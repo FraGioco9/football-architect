@@ -45,6 +45,14 @@
   copies[lang].competitionUnavailable=values[0];
   copies[lang].competitionUnpublished=values[1];
  }
+ const noActiveCompetitionLabels={
+  en:'No active competitions.',
+  de:'Keine aktiven Wettbewerbe.',
+  es:'No hay competiciones activas.',
+  fr:'Aucune compétition active.',
+  it:'Nessuna competizione attiva.'
+ };
+ for(const [lang,label] of Object.entries(noActiveCompetitionLabels))copies[lang].noActiveCompetitions=label;
  const internationalCategoryLabels={en:'International',de:'International',es:'Internacional',fr:'International',it:'Internazionale'};
  for(const [lang,label] of Object.entries(internationalCategoryLabels))copies[lang].internationalLabel=label;
  const internationalStatusLabels={
@@ -270,7 +278,7 @@
    name:divisionValue,tier:division.tier===1?t.tier1Label:t.tier2Label,
    status:rank,nextInfo:nextContent
   })+'</div>':
-   '<p class="club-competition-empty">'+escape(t.outside)+'</p>';
+   '<p class="club-competition-empty">'+escape(t.noActiveCompetitions)+'</p>';
 
   const memberCard=membership=>{
    const def=index.divisions.get(membership.competitionId),isDomestic=membership.category==='domestic';
@@ -302,7 +310,7 @@
   };
   const effectiveCompetitionCard=publicUnavailable?'<p class="club-competition-empty" role="status">'+escape(t.competitionUnavailable)+'</p>':publicUnpublished?
    '<p class="club-competition-empty" role="status">'+escape(t.competitionUnpublished)+'</p>':publicMemberships?
-   (publicMemberships.length?'<div class="club-competition-list">'+publicMemberships.map(memberCard).join('')+'</div>':'<p class="club-competition-empty">'+escape(t.outside)+'</p>'):
+   (publicMemberships.length?'<div class="club-competition-list">'+publicMemberships.map(memberCard).join('')+'</div>':'<p class="club-competition-empty">'+escape(t.noActiveCompetitions)+'</p>'):
    publicPending?'<div class="club-competition-list club-fp-competition" aria-busy="true"><div class="club-competition-layout club-competition-entry"><div class="club-competition-identity"><span class="club-competition-logo club-fp-competition-logo" aria-hidden="true"></span><div class="club-competition-copy"><strong class="club-competition-name"><span class="club-fp-bar club-fp-competition-name" aria-hidden="true"></span></strong><span class="club-competition-tier"><span class="club-fp-bar club-fp-competition-tier" aria-hidden="true"></span></span></div></div><div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.statusLabel)+'</dt><dd><span class="club-fp-bar club-fp-competition-position" aria-hidden="true"></span></dd></div></dl><div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span><div class="club-competition-next-content"><span class="club-fp-bar club-fp-competition-fixture" aria-hidden="true"></span><span class="club-fp-bar club-fp-competition-round" aria-hidden="true"></span></div></div></div></div></div>':
    competitionCard;
   // Navigation carries existing temporal context only into Fixtures/Stats. No clock is created here.

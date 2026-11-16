@@ -122,7 +122,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
    if(view==='overview'){
     for(const field of ['abbr','primaryColor','secondaryColor'])assert.ok(html.includes(c[field]));
     if(c.divisionId){assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));assert.equal((html.match(/data-club-division-link/g)||[]).length,1,'Only one division link in Competitions');assert.doesNotMatch(html,/club-header-division/);}
-    else assert.ok(html.includes(model.copies[lang].outside));
+    else assert.ok(html.includes(model.copies[lang].noActiveCompetitions));
    }else assert.ok(html.includes(view==='history'?'club-history-row-loading':view==='fixtures'?'club-fixtures':view==='roster'?'club-roster':'club-empty'));
    // Roster uses a canonical direct Info subview; only /app/ links are invalid.
    assert.doesNotMatch(html,/href="\/app\//);
@@ -255,7 +255,8 @@ test('CLUB-COMPETITION-02: active cards show localized metrics and inactive card
    assert.equal((box.match(/class="club-competition-logo"/g)||[]).length,1);
    assert.ok(!box.includes(model.copies[lang].provisional));
   }else{
-   assert.equal(box.split(model.copies[lang].outside).length-1,1,'Inactive clubs show one status message');
+   assert.equal(box.split(model.copies[lang].noActiveCompetitions).length-1,1,'Inactive clubs show one status message');
+   assert.ok(!box.includes(model.copies[lang].outside),'No misleading outside-structure message');
    assert.doesNotMatch(box,/<img|<a |club-competition-layout|club-competition-status/);
   }
  }
