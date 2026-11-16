@@ -8,7 +8,7 @@ import {INITIAL_PLAYERS,PLAYER_PITCH,PLAYER_VERSION} from './player-movement.mjs
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
-const ACTION_IMPULSE_NS=Object.freeze({pass:2.4,shot:3.0,clearance:2.7,carry:0.42});
+const ACTION_IMPULSE_NS=Object.freeze({pass:2.4,shot:3.0,cross:2.7,clearance:2.7,carry:0.42});
 export const PROVISIONAL_PHYSICAL_CARRY_IMPULSE_NS=0.42;
 // C3.2a: a small GROUND touch is a real Rapier impulse, NOT a virtual
 // dribble or privileged possession. Only isolated autonomousCarry fixtures.
@@ -16,6 +16,14 @@ const MAX_GAP_M=0.85;
 const MAX_HEIGHT_M=0.12;
 const PASS_LANE_MIN_CLEARANCE_M=1.9;
 const SHOT_LANE_MIN_CLEARANCE_M=2.4;
+// Functional-only provisional CROSS: winger with an actually observed
+// goal-area teammate; do not treat a cross attempt as pass completion.
+export const CROSS_WING_MIN_ABS_Y_M=20;
+export const CROSS_WING_MAX_ABS_Y_M=32;
+export const CROSS_ATTACK_MIN_X_M=24;
+export const CROSS_ATTACK_MAX_X_M=45;
+export const CROSS_LANE_MIN_CLEARANCE_M=1.4;
+
 // C2.3b: realistic medium-range attempts, with near-post lanes selected
 // only from LIVE opponent positions; this is tactical geometry, not scoring.
 export const SHOT_MAX_RANGE_M=35;
@@ -53,6 +61,31 @@ function chooseLiveShotLane(ball,goalX,team,players){
    return Object.freeze({target,clearance});
  }
  return null;
+}
+// Distinct high/wide CROSS uses a LIVE same-team penalty-area option.
+// Never stages a teammate, creates a contact, or awards a header/goal.
+function chooseLiveCrossRecipient(actor,ball,players){
+ const attack=actor.team==='home'?1:-1;
+ if(actor.role==='goalkeeper'||
+    attack*ball.x<CROSS_ATTACK_MIN_X_M||
+    attack*ball.x>CROSS_ATTACK_MAX_X_M||
+    Math.abs(ball.y)<CROSS_WING_MIN_ABS_Y_M||
+    Math.abs(ball.y)>CROSS_WING_MAX_ABS_Y_M)return null;
+ const choices=players.filter(p=>p.team===actor.team&&
+  p.id!==actor.id&&p.role!=='goalkeeper'&&
+  attack*p.x>=35&&attack*p.x<=49&&Math.abs(p.y)<=12)
+  .map(p=>{
+   const distanceM=Math.hypot(p.x-ball.x,p.y-ball.y);
+   return {player:p,distanceM,
+    laneClearanceM:lineClearance(ball,p,actor.team,players),
+    defenderGapM:nearOpponent(p,actor.team,players)};
+  }).filter(p=>p.distanceM>=8&&p.distanceM<=40&&
+   p.laneClearanceM>=CROSS_LANE_MIN_CLEARANCE_M&&
+   p.defenderGapM>=1.6)
+  .sort((a,b)=>b.laneClearanceM-a.laneClearanceM||
+   a.distanceM-b.distanceM||
+   ids.indexOf(a.player.id)-ids.indexOf(b.player.id));
+ return choices[0]??null;
 }
 function chooseRecipient(actor,ball,players){
  const attack=actor.team==='home'?1:-1;
@@ -233,14 +266,22 @@ export function selectUniformAutonomousContactAction({
    chooseLiveShotLane(ballPosition,goalX,player.team,actors):null;
   const shotLaneM=chosenShotLane?.clearance??
    lineClearance(ballPosition,goalTarget,player.team,actors);
-  let action,recipient=null,recipientInfo=null,dx,dy,vertical=0,rule;
+  let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
   if(chosenShotLane){
    action='shot';dx=toGoal;
    dy=chosenShotLane.target.y-ballPosition.y;vertical=0.24;
    rule=chosenShotLane.target.y===0?
     'unblocked-goal-lane':'unblocked-near-post-lane';
   }else{
-   recipientInfo=chooseRecipient(player,ballPosition,actors);
+   crossInfo=chooseLiveCrossRecipient(player,ballPosition,actors);
+   recipientInfo=crossInfo?null:chooseRecipient(player,ballPosition,actors);
+   if(crossInfo){
+    recipient=crossInfo.player;
+    action='cross';dx=recipient.x-ballPosition.x;
+    dy=recipient.y-ballPosition.y;
+    vertical=0.42;
+    rule='wide-live-teammate-lofted-cross';
+   }else 
    if(recipientInfo){
     recipient=recipientInfo.player;
     action='pass';dx=recipient.x-ballPosition.x;
@@ -293,6 +334,17 @@ export function selectUniformAutonomousContactAction({
    shortGroundTouchOnly:true,physicalRecontactObserved:false,
    dribbleConfirmed:null,officialMatchResult:null
   }):null;
+  const crossTarget=action==='cross'?Object.freeze({
+   source:'same-tick-canonical-wing-and-live-goal-area-teammate',
+   originPlayerId:id,recipientId:recipient.id,
+   originX:ballPosition.x,originY:ballPosition.y,
+   targetX:recipient.x,targetY:recipient.y,
+   distanceM:Math.hypot(dx,dy),
+   laneClearanceM:crossInfo.laneClearanceM,
+   team:player.team,physicsTick:tick,
+   physicalCrossAttemptOnly:true,crossCompleted:false,
+   officialMatchAction:false,officialGoal:false
+  }):null;
   const passTarget=action==='pass'?Object.freeze({
    source:'same-tick-canonical-22-player-positions',
    originPlayerId:id,recipientId:recipient.id,
@@ -307,7 +359,7 @@ export function selectUniformAutonomousContactAction({
    version:UNIFORM_AUTONOMOUS_ACTION_VERSION,tick,
    playerId:id,team:player.team,
    action,recipientId:recipient?.id??null,
-   passTarget,shotTarget,carryTarget,measuredGapM:gap,
+   passTarget,shotTarget,crossTarget,carryTarget,measuredGapM:gap,
    // Same-tick PRE-impulse values from the only existing contact selector.
    // No new eligibility policy or source authentication for caller input.
    physicalPrerequisites:Object.freeze({
@@ -329,7 +381,8 @@ export function selectUniformAutonomousContactAction({
     underImmediatePressure:nearestOpponentM<IMMEDIATE_PRESSURE_M,
     shotLaneClearanceM:shotLaneM,shotRange,
     passLaneClearanceM:recipientInfo?.laneClearanceM??null,
-    chosenRecipientOpponentGapM:recipientInfo?.nearestOpponentM??null,
+    chosenRecipientOpponentGapM:recipientInfo?.nearestOpponentM??
+     crossInfo?.defenderGapM??null,
     outcomeNotYetObserved:true,
     opponentTackleProven:false,interceptionProven:false,
     passCompleted:false,goalScored:false

@@ -18,7 +18,7 @@ import {createRealOpponentBallContestAuditM31}
 import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
-import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CARRY_LAB_STARTS,
+import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CROSS_LAB_STARTS,CARRY_LAB_STARTS,
  CHALLENGE_LAB_STARTS,CONTROL_LAB_STARTS,
  getActionLabScenario,classifyActionLabEvidence} from './action-lab-scenarios.mjs';
 
@@ -42,15 +42,18 @@ export function createControlledActionLab(RAPIER,id,{
     !['home','away'].includes(challengeSide)||
     !['contact','no-contact'].includes(challengeScene)||
     (id!=='challenge'&&(challengeSide!=='away'||challengeScene!=='contact'))||
-    (id!=='shot'&&(shotSide!=='home'||shotLane!=='open'))||
+    (!['shot','cross'].includes(id)&&(shotSide!=='home'||shotLane!=='open'))||
+     (id==='cross'&&shotLane!=='open')||
     (id!=='carry'&&carrySide!=='home')||
     (id!=='control'&&controlScene!=='receive'))
   throw new TypeError('Only bounded SHOT, CARRY or CONTROL scenes supported');
  const selectedControlSide=spec.mode==='control'?controlSide:null;
- const selectedShotSide=id==='shot'?shotSide:null;
+ const selectedShotSide=['shot','cross'].includes(id)?shotSide:null;
+  const wideCross=id==='cross';
  const selectedCarrySide=id==='carry'?carrySide:null;
  const selectedChallengeSide=id==='challenge'?challengeSide:null;
- const initial=selectedShotSide?SHOT_LAB_STARTS[selectedShotSide]:
+ const initial=wideCross?CROSS_LAB_STARTS[selectedShotSide]:
+   selectedShotSide?SHOT_LAB_STARTS[selectedShotSide]:
   selectedCarrySide?CARRY_LAB_STARTS[selectedCarrySide]:
   selectedControlSide?CONTROL_LAB_STARTS[selectedControlSide]:
   selectedChallengeSide?(challengeScene==='no-contact'?
@@ -96,6 +99,7 @@ export function createControlledActionLab(RAPIER,id,{
   diagnosticAutonomousFixtureActionEnabled:true,
   ...(selectedShotSide?{diagnosticResearchShotAttacker:selectedShotSide}:{}),
   ...(blocked?{diagnosticResearchShotBlockedLane:true}:{}),
+   ...(wideCross?{diagnosticResearchShotWideCross:true}:{}),
   ...(spec.mode==='control'?{
    diagnosticResearchControlReceiver:true,
    diagnosticResearchControlSide:selectedControlSide,
@@ -112,7 +116,8 @@ export function createControlledActionLab(RAPIER,id,{
  });
  const mover=createPlayerMovement(selectedShotSide?{
   researchShotAttacker:selectedShotSide,researchShotBall:initial,
-  ...(blocked?{researchShotBlockedLane:true}:{})
+  ...(blocked?{researchShotBlockedLane:true}:{}),
+   ...(wideCross?{researchShotWideCross:true}:{})
  }:spec.mode==='control'?{
   researchControlReceiver:true,researchControlBall:initial,
   researchControlSide:selectedControlSide,
@@ -198,9 +203,10 @@ export function createControlledActionLab(RAPIER,id,{
   // Post-impulse ball centres from the single Rapier engine, not a
   // predicted trajectory or inferred official goal.
   const p=physics.ball.position;
-  if(action?.action==='shot'&&evidence.verifiedShoeImpulse){
+  if(['shot','cross'].includes(action?.action)&&evidence.verifiedShoeImpulse){
    shotTrace=Object.freeze({
     shooterId:action.playerId,team:action.team,tick:physics.tick,
+     actionType:action.action,
     origin:Object.freeze({...p}),last:Object.freeze({...p}),
     samples:1,path3DM:0,maxCenterZM:p.z,observed3DFlight:false
    });
@@ -470,7 +476,7 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     ' · Last post-contact: '+
     snap.contactContinuity.latestCompleted.observedTicks+
     ' measured ticks · no proven control':'')+
-   (snap.shotFlight?' · SHOT '+snap.shotFlight.team.toUpperCase()+
+   (snap.shotFlight?' · '+(snap.shotFlight.actionType??'shot').toUpperCase()+' '+snap.shotFlight.team.toUpperCase()+
     ' · 3D path '+number(snap.shotFlight.path3DM)+' m'+
     ' · peak centre Z '+number(snap.shotFlight.maxCenterZM)+' m':'')+
    (snap.blockedShotObservation?' · All three SHOT lanes blocked':'')+
@@ -506,7 +512,8 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
    status.textContent='Research: real receiving shoe START → bounded physical first-touch impulse; ball control and possession NOT confirmed.';
   }else if(snap.shotFlight?.observed3DFlight){
    status.textContent='Verified '+snap.shotFlight.team.toUpperCase()+
-    ' SHOT: exclusive shoe START + real Rapier impulse; observed 3D flight ('+
+    ' '+(snap.shotFlight.actionType??'shot').toUpperCase()+
+    ': exclusive shoe START + real Rapier impulse; observed 3D flight ('+
     snap.shotFlight.samples+' physical samples). No goal awarded.';
   }else if(snap.carryTrace?.observedGroundMotion){
    status.textContent='Verified '+snap.carryTrace.team.toUpperCase()+
@@ -517,7 +524,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     ' shoe START; original policy finds no open SHOT lane. No shot or goal awarded.';
   }else if(snap.evidence.witnessed){
    const kind=session.spec.goal;
-   status.textContent=kind==='shot'?
+   status.textContent=kind==='cross'?
+    'Verified: genuine Rapier shoe START + lofted CROSS impulse; no completed cross or goal.':
+    kind==='shot'?
     'Verified: genuine Rapier shoe START + SHOT impulse. No goal awarded.':
     kind==='pass'?
      'Verified: genuine Rapier shoe START + PASS impulse. Reception not assumed.':
@@ -551,13 +560,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  }
  function resetSession(){
   stop();if(session)session.dispose();
-  shotSideLabel.hidden=!['shot','carry','challenge'].includes(select.value);
+  shotSideLabel.hidden=!['shot','cross','carry','challenge'].includes(select.value);
   shotLaneLabel.hidden=select.value!=='shot';
   controlSceneLabel.hidden=select.value!=='control';
   challengeSceneLabel.hidden=select.value!=='challenge';
   by('action-labs-title').textContent=select.selectedOptions[0].textContent.trim();
   session=createControlledActionLab(getRapier(),select.value,{
-   shotSide:select.value==='shot'?shotSide.value:'home',
+   shotSide:['shot','cross'].includes(select.value)?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',
    carrySide:select.value==='carry'?shotSide.value:'home',
    controlScene:select.value==='control'?controlSceneChoice.value:'receive',

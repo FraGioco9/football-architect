@@ -13,6 +13,11 @@ export const SHOT_LAB_STARTS=Object.freeze({
  home:scene('me-action-shot-home',30,1,0),
  away:scene('me-action-shot-away',-30,-1,0)
 });
+// Base-action coverage: lofted wide deliveries, not completed crosses.
+export const CROSS_LAB_STARTS=Object.freeze({
+ home:scene('me-action-cross-home',30,24),
+ away:scene('me-action-cross-away',-30,-24)
+});
 export const CARRY_LAB_STARTS=Object.freeze({
  home:scene('me-action-carry-home',-4.96,0,0.3),
  away:scene('me-action-carry-away',4.96,0,-0.3)
@@ -38,6 +43,9 @@ export const ACTION_LAB_SCENARIOS=Object.freeze([
  item('shot','Shot','shot',SHOT_LAB_STARTS.home,
   'Only forward #10 starts next to the ball before tick zero; genuine Rapier shoe START, original shot lane and flight required. No goal awarded.',
   ['home-10','away-1','away-10'],'shot'),
+ item('cross','Cross','shot',CROSS_LAB_STARTS.home,
+  'A real wide #10 shoe START drives one lofted impulse toward the observed #9 in the box. Neither completion nor a goal is assumed.',
+  ['home-10','home-9','away-1'],'cross'),
  item('challenge','Challenge','challenge',
   CHALLENGE_LAB_STARTS.away,
   'Witness an opponent shoe-ball START only. An actual tackle/interception or ball recovery is NOT yet verified.',
@@ -74,7 +82,7 @@ export function classifyActionLabEvidence(spec,{
     action.actualPhysicsImpulseApplied!==true||
     action.officialMatchAction!==false||
     starts.length!==1||starts[0]!==action.playerId||
-    !['pass','shot','carry','clearance'].includes(action.action)))
+    !['pass','shot','cross','carry','clearance'].includes(action.action)))
   throw new TypeError('Never award an action without a single same-tick real shoe START');
  if(typeof opponentEarlier!=='boolean')throw new TypeError('Boolean contact history required');
  if(!['home','away'].includes(challengeSide))
@@ -89,16 +97,17 @@ export function classifyActionLabEvidence(spec,{
   throw new TypeError('Invalid prior genuine physical pass');
  const pass=spec.goal==='pass'&&action?.action==='pass';
  const shot=spec.goal==='shot'&&action?.action==='shot';
+ const cross=spec.goal==='cross'&&action?.action==='cross';
  const carry=spec.goal==='carry'&&action?.action==='carry';
  const receiver=spec.goal==='control'&&priorPass!==null&&
   !opponentEarlier&&starts.length===1&&
   starts[0]===priorPass.recipientId;
  const opposition=spec.goal==='opponent-contact'&&
   starts.length===1&&starts[0].startsWith(challengeSide+'-');
- const witness=Boolean(pass||shot||carry||receiver||opposition);
+ const witness=Boolean(pass||shot||cross||carry||receiver||opposition);
  return Object.freeze({
   tick,witnessed:witness,kind:spec.goal,
-  verifiedShoeImpulse:Boolean(pass||shot||carry),
+  verifiedShoeImpulse:Boolean(pass||shot||cross||carry),
   realContactObserved:starts.length>0,
   verifiedReceivingShoeContact:Boolean(receiver),
   observedOpponentShoeContact:Boolean(opposition),

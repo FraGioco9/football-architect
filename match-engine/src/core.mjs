@@ -91,6 +91,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticAutonomousCarryEnabled = false,
   diagnosticResearchShotAttacker = null,
   diagnosticResearchShotBlockedLane = false,
+  diagnosticResearchShotWideCross = false,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -154,6 +155,13 @@ export function createEngine(RAPIER, input = {}, {
  if(typeof diagnosticResearchShotBlockedLane!=='boolean'||
     (diagnosticResearchShotBlockedLane&&diagnosticResearchShotAttacker===null))
   throw new TypeError('Blocked lane requires genuine bounded research shot');
+ if(typeof diagnosticResearchShotWideCross!=='boolean'||
+    (diagnosticResearchShotWideCross&&(
+     diagnosticResearchShotAttacker===null||
+     diagnosticResearchShotBlockedLane||
+     !diagnosticPlayerFootContactsEnabled||
+     !diagnosticAutonomousFixtureActionEnabled)))
+  throw new TypeError('Wide CROSS requires original exclusive Rapier shoe action');
  if(!['home','away'].includes(diagnosticResearchControlSide)||
     (diagnosticResearchControlSide==='away'&&
      (!diagnosticResearchControlReceiver||
@@ -227,7 +235,8 @@ export function createEngine(RAPIER, input = {}, {
   throw new TypeError('CARRY setup requires bounded genuine private shoe source');
  const stagedShoes=diagnosticResearchShotAttacker!==null?
   initialResearchShotLineup(INITIAL_PLAYERS,diagnosticResearchShotAttacker,
-   scenario,{blockedLane:diagnosticResearchShotBlockedLane}):
+   scenario,{blockedLane:diagnosticResearchShotBlockedLane,
+    wideCross:diagnosticResearchShotWideCross}):
   diagnosticResearchControlReceiver?
    initialResearchControlLineup(INITIAL_PLAYERS,scenario,
     {opponentFirst:diagnosticResearchControlOpponentFirst,
@@ -328,6 +337,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchBodyEncounter,diagnosticUnstagedBodyFeedbackEnabled,
     diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
+    diagnosticResearchShotWideCross,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
     diagnosticResearchReceivingDecisionEnabled,diagnosticResearchReceiverTapEnabled,

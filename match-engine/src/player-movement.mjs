@@ -1635,6 +1635,7 @@ export function createPlayerMovement(options={}){
  if(!options||typeof options!=='object'||Array.isArray(options)||
     Reflect.ownKeys(options).some(k=>k!=='researchShotAttacker'&&
      k!=='researchShotBall'&&k!=='researchShotBlockedLane'&&
+     k!=='researchShotWideCross'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlCloseDefender'&&
@@ -1691,6 +1692,7 @@ export function createPlayerMovement(options={}){
      options.researchShotAttacker!==undefined||
      options.researchShotBall!==undefined||
      options.researchShotBlockedLane!==undefined||
+     options.researchShotWideCross!==undefined||
      options.researchControlReceiver!==undefined||
      options.researchControlBall!==undefined))||
     (options.researchControlOpponentFirst!==undefined&&(
@@ -1731,6 +1733,7 @@ export function createPlayerMovement(options={}){
      options.researchShotAttacker!==undefined||
      options.researchShotBall!==undefined||
      options.researchShotBlockedLane!==undefined||
+     options.researchShotWideCross!==undefined||
      options.researchCarrySide!==undefined||
      options.researchCarryBall!==undefined))||
     (options.researchShotAttacker!==undefined&&
@@ -1738,11 +1741,17 @@ export function createPlayerMovement(options={}){
     (options.researchShotAttacker!==undefined&&!Object.hasOwn(options,'researchShotBall'))||
     (options.researchShotBlockedLane!==undefined&&
      (options.researchShotBlockedLane!==true||
+      options.researchShotWideCross!==undefined||
+      !['home','away'].includes(options.researchShotAttacker)))||
+    (options.researchShotWideCross!==undefined&&(
+      options.researchShotWideCross!==true||
+      options.researchShotBlockedLane!==undefined||
       !['home','away'].includes(options.researchShotAttacker))))
   throw new TypeError('Only paired bounded research shot initial positions allowed');
  const initial=options.researchShotAttacker?
   initialResearchShotLineup(INITIAL_PLAYERS,options.researchShotAttacker,
-   options.researchShotBall,{blockedLane:options.researchShotBlockedLane===true}):
+   options.researchShotBall,{blockedLane:options.researchShotBlockedLane===true,
+    wideCross:options.researchShotWideCross===true}):
   options.researchControlReceiver===true?
    initialResearchControlLineup(INITIAL_PLAYERS,options.researchControlBall,
     {opponentFirst:options.researchControlOpponentFirst===true,

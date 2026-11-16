@@ -8,10 +8,10 @@ import {ACTION_LAB_SCENARIOS,getActionLabScenario,
  classifyActionLabEvidence} from '../src/action-lab-scenarios.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
-test('five clean Action LABs retain negative authorization boundaries',()=>{
+test('six base-action LABs retain negative authorization boundaries',()=>{
  assert.deepEqual(ACTION_LAB_SCENARIOS.map(s=>s.id),
-  ['pass','shot','challenge','control','carry']);
- assert.equal(new Set(ACTION_LAB_SCENARIOS.map(s=>s.initial.seed)).size,5);
+  ['pass','shot','cross','challenge','control','carry']);
+ assert.equal(new Set(ACTION_LAB_SCENARIOS.map(s=>s.initial.seed)).size,6);
  for(const spec of ACTION_LAB_SCENARIOS){
   assert.ok(Object.isFrozen(spec)&&Object.isFrozen(spec.initial));
   assert.equal(spec.officialResult,false);

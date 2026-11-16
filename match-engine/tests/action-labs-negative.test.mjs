@@ -172,7 +172,7 @@ test('CHALLENGE rejects stale, absent, ambiguous START/ACTIVE and cooldown; pure
  }finally{world.dispose();}
 });
 
-test('all five Action LAB modes preserve canonical 22 players, 60Hz and 0.98m separation',
+test('all six Action LAB modes preserve canonical 22 players, 60Hz and 0.98m separation',
  {timeout:80000},async()=>{
  const R=await initializeRapier(rapier);
  const {PLAYER_MIN_SEPARATION_M}=await import('../src/player-movement.mjs');
