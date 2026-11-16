@@ -269,10 +269,15 @@
     const isPostseason=typeof selected==='string';
     const selectedChoice=configured.find(c=>c.value===selected);
     const loading=document.documentElement.dataset.faStandingsLoading==='true';
+    // The published draw may still be in flight after global bootstrap settles.
+    const source=window.faWorldState?.get?.();
+    const waitingForWorld=source?.source==='authoritative'&&
+      ['pending','loading'].includes(source.worldStatus)&&!available;
+    const unresolved=loading||pendingKey!==null||waitingForWorld;
     const hasSchedule=available&&([...rounds.values()].some(games=>games.length)||postseason.length>0);
-    fields.toolbar.hidden=!loading&&!hasSchedule;
+    fields.toolbar.hidden=!unresolved&&!hasSchedule;
     fields.current.hidden=!available||currentMatchday===null||selected===currentMatchday;
-    fields.round.value=String(selected);fields.round.disabled=false;
+    fields.round.value=String(selected);fields.round.disabled=!hasSchedule||unresolved;
     const label=document.getElementById('app-fixtures-round-label');
     if(label)label.hidden=isPostseason;
     const selectedLabel=isPostseason?element('span','',window.faCompetitionRulesView?.fixturesChoiceLabel?.(definition,selectedChoice,document.documentElement.lang)||selectedChoice.labelKey):element('span','',String(selected));
@@ -280,11 +285,11 @@
     window.faFixturesShell?.select(selected);
     if(!number.firstElementChild?.isEqualNode?.(selectedLabel))number.replaceChildren(selectedLabel);
     roundMenu.sync(String(selected));
-    if(!available)roundMenu.close();
+    if(fields.round.disabled)roundMenu.close();
     const choiceIndex=configured.findIndex(c=>c.value===selected);
-    fields.previous.disabled=choiceIndex===0;
-    fields.next.disabled=choiceIndex===configured.length-1;
-    fields.empty.hidden=available;fields.list.hidden=!available;fields.summary.hidden=!available;
+    fields.previous.disabled=fields.round.disabled||choiceIndex===0;
+    fields.next.disabled=fields.round.disabled||choiceIndex===configured.length-1;
+    fields.empty.hidden=true;fields.list.hidden=!available;fields.summary.hidden=!available;
     const matches=[];
     if(available){
       if(international&&isPostseason){
@@ -343,7 +348,7 @@
       previous.className=item.className;
       return previous;
     });
-    if(international){const hasMatches=next.some(item=>item.dataset.fixtureMatch);fields.empty.hidden=hasMatches;fields.list.hidden=!hasMatches;fields.summary.hidden=!hasMatches;}
+    if(international&&available){const hasMatches=next.some(item=>item.dataset.fixtureMatch);fields.empty.hidden=hasMatches;fields.list.hidden=!hasMatches;fields.summary.hidden=!hasMatches;}
     // Move existing crest hosts into new match rows instead of creating new images.
     // A club appears once per league round, but can appear in multiple postseason legs.
     const usedCrests=new Set();
@@ -373,15 +378,17 @@
     const emptyRound=available&&((international&&!next.some(item=>item.dataset.fixtureMatch))||
       (!international&&!isPostseason&&matches.length===0));
     const panel=document.getElementById('competition-panel-fixtures');
+    const confirmedEmpty=Boolean(absent||emptyRound||(!available&&!unresolved));
     if(panel){
-      panel.dataset.faContentState=absent||emptyRound?'empty':available?'available':'unknown';
+      panel.dataset.faContentState=confirmedEmpty?'empty':available?'available':'unknown';
       panel.dataset.faContentSeason=String(context?.selectedSeason??'');
       panel.dataset.faContentRevision=String(context?.revision??'');
     }
-    if(absent||emptyRound){fields.empty.hidden=false;fields.list.hidden=true;fields.summary.hidden=true;}
+    if(confirmedEmpty){fields.empty.hidden=false;fields.list.hidden=true;fields.summary.hidden=true;}
     window.faAppRenderLanguage?.();
   }
   function select(value){
+    if(fields.round.disabled)return;
     const round=/^[1-9]\d*$/.test(String(value))?Number(value):value;
     if(validChoice(round)){
       navigation.set({matchday:displayValue(round)});
@@ -550,6 +557,8 @@
     const key=[season,definition.id,source.world.generation,source.world.revision].join(':');
     if(key===publishedKey||key===pendingKey)return;
     pendingKey=key;const seq=++fetchSequence;
+    // Keep the toolbar's geometry and skeleton while the official lookup is unresolved.
+    render();
     try{
       const response=await fetch('/api/matches/seasons/'+season+'/competitions/'+definition.id,
        {credentials:'omit',cache:'no-store',redirect:'error'});
@@ -610,7 +619,7 @@
       syncKnockoutLinks();
     }catch{
       if(seq===fetchSequence){publishedSeason=null;publishedKey=null;publishedIds.clear();publishedLookup=null;syncKnockoutLinks();}
-    }finally{if(pendingKey===key)pendingKey=null;}
+    }finally{if(pendingKey===key){pendingKey=null;render();}}
   }
 
   // The world can become ready AFTER Fixtures mounted. Source-change is not
@@ -620,8 +629,9 @@
     if(snapshot?.source!=='authoritative'||snapshot.worldStatus!=='ready'||!snapshot.world){
       if(publishedKey!==null||pendingKey!==null||publishedLookup!==null){
         publishedSeason=null;publishedKey=null;pendingKey=null;
-        publishedLookup=null;publishedIds.clear();fetchSequence++;render();syncKnockoutLinks();
+        publishedLookup=null;publishedIds.clear();fetchSequence++;syncKnockoutLinks();
       }
+      render();
       return;
     }
     // Invalidate old bracket anchors immediately on a generation/revision

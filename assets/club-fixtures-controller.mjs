@@ -43,6 +43,7 @@ export function mountClubFixtures({host,manifest}){
   tooltip.style.top=Math.max(edge,Math.min(innerHeight-height-edge,top))+'px';
  };
  const navigate=(key,value)=>{
+  if(snapshot.coverage==='loading')return;
   const chosen=season();if(chosen===null)return;
   const url=new URL(location.href);
   if(key==='season'){
@@ -73,6 +74,8 @@ export function mountClubFixtures({host,manifest}){
    explicitSeason:window.faRoutesRegistry.resolveSeasonQuery(params,state?.get?.().current?.season).explicit,
    seasons,filter,snapshot});
   const incoming=staging.firstElementChild;
+  // The selector stays mounted but inert until the fixture list has resolved.
+  for(const control of incoming.querySelectorAll('[data-club-fixture-control]'))control.querySelector('button').disabled=snapshot.coverage==='loading';
   for(const crest of incoming.querySelectorAll('[data-club-crest]')){const old=oldCrests.get(crest.dataset.clubCrest)?.shift();if(old)crest.replaceWith(old);}
   hideTip();
   if(!panel){
@@ -104,7 +107,9 @@ export function mountClubFixtures({host,manifest}){
     const menu=control.querySelector('[role=listbox]'),nextMenu=next.querySelector('[role=listbox]');
     menu.replaceChildren(...nextMenu.childNodes);menu.setAttribute('aria-label',nextMenu.getAttribute('aria-label'));
     control.querySelector('[data-club-fixture-value]').replaceChildren(...next.querySelector('[data-club-fixture-value]').childNodes);
-    control.querySelector('button').setAttribute('aria-label',next.querySelector('button').getAttribute('aria-label'));
+    const trigger=control.querySelector('button'),incomingTrigger=next.querySelector('button');
+    trigger.setAttribute('aria-label',incomingTrigger.getAttribute('aria-label'));
+    trigger.disabled=incomingTrigger.disabled;
     next.replaceWith(control);
    }
    const focusedNext=panel.querySelector('[data-club-fixtures-next]')===document.activeElement;
