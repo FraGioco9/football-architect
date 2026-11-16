@@ -90,15 +90,42 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
   .toMatchObject({status:'scheduled',result:null,lineup:null,events:null});
  const oldWorld=world,oldCommand=cmd();
  await db.prepare("CREATE TRIGGER fail_day13_audit BEFORE INSERT ON admin_operations WHEN NEW.command='advance-season-v1' BEGIN SELECT RAISE(ABORT,'late day13 failure'); END").run();
+ let failureClockReads=0;
+ const failureClock=async()=>{
+  failureClockReads++;
+  if(failureClockReads===2){
+   // A concurrent authenticated GET refreshes this session during V2 planning.
+   await db.prepare('UPDATE player_sessions SET last_seen_at=? WHERE token_digest=?')
+    .bind(now+15,session.unified!.sessionDigest).run();
+  }
+  return failureClockReads>=2?now+16:now;
+ };
  try{
   await expect(executeLineupLifecycleV1(db,session,'advance',oldCommand,
-   'day13-actual-000001',now)).rejects.toMatchObject({status:503});
- }finally{await db.prepare('DROP TRIGGER fail_day13_audit').run()}
+   'day13-actual-000001',now,failureClock)).rejects.toMatchObject({status:503});
+  expect(failureClockReads).toBeGreaterThanOrEqual(3);
+ }finally{
+  await db.prepare('UPDATE player_sessions SET last_seen_at=? WHERE token_digest=?')
+   .bind(now,session.unified!.sessionDigest).run();
+  await db.prepare('DROP TRIGGER fail_day13_audit').run();
+ }
  expect(await readWorld(db)).toEqual(oldWorld);
  expect(await count('match_lineup_result_receipts')).toBe(0);
  expect(await count('season_lineup_day_outcomes')).toBe(12);
+ let successClockReads=0;
+ const successClock=async()=>{
+  successClockReads++;
+  if(successClockReads===2){
+   await db.prepare('UPDATE player_sessions SET last_seen_at=? WHERE token_digest=?')
+    .bind(now+19,session.unified!.sessionDigest).run();
+  }
+  return successClockReads>=2?now+20:now;
+ };
  const committed=await executeLineupLifecycleV1(db,session,'advance',oldCommand,
-  'day13-actual-000001',now);
+  'day13-actual-000001',now,successClock);
+ expect(successClockReads).toBe(2);
+ await db.prepare('UPDATE player_sessions SET last_seen_at=? WHERE token_digest=?')
+  .bind(now,session.unified!.sessionDigest).run();
  world=committed.world;
  expect(world.day).toBe(13);
  expect(await executeLineupLifecycleV1(db,session,'advance',oldCommand,
