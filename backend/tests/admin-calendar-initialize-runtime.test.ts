@@ -3,7 +3,6 @@ import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
-import {generateSeasonCalendar} from '../src/calendar-command.ts';
 import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
@@ -34,10 +33,11 @@ it('atomically seeds eight ordered milestones without inventing games or draws, 
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(0);
  expect(await initializeAdministrativeEvents(db,session,c,'initialize-events-synthetic-0001',now)).toEqual(a);
- await expect(generateSeasonCalendar(db,session,{...c,expectedRevision:a.world.revision},'legacy-calendar-blocked-0001',now)).rejects.toMatchObject({status:409});
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM season_lineup_day_outcomes').first())?.n).toBe(0);
 });
 it('refuses to initialize future events over already-published Season 1 fixtures',async()=>{
- const c=cmd();world=(await generateSeasonCalendar(db,session,c,'legacy-calendar-first-0001',now)).world;
+ await db.prepare('INSERT INTO season_calendars(season_number,calendar_version,calendar_hash,calendar_json,status,created_at) VALUES(?,?,?,?,?,?)')
+  .bind(1,'synthetic-blocked-test','a'.repeat(64),'{}','generated',now).run();
  await expect(initializeAdministrativeEvents(db,session,cmd(),'initialize-after-legacy-0001',now)).rejects.toMatchObject({status:409});
  expect((await db.prepare('SELECT count(*) n FROM season_admin_events').first()).n).toBe(0);
 });

@@ -6,7 +6,7 @@ import {clearTestWorld} from './fixtures/test-world.ts';
 import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
-import {advanceAdministrativeClock} from '../src/admin-calendar-clock.ts';
+import {advanceAdministrativeClockLineupV1 as advanceAdministrativeClock} from '../src/admin-calendar-clock-lineup-v1.ts';
 import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
 import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
 import {executeInternationalDraw} from '../src/admin-international-draw.ts';
@@ -38,7 +38,7 @@ beforeEach(async()=>{
  world=(await advanceAdministrativeClock(db,session,'advance',cmd(),'lineup-publish-day3',now)).world;
  world=(await executeInternationalDraw(db,session,cmd(),'lineup-publish-draw',now)).world;
 });
-describe('#613 V2-only published calendar (candidate, no HTTP cutover)',()=>{
+describe('#613 V2-only published calendar (routed V2 HTTP)',()=>{
  it('rolls back late failure then seals days 1–3 as empty V2, no legacy scores',async()=>{
   const before=cmd();
   await db.prepare(
