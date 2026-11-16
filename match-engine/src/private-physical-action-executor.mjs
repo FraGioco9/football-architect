@@ -24,7 +24,7 @@ export function createPrivatePhysicalActionExecutor({
     typeof allowPhysicalCarry!=='boolean'||
     (researchReceivingCushionSide!==null&&
      !['home','away'].includes(researchReceivingCushionSide))||
-    (researchReceivingCushionSide!==null&&allowPhysicalCarry)
+    (researchReceivingCushionSide!==null&&allowPhysicalCarry))
   throw new TypeError('Private Rapier body and live shoe source required');
  let tick=0,lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
  let action=null,audit=null,closed=false;
