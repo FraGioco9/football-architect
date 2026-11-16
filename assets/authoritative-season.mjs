@@ -96,7 +96,7 @@ export function validateAuthoritativeSeason(input,context,manifest){
  }
  for(const [clubId,p] of playerTotals){
   const t=allTotals.get(clubId);
-  if(!t||p.appearances>11*t.played||p.goals>t.goalsFor)fail();
+  if(!t||p.appearances>t.played||p.appearances>11*t.played||p.goals>t.goalsFor)fail();
  }
  if(!Array.isArray(d.calendar)||d.calendar.length!==56)fail();
  d.calendar.forEach((day,i)=>{

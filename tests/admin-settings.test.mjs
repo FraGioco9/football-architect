@@ -428,7 +428,7 @@ test('next-day simulation preview uses the destination day and shared sporting c
 
 test('Advance day is unavailable until all actions due today or earlier are completed',()=>{
  const active={...world,seasonNumber:1,phase:'active',day:3};
- for(const mode of ['administrative','sporting','legacy']){
+ for(const mode of ['administrative','sporting']){
   const action=mode==='administrative'?'eventAdvance':'advance';
   const events={worldGeneration:active.generation,worldRevision:0,mode,calendarReady:true,rows:[
    {id:'draw',kind:'draw-international',status:'scheduled',day:3,order:1},
@@ -442,6 +442,13 @@ test('Advance day is unavailable until all actions due today or earlier are comp
   events.rows.push({id:'overdue',kind:'overdue',status:'scheduled',day:2,order:1});
   assert.equal(canRunCommand(action,active,events),false);
  }
+});
+
+test('retired legacy mode cannot advance a V2 sporting day',()=>{
+ const w={...world,seasonNumber:1,phase:'active',day:3};
+ const events={worldGeneration:w.generation,worldRevision:w.revision,mode:'legacy',calendarReady:true,rows:[]};
+ assert.equal(canRunCommand('advance',w,events),false);
+ assert.equal(canRunCommand('eventAdvance',w,events),false);
 });
 
 test('Players local trial command uses bounded inputs and never calls world mutations',()=>{

@@ -11,7 +11,7 @@ const entry=(competitionId,category='domestic',withNext=true)=>({
 });
 function payload(memberships=[entry('IT-1'),entry('int-1','international')]){
  return {schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-17',selectedSeason:2,
-  world,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',
+  world,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',
    sourceRef:'club:'+world.generation+':season:2:verified'},
   data:{season:2,memberships}};
 }
@@ -112,7 +112,7 @@ test('QA-16: single-request protocol validates authoritative data, future matche
    provenance:{...payload().provenance,sourceRef:'club:'+world.generation+':season:1:verified'},
    data:{season:1,memberships:[]}};
   return {schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-17',world,
-   status:'available',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',
+   status:'available',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',
     sourceRef:'club-history:'+world.generation+':revision:'+world.revision},
    data:{overviews:[previous,payload()]}};
  };
@@ -222,7 +222,7 @@ test('QA-16: first paint panels, flags and short anonymous skeletons are preserv
 });
 test('QA-16: no parallel competition or redundant world requests; publication gate remains',()=>{
  const client=read('assets/club-page.js'),source=read('assets/club-season-source.mjs'),guard=read('tools/publication-guard.mjs');
- const backend=read('backend/src/public-sporting-read.ts'),route=read('backend/src/index.ts');
+ const backend=read('backend/src/public-sporting-read-lineup-v1.ts'),route=read('backend/src/index.ts');
  assert.match(source,/\/api\/clubs\/.*\/history/);
  assert.doesNotMatch(source,/\/api\/competitions\//);
  assert.doesNotMatch(client,/publicManifest\(\)/);
