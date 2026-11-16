@@ -26,12 +26,14 @@ function validateSelection(x,known){
 // observe-only run can have a different later trajectory because feedback
 // changes genuine next-frame positions; NEVER require equal contact counts.
 export function auditMovingBallMultiPairMatrix(RAPIER,{
- stateIds=DEFAULT_STATES,velocityIds=DEFAULT_MOTIONS,ticks=225
+ stateIds=DEFAULT_STATES,velocityIds=DEFAULT_MOTIONS,ticks=225,
+ handoffPolicy='bounded'
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function'||
     !validateSelection(stateIds,originalStates)||
     !validateSelection(velocityIds,byMotion)||
-    !Number.isSafeInteger(ticks)||ticks<1||ticks>240)
+    !Number.isSafeInteger(ticks)||ticks<1||ticks>240||
+    !['bounded','legacy'].includes(handoffPolicy))
   throw new TypeError('M15 requires original bounded states and rolling velocities');
  const rows=[],blocked=[];
  for(const stateId of stateIds)for(const velocityId of velocityIds){
@@ -39,7 +41,8 @@ export function auditMovingBallMultiPairMatrix(RAPIER,{
   for(const side of ['home','away'])for(const mode of ['feedback','observe']){
    try{
     const audit=auditNaturalNativeFeedback(RAPIER,{
-     stateId,side,mode,ticks,initialBallVelocity:{vx:motion.vx,vy:motion.vy}
+     stateId,side,mode,ticks,initialBallVelocity:{vx:motion.vx,vy:motion.vy},
+     shoeBodyHandoff:handoffPolicy
     });
     rows.push(freeze({...audit,velocityId}));
    }catch(error){
@@ -79,6 +82,7 @@ export function auditMovingBallMultiPairMatrix(RAPIER,{
  return freeze({
   version:'m15-moving-ball-authentic-native-multipair-search-v1',
   originalTerritories:stateIds.length,originalRollingProfiles:velocityIds.length,
+  handoffPolicy,
   runs:stateIds.length*velocityIds.length*4,
   completedRuns:rows.length,blockedRuns:blocked.length,
   allRequestedRunsCompleted:blocked.length===0,

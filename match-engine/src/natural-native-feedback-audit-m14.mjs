@@ -80,12 +80,13 @@ function validateLineMovement(after){
 // excuse to inject artificial collisions. All body feedback is M13-only.
 export function auditNaturalNativeFeedback(RAPIER,{
  stateId='centre',side='home',ticks=225,mode='feedback',
- initialBallVelocity=null
+ initialBallVelocity=null,shoeBodyHandoff='legacy'
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function'||
     !allBallStates.has(stateId)||!sides.includes(side)||
     !modes.includes(mode)||!Number.isSafeInteger(ticks)||
-    ticks<1||ticks>MAX_TICKS)
+    ticks<1||ticks>MAX_TICKS||
+    !['legacy','bounded'].includes(shoeBodyHandoff))
   throw new TypeError('M14 requires bounded original Rapier source state/mode');
  // M15 broadens only the pre-tick-zero ball trajectory. The original 22
  // players, their autonomous policy, body radii and native queue are identical.
@@ -115,7 +116,8 @@ export function auditNaturalNativeFeedback(RAPIER,{
  });
  const mover=createPlayerMovement(feedback?{
   researchOpposingPressConvergence:true,
-  researchUnstagedNativeBodyFeedback:true
+  researchUnstagedNativeBodyFeedback:true,
+  ...(shoeBodyHandoff==='bounded'?{researchShoeBodyHandoff:true}:{})
  }:{researchOpposingPressConvergence:true});
  let totalNativeBodyStarts=0,totalNativeBodyEnds=0;
  let totalNativeShoeStarts=0,actualResponses=0,actualRejectedResponses=0;
@@ -131,6 +133,7 @@ export function auditNaturalNativeFeedback(RAPIER,{
  // solver correction must NOT be retroactively teleported to the shoes.
  let lastGenuineShoeFrame=initialFootPositions();
  let latestShape=null,latestPressers=null,latestSupports=null;
+ let latestShoeBodyHandoff=null;
  try{
   const initial=mover.snapshot();
   if(!initial.players.every((p,i)=>p.id===INITIAL_PLAYERS[i].id&&
@@ -304,10 +307,13 @@ export function auditNaturalNativeFeedback(RAPIER,{
     actualBallConvergenceTicks++;
    latestShape=observed.shape;latestPressers=observed.pressers;
    latestSupports=observed.supports;
+   latestShoeBodyHandoff=observed.shoeBodyHandoff??null;
   }
   return frozen({
    version:'m14-authentic-multi-territory-feedback-audit-v1',
    stateId,side,mode,ticks,
+   shoeBodyHandoff:feedback?shoeBodyHandoff:'observe-only',
+   sourceBoundShoeHandoff:latestShoeBodyHandoff,
    initialBall:frozen({x:scene.x,y:scene.y,vx:scene.vx,vy:scene.vy}),
    initialRollingFraction:moving?1:0,
    original22Unstaged:true,sameRapierWorld:true,singleNativeEventQueue:true,

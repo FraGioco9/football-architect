@@ -2,6 +2,8 @@
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
 import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual-kinematics.mjs';
+import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
+ from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
 import {initialResearchCarryLineup} from './research-carry-initial-lineup.mjs';
@@ -1635,13 +1637,15 @@ export function createPlayerMovement(options={}){
      k!=='researchCarrySide'&&k!=='researchCarryBall'&&
      k!=='researchBodyEncounter'&&
      k!=='researchOpposingPressConvergence'&&
-     k!=='researchUnstagedNativeBodyFeedback')||
+     k!=='researchUnstagedNativeBodyFeedback'&&
+     k!=='researchShoeBodyHandoff')||
     ((options.researchShotAttacker??null)===null&&
      options.researchControlReceiver===undefined&&
      options.researchCarrySide===undefined&&
      options.researchBodyEncounter!==true&&
      options.researchOpposingPressConvergence!==true&&
      options.researchUnstagedNativeBodyFeedback!==true&&
+     options.researchShoeBodyHandoff!==true&&
      Reflect.ownKeys(options).length>0)||
     (options.researchBodyEncounter!==undefined&&(
      options.researchBodyEncounter!==true||
@@ -1649,12 +1653,19 @@ export function createPlayerMovement(options={}){
     (options.researchOpposingPressConvergence!==undefined&&(
      options.researchOpposingPressConvergence!==true||
      (options.researchUnstagedNativeBodyFeedback===true?
-      (Reflect.ownKeys(options).length!==2):
+      Reflect.ownKeys(options).length!==
+       (options.researchShoeBodyHandoff===true?3:2):
       Reflect.ownKeys(options).length!==1)))||
     (options.researchUnstagedNativeBodyFeedback!==undefined&&(
      options.researchUnstagedNativeBodyFeedback!==true||
      options.researchOpposingPressConvergence!==true||
-     Reflect.ownKeys(options).length!==2))||
+     Reflect.ownKeys(options).length!==
+      (options.researchShoeBodyHandoff===true?3:2)))||
+    (options.researchShoeBodyHandoff!==undefined&&(
+     options.researchShoeBodyHandoff!==true||
+     options.researchOpposingPressConvergence!==true||
+     options.researchUnstagedNativeBodyFeedback!==true||
+     Reflect.ownKeys(options).length!==3))||
     (options.researchCarrySide!==undefined&&(
      !['home','away'].includes(options.researchCarrySide)||
      !Object.hasOwn(options,'researchCarryBall')||
@@ -1704,6 +1715,13 @@ export function createPlayerMovement(options={}){
  const players=initial.map(p=>({...p}));
  let physicallyAppliedResponses=0,lastPhysicalReconciliation=null;
  let lastFeedbackSource=null,lastFeedbackReconciledTick=0;
+ // M16 keeps the physical shoe state sent to Rapier before its body solver.
+ // Never replace this source with post-solver canonical coordinates.
+ let lastNativeShoeFrame=options.researchShoeBodyHandoff===true?
+  initial.map(p=>Object.freeze({
+   id:p.id,x:p.x,y:p.y,facingRad:p.facingRad
+  })):null;
+ let shoePositionClamps=0,shoeHeadingClamps=0,shoeFeedbackRejects=0;
  let lastBall={x:0,y:0};
  let pressers={home:'home-10',away:'away-10'};
  let pressSwitches={home:0,away:0};
@@ -1893,6 +1911,13 @@ export function createPlayerMovement(options={}){
          options.researchUnstagedNativeBodyFeedback===true)?{
     actualNativeResponseCount:physicallyAppliedResponses,
     lastPhysicalReconciliation
+   }:{}),
+   ...(options.researchShoeBodyHandoff===true?{
+    shoeBodyHandoff:Object.freeze({
+     preSolverNativeShoes:true,positionClamps:shoePositionClamps,
+     headingClamps:shoeHeadingClamps,
+     rejectedUnsafeFeedback:shoeFeedbackRejects
+    })
    }:{})
   });
  }
@@ -2193,7 +2218,14 @@ export function createPlayerMovement(options={}){
   // Fixed ordering and collision rejection make every replay byte-stable.
   for(let i=0;i<players.length;i++){
    const p=players[i],target=targets[i];
-   const candidate=advanceFreePlayerKinematics(p,target,PLAYER_KINEMATIC_LIMITS);
+   const free=advanceFreePlayerKinematics(p,target,PLAYER_KINEMATIC_LIMITS);
+   const shoe=lastNativeShoeFrame?.[i];
+   if(shoe&&shoe.id!==p.id)
+    throw new TypeError('M16 original shoe/player order mismatch');
+   const candidate=shoe?projectNativeShoeBodyStep(p,shoe,free,{
+    dt:PLAYER_DT,maxSpeed:PLAYER_MAX_SPEED_MPS
+   }):free;
+   if(shoe&&candidate.clippedM>1e-10)shoePositionClamps++;
    const blocker=players.find(other=>other!==p&&
      (candidate.x-other.x)**2+(candidate.y-other.y)**2<
       PLAYER_MIN_SEPARATION_M**2-1e-9);
@@ -2201,9 +2233,20 @@ export function createPlayerMovement(options={}){
    p.blockedBy=blocker?.id??null;
    if(blocker){p.vx=0;p.vy=0;}
    else{p.x=candidate.x;p.y=candidate.y;p.vx=candidate.vx;p.vy=candidate.vy;}
-   p.facingRad=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
+   const wantedFacing=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
     PLAYER_KINEMATIC_LIMITS);
+   if(shoe){
+    const facing=projectNativeShoeBodyFacing(
+     p.facingRad,shoe.facingRad,wantedFacing,
+     PLAYER_TURN_RAD_PER_S*PLAYER_DT);
+    if(facing.clippedRad>1e-10)shoeHeadingClamps++;
+    p.facingRad=facing.facingRad;
+   }else p.facingRad=wantedFacing;
   }
+  if(lastNativeShoeFrame!==null)
+   lastNativeShoeFrame=players.map(p=>Object.freeze({
+    id:p.id,x:p.x,y:p.y,facingRad:p.facingRad
+   }));
   // Evaluate progress only after the existing hard kinematic collision
   // guard. A failed path is dropped and enters the ME-PLAYER-18 cooldown.
   for(const p of players){
@@ -2372,6 +2415,18 @@ export function createPlayerMovement(options={}){
   }
   if(minGapM<PLAYER_MIN_SEPARATION_M-1e-8)
    return reject('canonical-separation');
+  if(options.researchShoeBodyHandoff===true){
+   for(let i=0;i<candidate.length;i++){
+    const shoe=lastNativeShoeFrame[i],next=candidate[i];
+    if(shoe.id!==players[i].id)
+     throw new TypeError('M16 native shoe source ID mismatch');
+    if(Math.hypot(next.x-shoe.x,next.y-shoe.y)>
+       PLAYER_MAX_SPEED_MPS*PLAYER_DT+1e-8){
+     shoeFeedbackRejects++;
+     return reject('original-shoe-handoff-unreachable');
+    }
+   }
+  }
   // Every rejection must be fully atomic: even a native contact with
   // zero solver XY correction cannot alter canonical velocities/facing.
   const adjustedM=players.reduce((sum,p,i)=>sum+(
