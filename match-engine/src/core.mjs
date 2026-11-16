@@ -95,6 +95,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
   diagnosticResearchReceivingCushionEnabled = false,
+  diagnosticResearchControlCloseDefender = false,
   diagnosticResearchCarrySide = null
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
@@ -158,6 +159,12 @@ export function createEngine(RAPIER, input = {}, {
     (diagnosticResearchControlOpponentFirst&&
      !diagnosticResearchControlReceiver))
   throw new TypeError('Bounded CONTROL opponent requires genuine receiver scene');
+ if(typeof diagnosticResearchControlCloseDefender!=='boolean'||
+    (diagnosticResearchControlCloseDefender&&(
+     !diagnosticResearchControlReceiver||
+     !diagnosticResearchReceivingCushionEnabled||
+     diagnosticResearchControlOpponentFirst)))
+  throw new TypeError('M26 requires isolated CONTROL + original genuine cushion');
  if(typeof diagnosticResearchReceivingCushionEnabled!=='boolean'||
     (diagnosticResearchReceivingCushionEnabled&&(
      !diagnosticResearchControlReceiver||
@@ -188,6 +195,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchControlReceiver?
    initialResearchControlLineup(INITIAL_PLAYERS,scenario,
     {opponentFirst:diagnosticResearchControlOpponentFirst,
+     closeDefender:diagnosticResearchControlCloseDefender,
      side:diagnosticResearchControlSide}):
   diagnosticResearchCarrySide!==null?
    initialResearchCarryLineup(INITIAL_PLAYERS,diagnosticResearchCarrySide,
@@ -284,7 +292,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
-    diagnosticResearchCarrySide
+    diagnosticResearchControlCloseDefender,diagnosticResearchCarrySide
   });
   const world = new RAPIER.World(GRAVITY);
   world.timestep = FIXED_DT;

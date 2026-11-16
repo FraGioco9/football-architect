@@ -11,9 +11,18 @@ export const CONTROL_OPPONENT_FIRST_INITIAL=Object.freeze({
  alternative:Object.freeze({id:'home-11',x:-30,y:18}),
  opponent:Object.freeze({id:'away-7',x:-2.95,y:-2})
 });
-export function initialResearchControlLineup(players,ball,{opponentFirst=false,side='home'}={}){
+// Bounded alternative starting geometry, NEVER a staged collision:
+// the existing autonomous mover and physical shoe world run unchanged.
+export const CONTROL_CLOSE_DEFENDER_INITIAL=Object.freeze({
+ id:'away-7',x:-2.8,y:-3.8
+});
+export function initialResearchControlLineup(players,ball,{
+ opponentFirst=false,side='home',closeDefender=false
+}={}){
  if(!['home','away'].includes(side)||(opponentFirst&&side!=='home'))
   throw new TypeError('Bounded CONTROL side; opponent-first HOME only');
+ if(typeof closeDefender!=='boolean'||(closeDefender&&opponentFirst))
+  throw new TypeError('Close-defender research must be distinct from opponent-first');
  if(typeof opponentFirst!=='boolean')
   throw new TypeError('Bounded opponent-first flag must be boolean');
  if(!Array.isArray(players)||players.length!==22||!ball||
@@ -33,14 +42,21 @@ export function initialResearchControlLineup(players,ball,{opponentFirst=false,s
     players.filter(p=>p.id==='home-11'&&p.team==='home'&&
       p.role==='forward').length!==1))
   throw new TypeError('Canonical opponent and safe recipient alternative required');
+ if(closeDefender&&players.filter(p=>p.id===(side==='home'?'away':'home')+'-7'&&
+     p.team!==(side)&&p.role==='midfielder').length!==1)
+  throw new TypeError('M26 requires canonical original opposing midfielder #7');
  const stagedPositions=opponentFirst?[
   target,CONTROL_OPPONENT_FIRST_INITIAL.alternative,
   CONTROL_OPPONENT_FIRST_INITIAL.opponent
- ]:[target];
+ ]:closeDefender?[target,{
+  ...CONTROL_CLOSE_DEFENDER_INITIAL,
+  id:side==='home'?'away-7':'home-7'
+ }]:[target];
  // HOME coordinates and HOME IDs are canonical; reverse pitch X and
  // mirror team IDs only for the bounded AWAY receiving fixture.
  const mirror=p=>side==='home'?p:Object.freeze({
-  id:p.id.replace(/^home-/,'away-'),x:-p.x,y:p.y
+  id:p.id.replace(/^home-/,'away-').replace(/^away-7$/,'home-7'),
+  x:-p.x,y:p.y
  });
  const positions=new Map(stagedPositions.map(p=>{
   const position=mirror(p);return [position.id,position];

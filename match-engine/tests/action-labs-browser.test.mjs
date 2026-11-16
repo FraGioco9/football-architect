@@ -278,6 +278,22 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   assert.doesNotMatch(cushionMode.status,/possession confirmed|reception granted/i);
   process.stdout.write('ACTION_LAB_M25_GENUINE_CUSHION_CHROME '+
    JSON.stringify(cushionMode)+'\\n');
+  const livePressure=await evalJs(
+   "(()=>{const action=document.getElementById('action-labs-choice');"+
+   "action.value='control';action.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "const scene=document.getElementById('action-labs-control-scene');"+
+   "scene.value='receive-pressure';scene.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<95;i++)document.getElementById('action-labs-step').click();"+
+   "return {scene:scene.value,visible:!document.getElementById('action-labs-control-scene-label').hidden,"+
+   "status:document.getElementById('action-labs-status').textContent,"+
+   "readout:document.getElementById('action-labs-readout').textContent};})()"
+  );
+  assert.equal(livePressure.scene,'receive-pressure');
+  assert.equal(livePressure.visible,true);
+  assert.match(livePressure.readout,/closest opponent|Live defender/);
+  assert.doesNotMatch(livePressure.status,/possession awarded|confirmed control|tackle won/i);
+  process.stdout.write('ACTION_LAB_M26_REAL_LIVE_PRESSURE_CHROME '+
+   JSON.stringify(livePressure)+'\\n');
   const negativeControl=await evalJs(
    "(()=>{const action=document.getElementById('action-labs-choice');"+
    "action.value='control';action.dispatchEvent(new Event('change',{bubbles:true}));"+

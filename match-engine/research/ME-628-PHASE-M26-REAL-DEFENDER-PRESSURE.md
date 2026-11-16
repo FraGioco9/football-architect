@@ -1,0 +1,15 @@
+# #628 M26 — original moving defender, authentic repeat-touch and retention audit
+
+## Change and limits
+
+M25 reduced the measured original receiving ball travel in one second from 9.26 m to 4.59 m, but actual nearest defender at receiver contact was ~9.17 m. M26 explicitly tests a near opponent instead of asserting that the previous experiment was pressured.
+
+- The existing **CONTROL** dialog's internal Scene selector (under the ONE top-level Scenario dropdown, still 39 scenarios) adds **"M26 · Real defender pressure"**. The normal and M25 research scenes remain unchanged.
+- Only when this DEV CONTROL-only option is selected, the same fixed 22 original players start with the original midfielder **opponent #7** at a bounded near-receiver starting position **(-2.8,-3.8) home; mirrored X for away**, alongside the existing original receiver. It is strictly a **before-tick-zero starting lineup**, not a runtime teleport, synthetic shoe event, forced collision, fake take-away or guaranteed touch. All 22 original identities, same canonical starting ball, 0.98 m separation and autonomous acceleration/turn/press/guard remain enforced. The counterpart is the unchanged M25 22-player CONTROL source.
+- `diagnosticResearchControlCloseDefender` and `researchControlCloseDefender` are boolean, closed CONTROL-only opt-ins, unavailable in normal engine, other action scenes, shared body contexts, or any official match. M25's existing native first-receiver cushion remains independently guarded. If the actual opponent touches first, later receiver cushioning must remain barred.
+- The new M26 **read-only same-source pressure/retention observer** begins only upon the existing real, exclusive receiver shoe START and same-world M25 impulse. On each 60Hz step for up to **60 ticks**, it measures nearest actual opposing body distance, opposing body distance <=2m and <=3m team-ticks, original ball centre distance to the actual receiving player <=1m and <=2m, real additional same-recipient shoe STARTs, actual shoe-active ticks, and any conflicting different-player real shoe START. An opponent/teammate new shoe START ends this candidate's window before attributing that contact to the receiver.
+- Both genuine close defenders and the unchanged 22-player baseline are tested in mirrored HOME/AWAY scenes plus exact deterministic replay. Chrome exercises the existing internal Scene selector while retaining the single original Scenario launcher. DEV-only module routing is protected by existing local checks.
+
+**Acceptance guard:** It is valid for genuine physics to show **zero recontacts, ball escaping or an opponent first to the ball**. Do not invent an interception, tackle, retained ball or possession. The user-visible report must distinguish actual observed pressure from a successful football outcome. The standalone natural two-concurrent Rapier native body-pair gate remains separately OPEN.
+
+**Operational:** append targeted tests to the existing ME-01 CI, no duplicate workflows. #633 stays Draft/HOLD, no Ready, merge, deployment, D1 or official match authority.
