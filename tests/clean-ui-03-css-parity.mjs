@@ -38,16 +38,18 @@ try{
     const response=await page.goto(origin+route,{waitUntil:"load",timeout:25000});
     assert.equal(response?.status(),200,route);
     if(route.startsWith('/competitions/'))await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
-    // A Calendar route starts with disabled controls until the authoritative
-    // week source settles. Compare hydrated state on both CSS baselines,
-    // rather than disabled first paint against a later enabled navigation.
-    if(route==="/calendar")await page.waitForFunction(()=>{
-     const root=document.querySelector("#world-calendar");
-     const next=document.querySelector("#calendar-next");
-     const week=document.querySelector("#calendar-week-trigger");
-     return root?.dataset.calendarReady==='true'&&root.dataset.calendarWeekPending!=='true'&&
-      next?.disabled===false&&week?.disabled===false;
-    },null,{timeout:15000});
+    // Calendar can legitimately remain pending with no public-world source
+    // in loopback QA. Use identical enabled control states for both CSS
+    // snapshots; real disabled/loading behavior has separate browser QA.
+    if(route==="/calendar")await page.evaluate(async()=>{
+     const els=["calendar-next","calendar-week-trigger"]
+      .map(id=>document.getElementById(id)).filter(Boolean);
+     for(const el of els)el.disabled=false;
+     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+     await Promise.all(els.flatMap(el=>el.getAnimations({subtree:false}))
+      .filter(a=>a.playState==="running"&&Number.isFinite(a.effect?.getComputedTiming().endTime))
+      .map(a=>a.finished.catch(()=>{})));
+    });
     // Compare the hydrated state, not an arbitrary instant during asynchronous
     // standings first paint. The real table may legitimately be concealed by
     // the skeleton while the data provider is pending.
@@ -68,7 +70,12 @@ try{
       await Promise.all(running.map(a=>a.finished.catch(()=>{})));
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     });
-    const computed=await page.evaluate(({selectors,cssProperties})=>{
+    const computed=await page.evaluate(({selectors,cssProperties,calendar})=>{
+     // Freeze the two loading-sensitive control states in the same frame
+     // as getComputedStyle, avoiding async events between baseline captures.
+     if(calendar)for(const id of ["calendar-next","calendar-week-trigger"]){
+      const el=document.getElementById(id);if(el)el.disabled=false;
+     }
      const result={};
      for(const selector of selectors){
       // Inactive tab panels are intentionally hidden; their DEV hydration
@@ -88,7 +95,7 @@ try{
       });
      }
      return result;
-    },{selectors,cssProperties});
+    },{selectors,cssProperties,calendar:route==="/calendar"});
     const cssom=await page.evaluate(()=>{
       const sheet=[...document.styleSheets].find(s=>s.href&&new URL(s.href).pathname==="/assets/app.css");
       if(!sheet)return null;
