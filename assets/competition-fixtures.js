@@ -424,8 +424,8 @@
   });
   // Knockout bracket scores represent *different matches* for each leg.
   // Use the already-verified public competition collection, not club IDs or
-  // inferred pairings. Score columns use separate native links; single-leg
-  // finals keep the whole bracket card as a click target.
+  // inferred pairings. Both single- and two-leg ties expose only score-box
+  // click targets; the enclosing card remains non-interactive.
   const bracketLabels={
     en:['Open match','First leg','Second leg','Single match'],
     de:['Spiel öffnen','Hinspiel','Rückspiel','Einzelspiel'],
@@ -442,8 +442,8 @@
       route.season===publishedSeason&&publishedKey===liveKey&&!!publishedLookup;
     const lang=bracketLabels[document.documentElement.lang]||bracketLabels.en;
     // One card represents up to two DIFFERENT matches. Give first and
-    // second leg their own native score-column targets, even with TBD clubs.
-    // A one-leg final uses the full card; club links stay above.
+    // second leg their own native score-box targets, even with TBD clubs.
+    // A one-leg tie uses its single rightmost score column only.
     for(const card of root.querySelectorAll('[data-bracket-tie]')){
       const tieId=card.dataset.bracketTie;
       const phase=definition.rules.phases.find(p=>p.type==='knockout'&&

@@ -2030,23 +2030,26 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
 /* Restored desktop text must not expose mobile-only controls between frames. */
 .fa-positions-more{display:none}
 
-/* #605: each score column is a separate native match link. The two
- * columns both sit on the right, so half-card hit areas were ambiguous.
- * Single-match finals keep a full-card link and club links stay above. */
-.fa-bracket-card.is-match-link{position:relative;transition:background-color .15s ease,border-color .15s ease}
-.fa-bracket-card[data-fa-match-legs="1"]{cursor:pointer}
-html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs="1"]:hover,
-.fa-bracket-card[data-fa-match-legs="1"]:has(.fa-bracket-match-link:focus-visible){
- background:color-mix(in srgb,var(--fa-shell-accent) 11%,var(--surface));
- border-color:color-mix(in srgb,var(--fa-shell-accent) 45%,var(--border));
-}
-.fa-bracket-match-link{position:absolute;inset-block:0;z-index:2;display:block;cursor:pointer}
+/* #605: each leg has one native link with exactly two score-box hit
+ * regions, one for each team. A single-leg tie uses the rightmost column,
+ * never the entire bracket card. Club links remain independent. */
+.fa-bracket-card.is-match-link{position:relative}
+.fa-bracket-match-link{position:absolute;inset-block:0;z-index:2;display:block;pointer-events:none}
 .fa-bracket-match-link[data-fa-match-leg="1"]{inset-inline-end:calc(var(--fa-bracket-score-inset) + var(--fa-bracket-score-width) + 3px);width:var(--fa-bracket-score-width)}
-.fa-bracket-match-link[data-fa-match-leg="2"]{inset-inline-end:calc(var(--fa-bracket-score-inset) - 1px);width:var(--fa-bracket-score-width)}
-.fa-bracket-card[data-fa-match-legs="1"] .fa-bracket-match-link[data-fa-match-leg="1"]{inset-inline:0;width:auto}
-.fa-bracket-match-link:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:4px}
+.fa-bracket-match-link[data-fa-match-leg="2"],
+.fa-bracket-card[data-fa-match-legs="1"] .fa-bracket-match-link[data-fa-match-leg="1"]{inset-inline-end:calc(var(--fa-bracket-score-inset) - 1px);width:var(--fa-bracket-score-width)}
+/* The two pseudo-elements are the only pointer-active parts of the native
+ * anchor. The gap and the rest of the bracket card never trigger navigation. */
+.fa-bracket-match-link::before,.fa-bracket-match-link::after{content:"";position:absolute;inset-inline:0;block-size:28px;cursor:pointer;pointer-events:auto}
+.fa-bracket-match-link::before{inset-block-start:calc(25% - 14px)}
+.fa-bracket-match-link::after{inset-block-start:calc(75% - 14px)}
+html[data-fa-standings-loading="true"] .fa-bracket-match-link::before,
+html[data-fa-standings-loading="true"] .fa-bracket-match-link::after{pointer-events:none}
+.fa-bracket-match-link:focus-visible{outline:none}
 .fa-bracket-card .fa-bracket-identity a{position:relative;z-index:3}
 .fa-bracket-card .fa-bracket-score strong{position:relative;z-index:3}
+html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs="1"]:has(.fa-bracket-match-link[data-fa-match-leg="1"]:hover) .fa-bracket-row .fa-bracket-score:nth-child(2),
+.fa-bracket-card[data-fa-match-legs="1"]:has(.fa-bracket-match-link[data-fa-match-leg="1"]:focus-visible) .fa-bracket-row .fa-bracket-score:nth-child(2),
 html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs="2"]:has(.fa-bracket-match-link[data-fa-match-leg="1"]:hover) .fa-bracket-row .fa-bracket-score:nth-child(2),
 .fa-bracket-card[data-fa-match-legs="2"]:has(.fa-bracket-match-link[data-fa-match-leg="1"]:focus-visible) .fa-bracket-row .fa-bracket-score:nth-child(2),
 html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs="2"]:has(.fa-bracket-match-link[data-fa-match-leg="2"]:hover) .fa-bracket-row .fa-bracket-score:nth-child(3),
@@ -2054,4 +2057,6 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
  background:color-mix(in srgb,var(--fa-shell-accent) 20%,var(--surface));
  border-color:color-mix(in srgb,var(--fa-shell-accent) 65%,var(--border));
 }
-@media(prefers-reduced-motion:reduce){.fa-bracket-card.is-match-link,.fa-bracket-score{transition:none}}
+.fa-bracket-card:has(.fa-bracket-match-link[data-fa-match-leg="1"]:focus-visible) .fa-bracket-row .fa-bracket-score:nth-child(2),
+.fa-bracket-card[data-fa-match-legs="2"]:has(.fa-bracket-match-link[data-fa-match-leg="2"]:focus-visible) .fa-bracket-row .fa-bracket-score:nth-child(3){outline:2px solid var(--focus);outline-offset:1px}
+@media(prefers-reduced-motion:reduce){.fa-bracket-score{transition:none}}

@@ -954,7 +954,7 @@ test('#605 published Postseason bracket gives each leg its own official match li
   'first/second-leg links do not show title tooltips after language updates');
  const final=cards.find(x=>x.tie.legs===1);
  assert.equal(final.card.querySelectorAll('.fa-bracket-match-link').length,1,
-  'the single final has one native full-card link');
+  'the single final has one native score-box-only link');
  const semis=cards.filter(x=>x.tie.legs===2);
  assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link').length===2),
   'both legs use independent score-column links, even with TBD clubs');
@@ -999,10 +999,20 @@ test('#605 published Postseason bracket gives each leg its own official match li
   'fixed result boxes exist before score hydration');
  assert.match(css,/\.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline-end:calc\(var\(--fa-bracket-score-inset\) \+ var\(--fa-bracket-score-width\) \+ 3px\);width:var\(--fa-bracket-score-width\)\}/,
   'first-leg hit area aligns with the first score column');
- assert.match(css,/\.fa-bracket-match-link\[data-fa-match-leg="2"\]\{inset-inline-end:calc\(var\(--fa-bracket-score-inset\) - 1px\);width:var\(--fa-bracket-score-width\)\}/,
-  'return-leg hit area aligns with the second score column');
- assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline:0;width:auto\}/,
-  'single-leg finals keep the entire card clickable');
+ assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline-end:calc\(var\(--fa-bracket-score-inset\) - 1px\);width:var\(--fa-bracket-score-width\)\}/,
+  'single-leg hit area aligns with the rightmost score column');
+ assert.match(css,/\.fa-bracket-match-link::before,\.fa-bracket-match-link::after\{content:"";position:absolute;inset-inline:0;block-size:28px;cursor:pointer;pointer-events:auto\}/,
+  'only the two 28px score boxes are pointer-active');
+ assert.match(css,/\.fa-bracket-match-link::before\{inset-block-start:calc\(25% - 14px\)\}/);
+ assert.match(css,/\.fa-bracket-match-link::after\{inset-block-start:calc\(75% - 14px\)\}/);
+ assert.match(css,/html\[data-fa-standings-loading="true"\] \.fa-bracket-match-link::before,/,
+  'loading disables both score hit regions');
+ assert.doesNotMatch(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline:0;width:auto\}/,
+  'single-leg links cannot cover the whole card');
+ assert.doesNotMatch(css,/\.fa-bracket-card\[data-fa-match-legs="1"\]\{cursor:pointer\}/,
+  'single-leg cards are not whole-card click targets');
+ assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="1"\]:has\(\.fa-bracket-match-link\[data-fa-match-leg="1"\]:hover\) \.fa-bracket-row \.fa-bracket-score:nth-child\(2\)/,
+  'single-leg hover highlights only the result boxes');
  assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="2"\]:has\(\.fa-bracket-match-link\[data-fa-match-leg="1"\]:hover\) \.fa-bracket-row \.fa-bracket-score:nth-child\(2\)/,
   'first-leg hover highlights the first score column');
  assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="2"\]:has\(\.fa-bracket-match-link\[data-fa-match-leg="2"\]:hover\) \.fa-bracket-row \.fa-bracket-score:nth-child\(3\)/,
