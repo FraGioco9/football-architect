@@ -533,7 +533,8 @@ test('published domestic Fixtures appear at day 2, before worldwide calendar pub
  const source={source:'authoritative',worldStatus:'ready',
   world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:7,seasonNumber:1,day:2,phase:'active'}};
  const committed=createPreviewStandings(division,30).fixtures.map((f,i)=>({
-  matchId:String(i+1),phaseId:'league',round:f.round,day:13+f.round-1,
+  matchId:String(i+1),sourceFixtureId:'season:1:IT-1:N'+String(f.round).padStart(2,'0')+':IT-'+f.homeId+':IT-'+f.awayId,
+  phaseId:'league',round:f.round,day:13+f.round-1,
   homeClubId:'IT-'+f.homeId,awayClubId:'IT-'+f.awayId,marker:'N'+String(f.round).padStart(2,'0')
  }));
  let requests=0;
@@ -555,4 +556,39 @@ test('published domestic Fixtures appear at day 2, before worldwide calendar pub
  assert.equal(links.length,8,'eight published fixtures show eight stable score links');
  assert.ok(links.every(n=>/^\/matches\/[1-9][0-9]*$/.test(n.href)));
  assert.ok(links.every(n=>n.attrs['aria-label']?.startsWith('Open match: ')));
+});
+
+test('#605 scored competition fixtures keep official goals when linked to published IDs',async()=>{
+ const division=divisions.find(d=>d.id==='IT-1');
+ const source={source:'authoritative',worldStatus:'ready',
+  world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:9,seasonNumber:1,day:17,phase:'active'}};
+ const fixtures=schedule(division,5);
+ const collection=fixtures.map((g,i)=>({
+  matchId:String(i+1),
+  sourceFixtureId:'season:1:IT-1:N'+String(g.round).padStart(2,'0')+':IT-'+g.homeId+':IT-'+g.awayId,
+  phaseId:'league',marker:'N'+String(g.round).padStart(2,'0'),day:g.round+12,round:g.round,
+  homeClubId:'IT-'+g.homeId,awayClubId:'IT-'+g.awayId
+ }));
+ let requests=0;
+ const testView=setup(division,routeRegistry,{source,fetchImpl:async()=>{
+  requests++;return {ok:true,json:async()=>({
+   schemaVersion:1,providerId:'authoritative-world',status:'published',season:1,
+   competitionId:'IT-1',provenance:{kind:'authoritative'},fixtures:collection})};
+ }});
+ await new Promise(resolve=>setImmediate(resolve));
+ const officialFixtures=fixtures.map(game=>({
+  ...game,sourceFixtureId:'season:1:IT-1:N'+String(game.round).padStart(2,'0')+':IT-'+game.homeId+':IT-'+game.awayId,
+  marker:'N'+String(game.round).padStart(2,'0'),day:game.round+12
+ }));
+ testView.window.faCompetitionContext.seasonData={
+  provenance:{kind:'authoritative'},season:1,participants:division.clubs,
+  fixtures:officialFixtures,postseason:[],currentMatchday:1
+ };
+ testView.events['fa:competition-context-change']();
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ const matches=testView.fields.get('app-fixtures-list').children;
+ assert.equal(matches.length,8);
+ assert.equal(matches.flatMap(visit).filter(n=>n.className==='app-fixture-score-link').length,8);
+ assert.equal(requests,1,'same official list is reused when the scored view hydrates');
+ assert.ok(matches.some(n=>/\d+/.test(contents(n))),'verified score nodes are still present');
 });

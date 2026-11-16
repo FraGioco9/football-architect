@@ -44,3 +44,12 @@ The world/source/season fence in the controller discards stale asynchronous read
 The score text is the only linked region; crests and opponent names remain
 separate. World Calendar and the competition historic/postseason consumers
 remain for subsequent #605 stages.
+
+
+For Competition Fixtures, the authoritative-season adapter retains original
+`sourceFixtureId`, `marker` and `day` in addition to verified results.
+The published match collection is read at most once per season/competition/world
+revision, including scored/historical views. League links must match the
+source ID **and** the marker, day and round; knockout links require a published
+immutable phase/tie/leg slot plus marker and day. The sporting score is never
+replaced by placeholder draw data.
