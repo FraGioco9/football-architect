@@ -12,11 +12,15 @@ import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
 import {executeInternationalDraw} from '../src/admin-international-draw.ts';
 import {publishInternationalCalendarLineupV1} from '../src/admin-calendar-publish-lineup-v1.ts';
 import {executeLineupLifecycleV1} from '../src/lineup-lifecycle-command.ts';
+import {resetWorld} from '../src/reset-world-command.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {loadSeasonSportingEvidence} from '../src/season-sporting-evidence.ts';
 import {replayLineupSeasonV1} from '../src/lineup-season-replay.ts';
 import {readPublicMatchLineupV1} from '../src/public-match-read-lineup-v1.ts';
+import worker from '../src/index.ts';
+import {handleAdmin} from '../src/http-admin.ts';
+import {seedUnifiedAdminHttp} from './fixtures/unified-admin-http.ts';
 import {
  readPublicSportingSeasonLineupV1,readPublicCalendarDayLineupV1
 } from '../src/public-sporting-read-lineup-v1.ts';
@@ -134,9 +138,75 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(await readPublicMatchLineupV1(db,String(full.public_id))).toEqual(a);
  const afterward=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
  expect(afterward.data.statistics.players).toEqual(season.data.statistics.players);
+ // Verify the ACTUAL anonymous HTTP router, not only the standalone V2
+ // projection. Every public endpoint must agree with the same finalized day.
+ const get=async(path:string)=>{
+  const response=await worker.fetch(new Request('https://example.invalid'+path),{DB:db});
+  expect(response.status).toBe(200);
+  return response.json() as Promise<any>;
+ };
+ const httpMatch=await get('/api/matches/'+full.public_id);
+ expect(httpMatch.status).toBe('completed');
+ expect(httpMatch.result).toEqual(a.result);
+ expect(httpMatch.lineup).toEqual(a.lineup);
+ const httpSport=await get('/api/competitions/IT-1/seasons/1');
+ expect(httpSport.data.statistics.matchesPlayed).toBe(8);
+ expect(httpSport.data.fixtures.filter((f:any)=>f.result)).toHaveLength(8);
+ const httpCalendar=await get('/api/calendar/seasons/1/days/13');
+ expect(httpCalendar.data.fixtures.length).toBe(128);
+ expect(httpCalendar.data.fixtures.every((f:any)=>f.result)).toBe(true);
+ const httpClub=await get('/api/clubs/'+full.home_club_id+'/seasons/1/fixtures');
+ expect(httpClub.data.fixtures.some((f:any)=>f.result!==null)).toBe(true);
+ const httpHistory=await get('/api/clubs/'+full.home_club_id+'/history');
+ expect(httpHistory.provenance.resultAuthority).toBe('temporary-lineup-v1');
+ expect((await get('/api/matches/seasons/1/competitions/IT-1')).fixtures).toHaveLength(242);
  const future=(await db.prepare(
   "SELECT p.id AS id FROM public_match_numbers p JOIN season_match_slots s ON s.match_id=p.slot_match_id WHERE s.season_number=1 AND s.scheduled_day=14 LIMIT 1"
  ).first()) as {id:number};
  expect(await readPublicMatchLineupV1(db,String(future.id)))
   .toMatchObject({status:'scheduled',result:null,lineup:null,events:null});
+ // Authenticated Admin GET must report the SAME V2 day count as public GETs.
+ const operator=await seedUnifiedAdminHttp(db,session.actor.id,session.actor.email,
+  now,'c'.repeat(64));
+ const adminEnv={DB:db,PLAYER_MODE:'local',PLAYER_ORIGIN:'http://localhost:2000'};
+ const calendarRead=await handleAdmin(new Request(
+  'http://localhost:2000/api/admin/seasons/events',
+  {headers:{Cookie:operator.cookie}}
+ ),adminEnv);
+ expect(calendarRead.status).toBe(200);
+ expect((await calendarRead.json() as any).closure.days).toBe(13);
+ const retired=await handleAdmin(new Request(
+  'http://localhost:2000/api/admin/seasons/calendar',{
+   method:'POST',
+   headers:{Cookie:operator.cookie,Origin:'http://localhost:2000',
+    'X-CSRF-Token':operator.csrf,'Content-Type':'application/json',
+    'Idempotency-Key':'lineup-legacy-route-0001'},
+   body:JSON.stringify(cmd())
+  }),adminEnv);
+ expect(retired.status).toBe(410);
+ // The immutable tables reject ordinary deletes. Only the protected Season 0
+ // reset may remove this generation's receipts inside its own single batch.
+ await expect(db.prepare('DELETE FROM match_lineup_result_receipts').run()).rejects.toThrow();
+ await expect(db.prepare('DELETE FROM season_lineup_day_outcomes').run()).rejects.toThrow();
+ const beforeReset=world, resetCommand={...cmd(),confirmation:'RESET SEASON 0'};
+ const existingPlayers=await count('generated_players');
+ const existingLinks=await count('player_club_affiliations');
+ await db.prepare("CREATE TRIGGER fail_lineup_reset_late BEFORE INSERT ON admin_operations WHEN NEW.command='reset-world-v1' BEGIN SELECT RAISE(ABORT,'late reset rollback'); END").run();
+ try{
+  await expect(resetWorld(db,session,resetCommand,'day13-reset-qa-000001',now))
+   .rejects.toMatchObject({status:503});
+ }finally{await db.prepare('DROP TRIGGER fail_lineup_reset_late').run()}
+ expect(await readWorld(db)).toEqual(beforeReset);
+ expect(await count('match_lineup_result_receipts')).toBe(128);
+ expect(await count('season_lineup_day_outcomes')).toBe(13);
+ expect(await count('world_reset_permits')).toBe(0);
+ const reset=await resetWorld(db,session,resetCommand,'day13-reset-qa-000001',now);
+ expect(reset.world).toMatchObject({seasonNumber:0,day:0,phase:'unstarted'});
+ expect(await count('match_lineup_result_receipts')).toBe(0);
+ expect(await count('season_lineup_day_outcomes')).toBe(0);
+ expect(await count('world_reset_permits')).toBe(0);
+ expect(await count('generated_players')).toBe(existingPlayers);
+ expect(await count('player_club_affiliations')).toBe(existingLinks);
+ await expect(resetWorld(db,session,resetCommand,'day13-reset-qa-000001',now))
+  .rejects.toMatchObject({status:409});
 },180000);

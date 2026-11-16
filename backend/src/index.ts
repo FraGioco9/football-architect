@@ -7,11 +7,11 @@ import {gmailEmailDeliveries,type GmailDeliveryEnv} from './gmail-email-delivery
 import {localInboxDeliveries,handleLocalInbox,type LocalInboxEnv} from './local-dev-inbox.ts';
 import { ApiError } from './errors.ts';
 import {requireDatabase} from './database.ts';
-import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubHistory,readPublicClubFixtures} from './public-sporting-read.ts';
+import {readPublicSportingSeasonLineupV1 as readPublicSportingSeason,readPublicCalendarDayLineupV1 as readPublicCalendarDay,readPublicClubHistoryLineupV1 as readPublicClubHistory,readPublicClubFixturesLineupV1 as readPublicClubFixtures} from './public-sporting-read-lineup-v1.ts';
 import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
 import {readPublicClubRoster} from './public-club-roster-read.ts';
-import {readPublicMatch,readPublishedCompetitionMatches,readPublishedClubFixturesBeforeCalendar} from './public-match-read.ts';
+import {readPublicMatchLineupV1 as readPublicMatch,readPublishedCompetitionMatchesLineupV1 as readPublishedCompetitionMatches,readPublishedClubFixturesBeforeCalendarLineupV1 as readPublishedClubFixturesBeforeCalendar} from './public-match-read-lineup-v1.ts';
 import {parsePublicPlayerQuery} from './public-players-filters.mjs';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 

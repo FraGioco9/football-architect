@@ -10,18 +10,17 @@ import {readWorld} from './world-repository.ts';
 import {parsePrepareRequest,parseIdempotencyKey} from './command-contract.ts';
 import {loadApprovedSnapshot} from './approved-season-one.ts';
 import {prepareSeason} from './commands.ts';
-import {generateSeasonCalendar} from './calendar-command.ts';
-import {executeLifecycle} from './lifecycle-command.ts';
+import {executeLineupLifecycleV1 as executeLifecycle} from './lineup-lifecycle-command.ts';
 import {rescheduleSeasonEvent} from './admin-calendar-command.ts';
 import {initializeAdministrativeEvents} from './admin-calendar-initialize.ts';
 import {completeConfirmationEvent} from './admin-calendar-confirm.ts';
-import {advanceAdministrativeClock} from './admin-calendar-clock.ts';
+import {advanceAdministrativeClockLineupV1 as advanceAdministrativeClock} from './admin-calendar-clock-lineup-v1.ts';
 import {readAdministrativeCalendar} from './admin-calendar-read.ts';
 import {stageDomesticCalendar} from './admin-domestic-stage.ts';
 import {executeInternationalDraw} from './admin-international-draw.ts';
-import {publishInternationalCalendar} from './admin-calendar-publish.ts';
-import {closeSeason} from './season-close-command.ts';
-import {archiveSeason} from './season-archive-command.ts';
+import {publishInternationalCalendarLineupV1 as publishInternationalCalendar} from './admin-calendar-publish-lineup-v1.ts';
+import {closeSeasonLineupV1 as closeSeason} from './season-close-command-lineup-v1.ts';
+import {archiveSeasonLineupV1 as archiveSeason} from './season-archive-command-lineup-v1.ts';
 import {resetWorld} from './reset-world-command.ts';
 import {readSeasonArchives,readClosedSeasonHistory} from './season-archive-read.ts';
 import {readSeasonTwoCandidate} from './season-two-candidate-read.ts';
@@ -93,6 +92,10 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/seasons/next-prepare')return json(200,await prepareSeasonTwo(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/next-approve')return json(200,await approveSeasonTwoSnapshot(db,session,rawCommand,key,now));
   if(path==='/api/admin/world/reset')return json(200,await resetWorld(db,session,rawCommand as Parameters<typeof resetWorld>[2],key,now));
+  // Retire direct score-only calendar generation/start routes: the authenticated
+  // milestone flow is the one canonical route into V2 day finalization.
+  if(path==='/api/admin/seasons/calendar'||path==='/api/admin/seasons/start')
+   return json(410,{error:{code:'legacy_season_command_retired'}});
   if(path==='/api/admin/seasons/archive')return json(200,await archiveSeason(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/close')return json(200,await closeSeason(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/events/initialize')return json(200,await initializeAdministrativeEvents(db,session,parsePrepareRequest(rawCommand),key,now));
@@ -104,7 +107,6 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/seasons/events/reschedule')return json(200,await rescheduleSeasonEvent(db,session,rawCommand,key,now));
   const command=parsePrepareRequest(rawCommand);
   if(path==='/api/admin/seasons/start'||path==='/api/admin/seasons/advance')return json(200,await executeLifecycle(db,session,path.endsWith('/start')?'start':'advance',command,key,now));
-  if(path==='/api/admin/seasons/calendar')return json(200,await generateSeasonCalendar(db,session,command,key,now));
   return json(200,await prepareSeason(db,session,command,key,await loadApprovedSnapshot(),now));
  }catch(error){
   return httpError('account',error,'admin_unavailable');

@@ -26,6 +26,13 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
    sessionGuard(db,session,now),
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=? AND phase=? AND day=?',[world.generation,world.revision,world.seasonNumber,world.phase,world.day]),
    abortUnless(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM seasons WHERE generation<>?)',[world.generation]),
+   abortUnless(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM world_reset_permits)',[]),
+   abortUnless(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM season_lineup_day_outcomes WHERE generation<>?)',[world.generation]),
+   abortUnless(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM match_lineup_result_receipts WHERE generation<>?)',[world.generation]),
+   // This authorization is created and consumed within the exact same atomic
+   // world-reset batch. Outside the batch, immutable V2 triggers stay active.
+   db.prepare('INSERT INTO world_reset_permits(generation,operation_id) VALUES(?,?)')
+    .bind(world.generation,operationId),
    db.prepare("UPDATE world_state SET generation=?,revision=0,season_number=0,day=0,phase='unstarted' WHERE id=1 AND generation=? AND revision=?").bind(nextGeneration,world.generation,world.revision),
    // Persisted players reference committed draft IDs: keep both rows and FK parents.
    // Abandon only uncommitted previews from the previous sporting generation.
@@ -37,11 +44,17 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
    db.prepare('DELETE FROM season_knockout_match_slots'),
    db.prepare('DELETE FROM season_match_slots'),
    db.prepare('DELETE FROM season_domestic_stages'),
+   // Match receipts and day envelopes must be removed before their canonical
+   // parent rows. Generated players and current club affinities are untouched.
+   db.prepare('DELETE FROM match_lineup_result_receipts WHERE generation=?').bind(world.generation),
+   db.prepare('DELETE FROM season_lineup_day_outcomes WHERE generation=?').bind(world.generation),
    db.prepare('DELETE FROM season_knockout_ties'),
    db.prepare('DELETE FROM season_day_outcomes'),
    db.prepare('DELETE FROM season_draws'),
    db.prepare('DELETE FROM season_calendars'),
    db.prepare('DELETE FROM seasons'),
+   db.prepare('DELETE FROM world_reset_permits WHERE generation=? AND operation_id=?')
+    .bind(world.generation,operationId),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)')
     .bind(operationId,world.generation,key,requestHash,session.actor.id,'reset-world-v1',world.revision,world.revision+1,JSON.stringify(result),now),
   ]);

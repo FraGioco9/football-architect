@@ -45,7 +45,7 @@ export async function readAdministrativeCalendar(db:Database){
  const published=rows.length===0||events.some(e=>e.id==='international:calendar'&&e.status==='completed');
  const calendar=published?await db.prepare('SELECT calendar_hash FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first<{calendar_hash:string}>():null;
  const sporting=published&&!!calendar;
- const counts=sporting?await db.prepare('SELECT (SELECT count(*) FROM season_day_outcomes WHERE season_number=?) AS days, (SELECT count(*) FROM season_knockout_ties WHERE season_number=?) AS ties, (SELECT count(*) FROM season_archives WHERE season_number=?) AS archives').bind(world.seasonNumber,world.seasonNumber,world.seasonNumber).first<{days:number;ties:number;archives:number}>():null;
+ const counts=sporting?await db.prepare('SELECT (SELECT count(*) FROM season_lineup_day_outcomes WHERE season_number=?) AS days, (SELECT count(*) FROM season_knockout_ties WHERE season_number=?) AS ties, (SELECT count(*) FROM season_archives WHERE season_number=?) AS archives').bind(world.seasonNumber,world.seasonNumber,world.seasonNumber).first<{days:number;ties:number;archives:number}>():null;
  const closure={days:counts?.days??0,ties:counts?.ties??0,archived:(counts?.archives??0)>0,
   ready:world.phase==='active'&&world.day===56&&pending.every(e=>e.scope==='season')&&counts?.days===56&&counts?.ties===54&&counts?.archives===0};
  return {world,events,mode:rows.length===0&&world.phase==='preparing'?'legacy' as const:sporting?'sporting' as const:rows.length===0?'legacy' as const:'administrative' as const,closure,calendarReady:!!calendar,

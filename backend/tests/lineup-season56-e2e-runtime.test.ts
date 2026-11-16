@@ -17,6 +17,9 @@ import {publishInternationalCalendarLineupV1} from '../src/admin-calendar-publis
 import {executeLineupLifecycleV1} from '../src/lineup-lifecycle-command.ts';
 import {archiveSeasonLineupV1} from '../src/season-archive-command-lineup-v1.ts';
 import {closeSeasonLineupV1} from '../src/season-close-command-lineup-v1.ts';
+import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
+import {approveSeasonTwoSnapshot} from '../src/season-two-approval-command.ts';
+import {prepareSeasonTwo} from '../src/season-two-prepare-command.ts';
 import {verifyLineupSeasonArchiveV1} from '../src/lineup-season-archive-proof.ts';
 import {loadSeasonSportingEvidence} from '../src/season-sporting-evidence.ts';
 import {replayLineupSeasonV1} from '../src/lineup-season-replay.ts';
@@ -210,4 +213,23 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(sport.data.statistics.matchesPlayed).toBe(242);
  expect(await count('season_day_outcomes')).toBe(0);
  expect(await count('match_lineup_result_receipts')).toBe(4082);
+ // V2 cutover includes the qualification authority feeding the *next* season.
+ // The Season 2 candidate MUST be derived from frozen results, never rescore
+ // the previous season with temporary-score-v1.
+ const candidate=await readSeasonTwoCandidate(db);
+ expect(candidate.sourceArchiveHash).toBe(proof.archiveHash);
+ expect(candidate.snapshot.season).toBe(2);
+ expect(candidate.snapshot.readyForActivation).toBe(false);
+ const approved=await approveSeasonTwoSnapshot(db,session,{
+  ...command(),snapshotHash:candidate.snapshot.snapshotHash
+ },'lineup-season2-approval-0001',now);
+ world=approved.world;
+ const prepared=await prepareSeasonTwo(db,session,command(),
+  'lineup-season2-prepare-0001',now);
+ world=prepared.world;
+ expect(world).toMatchObject({seasonNumber:2,day:0,phase:'preparing'});
+ const historical=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
+ expect(historical.data.statistics.matchesPlayed).toBe(242);
+ expect(await count('season_day_outcomes')).toBe(0);
+ expect(await count('season_lineup_day_outcomes')).toBe(56);
 },600000);
