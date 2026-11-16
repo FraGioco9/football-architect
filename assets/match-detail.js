@@ -18,8 +18,9 @@
  const href=path=>typeof window.faAppHref==='function'?window.faAppHref(path):path;
  const competitionHref=id=>/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(id||'')
   ?href('/competitions/'+id.toLowerCase()+'/fixtures'):null;
- // Current verified match responses have venue:null and kickoff:null.
- // Never guess calendar dates from sporting days or venues from home teams.
+ // Current public match responses have venue:null and kickoff:null.
+ // Never infer dates from sporting days. For non-neutral matches, a verified
+ // home club's published stadiumName is authoritative when venue is absent.
  const publishedDate=kickoff=>{
   if(typeof kickoff!=='string')return '';
   const m=/^(\d{4})-(\d{2})-(\d{2})(?:T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,3})?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d))?$/.exec(kickoff);
@@ -155,7 +156,11 @@
   write('[data-match-overview="season"]',Number.isSafeInteger(data?.season)&&data.season>0?data.season:'');
   write('[data-match-overview="round"]',Number.isSafeInteger(data?.round)&&data.round>0?data.round:'');
   write('[data-match-overview="date"]',data?publishedDate(data.kickoff):'');
-  write('[data-match-overview="stadium"]',data?publishedStadium(data.venue):'');
+  const homeKey=clubKey(data?.homeParticipant?.clubId);
+  const homeClub=homeKey&&clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===homeKey);
+  const isNeutral=data?.neutral===true||data?.homePolicy==='neutral';
+  const homeStadium=!isNeutral?publishedStadium(homeClub?.stadiumName):'';
+  write('[data-match-overview="stadium"]',data?(publishedStadium(data.venue)||homeStadium):'');
   write('[data-match-overview="status"]',data?(tr.statusNames[data.status]||''):'');
   const panel=find('[data-match-overview-panel]');
   if(panel)panel.setAttribute('aria-label',tr.overview);

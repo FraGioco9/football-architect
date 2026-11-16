@@ -181,7 +181,11 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/link\.removeAttribute\('href'\);link\.removeAttribute\('target'\);link\.removeAttribute\('rel'\)/);
  assert.match(js,/const publishedDate=kickoff=>/);
  assert.match(js,/write\('\[data-match-overview="date"\]',data\?publishedDate\(data\.kickoff\):''\)/);
- assert.match(js,/write\('\[data-match-overview="stadium"\]',data\?publishedStadium\(data\.venue\):''\)/);
+ assert.match(js,/const homeKey=clubKey\(data\?\.homeParticipant\?\.clubId\)/);
+ assert.match(js,/homeKey&&clubs\?\.clubs\?\.find\(c=>c\.countryId\+'-'\+c\.clubId===homeKey\)/);
+ assert.match(js,/data\?\.neutral===true\|\|data\?\.homePolicy==='neutral'/);
+ assert.match(js,/publishedStadium\(homeClub\?\.stadiumName\)/);
+ assert.match(js,/publishedStadium\(data\.venue\)\|\|homeStadium/);
  assert.match(js,/Number\.isSafeInteger\(data\?\.round\)/);
  assert.match(js,/tr\.statusNames\[data\.status\]/);
  assert.doesNotMatch(js,/renderMatchView|activeMatchView|matchViews|data-match-view-selector/);
@@ -217,6 +221,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/name\.removeAttribute\('href'\);name\.removeAttribute\('target'\);name\.removeAttribute\('rel'\)/);
  const clubs=JSON.parse(read('clubs/_shared/manifest.json')).clubs;
  assert.equal(clubs.length,320);
+ assert.ok(clubs.every(c=>typeof c.stadiumName==='string'&&c.stadiumName.trim().length>0),
+  'Every published club must have an official stadiumName');
  assert.ok(clubs.every(c=>/^[A-Z0-9]{2,5}$/.test(c.abbr)),'Approved club abbreviations expected');
  assert.match(js,/data-match-home-score/);
  assert.match(js,/data-match-away-score/);
@@ -280,7 +286,12 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(css,/\.app-match-team-link\{[^}]*overflow:hidden/s);
  assert.match(css,/\.app-match-team-link:not\(\[href\]\)\{cursor:default;overflow:hidden;text-overflow:ellipsis\}/);
  assert.match(css,/\.app-match-team-link\{[^}]*text-align:center;font-size:26px;line-height:1;font-weight:800;letter-spacing:0/s);
- assert.match(css,/\.app-match-team-home\{justify-content:flex-end;padding-right:4px\}/);
+ assert.match(css,/\.app-match-team-home\{justify-content:flex-end;padding:0 4px 0 8px\}/);
+ assert.match(css,/\.app-match-overview-heading\{[^}]*font-size:18px/s);
+ assert.match(css,/\.app-match-info-label\{[^}]*font-size:12px/s);
+ assert.match(css,/\.app-match-info-value\{[^}]*font-size:clamp\(13px,1\.15vw,17px\)/s);
+ assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.app-match-overview-heading\{font-size:15px/s);
+ assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.app-match-info-value\{font-size:12px/s);
  assert.match(css,/\.app-match-team-away\{justify-content:flex-start;padding-left:4px\}/);
  assert.match(css,/\.app-match-team-slot\{[^}]*box-sizing:border-box;min-width:0/s);
  assert.match(css,/@media\(max-width:480px\)\{[\s\S]*?\.app-match-team-link\{font-size:24px;letter-spacing:0\}/);

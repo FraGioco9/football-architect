@@ -55,7 +55,7 @@
  display:flex;align-items:center;align-self:stretch;
  box-sizing:border-box;min-width:0;max-width:100%;overflow:hidden;
 }
-.app-match-team-home{justify-content:flex-end;padding-right:4px}
+.app-match-team-home{justify-content:flex-end;padding:0 4px 0 8px}
 .app-match-team-away{justify-content:flex-start;padding-left:4px}
 .app-match-team-link{
  display:inline-block;flex:0 1 auto;width:max-content;min-width:0;max-width:100%;
@@ -184,15 +184,15 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  padding:12px 15px;border:1px solid var(--border);border-radius:10px;
  background:color-mix(in srgb,var(--surface) 80%,transparent);pointer-events:auto;
 }
-.app-match-overview-heading{margin:0;color:var(--text);font-size:13px;line-height:1.4;font-weight:750;text-align:center}
+.app-match-overview-heading{margin:0;color:var(--text);font-size:18px;line-height:1.3;font-weight:750;text-align:center}
 .app-match-overview-row{display:grid;gap:10px;min-width:0}
 .app-match-overview-row-primary{grid-template-columns:minmax(0,1.8fr) minmax(0,.8fr) minmax(0,.8fr)}
 .app-match-overview-row-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}
 .app-match-overview-row-status{grid-template-columns:minmax(0,1fr)}
 .app-match-overview-row+.app-match-overview-row{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent);padding-top:7px}
 .app-match-overview-fact{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;gap:4px;text-align:center}
-.app-match-info-label{color:var(--muted);font-size:11px;line-height:1.3;font-weight:650}
-.app-match-info-value{display:block;min-height:1.3em;max-width:100%;color:var(--text);font-size:clamp(11px,1vw,15px);line-height:1.3;font-weight:750;overflow-wrap:anywhere}
+.app-match-info-label{color:var(--muted);font-size:12px;line-height:1.3;font-weight:650}
+.app-match-info-value{display:block;min-height:1.3em;max-width:100%;color:var(--text);font-size:clamp(13px,1.15vw,17px);line-height:1.3;font-weight:750;overflow-wrap:anywhere}
 .app-match-overview-competition-link{color:var(--text)!important;text-decoration:none}
 .app-match-overview-competition-link[href]{cursor:pointer}
 .app-match-overview-competition-link[href]:hover,
@@ -223,13 +223,13 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 @media(max-width:620px){
  .app-match-pitch-overlay{padding:6px}
  .app-match-overview{width:96%;padding:6px 8px;gap:4px}
- .app-match-overview-heading{font-size:11px;line-height:1.2}
+ .app-match-overview-heading{font-size:15px;line-height:1.2}
  .app-match-overview-row{gap:5px}
  .app-match-overview-row-primary{grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,.7fr))}
  .app-match-overview-row+.app-match-overview-row{padding-top:4px}
  .app-match-overview-fact{gap:2px}
- .app-match-info-label{font-size:9px;line-height:1.15}
- .app-match-info-value{font-size:10px;line-height:1.15;min-height:1.15em}
+ .app-match-info-label{font-size:10px;line-height:1.15}
+ .app-match-info-value{font-size:12px;line-height:1.2;min-height:1.2em}
  .app-match-side{padding:10px 7px 12px}
  .app-match-team-identity{flex-direction:column;justify-content:center;gap:5px;min-height:74px;margin-bottom:10px}
  .app-match-team-crest{width:40px;height:40px;flex-basis:40px}
