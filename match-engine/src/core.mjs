@@ -99,6 +99,7 @@ export function createEngine(RAPIER, input = {}, {
    diagnosticResearchReceiverTapEnabled = false,
   diagnosticResearchControlCloseDefender = false,
   diagnosticResearchControlSpaceDefender = false,
+   diagnosticResearchControlContestDefender = false,
   diagnosticResearchCarrySide = null
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
@@ -171,15 +172,27 @@ export function createEngine(RAPIER, input = {}, {
      (diagnosticResearchReceiverTapEnabled&&(
       !diagnosticResearchReceivingDecisionEnabled||
       !diagnosticResearchReceivingCushionEnabled||
-      !diagnosticResearchControlSpaceDefender||
+      (!diagnosticResearchControlSpaceDefender&&
+       !diagnosticResearchControlContestDefender)||
       diagnosticResearchControlCloseDefender||
       diagnosticResearchControlOpponentFirst)))
    throw new TypeError('M30 requires original isolated M27 space receiving decision');
+  if(typeof diagnosticResearchControlContestDefender!=='boolean'||
+     (diagnosticResearchControlContestDefender&&(
+      !diagnosticResearchControlReceiver||
+      !diagnosticResearchReceivingCushionEnabled||
+      !diagnosticResearchReceivingDecisionEnabled||
+      !diagnosticResearchReceiverTapEnabled||
+      diagnosticResearchControlSpaceDefender||
+      diagnosticResearchControlCloseDefender||
+      diagnosticResearchControlOpponentFirst)))
+   throw new TypeError('M31 contested source requires isolated real M30 tap');
   if(typeof diagnosticResearchControlSpaceDefender!=='boolean'||
     (diagnosticResearchControlSpaceDefender&&(
      !diagnosticResearchControlReceiver||
      !diagnosticResearchReceivingCushionEnabled||
      diagnosticResearchControlCloseDefender||
+     diagnosticResearchControlContestDefender||
      diagnosticResearchControlOpponentFirst)))
   throw new TypeError('M27 space source requires original CONTROL and M25');
  if(typeof diagnosticResearchControlCloseDefender!=='boolean'||
@@ -220,6 +233,7 @@ export function createEngine(RAPIER, input = {}, {
     {opponentFirst:diagnosticResearchControlOpponentFirst,
      closeDefender:diagnosticResearchControlCloseDefender,
      spaceDefender:diagnosticResearchControlSpaceDefender,
+     contestDefender:diagnosticResearchControlContestDefender,
      side:diagnosticResearchControlSide}):
   diagnosticResearchCarrySide!==null?
    initialResearchCarryLineup(INITIAL_PLAYERS,diagnosticResearchCarrySide,
@@ -318,7 +332,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
     diagnosticResearchReceivingDecisionEnabled,diagnosticResearchReceiverTapEnabled,
     diagnosticResearchControlCloseDefender,
-    diagnosticResearchControlSpaceDefender,diagnosticResearchCarrySide
+    diagnosticResearchControlSpaceDefender,
+     diagnosticResearchControlContestDefender,diagnosticResearchCarrySide
   });
   const world = new RAPIER.World(GRAVITY);
   world.timestep = FIXED_DT;

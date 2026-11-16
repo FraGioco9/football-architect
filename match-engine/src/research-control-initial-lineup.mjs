@@ -17,15 +17,23 @@ export const CONTROL_CLOSE_DEFENDER_INITIAL=Object.freeze({
  id:'away-7',x:-2.8,y:-3.8
 });
 export const CONTROL_SPACE_DEFENDER_INITIAL=Object.freeze({id:'away-7',x:2,y:-3.8});
+// M31: before-tick-zero legitimate challenger formation. Rapier determines
+// whether any shoe contact really happens, never the scene fixture.
+export const CONTROL_CONTEST_DEFENDER_INITIAL=Object.freeze({
+ id:'away-7',x:0,y:-3.8
+});
 export function initialResearchControlLineup(players,ball,{
- opponentFirst=false,side='home',closeDefender=false,spaceDefender=false
+ opponentFirst=false,side='home',closeDefender=false,spaceDefender=false,
+ contestDefender=false
 }={}){
  if(!['home','away'].includes(side)||(opponentFirst&&side!=='home'))
   throw new TypeError('Bounded CONTROL side; opponent-first HOME only');
- if(typeof spaceDefender!=='boolean'||(spaceDefender&&(closeDefender||opponentFirst)))
+ if(typeof spaceDefender!=='boolean'||(spaceDefender&&(closeDefender||opponentFirst||contestDefender)))
   throw new TypeError('M27 space research cannot share close or opponent-first state');
- if(typeof closeDefender!=='boolean'||(closeDefender&&opponentFirst))
+ if(typeof closeDefender!=='boolean'||(closeDefender&&(opponentFirst||contestDefender)))
   throw new TypeError('Close-defender research must be distinct from opponent-first');
+ if(typeof contestDefender!=='boolean'||(contestDefender&&(opponentFirst||spaceDefender||closeDefender)))
+  throw new TypeError('M31 contested fixture must be isolated');
  if(typeof opponentFirst!=='boolean')
   throw new TypeError('Bounded opponent-first flag must be boolean');
  if(!Array.isArray(players)||players.length!==22||!ball||
@@ -45,15 +53,16 @@ export function initialResearchControlLineup(players,ball,{
     players.filter(p=>p.id==='home-11'&&p.team==='home'&&
       p.role==='forward').length!==1))
   throw new TypeError('Canonical opponent and safe recipient alternative required');
- if((closeDefender||spaceDefender)&&players.filter(p=>p.id===(side==='home'?'away':'home')+'-7'&&
+ if((closeDefender||spaceDefender||contestDefender)&&players.filter(p=>p.id===(side==='home'?'away':'home')+'-7'&&
      p.team!==(side)&&p.role==='midfielder').length!==1)
   throw new TypeError('M26 requires canonical original opposing midfielder #7');
  const stagedPositions=opponentFirst?[
   target,CONTROL_OPPONENT_FIRST_INITIAL.alternative,
   CONTROL_OPPONENT_FIRST_INITIAL.opponent
- ]:(closeDefender||spaceDefender)?[
+ ]:(closeDefender||spaceDefender||contestDefender)?[
   target,CONTROL_OPPONENT_FIRST_INITIAL.alternative,{
-   ...(spaceDefender?CONTROL_SPACE_DEFENDER_INITIAL:CONTROL_CLOSE_DEFENDER_INITIAL),
+   ...(contestDefender?CONTROL_CONTEST_DEFENDER_INITIAL:
+     spaceDefender?CONTROL_SPACE_DEFENDER_INITIAL:CONTROL_CLOSE_DEFENDER_INITIAL),
    id:side==='home'?'away-7':'home-7'
   }
  ]:[target];

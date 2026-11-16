@@ -1637,6 +1637,7 @@ export function createPlayerMovement(options={}){
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlCloseDefender'&&
      k!=='researchControlSpaceDefender'&&
+      k!=='researchControlContestDefender'&&
      k!=='researchControlSide'&&
      k!=='researchCarrySide'&&k!=='researchCarryBall'&&
      k!=='researchBodyEncounter'&&
@@ -1696,9 +1697,17 @@ export function createPlayerMovement(options={}){
      options.researchControlSpaceDefender!==true||
      options.researchControlReceiver!==true||
      options.researchControlCloseDefender!==undefined||
+     options.researchControlContestDefender!==undefined||
+     options.researchControlOpponentFirst!==undefined))||
+    (options.researchControlContestDefender!==undefined&&(
+     options.researchControlContestDefender!==true||
+     options.researchControlReceiver!==true||
+     options.researchControlSpaceDefender!==undefined||
+     options.researchControlCloseDefender!==undefined||
      options.researchControlOpponentFirst!==undefined))||
     (options.researchControlCloseDefender!==undefined&&(
      options.researchControlCloseDefender!==true||
+     options.researchControlContestDefender!==undefined||
      options.researchControlReceiver!==true||
      options.researchControlOpponentFirst!==undefined))||
     (options.researchControlSide!==undefined&&(
@@ -1729,6 +1738,7 @@ export function createPlayerMovement(options={}){
     {opponentFirst:options.researchControlOpponentFirst===true,
      closeDefender:options.researchControlCloseDefender===true,
      spaceDefender:options.researchControlSpaceDefender===true,
+     contestDefender:options.researchControlContestDefender===true,
      side:options.researchControlSide??'home'}):
   options.researchCarrySide!==undefined?
    initialResearchCarryLineup(INITIAL_PLAYERS,options.researchCarrySide,
