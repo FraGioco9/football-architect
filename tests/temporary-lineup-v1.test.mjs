@@ -172,6 +172,44 @@ test('no fabricated identities across sides, invalid contexts fail closed, and d
  await assert.rejects(()=>contextPlay(roster(),roster(),{mode:'regulation'}),/both clubs/);
  assert.equal((await buildCandidateMatchReceiptV1(receiptMatch,both)).result.mode,'fallback_vs_fallback');
 });
+test('#650 ratings are deterministic, bounded and only for verified XI',async()=>{
+ const two=await contextPlay(roster(),opponentRoster(),{mode:'regulation'});
+ assert.equal(two.ratingVersion,'test-rating-v1');
+ assert.deepEqual(two,await contextPlay(roster(),opponentRoster(),{mode:'regulation'}));
+ const all=[...two.home.appearances,...two.away.appearances];
+ assert.equal(all.length,22);
+ assert.equal(new Set(all.map(p=>p.playerId)).size,22);
+ assert.ok(all.every(p=>p.rating>=4&&p.rating<=10&&Math.abs(p.rating*10-Math.round(p.rating*10))<1e-9));
+ const other=await contextPlay(roster(),opponentRoster(),{mode:'regulation'},'different-rating-seed-002');
+ assert.notDeepEqual(all.map(p=>p.rating),[...other.home.appearances,...other.away.appearances].map(p=>p.rating));
+ const mixed=await contextPlay(roster(),[],{mode:'regulation'});
+ assert.equal(mixed.home.appearances.length,11);
+ assert.ok(mixed.home.appearances.every(p=>typeof p.rating==='number'));
+ assert.deepEqual(mixed.away.appearances,[]);
+ const fallback=await contextPlay([],[],{mode:'regulation'});
+ assert.deepEqual(fallback.home.appearances,[]);
+ assert.deepEqual(fallback.away.appearances,[]);
+ for(const match of [two,mixed,fallback])await buildCandidateMatchReceiptV1(receiptMatch,match);
+});
+test('#650 keeps legacy receipts unrated and rejects forged, missing or partial ratings',async()=>{
+ const result=await contextPlay(roster(),[],{mode:'single-knockout'});
+ const historic=structuredClone(result);
+ delete historic.ratingVersion;
+ for(const side of ['home','away'])for(const p of historic[side].appearances)delete p.rating;
+ const archived=await buildCandidateMatchReceiptV1(receiptMatch,historic);
+ assert.equal(archived.result.ratingVersion,undefined);
+ assert.equal(archived.result.home.appearances[0].rating,undefined);
+ const current=await buildCandidateMatchReceiptV1(receiptMatch,result);
+ assert.notEqual(archived.receiptDigest,current.receiptDigest);
+ const missing=structuredClone(result);delete missing.home.appearances[0].rating;
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,missing),/rating consistency/);
+ const forged=structuredClone(result);forged.home.appearances[0].rating=11;
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,forged),/rating consistency/);
+ const invalid=structuredClone(result);invalid.ratingVersion='unknown';
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,invalid),/rating version/);
+ const stray=structuredClone(historic);stray.home.appearances[0].rating=7;
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,stray),/rating consistency/);
+});
 test('candidate receipt rejects mismatched provenance, scorer ghost, and score tampering',async()=>{
  const result=await contextPlay(roster(),[],{mode:'regulation'});
  await assert.rejects(()=>buildCandidateMatchReceiptV1({...receiptMatch,matchId:0},result),/fixture evidence/);

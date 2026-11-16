@@ -2,6 +2,8 @@
 import {ATTRIBUTES,calculatePositionSuitability} from './players-generator-core.mjs';
 
 export const LINEUP_SIMULATOR_VERSION='temporary-lineup-v1';
+// #650: versioned test-only evidence, not a realistic player evaluation model.
+export const TEST_RATING_VERSION='test-rating-v1';
 export const LINEUP_V1_SLOTS=Object.freeze(['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW']);
 const VALID_ROLES=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
 const BASELINE_STRENGTH=61;
@@ -225,14 +227,43 @@ export async function simulateMatchV1({homeRoster,awayRoster,matchKey,seed,homeC
  const awayEvents=events.filter(event=>event.side==='away');
  const home=mergedAppearanceSide(base.home,homeEvents,playedExtraTime,homeGoals);
  const away=mergedAppearanceSide(base.away,awayEvents,playedExtraTime,awayGoals);
- return {
+ return attachTestRatingsV1({
   algorithmVersion:LINEUP_SIMULATOR_VERSION,mode:base.mode,matchKey,homeClubId,awayClubId,
   sourceSeedHash:await sha256([LINEUP_SIMULATOR_VERSION,seed]),context:verified,neutral,
   expectedGoals:base.expectedGoals,regulation:{home:regHome,away:regAway},
   extraTime,penalties,homeGoals,awayGoals,
   resolution,winnerClubId:delta===0?null:delta>0?homeClubId:awayClubId,
   home,away,events
- };
+ });
+}
+// Frozen match identity, seed digest and player identity produce a stable draw.
+// Historic receipts can validate it without consulting current player data.
+function testRatingV1(result,sideName,appearance){
+ const key=JSON.stringify([TEST_RATING_VERSION,result.matchKey,result.sourceSeedHash,appearance.playerId]);
+ let hash=2166136261;
+ for(let i=0;i<key.length;i++)hash=Math.imul(hash^key.charCodeAt(i),16777619);
+ hash^=hash>>>16;hash=Math.imul(hash,0x7feb352d);
+ hash^=hash>>>15;hash=Math.imul(hash,0x846ca68b);hash^=hash>>>16;
+ const unit=(hash>>>0)/4294967296;
+ // Extra-time goals count, penalty kicks never count as goals. Apply the
+ // winner adjustment to penalties only when a shootout actually occurred.
+ const own=sideName==='home'?result.homeGoals:result.awayGoals;
+ const other=sideName==='home'?result.awayGoals:result.homeGoals;
+ const club=sideName==='home'?result.homeClubId:result.awayClubId;
+ const won=result.penalties?result.winnerClubId===club:own>other;
+ const lost=result.penalties?result.winnerClubId!==club:own<other;
+ const raw=6.5+(unit-.5)*4.8+Math.min(appearance.goals,3)*.8+(won?.2:lost?-.1:0);
+ return Math.round(clamp(raw,4,10)*10)/10;
+}
+function attachTestRatingsV1(result){
+ result.ratingVersion=TEST_RATING_VERSION;
+ for(const name of ['home','away']){
+  const side=result[name];
+  if(side.kind==='real_xi')side.appearances=side.appearances.map(appearance=>({
+   ...appearance,rating:testRatingV1(result,name,appearance)
+  }));
+ }
+ return result;
 }
 function deepFreeze(value){
  if(value&&typeof value==='object'&&!Object.isFrozen(value)){
@@ -284,6 +315,10 @@ export async function buildCandidateMatchReceiptV1(match,outcome){
   (resolution==='penalties'&&aggregate!==0)||
   (resolution==='extra-time'&&aggregate===0)||
   (context.mode==='regulation'&&playedExtraTime))error('receipt winner');
+ // Preserve unchanged pre-rating V2 receipts. New receipts must use a single
+ // explicit version; never infer a rating when that version is absent.
+ if(outcome.ratingVersion!==undefined&&outcome.ratingVersion!==TEST_RATING_VERSION)
+  error('receipt rating version');
  if(outcome.mode!==(outcome.home.kind==='real_xi'
   ?outcome.away.kind==='real_xi'?'xi_vs_xi':'xi_vs_fallback'
   :outcome.away.kind==='real_xi'?'fallback_vs_xi':'fallback_vs_fallback'))error('receipt mode');
@@ -312,6 +347,12 @@ export async function buildCandidateMatchReceiptV1(match,outcome){
     new Set(side.appearances.map(p=>p.playerId)).size!==11||
     recorded.some(event=>!unique.has(event.playerId)))error('receipt player consistency');
   }else error('receipt side mode');
+  const rated=outcome.ratingVersion===TEST_RATING_VERSION;
+  if(side.appearances.some(p=>rated
+   ?!Number.isFinite(p.rating)||p.rating<4||p.rating>10||
+    Math.abs(p.rating*10-Math.round(p.rating*10))>1e-9||
+    p.rating!==testRatingV1(outcome,sideName,p)
+   :Object.hasOwn(p,'rating')))error('receipt test rating consistency');
  }
  const participantIds=new Set([...outcome.home.appearances,...outcome.away.appearances].map(p=>p.playerId));
  if(participantIds.size!==outcome.home.appearances.length+outcome.away.appearances.length)

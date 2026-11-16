@@ -12,8 +12,9 @@ export interface FrozenLineupMatchDetailV1 {
   regulation:{home:number;away:number};extraTime:{home:number;away:number}|null;
   penalties:{home:number;away:number}|null;winnerClubId:string|null;
   resolution:'regulation'|'extra-time'|'penalties'};
- players:{home:{kind:string;starters:unknown[];appearances:unknown[]};
-  away:{kind:string;starters:unknown[];appearances:unknown[]}};
+ players:{ratingVersion:'test-rating-v1'|null;
+  home:{kind:string;starters:unknown[];appearances:Array<{playerId:number;started:true;minutes:number;goals:number;rating:number|null}>};
+  away:{kind:string;starters:unknown[];appearances:Array<{playerId:number;started:true;minutes:number;goals:number;rating:number|null}>}};
  events:LineupMatchResultV1['events'];
  provenance:{kind:'immutable-lineup-v1';receiptHash:string;algorithmVersion:'temporary-lineup-v1'};
 }
@@ -35,8 +36,9 @@ export function frozenLineupMatchDetailV1(
   starters:team.starters?.map(({playerId,role,emergencyGoalkeeper})=>({
    playerId,role,emergencyGoalkeeper
   }))??[],
-  appearances:team.appearances.map(({playerId,started,minutes,goals})=>({
-   playerId,started,minutes,goals
+  appearances:team.appearances.map(({playerId,started,minutes,goals,rating})=>({
+   playerId,started,minutes,goals,
+   rating:result.ratingVersion==='test-rating-v1'&&typeof rating==='number'?rating:null
   }))
  });
  return {
@@ -47,7 +49,8 @@ export function frozenLineupMatchDetailV1(
   result:{homeGoals:result.homeGoals,awayGoals:result.awayGoals,
    regulation:result.regulation,extraTime:result.extraTime,penalties:result.penalties,
    winnerClubId:result.winnerClubId,resolution:result.resolution},
-  players:{home:side(result.home),away:side(result.away)},
+  players:{ratingVersion:result.ratingVersion==='test-rating-v1'?'test-rating-v1':null,
+   home:side(result.home),away:side(result.away)},
   events:result.events.map(({type,minute,side,playerId,period})=>({
    type,minute,side,playerId,period
   })),

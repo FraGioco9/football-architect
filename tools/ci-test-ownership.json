@@ -41,6 +41,7 @@
     "backend/tests/fixtures/unified-operator.ts": "support",
     "backend/tests/footballer-internal-projection-runtime.test.ts": "backend-runtime",
     "backend/tests/footballer-public-projection-runtime.test.ts": "backend-runtime",
+    "backend/tests/frozen-rating-projection-runtime.test.ts": "backend-runtime",
     "backend/tests/gmail-delivery-runtime.test.ts": "backend-runtime",
     "backend/tests/gmail-email-delivery.test.ts": "backend-contract",
     "backend/tests/hosted-preview-runtime.test.ts": "backend-runtime",
