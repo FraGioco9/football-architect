@@ -740,6 +740,15 @@ test('#605 published Postseason bracket gives each leg its own official match li
  const hrefs=cells.map(({cell})=>cell.querySelector('.fa-bracket-leg-link')?.href);
  assert.deepEqual(hrefs,slots.map(x=>'/matches/'+x.matchId),
   'distinct official IDs are assigned to first leg, second leg and final with TBD opponents');
+ // Switching to the normal Fixtures page preserves the reserved match IDs;
+ // its TBD rows must open real official pages, never fabricated pairings.
+ r.route.set({view:'fixtures',matchday:'playoffs'});
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ const pendingLinks=r.fields.get('app-fixtures-list').children.flatMap(visit)
+  .filter(n=>n.className==='app-fixture-score-link');
+ assert.ok(pendingLinks.length>=4,'domestic knockout placeholders have published clickable IDs');
+ assert.ok(pendingLinks.every(a=>/^\/matches\/[1-9][0-9]*$/.test(a.href)));
+ r.route.set({view:'postseason'});
  assert.ok(cells.every(x=>x.cell.classList.contains('is-match-link')));
  assert.ok(cells.filter(x=>x.tie.legs===1).every(x=>x.card.classList.contains('is-single-match-link')));
  assert.ok(cells.filter(x=>x.tie.legs===2).every(x=>!x.card.classList.contains('is-single-match-link')));

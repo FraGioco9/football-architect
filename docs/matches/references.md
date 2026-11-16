@@ -79,3 +79,10 @@ Links use `phaseId + tieId + leg` from the canonical published collection,
 with exact world generation/revision and selected season fencing. Reserved
 knockout slots may open their official match detail even before club participants
 have been determined. Unknown/unpublished/DEV slots remain plain text.
+
+
+The standard competition Fixtures view also presents reserved knockout match slots
+as TBD rows before qualification, for domestic postseason and international
+knockout rounds. These rows derive only their phase/tie/leg from canonical
+approved rules and acquire links strictly from the published official knockout
+match index. They do not invent clubs, results, marker/day or kickoffs.
