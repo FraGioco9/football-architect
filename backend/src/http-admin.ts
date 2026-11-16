@@ -106,7 +106,7 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/seasons/events/confirm')return json(200,await completeConfirmationEvent(db,session,rawCommand,key,now));
   if(path==='/api/admin/seasons/events/reschedule')return json(200,await rescheduleSeasonEvent(db,session,rawCommand,key,now));
   const command=parsePrepareRequest(rawCommand);
-  if(path==='/api/admin/seasons/start'||path==='/api/admin/seasons/advance')return json(200,await executeLifecycle(db,session,path.endsWith('/start')?'start':'advance',command,key,now));
+  if(path==='/api/admin/seasons/advance')return json(200,await executeLifecycle(db,session,'advance',command,key,now));
   return json(200,await prepareSeason(db,session,command,key,await loadApprovedSnapshot(),now));
  }catch(error){
   return httpError('account',error,'admin_unavailable');
