@@ -17,7 +17,7 @@ import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CARRY_LAB_STARTS,
 
 export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
- controlSide='home',
+ controlSide='home',controlDecisionEnabled=true,
  challengeSide='away',challengeScene='contact'
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
@@ -28,6 +28,8 @@ export function createControlledActionLab(RAPIER,id,{
     !['open','blocked'].includes(shotLane)||
     !['receive','receive-cushion','receive-pressure','receive-decide','receive-pressure-decide','opponent-first'].includes(controlScene)||
     !['home','away'].includes(controlSide)||
+    typeof controlDecisionEnabled!=='boolean'||
+    (!controlDecisionEnabled&&controlScene!=='receive-decide')||
     (id!=='control'&&controlSide!=='home')||
     (controlScene==='opponent-first'&&controlSide!=='home')||
     !['home','away'].includes(challengeSide)||
@@ -54,11 +56,12 @@ export function createControlledActionLab(RAPIER,id,{
    'receive-pressure-decide'].includes(controlScene);
  const closePressure=id==='control'&&
   ['receive-pressure','receive-pressure-decide'].includes(controlScene);
- const adaptiveDecision=id==='control'&&
+ const moderatePressure=id==='control'&&controlScene==='receive-decide';
+ const adaptiveDecision=id==='control'&&controlDecisionEnabled&&
   ['receive-decide','receive-pressure-decide'].includes(controlScene);
  const focus=opposingControl?
   Object.freeze(['home-10','home-9','away-7']):
-  closePressure?Object.freeze(selectedControlSide==='home'?
+  (closePressure||moderatePressure)?Object.freeze(selectedControlSide==='home'?
    ['home-10','home-9','away-7']:['away-10','away-9','home-7']):
   selectedControlSide==='away'?
    Object.freeze(['away-10','away-9','home-10']):
@@ -85,7 +88,8 @@ export function createControlledActionLab(RAPIER,id,{
    diagnosticResearchControlSide:selectedControlSide,
    ...(firstTouchCushion?{diagnosticResearchReceivingCushionEnabled:true}:{}),
    ...(adaptiveDecision?{diagnosticResearchReceivingDecisionEnabled:true}:{}),
-   ...(closePressure?{diagnosticResearchControlCloseDefender:true}:{})
+   ...(closePressure?{diagnosticResearchControlCloseDefender:true}:{}),
+   ...(moderatePressure?{diagnosticResearchControlSpaceDefender:true}:{})
   }:{}),
   ...(opposingControl?{diagnosticResearchControlOpponentFirst:true}:{}),
   ...(selectedCarrySide?{diagnosticResearchCarrySide:selectedCarrySide}:{}),
@@ -98,7 +102,8 @@ export function createControlledActionLab(RAPIER,id,{
   researchControlReceiver:true,researchControlBall:initial,
   researchControlSide:selectedControlSide,
   ...(opposingControl?{researchControlOpponentFirst:true}:{}),
-  ...(closePressure?{researchControlCloseDefender:true}:{})
+  ...(closePressure?{researchControlCloseDefender:true}:{}),
+  ...(moderatePressure?{researchControlSpaceDefender:true}:{})
  }:selectedCarrySide?{
   researchCarrySide:selectedCarrySide,researchCarryBall:initial
  }:{});

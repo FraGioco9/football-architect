@@ -16,11 +16,14 @@ export const CONTROL_OPPONENT_FIRST_INITIAL=Object.freeze({
 export const CONTROL_CLOSE_DEFENDER_INITIAL=Object.freeze({
  id:'away-7',x:-2.8,y:-3.8
 });
+export const CONTROL_SPACE_DEFENDER_INITIAL=Object.freeze({id:'away-7',x:-0.7,y:-3.8});
 export function initialResearchControlLineup(players,ball,{
- opponentFirst=false,side='home',closeDefender=false
+ opponentFirst=false,side='home',closeDefender=false,spaceDefender=false
 }={}){
  if(!['home','away'].includes(side)||(opponentFirst&&side!=='home'))
   throw new TypeError('Bounded CONTROL side; opponent-first HOME only');
+ if(typeof spaceDefender!=='boolean'||(spaceDefender&&(closeDefender||opponentFirst)))
+  throw new TypeError('M27 space research cannot share close or opponent-first state');
  if(typeof closeDefender!=='boolean'||(closeDefender&&opponentFirst))
   throw new TypeError('Close-defender research must be distinct from opponent-first');
  if(typeof opponentFirst!=='boolean')
@@ -42,15 +45,15 @@ export function initialResearchControlLineup(players,ball,{
     players.filter(p=>p.id==='home-11'&&p.team==='home'&&
       p.role==='forward').length!==1))
   throw new TypeError('Canonical opponent and safe recipient alternative required');
- if(closeDefender&&players.filter(p=>p.id===(side==='home'?'away':'home')+'-7'&&
+ if((closeDefender||spaceDefender)&&players.filter(p=>p.id===(side==='home'?'away':'home')+'-7'&&
      p.team!==(side)&&p.role==='midfielder').length!==1)
   throw new TypeError('M26 requires canonical original opposing midfielder #7');
  const stagedPositions=opponentFirst?[
   target,CONTROL_OPPONENT_FIRST_INITIAL.alternative,
   CONTROL_OPPONENT_FIRST_INITIAL.opponent
- ]:closeDefender?[
+ ]:(closeDefender||spaceDefender)?[
   target,CONTROL_OPPONENT_FIRST_INITIAL.alternative,{
-   ...CONTROL_CLOSE_DEFENDER_INITIAL,
+   ...(spaceDefender?CONTROL_SPACE_DEFENDER_INITIAL:CONTROL_CLOSE_DEFENDER_INITIAL),
    id:side==='home'?'away-7':'home-7'
   }
  ]:[target];

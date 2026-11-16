@@ -97,6 +97,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchReceivingCushionEnabled = false,
   diagnosticResearchReceivingDecisionEnabled = false,
   diagnosticResearchControlCloseDefender = false,
+  diagnosticResearchControlSpaceDefender = false,
   diagnosticResearchCarrySide = null
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
@@ -165,6 +166,13 @@ export function createEngine(RAPIER, input = {}, {
      !diagnosticResearchReceivingCushionEnabled||
      !diagnosticResearchControlReceiver)))
   throw new TypeError('M27 applies only to original closed CONTROL M25 cushion source');
+ if(typeof diagnosticResearchControlSpaceDefender!=='boolean'||
+    (diagnosticResearchControlSpaceDefender&&(
+     !diagnosticResearchControlReceiver||
+     !diagnosticResearchReceivingCushionEnabled||
+     diagnosticResearchControlCloseDefender||
+     diagnosticResearchControlOpponentFirst)))
+  throw new TypeError('M27 space source requires original CONTROL and M25');
  if(typeof diagnosticResearchControlCloseDefender!=='boolean'||
     (diagnosticResearchControlCloseDefender&&(
      !diagnosticResearchControlReceiver||
@@ -202,6 +210,7 @@ export function createEngine(RAPIER, input = {}, {
    initialResearchControlLineup(INITIAL_PLAYERS,scenario,
     {opponentFirst:diagnosticResearchControlOpponentFirst,
      closeDefender:diagnosticResearchControlCloseDefender,
+     spaceDefender:diagnosticResearchControlSpaceDefender,
      side:diagnosticResearchControlSide}):
   diagnosticResearchCarrySide!==null?
    initialResearchCarryLineup(INITIAL_PLAYERS,diagnosticResearchCarrySide,
@@ -299,7 +308,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
     diagnosticResearchReceivingDecisionEnabled,
-    diagnosticResearchControlCloseDefender,diagnosticResearchCarrySide
+    diagnosticResearchControlCloseDefender,
+    diagnosticResearchControlSpaceDefender,diagnosticResearchCarrySide
   });
   const world = new RAPIER.World(GRAVITY);
   world.timestep = FIXED_DT;

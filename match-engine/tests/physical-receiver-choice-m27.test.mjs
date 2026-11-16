@@ -111,7 +111,8 @@ test('M27 authentic HOME/AWAY open-side second shoe can defer a clearance',
  const R=await initializeRapier(wasm);
  for(const side of ['home','away']){
   const base=createControlledActionLab(R,'control',{
-   controlSide:side,controlScene:'receive-cushion'
+   controlSide:side,controlScene:'receive-decide',
+   controlDecisionEnabled:false
   });
   const adapted=createControlledActionLab(R,'control',{
    controlSide:side,controlScene:'receive-decide'
