@@ -133,13 +133,16 @@ test('#502 error pages settle placeholders rather than leaving a perpetual loadi
 });
 
 test('#502 direct player details activate Players, never Dashboard, in app shell and sidebar',()=>{
- const app=read('assets/app.js'),sidebar=read('assets/sidebar-evolution.js');
+ const app=read('assets/app.js'),sidebar=read('assets/sidebar-evolution.js'),firstPaint=read('assets/sidebar-first-paint.js');
  const a=app.indexOf('  function activeView() {'),b=app.indexOf('\n  function renderLanguage()',a);
  assert.ok(a>=0&&b>a,'route recognition must remain in the app shell');
  const activeViewSource=app.slice(a,b);
  const c=sidebar.indexOf("const path=location.pathname.replace("),d=sidebar.indexOf('\nconst selected=',c);
  assert.ok(c>=0&&d>c,'sidebar selected navigation must use route pathname');
  const sidebarSource=sidebar.slice(c,d)+'\n;onPlayers;';
+ const firstPaintStart=firstPaint.indexOf("const path=location.pathname.replace("),firstPaintEnd=firstPaint.indexOf('\nconst selected=',firstPaintStart);
+ assert.ok(firstPaintStart>=0&&firstPaintEnd>firstPaintStart,'first-paint bootstrap must resolve the active route before deferred scripts');
+ const firstPaintSource=firstPaint.slice(firstPaintStart,firstPaintEnd)+'\n;onPlayers;';
  for(const [path,expectedView,selectedPlayers] of [
   ['/players','players',true],
   ['/players/42','players',true],
@@ -153,6 +156,12 @@ test('#502 direct player details activate Players, never Dashboard, in app shell
   const document={querySelector:()=>null};
   assert.equal(runInNewContext(activeViewSource+'\nactiveView()', {window,document}),expectedView,path);
   assert.equal(runInNewContext(sidebarSource,{location:window.location}),selectedPlayers,path);
+  assert.equal(runInNewContext(firstPaintSource,{location:window.location}),selectedPlayers,path+' first paint');
+ }
+ for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(file);
+  const inline=html.match(/<script data-nav01-bootstrap>([\s\S]*?)<\/script>/)?.[1];
+  assert.equal(inline,firstPaint.trim(),file+' must embed the canonical first-paint bootstrap');
  }
  assert.match(app,/if \(dashboard\) dashboard\.hidden = current !== "dashboard"/);
  assert.match(app,/if \(divisions\) divisions\.hidden = current !== "divisions" && current !== "clubs" && current !== "players"/);
