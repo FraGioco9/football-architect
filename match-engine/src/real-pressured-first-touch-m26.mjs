@@ -26,13 +26,14 @@ export function createRealPressuredFirstTouchObserver(){
   nearestBallGapM:round(v.minBallGap),
   finalBallGapM:round(v.lastBallGap),
   anyOtherGenuineShoeStartTick:v.otherShoeStartTick,
+  subsequentPhysicalAction:v.nextPhysicalAction,
   endReason:termination,
   observationComplete:termination!==null,
   claimedControl:false,claimedPossession:false,
   officialReception:false,officialInterception:false,
   readOnly:true,observedFromOriginal22:true
  });
- function observe({physics,playerFrame,foot,physicalFirstTouch}={}){
+ function observe({physics,playerFrame,foot,physicalFirstTouch,action=null}={}){
   const t=physics?.tick;
   if(!Number.isSafeInteger(t)||t!==tick+1||t<0||
      playerFrame?.tick!==t||foot?.tick!==t||
@@ -50,6 +51,12 @@ export function createRealPressuredFirstTouchObserver(){
      !foot.started.every(id=>ids.has(id))||
      !foot.active.every(id=>ids.has(id)))
    throw new TypeError('M26 requires concurrent genuine 22-player Rapier samples');
+  if(action!==null&&(
+     action.tick!==t||action.actualPhysicsImpulseApplied!==true||
+     action.appliedByRapier!==true||action.officialMatchAction!==false||
+     !ids.has(action.playerId)||foot.started.length!==1||
+     foot.started[0]!==action.playerId))
+   throw new TypeError('M26 observes only authenticated same-tick native physical action');
   if(physicalFirstTouch!==null&&(
      physicalFirstTouch.originalRapierBallBody!==true||
      physicalFirstTouch.nativeExclusiveShoeStart!==true||
@@ -80,8 +87,23 @@ export function createRealPressuredFirstTouchObserver(){
     within3Ticks:0,within2Ticks:0,
     ballWithin1Ticks:0,ballWithin2Ticks:0,
     shoeActiveTicks:0,recontacts:0,
-    minBallGap:Infinity,lastBallGap:Infinity,otherShoeStartTick:null
+    minBallGap:Infinity,lastBallGap:Infinity,otherShoeStartTick:null,
+    nextPhysicalAction:null
    };
+  }
+  if(active){
+   // New real action: the first touch no longer describes continued control.
+   if(t>active.onsetTick&&action?.playerId===active.actorId){
+    if(!foot.started.includes(active.actorId))
+     throw new TypeError('Real subsequent action requires current native START');
+    active.recontacts++;
+    active.nextPhysicalAction=freeze({tick:t,
+     actorId:active.actorId,action:action.action,
+     actualSameTickRapierImpulse:true,officialPossession:false
+    });
+    completed=report(active,'new-same-player-physical-action');
+    active=null;
+   }
   }
   if(active){
    // Never use one player's ball-retention trace after another real

@@ -110,6 +110,12 @@ test('M26 genuine same-ball pressure traces, mirrored HOME/AWAY and replay',
    assert.ok(atTouch?.nearestOpponentAtOnsetM<=3,
     'real opponent must be within the actual pressure threshold on native START');
    assert.ok(after,'real pressured observation must either finish or be interrupted');
+   assert.equal(after.endReason,'new-same-player-physical-action');
+   assert.equal(after.subsequentPhysicalAction?.tick,63);
+   assert.equal(after.subsequentPhysicalAction?.action,'clearance');
+   assert.equal(after.genuineSameReceiverRecontacts,1);
+   assert.equal(after.observedTicks,33,
+    '33 genuine pre-clearance ticks, never count subsequent kick as possession');
    assert.equal(after.officialReception,false);
    assert.equal(after.claimedPossession,false);
    assert.ok(after.realOpponentWithin3MTicks>0);
@@ -124,6 +130,7 @@ test('M26 genuine same-ball pressure traces, mirrored HOME/AWAY and replay',
      ballNear1MTicks:after.receiverBallWithin1MTicks,
      realRepeatShoeStarts:after.genuineSameReceiverRecontacts,
      traceEnd:after.endReason,observedTicks:after.observedTicks,
+     subsequentAction:after.subsequentPhysicalAction,
      awardedPossession:false})+'\n');
   }finally{base.dispose();pressured.dispose();replay.dispose();}
  }

@@ -13,3 +13,7 @@ M25 reduced the measured original receiving ball travel in one second from 9.26 
 **Acceptance guard:** It is valid for genuine physics to show **zero recontacts, ball escaping or an opponent first to the ball**. Do not invent an interception, tackle, retained ball or possession. The user-visible report must distinguish actual observed pressure from a successful football outcome. The standalone natural two-concurrent Rapier native body-pair gate remains separately OPEN.
 
 **Operational:** append targeted tests to the existing ME-01 CI, no duplicate workflows. #633 stays Draft/HOLD, no Ready, merge, deployment, D1 or official match authority.
+
+## Real action boundary: no false retention after clearance
+
+The original HOME/AWAY ball and 22 autonomous players produced PASS tick 1, a real exclusive receiver shoe START and M25 cushion at tick 30, followed by a **second genuine recipient shoe START and physical clearance at tick 63**. M26 therefore ends the initial first-touch window **before** the new clearance displacement, after **33 genuine source ticks**. That real second touch is not a verified controlled dribble or possession; a completed 60-tick ball trajectory following the clearance must not be counted as a continuous first-touch hold.

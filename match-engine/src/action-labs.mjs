@@ -230,7 +230,7 @@ export function createControlledActionLab(RAPIER,id,{
   });
   const physicalFirstTouch=engine.researchReceivingCushionSnapshot();
   const pressureEvidence=pressureObserver?.observe({
-   physics,playerFrame,foot,physicalFirstTouch
+   physics,playerFrame,foot,physicalFirstTouch,action
   })??null;
   const contactContinuity=continuityObserver.observe({
    physics,playerFrame,foot,decisionEvidence
@@ -363,7 +363,10 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     ' ticks · closest opponent '+
     number(snap.pressureEvidence.completed.minimumRealOpponentGapM)+' m'+
     ' · genuine recontacts '+
-    snap.pressureEvidence.completed.genuineSameReceiverRecontacts:'')+
+    snap.pressureEvidence.completed.genuineSameReceiverRecontacts+
+    (snap.pressureEvidence.completed.subsequentPhysicalAction?
+     ' · next action '+snap.pressureEvidence.completed.subsequentPhysicalAction.action:
+     ''):'')+
    (snap.contactContinuity.active?
     ' · Post-contact '+snap.contactContinuity.active.observedTicks+
     '/60 actual ticks · ball travel '+
