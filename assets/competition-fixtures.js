@@ -130,7 +130,7 @@
           !Number.isSafeInteger(game.awayGoals)||game.awayGoals<0):game.awayGoals!==null)
         throw Error("Invalid fixture result");
       if(!validKickoff(game.kickoff))throw Error("Invalid fixture kickoff");
-      byRound.get(game.round).push({round:game.round,homeId:game.homeId,awayId:game.awayId,
+      byRound.get(game.round).push({round:game.round,phaseId:'league',homeId:game.homeId,awayId:game.awayId,
         homeGoals:game.homeGoals,awayGoals:game.awayGoals,kickoff:game.kickoff,
         sourceFixtureId:game.sourceFixtureId??null,marker:game.marker??null,day:game.day??null,
          matchId:typeof game.matchId==='string'&&/^[1-9][0-9]*$/.test(game.matchId)&&
