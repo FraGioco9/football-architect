@@ -97,3 +97,57 @@ The old V3 PNG preflight and the frozen V3 portraits remain unchanged.
 See [V4 technical QA rules](player-portraits-v4-qa.md) for exact 3–8 px
 top-margin targets, 0–12 px outer allowance, alpha threshold, centered
 silhouette, side clearance, chromatic-fringe notes and manual acceptance.
+
+
+## V4.1 diversity extension — opt-in, immutable and versioned (#646)
+
+**Existing V4 and V3 identities are immutable.** The original `v4:0` facial seed,
+existing frozen `player-portraits-v3` / `player-portrait-v4` snapshots and the
+six owner-accepted pilot portraits remain bit-for-bit reproducible. They must
+never be silently re-rendered as a different identity.
+
+For new V4.1 candidates, use the separate functions exported by
+`backend/src/player-portrait-diversity-v41.mjs`:
+
+- `buildDiverseV4PortraitSnapshotForPlayer(player)`
+- `renderDiverseV4PortraitPromptFromSnapshot(snapshot)`
+- `buildChatGptDiverseV4PortraitExecutionFromSnapshot(snapshot)` in the
+  ChatGPT adapter module.
+
+The snapshot explicitly declares `schema_version='player-portraits-v4'`
+and `prompt_version='player-portrait-v4.1'`, with a fresh ID-only deterministic
+face seed and canonical fingerprint. Old V3/V4 snapshots fail closed if passed
+to this renderer or adapter. **Never convert an approved portrait's immutable
+snapshot in place.**
+
+V4.1 has **24 facial/hair descriptors** (23 weighted trait pools plus the
+texture/length-compatible hairstyle), independently covering face contours,
+cheek fullness, forehead, eye shape/spacing/colour, eyebrows, nasal bridge/tip,
+jaw, chin, mouth width and lip fullness, ear shape, complexion, hair
+length/texture/colour/density/hairline/style, facial hair, skin texture and a
+natural mark. The **body still uses the five V4 classes**, plus a restrained
+class-compatible natural body-build variant. All physical input must be
+frozen initial Strength/Speed/Agility; Stamina has no effect on body mass.
+No facial characteristic or age band is inferred from citizenship, position,
+player name, age or game development.
+
+**Compatibility:** haircut comes from the chosen hair length and texture,
+so e.g. coily hair never gets a straight-hair side part. Bald players have
+no visible hair colour, texture or hairline. All traits are deterministic
+for a given permanent player ID and seed version. Hair length/eye colours
+and facial marks use explicit weighted frequencies rather than equal
+probabilities. These frequencies are design weights, not demographic claims.
+
+**Single-image policy:** one player, one image invocation **then QA before
+another generation**. Auto-accept technical+visual PASS or PASS_WITH_NOTE,
+keeping notes; regenerate FAIL only after recording that failure, with
+a bounded retry safeguard. The prompt cannot control a provider that returns
+the wrong identity; validate the actual effective image output, true PNG alpha
+and 320x362 derivative before accepting. Never accept a collage or
+a reused face from an earlier player.
+
+**No automatic migration:** The six already accepted V4 pilot portraits remain
+V4 even after this extension; unapproved future candidate requests may opt in
+to V4.1 with their own versioned snapshots and independent QA. Nothing here
+writes DEV D1, publishes assets, merges code or deploys.
+See [V4.1 diversity details](player-portraits-v41-diversity.md).

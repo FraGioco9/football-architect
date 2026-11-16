@@ -6,6 +6,7 @@
  * remains the sole authority for facial and body descriptions.
  */
 import {renderPortraitPromptFromSnapshot,renderV4PortraitPromptFromSnapshot} from './player-portrait-core.mjs';
+import {renderDiverseV4PortraitPromptFromSnapshot} from './player-portrait-diversity-v41.mjs';
 
 export const CHATGPT_PORTRAIT_EXECUTION_VERSION='chatgpt-portrait-execution-v1';
 
@@ -99,5 +100,36 @@ export async function buildChatGptV4PortraitExecutionFromSnapshot(snapshot){
   desiredAspectRatio:'3:4',
   prompt:V4_BEFORE+'\n\n--- CANONICAL V4 PROMPT (VERBATIM) ---\n'+
    canonicalPrompt+'\n--- END CANONICAL V4 PROMPT ---\n\n'+V4_AFTER
+ });
+}
+
+
+/**
+ * Opt-in V4.1 diversified ChatGPT handoff.
+ * V3 and approved V4 v4:0 handoff functions above are unchanged.
+ */
+export const CHATGPT_DIVERSE_V4_EXECUTION_VERSION='chatgpt-portrait-execution-v3';
+
+export async function buildChatGptDiverseV4PortraitExecutionFromSnapshot(snapshot){
+ const canonicalPrompt=await renderDiverseV4PortraitPromptFromSnapshot(snapshot);
+ return Object.freeze({
+  playerId:snapshot.player_id,
+  portraitPromptVersion:snapshot.prompt_version,
+  executionVersion:CHATGPT_DIVERSE_V4_EXECUTION_VERSION,
+  renderer:'chatgpt-image-generation',
+  onePlayerPerInvocation:true,
+  requireQaBeforeNextInvocation:true,
+  toolOptions:CHATGPT_PORTRAIT_TOOL_OPTIONS,
+  desiredAspectRatio:'3:4',
+  prompt:[
+   'CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.',
+   'The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.',
+   '--- CANONICAL V4.1 PROMPT (VERBATIM) ---',
+   canonicalPrompt,
+   '--- END CANONICAL V4.1 PROMPT ---',
+   'EXECUTION GUARDS: Generate a single fictional adult male, never an age-specific subject or an idealized model. One image invocation only; do not batch or automatically generate a second.',
+   'Use a genuinely transparent RGBA PNG cutout, not an opaque checkerboard. Follow all binding traits, especially complexion, hair texture, hair length, hairstyle and ordinary facial proportions.',
+   'The output is a local candidate until real PNG alpha, final WebP geometry, trait consistency and visual QA are evaluated. Complete QA before considering another generation. PASS or PASS_WITH_NOTE may be locally accepted; FAIL must not be published. Publishing and D1 updates require separate authorization.'
+  ].join('\n\n')
  });
 }
