@@ -7,6 +7,8 @@ import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
 import {initialResearchCarryLineup} from './research-carry-initial-lineup.mjs';
+import {selectObservedSecondaryPressSupport}
+ from './secondary-press-support-m20.mjs';
 import {initialResearchBodyEncounterLineup,researchBodyEncounterTarget}
  from './research-body-encounter-initial-lineup.mjs';
 export const PLAYER_VERSION='me-player-34-observed-duty-measured-pace-v1';
@@ -1638,7 +1640,8 @@ export function createPlayerMovement(options={}){
      k!=='researchBodyEncounter'&&
      k!=='researchOpposingPressConvergence'&&
      k!=='researchUnstagedNativeBodyFeedback'&&
-     k!=='researchShoeBodyHandoff')||
+     k!=='researchShoeBodyHandoff'&&
+     k!=='researchSecondaryPressSupport')||
     ((options.researchShotAttacker??null)===null&&
      options.researchControlReceiver===undefined&&
      options.researchCarrySide===undefined&&
@@ -1646,6 +1649,7 @@ export function createPlayerMovement(options={}){
      options.researchOpposingPressConvergence!==true&&
      options.researchUnstagedNativeBodyFeedback!==true&&
      options.researchShoeBodyHandoff!==true&&
+     options.researchSecondaryPressSupport!==true&&
      Reflect.ownKeys(options).length>0)||
     (options.researchBodyEncounter!==undefined&&(
      options.researchBodyEncounter!==true||
@@ -1654,18 +1658,27 @@ export function createPlayerMovement(options={}){
      options.researchOpposingPressConvergence!==true||
      (options.researchUnstagedNativeBodyFeedback===true?
       Reflect.ownKeys(options).length!==
-       (options.researchShoeBodyHandoff===true?3:2):
-      Reflect.ownKeys(options).length!==1)))||
+       (options.researchShoeBodyHandoff===true?3:2)+
+       (options.researchSecondaryPressSupport===true?1:0):
+      Reflect.ownKeys(options).length!==
+       (options.researchSecondaryPressSupport===true?2:1))))||
     (options.researchUnstagedNativeBodyFeedback!==undefined&&(
      options.researchUnstagedNativeBodyFeedback!==true||
      options.researchOpposingPressConvergence!==true||
      Reflect.ownKeys(options).length!==
-      (options.researchShoeBodyHandoff===true?3:2)))||
+      (options.researchShoeBodyHandoff===true?3:2)+
+       (options.researchSecondaryPressSupport===true?1:0)))||
     (options.researchShoeBodyHandoff!==undefined&&(
      options.researchShoeBodyHandoff!==true||
      options.researchOpposingPressConvergence!==true||
      options.researchUnstagedNativeBodyFeedback!==true||
-     Reflect.ownKeys(options).length!==3))||
+     Reflect.ownKeys(options).length!==
+      (options.researchSecondaryPressSupport===true?4:3)))||
+    (options.researchSecondaryPressSupport!==undefined&&(
+     options.researchSecondaryPressSupport!==true||
+     options.researchOpposingPressConvergence!==true||
+     (options.researchUnstagedNativeBodyFeedback===true&&
+      options.researchShoeBodyHandoff!==true)))||
     (options.researchCarrySide!==undefined&&(
      !['home','away'].includes(options.researchCarrySide)||
      !Object.hasOwn(options,'researchCarryBall')||
@@ -1727,6 +1740,9 @@ export function createPlayerMovement(options={}){
  let pressSwitches={home:0,away:0};
  let opposingPressConvergence=null;
  let actualContestActiveTicks=0,actualContestStarts=0;
+ let secondaryPressSupport={home:null,away:null};
+ let secondaryPressSwitches={home:0,away:0};
+ let secondaryPressActiveTicks={home:0,away:0};
  let coverers={home:null,away:null};
  let coverSwitches={home:0,away:0};
  let screens={home:null,away:null};
@@ -1794,6 +1810,11 @@ export function createPlayerMovement(options={}){
    }),
    pressers:Object.freeze({...pressers}),
    pressSwitches:Object.freeze({...pressSwitches}),
+   ...(options.researchSecondaryPressSupport===true?{
+    secondaryPressSupport:Object.freeze({...secondaryPressSupport}),
+    secondaryPressSwitches:Object.freeze({...secondaryPressSwitches}),
+    secondaryPressActiveTicks:Object.freeze({...secondaryPressActiveTicks})
+   }:{}),
    ...(options.researchOpposingPressConvergence===true?{
     originalOpposingPressConvergence:opposingPressConvergence,
     actualContestActiveTicks,actualContestStarts
@@ -1997,6 +2018,22 @@ export function createPlayerMovement(options={}){
    away:supportSpace(players,'away',ball,nextPressers.away,nextCoverers.away,
      nextScreens.away,supports.away)
   };
+  const nextSecondaryPress={home:null,away:null};
+  if(options.researchSecondaryPressSupport===true&&
+     currentOpposingContest?.active===true){
+   for(const team of ['home','away']){
+    const excluded=[
+     nextCoverers[team],nextScreens[team]?.defenderId,
+     nextBalances[team]?.playerId,nextSupports[team]?.playerId,
+     ...(nextRecoveries[team]?.playerIds??[])
+    ].filter(Boolean);
+    nextSecondaryPress[team]=selectObservedSecondaryPressSupport(
+     players,team,ball,nextPressers,{
+      excludedIds:excluded,
+      incumbentId:secondaryPressSupport[team]?.playerId??null
+     });
+   }
+  }
   // Real teammate positions from the start of this tick; all 22 targets
   // see the same immutable line sample regardless of player update order.
   const cohesion={
@@ -2153,6 +2190,19 @@ export function createPlayerMovement(options={}){
      players.find(other=>other.id===recovery.opponentId):null;
    const pressing=p.id===nextPressers.home||p.id===nextPressers.away;
    const covering=p.id===nextCoverers.home||p.id===nextCoverers.away;
+   const secondary=nextSecondaryPress[p.team]?.playerId===p.id?
+    nextSecondaryPress[p.team]:null;
+   if(secondary){
+    // Same original acceleration/turn/shoe/separation/Rapier authority.
+    if(p.id in lineOffsets)
+     lineOffsets[p.id]=Object.freeze({x:0,y:0});
+    if(p.id in clearanceNeighbors){
+     nextClearanceNeighbors[p.id]=null;
+     clearCrossing(p);
+     releaseDetour(p);
+    }
+    return secondary.target;
+   }
    const balance=nextBalances[p.team];
    const balanceOpponent=balance?.playerId===p.id?
      players.find(other=>other.id===balance.opponentId):null;
@@ -2312,6 +2362,17 @@ export function createPlayerMovement(options={}){
   });
   if(pressers.home!==nextPressers.home)pressSwitches.home++;
   if(pressers.away!==nextPressers.away)pressSwitches.away++;
+  if(options.researchSecondaryPressSupport===true){
+   for(const team of ['home','away']){
+    if(secondaryPressSupport[team]?.playerId!==
+       nextSecondaryPress[team]?.playerId||
+       secondaryPressSupport[team]?.opponentId!==
+       nextSecondaryPress[team]?.opponentId)
+     secondaryPressSwitches[team]++;
+    if(nextSecondaryPress[team])secondaryPressActiveTicks[team]++;
+   }
+  }
+  secondaryPressSupport=nextSecondaryPress;
   if(coverers.home!==nextCoverers.home)coverSwitches.home++;
   if(coverers.away!==nextCoverers.away)coverSwitches.away++;
   for(const team of ['home','away']){

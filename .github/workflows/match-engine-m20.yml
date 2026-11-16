@@ -1,0 +1,42 @@
+name: Match Engine M20 original second-defender pressure comparison
+on:
+  pull_request:
+    paths:
+      - 'match-engine/**'
+      - '.github/workflows/match-engine-m20.yml'
+permissions:
+  contents: read
+jobs:
+  genuine-secondary-pressure:
+    if: ${{ github.head_ref == 'feat/628-individual-kinematics-foundation' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Assert exact source PR head
+        env:
+          EXPECTED: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED"
+          echo "M20_EXACT_HEAD $EXPECTED"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: match-engine/package-lock.json
+      - run: npm ci --prefix match-engine --no-audit --no-fund
+      - name: Genuine secondary press vs M19 baseline source comparison
+        env:
+          M20_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: npm --prefix match-engine run audit:secondary-press
+      - name: Archive true Rapier baseline and variant report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: me-628-m20-genuine-secondary-press
+          path: match-engine/match-engine-m20-support.json
+          if-no-files-found: warn
+          retention-days: 30

@@ -83,7 +83,8 @@ function validateLineMovement(after){
 export function auditNaturalNativeFeedback(RAPIER,{
  stateId='centre',side='home',ticks=225,mode='feedback',
  initialBallVelocity=null,shoeBodyHandoff='legacy',
- researchBallStart=null,researchEncounterTelemetry=false
+ researchBallStart=null,researchEncounterTelemetry=false,
+ researchSecondaryPressSupport=false
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function'||
     !allBallStates.has(stateId)||!sides.includes(side)||
@@ -91,7 +92,9 @@ export function auditNaturalNativeFeedback(RAPIER,{
     ticks<1||ticks>MAX_TICKS||
     !['legacy','bounded'].includes(shoeBodyHandoff)||
     typeof researchEncounterTelemetry!=='boolean'||
-    (researchEncounterTelemetry&&shoeBodyHandoff!=='bounded'))
+    (researchEncounterTelemetry&&shoeBodyHandoff!=='bounded')||
+    typeof researchSecondaryPressSupport!=='boolean'||
+    (researchSecondaryPressSupport&&shoeBodyHandoff!=='bounded'))
   throw new TypeError('M14 requires bounded original Rapier source state/mode');
  // M15 broadens only the pre-tick-zero ball trajectory. The original 22
  // players, their autonomous policy, body radii and native queue are identical.
@@ -137,8 +140,12 @@ export function auditNaturalNativeFeedback(RAPIER,{
  const mover=createPlayerMovement(feedback?{
   researchOpposingPressConvergence:true,
   researchUnstagedNativeBodyFeedback:true,
-  ...(shoeBodyHandoff==='bounded'?{researchShoeBodyHandoff:true}:{})
- }:{researchOpposingPressConvergence:true});
+  ...(shoeBodyHandoff==='bounded'?{researchShoeBodyHandoff:true}:{}),
+  ...(researchSecondaryPressSupport?{researchSecondaryPressSupport:true}:{})
+ }:{
+  researchOpposingPressConvergence:true,
+  ...(researchSecondaryPressSupport?{researchSecondaryPressSupport:true}:{})
+ });
  let totalNativeBodyStarts=0,totalNativeBodyEnds=0;
  let totalNativeShoeStarts=0,actualResponses=0,actualRejectedResponses=0;
  let firstNativeBodyStart=null,firstAppliedFeedback=null;
@@ -154,6 +161,9 @@ export function auditNaturalNativeFeedback(RAPIER,{
  let lastGenuineShoeFrame=initialFootPositions();
  let latestShape=null,latestPressers=null,latestSupports=null;
  let latestShoeBodyHandoff=null;
+ let latestSecondaryPress=null;
+ let latestSecondaryPressSwitches=null;
+ let latestSecondaryPressActiveTicks=null;
  // M19 is a read-only observer; neither the mover nor native Rapier
  // producer knows that this optional measuring device exists.
  const encounterTelemetry=researchEncounterTelemetry?
@@ -332,6 +342,11 @@ export function auditNaturalNativeFeedback(RAPIER,{
    latestShape=observed.shape;latestPressers=observed.pressers;
    latestSupports=observed.supports;
    latestShoeBodyHandoff=observed.shoeBodyHandoff??null;
+   if(researchSecondaryPressSupport){
+    latestSecondaryPress=observed.secondaryPressSupport;
+    latestSecondaryPressSwitches=observed.secondaryPressSwitches;
+    latestSecondaryPressActiveTicks=observed.secondaryPressActiveTicks;
+   }
    encounterTelemetry?.record({tick,frame:observed,native,ball:ballBefore});
   }
   return frozen({
@@ -343,6 +358,11 @@ export function auditNaturalNativeFeedback(RAPIER,{
    }),
    shoeBodyHandoff:feedback?shoeBodyHandoff:'observe-only',
    sourceBoundShoeHandoff:latestShoeBodyHandoff,
+   ...(researchSecondaryPressSupport?{
+    secondaryPressSupport:latestSecondaryPress,
+    secondaryPressSwitches:latestSecondaryPressSwitches,
+    secondaryPressActiveTicks:latestSecondaryPressActiveTicks
+   }:{}),
    initialBall:frozen({x:scene.x,y:scene.y,vx:scene.vx,vy:scene.vy}),
    initialRollingFraction:moving?1:0,
    original22Unstaged:true,sameRapierWorld:true,singleNativeEventQueue:true,
