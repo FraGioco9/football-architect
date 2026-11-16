@@ -3,6 +3,8 @@ import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import {generateSeasonCalendar} from '../src/calendar-command.ts';
+import {readPublicMatch,readPublishedCompetitionMatches} from '../src/public-match-read.ts';
+import {canonicalHomeStadium,matchSlotStadium} from '../src/match-venues.ts';
 import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
@@ -47,6 +49,30 @@ it('atomically saves 3984 actual fixtures, both draw outcomes, server seed, immu
  const audit=await db.prepare("SELECT * FROM admin_operations WHERE command='generate-calendar-v1'").first();
  expect(audit.account_id).toBe(session.actor.id);expect(audit.resulting_revision).toBe(2);expect(audit.created_at).toBe(now);
  expect(audit.outcome_json).not.toContain(value.seed);expect(audit.outcome_json).not.toContain(session.digest);
+});
+it('assigns 3984 immutable official home venues during calendar publication and exposes both match APIs',async()=>{
+ const generated=await generate();
+ expect(generated.world.revision).toBe(2);
+ const present=await db.prepare('SELECT count(*) n FROM season_match_slots WHERE stadium_name IS NOT NULL')
+  .first<{n:number}>();
+ expect(present?.n).toBe(3984);
+ const rows=(await db.prepare("SELECT home_club_id,stadium_name FROM season_match_slots WHERE competition_id='IT-1' ORDER BY scheduled_day LIMIT 10")
+  .all<{home_club_id:string;stadium_name:string}>()).results;
+ expect(rows).toHaveLength(10);
+ for(const r of rows)expect(r.stadium_name).toBe(canonicalHomeStadium(r.home_club_id));
+ const first=await db.prepare("SELECT n.id,s.home_club_id,s.stadium_name FROM season_match_slots s JOIN public_match_numbers n ON n.slot_match_id=s.match_id WHERE s.competition_id='IT-1' ORDER BY n.id LIMIT 1")
+  .first<{id:number;home_club_id:string;stadium_name:string}>();
+ expect(first).not.toBeNull();
+ expect(first!.stadium_name).toBe(canonicalHomeStadium(first!.home_club_id));
+ const detail=await readPublicMatch(db,String(first!.id));
+ expect(detail.venue).toEqual({name:first!.stadium_name});
+ expect(detail.kickoff).toBe(null);
+ const list=await readPublishedCompetitionMatches(db,1,'IT-1');
+ expect(list.fixtures.find(f=>f.matchId===String(first!.id))?.venue).toEqual({name:first!.stadium_name});
+ expect(matchSlotStadium(first!.home_club_id,null)).toBe(first!.stadium_name);
+ expect(canonicalHomeStadium('ZZ-1')).toBe(null);
+ await expect(db.prepare('UPDATE season_match_slots SET stadium_name=? WHERE home_club_id=?')
+  .bind('Tampered Stadium',first!.home_club_id).run()).rejects.toThrow();
 });
 it('concurrent identical keys replay one durable random seed, revision and audit; different keys cannot replace it',async()=>{
  const results=await Promise.all([generate(),generate(),generate()]);expect(results[1]).toEqual(results[0]);expect(results[2]).toEqual(results[0]);
