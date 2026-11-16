@@ -56,14 +56,20 @@ function validateLineMovement(after){
     !Object.hasOwn(after,'originalOpposingPressConvergence'))
   throw new Error('M14 original player pressure/lines/support source lost');
  for(const team of sides){
-  const x=after.shape[team];
-  if(!x||x.supporters!==9||
+  const x=after.shape[team],presser=after.pressers[team];
+  // At distant ball territories the ORIGINAL autonomous presser can be
+  // null. That is a measured non-assignment, never invent one for QA.
+  const expectedSupporters=presser===null?10:9;
+  if(!x||x.supporters!==expectedSupporters||
      ![x.widthM,x.depthM,x.defenderLineX,x.midfieldLineX,
        x.forwardLineX].every(Number.isFinite)||
      x.widthM<=0||x.depthM<=0||
-     typeof after.pressers[team]!=='string'||
-     !after.players.some(p=>p.id===after.pressers[team]&&p.team===team))
-   throw new Error('M14 cannot corrupt actual source-grounded team lines/pressers');
+     (presser!==null&&(
+      typeof presser!=='string'||!after.players.some(p=>
+       p.id===presser&&p.team===team&&p.role!=='goalkeeper'))))
+   throw new Error('M14 original source-grounded lines/presser invalid for '+team+
+    ': '+JSON.stringify({supporters:x?.supporters,
+      presser,expectedSupporters}));
  }
 }
 
