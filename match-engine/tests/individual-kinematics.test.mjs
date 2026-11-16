@@ -49,7 +49,17 @@ test('ME-628 M1 brakes at target, stays inside pitch and keeps zero-speed facing
  },{x:limits.maxX+10,y:limits.maxY+10},limits);
  assert.equal(edge.x,limits.maxX);
  assert.equal(edge.y,limits.maxY);
- assert.equal(edge.vx,0);assert.equal(edge.vy,0);
+ // M14: a clipped step still genuinely moved 1mm each axis. Velocity
+ // must represent that measured displacement or the original Rapier
+ // bridge would reject the 60Hz source (and could mistake it for a teleport).
+ close(edge.vx,(edge.x-(limits.maxX-0.001))/PLAYER_DT,1e-10);
+ close(edge.vy,(edge.y-(limits.maxY-0.001))/PLAYER_DT,1e-10);
+ const halted=advanceFreePlayerKinematics(edge,
+  {x:limits.maxX+10,y:limits.maxY+10},limits);
+ assert.equal(halted.x,limits.maxX);
+ assert.equal(halted.y,limits.maxY);
+ assert.equal(halted.vx,0);assert.equal(halted.vy,0);
+ assert.equal(advancePlayerOrientation(-2,halted.vx,halted.vy,limits),-2);
 });
 test('ME-628 M1 turn bound and stationary heading rely on actual velocity',()=>{
  let facing=0;
