@@ -8,7 +8,7 @@ import {INITIAL_PLAYERS,PLAYER_PITCH,PLAYER_VERSION} from './player-movement.mjs
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
-const ACTION_IMPULSE_NS=Object.freeze({pass:2.4,shot:3.0,cross:2.7,clearance:2.7,carry:0.42});
+const ACTION_IMPULSE_NS=Object.freeze({pass:2.4,shot:3.0,cross:2.7,save:2.6,clearance:2.7,carry:0.42});
 export const PROVISIONAL_PHYSICAL_CARRY_IMPULSE_NS=0.42;
 // C3.2a: a small GROUND touch is a real Rapier impulse, NOT a virtual
 // dribble or privileged possession. Only isolated autonomousCarry fixtures.
@@ -29,6 +29,17 @@ export const CROSS_LANE_MIN_CLEARANCE_M=1.4;
 export const SHOT_MAX_RANGE_M=35;
 export const SHOT_HALF_GOAL_AIM_Y_M=3.1;
 const IMMEDIATE_PRESSURE_M=3.0;
+export const BASIC_KEEPER_SAVE_VERSION='actions-b02-authentic-keeper-foot-parry-v1';
+// No catch, gloves or airborne body simulated yet: one native shoe parry
+// of an ACTUAL incoming ball is an attempt, never an official save.
+export function eligibleLiveKeeperSave(player,ballPosition,ballVelocity){
+ if(player.role!=='goalkeeper')return false;
+ const attack=player.team==='home'?1:-1;
+ const ownGoalX=-attack*PLAYER_PITCH.lengthM/2;
+ return Math.abs(ownGoalX-ballPosition.x)<=12&&
+  Math.abs(ballPosition.y)<=4.5&&
+  ballVelocity.x*attack<=-0.5;
+}
 export const UNIFORM_ACTION_CONTEXT_VERSION='me-pb-55-contextual-lane-observation-v1';
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const ids=Object.freeze(INITIAL_PLAYERS.map(p=>p.id));
@@ -267,7 +278,11 @@ export function selectUniformAutonomousContactAction({
   const shotLaneM=chosenShotLane?.clearance??
    lineClearance(ballPosition,goalTarget,player.team,actors);
   let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
-  if(chosenShotLane){
+  if(eligibleLiveKeeperSave(player,ballPosition,ballVelocity)){
+   action='save';dx=attack*7;
+   dy=ballPosition.y>=0?9:-9;vertical=0.24;
+   rule='incoming-goalward-keeper-physical-parry-attempt';
+  }else if(chosenShotLane){
    action='shot';dx=toGoal;
    dy=chosenShotLane.target.y-ballPosition.y;vertical=0.24;
    rule=chosenShotLane.target.y===0?
@@ -318,6 +333,16 @@ export function selectUniformAutonomousContactAction({
   // C1.1: the live teammate and ball geometry at THIS movement tick,
   // frozen before Rapier applies the impulse. A target is only intent,
   // never evidence of reception or a completed football pass.
+  const saveTarget=action==='save'?Object.freeze({
+   source:BASIC_KEEPER_SAVE_VERSION,
+   actorId:id,team:player.team,physicsTick:tick,
+   incomingVelocityX:ballVelocity.x,incomingVelocityY:ballVelocity.y,
+   originX:ballPosition.x,originY:ballPosition.y,
+   ownGoalX:-attack*PLAYER_PITCH.lengthM/2,
+   nativeExclusiveShoeRequired:true,
+   physicalSaveAttemptOnly:true,saveConfirmed:false,officialSave:false,
+   officialGoal:false,officialPossession:false
+  }):null;
   const shotTarget=action==='shot'?Object.freeze({
    source:'same-tick-closed-goal-lane-from-live-22-players',
    shooterId:id,team:player.team,physicsTick:tick,
@@ -359,7 +384,7 @@ export function selectUniformAutonomousContactAction({
    version:UNIFORM_AUTONOMOUS_ACTION_VERSION,tick,
    playerId:id,team:player.team,
    action,recipientId:recipient?.id??null,
-   passTarget,shotTarget,crossTarget,carryTarget,measuredGapM:gap,
+   passTarget,shotTarget,crossTarget,saveTarget,carryTarget,measuredGapM:gap,
    // Same-tick PRE-impulse values from the only existing contact selector.
    // No new eligibility policy or source authentication for caller input.
    physicalPrerequisites:Object.freeze({

@@ -11,6 +11,8 @@ import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {initialResearchBodyEncounterLineup}
  from './research-body-encounter-initial-lineup.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
+import {initialResearchGoalkeeperSaveLineup}
+ from './goalkeeper-save-foundation-b02.mjs';
 import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
 import {initialResearchCarryLineup} from './research-carry-initial-lineup.mjs';
 export const ENGINE_VERSION = 'me-01-physics-v4';
@@ -92,6 +94,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchShotAttacker = null,
   diagnosticResearchShotBlockedLane = false,
   diagnosticResearchShotWideCross = false,
+  diagnosticResearchGoalkeeperSaveSide = null,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -162,6 +165,15 @@ export function createEngine(RAPIER, input = {}, {
      !diagnosticPlayerFootContactsEnabled||
      !diagnosticAutonomousFixtureActionEnabled)))
   throw new TypeError('Wide CROSS requires original exclusive Rapier shoe action');
+ if(diagnosticResearchGoalkeeperSaveSide!==null&&(
+    !['home','away'].includes(diagnosticResearchGoalkeeperSaveSide)||
+    !diagnosticPlayerFootContactsEnabled||
+    !diagnosticAutonomousFixtureActionEnabled||
+    diagnosticAutonomousCarryEnabled||
+    diagnosticResearchShotAttacker!==null||
+    diagnosticResearchControlReceiver||
+    diagnosticResearchCarrySide!==null))
+  throw new TypeError('Goalkeeper SAVE requires isolated original Rapier shoe action');
  if(!['home','away'].includes(diagnosticResearchControlSide)||
     (diagnosticResearchControlSide==='away'&&
      (!diagnosticResearchControlReceiver||
@@ -233,7 +245,10 @@ export function createEngine(RAPIER, input = {}, {
     !diagnosticPlayerFootContactsEnabled||
     !diagnosticAutonomousFixtureActionEnabled))
   throw new TypeError('CARRY setup requires bounded genuine private shoe source');
- const stagedShoes=diagnosticResearchShotAttacker!==null?
+ const stagedShoes=diagnosticResearchGoalkeeperSaveSide!==null?
+   initialResearchGoalkeeperSaveLineup(INITIAL_PLAYERS,
+    diagnosticResearchGoalkeeperSaveSide,scenario):
+  diagnosticResearchShotAttacker!==null?
   initialResearchShotLineup(INITIAL_PLAYERS,diagnosticResearchShotAttacker,
    scenario,{blockedLane:diagnosticResearchShotBlockedLane,
     wideCross:diagnosticResearchShotWideCross}):
@@ -337,7 +352,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchBodyEncounter,diagnosticUnstagedBodyFeedbackEnabled,
     diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
-    diagnosticResearchShotWideCross,
+    diagnosticResearchShotWideCross,diagnosticResearchGoalkeeperSaveSide,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
     diagnosticResearchReceivingDecisionEnabled,diagnosticResearchReceiverTapEnabled,

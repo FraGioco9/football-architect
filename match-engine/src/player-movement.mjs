@@ -5,6 +5,8 @@ import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
+import {initialResearchGoalkeeperSaveLineup,chooseBasicGoalkeeperDiveTarget}
+ from './goalkeeper-save-foundation-b02.mjs';
 import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
 import {initialResearchCarryLineup} from './research-carry-initial-lineup.mjs';
 import {chooseOriginalOpponentBallReachM32}
@@ -1636,6 +1638,7 @@ export function createPlayerMovement(options={}){
     Reflect.ownKeys(options).some(k=>k!=='researchShotAttacker'&&
      k!=='researchShotBall'&&k!=='researchShotBlockedLane'&&
      k!=='researchShotWideCross'&&
+     k!=='researchGoalkeeperSaveSide'&&k!=='researchGoalkeeperSaveBall'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlCloseDefender'&&
@@ -1652,6 +1655,7 @@ export function createPlayerMovement(options={}){
     ((options.researchShotAttacker??null)===null&&
      options.researchControlReceiver===undefined&&
      options.researchCarrySide===undefined&&
+     options.researchGoalkeeperSaveSide===undefined&&
      options.researchBodyEncounter!==true&&
      options.researchOpposingPressConvergence!==true&&
      options.researchUnstagedNativeBodyFeedback!==true&&
@@ -1693,6 +1697,7 @@ export function createPlayerMovement(options={}){
      options.researchShotBall!==undefined||
      options.researchShotBlockedLane!==undefined||
      options.researchShotWideCross!==undefined||
+     options.researchGoalkeeperSaveSide!==undefined||
      options.researchControlReceiver!==undefined||
      options.researchControlBall!==undefined))||
     (options.researchControlOpponentFirst!==undefined&&(
@@ -1734,6 +1739,7 @@ export function createPlayerMovement(options={}){
      options.researchShotBall!==undefined||
      options.researchShotBlockedLane!==undefined||
      options.researchShotWideCross!==undefined||
+     options.researchGoalkeeperSaveSide!==undefined||
      options.researchCarrySide!==undefined||
      options.researchCarryBall!==undefined))||
     (options.researchShotAttacker!==undefined&&
@@ -1743,12 +1749,21 @@ export function createPlayerMovement(options={}){
      (options.researchShotBlockedLane!==true||
       options.researchShotWideCross!==undefined||
       !['home','away'].includes(options.researchShotAttacker)))||
+    (options.researchGoalkeeperSaveSide!==undefined&&(
+     !['home','away'].includes(options.researchGoalkeeperSaveSide)||
+     !Object.hasOwn(options,'researchGoalkeeperSaveBall')||
+     Reflect.ownKeys(options).length!==2))||
+    (options.researchGoalkeeperSaveBall!==undefined&&
+     options.researchGoalkeeperSaveSide===undefined)||
     (options.researchShotWideCross!==undefined&&(
       options.researchShotWideCross!==true||
       options.researchShotBlockedLane!==undefined||
       !['home','away'].includes(options.researchShotAttacker))))
   throw new TypeError('Only paired bounded research shot initial positions allowed');
- const initial=options.researchShotAttacker?
+ const initial=options.researchGoalkeeperSaveSide?
+  initialResearchGoalkeeperSaveLineup(INITIAL_PLAYERS,
+   options.researchGoalkeeperSaveSide,options.researchGoalkeeperSaveBall):
+  options.researchShotAttacker?
   initialResearchShotLineup(INITIAL_PLAYERS,options.researchShotAttacker,
    options.researchShotBall,{blockedLane:options.researchShotBlockedLane===true,
     wideCross:options.researchShotWideCross===true}):
@@ -1778,6 +1793,7 @@ export function createPlayerMovement(options={}){
   })):null;
  let shoePositionClamps=0,shoeHeadingClamps=0,shoeFeedbackRejects=0;
  let lastBall={x:0,y:0};
+ let goalkeeperDiveIntent=null,goalkeeperDiveIntentTicks=0;
  let pressers={home:'home-10',away:'away-10'};
  let pressSwitches={home:0,away:0};
  let opposingPressConvergence=null;
@@ -1858,6 +1874,9 @@ export function createPlayerMovement(options={}){
     secondaryPressSupport:Object.freeze({...secondaryPressSupport}),
     secondaryPressSwitches:Object.freeze({...secondaryPressSwitches}),
     secondaryPressActiveTicks:Object.freeze({...secondaryPressActiveTicks})
+   }:{}),
+   ...(options.researchGoalkeeperSaveSide!==undefined?{
+    goalkeeperDiveIntent,goalkeeperDiveIntentTicks
    }:{}),
    ...(options.researchControlChallengerReach===true?{
     realBallReachM32:Object.freeze({
@@ -1997,11 +2016,15 @@ export function createPlayerMovement(options={}){
   });
  }
  function step(ballPosition={x:0,y:0},priorRealPass=null,
-  priorRealTap=null){
+  priorRealTap=null,realBallVelocity=null){
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
   const ball=ballXY(ballPosition);
+  if(options.researchGoalkeeperSaveSide!==undefined&&(
+     !realBallVelocity||
+     !['x','y','z'].every(k=>finite(realBallVelocity[k]))))
+   throw new TypeError('Live keeper approach requires original Rapier ball velocity');
   // Exact accepted previous positions, before applying ANY new free 60Hz
   // intent. This is the only valid speed reference for an M13 correction.
   if(options.researchUnstagedNativeBodyFeedback===true)
@@ -2230,6 +2253,20 @@ export function createPlayerMovement(options={}){
    });
   };
   const targets=players.map(p=>{
+   if(options.researchGoalkeeperSaveSide===p.team&&
+      p.role==='goalkeeper'){
+    goalkeeperDiveIntent=chooseBasicGoalkeeperDiveTarget({
+     keeper:p,ballPosition,ballVelocity:realBallVelocity
+    });
+    if(goalkeeperDiveIntent){
+     goalkeeperDiveIntentTicks++;
+     // Returns only a target. The unchanged original mover still enforces
+     // speed, acceleration, turn-rate and 0.98m physical-player spacing.
+     return Object.freeze({
+      x:goalkeeperDiveIntent.x,y:goalkeeperDiveIntent.y
+     });
+    }
+   }
    if(options.researchControlChallengerReach===true&&
       p.id===((options.researchControlSide??'home')==='home'?
        'away-7':'home-7')){

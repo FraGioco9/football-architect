@@ -154,6 +154,26 @@ export function createProvisionalActionOutcomeObserver(fixtureId){
       (cross.targetX-cross.originX)*action.impulseNs.x+
        (cross.targetY-cross.originY)*action.impulseNs.y<=0
     ))throw new TypeError('Untrusted or fabricated physical CROSS target');
+   const save=action?.saveTarget;
+   if(action?.action==='save'&&(
+      !save||save.source!=='actions-b02-authentic-keeper-foot-parry-v1'||
+      save.physicalSaveAttemptOnly!==true||
+      save.nativeExclusiveShoeRequired!==true||
+      save.saveConfirmed!==false||save.officialSave!==false||
+      save.officialGoal!==false||save.officialPossession!==false||
+      save.actorId!==action.playerId||save.team!==action.team||
+      save.physicsTick!==physicsTick||
+      !['incomingVelocityX','incomingVelocityY','originX','originY','ownGoalX']
+        .every(k=>finite(save[k]))||
+      save.incomingVelocityX*(action.team==='home'?1:-1)>=-0.5||
+      Math.abs(save.ownGoalX)>52.50001||
+      !action.playerId.endsWith('-1')||
+      !action.impulseNs||![action.impulseNs.x,action.impulseNs.y,
+       action.impulseNs.z].every(finite)||
+      action.impulseNs.x*(action.team==='home'?1:-1)<=0
+    ))throw new TypeError('Untrusted goalkeeper SAVE without original shoe parry source');
+   if(action?.action!=='save'&&save!==null&&save!==undefined)
+    throw new TypeError('Non-keeper action cannot advertise a save');
    if(action?.action!=='cross'&&cross!==null&&cross!==undefined)
     throw new TypeError('Only true CROSS actions can advertise cross metadata');
    if(action?.action!=='pass'&&target!==null&&target!==undefined)

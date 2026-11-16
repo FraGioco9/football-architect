@@ -49,7 +49,7 @@ export function createPhysicalFootballDecisionObserver(){
    throw new TypeError('M23 cannot infer shoe START/END from proximity or a stale source');
   if(action!==null&&(
      action.tick!==tick||
-     !['pass','shot','cross','carry','clearance'].includes(action.action)||
+     !['pass','shot','cross','save','carry','clearance'].includes(action.action)||
      !known.has(action.playerId)||
      action.team!==known.get(action.playerId).team||
      action.appliedByRapier!==true||

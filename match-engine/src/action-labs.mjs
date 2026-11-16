@@ -18,7 +18,7 @@ import {createRealOpponentBallContestAuditM31}
 import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
-import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CROSS_LAB_STARTS,CARRY_LAB_STARTS,
+import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CROSS_LAB_STARTS,SAVE_LAB_STARTS,CARRY_LAB_STARTS,
  CHALLENGE_LAB_STARTS,CONTROL_LAB_STARTS,
  getActionLabScenario,classifyActionLabEvidence} from './action-lab-scenarios.mjs';
 
@@ -42,17 +42,19 @@ export function createControlledActionLab(RAPIER,id,{
     !['home','away'].includes(challengeSide)||
     !['contact','no-contact'].includes(challengeScene)||
     (id!=='challenge'&&(challengeSide!=='away'||challengeScene!=='contact'))||
-    (!['shot','cross'].includes(id)&&(shotSide!=='home'||shotLane!=='open'))||
-     (id==='cross'&&shotLane!=='open')||
+    (!['shot','cross','save'].includes(id)&&(shotSide!=='home'||shotLane!=='open'))||
+     (['cross','save'].includes(id)&&shotLane!=='open')||
     (id!=='carry'&&carrySide!=='home')||
     (id!=='control'&&controlScene!=='receive'))
   throw new TypeError('Only bounded SHOT, CARRY or CONTROL scenes supported');
  const selectedControlSide=spec.mode==='control'?controlSide:null;
- const selectedShotSide=['shot','cross'].includes(id)?shotSide:null;
+ const selectedShotSide=['shot','cross','save'].includes(id)?shotSide:null;
+  const goalkeeperSave=id==='save';
   const wideCross=id==='cross';
  const selectedCarrySide=id==='carry'?carrySide:null;
  const selectedChallengeSide=id==='challenge'?challengeSide:null;
- const initial=wideCross?CROSS_LAB_STARTS[selectedShotSide]:
+ const initial=goalkeeperSave?SAVE_LAB_STARTS[selectedShotSide]:
+   wideCross?CROSS_LAB_STARTS[selectedShotSide]:
    selectedShotSide?SHOT_LAB_STARTS[selectedShotSide]:
   selectedCarrySide?CARRY_LAB_STARTS[selectedCarrySide]:
   selectedControlSide?CONTROL_LAB_STARTS[selectedControlSide]:
@@ -75,7 +77,11 @@ export function createControlledActionLab(RAPIER,id,{
   ['receive-release','receive-contest','receive-challenge'].includes(controlScene);
  const adaptiveDecision=id==='control'&&controlDecisionEnabled&&
   ['receive-decide','receive-pressure-decide','receive-release','receive-contest','receive-challenge'].includes(controlScene);
- const focus=opposingControl?
+ const focus=goalkeeperSave?
+   Object.freeze(selectedShotSide==='home'?
+    ['home-1','away-10','away-1']:
+    ['away-1','home-10','home-1']):
+   opposingControl?
   Object.freeze(['home-10','home-9','away-7']):
   (closePressure||moderatePressure||contestExperiment)?Object.freeze(selectedControlSide==='home'?
    ['home-10','home-9','away-7']:['away-10','away-9','home-7']):
@@ -97,7 +103,8 @@ export function createControlledActionLab(RAPIER,id,{
  const engine=createEngine(RAPIER,initial,{
   diagnosticPlayerFootContactsEnabled:true,
   diagnosticAutonomousFixtureActionEnabled:true,
-  ...(selectedShotSide?{diagnosticResearchShotAttacker:selectedShotSide}:{}),
+  ...(goalkeeperSave?{diagnosticResearchGoalkeeperSaveSide:selectedShotSide}:
+    selectedShotSide?{diagnosticResearchShotAttacker:selectedShotSide}:{}),
   ...(blocked?{diagnosticResearchShotBlockedLane:true}:{}),
    ...(wideCross?{diagnosticResearchShotWideCross:true}:{}),
   ...(spec.mode==='control'?{
@@ -114,7 +121,10 @@ export function createControlledActionLab(RAPIER,id,{
   ...(selectedCarrySide?{diagnosticResearchCarrySide:selectedCarrySide}:{}),
   ...(spec.mode==='carry'?{diagnosticAutonomousCarryEnabled:true}:{})
  });
- const mover=createPlayerMovement(selectedShotSide?{
+ const mover=createPlayerMovement(goalkeeperSave?{
+   researchGoalkeeperSaveSide:selectedShotSide,
+   researchGoalkeeperSaveBall:initial
+  }:selectedShotSide?{
   researchShotAttacker:selectedShotSide,researchShotBall:initial,
   ...(blocked?{researchShotBlockedLane:true}:{}),
    ...(wideCross?{researchShotWideCross:true}:{})
@@ -203,7 +213,7 @@ export function createControlledActionLab(RAPIER,id,{
   // Post-impulse ball centres from the single Rapier engine, not a
   // predicted trajectory or inferred official goal.
   const p=physics.ball.position;
-  if(['shot','cross'].includes(action?.action)&&evidence.verifiedShoeImpulse){
+  if(['shot','cross','save'].includes(action?.action)&&evidence.verifiedShoeImpulse){
    shotTrace=Object.freeze({
     shooterId:action.playerId,team:action.team,tick:physics.tick,
      actionType:action.action,
@@ -312,6 +322,10 @@ export function createControlledActionLab(RAPIER,id,{
     ...(tapExperiment?{physicalReceiverTap,realReleaseSequence,
      realOpponentContest}:{}),
     ...(reachExperiment?{realBallReachM32:playerFrame.realBallReachM32}:{}),
+    ...(goalkeeperSave?{
+      goalkeeperDiveIntent:playerFrame.goalkeeperDiveIntent,
+      goalkeeperDiveIntentTicks:playerFrame.goalkeeperDiveIntentTicks
+    }:{}),
    eventCount:count,events:history,
    shotFlight:shotTrace,blockedShotObservation,
    carryTrace,carrySide:selectedCarrySide,
@@ -329,7 +343,8 @@ export function createControlledActionLab(RAPIER,id,{
   const prior=engine.snapshot();
   const frame=mover.step(prior.ball.position,
    spec.mode==='control'?firstPhysicalPassAction:null,
-   reachExperiment?engine.researchReceiverTapSnapshot():null);
+   reachExperiment?engine.researchReceiverTapSnapshot():null,
+   goalkeeperSave?prior.ball.velocity:null);
   const after=engine.step(frame);
   if(after.tick!==prior.tick+1||frame.tick!==after.tick)
    throw new Error('Action LAB must preserve real canonical 60Hz ticks');
@@ -442,6 +457,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
      snap.realReleaseSequence?.latestCompleted?
       ' · M30 '+snap.realReleaseSequence.latestCompleted.endReason+
       ' · official control unconfirmed':'')+
+   (snap.goalkeeperDiveIntentTicks?
+    ' · Keeper lateral dive approach '+snap.goalkeeperDiveIntentTicks+
+    ' original 60Hz ticks · no confirmed save':'')+
    (snap.realBallReachM32?.activeTicks?
     ' · M32 real challenger direct-ball pursuit '+
     snap.realBallReachM32.activeTicks+' native ticks':
@@ -524,7 +542,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     ' shoe START; original policy finds no open SHOT lane. No shot or goal awarded.';
   }else if(snap.evidence.witnessed){
    const kind=session.spec.goal;
-   status.textContent=kind==='cross'?
+   status.textContent=kind==='save'?
+    'Verified: genuine Rapier keeper shoe START + SAVE parry impulse; not a confirmed save.':
+    kind==='cross'?
     'Verified: genuine Rapier shoe START + lofted CROSS impulse; no completed cross or goal.':
     kind==='shot'?
     'Verified: genuine Rapier shoe START + SHOT impulse. No goal awarded.':
@@ -560,13 +580,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  }
  function resetSession(){
   stop();if(session)session.dispose();
-  shotSideLabel.hidden=!['shot','cross','carry','challenge'].includes(select.value);
+  shotSideLabel.hidden=!['shot','cross','save','carry','challenge'].includes(select.value);
   shotLaneLabel.hidden=select.value!=='shot';
   controlSceneLabel.hidden=select.value!=='control';
   challengeSceneLabel.hidden=select.value!=='challenge';
   by('action-labs-title').textContent=select.selectedOptions[0].textContent.trim();
   session=createControlledActionLab(getRapier(),select.value,{
-   shotSide:['shot','cross'].includes(select.value)?shotSide.value:'home',
+   shotSide:['shot','cross','save'].includes(select.value)?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',
    carrySide:select.value==='carry'?shotSide.value:'home',
    controlScene:select.value==='control'?controlSceneChoice.value:'receive',
@@ -575,7 +595,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   });
   trail=[{x:session.snapshot().ball.position.x,
    y:session.snapshot().ball.position.y}];
-  description.textContent=session.shotLane==='blocked'?
+  description.textContent=select.value==='save'?
+    'B02 basic goalkeeper approach: the canonical keeper moves laterally from the actual incoming ball velocity; only a real exclusive native shoe START can produce a single Rapier parry impulse. No airborne dive, catch or successful save is assumed.':
+    session.shotLane==='blocked'?
    'An opposing defender obstructs all goal-mouth lanes before tick zero. Observe real contact, never a fabricated SHOT.':
    session.controlScene==='receive-challenge'?
     'M32 research: original defender #7 uses the current REAL ball as its pursuit target only after authenticated M30 tap; same canonical 60Hz acceleration, turning, player separation and Rapier shoe collision apply; never infer a tackle or possession.':
