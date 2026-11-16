@@ -35,6 +35,8 @@ test('authoritative Standings rebinds links when loading ends after published li
  const fixtures=read('assets/competition-fixtures.js');
  assert.match(page,/attributeFilter:\['data-fa-standings-loading'\]/,
   'Standings observes the exact global loading state');
+ assert.match(page,/if\(typeof MutationObserver==='function'\)new MutationObserver/,
+  'browser-only loading observer cannot block Node/fallback renderers');
  assert.match(page,/faStandingsLoading!=='true'&&[\s\S]*?provenance\?\.kind==='authoritative'\)[\s\S]*?refresh\(\)/,
   'only settled authoritative standings can rebind native match anchors');
  assert.match(page,/addEventListener\('fa:published-match-links-change',refresh\)/,

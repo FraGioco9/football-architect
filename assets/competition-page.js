@@ -930,7 +930,7 @@
     // #659 correctly withholds match links while the table is loading.
     // Rebind verified native W/D/L anchors once that flag clears; otherwise
     // the initial tooltip-only controls can remain inert until navigation.
-    new MutationObserver(()=>{
+    if(typeof MutationObserver==='function')new MutationObserver(()=>{
       if(document.documentElement.dataset.faStandingsLoading!=='true'&&
          window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')
         refresh();
