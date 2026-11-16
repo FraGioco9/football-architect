@@ -37,10 +37,15 @@ export function basicSourcePositiveRestartSetup(players,attackSide,ball,kind){
   {x:direction*47.24,y:direction*5.5};
  // Predictor used ONLY to put a real original shoe in the moving
  // ball's path BEFORE the first native 60Hz physics step.
+ // Tangential native contact at the beginning of the live ball
+ // flight. A HEAD-ON shoe would legitimately reverse the moving ball
+ // and would therefore NOT create an out-of-play restart. This glancing
+ // setup must still produce a REAL Rapier START; proximity alone fails.
  const source=kind==='throw-in'?
-  {x:ball.x-0.22*sourceFacing,
-   y:ball.y+ball.vy/60}:
-  {x:ball.x+ball.vx/60-0.22*sourceFacing,y:ball.y};
+  {x:ball.x+0.15-0.22*sourceFacing,
+   y:ball.y+direction*0.10}:
+  {x:ball.x+direction*0.14-0.22*sourceFacing,
+   y:ball.y+direction*0.14};
  const modifications=new Map([[sourceId,source],[takerId,dest]]);
  const staged=freeze(players.map(p=>{
   const point=modifications.get(p.id);
