@@ -23,6 +23,7 @@ The existing **owner-approved PNGs** are preserved unchanged as full-resolution 
 | 54 | Massimo Bottineri (QA-reviewed candidate; not publication-approved) | `assets/players/portraits/54.webp` | `17984461e36616dc7cad8d267eb0eb12622f5372` (verified GitHub blob) | `04bb0e00c838e54cc7394671d4ba71bc9de8c895a5edc97f7cdba0e86a34fca9` | 12962 B |
 | 55 | Mario Bodi (QA-reviewed candidate; not publication-approved) | `assets/players/portraits/55.webp` | `61fcf2101e07465d3b8988efbee0af7617417508` (verified GitHub blob) | `fcdcab18571c7c524400c4a57887a51ebfa31714cefe0bba5c9e855ca0f34fda` | 12142 B |
 | 56 | Ferdinando Guerriero (QA-reviewed candidate; Draft/HOLD) | `assets/players/portraits/56.webp` | `30fdaaf6462fe676869ff46f38f011895d47240d` (verified GitHub blob) | `690054dda2bbe8ca93e79ff7d46ed33183a77a02d7a8862dbe489049fb280698` | 13380 B |
+| 57 | Gianni Cusenza (V8 QA PASS with visual caveat; Draft/HOLD) | `assets/players/portraits/57.webp` | `18afadd16bd8bf22f9ac5b4388e2daac209a78b8` (local expected blob; GitHub upload pending) | `b46e3af41182915bf150c9e299c73223f6d37877c171c7d21bb0e70c597aaad4` | 12146 B |
 
 The public allowlist and required publication file list are restricted to these 14 IDs while PR #640 remains Draft/HOLD. `tests/player-detail.test.mjs` verifies their SHA256 digests, RIFF/WEBP/VP8X headers, path allowlisting and inclusion in the published artifact, and checks the placeholder/error handling.
 
@@ -192,3 +193,14 @@ The QA-reviewed source PNG remains unchanged and outside GitHub: `player_56_ferd
 Display-only derivative `assets/players/portraits/56.webp`: Lanczos resize to 320×427, top crop 320×362, WebP quality 70 / method 6 / exact alpha. **13,380 bytes**, SHA256 `690054dda2bbe8ca93e79ff7d46ed33183a77a02d7a8862dbe489049fb280698`, verified GitHub blob SHA1 `30fdaaf6462fe676869ff46f38f011895d47240d`. RIFF/WEBP/VP8X 320×362, alpha flag and decoded transparency verified locally. No CSS/zoom/layout adjustments, changes to existing portrait binaries or protected Admin preview fallback.
 
 Mapping, fail-closed allowlist, required asset, SHA256/size/alpha test and manual guarded **DEV-only SQL** at `backend/manual/portrait-56-approved-dev.sql` are staged only. **DO NOT EXECUTE SQL.** Pending: exact-head Site/Browser/Admin/FULL CI, desktop/mobile/iPhone Safari crop and fallback QA, Admin isolation, owner acceptance and separate merge/deploy/DEV D1 authorization. Rollback: revert binary, map, allowlist, test and manual SQL, and coordinate any independently authorized DB status change. Remain **Draft/HOLD**.
+
+
+## #640 — Gianni Cusenza (#57) V8 candidate staged — Draft/HOLD
+
+User requested integration of the V8 QA-reviewed ChatGPT portrait for player 57. This authorizes PR-only staging, **not** final publication approval, merge, deploy, or D1 writes. D1 read-only verified name **Gianni Cusenza**, immutable snapshot schema `player-portraits-v2`, prompt `player-portrait-v3`, fingerprint `4367b40ea02d3a37`; `status=pending`, `asset_key=NULL`. Do not alter `snapshot_json`.
+
+Full-resolution source stays unchanged outside the repository: `football_architect_player_57_corrected_v8.png`, 1086×1448 RGBA PNG, SHA256 `a85c6e167585ffc0e0c4bc358a40f77fb560d59c5ea82244023250860261992e`. QA passed technical checks with visual caveats; exact biometric equivalence cannot be established from textual traits.
+
+Display-only derivative `assets/players/portraits/57.webp`: Lanczos resize 320×427, top crop **320×362**, WebP quality 70/method 6/exact alpha, 12,146 bytes, SHA256 `b46e3af41182915bf150c9e299c73223f6d37877c171c7d21bb0e70c597aaad4`; expected Git blob SHA1 `18afadd16bd8bf22f9ac5b4388e2daac209a78b8`. **Binary upload pending**; required integrity test cannot pass until exact blob committed and verified. No changes to CSS, protected Admin preview, or existing portraits.
+
+Public mapping, fail-closed required asset/allowlist and exact SHA/VP8X/dimension/alpha test are staged; guarded manual DEV-only SQL `backend/manual/portrait-57-approved-dev.sql` is included but **MUST NOT BE EXECUTED** without separate authorization after publication. Keep Draft/HOLD pending exact-head Site/Browser/Admin/FULL CI, desktop/mobile/Safari and fallback QA, owner publication approval, merge/deploy, and DEV D1 authorization.
