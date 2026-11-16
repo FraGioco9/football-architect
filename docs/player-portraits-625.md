@@ -22,6 +22,7 @@ The existing **owner-approved PNGs** are preserved unchanged as full-resolution 
 | 53 | Paolo Lacasa (QA-reviewed candidate; not publication-approved) | `assets/players/portraits/53.webp` | `af4f6b07f973072851fb2d8f819405f7e6626fee` (verified upload) | `dc088027b0b6462120ee99604429979be22d870da30891250215e5f73e23a457` | 12554 B |
 | 54 | Massimo Bottineri (QA-reviewed candidate; not publication-approved) | `assets/players/portraits/54.webp` | `17984461e36616dc7cad8d267eb0eb12622f5372` (verified GitHub blob) | `04bb0e00c838e54cc7394671d4ba71bc9de8c895a5edc97f7cdba0e86a34fca9` | 12962 B |
 | 55 | Mario Bodi (QA-reviewed candidate; not publication-approved) | `assets/players/portraits/55.webp` | `61fcf2101e07465d3b8988efbee0af7617417508` (verified GitHub blob) | `fcdcab18571c7c524400c4a57887a51ebfa31714cefe0bba5c9e855ca0f34fda` | 12142 B |
+| 56 | Ferdinando Guerriero (QA-reviewed candidate; Draft/HOLD) | `assets/players/portraits/56.webp` | `30fdaaf6462fe676869ff46f38f011895d47240d` (verified GitHub blob) | `690054dda2bbe8ca93e79ff7d46ed33183a77a02d7a8862dbe489049fb280698` | 13380 B |
 
 The public allowlist and required publication file list are restricted to these 14 IDs while PR #640 remains Draft/HOLD. `tests/player-detail.test.mjs` verifies their SHA256 digests, RIFF/WEBP/VP8X headers, path allowlisting and inclusion in the published artifact, and checks the placeholder/error handling.
 
@@ -180,3 +181,14 @@ QA-corrected source PNG stays unchanged **outside GitHub**: `player_60_enrico_pa
 Display-only target `assets/players/portraits/60.webp` prepared with Lanczos resize to 320×427, top crop to **320×362**, WebP quality 70 / method 6 / **exact alpha**: **13,670 bytes**, SHA256 `27b1033f7ed64362334f50d0367606d6d6b8368656c38c3f0f8a3045e113e75e`, expected Git blob SHA1 `c08145780edd701f0132d742be7bff9ca58bbbbd`. Confirm byte-perfect Git blob after uploading. Source PNG is not committed.
 
 Staged changes: public player detail mapping, required-asset path, fail-closed publication allowlist, exact WebP RIFF/VP8X alpha/dimension/SHA256 test, and guarded manual DEV-only SQL at `backend/manual/portrait-60-approved-dev.sql`. **DO NOT EXECUTE SQL**. Existing portrait binaries, shared CSS/zoom, protected Admin preview fallback, snapshots and database stay unchanged. **HOLD:** binary upload/verification, exact-head CI, desktop/mobile/Safari image crop/fallback QA, separate portrait acceptance and merge/deploy/DEV-D1 authorization.
+
+
+## #640 — Ferdinando Guerriero (#56) QA-reviewed staging — Draft/HOLD
+
+Owner requested PR-only staging after technical/visual QA. This does not grant final portrait acceptance, merge, deploy, publication or a D1 write. DEV D1 was queried read-only: player **56 Ferdinando Guerriero**, immutable `player-portraits-v2` / `player-portrait-v3`, fingerprint `9bdcd229a0c5c6c8`, `status=pending`, `asset_key=NULL`. Never mutate `snapshot_json` or recompute appearance from current gameplay attributes.
+
+The QA-reviewed source PNG remains unchanged and outside GitHub: `player_56_ferdinando_guerriero_bozza_uniformata.png`, 1086×1448 RGBA; SHA256 `dbfa970a5ad46aa84808894ff3dae5de377eed61b2b09264702be443023a16ef`. Alpha and visible edge QA passed; absolute facial fidelity to the textual traits cannot be certified.
+
+Display-only derivative `assets/players/portraits/56.webp`: Lanczos resize to 320×427, top crop 320×362, WebP quality 70 / method 6 / exact alpha. **13,380 bytes**, SHA256 `690054dda2bbe8ca93e79ff7d46ed33183a77a02d7a8862dbe489049fb280698`, verified GitHub blob SHA1 `30fdaaf6462fe676869ff46f38f011895d47240d`. RIFF/WEBP/VP8X 320×362, alpha flag and decoded transparency verified locally. No CSS/zoom/layout adjustments, changes to existing portrait binaries or protected Admin preview fallback.
+
+Mapping, fail-closed allowlist, required asset, SHA256/size/alpha test and manual guarded **DEV-only SQL** at `backend/manual/portrait-56-approved-dev.sql` are staged only. **DO NOT EXECUTE SQL.** Pending: exact-head Site/Browser/Admin/FULL CI, desktop/mobile/iPhone Safari crop and fallback QA, Admin isolation, owner acceptance and separate merge/deploy/DEV D1 authorization. Rollback: revert binary, map, allowlist, test and manual SQL, and coordinate any independently authorized DB status change. Remain **Draft/HOLD**.
