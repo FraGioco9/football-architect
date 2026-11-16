@@ -70,7 +70,7 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   for(const field of ['competition','season','round','status'])
    assert.ok(section.includes('data-match-overview="'+field+'"'));
   assert.ok(section.indexOf('app-match-pitch-overlay')<section.indexOf('data-match-pitch role="img"'));
-  assert.match(section,/data-match-overview="status"[\\s\\S]*<\\/div>\\s*<div class="app-match-pitch" data-match-pitch/);
+  assert.match(section,/data-match-overview="status"[\s\S]*<\/div>\s*<div class="app-match-pitch" data-match-pitch/);
   for(const side of ['home','away']){
    assert.ok(section.includes('data-match-side="'+side+'"'));
    assert.ok(section.includes('data-match-side-crest="'+side+'"'));
