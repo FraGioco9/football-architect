@@ -30,7 +30,7 @@
   let firstTies=knockoutPhases[0]?.ties.filter(t=>t.legs===2)||[];
   let hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
   let currentMatchday=null,rounds=null,postseason=[],selected=navigation.get().matchday;
-  let publishedSeason=null,publishedKey=null,pendingKey=null,fetchSequence=0,publishedIds=new Set(),publishedLookup=null;
+  let publishedSeason=null,publishedKey=null,pendingKey=null,fetchSequence=0,publishedIds=new Set(),publishedLookup=null,publishedAbort=null;
   // Match navigation requires both finished UI hydration and a fully read
   // official collection. A pending request must not expose old verified IDs.
   const matchLinksReady=()=>document.documentElement.dataset.faStandingsLoading!=='true'&&pendingKey===null;
@@ -611,12 +611,13 @@
     const key=[season,definition.id,source.world.generation,source.world.revision].join(':');
     if(key===publishedKey||key===pendingKey)return;
     pendingKey=key;const seq=++fetchSequence;
+    const requestController=new AbortController();publishedAbort=requestController;
     // Preserve the fixture boxes, but revoke old Fixtures/knockout and
     // Standings native links while this exact-world lookup is unresolved.
     render();syncKnockoutLinks();notifyPublishedMatchLinks();
     try{
       const response=await fetch('/api/matches/seasons/'+season+'/competitions/'+definition.id,
-       {credentials:'omit',cache:'no-store',redirect:'error'});
+       {credentials:'omit',cache:'no-store',redirect:'error',signal:requestController.signal});
       if(response.status===404){if(seq===fetchSequence)publishedKey=key;return;}
       if(!response.ok)throw Error('Published fixtures unavailable');
       const data=await response.json(),count=international?72:240;
@@ -684,8 +685,8 @@
       syncKnockoutLinks();
     }catch{
       if(seq===fetchSequence){publishedSeason=null;publishedKey=null;publishedIds.clear();publishedLookup=null;notifyPublishedMatchLinks();syncKnockoutLinks();}
-    }finally{if(pendingKey===key){
-      pendingKey=null;render();syncKnockoutLinks();
+    }finally{if(seq===fetchSequence&&pendingKey===key){
+      pendingKey=null;publishedAbort=null;render();syncKnockoutLinks();
       // In the combined #656/#659 source, resolve Standings native links
       // only after pendingKey is cleared; otherwise W/D/L stays inert.
       notifyPublishedMatchLinks();
@@ -714,6 +715,20 @@
     }
     syncKnockoutLinks();
     if(['standings','fixtures','postseason'].includes(navigation.get().view))void readPublishedFixtures();
+  });
+  // Safari may keep this document alive in its Back/Forward cache while a
+  // published-match fetch is suspended. Retire only the unfinished request;
+  // already verified same-world IDs remain cached, with no extra list read.
+  window.addEventListener('pagehide',()=>{
+    if(pendingKey!==null){
+      fetchSequence++;pendingKey=null;publishedAbort?.abort();publishedAbort=null;
+    }
+  });
+  window.addEventListener('pageshow',event=>{
+    if(!event.persisted)return;
+    delete document.documentElement.dataset.faFixtureHoverSuspended;
+    render();syncKnockoutLinks();notifyPublishedMatchLinks();
+    void readPublishedFixtures();
   });
   window.addEventListener('fa:competition-context-change',contextChanged);
   window.addEventListener('fa:source-change',()=>{publishedSeason=null;publishedIds.clear();publishedLookup=null;publishedKey=null;pendingKey=null;fetchSequence++;notifyPublishedMatchLinks();syncKnockoutLinks();if(window.faCompetitionContext?.seasonData?.provenance?.kind!=='dev')void readPublishedFixtures();});
