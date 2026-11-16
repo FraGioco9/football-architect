@@ -358,7 +358,7 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   assert.equal(nav.size,40);
   assert.equal(nav.groups.length,3);
   assert.equal(nav.disabled,false);
-  assert.match(nav.placeholder,/All situations \\(39\\)/);
+  assert.equal(nav.placeholder,'All situations (39)');
   const ballNav=await evalJs("(()=>{const p=document.getElementById('lab-all-situations');"+
    "p.value='ball:roll';p.dispatchEvent(new Event('change',{bubbles:true}));"+
    "return {selected:document.getElementById('preset').value,"+
