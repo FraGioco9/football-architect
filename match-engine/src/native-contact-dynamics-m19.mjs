@@ -2,6 +2,8 @@
 // telemetry. Never changes position, targets, events or official authority.
 import {INITIAL_PLAYERS,PLAYER_MAX_SPEED_MPS,
  PLAYER_MIN_SEPARATION_M} from './player-movement.mjs';
+import {createOriginalSecondaryDutyContinuity}
+ from './secondary-duty-continuity-m22.mjs';
 
 const freeze=Object.freeze;
 const thresholds=freeze([1.5,3,5,8]);
@@ -46,6 +48,7 @@ export function createNativeEncounterTelemetry(){
  let firstNativeStart=null,minRealOpponentGap=Infinity;
  const open=new Map(),firstCloseness={};
  const eventWindows=[];
+ let secondaryDutyContinuity=null;
  function record({tick,frame,native,ball}){
   if(!Number.isSafeInteger(tick)||tick!==lastTick+1||
      !frame||frame.tick!==tick||
@@ -160,6 +163,14 @@ export function createNativeEncounterTelemetry(){
   if(JSON.stringify([...open.keys()].sort())!==
      JSON.stringify(native.activePairs))
    throw new TypeError('M19 true same-tick active body ledger must reconcile');
+  // M22 reads this SAME independently reconciled Rapier frame and the
+  // original M20 selected roles. It makes no movement or physics writes.
+  const carriesDuty=Object.hasOwn(frame,'secondaryPressSupport');
+  if(lastTick===0&&carriesDuty)
+   secondaryDutyContinuity=createOriginalSecondaryDutyContinuity();
+  if(Boolean(secondaryDutyContinuity)!==carriesDuty)
+   throw new TypeError('M22 source opt-in cannot change mid-session');
+  secondaryDutyContinuity?.record({tick,frame,native});
   if((begins.length||ends.length)&&eventWindows.length<50)
    eventWindows.push(freeze({tick,
     starts:freeze(begins.map(x=>x.pair)),
@@ -183,6 +194,13 @@ export function createNativeEncounterTelemetry(){
    firstNativeStart,
    completedNativeContactDurationsTicks:freeze([...bodyPairLifetimes]),
    stillActiveNativePairs:freeze([...open.keys()].sort()),
+   stillActiveNativePairAgesTicks:freeze([...open.entries()].sort(
+    ([a],[b])=>a.localeCompare(b)).map(([pair,startTick])=>freeze({
+     pair,observedTicks:lastTick-startTick+1,rightCensored:true
+    }))),
+   ...(secondaryDutyContinuity?{
+    secondaryDutyContinuity:secondaryDutyContinuity.snapshot()
+   }:{}),
    proximity:freeze(Object.fromEntries(thresholds.map(x=>[
     String(x),freeze({...close[String(x)]})
    ]))),

@@ -32,11 +32,17 @@ jobs:
         env:
           M20_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
         run: npm --prefix match-engine run audit:secondary-press
+      - name: Authentic second-defender role continuity and contact lifetimes
+        env:
+          M22_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: npm --prefix match-engine run audit:role-continuity
       - name: Archive true Rapier baseline and variant report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: me-628-m20-genuine-secondary-press
-          path: match-engine/match-engine-m20-support.json
+          path: |
+            match-engine/match-engine-m20-support.json
+            match-engine/match-engine-m22-continuity.json
           if-no-files-found: warn
           retention-days: 30
