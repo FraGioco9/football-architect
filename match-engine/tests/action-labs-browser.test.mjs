@@ -629,6 +629,39 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    assert.match(measured.status,/Neither proximity nor presser motion certifies a tackle, possession or pass/);
    process.stdout.write('MOVEMENT_LAB_M10_UNSTAGED '+JSON.stringify(measured)+'\n');
   }
+  // M12 genuine unstaged original opposing press convergence.
+  // One shared native Rapier queue, normal player formation and 0.49m
+  // bodies. Positive is native START of the original press pair ONLY.
+  for(const [choice,side] of [
+   ['opposing-convergence','home'],['opposing-convergence','away'],
+   ['opposing-convergence-off','home'],['opposing-convergence-off','away']
+  ]){
+   const measured=await evalJs(
+    "(()=>{const c=document.getElementById('movement-labs-choice');"+
+    "const s=document.getElementById('movement-labs-side');"+
+    "c.value="+JSON.stringify(choice)+";c.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "s.value="+JSON.stringify(side)+";s.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "for(let t=0;t<100;t++)document.getElementById('movement-labs-step').click();"+
+    "return {choice:c.value,side:s.value,readout:document.getElementById('movement-labs-readout').textContent,"+
+    "status:document.getElementById('movement-labs-status').textContent};})()");
+   assert.equal(measured.choice,choice);
+   assert.equal(measured.side,side);
+   assert.match(measured.readout,/^Tick 100 /);
+   assert.match(measured.readout,/Rapier native bodies 22/);
+   assert.match(measured.readout,/single native queue true/);
+   if(choice==='opposing-convergence'){
+    assert.match(measured.readout,/original convergence active true/);
+    assert.match(measured.readout,/native opposing STARTs [1-9][0-9]*/);
+    assert.match(measured.readout,/closest observed opposing pair 0\.98 m/);
+    assert.match(measured.status,/Verified: two original opposing pressers converged naturally on actual ball/);
+   }else{
+    assert.match(measured.readout,/original convergence active false/);
+    assert.match(measured.readout,/native opposing STARTs 0/);
+    assert.match(measured.status,/Negative: source-grounded press-to-ball convergence OFF/);
+   }
+   assert.match(measured.status,/no tackle, official possession or body feedback/);
+   process.stdout.write('MOVEMENT_LAB_M12_NATIVE_PRESS '+JSON.stringify(measured)+'\n');
+  }
   for(const [width,height] of [[1280,720],[1440,900]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
    const size=await evalJs("(()=>{const d=document.getElementById('movement-labs-dialog');"+

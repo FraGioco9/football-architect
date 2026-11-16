@@ -11,6 +11,8 @@ import {createPlayerMovement,INITIAL_PLAYERS,PLAYER_MIN_SEPARATION_M,
  from '../src/player-movement.mjs';
 import {auditUnstagedBodyContacts,M11_BALL_STARTS}
  from '../src/unstaged-body-contact-audit.mjs';
+import {createControlledMovementLab} from '../src/movement-labs.mjs';
+import {MOVEMENT_LAB_SCENARIOS} from '../src/movement-lab-scenarios.mjs';
 
 test('M12 source-only opposing presser convergence has strict research-only opt-in',()=>{
  const baseline=createPlayerMovement();
@@ -160,4 +162,67 @@ test('M12 unchanged normal policy and no native-physics negative cannot certify 
  }
  assert.throws(()=>auditUnstagedBodyContacts(R,{
   movementPolicy:'fake-opponent'}),TypeError);
+});
+
+test('M12 DEV Movement LAB current-world HOME/AWAY real positive and equivalent negative',
+ {timeout:65000},async()=>{
+ const R=await initializeRapier(wasm);
+ assert.deepEqual(MOVEMENT_LAB_SCENARIOS.filter(x=>x.phase==='M12')
+  .map(x=>x.id),['opposing-convergence','opposing-convergence-off']);
+ const outcomes={};
+ for(const side of ['home','away'])for(const id of
+  ['opposing-convergence','opposing-convergence-off']){
+  const a=createControlledMovementLab(R,id,{side});
+  const b=createControlledMovementLab(R,id,{side});
+  let positive=false;
+  try{
+   assert.equal(a.snapshot().tick,0);
+   for(let tick=1;tick<=110;tick++){
+    const f=a.step(),replay=b.step();
+    assert.deepEqual(f,replay,'source and native 60Hz replay '+side+' '+id);
+    assert.equal(f.tick,tick);
+    assert.equal(f.readOnly,true);
+    assert.equal(f.officialMatchAction,false);
+    assert.equal(f.officialPossession,false);
+    assert.equal(f.officialMatchResult,null);
+    assert.equal(f.readout.verifiedMatchBodyCollision,false);
+    assert.equal(f.readout.nativeBodyCount,22);
+    assert.equal(f.readout.nativeSharedOneQueue,true);
+    assert.equal(f.readout.nativeBodyControlledEncounter,false);
+    assert.equal(f.readout.nativeBodyResearchColliderRadiusM,
+     PLAYER_MIN_SEPARATION_M/2);
+    assert.equal(f.readout.nativeBodyPositionsFedBack,false);
+    assert.ok(f.readout.minSpacingM>=PLAYER_MIN_SEPARATION_M-1e-8);
+    for(let i=0;i<22;i++)
+     assert.equal(f.players[i].id,INITIAL_PLAYERS[i].id);
+    if(f.readout.witnessed)positive=true;
+   }
+   const last=a.snapshot();
+   if(id==='opposing-convergence'){
+    assert.equal(positive,true);
+    assert.equal(last.readout.witnessed,true);
+    assert.ok(last.readout.nativeBodyStarts>0);
+    assert.ok(last.readout.genuineOpposingConvergenceBodyStarts>0);
+    assert.ok(last.readout.observedOpposingConvergenceTicks>0);
+    assert.ok(last.readout.minimumNativeOpposingContestGapM>=
+     PLAYER_MIN_SEPARATION_M-1e-7);
+   }else{
+    assert.equal(positive,false);
+    assert.equal(last.readout.witnessed,false);
+    assert.equal(last.readout.genuineOpposingConvergenceBodyStarts,0);
+    assert.equal(last.readout.observedOpposingConvergenceActive,false);
+    assert.equal(last.readout.observedOpposingConvergenceTicks,0);
+    assert.equal(last.readout.nativeBodyStarts,0);
+   }
+   outcomes[side+'-'+id]={
+    sourceContestTicks:last.readout.observedOpposingConvergenceTicks,
+    genuineOpposingStarts:last.readout.genuineOpposingConvergenceBodyStarts,
+    allNativeBodyStarts:last.readout.nativeBodyStarts,
+    closestOpposingPair:last.readout.minimumNativeOpposingContestGapM,
+    witnessed:last.readout.witnessed
+   };
+  }finally{a.dispose();b.dispose();}
+ }
+ process.stdout.write('ME_628_M12_LAB_POSITIVE_NEGATIVE '+
+  JSON.stringify(outcomes)+'\n');
 });

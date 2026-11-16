@@ -12,6 +12,8 @@ const delta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 const encounterOrOff=id=>['body-encounter','body-encounter-off',
  'shared-contacts','shared-contacts-off'].includes(id);
 const pressureSceneLabel=id=>id==='pressure-support'||id==='pressure-neutral';
+const opposingConvergenceLabel=id=>id==='opposing-convergence'||
+ id==='opposing-convergence-off';
 
 export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
@@ -31,7 +33,11 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  // support/press assignments. No scripted player encounter or target.
  const pressureScene=scene.spec.id==='pressure-support'||
   scene.spec.id==='pressure-neutral';
- const sharedContacts=scene.spec.id==='shared-contacts'||pressureScene;
+ const opposingConvergence=scene.spec.id==='opposing-convergence';
+ const opposingConvergenceOff=scene.spec.id==='opposing-convergence-off';
+ const opposingConvergenceScene=opposingConvergence||opposingConvergenceOff;
+ const sharedContacts=scene.spec.id==='shared-contacts'||
+  pressureScene||opposingConvergenceScene;
  const sharedOff=scene.spec.id==='shared-contacts-off';
  // M9 alone stages its controlled encounter; M10 only shares the
  // authentic event queue and NEVER opts into fixture player positions.
@@ -50,7 +56,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    }:{})
   }:{});
  const mover=usesOriginalControl?null:createPlayerMovement(
-  encounter?{researchBodyEncounter:true}:{}
+  encounter?{researchBodyEncounter:true}:
+  opposingConvergence?{researchOpposingPressConvergence:true}:{}
  );
  let disposed=false,latest=null,origin=null,previous=null;
  let pathM=0,maxSpeedMps=0,maxBrakeMps2=0,totalTurnRad=0;
@@ -58,6 +65,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  let measuredOpponentPathM=0,minContestedPlayerGapM=Infinity;
  let supportRunPathM=0,supportNetAdvanceM=0;
  let observedSharedFootStarts=0;
+ let nearestNativeOpposingContestGapM=Infinity;
+ let genuineOpposingConvergenceBodyStarts=0;
  let opposingPresserPathM=0,opposingPresserMovedTicks=0;
  let maxSupportClearanceReadoutErrorM=0;
  const contestedOpponentId=physicalContest?'away-7':null;
@@ -88,6 +97,30 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
       bodySample.physicalActors.some((p,i)=>p.id!==frame.players[i].id)))
    throw new Error('Only this-tick original 22-body Rapier event source accepted');
   if(physics.tick!==frame.tick)throw new Error('Canonical 60 Hz movement and Rapier tick mismatch');
+  const actualPressContest=opposingConvergence?
+   frame.originalOpposingPressConvergence:null;
+  if(opposingConvergence&&physics.tick>0&&
+     (!actualPressContest||typeof actualPressContest.active!=='boolean'))
+   throw new Error('M12 requires the two actual source pressers');
+  if(opposingConvergenceScene&&(
+     !bodySample||!sharedSample?.oneNativeEventQueue||
+     bodySample.controlledEncounter!==false||
+     bodySample.collisionColliderRadiusM!==PLAYER_MIN_SEPARATION_M/2))
+   throw new Error('M12 requires unstaged original 0.49m native bodies');
+  if(opposingConvergence&&actualPressContest?.active){
+   const ids=actualPressContest.playerIds;
+   const a=bodySample.physicalActors.find(p=>p.id===ids[0]);
+   const b=bodySample.physicalActors.find(p=>p.id===ids[1]);
+   if(!a||!b||a.team===b.team)
+    throw new Error('M12 true opposing identities missing from Rapier world');
+   nearestNativeOpposingContestGapM=Math.min(
+    nearestNativeOpposingContestGapM,
+    Math.hypot(a.position.x-b.position.x,a.position.y-b.position.y));
+   const pair=[...ids].sort().join('|');
+   genuineOpposingConvergenceBodyStarts+=bodySample.events.filter(e=>
+    e.tick===physics.tick&&e.type==='rapier-body-start'&&
+    e.source==='native-rapier-collision-event'&&e.pair===pair).length;
+  }
   const supportScene=scene.spec.id==='support-lane'||
    scene.spec.id==='support-neutral'||pressureScene;
   const support=supportScene?frame.supports?.[scene.side]??null:null;
@@ -237,6 +270,9 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     opposingPresserPathM>0.25&&opposingPresserMovedTicks>0&&
     bodySample?.physicalActors.length===22&&
     sharedSample?.oneNativeEventQueue===true):
+   opposingConvergenceScene?Boolean(opposingConvergence&&
+    genuineOpposingConvergenceBodyStarts>0&&
+    sharedSample?.oneNativeEventQueue===true):
    nativeBodies?Boolean(bodySample&&bodySample.actualNativeStarts>0&&
     (!encounter||bodySample.appliedMoverResponses>0)&&
     (!sharedContacts||(sharedSample?.oneNativeEventQueue===true&&
@@ -292,6 +328,16 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     unstagedOriginalPlayers:pressureScene,
     authenticatedDynamicOpposition:pressureScene&&
      opposingPresserPathM>0.25&&opposingPresserMovedTicks>0,
+    unstagedOpposingConvergence:opposingConvergenceScene,
+    observedOpposingConvergenceActive:Boolean(actualPressContest?.active),
+    observedOpposingConvergencePair:actualPressContest?.playerIds??null,
+    observedOpposingConvergenceTicks:frame.actualContestActiveTicks??0,
+    observedOpposingConvergenceStarts:frame.actualContestStarts??0,
+    observedOpposingPresserGapM:actualPressContest?.opponentGapM??null,
+    minimumNativeOpposingContestGapM:
+     nearestNativeOpposingContestGapM===Infinity?
+      null:nearestNativeOpposingContestGapM,
+    genuineOpposingConvergenceBodyStarts,
     nativeBodyCount:bodySample?.physicalActors.length??0,
     nativeBodyStarts:bodySample?.actualNativeStarts??0,
     nativeBodyEnds:bodySample?.actualNativeEnds??0,
@@ -447,7 +493,8 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
        two(m.actualSupportLaneOpponentClearanceM))+' m':''):'')+
    (['body-world','body-off','body-encounter','body-encounter-off',
      'shared-contacts','shared-contacts-off','pressure-support',
-     'pressure-neutral'].includes(f.scenarioId)?
+     'pressure-neutral','opposing-convergence',
+     'opposing-convergence-off'].includes(f.scenarioId)?
     ' · Rapier native bodies '+m.nativeBodyCount+
     ' · genuine starts '+m.nativeBodyStarts+
     ' · min physical gap '+
@@ -460,10 +507,28 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
       ' · actual mover responses '+m.nativeBodyAcceptedResponses+
       ' · active native pairs '+m.nativeBodyActivePairs.length:'')+
      (f.scenarioId==='shared-contacts'||f.scenarioId==='shared-contacts-off'||
-      pressureSceneLabel(f.scenarioId)?
+      pressureSceneLabel(f.scenarioId)||opposingConvergenceLabel(f.scenarioId)?
       ' · single native queue '+m.nativeSharedOneQueue+
       ' · genuine shoe STARTs '+m.authenticSharedShoeStarts+
-      ' · shared collision events last tick '+m.nativeSharedCollisionEventsLastTick:''):'');
+      ' · shared collision events last tick '+m.nativeSharedCollisionEventsLastTick:'')+
+     (opposingConvergenceLabel(f.scenarioId)?
+      ' · original convergence active '+m.observedOpposingConvergenceActive+
+      ' · native opposing STARTs '+m.genuineOpposingConvergenceBodyStarts+
+      ' · closest observed opposing pair '+
+      (m.minimumNativeOpposingContestGapM===null?'none':
+       two(m.minimumNativeOpposingContestGapM))+' m':''):'');
+  if(opposingConvergenceLabel(f.scenarioId)){
+   status.textContent=f.scenarioId==='opposing-convergence-off'?
+    'Negative: source-grounded press-to-ball convergence OFF; no invented body contact witness.':
+    m.witnessed?
+     'Verified: two original opposing pressers converged naturally on actual ball; genuine native Rapier body START recorded.':
+     'Original pressers observed; no genuine native Rapier body START proven yet.';
+   status.textContent+=' Original 0.98m guard; native body STARTs '+
+    m.nativeBodyStarts+', actual opposing STARTs '+
+    m.genuineOpposingConvergenceBodyStarts+
+    '. Read-only physics: no tackle, official possession or body feedback.';
+   return;
+  }
   if(pressureSceneLabel(f.scenarioId)){
    status.textContent=m.witnessed?
     'Verified: original unstaged support run with actual moving opposing presser under one native Rapier queue.':

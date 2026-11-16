@@ -12,6 +12,16 @@ The M11 matrix sampled 24 ordinary 22-player matches for 160 ticks and saw **zer
 - The core runs the same M9 one-original-Rapier-ball-world / one-authentic-collision-and-force-queue research mode with all 22 native body + shoe colliders. Only actual native `rapier-body-start` events, with the original ID pair and tick, count as physically real body contact. Mere presser convergence/proximity, refusal by canonical hard guard, or physical shoe START is not a body event.
 - An opt-in extension to the existing M11 reproducible audit, rather than an unrelated artificial scene, measures both positive convergence and negative original policy from the same fixed 22-player lineup and real ball-state inputs. The read-only M11 response-admissibility screen is reused; it never modifies the authoritative mover, takes possession or awards a tackle.
 
+## First exact-head evidence (M12 research source)
+
+[ME-01 run #43787240432](https://github.com/FraGioco9/football-architect/actions/runs/43787240432) succeeded on `7b06bd3`: **333/333 Node**, **9/9 routing**, Chrome existing LAB/viewport and benchmark. The six-source-state HOME/AWAY matrix (12 total, 225 ticks each) observed **four genuine native body START events**, on **four positive states** and involving independently selected real opposing pressers: centre HOME/AWAY at **tick 67** (`away-10|home-10`), middle-halfspace HOME **tick 152** and AWAY **tick 155** (`away-11|home-11`). Four states engaged; eight observed at least one authentic shoe START. No artificially enlarged native colliders and no staged players.
+
+The smallest observed original canonical separation in the positive centre scenario was **0.980667m**, and the independently screened native solver position passed the 0.98m bound in the first actual contact tick (read-only; no physical mover write).
+
+## DEV LAB verification
+
+M-19 **Natural opposing press convergence** exposes original 22-player autonomous pressing, current real opposed-presser evidence, measured pair gap, and source-authenticated native Rapier body START, via the existing single original Rapier ball World/one native queue. M-20 **Press convergence OFF** uses precisely the same unstaged initial lineup and ball, with the new press-to-ball intent disabled but native bridges still active; it must not invent a positive. Both are HOME/AWAY mirrored with Chrome interaction and deterministic Node replay. No new 11v11 or tactics panel.
+
 ## Acceptance plan
 
 - Compare six pre-selected ordinary initial ball territories mirrored HOME/AWAY (12 research sessions), 225 original 60Hz ticks each. Record real observed engagement ticks/actor IDs and distances, nearest real opposing player gap, same-world original native collision STARTs (including their exact pair/tick), native shoe STARTs, and source-valid read-only body response opportunities.
