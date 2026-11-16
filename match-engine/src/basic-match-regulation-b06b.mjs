@@ -6,28 +6,35 @@ import {createPlayerMovement,INITIAL_PLAYERS} from './player-movement.mjs';
 import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
 import {createBasicMatchTimelineB06,basicMatchClockB06,
  B06_HALF_TICKS,B06_FULL_TICKS} from './basic-match-clock-score-b06.mjs';
-export const B06B_SESSION_VERSION='me-628-b06b-real-two-half-native-source-v1';
+export const B06B_SESSION_VERSION='me-628-b06b-real-two-half-native-source-v2';
 const freeze=Object.freeze;
 export function createBasicRegulationSessionB06b(RAPIER,{
- researchHalfTicks=B06_HALF_TICKS
+ researchHalfTicks=B06_HALF_TICKS,researchOpeningKickoff=false
 }={}){
+ if(typeof researchOpeningKickoff!=='boolean')
+  throw new TypeError('B06b opening option must be boolean');
  if(!RAPIER||typeof RAPIER.World!=='function'||
    !Number.isSafeInteger(researchHalfTicks)||
    researchHalfTicks<120||researchHalfTicks>B06_HALF_TICKS)
   throw new TypeError('B06b requires Rapier and a bounded authentic 60Hz half');
+ const openingRequired=researchOpeningKickoff||researchHalfTicks===B06_HALF_TICKS;
  // This is a dedicated research-only match lifecycle: the same original
  // Rapier World, one ball and the same canonical movement for all 22 ids.
  const engine=createEngine(RAPIER,{
-  preset:'roll',seed:'me-628-b06b-real-halftime',x:0,y:20,z:0,
+  preset:'roll',seed:'me-628-b06b-real-halftime',x:0,
+  y:openingRequired?0:20,z:0,
   vx:0,vy:0,vz:0
  },{
   diagnosticPlayerFootContactsEnabled:true,
-  diagnosticB06bHalftimeTick:researchHalfTicks
+  diagnosticB06bHalftimeTick:researchHalfTicks,
+  diagnosticB06bOpeningKickoffEnabled:openingRequired
  });
- const mover=createPlayerMovement({researchB06bHalftimeTick:researchHalfTicks});
+ const mover=createPlayerMovement({researchB06bHalftimeTick:researchHalfTicks,
+  ...(openingRequired?{researchB06bOpeningKickoffEnabled:true}:{})});
  const referee=createBasicMatchRefereeB05();
  const ledger=createBasicMatchTimelineB06({b06bRealHalftimePause:true});
- let disposed=false,phase='first-half',clockTicks=0,halftimePlacement=null,
+ let disposed=false,phase=openingRequired?'opening-kickoff':'first-half',
+  clockTicks=0,openingKickoff=null,halftimePlacement=null,
   kickoff=null,end=null,deadBall=null;
  let frame=mover.snapshot(),physics=engine.snapshot();
  function observe(){
@@ -53,8 +60,11 @@ export function createBasicRegulationSessionB06b(RAPIER,{
     originalPhysicsSourceTick:physics.tick,
     halfTimeRestartVerified:kickoff!==null,
     completedMatchVerified:end!==null&&!shortened}),
-   phase,halfTime:halftimePlacement,secondHalfKickoff:kickoff,
-   final:end,realFull90MinutesVerified:end!==null&&!shortened,
+   phase,firstHalfKickoff:openingKickoff,
+   halfTime:halftimePlacement,secondHalfKickoff:kickoff,
+   final:end,
+   realFull90MinutesVerified:end!==null&&!shortened&&openingKickoff!==null,
+   fullFootballActionCoverageVerified:false,
    abbreviatedResearchRun:shortened,
    physicsBall:physics.ball,
    canonical22:frame.players.length===22&&INITIAL_PLAYERS.every((p,i)=>
@@ -77,7 +87,11 @@ export function createBasicRegulationSessionB06b(RAPIER,{
    throw new Error('B06b requires actual original canonical 60Hz movement and physics');
   // The private native shoe bridge has already observed the current
   // same-world solver. No synthetic shoe START or virtual possession.
-  if(phase==='half-time'){
+  if(phase==='opening-kickoff'){
+   openingKickoff=engine.b06bOriginalOpeningKickoff(frame);
+   if(!openingKickoff)throw new Error('B06b requires a genuine opening HOME sole Rapier shoe START');
+   phase='first-half';clockTicks++;
+  }else if(phase==='half-time'){
    const confirmed=engine.b06bOriginalSecondHalfKickoff(frame);
    if(confirmed){
     kickoff=confirmed;phase='second-half';
@@ -95,7 +109,7 @@ export function createBasicRegulationSessionB06b(RAPIER,{
    physics=engine.snapshot();
   }
   if(phase==='second-half'&&clockTicks===researchHalfTicks*2){
-   const verified=kickoff!==null&&
+   const verified=(!openingRequired||openingKickoff!==null)&&kickoff!==null&&
     halftimePlacement?.physicsTick===researchHalfTicks&&
     kickoff.tick>halftimePlacement.physicsTick&&
     timeline.tick===physics.tick&&
@@ -108,7 +122,9 @@ export function createBasicRegulationSessionB06b(RAPIER,{
      timeline.provisionalScore.home>timeline.provisionalScore.away?'home':'away',
     provisionalScore:timeline.provisionalScore,
     twoPhysicalHalvesAndNativeKickoff:true,
-    complete90Minutes:researchHalfTicks===B06_HALF_TICKS,
+    firstHalfNativeKickoffVerified:openingKickoff!==null,
+    complete90Minutes:researchHalfTicks===B06_HALF_TICKS&&openingKickoff!==null,
+    completeFootballGameplayVerified:false,
     officialMatchResult:null,competitionWrite:false
    });
    phase='full-time';

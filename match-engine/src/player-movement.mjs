@@ -7,6 +7,7 @@ import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
+import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
 import {initialResearchDefensiveLineup}
  from './basic-defensive-physical-actions-b03.mjs';
 import {initialResearchGoalkeeperSaveLineup,chooseBasicGoalkeeperDiveTarget}
@@ -1649,6 +1650,7 @@ export function createPlayerMovement(options={}){
      k!=='researchBasicRestartAttackSide'&&
      k!=='researchBasicRestartBall'&&
      k!=='researchB06bHalftimeTick'&&
+     k!=='researchB06bOpeningKickoffEnabled'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlCloseDefender'&&
@@ -1768,7 +1770,11 @@ export function createPlayerMovement(options={}){
       !Number.isSafeInteger(options.researchB06bHalftimeTick)||
       options.researchB06bHalftimeTick<120||
       options.researchB06bHalftimeTick>162000||
-      Reflect.ownKeys(options).length!==1))||
+      Reflect.ownKeys(options).length!==
+       (options.researchB06bOpeningKickoffEnabled===true?2:1)))||
+    (options.researchB06bOpeningKickoffEnabled!==undefined&&
+      (options.researchB06bOpeningKickoffEnabled!==true||
+       options.researchB06bHalftimeTick===undefined))||
     (options.researchBasicRestartSource!==undefined&&(
       !['throw-in','corner','goal-kick'].includes(options.researchBasicRestartSource)||
       !['home','away'].includes(options.researchBasicRestartAttackSide)||
@@ -1800,8 +1806,9 @@ export function createPlayerMovement(options={}){
    basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
     options.researchBasicRestartAttackSide,options.researchBasicRestartBall,
     options.researchBasicRestartSource):null;
- const initial=b05bStandby?
-  b05bStandby.players:
+ const initial=options.researchB06bOpeningKickoffEnabled===true?
+  initialB06bOpeningLineup(INITIAL_PLAYERS):
+  b05bStandby?b05bStandby.players:
   options.researchDefensiveSide?
   initialResearchDefensiveLineup(INITIAL_PLAYERS,
    options.researchDefensiveSide,options.researchDefensiveBall,

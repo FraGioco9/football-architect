@@ -13,6 +13,7 @@ import {initialResearchBodyEncounterLineup}
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
+import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
 import {initialResearchDefensiveLineup}
  from './basic-defensive-physical-actions-b03.mjs';
 import {initialResearchGoalkeeperSaveLineup}
@@ -105,6 +106,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticBasicRestartSource = null,
   diagnosticBasicRestartAttackSide = null,
   diagnosticB06bHalftimeTick = null,
+  diagnosticB06bOpeningKickoffEnabled = false,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -156,6 +158,9 @@ export function createEngine(RAPIER, input = {}, {
       !['throw-in','corner','goal-kick'].includes(diagnosticBasicRestartSource)||
       !['home','away'].includes(diagnosticBasicRestartAttackSide))))
    throw new TypeError('B05b authentic source must be tied to bounded DEV restart');
+  if(typeof diagnosticB06bOpeningKickoffEnabled!=='boolean'||
+     (diagnosticB06bOpeningKickoffEnabled&&diagnosticB06bHalftimeTick===null))
+    throw new TypeError('B06b opening requires original private regulation opt-in');
   if(diagnosticB06bHalftimeTick!==null&&(
     !Number.isSafeInteger(diagnosticB06bHalftimeTick)||
     diagnosticB06bHalftimeTick<120||
@@ -303,7 +308,9 @@ export function createEngine(RAPIER, input = {}, {
     !diagnosticPlayerFootContactsEnabled||
     !diagnosticAutonomousFixtureActionEnabled))
   throw new TypeError('CARRY setup requires bounded genuine private shoe source');
- const stagedShoes=diagnosticBasicRestartSource!==null?
+ const stagedShoes=diagnosticB06bOpeningKickoffEnabled?
+   initialB06bOpeningLineup(INITIAL_PLAYERS):
+  diagnosticBasicRestartSource!==null?
    basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
     diagnosticBasicRestartAttackSide,scenario,
     diagnosticBasicRestartSource).players:
@@ -506,7 +513,7 @@ export function createEngine(RAPIER, input = {}, {
   let tick = 0;
   let disposed = false;
   let basicRestartTick = -1;
-  let b06bHalftimePlacement=null,b06bKickoff=null;
+  let b06bOpeningKickoff=null,b06bHalftimePlacement=null,b06bKickoff=null;
   let b05bOutboundAction=null,b05bTake=null,b05bRestartTicket=null;
   const b05bSource=diagnosticBasicRestartSource===null?null:
    basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
@@ -813,6 +820,39 @@ export function createEngine(RAPIER, input = {}, {
     });
     return b05bTake;
   }
+  function b06bOriginalOpeningKickoff(frame){
+    if(disposed||!diagnosticB06bOpeningKickoffEnabled||
+       tick!==1||b06bOpeningKickoff||frame?.tick!==tick||
+       !Array.isArray(frame.players)||frame.players.length!==22||
+       frame.players.some((p,i)=>p?.id!==INITIAL_PLAYERS[i].id||
+        p.team!==INITIAL_PLAYERS[i].team||
+        p.role!==INITIAL_PLAYERS[i].role||
+        ![p.x,p.y,p.vx,p.vy].every(Number.isFinite)))
+      throw new TypeError('B06b opening needs first original 22-player physics tick');
+    const foot=shoeBridge.snapshot(),solver=shoeBridge.solver();
+    if(foot.tick!==tick||solver?.tick!==tick)
+      throw new TypeError('B06b opening requires same-tick Rapier shoe solver');
+    if(foot.started.length!==1||foot.active.length!==1||
+       foot.started[0]!=='home-10'||foot.active[0]!=='home-10')
+      return null;
+    if(!solver.pairs.some(p=>p.id==='home-10'&&p.beganThisTick&&
+       p.collisionActive&&p.manifolds.some(m=>m.geometricContacts>0)))
+      throw new TypeError('B06b opening cannot infer an absent Rapier manifold');
+    const pos=body.translation();
+    if(Math.hypot(pos.x,pos.y)>0.65||Math.abs(pos.z-BALL_RADIUS)>0.3)
+      throw new TypeError('B06b original opening ball must be at centre');
+    const impulse=Object.freeze({x:0.65,y:0,z:0.04});
+    body.applyImpulse(impulse,true);
+    b06bOpeningKickoff=Object.freeze({
+      tick,team:'home',actorId:'home-10',
+      genuineExclusiveOriginalShoeStart:true,
+      currentRapierContactManifold:true,original22PlayerFrame:true,
+      impulseNs:impulse,originalBallImpulseApplied:true,
+      sameOriginalRapierWorld:true,
+      officialMatchAction:false,officialPossession:false,officialMatchResult:null
+    });
+    return b06bOpeningKickoff;
+  }
   function b06bOriginalHalftimePlacement(frame){
     if(disposed||diagnosticB06bHalftimeTick===null||
        tick!==diagnosticB06bHalftimeTick||b06bHalftimePlacement||
@@ -894,7 +934,8 @@ export function createEngine(RAPIER, input = {}, {
     ...(diagnosticBasicRestartEnabled?{applyBasicRestartAtBoundary}:{}),
     ...(b05bSource?{attemptB05bNativeOutboundKick,attemptB05bOriginalSetPiece}:{}),
     ...(diagnosticB06bHalftimeTick!==null?{
-     b06bOriginalHalftimePlacement,b06bOriginalSecondHalfKickoff
+     b06bOriginalHalftimePlacement,b06bOriginalSecondHalfKickoff,
+     ...(diagnosticB06bOpeningKickoffEnabled?{b06bOriginalOpeningKickoff}:{})
     }:{}),
     ...(shoeBridge?{
       footContactSnapshot:()=>shoeBridge.snapshot(),

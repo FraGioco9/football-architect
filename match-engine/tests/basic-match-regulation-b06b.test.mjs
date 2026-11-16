@@ -12,6 +12,8 @@ import {createBasicRegulationSessionB06b,B06B_SESSION_VERSION}
  from '../src/basic-match-regulation-b06b.mjs';
 import {B06_HALF_TICKS,B06_FULL_TICKS}
  from '../src/basic-match-clock-score-b06.mjs';
+import {initialB06bOpeningLineup}
+ from '../src/basic-opening-kickoff-lineup-b06b.mjs';
 
 test('B06b H1 isolated original-world halftime source rejects unrelated action modes, short/synthetic intervals and frames',async()=>{
  const R=await initializeRapier(rapier);
@@ -136,4 +138,56 @@ test('B06b H1 true HOME/AWAY 22-player 60Hz continuous two-half MINIATURE: halft
     score:fa.provisionalScore,originalShoe:true,
     full90MinuteMatchVerified:false,officialResult:null})+'\\n');
  }finally{a.dispose();b.dispose();}
+});
+
+test('B06b H2a original opening requires true HOME shoe and 22 canonical players',async()=>{
+ const staged=initialB06bOpeningLineup(INITIAL_PLAYERS);
+ assert.deepEqual(staged.map(p=>p.id),INITIAL_PLAYERS.map(p=>p.id));
+ assert.equal(staged.find(p=>p.id==='home-10').x,-0.28);
+ assert.equal(INITIAL_PLAYERS.find(p=>p.id==='home-10').x,-5);
+ for(let i=0;i<staged.length;i++)for(let j=i+1;j<staged.length;j++)
+  assert.ok(Math.hypot(staged[i].x-staged[j].x,staged[i].y-staged[j].y)>=PLAYER_MIN_SEPARATION_M-1e-8);
+ const R=await initializeRapier(rapier);
+ assert.throws(()=>createEngine(R,{preset:'roll'},{diagnosticB06bOpeningKickoffEnabled:true}),/B06b opening/);
+ assert.throws(()=>createPlayerMovement({researchB06bOpeningKickoffEnabled:true}),TypeError);
+ const ordinary=createBasicRegulationSessionB06b(R,{researchHalfTicks:120});
+ const actual=createBasicRegulationSessionB06b(R,{researchHalfTicks:120,researchOpeningKickoff:true});
+ try{
+  assert.equal(ordinary.snapshot().firstHalfKickoff,null);
+  assert.equal(actual.snapshot().phase,'opening-kickoff');
+  const first=actual.step();
+  assert.equal(first.physicsTick,1);
+  assert.equal(first.clockTicks,1);
+  assert.equal(first.phase,'first-half');
+  assert.equal(first.firstHalfKickoff?.tick,1);
+  assert.equal(first.firstHalfKickoff.actorId,'home-10');
+  assert.equal(first.firstHalfKickoff.genuineExclusiveOriginalShoeStart,true);
+  assert.equal(first.firstHalfKickoff.currentRapierContactManifold,true);
+  assert.equal(first.firstHalfKickoff.originalBallImpulseApplied,true);
+  assert.equal(first.firstHalfKickoff.officialMatchResult,null);
+  assert.equal(first.canonical22,true);
+ }finally{ordinary.dispose();actual.dispose();}
+});
+
+test('B06b H2a two real physical kickoffs in a mini replay are NOT a complete 90m match',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const run=createBasicRegulationSessionB06b(R,{researchHalfTicks:120,researchOpeningKickoff:true});
+ try{
+  let last=null;
+  for(let i=0;i<900;i++){
+   const s=run.step();
+   if(s.final){last=s;break;}
+  }
+  assert.ok(last);
+  assert.equal(last.clockTicks,240);
+  assert.equal(last.firstHalfKickoff?.actorId,'home-10');
+  assert.equal(last.secondHalfKickoff?.actorId,'away-10');
+  assert.equal(last.halfTime?.physicsTick,120);
+  assert.equal(last.final.firstHalfNativeKickoffVerified,true);
+  assert.equal(last.final.complete90Minutes,false);
+  assert.equal(last.realFull90MinutesVerified,false);
+  assert.equal(last.fullFootballActionCoverageVerified,false);
+  assert.equal(last.officialMatchResult,null);
+ }finally{run.dispose();}
 });

@@ -14,7 +14,8 @@
     "audit:expanded-native-pairs": "node tools/audit-expanded-native-pairs-m18.mjs",
     "audit:contact-dynamics": "node tools/audit-contact-dynamics-m19.mjs",
     "audit:secondary-press": "node tools/audit-secondary-press-m20.mjs",
-    "audit:role-continuity": "node tools/audit-role-continuity-m22.mjs"
+    "audit:role-continuity": "node tools/audit-role-continuity-m22.mjs",
+    "audit:regulation-90": "node tools/audit-full-regulation-b06b-h2.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-deterministic-compat": "0.21.0"
