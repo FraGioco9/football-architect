@@ -8,7 +8,7 @@
  // SVGElement.hidden is not reliably reflected in the DOM; use the actual
  // hidden attribute. Keep both photo and fallback hidden until resolved.
  // Only owner-approved, static, public photo paths. Protected draft previews always use the placeholder.
- const portraitSources=Object.freeze({44:'/assets/players/portraits/44.webp',98:'/assets/players/portraits/98.webp',145:'/assets/players/portraits/145.webp',46:'/assets/players/portraits/46.webp',45:'/assets/players/portraits/45.webp',49:'/assets/players/portraits/49.webp'});
+ const portraitSources=Object.freeze({44:'/assets/players/portraits/44.webp',98:'/assets/players/portraits/98.webp',145:'/assets/players/portraits/145.webp',46:'/assets/players/portraits/46.webp',45:'/assets/players/portraits/45.webp',49:'/assets/players/portraits/49.webp',50:'/assets/players/portraits/50.webp'});
  let portraitRequest=0;
  function resetPortrait(){
   portraitRequest++;

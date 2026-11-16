@@ -509,9 +509,9 @@ test('#535 Info panel constrained to 680px on desktop, fluid on smaller screens'
  assert.doesNotMatch(css,/@media\(max-width:(?:900|760|620|460)px\)[^\n]*\.app-player-detail-info-view\{/);
 });
 
-test('#623 public player portrait and fallback: exact 6 staged/approved IDs only, stable geometry, protected preview isolation',()=>{
+test('#623 public player portrait and fallback: exact 7 staged/approved IDs only, stable geometry, protected preview isolation',()=>{
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
- for(const id of [44,98,145,46,45,49]){
+ for(const id of [44,98,145,46,45,49,50]){
   const path='assets/players/portraits/'+id+'.webp';
   assert.equal(isAllowlistedPublicPath(path),true,path);
   assert.ok(js.includes(id+":'/"+path+"'"),'canonical image map missing: '+id);
@@ -535,7 +535,7 @@ test('#623 public player portrait and fallback: exact 6 staged/approved IDs only
 });
 
 test('#623 optimized approved WebPs have SHA-256 provenance and appear in the public artifact',()=>{
- const expected={"44":"a4a05f06df54cff48612ce5cbebc56eee4ccea381ff8b93aa475a5738c015304","98":"7eec047c80a0e9bf662f72caf07cdcccab71dfad7d762698da2adf34c14b546d","145":"7e2c883d0e9776b103b76a64f3957b19cfcc974b9d47bdc5677904fa5e8ebd74","46":"e257210da736f83c444c1d7c7a9a88b59a7901a6c15fb6c10fab6c0eae58d617","45":"6830f96eed85a7ebea555fba09e988179f6548f5db955fbef107bc23802bb63f","49":"eb2ebb852ef2d99d6157dd0e4012236cde78ac04c5a658def3936e2847f82a28"};
+ const expected={"44":"a4a05f06df54cff48612ce5cbebc56eee4ccea381ff8b93aa475a5738c015304","98":"7eec047c80a0e9bf662f72caf07cdcccab71dfad7d762698da2adf34c14b546d","145":"7e2c883d0e9776b103b76a64f3957b19cfcc974b9d47bdc5677904fa5e8ebd74","46":"e257210da736f83c444c1d7c7a9a88b59a7901a6c15fb6c10fab6c0eae58d617","45":"6830f96eed85a7ebea555fba09e988179f6548f5db955fbef107bc23802bb63f","49":"eb2ebb852ef2d99d6157dd0e4012236cde78ac04c5a658def3936e2847f82a28","50":"ef25d641280c9e1cfa5d97d0fded878ae33b7694ad845aca071048dc61813b54"};
  const published=new Set(planPublicFiles());
  for(const [id,digest] of Object.entries(expected)){
   const path='assets/players/portraits/'+id+'.webp';
