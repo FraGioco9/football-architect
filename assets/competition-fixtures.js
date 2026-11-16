@@ -609,7 +609,11 @@
          navigation.get().season!==String(season))return;
       const hasOfficialScores=window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative';
       // Keep real sporting results: never overwrite them with a zero-score draw.
-      const commit=hasOfficialScores||navigation.get().view!=='fixtures'?null:window.faFixtures.prepare(games,{currentMatchday:null,postseason:[],definition});
+      // Keep the league draw in the shared Fixtures store even when the
+      // published collection was first requested from the Postseason tab.
+      // Otherwise switching tabs sees the deduplicated key but no schedule.
+      // Already scored official seasons are never overwritten.
+      const commit=hasOfficialScores?null:window.faFixtures.prepare(games,{currentMatchday:null,postseason:[],definition});
       publishedSeason=String(season);publishedKey=key;publishedIds=new Set(league.map(f=>f.matchId));
       publishedLookup=lookup;
       if(commit)commit();else render();
