@@ -400,6 +400,19 @@ html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);b
 /* No season-picker skeleton: a verified initial server value is visible, while
    an unavailable canonical clock reserves width without fabricating a numeral. */
 .app-competition-panel>.app-world-standings{margin-top:0}
+
+/* STANDINGS-SUBVIEWS: same compact second-level navigation as Club Roster. */
+#competition-panel-standings>.app-standings-subviews{display:flex;align-items:center;gap:4px;min-width:0;height:42px;min-height:42px;overflow-x:auto;overflow-y:hidden;margin:0;padding:0;border:0;scrollbar-width:none;overscroll-behavior-x:contain}
+#competition-panel-standings>.app-standings-subviews::-webkit-scrollbar{display:none}
+#competition-panel-standings>.app-standings-subviews .app-competition-tab{box-sizing:border-box;flex:0 0 92px;width:92px;min-width:92px;max-width:92px;height:32px;min-height:32px;padding:5px;border-radius:6px;font-size:11px;line-height:1.2}
+#competition-panel-standings>.app-standings-subviews .app-competition-tab[aria-pressed="true"]{color:var(--text);background:#21483d}
+#competition-panel-standings>.app-standings-subviews .app-competition-tab[hidden]{display:none!important}
+#competition-panel-standings>.app-standings-subviews .app-competition-tab:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+@media(max-width:620px){
+ #competition-panel-standings>.app-standings-subviews{scroll-padding-inline:0;-webkit-mask-image:linear-gradient(to right,transparent,#000 0px,#000 calc(100% - 16px),transparent);mask-image:linear-gradient(to right,transparent,#000 0px,#000 calc(100% - 16px),transparent)}
+ #competition-panel-standings>.app-standings-subviews .app-competition-tab{flex:0 0 calc(40% - 3.2px);width:calc(40% - 3.2px);min-width:calc(40% - 3.2px);max-width:calc(40% - 3.2px);padding-inline:4px}
+}
+
 .app-competition-panel>h2{margin:0 0 12px;font-size:17px;font-weight:750}
 .app-competition-status{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
 .app-competition-facts{display:flex;flex-wrap:wrap;gap:22px;margin:18px 0 0}
