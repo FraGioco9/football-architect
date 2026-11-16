@@ -56,6 +56,7 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/research-shot-initial-lineup.mjs': 'match-engine/src/research-shot-initial-lineup.mjs',
   '/__fa_match_engine__/goalkeeper-save-foundation-b02.mjs': 'match-engine/src/goalkeeper-save-foundation-b02.mjs',
   '/__fa_match_engine__/basic-defensive-physical-actions-b03.mjs': 'match-engine/src/basic-defensive-physical-actions-b03.mjs',
+  '/__fa_match_engine__/basic-receive-dribble-b04.mjs': 'match-engine/src/basic-receive-dribble-b04.mjs',
   '/__fa_match_engine__/research-control-initial-lineup.mjs': 'match-engine/src/research-control-initial-lineup.mjs',
   '/__fa_match_engine__/research-carry-initial-lineup.mjs': 'match-engine/src/research-carry-initial-lineup.mjs',
   '/__fa_match_engine__/player-foot-contact.mjs': 'match-engine/src/player-foot-contact.mjs',

@@ -13,6 +13,8 @@ import {createRealSecondTouchFollowThrough}
 import {createNativeControlEvidenceGateM29}
  from './native-control-evidence-gate-m29.mjs';
 import {createRealBallReleaseAuditM30} from './real-ball-release-audit-m30.mjs';
+import {createBasicReceiveDribbleObserverB04}
+ from './basic-receive-dribble-b04.mjs';
 import {createRealOpponentBallContestAuditM31}
  from './real-opponent-ball-contest-m31.mjs';
 import {createPlayerMovement} from './player-movement.mjs';
@@ -30,6 +32,9 @@ export function createControlledActionLab(RAPIER,id,{
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
  const spec=getActionLabScenario(id);
+ const basicFootwork=['trap','dribble'].includes(id);
+ const effectiveControlScene=id==='trap'?'receive-cushion':
+  id==='dribble'?'receive-release':controlScene;
  if(!['home','away'].includes(shotSide)||
     !['home','away'].includes(carrySide)||
     !['open','blocked'].includes(shotLane)||
@@ -42,12 +47,14 @@ export function createControlledActionLab(RAPIER,id,{
     !['home','away'].includes(challengeSide)||
     !['contact','no-contact'].includes(challengeScene)||
     (id!=='challenge'&&(challengeSide!=='away'||challengeScene!=='contact'))||
-    (!['shot','cross','save','tackle','interception'].includes(id)&&(shotSide!=='home'||shotLane!=='open'))||
-     (['cross','save','tackle','interception'].includes(id)&&shotLane!=='open')||
+    (!['shot','cross','save','tackle','interception','trap','dribble'].includes(id)&&(shotSide!=='home'||shotLane!=='open'))||
+     (['cross','save','tackle','interception','trap','dribble'].includes(id)&&shotLane!=='open')||
     (id!=='carry'&&carrySide!=='home')||
-    (id!=='control'&&controlScene!=='receive'))
+    (id!=='control'&&controlScene!=='receive')||
+    (basicFootwork&&!controlDecisionEnabled))
   throw new TypeError('Only bounded SHOT, CARRY or CONTROL scenes supported');
- const selectedControlSide=spec.mode==='control'?controlSide:null;
+ const selectedControlSide=spec.mode==='control'?
+  (basicFootwork?shotSide:controlSide):null;
  const selectedShotSide=['shot','cross','save','tackle','interception'].includes(id)?shotSide:null;
  const defenseExperiment=['tackle','interception'].includes(id);
   const goalkeeperSave=id==='save';
@@ -59,26 +66,27 @@ export function createControlledActionLab(RAPIER,id,{
    wideCross?CROSS_LAB_STARTS[selectedShotSide]:
    selectedShotSide?SHOT_LAB_STARTS[selectedShotSide]:
   selectedCarrySide?CARRY_LAB_STARTS[selectedCarrySide]:
-  selectedControlSide?CONTROL_LAB_STARTS[selectedControlSide]:
+  selectedControlSide?(basicFootwork&&selectedControlSide==='home'?
+   spec.initial:CONTROL_LAB_STARTS[selectedControlSide]):
   selectedChallengeSide?(challengeScene==='no-contact'?
    CHALLENGE_LAB_STARTS.noContact:CHALLENGE_LAB_STARTS[selectedChallengeSide]):
    spec.initial;
  const blocked=selectedShotSide!==null&&shotLane==='blocked';
- const opposingControl=id==='control'&&controlScene==='opponent-first';
- const firstTouchCushion=id==='control'&&
+ const opposingControl=spec.mode==='control'&&effectiveControlScene==='opponent-first';
+ const firstTouchCushion=spec.mode==='control'&&
   ['receive-cushion','receive-pressure','receive-decide',
-   'receive-pressure-decide','receive-release','receive-contest','receive-challenge'].includes(controlScene);
- const closePressure=id==='control'&&
-  ['receive-pressure','receive-pressure-decide'].includes(controlScene);
- const moderatePressure=id==='control'&&
-   ['receive-decide','receive-release'].includes(controlScene);
- const reachExperiment=id==='control'&&controlScene==='receive-challenge';
- const contestExperiment=id==='control'&&
-  ['receive-contest','receive-challenge'].includes(controlScene);
- const tapExperiment=id==='control'&&
-  ['receive-release','receive-contest','receive-challenge'].includes(controlScene);
- const adaptiveDecision=id==='control'&&controlDecisionEnabled&&
-  ['receive-decide','receive-pressure-decide','receive-release','receive-contest','receive-challenge'].includes(controlScene);
+   'receive-pressure-decide','receive-release','receive-contest','receive-challenge'].includes(effectiveControlScene);
+ const closePressure=spec.mode==='control'&&
+  ['receive-pressure','receive-pressure-decide'].includes(effectiveControlScene);
+ const moderatePressure=spec.mode==='control'&&
+   ['receive-decide','receive-release'].includes(effectiveControlScene);
+ const reachExperiment=spec.mode==='control'&&effectiveControlScene==='receive-challenge';
+ const contestExperiment=spec.mode==='control'&&
+  ['receive-contest','receive-challenge'].includes(effectiveControlScene);
+ const tapExperiment=spec.mode==='control'&&
+  ['receive-release','receive-contest','receive-challenge'].includes(effectiveControlScene);
+ const adaptiveDecision=spec.mode==='control'&&controlDecisionEnabled&&
+  ['receive-decide','receive-pressure-decide','receive-release','receive-contest','receive-challenge'].includes(effectiveControlScene);
  const focus=defenseExperiment?
    Object.freeze(selectedShotSide==='home'?
     ['home-7','away-10','home-10']:['away-7','home-10','away-10']):
@@ -166,6 +174,8 @@ export function createControlledActionLab(RAPIER,id,{
   createNativeControlEvidenceGateM29():null;
  const releaseObserver=tapExperiment?createRealBallReleaseAuditM30():null;
  const contestObserver=tapExperiment?createRealOpponentBallContestAuditM31():null;
+ const baseFootworkObserver=basicFootwork?
+  createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -312,6 +322,19 @@ export function createControlledActionLab(RAPIER,id,{
   const pressureEvidence=pressureObserver?.observe({
    physics,playerFrame,foot,physicalFirstTouch,action
   })??null;
+  const baseFootworkAudit=baseFootworkObserver?.observe({
+   physics,playerFrame,foot,
+   solver:engine.footContactSolverSnapshot(),
+   action,priorPass:firstRealPass,
+   cushion:physicalFirstTouch,tap:physicalReceiverTap,
+   releaseSequence:realReleaseSequence
+  })??null;
+  if(baseFootworkAudit?.attemptTick===physics.tick){
+   count++;
+   history=Object.freeze([...history,Object.freeze({
+    tick:physics.tick,kind:id,actorId:baseFootworkAudit.actorId
+   })].slice(-12));
+  }
   const contactContinuity=continuityObserver.observe({
    physics,playerFrame,foot,decisionEvidence
   });
@@ -334,6 +357,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(tapExperiment?{physicalReceiverTap,realReleaseSequence,
      realOpponentContest}:{}),
     ...(reachExperiment?{realBallReachM32:playerFrame.realBallReachM32}:{}),
+    ...(baseFootwork?{baseFootworkAudit}:{}),
     ...(goalkeeperSave?{
       goalkeeperDiveIntent:playerFrame.goalkeeperDiveIntent,
       goalkeeperDiveIntentTicks:playerFrame.goalkeeperDiveIntentTicks
@@ -342,7 +366,7 @@ export function createControlledActionLab(RAPIER,id,{
    shotFlight:shotTrace,blockedShotObservation,
    carryTrace,carrySide:selectedCarrySide,
    priorRealPass:firstRealPass,receivingContact,
-   firstOpposingShoe,controlScene:spec.mode==='control'?controlScene:null,
+   firstOpposingShoe,controlScene:spec.mode==='control'?effectiveControlScene:null,
    controlSide:selectedControlSide,
    officialMatchResult:null,officialMatchPossession:false,
    scoreChanged:false,readOnlyEvidence:true
@@ -367,7 +391,7 @@ export function createControlledActionLab(RAPIER,id,{
  return Object.freeze({spec,focus,shotSide:selectedShotSide,
   shotLane:selectedShotSide?shotLane:null,
   carrySide:selectedCarrySide,
-  controlScene:spec.mode==='control'?controlScene:null,
+  controlScene:spec.mode==='control'?effectiveControlScene:null,
   controlSide:selectedControlSide,
   challengeSide:selectedChallengeSide,
   challengeScene:selectedChallengeSide?challengeScene:null,
@@ -472,6 +496,16 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
    (snap.goalkeeperDiveIntentTicks?
     ' · Keeper lateral dive approach '+snap.goalkeeperDiveIntentTicks+
     ' original 60Hz ticks · no confirmed save':'')+
+   (snap.baseFootworkAudit?.trap?
+    ' · B04 native TRAP tick '+snap.baseFootworkAudit.trap.tick:
+    '')+
+   (snap.baseFootworkAudit?.dribbleAttempt?
+    ' · B04 physical DRIBBLE push tick '+
+     snap.baseFootworkAudit.dribbleAttempt.tick:'')+
+   (snap.baseFootworkAudit?.release?
+    ' · actual shoe release '+snap.baseFootworkAudit.release.actualShoeEndTick+
+    ' and independent recontact '+
+     snap.baseFootworkAudit.release.actualShoeRecontactTick:'')+
    (snap.realBallReachM32?.activeTicks?
     ' · M32 real challenger direct-ball pursuit '+
     snap.realBallReachM32.activeTicks+' native ticks':
@@ -519,7 +553,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     snap.firstOpposingShoe.tick+' · no verified reception':'')+
    (snap.carryTrace?' · CARRY '+snap.carryTrace.team.toUpperCase()+
     ' · observed ground path '+number(snap.carryTrace.path2DM)+' m':'');
-  if(snap.realOpponentContest?.latestCompleted?.opposingShoeContactIsNative){
+  if(session.spec.id==='trap'&&snap.baseFootworkAudit?.trap){
+   status.textContent='Verified '+snap.controlSide.toUpperCase()+' TRAP physical attempt: genuine separate receiving shoe START + Rapier cushioning impulse. No official control or possession.';
+  }else if(session.spec.id==='dribble'&&snap.baseFootworkAudit?.release){
+   status.textContent='Verified DRIBBLE physical sequence: original trap, second native shoe START with Rapier ball push, shoe END and independent recontact. No completed dribble or possession.';
+  }else if(session.spec.id==='dribble'&&snap.baseFootworkAudit?.dribbleAttempt){
+   status.textContent='Verified DRIBBLE physical attempt: original receiver cushioning and new native shoe START + real ball push; release/recontact pending. No possession.';
+  }else if(snap.realOpponentContest?.latestCompleted?.opposingShoeContactIsNative){
    const e=snap.realOpponentContest.latestCompleted;
    status.textContent='M31: genuine opponent '+e.firstOpposingNativeShoeStartPlayerId+
     ' shoe-ball START tick '+e.firstOpposingNativeShoeStartTick+
@@ -598,13 +638,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  }
  function resetSession(){
   stop();if(session)session.dispose();
-  shotSideLabel.hidden=!['shot','cross','save','tackle','interception','carry','challenge'].includes(select.value);
+  shotSideLabel.hidden=!['shot','cross','save','tackle','interception','trap','dribble','carry','challenge'].includes(select.value);
   shotLaneLabel.hidden=select.value!=='shot';
   controlSceneLabel.hidden=select.value!=='control';
   challengeSceneLabel.hidden=select.value!=='challenge';
   by('action-labs-title').textContent=select.selectedOptions[0].textContent.trim();
   session=createControlledActionLab(getRapier(),select.value,{
-   shotSide:['shot','cross','save','tackle','interception'].includes(select.value)?shotSide.value:'home',
+   shotSide:['shot','cross','save','tackle','interception','trap','dribble'].includes(select.value)?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',
    carrySide:select.value==='carry'?shotSide.value:'home',
    controlScene:select.value==='control'?controlSceneChoice.value:'receive',
@@ -613,7 +653,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   });
   trail=[{x:session.snapshot().ball.position.x,
    y:session.snapshot().ball.position.y}];
-  description.textContent=['tackle','interception'].includes(select.value)?
+  description.textContent=['trap','dribble'].includes(select.value)?
+    'B04 basic physical '+select.value.toUpperCase()+
+    ': original pass and native receiving shoe cushion'+
+    (select.value==='dribble'?
+    ', second independent shoe START and real ball tap / physical recontact':
+    '')+'. Attempts only, no completed reception, dribble or possession.':
+    ['tackle','interception'].includes(select.value)?
     'B03 defensive attempt: the original #7 meets a real nearby opponent and an observed live ball. Only a genuine exclusive Rapier shoe START allows a deflection. No official recovery, possession, completed interception or successful tackle.':
     select.value==='save'?
     'B02 basic goalkeeper approach: the canonical keeper moves laterally from the actual incoming ball velocity; only a real exclusive native shoe START can produce a single Rapier parry impulse. No airborne dive, catch or successful save is assumed.':
