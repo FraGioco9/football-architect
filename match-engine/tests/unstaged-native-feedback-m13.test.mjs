@@ -191,6 +191,35 @@ test('M13 rejects an unsafe native candidate without moving any original canonic
   }
  }finally{engine.dispose();}
 });
+test('M13 rejected native no-XY contact cannot change even canonical velocities or facing',
+ {timeout:18000},async()=>{
+ const R=await initializeRapier(wasm);
+ const engine=createEngine(R,scene,physicsOptions);
+ const mover=createPlayerMovement(moverOptions);
+ let sourceSeen=0,noOpRejected=0,actuallyApplied=0;
+ try{
+  for(let t=1;t<=110;t++){
+   const frame=mover.step(engine.snapshot().ball.position);
+   engine.step(frame);
+   const native=engine.nativePlayerBodySnapshot();
+   if(native.currentTickStarts>0)sourceSeen++;
+   const result=mover.reconcileUnstagedNativeBodyResponse(native);
+   if(result.accepted)actuallyApplied++;
+   if(result.reason==='native-contact-no-xy-correction'){
+    noOpRejected++;
+    assert.deepEqual(mover.snapshot().players,frame.players,
+     'Rejected native no-op cannot change any player position, velocity or facing');
+   }
+   const after=engine.acknowledgeNativePlayerResponse(mover.snapshot());
+   assert.equal(after.appliedMoverResponses,actuallyApplied);
+   assert.equal(after.tick,t);
+  }
+  assert.equal(sourceSeen,1);
+  assert.ok(actuallyApplied>0);
+  assert.ok(noOpRejected>0,
+   'M13 must observe at least one real native solver no-XY frame to prove atomic rejection');
+ }finally{engine.dispose();}
+});
 test('M13 rejects fabricated active pair, stale tick, forged body, missing queue and duplicate acknowledgment',
  {timeout:12000},async()=>{
  const R=await initializeRapier(wasm);

@@ -2372,19 +2372,22 @@ export function createPlayerMovement(options={}){
   }
   if(minGapM<PLAYER_MIN_SEPARATION_M-1e-8)
    return reject('canonical-separation');
-  let adjustedM=0;
+  // Every rejection must be fully atomic: even a native contact with
+  // zero solver XY correction cannot alter canonical velocities/facing.
+  const adjustedM=players.reduce((sum,p,i)=>sum+(
+   ids.has(p.id)?Math.hypot(candidate[i].x-p.x,candidate[i].y-p.y):0
+  ),0);
+  if(adjustedM<=1e-9)return reject('native-contact-no-xy-correction');
   for(let i=0;i<players.length;i++){
    const p=players[i];
    if(!ids.has(p.id))continue;
    const n=candidate[i],prior=lastFeedbackSource.players[i];
-   adjustedM+=Math.hypot(n.x-p.x,n.y-p.y);
    p.x=n.x;p.y=n.y;
    p.vx=(n.x-prior.x)/PLAYER_DT;
    p.vy=(n.y-prior.y)/PLAYER_DT;
    p.facingRad=advancePlayerOrientation(
     p.facingRad,p.vx,p.vy,PLAYER_KINEMATIC_LIMITS);
   }
-  if(adjustedM<=1e-9)return reject('native-contact-no-xy-correction');
   physicallyAppliedResponses++;
   lastPhysicalReconciliation=Object.freeze({
    tick,accepted:true,reason:'genuine-unstaged-rapier-body-response',
