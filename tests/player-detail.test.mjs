@@ -342,7 +342,7 @@ test('Player pitch only the inner disc handles pointer hover and selection; the 
 test('#535 header shows position chain, nationality/age and canonical club or Free Agent',()=>{
  const js=read('assets/player-detail.js'),renderer=read('tools/render-player-detail.mjs'),css=read('assets/player-detail.css');
  assert.match(js,/roleNode\.textContent=positionCodes\(\)\.join\(', '\)/);
- assert.match(js,/setContent\(nationalityNode,countryNode\(player\.nationality\)\)/);
+ assert.match(js,/setContent\(nationalityNode,countryNode\(player\.nationality,true\)\)/);
  assert.match(js,/setContent\(ageNode,Number\.isSafeInteger\(player\.age\)/);
  assert.match(js,/player\.clubKey===null\)\{setContent\(clubNode,'Free Agent'\)/);
  assert.match(js,/fetch\('\/clubs\/_shared\/manifest\.json'/);
@@ -419,7 +419,7 @@ test('#535 natural age text and nationality aligned on same header baseline in f
 
 test('#535 header nationality has no tooltip and shows a full visible name',()=>{
  const js=read('assets/player-detail.js');
- const start=js.indexOf(' function countryNode(code){'),end=js.indexOf(' function displayValue(',start);
+ const start=js.indexOf(' function countryNode(code,header=false){'),end=js.indexOf(' function displayValue(',start);
  assert.ok(start>=0&&end>start);
  const country=js.slice(start,end);
  assert.match(country,/countries\.name==='function'\?countries\.name\(code\):code/);
@@ -440,8 +440,8 @@ test('#535 flag, long nationality, dot and age skeleton share the real header fo
  assert.match(css,/\.app-player-detail-header-meta\{display:flex;align-items:center/);
  assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:126px/);
  assert.match(css,/\.app-player-detail-identity\{[^}]*flex:0 1 440px/);
- assert.match(css,/@media\(max-width:620px\)\{\.app-player-detail-affiliation\{[^}]*\}/);
- assert.match(css,/\.app-player-detail-identity\{flex:1 1 0;max-width:none\}/);
+ assert.match(css,/@media\(max-width:620px\)\{\s*\.app-player-detail-heading\{display:grid/);
+ assert.match(css,/\.app-player-detail-identity\{grid-column:2;grid-row:1;min-width:0;max-width:none/);
  for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
   const html=read(path);
   const header=html.slice(html.indexOf('class="app-player-detail-header-meta"'),html.indexOf('class="app-player-detail-affiliation"'));
@@ -512,7 +512,7 @@ test('#535 Info panel constrained to 680px on desktop, fluid on smaller screens'
 test('#623 public player portrait and fallback: staged/approved IDs only, stable geometry, protected preview isolation',()=>{
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
  for(const id of [44,98,145,46,45,49,50,51,47,52,148,53,54,55,59,60,61,56,57,48,63,58]){
-   const path='assets/players/portraits/'+id+'.webp';
+  const path='assets/players/portraits/'+id+'.webp';
   assert.equal(isAllowlistedPublicPath(path),true,path);
   assert.ok(js.includes(id+":'/"+path+"'"),'canonical image map missing: '+id);
  }
@@ -630,11 +630,11 @@ test('#623 approved portraits use adjustable top-anchored 150% crop in wider, he
  assert.ok(frameRule.includes('width:190px;height:181px'),'desktop portrait expands horizontally while retaining height');
  assert.ok(frameRule.includes('overflow:hidden'),'the crop is clipped inside the portrait');
  assert.ok(frameRule.includes('border:0'),'the borderless portrait remains unchanged');
- assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait expands horizontally while retaining height');
+ assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px;grid-column:1;grid-row:1}'),'mobile portrait expands horizontally while retaining height');
  assert.ok(!css.includes('.app-player-detail-silhouette{transform:'),'fallback SVG must never be photo-zoomed');
 });
 
-test('#623 wider portrait frame preserves mobile identity, affiliation and back-link alignment',()=>{
+test('#623 wider portrait frame preserves mobile grid identity, affiliation and back-link alignment',()=>{
  const css=read('assets/player-detail.css');
  const renderer=read('tools/render-player-detail.mjs');
  const frame=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
@@ -642,9 +642,9 @@ test('#623 wider portrait frame preserves mobile identity, affiliation and back-
  assert.ok(frame?.includes('overflow:hidden;border-radius:'),'larger image remains clipped to its box');
  assert.ok(frame?.includes('border:0'),'portrait still has no box border');
  const mobile=css.split('@media(max-width:620px){')[1]?.split('@media(max-width:460px)')[0];
- assert.ok(mobile?.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait reserves 120px width');
- assert.ok(mobile?.includes('flex-basis:calc(100% - 135px);max-width:none;min-height:92px;margin-left:135px'),'club panel offsets follow 120px image + 15px gap');
- assert.ok(mobile?.includes('.app-player-detail-back{margin-left:135px;align-self:flex-start}'),'back link matches new portrait width');
+ assert.ok(mobile?.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px;grid-column:1;grid-row:1}'),'mobile portrait reserves 120px width');
+ assert.ok(mobile?.includes('.app-player-detail-affiliation{grid-column:1/-1;grid-row:2;min-width:0;width:100%;max-width:none;min-height:80px;margin-left:0'),'club panel uses a full mobile grid row');
+ assert.ok(mobile?.includes('.app-player-detail-back{grid-column:2;grid-row:3;margin-left:0'),'preview back link follows the mobile grid');
  assert.ok(renderer.includes('data-detail-portrait-placeholder hidden viewBox="-20 -12 552 535" preserveAspectRatio="xMidYMax meet" width="190" height="181"'),'SVG intrinsic geometry follows desktop frame');
  assert.ok(renderer.includes('data-detail-portrait-photo width="190" height="181"'),'photo intrinsic dimensions follow desktop frame');
  for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
@@ -670,5 +670,65 @@ test('#623 wide placeholder maintains head/body proportions on desktop and mobil
  }
  const css=read('assets/player-detail.css');
  assert.ok(css.includes('.app-player-detail-portrait{width:190px;height:181px;flex:0 0 190px;'),'desktop frame unchanged');
- assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile frame unchanged');
+ assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px;grid-column:1;grid-row:1}'),'mobile frame unchanged');
+});
+
+test('#634 canonical nationality is compact only in the mobile header and remains accessible',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css');
+ const start=js.indexOf(' function countryNode(code,header=false){'),end=js.indexOf(' function displayValue(',start);
+ assert.ok(start>=0&&end>start);
+ const fakeDocument={
+  createElement(tag){return {tag,children:[],attributes:{},append(...parts){this.children.push(...parts)},setAttribute(k,v){this.attributes[k]=v}};},
+  createTextNode(text){return {text}}
+ };
+ for(const lang of ['en','de','es','fr','it']){
+  const localized={ITA:lang==='it'?'Italia':'Italy',ENG:lang==='it'?'Inghilterra':'England',ESP:lang==='es'?'España':'Spain',GER:lang==='de'?'Deutschland':'Germany'};
+  const flags={ITA:'it',ENG:'gb-eng',ESP:'es',GER:'de'};
+  const make=runInNewContext(js.slice(start,end)+'\ncountryNode',{document:fakeDocument,window:{faPlayersNationality:{flags,name:code=>localized[code]||code}}});
+  for(const code of ['ITA','ENG','ESP','GER']){
+   const country=make(code,true);
+   const full=country.children.find(x=>x.className==='app-player-detail-nationality-full');
+   const compact=country.children.find(x=>x.className==='app-player-detail-nationality-compact');
+   const accessible=country.children.find(x=>x.className?.includes('app-player-detail-nationality-accessible'));
+   assert.equal(compact.textContent,code,lang+' '+code);
+   assert.equal(compact.attributes['aria-hidden'],'true');
+   assert.equal(full.textContent,localized[code]);
+   assert.equal(accessible.textContent,localized[code]);
+   assert.equal(country.children[0].alt,'');
+   assert.equal(make(code,false).children.some(x=>x.className==='app-player-detail-nationality-compact'),false,'Info keeps full name');
+  }
+ }
+ assert.match(js,/setContent\(nationalityNode,countryNode\(player\.nationality,true\)\)/);
+ assert.match(js,/if\(key==='nationality'\|\|key==='secondary_nationality'\)return countryNode\(player\[key\]\)/);
+ assert.match(css,/\.app-player-detail-nationality-compact,\.app-player-detail-nationality-accessible\{display:none\}/);
+ assert.match(css,/@media\(max-width:620px\)[\s\S]*?\.app-player-detail-nationality-full\{display:none\}/);
+ assert.match(css,/\.app-player-detail-nationality-compact,\.app-player-detail-nationality-accessible\{display:inline\}/);
+});
+
+test('#634 mobile header grid reserves portrait and prevents nationality wrapping',()=>{
+ const css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
+ const mobile=css.slice(css.indexOf('/* #634:'),css.indexOf('@media(max-width:460px)'));
+ assert.match(mobile,/grid-template-columns:120px minmax\(0,1fr\)/);
+ assert.match(mobile,/\.app-player-detail-portrait\{width:120px;height:114px/);
+ assert.match(mobile,/\.app-player-detail-identity\{grid-column:2;grid-row:1;min-width:0/);
+ assert.match(mobile,/\.app-player-detail-affiliation\{grid-column:1\/-1;grid-row:2;[^}]*margin-left:0/);
+ assert.match(mobile,/\.app-player-detail-header-meta\{[^}]*flex-wrap:nowrap;gap:6px;white-space:nowrap/);
+ assert.match(mobile,/\.app-player-detail-nationality-skeleton\{width:30px\}/);
+ assert.match(mobile,/\.app-player-detail-back\{grid-column:2;grid-row:3;margin-left:0/);
+ const appCss=read('assets/app.css');
+ assert.match(appCss,/@media\(max-width:390px\)\{\s*\.fa-career-shell\{grid-template-columns:52px minmax\(0,1fr\)/);
+ assert.match(appCss,/--app-page-pad-inline:16px/);
+ assert.match(css,/@media\(max-width:390px\)\{\s*\.app-player-detail-heading\{grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(css,/\.app-player-detail-identity\{grid-column:1;grid-row:2;align-items:center;text-align:center;width:100%\}/);
+ for(const width of [320,375,390,430,620]){
+  const sidebar=width<=390?52:58,contentWidth=width-sidebar-32;
+  const identityWidth=width<=390?contentWidth:contentWidth-120-15;
+  assert.ok(identityWidth>=205,'mobile identity cannot overflow fixed portrait/sidebar: '+width);
+ }
+ assert.match(css,/\.app-player-detail-heading\{display:flex;align-items:center;gap:18px/,'desktop baseline unchanged');
+ for(const html of [read('players/_shared/index.html'),read('admin/players/preview/player/index.html')]){
+  assert.match(html,/app-player-detail-country-skeleton/);
+  assert.match(html,/app-player-detail-club-loading/);
+ }
+ assert.match(renderer,/data-detail-header-nationality/);
 });

@@ -1,6 +1,7 @@
 // Server-only opt-in bridge to the single shared nonproduction account/world DB.
 import {request as httpsRequest} from 'node:https';
 import {isIP} from 'node:net';
+import {isPublicMatchId,referenceFromPublicMatch} from '../assets/match-references.mjs';
 // Keep ordinary private responses tightly bounded. Player previews contain up to
 // 1000 full player records, so only these exact protected routes get a larger cap.
 export const protectedResponseLimit=(path,publicRead=false)=>publicRead?524288:
@@ -118,4 +119,26 @@ export async function proxySharedNonproduction(req,res,{target,path,body,publicR
   }
   res.writeHead(result.status,out);res.end(result.body);return true;
  }catch{return fail(res)}
+}
+
+/**
+ * Read an anonymous, publication-verified match on the *same* authorized
+ * shared Preview pool as /api/world. No cookies, commands or caller headers.
+ */
+export async function readSharedPublicMatch(target,matchId,{send=sendSharedHttps,timeoutMs=2500}={}){
+ if(!isPublicMatchId(matchId))return null;
+ try{
+  const url=targetOrigin(target),marker={'x-fa-expected-pool':'dev-preview'};
+  const handshake=validResponse(await send(new URL('/api/environment',url),
+   {headers:marker,limit:1024,timeoutMs}),1024);
+  if(handshake.status!==200)return null;
+  const env=JSON.parse(handshake.body.toString('utf8'));
+  if(!env||env.schemaVersion!==1||env.pool!=='dev-preview'||env.origin!==url.origin||
+     env.sharedWorld!==true||env.separateSignIn!==true)return null;
+  const response=validResponse(await send(new URL('/api/matches/'+matchId,url),
+   {headers:marker,limit:16384,timeoutMs}),16384);
+  if(response.status!==200)return null;
+  const payload=JSON.parse(response.body.toString('utf8'));
+  return referenceFromPublicMatch(payload,matchId)?payload:null;
+ }catch{return null}
 }

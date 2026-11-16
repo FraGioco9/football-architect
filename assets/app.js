@@ -1348,6 +1348,7 @@
     // Each page has its own static document for direct loading and refresh.
     if(document.querySelector?.(".fa404-main"))return "404"; // No active Dashboard on an error.
     const path = (window.location.pathname || "").replace(/\/+$/, "");
+    if (/^\/matches\/[1-9][0-9]*$/.test(path)) return "matches";
     if (path === "/players" || /^\/players\/[1-9][0-9]*$/.test(path)) return "players";
     if (path === "/clubs" || path.startsWith("/clubs/")) return "clubs";
     if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
@@ -1387,7 +1388,7 @@
       if (countryName) node.textContent = countryName;
     }
     const detail = document.getElementById("division-detail-name");
-    if (activeView() !== "clubs" && activeView() !== "profile" && activeView() !== "admin" && !document.querySelector?.("[data-player-detail-mode]")) document.title = (activeView() === "divisions" ? (detail?.textContent?.trim() || strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
+    if (activeView() !== "clubs" && activeView() !== "profile" && activeView() !== "admin" && !document.querySelector?.("[data-player-detail-mode]") && !document.querySelector?.("[data-match-detail]")) document.title = (activeView() === "divisions" ? (detail?.textContent?.trim() || strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
     renderWorldProgress();
   }
   function renderView() {
@@ -1396,7 +1397,7 @@
     if (dashboard) dashboard.hidden = current !== "dashboard";
     if (calendar) calendar.hidden = current !== "calendar";
     if (settings) settings.hidden = current !== "settings";
-    if (divisions) divisions.hidden = current !== "divisions" && current !== "clubs" && current !== "players";
+    if (divisions) divisions.hidden = current !== "divisions" && current !== "clubs" && current !== "players" && current !== "matches";
     for (const [view, link] of Object.entries(links)) {
       if (!link) continue;
       const selected = current === view;

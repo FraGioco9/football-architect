@@ -126,7 +126,7 @@
   if(hash.size)url.hash=hash.toString();
   return url.pathname+url.search+url.hash;
  }
- function countryNode(code){
+ function countryNode(code,header=false){
   const wrapper=document.createElement('span');wrapper.className='app-player-detail-country';
   if(!code){wrapper.textContent='—';return wrapper;}
   const countries=window.faPlayersNationality||{},flag=countries.flags?.[code];
@@ -136,6 +136,15 @@
    const img=document.createElement('img');img.className='app-player-detail-flag';
    img.src='/assets/flags/'+flag+'.svg';img.width=20;img.height=15;
    img.alt='';wrapper.append(img);
+  }
+  if(header){
+   // The football code is already canonical in the player record. Never derive it from the localized label.
+   const full=document.createElement('span');full.className='app-player-detail-nationality-full';full.textContent=name||code;
+   const compact=document.createElement('span');compact.className='app-player-detail-nationality-compact';
+   compact.textContent=Object.hasOwn(countries.flags||{},code)?code:(name||code);
+   compact.setAttribute('aria-hidden','true');
+   const accessible=document.createElement('span');accessible.className='sr-only app-player-detail-nationality-accessible';accessible.textContent=name||code;
+   wrapper.append(full,compact,accessible);return wrapper;
   }
   wrapper.append(document.createTextNode(name||code));return wrapper;
  }
@@ -304,7 +313,7 @@
   }
   setContent(nameNode,candidate||copy.player);
   roleNode.textContent=positionCodes().join(', ')||'—';
-  setContent(nationalityNode,countryNode(player.nationality));
+  setContent(nationalityNode,countryNode(player.nationality,true));
   setContent(ageNode,Number.isSafeInteger(player.age)?localizedAge(player.age):'—');
   renderClub();
   subtitle.textContent=preview?(previewCommitted?copy.savedPreview:copy.preview):'';
