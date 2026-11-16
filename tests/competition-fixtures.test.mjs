@@ -710,6 +710,11 @@ test('published domestic Fixtures appear at day 2, before worldwide calendar pub
  assert.equal(links.length,8,'eight published fixtures show eight stable score links');
  assert.ok(links.every(n=>/^\/matches\/[1-9][0-9]*$/.test(n.href)));
  assert.ok(links.every(n=>n.attrs['aria-label']?.startsWith('Open match: ')));
+ const native=displayed.flatMap(visit).filter(n=>n.className==='app-fixture-native-link');
+ assert.equal(native.length,8,'each verified match card includes a native new-tab target');
+ assert.deepEqual(native.map(n=>n.href),links.map(n=>n.href));
+ assert.ok(native.every(n=>n.attrs.tabindex==='-1'&&n.attrs['aria-hidden']==='true'));
+ assert.ok(native.every(n=>n.attrs.target===undefined),'normal clicks do not force a new tab');
  assert.ok(displayed.filter(row=>row.dataset.fixtureMatch).every(row=>row.className.includes('is-match-link')));
  const target={closest:selector=>selector.startsWith('a,button')?null:selector==='.app-fixture-match.is-match-link'?displayed[0]:null};
  view.fields.get('app-fixtures-list').events.click({button:0,target,defaultPrevented:false});
@@ -721,6 +726,8 @@ test('published domestic Fixtures appear at day 2, before worldwide calendar pub
  const styles=read('assets/app.css');
  assert.match(styles,/html:not\(\[data-fa-fixture-hover-suspended\]\) \.app-fixture-match\.is-match-link:hover[\s\S]*?background:color-mix/);
  assert.doesNotMatch(styles,/\.app-fixture-score-link:is\(:hover,:focus-visible\)/);
+ assert.match(styles,/\.app-fixture-native-link\{position:absolute;inset:0;z-index:1;display:block\}/);
+ assert.match(styles,/\.app-fixture-match\.is-match-link \.app-fixture-name,[\s\S]*?\.app-fixture-score-link\{position:relative;z-index:2\}/);
 });
 
 for(const cupId of ['int-1','int-2'])test('#605 official published '+cupId+' draw renders six rounds before the season projection',async()=>{
@@ -804,6 +811,8 @@ test('#605 scored competition fixtures keep official goals when linked to publis
  const matches=testView.fields.get('app-fixtures-list').children;
  assert.equal(matches.length,8);
  assert.equal(matches.flatMap(visit).filter(n=>n.className==='app-fixture-score-link').length,8);
+ assert.equal(matches.flatMap(visit).filter(n=>n.className==='app-fixture-native-link').length,8,
+  'hydrating official scores retains the native new-tab target');
  assert.ok(matches.every(n=>n.className.includes('is-match-link')),
   'the full-card click affordance survives authoritative score hydration');
  assert.equal(requests,1,'same official list is reused when the scored view hydrates');
@@ -840,6 +849,8 @@ test('#605 Fixtures starts public match API when world changes from loading to r
  r.publishSource({...ready,source:'dev'});
  assert.equal(r.fields.get('app-fixtures-list').children.flatMap(visit).filter(n=>n.className==='app-fixture-score-link').length,0,
   'DEV source invalidates published link identities');
+ assert.equal(r.fields.get('app-fixtures-list').children.flatMap(visit).filter(n=>n.className==='app-fixture-native-link').length,0,
+  'DEV source invalidates native card links as well');
 });
 
 test('#605 scrolling suppresses stale fixture hover until the mouse genuinely moves',()=>{

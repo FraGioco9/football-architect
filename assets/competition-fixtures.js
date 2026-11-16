@@ -248,6 +248,17 @@
     }
     result.append(status,scoreContent,
       element("span","app-fixture-stadium",clubs.get(game.homeId)?.stadiumName||"—"));
+    if(publicId){
+      // Native full-card anchor supports the browser's new-tab context menu
+      // and middle/Ctrl/Cmd-click without scripting. The score remains the
+      // keyboard link and club names retain independent destinations.
+      // Nest under result so reused match rows replace this link atomically.
+      const hit=element('a','app-fixture-native-link');
+      hit.href='/matches/'+publicId;
+      hit.setAttribute('tabindex','-1');
+      hit.setAttribute('aria-hidden','true');
+      result.append(hit);
+    }
     item.append(identity(game.homeId,true),result,identity(game.awayId,false));
     return item;
   }
