@@ -242,7 +242,11 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   dispatchEvent(event){this.emit(event.type,event)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
- runInNewContext(demo||testHooks?demoSource:source,{document,window,URL,fetch:fakeFetch,setTimeout,clearTimeout,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
+ // Browser production exposes MutationObserver. This isolated VM has no DOM
+ // mutation engine, so retain the API shape without inventing mutation events;
+ // browser QA exercises the real observer and hydration transitions.
+ const MutationObserver=class{constructor(callback){this.callback=callback}observe(){}disconnect(){}};
+ runInNewContext(demo||testHooks?demoSource:source,{document,window,URL,fetch:fakeFetch,setTimeout,clearTimeout,MutationObserver,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  // Flush fetch, DOM filling, and the four sequential script-load promises.
  await new Promise(resolve=>setImmediate(resolve));
  await new Promise(resolve=>setImmediate(resolve));

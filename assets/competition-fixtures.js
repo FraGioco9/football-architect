@@ -424,8 +424,8 @@
   });
   // Knockout bracket scores represent *different matches* for each leg.
   // Use the already-verified public competition collection, not club IDs or
-  // inferred pairings. Score cells are separate native links; single-leg
-  // finals may additionally use the whole bracket card as a click target.
+  // inferred pairings. Both single- and two-leg ties expose only score-box
+  // click targets; the enclosing card remains non-interactive.
   const bracketLabels={
     en:['Open match','First leg','Second leg','Single match'],
     de:['Spiel öffnen','Hinspiel','Rückspiel','Einzelspiel'],
@@ -441,10 +441,9 @@
     const authorized=matchLinksReady()&&source?.source==='authoritative'&&source.worldStatus==='ready'&&
       route.season===publishedSeason&&publishedKey===liveKey&&!!publishedLookup;
     const lang=bracketLabels[document.documentElement.lang]||bracketLabels.en;
-    // One card represents up to two DIFFERENT matches. Give the first and
-    // second leg their own large native half-card targets, regardless of
-    // whether participants have been determined. A one-leg final uses the
-    // full card. Independent club links remain above these targets in CSS.
+    // One card represents up to two DIFFERENT matches. Give first and
+    // second leg their own native score-box targets, even with TBD clubs.
+    // A one-leg tie uses its single rightmost score column only.
     for(const card of root.querySelectorAll('[data-bracket-tie]')){
       const tieId=card.dataset.bracketTie;
       const phase=definition.rules.phases.find(p=>p.type==='knockout'&&
@@ -464,7 +463,8 @@
         }
         anchor.href='/matches/'+match.matchId;
         anchor.setAttribute('aria-label',lang[0]+': '+(tie.legs===1?lang[3]:lang[leg]));
-        anchor.setAttribute('title',tie.legs===1?lang[3]:lang[leg]);
+        // Keep screen-reader names, but never expose native First/Second leg tooltips.
+        anchor.removeAttribute('title');
       }
       for(const link of existing)if(!expected.has(link.dataset.faMatchLeg))link.remove();
       if(expected.size){
