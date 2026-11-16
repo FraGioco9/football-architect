@@ -662,7 +662,7 @@ export function createEngine(RAPIER, input = {}, {
       throw new TypeError('B05b source no longer on original in-field ball');
     const d=diagnosticBasicRestartAttackSide==='home'?1:-1;
     const impulse=diagnosticBasicRestartSource==='throw-in'?
-     {x:0,y:2.3*d,z:0.06}:{x:2.3*d,y:0,z:0.06};
+     {x:0,y:4.0*d,z:0.06}:{x:4.0*d,y:0,z:0.06};
     body.applyImpulse(impulse,true);
     b05bOutboundAction=Object.freeze({
      tick,actorId:sourceId,team:b05bSource.lastTeam,

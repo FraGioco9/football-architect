@@ -35,7 +35,7 @@ test('B05b authentic last-shoe and restart taker are the original ordered 22, pr
      setup.players[i].y-setup.players[j].y)>=PLAYER_MIN_SEPARATION_M-1e-8);
   }
  assert.throws(()=>basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
-  'home',{...B05B_LAB_STARTS.corner.home,vx:0},'corner'),TypeError);
+  'home',{...B05B_LAB_STARTS.corner.home,vx:2},'corner'),TypeError);
 });
 test('B05b private restart staging is not available in default or unrelated physics worlds',async()=>{
  const R=await initializeRapier(rapier);
@@ -68,10 +68,14 @@ test('B05b HOME/AWAY true initial native shoe START sets real last-touch owner b
     assert.equal(initial.physicalRestart,null);
     let event=null;
     let started=[];
-    let sourceKick=null;
+    let sourceKick=null,lastBall=null,peakOutbound=-Infinity;
     let lastLive=null;
     for(let tick=1;tick<=65;tick++){
      const x=a.step(),y=b.step();
+     lastBall=x.ball;
+     peakOutbound=Math.max(peakOutbound,kind==='throw-in'?
+       x.ball.position.y*(side==='home'?1:-1):
+       x.ball.position.x*(side==='home'?1:-1));
      assert.deepEqual(x.ball,y.ball);
      assert.deepEqual(x.starts,y.starts);
      assert.deepEqual(x.refereeEvidence,y.refereeEvidence);
@@ -99,7 +103,7 @@ test('B05b HOME/AWAY true initial native shoe START sets real last-touch owner b
     }
     assert.ok(sourceKick,'first original native shoe START must kick real ball');
     assert.ok(event,
-     'must truly cross full-ball line: '+kind+' '+side+' starts='+JSON.stringify(started));
+     'must truly cross full-ball line: '+kind+' '+side+' starts='+JSON.stringify(started)+' kick='+JSON.stringify(sourceKick)+' max='+peakOutbound+' last='+JSON.stringify(lastBall));
     const expectedLast=(kind==='corner'?
       side==='home'?'away':'home':side)+'-10';
     const expectedTeam=expectedLast.split('-')[0]==='home'?'away':'home';

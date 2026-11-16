@@ -14,7 +14,7 @@ export function basicSourcePositiveRestartSetup(players,attackSide,ball,kind){
   (kind==='throw-in'?
    Math.abs(ball.x)>1e-8||Math.abs(ball.y-direction*29.8)>1e-8||
    ball.vx!==0||ball.vy!==0:
-   Math.abs(ball.x-direction*51)>1e-8||
+   Math.abs(ball.x-direction*47.8)>1e-8||
    Math.abs(ball.y-direction*10)>1e-8||
    ball.vx!==0||ball.vy!==0))
   throw new TypeError('B05b requires exact bounded in-field Rapier boundary fixture');

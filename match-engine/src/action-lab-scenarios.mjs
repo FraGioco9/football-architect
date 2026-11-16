@@ -78,12 +78,12 @@ export const B05B_LAB_STARTS=Object.freeze({
   away:boundary('me-b05b-throw-away',0,-29.8,0,0)
  }),
  corner:Object.freeze({
-  home:boundary('me-b05b-corner-home',51,10,0,0),
-  away:boundary('me-b05b-corner-away',-51,-10,0,0)
+  home:boundary('me-b05b-corner-home',47.8,10,0,0),
+  away:boundary('me-b05b-corner-away',-47.8,-10,0,0)
  }),
  goalKick:Object.freeze({
-  home:boundary('me-b05b-goalkick-home',51,10,0,0),
-  away:boundary('me-b05b-goalkick-away',-51,-10,0,0)
+  home:boundary('me-b05b-goalkick-home',47.8,10,0,0),
+  away:boundary('me-b05b-goalkick-away',-47.8,-10,0,0)
  })
 });
 export const ACTION_LAB_SCENARIOS=Object.freeze([

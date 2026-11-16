@@ -9,7 +9,7 @@ roles, kinematics, original physical shoe bridge and one Rapier ball.
 
 An actual shoe START against current-tick original Rapier solver and
 nonzero geometric manifold is now the *only* authorizer for a single,
-bounded **2.3 N·s** DEV-local outbound impulse on the **original ball**.
+bounded **4.0 N·s** DEV-local outbound impulse on the **original ball**.
 The original ball starts nearly stationary within the field,
 so it must be a real kick before the out-of-play line crossing. This
 research-only kicker is separate from official match scoring and cannot
