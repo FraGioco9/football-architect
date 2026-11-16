@@ -759,6 +759,9 @@ test('#605 official international draw renders six league rounds before the seas
   .filter(n=>n.className==='app-fixture-score-link');
  assert.equal(links.length,12,'every published cup match has its official link');
  assert.ok(links.every(link=>link.href.startsWith('/matches/')&&Number.isSafeInteger(Number(link.href.slice(9)))));
+ view.events['fa:competition-context-change']();
+ assert.equal(view.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch).length,12,
+  'an empty full-season read must not erase an independently published cup draw');
  view.route.set({matchday:6});
  assert.equal(view.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch).length,12,
   'all six published international rounds remain available');
