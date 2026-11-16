@@ -371,7 +371,73 @@
       selected=navigation.get().matchday;
     }
     roundMenu.close();render();
-    if(route.view==='fixtures')void readPublishedFixtures();
+    if(route.view==='fixtures'||route.view==='postseason')void readPublishedFixtures();
+  });
+  // Knockout bracket scores represent *different matches* for each leg.
+  // Use the already-verified public competition collection, not club IDs or
+  // inferred pairings. Score cells are separate native links; single-leg
+  // finals may additionally use the whole bracket card as a click target.
+  const bracketLabels={
+    en:['Open match','First leg','Second leg','Single match'],
+    de:['Spiel öffnen','Hinspiel','Rückspiel','Einzelspiel'],
+    es:['Abrir partido','Ida','Vuelta','Partido único'],
+    fr:['Ouvrir le match','Aller','Retour','Match unique'],
+    it:['Apri partita','Andata','Ritorno','Partita unica']
+  };
+  function syncKnockoutLinks(){
+    const root=document.getElementById('app-postseason-bracket');
+    if(!root?.querySelectorAll)return;
+    const source=window.faWorldState?.get?.(),world=source?.world,route=navigation.get();
+    const liveKey=[route.season,definition.id,world?.generation,world?.revision].join(':');
+    const authorized=source?.source==='authoritative'&&source.worldStatus==='ready'&&
+      route.season===publishedSeason&&publishedKey===liveKey&&!!publishedLookup;
+    const lang=bracketLabels[document.documentElement.lang]||bracketLabels.en;
+    for(const score of root.querySelectorAll('[data-postseason-score]')){
+      const cell=score.parentElement,card=score.closest?.('[data-bracket-tie]');
+      if(!cell||!card)continue;
+      const tieId=card.dataset.bracketTie;
+      const phase=definition.rules.phases.find(p=>p.type==='knockout'&&
+        p.ties.some(tie=>tie.id===tieId));
+      const metric=score.dataset.postseasonScore?.split(':').at(-1);
+      const leg=metric==='first'?1:metric==='second'?2:metric==='final'?1:null;
+      const registered=phase?.ties.find(t=>t.id===tieId);
+      const id=authorized&&leg&&registered&&leg<=registered.legs
+        ?publishedLookup.bySlot[[phase.id,tieId,leg].join(':')]?.matchId:null;
+      const existing=cell.querySelector?.('.fa-bracket-leg-link');
+      if(!id){
+        existing?.remove();
+        cell.classList?.remove('is-match-link');
+        card.classList?.remove('is-single-match-link');
+        continue;
+      }
+      let anchor=existing;
+      if(!anchor){
+        anchor=document.createElement('a');
+        anchor.className='fa-bracket-leg-link';
+        cell.append(anchor);
+      }
+      anchor.href='/matches/'+id;
+      anchor.setAttribute('aria-label',lang[0]+': '+(leg===1&&registered.legs===1?lang[3]:lang[leg]));
+      cell.classList?.add('is-match-link');
+      if(registered.legs===1)card.classList?.add('is-single-match-link');
+    }
+  }
+  // The bracket is recreated when season rules change. Defer sync until the
+  // last synchronous context listener has completed its DOM commit.
+  const bracketAfterContext=()=>void Promise.resolve().then(syncKnockoutLinks);
+  window.addEventListener('fa:competition-context-change',bracketAfterContext);
+  window.addEventListener('fa:source-change',bracketAfterContext);
+  window.addEventListener('fa:published-match-links-change',syncKnockoutLinks);
+  window.addEventListener('fa:competition-route-change',bracketAfterContext);
+  document.getElementById('app-postseason-bracket')?.addEventListener('click',event=>{
+    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||
+       event.altKey||event.shiftKey)return;
+    const target=event.target;
+    if(!target?.closest||target.closest('a,button,input,select,textarea,[role="button"]'))return;
+    const cell=target.closest('.fa-bracket-score.is-match-link');
+    if(cell){cell.querySelector('.fa-bracket-leg-link')?.click();return;}
+    const card=target.closest('.fa-bracket-card.is-single-match-link');
+    card?.querySelector('.fa-bracket-leg-link')?.click();
   });
   // Keep the score as the native focusable anchor, but let a primary click
   // elsewhere in a verified match card activate it. Existing club links take
@@ -455,7 +521,7 @@
   async function readPublishedFixtures(){
     const context=window.faCompetitionContext,source=window.faWorldState?.get?.();
     const route=navigation.get(),season=Number(route.season);
-    if(route.view!=='fixtures'||source?.source!=='authoritative'||source?.worldStatus!=='ready'||!source.world||
+    if(!['fixtures','postseason'].includes(route.view)||source?.source!=='authoritative'||source?.worldStatus!=='ready'||!source.world||
        !Number.isSafeInteger(season)||season<1||context?.selectedSeason!==season||
        season>source.world.seasonNumber)return;
     const key=[season,definition.id,source.world.generation,source.world.revision].join(':');
@@ -510,12 +576,13 @@
          navigation.get().season!==String(season))return;
       const hasOfficialScores=window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative';
       // Keep real sporting results: never overwrite them with a zero-score draw.
-      const commit=hasOfficialScores?null:window.faFixtures.prepare(games,{currentMatchday:null,postseason:[],definition});
+      const commit=hasOfficialScores||navigation.get().view!=='fixtures'?null:window.faFixtures.prepare(games,{currentMatchday:null,postseason:[],definition});
       publishedSeason=String(season);publishedKey=key;publishedIds=new Set(league.map(f=>f.matchId));
       publishedLookup=lookup;
       if(commit)commit();else render();
+      syncKnockoutLinks();
     }catch{
-      if(seq===fetchSequence){publishedSeason=null;publishedKey=null;publishedIds.clear();publishedLookup=null;}
+      if(seq===fetchSequence){publishedSeason=null;publishedKey=null;publishedIds.clear();publishedLookup=null;syncKnockoutLinks();}
     }finally{if(pendingKey===key)pendingKey=null;}
   }
 
@@ -526,14 +593,14 @@
     if(snapshot?.source!=='authoritative'||snapshot.worldStatus!=='ready'||!snapshot.world){
       if(publishedKey!==null||pendingKey!==null||publishedLookup!==null){
         publishedSeason=null;publishedKey=null;pendingKey=null;
-        publishedLookup=null;publishedIds.clear();fetchSequence++;render();
+        publishedLookup=null;publishedIds.clear();fetchSequence++;render();syncKnockoutLinks();
       }
       return;
     }
-    if(navigation.get().view==='fixtures')void readPublishedFixtures();
+    if(['fixtures','postseason'].includes(navigation.get().view))void readPublishedFixtures();
   });
   window.addEventListener('fa:competition-context-change',contextChanged);
-  window.addEventListener('fa:source-change',()=>{publishedSeason=null;publishedIds.clear();publishedLookup=null;publishedKey=null;pendingKey=null;fetchSequence++;if(window.faCompetitionContext?.seasonData?.provenance?.kind!=='dev')void readPublishedFixtures();});
+  window.addEventListener('fa:source-change',()=>{publishedSeason=null;publishedIds.clear();publishedLookup=null;publishedKey=null;pendingKey=null;fetchSequence++;syncKnockoutLinks();if(window.faCompetitionContext?.seasonData?.provenance?.kind!=='dev')void readPublishedFixtures();});
   window.addEventListener('fa:world-clock-snapshot',event=>{
     if(!international||window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')return;
     const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
@@ -541,4 +608,5 @@
   });
   contextChanged();
   render();
+  syncKnockoutLinks();
 })();

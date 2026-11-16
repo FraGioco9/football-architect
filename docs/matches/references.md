@@ -67,3 +67,15 @@ the verified fixture name and result **without a link**.
 
 The Calendar UI links only match name + score, not the entire event/day or
 competition label. No new browser fetches, schema migration or D1 writes.
+
+
+## #605 Postseason knockout bracket links
+
+The Postseason bracket's independently published match slots now provide
+separate `/matches/:id` links for the first leg, second leg and single-match
+final. Each leg's existing score cells remain separate navigable targets;
+a one-match final additionally allows the entire card to open that match.
+Links use `phaseId + tieId + leg` from the canonical published collection,
+with exact world generation/revision and selected season fencing. Reserved
+knockout slots may open their official match detail even before club participants
+have been determined. Unknown/unpublished/DEV slots remain plain text.
