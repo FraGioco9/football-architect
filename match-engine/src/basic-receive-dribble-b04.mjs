@@ -42,8 +42,15 @@ export function createBasicReceiveDribbleObserverB04({side,kind}={}){
    throw new TypeError('B04 requires ordered consecutive original 22-player ball/shoe source');
   if(tick===0){
    if(solver!==null||cushion!==null||tap!==null||
-      priorPass!==null||releaseSequence!==null||action!==null||
-      foot.started.length||foot.active.length||foot.ended.length)
+      priorPass!==null||action!==null||
+      foot.started.length||foot.active.length||foot.ended.length||
+      (releaseSequence!==null&&(
+       releaseSequence.version!=='m30-native-release-audit-observer-v1'||
+       releaseSequence.tick!==0||
+       releaseSequence.active!==null||
+       releaseSequence.latestCompleted!==null||
+       releaseSequence.matchAuthority!==false||
+       releaseSequence.officialPossession!==false)))
     throw new TypeError('B04 cannot start from synthetic contacts or actions');
   }else if(solver?.version!==FOOT_SOLVER_EVIDENCE_VERSION||
    solver.tick!==tick||!Array.isArray(solver.pairs))
