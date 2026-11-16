@@ -29,7 +29,9 @@ export async function planEmptyLineupPreseasonV1(args:{
   !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(generation)||
   !/^[0-9a-f]{64}$/.test(calendarHash)||calendarHash!==await canonicalHash(schedule))
   return fail();
- const calendar=calendarModel.createSeason(schedule.season);
+ const calendar=calendarModel.createSeason(schedule.season) as {
+  days:{day:number;events:unknown[]}[];
+ };
  if(!Array.isArray(schedule.fixtures)||!Array.isArray(calendar.days)||
   calendar.days.length!==56||calendar.days.slice(0,throughDay).some(day=>day.events.length>0)||
   schedule.fixtures.some(f=>f.day<=throughDay))
