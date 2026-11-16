@@ -294,6 +294,23 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   assert.doesNotMatch(livePressure.status,/possession awarded|confirmed control|tackle won/i);
   process.stdout.write('ACTION_LAB_M26_REAL_LIVE_PRESSURE_CHROME '+
    JSON.stringify(livePressure)+'\\n');
+  const tacticalChoice=await evalJs(
+   "(()=>{const action=document.getElementById('action-labs-choice');"+
+   "action.value='control';action.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "const scene=document.getElementById('action-labs-control-scene');"+
+   "scene.value='receive-pressure-decide';scene.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<67;i++)document.getElementById('action-labs-step').click();"+
+   "return {scene:scene.value,visible:!document.getElementById('action-labs-control-scene-label').hidden,"+
+   "status:document.getElementById('action-labs-status').textContent,"+
+   "readout:document.getElementById('action-labs-readout').textContent};})()"
+  );
+  assert.equal(tacticalChoice.scene,'receive-pressure-decide');
+  assert.equal(tacticalChoice.visible,true);
+  assert.match(tacticalChoice.status,/original clearance applied under observed pressure/);
+  assert.match(tacticalChoice.readout,/Native choice release existing clearance/);
+  assert.doesNotMatch(tacticalChoice.status,/possession granted|verified control|tackle won/i);
+  process.stdout.write('ACTION_LAB_M27_PHYSICAL_TACTICS_CHROME '+
+   JSON.stringify(tacticalChoice)+'\\n');
   const negativeControl=await evalJs(
    "(()=>{const action=document.getElementById('action-labs-choice');"+
    "action.value='control';action.dispatchEvent(new Event('change',{bubbles:true}));"+

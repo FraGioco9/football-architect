@@ -45,6 +45,7 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/physical-football-decision-evidence-m23.mjs': 'match-engine/src/physical-football-decision-evidence-m23.mjs',
   '/__fa_match_engine__/real-post-contact-ball-continuity-m24.mjs': 'match-engine/src/real-post-contact-ball-continuity-m24.mjs',
   '/__fa_match_engine__/real-pressured-first-touch-m26.mjs': 'match-engine/src/real-pressured-first-touch-m26.mjs',
+  '/__fa_match_engine__/physical-receiver-choice-m27.mjs': 'match-engine/src/physical-receiver-choice-m27.mjs',
   '/__fa_match_engine__/action-lab-scenarios.mjs': 'match-engine/src/action-lab-scenarios.mjs',
   '/__fa_match_engine__/research-shot-initial-lineup.mjs': 'match-engine/src/research-shot-initial-lineup.mjs',
   '/__fa_match_engine__/research-control-initial-lineup.mjs': 'match-engine/src/research-control-initial-lineup.mjs',

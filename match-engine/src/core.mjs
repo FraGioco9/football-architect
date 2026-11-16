@@ -95,6 +95,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
   diagnosticResearchReceivingCushionEnabled = false,
+  diagnosticResearchReceivingDecisionEnabled = false,
   diagnosticResearchControlCloseDefender = false,
   diagnosticResearchCarrySide = null
 } = {}) {
@@ -159,6 +160,11 @@ export function createEngine(RAPIER, input = {}, {
     (diagnosticResearchControlOpponentFirst&&
      !diagnosticResearchControlReceiver))
   throw new TypeError('Bounded CONTROL opponent requires genuine receiver scene');
+ if(typeof diagnosticResearchReceivingDecisionEnabled!=='boolean'||
+    (diagnosticResearchReceivingDecisionEnabled&&(
+     !diagnosticResearchReceivingCushionEnabled||
+     !diagnosticResearchControlReceiver)))
+  throw new TypeError('M27 applies only to original closed CONTROL M25 cushion source');
  if(typeof diagnosticResearchControlCloseDefender!=='boolean'||
     (diagnosticResearchControlCloseDefender&&(
      !diagnosticResearchControlReceiver||
@@ -292,6 +298,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
+    diagnosticResearchReceivingDecisionEnabled,
     diagnosticResearchControlCloseDefender,diagnosticResearchCarrySide
   });
   const world = new RAPIER.World(GRAVITY);
@@ -351,6 +358,8 @@ export function createEngine(RAPIER, input = {}, {
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled,
       researchReceivingCushionSide:diagnosticResearchReceivingCushionEnabled?
+       diagnosticResearchControlSide:null,
+      researchReceivingDecisionSide:diagnosticResearchReceivingDecisionEnabled?
        diagnosticResearchControlSide:null
     }):null;
   // A ball rolling in +X has angular velocity +Y; at its bottom contact
@@ -548,7 +557,8 @@ export function createEngine(RAPIER, input = {}, {
     ...(actionExecutor?{
       uniformAutonomousActionSnapshot:()=>actionExecutor.actionSnapshot(),
       physicalRejectionAuditSnapshot:()=>actionExecutor.rejectionSnapshot(),
-      researchReceivingCushionSnapshot:()=>actionExecutor.cushionSnapshot()
+      researchReceivingCushionSnapshot:()=>actionExecutor.cushionSnapshot(),
+      researchReceiverChoiceSnapshot:()=>actionExecutor.receiverChoiceSnapshot()
     }:{}),
     reset: () => {
     dispose();

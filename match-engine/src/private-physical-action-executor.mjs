@@ -7,13 +7,15 @@ import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,
 import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
 import {calculateRealReceivingCushion}
  from './physical-receiving-cushion-m25.mjs';
+import {choosePhysicalReceiverSecondTouch}
+ from './physical-receiver-choice-m27.mjs';
 
 export const PRIVATE_PHYSICAL_ACTION_EXECUTOR_VERSION=
  'me-action-foundation-real-shoe-impulse-v1';
 
 export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
- researchReceivingCushionSide=null
+ researchReceivingCushionSide=null,researchReceivingDecisionSide=null
 }={}){
  if(!ballBody||typeof ballBody.translation!=='function'||
     typeof ballBody.linvel!=='function'||
@@ -24,11 +26,15 @@ export function createPrivatePhysicalActionExecutor({
     typeof allowPhysicalCarry!=='boolean'||
     (researchReceivingCushionSide!==null&&
      !['home','away'].includes(researchReceivingCushionSide))||
-    (researchReceivingCushionSide!==null&&allowPhysicalCarry))
+    (researchReceivingCushionSide!==null&&allowPhysicalCarry)||
+    (researchReceivingDecisionSide!==null&&(
+     !['home','away'].includes(researchReceivingDecisionSide)||
+     researchReceivingDecisionSide!==researchReceivingCushionSide)))
   throw new TypeError('Private Rapier body and live shoe source required');
  let tick=0,lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
  let action=null,audit=null,closed=false;
  let actualPriorPass=null,interrupted=false,firstCushion=null;
+ let firstReceiverChoice=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame){
   ensureOpen();
@@ -80,9 +86,30 @@ export function createPrivatePhysicalActionExecutor({
     });
    }
   }
-  // Research mode substitutes the normal same-tick PASS response,
-  // rather than accidentally adding two impulses to one real contact.
-  const chosen=researchCandidate?null:originalChoice;
+  // M27 is triggered ONLY on an existing genuine second shoe START with
+  // an existing original clearance selected by the unchanged policy.
+  // It changes whether to APPLY that impulse; never manufactures one.
+  if(researchReceivingDecisionSide===side&&
+     firstCushion&&!firstReceiverChoice&&
+     nextTick>firstCushion.tick&&
+     originalChoice?.action==='clearance'&&
+     originalChoice.playerId===receiverId&&
+     contact.started.length===1&&contact.active.length===1&&
+     contact.started[0]===receiverId&&contact.active[0]===receiverId){
+   const receiver=playerFrame?.players?.find(p=>p.id===receiverId);
+   const opposition=playerFrame?.players?.filter(p=>p.team!==side);
+   firstReceiverChoice=choosePhysicalReceiverSecondTouch({
+    tick:nextTick,actorId:receiverId,originalChoice,
+    realNativeStarts:contact.started,realNativeActive:contact.active,
+    ballPosition:ballBody.translation(),ballVelocity:ballBody.linvel(),
+    receiver,realOpponents:opposition,verifiedEarlierCushion:firstCushion
+   });
+  }
+  const deferOriginal=firstReceiverChoice?.tick===nextTick&&
+   firstReceiverChoice.decision==='defer-clearance-to-keep-ball-near';
+  // M25 preempts same-tick action for cushioning. M27 may instead
+  // defer an ORIGINAL second-touch clearance with zero additional impulse.
+  const chosen=researchCandidate||deferOriginal?null:originalChoice;
   if(chosen&&(!gates.passedInputGates||
      gates.actorId!==chosen.playerId||
      !contact.started.includes(chosen.playerId)||
@@ -93,6 +120,7 @@ export function createPrivatePhysicalActionExecutor({
    ...gates,actionSelected:chosen!==null,
    noActionReason:chosen?null:researchCandidate?
     'experimental-receiving-cushion-preempts-uniform-action':
+    deferOriginal?'m27-native-decision-defers-original-clearance':
     (gates.firstFailedGate??'not-selected-after-input-gates')
   });
   let applied=null;
@@ -140,6 +168,7 @@ export function createPrivatePhysicalActionExecutor({
   actionSnapshot:()=>{ensureOpen();return action;},
   rejectionSnapshot:()=>{ensureOpen();return audit;},
   cushionSnapshot:()=>{ensureOpen();return firstCushion;},
+  receiverChoiceSnapshot:()=>{ensureOpen();return firstReceiverChoice;},
   dispose:()=>{closed=true;}
  });
 }
