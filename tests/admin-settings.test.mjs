@@ -174,6 +174,69 @@ test('operational command is single-flight, revision-bound and cannot run signed
  assert.equal(c.state().world.revision,2);
  assert.equal(c.state().operation,'completed');
 });
+test('confirmed sporting advance remains saved when its follow-up calendar read is unavailable',async()=>{
+ const before={...world,seasonNumber:1,phase:'active',day:12,revision:20};
+ const after={...before,day:13,revision:21};
+ let current=before,writes=0,postReadFails=true;
+ const c=createAdminController(async(path,options)=>{
+  if(path==='/api/admin/session')return session;
+  if(path==='/api/admin/world'){
+   if(current.day===13&&postReadFails)throw error(503,'admin_unavailable');
+   return {world:current};
+  }
+  if(path==='/api/admin/seasons/events'){
+   if(current.day===13&&postReadFails)throw error(503,'calendar_event_unavailable');
+   return {world:current,mode:'sporting',events:[],calendarReady:true};
+  }
+  if(path==='/api/admin/seasons/advance'){
+   writes++;
+   assert.deepEqual(options.body,{expectedGeneration:before.generation,expectedRevision:20});
+   current=after;
+   return {world:after,operationId:'v2-day-13'};
+  }
+  throw Error('unexpected path '+path);
+ },()=>{});
+ await c.refresh();
+ await c.command('advance');
+ assert.equal(writes,1,'day finalized once');
+ assert.equal(c.state().world.day,13,'acknowledged day remains visible');
+ assert.equal(c.state().world.revision,21);
+ assert.equal(c.state().message,'savedRefresh','do not show Admin unavailable for a saved day');
+ assert.equal(c.state().operation,'completed');
+ assert.equal(c.state().events,null,'never infer available controls without event authority');
+ await c.command('advance');
+ assert.equal(writes,1,'no repeat while event authority is unavailable');
+ postReadFails=false;
+ await c.refresh();
+ assert.equal(c.state().world.day,13);
+ assert.equal(c.state().message,'signedIn');
+ assert.equal(c.state().events.mode,'sporting');
+});
+
+test('confirmed sporting advance still clears access if post-write session is revoked',async()=>{
+ const before={...world,seasonNumber:1,phase:'active',day:12,revision:20};
+ let current=before,revoked=false,writes=0;
+ const c=createAdminController(async(path)=>{
+  if(path==='/api/admin/session')return session;
+  if(path==='/api/admin/world')return {world:current};
+  if(path==='/api/admin/seasons/events'){
+   if(revoked)throw error(401,'unauthorized');
+   return {world:current,mode:'sporting',events:[],calendarReady:true};
+  }
+  if(path==='/api/admin/seasons/advance'){
+   writes++;current={...before,day:13,revision:21};revoked=true;
+   return {world:current,operationId:'v2-day-13'};
+  }
+  throw Error('unexpected path '+path);
+ },()=>{});
+ await c.refresh();
+ await c.command('advance');
+ assert.equal(writes,1);
+ assert.equal(c.state().message,'signedOut');
+ assert.equal(c.state().world,null,'revoked sessions cannot keep a privileged world');
+ assert.equal(c.state().events,null);
+});
+
 test('operational command refuses stale generation response and reports an error',async()=>{
  const preparing={...world,phase:'preparing',seasonNumber:1,revision:1};
  const c=createAdminController(async(path)=>path.endsWith('/session')?session:path.endsWith('/world')?{world:preparing}:path.endsWith('/events')?{world:preparing,mode:'legacy',events:[],calendarReady:false}:{world:{...preparing,generation:'650e8400-e29b-41d4-a716-446655440000',revision:2}},()=>{});

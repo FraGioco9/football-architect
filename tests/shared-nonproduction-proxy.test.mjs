@@ -13,6 +13,33 @@ test('opt-in bridge handshakes without credentials then narrows cookie/headers a
  assert.deepEqual(seen[1].options.headers,{'x-fa-expected-pool':'dev-preview',origin,cookie:`__Host-fa_player=${token}`});
  assert.deepEqual(r.headers['set-cookie'],[`fa_player_local=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000`]);
 });
+test('shared DEV proxy forwards the extended timeout only for an authorized V2 sporting advance',async()=>{
+ const seen=[];
+ const send=async(url,options)=>{
+  seen.push({path:url.pathname,method:options.method||'GET',timeoutMs:options.timeoutMs});
+  return seen.length%2===1?context():{status:200,headers:{},body:Buffer.from('{\"world\":{}}')};
+ };
+ const advance=await run(req({
+  path:'/api/admin/seasons/advance',method:'POST',
+  headers:{origin:'http://app.localhost:2000',cookie:'fa_player_local='+token,
+   'content-type':'application/json','x-csrf-token':'csrf-test','idempotency-key':'idempotent-test'},
+  body:'{\"expectedRevision\":1}'
+ }),send);
+ assert.equal(advance.status,200);
+ assert.deepEqual(seen.slice(0,2),[
+  {path:'/api/environment',method:'GET',timeoutMs:undefined},
+  {path:'/api/admin/seasons/advance',method:'POST',timeoutMs:120000}
+ ]);
+ const normal=await run(req({
+  path:'/api/admin/world',method:'GET',headers:{cookie:'fa_player_local='+token}
+ }),send);
+ assert.equal(normal.status,200);
+ assert.deepEqual(seen.slice(2),[
+  {path:'/api/environment',method:'GET',timeoutMs:undefined},
+  {path:'/api/admin/world',method:'GET',timeoutMs:15000}
+ ]);
+});
+
 test('bad target handshake never receives login credentials',async()=>{
  for(const change of [{pool:'production'},{origin:'https://different.invalid'},{sharedWorld:false},{separateSignIn:false},{schemaVersion:2}]){
   let n=0;const res=await run(req({method:'POST',path:'/api/player/login',headers:{origin:'http://app.localhost:2000'},body:'{"password":"secret"}'}),async()=>{n++;const c=context();c.body=Buffer.from(JSON.stringify({...JSON.parse(c.body),...change}));return c});

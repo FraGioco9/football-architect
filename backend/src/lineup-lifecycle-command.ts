@@ -94,7 +94,8 @@ async function storedPrefixGuards(
 export function buildLineupLifecycleBatchV1(
  db:Database,session:AdminSession,now:number,world:WorldV1,
  proposal:LifecycleProposal,evidence:Evidence,prefixGuards:Statement[],
- planned:StagedLineupDayV1,operationId:string,key:string,requestHash:string
+ planned:StagedLineupDayV1,operationId:string,key:string,requestHash:string,
+ sessionNow:number=now
 ):Statement[]{
  if(!Number.isSafeInteger(now)||now<=0||proposal.before.revision!==world.revision||
   proposal.after.day!==planned.day||planned.day!==world.day+1||
@@ -104,7 +105,8 @@ export function buildLineupLifecycleBatchV1(
   !operationId||!key||!requestHash)invalid('lineup_lifecycle_plan_invalid');
  const outcome:Outcome={world:proposal.after,operationId};
  return [
-  sessionGuard(db,session,now),
+  // Evaluate the live session at commit time, not at sporting-plan start.
+  sessionGuard(db,session,sessionNow),
   abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=? AND phase=? AND day=?',
    [world.generation,world.revision,world.seasonNumber,world.phase,world.day]),
   ...sourceGuards(db,evidence),
@@ -127,15 +129,25 @@ export function buildLineupLifecycleBatchV1(
  */
 export async function executeLineupLifecycleV1(
  db:Database,session:AdminSession,action:'start'|'advance',
- input:PrepareRequest,idempotencyKey:string,now:number
+ input:PrepareRequest,idempotencyKey:string,now:number,
+ authorizationNow:()=>number|Promise<number>=()=>Math.floor(Date.now()/1000)
 ):Promise<Outcome>{
  const command=parsePrepareRequest(input),key=parseIdempotencyKey(idempotencyKey);
  if(!['start','advance'].includes(action))throw new ApiError(422,'invalid_lifecycle_command');
  if(!Number.isSafeInteger(now)||now<=0)throw new ApiError(503,'lifecycle_unavailable');
  const commandName=action==='start'?'start-season-v1':'advance-season-v1';
  const requestHash=await hashText(JSON.stringify({command:commandName,actor:session.actor.id,...command}));
+ // Sporting-day planning can take tens of seconds. A concurrent authenticated
+ // read may touch last_seen_at after the request's initial "now". Recheck the
+ // session against a fresh clock at each transaction/recovery boundary; keep
+ // the original "now" for the deterministic match evidence and audit stamps.
+ const sessionTime=async()=>{
+  const latest=await authorizationNow();
+  if(!Number.isSafeInteger(latest)||latest<=0)throw new ApiError(503,'lifecycle_unavailable');
+  return Math.max(now,latest);
+ };
  try{
-  const previous=await replay(db,session,command,key,requestHash,now);
+  const previous=await replay(db,session,command,key,requestHash,await sessionTime());
   if(previous)return previous;
   const world=await readWorld(db);
   if(world.generation!==command.expectedGeneration||
@@ -165,13 +177,13 @@ export async function executeLineupLifecycleV1(
   };
   const statements=buildLineupLifecycleBatchV1(
    db,session,now,world,proposal,evidence,prefixGuards,planned,
-   operationId,key,requestHash
+   operationId,key,requestHash,await sessionTime()
   );
   try{
    await db.batch(statements);
    return result;
   }catch{
-   const winner=await replay(db,session,command,key,requestHash,now);
+   const winner=await replay(db,session,command,key,requestHash,await sessionTime());
    if(winner)return winner;
    const current=await readWorld(db);
    if(current.generation!==world.generation||current.revision!==world.revision)

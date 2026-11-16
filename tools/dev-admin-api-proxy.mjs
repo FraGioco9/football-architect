@@ -1,6 +1,6 @@
 // Fixed-upstream DEV API bridge: LAN opt-in allows anonymous public GETs only.
 // Operator and Player endpoints always require loopback; never published.
-import {proxySharedNonproduction,protectedResponseLimit} from './shared-nonproduction-proxy.mjs';
+import {proxySharedNonproduction,protectedResponseLimit,upstreamTimeoutMs} from './shared-nonproduction-proxy.mjs';
 import {isAllowedPublicPlayersPath} from '../backend/src/public-players-filters.mjs';
 import {request as httpRequest} from 'node:http';
 import {networkInterfaces} from 'node:os';
@@ -74,7 +74,7 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  const maxResponseBytes=protectedResponseLimit(raw,anonymousRead);
  if(body.length)headers['content-length']=body.length;
  return new Promise(resolve=>{
-  const upstream=httpRequest({hostname:url.hostname.replace(/^\[|\]$/g,''),port:url.port,path:raw,method:req.method,headers,timeout:15000},response=>{
+  const upstream=httpRequest({hostname:url.hostname.replace(/^\[|\]$/g,''),port:url.port,path:raw,method:req.method,headers,timeout:upstreamTimeoutMs(raw,req.method)},response=>{
    const parts=[];let bytes=0;
    response.on('data',chunk=>{bytes+=chunk.length;if(bytes>maxResponseBytes)upstream.destroy();else parts.push(chunk)});
    response.on('end',()=>{
