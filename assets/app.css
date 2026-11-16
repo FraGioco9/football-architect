@@ -571,7 +571,7 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
  * delegated click makes the whole verified fixture card a pointer target.
  * Do not wrap the existing independent club links in another anchor. */
 .app-fixture-match.is-match-link{cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
-.app-fixture-match.is-match-link:hover,
+html:not([data-fa-fixture-hover-suspended]) .app-fixture-match.is-match-link:hover,
 .app-fixture-match.is-match-link:has(.app-fixture-score-link:focus-visible){
  background:color-mix(in srgb,var(--fa-shell-accent) 11%,var(--surface));
  border-color:color-mix(in srgb,var(--fa-shell-accent) 45%,var(--border));
@@ -581,6 +581,8 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 .app-fixture-match.is-match-link:has(.app-fixture-score-link:focus-visible){
  outline:2px solid var(--focus);outline-offset:2px;
 }
+/* Scroll dismisses hover immediately; do not leave a fade-out stuck behind the pointer. */
+html[data-fa-fixture-hover-suspended] .app-fixture-match.is-match-link{transition:none}
 @media(prefers-reduced-motion:reduce){.app-fixture-match.is-match-link{transition:none}}
 .app-fixture-pending{grid-column:2;justify-self:center;text-align:center}
 /* A single pending score occupies the centre track, regardless of surrounding placeholders. */

@@ -42,7 +42,7 @@ test('Club Fixtures only link official numeric draw scores, not crest or DEV row
  assert.match(linked,/<li class="club-fixture-row(?: is-next)? is-match-link"[^>]*data-club-fixture-id="123"/);
  assert.match(linked,/<a class="club-fixture-score-link" href="\/matches\/123" aria-label="Open match: Opponent FC"><strong/);
  const css=readFileSync(new URL('assets/club-page.css',root),'utf8');
- assert.match(css,/\.club-fixture-row\.is-match-link:hover[\s\S]*?background:color-mix/);
+ assert.match(css,/html:not\(\[data-fa-fixture-hover-suspended\]\) \.club-fixture-row\.is-match-link:hover[\s\S]*?background:color-mix/);
  assert.doesNotMatch(css,/\.club-fixture-score-link:is\(:hover,:focus-visible\) strong/);
  const controller=readFileSync(new URL('assets/club-fixtures-controller.mjs',root),'utf8');
  assert.match(controller,/card\?\.querySelector\('\.club-fixture-score-link'\)\?\.click\(\)/);
@@ -63,4 +63,14 @@ test('Complete verified club fixtures need the published lookup authority',()=>{
  const html=s=>fixtures.render({manifest:{clubs:[club]},lang:'en',season:1,currentSeason:1,seasons:[1],snapshot:s});
  assert.doesNotMatch(html(complete),/club-fixture-score-link/);
  assert.match(html({...complete,linkAuthority:'published-match-index-v1'}),/href="\/matches\/785"/);
+});
+
+test('Club Fixtures scroll dismisses pointer hover without hiding keyboard focus',()=>{
+ const css=readFileSync(new URL('assets/club-page.css',root),'utf8');
+ const controller=readFileSync(new URL('assets/club-fixtures-controller.mjs',root),'utf8');
+ assert.match(css,/html\[data-fa-fixture-hover-suspended\] \.club-fixture-row\.is-match-link\{transition:none\}/);
+ assert.match(css,/\.club-fixture-row\.is-match-link:has\(\.club-fixture-score-link:focus-visible\)/);
+ assert.match(controller,/window\.addEventListener\('scroll',[\s\S]*?faFixtureHoverSuspended='true'/);
+ assert.match(controller,/window\.addEventListener\('pointermove',[\s\S]*?event\.pointerType!=='mouse'/);
+ assert.match(controller,/delete document\.documentElement\.dataset\.faFixtureHoverSuspended/);
 });

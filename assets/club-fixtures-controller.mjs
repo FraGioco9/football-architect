@@ -175,6 +175,21 @@ export function mountClubFixtures({host,manifest}){
   refresh();
  });
  const moveTip=()=>{if(tipTarget===document.activeElement)showTip(tipTarget);else hideTip();};
+  // A stationary mouse must not keep a stale :hover highlight while a
+  // scrolling container moves fixture cards underneath it. A genuine pointer
+  // displacement (not a scroll-generated pointermove at the same coordinates)
+  // restores hover. Keyboard focus highlighting is independent.
+  let hoverPointerX=null,hoverPointerY=null;
+  window.addEventListener('scroll',()=>{
+    document.documentElement.dataset.faFixtureHoverSuspended='true';
+  },{capture:true,passive:true});
+  window.addEventListener('pointermove',event=>{
+    if(event.pointerType!=='mouse'||!Number.isFinite(event.clientX)||!Number.isFinite(event.clientY))return;
+    if(hoverPointerX!==null&&
+       (Math.abs(event.clientX-hoverPointerX)>1||Math.abs(event.clientY-hoverPointerY)>1))
+      delete document.documentElement.dataset.faFixtureHoverSuspended;
+    hoverPointerX=event.clientX;hoverPointerY=event.clientY;
+  },{capture:true,passive:true});
  window.addEventListener('scroll',moveTip,true);window.addEventListener('resize',moveTip);
  return {mount(){
   normalizeLocation();

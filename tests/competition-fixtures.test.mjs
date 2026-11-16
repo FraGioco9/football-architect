@@ -579,7 +579,7 @@ test('published domestic Fixtures appear at day 2, before worldwide calendar pub
  view.fields.get('app-fixtures-list').events.click({button:0,target:ownLink,defaultPrevented:false});
  assert.equal(links[0].clicked,false,'direct club/score anchors are not hijacked');
  const styles=read('assets/app.css');
- assert.match(styles,/\.app-fixture-match\.is-match-link:hover[\s\S]*?background:color-mix/);
+ assert.match(styles,/html:not\(\[data-fa-fixture-hover-suspended\]\) \.app-fixture-match\.is-match-link:hover[\s\S]*?background:color-mix/);
  assert.doesNotMatch(styles,/\.app-fixture-score-link:is\(:hover,:focus-visible\)/);
 });
 
@@ -655,4 +655,27 @@ test('#605 Fixtures starts public match API when world changes from loading to r
  r.publishSource({...ready,source:'dev'});
  assert.equal(r.fields.get('app-fixtures-list').children.flatMap(visit).filter(n=>n.className==='app-fixture-score-link').length,0,
   'DEV source invalidates published link identities');
+});
+
+test('#605 scrolling suppresses stale fixture hover until the mouse genuinely moves',()=>{
+ const view=setup(divisions[0],routeRegistry);
+ const state=view.document.documentElement.dataset;
+ view.events.pointermove({pointerType:'mouse',clientX:200,clientY:120});
+ assert.equal(state.faFixtureHoverSuspended,undefined);
+ view.events.scroll();
+ assert.equal(state.faFixtureHoverSuspended,'true','scroll immediately clears visual hover');
+ view.events.pointermove({pointerType:'mouse',clientX:200,clientY:120});
+ assert.equal(state.faFixtureHoverSuspended,'true','scroll-generated stationary pointermove does not restore hover');
+ view.events.pointermove({pointerType:'touch',clientX:210,clientY:120});
+ assert.equal(state.faFixtureHoverSuspended,'true','touch does not fake a mouse re-entry');
+ view.events.pointermove({pointerType:'mouse',clientX:203,clientY:120});
+ assert.equal(state.faFixtureHoverSuspended,undefined,'moving the mouse restores hover');
+ view.events.scroll();
+ assert.equal(state.faFixtureHoverSuspended,'true');
+ view.events.pointermove({pointerType:'mouse',clientX:205,clientY:122});
+ assert.equal(state.faFixtureHoverSuspended,undefined,'a new deliberate move restores hover');
+ const css=read('assets/app.css');
+ assert.match(css,/html\[data-fa-fixture-hover-suspended\] \.app-fixture-match\.is-match-link\{transition:none\}/);
+ assert.match(css,/\.app-fixture-match\.is-match-link:has\(\.app-fixture-score-link:focus-visible\)/,
+  'keyboard focus remains visible even when mouse hover is suspended');
 });
