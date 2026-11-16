@@ -130,9 +130,13 @@ export function createBasicMatchRefereeB05(){
     team:foot.started[0].split('-')[0],
     nativeExclusiveShoeStart:true});
   else if(foot.started.length>1)lastTouch=null;
-  if(previous&&!event){
+  // A source-verified, physically restarted dead ball can begin a NEW
+  // independent phase. Unresolved dead balls cannot create repeated
+  // phantom exits or goals.
+  if(previous&&(!event||restarted)){
    const crossing=detectFirstFullyOutBallB05(previous,ball.position);
    if(crossing){
+    restarted=false;
     const scoringTeam=crossing.edge==='goal'?
      crossing.side===1?'home':'away':null;
     const restart=restartFor({edge:crossing.edge,side:crossing.side,
@@ -157,7 +161,10 @@ export function createBasicMatchRefereeB05(){
   if(!event||restarted||ticket!==event.restart||!ticket.ready||
     !ticket.sameBallRapierRestart)
    throw new TypeError('B05 cannot restart without original scored/out event and verified restart team');
-  restarted=true;return snapshot();
+  restarted=true;
+  // Previous-phase last touch cannot be reused for a new throw/corner.
+  lastTouch=null;
+  return snapshot();
  }
  return freeze({observe,snapshot,acknowledgeRestart});
 }

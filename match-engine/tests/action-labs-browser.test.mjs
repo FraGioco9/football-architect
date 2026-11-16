@@ -187,6 +187,13 @@ test('clean-stack Action LABs load all seventeen options in real DEV Chrome',
     /No .* witness yet|genuine Rapier shoe START|Observed: actual|Observed: separate/,
     'A pending action must not become a fabricated positive');
    assert.match(result.readout,/Tick [0-9]+/);
+   if(['goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(choice)){
+    assert.match(result.readout,/B06 00:00 · LAB [0-9]+–[0-9]+ · match events [1-3]/,
+     'B06 must display source-measured clock and provisional goals in same Scenario menu');
+    if(choice==='goal')assert.match(result.readout,/B06 00:00 · LAB 1–0 · match events 2/);
+    else assert.match(result.readout,/B06 00:00 · LAB 0–0/);
+    assert.match(result.readout,/unofficial/);
+   }
    if(choice==='touchline'||choice==='goal-line-out'){
     assert.match(result.readout,/^Tick (?:11|12) /,
      'unresolved dead ball freezes at its actual full-ball boundary tick');

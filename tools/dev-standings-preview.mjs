@@ -59,6 +59,7 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/basic-receive-dribble-b04.mjs': 'match-engine/src/basic-receive-dribble-b04.mjs',
   '/__fa_match_engine__/basic-match-referee-b05.mjs': 'match-engine/src/basic-match-referee-b05.mjs',
   '/__fa_match_engine__/basic-restart-source-lineup-b05b.mjs': 'match-engine/src/basic-restart-source-lineup-b05b.mjs',
+  '/__fa_match_engine__/basic-match-clock-score-b06.mjs': 'match-engine/src/basic-match-clock-score-b06.mjs',
   '/__fa_match_engine__/research-control-initial-lineup.mjs': 'match-engine/src/research-control-initial-lineup.mjs',
   '/__fa_match_engine__/research-carry-initial-lineup.mjs': 'match-engine/src/research-carry-initial-lineup.mjs',
   '/__fa_match_engine__/player-foot-contact.mjs': 'match-engine/src/player-foot-contact.mjs',

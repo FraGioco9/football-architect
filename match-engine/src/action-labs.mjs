@@ -14,6 +14,7 @@ import {createNativeControlEvidenceGateM29}
  from './native-control-evidence-gate-m29.mjs';
 import {createRealBallReleaseAuditM30} from './real-ball-release-audit-m30.mjs';
 import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
+import {createBasicMatchTimelineB06} from './basic-match-clock-score-b06.mjs';
 import {createBasicReceiveDribbleObserverB04}
  from './basic-receive-dribble-b04.mjs';
 import {createRealOpponentBallContestAuditM31}
@@ -199,6 +200,7 @@ export function createControlledActionLab(RAPIER,id,{
  const releaseObserver=tapExperiment?createRealBallReleaseAuditM30():null;
  const contestObserver=tapExperiment?createRealOpponentBallContestAuditM31():null;
  const refereeObserver=refereeMode?createBasicMatchRefereeB05():null;
+ const matchTimelineObserver=refereeMode?createBasicMatchTimelineB06():null;
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
  function record(physics,playerFrame){
@@ -370,6 +372,9 @@ export function createControlledActionLab(RAPIER,id,{
     actorId:refereeEvidence.lastVerifiedTouch?.playerId??null
    })].slice(-12));
   }
+  const matchTimeline=matchTimelineObserver?.observe({
+   physics,refereeEvidence
+  })??null;
   const contactContinuity=continuityObserver.observe({
    physics,playerFrame,foot,decisionEvidence
   });
@@ -393,7 +398,8 @@ export function createControlledActionLab(RAPIER,id,{
      realOpponentContest}:{}),
     ...(reachExperiment?{realBallReachM32:playerFrame.realBallReachM32}:{}),
     ...(basicFootwork?{baseFootworkAudit}:{}),
-    ...(refereeMode?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake}:{}),
+    ...(refereeMode?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake,
+     matchTimeline}:{}),
     ...(goalkeeperSave?{
       goalkeeperDiveIntent:playerFrame.goalkeeperDiveIntent,
       goalkeeperDiveIntentTicks:playerFrame.goalkeeperDiveIntentTicks
@@ -431,8 +437,11 @@ export function createControlledActionLab(RAPIER,id,{
    physicalRestart=engine.applyBasicRestartAtBoundary(
     latest.refereeEvidence.lastEvent);
    refereeObserver.acknowledgeRestart(ticket);
+   const matchTimeline=matchTimelineObserver.recordRestart({
+    physicsTick:after.tick,refereeEvidence:refereeObserver.snapshot(),physicalRestart
+   });
    latest=Object.freeze({...latest,
-    refereeEvidence:refereeObserver.snapshot(),physicalRestart});
+    refereeEvidence:refereeObserver.snapshot(),physicalRestart,matchTimeline});
   }
   if(sourceRestart&&physicalRestart&&after.tick>physicalRestart.tick&&!b05bTake){
    const take=engine.attemptB05bOriginalSetPiece(
@@ -444,8 +453,11 @@ export function createControlledActionLab(RAPIER,id,{
      tick:after.tick,kind:take.type+'-physical-attempt',
      actorId:take.actorId
     })].slice(-12));
+    const matchTimeline=matchTimelineObserver.recordSetPiece({
+     physicsTick:after.tick,take
+    });
     latest=Object.freeze({...latest,
-     ball:engine.snapshot().ball,b05bTake,
+     ball:engine.snapshot().ball,b05bTake,matchTimeline,
      eventCount:count,events:history});
    }
   }
@@ -525,6 +537,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   summary.textContent='Tick '+snap.physicsTick+' · '+
    number(snap.timeS)+' s · Ball ('+[ball.x,ball.y,ball.z].map(number).join(', ')+
    ') m · Real shoe STARTs '+snap.starts.length+' · Witnesses '+snap.eventCount+
+   (snap.matchTimeline?
+    ' · B06 '+snap.matchTimeline.clock.label+
+    ' · LAB '+snap.matchTimeline.provisionalScore.home+
+    '–'+snap.matchTimeline.provisionalScore.away+
+    ' · match events '+snap.matchTimeline.matchEventCount+
+    (snap.matchTimeline.outstandingDeadBall?' · dead ball pending':'')+
+    ' · unofficial':'')+
    (snap.decisionEvidence.current.kind!=='none'?
     ' · Physical candidate '+snap.decisionEvidence.current.kind:'')+
    (snap.physicalFirstTouch?
