@@ -1,6 +1,6 @@
-/** #613 — V2-only archive command candidate, NOT yet connected to Admin.
- * Exactly 56 authenticated frozen days and 4,082 match receipts are required;
- * today's affiliations never appear in archived results or player statistics.
+/** #613 — official V2-only authenticated archive command.
+ * Exactly 56 verified days and 4,082 frozen match receipts are required;
+ * current player affiliations never alter archived statistics.
  */
 import {ApiError} from './errors.ts';
 import {hashText,type AdminSession} from './auth.ts';

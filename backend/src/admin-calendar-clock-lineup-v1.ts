@@ -1,4 +1,4 @@
-/** #613 clean-break administrative advance, NOT connected to Admin routes yet. */
+/** #613: official authenticated V2 administrative clock. */
 /** Advance only after every current-day milestone has its own completed receipt. */
 import {ApiError} from './errors.ts';
 import {hashText,type AdminSession} from './auth.ts';

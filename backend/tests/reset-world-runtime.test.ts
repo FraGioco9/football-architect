@@ -7,7 +7,6 @@ import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.t
 import {resetWorld} from '../src/reset-world-command.ts';
 import {previewPlayerGeneration,commitPlayerGeneration,listGeneratedPlayers} from '../src/players-generation-command.ts';
 import {readPublicPlayers} from '../src/public-players-read.ts';
-import {generateSeasonCalendar} from '../src/calendar-command.ts';
 import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
@@ -38,7 +37,7 @@ it('purges all season state and retains admin access plus historical operation l
  await expect(resetWorld(db,session,resetRequest,'reset-other-command-00001',now)).rejects.toMatchObject({status:409});
  const audit=await db.prepare("SELECT generation,expected_revision,resulting_revision FROM admin_operations WHERE command='reset-world-v1'").first();
  expect(audit).toMatchObject({generation:previousGeneration,expected_revision:resetRequest.expectedRevision,resulting_revision:resetRequest.expectedRevision+1});
- for(const table of ['seasons','season_admin_events','season_domestic_stages','season_calendars','season_draws','season_match_slots','season_day_outcomes','season_knockout_ties','season_archives'])
+ for(const table of ['seasons','season_admin_events','season_domestic_stages','season_calendars','season_draws','season_match_slots','season_lineup_day_outcomes','match_lineup_result_receipts','season_knockout_ties','season_archives'])
   expect((await db.prepare('SELECT count(*) n FROM '+table).first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM admin_accounts').first()).n).toBe(1);
  expect((await db.prepare('SELECT count(*) n FROM player_sessions').first()).n).toBe(1);

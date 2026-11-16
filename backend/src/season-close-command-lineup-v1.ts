@@ -1,6 +1,6 @@
-/** #613: V2-only protected season close. Candidate, not connected to Admin
- * until the full single-engine cutover. It proves the immutable 56-day source
- * independently, not just the archived hash.
+/** #613: official V2-only protected season closure.
+ * Independently verifies all 56 immutable sporting days and the archive hash
+ * before advancing world_state to closed.
  */
 import {ApiError} from './errors.ts';
 import {hashText,type AdminSession} from './auth.ts';

@@ -1,4 +1,4 @@
-/** #613 clean-break administrative auto-planner, NOT routed before full cutover. */
+/** #613: official V2 administrative preparation planner. */
 /** Read/plan only. The caller commits these guards and writes with its world CAS and audit. */
 import {ApiError} from './errors.ts';
 import type {Database,Statement} from './database.ts';

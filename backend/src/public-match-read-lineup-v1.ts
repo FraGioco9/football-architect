@@ -1,5 +1,6 @@
-/** #613: V2-only public match candidate, unrouted until the clean cutover.
- * Requires independent frozen result replay; future fixtures have no score.
+/** #613: official V2 public match read.
+ * Completed fixtures are reconstructed from verified frozen receipts only;
+ * scheduled fixtures have no score or fabricated player lineup.
  */
 /** Indexed public match read; staged fixtures remain private until draw commit. */
 import type {Database} from './database.ts';

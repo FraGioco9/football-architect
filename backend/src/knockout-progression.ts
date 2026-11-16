@@ -5,7 +5,7 @@ import calendarModel from '../../assets/world-calendar-model.js';
 import {requireApprovedSnapshot,canonicalHash,type ApprovedSnapshot} from './catalogue-snapshot.ts';
 import {requireGeneratedSchedule,type InitialSchedule,type Fixture} from './initial-schedule.ts';
 import {rankLeagueTable,type LeagueRow} from './league-standings.ts';
-import {simulateTemporaryMatch,type TemporaryResult,type MatchContext} from './temporary-simulation.ts';
+
 
 import {ApiError} from './errors.ts';
 interface Participant {phaseId?:string;rank?:number;tieId?:string}
@@ -28,14 +28,26 @@ export interface KnockoutTie {
 /** The sporting progression needs actual finalized scores, never a specific scoring algorithm.
  * The authorized scorer must be supplied explicitly for the new lineup result path.
  */
-export type FinalizedSportingMatch=Pick<TemporaryResult,
- 'fixtureId'|'context'|'regulation'|'extraTime'|'penalties'|'homeGoals'|'awayGoals'|'winnerClubId'|'resolution'>;
-export interface Progression<Result extends FinalizedSportingMatch=TemporaryResult> {
+/** Shared final-result contract for the only official result authority.
+ * A scorer is always passed explicitly; bracket progression never scores.
+ */
+export type MatchContext={mode:'regulation'}|
+ {mode:'single-knockout';neutral?:true}|
+ {mode:'second-leg';firstLegHomeGoals:number;firstLegAwayGoals:number};
+export interface FinalizedSportingMatch {
+ fixtureId:string;context:MatchContext;
+ regulation:{home:number;away:number};
+ extraTime:{home:number;away:number}|null;
+ penalties:{home:number;away:number}|null;
+ homeGoals:number;awayGoals:number;winnerClubId:string|null;
+ resolution:'regulation'|'extra-time'|'penalties';
+}
+export interface Progression<Result extends FinalizedSportingMatch=FinalizedSportingMatch> {
  snapshot:ApprovedSnapshot;schedule:InitialSchedule;lastDay:number;
  results:Map<string,Result>;ties:Map<string,KnockoutTie>;tables:Map<string,readonly Readonly<LeagueRow>[]>;
 }
 export const tieKey=(t:Pick<KnockoutTie,'competitionId'|'phaseId'|'tieId'>)=>`${t.competitionId}:${t.phaseId}:${t.tieId}`;
-export function createProgression<Result extends FinalizedSportingMatch=TemporaryResult>(snapshot:ApprovedSnapshot,schedule:InitialSchedule):Progression<Result>{
+export function createProgression<Result extends FinalizedSportingMatch=FinalizedSportingMatch>(snapshot:ApprovedSnapshot,schedule:InitialSchedule):Progression<Result>{
  requireApprovedSnapshot(snapshot);requireGeneratedSchedule(schedule,snapshot);
  if(!Number.isSafeInteger(schedule.season)||schedule.season<1||schedule.season>1000000)return fail();
  const calendar=calendarModel.createSeason(schedule.season) as Calendar;
@@ -78,14 +90,6 @@ async function resolveTie<Result extends FinalizedSportingMatch>(state:Progressi
  return {schemaVersion:1,season:state.schedule.season,competitionId:definition.id,phaseId:phase.id,tieId:tie.id,rulesVersion:definition.rules.version,
   sourceCalendarHash:state.schedule.calendarHash,sourceParticipantsHash:state.snapshot.participantsHash,sourceRulesHash:state.snapshot.rulesHash,leagueTableHash:await canonicalHash(table),homePolicy:tie.homePolicy,resolution:tie.resolution,originalRanks,dependencyResultIds:dependencies,fixtures};
 }
-/** The legacy entrypoint stays untouched until all official readers/writers move
- * together. It is not used by the new lineup scoring path.
- */
-export async function processSportingDay(state:Progression,day:number):Promise<{results:TemporaryResult[];newTies:KnockoutTie[]}>{
- return processSportingDayWithResolver(state,day,(fixture,context)=>
-  simulateTemporaryMatch(fixture,state.schedule.seed,context));
-}
-
 /** Canonical fixture generator and knockout bracket progression for any trusted
  * single-result authority. A result is accepted only for the current due fixture
  * and its source-derived match context. No past/future results can be injected.

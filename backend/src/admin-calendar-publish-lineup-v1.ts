@@ -1,5 +1,5 @@
-/** Candidate replacement for the publication command. Not yet routed:
- * requires the V2-only Admin, read and archive cutover. No legacy score replay.
+/** #613: official V2 calendar publication command.
+ * Publishes only verified fixtures and empty preseason V2 day receipts.
  */
 /** Publish the complete immutable calendar only after independently persisted draws. */
 import {ApiError} from './errors.ts';

@@ -232,4 +232,41 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(historical.data.statistics.matchesPlayed).toBe(242);
  expect(await count('season_day_outcomes')).toBe(0);
  expect(await count('season_lineup_day_outcomes')).toBe(56);
+ // After owner approval and Season 2 preparation, the same replacement V2
+ // commands must publish and finalize real Season 2 matches. No Season 1
+ // re-simulation or history mutation is permitted during this transition.
+ await advance(initializeAdministrativeEvents(db,session,command(),
+  'lineup-season2-events-0001',now));
+ await advance(advanceAdministrativeClockLineupV1(db,session,'start',command(),
+  'lineup-season2-admin-start-0001',now));
+ for(const eventId of ['domestic:entrants','international:entrants']){
+  await advance(completeConfirmationEvent(db,session,{...command(),eventId},
+   'lineup-season2-confirm-'+eventId,now));
+ }
+ await advance(advanceAdministrativeClockLineupV1(db,session,'advance',command(),
+  'lineup-season2-admin-day2-0001',now));
+ await advance(stageDomesticCalendar(db,session,command(),
+  'lineup-season2-domestic-0001',now));
+ await advance(advanceAdministrativeClockLineupV1(db,session,'advance',command(),
+  'lineup-season2-admin-day3-0001',now));
+ await advance(executeInternationalDraw(db,session,command(),
+  'lineup-season2-draw-0001',now));
+ await advance(publishInternationalCalendarLineupV1(db,session,command(),
+  'lineup-season2-publish-0001',now));
+ expect(world).toMatchObject({seasonNumber:2,phase:'active',day:3});
+ for(let day=4;day<=13;day++){
+  world=(await executeLineupLifecycleV1(db,session,'advance',command(),
+   'lineup-season2-sport-day-'+day+'-0001',now)).world;
+  expect(world.day).toBe(day);
+ }
+ const seasonTwo=await readPublicSportingSeasonLineupV1(db,'IT-1',2) as any;
+ expect(seasonTwo.data.statistics.matchesPlayed).toBe(8);
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM season_lineup_day_outcomes WHERE season_number=2')
+  .first() as {n:number}).n).toBe(13);
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM match_lineup_result_receipts WHERE season_number=2')
+  .first() as {n:number}).n).toBe(128);
+ const oldSeason=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
+ expect(oldSeason.data.statistics.matchesPlayed).toBe(242);
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM match_lineup_result_receipts WHERE season_number=1')
+  .first() as {n:number}).n).toBe(4082);
 },600000);
