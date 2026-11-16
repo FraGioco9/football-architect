@@ -71,6 +71,11 @@ try {
    await page.waitForFunction(()=>window.faFixtures&&window.faCompetitionRoute&&
     window.faCompetitionContext?.selectedSeason===1&&
     document.documentElement.dataset.faStandingsLoading!=='true');
+   // Cancel the ordinary asynchronous season reader before installing
+   // an isolated authoritative presentation. Without this fence the
+   // reader clears the fixture model during the test and hides all results.
+   const isolated=await page.evaluate(()=>window.faCompetitionContextApi.setDebugSeason(1));
+   assert.equal(isolated,true,'isolated browser QA can suspend the season loader');
    await page.evaluate(({snapshot,seasonData})=>{
     window.faWorldState={get:()=>snapshot};
     window.faCompetitionContext={...window.faCompetitionContext,seasonData};
