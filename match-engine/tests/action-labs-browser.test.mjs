@@ -599,6 +599,36 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    assert.match(observed.status,/No official pass, tackle or possession/);
    process.stdout.write('MOVEMENT_LAB_M9_SHARED_NATIVE_EVENTS '+JSON.stringify(observed)+'\n');
   }
+  // M10: original unchanged 22-player autonomous pressing / support,
+  // both same-world native observers live but no scripted encounter.
+  for(const [scene,side] of [
+   ['pressure-support','home'],['pressure-support','away'],
+   ['pressure-neutral','home'],['pressure-neutral','away']
+  ]){
+   const measured=await evalJs(
+    "(()=>{const c=document.getElementById('movement-labs-choice');"+
+    "const s=document.getElementById('movement-labs-side');"+
+    "c.value="+JSON.stringify(scene)+";c.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "s.value="+JSON.stringify(side)+";s.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "for(let t=0;t<180;t++)document.getElementById('movement-labs-step').click();"+
+    "return {choice:c.value,side:s.value,readout:document.getElementById('movement-labs-readout').textContent,"+
+    "status:document.getElementById('movement-labs-status').textContent};})()");
+   assert.equal(measured.choice,scene);assert.equal(measured.side,side);
+   assert.match(measured.readout,/^Tick 180 /);
+   assert.match(measured.readout,/Rapier native bodies 22/);
+   assert.match(measured.readout,/single native queue true/);
+   if(scene==='pressure-support'){
+    assert.match(measured.readout,/support (?:home|away)-[0-9]+ · lane (?:positive-y|negative-y)/);
+    assert.match(measured.readout,/real opposing presser (?:home|away)-[0-9]+/);
+    assert.match(measured.readout,/actual presser path [0-9.]+ m/);
+    assert.match(measured.status,/Verified: original unstaged support run with actual moving opposing presser/);
+   }else{
+    assert.match(measured.readout,/support none · lane none/);
+    assert.match(measured.status,/No original support assignment/);
+   }
+   assert.match(measured.status,/Neither proximity nor presser motion certifies a tackle, possession or pass/);
+   process.stdout.write('MOVEMENT_LAB_M10_UNSTAGED '+JSON.stringify(measured)+'\n');
+  }
   for(const [width,height] of [[1280,720],[1440,900]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
    const size=await evalJs("(()=>{const d=document.getElementById('movement-labs-dialog');"+

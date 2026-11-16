@@ -11,6 +11,7 @@ const two=n=>n.toFixed(2);
 const delta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 const encounterOrOff=id=>['body-encounter','body-encounter-off',
  'shared-contacts','shared-contacts-off'].includes(id);
+const pressureSceneLabel=id=>id==='pressure-support'||id==='pressure-neutral';
 
 export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
@@ -26,7 +27,11 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    controlSide:side,
    ...(physicalContest?{controlScene:'opponent-first'}:{})
   }):null;
- const sharedContacts=scene.spec.id==='shared-contacts';
+ // M10 keeps the ordinary 22-player lineup and original autonomous
+ // support/press assignments. No scripted player encounter or target.
+ const pressureScene=scene.spec.id==='pressure-support'||
+  scene.spec.id==='pressure-neutral';
+ const sharedContacts=scene.spec.id==='shared-contacts'||pressureScene;
  const sharedOff=scene.spec.id==='shared-contacts-off';
  const encounter=scene.spec.id==='body-encounter'||
   scene.spec.id==='body-encounter-off'||sharedContacts||sharedOff;
@@ -50,6 +55,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  let measuredOpponentPathM=0,minContestedPlayerGapM=Infinity;
  let supportRunPathM=0,supportNetAdvanceM=0;
  let observedSharedFootStarts=0;
+ let opposingPresserPathM=0,opposingPresserMovedTicks=0;
+ let maxSupportClearanceReadoutErrorM=0;
  const contestedOpponentId=physicalContest?'away-7':null;
  const toPhysical=(f)=>Object.freeze({tick:f.physicsTick,ball:f.ball});
  const toMovement=(f)=>Object.freeze({
@@ -79,7 +86,7 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    throw new Error('Only this-tick original 22-body Rapier event source accepted');
   if(physics.tick!==frame.tick)throw new Error('Canonical 60 Hz movement and Rapier tick mismatch');
   const supportScene=scene.spec.id==='support-lane'||
-   scene.spec.id==='support-neutral';
+   scene.spec.id==='support-neutral'||pressureScene;
   const support=supportScene?frame.supports?.[scene.side]??null:null;
   const p=frame.players.find(x=>x.id===(support?.playerId??scene.focusId));
   if(!p)throw new Error('Missing canonical movement focus');
@@ -91,6 +98,41 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
       !Number.isFinite(support.teammateClearanceM)))
    throw new Error('Original support assignment must come from real XY');
   const ball=physics.ball.position;
+  // M10: independently sample the opponent's ACTUAL assigned presser and
+  // all opposing current XY from the same original 22-player frame.
+  // A press assignment is not a marking event, tackle or possession.
+  const oppositeSide=scene.side==='home'?'away':'home';
+  const pressId=pressureScene?frame.pressers?.[oppositeSide]??null:null;
+  const presser=pressId?frame.players.find(other=>
+   other.id===pressId&&other.team===oppositeSide&&
+   other.role!=='goalkeeper'):null;
+  if(pressId&&!presser)
+   throw new Error('M10 opposing presser must be current original actor');
+  const actualLaneClearanceM=support&&pressureScene?Math.min(
+   ...frame.players.filter(other=>other.team===oppositeSide).map(other=>
+    Math.hypot(other.x-support.target.x,other.y-support.target.y))):null;
+  if(actualLaneClearanceM!==null){
+   const error=Math.abs(actualLaneClearanceM-support.clearanceM);
+   // The original lane scores the START-of-step positions; this
+   // observation uses END-of-step positions, up to 7m/s * 1/60 apart.
+   if(error>7*FIXED_DT+1e-5)
+    throw new Error('M10 support clearance must derive from actual opponents');
+   maxSupportClearanceReadoutErrorM=Math.max(
+    maxSupportClearanceReadoutErrorM,error);
+  }
+  if(support&&presser&&previous?.pressId===presser.id&&
+     previous.supportPlayerId===support.playerId&&
+     previous.tick+1===physics.tick&&previous.pressXY){
+   const moved=Math.hypot(
+    presser.x-previous.pressXY.x,presser.y-previous.pressXY.y);
+   opposingPresserPathM+=moved;
+   if(moved>1e-6)opposingPresserMovedTicks++;
+  }
+  const pressToSupportM=presser&&support?
+   Math.hypot(presser.x-p.x,presser.y-p.y):null;
+  const pressToLaneM=presser&&support?
+   Math.hypot(presser.x-support.target.x,
+    presser.y-support.target.y):null;
   const gapM=Math.hypot(p.x-ball.x,p.y-ball.y);
   if(origin===null)origin=Object.freeze({x:p.x,y:p.y,gapM});
   const contestedOpponent=physicalContest?
@@ -187,6 +229,11 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     measuredOpponentPathM>0.25):
    scene.spec.id==='support-lane'?Boolean(support&&
     supportRunPathM>0.5&&supportNetAdvanceM>0.35):
+   pressureScene?Boolean(scene.spec.id==='pressure-support'&&support&&
+    presser&&supportRunPathM>0.5&&supportNetAdvanceM>0.35&&
+    opposingPresserPathM>0.25&&opposingPresserMovedTicks>0&&
+    bodySample?.physicalActors.length===22&&
+    sharedSample?.oneNativeEventQueue===true):
    nativeBodies?Boolean(bodySample&&bodySample.actualNativeStarts>0&&
     (!encounter||bodySample.appliedMoverResponses>0)&&
     (!sharedContacts||(sharedSample?.oneNativeEventQueue===true&&
@@ -198,7 +245,9 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     x:contestedOpponent.x,y:contestedOpponent.y
    }):null,
    supportPlayerId:support?.playerId??null,
-   supportLane:support?.lane??null
+   supportLane:support?.lane??null,
+   pressId:presser?.id??null,
+   pressXY:presser?Object.freeze({x:presser.x,y:presser.y}):null
   });
   latest=Object.freeze({
    scenarioId:scene.spec.id,side:scene.side,focusId:p.id,
@@ -228,6 +277,18 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     supportRunPathM,supportNetAdvanceM,
     supportDistanceToTargetM:support?
      Math.hypot(p.x-support.target.x,p.y-support.target.y):null,
+    actualOpposingPresserId:presser?.id??null,
+    actualOpposingPresserSpeedMps:presser?
+     Math.hypot(presser.vx,presser.vy):null,
+    actualOpposingPresserPathM:opposingPresserPathM,
+    actualOpposingPresserMovedTicks:opposingPresserMovedTicks,
+    actualPressToRunnerM:pressToSupportM,
+    actualPressToLaneM:pressToLaneM,
+    actualSupportLaneOpponentClearanceM:actualLaneClearanceM,
+    maxSupportClearanceReadoutErrorM,
+    unstagedOriginalPlayers:pressureScene,
+    authenticatedDynamicOpposition:pressureScene&&
+     opposingPresserPathM>0.25&&opposingPresserMovedTicks>0,
     nativeBodyCount:bodySample?.physicalActors.length??0,
     nativeBodyStarts:bodySample?.actualNativeStarts??0,
     nativeBodyEnds:bodySample?.actualNativeEnds??0,
@@ -293,7 +354,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     sharedContacts?engine.sharedNativeContactSnapshot():null);
   }
   return record(after,frame,null,null,null,
-   nativeBodies?engine.nativePlayerBodySnapshot():null);
+   nativeBodies?engine.nativePlayerBodySnapshot():null,
+   sharedContacts?engine.sharedNativeContactSnapshot():null);
  }
  function dispose(){if(!disposed){
   disposed=true;engine?.dispose();actionSession?.dispose();
@@ -364,7 +426,8 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
     ' · observed path '+two(m.measuredOpponentPathM)+' m'+
     ' · opponent shoe START '+(m.actualOpposingShoeTick??'none')+
     ' · closest player gap '+two(m.minContestedPlayerGapM)+' m':'')+
-   (f.scenarioId==='support-lane'||f.scenarioId==='support-neutral'?
+   (['support-lane','support-neutral','pressure-support',
+      'pressure-neutral'].includes(f.scenarioId)?
     ' · support '+(m.supportPlayerId??'none')+
     ' · lane '+(m.supportLane??'none')+
     ' · observed path '+two(m.supportRunPathM)+' m'+
@@ -372,9 +435,16 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
     ' · observed opponent clearance '+
       (m.supportOppClearanceM===null?'none':two(m.supportOppClearanceM))+' m'+
     ' · teammate clearance '+
-      (m.supportTeammateClearanceM===null?'none':two(m.supportTeammateClearanceM))+' m':'')+
+      (m.supportTeammateClearanceM===null?'none':two(m.supportTeammateClearanceM))+' m'+
+     (pressureSceneLabel(f.scenarioId)?
+      ' · real opposing presser '+(m.actualOpposingPresserId??'none')+
+      ' · actual presser path '+two(m.actualOpposingPresserPathM)+' m'+
+      ' · actual lane clearance '+
+      (m.actualSupportLaneOpponentClearanceM===null?'none':
+       two(m.actualSupportLaneOpponentClearanceM))+' m':''):'')+
    (['body-world','body-off','body-encounter','body-encounter-off',
-     'shared-contacts','shared-contacts-off'].includes(f.scenarioId)?
+     'shared-contacts','shared-contacts-off','pressure-support',
+     'pressure-neutral'].includes(f.scenarioId)?
     ' · Rapier native bodies '+m.nativeBodyCount+
     ' · genuine starts '+m.nativeBodyStarts+
     ' · min physical gap '+
@@ -386,10 +456,22 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
      (encounterOrOff(f.scenarioId)?
       ' · actual mover responses '+m.nativeBodyAcceptedResponses+
       ' · active native pairs '+m.nativeBodyActivePairs.length:'')+
-     (f.scenarioId==='shared-contacts'||f.scenarioId==='shared-contacts-off'?
+     (f.scenarioId==='shared-contacts'||f.scenarioId==='shared-contacts-off'||
+      pressureSceneLabel(f.scenarioId)?
       ' · single native queue '+m.nativeSharedOneQueue+
       ' · genuine shoe STARTs '+m.authenticSharedShoeStarts+
       ' · shared collision events last tick '+m.nativeSharedCollisionEventsLastTick:''):'');
+  if(pressureSceneLabel(f.scenarioId)){
+   status.textContent=m.witnessed?
+    'Verified: original unstaged support run with actual moving opposing presser under one native Rapier queue.':
+    m.supportPlayerId===null?
+    'No original support assignment: no support or pressure witness.':
+    'Original unstaged movement under observation; dynamic opponent and support progress not both verified yet.';
+   status.textContent+=' Native body STARTs '+m.nativeBodyStarts+
+    ', shoe STARTs '+m.authenticSharedShoeStarts+
+    '. Neither proximity nor presser motion certifies a tackle, possession or pass.';
+   return;
+  }
   if(f.scenarioId==='shared-contacts'||f.scenarioId==='shared-contacts-off'){
    status.textContent=m.nativeBodyCount===0?
     'Negative: shared physics OFF; no shoe or body collider witness.':

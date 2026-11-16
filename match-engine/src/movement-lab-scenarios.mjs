@@ -46,7 +46,11 @@ export const MOVEMENT_LAB_SCENARIOS=Object.freeze([
  // M9: verified single-queue cohabitation in one original Rapier World.
  // Neither M9 choice activates game actions or creates a second ball.
  spec('shared-contacts','Shared shoe + body events','One original Rapier ball World and native event queue routes genuine shoe-ball START and body-body START independently. Explicit collision stress fixture; no match authority.',scene('me-m9-shared-contacts',-0.25,0),10,'M9'),
- spec('shared-contacts-off','Shared contacts OFF','Negative: exactly the same controlled 22-player approach with no native shoe/body collision bridges.',scene('me-m9-shared-contacts',-0.25,0),10,'M9')
+ spec('shared-contacts-off','Shared contacts OFF','Negative: exactly the same controlled 22-player approach with no native shoe/body collision bridges.',scene('me-m9-shared-contacts',-0.25,0),10,'M9'),
+ // M10: no substituted player coordinates, target overrides, or staged
+ // pair. Natural existing 22-player mover sees current real Rapier ball XY.
+ spec('pressure-support','Free support under opposition','Original free support runner and the real opposing presser move under original 60Hz duties; observe both actual XY paths with live shoes+body observers in one native queue. No staged pair, forced target or football award.',scene('me-m10-pressure-support',27,0),9,'M10'),
+ spec('pressure-neutral','No support under opposition','Original neutral-ball negative: the same unstaged 22-player mover and same real native shoe/body event queue cannot invent a support assignment.',scene('me-m10-pressure-neutral',0,0),9,'M10')
 ]);
 export function movementLabScenario(id,side='home'){
  if(!['home','away'].includes(side))throw new TypeError('Known HOME/AWAY side required');
