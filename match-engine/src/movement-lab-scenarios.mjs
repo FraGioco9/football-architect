@@ -58,7 +58,27 @@ export const MOVEMENT_LAB_SCENARIOS=Object.freeze([
  // M13: both experiments retain the positive real press-to-ball policy;
  // only one permits same-world native body solver XY reconciliation.
  spec('opposing-feedback','Unstaged native body feedback','M12 original opposed pressers and a real shared Rapier body START; apply original native solver XY ONLY when the 22-player canonical 0.98m, speed, pitch and authentic-event gates pass. Research, not football action.',scene('me-m13-unstaged-feedback',0,0),10,'M13'),
- spec('opposing-feedback-off','Unstaged body feedback OFF','Same ORIGINAL unstaged 22-player contest and native contact events, but do not apply physical solver corrections to canonical player motion. Genuine contact remains independently observable.',scene('me-m13-unstaged-feedback',0,0),10,'M13')
+ spec('opposing-feedback-off','Unstaged body feedback OFF','Same ORIGINAL unstaged 22-player contest and native contact events, but do not apply physical solver corrections to canonical player motion. Genuine contact remains independently observable.',scene('me-m13-unstaged-feedback',0,0),10,'M13'),
+ // M14–M20: real rolling-ball, all 22 ORIGINAL unstaged bodies, one
+ // shared native Rapier shoe + body event queue. These are VISUAL playback
+ // scenes from the canonical research rules, NOT precomputed audit results.
+ // Side mirrors the original moving ball X and VX before tick zero.
+ ...[
+  ['native-roll-observe','Rolling ball · native observation',0,0,4.8,0,false,false],
+  ['native-roll-feedback','Rolling ball · bounded body feedback',0,0,4.8,0,true,false],
+  ['native-roll-control','Rolling ball · feedback OFF',0,0,4.8,0,false,false],
+  ['native-flank-left','Left-side ball · body feedback',6,9,4.8,-4.8,true,false],
+  ['native-flank-right','Right-side ball · body feedback',-6,-9,-4.8,4.8,true,false],
+  ['secondary-pressure-off','Second defender OFF · baseline',0,0,6.8,0,true,false],
+  ['secondary-pressure','Second defender ON · real marking',0,0,6.8,0,true,true],
+  ['secondary-pressure-observe','Second defender · native observation',0,0,6.8,0,false,true]
+ ].map(([id,title,x,y,vx,vy,feedback,secondary])=>Object.freeze({
+  ...spec(id,title,
+   'Live original 22-player 60Hz rolling-ball source. One real Rapier World, body and shoe START/END from its shared queue; '+(secondary?'one extra actual off-ball marking defender during contested pressure; ':'original natural primary pressure; ')+(feedback?'bounded genuine native body XY feedback.':'observe-only: no native body XY feedback.')+' No official tackle, reception, possession or goal.',
+   Object.freeze({preset:'roll',seed:'m-lab-'+id,x,y,z:0,vx,vy,vz:0}),
+   10,secondary?'M20':feedback?'M16':'M14'),
+  naturalSource:true,feedback,secondary,shoeSourceEnabled:true
+ })),
 ]);
 export function movementLabScenario(id,side='home'){
  if(!['home','away'].includes(side))throw new TypeError('Known HOME/AWAY side required');
@@ -69,7 +89,8 @@ export function movementLabScenario(id,side='home'){
  const initial=s.id==='post-pass'?CONTROL_LAB_STARTS[side]:
   s.id==='opponent-contact'?CONTROL_LAB_STARTS.home:
   side==='home'?s.home:Object.freeze({
-   ...s.home,seed:s.home.seed+'-away',x:-s.home.x
+   ...s.home,seed:s.home.seed+'-away',x:-s.home.x,
+   vx:-s.home.vx
   });
  return Object.freeze({
   spec:s,side,initial,focusId:side+'-'+s.focusNumber

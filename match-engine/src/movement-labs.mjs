@@ -6,6 +6,8 @@ import {createEngine,FIXED_DT} from './core.mjs';
 import {createControlledActionLab} from './action-labs.mjs';
 import {createPlayerMovement,PLAYER_MIN_SEPARATION_M} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
+import {createNaturalMovementResearchLab}
+ from './natural-movement-research-lab-m21.mjs';
 import {MOVEMENT_LAB_SCENARIOS,movementLabScenario} from './movement-lab-scenarios.mjs';
 const two=n=>n.toFixed(2);
 const delta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
@@ -21,6 +23,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for movement LAB');
  const scene=movementLabScenario(id,side);
+ if(scene.spec.naturalSource===true)
+  return createNaturalMovementResearchLab(RAPIER,scene);
  const postPass=scene.spec.id==='post-pass';
  const physicalContest=scene.spec.id==='opponent-contact';
  const usesOriginalControl=postPass||physicalContest;
@@ -488,6 +492,31 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
   if(!session)return;
   const f=session.snapshot(),m=f.readout;
   draw(f);
+  if(m.naturalSource===true){
+   readout.textContent='Tick '+f.tick+' · '+two(f.timeS)+'s'+
+    ' · real 22-player Rapier'+
+    ' · ball ('+two(f.ball.position.x)+', '+two(f.ball.position.y)+') m'+
+    ' · primary press '+(m.primaryPressId??'none')+
+    ' · secondary marking '+(m.secondaryPlayerId??'OFF')+
+    (m.secondaryOpponentId?' vs '+m.secondaryOpponentId:'')+
+    ' · genuine body STARTs '+m.nativeBodyStarts+
+    ' · ENDs '+m.nativeBodyEnds+
+    ' · active body pairs '+m.activeNativeBodyPairs.length+
+    ' · shoe STARTs '+m.nativeShoeStarts+
+    ' · applied solver responses '+m.nativeFeedbackResponses+
+    ' · minimum canonical spacing '+two(m.minimumCanonicalGapM)+' m';
+   status.textContent=m.firstGenuineMultiPair?
+    'Verified: '+m.firstGenuineMultiPair.pairs.length+
+    ' simultaneous TRUE Rapier body pairs at tick '+
+    m.firstGenuineMultiPair.tick+'. Research only — no football outcome.':
+    'Live '+(m.feedbackEnabled?'bounded physical feedback':'observation-only')+
+    ' · native body pairs at this tick: '+m.activeNativeBodyPairs.length+
+    ' · '+(m.secondaryEnabled?
+     (m.secondaryPlayerId?'real second defensive marker assigned':'no eligible second marker this tick'):
+     'secondary marking OFF')+
+    '. Proximity is NOT a verified collision. No official tackle, possession or score.';
+   return;
+  }
   readout.textContent='Tick '+f.tick+' · '+two(f.timeS)+'s · '+
    f.focusId.replace('-', ' #')+' · speed '+two(m.focusSpeedMps)+' m/s'+
    ' · path '+two(m.pathM)+' m · heading change '+

@@ -596,7 +596,7 @@
   <div class="me-action-labs-header">
     <div>
       <h2 id="movement-labs-title">Controlled movement</h2>
-      <p class="me-hint">22 canonical kinematic players, one real Rapier ball. No shoe colliders, touch or match outcome.</p>
+      <p class="me-hint">All original movement situations: early motion-only cases, authentic shoe/body physics, negative controls and M20 secondary pressing. Each scene shows its real source; no official match outcome.</p>
     </div>
     <button id="movement-labs-close" type="button" class="me-button">Close</button>
   </div>
@@ -625,6 +625,14 @@
       <option value="opposing-convergence-off">M-20 · Press convergence OFF (control)</option>
       <option value="opposing-feedback">M-21 · Unstaged native body feedback</option>
       <option value="opposing-feedback-off">M-22 · Native body feedback OFF (control)</option>
+      <option value="native-roll-observe">M-23 · Rolling ball · Rapier observation</option>
+      <option value="native-roll-feedback">M-24 · Rolling ball · physical feedback</option>
+      <option value="native-roll-control">M-25 · Rolling ball · feedback OFF</option>
+      <option value="native-flank-left">M-26 · Left flank · physical feedback</option>
+      <option value="native-flank-right">M-27 · Right flank · physical feedback</option>
+      <option value="secondary-pressure-off">M-28 · Second defender OFF · baseline</option>
+      <option value="secondary-pressure">M-29 · Second defender ON · live</option>
+      <option value="secondary-pressure-observe">M-30 · Second defender · observe only</option>
     </select>
     <label class="me-action-labs-shot-side" for="movement-labs-side">Side
       <select id="movement-labs-side" class="me-inspect-select" aria-label="Movement observation side">
@@ -645,7 +653,7 @@
   </div>
   <p id="movement-labs-status" class="me-action-labs-status" role="status" aria-live="polite">Select a movement scene.</p>
   <p id="movement-labs-readout" class="me-action-labs-readout" aria-live="off">Tick 0</p>
-  <p class="me-hint">Targets do not authorize contacts. Recovery is reported only with a currently observed opponent; no interception or possession is inferred.</p>
+  <p class="me-hint">Earlier M scenes are movement-only unless explicitly marked. M-23–M-30 show authentic 22-player native Rapier body and shoe events in one world; feedback and control variants remain distinct. Nothing awards a tackle, possession, pass completion or goal.</p>
 </dialog>
 <script type="module" src="/__fa_match_engine__/lab.mjs"></script>
 </body>
