@@ -933,7 +933,8 @@ export function createEngine(RAPIER, input = {}, {
       currentRapierContactManifold:true,
       original22PlayerFrame:true,impulseNs:impulse,
       originalBallImpulseApplied:true,sameOriginalRapierWorld:true,
-      officiallyAwardedPossession:false,officialMatchResult:null
+      officiallyAwardedPossession:false,officialMatchResult:null,
+     ball:snapshot().ball
     });
     b06bGoalPending=null;
     return take;

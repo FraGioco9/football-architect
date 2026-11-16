@@ -4,6 +4,7 @@
 // This observer NEVER awards an official match result, match possession,
 // or permission to bypass the real half-time restart.
 import {FIXED_DT,ENGINE_VERSION,BALL_RADIUS} from './core.mjs';
+import {FOOT_SOLVER_EVIDENCE_VERSION} from './player-foot-contact-solver.mjs';
 import {B05_REFEREE_VERSION,detectFirstFullyOutBallB05,
  B05_GOAL_WIDTH_M,B05_GOAL_HEIGHT_M}
  from './basic-match-referee-b05.mjs';
@@ -38,7 +39,8 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
  if(typeof b06bRealHalftimePause!=='boolean')
   throw new TypeError('B06b half-time pause is exclusively boolean');
  let tick=-1,lastBall=null,lastEvent=null,lastRestart=null,
-  lastSetPiece=null,events=freeze([]),score=freeze({home:0,away:0});
+  lastSetPiece=null,lastGoalKickoff=null,events=freeze([]),
+  score=freeze({home:0,away:0});
  const eventTicks=new Set();
  function snapshot(){
   const clock=basicMatchClockB06(Math.max(0,tick));
@@ -49,6 +51,7 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
    matchEvents:events,matchEventCount:events.length,
    lastNativeBoundaryEvent:lastEvent,
    lastPhysicalRestart:lastRestart,lastPhysicalSetPiece:lastSetPiece,
+   lastPhysicalGoalKickoff:lastGoalKickoff,
    phase:deadBall?'dead-ball-awaiting-source-verified-restart':
     clock.phase,
    outstandingDeadBall:deadBall,
@@ -120,6 +123,7 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
     throw new TypeError('B06 rejects a new event before an authenticated prior restart');
    if(goal)score=freeze({...score,[scorer]:score[scorer]+1});
    lastEvent=latest;lastRestart=null;lastSetPiece=null;
+   lastGoalKickoff=null;
    add(freeze({
     type:goal?'goal':latest.kind,tick:n,
     elapsedS:n*FIXED_DT,scoringTeam:scorer,
@@ -162,6 +166,68 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
   }));
   return snapshot();
  }
+ // H2b2a: an actual native kickoff is NOT equivalent to ball placement.
+ // Keep the independent original B05/B06 goal reference, the only same-world
+ // native START/manifold, the physical impulse and PLAYED vs physics clocks.
+ function recordGoalKickoff({
+  physicsTick,playedTicks,refereeEvidence,physicalKickoff,foot,solver
+ }={}){
+  const take=physicalKickoff,playerId=take?.actorId;
+  if(!Number.isSafeInteger(physicsTick)||physicsTick!==tick||
+     !Number.isSafeInteger(playedTicks)||playedTicks<0||
+     playedTicks>B06_FULL_TICKS||
+     !lastEvent||lastEvent.kind!=='goal'||!lastRestart||
+     lastGoalKickoff!==null||lastRestart.kind!=='kickoff'||
+     lastRestart.sourceEventTick!==lastEvent.tick||
+     lastRestart.originalRapierBallRepositioned!==true||
+     lastRestart.realShoeContact!==false||
+     refereeEvidence?.version!==B05_REFEREE_VERSION||
+     refereeEvidence.tick!==tick||
+     refereeEvidence.lastEvent!==lastEvent||
+     refereeEvidence.restartApplied!==true||
+     refereeEvidence.officialMatchResult!==null||
+     !take||take.tick!==tick||
+     take.sourceEventTick!==lastEvent.tick||
+     tick<=lastRestart.tick||!validTeam(take.team)||
+     take.team!==lastRestart.assignedTeam||
+     take.team!==lastEvent.restart.team||
+     playerId!==take.team+'-10'||
+     take.genuineExclusiveOriginalShoeStart!==true||
+     take.currentRapierContactManifold!==true||
+     take.original22PlayerFrame!==true||
+     take.originalBallImpulseApplied!==true||
+     take.sameOriginalRapierWorld!==true||
+     take.officiallyAwardedPossession!==false||
+     take.officialMatchResult!==null||
+     !Number.isFinite(take.impulseNs?.x)||
+     !Number.isFinite(take.impulseNs?.y)||
+     !Number.isFinite(take.impulseNs?.z)||
+     (take.team==='home'?take.impulseNs.x<=0:take.impulseNs.x>=0)||
+     !ballXYZ(take.ball?.position)||
+     Math.hypot(take.ball.position.x,take.ball.position.y)>0.65||
+     Math.abs(take.ball.position.z-BALL_RADIUS)>0.3||
+     foot?.tick!==tick||!Array.isArray(foot.started)||
+     !Array.isArray(foot.active)||
+     foot.started.length!==1||foot.active.length!==1||
+     foot.started[0]!==playerId||foot.active[0]!==playerId||
+     solver?.version!==FOOT_SOLVER_EVIDENCE_VERSION||
+     solver.tick!==tick||!Array.isArray(solver.pairs)||
+     !solver.pairs.some(p=>p.id===playerId&&p.beganThisTick&&
+       p.collisionActive&&p.manifolds?.some(m=>m.geometricContacts>0)))
+   throw new TypeError('B06 refuses kickoff without original current-tick native shoe, goal ticket and physical ball');
+  lastGoalKickoff=take;
+  add(freeze({
+   type:'kickoff-physical-attempt',tick,playedTicks,
+   playedTime:basicMatchClockB06(playedTicks).label,
+   sourceGoalTick:lastEvent.tick,
+   team:take.team,actorId:playerId,
+   genuineOriginalRapierShoeStart:true,
+   actualOriginalBallImpulse:true,
+   playResumedWithoutAwardedPossession:true,
+   officialMatchEvent:false
+  }));
+  return snapshot();
+ }
  function recordSetPiece({physicsTick,take}={}){
   if(physicsTick!==tick||!lastEvent||!lastRestart||
     !take||take.tick!==tick||tick<=lastRestart.tick||
@@ -193,5 +259,5 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
   }));
   return snapshot();
  }
- return freeze({observe,recordRestart,recordSetPiece,snapshot});
+ return freeze({observe,recordRestart,recordGoalKickoff,recordSetPiece,snapshot});
 }

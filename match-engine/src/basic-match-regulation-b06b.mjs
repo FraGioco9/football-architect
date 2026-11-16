@@ -6,7 +6,7 @@ import {createPlayerMovement,INITIAL_PLAYERS} from './player-movement.mjs';
 import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
 import {createBasicMatchTimelineB06,basicMatchClockB06,
  B06_HALF_TICKS,B06_FULL_TICKS} from './basic-match-clock-score-b06.mjs';
-export const B06B_SESSION_VERSION='me-628-b06b-real-two-half-native-source-v3';
+export const B06B_SESSION_VERSION='me-628-b06b-real-two-half-native-source-v4';
 const freeze=Object.freeze;
 export function createBasicRegulationSessionB06b(RAPIER,{
  researchHalfTicks=B06_HALF_TICKS,researchOpeningKickoff=false,
@@ -122,6 +122,7 @@ export function createBasicRegulationSessionB06b(RAPIER,{
    throw new Error('B06b requires actual original canonical 60Hz movement and physics');
   // The private native shoe bridge has already observed the current
   // same-world solver. No synthetic shoe START or virtual possession.
+  let newlyConfirmedGoalKickoff=null;
   if(phase==='opening-kickoff'){
    openingKickoff=engine.b06bOriginalOpeningKickoff(frame);
    if(!openingKickoff)throw new Error('B06b requires a genuine opening HOME sole Rapier shoe START');
@@ -135,6 +136,7 @@ export function createBasicRegulationSessionB06b(RAPIER,{
    const confirmed=engine.b06bOriginalTakeGoalRestart(frame,goalPending);
    if(confirmed){
     mover.finishB06bOriginalGoalKickoff(confirmed);
+    newlyConfirmedGoalKickoff=confirmed;
     goalPauseTicks+=confirmed.tick-goalPending.tick;
     goalKickoffs=freeze([...goalKickoffs,confirmed]);
     goalPending=null;
@@ -142,6 +144,15 @@ export function createBasicRegulationSessionB06b(RAPIER,{
    }
   }else clockTicks++;
   timeline=observe();
+  if(newlyConfirmedGoalKickoff){
+   timeline=ledger.recordGoalKickoff({
+    physicsTick:physics.tick,playedTicks:clockTicks,
+    refereeEvidence:referee.snapshot(),
+    physicalKickoff:newlyConfirmedGoalKickoff,
+    foot:engine.footContactSnapshot(),
+    solver:engine.footContactSolverSnapshot()
+   });
+  }
   if(phase==='first-half'&&clockTicks===researchHalfTicks){
    if(deadBall)throw new Error('B06b half cannot resume on unassigned dead ball');
    halftimePlacement=engine.b06bOriginalHalftimePlacement(frame);
@@ -166,6 +177,11 @@ export function createBasicRegulationSessionB06b(RAPIER,{
      timeline.provisionalScore.away?'draw':
      timeline.provisionalScore.home>timeline.provisionalScore.away?'home':'away',
     provisionalScore:timeline.provisionalScore,
+    provisionalMatchEvents:timeline.matchEvents,
+    physicallyAuthenticatedGoalKickoffs:goalKickoffs,
+    playedTicksExcludingDeadBallApproaches:clockTicks,
+    actualRapierPhysicsTicks:physics.tick,
+    source:'original-b05-b06-independent-rapier-event-audit',
     twoPhysicalHalvesAndNativeKickoff:true,
     firstHalfNativeKickoffVerified:openingKickoff!==null,
     complete90Minutes:researchHalfTicks===B06_HALF_TICKS&&openingKickoff!==null,

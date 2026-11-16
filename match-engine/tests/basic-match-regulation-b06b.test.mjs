@@ -285,6 +285,19 @@ test('B06b H2b1 HOME and AWAY genuine whole-ball GOAL -> same original ball plac
      assert.equal(take.originalBallImpulseApplied,true);
      assert.equal(take.sameOriginalRapierWorld,true);
      assert.equal(take.officialMatchResult,null);
+     assert.equal(a.originalEventLedger.matchEventCount,3);
+     assert.deepEqual(a.originalEventLedger.matchEvents.map(e=>e.type),
+      ['goal','restart-placement','kickoff-physical-attempt']);
+     const proof=a.originalEventLedger.matchEvents[2];
+     assert.equal(proof.tick,n);
+     assert.equal(proof.sourceGoalTick,crossed.physicsTick);
+     assert.equal(proof.playedTicks,a.clockTicks);
+     assert.equal(proof.actorId,take.actorId);
+     assert.equal(proof.team,take.team);
+     assert.equal(proof.genuineOriginalRapierShoeStart,true);
+     assert.equal(proof.actualOriginalBallImpulse,true);
+     assert.equal(proof.officialMatchEvent,false);
+     assert.equal(a.originalEventLedger.lastPhysicalGoalKickoff,take);
      assert.equal(a.pausedGoalPhysicsTicks,n-crossed.physicsTick);
      assert.equal(a.clockTicks,crossed.clockTicks);
      assert.equal(a.phase,'first-half');
@@ -309,5 +322,59 @@ test('B06b H2b1 HOME and AWAY genuine whole-ball GOAL -> same original ball plac
      source:'real-original-rapier-22',actualShotActorVerified:false,
      officialResult:null})+'\\n');
   }finally{one.dispose();two.dispose();}
+ }
+});
+
+test('B06b H2b2a authentic HOME/AWAY goal, new native kickoff, true paused halftime and provisional MINI full-time report',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['home','away']){
+  const run=createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchGoalCrossingSide:side
+  });
+  try{
+   let final=null,half=null,secondKick=null,seenGoal=false,seenResume=false;
+   for(let i=1;i<=4000;i++){
+    const s=run.step();
+    assert.equal(s.physicsTick,i);
+    assert.equal(s.canonical22,true);
+    assert.equal(s.matchAuthority,false);
+    assert.equal(s.officialMatchResult,null);
+    if(s.goalRestartPlacements.length)seenGoal=true;
+    if(s.genuineGoalKickoffs.length)seenResume=true;
+    if(s.halfTime&&!half)half=s.halfTime;
+    if(s.secondHalfKickoff&&!secondKick)secondKick=s.secondHalfKickoff;
+    if(s.final){final=s;break;}
+   }
+   assert.ok(seenGoal&&seenResume,'original goal and native opposing kickoff required');
+   assert.ok(half,'actual first-half end must follow paused goal');
+   assert.ok(secondKick,'independent AWAY second-half kickoff required');
+   assert.ok(final,'true mini full time must occur, no projected stopwatch');
+   assert.equal(half.physicsTick,1200+final.pausedGoalPhysicsTicks);
+   assert.ok(secondKick.tick>half.physicsTick);
+   assert.equal(final.clockTicks,2400);
+   assert.equal(final.final.gameClockTicks,2400);
+   assert.equal(final.final.actualRapierPhysicsTicks,final.physicsTick);
+   assert.equal(final.final.physicallyAuthenticatedGoalKickoffs.length,1);
+   assert.deepEqual(final.provisionalScore,
+    side==='home'?{home:1,away:0}:{home:0,away:1});
+   assert.equal(final.final.winner,side);
+   assert.equal(final.final.provisionalMatchEvents.length,3);
+   assert.deepEqual(final.final.provisionalMatchEvents.map(e=>e.type),
+    ['goal','restart-placement','kickoff-physical-attempt']);
+   assert.equal(final.originalEventLedger.outstandingDeadBall,false);
+   assert.equal(final.realFull90MinutesVerified,false);
+   assert.equal(final.fullFootballActionCoverageVerified,false);
+   assert.equal(final.final.completeFootballGameplayVerified,false);
+   assert.equal(final.final.complete90Minutes,false);
+   assert.equal(final.final.officialMatchResult,null);
+   process.stdout.write('ME_628_B06B_H2B2A_MINI_FULLTIME '+JSON.stringify({
+    side,originalPhysicsTicks:final.physicsTick,
+    playedTicks:final.clockTicks,goalPause:final.pausedGoalPhysicsTicks,
+    genuineKickoffTick:final.genuineGoalKickoffs[0].tick,
+    halftimeTick:half.physicsTick,secondHalfKickoffTick:secondKick.tick,
+    provisionalScore:final.provisionalScore,
+    sourcePositiveShot:false,officialMatchResult:null})+'\\n');
+  }finally{run.dispose();}
  }
 });
