@@ -75,7 +75,13 @@ describe('#613 local Worker D1 guarded match receipts (not wired to official clo
   const row=await db.prepare('SELECT receipt_hash,receipt_json FROM match_lineup_result_receipts WHERE public_match_id=?')
    .bind(matchId).first<{receipt_hash:string;receipt_json:string}>();
   expect(row?.receipt_hash).toBe(fresh.receiptHash);
-  expect(JSON.parse(row!.receipt_json).result.home.starters).toHaveLength(11);
+  const frozen=JSON.parse(row!.receipt_json);
+  expect(frozen.result.home.starters).toHaveLength(11);
+  expect(frozen.result.ratingVersion).toBe('test-rating-v1');
+  expect(frozen.result.home.appearances).toHaveLength(11);
+  expect(frozen.result.home.appearances.every((p:{rating:number})=>
+   p.rating>=4&&p.rating<=10&&Math.abs(p.rating*10-Math.round(p.rating*10))<1e-9)).toBe(true);
+  expect(frozen.result.away.appearances).toEqual([]);
   await expect(db.batch([...fresh.guards,...fresh.writes])).rejects.toThrow();
   await expect(db.prepare('UPDATE match_lineup_result_receipts SET receipt_hash=? WHERE public_match_id=?')
    .bind('c'.repeat(64),matchId).run()).rejects.toThrow();

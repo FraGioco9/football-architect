@@ -1,4 +1,5 @@
 /** Strict typings for #613 single-lineup result module, server-only. */
+export const TEST_RATING_VERSION:'test-rating-v1';
 export interface LineupFootballerV1 {
  id:number;career_status:'active'|'retired';
  primary_position?:string;secondary_positions?:string[];
@@ -14,10 +15,12 @@ export interface LineupSideV1 {
   emergencyGoalkeeper:boolean;attributes:Record<string,number>;
   primaryPosition:string;secondaryPositions:string[]}>;
  unattributedGoals:number;
- appearances:Array<{playerId:number;started:true;minutes:90|120;goals:number}>;
+ appearances:Array<{playerId:number;started:true;minutes:90|120;goals:number;rating?:number}>;
 }
 export interface LineupMatchResultV1 {
  algorithmVersion:'temporary-lineup-v1';
+ /** Absent on existing frozen pre-rating V2 receipts, never silently backfilled. */
+ ratingVersion?:'test-rating-v1';
  mode:'xi_vs_xi'|'xi_vs_fallback'|'fallback_vs_xi'|'fallback_vs_fallback';
  matchKey:string;homeClubId:string;awayClubId:string;
  sourceSeedHash:string;context:LineupMatchContextV1;neutral:boolean;
