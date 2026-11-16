@@ -954,11 +954,37 @@ test('#605 published Postseason bracket gives each leg its own official match li
   'both legs are full-height native link targets, independent of the clubs');
  assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link')
   .map(a=>a.dataset.faMatchLeg).join(',')==='1,2'),'leg identities remain distinct');
+ // The current published lookup remains stored while UI hydration is busy;
+ // no numeric link or hover/click affordance may be exposed.
+ r.document.documentElement.dataset.faStandingsLoading='true';
+ r.events['fa:published-match-links-change']();
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link').length===0),
+  'loading removes first/second legs and final native links');
+ assert.ok(cards.every(({card})=>!card.classList.contains('is-match-link')),
+  'loading removes bracket hover and full-card navigation');
+ r.route.set({view:'fixtures',matchday:'playoffs'});
+ assert.equal(r.fields.get('app-fixtures-list').children.flatMap(visit)
+  .filter(n=>n.className==='app-fixture-score-link'||n.className==='app-fixture-native-link').length,0,
+  'loading Fixtures does not expose published match links');
+ assert.ok(r.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch)
+  .every(n=>!n.className.includes('is-match-link')));
+ r.document.documentElement.dataset.faStandingsLoading='false';
+ r.route.set({view:'postseason'});
+ r.events['fa:published-match-links-change']();
+ assert.deepEqual(cards.flatMap(({card})=>card.querySelectorAll('.fa-bracket-match-link').map(x=>x.href)),hrefs,
+  'published knockout leg/final links reappear after hydration');
+ r.route.set({view:'fixtures',matchday:'playoffs'});
+ assert.ok(r.fields.get('app-fixtures-list').children.flatMap(visit)
+  .some(n=>n.className==='app-fixture-score-link'),
+  'Fixtures score links reappear after hydration');
+ r.route.set({view:'postseason'});
  r.publishSource({...source,source:'dev'});
  assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link').length===0),
   'DEV source removes all published bracket links');
  assert.ok(cards.every(({card})=>!card.classList.contains('is-match-link')));
  const css=read('assets/app.css');
+ assert.match(read('assets/competition-fixtures.js'),/attributeFilter:\['lang','data-fa-standings-loading'\]/);
+ assert.match(css,/html\[data-fa-standings-loading="true"\] :is\(\.app-fixture-score-link,\.app-fixture-native-link,\.fa-bracket-match-link\)\{pointer-events:none\}/);
  assert.match(css,/\.fa-bracket-card\.is-match-link\{position:relative;cursor:pointer;transition:background-color \.15s ease,border-color \.15s ease\}/);
  assert.match(css,/\.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline-start:0;width:50%\}/);
  assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{width:100%\}/);
@@ -991,6 +1017,12 @@ test('#605 result links: Standings and Fixtures share one exact-world collection
   round:first.round,marker:first.marker,day:first.day};
  assert.equal(requests,1,'Standings requests the official match list once, not one request per form badge');
  assert.equal(r.window.faCompetitionMatchLinks.forFixture(fixture,1),first.matchId);
+ r.document.documentElement.dataset.faStandingsLoading='true';
+ assert.equal(r.window.faCompetitionMatchLinks.forFixture(fixture,1),null,
+  'Standings W/D/L cannot expose links while global hydration is in progress');
+ r.document.documentElement.dataset.faStandingsLoading='false';
+ assert.equal(r.window.faCompetitionMatchLinks.forFixture(fixture,1),first.matchId,
+  'Standings restores the same authoritative link when ready');
  assert.equal(r.window.faCompetitionMatchLinks.forFixture({...fixture,marker:'N99'},1),null);
  assert.equal(r.window.faCompetitionMatchLinks.forFixture({...fixture,sourceFixtureId:'fabricated'},1),null);
  assert.equal(r.window.faCompetitionMatchLinks.forFixture(fixture,2),null,'selected season is mandatory');

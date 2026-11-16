@@ -31,12 +31,15 @@
   let hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
   let currentMatchday=null,rounds=null,postseason=[],selected=navigation.get().matchday;
   let publishedSeason=null,publishedKey=null,pendingKey=null,fetchSequence=0,publishedIds=new Set(),publishedLookup=null;
+  // Match navigation requires both finished UI hydration and a fully read
+  // official collection. A pending request must not expose old verified IDs.
+  const matchLinksReady=()=>document.documentElement.dataset.faStandingsLoading!=='true'&&pendingKey===null;
   let menuHasPostseason=false;
   // The same official list powers Fixtures, Postseason and Standings forms.
   // A reference must belong to this exact selected season and world revision.
   function officialMatchId(game,expectedSeason=Number(navigation.get().season)){
     const source=window.faWorldState?.get?.(),world=source?.world;
-    if(!game||!Number.isSafeInteger(expectedSeason)||expectedSeason<1||
+    if(!game||!matchLinksReady()||!Number.isSafeInteger(expectedSeason)||expectedSeason<1||
        source?.source!=='authoritative'||source.worldStatus!=='ready'||!world||
        expectedSeason!==Number(navigation.get().season)||
        publishedSeason!==String(expectedSeason)||
@@ -435,7 +438,7 @@
     if(!root?.querySelectorAll)return;
     const source=window.faWorldState?.get?.(),world=source?.world,route=navigation.get();
     const liveKey=[route.season,definition.id,world?.generation,world?.revision].join(':');
-    const authorized=source?.source==='authoritative'&&source.worldStatus==='ready'&&
+    const authorized=matchLinksReady()&&source?.source==='authoritative'&&source.worldStatus==='ready'&&
       route.season===publishedSeason&&publishedKey===liveKey&&!!publishedLookup;
     const lang=bracketLabels[document.documentElement.lang]||bracketLabels.en;
     // One card represents up to two DIFFERENT matches. Give the first and
@@ -483,7 +486,7 @@
   // Locale changes do not replace the bracket itself; update the link's
   // accessible leg label in place without fetching the match list again.
   new MutationObserver(syncKnockoutLinks).observe(document.documentElement,{
-    attributes:true,attributeFilter:['lang']
+    attributes:true,attributeFilter:['lang','data-fa-standings-loading']
   });
   // Keep the score as the native focusable anchor, but let a primary click
   // elsewhere in a verified match card activate it. Existing club links take
@@ -504,7 +507,7 @@
     hoverPointerX=event.clientX;hoverPointerY=event.clientY;
   },{capture:true,passive:true});
   fields.list.addEventListener('click',event=>{
-    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||
+    if(!matchLinksReady()||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||
        event.shiftKey||event.altKey)return;
     const target=event.target;
     if(!target?.closest||target.closest('a,button,input,select,textarea,[role="button"]'))return;
@@ -608,8 +611,9 @@
     const key=[season,definition.id,source.world.generation,source.world.revision].join(':');
     if(key===publishedKey||key===pendingKey)return;
     pendingKey=key;const seq=++fetchSequence;
-    // Keep the toolbar's geometry and skeleton while the official lookup is unresolved.
-    render();
+    // Preserve the fixture boxes, but revoke old Fixtures/knockout and
+    // Standings native links while this exact-world lookup is unresolved.
+    render();syncKnockoutLinks();notifyPublishedMatchLinks();
     try{
       const response=await fetch('/api/matches/seasons/'+season+'/competitions/'+definition.id,
        {credentials:'omit',cache:'no-store',redirect:'error'});
@@ -680,7 +684,12 @@
       syncKnockoutLinks();
     }catch{
       if(seq===fetchSequence){publishedSeason=null;publishedKey=null;publishedIds.clear();publishedLookup=null;notifyPublishedMatchLinks();syncKnockoutLinks();}
-    }finally{if(pendingKey===key){pendingKey=null;render();}}
+    }finally{if(pendingKey===key){
+      pendingKey=null;render();syncKnockoutLinks();
+      // In the combined #656/#659 source, resolve Standings native links
+      // only after pendingKey is cleared; otherwise W/D/L stays inert.
+      notifyPublishedMatchLinks();
+    }}
   }
 
   // The world can become ready AFTER Fixtures mounted. Source-change is not
