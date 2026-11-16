@@ -130,7 +130,7 @@ export function createNativeControlEvidenceGateM29(){
     const actor=playerFrame.players.find(p=>p.id===id);
     const pair=solver.pairs.find(p=>p.id===id);
     const pose=footProxyTransform(actor),b=physics.ball;
-    if(!actor||window.observedTicks!==active.samples+1)
+    if(!actor||(window??m28.latestCompleted).observedTicks!==active.samples+1)
      throw new TypeError('M29 and M28 must sample exactly the same real tick');
     if(active.lastBall){
      active.ballTravel+=dist(active.lastBall,b.position);
