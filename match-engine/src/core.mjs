@@ -11,6 +11,8 @@ import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {initialResearchBodyEncounterLineup}
  from './research-body-encounter-initial-lineup.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
+import {basicSourcePositiveRestartSetup}
+ from './basic-restart-source-lineup-b05b.mjs';
 import {initialResearchDefensiveLineup}
  from './basic-defensive-physical-actions-b03.mjs';
 import {initialResearchGoalkeeperSaveLineup}
@@ -100,6 +102,8 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchDefensiveSide = null,
   diagnosticResearchDefensiveKind = null,
   diagnosticBasicRestartEnabled = false,
+  diagnosticBasicRestartSource = null,
+  diagnosticBasicRestartAttackSide = null,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -144,6 +148,13 @@ export function createEngine(RAPIER, input = {}, {
        diagnosticResearchDefensiveSide!==null||
        diagnosticResearchGoalkeeperSaveSide!==null)))
     throw new TypeError('B05 restart may only use isolated source-bound DEV ball/feet without kick authority');
+  if((diagnosticBasicRestartSource===null)!==
+     (diagnosticBasicRestartAttackSide===null)||
+     (diagnosticBasicRestartSource!==null&&(
+      !diagnosticBasicRestartEnabled||
+      !['throw-in','corner','goal-kick'].includes(diagnosticBasicRestartSource)||
+      !['home','away'].includes(diagnosticBasicRestartAttackSide))))
+   throw new TypeError('B05b authentic source must be tied to bounded DEV restart');
   const scenario = normalizeScenario(input);
   if(typeof diagnosticResearchBodyEncounter!=='boolean'||
      (diagnosticResearchBodyEncounter&&
@@ -276,7 +287,11 @@ export function createEngine(RAPIER, input = {}, {
     !diagnosticPlayerFootContactsEnabled||
     !diagnosticAutonomousFixtureActionEnabled))
   throw new TypeError('CARRY setup requires bounded genuine private shoe source');
- const stagedShoes=diagnosticResearchDefensiveSide!==null?
+ const stagedShoes=diagnosticBasicRestartSource!==null?
+   basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
+    diagnosticBasicRestartAttackSide,scenario,
+    diagnosticBasicRestartSource).players:
+  diagnosticResearchDefensiveSide!==null?
    initialResearchDefensiveLineup(INITIAL_PLAYERS,
     diagnosticResearchDefensiveSide,scenario,
     {kind:diagnosticResearchDefensiveKind}):
@@ -389,7 +404,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchShotWideCross,diagnosticResearchGoalkeeperSaveSide,
     diagnosticResearchDefensiveSide,diagnosticResearchDefensiveKind,
-    diagnosticBasicRestartEnabled,
+    diagnosticBasicRestartEnabled,diagnosticBasicRestartSource,
+    diagnosticBasicRestartAttackSide,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
     diagnosticResearchReceivingDecisionEnabled,diagnosticResearchReceiverTapEnabled,

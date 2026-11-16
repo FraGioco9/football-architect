@@ -5,6 +5,8 @@ import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
+import {basicSourcePositiveRestartSetup}
+ from './basic-restart-source-lineup-b05b.mjs';
 import {initialResearchDefensiveLineup}
  from './basic-defensive-physical-actions-b03.mjs';
 import {initialResearchGoalkeeperSaveLineup,chooseBasicGoalkeeperDiveTarget}
@@ -1643,6 +1645,9 @@ export function createPlayerMovement(options={}){
      k!=='researchGoalkeeperSaveSide'&&k!=='researchGoalkeeperSaveBall'&&
      k!=='researchDefensiveSide'&&k!=='researchDefensiveKind'&&
      k!=='researchDefensiveBall'&&
+     k!=='researchBasicRestartSource'&&
+     k!=='researchBasicRestartAttackSide'&&
+     k!=='researchBasicRestartBall'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlCloseDefender'&&
@@ -1661,6 +1666,7 @@ export function createPlayerMovement(options={}){
      options.researchCarrySide===undefined&&
      options.researchGoalkeeperSaveSide===undefined&&
      options.researchDefensiveSide===undefined&&
+     options.researchBasicRestartSource===undefined&&
      options.researchBodyEncounter!==true&&
      options.researchOpposingPressConvergence!==true&&
      options.researchUnstagedNativeBodyFeedback!==true&&
@@ -1756,6 +1762,14 @@ export function createPlayerMovement(options={}){
      (options.researchShotBlockedLane!==true||
       options.researchShotWideCross!==undefined||
       !['home','away'].includes(options.researchShotAttacker)))||
+    (options.researchBasicRestartSource!==undefined&&(
+      !['throw-in','corner','goal-kick'].includes(options.researchBasicRestartSource)||
+      !['home','away'].includes(options.researchBasicRestartAttackSide)||
+      !Object.hasOwn(options,'researchBasicRestartBall')||
+      Reflect.ownKeys(options).length!==3))||
+    ((options.researchBasicRestartAttackSide!==undefined||
+      options.researchBasicRestartBall!==undefined)&&
+     options.researchBasicRestartSource===undefined)||
     (options.researchDefensiveSide!==undefined&&(
      !['home','away'].includes(options.researchDefensiveSide)||
      !['tackle','interception'].includes(options.researchDefensiveKind)||
@@ -1775,7 +1789,11 @@ export function createPlayerMovement(options={}){
       options.researchShotBlockedLane!==undefined||
       !['home','away'].includes(options.researchShotAttacker))))
   throw new TypeError('Only paired bounded research shot initial positions allowed');
- const initial=options.researchDefensiveSide?
+ const initial=options.researchBasicRestartSource?
+  basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
+    options.researchBasicRestartAttackSide,options.researchBasicRestartBall,
+    options.researchBasicRestartSource).players:
+  options.researchDefensiveSide?
   initialResearchDefensiveLineup(INITIAL_PLAYERS,
    options.researchDefensiveSide,options.researchDefensiveBall,
    {kind:options.researchDefensiveKind}):

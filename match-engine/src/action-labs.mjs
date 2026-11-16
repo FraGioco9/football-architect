@@ -21,7 +21,7 @@ import {createRealOpponentBallContestAuditM31}
 import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
-import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CROSS_LAB_STARTS,SAVE_LAB_STARTS,DEFENSE_LAB_STARTS,B05_LAB_STARTS,CARRY_LAB_STARTS,
+import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CROSS_LAB_STARTS,SAVE_LAB_STARTS,DEFENSE_LAB_STARTS,B05_LAB_STARTS,B05B_LAB_STARTS,CARRY_LAB_STARTS,
  CHALLENGE_LAB_STARTS,CONTROL_LAB_STARTS,
  getActionLabScenario,classifyActionLabEvidence} from './action-lab-scenarios.mjs';
 
@@ -34,6 +34,7 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('Rapier required for real Action LAB');
  const spec=getActionLabScenario(id);
  const refereeMode=spec.mode==='referee';
+ const sourceRestart=['throw-in','corner','goal-kick'].includes(id);
  const basicFootwork=['trap','dribble'].includes(id);
  const effectiveControlScene=id==='trap'?'receive-cushion':
   id==='dribble'?'receive-release':controlScene;
@@ -49,21 +50,23 @@ export function createControlledActionLab(RAPIER,id,{
     !['home','away'].includes(challengeSide)||
     !['contact','no-contact'].includes(challengeScene)||
     (id!=='challenge'&&(challengeSide!=='away'||challengeScene!=='contact'))||
-    (!['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out'].includes(id)&&(shotSide!=='home'||shotLane!=='open'))||
-     (['cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out'].includes(id)&&shotLane!=='open')||
+    (!['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(id)&&(shotSide!=='home'||shotLane!=='open'))||
+     (['cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(id)&&shotLane!=='open')||
     (id!=='carry'&&carrySide!=='home')||
     (id!=='control'&&controlScene!=='receive')||
     (basicFootwork&&!controlDecisionEnabled))
   throw new TypeError('Only bounded SHOT, CARRY or CONTROL scenes supported');
  const selectedControlSide=spec.mode==='control'?
   (basicFootwork?shotSide:controlSide):null;
- const selectedShotSide=['shot','cross','save','tackle','interception','goal','touchline','goal-line-out'].includes(id)?shotSide:null;
+ const selectedShotSide=['shot','cross','save','tackle','interception','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(id)?shotSide:null;
  const defenseExperiment=['tackle','interception'].includes(id);
   const goalkeeperSave=id==='save';
   const wideCross=id==='cross';
  const selectedCarrySide=id==='carry'?carrySide:null;
  const selectedChallengeSide=id==='challenge'?challengeSide:null;
- const initial=refereeMode?
+ const initial=sourceRestart?
+    B05B_LAB_STARTS[id==='throw-in'?'throwIn':id==='goal-kick'?'goalKick':id][selectedShotSide]:
+  refereeMode?
    B05_LAB_STARTS[id==='goal-line-out'?'goalLine':id][selectedShotSide]:
   defenseExperiment?DEFENSE_LAB_STARTS[id][selectedShotSide]:
    goalkeeperSave?SAVE_LAB_STARTS[selectedShotSide]:
@@ -91,7 +94,12 @@ export function createControlledActionLab(RAPIER,id,{
   ['receive-release','receive-contest','receive-challenge'].includes(effectiveControlScene);
  const adaptiveDecision=spec.mode==='control'&&controlDecisionEnabled&&
   ['receive-decide','receive-pressure-decide','receive-release','receive-contest','receive-challenge'].includes(effectiveControlScene);
- const focus=refereeMode&&selectedShotSide==='away'?
+ const focus=sourceRestart?
+   Object.freeze((id==='corner'?
+    [(selectedShotSide==='home'?'away':'home')+'-10',selectedShotSide+'-9']:
+    [selectedShotSide+'-10',(selectedShotSide==='home'?'away':'home')+'-9'])
+    .concat([(selectedShotSide==='home'?'away':'home')+'-1'])):
+   refereeMode&&selectedShotSide==='away'?
    Object.freeze(['home-1','away-10','home-10']):
   defenseExperiment?
    Object.freeze(selectedShotSide==='home'?
@@ -123,6 +131,10 @@ export function createControlledActionLab(RAPIER,id,{
   diagnosticPlayerFootContactsEnabled:true,
   diagnosticAutonomousFixtureActionEnabled:!refereeMode,
   ...(refereeMode?{diagnosticBasicRestartEnabled:true}:{}),
+  ...(sourceRestart?{
+   diagnosticBasicRestartSource:id,
+   diagnosticBasicRestartAttackSide:selectedShotSide
+  }:{}),
   ...(defenseExperiment?{
     diagnosticResearchDefensiveSide:selectedShotSide,
     diagnosticResearchDefensiveKind:id
@@ -145,7 +157,11 @@ export function createControlledActionLab(RAPIER,id,{
   ...(selectedCarrySide?{diagnosticResearchCarrySide:selectedCarrySide}:{}),
   ...(spec.mode==='carry'?{diagnosticAutonomousCarryEnabled:true}:{})
  });
- const mover=createPlayerMovement(refereeMode?{}:defenseExperiment?{
+ const mover=createPlayerMovement(sourceRestart?{
+   researchBasicRestartSource:id,
+   researchBasicRestartAttackSide:selectedShotSide,
+   researchBasicRestartBall:initial
+  }:refereeMode?{}:defenseExperiment?{
    researchDefensiveSide:selectedShotSide,
    researchDefensiveKind:id,
    researchDefensiveBall:initial
@@ -697,13 +713,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  }
  function resetSession(){
   stop();step.disabled=false;if(session)session.dispose();
-  shotSideLabel.hidden=!['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','carry','challenge'].includes(select.value);
+  shotSideLabel.hidden=!['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick','carry','challenge'].includes(select.value);
   shotLaneLabel.hidden=select.value!=='shot';
   controlSceneLabel.hidden=select.value!=='control';
   challengeSceneLabel.hidden=select.value!=='challenge';
   by('action-labs-title').textContent=select.selectedOptions[0].textContent.trim();
   session=createControlledActionLab(getRapier(),select.value,{
-   shotSide:['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out'].includes(select.value)?shotSide.value:'home',
+   shotSide:['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(select.value)?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',
    carrySide:select.value==='carry'?shotSide.value:'home',
    controlScene:select.value==='control'?controlSceneChoice.value:'receive',
@@ -712,7 +728,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   });
   trail=[{x:session.snapshot().ball.position.x,
    y:session.snapshot().ball.position.y}];
-  description.textContent=session.spec.mode==='referee'?
+  description.textContent=['throw-in','corner','goal-kick'].includes(select.value)?
+    'B05b actual original exclusive native last shoe touch, source-confirmed full-ball exit and team-assigned same-world restart. No unverified throw, kick or official result.':
+    session.spec.mode==='referee'?
     'B05 native 105×68m field referee: actual consecutive Rapier ball crossing, genuine last-shoe attribution or unresolved ownership; original same-world KICKOFF on a scored goal. No official competition result.':
     ['trap','dribble'].includes(select.value)?
     'B04 basic physical '+select.value.toUpperCase()+

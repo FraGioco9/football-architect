@@ -71,6 +71,21 @@ export const B05_LAB_STARTS=Object.freeze({
   away:boundary('me-b05-goal-line-bottom',-47.8,-10,-25,0)
  })
 });
+// B05b: source-positive original native shoe LAST touch plus out-of-play.
+export const B05B_LAB_STARTS=Object.freeze({
+ throwIn:Object.freeze({
+  home:boundary('me-b05b-throw-home',0,29.8,0,25),
+  away:boundary('me-b05b-throw-away',0,-29.8,0,-25)
+ }),
+ corner:Object.freeze({
+  home:boundary('me-b05b-corner-home',47.8,10,25,0),
+  away:boundary('me-b05b-corner-away',-47.8,-10,-25,0)
+ }),
+ goalKick:Object.freeze({
+  home:boundary('me-b05b-goalkick-home',47.8,10,25,0),
+  away:boundary('me-b05b-goalkick-away',-47.8,-10,-25,0)
+ })
+});
 export const ACTION_LAB_SCENARIOS=Object.freeze([
  item('pass','Pass','uniform',scene('me-action-pass-home',-4.96,0,0.3),
   'Real shoe START + teammate-directed impulse; reception is not assumed.',
@@ -117,6 +132,15 @@ export const ACTION_LAB_SCENARIOS=Object.freeze([
   B05_LAB_STARTS.goalLine.home,
   'Original ball crosses the goal line outside the posts. CORNER or GOAL KICK requires an authenticated last real shoe touch; never guess the team.',
   ['home-10','away-1','away-10'],'goal-line-exit'),
+ item('throw-in','Native-touch throw-in','referee',B05B_LAB_STARTS.throwIn.home,
+  'A real exclusive shoe-ball last touch then full-ball touchline exit; the correct other team receives a physically placed same-world THROW-IN. No legal hand release is inferred.',
+  ['home-10','away-9','away-10'],'throw-in'),
+ item('corner','Native-touch corner','referee',B05B_LAB_STARTS.corner.home,
+  'True defending-team last shoe START before the fully crossed goal line outside the posts; correct attacking-team CORNER placement on the original Rapier ball.',
+  ['away-10','home-9','away-1'],'corner'),
+ item('goal-kick','Native-touch goal kick','referee',B05B_LAB_STARTS.goalKick.home,
+  'True attacking-team last shoe START before the fully crossed goal line outside the posts; correct defending-team GOAL KICK placement on the original Rapier ball.',
+  ['home-10','away-9','away-1'],'goal-kick'),
  item('carry','Carry','carry',CARRY_LAB_STARTS.home,
   'Two actual opponents cover the safe PASS recipients before tick zero. A genuine #10 shoe START may then produce the original short CARRY impulse; never a confirmed dribble.',
   ['home-10','home-9','home-11','away-9','away-11'],'carry')
