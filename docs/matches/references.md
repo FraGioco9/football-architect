@@ -53,3 +53,17 @@ revision, including scored/historical views. League links must match the
 source ID **and** the marker, day and round; knockout links require a published
 immutable phase/tie/leg slot plus marker and day. The sporting score is never
 replaced by placeholder draw data.
+
+
+## #605 World Calendar day projection
+
+The already-verified calendar day API now optionally returns `matchId` on each
+fixture when a read-only, generation/season/day-scoped join can establish the
+published numeric identity. A single D1 UNION query joins immutable league
+slots and reserved knockout slots to `public_match_numbers`; league matches
+use `source_fixture_id`, knockout matches use phase/tie/leg, and the fixture
+marker/day/competition must agree. If no safe match exists, Calendar retains
+the verified fixture name and result **without a link**.
+
+The Calendar UI links only match name + score, not the entire event/day or
+competition label. No new browser fetches, schema migration or D1 writes.
