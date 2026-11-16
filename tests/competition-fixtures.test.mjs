@@ -590,6 +590,11 @@ test('#605 scored competition fixtures keep official goals when linked to publis
    competitionId:'IT-1',provenance:{kind:'authoritative'},fixtures:collection})};
  }});
  await new Promise(resolve=>setImmediate(resolve));
+ const preHydrationRows=testView.fields.get('app-fixtures-list').children;
+ const preHydrationVisit=n=>[n,...n.children.flatMap(preHydrationVisit)];
+ const preLinks=preHydrationRows.flatMap(preHydrationVisit).filter(n=>n.className==='app-fixture-score-link');
+ assert.equal(requests,1,'official collection is requested before score hydration');
+ assert.equal(preLinks.length,8,'published score links exist before score hydration');
  const officialFixtures=fixtures.map(game=>({
   ...game,sourceFixtureId:'season:1:IT-1:N'+String(game.round).padStart(2,'0')+':IT-'+game.homeId+':IT-'+game.awayId,
   marker:'N'+String(game.round).padStart(2,'0'),day:game.round+12
