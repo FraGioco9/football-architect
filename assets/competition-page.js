@@ -1297,18 +1297,30 @@
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.
-        let selection='',pendingLoads=0,lastWorldReload='';
+        let selection='',pendingLoads=0,lastWorldReload='',lastSuccessfulRead='';
+        const worldReadKey=(context,snapshot)=>JSON.stringify([context?.definition?.id,
+          context?.selectedSeason,snapshot?.sourceRevision,snapshot?.world?.generation,
+          snapshot?.world?.revision,snapshot?.world?.seasonNumber,snapshot?.world?.day]);
         const revalidateWorld=snapshot=>{
           const c=window.faCompetitionContext,data=c?.seasonData;
-          if(activeDebugSeason!==null||pendingLoads||snapshot?.source!=='authoritative'||data?.provenance?.kind!=='authoritative')return;
-          if(snapshot.world&&window.faWorldClockAdapter.sameWorld(data.world,snapshot.world))return;
-          const token=JSON.stringify([c.definition.id,c.selectedSeason,snapshot.sourceRevision,snapshot.world?.generation,snapshot.world?.revision,snapshot.world?.seasonNumber,snapshot.world?.day]);
-          if(lastWorldReload===token)return;
+          if(activeDebugSeason!==null||pendingLoads||!c||snapshot?.source!=='authoritative'||
+             snapshot.worldStatus!=='ready'||!snapshot.world)return;
+          if(data?.provenance?.kind==='authoritative'&&
+             window.faWorldClockAdapter.sameWorld(data.world,snapshot.world))return;
+          const token=worldReadKey(c,snapshot);
+          // Confirmed empty reads are successful, not a reason to refetch.
+          // After a failed initial read (no seasonData), allow one bounded
+          // recovery attempt at this exact world/season revision.
+          if(lastWorldReload===token||lastSuccessfulRead===token)return;
           lastWorldReload=token;void load();
         };
         const load=()=>{
           pendingLoads++;
-          return loader.load().finally(()=>{
+          return loader.load().then(success=>{
+            if(success)lastSuccessfulRead=worldReadKey(window.faCompetitionContext,
+              window.faWorldState?.get?.());
+            return success;
+          }).finally(()=>{
             pendingLoads--;
             if(pendingLoads===0)revalidateWorld(window.faWorldState?.get?.());
           });

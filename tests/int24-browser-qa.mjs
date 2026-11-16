@@ -218,6 +218,37 @@ try {
    assert.equal(publishedReads,1,'renderers share the same published match collection');
    checks+=3;
   }finally{await realPage.close()}
+  // A first failed public season read must not strand Standings/Fixtures in
+  // an empty shell. The world listener retries once for the same revision.
+  const recovery=await browser.newPage({viewport:{width:1440,height:900}});
+  let attempts=0;
+  try{
+   await recovery.route('**/api/world',route=>route.fulfill({
+    status:200,contentType:'application/json',body:JSON.stringify({world})
+   }));
+   await recovery.route('**/api/competitions/IT-1/seasons/1',route=>{
+    attempts++;
+    return route.fulfill({status:attempts===1?503:200,contentType:'application/json',
+     body:JSON.stringify(attempts===1?{error:{code:'sporting_data_unavailable'}}:realSeason)});
+   });
+   await recovery.route('**/api/matches/seasons/1/competitions/IT-1',route=>
+    route.fulfill({status:200,contentType:'application/json',
+     body:JSON.stringify({schemaVersion:1,providerId:'authoritative-world',
+      status:'published',season:1,competitionId:'IT-1',
+      provenance:{kind:'authoritative'},fixtures:publicFixtures})}));
+   await recovery.goto(base+'/competitions/it-1/standings?season=1',
+    {waitUntil:'domcontentloaded'});
+   await recovery.waitForFunction(()=>
+    window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative'&&
+    document.querySelectorAll('#app-standings-body a[data-published-match]').length===16,
+    null,{timeout:15000});
+   assert.equal(attempts,2,'a first failed public read retries once at the same world revision');
+   await recovery.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',matchday:1}));
+   await recovery.waitForFunction(()=>
+    document.querySelectorAll('#app-fixtures-list .app-fixture-goals').length===16);
+   assert.equal(attempts,2,'Fixtures retains recovered data without further API reads');
+   checks+=2;
+  }finally{await recovery.close()}
  }
 
  await verifyCanonicalStateBrowser(browser,'chromium');
