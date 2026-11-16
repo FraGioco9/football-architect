@@ -16,7 +16,7 @@ export const CONTROL_OPPONENT_FIRST_INITIAL=Object.freeze({
 export const CONTROL_CLOSE_DEFENDER_INITIAL=Object.freeze({
  id:'away-7',x:-2.8,y:-3.8
 });
-export const CONTROL_SPACE_DEFENDER_INITIAL=Object.freeze({id:'away-7',x:-0.7,y:-3.8});
+export const CONTROL_SPACE_DEFENDER_INITIAL=Object.freeze({id:'away-7',x:2,y:-3.8});
 export function initialResearchControlLineup(players,ball,{
  opponentFirst=false,side='home',closeDefender=false,spaceDefender=false
 }={}){

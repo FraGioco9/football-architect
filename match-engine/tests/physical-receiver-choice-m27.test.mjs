@@ -133,6 +133,7 @@ test('M27 authentic HOME/AWAY open-side second shoe can defer a clearance',
      decision=b.physicalReceiverChoice;
      assert.ok(decision,'original physical second shoe candidate must exist');
      assert.equal(decision.tick,63);
+     process.stdout.write('ME_628_M27_REAL_SPACE_DECISION_'+side.toUpperCase()+' '+JSON.stringify(decision)+'\\n');
      assert.ok(decision.nearestRealDefenderM>2.5);
      assert.equal(decision.decision,'defer-clearance-to-keep-ball-near');
      assert.equal(decision.physicalImpulseAllowed,false);
