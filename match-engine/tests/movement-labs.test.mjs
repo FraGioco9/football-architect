@@ -38,7 +38,11 @@ test('#628 M2 scenario catalog is bounded, mirrored, DEV-only and non-authoritat
  assert.match(html,/id="movement-labs-open"/);
  assert.match(html,/id="movement-labs-dialog"/);
  assert.doesNotMatch(client,/diagnosticAutonomousFixtureActionEnabled:\s*true/);
- assert.doesNotMatch(client,/diagnosticPlayerFootContactsEnabled:\s*true/);
+ // M2 remains shoe-free; M9's separate explicit shared-contact scene
+ // is the ONLY Movement LAB allowed to enable physical shoe contacts.
+ assert.match(client,/\.\.\.\(sharedContacts\?\{\s*diagnosticPlayerFootContactsEnabled:true,\s*diagnosticSharedContactEventsEnabled:true\s*\}:\{\}\)/);
+ assert.ok(MOVEMENT_LAB_SCENARIOS.filter(x=>x.phase==='M2')
+  .every(x=>x.shoeSourceEnabled===false));
 });
 
 test('#628 M2 actual 22-player and Rapier ball scenarios have no synthetic touch or official outcome',

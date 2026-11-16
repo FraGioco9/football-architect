@@ -189,7 +189,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     supportRunPathM>0.5&&supportNetAdvanceM>0.35):
    nativeBodies?Boolean(bodySample&&bodySample.actualNativeStarts>0&&
     (!encounter||bodySample.appliedMoverResponses>0)&&
-    (!sharedContacts||sharedSample?.oneNativeEventQueue===true)):false;
+    (!sharedContacts||(sharedSample?.oneNativeEventQueue===true&&
+     observedSharedFootStarts>0))):false;
   previous=Object.freeze({
    tick:physics.tick,x:p.x,y:p.y,speedMps,facingRad:p.facingRad,
    blockedBy:p.blockedBy,assignedOpponentId:assigned?currentOpponent.id:null,

@@ -166,7 +166,9 @@ export function createEngine(RAPIER, input = {}, {
    initialResearchCarryLineup(INITIAL_PLAYERS,diagnosticResearchCarrySide,
     scenario):
   diagnosticResearchBodyEncounter?
-   initialResearchBodyEncounterLineup(INITIAL_PLAYERS,scenario):
+   initialResearchBodyEncounterLineup(INITIAL_PLAYERS,scenario,{
+    sharedContactBall:diagnosticSharedContactEventsEnabled
+   }):
    INITIAL_PLAYERS;
   // Restricted to isolated zero/partial/full-spin roll experiments. Default 0
   // remains byte-for-byte equivalent to the accepted ME-01 physics-v4 path.

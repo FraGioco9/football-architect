@@ -589,7 +589,7 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    if(scene==='shared-contacts'){
     assert.match(observed.readout,/Rapier native bodies 22 · genuine starts [1-9][0-9]*/);
     assert.match(observed.readout,/actual mover responses [1-9][0-9]*/);
-    assert.match(observed.readout,/single native queue true · genuine shoe STARTs [0-9]+/);
+    assert.match(observed.readout,/single native queue true · genuine shoe STARTs [1-9][0-9]*/);
     assert.match(observed.status,/Verified: native body START and canonical feedback in one shared Rapier queue/);
    }else{
     assert.match(observed.readout,/Rapier native bodies 0 · genuine starts 0/);

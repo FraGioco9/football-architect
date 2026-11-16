@@ -109,6 +109,10 @@ test('M9 original genuine shoe START survives a shared queue with native 22-body
 test('M9 real original body collision/feedback with live shoes through one queue and independent OFF negative',
  {timeout:100000},async()=>{
  const R=await initializeRapier(wasm);
+ const homeScene=movementLabScenario('shared-contacts','home');
+ const awayScene=movementLabScenario('shared-contacts','away');
+ assert.equal(homeScene.initial.x,-0.25);
+ assert.equal(awayScene.initial.x,0.25);
  const outcomes={};
  for(const side of ['home','away']){
   for(const scene of ['shared-contacts','shared-contacts-off']){
@@ -143,7 +147,8 @@ test('M9 real original body collision/feedback with live shoes through one queue
       if(f.readout.authenticSharedShoeStarts>0&&firstShoe===null)
        firstShoe=tick;
       if(f.readout.witnessed){
-       assert.ok(firstBody!==null&&firstFeedback!==null);
+       assert.ok(firstBody!==null&&firstFeedback!==null&&firstShoe!==null,
+        'M9 positive requires genuine shoe and body from ONE native queue');
        assert.equal(f.readout.nativeBodyPositionsFedBack,true);
       }
      }else{
@@ -158,6 +163,7 @@ test('M9 real original body collision/feedback with live shoes through one queue
     if(scene==='shared-contacts'){
      assert.ok(firstBody!==null,'genuine native body START required');
      assert.ok(firstFeedback!==null,'source-valid same-tick physical response required');
+     assert.ok(firstShoe!==null,'genuine shoe-ball START in the SAME original ball World required');
      assert.equal(a.snapshot().readout.witnessed,true);
     }
     outcomes[side+'-'+scene]={

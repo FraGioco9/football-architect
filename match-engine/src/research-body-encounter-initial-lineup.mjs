@@ -7,11 +7,18 @@ const finite=Number.isFinite;
 export const BODY_ENCOUNTER_IDS=Object.freeze(['home-10','away-10']);
 export const BODY_ENCOUNTER_START_X_M=0.72;
 export const BODY_ENCOUNTER_TARGET_X_M=3.5;
-export function initialResearchBodyEncounterLineup(players,ball){
- if(!Array.isArray(players)||players.length!==22||
+export function initialResearchBodyEncounterLineup(players,ball,
+ {sharedContactBall=false}={}){
+ // M8 default remains exactly centre ball. M9 explicitly stages a
+ // 25cm offset ball once BEFORE tick zero to authenticate an actual
+ // shoe-ball START alongside original physical body-body contact.
+ const expectedX=sharedContactBall?0.25:0;
+ if(typeof sharedContactBall!=='boolean'||
+    !Array.isArray(players)||players.length!==22||
     !ball||!['x','y','z','vx','vy','vz'].every(k=>finite(ball[k]))||
-    [ball.x,ball.y,ball.z,ball.vx,ball.vy,ball.vz].some(n=>n!==0))
-  throw new TypeError('M8 body encounter requires real stationary centre ball at tick zero');
+    Math.abs(Math.abs(ball.x)-expectedX)>1e-9||
+    [ball.y,ball.z,ball.vx,ball.vy,ball.vz].some(n=>n!==0))
+  throw new TypeError('Closed real stationary M8/M9 research encounter ball required');
  for(const id of BODY_ENCOUNTER_IDS){
   const p=players.filter(v=>v.id===id);
   if(p.length!==1||p[0].role!=='forward')
