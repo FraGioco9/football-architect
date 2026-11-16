@@ -1634,19 +1634,27 @@ export function createPlayerMovement(options={}){
      k!=='researchControlSide'&&
      k!=='researchCarrySide'&&k!=='researchCarryBall'&&
      k!=='researchBodyEncounter'&&
-     k!=='researchOpposingPressConvergence')||
+     k!=='researchOpposingPressConvergence'&&
+     k!=='researchUnstagedNativeBodyFeedback')||
     ((options.researchShotAttacker??null)===null&&
      options.researchControlReceiver===undefined&&
      options.researchCarrySide===undefined&&
      options.researchBodyEncounter!==true&&
      options.researchOpposingPressConvergence!==true&&
+     options.researchUnstagedNativeBodyFeedback!==true&&
      Reflect.ownKeys(options).length>0)||
     (options.researchBodyEncounter!==undefined&&(
      options.researchBodyEncounter!==true||
      Reflect.ownKeys(options).length!==1))||
     (options.researchOpposingPressConvergence!==undefined&&(
      options.researchOpposingPressConvergence!==true||
-     Reflect.ownKeys(options).length!==1))||
+     (options.researchUnstagedNativeBodyFeedback===true?
+      (Reflect.ownKeys(options).length!==2):
+      Reflect.ownKeys(options).length!==1)))||
+    (options.researchUnstagedNativeBodyFeedback!==undefined&&(
+     options.researchUnstagedNativeBodyFeedback!==true||
+     options.researchOpposingPressConvergence!==true||
+     Reflect.ownKeys(options).length!==2))||
     (options.researchCarrySide!==undefined&&(
      !['home','away'].includes(options.researchCarrySide)||
      !Object.hasOwn(options,'researchCarryBall')||
@@ -1695,6 +1703,7 @@ export function createPlayerMovement(options={}){
  let tick=0;
  const players=initial.map(p=>({...p}));
  let physicallyAppliedResponses=0,lastPhysicalReconciliation=null;
+ let lastFeedbackSource=null,lastFeedbackReconciledTick=0;
  let lastBall={x:0,y:0};
  let pressers={home:'home-10',away:'away-10'};
  let pressSwitches={home:0,away:0};
@@ -1880,14 +1889,27 @@ export function createPlayerMovement(options={}){
     away:teamShape(players,'away',pressers.away)
    }),
    players:Object.freeze(players.map(p=>Object.freeze({...p}))),
-   ...(options.researchBodyEncounter===true?{
+   ...((options.researchBodyEncounter===true||
+         options.researchUnstagedNativeBodyFeedback===true)?{
     actualNativeResponseCount:physicallyAppliedResponses,
     lastPhysicalReconciliation
    }:{})
   });
  }
  function step(ballPosition={x:0,y:0},priorRealPass=null){
+  if(options.researchUnstagedNativeBodyFeedback===true&&
+     lastFeedbackReconciledTick!==tick)
+   throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
   const ball=ballXY(ballPosition);
+  // Exact accepted previous positions, before applying ANY new free 60Hz
+  // intent. This is the only valid speed reference for an M13 correction.
+  if(options.researchUnstagedNativeBodyFeedback===true)
+   lastFeedbackSource=Object.freeze({
+    nextTick:tick+1,
+    players:Object.freeze(players.map(p=>Object.freeze({
+     id:p.id,team:p.team,x:p.x,y:p.y
+    })))
+   });
   // Research-only receiver reaction, never a received-pass award.
   // A kinematic destination is still subject to acceleration, 7m/s speed,
   // turning, and 0.98m kinematic separation enforced by the original mover.
@@ -2273,6 +2295,104 @@ export function createPlayerMovement(options={}){
   balances=nextBalances;lineResponses=nextLineResponses;
   return snapshot();
  }
+ // M13: independent unstaged physical feedback, strictly opt-in and
+ // completely isolated from M8's staged body-encounter authority.
+ // The input must originate from the same original Rapier World and its
+ // sole current event queue; no synthetic pair or stale START is accepted.
+ function reconcileUnstagedNativeBodyResponse(native){
+  if(options.researchUnstagedNativeBodyFeedback!==true||
+     native?.tick!==tick||tick<=0||
+     lastFeedbackReconciledTick!==tick-1||
+     lastFeedbackSource?.nextTick!==tick||
+     native.sameOriginalRapierBallWorld!==true||
+     native.unstagedFeedbackEnabled!==true||
+     native.controlledEncounter!==false||
+     native.collisionColliderRadiusM!==PLAYER_MIN_SEPARATION_M/2||
+     !Array.isArray(native.physicalActors)||
+     native.physicalActors.length!==INITIAL_PLAYERS.length||
+     !Array.isArray(native.activePairs)||!Array.isArray(native.events)||
+     !Number.isSafeInteger(native.actualNativeStarts)||
+     !Number.isSafeInteger(native.appliedMoverResponses)||
+     native.appliedMoverResponses!==physicallyAppliedResponses||
+     lastFeedbackSource.players.length!==INITIAL_PLAYERS.length)
+   throw new TypeError('M13 requires unacknowledged same-tick original native 22-body source');
+  const ids=new Set(),seen=new Set();
+  for(const label of native.activePairs){
+   const duo=typeof label==='string'?label.split('|'):[];
+   if(duo.length!==2||duo[0]>=duo[1]||
+      seen.has(label)||duo.some(id=>
+       !INITIAL_PLAYERS.some(p=>p.id===id)))
+    throw new TypeError('M13 rejects synthetic, repeated or invalid native pairs');
+   seen.add(label);
+   // The LAST event for a still-active native pair must be its genuine
+   // Rapier START, with no later native END. If history is unavailable,
+   // fail CLOSED; contact-free frames remain unaffected.
+   const last=[...native.events].reverse().find(e=>e.pair===label);
+   if(!last||last.type!=='rapier-body-start'||
+      last.source!=='native-rapier-collision-event'||
+      !Number.isSafeInteger(last.tick)||last.tick<1||
+      last.tick>tick||native.actualNativeStarts<1)
+    throw new TypeError('M13 active pair lacks authenticated Rapier START');
+   duo.forEach(id=>ids.add(id));
+  }
+  const candidate=players.map((p,i)=>{
+   const source=lastFeedbackSource.players[i];
+   const body=native.physicalActors[i];
+   if(source.id!==p.id||source.team!==p.team||
+      p.id!==INITIAL_PLAYERS[i].id||
+      body?.id!==p.id||body.team!==p.team||
+      ![p.x,p.y,p.vx,p.vy,source.x,source.y,
+        body.position?.x,body.position?.y].every(finite))
+    throw new TypeError('M13 current canonical and original Rapier IDs must match');
+   return Object.freeze({
+    x:ids.has(p.id)?body.position.x:p.x,
+    y:ids.has(p.id)?body.position.y:p.y
+   });
+  });
+  const reject=reason=>{
+   lastPhysicalReconciliation=Object.freeze({
+    tick,accepted:false,reason,
+    playerIds:Object.freeze([...ids].sort())
+   });
+   lastFeedbackReconciledTick=tick;
+   return lastPhysicalReconciliation;
+  };
+  if(ids.size===0)return reject('no-native-active-pair');
+  let minGapM=Infinity;
+  for(let i=0;i<players.length;i++){
+   const n=candidate[i],prior=lastFeedbackSource.players[i];
+   if(Math.abs(n.x)>PLAYER_KINEMATIC_LIMITS.maxX+1e-8||
+      Math.abs(n.y)>PLAYER_KINEMATIC_LIMITS.maxY+1e-8||
+      Math.hypot(n.x-prior.x,n.y-prior.y)>
+       PLAYER_MAX_SPEED_MPS*PLAYER_DT+1e-7)
+    return reject('physical-boundary-or-speed');
+   for(let j=i+1;j<players.length;j++)
+    minGapM=Math.min(minGapM,
+     Math.hypot(n.x-candidate[j].x,n.y-candidate[j].y));
+  }
+  if(minGapM<PLAYER_MIN_SEPARATION_M-1e-8)
+   return reject('canonical-separation');
+  let adjustedM=0;
+  for(let i=0;i<players.length;i++){
+   const p=players[i];
+   if(!ids.has(p.id))continue;
+   const n=candidate[i],prior=lastFeedbackSource.players[i];
+   adjustedM+=Math.hypot(n.x-p.x,n.y-p.y);
+   p.x=n.x;p.y=n.y;
+   p.vx=(n.x-prior.x)/PLAYER_DT;
+   p.vy=(n.y-prior.y)/PLAYER_DT;
+   p.facingRad=advancePlayerOrientation(
+    p.facingRad,p.vx,p.vy,PLAYER_KINEMATIC_LIMITS);
+  }
+  if(adjustedM<=1e-9)return reject('native-contact-no-xy-correction');
+  physicallyAppliedResponses++;
+  lastPhysicalReconciliation=Object.freeze({
+   tick,accepted:true,reason:'genuine-unstaged-rapier-body-response',
+   playerIds:Object.freeze([...ids].sort()),minGapM,adjustedM
+  });
+  lastFeedbackReconciledTick=tick;
+  return lastPhysicalReconciliation;
+ }
  // M8 controlled feedback: one real native pair and one same-tick
  // physical XY solution. The canonical minimum gap and speed always win.
  function reconcileNativeBodyResponse(native){
@@ -2337,6 +2457,9 @@ export function createPlayerMovement(options={}){
  }
  return Object.freeze({
   snapshot,step,reset:()=>createPlayerMovement(options),
-  ...(options.researchBodyEncounter===true?{reconcileNativeBodyResponse}:{})
+  ...(options.researchBodyEncounter===true?{reconcileNativeBodyResponse}:{}) ,
+  ...(options.researchUnstagedNativeBodyFeedback===true?{
+   reconcileUnstagedNativeBodyResponse
+  }:{})
  });
 }

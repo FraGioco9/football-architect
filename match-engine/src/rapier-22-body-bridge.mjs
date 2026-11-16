@@ -14,9 +14,13 @@ const finite=Number.isFinite;
 const pair=(a,b)=>[a,b].sort().join('|');
 
 export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_PLAYERS,
- {controlledEncounter=false,sharedQueue=null}={}){
- if(typeof controlledEncounter!=='boolean')
-  throw new TypeError('Research encounter flag must be boolean');
+ {controlledEncounter=false,unstagedFeedback=false,sharedQueue=null}={}){
+ if(typeof controlledEncounter!=='boolean'||
+    typeof unstagedFeedback!=='boolean'||
+    (controlledEncounter&&unstagedFeedback)||
+    (unstagedFeedback&&sharedQueue===null))
+  throw new TypeError('M13 unstaged feedback needs exclusive shared native queue');
+ const feedbackEnabled=controlledEncounter||unstagedFeedback;
  if(!R||typeof R.EventQueue!=='function'||!R.ColliderDesc||
     !world||typeof world.createRigidBody!=='function')
   throw new TypeError('Current original Rapier World required');
@@ -80,7 +84,7 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
    currentTickStarts:lastTickStarts,currentTickEnds:lastTickEnds,
    events:Object.freeze([...timeline]),
    activePairs:Object.freeze([...activePairs].sort()),
-   controlledEncounter,
+   controlledEncounter,unstagedFeedbackEnabled:unstagedFeedback,
    minPhysicalGapM,
    maxCanonicalDriftM:Math.max(...players.map(p=>p.driftM)),
    collisionColliderRadiusM:radiusM,
@@ -95,7 +99,7 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
  }
  function prepare(frame,nextTick){
   requireLive();
-  if((controlledEncounter&&lastAcceptedTick!==tick)||
+  if((feedbackEnabled&&lastAcceptedTick!==tick)||
      prepared!==null||!Number.isSafeInteger(nextTick)||
      nextTick!==tick+1||
      !Array.isArray(frame?.players)||frame.players.length!==22||
@@ -165,9 +169,12 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
  // Never reposition a physical body or generate a collision here.
  function acknowledgeCanonicalResponse(frame){
   requireLive();
-  if(!controlledEncounter||prepared!==null||
+  if(!feedbackEnabled||prepared!==null||
      lastAcceptedTick!==tick-1||frame?.tick!==tick||
-     frame.version!==PLAYER_VERSION||frame.players?.length!==22)
+     frame.version!==PLAYER_VERSION||frame.players?.length!==22||
+     (unstagedFeedback&&(
+      frame.lastPhysicalReconciliation?.tick!==tick||
+      typeof frame.lastPhysicalReconciliation?.accepted!=='boolean')))
    throw new TypeError('One same-tick original mover response required');
   const accepted=frame.players.map((p,i)=>{
    const body=INITIAL_PLAYERS[i];
@@ -192,6 +199,6 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
   }
  }
  return Object.freeze({snapshot,prepare,observe,dispose,eventQueue:events,
-  ...(controlledEncounter?{acknowledgeCanonicalResponse}:{})
+  ...(feedbackEnabled?{acknowledgeCanonicalResponse}:{})
  });
 }

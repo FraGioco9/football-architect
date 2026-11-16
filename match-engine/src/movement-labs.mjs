@@ -14,6 +14,8 @@ const encounterOrOff=id=>['body-encounter','body-encounter-off',
 const pressureSceneLabel=id=>id==='pressure-support'||id==='pressure-neutral';
 const opposingConvergenceLabel=id=>id==='opposing-convergence'||
  id==='opposing-convergence-off';
+const opposingFeedbackLabel=id=>id==='opposing-feedback'||
+ id==='opposing-feedback-off';
 
 export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
@@ -36,8 +38,11 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  const opposingConvergence=scene.spec.id==='opposing-convergence';
  const opposingConvergenceOff=scene.spec.id==='opposing-convergence-off';
  const opposingConvergenceScene=opposingConvergence||opposingConvergenceOff;
+ const opposingFeedback=scene.spec.id==='opposing-feedback';
+ const opposingFeedbackOff=scene.spec.id==='opposing-feedback-off';
+ const opposingFeedbackScene=opposingFeedback||opposingFeedbackOff;
  const sharedContacts=scene.spec.id==='shared-contacts'||
-  pressureScene||opposingConvergenceScene;
+  pressureScene||opposingConvergenceScene||opposingFeedbackScene;
  const sharedOff=scene.spec.id==='shared-contacts-off';
  // M9 alone stages its controlled encounter; M10 only shares the
  // authentic event queue and NEVER opts into fixture player positions.
@@ -50,6 +55,7 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   nativeBodies?{
    diagnosticPlayerBodyCollidersEnabled:true,
    ...(encounter?{diagnosticResearchBodyEncounter:true}:{}),
+   ...(opposingFeedback?{diagnosticUnstagedBodyFeedbackEnabled:true}:{}),
    ...(sharedContacts?{
     diagnosticPlayerFootContactsEnabled:true,
     diagnosticSharedContactEventsEnabled:true
@@ -57,7 +63,12 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   }:{});
  const mover=usesOriginalControl?null:createPlayerMovement(
   encounter?{researchBodyEncounter:true}:
-  opposingConvergence?{researchOpposingPressConvergence:true}:{}
+  opposingFeedback?{
+   researchOpposingPressConvergence:true,
+   researchUnstagedNativeBodyFeedback:true
+  }:
+  opposingConvergence||opposingFeedbackOff?
+   {researchOpposingPressConvergence:true}:{}
  );
  let disposed=false,latest=null,origin=null,previous=null;
  let pathM=0,maxSpeedMps=0,maxBrakeMps2=0,totalTurnRad=0;
@@ -273,6 +284,11 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    opposingConvergenceScene?Boolean(opposingConvergence&&
     genuineOpposingConvergenceBodyStarts>0&&
     sharedSample?.oneNativeEventQueue===true):
+   opposingFeedbackScene?Boolean(opposingFeedback&&
+    bodySample?.actualNativeStarts>0&&
+    bodySample?.appliedMoverResponses>0&&
+    frame.lastPhysicalReconciliation?.accepted===true&&
+    sharedSample?.oneNativeEventQueue===true):
    nativeBodies?Boolean(bodySample&&bodySample.actualNativeStarts>0&&
     (!encounter||bodySample.appliedMoverResponses>0)&&
     (!sharedContacts||(sharedSample?.oneNativeEventQueue===true&&
@@ -338,6 +354,10 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
      nearestNativeOpposingContestGapM===Infinity?
       null:nearestNativeOpposingContestGapM,
     genuineOpposingConvergenceBodyStarts,
+    researchUnstagedFeedbackEnabled:opposingFeedback,
+    observedOriginalFeedbackCount:frame.actualNativeResponseCount??0,
+    observedOriginalFeedbackAccepted:
+     frame.lastPhysicalReconciliation?.accepted===true,
     nativeBodyCount:bodySample?.physicalActors.length??0,
     nativeBodyStarts:bodySample?.actualNativeStarts??0,
     nativeBodyEnds:bodySample?.actualNativeEnds??0,
@@ -394,6 +414,14 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   const after=nativeBodies?engine.step(frame):engine.step();
   if(after.tick!==prior.tick+1||frame.tick!==after.tick)
    throw new Error('Only current synchronized real physical ticks');
+  if(opposingFeedback){
+   const source=engine.nativePlayerBodySnapshot();
+   mover.reconcileUnstagedNativeBodyResponse(source);
+   const reconciled=mover.snapshot();
+   const acknowledged=engine.acknowledgeNativePlayerResponse(reconciled);
+   return record(after,reconciled,null,null,null,acknowledged,
+    engine.sharedNativeContactSnapshot());
+  }
   if(encounter&&nativeBodies){
    const physicalSource=engine.nativePlayerBodySnapshot();
    mover.reconcileNativeBodyResponse(physicalSource);
@@ -494,7 +522,8 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
    (['body-world','body-off','body-encounter','body-encounter-off',
      'shared-contacts','shared-contacts-off','pressure-support',
      'pressure-neutral','opposing-convergence',
-     'opposing-convergence-off'].includes(f.scenarioId)?
+     'opposing-convergence-off','opposing-feedback',
+     'opposing-feedback-off'].includes(f.scenarioId)?
     ' · Rapier native bodies '+m.nativeBodyCount+
     ' · genuine starts '+m.nativeBodyStarts+
     ' · min physical gap '+
@@ -507,7 +536,8 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
       ' · actual mover responses '+m.nativeBodyAcceptedResponses+
       ' · active native pairs '+m.nativeBodyActivePairs.length:'')+
      (f.scenarioId==='shared-contacts'||f.scenarioId==='shared-contacts-off'||
-      pressureSceneLabel(f.scenarioId)||opposingConvergenceLabel(f.scenarioId)?
+      pressureSceneLabel(f.scenarioId)||opposingConvergenceLabel(f.scenarioId)||
+      opposingFeedbackLabel(f.scenarioId)?
       ' · single native queue '+m.nativeSharedOneQueue+
       ' · genuine shoe STARTs '+m.authenticSharedShoeStarts+
       ' · shared collision events last tick '+m.nativeSharedCollisionEventsLastTick:'')+
@@ -516,7 +546,22 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
       ' · native opposing STARTs '+m.genuineOpposingConvergenceBodyStarts+
       ' · closest observed opposing pair '+
       (m.minimumNativeOpposingContestGapM===null?'none':
-       two(m.minimumNativeOpposingContestGapM))+' m':''):'');
+       two(m.minimumNativeOpposingContestGapM))+' m':'')+
+     (opposingFeedbackLabel(f.scenarioId)?
+      ' · accepted native corrections '+m.nativeBodyAcceptedResponses+
+      ' · last mover correction '+(m.originalMoverResponseReason??'none')+
+      ' · corrected mover '+m.nativeBodyPositionsFedBack:''):'');
+  if(opposingFeedbackLabel(f.scenarioId)){
+   status.textContent=f.scenarioId==='opposing-feedback-off'?
+    'Negative: same original spontaneous Rapier body contact; no physical solver XY applied to canonical mover.':
+    m.witnessed?
+     'Verified: source-authenticated unstaged Rapier body START, bounded 22-player solver XY feedback accepted and applied to canonical mover.':
+     'Original contact and bounded same-tick physical feedback not both verified yet.';
+   status.textContent+=' Native body starts '+m.nativeBodyStarts+
+    ', accepted native mover responses '+m.nativeBodyAcceptedResponses+
+    '. Research only: no official tackle, possession or pass.';
+   return;
+  }
   if(opposingConvergenceLabel(f.scenarioId)){
    status.textContent=f.scenarioId==='opposing-convergence-off'?
     'Negative: source-grounded press-to-ball convergence OFF; no invented body contact witness.':

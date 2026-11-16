@@ -54,7 +54,11 @@ export const MOVEMENT_LAB_SCENARIOS=Object.freeze([
  // M12: actual current opposing pressers may converge on the ACTUAL ball.
  // No player staging, false contact, or 11v11 panel.
  spec('opposing-convergence','Original press convergence','Both original currently assigned opposing pressers converge on the actual ball only when their own observed XY enter the same bounded contest area. 22 unstaged players, one shared native Rapier queue; native body START is required, never guessed.',scene('me-m12-opposing-convergence',0,0),10,'M12'),
- spec('opposing-convergence-off','Press convergence OFF','Identical original 22-player positions and original ball physics, with the new press-to-ball intent disabled. Both native bridges stay enabled as an authentic negative.',scene('me-m12-opposing-convergence',0,0),10,'M12')
+ spec('opposing-convergence-off','Press convergence OFF','Identical original 22-player positions and original ball physics, with the new press-to-ball intent disabled. Both native bridges stay enabled as an authentic negative.',scene('me-m12-opposing-convergence',0,0),10,'M12'),
+ // M13: both experiments retain the positive real press-to-ball policy;
+ // only one permits same-world native body solver XY reconciliation.
+ spec('opposing-feedback','Unstaged native body feedback','M12 original opposed pressers and a real shared Rapier body START; apply original native solver XY ONLY when the 22-player canonical 0.98m, speed, pitch and authentic-event gates pass. Research, not football action.',scene('me-m13-unstaged-feedback',0,0),10,'M13'),
+ spec('opposing-feedback-off','Unstaged body feedback OFF','Same ORIGINAL unstaged 22-player contest and native contact events, but do not apply physical solver corrections to canonical player motion. Genuine contact remains independently observable.',scene('me-m13-unstaged-feedback',0,0),10,'M13')
 ]);
 export function movementLabScenario(id,side='home'){
  if(!['home','away'].includes(side))throw new TypeError('Known HOME/AWAY side required');

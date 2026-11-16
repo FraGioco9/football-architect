@@ -662,6 +662,39 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    assert.match(measured.status,/no tackle, official possession or body feedback/);
    process.stdout.write('MOVEMENT_LAB_M12_NATIVE_PRESS '+JSON.stringify(measured)+'\n');
   }
+  // M13: real original-source M12 contested press, actual native
+  // solver-to-22-player movement acknowledgment versus the exact same
+  // unstaged native contact with feedback DISABLED.
+  for(const [choice,side] of [
+   ['opposing-feedback','home'],['opposing-feedback','away'],
+   ['opposing-feedback-off','home'],['opposing-feedback-off','away']
+  ]){
+   const measured=await evalJs(
+    "(()=>{const c=document.getElementById('movement-labs-choice');"+
+    "const s=document.getElementById('movement-labs-side');"+
+    "c.value="+JSON.stringify(choice)+";c.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "s.value="+JSON.stringify(side)+";s.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "for(let t=0;t<110;t++)document.getElementById('movement-labs-step').click();"+
+    "return {choice:c.value,side:s.value,readout:document.getElementById('movement-labs-readout').textContent,"+
+    "status:document.getElementById('movement-labs-status').textContent};})()");
+   assert.equal(measured.choice,choice);
+   assert.equal(measured.side,side);
+   assert.match(measured.readout,/^Tick 110 /);
+   assert.match(measured.readout,/Rapier native bodies 22/);
+   assert.match(measured.readout,/single native queue true/);
+   assert.match(measured.readout,/genuine starts [1-9]/);
+   if(choice==='opposing-feedback'){
+    assert.match(measured.readout,/accepted native corrections [1-9][0-9]*/);
+    assert.match(measured.readout,/corrected mover true/);
+    assert.match(measured.status,/Verified: source-authenticated unstaged Rapier body START/);
+   }else{
+    assert.match(measured.readout,/accepted native corrections 0/);
+    assert.match(measured.readout,/corrected mover false/);
+    assert.match(measured.status,/Negative: same original spontaneous Rapier body contact/);
+   }
+   assert.match(measured.status,/no official tackle, possession or pass/);
+   process.stdout.write('MOVEMENT_LAB_M13_ACTUAL_FEEDBACK '+JSON.stringify(measured)+'\n');
+  }
   for(const [width,height] of [[1280,720],[1440,900]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
    const size=await evalJs("(()=>{const d=document.getElementById('movement-labs-dialog');"+

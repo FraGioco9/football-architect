@@ -86,6 +86,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticPlayerBodyCollidersEnabled = false,
   diagnosticSharedContactEventsEnabled = false,
   diagnosticResearchBodyEncounter = false,
+  diagnosticUnstagedBodyFeedbackEnabled = false,
   diagnosticAutonomousFixtureActionEnabled = false,
   diagnosticAutonomousCarryEnabled = false,
   diagnosticResearchShotAttacker = null,
@@ -124,6 +125,20 @@ export function createEngine(RAPIER, input = {}, {
         !diagnosticSharedContactEventsEnabled)||
        diagnosticAutonomousFixtureActionEnabled)))
    throw new TypeError('M8 encounter needs body-only same-world opt-in');
+ // M13: only the same original 22-body/shoe queue, NO staged encounter
+ // and NO football action authority. This is never enabled by default.
+ if(typeof diagnosticUnstagedBodyFeedbackEnabled!=='boolean'||
+    (diagnosticUnstagedBodyFeedbackEnabled&&(
+     !diagnosticPlayerBodyCollidersEnabled||
+     !diagnosticPlayerFootContactsEnabled||
+     !diagnosticSharedContactEventsEnabled||
+     diagnosticResearchBodyEncounter||
+     diagnosticAutonomousFixtureActionEnabled||
+     diagnosticAutonomousCarryEnabled||
+     diagnosticResearchShotAttacker!==null||
+     diagnosticResearchControlReceiver||
+     diagnosticResearchCarrySide!==null)))
+  throw new TypeError('M13 feedback requires unstaged shared Rapier without gameplay authority');
  if(diagnosticResearchShotAttacker!==null&&(
     !['home','away'].includes(diagnosticResearchShotAttacker)||
     !diagnosticPlayerFootContactsEnabled||
@@ -252,7 +267,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticMagnusLiftEnabled,diagnosticSpinDecayRatePerS,
     diagnosticPlayerFootContactsEnabled,diagnosticPlayerBodyCollidersEnabled,
     diagnosticSharedContactEventsEnabled,
-    diagnosticResearchBodyEncounter,diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
+    diagnosticResearchBodyEncounter,diagnosticUnstagedBodyFeedbackEnabled,
+    diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchCarrySide
@@ -305,6 +321,7 @@ export function createEngine(RAPIER, input = {}, {
   const bodyBridge=diagnosticPlayerBodyCollidersEnabled?
     createPrivateRapier22BodyBridge(RAPIER,world,stagedShoes,{
      controlledEncounter:diagnosticResearchBodyEncounter,
+     unstagedFeedback:diagnosticUnstagedBodyFeedbackEnabled,
      ...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{})
     }):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
@@ -499,7 +516,8 @@ export function createEngine(RAPIER, input = {}, {
     }:{}),
     ...(bodyBridge?{
       nativePlayerBodySnapshot:()=>bodyBridge.snapshot(),
-      ...(diagnosticResearchBodyEncounter?{
+      ...((diagnosticResearchBodyEncounter||
+           diagnosticUnstagedBodyFeedbackEnabled)?{
        acknowledgeNativePlayerResponse:frame=>
         bodyBridge.acknowledgeCanonicalResponse(frame)
       }:{})
