@@ -74,16 +74,16 @@ export const B05_LAB_STARTS=Object.freeze({
 // B05b: source-positive original native shoe LAST touch plus out-of-play.
 export const B05B_LAB_STARTS=Object.freeze({
  throwIn:Object.freeze({
-  home:boundary('me-b05b-throw-home',0,29.8,0,25),
-  away:boundary('me-b05b-throw-away',0,-29.8,0,-25)
+  home:boundary('me-b05b-throw-home',0,32.5,0,0),
+  away:boundary('me-b05b-throw-away',0,-32.5,0,0)
  }),
  corner:Object.freeze({
-  home:boundary('me-b05b-corner-home',47.8,10,25,0),
-  away:boundary('me-b05b-corner-away',-47.8,-10,-25,0)
+  home:boundary('me-b05b-corner-home',51,10,0,0),
+  away:boundary('me-b05b-corner-away',-51,-10,0,0)
  }),
  goalKick:Object.freeze({
-  home:boundary('me-b05b-goalkick-home',47.8,10,25,0),
-  away:boundary('me-b05b-goalkick-away',-47.8,-10,-25,0)
+  home:boundary('me-b05b-goalkick-home',51,10,0,0),
+  away:boundary('me-b05b-goalkick-away',-51,-10,0,0)
  })
 });
 export const ACTION_LAB_SCENARIOS=Object.freeze([

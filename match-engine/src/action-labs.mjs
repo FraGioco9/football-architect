@@ -186,7 +186,7 @@ export function createControlledActionLab(RAPIER,id,{
  let firstPhysicalPassAction=null;
  let disposed=false,firstRealPass=null,count=0,history=Object.freeze([]);
  let shotTrace=null,blockedShotObservation=null,receivingContact=null;
- let firstOpposingShoe=null,carryTrace=null,physicalRestart=null;
+ let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
  const decisionObserver=createPhysicalFootballDecisionObserver();
  const continuityObserver=createRealPostContactBallContinuity();
@@ -393,7 +393,7 @@ export function createControlledActionLab(RAPIER,id,{
      realOpponentContest}:{}),
     ...(reachExperiment?{realBallReachM32:playerFrame.realBallReachM32}:{}),
     ...(basicFootwork?{baseFootworkAudit}:{}),
-    ...(refereeMode?{refereeEvidence,physicalRestart}:{}),
+    ...(refereeMode?{refereeEvidence,physicalRestart,b05bOutKick}:{}),
     ...(goalkeeperSave?{
       goalkeeperDiveIntent:playerFrame.goalkeeperDiveIntent,
       goalkeeperDiveIntentTicks:playerFrame.goalkeeperDiveIntentTicks
@@ -417,7 +417,11 @@ export function createControlledActionLab(RAPIER,id,{
    spec.mode==='control'?firstPhysicalPassAction:null,
    reachExperiment?engine.researchReceiverTapSnapshot():null,
    goalkeeperSave?prior.ball.velocity:null);
-  const after=engine.step(frame);
+  const initialAfter=engine.step(frame);
+  if(sourceRestart&&!b05bOutKick){
+   b05bOutKick=engine.attemptB05bNativeOutboundKick(frame);
+  }
+  const after=sourceRestart?engine.snapshot():initialAfter;
   if(after.tick!==prior.tick+1||frame.tick!==after.tick)
    throw new Error('Action LAB must preserve real canonical 60Hz ticks');
   latest=record(after,frame);
@@ -551,6 +555,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     ' · actual shoe release '+snap.baseFootworkAudit.release.actualShoeEndTick+
     ' and independent recontact '+
      snap.baseFootworkAudit.release.actualShoeRecontactTick:'')+
+   (snap.b05bOutKick?
+    ' · native outbound shoe kick '+snap.b05bOutKick.actorId+
+    ' tick '+snap.b05bOutKick.tick:'')+
    (snap.refereeEvidence?.lastEvent?
     ' · B05 '+snap.refereeEvidence.lastEvent.kind.toUpperCase()+
     (snap.refereeEvidence.lastEvent.scoringTeam?

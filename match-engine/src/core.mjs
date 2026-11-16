@@ -489,6 +489,11 @@ export function createEngine(RAPIER, input = {}, {
   let tick = 0;
   let disposed = false;
   let basicRestartTick = -1;
+  let b05bOutboundAction=null;
+  const b05bSource=diagnosticBasicRestartSource===null?null:
+   basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
+    diagnosticBasicRestartAttackSide,scenario,
+    diagnosticBasicRestartSource);
   function applyGrassRollingResistance() {
     // Rapier collider friction resists sliding but an already-rolling sphere can
     // retain constant speed. Apply a surface-only energy loss per fixed tick.
@@ -627,6 +632,48 @@ export function createEngine(RAPIER, input = {}, {
     if(actionExecutor)actionExecutor.apply(tick,playerFrame);
     return snapshot();
   }
+  // B05b: one original native Rapier shoe START, one outbound physical
+  // impulse on the same ball. This is a DEV research action, not a match
+  // authority or a manufactured contact/proxy.
+  function attemptB05bNativeOutboundKick(frame){
+    if(disposed||!b05bSource||basicRestartTick>=0||
+       frame?.tick!==tick||tick<1||
+       !Array.isArray(frame?.players)||frame.players.length!==22)
+      throw new TypeError('B05b exclusive original outbound kick scene required');
+    if(b05bOutboundAction)return null;
+    const contact=shoeBridge.snapshot(),solver=shoeBridge.solver();
+    const sourceId=b05bSource.sourceId;
+    if(contact.tick!==tick||solver?.tick!==tick)
+      throw new TypeError('B05b requires original same-tick native shoe queue');
+    if(contact.started.length!==1||contact.active.length!==1||
+       contact.started[0]!==sourceId||contact.active[0]!==sourceId)
+      return null;
+    if(!solver.pairs.some(pair=>pair.id===sourceId&&
+      pair.beganThisTick&&pair.collisionActive&&
+      pair.manifolds.some(m=>m.geometricContacts>0))||
+       frame.players.some((p,i)=>p.id!==INITIAL_PLAYERS[i].id||
+        p.team!==INITIAL_PLAYERS[i].team||
+        p.role!==INITIAL_PLAYERS[i].role||
+        ![p.x,p.y,p.vx,p.vy].every(Number.isFinite)))
+      throw new TypeError('B05b rejects non-native or unauthenticated last shoe START');
+    const pos=body.translation();
+    if(Math.hypot(pos.x-scenario.x,pos.y-scenario.y)>1.5||
+       Math.abs(pos.z-BALL_RADIUS)>0.25)
+      throw new TypeError('B05b source no longer on original in-field ball');
+    const d=diagnosticBasicRestartAttackSide==='home'?1:-1;
+    const impulse=diagnosticBasicRestartSource==='throw-in'?
+     {x:0,y:2.3*d,z:0.06}:{x:2.3*d,y:0,z:0.06};
+    body.applyImpulse(impulse,true);
+    b05bOutboundAction=Object.freeze({
+     tick,actorId:sourceId,team:b05bSource.lastTeam,
+     sameWorldRapierBall:true,genuineExclusiveNativeShoeStart:true,
+     nativeSolverGeometricContact:true,
+     impulseNs:Object.freeze(impulse),
+     appliedByOriginalRapierBody:true,
+     officialMatchAction:false,officialPossession:false
+    });
+    return b05bOutboundAction;
+  }
   // The same existing Rapier ball is placed for a lawful DEAD-BALL restart.
   // This is never a football kick, native shoe START or field-player teleport.
   // Only an exact-tick referee ticket describing the ACTUAL fully-out ball
@@ -687,6 +734,7 @@ export function createEngine(RAPIER, input = {}, {
   }
   return Object.freeze({scenario, ballProperties, snapshot, angularVelocity, step, dispose,
     ...(diagnosticBasicRestartEnabled?{applyBasicRestartAtBoundary}:{}),
+    ...(b05bSource?{attemptB05bNativeOutboundKick}:{}),
     ...(shoeBridge?{
       footContactSnapshot:()=>shoeBridge.snapshot(),
       footContactTimelineSnapshot:()=>shoeBridge.timeline(),

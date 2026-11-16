@@ -12,11 +12,11 @@ export function basicSourcePositiveRestartSetup(players,attackSide,ball,kind){
   !['x','y','z','vx','vy','vz'].every(k=>finite(ball[k]))||
   ball.z!==0||ball.vz!==0||
   (kind==='throw-in'?
-   Math.abs(ball.x)>1e-8||Math.abs(Math.abs(ball.y)-29.8)>1e-8||
-   ball.vx!==0||ball.vy!==direction*25:
-   Math.abs(ball.x-direction*47.8)>1e-8||
+   Math.abs(ball.x)>1e-8||Math.abs(ball.y-direction*32.5)>1e-8||
+   ball.vx!==0||ball.vy!==0:
+   Math.abs(ball.x-direction*51)>1e-8||
    Math.abs(ball.y-direction*10)>1e-8||
-   ball.vx!==direction*25||ball.vy!==0))
+   ball.vx!==0||ball.vy!==0))
   throw new TypeError('B05b requires exact bounded in-field Rapier boundary fixture');
  const lastTeam=kind==='corner'?
   attackSide==='home'?'away':'home':attackSide;
@@ -37,15 +37,9 @@ export function basicSourcePositiveRestartSetup(players,attackSide,ball,kind){
   {x:direction*47.24,y:direction*5.5};
  // Predictor used ONLY to put a real original shoe in the moving
  // ball's path BEFORE the first native 60Hz physics step.
- // Tangential native contact at the beginning of the live ball
- // flight. A HEAD-ON shoe would legitimately reverse the moving ball
- // and would therefore NOT create an out-of-play restart. This glancing
- // setup must still produce a REAL Rapier START; proximity alone fails.
- const source=kind==='throw-in'?
-  {x:ball.x+0.15-0.22*sourceFacing,
-   y:ball.y+direction*0.10}:
-  {x:ball.x+direction*0.14-0.22*sourceFacing,
-   y:ball.y+direction*0.14};
+ // Only a real original shoe START may kick a near-stationary ball
+ // outward; no collision, action or source provenance is scripted.
+ const source={x:ball.x-0.28*sourceFacing,y:ball.y};
  const modifications=new Map([[sourceId,source],[takerId,dest]]);
  const staged=freeze(players.map(p=>{
   const point=modifications.get(p.id);

@@ -68,6 +68,7 @@ test('B05b HOME/AWAY true initial native shoe START sets real last-touch owner b
     assert.equal(initial.physicalRestart,null);
     let event=null;
     let started=[];
+    let sourceKick=null;
     let lastLive=null;
     for(let tick=1;tick<=65;tick++){
      const x=a.step(),y=b.step();
@@ -80,6 +81,15 @@ test('B05b HOME/AWAY true initial native shoe START sets real last-touch owner b
      assert.equal(x.scoreChanged,false);
      if(x.starts.length)
       started.push({tick,ids:x.starts});
+     if(x.b05bOutKick&&!sourceKick){
+      sourceKick=x.b05bOutKick;
+      assert.equal(sourceKick.tick,tick);
+      assert.deepEqual(x.starts,[sourceKick.actorId]);
+      assert.equal(sourceKick.genuineExclusiveNativeShoeStart,true);
+      assert.equal(sourceKick.nativeSolverGeometricContact,true);
+      assert.equal(sourceKick.appliedByOriginalRapierBody,true);
+      assert.equal(sourceKick.officialPossession,false);
+     }
      if(!event&&x.refereeEvidence.lastEvent){
       event=x.refereeEvidence.lastEvent;
       lastLive=x;
@@ -87,6 +97,7 @@ test('B05b HOME/AWAY true initial native shoe START sets real last-touch owner b
      for(const p of x.observedMovementPlayers)
       assert.ok(Math.hypot(p.vx,p.vy)<=PLAYER_MAX_SPEED_MPS+1e-8);
     }
+    assert.ok(sourceKick,'first original native shoe START must kick real ball');
     assert.ok(event,
      'must truly cross full-ball line: '+kind+' '+side+' starts='+JSON.stringify(started));
     const expectedLast=(kind==='corner'?
@@ -113,7 +124,8 @@ test('B05b HOME/AWAY true initial native shoe START sets real last-touch owner b
       lastTouchPlayer:event.lastVerifiedTouch.playerId,
       eventTick:event.tick,owner:event.restart.team,
       restart:event.restart.type,sameOriginalBallRepositioned:true,
-      nativeShoeStartTicks:started,officialPossession:false})+'\\n');
+      nativeShoeStartTicks:started,nativeOutboundKick:sourceKick.impulseNs,
+      officialPossession:false})+'\\n');
    }finally{a.dispose();b.dispose();}
   }
 });
