@@ -112,7 +112,7 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.ok(stage.viewBoxes.left>=stage.field.left-1&&stage.viewBoxes.right<=stage.field.right+1,JSON.stringify(stage));
     assert.equal(await page.locator('.app-match-pitch-frame').evaluate(el=>getComputedStyle(el).position),'relative');
     assert.equal(await page.locator('.app-match-pitch-overlay').evaluate(el=>getComputedStyle(el).position),'absolute');
-    assert.equal(await page.locator('[data-match-overview]').evaluateAll(els=>els.map(el=>el.textContent)),['','','']);
+    assert.deepEqual(await page.locator('[data-match-overview]').evaluateAll(els=>els.map(el=>el.textContent)),['','','']);
     assert.deepEqual(stage.firstPaintNames,['','']);
     assert.deepEqual(stage.firstPaintNameLinks,[{hasHref:false,content:''},{hasHref:false,content:''}]);
     for(let i=0;i<stage.facts.length;i++){
