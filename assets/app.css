@@ -406,6 +406,7 @@ html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);b
 #competition-panel-standings>.app-standings-subviews::-webkit-scrollbar{display:none}
 #competition-panel-standings>.app-standings-subviews .app-competition-tab{box-sizing:border-box;flex:0 0 92px;width:92px;min-width:92px;max-width:92px;height:32px;min-height:32px;padding:5px;border-radius:6px;font-size:11px;line-height:1.2}
 #competition-panel-standings>.app-standings-subviews .app-competition-tab[aria-pressed="true"]{color:var(--text);background:#21483d}
+html[data-theme="light"] #competition-panel-standings>.app-standings-subviews .app-competition-tab[aria-pressed="true"]{background:#D9EEE1;color:#174C37}
 #competition-panel-standings>.app-standings-subviews .app-competition-tab[hidden]{display:none!important}
 #competition-panel-standings>.app-standings-subviews .app-competition-tab:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 @media(max-width:620px){
