@@ -126,10 +126,19 @@
    if(key&&tr[key])node.textContent=tr[key];
   });
   for(const side of ['home','away']){
+   const id=clubKey(data?.[side+'Participant']?.clubId);
+   const club=id&&clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===id);
    const title=find('[data-match-side-title="'+side+'"]');
-   if(title)title.textContent=tr[side];
+   if(title)title.textContent=club?.primaryName||id||tr[side];
+   const crest=find('[data-match-side-crest="'+side+'"]');
+   if(crest){
+    // The canonical passive crest renderer accepts only published registry
+    // entries. Never construct an unapproved SVG image URL.
+    if(id&&crest.dataset.clubCrest!==id)crest.dataset.clubCrest=id;
+    if(!id&&crest.dataset.clubCrest)delete crest.dataset.clubCrest;
+   }
    const panel=find('[data-match-side="'+side+'"]');
-   if(panel)panel.setAttribute('aria-label',tr[side]);
+   if(panel)panel.setAttribute('aria-label',tr[side]+' · '+(club?.primaryName||id||''));
    const facts=sideFacts(side);
    write('[data-match-position="'+side+'"]',facts.position??'–');
    const form=find('[data-match-form="'+side+'"]');

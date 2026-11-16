@@ -22,6 +22,8 @@
   <script src="/assets/sidebar-evolution.js" defer></script>
   <script src="/assets/profile-navigation.js" defer></script>
   <script src="/assets/match-detail.js" defer></script>
+  <script>window.faClubCrests={"BR-1":"assets/clubs/BR/1/crest.svg","DE-1":"assets/clubs/DE/1/crest.svg","DE-2":"assets/clubs/DE/2/crest.svg","DE-3":"assets/clubs/DE/3/crest.svg","ENG-2":"assets/clubs/ENG/2/crest.svg","ENG-3":"assets/clubs/ENG/3/crest.svg","ENG-4":"assets/clubs/ENG/4/crest.svg","ENG-5":"assets/clubs/ENG/5/crest.svg","ENG-6":"assets/clubs/ENG/6/crest.svg","ENG-7":"assets/clubs/ENG/7/crest.svg","ES-1":"assets/clubs/ES/1/crest.svg","ES-4":"assets/clubs/ES/4/crest.svg","FR-1":"assets/clubs/FR/1/crest.svg","FR-2":"assets/clubs/FR/2/crest.svg","FR-3":"assets/clubs/FR/3/crest.svg","IT-1":"assets/clubs/IT/1/crest.svg","IT-2":"assets/clubs/IT/2/crest.svg","IT-4":"assets/clubs/IT/4/crest.svg","NL-1":"assets/clubs/NL/1/crest.svg","PT-1":"assets/clubs/PT/1/crest.svg"};</script>
+  <script src="/assets/club-crests.js" defer></script>
   <link rel="stylesheet" href="/assets/match-detail.css">
 </head>
 <body class="app-body">
@@ -231,7 +233,11 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           </section>
           <section class="app-match-stage" aria-label="Teams and match field">
           <aside class="app-match-side app-match-side-home" data-match-side="home" aria-label="Home team">
-            <h2 class="app-match-side-title" data-match-side-title="home">Home</h2>
+            <header class="app-match-team-identity">
+              <span class="app-world-club-crest-placeholder club-crest fa-crest-loading app-match-team-crest" data-match-side-crest="home" aria-hidden="true"></span>
+              <h2 class="app-match-side-title" data-match-side-title="home"></h2>
+            </header>
+            <div class="app-match-side-stats">
             <div class="app-match-side-fact">
               <span class="app-match-side-label" data-match-label="position">Position</span>
               <strong class="app-match-position" data-match-position="home">–</strong>
@@ -245,6 +251,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
                 <span class="app-match-form-cell" aria-hidden="true"></span>
                 <span class="app-match-form-cell" aria-hidden="true"></span>
               </div>
+            </div>
             </div>
             <div class="app-match-side-lineup" data-match-lineup="home">
               <h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3>
@@ -277,7 +284,11 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </div>
           </section>
           <aside class="app-match-side app-match-side-away" data-match-side="away" aria-label="Away team">
-            <h2 class="app-match-side-title" data-match-side-title="away">Away</h2>
+            <header class="app-match-team-identity">
+              <span class="app-world-club-crest-placeholder club-crest fa-crest-loading app-match-team-crest" data-match-side-crest="away" aria-hidden="true"></span>
+              <h2 class="app-match-side-title" data-match-side-title="away"></h2>
+            </header>
+            <div class="app-match-side-stats">
             <div class="app-match-side-fact">
               <span class="app-match-side-label" data-match-label="position">Position</span>
               <strong class="app-match-position" data-match-position="away">–</strong>
@@ -291,6 +302,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
                 <span class="app-match-form-cell" aria-hidden="true"></span>
                 <span class="app-match-form-cell" aria-hidden="true"></span>
               </div>
+            </div>
             </div>
             <div class="app-match-side-lineup" data-match-lineup="away">
               <h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3>

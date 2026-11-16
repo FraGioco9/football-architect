@@ -7,6 +7,10 @@ import {chromium,webkit} from 'playwright';
 import {applyPublishedMatchFirstPaint} from '../tools/match-first-paint.mjs';
 
 const shell=readFileSync(new URL('../matches/_shared/index.html',import.meta.url),'utf8');
+const manifestClubs=JSON.parse(readFileSync(new URL('../clubs/_shared/manifest.json',import.meta.url),'utf8')).clubs;
+const officialClub=id=>{
+ const [countryId,clubId]=id.split('-');return manifestClubs.find(c=>c.countryId===countryId&&c.clubId===Number(clubId));
+};
 const match={schemaVersion:1,providerId:'authoritative-world',matchId:'123',
  season:1,competitionId:'IT-1',stageId:'league',round:1,day:1,
  provenance:{kind:'authoritative'}};
@@ -73,19 +77,38 @@ for(const [engine,driver] of Object.entries(engines)){
      const panels=[...document.querySelectorAll('.app-match-side')],pitch=document.querySelector('[data-match-pitch]');
      const positions=panels.map(p=>p.getBoundingClientRect());
      const field=pitch.getBoundingClientRect();
-     return {panels:panels.length,positions:positions.map(p=>({left:p.left,right:p.right,top:p.top,width:p.width})),
+     const frame=document.querySelector('.app-match-stage').getBoundingClientRect();
+     const main=document.querySelector('.app-match-page').getBoundingClientRect();
+     const facts=panels.map(panel=>[...panel.querySelectorAll('.app-match-side-stats .app-match-side-fact')].map(n=>n.getBoundingClientRect()));
+     return {panels:panels.length,positions:positions.map(p=>({left:p.left,right:p.right,top:p.top,width:p.width,height:p.height})),
+      stage:{left:frame.left,right:frame.right,width:frame.width,height:frame.height},
+      main:{left:main.left,right:main.right,width:main.width},
+      firstPaintNames:panels.map(p=>p.querySelector('.app-match-side-title').textContent),
+      crestSlots:panels.map(p=>p.querySelectorAll('[data-match-side-crest]').length),
+      facts: facts.map(pair=>pair.map(x=>({left:x.left,top:x.top,right:x.right}))),
       field:{left:field.left,right:field.right,top:field.top,width:field.width},
       lineupCounts:panels.map(p=>p.querySelectorAll('.app-match-lineup-row').length),
       formCounts:panels.map(p=>p.querySelectorAll('.app-match-form-cell').length),
       blank:panels.every(p=>p.querySelector('.app-match-position').textContent.trim()==='–')};
     });
     assert.equal(stage.panels,2);
+    assert.ok(Math.abs(stage.stage.left-stage.main.left)<=1,JSON.stringify(stage));
+    assert.ok(Math.abs(stage.stage.width-stage.main.width)<=1,JSON.stringify(stage));
+    assert.deepEqual(stage.crestSlots,[1,1]);
+    assert.deepEqual(stage.firstPaintNames,['','']);
+    for(const pair of stage.facts){
+     assert.equal(pair.length,2);
+     assert.ok(Math.abs(pair[0].top-pair[1].top)<=1,JSON.stringify(stage));
+     assert.ok(pair[0].right<=pair[1].left+1,JSON.stringify(stage));
+    }
     assert.deepEqual(stage.lineupCounts,[11,11]);
     assert.deepEqual(stage.formCounts,[5,5]);
     assert.equal(stage.blank,true);
     if(device.width>1000){
      assert.ok(stage.positions[0].right<=stage.field.left&&stage.field.right<=stage.positions[1].left,JSON.stringify(stage));
      assert.ok(stage.field.width<stage.positions[1].right-stage.positions[0].left);
+     assert.ok(Math.abs(stage.positions[0].height-stage.stage.height)<=1,JSON.stringify(stage));
+     assert.ok(Math.abs(stage.positions[1].height-stage.stage.height)<=1,JSON.stringify(stage));
     }else{
      assert.ok(stage.positions.every(p=>p.top>=stage.field.top+pitchBox.height));
      assert.ok(Math.abs(stage.positions[0].width-stage.positions[1].width)<1);
@@ -270,6 +293,18 @@ for(const [engine,driver] of Object.entries(engines)){
      const response=await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
      assert.equal(response?.status(),200,engine+' '+theme+' '+status);
      await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
+     if(status!=='awaiting_participants'){
+      await page.waitForFunction(name=>document.querySelector('[data-match-side-title="home"]')?.textContent===name,
+       officialClub('IT-1').primaryName);
+      assert.deepEqual(await page.locator('[data-match-side-title]').allTextContents(),
+       [officialClub('IT-1').primaryName,officialClub('IT-2').primaryName]);
+      assert.deepEqual(await page.locator('[data-match-side-crest]').evaluateAll(els=>els.map(el=>el.dataset.clubCrest)),
+       ['IT-1','IT-2']);
+      await page.waitForFunction(()=>[...document.querySelectorAll('[data-match-side-crest]')].every(
+       el=>el.querySelector('.app-club-crest-image')));
+      assert.deepEqual(await page.locator('[data-match-side-crest] .app-club-crest-image').evaluateAll(els=>els.map(el=>
+       new URL(el.src).pathname)),['/assets/clubs/IT/1/crest.svg','/assets/clubs/IT/2/crest.svg']);
+     }
      assert.equal(await page.locator('.app-match-scoreboard-meta, [data-match-status], [data-match-extra]').count(),0,
       'no scheduled/playing/completed/extra-time caption should occupy the former line');
      if(status==='awaiting_participants'){

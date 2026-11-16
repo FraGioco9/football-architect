@@ -368,3 +368,26 @@ The responsive breakpoint is 1000px rather than 800px because the fixed
 career sidebar consumes 180–210px before mobile collapse. At intermediate
 viewport widths an inline three-column layout would otherwise shrink the
 central match field to an unusable width. Browser QA includes 900px.
+
+### Full-width club identity panels and inline facts
+
+The match stage uses the full available main content width (no 1120px
+max-width), preserving only existing page gutters. Both translucent side
+panels expand vertically to the field's height and distribute eleven
+reserved lineup rows across their space. Typography, crests and form
+indicators are larger; the central pitch retains its 105:68 ratio.
+
+The header of each panel shows the **official club name and actual crest**
+for its verified home/away club ID. Name comes from
+`clubs/_shared/manifest.json`; images come exclusively from the
+existing allowlisted `clubCrestAssets().catalog` generated into the
+match shell, then rendered by the shared `assets/club-crests.js`.
+Unpublished crests retain the site's established fallback, not an invented
+image. Logo and text slots are reserved at first paint. Unresolved teams
+retain localized Home/Away headings until published.
+
+**Position and Form are on the same horizontal row** within each panel,
+including small screens, with their own labels above rank / five outcomes.
+The lineup continues below. No matchday, clock or other boxes were added.
+Browser and static QA check names, crest sources, responsive grid geometry,
+full-content-width alignment, and absence of shifted elements.

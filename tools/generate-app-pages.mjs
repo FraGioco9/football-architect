@@ -387,7 +387,7 @@ for(const [source,output,mode] of [
  html=html.replace('<title>Players — Football Architect</title>','<title>Match — Football Architect</title>')
   .replace('  <script src="/assets/players-directory.js" defer></script>','  <script src="/assets/match-detail.js" defer></script>')
   .replace('  <script src="/assets/players-nationality-tooltip.js" defer></script>\n','')
-  .replace('</head>','  <link rel="stylesheet" href="/assets/match-detail.css">\n</head>')
+  .replace('</head>',`  <script>window.faClubCrests=${JSON.stringify(clubCrestAssets().catalog)};</script>\n  <script src="/assets/club-crests.js" defer></script>\n  <link rel="stylesheet" href="/assets/match-detail.css">\n</head>`)
   .replace('const selected=onPlayers?',"const selected=path.startsWith('/matches/')?null:onPlayers?");
  writeOutput("matches/_shared/index.html",html);
 }

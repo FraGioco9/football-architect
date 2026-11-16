@@ -63,10 +63,14 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.ok(section.includes('data-match-pitch role="img"'));
   for(const side of ['home','away']){
    assert.ok(section.includes('data-match-side="'+side+'"'));
+   assert.ok(section.includes('data-match-side-crest="'+side+'"'));
+   assert.ok(section.includes('data-match-side-title="'+side+'"></h2>'));
    assert.ok(section.includes('data-match-position="'+side+'">–</strong>'));
    assert.ok(section.includes('data-match-form="'+side+'"'));
    assert.ok(section.includes('data-match-lineup="'+side+'"'));
   }
+  assert.equal((section.match(/class="app-match-team-identity"/g)||[]).length,2);
+  assert.equal((section.match(/class="app-match-side-stats"/g)||[]).length,2);
   assert.equal((section.match(/class="app-match-lineup-row"/g)||[]).length,22);
   assert.equal((section.match(/class="app-match-form-cell"/g)||[]).length,10);
   assert.doesNotMatch(section,/data-match-(?:day|time|clock)|\bMatchday\b|>Tempo<|>Giornata</);
@@ -151,6 +155,12 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/officialState|data-match-status|data-match-extra/);
  assert.doesNotMatch(js,/renderContext|validLineup|knownStats|data-match-card|data-match-visual-title|data-match-emphasis/);
  assert.match(js,/pitch\.setAttribute\('aria-label',tr\.pitch\)/);
+ for(const fragment of ["club?.primaryName||id||tr[side]","crest.dataset.clubCrest=id",
+ "data-match-side-crest","renderSides(tr)"])assert.ok(js.includes(fragment),fragment);
+ assert.doesNotMatch(js,/assets\/clubs\/.*crest\.svg/);
+ assert.ok(html.includes('src="/assets/club-crests.js" defer'));
+ assert.ok(html.includes('window.faClubCrests='));
+ assert.ok(read('tools/generate-app-pages.mjs').includes('JSON.stringify(clubCrestAssets().catalog)'));
  for(const fragment of [
   "function verifiedProjection(projection)",
   "projection.provenance?.kind==='authoritative'",
@@ -183,7 +193,13 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/\.app-match-page\{box-sizing:border-box;width:100%;min-width:0;padding-top:0;overflow:visible\}/);
  assert.ok(css.includes('aspect-ratio:105 / 68'));
  for(const fragment of [
-  'grid-template-columns:minmax(170px,1fr) minmax(0,3.2fr) minmax(170px,1fr)',
+  'grid-template-columns:minmax(185px,1fr) minmax(0,3.4fr) minmax(185px,1fr)',
+  'align-items:stretch;gap:clamp(12px,1.1vw,22px);width:100%;max-width:none;margin:24px 0 0;',
+  '.app-match-team-identity{display:flex;align-items:center;gap:10px;',
+  '.app-match-side-stats{display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr)',
+  'grid-template-rows:repeat(11,minmax(18px,1fr))',
+  'font-size:32px;font-weight:800',
+  '.app-match-team-crest{flex:0 0 64px;width:64px;height:64px}',
   'background:color-mix(in srgb,var(--surface) 82%,transparent)',
   '.app-match-form-cell[data-outcome="w"]{background:#237c59}',
   '.app-match-form-cell[data-outcome="d"]{background:#667b82}',
