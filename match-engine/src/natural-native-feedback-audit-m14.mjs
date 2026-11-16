@@ -9,6 +9,8 @@ import {createPlayerMovement,INITIAL_PLAYERS,PLAYER_VERSION,
 import {M11_BALL_STARTS} from './unstaged-body-contact-audit.mjs';
 import {validateFootContactFrame,initialFootPositions}
  from './player-foot-contact.mjs';
+import {createNativeEncounterTelemetry}
+ from './native-contact-dynamics-m19.mjs';
 
 const frozen=o=>Object.freeze(o);
 const allBallStates=new Map(M11_BALL_STARTS.map(x=>[x.id,x]));
@@ -81,13 +83,15 @@ function validateLineMovement(after){
 export function auditNaturalNativeFeedback(RAPIER,{
  stateId='centre',side='home',ticks=225,mode='feedback',
  initialBallVelocity=null,shoeBodyHandoff='legacy',
- researchBallStart=null
+ researchBallStart=null,researchEncounterTelemetry=false
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function'||
     !allBallStates.has(stateId)||!sides.includes(side)||
     !modes.includes(mode)||!Number.isSafeInteger(ticks)||
     ticks<1||ticks>MAX_TICKS||
-    !['legacy','bounded'].includes(shoeBodyHandoff))
+    !['legacy','bounded'].includes(shoeBodyHandoff)||
+    typeof researchEncounterTelemetry!=='boolean'||
+    (researchEncounterTelemetry&&shoeBodyHandoff!=='bounded'))
   throw new TypeError('M14 requires bounded original Rapier source state/mode');
  // M15 broadens only the pre-tick-zero ball trajectory. The original 22
  // players, their autonomous policy, body radii and native queue are identical.
@@ -150,6 +154,10 @@ export function auditNaturalNativeFeedback(RAPIER,{
  let lastGenuineShoeFrame=initialFootPositions();
  let latestShape=null,latestPressers=null,latestSupports=null;
  let latestShoeBodyHandoff=null;
+ // M19 is a read-only observer; neither the mover nor native Rapier
+ // producer knows that this optional measuring device exists.
+ const encounterTelemetry=researchEncounterTelemetry?
+  createNativeEncounterTelemetry():null;
  try{
   const initial=mover.snapshot();
   if(!initial.players.every((p,i)=>p.id===INITIAL_PLAYERS[i].id&&
@@ -324,6 +332,7 @@ export function auditNaturalNativeFeedback(RAPIER,{
    latestShape=observed.shape;latestPressers=observed.pressers;
    latestSupports=observed.supports;
    latestShoeBodyHandoff=observed.shoeBodyHandoff??null;
+   encounterTelemetry?.record({tick,frame:observed,native,ball:ballBefore});
   }
   return frozen({
    version:'m14-authentic-multi-territory-feedback-audit-v1',
@@ -353,6 +362,9 @@ export function auditNaturalNativeFeedback(RAPIER,{
    actualConvergenceTicks:actualBallConvergenceTicks,
    originalPressTicks:pressureTicks,originalSupportTicks:supportTicks,
    fullShapeTicks,latestPressers,latestSupports,latestShape,
+   ...(encounterTelemetry?{
+    observedContactDynamics:encounterTelemetry.snapshot()
+   }:{}),
    matchAuthority:false,officialTackle:false,officialInterception:false,
    officialPossession:false,officialResult:null
   });

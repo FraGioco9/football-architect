@@ -1,0 +1,42 @@
+name: Match Engine M19 source contact-dynamics diagnosis
+on:
+  pull_request:
+    paths:
+      - 'match-engine/**'
+      - '.github/workflows/match-engine-m19.yml'
+permissions:
+  contents: read
+jobs:
+  measured-original-player-contact-dynamics:
+    if: ${{ github.head_ref == 'feat/628-individual-kinematics-foundation' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact PR head
+        env:
+          EXPECTED: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED"
+          echo "M19_EXACT_HEAD $EXPECTED"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: match-engine/package-lock.json
+      - run: npm ci --prefix match-engine --no-audit --no-fund
+      - name: Measured physical movement and 2-body-proximity diagnostic
+        env:
+          M19_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: npm --prefix match-engine run audit:contact-dynamics
+      - name: Archive real native-source diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: me-628-m19-original-contact-dynamics
+          path: match-engine/match-engine-m19-contact-dynamics.json
+          if-no-files-found: warn
+          retention-days: 30
