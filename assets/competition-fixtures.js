@@ -597,6 +597,9 @@
       }
       return;
     }
+    // Invalidate old bracket anchors immediately on a generation/revision
+    // change, before the asynchronous published collection resolves.
+    syncKnockoutLinks();
     if(['fixtures','postseason'].includes(navigation.get().view))void readPublishedFixtures();
   });
   window.addEventListener('fa:competition-context-change',contextChanged);

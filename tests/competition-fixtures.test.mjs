@@ -711,5 +711,5 @@ test('#605 the published knockout collection can load on the Postseason tab befo
  const css=read('assets/app.css');
  assert.match(css,/\.fa-bracket-leg-link\{position:absolute;inset:0/);
  assert.match(css,/\.fa-bracket-card\.is-single-match-link/);
- assert.match(read('assets/competition-fixtures.js'),/publishedLookup\.bySlot\[\[phase\.id,tieId,leg\]\.join\(': ' \)\]/.source?/.*/:/.*/);
+ assert.match(read('assets/competition-fixtures.js'),/publishedLookup\.bySlot/);
 });
