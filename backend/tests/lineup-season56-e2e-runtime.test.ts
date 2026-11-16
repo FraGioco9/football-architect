@@ -77,11 +77,19 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  ]);
  expect(milestones.results.every(e=>e.status==='scheduled'&&e.scheduled_day===56)).toBe(true);
 
+ let lastBatchError='';
+ const tracedDb={
+  prepare:(sql:string)=>db.prepare(sql),
+  batch:async(statements:any[])=>{
+   try{return await db.batch(statements)}
+   catch(error){lastBatchError=String(error);throw error}
+  }
+ } as any;
  for(let day=4;day<=56;day++){
   let result:{world:World};
   try{
    result=await executeLineupLifecycleV1(
-    db,session,'advance',command(),'lineup-season-sport-day-'+day+'-0001',now
+    tracedDb,session,'advance',command(),'lineup-season-sport-day-'+day+'-0001',now
    );
   }catch(error){
    // This branch runs only when the real protected writer rejected a day.
@@ -94,7 +102,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
     await planLineupSportingDayV1(db,world,prefix.progression,
      evidence.calendar.calendar_hash,now);
    }catch(sourceError){diagnostic=String(sourceError)}
-   throw new Error('V2 full-season day '+day+' failed: '+String(error)+'; '+diagnostic);
+   throw new Error('V2 full-season day '+day+' failed: '+String(error)+'; '+diagnostic+'; D1 batch='+lastBatchError);
   }
   world=result.world;
   expect(world.day).toBe(day);
