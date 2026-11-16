@@ -333,6 +333,8 @@
     "tests/player-portrait-core.test.mjs": "site-node",
     "tests/player-portrait-chatgpt.test.mjs": "site-node",
     "tests/player-portrait-png-preflight.test.mjs": "site-node",
-    "tests/temporary-lineup-v1.test.mjs": "site-node"
+    "tests/temporary-lineup-v1.test.mjs": "site-node",
+    "tests/match-lineup-snapshot-v1.test.mjs": "site-node",
+    "backend/tests/test_match_lineup_receipt_migration.py": "migration"
   }
 }

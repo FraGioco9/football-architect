@@ -165,7 +165,7 @@ test('no fabricated identities across sides, invalid contexts fail closed, and d
 test('candidate receipt rejects mismatched provenance, scorer ghost, and score tampering',async()=>{
  const result=await contextPlay(roster(),[],{mode:'regulation'});
  await assert.rejects(()=>buildCandidateMatchReceiptV1({...receiptMatch,matchId:0},result),/fixture evidence/);
- await assert.rejects(()=>buildCandidateMatchReceiptV1({...receiptMatch,homeClubId:'IT-4'},result),/identity/);
+ await assert.rejects(()=>buildCandidateMatchReceiptV1({...receiptMatch,homeClubId:'IT-4'},result),/fixture evidence/);
  await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,{...result,homeGoals:result.homeGoals+1}),/score reconciliation/);
  await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,{...result,
   events:[...result.events,{side:'away',period:'regulation',minute:45,playerId:999,type:'goal'}]}),/scorer reconciliation/);
