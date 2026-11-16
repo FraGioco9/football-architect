@@ -308,9 +308,9 @@ export function createControlledActionLab(RAPIER,id,{
   const decisionEvidence=decisionObserver.observe({
    physics,playerFrame,foot,action
   });
-  const physicalFirstTouch=engine.researchReceivingCushionSnapshot();
-  const physicalReceiverChoice=engine.researchReceiverChoiceSnapshot();
-  const physicalReceiverTap=engine.researchReceiverTapSnapshot();
+  const physicalFirstTouch=engine.researchReceivingCushionSnapshot?.()??null;
+  const physicalReceiverChoice=engine.researchReceiverChoiceSnapshot?.()??null;
+  const physicalReceiverTap=engine.researchReceiverTapSnapshot?.()??null;
   const postDeferContinuity=followThroughObserver?.observe({
    physics,playerFrame,foot,physicalFirstTouch,physicalReceiverChoice,action
   })??null;
