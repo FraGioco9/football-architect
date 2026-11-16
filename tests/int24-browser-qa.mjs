@@ -1,4 +1,6 @@
 import {verifyCanonicalStateBrowser} from './canonical-state-browser.mjs';
+import {createPreviewStandings} from '../tools/dev-standings-preview-data.mjs';
+import {readFileSync} from 'node:fs';
 import {chromium} from "playwright";
 import {verifyFe04AccessibilityBrowser} from "./fe-04-accessibility-browser.mjs";
 import {verifyPlayersScrollBrowser} from './players-scroll-browser-532.mjs';
@@ -22,6 +24,85 @@ const screenshot=async(page,name)=>{
 };
 try {
  checks+=await verifyPlayersScrollBrowser(browser);
+ // #605 / #656 — actual browser navigation for official Standings forms.
+ // Fixture data is isolated to this page and intercepted locally: never
+ // publish fake results or mutate shared DEV/Preview D1.
+ {
+  const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
+  const division=manifest.divisions.find(item=>item.id==='IT-1');
+  const full=createPreviewStandings(division,30),played=createPreviewStandings(division,1);
+  const fixtures=full.fixtures.map((game,index)=>{
+   const marker='N'+String(game.round).padStart(2,'0');
+   return {sourceFixtureId:'season:1:IT-1:'+marker+':IT-'+game.homeId+':IT-'+game.awayId,
+    phaseId:'league',marker,day:12+game.round,round:game.round,
+    homeId:game.homeId,awayId:game.awayId,neutral:false,tieId:null,leg:null,
+    homeGoals:game.round===1?game.homeGoals:null,
+    awayGoals:game.round===1?game.awayGoals:null,kickoff:null,
+    afterExtraTime:false,penalties:null};
+  });
+  const publicFixtures=fixtures.map((game,index)=>({
+   matchId:String(index+1),sourceFixtureId:game.sourceFixtureId,
+   phaseId:'league',marker:game.marker,day:game.day,round:game.round,
+   homeClubId:'IT-'+game.homeId,awayClubId:'IT-'+game.awayId
+  }));
+  const standings=played.rows.map(row=>({
+   club:row.club,played:row.played,won:row.won,drawn:row.drawn,lost:row.lost,
+   gf:row.gf,ga:row.ga,gd:row.gd,pts:row.pts,
+   recent:row.recent.map(game=>({result:game.result,round:game.round,
+    homeId:game.homeId,awayId:game.awayId}))
+  }));
+  const snapshot={source:'authoritative',worldStatus:'ready',
+   world:{generation:'550e8400-e29b-41d4-a716-446655440000',
+    revision:47,seasonNumber:1,day:13,phase:'active'}};
+  const seasonData={season:1,participants:division.clubs,fixtures,
+   postseason:[],results:[],statistics:{standings},
+   provenance:{kind:'authoritative'},status:'partial',currentMatchday:2};
+  let officialReads=0;
+  const page=await browser.newPage({viewport:{width:1440,height:900}});
+  try{
+   await page.route('**/api/matches/seasons/1/competitions/IT-1',async route=>{
+    officialReads++;
+    await route.fulfill({status:200,contentType:'application/json',
+     body:JSON.stringify({schemaVersion:1,providerId:'authoritative-world',
+      status:'published',season:1,competitionId:'IT-1',
+      provenance:{kind:'authoritative'},fixtures:publicFixtures})});
+   });
+   await page.goto(base+'/competitions/it-1/standings?season=1',{waitUntil:'domcontentloaded'});
+   await page.waitForFunction(()=>window.faFixtures&&window.faCompetitionRoute&&
+    window.faCompetitionContext?.selectedSeason===1&&
+    document.documentElement.dataset.faStandingsLoading!=='true');
+   await page.evaluate(({snapshot,seasonData})=>{
+    window.faWorldState={get:()=>snapshot};
+    window.faCompetitionContext={...window.faCompetitionContext,seasonData};
+    window.dispatchEvent(new CustomEvent('fa:competition-context-change',
+     {detail:window.faCompetitionContext}));
+   },{snapshot,seasonData});
+   await page.waitForFunction(()=>
+    document.querySelectorAll('#app-standings-body a[data-published-match]').length===16);
+   assert.equal(await page.locator('#app-standings-body a[data-published-match]').count(),16,
+    'real scored desktop form badges must be native official match links');
+   const first=await page.locator('#app-standings-body a[data-published-match]').first().getAttribute('href');
+   assert.match(first,new RegExp('^/matches/[1-9][0-9]*$'));
+   await page.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',matchday:1}));
+   await page.waitForFunction(()=>
+    document.querySelectorAll('#app-fixtures-list a.app-fixture-score-link').length===8);
+   assert.equal(await page.locator('#app-fixtures-list a.app-fixture-native-link').count(),8,
+    'the same authoritative collection retains native full-card Fixtures links');
+   await page.evaluate(()=>window.faCompetitionRoute.set({view:'standings'}));
+   await page.setViewportSize({width:390,height:844});
+   await page.waitForFunction(()=>
+    document.querySelectorAll('#app-standings-compact-list a[data-published-match]').length===16);
+   const mobile=page.locator('#app-standings-compact-list a[data-published-match]').first();
+   const target=await mobile.getAttribute('href');
+   assert.match(target,new RegExp('^/matches/[1-9][0-9]*$'));
+   assert.equal(await mobile.isVisible(),true,'compact form link is visible on mobile');
+   assert.equal(officialReads,1,'Standings to Fixtures navigation reuses a single public collection');
+   await mobile.click();
+   await page.waitForURL(url=>url.pathname===target);
+   checks+=4;
+  }finally{await page.close()}
+ }
+
  await verifyCanonicalStateBrowser(browser,'chromium');
  // Task 8: every canonical competition route initializes one shared, empty context.
  const allRoutes=["it","eng","es","de","fr","pt","nl","br"].flatMap(country=>[1,2].map(tier=>country+"-"+tier)).concat(cups);
