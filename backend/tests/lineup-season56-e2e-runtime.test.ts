@@ -206,7 +206,8 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  const sport=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
  expect(sport.status).toBe('available');
  expect(sport.data.fixtures.every((fixture:any)=>fixture.result!==null)).toBe(true);
- expect(sport.data.statistics.matchesPlayed).toBe(240);
+ expect(sport.data.fixtures).toHaveLength(242); // 240 league + 2 Tier-1 playout legs
+ expect(sport.data.statistics.matchesPlayed).toBe(242);
  expect(await count('season_day_outcomes')).toBe(0);
  expect(await count('match_lineup_result_receipts')).toBe(4082);
 },600000);
