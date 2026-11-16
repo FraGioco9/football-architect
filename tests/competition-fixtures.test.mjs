@@ -705,17 +705,13 @@ test('#605 published Postseason bracket gives each leg its own official match li
   throw Error('Tie slot missing');
  }
  const bracket=node();
- const cells=slots.map(({phase,tie,leg})=>{
+ const cards=phases.flatMap(phase=>phase.ties.map(tie=>{
   const card=node();card.className='fa-bracket-card';card.dataset.bracketTie=tie.id;
-  const cell=node('span');cell.className='fa-bracket-score';
-  const score=node('strong');
-  score.dataset.postseasonScore=tie.id+':0:'+(tie.legs===1?'final':leg===1?'first':'second');
-  score.parentElement=cell;
-  score.closest=selector=>selector==='[data-bracket-tie]'?card:null;
-  cell.append(score);card.append(cell);
-  return {phase,tie,leg,card,cell,score};
- });
- bracket.querySelectorAll=selector=>selector==='[data-postseason-score]'?cells.map(x=>x.score):[];
+  card.querySelectorAll=selector=>selector==='.fa-bracket-match-link'
+   ?card.children.filter(child=>child.className==='fa-bracket-match-link'):[];
+  return {phase,tie,card};
+ }));
+ bracket.querySelectorAll=selector=>selector==='[data-bracket-tie]'?cards.map(x=>x.card):[];
  const source={source:'authoritative',worldStatus:'ready',
   world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:8,seasonNumber:1,day:2,phase:'active'}};
  const league=createPreviewStandings(division,30).fixtures.map((f,i)=>({
@@ -736,10 +732,10 @@ test('#605 published Postseason bracket gives each leg its own official match li
  r.route.set({view:'postseason'});
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(requests,1,'Postseason reuses the published competition lookup');
- assert.equal(cells.length,5,'two semifinal legs per tie and the single final');
- const hrefs=cells.map(({cell})=>cell.querySelector('.fa-bracket-leg-link')?.href);
+ assert.equal(cards.length,3,'two two-leg semifinal cards and the single final');
+ const hrefs=cards.flatMap(({card})=>card.querySelectorAll('.fa-bracket-match-link').map(x=>x.href));
  assert.deepEqual(hrefs,slots.map(x=>'/matches/'+x.matchId),
-  'distinct official IDs are assigned to first leg, second leg and final with TBD opponents');
+  'full-size separate first/second-leg targets and the full final exist without squads');
  // Switching to the normal Fixtures page preserves the reserved match IDs;
  // its TBD rows must open real official pages, never fabricated pairings.
  r.route.set({view:'fixtures',matchday:'playoffs'});
@@ -749,25 +745,35 @@ test('#605 published Postseason bracket gives each leg its own official match li
  assert.ok(pendingLinks.length>=4,'domestic knockout placeholders have published clickable IDs');
  assert.ok(pendingLinks.every(a=>/^\/matches\/[1-9][0-9]*$/.test(a.href)));
  r.route.set({view:'postseason'});
- assert.ok(cells.every(x=>x.cell.classList.contains('is-match-link')));
- assert.ok(cells.filter(x=>x.tie.legs===1).every(x=>x.card.classList.contains('is-single-match-link')));
- assert.ok(cells.filter(x=>x.tie.legs===2).every(x=>!x.card.classList.contains('is-single-match-link')));
- assert.ok(cells.every(({cell})=>/^Open match: /.test(cell.querySelector('.fa-bracket-leg-link').attrs['aria-label'])));
+ assert.ok(cards.every(({card})=>card.classList.contains('is-match-link')));
+ assert.ok(cards.filter(x=>x.tie.legs===1).every(x=>x.card.dataset.faMatchLegs==='1'));
+ assert.ok(cards.filter(x=>x.tie.legs===2).every(x=>x.card.dataset.faMatchLegs==='2'));
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+   .every(link=>/^Open match: /.test(link.attrs['aria-label']))));
  r.document.documentElement.lang='it';
  r.events['fa:competition-route-change']();
  await Promise.resolve();
- assert.ok(cells.every(({cell})=>/^Apri partita: /.test(cell.querySelector('.fa-bracket-leg-link').attrs['aria-label'])),
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+   .every(link=>/^Apri partita: /.test(link.attrs['aria-label']))),
   'postseason links update accessible names for the selected locale');
- const final=cells.find(x=>x.tie.legs===1);
- bracket.events.click({button:0,defaultPrevented:false,target:{
-  closest:selector=>selector.startsWith('a,button')?null:selector==='.fa-bracket-score.is-match-link'?null:
-   selector==='.fa-bracket-card.is-single-match-link'?final.card:null
- }});
- assert.equal(final.cell.querySelector('.fa-bracket-leg-link').clicked,true,'single final card opens the official final');
+ const final=cards.find(x=>x.tie.legs===1);
+ assert.equal(final.card.querySelectorAll('.fa-bracket-match-link').length,1,
+  'the single final has one native full-card link');
+ const semis=cards.filter(x=>x.tie.legs===2);
+ assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link').length===2),
+  'both legs are full-height native link targets, independent of the clubs');
+ assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link')
+  .map(a=>a.dataset.faMatchLeg).join(',')==='1,2'),'leg identities remain distinct');
  r.publishSource({...source,source:'dev'});
- assert.ok(cells.every(({cell})=>!cell.querySelector('.fa-bracket-leg-link')),'DEV source removes all published bracket links');
- assert.ok(cells.every(x=>!x.card.classList.contains('is-single-match-link')));
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link').length===0),
+  'DEV source removes all published bracket links');
+ assert.ok(cards.every(({card})=>!card.classList.contains('is-match-link')));
  const css=read('assets/app.css');
- assert.match(css,/\.fa-bracket-leg-link\{position:absolute;inset:0/);
- assert.match(css,/\.fa-bracket-card\.is-single-match-link/);
+ assert.match(css,/\.fa-bracket-card\.is-match-link\{position:relative;cursor:pointer;transition:background-color \.15s ease,border-color \.15s ease\}/);
+ assert.match(css,/\.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline-start:0;width:50%\}/);
+ assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{width:100%\}/);
+ assert.doesNotMatch(css,/\.calendar-match-link/);
+ const calendarCode=read('assets/authoritative-calendar.mjs');
+ assert.doesNotMatch(calendarCode,/\/matches\/|calendar-match-link/);
+
 });
