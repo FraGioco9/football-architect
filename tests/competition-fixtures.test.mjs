@@ -925,7 +925,7 @@ test('#605 published Postseason bracket gives each leg its own official match li
  assert.equal(cards.length,3,'two two-leg semifinal cards and the single final');
  const hrefs=cards.flatMap(({card})=>card.querySelectorAll('.fa-bracket-match-link').map(x=>x.href));
  assert.deepEqual(hrefs,slots.map(x=>'/matches/'+x.matchId),
-  'full-size separate first/second-leg targets and the full final exist without squads');
+  'separate first/second-leg score-column targets and the full final exist without squads');
  // Switching to the normal Fixtures page preserves the reserved match IDs;
  // its TBD rows must open real official pages, never fabricated pairings.
  r.route.set({view:'fixtures',matchday:'playoffs'});
@@ -951,7 +951,7 @@ test('#605 published Postseason bracket gives each leg its own official match li
   'the single final has one native full-card link');
  const semis=cards.filter(x=>x.tie.legs===2);
  assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link').length===2),
-  'both legs are full-height native link targets, independent of the clubs');
+  'both legs use independent score-column links, even with TBD clubs');
  assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link')
   .map(a=>a.dataset.faMatchLeg).join(',')==='1,2'),'leg identities remain distinct');
  // Keep the bracket layout but remove all navigable match targets during loading.
@@ -984,9 +984,24 @@ test('#605 published Postseason bracket gives each leg its own official match li
  const css=read('assets/app.css');
  assert.match(read('assets/competition-fixtures.js'),/attributeFilter:\['lang','data-fa-standings-loading'\]/);
  assert.match(css,/html\[data-fa-standings-loading="true"\] :is\(\.app-fixture-score-link,\.app-fixture-native-link,\.fa-bracket-match-link\)\{pointer-events:none\}/);
- assert.match(css,/\.fa-bracket-card\.is-match-link\{position:relative;cursor:pointer;transition:background-color \.15s ease,border-color \.15s ease\}/);
- assert.match(css,/\.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline-start:0;width:50%\}/);
- assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{width:100%\}/);
+ assert.match(css,/\.fa-bracket-tie\{--fa-bracket-score-inset:18px;min-width:0;height:138px;/,
+  'outer tie size remains fixed');
+ assert.match(css,/\.fa-bracket-card\{--fa-bracket-score-width:26px;box-sizing:border-box;height:120px;/,
+  'large cards retain their original 120px height');
+ assert.match(css,/\.fa-bracket-score\{box-sizing:border-box;display:grid;place-items:center;inline-size:var\(--fa-bracket-score-width\);block-size:28px;border:1px solid/,
+  'fixed result boxes exist before score hydration');
+ assert.match(css,/\.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline-end:calc\(var\(--fa-bracket-score-inset\) \+ var\(--fa-bracket-score-width\) \+ 3px\);width:var\(--fa-bracket-score-width\)\}/,
+  'first-leg hit area aligns with the first score column');
+ assert.match(css,/\.fa-bracket-match-link\[data-fa-match-leg="2"\]\{inset-inline-end:calc\(var\(--fa-bracket-score-inset\) - 1px\);width:var\(--fa-bracket-score-width\)\}/,
+  'return-leg hit area aligns with the second score column');
+ assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline:0;width:auto\}/,
+  'single-leg finals keep the entire card clickable');
+ assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="2"\]:has\(\.fa-bracket-match-link\[data-fa-match-leg="1"\]:hover\) \.fa-bracket-row \.fa-bracket-score:nth-child\(2\)/,
+  'first-leg hover highlights the first score column');
+ assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="2"\]:has\(\.fa-bracket-match-link\[data-fa-match-leg="2"\]:hover\) \.fa-bracket-row \.fa-bracket-score:nth-child\(3\)/,
+  'return-leg hover highlights the second score column');
+ assert.doesNotMatch(css,/\.fa-bracket-match-link\[data-fa-match-leg="[12]"\]\{[^}]*width:50%/,
+  'half-card hit areas cannot open the wrong score');
  assert.doesNotMatch(css,/\.calendar-match-link/);
  const calendarCode=read('assets/authoritative-calendar.mjs');
  assert.doesNotMatch(calendarCode,/\/matches\/|calendar-match-link/);
