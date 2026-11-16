@@ -61,19 +61,16 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.ok(section.includes('<section class="app-match-stage" aria-label="Teams and match field">'));
   assert.ok(section.includes('<section class="app-match-visual" aria-label="Match visualization">'));
   assert.ok(section.includes('data-match-pitch role="img"'));
-  assert.equal((section.match(/role="tablist"/g)||[]).length,1);
-  for(const view of ['overview','stats','events']){
-   assert.ok(section.includes('data-match-view="'+view+'"'),view);
-   assert.ok(section.includes('data-match-view-content="'+view+'"'),view);
-   assert.ok(section.indexOf('data-match-view="'+view+'"')<section.indexOf('data-match-pitch role="img"'));
-  }
-  assert.equal((section.match(/class="app-match-info-box"/g)||[]).length,3);
-  assert.equal((section.match(/class="app-match-info-box app-match-info-unavailable"/g)||[]).length,2);
-  assert.ok(section.indexOf('data-match-view-selector')<section.indexOf('data-match-overview="competition"'));
+  assert.doesNotMatch(section,/role="tablist"|role="tab"|role="tabpanel"|data-match-view-selector|data-match-view-content|data-match-view="(?:overview|stats|events)"/);
+  assert.equal((section.match(/class="app-match-overview"/g)||[]).length,1);
+  assert.equal((section.match(/class="app-match-overview-fact"/g)||[]).length,4);
+  assert.ok(section.includes('data-match-overview-panel'));
   assert.ok(section.includes('<div class="app-match-pitch-frame">'));
   assert.ok(section.includes('<div class="app-match-pitch-overlay">'));
+  for(const field of ['competition','season','round','status'])
+   assert.ok(section.includes('data-match-overview="'+field+'"'));
   assert.ok(section.indexOf('app-match-pitch-overlay')<section.indexOf('data-match-pitch role="img"'));
-  assert.match(section,/data-match-overview="round"[\s\S]*<\/div>\s*<div class="app-match-pitch" data-match-pitch/);
+  assert.match(section,/data-match-overview="status"[\\s\\S]*<\\/div>\\s*<div class="app-match-pitch" data-match-pitch/);
   for(const side of ['home','away']){
    assert.ok(section.includes('data-match-side="'+side+'"'));
    assert.ok(section.includes('data-match-side-crest="'+side+'"'));
@@ -173,10 +170,10 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/pitch\.setAttribute\('aria-label',tr\.pitch\)/);
  assert.match(js,/formFact\.hidden=facts\.form\.length===0/);
  assert.match(js,/form\.replaceChildren\(\.\.\.facts\.form\.map/);
- assert.match(js,/function renderMatchView\(tr\)/);
- assert.match(js,/panel\.hidden=panel\.dataset\.matchViewContent!==activeMatchView/);
+ assert.match(js,/function renderOverview\(tr\)/);
  assert.match(js,/Number\.isSafeInteger\(data\?\.round\)/);
- assert.match(js,/event\.key==='ArrowRight'/);
+ assert.match(js,/tr\.statusNames\[data\.status\]/);
+ assert.doesNotMatch(js,/renderMatchView|activeMatchView|matchViews|data-match-view-selector/);
  for(const fragment of ["club?.primaryName||id||tr[side]","crest.dataset.clubCrest=id",
  "data-match-side-crest","renderSides(tr)"])assert.ok(js.includes(fragment),fragment);
  assert.doesNotMatch(js,/assets\/clubs\/.*crest\.svg/);

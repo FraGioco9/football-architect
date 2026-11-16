@@ -68,9 +68,8 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(first.mode,theme,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.height,48);
     assert.equal(await page.locator('[data-match-card], .app-match-context, [data-match-visual-title]').count(),0);
-    assert.equal(await page.locator('[data-match-view-selector] [role="tab"]').count(),3);
-    assert.equal(await page.locator('[data-match-view="overview"]').getAttribute('aria-selected'),'true');
-    assert.equal(await page.locator('[data-match-view-content="stats"]').isHidden(),true);
+    assert.equal(await page.locator('[data-match-view-selector], [data-match-view], [role="tab"], [role="tabpanel"]').count(),0);
+    assert.equal(await page.locator('[data-match-overview-panel]').count(),1);
     const pitchBox=await page.locator('[data-match-pitch]').boundingBox();
     const scoreboardBox=await page.locator('.app-match-scoreboard').boundingBox();
     assert.ok(pitchBox&&scoreboardBox,JSON.stringify({engine,theme,device}));
@@ -82,8 +81,7 @@ for(const [engine,driver] of Object.entries(engines)){
      const field=pitch.getBoundingClientRect();
      const frame=document.querySelector('.app-match-stage').getBoundingClientRect();
      const overlay=document.querySelector('.app-match-pitch-overlay').getBoundingClientRect();
-     const viewTabs=document.querySelector('.app-match-view-selector').getBoundingClientRect();
-     const viewBoxes=document.querySelector('.app-match-view-content').getBoundingClientRect();
+     const overview=document.querySelector('[data-match-overview-panel]').getBoundingClientRect();
      const main=document.querySelector('.app-match-page').getBoundingClientRect();
      const facts=panels.map(panel=>[...panel.querySelectorAll('.app-match-side-stats .app-match-side-fact:not([hidden])')].map(n=>n.getBoundingClientRect()));
      return {panels:panels.length,positions:positions.map(p=>({left:p.left,right:p.right,top:p.top,width:p.width,height:p.height})),
@@ -95,8 +93,7 @@ for(const [engine,driver] of Object.entries(engines)){
       facts: facts.map(pair=>pair.map(x=>({left:x.left,top:x.top,right:x.right}))),
       field:{left:field.left,right:field.right,top:field.top,width:field.width},
       overlay:{top:overlay.top,bottom:overlay.bottom,left:overlay.left,right:overlay.right},
-      viewTabs:{top:viewTabs.top,bottom:viewTabs.bottom,left:viewTabs.left,right:viewTabs.right},
-      viewBoxes:{top:viewBoxes.top,bottom:viewBoxes.bottom,left:viewBoxes.left,right:viewBoxes.right},
+      overview:{top:overview.top,bottom:overview.bottom,left:overview.left,right:overview.right},
       lineupCounts:panels.map(p=>p.querySelectorAll('.app-match-lineup-row').length),
       formCounts:panels.map(p=>p.querySelectorAll('.app-match-form-cell').length),
       formsHidden:panels.every(p=>p.querySelector('[data-match-form-fact]').hidden&&p.querySelector('.app-match-side-stats').dataset.formVisible==='false'),
@@ -107,12 +104,11 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.ok(Math.abs(stage.stage.width-stage.main.width)<=1,JSON.stringify(stage));
     assert.deepEqual(stage.crestSlots,[1,1]);
     assert.ok(Math.abs(stage.overlay.top-stage.field.top)<=1&&Math.abs(stage.overlay.bottom-(stage.field.top+stage.field.height))<=1,JSON.stringify(stage));
-    assert.ok(stage.viewTabs.top>=stage.field.top-1&&stage.viewTabs.bottom<=stage.viewBoxes.top+1,JSON.stringify(stage));
-    assert.ok(stage.viewBoxes.top>=stage.field.top&&stage.viewBoxes.bottom<=stage.field.top+stage.field.height+1,JSON.stringify(stage));
-    assert.ok(stage.viewBoxes.left>=stage.field.left-1&&stage.viewBoxes.right<=stage.field.right+1,JSON.stringify(stage));
+    assert.ok(stage.overview.top>=stage.field.top-1&&stage.overview.bottom<=stage.field.top+stage.field.height+1,JSON.stringify(stage));
+    assert.ok(stage.overview.left>=stage.field.left-1&&stage.overview.right<=stage.field.right+1,JSON.stringify(stage));
     assert.equal(await page.locator('.app-match-pitch-frame').evaluate(el=>getComputedStyle(el).position),'relative');
     assert.equal(await page.locator('.app-match-pitch-overlay').evaluate(el=>getComputedStyle(el).position),'absolute');
-    assert.deepEqual(await page.locator('[data-match-overview]').evaluateAll(els=>els.map(el=>el.textContent)),['','','']);
+    assert.deepEqual(await page.locator('[data-match-overview]').evaluateAll(els=>els.map(el=>el.textContent)),['','','','']);
     assert.deepEqual(stage.firstPaintNames,['','']);
     assert.deepEqual(stage.firstPaintNameLinks,[{hasHref:false,content:''},{hasHref:false,content:''}]);
     for(let i=0;i<stage.facts.length;i++){
@@ -375,25 +371,17 @@ for(const [engine,driver] of Object.entries(engines)){
       assert.equal(await page.locator('[data-match-overview="season"]').textContent(),'1');
       assert.equal(await page.locator('[data-match-overview="round"]').textContent(),'1');
       assert.ok((await page.locator('[data-match-overview="competition"]').textContent()).length>0);
-      const fieldTop=(await page.locator('[data-match-pitch]').boundingBox()).y;
-      await page.locator('[data-match-view="stats"]').click();
-      assert.equal(await page.locator('[data-match-view="stats"]').getAttribute('aria-selected'),'true');
-      assert.equal(await page.locator('[data-match-view-content="overview"]').isHidden(),true);
-      assert.equal(await page.locator('[data-match-view-content="stats"]').isVisible(),true);
-      assert.match(await page.locator('[data-match-empty="stats"]').textContent(),/not yet available/);
-      await page.locator('[data-match-view="stats"]').press('ArrowRight');
-      assert.equal(await page.locator('[data-match-view="events"]').getAttribute('aria-selected'),'true');
-      assert.equal(await page.locator('[data-match-view-content="events"]').isVisible(),true);
-      await page.locator('[data-match-view="events"]').press('Home');
-      assert.equal(await page.locator('[data-match-view="overview"]').getAttribute('aria-selected'),'true');
-      assert.ok(Math.abs((await page.locator('[data-match-pitch]').boundingBox()).y-fieldTop)<=1,
-       'Overlay View selector must not shift the pitch');
+      assert.equal(await page.locator('[data-match-overview="status"]').textContent(),'Scheduled');
+      assert.equal(await page.locator('[data-match-overview-panel]').count(),1);
+      assert.equal(await page.locator('[data-match-view-selector], [data-match-view], [data-match-empty]').count(),0);
       // Language changes update glyphs, not recorded results.
       await page.evaluate(()=>document.documentElement.lang='it');
       await page.waitForFunction(()=>document.querySelector('[data-match-label="position"]')?.textContent==='Posizione');
       assert.equal(await page.locator('[data-match-side-title="home"]').textContent(),officialClub('IT-1').primaryName,
        'Localization never replaces an official club name with a generic Home label');
       assert.deepEqual(await page.locator('[data-match-form="home"] .app-match-form-cell').allTextContents(),['V','N','P','V','V']);
+      assert.equal(await page.locator('[data-match-overview="status"]').textContent(),'Programmata');
+      assert.equal(await page.locator('[data-match-overview-panel]').getAttribute('aria-label'),'Panoramica');
       await page.evaluate(()=>document.documentElement.lang='en');
      }
      if(status==='postponed'){

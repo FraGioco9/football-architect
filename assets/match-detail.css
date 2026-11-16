@@ -178,33 +178,27 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  position:absolute;z-index:2;inset:0;display:flex;flex-direction:column;align-items:stretch;
  box-sizing:border-box;padding:clamp(6px,1.2vw,12px);gap:8px;pointer-events:none;
 }
-.app-match-view-header{
- display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;
- flex:0 0 auto;margin:0;padding:4px 10px;border:1px solid var(--border);border-radius:9px;
- background:color-mix(in srgb,var(--surface) 82%,transparent);pointer-events:auto;
+.app-match-overview{
+ box-sizing:border-box;display:flex;flex-direction:column;gap:10px;
+ max-width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+ background:color-mix(in srgb,var(--surface) 80%,transparent);
+ pointer-events:auto;
 }
-.app-match-view-heading{font-size:12px;line-height:1.4;font-weight:700;color:var(--muted)}
-.app-match-view-selector{display:flex;align-items:center;justify-content:flex-end;gap:clamp(8px,1.2vw,16px);min-width:0}
-.app-match-view-tab{
- appearance:none;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
- min-height:32px;padding:4px 2px 5px;border:0;border-bottom:2px solid transparent;border-radius:0;
- background:transparent;color:var(--muted);font:inherit;font-size:12px;line-height:1.3;font-weight:650;
- cursor:pointer;white-space:nowrap;
+.app-match-overview-heading{
+ margin:0;color:var(--text);font-size:13px;line-height:1.4;font-weight:750;
 }
-.app-match-view-tab:hover,.app-match-view-tab:focus-visible{color:var(--text)}
-.app-match-view-tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--text)}
-.app-match-view-content{flex:0 0 auto;height:84px;max-height:calc(100% - 48px);margin:0;pointer-events:auto}
-.app-match-view-content>[role="tabpanel"]{height:100%;min-width:0}
-.app-match-view-content>[hidden]{display:none}
-.app-match-overview-boxes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;height:100%}
-.app-match-info-box{
- box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
- min-width:0;min-height:0;height:100%;padding:8px 10px;border:1px solid var(--border);border-radius:10px;
- background:color-mix(in srgb,var(--surface) 80%,transparent);text-align:center;
+.app-match-overview-facts{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;
 }
-.app-match-info-label{display:block;color:var(--muted);font-size:11px;line-height:1.3;font-weight:650}
-.app-match-info-value{display:block;min-height:1.3em;max-width:100%;color:var(--text);font-size:clamp(11px,1vw,15px);line-height:1.3;font-weight:750;overflow-wrap:anywhere}
-.app-match-info-unavailable{font-size:12px;line-height:1.4;color:var(--muted);font-weight:550}
+.app-match-overview-fact{
+ display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+ min-width:0;gap:5px;
+}
+.app-match-info-label{color:var(--muted);font-size:11px;line-height:1.3;font-weight:650}
+.app-match-info-value{
+ display:block;min-height:1.3em;max-width:100%;color:var(--text);
+ font-size:clamp(11px,1vw,15px);line-height:1.3;font-weight:750;overflow-wrap:anywhere;
+}
 .app-match-pitch{
  box-sizing:border-box;width:100%;height:100%;aspect-ratio:105 / 68;
  overflow:hidden;border:1px solid var(--border);border-radius:12px;
@@ -228,17 +222,13 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-form-cell{width:clamp(8px,2.6vw,15px);height:clamp(8px,2.6vw,15px);font-size:clamp(7px,1.8vw,10px)}
 }
 @media(max-width:620px){
- .app-match-view-heading{font-size:10px}
- .app-match-view-tab{font-size:11px;min-height:28px}
- .app-match-pitch-overlay{gap:6px;padding:6px}
- .app-match-view-header{padding:2px 6px;gap:5px}
- .app-match-view-selector{gap:8px}
- .app-match-view-content{height:clamp(68px,48%,120px);max-height:calc(100% - 42px)}
- .app-match-overview-boxes{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
- .app-match-overview-boxes>.app-match-info-box:first-child{grid-column:1/-1}
- .app-match-info-box{padding:6px 8px;gap:4px}
+ .app-match-pitch-overlay{gap:0;padding:6px}
+ .app-match-overview{padding:7px 9px;gap:6px}
+ .app-match-overview-heading{font-size:12px}
+ .app-match-overview-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px}
+ .app-match-overview-fact{gap:3px}
  .app-match-info-label{font-size:10px}
- .app-match-info-value{font-size:12px}
+ .app-match-info-value{font-size:11px}
  .app-match-side{padding:10px 7px 12px}
  .app-match-team-identity{flex-direction:column;justify-content:center;gap:5px;min-height:74px;margin-bottom:10px}
  .app-match-team-crest{width:40px;height:40px;flex-basis:40px}
