@@ -15,7 +15,7 @@ interface PublishedRow {
  phase_id:string;source_fixture_id:string|null;tie_id:string|null;leg:number|null;
  marker:string;scheduled_day:number;round_number:number|null;
 }
-const numeric=id=>Number.isSafeInteger(id)&&id>0;
+const numeric=(id:number)=>Number.isSafeInteger(id)&&id>0;
 const bracket=(phase:string,tie:string,leg:number)=>[phase,tie,leg].join(':');
 
 export function linkCalendarFixturesFromRows(fixtures:readonly CalendarLinkFixture[],
@@ -31,7 +31,7 @@ export function linkCalendarFixturesFromRows(fixtures:readonly CalendarLinkFixtu
    league.set(row.source_fixture_id,row);
   }else{
    if(typeof row.tie_id!=='string'||!row.tie_id||
-      !Number.isSafeInteger(row.leg)||row.leg<1||row.leg>2)
+      typeof row.leg!=='number'||!Number.isSafeInteger(row.leg)||row.leg<1||row.leg>2)
     return new Map<string,string>();
    const key=bracket(row.phase_id,row.tie_id,row.leg);
    if(knockout.has(key+':'+row.competition_id))return new Map<string,string>();
