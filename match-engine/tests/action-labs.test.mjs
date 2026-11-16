@@ -8,10 +8,10 @@ import {ACTION_LAB_SCENARIOS,getActionLabScenario,
  classifyActionLabEvidence} from '../src/action-lab-scenarios.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
-test('eleven base-action LABs retain negative authorization boundaries',()=>{
+test('fourteen base-action LABs retain negative authorization boundaries',()=>{
  assert.deepEqual(ACTION_LAB_SCENARIOS.map(s=>s.id),
-  ['pass','shot','cross','save','tackle','interception','challenge','control','trap','dribble','carry']);
- assert.equal(new Set(ACTION_LAB_SCENARIOS.map(s=>s.initial.seed)).size,11);
+  ['pass','shot','cross','save','tackle','interception','challenge','control','trap','dribble','goal','touchline','goal-line-out','carry']);
+ assert.equal(new Set(ACTION_LAB_SCENARIOS.map(s=>s.initial.seed)).size,14);
  for(const spec of ACTION_LAB_SCENARIOS){
   assert.ok(Object.isFrozen(spec)&&Object.isFrozen(spec.initial));
   assert.equal(spec.officialResult,false);
@@ -93,8 +93,8 @@ test('eleven base-action LABs retain negative authorization boundaries',()=>{
  const dev=readFileSync(new URL('../../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
  const client=readFileSync(new URL('../src/action-labs.mjs',import.meta.url),'utf8');
  const unified=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
- assert.match(unified,/count!==45/,'4 ball + 11 action + 30 movement entries');
- assert.doesNotMatch(unified,/count!==43/);
+ assert.match(unified,/count!==48/,'4 ball + 14 action + 30 movement entries');
+ assert.doesNotMatch(unified,/count!==45/);
  for(const spec of ACTION_LAB_SCENARIOS)
   assert.match(html,new RegExp('<option value="'+spec.id+'">'));
  assert.match(html,/id="action-labs-dialog"/);

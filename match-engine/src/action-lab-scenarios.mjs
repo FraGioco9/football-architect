@@ -52,6 +52,25 @@ export const CHALLENGE_LAB_STARTS=Object.freeze({
  away:scene('me-action-opposition-shoe',4.96),
  noContact:scene('me-action-challenge-no-contact',0,30)
 });
+// B05: original same-world rolling-ball boundaries in both directions.
+// Each starts strictly INSIDE the 105×68m pitch before tick zero.
+const boundary=(seed,x,y,vx,vy)=>Object.freeze({
+ preset:'roll',seed,x,y,z:0,vx,vy,vz:0
+});
+export const B05_LAB_STARTS=Object.freeze({
+ goal:Object.freeze({
+  home:boundary('me-b05-real-goal-home',47.8,2.8,25,0),
+  away:boundary('me-b05-real-goal-away',-47.8,-2.8,-25,0)
+ }),
+ touchline:Object.freeze({
+  home:boundary('me-b05-touchline-top',0,29.8,0,25),
+  away:boundary('me-b05-touchline-bottom',0,-29.8,0,-25)
+ }),
+ goalLine:Object.freeze({
+  home:boundary('me-b05-goal-line-top',47.8,10,25,0),
+  away:boundary('me-b05-goal-line-bottom',-47.8,-10,-25,0)
+ })
+});
 export const ACTION_LAB_SCENARIOS=Object.freeze([
  item('pass','Pass','uniform',scene('me-action-pass-home',-4.96,0,0.3),
   'Real shoe START + teammate-directed impulse; reception is not assumed.',
@@ -88,6 +107,16 @@ export const ACTION_LAB_SCENARIOS=Object.freeze([
   scene('me-action-native-dribble-home',-4.96,0,0.3),
   'Original #9 receives genuine PASS, cushions on actual shoe START, then independently pushes the Rapier ball and may recontact; a physical attempt, not successful dribble.',
   ['home-10','home-9','away-7'],'dribble'),
+ item('goal','Goal crossing','referee',B05_LAB_STARTS.goal.home,
+  'One real Rapier ball crosses completely between the posts; observed provisional GOAL and a physical centre-circle KICKOFF using the SAME ball. No official match result.',
+  ['home-10','away-1','away-10'],'goal-crossing'),
+ item('touchline','Touchline exit','referee',B05_LAB_STARTS.touchline.home,
+  'Original ball crosses wholly over a touchline. THROW-IN spot is computed, but team remains unresolved if no native last shoe touch is witnessed.',
+  ['home-10','away-10','home-9'],'touchline-exit'),
+ item('goal-line-out','Goal-line exit','referee',
+  B05_LAB_STARTS.goalLine.home,
+  'Original ball crosses the goal line outside the posts. CORNER or GOAL KICK requires an authenticated last real shoe touch; never guess the team.',
+  ['home-10','away-1','away-10'],'goal-line-exit'),
  item('carry','Carry','carry',CARRY_LAB_STARTS.home,
   'Two actual opponents cover the safe PASS recipients before tick zero. A genuine #10 shoe START may then produce the original short CARRY impulse; never a confirmed dribble.',
   ['home-10','home-9','home-11','away-9','away-11'],'carry')

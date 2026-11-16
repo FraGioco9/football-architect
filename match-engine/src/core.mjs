@@ -99,6 +99,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchGoalkeeperSaveSide = null,
   diagnosticResearchDefensiveSide = null,
   diagnosticResearchDefensiveKind = null,
+  diagnosticBasicRestartEnabled = false,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -131,6 +132,18 @@ export function createEngine(RAPIER, input = {}, {
      (diagnosticAutonomousFixtureActionEnabled&&!diagnosticPlayerFootContactsEnabled)||
      (diagnosticAutonomousCarryEnabled&&!diagnosticAutonomousFixtureActionEnabled))
     throw new TypeError('Physical actions require explicit genuine shoe-source opt-in');
+  if(typeof diagnosticBasicRestartEnabled!=='boolean'||
+     (diagnosticBasicRestartEnabled&&(
+       !diagnosticPlayerFootContactsEnabled||
+       diagnosticAutonomousFixtureActionEnabled||
+       diagnosticPlayerBodyCollidersEnabled||
+       diagnosticSharedContactEventsEnabled||
+       diagnosticResearchShotAttacker!==null||
+       diagnosticResearchControlReceiver||
+       diagnosticResearchCarrySide!==null||
+       diagnosticResearchDefensiveSide!==null||
+       diagnosticResearchGoalkeeperSaveSide!==null)))
+    throw new TypeError('B05 restart may only use isolated source-bound DEV ball/feet without kick authority');
   const scenario = normalizeScenario(input);
   if(typeof diagnosticResearchBodyEncounter!=='boolean'||
      (diagnosticResearchBodyEncounter&&
@@ -376,6 +389,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchShotWideCross,diagnosticResearchGoalkeeperSaveSide,
     diagnosticResearchDefensiveSide,diagnosticResearchDefensiveKind,
+    diagnosticBasicRestartEnabled,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
     diagnosticResearchReceivingDecisionEnabled,diagnosticResearchReceiverTapEnabled,
@@ -458,6 +472,7 @@ export function createEngine(RAPIER, input = {}, {
   if(magnusSpin)body.setAngvel(magnusSpin,true);
   let tick = 0;
   let disposed = false;
+  let basicRestartTick = -1;
   function applyGrassRollingResistance() {
     // Rapier collider friction resists sliding but an already-rolling sphere can
     // retain constant speed. Apply a surface-only energy loss per fixed tick.
@@ -596,6 +611,54 @@ export function createEngine(RAPIER, input = {}, {
     if(actionExecutor)actionExecutor.apply(tick,playerFrame);
     return snapshot();
   }
+  // The same existing Rapier ball is placed for a lawful DEAD-BALL restart.
+  // This is never a football kick, native shoe START or field-player teleport.
+  // Only an exact-tick referee ticket describing the ACTUAL fully-out ball
+  // unlocks this explicitly DEV-only operation.
+  function applyBasicRestartAtBoundary(event){
+    if(disposed||!diagnosticBasicRestartEnabled||
+       !event||event.tick!==tick||basicRestartTick>=0||
+       event.originalRapierSource!==true||
+       event.crossing?.fullBallCrossed!==true||
+       event.crossing?.source!=='real-consecutive-rapier-centres'||
+       !event.restart?.ready||event.restart.sameBallRapierRestart!==true||
+       !['home','away'].includes(event.restart.team)||
+       !['goal','goal-line','touchline'].includes(event.kind)||
+       event.crossing.edge!==event.kind||
+       !['kickoff','throw-in','corner','goal-kick'].includes(event.restart.type))
+      throw new TypeError('B05 needs an original exact-tick verified full-ball exit and ready restart');
+    const p=body.translation(),at=event.restart.spot;
+    if(!at||![at.x,at.y,at.z].every(Number.isFinite)||
+       Math.abs(at.z-BALL_RADIUS)>1e-8||
+       ((event.kind==='touchline')!==(event.restart.type==='throw-in'))||
+       (event.kind==='goal')!==(event.restart.type==='kickoff')||
+       (event.kind==='goal-line'&&!['corner','goal-kick'].includes(event.restart.type))||
+       (event.kind==='touchline'&&
+        (Math.abs(p.y)<34+BALL_RADIUS-1e-6||
+         Math.abs(Math.abs(at.y)-(34-BALL_RADIUS))>1e-6))||
+       (event.kind!=='touchline'&&
+        (Math.abs(p.x)<52.5+BALL_RADIUS-1e-6||
+         (event.kind==='goal'&&(
+          at.x!==0||at.y!==0))||
+         (event.kind==='goal-line'&&event.restart.type==='corner'&&
+          (Math.abs(Math.abs(at.x)-(52.5-BALL_RADIUS))>1e-6||
+           Math.abs(Math.abs(at.y)-(34-BALL_RADIUS))>1e-6))||
+         (event.kind==='goal-line'&&event.restart.type==='goal-kick'&&
+          (Math.abs(Math.abs(at.x)-47)>1e-6||
+           Math.abs(Math.abs(at.y)-5.5)>1e-6)))))
+      throw new TypeError('B05 restart spot must be in original pitch geometry after true exit');
+    body.setTranslation(at,true);
+    body.setLinvel({x:0,y:0,z:0},true);
+    body.setAngvel({x:0,y:0,z:0},true);
+    body.resetForces(true);
+    body.resetTorques(true);
+    basicRestartTick=tick;
+    return Object.freeze({tick,kind:event.restart.type,
+     assignedTeam:event.restart.team,
+     originalRapierBallRepositioned:true,
+     realShoeContact:false,officialMatchResult:null,
+     ball:snapshot().ball,sourceEventTick:event.tick});
+  }
   function dispose() {
     if (!disposed) {
       disposed = true;
@@ -607,6 +670,7 @@ export function createEngine(RAPIER, input = {}, {
     }
   }
   return Object.freeze({scenario, ballProperties, snapshot, angularVelocity, step, dispose,
+    ...(diagnosticBasicRestartEnabled?{applyBasicRestartAtBoundary}:{}),
     ...(shoeBridge?{
       footContactSnapshot:()=>shoeBridge.snapshot(),
       footContactTimelineSnapshot:()=>shoeBridge.timeline(),
