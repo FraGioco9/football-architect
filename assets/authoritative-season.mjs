@@ -92,13 +92,17 @@ export function validateAuthoritativeSeason(input,context,manifest){
      !count(p.goals))fail();
   const identity=p.clubId+':'+p.playerId;
   if(playerIdentity.has(identity))fail();playerIdentity.add(identity);
+  // One player cannot appear more often than their club has played, but
+  // eleven DISTINCT starters may each appear in that same match.
+  const team=allTotals.get(p.clubId);
+  if(!team||p.appearances>team.played)fail();
   const total=playerTotals.get(p.clubId)??{appearances:0,goals:0};
   total.appearances+=p.appearances;total.goals+=p.goals;
   playerTotals.set(p.clubId,total);
  }
  for(const [clubId,p] of playerTotals){
   const t=allTotals.get(clubId);
-  if(!t||p.appearances>t.played||p.appearances>11*t.played||p.goals>t.goalsFor)fail();
+  if(!t||p.appearances>11*t.played||p.goals>t.goalsFor)fail();
  }
  if(!Array.isArray(d.calendar)||d.calendar.length!==56)fail();
  d.calendar.forEach((day,i)=>{
