@@ -18,6 +18,8 @@ import {
  readPublicClubOverviewLineupV1,readPublicClubFixturesLineupV1,
  readPublicClubHistoryLineupV1,lineupTeamStatisticsV1
 } from '../src/public-sporting-read-lineup-v1.ts';
+import {readPublicMatchLineupV1,
+ readPublishedCompetitionMatchesLineupV1} from '../src/public-match-read-lineup-v1.ts';
 import type {AdminSession} from '../src/auth.ts';
 
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
@@ -36,7 +38,7 @@ async function prepareAndPublish(){
  world=(await advanceAdministrativeClockLineupV1(db,session,'start',cmd(),'lp-start-00001-v2',now)).world;
  for(const eventId of ['domestic:entrants','international:entrants'])
   world=(await completeConfirmationEvent(db,session,{...cmd(),eventId},
-   'lp-confirm--v2'+eventId,now)).world;
+   'lp-confirm-v2-'+eventId,now)).world;
  world=(await advanceAdministrativeClockLineupV1(db,session,'advance',cmd(),'lp-day2-00001-v2',now)).world;
  world=(await stageDomesticCalendar(db,session,cmd(),'lp-domestic-00001-v2',now)).world;
  world=(await advanceAdministrativeClockLineupV1(db,session,'advance',cmd(),'lp-day3-00001-v2',now)).world;
@@ -47,6 +49,28 @@ describe('#613 new V2 public competition, club, calendar projections (unrouted)'
  it('reads published V2-only days and next day without scoring future fixtures',async()=>{
   await prepareAndPublish();
   expect(world.day).toBe(3);
+  // The same published numeric match IDs are now readable with V2-only
+  // result authority. Future league and reserved knockout games have no score.
+  const league=(await db.prepare(
+   "SELECT p.id AS public_id,s.source_fixture_id AS fixture_id,s.scheduled_day AS day FROM public_match_numbers p JOIN season_match_slots s ON s.match_id=p.slot_match_id WHERE s.season_number=1 AND s.competition_id='IT-1' ORDER BY p.id LIMIT 1"
+  ).first()) as {public_id:number;fixture_id:string;day:number};
+  expect(league.day).toBeGreaterThan(world.day);
+  const upcoming=await readPublicMatchLineupV1(db,String(league.public_id)) as any;
+  expect(upcoming).toMatchObject({
+   matchId:String(league.public_id),status:'scheduled',result:null,
+   lineup:null,events:null,provenance:{resultAuthority:'temporary-lineup-v1',receiptHash:null}
+  });
+  const knockout=(await db.prepare(
+   "SELECT p.id AS public_id FROM public_match_numbers p JOIN season_knockout_match_slots k ON k.match_id=p.slot_match_id WHERE k.season_number=1 ORDER BY p.id LIMIT 1"
+  ).first()) as {public_id:number};
+  const reserved=await readPublicMatchLineupV1(db,String(knockout.public_id)) as any;
+  expect(reserved).toMatchObject({
+   status:'awaiting_participants',result:null,lineup:null,events:null,
+   provenance:{resultAuthority:'temporary-lineup-v1',receiptHash:null}
+  });
+  const list=await readPublishedCompetitionMatchesLineupV1(db,1,'IT-1');
+  expect(list.fixtures).toHaveLength(242);
+  await expect(readPublicMatchLineupV1(db,'invalid')).rejects.toMatchObject({status:404});
   const old=(await db.prepare('SELECT COUNT(*) AS n FROM season_day_outcomes').first()) as {n:number};
   expect(old.n).toBe(0);
   const before=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
