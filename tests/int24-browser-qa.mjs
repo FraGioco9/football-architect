@@ -125,6 +125,94 @@ try {
    await page.waitForURL(url=>url.pathname===target);
    checks+=4;
   }finally{await page.close()}
+  // Exercise the actual public /api/competitions consumer, not just a
+  // manually injected window.faCompetitionContext. The published collection
+  // is a distinct endpoint, so both responses must be consumed together.
+  const world={schemaVersion:1,...snapshot.world};
+  const sportingFixtures=fixtures.map(game=>{
+   const homeClubId='IT-'+game.homeId,awayClubId='IT-'+game.awayId;
+   const result=game.homeGoals===null?null:{
+    homeGoals:game.homeGoals,awayGoals:game.awayGoals,resolution:'regulation',
+    extraTime:null,penalties:null,
+    winnerClubId:game.homeGoals===game.awayGoals?null:
+     game.homeGoals>game.awayGoals?homeClubId:awayClubId
+   };
+   return {id:game.sourceFixtureId,competitionId:'IT-1',day:game.day,
+    round:game.round,marker:game.marker,homeClubId,awayClubId,
+    phaseId:'league',tieId:null,leg:null,neutral:false,result};
+  });
+  const table=played.rows.map((r,i)=>({
+   clubId:r.club.countryId+'-'+r.club.clubId,rank:i+1,played:r.played,
+   won:r.won,drawn:r.drawn,lost:r.lost,goalsFor:r.gf,goalsAgainst:r.ga,
+   goalDifference:r.gd,points:r.pts
+  }));
+  const teams=played.rows.map(row=>{
+   const game=fixtures.find(f=>f.round===1&&
+    [f.homeId,f.awayId].includes(row.club.clubId));
+   assert.ok(game,'synthetic fixture has one game per participating club');
+   const cleanSheets=Number(game.homeId===row.club.clubId?
+    game.awayGoals===0:game.homeGoals===0);
+   return {clubId:row.club.countryId+'-'+row.club.clubId,
+    played:row.played,won:row.won,drawn:row.drawn,lost:row.lost,
+    goalsFor:row.gf,goalsAgainst:row.ga,goalDifference:row.gd,cleanSheets};
+  });
+  const totalGoals=fixtures.filter(f=>f.round===1)
+   .reduce((n,f)=>n+f.homeGoals+f.awayGoals,0);
+  const realSeason={
+   schemaVersion:1,providerId:'authoritative-world',competitionId:'IT-1',
+   selectedSeason:1,world,status:'partial',reason:null,
+   provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',
+    sourceRef:'world:'+world.generation+':season:1:'+'a'.repeat(64)},
+   data:{season:1,seasonState:{day:13,phase:'active'},
+    rulesVersion:manifest.competitions.find(c=>c.id==='IT-1').rules.version,
+    participants:division.clubs.map(c=>c.countryId+'-'+c.clubId),
+    fixtures:sportingFixtures,standings:{complete:false,rows:table},
+    statistics:{matchesPlayed:8,totalGoals,goalsPerMatch:totalGoals/8,
+     teams,players:[{playerId:58,clubId:'IT-'+fixtures[0].homeId,
+      appearances:1,starts:1,minutes:75,goals:0}],
+     playerStatus:'available'},
+    calendar:Array.from({length:56},(_,i)=>({
+     day:i+1,fixtureIds:sportingFixtures.filter(f=>f.day===i+1).map(f=>f.id),
+     played:sportingFixtures.filter(f=>f.day===i+1&&f.result!==null).length
+    })),history:null}
+  };
+  const realPage=await browser.newPage({viewport:{width:1440,height:900}});
+  let sportingReads=0,publishedReads=0;
+  try{
+   await realPage.route('**/api/world',route=>route.fulfill({
+    status:200,contentType:'application/json',body:JSON.stringify({world})
+   }));
+   await realPage.route('**/api/competitions/IT-1/seasons/1',route=>{
+    sportingReads++;
+    return route.fulfill({status:200,contentType:'application/json',
+     body:JSON.stringify(realSeason)});
+   });
+   await realPage.route('**/api/matches/seasons/1/competitions/IT-1',route=>{
+    publishedReads++;
+    return route.fulfill({status:200,contentType:'application/json',
+     body:JSON.stringify({schemaVersion:1,providerId:'authoritative-world',
+      status:'published',season:1,competitionId:'IT-1',
+      provenance:{kind:'authoritative',sourceKind:'domestic',sourceHash:'a'.repeat(64)},
+      fixtures:publicFixtures})});
+   });
+   await realPage.goto(base+'/competitions/it-1/standings?season=1',
+    {waitUntil:'domcontentloaded'});
+   await realPage.waitForFunction(()=>
+    window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative'&&
+    document.querySelectorAll('#app-standings-body a[data-published-match]').length===16,
+    null,{timeout:15000});
+   assert.ok(sportingReads>0,'competition page actually read public sporting API');
+   assert.equal(await realPage.evaluate(()=>
+    window.faCompetitionContext.seasonData.fixtures.filter(f=>f.homeGoals!==null).length),
+    8,'a valid 75-minute player appearance cannot discard scored fixtures');
+   await realPage.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',matchday:1}));
+   await realPage.waitForFunction(()=>
+    document.querySelectorAll('#app-fixtures-list .app-fixture-goals').length===16);
+   assert.equal(await realPage.locator('#app-fixtures-list a.app-fixture-score-link').count(),8,
+    'scored Fixtures cards preserve official numeric links');
+   assert.equal(publishedReads,1,'renderers share the same published match collection');
+   checks+=3;
+  }finally{await realPage.close()}
  }
 
  await verifyCanonicalStateBrowser(browser,'chromium');
