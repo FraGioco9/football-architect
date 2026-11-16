@@ -32,7 +32,7 @@ async function proof({leg=1,twoLegs=false,neutral=false}={}){
     :[{fixture:one,leg:1,neutral}],originalRanks:[],dependencyResultIds:[],leagueTableHash:'c'.repeat(64)};
  const slot={match_id:matchId,generation,season_number:1,competition_id:'int-1',
   phase_id:phaseId,tie_id:tieId,leg,slot_id:slotId,marker:f.marker,scheduled_day:f.day,
-  round_number:f.round,home_policy:plan.homePolicy,rules_version:plan.rulesVersion,
+  round_number:twoLegs?f.round:null,home_policy:plan.homePolicy,rules_version:plan.rulesVersion,
   source_hash:match.sourceHash};
  const tie={generation,plan_hash:await canonicalHash(plan),plan_json:JSON.stringify(plan)};
  const frozenFixture={matchId:200,season:1,day:20,generation,competitionId:'int-1',
@@ -77,6 +77,8 @@ test('neutral knockout final verifies hashed reservation and actual resolved clu
  assert.deepEqual(result.context,{mode:'single-knockout',neutral:true});
  assert.equal(result.leg,1);
  assert.equal(result.guards.length,2);
+ assert.equal(p.slot.round_number,null);
+ assert.ok(result.guards.some(g=>g.sql.includes('round_number IS ?')));
  assert.equal(result.planHash,p.tie.plan_hash);
  assert.ok(p.calls.some(c=>c.sql.includes('FROM season_knockout_ties')));
 });

@@ -64,7 +64,7 @@ export async function resolvePublishedKnockoutV1(db,{match,world,published,conte
   plan.fixtures.some(x=>x.fixture.day>56||x.fixture.day<1)||
   (plan.fixtures.length===1&&slot.leg!==1))fail('fixture binding');
  const guards=[
-  guard(db,'SELECT 1 FROM season_knockout_match_slots WHERE match_id=? AND generation=? AND season_number=? AND competition_id=? AND phase_id=? AND tie_id=? AND leg=? AND slot_id=? AND marker=? AND scheduled_day=? AND round_number=? AND source_hash=? AND rules_version=? AND home_policy=?',
+  guard(db,'SELECT 1 FROM season_knockout_match_slots WHERE match_id=? AND generation=? AND season_number=? AND competition_id=? AND phase_id=? AND tie_id=? AND leg=? AND slot_id=? AND marker=? AND scheduled_day=? AND round_number IS ? AND source_hash=? AND rules_version=? AND home_policy=?',
    [published.slot_match_id,slot.generation,slot.season_number,slot.competition_id,slot.phase_id,
     slot.tie_id,slot.leg,slot.slot_id,slot.marker,slot.scheduled_day,slot.round_number,
     slot.source_hash,slot.rules_version,slot.home_policy]),
