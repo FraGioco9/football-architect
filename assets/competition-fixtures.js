@@ -32,10 +32,8 @@
   let currentMatchday=null,rounds=null,postseason=[],selected=navigation.get().matchday;
   let publishedSeason=null,publishedKey=null,pendingKey=null,fetchSequence=0,publishedIds=new Set(),publishedLookup=null;
   let menuHasPostseason=false;
-  // One official collection serves Fixtures, Postseason and Standings. The
-  // consumer can only resolve an existing immutable fixture inside the exact
-  // selected season + world generation/revision; a score or pairing is never
-  // sufficient to manufacture a link.
+  // The same official list powers Fixtures, Postseason and Standings forms.
+  // A reference must belong to this exact selected season and world revision.
   function officialMatchId(game,expectedSeason=Number(navigation.get().season)){
     const source=window.faWorldState?.get?.(),world=source?.world;
     if(!game||!Number.isSafeInteger(expectedSeason)||expectedSeason<1||
@@ -49,19 +47,20 @@
       return official&&official.phaseId==='league'&&official.round===game.round&&
         official.day===game.day&&official.marker===game.marker?official.matchId:null;
     }
-    if(game.phaseId!=='league'&&typeof game.tieId==='string'&&
-       Number.isSafeInteger(game.leg)){
+    if(game.phaseId!=='league'&&typeof game.tieId==='string'&&Number.isSafeInteger(game.leg)){
       const official=publishedLookup.bySlot[[game.phaseId,game.tieId,game.leg].join(':')];
       const reserved=game.fixtureSlot===game.tieId&&game.homeId===null&&game.awayId===null;
       return official&&(reserved||official.day===game.day&&official.marker===game.marker)
         ?official.matchId:null;
     }
-    // Direct numeric IDs are accepted only when present in this verified
-    // collection and when no more specific source/slot identity was supplied.
-    return typeof game.matchId==='string'&&publishedIds.has(game.matchId)
-      ?game.matchId:null;
+    // Never accept an invented numeric ID: it must occur in the committed list.
+    return typeof game.matchId==='string'&&publishedIds.has(game.matchId)?game.matchId:null;
   }
   window.faCompetitionMatchLinks=Object.freeze({forFixture:officialMatchId});
+  function notifyPublishedMatchLinks(){
+    if(typeof window.dispatchEvent==='function'&&typeof Event==='function')
+      window.dispatchEvent(new Event('fa:published-match-links-change'));
+  }
   // Preserve each club crest host (and its loaded image) when the matchday changes.
   const crestHosts=new Map();
   const roundMenu=window.faBindCompetitionMenu(fields.round,picker,choices,value=>select(value),
@@ -240,7 +239,7 @@
       element("span","app-fixture-separator"," – "),
       element("span","app-fixture-goals",String(game.awayGoals)));
     else score.append(element("span","app-fixture-pending","—"));
-    // Shared resolver also owns the Standings form links.
+    // Standings forms use this same verified resolver.
     let scoreContent=score,publicId=officialMatchId(game);
     if(publicId){
       item.className+=' is-match-link';
@@ -254,6 +253,17 @@
     }
     result.append(status,scoreContent,
       element("span","app-fixture-stadium",clubs.get(game.homeId)?.stadiumName||"—"));
+    if(publicId){
+      // Native full-card anchor supports the browser's new-tab context menu
+      // and middle/Ctrl/Cmd-click without scripting. The score remains the
+      // keyboard link and club names retain independent destinations.
+      // Nest under result so reused match rows replace this link atomically.
+      const hit=element('a','app-fixture-native-link');
+      hit.href='/matches/'+publicId;
+      hit.setAttribute('tabindex','-1');
+      hit.setAttribute('aria-hidden','true');
+      result.append(hit);
+    }
     item.append(identity(game.homeId,true),result,identity(game.awayId,false));
     return item;
   }
@@ -666,10 +676,10 @@
       publishedSeason=String(season);publishedKey=key;publishedIds=new Set(league.map(f=>f.matchId));
       publishedLookup=lookup;
       if(commit)commit();else render();
-      window.dispatchEvent(new Event('fa:published-match-links-change'));
+      notifyPublishedMatchLinks();
       syncKnockoutLinks();
     }catch{
-      if(seq===fetchSequence){publishedSeason=null;publishedKey=null;publishedIds.clear();publishedLookup=null;window.dispatchEvent(new Event('fa:published-match-links-change'));syncKnockoutLinks();}
+      if(seq===fetchSequence){publishedSeason=null;publishedKey=null;publishedIds.clear();publishedLookup=null;notifyPublishedMatchLinks();syncKnockoutLinks();}
     }finally{if(pendingKey===key){pendingKey=null;render();}}
   }
 
@@ -680,24 +690,24 @@
     if(snapshot?.source!=='authoritative'||snapshot.worldStatus!=='ready'||!snapshot.world){
       if(publishedKey!==null||pendingKey!==null||publishedLookup!==null){
         publishedSeason=null;publishedKey=null;pendingKey=null;
-        publishedLookup=null;publishedIds.clear();fetchSequence++;window.dispatchEvent(new Event('fa:published-match-links-change'));syncKnockoutLinks();
+        publishedLookup=null;publishedIds.clear();fetchSequence++;notifyPublishedMatchLinks();syncKnockoutLinks();
       }
       render();
       return;
     }
-    // Invalidate every consumer's old anchors before the next collection lands.
+    // Remove old world identities from every consumer before the next read.
     const activeKey=[navigation.get().season,definition.id,
       snapshot.world.generation,snapshot.world.revision].join(':');
     if(publishedKey!==null&&publishedKey!==activeKey){
       publishedSeason=null;publishedKey=null;publishedLookup=null;
       publishedIds.clear();fetchSequence++;
-      window.dispatchEvent(new Event('fa:published-match-links-change'));
+      notifyPublishedMatchLinks();
     }
     syncKnockoutLinks();
     if(['standings','fixtures','postseason'].includes(navigation.get().view))void readPublishedFixtures();
   });
   window.addEventListener('fa:competition-context-change',contextChanged);
-  window.addEventListener('fa:source-change',()=>{publishedSeason=null;publishedIds.clear();publishedLookup=null;publishedKey=null;pendingKey=null;fetchSequence++;window.dispatchEvent(new Event('fa:published-match-links-change'));syncKnockoutLinks();if(window.faCompetitionContext?.seasonData?.provenance?.kind!=='dev')void readPublishedFixtures();});
+  window.addEventListener('fa:source-change',()=>{publishedSeason=null;publishedIds.clear();publishedLookup=null;publishedKey=null;pendingKey=null;fetchSequence++;notifyPublishedMatchLinks();syncKnockoutLinks();if(window.faCompetitionContext?.seasonData?.provenance?.kind!=='dev')void readPublishedFixtures();});
   window.addEventListener('fa:world-clock-snapshot',event=>{
     if(!international||window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')return;
     const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);

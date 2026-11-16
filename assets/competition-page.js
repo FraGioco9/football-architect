@@ -589,6 +589,13 @@
     return verified;
   }
 
+  // The form's verified score is not a link identity. Only the official
+  // published fixture index can authorize navigation to a match detail.
+  function linkedFormMatchId(records,key,season){
+    const fixture=records.get(key)?.fixture;
+    return fixture&&window.faCompetitionMatchLinks?.forFixture(fixture,season)||null;
+  }
+
   function bindPublishedFormTooltips(){
     const host=document.getElementById("competition-panel-standings");
     const tooltip=document.createElement("div");
@@ -674,13 +681,16 @@
     host.addEventListener("pointerdown",event=>{const node=target(event);touchWasOpen=!!node&&["touch","pen"].includes(event.pointerType)&&active===node});
     host.addEventListener("click",event=>{
       const node=target(event);if(!node)return;
+      // The native anchor handles navigation and new-tab gestures; the
+      // tooltip remains available on hover/focus. Never cancel anchor clicks.
+      if(node.tagName==="A"){event.stopPropagation();touchWasOpen=false;return}
       if(node.closest("summary")){event.preventDefault();event.stopPropagation()}
       if(touchWasOpen&&active===node)close();else open(node);
       touchWasOpen=false;
     });
     host.addEventListener("keydown",event=>{
       const node=target(event);
-      if(!node||node.tagName==="BUTTON"||!["Enter"," "].includes(event.key))return;
+      if(!node||["BUTTON","A"].includes(node.tagName)||!["Enter"," "].includes(event.key))return;
       event.preventDefault();event.stopPropagation();open(node);
     });
     document.addEventListener("pointerdown",event=>{if(active&&!active.contains(event.target))close()});
@@ -699,17 +709,37 @@
           const identity=row.club.countryId+"-"+row.club.clubId;
           const owner=definition.category==="international"?rules.clubKey(row.club):String(row.club.clubId);
           const marks=[...items.get(identity)?.querySelectorAll(".app-world-mobile-form .app-world-form-dot")||[]];
-          marks.forEach((mark,index)=>{
+          marks.forEach((original,index)=>{
             const game=row.recent[index];
             const key=[owner,game.round,game.homeId,game.awayId].join("|");
-            if(records.has(key)){
-              mark.dataset.publishedForm=key;mark.tabIndex=0;
-              mark.setAttribute("role","button");mark.setAttribute("aria-haspopup","true");
+            const verified=records.has(key);
+            const matchId=verified?linkedFormMatchId(records,key,Number(window.faCompetitionContext?.selectedSeason)):null;
+            let mark=original;
+            // Mobile form initially uses spans. Upgrade only a confirmed
+            // published match to a native anchor, or remove a stale anchor
+            // when the world/season/source has changed.
+            if(matchId&&mark.tagName!=="A"||!matchId&&mark.tagName==="A"){
+              const next=document.createElement(matchId?"a":"span");
+              next.className=mark.className;next.textContent=mark.textContent;
+              if(mark.dataset.appI18n)next.dataset.appI18n=mark.dataset.appI18n;
+              mark.replaceWith(next);mark=next;
+            }
+            if(verified){
+              mark.dataset.publishedForm=key;
               mark.setAttribute("aria-label",game.result+" — "+game.round);
+              if(matchId){
+                mark.href="/matches/"+matchId;
+                mark.dataset.publishedMatch=matchId;
+                mark.removeAttribute("role");mark.removeAttribute("aria-haspopup");
+                mark.removeAttribute("tabindex");
+              }else{
+                delete mark.dataset.publishedMatch;mark.tabIndex=0;
+                mark.setAttribute("role","button");mark.setAttribute("aria-haspopup","true");
+              }
             }else{
-              delete mark.dataset.publishedForm;mark.removeAttribute("role");
-              mark.removeAttribute("aria-haspopup");mark.removeAttribute("aria-label");
-              mark.removeAttribute("tabindex");
+              delete mark.dataset.publishedForm;delete mark.dataset.publishedMatch;
+              mark.removeAttribute("role");mark.removeAttribute("aria-haspopup");
+              mark.removeAttribute("aria-label");mark.removeAttribute("tabindex");
             }
           });
         }
@@ -807,8 +837,13 @@
               for(const game of row.recent){
                 const key=[owner,game.round,game.homeId,game.awayId].join('|');
                 const isVerified=verifiedForms.has(key);
-                const mark=document.createElement(isVerified?'button':'span');
-                if(isVerified){mark.type='button';mark.dataset.publishedForm=key;mark.setAttribute('aria-haspopup','true')}
+                const matchId=isVerified?linkedFormMatchId(verifiedForms,key,context.selectedSeason):null;
+                const mark=document.createElement(matchId?'a':isVerified?'button':'span');
+                if(isVerified){
+                  mark.dataset.publishedForm=key;
+                  if(matchId){mark.href='/matches/'+matchId;mark.dataset.publishedMatch=matchId;}
+                  else{mark.type='button';mark.setAttribute('aria-haspopup','true');}
+                }
                 mark.className='app-world-form-dot'+(isVerified?' app-world-form-control':'')+
                   ' app-world-form-'+game.result.toLowerCase()+
                   (game===row.recent[0]?' app-world-form-last':'');
@@ -889,7 +924,9 @@
       }catch(error){if(window.faDevPreviewMode===true)console.warn('Standings snapshot presentation rejected',error);resetBracket();empty();}
       window.faAppRenderLanguage?.();
     }
-    window.addEventListener('fa:competition-context-change',refresh);refresh();
+    window.addEventListener('fa:competition-context-change',refresh);
+    window.addEventListener('fa:published-match-links-change',refresh);
+    refresh();
   }
 
   // Form tooltips are regression-tested against isolated Node fixtures.

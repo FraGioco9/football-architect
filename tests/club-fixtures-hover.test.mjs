@@ -41,7 +41,12 @@ test('Club Fixtures only link official numeric draw scores, not crest or DEV row
  const linked=output(official);
  assert.match(linked,/<li class="club-fixture-row(?: is-next)? is-match-link"[^>]*data-club-fixture-id="123"/);
  assert.match(linked,/<a class="club-fixture-score-link" href="\/matches\/123" aria-label="Open match: Opponent FC"><strong/);
+ assert.match(linked,/<a class="club-fixture-native-link" href="\/matches\/123" tabindex="-1" aria-hidden="true"><\/a>/,
+  'browser native context menu and modifier/middle click are available on the whole row');
+ assert.doesNotMatch(linked,/target="_blank"/,'left click remains in the same tab');
  const css=readFileSync(new URL('assets/club-page.css',root),'utf8');
+ assert.match(css,/\.club-fixture-native-link\{position:absolute;inset:0;z-index:1;display:block\}/);
+ assert.match(css,/\.club-fixture-row\.is-match-link :is\(\.club-fixture-meta a,\.club-fixture-opponent-name,\.club-fixture-score-link,\.club-fixture-venue\)\{position:relative;z-index:2\}/);
  assert.match(css,/html:not\(\[data-fa-fixture-hover-suspended\]\) \.club-fixture-row\.is-match-link:hover[\s\S]*?background:color-mix/);
  assert.doesNotMatch(css,/\.club-fixture-score-link:is\(:hover,:focus-visible\) strong/);
  const controller=readFileSync(new URL('assets/club-fixtures-controller.mjs',root),'utf8');
@@ -53,6 +58,7 @@ test('Club Fixtures only link official numeric draw scores, not crest or DEV row
   {...official,rows:[{...official.rows[0],id:'9007199254740992',matchId:'9007199254740992'}]}
  ]){
   assert.doesNotMatch(output(invalid),/class="club-fixture-score-link"/);
+  assert.doesNotMatch(output(invalid),/class="club-fixture-native-link"/);
   assert.doesNotMatch(output(invalid),/class="club-fixture-row(?: is-next)? is-match-link"/);
  }
 });
@@ -63,6 +69,7 @@ test('Complete verified club fixtures need the published lookup authority',()=>{
  const html=s=>fixtures.render({manifest:{clubs:[club]},lang:'en',season:1,currentSeason:1,seasons:[1],snapshot:s});
  assert.doesNotMatch(html(complete),/club-fixture-score-link/);
  assert.match(html({...complete,linkAuthority:'published-match-index-v1'}),/href="\/matches\/785"/);
+ assert.match(html({...complete,linkAuthority:'published-match-index-v1'}),/class="club-fixture-native-link" href="\/matches\/785"/);
 });
 
 test('Club Fixtures scroll dismisses pointer hover without hiding keyboard focus',()=>{

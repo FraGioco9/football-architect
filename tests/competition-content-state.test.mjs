@@ -200,3 +200,33 @@ test('QA-12: completed History becomes visible even if unrelated current-season 
  assert.equal(dataset.faHistoryLoading,'false','History readiness is independent of the current-season public provider');
  assert.equal(skeleton.removed,true);
 });
+
+
+test('MATCH-LINKS #605: standings form links use official source identities on both layouts',()=>{
+ const page=read('assets/competition-page.js'),start=page.indexOf('  function linkedFormMatchId(');
+ const end=page.indexOf('  function bindPublishedFormTooltips()',start);
+ assert.ok(start>=0&&end>start,'shared form reference lookup is mounted before tooltip events');
+ const invoked=[];
+ const resolver=runInNewContext(page.slice(start,end)+';linkedFormMatchId',{
+  window:{faCompetitionMatchLinks:{forFixture(fixture,season){
+   invoked.push([fixture,season]);
+   return season===1&&fixture.sourceFixtureId==='official-source'?'59':null;
+  }}}
+ });
+ const verified=new Map([['IT-3|7|3|4',{fixture:{sourceFixtureId:'official-source'}}]]);
+ assert.equal(resolver(verified,'IT-3|7|3|4',1),'59','official ID is used without constructing a URL from scores');
+ assert.equal(resolver(verified,'IT-3|7|3|4',2),null,'other seasons fail closed');
+ assert.equal(resolver(verified,'unverified',1),null,'unverified result cannot navigate');
+ assert.equal(invoked.length,2,'no lookup for an unverified form');
+ assert.match(page,/document\.createElement\(matchId\?'a':isVerified\?'button':'span'\)/,
+  'desktop W/D/L uses a native anchor only when published');
+ assert.match(page,/document\.createElement\(matchId\?"a":"span"\)/,
+  'compact W/D/L upgrades to a native anchor after publication');
+ assert.match(page,/if\(node\.tagName==="A"\)\{event\.stopPropagation\(\);touchWasOpen=false;return\}/,
+  'native link clicks are not swallowed by tooltip or compact details');
+ assert.match(page,/\["BUTTON","A"\]\.includes\(node\.tagName\)/,
+  'keyboard Enter on anchors is not intercepted');
+ assert.match(page,/fa:published-match-links-change',refresh/,'late publication updates standings');
+ const css=read('assets/app.css');
+ assert.match(css,/\.app-world-mobile-form a\[data-published-match\]\{cursor:pointer\}/);
+});
