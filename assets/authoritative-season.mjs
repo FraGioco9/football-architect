@@ -98,7 +98,8 @@ export function adaptAuthoritativeSeason(source,context,manifest){
  if(source.data===null)return null;
  const {data:d}=source,definition=context.currentDefinition||context.definition,catalog=clubCatalog(manifest),participants=d.participants.map(id=>catalog.get(id));
  const club=id=>definition.category==='international'?id:catalog.get(id).clubId;
- const fixtures=d.fixtures.map(f=>({round:f.round,phaseId:f.phaseId,tieId:f.tieId,leg:f.leg,neutral:f.neutral,
+ const fixtures=d.fixtures.map(f=>({sourceFixtureId:f.id,marker:f.marker,day:f.day,
+  round:f.round,phaseId:f.phaseId,tieId:f.tieId,leg:f.leg,neutral:f.neutral,
   homeId:club(f.homeClubId),awayId:club(f.awayClubId),homeGoals:f.result?.homeGoals??null,awayGoals:f.result?.awayGoals??null,kickoff:null,
   afterExtraTime:!!f.result?.extraTime,penalties:f.result?.penalties?{homeId:club(f.homeClubId),awayId:club(f.awayClubId),homeGoals:f.result.penalties.home,awayGoals:f.result.penalties.away}:null}));
  const postseason=fixtures.filter(f=>f.phaseId!=='league');

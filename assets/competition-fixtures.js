@@ -30,7 +30,7 @@
   let firstTies=knockoutPhases[0]?.ties.filter(t=>t.legs===2)||[];
   let hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
   let currentMatchday=null,rounds=null,postseason=[],selected=navigation.get().matchday;
-  let publishedSeason=null,publishedKey=null,pendingKey=null,fetchSequence=0,publishedIds=new Set();
+  let publishedSeason=null,publishedKey=null,pendingKey=null,fetchSequence=0,publishedIds=new Set(),publishedLookup=null;
   let menuHasPostseason=false;
   // Preserve each club crest host (and its loaded image) when the matchday changes.
   const crestHosts=new Map();
@@ -132,6 +132,7 @@
       if(!validKickoff(game.kickoff))throw Error("Invalid fixture kickoff");
       byRound.get(game.round).push({round:game.round,homeId:game.homeId,awayId:game.awayId,
         homeGoals:game.homeGoals,awayGoals:game.awayGoals,kickoff:game.kickoff,
+        sourceFixtureId:game.sourceFixtureId??null,marker:game.marker??null,day:game.day??null,
          matchId:typeof game.matchId==='string'&&/^[1-9][0-9]*$/.test(game.matchId)&&
           Number.isSafeInteger(Number(game.matchId))?game.matchId:null});
     }
@@ -209,11 +210,23 @@
       element("span","app-fixture-separator"," – "),
       element("span","app-fixture-goals",String(game.awayGoals)));
     else score.append(element("span","app-fixture-pending","—"));
-    // Only the official published-draw numeric ID can open a match page.
-    let scoreContent=score;
-    if(publishedSeason===navigation.get().season&&publishedIds.has(game.matchId)){
+    // Match identity comes from the official public collection, never a pairing.
+    let scoreContent=score,publicId=null;
+    if(publishedSeason===navigation.get().season&&publishedLookup){
+      if(game.matchId&&publishedIds.has(game.matchId))publicId=game.matchId;
+      else if(game.phaseId==='league'&&typeof game.sourceFixtureId==='string'){
+        const official=publishedLookup.bySource[game.sourceFixtureId];
+        if(official&&official.phaseId==='league'&&official.round===game.round&&
+           official.day===game.day&&official.marker===game.marker)publicId=official.matchId;
+      }else if(game.phaseId!=='league'&&typeof game.tieId==='string'&&
+               Number.isSafeInteger(game.leg)){
+        const official=publishedLookup.bySlot[[game.phaseId,game.tieId,game.leg].join(':')];
+        if(official&&official.day===game.day&&official.marker===game.marker)publicId=official.matchId;
+      }
+    }
+    if(publicId){
       const link=element('a','app-fixture-score-link');
-      link.href='/matches/'+game.matchId;
+      link.href='/matches/'+publicId;
       const action={en:'Open match',de:'Spiel öffnen',es:'Abrir partido',fr:'Ouvrir le match',it:'Apri partita'};
       const locale=document.documentElement.lang||'en';
       link.setAttribute('aria-label',(action[locale]||action.en)+': '+
@@ -389,8 +402,8 @@
     updateDefinition(window.faCompetitionContext?.definition);
     const data=window.faCompetitionContext?.seasonData;
     if(!international&&data&&data.provenance?.kind!=='authoritative')return; // The protected domestic adapter commits transactionally through prepare().
-    if(data?.provenance?.kind==='authoritative'){publishedSeason=null;publishedIds.clear();}
-    if(!data){rounds=null;postseason=[];currentMatchday=null;publishedSeason=null;publishedIds.clear();render();void readPublishedFixtures();return;}
+    // The existing published IDs remain valid when this world's results hydrate.
+    if(!data){rounds=null;postseason=[];currentMatchday=null;publishedSeason=null;publishedIds.clear();publishedLookup=null;render();void readPublishedFixtures();return;}
     const previous=clubs;
     try{
       clubs=new Map(data.participants.map(club=>[international?rules.clubKey(club):club.clubId,club]));
@@ -398,6 +411,7 @@
       const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
       const current=data.provenance?.kind==='authoritative'?data.currentMatchday:calendar?rules.currentFixtureChoice(definition,calendar,window.faDevWorldClockSnapshot||window.faWorldClockSnapshot):null;
       window.faFixtures.prepare(data.fixtures,{currentMatchday:current,postseason:data.postseason||[],definition})();
+      if(data.provenance?.kind==='authoritative')void readPublishedFixtures();
     }catch{clubs=previous;rounds=null;postseason=[];currentMatchday=null;render();}
   }
 
@@ -405,8 +419,7 @@
   async function readPublishedFixtures(){
     const context=window.faCompetitionContext,source=window.faWorldState?.get?.();
     const route=navigation.get(),season=Number(route.season);
-    if(route.view!=='fixtures'||context?.seasonData?.provenance?.kind==='authoritative'||
-       source?.source!=='authoritative'||source?.worldStatus!=='ready'||!source.world||
+    if(route.view!=='fixtures'||source?.source!=='authoritative'||source?.worldStatus!=='ready'||!source.world||
        !Number.isSafeInteger(season)||season<1||context?.selectedSeason!==season||
        season>source.world.seasonNumber)return;
     const key=[season,definition.id,source.world.generation,source.world.revision].join(':');
@@ -422,6 +435,28 @@
          data.season!==season||data.competitionId!==definition.id||
          data.provenance?.kind!=='authoritative'||!Array.isArray(data.fixtures))throw Error('Invalid public fixtures');
       const league=data.fixtures.filter(f=>f.phaseId==='league');
+      // One authoritative lookup for the selected competition; no per-row probes.
+      const bySource=Object.create(null),bySlot=Object.create(null);
+      for(const f of data.fixtures){
+        if(!f||!/^[1-9][0-9]*$/.test(f.matchId)||!Number.isSafeInteger(Number(f.matchId))||
+           !Number.isSafeInteger(f.day)||f.day<1||f.day>56||
+           typeof f.marker!=='string'||!f.marker)throw Error('Invalid published match reference');
+        const item={matchId:f.matchId,phaseId:f.phaseId,marker:f.marker,day:f.day,round:f.round};
+        if(f.phaseId==='league'){
+          if(typeof f.sourceFixtureId!=='string'||
+             !f.sourceFixtureId.startsWith('season:'+season+':'+definition.id+':')||
+             Object.hasOwn(bySource,f.sourceFixtureId))throw Error('Invalid published source fixture');
+          bySource[f.sourceFixtureId]=item;
+        }else{
+          if(typeof f.phaseId!=='string'||!f.phaseId||
+             f.sourceFixtureId!==null||typeof f.tieId!=='string'||!f.tieId||
+             !Number.isSafeInteger(f.leg)||f.leg<1||f.leg>2)throw Error('Invalid published bracket slot');
+          const slot=[f.phaseId,f.tieId,f.leg].join(':');
+          if(Object.hasOwn(bySlot,slot))throw Error('Duplicate published bracket slot');
+          bySlot[slot]=item;
+        }
+      }
+      const lookup={bySource,bySlot};
       if(league.length!==count||new Set(data.fixtures.map(f=>f.matchId)).size!==data.fixtures.length||
          league.some(f=>!f||!/^[1-9][0-9]*$/.test(f.matchId)||!Number.isSafeInteger(f.round)||
           f.round<1||f.round>roundCount||!Number.isSafeInteger(f.day)||f.day<1||f.day>56))throw Error('Invalid published league');
@@ -430,22 +465,26 @@
         const away=international?f.awayClubId:Number(f.awayClubId?.split('-')[1]);
         if(!international&&(!f.homeClubId?.startsWith(definition.id.split('-')[0]+'-')||
            !f.awayClubId?.startsWith(definition.id.split('-')[0]+'-')))throw Error('Invalid club scope');
-        return {matchId:f.matchId,round:f.round,homeId:home,awayId:away,phaseId:'league',
+        return {matchId:f.matchId,sourceFixtureId:f.sourceFixtureId,day:f.day,marker:f.marker,round:f.round,homeId:home,awayId:away,phaseId:'league',
           tieId:null,leg:null,neutral:false,homeGoals:null,awayGoals:null,kickoff:null,
           afterExtraTime:false,penalties:null};
       });
       const latest=window.faWorldState?.get?.();
       if(seq!==fetchSequence||key!==[season,definition.id,latest?.world?.generation,latest?.world?.revision].join(':')||
-         window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')return;
-      const commit=window.faFixtures.prepare(games,{currentMatchday:null,postseason:[],definition});
-      publishedSeason=String(season);publishedKey=key;publishedIds=new Set(league.map(f=>f.matchId));commit();
+         navigation.get().season!==String(season))return;
+      const hasOfficialScores=window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative';
+      // Keep real sporting results: never overwrite them with a zero-score draw.
+      const commit=hasOfficialScores?null:window.faFixtures.prepare(games,{currentMatchday:null,postseason:[],definition});
+      publishedSeason=String(season);publishedKey=key;publishedIds=new Set(league.map(f=>f.matchId));
+      publishedLookup=lookup;
+      if(commit)commit();else render();
     }catch{
-      if(seq===fetchSequence){publishedSeason=null;publishedKey=null;publishedIds.clear();}
+      if(seq===fetchSequence){publishedSeason=null;publishedKey=null;publishedIds.clear();publishedLookup=null;}
     }finally{if(pendingKey===key)pendingKey=null;}
   }
 
   window.addEventListener('fa:competition-context-change',contextChanged);
-  window.addEventListener('fa:source-change',()=>{publishedSeason=null;publishedIds.clear();publishedKey=null;pendingKey=null;fetchSequence++;if(!window.faCompetitionContext?.seasonData)void readPublishedFixtures();});
+  window.addEventListener('fa:source-change',()=>{publishedSeason=null;publishedIds.clear();publishedLookup=null;publishedKey=null;pendingKey=null;fetchSequence++;if(window.faCompetitionContext?.seasonData?.provenance?.kind!=='dev')void readPublishedFixtures();});
   window.addEventListener('fa:world-clock-snapshot',event=>{
     if(!international||window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')return;
     const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
