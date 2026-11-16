@@ -51,3 +51,32 @@ node --test .\tests\player-portrait-chatgpt.test.mjs .\tests\player-portrait-png
 ```
 
 The new source/QA scripts run only on demand. Site/Backend/FULL CI must refer to the **exact PR head** before merging. A green technical test is **not** approval of any photo.
+
+## V4 — independently versioned ChatGPT handoff (#646, Step C)
+
+V3 remains untouched: continue to use `buildChatGptPortraitExecutionFromSnapshot()`
+with `player-portraits-v2` / `player-portrait-v3` snapshots.
+
+Only new `player-portraits-v3` / `player-portrait-v4` snapshots may use
+`buildChatGptV4PortraitExecutionFromSnapshot()` from
+`backend/src/player-portrait-chatgpt.mjs`. Both adapters reject the other
+version and validate frozen identity before returning any image prompt.
+
+V4 uses the entire canonical prompt **verbatim exactly once**, with V4-specific
+guards surrounding (never rewriting) it. The execution contract is
+`chatgpt-portrait-execution-v2`, `onePlayerPerInvocation:true`,
+`renderer:'chatgpt-image-generation'`, `desiredAspectRatio:'3:4'`, and the
+native `toolOptions:{transparent_background:true}` with no `n` image count.
+
+**Owner rule:** every image request is for a fictional **adult male**.
+Never add ages, age bands, or infer appearance from gameplay age. Keep
+ordinary natural faces, conservative V4 body, regular-fit white shirt and
+complete transparent head-to-hips crop. On the final 320×362 WebP derivative,
+aim for a top alpha margin of 3–8 px; assess separately during pixel QA.
+
+These modules do not call the image tool, modify D1, upload or publish assets.
+Invoke ChatGPT image generation separately for each snapshot, then conduct
+technical and visual QA plus owner approval before replacing any portrait.
+
+Focused tests:
+`node --test tests/player-portrait-core.test.mjs tests/player-portrait-v4.test.mjs tests/player-portrait-chatgpt.test.mjs`

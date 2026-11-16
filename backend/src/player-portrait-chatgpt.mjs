@@ -5,7 +5,7 @@
  * assets, writes player data or calls any AI service. The V3 canonical renderer
  * remains the sole authority for facial and body descriptions.
  */
-import {renderPortraitPromptFromSnapshot} from './player-portrait-core.mjs';
+import {renderPortraitPromptFromSnapshot,renderV4PortraitPromptFromSnapshot} from './player-portrait-core.mjs';
 
 export const CHATGPT_PORTRAIT_EXECUTION_VERSION='chatgpt-portrait-execution-v1';
 
@@ -55,5 +55,49 @@ export async function buildChatGptPortraitExecutionFromSnapshot(snapshot){
   toolOptions:CHATGPT_PORTRAIT_TOOL_OPTIONS,
   desiredAspectRatio:'3:4',
   prompt:`${BEFORE}\n\n--- CANONICAL V3 PROMPT (VERBATIM) ---\n${canonicalPrompt}\n--- END CANONICAL V3 PROMPT ---\n\n${AFTER}`
+ });
+}
+
+
+/** #646 Step C: independent V4 handoff. V3 exports and prompt remain untouched. */
+export const CHATGPT_V4_PORTRAIT_EXECUTION_VERSION='chatgpt-portrait-execution-v2';
+
+const V4_BEFORE=[
+ 'CHATGPT IMAGE GENERATION — V4 — SINGLE PLAYER / SINGLE IMAGE.',
+ 'Generate exactly ONE photographic portrait using the ChatGPT image-generation tool.',
+ 'The subject is always one fictional adult male football player, regardless of gameplay age.',
+ 'Treat the entire V4 canonical appearance below as BINDING; never paraphrase, shorten or substitute the specified traits.',
+ 'Run a single independent image invocation per player. No group, collage, triptych or contact sheet.',
+ 'Never reuse another player or an approved composition benchmark as a facial reference.'
+].join('\n');
+
+const V4_AFTER=[
+ 'CHATGPT-SPECIFIC V4 EXECUTION GUARDS:',
+ '- Exactly ONE ordinary-looking fictional adult male. Do not infer face, maturity or physical appearance from gameplay age, name, nationality, surname, position or club.',
+ '- Match the frozen V4 facial traits: complexion, face structure, eyes, brows, nose, jaw, ears, hairline, hair colour/texture/style, facial hair and natural skin detail.',
+ '- Natural human asymmetry, realistic pores and ordinary imperfections. No fashion/fitness model styling, cosmetic retouching, beauty lighting, carved jawline, sculpted cheekbones, smoothing or idealized face.',
+ '- Match the canonical V4 body profile. Do not add bulk or muscle definition based on stamina, football role or athletic stereotype.',
+ '- Plain pure-white unbranded short-sleeved jersey with comfortable regular match fit. No body-sculpting fabric, logos, text, sponsorship, stripes, numbers or colored trims.',
+ '- Front-facing, neutral expression, direct gaze, level shoulders, relaxed arms at sides, complete hair/head, both shoulders and arms, torso and hips visible. Centered 3:4 source framing.',
+ '- For QA of the final 320 x 362 WebP, target 3–8 px top silhouette margin; absolute allowance 0–12 px only if hair is intact. Never impose derivative pixel counts on the original source image.',
+ '- Request genuine native transparent PNG RGBA ALPHA, not white/grey backdrop, painted checkerboard, scenery, cast shadow, object or colored halo/fringing.',
+ '- No player name, ID, text, label, caption or watermark inside the generated image.',
+ '- A generated candidate is NOT approved until actual alpha/pixel QA, visual QA and owner acceptance.'
+].join('\n');
+
+/** Pure version-checked tool handoff; does not call an AI provider, D1 or filesystem. */
+export async function buildChatGptV4PortraitExecutionFromSnapshot(snapshot){
+ // Fail closed before assembling the execution prompt.
+ const canonicalPrompt=await renderV4PortraitPromptFromSnapshot(snapshot);
+ return Object.freeze({
+  playerId:snapshot.player_id,
+  portraitPromptVersion:snapshot.prompt_version,
+  executionVersion:CHATGPT_V4_PORTRAIT_EXECUTION_VERSION,
+  renderer:'chatgpt-image-generation',
+  onePlayerPerInvocation:true,
+  toolOptions:CHATGPT_PORTRAIT_TOOL_OPTIONS,
+  desiredAspectRatio:'3:4',
+  prompt:V4_BEFORE+'\n\n--- CANONICAL V4 PROMPT (VERBATIM) ---\n'+
+   canonicalPrompt+'\n--- END CANONICAL V4 PROMPT ---\n\n'+V4_AFTER
  });
 }
