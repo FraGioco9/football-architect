@@ -33,8 +33,11 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   scene.spec.id==='pressure-neutral';
  const sharedContacts=scene.spec.id==='shared-contacts'||pressureScene;
  const sharedOff=scene.spec.id==='shared-contacts-off';
+ // M9 alone stages its controlled encounter; M10 only shares the
+ // authentic event queue and NEVER opts into fixture player positions.
  const encounter=scene.spec.id==='body-encounter'||
-  scene.spec.id==='body-encounter-off'||sharedContacts||sharedOff;
+  scene.spec.id==='body-encounter-off'||
+  scene.spec.id==='shared-contacts'||sharedOff;
  const nativeBodies=scene.spec.id==='body-world'||
   scene.spec.id==='body-encounter'||sharedContacts;
  const engine=usesOriginalControl?null:createEngine(RAPIER,scene.initial,
