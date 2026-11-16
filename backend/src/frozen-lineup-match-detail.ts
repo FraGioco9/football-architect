@@ -13,9 +13,8 @@ export interface FrozenLineupMatchDetailV1 {
   penalties:{home:number;away:number}|null;winnerClubId:string|null;
   resolution:'regulation'|'extra-time'|'penalties'};
  players:{ratingVersion:'test-rating-v1'|null;
-  home:{kind:string;starters:unknown[];appearances:Array<{playerId:number;started:true;minutes:number;goals:number;rating:number|null}>};
-  away:{kind:string;starters:unknown[];appearances:Array<{playerId:number;started:true;minutes:number;goals:number;rating:number|null}>}};
- events:LineupMatchResultV1['events'];
+  home:{kind:'real_xi'|'team_fallback';starters:Array<{playerId:number;role:string;rating:number|null}>};
+  away:{kind:'real_xi'|'team_fallback';starters:Array<{playerId:number;role:string;rating:number|null}>}};
  provenance:{kind:'immutable-lineup-v1';receiptHash:string;algorithmVersion:'temporary-lineup-v1'};
 }
 const fail=():never=>{throw new TypeError('Invalid frozen match detail')};
@@ -31,16 +30,20 @@ export function frozenLineupMatchDetailV1(
  if(fixture.matchId!==publicMatchId||result.algorithmVersion!=='temporary-lineup-v1'||
   !['real_xi','team_fallback'].includes(result.home?.kind)||
   !['real_xi','team_fallback'].includes(result.away?.kind))return fail();
- const side=(team:LineupMatchResultV1['home'])=>({
-  kind:team.kind,
-  starters:team.starters?.map(({playerId,role,emergencyGoalkeeper})=>({
-   playerId,role,emergencyGoalkeeper
-  }))??[],
-  appearances:team.appearances.map(({playerId,started,minutes,goals,rating})=>({
-   playerId,started,minutes,goals,
-   rating:result.ratingVersion==='test-rating-v1'&&typeof rating==='number'?rating:null
-  }))
- });
+ const side=(team:LineupMatchResultV1['home'])=>{
+  if(team.kind==='team_fallback')return {kind:team.kind,starters:[]};
+  if(!Array.isArray(team.starters)||team.starters.length!==11||
+     !Array.isArray(team.appearances)||team.appearances.length!==11)return fail();
+  const appearances=new Map(team.appearances.map(p=>[p.playerId,p]));
+  if(appearances.size!==11||new Set(team.starters.map(p=>p.playerId)).size!==11)return fail();
+  const starters=team.starters.map(({playerId,role})=>{
+   const appearance=appearances.get(playerId);
+   if(!appearance||appearance.started!==true)return fail();
+   return {playerId,role,rating:result.ratingVersion==='test-rating-v1'&&
+    typeof appearance.rating==='number'?appearance.rating:null};
+  });
+  return {kind:team.kind,starters};
+ };
  return {
   matchId:String(publicMatchId),fixtureId:record.fixtureId,
   season:fixture.season as number,competitionId:fixture.competitionId as string,
@@ -51,9 +54,6 @@ export function frozenLineupMatchDetailV1(
    winnerClubId:result.winnerClubId,resolution:result.resolution},
   players:{ratingVersion:result.ratingVersion==='test-rating-v1'?'test-rating-v1':null,
    home:side(result.home),away:side(result.away)},
-  events:result.events.map(({type,minute,side,playerId,period})=>({
-   type,minute,side,playerId,period
-  })),
   provenance:{kind:'immutable-lineup-v1',algorithmVersion:'temporary-lineup-v1',
    receiptHash:record.receiptHash}
  };
