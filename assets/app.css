@@ -2021,15 +2021,21 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
 .calendar-match-link:is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:3px}
 .calendar-match-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
 
-/* #605 Knockout brackets: each score column has its own official match ID.
- * Score cells cover one leg; single-match finals can use their full card.
- * No anchors wrap team or competition links, and layout metrics stay fixed. */
-.fa-bracket-score.is-match-link{position:relative;border-radius:4px}
-.fa-bracket-score.is-match-link:is(:hover,:focus-within){background:color-mix(in srgb,var(--fa-shell-accent) 13%,transparent)}
-.fa-bracket-leg-link{position:absolute;inset:0;display:block;border-radius:4px;cursor:pointer;z-index:1}
-.fa-bracket-leg-link:focus-visible{outline:2px solid var(--focus);outline-offset:-1px}
-.fa-bracket-score.is-match-link strong{position:relative;pointer-events:none;z-index:2}
-.fa-bracket-score.is-match-link:has(strong:empty)::after{content:"↗";position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:11px;pointer-events:none;z-index:2}
-.fa-bracket-card.is-single-match-link{cursor:pointer;transition:background-color .15s ease}
-.fa-bracket-card.is-single-match-link:hover{background:color-mix(in srgb,var(--fa-shell-accent) 10%,var(--surface))}
-@media(prefers-reduced-motion:reduce){.fa-bracket-card.is-single-match-link{transition:none}}
+/* #605: postseason cards use the same petrol hover and 150ms exit as
+ * Competition/Club Fixtures. Single-leg ties have one native full-card
+ * link, two-leg ties have two separate full-height half-card links.
+ * Team names keep their independent native links above these hit areas. */
+.fa-bracket-card.is-match-link{position:relative;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
+html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card.is-match-link:hover,
+.fa-bracket-card.is-match-link:has(.fa-bracket-match-link:focus-visible){
+ background:color-mix(in srgb,var(--fa-shell-accent) 11%,var(--surface));
+ border-color:color-mix(in srgb,var(--fa-shell-accent) 45%,var(--border));
+}
+.fa-bracket-match-link{position:absolute;inset-block:0;z-index:2;display:block;cursor:pointer}
+.fa-bracket-match-link[data-fa-match-leg="1"]{inset-inline-start:0;width:50%}
+.fa-bracket-match-link[data-fa-match-leg="2"]{inset-inline-end:0;width:50%}
+.fa-bracket-card[data-fa-match-legs="1"] .fa-bracket-match-link[data-fa-match-leg="1"]{width:100%}
+.fa-bracket-match-link:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:4px}
+.fa-bracket-card .fa-bracket-identity a{position:relative;z-index:3}
+.fa-bracket-card .fa-bracket-score strong{position:relative;pointer-events:none;z-index:3}
+@media(prefers-reduced-motion:reduce){.fa-bracket-card.is-match-link{transition:none}}

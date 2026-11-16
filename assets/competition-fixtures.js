@@ -410,54 +410,44 @@
   function syncKnockoutLinks(){
     const root=document.getElementById('app-postseason-bracket');
     if(!root?.querySelectorAll)return;
-    // Season-rule replacements recreate the entire bracket DOM. Install the
-    // delegated click handler on each new board, exactly once per node.
-    if(!root.dataset.faKnockoutLinksBound){
-      root.dataset.faKnockoutLinksBound='true';
-      root.addEventListener('click',event=>{
-        if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||
-           event.altKey||event.shiftKey)return;
-        const target=event.target;
-        if(!target?.closest||target.closest('a,button,input,select,textarea,[role="button"]'))return;
-        const cell=target.closest('.fa-bracket-score.is-match-link');
-        if(cell){cell.querySelector('.fa-bracket-leg-link')?.click();return;}
-        const card=target.closest('.fa-bracket-card.is-single-match-link');
-        card?.querySelector('.fa-bracket-leg-link')?.click();
-      });
-    }
     const source=window.faWorldState?.get?.(),world=source?.world,route=navigation.get();
     const liveKey=[route.season,definition.id,world?.generation,world?.revision].join(':');
     const authorized=source?.source==='authoritative'&&source.worldStatus==='ready'&&
       route.season===publishedSeason&&publishedKey===liveKey&&!!publishedLookup;
     const lang=bracketLabels[document.documentElement.lang]||bracketLabels.en;
-    for(const score of root.querySelectorAll('[data-postseason-score]')){
-      const cell=score.parentElement,card=score.closest?.('[data-bracket-tie]');
-      if(!cell||!card)continue;
+    // One card represents up to two DIFFERENT matches. Give the first and
+    // second leg their own large native half-card targets, regardless of
+    // whether participants have been determined. A one-leg final uses the
+    // full card. Independent club links remain above these targets in CSS.
+    for(const card of root.querySelectorAll('[data-bracket-tie]')){
       const tieId=card.dataset.bracketTie;
       const phase=definition.rules.phases.find(p=>p.type==='knockout'&&
         p.ties.some(tie=>tie.id===tieId));
-      const metric=score.dataset.postseasonScore?.split(':').at(-1);
-      const leg=metric==='first'?1:metric==='second'?2:metric==='final'?1:null;
-      const registered=phase?.ties.find(t=>t.id===tieId);
-      const id=authorized&&leg&&registered&&leg<=registered.legs
-        ?publishedLookup.bySlot[[phase.id,tieId,leg].join(':')]?.matchId:null;
-      const existing=cell.querySelector?.('.fa-bracket-leg-link');
-      if(!id){
-        existing?.remove();
-        cell.classList?.remove('is-match-link');
-        card.classList?.remove('is-single-match-link');
-        continue;
+      const tie=phase?.ties.find(t=>t.id===tieId);
+      const existing=Array.from(card.querySelectorAll('.fa-bracket-match-link'));
+      const expected=new Set();
+      if(authorized&&tie)for(let leg=1;leg<=tie.legs;leg++){
+        const match=publishedLookup.bySlot[[phase.id,tieId,leg].join(':')];
+        if(!match)continue;
+        expected.add(String(leg));
+        let anchor=existing.find(a=>a.dataset.faMatchLeg===String(leg));
+        if(!anchor){
+          anchor=document.createElement('a');anchor.className='fa-bracket-match-link';
+          anchor.dataset.faMatchLeg=String(leg);
+          card.append(anchor);
+        }
+        anchor.href='/matches/'+match.matchId;
+        anchor.setAttribute('aria-label',lang[0]+': '+(tie.legs===1?lang[3]:lang[leg]));
+        anchor.setAttribute('title',tie.legs===1?lang[3]:lang[leg]);
       }
-      let anchor=existing;
-      if(!anchor){
-        anchor=document.createElement('a');
-        anchor.className='fa-bracket-leg-link';
-        cell.append(anchor);
+      for(const link of existing)if(!expected.has(link.dataset.faMatchLeg))link.remove();
+      if(expected.size){
+        card.classList.add('is-match-link');
+        card.dataset.faMatchLegs=String(tie.legs);
+      }else{
+        card.classList.remove('is-match-link');
+        delete card.dataset.faMatchLegs;
       }
-      anchor.href='/matches/'+id;
-      anchor.setAttribute('aria-label',lang[0]+': '+(leg===1&&registered.legs===1?lang[3]:lang[leg]));
-      cell.classList?.add('is-match-link');
-      if(registered.legs===1)card.classList?.add('is-single-match-link');
     }
   }
   // The bracket is recreated when season rules change. Defer sync until the
