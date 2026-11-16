@@ -38,7 +38,7 @@ export function auditMovingBallMultiPairMatrix(RAPIER,{
   const motion=byMotion.get(velocityId);
   for(const side of ['home','away'])for(const mode of ['feedback','observe']){
    const audit=auditNaturalNativeFeedback(RAPIER,{
-    stateId,side,mode,ticks,initialBallVelocity:motion
+    stateId,side,mode,ticks,initialBallVelocity:{vx:motion.vx,vy:motion.vy}
    });
    rows.push(freeze({...audit,velocityId}));
   }
