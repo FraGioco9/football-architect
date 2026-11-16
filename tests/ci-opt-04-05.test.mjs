@@ -108,6 +108,9 @@ test('gate executes its tested observer inline, without evaluating candidate cod
  const observer=readFileSync('tools/ci-full-evidence.cjs','utf8').split('\n').filter(l=>!l.startsWith('module.exports=')).join('\n').trim();
  const embedded=source.split('          script: |\n')[1].split('\n').map(l=>l.startsWith('            ')?l.slice(12):l).join('\n');
  assert.ok(embedded.startsWith(observer));assert.doesNotMatch(source,/actions\/checkout|require\(/);
+ assert.match(embedded,/try \\{/);
+ assert.match(embedded,/await verify\\(\\{github,core,context,prNumber:Number\\(process\\.env\\.PR_NUMBER\\),expected:process\\.env\\.EXPECTED_HEAD\\}\\)/);
+ assert.match(embedded,/catch\\(error\\) \\{\\s*core\\.setFailed\\(error\\.message\\)/);
 });
 
 test('ownership labels cannot hide executable tests in manual or helper lanes',async()=>{

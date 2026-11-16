@@ -125,3 +125,9 @@ jobs:
              }
              return null;
             }
+            // MISSING / PENDING must remain blocked; never claim PASS without running verify().
+            try {
+              await verify({github,core,context,prNumber:Number(process.env.PR_NUMBER),expected:process.env.EXPECTED_HEAD});
+            } catch(error) {
+              core.setFailed(error.message);
+            }
