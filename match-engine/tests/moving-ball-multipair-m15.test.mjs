@@ -34,7 +34,10 @@ test('M15 fixed 22-player native movement: rolling ball paired with observe-only
   assert.ok(blocked.violations.every(x=>x.id.startsWith('home-')||
    x.id.startsWith('away-')));
  }
- assert.ok(a.completeFeedbackControlPairs<=8);
+ assert.equal(a.completeFeedbackControlPairs,16,
+  'M16 should now complete all original 4 × 2 × 2 feedback/control pairs');
+ assert.equal(a.blockedRuns,0,
+  'Genuine M15 shoe/body incompatibilities are now bounded, not bypassed');
  assert.equal(a.controlsCanonicalResponses,0);
  assert.equal(a.allPlayersOriginal,true);
  assert.equal(a.matchAuthority,false);
