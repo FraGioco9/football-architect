@@ -377,6 +377,7 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   shotLaneLabel.hidden=select.value!=='shot';
   controlSceneLabel.hidden=select.value!=='control';
   challengeSceneLabel.hidden=select.value!=='challenge';
+  by('action-labs-title').textContent=select.selectedOptions[0].textContent.trim();
   session=createControlledActionLab(getRapier(),select.value,{
    shotSide:select.value==='shot'?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',

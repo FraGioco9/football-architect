@@ -100,9 +100,15 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   await send('Page.enable');
   await send('Runtime.enable');
   await send('Page.navigate',{
-   url:'http://app.localhost:2000/dev/match-engine#actions'
+   url:'http://app.localhost:2000/dev/match-engine'
   });
-  await wait("document.querySelector('#action-labs-dialog')?.open===true");
+  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===39");
+  const openedFromScenario=await evalJs("(()=>{"+
+   "document.getElementById('preset-trigger').click();"+
+   "document.querySelector('#preset-options [data-value=\"action:pass\"]').click();"+
+   "return {open:document.getElementById('action-labs-dialog').open,"+
+   "title:document.getElementById('action-labs-title').textContent};})()");
+  assert.deepEqual(openedFromScenario,{open:true,title:'LAB-14 · Pass'});
   await wait("document.querySelector('#action-labs-status')?.textContent?.startsWith('Ready')");
   // Actual requestAnimationFrame transport, not a mock clock or forged ticks.
   const ready=await evalJs("(()=>{const play=document.getElementById('action-labs-play');"+
@@ -350,49 +356,61 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");
   assert.equal(close,true);
-  // M21: a SINGLE primary chooser must expose every previously separate
-  // ball, Action LAB and Movement LAB situation without losing real source.
-  const nav=await evalJs("(()=>{const p=document.getElementById('lab-all-situations');"+
-   "return {size:p.options.length,groups:[...p.querySelectorAll('optgroup')].map(x=>x.label),"+
-   "disabled:p.disabled,placeholder:p.options[0].textContent};})()");
-  assert.equal(nav.size,40);
-  assert.equal(nav.groups.length,3);
-  assert.equal(nav.disabled,false);
-  assert.equal(nav.placeholder,'All situations (39)');
-  const ballNav=await evalJs("(()=>{const p=document.getElementById('lab-all-situations');"+
-   "p.value='ball:roll';p.dispatchEvent(new Event('change',{bubbles:true}));"+
-   "return {selected:document.getElementById('preset').value,"+
-   "label:document.getElementById('preset-value').textContent,reset:p.value};})()");
+  // One visible original Scenario dropdown for all 39 scenes.
+  // Action/Movement selectors and launch buttons remain internal only.
+  const nav=await evalJs("(()=>{const menu=document.getElementById('preset-options');"+
+   "const trigger=document.getElementById('preset-trigger');"+
+   "return {items:menu.querySelectorAll('[role=option][data-value]').length,"+
+   "groups:[...menu.querySelectorAll('.me-scenario-group-label')].map(x=>x.textContent),"+
+   "hiddenLaunches:['action-labs-open','movement-labs-open'].every(id=>"+
+    "getComputedStyle(document.getElementById(id)).display==='none'),"+
+   "hiddenChoices:['action-labs-choice','movement-labs-choice'].every(id=>"+
+    "getComputedStyle(document.getElementById(id)).display==='none'),"+
+   "unique:document.querySelectorAll('[data-me-dropdown=preset]').length===1,"+
+   "noSecondSelector:document.getElementById('lab-all-situations')===null,"+
+   "current:trigger.textContent.trim()};})()");
+  assert.equal(nav.items,39);
+  assert.deepEqual(nav.groups,['Ball physics','Actions','Movement and contacts']);
+  for(const key of ['hiddenLaunches','hiddenChoices','unique','noSecondSelector'])
+   assert.equal(nav[key],true,key);
+  const ballNav=await evalJs("(()=>{const t=document.getElementById('preset-trigger');"+
+   "t.click();document.getElementById('preset-opt-roll').click();"+
+   "return {preset:document.getElementById('preset').value,"+
+   "selected:document.getElementById('preset-value').textContent};})()");
   assert.deepEqual(ballNav,{
-   selected:'roll',label:'LAB-04 · Ball Roll (Grass)',reset:''
+   preset:'roll',selected:'LAB-04 · Ball Roll (Grass)'
   });
-  await evalJs("(()=>{const p=document.getElementById('lab-all-situations');"+
-   "p.value='ball:drop';p.dispatchEvent(new Event('change',{bubbles:true}));})()");
-  const actionNav=await evalJs("(()=>{const p=document.getElementById('lab-all-situations');"+
-   "p.value='action:shot';p.dispatchEvent(new Event('change',{bubbles:true}));"+
+  await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
+   "document.getElementById('preset-opt-drop').click();})()");
+  const actionNav=await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
+   "document.querySelector('#preset-options [data-value=\"action:shot\"]').click();"+
    "return {open:document.getElementById('action-labs-dialog').open,"+
-   "choice:document.getElementById('action-labs-choice').value};})()");
-  assert.deepEqual(actionNav,{open:true,choice:'shot'});
+   "choice:document.getElementById('action-labs-choice').value,"+
+   "title:document.getElementById('action-labs-title').textContent};})()");
+  assert.deepEqual(actionNav,{open:true,choice:'shot',title:'LAB-15 · Shot'});
   await evalJs("document.getElementById('action-labs-close').click()");
-  const movementNav=await evalJs("(()=>{const p=document.getElementById('lab-all-situations');"+
-   "p.value='movement:secondary-pressure';"+
-   "p.dispatchEvent(new Event('change',{bubbles:true}));"+
+  await wait("document.getElementById('preset-value').textContent==='LAB-01 · Ball Drop'");
+  const movementNav=await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
+   "document.querySelector('#preset-options [data-value=\"movement:secondary-pressure\"]').click();"+
    "document.getElementById('movement-labs-step').click();"+
    "return {open:document.getElementById('movement-labs-dialog').open,"+
    "choice:document.getElementById('movement-labs-choice').value,"+
+   "title:document.getElementById('movement-labs-title').textContent,"+
    "readout:document.getElementById('movement-labs-readout').textContent};})()");
   assert.equal(movementNav.open,true);
   assert.equal(movementNav.choice,'secondary-pressure');
+  assert.equal(movementNav.title,'M-29 · Second defender ON · live');
   assert.match(movementNav.readout,/^Tick 1 .*real 22-player Rapier/);
   await evalJs("document.getElementById('movement-labs-close').click()");
-  process.stdout.write('ME21_ALL_SITUATIONS_NAV '+JSON.stringify({
-   ...nav,ball:ballNav,action:actionNav,movement:movementNav
-  })+'\\n');
+  await wait("document.getElementById('preset-value').textContent==='LAB-01 · Ball Drop'");
+  process.stdout.write('ME22_SINGLE_ORIGINAL_SCENARIO_NAV '+
+   JSON.stringify({nav,ball:ballNav,action:actionNav,movement:movementNav})+'\\n');
   // #628 M2: actual desktop movement dialog on the same DEV page.
   // It has no Rapier shoe colliders; do not confuse measured motion with
   // the five real shoe-contact Action LABs above.
   const movementOpened=await evalJs("(()=>{"+
-   "document.getElementById('movement-labs-open').click();"+
+   "document.getElementById('preset-trigger').click();"+
+   "document.querySelector('#preset-options [data-value=\"movement:approach\"]').click();"+
    "return document.getElementById('movement-labs-dialog').open;})()");
   assert.equal(movementOpened,true);
   await wait("document.getElementById('movement-labs-readout').textContent.startsWith('Tick 0')");

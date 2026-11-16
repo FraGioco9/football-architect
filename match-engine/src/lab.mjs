@@ -18,7 +18,7 @@ import {prepareFlightPlaybackPair,sampleFlightPlaybackPair,flightPlaybackWallTim
 const byId = id => document.getElementById(id);
 const pitch = byId('pitch'), elevation = byId('elevation');
 const fields = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
-const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open', 'lab-all-situations'];
+const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open'];
 let rapier, engine, history = [], playing = false, lastFrame = 0, accumulator = 0;
 let physicsTickSnapshot = null;
 let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
@@ -1536,7 +1536,11 @@ function setupDropdowns() {
     const value = trigger.querySelector('span');
     const options = [...menu.querySelectorAll('[role="option"][data-value]')];
     if (!input || !trigger || !menu || !value || !options.length) throw new Error('Malformed lab dropdown');
-    function selectedIndex() { return Math.max(0, options.findIndex(option => option.dataset.value === input.value)); }
+    function selectedIndex(){
+      const key=root.dataset.meDropdown==='preset'&&root.dataset.selectedScene?
+        root.dataset.selectedScene:input.value;
+      return Math.max(0,options.findIndex(option=>option.dataset.value===key));
+    }
     function update() {
       const selected = options[selectedIndex()];
       value.textContent = selected.textContent;
@@ -1563,12 +1567,22 @@ function setupDropdowns() {
       focusOption(index);
     }
     function choose(option) {
-      if (!options.includes(option)) return;
-      const changed = input.value !== option.dataset.value;
-      input.value = option.dataset.value;
-      update();
-      close(true);
-      if (changed) input.dispatchEvent(new Event('change', {bubbles: true}));
+      if(!options.includes(option))return;
+      const chosen=option.dataset.value;
+      if(root.dataset.meDropdown==='preset'&&
+         /^(action|movement):/.test(chosen)){
+        // Keep physical ball preset intact when a selected scenario opens
+        // the correct original Action/Movement runner.
+        root.dataset.selectedScene=chosen;
+        update();close(true);
+        launchSelectedScenario(chosen);
+        return;
+      }
+      if(root.dataset.meDropdown==='preset')delete root.dataset.selectedScene;
+      const changed=input.value!==chosen;
+      input.value=chosen;
+      update();close(true);
+      if(changed)input.dispatchEvent(new Event('change',{bubbles:true}));
     }
     trigger.addEventListener('click', () => {
       if (menu.hidden) open();
@@ -1609,6 +1623,10 @@ function setupDropdowns() {
     document.addEventListener('pointerdown', event => {
       if (!root.contains(event.target)) close();
     });
+    if(root.dataset.meDropdown==='preset')
+      root.addEventListener('lab:restore-ball-scenario',()=>{
+        delete root.dataset.selectedScene;update();
+      });
     update();
     dropdowns.push({close});
   }
@@ -1656,76 +1674,68 @@ byId('reset').addEventListener('click', () => { try { restart(); } catch (e) { s
 byId('apply').addEventListener('click', () => { try { restart(); } catch (e) { say(e.message, true); } });
 byId('compare').addEventListener('click', compareReplay);
 byId('measure').addEventListener('click', measurePhysics);
+// The ORIGINAL Scenario dropdown presents the three real source catalogs.
+// The two internal modal selects remain invisible; no second launcher.
+function setupUnifiedScenarioMenu(){
+ const menu=byId('preset-options');
+ let count=menu.querySelectorAll('[role="option"][data-value]').length;
+ if(count!==4)throw new Error('Original four ball presets missing');
+ for(const [group,kind,select] of [
+   ['Actions','action',byId('action-labs-choice')],
+   ['Movement and contacts','movement',byId('movement-labs-choice')]
+ ]){
+  const heading=document.createElement('div');
+  heading.className='me-scenario-group-label';
+  heading.setAttribute('role','presentation');
+  heading.textContent=group;
+  menu.append(heading);
+  for(const entry of select.options){
+   const option=document.createElement('div');
+   option.className='language-option';
+   option.setAttribute('role','option');
+   option.tabIndex=-1;
+   option.dataset.value=kind+':'+entry.value;
+   option.setAttribute('aria-selected','false');
+   option.textContent=entry.textContent;
+   menu.append(option);
+   count++;
+  }
+ }
+ if(count!==39||menu.querySelectorAll('.me-scenario-group-label').length!==3)
+  throw new Error('Scenario must show all 4+5+30 existing situations');
+}
+function restoreOriginalScenario(){
+ document.querySelector('[data-me-dropdown="preset"]')
+  .dispatchEvent(new Event('lab:restore-ball-scenario'));
+}
+function launchSelectedScenario(value){
+ if(!rapier){
+  restoreOriginalScenario();say('Physics is still loading',true);return;
+ }
+ const colon=value.indexOf(':'),kind=value.slice(0,colon),
+  id=value.slice(colon+1);
+ if(!['action','movement'].includes(kind)||!id)
+  throw new RangeError('Invalid Scenario kind');
+ const prefix=kind==='action'?'action-labs':'movement-labs';
+ const choice=byId(prefix+'-choice');
+ if(![...choice.options].some(x=>x.value===id))
+  throw new RangeError('Unknown source LAB scenario');
+ choice.value=id;
+ choice.dispatchEvent(new Event('change',{bubbles:true}));
+ byId(prefix+'-open').click();
+}
+setupUnifiedScenarioMenu();
 setupDropdowns();
 setupNumericFields();
-// One chooser for ALL currently implemented situations: 4 ball,
- // 5 action and 30 movement. Source entries are read from the exact
- // existing independent menus; no duplicate scenario catalog/authorities.
-function setupAllSituations(){
- const picker=byId('lab-all-situations');
- const collections=[
-  {group:'Ball physics',kind:'ball',entries:[
-   ...document.querySelectorAll('#preset-options [role="option"][data-value]')
-  ].map(x=>({id:x.dataset.value,label:x.textContent.trim()}))},
-  {group:'Actions',kind:'action',entries:[
-   ...byId('action-labs-choice').options
-  ].map(x=>({id:x.value,label:x.textContent.trim()}))},
-  {group:'Movement and physical contacts',kind:'movement',entries:[
-   ...byId('movement-labs-choice').options
-  ].map(x=>({id:x.value,label:x.textContent.trim()}))}
- ];
- let count=0;
- for(const collection of collections){
-  const group=document.createElement('optgroup');
-  group.label=collection.group;
-  for(const entry of collection.entries){
-   const option=document.createElement('option');
-   option.value=collection.kind+':'+entry.id;
-   option.textContent=entry.label;
-   group.append(option);count++;
-  }
-  picker.append(group);
- }
- if(count!==39||picker.querySelectorAll('optgroup').length!==3)
-  throw new Error('All LAB situations must include 4+5+30 real scenes');
- picker.options[0].textContent='All situations ('+count+')';
- picker.addEventListener('change',()=>{
-  const value=picker.value;
-  picker.value='';
-  if(!rapier||!value)return;
-  const colon=value.indexOf(':'),kind=value.slice(0,colon),
-   id=value.slice(colon+1);
-  if(kind==='ball'){
-   const option=document.querySelector(
-    '#preset-options [data-value="'+id+'"]');
-   if(!option)throw new Error('Unknown canonical ball scenario');
-   byId('preset').value=id;
-   byId('preset-value').textContent=option.textContent.trim();
-   for(const item of document.querySelectorAll('#preset-options [role="option"]'))
-    item.setAttribute('aria-selected',String(item===option));
-   byId('preset').dispatchEvent(new Event('change',{bubbles:true}));
-  }else if(kind==='action'||kind==='movement'){
-   const prefix=kind==='action'?'action-labs':'movement-labs';
-   const choice=byId(prefix+'-choice');
-   if(![...choice.options].some(x=>x.value===id))
-    throw new Error('Unknown canonical '+kind+' scenario');
-   choice.value=id;
-   choice.dispatchEvent(new Event('change',{bubbles:true}));
-   byId(prefix+'-open').click();
-  }else throw new Error('Unknown LAB scenario group');
- });
-}
-
-setupAllSituations();
 mountControlledActionLabs({
  getRapier:()=>rapier,
  onOpen:()=>{playing=false;if(engine){engine.dispose();engine=null;}},
- onClose:()=>{if(rapier)try{restart();}catch(e){say(e.message,true);}}
+ onClose:()=>{restoreOriginalScenario();if(rapier)try{restart();}catch(e){say(e.message,true);}}
 });
 mountControlledMovementLabs({
  getRapier:()=>rapier,
  onOpen:()=>{playing=false;if(engine){engine.dispose();engine=null;}},
- onClose:()=>{if(rapier)try{restart();}catch(e){say(e.message,true);}}
+ onClose:()=>{restoreOriginalScenario();if(rapier)try{restart();}catch(e){say(e.message,true);}}
 });
 loadPreset();
 topDown(); // Show the complete static pitch while the WASM physics module loads.

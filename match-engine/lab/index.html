@@ -36,14 +36,6 @@
           <div class="me-page-heading">
             <div>
               <h1 class="app-page-title" id="lab-title">Match Engine</h1>
-              <p class="me-subtitle">3D physics · 2D visual tests</p>
-            </div>
-            <div class="me-lab-launches">
-              <select id="lab-all-situations" class="me-inspect-select" aria-label="All LAB situations" disabled>
-                <option value="">All situations</option>
-              </select>
-              <button id="action-labs-open" class="me-button" type="button" disabled>Action LABs</button>
-              <button id="movement-labs-open" class="me-button" type="button" disabled>Movement LABs</button>
             </div>
           </div>
           <p id="status" class="me-status" role="status" aria-live="polite">Loading physics…</p>
@@ -59,6 +51,7 @@
                       <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                     <div class="language-menu" id="preset-options" role="listbox" aria-labelledby="preset-label" hidden>
+                      <div class="me-scenario-group-label" role="presentation">Ball physics</div>
                       <div class="language-option" role="option" tabindex="-1" id="preset-opt-drop" data-value="drop" aria-selected="true">LAB-01 · Ball Drop</div>
                       <div class="language-option" role="option" tabindex="-1" id="preset-opt-launch" data-value="launch" aria-selected="false">LAB-02 · Ball Launch</div>
                       <div class="language-option" role="option" tabindex="-1" id="preset-opt-roll" data-value="roll" aria-selected="false">LAB-04 · Ball Roll (Grass)</div>
@@ -539,6 +532,7 @@
   </section>
   <p class="me-hint">Observations only: 430 g · 0.62 restitution · grass deceleration 0.8 m/s². No default/gameplay physics parameters are changed.</p>
 </dialog>
+<button id="action-labs-open" class="me-lab-internal-launch" type="button" hidden disabled aria-hidden="true" tabindex="-1">Open action</button>
 <dialog id="action-labs-dialog" class="me-metrics-dialog me-action-labs-dialog" aria-labelledby="action-labs-title">
   <div class="me-action-labs-header">
     <div>
@@ -548,8 +542,8 @@
     <button id="action-labs-close" type="button" class="me-button">Close</button>
   </div>
   <div class="me-action-labs-toolbar">
-    <label for="action-labs-choice">Action</label>
-    <select id="action-labs-choice" class="me-inspect-select">
+    <label for="action-labs-choice" hidden>Action</label>
+    <select id="action-labs-choice" class="me-inspect-select me-lab-internal-choice" hidden tabindex="-1">
       <option value="pass">LAB-14 · Pass</option>
       <option value="shot">LAB-15 · Shot</option>
       <option value="challenge">LAB-16 · Physical challenge</option>
@@ -595,6 +589,7 @@
   <p id="action-labs-readout" class="me-action-labs-readout" aria-live="off">Tick 0</p>
   <p class="me-hint">Shown markers are a compact view of actors from the canonical 22-player physics. A contact is not automatically a successful tackle, pass completion, dribble, possession or goal.</p>
 </dialog>
+<button id="movement-labs-open" class="me-lab-internal-launch" type="button" hidden disabled aria-hidden="true" tabindex="-1">Open movement</button>
 <dialog id="movement-labs-dialog" class="me-metrics-dialog me-action-labs-dialog" aria-labelledby="movement-labs-title">
   <div class="me-action-labs-header">
     <div>
@@ -604,8 +599,8 @@
     <button id="movement-labs-close" type="button" class="me-button">Close</button>
   </div>
   <div class="me-action-labs-toolbar">
-    <label for="movement-labs-choice">Movement</label>
-    <select id="movement-labs-choice" class="me-inspect-select">
+    <label for="movement-labs-choice" hidden>Movement</label>
+    <select id="movement-labs-choice" class="me-inspect-select me-lab-internal-choice" hidden tabindex="-1">
       <option value="approach">M-01 · Approach</option>
       <option value="brake">M-02 · Brake</option>
       <option value="turn">M-03 · Turn</option>

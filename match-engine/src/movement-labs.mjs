@@ -687,6 +687,7 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
   stop();session?.dispose();
   if(choice.value==='opponent-contact')side.value='home';
   side.disabled=choice.value==='opponent-contact';
+  by('movement-labs-title').textContent=choice.selectedOptions[0].textContent.trim();
   session=createControlledMovementLab(getRapier(),choice.value,{
    side:side.value});
   description.textContent=session.scene.spec.description;

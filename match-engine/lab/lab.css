@@ -15,7 +15,9 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-dropdown{min-width:0;width:100%;z-index:auto}
 .me-dropdown:has(.language-menu:not([hidden])){z-index:35}
 .me-dropdown .language-trigger{min-width:0;width:100%;min-height:36px;font-size:12px;font-weight:650}
-.me-dropdown .language-menu{inset-inline-start:0;inset-inline-end:auto;width:100%;min-width:100%;max-height:min(250px,40svh)}
+.me-dropdown .language-menu{inset-inline-start:0;inset-inline-end:auto;width:100%;min-width:100%;max-height:min(320px,55svh);overflow-y:auto}
+.me-scenario-group-label{padding:9px 12px 5px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.04em;user-select:none;pointer-events:none}
+.me-lab-internal-launch[hidden],.me-lab-internal-choice[hidden]{display:none!important}
 .me-dropdown .language-option{font-size:12px;font-weight:650;min-height:38px}
 .me-dropdown .language-option:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .me-button-group{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
@@ -178,10 +180,4 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-action-labs-readout{margin:0 0 8px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 @media(max-width:600px){.me-action-labs-dialog{padding:11px}.me-action-labs-toolbar>select{flex:1 1 100%}.me-action-labs-buttons{margin-left:0}.me-action-labs-buttons>.me-button{min-width:55px}}
 
-/* Action LAB launch stays inside the existing heading height; never wrap the 60Hz controls. */
-.me-page-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.me-lab-launches{display:flex;align-items:center;gap:6px;flex:none}
-.me-lab-launches>.me-button{min-height:32px;padding:5px 9px}
-.me-lab-launches>#lab-all-situations{width:172px;max-width:172px;min-height:32px;padding:5px 9px;font-size:12px}
-@media(max-width:950px){.me-page-heading{flex-wrap:wrap}.me-lab-launches{flex-wrap:wrap;justify-content:flex-start}}
-@media(max-width:570px){.me-lab-launches{flex-wrap:wrap;justify-content:flex-end}}
+.me-page-heading{display:block}
