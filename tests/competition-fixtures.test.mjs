@@ -94,7 +94,7 @@ function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null
  if(source){window.faWorldState={get:()=>liveSource,subscribe(fn){sourceListeners.push(fn);return ()=>{const i=sourceListeners.indexOf(fn);if(i>=0)sourceListeners.splice(i,1);}},emit(){for(const fn of [...sourceListeners])fn(liveSource)}};window.faCompetitionContext.selectedSeason=1;}
  const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>id==='app-postseason-bracket'?bracket:fields.get(id),createElement:tag=>node(tag)};
  runInNewContext(read('assets/competition-tabs.js'),{window,document});
- runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,fetch:fetchImpl,Event:class{constructor(type){this.type=type}},MutationObserver:class{observe(){}}});
+ runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,AbortController,fetch:fetchImpl,Event:class{constructor(type){this.type=type}},MutationObserver:class{observe(){}}});
  return {view:window.faFixtures,fields,route,choices,window,events,emitted,document,
   publishSource(next){liveSource=next;for(const callback of [...sourceListeners])callback(next);}};
 }
@@ -1072,4 +1072,55 @@ test('#605 result links: Standings and Fixtures share one exact-world collection
  assert.equal(r.window.faCompetitionMatchLinks.forFixture(fixture,1),first.matchId);
  r.publishSource({...source,source:'dev'});
  assert.equal(r.window.faCompetitionMatchLinks.forFixture(fixture,1),null,'DEV cannot reuse public match IDs');
+});
+
+test('#605 Safari BFCache Back: retired fetch cannot suppress restored match links',async()=>{
+ const division=divisions.find(d=>d.id==='IT-1');
+ const source={source:'authoritative',worldStatus:'ready',
+  world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:18,seasonNumber:1,day:19,phase:'active'}};
+ const published=createPreviewStandings(division,30).fixtures.map((game,i)=>({
+  matchId:String(i+1),sourceFixtureId:'season:1:IT-1:N'+String(game.round).padStart(2,'0')+
+   ':IT-'+game.homeId+':IT-'+game.awayId,phaseId:'league',round:game.round,
+  day:12+game.round,marker:'N'+String(game.round).padStart(2,'0'),
+  homeClubId:'IT-'+game.homeId,awayClubId:'IT-'+game.awayId
+ }));
+ const payload={ok:true,status:200,json:async()=>({schemaVersion:1,providerId:'authoritative-world',
+  status:'published',season:1,competitionId:'IT-1',
+  provenance:{kind:'authoritative'},fixtures:published})};
+ const requests=[];
+ const r=setup(division,routeRegistry,{source,initialView:'fixtures',
+  fetchImpl:(_url,{signal}={})=>new Promise(resolve=>requests.push({signal,resolve}))});
+ assert.equal(requests.length,1,'initial published list is in flight');
+ // Safari can freeze the page while the published-match request is unresolved.
+ r.events.pagehide({persisted:true});
+ assert.equal(requests[0].signal.aborted,true,'pagehide cancels the suspended request');
+ r.events.pageshow({persisted:true});
+ assert.equal(requests.length,2,'restore retries only the unfinished official lookup');
+ requests[0].resolve(payload); // Simulate an old transport ignoring abort.
+ await new Promise(resolve=>setImmediate(resolve));
+ const fixture=published[0];
+ const reference={phaseId:'league',sourceFixtureId:fixture.sourceFixtureId,
+  round:fixture.round,day:fixture.day,marker:fixture.marker};
+ assert.equal(r.window.faCompetitionMatchLinks.forFixture(reference,1),null,
+  'the obsolete response must not create a link while the restored read is pending');
+ r.route.set({view:'standings'});
+ assert.equal(requests.length,2,'old request completion cannot clear the new pending-key guard');
+ requests[1].resolve(payload);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(r.window.faCompetitionMatchLinks.forFixture(reference,1),fixture.matchId,
+  'restored Standings uses the newly verified match ID');
+ r.route.set({view:'fixtures'});
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ assert.equal(r.fields.get('app-fixtures-list').children.flatMap(visit)
+  .filter(n=>n.className==='app-fixture-score-link').length,8,
+  'Fixtures links become clickable again after Safari Back');
+ r.events.pagehide({persisted:true});
+ r.events.pageshow({persisted:true});
+ assert.equal(requests.length,2,'a completed same-world lookup is reused on subsequent Back');
+ assert.equal(r.window.faCompetitionMatchLinks.forFixture(reference,1),fixture.matchId);
+ const page=read('assets/competition-page.js');
+ assert.match(page,/lifecycleEpoch\+\+;pendingLoads=0;loader\.cancel\(\)/,
+  'restored documents must not inherit an abandoned API loading token');
+ assert.match(page,/window\.faStandingsLoading\?\.set\('api',false\)/,
+  'pagehide releases the loading guard while the document is frozen');
 });
