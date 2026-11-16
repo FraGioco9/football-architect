@@ -350,6 +350,7 @@
     "backend/tests/public-sporting-lineup-runtime.test.ts": "backend-runtime",
     "backend/tests/public-sporting-lineup-integration-runtime.test.ts": "backend-runtime",
     "backend/tests/lineup-day13-e2e-runtime.test.ts": "backend-runtime",
-    "backend/tests/lineup-archive-v2-runtime.test.ts": "backend-runtime"
+    "backend/tests/lineup-archive-v2-runtime.test.ts": "backend-runtime",
+    "backend/tests/lineup-season56-e2e-runtime.test.ts": "backend-runtime"
   }
 }

@@ -1,0 +1,156 @@
+/** #613 FULL 56-day V2 authority on isolated local Worker D1.
+ * Deliberately a single immutable-fixture test. Never reset the user's world.
+ * Runs the real protected day writer, archive and close, with no legacy score.
+ */
+import {beforeAll,it,expect} from 'vitest';
+import {env} from 'cloudflare:workers';
+import {applyD1Migrations} from 'cloudflare:test';
+import {clearTestWorld} from './fixtures/test-world.ts';
+import {seedUnifiedOperator} from './fixtures/unified-operator.ts';
+import {prepareSeason} from '../src/commands.ts';
+import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
+import {advanceAdministrativeClockLineupV1} from '../src/admin-calendar-clock-lineup-v1.ts';
+import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
+import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
+import {executeInternationalDraw} from '../src/admin-international-draw.ts';
+import {publishInternationalCalendarLineupV1} from '../src/admin-calendar-publish-lineup-v1.ts';
+import {executeLineupLifecycleV1} from '../src/lineup-lifecycle-command.ts';
+import {archiveSeasonLineupV1} from '../src/season-archive-command-lineup-v1.ts';
+import {closeSeasonLineupV1} from '../src/season-close-command-lineup-v1.ts';
+import {verifyLineupSeasonArchiveV1} from '../src/lineup-season-archive-proof.ts';
+import {readClosedSeasonHistory} from '../src/season-archive-read.ts';
+import {readPublicSportingSeasonLineupV1} from '../src/public-sporting-read-lineup-v1.ts';
+import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
+import {readWorld} from '../src/world-repository.ts';
+import type {AdminSession} from '../src/auth.ts';
+
+const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
+type World=Awaited<ReturnType<typeof readWorld>>;
+const count=async(table:string):Promise<number>=>{
+ const row=await db.prepare('SELECT COUNT(*) AS n FROM '+table).first() as {n:number}|null;
+ if(!row)throw Error('Missing '+table);
+ return row.n;
+};
+beforeAll(async()=>applyD1Migrations(db,bindings.TEST_MIGRATIONS));
+
+it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives and closes with atomic rollback',async()=>{
+ await clearTestWorld(db);
+ const session:AdminSession=(await seedUnifiedOperator(
+  db,'lineup-fullseason-qa','lineup-fullseason@example.invalid',now,'8'.repeat(64)
+ )).session;
+ let world:World=await readWorld(db);
+ const command=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
+ const advance=async(next:Promise<{world:World}>)=>{world=(await next).world;};
+
+ await advance(prepareSeason(db,session,command(),'lineup-season-prepare-0001',
+  await loadApprovedSnapshot(),now));
+ await advance(initializeAdministrativeEvents(db,session,command(),
+  'lineup-season-events-0001',now));
+ await advance(advanceAdministrativeClockLineupV1(db,session,'start',command(),
+  'lineup-season-admin-start-0001',now));
+ for(const eventId of ['domestic:entrants','international:entrants']){
+  await advance(completeConfirmationEvent(db,session,{...command(),eventId},
+   'lineup-season-confirm-'+eventId,now));
+ }
+ await advance(advanceAdministrativeClockLineupV1(db,session,'advance',command(),
+  'lineup-season-admin-day2-0001',now));
+ await advance(stageDomesticCalendar(db,session,command(),
+  'lineup-season-domestic-0001',now));
+ await advance(advanceAdministrativeClockLineupV1(db,session,'advance',command(),
+  'lineup-season-admin-day3-0001',now));
+ await advance(executeInternationalDraw(db,session,command(),
+  'lineup-season-draw-0001',now));
+ await advance(publishInternationalCalendarLineupV1(db,session,command(),
+  'lineup-season-publish-0001',now));
+ expect(world.day).toBe(3);
+ expect(await count('season_lineup_day_outcomes')).toBe(3);
+ expect(await count('match_lineup_result_receipts')).toBe(0);
+
+ const milestones=await db.prepare(
+  "SELECT event_id,status,scheduled_day FROM season_admin_events WHERE scope='season' ORDER BY event_order"
+ ).all<{event_id:string;status:string;scheduled_day:number}>();
+ expect(milestones.results.map(e=>e.event_id)).toEqual([
+  'season:archive','season:close','season:next-prepare'
+ ]);
+ expect(milestones.results.every(e=>e.status==='scheduled'&&e.scheduled_day===56)).toBe(true);
+
+ for(let day=4;day<=56;day++){
+  const result=await executeLineupLifecycleV1(
+   db,session,'advance',command(),'lineup-season-sport-day-'+day+'-0001',now
+  );
+  world=result.world;
+  expect(world.day).toBe(day);
+  if([12,13,30,43,55,56].includes(day)){
+   const receiptCount=await count('match_lineup_result_receipts');
+   expect(receiptCount).toBeGreaterThanOrEqual(day===13?128:0);
+   expect(await count('season_lineup_day_outcomes')).toBe(day);
+  }
+ }
+ expect(world.phase).toBe('active');
+ expect(await count('season_lineup_day_outcomes')).toBe(56);
+ expect(await count('match_lineup_result_receipts')).toBe(4082);
+ expect(await count('season_knockout_ties')).toBe(54);
+ expect(await count('season_day_outcomes')).toBe(0);
+
+ const proof=await verifyLineupSeasonArchiveV1(db,world);
+ expect(proof.history.resultCount).toBe(4082);
+ expect(proof.history.progression.results.size).toBe(4082);
+ expect(proof.history.progression.ties.size).toBe(54);
+ expect(proof.summaryHash).toMatch(/^[a-f0-9]{64}$/);
+ const sourceSummary=JSON.parse(proof.summaryJson);
+ expect(sourceSummary.sourceSeason).toBe(1);
+ expect(sourceSummary.divisions).toHaveLength(16);
+ expect(sourceSummary.cupWinners).toHaveLength(2);
+ expect(sourceSummary.statisticsAvailability).toBe('frozen-player-receipts-v1');
+ expect(sourceSummary.playerStatistics).toEqual([]); // all clubs use team fallback
+
+ // Closing cannot skip the independent archive milestone.
+ await expect(closeSeasonLineupV1(db,session,command(),
+  'lineup-season-too-early-close-0001',now)).rejects.toMatchObject({status:409});
+ expect(await count('season_archives')).toBe(0);
+ const before=world,archiveCommand=command();
+ await db.prepare(
+  "CREATE TRIGGER fail_v2_archive_late BEFORE INSERT ON admin_operations WHEN NEW.command='archive-season-v2' BEGIN SELECT RAISE(ABORT,'archive fault'); END"
+ ).run();
+ try{
+  await expect(archiveSeasonLineupV1(db,session,archiveCommand,
+   'lineup-season-archive-0001',now)).rejects.toMatchObject({status:503});
+ }finally{await db.prepare('DROP TRIGGER fail_v2_archive_late').run()}
+ expect(await readWorld(db)).toEqual(before);
+ expect(await count('season_archives')).toBe(0);
+ expect(await count('season_archive_summaries')).toBe(0);
+
+ const archived=await archiveSeasonLineupV1(db,session,archiveCommand,
+  'lineup-season-archive-0001',now);
+ world=archived.world;
+ expect(world.day).toBe(56);
+ expect(world.phase).toBe('active');
+ expect(await archiveSeasonLineupV1(db,session,archiveCommand,
+  'lineup-season-archive-0001',now)).toEqual(archived);
+ expect(await count('season_archives')).toBe(1);
+ expect(await count('season_archive_summaries')).toBe(1);
+ await expect(readClosedSeasonHistory(db,1)).rejects.toMatchObject({status:409});
+ const archivedRow=await db.prepare(
+  'SELECT archive_hash,results_count,days_count,ties_count FROM season_archives WHERE season_number=1'
+ ).first<{archive_hash:string;results_count:number;days_count:number;ties_count:number}>();
+ expect(archivedRow).toMatchObject({
+  archive_hash:proof.archiveHash,results_count:4082,days_count:56,ties_count:54
+ });
+ const closeCommand=command();
+ const closed=await closeSeasonLineupV1(db,session,closeCommand,
+  'lineup-season-close-0001',now);
+ world=closed.world;
+ expect(world.phase).toBe('closed');
+ expect(world.day).toBe(56);
+ expect(await closeSeasonLineupV1(db,session,closeCommand,
+  'lineup-season-close-0001',now)).toEqual(closed);
+ const history=await readClosedSeasonHistory(db,1);
+ expect(history.archiveHash).toBe(proof.archiveHash);
+ expect(history.summary).toEqual(sourceSummary);
+ const sport=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
+ expect(sport.status).toBe('available');
+ expect(sport.data.fixtures.every((fixture:any)=>fixture.result!==null)).toBe(true);
+ expect(sport.data.statistics.matchesPlayed).toBe(240);
+ expect(await count('season_day_outcomes')).toBe(0);
+ expect(await count('match_lineup_result_receipts')).toBe(4082);
+},600000);
