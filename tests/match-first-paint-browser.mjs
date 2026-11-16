@@ -79,7 +79,7 @@ for(const [engine,driver] of Object.entries(engines)){
      const field=pitch.getBoundingClientRect();
      const frame=document.querySelector('.app-match-stage').getBoundingClientRect();
      const main=document.querySelector('.app-match-page').getBoundingClientRect();
-     const facts=panels.map(panel=>[...panel.querySelectorAll('.app-match-side-stats .app-match-side-fact')].map(n=>n.getBoundingClientRect()));
+     const facts=panels.map(panel=>[...panel.querySelectorAll('.app-match-side-stats .app-match-side-fact:not([hidden])')].map(n=>n.getBoundingClientRect()));
      return {panels:panels.length,positions:positions.map(p=>({left:p.left,right:p.right,top:p.top,width:p.width,height:p.height})),
       stage:{left:frame.left,right:frame.right,width:frame.width,height:frame.height},
       main:{left:main.left,right:main.right,width:main.width},
@@ -89,6 +89,7 @@ for(const [engine,driver] of Object.entries(engines)){
       field:{left:field.left,right:field.right,top:field.top,width:field.width},
       lineupCounts:panels.map(p=>p.querySelectorAll('.app-match-lineup-row').length),
       formCounts:panels.map(p=>p.querySelectorAll('.app-match-form-cell').length),
+      formsHidden:panels.every(p=>p.querySelector('[data-match-form-fact]').hidden&&p.querySelector('.app-match-side-stats').dataset.formVisible==='false'),
       blank:panels.every(p=>p.querySelector('.app-match-position').textContent.trim()==='–')};
     });
     assert.equal(stage.panels,2);
@@ -96,13 +97,14 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.ok(Math.abs(stage.stage.width-stage.main.width)<=1,JSON.stringify(stage));
     assert.deepEqual(stage.crestSlots,[1,1]);
     assert.deepEqual(stage.firstPaintNames,['','']);
-    for(const pair of stage.facts){
-     assert.equal(pair.length,2);
-     assert.ok(Math.abs(pair[0].top-pair[1].top)<=1,JSON.stringify(stage));
-     assert.ok(pair[0].right<=pair[1].left+1,JSON.stringify(stage));
+    for(let i=0;i<stage.facts.length;i++){
+     const pair=stage.facts[i];
+     assert.equal(pair.length,1);
+     assert.ok(Math.abs((pair[0].left+pair[0].right)/2-(stage.positions[i].left+stage.positions[i].right)/2)<=1,JSON.stringify(stage));
     }
     assert.deepEqual(stage.lineupCounts,[11,11]);
-    assert.deepEqual(stage.formCounts,[5,5]);
+    assert.deepEqual(stage.formCounts,[0,0]);
+    assert.equal(stage.formsHidden,true);
     assert.equal(stage.blank,true);
     if(device.width>1000){
      assert.ok(stage.positions[0].right<=stage.field.left&&stage.field.right<=stage.positions[1].left,JSON.stringify(stage));
@@ -285,7 +287,8 @@ for(const [engine,driver] of Object.entries(engines)){
       status:'partial',provenance:{kind:'authoritative'},
       data:{season:1,seasonState:{day:currentStatus==='completed'?20:14},
        standings:{rows:[{clubId:'IT-1',rank:3,played:5},{clubId:'IT-2',rank:5,played:5}]},
-       fixtures:leagueFixtures}
+       fixtures:currentStatus==='postponed'?leagueFixtures.filter(f=>f.id==='f1'||f.id==='f3'):
+        currentStatus==='cancelled'?[]:leagueFixtures}
      })
     }));
     for(const status of ['awaiting_participants','scheduled','in_progress','postponed','cancelled','completed']){
@@ -342,6 +345,18 @@ for(const [engine,driver] of Object.entries(engines)){
       await page.waitForFunction(()=>document.querySelector('[data-match-side-title="home"]')?.textContent==='Casa');
       assert.deepEqual(await page.locator('[data-match-form="home"] .app-match-form-cell').allTextContents(),['V','N','P','V','V']);
       await page.evaluate(()=>document.documentElement.lang='en');
+     }
+     if(status==='postponed'){
+      await page.waitForFunction(()=>document.querySelector('[data-match-form="home"]')?.children.length===2);
+      assert.deepEqual(await page.locator('[data-match-form="home"] .app-match-form-cell').evaluateAll(els=>els.map(el=>el.dataset.outcome)),['w','d']);
+      assert.equal(await page.locator('[data-match-form-fact="home"]').evaluate(el=>el.hidden),false);
+      assert.equal(await page.locator('[data-match-form-fact="away"]').evaluate(el=>el.hidden),true);
+      assert.equal(await page.locator('[data-match-form="away"] .app-match-form-cell').count(),0);
+     }
+     if(status==='cancelled'){
+      await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3');
+      assert.deepEqual(await page.locator('[data-match-form-fact]').evaluateAll(els=>els.map(el=>el.hidden)),[true,true]);
+      assert.equal(await page.locator('.app-match-form-cell').count(),0);
      }
      if(status==='completed'){
       await page.waitForFunction(()=>document.querySelector('[data-match-form="home"]')?.children[0]?.dataset.outcome==='w');

@@ -67,12 +67,14 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
    assert.ok(section.includes('data-match-side-title="'+side+'"></h2>'));
    assert.ok(section.includes('data-match-position="'+side+'">–</strong>'));
    assert.ok(section.includes('data-match-form="'+side+'"'));
+   assert.ok(section.includes('data-match-form-fact="'+side+'" hidden'));
    assert.ok(section.includes('data-match-lineup="'+side+'"'));
   }
   assert.equal((section.match(/class="app-match-team-identity"/g)||[]).length,2);
   assert.equal((section.match(/class="app-match-side-stats"/g)||[]).length,2);
   assert.equal((section.match(/class="app-match-lineup-row"/g)||[]).length,22);
-  assert.equal((section.match(/class="app-match-form-cell"/g)||[]).length,10);
+  assert.equal((section.match(/class="app-match-form-cell"/g)||[]).length,0);
+  assert.equal((section.match(/data-form-visible="false"/g)||[]).length,2);
   assert.doesNotMatch(section,/data-match-(?:day|time|clock)|\bMatchday\b|>Tempo<|>Giornata</);
   assert.ok(section.includes('viewBox="0 0 1050 680"'));
   assert.doesNotMatch(section,/app-match-context|data-match-card|data-match-emphasis|app-match-visual-title|data-match-visual-title/);
@@ -155,6 +157,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/officialState|data-match-status|data-match-extra/);
  assert.doesNotMatch(js,/renderContext|validLineup|knownStats|data-match-card|data-match-visual-title|data-match-emphasis/);
  assert.match(js,/pitch\.setAttribute\('aria-label',tr\.pitch\)/);
+ assert.match(js,/formFact\.hidden=facts\.form\.length===0/);
+ assert.match(js,/form\.replaceChildren\(\.\.\.facts\.form\.map/);
  for(const fragment of ["club?.primaryName||id||tr[side]","crest.dataset.clubCrest=id",
  "data-match-side-crest","renderSides(tr)"])assert.ok(js.includes(fragment),fragment);
  assert.doesNotMatch(js,/assets\/clubs\/.*crest\.svg/);

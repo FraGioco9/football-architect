@@ -391,3 +391,7 @@ including small screens, with their own labels above rank / five outcomes.
 The lineup continues below. No matchday, clock or other boxes were added.
 Browser and static QA check names, crest sources, responsive grid geometry,
 full-content-width alignment, and absence of shifted elements.
+
+## Home/Away form availability
+
+The form row contains only the latest five verified prior-day results in this competition, in chronological order. Without any available prior result, the label and row stay hidden (also on first paint and when the published snapshot is unavailable), with Position centred across the panel. If one to four official outcomes exist, only those one to four cells are rendered; five outcomes render five cells. Home and Away are treated independently, with no placeholder results or fabricated fixtures. This remains responsive at every breakpoint.

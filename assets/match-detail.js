@@ -141,20 +141,24 @@
    if(panel)panel.setAttribute('aria-label',tr[side]+' · '+(club?.primaryName||id||''));
    const facts=sideFacts(side);
    write('[data-match-position="'+side+'"]',facts.position??'–');
+   // Display only verified prior results (1–5); never render blank slots.
+   const formFact=find('[data-match-form-fact="'+side+'"]');
+   if(formFact){
+    formFact.hidden=facts.form.length===0;
+    const stats=formFact.closest('.app-match-side-stats');
+    if(stats)stats.dataset.formVisible=String(facts.form.length>0);
+   }
    const form=find('[data-match-form="'+side+'"]');
    if(form){
     form.setAttribute('aria-label',tr[side]+' · '+tr.form);
-    [...form.children].forEach((cell,i)=>{
-     const state=facts.form[i-(5-facts.form.length)];
-     cell.textContent=state?tr['form'+state.toUpperCase()]:'';
-     if(state){
-      cell.dataset.outcome=state;cell.setAttribute('aria-hidden','false');
-      cell.setAttribute('aria-label',tr['outcome'+state.toUpperCase()]);
-     }else{
-      delete cell.dataset.outcome;cell.setAttribute('aria-hidden','true');
-      cell.removeAttribute('aria-label');
-     }
-    });
+    form.replaceChildren(...facts.form.map(state=>{
+     const cell=document.createElement('span');
+     cell.className='app-match-form-cell';
+     cell.textContent=tr['form'+state.toUpperCase()];
+     cell.dataset.outcome=state;
+     cell.setAttribute('aria-label',tr['outcome'+state.toUpperCase()]);
+     return cell;
+    }));
    }
   }
  }
