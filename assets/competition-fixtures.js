@@ -547,6 +547,28 @@
     }catch{clubs=previous;rounds=null;postseason=[];currentMatchday=null;render();}
   }
 
+  // An officially published INT24 league draw already identifies all 24
+  // participants, even while the aggregate season projection is unpublished.
+  // Resolve only those exact club keys against the validated public catalogue;
+  // never generate entrants, results or team names from fixture positions.
+  async function publishedCupParticipants(games){
+    const manifest=await window.faCompetitionManifestPromise;
+    if(!model?.validManifest?.(manifest))throw Error('Missing verified cup catalogue');
+    const catalogue=new Map(manifest.divisions.flatMap(d=>d.clubs).map(club=>[rules.clubKey(club),club]));
+    const appearances=new Map();
+    for(const game of games){
+      if(!validRound(game.round)||typeof game.homeId!=='string'||typeof game.awayId!=='string'||
+         game.homeId===game.awayId)throw Error('Invalid published cup fixture');
+      for(const key of [game.homeId,game.awayId]){
+        if(!catalogue.has(key))throw Error('Unknown published cup participant');
+        appearances.set(key,(appearances.get(key)||0)+1);
+      }
+    }
+    if(appearances.size!==capacity||[...appearances.values()].some(n=>n!==roundCount))
+      throw Error('Incomplete published cup membership');
+    return [...appearances.keys()].map(key=>catalogue.get(key));
+  }
+
   /** Read only the officially committed draw, even before worldwide publication. */
   async function readPublishedFixtures(){
     const context=window.faCompetitionContext,source=window.faWorldState?.get?.();
@@ -603,16 +625,22 @@
           tieId:null,leg:null,neutral:false,homeGoals:null,awayGoals:null,kickoff:null,
           afterExtraTime:false,penalties:null};
       });
+      const scored=window.faCompetitionContext?.seasonData;
+      const hasOfficialScores=scored?.provenance?.kind==='authoritative'&&scored.season===season;
+      const participants=international&&!hasOfficialScores?await publishedCupParticipants(games):null;
+      // The catalogue read can outlive an admin advance, source toggle, or
+      // route change. Fence the commit AFTER every awaited dependency.
       const latest=window.faWorldState?.get?.();
-      if(seq!==fetchSequence||key!==[season,definition.id,latest?.world?.generation,latest?.world?.revision].join(':')||
-         navigation.get().season!==String(season))return;
-      const hasOfficialScores=window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative';
+      if(seq!==fetchSequence||latest?.source!=='authoritative'||latest.worldStatus!=='ready'||
+         key!==[season,definition.id,latest?.world?.generation,latest?.world?.revision].join(':')||
+         navigation.get().season!==String(season)||
+         window.faCompetitionContext?.selectedSeason!==season)return;
       // Keep real sporting results: never overwrite them with a zero-score draw.
       // Keep the league draw in the shared Fixtures store even when the
       // published collection was first requested from the Postseason tab.
       // Otherwise switching tabs sees the deduplicated key but no schedule.
       // Already scored official seasons are never overwritten.
-      const commit=hasOfficialScores?null:window.faFixtures.prepare(games,{currentMatchday:null,postseason:[],definition});
+      const commit=hasOfficialScores?null:window.faFixtures.prepare(games,{currentMatchday:null,postseason:[],definition,participants});
       publishedSeason=String(season);publishedKey=key;publishedIds=new Set(league.map(f=>f.matchId));
       publishedLookup=lookup;
       if(commit)commit();else render();
