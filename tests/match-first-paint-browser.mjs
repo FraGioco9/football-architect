@@ -14,7 +14,7 @@ const decorated=applyPublishedMatchFirstPaint(shell,match,'123');
 assert.ok(decorated.includes('data-fa-match-first-paint'));
 assert.ok(decorated.indexOf('data-fa-match-first-paint')<decorated.indexOf('</head>'));
 assert.ok(!shell.includes('data-fa-match-first-paint'));
-const cases=[{width:1440,expectedWidth:284},{width:390,expectedWidth:268},{width:320,expectedWidth:268}];
+const cases=[{width:1440,expectedWidth:284},{width:900,expectedWidth:284},{width:390,expectedWidth:268},{width:320,expectedWidth:268}];
 const engines={chromium,webkit};
 let count=0;
 for(const [engine,driver] of Object.entries(engines)){
@@ -83,7 +83,7 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.deepEqual(stage.lineupCounts,[11,11]);
     assert.deepEqual(stage.formCounts,[5,5]);
     assert.equal(stage.blank,true);
-    if(device.width>800){
+    if(device.width>1000){
      assert.ok(stage.positions[0].right<=stage.field.left&&stage.field.right<=stage.positions[1].left,JSON.stringify(stage));
      assert.ok(stage.field.width<stage.positions[1].right-stage.positions[0].left);
     }else{

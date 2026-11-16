@@ -170,7 +170,7 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 }
 .app-match-pitch svg{display:block;width:100%;height:100%}
 .app-match-page[data-match-load="missing"] .app-match-visual{display:none}
-@media(max-width:800px){
+@media(max-width:1000px){
  .app-match-stage{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
  .app-match-visual{grid-column:1/-1;grid-row:1}
  .app-match-side-home{grid-column:1;grid-row:2}

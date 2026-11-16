@@ -188,7 +188,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
   '.app-match-form-cell[data-outcome="w"]{background:#237c59}',
   '.app-match-form-cell[data-outcome="d"]{background:#667b82}',
   '.app-match-form-cell[data-outcome="l"]{background:#98504d}',
-  '.app-match-visual{grid-column:1/-1;grid-row:1}'
+  '.app-match-visual{grid-column:1/-1;grid-row:1}',
+  '@media(max-width:1000px)'
  ])assert.ok(css.includes(fragment),fragment);
  assert.ok(css.includes('.app-match-page[data-match-load="missing"] .app-match-visual{display:none}'));
  assert.doesNotMatch(css,/app-match-context|app-match-visual-title|match-emphasis/);

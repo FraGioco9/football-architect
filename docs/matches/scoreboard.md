@@ -343,7 +343,7 @@ panel contains three elements and nothing more:
 No Matchday, clock/time, events, points or extra information boxes are
 rendered. The cards retain roughly 82% surface opacity but all text is
 fully opaque. Desktop uses proportions approximately 20% / 60% / 20%.
-At 800px and below, the field spans the full available content width and
+At 1000px and below, the field spans the full available content width and
 the two team panels are displayed side by side beneath it.
 
 The only new read-only request is
@@ -363,3 +363,8 @@ ES, FR.
 First paint reserves every cell and all 22 lineup rows with no animation
 or content shifts. Browser QA checks 1440px, 390px, 320px in both themes,
 Chromium/WebKit, layout order, safe data gating and language updates.
+
+The responsive breakpoint is 1000px rather than 800px because the fixed
+career sidebar consumes 180–210px before mobile collapse. At intermediate
+viewport widths an inline three-column layout would otherwise shrink the
+central match field to an unusable width. Browser QA includes 900px.
