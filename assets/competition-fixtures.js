@@ -387,6 +387,21 @@
   function syncKnockoutLinks(){
     const root=document.getElementById('app-postseason-bracket');
     if(!root?.querySelectorAll)return;
+    // Season-rule replacements recreate the entire bracket DOM. Install the
+    // delegated click handler on each new board, exactly once per node.
+    if(!root.dataset.faKnockoutLinksBound){
+      root.dataset.faKnockoutLinksBound='true';
+      root.addEventListener('click',event=>{
+        if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||
+           event.altKey||event.shiftKey)return;
+        const target=event.target;
+        if(!target?.closest||target.closest('a,button,input,select,textarea,[role="button"]'))return;
+        const cell=target.closest('.fa-bracket-score.is-match-link');
+        if(cell){cell.querySelector('.fa-bracket-leg-link')?.click();return;}
+        const card=target.closest('.fa-bracket-card.is-single-match-link');
+        card?.querySelector('.fa-bracket-leg-link')?.click();
+      });
+    }
     const source=window.faWorldState?.get?.(),world=source?.world,route=navigation.get();
     const liveKey=[route.season,definition.id,world?.generation,world?.revision].join(':');
     const authorized=source?.source==='authoritative'&&source.worldStatus==='ready'&&
@@ -429,16 +444,6 @@
   window.addEventListener('fa:source-change',bracketAfterContext);
   window.addEventListener('fa:published-match-links-change',syncKnockoutLinks);
   window.addEventListener('fa:competition-route-change',bracketAfterContext);
-  document.getElementById('app-postseason-bracket')?.addEventListener('click',event=>{
-    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||
-       event.altKey||event.shiftKey)return;
-    const target=event.target;
-    if(!target?.closest||target.closest('a,button,input,select,textarea,[role="button"]'))return;
-    const cell=target.closest('.fa-bracket-score.is-match-link');
-    if(cell){cell.querySelector('.fa-bracket-leg-link')?.click();return;}
-    const card=target.closest('.fa-bracket-card.is-single-match-link');
-    card?.querySelector('.fa-bracket-leg-link')?.click();
-  });
   // Keep the score as the native focusable anchor, but let a primary click
   // elsewhere in a verified match card activate it. Existing club links take
   // precedence; no navigation for unpublished/TBD/DEV rows or modifier clicks.
