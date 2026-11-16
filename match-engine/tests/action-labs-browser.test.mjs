@@ -542,6 +542,34 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    assert.doesNotMatch(native.status,/tackle confirmed|interception successful|possession awarded/i);
    process.stdout.write('MOVEMENT_LAB_M7_NATIVE_BODIES '+JSON.stringify(native)+'\n');
   }
+  // M8: real native collision START in the same Rapier World and bounded
+  // canonical mover feedback, never an official football event.
+  for(const [choice,side] of [
+   ['body-encounter','home'],['body-encounter','away'],
+   ['body-encounter-off','home'],['body-encounter-off','away']
+  ]){
+   const witnessed=await evalJs(
+    "(()=>{const c=document.getElementById('movement-labs-choice');"+
+    "const s=document.getElementById('movement-labs-side');"+
+    "c.value="+JSON.stringify(choice)+";c.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "s.value="+JSON.stringify(side)+";s.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "for(let t=0;t<90;t++)document.getElementById('movement-labs-step').click();"+
+    "return {choice:c.value,side:s.value,readout:document.getElementById('movement-labs-readout').textContent,"+
+    "status:document.getElementById('movement-labs-status').textContent};})()");
+   assert.equal(witnessed.choice,choice);assert.equal(witnessed.side,side);
+   assert.match(witnessed.readout,/^Tick 90 /);
+   if(choice==='body-encounter'){
+    assert.match(witnessed.readout,/Rapier native bodies 22 · genuine starts [1-9][0-9]*/);
+    assert.match(witnessed.readout,/actual mover responses [1-9][0-9]*/);
+    assert.match(witnessed.status,/Observed: real original-world Rapier collision START/);
+   }else{
+    assert.match(witnessed.readout,/Rapier native bodies 0 · genuine starts 0/);
+    assert.match(witnessed.readout,/actual mover responses 0/);
+    assert.match(witnessed.status,/Negative: the same 22-player approach has native bodies OFF/);
+   }
+   assert.match(witnessed.status,/Research only: no simultaneous foot contact, official tackle or possession/);
+   process.stdout.write('MOVEMENT_LAB_M8_RECONCILED '+JSON.stringify(witnessed)+'\n');
+  }
   for(const [width,height] of [[1280,720],[1440,900]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
    const size=await evalJs("(()=>{const d=document.getElementById('movement-labs-dialog');"+

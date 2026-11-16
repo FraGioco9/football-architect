@@ -5,6 +5,8 @@ import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
 import {initialResearchCarryLineup} from './research-carry-initial-lineup.mjs';
+import {initialResearchBodyEncounterLineup,researchBodyEncounterTarget}
+ from './research-body-encounter-initial-lineup.mjs';
 export const PLAYER_VERSION='me-player-34-observed-duty-measured-pace-v1';
 export const PLAYER_DT=1/60;
 export const PLAYER_PITCH=Object.freeze({lengthM:105,widthM:68});
@@ -1586,10 +1588,15 @@ export function createPlayerMovement(options={}){
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlSide'&&
-     k!=='researchCarrySide'&&k!=='researchCarryBall')||
+     k!=='researchCarrySide'&&k!=='researchCarryBall'&&
+     k!=='researchBodyEncounter')||
     ((options.researchShotAttacker??null)===null&&
      options.researchControlReceiver===undefined&&
-     options.researchCarrySide===undefined&&Reflect.ownKeys(options).length>0)||
+     options.researchCarrySide===undefined&&
+     options.researchBodyEncounter!==true&&Reflect.ownKeys(options).length>0)||
+    (options.researchBodyEncounter!==undefined&&(
+     options.researchBodyEncounter!==true||
+     Reflect.ownKeys(options).length!==1))||
     (options.researchCarrySide!==undefined&&(
      !['home','away'].includes(options.researchCarrySide)||
      !Object.hasOwn(options,'researchCarryBall')||
@@ -1630,9 +1637,14 @@ export function createPlayerMovement(options={}){
      side:options.researchControlSide??'home'}):
   options.researchCarrySide!==undefined?
    initialResearchCarryLineup(INITIAL_PLAYERS,options.researchCarrySide,
-    options.researchCarryBall):INITIAL_PLAYERS;
+    options.researchCarryBall):
+  options.researchBodyEncounter===true?
+   initialResearchBodyEncounterLineup(INITIAL_PLAYERS,{
+    x:0,y:0,z:0,vx:0,vy:0,vz:0
+   }):INITIAL_PLAYERS;
  let tick=0;
  const players=initial.map(p=>({...p}));
+ let physicallyAppliedResponses=0,lastPhysicalReconciliation=null;
  let lastBall={x:0,y:0};
  let pressers={home:'home-10',away:'away-10'};
  let pressSwitches={home:0,away:0};
@@ -1811,7 +1823,11 @@ export function createPlayerMovement(options={}){
     home:teamShape(players,'home',pressers.home),
     away:teamShape(players,'away',pressers.away)
    }),
-   players:Object.freeze(players.map(p=>Object.freeze({...p})))
+   players:Object.freeze(players.map(p=>Object.freeze({...p}))),
+   ...(options.researchBodyEncounter===true?{
+    actualNativeResponseCount:physicallyAppliedResponses,
+    lastPhysicalReconciliation
+   }:{})
   });
  }
  function step(ballPosition={x:0,y:0},priorRealPass=null){
@@ -2004,6 +2020,11 @@ export function createPlayerMovement(options={}){
    });
   };
   const targets=players.map(p=>{
+   // M8 only: true 60Hz acceleration, orientation and separation.
+   if(options.researchBodyEncounter===true){
+    const target=researchBodyEncounterTarget(p.id);
+    if(target)return target;
+   }
    if(receiverApproaching&&
       p.id===(options.researchControlSide??'home')+'-9')
     return Object.freeze({x:ball.x,y:ball.y});
@@ -2185,5 +2206,70 @@ export function createPlayerMovement(options={}){
   balances=nextBalances;lineResponses=nextLineResponses;
   return snapshot();
  }
- return Object.freeze({snapshot,step,reset:()=>createPlayerMovement(options)});
+ // M8 controlled feedback: one real native pair and one same-tick
+ // physical XY solution. The canonical minimum gap and speed always win.
+ function reconcileNativeBodyResponse(native){
+  if(options.researchBodyEncounter!==true||
+     native?.tick!==tick||native.sameOriginalRapierBallWorld!==true||
+     native.physicalActors?.length!==22||!Array.isArray(native.activePairs))
+   throw new TypeError('Original same-world current body response required');
+  const ids=new Set();
+  for(const pair of native.activePairs){
+   if(pair!=='away-10|home-10')
+    throw new TypeError('Only genuine staged native body pair can be reconciled');
+   ids.add('home-10');ids.add('away-10');
+  }
+  const candidate=players.map((p,i)=>{
+   const body=native.physicalActors[i];
+   if(!body||body.id!==p.id||body.team!==p.team)
+    throw new TypeError('Ordered original native identity required');
+   const x=ids.has(p.id)?body.position?.x:p.x;
+   const y=ids.has(p.id)?body.position?.y:p.y;
+   if(!finite(x)||!finite(y))throw new TypeError('Finite native XY required');
+   return Object.freeze({x,y});
+  });
+  if(ids.size===0){
+   lastPhysicalReconciliation=Object.freeze({tick,accepted:false,
+    reason:'no-native-contact'});
+   return lastPhysicalReconciliation;
+  }
+  let minGap=Infinity;
+  for(let i=0;i<22;i++){
+   const p=players[i],n=candidate[i];
+   const oldX=p.x-p.vx*PLAYER_DT,oldY=p.y-p.vy*PLAYER_DT;
+   if(Math.abs(n.x)>PLAYER_KINEMATIC_LIMITS.maxX||
+      Math.abs(n.y)>PLAYER_KINEMATIC_LIMITS.maxY||
+      Math.hypot(n.x-oldX,n.y-oldY)>PLAYER_MAX_SPEED_MPS*PLAYER_DT+1e-7){
+    lastPhysicalReconciliation=Object.freeze({tick,accepted:false,
+     reason:'physical-boundary-or-speed'});
+    return lastPhysicalReconciliation;
+   }
+   for(let j=i+1;j<22;j++)
+    minGap=Math.min(minGap,Math.hypot(
+     n.x-candidate[j].x,n.y-candidate[j].y));
+  }
+  if(minGap<PLAYER_MIN_SEPARATION_M-1e-8){
+   lastPhysicalReconciliation=Object.freeze({tick,accepted:false,
+    reason:'canonical-separation'});
+   return lastPhysicalReconciliation;
+  }
+  for(let i=0;i<22;i++){
+   const p=players[i];if(!ids.has(p.id))continue;
+   const oldX=p.x-p.vx*PLAYER_DT,oldY=p.y-p.vy*PLAYER_DT;
+   const n=candidate[i];
+   p.x=n.x;p.y=n.y;p.vx=(n.x-oldX)/PLAYER_DT;
+   p.vy=(n.y-oldY)/PLAYER_DT;
+   p.facingRad=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
+    PLAYER_KINEMATIC_LIMITS);
+  }
+  physicallyAppliedResponses++;
+  lastPhysicalReconciliation=Object.freeze({tick,accepted:true,
+   reason:'native-rapier-body-solution',
+   playerIds:Object.freeze([...ids].sort()),minGapM:minGap});
+  return lastPhysicalReconciliation;
+ }
+ return Object.freeze({
+  snapshot,step,reset:()=>createPlayerMovement(options),
+  ...(options.researchBodyEncounter===true?{reconcileNativeBodyResponse}:{})
+ });
 }

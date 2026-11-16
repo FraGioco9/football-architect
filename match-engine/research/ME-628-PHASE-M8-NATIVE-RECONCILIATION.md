@@ -1,0 +1,17 @@
+#628 M8 — native same-world contact + bounded canonical feedback (controlled research)
+
+## Scope and physically honest attribution
+
+- New M-13 vs M-14 DEV-only Movement LAB scenes explicitly stage HOME #10 and AWAY #10 0.72m from midfield **before tick 0**. They are a deterministic collision stress test, not natural 11v11 play and not a match action. The original ball starts at rest at midfield, without shoe colliders or action executor.
+- Original `createPlayerMovement({researchBodyEncounter:true})` selects the two approaching targets once from an explicit fixture option, then uses the same original 60Hz accelerated/turn-limited kinematics and the original **0.98m hard interplayer guard**. All 22 player identities and other movement policies remain canonical.
+- Only `createEngine(...,{diagnosticPlayerBodyCollidersEnabled:true,diagnosticResearchBodyEncounter:true})` activates 22 genuine dynamic bodies **in the original ball Rapier World**. The fixture-specific contact skin is radius 0.51m vs M7 0.49m: physical contact is detected at ~1.02m, *before* the existing 0.98m kinematic rejection. This 2cm total research skin is not a gameplay parameter or an invented event.
+- Contact is positive ONLY when Rapier's original native collision event queue emits `rapier-body-start` for the staged pair; collision-pair activity is tracked from original START/END. The system records real post-solver XY and physical separation, not a geometrically guessed tackle.
+- After an actual native event, `reconcileNativeBodyResponse(native)` conditionally accepts only those two original actors' solver positions if all 22 preserve the original 0.98m minimum, pitch bounds and <=7m/s per tick; otherwise the complete update is rejected, never partially applied. `acknowledgeNativePlayerResponse` binds this resulting same-tick mover frame to the same Rapier world and prevents stepping twice without an acknowledgment. No implicit teleport/second world or change to ball.
+- The M-14 negative uses precisely the same original encounter mover, but with bodies OFF, no queue or possible physical contact. All original M1-M7 and five Action LAB scenes remain defaults/independently gated.
+
+## Limits / future release gates
+
+- This is **controlled, opt-in research**, not yet a general match-body collision engine. Body/ball and body/shoe interaction groups remain isolated. Foot contact and body contact are mutually exclusive until a dedicated shared event queue and conflict rules are verified.
+- Contact does not certify tackle, interception, possession, successful pass or match outcome. Even a successful same-tick feedback loop only proves that the original canonical mover can accept a bounded native body response in this single staged pair.
+- Acceptance requires deterministic HOME/AWAY 22-player source replay, positive native START, at least one accepted canonical feedback, 0.98m separation and 7m/s speed, no-contact negative, unchanged original ball trajectory, strict invalid-option/replay safeguards, and desktop Chrome QA on exact HEAD. If no native START or feedback occurs, report a failed gate—never manufacture contact.
+- Follow-up gate before Phase M signoff: unpredictable real play/body encounters under ordinary movement with a combined authoritative shoe + body event queue and under-opposition support; then Phase I. Draft/HOLD #633; no merge, deploy, remote D1 or ordinary 11v11 implementation.

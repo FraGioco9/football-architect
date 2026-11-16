@@ -37,7 +37,12 @@ export const MOVEMENT_LAB_SCENARIOS=Object.freeze([
  // colliders (body-body only), or strictly identical default-off control.
  // This is a research shadow; mover positions are NOT reconciled to Rapier.
  spec('body-world','22 Rapier body observers','Research opt-in: all 22 native body colliders share the Rapier ball world; real collision events and divergence are measured, but solver positions are not fed back into the mover.',scene('me-m7-body-world',27,0),9,'M7'),
- spec('body-off','22 bodies OFF','Negative control: same source ball and 22-player mover but NO native player body colliders; no collision can be inferred from close spacing.',scene('me-m7-body-world',27,0),9,'M7')
+ spec('body-off','22 bodies OFF','Negative control: same source ball and 22-player mover but NO native player body colliders; no collision can be inferred from close spacing.',scene('me-m7-body-world',27,0),9,'M7'),
+ // Explicit controlled research collision, not a natural football match.
+ // Only real 60Hz player velocities, native Rapier collision events and
+ // checked post-solver XY feedback can satisfy an M8 positive witness.
+ spec('body-encounter','Body encounter and feedback','Controlled before-tick-zero opposing forwards run toward each other. Observe native same-world collision and accept only bounded Rapier-resolved XY into the original mover.',scene('me-m8-body-encounter',0,0),10,'M8'),
+ spec('body-encounter-off','Body encounter OFF','Exact same original 22-player controlled approach without native player colliders. No collision or physical feedback can be credited.',scene('me-m8-body-encounter',0,0),10,'M8')
 ]);
 export function movementLabScenario(id,side='home'){
  if(!['home','away'].includes(side))throw new TypeError('Known HOME/AWAY side required');

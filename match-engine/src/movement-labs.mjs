@@ -9,6 +9,7 @@ import {drawPitchMarkings} from './pitch-markings.mjs';
 import {MOVEMENT_LAB_SCENARIOS,movementLabScenario} from './movement-lab-scenarios.mjs';
 const two=n=>n.toFixed(2);
 const delta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+const encounterOrOff=id=>id==='body-encounter'||id==='body-encounter-off';
 
 export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
@@ -24,10 +25,18 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    controlSide:side,
    ...(physicalContest?{controlScene:'opponent-first'}:{})
   }):null;
- const nativeBodies=scene.spec.id==='body-world';
+ const encounter=scene.spec.id==='body-encounter'||
+  scene.spec.id==='body-encounter-off';
+ const nativeBodies=scene.spec.id==='body-world'||
+  scene.spec.id==='body-encounter';
  const engine=usesOriginalControl?null:createEngine(RAPIER,scene.initial,
-  nativeBodies?{diagnosticPlayerBodyCollidersEnabled:true}:{});
- const mover=usesOriginalControl?null:createPlayerMovement();
+  nativeBodies?{
+   diagnosticPlayerBodyCollidersEnabled:true,
+   ...(encounter?{diagnosticResearchBodyEncounter:true}:{})
+  }:{});
+ const mover=usesOriginalControl?null:createPlayerMovement(
+  encounter?{researchBodyEncounter:true}:{}
+ );
  let disposed=false,latest=null,origin=null,previous=null;
  let pathM=0,maxSpeedMps=0,maxBrakeMps2=0,totalTurnRad=0;
  let postPassDistanceM=0,goalSideTravelM=0;
@@ -159,7 +168,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     measuredOpponentPathM>0.25):
    scene.spec.id==='support-lane'?Boolean(support&&
     supportRunPathM>0.5&&supportNetAdvanceM>0.35):
-   nativeBodies?Boolean(bodySample&&bodySample.actualNativeStarts>0):false;
+   nativeBodies?Boolean(bodySample&&bodySample.actualNativeStarts>0&&
+    (!encounter||bodySample.appliedMoverResponses>0)):false;
   previous=Object.freeze({
    tick:physics.tick,x:p.x,y:p.y,speedMps,facingRad:p.facingRad,
    blockedBy:p.blockedBy,assignedOpponentId:assigned?currentOpponent.id:null,
@@ -205,7 +215,12 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     nativeBodyMaxMoverDriftM:bodySample?.maxCanonicalDriftM??null,
     nativeBodyEventSource:bodySample?
      'native-rapier-collision-event':null,
-    nativeBodyPositionsFedBack:false,
+    nativeBodyPositionsFedBack:Boolean(bodySample?.physicalPositionsFedBackIntoMover),
+    nativeBodyAcceptedResponses:bodySample?.appliedMoverResponses??0,
+    nativeBodyActivePairs:bodySample?.activePairs??Object.freeze([]),
+    nativeBodyControlledEncounter:Boolean(bodySample?.controlledEncounter),
+    nativeBodyResearchColliderRadiusM:bodySample?.collisionColliderRadiusM??null,
+    originalMoverResponseReason:frame.lastPhysicalReconciliation?.reason??null,
     isCurrentCanonical22BodyWorld:Boolean(bodySample),
     // Even when a real research collider event occurs, there is no
     // authoritative player-body collision in an accepted football match.
@@ -236,11 +251,16 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   }
   const prior=engine.snapshot();
   const frame=mover.step(prior.ball.position);
-  // M7 drives research bodies only with the canonical 60 Hz sampled
-  // velocity in THIS original ball World. Neither ball nor mover is steered.
   const after=nativeBodies?engine.step(frame):engine.step();
   if(after.tick!==prior.tick+1||frame.tick!==after.tick)
-   throw new Error('Only current, synchronized real physical ticks');
+   throw new Error('Only current synchronized real physical ticks');
+  if(encounter&&nativeBodies){
+   const physicalSource=engine.nativePlayerBodySnapshot();
+   mover.reconcileNativeBodyResponse(physicalSource);
+   const reconciled=mover.snapshot();
+   const verified=engine.acknowledgeNativePlayerResponse(reconciled);
+   return record(after,reconciled,null,null,null,verified);
+  }
   return record(after,frame,null,null,null,
    nativeBodies?engine.nativePlayerBodySnapshot():null);
  }
@@ -322,7 +342,7 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
       (m.supportOppClearanceM===null?'none':two(m.supportOppClearanceM))+' m'+
     ' · teammate clearance '+
       (m.supportTeammateClearanceM===null?'none':two(m.supportTeammateClearanceM))+' m':'')+
-   (f.scenarioId==='body-world'||f.scenarioId==='body-off'?
+   (['body-world','body-off','body-encounter','body-encounter-off'].includes(f.scenarioId)?
     ' · Rapier native bodies '+m.nativeBodyCount+
     ' · genuine starts '+m.nativeBodyStarts+
     ' · min physical gap '+
@@ -330,7 +350,21 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
       two(m.nativeBodyMinPhysicalGapM))+' m'+
     ' · max mover difference '+
      (m.nativeBodyMaxMoverDriftM===null?'none':
-      two(m.nativeBodyMaxMoverDriftM))+' m':'');
+      two(m.nativeBodyMaxMoverDriftM))+' m'+
+     (encounterOrOff(f.scenarioId)?
+      ' · actual mover responses '+m.nativeBodyAcceptedResponses+
+      ' · active native pairs '+m.nativeBodyActivePairs.length:''):'');
+  if(encounterOrOff(f.scenarioId)){
+   status.textContent=m.nativeBodyCount===0?
+    'Negative: the same 22-player approach has native bodies OFF. No physical collision or feedback.':
+    m.witnessed?
+    'Observed: real original-world Rapier collision START with bounded same-tick XY response accepted by canonical mover.':
+    m.nativeBodyStarts>0?
+    'Original native collision witnessed but mover feedback rejected by safety gates.':
+    'Controlled original 22-body approach; no native collision START witnessed yet.';
+   status.textContent+=' Research only: no simultaneous foot contact, official tackle or possession.';
+   return;
+  }
   if(f.scenarioId==='body-world'||f.scenarioId==='body-off'){
    status.textContent=(m.nativeBodyCount===22?
     (m.nativeBodyStarts>0?

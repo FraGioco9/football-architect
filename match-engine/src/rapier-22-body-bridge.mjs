@@ -13,7 +13,10 @@ const xyz=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 const finite=Number.isFinite;
 const pair=(a,b)=>[a,b].sort().join('|');
 
-export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_PLAYERS){
+export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_PLAYERS,
+ {controlledEncounter=false}={}){
+ if(typeof controlledEncounter!=='boolean')
+  throw new TypeError('Research encounter flag must be boolean');
  if(!R||typeof R.EventQueue!=='function'||!R.ColliderDesc||
     !world||typeof world.createRigidBody!=='function')
   throw new TypeError('Current original Rapier World required');
@@ -22,6 +25,10 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
      p.team!==INITIAL_PLAYERS[i].team||
      !finite(p.x)||!finite(p.y)||!finite(p.vx)||!finite(p.vy)))
   throw new TypeError('Canonical ordered 22 real player samples required');
+ // Small, explicitly disclosed 2cm total collision skin in M8 only:
+ // physical impact BEFORE canonical 0.98m hard separation rejection.
+ // M7 and default colliders remain unchanged.
+ const radiusM=controlledEncounter?0.51:COLLIDER_RADIUS_M;
  const events=new R.EventQueue(true);
  const bodies=[],colliders=[],byHandle=new Map();
  for(const p of initialPlayers){
@@ -30,7 +37,7 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
    .setTranslation(p.x,p.y,BODY_Z_M)
    .setGravityScale(0)
    .setCcdEnabled(true));
-  const collider=world.createCollider(R.ColliderDesc.ball(COLLIDER_RADIUS_M)
+  const collider=world.createCollider(R.ColliderDesc.ball(radiusM)
    .setDensity(60).setFriction(0.6).setRestitution(0)
    .setCollisionGroups(BODY_INTERACTION_GROUP)
    .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS),rigid);
@@ -40,7 +47,9 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
  let current=initialPlayers.map(p=>Object.freeze({
   id:p.id,team:p.team,x:p.x,y:p.y,vx:p.vx,vy:p.vy
  }));
- let tick=0,prepared=null,disposed=false;
+ let tick=0,prepared=null,disposed=false,lastAcceptedTick=0;
+ let appliedMoverResponses=0;
+ const activePairs=new Set();
  let totalStarts=0,totalEnds=0,lastTickStarts=0,lastTickEnds=0;
  const timeline=[];
  function requireLive(){if(disposed)throw new Error('Rapier body bridge disposed');}
@@ -66,11 +75,14 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
    actualNativeStarts:totalStarts,actualNativeEnds:totalEnds,
    currentTickStarts:lastTickStarts,currentTickEnds:lastTickEnds,
    events:Object.freeze([...timeline]),
+   activePairs:Object.freeze([...activePairs].sort()),
+   controlledEncounter,
    minPhysicalGapM,
    maxCanonicalDriftM:Math.max(...players.map(p=>p.driftM)),
-   collisionColliderRadiusM:COLLIDER_RADIUS_M,
+   collisionColliderRadiusM:radiusM,
    sameOriginalRapierBallWorld:true,
-   physicalPositionsFedBackIntoMover:false,
+   physicalPositionsFedBackIntoMover:appliedMoverResponses>0,
+   appliedMoverResponses,
    physicallyAuthoritativeMatchWorld:false,
    verifiedMatchBodyCollision:false,
    officialTackle:false,officialInterception:false,
@@ -79,7 +91,8 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
  }
  function prepare(frame,nextTick){
   requireLive();
-  if(prepared!==null||!Number.isSafeInteger(nextTick)||
+  if((controlledEncounter&&lastAcceptedTick!==tick)||
+     prepared!==null||!Number.isSafeInteger(nextTick)||
      nextTick!==tick+1||
      !Array.isArray(frame?.players)||frame.players.length!==22||
      frame.tick!==nextTick||frame.version!==PLAYER_VERSION)
@@ -122,11 +135,37 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
     source:'native-rapier-collision-event'
    });
    timeline.push(recorded);
+   if(began)activePairs.add(recorded.pair);
+   else activePairs.delete(recorded.pair);
    if(timeline.length>MAX_RECORDED_EVENTS)timeline.shift();
    if(began){totalStarts++;lastTickStarts++;}
    else{totalEnds++;lastTickEnds++;}
   });
   tick=observedTick;prepared=null;
+  return snapshot();
+ }
+ // After the actual solver step, acknowledge the independently
+ // validated canonical response (which may reject an unsafe correction).
+ // Never reposition a physical body or generate a collision here.
+ function acknowledgeCanonicalResponse(frame){
+  requireLive();
+  if(!controlledEncounter||prepared!==null||
+     lastAcceptedTick!==tick-1||frame?.tick!==tick||
+     frame.version!==PLAYER_VERSION||frame.players?.length!==22)
+   throw new TypeError('One same-tick original mover response required');
+  const accepted=frame.players.map((p,i)=>{
+   const body=INITIAL_PLAYERS[i];
+   if(p.id!==body.id||p.team!==body.team||
+      ![p.x,p.y,p.vx,p.vy].every(finite))
+    throw new TypeError('Canonical acknowledgment order mismatch');
+   return Object.freeze({id:p.id,team:p.team,
+    x:p.x,y:p.y,vx:p.vx,vy:p.vy});
+  });
+  if(frame.lastPhysicalReconciliation?.tick===tick&&
+     frame.lastPhysicalReconciliation.accepted===true)
+   appliedMoverResponses++;
+  current=accepted;
+  lastAcceptedTick=tick;
   return snapshot();
  }
  function dispose(){
@@ -136,5 +175,7 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
    // Bodies/colliders belong to the shared world and are freed by world.free().
   }
  }
- return Object.freeze({snapshot,prepare,observe,dispose,eventQueue:events});
+ return Object.freeze({snapshot,prepare,observe,dispose,eventQueue:events,
+  ...(controlledEncounter?{acknowledgeCanonicalResponse}:{})
+ });
 }

@@ -8,6 +8,8 @@ import {createPrivateRapier22BodyBridge} from './rapier-22-body-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
+import {initialResearchBodyEncounterLineup}
+ from './research-body-encounter-initial-lineup.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
 import {initialResearchCarryLineup} from './research-carry-initial-lineup.mjs';
@@ -82,6 +84,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSpinDecayRatePerS = 0,
   diagnosticPlayerFootContactsEnabled = false,
   diagnosticPlayerBodyCollidersEnabled = false,
+  diagnosticResearchBodyEncounter = false,
   diagnosticAutonomousFixtureActionEnabled = false,
   diagnosticAutonomousCarryEnabled = false,
   diagnosticResearchShotAttacker = null,
@@ -107,6 +110,12 @@ export function createEngine(RAPIER, input = {}, {
      (diagnosticAutonomousCarryEnabled&&!diagnosticAutonomousFixtureActionEnabled))
     throw new TypeError('Physical actions require explicit genuine shoe-source opt-in');
   const scenario = normalizeScenario(input);
+  if(typeof diagnosticResearchBodyEncounter!=='boolean'||
+     (diagnosticResearchBodyEncounter&&
+      (!diagnosticPlayerBodyCollidersEnabled||
+       diagnosticPlayerFootContactsEnabled||
+       diagnosticAutonomousFixtureActionEnabled)))
+   throw new TypeError('M8 encounter needs body-only same-world opt-in');
  if(diagnosticResearchShotAttacker!==null&&(
     !['home','away'].includes(diagnosticResearchShotAttacker)||
     !diagnosticPlayerFootContactsEnabled||
@@ -147,7 +156,10 @@ export function createEngine(RAPIER, input = {}, {
      side:diagnosticResearchControlSide}):
   diagnosticResearchCarrySide!==null?
    initialResearchCarryLineup(INITIAL_PLAYERS,diagnosticResearchCarrySide,
-    scenario):INITIAL_PLAYERS;
+    scenario):
+  diagnosticResearchBodyEncounter?
+   initialResearchBodyEncounterLineup(INITIAL_PLAYERS,scenario):
+   INITIAL_PLAYERS;
   // Restricted to isolated zero/partial/full-spin roll experiments. Default 0
   // remains byte-for-byte equivalent to the accepted ME-01 physics-v4 path.
   if (typeof diagnosticInitialRollFraction !== 'number' ||
@@ -229,7 +241,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticMagnusSpinRadS:magnusSpin,
     diagnosticMagnusLiftEnabled,diagnosticSpinDecayRatePerS,
     diagnosticPlayerFootContactsEnabled,diagnosticPlayerBodyCollidersEnabled,
-    diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
+    diagnosticResearchBodyEncounter,diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchCarrySide
@@ -273,7 +285,8 @@ export function createEngine(RAPIER, input = {}, {
   // this ball's Rapier World, with body-only collision groups. They NEVER
   // touch the ball/ground and NEVER bypass accepted shoe/action authority.
   const bodyBridge=diagnosticPlayerBodyCollidersEnabled?
-    createPrivateRapier22BodyBridge(RAPIER,world,INITIAL_PLAYERS):null;
+    createPrivateRapier22BodyBridge(RAPIER,world,stagedShoes,
+     {controlledEncounter:diagnosticResearchBodyEncounter}):null;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
@@ -417,7 +430,11 @@ export function createEngine(RAPIER, input = {}, {
       footContactSolverSnapshot:()=>shoeBridge.solver()
     }:{}),
     ...(bodyBridge?{
-      nativePlayerBodySnapshot:()=>bodyBridge.snapshot()
+      nativePlayerBodySnapshot:()=>bodyBridge.snapshot(),
+      ...(diagnosticResearchBodyEncounter?{
+       acknowledgeNativePlayerResponse:frame=>
+        bodyBridge.acknowledgeCanonicalResponse(frame)
+      }:{})
     }:{}),
     ...(actionExecutor?{
       uniformAutonomousActionSnapshot:()=>actionExecutor.actionSnapshot(),
