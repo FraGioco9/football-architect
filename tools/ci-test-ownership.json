@@ -343,6 +343,8 @@
     "backend/tests/knockout-lineup-progression-runtime.test.ts": "backend-runtime",
     "backend/tests/lineup-sporting-day-plan-runtime.test.ts": "backend-runtime",
     "backend/tests/lineup-season-replay-runtime.test.ts": "backend-runtime",
-    "backend/tests/lineup-lifecycle-command-runtime.test.ts": "backend-runtime"
+    "backend/tests/lineup-lifecycle-command-runtime.test.ts": "backend-runtime",
+    "backend/tests/lineup-preseason-evidence-runtime.test.ts": "backend-runtime",
+    "backend/tests/lineup-calendar-publish-runtime.test.ts": "backend-runtime"
   }
 }
