@@ -54,14 +54,14 @@ it('assigns 3984 immutable official home venues during calendar publication and 
  const generated=await generate();
  expect(generated.world.revision).toBe(2);
  const present=await db.prepare('SELECT count(*) n FROM season_match_slots WHERE stadium_name IS NOT NULL')
-  .first<{n:number}>();
+  .first();
  expect(present?.n).toBe(3984);
  const rows=(await db.prepare("SELECT home_club_id,stadium_name FROM season_match_slots WHERE competition_id='IT-1' ORDER BY scheduled_day LIMIT 10")
-  .all<{home_club_id:string;stadium_name:string}>()).results;
+  .all()).results;
  expect(rows).toHaveLength(10);
  for(const r of rows)expect(r.stadium_name).toBe(canonicalHomeStadium(r.home_club_id));
  const first=await db.prepare("SELECT n.id,s.home_club_id,s.stadium_name FROM season_match_slots s JOIN public_match_numbers n ON n.slot_match_id=s.match_id WHERE s.competition_id='IT-1' ORDER BY n.id LIMIT 1")
-  .first<{id:number;home_club_id:string;stadium_name:string}>();
+  .first();
  expect(first).not.toBeNull();
  expect(first!.stadium_name).toBe(canonicalHomeStadium(first!.home_club_id));
  const detail=await readPublicMatch(db,String(first!.id));
