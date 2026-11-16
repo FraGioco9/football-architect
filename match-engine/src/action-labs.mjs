@@ -33,7 +33,7 @@ export function createControlledActionLab(RAPIER,id,{
  if(!['home','away'].includes(shotSide)||
     !['home','away'].includes(carrySide)||
     !['open','blocked'].includes(shotLane)||
-    !['receive','receive-cushion','receive-pressure','receive-decide','receive-pressure-decide','receive-release','receive-contest','opponent-first'].includes(controlScene)||
+    !['receive','receive-cushion','receive-pressure','receive-decide','receive-pressure-decide','receive-release','receive-contest','receive-challenge','opponent-first'].includes(controlScene)||
     !['home','away'].includes(controlSide)||
     typeof controlDecisionEnabled!=='boolean'||
     (!controlDecisionEnabled&&controlScene!=='receive-decide')||
@@ -60,16 +60,18 @@ export function createControlledActionLab(RAPIER,id,{
  const opposingControl=id==='control'&&controlScene==='opponent-first';
  const firstTouchCushion=id==='control'&&
   ['receive-cushion','receive-pressure','receive-decide',
-   'receive-pressure-decide','receive-release','receive-contest'].includes(controlScene);
+   'receive-pressure-decide','receive-release','receive-contest','receive-challenge'].includes(controlScene);
  const closePressure=id==='control'&&
   ['receive-pressure','receive-pressure-decide'].includes(controlScene);
  const moderatePressure=id==='control'&&
    ['receive-decide','receive-release'].includes(controlScene);
- const contestExperiment=id==='control'&&controlScene==='receive-contest';
+ const reachExperiment=id==='control'&&controlScene==='receive-challenge';
+ const contestExperiment=id==='control'&&
+  ['receive-contest','receive-challenge'].includes(controlScene);
  const tapExperiment=id==='control'&&
-  ['receive-release','receive-contest'].includes(controlScene);
+  ['receive-release','receive-contest','receive-challenge'].includes(controlScene);
  const adaptiveDecision=id==='control'&&controlDecisionEnabled&&
-  ['receive-decide','receive-pressure-decide','receive-release','receive-contest'].includes(controlScene);
+  ['receive-decide','receive-pressure-decide','receive-release','receive-contest','receive-challenge'].includes(controlScene);
  const focus=opposingControl?
   Object.freeze(['home-10','home-9','away-7']):
   (closePressure||moderatePressure||contestExperiment)?Object.freeze(selectedControlSide==='home'?
@@ -117,7 +119,8 @@ export function createControlledActionLab(RAPIER,id,{
   ...(opposingControl?{researchControlOpponentFirst:true}:{}),
   ...(closePressure?{researchControlCloseDefender:true}:{}),
   ...(moderatePressure?{researchControlSpaceDefender:true}:{}),
-   ...(contestExperiment?{researchControlContestDefender:true}:{})
+   ...(contestExperiment?{researchControlContestDefender:true}:{}),
+   ...(reachExperiment?{researchControlChallengerReach:true}:{})
  }:selectedCarrySide?{
   researchCarrySide:selectedCarrySide,researchCarryBall:initial
  }:{});
@@ -302,6 +305,7 @@ export function createControlledActionLab(RAPIER,id,{
     physicalControlEvidence}:{}),
     ...(tapExperiment?{physicalReceiverTap,realReleaseSequence,
      realOpponentContest}:{}),
+    ...(reachExperiment?{realBallReachM32:playerFrame.realBallReachM32}:{}),
    eventCount:count,events:history,
    shotFlight:shotTrace,blockedShotObservation,
    carryTrace,carrySide:selectedCarrySide,
@@ -318,7 +322,8 @@ export function createControlledActionLab(RAPIER,id,{
   if(disposed)throw new Error('Action LAB disposed');
   const prior=engine.snapshot();
   const frame=mover.step(prior.ball.position,
-   spec.mode==='control'?firstPhysicalPassAction:null);
+   spec.mode==='control'?firstPhysicalPassAction:null,
+   reachExperiment?engine.researchReceiverTapSnapshot():null);
   const after=engine.step(frame);
   if(after.tick!==prior.tick+1||frame.tick!==after.tick)
    throw new Error('Action LAB must preserve real canonical 60Hz ticks');
@@ -431,6 +436,10 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
      snap.realReleaseSequence?.latestCompleted?
       ' · M30 '+snap.realReleaseSequence.latestCompleted.endReason+
       ' · official control unconfirmed':'')+
+   (snap.realBallReachM32?.activeTicks?
+    ' · M32 real challenger direct-ball pursuit '+
+    snap.realBallReachM32.activeTicks+' native ticks':
+    '')+
    (snap.realOpponentContest?.active?
     ' · M31 real opponent shoe '+(snap.realOpponentContest.active.opposingShoeContactIsNative?
      'START tick '+snap.realOpponentContest.active.firstOpposingNativeShoeStartTick:
@@ -559,7 +568,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
    y:session.snapshot().ball.position.y}];
   description.textContent=session.shotLane==='blocked'?
    'An opposing defender obstructs all goal-mouth lanes before tick zero. Observe real contact, never a fabricated SHOT.':
-   session.controlScene==='receive-contest'?
+   session.controlScene==='receive-challenge'?
+    'M32 research: original defender #7 uses the current REAL ball as its pursuit target only after authenticated M30 tap; same canonical 60Hz acceleration, turning, player separation and Rapier shoe collision apply; never infer a tackle or possession.':
+    session.controlScene==='receive-contest'?
     'M31 research: original pre-start defender closer to the REAL receiver; native shoe-ball START required to claim a direct challenge. No tackle or possession awarded.':
     session.controlScene==='receive-release'?
     'M30 research: after genuine second shoe START, apply one bounded real Rapier tap and measure physical release/recontact; no dribble or possession awarded.':

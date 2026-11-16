@@ -7,6 +7,8 @@ import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
 import {initialResearchCarryLineup} from './research-carry-initial-lineup.mjs';
+import {chooseOriginalOpponentBallReachM32}
+ from './original-challenger-ball-reach-m32.mjs';
 import {selectObservedSecondaryPressSupport}
  from './secondary-press-support-m20.mjs';
 import {initialResearchBodyEncounterLineup,researchBodyEncounterTarget}
@@ -1638,6 +1640,7 @@ export function createPlayerMovement(options={}){
      k!=='researchControlCloseDefender'&&
      k!=='researchControlSpaceDefender'&&
       k!=='researchControlContestDefender'&&
+      k!=='researchControlChallengerReach'&&
      k!=='researchControlSide'&&
      k!=='researchCarrySide'&&k!=='researchCarryBall'&&
      k!=='researchBodyEncounter'&&
@@ -1698,6 +1701,13 @@ export function createPlayerMovement(options={}){
      options.researchControlReceiver!==true||
      options.researchControlCloseDefender!==undefined||
      options.researchControlContestDefender!==undefined||
+     options.researchControlOpponentFirst!==undefined))||
+    (options.researchControlChallengerReach!==undefined&&(
+     options.researchControlChallengerReach!==true||
+     options.researchControlContestDefender!==true||
+     options.researchControlReceiver!==true||
+     options.researchControlSpaceDefender!==undefined||
+     options.researchControlCloseDefender!==undefined||
      options.researchControlOpponentFirst!==undefined))||
     (options.researchControlContestDefender!==undefined&&(
      options.researchControlContestDefender!==true||
@@ -1763,6 +1773,8 @@ export function createPlayerMovement(options={}){
  let pressSwitches={home:0,away:0};
  let opposingPressConvergence=null;
  let actualContestActiveTicks=0,actualContestStarts=0;
+ let m32ChallengerReachedTick=null,m32BallReachActiveTicks=0,
+  m32ClosestTruePlayerBallGapM=null,m32BallReachLast=null;
  let secondaryPressSupport={home:null,away:null};
  let secondaryPressSwitches={home:0,away:0};
  let secondaryPressActiveTicks={home:0,away:0};
@@ -1837,6 +1849,16 @@ export function createPlayerMovement(options={}){
     secondaryPressSupport:Object.freeze({...secondaryPressSupport}),
     secondaryPressSwitches:Object.freeze({...secondaryPressSwitches}),
     secondaryPressActiveTicks:Object.freeze({...secondaryPressActiveTicks})
+   }:{}),
+   ...(options.researchControlChallengerReach===true?{
+    realBallReachM32:Object.freeze({
+     originalPhysicalTapRequired:true,activeTicks:m32BallReachActiveTicks,
+     firstActiveTick:m32ChallengerReachedTick,
+     minObservedPlayerBallGapM:m32ClosestTruePlayerBallGapM,
+     lastRealBallTarget:m32BallReachLast,
+     verifiedOpponentShoeContact:false,
+     officialPossession:false,readOnly:true
+    })
    }:{}),
    ...(options.researchOpposingPressConvergence===true?{
     originalOpposingPressConvergence:opposingPressConvergence,
@@ -1965,7 +1987,8 @@ export function createPlayerMovement(options={}){
    }:{})
   });
  }
- function step(ballPosition={x:0,y:0},priorRealPass=null){
+ function step(ballPosition={x:0,y:0},priorRealPass=null,
+  priorRealTap=null){
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
@@ -1992,6 +2015,11 @@ export function createPlayerMovement(options={}){
      !Number.isInteger(priorRealPass.tick)||priorRealPass.tick<1||
      priorRealPass.tick>tick))
    throw new TypeError('Only earlier actual CONTROL research pass intent allowed');
+  if(priorRealTap!==null&&(
+     options.researchControlChallengerReach!==true||
+     !Number.isSafeInteger(priorRealTap.tick)||priorRealTap.tick>tick||
+     priorRealTap.tick<1))
+   throw new TypeError('M32 rejects stale/future or non-opt-in research tap');
   const opponentFirst=options.researchControlOpponentFirst===true;
   const receiverApproaching=priorRealPass!==null&&!opponentFirst&&
    tick-priorRealPass.tick<180;
@@ -2193,6 +2221,27 @@ export function createPlayerMovement(options={}){
    });
   };
   const targets=players.map(p=>{
+   if(options.researchControlChallengerReach===true&&
+      p.id===((options.researchControlSide??'home')==='home'?
+       'away-7':'home-7')){
+    const realReach=chooseOriginalOpponentBallReachM32({
+     challenger:p,ball,actualReceiverTap:priorRealTap,
+     actualPass:priorRealPass,
+     receiverTeam:options.researchControlSide??'home',
+     active:m32BallReachLast!==null
+    });
+    m32BallReachLast=realReach;
+    if(realReach){
+     m32BallReachActiveTicks++;
+     if(m32ChallengerReachedTick===null)m32ChallengerReachedTick=tick+1;
+     const measuredGap=Math.hypot(p.x-ball.x,p.y-ball.y);
+     m32ClosestTruePlayerBallGapM=m32ClosestTruePlayerBallGapM===null?
+      measuredGap:Math.min(measuredGap,m32ClosestTruePlayerBallGapM);
+     // Never alter actual x/y here. Original acceleration, turning, hard
+     // 0.98m body separation and Rapier shoe step remain the ONLY physics.
+     return Object.freeze({x:realReach.x,y:realReach.y});
+    }
+   }
    // M8 only: true 60Hz acceleration, orientation and separation.
    if(options.researchBodyEncounter===true){
     const target=researchBodyEncounterTarget(p.id);
