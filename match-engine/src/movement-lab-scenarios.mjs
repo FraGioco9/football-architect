@@ -42,7 +42,11 @@ export const MOVEMENT_LAB_SCENARIOS=Object.freeze([
  // Only real 60Hz player velocities, native Rapier collision events and
  // checked post-solver XY feedback can satisfy an M8 positive witness.
  spec('body-encounter','Body encounter and feedback','Controlled before-tick-zero opposing forwards run toward each other. Observe native same-world collision and accept only bounded Rapier-resolved XY into the original mover.',scene('me-m8-body-encounter',0,0),10,'M8'),
- spec('body-encounter-off','Body encounter OFF','Exact same original 22-player controlled approach without native player colliders. No collision or physical feedback can be credited.',scene('me-m8-body-encounter',0,0),10,'M8')
+ spec('body-encounter-off','Body encounter OFF','Exact same original 22-player controlled approach without native player colliders. No collision or physical feedback can be credited.',scene('me-m8-body-encounter',0,0),10,'M8'),
+ // M9: verified single-queue cohabitation in one original Rapier World.
+ // Neither M9 choice activates game actions or creates a second ball.
+ spec('shared-contacts','Shared shoe + body events','One original Rapier ball World and native event queue routes genuine shoe-ball START and body-body START independently. Explicit collision stress fixture; no match authority.',scene('me-m9-shared-contacts',0,0),10,'M9'),
+ spec('shared-contacts-off','Shared contacts OFF','Negative: exactly the same controlled 22-player approach with no native shoe/body collision bridges.',scene('me-m9-shared-contacts',0,0),10,'M9')
 ]);
 export function movementLabScenario(id,side='home'){
  if(!['home','away'].includes(side))throw new TypeError('Known HOME/AWAY side required');

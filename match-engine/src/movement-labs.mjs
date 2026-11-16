@@ -9,7 +9,8 @@ import {drawPitchMarkings} from './pitch-markings.mjs';
 import {MOVEMENT_LAB_SCENARIOS,movementLabScenario} from './movement-lab-scenarios.mjs';
 const two=n=>n.toFixed(2);
 const delta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
-const encounterOrOff=id=>id==='body-encounter'||id==='body-encounter-off';
+const encounterOrOff=id=>['body-encounter','body-encounter-off',
+ 'shared-contacts','shared-contacts-off'].includes(id);
 
 export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
@@ -25,14 +26,20 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    controlSide:side,
    ...(physicalContest?{controlScene:'opponent-first'}:{})
   }):null;
+ const sharedContacts=scene.spec.id==='shared-contacts';
+ const sharedOff=scene.spec.id==='shared-contacts-off';
  const encounter=scene.spec.id==='body-encounter'||
-  scene.spec.id==='body-encounter-off';
+  scene.spec.id==='body-encounter-off'||sharedContacts||sharedOff;
  const nativeBodies=scene.spec.id==='body-world'||
-  scene.spec.id==='body-encounter';
+  scene.spec.id==='body-encounter'||sharedContacts;
  const engine=usesOriginalControl?null:createEngine(RAPIER,scene.initial,
   nativeBodies?{
    diagnosticPlayerBodyCollidersEnabled:true,
-   ...(encounter?{diagnosticResearchBodyEncounter:true}:{})
+   ...(encounter?{diagnosticResearchBodyEncounter:true}:{}),
+   ...(sharedContacts?{
+    diagnosticPlayerFootContactsEnabled:true,
+    diagnosticSharedContactEventsEnabled:true
+   }:{})
   }:{});
  const mover=usesOriginalControl?null:createPlayerMovement(
   encounter?{researchBodyEncounter:true}:{}
@@ -42,6 +49,7 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  let postPassDistanceM=0,goalSideTravelM=0;
  let measuredOpponentPathM=0,minContestedPlayerGapM=Infinity;
  let supportRunPathM=0,supportNetAdvanceM=0;
+ let observedSharedFootStarts=0;
  const contestedOpponentId=physicalContest?'away-7':null;
  const toPhysical=(f)=>Object.freeze({tick:f.physicsTick,ball:f.ball});
  const toMovement=(f)=>Object.freeze({
@@ -51,7 +59,18 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   supports:Object.freeze({home:null,away:null})
  });
  function record(physics,frame,pass=null,receivingContact=null,
-  opposingShoe=null,bodySample=null){
+  opposingShoe=null,bodySample=null,sharedSample=null){
+  if(sharedSample&&(
+      !sharedContacts||!bodySample||
+      sharedSample.tick!==physics.tick||
+      sharedSample.oneNativeRapierWorld!==true||
+      sharedSample.oneNativeEventQueue!==true||
+      !Array.isArray(sharedSample.genuineFootStarts)||
+      !Number.isSafeInteger(sharedSample.nativeCollisionEventsLastTick)||
+      sharedSample.officialMatchAction!==false))
+   throw new Error('Shared collision data must come from one original tick');
+  if(sharedSample&&physics.tick>0)
+   observedSharedFootStarts+=sharedSample.genuineFootStarts.length;
   if(bodySample&&(
       bodySample.tick!==physics.tick||
       bodySample.physicalActors.length!==22||
@@ -169,7 +188,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    scene.spec.id==='support-lane'?Boolean(support&&
     supportRunPathM>0.5&&supportNetAdvanceM>0.35):
    nativeBodies?Boolean(bodySample&&bodySample.actualNativeStarts>0&&
-    (!encounter||bodySample.appliedMoverResponses>0)):false;
+    (!encounter||bodySample.appliedMoverResponses>0)&&
+    (!sharedContacts||sharedSample?.oneNativeEventQueue===true)):false;
   previous=Object.freeze({
    tick:physics.tick,x:p.x,y:p.y,speedMps,facingRad:p.facingRad,
    blockedBy:p.blockedBy,assignedOpponentId:assigned?currentOpponent.id:null,
@@ -221,6 +241,14 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     nativeBodyControlledEncounter:Boolean(bodySample?.controlledEncounter),
     nativeBodyResearchColliderRadiusM:bodySample?.collisionColliderRadiusM??null,
     originalMoverResponseReason:frame.lastPhysicalReconciliation?.reason??null,
+    nativeSharedOneQueue:Boolean(sharedSample?.oneNativeEventQueue),
+    nativeSharedCollisionEventsLastTick:sharedSample?.nativeCollisionEventsLastTick??0,
+    nativeSharedForceEventsLastTick:sharedSample?.nativeForceEventsLastTick??0,
+    authenticSharedShoeStarts:observedSharedFootStarts,
+    actualSharedShoeStartedIds:sharedSample?.genuineFootStarts??Object.freeze([]),
+    // Foot contact is an authentic physical START but NOT an action,
+    // awarded reception, a dribble or official match possession.
+    verifiedSharedShoeBallStarts:observedSharedFootStarts>0,
     isCurrentCanonical22BodyWorld:Boolean(bodySample),
     // Even when a real research collider event occurs, there is no
     // authoritative player-body collision in an accepted football match.
@@ -237,7 +265,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   record(toPhysical(f),toMovement(f),f.priorRealPass,f.receivingContact,
    f.firstOpposingShoe);
  }else record(engine.snapshot(),mover.snapshot(),null,null,null,
-  nativeBodies?engine.nativePlayerBodySnapshot():null);
+  nativeBodies?engine.nativePlayerBodySnapshot():null,
+  sharedContacts?engine.sharedNativeContactSnapshot():null);
  function snapshot(){if(disposed)throw new Error('Movement LAB disposed');return latest;}
  function step(){
   if(disposed)throw new Error('Movement LAB disposed');
@@ -259,7 +288,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    mover.reconcileNativeBodyResponse(physicalSource);
    const reconciled=mover.snapshot();
    const verified=engine.acknowledgeNativePlayerResponse(reconciled);
-   return record(after,reconciled,null,null,null,verified);
+   return record(after,reconciled,null,null,null,verified,
+    sharedContacts?engine.sharedNativeContactSnapshot():null);
   }
   return record(after,frame,null,null,null,
    nativeBodies?engine.nativePlayerBodySnapshot():null);
@@ -342,7 +372,8 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
       (m.supportOppClearanceM===null?'none':two(m.supportOppClearanceM))+' m'+
     ' · teammate clearance '+
       (m.supportTeammateClearanceM===null?'none':two(m.supportTeammateClearanceM))+' m':'')+
-   (['body-world','body-off','body-encounter','body-encounter-off'].includes(f.scenarioId)?
+   (['body-world','body-off','body-encounter','body-encounter-off',
+     'shared-contacts','shared-contacts-off'].includes(f.scenarioId)?
     ' · Rapier native bodies '+m.nativeBodyCount+
     ' · genuine starts '+m.nativeBodyStarts+
     ' · min physical gap '+
@@ -353,7 +384,21 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
       two(m.nativeBodyMaxMoverDriftM))+' m'+
      (encounterOrOff(f.scenarioId)?
       ' · actual mover responses '+m.nativeBodyAcceptedResponses+
-      ' · active native pairs '+m.nativeBodyActivePairs.length:''):'');
+      ' · active native pairs '+m.nativeBodyActivePairs.length:'')+
+     (f.scenarioId==='shared-contacts'||f.scenarioId==='shared-contacts-off'?
+      ' · single native queue '+m.nativeSharedOneQueue+
+      ' · genuine shoe STARTs '+m.authenticSharedShoeStarts+
+      ' · shared collision events last tick '+m.nativeSharedCollisionEventsLastTick:''):'');
+  if(f.scenarioId==='shared-contacts'||f.scenarioId==='shared-contacts-off'){
+   status.textContent=m.nativeBodyCount===0?
+    'Negative: shared physics OFF; no shoe or body collider witness.':
+    m.witnessed?
+    'Verified: native body START and canonical feedback in one shared Rapier queue.':
+    'Single original Rapier queue active; no verified body response yet.';
+   status.textContent+=' Actual shoe-ball START count '+m.authenticSharedShoeStarts+
+    ' (independent). No official pass, tackle or possession.';
+   return;
+  }
   if(encounterOrOff(f.scenarioId)){
    status.textContent=m.nativeBodyCount===0?
     'Negative: the same 22-player approach has native bodies OFF. No physical collision or feedback.':

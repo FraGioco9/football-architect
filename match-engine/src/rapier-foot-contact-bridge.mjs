@@ -14,7 +14,8 @@ const ordered=set=>Object.freeze(INITIAL_PLAYERS
  .filter(p=>set.has(p.id)).map(p=>p.id));
 const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 
-export function createPrivateRapierFootContactBridge(R,world,ballCollider,initialPlayers=INITIAL_PLAYERS){
+export function createPrivateRapierFootContactBridge(R,world,ballCollider,
+ initialPlayers=INITIAL_PLAYERS,{sharedQueue=null}={}){
  if(!R||typeof R.EventQueue!=='function'||!world||
     typeof world.createRigidBody!=='function'||
     !ballCollider||ballCollider.handle===undefined||
@@ -26,20 +27,27 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,initia
      ![p.x,p.y,p.facingRad].every(Number.isFinite)||
      Math.abs(p.x)>52.5||Math.abs(p.y)>34))
   throw new TypeError('Ordered canonical 22-player initial shoes required');
- const eventQueue=new R.EventQueue(true);
+ if(sharedQueue!==null&&
+    (typeof sharedQueue.drainCollisionEvents!=='function'||
+     typeof sharedQueue.drainContactForceEvents!=='function'))
+  throw new TypeError('Native shared Rapier event queue required');
+ const eventQueue=sharedQueue??new R.EventQueue(true);
+ const ownsEventQueue=sharedQueue===null;
  const colliders=[],bodies=[],idsByCollider=new Map();
  for(const p of initialPlayers){
   const pose=footProxyTransform(p);
   const body=world.createRigidBody(
    R.RigidBodyDesc.kinematicPositionBased()
     .setTranslation(pose.x,pose.y,pose.z).setRotation(pose.rotation));
-  const collider=world.createCollider(R.ColliderDesc.roundCuboid(
+  const shoeShape=R.ColliderDesc.roundCuboid(
    FOOT_CONTACT_HALF_LENGTH_M,FOOT_CONTACT_HALF_WIDTH_M,
    FOOT_CONTACT_HALF_HEIGHT_M,FOOT_CONTACT_ROUNDING_M)
    .setFriction(FOOT_CONTACT_FRICTION)
    .setRestitution(FOOT_CONTACT_RESTITUTION)
    .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS|
-    R.ActiveEvents.CONTACT_FORCE_EVENTS),body);
+    R.ActiveEvents.CONTACT_FORCE_EVENTS);
+  if(sharedQueue!==null)shoeShape.setCollisionGroups(0x00010001);
+  const collider=world.createCollider(shoeShape,body);
   bodies.push(body);colliders.push(collider);
   idsByCollider.set(collider.handle,p.id);
  }
@@ -67,20 +75,27 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,initia
   }
   positions=next;
  }
- function observe(nextTick,priorBall,postBall){
+ function observe(nextTick,priorBall,postBall,sharedEvents=null){
   live();
   if(nextTick!==tick+1||!priorBall?.position||!priorBall?.velocity||
      !postBall?.position||!postBall?.velocity)
    throw new RangeError('Consecutive actual pre/post Rapier states required');
   const started=new Set(),ended=new Set(),next=new Set(active);
-  eventQueue.drainCollisionEvents((a,b,began)=>{
+  const visitCollision=(a,b,began)=>{
    const other=a===ballCollider.handle?b:
     b===ballCollider.handle?a:null;
    const id=idsByCollider.get(other);
    if(!id)return; // no turf, no proxy-to-proxy contact
    if(began){started.add(id);next.add(id);}
    else{ended.add(id);next.delete(id);}
-  });
+  };
+  if(sharedEvents===null)eventQueue.drainCollisionEvents(visitCollision);
+  else{
+   if(!Array.isArray(sharedEvents.collisions))
+    throw new TypeError('One genuine native shared collision sample required');
+   for(const e of sharedEvents.collisions)
+    visitCollision(e.a,e.b,e.started);
+  }
   const dv=Math.hypot(
    postBall.velocity.x-priorBall.velocity.x,
    postBall.velocity.y-priorBall.velocity.y,
@@ -94,18 +109,26 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,initia
   });
   const observedTimeline=timeline.observe(collision,priorBall,positions);
   const forces=[];
-  eventQueue.drainContactForceEvents(e=>{
-   const a=e.collider1(),b=e.collider2();
+  const visitForce=(a,b,f,d,totalMagnitude,maxMagnitude)=>{
    const other=a===ballCollider.handle?b:
     b===ballCollider.handle?a:null;
    const id=idsByCollider.get(other);
    if(!id)return;
-   const f=e.totalForce(),d=e.maxForceDirection();
    forces.push({id,totalForceWorldN:vector(f),
-    totalForceMagnitudeN:e.totalForceMagnitude(),
-    maxContactForceMagnitudeN:e.maxForceMagnitude(),
+    totalForceMagnitudeN:totalMagnitude,
+    maxContactForceMagnitudeN:maxMagnitude,
     maxContactForceDirectionWorld:vector(d)});
-  });
+  };
+  if(sharedEvents===null)eventQueue.drainContactForceEvents(e=>
+   visitForce(e.collider1(),e.collider2(),e.totalForce(),
+    e.maxForceDirection(),e.totalForceMagnitude(),e.maxForceMagnitude()));
+  else{
+   if(!Array.isArray(sharedEvents.forces))
+    throw new TypeError('One genuine native shared force sample required');
+   for(const e of sharedEvents.forces)
+    visitForce(e.a,e.b,e.force,e.direction,
+     e.magnitude,e.maxMagnitude);
+  }
   const relevant=new Set([...next,...started,...ended,...forces.map(x=>x.id)]);
   const manifolds=[];
   for(let i=0;i<INITIAL_PLAYERS.length;i++){
@@ -123,7 +146,10 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,initia
   tick=nextTick;active=next;current=collision;solver=observedSolver;
   return Object.freeze({collision,timeline:observedTimeline,solver});
  }
- function dispose(){if(!disposed){disposed=true;eventQueue.free();}}
+ function dispose(){if(!disposed){
+  disposed=true;
+  if(ownsEventQueue)eventQueue.free();
+ }}
  return Object.freeze({
   eventQueue,prepare,observe,dispose,
   snapshot:()=>{live();return current;},

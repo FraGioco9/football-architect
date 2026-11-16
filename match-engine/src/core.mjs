@@ -84,6 +84,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSpinDecayRatePerS = 0,
   diagnosticPlayerFootContactsEnabled = false,
   diagnosticPlayerBodyCollidersEnabled = false,
+  diagnosticSharedContactEventsEnabled = false,
   diagnosticResearchBodyEncounter = false,
   diagnosticAutonomousFixtureActionEnabled = false,
   diagnosticAutonomousCarryEnabled = false,
@@ -97,13 +98,19 @@ export function createEngine(RAPIER, input = {}, {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
   if(typeof diagnosticPlayerFootContactsEnabled!=='boolean')
     throw new TypeError('Boolean opt-in required for private shoe physics');
-  // M7 cannot yet reconcile physical dynamic-player XY with the canonical
-  // mover or share the original private shoe event queue. Disallow combined
-  // contact authority until that independent release gate is implemented.
+  // M9: the only permitted dual-source mode is explicitly research-only,
+  // action-disabled, and drains exactly ONE current-world native event queue.
+  // Existing isolated shoe/body paths are unchanged and remain default OFF.
   if(typeof diagnosticPlayerBodyCollidersEnabled!=='boolean'||
+     typeof diagnosticSharedContactEventsEnabled!=='boolean'||
      (diagnosticPlayerBodyCollidersEnabled&&
-      diagnosticPlayerFootContactsEnabled))
-    throw new TypeError('Body-only research mode must exclude shoe contact authority');
+      diagnosticPlayerFootContactsEnabled&&!diagnosticSharedContactEventsEnabled)||
+     (diagnosticSharedContactEventsEnabled&&
+      (!diagnosticPlayerBodyCollidersEnabled||
+       !diagnosticPlayerFootContactsEnabled||
+       diagnosticAutonomousFixtureActionEnabled||
+       diagnosticAutonomousCarryEnabled)))
+    throw new TypeError('Shared contact events require both native bridges without football action authority');
   if(typeof diagnosticAutonomousFixtureActionEnabled!=='boolean'||
      typeof diagnosticAutonomousCarryEnabled!=='boolean'||
      (diagnosticAutonomousFixtureActionEnabled&&!diagnosticPlayerFootContactsEnabled)||
@@ -113,7 +120,8 @@ export function createEngine(RAPIER, input = {}, {
   if(typeof diagnosticResearchBodyEncounter!=='boolean'||
      (diagnosticResearchBodyEncounter&&
       (!diagnosticPlayerBodyCollidersEnabled||
-       diagnosticPlayerFootContactsEnabled||
+       (diagnosticPlayerFootContactsEnabled&&
+        !diagnosticSharedContactEventsEnabled)||
        diagnosticAutonomousFixtureActionEnabled)))
    throw new TypeError('M8 encounter needs body-only same-world opt-in');
  if(diagnosticResearchShotAttacker!==null&&(
@@ -241,6 +249,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticMagnusSpinRadS:magnusSpin,
     diagnosticMagnusLiftEnabled,diagnosticSpinDecayRatePerS,
     diagnosticPlayerFootContactsEnabled,diagnosticPlayerBodyCollidersEnabled,
+    diagnosticSharedContactEventsEnabled,
     diagnosticResearchBodyEncounter,diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
@@ -261,12 +270,17 @@ export function createEngine(RAPIER, input = {}, {
   // Mass is NOT density: the old density=0.4 produced only ~2.23 grams.
   // Model the ball as a thin spherical shell for mass moment of inertia,
   // I=(2/3)*m*r². Rapier's physical collider remains an 11cm sphere.
-  const ballCollider=world.createCollider(RAPIER.ColliderDesc.ball(BALL_RADIUS)
+  const ballShape=RAPIER.ColliderDesc.ball(BALL_RADIUS)
     .setMassProperties(BALL_MASS_KG,
       {x: 0, y: 0, z: 0},
       {x: BALL_INERTIA_KG_M2, y: BALL_INERTIA_KG_M2, z: BALL_INERTIA_KG_M2},
       {w: 1, x: 0, y: 0, z: 0})
-    .setFriction(0.45).setRestitution(BALL_RESTITUTION), body);
+    .setFriction(0.45).setRestitution(BALL_RESTITUTION);
+  // In M9 only, category 0x1 shoes/ball can interact with each other
+  // and ground but NOT player-body category 0x20. Default path untouched.
+  if(diagnosticSharedContactEventsEnabled)
+   ballShape.setCollisionGroups(0x00010001);
+  const ballCollider=world.createCollider(ballShape,body);
   const measuredInertia = body.principalInertia();
   const ballProperties = Object.freeze({
     massKg: body.mass(),
@@ -278,15 +292,20 @@ export function createEngine(RAPIER, input = {}, {
       Object.values(ballProperties.principalInertiaKgM2)
         .some(value => !Number.isFinite(value) || Math.abs(value - BALL_INERTIA_KG_M2) > 1e-5))
     throw new Error('Rapier match-ball mass/inertia mismatch');
-  // No additional world or colliders on the accepted default-off core.
+  // M9 shared mode owns exactly ONE Rapier queue. Pre-existing action labs
+  // still create their own unshared shoe queue with byte-stable callbacks.
+  const sharedContactQueue=diagnosticSharedContactEventsEnabled?
+   new RAPIER.EventQueue(true):null;
   const shoeBridge=diagnosticPlayerFootContactsEnabled?
-    createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes):null;
-  // M7 explicit research-only: 22 genuine native dynamic colliders share
-  // this ball's Rapier World, with body-only collision groups. They NEVER
-  // touch the ball/ground and NEVER bypass accepted shoe/action authority.
+    createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes,
+     sharedContactQueue?{sharedQueue:sharedContactQueue}:{}):null;
+  // All 22 real body colliders remain isolated from ball, shoes and grass.
   const bodyBridge=diagnosticPlayerBodyCollidersEnabled?
-    createPrivateRapier22BodyBridge(RAPIER,world,stagedShoes,
-     {controlledEncounter:diagnosticResearchBodyEncounter}):null;
+    createPrivateRapier22BodyBridge(RAPIER,world,stagedShoes,{
+     controlledEncounter:diagnosticResearchBodyEncounter,
+     ...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{})
+    }):null;
+  let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
@@ -391,7 +410,35 @@ export function createEngine(RAPIER, input = {}, {
         }
       }
     }
-    if(shoeBridge){
+    if(sharedContactQueue){
+      // The SINGLE original-world step emits native collider events once.
+      // Capture immutable measurements BEFORE any observer can drain them.
+      world.step(sharedContactQueue);
+      const collisions=[],forces=[];
+      sharedContactQueue.drainCollisionEvents((a,b,started)=>{
+       collisions.push(Object.freeze({a,b,started}));
+      });
+      sharedContactQueue.drainContactForceEvents(e=>{
+       const v=e.totalForce(),d=e.maxForceDirection();
+       forces.push(Object.freeze({
+        a:e.collider1(),b:e.collider2(),
+        force:Object.freeze({x:v.x,y:v.y,z:v.z}),
+        direction:Object.freeze({x:d.x,y:d.y,z:d.z}),
+        magnitude:e.totalForceMagnitude(),
+        maxMagnitude:e.maxForceMagnitude()
+       }));
+      });
+      const shared=Object.freeze({
+       collisions:Object.freeze(collisions),
+       forces:Object.freeze(forces)
+      });
+      shoeBridge.observe(tick+1,preStepBall,{
+       position:body.translation(),velocity:body.linvel()
+      },shared);
+      bodyBridge.observe(tick+1,shared);
+      sharedCollisionEventsLastTick=collisions.length;
+      sharedForceEventsLastTick=forces.length;
+    }else if(shoeBridge){
       world.step(shoeBridge.eventQueue);
       shoeBridge.observe(tick+1,preStepBall,{
         position:body.translation(),velocity:body.linvel()
@@ -420,6 +467,7 @@ export function createEngine(RAPIER, input = {}, {
       actionExecutor?.dispose();
       shoeBridge?.dispose();
       bodyBridge?.dispose();
+      sharedContactQueue?.free();
       world.free();
     }
   }
@@ -428,6 +476,24 @@ export function createEngine(RAPIER, input = {}, {
       footContactSnapshot:()=>shoeBridge.snapshot(),
       footContactTimelineSnapshot:()=>shoeBridge.timeline(),
       footContactSolverSnapshot:()=>shoeBridge.solver()
+    }:{}),
+    ...(sharedContactQueue?{
+      sharedNativeContactSnapshot:()=>{
+       if(disposed)throw new Error('Engine has been disposed');
+       const foot=shoeBridge.snapshot(),physical=bodyBridge.snapshot();
+       if(foot.tick!==tick||physical.tick!==tick)
+        throw new Error('Only exact-tick shared Rapier contact evidence');
+       return Object.freeze({
+        tick,oneNativeRapierWorld:true,oneNativeEventQueue:true,
+        nativeCollisionEventsLastTick:sharedCollisionEventsLastTick,
+        nativeForceEventsLastTick:sharedForceEventsLastTick,
+        genuineFootStarts:foot.started,
+        genuineBodyStarts:physical.currentTickStarts,
+        bodyActivePairs:physical.activePairs,
+        officialMatchAction:false,officialTackle:false,
+        officialPossession:false,officialResult:null
+       });
+      }
     }:{}),
     ...(bodyBridge?{
       nativePlayerBodySnapshot:()=>bodyBridge.snapshot(),

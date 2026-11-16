@@ -570,6 +570,35 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    assert.match(witnessed.status,/Research only: no simultaneous foot contact, official tackle or possession/);
    process.stdout.write('MOVEMENT_LAB_M8_RECONCILED '+JSON.stringify(witnessed)+'\n');
   }
+  // M9: one genuine Rapier event queue, physical shoe/body sources
+  // independently reported; no synthetic pass/tackle/possession.
+  for(const [scene,side] of [
+   ['shared-contacts','home'],['shared-contacts','away'],
+   ['shared-contacts-off','home'],['shared-contacts-off','away']
+  ]){
+   const observed=await evalJs(
+    "(()=>{const c=document.getElementById('movement-labs-choice');"+
+    "const s=document.getElementById('movement-labs-side');"+
+    "c.value="+JSON.stringify(scene)+";c.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "s.value="+JSON.stringify(side)+";s.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "for(let t=0;t<95;t++)document.getElementById('movement-labs-step').click();"+
+    "return {choice:c.value,side:s.value,readout:document.getElementById('movement-labs-readout').textContent,"+
+    "status:document.getElementById('movement-labs-status').textContent};})()");
+   assert.equal(observed.choice,scene);assert.equal(observed.side,side);
+   assert.match(observed.readout,/^Tick 95 /);
+   if(scene==='shared-contacts'){
+    assert.match(observed.readout,/Rapier native bodies 22 · genuine starts [1-9][0-9]*/);
+    assert.match(observed.readout,/actual mover responses [1-9][0-9]*/);
+    assert.match(observed.readout,/single native queue true · genuine shoe STARTs [0-9]+/);
+    assert.match(observed.status,/Verified: native body START and canonical feedback in one shared Rapier queue/);
+   }else{
+    assert.match(observed.readout,/Rapier native bodies 0 · genuine starts 0/);
+    assert.match(observed.readout,/single native queue false · genuine shoe STARTs 0/);
+    assert.match(observed.status,/Negative: shared physics OFF/);
+   }
+   assert.match(observed.status,/No official pass, tackle or possession/);
+   process.stdout.write('MOVEMENT_LAB_M9_SHARED_NATIVE_EVENTS '+JSON.stringify(observed)+'\n');
+  }
   for(const [width,height] of [[1280,720],[1440,900]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
    const size=await evalJs("(()=>{const d=document.getElementById('movement-labs-dialog');"+

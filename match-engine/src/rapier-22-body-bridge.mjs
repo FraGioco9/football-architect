@@ -14,7 +14,7 @@ const finite=Number.isFinite;
 const pair=(a,b)=>[a,b].sort().join('|');
 
 export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_PLAYERS,
- {controlledEncounter=false}={}){
+ {controlledEncounter=false,sharedQueue=null}={}){
  if(typeof controlledEncounter!=='boolean')
   throw new TypeError('Research encounter flag must be boolean');
  if(!R||typeof R.EventQueue!=='function'||!R.ColliderDesc||
@@ -29,7 +29,11 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
  // physical impact BEFORE canonical 0.98m hard separation rejection.
  // M7 and default colliders remain unchanged.
  const radiusM=controlledEncounter?0.51:COLLIDER_RADIUS_M;
- const events=new R.EventQueue(true);
+ if(sharedQueue!==null&&
+     typeof sharedQueue.drainCollisionEvents!=='function')
+  throw new TypeError('Existing native shared collision queue required');
+ const events=sharedQueue??new R.EventQueue(true);
+ const ownsEventQueue=sharedQueue===null;
  const bodies=[],colliders=[],byHandle=new Map();
  for(const p of initialPlayers){
   // Zero gravity on this one body, not on the ball or the shared World.
@@ -120,15 +124,16 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
   }));
   prepared=nextTick;
  }
- function observe(observedTick){
+ function observe(observedTick,sharedEvents=null){
   requireLive();
   if(prepared!==observedTick||observedTick!==tick+1)
    throw new TypeError('One genuine post-step Rapier body event sample required');
   lastTickStarts=0;lastTickEnds=0;
-  events.drainCollisionEvents((a,b,began)=>{
+  const visitCollision=(a,b,began)=>{
    const idA=byHandle.get(a),idB=byHandle.get(b);
-   if(!idA||!idB||idA===idB)
-    throw new Error('Unexpected non-body collision in isolated interaction group');
+   if(!idA||!idB)return; // shared queue includes genuine shoes/ball
+   if(idA===idB)
+    throw new Error('Identical body collider native event');
    const recorded=Object.freeze({
     tick:observedTick,pair:pair(idA,idB),
     type:began?'rapier-body-start':'rapier-body-end',
@@ -140,7 +145,18 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
    if(timeline.length>MAX_RECORDED_EVENTS)timeline.shift();
    if(began){totalStarts++;lastTickStarts++;}
    else{totalEnds++;lastTickEnds++;}
+  };
+  if(sharedEvents===null)events.drainCollisionEvents((a,b,began)=>{
+   // Body-only worlds should never see a non-body event.
+   if(!byHandle.has(a)||!byHandle.has(b))
+    throw new Error('Unexpected non-body native collider');
+   visitCollision(a,b,began);
   });
+  else{
+   if(!Array.isArray(sharedEvents.collisions))
+    throw new TypeError('One genuine shared collision sample required');
+   for(const e of sharedEvents.collisions)visitCollision(e.a,e.b,e.started);
+  }
   tick=observedTick;prepared=null;
   return snapshot();
  }
@@ -171,7 +187,7 @@ export function createPrivateRapier22BodyBridge(R,world,initialPlayers=INITIAL_P
  function dispose(){
   if(!disposed){
    disposed=true;
-   events.free();
+   if(ownsEventQueue)events.free();
    // Bodies/colliders belong to the shared world and are freed by world.free().
   }
  }
