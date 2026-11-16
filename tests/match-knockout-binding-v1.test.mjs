@@ -46,10 +46,13 @@ async function proof({leg=1,twoLegs=false,neutral=false}={}){
  const frozen={public_match_id:200,slot_match_id:priorSlotId,generation,season_number:1,day:20,
   fixture_id:one.id,algorithm_version:'temporary-lineup-v1',
   receipt_hash:await hashString(JSON.stringify(priorReceipt)),receipt_json:JSON.stringify(priorReceipt)};
- const dayPayload={schemaVersion:2,season:1,generation,day:20,calendarHash:plan.sourceCalendarHash,
+ const calendarJson=JSON.stringify({calendarHash:plan.sourceCalendarHash});
+ const calendar={calendar_hash:await canonicalHash(JSON.parse(calendarJson)),
+  calendar_json:calendarJson};
+ const dayPayload={schemaVersion:2,season:1,generation,day:20,calendarHash:calendar.calendar_hash,
   simulationVersion:'temporary-lineup-v1',results:[{fixtureId:one.id,matchId:200,
     receiptHash:frozen.receipt_hash,homeGoals:2,awayGoals:1}]};
- const prior={generation,day:20,calendar_hash:plan.sourceCalendarHash,simulation_version:'temporary-lineup-v1',
+ const prior={generation,day:20,calendar_hash:calendar.calendar_hash,simulation_version:'temporary-lineup-v1',
   outcome_hash:await canonicalHash(dayPayload),outcome_json:JSON.stringify(dayPayload)};
  let tiePresent=true;
  const calls=[];
@@ -58,12 +61,13 @@ async function proof({leg=1,twoLegs=false,neutral=false}={}){
    if(sql.includes('FROM season_knockout_match_slots'))return slot;
    if(sql.includes('FROM season_knockout_ties'))return tiePresent?tie:null;
    if(sql.includes('FROM match_lineup_result_receipts'))return frozen;
+   if(sql.includes('FROM season_calendars'))return calendar;
    if(sql.includes('FROM season_lineup_day_outcomes'))return prior;
    throw Error('Unexpected query '+sql);
   }};
   calls.push(st);return st;
  }};
- return {db,match,slot,tie,prior,frozen,published:{slot_match_id:matchId},world,calls,
+ return {db,match,slot,tie,prior,calendar,frozen,published:{slot_match_id:matchId},world,calls,
   dropTie:()=>{tiePresent=false;}};
 }
 test('neutral knockout final verifies hashed reservation and actual resolved clubs',async()=>{
@@ -99,13 +103,18 @@ test('first leg is regulation only, second leg reads and guards prior finalized 
  const b=await resolvePublishedKnockoutV1(second.db,{match:second.match,
   world:second.world,published:second.published,context:ctx});
  assert.deepEqual(b.context,ctx);
- assert.equal(b.guards.length,4);
+ assert.equal(b.guards.length,5);
+ assert.ok(b.guards.some(g=>g.sql.includes('FROM season_calendars')));
  assert.ok(second.calls.some(c=>c.sql.includes('FROM season_lineup_day_outcomes')));
  await assert.rejects(()=>resolvePublishedKnockoutV1(second.db,{match:second.match,
   world:second.world,published:second.published,context:{...ctx,firstLegHomeGoals:9}}),/untrusted context/);
  second.prior.outcome_hash='f'.repeat(64);
  await assert.rejects(()=>resolvePublishedKnockoutV1(second.db,{match:second.match,
   world:second.world,published:second.published,context:ctx}),/first leg day receipt/);
+ second.prior.outcome_hash=await canonicalHash(JSON.parse(second.prior.outcome_json));
+ second.calendar.calendar_hash='f'.repeat(64);
+ await assert.rejects(()=>resolvePublishedKnockoutV1(second.db,{match:second.match,
+  world:second.world,published:second.published,context:ctx}),/first leg calendar/);
 });
 
 test('new same-day first-leg plan is accepted only when canonically supplied and guarded',async()=>{

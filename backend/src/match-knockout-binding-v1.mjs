@@ -105,17 +105,29 @@ export async function resolvePublishedKnockoutV1(db,{match,world,published,conte
    !Number.isSafeInteger(oldResult.awayGoals)||oldResult.awayGoals<0||
    await hashString(JSON.stringify(prior))!==frozen.receipt_hash)
    fail('first leg receipt');
+  // A knockout plan's sourceCalendarHash attests the WORLD calendar model.
+  // V2 day receipts instead bind to the hash of the entire approved fixture
+  // schedule. These digests are different and must NEVER be interchanged.
+  const calendar=await db.prepare(
+   'SELECT calendar_hash,calendar_json FROM season_calendars WHERE season_number=?'
+  ).bind(world.seasonNumber).first();
+  let schedule;
+  try{schedule=JSON.parse(calendar?.calendar_json)}catch{fail('first leg calendar JSON')}
+  if(!calendar||!hex64.test(calendar.calendar_hash)||
+   await canonicalHash(schedule)!==calendar.calendar_hash||
+   schedule?.calendarHash!==plan.sourceCalendarHash)
+   fail('first leg calendar');
   const dayRow=await db.prepare('SELECT generation,day,calendar_hash,simulation_version,outcome_hash,outcome_json FROM season_lineup_day_outcomes WHERE season_number=? AND day=?')
    .bind(world.seasonNumber,first.day).first();
   if(!dayRow||dayRow.generation!==world.generation||dayRow.day!==first.day||
-   dayRow.calendar_hash!==plan.sourceCalendarHash||
+   dayRow.calendar_hash!==calendar.calendar_hash||
    dayRow.simulation_version!=='temporary-lineup-v1'||!hex64.test(dayRow.outcome_hash))
    fail('first leg day');
   let dayPayload;
   try{dayPayload=JSON.parse(dayRow.outcome_json)}catch{fail('first leg day JSON')}
   if(dayPayload?.schemaVersion!==2||dayPayload.season!==world.seasonNumber||
    dayPayload.generation!==world.generation||dayPayload.day!==first.day||
-   dayPayload.calendarHash!==plan.sourceCalendarHash||
+   dayPayload.calendarHash!==calendar.calendar_hash||
    dayPayload.simulationVersion!=='temporary-lineup-v1'||
    !Array.isArray(dayPayload.results)||
    await canonicalHash(dayPayload)!==dayRow.outcome_hash)fail('first leg day receipt');
@@ -126,6 +138,9 @@ export async function resolvePublishedKnockoutV1(db,{match,world,published,conte
    fail('first leg result link');
   verified={mode:'second-leg',firstLegHomeGoals:oldResult.homeGoals,
    firstLegAwayGoals:oldResult.awayGoals};
+  guards.push(guard(db,
+   'SELECT 1 FROM season_calendars WHERE season_number=? AND calendar_hash=? AND calendar_json=?',
+   [world.seasonNumber,calendar.calendar_hash,calendar.calendar_json]));
   guards.push(guard(db,'SELECT 1 FROM match_lineup_result_receipts WHERE slot_match_id=? AND generation=? AND season_number=? AND day=? AND fixture_id=? AND receipt_hash=? AND receipt_json=?',
    [priorSlot,world.generation,world.seasonNumber,first.day,first.id,
     frozen.receipt_hash,frozen.receipt_json]));
