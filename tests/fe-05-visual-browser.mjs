@@ -255,3 +255,7 @@ try{
  writeFileSync(output+'/fe-05-visual-results.json',JSON.stringify({head,results},null,2));
  console.log('FE-05 Chromium visual stability PASS: '+results.length+' scenarios, head '+head);
 }finally{await browser.close()}
+
+// Always exercise the match scoreboard's parser-time palette and badge geometry
+// in the existing FULL browser lane, without modifying the workflow definition.
+await import('./match-first-paint-browser.mjs');

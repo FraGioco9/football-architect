@@ -7,11 +7,12 @@ import {isMatchId,matchIdForSlot} from './domain/calendar/match-slot-identity.ts
 import type {TemporaryResult} from './temporary-simulation.ts';
 import {buildKnockoutSlotReservations,type BracketScope} from './domain/calendar/knockout-slot-reservations.ts';
 import {readPublicSportingSeason} from './public-sporting-read.ts';
+import {canonicalHomeStadium,matchSlotStadium} from './match-venues.ts';
 
 interface MatchRow {
  match_id:string;generation:string;season_number:number;competition_id:string;phase_id:string;
  slot_id:string;source_fixture_id:string;marker:string;scheduled_day:number;round_number:number;
- home_club_id:string;away_club_id:string;source_kind:'calendar'|'domestic'|'international';
+ home_club_id:string;away_club_id:string;stadium_name:string|null;source_kind:'calendar'|'domestic'|'international';
  source_hash:string;published_at:number;
 }
 interface MatchNumber {id:number;slot_match_id:string;generation:string;season_number:number}
@@ -118,7 +119,8 @@ export async function readPublicMatch(db:Database,matchId:string){
   competitionId:row.competition_id,stageId:row.phase_id,slotId:row.slot_id,
   round:row.round_number,marker:row.marker,day:row.scheduled_day,
   homeParticipant:{clubId:row.home_club_id},awayParticipant:{clubId:row.away_club_id},
-  status:result?'completed':'scheduled',result,venue:null,kickoff:null,
+  status:result?'completed':'scheduled',result,
+  venue:(()=>{const name=matchSlotStadium(row.home_club_id,row.stadium_name);return name?{name}:null})(),kickoff:null,
   provenance:{kind:'authoritative',sourceKind:row.source_kind,sourceHash:row.source_hash}};
 }
 
@@ -172,10 +174,11 @@ export async function readPublishedCompetitionMatches(db:Database,season:number,
   status:'published',fixtures:[
    ...rows.map(r=>({matchId:String((r as MatchRow&{public_id:number}).public_id),sourceFixtureId:r.source_fixture_id,
      marker:r.marker,day:r.scheduled_day,round:r.round_number,phaseId:'league',
-     homeClubId:r.home_club_id,awayClubId:r.away_club_id})),
+     homeClubId:r.home_club_id,awayClubId:r.away_club_id,
+     venue:(()=>{const name=matchSlotStadium(r.home_club_id,r.stadium_name);return name?{name}:null})()})),
    ...brackets.map(r=>({matchId:String((r as ReservedKnockout&{public_id:number}).public_id),sourceFixtureId:null,
      marker:r.marker,day:r.scheduled_day,round:r.round_number,phaseId:r.phase_id,
-     tieId:r.tie_id,leg:r.leg,homeClubId:null,awayClubId:null,
+     tieId:r.tie_id,leg:r.leg,homeClubId:null,awayClubId:null,venue:null,
      participantA:JSON.parse(r.participant_a_json),participantB:JSON.parse(r.participant_b_json)}))
   ].sort((a,b)=>a.day-b.day||a.matchId.localeCompare(b.matchId,'en')),
   provenance:{kind:'authoritative',sourceKind:sample.source_kind,sourceHash:sample.source_hash}};
@@ -296,6 +299,9 @@ async function readPublicReservedKnockout(
   homeParticipant:resolved?{clubId:resolved.homeClubId}:null,
   awayParticipant:resolved?{clubId:resolved.awayClubId}:null,
   status:resolved?.result?'completed':resolved?'scheduled':'awaiting_participants',
-  result:resolved?.result??null,venue:null,kickoff:null,
+  result:resolved?.result??null,
+  venue:resolved&&row.home_policy!=='neutral'
+   ?(()=>{const name=canonicalHomeStadium(resolved.homeClubId);return name?{name}:null})()
+   :null,kickoff:null,
   provenance:{kind:'authoritative',sourceKind:row.source_kind,sourceHash:row.source_hash}};
 }
