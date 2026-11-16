@@ -128,6 +128,7 @@
 
   // Presentation only: indicate the Rules bands without changing league ranking.
   function standingOutcome(position) {
+    if(activeStandingsSubview!=='overall')return '';
     const selected=window.faCompetitionContext?.definition||definition;
     if(!Number.isInteger(position)||position<1||!selected||position>selected.capacity)return '';
     const outcome=window.faCompetitionRulesView.standingsOutcomes(selected).find(o=>position>=o.from&&position<=o.to);
@@ -155,7 +156,7 @@
     const selected=window.faCompetitionContext?.definition,host=document.querySelector('.app-standings-legend'),list=host?.querySelector?.('ul');
     if(!selected||!list||!window.faCompetitionRulesView)return;
     const outcomes=window.faCompetitionRulesView.standingsLegendOutcomes(selected);
-    host.hidden=!outcomes.length;
+    host.hidden=activeStandingsSubview!=='overall'||!outcomes.length;
     const signature=JSON.stringify([document.documentElement.lang,selected.id,outcomes]);
     if(list.dataset.faLegendSignature===signature)return;
     list.replaceChildren(...outcomes.map(outcome=>{
@@ -749,6 +750,15 @@
 
   function bindSuppliedPanels(mobile){
     const tbody=document.getElementById('app-standings-body'),rules=window.faCompetitionRules;
+    const subviewButtons=[...document.querySelectorAll('[data-standings-subview]')];
+    const syncSubviews=()=>{
+      const cup=window.faCompetitionContext?.definition?.category==='international';
+      if(cup&&['first','second'].includes(activeStandingsSubview))activeStandingsSubview='overall';
+      for(const button of subviewButtons){
+        button.hidden=Boolean(cup&&['first','second'].includes(button.dataset.standingsSubview));
+        button.setAttribute('aria-pressed',String(button.dataset.standingsSubview===activeStandingsSubview));
+      }
+    };
     // Mount the published tooltip only after verified played fixtures exist.
     // Do not change first paint or the empty-context bootstrap DOM.
     let publishedFormTips=null;
@@ -791,6 +801,7 @@
     };
     function refresh(){
       const context=window.faCompetitionContext;if(!context)return;
+      syncSubviews();
       const definition=context.definition,league=definition.rules.phases.find(p=>p.rankOutcomes),roundCount=definition.metrics.phases[league.id].rounds;
       const nextGraph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
       const panel=document.getElementById('competition-panel-postseason');
@@ -822,11 +833,16 @@
           if(row.played>roundCount||row.won+row.drawn+row.lost!==row.played||row.gd!==row.gf-row.ga)throw Error('Invalid supplied totals');
           return {...row,club,position:index+1,recent:row.recent||[]};
         }):data.participants.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
-        const commitMobile=mobile.prepare(rows);
-        const verifiedForms=verifiedPublishedForms(data,rows,definition,rules);
-        const desktop=rows.map((row,index)=>{
-          const tr=createStandingsRow(row.club);decorateStanding(tr,supplied?index+1:null);
-          if(supplied){
+        const projected=activeStandingsSubview==='overall'?rows:
+          projectStandings?.(rows,data.fixtures,definition,activeStandingsSubview);
+        const displayReady=Boolean(supplied&&projected);
+        const displayRows=projected||rows.map(row=>({...row,played:null,won:null,drawn:null,
+          lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
+        const commitMobile=mobile.prepare(displayRows);
+        const verifiedForms=verifiedPublishedForms(data,displayRows,definition,rules);
+        const desktop=displayRows.map((row,index)=>{
+          const tr=createStandingsRow(row.club);decorateStanding(tr,displayReady?index+1:null);
+          if(displayReady){
             const values=[index+1,null,...['played','won','drawn','lost','gf','ga','gd','pts'].map(k=>row[k])];
             values.forEach((value,i)=>{if(i!==1)tr.children[i].textContent=String(value)});
             // A real match can use the domestic tooltip layout only when
@@ -889,7 +905,7 @@
         renderDOM.keyed(tbody,desktop,row=>row.dataset.worldClub);commitMobile(true);
         if(verifiedForms.size){
           if(!publishedFormTips)publishedFormTips=bindPublishedFormTooltips();
-          publishedFormTips.sync(verifiedForms,rows,definition,rules);
+          publishedFormTips.sync(verifiedForms,displayRows,definition,rules);
         }else publishedFormTips?.clear();
         commitDomestic?.();suppliedOwned=true;resetBracket(new Set(updates.filter(item=>item.club).map(item=>item.slot)));
         for(const {slot,club} of updates)if(club){
@@ -924,6 +940,34 @@
       }catch(error){if(window.faDevPreviewMode===true)console.warn('Standings snapshot presentation rejected',error);resetBracket();empty();}
       window.faAppRenderLanguage?.();
     }
+    const setSubview=next=>{
+      if(!STANDINGS_SUBVIEWS.includes(next)||next===activeStandingsSubview)return;
+      activeStandingsSubview=next;
+      syncSubviews();refresh();refreshSeasonPresentation();
+    };
+    document.querySelector('.app-standings-subviews')?.addEventListener('click',event=>{
+      const button=event.target.closest?.('[data-standings-subview]');
+      if(!button||button.hidden)return;
+      const next=button.dataset.standingsSubview;
+      if(next===activeStandingsSubview)return;
+      const url=new URL(window.location.href);
+      if(next==='overall')url.searchParams.delete('table');else url.searchParams.set('table',next);
+      window.history.pushState(null,'',url.href);
+      setSubview(next);
+    });
+    document.querySelector('.app-standings-subviews')?.addEventListener('keydown',event=>{
+      const button=event.target.closest?.('[data-standings-subview]');
+      if(!button||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+      const buttons=subviewButtons.filter(x=>!x.hidden),index=buttons.indexOf(button);
+      if(index<0)return;
+      event.preventDefault();
+      const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:
+        (index+(event.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length;
+      buttons[next].click();buttons[next].focus({preventScroll:true});
+    });
+    const onNavigation=()=>setSubview(readStandingsSubview());
+    window.addEventListener('popstate',onNavigation);
+    window.addEventListener('fa:competition-route-change',onNavigation);
     window.addEventListener('fa:competition-context-change',refresh);
     window.addEventListener('fa:published-match-links-change',refresh);
     // The official collection may finish before the global season loader.
@@ -1094,6 +1138,14 @@
     return value;
   };
   let definition,division,activeDebugSeason,mountedPostseasonGraph;
+  let activeStandingsSubview='overall',projectStandings;
+  const STANDINGS_SUBVIEWS=['overall','first','second','home','away','last5'];
+  function readStandingsSubview(){
+    const query=new URL(window.location.href).searchParams.get('table');
+    if(!STANDINGS_SUBVIEWS.includes(query))return 'overall';
+    if(definition?.category==='international'&&['first','second'].includes(query))return 'overall';
+    return query;
+  }
   function createContext(definition,selectedSeason,seasonData,revision){
     if(!Number.isSafeInteger(selectedSeason)||selectedSeason<1||!Number.isSafeInteger(revision)||revision<1)
       throw Error("Invalid competition context");
@@ -1276,6 +1328,8 @@
       cell.textContent="No standings available yet.";empty.appendChild(cell);
       document.getElementById("app-standings-body").replaceChildren(empty);
     }
+    ({projectStandings}=await import(new URL('standings-subviews.mjs',sourceUrl).href));
+    activeStandingsSubview=readStandingsSubview();
     bindSuppliedPanels(suppliedMobile);
     if(!document.querySelector('link[href="/assets/competition-awards.css"]')){const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);}
     // The module bootstrap does not delay legacy shared-page initialization.
