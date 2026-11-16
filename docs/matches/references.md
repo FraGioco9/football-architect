@@ -85,3 +85,36 @@ preserved exactly; this feature introduces no new calendar-only database
 lookup, no additional Calendar API fields and no links in Calendar event
 details. Use the competition Fixtures/Postseason and Club Fixtures views for
 match-detail navigation instead.
+
+
+## Cross-page result navigation audit (stacked on PR #641)
+
+Competition Standings uses the same authenticated-world, season-scoped public
+competition match collection as Fixtures and Postseason. A recent-form badge
+(W/D/L) may navigate to `/matches/<numericId>` **only after** matching its
+verified played fixture by original `sourceFixtureId`, round, marker and day.
+The desktop tooltip and compact/mobile tooltip remain usable on hover/focus;
+the result badge becomes a native anchor for left-click, Ctrl/Cmd-click,
+middle-click and new-tab context-menu navigation. Unverified, DEV, unpublished
+or wrong-world form remains informational, never a fabricated match link.
+
+QA checklist (both domestic divisions and INT-24 competitions, present and
+historical seasons, desktop and iPhone Safari, EN/DE/ES/FR/IT):
+
+- [ ] `/competitions/<id>/standings` — recent W/D/L results, desktop and compact.
+- [ ] `/competitions/<id>/fixtures` — scheduled and scored league rows; all six INT-24 league rounds.
+- [ ] `/competitions/<id>/fixtures` — reserved TBD knockout slots and each resolved leg.
+- [ ] `/competitions/<id>/postseason` — separate first/second-leg links, single-leg finals.
+- [ ] `/clubs/<country>/<clubId>/fixtures` — domestic/international, historical and resolved scores.
+- [ ] `/matches/<matchId>` — canonical destination, prematch/completed, correct identity and result.
+- [ ] Confirm club-name links still lead to the Club Overview, and native new-tab
+      actions work without nested anchors.
+- [ ] Confirm loading, 404/unpublished, reset, season change, Debug ON/OFF and
+      world revision changes remove stale links without score or layout flashes.
+
+Explicitly excluded: `/calendar` (no individual-match links by owner decision).
+Competition History, Stats, Awards and Club History currently show aggregate
+season/club outcomes rather than individual match-result records; they must not
+invent a result link. Club Overview's next-match summary is not a scored-result
+list. Any future per-match records added to those views require a separate
+published-ID linkage check.

@@ -16,6 +16,35 @@ test('skip skeleton only for known empty current season/revision',()=>{
  assert.equal(confirmedEmpty({...panel,dataset:{...panel.dataset,faContentState:'unknown'}},context,{season:'2'}),false);
  assert.equal(confirmedEmpty(null,context,{season:'2'}),false);
 });
+test('Standings table has no hover animation or row hover highlight in either theme',()=>{
+ const css=read('assets/app.css');
+ assert.doesNotMatch(css,/\.app-world-standing-table tbody tr:hover/,
+  'desktop Standings rows do not change background when the pointer passes over them');
+ assert.match(css,/\.app-world-standing-table \.app-world-form-control\{transition:none\}/,
+  'match-form controls inside Standings do not animate on hover');
+ assert.match(css,/\.app-world-standing-table \.app-world-form-control:hover:not\(:focus-visible\)\{background:transparent\}/,
+  'badge hover does not animate a colored background');
+ assert.match(css,/\.app-world-form-control:focus-visible/,
+  'keyboard focus remains visible');
+ assert.match(css,/\.app-world-form-tooltip/,
+  'match-result tooltip remains available');
+});
+
+test('authoritative Standings rebinds links when loading ends after published list',()=>{
+ const page=read('assets/competition-page.js');
+ const fixtures=read('assets/competition-fixtures.js');
+ assert.match(page,/attributeFilter:\['data-fa-standings-loading'\]/,
+  'Standings observes the exact global loading state');
+ assert.match(page,/if\(typeof MutationObserver==='function'\)new MutationObserver/,
+  'browser-only loading observer cannot block Node/fallback renderers');
+ assert.match(page,/faStandingsLoading!=='true'&&[\s\S]*?provenance\?\.kind==='authoritative'\)[\s\S]*?refresh\(\)/,
+  'only settled authoritative standings can rebind native match anchors');
+ assert.match(page,/addEventListener\('fa:published-match-links-change',refresh\)/,
+  'a settled published collection can also rebind result links');
+ assert.match(fixtures,/pendingKey=null;render\(\);syncKnockoutLinks\(\);[\s\S]*?notifyPublishedMatchLinks\(\)/,
+  'published collection completion notifies Standings after the pending key clears');
+});
+
 test('presenters require concrete absence instead of missing responses',()=>{
  assert.match(read('assets/competition-fixtures.js'),/data\.fixtures===null/);
  assert.match(read('assets/competition-fixtures.js'),/available&&\(\(international/);
@@ -199,4 +228,34 @@ test('QA-12: completed History becomes visible even if unrelated current-season 
  window.faHistorySetReady(true);
  assert.equal(dataset.faHistoryLoading,'false','History readiness is independent of the current-season public provider');
  assert.equal(skeleton.removed,true);
+});
+
+
+test('MATCH-LINKS #605: standings form links use official source identities on both layouts',()=>{
+ const page=read('assets/competition-page.js'),start=page.indexOf('  function linkedFormMatchId(');
+ const end=page.indexOf('  function bindPublishedFormTooltips()',start);
+ assert.ok(start>=0&&end>start,'shared form reference lookup is mounted before tooltip events');
+ const invoked=[];
+ const resolver=runInNewContext(page.slice(start,end)+';linkedFormMatchId',{
+  window:{faCompetitionMatchLinks:{forFixture(fixture,season){
+   invoked.push([fixture,season]);
+   return season===1&&fixture.sourceFixtureId==='official-source'?'59':null;
+  }}}
+ });
+ const verified=new Map([['IT-3|7|3|4',{fixture:{sourceFixtureId:'official-source'}}]]);
+ assert.equal(resolver(verified,'IT-3|7|3|4',1),'59','official ID is used without constructing a URL from scores');
+ assert.equal(resolver(verified,'IT-3|7|3|4',2),null,'other seasons fail closed');
+ assert.equal(resolver(verified,'unverified',1),null,'unverified result cannot navigate');
+ assert.equal(invoked.length,2,'no lookup for an unverified form');
+ assert.match(page,/document\.createElement\(matchId\?'a':isVerified\?'button':'span'\)/,
+  'desktop W/D/L uses a native anchor only when published');
+ assert.match(page,/document\.createElement\(matchId\?"a":"span"\)/,
+  'compact W/D/L upgrades to a native anchor after publication');
+ assert.match(page,/if\(node\.tagName==="A"\)\{event\.stopPropagation\(\);touchWasOpen=false;return\}/,
+  'native link clicks are not swallowed by tooltip or compact details');
+ assert.match(page,/\["BUTTON","A"\]\.includes\(node\.tagName\)/,
+  'keyboard Enter on anchors is not intercepted');
+ assert.match(page,/fa:published-match-links-change',refresh/,'late publication updates standings');
+ const css=read('assets/app.css');
+ assert.match(css,/\.app-world-mobile-form a\[data-published-match\]\{cursor:pointer\}/);
 });
