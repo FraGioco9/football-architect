@@ -29,7 +29,9 @@ test('M10 scenario contract: ordinary unstaged 22-player formation and no fake p
  }
  const source=readFileSync(new URL('../src/movement-labs.mjs',import.meta.url),'utf8');
  assert.match(source,/const pressureScene=scene\.spec\.id==='pressure-support'/);
- assert.match(source,/sharedContacts=scene\.spec\.id==='shared-contacts'\|\|pressureScene/);
+ // M10 original observer remains enabled; M12 adds an independent
+ // research scene without inheriting M8/M9 controlled initial lineup.
+ assert.match(source,/sharedContacts=scene\.spec\.id==='shared-contacts'\|\|\s*pressureScene\|\|opposingConvergenceScene/);
  assert.match(source,/encounter\?\{researchBodyEncounter:true\}:\{\}/);
  assert.match(source,/const pressId=pressureScene\?frame\.pressers\?\.\[oppositeSide\]/);
  assert.doesNotMatch(source,/diagnosticAutonomousFixtureActionEnabled:\s*true/);
