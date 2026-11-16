@@ -108,6 +108,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticB06bHalftimeTick = null,
   diagnosticB06bOpeningKickoffEnabled = false,
   diagnosticB06bGoalRestartEnabled = false,
+  diagnosticB06bNativeShotSide = null,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -166,17 +167,33 @@ export function createEngine(RAPIER, input = {}, {
      (diagnosticB06bGoalRestartEnabled&&(
       diagnosticB06bHalftimeTick===null||diagnosticB06bOpeningKickoffEnabled)))
    throw new TypeError('B06b goal restart needs isolated non-opening regulation source');
+  // H2b2b1: only this coupled, private research option may reuse the
+  // EXISTING original uniform 22-player shot selector during a mini match.
+  // An unrelated SHOT LAB, ordinary engine, or 90-minute audit cannot opt in.
+  if(diagnosticB06bNativeShotSide!==null&&(
+     !['home','away'].includes(diagnosticB06bNativeShotSide)||
+     diagnosticB06bHalftimeTick===null||
+     diagnosticB06bHalftimeTick===162000||
+     !diagnosticB06bGoalRestartEnabled||
+     diagnosticB06bOpeningKickoffEnabled||
+     !diagnosticAutonomousFixtureActionEnabled||
+     diagnosticAutonomousCarryEnabled||
+     diagnosticResearchShotAttacker!==diagnosticB06bNativeShotSide||
+     diagnosticResearchShotBlockedLane||diagnosticResearchShotWideCross))
+   throw new TypeError('B06b native shot must use isolated original mini-match Rapier action source');
   if(diagnosticB06bHalftimeTick!==null&&(
     !Number.isSafeInteger(diagnosticB06bHalftimeTick)||
     diagnosticB06bHalftimeTick<120||
     diagnosticB06bHalftimeTick>162000||
     !diagnosticPlayerFootContactsEnabled||
-    diagnosticAutonomousFixtureActionEnabled||
+    (diagnosticAutonomousFixtureActionEnabled&&
+     diagnosticB06bNativeShotSide===null)||
     diagnosticAutonomousCarryEnabled||
     diagnosticBasicRestartEnabled||
     diagnosticPlayerBodyCollidersEnabled||
     diagnosticSharedContactEventsEnabled||
-    diagnosticResearchShotAttacker!==null||
+    (diagnosticResearchShotAttacker!==null&&
+     diagnosticResearchShotAttacker!==diagnosticB06bNativeShotSide)||
     diagnosticResearchControlReceiver||
     diagnosticResearchDefensiveSide!==null||
     diagnosticResearchGoalkeeperSaveSide!==null))
@@ -434,7 +451,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchDefensiveSide,diagnosticResearchDefensiveKind,
     diagnosticBasicRestartEnabled,diagnosticBasicRestartSource,
     diagnosticBasicRestartAttackSide,
-    diagnosticB06bHalftimeTick,
+    diagnosticB06bHalftimeTick,diagnosticB06bNativeShotSide,
+    diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
     diagnosticResearchReceivingDecisionEnabled,diagnosticResearchReceiverTapEnabled,
@@ -660,7 +678,11 @@ export function createEngine(RAPIER, input = {}, {
     tick += 1;
     // Same tick, same private Rapier ball, exclusively from observed shoe
     // START. The ordinary physics and contact-only modes never kick.
-    if(actionExecutor)actionExecutor.apply(tick,playerFrame);
+    if(actionExecutor)actionExecutor.apply(tick,playerFrame,{
+      suppressOriginalAction:diagnosticB06bNativeShotSide!==null&&(
+       b06bGoalPending!==null||
+       (b06bHalftimePlacement!==null&&b06bKickoff===null))
+    });
     return snapshot();
   }
   // B05b: one original native Rapier shoe START, one outbound physical

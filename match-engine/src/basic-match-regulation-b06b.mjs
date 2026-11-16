@@ -6,12 +6,15 @@ import {createPlayerMovement,INITIAL_PLAYERS} from './player-movement.mjs';
 import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
 import {createBasicMatchTimelineB06,basicMatchClockB06,
  B06_HALF_TICKS,B06_FULL_TICKS} from './basic-match-clock-score-b06.mjs';
-export const B06B_SESSION_VERSION='me-628-b06b-real-two-half-native-source-v4';
+export const B06B_SESSION_VERSION='me-628-b06b-real-two-half-native-source-v5';
 const freeze=Object.freeze;
 export function createBasicRegulationSessionB06b(RAPIER,{
  researchHalfTicks=B06_HALF_TICKS,researchOpeningKickoff=false,
- researchGoalCrossingSide=null
+ researchGoalCrossingSide=null,researchLiveShotSide=null
 }={}){
+ if(researchLiveShotSide!==null&&
+    !['home','away'].includes(researchLiveShotSide))
+  throw new TypeError('B06b native live shot requires a known HOME/AWAY side');
  if(researchGoalCrossingSide!==null&&
     !['home','away'].includes(researchGoalCrossingSide))
   throw new TypeError('B06b goal diagnostic requires HOME/AWAY only');
@@ -22,10 +25,18 @@ export function createBasicRegulationSessionB06b(RAPIER,{
    researchHalfTicks<120||researchHalfTicks>B06_HALF_TICKS)
   throw new TypeError('B06b requires Rapier and a bounded authentic 60Hz half');
  const goalMode=researchGoalCrossingSide!==null;
+ const shotMode=researchLiveShotSide!==null;
+ const goalRestartEnabled=goalMode||shotMode;
+ if(shotMode&&(goalMode||researchOpeningKickoff||
+    researchHalfTicks===B06_HALF_TICKS))
+  throw new TypeError('B06b native shot is exclusively bounded non-opening mini research');
  if(goalMode&&(researchOpeningKickoff||researchHalfTicks===B06_HALF_TICKS))
   throw new TypeError('B06b real goal fixture is restricted to bounded non-opening mini QA');
  const openingRequired=researchOpeningKickoff||researchHalfTicks===B06_HALF_TICKS;
  // A DEV-only pre-tick-zero physical ball flight, NOT a native player shot.
+ const shotInitial=shotMode?{
+  x:researchLiveShotSide==='home'?30:-30,y:0,vx:0
+ }:null;
  const goalInitial=goalMode?{
   x:researchGoalCrossingSide==='home'?47.8:-47.8,
   y:researchGoalCrossingSide==='home'?2.8:-2.8,
@@ -33,35 +44,55 @@ export function createBasicRegulationSessionB06b(RAPIER,{
  }:null;
  // This is a dedicated research-only match lifecycle: the same original
  // Rapier World, one ball and the same canonical movement for all 22 ids.
- const engine=createEngine(RAPIER,{
+ const researchBall=freeze({
   preset:'roll',seed:'me-628-b06b-real-halftime',
-  x:goalInitial?.x??0,
-  y:goalInitial?.y??(openingRequired?0:20),
-  z:0,vx:goalInitial?.vx??0,vy:0,vz:0
- },{
+  x:goalInitial?.x??shotInitial?.x??0,
+  y:goalInitial?.y??shotInitial?.y??(openingRequired?0:20),
+  z:0,vx:goalInitial?.vx??shotInitial?.vx??0,vy:0,vz:0
+ });
+ const engine=createEngine(RAPIER,researchBall,{
   diagnosticPlayerFootContactsEnabled:true,
+  diagnosticAutonomousFixtureActionEnabled:shotMode,
+  diagnosticResearchShotAttacker:researchLiveShotSide,
+  diagnosticB06bNativeShotSide:researchLiveShotSide,
   diagnosticB06bHalftimeTick:researchHalfTicks,
   diagnosticB06bOpeningKickoffEnabled:openingRequired,
-  diagnosticB06bGoalRestartEnabled:goalMode
+  diagnosticB06bGoalRestartEnabled:goalRestartEnabled
  });
  const mover=createPlayerMovement({researchB06bHalftimeTick:researchHalfTicks,
   ...(openingRequired?{researchB06bOpeningKickoffEnabled:true}:{}),
-  ...(goalMode?{researchB06bGoalRestartEnabled:true}:{})});
+  ...(goalRestartEnabled?{researchB06bGoalRestartEnabled:true}:{}),
+  ...(shotMode?{
+   researchB06bNativeShotSide:researchLiveShotSide,
+   researchShotAttacker:researchLiveShotSide,
+   researchShotBall:researchBall
+  }:{})});
  const referee=createBasicMatchRefereeB05();
  const ledger=createBasicMatchTimelineB06({b06bRealHalftimePause:true});
  let disposed=false,phase=openingRequired?'opening-kickoff':'first-half',
   clockTicks=0,openingKickoff=null,halftimePlacement=null,
   kickoff=null,end=null,deadBall=null,goalPending=null,
-  goalPauseTicks=0,goalKickoffs=freeze([]),goalPlacements=freeze([]);
+  goalPauseTicks=0,goalKickoffs=freeze([]),goalPlacements=freeze([]),
+  nativeShots=freeze([]);
  let frame=mover.snapshot(),physics=engine.snapshot();
  function observe(){
+  const foot=engine.footContactSnapshot();
+  const solver=physics.tick?engine.footContactSolverSnapshot():null;
+  const action=shotMode&&physics.tick?
+    engine.uniformAutonomousActionSnapshot():null;
   const evidence=referee.observe({physics,playerFrame:frame,
-   foot:engine.footContactSnapshot(),
-   solver:physics.tick?engine.footContactSolverSnapshot():null,action:null});
+   foot,solver,action});
   let current=ledger.observe({physics,refereeEvidence:evidence});
+  if(action?.action==='shot'){
+   current=ledger.recordNativeLiveShot({
+    physicsTick:physics.tick,playedTicks:clockTicks,
+    physics,action,foot,solver,refereeEvidence:evidence
+   });
+   nativeShots=freeze([...nativeShots,action].slice(-64));
+  }
   if(evidence.lastEvent?.tick===physics.tick){
    const event=evidence.lastEvent;
-   if(goalMode&&event.kind==='goal'&&event.restart.ready){
+   if(goalRestartEnabled&&event.kind==='goal'&&event.restart.ready){
     // B05 and independent B06 geometry have both observed THIS physical tick.
     const placement=engine.b06bOriginalPlaceGoalRestart(event,frame);
     referee.acknowledgeRestart(event.restart);
@@ -96,6 +127,8 @@ export function createBasicRegulationSessionB06b(RAPIER,{
    genuineGoalKickoffs:goalKickoffs,
    pausedGoalPhysicsTicks:goalPauseTicks,
    goalFixtureStartsFromPreTickZeroBallVelocity:goalMode,
+   nativePlayerShotResearchEnabled:shotMode,
+   nativePhysicalShotAttempts:nativeShots,
    halfTime:halftimePlacement,secondHalfKickoff:kickoff,
    final:end,
    realFull90MinutesVerified:end!==null&&!shortened&&openingKickoff!==null,
@@ -179,6 +212,7 @@ export function createBasicRegulationSessionB06b(RAPIER,{
     provisionalScore:timeline.provisionalScore,
     provisionalMatchEvents:timeline.matchEvents,
     physicallyAuthenticatedGoalKickoffs:goalKickoffs,
+    nativeOriginalShotAttempts:nativeShots,
     playedTicksExcludingDeadBallApproaches:clockTicks,
     actualRapierPhysicsTicks:physics.tick,
     source:'original-b05-b06-independent-rapier-event-audit',

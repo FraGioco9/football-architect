@@ -5,6 +5,8 @@
 // or permission to bypass the real half-time restart.
 import {FIXED_DT,ENGINE_VERSION,BALL_RADIUS} from './core.mjs';
 import {FOOT_SOLVER_EVIDENCE_VERSION} from './player-foot-contact-solver.mjs';
+import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
+import {UNIFORM_AUTONOMOUS_ACTION_VERSION} from './player-ball-uniform-autonomous-action.mjs';
 import {B05_REFEREE_VERSION,detectFirstFullyOutBallB05,
  B05_GOAL_WIDTH_M,B05_GOAL_HEIGHT_M}
  from './basic-match-referee-b05.mjs';
@@ -39,7 +41,8 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
  if(typeof b06bRealHalftimePause!=='boolean')
   throw new TypeError('B06b half-time pause is exclusively boolean');
  let tick=-1,lastBall=null,lastEvent=null,lastRestart=null,
-  lastSetPiece=null,lastGoalKickoff=null,events=freeze([]),
+  lastSetPiece=null,lastGoalKickoff=null,lastNativeShot=null,
+  events=freeze([]),
   score=freeze({home:0,away:0});
  const eventTicks=new Set();
  function snapshot(){
@@ -52,6 +55,7 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
    lastNativeBoundaryEvent:lastEvent,
    lastPhysicalRestart:lastRestart,lastPhysicalSetPiece:lastSetPiece,
    lastPhysicalGoalKickoff:lastGoalKickoff,
+   lastOriginalNativeShot:lastNativeShot,
    phase:deadBall?'dead-ball-awaiting-source-verified-restart':
     clock.phase,
    outstandingDeadBall:deadBall,
@@ -166,6 +170,85 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
   }));
   return snapshot();
  }
+
+ // H2b2b1: observe the same ORIGINAL uniform policy, Rapier shoe and solver
+ // used in the Action LAB, but now under the regulated 60Hz match clock.
+ // A SHOT is an attempt; ball crossing is observed separately by B05/B06.
+ function recordNativeLiveShot({
+  physicsTick,playedTicks,physics,action,foot,solver,refereeEvidence
+ }={}){
+  const n=physicsTick,side=action?.team,actor=action?.playerId;
+  const target=action?.shotTarget;
+  if(n!==tick||n<1||!Number.isSafeInteger(playedTicks)||
+     playedTicks<1||playedTicks>B06_FULL_TICKS||
+     physics?.version!==ENGINE_VERSION||physics.tick!==n||
+     !ballXYZ(physics.ball?.position)||
+     !ballXYZ(physics.ball?.velocity)||
+     !['home','away'].includes(side)||actor!==side+'-10'||
+     action?.tick!==n||action?.version!==UNIFORM_AUTONOMOUS_ACTION_VERSION||
+     action.action!=='shot'||action.appliedByRapier!==true||
+     action.actualPhysicsImpulseApplied!==true||
+     action.actionSource!=='internal-uniform-22-player-ai'||
+     action.physicalTrigger!=='same-tick-real-rapier-shoe-start'||
+     action.physicalPrerequisites?.physicsTick!==n||
+     action.physicalPrerequisites?.actorId!==actor||
+     action.physicalPrerequisites?.originalPhysicalGuardsPassed!==true||
+     action.physicalPrerequisites?.exclusiveShoeStart!==true||
+     action.decisionContext?.shotRange!==true||
+     action.officialMatchAction!==false||
+     action.officialMatchPossession!==false||
+     action.officialGoalEvidence!==false||
+     action.officialMatchResult!==null||
+     target?.source!=='same-tick-closed-goal-lane-from-live-22-players'||
+     target.physicsTick!==n||target.shooterId!==actor||
+     target.team!==side||target.attemptOnly!==true||
+     target.shotOnTarget!==null||target.goalScored!==null||
+     !Number.isFinite(target.originX)||!Number.isFinite(target.originY)||
+     !Number.isFinite(target.targetY)||!Number.isFinite(target.laneClearanceM)||
+     target.laneClearanceM<2.4||
+     target.targetX!==(side==='home'?52.5:-52.5)||
+     Math.abs(target.targetY)>3.55||
+     Math.hypot(physics.ball.position.x-target.originX,
+       physics.ball.position.y-target.originY)>0.02||
+     !Number.isFinite(action.impulseNs?.x)||
+     !Number.isFinite(action.impulseNs?.y)||
+     !Number.isFinite(action.impulseNs?.z)||
+     (side==='home'?action.impulseNs.x<=0:action.impulseNs.x>=0)||
+     action.impulseNs.z<=0||
+     foot?.version!==FOOT_CONTACT_VERSION||
+     foot.tick!==n||foot.started?.length!==1||
+     foot.active?.length!==1||
+     foot.started[0]!==actor||foot.active[0]!==actor||
+     solver?.version!==FOOT_SOLVER_EVIDENCE_VERSION||
+     solver.tick!==n||!Array.isArray(solver.pairs)||
+     !solver.pairs.some(p=>p.id===actor&&p.beganThisTick&&
+       p.collisionActive&&p.manifolds?.some(m=>m.geometricContacts>0))||
+     refereeEvidence?.version!==B05_REFEREE_VERSION||
+     refereeEvidence.tick!==n||refereeEvidence.lastVerifiedTouch?.tick!==n||
+     refereeEvidence.lastVerifiedTouch.playerId!==actor||
+     refereeEvidence.lastVerifiedTouch.team!==side||
+     refereeEvidence.lastVerifiedTouch.nativeExclusiveShoeStart!==true||
+     refereeEvidence.officialMatchResult!==null||
+     lastNativeShot?.tick===n||
+     (lastEvent!==null&&lastRestart?.sourceEventTick!==lastEvent.tick))
+   throw new TypeError('B06 refuses native live SHOT without same-tick original policy, Rapier sole and solver');
+  lastNativeShot=action;
+  add(freeze({
+   type:'native-shot-physical-attempt',tick:n,
+   playedTicks,playedTime:basicMatchClockB06(playedTicks).label,
+   team:side,actorId:actor,
+   originalPolicyActionSource:true,
+   originalRapierShoeStart:true,
+   originalRapierSolverManifold:true,
+   actualOriginalBallImpulse:true,
+   originalShotTarget:target,
+   observedBallCentre:freeze({...physics.ball.position}),
+   verifiedGoalScored:null,
+   noScoringConclusionFromShot:true,
+   officialMatchEvent:false
+  }));
+  return snapshot();
+ }
  // H2b2a: an actual native kickoff is NOT equivalent to ball placement.
  // Keep the independent original B05/B06 goal reference, the only same-world
  // native START/manifold, the physical impulse and PLAYED vs physics clocks.
@@ -259,5 +342,6 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
   }));
   return snapshot();
  }
- return freeze({observe,recordRestart,recordGoalKickoff,recordSetPiece,snapshot});
+ return freeze({observe,recordRestart,recordNativeLiveShot,
+  recordGoalKickoff,recordSetPiece,snapshot});
 }

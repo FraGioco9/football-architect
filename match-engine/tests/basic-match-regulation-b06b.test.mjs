@@ -378,3 +378,136 @@ test('B06b H2b2a authentic HOME/AWAY goal, new native kickoff, true paused halft
   }finally{run.dispose();}
  }
 });
+
+test('B06b H2b2b1 fail-closed: only bounded original HOME/AWAY live-shoe SHOT research can opt in',async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['x','HOME',15,false]){
+  assert.throws(()=>createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchLiveShotSide:side
+  }),TypeError);
+ }
+ assert.throws(()=>createBasicRegulationSessionB06b(R,{
+  researchLiveShotSide:'home'
+ }),/exclusively bounded/);
+ assert.throws(()=>createBasicRegulationSessionB06b(R,{
+  researchHalfTicks:1200,researchLiveShotSide:'away',
+  researchOpeningKickoff:true
+ }),/exclusively bounded/);
+ assert.throws(()=>createBasicRegulationSessionB06b(R,{
+  researchHalfTicks:1200,researchLiveShotSide:'home',
+  researchGoalCrossingSide:'away'
+ }),/exclusively bounded/);
+ assert.throws(()=>createEngine(R,{preset:'roll'},{
+  diagnosticB06bNativeShotSide:'home'
+ }),/native shot/);
+ const shotBall={preset:'roll',x:30,y:0,z:0,vx:0,vy:0,vz:0};
+ assert.throws(()=>createPlayerMovement({
+  researchB06bNativeShotSide:'home',
+  researchB06bHalftimeTick:1200,
+  researchB06bGoalRestartEnabled:true,
+  researchShotAttacker:'away',researchShotBall:shotBall
+ }),TypeError);
+ const defaultEngine=createEngine(R,shotBall);
+ try{
+  assert.equal(defaultEngine.uniformAutonomousActionSnapshot,undefined);
+ }finally{defaultEngine.dispose();}
+ const ordinary=createBasicRegulationSessionB06b(R,{researchHalfTicks:1200});
+ try{
+  assert.equal(ordinary.snapshot().nativePlayerShotResearchEnabled,false);
+  assert.deepEqual(ordinary.snapshot().nativePhysicalShotAttempts,[]);
+ }finally{ordinary.dispose();}
+});
+
+test('B06b H2b2b1 original HOME/AWAY player-native SHOT occurs during B06b live game ticks, not as preloaded ball velocity',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['home','away']){
+  const a=createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchLiveShotSide:side
+  });
+  const b=createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchLiveShotSide:side
+  });
+  try{
+   let first=null,peak=0,frames=0,knownExit=null;
+   const initial=a.snapshot();
+   assert.equal(initial.nativePlayerShotResearchEnabled,true);
+   assert.equal(initial.goalFixtureStartsFromPreTickZeroBallVelocity,false);
+   assert.equal(initial.physicsTick,0);
+   assert.equal(initial.clockTicks,0);
+   assert.equal(initial.physicsBall.velocity.x,0);
+   assert.equal(initial.provisionalScore.home,0);
+   assert.equal(initial.provisionalScore.away,0);
+   for(let n=1;n<=125;n++){
+    const x=a.step(),y=b.step();
+    assert.deepEqual(x.physicsBall,y.physicsBall,
+      'two independent original Rapier Worlds must replay deterministically');
+    assert.deepEqual(x.provisionalScore,y.provisionalScore);
+    assert.equal(x.physicsTick,n);
+    assert.equal(x.canonical22,true);
+    assert.equal(x.matchAuthority,false);
+    assert.equal(x.officialMatchResult,null);
+    assert.equal(x.realFull90MinutesVerified,false);
+    peak=Math.max(peak,x.physicsBall.position.z);
+    frames=n;
+    if(x.nativePhysicalShotAttempts.length&&!first){
+     first=x;
+     const shot=x.nativePhysicalShotAttempts[0];
+     assert.equal(shot.tick,n);
+     assert.equal(shot.playerId,side+'-10');
+     assert.equal(shot.team,side);
+     assert.equal(shot.action,'shot');
+     assert.equal(shot.appliedByRapier,true);
+     assert.equal(shot.actualPhysicsImpulseApplied,true);
+     assert.equal(shot.physicalTrigger,'same-tick-real-rapier-shoe-start');
+     assert.equal(shot.shotTarget.physicsTick,n);
+     assert.equal(shot.shotTarget.attemptOnly,true);
+     assert.equal(shot.shotTarget.goalScored,null);
+     assert.equal(shot.officialMatchResult,null);
+     assert.equal(x.originalEventLedger.lastOriginalNativeShot,shot);
+     assert.equal(x.refereeSource.lastVerifiedTouch?.playerId,side+'-10');
+     assert.equal(x.refereeSource.lastVerifiedTouch?.tick,n);
+     assert.equal(x.originalEventLedger.matchEventCount,1);
+     const rec=x.originalEventLedger.matchEvents[0];
+     assert.equal(rec.type,'native-shot-physical-attempt');
+     assert.equal(rec.tick,n);
+     assert.equal(rec.playedTicks,x.clockTicks);
+     assert.equal(rec.actorId,side+'-10');
+     assert.equal(rec.team,side);
+     assert.equal(rec.originalPolicyActionSource,true);
+     assert.equal(rec.originalRapierShoeStart,true);
+     assert.equal(rec.originalRapierSolverManifold,true);
+     assert.equal(rec.actualOriginalBallImpulse,true);
+     assert.equal(rec.noScoringConclusionFromShot,true);
+     assert.equal(rec.officialMatchEvent,false);
+     assert.deepEqual(x.provisionalScore,{home:0,away:0},
+      'an actual SHOT does not automatically count as a GOAL');
+    }
+    if(x.phase==='dead-ball-pending-source-verified-restart'){
+     knownExit=x.refereeSource.lastEvent;
+     assert.ok(knownExit?.kind==='touchline'||knownExit?.kind==='goal-line');
+     break;
+    }
+   }
+   assert.ok(first,'original source-positive live player SHOT required');
+   assert.equal(first.physicsTick,1);
+   assert.ok(frames>=10,'must follow the physical ball after the native shoe');
+   assert.ok(peak>first.physicsBall.position.z+0.03,
+    'original physical SHOT produces measured 3D flight, not an event-only label');
+   const last=a.snapshot();
+   assert.equal(last.nativePlayerShotResearchEnabled,true);
+   assert.equal(last.goalFixtureStartsFromPreTickZeroBallVelocity,false);
+   assert.equal(last.fullFootballActionCoverageVerified,false);
+   assert.equal(last.officialMatchResult,null);
+   assert.equal(last.nativePhysicalShotAttempts[0].playerId,side+'-10');
+   if(knownExit)assert.equal(last.phase,'dead-ball-pending-source-verified-restart');
+   process.stdout.write('ME_628_B06B_H2B2B1_ORIGINAL_SHOT '+JSON.stringify({
+    side,nativeShotTick:first.physicsTick,
+    originalRapierFrames:frames,peakCentreZM:peak,
+    goalOnlyFromSubsequentCrossing:last.provisionalScore,
+    unresolvedBoundary:knownExit?.kind??null,
+    actualOriginalShoe:true,officialResult:null
+   })+'\\n');
+  }finally{a.dispose();b.dispose();}
+ }
+});

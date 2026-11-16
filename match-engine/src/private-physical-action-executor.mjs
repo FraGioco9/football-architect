@@ -41,8 +41,10 @@ export function createPrivatePhysicalActionExecutor({
  let actualPriorPass=null,interrupted=false,firstCushion=null;
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
- function apply(nextTick,playerFrame){
+ function apply(nextTick,playerFrame,{suppressOriginalAction=false}={}){
   ensureOpen();
+  if(typeof suppressOriginalAction!=='boolean')
+   throw new TypeError('Only boolean original-source dead-ball suppression');
   const contact=shoeBridge.snapshot();
   if(!Number.isSafeInteger(nextTick)||nextTick!==tick+1||
      !contact||contact.version!==FOOT_CONTACT_VERSION||
@@ -58,7 +60,11 @@ export function createPrivatePhysicalActionExecutor({
    allowPhysicalCarry
   };
   const gates=inspectPhysicalActionRejection(input);
-  const originalChoice=selectUniformAutonomousContactAction(input);
+  // When the private B06b match is PAUSED for a real referee-issued
+  // restart, advance this same original executor's tick but do not
+  // apply an unrelated uniform impulse over the authentic kickoff.
+  const originalChoice=suppressOriginalAction?null:
+   selectUniformAutonomousContactAction(input);
   let researchCandidate=null;
   const side=researchReceivingCushionSide;
   const receiverId=side===null?null:side+'-9';
@@ -133,7 +139,8 @@ export function createPrivatePhysicalActionExecutor({
    throw new Error('Rapier exclusive START and original action gates disagree');
   const currentAudit=Object.freeze({
    ...gates,actionSelected:chosen!==null,
-   noActionReason:chosen?null:researchCandidate?
+   noActionReason:chosen?null:suppressOriginalAction?
+    'b06b-referee-physical-dead-ball-original-action-suppressed':researchCandidate?
     'experimental-receiving-cushion-preempts-uniform-action':
     deferOriginal?'m27-native-decision-defers-original-clearance':
     (gates.firstFailedGate??'not-selected-after-input-gates')

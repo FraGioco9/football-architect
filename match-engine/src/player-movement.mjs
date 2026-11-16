@@ -1652,6 +1652,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bHalftimeTick'&&
      k!=='researchB06bOpeningKickoffEnabled'&&
      k!=='researchB06bGoalRestartEnabled'&&
+     k!=='researchB06bNativeShotSide'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlCloseDefender'&&
@@ -1773,7 +1774,8 @@ export function createPlayerMovement(options={}){
       options.researchB06bHalftimeTick>162000||
       Reflect.ownKeys(options).length!==
        (options.researchB06bOpeningKickoffEnabled===true?2:1)+
-       (options.researchB06bGoalRestartEnabled===true?1:0)))||
+       (options.researchB06bGoalRestartEnabled===true?1:0)+
+       (options.researchB06bNativeShotSide!==undefined?3:0)))||
     (options.researchB06bOpeningKickoffEnabled!==undefined&&
       (options.researchB06bOpeningKickoffEnabled!==true||
        options.researchB06bHalftimeTick===undefined))||
@@ -1781,6 +1783,16 @@ export function createPlayerMovement(options={}){
       (options.researchB06bGoalRestartEnabled!==true||
        options.researchB06bHalftimeTick===undefined||
        options.researchB06bOpeningKickoffEnabled===true))||
+    (options.researchB06bNativeShotSide!==undefined&&(
+      !['home','away'].includes(options.researchB06bNativeShotSide)||
+      options.researchB06bGoalRestartEnabled!==true||
+      options.researchB06bHalftimeTick===undefined||
+      options.researchB06bHalftimeTick===162000||
+      options.researchB06bOpeningKickoffEnabled!==undefined||
+      options.researchShotAttacker!==options.researchB06bNativeShotSide||
+      !Object.hasOwn(options,'researchShotBall')||
+      options.researchShotBlockedLane!==undefined||
+      options.researchShotWideCross!==undefined))||
     (options.researchBasicRestartSource!==undefined&&(
       !['throw-in','corner','goal-kick'].includes(options.researchBasicRestartSource)||
       !['home','away'].includes(options.researchBasicRestartAttackSide)||
