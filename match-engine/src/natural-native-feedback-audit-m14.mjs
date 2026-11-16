@@ -80,7 +80,8 @@ function validateLineMovement(after){
 // excuse to inject artificial collisions. All body feedback is M13-only.
 export function auditNaturalNativeFeedback(RAPIER,{
  stateId='centre',side='home',ticks=225,mode='feedback',
- initialBallVelocity=null,shoeBodyHandoff='legacy'
+ initialBallVelocity=null,shoeBodyHandoff='legacy',
+ researchBallStart=null
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function'||
     !allBallStates.has(stateId)||!sides.includes(side)||
@@ -101,10 +102,25 @@ export function auditNaturalNativeFeedback(RAPIER,{
    Math.hypot(initialBallVelocity.vx,initialBallVelocity.vy)<0.25||
    Math.hypot(initialBallVelocity.vx,initialBallVelocity.vy)>8))
   throw new TypeError('M15 allows only bounded genuine pre-tick-zero ball velocity');
+ // M18's explicit opt-in changes ONLY the initial ball location. All 22
+ // players, real event source, physical handoff and historical M14/M17
+ // defaults are untouched. Mirror the X coordinate for the AWAY source.
+ if(researchBallStart!==null&&(
+   stateId!=='centre'||!moving||shoeBodyHandoff!=='bounded'||
+   typeof researchBallStart!=='object'||Array.isArray(researchBallStart)||
+   Reflect.ownKeys(researchBallStart).length!==2||
+   !Object.hasOwn(researchBallStart,'x')||
+   !Object.hasOwn(researchBallStart,'y')||
+   ![researchBallStart.x,researchBallStart.y].every(Number.isFinite)||
+   Math.abs(researchBallStart.x)>48||
+   Math.abs(researchBallStart.y)>30))
+  throw new TypeError('M18 requires bounded pre-tick-zero ball-only research coordinates');
  const source=allBallStates.get(stateId);
+ const ballStart=researchBallStart??source;
  const scene=frozen({preset:'roll',
-  seed:'m14-original-'+stateId+'-'+side,
-  x:side==='home'?source.x:-source.x,y:source.y,
+  seed:researchBallStart===null?'m14-original-'+stateId+'-'+side:
+   'm18-ball-'+ballStart.x+'-'+ballStart.y+'-'+side,
+  x:side==='home'?ballStart.x:-ballStart.x,y:ballStart.y,
   z:0,
   vx:moving?(side==='home'?initialBallVelocity.vx:-initialBallVelocity.vx):0,
   vy:moving?initialBallVelocity.vy:0,vz:0});
@@ -312,6 +328,10 @@ export function auditNaturalNativeFeedback(RAPIER,{
   return frozen({
    version:'m14-authentic-multi-territory-feedback-audit-v1',
    stateId,side,mode,ticks,
+   ...(researchBallStart===null?{}:{
+    ballStartSource:'m18-original-ball-only-before-tick-zero',
+    ballStartLocal:frozen({x:ballStart.x,y:ballStart.y})
+   }),
    shoeBodyHandoff:feedback?shoeBodyHandoff:'observe-only',
    sourceBoundShoeHandoff:latestShoeBodyHandoff,
    initialBall:frozen({x:scene.x,y:scene.y,vx:scene.vx,vy:scene.vy}),
