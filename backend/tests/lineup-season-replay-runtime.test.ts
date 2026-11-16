@@ -6,6 +6,7 @@ import {assignLeagueMatchSlots} from '../src/domain/calendar/match-slot-identity
 import {simulateMatchV1,buildCandidateMatchReceiptV1} from '../src/temporary-lineup-v1.mjs';
 import {buildLineupDayEvidenceV2} from '../src/lineup-day-evidence-v2.mjs';
 import {replayLineupSeasonV1,verifyFrozenLineupMatchV1} from '../src/lineup-season-replay.ts';
+import {frozenLineupMatchDetailV1} from '../src/frozen-lineup-match-detail.ts';
 import type {WorldV1} from '../src/types.ts';
 
 const generation='11111111-1111-4111-8111-111111111111';
@@ -111,6 +112,14 @@ describe('#613 single-V2 result replay and historical match proofs',()=>{
    knockout_slot_id:null} as any;
   const args=[fixture,{mode:'regulation'} as const,null,world(fixture.day),published.slotId] as const;
   const frozen=await verifyFrozenLineupMatchV1(row,...args);
+  const history={frozenMatches:new Map([[frozen.fixtureId,frozen]])} as any;
+  const projected=frozenLineupMatchDetailV1(history,57);
+  expect(projected?.status).toBe('completed');
+  expect(projected?.result.homeGoals).toBe(result.homeGoals);
+  expect(projected?.players.home.kind).toBe('team_fallback');
+  expect(projected?.players.home.appearances).toHaveLength(0);
+  expect(projected?.provenance.receiptHash).toBe(row.receipt_hash);
+  expect(frozenLineupMatchDetailV1(history,58)).toBeNull();
   expect(frozen.matchId).toBe(57);
   expect(frozen.score.algorithmVersion).toBe('temporary-lineup-v1');
   expect(frozen.score.homeGoals).toBe(result.homeGoals);

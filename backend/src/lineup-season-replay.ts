@@ -152,6 +152,7 @@ export async function verifyFrozenLineupMatchV1(
 export interface LineupSeasonReplayV1 {
  progression:ReturnType<typeof createProgression<LineupSportingScoreV1>>;
  days:LineupDailyEvidenceV2[];
+ frozenMatches:ReadonlyMap<string,FrozenLineupMatchV1>;
  resultCount:number;
 }
 /** Reconstruct the EXACT persisted prefix, including empty days, with a single
@@ -177,6 +178,7 @@ export async function replayLineupSeasonV1(
   world.generation,world.seasonNumber)).map(s=>[s.sourceFixtureId,s.slotId]));
  const state=createProgression<LineupSportingScoreV1>(evidence.snapshot,evidence.schedule);
  const days:LineupDailyEvidenceV2[]=[];
+ const frozenMatches=new Map<string,FrozenLineupMatchV1>();
  let resultCount=0;
  for(let day=1;day<=throughDay;day++){
   const row=rows[day-1];
@@ -197,6 +199,8 @@ export async function replayLineupSeasonV1(
     if(!match)return fail();
     const frozen=await verifyFrozenLineupMatchV1(match,f,context,source,world,
      source?undefined:leagueSlots.get(f.id));
+    if(frozenMatches.has(f.id))return fail();
+    frozenMatches.set(f.id,frozen);
     entries.push({fixtureId:f.id,receiptHash:frozen.receiptHash,receipt:frozen.receipt});
     dueFixtures.push({fixtureId:f.id,matchId:frozen.matchId});
     return frozen.score;
@@ -225,5 +229,5 @@ export async function replayLineupSeasonV1(
    if(await canonicalHash(parseObject(row.plan_json))!==row.plan_hash)return fail();
   }catch{return fail()}
  }
- return {progression:state,days,resultCount};
+ return {progression:state,days,frozenMatches,resultCount};
 }
