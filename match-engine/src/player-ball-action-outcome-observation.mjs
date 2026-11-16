@@ -127,6 +127,35 @@ export function createProvisionalActionOutcomeObserver(fixtureId){
       (target.recipientX-target.originX)*action.impulseNs.x+
        (target.recipientY-target.originY)*action.impulseNs.y<=0
      ))throw new TypeError('Untrusted or fabricated physical pass target');
+   // CROSS is a distinct provisional physical attempt, not a completed
+   // pass, header, reception or a scored goal. Keep the original real
+   // shoe/impulse gates below and reject unauthenticated cross metadata.
+   const cross=action?.crossTarget;
+   if(action?.action==='cross'&&(
+      !cross||cross.source!=='same-tick-canonical-wing-and-live-goal-area-teammate'||
+      cross.physicalCrossAttemptOnly!==true||
+      cross.crossCompleted!==false||
+      cross.officialMatchAction!==false||
+      cross.officialGoal!==false||
+      cross.physicsTick!==physicsTick||
+      cross.originPlayerId!==action.playerId||
+      cross.recipientId!==action.recipientId||
+      cross.team!==action.team||
+      !['originX','originY','targetX','targetY','distanceM','laneClearanceM']
+        .every(k=>finite(cross[k]))||
+      cross.distanceM<8||cross.distanceM>40||
+      cross.laneClearanceM<1.4||
+      Math.abs(cross.distanceM-Math.hypot(
+       cross.targetX-cross.originX,
+       cross.targetY-cross.originY))>1e-6||
+      !action.impulseNs||
+      ![action.impulseNs.x,action.impulseNs.y,action.impulseNs.z]
+       .every(finite)||action.impulseNs.z<=0||
+      (cross.targetX-cross.originX)*action.impulseNs.x+
+       (cross.targetY-cross.originY)*action.impulseNs.y<=0
+    ))throw new TypeError('Untrusted or fabricated physical CROSS target');
+   if(action?.action!=='cross'&&cross!==null&&cross!==undefined)
+    throw new TypeError('Only true CROSS actions can advertise cross metadata');
    if(action?.action!=='pass'&&target!==null&&target!==undefined)
     throw new TypeError('Non-pass action cannot advertise pass completion');
    if(action&&(
