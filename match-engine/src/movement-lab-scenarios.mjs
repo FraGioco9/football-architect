@@ -90,7 +90,7 @@ export function movementLabScenario(id,side='home'){
   s.id==='opponent-contact'?CONTROL_LAB_STARTS.home:
   side==='home'?s.home:Object.freeze({
    ...s.home,seed:s.home.seed+'-away',x:-s.home.x,
-   vx:-s.home.vx
+   vx:s.home.vx===0?0:-s.home.vx
   });
  return Object.freeze({
   spec:s,side,initial,focusId:side+'-'+s.focusNumber
