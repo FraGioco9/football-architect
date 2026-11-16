@@ -78,11 +78,41 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(milestones.results.every(e=>e.status==='scheduled'&&e.scheduled_day===56)).toBe(true);
 
  let lastBatchError='';
+ const boundStatements=new WeakMap<object,{sql:string;args:unknown[]}>();
+ const guardStart='INSERT INTO world_state(id,generation) SELECT 2,? WHERE NOT EXISTS(';
  const tracedDb={
-  prepare:(sql:string)=>db.prepare(sql),
+  prepare:(sql:string)=>{
+   const stmt=db.prepare(sql);
+   return {
+    bind:(...args:unknown[])=>{
+     const bound=stmt.bind(...args);
+     boundStatements.set(bound,{sql,args});
+     return bound;
+    },
+    first:(...args:any[])=>stmt.first(...args),
+    all:(...args:any[])=>stmt.all(...args),
+    run:(...args:any[])=>stmt.run(...args)
+   };
+  },
   batch:async(statements:any[])=>{
    try{return await db.batch(statements)}
-   catch(error){lastBatchError=String(error);throw error}
+   catch(error){
+    const failedGuards:{index:number;query:string;params:string[]}[]=[];
+    for(let i=0;i<statements.length;i++){
+     const item=boundStatements.get(statements[i]);
+     if(!item||!item.sql.startsWith(guardStart))continue;
+     const query=item.sql.slice(guardStart.length,-1);
+     const args=item.args.slice(1);
+     try{
+      const found=await db.prepare(query).bind(...args).first();
+      if(!found)failedGuards.push({index:i,query:query.slice(0,450),
+       params:args.map(x=>String(x).slice(0,70))});
+     }catch(readError){failedGuards.push({index:i,query:'read failed '+String(readError),
+       params:[]})}
+    }
+    lastBatchError=String(error)+'; failing source guards='+JSON.stringify(failedGuards.slice(0,8));
+    throw error;
+   }
   }
  } as any;
  for(let day=4;day<=56;day++){
