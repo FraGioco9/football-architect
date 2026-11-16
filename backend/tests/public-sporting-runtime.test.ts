@@ -191,7 +191,11 @@ it('keeps day13 public calendar, competition, standings and club statistics cons
  expect(globalDay).toMatchObject({scope:'calendar',selectedSeason:1,day:13,status:'partial'});
  expect(globalDay.data.fixtures).toHaveLength(128);
  expect(globalDay.data.fixtures.every((f:any)=>f.day===13&&f.result!==null)).toBe(true);
- expect(globalDay.data.fixtures.filter((f:any)=>f.competitionId==='IT-1'))
+ const calendarDomestic=globalDay.data.fixtures.filter((f:any)=>f.competitionId==='IT-1');
+ expect(calendarDomestic.every((f:any)=>typeof f.matchId==='string'&&/^[1-9][0-9]*$/.test(f.matchId))).toBe(true);
+ // The calendar alone enriches verified sporting rows with optional public IDs.
+ // Strip ONLY that link metadata for the strict result/receipt parity check.
+ expect(calendarDomestic.map(({matchId,...fixture}:any)=>fixture))
   .toEqual(body.data.fixtures.filter((f:any)=>f.day===13));
  expect(globalDay.data.competitions).toHaveLength(18);
  expect(JSON.stringify(globalDay)).not.toMatch(/"seed"|token|csrf|password|sourceSeedHash/);

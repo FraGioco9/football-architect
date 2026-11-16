@@ -212,7 +212,13 @@
     else score.append(element("span","app-fixture-pending","—"));
     // Match identity comes from the official public collection, never a pairing.
     let scoreContent=score,publicId=null;
-    if(publishedSeason===navigation.get().season&&publishedLookup){
+    // A confirmed public ID belongs to one exact world revision only.
+    // Never surface IDs from an earlier world after advancing/resetting it.
+    const liveSource=window.faWorldState?.get?.();
+    const liveWorld=liveSource?.world;
+    const liveKey=[navigation.get().season,definition.id,liveWorld?.generation,liveWorld?.revision].join(':');
+    if(liveSource?.source==='authoritative'&&liveSource?.worldStatus==='ready'&&
+       publishedSeason===navigation.get().season&&publishedKey===liveKey&&publishedLookup){
       if(game.matchId&&publishedIds.has(game.matchId))publicId=game.matchId;
       else if(game.phaseId==='league'&&typeof game.sourceFixtureId==='string'){
         const official=publishedLookup.bySource[game.sourceFixtureId];
@@ -483,6 +489,19 @@
     }finally{if(pendingKey===key)pendingKey=null;}
   }
 
+  // The world can become ready AFTER Fixtures mounted. Source-change is not
+  // emitted on every initial /api/world completion, so subscribe directly.
+  // The published-key fence prevents duplicate requests on repeated updates.
+  window.faWorldState?.subscribe?.(snapshot=>{
+    if(snapshot?.source!=='authoritative'||snapshot.worldStatus!=='ready'||!snapshot.world){
+      if(publishedKey!==null||pendingKey!==null||publishedLookup!==null){
+        publishedSeason=null;publishedKey=null;pendingKey=null;
+        publishedLookup=null;publishedIds.clear();fetchSequence++;render();
+      }
+      return;
+    }
+    if(navigation.get().view==='fixtures')void readPublishedFixtures();
+  });
   window.addEventListener('fa:competition-context-change',contextChanged);
   window.addEventListener('fa:source-change',()=>{publishedSeason=null;publishedIds.clear();publishedLookup=null;publishedKey=null;pendingKey=null;fetchSequence++;if(window.faCompetitionContext?.seasonData?.provenance?.kind!=='dev')void readPublishedFixtures();});
   window.addEventListener('fa:world-clock-snapshot',event=>{
