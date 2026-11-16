@@ -191,3 +191,123 @@ test('B06b H2a two real physical kickoffs in a mini replay are NOT a complete 90
   assert.equal(last.officialMatchResult,null);
  }finally{run.dispose();}
 });
+
+test('B06b H2b1 rejects invented goal restart modes and authority outside the isolated private source',async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['invalid','HOME',42])
+  assert.throws(()=>createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchGoalCrossingSide:side
+  }),TypeError);
+ assert.throws(()=>createBasicRegulationSessionB06b(R,{
+  researchGoalCrossingSide:'home'
+ }),/bounded/);
+ assert.throws(()=>createBasicRegulationSessionB06b(R,{
+  researchHalfTicks:1200,researchGoalCrossingSide:'away',
+  researchOpeningKickoff:true
+ }),/non-opening/);
+ assert.throws(()=>createEngine(R,{preset:'roll'},{
+  diagnosticB06bGoalRestartEnabled:true
+ }),/goal restart/);
+ assert.throws(()=>createPlayerMovement({
+  researchB06bGoalRestartEnabled:true
+ }),TypeError);
+ const ordinary=createEngine(R,{preset:'roll'});
+ try{
+  assert.equal(ordinary.b06bOriginalPlaceGoalRestart,undefined);
+  assert.equal(ordinary.b06bOriginalTakeGoalRestart,undefined);
+ }finally{ordinary.dispose();}
+});
+
+test('B06b H2b1 HOME and AWAY genuine whole-ball GOAL -> same original ball placement -> independent native opposing #10 kickoff',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['home','away']){
+  const one=createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchGoalCrossingSide:side
+  });
+  const two=createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchGoalCrossingSide:side
+  });
+  try{
+   let crossed=null,kicked=null,holdTicks=0;
+   for(let n=1;n<=800;n++){
+    const a=one.step(),b=two.step();
+    assert.equal(a.physicsTick,n);
+    assert.deepEqual(a.physicsBall,b.physicsBall,
+      'only the original same-world deterministic Rapier ball is integrated');
+    assert.deepEqual(a.provisionalScore,b.provisionalScore);
+    assert.equal(a.canonical22,true);
+    assert.equal(a.matchAuthority,false);
+    assert.equal(a.officialMatchResult,null);
+    assert.equal(a.realFull90MinutesVerified,false);
+    if(!crossed&&a.goalRestartPlacements.length){
+     crossed=a;
+     assert.equal(a.goalRestartPlacements.length,1);
+     const placement=a.goalRestartPlacements[0];
+     assert.equal(placement.sourceEventTick,n);
+     assert.equal(placement.tick,n);
+     assert.equal(placement.kind,'kickoff');
+     assert.equal(placement.assignedTeam,side==='home'?'away':'home');
+     assert.equal(placement.originalRapierBallRepositioned,true);
+     assert.equal(placement.realShoeContact,false);
+     assert.equal(placement.ball.position.x,0);
+     assert.equal(placement.ball.position.y,0);
+     assert.ok(Math.abs(placement.ball.position.z-BALL_RADIUS)<1e-8);
+     assert.equal(a.physicsBall.position.x,0);
+     assert.equal(a.physicsBall.position.y,0);
+     assert.equal(a.refereeSource.lastEvent.kind,'goal');
+     assert.equal(a.refereeSource.lastEvent.scoringTeam,side);
+     assert.equal(a.refereeSource.lastEvent.crossing.fullBallCrossed,true);
+     assert.equal(a.refereeSource.restartApplied,true);
+     assert.equal(a.originalEventLedger.matchEventCount,2);
+     assert.deepEqual(a.originalEventLedger.matchEvents.map(e=>e.type),
+      ['goal','restart-placement']);
+     assert.equal(a.originalEventLedger.outstandingDeadBall,false);
+     assert.equal(a.provisionalScore[side],1);
+     assert.equal(a.provisionalScore[side==='home'?'away':'home'],0);
+     assert.equal(a.phase,'goal-kickoff');
+    }
+    if(crossed&&!a.genuineGoalKickoffs.length){
+     holdTicks++;
+     assert.equal(a.clockTicks,crossed.clockTicks,
+      'goal restart cannot consume football match time before genuine taker');
+    }
+    if(a.genuineGoalKickoffs.length){
+     kicked=a;
+     const take=a.genuineGoalKickoffs[0];
+     assert.equal(take.tick,n);
+     assert.ok(n>crossed.physicsTick);
+     assert.equal(take.team,side==='home'?'away':'home');
+     assert.equal(take.actorId,take.team+'-10');
+     assert.equal(take.sourceEventTick,crossed.physicsTick);
+     assert.equal(take.genuineExclusiveOriginalShoeStart,true);
+     assert.equal(take.currentRapierContactManifold,true);
+     assert.equal(take.originalBallImpulseApplied,true);
+     assert.equal(take.sameOriginalRapierWorld,true);
+     assert.equal(take.officialMatchResult,null);
+     assert.equal(a.pausedGoalPhysicsTicks,n-crossed.physicsTick);
+     assert.equal(a.clockTicks,crossed.clockTicks);
+     assert.equal(a.phase,'first-half');
+     break;
+    }
+   }
+   assert.ok(crossed,side+' original full-ball goal crossing was not observed');
+   assert.ok(kicked,side+' original opposition foot kickoff never happened');
+   assert.ok(holdTicks>=1,'goal dead ball must pause live time');
+   for(let n=0;n<5;n++){
+    const x=one.step();
+    assert.equal(x.clockTicks,kicked.clockTicks+n+1);
+    assert.equal(x.originalEventLedger.outstandingDeadBall,false);
+    assert.equal(x.provisionalScore[side],1);
+    assert.equal(x.genuineGoalKickoffs.length,1);
+   }
+   process.stdout.write('ME_628_B06B_H2B1_GOAL_NATIVE_RESTART '+
+    JSON.stringify({side,goalTick:crossed.physicsTick,
+     realKickoffTick:kicked.physicsTick,
+     pausedPhysicsTicks:kicked.pausedGoalPhysicsTicks,
+     provisionalScore:kicked.provisionalScore,
+     source:'real-original-rapier-22',actualShotActorVerified:false,
+     officialResult:null})+'\\n');
+  }finally{one.dispose();two.dispose();}
+ }
+});

@@ -107,6 +107,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticBasicRestartAttackSide = null,
   diagnosticB06bHalftimeTick = null,
   diagnosticB06bOpeningKickoffEnabled = false,
+  diagnosticB06bGoalRestartEnabled = false,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -161,6 +162,10 @@ export function createEngine(RAPIER, input = {}, {
   if(typeof diagnosticB06bOpeningKickoffEnabled!=='boolean'||
      (diagnosticB06bOpeningKickoffEnabled&&diagnosticB06bHalftimeTick===null))
     throw new TypeError('B06b opening requires original private regulation opt-in');
+  if(typeof diagnosticB06bGoalRestartEnabled!=='boolean'||
+     (diagnosticB06bGoalRestartEnabled&&(
+      diagnosticB06bHalftimeTick===null||diagnosticB06bOpeningKickoffEnabled)))
+   throw new TypeError('B06b goal restart needs isolated non-opening regulation source');
   if(diagnosticB06bHalftimeTick!==null&&(
     !Number.isSafeInteger(diagnosticB06bHalftimeTick)||
     diagnosticB06bHalftimeTick<120||
@@ -514,6 +519,7 @@ export function createEngine(RAPIER, input = {}, {
   let disposed = false;
   let basicRestartTick = -1;
   let b06bOpeningKickoff=null,b06bHalftimePlacement=null,b06bKickoff=null;
+  let b06bGoalPending=null,b06bGoalLastTick=-1,b06bGoalPausedTicks=0;
   let b05bOutboundAction=null,b05bTake=null,b05bRestartTicket=null;
   const b05bSource=diagnosticBasicRestartSource===null?null:
    basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
@@ -853,9 +859,89 @@ export function createEngine(RAPIER, input = {}, {
     });
     return b06bOpeningKickoff;
   }
+  // H2b1: a goal is observed by B05/B06 before this PRIVATE same-World
+  // placement. The placement is NOT a shoe kick or a restart completion.
+  function b06bOriginalPlaceGoalRestart(event,frame){
+    const pos=body.translation();
+    const scorer=event?.scoringTeam;
+    const side=scorer==='home'?1:scorer==='away'?-1:0;
+    const c=event?.crossing,at=event?.restart?.spot;
+    if(disposed||!diagnosticB06bGoalRestartEnabled||
+       b06bGoalPending||tick<=b06bGoalLastTick||
+       frame?.tick!==tick||frame.players?.length!==22||
+       frame.players.some((p,i)=>p?.id!==INITIAL_PLAYERS[i].id||
+        p.team!==INITIAL_PLAYERS[i].team||
+        ![p.x,p.y,p.vx,p.vy].every(Number.isFinite))||
+       !event||event.tick!==tick||event.kind!=='goal'||
+       event.originalRapierSource!==true||
+       event.provisionalGoalScored!==true||
+       event.officialResult!==false||
+       side===0||event.restart?.type!=='kickoff'||
+       event.restart?.team!==(side===1?'away':'home')||
+       event.restart?.ready!==true||
+       event.restart?.sameBallRapierRestart!==true||
+       at?.x!==0||at?.y!==0||Math.abs(at?.z-BALL_RADIUS)>1e-8||
+       c?.source!=='real-consecutive-rapier-centres'||
+       c.fullBallCrossed!==true||c.goal!==true||
+       c.edge!=='goal'||c.axis!=='x'||c.side!==side||
+       Math.abs(c.intersection?.x-side*(52.5+BALL_RADIUS))>1e-6||
+       Math.abs(c.intersection?.y)>7.32/2-BALL_RADIUS+1e-8||
+       c.intersection?.z>BALL_RADIUS+2.44||
+       side*pos.x<=52.5+BALL_RADIUS||Math.abs(pos.y)>7.32/2||
+       pos.z>BALL_RADIUS+2.44)
+      throw new TypeError('B06b refuses goal placement without real current full-ball B05 crossing');
+    body.setTranslation({x:0,y:0,z:BALL_RADIUS},true);
+    body.setLinvel({x:0,y:0,z:0},true);
+    body.setAngvel({x:0,y:0,z:0},true);
+    body.resetForces(true);body.resetTorques(true);
+    b06bGoalLastTick=tick;
+    const placement=Object.freeze({
+      tick,kind:'kickoff',assignedTeam:event.restart.team,
+      sourceEventTick:event.tick,originalRapierBallRepositioned:true,
+      realShoeContact:false,officialMatchResult:null,ball:snapshot().ball
+    });
+    b06bGoalPending={event,placement};
+    return placement;
+  }
+  function b06bOriginalTakeGoalRestart(frame,event){
+    if(disposed||!diagnosticB06bGoalRestartEnabled||
+       !b06bGoalPending||b06bGoalPending.event!==event||
+       frame?.tick!==tick||tick<=b06bGoalPending.placement.tick||
+       frame.players?.length!==22||
+       frame.players.some((p,i)=>p?.id!==INITIAL_PLAYERS[i].id||
+        p.team!==INITIAL_PLAYERS[i].team||
+        ![p.x,p.y,p.vx,p.vy].every(Number.isFinite)))
+     throw new TypeError('B06b goal kickoff requires currently pending source-proven goal');
+    const team=event.restart.team,id=team+'-10';
+    const foot=shoeBridge.snapshot(),solver=shoeBridge.solver();
+    if(foot.tick!==tick||solver?.tick!==tick)
+      throw new TypeError('B06b goal kick requires current native shoe solver');
+    if(foot.started.length!==1||foot.active.length!==1||
+       foot.started[0]!==id||foot.active[0]!==id)return null;
+    if(!solver.pairs.some(p=>p.id===id&&p.beganThisTick&&
+       p.collisionActive&&p.manifolds.some(m=>m.geometricContacts>0)))
+     throw new TypeError('B06b rejects goal kick without real shoe manifold');
+    const pos=body.translation();
+    if(Math.hypot(pos.x,pos.y)>0.65||Math.abs(pos.z-BALL_RADIUS)>0.3)
+      throw new TypeError('B06b goal kick must act on original midfield ball');
+    const impulse=Object.freeze({x:team==='home'?0.65:-0.65,y:0,z:0.04});
+    body.applyImpulse(impulse,true);
+    b06bGoalPausedTicks+=tick-b06bGoalPending.placement.tick;
+    const take=Object.freeze({
+      tick,sourceEventTick:event.tick,team,actorId:id,
+      genuineExclusiveOriginalShoeStart:true,
+      currentRapierContactManifold:true,
+      original22PlayerFrame:true,impulseNs:impulse,
+      originalBallImpulseApplied:true,sameOriginalRapierWorld:true,
+      officiallyAwardedPossession:false,officialMatchResult:null
+    });
+    b06bGoalPending=null;
+    return take;
+  }
   function b06bOriginalHalftimePlacement(frame){
     if(disposed||diagnosticB06bHalftimeTick===null||
-       tick!==diagnosticB06bHalftimeTick||b06bHalftimePlacement||
+       tick!==diagnosticB06bHalftimeTick+b06bGoalPausedTicks||
+       b06bHalftimePlacement||b06bGoalPending||
        !frame||frame.tick!==tick||
        !Array.isArray(frame.players)||frame.players.length!==22||
        frame.players.some((p,i)=>{
@@ -882,7 +968,7 @@ export function createEngine(RAPIER, input = {}, {
   }
   function b06bOriginalSecondHalfKickoff(frame){
     if(disposed||diagnosticB06bHalftimeTick===null||
-       !b06bHalftimePlacement||tick<=diagnosticB06bHalftimeTick||
+       !b06bHalftimePlacement||tick<=b06bHalftimePlacement.physicsTick||
        frame?.tick!==tick||!Array.isArray(frame.players)||
        frame.players.length!==22||
        frame.players.some((p,i)=>{
@@ -909,7 +995,7 @@ export function createEngine(RAPIER, input = {}, {
     const impulse=Object.freeze({x:-0.65,y:0,z:0.04});
     body.applyImpulse(impulse,true);
     b06bKickoff=Object.freeze({
-     tick,firstHalfEndPhysicalTick:diagnosticB06bHalftimeTick,
+     tick,firstHalfEndPhysicalTick:b06bHalftimePlacement.physicsTick,
      team:'away',actorId:'away-10',
      genuineExclusiveOriginalShoeStart:true,
      currentRapierContactManifold:true,
@@ -935,7 +1021,10 @@ export function createEngine(RAPIER, input = {}, {
     ...(b05bSource?{attemptB05bNativeOutboundKick,attemptB05bOriginalSetPiece}:{}),
     ...(diagnosticB06bHalftimeTick!==null?{
      b06bOriginalHalftimePlacement,b06bOriginalSecondHalfKickoff,
-     ...(diagnosticB06bOpeningKickoffEnabled?{b06bOriginalOpeningKickoff}:{})
+     ...(diagnosticB06bOpeningKickoffEnabled?{b06bOriginalOpeningKickoff}:{}),
+     ...(diagnosticB06bGoalRestartEnabled?{
+      b06bOriginalPlaceGoalRestart,b06bOriginalTakeGoalRestart
+     }:{})
     }:{}),
     ...(shoeBridge?{
       footContactSnapshot:()=>shoeBridge.snapshot(),

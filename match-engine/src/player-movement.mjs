@@ -1651,6 +1651,7 @@ export function createPlayerMovement(options={}){
      k!=='researchBasicRestartBall'&&
      k!=='researchB06bHalftimeTick'&&
      k!=='researchB06bOpeningKickoffEnabled'&&
+     k!=='researchB06bGoalRestartEnabled'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlCloseDefender'&&
@@ -1771,11 +1772,16 @@ export function createPlayerMovement(options={}){
       options.researchB06bHalftimeTick<120||
       options.researchB06bHalftimeTick>162000||
       Reflect.ownKeys(options).length!==
-       (options.researchB06bOpeningKickoffEnabled===true?2:1)))||
+       (options.researchB06bOpeningKickoffEnabled===true?2:1)+
+       (options.researchB06bGoalRestartEnabled===true?1:0)))||
     (options.researchB06bOpeningKickoffEnabled!==undefined&&
       (options.researchB06bOpeningKickoffEnabled!==true||
        options.researchB06bHalftimeTick===undefined))||
-    (options.researchBasicRestartSource!==undefined&&(
+    (options.researchB06bGoalRestartEnabled!==undefined&&
+      (options.researchB06bGoalRestartEnabled!==true||
+       options.researchB06bHalftimeTick===undefined||
+       options.researchB06bOpeningKickoffEnabled===true))||
+    (options.researchBasicRestartSource!==undefined&&
       !['throw-in','corner','goal-kick'].includes(options.researchBasicRestartSource)||
       !['home','away'].includes(options.researchBasicRestartAttackSide)||
       !Object.hasOwn(options,'researchBasicRestartBall')||
@@ -1836,6 +1842,30 @@ export function createPlayerMovement(options={}){
    }):INITIAL_PLAYERS;
  let tick=0;
  const players=initial.map(p=>({...p}));
+ let b06bGoalKickoffTarget=null;
+ function queueB06bOriginalGoalKickoff(event){
+  const scorer=event?.scoringTeam;
+  const required=scorer==='home'?'away':scorer==='away'?'home':null;
+  if(options.researchB06bGoalRestartEnabled!==true||
+     b06bGoalKickoffTarget!==null||event?.tick!==tick||
+     event.kind!=='goal'||event.originalRapierSource!==true||
+     event.provisionalGoalScored!==true||
+     event.restart?.type!=='kickoff'||
+     event.restart?.team!==required||!required)
+   throw new TypeError('B06b goal taker requires current exact original goal ticket');
+  b06bGoalKickoffTarget=Object.freeze({team:required,sourceTick:tick});
+ }
+ function finishB06bOriginalGoalKickoff(take){
+  if(options.researchB06bGoalRestartEnabled!==true||
+     !b06bGoalKickoffTarget||take?.tick!==tick||
+     take.sourceEventTick!==b06bGoalKickoffTarget.sourceTick||
+     take.team!==b06bGoalKickoffTarget.team||
+     take.actorId!==take.team+'-10'||
+     take.genuineExclusiveOriginalShoeStart!==true||
+     take.originalBallImpulseApplied!==true)
+   throw new TypeError('B06b taker cannot finish without original Rapier source receipt');
+  b06bGoalKickoffTarget=null;
+ }
  let physicallyAppliedResponses=0,lastPhysicalReconciliation=null;
  let lastFeedbackSource=null,lastFeedbackReconciledTick=0;
  // M16 keeps the physical shoe state sent to Rapier before its body solver.
@@ -2306,6 +2336,8 @@ export function createPlayerMovement(options={}){
    });
   };
   const targets=players.map(p=>{
+   if(b06bGoalKickoffTarget&&p.id===b06bGoalKickoffTarget.team+'-10')
+    return Object.freeze({x:p.team==='home'?0.15:-0.15,y:0});
    if(options.researchB06bHalftimeTick!==undefined&&
       tick>=options.researchB06bHalftimeTick&&p.id==='away-10')
     return Object.freeze({x:-0.15,y:0});
@@ -2757,6 +2789,9 @@ export function createPlayerMovement(options={}){
  }
  return Object.freeze({
   snapshot,step,reset:()=>createPlayerMovement(options),
+  ...(options.researchB06bGoalRestartEnabled===true?{
+   queueB06bOriginalGoalKickoff,finishB06bOriginalGoalKickoff
+  }:{}),
   ...(options.researchBodyEncounter===true?{reconcileNativeBodyResponse}:{}) ,
   ...(options.researchUnstagedNativeBodyFeedback===true?{
    reconcileUnstagedNativeBodyResponse
