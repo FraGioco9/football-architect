@@ -93,7 +93,7 @@ it('runs distinct domestic, draw and publication transactions before handing off
  expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='domestic'").first()).n).toBe(3840);
  expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='international'").first()).n).toBe(144);
  const cup=await db.prepare("SELECT match_id FROM season_match_slots WHERE source_kind='international' LIMIT 1").first();
- expect(await readPublicMatch(db,cup!.match_id)).toMatchObject({status:'scheduled',result:null,provenance:{sourceKind:'international'}});
+ expect(await readPublicMatch(db,cup!.match_id)).toMatchObject({status:'scheduled',result:null,provenance:{kind:'authoritative',receiptHash:null}});
  const sovereign=await readPublishedCompetitionMatches(db,1,'int-1');
  expect(sovereign.fixtures).toHaveLength(93);
  const final=sovereign.fixtures.find((f:any)=>f.phaseId==='final');
@@ -259,7 +259,7 @@ it('resets a staged V2 draw and republishes both scopes with new-generation matc
  const newKnockout=await db.prepare("SELECT match_id FROM season_knockout_match_slots WHERE competition_id='IT-1' LIMIT 1").first();
  expect(newLeague!.match_id).not.toBe(priorLeague!.match_id);
  expect(newKnockout!.match_id).not.toBe(priorKnockout!.match_id);
- expect(await readPublicMatch(db,newLeague!.match_id)).toMatchObject({status:'scheduled',provenance:{sourceKind:'domestic'}});
+ expect(await readPublicMatch(db,newLeague!.match_id)).toMatchObject({status:'scheduled',provenance:{kind:'authoritative',receiptHash:null}});
  expect(await readPublicMatch(db,newKnockout!.match_id)).toMatchObject({status:'awaiting_participants',result:null});
  await expect(readPublishedCompetitionMatches(db,1,'int-1')).rejects.toMatchObject({status:404});
 

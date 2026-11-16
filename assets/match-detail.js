@@ -158,7 +158,7 @@
   write('[data-match-overview="date"]',data?publishedDate(data.kickoff):'');
   const homeKey=clubKey(data?.homeParticipant?.clubId);
   const homeClub=homeKey&&clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===homeKey);
-  const isNeutral=data?.neutral===true||data?.homePolicy==='neutral';
+  const isNeutral=data?.neutral===true;
   const homeStadium=!isNeutral?publishedStadium(homeClub?.stadiumName):'';
   write('[data-match-overview="stadium"]',data?(publishedStadium(data.venue)||homeStadium):'');
   write('[data-match-overview="status"]',data?(tr.statusNames[data.status]||''):'');
@@ -227,14 +227,11 @@
    const source=data?.status==='completed'&&data?.provenance?.receiptHash
     ?data.lineup?.[side]:null;
    const starters=source?.kind==='real_xi'&&Array.isArray(source.starters)&&
-    Array.isArray(source.appearances)&&source.starters.length===11&&source.appearances.length===11
-    ?source.starters:null;
-   const appearances=new Map(Array.isArray(source?.appearances)
-    ?source.appearances.map(p=>[p.playerId,p]):[]);
+    source.starters.length===11?source.starters:null;
    const valid=starters&&new Set(starters.map(p=>p.playerId)).size===11&&
     starters.every(p=>Number.isSafeInteger(p.playerId)&&p.playerId>0&&
-     /^[A-Z]{2,3}$/.test(p.role)&&appearances.has(p.playerId)&&
-     appearances.get(p.playerId)?.started===true)&&appearances.size===11;
+     /^[A-Z]{2,3}$/.test(p.role)&&
+     (p.rating===null||typeof p.rating==='number'));
    const rated=valid&&data.lineup?.ratingVersion==='test-rating-v1';
    for(const [i,row] of [...list.children].entries()){
     if(!valid||i>=starters.length){
@@ -243,14 +240,14 @@
      row.replaceChildren(bar);continue;
     }
     row.removeAttribute('aria-hidden');
-    const starter=starters[i],appearance=appearances.get(starter.playerId);
+    const starter=starters[i];
     const role=document.createElement('span');role.className='app-match-lineup-role';role.textContent=starter.role;
     const player=document.createElement('a');player.className='app-match-lineup-player';
     player.textContent=tr.player+' #'+starter.playerId;
     player.href=href('/players/'+starter.playerId);
     player.target='_blank';player.rel='noopener noreferrer';
     const vote=document.createElement('span');vote.className='app-match-lineup-rating';
-    const n=appearance.rating;
+    const n=starter.rating;
     const officialVote=rated&&typeof n==='number'&&Number.isFinite(n)&&n>=4&&n<=10&&
      Math.abs(n*10-Math.round(n*10))<1e-9;
     vote.textContent=officialVote?n.toFixed(1):'–';
