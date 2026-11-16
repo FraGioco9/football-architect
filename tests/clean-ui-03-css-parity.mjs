@@ -38,6 +38,16 @@ try{
     const response=await page.goto(origin+route,{waitUntil:"load",timeout:25000});
     assert.equal(response?.status(),200,route);
     if(route.startsWith('/competitions/'))await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
+    // A Calendar route starts with disabled controls until the authoritative
+    // week source settles. Compare hydrated state on both CSS baselines,
+    // rather than disabled first paint against a later enabled navigation.
+    if(route==="/calendar")await page.waitForFunction(()=>{
+     const root=document.querySelector("#world-calendar");
+     const next=document.querySelector("#calendar-next");
+     const week=document.querySelector("#calendar-week-trigger");
+     return root?.dataset.calendarReady==='true'&&root.dataset.calendarWeekPending!=='true'&&
+      next?.disabled===false&&week?.disabled===false;
+    },null,{timeout:15000});
     // Compare the hydrated state, not an arbitrary instant during asynchronous
     // standings first paint. The real table may legitimately be concealed by
     // the skeleton while the data provider is pending.
