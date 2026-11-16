@@ -124,9 +124,12 @@ function validateResolvedMatch(fixture:Fixture,context:MatchContext,score:Finali
  if(score.winnerClubId!==expected||(context.mode!=='regulation'&&expected===null))return fail();
 }
 
+export interface SportingFixtureSource {
+ phaseId:string;tieId:string;leg:1|2;neutral:boolean;
+}
 export async function processSportingDayWithResolver<Result extends FinalizedSportingMatch>(
  state:Progression<Result>,day:number,
- resolve:(fixture:Fixture,context:MatchContext)=>Promise<Result>
+ resolve:(fixture:Fixture,context:MatchContext,source:SportingFixtureSource|null)=>Promise<Result>
 ):Promise<{results:Result[];newTies:KnockoutTie[]}>{
  if(!Number.isInteger(day)||day!==state.lastDay+1||day<1||day>56)return fail();
  const working:Progression<Result>={...state,results:new Map(state.results),ties:new Map(state.ties),tables:new Map(state.tables)};
@@ -156,7 +159,10 @@ export async function processSportingDayWithResolver<Result extends FinalizedSpo
    if(!score||first.homeClubId!==f.awayClubId||first.awayClubId!==f.homeClubId)return fail();
    context={mode:'second-leg',firstLegHomeGoals:score.homeGoals,firstLegAwayGoals:score.awayGoals};
   }
-  const result=await resolve(f,context);
+  const source:SportingFixtureSource|null=plan?{
+   phaseId:plan.tie.phaseId,tieId:plan.tie.tieId,leg:plan.leg as 1|2,neutral:plan.neutral
+  }:null;
+  const result=await resolve(f,context,source);
   validateResolvedMatch(f,context,result);
   results.push(result);working.results.set(f.id,result);
  }
