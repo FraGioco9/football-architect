@@ -695,6 +695,43 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    assert.match(measured.status,/no official tackle, possession or pass/);
    process.stdout.write('MOVEMENT_LAB_M13_ACTUAL_FEEDBACK '+JSON.stringify(measured)+'\n');
   }
+  // M21: the previously audit-only M14–M20 situations are NOW live,
+  // selectable physical 22-player scenes in the actual Chrome Movement LAB.
+  // Show TRUE Rapier events and actual HOME/AWAY source; never imply a
+  // successful tackle or possession from proximity alone.
+  const naturalIds=[
+   'native-roll-observe','native-roll-feedback','native-roll-control',
+   'native-flank-left','native-flank-right','secondary-pressure-off',
+   'secondary-pressure','secondary-pressure-observe'
+  ];
+  for(const choice of naturalIds)for(const side of ['home','away']){
+   const sample=await evalJs(
+    "(()=>{const c=document.getElementById('movement-labs-choice');"+
+    "const s=document.getElementById('movement-labs-side');"+
+    "c.value="+JSON.stringify(choice)+";c.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "s.value="+JSON.stringify(side)+";s.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "for(let t=0;t<35;t++)document.getElementById('movement-labs-step').click();"+
+    "return {choice:c.value,side:s.value,total:c.options.length,"+
+    "status:document.getElementById('movement-labs-status').textContent,"+
+    "readout:document.getElementById('movement-labs-readout').textContent};})()");
+   assert.equal(sample.total,30,'all implemented original scenes visible');
+   assert.equal(sample.choice,choice);
+   assert.equal(sample.side,side);
+   assert.match(sample.readout,/^Tick 35 /);
+   assert.match(sample.readout,/real 22-player Rapier/);
+   assert.match(sample.readout,/genuine body STARTs [0-9]+/);
+   assert.match(sample.readout,/shoe STARTs [0-9]+/);
+   assert.match(sample.readout,/minimum canonical spacing [0-9.]+ m/);
+   if(choice==='secondary-pressure'||choice==='secondary-pressure-observe')
+    assert.match(sample.status,/second defensive marker assigned|no eligible second marker this tick/);
+   else assert.match(sample.status,/secondary marking OFF/);
+   assert.match(sample.status,/Proximity is NOT a verified collision/);
+   assert.match(sample.status,/No official tackle, possession or score/);
+   if(choice.endsWith('-observe')||choice==='native-roll-control')
+    assert.match(sample.readout,/applied solver responses 0/);
+   process.stdout.write('MOVEMENT_LAB_M21_CHROME_ALL_SCENES '+
+    JSON.stringify(sample)+'\\n');
+  }
   for(const [width,height] of [[1280,720],[1440,900]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
    const size=await evalJs("(()=>{const d=document.getElementById('movement-labs-dialog');"+
