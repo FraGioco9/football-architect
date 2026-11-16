@@ -332,6 +332,7 @@
     "backend/tests/test_player_portrait_profiles_migration.py": "migration",
     "tests/player-portrait-core.test.mjs": "site-node",
     "tests/player-portrait-chatgpt.test.mjs": "site-node",
-    "tests/player-portrait-png-preflight.test.mjs": "site-node"
+    "tests/player-portrait-png-preflight.test.mjs": "site-node",
+    "tests/temporary-lineup-v1.test.mjs": "site-node"
   }
 }
