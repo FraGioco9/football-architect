@@ -52,19 +52,34 @@ function source(){
   calendar:Array.from({length:56},(_,i)=>({day:i+1,fixtureIds:fixtures.filter(f=>f.day===i+1).map(f=>f.id),played:0})),history:null}};
 }
 test('accepts only real, internally coherent frozen V2 player totals',()=>{
- const raw=source(),fixture=raw.data.fixtures[0];
- raw.world={...world,day:fixture.day};
- fixture.result={homeGoals:1,awayGoals:0,resolution:'regulation',extraTime:null,penalties:null,winnerClubId:fixture.homeClubId};
- const home=raw.data.standings.rows.find(t=>t.clubId===fixture.homeClubId);
- const away=raw.data.standings.rows.find(t=>t.clubId===fixture.awayClubId);
- Object.assign(home,{played:1,won:1,goalsFor:1,goalDifference:1,points:3});
- Object.assign(away,{played:1,lost:1,goalsAgainst:1,goalDifference:-1,points:0});
- for(const team of raw.data.statistics.teams){
-  if(team.clubId===fixture.homeClubId)Object.assign(team,{played:1,won:1,goalsFor:1,goalDifference:1,cleanSheets:1});
-  if(team.clubId===fixture.awayClubId)Object.assign(team,{played:1,lost:1,goalsAgainst:1,goalDifference:-1,cleanSheets:0});
+ const raw=source(),fixture=raw.data.fixtures[0],matchDay=fixture.day;
+ raw.world={...world,day:matchDay};
+ const league=raw.data.fixtures.filter(f=>f.day===matchDay);
+ assert.equal(league.length,8);
+ for(const f of league){
+  const selected=f===fixture;
+  f.result={homeGoals:selected?1:0,awayGoals:0,resolution:'regulation',
+   extraTime:null,penalties:null,winnerClubId:selected?f.homeClubId:null};
+  const home=raw.data.standings.rows.find(t=>t.clubId===f.homeClubId);
+  const away=raw.data.standings.rows.find(t=>t.clubId===f.awayClubId);
+  const homeStats=raw.data.statistics.teams.find(t=>t.clubId===f.homeClubId);
+  const awayStats=raw.data.statistics.teams.find(t=>t.clubId===f.awayClubId);
+  for(const row of [home,homeStats]){
+   row.played=1;row.won=selected?1:0;row.drawn=selected?0:1;
+   row.goalsFor=selected?1:0;row.goalDifference=selected?1:0;
+   row.cleanSheets=1;
+   if('points' in row)row.points=selected?3:1;
+  }
+  for(const row of [away,awayStats]){
+   row.played=1;row.lost=selected?1:0;row.drawn=selected?0:1;
+   row.goalsAgainst=selected?1:0;row.goalDifference=selected?-1:0;
+   row.cleanSheets=selected?0:1;
+   if('points' in row)row.points=selected?0:1;
+  }
  }
- raw.data.statistics.matchesPlayed=1;raw.data.statistics.totalGoals=1;raw.data.statistics.goalsPerMatch=1;
- raw.data.calendar.find(d=>d.day===fixture.day).played=1;
+ raw.data.statistics.matchesPlayed=8;raw.data.statistics.totalGoals=1;
+ raw.data.statistics.goalsPerMatch=1/8;
+ raw.data.calendar.find(d=>d.day===matchDay).played=8;
  const player={playerId:58,clubId:fixture.homeClubId,appearances:1,starts:1,minutes:90,goals:1};
  raw.data.statistics.players=[player];
  assert.deepEqual(validateAuthoritativeSeason(raw,ctx(),manifest).data.statistics.players,[player]);
