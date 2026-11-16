@@ -36,8 +36,8 @@ function restartFor({edge,side,intersection,lastTouchTeam,scoringTeam}){
    source:'no-verified-last-touch',sameBallRapierRestart:false});
  if(lastTouchTeam===defending){
   return freeze({type:'corner',team:attacking,
-   spot:freeze({x:side*(halfX-BALL_RADIUS),
-    y:(intersection.y>=0?1:-1)*(halfY-BALL_RADIUS),z:BALL_RADIUS}),
+   spot:freeze({x:side*(halfX-0.46),
+    y:(intersection.y>=0?1:-1)*(halfY-0.55),z:BALL_RADIUS}),
    ready:true,source:'native-sole-shoe-last-touch',
    sameBallRapierRestart:true});
  }

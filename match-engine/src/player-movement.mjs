@@ -1789,10 +1789,12 @@ export function createPlayerMovement(options={}){
       options.researchShotBlockedLane!==undefined||
       !['home','away'].includes(options.researchShotAttacker))))
   throw new TypeError('Only paired bounded research shot initial positions allowed');
- const initial=options.researchBasicRestartSource?
-  basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
+ const b05bStandby=options.researchBasicRestartSource?
+   basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
     options.researchBasicRestartAttackSide,options.researchBasicRestartBall,
-    options.researchBasicRestartSource).players:
+    options.researchBasicRestartSource):null;
+ const initial=b05bStandby?
+  b05bStandby.players:
   options.researchDefensiveSide?
   initialResearchDefensiveLineup(INITIAL_PLAYERS,
    options.researchDefensiveSide,options.researchDefensiveBall,
@@ -2290,6 +2292,13 @@ export function createPlayerMovement(options={}){
    });
   };
   const targets=players.map(p=>{
+   if(b05bStandby&&p.id===b05bStandby.takerId){
+    // Before-tick-zero original #9 holds a real tactical standby
+    // destination. Kinematics and native Rapier foot contacts remain
+    // the source; no player is moved directly when play stops.
+    const original=b05bStandby.players.find(q=>q.id===p.id);
+    return Object.freeze({x:original.x,y:original.y});
+   }
    if(options.researchGoalkeeperSaveSide===p.team&&
       p.role==='goalkeeper'){
     goalkeeperDiveIntent=chooseBasicGoalkeeperDiveTarget({

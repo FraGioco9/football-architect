@@ -68,7 +68,7 @@ test('B05b HOME/AWAY true initial native shoe START sets real last-touch owner b
     assert.equal(initial.physicalRestart,null);
     let event=null;
     let started=[];
-    let sourceKick=null,lastBall=null,peakOutbound=-Infinity;
+    let sourceKick=null,lastBall=null,peakOutbound=-Infinity,take=null;
     let lastLive=null;
     for(let tick=1;tick<=65;tick++){
      const x=a.step(),y=b.step();
@@ -93,6 +93,27 @@ test('B05b HOME/AWAY true initial native shoe START sets real last-touch owner b
       assert.equal(sourceKick.nativeSolverGeometricContact,true);
       assert.equal(sourceKick.appliedByOriginalRapierBody,true);
       assert.equal(sourceKick.officialPossession,false);
+     }
+     if(x.b05bTake&&!take){
+      take=x.b05bTake;
+      assert.equal(take.tick,tick);
+      assert.equal(take.type,kind);
+      assert.equal(take.singleOriginalRapierBall,true);
+      assert.equal(take.physicalImpulseApplied,true);
+      assert.equal(take.officialMatchAction,false);
+      assert.equal(take.officialMatchResult,null);
+      assert.equal(take.officialPossession,false);
+      assert.equal(take.actorId,(kind==='corner'?side:
+       side==='home'?'away':'home')+'-9');
+      if(kind==='throw-in'){
+       assert.equal(take.originalNativeShoeStart,false);
+       assert.equal(take.provisionalHandReleaseWithoutHandCollider,true);
+       assert.equal(take.legalThrowConfirmed,false);
+      }else{
+       assert.equal(take.originalNativeShoeStart,true);
+       assert.deepEqual(x.starts,[take.actorId]);
+       assert.equal(take.provisionalHandReleaseWithoutHandCollider,false);
+      }
      }
      if(!event&&x.refereeEvidence.lastEvent){
       event=x.refereeEvidence.lastEvent;
@@ -120,7 +141,11 @@ test('B05b HOME/AWAY true initial native shoe START sets real last-touch owner b
     assert.equal(lastLive.physicalRestart?.originalRapierBallRepositioned,true);
     assert.equal(lastLive.physicalRestart.assignedTeam,expectedTeam);
     assert.equal(lastLive.refereeEvidence.restartApplied,true);
-    assert.equal(a.snapshot().eventCount,1);
+    assert.ok(take,
+     'B05b must attempt physical set-piece from original taker: '+
+      kind+' '+side+' starts='+JSON.stringify(started));
+    assert.ok(take.tick>event.tick);
+    assert.equal(a.snapshot().eventCount,2);
     assert.equal(a.snapshot().refereeEvidence.provisionalGoals.home,0);
     assert.equal(a.snapshot().refereeEvidence.provisionalGoals.away,0);
     process.stdout.write('ME_628_B05B_'+kind.toUpperCase()+'_'+side.toUpperCase()+' '+
@@ -129,6 +154,9 @@ test('B05b HOME/AWAY true initial native shoe START sets real last-touch owner b
       eventTick:event.tick,owner:event.restart.team,
       restart:event.restart.type,sameOriginalBallRepositioned:true,
       nativeShoeStartTicks:started,nativeOutboundKick:sourceKick.impulseNs,
+      setPieceTick:take.tick,setPieceActor:take.actorId,
+      setPieceTrueShoe:take.originalNativeShoeStart,
+      handUnmodelled:take.provisionalHandReleaseWithoutHandCollider,
       officialPossession:false})+'\\n');
    }finally{a.dispose();b.dispose();}
   }

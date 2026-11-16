@@ -489,7 +489,7 @@ export function createEngine(RAPIER, input = {}, {
   let tick = 0;
   let disposed = false;
   let basicRestartTick = -1;
-  let b05bOutboundAction=null;
+  let b05bOutboundAction=null,b05bTake=null,b05bRestartTicket=null;
   const b05bSource=diagnosticBasicRestartSource===null?null:
    basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
     diagnosticBasicRestartAttackSide,scenario,
@@ -704,23 +704,96 @@ export function createEngine(RAPIER, input = {}, {
          (event.kind==='goal'&&(
           at.x!==0||at.y!==0))||
          (event.kind==='goal-line'&&event.restart.type==='corner'&&
-          (Math.abs(Math.abs(at.x)-(52.5-BALL_RADIUS))>1e-6||
-           Math.abs(Math.abs(at.y)-(34-BALL_RADIUS))>1e-6))||
+          (Math.abs(at.x)>52.5-BALL_RADIUS+1e-6||
+           Math.abs(at.y)>34-BALL_RADIUS+1e-6||
+           Math.hypot(52.5-Math.abs(at.x),34-Math.abs(at.y))>1+1e-6))||
          (event.kind==='goal-line'&&event.restart.type==='goal-kick'&&
           (Math.abs(Math.abs(at.x)-47)>1e-6||
            Math.abs(Math.abs(at.y)-5.5)>1e-6)))))
       throw new TypeError('B05 restart spot must be in original pitch geometry after true exit');
+    if(b05bSource&&(
+      !b05bOutboundAction||
+      event.lastVerifiedTouch?.tick!==b05bOutboundAction.tick||
+      event.lastVerifiedTouch?.playerId!==b05bSource.sourceId||
+      event.lastVerifiedTouch?.team!==b05bSource.lastTeam||
+      event.restart.type!==b05bSource.kind||
+      event.restart.team!==b05bSource.restartTeam))
+     throw new TypeError('B05b restart requires original same-shoe outbound action and goal-line outcome');
     body.setTranslation(at,true);
     body.setLinvel({x:0,y:0,z:0},true);
     body.setAngvel({x:0,y:0,z:0},true);
     body.resetForces(true);
     body.resetTorques(true);
     basicRestartTick=tick;
+    b05bRestartTicket=b05bSource?event.restart:null;
     return Object.freeze({tick,kind:event.restart.type,
      assignedTeam:event.restart.team,
      originalRapierBallRepositioned:true,
      realShoeContact:false,officialMatchResult:null,
      ball:snapshot().ball,sourceEventTick:event.tick});
+  }
+  // B05b set piece: corner/goal kick MUST have an independent native
+  // restart-taker shoe START and live same-tick Rapier manifold.
+  // A throw-in has no hand colliders yet: a player-proximity-gated
+  // DEV-only *provisional hand-release impulse*, never a certified throw.
+  function attemptB05bOriginalSetPiece(frame,ticket){
+    if(disposed||!b05bSource||!b05bOutboundAction||
+       b05bRestartTicket===null||ticket!==b05bRestartTicket||
+       ticket.type!==b05bSource.kind||
+       frame?.tick!==tick||tick<=basicRestartTick||
+       !Array.isArray(frame.players)||frame.players.length!==22)
+      throw new TypeError('B05b set piece requires original prepared restart ticket');
+    if(b05bTake)return null;
+    const p=frame.players.find(q=>q.id===b05bSource.takerId);
+    if(!p||p.team!==ticket.team||
+       frame.players.some((q,i)=>q.id!==INITIAL_PLAYERS[i].id||
+        q.team!==INITIAL_PLAYERS[i].team||
+        q.role!==INITIAL_PLAYERS[i].role||
+        ![q.x,q.y,q.vx,q.vy].every(Number.isFinite)))
+      throw new TypeError('B05b set-piece taker must be the original current player');
+    const at=ticket.spot,position=body.translation();
+    if(Math.hypot(position.x-at.x,position.y-at.y)>0.65||
+       Math.abs(position.z-BALL_RADIUS)>0.35)
+      return null;
+    const contact=shoeBridge.snapshot(),solver=shoeBridge.solver();
+    if(contact.tick!==tick||solver?.tick!==tick)
+      throw new TypeError('B05b set-piece requires original latest Rapier shoe step');
+    const throwIn=ticket.type==='throw-in';
+    const native=contact.started.length===1&&contact.active.length===1&&
+      contact.started[0]===b05bSource.takerId&&
+      contact.active[0]===b05bSource.takerId&&
+      solver.pairs.some(pair=>pair.id===b05bSource.takerId&&
+       pair.beganThisTick&&pair.collisionActive&&
+       pair.manifolds.some(m=>m.geometricContacts>0));
+    if(!throwIn&&!native)return null;
+    if(throwIn&&(
+      contact.started.length!==0||
+      Math.hypot(p.x-at.x,p.y-at.y)>2.2))
+      return null;
+    const d=diagnosticBasicRestartAttackSide==='home'?1:-1;
+    const impulse=throwIn?
+     {x:d*0.2,y:-d*1.8,z:0.55}:
+     ticket.type==='corner'?
+     {x:-d*1.85,y:-d*1.15,z:0.42}:
+     {x:-d*2.5,y:0,z:0.3};
+    if(throwIn){
+     // Original ball is positioned at the approximate release height
+     // only once. The human arm/hand itself is NOT simulated.
+     body.setTranslation({x:at.x,y:at.y,z:1.8},true);
+     body.setLinvel({x:0,y:0,z:0},true);
+    }
+    body.applyImpulse(impulse,true);
+    b05bTake=Object.freeze({
+     tick,actorId:b05bSource.takerId,team:b05bSource.restartTeam,
+     type:ticket.type,impulseNs:Object.freeze(impulse),
+     singleOriginalRapierBall:true,physicalImpulseApplied:true,
+     originalNativeShoeStart:native,
+     provisionalHandReleaseWithoutHandCollider:throwIn,
+     legalThrowConfirmed:false,officialMatchAction:false,
+     officialPossession:false,officialMatchResult:null,
+     ball:snapshot().ball
+    });
+    return b05bTake;
   }
   function dispose() {
     if (!disposed) {
@@ -734,7 +807,7 @@ export function createEngine(RAPIER, input = {}, {
   }
   return Object.freeze({scenario, ballProperties, snapshot, angularVelocity, step, dispose,
     ...(diagnosticBasicRestartEnabled?{applyBasicRestartAtBoundary}:{}),
-    ...(b05bSource?{attemptB05bNativeOutboundKick}:{}),
+    ...(b05bSource?{attemptB05bNativeOutboundKick,attemptB05bOriginalSetPiece}:{}),
     ...(shoeBridge?{
       footContactSnapshot:()=>shoeBridge.snapshot(),
       footContactTimelineSnapshot:()=>shoeBridge.timeline(),

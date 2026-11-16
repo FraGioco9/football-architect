@@ -186,7 +186,7 @@ export function createControlledActionLab(RAPIER,id,{
  let firstPhysicalPassAction=null;
  let disposed=false,firstRealPass=null,count=0,history=Object.freeze([]);
  let shotTrace=null,blockedShotObservation=null,receivingContact=null;
- let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null;
+ let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
  const decisionObserver=createPhysicalFootballDecisionObserver();
  const continuityObserver=createRealPostContactBallContinuity();
@@ -393,7 +393,7 @@ export function createControlledActionLab(RAPIER,id,{
      realOpponentContest}:{}),
     ...(reachExperiment?{realBallReachM32:playerFrame.realBallReachM32}:{}),
     ...(basicFootwork?{baseFootworkAudit}:{}),
-    ...(refereeMode?{refereeEvidence,physicalRestart,b05bOutKick}:{}),
+    ...(refereeMode?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake}:{}),
     ...(goalkeeperSave?{
       goalkeeperDiveIntent:playerFrame.goalkeeperDiveIntent,
       goalkeeperDiveIntentTicks:playerFrame.goalkeeperDiveIntentTicks
@@ -433,6 +433,21 @@ export function createControlledActionLab(RAPIER,id,{
    refereeObserver.acknowledgeRestart(ticket);
    latest=Object.freeze({...latest,
     refereeEvidence:refereeObserver.snapshot(),physicalRestart});
+  }
+  if(sourceRestart&&physicalRestart&&after.tick>physicalRestart.tick&&!b05bTake){
+   const take=engine.attemptB05bOriginalSetPiece(
+    frame,latest.refereeEvidence.lastEvent.restart);
+   if(take){
+    b05bTake=take;
+    count++;
+    history=Object.freeze([...history,Object.freeze({
+     tick:after.tick,kind:take.type+'-physical-attempt',
+     actorId:take.actorId
+    })].slice(-12));
+    latest=Object.freeze({...latest,
+     ball:engine.snapshot().ball,b05bTake,
+     eventCount:count,events:history});
+   }
   }
   return latest;
  }
@@ -555,6 +570,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     ' · actual shoe release '+snap.baseFootworkAudit.release.actualShoeEndTick+
     ' and independent recontact '+
      snap.baseFootworkAudit.release.actualShoeRecontactTick:'')+
+   (snap.b05bTake?
+    ' · B05b '+snap.b05bTake.type.toUpperCase()+
+    ' physical attempt by '+snap.b05bTake.actorId+
+    ' tick '+snap.b05bTake.tick+
+    (snap.b05bTake.originalNativeShoeStart?
+     ' · real set-piece native shoe START':
+     ' · provisional unmodelled hand release'):'')+
    (snap.b05bOutKick?
     ' · native outbound shoe kick '+snap.b05bOutKick.actorId+
     ' tick '+snap.b05bOutKick.tick:'')+
@@ -612,7 +634,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     snap.firstOpposingShoe.tick+' · no verified reception':'')+
    (snap.carryTrace?' · CARRY '+snap.carryTrace.team.toUpperCase()+
     ' · observed ground path '+number(snap.carryTrace.path2DM)+' m':'');
-  if(session.spec.mode==='referee'&&snap.refereeEvidence?.lastEvent){
+  if(session.spec.mode==='referee'&&snap.b05bTake){
+   const t=snap.b05bTake;
+   status.textContent=t.originalNativeShoeStart?
+    'B05b physical '+t.type.toUpperCase()+
+    ' attempt: genuine independent original #9 Rapier shoe START and applied same-ball kick. No official result or possession.':
+    'B05b provisional THROW-IN: current original #9 near the verified spot, physical same-ball launch. No native hand collider or legally confirmed throw.';
+  }else if(session.spec.mode==='referee'&&snap.refereeEvidence?.lastEvent){
    const e=snap.refereeEvidence.lastEvent;
    status.textContent=e.provisionalGoalScored?
     'Observed genuine full-ball GOAL crossing ('+
@@ -736,7 +764,7 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   trail=[{x:session.snapshot().ball.position.x,
    y:session.snapshot().ball.position.y}];
   description.textContent=['throw-in','corner','goal-kick'].includes(select.value)?
-    'B05b actual original exclusive native last shoe touch, source-confirmed full-ball exit and team-assigned same-world restart. No unverified throw, kick or official result.':
+    'B05b original native outbound shoe START, real full-ball exit and assigned restart. CORNER/GOAL KICK require a second genuine #9 shoe START to kick; THROW-IN uses an explicitly provisional same-ball hand-release proxy without simulated hands. No official result or possession.':
     session.spec.mode==='referee'?
     'B05 native 105×68m field referee: actual consecutive Rapier ball crossing, genuine last-shoe attribution or unresolved ownership; original same-world KICKOFF on a scored goal. No official competition result.':
     ['trap','dribble'].includes(select.value)?

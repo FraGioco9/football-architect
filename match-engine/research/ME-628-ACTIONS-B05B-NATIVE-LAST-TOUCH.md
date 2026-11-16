@@ -21,8 +21,22 @@ exact-tick B05 gate, with velocity reset; this is **not** a foot kick
 or a legal hand throw. Missing or ambiguous genuine last shoe START
 retains the B05a unresolved outcome.
 
-The next functional addition must authenticate the actual taker and
-real same-ball set-piece impulse. For a throw-in, a provisional hand
+B05b also uses the original #9 taker held at a **pre-tick-zero**
+research standby target by the same constrained mover (not teleported
+while playing). Once the real source-positive restart is placed:
+- **CORNER** is placed within 1 metre of the corner flag; the original
+  #9 must get its own NEW exclusive native Rapier shoe START and solver
+  manifold before the original ball receives a provisional corner kick.
+- **GOAL KICK** likewise requires a separate native original #9 shoe START
+  and applies a same-ball physical kick inwards.
+- **THROW-IN** has no simulated hands. Original #9 must be spatially near
+  the verified throw-in location. An isolated original-ball impulse from
+  approximate hand height is labelled
+  `provisionalHandReleaseWithoutHandCollider:true`, not a native hand
+  contact or legally confirmed throw-in.
+
+Both the source kick and a different, later restart impulse use the
+original ball. No extra world/player teleport/official match authority. For a throw-in, a provisional hand
 release mechanism must be clearly distinguished from original Rapier
 shoe START and from a legally confirmed hand throw; the latter is not
 currently modelled. No official match possession/result, merge,

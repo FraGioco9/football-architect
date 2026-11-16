@@ -31,7 +31,7 @@ export function basicSourcePositiveRestartSetup(players,attackSide,ball,kind){
   throw new TypeError('B05b needs unchanged original 22-player source and taker roles');
  const sourceFacing=lastTeam==='home'?1:-1;
  const dest=kind==='throw-in'?
-  {x:0,y:direction*33.3}:
+  {x:direction*1.5,y:direction*33.3}:
   kind==='corner'?
   {x:direction*51.75,y:direction*33.45}:
   {x:direction*47.24,y:direction*5.5};
