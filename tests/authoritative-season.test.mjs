@@ -47,7 +47,7 @@ function source(){
   }ring.splice(1,0,ring.pop());
  }
  const zero=id=>({clubId:id,played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,goalDifference:0});
- return {...empty(),status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'world:'+world.generation+':season:1:'+'a'.repeat(64)},data:{season:1,rulesVersion:definition.rules.version,participants:ids,fixtures,
+ return {...empty(),status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'world:'+world.generation+':season:1:'+'a'.repeat(64)},data:{season:1,rulesVersion:definition.rules.version,participants:ids,fixtures,
   standings:{complete:false,rows:ids.map((id,i)=>({...zero(id),rank:i+1,points:0}))},statistics:{matchesPlayed:0,totalGoals:0,goalsPerMatch:0,teams:ids.map(id=>({...zero(id),cleanSheets:0})),players:null,playerStatus:'unavailable'},
   calendar:Array.from({length:56},(_,i)=>({day:i+1,fixtureIds:fixtures.filter(f=>f.day===i+1).map(f=>f.id),played:0})),history:null}};
 }

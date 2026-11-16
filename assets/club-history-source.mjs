@@ -22,7 +22,7 @@ export function projectClubCompetitionStats(payload,clubKey,membership,season,wo
    payload.competitionId!==membership.competitionId||payload.selectedSeason!==season||
    !sameWorld(payload.world,world)||payload.status!==(closed?'available':'partial')||payload.reason!==null||
    !isObject(payload.provenance)||payload.provenance.kind!=='authoritative'||
-   payload.provenance.resultAuthority!=='temporary-score-v1'||
+   payload.provenance.resultAuthority!=='temporary-lineup-v1'||
    typeof payload.provenance.sourceRef!=='string'||
    !payload.provenance.sourceRef.startsWith('world:'+world.generation+':season:'+season+':')||
    !isObject(payload.data)||payload.data.season!==season||
@@ -87,7 +87,7 @@ export function projectClubOverviewStats(payload,clubKey,membership,season,world
   payload.clubKey!==clubKey||payload.selectedSeason!==season||!sameWorld(payload.world,world)||
   payload.status!==(closed?'available':'partial')||payload.reason!==null||
   !isObject(payload.provenance)||payload.provenance.kind!=='authoritative'||
-  payload.provenance.resultAuthority!=='temporary-score-v1'||
+  payload.provenance.resultAuthority!=='temporary-lineup-v1'||
   typeof payload.provenance.sourceRef!=='string'||
   !payload.provenance.sourceRef.startsWith('club:'+world.generation+':season:'+season+':')||
   !isObject(payload.data)||payload.data.season!==season||

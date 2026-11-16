@@ -45,7 +45,7 @@ export function validateAuthoritativeSeason(input,context,manifest){
  }
  const {data:d,world:w,provenance:p}=input,viewed=viewedSeasonState(input);
  if(!viewed||![1,2].includes(w.seasonNumber)||!object(d)||d.season!==input.selectedSeason||d.rulesVersion!==definition.rules.version||input.reason!==null||
-    p?.kind!=='authoritative'||p.resultAuthority!=='temporary-score-v1'||typeof p.sourceRef!=='string'||!new RegExp('^world:'+w.generation+':season:'+d.season+':[a-f0-9]{64}$').test(p.sourceRef)||
+    p?.kind!=='authoritative'||p.resultAuthority!=='temporary-lineup-v1'||typeof p.sourceRef!=='string'||!new RegExp('^world:'+w.generation+':season:'+d.season+':[a-f0-9]{64}$').test(p.sourceRef)||
     (input.status==='available')!==(viewed.phase==='closed'))fail();
  const catalog=clubCatalog(manifest),ids=d.participants;
  if(!Array.isArray(ids)||ids.length!==definition.capacity||new Set(ids).size!==ids.length||ids.some(id=>!idPattern.test(id)||!catalog.has(id))||
