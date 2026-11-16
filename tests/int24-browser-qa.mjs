@@ -168,8 +168,10 @@ try {
     participants:division.clubs.map(c=>c.countryId+'-'+c.clubId),
     fixtures:sportingFixtures,standings:{complete:false,rows:table},
     statistics:{matchesPlayed:8,totalGoals,goalsPerMatch:totalGoals/8,
-     teams,players:[{playerId:58,clubId:'IT-'+fixtures[0].homeId,
-      appearances:1,starts:1,minutes:75,goals:0}],
+     teams,players:Array.from({length:11},(_,i)=>({
+      playerId:100+i,clubId:'IT-'+fixtures[0].homeId,
+      appearances:1,starts:1,minutes:i===0?75:90,goals:0
+     })),
      playerStatus:'available'},
     calendar:Array.from({length:56},(_,i)=>({
      day:i+1,fixtureIds:sportingFixtures.filter(f=>f.day===i+1).map(f=>f.id),
