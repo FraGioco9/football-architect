@@ -63,17 +63,24 @@ export function summarizeFrozenLineupPlayersV1(
  }>();
  for(const frozen of frozenMatches.values()){
   const fixture=frozen.receipt.fixture;
+  if(!fixture||typeof fixture.competitionId!=='string'||
+   typeof fixture.homeClubId!=='string'||typeof fixture.awayClubId!=='string'||
+   !/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$|^int-[12]$/.test(fixture.competitionId))
+   invalid();
+  const competitionId=fixture.competitionId as string;
+  const homeClubId=fixture.homeClubId as string;
+  const awayClubId=fixture.awayClubId as string;
   const result=frozen.receipt.result as unknown as LineupMatchResultV1;
   for(const side of ['home','away'] as const){
-   const clubId=side==='home'?fixture.homeClubId:fixture.awayClubId;
+   const clubId=side==='home'?homeClubId:awayClubId;
    for(const appearance of result[side].appearances){
     if(!Number.isSafeInteger(appearance.playerId)||appearance.playerId<1||
      appearance.started!==true||!Number.isSafeInteger(appearance.minutes)||
      appearance.minutes<1||appearance.minutes>120||
      !Number.isSafeInteger(appearance.goals)||appearance.goals<0)invalid();
-    const key=fixture.competitionId+':'+clubId+':'+appearance.playerId;
+    const key=competitionId+':'+clubId+':'+appearance.playerId;
     const item=players.get(key)??{
-     playerId:appearance.playerId,clubId,competitionId:fixture.competitionId,
+     playerId:appearance.playerId,clubId,competitionId,
      appearances:0,starts:0,minutes:0,goals:0
     };
     item.appearances++;item.starts++;item.minutes+=appearance.minutes;
