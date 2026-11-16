@@ -127,7 +127,8 @@ test('M13 genuine native event and accepted canonical physical response, mirrore
        assert.ok(firstNative!==null);
        assert.ok(firstAccepted!==null);
        assert.equal(f.readout.nativeBodyPositionsFedBack,true);
-       assert.equal(f.readout.observedOriginalFeedbackAccepted,true);
+       assert.ok(f.readout.observedOriginalFeedbackCount>0,
+        'Real native response remains historically witnessed after the event');
       }
      }
      last=f;
@@ -151,6 +152,45 @@ test('M13 genuine native event and accepted canonical physical response, mirrore
  process.stdout.write('ME_628_M13_NATIVE_APPLIED_VS_READONLY '+JSON.stringify(witnesses)+'\n');
 });
 
+test('M13 rejects an unsafe native candidate without moving any original canonical player',
+ {timeout:18000},async()=>{
+ const R=await initializeRapier(wasm);
+ const engine=createEngine(R,scene,physicsOptions);
+ const mover=createPlayerMovement(moverOptions);
+ try{
+  for(let t=1;t<=67;t++){
+   const frame=mover.step(engine.snapshot().ball.position);
+   engine.step(frame);
+   const source=engine.nativePlayerBodySnapshot();
+   if(t!==67){
+    const rejected=mover.reconcileUnstagedNativeBodyResponse(source);
+    assert.equal(rejected.accepted,false);
+    engine.acknowledgeNativePlayerResponse(mover.snapshot());
+    continue;
+   }
+   assert.equal(source.currentTickStarts,1,
+    'Boundary test only uses the genuine original native START at tick 67');
+   assert.deepEqual(source.activePairs,['away-10|home-10']);
+   const actors=source.physicalActors.map((p,i)=>i===9?{
+    ...p,position:{...p.position,x:100}
+   }:p);
+   const result=mover.reconcileUnstagedNativeBodyResponse({
+    ...source,physicalActors:actors
+   });
+   assert.equal(result.accepted,false);
+   assert.equal(result.reason,'physical-boundary-or-speed');
+   assert.equal(mover.snapshot().actualNativeResponseCount,0);
+   assert.deepEqual(mover.snapshot().players,frame.players,
+    'Failed all-22 screen must never partially mutate the canonical mover');
+   const ack=engine.acknowledgeNativePlayerResponse(mover.snapshot());
+   assert.equal(ack.appliedMoverResponses,0);
+   assert.equal(ack.actualNativeStarts,1,
+    'Real native contact is still recorded even when XY correction rejected');
+   assert.equal(mover.step(engine.snapshot().ball.position).tick,68,
+    'Rejected response must still be acknowledged before next true 60Hz step');
+  }
+ }finally{engine.dispose();}
+});
 test('M13 rejects fabricated active pair, stale tick, forged body, missing queue and duplicate acknowledgment',
  {timeout:12000},async()=>{
  const R=await initializeRapier(wasm);

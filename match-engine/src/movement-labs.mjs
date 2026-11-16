@@ -287,7 +287,7 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    opposingFeedbackScene?Boolean(opposingFeedback&&
     bodySample?.actualNativeStarts>0&&
     bodySample?.appliedMoverResponses>0&&
-    frame.lastPhysicalReconciliation?.accepted===true&&
+    frame.actualNativeResponseCount>0&&
     sharedSample?.oneNativeEventQueue===true):
    nativeBodies?Boolean(bodySample&&bodySample.actualNativeStarts>0&&
     (!encounter||bodySample.appliedMoverResponses>0)&&
