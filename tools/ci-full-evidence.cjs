@@ -36,13 +36,37 @@ async function observe({github,owner,repo,sha,prNumber,baseSha}){
  }
  return rows;
 }
+/**
+ * Stacked PRs are accepted only when their exact base is an OPEN same-repo PR
+ * targeting main, and that base commit is an ancestor of the candidate head.
+ * This preserves exact-head and full-coverage requirements for both PR styles.
+ */
+async function validateBase(github,owner,repo,pr){
+ if(pr.base.ref==='main')return;
+ if(pr.base.repo?.full_name!==owner+'/'+repo)throw Error('BLOCKED: foreign stacked base');
+ const parents=await github.paginate(github.rest.pulls.list,{
+  owner,repo,head:owner+':'+pr.base.ref,base:'main',state:'open',per_page:100
+ });
+ const verified=parents.some(parent=>parent.number!==pr.number&&
+  parent.state==='open'&&parent.head.ref===pr.base.ref&&
+  parent.head.sha===pr.base.sha&&parent.head.repo?.full_name===owner+'/'+repo&&
+  parent.base.ref==='main');
+ if(!verified)throw Error('BLOCKED: unverified stacked PR base');
+ const compare=await github.rest.repos.compareCommitsWithBasehead({
+  owner,repo,basehead:pr.base.sha+'...'+pr.head.sha
+ });
+ if(compare.data.behind_by!==0||!['ahead','identical'].includes(compare.data.status))
+  throw Error('BLOCKED: stacked PR HEAD does not contain exact base');
+}
 async function verify({github,core,context,prNumber,expected,maxWaitMs=45*60*1000,intervalMs=30000,now=Date.now,wait=ms=>new Promise(r=>setTimeout(r,ms))}){
  const {owner,repo}=context.repo;
  if(!Number.isSafeInteger(prNumber)||prNumber<1||!/^[0-9a-f]{40}$/.test(expected))throw Error('Invalid PR number or expected SHA');
  const start=now();let last='';
  async function current(){
   const {data:pr}=await github.rest.pulls.get({owner,repo,pull_number:prNumber});
-  if(pr.state!=='open'||pr.head.repo?.full_name!==owner+'/'+repo||pr.head.sha!==expected||pr.base.ref!=='main')throw Error('BLOCKED: closed/foreign PR, stale HEAD or unexpected base');
+  if(pr.state!=='open'||pr.head.repo?.full_name!==owner+'/'+repo||pr.head.sha!==expected)
+   throw Error('BLOCKED: closed/foreign PR or stale HEAD');
+  await validateBase(github,owner,repo,pr);
   return pr;
  }
  while(true){
@@ -67,4 +91,4 @@ async function findReusable({github,owner,repo,sha,workflow,currentRun,prNumber,
  }
  return null;
 }
-module.exports={requirements,evaluateRun,observe,verify,findReusable};
+module.exports={requirements,evaluateRun,observe,verify,findReusable,validateBase};

@@ -157,9 +157,9 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(a).not.toHaveProperty('events');
  expect(b).not.toHaveProperty('events');
  const frozenA=await db.prepare('SELECT receipt_json FROM match_lineup_result_receipts WHERE public_match_id=?')
-  .bind(full.public_id).first<{receipt_json:string}>();
+  .bind(full.public_id).first() as {receipt_json:string}|null;
  const frozenB=await db.prepare('SELECT receipt_json FROM match_lineup_result_receipts WHERE public_match_id=?')
-  .bind(mixed.public_id).first<{receipt_json:string}>();
+  .bind(mixed.public_id).first() as {receipt_json:string}|null;
  expect(JSON.parse(frozenA!.receipt_json).result.events)
   .toHaveLength(a.result.homeGoals+a.result.awayGoals);
  expect(JSON.parse(frozenB!.receipt_json).result.events.filter((e:{side:string})=>e.side==='away'))
