@@ -3,8 +3,19 @@ import assert from 'node:assert/strict';
 import {createServer,request} from 'node:http';
 import {once} from 'node:events';
 import {proxyAdminApi} from '../tools/dev-admin-api-proxy.mjs';
+import {upstreamTimeoutMs} from '../tools/shared-nonproduction-proxy.mjs';
 const response=()=>({status:0,body:'',writeHead(status,headers){this.status=status;this.headers=headers},end(body=''){this.body=body}});
 const req=(url='/api/world',remoteAddress='127.0.0.1',host='localhost:2000')=>({url,method:'GET',headers:{host},socket:{remoteAddress}});
+test('only an exact V2 sporting advance can outlive the default 15-second local proxy timeout',()=>{
+ assert.equal(upstreamTimeoutMs('/api/admin/seasons/advance','POST'),120000);
+ for(const [path,method] of [
+  ['/api/admin/seasons/advance','GET'],['/api/admin/seasons/events/advance','POST'],
+  ['/api/admin/seasons/prepare','POST'],['/api/admin/world','GET'],
+  ['/api/player/session','GET'],['/api/competitions/IT-1/seasons/1','GET'],
+  ['/api/admin/seasons/advance?unexpected=true','POST']
+ ])assert.equal(upstreamTimeoutMs(path,method),15000,path+' '+method);
+});
+
 test('bridge disabled leaves ordinary preview unchanged and ignores non-API paths',async()=>{
  assert.equal(await proxyAdminApi(req(),response(),{}),false);
  assert.equal(await proxyAdminApi(req('/settings'),response(),{target:'http://127.0.0.1:8787'}),false);
