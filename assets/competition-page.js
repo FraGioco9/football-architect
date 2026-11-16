@@ -944,6 +944,7 @@
       if(!STANDINGS_SUBVIEWS.includes(next)||next===activeStandingsSubview)return;
       activeStandingsSubview=next;
       syncSubviews();refresh();refreshSeasonPresentation();
+      window.dispatchEvent(new CustomEvent('fa:standings-subview-change',{detail:{view:next}}));
     };
     document.querySelector('.app-standings-subviews')?.addEventListener('click',event=>{
       const button=event.target.closest?.('[data-standings-subview]');
@@ -1330,6 +1331,10 @@
     }
     ({projectStandings}=await import(new URL('standings-subviews.mjs',sourceUrl).href));
     activeStandingsSubview=readStandingsSubview();
+    window.faStandingsSubViews=Object.freeze({
+      get:()=>activeStandingsSubview,
+      project:(rows,fixtures,definition)=>projectStandings(rows,fixtures,definition,activeStandingsSubview)
+    });
     bindSuppliedPanels(suppliedMobile);
     if(!document.querySelector('link[href="/assets/competition-awards.css"]')){const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);}
     // The module bootstrap does not delay legacy shared-page initialization.
