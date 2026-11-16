@@ -59,6 +59,7 @@ export interface MatchReceiptPlanV1 {
 export function planMatchSimulationReceiptV1(
  db:Database,input:{
   match:MatchLineupFixtureV1;world:MatchLineupWorldV1;
-  seed:string;context:MatchLineupContextV1;now:number
+  seed:string;context:MatchLineupContextV1;now:number;
+  pendingTie?:import('./knockout-progression.ts').KnockoutTie
  }
 ):Promise<MatchReceiptPlanV1>;

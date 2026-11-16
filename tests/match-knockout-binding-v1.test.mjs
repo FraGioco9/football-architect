@@ -51,18 +51,20 @@ async function proof({leg=1,twoLegs=false,neutral=false}={}){
     receiptHash:frozen.receipt_hash,homeGoals:2,awayGoals:1}]};
  const prior={generation,day:20,calendar_hash:plan.sourceCalendarHash,simulation_version:'temporary-lineup-v1',
   outcome_hash:await canonicalHash(dayPayload),outcome_json:JSON.stringify(dayPayload)};
+ let tiePresent=true;
  const calls=[];
  const db={prepare(sql){
   const st={sql,args:[],bind(...args){this.args=args;return this},async first(){
    if(sql.includes('FROM season_knockout_match_slots'))return slot;
-   if(sql.includes('FROM season_knockout_ties'))return tie;
+   if(sql.includes('FROM season_knockout_ties'))return tiePresent?tie:null;
    if(sql.includes('FROM match_lineup_result_receipts'))return frozen;
    if(sql.includes('FROM season_lineup_day_outcomes'))return prior;
    throw Error('Unexpected query '+sql);
   }};
   calls.push(st);return st;
  }};
- return {db,match,slot,tie,prior,frozen,published:{slot_match_id:matchId},world,calls};
+ return {db,match,slot,tie,prior,frozen,published:{slot_match_id:matchId},world,calls,
+  dropTie:()=>{tiePresent=false;}};
 }
 test('neutral knockout final verifies hashed reservation and actual resolved clubs',async()=>{
  const p=await proof({neutral:true});
@@ -104,4 +106,26 @@ test('first leg is regulation only, second leg reads and guards prior finalized 
  second.prior.outcome_hash='f'.repeat(64);
  await assert.rejects(()=>resolvePublishedKnockoutV1(second.db,{match:second.match,
   world:second.world,published:second.published,context:ctx}),/first leg day receipt/);
+});
+
+test('new same-day first-leg plan is accepted only when canonically supplied and guarded',async()=>{
+ const p=await proof({twoLegs:true,leg:1});
+ p.dropTie();
+ const context={mode:'regulation'};
+ await assert.rejects(()=>resolvePublishedKnockoutV1(p.db,{match:p.match,world:p.world,
+  published:p.published,context}),/resolved tie/);
+ const pendingTie=JSON.parse(p.tie.plan_json);
+ const result=await resolvePublishedKnockoutV1(p.db,{match:p.match,world:p.world,
+  published:p.published,context,pendingTie});
+ assert.equal(result.planHash,p.tie.plan_hash);
+ assert.equal(result.leg,1);
+ assert.ok(result.guards.some(g=>g.sql.includes('NOT EXISTS(SELECT 1 FROM season_knockout_ties')));
+ await assert.rejects(()=>resolvePublishedKnockoutV1(p.db,{match:p.match,world:p.world,
+  published:p.published,context,pendingTie:{...pendingTie,homePolicy:'neutral'}}),/tie source integrity|fixture binding/);
+ // Prevent an authenticated plan from being inserted over an existing one.
+ const published=await proof({twoLegs:true,leg:1});
+ await assert.rejects(()=>resolvePublishedKnockoutV1(published.db,{
+  match:published.match,world:published.world,published:published.published,
+  context,pendingTie:JSON.parse(published.tie.plan_json)
+ }),/tie already published/);
 });

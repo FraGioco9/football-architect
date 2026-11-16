@@ -26,7 +26,7 @@ const guard=(db,query,args)=>db.prepare(GUARD_START+query+')').bind(FAIL_SENTINE
 /** Matches stored plan fixture, slot publication and (for leg 2) a finalized prior result.
  * No direct writes; returned guards MUST be added to the future single D1 batch.
  */
-export async function resolvePublishedKnockoutV1(db,{match,world,published,context}){
+export async function resolvePublishedKnockoutV1(db,{match,world,published,context,pendingTie}){
  if(!match||!world||!published||typeof published.slot_match_id!=='string')fail('inputs');
  const slot=await db.prepare('SELECT * FROM season_knockout_match_slots WHERE match_id=?')
   .bind(published.slot_match_id).first();
@@ -41,14 +41,19 @@ export async function resolvePublishedKnockoutV1(db,{match,world,published,conte
   fail('slot identity');
  const tie=await db.prepare('SELECT generation,plan_hash,plan_json FROM season_knockout_ties WHERE season_number=? AND competition_id=? AND phase_id=? AND tie_id=?')
   .bind(world.seasonNumber,match.competitionId,slot.phase_id,slot.tie_id).first();
- if(!tie||tie.generation!==world.generation||!hex64.test(tie.plan_hash))fail('resolved tie');
+ if(tie&&pendingTie)fail('tie already published');
+ if(!tie&&!pendingTie)fail('resolved tie');
+ const plannedJson=tie?.plan_json??JSON.stringify(pendingTie);
+ const plannedHash=tie?.plan_hash??await canonicalHash(pendingTie);
+ if(tie&&(tie.generation!==world.generation||!hex64.test(tie.plan_hash)))
+  fail('resolved tie');
  let plan;
- try{plan=JSON.parse(tie.plan_json)}catch{fail('tie JSON')}
+ try{plan=JSON.parse(plannedJson)}catch{fail('tie JSON')}
  if(!plan||plan.schemaVersion!==1||plan.season!==world.seasonNumber||plan.competitionId!==match.competitionId||
   plan.phaseId!==slot.phase_id||plan.tieId!==slot.tie_id||
   plan.rulesVersion!==slot.rules_version||plan.homePolicy!==slot.home_policy||
   !Array.isArray(plan.fixtures)||![1,2].includes(plan.fixtures.length)||
-  await canonicalHash(plan)!==tie.plan_hash)fail('tie source integrity');
+  await canonicalHash(plan)!==plannedHash)fail('tie source integrity');
  if(slot.home_policy==='neutral'&&plan.fixtures.length!==1)fail('neutral multi-leg');
  const entry=plan.fixtures.find(x=>x.leg===slot.leg);
  const f=entry?.fixture;
@@ -63,8 +68,10 @@ export async function resolvePublishedKnockoutV1(db,{match,world,published,conte
    [published.slot_match_id,slot.generation,slot.season_number,slot.competition_id,slot.phase_id,
     slot.tie_id,slot.leg,slot.slot_id,slot.marker,slot.scheduled_day,slot.round_number,
     slot.source_hash,slot.rules_version,slot.home_policy]),
-  guard(db,'SELECT 1 FROM season_knockout_ties WHERE season_number=? AND competition_id=? AND phase_id=? AND tie_id=? AND generation=? AND plan_hash=? AND plan_json=?',
-   [world.seasonNumber,match.competitionId,slot.phase_id,slot.tie_id,world.generation,tie.plan_hash,tie.plan_json])
+  tie?guard(db,'SELECT 1 FROM season_knockout_ties WHERE season_number=? AND competition_id=? AND phase_id=? AND tie_id=? AND generation=? AND plan_hash=? AND plan_json=?',
+   [world.seasonNumber,match.competitionId,slot.phase_id,slot.tie_id,world.generation,plannedHash,plannedJson])
+   :guard(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM season_knockout_ties WHERE season_number=? AND competition_id=? AND phase_id=? AND tie_id=?)',
+    [world.seasonNumber,match.competitionId,slot.phase_id,slot.tie_id])
  ];
  let verified;
  if(plan.fixtures.length===1)verified=slot.home_policy==='neutral'
@@ -128,5 +135,5 @@ export async function resolvePublishedKnockoutV1(db,{match,world,published,conte
  }
  if(canonical(context)!==canonical(verified))fail('untrusted context');
  return {context:verified,guards,phaseId:slot.phase_id,tieId:slot.tie_id,leg:slot.leg,
-  planHash:tie.plan_hash,slotMatchId:slot.match_id};
+  planHash:plannedHash,slotMatchId:slot.match_id};
 }

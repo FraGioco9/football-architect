@@ -88,7 +88,7 @@ export async function readFrozenMatchRostersV1(db,{homeClubId,awayClubId,world})
 /** League fixture only: knockout slot/actual-participant binding remains an explicit
  * fail-closed future step. Stages a write for the protected caller's SINGLE D1 batch.
  */
-export async function planMatchSimulationReceiptV1(db,{match,world,seed,context,now}){
+export async function planMatchSimulationReceiptV1(db,{match,world,seed,context,now,pendingTie}){
  checkedWorld(world);
  if(!match||!validId(match.matchId)||match.season!==world.seasonNumber||
   !Number.isInteger(match.day)||match.day<1||match.day>56||match.day!==world.day+1||
@@ -109,7 +109,9 @@ export async function planMatchSimulationReceiptV1(db,{match,world,seed,context,
   fail('published league source');
  // A missing league slot is not permission to invent a knockout fixture:
  // independently validate an existing published reservation plus resolved tie proof.
- const knockout=league?null:await resolvePublishedKnockoutV1(db,{match,world,published,context});
+ const knockout=league?null:await resolvePublishedKnockoutV1(db,{
+  match,world,published,context,pendingTie
+ });
  const outcome=await simulateMatchV1({
   homeRoster:snapshot.homeRoster,awayRoster:snapshot.awayRoster,
   matchKey:match.fixtureId,seed,homeClubId:match.homeClubId,

@@ -126,6 +126,8 @@ function validateResolvedMatch(fixture:Fixture,context:MatchContext,score:Finali
 
 export interface SportingFixtureSource {
  phaseId:string;tieId:string;leg:1|2;neutral:boolean;
+ /** Resolved only in the destination day, not yet persisted. */
+ pendingTie?:KnockoutTie;
 }
 export async function processSportingDayWithResolver<Result extends FinalizedSportingMatch>(
  state:Progression<Result>,day:number,
@@ -160,7 +162,9 @@ export async function processSportingDayWithResolver<Result extends FinalizedSpo
    context={mode:'second-leg',firstLegHomeGoals:score.homeGoals,firstLegAwayGoals:score.awayGoals};
   }
   const source:SportingFixtureSource|null=plan?{
-   phaseId:plan.tie.phaseId,tieId:plan.tie.tieId,leg:plan.leg as 1|2,neutral:plan.neutral
+   phaseId:plan.tie.phaseId,tieId:plan.tie.tieId,leg:plan.leg as 1|2,
+   neutral:plan.neutral,
+   ...(newTies.includes(plan.tie)?{pendingTie:plan.tie}:{})
   }:null;
   const result=await resolve(f,context,source);
   validateResolvedMatch(f,context,result);

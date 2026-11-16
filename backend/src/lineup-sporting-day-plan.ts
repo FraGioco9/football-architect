@@ -41,7 +41,7 @@ export interface StagedLineupDayV1 {
  */
 async function publishedMatch(
  db:Database,world:WorldV1,fixture:Fixture,
- source:{phaseId:string;tieId:string;leg:1|2;neutral:boolean}|null
+ source:{phaseId:string;tieId:string;leg:1|2;neutral:boolean;pendingTie?:KnockoutTie}|null
 ):Promise<{public_id:number;source_hash:string}>{
  const slot=source?await matchIdForSlot({
   generation:world.generation,season:world.seasonNumber,
@@ -109,7 +109,7 @@ export async function planLineupSportingDayV1(
     fixtureId:f.id,competitionId:f.competitionId,
     homeClubId:f.homeClubId,awayClubId:f.awayClubId,
     sourceHash:published.source_hash},
-   context,seed,now
+   context,seed,now,pendingTie:source?.pendingTie
   });
   if(planned.kind!=='lineup_candidate'||planned.writes.length!==1)
    throw new ApiError(422,'lineup_match_result_invalid');
@@ -142,7 +142,12 @@ export async function planLineupSportingDayV1(
    [world.seasonNumber,day]),
   ...staged.flatMap(s=>s.guards)
  ];
+ const newTieWrites=await Promise.all(progress.newTies.map(async tie=>db.prepare(
+  'INSERT INTO season_knockout_ties VALUES(?,?,?,?,?,?,?,?)'
+ ).bind(world.seasonNumber,world.generation,tie.competitionId,tie.phaseId,tie.tieId,
+  await canonicalHash(tie),JSON.stringify(tie),now)));
  const writes=[
+  ...newTieWrites,
   ...staged.flatMap(s=>s.writes),
   db.prepare(`INSERT INTO season_lineup_day_outcomes(
    season_number,generation,day,calendar_hash,simulation_version,

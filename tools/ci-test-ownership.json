@@ -342,6 +342,7 @@
     "backend/tests/test_lineup_day_outcomes_migration.py": "migration",
     "backend/tests/knockout-lineup-progression-runtime.test.ts": "backend-runtime",
     "backend/tests/lineup-sporting-day-plan-runtime.test.ts": "backend-runtime",
-    "backend/tests/lineup-season-replay-runtime.test.ts": "backend-runtime"
+    "backend/tests/lineup-season-replay-runtime.test.ts": "backend-runtime",
+    "backend/tests/lineup-lifecycle-command-runtime.test.ts": "backend-runtime"
   }
 }
