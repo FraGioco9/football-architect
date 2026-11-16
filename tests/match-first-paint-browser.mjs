@@ -69,6 +69,27 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.ok(pitchBox&&scoreboardBox,JSON.stringify({engine,theme,device}));
     assert.ok(pitchBox.y>=scoreboardBox.y+scoreboardBox.height);
     assert.ok(Math.abs(pitchBox.width/pitchBox.height-105/68)<.02);
+    const stage=await page.evaluate(()=>{
+     const panels=[...document.querySelectorAll('.app-match-side')],pitch=document.querySelector('[data-match-pitch]');
+     const positions=panels.map(p=>p.getBoundingClientRect());
+     const field=pitch.getBoundingClientRect();
+     return {panels:panels.length,positions:positions.map(p=>({left:p.left,right:p.right,top:p.top,width:p.width})),
+      field:{left:field.left,right:field.right,top:field.top,width:field.width},
+      lineupCounts:panels.map(p=>p.querySelectorAll('.app-match-lineup-row').length),
+      formCounts:panels.map(p=>p.querySelectorAll('.app-match-form-cell').length),
+      blank:panels.every(p=>p.querySelector('.app-match-position').textContent.trim()==='–')};
+    });
+    assert.equal(stage.panels,2);
+    assert.deepEqual(stage.lineupCounts,[11,11]);
+    assert.deepEqual(stage.formCounts,[5,5]);
+    assert.equal(stage.blank,true);
+    if(device.width>800){
+     assert.ok(stage.positions[0].right<=stage.field.left&&stage.field.right<=stage.positions[1].left,JSON.stringify(stage));
+     assert.ok(stage.field.width<stage.positions[1].right-stage.positions[0].left);
+    }else{
+     assert.ok(stage.positions.every(p=>p.top>=stage.field.top+pitchBox.height));
+     assert.ok(Math.abs(stage.positions[0].width-stage.positions[1].width)<1);
+    }
     assert.equal(await page.locator('.app-match-scoreboard-meta, [data-match-status], [data-match-extra]').count(),0,
      'no loading or sporting-status captions under the scoreboard');
     assert.equal(first.sectionFillsMain,true,'match section must share the main content width');
@@ -226,20 +247,23 @@ for(const [engine,driver] of Object.entries(engines)){
     }));
     await page.route('**/api/matches/123',route=>route.fulfill({
      status:200,contentType:'application/json',
-     body:JSON.stringify({...match,status:currentStatus,
-      homeParticipant:currentStatus==='awaiting_participants'?null:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'},
-      // These are test-only, deliberately inconsistent stale goals. The
-      // public controller must ignore them before a completed result.
-      result:currentStatus==='completed'?{homeGoals:12,awayGoals:3}:{homeGoals:9,awayGoals:9},
-      lineups:['in_progress','completed'].includes(currentStatus)?{
-       home:{confirmed:true,starters:Array.from({length:11},(_,i)=>i+1)},
-       away:{confirmed:true,starters:Array.from({length:11},(_,i)=>i+12)}
-      }:null,
-      // Deliberately stale values on scheduled to prove they cannot leak.
-      events:currentStatus==='completed'?[{type:'goal',minute:31}]:
-       currentStatus==='scheduled'?[{type:'goal',minute:90}]:null,
-      statistics:currentStatus==='completed'?{home:{shots:3},away:{shots:2}}:
-       currentStatus==='scheduled'?{home:{shots:99},away:{shots:99}}:null})
+     body:JSON.stringify({...match,status:currentStatus,day:16,stageId:'league',
+      homeParticipant:currentStatus==='awaiting_participants'?null:{clubId:'IT-1'},
+      awayParticipant:{clubId:'IT-2'},
+      // A scheduled match may not reveal stale score data.
+      result:currentStatus==='completed'?{homeGoals:12,awayGoals:3}:{homeGoals:9,awayGoals:9}})
+
+    }));
+    const leagueFixtures=[{"id":"f1","day":1,"homeClubId":"IT-1","awayClubId":"IT-7","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f2","day":2,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":1}},{"id":"f3","day":4,"homeClubId":"IT-4","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":1,"awayGoals":1}},{"id":"f4","day":5,"homeClubId":"IT-5","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":3,"awayGoals":2}},{"id":"f5","day":7,"homeClubId":"IT-1","awayClubId":"IT-5","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":2}},{"id":"f6","day":8,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":0}},{"id":"f7","day":11,"homeClubId":"IT-9","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f8","day":12,"homeClubId":"IT-7","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f9","day":13,"homeClubId":"IT-1","awayClubId":"IT-10","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f10","day":14,"homeClubId":"IT-2","awayClubId":"IT-8","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":3}},{"id":"f11","day":16,"homeClubId":"IT-1","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":99}},{"id":"f12","day":19,"homeClubId":"IT-1","awayClubId":"IT-4","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":0}}];
+    await page.route('**/api/competitions/IT-1/seasons/1',route=>route.fulfill({
+     status:200,contentType:'application/json',
+     body:JSON.stringify({
+      schemaVersion:1,providerId:'authoritative-world',competitionId:'IT-1',selectedSeason:1,
+      status:'partial',provenance:{kind:'authoritative'},
+      data:{season:1,seasonState:{day:currentStatus==='completed'?20:14},
+       standings:{rows:[{clubId:'IT-1',rank:3,played:5},{clubId:'IT-2',rank:5,played:5}]},
+       fixtures:leagueFixtures}
+     })
     }));
     for(const status of ['awaiting_participants','scheduled','in_progress','postponed','cancelled','completed']){
      currentStatus=status;
@@ -271,6 +295,24 @@ for(const [engine,driver] of Object.entries(engines)){
      assert.deepEqual(state.hidden,status==='completed'?['false','false']:['true','true']);
      assert.equal(await page.locator('[data-match-card], .app-match-context, [data-match-visual-title]').count(),0);
      assert.equal(await page.locator('[data-match-pitch] svg').count(),1);
+     if(status==='scheduled'){
+      await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3');
+      assert.deepEqual(await page.locator('[data-match-position]').allTextContents(),['3','5']);
+      const form=await page.locator('[data-match-form]').evaluateAll(els=>els.map(el=>
+       [...el.children].map(x=>x.dataset.outcome||'-').join('')
+      ));
+      assert.deepEqual(form,['wdlww','wldwl']);
+      // Language changes update glyphs, not recorded results.
+      await page.evaluate(()=>document.documentElement.lang='it');
+      await page.waitForFunction(()=>document.querySelector('[data-match-side-title="home"]')?.textContent==='Casa');
+      assert.deepEqual(await page.locator('[data-match-form="home"] .app-match-form-cell').allTextContents(),['V','N','P','V','V']);
+      await page.evaluate(()=>document.documentElement.lang='en');
+     }
+     if(status==='completed'){
+      await page.waitForFunction(()=>document.querySelector('[data-match-form="home"]')?.children[0]?.dataset.outcome==='w');
+      assert.deepEqual(await page.locator('[data-match-position]').allTextContents(),['–','–'],
+       'Historical positions cannot be inferred from later standings');
+     }
      assert.ok(Math.abs(state.centreOffset)<=0.5,JSON.stringify({engine,theme,status,state}));
      // Real authorised club IDs link to club pages even before a score
      // exists. Underlining must neither move text nor change on hover.

@@ -54,12 +54,22 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.match(section,/data-match-away-score/);
   assert.doesNotMatch(section,/data-match-status|data-match-extra|app-match-scoreboard-meta/);
   assert.doesNotMatch(section,/app-match-scoreboard-topline/);
-  assert.match(section,/<\/section>\s*<section class="app-match-visual"/);
+  assert.match(section,/<\/section>\s*<section class="app-match-stage"/);
   assert.match(section,/<\/section>\s*<p class="app-match-feedback"/);
   assert.doesNotMatch(section,/data-match-reference|app-match-page-heading|match-page-title|data-match-home-crest|data-match-away-crest/);
   assert.doesNotMatch(section,/data-match-tab|data-match-panel|role="tablist"/);
+  assert.ok(section.includes('<section class="app-match-stage" aria-label="Teams and match field">'));
   assert.ok(section.includes('<section class="app-match-visual" aria-label="Match visualization">'));
   assert.ok(section.includes('data-match-pitch role="img"'));
+  for(const side of ['home','away']){
+   assert.ok(section.includes('data-match-side="'+side+'"'));
+   assert.ok(section.includes('data-match-position="'+side+'">–</strong>'));
+   assert.ok(section.includes('data-match-form="'+side+'"'));
+   assert.ok(section.includes('data-match-lineup="'+side+'"'));
+  }
+  assert.equal((section.match(/class="app-match-lineup-row"/g)||[]).length,22);
+  assert.equal((section.match(/class="app-match-form-cell"/g)||[]).length,10);
+  assert.doesNotMatch(section,/data-match-(?:day|time|clock)|\bMatchday\b|>Tempo<|>Giornata</);
   assert.ok(section.includes('viewBox="0 0 1050 680"'));
   assert.doesNotMatch(section,/app-match-context|data-match-card|data-match-emphasis|app-match-visual-title|data-match-visual-title/);
   assert.doesNotMatch(section,/role="tablist"|data-match-tab|data-match-panel/);
@@ -141,6 +151,18 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/officialState|data-match-status|data-match-extra/);
  assert.doesNotMatch(js,/renderContext|validLineup|knownStats|data-match-card|data-match-visual-title|data-match-emphasis/);
  assert.match(js,/pitch\.setAttribute\('aria-label',tr\.pitch\)/);
+ for(const fragment of [
+  "function verifiedProjection(projection)",
+  "projection.provenance?.kind==='authoritative'",
+  "facts.seasonState.day<priorDay",
+  "f.day<priorDay",
+  "games.slice(-5)",
+  "data.stageId==='league'",
+  "Number.isSafeInteger(rankRow?.played)&&rankRow.played>0",
+  "fetch('/api/competitions/'+item.competitionId+'/seasons/'+item.season",
+  "renderSides(tr)"
+ ])assert.ok(js.includes(fragment),fragment);
+ assert.doesNotMatch(js,/fakeStandings|mockRanking|Math\.random\(/);
  assert.match(js,/name\.target='_blank';name\.rel='noopener noreferrer'/);
  assert.match(js,/link\.target='_blank';link\.rel='noopener noreferrer'/);
  assert.match(js,/link\.removeAttribute\('href'\);link\.removeAttribute\('target'\);link\.removeAttribute\('rel'\)/);
@@ -160,6 +182,14 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  const css=read('assets/match-detail.css');
  assert.match(css,/\.app-match-page\{box-sizing:border-box;width:100%;min-width:0;padding-top:0;overflow:visible\}/);
  assert.ok(css.includes('aspect-ratio:105 / 68'));
+ for(const fragment of [
+  'grid-template-columns:minmax(170px,1fr) minmax(0,3.2fr) minmax(170px,1fr)',
+  'background:color-mix(in srgb,var(--surface) 82%,transparent)',
+  '.app-match-form-cell[data-outcome="w"]{background:#237c59}',
+  '.app-match-form-cell[data-outcome="d"]{background:#667b82}',
+  '.app-match-form-cell[data-outcome="l"]{background:#98504d}',
+  '.app-match-visual{grid-column:1/-1;grid-row:1}'
+ ])assert.ok(css.includes(fragment),fragment);
  assert.ok(css.includes('.app-match-page[data-match-load="missing"] .app-match-visual{display:none}'));
  assert.doesNotMatch(css,/app-match-context|app-match-visual-title|match-emphasis/);
  assert.doesNotMatch(css,/\.app-match-scoreboard-meta|\.app-match-status|\.app-match-extra/);

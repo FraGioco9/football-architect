@@ -137,8 +137,32 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-score-separator{font-size:19px}
 }
 
-/* #577 — A single permanent empty pitch directly below the scoreboard. */
-.app-match-visual{max-width:1120px;min-width:0;margin:24px auto 0}
+/* Match stage: two translucent team panels flank the slightly smaller field.
+   Only position, form and 11 reserved lineup slots belong in the panels. */
+.app-match-stage{
+ box-sizing:border-box;display:grid;grid-template-columns:minmax(170px,1fr) minmax(0,3.2fr) minmax(170px,1fr);
+ align-items:start;gap:14px;width:100%;max-width:1120px;margin:24px auto 0;
+}
+.app-match-side{
+ box-sizing:border-box;min-width:0;padding:14px 13px 16px;
+ border:1px solid var(--border);border-radius:12px;
+ background:color-mix(in srgb,var(--surface) 82%,transparent);
+}
+.app-match-side-title{margin:0 0 14px;font-size:14px;line-height:1.35;font-weight:750;text-align:center;color:var(--text)}
+.app-match-side-fact{display:flex;flex-direction:column;align-items:center;gap:6px;margin:0 0 14px}
+.app-match-side-label{display:block;margin:0;color:var(--muted);font-size:11px;line-height:1.35;font-weight:650;text-align:center}
+.app-match-position{display:block;min-height:31px;line-height:31px;font-size:25px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
+.app-match-form{display:flex;align-items:center;justify-content:center;gap:4px;min-height:17px;max-width:100%}
+.app-match-form-cell{box-sizing:border-box;display:grid;place-items:center;flex:none;width:17px;height:17px;
+ border-radius:4px;background:var(--surface-raised,var(--border));font-size:10px;font-weight:800;line-height:1;color:#f7fbf8}
+.app-match-form-cell[data-outcome="w"]{background:#237c59}
+.app-match-form-cell[data-outcome="d"]{background:#667b82}
+.app-match-form-cell[data-outcome="l"]{background:#98504d}
+.app-match-side-lineup{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+.app-match-lineup-rows{display:grid;gap:5px;margin:9px 0 0;padding:0;list-style:none}
+.app-match-lineup-row{box-sizing:border-box;display:flex;align-items:center;min-height:21px;padding:0 4px}
+.app-match-lineup-reserved{display:block;width:100%;height:1px;background:var(--line);opacity:.7}
+.app-match-visual{min-width:0;margin:0}
 .app-match-pitch{
  box-sizing:border-box;width:100%;aspect-ratio:105 / 68;
  overflow:hidden;border:1px solid var(--border);border-radius:12px;
@@ -146,3 +170,15 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 }
 .app-match-pitch svg{display:block;width:100%;height:100%}
 .app-match-page[data-match-load="missing"] .app-match-visual{display:none}
+@media(max-width:800px){
+ .app-match-stage{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+ .app-match-visual{grid-column:1/-1;grid-row:1}
+ .app-match-side-home{grid-column:1;grid-row:2}
+ .app-match-side-away{grid-column:2;grid-row:2}
+ .app-match-side{padding:11px 9px 13px}
+}
+@media(max-width:350px){
+ .app-match-stage{gap:8px}
+ .app-match-form{gap:3px}
+ .app-match-form-cell{width:15px;height:15px}
+}

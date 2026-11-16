@@ -229,6 +229,40 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
               <div class="app-match-team-slot app-match-team-away"><a class="app-match-team-link" data-match-away-name target="_blank" rel="noopener noreferrer"><span class="app-skeleton-bar" aria-hidden="true"></span></a></div>
             </div>
           </section>
+          <section class="app-match-stage" aria-label="Teams and match field">
+          <aside class="app-match-side app-match-side-home" data-match-side="home" aria-label="Home team">
+            <h2 class="app-match-side-title" data-match-side-title="home">Home</h2>
+            <div class="app-match-side-fact">
+              <span class="app-match-side-label" data-match-label="position">Position</span>
+              <strong class="app-match-position" data-match-position="home">–</strong>
+            </div>
+            <div class="app-match-side-fact">
+              <span class="app-match-side-label" data-match-label="form">Form</span>
+              <div class="app-match-form" data-match-form="home" aria-label="Home form in this competition">
+                <span class="app-match-form-cell" aria-hidden="true"></span>
+                <span class="app-match-form-cell" aria-hidden="true"></span>
+                <span class="app-match-form-cell" aria-hidden="true"></span>
+                <span class="app-match-form-cell" aria-hidden="true"></span>
+                <span class="app-match-form-cell" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="app-match-side-lineup" data-match-lineup="home">
+              <h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3>
+              <ol class="app-match-lineup-rows" aria-hidden="true">
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+              </ol>
+            </div>
+          </aside>
           <section class="app-match-visual" aria-label="Match visualization">
             <div class="app-match-pitch" data-match-pitch role="img" aria-label="Empty football pitch; match visualization is not yet available">
               <svg viewBox="0 0 1050 680" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
@@ -241,6 +275,40 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
                 <path d="M183 267A91.5 91.5 0 0 1 183 413 M867 267A91.5 91.5 0 0 0 867 413" fill="none" stroke="currentColor" stroke-width="3"/>
               </svg>
             </div>
+          </section>
+          <aside class="app-match-side app-match-side-away" data-match-side="away" aria-label="Away team">
+            <h2 class="app-match-side-title" data-match-side-title="away">Away</h2>
+            <div class="app-match-side-fact">
+              <span class="app-match-side-label" data-match-label="position">Position</span>
+              <strong class="app-match-position" data-match-position="away">–</strong>
+            </div>
+            <div class="app-match-side-fact">
+              <span class="app-match-side-label" data-match-label="form">Form</span>
+              <div class="app-match-form" data-match-form="away" aria-label="Away form in this competition">
+                <span class="app-match-form-cell" aria-hidden="true"></span>
+                <span class="app-match-form-cell" aria-hidden="true"></span>
+                <span class="app-match-form-cell" aria-hidden="true"></span>
+                <span class="app-match-form-cell" aria-hidden="true"></span>
+                <span class="app-match-form-cell" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="app-match-side-lineup" data-match-lineup="away">
+              <h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3>
+              <ol class="app-match-lineup-rows" aria-hidden="true">
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+                <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+              </ol>
+            </div>
+          </aside>
           </section>
           <p class="app-match-feedback" data-match-feedback role="status" aria-live="polite" hidden></p>
         </section>

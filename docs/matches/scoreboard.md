@@ -325,3 +325,41 @@ missing/error feedback stays hidden in normal operation. The official
 score gating, competition branding, new-tab links and responsive scoreboard
 centring remain intact. Chromium/WebKit QA checks no extra UI and pitch
 geometry on desktop and mobile.
+
+### Team context panels: Home and Away
+
+The match stage contains only two subtle translucent, symmetric side panels,
+Home and Away, around a narrower central **105:68** empty pitch. Each side
+panel contains three elements and nothing more:
+
+- **Position** in the current competition, if an authoritative pre-match
+  league table exists.
+- **Form**, using five fixed W/D/L indicator slots populated from verified
+  results from this competition *strictly before the match day*.
+- **Lineup**, with exactly 11 permanently reserved empty rows. Neither
+  player identity nor formation is invented: the authoritative public match
+  endpoint does not yet supply starting XI information.
+
+No Matchday, clock/time, events, points or extra information boxes are
+rendered. The cards retain roughly 82% surface opacity but all text is
+fully opaque. Desktop uses proportions approximately 20% / 60% / 20%.
+At 800px and below, the field spans the full available content width and
+the two team panels are displayed side by side beneath it.
+
+The only new read-only request is
+`GET /api/competitions/:competitionId/seasons/:season`, following a
+validated authoritative match response. Match ID, competition ID, season,
+schema version and provenance must match. League position appears only if
+the verified competition projection's sporting day is **earlier** than
+this fixture's sporting day and the team has at least one completed game.
+No present-day league ranking is falsely presented as the historic pre-match
+rank. Last-five form uses only verified fixture scores from this exact
+competition, excluding same-day and future fixtures; empty slots are
+neutral rather than invented results. League and knockout teams may show
+form where official results exist; a knockout phase never masquerades as a
+league rank. W/D/L colours match standings and localize in EN, IT, DE,
+ES, FR.
+
+First paint reserves every cell and all 22 lineup rows with no animation
+or content shifts. Browser QA checks 1440px, 390px, 320px in both themes,
+Chromium/WebKit, layout order, safe data gating and language updates.
