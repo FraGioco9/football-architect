@@ -18,7 +18,7 @@ import {prepareFlightPlaybackPair,sampleFlightPlaybackPair,flightPlaybackWallTim
 const byId = id => document.getElementById(id);
 const pitch = byId('pitch'), elevation = byId('elevation');
 const fields = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
-const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open'];
+const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open', 'lab-all-situations'];
 let rapier, engine, history = [], playing = false, lastFrame = 0, accumulator = 0;
 let physicsTickSnapshot = null;
 let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
@@ -1658,6 +1658,65 @@ byId('compare').addEventListener('click', compareReplay);
 byId('measure').addEventListener('click', measurePhysics);
 setupDropdowns();
 setupNumericFields();
+// One chooser for ALL currently implemented situations: 4 ball,
+ // 5 action and 30 movement. Source entries are read from the exact
+ // existing independent menus; no duplicate scenario catalog/authorities.
+function setupAllSituations(){
+ const picker=byId('lab-all-situations');
+ const collections=[
+  {group:'Ball physics',kind:'ball',entries:[
+   ...document.querySelectorAll('#preset-options [role="option"][data-value]')
+  ].map(x=>({id:x.dataset.value,label:x.textContent.trim()}))},
+  {group:'Actions',kind:'action',entries:[
+   ...byId('action-labs-choice').options
+  ].map(x=>({id:x.value,label:x.textContent.trim()}))},
+  {group:'Movement and physical contacts',kind:'movement',entries:[
+   ...byId('movement-labs-choice').options
+  ].map(x=>({id:x.value,label:x.textContent.trim()}))}
+ ];
+ let count=0;
+ for(const collection of collections){
+  const group=document.createElement('optgroup');
+  group.label=collection.group;
+  for(const entry of collection.entries){
+   const option=document.createElement('option');
+   option.value=collection.kind+':'+entry.id;
+   option.textContent=entry.label;
+   group.append(option);count++;
+  }
+  picker.append(group);
+ }
+ if(count!==39||picker.querySelectorAll('optgroup').length!==3)
+  throw new Error('All LAB situations must include 4+5+30 real scenes');
+ picker.options[0].textContent='All situations ('+count+')';
+ picker.addEventListener('change',()=>{
+  const value=picker.value;
+  picker.value='';
+  if(!rapier||!value)return;
+  const colon=value.indexOf(':'),kind=value.slice(0,colon),
+   id=value.slice(colon+1);
+  if(kind==='ball'){
+   const option=document.querySelector(
+    '#preset-options [data-value="'+id+'"]');
+   if(!option)throw new Error('Unknown canonical ball scenario');
+   byId('preset').value=id;
+   byId('preset-value').textContent=option.textContent.trim();
+   for(const item of document.querySelectorAll('#preset-options [role="option"]'))
+    item.setAttribute('aria-selected',String(item===option));
+   byId('preset').dispatchEvent(new Event('change',{bubbles:true}));
+  }else if(kind==='action'||kind==='movement'){
+   const prefix=kind==='action'?'action-labs':'movement-labs';
+   const choice=byId(prefix+'-choice');
+   if(![...choice.options].some(x=>x.value===id))
+    throw new Error('Unknown canonical '+kind+' scenario');
+   choice.value=id;
+   choice.dispatchEvent(new Event('change',{bubbles:true}));
+   byId(prefix+'-open').click();
+  }else throw new Error('Unknown LAB scenario group');
+ });
+}
+
+setupAllSituations();
 mountControlledActionLabs({
  getRapier:()=>rapier,
  onOpen:()=>{playing=false;if(engine){engine.dispose();engine=null;}},

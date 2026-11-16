@@ -182,4 +182,6 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-page-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .me-lab-launches{display:flex;align-items:center;gap:6px;flex:none}
 .me-lab-launches>.me-button{min-height:32px;padding:5px 9px}
+.me-lab-launches>#lab-all-situations{width:172px;max-width:172px;min-height:32px;padding:5px 9px;font-size:12px}
+@media(max-width:950px){.me-page-heading{flex-wrap:wrap}.me-lab-launches{flex-wrap:wrap;justify-content:flex-start}}
 @media(max-width:570px){.me-lab-launches{flex-wrap:wrap;justify-content:flex-end}}

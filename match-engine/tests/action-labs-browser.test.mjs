@@ -350,6 +350,44 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");
   assert.equal(close,true);
+  // M21: a SINGLE primary chooser must expose every previously separate
+  // ball, Action LAB and Movement LAB situation without losing real source.
+  const nav=await evalJs("(()=>{const p=document.getElementById('lab-all-situations');"+
+   "return {size:p.options.length,groups:[...p.querySelectorAll('optgroup')].map(x=>x.label),"+
+   "disabled:p.disabled,placeholder:p.options[0].textContent};})()");
+  assert.equal(nav.size,40);
+  assert.equal(nav.groups.length,3);
+  assert.equal(nav.disabled,false);
+  assert.match(nav.placeholder,/All situations \\(39\\)/);
+  const ballNav=await evalJs("(()=>{const p=document.getElementById('lab-all-situations');"+
+   "p.value='ball:roll';p.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "return {selected:document.getElementById('preset').value,"+
+   "label:document.getElementById('preset-value').textContent,reset:p.value};})()");
+  assert.deepEqual(ballNav,{
+   selected:'roll',label:'LAB-04 · Ball Roll (Grass)',reset:''
+  });
+  await evalJs("(()=>{const p=document.getElementById('lab-all-situations');"+
+   "p.value='ball:drop';p.dispatchEvent(new Event('change',{bubbles:true}));})()");
+  const actionNav=await evalJs("(()=>{const p=document.getElementById('lab-all-situations');"+
+   "p.value='action:shot';p.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "return {open:document.getElementById('action-labs-dialog').open,"+
+   "choice:document.getElementById('action-labs-choice').value};})()");
+  assert.deepEqual(actionNav,{open:true,choice:'shot'});
+  await evalJs("document.getElementById('action-labs-close').click()");
+  const movementNav=await evalJs("(()=>{const p=document.getElementById('lab-all-situations');"+
+   "p.value='movement:secondary-pressure';"+
+   "p.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "document.getElementById('movement-labs-step').click();"+
+   "return {open:document.getElementById('movement-labs-dialog').open,"+
+   "choice:document.getElementById('movement-labs-choice').value,"+
+   "readout:document.getElementById('movement-labs-readout').textContent};})()");
+  assert.equal(movementNav.open,true);
+  assert.equal(movementNav.choice,'secondary-pressure');
+  assert.match(movementNav.readout,/^Tick 1 .*real 22-player Rapier/);
+  await evalJs("document.getElementById('movement-labs-close').click()");
+  process.stdout.write('ME21_ALL_SITUATIONS_NAV '+JSON.stringify({
+   ...nav,ball:ballNav,action:actionNav,movement:movementNav
+  })+'\\n');
   // #628 M2: actual desktop movement dialog on the same DEV page.
   // It has no Rapier shoe colliders; do not confuse measured motion with
   // the five real shoe-contact Action LABs above.

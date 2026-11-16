@@ -45,6 +45,8 @@ test('ME-01 lab is accessible on local DEV app host with strict headers and asse
   assert.equal(wasm.status,200,'compat ESM module missing. Package files='+installedFiles.join(',')+
     ', module='+String(packageMeta.module)+', exports='+JSON.stringify(packageMeta.exports));
   const page = await fetchLocal(server,'/dev/match-engine');
+  assert.match(page.body,/id="lab-all-situations"/);
+  assert.match(page.body,/All situations/);
   assert.match(page.body,/LAB-01/);
   assert.match(page.body,/LAB-04 · Ball Roll \(Grass\)/);
   assert.match(page.body,/LAB-05 · Ball Bounce \(2 m\)/);
