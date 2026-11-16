@@ -41,6 +41,11 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
    db.prepare('DELETE FROM season_archive_summaries'),
    db.prepare('DELETE FROM season_archives'),
    db.prepare('DELETE FROM season_admin_events'),
+   // Old public URLs are deliberately invalidated only by this authorized
+   // full-world reset. Clearing both rows and AUTOINCREMENT state in this
+   // batch makes the next published match number 1, not the old high-water mark.
+   db.prepare('DELETE FROM public_match_numbers'),
+   db.prepare("DELETE FROM sqlite_sequence WHERE name='public_match_numbers'"),
    db.prepare('DELETE FROM season_knockout_match_slots'),
    db.prepare('DELETE FROM season_match_slots'),
    db.prepare('DELETE FROM season_domestic_stages'),
