@@ -22,7 +22,8 @@
    "extra": "After extra time",
    "penalties": "Penalties",
    "scheduled": "Scheduled",
-   "fulltime": "Full time"
+   "fulltime": "Full time",
+   "openMatch": "Open match"
   },
   "de": {
    "season": "Saison",
@@ -40,7 +41,8 @@
    "extra": "Nach Verlängerung",
    "penalties": "Elfmeterschießen",
    "scheduled": "Angesetzt",
-   "fulltime": "Endstand"
+   "fulltime": "Endstand",
+   "openMatch": "Spiel öffnen"
   },
   "es": {
    "season": "Temporada",
@@ -58,7 +60,8 @@
    "extra": "Tras prórroga",
    "penalties": "Penaltis",
    "scheduled": "Programado",
-   "fulltime": "Finalizado"
+   "fulltime": "Finalizado",
+   "openMatch": "Abrir partido"
   },
   "fr": {
    "season": "Saison",
@@ -76,7 +79,8 @@
    "extra": "Après prolongation",
    "penalties": "Tirs au but",
    "scheduled": "Programmé",
-   "fulltime": "Terminé"
+   "fulltime": "Terminé",
+   "openMatch": "Ouvrir le match"
   },
   "it": {
    "season": "Stagione",
@@ -94,7 +98,8 @@
    "extra": "Dopo i supplementari",
    "penalties": "Rigori",
    "scheduled": "Programmata",
-   "fulltime": "Terminata"
+   "fulltime": "Terminata",
+   "openMatch": "Apri partita"
   }
  };
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -132,7 +137,12 @@
    const played=row.goalsFor!==null,score=played?row.goalsFor+'–'+row.goalsAgainst:'—';
    const status=!played?t.scheduled:row.resolution==='penalties'?t.penalties:row.resolution==='extra-time'?t.extra:t.fulltime;
    const venueLabel=row.venue==='neutral'&&t===copy.en?'Neutral':t[row.venue];
-   return '<li class="club-fixture-row'+(row===next?' is-next':'')+'" data-club-fixture-id="'+esc(row.id)+'"'+(row===next?' data-club-fixture-next tabindex="-1"':'')+'><span class="club-fixture-meta"><span>'+esc(t.day)+' '+row.day+'</span><a href="'+esc(compHref)+'">'+esc(compName(row.competitionId))+' · '+esc(stage)+'</a></span>'+'<span class="club-fixture-opponent">'+opponent+'</span>'+'<span class="club-fixture-venue" role="img" tabindex="0" data-club-venue="'+row.venue+'" aria-label="'+esc(venueLabel)+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">'+icons[row.venue]+'</svg></span><span class="club-fixture-result"><strong aria-label="'+esc(t.result+': '+score)+'">'+score+'</strong><small>'+esc(status)+(played&&row.penalties?' '+row.penalties.for+'–'+row.penalties.against:'')+'</small></span></li>';
+   const canOpenMatch=snapshot.source==='authoritative'&&snapshot.coverage==='partial'&&
+    row.matchId===row.id&&typeof row.matchId==='string'&&/^[1-9][0-9]*$/.test(row.matchId)&&
+    Number.isSafeInteger(Number(row.matchId));
+   const scoreText='<strong aria-label="'+esc(t.result+': '+score)+'">'+esc(score)+'</strong>';
+   const scoreContent=canOpenMatch?'<a class="club-fixture-score-link" href="/matches/'+esc(row.matchId)+'" aria-label="'+esc(t.openMatch+': '+name)+'">'+scoreText+'</a>':scoreText;
+   return '<li class="club-fixture-row'+(row===next?' is-next':'')+'" data-club-fixture-id="'+esc(row.id)+'"'+(row===next?' data-club-fixture-next tabindex="-1"':'')+'><span class="club-fixture-meta"><span>'+esc(t.day)+' '+row.day+'</span><a href="'+esc(compHref)+'">'+esc(compName(row.competitionId))+' · '+esc(stage)+'</a></span>'+'<span class="club-fixture-opponent">'+opponent+'</span>'+'<span class="club-fixture-venue" role="img" tabindex="0" data-club-venue="'+row.venue+'" aria-label="'+esc(venueLabel)+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">'+icons[row.venue]+'</svg></span><span class="club-fixture-result">'+scoreContent+'<small>'+esc(status)+(played&&row.penalties?' '+row.penalties.for+'–'+row.penalties.against:'')+'</small></span></li>';
   }).join('');
   return '<section class="club-fixtures" data-club-fixtures-state="'+esc(snapshot.coverage)+'" data-club-fixtures-source="'+esc(snapshot.source||'unknown')+'" aria-label="'+esc(t.competition)+'"><div class="club-fixtures-controls">'+toolbar+'</div><ul class="club-fixtures-list" aria-busy="'+pending+'">'+body+'</ul></section>';
  }

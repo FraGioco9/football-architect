@@ -34,3 +34,15 @@ test('Club Fixtures keeps unknown opponents as plain text and restores focus to 
  const controller=readFileSync(new URL('assets/club-fixtures-controller.mjs',root),'utf8');
  assert.match(controller,/focused\?\.matches\('\.club-fixture-opponent-name'\)/);
 });
+
+test('Club Fixtures only link official numeric draw scores, not crest or DEV rows',()=>{
+ const official={...snapshot,source:'authoritative',coverage:'partial',rows:[{...snapshot.rows[0],id:'123',matchId:'123'}]};
+ const output=value=>fixtures.render({manifest:{clubs:[club],clubCrests:{'IT-2':'assets/opponent.svg'}},lang:'en',season:1,currentSeason:1,seasons:[1],snapshot:value});
+ assert.match(output(official),/<a class="club-fixture-score-link" href="\/matches\/123" aria-label="Open match: Opponent FC"><strong/);
+ for(const invalid of [
+  {...official,coverage:'complete'},{...official,source:'dev'},
+  {...official,rows:[{...official.rows[0],matchId:'00123'}]},
+  {...official,rows:[{...official.rows[0],matchId:'124'}]},
+  {...official,rows:[{...official.rows[0],id:'9007199254740992',matchId:'9007199254740992'}]}
+ ])assert.doesNotMatch(output(invalid),/class="club-fixture-score-link"/);
+});

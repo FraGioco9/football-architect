@@ -550,4 +550,9 @@ test('published domestic Fixtures appear at day 2, before worldwide calendar pub
  assert.equal(displayed.filter(row=>row.dataset.fixtureMatch).length,8);
  assert.equal(view.fields.get('app-fixtures-empty').hidden,true);
  assert.equal(view.fields.get('app-fixtures-toolbar').hidden,false);
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ const links=displayed.flatMap(visit).filter(n=>n.tagName==='a'&&n.className==='app-fixture-score-link');
+ assert.equal(links.length,8,'eight published fixtures show eight stable score links');
+ assert.ok(links.every(n=>/^\/matches\/[1-9][0-9]*$/.test(n.href)));
+ assert.ok(links.every(n=>n.attrs['aria-label']?.startsWith('Open match: ')));
 });

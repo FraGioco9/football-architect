@@ -30,7 +30,7 @@
   let firstTies=knockoutPhases[0]?.ties.filter(t=>t.legs===2)||[];
   let hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
   let currentMatchday=null,rounds=null,postseason=[],selected=navigation.get().matchday;
-  let publishedSeason=null,publishedKey=null,pendingKey=null,fetchSequence=0;
+  let publishedSeason=null,publishedKey=null,pendingKey=null,fetchSequence=0,publishedIds=new Set();
   let menuHasPostseason=false;
   // Preserve each club crest host (and its loaded image) when the matchday changes.
   const crestHosts=new Map();
@@ -131,7 +131,9 @@
         throw Error("Invalid fixture result");
       if(!validKickoff(game.kickoff))throw Error("Invalid fixture kickoff");
       byRound.get(game.round).push({round:game.round,homeId:game.homeId,awayId:game.awayId,
-        homeGoals:game.homeGoals,awayGoals:game.awayGoals,kickoff:game.kickoff});
+        homeGoals:game.homeGoals,awayGoals:game.awayGoals,kickoff:game.kickoff,
+         matchId:typeof game.matchId==='string'&&/^[1-9][0-9]*$/.test(game.matchId)&&
+          Number.isSafeInteger(Number(game.matchId))?game.matchId:null});
     }
     for(const matches of byRound.values()){
       if(matches.length!==matchesPerRound||new Set(matches.flatMap(game=>[game.homeId,game.awayId])).size!==capacity)
@@ -207,7 +209,18 @@
       element("span","app-fixture-separator"," – "),
       element("span","app-fixture-goals",String(game.awayGoals)));
     else score.append(element("span","app-fixture-pending","—"));
-    result.append(status,score,
+    // Only the official published-draw numeric ID can open a match page.
+    let scoreContent=score;
+    if(publishedSeason===navigation.get().season&&publishedIds.has(game.matchId)){
+      const link=element('a','app-fixture-score-link');
+      link.href='/matches/'+game.matchId;
+      const action={en:'Open match',de:'Spiel öffnen',es:'Abrir partido',fr:'Ouvrir le match',it:'Apri partita'};
+      const locale=document.documentElement.lang||'en';
+      link.setAttribute('aria-label',(action[locale]||action.en)+': '+
+        (clubs.get(game.homeId)?.primaryName||'Home')+' – '+(clubs.get(game.awayId)?.primaryName||'Away'));
+      link.append(score);scoreContent=link;
+    }
+    result.append(status,scoreContent,
       element("span","app-fixture-stadium",clubs.get(game.homeId)?.stadiumName||"—"));
     item.append(identity(game.homeId,true),result,identity(game.awayId,false));
     return item;
@@ -376,7 +389,8 @@
     updateDefinition(window.faCompetitionContext?.definition);
     const data=window.faCompetitionContext?.seasonData;
     if(!international&&data&&data.provenance?.kind!=='authoritative')return; // The protected domestic adapter commits transactionally through prepare().
-    if(!data){rounds=null;postseason=[];currentMatchday=null;publishedSeason=null;render();void readPublishedFixtures();return;}
+    if(data?.provenance?.kind==='authoritative'){publishedSeason=null;publishedIds.clear();}
+    if(!data){rounds=null;postseason=[];currentMatchday=null;publishedSeason=null;publishedIds.clear();render();void readPublishedFixtures();return;}
     const previous=clubs;
     try{
       clubs=new Map(data.participants.map(club=>[international?rules.clubKey(club):club.clubId,club]));
@@ -424,14 +438,14 @@
       if(seq!==fetchSequence||key!==[season,definition.id,latest?.world?.generation,latest?.world?.revision].join(':')||
          window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')return;
       const commit=window.faFixtures.prepare(games,{currentMatchday:null,postseason:[],definition});
-      publishedSeason=String(season);publishedKey=key;commit();
+      publishedSeason=String(season);publishedKey=key;publishedIds=new Set(league.map(f=>f.matchId));commit();
     }catch{
-      if(seq===fetchSequence){publishedSeason=null;publishedKey=null;}
+      if(seq===fetchSequence){publishedSeason=null;publishedKey=null;publishedIds.clear();}
     }finally{if(pendingKey===key)pendingKey=null;}
   }
 
   window.addEventListener('fa:competition-context-change',contextChanged);
-  window.addEventListener('fa:source-change',()=>{publishedKey=null;pendingKey=null;fetchSequence++;if(!window.faCompetitionContext?.seasonData)void readPublishedFixtures();});
+  window.addEventListener('fa:source-change',()=>{publishedSeason=null;publishedIds.clear();publishedKey=null;pendingKey=null;fetchSequence++;if(!window.faCompetitionContext?.seasonData)void readPublishedFixtures();});
   window.addEventListener('fa:world-clock-snapshot',event=>{
     if(!international||window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')return;
     const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
