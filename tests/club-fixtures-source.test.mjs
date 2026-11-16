@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readClubFixtures} from '../assets/club-fixtures-source.mjs';
+import {readClubFixtures,attachPublishedClubMatchLinks} from '../assets/club-fixtures-source.mjs';
 
 const generation='550e8400-e29b-41d4-a716-446655440000';
 const world={schemaVersion:1,generation,revision:4,seasonNumber:1,day:13,phase:'active'};
@@ -102,4 +102,26 @@ test('club fixtures renders a verified early draw using only one HTTP request',a
   {...draw,data:{...draw.data,fixtures:early.map((f,i)=>i===0?{...f,homeClubId:'IT-3',awayClubId:'IT-4'}:f)}},
   {...draw,data:{...draw.data,fixtures:early.map((f,i)=>i===0?{...f,id:'01',matchId:'01'}:f)}}
  ])await assert.rejects(read(bad,w).run(),/Invalid authoritative club fixture payload/);
+});
+
+test('#605 complete and historical club rows use published source fixture IDs (not pairings)',async()=>{
+ const initial=await read(packet()).run(),fixtureId=initial.rows[0].id;
+ const collection={schemaVersion:1,providerId:'authoritative-world',status:'published',
+  season:1,competitionId:'IT-1',provenance:{kind:'authoritative'},
+  fixtures:[{matchId:'785',sourceFixtureId:fixtureId,phaseId:'league',marker:'N01',day:13,
+   round:1,homeClubId:'IT-1',awayClubId:'IT-2'}]};
+ const requests=[];
+ const linked=await attachPublishedClubMatchLinks(initial,{fetchJson:async url=>{requests.push(url);return collection}});
+ assert.deepEqual(requests,['/api/matches/seasons/1/competitions/IT-1']);
+ assert.equal(linked.rows[0].matchId,'785');
+ assert.equal(linked.rows[1].matchId,null,'unmapped fixtures stay text-only');
+ assert.equal(linked.linkAuthority,'published-match-index-v1');
+ const invalid=await attachPublishedClubMatchLinks(initial,{fetchJson:async()=>({...collection,season:2})});
+ assert.ok(invalid.rows.every(row=>row.matchId===null));
+ const missing=await attachPublishedClubMatchLinks(initial,{fetchJson:async()=>{throw Error('404')}});
+ assert.ok(missing.rows.every(row=>row.matchId===null));
+ const changed=await attachPublishedClubMatchLinks(initial,{fetchJson:async()=>({...collection,fixtures:[{...collection.fixtures[0],day:14}]})});
+ assert.ok(changed.rows.every(row=>row.matchId===null));
+ const aborted=new AbortController();aborted.abort();
+ await assert.rejects(attachPublishedClubMatchLinks(initial,{signal:aborted.signal,fetchJson:async()=>collection}),/Cancelled/);
 });
