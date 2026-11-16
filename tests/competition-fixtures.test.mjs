@@ -72,10 +72,16 @@ function node(tag='div'){
   replaceWith(item){const parent=this.__parent,index=parent?.children.indexOf(this)??-1;
    if(index>=0){parent.children[index]=item;item.__parent=parent;}},
   removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=String(v)},
+  remove(){if(this.__parent)this.__parent.children=this.__parent.children.filter(item=>item!==this)},
   click(){this.clicked=true},focus(){this.focused=true},contains(){return false},addEventListener(k,fn){this.events[k]=fn},emit(k){this.events[k]?.({target:this})}};
+ n.classList={
+  add(cls){if(!n.className?.split(' ').includes(cls))n.className=[n.className,cls].filter(Boolean).join(' ')},
+  remove(cls){n.className=(n.className||'').split(' ').filter(item=>item!==cls).join(' ')},
+  contains(cls){return (n.className||'').split(' ').includes(cls)}
+ };
  return n;
 }
-function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null}={}){
+function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null,bracket=null}={}){
  const definition=definitions.find(item=>item.id===d.id),configured=rules.fixtureChoices(definition);
  const fields=new Map(['toolbar','current','round','previous','next','list','empty','summary','picker','round-number','round-label'].map(id=>['app-fixtures-'+id,node()]));
  const choices=rulesView.fixturesDisplayChoices(definition).map(c=>({...node('button'),id:"app-fixtures-round-option-"+c.value,dataset:{fixtureRoundChoice:String(c.value),menuValue:String(c.value)}}));
@@ -85,7 +91,7 @@ function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null
  const events={},sourceListeners=[];let liveSource=source;
  const window={faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionRulesView:rulesView,faCompetitionContext:{definition,seasonData:null},faCompetitionModel:competitionModel,faCompetitionDivision:definition.category==='domestic'?d:null,faCompetitionRoute:route,faAppRenderLanguage(){},addEventListener(k,fn){events[k]=fn}};
  if(source){window.faWorldState={get:()=>liveSource,subscribe(fn){sourceListeners.push(fn);return ()=>{const i=sourceListeners.indexOf(fn);if(i>=0)sourceListeners.splice(i,1);}}};window.faCompetitionContext.selectedSeason=1;}
- const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
+ const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>id==='app-postseason-bracket'?bracket:fields.get(id),createElement:tag=>node(tag)};
  runInNewContext(read('assets/competition-tabs.js'),{window,document});
  runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,fetch:fetchImpl,MutationObserver:class{observe(){}}});
  return {view:window.faFixtures,fields,route,choices,window,events,document,
@@ -682,34 +688,72 @@ test('#605 scrolling suppresses stale fixture hover until the mouse genuinely mo
   'keyboard focus remains visible even when mouse hover is suspended');
 });
 
-test('#605 the published knockout collection can load on the Postseason tab before participants resolve',async()=>{
- const division=divisions.find(d=>d.id==='IT-1');
- const definition=definitions.find(d=>d.id==='IT-1');
- const phase=definition.rules.phases.find(p=>p.type==='knockout');
- const tie=phase.ties[0];
+
+test('#605 published Postseason bracket gives each leg its own official match link',async()=>{
+ const division=divisions.find(d=>d.id==='IT-2');
+ const definition=definitions.find(d=>d.id==='IT-2');
+ const phases=definition.rules.phases.filter(p=>p.type==='knockout');
+ const slots=phases.flatMap(phase=>phase.ties.flatMap(tie=>
+  Array.from({length:tie.legs},(_,i)=>({phase,tie,leg:i+1,matchId:String(241+slotsFor(phase,tie,i))}))));
+ function slotsFor(phase,tie,leg){
+  const preceding=phases.flatMap(p=>p.ties.map(t=>({phase:p,tie:t})));
+  let offset=0;
+  for(const pair of preceding){
+   if(pair.phase===phase&&pair.tie===tie)return offset+leg;
+   offset+=pair.tie.legs;
+  }
+  throw Error('Tie slot missing');
+ }
+ const bracket=node();
+ const cells=slots.map(({phase,tie,leg})=>{
+  const card=node();card.className='fa-bracket-card';card.dataset.bracketTie=tie.id;
+  const cell=node('span');cell.className='fa-bracket-score';
+  const score=node('strong');
+  score.dataset.postseasonScore=tie.id+':0:'+(tie.legs===1?'final':leg===1?'first':'second');
+  score.parentElement=cell;
+  score.closest=selector=>selector==='[data-bracket-tie]'?card:null;
+  cell.append(score);card.append(cell);
+  return {phase,tie,leg,card,cell,score};
+ });
+ bracket.querySelectorAll=selector=>selector==='[data-postseason-score]'?cells.map(x=>x.score):[];
  const source={source:'authoritative',worldStatus:'ready',
   world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:8,seasonNumber:1,day:2,phase:'active'}};
  const league=createPreviewStandings(division,30).fixtures.map((f,i)=>({
-  matchId:String(i+1),sourceFixtureId:'season:1:IT-1:N'+String(f.round).padStart(2,'0')+':IT-'+f.homeId+':IT-'+f.awayId,
+  matchId:String(i+1),sourceFixtureId:'season:1:IT-2:N'+String(f.round).padStart(2,'0')+':IT-'+f.homeId+':IT-'+f.awayId,
   phaseId:'league',round:f.round,day:13+f.round-1,marker:'N'+String(f.round).padStart(2,'0'),
   homeClubId:'IT-'+f.homeId,awayClubId:'IT-'+f.awayId
  }));
- const knockout=phase.ties.flatMap((t,i)=>Array.from({length:t.legs},(_,j)=>({
-   matchId:String(241+i*2+j),sourceFixtureId:null,phaseId:phase.id,tieId:t.id,leg:j+1,
-   marker:'N'+(31+j),day:52+j,round:31+j,
-   homeClubId:null,awayClubId:null
- })));
+ const knockout=slots.map(({phase,tie,leg,matchId})=>({
+  matchId,sourceFixtureId:null,phaseId:phase.id,tieId:tie.id,leg,
+  marker:'N'+(30+leg),day:51+leg,round:30+leg,homeClubId:null,awayClubId:null
+ }));
  let requests=0;
- const r=setup(division,routeRegistry,{source,fetchImpl:async()=>{
+ const r=setup(division,routeRegistry,{source,bracket,fetchImpl:async()=>{
   requests++;return {ok:true,status:200,json:async()=>({
    schemaVersion:1,providerId:'authoritative-world',status:'published',season:1,
-   competitionId:'IT-1',provenance:{kind:'authoritative'},fixtures:[...league,...knockout]})};
+   competitionId:'IT-2',provenance:{kind:'authoritative'},fixtures:[...league,...knockout]})};
  }});
  r.route.set({view:'postseason'});
  await new Promise(resolve=>setImmediate(resolve));
- assert.equal(requests,1,'the bracket view requests published match IDs on its own');
+ assert.equal(requests,1,'Postseason reuses the published competition lookup');
+ assert.equal(cells.length,5,'two semifinal legs per tie and the single final');
+ const hrefs=cells.map(({cell})=>cell.querySelector('.fa-bracket-leg-link')?.href);
+ assert.deepEqual(hrefs,slots.map(x=>'/matches/'+x.matchId),
+  'distinct official IDs are assigned to first leg, second leg and final with TBD opponents');
+ assert.ok(cells.every(x=>x.cell.classList.contains('is-match-link')));
+ assert.ok(cells.filter(x=>x.tie.legs===1).every(x=>x.card.classList.contains('is-single-match-link')));
+ assert.ok(cells.filter(x=>x.tie.legs===2).every(x=>!x.card.classList.contains('is-single-match-link')));
+ assert.ok(cells.every(({cell})=>/^Open match: /.test(cell.querySelector('.fa-bracket-leg-link').attrs['aria-label'])));
+ const final=cells.find(x=>x.tie.legs===1);
+ bracket.events.click({button:0,defaultPrevented:false,target:{
+  closest:selector=>selector.startsWith('a,button')?null:selector==='.fa-bracket-score.is-match-link'?null:
+   selector==='.fa-bracket-card.is-single-match-link'?final.card:null
+ }});
+ assert.equal(final.cell.querySelector('.fa-bracket-leg-link').clicked,true,'single final card opens the official final');
+ r.publishSource({...source,source:'dev'});
+ assert.ok(cells.every(({cell})=>!cell.querySelector('.fa-bracket-leg-link')),'DEV source removes all published bracket links');
+ assert.ok(cells.every(x=>!x.card.classList.contains('is-single-match-link')));
  const css=read('assets/app.css');
  assert.match(css,/\.fa-bracket-leg-link\{position:absolute;inset:0/);
  assert.match(css,/\.fa-bracket-card\.is-single-match-link/);
- assert.match(read('assets/competition-fixtures.js'),/publishedLookup\.bySlot/);
 });
