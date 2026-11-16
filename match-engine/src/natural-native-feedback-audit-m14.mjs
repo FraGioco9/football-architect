@@ -77,21 +77,38 @@ function validateLineMovement(after){
 // genuine contact count of zero is a valid negative observation, not an
 // excuse to inject artificial collisions. All body feedback is M13-only.
 export function auditNaturalNativeFeedback(RAPIER,{
- stateId='centre',side='home',ticks=225,mode='feedback'
+ stateId='centre',side='home',ticks=225,mode='feedback',
+ initialBallVelocity=null
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function'||
     !allBallStates.has(stateId)||!sides.includes(side)||
     !modes.includes(mode)||!Number.isSafeInteger(ticks)||
     ticks<1||ticks>MAX_TICKS)
   throw new TypeError('M14 requires bounded original Rapier source state/mode');
+ // M15 broadens only the pre-tick-zero ball trajectory. The original 22
+ // players, their autonomous policy, body radii and native queue are identical.
+ const moving=initialBallVelocity!==null;
+ if(moving&&(
+   typeof initialBallVelocity!=='object'||
+   Array.isArray(initialBallVelocity)||
+   Reflect.ownKeys(initialBallVelocity).length!==2||
+   !Object.hasOwn(initialBallVelocity,'vx')||
+   !Object.hasOwn(initialBallVelocity,'vy')||
+   ![initialBallVelocity.vx,initialBallVelocity.vy].every(Number.isFinite)||
+   Math.hypot(initialBallVelocity.vx,initialBallVelocity.vy)<0.25||
+   Math.hypot(initialBallVelocity.vx,initialBallVelocity.vy)>8))
+  throw new TypeError('M15 allows only bounded genuine pre-tick-zero ball velocity');
  const source=allBallStates.get(stateId);
  const scene=frozen({preset:'roll',
   seed:'m14-original-'+stateId+'-'+side,
   x:side==='home'?source.x:-source.x,y:source.y,
-  z:0,vx:0,vy:0,vz:0});
+  z:0,
+  vx:moving?(side==='home'?initialBallVelocity.vx:-initialBallVelocity.vx):0,
+  vy:moving?initialBallVelocity.vy:0,vz:0});
  const feedback=mode==='feedback';
  const engine=createEngine(RAPIER,scene,{
   ...physicalOptions,
+  ...(moving?{diagnosticInitialRollFraction:1}:{}),
   ...(feedback?{diagnosticUnstagedBodyFeedbackEnabled:true}:{})
  });
  const mover=createPlayerMovement(feedback?{
@@ -103,9 +120,11 @@ export function auditNaturalNativeFeedback(RAPIER,{
  let firstNativeBodyStart=null,firstAppliedFeedback=null;
  let minCanonicalGapM=Infinity,maxCanonicalSpeedMps=0;
  let maxSimultaneousBodyPairs=0,maxBodyStartsSingleTick=0;
+ let firstSimultaneousBodyPairs=null,simultaneousBodyPairTicks=0;
  let pressureTicks=0,supportTicks=0,realConcurrentBodyAndShoeTicks=0;
  let actualBallConvergenceTicks=0,fullShapeTicks=0;
  const actualBodyPairs=new Set(),actualReasons=new Map();
+ const independentNativeActivePairs=new Set();
  let latestShape=null,latestPressers=null,latestSupports=null;
  try{
   const initial=mover.snapshot();
@@ -163,13 +182,42 @@ export function auditNaturalNativeFeedback(RAPIER,{
      throw new Error('M14 cannot infer non-original collision pairs');
     actualBodyPairs.add(e.pair);
    }
+   // M15: independently rebuild the active-pair ledger strictly from the
+   // current native START/END transitions, not from native.activePairs or
+   // distance thresholds. This is NOT a second physical event producer.
+   const currentEvents=native.events.filter(e=>e.tick===tick&&
+    ['rapier-body-start','rapier-body-end'].includes(e.type));
+   if(currentEvents.length!==begins.length+ends.length)
+    throw new Error('M15 current native body event sequence truncated');
+   for(const e of currentEvents){
+    if(e.source!=='native-rapier-collision-event'||
+       typeof e.pair!=='string'||
+       !actualBodyPairs.has(e.pair)&&e.type==='rapier-body-end')
+     throw new Error('M15 pair event must come from original Rapier START');
+    if(e.type==='rapier-body-start'){
+     if(independentNativeActivePairs.has(e.pair))
+      throw new Error('M15 duplicate native START without END');
+     independentNativeActivePairs.add(e.pair);
+    }else if(!independentNativeActivePairs.delete(e.pair))
+     throw new Error('M15 native END without active START');
+   }
+   const activeNow=[...independentNativeActivePairs].sort();
+   if(JSON.stringify(activeNow)!==JSON.stringify(native.activePairs)||
+      independentNativeActivePairs.size!==
+       totalNativeBodyStarts+begins.length-totalNativeBodyEnds-ends.length)
+    throw new Error('M15 active native pairs must reconcile independently');
    totalNativeBodyStarts+=begins.length;
    totalNativeBodyEnds+=ends.length;
    totalNativeShoeStarts+=queue.genuineFootStarts.length;
    if(begins.length&&queue.genuineFootStarts.length)
     realConcurrentBodyAndShoeTicks++;
    maxSimultaneousBodyPairs=Math.max(maxSimultaneousBodyPairs,
-    native.activePairs.length);
+    activeNow.length);
+   if(activeNow.length>=2){
+    simultaneousBodyPairTicks++;
+    if(!firstSimultaneousBodyPairs)
+     firstSimultaneousBodyPairs=frozen({tick,pairs:frozen(activeNow)});
+   }
    maxBodyStartsSingleTick=Math.max(maxBodyStartsSingleTick,begins.length);
    if(!firstNativeBodyStart&&begins.length)
     firstNativeBodyStart=frozen({
@@ -222,13 +270,16 @@ export function auditNaturalNativeFeedback(RAPIER,{
   }
   return frozen({
    version:'m14-authentic-multi-territory-feedback-audit-v1',
-   stateId,side,mode,ticks,initialBall:frozen({x:scene.x,y:scene.y}),
+   stateId,side,mode,ticks,
+   initialBall:frozen({x:scene.x,y:scene.y,vx:scene.vx,vy:scene.vy}),
+   initialRollingFraction:moving?1:0,
    original22Unstaged:true,sameRapierWorld:true,singleNativeEventQueue:true,
    nativeColliderRadiusM:PLAYER_MIN_SEPARATION_M/2,
    nativeBodyStarts:totalNativeBodyStarts,
    nativeBodyEnds:totalNativeBodyEnds,nativeShoeStarts:totalNativeShoeStarts,
    firstNativeBodyStart,realBodyPairs:frozen([...actualBodyPairs].sort()),
    maxSimultaneousBodyPairs,maxBodyStartsSingleTick,
+   simultaneousBodyPairTicks,firstSimultaneousBodyPairs,
    sameTickNativeBodyAndShoeStarts:realConcurrentBodyAndShoeTicks,
    acceptedNativeResponses:actualResponses,
    rejectedNativeResponses:actualRejectedResponses,
