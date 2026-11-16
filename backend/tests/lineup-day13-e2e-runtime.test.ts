@@ -175,15 +175,20 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  ),adminEnv);
  expect(calendarRead.status).toBe(200);
  expect((await calendarRead.json() as any).closure.days).toBe(13);
- const retired=await handleAdmin(new Request(
-  'http://localhost:2000/api/admin/seasons/calendar',{
-   method:'POST',
-   headers:{Cookie:operator.cookie,Origin:'http://localhost:2000',
-    'X-CSRF-Token':operator.csrf,'Content-Type':'application/json',
-    'Idempotency-Key':'lineup-legacy-route-0001'},
-   body:JSON.stringify(cmd())
-  }),adminEnv);
- expect(retired.status).toBe(410);
+ // Both direct score-only calendar generation and old season start must
+ // stay retired. Only explicit V2 Admin milestones can begin a season.
+ for(const retiredPath of ['calendar','start']){
+  const retired=await handleAdmin(new Request(
+   'http://localhost:2000/api/admin/seasons/'+retiredPath,{
+    method:'POST',
+    headers:{Cookie:operator.cookie,Origin:'http://localhost:2000',
+     'X-CSRF-Token':operator.csrf,'Content-Type':'application/json',
+     'Idempotency-Key':'lineup-retired-'+retiredPath+'-0001'},
+    body:JSON.stringify(cmd())
+   }),adminEnv);
+  expect(retired.status).toBe(410);
+  expect(await retired.json()).toMatchObject({error:{code:'legacy_season_command_retired'}});
+ }
  // The immutable tables reject ordinary deletes. Only the protected Season 0
  // reset may remove this generation's receipts inside its own single batch.
  await expect(db.prepare('DELETE FROM match_lineup_result_receipts').run()).rejects.toThrow();
