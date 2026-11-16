@@ -1307,7 +1307,7 @@
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.
-        let selection='',pendingLoads=0,lastWorldReload='',lastSuccessfulRead='';
+        let selection='',pendingLoads=0,lifecycleEpoch=0,lastWorldReload='',lastSuccessfulRead='';
         const worldReadKey=(context,snapshot)=>JSON.stringify([context?.definition?.id,
           context?.selectedSeason,snapshot?.sourceRevision,snapshot?.world?.generation,
           snapshot?.world?.revision,snapshot?.world?.seasonNumber,snapshot?.world?.day]);
@@ -1325,12 +1325,17 @@
           lastWorldReload=token;void load();
         };
         const load=()=>{
+          const lifecycle=lifecycleEpoch;
           pendingLoads++;
           return loader.load().then(success=>{
             if(success)lastSuccessfulRead=worldReadKey(window.faCompetitionContext,
               window.faWorldState?.get?.());
             return success;
           }).finally(()=>{
+            // A Safari BFCache pagehide may suspend an aborted request
+            // indefinitely. Its completion must not consume the restored
+            // document's pending-load slot or block future revalidation.
+            if(lifecycle!==lifecycleEpoch)return;
             pendingLoads--;
             if(pendingLoads===0)revalidateWorld(window.faWorldState?.get?.());
           });
@@ -1340,7 +1345,14 @@
         window.addEventListener('fa:source-change',()=>{if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;selection='';setDebugSeason(window.faDebugEnabled!==true?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select()});
         window.faWorldState?.subscribe?.(revalidateWorld);
         window.addEventListener('pageshow',event=>{if(event.persisted)void load()});
-        window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});
+        window.addEventListener('pagehide',event=>{
+          // BFCache restores the document and its JS state, including any
+          // in-flight loading token. Cancel and release that token so match
+          // links cannot remain disabled after Safari Back navigation.
+          lifecycleEpoch++;pendingLoads=0;loader.cancel();
+          window.faStandingsLoading?.set('api',false);
+          if(!event.persisted)loader.dispose();
+        });
         select();
       }catch{window.faStandingsLoading?.set('api',false);clearSeasonData();}
     }
