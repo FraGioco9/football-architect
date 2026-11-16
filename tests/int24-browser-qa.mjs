@@ -858,14 +858,20 @@ try {
   assert.equal(await page.locator('[data-postseason-score="q1:1:first"]').innerText(),'1');
   assert.equal(await page.locator('[data-postseason-score="q1:1:second"]').innerText(),'0');
   assert.ok(await page.locator('[data-postseason-resolution="q1"]').isVisible());
+  // Score glyphs are now centered in fixed-size boxes. Test the box edges,
+  // not the text glyph's right edge, to assert real layout alignment.
   const alignment=await page.locator('[data-bracket-tie="q1"]').evaluate(card=>{
-   const end=selector=>card.querySelector(selector).getBoundingClientRect().right;
-   const first=end('[data-postseason-score="q1:0:first"]');
-   const second=end('[data-postseason-score="q1:0:second"]');
+   const rect=selector=>card.querySelector(selector).closest('.fa-bracket-score').getBoundingClientRect();
+   const first=rect('[data-postseason-score="q1:0:first"]');
+   const second=rect('[data-postseason-score="q1:0:second"]');
    const note=card.nextElementSibling.getBoundingClientRect().right;
-   return {gap:second-first,inset:card.getBoundingClientRect().right-second,noteOffset:note-second};
+   const edge=card.getBoundingClientRect().right;
+   const round=value=>Math.round(value);
+   return {gap:round(second.right-first.right),inset:round(edge-second.right),
+    noteOffset:round(note-second.right),firstWidth:round(first.width),secondWidth:round(second.width)};
   });
-  assert.deepEqual(alignment,{gap:22,inset:18,noteOffset:0},'Scores and resolution share the right edge');
+  assert.deepEqual(alignment,{gap:30,inset:18,noteOffset:0,firstWidth:26,secondWidth:26},
+   'Both fixed-width leg boxes and the resolution share the correct right edge');
   await screenshot(page,cup+'-'+width+'-supplied-knockouts.png');
   await page.locator('#competition-tab-stats').click();
   await page.locator('[data-stats-view="overview"]').click();
