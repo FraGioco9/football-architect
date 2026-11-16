@@ -51,7 +51,7 @@ describe('#613 protected single-engine lifecycle atomic batch',()=>{
   const prefix=[db.prepare('PRIOR_DAY_AND_MATCH_GUARD')];
   const statements=buildLineupLifecycleBatchV1(db,session as any,123456,world,
    proposal as any,evidence,prefix,planned,'op-1','key-1','req-1');
-  const sql=statements.map(q=>prepared.find(p=>p===q)?.sql??'');
+  const sql=statements.map(q=>(q as unknown as {sql:string}).sql);
   const order=[
    'PRIOR_DAY_AND_MATCH_GUARD','MATCH_SOURCE_GUARD',
    'INSERT INTO season_knockout_ties TEST',
