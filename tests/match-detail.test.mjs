@@ -153,19 +153,19 @@ test('#577 refuses arbitrary palette entries or fake logos',()=>{
 test('#650 Match Detail renders only frozen verified XI test ratings with reserved first paint',()=>{
  const js=read('assets/match-detail.js'),css=read('assets/match-detail.css');
  const html=read('templates/match-detail-content.html');
- assert.match(js,/function renderLineups\\(tr\\)/);
- assert.match(js,/data\\?\\.status==='completed'&&data\\?\\.provenance\\?\\.receiptHash/);
- assert.match(js,/source\\?\\.kind==='real_xi'/);
- assert.match(js,/data\\.lineup\\?\\.ratingVersion==='test-rating-v1'/);
- assert.match(js,/Number\\.isSafeInteger\\(p\\.playerId\\)/);
- assert.match(js,/player\\.href=href\\('\\/players\\/'\\+starter\\.playerId\\)/);
- assert.match(js,/officialVote\\?n\\.toFixed\\(1\\):'–'/);
- assert.match(js,/list\\.setAttribute\\('aria-hidden','true'\\)/);
- assert.match(css,/\\.app-match-lineup-rating/);
+ assert.match(js,/function renderLineups\(tr\)/);
+ assert.match(js,/data\?\.status==='completed'&&data\?\.provenance\?\.receiptHash/);
+ assert.match(js,/source\?\.kind==='real_xi'/);
+ assert.match(js,/data\.lineup\?\.ratingVersion==='test-rating-v1'/);
+ assert.match(js,/Number\.isSafeInteger\(p\.playerId\)/);
+ assert.match(js,/player\.href=href\('\/players\/'\+starter\.playerId\)/);
+ assert.match(js,/officialVote\?n\.toFixed\(1\):'–'/);
+ assert.match(js,/list\.setAttribute\('aria-hidden','true'\)/);
+ assert.match(css,/\.app-match-lineup-rating/);
  assert.equal((html.match(/class="app-match-lineup-row"/g)||[]).length,22);
  for(const phrase of ['Test rating','Voto di prova','Testnote','Nota de prueba','Note de test'])
   assert.ok(js.includes(phrase),phrase);
- assert.doesNotMatch(js,/Math\\.random\\(/);
+ assert.doesNotMatch(js,/Math\.random\(/);
 });
 test('#577 never fabricates scores, lineups, competition branding or match outcomes',()=>{
  const js=read('assets/match-detail.js');
