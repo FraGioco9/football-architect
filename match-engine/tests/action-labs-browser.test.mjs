@@ -1,4 +1,4 @@
-// #620 true Chromium user journey: primary DEV LAB -> seven controlled
+// #620 true Chromium user journey: primary DEV LAB -> nine controlled
 // Action LABs -> real Rapier event feedback -> restore original LAB.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,7 +24,7 @@ function fromPortFile(text){
   /^\/devtools\/browser\/[\w-]+$/.test(a[1]??'')?
   'ws://127.0.0.1:'+a[0]+a[1]:null;
 }
-test('clean-stack Action LABs load all seven options in real DEV Chrome',
+test('clean-stack Action LABs load all nine options in real DEV Chrome',
  {timeout:120000},async()=>{
  const chrome=chromeBinary(),temp=await mkdtemp(join(tmpdir(),'fa-action-labs-'));
  const server=createPreviewServer({subdomains:true});
@@ -102,7 +102,7 @@ test('clean-stack Action LABs load all seven options in real DEV Chrome',
   await send('Page.navigate',{
    url:'http://app.localhost:2000/dev/match-engine'
   });
-  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===41");
+  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===43");
   const openedFromScenario=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
    "document.querySelector('#preset-options [data-value=\"action:pass\"]').click();"+
@@ -155,6 +155,8 @@ test('clean-stack Action LABs load all seven options in real DEV Chrome',
    ['shot',35,'Verified HOME SHOT'],
     ['cross',35,'Verified HOME CROSS'],
     ['save',35,'Verified HOME SAVE'],
+    ['tackle',35,'Verified HOME TACKLE'],
+    ['interception',35,'Verified HOME INTERCEPTION'],
    ['challenge',12,null],
    ['control',90,'Observed: separate teammate shoe-ball contact after real pass'],
    ['carry',35,'Verified HOME CARRY:']
@@ -409,7 +411,7 @@ test('clean-stack Action LABs load all seven options in real DEV Chrome',
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");
   assert.equal(close,true);
-  // One visible original Scenario dropdown for all 41 scenes.
+  // One visible original Scenario dropdown for all 43 scenes.
   // Action/Movement selectors and launch buttons remain internal only.
   const nav=await evalJs("(()=>{const menu=document.getElementById('preset-options');"+
    "const trigger=document.getElementById('preset-trigger');"+
@@ -422,7 +424,7 @@ test('clean-stack Action LABs load all seven options in real DEV Chrome',
    "unique:document.querySelectorAll('[data-me-dropdown=preset]').length===1,"+
    "noSecondSelector:document.getElementById('lab-all-situations')===null,"+
    "current:trigger.textContent.trim()};})()");
-  assert.equal(nav.items,41);
+  assert.equal(nav.items,43);
   assert.deepEqual(nav.groups,['Ball physics','Actions','Movement and contacts']);
   for(const key of ['hiddenLaunches','hiddenChoices','unique','noSecondSelector'])
    assert.equal(nav[key],true,key);
@@ -460,7 +462,7 @@ test('clean-stack Action LABs load all seven options in real DEV Chrome',
    JSON.stringify({nav,ball:ballNav,action:actionNav,movement:movementNav})+'\\n');
   // #628 M2: actual desktop movement dialog on the same DEV page.
   // It has no Rapier shoe colliders; do not confuse measured motion with
-  // the seven real shoe-contact Action LABs above.
+  // the nine real shoe-contact Action LABs above.
   const movementOpened=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
    "document.querySelector('#preset-options [data-value=\"movement:approach\"]').click();"+

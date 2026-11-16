@@ -9,6 +9,16 @@ const item=(id,title,mode,initial,description,focus,goal)=>Object.freeze({
  source:'one-canonical-rapier-ball-and-22-physical-feet',
  officialResult:false
 });
+export const DEFENSE_LAB_STARTS=Object.freeze({
+ tackle:Object.freeze({
+  home:scene('me-action-tackle-home',-30,0,0.28),
+  away:scene('me-action-tackle-away',30,0,-0.28)
+ }),
+ interception:Object.freeze({
+  home:scene('me-action-interception-home',-30,0,-2),
+  away:scene('me-action-interception-away',30,0,2)
+ })
+});
 export const SHOT_LAB_STARTS=Object.freeze({
  home:scene('me-action-shot-home',30,1,0),
  away:scene('me-action-shot-away',-30,-1,0)
@@ -55,6 +65,13 @@ export const ACTION_LAB_SCENARIOS=Object.freeze([
  item('save','Goalkeeper save','save',SAVE_LAB_STARTS.home,
   'An incoming goalward real ball triggers a bounded keeper lateral dive approach and, only on genuine exclusive Rapier shoe START, a physical parry attempt. No completed save.',
   ['home-1','away-10','away-1'],'save'),
+ item('tackle','Tackle','defense',DEFENSE_LAB_STARTS.tackle.home,
+  'Live defender #7 with a real nearby opponent attempts a physical poke on an almost stationary ball. Same native Rapier shoe START; no automatic ball recovery.',
+  ['home-7','away-10','home-10'],'tackle'),
+ item('interception','Interception','defense',
+  DEFENSE_LAB_STARTS.interception.home,
+  'Original defender #7 attempts to deflect an inbound moving ball under observed opponent pressure. An incoming trajectory is not proof of an opponent pass or a successful interception.',
+  ['home-7','away-10','home-10'],'interception'),
  item('challenge','Challenge','challenge',
   CHALLENGE_LAB_STARTS.away,
   'Witness an opponent shoe-ball START only. An actual tackle/interception or ball recovery is NOT yet verified.',
@@ -91,7 +108,7 @@ export function classifyActionLabEvidence(spec,{
     action.actualPhysicsImpulseApplied!==true||
     action.officialMatchAction!==false||
     starts.length!==1||starts[0]!==action.playerId||
-    !['pass','shot','cross','save','carry','clearance'].includes(action.action)))
+    !['pass','shot','cross','save','tackle','interception','carry','clearance'].includes(action.action)))
   throw new TypeError('Never award an action without a single same-tick real shoe START');
  if(typeof opponentEarlier!=='boolean')throw new TypeError('Boolean contact history required');
  if(!['home','away'].includes(challengeSide))
@@ -108,16 +125,19 @@ export function classifyActionLabEvidence(spec,{
  const shot=spec.goal==='shot'&&action?.action==='shot';
  const cross=spec.goal==='cross'&&action?.action==='cross';
  const save=spec.goal==='save'&&action?.action==='save';
+ const tackle=spec.goal==='tackle'&&action?.action==='tackle';
+ const interception=spec.goal==='interception'&&
+  action?.action==='interception';
  const carry=spec.goal==='carry'&&action?.action==='carry';
  const receiver=spec.goal==='control'&&priorPass!==null&&
   !opponentEarlier&&starts.length===1&&
   starts[0]===priorPass.recipientId;
  const opposition=spec.goal==='opponent-contact'&&
   starts.length===1&&starts[0].startsWith(challengeSide+'-');
- const witness=Boolean(pass||shot||cross||save||carry||receiver||opposition);
+ const witness=Boolean(pass||shot||cross||save||tackle||interception||carry||receiver||opposition);
  return Object.freeze({
   tick,witnessed:witness,kind:spec.goal,
-  verifiedShoeImpulse:Boolean(pass||shot||cross||save||carry),
+  verifiedShoeImpulse:Boolean(pass||shot||cross||save||tackle||interception||carry),
   realContactObserved:starts.length>0,
   verifiedReceivingShoeContact:Boolean(receiver),
   observedOpponentShoeContact:Boolean(opposition),

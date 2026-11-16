@@ -154,6 +154,45 @@ export function createProvisionalActionOutcomeObserver(fixtureId){
       (cross.targetX-cross.originX)*action.impulseNs.x+
        (cross.targetY-cross.originY)*action.impulseNs.y<=0
     ))throw new TypeError('Untrusted or fabricated physical CROSS target');
+   // B03: only an ACTUAL opponent-proximity-based shoe impulse,
+   // never proof of a successful tackle, interception or possession.
+   const defensive=action?.defensiveTarget;
+   const defensiveAction=['tackle','interception'].includes(action?.action);
+   if(defensiveAction&&(
+      !defensive||
+      defensive.version!=='actions-b03-real-opponent-physical-defensive-attempt-v1'||
+      defensive.kind!==action.action||
+      defensive.actorId!==action.playerId||
+      defensive.team!==action.team||
+      defensive.opponentId===action.playerId||
+      typeof defensive.opponentId!=='string'||
+      !defensive.opponentId.startsWith(action.team==='home'?'away-':'home-')||
+      defensive.physicsTick!==physicsTick||
+      !['opponentBallGapM','observedBallSpeedMps','observedBallVx',
+       'observedBallVy','observedBallX','observedBallY','ownGoalX',
+       'targetX','targetY'].every(k=>finite(defensive[k]))||
+      defensive.opponentBallGapM<0||defensive.opponentBallGapM>3.3||
+      defensive.observedBallSpeedMps<0||
+      Math.abs(defensive.observedBallSpeedMps-
+       Math.hypot(defensive.observedBallVx,defensive.observedBallVy))>1e-6||
+      (defensive.kind==='tackle'&&defensive.observedBallSpeedMps>0.700001)||
+      (defensive.kind==='interception'&&(
+       defensive.observedBallSpeedMps<1.249999||
+       defensive.observedBallVx*(action.team==='home'?1:-1)>-1.249999))||
+      defensive.actualOpposingPlayerObserved!==true||
+      defensive.nativeRapierShoeStartRequired!==true||
+      defensive.physicalAttemptOnly!==true||
+      defensive.tackleWon!==false||
+      defensive.interceptionConfirmed!==false||
+      defensive.officialPossession!==false||
+      defensive.officialMatchAction!==false||
+      defensive.officialResult!==null||
+      !action.impulseNs||![action.impulseNs.x,action.impulseNs.y,
+       action.impulseNs.z].every(finite)||
+      action.impulseNs.x*(action.team==='home'?1:-1)<=0
+     ))throw new TypeError('Untrusted B03 defensive physical attempt');
+   if(!defensiveAction&&defensive!==null&&defensive!==undefined)
+    throw new TypeError('Only real physical defensive actions may carry B03 metadata');
    const save=action?.saveTarget;
    if(action?.action==='save'&&(
       !save||save.source!=='actions-b02-authentic-keeper-foot-parry-v1'||

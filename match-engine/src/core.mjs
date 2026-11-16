@@ -11,6 +11,8 @@ import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {initialResearchBodyEncounterLineup}
  from './research-body-encounter-initial-lineup.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
+import {initialResearchDefensiveLineup}
+ from './basic-defensive-physical-actions-b03.mjs';
 import {initialResearchGoalkeeperSaveLineup}
  from './goalkeeper-save-foundation-b02.mjs';
 import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
@@ -95,6 +97,8 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchShotBlockedLane = false,
   diagnosticResearchShotWideCross = false,
   diagnosticResearchGoalkeeperSaveSide = null,
+  diagnosticResearchDefensiveSide = null,
+  diagnosticResearchDefensiveKind = null,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -165,6 +169,20 @@ export function createEngine(RAPIER, input = {}, {
      !diagnosticPlayerFootContactsEnabled||
      !diagnosticAutonomousFixtureActionEnabled)))
   throw new TypeError('Wide CROSS requires original exclusive Rapier shoe action');
+ if(diagnosticResearchDefensiveSide!==null&&(
+    !['home','away'].includes(diagnosticResearchDefensiveSide)||
+    !['tackle','interception'].includes(diagnosticResearchDefensiveKind)||
+    !diagnosticPlayerFootContactsEnabled||
+    !diagnosticAutonomousFixtureActionEnabled||
+    diagnosticAutonomousCarryEnabled||
+    diagnosticResearchShotAttacker!==null||
+    diagnosticResearchGoalkeeperSaveSide!==null||
+    diagnosticResearchControlReceiver||
+    diagnosticResearchCarrySide!==null))
+  throw new TypeError('B03 defensive actions require exclusive original Rapier source');
+ if(diagnosticResearchDefensiveSide===null&&
+    diagnosticResearchDefensiveKind!==null)
+  throw new TypeError('B03 kind requires real defender research side');
  if(diagnosticResearchGoalkeeperSaveSide!==null&&(
     !['home','away'].includes(diagnosticResearchGoalkeeperSaveSide)||
     !diagnosticPlayerFootContactsEnabled||
@@ -245,7 +263,11 @@ export function createEngine(RAPIER, input = {}, {
     !diagnosticPlayerFootContactsEnabled||
     !diagnosticAutonomousFixtureActionEnabled))
   throw new TypeError('CARRY setup requires bounded genuine private shoe source');
- const stagedShoes=diagnosticResearchGoalkeeperSaveSide!==null?
+ const stagedShoes=diagnosticResearchDefensiveSide!==null?
+   initialResearchDefensiveLineup(INITIAL_PLAYERS,
+    diagnosticResearchDefensiveSide,scenario,
+    {kind:diagnosticResearchDefensiveKind}):
+  diagnosticResearchGoalkeeperSaveSide!==null?
    initialResearchGoalkeeperSaveLineup(INITIAL_PLAYERS,
     diagnosticResearchGoalkeeperSaveSide,scenario):
   diagnosticResearchShotAttacker!==null?
@@ -353,6 +375,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchShotWideCross,diagnosticResearchGoalkeeperSaveSide,
+    diagnosticResearchDefensiveSide,diagnosticResearchDefensiveKind,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
     diagnosticResearchReceivingDecisionEnabled,diagnosticResearchReceiverTapEnabled,
