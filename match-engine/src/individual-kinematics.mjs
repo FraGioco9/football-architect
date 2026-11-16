@@ -30,8 +30,16 @@ export function advanceFreePlayerKinematics(player,target,limits){
  if(Math.hypot(vx,vy)<1e-9){vx=0;vy=0;}
  const x=clamp(player.x+vx*limits.dt,-limits.maxX,limits.maxX);
  const y=clamp(player.y+vy*limits.dt,-limits.maxY,limits.maxY);
- if(Math.abs(x-(player.x+vx*limits.dt))>1e-9)vx=0;
- if(Math.abs(y-(player.y+vy*limits.dt))>1e-9)vy=0;
+ // M14 real physical-border correction: when a 60Hz substep is clipped
+ // at the actual pitch boundary, its measured displacement may be smaller
+ // than the free predicted velocity * dt. Preserve the ORIGINAL source
+ // identity vx=(newX-oldX)/dt; otherwise the native Rapier body bridge
+ // correctly refuses an internally inconsistent player motion frame.
+ // This cannot increase speed: the actual distance was clipped inwards.
+ if(Math.abs(x-(player.x+vx*limits.dt))>1e-9)
+  vx=(x-player.x)/limits.dt;
+ if(Math.abs(y-(player.y+vy*limits.dt))>1e-9)
+  vy=(y-player.y)/limits.dt;
  return Object.freeze({x,y,vx,vy});
 }
 // Turn toward ACTUAL velocity only after any canonical collision rejection.

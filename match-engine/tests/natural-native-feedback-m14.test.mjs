@@ -8,9 +8,41 @@ import {initializeRapier,createEngine} from '../src/core.mjs';
 import {createPlayerMovement,PLAYER_MIN_SEPARATION_M,
  PLAYER_MAX_SPEED_MPS,INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {M11_BALL_STARTS} from '../src/unstaged-body-contact-audit.mjs';
+import {advanceFreePlayerKinematics} from '../src/individual-kinematics.mjs';
 import {auditNaturalNativeFeedback,auditNaturalNativeFeedbackMatrix}
  from '../src/natural-native-feedback-audit-m14.mjs';
 
+test('M14 pitch-edge actual velocity equals real clipped XY displacement on both axes',()=>{
+ const limits={dt:1/60,maxSpeed:PLAYER_MAX_SPEED_MPS,
+  acceleration:9,braking:12,turnRate:6,maxX:52.06,maxY:33.56};
+ const p0={x:0,y:0,vx:0,vy:0};
+ const control=advanceFreePlayerKinematics(p0,{x:20,y:0},limits);
+ assert.ok(control.vx>0);
+ assert.ok(Math.abs(control.x-p0.x-control.vx*limits.dt)<1e-12);
+ for(const [player,target] of [
+  [{x:limits.maxX-0.02,y:1,vx:5,vy:0},
+   {x:limits.maxX+9,y:1}],
+  [{x:-limits.maxX+0.01,y:-1,vx:-5,vy:0},
+   {x:-limits.maxX-7,y:-1}],
+  [{x:1,y:limits.maxY-0.015,vx:0,vy:6},
+   {x:1,y:limits.maxY+11}],
+  [{x:-1,y:-limits.maxY+0.01,vx:0,vy:-6},
+   {x:-1,y:-limits.maxY-5}],
+  [{x:limits.maxX-0.008,y:limits.maxY-0.013,vx:5,vy:5},
+   {x:limits.maxX+10,y:limits.maxY+9}],
+  [{x:limits.maxX,y:limits.maxY,vx:3,vy:4},
+   {x:limits.maxX+12,y:limits.maxY+9}]
+ ]){
+  const next=advanceFreePlayerKinematics(player,target,limits);
+  assert.ok(Math.abs(next.x-player.x-next.vx*limits.dt)<1e-10,
+   'actual X must agree exactly with physical velocity at field edge');
+  assert.ok(Math.abs(next.y-player.y-next.vy*limits.dt)<1e-10,
+   'actual Y must agree exactly with physical velocity at field edge');
+  assert.ok(Math.abs(next.x)<=limits.maxX+1e-10);
+  assert.ok(Math.abs(next.y)<=limits.maxY+1e-10);
+  assert.ok(Math.hypot(next.vx,next.vy)<=limits.maxSpeed+1e-7);
+ }
+});
 test('M14 8 actual different ball territories × HOME/AWAY × feedback/observational negative',
  {timeout:115000},async()=>{
  const R=await initializeRapier(wasm);

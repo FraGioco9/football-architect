@@ -115,6 +115,16 @@ export function auditNaturalNativeFeedback(RAPIER,{
   for(let tick=1;tick<=ticks;tick++){
    const prior=mover.snapshot(),ballBefore=engine.snapshot().ball.position;
    const intended=mover.step(ballBefore);
+   // Prove input frame's measured XY velocity agrees with actual last
+   // canonical positions BEFORE the strict original Rapier bridge sees it.
+   const invalid=intended.players.flatMap((p,i)=>{
+    const old=prior.players[i],dx=p.x-old.x-p.vx*FIXED_DT,
+     dy=p.y-old.y-p.vy*FIXED_DT;
+    return Math.max(Math.abs(dx),Math.abs(dy))>1e-6?
+     [{id:p.id,dx,dy,x:p.x,y:p.y,vx:p.vx,vy:p.vy}]:[];
+   });
+   if(invalid.length)throw new Error('M14 source kinematics mismatch '+
+    JSON.stringify({stateId,side,mode,tick,invalid}));
    const world=engine.step(intended);
    const native=engine.nativePlayerBodySnapshot();
    const queue=engine.sharedNativeContactSnapshot();
