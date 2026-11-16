@@ -87,7 +87,7 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(await count('season_lineup_day_outcomes')).toBe(12);
  expect(await count('match_lineup_result_receipts')).toBe(0);
  expect(await readPublicMatchLineupV1(db,String(full.public_id)))
-  .toMatchObject({status:'scheduled',result:null,lineup:null,events:null});
+  .toMatchObject({status:'scheduled',result:null,lineup:null,kickoff:null});
  const oldWorld=world,oldCommand=cmd();
  await db.prepare("CREATE TRIGGER fail_day13_audit BEFORE INSERT ON admin_operations WHEN NEW.command='advance-season-v1' BEGIN SELECT RAISE(ABORT,'late day13 failure'); END").run();
  let failureClockReads=0;
@@ -141,18 +141,29 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(replay.frozenMatches.size).toBe(128);
  const a=await readPublicMatchLineupV1(db,String(full.public_id)) as any;
  const b=await readPublicMatchLineupV1(db,String(mixed.public_id)) as any;
- expect(a).toMatchObject({status:'completed',provenance:{resultAuthority:'temporary-lineup-v1'}});
+ expect(a).toMatchObject({status:'completed',kickoff:null,provenance:{kind:'authoritative'}});
+ expect(Object.keys(a.provenance).sort()).toEqual(['kind','receiptHash']);
  expect(a.lineup.home.kind).toBe('real_xi');
  expect(a.lineup.away.kind).toBe('real_xi');
  expect(a.lineup.home.starters).toHaveLength(11);
- expect(a.lineup.away.appearances).toHaveLength(11);
+ expect(a.lineup.away.starters).toHaveLength(11);
+ expect(a.lineup.home).not.toHaveProperty('appearances');
  expect(b.status).toBe('completed');
  expect(b.lineup.home.kind).toBe('real_xi');
  expect(b.lineup.away.kind).toBe('team_fallback');
  expect(b.lineup.away.starters).toEqual([]);
- expect(b.lineup.away.appearances).toEqual([]);
- expect(a.events.length).toBe(a.result.homeGoals+a.result.awayGoals);
- expect(b.events.filter((e:any)=>e.side==='away')).toHaveLength(0);
+ expect(b.lineup.away).not.toHaveProperty('appearances');
+ // Retain immutable scoring evidence in D1 while omitting events from public Match Detail.
+ expect(a).not.toHaveProperty('events');
+ expect(b).not.toHaveProperty('events');
+ const frozenA=await db.prepare('SELECT receipt_json FROM match_lineup_result_receipts WHERE public_match_id=?')
+  .bind(full.public_id).first() as {receipt_json:string}|null;
+ const frozenB=await db.prepare('SELECT receipt_json FROM match_lineup_result_receipts WHERE public_match_id=?')
+  .bind(mixed.public_id).first() as {receipt_json:string}|null;
+ expect(JSON.parse(frozenA!.receipt_json).result.events)
+  .toHaveLength(a.result.homeGoals+a.result.awayGoals);
+ expect(JSON.parse(frozenB!.receipt_json).result.events.filter((e:{side:string})=>e.side==='away'))
+  .toHaveLength(0);
  const season=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
  expect(season.data.fixtures.filter((f:any)=>f.result)).toHaveLength(8);
  expect(season.data.statistics.matchesPlayed).toBe(8);
@@ -176,6 +187,10 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(httpMatch.status).toBe('completed');
  expect(httpMatch.result).toEqual(a.result);
  expect(httpMatch.lineup).toEqual(a.lineup);
+ expect(httpMatch).not.toHaveProperty('events');
+ expect(httpMatch).not.toHaveProperty('marker');
+ expect(httpMatch).not.toHaveProperty('slotId');
+ expect(httpMatch).toHaveProperty('kickoff',null);
  const httpSport=await get('/api/competitions/IT-1/seasons/1');
  expect(httpSport.data.statistics.matchesPlayed).toBe(8);
  expect(httpSport.data.fixtures.filter((f:any)=>f.result)).toHaveLength(8);
@@ -191,7 +206,7 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
   "SELECT p.id AS id FROM public_match_numbers p JOIN season_match_slots s ON s.match_id=p.slot_match_id WHERE s.season_number=1 AND s.scheduled_day=14 LIMIT 1"
  ).first()) as {id:number};
  expect(await readPublicMatchLineupV1(db,String(future.id)))
-  .toMatchObject({status:'scheduled',result:null,lineup:null,events:null});
+  .toMatchObject({status:'scheduled',result:null,lineup:null,kickoff:null});
  // Authenticated Admin GET must report the SAME V2 day count as public GETs.
  const operator=await seedUnifiedAdminHttp(db,session.actor.id,session.actor.email,
   now,'c'.repeat(64));

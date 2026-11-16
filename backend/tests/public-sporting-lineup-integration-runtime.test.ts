@@ -58,16 +58,25 @@ describe('#613 new V2 public competition, club, calendar projections (unrouted)'
   const upcoming=await readPublicMatchLineupV1(db,String(league.public_id)) as any;
   expect(upcoming).toMatchObject({
    matchId:String(league.public_id),status:'scheduled',result:null,
-   lineup:null,events:null,provenance:{resultAuthority:'temporary-lineup-v1',receiptHash:null}
+   lineup:null,provenance:{kind:'authoritative',receiptHash:null}
   });
+  expect(upcoming).not.toHaveProperty('events');
+  expect(upcoming).not.toHaveProperty('slotId');
+  expect(upcoming).not.toHaveProperty('marker');
+  expect(upcoming).toHaveProperty('kickoff',null);
+  expect(Object.keys(upcoming.provenance).sort()).toEqual(['kind','receiptHash']);
   const knockout=(await db.prepare(
    "SELECT p.id AS public_id FROM public_match_numbers p JOIN season_knockout_match_slots k ON k.match_id=p.slot_match_id WHERE k.season_number=1 ORDER BY p.id LIMIT 1"
   ).first()) as {public_id:number};
   const reserved=await readPublicMatchLineupV1(db,String(knockout.public_id)) as any;
   expect(reserved).toMatchObject({
-   status:'awaiting_participants',result:null,lineup:null,events:null,
-   provenance:{resultAuthority:'temporary-lineup-v1',receiptHash:null}
+   status:'awaiting_participants',result:null,lineup:null,
+   provenance:{kind:'authoritative',receiptHash:null}
   });
+  expect(reserved).not.toHaveProperty('events');
+  expect(reserved).not.toHaveProperty('homePolicy');
+  expect(reserved).not.toHaveProperty('slotId');
+  expect(reserved).toHaveProperty('kickoff',null);
   const list=await readPublishedCompetitionMatchesLineupV1(db,1,'IT-1');
   expect(list.fixtures).toHaveLength(242);
   await expect(readPublicMatchLineupV1(db,'invalid')).rejects.toMatchObject({status:404});

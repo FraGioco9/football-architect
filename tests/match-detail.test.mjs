@@ -157,6 +157,7 @@ test('#650 Match Detail renders only frozen verified XI test ratings with reserv
  assert.match(js,/data\?\.status==='completed'&&data\?\.provenance\?\.receiptHash/);
  assert.match(js,/source\?\.kind==='real_xi'/);
  assert.match(js,/data\.lineup\?\.ratingVersion==='test-rating-v1'/);
+ assert.match(js,/const n=starter\.rating/);
  assert.match(js,/Number\.isSafeInteger\(p\.playerId\)/);
  assert.match(js,/player\.href=href\('\/players\/'\+starter\.playerId\)/);
  assert.match(js,/officialVote\?n\.toFixed\(1\):'–'/);
@@ -200,7 +201,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/write\('\[data-match-overview="date"\]',data\?publishedDate\(data\.kickoff\):''\)/);
  assert.match(js,/const homeKey=clubKey\(data\?\.homeParticipant\?\.clubId\)/);
  assert.match(js,/homeKey&&clubs\?\.clubs\?\.find\(c=>c\.countryId\+'-'\+c\.clubId===homeKey\)/);
- assert.match(js,/data\?\.neutral===true\|\|data\?\.homePolicy==='neutral'/);
+ assert.match(js,/data\?\.neutral===true/);
+ assert.doesNotMatch(js,/data\?\.homePolicy/);
  assert.match(js,/publishedStadium\(homeClub\?\.stadiumName\)/);
  assert.match(js,/publishedStadium\(data\.venue\)\|\|homeStadium/);
  assert.match(js,/Number\.isSafeInteger\(data\?\.round\)/);

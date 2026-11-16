@@ -117,7 +117,7 @@ describe('#613 single-V2 result replay and historical match proofs',()=>{
   expect(projected?.status).toBe('completed');
   expect(projected?.result.homeGoals).toBe(result.homeGoals);
   expect(projected?.players.home.kind).toBe('team_fallback');
-  expect(projected?.players.home.appearances).toHaveLength(0);
+  expect(projected?.players.home.starters).toHaveLength(0);
   expect(projected?.provenance.receiptHash).toBe(row.receipt_hash);
   expect(frozenLineupMatchDetailV1(history,58)).toBeNull();
   expect(frozen.matchId).toBe(57);

@@ -27,27 +27,30 @@ describe('#650 frozen Match Detail rating projection',()=>{
  it('projects all verified XI ratings with no lookup from live players',async()=>{
   const result=await play(11,11),frozen=detail(result);
   expect(frozen?.players.ratingVersion).toBe('test-rating-v1');
-  expect(frozen?.players.home.appearances).toHaveLength(11);
-  expect(frozen?.players.away.appearances).toHaveLength(11);
+  expect(frozen?.players.home.starters).toHaveLength(11);
+  expect(frozen?.players.away.starters).toHaveLength(11);
+  expect(frozen).not.toHaveProperty('events');
   for(const side of ['home','away'] as const){
-   const rated=frozen!.players[side].appearances;
+   const rated=frozen!.players[side].starters;
+   expect(frozen!.players[side]).not.toHaveProperty('appearances');
+   expect(rated.every(p=>!('emergencyGoalkeeper' in p)&&!('minutes' in p)&&!('goals' in p))).toBe(true);
    expect(rated.every(p=>p.rating!==null&&p.rating>=4&&p.rating<=10)).toBe(true);
    expect(rated.every(p=>Number.isSafeInteger(p.playerId))).toBe(true);
   }
  });
  it('does not invent fallback players or backfill pre-rating results',async()=>{
   const mixed=detail(await play(11,0));
-  expect(mixed?.players.home.appearances).toHaveLength(11);
-  expect(mixed?.players.away.appearances).toEqual([]);
+  expect(mixed?.players.home.starters).toHaveLength(11);
+  expect(mixed?.players.away.starters).toEqual([]);
   const empty=detail(await play(0,0));
-  expect(empty?.players.home.appearances).toEqual([]);
-  expect(empty?.players.away.appearances).toEqual([]);
+  expect(empty?.players.home.starters).toEqual([]);
+  expect(empty?.players.away.starters).toEqual([]);
   const legacy=await play(11,0);
   delete legacy.ratingVersion;
   for(const p of legacy.home.appearances)delete p.rating;
   const old=detail(legacy);
   expect(old?.players.ratingVersion).toBeNull();
-  expect(old?.players.home.appearances).toHaveLength(11);
-  expect(old?.players.home.appearances.every(p=>p.rating===null)).toBe(true);
+  expect(old?.players.home.starters).toHaveLength(11);
+  expect(old?.players.home.starters.every(p=>p.rating===null)).toBe(true);
  });
 });
