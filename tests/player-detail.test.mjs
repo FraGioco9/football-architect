@@ -543,6 +543,9 @@ test('#623 optimized approved WebPs have SHA-256 provenance and appear in the pu
   assert.equal(data.toString('ascii',0,4),'RIFF',path);
   assert.equal(data.toString('ascii',8,12),'WEBP',path);
   assert.equal(data.toString('ascii',12,16),'VP8X',path);
+  assert.equal(data[20]&0x10,0x10,'WebP alpha must be present: '+id);
+  assert.equal(data.readUIntLE(24,3)+1,320,'WebP width must be 320: '+id);
+  assert.equal(data.readUIntLE(27,3)+1,362,'WebP height must be 362: '+id);
   assert.ok(data.length<50_000,'WebP must be optimized: '+id);
   assert.equal(createHash('sha256').update(data).digest('hex'),digest,path);
   assert.ok(published.has(path),'Public artifact missing '+path);
