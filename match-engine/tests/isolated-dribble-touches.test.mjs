@@ -22,9 +22,9 @@ test('#628 1v1 pure varied native-ground-touch intent is reproducible and mirror
   ballVelocity:{x:2.9,y:0}}).magnitudeNs,
   'Higher measured forward velocity must not trigger a harder touch');
  assert.throws(()=>chooseIsolatedDribbleTouch({...params,ballVelocity:undefined}),TypeError);
- assert.ok(a.magnitudeNs>=0.095&&a.magnitudeNs<=0.17);
+ assert.ok(a.magnitudeNs>=0.085&&a.magnitudeNs<=0.15);
  assert.equal(a.officialPossession,false);assert.equal(a.verifiedSecondTouch,false);
- assert.equal(chooseIsolatedDribbleTouch({...params,variantIndex:0}).magnitudeNs,0.12);
+ assert.equal(chooseIsolatedDribbleTouch({...params,variantIndex:0}).magnitudeNs,0.105);
  assert.throws(()=>chooseIsolatedDribbleTouch({...params,variantIndex:30}),TypeError);
 });
 test('#628 every variant stages the attacker behind the original ball, not overlapping its shoe',()=>{
@@ -78,7 +78,7 @@ test('#628 actual 1v1 native source: only attacker physical carry, 2 colliders, 
       const touch=frame.action.decisionContext.isolatedDribbleTouch;
       assert.equal(touch?.tick,tick);assert.equal(touch?.variantIndex,variantIndex);
       assert.equal(touch?.verifiedDribble,false);
-      assert.ok(touch?.magnitudeNs>=0.095&&touch?.magnitudeNs<=0.17);
+      assert.ok(touch?.magnitudeNs>=0.085&&touch?.magnitudeNs<=0.15);
       magnitudes.add(touch.magnitudeNs.toFixed(6));
      }
      if(frame.refereeEvidence?.lastEvent)break;
@@ -133,8 +133,8 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
    // Genuine native absence is a measured failed trial, not a forced touch.
    assert.ok(result.actionCount>=0);
    assert.equal(result.impulse.length,result.actionCount);
-   assert.ok(result.impulse.every(n=>n>=0.094&&n<=0.171));
-   if(variantIndex===0)assert.ok(result.impulse.every(n=>Math.abs(n-0.12)<0.0001));
+   assert.ok(result.impulse.every(n=>n>=0.084&&n<=0.151));
+   if(variantIndex===0)assert.ok(result.impulse.every(n=>Math.abs(n-0.105)<0.0001));
    samples.push(result);
   }finally{lab.dispose();}
   if(bodyGuardEnabled&&[0,7,17,29].includes(variantIndex)){
@@ -201,7 +201,7 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
  assert.ok(summary.withRealCarry>=100,'at least 100 genuine source carries');
  assert.ok(summary.withSecondAction>=80,'at least 80 real repeat-touch trials');
  assert.ok(summary.withFourOrMoreTouches>=20,'repeat touches must be frequent');
- assert.ok(summary.meanTouchesPerTrial>=4.0,'repeatable ground-control frequency must not regress');
+ assert.ok(summary.meanTouchesPerTrial>=5.0,'real running-paced touch cadence must improve on v3');
  assert.equal(summary.noRealCarry,0,'every seed must produce a real shoe-triggered carry');
  assert.equal(summary.reverseTravels,0,'no negative total forward ball travel in D-01');
  assert.ok(summary.withSecondAction>=100,'repeat real carries in almost all trials');

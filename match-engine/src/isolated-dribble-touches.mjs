@@ -1,5 +1,5 @@
 // #628 research: proposal only; actual ball impulse needs authentic Rapier START.
-export const ISOLATED_DRIBBLE_TOUCH_VERSION='me-628-dribble-grounded-pressure-paced-v3';
+export const ISOLATED_DRIBBLE_TOUCH_VERSION='me-628-dribble-grounded-running-cadence-v4';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 function fraction(variantIndex,tick){
  let state=2166136261;
@@ -27,8 +27,9 @@ export function chooseIsolatedDribbleTouch({variantIndex,tick,attackingSide,ball
  // Never brakes by directly mutating ball velocity and never awards possession.
  const forwardSpeed=Math.max(0,attack*ballVelocity.x);
  const assistance=clamp((3.4-forwardSpeed)/1.8,0,1);
- const magnitudeNs=variantIndex===0?0.12:
-  0.095+f*0.075*(0.60+0.40*assistance);
+  // More frequent native STARTs must not accelerate or loft the ball.
+  const magnitudeNs=variantIndex===0?0.105:
+   0.085+f*0.065*(0.60+0.40*assistance);
  return Object.freeze({version:ISOLATED_DRIBBLE_TOUCH_VERSION,variantIndex,tick,
   dx:attack*8,dy:8*lateral,magnitudeNs,lateralRatio:lateral,
   fromLiveOpponent:true,fromLiveBallVelocity:true,

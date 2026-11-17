@@ -27,7 +27,6 @@ let playersShown=false;
 let inspectedPlayerId=null;
 // All visible scenes use the existing pitch/elevation/transport, never dialogs.
 let activeScene=null,activeLab=null,activeVariantIndex=0;
-let activeBodyGuardEnabled=true;
 let lastInlineFootballAction=null;
 const inlinePhysics=s=>Object.freeze({
  tick:s.physicsTick??s.tick,
@@ -41,9 +40,6 @@ function syncScenarioSurface(){
  byId('me-inline-variant-control').hidden=!variable;
  byId('me-inline-variant-display').textContent=
   String(activeVariantIndex+1).padStart(2,'0')+' / '+SMALL_SIDED_VARIANT_COUNT;
- const physical=byId('me-inline-bodyguard');
- physical.disabled=!variable;
- physical.setAttribute('aria-pressed',String(activeBodyGuardEnabled));
  byId('me-inline-observation').hidden=!inline;
  byId('advanced-settings').hidden=inline;
  if(inline)byId('advanced-settings').open=false;
@@ -129,7 +125,7 @@ function restart() {
       throw new TypeError('Original small-sided situation requires HOME/AWAY');
     const next=kind==='action'?
       createControlledActionLab(rapier,id,{shotSide:side,
-       variantIndex:activeVariantIndex,bodyGuardEnabled:activeBodyGuardEnabled}):
+       variantIndex:activeVariantIndex,bodyGuardEnabled:true}):
       createControlledMovementLab(rapier,id,{side});
     if(activeLab)activeLab.dispose();
     if(engine){engine.dispose();engine=null;}
@@ -1819,26 +1815,16 @@ byId('me-inline-side').addEventListener('change',()=>{
 });
 function changeSmallSidedVariant(direction){
  if(activeScene?.kind!=='action'||!rapier)return;
- const before=activeVariantIndex,previousBodyGuard=activeBodyGuardEnabled;
+ const before=activeVariantIndex;
  activeVariantIndex=(before+direction+SMALL_SIDED_VARIANT_COUNT)%SMALL_SIDED_VARIANT_COUNT;
  try{restart();}catch(error){
-  activeVariantIndex=before;activeBodyGuardEnabled=previousBodyGuard;
+  activeVariantIndex=before;
   try{restart();}catch{}
   playing=false;say('Variation failed: '+error.message,true);
  }
 }
 byId('me-inline-variant-prev').addEventListener('click',()=>changeSmallSidedVariant(-1));
 byId('me-inline-variant-next').addEventListener('click',()=>changeSmallSidedVariant(1));
-byId('me-inline-bodyguard').addEventListener('click',()=>{
- if(activeScene?.kind!=='action'||!rapier)return;
- const old=activeBodyGuardEnabled;
- activeBodyGuardEnabled=!old;
- try{restart();}catch(error){
-  activeBodyGuardEnabled=old;
-  try{restart();}catch{}
-  playing=false;say('Body contact study failed: '+error.message,true);
- }
-});
 byId('play').addEventListener('click', play);
 byId('pause').addEventListener('click', pause);
 byId('step').addEventListener('click', () => {
@@ -1915,7 +1901,7 @@ function launchSelectedScenario(value){
  // Selecting a new exercise starts at V01. Side change and Reset replay
  // the current variation; Next/Previous are the only variation controls.
  if(!activeScene||activeScene.kind!==kind||activeScene.id!==id){
-   activeVariantIndex=0;activeBodyGuardEnabled=kind==='action';
+   activeVariantIndex=0;
   }
  activeScene={kind,id};
  try{restart();}catch(error){

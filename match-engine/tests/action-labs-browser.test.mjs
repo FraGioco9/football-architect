@@ -116,8 +116,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "physical:document.getElementById('me-inline-observation').textContent,"+
    "mainPitch:document.getElementById('pitch').getBoundingClientRect().width,"+
    "sideVisible:!document.getElementById('me-inline-side-control').hidden,"+
-   "bodyPressed:document.getElementById('me-inline-bodyguard').getAttribute('aria-pressed'),"+
-   "bodyDisabled:document.getElementById('me-inline-bodyguard').disabled,"+
+   "bodyControlAbsent:document.getElementById('me-inline-bodyguard')===null,"+
    "advancedHidden:document.getElementById('advanced-settings').hidden};})()");
   assert.equal(inline.popup,false);
   assert.equal(inline.movementPopup,false);
@@ -126,8 +125,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.match(inline.physical,/2 real physical players/);
   assert.ok(inline.mainPitch>300);
   assert.equal(inline.sideVisible,true);
-  assert.equal(inline.bodyPressed,'true');
-  assert.equal(inline.bodyDisabled,false);
+  assert.equal(inline.bodyControlAbsent,true);
   assert.equal(inline.advancedHidden,true);
   // Replay/Next: VAR-01 changes genuine initial geometry only before tick
   // zero. Reset replays the exact same seed and HOME/AWAY keeps the index.
@@ -155,38 +153,27 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    position:variation.first.position});
   process.stdout.write('ME_628_REPLAY_VARIATION_CHROME '+
    JSON.stringify(variation)+'\\n');
-  // Default ON in the visible Lab, V01 included. Manual OFF performs
-  // a clean A/B replay. Explicit OFF persists over variants, but a newly
-  // chosen exercise starts with bodies ON again (still DEV-only).
+  // Visible LAB always includes real physical bodies, with no A/B toggle.
   const physicalBodies=await evalJs("(()=>{"+
-   "const b=document.getElementById('me-inline-bodyguard');"+
-   "const initial={disabled:b.disabled,pressed:b.getAttribute('aria-pressed')};"+
-   "b.click();"+
-   "const off={pressed:b.getAttribute('aria-pressed'),tick:document.getElementById('tick').textContent};"+
-   "document.getElementById('step').click();"+
-   "const offStep=document.getElementById('tick').textContent;"+
-   "b.click();"+
-   "const on={pressed:b.getAttribute('aria-pressed'),tick:document.getElementById('tick').textContent};"+
+   "const absent=()=>document.getElementById('me-inline-bodyguard')===null;"+
+   "const initial=absent();"+
    "document.getElementById('me-inline-variant-next').click();"+
-   "const v02={pressed:b.getAttribute('aria-pressed'),variation:document.getElementById('me-inline-variant-display').textContent};"+
-   "b.click();"+
-   "const optedOut={pressed:b.getAttribute('aria-pressed')};"+
+   "const v02={absent:absent(),variation:document.getElementById('me-inline-variant-display').textContent};"+
+   "document.getElementById('step').click();document.getElementById('reset').click();"+
+   "const reset={absent:absent(),tick:document.getElementById('tick').textContent};"+
    "document.getElementById('me-inline-variant-next').click();"+
-   "const v03={pressed:b.getAttribute('aria-pressed'),variation:document.getElementById('me-inline-variant-display').textContent};"+
+   "const v03={absent:absent(),variation:document.getElementById('me-inline-variant-display').textContent};"+
    "document.getElementById('preset-trigger').click();"+
-   "document.querySelector('#preset-options [data-value=\\\"action:defender-1v1\\\"]').click();"+
-   "const newScene={pressed:b.getAttribute('aria-pressed'),variation:document.getElementById('me-inline-variant-display').textContent};"+
-   "return {initial,off,offStep,on,v02,optedOut,v03,newScene,popup:document.getElementById('action-labs-dialog').open};})()");
-  assert.deepEqual(physicalBodies.initial,{disabled:false,pressed:'true'});
-  assert.deepEqual(physicalBodies.off,{pressed:'false',tick:'Tick 0 · 0.00 s'});
-  assert.match(physicalBodies.offStep,/^Tick 1/);
-  assert.deepEqual(physicalBodies.on,{pressed:'true',tick:'Tick 0 · 0.00 s'});
-  assert.deepEqual(physicalBodies.v02,{pressed:'true',variation:'02 / 30'});
-  assert.equal(physicalBodies.optedOut.pressed,'false');
-  assert.deepEqual(physicalBodies.v03,{pressed:'false',variation:'03 / 30'});
-  assert.deepEqual(physicalBodies.newScene,{pressed:'true',variation:'01 / 30'});
+   "([...document.querySelectorAll('#preset-options [data-value]')].find(e=>e.dataset.value==='action:defender-1v1')).click();"+
+   "const newScene={absent:absent(),variation:document.getElementById('me-inline-variant-display').textContent};"+
+   "return {initial,v02,reset,v03,newScene,popup:document.getElementById('action-labs-dialog').open};})()");
+  assert.equal(physicalBodies.initial,true);
+  assert.deepEqual(physicalBodies.v02,{absent:true,variation:'02 / 30'});
+  assert.deepEqual(physicalBodies.reset,{absent:true,tick:'Tick 0 · 0.00 s'});
+  assert.deepEqual(physicalBodies.v03,{absent:true,variation:'03 / 30'});
+  assert.deepEqual(physicalBodies.newScene,{absent:true,variation:'01 / 30'});
   assert.equal(physicalBodies.popup,false);
-  process.stdout.write('ME_628_NATIVE_BODIES_DEFAULT_ON_CHROME '+
+  process.stdout.write('ME_628_NATIVE_BODIES_ALWAYS_ON_CHROME '+
    JSON.stringify(physicalBodies)+'\\n');
   // All five situations both directions, using the VISIBLE selectors,
   // original main Step, original pitch and source-only Rapier evidence.
@@ -203,10 +190,10 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
     "return {side:document.getElementById('me-inline-side').value,"+
     "tick:document.getElementById('tick').textContent,"+
     "observation:document.getElementById('me-inline-observation').textContent,"+
-    "bodies:document.getElementById('me-inline-bodyguard').getAttribute('aria-pressed'),"+
+    "bodyControlAbsent:document.getElementById('me-inline-bodyguard')===null,"+
     "popup:document.getElementById('action-labs-dialog').open};})()");
    assert.equal(x.side,side);
-   assert.equal(x.bodies,'true','new visible exercises default to native body physics');
+   assert.equal(x.bodyControlAbsent,true,'visible LAB must not expose a body toggle');
    assert.equal(x.popup,false);
    assert.match(x.tick,scene==='dribble-1v1'?/^Tick 60/:/^Tick 10/);
    assert.match(x.observation,new RegExp(actors+' real physical players'));
