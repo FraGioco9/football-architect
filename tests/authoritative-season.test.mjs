@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {validateAuthoritativeSeason,adaptAuthoritativeSeason,createAuthoritativeLoader} from '../assets/authoritative-season.mjs';
+import {validateAuthoritativeSeason,adaptAuthoritativeSeason,createAuthoritativeLoader,createCompetitionSeasonReadCache} from '../assets/authoritative-season.mjs';
 const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
 const definition=manifest.competitions.find(c=>c.id==='IT-1');
 const clubs=manifest.divisions.find(d=>d.id==='IT-1').clubs;
@@ -320,4 +320,57 @@ test('CLUB-FIXTURES: neutral final and extra-time/shootout retain club perspecti
   result:{homeGoals:2,awayGoals:2,resolution:'penalties',extraTime:{home:1,away:1},penalties:{home:4,away:5},winnerClubId:'IT-1'}};
  const [row]=projectClubFixtures([fixture],'IT-1',1,54);
  assert.equal(row.venue,'neutral');assert.equal(row.goalsFor,2);assert.equal(row.goalsAgainst,2);assert.deepEqual(row.penalties,{for:5,against:4});
+});
+
+test('PERF-API-657 returning to a previously loaded season reuses its exact-world verified snapshot',()=>{
+ const cache=createCompetitionSeasonReadCache({limit:3});
+ const currentWorld={...world,seasonNumber:2,revision:19,day:15};
+ const snapshot={source:'authoritative',worldStatus:'ready',sourceRevision:3,world:currentWorld};
+ const one={season:1,world:currentWorld,provenance:{kind:'authoritative'},participants:['IT-1']};
+ const two={season:2,world:currentWorld,provenance:{kind:'authoritative'},participants:['IT-2']};
+ const key=season=>({competitionId:'IT-1',season,snapshot});
+ assert.equal(cache.remember({...key(1),data:one}),true);
+ assert.equal(cache.remember({...key(2),data:two}),true);
+ assert.equal(cache.size(),2);
+ one.participants.push('IT-3');
+ assert.deepEqual(cache.find(key(1)).data.participants,['IT-1'],
+  'cache is an immutable copy, not a reference to mutable live data');
+ assert.ok(Object.isFrozen(cache.find(key(2)).data));
+ assert.equal(cache.find(key(1)).data.season,1,'1→2→1 returns cached Season 1 without network');
+ assert.equal(cache.find(key(2)).data.season,2,'both seasons remain reusable');
+ assert.equal(cache.find({...key(1),snapshot:{...snapshot,world:{...currentWorld,revision:20}}}),null,
+  'world progress invalidates previous snapshots');
+ assert.equal(cache.find({...key(1),snapshot:{...snapshot,world:{...currentWorld,generation:'12345678-1234-4123-8123-123456789abc'}}}),null,
+  'reset generation invalidates previous snapshots');
+ assert.equal(cache.find({...key(1),snapshot:{...snapshot,sourceRevision:4}}),null,
+  'source rotation invalidates previous snapshots');
+ assert.equal(cache.find({...key(1),snapshot:{...snapshot,source:'dev'}}),null,
+  'protected DEV cannot use public sporting cache');
+ assert.equal(cache.find({...key(1),snapshot:{...snapshot,worldStatus:'pending'}}),null,
+  'no cache restores before authoritative world clock is ready');
+ assert.equal(cache.remember({...key(1),data:{...one,world:{...currentWorld,revision:5}}}),false,
+  'unverified world payload cannot enter cache');
+ assert.equal(cache.remember({...key(1),data:{...one,provenance:{kind:'dev'}}}),false,
+  'fictional data never enters public season cache');
+});
+test('PERF-API-657 confirmed empty seasons reuse the same world but failures do not cache',()=>{
+ const cache=createCompetitionSeasonReadCache({limit:2});
+ const currentWorld={...world,seasonNumber:2,revision:23,day:16};
+ const snapshot={source:'authoritative',worldStatus:'ready',sourceRevision:0,world:currentWorld};
+ const key=(season)=>({competitionId:'int-1',season,snapshot});
+ assert.equal(cache.find(key(1)),null);
+ assert.equal(cache.remember({...key(1),data:null}),true);
+ assert.deepEqual(cache.find(key(1)),{data:null},
+  'verified empty is distinct from a failed/missing request');
+ assert.equal(cache.remember({...key(2),data:{season:2,world:currentWorld,provenance:{kind:'authoritative'}}}),true);
+ assert.equal(cache.size(),2);
+ assert.equal(cache.remember({...key(1),data:{season:1,world:currentWorld,provenance:{kind:'authoritative'}}}),true);
+ cache.clear();assert.equal(cache.size(),0);assert.equal(cache.find(key(1)),null);
+});
+test('PERF-API-657 competition controller restores cached season before starting the API loader',()=>{
+ const page=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
+ assert.match(page,/createCompetitionSeasonReadCache/);
+ assert.match(page,/if\(cached\)\{[\s\S]*?loader\.cancel\(\);[\s\S]*?acceptSeasonData\(cached\.data,c\.revision,true\)/);
+ assert.match(page,/lastSuccessfulRead=worldReadKey\(window\.faCompetitionContext,snapshot\)/);
+ assert.match(page,/seasonReadCache\.clear\(\)/,'DEV source toggles must invalidate the season cache');
 });

@@ -1198,3 +1198,85 @@ test('#605 Safari BFCache Back: retired fetch cannot suppress restored match lin
  assert.match(page,/window\.faStandingsLoading\?\.set\('api',false\)/,
   'pagehide releases the loading guard while the document is frozen');
 });
+
+test('PERF-API-657 published match links restore Season 1 after Season 2 without extra Match API reads',async()=>{
+ const division=divisions.find(d=>d.id==='IT-1');
+ const world={generation:'550e8400-e29b-41d4-a716-446655440000',
+  revision:29,seasonNumber:2,day:15,phase:'active'};
+ const source={source:'authoritative',sourceRevision:0,worldStatus:'ready',world};
+ const scheduled=createPreviewStandings(division,30).fixtures;
+ const collection=season=>scheduled.map((game,index)=>({
+  matchId:String((season-1)*1000+index+1),
+  sourceFixtureId:'season:'+season+':IT-1:N'+String(game.round).padStart(2,'0')+
+   ':IT-'+game.homeId+':IT-'+game.awayId,
+  phaseId:'league',round:game.round,marker:'N'+String(game.round).padStart(2,'0'),
+  day:12+game.round,homeClubId:'IT-'+game.homeId,awayClubId:'IT-'+game.awayId
+ }));
+ const calls=[];
+ const view=setup(division,routeRegistry,{source,fetchImpl:async path=>{
+  calls.push(path);
+  const season=Number(path.match(/\/seasons\/(\d+)\//)?.[1]);
+  assert.ok([1,2].includes(season));
+  return {ok:true,status:200,json:async()=>({
+   schemaVersion:1,providerId:'authoritative-world',status:'published',
+   season,competitionId:'IT-1',provenance:{kind:'authoritative'},
+   fixtures:collection(season)
+  })};
+ }});
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ const links=()=>view.fields.get('app-fixtures-list').children
+  .flatMap(visit).filter(x=>x.className==='app-fixture-score-link').map(x=>x.href);
+ const choose=async (season,seasonData=null)=>{
+  view.window.faCompetitionContext={
+   ...view.window.faCompetitionContext,selectedSeason:season,revision:season+1,seasonData
+  };
+  view.route.set({season:String(season)});
+  view.events['fa:competition-context-change']();
+  await new Promise(resolve=>setImmediate(resolve));
+ };
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls.length,1,'first season requests its published collection');
+ const originalLinks=links();
+ assert.equal(originalLinks.length,8);
+ await choose(2);
+ assert.equal(calls.length,2,'first visit to Season 2 makes one Match API read');
+ assert.notDeepEqual(links(),originalLinks,'links must be for Season 2, never stale Season 1 IDs');
+ await choose(1,{season:1,entrantsOnly:true,participants:division.clubs,
+  fixtures:null,postseason:[],currentMatchday:null,provenance:{kind:'authoritative'}});
+ assert.equal(calls.length,2,'return to already-read Season 1 uses verified memory cache');
+ assert.deepEqual(links(),originalLinks,'restored Season 1 links retain exactly their public match IDs');
+ await choose(2);
+ assert.equal(calls.length,2,'back-and-forth selection causes no further Match API reads');
+ view.publishSource({...source,world:{...world,revision:30}});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls.length,3,'world revision advance invalidates stored official match IDs');
+ await choose(1);
+ assert.equal(calls.length,4,'prior revision cache cannot be reused after world advance');
+ view.publishSource({...source,world:{...world,revision:30},sourceRevision:1});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls.length,5,'source revision rotation invalidates public collections');
+});
+test('PERF-API-657 confirmed unpublished draw is memoized only inside the same verified world',async()=>{
+ const division=divisions.find(d=>d.id==='IT-1');
+ const world={generation:'550e8400-e29b-41d4-a716-446655440000',
+  revision:31,seasonNumber:2,day:16,phase:'active'};
+ const state={source:'authoritative',sourceRevision:0,worldStatus:'ready',world};
+ let calls=0;
+ const view=setup(division,routeRegistry,{source:state,fetchImpl:async()=>{
+  calls++;return {ok:false,status:404};
+ }});
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,1);
+ const choose=async season=>{
+  view.window.faCompetitionContext={...view.window.faCompetitionContext,
+   selectedSeason:season,revision:season+1,seasonData:null};
+  view.route.set({season:String(season)});
+  view.events['fa:competition-context-change']();
+  await new Promise(resolve=>setImmediate(resolve));
+ };
+ await choose(2);assert.equal(calls,2);
+ await choose(1);assert.equal(calls,2,
+  'a confirmed 404 does not cause repeated reads before the world changes');
+ view.publishSource({...state,world:{...world,revision:32}});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls,3,'new world revision retries unpublished collection');
+});
