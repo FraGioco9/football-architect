@@ -28,9 +28,9 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
     window.__stats643Data=data;
     window.__stats643Supply=mode=>{
      const next=structuredClone(data);
-     next.statistics.players=mode==='fallback'?[]:Array.from({length:mode==='mixed'?11:22},(_,i)=>({playerId:i+1,name:i===0?null:'QA Player '+String(i+1).padStart(2,'0'),clubKey:mode==='mixed'||i<11?'IT-1':'IT-2',appearances:1,starts:1,minutes:i===0?75:90,goals:i===1?1:0}));
+     next.statistics.players=mode==='fallback'?[]:Array.from({length:mode==='mixed'?11:22},(_,i)=>({playerId:i+1,name:i===0?null:'QA Player '+String(i+1).padStart(2,'0'),clubKey:mode==='mixed'||i<11?'IT-1':'IT-2',appearances:1,starts:1,minutes:i===0?75:90,goals:i===1?2:i<8?1:0}));
      if(mode==='no-games'){next.statistics.players=[];next.statistics.overview={matchesPlayed:0,totalGoals:0,goalsPerMatch:0};}
-     if(mode==='archive'){next.seasonState={day:56,phase:'closed'};next.status='available';next.statistics.players=[{playerId:58,name:'Archived Player',clubKey:'IT-1',appearances:30,starts:30,minutes:2700,goals:0,averageRating:6.75,ratedAppearances:20,cleanSheets:10}];}
+     if(mode==='archive'){next.seasonState={day:56,phase:'closed'};next.status='available';next.statistics.players=[{playerId:58,name:'Archived Player',clubKey:'IT-1',appearances:30,starts:30,minutes:2700,goals:2,averageRating:6.75,ratedAppearances:20,cleanSheets:10}];}
      if(!window.faCompetitionContextApi.replaceSeasonData(next,window.faCompetitionContext.revision))throw Error('Stats fixture rejected');
     };
     window.__stats643Supply('real');
@@ -40,15 +40,15 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    const goals=cards.filter({has:page.locator('[data-app-i18n="statsDevGoals"]')});
    assert.equal(await cards.count(),8);
    assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevAverageRating','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevRedCards','statsDevMinutes']);
-   assert.equal(await goals.locator('li strong').first().textContent(),'1');
-   assert.equal(await goals.locator('li strong').nth(1).textContent(),'0');
-   assert.equal(await cards.filter({has:page.locator('[data-app-i18n="statsDevAssists"]')}).locator('.fa-dev-stats-empty').textContent(),'—');
+   assert.equal(await goals.locator('li strong').first().textContent(),'2');
+   assert.equal(await goals.locator('li strong').nth(1).textContent(),'1');
+   assert.equal(await cards.filter({has:page.locator('[data-app-i18n="statsDevAssists"]')}).locator('.fa-dev-stats-empty').textContent(),width===390?'Non registrato':'Not recorded');
    assert.equal(await goals.locator('li .fa-dev-stats-team-name[href="/players/2"]').count(),1);
-   assert.equal(await goals.locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').first().textContent(),'QA Club 1');
+   assert.equal(await goals.locator('span.fa-dev-stats-club-link').first().textContent(),'QA Club 1');
    const before=await goals.boundingBox();
    const expand=goals.locator('.fa-dev-stats-expand');await expand.click();
    const dialog=page.locator('dialog[open]');
-   assert.equal(await dialog.locator('li').count(),22);
+   assert.equal(await dialog.locator('li').count(),8);
    assert.equal(await dialog.locator('.fa-dev-stats-team-name[href="/players/1"]').textContent(),'#1');
    await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
    for(const mode of ['mixed','fallback','no-games','archive']){
@@ -56,14 +56,20 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
     assert.equal(await cards.count(),8);
     if(mode==='mixed'){
      await goals.locator('.fa-dev-stats-expand').click();
-     assert.equal(await page.locator('dialog[open] li').count(),11);
+     assert.equal(await page.locator('dialog[open] li').count(),8);
      await page.keyboard.press('Escape');
-    }else if(mode==='fallback'||mode==='no-games')assert.equal(await cards.locator('li').count(),0);
+    }else if(mode==='fallback'||mode==='no-games'){
+     assert.equal(await cards.locator('li').count(),0);
+     assert.equal(await goals.locator('.fa-dev-stats-empty').textContent(),width===390?'Nessun giocatore':'No players');
+     assert.deepEqual(await goals.boundingBox(),before,'empty leaderboard retains five-row card geometry');
+    }
     else {
      assert.equal(await cards.locator('.fa-dev-stats-team-name[href="/players/58"]').count(),5);
      const portrait=goals.locator('.fa-dev-stats-player-portrait');
      await portrait.locator('img').waitFor({state:'visible'});
      const crop=await portrait.evaluate(el=>({radius:getComputedStyle(el).borderRadius,overflow:getComputedStyle(el).overflow,width:el.clientWidth,height:el.clientHeight,imageWidth:el.querySelector('img').getBoundingClientRect().width,state:el.dataset.portraitState}));
+     assert.equal(await portrait.evaluate(el=>el.tagName),'SPAN');
+     assert.equal(await goals.locator('li a').count(),1,'the only player-row link is the name');
      assert.equal(crop.radius,'50%');assert.equal(crop.overflow,'hidden');assert.equal(crop.width,crop.height);assert.equal(crop.state,'ready');assert.ok(crop.imageWidth>crop.width*2.7);
      mkdirSync('int24-browser-artifacts',{recursive:true});
      await page.screenshot({path:`int24-browser-artifacts/stats-643-face-${engine}-${id}-${width}.png`,fullPage:true});
