@@ -141,3 +141,31 @@ test('#628 small-sided source must remain private and fail closed without real R
   assert.equal(plain.originalSmallSidedPhysicalShoeIds,undefined);
  }finally{plain.dispose();}
 });
+
+test('#628 selected situations reuse main field/elevation and original transport without opening the modal',()=>{
+ const html=readFileSync(new URL('../lab/index.html',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../lab/lab.css',import.meta.url),'utf8');
+ const browser=readFileSync(new URL('./action-labs-browser.test.mjs',import.meta.url),'utf8');
+ assert.match(html,/id="pitch"/);
+ assert.match(html,/id="elevation"/);
+ assert.match(html,/id="me-inline-side-control"/);
+ assert.match(html,/id="me-inline-observation"/);
+ assert.match(html,/id="play"/);
+ assert.match(html,/id="pause"/);
+ assert.match(html,/id="step"/);
+ assert.match(html,/id="reset"/);
+ assert.match(js,/createControlledActionLab\(rapier,id,\{shotSide:side\}\)/);
+ assert.match(js,/createControlledMovementLab\(rapier,id,\{side\}\)/);
+ assert.match(js,/activeScene=\{kind,id\}/);
+ assert.match(js,/if\s*\(activeLab\)drawInlinePlayers/);
+ assert.match(js,/if\s*\(\(engine\|\|activeLab\) && playing\)/);
+ assert.match(js,/byId\('me-inline-side'\)\.addEventListener\('change'/);
+ assert.doesNotMatch(js,/byId\(prefix\+'-open'\)\.click\(\)/,
+  'A visible scenario MUST NOT launch any hidden modal runner');
+ assert.match(css,/me-inline-side-control\[hidden\]/);
+ assert.match(browser,/ME_628_INLINE_CHROME/);
+ assert.match(browser,/ME_628_INLINE_MAIN_TRANSPORT/);
+ assert.match(browser,/assert\.equal\(actionNav\.open,false\)/);
+ assert.match(browser,/assert\.equal\(movementNav\.open,false\)/);
+});

@@ -11,6 +11,14 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-toolbar{display:flex;align-items:flex-end;flex-wrap:wrap;gap:7px 10px;margin-bottom:10px}
 .me-preset-control{display:grid;gap:5px;flex:1 1 205px;min-width:160px}
 .me-speed-control{display:grid;gap:5px;flex:0 0 92px}
+/* Inline LAB mode reuses the original reserved field. Explicit [hidden]
+   overrides flexible/grid panel display rules, including open <details>. */
+.me-inline-side-control[hidden],.me-advanced[hidden],
+.me-players-toggle[hidden],.me-inline-observation[hidden]{display:none!important}
+.me-inline-observation{min-width:0;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.4}
+.me-inline-side-control{flex:0 0 80px}
+.me-toolbar:has(.me-inline-side-control:not([hidden])) .me-preset-control{flex-basis:160px;min-width:140px}
+.me-inline-observation{flex:1 1 100%;word-break:normal}
 .me-field-label{display:block;color:var(--muted);font-size:11px;font-weight:700;line-height:1.4}
 .me-dropdown{min-width:0;width:100%;z-index:auto}
 .me-dropdown:has(.language-menu:not([hidden])){z-index:35}

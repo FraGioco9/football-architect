@@ -104,13 +104,75 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    url:'http://app.localhost:2000/dev/match-engine'
   });
   await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===15");
-  const openedFromScenario=await evalJs("(()=>{"+
+  // Verify the visible small-sided scenario runs IN the main 105x68 field.
+  const inline=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
    "document.querySelector('#preset-options [data-value=\"action:keeper-1v1\"]').click();"+
-   "return {open:document.getElementById('action-labs-dialog').open,"+
-   "title:document.getElementById('action-labs-title').textContent};})()");
-  assert.deepEqual(openedFromScenario,{open:true,title:'S-01 · 1v1 vs goalkeeper'});
-  await wait("document.querySelector('#action-labs-status')?.textContent?.startsWith('Ready')");
+   "return {popup:document.getElementById('action-labs-dialog').open,"+
+   "movementPopup:document.getElementById('movement-labs-dialog').open,"+
+   "selected:document.getElementById('preset-value').textContent,"+
+   "tick:document.getElementById('tick').textContent,"+
+   "physical:document.getElementById('me-inline-observation').textContent,"+
+   "mainPitch:document.getElementById('pitch').getBoundingClientRect().width,"+
+   "sideVisible:!document.getElementById('me-inline-side-control').hidden,"+
+   "advancedHidden:document.getElementById('advanced-settings').hidden};})()");
+  assert.equal(inline.popup,false);
+  assert.equal(inline.movementPopup,false);
+  assert.equal(inline.selected,'S-01 · 1v1 vs goalkeeper');
+  assert.match(inline.tick,/^Tick 0/);
+  assert.match(inline.physical,/2 real physical players/);
+  assert.ok(inline.mainPitch>300);
+  assert.equal(inline.sideVisible,true);
+  assert.equal(inline.advancedHidden,true);
+  // All five situations both directions, using the VISIBLE selectors,
+  // original main Step, original pitch and source-only Rapier evidence.
+  for(const [scene,actors] of [
+   ['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],
+   ['duel-2v2',5],['duel-3v3',7]
+  ])for(const side of ['home','away']){
+   const x=await evalJs("(()=>{"+
+    "document.getElementById('preset-trigger').click();"+
+    "document.querySelector('#preset-options [data-value=\"action:"+scene+"\"]').click();"+
+    "document.getElementById('me-inline-side-trigger').click();"+
+    "document.querySelector('#me-inline-side-options [data-value=\""+side+"\"]').click();"+
+    "for(let n=0;n<10;n++)document.getElementById('step').click();"+
+    "return {side:document.getElementById('me-inline-side').value,"+
+    "tick:document.getElementById('tick').textContent,"+
+    "observation:document.getElementById('me-inline-observation').textContent,"+
+    "popup:document.getElementById('action-labs-dialog').open};})()");
+   assert.equal(x.side,side);
+   assert.equal(x.popup,false);
+   assert.match(x.tick,/^Tick 10/);
+   assert.match(x.observation,new RegExp(actors+' real physical players'));
+   assert.match(x.observation,/source events [1-9]/);
+   assert.match(x.observation,/provisional 0–0/);
+   assert.match(x.observation,/no official result/);
+   process.stdout.write('ME_628_INLINE_CHROME '+JSON.stringify({scene,side,...x})+'\n');
+  }
+  // Play, Pause, Step, Reset on the ACTUAL main toolbar, not the modal.
+  await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
+   "document.querySelector('#preset-options [data-value=\"action:keeper-1v1\"]').click();"+
+   "document.getElementById('play').click();})()");
+  await wait("Number(document.getElementById('tick').textContent.match(/^Tick (\\d+)/)?.[1])>=5");
+  const pauseTick=await evalJs("(()=>{document.getElementById('pause').click();"+
+   "return Number(document.getElementById('tick').textContent.match(/^Tick (\\d+)/)?.[1]);})()");
+  await delay(220);
+  const still=await evalJs("Number(document.getElementById('tick').textContent.match(/^Tick (\\d+)/)?.[1])");
+  assert.equal(still,pauseTick);
+  const inlineStepped=await evalJs("(()=>{document.getElementById('step').click();"+
+   "return Number(document.getElementById('tick').textContent.match(/^Tick (\\d+)/)?.[1]);})()");
+  assert.equal(inlineStepped,pauseTick+1);
+  const reset=await evalJs("(()=>{document.getElementById('reset').click();"+
+   "return {tick:document.getElementById('tick').textContent,"+
+   "popup:document.getElementById('action-labs-dialog').open};})()");
+  assert.equal(reset.tick,'Tick 0 · 0.00 s');
+  assert.equal(reset.popup,false);
+  process.stdout.write('ME_628_INLINE_MAIN_TRANSPORT '+
+   JSON.stringify({pauseTick,inlineStepped,reset})+'\n');
+  // Only the *hidden* DEV fixture launcher is allowed to open the old
+  // one-action regression dialog; visible Scenario never does this.
+  await evalJs("document.getElementById('action-labs-open').click()");
+  await wait("document.getElementById('action-labs-dialog').open&&document.getElementById('action-labs-status').textContent.startsWith('Ready')");
   // Actual requestAnimationFrame transport, not a mock clock or forged ticks.
   const ready=await evalJs("(()=>{const play=document.getElementById('action-labs-play');"+
    "const pause=document.getElementById('action-labs-pause');"+
@@ -493,35 +555,39 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   });
   await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
    "document.getElementById('preset-opt-drop').click();})()");
+  // Visible scene switching keeps the same field, no popup.
   const actionNav=await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
    "document.querySelector('#preset-options [data-value=\"action:duel-2v2\"]').click();"+
    "return {open:document.getElementById('action-labs-dialog').open,"+
-   "choice:document.getElementById('action-labs-choice').value,"+
-   "title:document.getElementById('action-labs-title').textContent};})()");
-  assert.deepEqual(actionNav,{open:true,choice:'duel-2v2',title:'S-04 · 2v2 + goalkeeper'});
-  await evalJs("document.getElementById('action-labs-close').click()");
+   "choice:document.getElementById('preset-value').textContent,"+
+   "tick:document.getElementById('tick').textContent};})()");
+  assert.deepEqual(actionNav,{open:false,choice:'S-04 · 2v2 + goalkeeper',tick:'Tick 0 · 0.00 s'});
+  await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
+   "document.getElementById('preset-opt-drop').click();})()");
   await wait("document.getElementById('preset-value').textContent==='LAB-01 · Ball Drop'");
   const movementNav=await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
    "document.querySelector('#preset-options [data-value=\"movement:secondary-pressure\"]').click();"+
-   "document.getElementById('movement-labs-step').click();"+
+   "document.getElementById('step').click();"+
    "return {open:document.getElementById('movement-labs-dialog').open,"+
-   "choice:document.getElementById('movement-labs-choice').value,"+
-   "title:document.getElementById('movement-labs-title').textContent,"+
-   "readout:document.getElementById('movement-labs-readout').textContent};})()");
-  assert.equal(movementNav.open,true);
-  assert.equal(movementNav.choice,'secondary-pressure');
-  assert.equal(movementNav.title,'M-29 · Second defender ON · live');
-  assert.match(movementNav.readout,/^Tick 1 .*real 22-player Rapier/);
-  await evalJs("document.getElementById('movement-labs-close').click()");
+   "choice:document.getElementById('preset-value').textContent,"+
+   "tick:document.getElementById('tick').textContent,"+
+   "observation:document.getElementById('me-inline-observation').textContent};})()");
+  assert.equal(movementNav.open,false);
+  assert.equal(movementNav.choice,'M-29 · Second defender ON · live');
+  assert.match(movementNav.tick,/^Tick 1/);
+  assert.match(movementNav.observation,/movement/);
+  await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
+   "document.getElementById('preset-opt-drop').click();})()");
   await wait("document.getElementById('preset-value').textContent==='LAB-01 · Ball Drop'");
-  process.stdout.write('ME22_SINGLE_ORIGINAL_SCENARIO_NAV '+
-   JSON.stringify({nav,ball:ballNav,action:actionNav,movement:movementNav})+'\\n');
+  process.stdout.write('ME_628_SINGLE_INLINE_SCENARIO_NAV '+
+   JSON.stringify({nav,ball:ballNav,action:actionNav,movement:movementNav})+'\n');
   // #628 M2: actual desktop movement dialog on the same DEV page.
   // It has no Rapier shoe colliders; do not confuse measured motion with
   // the seventeen real same-world ball/feet Action LABs above.
+  // Archive-only movement fixture through hidden QA launcher, never the
+  // visible Scenario picker.
   const movementOpened=await evalJs("(()=>{"+
-   "document.getElementById('preset-trigger').click();"+
-   "document.querySelector('#preset-options [data-value=\"movement:post-pass\"]').click();"+
+   "document.getElementById('movement-labs-open').click();"+
    "return document.getElementById('movement-labs-dialog').open;})()");
   assert.equal(movementOpened,true);
   await wait("document.getElementById('movement-labs-readout').textContent.startsWith('Tick 0')");

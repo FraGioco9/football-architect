@@ -11,8 +11,8 @@ import {runSpinDecayDiagnostics} from '/__fa_match_engine__/spin-decay-qa.mjs';
 import {reviewSpinRetentionEvidence} from '/__fa_match_engine__/spin-retention-evidence.mjs';
 import {reviewLiftInputContributions} from '/__fa_match_engine__/lift-input-qa.mjs';
 import {runContactImpactDiagnostics} from '/__fa_match_engine__/contact-impact-qa.mjs';
-import {mountControlledActionLabs} from '/__fa_match_engine__/action-labs.mjs';
-import {mountControlledMovementLabs} from '/__fa_match_engine__/movement-labs.mjs';
+import {mountControlledActionLabs,createControlledActionLab} from '/__fa_match_engine__/action-labs.mjs';
+import {mountControlledMovementLabs,createControlledMovementLab} from '/__fa_match_engine__/movement-labs.mjs';
 import {prepareFlightPlaybackPair,sampleFlightPlaybackPair,flightPlaybackWallTime} from '/__fa_match_engine__/flight-playback.mjs';
 
 const byId = id => document.getElementById(id);
@@ -24,6 +24,26 @@ let physicsTickSnapshot = null;
 let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
 let playersShown=false;
 let inspectedPlayerId=null;
+// All visible scenes use the existing pitch/elevation/transport, never dialogs.
+let activeScene=null,activeLab=null;
+const inlinePhysics=s=>Object.freeze({
+ tick:s.physicsTick??s.tick,
+ time:s.timeS??(s.physicsTick??s.tick)*FIXED_DT,
+ ball:s.ball,nearGround:toGroundClearance(s.ball.position.z)<=0.02
+});
+function syncScenarioSurface(){
+ const inline=activeScene!==null;
+ byId('me-inline-side-control').hidden=!inline;
+ byId('me-inline-observation').hidden=!inline;
+ byId('advanced-settings').hidden=inline;
+ if(inline)byId('advanced-settings').open=false;
+ byId('players-toggle').hidden=inline;
+ byId('player-controls').hidden=inline||!playersShown;
+}
+function disposeInline(){
+ if(activeLab){activeLab.dispose();activeLab=null;}
+ activeScene=null;
+}
 
 const say = (message, error = false) => {
   byId('status').textContent = message;
@@ -93,6 +113,27 @@ function currentInput() {
   return data;
 }
 function restart() {
+  if(activeScene){
+    const {kind,id}=activeScene,side=byId('me-inline-side').value;
+    if(!['home','away'].includes(side))
+      throw new TypeError('Original small-sided situation requires HOME/AWAY');
+    const next=kind==='action'?
+      createControlledActionLab(rapier,id,{shotSide:side}):
+      createControlledMovementLab(rapier,id,{side});
+    if(activeLab)activeLab.dispose();
+    if(engine){engine.dispose();engine=null;}
+    activeLab=next;
+    physicsTickSnapshot=inlinePhysics(next.snapshot());
+    history=[physicsTickSnapshot];
+    accumulator=0;playing=false;inspectedPlayerId=null;
+    byId('player-inspect-choice').value='';
+    syncScenarioSurface();
+    say('Ready · '+(kind==='action'?next.spec.title:next.scene.spec.title)+
+      ' · '+side.toUpperCase()+' · original Rapier · DEV only');
+    render();
+    return;
+  }
+  if(activeLab){activeLab.dispose();activeLab=null;}
   const next = createEngine(rapier, currentInput());
   if (engine) engine.dispose();
   engine = next;
@@ -104,18 +145,63 @@ function restart() {
   playing = false;
   byId('compare-result').textContent = '';
   byId('compare-result').hidden = true;
+  syncScenarioSurface();
   say('Ready · ' + ({drop:'Ball Drop',launch:'Ball Launch',roll:'Ball Roll (Grass)',bounce:'Ball Bounce (2 m)'}[engine.scenario.preset]));
   render();
 }
 function advance() {
+  if(activeLab){
+    const old=activeLab.snapshot();
+    if(activeScene.kind==='action'&&old.refereeEvidence?.lastEvent){
+      playing=false;return;
+    }
+    const observed=activeLab.step();
+    const snapshot=inlinePhysics(observed);
+    physicsTickSnapshot=snapshot;
+    history.push(snapshot);
+    if(history.length>1400)history.shift();
+    if(activeScene.kind==='action'&&observed.refereeEvidence?.lastEvent){
+      playing=false;
+      say('Observed physical '+observed.refereeEvidence.lastEvent.kind+
+        ' · dead ball · Reset for another exercise');
+    }
+    return;
+  }
   const snapshot = engine.step();
   physicsTickSnapshot = snapshot;
   playerSnapshot=playerWorld.step(snapshot.ball.position);
   history.push(snapshot);
   if (history.length > 1400) history.shift();
 }
-function play() { playing = true; say('Running'); }
+function play() {
+  if(activeScene?.kind==='action'&&activeLab?.snapshot().refereeEvidence?.lastEvent){
+    playing=false;say('Dead ball · Reset to retry the real Rapier exercise');
+    return;
+  }
+  playing = true; say('Running');
+}
 function pause() { playing = false; say('Paused'); }
+function drawInlinePlayers(ctx,X,Y){
+ const frame=activeLab.snapshot();
+ const all=frame.observedMovementPlayers??frame.players;
+ const focus=activeScene.kind==='action'?new Set(activeLab.focus):null;
+ for(const p of all){
+  if(focus&&!focus.has(p.id))continue;
+  const x=X(p.x),y=Y(p.y);
+  ctx.beginPath();ctx.arc(x,y,p.role==='goalkeeper'?8:7,0,Math.PI*2);
+  ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
+  ctx.fill();ctx.strokeStyle=p.role==='goalkeeper'?'#fbdfaa':'#183f36';
+  ctx.lineWidth=p.role==='goalkeeper'?2.2:1.5;ctx.stroke();
+  if(Number.isFinite(p.facingRad)){
+   ctx.beginPath();ctx.moveTo(x,y);
+   ctx.lineTo(x+Math.cos(p.facingRad)*11,y+Math.sin(p.facingRad)*11);
+   ctx.strokeStyle='#142e29';ctx.lineWidth=1.6;ctx.stroke();
+  }
+  ctx.fillStyle='#102d2e';ctx.textAlign='center';
+  ctx.textBaseline='middle';ctx.font='bold 9px system-ui';
+  ctx.fillText(p.id.split('-')[1],x,y);
+ }
+}
 function drawPlayers(ctx,X,Y){
   for(const p of playerSnapshot.players){
     const x=X(p.x),y=Y(p.y),pressing=Object.values(playerSnapshot.pressers).includes(p.id);
@@ -164,7 +250,8 @@ function renderPlayerReadout(){
 function topDown() {
   const c = pitch.getContext('2d'), w = pitch.width, h = pitch.height;
   const {X, Y} = drawPitchMarkings(c, w, h);
-  if(playersShown)drawPlayers(c,X,Y);
+  if(activeLab)drawInlinePlayers(c,X,Y);
+  else if(playersShown)drawPlayers(c,X,Y);
   if (!physicsTickSnapshot) return;
   c.strokeStyle = '#ffda84'; c.lineWidth = 2.6; c.beginPath();
   history.forEach((s, i) => {
@@ -210,9 +297,10 @@ function sideView() {
 function render() {
   if (!physicsTickSnapshot) return;
   topDown(); sideView();
-  if(playersShown)renderPlayerReadout();
+  if(playersShown&&!activeLab)renderPlayerReadout();
   const s = physicsTickSnapshot, p = s.ball.position, v = s.ball.velocity;
-  byId('tick').textContent = fmt(s.time) + ' s';
+  byId('tick').textContent = activeLab?
+    'Tick '+s.tick+' · '+fmt(s.time)+' s':fmt(s.time)+' s';
   byId('height').textContent = fmt(toGroundClearance(p.z)) + ' m';
   byId('position').textContent = [p.x, p.y, toGroundClearance(p.z)].map(fmt).join(', ');
   byId('velocity').textContent = [v.x, v.y, v.z].map(fmt).join(', ');
@@ -221,13 +309,31 @@ function render() {
   // LAB-05: display measured first rebound only after observing its apex.
   // Do not conflate the measured simulation with FIFA turf certification.
   const bounceResult=byId('bounce-result');
-  const firstPeak=engine.scenario.preset==='bounce'
+  const firstPeak=!activeLab&&engine.scenario.preset==='bounce'
     ? measureBounceHistory(history).firstReboundHeightM : null;
   bounceResult.hidden=firstPeak===null;
   if(firstPeak!==null) {
     const {min,max}=FIFA_TURF_QUALITY_PRO_REFERENCE_M;
     bounceResult.textContent='1st rebound '+fmt(firstPeak)+' m'+
       (firstPeak>=min&&firstPeak<=max?' · reference range':' · outside reference');
+  }
+  if(activeLab){
+    const f=activeLab.snapshot();
+    const detail=activeScene.kind==='action'?
+      '· '+f.genuinePhysicalPlayerCount+' real physical players'+
+      ' · '+f.eventCount+' source events'+
+      (f.action?' · '+f.action.team.toUpperCase()+' '+
+       f.action.action.toUpperCase()+' native shoe/impulse':'')+
+      (f.refereeEvidence?.lastEvent?' · '+
+       f.refereeEvidence.lastEvent.kind.toUpperCase()+' verified crossing':'')+
+      (f.matchTimeline?' · provisional '+
+       f.matchTimeline.provisionalScore.home+'–'+
+       f.matchTimeline.provisionalScore.away:''):
+      '· movement '+(f.focusId??'')+' · real Rapier tick '+f.tick+
+      (f.readout?.activeNativeBodyPairs?
+       ' · body pairs '+f.readout.activeNativeBodyPairs.length:'');
+    byId('me-inline-observation').textContent=detail+
+      ' · no official result';
   }
 }
 // ME-PHYS-03 diagnostic simulations are independent of the active lab engine.
@@ -1513,7 +1619,7 @@ function compareReplay() {
   } catch (error) { say(error.message, true); }
 }
 function frame(now) {
-  if (engine && playing) {
+  if ((engine||activeLab) && playing) {
     accumulator += Math.min(Math.max(0, now - lastFrame) / 1000, 0.08) * Number(byId('speed').value);
     let iterations = 0;
     while (accumulator >= FIXED_DT && iterations < 24) {
@@ -1578,8 +1684,10 @@ function setupDropdowns() {
         launchSelectedScenario(chosen);
         return;
       }
+      const wasScene=root.dataset.meDropdown==='preset'&&
+        root.dataset.selectedScene!==undefined;
       if(root.dataset.meDropdown==='preset')delete root.dataset.selectedScene;
-      const changed=input.value!==chosen;
+      const changed=input.value!==chosen||wasScene;
       input.value=chosen;
       update();close(true);
       if(changed)input.dispatchEvent(new Event('change',{bubbles:true}));
@@ -1650,7 +1758,7 @@ byId('player-inspect-choice').addEventListener('change',()=>{
  topDown();
 });
 pitch.addEventListener('click',event=>{
- if(!playersShown||!physicsTickSnapshot)return;
+ if(activeLab||!playersShown||!physicsTickSnapshot)return;
  const rect=pitch.getBoundingClientRect();
  if(rect.width<=0||rect.height<=0||
    event.clientX<rect.left||event.clientX>rect.right||
@@ -1666,10 +1774,26 @@ pitch.addEventListener('click',event=>{
  renderPlayerReadout();
  topDown();
 });
-byId('preset').addEventListener('change', () => { loadPreset(); if (rapier) { try { restart(); } catch (e) { say(e.message, true); } } });
+byId('preset').addEventListener('change', () => {
+  disposeInline();loadPreset();
+  if (rapier) { try { restart(); } catch (e) { say(e.message, true); } }
+});
+byId('me-inline-side').addEventListener('change',()=>{
+  if(!activeScene||!rapier)return;
+  try{restart();}catch(e){playing=false;say(e.message,true);}
+});
 byId('play').addEventListener('click', play);
 byId('pause').addEventListener('click', pause);
-byId('step').addEventListener('click', () => { playing = false; advance(); render(); say('Paused · advanced one tick'); });
+byId('step').addEventListener('click', () => {
+  playing=false;
+  const before=physicsTickSnapshot?.tick;
+  advance();render();
+  if(activeScene?.kind==='action'&&activeLab?.snapshot().refereeEvidence?.lastEvent)
+    say('Observed real full-ball crossing · dead ball · Reset to retry');
+  else say(physicsTickSnapshot?.tick===before?
+    'No additional physical tick · Reset to retry':
+    'Paused · advanced one tick');
+});
 byId('reset').addEventListener('click', () => { try { restart(); } catch (e) { say(e.message, true); } });
 byId('apply').addEventListener('click', () => { try { restart(); } catch (e) { say(e.message, true); } });
 byId('compare').addEventListener('click', compareReplay);
@@ -1728,21 +1852,27 @@ function launchSelectedScenario(value){
  const choice=byId(prefix+'-choice');
  if(![...choice.options].some(x=>x.value===id))
   throw new RangeError('Unknown source LAB scenario');
- choice.value=id;
- choice.dispatchEvent(new Event('change',{bubbles:true}));
- byId(prefix+'-open').click();
+ // Existing pitch and elevation plus main Play/Pause/Step/Reset.
+ // Do NOT open the legacy modal for a visible situation.
+ playing=false;
+ activeScene={kind,id};
+ try{restart();}catch(error){
+  disposeInline();restoreOriginalScenario();
+  say('LAB could not start: '+error.message,true);
+  try{restart();}catch{}
+ }
 }
 setupUnifiedScenarioMenu();
 setupDropdowns();
 setupNumericFields();
 mountControlledActionLabs({
  getRapier:()=>rapier,
- onOpen:()=>{playing=false;if(engine){engine.dispose();engine=null;}},
+ onOpen:()=>{playing=false;disposeInline();if(engine){engine.dispose();engine=null;}},
  onClose:()=>{restoreOriginalScenario();if(rapier)try{restart();}catch(e){say(e.message,true);}}
 });
 mountControlledMovementLabs({
  getRapier:()=>rapier,
- onOpen:()=>{playing=false;if(engine){engine.dispose();engine=null;}},
+ onOpen:()=>{playing=false;disposeInline();if(engine){engine.dispose();engine=null;}},
  onClose:()=>{restoreOriginalScenario();if(rapier)try{restart();}catch(e){say(e.message,true);}}
 });
 loadPreset();
@@ -1753,8 +1883,12 @@ try {
   rapier = await initializeRapier(moduleNamespace);
   restart();
   for (const id of controls) byId(id).disabled = false;
-  if(location.hash==='#actions')byId('action-labs-open').click();
-  if(location.hash==='#movement')byId('movement-labs-open').click();
+  if(location.hash==='#actions'){
+    byId('preset-options').querySelector('[data-value="action:keeper-1v1"]')?.click();
+  }
+  if(location.hash==='#movement'){
+    byId('preset-options').querySelector('[data-value="movement:post-pass"]')?.click();
+  }
 } catch (error) {
   say('Physics library failed to initialize: ' + error.message + '. Run npm --prefix match-engine ci locally.', true);
 }
