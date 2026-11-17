@@ -572,6 +572,13 @@
     try{
       clubs=new Map(data.participants.map(club=>[international?rules.clubKey(club):club.clubId,club]));
       if(clubs.size!==capacity)throw Error('Invalid cup participants');
+      // The entrants-only projection can arrive after an independently published
+      // draw. Preserve that valid draw for this exact world revision.
+      const source=window.faWorldState?.get?.();
+      const key=[context.selectedSeason,definition.id,source?.world?.generation,source?.world?.revision].join(':');
+      if(data.entrantsOnly===true&&publishedLookup&&publishedKey===key&&rounds){
+        render();return;
+      }
       const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
       const current=data.provenance?.kind==='authoritative'?data.currentMatchday:calendar?rules.currentFixtureChoice(definition,calendar,window.faDevWorldClockSnapshot||window.faWorldClockSnapshot):null;
       window.faFixtures.prepare(data.fixtures,{currentMatchday:current,postseason:data.postseason||[],definition})();
@@ -659,8 +666,10 @@
           afterExtraTime:false,penalties:null};
       });
       const initialData=window.faCompetitionContext?.seasonData;
-      const hasInitialScores=initialData?.provenance?.kind==='authoritative'&&initialData.season===season;
-      const participants=international&&!hasInitialScores?await publishedCupParticipants(games):null;
+      const hasInitialScores=initialData?.provenance?.kind==='authoritative'&&initialData.season===season&&initialData.entrantsOnly!==true;
+      const confirmed=initialData?.provenance?.kind==='authoritative'&&initialData.season===season&&initialData.entrantsOnly===true;
+      const participants=international&&!hasInitialScores?
+        confirmed?initialData.participants:await publishedCupParticipants(games):null;
       // The catalogue read can outlive an admin advance, source toggle, or
       // route change. Fence the commit AFTER every awaited dependency.
       const latest=window.faWorldState?.get?.();
@@ -675,7 +684,7 @@
       // Already scored official seasons are never overwritten, even if the
       // authoritative season hydrated while the manifest request was pending.
       const scored=window.faCompetitionContext?.seasonData;
-      const hasOfficialScores=scored?.provenance?.kind==='authoritative'&&scored.season===season;
+      const hasOfficialScores=scored?.provenance?.kind==='authoritative'&&scored.season===season&&scored.entrantsOnly!==true;
       const commit=hasOfficialScores?null:window.faFixtures.prepare(games,{currentMatchday:null,postseason:[],definition,participants});
       publishedSeason=String(season);publishedKey=key;publishedIds=new Set(league.map(f=>f.matchId));
       publishedLookup=lookup;

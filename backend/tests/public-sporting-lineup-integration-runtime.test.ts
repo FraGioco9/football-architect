@@ -46,6 +46,37 @@ async function prepareAndPublish(){
  world=(await publishInternationalCalendarLineupV1(db,session,cmd(),'lp-publish-00001-v2',now)).world;
 }
 describe('#613 new V2 public competition, club, calendar projections (unrouted)',()=>{
+ it('shows confirmed entrants before calendar, independently for domestic and international tables',async()=>{
+  world=(await prepareSeason(db,session,cmd(),'lp-entrants-prepare-0001',await loadApprovedSnapshot(),now)).world;
+  const preparing=await readPublicSportingSeasonLineupV1(db,'IT-1',1);
+  expect(preparing).toMatchObject({status:'empty',reason:'calendar-unpublished',data:null});
+  world=(await initializeAdministrativeEvents(db,session,cmd(),'lp-entrants-init-0001',now)).world;
+  world=(await advanceAdministrativeClockLineupV1(db,session,'start',cmd(),'lp-entrants-start-0001',now)).world;
+  expect((await readPublicSportingSeasonLineupV1(db,'int-1',1)).status).toBe('empty');
+  world=(await completeConfirmationEvent(db,session,{...cmd(),eventId:'domestic:entrants'},
+   'lp-entrants-confirm-domestic-0001',now)).world;
+  const domestic=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
+  expect(domestic).toMatchObject({status:'partial',reason:null,
+   provenance:{kind:'authoritative',resultAuthority:'confirmed-entrants-v1'},
+   data:{season:1,entrantsOnly:true,seasonState:{day:1,phase:'active'}}});
+  expect(domestic.data.participants).toHaveLength(16);
+  expect(Object.keys(domestic.data).sort()).toEqual(['entrantsOnly','participants','rulesVersion','season','seasonState']);
+  expect((await readPublicSportingSeasonLineupV1(db,'int-1',1)).status).toBe('empty');
+  world=(await completeConfirmationEvent(db,session,{...cmd(),eventId:'international:entrants'},
+   'lp-entrants-confirm-international-0001',now)).world;
+  const international=await readPublicSportingSeasonLineupV1(db,'int-1',1) as any;
+  expect(international).toMatchObject({status:'partial',data:{entrantsOnly:true},
+   provenance:{resultAuthority:'confirmed-entrants-v1'}});
+  expect(international.data.participants).toHaveLength(24);
+  expect(international.data.participants.every((id:string)=>typeof id==='string')).toBe(true);
+  world=(await advanceAdministrativeClockLineupV1(db,session,'advance',cmd(),'lp-entrants-day2-0001',now)).world;
+  world=(await stageDomesticCalendar(db,session,cmd(),'lp-entrants-domestic-draw-0001',now)).world;
+  const still=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
+  expect(still.data).toMatchObject({entrantsOnly:true,seasonState:{day:2}});
+  expect(still.data.fixtures).toBeUndefined();
+  const calendars=(await db.prepare('SELECT COUNT(*) AS n FROM season_calendars').first()) as {n:number}|null;
+  expect(calendars?.n).toBe(0);
+ },60000);
  it('reads published V2-only days and next day without scoring future fixtures',async()=>{
   await prepareAndPublish();
   expect(world.day).toBe(3);
