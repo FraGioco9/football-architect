@@ -272,7 +272,7 @@ test('COMP-STATS-643: missing name shows numeric identity; duplicate club/player
  const r=fixture(),c=supplied('int-1',24);c.seasonData.statistics.players=[record];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  assert.ok(contents(r.panel).includes('#58'));
- assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/58').length,1);
+ assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/58').length,2,'scorer qualifies in Goals and Starts, without duplicate links within a card');
  for(const bad of [{playerId:'58'},{playerId:0},{starts:2},{minutes:null},{goals:-1},{name:''}]){
   const f=fixture(),next=supplied('int-1',24);next.seasonData.statistics.players=[{...record,...bad}];
   f.api.mount(f.panel,next);assert.ok(contents(f.panel).includes('Statistics are unavailable.'));
@@ -281,14 +281,14 @@ test('COMP-STATS-643: missing name shows numeric identity; duplicate club/player
  assert.ok(contents(dup.panel).includes('Statistics are unavailable.'));
  // The same player may have separate frozen contribution rows after a club change.
  const changed=fixture();c.seasonData.statistics.players=[record,{...record,clubKey:'IT-2'}];changed.api.mount(changed.panel,c);
- buttons(changed)[2].emit('click');assert.equal(changed.nodes().filter(n=>n.tagName==='li').length,2);
+ buttons(changed)[2].emit('click');assert.equal(changed.nodes().filter(n=>n.tagName==='li').length,4,'two club-specific records qualify in Goals and Starts');
 });
 
 test('COMP-STATS-643: circular face photos use generic player paths and an honest missing-photo silhouette',()=>{
  const r=fixture(),c=supplied('int-1',24);
  c.seasonData.statistics.players=[{playerId:58,name:'Recorded Player',clubKey:'IT-1',appearances:1,starts:1,minutes:90,goals:1}];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
- const portraits=byClass(r,'fa-dev-stats-player-portrait');assert.equal(portraits.length,1);
+ const portraits=byClass(r,'fa-dev-stats-player-portrait');assert.equal(portraits.length,3,'recorded scorer appears in Goals, Starts and Minutes');
  for(const portrait of portraits){
   assert.equal(portrait.tagName,'span');assert.equal(portrait.href,undefined);
   assert.equal(portrait.dataset.portraitState,'loading');
@@ -305,7 +305,7 @@ test('COMP-STATS-643: circular face photos use generic player paths and an hones
 
 
 test('COMP-STATS-643: player rows have no hover titles; metric-sized skeletons reserve name, club and value slots',()=>{
- const r=fixture(),c=supplied('it-1',16);
+ const r=fixture(),c=supplied('IT-1',16);
  c.seasonData.statistics.players=[{playerId:58,name:'Recorded Player',clubKey:'IT-1',appearances:1,starts:1,minutes:90,goals:1}];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  const labels=byClass(r,'fa-dev-stats-player-label');
