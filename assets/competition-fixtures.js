@@ -31,6 +31,16 @@
   let hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
   let currentMatchday=null,rounds=null,postseason=[],selected=navigation.get().matchday;
   let publishedSeason=null,publishedKey=null,pendingKey=null,fetchSequence=0,publishedIds=new Set(),publishedLookup=null,publishedAbort=null;
+  // Verified published match IDs are scoped by competition, season, source
+  // revision and public world revision. Switching back within one unchanged
+  // world must not fetch the same collection again.
+  const publishedCache=new Map();
+  const publishedWorldKey=(season,snapshot)=>[season,definition.id,
+    snapshot?.sourceRevision,snapshot?.world?.generation,snapshot?.world?.revision].join(':');
+  const rememberPublished=(key,value)=>{
+    publishedCache.delete(key);publishedCache.set(key,value);
+    while(publishedCache.size>8)publishedCache.delete(publishedCache.keys().next().value);
+  };
   // Match navigation requires both finished UI hydration and a fully read
   // official collection. A pending request must not expose old verified IDs.
   const matchLinksReady=()=>document.documentElement.dataset.faStandingsLoading!=='true'&&pendingKey===null;
@@ -43,7 +53,7 @@
        source?.source!=='authoritative'||source.worldStatus!=='ready'||!world||
        expectedSeason!==Number(navigation.get().season)||
        publishedSeason!==String(expectedSeason)||
-       publishedKey!==[expectedSeason,definition.id,world.generation,world.revision].join(':')||
+       publishedKey!==publishedWorldKey(expectedSeason,source)||
        !publishedLookup)return null;
     if(game.phaseId==='league'&&typeof game.sourceFixtureId==='string'){
       const official=publishedLookup.bySource[game.sourceFixtureId];
@@ -314,8 +324,7 @@
       if(international&&isPostseason){
         const phase=definition.rules.phases.find(p=>p.id===selectedChoice.phaseId),legs=Math.max(...phase.ties.map(t=>t.legs));
         const publishedWorld=window.faWorldState?.get?.();
-        const reservedKey=[navigation.get().season,definition.id,
-          publishedWorld?.world?.generation,publishedWorld?.world?.revision].join(':');
+        const reservedKey=publishedWorldKey(navigation.get().season,publishedWorld);
         const showPublishedReservations=publishedWorld?.source==='authoritative'&&
           publishedWorld.worldStatus==='ready'&&publishedSeason===navigation.get().season&&
           publishedKey===reservedKey&&!!publishedLookup;
@@ -441,7 +450,7 @@
     const root=document.getElementById('app-postseason-bracket');
     if(!root?.querySelectorAll)return;
     const source=window.faWorldState?.get?.(),world=source?.world,route=navigation.get();
-    const liveKey=[route.season,definition.id,world?.generation,world?.revision].join(':');
+    const liveKey=publishedWorldKey(route.season,source);
     const authorized=matchLinksReady()&&source?.source==='authoritative'&&source.worldStatus==='ready'&&
       route.season===publishedSeason&&publishedKey===liveKey&&!!publishedLookup;
     const lang=bracketLabels[document.documentElement.lang]||bracketLabels.en;
@@ -578,7 +587,7 @@
       // world-calendar publication. A verified, independently published draw
       // must survive an unrelated empty/late season-read notification.
       const source=window.faWorldState?.get?.();
-      const key=[context?.selectedSeason,definition.id,source?.world?.generation,source?.world?.revision].join(':');
+      const key=publishedWorldKey(context?.selectedSeason,source);
       if(source?.source==='authoritative'&&source.worldStatus==='ready'&&
          publishedLookup&&publishedKey===key&&publishedSeason===String(context?.selectedSeason)&&rounds){
         render();return;
@@ -594,7 +603,7 @@
       // The entrants-only projection can arrive after an independently published
       // draw. Preserve that valid draw for this exact world revision.
       const source=window.faWorldState?.get?.();
-      const key=[context.selectedSeason,definition.id,source?.world?.generation,source?.world?.revision].join(':');
+      const key=publishedWorldKey(context.selectedSeason,source);
       if(data.entrantsOnly===true&&publishedLookup&&publishedKey===key&&rounds){
         render();return;
       }
@@ -659,8 +668,37 @@
     if(!['standings','fixtures','postseason'].includes(route.view)||source?.source!=='authoritative'||source?.worldStatus!=='ready'||!source.world||
        !Number.isSafeInteger(season)||season<1||context?.selectedSeason!==season||
        season>source.world.seasonNumber)return;
-    const key=[season,definition.id,source.world.generation,source.world.revision].join(':');
+    const key=publishedWorldKey(season,source);
     if(key===publishedKey||key===pendingKey)return;
+    const cacheKey=[source.sourceRevision,key].join(':');
+    const cached=publishedCache.get(cacheKey);
+    if(cached){
+      // A previous season request may still be in flight. Fence it before
+      // restoring the validated collection, keeping native link IDs exact.
+      fetchSequence++;pendingKey=null;
+      if(cached.missing){
+        publishedSeason=null;publishedKey=key;publishedIds.clear();publishedLookup=null;
+        render();syncKnockoutLinks();notifyPublishedMatchLinks();
+        return;
+      }
+      try{
+        const scored=window.faCompetitionContext?.seasonData;
+        const hasOfficialScores=scored?.provenance?.kind==='authoritative'&&scored.season===season&&scored.entrantsOnly!==true;
+        const commit=hasOfficialScores?null:window.faFixtures.prepare(cached.games,{
+          currentMatchday:null,postseason:[],definition,participants:cached.participants
+        });
+        publishedSeason=String(season);publishedKey=key;
+        publishedIds=new Set(cached.ids);publishedLookup=cached.lookup;
+        if(commit)commit();else render();
+        notifyPublishedMatchLinks();syncKnockoutLinks();
+        return;
+      }catch{
+        // A changed presentation contract cannot reuse a stored collection;
+        // retry its authoritative endpoint rather than displaying stale IDs.
+        publishedCache.delete(cacheKey);
+        publishedKey=null;publishedLookup=null;publishedIds.clear();
+      }
+    }
     pendingKey=key;const seq=++fetchSequence;
     const requestController=typeof AbortController==='function'?new AbortController():null;
     publishedAbort=requestController;
@@ -670,7 +708,10 @@
     try{
       const response=await fetch('/api/matches/seasons/'+season+'/competitions/'+definition.id,
        {credentials:'omit',cache:'no-store',redirect:'error',signal:requestController?.signal});
-      if(response.status===404){if(seq===fetchSequence)publishedKey=key;return;}
+      if(response.status===404){
+        if(seq===fetchSequence){publishedKey=key;rememberPublished(cacheKey,{missing:true});}
+        return;
+      }
       if(!response.ok)throw Error('Published fixtures unavailable');
       const data=await response.json(),count=international?72:240;
       if(data?.schemaVersion!==1||data.providerId!=='authoritative-world'||data.status!=='published'||
@@ -726,7 +767,7 @@
       // route change. Fence the commit AFTER every awaited dependency.
       const latest=window.faWorldState?.get?.();
       if(seq!==fetchSequence||latest?.source!=='authoritative'||latest.worldStatus!=='ready'||
-         key!==[season,definition.id,latest?.world?.generation,latest?.world?.revision].join(':')||
+         key!==publishedWorldKey(season,latest)||
          navigation.get().season!==String(season)||
          window.faCompetitionContext?.selectedSeason!==season)return;
       // Keep real sporting results: never overwrite them with a zero-score draw.
@@ -741,6 +782,9 @@
       publishedSeason=String(season);publishedKey=key;publishedIds=new Set(league.map(f=>f.matchId));
       publishedLookup=lookup;
       if(commit)commit();else render();
+      rememberPublished(cacheKey,{
+        ids:league.map(f=>f.matchId),games,lookup,participants
+      });
       notifyPublishedMatchLinks();
       syncKnockoutLinks();
     }catch{
@@ -766,8 +810,7 @@
       return;
     }
     // Remove old world identities from every consumer before the next read.
-    const activeKey=[navigation.get().season,definition.id,
-      snapshot.world.generation,snapshot.world.revision].join(':');
+    const activeKey=publishedWorldKey(navigation.get().season,snapshot);
     if(publishedKey!==null&&publishedKey!==activeKey){
       publishedSeason=null;publishedKey=null;publishedLookup=null;
       publishedIds.clear();fetchSequence++;
@@ -791,7 +834,12 @@
     void readPublishedFixtures();
   });
   window.addEventListener('fa:competition-context-change',contextChanged);
-  window.addEventListener('fa:source-change',()=>{publishedSeason=null;publishedIds.clear();publishedLookup=null;publishedKey=null;pendingKey=null;fetchSequence++;notifyPublishedMatchLinks();syncKnockoutLinks();if(window.faCompetitionContext?.seasonData?.provenance?.kind!=='dev')void readPublishedFixtures();});
+  window.addEventListener('fa:source-change',()=>{
+    publishedCache.clear();
+    publishedSeason=null;publishedIds.clear();publishedLookup=null;publishedKey=null;pendingKey=null;
+    fetchSequence++;notifyPublishedMatchLinks();syncKnockoutLinks();
+    if(window.faCompetitionContext?.seasonData?.provenance?.kind!=='dev')void readPublishedFixtures();
+  });
   window.addEventListener('fa:world-clock-snapshot',event=>{
     if(!international||window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')return;
     const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);

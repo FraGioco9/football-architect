@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {existsSync,mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,readdirSync,unlinkSync} from "node:fs";
 import {join} from "node:path";
 import {tmpdir} from "node:os";
-import {repositoryRoot,planPublicFiles,assertPublicArtifact,stagePublicArtifact} from "../tools/publication-guard.mjs";
+import {repositoryRoot,planPublicFiles,assertPublicArtifact,stagePublicArtifact,isAllowlistedPublicPath,publicRequestFile} from "../tools/publication-guard.mjs";
 
 test("PLAYER-AUTH public artifact includes only the approved account pages and scripts",()=>{
  const files=planPublicFiles();
@@ -234,4 +234,13 @@ test('A03-04D: public staging includes only the pure classic route core, never i
   unlinkSync(core);
   assert.throws(()=>assertPublicArtifact(target),/manifest|missing/i);
  }finally{rmSync(root,{recursive:true,force:true})}
+});
+
+test('PERF-API-657: compact manifest is a required public asset at its canonical route',()=>{
+ const path='competitions/_shared/compact.json';
+ assert.equal(isAllowlistedPublicPath(path),true);
+ assert.equal(publicRequestFile('/'+path),path);
+ assert.ok(planPublicFiles().includes(path));
+ assert.equal(isAllowlistedPublicPath('competitions/_shared/compact-broken.json'),false);
+ assert.equal(isAllowlistedPublicPath('competitions/_shared/not-allowed.json'),false);
 });
