@@ -40,6 +40,6 @@ Default coverage: Dashboard, Calendar, Explore Clubs, Club Overview, Fixtures an
 node tools/perf-api-657-paired-local.mjs --before=003806fd7bd6a9b51ef1811f1e3b255eabcf9c8d --after=30bd215f41531326676e4c28f56f2a7546125b7b --snapshot="$snapshot" --runs=3 --routes=/clubs,/dashboard,/calendar
 ```
 
-Redacted reports are written to `int24-browser-artifacts/perf-api-657-*.json`. Review `pairs.wireComparable` and individual `status: wire-comparable` rows before claiming a transfer reduction. Missing browser timing, 4xx/5xx on required endpoints, unprepared seasons and mismatched world states are not a performance pass. Counts include allowlisted static JSON and read-contract modules, but not every image/CSS/font.
+Redacted reports are written to `int24-browser-artifacts/perf-api-657-*.json`. Review `pairs.wireComparable` and individual `status: wire-comparable` rows before claiming a transfer reduction. Missing browser timing, 4xx/5xx on required endpoints, unprepared seasons and mismatched world states are not a performance pass. Counts include allowlisted static JSON and read-contract modules (including Calendar's authoritative reader and season validator, the shared compact reader and Competition model), but not every image/CSS/font.
 
 After reviewing the reports, the snapshot can be deleted locally by its exact path. This is a diagnostic activity only: it does not advance/reset the world, apply migrations, authenticate Admin users, write any remote D1, merge PRs or deploy.

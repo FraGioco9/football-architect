@@ -56,6 +56,7 @@ export const PERF_CAPTURE_SCHEMA_VERSION=2;
 // Arbitrary CSS, images, fonts and other bundles are outside this inventory.
 export const TRACKED_STATIC_MODULES=Object.freeze([
  '/assets/competition-model.js','/assets/club-competition-catalogue.mjs',
+ '/assets/authoritative-calendar.mjs','/assets/authoritative-season.mjs',
  '/assets/club-fixtures-controller.mjs','/assets/club-fixtures-source.mjs',
  '/assets/club-history-source.mjs','/assets/club-public-read-cache.mjs',
  '/assets/competition-rules-view.js','/assets/competition-tabs.js'

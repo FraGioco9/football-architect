@@ -160,6 +160,7 @@ test('PERF-API-657 Club audit uses actual tab links and season options, without 
 test('PERF-API-657 measures explicitly scoped module transport separately from API and catalogue reads',()=>{
  assert.equal(PERF_CAPTURE_SCHEMA_VERSION,2);
  for(const path of ['/assets/competition-model.js','/assets/club-competition-catalogue.mjs',
+  '/assets/authoritative-calendar.mjs','/assets/authoritative-season.mjs',
   '/assets/club-fixtures-controller.mjs','/assets/club-history-source.mjs',
   '/assets/competition-rules-view.js','/assets/competition-tabs.js']){
   assert.ok(TRACKED_STATIC_MODULES.includes(path),path);
