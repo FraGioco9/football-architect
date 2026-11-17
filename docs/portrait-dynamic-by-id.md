@@ -1,48 +1,46 @@
-# Football Architect — One-ID direct portrait generation and QA (#646)
+# Football Architect — One-ID V4.1 automatic image generation (#646)
 
-**Edit only the numeric `PLAYER_ID` inside the prompt below.** The selected workflow is **one chat, one user message**: read the versioned V4.1 identity using GitHub (Cloudflare DEV D1 only when needed), call the native original text-to-image engine once, and automatically attempt QA after a real candidate exists. No second prompt or separate chat is required.
+**Utilizzo:** in una normale chat del progetto Football Architect, con i plugin GitHub e Cloudflare collegati e ImageGen disponibile. Cambia **solo** il numero in `PLAYER_ID`. L'assistente deve recuperare l'identità canonica, chiamare direttamente ImageGen e valutare l'immagine restituita nella **stessa chat**, senza richiedere un secondo messaggio.
 
-**Important limitation:** this orchestrates generation but **does not guarantee** that an original text-to-image operation is available. Earlier combined prompts encountered missing-edit-target errors. If the generator still fails or demands an image input, return `GENERATION_UNAVAILABLE / NO CANDIDATE` without requesting an upload or fabricating image QA.
+**Important:** previous combined orchestration prompts failed because the generator requested an image target instead of creating a new image. This revision isolates the **visual payload** from metadata, connector instructions and QA within the workflow. It is a diagnostic improvement, **not a guarantee of image-tool routing**. If ImageGen cannot create an image, return `GENERATION_UNAVAILABLE / NO CANDIDATE`; do not ask the user to upload a photo, fabricate QA or silently switch workflows.
 
-The 23 frozen image-only identities in `docs/portrait-image-prompts-all.md` are reused exactly. Other IDs require verified frozen initial physical attributes and the real version-pinned V4.1 exporter; otherwise fail closed. Appearance is young male, approximately **21–25** years old. No source photos, Production, D1 writes, image publication, merges or deployments.
+**Sources:** `FraGioco9/football-architect`, Draft/HOLD PR #648. Reuse frozen entries from `docs/portrait-image-prompts-all.md` exactly; for other IDs, use only read-only DEV D1 data with auditable FROZEN INITIAL stat provenance and the actual V4.1 exporter, or fail closed. The image-only visual description preserves the immutable facial fingerprint and uses the presentation cue **young male approximately 21–25 years old**.
 
-## Prompt universale — copia tutto, cambia soltanto PLAYER_ID
+## Reusable prompt — edit ONLY the one ID
 
 ```text
-# FOOTBALL ARCHITECT — V4.1 ONE-ID PORTRAIT: LOOK UP → GENERATE → QA
-
+# FOOTBALL ARCHITECT — ONE-ID V4.1 ORIGINAL PORTRAIT
 PLAYER_ID = 44
 
 [$github](app://connector_76869538009648d5b282a4bb21c3d157)
 [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
 
-Change ONLY the numeric PLAYER_ID above. In THIS SAME CHAT, automatically (1) retrieve the frozen identity from repository/DEV, (2) immediately generate ONE ORIGINAL portrait with ChatGPT ImageGen, then (3) perform the possible candidate QA and report the outcome. Do not ask me to paste another prompt, open a second chat, upload a reference photograph, or authorize an intermediate step. Do not stop after preparing the prompt.
+Change ONLY the number in PLAYER_ID. Execute the following automatically in THIS NORMAL CHAT: verify the player identity, create exactly ONE new portrait using the built-in ChatGPT image generator, then run all possible QA. Do not stop after a text-only prompt, ask for a second message, or direct me to Images → Create image.
 
-A. CANONICAL DATA — BEFORE GENERATION
-- Use the connected GitHub plugin on repository FraGioco9/football-architect, PR #648, branch feat/646-player-portrait-v4-core. Pin a consistent PR HEAD; the unmerged V4.1 files may not yet be in main.
-- First inspect docs/portrait-image-prompts-all.md for a heading with the EXACT integer PLAYER_ID. If found, read the player name, immutable V4.1 fingerprint and physique class from its heading; use that ID's COMPLETE image-only fenced prompt verbatim. NEVER alter facial traits or re-derive its fingerprint. Cloudflare verification of original initial attributes is optional for this already-frozen image prompt; mark unavailable checks NOT VERIFIED.
-- If the ID is not in the prepared 23-player index, use the connected Cloudflare plugin ONLY for read-only DEV D1 database football-architect-dev to locate the player and verify ORIGINAL FROZEN INITIAL strength, speed, agility and stamina against a committed original generation record or auditable frozen snapshot. Do not assume current/evolving player attributes are the initial values. Read backend/src/player-portrait-diversity-v41.mjs and tools/export-player-image-prompts.mjs from the SAME PR HEAD. Execute its exact versioned createImageOnlyPortraitPrompt() with verified player ID, name, nationalities and initial stats. Use only the returned visual content/fingerprint/body class. Do not simulate deterministic identity generation in prose.
-- If no canonical image prompt can be recovered or generated faithfully, report CANONICAL_PROFILE_NOT_VERIFIED with the missing source and STOP without using ImageGen.
-- Never use a legacy approved WebP as an ImageGen input or face/pose reference. GitHub and Cloudflare are DATA connectors, not rendering engines. Never access Production or write D1.
+PHASE 1 — REPOSITORY LOOKUP (tools: GitHub; Cloudflare if necessary)
+1. GitHub: FraGioco9/football-architect, PR #648, branch feat/646-player-portrait-v4-core. Pin its exact HEAD and use that same revision throughout.
+2. Read docs/portrait-image-prompts-all.md. Find the heading matching the EXACT numeric PLAYER_ID. When present, obtain the name, V4.1 fingerprint, frozen physique and the COMPLETE fenced image-only description from that entry. Use the visual text VERBATIM. Do not recompute the frozen identity.
+3. For IDs absent from that index, fetch backend/src/player-portrait-diversity-v41.mjs and tools/export-player-image-prompts.mjs from the same HEAD. Retrieve player information using the Cloudflare plugin ONLY from football-architect-dev (DEV D1, read-only). Prove that strength, speed, agility and stamina are ORIGINAL/FROZEN initial values using a committed draft or other auditable initial record; current/evolved stats alone are not proof. Run the exact repository createImageOnlyPortraitPrompt() implementation with the verified row, if execution is possible. Do not approximate its deterministic facial features or fabricate a fingerprint. If provenance or execution is missing, return CANONICAL_PROFILE_NOT_VERIFIED and stop.
+4. The image description must retain the exact frozen V4.1 facial features, hair, complexion and body class, plus the image-only-chat-v2 apparent age: young male, approximately 21–25 years old, irrespective of gameplay age.
+5. Keep all metadata and connector results INTERNAL. They are NOT part of the description passed to image generation.
 
-B. GENERATE IMMEDIATELY — IN THIS CHAT
-- As soon as the complete canonical image-only text is available, invoke ChatGPT's ORIGINAL TEXT-TO-IMAGE generator EXACTLY ONCE to create a NEW image from that visual description. Do not merely output the prompt for me to copy.
-- Give the image engine ONLY the recovered image-only visual prompt, not this orchestration text, player ID/name, GitHub/Cloudflare links, QA instructions, previously approved files, image IDs, masks or input photographs. This is NOT an edit, remix, restoration or image-to-image request.
-- Keep the versioned presentation cue: one fictional YOUNG MALE footballer, approximately 21–25 years old in apparent age (not gameplay age), without changing the immutable V4.1 face or body class.
-- Request a single original vertical 3:4 portrait with real transparent RGBA background, frontal media-day pose, all hair/head/arms through hips visible, plain white regular-fit jersey, no logos or captions.
-- If no original text-to-image mode is available or the generator requests an existing image target, report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not request a reference photo, switch to image editing, claim an image was created, or automatically retry.
+PHASE 2 — CREATE THE IMAGE NOW (native ChatGPT ImageGen)
+Immediately after a successful lookup, call the available original image-generation tool in this same chat, for exactly ONE new image. Pass ONLY the resolved, COMPLETE image-only visual description as the generation request. It specifies a realistic studio media-day portrait, full head/hair/arms down to hips, regular-fit pure-white jersey, vertical 3:4 and transparent background.
 
-C. AUTOMATIC QA — ONLY AFTER A REAL IMAGE IS RETURNED
-- Inspect the actual newly rendered portrait visually: one person, precise canonical face/hair/complexion, plausible frozen physique, apparent age 21–25, natural unretouched features, pose, anatomy, plain white shirt, clean silhouette. Do not invent image observations.
-- If the original PNG bytes are actually accessible, verify vertical 3:4 dimensions, genuine RGBA transparency and no painted checkerboard; otherwise record PNG technical QA as NOT VERIFIED.
-- If you can create/inspect a 320×362 transparent WebP derivative, check decoded alpha, significant top margin 3–8 px (0–12 only after hair integrity review), side room ≥20 px, center and fringes. Otherwise mark derivative QA NOT VERIFIED; NEVER invent a WebP, SHA-256 or pixel measurements.
-- Report PASS / PASS CON NOTA / FAIL only for checks actually evaluated; when QA evidence is incomplete, report INCOMPLETE. If permitted, record a traceable QA outcome in issue #646 with ID, immutable fingerprint and verified observations. Do not publish or automatically replace an existing asset.
-- Do not generate a second candidate after a failed or incomplete QA without an explicit new request.
+Do not transmit this orchestration prompt, connector calls, repository files, metadata, QA instructions or other conversation context as the visual request. Do not substitute another face, shorten the canonical description, or create a collage. No user-supplied material is needed.
 
-FINAL RESPONSE
-Show the single generated image (if successful), then briefly report player ID/name, V4.1 fingerprint, frozen body class, GitHub source PR HEAD, DEV verification status, visual QA, PNG/WebP technical QA, any limitations and overall candidate status. If generation fails, state there is NO CANDIDATE and that image QA cannot be performed. Never claim publication approval, perform D1 writes, merge PRs, deploy or overwrite approved WebPs.
+If the tool cannot create a new image and returns no result, stop with GENERATION_UNAVAILABLE / NO CANDIDATE and the actual tool error. Do not improvise a candidate or claim the image exists; no retries without a new request.
+
+PHASE 3 — QA (only once a real new image is returned)
+Evaluate the actual candidate against the frozen face/hair/skin/body, approximate 21–25 appearance, natural anatomy, white jersey and full frontal head-to-hips pose. If you can access the actual PNG bytes, verify genuine transparency, vertical 3:4 and clean edges; otherwise technical QA is NOT VERIFIED. If possible, derive a QA-only transparent WebP 320×362, preserving the face and hair; check top significant alpha margin 3–8 px (0–12 only with full hair), left/right room >=20 px, centering and color fringing. Mark unavailable checks NOT VERIFIED; never invent files, SHA-256 or measurements. Report PASS / PASS CON NOTA / FAIL based on actual evidence; use INCOMPLETE when necessary. Add a traceable comment to GitHub issue #646 only if the plugin permits it.
+
+FINAL OUTPUT
+Show the GENERATED IMAGE and a concise report: player ID/name, immutable fingerprint, physique, PR HEAD, DEV verification if used, generation status, visual QA, PNG/WebP QA and any limitations. If generation failed, show the failure rather than a fictional QA report.
+
+BOUNDARIES
+One player and one image attempt per run. Keep approved portraits unchanged. No writes to D1, no Production access, no publication, asset replacement, PR merge or deployment without separate explicit authorization.
 ```
 
-## QA and fallback
+## Boundaries and fallback
 
-If the engine returns a candidate, the same chat performs all possible visual and decoded-pixel QA, and notes **NOT VERIFIED** for evidence it cannot access. When needed, use the original optional manual [follow-up QA specification](portrait-image-only-qa.md) for a deeper operator audit, but it is **not a required second message**. The earlier two-chat isolation workflow and 23 individual files remain available as a fallback if the combined prompt is misrouted to image-editing mode. Never substitute an image reference for text-only generation.
+One native original image attempt per invocation. QA is attempted **only after** real generated pixels exist. The 23 individual image-only files are retained as optional fallback if the product repeatedly fails to route the combined request, but the normal expected path is a single message and a single chat. No Production or D1 writes, approved asset replacement, automatic publishing, merge or deploy. PR remains Draft/HOLD.
