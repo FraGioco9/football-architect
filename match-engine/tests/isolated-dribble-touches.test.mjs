@@ -27,6 +27,29 @@ test('#628 1v1 pure varied native-ground-touch intent is reproducible and mirror
  assert.equal(chooseIsolatedDribbleTouch({...params,variantIndex:0}).magnitudeNs,0.12);
  assert.throws(()=>chooseIsolatedDribbleTouch({...params,variantIndex:30}),TypeError);
 });
+test('#628 every variant stages the attacker behind the original ball, not overlapping its shoe',()=>{
+ for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const scenario=smallSidedSetup('dribble-1v1',side,INITIAL_PLAYERS,{variantIndex});
+  const forward=side==='home'?1:-1;
+  const player=scenario.staged.find(p=>p.id===side+'-10');
+  const gap=forward*(scenario.ball.x-player.x);
+  assert.ok(gap>=0.499&&gap<=0.671,
+   'V'+(variantIndex+1)+' '+side+' starts the original player safely behind the ball');
+  assert.ok(Math.hypot(scenario.ball.x-player.x,scenario.ball.y-player.y)>=0.499);
+ }
+});
+test('#628 genuine lateral variation is smooth in time under stable physical pressure',()=>{
+ const ballPosition={x:30,y:0},defender={team:'away',x:32,y:1.5},
+  ballVelocity={x:1,y:0};
+ for(let variantIndex=1;variantIndex<30;variantIndex++)
+ for(let tick=1;tick<=179;tick++){
+  const args={variantIndex,tick,attackingSide:'home',ballPosition,ballVelocity,defender};
+  const current=chooseIsolatedDribbleTouch(args);
+  const next=chooseIsolatedDribbleTouch({...args,tick:tick+1});
+  assert.ok(Math.abs(current.lateralRatio-next.lateralRatio)<=0.081,
+   'No random per-tick zig-zag in real D-01 touch intent');
+ }
+});
 test('#628 actual 1v1 native source: only attacker physical carry, 2 colliders, both sides and Bodies A/B',
  {timeout:120000},async()=>{
  const R=await initializeRapier(rapier),magnitudes=new Set();
@@ -104,7 +127,9 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
     peakClearanceM:+f.nativeDribbleAudit.peakGroundClearanceM.toFixed(5),
     airFrames:f.nativeDribbleAudit.airborneFramesAbove2Cm,
     peakBallSpeedMps:+f.nativeDribbleAudit.peakBallSpeedMps.toFixed(4),
-    meanTouchIntervalTicks:f.nativeDribbleAudit.meanAppliedTouchIntervalTicks};
+    meanTouchIntervalTicks:f.nativeDribbleAudit.meanAppliedTouchIntervalTicks,
+    meanAttackerBallGapM:+f.nativeDribbleAudit.averageRealAttackerBallGapM.toFixed(4),
+    maxAttackerBallGapM:+f.nativeDribbleAudit.maximumRealAttackerBallGapM.toFixed(4)};
    // Genuine native absence is a measured failed trial, not a forced touch.
    assert.ok(result.actionCount>=0);
    assert.equal(result.impulse.length,result.actionCount);
@@ -154,6 +179,9 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
     shoeEnds,recontacts,forwardM,pathM,pressureTicks})=>({side,bodyGuardEnabled,
     variantIndex,actionCount,shoeStarts,shoeEnds,recontacts,forwardM,pathM,pressureTicks})),
   reverseTravels:samples.filter(s=>s.forwardM<0).length,
+  meanAttackerBallGapM:+(samples.reduce((n,s)=>n+s.meanAttackerBallGapM,0)/
+   samples.length).toFixed(4),
+  maximumAttackerBallGapM:Math.max(...samples.map(s=>s.maxAttackerBallGapM)),
   sample:samples.filter(s=>[0,7,17,29].includes(s.variantIndex)),
   largestVertical:samples.toSorted((a,b)=>b.peakClearanceM-a.peakClearanceM).slice(0,8),
   fastestBall:samples.toSorted((a,b)=>b.peakBallSpeedMps-a.peakBallSpeedMps).slice(0,8)
@@ -173,7 +201,14 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
  assert.ok(summary.withRealCarry>=100,'at least 100 genuine source carries');
  assert.ok(summary.withSecondAction>=80,'at least 80 real repeat-touch trials');
  assert.ok(summary.withFourOrMoreTouches>=20,'repeat touches must be frequent');
- assert.ok(summary.meanTouchesPerTrial>=2.4,'bounded full-matrix touch frequency');
+ assert.ok(summary.meanTouchesPerTrial>=4.0,'repeatable ground-control frequency must not regress');
+ assert.equal(summary.noRealCarry,0,'every seed must produce a real shoe-triggered carry');
+ assert.equal(summary.reverseTravels,0,'no negative total forward ball travel in D-01');
+ assert.ok(summary.withSecondAction>=100,'repeat real carries in almost all trials');
+ assert.ok(summary.withFourOrMoreTouches>=75,'many 4+ touch samples, not only V01');
+ assert.ok(summary.withDefenderShoeStart>=5,'at least five actual defender interventions');
+ assert.ok(summary.withOpposingTorso>=20,'native player pressure must remain observable');
+ assert.ok(summary.withBodyBall>=20,'genuine body-ball interactions must remain possible');
  const baseline=samples.filter(s=>s.variantIndex===0);
  assert.equal(baseline.length,4);
  assert.ok(baseline.every(s=>s.actionCount>=5&&s.recontacts>=4&&
