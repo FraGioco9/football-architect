@@ -23,6 +23,21 @@ test('six compact subviews are visible in parser-time Standings markup',()=>{
  assert.match(panel,/aria-pressed="true">Overall/);
  assert.match(css,/\.app-standings-subviews .*app-competition-tab/);
 });
+test('international cups hide Last 5 during first paint and reject direct deep links',()=>{
+ const restricted="['first','second','last5']";
+ const domestic=read('competitions/it-1/index.html');
+ assert.equal(domestic.split(restricted).length-1,0,'domestic pages retain Last 5');
+ for(const id of ['int-1','int-2']){
+   const html=read('competitions/'+id+'/index.html');
+   const start=html.indexOf('const valid=[\'overall\',\'first\',\'second\',\'home\',\'away\',\'last5\']');
+   assert.ok(start>0,id+' prepaint script exists');
+   const script=html.slice(start,html.indexOf('</script>',start));
+   assert.equal(script.split(restricted).length-1,2,id+' hides last5 and normalizes direct links');
+ }
+ assert.ok(controller.includes("button.hidden=Boolean(cup&&['first','second','last5'].includes(button.dataset.standingsSubview))"));
+ assert.ok(controller.includes("if(definition?.category==='international'&&['first','second','last5'].includes(query))return 'overall';"));
+});
+
 test('all supported languages have the six view labels and accessible group name',()=>{
  for(const key of [...keys,'standingsSubviewLabel'])
    assert.equal((i18n.match(new RegExp('\\b'+key+':','g'))||[]).length,5,key);
