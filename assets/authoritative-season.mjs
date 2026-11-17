@@ -12,7 +12,13 @@ const freeze=value=>{if(value&&typeof value==='object'){Object.values(value).for
 export const validPublicWorld=globalThis.faWorldClockAdapter.validPublicWorld;
 export function viewedSeasonState(input){
  const w=input?.world,d=input?.data,season=input?.selectedSeason;
- if(!validPublicWorld(w)||![1,2].includes(season)||!d||season>w.seasonNumber)return null;
+ if(!validPublicWorld(w)||![1,2].includes(season)||!d)return null;
+ if(w.seasonNumber===0){
+  const state=d.seasonState;
+  return season===1&&w.phase==='unstarted'&&d.entrantsOnly===true&&
+   state?.day===0&&state.phase==='unstarted'?{day:0,phase:'unstarted'}:null;
+ }
+ if(season>w.seasonNumber)return null;
  const state=d.seasonState??(season===w.seasonNumber?{day:w.day,phase:w.phase}:null);
  if(!state||!Number.isInteger(state.day)||state.day<0||state.day>56||!['preparing','active','closed'].includes(state.phase))return null;
  if(season===w.seasonNumber)return state.day===w.day&&state.phase===w.phase?state:null;
@@ -46,16 +52,23 @@ export function validateAuthoritativeSeason(input,context,manifest){
  const {data:d,world:w,provenance:p}=input,viewed=viewedSeasonState(input);
  const entrantsOnly=d?.entrantsOnly===true;
  const authority=entrantsOnly?'confirmed-entrants-v1':'temporary-lineup-v1';
- const sourceSuffix=entrantsOnly?'entrants:':'';
- if(!viewed||![1,2].includes(w.seasonNumber)||!object(d)||d.season!==input.selectedSeason||d.rulesVersion!==definition.rules.version||input.reason!==null||
-    p?.kind!=='authoritative'||p.resultAuthority!==authority||typeof p.sourceRef!=='string'||!new RegExp('^world:'+w.generation+':season:'+d.season+':'+sourceSuffix+'[a-f0-9]{64}$').test(p.sourceRef)||
+ const zeroEntrants=w.seasonNumber===0&&entrantsOnly&&input.selectedSeason===1;
+ const scope=definition.category==='international'?'international':'domestic';
+ const sourcePrefix=zeroEntrants?
+  'world:'+w.generation+':season:0:entrants:'+scope+':':
+  'world:'+w.generation+':season:'+d.season+':'+(entrantsOnly?'entrants:':'');
+ const validSource=typeof p?.sourceRef==='string'&&p.sourceRef.startsWith(sourcePrefix)&&
+  /^[a-f0-9]{64}$/.test(p.sourceRef.slice(sourcePrefix.length));
+ if(!viewed||!(zeroEntrants||[1,2].includes(w.seasonNumber))||!object(d)||
+    d.season!==input.selectedSeason||d.rulesVersion!==definition.rules.version||input.reason!==null||
+    p?.kind!=='authoritative'||p.resultAuthority!==authority||!validSource||
     (input.status==='available')!==(viewed.phase==='closed'))fail();
  const catalog=clubCatalog(manifest),ids=d.participants;
  if(!Array.isArray(ids)||ids.length!==definition.capacity||new Set(ids).size!==ids.length||ids.some(id=>!idPattern.test(id)||!catalog.has(id))||
     definition.category==='domestic'&&ids.some(id=>!id.startsWith(definition.id.split('-')[0]+'-')))fail();
  if(entrantsOnly){
   // Membership confirmation has no schedule, result, rank or archived history.
-  if(input.status!=='partial'||viewed.phase!=='active'||viewed.day<1||viewed.day>12||
+  if(input.status!=='partial'||!(zeroEntrants?viewed.phase==='unstarted'&&viewed.day===0:viewed.phase==='active'&&viewed.day>=1&&viewed.day<=12)||
      Object.keys(d).sort().join(',')!=='entrantsOnly,participants,rulesVersion,season,seasonState'||
      !object(d.seasonState)||d.seasonState.day!==viewed.day||d.seasonState.phase!==viewed.phase)fail();
   return freeze(structuredClone(input));
@@ -189,7 +202,7 @@ export function createCompetitionSeasonReadCache({limit=8}={}){
      !Number.isSafeInteger(season)||season<1||
      snapshot?.source!=='authoritative'||snapshot.worldStatus!=='ready'||
      !Number.isSafeInteger(snapshot.sourceRevision)||snapshot.sourceRevision<0||
-     !validPublicWorld(world)||season>world.seasonNumber)return null;
+     !validPublicWorld(world)||season>world.seasonNumber&&(world.seasonNumber!==0||season!==1))return null;
   return JSON.stringify([competitionId,season,snapshot.sourceRevision,
    world.generation,world.revision,world.seasonNumber,world.day,world.phase]);
  };

@@ -23,7 +23,7 @@ export function parseWorldV1(value: unknown): WorldV1 {
       !integer(v.day) || (v.day as number) < 0 || (v.day as number) > 56 ||
       !['unstarted','preparing','active','closed'].includes(String(v.phase)))
     throw new TypeError('invalid_world');
-  if (v.phase === 'unstarted' && (v.seasonNumber !== 0 || v.day !== 0 || v.revision !== 0))
+  if (v.phase === 'unstarted' && (v.seasonNumber !== 0 || v.day !== 0))
     throw new TypeError('invalid_world');
   if (v.phase !== 'unstarted' && v.seasonNumber === 0)
     throw new TypeError('invalid_world');

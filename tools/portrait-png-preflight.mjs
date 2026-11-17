@@ -19,7 +19,7 @@ function paeth(a,b,c){
 }
 
 /** Throws on invalid/unsupported PNG. Deliberately fail closed. */
-export function inspectPortraitPng(bytes){
+export function inspectPortraitPng(bytes,{includePixels=false}={}){
  const data=Buffer.from(bytes);
  if(!data.subarray(0,8).equals(SIGNATURE))fail('not_png');
  let offset=8,width,height,bitDepth,colorType,interlace;
@@ -54,6 +54,7 @@ export function inspectPortraitPng(bytes){
  catch{fail('invalid_png_image_data')}
  if(inflated.length!==expected)fail('invalid_png_scanlines');
  let prior=Buffer.alloc(rowSize);
+ const decoded=includePixels?Buffer.alloc(width*height*4):null;
  const corners=[],total=width*height;
  let zeroAlpha=0,partialAlpha=0,opaqueAlpha=0;
  for(let y=0;y<height;y++){
@@ -72,6 +73,7 @@ export function inspectPortraitPng(bytes){
    else partialAlpha++;
    if((y===0||y===height-1)&&(x===0||x===width-1))corners.push(alpha);
   }
+  if(decoded)current.copy(decoded,y*rowSize);
   prior=current;
  }
  const issues=[];
@@ -82,7 +84,8 @@ export function inspectPortraitPng(bytes){
  return {ok:issues.length===0,width,height,format:'PNG RGBA 8-bit',transparentPixels:zeroAlpha,
   partialAlphaPixels:partialAlpha,opaquePixels:opaqueAlpha,issues,
   manualReviewRequired:['exactly_one_subject','frozen_facial_traits','plain_white_kit',
-   'head_to_hips_crop','natural_edges_no_color_fringe','owner_approval']};
+   'head_to_hips_crop','natural_edges_no_color_fringe','owner_approval'],
+  ...(decoded?{pixels:decoded}:{})};
 }
 
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){

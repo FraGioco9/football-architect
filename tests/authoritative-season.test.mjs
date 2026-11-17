@@ -374,3 +374,32 @@ test('PERF-API-657 competition controller restores cached season before starting
  assert.match(page,/lastSuccessfulRead=worldReadKey\(window\.faCompetitionContext,snapshot\)/);
  assert.match(page,/seasonReadCache\.clear\(\)/,'DEV source toggles must invalidate the season cache');
 });
+
+test('Season 0 accepts only an independently receipt-gated unstarted entrants projection',()=>{
+ const world0={...world,seasonNumber:0,phase:'unstarted',day:0,revision:2};
+ const payload=confirmedEntrants();
+ payload.world=world0;
+ payload.data.seasonState={phase:'unstarted',day:0};
+ payload.provenance.sourceRef='world:'+world0.generation+':season:0:entrants:domestic:'+'b'.repeat(64);
+ const verified=validateAuthoritativeSeason(payload,ctx(),manifest);
+ const adapted=adaptAuthoritativeSeason(verified,ctx(),manifest);
+ assert.equal(adapted.entrantsOnly,true);
+ assert.equal(adapted.seasonState.phase,'unstarted');
+ assert.equal(adapted.seasonState.day,0);
+ assert.equal(adapted.fixtures,null);
+ assert.equal(adapted.participants.length,16);
+ for(const mutate of [
+  r=>{r.provenance.sourceRef=r.provenance.sourceRef.replace('domestic','international')},
+  r=>{r.data.seasonState={phase:'active',day:1}},
+  r=>{r.data.fixtures=[]},
+  r=>{r.world={...r.world,day:1}},
+  r=>{r.status='available'},
+  r=>{r.data.participants.pop()},
+  r=>{r.world={...r.world,generation:'12345678-1234-4123-8123-123456789abc'}},
+ ]){const invalid=structuredClone(payload);mutate(invalid);assert.throws(()=>validateAuthoritativeSeason(invalid,ctx(),manifest));}
+ const cache=createCompetitionSeasonReadCache();
+ const snapshot={source:'authoritative',sourceRevision:1,worldStatus:'ready',world:world0};
+ assert.equal(cache.remember({competitionId:'IT-1',season:1,snapshot,data:adapted}),true);
+ assert.ok(cache.find({competitionId:'IT-1',season:1,snapshot}));
+ assert.equal(cache.find({competitionId:'IT-1',season:1,snapshot:{...snapshot,world:{...world0,revision:3}}}),null);
+});

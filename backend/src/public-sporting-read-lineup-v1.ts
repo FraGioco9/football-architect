@@ -8,6 +8,7 @@ import type {WorldV1} from './types.ts';
 import {readWorld} from './world-repository.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
+import {readSeasonZeroAuthority} from './season-zero-entrants.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import type {KnockoutTie} from './knockout-progression.ts';
 import {replayLineupSeasonV1} from './lineup-season-replay.ts';
@@ -15,6 +16,7 @@ import type {LineupSportingScoreV1} from './lineup-sporting-day-plan.ts';
 import type {FrozenLineupMatchV1} from './lineup-season-replay.ts';
 import type {LineupMatchResultV1} from './temporary-lineup-v1.mjs';
 import {rankLeagueTable} from './league-standings.ts';
+import {withOfficialClubMatchIds} from './public-club-fixture-match-ids.ts';
 import type {Fixture} from './initial-schedule.ts';
 import {readSeasonKnockoutTies,readSeasonCalendarHash,readSeasonArchiveSummary,readSeasonCloseReceipt} from './season-evidence-repository.ts';
 interface Archive {generation:string;calendar_hash:string;results_hash:string;knockout_hash:string;archive_hash:string;results_count:number;days_count:number;ties_count:number;created_at:number}
@@ -163,7 +165,20 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
  };
  // A future/unimplemented viewed season must never be silently mapped to Season1.
  if(![1,2].includes(selectedSeason))return empty('unavailable','unsupported-season');
- if(world.seasonNumber===0)return empty('empty','season-not-prepared');
+ if(world.seasonNumber===0){
+  if(selectedSeason!==1||!competitionPattern.test(competitionId))return empty('empty','season-not-prepared');
+  const zero=await readSeasonZeroAuthority(db,world);
+  const scope=competitionId.startsWith('int-')?'international':'domestic';
+  if(!zero.approved[scope])return empty('empty','season-not-prepared');
+  const binding=zero.snapshot.bindings.find(b=>b.competitionId===competitionId);
+  if(!binding)invalid();
+  const data={entrantsOnly:true as const,season:1,seasonState:{day:0,phase:'unstarted' as const},
+   rulesVersion:binding!.rulesVersion,participants:[...binding!.clubIds]};
+  await unchanged(db,world);
+  return {...base,status:'partial' as const,reason:null,
+   provenance:{kind:'authoritative' as const,resultAuthority:'confirmed-entrants-v1' as const,
+    sourceRef:`world:${world.generation}:season:0:entrants:${scope}:${zero.snapshotHash}`},data};
+ }
  // Only seasons1/2 currently have a complete approved authority chain.
  if(![1,2].includes(world.seasonNumber))return empty('unavailable','unsupported-world-season');
  if(selectedSeason>world.seasonNumber)return empty('empty','season-not-prepared');
@@ -224,8 +239,12 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
      a.marker.localeCompare(b.marker,'en')||a.id.localeCompare(b.id,'en'));
    if(fixtures.some(f=>!competitionIds.has(f.competitionId)||
      (f.result!==null)!==(f.day<=viewedWorld.day)))invalid();
+   // Carry persisted public IDs in the verified club response so the client
+   // does not download two full public competition match collections.
+   const linked=await withOfficialClubMatchIds(db,world.generation,selectedSeason,
+    fixturesClubKey,[...competitionIds],fixtures);
    const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},
-    competitions:[...competitionIds],fixtures};
+    competitions:[...competitionIds],fixtures:linked};
    await unchanged(db,world);
    return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
     provenance:{kind:'authoritative' as const,resultAuthority:'temporary-lineup-v1' as const,

@@ -11,7 +11,7 @@ export function projectStandings(rows,fixtures,definition,mode){
   if(!STANDINGS_SUBVIEWS.includes(mode)||!Array.isArray(rows))return null;
   if(mode==='overall')return rows;
   const international=definition?.category==='international';
-  if(international&&(mode==='first'||mode==='second'))return null;
+  if(international&&['first','second','last5'].includes(mode))return null;
   const roundCount=definition?.metrics?.phases?.league?.rounds;
   if(!Number.isSafeInteger(roundCount)||roundCount<2||!Array.isArray(fixtures))return null;
   if((mode==='first'||mode==='second')&&roundCount%2!==0)return null;

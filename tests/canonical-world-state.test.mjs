@@ -8,6 +8,7 @@ const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {
 test('canonical validation preserves real Season 0 and rejects inconsistent phases',()=>{
  assert.equal(typeof api.validPublicWorld,'function');
  assert.equal(api.validPublicWorld({...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'}),true);
+ assert.equal(api.validPublicWorld({...world,revision:2,seasonNumber:0,day:0,phase:'unstarted'}),true);
  for(const patch of [{day:0},{seasonNumber:0},{day:55,phase:'closed'},{revision:-1},{phase:'preparing',day:1}])assert.equal(api.validPublicWorld({...world,...patch}),false);
 });
 test('viewed season is not current world and source round trips invalidate leases',()=>{

@@ -70,7 +70,17 @@ try{
       await Promise.all(running.map(a=>a.finished.catch(()=>{})));
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     });
-    const computed=await page.evaluate(({selectors,cssProperties,calendar})=>{
+    const computed=await page.evaluate(({selectors,cssProperties,calendar,standings})=>{
+     // CSS-only parity compares the same settled table on both stylesheets,
+     // independent of the asynchronous verified-empty provider read. Actual
+     // skeleton/loading visibility remains covered by dedicated browser QA.
+     // Apply in the same frame as getComputedStyle to prevent a late provider
+     // notification from making one side visible and the other hidden.
+     if(standings){
+      const root=document.documentElement;
+      root.dataset.faStandingsLoading='false';
+      for(const key of ['faDevStandingsPending','faDebugPending','faDevSeasonTransition'])delete root.dataset[key];
+     }
      // Freeze the two loading-sensitive control states in the same frame
      // as getComputedStyle, avoiding async events between baseline captures.
      if(calendar)for(const id of ["calendar-next","calendar-week-trigger"]){
@@ -95,7 +105,7 @@ try{
       });
      }
      return result;
-    },{selectors,cssProperties,calendar:route==="/calendar"});
+    },{selectors,cssProperties,calendar:route==="/calendar",standings:route==="/competitions/it-1/standings"});
     const cssom=await page.evaluate(()=>{
       const sheet=[...document.styleSheets].find(s=>s.href&&new URL(s.href).pathname==="/assets/app.css");
       if(!sheet)return null;
