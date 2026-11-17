@@ -62,7 +62,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  const colliders=[],bodies=[],idsByCollider=new Map();
  // D-01: short continuous foot swings follow REAL canonical running speed.
  // More native release/recontact opportunities; never synthesize a touch,
- // event or impulse. At 4m/s the <=4Hz, 0.105m swing adds <=2.64m/s;
+ // event or impulse. At 4m/s the <=3.4Hz, 0.13m swing adds <=2.78m/s;
  // prepare() still enforces the original 7m/s total shoe path bound.
  let dribbleSwingPhase=0;
  function shoeFeet(frame,stepTick,canonicalFrame=null){
@@ -70,10 +70,10 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const wearer=canonicalFrame?.players?.find(p=>p.id===dribbleAttackerId);
   if(stepTick>0){
    const speed=Math.hypot(wearer.vx??0,wearer.vy??0);
-   const cadenceHz=Math.min(4,1.9+0.52*speed);
+   const cadenceHz=Math.min(3.4,2.8+0.15*speed);
    dribbleSwingPhase+=2*Math.PI*cadenceHz/60;
   }
-  const swingM=-0.105*Math.cos(dribbleSwingPhase);
+  const swingM=-0.13*Math.cos(dribbleSwingPhase);
   return Object.freeze(frame.map((p,i)=>{
    if(initialPlayers[i].id!==dribbleAttackerId)return p;
    return Object.freeze({...p,
