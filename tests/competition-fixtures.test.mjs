@@ -682,6 +682,60 @@ test('Fixtures loading controls stay visible but disabled until actual matches a
  assert.equal(route.get().matchday,2,'navigation activates after matches appear');
 });
 
+test('#601 Season 2 domestic draw renders promoted entrants before the separate entrants response',async()=>{
+ const division=divisions.find(d=>d.id==='IT-1');
+ const manifest=JSON.parse(read('competitions/_shared/manifest.json'));
+ const promotion=new Map([[5,17],[10,18],[15,24]]);
+ const replace=id=>promotion.get(id)??id;
+ const games=createPreviewStandings(division,30).fixtures.map((f,i)=>{
+  const h=replace(f.homeId),a=replace(f.awayId),marker='N'+String(f.round).padStart(2,'0');
+  return {matchId:String(8165+i),sourceFixtureId:'season:2:IT-1:'+marker+':IT-'+h+':IT-'+a,
+   phaseId:'league',round:f.round,day:12+f.round,marker,
+   homeClubId:'IT-'+h,awayClubId:'IT-'+a};
+ });
+ const pending={source:'authoritative',worldStatus:'loading',world:null};
+ const ready={source:'authoritative',worldStatus:'ready',world:{
+  generation:'550e8400-e29b-41d4-a716-446655440000',
+  revision:74,seasonNumber:2,day:3,phase:'active'}};
+ let requests=0;
+ const r=setup(division,routeRegistry,{source:pending,fetchImpl:async url=>{
+  requests++;assert.equal(url,'/api/matches/seasons/2/competitions/IT-1');
+  return {ok:true,status:200,json:async()=>({
+   schemaVersion:1,providerId:'authoritative-world',status:'published',
+   season:2,competitionId:'IT-1',provenance:{kind:'authoritative'},
+   fixtures:games
+  })};
+ }});
+ r.route.set({season:'2'});
+ r.window.faCompetitionContext.selectedSeason=2;
+ r.window.faCompetitionManifestPromise=Promise.resolve(manifest);
+ r.publishSource(ready);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(requests,1,'only one official published draw read is needed');
+ const list=r.fields.get('app-fixtures-list');
+ assert.equal(list.children.filter(n=>n.dataset.fixtureMatch).length,8,
+  'all eight matchday fixtures display even before entrants-only hydration');
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ const links=list.children.flatMap(visit).filter(n=>n.className==='app-fixture-score-link');
+ assert.equal(links.length,8,'promoted participants retain verified match links');
+ assert.ok(links.every(link=>/^\/matches\/[1-9][0-9]*$/.test(link.href)));
+ assert.ok([17,18,24].every(id=>games.some(g=>g.round===1&&
+  (g.homeClubId==='IT-'+id||g.awayClubId==='IT-'+id))),
+  'round 1 includes the real season-two promotion cohort');
+ const entrants=manifest.divisions.filter(d=>d.countryId==='IT')
+  .flatMap(d=>d.clubs).filter(c=>games.some(g=>
+   g.homeClubId===rules.clubKey(c)||g.awayClubId===rules.clubKey(c)));
+ r.window.faCompetitionContext.seasonData={
+  season:2,entrantsOnly:true,participants:entrants,
+  fixtures:null,postseason:[],currentMatchday:null,
+  provenance:{kind:'authoritative'}
+ };
+ r.events['fa:competition-context-change']();
+ assert.equal(list.children.filter(n=>n.dataset.fixtureMatch).length,8,
+  'late entrants-only hydration must not erase the published draw');
+ assert.equal(requests,1,'confirmed entrants reuse the same draw and revision');
+});
+
 test('published domestic Fixtures appear at day 2, before worldwide calendar publication',async()=>{
  const division=divisions.find(d=>d.id==='IT-1');
  const source={source:'authoritative',worldStatus:'ready',
