@@ -627,11 +627,21 @@
     tooltip.append(meta,scoreline,context);
     document.body.append(tooltip);
     let verified=new Map(),active=null,touchWasOpen=false;
-    const close=()=>{
+    const reducedMotion=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
+    const hide=()=>{tooltip.hidden=true;tooltip.className="app-world-form-tooltip";};
+    const close=(immediate=false)=>{
       active?.removeAttribute("aria-describedby");
-      active=null;tooltip.hidden=true;tooltip.className="app-world-form-tooltip";
+      active=null;
       tooltip.setAttribute("aria-hidden","true");
+      if(immediate||reducedMotion||tooltip.hidden){hide();return;}
+      // Keep the tooltip rendered until the 130ms CSS exit animation ends.
+      // Do not restart an animation already in progress.
+      if(tooltip.className!=="app-world-form-tooltip is-closing")
+        tooltip.className="app-world-form-tooltip is-closing";
     };
+    tooltip.addEventListener("animationend",event=>{
+      if(event.target===tooltip&&event.animationName==="app-world-tooltip-out"&&!active)hide();
+    });
     const place=()=>{
       if(!active||tooltip.hidden)return;
       const rect=active.getBoundingClientRect(),width=window.innerWidth,height=window.innerHeight;
@@ -683,7 +693,7 @@
       if(event.target===active&&["mouse","pen"].includes(event.pointerType))close();
     },true);
     // BFCache retains the tooltip DOM/state; never restore a stale hover.
-    window.addEventListener("pagehide",close);
+    window.addEventListener("pagehide",()=>close(true));
     host.addEventListener("focusin",event=>{const node=target(event);if(node)open(node)});
     host.addEventListener("focusout",event=>{const node=target(event);if(node&&active===node&&!node.contains(event.relatedTarget))close()});
     host.addEventListener("pointerdown",event=>{const node=target(event);touchWasOpen=!!node&&["touch","pen"].includes(event.pointerType)&&active===node});
@@ -708,9 +718,9 @@
     document.querySelector(".fa-shell-content-scroll")?.addEventListener("scroll",place,{passive:true});
     document.querySelector(".app-world-standing-scroll")?.addEventListener("scroll",place,{passive:true});
     return {
-      clear(){verified=new Map();close()},
+      clear(){verified=new Map();close(true)},
       sync(records,rows,definition,rules){
-        close();verified=records;
+        close(true);verified=records;
         const list=document.getElementById("app-standings-compact-list");
         const items=new Map([...list.children].map(li=>[li.dataset.worldClub,li]));
         for(const row of rows){
