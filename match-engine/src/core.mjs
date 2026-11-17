@@ -577,8 +577,14 @@ export function createEngine(RAPIER, input = {}, {
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
-       (smallSided?.variantIndex>0),
+       smallSided?.id==='dribble-1v1'||(smallSided?.variantIndex>0),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
+      ...(smallSided?.id==='dribble-1v1'?{
+       isolatedDribbleContext:Object.freeze({
+        situationId:smallSided.id,attackingSide:smallSided.side,
+        variantIndex:smallSided.variantIndex
+       })
+      }:{}),
       ...(smallSided?.variantIndex>0?{
        smallSidedDecisionContext:Object.freeze({
         situationId:smallSided.id,

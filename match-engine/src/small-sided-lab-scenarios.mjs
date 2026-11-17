@@ -30,21 +30,24 @@ function physicallySeparated(players,minimumM){
  return true;
 }
 
-const ids=freeze(['keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3']);
+const ids=freeze(['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3']);
 const definitions=freeze([
- freeze({id:ids[0],title:'1v1 · Attacker vs goalkeeper',
+ freeze({id:ids[0],title:'Dribbling · 1v1 (no goalkeeper)',
+  attackers:freeze([10]),defenders:freeze([2]),includeGoalkeeper:false,
+  description:'Real attacker vs defender and the original Rapier ball; only attacker genuine shoe STARTs can trigger variable carry touches. No shot/pass/automatic tackle, possession or dribble success.'}),
+ freeze({id:ids[1],title:'1v1 · Attacker vs goalkeeper',
   attackers:freeze([10]),defenders:freeze([]),
   description:'One forward faces a real opponent goalkeeper. Original Rapier shoe contact and keeper movement; observe shot, physical parry attempt or actual full-ball exit. No automatic goal or save.'}),
- freeze({id:ids[1],title:'1v1 + goalkeeper',
+ freeze({id:ids[2],title:'1v1 + goalkeeper',
   attackers:freeze([10]),defenders:freeze([2]),
   description:'One forward, one real defender and the goalkeeper. Watch genuine pressure, shot selection, shoe contact and ball travel; no inferred tackle or possession.'}),
- freeze({id:ids[2],title:'2v1 + goalkeeper',
+ freeze({id:ids[3],title:'2v1 + goalkeeper',
   attackers:freeze([10,9]),defenders:freeze([2]),
   description:'Two forwards against one defender and a goalkeeper. Observe live pass options, overlapping runs and native player-ball actions; no completed pass or goal without physical evidence.'}),
- freeze({id:ids[3],title:'2v2 + goalkeeper',
+ freeze({id:ids[4],title:'2v2 + goalkeeper',
   attackers:freeze([10,9]),defenders:freeze([2,3]),
   description:'Two forwards against two defenders and a goalkeeper. Original 60 Hz movement, individual shoe collisions, pressure and shot/pass selection, not an 11v11 simulation.'}),
- freeze({id:ids[4],title:'3v3 + goalkeeper',
+ freeze({id:ids[5],title:'3v3 + goalkeeper',
   attackers:freeze([10,9,11]),defenders:freeze([2,3,4]),
   description:'Three forwards face three defenders and a goalkeeper. Keep the same Rapier world and canonical physics; inspect live support, blocked lanes and genuinely resulting actions.'})
 ]);
@@ -54,7 +57,7 @@ export const SMALL_SIDED_LAB_SCENARIOS=freeze(definitions.map(s=>
   initial:freeze({preset:'roll',seed:'me-small-'+s.id+'-home',
    x:30,y:0,z:0,vx:0,vy:0,vz:0}),
   focus:freeze([...s.attackers.map(n=>'home-'+n),
-   ...s.defenders.map(n=>'away-'+n),'away-1']),
+   ...s.defenders.map(n=>'away-'+n),...(s.includeGoalkeeper===false?[]:['away-1'])]),
   source:'original-rapier-selected-shoe-colliders-only',
   officialResult:false})
 ));
@@ -74,11 +77,12 @@ export function smallSidedSetup(id,side,canonicalPlayers,{variantIndex=0}={}){
   throw new TypeError('Small-sided exercise needs real canonical ordered 22-player identities');
  const opponent=side==='home'?'away':'home',dir=side==='home'?1:-1;
  const activeIds=freeze(canonicalPlayers.filter(p=>
-   p.id===opponent+'-1'||
+   (d.includeGoalkeeper!==false&&p.id===opponent+'-1')||
    d.attackers.some(n=>p.id===side+'-'+n)||
    d.defenders.some(n=>p.id===opponent+'-'+n)
  ).map(p=>p.id));
- if(activeIds.length!==d.attackers.length+d.defenders.length+1||
+ if(activeIds.length!==d.attackers.length+d.defenders.length+
+    (d.includeGoalkeeper===false?0:1)||
     new Set(activeIds).size!==activeIds.length)
   throw new TypeError('Every real small-sided attacker/defender/keeper must have a canonical identity');
  // Identical seed and relative coordinates for HOME/AWAY; only attacking
@@ -113,7 +117,9 @@ export function smallSidedSetup(id,side,canonicalPlayers,{variantIndex=0}={}){
     [side+'-10',[bx-0.25-random()*0.26,by+(random()-0.5)*0.20]],
     [side+'-9',[bx+1.8+random()*2.4,by-4.8-random()*2.8]],
     [side+'-11',[bx+1.8+random()*2.4,by+4.8+random()*2.8]],
-    [opponent+'-2',[bx+3.2+random()*2.5,by-1+random()*4]],
+    [opponent+'-2',id==='dribble-1v1'?
+     [bx+2.2+random()*2.2,by-2.2+random()*4.4]:
+     [bx+3.2+random()*2.5,by-1+random()*4]],
     [opponent+'-3',[bx+7+random()*2.7,by-4.6-random()*2.7]],
     [opponent+'-4',[bx+8+random()*2.7,by+4.6+random()*2.7]],
     [opponent+'-1',[46.7+random()*2.2,

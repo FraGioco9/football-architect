@@ -104,7 +104,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   await send('Page.navigate',{
    url:'http://app.localhost:2000/dev/match-engine'
   });
-  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===15");
+  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===16");
   // Verify the visible small-sided scenario runs IN the main 105x68 field.
   const inline=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
@@ -191,7 +191,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   // All five situations both directions, using the VISIBLE selectors,
   // original main Step, original pitch and source-only Rapier evidence.
   for(const [scene,actors] of [
-   ['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],
+   ['dribble-1v1',2],['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],
    ['duel-2v2',5],['duel-3v3',7]
   ])for(const side of ['home','away']){
    const x=await evalJs("(()=>{"+
@@ -281,7 +281,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   // The 2–7 authentic native shoe colliders are separately verified by
   // the real-physics Node tests, never just a visual filter here.
   for(const [choice,players] of [
-   ['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],
+   ['dribble-1v1',2],['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],
    ['duel-2v2',5],['duel-3v3',7]
   ])for(const side of ['home','away']){
    const state=await evalJs("(()=>{"+
@@ -608,7 +608,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "unique:document.querySelectorAll('[data-me-dropdown=preset]').length===1,"+
    "noSecondSelector:document.getElementById('lab-all-situations')===null,"+
    "current:trigger.textContent.trim()};})()");
-  assert.equal(nav.items,15);
+  assert.equal(nav.items,16);
   assert.deepEqual(nav.groups,['Ball physics','Small-sided situations','Advanced movement']);
   for(const key of ['hiddenLaunches','hiddenChoices','unique','noSecondSelector'])
    assert.equal(nav[key],true,key);

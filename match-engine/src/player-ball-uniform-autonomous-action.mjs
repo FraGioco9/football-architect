@@ -9,6 +9,7 @@ import {chooseSmallSidedContextAction}
  from './small-sided-context-choice.mjs';
 
 
+import {chooseIsolatedDribbleTouch} from './isolated-dribble-touches.mjs';
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
@@ -232,7 +233,8 @@ export function inspectPhysicalActionRejection({
 export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
- allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null
+ allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null,
+ isolatedDribbleContext=null
 }){
  if(!Number.isSafeInteger(tick)||tick<1||
     !Array.isArray(contactStarted)||new Set(contactStarted).size!==contactStarted.length||
@@ -253,6 +255,15 @@ export function selectUniformAutonomousContactAction({
       activePlayerIds.length<2||activePlayerIds.length>7||
       new Set(activePlayerIds).size!==activePlayerIds.length||
       activePlayerIds.some(id=>!ids.includes(id))))||
+    (isolatedDribbleContext!==null&&(
+      isolatedDribbleContext?.situationId!=='dribble-1v1'||
+      !['home','away'].includes(isolatedDribbleContext?.attackingSide)||
+      !Number.isSafeInteger(isolatedDribbleContext?.variantIndex)||
+      isolatedDribbleContext.variantIndex<0||isolatedDribbleContext.variantIndex>29||
+      activePlayerIds===null||activePlayerIds.length!==2||
+      !activePlayerIds.includes(isolatedDribbleContext.attackingSide+'-10')||
+      !activePlayerIds.includes((isolatedDribbleContext.attackingSide==='home'?'away':'home')+'-2')||
+      allowPhysicalCarry!==true))||
     (smallSidedDecisionContext!==null&&(
       activePlayerIds===null||allowPhysicalCarry!==true||
       typeof smallSidedDecisionContext!=='object'||
@@ -286,6 +297,9 @@ export function selectUniformAutonomousContactAction({
    throw new TypeError('Inactive player has no authenticated Rapier shoe');
   const player=actors.find(p=>p.id===id);
   if(!player)continue;
+  // 1v1 defender may collide, but does not issue other automatic actions.
+  if(isolatedDribbleContext!==null&&id!==isolatedDribbleContext.attackingSide+'-10')
+   continue;
   const gap=Math.hypot(player.x-ballPosition.x,player.y-ballPosition.y);
   if(!finite(gap)||gap>MAX_GAP_M)continue;
   const attack=player.team==='home'?1:-1;
@@ -305,7 +319,8 @@ export function selectUniformAutonomousContactAction({
   // LAB-VAR-02 only: AFTER verified genuine exclusive Rapier shoe START,
   // examine live legitimate affordances. Normal 22-player policy, keeper
   // and defensive priority, and archival V01 remain byte-identical.
-  const contextualAttacker=smallSidedDecisionContext!==null&&
+  const contextualAttacker=isolatedDribbleContext===null&&
+   smallSidedDecisionContext!==null&&
    player.team===smallSidedDecisionContext.attackingSide&&
    player.role!=='goalkeeper'&&!defensiveAttempt;
   const contextualRecipient=contextualAttacker?
@@ -330,8 +345,17 @@ export function selectUniformAutonomousContactAction({
     canPass:contextualRecipient!==null,
     canCarry:carryPossible
    }):null;
+  const dribbleTouch=isolatedDribbleContext===null?null:
+   chooseIsolatedDribbleTouch({
+    variantIndex:isolatedDribbleContext.variantIndex,tick,
+    attackingSide:isolatedDribbleContext.attackingSide,
+    ballPosition,defender:actors.find(p=>p.team!==player.team)
+   });
   let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
-  if(eligibleLiveKeeperSave(player,ballPosition,ballVelocity)){
+  if(dribbleTouch!==null){
+   action='carry';dx=dribbleTouch.dx;dy=dribbleTouch.dy;
+   rule='isolated-dribble-real-shoe-variable-ground-touch';
+  }else if(eligibleLiveKeeperSave(player,ballPosition,ballVelocity)){
    action='save';dx=attack*7;
    dy=ballPosition.y>=0?9:-9;vertical=0.24;
    rule='incoming-goalward-keeper-physical-parry-attempt';
@@ -396,7 +420,7 @@ export function selectUniformAutonomousContactAction({
   }
   const length=Math.hypot(dx,dy);
   if(length<1e-5)continue;
-  const magnitude=ACTION_IMPULSE_NS[action],factor=magnitude/
+  const magnitude=dribbleTouch?.magnitudeNs??ACTION_IMPULSE_NS[action],factor=magnitude/
    Math.hypot(dx,dy,vertical*length);
   const impulseNs=Object.freeze({x:dx*factor,y:dy*factor,
    z:vertical*length*factor});
@@ -425,10 +449,11 @@ export function selectUniformAutonomousContactAction({
    attemptOnly:true,shotOnTarget:null,goalScored:null
   }):null;
   const carryTarget=action==='carry'?Object.freeze({
-   source:'same-tick-exclusive-rapier-shoe-short-ground-touch',
+   source:dribbleTouch?'isolated-dribble-real-rapier-shoe-touch':
+    'same-tick-exclusive-rapier-shoe-short-ground-touch',
    actorId:id,team:player.team,physicsTick:tick,
    originX:ballPosition.x,originY:ballPosition.y,
-   impulseMagnitudeNs:PROVISIONAL_PHYSICAL_CARRY_IMPULSE_NS,
+   impulseMagnitudeNs:magnitude,
    shortGroundTouchOnly:true,physicalRecontactObserved:false,
    dribbleConfirmed:null,officialMatchResult:null
   }):null;
@@ -485,7 +510,8 @@ export function selectUniformAutonomousContactAction({
     outcomeNotYetObserved:true,
     opponentTackleProven:false,interceptionProven:false,
     passCompleted:false,goalScored:false,
-    ...(contextualChoice?{smallSidedChoice:contextualChoice}:{})
+    ...(contextualChoice?{smallSidedChoice:contextualChoice}:{}),
+    ...(dribbleTouch?{isolatedDribbleTouch:dribbleTouch}:{})
    }),
    temporaryPlayersOnly:true,uniformPlayerStats:true,
    officialMatchAction:false,officialMatchPossession:false,

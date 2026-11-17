@@ -12,17 +12,17 @@ import {createControlledActionLab} from '../src/action-labs.mjs';
 
 test('#628 small-sided catalog replaces only visible elementary exercise UI; archives remain for regression',()=>{
  const ids=SMALL_SIDED_LAB_SCENARIOS.map(s=>s.id);
- assert.deepEqual(ids,['keeper-1v1','defender-1v1','overload-2v1',
+ assert.deepEqual(ids,['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1',
   'duel-2v2','duel-3v3']);
  assert.deepEqual(SMALL_SIDED_LAB_SCENARIOS.map(s=>s.focus.length),
-  [2,3,4,5,7]);
+  [2,2,3,4,5,7]);
  const html=readFileSync(new URL('../lab/index.html',import.meta.url),'utf8');
  const ui=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
  for(const id of ids){
   assert.match(html,new RegExp('<option value="'+id+'">'));
   assert.match(ui,new RegExp("'"+id+"'"));
  }
- assert.match(ui,/count!==15/);
+ assert.match(ui,/count!==16/);
  assert.doesNotMatch(ui,/count!==51/);
  assert.match(ui,/visibleMovement/);
  assert.match(html,/Small-sided situations/);
@@ -40,7 +40,8 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
   assert.equal(scene.ball.vz,0);
   assert.equal(scene.staged.length,22);
   assert.equal(scene.staged.find(p=>p.id===side+'-10').role,'forward');
-  assert.ok(scene.activeIds.includes((side==='home'?'away':'home')+'-1'));
+  assert.equal(scene.activeIds.includes((side==='home'?'away':'home')+'-1'),
+    s.id!=='dribble-1v1');
   for(let i=0;i<scene.staged.length;i++)for(let j=i+1;j<scene.staged.length;j++)
    assert.ok(Math.hypot(scene.staged[i].x-scene.staged[j].x,
      scene.staged[i].y-scene.staged[j].y)>=0.98-1e-8);

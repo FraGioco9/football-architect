@@ -1854,7 +1854,7 @@ function setupUnifiedScenarioMenu(){
  const menu=byId('preset-options');
  let count=menu.querySelectorAll('[role="option"][data-value]').length;
  if(count!==4)throw new Error('Original four ball presets missing');
- const visibleSmall=new Set(['keeper-1v1','defender-1v1',
+ const visibleSmall=new Set(['dribble-1v1','keeper-1v1','defender-1v1',
   'overload-2v1','duel-2v2','duel-3v3']);
  const visibleMovement=new Set(['post-pass','opposing-convergence',
   'opposing-feedback','native-flank-left',
@@ -1882,8 +1882,8 @@ function setupUnifiedScenarioMenu(){
    count++;
   }
  }
- if(count!==15||menu.querySelectorAll('.me-scenario-group-label').length!==3)
-  throw new Error('Scenario must show 4 physics + 5 small-sided + 6 advanced movement situations');
+ if(count!==16||menu.querySelectorAll('.me-scenario-group-label').length!==3)
+  throw new Error('Scenario must show 4 physics + 6 small-sided + 6 advanced movement situations');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')

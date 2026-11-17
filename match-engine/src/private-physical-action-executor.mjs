@@ -18,7 +18,8 @@ export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
- smallSidedDecisionContext=null,physicalBodyGuardEnabled=false
+ smallSidedDecisionContext=null,isolatedDribbleContext=null,
+ physicalBodyGuardEnabled=false
 }={}){
  if(activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
     activePlayerIds.length<2||activePlayerIds.length>7||
@@ -36,6 +37,16 @@ export function createPrivatePhysicalActionExecutor({
     smallSidedDecisionContext.variantIndex<1||
     smallSidedDecisionContext.variantIndex>29))
   throw new TypeError('Seeded contextual LAB choice needs an active real physical shoe set');
+ if(isolatedDribbleContext!==null&&(
+    !['home','away'].includes(isolatedDribbleContext?.attackingSide)||
+    isolatedDribbleContext?.situationId!=='dribble-1v1'||
+    !Number.isSafeInteger(isolatedDribbleContext?.variantIndex)||
+    isolatedDribbleContext.variantIndex<0||isolatedDribbleContext.variantIndex>29||
+    activePlayerIds===null||activePlayerIds.length!==2||
+    !activePlayerIds.includes(isolatedDribbleContext.attackingSide+'-10')||
+    !activePlayerIds.includes((isolatedDribbleContext.attackingSide==='home'?'away':'home')+'-2')||
+    allowPhysicalCarry!==true))
+  throw new TypeError('Isolated dribble requires paired genuine Rapier shoes');
  if(!ballBody||typeof ballBody.translation!=='function'||
     typeof ballBody.linvel!=='function'||
     typeof ballBody.applyImpulse!=='function'||
@@ -86,7 +97,7 @@ export function createPrivatePhysicalActionExecutor({
   // apply an unrelated uniform impulse over the authentic kickoff.
   const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,
-    smallSidedDecisionContext});
+    smallSidedDecisionContext,isolatedDribbleContext});
   let researchCandidate=null;
   const side=researchReceivingCushionSide;
   const receiverId=side===null?null:side+'-9';
