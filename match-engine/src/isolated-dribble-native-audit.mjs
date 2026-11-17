@@ -2,6 +2,7 @@
 // changes player intent, awards possession or infers successful dribbling.
 // Receives only the original closed Action LAB shoe/ball/current mover frames.
 import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
+import {BALL_RADIUS} from './core.mjs';
 import {PLAYER_VERSION,PLAYER_MAX_SPEED_MPS,PLAYER_MIN_SEPARATION_M}
  from './player-movement.mjs';
 export const ISOLATED_DRIBBLE_AUDIT_VERSION='me-628-d01-native-touches-audit-v1';
@@ -16,7 +17,8 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
   nativeStarts=0,recontacts=0,opposingStarts=0,actions=0;
  let lastEnd=-1,hasEnded=false,ballPath=0,minimumGap=Infinity,
   minPlayerGap=Infinity,maxActualPlayerSpeed=0,pressureTicks=0,
-  nativeBodyBallTicks=0,nativeBodyPairsTicks=0;
+  nativeBodyBallTicks=0,nativeBodyPairsTicks=0,
+  peakGroundClearanceM=0,airborneFramesAbove2Cm=0,peakBallSpeedMps=0;
  const touchTicks=[],actionTicks=[],actionMagnitudes=[],directions=[];
  let latest=null;
  function observe({physics,playerFrame,foot,action,physicalBodies=null}={}){
@@ -54,6 +56,11 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
   if(priorBall)ballPath+=Math.hypot(b.x-priorBall.x,b.y-priorBall.y);
   else firstBall=freeze({x:b.x,y:b.y});
   priorBall={x:b.x,y:b.y};
+  const clearance=Math.max(0,b.z-BALL_RADIUS);
+  peakGroundClearanceM=Math.max(peakGroundClearanceM,clearance);
+  if(clearance>0.02)airborneFramesAbove2Cm++;
+  const bv=physics.ball.velocity;
+  peakBallSpeedMps=Math.max(peakBallSpeedMps,Math.hypot(bv.x,bv.y));
   const distance=Math.hypot(b.x-d.x,b.y-d.y);
   minimumGap=Math.min(minimumGap,distance);
   if(distance<3)pressureTicks++;
@@ -89,6 +96,9 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
    actualImpulseDirectionRad:freeze([...directions]),
    minimumRealDefenderBallGapM:minimumGap,
    measuredPressureTicks:pressureTicks,ballPath2DM:ballPath,
+   peakGroundClearanceM,airborneFramesAbove2Cm,peakBallSpeedMps,
+   meanAppliedTouchIntervalTicks:actionTicks.length<2?null:
+    (actionTicks[actionTicks.length-1]-actionTicks[0])/(actionTicks.length-1),
    ballForwardDistanceM:(b.x-firstBall.x)*(side==='home'?1:-1),
    ballLateralDisplacementM:b.y-firstBall.y,
    nativeBodyBallContactTicks:nativeBodyBallTicks,

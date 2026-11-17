@@ -89,7 +89,7 @@ export function createPrivatePhysicalActionExecutor({
    contactStarted:contact.started,contactActive:contact.active,
    playerFrame,ballPosition:ballBody.translation(),
    ballVelocity:ballBody.linvel(),ballRadiusM,lastActionTick,
-   allowPhysicalCarry
+   allowPhysicalCarry,isolatedDribbleContext
   };
   const gates=inspectPhysicalActionRejection(input);
   // When the private B06b match is PAUSED for a real referee-issued

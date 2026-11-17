@@ -189,7 +189,7 @@ export const PHYSICAL_REJECTION_REASONS_VERSION=
 export function inspectPhysicalActionRejection({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
- allowPhysicalCarry=false
+ allowPhysicalCarry=false,isolatedDribbleContext=null
 }={}){
  if(!Number.isSafeInteger(tick)||tick<1||
     !Array.isArray(contactStarted)||!Array.isArray(contactActive)||
@@ -214,8 +214,10 @@ export function inspectPhysicalActionRejection({
   contactStarted[0]===contactActive[0];
  const actor=exclusive?players.find(p=>p.id===contactStarted[0]):null;
  const gap=actor?Math.hypot(actor.x-ballPosition.x,actor.y-ballPosition.y):null;
+ const requiredCooldown=isolatedDribbleContext?.situationId==='dribble-1v1'?
+  4:UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
  const firstFailedGate=!exclusive?'no-exclusive-shoe-start':
-  tick-lastActionTick<UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS?'cooldown':
+  tick-lastActionTick<requiredCooldown?'cooldown':
   ballPosition.z<ballRadiusM-0.015||
    ballPosition.z>ballRadiusM+MAX_HEIGHT_M?'ball-height':
   Math.hypot(ballVelocity.x,ballVelocity.y)>14?'ball-speed':
@@ -278,7 +280,9 @@ export function selectUniformAutonomousContactAction({
  // Multi-contact remains real physics evidence, never a possession award.
  if(contactStarted.length!==1||contactActive.length!==1||
     contactActive[0]!==contactStarted[0])return null;
- if(tick-lastActionTick<UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS||
+ const requiredCooldown=isolatedDribbleContext!==null?
+  4:UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
+ if(tick-lastActionTick<requiredCooldown||
     ballPosition.z<ballRadiusM-0.015||
     ballPosition.z>ballRadiusM+MAX_HEIGHT_M||
     Math.hypot(ballVelocity.x,ballVelocity.y)>14)
@@ -490,7 +494,7 @@ export function selectUniformAutonomousContactAction({
     physicsTick:tick,actorId:id,source:'real-selector-inputs-pre-impulse',
     exclusiveShoeStart:true,
     cooldownElapsedTicks:tick-lastActionTick,
-    cooldownMinimumTicks:UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,
+    cooldownMinimumTicks:requiredCooldown,
     shoeBallGapM:gap,ballHeightM:ballPosition.z,
     ballRadiusM,ballHorizontalSpeedMps:Math.hypot(ballVelocity.x,ballVelocity.y),
     originalPhysicalGuardsPassed:true,

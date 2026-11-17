@@ -16,7 +16,7 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
- isolatedPhysicalBodies=false}={}){
+ isolatedPhysicalBodies=false,isolatedGroundDribbleBallCentreZ=null}={}){
  if(!R||typeof R.EventQueue!=='function'||!world||
     typeof world.createRigidBody!=='function'||
     !ballCollider||ballCollider.handle===undefined||
@@ -43,20 +43,30 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    new Set(activePlayerIds).size!==activePlayerIds.length||
    activePlayerIds.some(id=>!INITIAL_PLAYERS.some(p=>p.id===id))))
   throw new TypeError('Genuine small-sided source needs 2–7 unique physical shoes');
+ if(isolatedGroundDribbleBallCentreZ!==null&&(
+    !Number.isFinite(isolatedGroundDribbleBallCentreZ)||
+    isolatedGroundDribbleBallCentreZ<0.09||
+    isolatedGroundDribbleBallCentreZ>0.13||
+    activePlayerIds?.length!==2))
+  throw new TypeError('Only isolated 1v1 original ground-ball shoe height');
  const physicalIds=activePlayerIds===null?null:new Set(activePlayerIds);
  const eventQueue=sharedQueue??new R.EventQueue(true);
  const ownsEventQueue=sharedQueue===null;
  const colliders=[],bodies=[],idsByCollider=new Map();
  for(const p of initialPlayers){
   const pose=footProxyTransform(p);
+  const groundPose=isolatedGroundDribbleBallCentreZ===null?pose:
+   {...pose,z:isolatedGroundDribbleBallCentreZ};
   const body=world.createRigidBody(
    R.RigidBodyDesc.kinematicPositionBased()
-    .setTranslation(pose.x,pose.y,pose.z).setRotation(pose.rotation));
+    .setTranslation(groundPose.x,groundPose.y,groundPose.z)
+     .setRotation(pose.rotation));
   const shoeShape=R.ColliderDesc.roundCuboid(
    FOOT_CONTACT_HALF_LENGTH_M,FOOT_CONTACT_HALF_WIDTH_M,
    FOOT_CONTACT_HALF_HEIGHT_M,FOOT_CONTACT_ROUNDING_M)
    .setFriction(FOOT_CONTACT_FRICTION)
-   .setRestitution(FOOT_CONTACT_RESTITUTION)
+   .setRestitution(isolatedGroundDribbleBallCentreZ===null?
+    FOOT_CONTACT_RESTITUTION:0)
    .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS|
     R.ActiveEvents.CONTACT_FORCE_EVENTS);
   if(sharedQueue!==null||isolatedPhysicalBodies)
@@ -85,7 +95,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const poses=next.map(footProxyTransform);
   for(let i=0;i<poses.length;i++){
    const p=poses[i];
-   bodies[i].setNextKinematicTranslation({x:p.x,y:p.y,z:p.z});
+   bodies[i].setNextKinematicTranslation({x:p.x,y:p.y,
+    z:isolatedGroundDribbleBallCentreZ??p.z});
    bodies[i].setNextKinematicRotation(p.rotation);
   }
   positions=next;

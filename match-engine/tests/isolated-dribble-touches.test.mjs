@@ -16,9 +16,9 @@ test('#628 1v1 pure varied native-ground-touch intent is reproducible and mirror
  assert.equal(a.dx,-mirror.dx);assert.equal(a.dy,mirror.dy);
  assert.equal(a.magnitudeNs,mirror.magnitudeNs);
  assert.notEqual(a.magnitudeNs,chooseIsolatedDribbleTouch({...params,variantIndex:9}).magnitudeNs);
- assert.ok(a.magnitudeNs>=0.30&&a.magnitudeNs<=0.54);
+ assert.ok(a.magnitudeNs>=0.095&&a.magnitudeNs<=0.17);
  assert.equal(a.officialPossession,false);assert.equal(a.verifiedSecondTouch,false);
- assert.equal(chooseIsolatedDribbleTouch({...params,variantIndex:0}).magnitudeNs,0.42);
+ assert.equal(chooseIsolatedDribbleTouch({...params,variantIndex:0}).magnitudeNs,0.12);
  assert.throws(()=>chooseIsolatedDribbleTouch({...params,variantIndex:30}),TypeError);
 });
 test('#628 actual 1v1 native source: only attacker physical carry, 2 colliders, both sides and Bodies A/B',
@@ -49,7 +49,7 @@ test('#628 actual 1v1 native source: only attacker physical carry, 2 colliders, 
       const touch=frame.action.decisionContext.isolatedDribbleTouch;
       assert.equal(touch?.tick,tick);assert.equal(touch?.variantIndex,variantIndex);
       assert.equal(touch?.verifiedDribble,false);
-      assert.ok(touch?.magnitudeNs>=0.30&&touch?.magnitudeNs<=0.54);
+      assert.ok(touch?.magnitudeNs>=0.095&&touch?.magnitudeNs<=0.17);
       magnitudes.add(touch.magnitudeNs.toFixed(6));
      }
      if(frame.refereeEvidence?.lastEvent)break;
@@ -94,12 +94,16 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
     forwardM:+f.nativeDribbleAudit.ballForwardDistanceM.toFixed(4),
     pressureTicks:f.nativeDribbleAudit.measuredPressureTicks,
     bodyBallTicks:f.nativeDribbleAudit.nativeBodyBallContactTicks,
-    torsoTicks:f.nativeDribbleAudit.nativeOpposingTorsoContactTicks};
+    torsoTicks:f.nativeDribbleAudit.nativeOpposingTorsoContactTicks,
+    peakClearanceM:+f.nativeDribbleAudit.peakGroundClearanceM.toFixed(5),
+    airFrames:f.nativeDribbleAudit.airborneFramesAbove2Cm,
+    peakBallSpeedMps:+f.nativeDribbleAudit.peakBallSpeedMps.toFixed(4),
+    meanTouchIntervalTicks:f.nativeDribbleAudit.meanAppliedTouchIntervalTicks};
    // Genuine native absence is a measured failed trial, not a forced touch.
    assert.ok(result.actionCount>=0);
    assert.equal(result.impulse.length,result.actionCount);
-   assert.ok(result.impulse.every(n=>n>=0.29&&n<=0.55));
-   if(variantIndex===0)assert.ok(result.impulse.every(n=>Math.abs(n-0.42)<0.0001));
+   assert.ok(result.impulse.every(n=>n>=0.094&&n<=0.171));
+   if(variantIndex===0)assert.ok(result.impulse.every(n=>Math.abs(n-0.12)<0.0001));
    samples.push(result);
   }finally{lab.dispose();}
   if(bodyGuardEnabled&&[0,7,17,29].includes(variantIndex)){
@@ -130,6 +134,13 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
   distinctPathM:new Set(samples.map(s=>s.pathM.toFixed(2))).size,
   maxActions:Math.max(...samples.map(s=>s.actionCount)),
   maxRecontacts:Math.max(...samples.map(s=>s.recontacts)),
+  maximumGroundClearanceM:Math.max(...samples.map(s=>s.peakClearanceM)),
+  samplesWithAirFrames:samples.filter(s=>s.airFrames>0).length,
+  maximumBallSpeedMps:Math.max(...samples.map(s=>s.peakBallSpeedMps)),
+  withFourOrMoreTouches:samples.filter(s=>s.actionCount>=4).length,
+  meanTouchesPerTrial:samples.reduce((n,s)=>n+s.actionCount,0)/samples.length,
+  meanTouchIntervalTicks:samples.filter(s=>s.meanTouchIntervalTicks!==null)
+   .reduce((n,s,_,a)=>n+s.meanTouchIntervalTicks/a.length,0),
   minPressureTicks:Math.min(...samples.map(s=>s.pressureTicks)),
   maxPressureTicks:Math.max(...samples.map(s=>s.pressureTicks)),
   sample:samples.filter(s=>s.bodyGuardEnabled&&[0,7,17,29].includes(s.variantIndex))
