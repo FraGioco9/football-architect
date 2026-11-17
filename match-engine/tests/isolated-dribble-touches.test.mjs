@@ -36,6 +36,14 @@ test('#628 D01-GAIT-01 pure live player/ball foot target is mirrored, bounded an
  const close=advanceD01LiveShoeGait({...source,phaseRad:Math.PI-0.27,
   ball:{...source.ball,position:{x:29.75,y:0,z:0.11}}});
  assert.ok(far.forwardM>close.forwardM,'live long-ball gap can extend forward foot only');
+ const pressurePhase=Math.PI-0.27;
+ const unsafe=advanceD01LiveShoeGait({...source,phaseRad:pressurePhase,
+  defender:{x:30.7,y:0.1}});
+ const open=advanceD01LiveShoeGait({...source,phaseRad:pressurePhase,
+  defender:{x:36,y:0.1}});
+ assert.equal(unsafe.frequencyHz,2.5);
+ assert.ok(unsafe.forwardM<open.forwardM);
+ assert.ok(unsafe.freeSpace<open.freeSpace);
  assert.throws(()=>advanceD01LiveShoeGait({...source,ball:null}),TypeError);
 });
 test('#628 1v1 pure varied native-ground-touch intent is reproducible and mirrored',()=>{

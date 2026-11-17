@@ -18,10 +18,12 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
  // ball position/velocity. This is a foot target only, never a collision,
  // impulse, synthetic START/END, possession or ball correction.
  const gaitClamp=(n,a,b)=>Math.max(a,Math.min(b,n));
- export function advanceD01LiveShoeGait({phaseRad,player,ball,tick}={}){
+ export function advanceD01LiveShoeGait({phaseRad,player,ball,defender=null,tick}={}){
   if(!Number.isInteger(tick)||tick<1||
      !Number.isFinite(phaseRad)||phaseRad<0||phaseRad>=2*Math.PI||
      !player||!ball?.position||!ball?.velocity||
+     (defender!==null&&(!defender||
+       ![defender.x,defender.y].every(Number.isFinite)))||
      ![player.x,player.y,player.vx,player.vy,player.facingRad,
        ball.position.x,ball.position.y,ball.position.z,
        ball.velocity.x,ball.velocity.y,ball.velocity.z]
@@ -32,22 +34,28 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
   const aheadM=relX*cos+relY*sin;
   const lateralM=-relX*sin+relY*cos;
   const speedMps=Math.hypot(player.vx,player.vy);
-  // Do not increase the fixed mechanical frequency blindly. Respond smoothly
-  // to REAL observed speed and preserve a true full release stroke.
-  const frequencyHz=2.45+0.25*gaitClamp(speedMps/4,0,1);
+  // The opposing REAL defender can push the ball with native body/shoe
+  // contacts. Under close pressure keep the proven original stroke until
+  // actual space opens. Do not override its physically resulting velocity.
+  const defenderGapM=defender===null?Infinity:
+   Math.hypot(ball.position.x-defender.x,ball.position.y-defender.y);
+  const freeSpace=gaitClamp((defenderGapM-2.8)/1.8,0,1);
+  const desiredHz=2.45+0.25*gaitClamp(speedMps/4,0,1);
+  const frequencyHz=2.5+(desiredHz-2.5)*freeSpace;
   const nextPhase=(phaseRad+2*Math.PI*frequencyHz/60)%(2*Math.PI);
   const stroke=-Math.cos(nextPhase);
   // At the original .50–.70m player/ball gap, a modest forward approach
   // reduces missed shoes; backing stroke remains unchanged for native END.
   const approachM=gaitClamp((aheadM-0.53)*0.40,0,0.055)*
-   Math.max(0,stroke);
+   Math.max(0,stroke)*freeSpace;
   const forwardM=0.105*stroke+approachM;
   const sideM=gaitClamp(lateralM*0.20,-0.03,0.03)*
-   Math.max(0,stroke);
+   Math.max(0,stroke)*freeSpace;
   return Object.freeze({
    phaseRad:nextPhase,frequencyHz,forwardM,sideM,
    observedSpeedMps:speedMps,observedAheadM:aheadM,
-   observedLateralM:lateralM,observedBallSpeedMps:
+   observedLateralM:lateralM,observedDefenderGapM:defenderGapM,
+   freeSpace,observedBallSpeedMps:
     Math.hypot(ball.velocity.x,ball.velocity.y),
    nativeShoeEventCreated:false,ballImpulseCreated:false,
    possessionAssigned:false
@@ -159,8 +167,10 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const next=validateFootContactFrame(playerFrame,nextTick,positions);
   const actor=dribbleAttackerId===null?null:
    playerFrame.players.find(p=>p.id===dribbleAttackerId);
+  const defender=actor?playerFrame.players.find(p=>
+   p.team!==actor.team&&p.number===2):null;
   const gait=actor?advanceD01LiveShoeGait({
-   phaseRad:gaitPhaseRad,player:actor,ball:preStepBall,tick:nextTick
+   phaseRad:gaitPhaseRad,player:actor,defender,ball:preStepBall,tick:nextTick
   }):null;
   const proposed=shoeFeet(next,nextTick,gait);
   // The whole shoe also moves when its owner turns or advances. Clamp the
