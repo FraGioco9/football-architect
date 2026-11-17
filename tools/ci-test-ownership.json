@@ -192,6 +192,7 @@
     "tests/clean-ui-03-webkit-iphone.mjs": "browser",
     "tests/cloudflare-preview-package-workflow.test.mjs": "site-node",
     "tests/club-colors-integration.test.mjs": "site-node",
+    "tests/club-competition-catalogue.test.mjs": "site-node",
     "tests/club-competition-skeleton-layout.test.mjs": "site-node",
     "tests/club-competition-summary.test.mjs": "site-node",
     "tests/club-crests.test.mjs": "site-node",

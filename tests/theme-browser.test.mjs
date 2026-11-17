@@ -388,12 +388,19 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("window.faFixtures.prepare(null)()");
         assert.equal(await run("document.getElementById('app-fixtures-round').getClientRects().length"),0,"removing schedule hides controls again");
         await run("document.getElementById('competition-tab-standings').click()");
+        // The tab switch is asynchronous and the DEV source may briefly
+        // replace the visible table with a first-paint skeleton. Focus QA
+        // must target an attached, visible row after the layout has settled.
+        await wait("document.getElementById('competition-panel-standings')?.hidden===false&&"+
+          "document.querySelector('#app-standings-body tr')?.getClientRects().length>0&&"+
+          "getComputedStyle(document.querySelector('.app-world-standing-table')).visibility==='visible'");
         // UX-01B: desktop-only styling, sticky geometry and both themes.
         if(name==="desktop"){
           for(const width of [621,1024,1159,1160,1440]){
             await cmd("Emulation.setDeviceMetricsOverride",
               {width,height:h,deviceScaleFactor:1,mobile:false,screenWidth:width,screenHeight:h});
-            await wait("innerWidth==="+width);
+            await wait("innerWidth==="+width+"&&getComputedStyle(document.querySelector('.app-world-standing-table')).visibility==='visible'");
+            await run("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
             const desktop=await run("(()=>{const t=document.querySelector('.app-world-standing-table'),r=t.tBodies[0].rows[0],c=r.cells,style=e=>getComputedStyle(e),head=style(t.tHead.rows[0].cells[0]),club=style(r.querySelector('.app-world-club-name')),crest=style(r.querySelector('.app-world-club-crest-placeholder')),pts=style(c[9]);const input=document.createElement('button');input.type='button';input.textContent='Focus QA';input.setAttribute('aria-label','Focus QA');c[10].append(input);const before=style(c[0]).backgroundColor,ptsBefore=pts.backgroundColor;input.focus();const focus=style(c[0]).backgroundColor,ptsAfter=style(c[9]).backgroundColor;const focused=document.activeElement===input;input.remove();return {rows:t.tBodies[0].rows.length,cells:c.length,minWidth:style(t).minWidth,headHeight:head.height,cellHeight:style(c[0]).height,pos:style(c[0]).width,clubLeft:style(c[1]).left,sticky:style(c[1]).position,clubMin:style(c[1]).minWidth,clubFont:club.fontSize,clubWeight:club.fontWeight,crestWidth:crest.width,crestHeight:crest.height,numeric:style(c[2]).textAlign,pointsAlign:pts.textAlign,pointsSize:pts.fontSize,pointsWeight:pts.fontWeight,pointsText:c[9].textContent,pointsBg:pts.backgroundColor,formAlign:style(c[10]).textAlign,focusChanged:before!==focus,focusColor:focus,pointsStable:ptsBefore===ptsAfter,focused}})()");
             const wide=width>=1160;
             assert.equal(desktop.rows,16,"UX-01B rows "+width);
@@ -412,7 +419,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
             assert.equal(desktop.formAlign,"center");
             assert.ok(["—","0"].includes(desktop.pointsText),"explicit DEV style fixture may show unplayed zeroes or reserved unknowns");
             assert.equal(desktop.pointsBg,theme==="light"?"rgb(212, 235, 221)":"rgb(38, 71, 62)");
-            assert.ok(desktop.focused&&desktop.focusChanged&&desktop.pointsStable,"UX-01B focus "+width);
+            assert.ok(desktop.focused&&desktop.focusChanged&&desktop.pointsStable,
+              "UX-01B focus "+width+" "+JSON.stringify({focused:desktop.focused,focusChanged:desktop.focusChanged,focusColor:desktop.focusColor,pointsStable:desktop.pointsStable}));
           }
           await cmd("Emulation.setDeviceMetricsOverride",
             {width:w,height:h,deviceScaleFactor:1,mobile:false,screenWidth:w,screenHeight:h});
