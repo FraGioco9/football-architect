@@ -5,6 +5,8 @@
 import {INITIAL_PLAYERS,PLAYER_PITCH,PLAYER_VERSION} from './player-movement.mjs';
 import {chooseBasicDefensiveAttempt}
  from './basic-defensive-physical-actions-b03.mjs';
+import {chooseSmallSidedContextAction}
+ from './small-sided-context-choice.mjs';
 
 
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
@@ -230,7 +232,7 @@ export function inspectPhysicalActionRejection({
 export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
- allowPhysicalCarry=false,activePlayerIds=null
+ allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null
 }){
  if(!Number.isSafeInteger(tick)||tick<1||
     !Array.isArray(contactStarted)||new Set(contactStarted).size!==contactStarted.length||
@@ -250,7 +252,15 @@ export function selectUniformAutonomousContactAction({
     (activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
       activePlayerIds.length<2||activePlayerIds.length>7||
       new Set(activePlayerIds).size!==activePlayerIds.length||
-      activePlayerIds.some(id=>!ids.includes(id)))))
+      activePlayerIds.some(id=>!ids.includes(id))))||
+    (smallSidedDecisionContext!==null&&(
+      activePlayerIds===null||allowPhysicalCarry!==true||
+      typeof smallSidedDecisionContext!=='object'||
+      !['home','away'].includes(smallSidedDecisionContext.attackingSide)||
+      typeof smallSidedDecisionContext.situationId!=='string'||
+      !Number.isSafeInteger(smallSidedDecisionContext.variantIndex)||
+      smallSidedDecisionContext.variantIndex<1||
+      smallSidedDecisionContext.variantIndex>29)))
   throw new TypeError('Verified same-tick movement, ball and real Rapier shoe starts required');
  // A4.2b.3: an ambiguous START/ACTIVE contact cannot confer a right
  // to kick the ball. Require one genuine START and no other active shoe.
@@ -292,6 +302,34 @@ export function selectUniformAutonomousContactAction({
   const defensiveAttempt=chooseBasicDefensiveAttempt({
    actor:player,players:actors,ball:ballPosition,velocity:ballVelocity
   });
+  // LAB-VAR-02 only: AFTER verified genuine exclusive Rapier shoe START,
+  // examine live legitimate affordances. Normal 22-player policy, keeper
+  // and defensive priority, and archival V01 remain byte-identical.
+  const contextualAttacker=smallSidedDecisionContext!==null&&
+   player.team===smallSidedDecisionContext.attackingSide&&
+   player.role!=='goalkeeper'&&!defensiveAttempt;
+  const contextualRecipient=contextualAttacker?
+   chooseRecipient(player,ballPosition,actors):null;
+  const carryPossible=contextualAttacker&&allowPhysicalCarry&&
+   Math.abs(ballPosition.y)<=20&&
+   attack*ballPosition.x>=-30&&attack*ballPosition.x<=45&&
+   Math.abs(toGoal)>5&&
+   Math.hypot(ballVelocity.x,ballVelocity.y)<=8;
+  const contextualChoice=contextualAttacker?
+   chooseSmallSidedContextAction({
+    situationId:smallSidedDecisionContext.situationId,
+    variantIndex:smallSidedDecisionContext.variantIndex,tick,
+    actorId:id,team:player.team,
+    attackingSide:smallSidedDecisionContext.attackingSide,
+    goalDistanceM:Math.abs(toGoal),nearestOpponentM,
+    shotLaneClearanceM:chosenShotLane?.clearance??null,
+    passLaneClearanceM:contextualRecipient?.laneClearanceM??null,
+    recipientOpponentGapM:contextualRecipient?.nearestOpponentM??null,
+    passForwardM:contextualRecipient?.forward??null,
+    canShoot:chosenShotLane!==null,
+    canPass:contextualRecipient!==null,
+    canCarry:carryPossible
+   }):null;
   let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
   if(eligibleLiveKeeperSave(player,ballPosition,ballVelocity)){
    action='save';dx=attack*7;
@@ -305,6 +343,15 @@ export function selectUniformAutonomousContactAction({
    rule=action==='tackle'?
     'observed-near-opponent-ground-ball-poke-attempt':
     'observed-inbound-ball-line-block-attempt';
+  }else if(contextualChoice?.selected==='pass'){
+   recipientInfo=contextualRecipient;
+   recipient=recipientInfo.player;
+   action='pass';dx=recipient.x-ballPosition.x;
+   dy=recipient.y-ballPosition.y;
+   rule='small-sided-live-context-safe-pass';
+  }else if(contextualChoice?.selected==='carry'){
+   action='carry';dx=attack*8;dy=-ballPosition.y*0.12;
+   rule='small-sided-live-context-short-physical-touch';
   }else if(chosenShotLane){
    action='shot';dx=toGoal;
    dy=chosenShotLane.target.y-ballPosition.y;vertical=0.24;
@@ -437,7 +484,8 @@ export function selectUniformAutonomousContactAction({
      crossInfo?.defenderGapM??null,
     outcomeNotYetObserved:true,
     opponentTackleProven:false,interceptionProven:false,
-    passCompleted:false,goalScored:false
+    passCompleted:false,goalScored:false,
+    ...(contextualChoice?{smallSidedChoice:contextualChoice}:{})
    }),
    temporaryPlayersOnly:true,uniformPlayerStats:true,
    officialMatchAction:false,officialMatchPossession:false,

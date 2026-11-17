@@ -27,6 +27,7 @@ let playersShown=false;
 let inspectedPlayerId=null;
 // All visible scenes use the existing pitch/elevation/transport, never dialogs.
 let activeScene=null,activeLab=null,activeVariantIndex=0;
+let lastInlineFootballAction=null;
 const inlinePhysics=s=>Object.freeze({
  tick:s.physicsTick??s.tick,
  time:s.timeS??(s.physicsTick??s.tick)*FIXED_DT,
@@ -128,6 +129,7 @@ function restart() {
     if(activeLab)activeLab.dispose();
     if(engine){engine.dispose();engine=null;}
     activeLab=next;
+    lastInlineFootballAction=null;
     physicsTickSnapshot=inlinePhysics(next.snapshot());
     history=[physicsTickSnapshot];
     accumulator=0;playing=false;inspectedPlayerId=null;
@@ -163,6 +165,12 @@ function advance() {
       playing=false;return;
     }
     const observed=activeLab.step();
+    if(activeScene.kind==='action'&&observed.action?.appliedByRapier)
+      lastInlineFootballAction=Object.freeze({
+       team:observed.action.team,action:observed.action.action,
+       sourceTick:observed.physicsTick,
+       contextual:observed.action.decisionContext?.smallSidedChoice!==undefined
+      });
     const snapshot=inlinePhysics(observed);
     physicsTickSnapshot=snapshot;
     history.push(snapshot);
@@ -329,8 +337,11 @@ function render() {
     const detail=activeScene.kind==='action'?
       '· '+f.genuinePhysicalPlayerCount+' real physical players'+
       ' · source events '+f.eventCount+
-      (f.action?' · '+f.action.team.toUpperCase()+' '+
-       f.action.action.toUpperCase()+' native shoe/impulse':'')+
+      (lastInlineFootballAction?' · last '+
+       lastInlineFootballAction.team.toUpperCase()+' '+
+       lastInlineFootballAction.action.toUpperCase()+
+       ' native shoe/impulse'+
+       (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
       (f.refereeEvidence?.lastEvent?' · '+
        f.refereeEvidence.lastEvent.kind.toUpperCase()+' verified crossing':'')+
       (f.matchTimeline?' · provisional '+

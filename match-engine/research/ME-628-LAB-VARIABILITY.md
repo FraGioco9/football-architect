@@ -18,3 +18,17 @@ The existing Lab previously had one fixed starting geometry per S-01…S-05 for 
 - Passing VAR-01 does **not** mean decision utility / execution quality / realistic dribbling are complete. The next stages LAB-VAR-02, LAB-VAR-03 and LAB-DRIBBLE-01 remain separate checkboxes and require comparative QA.
 
 No full 11v11 until the reduced situations have been approved. PR remains Draft/HOLD, no deploy, merge or remote database writes.
+
+## LAB-VAR-02 — Live contextual physical-action choice
+
+**Isolation**: only the five small-sided scenes with V02–V30 enable the seeded choice. V01 remains the original uniform baseline. The default 22-player selector and 17 legacy closed Action LAB regression cases remain unchanged. There is NO externally submitted player command or action impulse.
+
+At a real, exclusive Rapier shoe START, with original 60 Hz movement, live ball coordinates and the actual 2–7 active participants:
+
+1. Retain original priority for real keeper physical parry attempts and genuine defensive tackle/interception attempts.
+2. Compute actual shooting-lane clearance, genuinely eligible recipient and unobstructed pass, and short-ground carry eligibility using live geometry. No candidate means no chance of selecting it.
+3. Weight only eligible **shot/pass/carry** options according to distance to goal, direct opponent pressure, lane clearance and recipient availability. Choose by seeded, symmetric hash of situation/variant/player number/physics tick. The weights allow a close-range shot even when a pass exists, while a safe pressured pass may win despite an open shooting lane. A carry is a single 0.42 Ns native short touch, **not** dribbling success, controlled possession, shielding or an animated fake.
+4. The existing executor checks the original source evidence gates and applies one and only one Rapier impulse in the existing World; records a read-only contextual-choice trace within `decisionContext`. The UI displays the latest ACTUAL Rapier action rather than labeling a planned but never executed choice as completed.
+5. If no shot/pass/carry is viable, retain the original player action fallbacks. No official goal, score, pass completion, reception, save, interception or possession is manufactured.
+
+**QA**: pure seeded mirrored HOME/AWAY choice distribution for 29 variants, blocked-opportunity negative cases, 22-player/ordinary scenario fail-closed behavior, real physical first-attempt distributions in 1v1 vs goalkeeper and 2v1 with native shoe START and impulse. Further success/failure mechanics, player attributes and variable execution strength remain LAB-VAR-03/DRIBBLE-01 and are not claimed here.

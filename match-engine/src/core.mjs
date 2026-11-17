@@ -550,8 +550,16 @@ export function createEngine(RAPIER, input = {}, {
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
-      allowPhysicalCarry:diagnosticAutonomousCarryEnabled,
+      allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
+       (smallSided?.variantIndex>0),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
+      ...(smallSided?.variantIndex>0?{
+       smallSidedDecisionContext:Object.freeze({
+        situationId:smallSided.id,
+        variantIndex:smallSided.variantIndex,
+        attackingSide:smallSided.side
+       })
+      }:{}),
       researchReceivingCushionSide:diagnosticResearchReceivingCushionEnabled?
        diagnosticResearchControlSide:null,
       researchReceivingDecisionSide:diagnosticResearchReceivingDecisionEnabled?

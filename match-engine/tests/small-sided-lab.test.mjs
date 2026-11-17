@@ -260,3 +260,53 @@ test('#628 LAB-VAR-01 variants preserve real Rapier native shoes and original-ac
   }finally{a.dispose();b.dispose();}
  }
 });
+
+test('#628 LAB-VAR-02 live small-sided choices vary across 29 seeds and still require real Rapier exclusive shoe impulses',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const sId of ['keeper-1v1','overload-2v1']){
+  const observed=new Set(),counts={shot:0,pass:0,carry:0,other:0};
+  for(const side of ['home','away'])for(let variantIndex=1;variantIndex<30;variantIndex++){
+   // Source matrix for HOME, plus mirrored AWAY sample (VAR-04 covers
+   // the exhaustive two-side distribution and longer real-play sequences).
+   if(side==='away'&&![1,9,21].includes(variantIndex))continue;
+   const scene=createControlledActionLab(R,sId,{shotSide:side,variantIndex});
+   try{
+    const zero=scene.snapshot();
+    assert.equal(zero.smallSidedVariantIndex,variantIndex);
+    let first=null;
+    for(let tick=1;tick<=90;tick++){
+     const frame=scene.step();
+     assert.ok(frame.starts.every(id=>frame.smallSidedParticipants.includes(id)),
+      'Only existing small-sided native Rapier shoes can start a contact');
+     if(frame.action?.team===side){
+      first=frame.action;
+      assert.deepEqual(frame.starts,[first.playerId]);
+      assert.equal(first.appliedByRapier,true);
+      assert.equal(first.actualPhysicsImpulseApplied,true);
+      assert.equal(first.physicalTrigger,'same-tick-real-rapier-shoe-start');
+      assert.equal(first.decisionContext.smallSidedChoice?.selected,
+       first.action,'applied impulse must correspond to live eligible choice');
+      assert.equal(first.officialMatchAction,false);
+      assert.equal(first.officialMatchPossession,false);
+      assert.equal(frame.officialMatchResult,null);
+      break;
+     }
+     if(frame.refereeEvidence?.lastEvent)break;
+    }
+    assert.ok(first,sId+' '+side+' V'+(variantIndex+1)+
+     ' must produce an actual attacking Rapier shoe impulse');
+    observed.add(first.action);
+    counts[first.action in counts?first.action:'other']++;
+   }finally{scene.dispose();}
+  }
+  assert.ok(observed.has('shot'),'real selected situations still shoot');
+  assert.ok(observed.has('carry'),'real selected situations must also carry');
+  if(sId==='overload-2v1')
+   assert.ok(observed.has('pass'),'2v1 source geometry must offer real passes');
+  process.stdout.write('ME_628_LIVE_CONTEXT_VARIATION '+JSON.stringify({
+   situationId:sId,counts,distinct:[...observed].sort(),
+   requiresNativeRapier:true,officialResult:null
+  })+'\\n');
+ }
+});
