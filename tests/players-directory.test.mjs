@@ -260,7 +260,8 @@ test('#532 public Overview renders Flag Player Positions Age Height Foot Club an
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) col\.app-players-view-third-column\{width:var\(--app-players-positions-width\)\}/);
  assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] col\.app-players-view-third-column\{width:var\(--app-players-positions-width\)\}/);
  assert.match(html,/while\(row\.cells\.length>2\)row\.deleteCell\(2\)/);
- assert.match(js,/fetch\('\/clubs\/_shared\/manifest\.json',\{credentials:'omit',cache:'force-cache'\}\)/);
+ assert.match(js,/import\('\/assets\/match-public-context\.mjs'\)/);
+ assert.doesNotMatch(js,/fetch\('\/clubs\/_shared\/manifest\.json'/);
  assert.match(js,/Object\.hasOwn\(catalog,key\)\|\|catalog\[key\]!==path/);
  assert.match(js,/crest\.dataset\.playerClubCrest=player\.clubKey/);
  assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+id\+'\/overview'/);

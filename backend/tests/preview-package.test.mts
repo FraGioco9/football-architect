@@ -36,10 +36,10 @@ test('offline exact-snapshot preparation compiles a standalone guarded package a
   try{
    const db=await runtime.getD1Database('DB');for(const migration of await readD1Migrations(join(source,'backend/migrations')))await db.batch(migration.queries.map(sql=>db.prepare(sql)));
    await db.prepare("INSERT INTO account_environment_pool VALUES(1,'dev-preview',1)").run();
-   for(const path of ['/account/login','/calendar','/competitions/it-1/fixtures?season=1','/clubs/it/3/history']){
+   for(const path of ['/account/login','/calendar','/competitions/it-1/fixtures?season=1','/clubs/it/3/history','/players/44','/players/44?view=info']){
     const r=await runtime.dispatchFetch(target.origin+path);assert.equal(r.status,200,path+(r.status===200?'':' '+(await r.text()).slice(0,1200)));assert.match(r.headers.get('content-type')??'',/html/);assert.match(r.headers.get('cache-control')??'',/no-store/);assert.equal(r.headers.get('x-fa-source-sha'),sourceSha);assert.doesNotMatch(await r.text(),/window\.faDevPreviewMode=true|data-fa-dev-preview/);
    }
-   for(const path of ['/backend/wrangler.toml','/tools/publication-guard.mjs','/__fa_dev__/standings-client.mjs'])assert.equal((await runtime.dispatchFetch(target.origin+path)).status,404,path);
+   for(const path of ['/backend/wrangler.toml','/tools/publication-guard.mjs','/__fa_dev__/standings-client.mjs','/players/0','/players/044'])assert.equal((await runtime.dispatchFetch(target.origin+path)).status,404,path);
    const headers={'CF-Connecting-IP':'192.0.2.10'};
    const handshake=await runtime.dispatchFetch(target.origin+'/api/environment',{headers});assert.equal(handshake.status,200);assert.equal((await handshake.json() as {pool:string}).pool,'dev-preview');
    assert.equal((await runtime.dispatchFetch(target.origin+'/api/player/session',{headers})).status,401);

@@ -165,12 +165,13 @@
   const scrollPane=document.querySelector('.fa-shell-content-scroll');
   let state=parseLocation(),ticket=0,current=null,lastCount=null,status='loading';
   let loadedThrough=state.page,appendPending=false,appendError='',batchAbort=null;
-  // One canonical public manifest for every rendered segment; never request a crest per player.
+  // A generated small identity catalogue replaces the full 320-club profile
+  // manifest (descriptions, histories and rivalries do not belong in Players).
   let clubCrestsPromise=null;
   function hydrateClubCrests(){
    if(table.dataset.playersTableMode!=='overview')return;
-   if(!clubCrestsPromise)clubCrestsPromise=fetch('/clubs/_shared/manifest.json',{credentials:'omit',cache:'force-cache'})
-    .then(response=>{if(!response.ok)throw Error('club_manifest_unavailable');return response.json()})
+   if(!clubCrestsPromise)clubCrestsPromise=import('/assets/match-public-context.mjs')
+    .then(module=>module.publicClubIdentityCatalog())
     .then(manifest=>Array.isArray(manifest.clubs)&&manifest.clubs.length===320&&manifest.clubCrests&&typeof manifest.clubCrests==='object'?manifest:null)
     .catch(()=>null);
    void clubCrestsPromise.then(manifest=>{

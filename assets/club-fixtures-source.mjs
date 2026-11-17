@@ -1,6 +1,7 @@
 // Read-only Club Fixtures projection. Authority stays with the shared season validator.
 import {validPublicWorld,scoreValid} from './authoritative-season.mjs';
 import {competitionIdsForClub} from './club-season-source.mjs';
+import {indexPublishedMatchLinks,matchIdForFixture} from './published-match-links.mjs';
 const compare=(a,b)=>a<b?-1:a>b?1:0;
 const same=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
 export function projectClubFixtures(fixtures,clubKey,season,day){
@@ -86,7 +87,7 @@ export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,
   return projectPublishedDraw({payload,clubKey,season,world,manifest,allowed,base});
  const closed=season<world.seasonNumber||world.phase==='closed',data=payload.data,provenance=payload.provenance;
  if(payload.status!==(closed?'available':'partial')||payload.reason!==null||
-   provenance?.kind!=='authoritative'||provenance.resultAuthority!=='temporary-score-v1'||
+   provenance?.kind!=='authoritative'||provenance.resultAuthority!=='temporary-lineup-v1'||
    typeof provenance.sourceRef!=='string'||
    !provenance.sourceRef.startsWith('club-fixtures:'+world.generation+':season:'+season+':')||
    !/^[a-f0-9]{64}$/.test(provenance.sourceRef.split(':').at(-1))||
@@ -112,4 +113,32 @@ export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,
  }
  const rows=projectClubFixtures(data.fixtures,clubKey,season,base.day);
  return {...base,competitions,rows,coverage:'complete'};
+}
+
+/**
+ * A complete/historical club fixture row retains the original source Fixture.id.
+ * Resolve public IDs from one published collection per known competition,
+ * never from pairings or numeric list positions. Missing collections fail closed.
+ * The controller's source/world/season abort fence discards stale responses.
+ */
+export async function attachPublishedClubMatchLinks(snapshot,{fetchJson,signal}){
+ if(snapshot?.source!=='authoritative'||snapshot.coverage!=='complete'||
+    !Number.isSafeInteger(snapshot.season)||snapshot.season<1||
+    !Array.isArray(snapshot.competitions)||!Array.isArray(snapshot.rows)||typeof fetchJson!=='function')
+  return snapshot;
+ const indexes=await Promise.all(snapshot.competitions.map(async competition=>{
+  try{
+   const id=competition.id,season=snapshot.season;
+   const payload=await fetchJson('/api/matches/seasons/'+season+'/competitions/'+id,{signal});
+   if(signal?.aborted)throw Error('Cancelled match links');
+   return [id,indexPublishedMatchLinks(payload,season,id)];
+  }catch(error){if(signal?.aborted)throw error;return [competition.id,null];}
+ }));
+ const byCompetition=new Map(indexes);
+ const rows=snapshot.rows.map(row=>{
+  const index=byCompetition.get(row.competitionId);
+  const id=index?matchIdForFixture({...row,sourceFixtureId:row.id},index):null;
+  return Object.freeze({...row,matchId:id});
+ });
+ return {...snapshot,rows,linkAuthority:'published-match-index-v1'};
 }

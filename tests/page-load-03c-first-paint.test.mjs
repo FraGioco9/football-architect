@@ -139,8 +139,11 @@ test('QA-05: the real History panel and its skeleton paint before other competit
   assert.doesNotMatch(html,/historyFinalLeagueTable|app-view-skeleton-history-table/,
    competition.slug+' no History final table skeleton');
   const css=html.match(/<style data-fa-competition-shell>([^<]+)<\/style>/)?.[1]||'';
-  const visibilityGuard='html[data-fa-competition-prepaint]:not([data-competition-view="history"]) body{visibility:hidden}';
-  assert.ok(css.includes(visibilityGuard),competition.slug+' History must not be blocked by the body prepaint gate');
+  const visibilityGuard='html[data-fa-competition-prepaint]:not([data-competition-view="history"]) .fa-shell-content-scroll{opacity:0}';
+  assert.ok(css.includes(visibilityGuard),competition.slug+' History must not be blocked by the opacity prepaint gate');
+  assert.ok(css.includes('html[data-competition-view]:not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) .fa-shell-content-scroll{opacity:1;visibility:visible}'),
+   competition.slug+' must reveal the scroll pane after prepaint, except while fragment alignment is pending');
+  assert.ok(!css.includes(' body{visibility:hidden}'),competition.slug+' never hides the entire body during prepaint');
   assert.ok(!css.includes('html[data-fa-competition-prepaint] body{visibility:hidden}'),
    competition.slug+' no blanket body hiding');
   assert.ok(html.indexOf('id="competition-tab-history"')<history,competition.slug+' static tabs precede History content');

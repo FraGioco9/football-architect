@@ -96,7 +96,7 @@ function paint(){
 const path=location.pathname.replace(/^\/app(?=\/)/,'').replace(/\/+$/,'');
 const onCompetition=path==='/competitions'||path.startsWith('/competitions/');
 const onClubs=path==='/clubs'||path.startsWith('/clubs/');
-const onPlayers=path==='/players';
+const onPlayers=path==='/players'||/^\/players\/[1-9][0-9]*$/.test(path);
 const selected=onPlayers?nav.querySelector('[data-nav01-players]'):onClubs?nav.querySelector('[data-nav01-clubs]'):nav.querySelector('#app-nav-'+(onCompetition?'divisions':path==='/calendar'?'calendar':path==='/settings'?'settings':(path==='/admin'||path.startsWith('/admin/'))?'admin':(path==='/account'||path.startsWith('/account/'))?'profile':'dashboard'));
 for(const link of nav.querySelectorAll('.fa-shell-link')){const active=link===selected;link.classList.toggle('is-active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');}
 let opened=false;try{opened=sessionStorage.getItem('fa-nav01-expanded')==='true';}catch{}
@@ -171,7 +171,6 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <button type="button" data-admin-command="domestic" data-admin-copy="cmddomestic" disabled>Generate domestic calendar</button>
  <button type="button" data-admin-command="draw" data-admin-copy="cmddraw" disabled>Draw international cups</button>
  <button type="button" data-admin-command="publish" data-admin-copy="cmdpublish" disabled>Publish international calendar</button>
- <button type="button" data-admin-command="start" data-admin-copy="cmdstart" disabled>Start season</button>
  <button type="button" data-admin-command="advance" data-admin-copy="cmdadvance" disabled>Advance day</button>
  <button type="button" data-admin-command="archive" data-admin-copy="cmdarchive" disabled>Archive season</button>
  <button type="button" data-admin-command="close" data-admin-copy="cmdclose" disabled>Close season</button>

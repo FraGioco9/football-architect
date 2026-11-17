@@ -7,7 +7,6 @@ import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.t
 import {resetWorld} from '../src/reset-world-command.ts';
 import {previewPlayerGeneration,commitPlayerGeneration,listGeneratedPlayers} from '../src/players-generation-command.ts';
 import {readPublicPlayers} from '../src/public-players-read.ts';
-import {generateSeasonCalendar} from '../src/calendar-command.ts';
 import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
@@ -38,7 +37,7 @@ it('purges all season state and retains admin access plus historical operation l
  await expect(resetWorld(db,session,resetRequest,'reset-other-command-00001',now)).rejects.toMatchObject({status:409});
  const audit=await db.prepare("SELECT generation,expected_revision,resulting_revision FROM admin_operations WHERE command='reset-world-v1'").first();
  expect(audit).toMatchObject({generation:previousGeneration,expected_revision:resetRequest.expectedRevision,resulting_revision:resetRequest.expectedRevision+1});
- for(const table of ['seasons','season_admin_events','season_domestic_stages','season_calendars','season_draws','season_match_slots','season_day_outcomes','season_knockout_ties','season_archives'])
+ for(const table of ['seasons','season_admin_events','season_domestic_stages','season_calendars','season_draws','season_match_slots','season_lineup_day_outcomes','match_lineup_result_receipts','season_knockout_ties','season_archives'])
   expect((await db.prepare('SELECT count(*) n FROM '+table).first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM admin_accounts').first()).n).toBe(1);
  expect((await db.prepare('SELECT count(*) n FROM player_sessions').first()).n).toBe(1);
@@ -153,4 +152,31 @@ it('rejects reset of an already empty Season 0, even with a fresh idempotency ke
  const first=await resetWorld(db,session,{...cmd(),confirmation:'RESET SEASON 0'},'reset-once-00001',now);
  await expect(resetWorld(db,session,{expectedGeneration:first.world.generation,expectedRevision:0,confirmation:'RESET SEASON 0'},'reset-empty-00001',now)).rejects.toMatchObject({status:409});
  expect(await readWorld(db)).toEqual(first.world);
+});
+
+it('restarts public match numbering at 1 after a guarded reset, without weakening ordinary immutability',async()=>{
+ const oldGeneration=world.generation;
+ const oldSlots=['a','b','c'].map(letter=>'m1_'+letter.repeat(32));
+ for(const slot of oldSlots){
+  await db.prepare('INSERT INTO public_match_numbers(slot_match_id,generation,season_number) VALUES(?,?,1)')
+   .bind(slot,oldGeneration).run();
+ }
+ expect((await db.prepare('SELECT id FROM public_match_numbers ORDER BY id').all()).results.map((row:any)=>row.id)).toEqual([1,2,3]);
+ await expect(db.prepare('DELETE FROM public_match_numbers').run()).rejects.toThrow();
+ expect((await db.prepare('SELECT count(*) AS n FROM public_match_numbers').first())?.n).toBe(3);
+ const reset=await resetWorld(db,session,{...cmd(),confirmation:'RESET SEASON 0'},'reset-match-ids-first-00001',now);
+ expect((await db.prepare('SELECT count(*) AS n FROM public_match_numbers').first())?.n).toBe(0);
+ expect(await db.prepare("SELECT seq FROM sqlite_sequence WHERE name='public_match_numbers'").first()).toBeNull();
+ const next=await prepareSeason(db,session,{expectedGeneration:reset.world.generation,expectedRevision:0},
+  'post-reset-match-prepare-00001',await loadApprovedSnapshot(),now);
+ expect(next.world.seasonNumber).toBe(1);
+ await db.prepare('INSERT INTO public_match_numbers(slot_match_id,generation,season_number) VALUES(?,?,1)')
+  .bind('m1_'+'d'.repeat(32),next.world.generation).run();
+ await db.prepare('INSERT INTO public_match_numbers(slot_match_id,generation,season_number) VALUES(?,?,1)')
+  .bind('m1_'+'e'.repeat(32),next.world.generation).run();
+ const rows=(await db.prepare('SELECT id,slot_match_id,generation FROM public_match_numbers ORDER BY id').all()).results as {id:number;slot_match_id:string;generation:string}[];
+ expect(rows.map(row=>row.id)).toEqual([1,2]);
+ expect(rows.every(row=>row.generation===next.world.generation)).toBe(true);
+ expect(rows.every(row=>!oldSlots.includes(row.slot_match_id))).toBe(true);
+ await expect(db.prepare('DELETE FROM public_match_numbers').run()).rejects.toThrow();
 });

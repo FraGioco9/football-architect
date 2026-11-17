@@ -39,6 +39,13 @@
       standingsEmpty:"Provisional clubs. No standings until a season begins.",
       competitionStandingsEmpty:"No standings available yet.",
       standingsCaption:"Provisional club list; no active league standings yet.",
+      standingsViewOverall:"Overall",
+      standingsViewFirstHalf:"First half",
+      standingsViewSecondHalf:"Second half",
+      standingsViewHome:"Home",
+      standingsViewAway:"Away",
+      standingsViewLastFive:"Last 5",
+      standingsSubviewLabel:"Standings breakdown",
       standingsDemoWinLetter:"W",
       standingsDemoDrawLetter:"D",
       standingsDemoLossLetter:"L",
@@ -285,6 +292,13 @@
       standingsEmpty:"Vorläufige Vereine. Eine Tabelle gibt es erst nach Saisonbeginn.",
       competitionStandingsEmpty:"Noch keine Tabelle verfügbar.",
       standingsCaption:"Vorläufige Vereinsliste; noch keine aktive Ligatabelle.",
+      standingsViewOverall:"Gesamt",
+      standingsViewFirstHalf:"Hinrunde",
+      standingsViewSecondHalf:"Rückrunde",
+      standingsViewHome:"Heim",
+      standingsViewAway:"Auswärts",
+      standingsViewLastFive:"Letzte 5",
+      standingsSubviewLabel:"Tabellenansichten",
       standingsDemoWinLetter:"S",
       standingsDemoDrawLetter:"U",
       standingsDemoLossLetter:"N",
@@ -531,6 +545,13 @@
       standingsEmpty:"Clubes provisionales. No habrá clasificación hasta el inicio de la temporada.",
       competitionStandingsEmpty:"Todavía no hay clasificación disponible.",
       standingsCaption:"Lista provisional de clubes; todavía no hay clasificación activa.",
+      standingsViewOverall:"General",
+      standingsViewFirstHalf:"Ida",
+      standingsViewSecondHalf:"Vuelta",
+      standingsViewHome:"Local",
+      standingsViewAway:"Visitante",
+      standingsViewLastFive:"Últimos 5",
+      standingsSubviewLabel:"Vistas de clasificación",
       standingsDemoWinLetter:"V",
       standingsDemoDrawLetter:"E",
       standingsDemoLossLetter:"D",
@@ -777,6 +798,13 @@
       standingsEmpty:"Clubs provisoires. Aucun classement avant le début de saison.",
       competitionStandingsEmpty:"Aucun classement disponible pour le moment.",
       standingsCaption:"Liste provisoire des clubs ; aucun classement de championnat actif.",
+      standingsViewOverall:"Général",
+      standingsViewFirstHalf:"Aller",
+      standingsViewSecondHalf:"Retour",
+      standingsViewHome:"Domicile",
+      standingsViewAway:"Extérieur",
+      standingsViewLastFive:"5 derniers",
+      standingsSubviewLabel:"Vues du classement",
       standingsDemoWinLetter:"V",
       standingsDemoDrawLetter:"N",
       standingsDemoLossLetter:"D",
@@ -1023,6 +1051,13 @@
       standingsEmpty:"Club provvisori. La classifica sarà disponibile dall’inizio della stagione.",
       competitionStandingsEmpty:"Nessuna classifica ancora disponibile.",
       standingsCaption:"Elenco provvisorio dei club; classifica del campionato non ancora attiva.",
+      standingsViewOverall:"Generale",
+      standingsViewFirstHalf:"Andata",
+      standingsViewSecondHalf:"Ritorno",
+      standingsViewHome:"Casa",
+      standingsViewAway:"Trasferta",
+      standingsViewLastFive:"Ultime 5",
+      standingsSubviewLabel:"Viste classifica",
       standingsDemoWinLetter:"V",
       standingsDemoDrawLetter:"N",
       standingsDemoLossLetter:"P",
@@ -1348,6 +1383,7 @@
     // Each page has its own static document for direct loading and refresh.
     if(document.querySelector?.(".fa404-main"))return "404"; // No active Dashboard on an error.
     const path = (window.location.pathname || "").replace(/\/+$/, "");
+    if (/^\/matches\/[1-9][0-9]*$/.test(path)) return "matches";
     if (path === "/players" || /^\/players\/[1-9][0-9]*$/.test(path)) return "players";
     if (path === "/clubs" || path.startsWith("/clubs/")) return "clubs";
     if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
@@ -1387,7 +1423,7 @@
       if (countryName) node.textContent = countryName;
     }
     const detail = document.getElementById("division-detail-name");
-    if (activeView() !== "clubs" && activeView() !== "profile" && activeView() !== "admin" && !document.querySelector?.("[data-player-detail-mode]")) document.title = (activeView() === "divisions" ? (detail?.textContent?.trim() || strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
+    if (activeView() !== "clubs" && activeView() !== "profile" && activeView() !== "admin" && !document.querySelector?.("[data-player-detail-mode]") && !document.querySelector?.("[data-match-detail]")) document.title = (activeView() === "divisions" ? (detail?.textContent?.trim() || strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
     renderWorldProgress();
   }
   function renderView() {
@@ -1396,7 +1432,7 @@
     if (dashboard) dashboard.hidden = current !== "dashboard";
     if (calendar) calendar.hidden = current !== "calendar";
     if (settings) settings.hidden = current !== "settings";
-    if (divisions) divisions.hidden = current !== "divisions" && current !== "clubs" && current !== "players";
+    if (divisions) divisions.hidden = current !== "divisions" && current !== "clubs" && current !== "players" && current !== "matches";
     for (const [view, link] of Object.entries(links)) {
       if (!link) continue;
       const selected = current === view;

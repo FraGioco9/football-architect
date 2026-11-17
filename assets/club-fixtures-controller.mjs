@@ -1,6 +1,7 @@
 import './club-fixtures.js';
-import {readClubFixtures} from './club-fixtures-source.mjs';
+import {readClubFixtures,attachPublishedClubMatchLinks} from './club-fixtures-source.mjs';
 import {createClubPublicReadCache} from './club-public-read-cache.mjs';
+import {readClubCompetitionCatalogue} from './club-competition-catalogue.mjs';
 import './world-clock-adapter.js';
 import './competition-rules-view.js';
 import './competition-tabs.js';
@@ -43,6 +44,7 @@ export function mountClubFixtures({host,manifest}){
   tooltip.style.top=Math.max(edge,Math.min(innerHeight-height-edge,top))+'px';
  };
  const navigate=(key,value)=>{
+  if(snapshot.coverage==='loading')return;
   const chosen=season();if(chosen===null)return;
   const url=new URL(location.href);
   if(key==='season'){
@@ -65,7 +67,7 @@ export function mountClubFixtures({host,manifest}){
   const focused=panel?.contains(document.activeElement)?document.activeElement:null;
   const focusControl=focused?.closest('[data-club-fixture-control]')?.dataset.clubFixtureControl;
   const focusRow=focused?.closest('[data-club-fixture-id]')?.dataset.clubFixtureId;
-  const focusPart=focused?.matches('[data-club-venue]')?'[data-club-venue]':focused?.matches('.club-fixture-opponent-name')?'.club-fixture-opponent-name':focused?.matches('.club-fixture-meta a')?'.club-fixture-meta a':null;
+  const focusPart=focused?.matches('[data-club-venue]')?'[data-club-venue]':focused?.matches('.club-fixture-opponent-name')?'.club-fixture-opponent-name':focused?.matches('.club-fixture-score-link')?'.club-fixture-score-link':focused?.matches('.club-fixture-meta a')?'.club-fixture-meta a':null;
   const oldCrests=new Map();
   for(const node of panel?.querySelectorAll('[data-club-crest]')||[]){const key=node.dataset.clubCrest;if(!oldCrests.has(key))oldCrests.set(key,[]);oldCrests.get(key).push(node);}
   const staging=document.createElement('div');staging.innerHTML=ui.render({manifest,lang:lang(),season:displaySeason,
@@ -73,6 +75,8 @@ export function mountClubFixtures({host,manifest}){
    explicitSeason:window.faRoutesRegistry.resolveSeasonQuery(params,state?.get?.().current?.season).explicit,
    seasons,filter,snapshot});
   const incoming=staging.firstElementChild;
+  // The selector stays mounted but inert until the fixture list has resolved.
+  for(const control of incoming.querySelectorAll('[data-club-fixture-control]'))control.querySelector('button').disabled=snapshot.coverage==='loading';
   for(const crest of incoming.querySelectorAll('[data-club-crest]')){const old=oldCrests.get(crest.dataset.clubCrest)?.shift();if(old)crest.replaceWith(old);}
   hideTip();
   if(!panel){
@@ -87,7 +91,16 @@ export function mountClubFixtures({host,manifest}){
     if(action.disabled||!next)return;
     if(filter!=='all'&&next.competitionId!==filter){const u=new URL(location.href);u.searchParams.delete('competition');history.pushState(null,'',u.pathname+u.search);paint();}
     const row=panel.querySelector('[data-club-fixture-next]');row?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});row?.focus({preventScroll:true});
-   }});
+    return;
+   }
+   // Native opponent and competition anchors retain their own destinations.
+   // The linked score remains the focusable keyboard target; mouse clicks
+   // anywhere else on a verified match row activate that same anchor.
+   if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||
+      e.target.closest('a,button,input,select,textarea,[role="button"]'))return;
+   const card=e.target.closest('.club-fixture-row.is-match-link');
+   card?.querySelector('.club-fixture-score-link')?.click();
+  });
   }else{
    // Keep combobox triggers, handlers and focus stable across source/language reads.
    for(const control of panel.querySelectorAll('[data-club-fixture-control]')){
@@ -95,7 +108,9 @@ export function mountClubFixtures({host,manifest}){
     const menu=control.querySelector('[role=listbox]'),nextMenu=next.querySelector('[role=listbox]');
     menu.replaceChildren(...nextMenu.childNodes);menu.setAttribute('aria-label',nextMenu.getAttribute('aria-label'));
     control.querySelector('[data-club-fixture-value]').replaceChildren(...next.querySelector('[data-club-fixture-value]').childNodes);
-    control.querySelector('button').setAttribute('aria-label',next.querySelector('button').getAttribute('aria-label'));
+    const trigger=control.querySelector('button'),incomingTrigger=next.querySelector('button');
+    trigger.setAttribute('aria-label',incomingTrigger.getAttribute('aria-label'));
+    trigger.disabled=incomingTrigger.disabled;
     next.replaceWith(control);
    }
    const focusedNext=panel.querySelector('[data-club-fixtures-next]')===document.activeElement;
@@ -140,14 +155,29 @@ export function mountClubFixtures({host,manifest}){
    return;
   }
   if(!current.world||current.worldStatus!=='ready'){
-   if(current.worldStatus==='unavailable')publish({coverage:'unavailable',rows:[],competitions:[]});return;
+   if(current.worldStatus==='unavailable')publish({coverage:'unavailable',rows:[],competitions:[]});
+   return; // No speculative read or false error while the public world is loading.
   }
   void (async()=>{
    try{
-    catalogue??=fetch('/competitions/_shared/manifest.json',{credentials:'omit'}).then(async r=>{if(!r.ok)throw Error('Competition catalogue unavailable');return r.json();}).catch(e=>{catalogue=null;throw e;});
+    catalogue??=readClubCompetitionCatalogue({
+     fetchJson:async path=>{
+      const response=await fetch(path,{credentials:'omit',redirect:'error'});
+      if(!response.ok)throw Error('Competition catalogue unavailable');
+      return response.json();
+     },
+     loadModel:async()=>{
+      // Club pages load this only on Fixtures, not for Overview/History/Roster.
+      if(!window.faCompetitionModel?.expandCompactManifest)
+       await import('/assets/competition-model.js');
+      return window.faCompetitionModel;
+     }
+    }).catch(e=>{catalogue=null;throw e;});
     const data=await catalogue;
     const result=await readClubFixtures({clubKey,season:selectedSeason,world:current.world,fetchJson:cache.read,manifest:data,signal});
+    // Keep initial verified rows visible while their published IDs are resolved.
     publish(result);
+    if(result.coverage==='complete')publish(await attachPublishedClubMatchLinks(result,{fetchJson:cache.read,signal}));
    }catch{publish({coverage:'error',rows:[],competitions:[]});}
   })();
  }
@@ -164,6 +194,21 @@ export function mountClubFixtures({host,manifest}){
   refresh();
  });
  const moveTip=()=>{if(tipTarget===document.activeElement)showTip(tipTarget);else hideTip();};
+  // A stationary mouse must not keep a stale :hover highlight while a
+  // scrolling container moves fixture cards underneath it. A genuine pointer
+  // displacement (not a scroll-generated pointermove at the same coordinates)
+  // restores hover. Keyboard focus highlighting is independent.
+  let hoverPointerX=null,hoverPointerY=null;
+  window.addEventListener('scroll',()=>{
+    document.documentElement.dataset.faFixtureHoverSuspended='true';
+  },{capture:true,passive:true});
+  window.addEventListener('pointermove',event=>{
+    if(event.pointerType!=='mouse'||!Number.isFinite(event.clientX)||!Number.isFinite(event.clientY))return;
+    if(hoverPointerX!==null&&
+       (Math.abs(event.clientX-hoverPointerX)>1||Math.abs(event.clientY-hoverPointerY)>1))
+      delete document.documentElement.dataset.faFixtureHoverSuspended;
+    hoverPointerX=event.clientX;hoverPointerY=event.clientY;
+  },{capture:true,passive:true});
  window.addEventListener('scroll',moveTip,true);window.addEventListener('resize',moveTip);
  return {mount(){
   normalizeLocation();

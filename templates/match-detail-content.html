@@ -1,0 +1,113 @@
+<section id="app-divisions" class="app-view app-match-page" aria-label="Match" data-match-detail data-match-load="loading">
+  <section class="app-match-scoreboard" data-scoreboard-theme="neutral" aria-label="Match scoreboard">
+    <a class="app-match-competition-logo" data-match-competition-link aria-label="Competition" target="_blank" rel="noopener noreferrer">
+      <span data-match-competition-logo aria-hidden="true"></span>
+    </a>
+    <div class="app-match-score-line">
+      <div class="app-match-team-slot app-match-team-home"><a class="app-match-team-link" data-match-home-name target="_blank" rel="noopener noreferrer"><span class="app-skeleton-bar" aria-hidden="true"></span></a></div>
+      <strong class="app-match-side-score" data-match-home-score aria-label="Home score" aria-hidden="true"></strong>
+      <span class="app-match-score-separator" aria-hidden="true">–</span>
+      <strong class="app-match-side-score" data-match-away-score aria-label="Away score" aria-hidden="true"></strong>
+      <div class="app-match-team-slot app-match-team-away"><a class="app-match-team-link" data-match-away-name target="_blank" rel="noopener noreferrer"><span class="app-skeleton-bar" aria-hidden="true"></span></a></div>
+    </div>
+  </section>
+  <section class="app-match-stage" aria-label="Teams and match field">
+  <aside class="app-match-side app-match-side-home" data-match-side="home" aria-label="Home team">
+    <header class="app-match-team-identity">
+      <span class="app-world-club-crest-placeholder club-crest fa-crest-loading app-match-team-crest" data-match-side-crest="home" aria-hidden="true"></span>
+      <h2 class="app-match-side-title" data-match-side-title="home"><a class="app-match-side-link" data-match-side-name="home"></a></h2>
+    </header>
+    <div class="app-match-side-stats" data-form-visible="false">
+    <div class="app-match-side-fact">
+      <span class="app-match-side-label" data-match-label="position">Position</span>
+      <strong class="app-match-position" data-match-position="home">–</strong>
+    </div>
+    <div class="app-match-side-fact" data-match-form-fact="home" hidden>
+      <span class="app-match-side-label" data-match-label="form">Form</span>
+      <div class="app-match-form" data-match-form="home" aria-label="Home form in this competition"></div>
+    </div>
+    </div>
+    <div class="app-match-side-lineup" data-match-lineup="home">
+      <h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3>
+      <ol class="app-match-lineup-rows" aria-hidden="true">
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+      </ol>
+    </div>
+  </aside>
+  <section class="app-match-visual" aria-label="Match visualization">
+    <div class="app-match-pitch-frame">
+    <div class="app-match-pitch-overlay">
+      <section class="app-match-overview" aria-label="Overview" data-match-overview-panel>
+        <h3 class="app-match-overview-heading" data-match-label="overview">Overview</h3>
+        <div class="app-match-overview-row app-match-overview-row-primary">
+          <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="competition">Competition</span><a class="app-match-info-value app-match-overview-competition-link" data-match-overview="competition"></a></div>
+          <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="season">Season</span><strong class="app-match-info-value" data-match-overview="season"></strong></div>
+          <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="round">Round</span><strong class="app-match-info-value" data-match-overview="round"></strong></div>
+        </div>
+        <div class="app-match-overview-row app-match-overview-row-secondary">
+          <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="date">Date</span><strong class="app-match-info-value" data-match-overview="date"></strong></div>
+          <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="stadium">Stadium</span><strong class="app-match-info-value" data-match-overview="stadium"></strong></div>
+        </div>
+        <div class="app-match-overview-row app-match-overview-row-status">
+          <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="status">Status</span><strong class="app-match-info-value" data-match-overview="status"></strong></div>
+        </div>
+      </section>
+    </div>
+    <div class="app-match-pitch" data-match-pitch role="img" aria-label="Empty football pitch; match visualization is not yet available">
+      <svg viewBox="0 0 1050 680" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+        <rect x="18" y="18" width="1014" height="644" fill="none" stroke="currentColor" stroke-width="3"/>
+        <path d="M525 18V662 M18 138H183V542H18 M1032 138H867V542H1032 M18 248H73V432H18 M1032 248H977V432H1032" fill="none" stroke="currentColor" stroke-width="3"/>
+        <circle cx="525" cy="340" r="91.5" fill="none" stroke="currentColor" stroke-width="3"/>
+        <circle cx="525" cy="340" r="3" fill="currentColor"/>
+        <circle cx="128" cy="340" r="3" fill="currentColor"/>
+        <circle cx="922" cy="340" r="3" fill="currentColor"/>
+        <path d="M183 267A91.5 91.5 0 0 1 183 413 M867 267A91.5 91.5 0 0 0 867 413" fill="none" stroke="currentColor" stroke-width="3"/>
+      </svg>
+    </div>
+    </div>
+  </section>
+  <aside class="app-match-side app-match-side-away" data-match-side="away" aria-label="Away team">
+    <header class="app-match-team-identity">
+      <span class="app-world-club-crest-placeholder club-crest fa-crest-loading app-match-team-crest" data-match-side-crest="away" aria-hidden="true"></span>
+      <h2 class="app-match-side-title" data-match-side-title="away"><a class="app-match-side-link" data-match-side-name="away"></a></h2>
+    </header>
+    <div class="app-match-side-stats" data-form-visible="false">
+    <div class="app-match-side-fact">
+      <span class="app-match-side-label" data-match-label="position">Position</span>
+      <strong class="app-match-position" data-match-position="away">–</strong>
+    </div>
+    <div class="app-match-side-fact" data-match-form-fact="away" hidden>
+      <span class="app-match-side-label" data-match-label="form">Form</span>
+      <div class="app-match-form" data-match-form="away" aria-label="Away form in this competition"></div>
+    </div>
+    </div>
+    <div class="app-match-side-lineup" data-match-lineup="away">
+      <h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3>
+      <ol class="app-match-lineup-rows" aria-hidden="true">
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+        <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
+      </ol>
+    </div>
+  </aside>
+  </section>
+  <p class="app-match-feedback" data-match-feedback role="status" aria-live="polite" hidden></p>
+</section>

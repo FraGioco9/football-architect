@@ -1159,7 +1159,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
  const {published}=await import('./canonical-state-browser.mjs');
  const browser=chrome(),dir=await mkdtemp(join(tmpdir(),'fa-club-fixtures-'));
  let world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:4,seasonNumber:1,day:16,phase:'active'};
- let hold=false,failHistory=false,failCompetition=false,failFixtures=false,useDev=false;const held=[];let fixtureReads=0,competitionReads=0;
+ let hold=false,failHistory=false,failCompetition=false,failFixtures=false,useDev=false;const held=[];let fixtureReads=0,competitionReads=0,compactReads=0,legacyCatalogueReads=0;
  const payloadFor=season=>{
   const closed=season<world.seasonNumber||world.phase==='closed';
   const raw=published('IT-1',season,closed?{...world,day:56}:world);
@@ -1171,6 +1171,8 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
  const router=createPreviewServer({devPreview:false}),devRouter=createPreviewServer();
  const server=createServer((req,res)=>{
   const path=new URL(req.url,'http://localhost').pathname;
+  if(path==='/competitions/_shared/compact.json')compactReads++;
+  if(path==='/competitions/_shared/manifest.json')legacyCatalogueReads++;
   const json=(status,body)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(body));};
   if(path==='/api/world')return json(200,{world});
   const clubFixtureRoute=/^\/api\/clubs\/IT-1\/seasons\/([12])\/fixtures$/.exec(path);
@@ -1178,7 +1180,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    fixtureReads++;const season=Number(clubFixtureRoute[1]),raw=payloadFor(season);
    const packet={schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:season,world,
     status:raw.status,reason:null,
-    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club-fixtures:'+world.generation+':season:'+season+':'+('a'.repeat(64))},
+    provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'club-fixtures:'+world.generation+':season:'+season+':'+('a'.repeat(64))},
     data:{season,seasonState:raw.data.seasonState,competitions:['IT-1'],
      fixtures:raw.data.fixtures.filter(f=>[f.homeClubId,f.awayClubId].includes('IT-1'))}};
    const send=()=>{
@@ -1194,11 +1196,11 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    const overviews=Array.from({length:world.seasonNumber},(_,i)=>{
     const season=i+1,raw=payloadFor(season),{clubId,...stats}=raw.data.statistics.teams.find(t=>t.clubId==='IT-1');
     return {schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:season,world,status:raw.status,reason:null,
-     provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club:'+world.generation+':season:'+season+':x'},
+     provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'club:'+world.generation+':season:'+season+':x'},
      data:{season,memberships:[{competitionId:'IT-1',season,category:'domestic',position:stats.played?1:null,points:stats.played,cupStatus:null,nextMatch:null,stats}]}};
    });
    return json(200,{schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',world,status:'available',reason:null,
-    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club-history:'+world.generation+':revision:'+world.revision},data:{overviews}});
+    provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'club-history:'+world.generation+':revision:'+world.revision},data:{overviews}});
   }
   const competition=/^\/api\/competitions\/IT-1\/seasons\/([12])$/.exec(path);
   if(competition){
@@ -1231,6 +1233,8 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   const after=await run("[...document.querySelectorAll('.club-fixture-select button')].map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y,w:n.getBoundingClientRect().width}))");assert.deepEqual(after,before,'controls keep first-paint geometry');
   assert.ok(fixtureReads>=1,'verified club fixture endpoint serves the public view, including cache reuse');
   assert.equal(competitionReads,0,'Club Fixtures never calls the per-competition season APIs');
+  assert.equal(compactReads,1,'Club Fixtures reuses one verified compact static catalogue across tab return');
+  assert.equal(legacyCatalogueReads,0,'Club Fixtures does not download the full 160 KB competition manifest');
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'Season 1 offers only Season 1');
   assert.equal(await run("document.querySelector('.club-fixtures-notice')"),null);
 

@@ -133,13 +133,16 @@ test('#502 error pages settle placeholders rather than leaving a perpetual loadi
 });
 
 test('#502 direct player details activate Players, never Dashboard, in app shell and sidebar',()=>{
- const app=read('assets/app.js'),sidebar=read('assets/sidebar-evolution.js');
+ const app=read('assets/app.js'),sidebar=read('assets/sidebar-evolution.js'),firstPaint=read('assets/sidebar-first-paint.js');
  const a=app.indexOf('  function activeView() {'),b=app.indexOf('\n  function renderLanguage()',a);
  assert.ok(a>=0&&b>a,'route recognition must remain in the app shell');
  const activeViewSource=app.slice(a,b);
  const c=sidebar.indexOf("const path=location.pathname.replace("),d=sidebar.indexOf('\nconst selected=',c);
  assert.ok(c>=0&&d>c,'sidebar selected navigation must use route pathname');
  const sidebarSource=sidebar.slice(c,d)+'\n;onPlayers;';
+ const firstPaintStart=firstPaint.indexOf("const path=location.pathname.replace("),firstPaintEnd=firstPaint.indexOf('\nconst selected=',firstPaintStart);
+ assert.ok(firstPaintStart>=0&&firstPaintEnd>firstPaintStart,'first-paint bootstrap must resolve the active route before deferred scripts');
+ const firstPaintSource=firstPaint.slice(firstPaintStart,firstPaintEnd)+'\n;onPlayers;';
  for(const [path,expectedView,selectedPlayers] of [
   ['/players','players',true],
   ['/players/42','players',true],
@@ -153,6 +156,12 @@ test('#502 direct player details activate Players, never Dashboard, in app shell
   const document={querySelector:()=>null};
   assert.equal(runInNewContext(activeViewSource+'\nactiveView()', {window,document}),expectedView,path);
   assert.equal(runInNewContext(sidebarSource,{location:window.location}),selectedPlayers,path);
+  assert.equal(runInNewContext(firstPaintSource,{location:window.location}),selectedPlayers,path+' first paint');
+ }
+ for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(file);
+  const inline=html.match(/<script data-nav01-bootstrap>([\s\S]*?)<\/script>/)?.[1];
+  assert.equal(inline,firstPaint.trim(),file+' must embed the canonical first-paint bootstrap');
  }
  assert.match(app,/if \(dashboard\) dashboard\.hidden = current !== "dashboard"/);
  assert.match(app,/if \(divisions\) divisions\.hidden = current !== "divisions" && current !== "clubs" && current !== "players"/);
@@ -342,10 +351,11 @@ test('Player pitch only the inner disc handles pointer hover and selection; the 
 test('#535 header shows position chain, nationality/age and canonical club or Free Agent',()=>{
  const js=read('assets/player-detail.js'),renderer=read('tools/render-player-detail.mjs'),css=read('assets/player-detail.css');
  assert.match(js,/roleNode\.textContent=positionCodes\(\)\.join\(', '\)/);
- assert.match(js,/setContent\(nationalityNode,countryNode\(player\.nationality\)\)/);
+ assert.match(js,/setContent\(nationalityNode,countryNode\(player\.nationality,true\)\)/);
  assert.match(js,/setContent\(ageNode,Number\.isSafeInteger\(player\.age\)/);
  assert.match(js,/player\.clubKey===null\)\{setContent\(clubNode,'Free Agent'\)/);
- assert.match(js,/fetch\('\/clubs\/_shared\/manifest\.json'/);
+ assert.match(js,/import\('\/assets\/match-public-context\.mjs'\)/);
+ assert.doesNotMatch(js,/fetch\('\/clubs\/_shared\/manifest\.json'/);
  assert.match(js,/clubCatalog\.clubs\.find\(/);
  assert.match(js,/clubCatalog\.clubCrests\?\.\[key\]/);
  assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+number\+'\/overview'/);
@@ -419,7 +429,7 @@ test('#535 natural age text and nationality aligned on same header baseline in f
 
 test('#535 header nationality has no tooltip and shows a full visible name',()=>{
  const js=read('assets/player-detail.js');
- const start=js.indexOf(' function countryNode(code){'),end=js.indexOf(' function displayValue(',start);
+ const start=js.indexOf(' function countryNode(code,header=false){'),end=js.indexOf(' function displayValue(',start);
  assert.ok(start>=0&&end>start);
  const country=js.slice(start,end);
  assert.match(country,/countries\.name==='function'\?countries\.name\(code\):code/);
@@ -440,8 +450,8 @@ test('#535 flag, long nationality, dot and age skeleton share the real header fo
  assert.match(css,/\.app-player-detail-header-meta\{display:flex;align-items:center/);
  assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:126px/);
  assert.match(css,/\.app-player-detail-identity\{[^}]*flex:0 1 440px/);
- assert.match(css,/@media\(max-width:620px\)\{\.app-player-detail-affiliation\{[^}]*\}/);
- assert.match(css,/\.app-player-detail-identity\{flex:1 1 0;max-width:none\}/);
+ assert.match(css,/@media\(max-width:620px\)\{\s*\.app-player-detail-heading\{display:grid/);
+ assert.match(css,/\.app-player-detail-identity\{grid-column:2;grid-row:1;min-width:0;max-width:none/);
  for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
   const html=read(path);
   const header=html.slice(html.indexOf('class="app-player-detail-header-meta"'),html.indexOf('class="app-player-detail-affiliation"'));
@@ -509,9 +519,9 @@ test('#535 Info panel constrained to 680px on desktop, fluid on smaller screens'
  assert.doesNotMatch(css,/@media\(max-width:(?:900|760|620|460)px\)[^\n]*\.app-player-detail-info-view\{/);
 });
 
-test('#623 public player portrait and fallback: exact 3 IDs only, stable geometry, protected preview isolation',()=>{
+test('#623 public player portrait and fallback: staged/approved IDs only, stable geometry, protected preview isolation',()=>{
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
- for(const id of [44,98,145]){
+ for(const id of [44,98,145,46,45,49,50,51,47,52,148,53,54,55,59,60,61,56,57,48,63,58]){
   const path='assets/players/portraits/'+id+'.webp';
   assert.equal(isAllowlistedPublicPath(path),true,path);
   assert.ok(js.includes(id+":'/"+path+"'"),'canonical image map missing: '+id);
@@ -535,7 +545,7 @@ test('#623 public player portrait and fallback: exact 3 IDs only, stable geometr
 });
 
 test('#623 optimized approved WebPs have SHA-256 provenance and appear in the public artifact',()=>{
- const expected={"44":"a4a05f06df54cff48612ce5cbebc56eee4ccea381ff8b93aa475a5738c015304","98":"7eec047c80a0e9bf662f72caf07cdcccab71dfad7d762698da2adf34c14b546d","145":"7e2c883d0e9776b103b76a64f3957b19cfcc974b9d47bdc5677904fa5e8ebd74"};
+ const expected={"44":"a4a05f06df54cff48612ce5cbebc56eee4ccea381ff8b93aa475a5738c015304","98":"7eec047c80a0e9bf662f72caf07cdcccab71dfad7d762698da2adf34c14b546d","145":"7e2c883d0e9776b103b76a64f3957b19cfcc974b9d47bdc5677904fa5e8ebd74","46":"e257210da736f83c444c1d7c7a9a88b59a7901a6c15fb6c10fab6c0eae58d617","45":"6830f96eed85a7ebea555fba09e988179f6548f5db955fbef107bc23802bb63f","49":"eb2ebb852ef2d99d6157dd0e4012236cde78ac04c5a658def3936e2847f82a28","50":"ef25d641280c9e1cfa5d97d0fded878ae33b7694ad845aca071048dc61813b54","51":"ce1b90f2e7b115395affe7949d56ba07943dfaab2ffb376d2fbe8a30ceb2a1e3","47":"1110c0aaf7bee8e459f4fee223e8d765314108fb94bfe345310761423aa45d6a","52":"71fedc686de47aec66c77d4f1439acb58bc690a7f93b5fa8b208bedd63ae4118","148":"c340bcf5dc77a0462e4f252c383ec1d624cb47bfa0e6b455dd05dd8fe84ec749","53":"dc088027b0b6462120ee99604429979be22d870da30891250215e5f73e23a457","54":"04bb0e00c838e54cc7394671d4ba71bc9de8c895a5edc97f7cdba0e86a34fca9","55":"fcdcab18571c7c524400c4a57887a51ebfa31714cefe0bba5c9e855ca0f34fda","59":"3ce53bcf1a6b002bf3ee6fa517747cb440bf9f126f12cce65ed0caf01dfaf6fd","62":"11d1752bd9b491df1ed4598ce4468171910c0ef3b07a3b8da962cf50e9427f1c","60":"27b1033f7ed64362334f50d0367606d6d6b8368656c38c3f0f8a3045e113e75e","61":"4b622ed1b27cc1422820b4010b30ebe1a8990073551b6de71634e1a59388d4b3","56":"690054dda2bbe8ca93e79ff7d46ed33183a77a02d7a8862dbe489049fb280698","57":"b46e3af41182915bf150c9e299c73223f6d37877c171c7d21bb0e70c597aaad4","48":"5c4a259ae3f6efd2c6ade48838e969a1177203f5815febdd5bcc327dd77d3db3","63":"4c7f3337c01dd3c6d5de8436c23af7dbaf402649afc3de10770191172db19672","58":"339958014e4c312194d164bb2d4a87f5784cb3b0938ba995134ce3563b226585"};
  const published=new Set(planPublicFiles());
  for(const [id,digest] of Object.entries(expected)){
   const path='assets/players/portraits/'+id+'.webp';
@@ -543,6 +553,9 @@ test('#623 optimized approved WebPs have SHA-256 provenance and appear in the pu
   assert.equal(data.toString('ascii',0,4),'RIFF',path);
   assert.equal(data.toString('ascii',8,12),'WEBP',path);
   assert.equal(data.toString('ascii',12,16),'VP8X',path);
+  assert.equal(data[20]&0x10,0x10,'WebP alpha must be present: '+id);
+  assert.equal(data.readUIntLE(24,3)+1,320,'WebP width must be 320: '+id);
+  assert.equal(data.readUIntLE(27,3)+1,362,'WebP height must be 362: '+id);
   assert.ok(data.length<50_000,'WebP must be optimized: '+id);
   assert.equal(createHash('sha256').update(data).digest('hex'),digest,path);
   assert.ok(published.has(path),'Public artifact missing '+path);
@@ -627,11 +640,11 @@ test('#623 approved portraits use adjustable top-anchored 150% crop in wider, he
  assert.ok(frameRule.includes('width:190px;height:181px'),'desktop portrait expands horizontally while retaining height');
  assert.ok(frameRule.includes('overflow:hidden'),'the crop is clipped inside the portrait');
  assert.ok(frameRule.includes('border:0'),'the borderless portrait remains unchanged');
- assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait expands horizontally while retaining height');
+ assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px;grid-column:1;grid-row:1}'),'mobile portrait expands horizontally while retaining height');
  assert.ok(!css.includes('.app-player-detail-silhouette{transform:'),'fallback SVG must never be photo-zoomed');
 });
 
-test('#623 wider portrait frame preserves mobile identity, affiliation and back-link alignment',()=>{
+test('#623 wider portrait frame preserves mobile grid identity, affiliation and back-link alignment',()=>{
  const css=read('assets/player-detail.css');
  const renderer=read('tools/render-player-detail.mjs');
  const frame=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
@@ -639,9 +652,9 @@ test('#623 wider portrait frame preserves mobile identity, affiliation and back-
  assert.ok(frame?.includes('overflow:hidden;border-radius:'),'larger image remains clipped to its box');
  assert.ok(frame?.includes('border:0'),'portrait still has no box border');
  const mobile=css.split('@media(max-width:620px){')[1]?.split('@media(max-width:460px)')[0];
- assert.ok(mobile?.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait reserves 120px width');
- assert.ok(mobile?.includes('flex-basis:calc(100% - 135px);max-width:none;min-height:92px;margin-left:135px'),'club panel offsets follow 120px image + 15px gap');
- assert.ok(mobile?.includes('.app-player-detail-back{margin-left:135px;align-self:flex-start}'),'back link matches new portrait width');
+ assert.ok(mobile?.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px;grid-column:1;grid-row:1}'),'mobile portrait reserves 120px width');
+ assert.ok(mobile?.includes('.app-player-detail-affiliation{grid-column:1/-1;grid-row:2;min-width:0;width:100%;max-width:none;min-height:80px;margin-left:0'),'club panel uses a full mobile grid row');
+ assert.ok(mobile?.includes('.app-player-detail-back{grid-column:2;grid-row:3;margin-left:0'),'preview back link follows the mobile grid');
  assert.ok(renderer.includes('data-detail-portrait-placeholder hidden viewBox="-20 -12 552 535" preserveAspectRatio="xMidYMax meet" width="190" height="181"'),'SVG intrinsic geometry follows desktop frame');
  assert.ok(renderer.includes('data-detail-portrait-photo width="190" height="181"'),'photo intrinsic dimensions follow desktop frame');
  for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
@@ -667,5 +680,65 @@ test('#623 wide placeholder maintains head/body proportions on desktop and mobil
  }
  const css=read('assets/player-detail.css');
  assert.ok(css.includes('.app-player-detail-portrait{width:190px;height:181px;flex:0 0 190px;'),'desktop frame unchanged');
- assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile frame unchanged');
+ assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px;grid-column:1;grid-row:1}'),'mobile frame unchanged');
+});
+
+test('#634 canonical nationality is compact only in the mobile header and remains accessible',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css');
+ const start=js.indexOf(' function countryNode(code,header=false){'),end=js.indexOf(' function displayValue(',start);
+ assert.ok(start>=0&&end>start);
+ const fakeDocument={
+  createElement(tag){return {tag,children:[],attributes:{},append(...parts){this.children.push(...parts)},setAttribute(k,v){this.attributes[k]=v}};},
+  createTextNode(text){return {text}}
+ };
+ for(const lang of ['en','de','es','fr','it']){
+  const localized={ITA:lang==='it'?'Italia':'Italy',ENG:lang==='it'?'Inghilterra':'England',ESP:lang==='es'?'España':'Spain',GER:lang==='de'?'Deutschland':'Germany'};
+  const flags={ITA:'it',ENG:'gb-eng',ESP:'es',GER:'de'};
+  const make=runInNewContext(js.slice(start,end)+'\ncountryNode',{document:fakeDocument,window:{faPlayersNationality:{flags,name:code=>localized[code]||code}}});
+  for(const code of ['ITA','ENG','ESP','GER']){
+   const country=make(code,true);
+   const full=country.children.find(x=>x.className==='app-player-detail-nationality-full');
+   const compact=country.children.find(x=>x.className==='app-player-detail-nationality-compact');
+   const accessible=country.children.find(x=>x.className?.includes('app-player-detail-nationality-accessible'));
+   assert.equal(compact.textContent,code,lang+' '+code);
+   assert.equal(compact.attributes['aria-hidden'],'true');
+   assert.equal(full.textContent,localized[code]);
+   assert.equal(accessible.textContent,localized[code]);
+   assert.equal(country.children[0].alt,'');
+   assert.equal(make(code,false).children.some(x=>x.className==='app-player-detail-nationality-compact'),false,'Info keeps full name');
+  }
+ }
+ assert.match(js,/setContent\(nationalityNode,countryNode\(player\.nationality,true\)\)/);
+ assert.match(js,/if\(key==='nationality'\|\|key==='secondary_nationality'\)return countryNode\(player\[key\]\)/);
+ assert.match(css,/\.app-player-detail-nationality-compact,\.app-player-detail-nationality-accessible\{display:none\}/);
+ assert.match(css,/@media\(max-width:620px\)[\s\S]*?\.app-player-detail-nationality-full\{display:none\}/);
+ assert.match(css,/\.app-player-detail-nationality-compact,\.app-player-detail-nationality-accessible\{display:inline\}/);
+});
+
+test('#634 mobile header grid reserves portrait and prevents nationality wrapping',()=>{
+ const css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
+ const mobile=css.slice(css.indexOf('/* #634:'),css.indexOf('@media(max-width:460px)'));
+ assert.match(mobile,/grid-template-columns:120px minmax\(0,1fr\)/);
+ assert.match(mobile,/\.app-player-detail-portrait\{width:120px;height:114px/);
+ assert.match(mobile,/\.app-player-detail-identity\{grid-column:2;grid-row:1;min-width:0/);
+ assert.match(mobile,/\.app-player-detail-affiliation\{grid-column:1\/-1;grid-row:2;[^}]*margin-left:0/);
+ assert.match(mobile,/\.app-player-detail-header-meta\{[^}]*flex-wrap:nowrap;gap:6px;white-space:nowrap/);
+ assert.match(mobile,/\.app-player-detail-nationality-skeleton\{width:30px\}/);
+ assert.match(mobile,/\.app-player-detail-back\{grid-column:2;grid-row:3;margin-left:0/);
+ const appCss=read('assets/app.css');
+ assert.match(appCss,/@media\(max-width:390px\)\{\s*\.fa-career-shell\{grid-template-columns:52px minmax\(0,1fr\)/);
+ assert.match(appCss,/--app-page-pad-inline:16px/);
+ assert.match(css,/@media\(max-width:390px\)\{\s*\.app-player-detail-heading\{grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(css,/\.app-player-detail-identity\{grid-column:1;grid-row:2;align-items:center;text-align:center;width:100%\}/);
+ for(const width of [320,375,390,430,620]){
+  const sidebar=width<=390?52:58,contentWidth=width-sidebar-32;
+  const identityWidth=width<=390?contentWidth:contentWidth-120-15;
+  assert.ok(identityWidth>=205,'mobile identity cannot overflow fixed portrait/sidebar: '+width);
+ }
+ assert.match(css,/\.app-player-detail-heading\{display:flex;align-items:center;gap:18px/,'desktop baseline unchanged');
+ for(const html of [read('players/_shared/index.html'),read('admin/players/preview/player/index.html')]){
+  assert.match(html,/app-player-detail-country-skeleton/);
+  assert.match(html,/app-player-detail-club-loading/);
+ }
+ assert.match(renderer,/data-detail-header-nationality/);
 });

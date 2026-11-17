@@ -19,14 +19,14 @@ export function published(competitionId,selectedSeason,currentWorld){
  }
  const played=fixtures.filter(f=>f.result).length,clubPlayed=played/8;
  const row=id=>({clubId:id,played:clubPlayed,won:0,drawn:clubPlayed,lost:0,goalsFor:0,goalsAgainst:0,goalDifference:0});
- return {schemaVersion:1,providerId:'authoritative-world',competitionId,selectedSeason,world:currentWorld,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${currentWorld.generation}:season:${selectedSeason}:`+'a'.repeat(64)},data:{season:selectedSeason,seasonState:{day:currentWorld.day,phase:'active'},rulesVersion:def.rules.version,participants:ids,fixtures,
-  standings:{complete:false,rows:ids.map((id,i)=>({...row(id),rank:i+1,points:clubPlayed}))},statistics:{matchesPlayed:played,totalGoals:0,goalsPerMatch:0,teams:ids.map(id=>({...row(id),cleanSheets:clubPlayed})),players:null,playerStatus:'unavailable'},
+ return {schemaVersion:1,providerId:'authoritative-world',competitionId,selectedSeason,world:currentWorld,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:`world:${currentWorld.generation}:season:${selectedSeason}:`+'a'.repeat(64)},data:{season:selectedSeason,seasonState:{day:currentWorld.day,phase:'active'},rulesVersion:def.rules.version,participants:ids,fixtures,
+  standings:{complete:false,rows:ids.map((id,i)=>({...row(id),rank:i+1,points:clubPlayed}))},statistics:{matchesPlayed:played,totalGoals:0,goalsPerMatch:0,teams:ids.map(id=>({...row(id),cleanSheets:clubPlayed})),players:[],playerStatus:'available'},
   calendar:days.map(d=>({day:d.day,fixtureIds:fixtures.filter(f=>f.day===d.day).map(f=>f.id),played:fixtures.filter(f=>f.day===d.day&&f.result).length})),history:null}};
 }
 export function calendarPublished(season,day,currentWorld){
  const catalog=manifest.divisions.flatMap(d=>d.clubs),competitions=manifest.competitions.map(c=>({id:c.id,rulesVersion:c.rules.version,clubIds:c.category==='domestic'?manifest.divisions.find(d=>d.id===c.id).clubs.map(c=>c.countryId+'-'+c.clubId):catalog.filter(club=>c.id==='int-1'?club.clubId<=3:club.clubId>=4&&club.clubId<=6).map(c=>c.countryId+'-'+c.clubId)}));
  const fixtures=manifest.divisions.flatMap(d=>published(d.id,season,currentWorld).data.fixtures.filter(f=>f.day===day));
- return {schemaVersion:1,providerId:'authoritative-world',scope:'calendar',selectedSeason:season,day,world:currentWorld,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${currentWorld.generation}:season:${season}:`+'a'.repeat(64)},data:{season,day,seasonState:{day:currentWorld.day,phase:'active'},calendarHash:'a'.repeat(64),rulesHash:'b'.repeat(64),competitions,fixtures}};
+ return {schemaVersion:1,providerId:'authoritative-world',scope:'calendar',selectedSeason:season,day,world:currentWorld,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:`world:${currentWorld.generation}:season:${season}:`+'a'.repeat(64)},data:{season,day,seasonState:{day:currentWorld.day,phase:'active'},calendarHash:'a'.repeat(64),rulesHash:'b'.repeat(64),competitions,fixtures}};
 }
 const routes=['/dashboard','/competitions','/competitions/it-1/standings?season=1','/competitions/int-1/stats?season=1','/calendar?season=1&calendarView=week','/clubs','/clubs/it/1/overview','/settings'];
 const unavailable={kind:'none',sourceRef:null,resultAuthority:null};

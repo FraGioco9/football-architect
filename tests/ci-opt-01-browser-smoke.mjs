@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {browserCases,areaRoutes,verifyArea} from './ci-opt-01-browser-cases.mjs';
+import {verifyCompetitionCompactNetwork} from './competition-compact-network-browser.mjs';
 
 export async function runArea(browser,area,engine='chromium'){
  assert.ok(Object.hasOwn(areaRoutes,area),'Unknown area');
@@ -36,6 +37,7 @@ export async function runArea(browser,area,engine='chromium'){
    throw error;
   }finally{await context.close()}
  }
+ if(area==='competitions')checks+=await verifyCompetitionCompactNetwork(browser,{engine});
  console.log('TARGETED '+engine+' PASS: '+area+' '+checks+' cases (pairwise widths/locales/themes; touch + keyboard)');
  return checks;
 }

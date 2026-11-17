@@ -58,3 +58,26 @@ test('canonical local launcher advertises one consistent site/app URL split',()=
  assert.ok(readme.includes('http://app.localhost:2000/competitions'));
  assert.equal(readme.includes('Use `node tools/dev-standings-preview.mjs` for canonical local routing on `http://127.0.0.1:2000`'),false);
 });
+
+test('local Match Detail first paint only applies server-verified identity',async()=>{
+ const official={schemaVersion:1,providerId:'authoritative-world',matchId:'123',
+  season:2,competitionId:'IT-1',stageId:'league',round:1,day:1,
+  provenance:{kind:'authoritative'}};
+ const calls=[];
+ const server=createPreviewServer({subdomains:true,readInitialMatch:async id=>{calls.push(id);return official}});
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ const get=path=>new Promise((resolve,reject)=>{
+  const req=request({host:'127.0.0.1',port:server.address().port,path,
+   headers:{host:'app.localhost:2000'}},res=>{
+   let body='';res.on('data',p=>body+=p);res.on('end',()=>resolve({status:res.statusCode,body}));
+  });req.on('error',reject);req.end();
+ });
+ try{
+  const valid=await get('/matches/123');
+  assert.equal(valid.status,200);assert.match(valid.body,/data-fa-match-first-paint/);
+  assert.match(valid.body,/--app-match-surface:#155F50/);
+  const wrong=await get('/matches/124');
+  assert.equal(wrong.status,200);assert.doesNotMatch(wrong.body,/data-fa-match-first-paint/);
+  assert.deepEqual(calls,['123','124']);
+ }finally{server.closeAllConnections();await new Promise(r=>server.close(r))}
+});

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {existsSync,mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,readdirSync,unlinkSync} from "node:fs";
 import {join} from "node:path";
 import {tmpdir} from "node:os";
-import {repositoryRoot,planPublicFiles,assertPublicArtifact,stagePublicArtifact} from "../tools/publication-guard.mjs";
+import {repositoryRoot,planPublicFiles,assertPublicArtifact,stagePublicArtifact,isAllowlistedPublicPath,publicRequestFile} from "../tools/publication-guard.mjs";
 
 test("PLAYER-AUTH public artifact includes only the approved account pages and scripts",()=>{
  const files=planPublicFiles();
@@ -48,6 +48,20 @@ test("INT24-PUBLIC: shared rules and stats are self-contained public dependencie
   for(const name of assets)assert.ok(existsSync(join(target,"assets",name)));
   assert.ok(!existsSync(join(target,"__fa_dev__")));
   assert.ok(!existsSync(join(target,"tools")));
+ }finally{rmSync(root,{recursive:true,force:true})}
+});
+
+test("#605: shipped Club Fixtures includes the published match-reference module and its imports",()=>{
+ const files=planPublicFiles();
+ for(const path of ["assets/club-fixtures-source.mjs","assets/published-match-links.mjs","assets/match-references.mjs","assets/club-competition-catalogue.mjs"]){
+  assert.ok(files.includes(path),"required browser import missing from public artifact: "+path);
+ }
+ const root=mkdtempSync(join(tmpdir(),"fa-605-fixtures-artifact-"));
+ try{
+  const destination=join(root,"public");
+  stagePublicArtifact(repositoryRoot,destination);
+  for(const path of ["assets/club-fixtures-source.mjs","assets/published-match-links.mjs","assets/match-references.mjs","assets/club-competition-catalogue.mjs"])
+   assert.ok(existsSync(join(destination,path)),"missing staged fixture dependency: "+path);
  }finally{rmSync(root,{recursive:true,force:true})}
 });
 
@@ -220,4 +234,13 @@ test('A03-04D: public staging includes only the pure classic route core, never i
   unlinkSync(core);
   assert.throws(()=>assertPublicArtifact(target),/manifest|missing/i);
  }finally{rmSync(root,{recursive:true,force:true})}
+});
+
+test('PERF-API-657: compact manifest is a required public asset at its canonical route',()=>{
+ const path='competitions/_shared/compact.json';
+ assert.equal(isAllowlistedPublicPath(path),true);
+ assert.equal(publicRequestFile('/'+path),path);
+ assert.ok(planPublicFiles().includes(path));
+ assert.equal(isAllowlistedPublicPath('competitions/_shared/compact-broken.json'),false);
+ assert.equal(isAllowlistedPublicPath('competitions/_shared/not-allowed.json'),false);
 });

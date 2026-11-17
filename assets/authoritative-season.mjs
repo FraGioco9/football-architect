@@ -44,12 +44,22 @@ export function validateAuthoritativeSeason(input,context,manifest){
   return freeze(structuredClone(input));
  }
  const {data:d,world:w,provenance:p}=input,viewed=viewedSeasonState(input);
+ const entrantsOnly=d?.entrantsOnly===true;
+ const authority=entrantsOnly?'confirmed-entrants-v1':'temporary-lineup-v1';
+ const sourceSuffix=entrantsOnly?'entrants:':'';
  if(!viewed||![1,2].includes(w.seasonNumber)||!object(d)||d.season!==input.selectedSeason||d.rulesVersion!==definition.rules.version||input.reason!==null||
-    p?.kind!=='authoritative'||p.resultAuthority!=='temporary-score-v1'||typeof p.sourceRef!=='string'||!new RegExp('^world:'+w.generation+':season:'+d.season+':[a-f0-9]{64}$').test(p.sourceRef)||
+    p?.kind!=='authoritative'||p.resultAuthority!==authority||typeof p.sourceRef!=='string'||!new RegExp('^world:'+w.generation+':season:'+d.season+':'+sourceSuffix+'[a-f0-9]{64}$').test(p.sourceRef)||
     (input.status==='available')!==(viewed.phase==='closed'))fail();
  const catalog=clubCatalog(manifest),ids=d.participants;
  if(!Array.isArray(ids)||ids.length!==definition.capacity||new Set(ids).size!==ids.length||ids.some(id=>!idPattern.test(id)||!catalog.has(id))||
     definition.category==='domestic'&&ids.some(id=>!id.startsWith(definition.id.split('-')[0]+'-')))fail();
+ if(entrantsOnly){
+  // Membership confirmation has no schedule, result, rank or archived history.
+  if(input.status!=='partial'||viewed.phase!=='active'||viewed.day<1||viewed.day>12||
+     Object.keys(d).sort().join(',')!=='entrantsOnly,participants,rulesVersion,season,seasonState'||
+     !object(d.seasonState)||d.seasonState.day!==viewed.day||d.seasonState.phase!==viewed.phase)fail();
+  return freeze(structuredClone(input));
+ }
  const fixtures=d.fixtures,seen=new Set(),positions=new Set();
  if(!Array.isArray(fixtures))fail();
  for(const f of fixtures){
@@ -79,9 +89,31 @@ export function validateAuthoritativeSeason(input,context,manifest){
   if(!t||r.rank!==i+1||['played','won','drawn','lost','goalsFor','goalsAgainst'].some(k=>r[k]!==t[k])||r.goalDifference!==t.goalsFor-t.goalsAgainst||r.points!==t.won*3+t.drawn)fail();
  });
  const stats=d.statistics,allTotals=totals(ids,fixtures),played=fixtures.filter(f=>f.result!==null),goals=played.reduce((n,f)=>n+f.result.homeGoals+f.result.awayGoals,0);
- if(!object(stats)||stats.matchesPlayed!==played.length||stats.totalGoals!==goals||stats.goalsPerMatch!==(played.length?goals/played.length:0)||stats.players!==null||stats.playerStatus!=='unavailable'||
+ if(!object(stats)||stats.matchesPlayed!==played.length||stats.totalGoals!==goals||stats.goalsPerMatch!==(played.length?goals/played.length:0)||!Array.isArray(stats.players)||stats.playerStatus!=='available'||
     !Array.isArray(stats.teams)||stats.teams.length!==ids.length||new Set(stats.teams.map(t=>t.clubId)).size!==ids.length)fail();
  for(const row of stats.teams){const t=allTotals.get(row.clubId);if(!t||Object.keys(t).some(k=>row[k]!==t[k])||row.goalDifference!==t.goalsFor-t.goalsAgainst)fail()}
+ const playerIdentity=new Set(),playerTotals=new Map();
+ for(const p of stats.players){
+  if(!object(p)||!count(p.playerId)||p.playerId===0||!ids.includes(p.clubId)||
+     !count(p.appearances)||p.appearances===0||!count(p.starts)||p.starts!==p.appearances||
+     // Frozen V2 appearances may be substituted before 90'; each counted
+     // appearance contributes 1..120 playing minutes, never a mandatory 90.
+     !count(p.minutes)||p.minutes<p.appearances||p.minutes>120*p.appearances||
+     !count(p.goals))fail();
+  const identity=p.clubId+':'+p.playerId;
+  if(playerIdentity.has(identity))fail();playerIdentity.add(identity);
+  // One player cannot appear more often than their club has played, but
+  // eleven DISTINCT starters may each appear in that same match.
+  const team=allTotals.get(p.clubId);
+  if(!team||p.appearances>team.played)fail();
+  const total=playerTotals.get(p.clubId)??{appearances:0,goals:0};
+  total.appearances+=p.appearances;total.goals+=p.goals;
+  playerTotals.set(p.clubId,total);
+ }
+ for(const [clubId,p] of playerTotals){
+  const t=allTotals.get(clubId);
+  if(!t||p.appearances>11*t.played||p.goals>t.goalsFor)fail();
+ }
  if(!Array.isArray(d.calendar)||d.calendar.length!==56)fail();
  d.calendar.forEach((day,i)=>{
   const expected=fixtures.filter(f=>f.day===i+1);
@@ -97,8 +129,19 @@ export function validateAuthoritativeSeason(input,context,manifest){
 export function adaptAuthoritativeSeason(source,context,manifest){
  if(source.data===null)return null;
  const {data:d}=source,definition=context.currentDefinition||context.definition,catalog=clubCatalog(manifest),participants=d.participants.map(id=>catalog.get(id));
+ if(d.entrantsOnly===true){
+  // Approved membership is stored in ID order, but unranked entrants are presented by primary name.
+  participants.sort((a,b)=>a.primaryName.localeCompare(b.primaryName,'en',{sensitivity:'base'})||key(a).localeCompare(key(b),'en'));
+  const standings=participants.map(club=>({club,played:0,won:0,drawn:0,lost:0,gf:0,ga:0,gd:0,pts:0,recent:[]}));
+  return freeze({season:d.season,rulesVersion:d.rulesVersion,participants,entrantsOnly:true,fixtures:null,
+   postseason:[],results:[],statistics:{standings,overview:{matchesPlayed:0,totalGoals:0,goalsPerMatch:0},teams:[],players:[]},
+   status:source.status,history:null,
+   provenance:{kind:'authoritative',sourceRef:source.provenance.sourceRef,resultAuthority:source.provenance.resultAuthority},
+   world:source.world,seasonState:viewedSeasonState(source),currentMatchday:null});
+ }
  const club=id=>definition.category==='international'?id:catalog.get(id).clubId;
- const fixtures=d.fixtures.map(f=>({round:f.round,phaseId:f.phaseId,tieId:f.tieId,leg:f.leg,neutral:f.neutral,
+ const fixtures=d.fixtures.map(f=>({sourceFixtureId:f.id,marker:f.marker,day:f.day,
+  round:f.round,phaseId:f.phaseId,tieId:f.tieId,leg:f.leg,neutral:f.neutral,
   homeId:club(f.homeClubId),awayId:club(f.awayClubId),homeGoals:f.result?.homeGoals??null,awayGoals:f.result?.awayGoals??null,kickoff:null,
   afterExtraTime:!!f.result?.extraTime,penalties:f.result?.penalties?{homeId:club(f.homeClubId),awayId:club(f.awayClubId),homeGoals:f.result.penalties.home,awayGoals:f.result.penalties.away}:null}));
  const postseason=fixtures.filter(f=>f.phaseId!=='league');
@@ -130,6 +173,47 @@ export function adaptAuthoritativeSeason(source,context,manifest){
   provenance:{kind:'authoritative',sourceRef:source.provenance.sourceRef,resultAuthority:source.provenance.resultAuthority},world:source.world,seasonState:viewedSeasonState(source),
   currentMatchday:viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?currentChoice:null});
 }
+/**
+ * PERF-API-657 — validated immutable sporting-season snapshots, scoped to a
+ * single public world generation/revision and source revision. A season viewed
+ * earlier is reusable only while the authoritative world is *exactly* unchanged.
+ * A confirmed canonical empty response is a valid cache entry; failed reads
+ * never reach this helper.
+ */
+export function createCompetitionSeasonReadCache({limit=8}={}){
+ if(!Number.isSafeInteger(limit)||limit<1||limit>32)throw TypeError('Invalid cache limit');
+ const entries=new Map();
+ const cacheKey=(competitionId,season,snapshot)=>{
+  const world=snapshot?.world;
+  if(!/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(competitionId)||
+     !Number.isSafeInteger(season)||season<1||
+     snapshot?.source!=='authoritative'||snapshot.worldStatus!=='ready'||
+     !Number.isSafeInteger(snapshot.sourceRevision)||snapshot.sourceRevision<0||
+     !validPublicWorld(world)||season>world.seasonNumber)return null;
+  return JSON.stringify([competitionId,season,snapshot.sourceRevision,
+   world.generation,world.revision,world.seasonNumber,world.day,world.phase]);
+ };
+ return Object.freeze({
+  remember({competitionId,season,snapshot,data}){
+   const key=cacheKey(competitionId,season,snapshot);
+   if(!key||data!==null&&(data?.provenance?.kind!=='authoritative'||
+      data.season!==season||!globalThis.faWorldClockAdapter.sameWorld(data.world,snapshot.world)))
+    return false;
+   const copy=data===null?null:freeze(structuredClone(data));
+   entries.delete(key);entries.set(key,copy);
+   while(entries.size>limit)entries.delete(entries.keys().next().value);
+   return true;
+  },
+  find({competitionId,season,snapshot}){
+   const key=cacheKey(competitionId,season,snapshot);
+   // The wrapper distinguishes a verified empty season from a cache miss.
+   return key&&entries.has(key)?{data:entries.get(key)}:null;
+  },
+  clear(){entries.clear()},
+  size(){return entries.size}
+ });
+}
+
 export function createAuthoritativeLoader({getContext,clear,commit,isDev,fetchJson,manifest,onState=()=>{},onWorld=()=>{}}){
  let context,retained=false;
  return globalThis.faWorldClockAdapter.createSnapshotReader({

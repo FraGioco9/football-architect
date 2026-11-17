@@ -9,7 +9,7 @@ export function validateCalendarDay(input,selection,manifest){
   if(!reasons.includes(input.reason)||input.data!==null||input.provenance?.kind!=='none'||input.provenance.sourceRef!==null||input.provenance.resultAuthority!==null)fail();return structuredClone(input);
  }
  const {data:d,world:w,provenance:p}=input,viewed=viewedSeasonState(input);
- if(!viewed||![1,2].includes(w.seasonNumber)||d?.season!==selection.season||d.day!==selection.day||input.reason!==null||p?.kind!=='authoritative'||p.resultAuthority!=='temporary-score-v1'||
+ if(!viewed||![1,2].includes(w.seasonNumber)||d?.season!==selection.season||d.day!==selection.day||input.reason!==null||p?.kind!=='authoritative'||p.resultAuthority!=='temporary-lineup-v1'||
    !/^[a-f0-9]{64}$/.test(d.calendarHash)||!/^[a-f0-9]{64}$/.test(d.rulesHash)||p.sourceRef!==`world:${w.generation}:season:${selection.season}:${d.calendarHash}`||(input.status==='available')!==(viewed.phase==='closed'))fail();
  const definitions=new Map(manifest.competitions.map(c=>[c.id,c])),catalog=new Map(manifest.divisions.flatMap(d=>d.clubs).map(c=>[key(c),c]));
  if(!Array.isArray(d.competitions)||d.competitions.length!==18||new Set(d.competitions.map(c=>c.id)).size!==18||!Array.isArray(d.fixtures))fail();

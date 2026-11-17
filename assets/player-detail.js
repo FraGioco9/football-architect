@@ -7,8 +7,8 @@
  const portraitFallback=panel.querySelector('[data-detail-portrait-placeholder]');
  // SVGElement.hidden is not reliably reflected in the DOM; use the actual
  // hidden attribute. Keep both photo and fallback hidden until resolved.
- // Only owner-approved, static, public photo paths. Protected draft previews always use the placeholder.
- const portraitSources=Object.freeze({44:'/assets/players/portraits/44.webp',98:'/assets/players/portraits/98.webp',145:'/assets/players/portraits/145.webp'});
+ // Static public portrait paths are staged on this Draft/HOLD branch; publication needs separate approval. Protected previews always use the placeholder.
+ const portraitSources=Object.freeze({44:'/assets/players/portraits/44.webp',98:'/assets/players/portraits/98.webp',145:'/assets/players/portraits/145.webp',46:'/assets/players/portraits/46.webp',45:'/assets/players/portraits/45.webp',49:'/assets/players/portraits/49.webp',50:'/assets/players/portraits/50.webp',51:'/assets/players/portraits/51.webp',47:'/assets/players/portraits/47.webp',52:'/assets/players/portraits/52.webp',148:'/assets/players/portraits/148.webp',53:'/assets/players/portraits/53.webp',54:'/assets/players/portraits/54.webp',55:'/assets/players/portraits/55.webp',59:'/assets/players/portraits/59.webp',56:'/assets/players/portraits/56.webp',57:'/assets/players/portraits/57.webp',62:'/assets/players/portraits/62.webp',60:'/assets/players/portraits/60.webp',61:'/assets/players/portraits/61.webp',48:'/assets/players/portraits/48.webp',63:'/assets/players/portraits/63.webp',58:'/assets/players/portraits/58.webp'});
  let portraitRequest=0;
  function resetPortrait(){
   portraitRequest++;
@@ -126,7 +126,7 @@
   if(hash.size)url.hash=hash.toString();
   return url.pathname+url.search+url.hash;
  }
- function countryNode(code){
+ function countryNode(code,header=false){
   const wrapper=document.createElement('span');wrapper.className='app-player-detail-country';
   if(!code){wrapper.textContent='—';return wrapper;}
   const countries=window.faPlayersNationality||{},flag=countries.flags?.[code];
@@ -136,6 +136,15 @@
    const img=document.createElement('img');img.className='app-player-detail-flag';
    img.src='/assets/flags/'+flag+'.svg';img.width=20;img.height=15;
    img.alt='';wrapper.append(img);
+  }
+  if(header){
+   // The football code is already canonical in the player record. Never derive it from the localized label.
+   const full=document.createElement('span');full.className='app-player-detail-nationality-full';full.textContent=name||code;
+   const compact=document.createElement('span');compact.className='app-player-detail-nationality-compact';
+   compact.textContent=Object.hasOwn(countries.flags||{},code)?code:(name||code);
+   compact.setAttribute('aria-hidden','true');
+   const accessible=document.createElement('span');accessible.className='sr-only app-player-detail-nationality-accessible';accessible.textContent=name||code;
+   wrapper.append(full,compact,accessible);return wrapper;
   }
   wrapper.append(document.createTextNode(name||code));return wrapper;
  }
@@ -246,8 +255,8 @@
  }
  async function resolveClubCatalog(ticket){
   if(!player||!player.clubKey)return;
-  if(!clubCatalogPromise)clubCatalogPromise=fetch('/clubs/_shared/manifest.json',{credentials:'omit',cache:'force-cache'})
-   .then(res=>{if(!res.ok)throw Error('club_catalog_unavailable');return res.json()})
+  if(!clubCatalogPromise)clubCatalogPromise=import('/assets/match-public-context.mjs')
+   .then(module=>module.publicClubIdentityCatalog())
    .then(manifest=>Array.isArray(manifest.clubs)&&manifest.clubs.length===320?manifest:null)
    .catch(()=>null);
   const manifest=await clubCatalogPromise;
@@ -304,7 +313,7 @@
   }
   setContent(nameNode,candidate||copy.player);
   roleNode.textContent=positionCodes().join(', ')||'—';
-  setContent(nationalityNode,countryNode(player.nationality));
+  setContent(nationalityNode,countryNode(player.nationality,true));
   setContent(ageNode,Number.isSafeInteger(player.age)?localizedAge(player.age):'—');
   renderClub();
   subtitle.textContent=preview?(previewCommitted?copy.savedPreview:copy.preview):'';

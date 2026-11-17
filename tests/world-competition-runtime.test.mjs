@@ -19,6 +19,24 @@ assert.equal(source.split(marker).length,2);
 const demoSource=source.replace(marker,
   "  window.__faFixtureHooks = { createStandingsRow, attachFormTooltips };\n"+marker);
 const manifest=JSON.parse(read("competitions/_shared/manifest.json"));
+
+function compactForVM(manifest){
+ // Intentionally allow invalid fixtures in the transport: negative tests
+ // must reach the real expansion/validation boundary, not fail at setup.
+ const templates=[],bySignature=new Map();
+ const definitions=(manifest.competitions||[]).map(original=>{
+  const template={rules:original.rules,metrics:original.metrics,capabilities:original.capabilities};
+  const signature=JSON.stringify(template);let index=bySignature.get(signature);
+  if(index===undefined){index=templates.length;templates.push(template);bySignature.set(signature,index)}
+  const row={};for(const [key,value] of Object.entries(original))
+   if(!['rules','metrics','capabilities'].includes(key))row[key]=value;
+  row.templateIndex=index;return row;
+ });
+ return {catalogFormat:'competition-catalog-dedup-v1',schemaVersion:manifest.schemaVersion,
+  approved:manifest.approved,profile:manifest.profile,clubCrests:manifest.clubCrests,
+  divisions:manifest.divisions,templates,competitions:definitions};
+}
+
 const root="http://127.0.0.1:2000";
 test('SEASON-DEV-BANDS: publishing a historical provider snapshot repairs desktop and mobile bands prepared before publication',async()=>{
  const data=structuredClone(manifest),current=data.competitions.find(d=>d.id==='IT-1');
@@ -234,15 +252,19 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   const u=new URL(url);
   requested.push(u.pathname);
   if(fetchFailure)return {ok:false};
-  if(u.pathname==="/competitions/_shared/manifest.json")
-   return {ok:true,json:async()=>data};
+  if(u.pathname==="/competitions/_shared/compact.json")
+   return {ok:true,json:async()=>compactForVM(data)};
   return {ok:false};
  };
  const window={faDebugEnabled:devSeason!==null,faRoutesRegistry:routeRegistry,faCompetitionModel:competitionModel,faCompetitionRules:competitionRules,faCompetitionRulesView:competitionRulesView,location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   dispatchEvent(event){this.emit(event.type,event)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
- runInNewContext(demo||testHooks?demoSource:source,{document,window,URL,fetch:fakeFetch,setTimeout,clearTimeout,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
+ // Browser production exposes MutationObserver. This isolated VM has no DOM
+ // mutation engine, so retain the API shape without inventing mutation events;
+ // browser QA exercises the real observer and hydration transitions.
+ const MutationObserver=class{constructor(callback){this.callback=callback}observe(){}disconnect(){}};
+ runInNewContext(demo||testHooks?demoSource:source,{document,window,URL,fetch:fakeFetch,setTimeout,clearTimeout,MutationObserver,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  // Flush fetch, DOM filling, and the four sequential script-load promises.
  await new Promise(resolve=>setImmediate(resolve));
  await new Promise(resolve=>setImmediate(resolve));
@@ -267,7 +289,7 @@ test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async
   for(const ending of ["","/","/index.html"]){
    const r=await simulate({division,ending});
    assert.deepEqual(r.requested,[
-    "/competitions/_shared/manifest.json"
+    "/competitions/_shared/compact.json"
    ],division.id+ending);
    assert.deepEqual(r.loaded,[
     "/assets/world-calendar-model.js","/assets/competition-rules.js","/assets/competition-rules-view.js","/assets/provider-selectors-bootstrap.mjs","/assets/landing.js","/assets/app.js",
@@ -417,6 +439,17 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  newest.emit("pointerenter",{pointerType:"mouse"});
  assert.equal(tooltip.hidden,false);
  assert.equal(newest.attrs["aria-describedby"],"app-world-form-tooltip");
+ // After a mouse click the button can retain focus; pointer exit must still dismiss.
+ r.document.activeElement=newest;
+ newest.emit("focus");
+ newest.emit("click");
+ newest.emit("pointerleave",{pointerType:"mouse"});
+ assert.equal(newest.attrs["aria-describedby"],undefined);
+ assert.equal(tooltip.className,"app-world-form-tooltip is-closing");
+ tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
+ assert.equal(tooltip.hidden,true);
+ r.document.activeElement=null;
+ newest.emit("pointerenter",{pointerType:"mouse"});
  assert.equal(metadata.children[0].children[1].textContent,"15");
  assert.match(scoreline.children[1].children.map(part=>part.textContent).join(""),/^(?:1 – 2|2 – 1|1 – 1)$/);
  assert.ok(scoreline.children[0].textContent);

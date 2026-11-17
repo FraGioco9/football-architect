@@ -3,17 +3,19 @@ import type {Database,Statement} from './database.ts';
 import type {Fixture} from './initial-schedule.ts';
 import {assignLeagueMatchSlots} from './domain/calendar/match-slot-identity.ts';
 import {buildKnockoutSlotReservations} from './domain/calendar/knockout-slot-reservations.ts';
+import {canonicalHomeStadium} from './match-venues.ts';
 
 export type PublicationKind='calendar'|'domestic'|'international';
 const insertSql=`INSERT INTO season_match_slots(
  match_id,generation,season_number,competition_id,phase_id,slot_id,
  source_fixture_id,marker,scheduled_day,round_number,home_club_id,away_club_id,
- source_kind,source_hash,published_at)
+ stadium_name,source_kind,source_hash,published_at)
  SELECT json_extract(value,'$.matchId'),json_extract(value,'$.generation'),
  json_extract(value,'$.season'),json_extract(value,'$.competitionId'),'league',
  json_extract(value,'$.slotId'),json_extract(value,'$.sourceFixtureId'),
  json_extract(value,'$.marker'),json_extract(value,'$.day'),json_extract(value,'$.round'),
  json_extract(value,'$.homeClubId'),json_extract(value,'$.awayClubId'),
+ json_extract(value,'$.stadiumName'),
  json_extract(value,'$.sourceKind'),json_extract(value,'$.sourceHash'),
  json_extract(value,'$.publishedAt') FROM json_each(?)`;
 
@@ -36,11 +38,13 @@ export async function matchPublicationStatements(
      (kind==='domestic'&&slot.competitionId.startsWith('int-'))||
      (kind==='international'&&!slot.competitionId.startsWith('int-')))
    throw new RangeError('Invalid fixture provenance');
+  const stadiumName=canonicalHomeStadium(fixture.homeClubId);
+  if(!stadiumName)throw new RangeError('Unknown official home stadium');
   const rows=groups.get(slot.competitionId)??[];
   rows.push({matchId:slot.matchId,generation,season,competitionId:slot.competitionId,
    slotId:slot.slotId,sourceFixtureId:fixture.id,marker:fixture.marker,
    day:fixture.day,round:fixture.round,homeClubId:fixture.homeClubId,
-   awayClubId:fixture.awayClubId,sourceKind:kind,sourceHash,publishedAt});
+   awayClubId:fixture.awayClubId,stadiumName,sourceKind:kind,sourceHash,publishedAt});
   groups.set(slot.competitionId,rows);
  }
  const targetGroups=kind==='calendar'?18:kind==='domestic'?16:2;

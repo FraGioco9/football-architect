@@ -10,29 +10,27 @@ import {readWorld} from './world-repository.ts';
 import {parsePrepareRequest,parseIdempotencyKey} from './command-contract.ts';
 import {loadApprovedSnapshot} from './approved-season-one.ts';
 import {prepareSeason} from './commands.ts';
-import {generateSeasonCalendar} from './calendar-command.ts';
-import {executeLifecycle} from './lifecycle-command.ts';
+import {executeLineupLifecycleV1 as executeLifecycle} from './lineup-lifecycle-command.ts';
 import {rescheduleSeasonEvent} from './admin-calendar-command.ts';
 import {initializeAdministrativeEvents} from './admin-calendar-initialize.ts';
 import {completeConfirmationEvent} from './admin-calendar-confirm.ts';
-import {advanceAdministrativeClock} from './admin-calendar-clock.ts';
+import {advanceAdministrativeClockLineupV1 as advanceAdministrativeClock} from './admin-calendar-clock-lineup-v1.ts';
 import {readAdministrativeCalendar} from './admin-calendar-read.ts';
 import {stageDomesticCalendar} from './admin-domestic-stage.ts';
 import {executeInternationalDraw} from './admin-international-draw.ts';
-import {publishInternationalCalendar} from './admin-calendar-publish.ts';
-import {closeSeason} from './season-close-command.ts';
-import {archiveSeason} from './season-archive-command.ts';
+import {publishInternationalCalendarLineupV1 as publishInternationalCalendar} from './admin-calendar-publish-lineup-v1.ts';
+import {closeSeasonLineupV1 as closeSeason} from './season-close-command-lineup-v1.ts';
+import {archiveSeasonLineupV1 as archiveSeason} from './season-archive-command-lineup-v1.ts';
 import {resetWorld} from './reset-world-command.ts';
 import {readSeasonArchives,readClosedSeasonHistory} from './season-archive-read.ts';
 import {readSeasonTwoCandidate} from './season-two-candidate-read.ts';
 import {previewPlayerGeneration,readPlayerGenerationDraft,commitPlayerGeneration,listGeneratedPlayers} from './players-generation-command.ts';
-import {readPlayerPortraitPrompt} from './player-portrait-read.ts';
 import {parseContractListQuery,readPlayerContracts,changePlayerContract,changePlayerContractsBatch} from './player-club-contracts.ts';
 import {prepareSeasonTwo} from './season-two-prepare-command.ts';
 import {approveSeasonTwoSnapshot} from './season-two-approval-command.ts';
 export interface AdminEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string}
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>httpJson('account',status,body,extra);
-const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/players','GET'],['/api/admin/players/portrait','GET'],['/api/admin/players/preview','POST'],['/api/admin/players/draft','POST'],['/api/admin/players/commit','POST'],['/api/admin/contracts','GET|POST'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
+const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/players','GET'],['/api/admin/players/preview','POST'],['/api/admin/players/draft','POST'],['/api/admin/players/commit','POST'],['/api/admin/contracts','GET|POST'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
 export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response>{
  const path=new URL(request.url).pathname,method=known.get(path);
  if(!method)return json(404,{error:{code:'not_found'}});
@@ -62,11 +60,6 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/session')return json(200,{actor:player.actor,csrfToken:await playerCsrfFor(playerToken)});
   if(path==='/api/admin/world')return json(200,{world:await readWorld(db)});
   if(path==='/api/admin/players')return json(200,await listGeneratedPlayers(db));
-  if(path==='/api/admin/players/portrait'){
-   const params=new URL(request.url).searchParams;
-   if(params.size!==1||!params.has('playerId'))throw new ApiError(422,'invalid_portrait_player_id');
-   return json(200,await readPlayerPortraitPrompt(db,params.get('playerId')));
-  }
   if(path==='/api/admin/contracts'&&request.method==='GET')
    return json(200,await readPlayerContracts(db,parseContractListQuery(new URL(request.url).search)));
   if(path==='/api/admin/players/draft'){
@@ -99,6 +92,10 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/seasons/next-prepare')return json(200,await prepareSeasonTwo(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/next-approve')return json(200,await approveSeasonTwoSnapshot(db,session,rawCommand,key,now));
   if(path==='/api/admin/world/reset')return json(200,await resetWorld(db,session,rawCommand as Parameters<typeof resetWorld>[2],key,now));
+  // Retire direct score-only calendar generation/start routes: the authenticated
+  // milestone flow is the one canonical route into V2 day finalization.
+  if(path==='/api/admin/seasons/calendar'||path==='/api/admin/seasons/start')
+   return json(410,{error:{code:'legacy_season_command_retired'}});
   if(path==='/api/admin/seasons/archive')return json(200,await archiveSeason(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/close')return json(200,await closeSeason(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/events/initialize')return json(200,await initializeAdministrativeEvents(db,session,parsePrepareRequest(rawCommand),key,now));
@@ -109,8 +106,7 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/seasons/events/confirm')return json(200,await completeConfirmationEvent(db,session,rawCommand,key,now));
   if(path==='/api/admin/seasons/events/reschedule')return json(200,await rescheduleSeasonEvent(db,session,rawCommand,key,now));
   const command=parsePrepareRequest(rawCommand);
-  if(path==='/api/admin/seasons/start'||path==='/api/admin/seasons/advance')return json(200,await executeLifecycle(db,session,path.endsWith('/start')?'start':'advance',command,key,now));
-  if(path==='/api/admin/seasons/calendar')return json(200,await generateSeasonCalendar(db,session,command,key,now));
+  if(path==='/api/admin/seasons/advance')return json(200,await executeLifecycle(db,session,'advance',command,key,now));
   return json(200,await prepareSeason(db,session,command,key,await loadApprovedSnapshot(),now));
  }catch(error){
   return httpError('account',error,'admin_unavailable');
