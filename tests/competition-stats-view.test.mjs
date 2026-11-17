@@ -280,6 +280,25 @@ test('COMP-STATS-643: circular face photos use generic player paths and an hones
  assert.match(css,/\.fa-dev-stats-player-portrait img\{[^}]*width:280%[^}]*height:auto[^}]*left:50%;top:0/);
 });
 
+
+test('COMP-STATS-643: player rows have no hover titles; metric-sized skeletons reserve name, club and value slots',()=>{
+ const r=fixture(),c=supplied('it-1',16);
+ c.seasonData.statistics.players=[{playerId:58,name:'Recorded Player',clubKey:'IT-1',appearances:1,starts:1,minutes:90,goals:1}];
+ r.api.mount(r.panel,c);buttons(r)[2].emit('click');
+ const labels=byClass(r,'fa-dev-stats-player-label');
+ assert.equal(labels.length,1);
+ assert.equal(labels[0].children[0].title,undefined,'player link has no native hover tooltip');
+ assert.equal(labels[0].children[1].title,undefined,'club label has no native hover tooltip');
+ const markup=r.api.renderSkeleton('players');
+ assert.equal((markup.match(/class="fa-dev-stats-player-label"/g)||[]).length,40,'five player identities per card');
+ assert.equal((markup.match(/class="fa-dev-stats-club-link"/g)||[]).length,40,'club label keeps its own second row');
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-leader-card:not\(\.fa-dev-stats-team-card\):nth-child\(1\)\{--fa-stats-skeleton-value-width:8\.5ch\}/);
+ assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-leader-card:not\(\.fa-dev-stats-team-card\):nth-child\(5\)\{--fa-stats-skeleton-value-width:7\.5ch\}/);
+ assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-player-label \.fa-dev-stats-team-name\{[^}]*width:min\(var\(--fa-stats-skeleton-player-name\),100%\);height:1\.3em/);
+ assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-player-label \.fa-dev-stats-club-link\{[^}]*width:min\(var\(--fa-stats-skeleton-club-name\),100%\);height:1\.3em/);
+});
+
 test('COMP-STATS: rating and GK clean sheets show appearances while missing metrics stay unavailable',()=>{
  const r=fixture(),c=supplied('int-1',24);
  c.seasonData.statistics.players=[{playerId:58,name:'Keeper',nationality:'ITA',clubKey:'IT-1',appearances:13,starts:10,minutes:900,goals:0,assists:null,cleanSheets:6,redCards:null,averageRating:7.25,ratedAppearances:5}];

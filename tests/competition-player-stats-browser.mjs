@@ -53,6 +53,41 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    const before=await goals.boundingBox();
    const filledSizes=await cards.evaluateAll(nodes=>nodes.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
    assert.ok(filledSizes.every(size=>size.height===filledSizes[0].height),'all eight populated cards reserve equal height');
+
+   // Off-screen first-paint oracle: all pending player cards/rows must occupy
+   // the same slots as the hydrated presentation at this viewport.
+   const loadingGeometry=await page.evaluate(()=>{
+    const live=document.getElementById('fa-dev-stats');
+    const shell=document.createElement('div');
+    shell.className='app-competition-view-skeleton';
+    shell.style.cssText='display:block;position:absolute;visibility:hidden;pointer-events:none;left:0;top:0;width:'+live.getBoundingClientRect().width+'px';
+    shell.innerHTML=window.faCompetitionStats.renderSkeleton('players');
+    live.parentElement.append(shell);
+    try{
+     const pending=[...shell.querySelectorAll('.fa-dev-stats-leader-card')];
+     const actual=[...live.querySelectorAll('.fa-dev-stats-leader-card')];
+     const rows=[...shell.querySelectorAll('.fa-dev-stats-top li')];
+     const bounds=node=>({width:node.getBoundingClientRect().width,height:node.getBoundingClientRect().height});
+     const sample=rows[0];
+     const portrait=sample.querySelector('.app-view-skeleton-crest-slot');
+     const bars=[...sample.querySelectorAll('.fa-dev-stats-player-label .app-skeleton-bar')];
+     return {cards:pending.map(bounds),liveCards:actual.map(bounds),
+      rows:rows.every(row=>Math.abs(bounds(row).height-bounds(sample).height)<.1),
+      rowHeight:bounds(sample).height,portrait:bounds(portrait),
+      nameWidth:bounds(bars[0]).width,clubWidth:bounds(bars[1]).width,
+      valueWidths:pending.map(card=>bounds(card.querySelector('li>strong>.app-skeleton-bar')).width),
+      noTooltip:!live.querySelector('.fa-dev-stats-player-label [title]')};
+    }finally{shell.remove()}
+   });
+   assert.deepEqual(loadingGeometry.cards,filledSizes,'first-paint player cards must match their hydrated dimensions');
+   assert.equal(loadingGeometry.rows,true,'all 40 pending player rows have the same height');
+   assert.equal(loadingGeometry.rowHeight,width===390?52:60);
+   assert.equal(loadingGeometry.portrait.width,width===390?40:48);
+   assert.equal(loadingGeometry.portrait.height,loadingGeometry.portrait.width);
+   assert.ok(loadingGeometry.nameWidth>loadingGeometry.clubWidth*0.7&&loadingGeometry.clubWidth>0,'name and club bars are text-sized');
+   assert.ok(loadingGeometry.valueWidths[0]>loadingGeometry.valueWidths[1]*1.5,'Rating includes coverage, unlike Goals');
+   assert.ok(loadingGeometry.valueWidths[4]>loadingGeometry.valueWidths[1]*1.3,'Clean sheets include appearances');
+   assert.equal(loadingGeometry.noTooltip,true,'no native hover tooltip on player names or clubs');
    const expand=goals.locator('.fa-dev-stats-expand');await expand.click();
    const dialog=page.locator('dialog[open]');
    assert.equal(await dialog.locator('li').count(),8);

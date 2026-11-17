@@ -1384,6 +1384,28 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 .app-competition-view-skeleton .app-view-skeleton-stats-expand{position:relative;pointer-events:none;cursor:default}
 .app-competition-view-skeleton .app-view-skeleton-stats-expand-label{visibility:hidden}
 .app-competition-view-skeleton .app-view-skeleton-stats-expand>.app-skeleton-bar{position:absolute;left:50%;top:50%;translate:-50% -50%;width:56px;height:10px}
+
+/* The loading bars match the typography/footprints of recorded Stats values.
+   Keep the circular player portrait and both identity lines in their final slots. */
+.app-competition-view-skeleton .fa-dev-stats-leader-card{--fa-stats-skeleton-value-width:3.5ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(1){--fa-stats-skeleton-value-width:8.5ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(4){--fa-stats-skeleton-value-width:5.5ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(5){--fa-stats-skeleton-value-width:7.5ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(6){--fa-stats-skeleton-value-width:7ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(8){--fa-stats-skeleton-value-width:5.5ch}
+.app-competition-view-skeleton .fa-dev-stats-team-card:nth-child(5){--fa-stats-skeleton-value-width:5ch}
+.app-competition-view-skeleton .fa-dev-stats-top li>strong{width:var(--fa-stats-skeleton-value-width);min-width:var(--fa-stats-skeleton-value-width);display:flex;align-items:center;justify-content:flex-end;min-height:1.3em}
+.app-competition-view-skeleton .fa-dev-stats-top li>strong>.app-skeleton-bar{height:.85em;border-radius:3px}
+.app-competition-view-skeleton .fa-dev-stats-top .fa-dev-stats-rank>.app-skeleton-bar{height:.8em;border-radius:3px}
+.app-competition-view-skeleton .fa-dev-stats-top .fa-dev-stats-team-name>.app-skeleton-bar{height:.83em;border-radius:3px}
+.app-competition-view-skeleton .fa-dev-stats-top li{--fa-stats-skeleton-player-name:15ch;--fa-stats-skeleton-club-name:12ch}
+.app-competition-view-skeleton .fa-dev-stats-top li:nth-child(2){--fa-stats-skeleton-player-name:12ch;--fa-stats-skeleton-club-name:15ch}
+.app-competition-view-skeleton .fa-dev-stats-top li:nth-child(3){--fa-stats-skeleton-player-name:18ch;--fa-stats-skeleton-club-name:10ch}
+.app-competition-view-skeleton .fa-dev-stats-top li:nth-child(4){--fa-stats-skeleton-player-name:11ch;--fa-stats-skeleton-club-name:13ch}
+.app-competition-view-skeleton .fa-dev-stats-top li:nth-child(5){--fa-stats-skeleton-player-name:16ch;--fa-stats-skeleton-club-name:11ch}
+.app-competition-view-skeleton .fa-dev-stats-player-label .fa-dev-stats-team-name{display:flex;align-items:center;width:min(var(--fa-stats-skeleton-player-name),100%);height:1.3em}
+.app-competition-view-skeleton .fa-dev-stats-player-label .fa-dev-stats-club-link{display:flex;align-items:center;width:min(var(--fa-stats-skeleton-club-name),100%);height:1.3em}
+.app-competition-view-skeleton .fa-dev-stats-player-label .fa-dev-stats-club-link>.app-skeleton-bar{height:.75em;border-radius:3px}
 .app-view-skeleton-record-holder{display:flex;align-items:center;min-height:48px}
 .app-view-skeleton-record-holder>.app-skeleton-bar{max-width:140px}
 .app-view-skeleton-history-archive{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}

@@ -105,7 +105,6 @@
    const clubRoute=window.faRoutesRegistry.buildRoute({kind:'club',country:match[1].toLowerCase(),id:match[2],view:'overview'});
    const name=create('a',player?(record.name??'#'+record.playerId):record.clubName,'fa-dev-stats-team-name app-world-standing-club-link');
    name.href=player?window.faRoutesRegistry.buildRoute({kind:'player',id:record.playerId}):clubRoute;
-   if(player)name.title=record.name??'#'+record.playerId;
    if(player){
     const portrait=create('span',undefined,'fa-dev-stats-player-portrait');
     // Only the player name is interactive.
@@ -117,7 +116,7 @@
     // Generic persistent-ID paths: no player-specific crop rules or asset list.
     photo.src='/assets/players/portraits/'+record.playerId+'.webp';portrait.append(photo);
     const label=create('span',undefined,'fa-dev-stats-player-label');
-    const clubLabel=create('span',club.primaryName,'fa-dev-stats-club-link');clubLabel.title=club.primaryName;
+    const clubLabel=create('span',club.primaryName,'fa-dev-stats-club-link');
     label.append(name,clubLabel);identityNode.append(portrait,label);
    }else identityNode.append(crest,name);
    li.append(create('span',rank,'fa-dev-stats-rank'),identityNode,create('strong',format(key,record[key],record)));return li;
