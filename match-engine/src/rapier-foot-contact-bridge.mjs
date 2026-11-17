@@ -2,6 +2,7 @@
 // This module creates no world, assigns no player movement and never kicks.
 import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
+ FOOT_CONTACT_FORWARD_OFFSET_M,
  FOOT_CONTACT_HALF_WIDTH_M,FOOT_CONTACT_HALF_HEIGHT_M,
  FOOT_CONTACT_ROUNDING_M,FOOT_CONTACT_FRICTION,
  FOOT_CONTACT_RESTITUTION,footProxyTransform,
@@ -114,7 +115,28 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   if(nextTick!==tick+1)throw new RangeError('Nonconsecutive physical shoe tick');
   // Validate ALL actors, headings and physical displacement before mutation.
   const next=validateFootContactFrame(playerFrame,nextTick,positions);
-  const newFeet=shoeFeet(next,nextTick);
+  const proposed=shoeFeet(next,nextTick);
+  // The whole shoe also moves when its owner turns or advances. Clamp the
+  // actual Rapier kinematic collider trajectory, NOT the canonical player,
+  // to the original physical 7m/s ceiling (one 60Hz tick = 0.1167m).
+  // This is a real, continuous shoe pose: no new START/END, impulse, or ball
+  // ownership is synthesized.
+  const newFeet=dribbleAttackerId===null?proposed:
+   Object.freeze(proposed.map((foot,i)=>{
+    if(initialPlayers[i].id!==dribbleAttackerId)return foot;
+    const prior=footProxyTransform(actualShoeFeet[i]);
+    const desired=footProxyTransform(foot);
+    const dx=desired.x-prior.x,dy=desired.y-prior.y;
+    const travelled=Math.hypot(dx,dy);
+    const maxM=7/60-1e-6;
+    if(travelled<=maxM)return foot;
+    const fraction=maxM/travelled;
+    return Object.freeze({...foot,
+     x:prior.x+dx*fraction-
+      FOOT_CONTACT_FORWARD_OFFSET_M*Math.cos(foot.facingRad),
+     y:prior.y+dy*fraction-
+      FOOT_CONTACT_FORWARD_OFFSET_M*Math.sin(foot.facingRad)});
+   }));
   const poses=newFeet.map(footProxyTransform);
   for(let i=0;i<poses.length;i++){
    const p=poses[i];
