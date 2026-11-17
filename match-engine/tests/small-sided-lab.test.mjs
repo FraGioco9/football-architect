@@ -155,7 +155,7 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.match(html,/id="pause"/);
  assert.match(html,/id="step"/);
  assert.match(html,/id="reset"/);
- assert.match(js,/createControlledActionLab\(rapier,id,\{shotSide:side\}\)/);
+ assert.match(js,/createControlledActionLab\(rapier,id,\{shotSide:side,variantIndex:activeVariantIndex\}\)/);
  assert.match(js,/createControlledMovementLab\(rapier,id,\{side\}\)/);
  assert.match(js,/activeScene=\{kind,id\}/);
  assert.match(js,/if\s*\(activeLab\)drawInlinePlayers/);
@@ -231,8 +231,10 @@ test('#628 LAB-VAR-01 variants preserve real Rapier native shoes and original-ac
    const zero=a.snapshot();
    assert.equal(zero.smallSidedVariantIndex,variantIndex);
    assert.equal(zero.physicsTick,0);
-   assert.equal(zero.ball.position.x,setup.ball.x);
-   assert.equal(zero.ball.position.y,setup.ball.y);
+   assert.ok(Math.abs(zero.ball.position.x-setup.ball.x)<1e-5,
+    'Rapier float32 X must preserve the seeded physical ball start');
+   assert.ok(Math.abs(zero.ball.position.y-setup.ball.y)<1e-5,
+    'Rapier float32 Y must preserve the seeded physical ball start');
    assert.deepEqual(zero.smallSidedParticipants,setup.activeIds);
    let realStarts=0,realAttempts=0;
    for(let i=1;i<=60;i++){
