@@ -454,19 +454,34 @@
       if(authorized&&tie)for(let leg=1;leg<=tie.legs;leg++){
         const match=publishedLookup.bySlot[[phase.id,tieId,leg].join(':')];
         if(!match)continue;
-        expected.add(String(leg));
-        let anchor=existing.find(a=>a.dataset.faMatchLeg===String(leg));
-        if(!anchor){
-          anchor=document.createElement('a');anchor.className='fa-bracket-match-link';
-          anchor.dataset.faMatchLeg=String(leg);
-          card.append(anchor);
+        // Safari does not reliably re-hit-test pseudo-element-only anchors
+        // after Back/Forward restoration. Use two real native 26x28px anchors
+        // per leg, precisely over the two visible score boxes (never the gap).
+        // Only the first participates in keyboard/screen-reader navigation.
+        for(let row=1;row<=2;row++){
+          const identity=leg+':'+row;expected.add(identity);
+          let anchor=existing.find(a=>a.dataset.faMatchLeg===String(leg)&&
+            a.dataset.faMatchRow===String(row));
+          if(!anchor){
+            anchor=document.createElement('a');anchor.className='fa-bracket-match-link';
+            anchor.dataset.faMatchLeg=String(leg);
+            anchor.dataset.faMatchRow=String(row);
+            card.append(anchor);
+          }
+          anchor.href='/matches/'+match.matchId;
+          if(row===1){
+            anchor.removeAttribute('tabindex');anchor.removeAttribute('aria-hidden');
+            anchor.setAttribute('aria-label',lang[0]+': '+(tie.legs===1?lang[3]:lang[leg]));
+          }else{
+            anchor.setAttribute('tabindex','-1');anchor.setAttribute('aria-hidden','true');
+            anchor.removeAttribute('aria-label');
+          }
+          // Never expose native First/Second leg hover title tooltips.
+          anchor.removeAttribute('title');
         }
-        anchor.href='/matches/'+match.matchId;
-        anchor.setAttribute('aria-label',lang[0]+': '+(tie.legs===1?lang[3]:lang[leg]));
-        // Keep screen-reader names, but never expose native First/Second leg tooltips.
-        anchor.removeAttribute('title');
       }
-      for(const link of existing)if(!expected.has(link.dataset.faMatchLeg))link.remove();
+      for(const link of existing)
+        if(!expected.has(link.dataset.faMatchLeg+':'+link.dataset.faMatchRow))link.remove();
       if(expected.size){
         card.classList.add('is-match-link');
         card.dataset.faMatchLegs=String(tie.legs);
