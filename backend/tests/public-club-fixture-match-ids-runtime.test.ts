@@ -42,6 +42,35 @@ test('published IDs travel on the club response without public HTTP collection r
  assert.deepEqual(calls[1].params,[generation,1,'IT-1']);
 });
 
+
+test('club IDs launch both independent published SQL reads together and preserve source validation',async()=>{
+ const pending:{sql:string;params:unknown[];release:(rows:unknown[])=>void}[]=[];
+ const db={prepare(sql:string){
+  const statement=(params:unknown[])=>({
+   bind(...values:unknown[]){return statement(values)},
+   all(){return new Promise(resolve=>pending.push({
+    sql,params,release:rows=>resolve({results:rows,meta:{changes:0}})
+   }))},
+   async first(){throw Error('No scalar reads')},
+   async run(){throw Error('No writes')}
+  });return statement([]);
+ },async batch(){throw Error('No transactions')}} as unknown as Database;
+ const future=read(db);
+ assert.equal(pending.length,2,'league and knockout reads must be started before either is awaited');
+ assert.match(pending[0].sql,/FROM season_match_slots/);
+ assert.match(pending[1].sql,/FROM season_knockout_match_slots/);
+ assert.deepEqual(pending.map(q=>q.params),[[generation,1,'IT-1','IT-1'],[generation,1,'IT-1']]);
+ // Reverse completion order must have no influence on the authoritative ID order.
+ pending[1].release([knockout]);
+ pending[0].release([league]);
+ assert.deepEqual((await future).map(x=>x.matchId),['42','43']);
+
+ const noScope=fixtureDb([]);
+ const none=await withOfficialClubMatchIds(noScope.db,generation,1,'IT-1',[],[]);
+ assert.deepEqual(none,[]);
+ assert.equal(noScope.calls.length,1,'a zero-competition read must not query knockout reservations');
+});
+
 test('missing official mappings and unconfirmed knockout reservations never create IDs',async()=>{
  const {db}=fixtureDb([], [{...knockout,tie_id:'future'}]);
  const result=await read(db);

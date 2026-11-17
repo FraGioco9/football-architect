@@ -31,13 +31,26 @@ export async function withOfficialClubMatchIds<T extends ClubFixtureIdentity>(
  const bySource=new Map(fixtures.map(f=>[f.id,f]));
  if(bySource.size!==fixtures.length||new Set(competitionIds).size!==competitionIds.length)corrupt();
  const ids=new Map<string,string>(),used=new Set<string>();
- const league=(await db.prepare(
+ // The two bounded, read-only identity lookups are independent. Start them
+ // together, but still validate both against the same caller-owned published
+ // fixture set before returning any match ID.
+ const leagueRead=db.prepare(
   'SELECT s.source_fixture_id,s.competition_id,s.marker,s.scheduled_day,s.round_number,'+
   's.home_club_id,s.away_club_id,p.id AS public_id FROM season_match_slots s '+
   'JOIN public_match_numbers p ON p.slot_match_id=s.match_id AND p.generation=s.generation '+
   'AND p.season_number=s.season_number WHERE s.generation=? AND s.season_number=? '+
   'AND (s.home_club_id=? OR s.away_club_id=?)'
- ).bind(generation,season,clubKey,clubKey).all<LeagueLink>()).results;
+ ).bind(generation,season,clubKey,clubKey).all<LeagueLink>();
+ const reservedRead=competitionIds.length
+  ?db.prepare(
+   'SELECT s.competition_id,s.phase_id,s.tie_id,s.leg,s.marker,s.scheduled_day,'+
+   's.round_number,p.id AS public_id FROM season_knockout_match_slots s '+
+   'JOIN public_match_numbers p ON p.slot_match_id=s.match_id AND p.generation=s.generation '+
+   'AND p.season_number=s.season_number WHERE s.generation=? AND s.season_number=? '+
+   'AND s.competition_id IN ('+competitionIds.map(()=>'?').join(',')+')'
+  ).bind(generation,season,...competitionIds).all<KnockoutLink>()
+  :Promise.resolve({results:[] as KnockoutLink[]});
+ const [{results:league},{results:reserved}]=await Promise.all([leagueRead,reservedRead]);
  for(const row of league){
   const f=bySource.get(row.source_fixture_id),id=matchNumber(row.public_id);
   if(!f||f.phaseId!=='league'||f.competitionId!==row.competition_id||
@@ -56,14 +69,6 @@ export async function withOfficialClubMatchIds<T extends ClubFixtureIdentity>(
   knockoutFixtures.set(key,f);
  }
  if(competitionIds.length){
-  const params=competitionIds.map(()=>'?').join(',');
-  const reserved=(await db.prepare(
-   'SELECT s.competition_id,s.phase_id,s.tie_id,s.leg,s.marker,s.scheduled_day,'+
-   's.round_number,p.id AS public_id FROM season_knockout_match_slots s '+
-   'JOIN public_match_numbers p ON p.slot_match_id=s.match_id AND p.generation=s.generation '+
-   'AND p.season_number=s.season_number WHERE s.generation=? AND s.season_number=? '+
-   'AND s.competition_id IN ('+params+')'
-  ).bind(generation,season,...competitionIds).all<KnockoutLink>()).results;
   for(const row of reserved){
    const key=slotKey(row.competition_id,row.phase_id,row.tie_id,row.leg);
    const f=knockoutFixtures.get(key);

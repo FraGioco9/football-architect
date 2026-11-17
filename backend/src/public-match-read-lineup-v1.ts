@@ -153,10 +153,10 @@ export async function readPublishedCompetitionMatchesLineupV1(db:Database,season
  ).bind(season,competitionId).all<ReservedKnockout>()).results;
  const expectedBrackets=competitionId.startsWith('int-')?21:competitionId.endsWith('-1')?2:5;
  if(brackets.length!==expectedBrackets)return corrupt();
- const definitions=(await buildKnockoutSlotReservations(world.generation,season,sample.source_kind))
-  .filter(s=>s.competitionId===competitionId);
- if(definitions.length!==expectedBrackets)return corrupt();
+ // Generate and hash the canonical bracket reservation set only once.
  const canonical=await buildKnockoutSlotReservations(world.generation,season,sample.source_kind);
+ const definitions=canonical.filter(s=>s.competitionId===competitionId);
+ if(definitions.length!==expectedBrackets)return corrupt();
  for(const bracket of brackets){
   if(!Number.isSafeInteger((bracket as ReservedKnockout&{public_id:number}).public_id)||bracket.generation!==world.generation||bracket.source_kind!==sample.source_kind||
      bracket.source_hash!==sample.source_hash||bracket.published_at!==sample.published_at)return corrupt();
