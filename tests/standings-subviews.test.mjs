@@ -57,6 +57,7 @@ test('international cups expose location/form splits but not fictitious halves',
   const internationalRows=rows.map(row=>({...row,club:{...row.club},recent:[]}));
   assert.equal(projectStandings(internationalRows,[],cup,'first'),null);
   assert.equal(projectStandings(internationalRows,[],cup,'second'),null);
+  assert.equal(projectStandings(internationalRows,[],cup,'last5'),null);
   const noGames=internationalRows.map(row=>({...row,played:0,gf:0,ga:0}));
   assert.equal(projectStandings(noGames,[],cup,'home')?.length,2);
 });
