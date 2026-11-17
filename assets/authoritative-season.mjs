@@ -130,6 +130,8 @@ export function adaptAuthoritativeSeason(source,context,manifest){
  if(source.data===null)return null;
  const {data:d}=source,definition=context.currentDefinition||context.definition,catalog=clubCatalog(manifest),participants=d.participants.map(id=>catalog.get(id));
  if(d.entrantsOnly===true){
+  // Approved membership is stored in ID order, but unranked entrants are presented by primary name.
+  participants.sort((a,b)=>a.primaryName.localeCompare(b.primaryName,'en',{sensitivity:'base'})||key(a).localeCompare(key(b),'en'));
   const standings=participants.map(club=>({club,played:0,won:0,drawn:0,lost:0,gf:0,ga:0,gd:0,pts:0,recent:[]}));
   return freeze({season:d.season,rulesVersion:d.rulesVersion,participants,entrantsOnly:true,fixtures:null,
    postseason:[],results:[],statistics:{standings,overview:{matchesPlayed:0,totalGoals:0,goalsPerMatch:0},teams:[],players:[]},
