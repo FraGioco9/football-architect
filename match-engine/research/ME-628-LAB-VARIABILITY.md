@@ -52,3 +52,12 @@ At a real, exclusive Rapier shoe START, with original 60 Hz movement, live ball 
 ## LAB-VAR-02B / Phase 2a — bounded body-to-mover feedback (not shielding acceptance)
 
 With visible Bodies ON the SAME original Rapier World now supplies selected 2–7 body XY solver responses to the existing 22-player canonical mover *after* the native shoe/ball integration. Only actual native ball/leg or opposing torso solver manifolds qualify. The whole correction is atomically rejected unless the exact 60 Hz prior mover position, <=7 m/s speed, legal pitch bounds, >=0.98 m separation from every canonical actor, and next-tick original shoe handoff all remain valid. A same-tick acknowledgment synchronizes original body bookkeeping; no collision, extra physics tick, kick, possession or player teleport is invented. Bodies OFF retains the previous isolated shoe-only baseline. Source snapshots report the exact tick, applied/rejected XY adjustment and reason, and retain `ballProtectionProven:false`, `successfulPossession:false`, `tackleWon:false`. This is a *guarded feedback foundation*, not evidence of ball retention or successful shielding; repeated contested-ball physics QA remains open before LAB-VAR-02B/2 can be marked complete.
+
+
+## LAB-DRIBBLE-FIRST / candidate implementation (PR #633)
+
+The new visible **D-01 Dribbling 1v1 (no GK)** uses exactly two original Rapier shoe collider actors: attacker #10 and opposing defender #2. The original 22-person movement frame stays validated, with HOME/AWAY mirroring. No goalkeeper, scripted pass/shot/tackle, modal, artificial contact, possession or completed dribble is introduced. Default browser Bodies ON remains available for A/B with OFF.
+
+The isolated `isolatedDribbleContext` is created only from the pre-tick-zero real 1v1 setup and threads through the original single-world closed action executor. Upon a *genuine exclusive* attacker shoe START only, the existing carry action uses a ground impulse: V01 original 0.42 Ns straight baseline, V02–V30 deterministic 0.30–0.54 Ns with bounded lateral aim responding to actual defender coordinates and tick. Defender shoe/body contact remains Rapier-native without automatic action impulse. No claimed continuous dribbling or retention until measured multi-touch QA.
+
+Candidate status: test and browser CI required; source-bound traces do not prove successful dribbling. PR remains Draft/HOLD. No merge/deploy/remote DB.
