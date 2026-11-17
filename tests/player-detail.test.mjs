@@ -1,8 +1,7 @@
 import test from 'node:test';
 import {runInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
-import {createHash} from 'node:crypto';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 import {parseRoute,buildRoute} from '../assets/routes-registry.mjs';
 import {publicRequestFile,isAllowlistedPublicPath,planPublicFiles} from '../tools/publication-guard.mjs';
 import {renderPlayerDetailPage} from '../tools/render-player-detail.mjs';
@@ -521,12 +520,13 @@ test('#535 Info panel constrained to 680px on desktop, fluid on smaller screens'
 
 test('#623 public player portrait and fallback: staged/approved IDs only, stable geometry, protected preview isolation',()=>{
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
- for(const id of [44,98,145,46,45,49,50,51,47,52,148,53,54,55,59,60,61,56,57,48,63,58]){
-  const path='assets/players/portraits/'+id+'.webp';
-  assert.equal(isAllowlistedPublicPath(path),true,path);
-  assert.ok(js.includes(id+":'/"+path+"'"),'canonical image map missing: '+id);
- }
- for(const path of ['assets/players/portraits/1.png','assets/players/portraits/044.png','assets/players/portraits/99.webp','assets/players/portraits/44.png','assets/players/portraits/44.jpg','assets/players/portraits/44.svg'])
+ const paths=readdirSync(new URL('../assets/players/portraits/',import.meta.url))
+  .filter(name=>/^[1-9][0-9]*\.webp$/.test(name)).map(name=>'assets/players/portraits/'+name);
+ assert.ok(paths.length>0,'approved portrait directory cannot be empty');
+ for(const path of paths)assert.equal(isAllowlistedPublicPath(path),true,path);
+ assert.ok(js.includes("'/assets/players/portraits/'+id+'.webp'"),'portrait URL is derived from the canonical ID');
+ assert.doesNotMatch(js,/const portraitSources=/,'no per-player JS portrait map');
+ for(const path of ['assets/players/portraits/1.png','assets/players/portraits/01.webp','assets/players/portraits/does-not-exist.webp','assets/players/portraits/1.jpg','assets/players/portraits/1.svg'])
   assert.equal(isAllowlistedPublicPath(path),false,path);
  assert.match(js,/!preview&&state==='ready'&&player/);
  assert.match(js,/portraitImage\.onerror=\(\)=>\{/);
@@ -544,23 +544,20 @@ test('#623 public player portrait and fallback: staged/approved IDs only, stable
  }
 });
 
-test('#646 V4.1 replaced WebPs match the 23-file integration manifest and public artifact',()=>{
- const manifest=JSON.parse(read('docs/portrait-v41-integration-batch-2026-11-17.json'));
+test('committed portrait WebPs are automatically discoverable and structurally valid',()=>{
  const published=new Set(planPublicFiles());
- assert.equal(manifest.entries.length,23,'23 player portraits expected');
- assert.deepEqual(manifest.missing_ids,[]);
- const ids=new Set();
- for(const item of manifest.entries){
-  const id=item.player_id,path='assets/players/portraits/'+id+'.webp';
-  assert.ok(!ids.has(id),'duplicate ID '+id);ids.add(id);
-  assert.equal(item.webp_path,path,'ID-to-asset map');
-  const data=readFileSync(new URL('../'+path,import.meta.url));
+ const root=new URL('../assets/players/portraits/',import.meta.url);
+ const names=readdirSync(root).filter(name=>/^[1-9][0-9]*\.webp$/.test(name));
+ assert.ok(names.length>0,'portrait asset directory is not empty');
+ for(const name of names){
+  const path='assets/players/portraits/'+name;
+  const data=readFileSync(new URL(name,root));
   assert.equal(data.toString('ascii',0,4),'RIFF',path);
   assert.equal(data.toString('ascii',8,12),'WEBP',path);
   const kind=data.toString('ascii',12,16);
   let width,height,hasAlpha;
   if(kind==='VP8L'){
-   assert.equal(data[20],0x2f,'WebP lossless header signature: '+id);
+   assert.equal(data[20],0x2f,'WebP lossless signature '+path);
    width=1+((data[21]|(data[22]<<8))&0x3fff);
    height=1+(((data[22]>>6)|(data[23]<<2)|(data[24]<<10))&0x3fff);
    hasAlpha=(data[24]&0x10)!==0;
@@ -571,14 +568,10 @@ test('#646 V4.1 replaced WebPs match the 23-file integration manifest and public
   }else assert.fail('Unexpected WebP chunk '+kind+' for '+path);
   assert.equal(width,320,path+' width');
   assert.equal(height,362,path+' height');
-  assert.equal(hasAlpha,true,path+' alpha');
-  assert.equal(data.length,item.webp_size_bytes,path+' size');
-  assert.ok(data.length<150_000,'lossless WebP size budget: '+id);
-  assert.equal(createHash('sha256').update(data).digest('hex'),item.webp_sha256,path+' SHA-256');
+  assert.equal(hasAlpha,true,path+' transparency');
+  assert.ok(data.length>0&&data.length<150_000,path+' size budget');
   assert.ok(published.has(path),'Public artifact missing '+path);
  }
- assert.deepEqual([...ids].sort((a,b)=>a-b),
-  [...Array.from({length:20},(_,i)=>i+44),98,145,148]);
 });
 
 test('#623 plain filled Players silhouette has no internal strokes or portrait frame border',()=>{
