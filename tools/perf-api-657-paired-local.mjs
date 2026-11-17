@@ -177,8 +177,9 @@ async function run(){
    if(worldBefore===null)worldBefore=observed;
    else if(JSON.stringify(observed)!==JSON.stringify(worldBefore))
     throw Error('Worker world generation/revision/season/day differ; paired captures are NOT comparable');
-   // Same sampler code executes against both actual served checkouts.
-   command(process.execPath,['tools/perf-api-01-requests.mjs',label,
+   // One pinned sampler from THIS runner checkout executes against BOTH served checkouts.
+   // The served app SHA is independently recorded via --served-head.
+   command(process.execPath,[join(ROOT,'tools','perf-api-01-requests.mjs'),label,
     '--served-head='+sha,'--runs='+options.runs,'--routes='+options.routes.join(',')],{
     cwd:afterDir,env:{...process.env,FA_ACCOUNT_PLAYWRIGHT:playwright}});
    const file=join(afterDir,'int24-browser-artifacts','perf-api-01-'+label+'.json');
@@ -193,7 +194,7 @@ async function run(){
     await new Promise(ok=>setTimeout(ok,200));
   }
   await requireUnusedPorts();
-  command(process.execPath,['tools/perf-api-01-compare.mjs',
+  command(process.execPath,[join(ROOT,'tools','perf-api-01-compare.mjs'),
    join(options.output,names.before),join(options.output,names.after),
    join(options.output,names.comparison)],{cwd:afterDir});
   const comparison=JSON.parse(readFileSync(join(options.output,names.comparison),'utf8'));

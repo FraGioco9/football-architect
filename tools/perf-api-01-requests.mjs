@@ -2,7 +2,8 @@
 // No credentials, response bodies, headers (other than cache-control), or query values are persisted.
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
-import {pathToFileURL} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+import {dirname,resolve} from 'node:path';
 
 export const DEFAULT_ROUTES=Object.freeze([
  '/dashboard','/clubs','/clubs/it/1/overview','/clubs/it/1/roster',
@@ -216,7 +217,8 @@ export function parseArgs(args){
  const routes=option('routes')?option('routes').split(','):DEFAULT_ROUTES;
  if(!routes.length||routes.some(route=>!route.startsWith('/')||route.startsWith('//')||route.includes('#')))
   throw Error('Routes must be local absolute paths');
- // A sampler checkout is not necessarily the checkout served by the Worker.
+ // A sampler checkout is not necessarily the checkout served by the Worker;
+ // record the collector's actual source HEAD separately from --served-head.
  const servedHead=option('served-head')||null;
  if(servedHead!==null&&!/^[0-9a-f]{40}$/i.test(servedHead))
   throw Error('served-head must be a full 40-character commit SHA');
@@ -385,7 +387,7 @@ async function main(args){
   ...(process.env.FA_ACCOUNT_CHROME?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
  let records;
  try{records=await collectAnonymousBrowser(browser,options)}finally{await browser.close()}
- const samplerHead=(()=>{try{return execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()}catch{return 'UNKNOWN'}})();
+ const samplerHead=(()=>{try{return execFileSync('git',['-C',resolve(dirname(fileURLToPath(import.meta.url)),'..'),'rev-parse','HEAD'],{encoding:'utf8'}).trim()}catch{return 'UNKNOWN'}})();
  const head=options.servedHead??samplerHead;
  const result={label:options.label,captureSchemaVersion:PERF_CAPTURE_SCHEMA_VERSION,
   head,samplerHead,headSource:options.servedHead?'operator-declared-served-checkout':'sampler-checkout',

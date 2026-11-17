@@ -32,6 +32,8 @@ node tools/perf-api-657-paired-local.mjs --before=003806fd7bd6a9b51ef1811f1e3b25
 
 The two SHAs are respectively the pre-#686 `main` and the exact PR #686 Explore optimization HEAD. This measures the actual Worker and frontend served by each checkout with one identical schema-v2 sampler.
 
+**Collector/source provenance:** the sampler and comparison scripts are always run from the checkout containing this runner, even when the served baseline/candidate commits do not yet contain the sampler updates. Each report separately records `samplerHead` (sampler source checkout) and `head`/`headSource` (explicit served checkout). Do not treat the two as interchangeable.
+
 On a clean temporary copy of the same local SQLite state for each revision, the script starts only `node tools/dev.mjs --local`, checks `/api/world` and anonymous permissions, verifies identical world generation/revision/season/day/phase, collects direct/refresh/return and applicable in-page routes, then stops that Worker before starting the other one. Only successful comparable observations can contribute to reported on-wire savings. Cleanup removes the runner's temporary worktrees, not the source snapshot.
 
 Default coverage: Dashboard, Calendar, Explore Clubs, Club Overview, Fixtures and History. To focus on one subsystem:
