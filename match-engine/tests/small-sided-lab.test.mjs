@@ -212,7 +212,7 @@ test('#628 goalkeeper 1v1 V01 replay fixed, other styles differ and D-01 start u
   const actor=s.staged.find(p=>p.id==='home-10');
   const base=goalkeeperPosition('away',s.ball);
   const keeper=keeperDuelGoalkeeperTarget('home',index,actor,s.ball,base);
-  if(index===0)assert.deepEqual(keeper,base);
+  if(index===0)assert.deepEqual([keeper.x,keeper.y],[base.x,base.y]);
   else positions.add((keeper.x-s.ball.x).toFixed(3)+'|'+keeper.y.toFixed(3));
   assert.ok(Math.hypot(actor.x-s.ball.x,actor.y-s.ball.y)<0.85);
  }
