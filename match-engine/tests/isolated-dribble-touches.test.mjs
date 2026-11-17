@@ -6,6 +6,38 @@ import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
 import {chooseIsolatedDribbleTouch} from '../src/isolated-dribble-touches.mjs';
+import {advanceD01LiveShoeGait} from '../src/rapier-foot-contact-bridge.mjs';
+
+test('#628 D01-GAIT-01 pure live player/ball foot target is mirrored, bounded and speed-coupled',()=>{
+ const source={phaseRad:0,tick:1,
+  player:{x:29.42,y:0.08,vx:2,vy:0,facingRad:0},
+  ball:{position:{x:30,y:0,z:0.11},
+   velocity:{x:1.8,y:0,z:0}}};
+ const a=advanceD01LiveShoeGait(source);
+ assert.deepEqual(a,advanceD01LiveShoeGait(source));
+ assert.ok(a.frequencyHz>2.45&&a.frequencyHz<2.7);
+ assert.ok(a.forwardM>=-0.106&&a.forwardM<=0.161);
+ assert.ok(Math.abs(a.sideM)<=0.03);
+ assert.equal(a.nativeShoeEventCreated,false);
+ assert.equal(a.ballImpulseCreated,false);
+ assert.equal(a.possessionAssigned,false);
+ const mirrored=advanceD01LiveShoeGait({...source,
+  player:{x:-29.42,y:0.08,vx:-2,vy:0,facingRad:Math.PI},
+  ball:{position:{x:-30,y:0,z:0.11},velocity:{x:-1.8,y:0,z:0}}});
+ assert.ok(Math.abs(a.forwardM-mirrored.forwardM)<1e-12);
+ assert.ok(Math.abs(a.frequencyHz-mirrored.frequencyHz)<1e-12);
+ const slow=advanceD01LiveShoeGait({...source,
+  player:{...source.player,vx:0}});
+ const fast=advanceD01LiveShoeGait({...source,
+  player:{...source.player,vx:4}});
+ assert.ok(slow.frequencyHz<fast.frequencyHz);
+ const far=advanceD01LiveShoeGait({...source,phaseRad:Math.PI-0.27,
+  ball:{...source.ball,position:{x:30.5,y:0,z:0.11}}});
+ const close=advanceD01LiveShoeGait({...source,phaseRad:Math.PI-0.27,
+  ball:{...source.ball,position:{x:29.75,y:0,z:0.11}}});
+ assert.ok(far.forwardM>close.forwardM,'live long-ball gap can extend forward foot only');
+ assert.throws(()=>advanceD01LiveShoeGait({...source,ball:null}),TypeError);
+});
 test('#628 1v1 pure varied native-ground-touch intent is reproducible and mirrored',()=>{
  const b={x:30,y:2},d={team:'away',x:33,y:1};
  const params={variantIndex:7,tick:10,attackingSide:'home',ballPosition:b,

@@ -672,7 +672,7 @@ export function createEngine(RAPIER, input = {}, {
     // Private current Rapier state is captured before the only world.step().
     // The bridge never manufactures an event, impulse or match possession.
     const preStepBall=shoeBridge?snapshot().ball:null;
-    if(shoeBridge)shoeBridge.prepare(playerFrame,tick+1);
+    if(shoeBridge)shoeBridge.prepare(playerFrame,tick+1,preStepBall);
     if(bodyBridge)bodyBridge.prepare(playerFrame,tick+1);
     if(smallBodyGuard)smallBodyGuard.prepare(playerFrame,tick+1);
     // User forces are persistent in Rapier. Clear the previous tick's drag
