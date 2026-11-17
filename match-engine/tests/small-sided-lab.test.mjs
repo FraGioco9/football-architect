@@ -319,8 +319,9 @@ test('#628 LAB-VAR-02 live small-sided choices vary across 29 seeds and still re
 test('#628 LAB-VAR-02 local preview must serve actual seed-choice module before Chrome Ready',()=>{
  const server=readFileSync(new URL('../../tools/dev-standings-preview.mjs',
   import.meta.url),'utf8');
- assert.match(server,/\/'\/__fa_match_engine__\/small-sided-context-choice\\.mjs'/);
+ assert.ok(server.includes("'/__fa_match_engine__/small-sided-context-choice.mjs':"),
+  'new LAB module must be in the local preview server allowlist');
  const nodePolicy=readFileSync(new URL('../src/player-ball-uniform-autonomous-action.mjs',
   import.meta.url),'utf8');
- assert.match(nodePolicy,/from '\\.\/small-sided-context-choice\\.mjs'/);
+ assert.ok(nodePolicy.includes("from './small-sided-context-choice.mjs'"));
 });
