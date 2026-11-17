@@ -90,11 +90,18 @@ const handoff=await buildChatGptDiverseV4PortraitExecutionFromSnapshot(snapshot)
 The returned snapshot is *ephemeral* until a separately authorised versioned
 migration. Do not alter approved V4 snapshots or use old V4 face traits as
 references for V4.1 subjects. One generated image at a time, finish PNG/WebP
-technical and strict facial identity QA first. Record PASS or PASS_WITH_NOTE
-and automatically accept local candidate, but preserve the notes; retry a
-FAIL only after its QA is recorded. A failure due to the effective image tool
-using the wrong player/person is an unconditional identity FAIL, regardless
-of mathematically valid frame/alpha.
+technical and identity QA first. Owner-approved QA policy (2026-11-17):
+**PASS CON NOTA / PASS_WITH_NOTE counts as PASS** for local candidate QA.
+Acceptance is based on credible consistency with frozen V4.1 identity, not
+literal photographic reproduction of every subtle descriptor. Small hair
+volume/density/styling differences, borderline eyebrows/jaw/asymmetry or
+lighting-driven colour impressions are nonblocking notes. Reject only clear,
+material contradictions of major identity traits, wrong player/physique,
+anatomy, or failed technical gates. See `docs/portrait-image-only-qa.md`.
+Preserve the notes; retry an actual FAIL only after its QA is recorded.
+A failure due to the effective image tool using the wrong player/person is
+an unconditional identity FAIL, regardless of valid frame/alpha.
+A QA PASS accepts the **local candidate only**, never authorises publishing.
 
 ## QA and release gates
 
