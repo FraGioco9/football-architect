@@ -1,0 +1,11 @@
+# Football Architect — STEP 2, ONLY AFTER SUCCESSFUL IMAGE CREATION
+
+**Do not include this text in the first image-generation request.** Copy/paste this as a **second message in the SAME individual player's chat only after an actual new portrait was rendered**. For a failed generation, there is no technical or visual candidate QA; report the tool error and stop without demanding a reference image.
+
+## Follow-up QA message (copy only after a successful image)
+
+Do not generate any additional portrait yet. We have exactly one original candidate image in this chat. For this player's immutable V4.1 portrait, inspect this actual candidate and run QA. Use the connected GitHub plugin to read PR #648 and record an outcome in issue #646 if permitted, and Cloudflare for read-only DEV D1 (football-architect-dev) verification of this player's original frozen Strength/Speed/Agility. Do not access Production or write D1. The player ID, frozen V4.1 fingerprint and body class are documented in the source prompt index. The image is only a candidate, not an approved or published asset.
+
+First assess the current image visually against the exact written facial identity and hair/complexion/physique, real natural proportions, plain regular-fit white jersey, frontal head-to-hips pose and anatomy. Verify actual PNG bytes, source vertical 3:4, genuine RGBA transparent alpha and absence of colored fringes if the file is accessible; otherwise technical QA is NOT VERIFIED. Derive or obtain a non-published 320x362 transparent WebP and measure significant top alpha margin 3-8 px (0-12 review only with intact hair), outer clearance >=20 px and subject centering if actual decoded bytes can be examined; otherwise derivative QA is NOT VERIFIED. Record PASS, PASS CON NOTA, FAIL or INCOMPLETE with explicit evidence, real SHA-256 only if available, and any deviations. Never claim to have verified unavailable pixels. Do not publish, replace existing approved portraits, merge, deploy or update any status/asset_key. Stop after QA and await a separate authorization for integration.
+
+The existing legacy approved WebP may be inspected only as repository metadata, not treated as a reference for facial identity or as a new image candidate. A technical PASS does not imply publication approval.

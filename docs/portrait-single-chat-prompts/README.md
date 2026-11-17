@@ -1,5 +1,8 @@
 # Football Architect — New Chat per Player (V4.1)
 
+**ATTENZIONE (2026-11-17):** l'esecuzione con prompt v3 ha riprodotto l'errore di generazione ImageGen anche dopo aver vietato le immagini di riferimento. Per il nuovo tentativo isolato si usa il [pacchetto image-only](../portrait-image-prompts-all.md): **primo messaggio soltanto visuale**, QA + connettori in un messaggio successivo e separato, dopo che ImageGen ha restituito una candidata. I vecchi prompt v3 restano disponibili solo per tracciabilità, non sono la procedura raccomandata.
+
+
 **Modalità ufficiale proposta per rigenerare ritratti e per i nuovi giocatori.**
 Questo pacchetto contiene **23 prompt completi e indipendenti**, ricostruiti dai
 valori iniziali verificati nel database DEV, senza alcun aggiornamento D1.

@@ -84,3 +84,31 @@ test('fails closed if caller cannot prove initial player attributes or repeats I
   assert.deepEqual(await readdir(dir),[]);
  }finally{await rm(dir,{force:true,recursive:true})}
 });
+
+
+// #646: image-only generation as a separate first chat message, QA as follow-up.
+test('image-only V4.1 exporter preserves canon face while excluding tool-routing and connector instructions',async()=>{
+ const {createImageOnlyPortraitPrompt,exportImageOnlyPortraitPrompts,IMAGE_ONLY_PROMPT_EXPORT_VERSION}=
+  await import('../tools/export-player-image-prompts.mjs');
+ const row=person(), image=await createImageOnlyPortraitPrompt(row);
+ const snapshot=await buildDiverseV4PortraitSnapshotForPlayer(row);
+ const canonical=await renderDiverseV4PortraitPromptFromSnapshot(snapshot);
+ const section=canonical.match(/IMMUTABLE CANONICAL FACIAL DESCRIPTION:[\s\S]*?(?=\n\nPHYSIQUE:)/)?.[0];
+ assert.ok(section);
+ assert.equal(IMAGE_ONLY_PROMPT_EXPORT_VERSION,'image-only-chat-v1');
+ assert.equal(image.fingerprint,snapshot.appearance_fingerprint);
+ assert.equal(image.bodyProfile,snapshot.body_profile);
+ assert.equal(image.fileName,'44-Giacinto-Lello.md');
+ assert.ok(image.content.includes(section));
+ assert.match(image.content,/Exactly one subject standing front-facing/);
+ assert.match(image.content,/native genuine TRANSPARENT RGBA PNG/);
+ assert.doesNotMatch(image.content,/GitHub|Cloudflare|QA|WebP|ImageGen|reference image|existing image|GENERATION_UNAVAILABLE|Canva|Player ID/i);
+ const dir=await mkdtemp(join(tmpdir(),'fa-image-only-'));
+ try{
+  const exported=await exportImageOnlyPortraitPrompts([row],dir);
+  assert.equal(exported.length,1);
+  assert.equal(await readFile(join(dir,image.fileName),'utf8'),image.content);
+  await assert.rejects(()=>exportImageOnlyPortraitPrompts([row],dir),/EEXIST/);
+ }finally{await rm(dir,{recursive:true,force:true})}
+ await assert.rejects(()=>createImageOnlyPortraitPrompt({...row,initial_verified:false}),/invalid_or_unverified_initial_player/);
+});
