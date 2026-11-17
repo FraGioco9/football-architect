@@ -26,5 +26,77 @@ try{
    checks++;
   }finally{await context.close();}
  }
+ // A confirmed entrant snapshot has club identities but *no* sporting rank,
+ // points, form or outcome bands. Simulate this strictly inside an enabled
+ // DEV session; no public authority or Admin receipt is fabricated.
+ for(const width of [1440,390])for(const id of ['it-1','int-1']){
+  const context=await browser.newContext({viewport:{width,height:1000}});
+  try{
+   await context.addInitScript(()=>{
+    sessionStorage.setItem('football-architect:debug-enabled','on');
+    sessionStorage.setItem('football-architect:standings-dev-season','1');
+    sessionStorage.setItem('football-architect:standings-dev-matchdays','0');
+   });
+   const page=await context.newPage();
+   await page.goto('http://127.0.0.1:2000/competitions/'+id+'/standings');
+   await page.waitForFunction(()=>window.faDebugEnabled===true&&!!window.faCompetitionContextApi&&
+    !!window.faStandingsMobile&&document.documentElement.dataset.faDevStandingsPending===undefined);
+   const accepted=await page.evaluate(async()=>{
+    const c=window.faCompetitionContext,manifest=await window.faCompetitionManifestPromise;
+    const division=manifest.divisions.find(d=>d.id===c.definition.id);
+    const participants=division?division.clubs:manifest.divisions.filter(d=>d.tier===1).flatMap(d=>d.clubs.slice(0,3));
+    const standings=participants.map(club=>({club,played:0,won:0,drawn:0,lost:0,
+     gf:0,ga:0,gd:0,pts:0,recent:[]}));
+    return window.faCompetitionContextApi.replaceSeasonData({
+     season:c.selectedSeason,rulesVersion:c.definition.rules.version,participants,
+     fixtures:null,results:[],statistics:{standings},status:'partial',entrantsOnly:true
+    },c.revision);
+   });
+   assert.equal(accepted,true,'DEV-only confirmed entrant fixture accepted');
+   const before=await page.evaluate(()=>{
+    const desktop=[...document.querySelectorAll('#app-standings-body tr[data-world-club]')];
+    const mobile=[...document.querySelectorAll('#app-standings-compact-list li[data-world-club]')];
+    const first=desktop[0],legend=document.querySelector('.app-standings-legend');
+    return {desktop:desktop.length,mobile:mobile.length,names:desktop.map(row=>row.children[1].textContent.trim()),
+     emptyRank:desktop.every(row=>![...row.querySelectorAll('td')].some(cell=>cell.textContent.trim())),
+     bands:document.querySelectorAll('#app-standings-body [data-standing-rank],#app-standings-compact-list [data-standing-outcome]').length,
+     badges:document.querySelectorAll('#app-standings-compact-list .app-world-mobile-points').length,
+     disclosures:document.querySelectorAll('#app-standings-compact-list details').length,
+     recent:document.querySelectorAll('#app-standings-compact-list .app-world-mobile-form').length,
+     legendVisible:legend?!legend.hidden:false,
+     firstKey:first?.dataset.worldClub};
+   });
+   const expected=id==='it-1'?16:24;
+   assert.equal(before.desktop,expected);
+   assert.equal(before.mobile,expected);
+   assert.ok(before.emptyRank,'no ranks/points/statistics before kickoff');
+   assert.equal(before.bands,0,'no position highlights before kickoff');
+   assert.equal(before.badges,0,'no mobile points cards before kickoff');
+   assert.equal(before.disclosures,0,'no expandable sporting statistics before kickoff');
+   assert.equal(before.recent,0);
+   assert.equal(before.legendVisible,false);
+   assert.deepEqual(before.names,[...before.names].sort((a,b)=>a.localeCompare(b,'en',{sensitivity:'base'})));
+   const resumed=await page.evaluate(()=>{
+    const c=window.faCompetitionContext;
+    return window.faCompetitionContextApi.replaceSeasonData({...c.seasonData,
+     statistics:{...c.seasonData.statistics,standings:c.seasonData.statistics.standings.map(row=>
+      ({...row,played:1,drawn:1,pts:1}))}
+    },c.revision);
+   });
+   assert.equal(resumed,true);
+   const after=await page.evaluate(()=>({
+    ranks:document.querySelectorAll('#app-standings-body [data-standing-rank]').length,
+    numeric:document.querySelector('#app-standings-body tr[data-world-club] td:nth-child(10)')?.textContent,
+    details:document.querySelectorAll('#app-standings-compact-list details').length,
+    points:document.querySelectorAll('#app-standings-compact-list .app-world-mobile-points').length
+   }));
+   assert.equal(after.ranks,expected,'after the first match the rank is visible');
+   assert.equal(after.numeric,'1','points are visible after kickoff');
+   assert.equal(after.details,expected,'sporting detail is restored after kickoff');
+   assert.equal(after.points,expected);
+   checks++;
+  }finally{await context.close();}
+ }
+
  console.log('Season 0 unconfirmed entrants browser PASS: '+checks+' cases ('+engine+')');
 }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await browser.close();}
