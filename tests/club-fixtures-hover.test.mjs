@@ -65,13 +65,18 @@ test('Club Fixtures only link official numeric draw scores, not crest or DEV row
  }
 });
 
-test('Complete verified club fixtures need the published lookup authority',()=>{
+test('Complete verified club fixtures need the canonical club response authority',()=>{
  const complete={...snapshot,source:'authoritative',coverage:'complete',
   rows:[{...snapshot.rows[0],id:'source-fixture',matchId:'785'}]};
  const html=s=>fixtures.render({manifest:{clubs:[club]},lang:'en',season:1,currentSeason:1,seasons:[1],snapshot:s});
  assert.doesNotMatch(html(complete),/club-fixture-score-link/);
- assert.match(html({...complete,linkAuthority:'published-match-index-v1'}),/href="\/matches\/785"/);
- assert.match(html({...complete,linkAuthority:'published-match-index-v1'}),/class="club-fixture-native-link" href="\/matches\/785"/);
+ assert.doesNotMatch(html({...complete,linkAuthority:'published-match-index-v1'}),/club-fixture-score-link/);
+ const verified={...complete,linkAuthority:'club-fixtures-v1'};
+ assert.match(html(verified),/href="\/matches\/785"/);
+ assert.match(html(verified),/class="club-fixture-native-link" href="\/matches\/785"/);
+ for(const matchId of [null,undefined,'00785','0','9007199254740992']){
+  assert.doesNotMatch(html({...verified,rows:[{...verified.rows[0],matchId}]}),/club-fixture-score-link|club-fixture-native-link/);
+ }
 });
 
 test('Club Fixtures scroll dismisses pointer hover without hiding keyboard focus',()=>{

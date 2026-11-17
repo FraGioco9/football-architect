@@ -44,7 +44,7 @@ export async function withOfficialClubMatchIds<T extends ClubFixtureIdentity>(
    !competitionIds.includes(row.competition_id)||f.marker!==row.marker||
    f.day!==row.scheduled_day||f.round!==row.round_number||
    f.homeClubId!==row.home_club_id||f.awayClubId!==row.away_club_id||
-   ids.has(f.id)||used.has(id))corrupt();
+   ids.has(f.id)||used.has(id))return corrupt();
   ids.set(f.id,id);used.add(id);
  }
  const knockoutFixtures=new Map<string,T>();
