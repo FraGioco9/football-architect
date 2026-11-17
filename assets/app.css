@@ -840,6 +840,11 @@ html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-col
 [data-standing-outcome="relegated"],.app-rules-outcome[data-outcome="relegated"]{--standing-outcome-color:#C75C61}
 html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>*:not(:nth-child(10)){background:color-mix(in srgb,var(--surface) 92%,var(--standing-outcome-color) 8%)}
 html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:first-child{box-shadow:inset 3px 0 var(--standing-outcome-color)}
+/* Ranked-row outcome bands must not suppress keyboard focus highlighting. */
+@media(min-width:621px){
+ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]:focus-within>*:not(:nth-child(10)){background:rgba(100,203,169,.075)}
+ html[data-theme="light"] .app-world-standing-table tbody tr[data-standing-outcome]:focus-within>*:not(:nth-child(10)){background:#E7F4EB}
+}
 .app-world-mobile-item[data-standing-outcome]{box-shadow:inset 3px 0 var(--standing-outcome-color);background:color-mix(in srgb,var(--surface) 92%,var(--standing-outcome-color) 8%)}
 .app-standings-legend{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;color:var(--text);font-size:12px;line-height:1.5}
 .app-standings-legend p{margin:0 0 8px;font-weight:750}
