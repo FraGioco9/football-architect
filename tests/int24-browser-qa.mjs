@@ -419,10 +419,12 @@ try {
     panel:window.__fa03bNodes.panel===document.getElementById('competition-panel-'+window.faCompetitionRoute.get().view)
    }));
    assert.deepEqual(after,{header:true,tabs:true,season:true,panel:true},'stable DOM after hydration '+route);
-   if(view==='standings'&&season==='1'){
-    await page.waitForFunction(()=>!!document.querySelector(innerWidth<=620?
-      '#app-standings-compact-list .app-world-mobile-club-name':
-      '#app-standings-body .app-world-club-name'));
+   if(view==='standings'&&season==='1'&&await page.evaluate(()=>
+      !!document.querySelector(innerWidth<=620?
+        '#app-standings-compact-list .app-world-mobile-club-name':
+        '#app-standings-body .app-world-club-name'))){
+    // Before a verified Admin confirmation, the static club catalogue must
+    // not be used to satisfy a loaded-name requirement.
     const loadedLeft=await page.evaluate(()=>{
      const n=document.querySelector(innerWidth<=620?
       '#app-standings-compact-list .app-world-mobile-club-name':
@@ -441,6 +443,8 @@ try {
     assert.equal(loadedWeight,'700','loaded team names remain bold '+route);
    }
    if(view==='standings'&&slug==='it-1'&&season==='1'&&width===390){
+    assert.equal(await page.evaluate(()=>!!document.querySelector('#app-standings-body [data-standing-rank]')),false,
+      'unconfirmed participants cannot create a public league ranking');
     // Public URL navigation can reject a future season when the QA world is in Season 1.
     // Exercise the same canonical coordinator transition without inventing availability.
     assert.equal(await page.evaluate(()=>window.faCompetitionContextApi.selectSeason(2)),true);

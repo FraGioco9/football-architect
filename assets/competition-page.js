@@ -156,7 +156,7 @@
     const selected=window.faCompetitionContext?.definition,host=document.querySelector('.app-standings-legend'),list=host?.querySelector?.('ul');
     if(!selected||!list||!window.faCompetitionRulesView)return;
     const outcomes=window.faCompetitionRulesView.standingsLegendOutcomes(selected);
-    host.hidden=activeStandingsSubview!=='overall'||!outcomes.length;
+    host.hidden=activeStandingsSubview!=='overall'||!outcomes.length||!hasPlayedLeagueMatches(window.faCompetitionContext?.seasonData);
     const signature=JSON.stringify([document.documentElement.lang,selected.id,outcomes]);
     if(list.dataset.faLegendSignature===signature)return;
     list.replaceChildren(...outcomes.map(outcome=>{
@@ -409,7 +409,7 @@
     }
     if (breakpoint?.addEventListener) breakpoint.addEventListener("change", updateVisibility);
     window.addEventListener("resize", updateVisibility);
-    function prepare(rows) {
+    function prepare(rows,{preKickoff=false}={}) {
       if (!Array.isArray(rows) || rows.length !== definition.capacity)
         throw Error("Incomplete mobile standings model");
       const identities = new Set();
@@ -424,12 +424,7 @@
         identities.add(id);
         const li = element("li","app-world-mobile-item");
         li.dataset.worldClub = id;
-        decorateStanding(li, row.position ?? (row.played == null ? null : index + 1));
-        const details = element("details","app-world-mobile-details");
-        const summary = element("summary","app-world-mobile-summary");
-        const pos = element("span","app-world-mobile-position",
-          row.position == null ? (row.played == null ? "—" : String(index + 1)) :
-            String(row.position));
+        decorateStanding(li, preKickoff?null:row.position ?? (row.played == null ? null : index + 1));
         const name = element("span","app-world-mobile-name");
         const crest = createCrestHost(id);
         const clubLink = element("a","app-world-standing-club-link app-world-mobile-club-name",club.primaryName || club.abbr);
@@ -437,6 +432,19 @@
         clubLink.addEventListener("click",event=>event.stopPropagation());
         clubLink.addEventListener("keydown",event=>event.stopPropagation());
         name.append(crest,clubLink);
+        if(preKickoff){
+          // Confirmed identity only: no points badge, disclosure, form or
+          // statistical details until an official league match is played.
+          li.dataset.standingsPrekickoff="true";
+          const summary=element("div","app-world-mobile-summary");
+          summary.append(name);li.append(summary);
+          return li;
+        }
+        const details = element("details","app-world-mobile-details");
+        const summary = element("summary","app-world-mobile-summary");
+        const pos = element("span","app-world-mobile-position",
+          row.position == null ? (row.played == null ? "—" : String(index + 1)) :
+            String(row.position));
         const points = element("span","app-world-mobile-points",
           row.pts == null ? "—" : String(row.pts));
         const form = element("span","app-world-mobile-form");
@@ -845,13 +853,25 @@
         }):data.participants.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
         const projected=activeStandingsSubview==='overall'?rows:
           projectStandings?.(rows,data.fixtures,definition,activeStandingsSubview);
-        const displayReady=Boolean(supplied&&projected);
-        const displayRows=projected||rows.map(row=>({...row,played:null,won:null,drawn:null,
-          lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
-        const commitMobile=mobile.prepare(displayRows);
+        const preKickoff=Boolean(supplied&&!hasPlayedLeagueMatches(data));
+        const displayReady=Boolean(supplied&&projected&&!preKickoff);
+        // Before the first real match, display verified entrants alphabetically
+        // without adopting the backend's technical zero-point tie-break order.
+        const displayRows=preKickoff?[...rows].sort((a,b)=>
+          a.club.primaryName.localeCompare(b.club.primaryName,'en',{sensitivity:'base'})||
+          rules.clubKey(a.club).localeCompare(rules.clubKey(b.club),'en'))
+          .map(row=>({...row,position:null,played:null,won:null,drawn:null,lost:null,
+            gf:null,ga:null,gd:null,pts:null,recent:[]})):
+          projected||rows.map(row=>({...row,played:null,won:null,drawn:null,
+            lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
+        const commitMobile=mobile.prepare(displayRows,{preKickoff});
         const verifiedForms=verifiedPublishedForms(data,displayRows,definition,rules);
         const desktop=displayRows.map((row,index)=>{
           const tr=createStandingsRow(row.club);decorateStanding(tr,displayReady?index+1:null);
+          if(preKickoff){
+            tr.dataset.standingsPrekickoff="true";
+            for(const cell of tr.children)if(cell.tagName?.toLowerCase()==='td')cell.textContent='';
+          }
           if(displayReady){
             const values=[index+1,null,...['played','won','drawn','lost','gf','ga','gd','pts'].map(k=>row[k])];
             values.forEach((value,i)=>{if(i!==1)tr.children[i].textContent=String(value)});
@@ -1157,6 +1177,12 @@
   }
   let activeStandingsSubview='overall',projectStandings;
   const STANDINGS_SUBVIEWS=['overall','first','second','home','away','last5'];
+  // A verified entrant list is not a sporting ranking. The table only
+  // becomes meaningful after this competition has played a league match.
+  function hasPlayedLeagueMatches(data){
+    const rows=data?.statistics?.standings;
+    return Array.isArray(rows)&&rows.some(row=>Number.isSafeInteger(row?.played)&&row.played>0);
+  }
   function readStandingsSubview(){
     const query=new URL(window.location.href).searchParams.get('table');
     if(!STANDINGS_SUBVIEWS.includes(query))return 'overall';

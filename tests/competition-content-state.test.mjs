@@ -277,3 +277,29 @@ test('Season 0 and unconfirmed public seasons suppress provisional entrants unti
  assert.match(source,/if\(suppliedOwned\|\|wrongShell\)empty\(\)/,
    'source reset and confirmed-empty remove stale club identities');
 });
+
+test('confirmed pre-kickoff entrants are names only without points, ranks, highlights or legend',()=>{
+ const page=read('assets/competition-page.js');
+ const begin=page.indexOf('  function hasPlayedLeagueMatches(');
+ const end=page.indexOf('  function readStandingsSubview(',begin);
+ assert.ok(begin>=0&&end>begin,'the kickoff gate belongs to the competition presenter');
+ const started=runInNewContext(page.slice(begin,end)+';hasPlayedLeagueMatches');
+ assert.equal(started(null),false);
+ assert.equal(started({statistics:{standings:Array.from({length:16},()=>({played:0}))}}),false);
+ assert.equal(started({entrantsOnly:true,statistics:{standings:[{played:0}]}}),false);
+ assert.equal(started({statistics:{standings:[{played:0},{played:1}]}}),true,
+  'the first played league game activates the sport table for that competition');
+ assert.match(page,/const preKickoff=Boolean\(supplied&&!hasPlayedLeagueMatches\(data\)\)/);
+ assert.match(page,/const displayReady=Boolean\(supplied&&projected&&!preKickoff\)/,
+  'unplayed participants cannot receive arbitrary displayed ranks');
+ assert.match(page,/displayRows=preKickoff\?\[\.\.\.rows\]\.sort/,
+  'pre-kickoff entrants are alphabetic and unranked');
+ assert.match(page,/if\(preKickoff\)\{\s*tr\.dataset\.standingsPrekickoff="true";/,
+  'desktop numeric cells are cleared');
+ assert.match(page,/if\(preKickoff\)\{[\s\S]*?li\.dataset\.standingsPrekickoff="true"/,
+  'compact mobile items contain no numeric badge, form or expandable statistics');
+ assert.match(page,/!hasPlayedLeagueMatches\(window\.faCompetitionContext\?\.seasonData\)/,
+  'position outcome legend is withheld until a real game');
+ assert.match(read('assets/app.css'),/grid-template-areas:"\. name \." "\. name \."/,
+  'mobile unranked names fill the existing reserved layout');
+});
