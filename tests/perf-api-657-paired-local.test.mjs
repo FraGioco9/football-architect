@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdtempSync,mkdirSync,writeFileSync,rmSync,readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import {parsePairedOptions,validateLocalSnapshot,DEFAULT_MEASURED_ROUTES} from '../tools/perf-api-657-paired-local.mjs';
+import {parsePairedOptions,validateLocalSnapshot,DEFAULT_MEASURED_ROUTES,runCommandAsync} from '../tools/perf-api-657-paired-local.mjs';
 
 const a='1'.repeat(40),b='2'.repeat(40);
 const opts=extra=>parsePairedOptions([
@@ -30,6 +30,15 @@ test('PERF-API-657 executes one collector and comparator from its own checkout, 
  assert.ok(!script.includes("command(process.execPath,['tools/perf-api-01-requests.mjs'"));
  assert.ok(sampler.includes("['-C',resolve(dirname(fileURLToPath(import.meta.url)),'..'),'rev-parse','HEAD']"));
  assert.ok(script.includes("'--served-head='+sha"));
+});
+test('PERF-API-657 child capture is async so Worker and frontend streams continue draining',async()=>{
+ let ticks=0;
+ const ticker=setInterval(()=>ticks++,10);
+ try{
+  await runCommandAsync(process.execPath,['-e','setTimeout(()=>process.exit(0),120)'],{timeout:15000});
+  assert.ok(ticks>=3,'capture subprocess must not block the parent event loop');
+  await assert.rejects(runCommandAsync(process.execPath,['-e','process.exit(9)'],{timeout:15000}),/exit 9/);
+ }finally{clearInterval(ticker)}
 });
 test('PERF-API-657 requires a COPY of a real local SQLite state outside the checkout',()=>{
  const root=mkdtempSync(join(tmpdir(),'fa-perf-657-test-'));

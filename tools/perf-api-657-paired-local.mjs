@@ -69,6 +69,21 @@ function command(executable,args,{cwd=ROOT,timeout=900000,env=process.env}={}){
   shell:process.platform==='win32'&&executable.toLowerCase().endsWith('.cmd')});
  if(output.error||output.status!==0)throw Error('Command failed: '+executable+' (exit '+(output.status??'unknown')+')'+(output.error?' '+output.error.message:''));
 }
+// Asynchronous while the LOCAL Worker is running: blocking spawnSync here would
+// stop this parent from draining the two piped Wrangler/frontend log streams.
+export function runCommandAsync(executable,args,{cwd=ROOT,timeout=900000,env=process.env}={}){
+ return new Promise((resolve,reject)=>{
+  const child=spawn(executable,args,{cwd,env,stdio:'inherit',
+   shell:process.platform==='win32'&&executable.toLowerCase().endsWith('.cmd')});
+  let settled=false;
+  const finish=error=>{if(settled)return;settled=true;clearTimeout(timer);error?reject(error):resolve()};
+  const timer=setTimeout(()=>{
+   stopTree(child);finish(Error('Timed out running '+executable));
+  },timeout);
+  child.once('error',error=>finish(Error('Could not start '+executable+': '+error.message)));
+  child.once('close',(code,signal)=>finish(code===0?null:Error('Command failed: '+executable+' (exit '+(code??signal??'unknown')+')')));
+ });
+}
 function git(args,cwd=ROOT){return execFileSync('git',args,{cwd,encoding:'utf8'}).trim();}
 function tcpOpen(port){
  return new Promise(done=>{
@@ -179,7 +194,7 @@ async function run(){
     throw Error('Worker world generation/revision/season/day differ; paired captures are NOT comparable');
    // One pinned sampler from THIS runner checkout executes against BOTH served checkouts.
    // The served app SHA is independently recorded via --served-head.
-   command(process.execPath,[join(ROOT,'tools','perf-api-01-requests.mjs'),label,
+   await runCommandAsync(process.execPath,[join(ROOT,'tools','perf-api-01-requests.mjs'),label,
     '--served-head='+sha,'--runs='+options.runs,'--routes='+options.routes.join(',')],{
     cwd:afterDir,env:{...process.env,FA_ACCOUNT_PLAYWRIGHT:playwright}});
    const file=join(afterDir,'int24-browser-artifacts','perf-api-01-'+label+'.json');
@@ -194,7 +209,7 @@ async function run(){
     await new Promise(ok=>setTimeout(ok,200));
   }
   await requireUnusedPorts();
-  command(process.execPath,[join(ROOT,'tools','perf-api-01-compare.mjs'),
+  await runCommandAsync(process.execPath,[join(ROOT,'tools','perf-api-01-compare.mjs'),
    join(options.output,names.before),join(options.output,names.after),
    join(options.output,names.comparison)],{cwd:afterDir});
   const comparison=JSON.parse(readFileSync(join(options.output,names.comparison),'utf8'));

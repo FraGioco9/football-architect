@@ -30,6 +30,8 @@ git fetch origin main pull/686/head
 node tools/perf-api-657-paired-local.mjs --before=003806fd7bd6a9b51ef1811f1e3b255eabcf9c8d --after=30bd215f41531326676e4c28f56f2a7546125b7b --snapshot="$snapshot" --runs=2
 ```
 
+The sampler runs in an **asynchronous subprocess** while the two local server log streams are drained. This prevents a Windows/Linux pipe deadlock when many HTTP requests are captured.
+
 The two SHAs are respectively the pre-#686 `main` and the exact PR #686 Explore optimization HEAD. This measures the actual Worker and frontend served by each checkout with one identical schema-v2 sampler.
 
 **Collector/source provenance:** the sampler and comparison scripts are always run from the checkout containing this runner, even when the served baseline/candidate commits do not yet contain the sampler updates. Each report separately records `samplerHead` (sampler source checkout) and `head`/`headSource` (explicit served checkout). Do not treat the two as interchangeable.
