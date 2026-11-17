@@ -2406,7 +2406,7 @@ export function createPlayerMovement(options={}){
     const attack=smallSided.side==='home'?1:-1;
     if(p.team===smallSided.side){
      if(p.id===smallSided.side+'-10')
-      return Object.freeze({x:ball.x-attack*(smallSided.id==='dribble-1v1'?0.38:0.08),y:ball.y});
+      return Object.freeze({x:ball.x-attack*(smallSided.id==='dribble-1v1'?0.40:0.08),y:ball.y});
      const wing=p.id.endsWith('-9')?-1:1;
      return Object.freeze({x:clamp(ball.x-attack*3,
       -PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),

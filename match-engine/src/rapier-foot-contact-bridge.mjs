@@ -60,20 +60,13 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  const eventQueue=sharedQueue??new R.EventQueue(true);
  const ownsEventQueue=sharedQueue===null;
  const colliders=[],bodies=[],idsByCollider=new Map();
- // D-01: short continuous foot swings follow REAL canonical running speed.
- // More native release/recontact opportunities; never synthesize a touch,
- // event or impulse. At 4m/s the <=3.4Hz, 0.13m swing adds <=2.78m/s;
- // prepare() still enforces the original 7m/s total shoe path bound.
- let dribbleSwingPhase=0;
- function shoeFeet(frame,stepTick,canonicalFrame=null){
+ // D-01 native shoe: a controlled 3Hz continuous stride, preserving the
+ // original 0.105m swing amplitude and physically bounded 7m/s trajectory.
+ // Each carry still requires a real Rapier START after actual release;
+ // no synthesized collision, touch, teleport or direct ball-speed clamp.
+ function shoeFeet(frame,stepTick){
   if(dribbleAttackerId===null)return frame;
-  const wearer=canonicalFrame?.players?.find(p=>p.id===dribbleAttackerId);
-  if(stepTick>0){
-   const speed=Math.hypot(wearer.vx??0,wearer.vy??0);
-   const cadenceHz=Math.min(3.4,2.8+0.15*speed);
-   dribbleSwingPhase+=2*Math.PI*cadenceHz/60;
-  }
-  const swingM=-0.13*Math.cos(dribbleSwingPhase);
+  const swingM=-0.105*Math.cos(2*Math.PI*stepTick/20);
   return Object.freeze(frame.map((p,i)=>{
    if(initialPlayers[i].id!==dribbleAttackerId)return p;
    return Object.freeze({...p,
@@ -123,7 +116,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   if(nextTick!==tick+1)throw new RangeError('Nonconsecutive physical shoe tick');
   // Validate ALL actors, headings and physical displacement before mutation.
   const next=validateFootContactFrame(playerFrame,nextTick,positions);
-  const proposed=shoeFeet(next,nextTick,playerFrame);
+  const proposed=shoeFeet(next,nextTick);
   // The whole shoe also moves when its owner turns or advances. Clamp the
   // actual Rapier kinematic collider trajectory, NOT the canonical player,
   // to the original physical 7m/s ceiling (one 60Hz tick = 0.1167m).
