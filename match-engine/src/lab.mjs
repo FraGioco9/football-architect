@@ -328,7 +328,7 @@ function render() {
     const f=activeLab.snapshot();
     const detail=activeScene.kind==='action'?
       '· '+f.genuinePhysicalPlayerCount+' real physical players'+
-      ' · '+f.eventCount+' source events'+
+      ' · source events '+f.eventCount+
       (f.action?' · '+f.action.team.toUpperCase()+' '+
        f.action.action.toUpperCase()+' native shoe/impulse':'')+
       (f.refereeEvidence?.lastEvent?' · '+
