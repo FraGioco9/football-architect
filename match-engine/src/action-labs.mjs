@@ -31,13 +31,15 @@ import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CROSS_LAB_STARTS,SAVE_LAB_STARTS,DE
 export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
  controlSide='home',controlDecisionEnabled=true,
- challengeSide='away',challengeScene='contact'
+ challengeSide='away',challengeScene='contact',variantIndex=0
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
  const spec=getActionLabScenario(id);
+ if(spec.mode!=='situation'&&variantIndex!==0)
+  throw new TypeError('Variations require a selected small-sided exercise');
  const smallSided=spec.mode==='situation'?
-  smallSidedSetup(id,shotSide,INITIAL_PLAYERS):null;
+  smallSidedSetup(id,shotSide,INITIAL_PLAYERS,{variantIndex}):null;
  const refereeMode=spec.mode==='referee';
  const sourceRestart=['throw-in','corner','goal-kick'].includes(id);
  const basicFootwork=['trap','dribble'].includes(id);
@@ -139,7 +141,8 @@ export function createControlledActionLab(RAPIER,id,{
   diagnosticAutonomousFixtureActionEnabled:!refereeMode,
   ...(smallSided?{
    diagnosticSmallSidedSituation:id,
-   diagnosticSmallSidedSide:shotSide
+   diagnosticSmallSidedSide:shotSide,
+   diagnosticSmallSidedVariantIndex:variantIndex
   }:{}),
   ...(refereeMode?{diagnosticBasicRestartEnabled:true}:{}),
   ...(sourceRestart?{
@@ -169,7 +172,8 @@ export function createControlledActionLab(RAPIER,id,{
   ...(spec.mode==='carry'?{diagnosticAutonomousCarryEnabled:true}:{})
  });
  const mover=createPlayerMovement(smallSided?{
-   researchSmallSidedSituation:id,researchSmallSidedSide:shotSide
+   researchSmallSidedSituation:id,researchSmallSidedSide:shotSide,
+   ...(variantIndex>0?{researchSmallSidedVariantIndex:variantIndex}:{})
   }:sourceRestart?{
    researchBasicRestartSource:id,
    researchBasicRestartAttackSide:selectedShotSide,
@@ -418,6 +422,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(refereeMode||smallSided?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake,
      matchTimeline}:{}),
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
+     smallSidedVariantIndex:smallSided.variantIndex,
      genuinePhysicalPlayerCount:smallSided.genuinePhysicalPlayers,
      activeCollisionSource:'native-colliders-only',
      no11v11Authority:true}:{}),

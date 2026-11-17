@@ -13,6 +13,7 @@ import {reviewLiftInputContributions} from '/__fa_match_engine__/lift-input-qa.m
 import {runContactImpactDiagnostics} from '/__fa_match_engine__/contact-impact-qa.mjs';
 import {mountControlledActionLabs,createControlledActionLab} from '/__fa_match_engine__/action-labs.mjs';
 import {mountControlledMovementLabs,createControlledMovementLab} from '/__fa_match_engine__/movement-labs.mjs';
+import {SMALL_SIDED_VARIANT_COUNT} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
 import {prepareFlightPlaybackPair,sampleFlightPlaybackPair,flightPlaybackWallTime} from '/__fa_match_engine__/flight-playback.mjs';
 
 const byId = id => document.getElementById(id);
@@ -25,7 +26,7 @@ let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
 let playersShown=false;
 let inspectedPlayerId=null;
 // All visible scenes use the existing pitch/elevation/transport, never dialogs.
-let activeScene=null,activeLab=null;
+let activeScene=null,activeLab=null,activeVariantIndex=0;
 const inlinePhysics=s=>Object.freeze({
  tick:s.physicsTick??s.tick,
  time:s.timeS??(s.physicsTick??s.tick)*FIXED_DT,
@@ -34,6 +35,10 @@ const inlinePhysics=s=>Object.freeze({
 function syncScenarioSurface(){
  const inline=activeScene!==null;
  byId('me-inline-side-control').hidden=!inline;
+ const variable=activeScene?.kind==='action';
+ byId('me-inline-variant-control').hidden=!variable;
+ byId('me-inline-variant-display').textContent=
+  String(activeVariantIndex+1).padStart(2,'0')+' / '+SMALL_SIDED_VARIANT_COUNT;
  byId('me-inline-observation').hidden=!inline;
  byId('advanced-settings').hidden=inline;
  if(inline)byId('advanced-settings').open=false;
@@ -118,7 +123,7 @@ function restart() {
     if(!['home','away'].includes(side))
       throw new TypeError('Original small-sided situation requires HOME/AWAY');
     const next=kind==='action'?
-      createControlledActionLab(rapier,id,{shotSide:side}):
+      createControlledActionLab(rapier,id,{shotSide:side,variantIndex:activeVariantIndex}):
       createControlledMovementLab(rapier,id,{side});
     if(activeLab)activeLab.dispose();
     if(engine){engine.dispose();engine=null;}
@@ -129,7 +134,9 @@ function restart() {
     byId('player-inspect-choice').value='';
     syncScenarioSurface();
     say('Ready · '+(kind==='action'?next.spec.title:next.scene.spec.title)+
-      ' · '+side.toUpperCase()+' · original Rapier · DEV only');
+      ' · '+side.toUpperCase()+(kind==='action'?
+       ' · V'+String(activeVariantIndex+1).padStart(2,'0'):'')+
+      ' · original Rapier · DEV only');
     render();
     return;
   }
@@ -1782,6 +1789,18 @@ byId('me-inline-side').addEventListener('change',()=>{
   if(!activeScene||!rapier)return;
   try{restart();}catch(e){playing=false;say(e.message,true);}
 });
+function changeSmallSidedVariant(direction){
+ if(activeScene?.kind!=='action'||!rapier)return;
+ const before=activeVariantIndex;
+ activeVariantIndex=(before+direction+SMALL_SIDED_VARIANT_COUNT)%SMALL_SIDED_VARIANT_COUNT;
+ try{restart();}catch(error){
+  activeVariantIndex=before;
+  try{restart();}catch{}
+  playing=false;say('Variation failed: '+error.message,true);
+ }
+}
+byId('me-inline-variant-prev').addEventListener('click',()=>changeSmallSidedVariant(-1));
+byId('me-inline-variant-next').addEventListener('click',()=>changeSmallSidedVariant(1));
 byId('play').addEventListener('click', play);
 byId('pause').addEventListener('click', pause);
 byId('step').addEventListener('click', () => {
@@ -1855,6 +1874,10 @@ function launchSelectedScenario(value){
  // Existing pitch and elevation plus main Play/Pause/Step/Reset.
  // Do NOT open the legacy modal for a visible situation.
  playing=false;
+ // Selecting a new exercise starts at V01. Side change and Reset replay
+ // the current variation; Next/Previous are the only variation controls.
+ if(!activeScene||activeScene.kind!==kind||activeScene.id!==id)
+  activeVariantIndex=0;
  activeScene={kind,id};
  try{restart();}catch(error){
   disposeInline();restoreOriginalScenario();

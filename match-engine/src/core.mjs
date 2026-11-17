@@ -112,6 +112,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticB06bNativeShotSide = null,
   diagnosticSmallSidedSituation = null,
   diagnosticSmallSidedSide = null,
+  diagnosticSmallSidedVariantIndex = 0,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -141,9 +142,12 @@ export function createEngine(RAPIER, input = {}, {
     throw new TypeError('Shared contact events require both native bridges without football action authority');
   if((diagnosticSmallSidedSituation===null)!==(diagnosticSmallSidedSide===null))
    throw new TypeError('Small-sided situation and attacking side must be paired');
+  if(diagnosticSmallSidedSituation===null&&diagnosticSmallSidedVariantIndex!==0)
+   throw new TypeError('Small-sided variant requires a paired physical exercise');
   if(diagnosticSmallSidedSituation!==null){
    smallSidedSetup(diagnosticSmallSidedSituation,
-    diagnosticSmallSidedSide,INITIAL_PLAYERS);
+    diagnosticSmallSidedSide,INITIAL_PLAYERS,
+    {variantIndex:diagnosticSmallSidedVariantIndex});
    if(!diagnosticPlayerFootContactsEnabled||
       !diagnosticAutonomousFixtureActionEnabled||
       diagnosticPlayerBodyCollidersEnabled||diagnosticSharedContactEventsEnabled||
@@ -355,7 +359,8 @@ export function createEngine(RAPIER, input = {}, {
   throw new TypeError('CARRY setup requires bounded genuine private shoe source');
  const smallSided=diagnosticSmallSidedSituation===null?null:
   smallSidedSetup(diagnosticSmallSidedSituation,
-   diagnosticSmallSidedSide,INITIAL_PLAYERS);
+   diagnosticSmallSidedSide,INITIAL_PLAYERS,
+   {variantIndex:diagnosticSmallSidedVariantIndex});
  const stagedShoes=smallSided?smallSided.staged:
   diagnosticB06bOpeningKickoffEnabled?
    initialB06bOpeningLineup(INITIAL_PLAYERS):

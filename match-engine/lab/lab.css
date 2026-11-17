@@ -13,7 +13,7 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-speed-control{display:grid;gap:5px;flex:0 0 92px}
 /* Inline LAB mode reuses the original reserved field. Explicit [hidden]
    overrides flexible/grid panel display rules, including open <details>. */
-.me-inline-side-control[hidden],.me-advanced[hidden],
+.me-inline-variant-control[hidden],.me-inline-side-control[hidden],.me-advanced[hidden],
 .me-players-toggle[hidden],.me-inline-observation[hidden]{display:none!important}
 .me-inline-observation{min-width:0;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.4}
 .me-inline-side-control{flex:0 0 80px}
@@ -189,3 +189,10 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 @media(max-width:600px){.me-action-labs-dialog{padding:11px}.me-action-labs-toolbar>select{flex:1 1 100%}.me-action-labs-buttons{margin-left:0}.me-action-labs-buttons>.me-button{min-width:55px}}
 
 .me-page-heading{display:block}
+
+/* LAB-VAR-01: replayable pre-tick-zero geometry without a second pitch. */
+.me-variant-control{display:grid;gap:5px;flex:0 0 auto;min-width:145px}
+.me-variant-buttons{display:flex;align-items:center;gap:4px;min-height:36px}
+.me-variant-buttons .me-button{min-height:36px;padding:5px 8px}
+.me-variant-buttons output{font-variant-numeric:tabular-nums;font-size:11px;
+ font-weight:750;color:var(--text);min-width:54px;text-align:center}

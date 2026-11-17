@@ -1655,6 +1655,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bGoalRestartEnabled'&&
      k!=='researchB06bNativeShotSide'&&
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
+     k!=='researchSmallSidedVariantIndex'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlCloseDefender'&&
@@ -1800,9 +1801,12 @@ export function createPlayerMovement(options={}){
       options.researchB06bHalftimeTick!==undefined||
       options.researchShotAttacker!==undefined||
       options.researchBodyEncounter!==undefined||
-      Reflect.ownKeys(options).length!==2))||
+      Reflect.ownKeys(options).length!==
+       (options.researchSmallSidedVariantIndex===undefined?2:3)))||
     ((options.researchSmallSidedSituation===undefined)!==
      (options.researchSmallSidedSide===undefined))||
+    (options.researchSmallSidedVariantIndex!==undefined&&
+     options.researchSmallSidedSituation===undefined)||
     (options.researchBasicRestartSource!==undefined&&(
       !['throw-in','corner','goal-kick'].includes(options.researchBasicRestartSource)||
       !['home','away'].includes(options.researchBasicRestartAttackSide)||
@@ -1836,7 +1840,8 @@ export function createPlayerMovement(options={}){
     options.researchBasicRestartSource):null;
  const smallSided=options.researchSmallSidedSituation===undefined?null:
   smallSidedSetup(options.researchSmallSidedSituation,
-   options.researchSmallSidedSide,INITIAL_PLAYERS);
+   options.researchSmallSidedSide,INITIAL_PLAYERS,
+   {variantIndex:options.researchSmallSidedVariantIndex??0});
  const smallActive=smallSided?new Set(smallSided.activeIds):null;
  const initial=smallSided?smallSided.staged:
   options.researchB06bOpeningKickoffEnabled===true?

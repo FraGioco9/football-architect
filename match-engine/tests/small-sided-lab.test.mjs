@@ -6,7 +6,7 @@ import {readFileSync} from 'node:fs';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS} from '../src/player-movement.mjs';
-import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup}
+import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
@@ -168,4 +168,93 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.match(browser,/ME_628_INLINE_MAIN_TRANSPORT/);
  assert.match(browser,/assert\.deepEqual\(actionNav,\{open:false/);
  assert.match(browser,/assert\.equal\(movementNav\.open,false\)/);
+});
+
+test('#628 LAB-VAR-01 thirty deterministic geometries per scene are physically separated, mirrored and seed-identical',()=>{
+ assert.equal(SMALL_SIDED_VARIANT_COUNT,30);
+ for(const scenario of SMALL_SIDED_LAB_SCENARIOS){
+  const seen=new Set();
+  for(let variantIndex=0;variantIndex<SMALL_SIDED_VARIANT_COUNT;variantIndex++){
+   const options={variantIndex};
+   const home=smallSidedSetup(scenario.id,'home',INITIAL_PLAYERS,options);
+   const again=smallSidedSetup(scenario.id,'home',INITIAL_PLAYERS,options);
+   const away=smallSidedSetup(scenario.id,'away',INITIAL_PLAYERS,options);
+   assert.deepEqual(home,again,'same seed must produce identical canonical setup');
+   assert.equal(home.variantIndex,variantIndex);
+   assert.equal(away.variantIndex,variantIndex);
+   assert.equal(home.ball.x,-away.ball.x);
+   assert.equal(home.ball.y,away.ball.y);
+   assert.equal(home.ball.vx,0);assert.equal(home.ball.vy,0);
+   assert.equal(home.activeIds.length,scenario.focus.length);
+   assert.equal(away.activeIds.length,scenario.focus.length);
+   const homeMain=home.staged.find(p=>p.id==='home-10');
+   assert.ok(Math.hypot(homeMain.x-home.ball.x,homeMain.y-home.ball.y)<0.85,
+    'authentic actor must start within original physical contact eligibility');
+   for(const source of [home,away]){
+    assert.ok(source.staged.every(p=>Math.abs(p.x)<52&&Math.abs(p.y)<34));
+    for(let i=0;i<22;i++)for(let j=i+1;j<22;j++){
+     const a=source.staged[i],b=source.staged[j];
+     assert.ok(Math.hypot(a.x-b.x,a.y-b.y)>=0.98-1e-8,
+      scenario.id+' V'+(variantIndex+1)+' '+source.side+
+      ': canonical 0.98m separation for all 22 IDs');
+    }
+   }
+   for(const [number,team] of [
+    ...scenario.attackers.map(n=>[n,'home']),
+    ...scenario.defenders.map(n=>[n,'away']),[1,'away']
+   ]){
+    const from=home.staged.find(p=>p.id===team+'-'+number);
+    const mirror=away.staged.find(p=>p.id===
+     (team==='home'?'away':'home')+'-'+number);
+    assert.equal(from.x,-mirror.x);
+    assert.equal(from.y,mirror.y);
+   }
+   seen.add(home.ball.x.toFixed(6)+'|'+home.ball.y.toFixed(6));
+  }
+  assert.ok(seen.size>=25,scenario.id+' must have actual distinct starts');
+ }
+ for(const invalid of [-1,30,1.2,'1',Infinity,NaN])
+  assert.throws(()=>smallSidedSetup('keeper-1v1','home',INITIAL_PLAYERS,
+   {variantIndex:invalid}),RangeError);
+});
+
+test('#628 LAB-VAR-01 variants preserve real Rapier native shoes and original-action provenance', 
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const s of SMALL_SIDED_LAB_SCENARIOS)
+ for(const side of ['home','away'])
+ for(const variantIndex of [1,9,21]){
+  const a=createControlledActionLab(R,s.id,{shotSide:side,variantIndex});
+  const b=createControlledActionLab(R,s.id,{shotSide:side,variantIndex});
+  try{
+   const setup=smallSidedSetup(s.id,side,INITIAL_PLAYERS,{variantIndex});
+   const zero=a.snapshot();
+   assert.equal(zero.smallSidedVariantIndex,variantIndex);
+   assert.equal(zero.physicsTick,0);
+   assert.equal(zero.ball.position.x,setup.ball.x);
+   assert.equal(zero.ball.position.y,setup.ball.y);
+   assert.deepEqual(zero.smallSidedParticipants,setup.activeIds);
+   let realStarts=0,realAttempts=0;
+   for(let i=1;i<=60;i++){
+    const x=a.step(),y=b.step();
+    assert.deepEqual(x.ball,y.ball,'deterministic native Rapier seed');
+    assert.deepEqual(x.starts,y.starts);
+    assert.deepEqual(x.action,y.action);
+    assert.equal(x.physicsTick,i);
+    assert.equal(x.officialMatchResult,null);
+    assert.equal(x.officialMatchPossession,false);
+    assert.ok(x.starts.every(id=>setup.activeIds.includes(id)));
+    realStarts+=x.starts.length;
+    if(x.action){
+     realAttempts++;
+     assert.equal(x.action.appliedByRapier,true);
+     assert.equal(x.action.actualPhysicsImpulseApplied,true);
+     assert.equal(x.action.officialMatchAction,false);
+    }
+    if(x.refereeEvidence?.lastEvent)break;
+   }
+   assert.ok(realStarts>0,'variant must preserve a true physical shoe START');
+   assert.ok(realAttempts>0,'variant must preserve an authentic action impulse');
+  }finally{a.dispose();b.dispose();}
+ }
 });

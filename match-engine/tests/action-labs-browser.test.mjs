@@ -35,6 +35,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   await once(server,'listening');
   proc=spawn(chrome,[
    '--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage',
+   '--window-size=1280,800',
    '--no-proxy-server','--disable-extensions','--disable-background-networking',
    '--no-first-run','--no-default-browser-check','--remote-debugging-port=0',
    '--host-resolver-rules=MAP app.localhost 127.0.0.1',
@@ -124,6 +125,32 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.ok(inline.mainPitch>300);
   assert.equal(inline.sideVisible,true);
   assert.equal(inline.advancedHidden,true);
+  // Replay/Next: VAR-01 changes genuine initial geometry only before tick
+  // zero. Reset replays the exact same seed and HOME/AWAY keeps the index.
+  const variation=await evalJs("(()=>{"+
+   "const d=()=>document.getElementById('me-inline-variant-display').textContent;"+
+   "const pos=()=>document.getElementById('position').textContent;"+
+   "const visible=()=>!document.getElementById('me-inline-variant-control').hidden;"+
+   "const first={name:d(),position:pos(),visible:visible()};"+
+   "document.getElementById('me-inline-variant-next').click();"+
+   "const second={name:d(),position:pos(),tick:document.getElementById('tick').textContent};"+
+   "document.getElementById('step').click();"+
+   "document.getElementById('reset').click();"+
+   "const replay={name:d(),position:pos(),tick:document.getElementById('tick').textContent};"+
+   "document.getElementById('me-inline-variant-prev').click();"+
+   "const back={name:d(),position:pos()};"+
+   "return {first,second,replay,back};})()");
+  assert.equal(variation.first.visible,true);
+  assert.equal(variation.first.name,'01 / 30');
+  assert.equal(variation.second.name,'02 / 30');
+  assert.equal(variation.replay.name,'02 / 30');
+  assert.equal(variation.replay.tick,'Tick 0 · 0.00 s');
+  assert.equal(variation.second.position,variation.replay.position);
+  assert.notEqual(variation.first.position,variation.second.position);
+  assert.deepEqual(variation.back, {name:'01 / 30',
+   position:variation.first.position});
+  process.stdout.write('ME_628_REPLAY_VARIATION_CHROME '+
+   JSON.stringify(variation)+'\\n');
   // All five situations both directions, using the VISIBLE selectors,
   // original main Step, original pitch and source-only Rapier evidence.
   for(const [scene,actors] of [
