@@ -412,9 +412,10 @@ test("SEARCH-01 uses direct canonical Dashboard suggestions and anchors",()=>{
 test("UI-WORLD resolves all canonical divisions by name and identifier",async()=>{
   const catalogue=JSON.parse(read("data/divisions.json"));
   const app=simulate("en",catalogue);
+  assert.deepEqual(app.requestedUrls,[],'Search catalogue must not load before the dialog is opened');
+  app.trigger.emit("click");
   await new Promise(resolve=>setImmediate(resolve));
   assert.deepEqual(app.requestedUrls,["http://127.0.0.1:2000/data/divisions.json"]);
-  app.trigger.emit("click");
   for(const [query,path] of [
     ["pt-1","/competitions/pt-1"],
     ["atlantica","/competitions/pt-2"],
@@ -437,7 +438,22 @@ test('search rejects seasonal members injected into the permanent catalogue',asy
  const catalogue=JSON.parse(read('data/divisions.json'));
  catalogue[0].clubIds=[];
  const app=simulate('en',catalogue);
+ assert.deepEqual(app.requestedUrls,[]);
+ app.trigger.emit('click');
  await new Promise(resolve=>setImmediate(resolve));
- app.trigger.emit('click');app.input.value='pt-1';app.input.emit('input');
+ app.input.value='pt-1';app.input.emit('input');
  assert.equal(app.links().length,0);
+});
+
+test('all app pages fetch division search data lazily and only once per document',async()=>{
+ const catalogue=JSON.parse(read('data/divisions.json'));
+ const app=simulate('en',catalogue);
+ assert.deepEqual(app.requestedUrls,[],'search must not load before it is used');
+ app.trigger.emit('click');
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(app.requestedUrls.length,1);
+ app.nodes['app-search-close'].emit('click');
+ app.trigger.emit('click');
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(app.requestedUrls.length,1,'opening Search again must not repeat the catalogue request');
 });

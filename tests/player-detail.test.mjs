@@ -354,7 +354,8 @@ test('#535 header shows position chain, nationality/age and canonical club or Fr
  assert.match(js,/setContent\(nationalityNode,countryNode\(player\.nationality,true\)\)/);
  assert.match(js,/setContent\(ageNode,Number\.isSafeInteger\(player\.age\)/);
  assert.match(js,/player\.clubKey===null\)\{setContent\(clubNode,'Free Agent'\)/);
- assert.match(js,/fetch\('\/clubs\/_shared\/manifest\.json'/);
+ assert.match(js,/import\('\/assets\/match-public-context\.mjs'\)/);
+ assert.doesNotMatch(js,/fetch\('\/clubs\/_shared\/manifest\.json'/);
  assert.match(js,/clubCatalog\.clubs\.find\(/);
  assert.match(js,/clubCatalog\.clubCrests\?\.\[key\]/);
  assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+number\+'\/overview'/);
