@@ -76,6 +76,15 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
       rowHeight:bounds(sample).height,portrait:bounds(portrait),
       nameWidth:bounds(bars[0]).width,clubWidth:bounds(bars[1]).width,
       clubWidths:rows.map(row=>bounds(row.querySelector('.fa-dev-stats-club-link>.app-skeleton-bar')).width),
+      teamClubWidths:(()=>{
+       const teamShell=document.createElement('div');
+       teamShell.className='app-competition-view-skeleton';
+       teamShell.style.cssText=shell.style.cssText;
+       teamShell.innerHTML=window.faCompetitionStats.renderSkeleton('teams');
+       live.parentElement.append(teamShell);
+       try{return [...teamShell.querySelectorAll('.fa-dev-stats-team-card .fa-dev-stats-team-name>.app-skeleton-bar')].map(node=>bounds(node).width)}
+       finally{teamShell.remove()}
+      })(),
       valueWidths:pending.map(card=>bounds(card.querySelector('li>strong>.app-skeleton-bar')).width),
       noTooltip:!live.querySelector('.fa-dev-stats-player-label [title]')};
     }finally{shell.remove()}
@@ -87,7 +96,13 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    assert.equal(loadingGeometry.portrait.height,loadingGeometry.portrait.width);
    assert.ok(loadingGeometry.nameWidth>loadingGeometry.clubWidth*0.7&&loadingGeometry.clubWidth>0,'name and club bars are text-sized');
    assert.equal(loadingGeometry.clubWidths.length,40);
-   assert.ok(loadingGeometry.clubWidths.every(value=>Math.abs(value-loadingGeometry.clubWidth)<.1),'club placeholders have identical widths across all rows and metric cards');
+   const clubPattern=loadingGeometry.clubWidths.slice(0,5);
+   assert.equal(new Set(clubPattern.map(Math.round)).size,5,'club placeholders have realistic, distinct lengths within a card');
+   for(let card=0;card<8;card++)for(let rank=0;rank<5;rank++)
+    assert.ok(Math.abs(loadingGeometry.clubWidths[card*5+rank]-clubPattern[rank])<.1,'club widths repeat deterministically at the same rank in every player card');
+   assert.equal(loadingGeometry.teamClubWidths.length,35,'seven Teams cards reserve five club names each');
+   for(let card=0;card<7;card++)for(let rank=0;rank<5;rank++)
+    assert.ok(Math.abs(loadingGeometry.teamClubWidths[card*5+rank]-clubPattern[rank])<.1,'Teams skeleton uses the same club-width pattern as Players');
    assert.ok(loadingGeometry.valueWidths[0]>loadingGeometry.valueWidths[1]*1.5,'Rating includes coverage, unlike Goals');
    assert.ok(loadingGeometry.valueWidths[4]>loadingGeometry.valueWidths[1]*1.3,'Clean sheets include appearances');
    assert.equal(loadingGeometry.noTooltip,true,'no native hover tooltip on player names or clubs');

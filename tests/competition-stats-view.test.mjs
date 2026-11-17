@@ -299,7 +299,8 @@ test('COMP-STATS-643: player rows have no hover titles; metric-sized skeletons r
  assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-leader-card:not\(\.fa-dev-stats-team-card\):nth-child\(5\)\{--fa-stats-skeleton-value-width:7\.5ch\}/);
  assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-player-label \.fa-dev-stats-team-name\{[^}]*width:min\(var\(--fa-stats-skeleton-player-name\),100%\);height:1\.3em/);
  assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-player-label \.fa-dev-stats-club-link\{[^}]*width:min\(var\(--fa-stats-skeleton-club-name\),100%\);height:1\.3em/);
- assert.equal((css.match(/--fa-stats-skeleton-club-name:/g)||[]).length,1,'all club labels share one skeleton width');
+ assert.deepEqual([...css.matchAll(/--fa-stats-skeleton-club-name:(\d+)ch/g)].map(match=>Number(match[1])),[11,15,13,9,14],'club skeleton widths vary deterministically by rank');
+ assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-team-card \.fa-dev-stats-team-name\{width:min\(var\(--fa-stats-skeleton-club-name\),100%\)\}/,'Teams and Players share the club-width pattern');
 });
 
 test('COMP-STATS: rating and GK clean sheets show appearances while missing metrics stay unavailable',()=>{
