@@ -1,5 +1,6 @@
-// #620 true Chromium user journey: primary DEV LAB -> seventeen controlled
-// Action LABs -> real Rapier event feedback -> restore original LAB.
+// #628 actual Chrome user journey: five small-sided situations are visible
+// first; all seventeen original isolated Action LABs remain internal QA.
+// Original Rapier source and Play/Pause/Step/Reset must remain functional.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn,spawnSync} from 'node:child_process';
@@ -24,7 +25,7 @@ function fromPortFile(text){
   /^\/devtools\/browser\/[\w-]+$/.test(a[1]??'')?
   'ws://127.0.0.1:'+a[0]+a[1]:null;
 }
-test('clean-stack Action LABs load all seventeen options in real DEV Chrome',
+test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chrome behavior',
  {timeout:120000},async()=>{
  const chrome=chromeBinary(),temp=await mkdtemp(join(tmpdir(),'fa-action-labs-'));
  const server=createPreviewServer({subdomains:true});
@@ -102,13 +103,13 @@ test('clean-stack Action LABs load all seventeen options in real DEV Chrome',
   await send('Page.navigate',{
    url:'http://app.localhost:2000/dev/match-engine'
   });
-  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===51");
+  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===15");
   const openedFromScenario=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
-   "document.querySelector('#preset-options [data-value=\"action:pass\"]').click();"+
+   "document.querySelector('#preset-options [data-value=\"action:keeper-1v1\"]').click();"+
    "return {open:document.getElementById('action-labs-dialog').open,"+
    "title:document.getElementById('action-labs-title').textContent};})()");
-  assert.deepEqual(openedFromScenario,{open:true,title:'LAB-14 · Pass'});
+  assert.deepEqual(openedFromScenario,{open:true,title:'S-01 · 1v1 vs goalkeeper'});
   await wait("document.querySelector('#action-labs-status')?.textContent?.startsWith('Ready')");
   // Actual requestAnimationFrame transport, not a mock clock or forged ticks.
   const ready=await evalJs("(()=>{const play=document.getElementById('action-labs-play');"+
@@ -148,6 +149,42 @@ test('clean-stack Action LABs load all seventeen options in real DEV Chrome',
   assert.equal(resetState.pauseDisabled,true);
   process.stdout.write('ACTION_LAB_CHROME_TRANSPORT '+
    JSON.stringify({pausedTick:paused.tick,stepTick:stepped.tick,reset:resetState.readout})+'\\n');
+  // Exercise each VISIBLE small-sided situation in real Chrome on HOME/AWAY.
+  // The 2–7 authentic native shoe colliders are separately verified by
+  // the real-physics Node tests, never just a visual filter here.
+  for(const [choice,players] of [
+   ['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],
+   ['duel-2v2',5],['duel-3v3',7]
+  ])for(const side of ['home','away']){
+   const state=await evalJs("(()=>{"+
+    "const choice=document.getElementById('action-labs-choice');"+
+    "choice.value="+JSON.stringify(choice)+";"+
+    "choice.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "const team=document.getElementById('action-labs-shot-side');"+
+    "team.value="+JSON.stringify(side)+";"+
+    "team.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "for(let i=0;i<10;i++)document.getElementById('action-labs-step').click();"+
+    "return {choice:choice.value,team:team.value,"+
+    "title:document.getElementById('action-labs-title').textContent,"+
+    "readout:document.getElementById('action-labs-readout').textContent,"+
+    "status:document.getElementById('action-labs-status').textContent,"+
+    "sideVisible:!document.getElementById('action-labs-shot-side-label').hidden};})()"
+   );
+   assert.equal(state.choice,choice);
+   assert.equal(state.team,side);
+   assert.equal(state.sideVisible,true);
+   assert.match(state.readout,/Tick 10 /);
+   assert.match(state.readout,/Witnesses [1-9]/,
+    'Visible '+choice+'/'+side+' needs an original Rapier action');
+   assert.match(state.readout,/B06 00:00 · LAB 0–0/);
+   assert.doesNotMatch(state.status,/goal scored|possession awarded|tackle successful/i);
+   process.stdout.write('ME_628_SMALL_CHROME '+JSON.stringify({
+    choice,side,players,readout:state.readout})+'\\n');
+  }
+  await evalJs("(()=>{const team=document.getElementById('action-labs-shot-side');"+
+   "team.value='home';team.dispatchEvent(new Event('change',{bubbles:true}));})()");
+  // Keep all 17 original contact scenes executable by the hidden catalog
+  // to preserve the earlier physical and negative regression coverage.
   // Check genuine PASS, mirrored SHOT and separate receiver shoe CONTACT.
   // These are physical events only, never completed possession or dribble.
   for(const [choice,ticks,marker] of [
@@ -430,8 +467,8 @@ test('clean-stack Action LABs load all seventeen options in real DEV Chrome',
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");
   assert.equal(close,true);
-  // One visible original Scenario dropdown for all 51 scenes.
-  // Action/Movement selectors and launch buttons remain internal only.
+  // One visible original Scenario dropdown: 4 physics, 5 small-sided,
+  // 6 advanced movement; old one-action and movement fixtures stay internal.
   const nav=await evalJs("(()=>{const menu=document.getElementById('preset-options');"+
    "const trigger=document.getElementById('preset-trigger');"+
    "return {items:menu.querySelectorAll('[role=option][data-value]').length,"+
@@ -443,8 +480,8 @@ test('clean-stack Action LABs load all seventeen options in real DEV Chrome',
    "unique:document.querySelectorAll('[data-me-dropdown=preset]').length===1,"+
    "noSecondSelector:document.getElementById('lab-all-situations')===null,"+
    "current:trigger.textContent.trim()};})()");
-  assert.equal(nav.items,51);
-  assert.deepEqual(nav.groups,['Ball physics','Actions','Movement and contacts']);
+  assert.equal(nav.items,15);
+  assert.deepEqual(nav.groups,['Ball physics','Small-sided situations','Advanced movement']);
   for(const key of ['hiddenLaunches','hiddenChoices','unique','noSecondSelector'])
    assert.equal(nav[key],true,key);
   const ballNav=await evalJs("(()=>{const t=document.getElementById('preset-trigger');"+
@@ -457,11 +494,11 @@ test('clean-stack Action LABs load all seventeen options in real DEV Chrome',
   await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
    "document.getElementById('preset-opt-drop').click();})()");
   const actionNav=await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
-   "document.querySelector('#preset-options [data-value=\"action:shot\"]').click();"+
+   "document.querySelector('#preset-options [data-value=\"action:duel-2v2\"]').click();"+
    "return {open:document.getElementById('action-labs-dialog').open,"+
    "choice:document.getElementById('action-labs-choice').value,"+
    "title:document.getElementById('action-labs-title').textContent};})()");
-  assert.deepEqual(actionNav,{open:true,choice:'shot',title:'LAB-15 · Shot'});
+  assert.deepEqual(actionNav,{open:true,choice:'duel-2v2',title:'S-04 · 2v2 + goalkeeper'});
   await evalJs("document.getElementById('action-labs-close').click()");
   await wait("document.getElementById('preset-value').textContent==='LAB-01 · Ball Drop'");
   const movementNav=await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
@@ -484,7 +521,7 @@ test('clean-stack Action LABs load all seventeen options in real DEV Chrome',
   // the seventeen real same-world ball/feet Action LABs above.
   const movementOpened=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
-   "document.querySelector('#preset-options [data-value=\"movement:approach\"]').click();"+
+   "document.querySelector('#preset-options [data-value=\"movement:post-pass\"]').click();"+
    "return document.getElementById('movement-labs-dialog').open;})()");
   assert.equal(movementOpened,true);
   await wait("document.getElementById('movement-labs-readout').textContent.startsWith('Tick 0')");
