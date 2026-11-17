@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {validateAuthoritativeSeason,adaptAuthoritativeSeason,createAuthoritativeLoader} from '../assets/authoritative-season.mjs';
+import {validateAuthoritativeSeason,adaptAuthoritativeSeason,createAuthoritativeLoader,createCompetitionSeasonReadCache} from '../assets/authoritative-season.mjs';
 const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
 const definition=manifest.competitions.find(c=>c.id==='IT-1');
 const clubs=manifest.divisions.find(d=>d.id==='IT-1').clubs;
@@ -33,6 +33,76 @@ test('out-of-order requests cannot commit into a newer context',async()=>{
  const first=loader.load();await Promise.resolve();await Promise.resolve();
  await loader.load();release(empty());await first;
  assert.equal(commits,1);
+});
+function confirmedEntrants(){
+ const ids=clubs.map(c=>c.countryId+'-'+c.clubId);
+ return {...empty(),status:'partial',reason:null,
+  provenance:{kind:'authoritative',resultAuthority:'confirmed-entrants-v1',
+   sourceRef:'world:'+world.generation+':season:1:entrants:'+'b'.repeat(64)},
+  data:{entrantsOnly:true,season:1,seasonState:{day:1,phase:'active'},
+   rulesVersion:definition.rules.version,participants:ids}};
+}
+test('confirmed entrants hydrate an unranked zero-stat standings table without a calendar',()=>{
+ const raw=confirmedEntrants();
+ const confirmed=validateAuthoritativeSeason(raw,ctx(),manifest);
+ const data=adaptAuthoritativeSeason(confirmed,ctx(),manifest);
+ assert.equal(data.participants.length,16);
+ assert.equal(data.entrantsOnly,true);
+ assert.equal(data.fixtures,null);
+ assert.deepEqual(data.postseason,[]);
+ assert.deepEqual(data.results,[]);
+ assert.equal(data.currentMatchday,null);
+ assert.equal(data.statistics.overview.matchesPlayed,0);
+ assert.equal(data.statistics.standings.length,16);
+ assert.ok(data.statistics.standings.every(r=>r.played===0&&r.won===0&&r.drawn===0&&
+  r.lost===0&&r.gf===0&&r.ga===0&&r.gd===0&&r.pts===0&&r.recent.length===0));
+ assert.ok(Object.isFrozen(data));
+});
+test('confirmed entrants use alphabetical primary names for domestic and international standings',()=>{
+ const international=manifest.competitions.find(c=>c.id==='int-1');
+ const selections=[[definition,clubs],
+  [international,manifest.divisions.filter(d=>d.tier===1).flatMap(d=>d.clubs.slice(0,3))]];
+ for(const [competition,members] of selections){
+  assert.equal(members.length,competition.capacity);
+  const raw=confirmedEntrants();
+  raw.competitionId=competition.id;
+  raw.data.rulesVersion=competition.rules.version;
+  const incoming=members.map(c=>c.countryId+'-'+c.clubId).reverse();
+  raw.data.participants=[...incoming];
+  const context={definition:competition,selectedSeason:1,revision:1};
+  const data=adaptAuthoritativeSeason(validateAuthoritativeSeason(raw,context,manifest),context,manifest);
+  const sorted=[...members].sort((a,b)=>a.primaryName.localeCompare(b.primaryName,'en',{sensitivity:'base'})||
+   (a.countryId+'-'+a.clubId).localeCompare(b.countryId+'-'+b.clubId,'en'));
+  assert.deepEqual(data.participants.map(c=>c.countryId+'-'+c.clubId),
+   sorted.map(c=>c.countryId+'-'+c.clubId),competition.id+' sorts by name, not membership ID');
+  assert.deepEqual(data.statistics.standings.map(row=>row.club),data.participants,
+   competition.id+' desktop and compact standings receive the same row order');
+  assert.deepEqual(raw.data.participants,incoming,'canonical transport membership order remains untouched');
+ }
+});
+test('confirmed entrants reject forged schedules, results, provenance and future-season leakage',()=>{
+ for(const edit of [
+  r=>{r.data.fixtures=[]},
+  r=>{r.data.standings={rows:[]}},
+  r=>{r.data.participants.pop()},
+  r=>{r.data.participants[0]='FR-1'},
+  r=>{r.data.seasonState={day:2,phase:'active'}},
+  r=>{r.provenance.resultAuthority='temporary-lineup-v1'},
+  r=>{r.provenance.sourceRef='world:'+world.generation+':season:1:'+'b'.repeat(64)},
+  r=>{r.status='available'},
+  r=>{r.world={...world,generation:'12345678-1234-4123-8123-123456789abc'}},
+  r=>{r.selectedSeason=2}
+ ]){
+  const raw=confirmedEntrants();edit(raw);
+  assert.throws(()=>validateAuthoritativeSeason(raw,ctx(),manifest));
+ }
+ const two=confirmedEntrants();two.selectedSeason=2;two.world={...world,seasonNumber:2};
+ two.data.season=2;two.data.participants[15]='IT-17';
+ two.provenance.sourceRef='world:'+world.generation+':season:2:entrants:'+'b'.repeat(64);
+ const c2={...ctx(),selectedSeason:2};
+ const view=adaptAuthoritativeSeason(validateAuthoritativeSeason(two,c2,manifest),c2,manifest);
+ assert.ok(view.participants.some(c=>c.clubId===17));
+ assert.ok(!view.participants.some(c=>c.clubId===16));
 });
 test('adapts validated empty source without inventing league or player statistics',()=>{
  assert.equal(adaptAuthoritativeSeason(validateAuthoritativeSeason(empty(),ctx(),manifest),ctx(),manifest),null);
@@ -83,15 +153,50 @@ test('accepts only real, internally coherent frozen V2 player totals',()=>{
  const player={playerId:58,clubId:fixture.homeClubId,appearances:1,starts:1,minutes:90,goals:1};
  raw.data.statistics.players=[player];
  assert.deepEqual(validateAuthoritativeSeason(raw,ctx(),manifest).data.statistics.players,[player]);
+ // Backend lineupTeamStatisticsV1 accepts 1..120 minutes per appearance:
+ // an early substitution is valid and must never blank the entire table.
+ for(const minutes of [1,60,75,89,90,120]){
+  const actual=structuredClone(raw);
+  actual.data.statistics.players=[{...player,minutes}];
+  const validated=validateAuthoritativeSeason(actual,ctx(),manifest);
+  assert.equal(validated.data.statistics.players[0].minutes,minutes);
+  const adapted=adaptAuthoritativeSeason(validated,ctx(),manifest);
+  assert.equal(adapted.statistics.standings.length,16,'valid substitution retains standings');
+  assert.equal(adapted.fixtures.find(f=>f.sourceFixtureId===fixture.id).homeGoals,1,
+   'valid substitution retains official fixture scores');
+ }
  for(const bad of [
-  {...player,goals:2},{...player,starts:0},{...player,minutes:60},
-  {...player,clubId:'FR-1'},{...player,appearances:2,starts:2,minutes:180}
+  {...player,goals:2},{...player,starts:0},{...player,minutes:0},
+  {...player,minutes:121},{...player,clubId:'FR-1'},
+  {...player,appearances:2,starts:2,minutes:180}
  ]){
   const altered=structuredClone(raw);altered.data.statistics.players=[bad];
   assert.throws(()=>validateAuthoritativeSeason(altered,ctx(),manifest));
  }
  const duplicate=structuredClone(raw);duplicate.data.statistics.players=[player,player];
  assert.throws(()=>validateAuthoritativeSeason(duplicate,ctx(),manifest));
+
+ // The backend aggregates all starters of a club: 11 different players
+ // each appearing once is valid with only one club match played.
+ const eleven=structuredClone(raw);
+ eleven.data.statistics.players=Array.from({length:11},(_,i)=>({
+  ...player,playerId:100+i,minutes:i===0?75:90,goals:i===0?1:0
+ }));
+ const season=validateAuthoritativeSeason(eleven,ctx(),manifest);
+ assert.equal(season.data.statistics.players.length,11);
+ const view=adaptAuthoritativeSeason(season,ctx(),manifest);
+ assert.equal(view.statistics.standings.length,16);
+ assert.equal(view.fixtures.find(f=>f.sourceFixtureId===fixture.id).homeGoals,1);
+ // The per-player bound still rejects two appearances after one club match.
+ const impossible=structuredClone(eleven);
+ impossible.data.statistics.players[0].appearances=2;
+ impossible.data.statistics.players[0].starts=2;
+ impossible.data.statistics.players[0].minutes=150;
+ assert.throws(()=>validateAuthoritativeSeason(impossible,ctx(),manifest));
+ // The team-wide bound still rejects >11 total starts for one match.
+ const excess=structuredClone(eleven);
+ excess.data.statistics.players.push({...player,playerId:999,goals:0});
+ assert.throws(()=>validateAuthoritativeSeason(excess,ctx(),manifest));
 });
 test('adapts a complete published schedule into existing domestic fixture and table contracts',()=>{
  const raw=source(),data=adaptAuthoritativeSeason(validateAuthoritativeSeason(raw,ctx(),manifest),ctx(),manifest);
@@ -215,4 +320,57 @@ test('CLUB-FIXTURES: neutral final and extra-time/shootout retain club perspecti
   result:{homeGoals:2,awayGoals:2,resolution:'penalties',extraTime:{home:1,away:1},penalties:{home:4,away:5},winnerClubId:'IT-1'}};
  const [row]=projectClubFixtures([fixture],'IT-1',1,54);
  assert.equal(row.venue,'neutral');assert.equal(row.goalsFor,2);assert.equal(row.goalsAgainst,2);assert.deepEqual(row.penalties,{for:5,against:4});
+});
+
+test('PERF-API-657 returning to a previously loaded season reuses its exact-world verified snapshot',()=>{
+ const cache=createCompetitionSeasonReadCache({limit:3});
+ const currentWorld={...world,seasonNumber:2,revision:19,day:15};
+ const snapshot={source:'authoritative',worldStatus:'ready',sourceRevision:3,world:currentWorld};
+ const one={season:1,world:currentWorld,provenance:{kind:'authoritative'},participants:['IT-1']};
+ const two={season:2,world:currentWorld,provenance:{kind:'authoritative'},participants:['IT-2']};
+ const key=season=>({competitionId:'IT-1',season,snapshot});
+ assert.equal(cache.remember({...key(1),data:one}),true);
+ assert.equal(cache.remember({...key(2),data:two}),true);
+ assert.equal(cache.size(),2);
+ one.participants.push('IT-3');
+ assert.deepEqual(cache.find(key(1)).data.participants,['IT-1'],
+  'cache is an immutable copy, not a reference to mutable live data');
+ assert.ok(Object.isFrozen(cache.find(key(2)).data));
+ assert.equal(cache.find(key(1)).data.season,1,'1→2→1 returns cached Season 1 without network');
+ assert.equal(cache.find(key(2)).data.season,2,'both seasons remain reusable');
+ assert.equal(cache.find({...key(1),snapshot:{...snapshot,world:{...currentWorld,revision:20}}}),null,
+  'world progress invalidates previous snapshots');
+ assert.equal(cache.find({...key(1),snapshot:{...snapshot,world:{...currentWorld,generation:'12345678-1234-4123-8123-123456789abc'}}}),null,
+  'reset generation invalidates previous snapshots');
+ assert.equal(cache.find({...key(1),snapshot:{...snapshot,sourceRevision:4}}),null,
+  'source rotation invalidates previous snapshots');
+ assert.equal(cache.find({...key(1),snapshot:{...snapshot,source:'dev'}}),null,
+  'protected DEV cannot use public sporting cache');
+ assert.equal(cache.find({...key(1),snapshot:{...snapshot,worldStatus:'pending'}}),null,
+  'no cache restores before authoritative world clock is ready');
+ assert.equal(cache.remember({...key(1),data:{...one,world:{...currentWorld,revision:5}}}),false,
+  'unverified world payload cannot enter cache');
+ assert.equal(cache.remember({...key(1),data:{...one,provenance:{kind:'dev'}}}),false,
+  'fictional data never enters public season cache');
+});
+test('PERF-API-657 confirmed empty seasons reuse the same world but failures do not cache',()=>{
+ const cache=createCompetitionSeasonReadCache({limit:2});
+ const currentWorld={...world,seasonNumber:2,revision:23,day:16};
+ const snapshot={source:'authoritative',worldStatus:'ready',sourceRevision:0,world:currentWorld};
+ const key=(season)=>({competitionId:'int-1',season,snapshot});
+ assert.equal(cache.find(key(1)),null);
+ assert.equal(cache.remember({...key(1),data:null}),true);
+ assert.deepEqual(cache.find(key(1)),{data:null},
+  'verified empty is distinct from a failed/missing request');
+ assert.equal(cache.remember({...key(2),data:{season:2,world:currentWorld,provenance:{kind:'authoritative'}}}),true);
+ assert.equal(cache.size(),2);
+ assert.equal(cache.remember({...key(1),data:{season:1,world:currentWorld,provenance:{kind:'authoritative'}}}),true);
+ cache.clear();assert.equal(cache.size(),0);assert.equal(cache.find(key(1)),null);
+});
+test('PERF-API-657 competition controller restores cached season before starting the API loader',()=>{
+ const page=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
+ assert.match(page,/createCompetitionSeasonReadCache/);
+ assert.match(page,/if\(cached\)\{[\s\S]*?loader\.cancel\(\);[\s\S]*?acceptSeasonData\(cached\.data,c\.revision,true\)/);
+ assert.match(page,/lastSuccessfulRead=worldReadKey\(window\.faCompetitionContext,snapshot\)/);
+ assert.match(page,/seasonReadCache\.clear\(\)/,'DEV source toggles must invalidate the season cache');
 });

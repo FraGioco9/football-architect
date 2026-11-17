@@ -19,6 +19,24 @@ assert.equal(source.split(marker).length,2);
 const demoSource=source.replace(marker,
   "  window.__faFixtureHooks = { createStandingsRow, attachFormTooltips };\n"+marker);
 const manifest=JSON.parse(read("competitions/_shared/manifest.json"));
+
+function compactForVM(manifest){
+ // Intentionally allow invalid fixtures in the transport: negative tests
+ // must reach the real expansion/validation boundary, not fail at setup.
+ const templates=[],bySignature=new Map();
+ const definitions=(manifest.competitions||[]).map(original=>{
+  const template={rules:original.rules,metrics:original.metrics,capabilities:original.capabilities};
+  const signature=JSON.stringify(template);let index=bySignature.get(signature);
+  if(index===undefined){index=templates.length;templates.push(template);bySignature.set(signature,index)}
+  const row={};for(const [key,value] of Object.entries(original))
+   if(!['rules','metrics','capabilities'].includes(key))row[key]=value;
+  row.templateIndex=index;return row;
+ });
+ return {catalogFormat:'competition-catalog-dedup-v1',schemaVersion:manifest.schemaVersion,
+  approved:manifest.approved,profile:manifest.profile,clubCrests:manifest.clubCrests,
+  divisions:manifest.divisions,templates,competitions:definitions};
+}
+
 const root="http://127.0.0.1:2000";
 test('SEASON-DEV-BANDS: publishing a historical provider snapshot repairs desktop and mobile bands prepared before publication',async()=>{
  const data=structuredClone(manifest),current=data.competitions.find(d=>d.id==='IT-1');
@@ -162,7 +180,7 @@ function node(tag){
  return n;
 }
 
-async function simulate({division,ending="/",data=manifest,shell=null,fetchFailure=false,demo=false,testHooks=false,metadata=undefined,devSeason=null,onLoad=null}){
+async function simulate({division,ending="/",data=manifest,shell=null,fetchFailure=false,demo=false,testHooks=false,metadata=undefined,devSeason=null,withoutDevSeasons=false,onLoad=null}){
  const loaded=[],requested=[],fields=new Map(),contexts=[];
  const selected=division?.id??"IT-1";
  shell??=read("competitions/"+selected.toLowerCase()+"/index.html");
@@ -201,7 +219,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   events:{},activeElement:null,
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)},
-  documentElement:{dataset:devSeason===null?{}:{faDevSeasons:"1,2,3,4",faDevCurrentSeason:String(devSeason)}},
+  documentElement:{dataset:devSeason===null?{}:withoutDevSeasons?{faDevCurrentSeason:String(devSeason)}:{faDevSeasons:"1,2,3,4",faDevCurrentSeason:String(devSeason)}},
   currentScript:{src:root+"/assets/competition-page.js"},
   head:{
    append(...assets){for(const asset of assets)this.appendChild(asset)},
@@ -234,15 +252,19 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   const u=new URL(url);
   requested.push(u.pathname);
   if(fetchFailure)return {ok:false};
-  if(u.pathname==="/competitions/_shared/manifest.json")
-   return {ok:true,json:async()=>data};
+  if(u.pathname==="/competitions/_shared/compact.json")
+   return {ok:true,json:async()=>compactForVM(data)};
   return {ok:false};
  };
  const window={faDebugEnabled:devSeason!==null,faRoutesRegistry:routeRegistry,faCompetitionModel:competitionModel,faCompetitionRules:competitionRules,faCompetitionRulesView:competitionRulesView,location,innerWidth:390,innerHeight:600,events:{},
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   dispatchEvent(event){this.emit(event.type,event)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)}};
- runInNewContext(demo||testHooks?demoSource:source,{document,window,URL,fetch:fakeFetch,setTimeout,clearTimeout,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
+ // Browser production exposes MutationObserver. This isolated VM has no DOM
+ // mutation engine, so retain the API shape without inventing mutation events;
+ // browser QA exercises the real observer and hydration transitions.
+ const MutationObserver=class{constructor(callback){this.callback=callback}observe(){}disconnect(){}};
+ runInNewContext(demo||testHooks?demoSource:source,{document,window,URL,fetch:fakeFetch,setTimeout,clearTimeout,MutationObserver,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  // Flush fetch, DOM filling, and the four sequential script-load promises.
  await new Promise(resolve=>setImmediate(resolve));
  await new Promise(resolve=>setImmediate(resolve));
@@ -262,12 +284,12 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
  return {document,fields,loaded,requested,body,window,contexts,postseasonSlots,postseasonNodes};
 }
 
-test("SHARED-QA-01: all sixteen routes hydrate on direct load and refresh",async()=>{
+test("SHARED-QA-01: explicit DEV seasons hydrate canonical club identities on every route",async()=>{
  for(const division of manifest.divisions){
   for(const ending of ["","/","/index.html"]){
-   const r=await simulate({division,ending});
+   const r=await simulate({division,ending,devSeason:1});
    assert.deepEqual(r.requested,[
-    "/competitions/_shared/manifest.json"
+    "/competitions/_shared/compact.json"
    ],division.id+ending);
    assert.deepEqual(r.loaded,[
     "/assets/world-calendar-model.js","/assets/competition-rules.js","/assets/competition-rules-view.js","/assets/provider-selectors-bootstrap.mjs","/assets/landing.js","/assets/app.js",
@@ -417,6 +439,17 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  newest.emit("pointerenter",{pointerType:"mouse"});
  assert.equal(tooltip.hidden,false);
  assert.equal(newest.attrs["aria-describedby"],"app-world-form-tooltip");
+ // After a mouse click the button can retain focus; pointer exit must still dismiss.
+ r.document.activeElement=newest;
+ newest.emit("focus");
+ newest.emit("click");
+ newest.emit("pointerleave",{pointerType:"mouse"});
+ assert.equal(newest.attrs["aria-describedby"],undefined);
+ assert.equal(tooltip.className,"app-world-form-tooltip is-closing");
+ tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
+ assert.equal(tooltip.hidden,true);
+ r.document.activeElement=null;
+ newest.emit("pointerenter",{pointerType:"mouse"});
  assert.equal(metadata.children[0].children[1].textContent,"15");
  assert.match(scoreline.children[1].children.map(part=>part.textContent).join(""),/^(?:1 – 2|2 – 1|1 – 1)$/);
  assert.ok(scoreline.children[0].textContent);
@@ -713,7 +746,7 @@ test('CONTEXT: Debug/public source handoff restores later-season domestic rows b
  assert.equal(r.window.faCompetitionContext.selectedSeason,2);
  assert.equal(tbody.children.length,16);
  assert.equal(api.setDebugSeason(null),true,'Switch to public source');
- assert.equal(tbody.children.length,1,'Unknown Season 2 public standings use a neutral empty row');
+ assert.equal(tbody.children.length,0,'Unverified public entrants stay absent until source confirmation');
  const revision=r.window.faCompetitionContext.revision;
  assert.equal(api.setDebugSeason(3),true,'Return to DEV Season 3');
  assert.ok(r.window.faCompetitionContext.revision>revision,'Even an empty source handoff invalidates stale reads');
@@ -735,10 +768,14 @@ test('CONTEXT: a world-day change with unchanged domestic progress retains suppl
  assert.equal(r.window.faCompetitionContext.seasonData.season,1);
 });
 
-test('A03-04E2: desktop and compact public standings emit the same complete canonical club link set',async()=>{
+test('A03-04E2: explicit DEV standings render complete links, public unconfirmed source does not',async()=>{
  const walk=node=>[node,...node.children.flatMap(walk)];
  for(const division of manifest.divisions){
-  const r=await simulate({division});
+  const publicPage=await simulate({division});
+  assert.equal(publicPage.fields.get('app-standings-body').children.length,0,
+    'Static identities alone do not authorize public entrants');
+  assert.equal(publicPage.fields.get('app-standings-compact-list').children.length,0);
+  const r=await simulate({division,devSeason:1});
   const expected=division.clubs.map(club=>'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview').sort();
   for(const id of ['app-standings-body','app-standings-compact-list']){
    const links=walk(r.fields.get(id)).filter(n=>n.tagName==='a'&&n.className.includes('app-world-standing-club-link')).map(n=>n.href).sort();
@@ -785,4 +822,19 @@ test('POSTSEASON: supplied domestic results populate the same cards and clear on
   assert.ok(r.postseasonNodes.score.every(score=>score.textContent===''),id);
   assert.ok(r.postseasonNodes.row.every(row=>row.dataset.postseasonWinner==='false'),id);
  }
+});
+
+test('SEASON-0 rollback: enabled DEV world transitions without optional faDevSeasons metadata',async()=>{
+ const r=await simulate({division:divisionsForTest('IT-1'),devSeason:1,withoutDevSeasons:true});
+ const api=r.window.faCompetitionContextApi,desktop=r.fields.get('app-standings-body'),mobile=r.fields.get('app-standings-compact-list');
+ assert.equal(desktop.children.length,16,'explicit DEV Season 1 has its provisional club rows');
+ assert.equal(api.setDebugSeason(0),true,'enabled DEV may enter Season 0 without a season-list marker');
+ assert.equal(r.window.faCompetitionContext.seasonData,null);
+ assert.equal(desktop.children.length,1,'Season 0 replaces stale 16 clubs with one empty state');
+ assert.equal(desktop.children[0].children[0].dataset.appI18n,'competitionStandingsEmpty');
+ assert.equal(mobile.children.length,1,'mobile Season 0 has the same empty state');
+ assert.equal(mobile.children[0].children[0].dataset.appI18n,'competitionStandingsEmpty');
+ assert.equal(api.setDebugSeason(1),true,'DEV Season 1 can be reactivated');
+ assert.equal(desktop.children.length,16,'DEV Season 1 can remount its provisional identities');
+ assert.equal(mobile.children.length,16);
 });

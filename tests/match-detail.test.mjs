@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {matchPublicContext,publicClubIdentityCatalog} from '../assets/match-public-context.mjs';
 import {parseRoute,buildRoute} from '../assets/routes-registry.mjs';
 import {publicRequestFile,isAllowlistedPublicPath,planPublicFiles} from '../tools/publication-guard.mjs';
 import {scoreboardThemes,resolveScoreboardTheme,resolveFirstPaintMatchTheme,contrastRatio} from '../assets/match-scoreboard-themes.mjs';
@@ -150,6 +151,24 @@ test('#577 refuses arbitrary palette entries or fake logos',()=>{
  assert.equal(resolveScoreboardTheme({...sample,ivoryHex:'var(--unsafe)'}).kind,'neutral');
  assert.equal(resolveScoreboardTheme(sample).logoAsset,'assets/divisions/it-1-lega-federale/compact.svg');
 });
+test('#650 Match Detail renders only frozen verified XI test ratings with reserved first paint',()=>{
+ const js=read('assets/match-detail.js'),css=read('assets/match-detail.css');
+ const html=read('templates/match-detail-content.html');
+ assert.match(js,/function renderLineups\(tr\)/);
+ assert.match(js,/data\?\.status==='completed'&&data\?\.provenance\?\.receiptHash/);
+ assert.match(js,/source\?\.kind==='real_xi'/);
+ assert.match(js,/data\.lineup\?\.ratingVersion==='test-rating-v1'/);
+ assert.match(js,/const n=starter\.rating/);
+ assert.match(js,/Number\.isSafeInteger\(p\.playerId\)/);
+ assert.match(js,/player\.href=href\('\/players\/'\+starter\.playerId\)/);
+ assert.match(js,/officialVote\?n\.toFixed\(1\):'–'/);
+ assert.match(js,/list\.setAttribute\('aria-hidden','true'\)/);
+ assert.match(css,/\.app-match-lineup-rating/);
+ assert.equal((html.match(/class="app-match-lineup-row"/g)||[]).length,22);
+ for(const phrase of ['Test rating','Voto di prova','Testnote','Nota de prueba','Note de test'])
+  assert.ok(js.includes(phrase),phrase);
+ assert.doesNotMatch(js,/Math\.random\(/);
+});
 test('#577 never fabricates scores, lineups, competition branding or match outcomes',()=>{
  const js=read('assets/match-detail.js');
  const html=read('matches/_shared/index.html');
@@ -183,7 +202,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/write\('\[data-match-overview="date"\]',data\?publishedDate\(data\.kickoff\):''\)/);
  assert.match(js,/const homeKey=clubKey\(data\?\.homeParticipant\?\.clubId\)/);
  assert.match(js,/homeKey&&clubs\?\.clubs\?\.find\(c=>c\.countryId\+'-'\+c\.clubId===homeKey\)/);
- assert.match(js,/data\?\.neutral===true\|\|data\?\.homePolicy==='neutral'/);
+ assert.match(js,/data\?\.neutral===true/);
+ assert.doesNotMatch(js,/data\?\.homePolicy/);
  assert.match(js,/publishedStadium\(homeClub\?\.stadiumName\)/);
  assert.match(js,/publishedStadium\(data\.venue\)\|\|homeStadium/);
  assert.match(js,/Number\.isSafeInteger\(data\?\.round\)/);
@@ -337,4 +357,46 @@ test('#577 parser-time branding only uses the same approved palette as hydration
    foregroundHex:hydrated.foregroundHex,accentHex:hydrated.accentHex});
  }
  for(const id of ['ZZ-1','it-1','IT-3',null,'<script>'])assert.equal(resolveFirstPaintMatchTheme(id),null);
+});
+
+test('match page uses a minimal published context instead of full club or competition manifests',()=>{
+ const js=read('assets/match-detail.js');
+ assert.doesNotMatch(js,/clubs\/_shared\/manifest\.json|competitions\/_shared\/manifest\.json/);
+ assert.match(js,/import\('\/assets\/match-public-context\.mjs'\)/);
+ assert.ok(planPublicFiles().includes('assets/match-public-context.mjs'));
+ const context=matchPublicContext({competitionId:'IT-1',
+  homeParticipant:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'}});
+ assert.deepEqual(context.clubs.map(c=>c.countryId+'-'+c.clubId),['IT-1','IT-2']);
+ assert.equal(context.competitions[0].id,'IT-1');
+ assert.equal(context.competitions[0].primaryHex,'#155F50');
+ assert.ok(context.clubs.every(c=>c.primaryName&&c.abbr&&c.stadiumName));
+ assert.equal(matchPublicContext({competitionId:'ZZ-1'}),null);
+});
+
+test('match first paint retains every box before hydration and during transient errors',()=>{
+ const html=read('matches/_shared/index.html');
+ const css=read('assets/match-detail.css'),js=read('assets/match-detail.js');
+ assert.match(html,/data-match-detail data-match-load="loading"/);
+ for(const marker of ['app-match-scoreboard','app-match-stage','app-match-side-home',
+  'app-match-side-away','app-match-visual','app-match-overview','app-match-pitch'])
+  assert.ok(html.includes(marker),marker);
+ assert.ok(css.includes('[data-match-load="loading"],[data-match-load="unavailable"]'));
+ assert.ok(js.includes("root.dataset.matchLoad=errorKind==='missing'?'missing':'unavailable'"));
+ assert.match(js,/if\(!data\)\{[\s\S]*?return;\s*\}\s*renderOverview\(tr\)/);
+});
+
+test('generated lightweight club identities serve Match and Player views without full manifests',()=>{
+ const identity=publicClubIdentityCatalog();
+ assert.equal(identity.clubs.length,320);
+ assert.ok(Object.keys(identity.clubCrests).length>0); // Approved crest set evolves; canonical parity is asserted below.
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ for(const club of identity.clubs){
+  const canonical=manifest.clubs.find(c=>c.countryId===club.countryId&&c.clubId===club.clubId);
+  assert.ok(canonical);
+  for(const key of ['primaryName','compactName','abbr','stadiumName'])
+   assert.equal(club[key],canonical[key]);
+  assert.equal(Object.hasOwn(club,'descriptions'),false);
+  assert.equal(Object.hasOwn(club,'rivalries'),false);
+ }
+ assert.deepEqual(identity.clubCrests,manifest.clubCrests);
 });

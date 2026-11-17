@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {describeApiUrl,describePageUrl,summarizeRequests,summarizeVisit,waitForApiCompletion,validateSamplerBackend,DEFAULT_ROUTES,IN_PAGE_SCENARIOS} from '../tools/perf-api-01-requests.mjs';
+import {describeApiUrl,describeDataUrl,TRACKED_STATIC_DATA,describePageUrl,attachResourceTransferTimings,summarizeRequests,summarizeVisit,waitForApiCompletion,validateSamplerBackend,DEFAULT_ROUTES,IN_PAGE_SCENARIOS,CLUB_READ_AUDIT} from '../tools/perf-api-01-requests.mjs';
 
 test('API audit redacts secret values and ignores static assets',()=>{
  assert.equal(describeApiUrl('http://app.localhost:2000/assets/main.js'),null);
@@ -90,4 +90,69 @@ test('API audit finishes when tracked API reads settle, independently of unrelat
  records=[{settled:false}];clock=0;
  assert.equal(await waitForApiCompletion(()=>records,{timeoutMs:350,quietMs:100,now:()=>clock,delay:async ms=>{clock+=ms}}),false,
   'a pending API request cannot be counted as zero or complete');
+});
+
+test('cross-page inventory includes expensive public data catalogues without CSS/image noise',()=>{
+ for(const path of TRACKED_STATIC_DATA){
+  const parsed=describeDataUrl('http://app.localhost:2000'+path);
+  assert.equal(parsed?.path,path);
+  assert.equal(parsed?.resourceKind,'catalog');
+ }
+ assert.equal(describeDataUrl('http://app.localhost:2000/api/world')?.resourceKind,'api');
+ assert.equal(describeDataUrl('http://app.localhost:2000/assets/app.css'),null);
+ assert.equal(describeDataUrl('http://app.localhost:2000/assets/clubs/IT/1/crest.svg'),null);
+ assert.ok(DEFAULT_ROUTES.includes('/matches/1'));
+ assert.ok(DEFAULT_ROUTES.includes('/players/44'));
+});
+
+test('PERF-API-657 records compact and scoped identity catalogues, never arbitrary assets',()=>{
+ for(const path of ['/clubs/_shared/identity.json','/competitions/_shared/compact.json',
+  '/clubs/_profiles/BR-1.json','/clubs/_profiles/ENG-40.json']){
+  const data=describeDataUrl('http://app.localhost:2000'+path);
+  assert.equal(data?.resourceKind,'catalog',path);assert.equal(data?.path,path);
+ }
+ for(const path of ['/clubs/_profiles/ENG-0.json','/clubs/_profiles/IT-41.json',
+  '/clubs/_profiles/IT-3.js','/clubs/_profiles/IT-3.json/extra','/assets/app.css']){
+  assert.equal(describeDataUrl('http://app.localhost:2000'+path),null,path);
+ }
+});
+
+test('PERF-API-657 preserves Resource Timing wire sizes without private query leakage or fake zeroes',()=>{
+ const api=describeDataUrl('http://app.localhost:2000/api/world?token=secret-value');
+ const catalog=describeDataUrl('http://app.localhost:2000/clubs/_shared/identity.json');
+ const first={...api,method:'GET',status:200,transferBytes:null,responseBytes:100};
+ const second={...catalog,method:'GET',status:200,transferBytes:null,responseBytes:250};
+ const ephemeral=new Map([[first,'http://app.localhost:2000/api/world?token=secret-value'],
+  [second,'http://app.localhost:2000/clubs/_shared/identity.json']]);
+ attachResourceTransferTimings([first,second],[
+  {url:ephemeral.get(first),transferBytes:900,encodedBodyBytes:700,decodedBodyBytes:1400},
+  {url:ephemeral.get(first),transferBytes:90,encodedBodyBytes:60,decodedBodyBytes:1400}
+ ],entry=>ephemeral.get(entry));
+ assert.equal(first.transferBytes,90,'a later in-page request uses its most recent timing');
+ assert.equal(first.encodedBodyBytes,60);
+ assert.equal(second.transferBytes,null,'a missing Resource Timing entry is unknown, never free');
+ const partial=summarizeRequests([first,second]);
+ assert.equal(partial.apiRequestCount,1);assert.equal(partial.catalogRequestCount,1);
+ assert.equal(partial.transferBytes,null);assert.equal(partial.measuredTransferResponses,1);
+ assert.equal(partial.observedTransferBytes,90);
+ assert.equal(partial.endpoints.find(x=>x.resourceKind==='catalog').transferBytes,null);
+ assert.equal(JSON.stringify([first,second,partial]).includes('secret-value'),false);
+ second.transferBytes=0;
+ const completed=summarizeRequests([first,second]);
+ assert.equal(completed.transferBytes,90,'an explicit cached zero is distinct from missing timing');
+ assert.equal(completed.measuredTransferResponses,2);
+ assert.equal(summarizeVisit([first,second],{complete:false}).transferBytes,null);
+});
+
+
+test('PERF-API-657 Club audit uses actual tab links and season options, without assuming a future season',()=>{
+ assert.equal(CLUB_READ_AUDIT.overviewRoute.test('/clubs/it/1/overview'),true);
+ assert.equal(CLUB_READ_AUDIT.overviewRoute.test('/clubs/it/1/history'),false);
+ assert.equal(CLUB_READ_AUDIT.fixturesRoute.test('/clubs/it/1/fixtures?season=1'),true);
+ assert.equal(CLUB_READ_AUDIT.fixturesRoute.test('/clubs/it/1/stats'),false);
+ assert.equal(CLUB_READ_AUDIT.historyLink,'.club-tabs a[href$="/history"]');
+ assert.equal(CLUB_READ_AUDIT.overviewLink,'.club-tabs a[href$="/overview"]');
+ assert.match(CLUB_READ_AUDIT.seasonOptions,/data-menu-value/);
+ for(const route of ['/clubs/it/1/overview','/clubs/it/1/fixtures','/clubs/it/1/history'])
+  assert.ok(DEFAULT_ROUTES.includes(route),route);
 });

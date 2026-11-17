@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {chromium,webkit} from 'playwright';
-import {applyPublishedMatchFirstPaint} from '../tools/match-first-paint.mjs';
+import {applyPublishedMatchFirstPaint,applyPublishedMatchDocument} from '../tools/match-first-paint.mjs';
 
 const shell=readFileSync(new URL('../matches/_shared/index.html',import.meta.url),'utf8');
 const manifestClubs=JSON.parse(readFileSync(new URL('../clubs/_shared/manifest.json',import.meta.url),'utf8')).clubs;
@@ -113,6 +113,15 @@ for(const [engine,driver] of Object.entries(engines)){
       blank:panels.every(p=>p.querySelector('.app-match-position').textContent.trim()==='–')};
     });
     assert.equal(stage.panels,2);
+    // Match boxes must be genuinely visible and dimensioned before JS hydrates.
+    const boxes=await page.locator('.app-match-scoreboard,.app-match-side,.app-match-visual,[data-match-overview-panel],[data-match-pitch]')
+      .evaluateAll(elements=>elements.map(el=>({
+       display:getComputedStyle(el).display,visibility:getComputedStyle(el).visibility,
+       width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height
+      })));
+    assert.equal(boxes.length,6);
+    assert.ok(boxes.every(b=>b.display!=='none'&&b.visibility==='visible'&&b.width>0&&b.height>0),
+     JSON.stringify({engine,theme,device,boxes}));
     assert.ok(Math.abs(stage.stage.left-stage.main.left)<=1,JSON.stringify(stage));
     assert.ok(Math.abs(stage.stage.width-stage.main.width)<=1,JSON.stringify(stage));
     assert.deepEqual(stage.crestSlots,[1,1]);
@@ -540,12 +549,83 @@ for(const [engine,driver] of Object.entries(engines)){
        const popupReady=ctx.waitForEvent('page');
        await item.link.click();
        const newTab=await popupReady;
-       await newTab.waitForURL(url=>url.pathname===item.path);
+       // The link contract requires the destination URL, not the unrelated
+       // destination page's full load event (which can fail internally in WebKit).
+       await newTab.waitForURL(url=>url.pathname===item.path,{waitUntil:'commit'});
        assert.equal(new URL(page.url()).pathname,'/matches/123');
        await newTab.close();
       }
      }
     }
+   }finally{await ctx.close()}
+  }
+
+  // A verified server read must not turn into a second match API call on load.
+  // The separate competition snapshot still serves pre-match rank and form.
+  const hydrated={...match,status:'scheduled',day:16,
+   homeParticipant:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'},result:null};
+  const ctx=await browser.newContext({viewport:{width:390,height:844}});
+  try{
+   const page=await ctx.newPage();
+   let withBootstrap=true,matchCalls=0,snapshotCalls=0;
+   const catalogRequests=[];
+   for(const pattern of ['**/clubs/_shared/manifest.json','**/competitions/_shared/manifest.json','**/data/divisions.json']){
+    await page.route(pattern,route=>{catalogRequests.push(route.request().url());return route.abort();});
+   }
+   await page.route('**/matches/123',route=>route.fulfill({status:200,
+    contentType:'text/html',body:withBootstrap?
+     applyPublishedMatchDocument(shell,hydrated,'123'):decorated}));
+   await page.route('**/api/matches/123',route=>{
+    matchCalls++;
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(hydrated)});
+   });
+   await page.route('**/api/competitions/IT-1/seasons/1',route=>{
+    snapshotCalls++;
+    return route.fulfill({status:503,contentType:'application/json',body:'{}'});
+   });
+   const snapshotRequest=page.waitForRequest('**/api/competitions/IT-1/seasons/1');
+   await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
+   await snapshotRequest;
+   await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
+   assert.equal(matchCalls,0,engine+' rehydrating the server match must not issue a duplicate HTTP read');
+   assert.equal(snapshotCalls,1,engine+' the rank/form snapshot remains a separate read');
+   assert.deepEqual(catalogRequests,[],engine+' no global club/competition/division catalogs on initial match load');
+   assert.deepEqual(await page.locator('[data-match-side-title]').allTextContents(),
+    [officialClub('IT-1').primaryName,officialClub('IT-2').primaryName]);
+   // Normal API fallback remains available for an undecorated HTML response.
+   withBootstrap=false;
+   await page.reload({waitUntil:'domcontentloaded'});
+   await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
+   assert.equal(matchCalls,1,engine+' missing bootstrap must fetch the public match once');
+   assert.deepEqual(catalogRequests,[],engine+' fallback reads compact module, not large catalogs');
+   // Search must still load the division catalogue on demand, once only.
+   const divisionRequest=page.waitForRequest('**/data/divisions.json');
+   await page.locator('#app-search-trigger').click();
+   await divisionRequest;
+   assert.equal(catalogRequests.filter(url=>url.endsWith('/data/divisions.json')).length,1,
+    engine+' division search is lazy and single-flight');
+  }finally{await ctx.close()}
+
+  // A temporarily unavailable API must leave the paint-ready structure intact.
+  {
+   const ctx=await browser.newContext({viewport:{width:390,height:844}});
+   try{
+    const page=await ctx.newPage();
+    await page.route('**/matches/123',route=>route.fulfill({status:200,
+     contentType:'text/html',body:decorated}));
+    await page.route('**/api/matches/123',route=>route.fulfill({status:503,
+     contentType:'application/json',body:'{"error":{"code":"match_unavailable"}}'}));
+    await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='unavailable');
+    assert.equal(await page.locator('[data-match-feedback]').isVisible(),true);
+    assert.deepEqual(await page.locator('[data-match-side-title]').allTextContents(),['','']);
+    const boxes=await page.locator('.app-match-scoreboard,.app-match-side,.app-match-visual,[data-match-overview-panel],[data-match-pitch]')
+     .evaluateAll(elements=>elements.map(el=>({display:getComputedStyle(el).display,
+      visibility:getComputedStyle(el).visibility,
+      width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
+    assert.equal(boxes.length,6);
+    assert.ok(boxes.every(b=>b.display!=='none'&&b.visibility==='visible'&&b.width>0&&b.height>0),
+     JSON.stringify({engine,boxes}));
    }finally{await ctx.close()}
   }
  }finally{await browser.close()}

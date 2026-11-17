@@ -4,6 +4,10 @@ import {isIP} from 'node:net';
 import {isPublicMatchId,referenceFromPublicMatch} from '../assets/match-references.mjs';
 // Keep ordinary private responses tightly bounded. Player previews contain up to
 // 1000 full player records, so only these exact protected routes get a larger cap.
+// Match-day finalization may stage 100+ V2 fixtures before returning; keep
+// ordinary proxy requests short, but do not abandon a committed day at 15 s.
+export const upstreamTimeoutMs=(path,method)=>
+ path==='/api/admin/seasons/advance'&&method==='POST'?120000:15000;
 export const protectedResponseLimit=(path,publicRead=false)=>publicRead?524288:
  (path==='/api/admin/players'||path==='/api/admin/players/preview'||path==='/api/admin/players/draft')?2097152:65536;
 const fail=res=>{res.writeHead(503,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"error":{"code":"environment_unavailable"}}');return true};
@@ -110,7 +114,7 @@ export async function proxySharedNonproduction(req,res,{target,path,body,publicR
   }
   if(body.length)headers['content-length']=body.length;
   const maxResponseBytes=protectedResponseLimit(path,publicRead);
-  const result=validResponse(await send(new URL(path,url),{method:req.method,headers,body,limit:maxResponseBytes}),maxResponseBytes);
+  const result=validResponse(await send(new URL(path,url),{method:req.method,headers,body,limit:maxResponseBytes,timeoutMs:upstreamTimeoutMs(path,req.method)}),maxResponseBytes);
   JSON.parse(result.body.toString('utf8'));
   const out={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
   if(!publicRead){

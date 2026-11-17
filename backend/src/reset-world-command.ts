@@ -48,6 +48,11 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
    // parent rows. Generated players and current club affinities are untouched.
    db.prepare('DELETE FROM match_lineup_result_receipts WHERE generation=?').bind(world.generation),
    db.prepare('DELETE FROM season_lineup_day_outcomes WHERE generation=?').bind(world.generation),
+   // Match receipts reference public_match_numbers via ON DELETE RESTRICT.
+   // Delete receipts first, then clear mappings + AUTOINCREMENT in this same
+   // guarded batch. A failure rolls back both the mappings and sequence.
+   db.prepare('DELETE FROM public_match_numbers'),
+   db.prepare("DELETE FROM sqlite_sequence WHERE name='public_match_numbers'"),
    db.prepare('DELETE FROM season_knockout_ties'),
    db.prepare('DELETE FROM season_day_outcomes'),
    db.prepare('DELETE FROM season_draws'),

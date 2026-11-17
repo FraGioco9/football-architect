@@ -38,6 +38,18 @@ try{
     const response=await page.goto(origin+route,{waitUntil:"load",timeout:25000});
     assert.equal(response?.status(),200,route);
     if(route.startsWith('/competitions/'))await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
+    // Calendar can legitimately remain pending with no public-world source
+    // in loopback QA. Use identical enabled control states for both CSS
+    // snapshots; real disabled/loading behavior has separate browser QA.
+    if(route==="/calendar")await page.evaluate(async()=>{
+     const els=["calendar-next","calendar-week-trigger"]
+      .map(id=>document.getElementById(id)).filter(Boolean);
+     for(const el of els)el.disabled=false;
+     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+     await Promise.all(els.flatMap(el=>el.getAnimations({subtree:false}))
+      .filter(a=>a.playState==="running"&&Number.isFinite(a.effect?.getComputedTiming().endTime))
+      .map(a=>a.finished.catch(()=>{})));
+    });
     // Compare the hydrated state, not an arbitrary instant during asynchronous
     // standings first paint. The real table may legitimately be concealed by
     // the skeleton while the data provider is pending.
@@ -58,7 +70,22 @@ try{
       await Promise.all(running.map(a=>a.finished.catch(()=>{})));
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     });
-    const computed=await page.evaluate(({selectors,cssProperties})=>{
+    const computed=await page.evaluate(({selectors,cssProperties,calendar,standings})=>{
+     // CSS-only parity compares the same settled table on both stylesheets,
+     // independent of the asynchronous verified-empty provider read. Actual
+     // skeleton/loading visibility remains covered by dedicated browser QA.
+     // Apply in the same frame as getComputedStyle to prevent a late provider
+     // notification from making one side visible and the other hidden.
+     if(standings){
+      const root=document.documentElement;
+      root.dataset.faStandingsLoading='false';
+      for(const key of ['faDevStandingsPending','faDebugPending','faDevSeasonTransition'])delete root.dataset[key];
+     }
+     // Freeze the two loading-sensitive control states in the same frame
+     // as getComputedStyle, avoiding async events between baseline captures.
+     if(calendar)for(const id of ["calendar-next","calendar-week-trigger"]){
+      const el=document.getElementById(id);if(el)el.disabled=false;
+     }
      const result={};
      for(const selector of selectors){
       // Inactive tab panels are intentionally hidden; their DEV hydration
@@ -78,7 +105,7 @@ try{
       });
      }
      return result;
-    },{selectors,cssProperties});
+    },{selectors,cssProperties,calendar:route==="/calendar",standings:route==="/competitions/it-1/standings"});
     const cssom=await page.evaluate(()=>{
       const sheet=[...document.styleSheets].find(s=>s.href&&new URL(s.href).pathname==="/assets/app.css");
       if(!sheet)return null;

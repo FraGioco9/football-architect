@@ -128,6 +128,7 @@
 
   // Presentation only: indicate the Rules bands without changing league ranking.
   function standingOutcome(position) {
+    if(typeof activeStandingsSubview==='string'&&activeStandingsSubview!=='overall')return '';
     const selected=window.faCompetitionContext?.definition||definition;
     if(!Number.isInteger(position)||position<1||!selected||position>selected.capacity)return '';
     const outcome=window.faCompetitionRulesView.standingsOutcomes(selected).find(o=>position>=o.from&&position<=o.to);
@@ -155,7 +156,7 @@
     const selected=window.faCompetitionContext?.definition,host=document.querySelector('.app-standings-legend'),list=host?.querySelector?.('ul');
     if(!selected||!list||!window.faCompetitionRulesView)return;
     const outcomes=window.faCompetitionRulesView.standingsLegendOutcomes(selected);
-    host.hidden=!outcomes.length;
+    host.hidden=activeStandingsSubview!=='overall'||!outcomes.length||!hasPlayedLeagueMatches(window.faCompetitionContext?.seasonData);
     const signature=JSON.stringify([document.documentElement.lang,selected.id,outcomes]);
     if(list.dataset.faLegendSignature===signature)return;
     list.replaceChildren(...outcomes.map(outcome=>{
@@ -424,11 +425,6 @@
         const li = element("li","app-world-mobile-item");
         li.dataset.worldClub = id;
         decorateStanding(li, row.position ?? (row.played == null ? null : index + 1));
-        const details = element("details","app-world-mobile-details");
-        const summary = element("summary","app-world-mobile-summary");
-        const pos = element("span","app-world-mobile-position",
-          row.position == null ? (row.played == null ? "—" : String(index + 1)) :
-            String(row.position));
         const name = element("span","app-world-mobile-name");
         const crest = createCrestHost(id);
         const clubLink = element("a","app-world-standing-club-link app-world-mobile-club-name",club.primaryName || club.abbr);
@@ -436,6 +432,11 @@
         clubLink.addEventListener("click",event=>event.stopPropagation());
         clubLink.addEventListener("keydown",event=>event.stopPropagation());
         name.append(crest,clubLink);
+        const details = element("details","app-world-mobile-details");
+        const summary = element("summary","app-world-mobile-summary");
+        const pos = element("span","app-world-mobile-position",
+          row.position == null ? (row.played == null ? "—" : String(index + 1)) :
+            String(row.position));
         const points = element("span","app-world-mobile-points",
           row.pts == null ? "—" : String(row.pts));
         const form = element("span","app-world-mobile-form");
@@ -589,6 +590,13 @@
     return verified;
   }
 
+  // The form's verified score is not a link identity. Only the official
+  // published fixture index can authorize navigation to a match detail.
+  function linkedFormMatchId(records,key,season){
+    const fixture=records.get(key)?.fixture;
+    return fixture&&window.faCompetitionMatchLinks?.forFixture(fixture,season)||null;
+  }
+
   function bindPublishedFormTooltips(){
     const host=document.getElementById("competition-panel-standings");
     const tooltip=document.createElement("div");
@@ -619,11 +627,21 @@
     tooltip.append(meta,scoreline,context);
     document.body.append(tooltip);
     let verified=new Map(),active=null,touchWasOpen=false;
-    const close=()=>{
+    const reducedMotion=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
+    const hide=()=>{tooltip.hidden=true;tooltip.className="app-world-form-tooltip";};
+    const close=(immediate=false)=>{
       active?.removeAttribute("aria-describedby");
-      active=null;tooltip.hidden=true;tooltip.className="app-world-form-tooltip";
+      active=null;
       tooltip.setAttribute("aria-hidden","true");
+      if(immediate||reducedMotion||tooltip.hidden){hide();return;}
+      // Keep the tooltip rendered until the 130ms CSS exit animation ends.
+      // Do not restart an animation already in progress.
+      if(tooltip.className!=="app-world-form-tooltip is-closing")
+        tooltip.className="app-world-form-tooltip is-closing";
     };
+    tooltip.addEventListener("animationend",event=>{
+      if(event.target===tooltip&&event.animationName==="app-world-tooltip-out"&&!active)hide();
+    });
     const place=()=>{
       if(!active||tooltip.hidden)return;
       const rect=active.getBoundingClientRect(),width=window.innerWidth,height=window.innerHeight;
@@ -669,18 +687,28 @@
     };
     host.addEventListener("pointerover",event=>{const node=target(event);if(node&&["mouse","pen"].includes(event.pointerType))open(node)});
     host.addEventListener("pointerout",event=>{const node=target(event);if(node&&active===node&&!node.contains(event.relatedTarget)&&["mouse","pen"].includes(event.pointerType))close()});
+    // A captured pointerleave also dismisses a focused mark when pointerout
+    // was lost during DOM replacement or a Safari history restoration.
+    host.addEventListener("pointerleave",event=>{
+      if(event.target===active&&["mouse","pen"].includes(event.pointerType))close();
+    },true);
+    // BFCache retains the tooltip DOM/state; never restore a stale hover.
+    window.addEventListener("pagehide",()=>close(true));
     host.addEventListener("focusin",event=>{const node=target(event);if(node)open(node)});
     host.addEventListener("focusout",event=>{const node=target(event);if(node&&active===node&&!node.contains(event.relatedTarget))close()});
     host.addEventListener("pointerdown",event=>{const node=target(event);touchWasOpen=!!node&&["touch","pen"].includes(event.pointerType)&&active===node});
     host.addEventListener("click",event=>{
       const node=target(event);if(!node)return;
+      // The native anchor handles navigation and new-tab gestures; the
+      // tooltip remains available on hover/focus. Never cancel anchor clicks.
+      if(node.tagName==="A"){event.stopPropagation();touchWasOpen=false;return}
       if(node.closest("summary")){event.preventDefault();event.stopPropagation()}
       if(touchWasOpen&&active===node)close();else open(node);
       touchWasOpen=false;
     });
     host.addEventListener("keydown",event=>{
       const node=target(event);
-      if(!node||node.tagName==="BUTTON"||!["Enter"," "].includes(event.key))return;
+      if(!node||["BUTTON","A"].includes(node.tagName)||!["Enter"," "].includes(event.key))return;
       event.preventDefault();event.stopPropagation();open(node);
     });
     document.addEventListener("pointerdown",event=>{if(active&&!active.contains(event.target))close()});
@@ -690,26 +718,46 @@
     document.querySelector(".fa-shell-content-scroll")?.addEventListener("scroll",place,{passive:true});
     document.querySelector(".app-world-standing-scroll")?.addEventListener("scroll",place,{passive:true});
     return {
-      clear(){verified=new Map();close()},
+      clear(){verified=new Map();close(true)},
       sync(records,rows,definition,rules){
-        close();verified=records;
+        close(true);verified=records;
         const list=document.getElementById("app-standings-compact-list");
         const items=new Map([...list.children].map(li=>[li.dataset.worldClub,li]));
         for(const row of rows){
           const identity=row.club.countryId+"-"+row.club.clubId;
           const owner=definition.category==="international"?rules.clubKey(row.club):String(row.club.clubId);
           const marks=[...items.get(identity)?.querySelectorAll(".app-world-mobile-form .app-world-form-dot")||[]];
-          marks.forEach((mark,index)=>{
+          marks.forEach((original,index)=>{
             const game=row.recent[index];
             const key=[owner,game.round,game.homeId,game.awayId].join("|");
-            if(records.has(key)){
-              mark.dataset.publishedForm=key;mark.tabIndex=0;
-              mark.setAttribute("role","button");mark.setAttribute("aria-haspopup","true");
+            const verified=records.has(key);
+            const matchId=verified?linkedFormMatchId(records,key,Number(window.faCompetitionContext?.selectedSeason)):null;
+            let mark=original;
+            // Mobile form initially uses spans. Upgrade only a confirmed
+            // published match to a native anchor, or remove a stale anchor
+            // when the world/season/source has changed.
+            if(matchId&&mark.tagName!=="A"||!matchId&&mark.tagName==="A"){
+              const next=document.createElement(matchId?"a":"span");
+              next.className=mark.className;next.textContent=mark.textContent;
+              if(mark.dataset.appI18n)next.dataset.appI18n=mark.dataset.appI18n;
+              mark.replaceWith(next);mark=next;
+            }
+            if(verified){
+              mark.dataset.publishedForm=key;
               mark.setAttribute("aria-label",game.result+" — "+game.round);
+              if(matchId){
+                mark.href="/matches/"+matchId;
+                mark.dataset.publishedMatch=matchId;
+                mark.removeAttribute("role");mark.removeAttribute("aria-haspopup");
+                mark.removeAttribute("tabindex");
+              }else{
+                delete mark.dataset.publishedMatch;mark.tabIndex=0;
+                mark.setAttribute("role","button");mark.setAttribute("aria-haspopup","true");
+              }
             }else{
-              delete mark.dataset.publishedForm;mark.removeAttribute("role");
-              mark.removeAttribute("aria-haspopup");mark.removeAttribute("aria-label");
-              mark.removeAttribute("tabindex");
+              delete mark.dataset.publishedForm;delete mark.dataset.publishedMatch;
+              mark.removeAttribute("role");mark.removeAttribute("aria-haspopup");
+              mark.removeAttribute("aria-label");mark.removeAttribute("tabindex");
             }
           });
         }
@@ -719,6 +767,29 @@
 
   function bindSuppliedPanels(mobile){
     const tbody=document.getElementById('app-standings-body'),rules=window.faCompetitionRules;
+    const subviewStrip=document.querySelector('.app-standings-subviews');
+    const subviewButtons=[...document.querySelectorAll('[data-standings-subview]')];
+    const syncSubviewEdges=()=>{
+      if(!subviewStrip||!subviewStrip.clientWidth)return;
+      const maximum=Math.max(0,subviewStrip.scrollWidth-subviewStrip.clientWidth);
+      subviewStrip.dataset.canScrollLeft=String(maximum>1&&subviewStrip.scrollLeft>1);
+      subviewStrip.dataset.canScrollRight=String(maximum>1&&subviewStrip.scrollLeft<maximum-1);
+    };
+    subviewStrip?.addEventListener('scroll',syncSubviewEdges,{passive:true});
+    window.addEventListener('resize',syncSubviewEdges,{passive:true});
+    window.addEventListener('pageshow',syncSubviewEdges);
+    if(subviewStrip&&typeof ResizeObserver!=='undefined')new ResizeObserver(syncSubviewEdges).observe(subviewStrip);
+    syncSubviewEdges();
+
+    const syncSubviews=()=>{
+      const cup=window.faCompetitionContext?.definition?.category==='international';
+      if(cup&&['first','second','last5'].includes(activeStandingsSubview))activeStandingsSubview='overall';
+      for(const button of subviewButtons){
+        button.hidden=Boolean(cup&&['first','second','last5'].includes(button.dataset.standingsSubview));
+        button.setAttribute('aria-pressed',String(button.dataset.standingsSubview===activeStandingsSubview));
+      }
+      syncSubviewEdges();
+    };
     // Mount the published tooltip only after verified played fixtures exist.
     // Do not change first paint or the empty-context bootstrap DOM.
     let publishedFormTips=null;
@@ -733,11 +804,13 @@
     let suppliedOwned=false;
     const empty=()=>{
       if(definition.category==='domestic')window.faPostseason?.prepare(null)();
-      if(definition.category==='domestic'&&!(activeDebugSeason===null&&window.faCompetitionContext?.selectedSeason>1)){
+      // Only explicitly enabled fictional seasons may show provisional clubs.
+      // Real entrants require independent verified Admin confirmation.
+      if(definition.category==='domestic'&&standingsAbsentMode(activeDebugSeason,publicStandingsState)==='debug-preview'){
         const rows=division.clubs.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
         renderDOM.keyed(tbody,division.clubs.map(club=>createStandingsRow(club)),row=>row.dataset.worldClub);mobile.prepare(rows)(true);publishedFormTips?.clear();suppliedOwned=false;return;
       }
-      const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=11;
+      const row=document.createElement('tr'),cell=document.createElement('td');row.className='app-standings-empty-row';cell.colSpan=11;
       cell.className='app-competition-empty-row';cell.dataset.appI18n='competitionStandingsEmpty';cell.textContent='No standings available yet.';row.appendChild(cell);tbody.replaceChildren(row);
       // At mobile widths the desktop table is CSS-hidden: preserve the same
       // translated empty state instead of silently replacing it with nothing.
@@ -746,7 +819,7 @@
       message.dataset.appI18n='competitionStandingsEmpty';message.textContent='No standings available yet.';
       li.appendChild(message);
       document.getElementById('app-standings-compact-list')?.replaceChildren(li);
-      publishedFormTips?.clear();window.faAppRenderLanguage?.();
+      publishedFormTips?.clear();suppliedOwned=false;window.faAppRenderLanguage?.();
     };
     const resetBracket=(keep=new Set())=>{
       slots.forEach((slot,i)=>{if(!keep.has(slot)&&slot.innerHTML!==initialSlots[i])slot.innerHTML=initialSlots[i]});
@@ -761,6 +834,7 @@
     };
     function refresh(){
       const context=window.faCompetitionContext;if(!context)return;
+      syncSubviews();
       const definition=context.definition,league=definition.rules.phases.find(p=>p.rankOutcomes),roundCount=definition.metrics.phases[league.id].rounds;
       const nextGraph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
       const panel=document.getElementById('competition-panel-postseason');
@@ -771,11 +845,19 @@
       const data=context.seasonData;
       if(definition.category==='domestic'&&!data?.statistics?.standings){
         publishedFormTips?.clear();
-        // An unresolved public Season 2 may temporarily render one anonymous
-        // empty row. On source handoff into DEV restore the 16 reserved rows,
-        // otherwise DEV hydration waits for a table that never materializes.
-        const wrongShell=(tbody.rows?.length??tbody.children?.length??0)!==division.clubs.length;
-        if(suppliedOwned||wrongShell||(activeDebugSeason===null&&context.selectedSeason>1))empty();
+        const mode=standingsAbsentMode(activeDebugSeason,publicStandingsState);
+        if(mode==='pending'){
+          // Preserve the fixed skeleton while public authority is unresolved.
+          // Static manifest membership is never a confirmation receipt.
+          window.faPostseason?.prepare(null)();
+          if(tbody.children.length)tbody.replaceChildren();
+          document.getElementById('app-standings-compact-list')?.replaceChildren();
+          suppliedOwned=false;
+        }else{
+          const expectedRows=mode==='debug-preview'?division.clubs.length:1;
+          const wrongShell=(tbody.rows?.length??tbody.children?.length??0)!==expectedRows;
+          if(suppliedOwned||wrongShell)empty();
+        }
         return;
       }
       if(!data){resetBracket();empty();return;}
@@ -792,11 +874,24 @@
           if(row.played>roundCount||row.won+row.drawn+row.lost!==row.played||row.gd!==row.gf-row.ga)throw Error('Invalid supplied totals');
           return {...row,club,position:index+1,recent:row.recent||[]};
         }):data.participants.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
-        const commitMobile=mobile.prepare(rows);
-        const verifiedForms=verifiedPublishedForms(data,rows,definition,rules);
-        const desktop=rows.map((row,index)=>{
-          const tr=createStandingsRow(row.club);decorateStanding(tr,supplied?index+1:null);
-          if(supplied){
+        const projected=activeStandingsSubview==='overall'?rows:
+          projectStandings?.(rows,data.fixtures,definition,activeStandingsSubview);
+        const preKickoff=Boolean(supplied&&!hasPlayedLeagueMatches(data));
+        const displayReady=Boolean(supplied&&projected&&!preKickoff);
+        // Before the first real match, display verified entrants alphabetically
+        // without adopting the backend's technical zero-point tie-break order.
+        const displayRows=preKickoff?[...rows].sort((a,b)=>
+          a.club.primaryName.localeCompare(b.club.primaryName,'en',{sensitivity:'base'})||
+          rules.clubKey(a.club).localeCompare(rules.clubKey(b.club),'en'))
+          .map(row=>({...row,position:null,played:null,won:null,drawn:null,lost:null,
+            gf:null,ga:null,gd:null,pts:null,recent:[]})):
+          projected||rows.map(row=>({...row,played:null,won:null,drawn:null,
+            lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
+        const commitMobile=mobile.prepare(displayRows);
+        const verifiedForms=verifiedPublishedForms(data,displayRows,definition,rules);
+        const desktop=displayRows.map((row,index)=>{
+          const tr=createStandingsRow(row.club);decorateStanding(tr,displayReady?index+1:null);
+          if(displayReady){
             const values=[index+1,null,...['played','won','drawn','lost','gf','ga','gd','pts'].map(k=>row[k])];
             values.forEach((value,i)=>{if(i!==1)tr.children[i].textContent=String(value)});
             // A real match can use the domestic tooltip layout only when
@@ -807,8 +902,13 @@
               for(const game of row.recent){
                 const key=[owner,game.round,game.homeId,game.awayId].join('|');
                 const isVerified=verifiedForms.has(key);
-                const mark=document.createElement(isVerified?'button':'span');
-                if(isVerified){mark.type='button';mark.dataset.publishedForm=key;mark.setAttribute('aria-haspopup','true')}
+                const matchId=isVerified?linkedFormMatchId(verifiedForms,key,context.selectedSeason):null;
+                const mark=document.createElement(matchId?'a':isVerified?'button':'span');
+                if(isVerified){
+                  mark.dataset.publishedForm=key;
+                  if(matchId){mark.href='/matches/'+matchId;mark.dataset.publishedMatch=matchId;}
+                  else{mark.type='button';mark.setAttribute('aria-haspopup','true');}
+                }
                 mark.className='app-world-form-dot'+(isVerified?' app-world-form-control':'')+
                   ' app-world-form-'+game.result.toLowerCase()+
                   (game===row.recent[0]?' app-world-form-last':'');
@@ -854,7 +954,7 @@
         renderDOM.keyed(tbody,desktop,row=>row.dataset.worldClub);commitMobile(true);
         if(verifiedForms.size){
           if(!publishedFormTips)publishedFormTips=bindPublishedFormTooltips();
-          publishedFormTips.sync(verifiedForms,rows,definition,rules);
+          publishedFormTips.sync(verifiedForms,displayRows,definition,rules);
         }else publishedFormTips?.clear();
         commitDomestic?.();suppliedOwned=true;resetBracket(new Set(updates.filter(item=>item.club).map(item=>item.slot)));
         for(const {slot,club} of updates)if(club){
@@ -889,7 +989,49 @@
       }catch(error){if(window.faDevPreviewMode===true)console.warn('Standings snapshot presentation rejected',error);resetBracket();empty();}
       window.faAppRenderLanguage?.();
     }
-    window.addEventListener('fa:competition-context-change',refresh);refresh();
+    const setSubview=next=>{
+      if(!STANDINGS_SUBVIEWS.includes(next)||next===activeStandingsSubview)return;
+      activeStandingsSubview=next;
+      syncSubviews();refresh();refreshSeasonPresentation();
+      window.dispatchEvent(new CustomEvent('fa:standings-subview-change',{detail:{view:next}}));
+    };
+    document.querySelector('.app-standings-subviews')?.addEventListener('click',event=>{
+      const button=event.target.closest?.('[data-standings-subview]');
+      if(!button||button.hidden)return;
+      const next=button.dataset.standingsSubview;
+      if(next===activeStandingsSubview)return;
+      const url=new URL(window.location.href);
+      if(next==='overall')url.searchParams.delete('table');else url.searchParams.set('table',next);
+      window.history.pushState(null,'',url.href);
+      setSubview(next);
+    });
+    document.querySelector('.app-standings-subviews')?.addEventListener('keydown',event=>{
+      const button=event.target.closest?.('[data-standings-subview]');
+      if(!button||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+      const buttons=subviewButtons.filter(x=>!x.hidden),index=buttons.indexOf(button);
+      if(index<0)return;
+      event.preventDefault();
+      const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:
+        (index+(event.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length;
+      buttons[next].click();buttons[next].focus({preventScroll:true});
+    });
+    const onNavigation=()=>setSubview(readStandingsSubview());
+    window.addEventListener('popstate',onNavigation);
+    window.addEventListener('fa:competition-route-change',onNavigation);
+    window.addEventListener('fa:competition-context-change',refresh);
+    window.addEventListener('fa:published-match-links-change',refresh);
+    // The official collection may finish before the global season loader.
+    // #659 correctly withholds match links while the table is loading.
+    // Rebind verified native W/D/L anchors once that flag clears; otherwise
+    // the initial tooltip-only controls can remain inert until navigation.
+    if(typeof MutationObserver==='function')new MutationObserver(()=>{
+      if(document.documentElement.dataset.faStandingsLoading!=='true'&&
+         window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')
+        refresh();
+    }).observe(document.documentElement,{attributes:true,
+      attributeFilter:['data-fa-standings-loading']});
+    standingsRefresh=refresh;
+    refresh();
   }
 
   // Form tooltips are regression-tested against isolated Node fixtures.
@@ -1003,7 +1145,7 @@
       });
       button.addEventListener("pointerleave",event => {
         if ((event.pointerType === "mouse" || event.pointerType === "pen") &&
-            active === button && document.activeElement !== button) close();
+            active === button) close();
       });
       button.addEventListener("focus",() => open(entry));
       button.addEventListener("blur",() => { if (active === button) close(); });
@@ -1047,6 +1189,25 @@
     return value;
   };
   let definition,division,activeDebugSeason,mountedPostseasonGraph;
+  let publicStandingsState='pending',standingsRefresh=null;
+  function standingsAbsentMode(debugSeason,sourceState){
+    if(Number.isInteger(debugSeason)&&debugSeason>0)return 'debug-preview';
+    return debugSeason===0||sourceState==='empty'?'empty':'pending';
+  }
+  let activeStandingsSubview='overall',projectStandings;
+  const STANDINGS_SUBVIEWS=['overall','first','second','home','away','last5'];
+  // A verified entrant list is not a sporting ranking. The table only
+  // becomes meaningful after this competition has played a league match.
+  function hasPlayedLeagueMatches(data){
+    const rows=data?.statistics?.standings;
+    return Array.isArray(rows)&&rows.some(row=>Number.isSafeInteger(row?.played)&&row.played>0);
+  }
+  function readStandingsSubview(){
+    const query=new URL(window.location.href).searchParams.get('table');
+    if(!STANDINGS_SUBVIEWS.includes(query))return 'overall';
+    if(definition?.category==='international'&&['first','second','last5'].includes(query))return 'overall';
+    return query;
+  }
   function createContext(definition,selectedSeason,seasonData,revision){
     if(!Number.isSafeInteger(selectedSeason)||selectedSeason<1||!Number.isSafeInteger(revision)||revision<1)
       throw Error("Invalid competition context");
@@ -1065,6 +1226,7 @@
   function nextContext(season,data=null,{force=false}={}){
     const current=window.faCompetitionContext;
     if(!force&&current?.selectedSeason===season&&(current.seasonData===data||data&&current.seasonData&&JSON.stringify(current.seasonData)===JSON.stringify(data)))return;
+    if(!data)publicStandingsState='pending';
     publishCompetitionContext(createContext(definition,season,data,(current?.revision||0)+1));
   }
   function selectSeason(season){
@@ -1077,7 +1239,13 @@
     if(window.faCompetitionContext)nextContext(window.faCompetitionContext.selectedSeason);
   }
   function setDebugSeason(season){
-    if(season!==null&&window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return false;
+    // The DEV widget publishes faDevCurrentSeason even when optional
+    // faDevSeasons metadata is absent. Reject public callers, but permit a
+    // genuine enabled DEV source to transition to Season 0 and remove all
+    // previously mounted entrant identities instead of retaining Season 1.
+    if(season!==null&&window.faDevPreviewMode!==true&&
+      document.documentElement.dataset.faDevSeasons===undefined&&
+      !(window.faDebugEnabled===true&&document.documentElement.dataset.faDevCurrentSeason!==undefined))return false;
     if(season!==null&&(!Number.isInteger(season)||season<0||season>4))return false;
     if(activeDebugSeason!==season){
       activeDebugSeason=season;
@@ -1085,7 +1253,14 @@
       // published yet; rebuild the correct first-paint shell for this source.
       if(window.faCompetitionContext)nextContext(window.faCompetitionContext.selectedSeason,null,{force:true});
     }
-    if(season===0)selectSeason(1);
+    if(season===0){
+      selectSeason(1);
+      // The DEV widget can change global progress without another context
+      // revision (e.g. when the viewed Season 1 already has null data).
+      // Explicitly reconcile the existing DOM so no Season 1 provisional
+      // club rows survive an unconfirmed Season 0 source switch.
+      standingsRefresh?.();
+    }
     return true;
   }
   function acceptSeasonData(data,expectedRevision,authoritative=false){
@@ -1122,9 +1297,9 @@
     // Share the one validated manifest read with the local DEV presenters.
     // The promise is installed synchronously before any dependent script boots.
     const manifest=await (window.faCompetitionManifestPromise ||= (async()=>{
-      const dataResponse=await fetch(new URL("manifest.json",root),{credentials:"same-origin"});
+      const dataResponse=await fetch(new URL("compact.json",root),{credentials:"same-origin"});
       if(!dataResponse.ok)throw Error("Competition data unavailable");
-      return dataResponse.json();
+      return model.expandCompactManifest(await dataResponse.json());
     })());
     if(!model.validManifest(manifest))throw Error("Invalid or approved competition manifest");
     definition=model.competitionById(manifest,routeId);
@@ -1187,6 +1362,9 @@
     const tbody = document.getElementById("app-standings-body");
     const mobile = createMobileStandings();
     suppliedMobile=mobile;
+    // The manifest is an identity catalogue, not an entrants confirmation.
+    // Keep the generated first-paint skeleton until a verified source resolves.
+    if(standingsAbsentMode(activeDebugSeason,publicStandingsState)==='debug-preview'){
     const provisional = division.clubs.map(club => ({
       club,position:null,played:null,won:null,drawn:null,lost:null,
       gf:null,ga:null,gd:null,pts:null,recent:[]
@@ -1213,6 +1391,9 @@
       if(link!==name)name.replaceWith(link);
     });
     commitMobile();
+    }else{
+      tbody.replaceChildren();
+    }
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;
     createPostseason(division);
@@ -1229,6 +1410,18 @@
       cell.textContent="No standings available yet.";empty.appendChild(cell);
       document.getElementById("app-standings-body").replaceChildren(empty);
     }
+    // Load the optional split projector without blocking the existing competition
+    // bootstrap. Standings reserve their unknown cells until it is available.
+    activeStandingsSubview=readStandingsSubview();
+    window.faStandingsSubViews=Object.freeze({
+      get:()=>activeStandingsSubview,
+      project:(rows,fixtures,definition)=>projectStandings?.(rows,fixtures,definition,activeStandingsSubview)
+    });
+    void import(new URL('standings-subviews.mjs',sourceUrl).href).then(module=>{
+      projectStandings=module.projectStandings;
+      refreshSeasonPresentation();
+      window.dispatchEvent(new CustomEvent('fa:standings-subview-change',{detail:{view:activeStandingsSubview}}));
+    }).catch(()=>{});
     bindSuppliedPanels(suppliedMobile);
     if(!document.querySelector('link[href="/assets/competition-awards.css"]')){const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);}
     // The module bootstrap does not delay legacy shared-page initialization.
@@ -1247,7 +1440,10 @@
     {
       try{
         const initialExplicitSeason=requestedSeasonWasExplicit;let publicDefaultApplied=false;
-        const {createAuthoritativeLoader}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
+        const {createAuthoritativeLoader,createCompetitionSeasonReadCache}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
+        // Validated official snapshots only. Changing a view or selecting an
+        // already-visited season never needs to repeat a current-world API read.
+        const seasonReadCache=createCompetitionSeasonReadCache();
         const {mountAuthoritativeHistory}=await import(new URL('authoritative-history.mjs',sourceUrl).href);
         const historyPanel=document.getElementById('competition-panel-history');
         const history=historyPanel?mountAuthoritativeHistory(historyPanel,{manifest,isDev:()=>activeDebugSeason!==null,getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()}):null;
@@ -1256,32 +1452,93 @@
         // Each competition view owns its empty/loading shell; no global
         // "No published season data yet" banner is inserted above standings.
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');/* No cross-view empty banner; retain panel-specific loading states. */},
+          commit:(data,revision)=>{
+            const selectedSeason=window.faCompetitionContext?.selectedSeason;
+            const accepted=acceptSeasonData(data,revision,true);
+            if(accepted)seasonReadCache.remember({
+              competitionId:definition.id,season:selectedSeason,
+              snapshot:window.faWorldState?.get?.(),data
+            });
+            return accepted;
+          },onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');if(activeDebugSeason===null){publicStandingsState=state==='empty'?'empty':state==='partial'||state==='available'?'verified':'pending';if(state==='empty'||state==='unavailable')standingsRefresh?.();}/* No cross-view empty banner; retain panel-specific loading states. */},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.
-        let selection='',pendingLoads=0,lastWorldReload='';
+        let selection='',pendingLoads=0,lifecycleEpoch=0,lastWorldReload='',lastSuccessfulRead='';
+        const worldReadKey=(context,snapshot)=>JSON.stringify([context?.definition?.id,
+          context?.selectedSeason,snapshot?.sourceRevision,snapshot?.world?.generation,
+          snapshot?.world?.revision,snapshot?.world?.seasonNumber,snapshot?.world?.day]);
         const revalidateWorld=snapshot=>{
           const c=window.faCompetitionContext,data=c?.seasonData;
-          if(activeDebugSeason!==null||pendingLoads||snapshot?.source!=='authoritative'||data?.provenance?.kind!=='authoritative')return;
-          if(snapshot.world&&window.faWorldClockAdapter.sameWorld(data.world,snapshot.world))return;
-          const token=JSON.stringify([c.definition.id,c.selectedSeason,snapshot.sourceRevision,snapshot.world?.generation,snapshot.world?.revision,snapshot.world?.seasonNumber,snapshot.world?.day]);
-          if(lastWorldReload===token)return;
+          if(activeDebugSeason!==null||pendingLoads||!c||snapshot?.source!=='authoritative'||
+             snapshot.worldStatus!=='ready'||!snapshot.world)return;
+          if(data?.provenance?.kind==='authoritative'&&
+             window.faWorldClockAdapter.sameWorld(data.world,snapshot.world))return;
+          const token=worldReadKey(c,snapshot);
+          // Confirmed empty reads are successful, not a reason to refetch.
+          // After a failed initial read (no seasonData), allow one bounded
+          // recovery attempt at this exact world/season revision.
+          if(lastWorldReload===token||lastSuccessfulRead===token)return;
           lastWorldReload=token;void load();
         };
         const load=()=>{
+          const lifecycle=lifecycleEpoch;
           pendingLoads++;
-          return loader.load().finally(()=>{
+          return loader.load().then(success=>{
+            if(success)lastSuccessfulRead=worldReadKey(window.faCompetitionContext,
+              window.faWorldState?.get?.());
+            return success;
+          }).finally(()=>{
+            // A Safari BFCache pagehide may suspend an aborted request
+            // indefinitely. Its completion must not consume the restored
+            // document's pending-load slot or block future revalidation.
+            if(lifecycle!==lifecycleEpoch)return;
             pendingLoads--;
             if(pendingLoads===0)revalidateWorld(window.faWorldState?.get?.());
           });
         };
-        const select=()=>{if(activeDebugSeason!==null){loader.cancel();window.faStandingsLoading?.set('api',false);return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void load()};
+        const select=()=>{
+          if(activeDebugSeason!==null){
+            loader.cancel();seasonReadCache.clear();
+            window.faStandingsLoading?.set('api',false);return;
+          }
+          const c=window.faCompetitionContext,snapshot=window.faWorldState?.get?.();
+          const key=c?.definition.id+':'+c?.selectedSeason+':'+snapshot?.sourceRevision;
+          if(key===selection)return;
+          selection=key;
+          const cached=seasonReadCache.find({
+            competitionId:definition.id,season:c?.selectedSeason,snapshot
+          });
+          if(cached){
+            // Abort a stale in-flight season request before restoring the
+            // previously verified official snapshot for this exact world.
+            loader.cancel();
+            if(acceptSeasonData(cached.data,c.revision,true)){
+              lastSuccessfulRead=worldReadKey(window.faCompetitionContext,snapshot);
+              window.faStandingsLoading?.set('api',false);
+              return;
+            }
+          }
+          void load();
+        };
         window.addEventListener('fa:competition-context-change',select);
-        window.addEventListener('fa:source-change',()=>{if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;selection='';setDebugSeason(window.faDebugEnabled!==true?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select()});
+        window.addEventListener('fa:source-change',()=>{
+          // DEV and public world generations must never share cached sporting
+          // participants, historical rules, results, or match outcomes.
+          seasonReadCache.clear();
+          if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;
+          selection='';setDebugSeason(window.faDebugEnabled!==true?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select();
+        });
         window.faWorldState?.subscribe?.(revalidateWorld);
         window.addEventListener('pageshow',event=>{if(event.persisted)void load()});
-        window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});
+        window.addEventListener('pagehide',event=>{
+          // BFCache restores the document and its JS state, including any
+          // in-flight loading token. Cancel and release that token so match
+          // links cannot remain disabled after Safari Back navigation.
+          lifecycleEpoch++;pendingLoads=0;loader.cancel();
+          window.faStandingsLoading?.set('api',false);
+          if(!event.persisted)loader.dispose();
+        });
         select();
       }catch{window.faStandingsLoading?.set('api',false);clearSeasonData();}
     }

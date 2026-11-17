@@ -5,7 +5,7 @@ import {requireDatabase} from './database.ts';
 import {PREVIEW_RETENTION_CRON,pruneExpiredPlayerPreviews} from './player-preview-retention.ts';
 import {parseRoute,competitionViews,clubViews} from '../../assets/routes-registry.mjs';
 import {readPublicMatchLineupV1 as readPublicMatch} from './public-match-read-lineup-v1.ts';
-import {applyPublishedMatchFirstPaint} from '../../tools/match-first-paint.mjs';
+import {applyPublishedMatchDocument} from '../../tools/match-first-paint.mjs';
 export interface PreviewEnv extends Env {ASSETS:Pick<typeof globalThis,'fetch'>;PREVIEW_SOURCE_SHA?:string}
 const privateHeaders={'Cache-Control':'private, no-store, max-age=0','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow','X-Content-Type-Options':'nosniff'};
 // Only eligible missing documents receive the friendly HTML; resources keep
@@ -88,7 +88,7 @@ export default {
      }catch{/* Unpublished, missing or stale world: never guess branding. */}
      if(published){
       const html=await response.text();
-      const decorated=applyPublishedMatchFirstPaint(html,published,id);
+      const decorated=applyPublishedMatchDocument(html,published,id);
       headers.delete('Content-Length');headers.delete('ETag');headers.delete('Content-Encoding');
       return new Response(decorated,{status:200,headers});
      }

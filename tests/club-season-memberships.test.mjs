@@ -128,6 +128,20 @@ test('QA-16: single-request protocol validates authoritative data, future matche
  const inactive=projectClubMemberships(payload([]),'IT-17',2,world);
  assert.deepEqual(inactive.memberships,[],'inactive clubs have verified no memberships, not an error');
 });
+test('QA-16: a verified club with zero memberships shows a localized no-active-competitions message',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const selected=model.route('/clubs/it/17/overview');
+ const inactive=projectClubMemberships(payload([]),'IT-17',2,world);
+ for(const lang of ['en','de','es','fr','it']){
+  const html=model.render(manifest,selected,lang,'',inactive,2);
+  const panel=html.match(/<section class="app-panel club-competition"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(panel,lang+' Competitions panel exists');
+  assert.ok(panel.includes(model.copies[lang].noActiveCompetitions),lang+' uses the no-active message');
+  assert.ok(!panel.includes(model.copies[lang].outside),lang+' does not claim a different playing structure');
+  assert.doesNotMatch(panel,/club-competition-entry|data-club-position/,'No phantom competition rows');
+ }
+});
 test('QA-16: international status shows verified bracket phases, not stale league ranks',async()=>{
  const {default:model}=await import('../assets/club-model.js');
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));

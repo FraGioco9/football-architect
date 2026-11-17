@@ -41,9 +41,9 @@ test('publication aliases map canonical app URLs to the same allowlisted DEV fil
   const config=JSON.parse(read('vercel.json'));
   const tokens=[[':page(dashboard|calendar|settings|admin|competitions|players)','(?<page>dashboard|calendar|settings|admin|competitions|players)'],
     [':division((?:it|eng|es|de|fr|pt|nl|br)-[12])','(?<division>(?:it|eng|es|de|fr|pt|nl|br)-[12])'],
-    [':file(index.html|manifest.json)','(?<file>index.html|manifest.json)'],
+    [':file(index.html|manifest.json|compact.json)','(?<file>index.html|manifest.json|compact.json)'],
     [':section(calendar|players|contracts)','(?<section>calendar|players|contracts)']];
-  const paths=['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/competitions/_shared/manifest.json',
+  const paths=['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/competitions/_shared/manifest.json','/competitions/_shared/compact.json',
     ...['it','eng','es','de','fr','pt','nl','br'].flatMap(country=>[1,2].map(tier=>'/competitions/'+country+'-'+tier))];
   for(const path of paths){
     let target;

@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="/assets/app.css">
   <script>(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split("/").filter(Boolean).at(-1),s=p.get("season");document.documentElement.dataset.competitionView=["standings","postseason","fixtures","stats","history","rules","awards"].includes(v)?v:["standings","postseason","fixtures","stats","history","rules","awards"].includes(p.get("view"))?p.get("view"):"standings";document.documentElement.dataset.competitionSeasonUnavailable="false";document.documentElement.dataset.faStandingsLoading="true"})();</script>
     <script data-fa-competition-first-paint-init>document.documentElement.setAttribute("data-fa-competition-prepaint","");document.addEventListener("DOMContentLoaded",()=>document.documentElement.removeAttribute("data-fa-competition-prepaint"),{once:true});</script>
-  <style data-fa-competition-shell>html[data-fa-competition-prepaint]:not([data-competition-view="history"]) body{visibility:hidden}#app-divisions{display:flex;flex-direction:column}#app-divisions>.app-competition-header{order:0}#app-divisions>#app-competition-season-unavailable{order:0}#app-divisions>.app-competition-tabs{order:1;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap,28px);padding:0 0 7px;border-bottom:1px solid var(--line)}#app-divisions>.app-competition-panel{order:2}</style>
+  <style data-fa-competition-shell>html[data-fa-competition-prepaint]:not([data-competition-view="history"]) .fa-shell-content-scroll{opacity:0}html[data-competition-view]:not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) .fa-shell-content-scroll{opacity:1;visibility:visible}#app-divisions{display:flex;flex-direction:column}#app-divisions>.app-competition-header{order:0}#app-divisions>#app-competition-season-unavailable{order:0}#app-divisions>.app-competition-tabs{order:1;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap,28px);padding:0 0 7px;border-bottom:1px solid var(--line)}#app-divisions>.app-competition-panel{order:2}</style>
   <link rel="stylesheet" href="/assets/competition-awards.css">
   <script data-fa-competition-preboot>(function bootstrapCompetitionTabs() {
   const views = ['standings', 'postseason', 'fixtures', 'stats', 'history', 'rules', 'awards'];
@@ -417,6 +417,16 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
 })("history");</script>
           </section>
           <div id="competition-panel-standings" aria-busy="true" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">
+          <div class="app-standings-subviews" role="group" aria-label="Standings breakdown" data-app-aria="standingsSubviewLabel">
+            <button type="button" class="app-competition-tab" data-standings-subview="overall" data-app-i18n="standingsViewOverall" aria-pressed="true">Overall</button>
+            <button type="button" class="app-competition-tab" data-standings-subview="first" data-app-i18n="standingsViewFirstHalf" aria-pressed="false">First half</button>
+            <button type="button" class="app-competition-tab" data-standings-subview="second" data-app-i18n="standingsViewSecondHalf" aria-pressed="false">Second half</button>
+            <button type="button" class="app-competition-tab" data-standings-subview="home" data-app-i18n="standingsViewHome" aria-pressed="false">Home</button>
+            <button type="button" class="app-competition-tab" data-standings-subview="away" data-app-i18n="standingsViewAway" aria-pressed="false">Away</button>
+            <button type="button" class="app-competition-tab" data-standings-subview="last5" data-app-i18n="standingsViewLastFive" aria-pressed="false">Last 5</button>
+          </div>
+          <script>(()=>{const valid=['overall','first','second','home','away','last5'],cup=/^int-[12]$/.test(document.querySelector('meta[name="fa-competition"]')?.content||'');const query=new URL(location.href).searchParams.get('table'),selected=valid.includes(query)&&!(cup&&['first','second'].includes(query))?query:'overall';for(const button of document.querySelectorAll('[data-standings-subview]')){button.hidden=cup&&['first','second'].includes(button.dataset.standingsSubview);button.setAttribute('aria-pressed',String(button.dataset.standingsSubview===selected));}})();</script>
+          
           <div class="app-world-standings">
             <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
               <table class="app-world-standing-table">
