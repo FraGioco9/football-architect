@@ -1241,7 +1241,8 @@ svg.site-chevron>path{translate:0 .5px}
  .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity]{width:auto;max-width:100%;margin-left:0;min-height:40px}
  .app-standings-skeleton .app-world-mobile-name .app-world-club-crest-placeholder{flex:0 0 40px;width:40px;height:40px}
 }
-#competition-panel-standings{position:relative}
+/* Match Roster subview spacing: the 42px row centers 32px buttons with 5px above and below. */
+#competition-panel-standings{position:relative;margin-top:0}
 html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]) #competition-panel-standings>.app-world-standings{position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
 html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]) #competition-panel-standings>.app-standings-skeleton{display:block}
 /* Club names and points lead the standings hierarchy; other statistics stay normal. */
