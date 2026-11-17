@@ -1014,9 +1014,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       for(const country of ['DE','BR','PT']){
         // The first-paint skeleton has separate canonical crest hosts.
         // Assert both hydrated projections, independently of the decorative skeleton.
-        await visit('/competitions/'+country.toLowerCase()+'-1/standings',
-          "!!window.faFixtures&&!!document.querySelector('#competition-panel-standings>.app-world-standings')"+
-          "&&getComputedStyle(document.querySelector('#competition-panel-standings>.app-world-standings')).visibility==='visible'");
+        // Public entrants are intentionally unavailable until confirmed by
+        // Admin; crest rendering requires explicit fictional DEV identities.
+        await visitUnknownStandings('/competitions/'+country.toLowerCase()+'-1/standings','dark');
         const selector='[data-club-crest="'+country+'-1"]';
         await wait("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify('.app-world-standings '+selector)+")];return hosts.length===2&&hosts.every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)})()");
         // Preserve the strict rendering assertion below, but sample it only
@@ -1037,7 +1037,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     for(const width of [1440,390])for(const theme of ['dark','light']){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
       await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
-      await visit('/competitions/de-1/standings',"[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");
+      await visitUnknownStandings('/competitions/de-1/standings',theme);
+      await wait("[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");
       for(const refresh of [false,true]){
         if(refresh){await run('window.__crestBeforeReload=true');await cmd('Page.reload',{ignoreCache:false});await wait("window.__crestBeforeReload!==true&&document.readyState==='complete'&&[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");}
         assert.ok(await run('window.__crestLoadingFrames>0'),'Slow SVG actually exercised the loading state');
