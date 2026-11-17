@@ -357,6 +357,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await snap(name+" "+theme+" standings",w,h);
         await wait("!!window.faFixtures&&document.documentElement.dataset.faStandingsLoading==='false'");
         await run("document.getElementById('competition-tab-fixtures').click()");
+        // This QA route uses a DEV season to style the unknown-stat table,
+        // so clear its independently generated DEV fixtures before checking
+        // the genuinely unscheduled shell. Public Season 0 has no entrants.
+        await run("window.faFixtures.prepare(null)()");
         assert.equal(await run("['round','previous','next'].every(id=>document.getElementById('app-fixtures-'+id).getClientRects().length===0)"),true,"no matchday controls without a schedule");
         const fixtureDivision=JSON.parse(await readFile(join(root,"competitions/_shared/manifest.json"),"utf8")).divisions.find(d=>d.id==="IT-1");
         const fixtureModel=createPreviewStandings(fixtureDivision,30).fixtures.map(game=>({...game,kickoff:null,homeGoals:null,awayGoals:null}));

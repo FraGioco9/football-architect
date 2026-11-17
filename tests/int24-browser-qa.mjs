@@ -962,11 +962,28 @@ try {
    assert.deepEqual(actual,expected,label+' must render the canonical 16 approved DEV identities');
   };
   const assertSeasonZeroUnconfirmed=async(label)=>{
-   await page.waitForFunction(()=>window.faCompetitionContext?.seasonData===null &&
-    document.documentElement.dataset.faStandingsLoading==='false' &&
-    document.querySelectorAll('#app-standings-body [data-club-crest]').length===0 &&
-    !!document.querySelector('#app-standings-body .app-competition-empty-row') &&
-    !!document.querySelector('#app-standings-compact-list .app-world-mobile-empty'));
+   try{
+    await page.waitForFunction(()=>window.faCompetitionContext?.seasonData===null &&
+     document.documentElement.dataset.faStandingsLoading==='false' &&
+     document.querySelectorAll('#app-standings-body [data-club-crest]').length===0 &&
+     !!document.querySelector('#app-standings-body .app-competition-empty-row') &&
+     !!document.querySelector('#app-standings-compact-list .app-world-mobile-empty'));
+   }catch(error){
+    // A source handoff regression must report what remained mounted, not
+    // merely a 30-second timeout on an anonymous readiness predicate.
+    console.error('SEASON_ZERO_DEBUG_DIAGNOSTIC '+JSON.stringify(await page.evaluate(()=>({
+     enabled:window.faDebugEnabled,devSeason:document.documentElement.dataset.faDevCurrentSeason,
+     devSeasons:document.documentElement.dataset.faDevSeasons??null,
+     contextSeason:window.faCompetitionContext?.selectedSeason,
+     contextData:window.faCompetitionContext?.seasonData?.season??null,
+     loading:document.documentElement.dataset.faStandingsLoading,
+     desktopRows:document.querySelectorAll('#app-standings-body tr').length,
+     crests:document.querySelectorAll('#app-standings-body [data-club-crest]').length,
+     emptyDesktop:!!document.querySelector('#app-standings-body .app-competition-empty-row'),
+     emptyMobile:!!document.querySelector('#app-standings-compact-list .app-world-mobile-empty')
+    }))));
+    throw error;
+   }
    assert.equal(await page.locator('#app-standings-body [data-world-club],#app-standings-compact-list [data-world-club]').count(),0,
     label+' must not leak any unconfirmed identities');
   };

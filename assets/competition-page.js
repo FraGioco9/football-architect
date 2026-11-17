@@ -1208,7 +1208,13 @@
     if(window.faCompetitionContext)nextContext(window.faCompetitionContext.selectedSeason);
   }
   function setDebugSeason(season){
-    if(season!==null&&window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return false;
+    // The DEV widget publishes faDevCurrentSeason even when optional
+    // faDevSeasons metadata is absent. Reject public callers, but permit a
+    // genuine enabled DEV source to transition to Season 0 and remove all
+    // previously mounted entrant identities instead of retaining Season 1.
+    if(season!==null&&window.faDevPreviewMode!==true&&
+      document.documentElement.dataset.faDevSeasons===undefined&&
+      !(window.faDebugEnabled===true&&document.documentElement.dataset.faDevCurrentSeason!==undefined))return false;
     if(season!==null&&(!Number.isInteger(season)||season<0||season>4))return false;
     if(activeDebugSeason!==season){
       activeDebugSeason=season;

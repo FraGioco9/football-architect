@@ -162,7 +162,7 @@ function node(tag){
  return n;
 }
 
-async function simulate({division,ending="/",data=manifest,shell=null,fetchFailure=false,demo=false,testHooks=false,metadata=undefined,devSeason=null,onLoad=null}){
+async function simulate({division,ending="/",data=manifest,shell=null,fetchFailure=false,demo=false,testHooks=false,metadata=undefined,devSeason=null,withoutDevSeasons=false,onLoad=null}){
  const loaded=[],requested=[],fields=new Map(),contexts=[];
  const selected=division?.id??"IT-1";
  shell??=read("competitions/"+selected.toLowerCase()+"/index.html");
@@ -201,7 +201,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
   events:{},activeElement:null,
   addEventListener(name,fn){(this.events[name]??=[]).push(fn)},
   emit(name,event){for(const fn of this.events[name]??[])fn(event)},
-  documentElement:{dataset:devSeason===null?{}:{faDevSeasons:"1,2,3,4",faDevCurrentSeason:String(devSeason)}},
+  documentElement:{dataset:devSeason===null?{}:withoutDevSeasons?{faDevCurrentSeason:String(devSeason)}:{faDevSeasons:"1,2,3,4",faDevCurrentSeason:String(devSeason)}},
   currentScript:{src:root+"/assets/competition-page.js"},
   head:{
    append(...assets){for(const asset of assets)this.appendChild(asset)},
@@ -793,4 +793,19 @@ test('POSTSEASON: supplied domestic results populate the same cards and clear on
   assert.ok(r.postseasonNodes.score.every(score=>score.textContent===''),id);
   assert.ok(r.postseasonNodes.row.every(row=>row.dataset.postseasonWinner==='false'),id);
  }
+});
+
+test('SEASON-0 rollback: enabled DEV world transitions without optional faDevSeasons metadata',async()=>{
+ const r=await simulate({division:divisionsForTest('IT-1'),devSeason:1,withoutDevSeasons:true});
+ const api=r.window.faCompetitionContextApi,desktop=r.fields.get('app-standings-body'),mobile=r.fields.get('app-standings-compact-list');
+ assert.equal(desktop.children.length,16,'explicit DEV Season 1 has its provisional club rows');
+ assert.equal(api.setDebugSeason(0),true,'enabled DEV may enter Season 0 without a season-list marker');
+ assert.equal(r.window.faCompetitionContext.seasonData,null);
+ assert.equal(desktop.children.length,1,'Season 0 replaces stale 16 clubs with one empty state');
+ assert.equal(desktop.children[0].children[0].dataset.appI18n,'competitionStandingsEmpty');
+ assert.equal(mobile.children.length,1,'mobile Season 0 has the same empty state');
+ assert.equal(mobile.children[0].children[0].dataset.appI18n,'competitionStandingsEmpty');
+ assert.equal(api.setDebugSeason(1),true,'DEV Season 1 can be reactivated');
+ assert.equal(desktop.children.length,16,'DEV Season 1 can remount its provisional identities');
+ assert.equal(mobile.children.length,16);
 });
