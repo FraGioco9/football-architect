@@ -31,11 +31,15 @@ import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CROSS_LAB_STARTS,SAVE_LAB_STARTS,DE
 export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
  controlSide='home',controlDecisionEnabled=true,
- challengeSide='away',challengeScene='contact',variantIndex=0
+ challengeSide='away',challengeScene='contact',variantIndex=0,
+ bodyGuardEnabled=false
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
  const spec=getActionLabScenario(id);
+ if(typeof bodyGuardEnabled!=='boolean'||
+    (bodyGuardEnabled&&(spec.mode!=='situation'||variantIndex===0)))
+  throw new TypeError('Native body-contact exercise only in V02–V30');
  if(spec.mode!=='situation'&&variantIndex!==0)
   throw new TypeError('Variations require a selected small-sided exercise');
  const smallSided=spec.mode==='situation'?
@@ -143,7 +147,7 @@ export function createControlledActionLab(RAPIER,id,{
    diagnosticSmallSidedSituation:id,
    diagnosticSmallSidedSide:shotSide,
    diagnosticSmallSidedVariantIndex:variantIndex,
-   diagnosticSmallSidedBodyGuardEnabled:variantIndex>0
+   diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled
   }:{}),
   ...(refereeMode?{diagnosticBasicRestartEnabled:true}:{}),
   ...(sourceRestart?{
@@ -423,7 +427,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(refereeMode||smallSided?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake,
      matchTimeline}:{}),
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
-     smallSidedNativeBodyGuard:variantIndex>0?
+     smallSidedNativeBodyGuard:bodyGuardEnabled?
       engine.smallSidedBodyGuardSnapshot():null,
      smallSidedVariantIndex:smallSided.variantIndex,
      genuinePhysicalPlayerCount:smallSided.genuinePhysicalPlayers,

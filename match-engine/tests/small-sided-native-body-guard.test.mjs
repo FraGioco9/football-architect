@@ -56,9 +56,13 @@ test('#628 body guard remains selected-only, exact-tick and deterministic in all
   const baseline=createControlledActionLab(R,spec.id,{shotSide:side});
   try{assert.equal(baseline.snapshot().smallSidedNativeBodyGuard,null);}
   finally{baseline.dispose();}
+  const ungated=createControlledActionLab(R,spec.id,{shotSide:side,variantIndex:1});
+  try{assert.equal(ungated.snapshot().smallSidedNativeBodyGuard,null,
+   'ordinary V02 must retain pre-existing Rapier physics');}
+  finally{ungated.dispose();}
   for(const variantIndex of [1,9,21]){
-   const a=createControlledActionLab(R,spec.id,{shotSide:side,variantIndex});
-   const b=createControlledActionLab(R,spec.id,{shotSide:side,variantIndex});
+   const a=createControlledActionLab(R,spec.id,{shotSide:side,variantIndex,bodyGuardEnabled:true});
+   const b=createControlledActionLab(R,spec.id,{shotSide:side,variantIndex,bodyGuardEnabled:true});
    try{
     assert.equal(a.snapshot().smallSidedNativeBodyGuard.tick,0);
     for(let tick=1;tick<=65;tick++){
@@ -96,6 +100,10 @@ test('#628 V01 and regular world cannot accidentally enable physical body guard'
   diagnosticAutonomousFixtureActionEnabled:true,
   diagnosticSmallSidedBodyGuardEnabled:true
  }),TypeError);
+ assert.throws(()=>createControlledActionLab(R,'keeper-1v1',{
+  shotSide:'home',variantIndex:0,bodyGuardEnabled:true}),TypeError);
+ assert.throws(()=>createControlledActionLab(R,'shot',{
+  bodyGuardEnabled:true}),TypeError);
  const routes=readFileSync(new URL('../../tools/dev-standings-preview.mjs',
   import.meta.url),'utf8');
  assert.ok(routes.includes("'/__fa_match_engine__/small-sided-native-body-guard.mjs':"));

@@ -151,6 +151,31 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    position:variation.first.position});
   process.stdout.write('ME_628_REPLAY_VARIATION_CHROME '+
    JSON.stringify(variation)+'\\n');
+  // Opt-in native body/ball source is intentionally OFF on V01 and
+  // OFF on every ordinary V02: no regression to the approved shoe policy.
+  const physicalBodies=await evalJs("(()=>{"+
+   "document.getElementById('me-inline-variant-next').click();"+
+   "const b=document.getElementById('me-inline-bodyguard');"+
+   "const initial={disabled:b.disabled,pressed:b.getAttribute('aria-pressed')};"+
+   "b.click();"+
+   "const active={pressed:b.getAttribute('aria-pressed'),tick:document.getElementById('tick').textContent};"+
+   "document.getElementById('step').click();"+
+   "const after=document.getElementById('tick').textContent;"+
+   "b.click();"+
+   "const inactive={pressed:b.getAttribute('aria-pressed'),tick:document.getElementById('tick').textContent};"+
+   "document.getElementById('me-inline-variant-prev').click();"+
+   "return {initial,active,after,inactive,v01Disabled:b.disabled,"+
+   "v01Pressed:b.getAttribute('aria-pressed'),popup:document.getElementById('action-labs-dialog').open};})()");
+  assert.deepEqual(physicalBodies.initial,{disabled:false,pressed:'false'});
+  assert.equal(physicalBodies.active.pressed,'true');
+  assert.match(physicalBodies.active.tick,/^Tick 0/);
+  assert.match(physicalBodies.after,/^Tick 1/);
+  assert.deepEqual(physicalBodies.inactive,{pressed:'false',tick:'Tick 0 · 0.00 s'});
+  assert.equal(physicalBodies.v01Disabled,true);
+  assert.equal(physicalBodies.v01Pressed,'false');
+  assert.equal(physicalBodies.popup,false);
+  process.stdout.write('ME_628_NATIVE_BODIES_CHROME '+
+   JSON.stringify(physicalBodies)+'\\n');
   // All five situations both directions, using the VISIBLE selectors,
   // original main Step, original pitch and source-only Rapier evidence.
   for(const [scene,actors] of [
