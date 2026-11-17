@@ -11,10 +11,19 @@ try{
  for(const width of [1440,390])for(const id of ['it-1','eng-2','int-1','int-2']){
   const context=await browser.newContext({viewport:{width,height:1000}});
   try{
-   await context.addInitScript(()=>sessionStorage.setItem('football-architect:standings-dev-season','0'));
+   await context.addInitScript(()=>{
+    // This test explicitly enters fictional Debug Season 0. With Debug OFF,
+    // an unavailable public API is only pending, not a verified empty result.
+    sessionStorage.setItem('football-architect:debug-enabled','on');
+    sessionStorage.setItem('football-architect:standings-dev-season','0');
+   });
    const page=await context.newPage();
    await page.goto('http://127.0.0.1:2000/competitions/'+id+'/standings');
-   await page.waitForFunction(()=>window.faCompetitionRoute&&window.faFixtures&&document.documentElement.dataset.faDevStandingsPending===undefined);
+   await page.waitForFunction(()=>window.faCompetitionRoute&&window.faFixtures&&
+    document.documentElement.dataset.faDevCurrentSeason==='0'&&
+    document.documentElement.dataset.faStandingsLoading==='false'&&
+    !!document.querySelector('#app-standings-body .app-competition-empty-row')&&
+    !!document.querySelector('#app-standings-compact-list .app-world-mobile-empty'));
    assert.equal(await page.evaluate(()=>document.documentElement.dataset.faDevCurrentSeason),'0');
    assert.equal(await page.evaluate(()=>window.faCompetitionContext.seasonData),null,'Season 0 cannot fabricate season results');
    assert.equal(await page.locator('#app-standings-body [data-world-club],#app-standings-compact-list [data-world-club]').count(),0,
