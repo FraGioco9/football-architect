@@ -4,6 +4,10 @@
 
 This is a **diagnostic isolation workflow** for the repeated ImageGen missing-edit-target error: the first message of each isolated player chat contains ONLY an original image-creation request and the immutable canonical V4.1 visual features. No GitHub/Cloudflare connector links, old published portraits, reference image discussion, QA instructions or player metadata are included in the first message.
 
+## Prompt dinamico: cambia solo PLAYER_ID
+
+Per non gestire 23 file diversi, usa il [prompt universale per ID](../portrait-dynamic-by-id.md): cambia soltanto il numero. La nuova chat di preparazione legge GitHub (e Cloudflare DEV in sola lettura, quando necessario) e restituisce il solo testo visuale da usare in una **seconda chat** di generazione. Per gli ID non presenti nell'indice, il prompt richiede dati iniziali verificabili e il generatore V4.1 eseguibile: non inventa profili mancanti.
+
 ## How to use
 
 1. Open a fresh chat for ONE player.
