@@ -15,7 +15,7 @@ test('anonymous projection does not include operator or session data', () => {
 test('rejects malformed and inconsistent persisted worlds', () => {
   for (const state of [
     null, {}, { ...unstarted, schemaVersion: 2 }, { ...unstarted, generation: 'guess' },
-    { ...unstarted, revision: -1 }, { ...unstarted, revision: 1 },
+    { ...unstarted, revision: -1 },
     { ...unstarted, seasonNumber: 1 }, { ...unstarted, day: 1 },
     { ...unstarted, phase: 'active' }, { ...unstarted, phase: 'closed' },
     { ...unstarted, day: 57 }, { ...unstarted, revision: 1.5 },
@@ -25,6 +25,8 @@ test('rejects malformed and inconsistent persisted worlds', () => {
 });
 test('accepts prepared, active and closed season projections', () => {
   for (const state of [
+    { ...unstarted, revision: 1 },
+    { ...unstarted, revision: 2 },
     { ...unstarted, revision: 1, seasonNumber: 1, day: 0, phase: 'preparing' },
     { ...unstarted, revision: 2, seasonNumber: 1, day: 1, phase: 'active' },
     { ...unstarted, revision: 57, seasonNumber: 1, day: 56, phase: 'closed' },

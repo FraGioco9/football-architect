@@ -8,6 +8,7 @@ import type {WorldV1} from './types.ts';
 import {readWorld} from './world-repository.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
+import {readSeasonZeroAuthority} from './season-zero-entrants.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import type {KnockoutTie} from './knockout-progression.ts';
 import {replayLineupSeasonV1} from './lineup-season-replay.ts';
@@ -163,7 +164,20 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
  };
  // A future/unimplemented viewed season must never be silently mapped to Season1.
  if(![1,2].includes(selectedSeason))return empty('unavailable','unsupported-season');
- if(world.seasonNumber===0)return empty('empty','season-not-prepared');
+ if(world.seasonNumber===0){
+  if(selectedSeason!==1||!competitionPattern.test(competitionId))return empty('empty','season-not-prepared');
+  const zero=await readSeasonZeroAuthority(db,world);
+  const scope=competitionId.startsWith('int-')?'international':'domestic';
+  if(!zero.approved[scope])return empty('empty','season-not-prepared');
+  const binding=zero.snapshot.bindings.find(b=>b.competitionId===competitionId);
+  if(!binding)invalid();
+  const data={entrantsOnly:true as const,season:1,seasonState:{day:0,phase:'unstarted' as const},
+   rulesVersion:binding!.rulesVersion,participants:[...binding!.clubIds]};
+  await unchanged(db,world);
+  return {...base,status:'partial' as const,reason:null,
+   provenance:{kind:'authoritative' as const,resultAuthority:'confirmed-entrants-v1' as const,
+    sourceRef:`world:${world.generation}:season:0:entrants:${scope}:${zero.snapshotHash}`},data};
+ }
  // Only seasons1/2 currently have a complete approved authority chain.
  if(![1,2].includes(world.seasonNumber))return empty('unavailable','unsupported-world-season');
  if(selectedSeason>world.seasonNumber)return empty('empty','season-not-prepared');

@@ -18,7 +18,9 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
  if(alreadyRecorded)throw new ApiError(409,'reset_already_processed');
  const world=await readWorld(db);
  if(world.generation!==cmd.expectedGeneration||world.revision!==cmd.expectedRevision)throw new ApiError(409,'stale_world');
- if(world.seasonNumber===0||!['preparing','active','closed'].includes(world.phase))throw new ApiError(409,'reset_prerequisites');
+ if(world.seasonNumber===0){
+  if(world.phase!=='unstarted'||!(await db.prepare('SELECT scope FROM season_zero_approvals LIMIT 1').first()))throw new ApiError(409,'reset_prerequisites');
+ }else if(!['preparing','active','closed'].includes(world.phase))throw new ApiError(409,'reset_prerequisites');
  const nextGeneration=crypto.randomUUID(),operationId=crypto.randomUUID();
  const result:Outcome={operationId,world:{schemaVersion:1,generation:nextGeneration,revision:0,seasonNumber:0,day:0,phase:'unstarted'}};
  try{
@@ -37,6 +39,7 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
    // Persisted players reference committed draft IDs: keep both rows and FK parents.
    // Abandon only uncommitted previews from the previous sporting generation.
    db.prepare("DELETE FROM player_generation_drafts WHERE status='preview'"),
+   db.prepare('DELETE FROM season_zero_approvals'),
    db.prepare('DELETE FROM season_two_approvals'),
    db.prepare('DELETE FROM season_archive_summaries'),
    db.prepare('DELETE FROM season_archives'),

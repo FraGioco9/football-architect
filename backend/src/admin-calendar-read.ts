@@ -2,6 +2,7 @@
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
+import {readSeasonZeroAuthority} from './season-zero-entrants.ts';
 import {dueAdministrativeMilestones,proposeAdministrativeMilestones,proposeEndSeasonMilestones,type AdministrativeMilestone} from './domain/calendar/admin-calendar-policy.ts';
 type Row={event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status'];completed_at:number|null;receipt_hash:string|null};
 async function querySeasonAdministrativeEvents(db:Database,seasonNumber:number):Promise<Row[]>{
@@ -19,7 +20,16 @@ export async function readSeasonAdministrativeEventRows(db:Database,seasonNumber
 }
 export async function readAdministrativeCalendar(db:Database){
  const world=await readWorld(db);
- if(world.seasonNumber===0)return {world,events:[],mode:'uninitialized' as const};
+ if(world.seasonNumber===0){
+  const zero=await readSeasonZeroAuthority(db,world);
+  const events=(['domestic','international'] as const).map((scope,order)=>({
+   id:scope+':entrants',kind:'confirm-'+scope+'-entrants',scope,day:0,order,
+   status:zero.approved[scope]?'completed':'scheduled',completedAt:zero.approved[scope]?.approved_at??null,
+   hasReceipt:!!zero.approved[scope],
+  }));
+  return {world,events,mode:'season-zero' as const,snapshotHash:zero.snapshotHash,
+   nextEvent:null,remaining:events.filter(e=>e.status==='scheduled').length,blocked:false};
+ }
  const rows=await querySeasonAdministrativeEvents(db,world.seasonNumber);
 
  const legacy=proposeAdministrativeMilestones();
