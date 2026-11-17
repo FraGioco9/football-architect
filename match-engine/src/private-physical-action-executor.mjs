@@ -18,12 +18,15 @@ export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
- smallSidedDecisionContext=null
+ smallSidedDecisionContext=null,physicalBodyGuardEnabled=false
 }={}){
  if(activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
     activePlayerIds.length<2||activePlayerIds.length>7||
     new Set(activePlayerIds).size!==activePlayerIds.length))
   throw new TypeError('Small-sided active physical shoe set is invalid');
+ if(typeof physicalBodyGuardEnabled!=='boolean'||
+    (physicalBodyGuardEnabled&&activePlayerIds===null))
+  throw new TypeError('Native body contact requires genuine small-sided shoe source');
  if(smallSidedDecisionContext!==null&&(
     activePlayerIds===null||allowPhysicalCarry!==true||
     typeof smallSidedDecisionContext!=='object'||
@@ -61,7 +64,7 @@ export function createPrivatePhysicalActionExecutor({
   ensureOpen();
   if(typeof suppressOriginalAction!=='boolean'||
      typeof suppressPhysicalBodyContact!=='boolean'||
-     (suppressPhysicalBodyContact&&smallSidedDecisionContext===null))
+     (suppressPhysicalBodyContact&&!physicalBodyGuardEnabled))
    throw new TypeError('Physical body-contact guard only in opt-in small-sided source');
   const contact=shoeBridge.snapshot();
   if(!Number.isSafeInteger(nextTick)||nextTick!==tick+1||

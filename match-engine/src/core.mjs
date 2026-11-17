@@ -567,6 +567,7 @@ export function createEngine(RAPIER, input = {}, {
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
+      physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
        (smallSided?.variantIndex>0),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
