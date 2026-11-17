@@ -52,8 +52,16 @@ export function validateAuthoritativeSeason(input,context,manifest){
  const entrantsOnly=d?.entrantsOnly===true;
  const authority=entrantsOnly?'confirmed-entrants-v1':'temporary-lineup-v1';
  const zeroEntrants=w.seasonNumber===0&&entrantsOnly&&input.selectedSeason===1;
- const sourcePattern=zeroEntrants?
-  '^world:'+w.generation+':season:0:entrants:'+(definition.category==='international'?'international':'domestic')+':[a-f0-9]{64}
+ const scope=definition.category==='international'?'international':'domestic';
+ const sourcePrefix=zeroEntrants?
+  'world:'+w.generation+':season:0:entrants:'+scope+':' :
+  'world:'+w.generation+':season:'+d.season+':'+(entrantsOnly?'entrants:':'');
+ const validSource=typeof p?.sourceRef==='string'&&p.sourceRef.startsWith(sourcePrefix)&&
+  /^[a-f0-9]{64}$/.test(p.sourceRef.slice(sourcePrefix.length));
+ if(!viewed||!(zeroEntrants||[1,2].includes(w.seasonNumber))||!object(d)||
+    d.season!==input.selectedSeason||d.rulesVersion!==definition.rules.version||input.reason!==null||
+    p?.kind!=='authoritative'||p.resultAuthority!==authority||!validSource||
+    (input.status==='available')!==(viewed.phase==='closed'))fail();
  const catalog=clubCatalog(manifest),ids=d.participants;
  if(!Array.isArray(ids)||ids.length!==definition.capacity||new Set(ids).size!==ids.length||ids.some(id=>!idPattern.test(id)||!catalog.has(id))||
     definition.category==='domestic'&&ids.some(id=>!id.startsWith(definition.id.split('-')[0]+'-')))fail();
