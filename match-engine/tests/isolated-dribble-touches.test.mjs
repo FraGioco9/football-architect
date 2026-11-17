@@ -151,4 +151,21 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
  assert.ok(summary.withRealCarry>=16,'measured physical carries must exist across seeds');
  assert.ok(summary.distinctImpulseNs>=8,'physical impulse must vary across actual shoe starts');
  assert.ok(summary.distinctPathM>=8,'actual Rapier ball paths must vary across seeds');
+ // Realism acceptance gates from direct LAB visual feedback: low, close,
+ // frequent short native touches, NOT success/possession declarations.
+ assert.ok(summary.maximumGroundClearanceM<=0.015,
+  'D-01 grounded source must not visibly loft the real ball');
+ assert.equal(summary.samplesWithAirFrames,0,
+  'D-01 must have no samples more than 2 cm off the grass');
+ assert.ok(summary.maximumBallSpeedMps<=3.5,
+  'D-01 ground carries must not fire the ball away');
+ assert.ok(summary.withRealCarry>=100,'at least 100 genuine source carries');
+ assert.ok(summary.withSecondAction>=80,'at least 80 real repeat-touch trials');
+ assert.ok(summary.withFourOrMoreTouches>=20,'repeat touches must be frequent');
+ assert.ok(summary.meanTouchesPerTrial>=2.4,'bounded full-matrix touch frequency');
+ const baseline=samples.filter(s=>s.variantIndex===0);
+ assert.equal(baseline.length,4);
+ assert.ok(baseline.every(s=>s.actionCount>=5&&s.recontacts>=4&&
+    s.forwardM>4&&s.peakClearanceM===0&&s.peakBallSpeedMps<3.5),
+   'V01 HOME/AWAY Bodies ON/OFF must dribble forward on the grass with true recontacts');
 });

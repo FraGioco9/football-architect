@@ -351,7 +351,10 @@ function render() {
        f.nativeDribbleAudit.appliedCarryActions+
        ' · native releases '+f.nativeDribbleAudit.attackerShoeEnds+
        ' · independent recontacts '+f.nativeDribbleAudit.independentRecontacts+
-       ' · ball path '+f.nativeDribbleAudit.ballPath2DM.toFixed(2)+' m': '')+
+       ' · ball path '+f.nativeDribbleAudit.ballPath2DM.toFixed(2)+' m'+
+       ' · peak lift '+(f.nativeDribbleAudit.peakGroundClearanceM*100).toFixed(1)+' cm'+
+       (f.nativeDribbleAudit.meanAppliedTouchIntervalTicks===null?'':
+        ' · touch gap '+(f.nativeDribbleAudit.meanAppliedTouchIntervalTicks/60).toFixed(2)+' s'): '')+
       (f.smallSidedNativeBodyGuard?.lowerLegBallContacts.length?
        ' · real body–ball '+f.smallSidedNativeBodyGuard.lowerLegBallContacts.length:'')+
       (f.smallSidedNativeBodyGuard?.nativeOpposingTorsoPairs.length?
