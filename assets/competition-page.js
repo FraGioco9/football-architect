@@ -767,7 +767,19 @@
 
   function bindSuppliedPanels(mobile){
     const tbody=document.getElementById('app-standings-body'),rules=window.faCompetitionRules;
+    const subviewStrip=document.querySelector('.app-standings-subviews');
     const subviewButtons=[...document.querySelectorAll('[data-standings-subview]')];
+    const syncSubviewEdges=()=>{
+      if(!subviewStrip||!subviewStrip.clientWidth)return;
+      const maximum=Math.max(0,subviewStrip.scrollWidth-subviewStrip.clientWidth);
+      subviewStrip.dataset.canScrollLeft=String(maximum>1&&subviewStrip.scrollLeft>1);
+      subviewStrip.dataset.canScrollRight=String(maximum>1&&subviewStrip.scrollLeft<maximum-1);
+    };
+    subviewStrip?.addEventListener('scroll',syncSubviewEdges,{passive:true});
+    window.addEventListener('resize',syncSubviewEdges,{passive:true});
+    window.addEventListener('pageshow',syncSubviewEdges);
+    if(subviewStrip&&typeof ResizeObserver!=='undefined')new ResizeObserver(syncSubviewEdges).observe(subviewStrip);
+    syncSubviewEdges();
     const syncSubviews=()=>{
       const cup=window.faCompetitionContext?.definition?.category==='international';
       if(cup&&['first','second'].includes(activeStandingsSubview))activeStandingsSubview='overall';
@@ -775,6 +787,7 @@
         button.hidden=Boolean(cup&&['first','second'].includes(button.dataset.standingsSubview));
         button.setAttribute('aria-pressed',String(button.dataset.standingsSubview===activeStandingsSubview));
       }
+      syncSubviewEdges();
     };
     // Mount the published tooltip only after verified played fixtures exist.
     // Do not change first paint or the empty-context bootstrap DOM.
