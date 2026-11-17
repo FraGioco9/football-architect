@@ -8,6 +8,11 @@ import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_DT,PLAYER_MAX_SPEED_MPS}
 export const SMALL_SIDED_BODY_VERSION='me-628-native-physical-body-guard-v1';
 const TORSO_CATEGORY=0x0020,LEG_CATEGORY=0x0040,BALL_CATEGORY=0x0001;
 const TORSO_RADIUS_M=0.51,LEG_RADIUS_M=0.28,LEG_CENTRE_Z_M=0.43;
+// D-01 canonical collision-safe 0.98m separation must also be native
+// collision-safe: former twin 0.51m torso radii overlapped by 0.04m.
+// This avoids artificial solver separation near the original ball while
+// keeping all real opponent torso, leg, shoe and ball colliders enabled.
+export const D01_TORSO_RADIUS_M=0.49;
 const TORSO_OFFSET_Z_M=0.57;
 const finite=Number.isFinite;
 const freeze=Object.freeze;
@@ -43,7 +48,8 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
    .setTranslation(actor.x,actor.y,LEG_CENTRE_Z_M)
    .setGravityScale(0).setCcdEnabled(true));
   // Upper torso: native, mutually colliding selected human bodies ONLY.
-  const torso=world.createCollider(R.ColliderDesc.ball(TORSO_RADIUS_M)
+  const torso=world.createCollider(R.ColliderDesc.ball(
+    dribbleGroundBallCentreZ===null?TORSO_RADIUS_M:D01_TORSO_RADIUS_M)
    .setTranslation(0,0,TORSO_OFFSET_Z_M)
    .setDensity(35).setFriction(0.6).setRestitution(0)
    .setCollisionGroups((TORSO_CATEGORY<<16)|TORSO_CATEGORY),rigid);

@@ -7,10 +7,11 @@ import {initializeRapier,createEngine} from '../src/core.mjs';
 import {INITIAL_PLAYERS,PLAYER_VERSION} from '../src/player-movement.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS} from '../src/small-sided-lab-scenarios.mjs';
-import {createSmallSidedNativeBodyGuard,SMALL_SIDED_BODY_VERSION}
+import {createSmallSidedNativeBodyGuard,SMALL_SIDED_BODY_VERSION,
+ D01_TORSO_RADIUS_M}
  from '../src/small-sided-native-body-guard.mjs';
 
-function oneWorldNativeContact(R,gap){
+function oneWorldNativeContact(R,gap,{groundD01=false}={}){
  const world=new R.World({x:0,y:0,z:-9.81});
  world.timestep=1/60;
  const ballBody=world.createRigidBody(R.RigidBodyDesc.dynamic()
@@ -21,7 +22,8 @@ function oneWorldNativeContact(R,gap){
   {...p,x:40,y:0}:p.id==='away-2'?
   {...p,x:40+gap,y:0}:p);
  const bridge=createSmallSidedNativeBodyGuard(R,world,ballCollider,
-  staged,['home-10','away-2']);
+  staged,['home-10','away-2'],
+  groundD01?{dribbleGroundBallCentreZ:.11}:{});
  const frame={version:PLAYER_VERSION,tick:1,players:staged.map(p=>({...p,vx:0,vy:0}))};
  try{
   assert.equal(bridge.snapshot().tick,0);
@@ -31,6 +33,10 @@ function oneWorldNativeContact(R,gap){
   return {evidence,ball:{...ballBody.translation()}};
  }finally{bridge.dispose();world.free();}
 }
+test('#628 D-01 torso diameter respects the hard canonical physical player gap',()=>{
+ assert.equal(D01_TORSO_RADIUS_M*2,0.98);
+});
+
 test('#628 native lower-leg ball and opponent torso response are genuine Rapier solver manifolds',
  {timeout:30000},async()=>{
  const R=await initializeRapier(rapier);
@@ -47,6 +53,11 @@ test('#628 native lower-leg ball and opponent torso response are genuine Rapier 
   'identical native physics input must replay exactly');
  assert.deepEqual(oneWorldNativeContact(R,2.2).evidence.nativeOpposingTorsoPairs,[],
   'an absent opponent cannot manufacture a native torso collision');
+ const ground=oneWorldNativeContact(R,0.98,{groundD01:true});
+ assert.equal(ground.evidence.lowerLegBallStarts.includes('home-10'),true,
+  'D-01 real grounded leg-ball contact remains enabled');
+ assert.deepEqual(ground.evidence.nativeOpposingTorsoPairs,[],
+  'D-01 canonical-legal XY spacing should not cause a phantom torso contact');
 });
 test('#628 body guard remains selected-only, exact-tick and deterministic in all 5 native LAB situations',
  {timeout:120000},async()=>{
