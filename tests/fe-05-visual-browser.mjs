@@ -213,16 +213,16 @@ try{
   const reads=[];
   page.on('request',request=>{
    const path=new URL(request.url()).pathname;
-   if(path==='/competitions/_shared/manifest.json'||path==='/api/world')reads.push(path);
+   if(path==='/competitions/_shared/compact.json'||path==='/api/world')reads.push(path);
   });
   try{
    const response=await page.goto(originFor(config)+config.path,{waitUntil:'load',timeout:30000});
    assert.equal(response?.status(),200);
    await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1'&&
     document.documentElement.dataset.faStandingsLoading!=='true',null,{timeout:15000});
-   const manifestReads=reads.filter(path=>path==='/competitions/_shared/manifest.json').length;
+   const compactReads=reads.filter(path=>path==='/competitions/_shared/compact.json').length;
    const worldReads=reads.filter(path=>path==='/api/world').length;
-   assert.equal(manifestReads,1,'one shared manifest request per cold History document');
+   assert.equal(compactReads,1,'one validated compact catalogue request per cold History document');
    assert.ok(worldReads<=2,'cold world reads respect the two-read reset fence');
    const before=reads.length;
    for(const view of ['stats','standings','history']){
@@ -231,8 +231,8 @@ try{
    }
    await page.waitForFunction(()=>window.faCompetitionRoute?.get()?.view==='history');
    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-   assert.deepEqual(reads.slice(before),[],'view-only tabs must not refetch manifest or world');
-   results.push({head,scenario:'qa-05-history-network-per-document',status:'PASS',manifestReads,worldReads});
+   assert.deepEqual(reads.slice(before),[],'view-only tabs must not refetch the compact catalogue or world');
+   results.push({head,scenario:'qa-05-history-network-per-document',status:'PASS',compactReads,worldReads});
   }finally{await context.close();}
  }
  // One focused visual navigation test; existing SH-03/INT24 suites own season, source and stale-response semantics.

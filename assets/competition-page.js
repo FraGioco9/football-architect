@@ -780,6 +780,7 @@
     window.addEventListener('pageshow',syncSubviewEdges);
     if(subviewStrip&&typeof ResizeObserver!=='undefined')new ResizeObserver(syncSubviewEdges).observe(subviewStrip);
     syncSubviewEdges();
+
     const syncSubviews=()=>{
       const cup=window.faCompetitionContext?.definition?.category==='international';
       if(cup&&['first','second'].includes(activeStandingsSubview))activeStandingsSubview='overall';
@@ -1252,9 +1253,9 @@
     // Share the one validated manifest read with the local DEV presenters.
     // The promise is installed synchronously before any dependent script boots.
     const manifest=await (window.faCompetitionManifestPromise ||= (async()=>{
-      const dataResponse=await fetch(new URL("manifest.json",root),{credentials:"same-origin"});
+      const dataResponse=await fetch(new URL("compact.json",root),{credentials:"same-origin"});
       if(!dataResponse.ok)throw Error("Competition data unavailable");
-      return dataResponse.json();
+      return model.expandCompactManifest(await dataResponse.json());
     })());
     if(!model.validManifest(manifest))throw Error("Invalid or approved competition manifest");
     definition=model.competitionById(manifest,routeId);
@@ -1389,7 +1390,10 @@
     {
       try{
         const initialExplicitSeason=requestedSeasonWasExplicit;let publicDefaultApplied=false;
-        const {createAuthoritativeLoader}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
+        const {createAuthoritativeLoader,createCompetitionSeasonReadCache}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
+        // Validated official snapshots only. Changing a view or selecting an
+        // already-visited season never needs to repeat a current-world API read.
+        const seasonReadCache=createCompetitionSeasonReadCache();
         const {mountAuthoritativeHistory}=await import(new URL('authoritative-history.mjs',sourceUrl).href);
         const historyPanel=document.getElementById('competition-panel-history');
         const history=historyPanel?mountAuthoritativeHistory(historyPanel,{manifest,isDev:()=>activeDebugSeason!==null,getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()}):null;
@@ -1398,7 +1402,15 @@
         // Each competition view owns its empty/loading shell; no global
         // "No published season data yet" banner is inserted above standings.
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');/* No cross-view empty banner; retain panel-specific loading states. */},
+          commit:(data,revision)=>{
+            const selectedSeason=window.faCompetitionContext?.selectedSeason;
+            const accepted=acceptSeasonData(data,revision,true);
+            if(accepted)seasonReadCache.remember({
+              competitionId:definition.id,season:selectedSeason,
+              snapshot:window.faWorldState?.get?.(),data
+            });
+            return accepted;
+          },onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');/* No cross-view empty banner; retain panel-specific loading states. */},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.
@@ -1435,9 +1447,38 @@
             if(pendingLoads===0)revalidateWorld(window.faWorldState?.get?.());
           });
         };
-        const select=()=>{if(activeDebugSeason!==null){loader.cancel();window.faStandingsLoading?.set('api',false);return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void load()};
+        const select=()=>{
+          if(activeDebugSeason!==null){
+            loader.cancel();seasonReadCache.clear();
+            window.faStandingsLoading?.set('api',false);return;
+          }
+          const c=window.faCompetitionContext,snapshot=window.faWorldState?.get?.();
+          const key=c?.definition.id+':'+c?.selectedSeason+':'+snapshot?.sourceRevision;
+          if(key===selection)return;
+          selection=key;
+          const cached=seasonReadCache.find({
+            competitionId:definition.id,season:c?.selectedSeason,snapshot
+          });
+          if(cached){
+            // Abort a stale in-flight season request before restoring the
+            // previously verified official snapshot for this exact world.
+            loader.cancel();
+            if(acceptSeasonData(cached.data,c.revision,true)){
+              lastSuccessfulRead=worldReadKey(window.faCompetitionContext,snapshot);
+              window.faStandingsLoading?.set('api',false);
+              return;
+            }
+          }
+          void load();
+        };
         window.addEventListener('fa:competition-context-change',select);
-        window.addEventListener('fa:source-change',()=>{if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;selection='';setDebugSeason(window.faDebugEnabled!==true?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select()});
+        window.addEventListener('fa:source-change',()=>{
+          // DEV and public world generations must never share cached sporting
+          // participants, historical rules, results, or match outcomes.
+          seasonReadCache.clear();
+          if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;
+          selection='';setDebugSeason(window.faDebugEnabled!==true?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select();
+        });
         window.faWorldState?.subscribe?.(revalidateWorld);
         window.addEventListener('pageshow',event=>{if(event.persisted)void load()});
         window.addEventListener('pagehide',event=>{

@@ -173,6 +173,47 @@ export function adaptAuthoritativeSeason(source,context,manifest){
   provenance:{kind:'authoritative',sourceRef:source.provenance.sourceRef,resultAuthority:source.provenance.resultAuthority},world:source.world,seasonState:viewedSeasonState(source),
   currentMatchday:viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?currentChoice:null});
 }
+/**
+ * PERF-API-657 — validated immutable sporting-season snapshots, scoped to a
+ * single public world generation/revision and source revision. A season viewed
+ * earlier is reusable only while the authoritative world is *exactly* unchanged.
+ * A confirmed canonical empty response is a valid cache entry; failed reads
+ * never reach this helper.
+ */
+export function createCompetitionSeasonReadCache({limit=8}={}){
+ if(!Number.isSafeInteger(limit)||limit<1||limit>32)throw TypeError('Invalid cache limit');
+ const entries=new Map();
+ const cacheKey=(competitionId,season,snapshot)=>{
+  const world=snapshot?.world;
+  if(!/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(competitionId)||
+     !Number.isSafeInteger(season)||season<1||
+     snapshot?.source!=='authoritative'||snapshot.worldStatus!=='ready'||
+     !Number.isSafeInteger(snapshot.sourceRevision)||snapshot.sourceRevision<0||
+     !validPublicWorld(world)||season>world.seasonNumber)return null;
+  return JSON.stringify([competitionId,season,snapshot.sourceRevision,
+   world.generation,world.revision,world.seasonNumber,world.day,world.phase]);
+ };
+ return Object.freeze({
+  remember({competitionId,season,snapshot,data}){
+   const key=cacheKey(competitionId,season,snapshot);
+   if(!key||data!==null&&(data?.provenance?.kind!=='authoritative'||
+      data.season!==season||!globalThis.faWorldClockAdapter.sameWorld(data.world,snapshot.world)))
+    return false;
+   const copy=data===null?null:freeze(structuredClone(data));
+   entries.delete(key);entries.set(key,copy);
+   while(entries.size>limit)entries.delete(entries.keys().next().value);
+   return true;
+  },
+  find({competitionId,season,snapshot}){
+   const key=cacheKey(competitionId,season,snapshot);
+   // The wrapper distinguishes a verified empty season from a cache miss.
+   return key&&entries.has(key)?{data:entries.get(key)}:null;
+  },
+  clear(){entries.clear()},
+  size(){return entries.size}
+ });
+}
+
 export function createAuthoritativeLoader({getContext,clear,commit,isDev,fetchJson,manifest,onState=()=>{},onWorld=()=>{}}){
  let context,retained=false;
  return globalThis.faWorldClockAdapter.createSnapshotReader({

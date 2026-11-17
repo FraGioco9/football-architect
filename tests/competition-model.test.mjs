@@ -82,3 +82,56 @@ test('one view catalogue drives all generated detail documents and their first p
   assert.ok(html.includes('data-fixture-round-choice="'+(d.tier===1?'playout':'playoffs')+'"'));
  }
 });
+
+test('PERF-API-657 canonical competition catalogue reconstructed from 4 complete reusable rule templates',()=>{
+ const model=getModel(),full=manifest(),compactFile=read('competitions/_shared/compact.json');
+ const compact=JSON.parse(compactFile);
+ assert.equal(compact.catalogFormat,'competition-catalog-dedup-v1');
+ assert.equal(compact.templates.length,4);
+ assert.equal(compact.competitions.length,18);
+ assert.deepEqual(compact,model.packCompactManifest(full),'generated asset matches canonical generator');
+ assert.deepEqual(model.expandCompactManifest(compact),full,'all participants, domestic and INT24 phases remain identical');
+ assert.equal(model.validManifest(model.expandCompactManifest(compact)),true);
+ assert.ok(compactFile.length<read('competitions/_shared/manifest.json').length*.4,'at least 60% fewer raw bytes');
+});
+test('PERF-API-657 tampered compact rules, templates, IDs and approvals fail closed',()=>{
+ const model=getModel(),source=JSON.parse(read('competitions/_shared/compact.json'));
+ const mutations=[
+  d=>d.catalogFormat='unknown', d=>d.templates[0].rules.phases[0].points.win=-1,
+  d=>d.competitions[0].templateIndex=999, d=>d.competitions[0].templateIndex=-1,
+  d=>d.competitions[0].templateIndex='0', d=>d.competitions[0].rules={schemaVersion:1},
+  d=>d.templates[0].metrics.phases.league.matches=1,d=>d.competitions.pop(),
+  d=>d.approved=true,d=>delete d.clubCrests,d=>d.templates[0].unexpected=true,
+  d=>d.competitions[0].constructor={unsafe:true}
+ ];
+ for(const change of mutations){
+  const data=JSON.parse(JSON.stringify(source));change(data);
+  assert.throws(()=>model.expandCompactManifest(data),/compact|reconstructed/i,String(change));
+ }
+ for(const data of [null,[],{},'json'])assert.throws(()=>model.expandCompactManifest(data));
+ const browser={};runInNewContext(read('assets/competition-model.js'),{window:browser});
+ assert.deepEqual(JSON.parse(JSON.stringify(browser.faCompetitionModel.expandCompactManifest(source))),manifest());
+ const controller=read('assets/competition-page.js');
+ assert.match(controller,/new URL\("compact\.json",root\)/);
+ assert.doesNotMatch(controller,/new URL\("manifest\.json",root\)/);
+ assert.match(controller,/model\.expandCompactManifest\(await dataResponse\.json\(\)\)/);
+});
+
+test('PERF-API-657: deduplicated transport never aliases mutable rules across distinct competitions',()=>{
+ const model=getModel(),raw=JSON.parse(read('competitions/_shared/compact.json'));
+ const full=model.expandCompactManifest(raw);
+ const italy=full.competitions.find(x=>x.id==='IT-1');
+ const england=full.competitions.find(x=>x.id==='ENG-1');
+ const second=full.competitions.find(x=>x.id==='IT-2');
+ const otherSecond=full.competitions.find(x=>x.id==='ENG-2');
+ assert.notStrictEqual(italy.rules,england.rules);
+ assert.notStrictEqual(italy.metrics,england.metrics);
+ assert.notStrictEqual(italy.capabilities,england.capabilities);
+ assert.notStrictEqual(second.rules,otherSecond.rules);
+ assert.notStrictEqual(italy.rules,raw.templates[italy.templateIndex||0]?.rules);
+ italy.rules.phases[0].points.win=2;
+ italy.metrics.phases.league.matches=1;
+ assert.equal(england.rules.phases[0].points.win,3,'other domestic competition unaffected');
+ assert.equal(england.metrics.phases.league.matches,240,'other domestic metrics unaffected');
+ assert.equal(raw.templates[0].rules.phases[0].points.win,3,'raw compact template remains unchanged');
+});
