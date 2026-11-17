@@ -773,7 +773,9 @@
     let suppliedOwned=false;
     const empty=()=>{
       if(definition.category==='domestic')window.faPostseason?.prepare(null)();
-      if(definition.category==='domestic'&&!(activeDebugSeason===null&&window.faCompetitionContext?.selectedSeason>1)){
+      // Only explicitly enabled fictional seasons may show provisional clubs.
+      // Real entrants require independent verified Admin confirmation.
+      if(definition.category==='domestic'&&standingsAbsentMode(activeDebugSeason,publicStandingsState)==='debug-preview'){
         const rows=division.clubs.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
         renderDOM.keyed(tbody,division.clubs.map(club=>createStandingsRow(club)),row=>row.dataset.worldClub);mobile.prepare(rows)(true);publishedFormTips?.clear();suppliedOwned=false;return;
       }
@@ -786,7 +788,7 @@
       message.dataset.appI18n='competitionStandingsEmpty';message.textContent='No standings available yet.';
       li.appendChild(message);
       document.getElementById('app-standings-compact-list')?.replaceChildren(li);
-      publishedFormTips?.clear();window.faAppRenderLanguage?.();
+      publishedFormTips?.clear();suppliedOwned=false;window.faAppRenderLanguage?.();
     };
     const resetBracket=(keep=new Set())=>{
       slots.forEach((slot,i)=>{if(!keep.has(slot)&&slot.innerHTML!==initialSlots[i])slot.innerHTML=initialSlots[i]});
@@ -812,11 +814,19 @@
       const data=context.seasonData;
       if(definition.category==='domestic'&&!data?.statistics?.standings){
         publishedFormTips?.clear();
-        // An unresolved public Season 2 may temporarily render one anonymous
-        // empty row. On source handoff into DEV restore the 16 reserved rows,
-        // otherwise DEV hydration waits for a table that never materializes.
-        const wrongShell=(tbody.rows?.length??tbody.children?.length??0)!==division.clubs.length;
-        if(suppliedOwned||wrongShell||(activeDebugSeason===null&&context.selectedSeason>1))empty();
+        const mode=standingsAbsentMode(activeDebugSeason,publicStandingsState);
+        if(mode==='pending'){
+          // Preserve the fixed skeleton while public authority is unresolved.
+          // Static manifest membership is never a confirmation receipt.
+          window.faPostseason?.prepare(null)();
+          if(tbody.children.length)tbody.replaceChildren();
+          document.getElementById('app-standings-compact-list')?.replaceChildren();
+          suppliedOwned=false;
+        }else{
+          const expectedRows=mode==='debug-preview'?division.clubs.length:1;
+          const wrongShell=(tbody.rows?.length??tbody.children?.length??0)!==expectedRows;
+          if(suppliedOwned||wrongShell)empty();
+        }
         return;
       }
       if(!data){resetBracket();empty();return;}
@@ -981,6 +991,7 @@
         refresh();
     }).observe(document.documentElement,{attributes:true,
       attributeFilter:['data-fa-standings-loading']});
+    standingsRefresh=refresh;
     refresh();
   }
 
@@ -1139,6 +1150,11 @@
     return value;
   };
   let definition,division,activeDebugSeason,mountedPostseasonGraph;
+  let publicStandingsState='pending',standingsRefresh=null;
+  function standingsAbsentMode(debugSeason,sourceState){
+    if(Number.isInteger(debugSeason)&&debugSeason>0)return 'debug-preview';
+    return debugSeason===0||sourceState==='empty'?'empty':'pending';
+  }
   let activeStandingsSubview='overall',projectStandings;
   const STANDINGS_SUBVIEWS=['overall','first','second','home','away','last5'];
   function readStandingsSubview(){
@@ -1165,6 +1181,7 @@
   function nextContext(season,data=null,{force=false}={}){
     const current=window.faCompetitionContext;
     if(!force&&current?.selectedSeason===season&&(current.seasonData===data||data&&current.seasonData&&JSON.stringify(current.seasonData)===JSON.stringify(data)))return;
+    if(!data)publicStandingsState='pending';
     publishCompetitionContext(createContext(definition,season,data,(current?.revision||0)+1));
   }
   function selectSeason(season){
@@ -1287,6 +1304,9 @@
     const tbody = document.getElementById("app-standings-body");
     const mobile = createMobileStandings();
     suppliedMobile=mobile;
+    // The manifest is an identity catalogue, not an entrants confirmation.
+    // Keep the generated first-paint skeleton until a verified source resolves.
+    if(standingsAbsentMode(activeDebugSeason,publicStandingsState)==='debug-preview'){
     const provisional = division.clubs.map(club => ({
       club,position:null,played:null,won:null,drawn:null,lost:null,
       gf:null,ga:null,gd:null,pts:null,recent:[]
@@ -1313,6 +1333,9 @@
       if(link!==name)name.replaceWith(link);
     });
     commitMobile();
+    }else{
+      tbody.replaceChildren();
+    }
     window.faStandingsMobile = mobile;
     window.faCompetitionDivision=division;
     createPostseason(division);
@@ -1368,7 +1391,7 @@
         // Each competition view owns its empty/loading shell; no global
         // "No published season data yet" banner is inserted above standings.
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');/* No cross-view empty banner; retain panel-specific loading states. */},
+          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');if(activeDebugSeason===null){publicStandingsState=state==='empty'?'empty':state==='partial'||state==='available'?'verified':'pending';if(state==='empty'||state==='unavailable')standingsRefresh?.();}/* No cross-view empty banner; retain panel-specific loading states. */},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.

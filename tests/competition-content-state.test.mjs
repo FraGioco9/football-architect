@@ -259,3 +259,21 @@ test('MATCH-LINKS #605: standings form links use official source identities on b
  const css=read('assets/app.css');
  assert.match(css,/\.app-world-mobile-form a\[data-published-match\]\{cursor:pointer\}/);
 });
+
+test('Season 0 and unconfirmed public seasons suppress provisional entrants until Admin approval',()=>{
+ const source=read('assets/competition-page.js');
+ const start=source.indexOf('  function standingsAbsentMode(');
+ const end=source.indexOf('  const STANDINGS_SUBVIEWS=',start);
+ assert.ok(start>=0&&end>start,'standings authority gate is available');
+ const mode=runInNewContext(source.slice(start,end)+';standingsAbsentMode');
+ assert.equal(mode(null,'pending'),'pending','unknown public authority keeps first-paint skeleton');
+ assert.equal(mode(null,'empty'),'empty','verified Season 0 absence renders the empty message');
+ assert.equal(mode(0,'pending'),'empty','DEV Season 0 cannot show unapproved entrants');
+ assert.equal(mode(1,'pending'),'debug-preview','enabled fictional seasons stay available');
+ assert.match(source,/if\(standingsAbsentMode\(activeDebugSeason,publicStandingsState\)==='debug-preview'\)/,
+   'boot cannot prefill real Season 0 from the static manifest');
+ assert.match(source,/publicStandingsState=state==='empty'\?'empty'/,
+   'empty public Standings derives from a verified source outcome');
+ assert.match(source,/if\(suppliedOwned\|\|wrongShell\)empty\(\)/,
+   'source reset and confirmed-empty remove stale club identities');
+});

@@ -1,4 +1,4 @@
-// Regression for preserved build-time club identities before any fictional season starts.
+// Regression: Season 0 must not publish unconfirmed identities or standings.
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
@@ -17,22 +17,14 @@ try{
    await page.waitForFunction(()=>window.faCompetitionRoute&&window.faFixtures&&document.documentElement.dataset.faDevStandingsPending===undefined);
    assert.equal(await page.evaluate(()=>document.documentElement.dataset.faDevCurrentSeason),'0');
    assert.equal(await page.evaluate(()=>window.faCompetitionContext.seasonData),null,'Season 0 cannot fabricate season results');
-   if(id.startsWith('int')){
-    assert.equal(await page.locator('#app-standings-body [data-world-club],#app-standings-compact-list [data-world-club]').count(),0,'Unqualified international clubs must remain unknown');
-    assert.equal(await page.locator('#app-standings-body .app-competition-empty-row').count(),1);
-   }else{
-    const desktop=page.locator('#app-standings-body a.app-world-club-name');
-    assert.equal(await desktop.count(),16,'Every Season 0 desktop club name must be a link');
-    assert.equal(await page.locator('#app-standings-compact-list a.app-world-mobile-club-name').count(),16);
-    assert.equal(await page.locator('#app-standings-body [data-standing-rank],#app-standings-body [data-standing-outcome],#app-standings-body .app-world-form-dot').count(),0,'Link hydration must not introduce sporting data');
-    const statistics=await page.locator('#app-standings-body td').allTextContents();
-    assert.ok(statistics.every(value=>value==='—'),'All Season 0 statistics remain unknown');
-    const link=width===390?page.locator('#app-standings-compact-list a.app-world-mobile-club-name').first():desktop.first();
-    const target=await link.getAttribute('href');assert.match(target,/^\/clubs\/(it|eng)\/\d{1,2}\/overview$/);
-    await link.click();await page.waitForURL('**'+target);assert.equal(new URL(page.url()).pathname,target);
-   }
+   assert.equal(await page.locator('#app-standings-body [data-world-club],#app-standings-compact-list [data-world-club]').count(),0,
+    'Unconfirmed Season 0 entrants must not be rendered for any competition');
+   assert.equal(await page.locator('#app-standings-body .app-competition-empty-row').count(),1);
+   assert.equal(await page.locator('#app-standings-compact-list .app-world-mobile-empty').count(),1);
+   assert.equal(await page.locator('#app-standings-body a.app-world-club-name,#app-standings-compact-list a.app-world-mobile-club-name').count(),0);
+   assert.equal(await page.locator('#app-standings-body .app-competition-empty-row').textContent(),'No standings available yet.');
    checks++;
   }finally{await context.close();}
  }
- console.log('Season 0 club links browser PASS: '+checks+' cases ('+engine+')');
+ console.log('Season 0 unconfirmed entrants browser PASS: '+checks+' cases ('+engine+')');
 }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await browser.close();}
