@@ -60,3 +60,78 @@ test('#628 actual 1v1 native source: only attacker physical carry, 2 colliders, 
  }
  assert.ok(magnitudes.size>=4,'real Rapier impulses should vary');
 });
+
+test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only measured distribution',
+ {timeout:240000},async()=>{
+ const R=await initializeRapier(rapier);
+ const samples=[],replays=new Map();
+ for(const side of ['home','away'])for(const bodyGuardEnabled of [false,true])
+ for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const options={shotSide:side,bodyGuardEnabled,variantIndex};
+  const lab=createControlledActionLab(R,'dribble-1v1',options);
+  let result;
+  try{
+   for(let tick=1;tick<=180;tick++){
+    const frame=lab.step();
+    assert.equal(frame.physicsTick,tick);
+    assert.equal(frame.nativeDribbleAudit?.tick,tick);
+    assert.equal(frame.nativeDribbleAudit?.officialPossession,false);
+    assert.equal(frame.nativeDribbleAudit?.dribbleCompleted,false);
+    assert.equal(frame.nativeDribbleAudit?.ballProtectionProven,false);
+    assert.ok(frame.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
+    assert.ok(frame.nativeDribbleAudit.maximumObservedCanonicalPlayerSpeedMps<=7+1e-5);
+    if(frame.refereeEvidence?.lastEvent)break;
+   }
+   const f=lab.snapshot();result={side,bodyGuardEnabled,variantIndex,
+    ticks:f.physicsTick,actionCount:f.nativeDribbleAudit.appliedCarryActions,
+    shoeStarts:f.nativeDribbleAudit.attackerShoeStarts,
+    shoeEnds:f.nativeDribbleAudit.attackerShoeEnds,
+    recontacts:f.nativeDribbleAudit.independentRecontacts,
+    defenderStarts:f.nativeDribbleAudit.defenderShoeStarts,
+    impulse:f.nativeDribbleAudit.realImpulseMagnitudesNs,
+    direction:f.nativeDribbleAudit.actualImpulseDirectionRad,
+    pathM:+f.nativeDribbleAudit.ballPath2DM.toFixed(4),
+    forwardM:+f.nativeDribbleAudit.ballForwardDistanceM.toFixed(4),
+    pressureTicks:f.nativeDribbleAudit.measuredPressureTicks,
+    bodyBallTicks:f.nativeDribbleAudit.nativeBodyBallContactTicks,
+    torsoTicks:f.nativeDribbleAudit.nativeOpposingTorsoContactTicks};
+   assert.ok(result.actionCount>=1,'original shoe start required '+JSON.stringify(options));
+   assert.equal(result.impulse.length,result.actionCount);
+   assert.ok(result.impulse.every(n=>n>=0.29&&n<=0.55));
+   if(variantIndex===0)assert.ok(result.impulse.every(n=>Math.abs(n-0.42)<0.0001));
+   samples.push(result);
+  }finally{lab.dispose();}
+  if(bodyGuardEnabled&&[0,7,17,29].includes(variantIndex)){
+   const second=createControlledActionLab(R,'dribble-1v1',options);
+   try{
+    for(let t=0;t<result.ticks;t++)second.step();
+    const a=second.snapshot().nativeDribbleAudit;
+    assert.deepEqual(a.realImpulseMagnitudesNs,result.impulse);
+    assert.deepEqual(a.actualImpulseDirectionRad,result.direction);
+    assert.equal(+a.ballPath2DM.toFixed(4),result.pathM);
+    assert.equal(a.independentRecontacts,result.recontacts);
+    replays.set(side+'-'+variantIndex,true);
+   }finally{second.dispose();}
+  }
+ }
+ assert.equal(samples.length,120);
+ assert.equal(replays.size,8);
+ const summary={
+  trials:samples.length,exactReplayPairs:replays.size,
+  withSecondAction:samples.filter(s=>s.actionCount>1).length,
+  withNativeRecontact:samples.filter(s=>s.recontacts>0).length,
+  withDefenderShoeStart:samples.filter(s=>s.defenderStarts>0).length,
+  withOpposingTorso:samples.filter(s=>s.torsoTicks>0).length,
+  withBodyBall:samples.filter(s=>s.bodyBallTicks>0).length,
+  distinctImpulseNs:new Set(samples.flatMap(s=>s.impulse.map(x=>x.toFixed(4)))).size,
+  distinctPathM:new Set(samples.map(s=>s.pathM.toFixed(2))).size,
+  maxActions:Math.max(...samples.map(s=>s.actionCount)),
+  maxRecontacts:Math.max(...samples.map(s=>s.recontacts)),
+  minPressureTicks:Math.min(...samples.map(s=>s.pressureTicks)),
+  maxPressureTicks:Math.max(...samples.map(s=>s.pressureTicks)),
+  sample:samples.filter(s=>s.bodyGuardEnabled&&[0,7,17,29].includes(s.variantIndex))
+ };
+ assert.ok(summary.distinctImpulseNs>=15,'physical impulse must vary across seeds');
+ assert.ok(summary.distinctPathM>=15,'actual Rapier ball paths must vary across seeds');
+ process.stdout.write('ME_628_D01_REAL_120_TRIAL_MATRIX '+JSON.stringify(summary)+'\\n');
+});

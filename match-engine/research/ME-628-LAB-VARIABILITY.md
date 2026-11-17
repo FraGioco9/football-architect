@@ -61,3 +61,8 @@ The new visible **D-01 Dribbling 1v1 (no GK)** uses exactly two original Rapier 
 The isolated `isolatedDribbleContext` is created only from the pre-tick-zero real 1v1 setup and threads through the original single-world closed action executor. Upon a *genuine exclusive* attacker shoe START only, the existing carry action uses a ground impulse: V01 original 0.42 Ns straight baseline, V02–V30 deterministic 0.30–0.54 Ns with bounded lateral aim responding to actual defender coordinates and tick. Defender shoe/body contact remains Rapier-native without automatic action impulse. No claimed continuous dribbling or retention until measured multi-touch QA.
 
 Candidate status: test and browser CI required; source-bound traces do not prove successful dribbling. PR remains Draft/HOLD. No merge/deploy/remote DB.
+
+
+## LAB-DRIBBLE-FIRST-02/03 — source audit (research, not gameplay)
+
+An isolated read-only D-01 Rapier audit records authentic native attacker shoe START/END/recontact, exact exclusive action impulses, defender shoe START, measured 2D ball travel, defender-ball proximity, active body-ball and torso collisions, all-22 canonical 0.98m minimum separation and 7m/s maximum speed. The inline field readout displays physical carries, native releases, independent recontacts and travel (no virtual possession). A 120-trial matrix covers all 30 variants × HOME/AWAY × Bodies ON/OFF for 180 genuine 60Hz ticks per trial, with 8 exact replay pairs. Its log distinguishes multi-touch physical success from mere variation of the first touch. Never mark an unobserved release or recontact as success. Future improvements to turn/carry kinematics must be isolated to D-01.

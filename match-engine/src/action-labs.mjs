@@ -23,6 +23,7 @@ import {createPlayerMovement,INITIAL_PLAYERS} from './player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup}
  from './small-sided-lab-scenarios.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
+import {createIsolatedDribbleNativeAudit} from './isolated-dribble-native-audit.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
 import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CROSS_LAB_STARTS,SAVE_LAB_STARTS,DEFENSE_LAB_STARTS,B05_LAB_STARTS,B05B_LAB_STARTS,CARRY_LAB_STARTS,
  CHALLENGE_LAB_STARTS,CONTROL_LAB_STARTS,
@@ -229,6 +230,8 @@ export function createControlledActionLab(RAPIER,id,{
   createBasicMatchRefereeB05():null;
  const matchTimelineObserver=(refereeMode||smallSided)?
   createBasicMatchTimelineB06():null;
+ const isolatedDribbleAudit=id==='dribble-1v1'?
+  createIsolatedDribbleNativeAudit({side:shotSide,variantIndex}):null;
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
  function record(physics,playerFrame){
@@ -403,6 +406,10 @@ export function createControlledActionLab(RAPIER,id,{
   const matchTimeline=matchTimelineObserver?.observe({
    physics,refereeEvidence
   })??null;
+  const nativeDribbleAudit=isolatedDribbleAudit?.observe({
+   physics,playerFrame,foot,action,
+   physicalBodies:bodyGuardEnabled?engine.smallSidedBodyGuardSnapshot():null
+  })??null;
   const contactContinuity=continuityObserver.observe({
    physics,playerFrame,foot,decisionEvidence
   });
@@ -428,6 +435,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(basicFootwork?{baseFootworkAudit}:{}),
     ...(refereeMode||smallSided?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake,
      matchTimeline}:{}),
+    ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
      smallSidedNativeBodyGuard:bodyGuardEnabled?
        engine.smallSidedBodyGuardSnapshot():null,

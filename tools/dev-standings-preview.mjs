@@ -56,6 +56,7 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/small-sided-lab-scenarios.mjs': 'match-engine/src/small-sided-lab-scenarios.mjs',
   '/__fa_match_engine__/small-sided-context-choice.mjs': 'match-engine/src/small-sided-context-choice.mjs',
    '/__fa_match_engine__/isolated-dribble-touches.mjs': 'match-engine/src/isolated-dribble-touches.mjs',
+   '/__fa_match_engine__/isolated-dribble-native-audit.mjs': 'match-engine/src/isolated-dribble-native-audit.mjs',
   '/__fa_match_engine__/small-sided-native-body-guard.mjs': 'match-engine/src/small-sided-native-body-guard.mjs',
   '/__fa_match_engine__/research-shot-initial-lineup.mjs': 'match-engine/src/research-shot-initial-lineup.mjs',
   '/__fa_match_engine__/goalkeeper-save-foundation-b02.mjs': 'match-engine/src/goalkeeper-save-foundation-b02.mjs',

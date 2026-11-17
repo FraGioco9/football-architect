@@ -347,6 +347,11 @@ function render() {
        lastInlineFootballAction.action.toUpperCase()+
        ' native shoe/impulse'+
        (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
+      (f.nativeDribbleAudit?' · real native carries '+
+       f.nativeDribbleAudit.appliedCarryActions+
+       ' · native releases '+f.nativeDribbleAudit.attackerShoeEnds+
+       ' · independent recontacts '+f.nativeDribbleAudit.independentRecontacts+
+       ' · ball path '+f.nativeDribbleAudit.ballPath2DM.toFixed(2)+' m': '')+
       (f.smallSidedNativeBodyGuard?.lowerLegBallContacts.length?
        ' · real body–ball '+f.smallSidedNativeBodyGuard.lowerLegBallContacts.length:'')+
       (f.smallSidedNativeBodyGuard?.nativeOpposingTorsoPairs.length?
