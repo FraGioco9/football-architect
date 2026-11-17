@@ -14,7 +14,9 @@ const freeze=Object.freeze;
 const idPair=(a,b)=>[a,b].sort().join('|');
 
 export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
- initialPlayers,activePlayerIds){
+ initialPlayers,activePlayerIds,{feedbackEnabled=false}={}){
+ if(typeof feedbackEnabled!=='boolean')
+  throw new TypeError('LAB feedback option must be a boolean');
  if(!R?.RigidBodyDesc||!R?.ColliderDesc||
     typeof world?.createRigidBody!=='function'||
     typeof world?.contactPair!=='function'||
@@ -50,12 +52,14 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
  if(entries.length!==activePlayerIds.length)
   throw new Error('Selected physical body identity mismatch');
  let tick=0,prepared=null,disposed=false,previousBallIds=new Set();
+ let lastAcceptedTick=0;
  let latest=null,prior=initialPlayers.map(p=>({id:p.id,x:p.x,y:p.y}));
  function requireLive(){if(disposed)throw new Error('Physical body guard disposed');}
  function snapshot(){requireLive();return latest;}
  function prepare(frame,nextTick){
   requireLive();
-  if(prepared!==null||nextTick!==tick+1||
+  if((feedbackEnabled&&lastAcceptedTick!==tick)||
+     prepared!==null||nextTick!==tick+1||
      !Number.isSafeInteger(nextTick)||
      frame?.version!==PLAYER_VERSION||frame.tick!==nextTick||
      !Array.isArray(frame.players)||frame.players.length!==22)
@@ -123,6 +127,24 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
   });
   return latest;
  }
+ function acknowledgeCanonicalResponse(frame){
+  requireLive();
+  if(!feedbackEnabled||prepared!==null||lastAcceptedTick!==tick-1||
+     frame?.tick!==tick||frame.version!==PLAYER_VERSION||
+     frame.smallSidedPhysicalFeedback?.tick!==tick||
+     typeof frame.smallSidedPhysicalFeedback.accepted!=='boolean'||
+     !Array.isArray(frame.players)||frame.players.length!==22)
+   throw new TypeError('One current original mover acknowledgment required');
+  const accepted=frame.players.map((p,i)=>{
+   if(p.id!==INITIAL_PLAYERS[i].id||
+      p.team!==INITIAL_PLAYERS[i].team||
+      ![p.x,p.y,p.vx,p.vy].every(finite))
+    throw new TypeError('Original mover feedback receipt identity mismatch');
+   return {id:p.id,x:p.x,y:p.y};
+  });
+  prior=accepted;lastAcceptedTick=tick;
+  return latest;
+ }
  function dispose(){disposed=true;}
  latest=freeze({version:SMALL_SIDED_BODY_VERSION,tick:0,
   oneOriginalRapierWorld:true,selectedColliderIds:freeze(entries.map(e=>e.id)),
@@ -131,5 +153,6 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
   bodies:freeze([]),ballProtectionProven:false,
   successfulPossession:false,tackleWon:false,officialMatchResult:null,
   evidenceSource:'native-rapier-solver-manifold'});
- return freeze({prepare,observe,snapshot,dispose});
+ return freeze({prepare,observe,snapshot,dispose,
+  ...(feedbackEnabled?{acknowledgeCanonicalResponse}:{})});
 }

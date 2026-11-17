@@ -116,6 +116,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSmallSidedSide = null,
   diagnosticSmallSidedVariantIndex = 0,
   diagnosticSmallSidedBodyGuardEnabled = false,
+   diagnosticSmallSidedBodyFeedbackEnabled = false,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -147,7 +148,11 @@ export function createEngine(RAPIER, input = {}, {
    throw new TypeError('Small-sided situation and attacking side must be paired');
   if(diagnosticSmallSidedSituation===null&&diagnosticSmallSidedVariantIndex!==0)
    throw new TypeError('Small-sided variant requires a paired physical exercise');
-  if(typeof diagnosticSmallSidedBodyGuardEnabled!=='boolean'||
+  if(typeof diagnosticSmallSidedBodyFeedbackEnabled!=='boolean'||
+      (diagnosticSmallSidedBodyFeedbackEnabled&&
+       diagnosticSmallSidedBodyGuardEnabled!==true))
+    throw new TypeError('Small-sided feedback needs selected physical bodies');
+   if(typeof diagnosticSmallSidedBodyGuardEnabled!=='boolean'||
      (diagnosticSmallSidedBodyGuardEnabled&&(
       diagnosticSmallSidedSituation===null||
       !diagnosticPlayerFootContactsEnabled||
@@ -497,6 +502,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticB06bHalftimeTick,diagnosticB06bNativeShotSide,
     diagnosticSmallSidedSituation,diagnosticSmallSidedSide,
     diagnosticSmallSidedVariantIndex,diagnosticSmallSidedBodyGuardEnabled,
+     diagnosticSmallSidedBodyFeedbackEnabled,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
@@ -562,7 +568,9 @@ export function createEngine(RAPIER, input = {}, {
     }):null;
   const smallBodyGuard=diagnosticSmallSidedBodyGuardEnabled?
    createSmallSidedNativeBodyGuard(RAPIER,world,ballCollider,
-    stagedShoes,smallSided.activeIds):null;
+     stagedShoes,smallSided.activeIds,{
+      feedbackEnabled:diagnosticSmallSidedBodyFeedbackEnabled
+     }):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
@@ -1151,8 +1159,13 @@ export function createEngine(RAPIER, input = {}, {
     }:{}),
     ...(smallSided?{
       originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds,
-      ...(smallBodyGuard?{smallSidedBodyGuardSnapshot:()=>
-       smallBodyGuard.snapshot()}:{})
+      ...(smallBodyGuard?{
+        smallSidedBodyGuardSnapshot:()=>smallBodyGuard.snapshot(),
+        ...(diagnosticSmallSidedBodyFeedbackEnabled?{
+         acknowledgeSmallSidedBodyFeedback:frame=>
+          smallBodyGuard.acknowledgeCanonicalResponse(frame)
+        }:{})
+       }:{})
     }:{}),
     ...(actionExecutor?{
       uniformAutonomousActionSnapshot:()=>actionExecutor.actionSnapshot(),

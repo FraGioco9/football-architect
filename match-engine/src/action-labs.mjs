@@ -147,7 +147,8 @@ export function createControlledActionLab(RAPIER,id,{
    diagnosticSmallSidedSituation:id,
    diagnosticSmallSidedSide:shotSide,
    diagnosticSmallSidedVariantIndex:variantIndex,
-   diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled
+   diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
+    diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
   }:{}),
   ...(refereeMode?{diagnosticBasicRestartEnabled:true}:{}),
   ...(sourceRestart?{
@@ -178,7 +179,8 @@ export function createControlledActionLab(RAPIER,id,{
  });
  const mover=createPlayerMovement(smallSided?{
    researchSmallSidedSituation:id,researchSmallSidedSide:shotSide,
-   ...(variantIndex>0?{researchSmallSidedVariantIndex:variantIndex}:{})
+   ...(variantIndex>0?{researchSmallSidedVariantIndex:variantIndex}:{}),
+   ...(bodyGuardEnabled?{researchSmallSidedBodyFeedback:true}:{})
   }:sourceRestart?{
    researchBasicRestartSource:id,
    researchBasicRestartAttackSide:selectedShotSide,
@@ -428,7 +430,9 @@ export function createControlledActionLab(RAPIER,id,{
      matchTimeline}:{}),
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
      smallSidedNativeBodyGuard:bodyGuardEnabled?
-      engine.smallSidedBodyGuardSnapshot():null,
+       engine.smallSidedBodyGuardSnapshot():null,
+      smallSidedPhysicalFeedback:bodyGuardEnabled?
+       playerFrame.smallSidedPhysicalFeedback:null,
      smallSidedVariantIndex:smallSided.variantIndex,
      genuinePhysicalPlayerCount:smallSided.genuinePhysicalPlayers,
      activeCollisionSource:'native-colliders-only',
@@ -452,11 +456,19 @@ export function createControlledActionLab(RAPIER,id,{
  function step(){
   if(disposed)throw new Error('Action LAB disposed');
   const prior=engine.snapshot();
-  const frame=mover.step(prior.ball.position,
+  let frame=mover.step(prior.ball.position,
    spec.mode==='control'?firstPhysicalPassAction:null,
    reachExperiment?engine.researchReceiverTapSnapshot():null,
    goalkeeperSave?prior.ball.velocity:null);
   const initialAfter=engine.step(frame);
+   if(smallSided&&bodyGuardEnabled){
+    // Only post-step original native manifolds feed the canonical mover.
+    // The real shoe impulse in this tick has already been decided.
+    mover.reconcileSmallSidedNativeBodyResponse(
+     engine.smallSidedBodyGuardSnapshot());
+    frame=mover.snapshot();
+    engine.acknowledgeSmallSidedBodyFeedback(frame);
+   }
   if(sourceRestart&&!b05bOutKick){
    b05bOutKick=engine.attemptB05bNativeOutboundKick(frame);
   }

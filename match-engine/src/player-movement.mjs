@@ -1656,6 +1656,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bNativeShotSide'&&
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
      k!=='researchSmallSidedVariantIndex'&&
+      k!=='researchSmallSidedBodyFeedback'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlCloseDefender'&&
@@ -1802,11 +1803,15 @@ export function createPlayerMovement(options={}){
       options.researchShotAttacker!==undefined||
       options.researchBodyEncounter!==undefined||
       Reflect.ownKeys(options).length!==
-       (options.researchSmallSidedVariantIndex===undefined?2:3)))||
+       (options.researchSmallSidedVariantIndex===undefined?2:3)+
+        (options.researchSmallSidedBodyFeedback===true?1:0)))||
     ((options.researchSmallSidedSituation===undefined)!==
      (options.researchSmallSidedSide===undefined))||
     (options.researchSmallSidedVariantIndex!==undefined&&
      options.researchSmallSidedSituation===undefined)||
+    (options.researchSmallSidedBodyFeedback!==undefined&&
+     (options.researchSmallSidedBodyFeedback!==true||
+      options.researchSmallSidedSituation===undefined))||
     (options.researchBasicRestartSource!==undefined&&(
       !['throw-in','corner','goal-kick'].includes(options.researchBasicRestartSource)||
       !['home','away'].includes(options.researchBasicRestartAttackSide)||
@@ -1899,13 +1904,21 @@ export function createPlayerMovement(options={}){
   b06bGoalKickoffTarget=null;
  }
  let physicallyAppliedResponses=0,lastPhysicalReconciliation=null;
+  let smallBodyFeedbackTick=0,smallBodyPrior=null;
+  let smallSidedPhysicalFeedback=Object.freeze({
+   tick:0,accepted:false,reason:'not-stepped',
+   playerIds:Object.freeze([]),adjustedM:0,
+   ballProtectionProven:false,successfulPossession:false,tackleWon:false
+  });
  let lastFeedbackSource=null,lastFeedbackReconciledTick=0;
  // M16 keeps the physical shoe state sent to Rapier before its body solver.
  // Never replace this source with post-solver canonical coordinates.
- let lastNativeShoeFrame=options.researchShoeBodyHandoff===true?
-  initial.map(p=>Object.freeze({
-   id:p.id,x:p.x,y:p.y,facingRad:p.facingRad
-  })):null;
+ let lastNativeShoeFrame=(options.researchShoeBodyHandoff===true||
+   options.researchSmallSidedBodyFeedback===true)?
+   initial.map(p=>options.researchSmallSidedBodyFeedback===true&&
+    !smallActive.has(p.id)?null:Object.freeze({
+     id:p.id,x:p.x,y:p.y,facingRad:p.facingRad
+    })):null;
  let shoePositionClamps=0,shoeHeadingClamps=0,shoeFeedbackRejects=0;
  let lastBall={x:0,y:0};
  let goalkeeperDiveIntent=null,goalkeeperDiveIntentTicks=0;
@@ -2116,6 +2129,9 @@ export function createPlayerMovement(options={}){
     away:teamShape(players,'away',pressers.away)
    }),
    players:Object.freeze(players.map(p=>Object.freeze({...p}))),
+    ...(options.researchSmallSidedBodyFeedback===true?{
+     smallSidedPhysicalFeedback
+    }:{}),
    ...((options.researchBodyEncounter===true||
          options.researchUnstagedNativeBodyFeedback===true)?{
     actualNativeResponseCount:physicallyAppliedResponses,
@@ -2135,6 +2151,9 @@ export function createPlayerMovement(options={}){
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
+  if(options.researchSmallSidedBodyFeedback===true&&
+     smallBodyFeedbackTick!==tick)
+   throw new TypeError('LAB native feedback requires the prior tick acknowledgment');
   const ball=ballXY(ballPosition);
   if(options.researchGoalkeeperSaveSide!==undefined&&(
      !realBallVelocity||
@@ -2149,6 +2168,11 @@ export function createPlayerMovement(options={}){
      id:p.id,team:p.team,x:p.x,y:p.y
     })))
    });
+  if(options.researchSmallSidedBodyFeedback===true)
+   smallBodyPrior=Object.freeze({tick:tick+1,
+    players:Object.freeze(players.map(p=>Object.freeze({
+     id:p.id,team:p.team,x:p.x,y:p.y
+    })))});
   // Research-only receiver reaction, never a received-pass award.
   // A kinematic destination is still subject to acceleration, 7m/s speed,
   // turning, and 0.98m kinematic separation enforced by the original mover.
@@ -2572,9 +2596,11 @@ export function createPlayerMovement(options={}){
    }else p.facingRad=wantedFacing;
   }
   if(lastNativeShoeFrame!==null)
-   lastNativeShoeFrame=players.map(p=>Object.freeze({
-    id:p.id,x:p.x,y:p.y,facingRad:p.facingRad
-   }));
+   lastNativeShoeFrame=players.map(p=>
+    options.researchSmallSidedBodyFeedback===true&&
+    !smallActive.has(p.id)?null:Object.freeze({
+     id:p.id,x:p.x,y:p.y,facingRad:p.facingRad
+    }));
   // Evaluate progress only after the existing hard kinematic collision
   // guard. A failed path is dropped and enters the ME-PLAYER-18 cooldown.
   for(const p of players){
@@ -2790,6 +2816,103 @@ export function createPlayerMovement(options={}){
   lastFeedbackReconciledTick=tick;
   return lastPhysicalReconciliation;
  }
+ // LAB-VAR-02B/2a: only actual selected-body solver responses may
+ // change canonical XY. All-or-nothing validation uses original 22-player
+ // separation and pre-tick source; it never claims a football outcome.
+ function reconcileSmallSidedNativeBodyResponse(native){
+  if(options.researchSmallSidedBodyFeedback!==true||!smallSided||
+     native?.tick!==tick||tick<1||smallBodyFeedbackTick!==tick-1||
+     smallBodyPrior?.tick!==tick||
+     native.version!=='me-628-native-physical-body-guard-v1'||
+     native.oneOriginalRapierWorld!==true||
+     native.evidenceSource!=='native-rapier-solver-manifold'||
+     !Array.isArray(native.selectedColliderIds)||
+     !Array.isArray(native.bodies)||
+     !Array.isArray(native.lowerLegBallContacts)||
+     !Array.isArray(native.nativeOpposingTorsoPairs)||
+     native.selectedColliderIds.length!==smallSided.activeIds.length||
+     native.bodies.length!==smallSided.activeIds.length||
+     native.selectedColliderIds.some((id,i)=>id!==smallSided.activeIds[i]))
+   throw new TypeError('LAB requires current selected original native body source');
+  const ids=new Set(),pairs=new Set();
+  for(const id of native.lowerLegBallContacts){
+   if(!smallActive.has(id)||ids.has(id))
+    throw new TypeError('Invalid selected original ball-contact source');
+   ids.add(id);
+  }
+  for(const label of native.nativeOpposingTorsoPairs){
+   const duo=typeof label==='string'?label.split('|'):[];
+   if(duo.length!==2||duo[0]>=duo[1]||pairs.has(label)||
+      duo.some(id=>!smallActive.has(id))||
+      INITIAL_PLAYERS.find(p=>p.id===duo[0]).team===
+       INITIAL_PLAYERS.find(p=>p.id===duo[1]).team)
+    throw new TypeError('Invalid original opposing torso manifold');
+   pairs.add(label);duo.forEach(id=>ids.add(id));
+  }
+  let adjustedM=0;
+  const candidate=players.map(p=>({x:p.x,y:p.y}));
+  for(let i=0;i<native.bodies.length;i++){
+   const b=native.bodies[i],id=smallSided.activeIds[i];
+   if(b?.id!==id||b.team!==INITIAL_PLAYERS.find(p=>p.id===id).team||
+      ![b.position?.x,b.position?.y,b.velocity?.x,b.velocity?.y,
+       b.originalCanonicalDriftM].every(Number.isFinite))
+    throw new TypeError('Original native body order and finite XY required');
+   if(ids.has(id)){
+    const index=players.findIndex(p=>p.id===id);
+    candidate[index]={x:b.position.x,y:b.position.y};
+    adjustedM+=Math.hypot(b.position.x-players[index].x,
+     b.position.y-players[index].y);
+   }
+  }
+  const reject=reason=>{
+   smallBodyFeedbackTick=tick;smallBodyPrior=null;
+   smallSidedPhysicalFeedback=Object.freeze({
+    tick,accepted:false,reason,
+    playerIds:Object.freeze([...ids].sort()),adjustedM,
+    ballProtectionProven:false,successfulPossession:false,tackleWon:false
+   });
+   return smallSidedPhysicalFeedback;
+  };
+  if(!ids.size)return reject('no-native-body-manifold');
+  if(adjustedM<=1e-9)return reject('no-measured-xy-response');
+  for(let i=0;i<players.length;i++){
+   const p=players[i],n=candidate[i],old=smallBodyPrior.players[i];
+   if(p.id!==old.id||p.team!==old.team)
+    throw new TypeError('Original mover history identity mismatch');
+   if(Math.abs(n.x)>PLAYER_KINEMATIC_LIMITS.maxX+1e-8||
+      Math.abs(n.y)>PLAYER_KINEMATIC_LIMITS.maxY+1e-8||
+      Math.hypot(n.x-old.x,n.y-old.y)>
+       PLAYER_MAX_SPEED_MPS*PLAYER_DT+1e-7)
+    return reject('original-speed-or-pitch');
+   if(ids.has(p.id)){
+    const shoe=lastNativeShoeFrame[i];
+    if(!shoe||shoe.id!==p.id||
+       Math.hypot(n.x-shoe.x,n.y-shoe.y)>
+        PLAYER_MAX_SPEED_MPS*PLAYER_DT+1e-8)
+     return reject('original-shoe-handoff');
+   }
+   for(let j=i+1;j<players.length;j++)
+    if(Math.hypot(n.x-candidate[j].x,n.y-candidate[j].y)<
+       PLAYER_MIN_SEPARATION_M-1e-8)
+     return reject('original-22-player-separation');
+  }
+  for(let i=0;i<players.length;i++){
+   const p=players[i];if(!ids.has(p.id))continue;
+   const n=candidate[i],old=smallBodyPrior.players[i];
+   p.x=n.x;p.y=n.y;
+   p.vx=(n.x-old.x)/PLAYER_DT;
+   p.vy=(n.y-old.y)/PLAYER_DT;
+   p.facingRad=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
+    PLAYER_KINEMATIC_LIMITS);
+  }
+  smallBodyFeedbackTick=tick;smallBodyPrior=null;
+  smallSidedPhysicalFeedback=Object.freeze({
+   tick,accepted:true,reason:'measured-original-native-xy-response',
+   playerIds:Object.freeze([...ids].sort()),adjustedM,
+   ballProtectionProven:false,successfulPossession:false,tackleWon:false
+  });
+  return smallSidedPhysicalFeedback;
+ }
  // M8 controlled feedback: one real native pair and one same-tick
  // physical XY solution. The canonical minimum gap and speed always win.
  function reconcileNativeBodyResponse(native){
@@ -2858,6 +2981,9 @@ export function createPlayerMovement(options={}){
    queueB06bOriginalGoalKickoff,finishB06bOriginalGoalKickoff
   }:{}),
   ...(options.researchBodyEncounter===true?{reconcileNativeBodyResponse}:{}) ,
+   ...(options.researchSmallSidedBodyFeedback===true?{
+    reconcileSmallSidedNativeBodyResponse
+   }:{}),
   ...(options.researchUnstagedNativeBodyFeedback===true?{
    reconcileUnstagedNativeBodyResponse
   }:{})

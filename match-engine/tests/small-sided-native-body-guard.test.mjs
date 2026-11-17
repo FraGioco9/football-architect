@@ -62,6 +62,7 @@ test('#628 body guard remains selected-only, exact-tick and deterministic in all
    const zero=enabledV01.snapshot();
    assert.equal(zero.smallSidedVariantIndex,0);
    assert.equal(zero.smallSidedNativeBodyGuard.tick,0);
+   assert.equal(zero.smallSidedPhysicalFeedback.tick,0);
    assert.deepEqual(zero.smallSidedNativeBodyGuard.selectedColliderIds,
     zero.smallSidedParticipants);
    for(let expectedTick=1;expectedTick<=12;expectedTick++){
@@ -71,6 +72,9 @@ test('#628 body guard remains selected-only, exact-tick and deterministic in all
      'V01 Bodies ON '+spec.id+' '+side+' tick '+expectedTick+
      ' failed: '+error.message,{cause:error});}
     assert.equal(next.smallSidedNativeBodyGuard.tick,expectedTick);
+    assert.equal(next.smallSidedPhysicalFeedback.tick,expectedTick);
+    assert.equal(typeof next.smallSidedPhysicalFeedback.accepted,'boolean');
+    assert.equal(next.smallSidedPhysicalFeedback.ballProtectionProven,false);
     assert.equal(next.officialMatchResult,null);
     if(next.refereeEvidence?.lastEvent){
      process.stdout.write('ME_628_V01_BODIES_EARLY_EVENT '+
@@ -93,6 +97,9 @@ test('#628 body guard remains selected-only, exact-tick and deterministic in all
     for(let tick=1;tick<=65;tick++){
      const x=a.step(),y=b.step(),g=x.smallSidedNativeBodyGuard;
      assert.equal(g.tick,tick);
+     assert.equal(x.smallSidedPhysicalFeedback.tick,tick);
+     assert.deepEqual(x.smallSidedPhysicalFeedback,
+      y.smallSidedPhysicalFeedback);
      assert.deepEqual(g,y.smallSidedNativeBodyGuard);
      assert.deepEqual(x.ball,y.ball);
      assert.deepEqual(g.selectedColliderIds,x.smallSidedParticipants);
@@ -105,6 +112,13 @@ test('#628 body guard remains selected-only, exact-tick and deterministic in all
      assert.equal(g.successfulPossession,false);
      assert.equal(g.tackleWon,false);
      assert.equal(x.officialMatchResult,null);
+     const live=x.observedMovementPlayers;
+     for(let i=0;i<live.length;i++){
+      assert.ok(Math.hypot(live[i].vx,live[i].vy)<=7+1e-7);
+      for(let j=i+1;j<live.length;j++)
+       assert.ok(Math.hypot(live[i].x-live[j].x,
+        live[i].y-live[j].y)>=.98-1e-7);
+     }
      if(x.refereeEvidence?.lastEvent)break;
     }
    }finally{a.dispose();b.dispose();}
@@ -129,6 +143,9 @@ test('#628 body collision requires a real small-sided shoe source; V01 supports 
   shotSide:'home',variantIndex:0,bodyGuardEnabled:'yes'}),TypeError);
  assert.throws(()=>createControlledActionLab(R,'shot',{
   bodyGuardEnabled:true}),TypeError);
+ assert.throws(()=>createEngine(R,ball,{
+  diagnosticSmallSidedBodyFeedbackEnabled:true
+ }),TypeError);
  const routes=readFileSync(new URL('../../tools/dev-standings-preview.mjs',
   import.meta.url),'utf8');
  assert.ok(routes.includes("'/__fa_match_engine__/small-sided-native-body-guard.mjs':"));
