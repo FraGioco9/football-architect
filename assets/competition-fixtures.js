@@ -393,7 +393,11 @@
     // Do not interpret missing or stale season data as an empty schedule.
     const context=window.faCompetitionContext,data=context?.seasonData;
     const matching=data&&String(data.season)===String(context.selectedSeason)&&String(context.selectedSeason)===String(navigation.get().season);
-    const absent=matching&&data.fixtures===null;
+    // The entrants-only sporting projection intentionally has fixtures:null
+    // until the world calendar is published. A separately verified, already
+    // published match collection is authoritative for Fixtures, so that null
+    // must not hide eight real round matches behind an "empty" panel.
+    const absent=matching&&data.fixtures===null&&!hasSchedule;
     const emptyRound=available&&((international&&!next.some(item=>item.dataset.fixtureMatch))||
       (!international&&!isPostseason&&matches.length===0));
     const panel=document.getElementById('competition-panel-fixtures');
@@ -623,6 +627,31 @@
     return [...appearances.keys()].map(key=>catalogue.get(key));
   }
 
+  // Season 2 domestic promotions can replace inaugural division clubs.
+  // Resolve actual published entrants from the public immutable draw and
+  // verified catalogue, even when the separate entrants read is still pending.
+  // Never fall back to the Season 1 division map or invent a participant.
+  async function publishedDomesticParticipants(games){
+    const manifest=await window.faCompetitionManifestPromise;
+    if(!model?.validManifest?.(manifest))throw Error('Missing verified domestic catalogue');
+    const countryId=definition.id.split('-')[0];
+    const catalogue=new Map(manifest.divisions.filter(d=>d.countryId===countryId)
+      .flatMap(d=>d.clubs).map(club=>[club.clubId,club]));
+    const appearances=new Map();
+    for(const game of games){
+      if(!validRound(game.round)||!Number.isSafeInteger(game.homeId)||
+         !Number.isSafeInteger(game.awayId)||game.homeId===game.awayId)
+        throw Error('Invalid published domestic fixture');
+      for(const clubId of [game.homeId,game.awayId]){
+        if(!catalogue.has(clubId))throw Error('Unknown published domestic entrant');
+        appearances.set(clubId,(appearances.get(clubId)||0)+1);
+      }
+    }
+    if(appearances.size!==capacity||[...appearances.values()].some(n=>n!==roundCount))
+      throw Error('Incomplete published domestic membership');
+    return [...appearances.keys()].map(id=>catalogue.get(id));
+  }
+
   /** Read only the officially committed draw, even before worldwide publication. */
   async function readPublishedFixtures(){
     const context=window.faCompetitionContext,source=window.faWorldState?.get?.();
@@ -685,8 +714,14 @@
       const initialData=window.faCompetitionContext?.seasonData;
       const hasInitialScores=initialData?.provenance?.kind==='authoritative'&&initialData.season===season&&initialData.entrantsOnly!==true;
       const confirmed=initialData?.provenance?.kind==='authoritative'&&initialData.season===season&&initialData.entrantsOnly===true;
-      const participants=international&&!hasInitialScores?
-        confirmed?initialData.participants:await publishedCupParticipants(games):null;
+      // Reuse an already verified roster without an extra catalogue await.
+      // Season 2 promotions require canonical lookup if this is still
+      // the inaugural division map (the entrant response can arrive later).
+      const knownDomesticClubs=!international&&games.every(g=>clubs.has(g.homeId)&&clubs.has(g.awayId));
+      const participants=hasInitialScores?null:confirmed?
+        initialData.participants:international?
+        await publishedCupParticipants(games):knownDomesticClubs?null:
+        await publishedDomesticParticipants(games);
       // The catalogue read can outlive an admin advance, source toggle, or
       // route change. Fence the commit AFTER every awaited dependency.
       const latest=window.faWorldState?.get?.();
