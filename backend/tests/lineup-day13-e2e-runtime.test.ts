@@ -164,10 +164,26 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
   .toHaveLength(a.result.homeGoals+a.result.awayGoals);
  expect(JSON.parse(frozenB!.receipt_json).result.events.filter((e:{side:string})=>e.side==='away'))
   .toHaveLength(0);
- const season=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
+ const identityQueries:string[]=[];
+ const trackedDb={prepare(sql:string){if(sql.includes('FROM generated_players'))identityQueries.push(sql);return db.prepare(sql)},batch:db.batch.bind(db)};
+ const season=await readPublicSportingSeasonLineupV1(trackedDb,'IT-1',1) as any;
+ expect(identityQueries).toHaveLength(1);
+ expect(identityQueries[0]).not.toContain('player_club_affiliations');
  expect(season.data.fixtures.filter((f:any)=>f.result)).toHaveLength(8);
  expect(season.data.statistics.matchesPlayed).toBe(8);
  expect(season.data.statistics.players).toHaveLength(33);
+ for(const player of season.data.statistics.players){
+  expect(player.displayName).toBe('Test Player'+player.playerId);
+  expect(player.appearances).toBe(1);
+  expect(player.starts).toBe(1);
+  expect(player.minutes).toBeGreaterThan(0);
+  expect(player).not.toHaveProperty('assists');
+  expect(player).not.toHaveProperty('averageRating');
+ }
+ const fullPlayers=season.data.statistics.players.filter((p:any)=>[full.home_club_id,full.away_club_id].includes(p.clubId));
+ expect(fullPlayers).toHaveLength(22);
+ expect(season.data.statistics.players.filter((p:any)=>p.clubId===mixed.home_club_id)).toHaveLength(11);
+ expect(season.data.statistics.players.some((p:any)=>p.clubId===mixed.away_club_id)).toBe(false);
  const calendar=await readPublicCalendarDayLineupV1(db,1,13) as any;
  expect(calendar.data.fixtures.length).toBe(128);
  expect(calendar.data.fixtures.every((f:any)=>f.result)).toBe(true);
@@ -176,6 +192,17 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(await readPublicMatchLineupV1(db,String(full.public_id))).toEqual(a);
  const afterward=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
  expect(afterward.data.statistics.players).toEqual(season.data.statistics.players);
+ const beforeIdentityRead=await readWorld(db);
+ // An unavailable directory label must never fabricate a name or erase totals.
+ const payload=await db.prepare('SELECT payload_json FROM generated_players WHERE id=1').first() as {payload_json:string};
+ const unknown=JSON.parse(payload.payload_json);delete unknown.first_name;delete unknown.last_name;
+ await db.prepare('UPDATE generated_players SET payload_json=? WHERE id=1').bind(JSON.stringify(unknown)).run();
+ const unnamed=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
+ const recorded=season.data.statistics.players.find((p:any)=>p.playerId===1);
+ expect(unnamed.data.statistics.players.find((p:any)=>p.playerId===1)).toEqual({...recorded,displayName:null});
+ expect(await readWorld(db)).toEqual(beforeIdentityRead);
+ await db.prepare('UPDATE generated_players SET payload_json=? WHERE id=1').bind(payload.payload_json).run();
+
  // Verify the ACTUAL anonymous HTTP router, not only the standalone V2
  // projection. Every public endpoint must agree with the same finalized day.
  const get=async(path:string)=>{

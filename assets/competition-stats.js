@@ -7,7 +7,7 @@
  const views=[['overview','statsDevOverview','Overview'],['teams','statsDevTeams','Teams'],['players','statsDevPlayers','Players']];
  const overview=[['matchesPlayed','statsDevMatchesPlayed','Matches played'],['totalGoals','statsDevTotalGoals','Total goals'],['goalsPerMatch','statsDevGoalsPerMatch','Goals per match']];
  const teams=[['gf','statsDevGoalsScored','Goals scored',false],['ga','statsDevFewestConceded','Fewest conceded',true],['w','statsDevWins','Wins',false],['cs','statsDevCleanSheets','Clean sheets',false],['ppg','statsDevPointsPerMatch','Points per match',false],['gd','statsDevGoalDifference','Goal difference',false],['unbeatenStreak','statsDevUnbeatenStreak','Unbeaten streak',false]];
- const players=[['goals','statsDevGoals','Goals'],['assists','statsDevAssists','Assists'],['averageRating','statsDevAverageRating','Average rating'],['cleanSheets','statsDevCleanSheets','Clean sheets']];
+ const players=[['goals','statsDevGoals','Goals'],['appearances','statsDevAppearances','Appearances'],['starts','statsDevStarts','Starts'],['minutes','statsDevMinutes','Minutes']];
  const mounted=new WeakMap(),identity=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/;
  const text=value=>typeof value==='string'&&value.trim().length>0;
  const count=value=>Number.isSafeInteger(value)&&value>=0;
@@ -51,9 +51,11 @@
   }).filter(Boolean);
   const playerIds=new Set();
   const people=(statistics.players||[]).map(player=>{
-   if(!player||!text(player.playerId)||playerIds.has(player.playerId)||!text(player.name)||!participants.has(player.clubKey)||!count(player.appearances)||player.appearances<1)throw Error('Invalid player statistic');
-   playerIds.add(player.playerId);
-   for(const [key] of players)if(player[key]!==undefined&&(!finite(player[key])||player[key]<0||key!=='averageRating'&&!Number.isSafeInteger(player[key])))throw Error('Invalid player metric');
+   const identity=player?.clubKey+':'+player?.playerId;
+   if(!player||!count(player.playerId)||player.playerId<1||playerIds.has(identity)||player.name!==null&&!text(player.name)||!participants.has(player.clubKey)||!count(player.appearances)||player.appearances<1)throw Error('Invalid player statistic');
+   playerIds.add(identity);
+   for(const [key] of players)if(!count(player[key]))throw Error('Invalid player metric');
+   if(player.starts>player.appearances||player.minutes<player.appearances||player.minutes>120*player.appearances)throw Error('Invalid player participation');
    return {...player};
   });
   return {overview:{...o},teams:records,players:people};
@@ -81,9 +83,14 @@
    const li=create('li'),rank=list.findIndex(candidate=>candidate[key]===record[key])+1;
    const identityNode=create('span',undefined,'app-world-club-identity'),crest=create('span',undefined,'app-world-club-crest-placeholder');
    crest.dataset.clubCrest=record.clubKey;crest.setAttribute('aria-hidden','true');
-   const match=record.clubKey.match(identity),name=create(player?'span':'a',player?record.name:record.clubName,'fa-dev-stats-team-name'+(player?'':' app-world-standing-club-link'));
-   if(!player)name.href=window.faRoutesRegistry.buildRoute({kind:'club',country:match[1].toLowerCase(),id:match[2],view:'overview'});
-   identityNode.append(crest,name);li.append(create('span',rank,'fa-dev-stats-rank'),identityNode,create('strong',format(key,record[key])));return li;
+   const match=record.clubKey.match(identity),club=context.seasonData.participants.find(c=>c.countryId+'-'+c.clubId===record.clubKey);
+   const clubRoute=window.faRoutesRegistry.buildRoute({kind:'club',country:match[1].toLowerCase(),id:match[2],view:'overview'});
+   const name=create('a',player?(record.name??'#'+record.playerId):record.clubName,'fa-dev-stats-team-name app-world-standing-club-link');
+   name.href=player?window.faRoutesRegistry.buildRoute({kind:'player',id:record.playerId}):clubRoute;
+   if(player){
+    const clubLink=create('a',undefined,'fa-dev-stats-club-link app-world-club-identity');clubLink.href=clubRoute;
+    clubLink.setAttribute('aria-label',club.primaryName);clubLink.title=club.primaryName;clubLink.append(crest);identityNode.append(clubLink,name);
+   }else identityNode.append(crest,name);li.append(create('span',rank,'fa-dev-stats-rank'),identityNode,create('strong',format(key,record[key])));return li;
   }
   function showAll(button,records,key,labelKey,label,player){
    removeDialog(false);opener=button;
@@ -135,7 +142,7 @@
     for(const [key,labelKey,label,ascending=false] of player?players:teams){
      const card=create('section',undefined,'app-competition-stat-card '+(player?'app-competition-stat-card--compact':'app-competition-stat-card--fluid')+' fa-dev-stats-leader-card'+(player?'':' fa-dev-stats-team-card'));
      card.append(localized('h4',labelKey,label,'app-competition-stat-label fa-dev-stats-leader-title'));
-     const records=[...(stats?.[player?'players':'teams']||[])].filter(record=>record[key]!==undefined).sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||(player?a.name.localeCompare(b.name):a.clubName.localeCompare(b.clubName))||(a.clubKey.localeCompare(b.clubKey)));
+     const records=[...(stats?.[player?'players':'teams']||[])].filter(record=>record[key]!==undefined).sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||(player?(a.name??'').localeCompare(b.name??'','en',{sensitivity:'base'}):a.clubName.localeCompare(b.clubName,'en'))||a.clubKey.localeCompare(b.clubKey,'en')||(player?a.playerId-b.playerId:0));
      if(records.length){const top=create('ol',undefined,'fa-dev-stats-top');records.slice(0,5).forEach((record,i)=>top.append(row(record,i,records,key,player)));card.append(top)}else card.append(empty(player));
      if(records.length>5){const expand=localized('button','statsDevShowAll','Show all','fa-dev-stats-expand');expand.type='button';expand.addEventListener('click',()=>showAll(expand,records,key,labelKey,label,player));card.append(expand)}
      grid.append(card);

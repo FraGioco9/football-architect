@@ -88,6 +88,21 @@ export function lineupTeamStatisticsV1(
   players:[...players.values()].sort((a,b)=>a.clubId.localeCompare(b.clubId,'en')||a.playerId-b.playerId),
   playerStatus:'available' as const};
 }
+/** Names are read-only identity enrichment; all sporting totals and club IDs
+ * remain frozen receipt evidence. A single bound ID list avoids per-player GETs
+ * and current-affiliation joins, including when viewing an archived season. */
+async function competitionPlayerIdentities(db:Database,players:ReturnType<typeof lineupTeamStatisticsV1>['players']){
+ const ids=[...new Set(players.map(p=>p.playerId))];
+ if(!ids.length)return [];
+ const rows=(await db.prepare(`SELECT id,
+  COALESCE(NULLIF(TRIM(json_extract(payload_json,'$.display_name')),''),
+   TRIM(json_extract(payload_json,'$.first_name')||' '||json_extract(payload_json,'$.last_name'))) AS display_name
+  FROM generated_players WHERE id IN (SELECT value FROM json_each(?))`)
+  .bind(JSON.stringify(ids)).all<{id:number;display_name:string|null}>()).results;
+ const names=new Map(rows.map(row=>[row.id,
+  typeof row.display_name==='string'&&row.display_name.trim()?row.display_name.trim():null]));
+ return players.map(player=>({...player,displayName:names.get(player.playerId)??null}));
+}
 function projectFixtures(fixtures:readonly Fixture[],plans:readonly KnockoutTie[],results:ReadonlyMap<string,LineupSportingScoreV1>){
  const metadata=new Map(plans.flatMap(plan=>plan.fixtures.map(item=>[item.fixture.id,{phaseId:plan.phaseId,tieId:plan.tieId,leg:item.leg,neutral:item.neutral}] as const)));
  return fixtures.map(f=>({...f,...(metadata.get(f.id)??{phaseId:'league',tieId:null,leg:null,neutral:false}),result:results.has(f.id)?publicScore(results.get(f.id)!):null}));
@@ -301,7 +316,8 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
   const fixtures=[...leagueFixtures,...plans.flatMap(t=>t.fixtures.map(f=>f.fixture))].sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id,'en'));
   const table=await rankLeagueTable(competitionId,binding.clubIds,leagueFixtures,storedResults,evidence.schedule.seed,{throughDay:viewedWorld.day});
   const standings={complete:leagueFixtures.every(f=>storedResults.has(f.id)),rows:table.map(({drawKey,...row})=>row)};
-  const stats=lineupTeamStatisticsV1(binding.clubIds,fixtures,storedResults,replay.frozenMatches);
+  const recordedStats=lineupTeamStatisticsV1(binding.clubIds,fixtures,storedResults,replay.frozenMatches);
+  const stats={...recordedStats,players:await competitionPlayerIdentities(db,recordedStats.players)};
   const final=fixtures.find(f=>f.marker===(competitionId==='int-1'?'SOVEREIGN-FINAL':'FEDERATION-FINAL'));
   const championClubId=competitionId.startsWith('int-')?(final?storedResults.get(final.id)?.winnerClubId:null):table[0]?.clubId;
   if(archive&&!championClubId)invalid();

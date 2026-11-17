@@ -169,12 +169,14 @@ test('STATS-SEASON: mismatched season/rules and reused revision cannot restore o
  const changed=supplied('int-1',24);changed.revision=4;changed.seasonData.rulesVersion='unknown';mounted.update(changed);
  assert.equal(byClass(r,'app-competition-stat-value').length,0);
 });
-test('STATS-PLAYERS: only supplied player records populate the four existing categories',()=>{
+test('STATS-PLAYERS: recorded participation populates four supported rankings without fabricated metrics',()=>{
  const r=fixture(),c=supplied('int-1',24);
- c.seasonData.statistics.players=[{playerId:'p1',name:'Supplied Player',clubKey:'IT-1',appearances:2,goals:0,assists:1,averageRating:7,cleanSheets:0}];
+ c.seasonData.statistics.players=[{playerId:1,name:'Supplied Player',clubKey:'IT-1',appearances:2,starts:2,minutes:150,goals:0}];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  assert.equal(byClass(r,'fa-dev-stats-leader-card').length,4);
- assert.ok(contents(r.panel).includes('7.00'));assert.ok(contents(r.panel).includes('Supplied Player'));
+ assert.ok(contents(r.panel).includes('150'));assert.ok(contents(r.panel).includes('Supplied Player'));
+ assert.deepEqual(byClass(r,'fa-dev-stats-leader-title').map(n=>n.dataset.appI18n),['statsDevGoals','statsDevAppearances','statsDevStarts','statsDevMinutes']);
+ assert.equal(byClass(r,'fa-dev-stats-top')[0].children[0].children.at(-1).textContent,'0','recorded zero is visible');
  assert.equal(r.nodes().filter(n=>n.tagName==='li').length,4);
 });
 test('STATS-PARTIAL: unplayed teams do not erase played statistics or enter rankings',()=>{
@@ -211,15 +213,49 @@ test('STATS-ERROR: invalid supplied records differ from an ordinary empty season
  buttons(r)[2].emit('click');assert.equal(byClass(r,'fa-dev-stats-leader-card').length,4);
 });
 
-test('A03-04E2: supplied domestic and cup team links use the real registry without linking player labels',()=>{
+test('A03-04E2: supplied domestic and cup rankings link verified player IDs and recorded clubs',()=>{
  for(const [id,count] of [['IT-1',16],['int-1',24],['int-2',24]]){
   const calls=[],registry=Object.freeze({...routeRegistry,buildRoute(identity){calls.push(identity);return routeRegistry.buildRoute(identity)}});
   const r=fixture(registry),c=supplied(id,count);
-  c.seasonData.statistics.players=[{playerId:'p1',name:'Supplied Player',clubKey:'IT-1',appearances:2,goals:0,assists:1,averageRating:7,cleanSheets:0}];
+  c.seasonData.statistics.players=[{playerId:1,name:'Supplied Player',clubKey:'IT-1',appearances:2,starts:2,minutes:150,goals:0}];
   r.api.mount(r.panel,c);buttons(r)[1].emit('click');byClass(r,'fa-dev-stats-expand')[0].emit('click');
   const links=walk(byClass(r,'fa-dev-stats-dialog')[0]).filter(n=>n.tagName==='a').map(n=>n.href).sort();
   const expected=c.seasonData.participants.map(club=>'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview').sort();
   assert.deepEqual(links,expected,id);assert.ok(calls.length>=count);
-  buttons(r)[2].emit('click');assert.equal(r.nodes().filter(n=>n.tagName==='a').length,0,'Player names remain plain labels');
+  buttons(r)[2].emit('click');assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/1').length,4);
+  assert.equal(byClass(r,'fa-dev-stats-club-link').length,4);
+  assert.equal(byClass(r,'fa-dev-stats-club-link')[0].href,'/clubs/it/1/overview');
+  assert.equal(byClass(r,'fa-dev-stats-club-link')[0].getAttribute('aria-label'),'Team 01');
  }
+});
+
+test('COMP-STATS-643: numeric ID breaks equal-name ties; show all preserves ranks and recorded clubs',()=>{
+ const r=fixture(),c=supplied('int-1',24);
+ c.seasonData.statistics.players=Array.from({length:7},(_,i)=>({
+  playerId:7-i,name:'Same Name',clubKey:i===0?'IT-2':'IT-1',appearances:2,starts:2,minutes:180,goals:0
+ }));
+ r.api.mount(r.panel,c);buttons(r)[2].emit('click');
+ const first=byClass(r,'fa-dev-stats-top')[0];
+ assert.deepEqual(first.children.map(n=>n.children[1].children[1].href),[1,2,3,4,5].map(id=>'/players/'+id));
+ assert.deepEqual(first.children.map(n=>n.children[0].textContent),Array(5).fill('1'));
+ byClass(r,'fa-dev-stats-expand')[0].emit('click');
+ const dialog=byClass(r,'fa-dev-stats-dialog')[0];
+ assert.equal(walk(dialog).filter(n=>n.tagName==='li').length,7);
+ assert.ok(walk(dialog).some(n=>n.tagName==='a'&&n.href==='/clubs/it/2/overview'));
+});
+test('COMP-STATS-643: missing name shows numeric identity; duplicate club/player pairs and malformed metrics fail closed',()=>{
+ const record={playerId:58,name:null,clubKey:'IT-1',appearances:1,starts:1,minutes:75,goals:0};
+ const r=fixture(),c=supplied('int-1',24);c.seasonData.statistics.players=[record];
+ r.api.mount(r.panel,c);buttons(r)[2].emit('click');
+ assert.ok(contents(r.panel).includes('#58'));
+ assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/58').length,4);
+ for(const bad of [{playerId:'58'},{playerId:0},{starts:2},{minutes:null},{goals:-1},{name:''}]){
+  const f=fixture(),next=supplied('int-1',24);next.seasonData.statistics.players=[{...record,...bad}];
+  f.api.mount(f.panel,next);assert.ok(contents(f.panel).includes('Statistics are unavailable.'));
+ }
+ const dup=fixture();c.seasonData.statistics.players=[record,record];dup.api.mount(dup.panel,c);
+ assert.ok(contents(dup.panel).includes('Statistics are unavailable.'));
+ // The same player may have separate frozen contribution rows after a club change.
+ const changed=fixture();c.seasonData.statistics.players=[record,{...record,clubKey:'IT-2'}];changed.api.mount(changed.panel,c);
+ buttons(changed)[2].emit('click');assert.equal(changed.nodes().filter(n=>n.tagName==='li').length,8);
 });

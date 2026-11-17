@@ -112,7 +112,8 @@ export function validateAuthoritativeSeason(input,context,manifest){
      // Frozen V2 appearances may be substituted before 90'; each counted
      // appearance contributes 1..120 playing minutes, never a mandatory 90.
      !count(p.minutes)||p.minutes<p.appearances||p.minutes>120*p.appearances||
-     !count(p.goals))fail();
+     !count(p.goals)||p.displayName!==undefined&&p.displayName!==null&&
+     (typeof p.displayName!=='string'||!p.displayName.trim()))fail();
   const identity=p.clubId+':'+p.playerId;
   if(playerIdentity.has(identity))fail();playerIdentity.add(identity);
   // One player cannot appear more often than their club has played, but
@@ -178,7 +179,9 @@ export function adaptAuthoritativeSeason(source,context,manifest){
  }));
  const statistics={overview:{matchesPlayed:d.statistics.matchesPlayed,totalGoals:d.statistics.totalGoals,goalsPerMatch:d.statistics.goalsPerMatch},
   standings:d.standings.rows.map(r=>({club:catalog.get(r.clubId),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,gf:r.goalsFor,ga:r.goalsAgainst,gd:r.goalDifference,pts:r.points,recent:recentDetails(r.clubId)})),
-  teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),players:[]};
+  teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),
+  players:d.statistics.players.map(p=>({playerId:p.playerId,name:p.displayName??null,
+   clubKey:p.clubId,appearances:p.appearances,starts:p.starts,minutes:p.minutes,goals:p.goals}))};
  const currentChoice=viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?
   globalThis.faCompetitionRules.currentFixtureChoice(definition,globalThis.faWorldCalendarModel.projectCompetition(d.season,definition.id),{current:{season:source.world.seasonNumber,day:source.world.day}}):null;
  return freeze({season:d.season,rulesVersion:d.rulesVersion,participants,fixtures:definition.category==='international'?fixtures:fixtures.filter(f=>f.phaseId==='league'),postseason,results,statistics,status:source.status,

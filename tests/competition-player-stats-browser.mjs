@@ -1,0 +1,78 @@
+// #643: isolated presentation fixtures, no remote DB or sporting writes.
+import assert from 'node:assert/strict';
+import {mkdirSync} from 'node:fs';
+
+export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={}){
+ let checks=0;
+ for(const id of ['it-1','int-1','int-2'])for(const width of [390,1440]){
+  const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'});
+  const page=await context.newPage(),errors=[],playerRequests=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  page.on('request',request=>{if(new URL(request.url()).pathname.startsWith('/api/players'))playerRequests.push(request.url())});
+  try{
+   await page.addInitScript(width=>{
+    localStorage.setItem('football-architect:language',width===390?'it':'en');
+    localStorage.setItem('football-architect:theme',width===390?'light':'dark');
+   },width);
+   // The public world is explicitly unavailable; fixtures below are supplied
+   // only to the presentation API after its asynchronous reader is suspended.
+   await page.route('**/api/**',route=>route.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.goto('http://app.localhost:2000/competitions/'+id+'/stats?season=1',{waitUntil:'domcontentloaded'});
+   await page.waitForFunction(()=>window.faCompetitionContextApi&&window.faCompetitionContext?.selectedSeason===1&&window.faCompetitionStats);
+   assert.equal(await page.evaluate(()=>{window.faDevPreviewMode=true;return window.faCompetitionContextApi.setDebugSeason(1)}),true);
+   await page.evaluate(()=>{
+    const c=window.faCompetitionContext,capacity=c.definition.capacity,countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
+    const participants=Array.from({length:capacity},(_,i)=>({countryId:capacity===16?'IT':countries[Math.floor(i/3)],clubId:capacity===16?i+1:i%3+1,primaryName:'QA Club '+(i+1)}));
+    const teams=participants.map(club=>({clubKey:club.countryId+'-'+club.clubId,clubName:club.primaryName,mp:1,gf:1,ga:1,w:0,cs:0,ppg:1,gd:0,unbeatenStreak:1}));
+    const data={season:1,rulesVersion:c.definition.rules.version,participants,fixtures:[],results:[],status:'partial',provenance:{kind:'authoritative',sourceRef:'isolated-browser-fixture'},statistics:{standings:[],overview:{matchesPlayed:8,totalGoals:16,goalsPerMatch:2},teams,players:[]}};
+    window.__stats643Data=data;
+    window.__stats643Supply=mode=>{
+     const next=structuredClone(data);
+     next.statistics.players=mode==='fallback'?[]:Array.from({length:mode==='mixed'?11:22},(_,i)=>({playerId:i+1,name:i===0?null:'QA Player '+String(i+1).padStart(2,'0'),clubKey:mode==='mixed'||i<11?'IT-1':'IT-2',appearances:1,starts:1,minutes:i===0?75:90,goals:i===1?1:0}));
+     if(mode==='no-games'){next.statistics.players=[];next.statistics.overview={matchesPlayed:0,totalGoals:0,goalsPerMatch:0};}
+     if(mode==='archive'){next.seasonState={day:56,phase:'closed'};next.status='available';next.statistics.players=[{playerId:58,name:'Archived Player',clubKey:'IT-1',appearances:30,starts:30,minutes:2700,goals:0}];}
+     if(!window.faCompetitionContextApi.replaceSeasonData(next,window.faCompetitionContext.revision))throw Error('Stats fixture rejected');
+    };
+    window.__stats643Supply('real');
+   });
+   await page.locator('#fa-dev-stats [data-stats-view="players"]').click();
+   const cards=page.locator('#fa-dev-stats .fa-dev-stats-leader-card');
+   assert.equal(await cards.count(),4);
+   assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevGoals','statsDevAppearances','statsDevStarts','statsDevMinutes']);
+   assert.equal(await cards.first().locator('li strong').first().textContent(),'1');
+   assert.equal(await cards.first().locator('li strong').nth(1).textContent(),'0');
+   assert.equal(await cards.first().locator('li a[href="/players/2"]').count(),1);
+   assert.equal(await cards.first().locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').first().getAttribute('aria-label'),'QA Club 1');
+   const before=await cards.first().boundingBox();
+   const expand=cards.first().locator('.fa-dev-stats-expand');await expand.click();
+   const dialog=page.locator('dialog[open]');
+   assert.equal(await dialog.locator('li').count(),22);
+   assert.equal(await dialog.locator('a[href="/players/1"]').textContent(),'#1');
+   await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
+   for(const mode of ['mixed','fallback','no-games','archive']){
+    await page.evaluate(mode=>window.__stats643Supply(mode),mode);
+    assert.equal(await cards.count(),4);
+    if(mode==='mixed'){
+     await cards.first().locator('.fa-dev-stats-expand').click();
+     assert.equal(await page.locator('dialog[open] li').count(),11);
+     await page.keyboard.press('Escape');
+    }else if(mode==='fallback'||mode==='no-games')assert.equal(await cards.locator('li').count(),0);
+    else assert.equal(await cards.locator('a[href="/players/58"]').count(),4);
+   }
+   await page.evaluate(()=>window.__stats643Supply('real'));
+   const after=await cards.first().boundingBox();
+   assert.deepEqual(after,before,'stable repeated hydration geometry');
+   const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));
+   assert.ok(dimensions.scroll<=dimensions.width+2,JSON.stringify(dimensions));
+   assert.deepEqual(playerRequests,[],'identity enrichment needs no per-player API');
+   assert.deepEqual(errors,[]);
+   mkdirSync('int24-browser-artifacts',{recursive:true});
+   await page.screenshot({path:`int24-browser-artifacts/stats-643-${engine}-${id}-${width}.png`,fullPage:true});
+   // A season change must clear the previous player identities immediately.
+   await page.evaluate(()=>{window.faCompetitionContextApi.setDebugSeason(2);window.faCompetitionContextApi.selectSeason(2)});
+   assert.equal(await cards.locator('a[href^="/players/"]').count(),0);
+   checks++;
+  }finally{await context.close()}
+ }
+ return checks;
+}

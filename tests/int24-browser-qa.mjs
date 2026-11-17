@@ -1,3 +1,4 @@
+import {verifyCompetitionPlayerStats} from './competition-player-stats-browser.mjs';
 import {verifyCanonicalStateBrowser} from './canonical-state-browser.mjs';
 import {createPreviewStandings} from '../tools/dev-standings-preview-data.mjs';
 import {readFileSync} from 'node:fs';
@@ -27,6 +28,7 @@ const screenshot=async(page,name)=>{
 try {
  // #657: capture network/refresh before the inherited #656 match-link checks.
  checks+=await verifyCompetitionCompactNetwork(browser,{engine:'chromium'});
+ checks+=await verifyCompetitionPlayerStats(browser,{engine:'chromium'});
  checks+=await verifyPlayersScrollBrowser(browser);
  // #605 / #656 — actual browser navigation for official Standings forms.
  // Fixture data is isolated to this page and intercepted locally: never

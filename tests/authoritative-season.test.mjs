@@ -150,7 +150,7 @@ test('accepts only real, internally coherent frozen V2 player totals',()=>{
  raw.data.statistics.matchesPlayed=8;raw.data.statistics.totalGoals=1;
  raw.data.statistics.goalsPerMatch=1/8;
  raw.data.calendar.find(d=>d.day===matchDay).played=8;
- const player={playerId:58,clubId:fixture.homeClubId,appearances:1,starts:1,minutes:90,goals:1};
+ const player={playerId:58,displayName:"Recorded Player",clubId:fixture.homeClubId,appearances:1,starts:1,minutes:90,goals:1};
  raw.data.statistics.players=[player];
  assert.deepEqual(validateAuthoritativeSeason(raw,ctx(),manifest).data.statistics.players,[player]);
  // Backend lineupTeamStatisticsV1 accepts 1..120 minutes per appearance:
@@ -161,18 +161,22 @@ test('accepts only real, internally coherent frozen V2 player totals',()=>{
   const validated=validateAuthoritativeSeason(actual,ctx(),manifest);
   assert.equal(validated.data.statistics.players[0].minutes,minutes);
   const adapted=adaptAuthoritativeSeason(validated,ctx(),manifest);
+  assert.deepEqual(adapted.statistics.players,[{playerId:58,name:'Recorded Player',clubKey:fixture.homeClubId,appearances:1,starts:1,minutes,goals:1}]);
+  assert.ok(Object.isFrozen(adapted.statistics.players[0]));
   assert.equal(adapted.statistics.standings.length,16,'valid substitution retains standings');
   assert.equal(adapted.fixtures.find(f=>f.sourceFixtureId===fixture.id).homeGoals,1,
    'valid substitution retains official fixture scores');
  }
  for(const bad of [
-  {...player,goals:2},{...player,starts:0},{...player,minutes:0},
+  {...player,displayName:58},{...player,displayName:''},{...player,goals:2},{...player,starts:0},{...player,minutes:0},
   {...player,minutes:121},{...player,clubId:'FR-1'},
   {...player,appearances:2,starts:2,minutes:180}
  ]){
   const altered=structuredClone(raw);altered.data.statistics.players=[bad];
   assert.throws(()=>validateAuthoritativeSeason(altered,ctx(),manifest));
  }
+ const unnamed=structuredClone(raw);delete unnamed.data.statistics.players[0].displayName;
+ assert.equal(adaptAuthoritativeSeason(validateAuthoritativeSeason(unnamed,ctx(),manifest),ctx(),manifest).statistics.players[0].name,null);
  const duplicate=structuredClone(raw);duplicate.data.statistics.players=[player,player];
  assert.throws(()=>validateAuthoritativeSeason(duplicate,ctx(),manifest));
 

@@ -1,0 +1,13 @@
+# Competition player statistics (#643)
+
+Competition > Stats > Players shows goals, appearances, starts and minutes for the selected competition and season, including that competition's postseason. Values come exclusively from verified immutable `temporary-lineup-v1` appearances. Shootout goals, anonymous team-fallback goals and future matches never create player contributions. Team totals can therefore exceed attributed player totals.
+
+The existing public season response adds nullable `displayName` to each `statistics.players` row. One bound JSON ID-list query reads only persisted player names, without current affiliation joins or per-player HTTP calls. Sporting totals and `clubId` remain receipt-derived, including in archives. Name enrichment is presentation metadata, not part of the frozen receipt or archive digest. A missing identity label is `null`; the UI displays the numeric ID and links to the player route. Older responses without `displayName` remain readable.
+
+The adapter retains only player ID, name, recorded club and the four supported counters. The existing four cards, five-row previews and Show all dialog are reused. Rankings descend by value; ties share the same rank, followed by English name, club key and numeric player ID for stable ordering. A player with contributions for two clubs has separate club/player rows.
+
+Recorded zero is displayed as `0`. Assists, ratings, cards, shots and player clean sheets are not projected or displayed as zero. An unplayed season and a played season containing only fallback participants have honest empty player views. First-paint templates use the same four labels and geometry as hydration; labels are translated in EN/DE/ES/FR/IT.
+
+Coverage lives in the existing authoritative-season and Stats view Node contracts, the isolated day-13 XI/mixed D1 E2E, and the season-56 fallback/archive D1 E2E. `competition-player-stats-browser.mjs` is a presentation fixture helper called by full Chromium, full WebKit and targeted competition browser owners. It covers domestic and both cup layouts at desktop/mobile widths, links, ties, unknown names, fallback, archive, season changes and absence of per-player HTTP calls. Browser fixtures are not hosted sporting evidence or physical iPhone Safari certification.
+
+No migration, historical backfill, receipt rewrite, simulation change, remote D1 operation or deployment is required by this change. Club Stats, Player Detail Stats, Roster and directory integrations remain separate work.
