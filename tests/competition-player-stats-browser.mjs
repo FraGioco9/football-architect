@@ -38,6 +38,32 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    const cardSizes=async selector=>page.locator(selector).evaluateAll(nodes=>nodes.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
    await page.locator('#fa-dev-stats [data-stats-view="overview"]').click();
    const overviewFilled=await cardSizes('#fa-dev-stats .fa-dev-stats-card');
+   assert.deepEqual(await page.locator('#fa-dev-stats .fa-dev-stats-card strong').allTextContents(),
+    ['8','16',width===390?'2,00':'2.00'],'Overview formats its three values in the selected language');
+   const overviewShell=await page.evaluate(()=>{
+    const live=document.getElementById('fa-dev-stats');
+    const shell=document.createElement('div');
+    shell.className='app-competition-view-skeleton';
+    shell.style.cssText='display:block;position:absolute;visibility:hidden;pointer-events:none;left:0;top:0;width:'+live.getBoundingClientRect().width+'px';
+    shell.innerHTML=window.faCompetitionStats.renderSkeleton('overview');
+    live.parentElement.append(shell);
+    try{
+     const bounds=n=>({width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height});
+     const slots=host=>[...host.querySelectorAll('.fa-dev-stats-card')].map(card=>{
+      const r=card.getBoundingClientRect(),value=card.querySelector('.app-competition-stat-value').getBoundingClientRect();
+      return {height:value.height,offset:value.top-r.top};
+     });
+     return {cards:[...shell.querySelectorAll('.fa-dev-stats-card')].map(bounds),
+      skeletonSlots:slots(shell),liveSlots:slots(live)};
+    }finally{shell.remove()}
+   });
+   assert.deepEqual(overviewShell.cards,overviewFilled,'Overview first paint reserves exact populated box dimensions');
+   assert.deepEqual(overviewShell.skeletonSlots,overviewShell.liveSlots,'Overview number slots align with the skeletons');
+   assert.ok(overviewShell.liveSlots.every(slot=>slot.height===50),'every Overview value has one 50px track');
+   await page.evaluate(()=>{document.documentElement.lang='de'});
+   await page.waitForFunction(()=>document.querySelector('#fa-dev-stats .fa-dev-stats-card:nth-child(3) strong')?.textContent==='2,00');
+   await page.evaluate(lang=>{document.documentElement.lang=lang},width===390?'it':'en');
+   await page.waitForFunction(expected=>document.querySelector('#fa-dev-stats .fa-dev-stats-card:nth-child(3) strong')?.textContent===expected,width===390?'2,00':'2.00');
    await page.locator('#fa-dev-stats [data-stats-view="teams"]').click();
    const teamsFilled=await cardSizes('#fa-dev-stats .fa-dev-stats-team-card');
    await page.locator('#fa-dev-stats [data-stats-view="players"]').click();

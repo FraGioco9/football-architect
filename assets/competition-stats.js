@@ -25,6 +25,14 @@
  const text=value=>typeof value==='string'&&value.trim().length>0;
  const count=value=>Number.isSafeInteger(value)&&value>=0;
  const finite=value=>typeof value==='number'&&Number.isFinite(value);
+ // Overview uses the current UI language for grouping and decimal separators.
+ // The three existing values are integers except for the two-decimal goal average.
+ const overviewNumber=(key,value)=>{
+  const requested=document.documentElement?.lang;
+  const locale=['en','de','es','fr','it'].includes(requested)?requested:'en';
+  const decimals=key==='goalsPerMatch'?2:0;
+  return new Intl.NumberFormat(locale,{minimumFractionDigits:decimals,maximumFractionDigits:decimals}).format(value);
+ };
  const emptyHtml='<p data-app-i18n="statsDevNoData" class="fa-dev-stats-empty">No statistics yet.</p>';
  function renderEmpty(){
   return '<div id="fa-dev-stats"><div class="fa-dev-stats-nav" role="group" aria-label="Stats" data-app-aria="competitionTabStats">'+views.map(([id,key,label],i)=>'<button type="button" class="language-trigger" data-stats-view="'+id+'" data-app-i18n="'+key+'" aria-pressed="'+(i===0)+'" tabindex="'+(i===0?'0':'-1')+'">'+label+'</button>').join('')+'</div><div class="fa-dev-stats-content"><div class="app-competition-stat-grid fa-dev-stats-grid">'+overview.map(([,key,label])=>'<div class="app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card"><span class="app-competition-stat-label" data-app-i18n="'+key+'">'+label+'</span>'+emptyHtml+'</div>').join('')+'</div></div></div>';
@@ -157,14 +165,14 @@
   let previousPresentation=null;
   function render(){
    panel.dataset.faStatsSelectedView=view;
-   const presentation=JSON.stringify([view,invalid,stats]);
+   const presentation=JSON.stringify([view,invalid,stats,view==='overview'?document.documentElement.lang:null]);
    if(previousPresentation===presentation&&content.firstElementChild){sync();return;}
    previousPresentation=presentation;
    for(let i=0;i<navButtons.length;i++){const active=views[i][0]===view;navButtons[i].setAttribute('aria-pressed',active);navButtons[i].tabIndex=active?0:-1;}
    content.replaceChildren();
    if(view==='overview'){
     const grid=create('div',undefined,'app-competition-stat-grid fa-dev-stats-grid');
-    for(const [key,labelKey,label] of overview){const card=create('div',undefined,'app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card');card.append(localized('span',labelKey,label,'app-competition-stat-label'),stats?create('strong',format(key,stats.overview[key]),'app-competition-stat-value'):empty());grid.append(card)}
+    for(const [key,labelKey,label] of overview){const card=create('div',undefined,'app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card');card.append(localized('span',labelKey,label,'app-competition-stat-label'),stats?create('strong',overviewNumber(key,stats.overview[key]),'app-competition-stat-value'):empty());grid.append(card)}
     content.append(grid);
    }else{
     const player=view==='players',section=create('section',undefined,'fa-dev-stats-section'),grid=create('div',undefined,'fa-dev-stats-leader-grid');
@@ -183,6 +191,12 @@
    }
    sync();
   }
+  // Translation is handled by app.js; refresh Overview's locale-sensitive
+  // numbers when the language changes without waiting for a season revision.
+  const languageObserver=typeof MutationObserver==='function'?new MutationObserver(()=>{
+   if(!destroyed&&view==='overview')render();
+  }):null;
+  languageObserver?.observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   const onShellSelection=event=>{
     if(!views.some(([id])=>id===event.detail)||event.detail===view)return;
     removeDialog(false);view=event.detail;render();
@@ -216,7 +230,7 @@
     panel.dataset.faContentRevision=String(next.revision??'');
     render();if(hadDialog)navButtons[views.findIndex(item=>item[0]===view)].focus();return true;
    },
-   destroy(){if(destroyed)return;destroyed=true;panel.removeEventListener('fa:stats-shell-selection',onShellSelection);removeDialog(false);root.remove();mounted.delete(panel)}
+   destroy(){if(destroyed)return;destroyed=true;languageObserver?.disconnect();panel.removeEventListener('fa:stats-shell-selection',onShellSelection);removeDialog(false);root.remove();mounted.delete(panel)}
   });
   mounted.set(panel,api);api.update(initial);return api;
  }

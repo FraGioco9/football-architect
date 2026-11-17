@@ -1133,6 +1133,8 @@ svg.site-chevron>path{translate:0 .5px}
 .fa-dev-stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .fa-dev-stats-card.app-competition-stat-card--compact{display:grid;grid-template-rows:minmax(var(--fa-record-heading),max-content) 50px;gap:4px;min-width:0;padding:10px 12px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
 .fa-dev-stats-card strong{display:block;font-size:clamp(1.25rem,2.5vw,1.8rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+/* Overview uses one stable 50px numeric track for values, empty copy and first-paint bars. */
+.fa-dev-stats-card .app-competition-stat-value{display:flex;align-items:center;align-self:stretch;height:50px;min-height:0}
 .fa-dev-stats-section{margin:0 0 20px}
 .fa-dev-stats-leader-grid{--fa-stats-row-height:60px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .fa-dev-stats-leader-card{min-width:0;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:10px 12px;background:transparent}
@@ -1144,12 +1146,10 @@ svg.site-chevron>path{translate:0 .5px}
 .fa-dev-stats-top li:last-child{border-bottom:0}
 .fa-dev-stats-top li>strong{justify-self:end;min-width:3.5ch;max-width:100%;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:.84rem;line-height:1.3}
 .fa-dev-stats-empty{font-size:.85rem;opacity:.65}
-/* Align actual empty text with the unchanged large-value skeleton baseline. */
-/* Empty-state copy and the unchanged skeleton share the same value-row
-   vertical centre, regardless of viewport/font size or localization. */
+/* Keep the empty message in the same value track, without resizing the card. */
 .fa-dev-stats-grid .fa-dev-stats-card>.fa-dev-stats-empty{
- display:flex;align-items:center;
- min-height:calc(clamp(1.25rem,2.5vw,1.8rem) * 1.25);
+ display:flex;align-items:center;align-self:stretch;
+ height:50px;min-height:0;box-sizing:border-box;
  transform:none;
 }
 .fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}

@@ -108,6 +108,29 @@ test('QA-11: Stats skeleton cards reserve Show all size before hydration in dome
  assert.match(css,/\.fa-dev-stats-expand\{[^}]*margin:10px auto 0;padding:5px 9px/);
 });
 
+test('STATS-OVERVIEW: three metrics keep localized numeric formats and stable empty/skeleton tracks',()=>{
+ const r=fixture(),c=supplied('IT-1',16);
+ c.seasonData.statistics.overview={matchesPlayed:12345,totalGoals:30987,goalsPerMatch:2.507};
+ const mounted=r.api.mount(r.panel,c);
+ const numbers=()=>byClass(r,'app-competition-stat-value').map(n=>n.textContent);
+ assert.deepEqual(numbers(),['12,345','30,987','2.51'],'English groups integer totals and prints two decimal places');
+ r.document.documentElement.lang='it';
+ mounted.update({...c,revision:2});
+ assert.deepEqual(numbers(),['12.345','30.987','2,51'],'Italian grouping and decimal separators follow document language');
+ r.document.documentElement.lang='de';
+ mounted.update({...c,revision:3});
+ assert.deepEqual(numbers(),['12.345','30.987','2,51'],'German separators follow document language');
+ const empty={...c,revision:4,seasonData:null};mounted.update(empty);
+ assert.equal(byClass(r,'fa-dev-stats-card').length,3);
+ assert.equal(byClass(r,'fa-dev-stats-empty').length,3);
+ assert.equal(byClass(r,'app-competition-stat-value').length,0,'unknown values are never formatted as zero');
+ const markup=r.api.renderSkeleton('overview');
+ assert.equal((markup.match(/class="app-competition-stat-value"/g)||[]).length,3);
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(css,/\.fa-dev-stats-card \.app-competition-stat-value\{[^}]*align-items:center[^}]*height:50px;min-height:0/);
+ assert.match(css,/\.fa-dev-stats-grid \.fa-dev-stats-card>\.fa-dev-stats-empty\{[^}]*height:50px;min-height:0;box-sizing:border-box/);
+});
+
 test('STATS-SUPPLIED: averages retain two decimals and Show all uses actual 16/24 identities and tied ranks',()=>{
  for(const [id,count] of [['IT-1',16],['int-1',24]]){
   const r=fixture();assert.equal(typeof r.api?.mount,'function');const c=supplied(id,count);
