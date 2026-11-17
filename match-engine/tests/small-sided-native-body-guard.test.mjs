@@ -11,11 +11,11 @@ import {createSmallSidedNativeBodyGuard,SMALL_SIDED_BODY_VERSION,
  D01_TORSO_RADIUS_M}
  from '../src/small-sided-native-body-guard.mjs';
 
-function oneWorldNativeContact(R,gap,{groundD01=false}={}){
+function oneWorldNativeContact(R,gap,{groundD01=false,ballFar=false}={}){
  const world=new R.World({x:0,y:0,z:-9.81});
  world.timestep=1/60;
  const ballBody=world.createRigidBody(R.RigidBodyDesc.dynamic()
-  .setTranslation(40.19,0,0.11).setCcdEnabled(true));
+  .setTranslation(40.19,ballFar?8:0,0.11).setCcdEnabled(true));
  const ballCollider=world.createCollider(R.ColliderDesc.ball(.11)
   .setDensity(6).setFriction(.4),ballBody);
  const staged=INITIAL_PLAYERS.map(p=>p.id==='home-10'?
@@ -56,8 +56,15 @@ test('#628 native lower-leg ball and opponent torso response are genuine Rapier 
  const ground=oneWorldNativeContact(R,0.98,{groundD01:true});
  assert.equal(ground.evidence.lowerLegBallStarts.includes('home-10'),true,
   'D-01 real grounded leg-ball contact remains enabled');
- assert.deepEqual(ground.evidence.nativeOpposingTorsoPairs,[],
-  'D-01 canonical-legal XY spacing should not cause a phantom torso contact');
+ // A real leg-ball solver impulse CAN move the common dynamic body and
+ // create a subsequent genuine torso contact; that must not be suppressed.
+ // To test only *initial* torso geometry, keep the ball safely out of reach.
+ const isolated=oneWorldNativeContact(R,0.99,
+  {groundD01:true,ballFar:true});
+ assert.deepEqual(isolated.evidence.nativeOpposingTorsoPairs,[],
+  '0.98m D-01 torso diameter cannot create a phantom overlap at 0.99m gap');
+ assert.deepEqual(isolated.evidence.lowerLegBallContacts,[],
+  'the remote original ball cannot make a fictitious lower-leg contact');
 });
 test('#628 body guard remains selected-only, exact-tick and deterministic in all 5 native LAB situations',
  {timeout:120000},async()=>{

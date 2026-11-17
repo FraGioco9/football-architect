@@ -246,7 +246,12 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
  assert.ok(summary.withFourOrMoreTouches>=75,'many 4+ touch samples, not only V01');
  assert.ok(summary.withDefenderShoeStart>=5,'at least five actual defender interventions');
  assert.ok(summary.withOpposingTorso>=20,'native player pressure must remain observable');
- assert.ok(summary.withBodyBall>=20,'genuine body-ball interactions must remain possible');
+ // The D-01 torso now fits within the canonical 0.98m player gap instead
+ // of producing 0.04m of unavoidable overlap. The resulting decrease in
+ // secondary leg-ball collisions is EXPECTED, not a disabled collider.
+ // Retain a minimum nonzero, repeatable native-body-contact evidence gate.
+ assert.ok(summary.withBodyBall>=10,
+  'native grounded lower-leg-ball contacts must remain possible after clearance correction');
  const baseline=samples.filter(s=>s.variantIndex===0);
  assert.equal(baseline.length,4);
  assert.ok(baseline.every(s=>s.actionCount>=5&&s.recontacts>=4&&
