@@ -410,7 +410,9 @@ html[data-theme="light"] #competition-panel-standings>.app-standings-subviews .a
 #competition-panel-standings>.app-standings-subviews .app-competition-tab[hidden]{display:none!important}
 #competition-panel-standings>.app-standings-subviews .app-competition-tab:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 @media(max-width:620px){
- #competition-panel-standings>.app-standings-subviews{scroll-padding-inline:0;-webkit-mask-image:linear-gradient(to right,transparent,#000 0px,#000 calc(100% - 16px),transparent);mask-image:linear-gradient(to right,transparent,#000 0px,#000 calc(100% - 16px),transparent)}
+ #competition-panel-standings>.app-standings-subviews{--app-tabs-fade-left:0px;--app-tabs-fade-right:16px;scroll-padding-inline:0;-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent)}
+ #competition-panel-standings>.app-standings-subviews[data-can-scroll-left="true"]{--app-tabs-fade-left:16px}
+ #competition-panel-standings>.app-standings-subviews[data-can-scroll-right="false"]{--app-tabs-fade-right:0px}
  #competition-panel-standings>.app-standings-subviews .app-competition-tab{flex:0 0 calc(40% - 3.2px);width:calc(40% - 3.2px);min-width:calc(40% - 3.2px);max-width:calc(40% - 3.2px);padding-inline:4px}
 }
 

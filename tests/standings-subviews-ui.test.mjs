@@ -47,3 +47,26 @@ test('DEV preview updates active subview on existing renderer, not another API r
  assert.match(handler,/fa:standings-subview-change/);
  assert.doesNotMatch(handler,/fetch\(/);
 });
+
+test('Standings mobile subview fades track both scroll edges and responsive overflow',()=>{
+ assert.match(css,/\.app-standings-subviews\{--app-tabs-fade-left:0px;--app-tabs-fade-right:16px/);
+ assert.match(css,/\.app-standings-subviews\[data-can-scroll-left="true"\]\{--app-tabs-fade-left:16px\}/);
+ assert.match(css,/\.app-standings-subviews\[data-can-scroll-right="false"\]\{--app-tabs-fade-right:0px\}/);
+ assert.match(controller,/subviewStrip\?\.addEventListener\('scroll',syncSubviewEdges,\{passive:true\}\)/);
+ assert.match(controller,/window\.addEventListener\('resize',syncSubviewEdges,\{passive:true\}\)/);
+ assert.match(controller,/window\.addEventListener\('pageshow',syncSubviewEdges\)/);
+ assert.match(controller,/new ResizeObserver\(syncSubviewEdges\)\.observe\(subviewStrip\)/);
+ assert.match(controller,/syncSubviews=\(\)=>\{[\s\S]*?syncSubviewEdges\(\);\n    \};/);
+ const source=controller.match(/const syncSubviewEdges=\(\)=>\{([\s\S]*?)\n    \};/);
+ assert.ok(source,'edge sync routine remains available');
+ const sync=new Function('subviewStrip',source[1]);
+ const strip={clientWidth:240,scrollWidth:552,scrollLeft:0,dataset:{}};
+ sync(strip);
+ assert.deepEqual(strip.dataset,{canScrollLeft:'false',canScrollRight:'true'},'at the beginning only the right edge fades');
+ strip.scrollLeft=145;sync(strip);
+ assert.deepEqual(strip.dataset,{canScrollLeft:'true',canScrollRight:'true'},'in the middle both edges fade');
+ strip.scrollLeft=312;sync(strip);
+ assert.deepEqual(strip.dataset,{canScrollLeft:'true',canScrollRight:'false'},'at the end only the left edge fades');
+ strip.clientWidth=600;strip.scrollLeft=0;sync(strip);
+ assert.deepEqual(strip.dataset,{canScrollLeft:'false',canScrollRight:'false'},'without overflow neither edge fades');
+});
