@@ -75,6 +75,7 @@
     "backend/tests/preview-package.test.mts": "backend-operator",
     "backend/tests/production-bundle.test.mts": "backend-operator",
     "backend/tests/public-club-fixture-match-ids-runtime.test.ts": "backend-runtime",
+    "backend/tests/public-match-publication-read-runtime.test.ts": "backend-runtime",
     "backend/tests/public-club-roster-runtime.test.ts": "backend-runtime",
     "backend/tests/public-player-detail-runtime.test.ts": "backend-runtime",
     "backend/tests/public-players-directory-runtime.test.ts": "backend-runtime",
