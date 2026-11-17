@@ -38,7 +38,7 @@ class SeasonZeroApprovalMigrationTest(unittest.TestCase):
             self.db.execute("UPDATE season_zero_approvals SET approved_revision=2")
         with self.assertRaises(sqlite3.IntegrityError):
             self.db.execute('DELETE FROM season_zero_approvals')
-        self.db.execute("INSERT INTO world_reset_permits VALUES(?,?)",(generation,'reset-fixture'))
+        self.db.execute("INSERT INTO world_reset_permits VALUES(?,?)",(generation,'550e8400-e29b-41d4-a716-446655440000'))
         self.db.execute('DELETE FROM season_zero_approvals')
         self.assertEqual(self.db.execute('SELECT COUNT(*) FROM season_zero_approvals').fetchone()[0],0)
 
