@@ -963,6 +963,15 @@ test('#605 published Postseason bracket gives each leg its own official match li
   'both legs have two score-box targets each, even with TBD clubs');
  assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link')
    .filter(a=>a.dataset.faMatchRow==='1').map(a=>a.dataset.faMatchLeg).join(',')==='1,2'),'leg identities remain distinct');
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+  .filter(link=>link.dataset.faMatchRow==='2')
+  .every(link=>link.attrs.tabindex==='-1'&&link.attrs['aria-hidden']==='true'&&
+    link.attrs['aria-label']===undefined)),
+  'second row anchors are pointer-only without duplicate keyboard focus');
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+  .filter(link=>link.dataset.faMatchRow==='1')
+  .every(link=>link.attrs.tabindex===undefined&&link.attrs['aria-hidden']===undefined)),
+  'each leg preserves exactly one accessible keyboard anchor');
  // The current published lookup remains stored while UI hydration is busy;
  // no numeric link or hover/click affordance may be exposed.
  r.document.documentElement.dataset.faStandingsLoading='true';
@@ -1011,15 +1020,6 @@ test('#605 published Postseason bracket gives each leg its own official match li
  assert.match(css,/\.fa-bracket-match-link\[data-fa-match-row="2"\]\{inset-block-start:calc\(75% - 14px\)\}/);
  assert.doesNotMatch(css,/\.fa-bracket-match-link::(?:before|after)/,
   'no pseudo-element-only click targets remain');
- assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
-  .filter(link=>link.dataset.faMatchRow==='2')
-  .every(link=>link.attrs.tabindex==='-1'&&link.attrs['aria-hidden']==='true'&&
-    link.attrs['aria-label']===undefined)),
-  'second row anchors are pointer-only without duplicate keyboard focus');
- assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
-  .filter(link=>link.dataset.faMatchRow==='1')
-  .every(link=>link.attrs.tabindex===undefined&&link.attrs['aria-hidden']===undefined)),
-  'each leg preserves exactly one accessible keyboard anchor');
  assert.doesNotMatch(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline:0;width:auto\}/,
   'single-leg links cannot cover the whole card');
  assert.doesNotMatch(css,/\.fa-bracket-card\[data-fa-match-legs="1"\]\{cursor:pointer\}/,
