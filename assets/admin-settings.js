@@ -211,7 +211,9 @@
     finally{if(ticket===epoch){value.busy=false;emit()}}
    },
    async reset(confirmation){
-    if(value.busy||!value.actor||!value.world||value.world.phase==='unstarted'||confirmation!=='RESET SEASON 0')return;
+    if(value.busy||!value.actor||!value.world||
+       value.world.phase==='unstarted'&&!value.events?.rows?.some(e=>e.status==='completed')||
+       confirmation!=='RESET SEASON 0')return;
     const ticket=++epoch,old=value.world;
     value.busy=true;value.operation='reset';value.errorCode=null;emit();
     try{
@@ -319,8 +321,10 @@
    if(proposal?.holderProposal)for(const move of proposal.holderProposal.moves){if(!move.removedClubId)continue;const li=doc.createElement('li');li.textContent=text.nextProposal+' · '+move.cup+': '+move.championClubId+' / '+move.removedClubId+(move.sourceCup?' ('+move.sourceCup+')':'');holders.append(li)}
    find('[data-admin-next-event]').textContent=['administrative','sporting'].includes(state.events?.mode)?
     (nextEvent?nextLabel+' · '+text.day+' '+nextEvent.day:''):'';
-   const resetInput=find('[data-admin-reset-confirm]'),resetButton=find('[data-admin-reset]'),canReset=canWrite&&!!state.actor&&state.world?.phase!=='unstarted'&&!state.busy;
-   find('[data-admin-reset-section]').hidden=!state.actor||!canWrite||state.world?.phase==='unstarted';
+   const resetInput=find('[data-admin-reset-confirm]'),resetButton=find('[data-admin-reset]');
+   const hasSeasonZeroApproval=state.world?.phase==='unstarted'&&state.events?.mode==='season-zero'&&state.events.rows.some(e=>e.status==='completed');
+   const canReset=canWrite&&!!state.actor&&(state.world?.phase!=='unstarted'||hasSeasonZeroApproval)&&!state.busy;
+   find('[data-admin-reset-section]').hidden=!state.actor||!canWrite||!(state.world?.phase!=='unstarted'||hasSeasonZeroApproval);
    resetInput.disabled=!canReset;
    if(state.message==='resetDone')resetInput.value='';
    resetButton.disabled=!canReset||resetInput.value!=='RESET SEASON 0';
