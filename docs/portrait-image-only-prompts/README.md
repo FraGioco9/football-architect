@@ -6,7 +6,7 @@ This is a **diagnostic isolation workflow** for the repeated ImageGen missing-ed
 
 ## Prompt dinamico: cambia solo PLAYER_ID
 
-Per non gestire 23 file diversi, usa il [prompt universale per ID](../portrait-dynamic-by-id.md): cambia soltanto il numero. La nuova chat di preparazione legge GitHub (e Cloudflare DEV in sola lettura, quando necessario) e restituisce il solo testo visuale da usare in una **seconda chat** di generazione. Per gli ID non presenti nell'indice, il prompt richiede dati iniziali verificabili e il generatore V4.1 eseguibile: non inventa profili mancanti.
+Per non gestire 23 file diversi, usa il [prompt universale per ID](../portrait-dynamic-by-id.md): cambia soltanto il numero. Ora il flusso è **in una sola chat**: recupero ID/identità con GitHub e Cloudflare DEV, chiamata a ImageGen una sola volta, poi QA automatico sul risultato effettivo. Se il motore fallisce, nessuna immagine di riferimento viene richiesta e nessun QA fittizio viene dichiarato. Per gli ID non presenti nell'indice servono attributi iniziali verificati e il vero generatore V4.1; altrimenti si interrompe senza inventare il volto.
 
 ## How to use
 
