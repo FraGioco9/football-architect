@@ -633,7 +633,7 @@
     render();syncKnockoutLinks();notifyPublishedMatchLinks();
     try{
       const response=await fetch('/api/matches/seasons/'+season+'/competitions/'+definition.id,
-       {credentials:'omit',cache:'no-store',redirect:'error',signal:requestController.signal});
+       {credentials:'omit',cache:'no-store',redirect:'error',signal:requestController?.signal});
       if(response.status===404){if(seq===fetchSequence)publishedKey=key;return;}
       if(!response.ok)throw Error('Published fixtures unavailable');
       const data=await response.json(),count=international?72:240;
