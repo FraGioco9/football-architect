@@ -155,7 +155,9 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.match(html,/id="pause"/);
  assert.match(html,/id="step"/);
  assert.match(html,/id="reset"/);
- assert.match(js,/createControlledActionLab\\(rapier,id,\\{shotSide:side,\\s*variantIndex:activeVariantIndex,bodyGuardEnabled:activeBodyGuardEnabled\\}\\)/);
+ assert.ok(js.includes('createControlledActionLab(rapier,id,{shotSide:side,')&&
+  js.includes('variantIndex:activeVariantIndex,bodyGuardEnabled:activeBodyGuardEnabled}'),
+  'inline small-sided must explicitly pass the opt-in physical-body toggle');
  assert.match(js,/me-inline-bodyguard/);
  assert.match(html,/id="me-inline-bodyguard"/);
  assert.match(js,/createControlledMovementLab\(rapier,id,\{side\}\)/);
