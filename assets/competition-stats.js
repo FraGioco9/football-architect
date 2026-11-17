@@ -8,15 +8,17 @@
  const overview=[['matchesPlayed','statsDevMatchesPlayed','Matches played'],['totalGoals','statsDevTotalGoals','Total goals'],['goalsPerMatch','statsDevGoalsPerMatch','Goals per match']];
  const teams=[['gf','statsDevGoalsScored','Goals scored',false],['ga','statsDevFewestConceded','Fewest conceded',true],['w','statsDevWins','Wins',false],['cs','statsDevCleanSheets','Clean sheets',false],['ppg','statsDevPointsPerMatch','Points per match',false],['gd','statsDevGoalDifference','Goal difference',false],['unbeatenStreak','statsDevUnbeatenStreak','Unbeaten streak',false]];
  const players=[['averageRating','statsDevAverageRating','Rating'],['goals','statsDevGoals','Goals'],['assists','statsDevAssists','Assists'],['goalsAssistsPer90','statsDevGoalsAssists90','Goals + assists per 90'],['cleanSheets','statsDevCleanSheets','Clean sheets'],['starts','statsDevStartsSubstitutes','Starts (substitutes)'],['redCards','statsDevRedCards','Red cards'],['minutes','statsDevMinutes','Minutes']];
- // Minimum ranking eligibility; never change frozen recorded counters.
- const eligible=(key,record,international)=>{
-  if(record[key]===undefined||record[key]===null)return false;
-  if(key==='averageRating')return record.ratedAppearances>=(international?3:5);
+ // Ranking qualifications scale with the recorded club's played matches.
+ // Never modify frozen individual counters and never rank unavailable metrics.
+ const eligible=(key,record,clubMatches)=>{
+  if(record[key]===undefined||record[key]===null||!Number.isSafeInteger(clubMatches)||clubMatches<1)return false;
+  const halfGames=Math.ceil(clubMatches*0.5),halfMinutes=clubMatches*90*0.5;
   if(key==='goals'||key==='assists'||key==='redCards')return record[key]>=1;
-  if(key==='cleanSheets')return record[key]>=1&&record.appearances>=3;
-  if(key==='goalsAssistsPer90')return record.minutes>=270&&record.goals+(record.assists??0)>=1;
-  if(key==='starts')return record.starts>=3;
-  if(key==='minutes')return record.minutes>=270;
+  if(key==='averageRating')return record.ratedAppearances>=halfGames;
+  if(key==='cleanSheets')return record.cleanSheets>=1&&record.appearances>=halfGames;
+  if(key==='goalsAssistsPer90')return record.goals+record.assists>=1&&record.minutes>=clubMatches*90*0.4;
+  if(key==='starts')return record.starts>=halfGames;
+  if(key==='minutes')return record.minutes>=halfMinutes;
   return true;
  };
  const mounted=new WeakMap(),identity=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/;
@@ -167,15 +169,13 @@
     content.append(grid);
    }else{
     const player=view==='players',section=create('section',undefined,'fa-dev-stats-section'),grid=create('div',undefined,'fa-dev-stats-leader-grid');
+    const playedByClub=player?new Map((stats?.teams||[]).map(team=>[team.clubKey,team.mp])):null;
     for(const [key,labelKey,label,ascending=false] of player?players:teams){
      const card=create('section',undefined,'app-competition-stat-card '+(player?'app-competition-stat-card--compact':'app-competition-stat-card--fluid')+' fa-dev-stats-leader-card'+(player?'':' fa-dev-stats-team-card'));
      card.append(localized('h4',labelKey,label,'app-competition-stat-label fa-dev-stats-leader-title'));
-     const records=[...(stats?.[player?'players':'teams']||[])].filter(record=>player?eligible(key,record,/^int-[12]$/.test(context?.definition?.id||'')):record[key]!==undefined&&record[key]!==null).sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||(player?(a.name??'').localeCompare(b.name??'','en',{sensitivity:'base'}):a.clubName.localeCompare(b.clubName,'en'))||a.clubKey.localeCompare(b.clubKey,'en')||(player?a.playerId-b.playerId:0));
-     if(records.length){const top=create('ol',undefined,'fa-dev-stats-top');records.slice(0,5).forEach((record,i)=>top.append(row(record,i,records,key,player)));card.append(top)}else if(player&&stats?.players?.length){
-      if(stats.players.every(record=>record[key]===undefined||record[key]===null)){
-       card.append(localized('p','statsDevMetricUnavailable','Not recorded','fa-dev-stats-empty'));
-      }else card.append(empty(true));
-     }else card.append(empty(player));
+     const records=[...(stats?.[player?'players':'teams']||[])].filter(record=>player?eligible(key,record,playedByClub.get(record.clubKey)):record[key]!==undefined&&record[key]!==null).sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||(player?(a.name??'').localeCompare(b.name??'','en',{sensitivity:'base'}):a.clubName.localeCompare(b.clubName,'en'))||a.clubKey.localeCompare(b.clubKey,'en')||(player?a.playerId-b.playerId:0));
+     if(records.length){const top=create('ol',undefined,'fa-dev-stats-top');records.slice(0,5).forEach((record,i)=>top.append(row(record,i,records,key,player)));card.append(top)}
+     else card.append(empty(player));
      if(records.length>5){const expand=localized('button','statsDevShowAll','Show all','fa-dev-stats-expand');expand.type='button';expand.addEventListener('click',()=>showAll(expand,records,key,labelKey,label,player));card.append(expand)}
      else{const spacer=create('span',undefined,'fa-dev-stats-expand-placeholder');spacer.setAttribute('aria-hidden','true');card.append(spacer)}
      grid.append(card);
