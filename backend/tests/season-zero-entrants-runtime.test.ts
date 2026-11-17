@@ -54,9 +54,9 @@ it('holds both scopes private until independent authenticated receipt and shows 
  const international=await readPublicSportingSeasonLineupV1(db,'int-1',1) as any;
  expect(international.status).toBe('partial');
  expect(international.data.participants).toHaveLength(24);
- expect((await db.prepare('SELECT COUNT(*) AS n FROM seasons').first<{n:number}>())?.n).toBe(0);
- expect((await db.prepare('SELECT COUNT(*) AS n FROM season_calendars').first<{n:number}>())?.n).toBe(0);
- expect((await db.prepare('SELECT COUNT(*) AS n FROM season_draws').first<{n:number}>())?.n).toBe(0);
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM seasons').first())?.n).toBe(0);
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM season_calendars').first())?.n).toBe(0);
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM season_draws').first())?.n).toBe(0);
 });
 it('enforces CAS, idempotent replay, hash binding, immutable receipts and stale authority',async()=>{
  await expect(confirmSeasonZeroEntrants(db,session,{...body('domestic'),snapshotHash:'c'.repeat(64)},'zero-wrong-hash-0001',now)).rejects.toMatchObject({status:409});
@@ -99,7 +99,7 @@ it('resets approved but unstarted Season 0 and rotates generation, without leaki
  world=(await resetWorld(db,session,{...meta(),confirmation:'RESET SEASON 0'},'zero-reset-only-0001',now)).world;
  expect(world).toMatchObject({seasonNumber:0,day:0,phase:'unstarted',revision:0});
  expect(world.generation).not.toBe(prior);
- expect((await db.prepare('SELECT COUNT(*) AS n FROM season_zero_approvals').first<{n:number}>())?.n).toBe(0);
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM season_zero_approvals').first())?.n).toBe(0);
  expect((await readPublicSportingSeasonLineupV1(db,'int-1',1)).status).toBe('empty');
  await expect(confirmSeasonZeroEntrants(db,session,{expectedGeneration:prior,expectedRevision:1,scope:'international',snapshotHash:hash},'zero-old-generation-0001',now)).rejects.toMatchObject({status:409});
  await approve('domestic','zero-new-generation-0001');

@@ -17,7 +17,8 @@ export async function prepareSeason(db:Database,session:AdminSession,input:Prepa
   const world=await readWorld(db);
   if(world.generation!==command.expectedGeneration||world.revision!==command.expectedRevision||world.phase!=='unstarted')throw new ApiError(409,'stale_world');
   const zero=await readSeasonZeroAuthority(db,world);
-  if(await canonicalHash(trusted)!==zero.snapshotHash)throw new ApiError(422,'catalogue_not_approved');
+  if((zero.approved.domestic||zero.approved.international)&&await canonicalHash(trusted)!==zero.snapshotHash)
+   throw new ApiError(422,'catalogue_not_approved');
   const operationId=crypto.randomUUID();
   const result:Outcome={operationId,world:{schemaVersion:1,generation:command.expectedGeneration,revision:command.expectedRevision+1,seasonNumber:1,day:0,phase:'preparing'}};
   const worldGuard=abortUnless(db,`SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND phase='unstarted' AND season_number=0 AND day=0`,[command.expectedGeneration,command.expectedRevision]);
