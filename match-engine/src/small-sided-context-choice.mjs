@@ -73,7 +73,7 @@ export function chooseSmallSidedContextAction({
    passLaneClearanceM,recipientOpponentGapM,passForwardM,
    underPressure:pressure,canShoot,canPass,canCarry
   }),
-  readOnlyDecision:false, // a physical attempt still requires real shoe START
+  decisionOnly:true, // the executor still requires a real Rapier shoe START
   officialMatchAction:false,officialPossession:false,officialGoal:false,
   noInferredReception:true
  });

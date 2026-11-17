@@ -54,6 +54,7 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/original-challenger-ball-reach-m32.mjs': 'match-engine/src/original-challenger-ball-reach-m32.mjs',
   '/__fa_match_engine__/action-lab-scenarios.mjs': 'match-engine/src/action-lab-scenarios.mjs',
   '/__fa_match_engine__/small-sided-lab-scenarios.mjs': 'match-engine/src/small-sided-lab-scenarios.mjs',
+  '/__fa_match_engine__/small-sided-context-choice.mjs': 'match-engine/src/small-sided-context-choice.mjs',
   '/__fa_match_engine__/research-shot-initial-lineup.mjs': 'match-engine/src/research-shot-initial-lineup.mjs',
   '/__fa_match_engine__/goalkeeper-save-foundation-b02.mjs': 'match-engine/src/goalkeeper-save-foundation-b02.mjs',
   '/__fa_match_engine__/basic-defensive-physical-actions-b03.mjs': 'match-engine/src/basic-defensive-physical-actions-b03.mjs',
