@@ -114,7 +114,9 @@ export function smallSidedSetup(id,side,canonicalPlayers,{variantIndex=0}={}){
   for(let attempt=0;attempt<96&&!accepted;attempt++){
    const bx=27+random()*6,by=-6+random()*12;
    const positions=new Map([
-    [side+'-10',[bx-0.25-random()*0.26,by+(random()-0.5)*0.20]],
+    [side+'-10',id==='dribble-1v1'?
+     [bx-0.50-random()*0.17,by+(random()-0.5)*0.20]:
+     [bx-0.25-random()*0.26,by+(random()-0.5)*0.20]],
     [side+'-9',[bx+1.8+random()*2.4,by-4.8-random()*2.8]],
     [side+'-11',[bx+1.8+random()*2.4,by+4.8+random()*2.8]],
     [opponent+'-2',id==='dribble-1v1'?

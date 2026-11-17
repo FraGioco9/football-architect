@@ -353,7 +353,7 @@ export function selectUniformAutonomousContactAction({
    chooseIsolatedDribbleTouch({
     variantIndex:isolatedDribbleContext.variantIndex,tick,
     attackingSide:isolatedDribbleContext.attackingSide,
-    ballPosition,defender:actors.find(p=>p.team!==player.team)
+    ballPosition,ballVelocity,defender:actors.find(p=>p.team!==player.team)
    });
   let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
   if(dribbleTouch!==null){

@@ -8,14 +8,20 @@ import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
 import {chooseIsolatedDribbleTouch} from '../src/isolated-dribble-touches.mjs';
 test('#628 1v1 pure varied native-ground-touch intent is reproducible and mirrored',()=>{
  const b={x:30,y:2},d={team:'away',x:33,y:1};
- const params={variantIndex:7,tick:10,attackingSide:'home',ballPosition:b,defender:d};
+ const params={variantIndex:7,tick:10,attackingSide:'home',ballPosition:b,
+  ballVelocity:{x:1.2,y:0.1},defender:d};
  const a=chooseIsolatedDribbleTouch(params);
  assert.deepEqual(a,chooseIsolatedDribbleTouch(params));
  const mirror=chooseIsolatedDribbleTouch({...params,attackingSide:'away',
-  ballPosition:{x:-30,y:2},defender:{team:'home',x:-33,y:1}});
+  ballPosition:{x:-30,y:2},ballVelocity:{x:-1.2,y:0.1},
+  defender:{team:'home',x:-33,y:1}});
  assert.equal(a.dx,-mirror.dx);assert.equal(a.dy,mirror.dy);
  assert.equal(a.magnitudeNs,mirror.magnitudeNs);
  assert.notEqual(a.magnitudeNs,chooseIsolatedDribbleTouch({...params,variantIndex:9}).magnitudeNs);
+ assert.ok(a.magnitudeNs>=chooseIsolatedDribbleTouch({...params,
+  ballVelocity:{x:2.9,y:0}}).magnitudeNs,
+  'Higher measured forward velocity must not trigger a harder touch');
+ assert.throws(()=>chooseIsolatedDribbleTouch({...params,ballVelocity:undefined}),TypeError);
  assert.ok(a.magnitudeNs>=0.095&&a.magnitudeNs<=0.17);
  assert.equal(a.officialPossession,false);assert.equal(a.verifiedSecondTouch,false);
  assert.equal(chooseIsolatedDribbleTouch({...params,variantIndex:0}).magnitudeNs,0.12);
@@ -143,6 +149,11 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
    .reduce((n,s,_,a)=>n+s.meanTouchIntervalTicks/a.length,0),
   minPressureTicks:Math.min(...samples.map(s=>s.pressureTicks)),
   maxPressureTicks:Math.max(...samples.map(s=>s.pressureTicks)),
+  weakSamples:samples.filter(s=>s.actionCount<2||s.forwardM<-1)
+   .map(({side,bodyGuardEnabled,variantIndex,actionCount,shoeStarts,
+    shoeEnds,recontacts,forwardM,pathM,pressureTicks})=>({side,bodyGuardEnabled,
+    variantIndex,actionCount,shoeStarts,shoeEnds,recontacts,forwardM,pathM,pressureTicks})),
+  reverseTravels:samples.filter(s=>s.forwardM<0).length,
   sample:samples.filter(s=>[0,7,17,29].includes(s.variantIndex)),
   largestVertical:samples.toSorted((a,b)=>b.peakClearanceM-a.peakClearanceM).slice(0,8),
   fastestBall:samples.toSorted((a,b)=>b.peakBallSpeedMps-a.peakBallSpeedMps).slice(0,8)

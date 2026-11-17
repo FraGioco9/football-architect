@@ -16,6 +16,7 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
  let tick=-1,priorBall=null,firstBall=null,sourceEnds=0,
   nativeStarts=0,recontacts=0,opposingStarts=0,actions=0;
  let lastEnd=-1,hasEnded=false,ballPath=0,minimumGap=Infinity,
+  totalAttackerBallGapM=0,maxAttackerBallGapM=0,
   minPlayerGap=Infinity,maxActualPlayerSpeed=0,pressureTicks=0,
   nativeBodyBallTicks=0,nativeBodyPairsTicks=0,
   peakGroundClearanceM=0,airborneFramesAbove2Cm=0,peakBallSpeedMps=0;
@@ -61,6 +62,9 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
   if(clearance>0.02)airborneFramesAbove2Cm++;
   const bv=physics.ball.velocity;
   peakBallSpeedMps=Math.max(peakBallSpeedMps,Math.hypot(bv.x,bv.y));
+  const attackerGap=Math.hypot(b.x-p.x,b.y-p.y);
+  totalAttackerBallGapM+=attackerGap;
+  maxAttackerBallGapM=Math.max(maxAttackerBallGapM,attackerGap);
   const distance=Math.hypot(b.x-d.x,b.y-d.y);
   minimumGap=Math.min(minimumGap,distance);
   if(distance<3)pressureTicks++;
@@ -95,6 +99,8 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
    realImpulseMagnitudesNs:freeze([...actionMagnitudes]),
    actualImpulseDirectionRad:freeze([...directions]),
    minimumRealDefenderBallGapM:minimumGap,
+   averageRealAttackerBallGapM:totalAttackerBallGapM/(tick+2),
+   maximumRealAttackerBallGapM:maxAttackerBallGapM,
    measuredPressureTicks:pressureTicks,ballPath2DM:ballPath,
    peakGroundClearanceM,airborneFramesAbove2Cm,peakBallSpeedMps,
    meanAppliedTouchIntervalTicks:actionTicks.length<2?null:
