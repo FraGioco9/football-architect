@@ -1,7 +1,7 @@
 // Read-only Club Fixtures projection. Authority stays with the shared season validator.
 import {validPublicWorld,scoreValid} from './authoritative-season.mjs';
 import {competitionIdsForClub} from './club-season-source.mjs';
-import {indexPublishedMatchLinks,matchIdForFixture} from './published-match-links.mjs';
+import {isPublicMatchId} from './match-references.mjs';
 const compare=(a,b)=>a<b?-1:a>b?1:0;
 const same=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
 export function projectClubFixtures(fixtures,clubKey,season,day){
@@ -16,7 +16,7 @@ export function projectClubFixtures(fixtures,clubKey,season,day){
   return Object.freeze({id:f.id,competitionId:f.competitionId,season,day:f.day,round:f.round,phaseId:f.phaseId,
    marker:f.marker??'',tieId:f.tieId??null,leg:f.leg??null,opponentId:home?f.awayClubId:f.homeClubId,
    venue:f.neutral?'neutral':home?'home':'away',goalsFor:result?(home?result.homeGoals:result.awayGoals):null,
-   goalsAgainst:result?(home?result.awayGoals:result.homeGoals):null,resolution:result?.resolution??null,
+   goalsAgainst:result?(home?result.awayGoals:result.homeGoals):null,resolution:result?.resolution??null,matchId:f.matchId??null,
    penalties:penalties?Object.freeze({for:home?penalties.home:penalties.away,against:home?penalties.away:penalties.home}):null});
  }).sort((a,b)=>a.day-b.day||compare(a.competitionId,b.competitionId)||compare(a.marker,b.marker)||
   a.round-b.round||compare(a.tieId??'',b.tieId??'')||(a.leg??0)-(b.leg??0)||compare(a.id,b.id)));
@@ -111,34 +111,14 @@ export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,
     (f.result!==null)!==(f.day<=base.day)||
     f.result!==null&&!scoreValid(f.result,f))bad();
  }
+ const matchIds=new Set();
+ for(const f of data.fixtures){
+  if(f.matchId!==null&&f.matchId!==undefined){
+   if(!isPublicMatchId(f.matchId)||matchIds.has(f.matchId))bad();
+   matchIds.add(f.matchId);
+  }
+ }
  const rows=projectClubFixtures(data.fixtures,clubKey,season,base.day);
- return {...base,competitions,rows,coverage:'complete'};
+ return {...base,competitions,rows,coverage:'complete',linkAuthority:'club-fixtures-v1'};
 }
 
-/**
- * A complete/historical club fixture row retains the original source Fixture.id.
- * Resolve public IDs from one published collection per known competition,
- * never from pairings or numeric list positions. Missing collections fail closed.
- * The controller's source/world/season abort fence discards stale responses.
- */
-export async function attachPublishedClubMatchLinks(snapshot,{fetchJson,signal}){
- if(snapshot?.source!=='authoritative'||snapshot.coverage!=='complete'||
-    !Number.isSafeInteger(snapshot.season)||snapshot.season<1||
-    !Array.isArray(snapshot.competitions)||!Array.isArray(snapshot.rows)||typeof fetchJson!=='function')
-  return snapshot;
- const indexes=await Promise.all(snapshot.competitions.map(async competition=>{
-  try{
-   const id=competition.id,season=snapshot.season;
-   const payload=await fetchJson('/api/matches/seasons/'+season+'/competitions/'+id,{signal});
-   if(signal?.aborted)throw Error('Cancelled match links');
-   return [id,indexPublishedMatchLinks(payload,season,id)];
-  }catch(error){if(signal?.aborted)throw error;return [competition.id,null];}
- }));
- const byCompetition=new Map(indexes);
- const rows=snapshot.rows.map(row=>{
-  const index=byCompetition.get(row.competitionId);
-  const id=index?matchIdForFixture({...row,sourceFixtureId:row.id},index):null;
-  return Object.freeze({...row,matchId:id});
- });
- return {...snapshot,rows,linkAuthority:'published-match-index-v1'};
-}
