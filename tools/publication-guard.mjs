@@ -11,7 +11,7 @@ import competitionModel from "../assets/competition-model.js";
 
 export const repositoryRoot=fileURLToPath(new URL("../",import.meta.url));
 const required=["404.html","assets/admin-permissions-cache.js","assets/profile-navigation.js","assets/account-ui.js","assets/account.css","data/country-codes.json","account/index.html","account/login/index.html","account/recover/index.html","account/register/index.html","account/verify-email/index.html","assets/account-login.js","assets/local-dev-inbox-link.js","assets/account-onboarding.js","assets/account-recovery.js","assets/account-settings.js","assets/account-verification.js",
- "assets/competition-stats.js","assets/players-directory.js","assets/player-detail.js","assets/player-detail.css","assets/players/portraits/44.webp","assets/players/portraits/98.webp","assets/players/portraits/145.webp","assets/players/portraits/46.webp","assets/players/portraits/45.webp","assets/players/portraits/49.webp","assets/players/portraits/50.webp","assets/players/portraits/51.webp","assets/players/portraits/47.webp","assets/players/portraits/52.webp","assets/players/portraits/148.webp","assets/players/portraits/53.webp","assets/players/portraits/54.webp","assets/players/portraits/55.webp","assets/players/portraits/60.webp","assets/players/portraits/61.webp","assets/players/portraits/48.webp","assets/players/portraits/59.webp","assets/players/portraits/56.webp","assets/players/portraits/57.webp","assets/players/portraits/62.webp","assets/players/portraits/63.webp","assets/players/portraits/58.webp","assets/match-detail.js","assets/match-detail.css","assets/match-scoreboard-themes.mjs","assets/match-references.mjs","assets/match-public-context.mjs","assets/players-nationality-tooltip.js","assets/players-mobile.js","assets/admin-players-preview.js","assets/admin-contracts.js",
+ "assets/competition-stats.js","assets/players-directory.js","assets/player-detail.js","assets/player-detail.css","assets/match-detail.js","assets/match-detail.css","assets/match-scoreboard-themes.mjs","assets/match-references.mjs","assets/match-public-context.mjs","assets/players-nationality-tooltip.js","assets/players-mobile.js","assets/admin-players-preview.js","assets/admin-contracts.js",
  "clubs/_shared/index.html","clubs/_shared/manifest.json","clubs/_shared/identity.json","assets/club-page.js","assets/club-model.js","assets/club-page.css","assets/club-season-source.mjs","assets/club-history-source.mjs","assets/club-public-read-cache.mjs","assets/club-fixtures.js","assets/club-fixtures-source.mjs","assets/published-match-links.mjs","assets/club-fixtures-controller.mjs","assets/club-competition-catalogue.mjs",
  "vercel.json","index.html","guide/index.html","dashboard/index.html","players/index.html","players/_shared/index.html","matches/_shared/index.html",
  "calendar/index.html","admin/index.html","admin/calendar/index.html","admin/players/index.html","admin/contracts/index.html","admin/players/preview/index.html","admin/players/preview/player/index.html","settings/index.html","competitions/index.html",
@@ -41,8 +41,12 @@ export function isAllowlistedPublicPath(path,sourceRoot=repositoryRoot) {
  if(rootFiles.has(path)||divisions.includes(path))return true;
  if(path.startsWith("assets/brand/"))
   return /^assets\/brand\/[a-z0-9-]+\.(?:svg|png)$/.test(path);
- if(path.startsWith("assets/players/portraits/"))
-  return ["assets/players/portraits/44.webp","assets/players/portraits/98.webp","assets/players/portraits/145.webp","assets/players/portraits/46.webp","assets/players/portraits/45.webp","assets/players/portraits/49.webp","assets/players/portraits/50.webp","assets/players/portraits/51.webp","assets/players/portraits/47.webp","assets/players/portraits/52.webp","assets/players/portraits/148.webp","assets/players/portraits/53.webp","assets/players/portraits/54.webp","assets/players/portraits/55.webp","assets/players/portraits/60.webp","assets/players/portraits/61.webp","assets/players/portraits/48.webp","assets/players/portraits/59.webp","assets/players/portraits/56.webp","assets/players/portraits/57.webp","assets/players/portraits/62.webp","assets/players/portraits/63.webp","assets/players/portraits/58.webp"].includes(path);
+ if(path.startsWith("assets/players/portraits/")){
+  // A canonical numeric WebP committed here is the explicit publication boundary.
+  if(!/^assets\/players\/portraits\/[1-9][0-9]*\.webp$/.test(path))return false;
+  const file=join(sourceRoot,path);
+  return existsSync(file)&&lstatSync(file).isFile()&&!lstatSync(file).isSymbolicLink();
+ }
  if(path.startsWith("assets/flags/"))
   return path==="assets/flags/LICENSE"||/^assets\/flags\/[a-z0-9-]+\.svg$/.test(path);
  if(path.startsWith("assets/"))

@@ -354,7 +354,6 @@
     "backend/tests/test_portrait_v41_replacement_migration.py": "migration",
     "tests/player-portrait-v4.test.mjs": "site-node",
     "tests/player-portrait-v41-diversity.test.mjs": "site-node",
-    "tests/player-portrait-v41-cutover.test.mjs": "site-node",
     "tests/player-portrait-chat-export.test.mjs": "site-node",
     "tests/player-portrait-v4-qa.test.mjs": "site-node"
   }
