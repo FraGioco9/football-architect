@@ -51,6 +51,15 @@ export function describeApiUrl(input){
 }
 // Public static data is also a meaningful page payload; tracking CSS/crests
 // would confound the read-contract audit with rendering assets.
+export const PERF_CAPTURE_SCHEMA_VERSION=2;
+// Read-contract modules only: count the incremental JS transport with the JSON.
+// Arbitrary CSS, images, fonts and other bundles are outside this inventory.
+export const TRACKED_STATIC_MODULES=Object.freeze([
+ '/assets/competition-model.js','/assets/club-competition-catalogue.mjs',
+ '/assets/club-fixtures-controller.mjs','/assets/club-fixtures-source.mjs',
+ '/assets/club-history-source.mjs','/assets/club-public-read-cache.mjs',
+ '/assets/competition-rules-view.js','/assets/competition-tabs.js'
+]);
 export const TRACKED_STATIC_DATA=Object.freeze([
  '/clubs/_shared/manifest.json','/clubs/_shared/identity.json',
  '/competitions/_shared/manifest.json','/competitions/_shared/compact.json',
@@ -61,6 +70,8 @@ export function describeDataUrl(input){
  const api=describeApiUrl(input);
  if(api)return {...api,resourceKind:'api'};
  let url;try{url=new URL(input)}catch{return null}
+ if(TRACKED_STATIC_MODULES.includes(url.pathname))
+  return {...safeDescription(url),resourceKind:'module'};
  if(!TRACKED_STATIC_DATA.includes(url.pathname)&&!SCOPED_CLUB_PROFILE.test(url.pathname))return null;
  return {...safeDescription(url),resourceKind:'catalog'};
 }
@@ -121,8 +132,9 @@ export function summarizeRequests(requests){
  const transferReads=requests.filter(r=>Number.isFinite(r.transferBytes)&&r.transferBytes>=0);
  const observedTransferBytes=transferReads.reduce((sum,r)=>sum+r.transferBytes,0);
  return {requestCount:requests.length,
-  apiRequestCount:requests.filter(r=>r.resourceKind!=='catalog').length,
+  apiRequestCount:requests.filter(r=>!r.resourceKind||r.resourceKind==='api').length,
   catalogRequestCount:requests.filter(r=>r.resourceKind==='catalog').length,
+  moduleRequestCount:requests.filter(r=>r.resourceKind==='module').length,
   transferBytes:transferReads.length===requests.length?observedTransferBytes:null,
   observedTransferBytes,measuredTransferResponses:transferReads.length,
   uniqueRequestShapes:endpoints.length,repeatedRequestCandidates:requests.length-endpoints.length,
@@ -131,8 +143,23 @@ export function summarizeRequests(requests){
 }
 // A failed/unfinished navigation is not evidence of zero API requests.
 // Keep partial observations for diagnosis, but exclude them from valid totals.
+// Any failed tracked read makes a purported wire saving inconclusive.
+// Only documented anonymous authorization and published-collection absences
+// can return 4xx without invalidating the sampled page.
+const OPTIONAL_PUBLISHED_MATCHES=/^\/api\/matches\/seasons\/[1-9]\d*\/competitions\/(?:(?:it|eng|es|de|fr|pt|nl|br)-[12]|int-[12])$/;
+export function hasFailedTrackedRead(requests){
+ return requests.some(row=>{
+  if(row?.failed===true||row?.settled===false||
+   !Number.isInteger(row?.status)||row.status<100)return true;
+  if(row.status<400)return false;
+  if(row.resourceKind!=='api'||row.method!=='GET')return true;
+  if(row.status===401&&['/api/player/permissions','/api/admin/session'].includes(row.path))return false;
+  if(row.status===404&&OPTIONAL_PUBLISHED_MATCHES.test(row.path))return false;
+  return true;
+ });
+}
 export function summarizeVisit(requests,{complete=true}={}){
- if(!complete)return {requestCount:null,apiRequestCount:null,catalogRequestCount:null,
+ if(!complete)return {requestCount:null,apiRequestCount:null,catalogRequestCount:null,moduleRequestCount:null,
   transferBytes:null,observedTransferBytes:null,measuredTransferResponses:null,uniqueRequestShapes:null,
   repeatedRequestCandidates:null,errorResponses:null,endpoints:[],
   observedRequestCount:requests.length,incomplete:true};
@@ -176,9 +203,9 @@ export async function preflightAnonymousLocalApi(base){
  if(!world.headers.get('content-type')?.includes('application/json'))
   throw Error('Public world API response is not JSON; local Worker is unavailable');
 }
-function parseArgs(args){
+export function parseArgs(args){
  const [label,...flags]=args;
- if(!['before','after'].includes(label))throw Error('Usage: node tools/perf-api-01-requests.mjs before|after [--runs=1] [--routes=/dashboard,/players] [--base-url=http://app.localhost:2000]');
+ if(!['before','after'].includes(label))throw Error('Usage: node tools/perf-api-01-requests.mjs before|after [--runs=1] [--routes=/dashboard,/players] [--base-url=http://app.localhost:2000] [--served-head=<40-char-sha>]');
  const option=name=>flags.find(a=>a.startsWith('--'+name+'='))?.slice(name.length+3);
  const runs=Number(option('runs')||1);
  if(!Number.isInteger(runs)||runs<1||runs>10)throw Error('runs must be 1..10');
@@ -188,7 +215,11 @@ function parseArgs(args){
  const routes=option('routes')?option('routes').split(','):DEFAULT_ROUTES;
  if(!routes.length||routes.some(route=>!route.startsWith('/')||route.startsWith('//')||route.includes('#')))
   throw Error('Routes must be local absolute paths');
- return {label,runs,base:base.origin,routes};
+ // A sampler checkout is not necessarily the checkout served by the Worker.
+ const servedHead=option('served-head')||null;
+ if(servedHead!==null&&!/^[0-9a-f]{40}$/i.test(servedHead))
+  throw Error('served-head must be a full 40-character commit SHA');
+ return {label,runs,base:base.origin,routes,servedHead};
 }
 // Collect anonymous read-only samples with an existing local Chromium instance.
 // The production CLI and the disposable CI Worker share the exact same recorder.
@@ -246,9 +277,10 @@ export async function collectAnonymousBrowser(browser,options){
      }))).catch(()=>[]);
      attachResourceTransferTimings(sample,timings,entry=>resourceUrls.get(entry));
      const observed=sample.map(entry=>({...entry}));
-     const complete=error===null&&apiQuiet&&(status===null||status<400);
+     const readFailed=hasFailedTrackedRead(observed);
+     const complete=error===null&&apiQuiet&&(status===null||status<400)&&!readFailed;
      records.push({route:safeRoute,attempt,scenario,pageStatus:status,
-      error:error??(!apiQuiet?'ApiRequestsUnsettled':status>=400?'PageHttpError':null),
+      error:error??(!apiQuiet?'ApiRequestsUnsettled':status>=400?'PageHttpError':readFailed?'TrackedReadFailed':null),
       ...summarizeVisit(observed,{complete}),requests:observed});
      return complete;
     };
@@ -352,10 +384,13 @@ async function main(args){
   ...(process.env.FA_ACCOUNT_CHROME?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
  let records;
  try{records=await collectAnonymousBrowser(browser,options)}finally{await browser.close()}
- const head=(()=>{try{return execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()}catch{return 'UNKNOWN'}})();
- const result={label:options.label,head,base:options.base,runs:options.runs,
+ const samplerHead=(()=>{try{return execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()}catch{return 'UNKNOWN'}})();
+ const head=options.servedHead??samplerHead;
+ const result={label:options.label,captureSchemaVersion:PERF_CAPTURE_SCHEMA_VERSION,
+  head,samplerHead,headSource:options.servedHead?'operator-declared-served-checkout':'sampler-checkout',
+  base:options.base,runs:options.runs,
   environment:'Local isolated DEV recommended; anonymous fresh browser context per route/run',
-  caveats:'Counts include public APIs plus scoped and shared static data catalogues, not CSS, crests or fonts. Candidate repeats do not prove redundant work. API/page query values except public numeric season/day/week/offset/limit are redacted; private URL values remain ephemeral. Resource Timing transferSize includes response headers and can be zero for cached reads; missing timing means null totals, not zero traffic. Playwright responseBodySize is separate from wire size. Some sample player/match IDs may be unpublished and are never counted as successful page data. No real login, post-write, physical iPhone Safari or hosted Preview coverage.',
+  caveats:'Counts include public APIs, scoped/shared catalogues and allowlisted Club/Competition read-contract JS modules, not arbitrary CSS, crests or fonts. Candidate repeats do not prove redundant work. API/page query values except public numeric season/day/week/offset/limit are redacted; private URL values remain ephemeral. Resource Timing transferSize includes response headers and can be zero for cached reads; missing timing means null totals, not zero traffic. Playwright responseBodySize is separate from wire size. Some sample player/match IDs may be unpublished and are never counted as successful page data. No real login, post-write, physical iPhone Safari or hosted Preview coverage.',
   records};
  mkdirSync('int24-browser-artifacts',{recursive:true});
  const output='int24-browser-artifacts/perf-api-01-'+options.label+'.json';
