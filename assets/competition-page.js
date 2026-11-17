@@ -423,12 +423,13 @@
         identities.add(id);
         const li = element("li","app-world-mobile-item");
         li.dataset.worldClub = id;
-        decorateStanding(li, row.position ?? (row.played == null ? null : index + 1));
+        decorateStanding(li, row.unranked === true ? null : row.position ?? (row.played == null ? null : index + 1));
         const details = element("details","app-world-mobile-details");
         const summary = element("summary","app-world-mobile-summary");
         const pos = element("span","app-world-mobile-position",
-          row.position == null ? (row.played == null ? "—" : String(index + 1)) :
-            String(row.position));
+          row.unranked === true ? "—" :
+            row.position == null ? (row.played == null ? "—" : String(index + 1)) :
+              String(row.position));
         const name = element("span","app-world-mobile-name");
         const crest = createCrestHost(id);
         const clubLink = element("a","app-world-standing-club-link app-world-mobile-club-name",club.primaryName || club.abbr);
@@ -812,6 +813,7 @@
       try{
         const clubs=new Map(data.participants.map(club=>[rules.clubKey(club),club]));
         if(clubs.size!==definition.capacity||[...clubs.values()].some(club=>typeof club.primaryName!=='string'||!club.primaryName.trim()))throw Error('Invalid supplied participants');
+        const entrantsOnly=data.entrantsOnly===true;
         const supplied=data.statistics?.standings;
         if(supplied!==undefined&&(!Array.isArray(supplied)||supplied.length!==definition.capacity))throw Error('Incomplete supplied standings');
         const seen=new Set();
@@ -820,14 +822,14 @@
           if(!club||seen.has(id))throw Error('Invalid supplied standings identity');seen.add(id);
           for(const field of ['played','won','drawn','lost','gf','ga','gd','pts'])if(!Number.isSafeInteger(row[field])||(field!=='gd'&&row[field]<0))throw Error('Invalid supplied statistic');
           if(row.played>roundCount||row.won+row.drawn+row.lost!==row.played||row.gd!==row.gf-row.ga)throw Error('Invalid supplied totals');
-          return {...row,club,position:index+1,recent:row.recent||[]};
+          return {...row,club,position:entrantsOnly?null:index+1,unranked:entrantsOnly,recent:row.recent||[]};
         }):data.participants.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
         const commitMobile=mobile.prepare(rows);
         const verifiedForms=verifiedPublishedForms(data,rows,definition,rules);
         const desktop=rows.map((row,index)=>{
-          const tr=createStandingsRow(row.club);decorateStanding(tr,supplied?index+1:null);
+          const tr=createStandingsRow(row.club);decorateStanding(tr,supplied&&!entrantsOnly?index+1:null);
           if(supplied){
-            const values=[index+1,null,...['played','won','drawn','lost','gf','ga','gd','pts'].map(k=>row[k])];
+            const values=[entrantsOnly?'—':index+1,null,...['played','won','drawn','lost','gf','ga','gd','pts'].map(k=>row[k])];
             values.forEach((value,i)=>{if(i!==1)tr.children[i].textContent=String(value)});
             // A real match can use the domestic tooltip layout only when
             // the verified fixture also supplies the actual score.

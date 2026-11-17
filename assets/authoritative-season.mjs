@@ -44,12 +44,22 @@ export function validateAuthoritativeSeason(input,context,manifest){
   return freeze(structuredClone(input));
  }
  const {data:d,world:w,provenance:p}=input,viewed=viewedSeasonState(input);
+ const entrantsOnly=d?.entrantsOnly===true;
+ const authority=entrantsOnly?'confirmed-entrants-v1':'temporary-lineup-v1';
+ const sourceSuffix=entrantsOnly?'entrants:':'';
  if(!viewed||![1,2].includes(w.seasonNumber)||!object(d)||d.season!==input.selectedSeason||d.rulesVersion!==definition.rules.version||input.reason!==null||
-    p?.kind!=='authoritative'||p.resultAuthority!=='temporary-lineup-v1'||typeof p.sourceRef!=='string'||!new RegExp('^world:'+w.generation+':season:'+d.season+':[a-f0-9]{64}$').test(p.sourceRef)||
+    p?.kind!=='authoritative'||p.resultAuthority!==authority||typeof p.sourceRef!=='string'||!new RegExp('^world:'+w.generation+':season:'+d.season+':'+sourceSuffix+'[a-f0-9]{64}$').test(p.sourceRef)||
     (input.status==='available')!==(viewed.phase==='closed'))fail();
  const catalog=clubCatalog(manifest),ids=d.participants;
  if(!Array.isArray(ids)||ids.length!==definition.capacity||new Set(ids).size!==ids.length||ids.some(id=>!idPattern.test(id)||!catalog.has(id))||
     definition.category==='domestic'&&ids.some(id=>!id.startsWith(definition.id.split('-')[0]+'-')))fail();
+ if(entrantsOnly){
+  // Membership confirmation has no schedule, result, rank or archived history.
+  if(input.status!=='partial'||viewed.phase!=='active'||viewed.day<1||viewed.day>12||
+     Object.keys(d).sort().join(',')!=='entrantsOnly,participants,rulesVersion,season,seasonState'||
+     !object(d.seasonState)||d.seasonState.day!==viewed.day||d.seasonState.phase!==viewed.phase)fail();
+  return freeze(structuredClone(input));
+ }
  const fixtures=d.fixtures,seen=new Set(),positions=new Set();
  if(!Array.isArray(fixtures))fail();
  for(const f of fixtures){
@@ -119,6 +129,14 @@ export function validateAuthoritativeSeason(input,context,manifest){
 export function adaptAuthoritativeSeason(source,context,manifest){
  if(source.data===null)return null;
  const {data:d}=source,definition=context.currentDefinition||context.definition,catalog=clubCatalog(manifest),participants=d.participants.map(id=>catalog.get(id));
+ if(d.entrantsOnly===true){
+  const standings=participants.map(club=>({club,played:0,won:0,drawn:0,lost:0,gf:0,ga:0,gd:0,pts:0,recent:[]}));
+  return freeze({season:d.season,rulesVersion:d.rulesVersion,participants,entrantsOnly:true,fixtures:null,
+   postseason:[],results:[],statistics:{standings,overview:{matchesPlayed:0,totalGoals:0,goalsPerMatch:0},teams:[],players:[]},
+   status:source.status,history:null,
+   provenance:{kind:'authoritative',sourceRef:source.provenance.sourceRef,resultAuthority:source.provenance.resultAuthority},
+   world:source.world,seasonState:viewedSeasonState(source),currentMatchday:null});
+ }
  const club=id=>definition.category==='international'?id:catalog.get(id).clubId;
  const fixtures=d.fixtures.map(f=>({sourceFixtureId:f.id,marker:f.marker,day:f.day,
   round:f.round,phaseId:f.phaseId,tieId:f.tieId,leg:f.leg,neutral:f.neutral,
