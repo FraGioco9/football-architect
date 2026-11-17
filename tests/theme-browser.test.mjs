@@ -39,7 +39,7 @@ const devServer=createServer((req,res)=>{
    return end(body,...args);
   };
  }
- const pause=req.url.includes("manifest.json")?devManifestDelay:req.url.startsWith("/assets/competition-fixtures.js")?devFixturesDelay:0;
+ const pause=req.url.includes("manifest.json")?devManifestDelay:req.url.startsWith("/assets/competition-fixtures.js")?devFixturesDelay:req.url.startsWith("/assets/clubs/")?clubCrestDelay:0;
  if(pause)setTimeout(()=>devRouter.emit("request",req,res),pause);
  else devRouter.emit("request",req,res);
 });
