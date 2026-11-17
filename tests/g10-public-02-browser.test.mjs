@@ -129,10 +129,10 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await cmd("Emulation.setFocusEmulationEnabled",{enabled:true});
   // CAL-AUDIT: the public-intended DEV widget now exposes only global Season and Day.
   await cmd("Page.navigate",{url:origin+"/competitions/it-1?season=1&view=standings"});
-  await until("document.readyState==='complete'&&!!document.querySelector('.fa-dev-widget-button')&&document.querySelectorAll('#app-standings-body tr').length===16");
+  await until("document.readyState==='complete'&&!!document.querySelector('.fa-dev-widget-button')&&!!window.faCompetitionContext");
   await run("document.querySelector('.fa-dev-widget-button').click()");
   await run("document.querySelector('[data-dev-control=debug-enabled]').click()");
-  await until("window.faDebugEnabled===true");
+  await until("window.faDebugEnabled===true&&document.querySelectorAll('#app-standings-body tr[data-world-club]').length===16");
   await until("!!document.querySelector('[data-dev-control=season]')&&!!document.querySelector('[data-dev-control=world-day]')");
   assert.equal(await run("document.querySelector('[data-dev-control=season]').value"),"1");
   assert.equal(await run("document.querySelector('[data-dev-control=world-day]').value"),"1");

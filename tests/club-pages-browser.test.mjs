@@ -1137,7 +1137,18 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }
     console.log('A03-04D BROWSER PASS: immutable staged registry available before deferred consumers on competition, club, directory and calendar pages');
     // A03-04E: follow canonical links produced by migrated browser renderers.
-    await cmd('Page.navigate',{url:origin+'/competitions/it-1/standings?season=1'});
+    // Explicit per-route DEV fixture: earlier browser cases may have switched
+    // Debug OFF, or left the global world on Season 0. Public standings must
+    // remain empty without a real confirmation, so never use the public origin
+    // to assert canonical club links.
+    const clubStandingsBootstrap=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:
+      "if(location.origin==="+JSON.stringify(devOrigin)+"&&location.pathname==='/competitions/it-1/standings'){"+
+      "sessionStorage.setItem('football-architect:debug-enabled','on');"+
+      "sessionStorage.setItem('football-architect:standings-dev-preview','on');"+
+      "sessionStorage.setItem('football-architect:standings-dev-season','1');"+
+      "sessionStorage.setItem('football-architect:standings-dev-matchdays','1');"+
+      "sessionStorage.removeItem('football-architect:calendar-dev-world-day');}"});
+    await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1/standings?season=1'});
     await wait("document.readyState==='complete'&&!!document.querySelector('.app-world-standing-club-link[href=\"/clubs/it/1/overview\"]')");
     const clubDestinations=await run("[...new Set([...document.querySelectorAll('.app-world-standing-club-link[href^=\"/clubs/it/\"]')].map(a=>a.getAttribute('href')))].sort()");
     assert.deepEqual(clubDestinations,Array.from({length:16},(_,i)=>'/clubs/it/'+(i+1)+'/overview').sort());
@@ -1145,6 +1156,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("location.pathname==='/clubs/it/1/overview'&&document.documentElement.dataset.clubReady==='true'");
     await run('history.back()');await wait("location.pathname==='/competitions/it-1/standings'&&!!window.faCompetitionRoute");
     assert.equal(await currentUrl(),'/competitions/it-1/standings?season=1');
+    await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:clubStandingsBootstrap.identifier});
     console.log('A03-04E BROWSER PASS: migrated router/club/directory/standings links preserve canonical destinations, temporal query and history; legacy calendar links and cup historical links covered by executable VM fixtures');
     assert.equal(errors.length,0,errors.join('; '));
   }finally{

@@ -338,3 +338,73 @@ test('MATCH-LINKS #605: standings form links use official source identities on b
  const css=read('assets/app.css');
  assert.match(css,/\.app-world-mobile-form a\[data-published-match\]\{cursor:pointer\}/);
 });
+
+test('Season 0 and unconfirmed public seasons suppress provisional entrants until Admin approval',()=>{
+ const source=read('assets/competition-page.js');
+ const start=source.indexOf('  function standingsAbsentMode(');
+ const end=source.indexOf('  const STANDINGS_SUBVIEWS=',start);
+ assert.ok(start>=0&&end>start,'standings authority gate is available');
+ const mode=runInNewContext(source.slice(start,end)+';standingsAbsentMode');
+ assert.equal(mode(null,'pending'),'pending','unknown public authority keeps first-paint skeleton');
+ assert.equal(mode(null,'empty'),'empty','verified Season 0 absence renders the empty message');
+ assert.equal(mode(0,'pending'),'empty','DEV Season 0 cannot show unapproved entrants');
+ assert.equal(mode(1,'pending'),'debug-preview','enabled fictional seasons stay available');
+ assert.match(source,/if\(standingsAbsentMode\(activeDebugSeason,publicStandingsState\)==='debug-preview'\)/,
+   'boot cannot prefill real Season 0 from the static manifest');
+ assert.match(source,/publicStandingsState=state==='empty'\?'empty'/,
+   'empty public Standings derives from a verified source outcome');
+ assert.match(source,/if\(suppliedOwned\|\|wrongShell\)empty\(\)/,
+   'source reset and confirmed-empty remove stale club identities');
+});
+
+test('confirmed pre-kickoff entrants show dash placeholders without real rank, points, highlights or legend',()=>{
+ const page=read('assets/competition-page.js');
+ const begin=page.indexOf('  function hasPlayedLeagueMatches(');
+ const end=page.indexOf('  function readStandingsSubview(',begin);
+ assert.ok(begin>=0&&end>begin,'the kickoff gate belongs to the competition presenter');
+ const started=runInNewContext(page.slice(begin,end)+';hasPlayedLeagueMatches');
+ assert.equal(started(null),false);
+ assert.equal(started({statistics:{standings:Array.from({length:16},()=>({played:0}))}}),false);
+ assert.equal(started({entrantsOnly:true,statistics:{standings:[{played:0}]}}),false);
+ assert.equal(started({statistics:{standings:[{played:0},{played:1}]}}),true,
+  'the first played league game activates the sport table for that competition');
+ assert.match(page,/const preKickoff=Boolean\(supplied&&!hasPlayedLeagueMatches\(data\)\)/);
+ assert.match(page,/const displayReady=Boolean\(supplied&&projected&&!preKickoff\)/,
+  'unplayed participants cannot receive arbitrary displayed ranks');
+ assert.match(page,/displayRows=preKickoff\?\[\.\.\.rows\]\.sort/,
+  'pre-kickoff entrants are alphabetic and unranked');
+ assert.match(page,/const tr=createStandingsRow\(row\.club\);decorateStanding\(tr,displayReady\?index\+1:null\)/,
+  'pre-kickoff desktop displays the canonical unknown-cell dash placeholders');
+ assert.doesNotMatch(page,/tr\.dataset\.standingsPrekickoff|cell\.textContent=''/,
+  'do not erase the dash values from the desktop standings');
+ assert.match(page,/const commitMobile=mobile\.prepare\(displayRows\)/,
+  'compact mobile uses the same dash-backed unknown values as the desktop table');
+ assert.match(page,/row\.played == null \? "—" : String\(index \+ 1\)/,
+  'pre-kickoff mobile rank is the unknown marker');
+ assert.match(page,/row\.pts == null \? "—" : String\(row\.pts\)/,
+  'pre-kickoff mobile points are shown as unknown, not hidden or zero');
+ assert.match(page,/!hasPlayedLeagueMatches\(window\.faCompetitionContext\?\.seasonData\)/,
+  'position outcome legend is withheld until a real game');
+ assert.doesNotMatch(read('assets/app.css'),/data-standings-prekickoff/,
+  'compact view preserves its original full layout with unknown values');
+});
+
+test('confirmed-empty standings centers the translated message vertically in a full-height desktop/mobile empty region',()=>{
+ const page=read('assets/competition-page.js'),css=read('assets/app.css');
+ assert.match(page,/row\.className='app-standings-empty-row'/,
+  'the empty desktop row is distinct from unranked club identities');
+ assert.match(css,/#competition-panel-standings #app-standings-body tr\.app-standings-empty-row\{\s*height:clamp\(240px,40vh,360px\)/,
+  'a confirmed-empty desktop table reserves vertical room for the message');
+ assert.match(css,/#competition-panel-standings #app-standings-body td\.app-competition-empty-row\{[\s\S]*?display:table-cell!important;[\s\S]*?vertical-align:middle;/,
+  'the table cell uses native vertical middle alignment instead of display:block');
+ assert.match(css,/#competition-panel-standings #app-standings-compact-list \.app-world-mobile-empty\{[\s\S]*?display:flex;[\s\S]*?align-items:center;[\s\S]*?justify-content:center;/,
+  'the mobile compact message is vertically centered within the same empty region');
+});
+
+test('Season 1 -> 0 DEV source change reconciles live standings even without a new data revision',()=>{
+ const page=read('assets/competition-page.js');
+ assert.match(page,/if\(season===0\)\{\s*selectSeason\(1\);[\s\S]*?standingsRefresh\?\.\(\);/,
+  'DEV Season 0 source transition always flushes stale roster nodes');
+ assert.match(page,/const expectedRows=mode==='debug-preview'\?division\.clubs\.length:1;/,
+  'only a real DEV season with explicit preview may keep the 16-club provisional list');
+});
