@@ -393,7 +393,11 @@
     // Do not interpret missing or stale season data as an empty schedule.
     const context=window.faCompetitionContext,data=context?.seasonData;
     const matching=data&&String(data.season)===String(context.selectedSeason)&&String(context.selectedSeason)===String(navigation.get().season);
-    const absent=matching&&data.fixtures===null;
+    // The entrants-only sporting projection intentionally has fixtures:null
+    // until the world calendar is published. A separately verified, already
+    // published match collection is authoritative for Fixtures, so that null
+    // must not hide eight real round matches behind an "empty" panel.
+    const absent=matching&&data.fixtures===null&&!hasSchedule;
     const emptyRound=available&&((international&&!next.some(item=>item.dataset.fixtureMatch))||
       (!international&&!isPostseason&&matches.length===0));
     const panel=document.getElementById('competition-panel-fixtures');

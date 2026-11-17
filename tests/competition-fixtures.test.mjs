@@ -713,6 +713,10 @@ test('#601 Season 2 domestic draw renders promoted entrants before the separate 
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(requests,1,'only one official published draw read is needed');
  const list=r.fields.get('app-fixtures-list');
+ const panel=r.fields.get('competition-panel-fixtures');
+ assert.equal(list.hidden,false,'published league is actually visible, not just mounted in a hidden list');
+ assert.equal(r.fields.get('app-fixtures-empty').hidden,true);
+ assert.equal(panel.dataset.faContentState,'available');
  assert.equal(list.children.filter(n=>n.dataset.fixtureMatch).length,8,
   'all eight matchday fixtures display even before entrants-only hydration');
  const visit=n=>[n,...n.children.flatMap(visit)];
@@ -733,6 +737,9 @@ test('#601 Season 2 domestic draw renders promoted entrants before the separate 
  r.events['fa:competition-context-change']();
  assert.equal(list.children.filter(n=>n.dataset.fixtureMatch).length,8,
   'late entrants-only hydration must not erase the published draw');
+ assert.equal(list.hidden,false,'entrants-only fixtures:null must not hide the verified published schedule');
+ assert.equal(r.fields.get('app-fixtures-empty').hidden,true,'avoid incorrect empty-state message');
+ assert.equal(panel.dataset.faContentState,'available','published matches override entrants-only null');
  assert.equal(requests,1,'confirmed entrants reuse the same draw and revision');
 });
 
