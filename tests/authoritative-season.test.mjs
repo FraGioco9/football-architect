@@ -34,6 +34,54 @@ test('out-of-order requests cannot commit into a newer context',async()=>{
  await loader.load();release(empty());await first;
  assert.equal(commits,1);
 });
+function confirmedEntrants(){
+ const ids=clubs.map(c=>c.countryId+'-'+c.clubId);
+ return {...empty(),status:'partial',reason:null,
+  provenance:{kind:'authoritative',resultAuthority:'confirmed-entrants-v1',
+   sourceRef:'world:'+world.generation+':season:1:entrants:'+'b'.repeat(64)},
+  data:{entrantsOnly:true,season:1,seasonState:{day:1,phase:'active'},
+   rulesVersion:definition.rules.version,participants:ids}};
+}
+test('confirmed entrants hydrate an unranked zero-stat standings table without a calendar',()=>{
+ const raw=confirmedEntrants();
+ const confirmed=validateAuthoritativeSeason(raw,ctx(),manifest);
+ const data=adaptAuthoritativeSeason(confirmed,ctx(),manifest);
+ assert.equal(data.participants.length,16);
+ assert.equal(data.entrantsOnly,true);
+ assert.equal(data.fixtures,null);
+ assert.deepEqual(data.postseason,[]);
+ assert.deepEqual(data.results,[]);
+ assert.equal(data.currentMatchday,null);
+ assert.equal(data.statistics.overview.matchesPlayed,0);
+ assert.equal(data.statistics.standings.length,16);
+ assert.ok(data.statistics.standings.every(r=>r.played===0&&r.won===0&&r.drawn===0&&
+  r.lost===0&&r.gf===0&&r.ga===0&&r.gd===0&&r.pts===0&&r.recent.length===0));
+ assert.ok(Object.isFrozen(data));
+});
+test('confirmed entrants reject forged schedules, results, provenance and future-season leakage',()=>{
+ for(const edit of [
+  r=>{r.data.fixtures=[]},
+  r=>{r.data.standings={rows:[]}},
+  r=>{r.data.participants.pop()},
+  r=>{r.data.participants[0]='FR-1'},
+  r=>{r.data.seasonState={day:2,phase:'active'}},
+  r=>{r.provenance.resultAuthority='temporary-lineup-v1'},
+  r=>{r.provenance.sourceRef='world:'+world.generation+':season:1:'+'b'.repeat(64)},
+  r=>{r.status='available'},
+  r=>{r.world={...world,generation:'12345678-1234-4123-8123-123456789abc'}},
+  r=>{r.selectedSeason=2}
+ ]){
+  const raw=confirmedEntrants();edit(raw);
+  assert.throws(()=>validateAuthoritativeSeason(raw,ctx(),manifest));
+ }
+ const two=confirmedEntrants();two.selectedSeason=2;two.world={...world,seasonNumber:2};
+ two.data.season=2;two.data.participants[15]='IT-17';
+ two.provenance.sourceRef='world:'+world.generation+':season:2:entrants:'+'b'.repeat(64);
+ const c2={...ctx(),selectedSeason:2};
+ const view=adaptAuthoritativeSeason(validateAuthoritativeSeason(two,c2,manifest),c2,manifest);
+ assert.ok(view.participants.some(c=>c.clubId===17));
+ assert.ok(!view.participants.some(c=>c.clubId===16));
+});
 test('adapts validated empty source without inventing league or player statistics',()=>{
  assert.equal(adaptAuthoritativeSeason(validateAuthoritativeSeason(empty(),ctx(),manifest),ctx(),manifest),null);
  assert.equal(clubs.length,16);
