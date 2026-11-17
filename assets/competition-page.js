@@ -783,9 +783,9 @@
 
     const syncSubviews=()=>{
       const cup=window.faCompetitionContext?.definition?.category==='international';
-      if(cup&&['first','second'].includes(activeStandingsSubview))activeStandingsSubview='overall';
+      if(cup&&['first','second','last5'].includes(activeStandingsSubview))activeStandingsSubview='overall';
       for(const button of subviewButtons){
-        button.hidden=Boolean(cup&&['first','second'].includes(button.dataset.standingsSubview));
+        button.hidden=Boolean(cup&&['first','second','last5'].includes(button.dataset.standingsSubview));
         button.setAttribute('aria-pressed',String(button.dataset.standingsSubview===activeStandingsSubview));
       }
       syncSubviewEdges();
@@ -1175,7 +1175,7 @@
   function readStandingsSubview(){
     const query=new URL(window.location.href).searchParams.get('table');
     if(!STANDINGS_SUBVIEWS.includes(query))return 'overall';
-    if(definition?.category==='international'&&['first','second'].includes(query))return 'overall';
+    if(definition?.category==='international'&&['first','second','last5'].includes(query))return 'overall';
     return query;
   }
   function createContext(definition,selectedSeason,seasonData,revision){
