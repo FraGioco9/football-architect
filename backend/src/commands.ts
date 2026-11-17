@@ -2,7 +2,9 @@ import {ApiError} from './errors.ts';
 import {type AdminSession,hashText} from './auth.ts';
 import type {Database} from './database.ts';
 import {parseIdempotencyKey,parsePrepareRequest,type PrepareRequest} from './command-contract.ts';
-import {requireApprovedSnapshot,type ApprovedSnapshot} from './catalogue-snapshot.ts';
+import {requireApprovedSnapshot,canonicalHash,type ApprovedSnapshot} from './catalogue-snapshot.ts';
+import {readWorld} from './world-repository.ts';
+import {readSeasonZeroAuthority} from './season-zero-entrants.ts';
 
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 /** D1 batch is the mutation boundary. All positive approval data is server-owned. */
@@ -12,12 +14,17 @@ export async function prepareSeason(db:Database,session:AdminSession,input:Prepa
  const requestHash=await hashText(JSON.stringify({command:'prepare-season-v1',actor:session.actor.id,...command,snapshot:trusted}));
  try{
   const previous=await replay(db,session,command,key,requestHash,now);if(previous)return previous;
+  const world=await readWorld(db);
+  if(world.generation!==command.expectedGeneration||world.revision!==command.expectedRevision||world.phase!=='unstarted')throw new ApiError(409,'stale_world');
+  const zero=await readSeasonZeroAuthority(db,world);
+  if((zero.approved.domestic||zero.approved.international)&&await canonicalHash(trusted)!==zero.snapshotHash)
+   throw new ApiError(422,'catalogue_not_approved');
   const operationId=crypto.randomUUID();
   const result:Outcome={operationId,world:{schemaVersion:1,generation:command.expectedGeneration,revision:command.expectedRevision+1,seasonNumber:1,day:0,phase:'preparing'}};
   const worldGuard=abortUnless(db,`SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND phase='unstarted' AND season_number=0 AND day=0`,[command.expectedGeneration,command.expectedRevision]);
   try{
    await db.batch([
-    sessionGuard(db,session,now),worldGuard,
+    sessionGuard(db,session,now),worldGuard,...zero.guards,
     db.prepare('INSERT INTO seasons(season_number,generation,participants_hash,rules_hash,snapshot_json,created_at) VALUES(1,?,?,?,?,?)')
      .bind(command.expectedGeneration,trusted.participantsHash,trusted.rulesHash,JSON.stringify(trusted),now),
     db.prepare("UPDATE world_state SET revision=revision+1,season_number=1,day=0,phase='preparing' WHERE id=1 AND generation=? AND revision=?")

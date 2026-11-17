@@ -35,7 +35,7 @@
   return !!w&&typeof w==='object'&&!Array.isArray(w)&&w.schemaVersion===1&&
    typeof w.generation==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(w.generation)&&
    count(w.revision)&&count(w.seasonNumber)&&count(w.day)&&w.day<=56&&
-   (w.phase==='unstarted'?w.seasonNumber===0&&w.day===0&&w.revision===0:w.seasonNumber>0&&
+   (w.phase==='unstarted'?w.seasonNumber===0&&w.day===0:w.seasonNumber>0&&
     (w.phase==='preparing'?w.day===0:w.phase==='active'?w.day>=1:w.phase==='closed'&&w.day===56));
  }
  function createWorldState(){

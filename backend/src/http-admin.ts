@@ -14,6 +14,7 @@ import {executeLineupLifecycleV1 as executeLifecycle} from './lineup-lifecycle-c
 import {rescheduleSeasonEvent} from './admin-calendar-command.ts';
 import {initializeAdministrativeEvents} from './admin-calendar-initialize.ts';
 import {completeConfirmationEvent} from './admin-calendar-confirm.ts';
+import {confirmSeasonZeroEntrants} from './season-zero-entrants.ts';
 import {advanceAdministrativeClockLineupV1 as advanceAdministrativeClock} from './admin-calendar-clock-lineup-v1.ts';
 import {readAdministrativeCalendar} from './admin-calendar-read.ts';
 import {stageDomesticCalendar} from './admin-domestic-stage.ts';
@@ -30,7 +31,7 @@ import {prepareSeasonTwo} from './season-two-prepare-command.ts';
 import {approveSeasonTwoSnapshot} from './season-two-approval-command.ts';
 export interface AdminEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string}
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>httpJson('account',status,body,extra);
-const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/players','GET'],['/api/admin/players/preview','POST'],['/api/admin/players/draft','POST'],['/api/admin/players/commit','POST'],['/api/admin/contracts','GET|POST'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
+const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/players','GET'],['/api/admin/players/preview','POST'],['/api/admin/players/draft','POST'],['/api/admin/players/commit','POST'],['/api/admin/contracts','GET|POST'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/season-zero/confirm','POST'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
 export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response>{
  const path=new URL(request.url).pathname,method=known.get(path);
  if(!method)return json(404,{error:{code:'not_found'}});
@@ -104,6 +105,7 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/seasons/events/international-draw')return json(200,await executeInternationalDraw(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/events/domestic-calendar')return json(200,await stageDomesticCalendar(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/events/confirm')return json(200,await completeConfirmationEvent(db,session,rawCommand,key,now));
+  if(path==='/api/admin/seasons/season-zero/confirm')return json(200,await confirmSeasonZeroEntrants(db,session,rawCommand,key,now));
   if(path==='/api/admin/seasons/events/reschedule')return json(200,await rescheduleSeasonEvent(db,session,rawCommand,key,now));
   const command=parsePrepareRequest(rawCommand);
   if(path==='/api/admin/seasons/advance')return json(200,await executeLifecycle(db,session,'advance',command,key,now));
