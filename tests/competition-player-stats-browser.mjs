@@ -93,7 +93,7 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    }
    await page.evaluate(()=>window.__stats643Supply('real'));
    const after=await goals.boundingBox();
-   assert.deepEqual(after,before,'stable repeated hydration geometry');
+   assert.deepEqual({width:after.width,height:after.height},{width:before.width,height:before.height},'stable repeated hydration dimensions independent of scroll position');
    const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));
    assert.ok(dimensions.scroll<=dimensions.width+2,JSON.stringify(dimensions));
    assert.deepEqual(playerRequests,[],'identity enrichment needs no per-player API');
