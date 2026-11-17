@@ -540,7 +540,9 @@ for(const [engine,driver] of Object.entries(engines)){
        const popupReady=ctx.waitForEvent('page');
        await item.link.click();
        const newTab=await popupReady;
-       await newTab.waitForURL(url=>url.pathname===item.path);
+       // The link contract requires the destination URL, not the unrelated
+       // destination page's full load event (which can fail internally in WebKit).
+       await newTab.waitForURL(url=>url.pathname===item.path,{waitUntil:'commit'});
        assert.equal(new URL(page.url()).pathname,'/matches/123');
        await newTab.close();
       }

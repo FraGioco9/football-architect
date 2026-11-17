@@ -9,10 +9,13 @@ export async function clearTestWorld(db:Database){
    SELECT generation,? FROM match_lineup_result_receipts
    UNION SELECT generation,? FROM season_lineup_day_outcomes`)
    .bind(crypto.randomUUID(),crypto.randomUUID()),
+  db.prepare('INSERT OR IGNORE INTO world_reset_permits(generation,operation_id) SELECT generation,? FROM world_state WHERE id=1').bind(crypto.randomUUID()),
   db.prepare('DELETE FROM match_lineup_result_receipts'),
   db.prepare('DELETE FROM season_lineup_day_outcomes'),
-  db.prepare('DELETE FROM world_reset_permits'),
   db.prepare("UPDATE world_state SET generation=?,revision=0,season_number=0,day=0,phase='unstarted' WHERE id=1").bind(crypto.randomUUID()),
+  db.prepare('DELETE FROM public_match_numbers'),
+  db.prepare("DELETE FROM sqlite_sequence WHERE name='public_match_numbers'"),
+  db.prepare('DELETE FROM world_reset_permits'),
   // The unified Player-to-legacy-operator bridge references admin_accounts.
   // Clear links before deleting their historical operator rows in disposable test D1.
   db.prepare('DELETE FROM player_admin_operator_links'),

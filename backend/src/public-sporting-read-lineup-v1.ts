@@ -7,6 +7,7 @@ import type {Database} from './database.ts';
 import type {WorldV1} from './types.ts';
 import {readWorld} from './world-repository.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
+import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import type {KnockoutTie} from './knockout-progression.ts';
 import {replayLineupSeasonV1} from './lineup-season-replay.ts';
@@ -115,6 +116,41 @@ export function deriveInternationalClubStatus(
   stage=phases[phases.indexOf(stage)+1];
  }
 }
+/** Published entrants are independent of any fixture draw. A completed admin
+ * receipt and the exact season snapshot both have to match server approval.
+ * An unconfirmed scope must never inherit the other scope's public clubs. */
+async function confirmedEntrantsBeforeCalendar(db:Database,world:WorldV1,competitionId:string){
+ if(world.phase!=='active'||world.day<1||world.day>12)return null;
+ const international=competitionId.startsWith('int-');
+ const eventId=international?'international:entrants':'domestic:entrants';
+ const kind=international?'confirm-international-entrants':'confirm-domestic-entrants';
+ const scope=international?'international':'domestic';
+ const event=await db.prepare(
+  'SELECT event_id,kind,scope,scheduled_day,status,completed_at,receipt_hash FROM season_admin_events WHERE season_number=? AND event_id=?'
+ ).bind(world.seasonNumber,eventId).first<{
+  event_id:string;kind:string;scope:string;scheduled_day:number;status:string;completed_at:number|null;receipt_hash:string|null
+ }>();
+ if(!event||event.status==='scheduled')return null;
+ if(event.event_id!==eventId||event.kind!==kind||event.scope!==scope||
+    event.status!=='completed'||!Number.isSafeInteger(event.scheduled_day)||
+    event.scheduled_day<1||event.scheduled_day>world.day||
+    !Number.isSafeInteger(event.completed_at)||Number(event.completed_at)<=0)return invalid();
+ const {snapshot}=await loadSeasonSnapshotAuthority(db,world);
+ const season=await db.prepare(
+  'SELECT generation,participants_hash,rules_hash,snapshot_json FROM seasons WHERE season_number=?'
+ ).bind(world.seasonNumber).first<{generation:string;participants_hash:string;rules_hash:string;snapshot_json:string}>();
+ if(!season||season.generation!==world.generation||season.participants_hash!==snapshot.participantsHash||
+    season.rules_hash!==snapshot.rulesHash)return invalid();
+ let recorded:unknown;
+ try{recorded=JSON.parse(season.snapshot_json)}catch{return invalid()}
+ if(await canonicalHash(recorded)!==await canonicalHash(snapshot))return invalid();
+ const receipt=await canonicalHash({schemaVersion:1,season:world.seasonNumber,generation:world.generation,
+  eventId,kind,participantsHash:snapshot.participantsHash,rulesHash:snapshot.rulesHash});
+ if(event.receipt_hash!==receipt)return invalid();
+ const binding=snapshot.bindings.find(b=>b.competitionId===competitionId);
+ if(!binding)return invalid();
+ return {binding,participantsHash:snapshot.participantsHash};
+}
 async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number){
  const clubKey=competitionId.startsWith('club:')?competitionId.slice('club:'.length):null;
  const fixturesClubKey=competitionId.startsWith('club-fixtures:')?competitionId.slice('club-fixtures:'.length):null;
@@ -138,7 +174,16 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    // Staged fixtures, participant lists and draw outputs remain private until publication.
    const leaked=await countV2Days(db,selectedSeason);
    if(leaked||viewedWorld.day>12||viewedWorld.phase==='closed')invalid();
-   return await empty('empty','calendar-unpublished');
+   if(!competitionPattern.test(competitionId))return await empty('empty','calendar-unpublished');
+   const entrants=await confirmedEntrantsBeforeCalendar(db,viewedWorld,competitionId);
+   if(!entrants)return await empty('empty','calendar-unpublished');
+   const data={entrantsOnly:true as const,season:selectedSeason,
+    seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},rulesVersion:entrants.binding.rulesVersion,
+    participants:[...entrants.binding.clubIds]};
+   await unchanged(db,world);
+   return {...base,status:'partial' as const,reason:null,
+    provenance:{kind:'authoritative' as const,resultAuthority:'confirmed-entrants-v1' as const,
+     sourceRef:`world:${world.generation}:season:${selectedSeason}:entrants:${entrants.participantsHash}`},data};
   }
   const evidence=await loadSeasonSportingEvidence(db,viewedWorld);
   // One verified frozen V2 chain is authoritative for all competitions.

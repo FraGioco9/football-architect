@@ -38,14 +38,28 @@ class PublicMatchNumbersMigration(unittest.TestCase):
    "INSERT INTO public_match_numbers(slot_match_id,generation,season_number) SELECT slot_match_id,generation,season_number FROM public_match_numbers WHERE id=1"):
    with self.assertRaises(sqlite3.IntegrityError):self.db.execute(statement)
   self.assertEqual(self.db.execute("PRAGMA foreign_key_check").fetchall(),[])
- def test_ids_are_not_recycled_after_world_reset(self):
+ def test_only_authorized_world_reset_restarts_match_numbers(self):
   self.league("a")
   self.db.executescript((MIGRATIONS/"0025_public_match_numbers.sql").read_text(encoding="utf-8"))
-  self.db.execute("UPDATE world_state SET generation=?,revision=0,season_number=0,day=0,phase='unstarted'",("0"*36,))
+  self.db.execute("CREATE TABLE world_reset_permits(generation TEXT PRIMARY KEY NOT NULL,operation_id TEXT NOT NULL)")
+  self.db.executescript((MIGRATIONS/"0031_reset_public_match_numbers.sql").read_text(encoding="utf-8"))
+  with self.assertRaises(sqlite3.IntegrityError):
+   self.db.execute("DELETE FROM public_match_numbers")
+  next_generation="0"*36
+  self.db.execute("INSERT INTO world_reset_permits VALUES(?,?)",(self.gen,"1"*36))
+  # The reset changes generation before deleting public IDs, in one transaction.
+  self.db.execute("UPDATE world_state SET generation=?,revision=0,season_number=0,day=0,phase='unstarted'",(next_generation,))
+  self.db.execute("DELETE FROM public_match_numbers")
+  self.db.execute("DELETE FROM sqlite_sequence WHERE name='public_match_numbers'")
   self.db.execute("DELETE FROM season_match_slots")
   self.db.execute("DELETE FROM seasons")
-  self.assertEqual(self.db.execute("SELECT COUNT(*) FROM public_match_numbers").fetchone()[0],1)
-  self.db.execute("INSERT INTO public_match_numbers(slot_match_id,generation,season_number) VALUES(?,?,1)",("m1_"+"c"*32,"0"*36))
+  self.db.execute("DELETE FROM world_reset_permits")
+  self.assertEqual(self.db.execute("SELECT COUNT(*) FROM public_match_numbers").fetchone()[0],0)
+  self.assertIsNone(self.db.execute("SELECT seq FROM sqlite_sequence WHERE name='public_match_numbers'").fetchone())
+  self.db.execute("INSERT INTO public_match_numbers(slot_match_id,generation,season_number) VALUES(?,?,1)",("m1_"+"c"*32,next_generation))
+  self.db.execute("INSERT INTO public_match_numbers(slot_match_id,generation,season_number) VALUES(?,?,1)",("m1_"+"d"*32,next_generation))
   self.assertEqual(self.db.execute("SELECT id FROM public_match_numbers ORDER BY id").fetchall(),[(1,),(2,)])
+  with self.assertRaises(sqlite3.IntegrityError):
+   self.db.execute("DELETE FROM public_match_numbers")
 
 if __name__=="__main__":unittest.main()

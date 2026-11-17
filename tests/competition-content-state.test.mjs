@@ -41,8 +41,8 @@ test('authoritative Standings rebinds links when loading ends after published li
   'only settled authoritative standings can rebind native match anchors');
  assert.match(page,/addEventListener\('fa:published-match-links-change',refresh\)/,
   'a settled published collection can also rebind result links');
- assert.match(fixtures,/pendingKey=null;render\(\);syncKnockoutLinks\(\);[\s\S]*?notifyPublishedMatchLinks\(\)/,
-  'published collection completion notifies Standings after the pending key clears');
+ assert.match(fixtures,/if\(seq===fetchSequence&&pendingKey===key\)\{[\s\S]*?pendingKey=null;[\s\S]*?render\(\);syncKnockoutLinks\(\);[\s\S]*?notifyPublishedMatchLinks\(\)/,
+  'only the current published request clears the pending key and rebinds Standings links');
 });
 
 test('presenters require concrete absence instead of missing responses',()=>{

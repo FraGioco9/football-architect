@@ -2045,21 +2045,17 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
 /* Restored desktop text must not expose mobile-only controls between frames. */
 .fa-positions-more{display:none}
 
-/* #605: each leg has one native link with exactly two score-box hit
- * regions, one for each team. A single-leg tie uses the rightmost column,
- * never the entire bracket card. Club links remain independent. */
+/* #605: native links occupy the two real 26x28px score boxes for each
+ * match leg. Separate elements avoid Safari BFCache pseudo hit-test failures.
+ * The central gap, card and club labels are never covered by match links. */
 .fa-bracket-card.is-match-link{position:relative}
-.fa-bracket-match-link{position:absolute;inset-block:0;z-index:2;display:block;pointer-events:none}
+.fa-bracket-match-link{position:absolute;z-index:2;display:block;block-size:28px;cursor:pointer;pointer-events:auto}
+.fa-bracket-match-link[data-fa-match-row="1"]{inset-block-start:calc(25% - 14px)}
+.fa-bracket-match-link[data-fa-match-row="2"]{inset-block-start:calc(75% - 14px)}
 .fa-bracket-match-link[data-fa-match-leg="1"]{inset-inline-end:calc(var(--fa-bracket-score-inset) + var(--fa-bracket-score-width) + 3px);width:var(--fa-bracket-score-width)}
 .fa-bracket-match-link[data-fa-match-leg="2"],
 .fa-bracket-card[data-fa-match-legs="1"] .fa-bracket-match-link[data-fa-match-leg="1"]{inset-inline-end:calc(var(--fa-bracket-score-inset) - 1px);width:var(--fa-bracket-score-width)}
-/* The two pseudo-elements are the only pointer-active parts of the native
- * anchor. The gap and the rest of the bracket card never trigger navigation. */
-.fa-bracket-match-link::before,.fa-bracket-match-link::after{content:"";position:absolute;inset-inline:0;block-size:28px;cursor:pointer;pointer-events:auto}
-.fa-bracket-match-link::before{inset-block-start:calc(25% - 14px)}
-.fa-bracket-match-link::after{inset-block-start:calc(75% - 14px)}
-html[data-fa-standings-loading="true"] .fa-bracket-match-link::before,
-html[data-fa-standings-loading="true"] .fa-bracket-match-link::after{pointer-events:none}
+/* The shared html[data-fa-standings-loading] rule disables the anchors while loading. */
 .fa-bracket-match-link:focus-visible{outline:none}
 .fa-bracket-card .fa-bracket-identity a{position:relative;z-index:3}
 .fa-bracket-card .fa-bracket-score strong{position:relative;z-index:3}
