@@ -2,7 +2,7 @@ import {proxyAdminApi} from './dev-admin-api-proxy.mjs';
 import {addDevelopmentToAppHtml,renderMatchEngineLab,labFirstPaintBootstrap} from '../match-engine/src/sidebar-shell.mjs';
 import {readSharedPublicWorld,readSharedPublicMatch} from './shared-nonproduction-proxy.mjs';
 import {isPublicMatchId} from '../assets/match-references.mjs';
-import {applyPublishedMatchFirstPaint} from './match-first-paint.mjs';
+import {applyPublishedMatchDocument} from './match-first-paint.mjs';
 import {request as httpRequest} from 'node:http';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
@@ -402,7 +402,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         const matchId=/^\/matches\/([1-9][0-9]*)$/.exec(raw)?.[1];
         if(matchId&&isPublicMatchId(matchId)){
          let published=null;try{published=await readInitialMatch(matchId)}catch{/* no guess */}
-         body=Buffer.from(applyPublishedMatchFirstPaint(body.toString('utf8'),published,matchId),'utf8');
+         body=Buffer.from(applyPublishedMatchDocument(body.toString('utf8'),published,matchId),'utf8');
         }
       }
       if(devPreview&&['dashboard/index.html','settings/index.html','clubs/index.html','players/index.html'].includes(publicRequestFile(raw)))body=Buffer.from(body.toString('utf8').replace('</head>',DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>\n</head>'),'utf8');

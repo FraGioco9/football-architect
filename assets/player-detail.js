@@ -255,8 +255,8 @@
  }
  async function resolveClubCatalog(ticket){
   if(!player||!player.clubKey)return;
-  if(!clubCatalogPromise)clubCatalogPromise=fetch('/clubs/_shared/manifest.json',{credentials:'omit',cache:'force-cache'})
-   .then(res=>{if(!res.ok)throw Error('club_catalog_unavailable');return res.json()})
+  if(!clubCatalogPromise)clubCatalogPromise=import('/assets/match-public-context.mjs')
+   .then(module=>module.publicClubIdentityCatalog())
    .then(manifest=>Array.isArray(manifest.clubs)&&manifest.clubs.length===320?manifest:null)
    .catch(()=>null);
   const manifest=await clubCatalogPromise;

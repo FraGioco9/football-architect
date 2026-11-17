@@ -14,6 +14,7 @@ import model from "../assets/competition-model.js";
 import {loadCompetitionCatalogue} from "./competition-catalogue.mjs";
 import {createCompetitionRenderer} from "./render-competition-page.mjs";
 import {clubCrestAssets} from "./club-crest-assets.mjs";
+import {renderMatchPublicContext} from "./render-match-public-context.mjs";
 import {validateProvisionalAllocations} from "./validate-provisional-allocations.mjs";
 import {validateDivisionAssets,renderDivisionLogo} from "./validate-division-assets.mjs";
 
@@ -375,6 +376,9 @@ for(const [source,output,mode] of [
  const html=readFileSync(new URL('../'+source,import.meta.url),'utf8').replace(/\r\n/g,'\n');
  writeOutput(output,renderPlayerDetailPage(html,mode));
 }
+
+// A compact, build-verified match identity projection replaces two heavy manifests.
+writeOutput("assets/match-public-context.mjs",renderMatchPublicContext(clubData,competitionManifest.competitions,clubCrestAssets().catalog));
 
 // #577: one reusable match shell; identities and outcomes arrive from the verified API.
 {
