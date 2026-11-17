@@ -7,9 +7,9 @@ import {validateCalendarDay,createCalendarLoader} from '../assets/authoritative-
 const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
 test('PERF-API-657 Calendar expands compact transport into the exact validated authoritative definitions',async()=>{
  const source=readFileSync(new URL('../assets/authoritative-calendar.mjs',import.meta.url),'utf8');
- assert.match(source,/readCompetitionCatalogue\\(\\{fetchJson,loadModel/);
- assert.match(source,/import\\('\/assets\/competition-model\\.js'\)/);
- assert.doesNotMatch(source,/fetchJson\\('\/competitions\/_shared\/manifest\\.json'\)/);
+ assert.ok(source.includes('readCompetitionCatalogue({fetchJson,loadModel:async()=>{'));
+ assert.ok(source.includes("await import('/assets/competition-model.js')"));
+ assert.ok(!source.includes("fetchJson('/competitions/_shared/manifest.json')"));
  const model=createRequire(import.meta.url)(new URL('../assets/competition-model.js',import.meta.url).pathname);
  const compact=JSON.parse(readFileSync(new URL('../competitions/_shared/compact.json',import.meta.url),'utf8'));
  const observed=[];
