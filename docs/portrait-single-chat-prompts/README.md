@@ -1,5 +1,7 @@
 # Football Architect — New Chat per Player (V4.1)
 
+**ETÀ APPARENTE (nuovi prompt image-only):** usare `image-only-chat-v2`: giovane uomo di circa **21–25 anni**. Il pacchetto storico `single-player-chat-v3` mantiene invece la precedente dicitura; non è più il flusso consigliato. I tratti V4.1/fingerprint restano congelati.
+
 **ATTENZIONE (2026-11-17):** l'esecuzione con prompt v3 ha riprodotto l'errore di generazione ImageGen anche dopo aver vietato le immagini di riferimento. Per il nuovo tentativo isolato si usa il [pacchetto image-only](../portrait-image-prompts-all.md): **primo messaggio soltanto visuale**, QA + connettori in un messaggio successivo e separato, dopo che ImageGen ha restituito una candidata. I vecchi prompt v3 restano disponibili solo per tracciabilità, non sono la procedura raccomandata.
 
 

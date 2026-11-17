@@ -10,7 +10,7 @@ import {fileURLToPath} from 'node:url';
 import {buildDiverseV4PortraitSnapshotForPlayer,renderDiverseV4PortraitPromptFromSnapshot}
  from '../backend/src/player-portrait-diversity-v41.mjs';
 
-export const IMAGE_ONLY_PROMPT_EXPORT_VERSION='image-only-chat-v1';
+export const IMAGE_ONLY_PROMPT_EXPORT_VERSION='image-only-chat-v2';
 
 function verify(row){
  if(!row||typeof row!=='object'||Array.isArray(row)||
@@ -35,9 +35,16 @@ function extractGenerationContent(canonical){
  ];
  const parts=required.map(pattern=>canonical.match(pattern)?.[0]);
  if(parts.some(x=>!x))throw new Error('unexpected_v41_canonical_structure');
+ // The immutable V4.1 source keeps the ID-derived face exactly as frozen.
+ // Presentation-only age cue is independently versioned by image-only-chat-v2;
+ // never infer an age from gameplay attributes or re-seed facial descriptors.
+ const youngAppearance=parts[2].replace(
+  'Look like an ordinary real adult male,',
+  'Look like an ordinary real young male, approximately 21–25 years old,');
+ if(youngAppearance===parts[2])throw new Error('unexpected_v41_age_wording');
  return [
-  'Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.',
-  ...parts,
+  'Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.',
+  parts[0],parts[1],youngAppearance,...parts.slice(3),
   'Maintain the described facial details precisely. One person only. Photographic realism, natural soft lighting, direct camera gaze, full hair and head through hip level. No typography, graphics or collage.'
  ].join('\n\n')+'\n';
 }
@@ -50,6 +57,8 @@ export async function createImageOnlyPortraitPrompt(row){
  const snapshot=await buildDiverseV4PortraitSnapshotForPlayer(player);
  const canonical=await renderDiverseV4PortraitPromptFromSnapshot(snapshot);
  const content=extractGenerationContent(canonical);
+ if(!content.includes('young male')||!content.includes('21–25 years old')||content.includes('adult male'))
+   throw new Error('wrong_image_only_age_cue');
  if(/GitHub|Cloudflare|QA|WebP|existing image|reference image|ImageGen|GENERATION_UNAVAILABLE|input_image|Canva/i.test(content))
    throw new Error('nonvisual_instruction_in_image_only_prompt');
  return Object.freeze({

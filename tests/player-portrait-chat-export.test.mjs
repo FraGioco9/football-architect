@@ -95,12 +95,16 @@ test('image-only V4.1 exporter preserves canon face while excluding tool-routing
  const canonical=await renderDiverseV4PortraitPromptFromSnapshot(snapshot);
  const section=canonical.match(/IMMUTABLE CANONICAL FACIAL DESCRIPTION:[\s\S]*?(?=\n\nPHYSIQUE:)/)?.[0];
  assert.ok(section);
- assert.equal(IMAGE_ONLY_PROMPT_EXPORT_VERSION,'image-only-chat-v1');
+ assert.equal(IMAGE_ONLY_PROMPT_EXPORT_VERSION,'image-only-chat-v2');
  assert.equal(image.fingerprint,snapshot.appearance_fingerprint);
  assert.equal(image.bodyProfile,snapshot.body_profile);
  assert.equal(image.fileName,'44-Giacinto-Lello.md');
  assert.ok(image.content.includes(section));
  assert.match(image.content,/Exactly one subject standing front-facing/);
+ assert.match(image.content,/fictional young male footballer, approximately 21–25 years old/);
+ assert.match(image.content,/Look like an ordinary real young male, approximately 21–25 years old/);
+ assert.doesNotMatch(image.content,/adult male/);
+ assert.match(canonical,/fictional adult male footballer/); // frozen V4.1 source unchanged
  assert.match(image.content,/native genuine TRANSPARENT RGBA PNG/);
  assert.doesNotMatch(image.content,/GitHub|Cloudflare|QA|WebP|ImageGen|reference image|existing image|GENERATION_UNAVAILABLE|Canva|Player ID/i);
  const dir=await mkdtemp(join(tmpdir(),'fa-image-only-'));

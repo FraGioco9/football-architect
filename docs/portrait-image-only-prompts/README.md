@@ -1,5 +1,7 @@
 # Football Architect — Image-only V4.1 first messages (#646)
 
+**Image-only execution version:** `image-only-chat-v2`. The portrait should look like a **young male, approximately 21–25 years old**, regardless of the game's player age. The permanent ID-based V4.1 face description and physique class remain unchanged. This is a prompt-level visual age cue, not a rewrite of a frozen V4.1 identity fingerprint.
+
 This is a **diagnostic isolation workflow** for the repeated ImageGen missing-edit-target error: the first message of each isolated player chat contains ONLY an original image-creation request and the immutable canonical V4.1 visual features. No GitHub/Cloudflare connector links, old published portraits, reference image discussion, QA instructions or player metadata are included in the first message.
 
 ## How to use

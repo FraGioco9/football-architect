@@ -1,11 +1,13 @@
 # Football Architect — 23 V4.1 portrait image-only first messages
 
+**Age styling in image-only-chat-v2:** render a **young male, approximately 21–25 years old in appearance**, independent of the game player's age; V4.1 face descriptors, body classes and fingerprints are retained. This is a versioned visual-presentation change, NOT a change to frozen face traits.
+
 **Use ONLY the content of one fenced prompt as the first message in a NEW player chat.** The ID, name and fingerprint in the heading are QA metadata and must not enter the image prompt. **After a successful generation**, send the separate [QA follow-up](portrait-image-only-qa.md) as the second message. Do not paste GitHub/Cloudflare instructions or the old multi-task v3 prompt before the first image. This is a diagnostic isolation attempt, not a guarantee that ImageGen is available.
 
 ## 44 — Giacinto Lello (sturdy; fingerprint 46163acf3ae85a04)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: compact rounded face. CHEEKS: broad lower cheeks. FOREHEAD: gently sloping forehead.
@@ -18,7 +20,7 @@ SKIN: natural visible skin texture and pores; few tiny blemishes.
 
 PHYSIQUE: sturdy; a broader, naturally stocky torso with a softly rounded waist. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -32,7 +34,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 45 — Paolo Andrian (muscular; fingerprint 62dfab1eb9a0156a)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: long oval face. CHEEKS: broad lower cheeks. FOREHEAD: subtly asymmetric forehead.
@@ -45,7 +47,7 @@ SKIN: slightly uneven skin tone; no conspicuous facial mark.
 
 PHYSIQUE: muscular; noticeably developed but natural shoulders and upper arms. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -59,7 +61,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 46 — Gennaro Cassola (average-fit; fingerprint 28858299f2a27664)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: narrow oval face. CHEEKS: ordinary cheek fullness. FOREHEAD: ordinary forehead height.
@@ -72,7 +74,7 @@ SKIN: subtle non-retouched pores; no conspicuous facial mark.
 
 PHYSIQUE: average-fit; average shoulders and arms without visible muscle sculpting. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -86,7 +88,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 47 — Matthew Tiamiyu (average-fit; fingerprint cd5632866931fc36)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: subtly angular face. CHEEKS: asymmetrically full cheeks. FOREHEAD: subtly asymmetric forehead.
@@ -99,7 +101,7 @@ SKIN: natural visible skin texture and pores; subtle acne marks.
 
 PHYSIQUE: average-fit; an ordinary proportionate torso with a naturally soft waist. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -113,7 +115,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 48 — Patrizio Cimmini (lean-fit; fingerprint 9dafd2c35104e401)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: narrow oval face. CHEEKS: ordinary cheek fullness. FOREHEAD: ordinary forehead height.
@@ -126,7 +128,7 @@ SKIN: mild under-eye shadows and natural pores; no conspicuous facial mark.
 
 PHYSIQUE: lean-fit; a lean compact torso and lightly trained but unsculpted arms. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -140,7 +142,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 49 — Gianfranco Patry (lean-fit; fingerprint 243e072c6cd86198)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: asymmetric oval face. CHEEKS: gently fuller cheeks. FOREHEAD: ordinary forehead height.
@@ -153,7 +155,7 @@ SKIN: natural visible skin texture and pores; small natural facial mole.
 
 PHYSIQUE: lean-fit; slender, gently conditioned shoulders and unremarkable arms. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -167,7 +169,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 50 — Severino Cerboni (sturdy; fingerprint 64856e8445673fc1)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: broad face. CHEEKS: ordinary cheek fullness. FOREHEAD: wide forehead.
@@ -180,7 +182,7 @@ SKIN: ordinary texture with soft smile lines; small natural facial mole.
 
 PHYSIQUE: sturdy; a broader, naturally stocky torso with a softly rounded waist. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -194,7 +196,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 51 — Giampiero Caione (sturdy; fingerprint ba69d6d23d2065c6)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: triangular face. CHEEKS: ordinary cheek fullness. FOREHEAD: ordinary forehead height.
@@ -207,7 +209,7 @@ SKIN: natural visible skin texture and pores; small natural facial mole.
 
 PHYSIQUE: sturdy; a broader, naturally stocky torso with a softly rounded waist. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -221,7 +223,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 52 — Emilio Rigotto (average-fit; fingerprint 5dacb214b01ccbb6)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: broad forehead with gently tapered face. CHEEKS: asymmetrically full cheeks. FOREHEAD: wide forehead.
@@ -234,7 +236,7 @@ SKIN: ordinary texture with soft smile lines; subtle acne marks.
 
 PHYSIQUE: average-fit; an ordinary proportionate torso with a naturally soft waist. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -248,7 +250,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 53 — Paolo Lacasa (average-fit; fingerprint 5a1bae96432df5f4)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: soft heart-shaped face. CHEEKS: gently fuller cheeks. FOREHEAD: ordinary forehead height.
@@ -261,7 +263,7 @@ SKIN: natural visible skin texture and pores; few tiny blemishes.
 
 PHYSIQUE: average-fit; a slightly broader but unremarkable everyday build. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -275,7 +277,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 54 — Massimo Bottineri (average-fit; fingerprint 9ed4ab37138bc09a)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: ordinary oval face. CHEEKS: broad lower cheeks. FOREHEAD: slightly taller forehead.
@@ -288,7 +290,7 @@ SKIN: mild under-eye shadows and natural pores; no conspicuous facial mark.
 
 PHYSIQUE: average-fit; an ordinary proportionate torso with a naturally soft waist. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -302,7 +304,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 55 — Mario Bodi (average-fit; fingerprint 518256f221ccf658)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: compact rounded face. CHEEKS: ordinary cheek fullness. FOREHEAD: ordinary forehead height.
@@ -315,7 +317,7 @@ SKIN: slightly uneven skin tone; no conspicuous facial mark.
 
 PHYSIQUE: average-fit; average shoulders and arms without visible muscle sculpting. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -329,7 +331,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 56 — Ferdinando Guerriero (average-fit; fingerprint 2e29062272c334fe)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: asymmetric oval face. CHEEKS: broad lower cheeks. FOREHEAD: ordinary forehead height.
@@ -342,7 +344,7 @@ SKIN: slightly uneven skin tone; no conspicuous facial mark.
 
 PHYSIQUE: average-fit; an ordinary proportionate torso with a naturally soft waist. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -356,7 +358,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 57 — Gianni Cusenza (lean-fit; fingerprint 1ea0d00b0b56b3ed)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: rectangular face. CHEEKS: gently fuller cheeks. FOREHEAD: wide forehead.
@@ -369,7 +371,7 @@ SKIN: natural visible skin texture and pores; faint freckles.
 
 PHYSIQUE: lean-fit; slender, gently conditioned shoulders and unremarkable arms. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -383,7 +385,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 58 — Antonio Simplici (average-fit; fingerprint a66b2605ebc6f133)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: soft square face. CHEEKS: gently fuller cheeks. FOREHEAD: ordinary forehead height.
@@ -396,7 +398,7 @@ SKIN: slightly uneven skin tone; subtle acne marks.
 
 PHYSIQUE: average-fit; an ordinary proportionate torso with a naturally soft waist. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -410,7 +412,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 59 — Andrea Cusenza (lean-fit; fingerprint 017ce26b3046699d)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: long oval face. CHEEKS: slightly hollow cheeks. FOREHEAD: wide forehead.
@@ -423,7 +425,7 @@ SKIN: subtle non-retouched pores; few tiny blemishes.
 
 PHYSIQUE: lean-fit; a lean compact torso and lightly trained but unsculpted arms. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -437,7 +439,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 60 — Enrico Pasi (sturdy; fingerprint 1a64070f9f1578a8)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: narrow oval face. CHEEKS: asymmetrically full cheeks. FOREHEAD: shorter forehead.
@@ -450,7 +452,7 @@ SKIN: natural visible skin texture and pores; no conspicuous facial mark.
 
 PHYSIQUE: sturdy; robust shoulders with ordinary soft muscular definition. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -464,7 +466,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 61 — Emanuele Pizzica (average-fit; fingerprint 58f0516ad0b2cfdf)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: asymmetric oval face. CHEEKS: ordinary cheek fullness. FOREHEAD: shorter forehead.
@@ -477,7 +479,7 @@ SKIN: subtle non-retouched pores; no conspicuous facial mark.
 
 PHYSIQUE: average-fit; average shoulders and arms without visible muscle sculpting. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -491,7 +493,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 62 — Angelo Mazzuca (average-fit; fingerprint a00e0e83a582feb0)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: ordinary oval face. CHEEKS: gently fuller cheeks. FOREHEAD: shorter forehead.
@@ -504,7 +506,7 @@ SKIN: mild under-eye shadows and natural pores; few tiny blemishes.
 
 PHYSIQUE: average-fit; a slightly broader but unremarkable everyday build. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -518,7 +520,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 63 — Fiorenzo Colarusso (average-fit; fingerprint c580a3526d483791)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: soft square face. CHEEKS: asymmetrically full cheeks. FOREHEAD: ordinary forehead height.
@@ -531,7 +533,7 @@ SKIN: natural visible skin texture and pores; no conspicuous facial mark.
 
 PHYSIQUE: average-fit; average shoulders and arms without visible muscle sculpting. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -545,7 +547,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 98 — Arthur Kiesel (lean-fit; fingerprint 1a25525aa385aac5)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: soft square face. CHEEKS: gently fuller cheeks. FOREHEAD: ordinary forehead height.
@@ -558,7 +560,7 @@ SKIN: ordinary texture with soft smile lines; no conspicuous facial mark.
 
 PHYSIQUE: lean-fit; a lean compact torso and lightly trained but unsculpted arms. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -572,7 +574,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 145 — Steven Sellen (sturdy; fingerprint 59c1cc5a389a8fe6)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: broad face. CHEEKS: broad lower cheeks. FOREHEAD: ordinary forehead height.
@@ -585,7 +587,7 @@ SKIN: ordinary texture with soft smile lines; subtle acne marks.
 
 PHYSIQUE: sturdy; a broader, naturally stocky torso with a softly rounded waist. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
@@ -599,7 +601,7 @@ Maintain the described facial details precisely. One person only. Photographic r
 ## 148 — Craig Leaman (lean-fit; fingerprint 59756ee2a93dab36)
 
 ```text
-Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional adult male footballer. This is a new image generated solely from the following written visual description.
+Create exactly one NEW original ultra-photorealistic studio media-day portrait of a fictional young male footballer, approximately 21–25 years old. This is a new image generated solely from the following written visual description.
 
 IMMUTABLE CANONICAL FACIAL DESCRIPTION: faithfully reproduce EACH listed feature, especially skin complexion, hair color, hair texture, hair length and exact compatible haircut:
 FACE SHAPE: pear-shaped face. CHEEKS: ordinary cheek fullness. FOREHEAD: slightly taller forehead.
@@ -612,7 +614,7 @@ SKIN: mild under-eye shadows and natural pores; small natural facial mole.
 
 PHYSIQUE: lean-fit; slender, gently conditioned shoulders and unremarkable arms. This must remain consistent with the frozen initial strength/speed/agility body class, not position or stereotypes. Stamina cannot inflate muscle definition. Ordinary human body softness is welcome; no bodybuilder build, etched abs, sculpted deltoids or oversized biceps.
 
-Look like an ordinary real adult male, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
+Look like an ordinary real young male, approximately 21–25 years old, chosen for footballing ability rather than looks. Preserve natural asymmetry, non-idealized facial proportions, visible natural skin texture and small imperfections. No beauty retouching, glamorous styling, perfect symmetry, waxy pores, fashion-model faces or advertising lighting.
 
 Exactly one subject standing front-facing with level shoulders, direct gaze, neutral mouth and arms hanging naturally at his sides. Show all hair, complete head, shoulders, both arms, torso and waist DOWN TO HIP LEVEL. Do not show additional people, body doubles, captions, labels, player numbers or a collage.
 
