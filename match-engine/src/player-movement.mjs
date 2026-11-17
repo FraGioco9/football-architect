@@ -129,6 +129,10 @@ const PLAYER_KINEMATIC_LIMITS=Object.freeze({
  maxX:PLAYER_PITCH.lengthM/2-PLAYER_RADIUS_M,
  maxY:PLAYER_PITCH.widthM/2-PLAYER_RADIUS_M
 });
+// D-01 only: keep the native shoe/player at controllable dribbling pace.
+const D01_KINEMATIC_LIMITS=Object.freeze({
+ ...PLAYER_KINEMATIC_LIMITS,maxSpeed:4.0,acceleration:6,braking:9
+});
 const baseFormation=Object.freeze([
  [-48,0],[-35,-22],[-35,-8],[-35,8],[-35,22],
  [-20,-16],[-20,0],[-20,16],[-5,-18],[-5,0],[-5,18]
@@ -2419,7 +2423,7 @@ export function createPlayerMovement(options={}){
        const lateral=Math.sign(ball.y-defender.y)||
         (smallSided.variantIndex%2===0?1:-1);
        return Object.freeze({
-        x:clamp(ball.x-attack*0.28,-PLAYER_KINEMATIC_LIMITS.maxX,
+        x:clamp(ball.x-attack*0.20,-PLAYER_KINEMATIC_LIMITS.maxX,
          PLAYER_KINEMATIC_LIMITS.maxX),
         y:clamp(ball.y+lateral*0.55,-PLAYER_KINEMATIC_LIMITS.maxY,
          PLAYER_KINEMATIC_LIMITS.maxY)});
@@ -2593,7 +2597,9 @@ export function createPlayerMovement(options={}){
   // Fixed ordering and collision rejection make every replay byte-stable.
   for(let i=0;i<players.length;i++){
    const p=players[i],target=targets[i];
-   const free=advanceFreePlayerKinematics(p,target,PLAYER_KINEMATIC_LIMITS);
+   const limits=smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
+     D01_KINEMATIC_LIMITS:PLAYER_KINEMATIC_LIMITS;
+    const free=advanceFreePlayerKinematics(p,target,limits);
    const shoe=lastNativeShoeFrame?.[i];
    if(shoe&&shoe.id!==p.id)
     throw new TypeError('M16 original shoe/player order mismatch');

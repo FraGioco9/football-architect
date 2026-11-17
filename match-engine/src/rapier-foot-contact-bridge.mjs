@@ -63,7 +63,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
      .setRotation(pose.rotation));
   const shoeShape=R.ColliderDesc.roundCuboid(
    FOOT_CONTACT_HALF_LENGTH_M,FOOT_CONTACT_HALF_WIDTH_M,
-   FOOT_CONTACT_HALF_HEIGHT_M,FOOT_CONTACT_ROUNDING_M)
+   isolatedGroundDribbleBallCentreZ===null?FOOT_CONTACT_HALF_HEIGHT_M:0.015,
+   isolatedGroundDribbleBallCentreZ===null?FOOT_CONTACT_ROUNDING_M:0.01)
    .setFriction(FOOT_CONTACT_FRICTION)
    .setRestitution(isolatedGroundDribbleBallCentreZ===null?
     FOOT_CONTACT_RESTITUTION:0)

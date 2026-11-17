@@ -143,7 +143,9 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
    .reduce((n,s,_,a)=>n+s.meanTouchIntervalTicks/a.length,0),
   minPressureTicks:Math.min(...samples.map(s=>s.pressureTicks)),
   maxPressureTicks:Math.max(...samples.map(s=>s.pressureTicks)),
-  sample:samples.filter(s=>s.bodyGuardEnabled&&[0,7,17,29].includes(s.variantIndex))
+  sample:samples.filter(s=>[0,7,17,29].includes(s.variantIndex)),
+  largestVertical:samples.toSorted((a,b)=>b.peakClearanceM-a.peakClearanceM).slice(0,8),
+  fastestBall:samples.toSorted((a,b)=>b.peakBallSpeedMps-a.peakBallSpeedMps).slice(0,8)
  };
  process.stdout.write('ME_628_D01_REAL_120_TRIAL_MATRIX '+JSON.stringify(summary)+'\\n');
  assert.ok(summary.withRealCarry>=16,'measured physical carries must exist across seeds');
