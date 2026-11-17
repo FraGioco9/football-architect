@@ -38,8 +38,8 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('Rapier required for real Action LAB');
  const spec=getActionLabScenario(id);
  if(typeof bodyGuardEnabled!=='boolean'||
-    (bodyGuardEnabled&&(spec.mode!=='situation'||variantIndex===0)))
-  throw new TypeError('Native body-contact exercise only in V02–V30');
+    (bodyGuardEnabled&&spec.mode!=='situation'))
+  throw new TypeError('Native body-contact exercise only in a small-sided situation');
  if(spec.mode!=='situation'&&variantIndex!==0)
   throw new TypeError('Variations require a selected small-sided exercise');
  const smallSided=spec.mode==='situation'?

@@ -150,12 +150,11 @@ export function createEngine(RAPIER, input = {}, {
   if(typeof diagnosticSmallSidedBodyGuardEnabled!=='boolean'||
      (diagnosticSmallSidedBodyGuardEnabled&&(
       diagnosticSmallSidedSituation===null||
-      diagnosticSmallSidedVariantIndex===0||
       !diagnosticPlayerFootContactsEnabled||
       !diagnosticAutonomousFixtureActionEnabled||
       diagnosticPlayerBodyCollidersEnabled||
       diagnosticSharedContactEventsEnabled)))
-   throw new TypeError('LAB body collision requires isolated V02–V30 with actual shoe source');
+   throw new TypeError('LAB body collision requires a small-sided exercise with actual shoe source');
   if(diagnosticSmallSidedSituation!==null){
    smallSidedSetup(diagnosticSmallSidedSituation,
     diagnosticSmallSidedSide,INITIAL_PLAYERS,

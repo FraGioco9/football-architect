@@ -56,6 +56,18 @@ test('#628 body guard remains selected-only, exact-tick and deterministic in all
   const baseline=createControlledActionLab(R,spec.id,{shotSide:side});
   try{assert.equal(baseline.snapshot().smallSidedNativeBodyGuard,null);}
   finally{baseline.dispose();}
+  const enabledV01=createControlledActionLab(R,spec.id,{
+   shotSide:side,variantIndex:0,bodyGuardEnabled:true});
+  try{
+   const zero=enabledV01.snapshot();
+   assert.equal(zero.smallSidedVariantIndex,0);
+   assert.equal(zero.smallSidedNativeBodyGuard.tick,0);
+   assert.deepEqual(zero.smallSidedNativeBodyGuard.selectedColliderIds,
+    zero.smallSidedParticipants);
+   const next=enabledV01.step();
+   assert.equal(next.smallSidedNativeBodyGuard.tick,1);
+   assert.equal(next.officialMatchResult,null);
+  }finally{enabledV01.dispose();}
   const ungated=createControlledActionLab(R,spec.id,{shotSide:side,variantIndex:1});
   try{assert.equal(ungated.snapshot().smallSidedNativeBodyGuard,null,
    'ordinary V02 must retain pre-existing Rapier physics');}
@@ -86,7 +98,7 @@ test('#628 body guard remains selected-only, exact-tick and deterministic in all
   }
  }
 });
-test('#628 V01 and regular world cannot accidentally enable physical body guard',
+test('#628 body collision requires a real small-sided shoe source; V01 supports explicit opt-in',
  {timeout:30000},async()=>{
  const R=await initializeRapier(rapier);
  const ball={preset:'roll',seed:'guard-off',x:0,y:0,z:0,vx:0,vy:0,vz:0};
@@ -96,12 +108,12 @@ test('#628 V01 and regular world cannot accidentally enable physical body guard'
   diagnosticSmallSidedSituation:'keeper-1v1',
   diagnosticSmallSidedSide:'home',
   diagnosticSmallSidedVariantIndex:0,
-  diagnosticPlayerFootContactsEnabled:true,
+  diagnosticPlayerFootContactsEnabled:false,
   diagnosticAutonomousFixtureActionEnabled:true,
   diagnosticSmallSidedBodyGuardEnabled:true
  }),TypeError);
  assert.throws(()=>createControlledActionLab(R,'keeper-1v1',{
-  shotSide:'home',variantIndex:0,bodyGuardEnabled:true}),TypeError);
+  shotSide:'home',variantIndex:0,bodyGuardEnabled:'yes'}),TypeError);
  assert.throws(()=>createControlledActionLab(R,'shot',{
   bodyGuardEnabled:true}),TypeError);
  const routes=readFileSync(new URL('../../tools/dev-standings-preview.mjs',
