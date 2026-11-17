@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readClubFixtures,attachPublishedClubMatchLinks} from '../assets/club-fixtures-source.mjs';
+import {readClubFixtures} from '../assets/club-fixtures-source.mjs';
 
 const generation='550e8400-e29b-41d4-a716-446655440000';
 const world={schemaVersion:1,generation,revision:4,seasonNumber:1,day:13,phase:'active'};
 const manifest={competitions:[{id:'IT-1',category:'domestic',name:'Italy First'}]};
 const fixture=(day,result=null)=>({id:'season:1:IT-1:N01:IT-1:IT-2:'+day,competitionId:'IT-1',season:1,
- day,round:1,phaseId:'league',marker:'N01',tieId:null,leg:null,neutral:false,
+ day,round:1,phaseId:'league',marker:'N01',tieId:null,leg:null,neutral:false,matchId:String(1000+day),
  homeClubId:'IT-1',awayClubId:'IT-2',result});
 const result={homeGoals:2,awayGoals:1,resolution:'regulation',extraTime:null,penalties:null,winnerClubId:'IT-1'};
 const packet=(fixtures=[fixture(13,result),fixture(14)],w=world,season=1)=>({
@@ -25,6 +25,8 @@ test('club fixtures source uses one scoped endpoint and preserves fixture render
  assert.equal(data.coverage,'complete');assert.equal(data.rows.length,2);
  assert.deepEqual(data.rows.map(r=>[r.day,r.goalsFor,r.goalsAgainst,r.venue]),[[13,2,1,'home'],[14,null,null,'home']]);
  assert.equal(data.competitions[0].id,'IT-1');
+ assert.equal(data.linkAuthority,'club-fixtures-v1');
+ assert.deepEqual(data.rows.map(x=>x.matchId),['1013','1014']);
 });
 
 test('club fixtures source rejects mismatched world, foreign fixtures, future result and extra memberships',async()=>{
@@ -104,24 +106,20 @@ test('club fixtures renders a verified early draw using only one HTTP request',a
  ])await assert.rejects(read(bad,w).run(),/Invalid authoritative club fixture payload/);
 });
 
-test('#605 complete and historical club rows use published source fixture IDs (not pairings)',async()=>{
- const initial=await read(packet()).run(),fixtureId=initial.rows[0].id;
- const collection={schemaVersion:1,providerId:'authoritative-world',status:'published',
-  season:1,competitionId:'IT-1',provenance:{kind:'authoritative'},
-  fixtures:[{matchId:'785',sourceFixtureId:fixtureId,phaseId:'league',marker:'N01',day:13,
-   round:1,homeClubId:'IT-1',awayClubId:'IT-2'}]};
- const requests=[];
- const linked=await attachPublishedClubMatchLinks(initial,{fetchJson:async url=>{requests.push(url);return collection}});
- assert.deepEqual(requests,['/api/matches/seasons/1/competitions/IT-1']);
- assert.equal(linked.rows[0].matchId,'785');
- assert.equal(linked.rows[1].matchId,null,'unmapped fixtures stay text-only');
- assert.equal(linked.linkAuthority,'published-match-index-v1');
- const invalid=await attachPublishedClubMatchLinks(initial,{fetchJson:async()=>({...collection,season:2})});
- assert.ok(invalid.rows.every(row=>row.matchId===null));
- const missing=await attachPublishedClubMatchLinks(initial,{fetchJson:async()=>{throw Error('404')}});
- assert.ok(missing.rows.every(row=>row.matchId===null));
- const changed=await attachPublishedClubMatchLinks(initial,{fetchJson:async()=>({...collection,fixtures:[{...collection.fixtures[0],day:14}]})});
- assert.ok(changed.rows.every(row=>row.matchId===null));
- const aborted=new AbortController();aborted.abort();
- await assert.rejects(attachPublishedClubMatchLinks(initial,{signal:aborted.signal,fetchJson:async()=>collection}),/Cancelled/);
+test('one club endpoint transports official numeric match IDs without collection fetches',async()=>{
+ const calls=[];
+ const linked=await readClubFixtures({clubKey:'IT-1',season:1,world,manifest,
+  fetchJson:async path=>{calls.push(path);return packet();}});
+ assert.deepEqual(calls,['/api/clubs/IT-1/seasons/1/fixtures']);
+ assert.equal(linked.linkAuthority,'club-fixtures-v1');
+ assert.equal(linked.rows[0].matchId,'1013');
+ const noId=packet([{...fixture(13,result),matchId:null},{...fixture(14),matchId:null}]);
+ const absent=await read(noId).run();
+ assert.equal(absent.rows.every(row=>row.matchId===null),true,'missing official mappings never invent links');
+ for(const wrong of ['01','NaN','1.2','9007199254740992']){
+  const invalid=packet([{...fixture(13,result),matchId:wrong}]);
+  await assert.rejects(read(invalid).run(),/Invalid authoritative club fixture payload/);
+ }
+ const duplicate=packet([{...fixture(13,result),matchId:'12'},{...fixture(14),matchId:'12'}]);
+ await assert.rejects(read(duplicate).run(),/Invalid authoritative club fixture payload/);
 });
