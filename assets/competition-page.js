@@ -128,7 +128,7 @@
 
   // Presentation only: indicate the Rules bands without changing league ranking.
   function standingOutcome(position) {
-    if(activeStandingsSubview!=='overall')return '';
+    if(typeof activeStandingsSubview==='string'&&activeStandingsSubview!=='overall')return '';
     const selected=window.faCompetitionContext?.definition||definition;
     if(!Number.isInteger(position)||position<1||!selected||position>selected.capacity)return '';
     const outcome=window.faCompetitionRulesView.standingsOutcomes(selected).find(o=>position>=o.from&&position<=o.to);
@@ -1329,12 +1329,18 @@
       cell.textContent="No standings available yet.";empty.appendChild(cell);
       document.getElementById("app-standings-body").replaceChildren(empty);
     }
-    ({projectStandings}=await import(new URL('standings-subviews.mjs',sourceUrl).href));
+    // Load the optional split projector without blocking the existing competition
+    // bootstrap. Standings reserve their unknown cells until it is available.
     activeStandingsSubview=readStandingsSubview();
     window.faStandingsSubViews=Object.freeze({
       get:()=>activeStandingsSubview,
-      project:(rows,fixtures,definition)=>projectStandings(rows,fixtures,definition,activeStandingsSubview)
+      project:(rows,fixtures,definition)=>projectStandings?.(rows,fixtures,definition,activeStandingsSubview)
     });
+    void import(new URL('standings-subviews.mjs',sourceUrl).href).then(module=>{
+      projectStandings=module.projectStandings;
+      refreshSeasonPresentation();
+      window.dispatchEvent(new CustomEvent('fa:standings-subview-change',{detail:{view:activeStandingsSubview}}));
+    }).catch(()=>{});
     bindSuppliedPanels(suppliedMobile);
     if(!document.querySelector('link[href="/assets/competition-awards.css"]')){const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);}
     // The module bootstrap does not delay legacy shared-page initialization.

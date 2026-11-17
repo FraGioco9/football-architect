@@ -652,7 +652,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     }));
     // Same verified fixture projection for public and DEV Standings subviews.
     const rowsForMode=(sourceRows,sourceFixtures,sourceDefinition)=>{
-      if(window.faStandingsSubViews?.get?.()==='overall')return sourceRows;
+      if(!window.faStandingsSubViews||window.faStandingsSubViews.get?.()==='overall')return sourceRows;
       const projected=window.faStandingsSubViews?.project?.(sourceRows,sourceFixtures,sourceDefinition);
       if(!projected)throw Error('Unverified DEV standings split');
       return projected;
@@ -1041,7 +1041,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       restore.refresh(projected,null,null,window.faStandingsMobile?.prepare(projected));
     };
     listen(window,'fa:standings-subview-change',onSubviewChange);
-    if(window.faStandingsSubViews?.get?.()!=='overall')onSubviewChange();
+    if(window.faStandingsSubViews?.get?.()&&window.faStandingsSubViews.get()!=='overall')onSubviewChange();
     publishContext();
     return restore;
     } catch(error){restore();throw error}
