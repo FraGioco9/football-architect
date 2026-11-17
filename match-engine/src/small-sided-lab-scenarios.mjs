@@ -97,7 +97,7 @@ export function smallSidedSetup(id,side,canonicalPlayers,{variantIndex=0}={}){
   }));
  }
  const original=new Map([
-  [side+'-10',[29.72,0]],
+  [side+'-10',[id==='dribble-1v1'?29.45:29.72,0]],
   [side+'-9',[32,-6]],
   [side+'-11',[32,7]],
   [opponent+'-2',[34,2.7]],

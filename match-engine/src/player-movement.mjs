@@ -2423,12 +2423,12 @@ export function createPlayerMovement(options={}){
        const lateral=Math.sign(ball.y-defender.y)||
         (smallSided.variantIndex%2===0?1:-1);
        return Object.freeze({
-        x:clamp(ball.x-attack*0.20,-PLAYER_KINEMATIC_LIMITS.maxX,
+        x:clamp(ball.x-attack*0.55,-PLAYER_KINEMATIC_LIMITS.maxX,
          PLAYER_KINEMATIC_LIMITS.maxX),
-        y:clamp(ball.y+lateral*0.55,-PLAYER_KINEMATIC_LIMITS.maxY,
+        y:clamp(ball.y+lateral*0.4,-PLAYER_KINEMATIC_LIMITS.maxY,
          PLAYER_KINEMATIC_LIMITS.maxY)});
       }
-      return Object.freeze({x:ball.x-attack*0.08,y:ball.y});
+      return Object.freeze({x:ball.x-attack*(smallSided.id==='dribble-1v1'?0.36:0.08),y:ball.y});
      }
      const wing=p.id.endsWith('-9')?-1:1;
      return Object.freeze({x:clamp(ball.x-attack*3,
