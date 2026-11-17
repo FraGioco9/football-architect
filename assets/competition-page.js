@@ -677,6 +677,13 @@
     };
     host.addEventListener("pointerover",event=>{const node=target(event);if(node&&["mouse","pen"].includes(event.pointerType))open(node)});
     host.addEventListener("pointerout",event=>{const node=target(event);if(node&&active===node&&!node.contains(event.relatedTarget)&&["mouse","pen"].includes(event.pointerType))close()});
+    // A captured pointerleave also dismisses a focused mark when pointerout
+    // was lost during DOM replacement or a Safari history restoration.
+    host.addEventListener("pointerleave",event=>{
+      if(event.target===active&&["mouse","pen"].includes(event.pointerType))close();
+    },true);
+    // BFCache retains the tooltip DOM/state; never restore a stale hover.
+    window.addEventListener("pagehide",close);
     host.addEventListener("focusin",event=>{const node=target(event);if(node)open(node)});
     host.addEventListener("focusout",event=>{const node=target(event);if(node&&active===node&&!node.contains(event.relatedTarget))close()});
     host.addEventListener("pointerdown",event=>{const node=target(event);touchWasOpen=!!node&&["touch","pen"].includes(event.pointerType)&&active===node});

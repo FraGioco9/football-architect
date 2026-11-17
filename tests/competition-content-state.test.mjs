@@ -231,6 +231,17 @@ test('QA-12: completed History becomes visible even if unrelated current-season 
 });
 
 
+test('STANDINGS-FORM-TOOLTIP: mouse exit and Safari BFCache dismiss published hover',()=>{
+ const page=read('assets/competition-page.js');
+ const start=page.indexOf('  function bindPublishedFormTooltips()');
+ const end=page.indexOf('  function bindSuppliedPanels(',start);
+ assert.ok(start>=0&&end>start,'public Form tooltip runtime exists');
+ const tooltip=page.slice(start,end);
+ assert.match(tooltip,/host\\.addEventListener\\("pointerout",event=>\\{[^\\n]*close\\(\\)\\}/);
+ assert.match(tooltip,/host\\.addEventListener\\("pointerleave",event=>\\{[\\s\\S]*?event\\.target===active[\\s\\S]*?close\\(\\);\\s*\\},true\\)/);
+ assert.match(tooltip,/window\\.addEventListener\\("pagehide",close\\)/);
+});
+
 test('MATCH-LINKS #605: standings form links use official source identities on both layouts',()=>{
  const page=read('assets/competition-page.js'),start=page.indexOf('  function linkedFormMatchId(');
  const end=page.indexOf('  function bindPublishedFormTooltips()',start);
