@@ -950,26 +950,27 @@ try {
   await page.locator('.fa-dev-widget-button').click();
   const season=page.locator('[data-dev-control="season-number"]');
   assert.equal(await season.getAttribute('min'),'0');
-  // #521: sample the 16 fully-mounted club hosts before switching out of DEV.
-  // Matching by club identity also detects a row reorder without false failures.
-  const verifyCrestHosts=async(label)=>{
-   const detached=await page.evaluate(()=>{
-    const captured=window.__qa521CrestHosts;
-    return [...captured].flatMap(([id,host])=>{
-     const current=document.querySelector('#app-standings-body [data-club-crest="'+id+'"]');
-     return host.isConnected&&current===host?[]:[id];
-    });
-   });
-   assert.deepEqual(detached,[],label+' must retain exact crest host identities');
-  };
-  if(route==='/competitions/it-1/standings'){
+  // Unapproved Season 0 must remove previously mounted DEV participants.
+  // Switching back to Season 1 restores the same canonical club identities,
+  // not the old DOM nodes: retaining those nodes would leak unconfirmed entrants.
+  const assertSeasonOneCrests=async(label)=>{
    await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.season===1 &&
     document.querySelectorAll('#app-standings-body [data-club-crest]').length===16);
-   await page.evaluate(()=>{
-    window.__qa521CrestHosts=new Map([...document.querySelectorAll('#app-standings-body [data-club-crest]')]
-     .map(host=>[host.dataset.clubCrest,host]));
-   });
-  }
+   const actual=await page.locator('#app-standings-body [data-club-crest]').evaluateAll(hosts=>
+    hosts.map(host=>host.dataset.clubCrest).sort());
+   const expected=Array.from({length:16},(_,i)=>'IT-'+(i+1)).sort();
+   assert.deepEqual(actual,expected,label+' must render the canonical 16 approved DEV identities');
+  };
+  const assertSeasonZeroUnconfirmed=async(label)=>{
+   await page.waitForFunction(()=>window.faCompetitionContext?.seasonData===null &&
+    document.documentElement.dataset.faStandingsLoading==='false' &&
+    document.querySelectorAll('#app-standings-body [data-club-crest]').length===0 &&
+    !!document.querySelector('#app-standings-body .app-competition-empty-row') &&
+    !!document.querySelector('#app-standings-compact-list .app-world-mobile-empty'));
+   assert.equal(await page.locator('#app-standings-body [data-world-club],#app-standings-compact-list [data-world-club]').count(),0,
+    label+' must not leak any unconfirmed identities');
+  };
+  if(route==='/competitions/it-1/standings')await assertSeasonOneCrests('Initial DEV Season 1');
   await season.fill('0');await season.dispatchEvent('change');
   await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===true);
   assert.equal(await page.locator('[data-dev-control="world-day-number"]').isDisabled(),true);
@@ -983,11 +984,8 @@ try {
    assert.equal(await page.locator('#competition-panel-'+route.split('/').at(-1)).isVisible(),true);
    assert.equal(await page.evaluate(()=>window.faCompetitionRoute.get().season),'1');
    assert.deepEqual(await page.evaluate(()=>({season:window.faCompetitionContext?.selectedSeason,data:window.faCompetitionContext?.seasonData})),{season:1,data:null});
-   if(route==='/competitions/it-1/standings'){
-    await page.waitForFunction(()=>document.documentElement.dataset.faStandingsLoading==='false'&&
-     document.querySelectorAll('#app-standings-body [data-club-crest]').length===16);
-    await verifyCrestHosts('Season 1 -> 0 DEV rollback');
-   }
+   if(route==='/competitions/it-1/standings')
+    await assertSeasonZeroUnconfirmed('Season 1 -> 0 DEV rollback');
    if(route.endsWith('/stats')){assert.equal(await page.locator('#fa-dev-stats .fa-dev-stats-card').count(),3);assert.equal(await page.locator('#fa-dev-stats .app-competition-stat-value').count(),0)}
   }
   if(route==='/calendar'){
@@ -997,13 +995,8 @@ try {
   await page.reload({waitUntil:"domcontentloaded"});
   await waitForCompetitionRuntime();
   await page.waitForSelector('.fa-dev-widget-button');
-  if(route==='/competitions/it-1/standings'){
-   await page.waitForFunction(()=>document.querySelectorAll('#app-standings-body [data-club-crest]').length===16);
-   await page.evaluate(()=>{
-    window.__qa521CrestHosts=new Map([...document.querySelectorAll('#app-standings-body [data-club-crest]')]
-     .map(host=>[host.dataset.clubCrest,host]));
-   });
-  }
+  if(route==='/competitions/it-1/standings')
+   await assertSeasonZeroUnconfirmed('Season 0 hard refresh');
   assert.equal(await page.locator('[data-dev-control="world-day"]').isDisabled(),true);
   if(route.startsWith('/competitions/')){
    assert.equal(await page.locator('#app-competition-season-value').innerText(),'1');
@@ -1031,9 +1024,8 @@ try {
    if(/\/competitions\/int-[12]\//.test(route))assert.equal(await page.evaluate(()=>window.faCompetitionContext?.seasonData),null);
    else await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.season===1);
    if(route==='/competitions/it-1/standings'){
-    await page.waitForFunction(()=>document.querySelectorAll('#app-standings-body [data-club-crest]').length===16&&
-     document.documentElement.dataset.faStandingsLoading==='false');
-    await verifyCrestHosts('Season 0 -> 1 DEV activation');
+    await assertSeasonOneCrests('Season 0 -> 1 DEV activation');
+    await page.waitForFunction(()=>document.documentElement.dataset.faStandingsLoading==='false');
    }
   }
   checks++;
