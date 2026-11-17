@@ -42,10 +42,12 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevAverageRating','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevRedCards','statsDevMinutes']);
    assert.equal(await goals.locator('li strong').first().textContent(),'2');
    assert.equal(await goals.locator('li strong').nth(1).textContent(),'1');
-   assert.equal(await cards.filter({has:page.locator('[data-app-i18n="statsDevAssists"]')}).locator('.fa-dev-stats-empty').textContent(),width===390?'Non registrato':'Not recorded');
+   assert.equal(await cards.filter({has:page.locator('[data-app-i18n="statsDevAssists"]')}).locator('.fa-dev-stats-empty').textContent(),width===390?'Nessun giocatore':'No players');
    assert.equal(await goals.locator('li .fa-dev-stats-team-name[href="/players/2"]').count(),1);
    assert.equal(await goals.locator('span.fa-dev-stats-club-link').first().textContent(),'QA Club 1');
    const before=await goals.boundingBox();
+   const filledSizes=await cards.evaluateAll(nodes=>nodes.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
+   assert.ok(filledSizes.every(size=>size.height===filledSizes[0].height),'all eight populated cards reserve equal height');
    const expand=goals.locator('.fa-dev-stats-expand');await expand.click();
    const dialog=page.locator('dialog[open]');
    assert.equal(await dialog.locator('li').count(),8);
@@ -61,7 +63,9 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
     }else if(mode==='fallback'||mode==='no-games'){
      assert.equal(await cards.locator('li').count(),0);
      assert.equal(await goals.locator('.fa-dev-stats-empty').textContent(),width===390?'Nessun giocatore':'No players');
-     assert.deepEqual(await goals.boundingBox(),before,'empty leaderboard retains five-row card geometry');
+     const emptySizes=await cards.evaluateAll(nodes=>nodes.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
+     assert.deepEqual(emptySizes,filledSizes,'every card must keep exactly the same dimensions without players');
+     assert.equal((await goals.boundingBox()).height,before.height,'empty leaderboard keeps its populated height');
     }
     else {
      assert.equal(await cards.locator('.fa-dev-stats-team-name[href="/players/58"]').count(),5);

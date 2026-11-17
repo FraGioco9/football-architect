@@ -288,14 +288,15 @@ test('COMP-STATS: rating and GK clean sheets show appearances while missing metr
  assert.equal(cards[0].children[1].children[0].children.at(-1).textContent,'7.25 (5)');
  assert.equal(cards[4].children[1].children[0].children.at(-1).textContent,'6 (13)');
  assert.equal(cards[5].children[1].children[0].children.at(-1).textContent,'10 (3)');
- for(const i of [2,3,6])assert.equal(cards[i].children[1].textContent,'Not recorded');
+ for(const i of [2,3,6])assert.equal(cards[i].children[1].textContent,'No players');
  assert.equal(cards[1].children[1].textContent,'No players');
  assert.ok(!byClass(r,'fa-dev-stats-leader-title').some(n=>/yellow/i.test(n.dataset.appI18n)));
 });
 
-test('COMP-STATS-643: zero scorers and one-match ratings never enter qualified rankings',()=>{
+test('COMP-STATS-643: scoring zeros and low-coverage ratings do not enter rankings',()=>{
  for(const [competition,capacity,minRated] of [['IT-1',16,5],['int-1',24,3]]){
   const r=fixture(),c=supplied(competition,capacity);
+  c.seasonData.statistics.teams.find(team=>team.clubKey==='IT-1').mp=competition==='IT-1'?10:6;
   c.seasonData.statistics.players=[
    {playerId:1,name:'One Match',clubKey:'IT-1',appearances:1,starts:1,minutes:90,goals:0,assists:0,redCards:0,cleanSheets:0,averageRating:9.9,ratedAppearances:1,goalsAssistsPer90:0},
    {playerId:2,name:'Qualified',clubKey:'IT-1',appearances:minRated,starts:minRated,minutes:90*minRated,goals:2,assists:1,redCards:1,cleanSheets:1,averageRating:7.25,ratedAppearances:minRated,goalsAssistsPer90:0.6}
@@ -322,7 +323,48 @@ test('COMP-STATS-643: empty player cards and first-paint Overview skeleton prese
  assert.ok(byClass(r,'fa-dev-stats-empty').every(n=>n.textContent==='No players'));
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  assert.match(css,/\.fa-dev-stats-player-label\{display:grid;grid-template-rows:1\.3em 1\.3em/);
- assert.match(css,/minmax\(calc\(var\(--fa-stats-row-height\)\*5\),auto\)/);
+ assert.match(css,/calc\(var\(--fa-stats-row-height\)\*5\) 36px/);
  for(const width of ['3ch','4ch','4.5ch'])assert.ok(css.includes('width:'+width));
  assert.equal((r.api.renderSkeleton('overview').match(/app-competition-stat-value/g)||[]).length,3);
+});
+
+test('COMP-STATS-643: percentages use each recorded club own played matches and update with season revision',()=>{
+ for(const [competition,capacity] of [['IT-1',16],['int-1',24]]){
+  const r=fixture(),c=supplied(competition,capacity);
+  c.seasonData.statistics.teams.find(team=>team.clubKey==='IT-1').mp=10;
+  c.seasonData.statistics.teams.find(team=>team.clubKey==='IT-2').mp=4;
+  const short={playerId:101,name:'Four of ten',clubKey:'IT-1',appearances:4,starts:4,minutes:359,goals:1,assists:1,redCards:1,cleanSheets:1,averageRating:9.7,ratedAppearances:4,goalsAssistsPer90:0.50};
+  const qualified={playerId:102,name:'Five of ten',clubKey:'IT-1',appearances:5,starts:5,minutes:450,goals:2,assists:1,redCards:1,cleanSheets:1,averageRating:7.1,ratedAppearances:5,goalsAssistsPer90:0.6};
+  const other={playerId:103,name:'Two of four',clubKey:'IT-2',appearances:2,starts:2,minutes:180,goals:1,assists:1,redCards:1,cleanSheets:1,averageRating:7.2,ratedAppearances:2,goalsAssistsPer90:1};
+  c.seasonData.statistics.players=[short,qualified,other];
+  const mounted=r.api.mount(r.panel,c);buttons(r)[2].emit('click');
+  const cards=byClass(r,'fa-dev-stats-leader-card');
+  const names=index=>contents(cards[index].children[1]);
+  for(const index of [0,4,5,7]){
+   assert.ok(!names(index).includes('Four of ten'),competition+' category '+index+' below 50%');
+   assert.ok(names(index).includes('Five of ten')&&names(index).includes('Two of four'),competition+' thresholds follow club games');
+  }
+  for(const index of [1,2,6])assert.ok(names(index).includes('Four of ten'),'event counts stay at one');
+  assert.ok(!names(3).includes('Four of ten'),'per-90 minutes require 40% of club games');
+  assert.ok(names(3).includes('Two of four'),'per-90 minutes scale with club coverage');
+  const next=structuredClone(c.seasonData);
+  next.statistics.teams.find(team=>team.clubKey==='IT-1').mp=12;
+  mounted.update({...c,revision:2,seasonData:next});
+  const later=byClass(r,'fa-dev-stats-leader-card');
+  assert.ok(!contents(later[0].children[1]).includes('Five of ten'),'50% threshold rises as team plays');
+  assert.ok(contents(later[0].children[1]).includes('Two of four'),'other club threshold is unchanged');
+  assert.ok(contents(later[1].children[1]).includes('Four of ten'),'fixed one-goal requirement does not change');
+ }
+});
+test('COMP-STATS-643: unavailable and low-coverage metrics always show the same No players message',()=>{
+ const r=fixture(),c=supplied('IT-1',16);
+ c.seasonData.statistics.teams.find(team=>team.clubKey==='IT-1').mp=20;
+ c.seasonData.statistics.players=[{playerId:99,name:'Recorded',clubKey:'IT-1',appearances:1,starts:1,minutes:90,goals:0,assists:null,redCards:null,cleanSheets:null,averageRating:9.0,ratedAppearances:1,goalsAssistsPer90:null}];
+ r.api.mount(r.panel,c);buttons(r)[2].emit('click');
+ assert.equal(byClass(r,'fa-dev-stats-empty').length,8);
+ assert.ok(byClass(r,'fa-dev-stats-empty').every(el=>el.dataset.appI18n==='statsDevNoPlayerData'&&el.textContent==='No players'));
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(css,/\.fa-dev-stats-leader-grid\{--fa-stats-row-height:60px/);
+ assert.match(css,/@media\(max-width:620px\)\{\.fa-dev-stats-leader-grid\{--fa-stats-row-height:52px\}/);
+ assert.match(css,/\.fa-dev-stats-leader-card>\.fa-dev-stats-empty\{[^}]*height:calc\(var\(--fa-stats-row-height\)\*5\);min-height:0;box-sizing:border-box/);
 });
