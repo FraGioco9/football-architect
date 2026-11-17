@@ -157,10 +157,10 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.match(html,/id="step"/);
  assert.match(html,/id="reset"/);
  assert.ok(js.includes('createControlledActionLab(rapier,id,{shotSide:side,')&&
-  js.includes('variantIndex:activeVariantIndex,bodyGuardEnabled:activeBodyGuardEnabled}'),
-  'inline small-sided must explicitly pass the opt-in physical-body toggle');
- assert.match(js,/me-inline-bodyguard/);
- assert.match(html,/id="me-inline-bodyguard"/);
+  js.includes('variantIndex:activeVariantIndex,bodyGuardEnabled:true}'),
+  'visible LAB must always use original native physical bodies');
+ assert.doesNotMatch(js,/me-inline-bodyguard|activeBodyGuardEnabled/);
+ assert.doesNotMatch(html,/id="me-inline-bodyguard"/);
  assert.match(js,/createControlledMovementLab\(rapier,id,\{side\}\)/);
  assert.match(js,/activeScene=\{kind,id\}/);
  assert.match(js,/if\s*\(activeLab\)drawInlinePlayers/);

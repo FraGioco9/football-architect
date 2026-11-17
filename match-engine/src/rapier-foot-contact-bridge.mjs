@@ -65,9 +65,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  // event or impulse. At 4m/s the <=4Hz, 0.105m swing adds <=2.64m/s;
  // prepare() still enforces the original 7m/s total shoe path bound.
  let dribbleSwingPhase=0;
- function shoeFeet(frame,stepTick){
+ function shoeFeet(frame,stepTick,canonicalFrame=null){
   if(dribbleAttackerId===null)return frame;
-  const wearer=frame.find(p=>p.id===dribbleAttackerId);
+  const wearer=canonicalFrame?.players?.find(p=>p.id===dribbleAttackerId);
   if(stepTick>0){
    const speed=Math.hypot(wearer.vx??0,wearer.vy??0);
    const cadenceHz=Math.min(4,1.9+0.52*speed);
@@ -123,7 +123,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   if(nextTick!==tick+1)throw new RangeError('Nonconsecutive physical shoe tick');
   // Validate ALL actors, headings and physical displacement before mutation.
   const next=validateFootContactFrame(playerFrame,nextTick,positions);
-  const proposed=shoeFeet(next,nextTick);
+  const proposed=shoeFeet(next,nextTick,playerFrame);
   // The whole shoe also moves when its owner turns or advances. Clamp the
   // actual Rapier kinematic collider trajectory, NOT the canonical player,
   // to the original physical 7m/s ceiling (one 60Hz tick = 0.1167m).
