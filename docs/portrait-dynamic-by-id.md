@@ -1,6 +1,6 @@
 # Football Architect — One-ID dynamic portrait prompt (#646)
 
-**Change only `PLAYER_ID = 44`.** This preparation prompt retrieves an existing frozen V4.1 identity from GitHub PR #648 and, for non-exported player IDs, consults Cloudflare **DEV D1 read-only** plus the canonical repository generator. The result is one **image-only** text description to paste into a separate image-generation chat.
+**Change only the numeric PLAYER_ID in the prompt below.** This preparation prompt retrieves an existing frozen V4.1 identity from GitHub PR #648 and, for non-exported player IDs, consults Cloudflare **DEV D1 read-only** plus the canonical repository generator. The result is one **image-only** text description to paste into a separate image-generation chat.
 
 **Why two chats:** The prior full-handoff v2/v3 workflow repeatedly triggered a missing-image-target failure. This isolated lookup approach keeps GitHub, Cloudflare, and QA requests out of the actual image-generation chat. It improves separation but **does not guarantee** ImageGen will be available.
 
