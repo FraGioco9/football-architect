@@ -226,7 +226,7 @@ test('A04 browser baseline: public routes, provider states, delayed publications
  const binary=chromeBinary(),dir=mkdtempSync(join(tmpdir(),'fa-a04-browser-'));
  const staged=join(dir,'public'),allowed=new Set(stagePublicArtifact(repositoryRoot,staged));
  const delayedSources=new Map();
- const requests=[],mime={'.html':'text/html','.js':'application/javascript','.json':'application/json','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
+ const requests=[],mime={'.html':'text/html','.js':'application/javascript','.mjs':'application/javascript','.json':'application/json','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
  const server=createServer((req,res)=>{
   const path=new URL(req.url,'http://localhost').pathname;requests.push(path);
   if(delayedSources.has(path)){delayedSources.get(path)(res);return}
