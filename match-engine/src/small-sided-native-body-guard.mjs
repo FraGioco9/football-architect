@@ -51,7 +51,7 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
   // shoe colliders. Body contact is not automatically "ball protection".
   const leg=world.createCollider(R.ColliderDesc.ball(dribbleGroundBallCentreZ===null?LEG_RADIUS_M:0.14)
    .setTranslation(0,0,dribbleGroundBallCentreZ===null?0:
-    dribbleGroundBallCentreZ-LEG_CENTRE_Z_M)
+    dribbleGroundBallCentreZ+0.018-LEG_CENTRE_Z_M)
    .setDensity(80).setFriction(0.7).setRestitution(0)
    .setCollisionGroups((LEG_CATEGORY<<16)|BALL_CATEGORY),rigid);
   entries.push({id:actor.id,team:actor.team,rigid,torso,leg});

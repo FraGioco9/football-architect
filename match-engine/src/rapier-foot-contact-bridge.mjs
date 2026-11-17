@@ -77,7 +77,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  for(const p of stagedFeet){
   const pose=footProxyTransform(p);
   const groundPose=isolatedGroundDribbleBallCentreZ===null?pose:
-   {...pose,z:isolatedGroundDribbleBallCentreZ};
+   {...pose,z:isolatedGroundDribbleBallCentreZ+0.018};
   const body=world.createRigidBody(
    R.RigidBodyDesc.kinematicPositionBased()
     .setTranslation(groundPose.x,groundPose.y,groundPose.z)
@@ -146,7 +146,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
      throw new TypeError('D-01 real shoe exceeds original 7m/s continuity');
    }
    bodies[i].setNextKinematicTranslation({x:p.x,y:p.y,
-    z:isolatedGroundDribbleBallCentreZ??p.z});
+    z:isolatedGroundDribbleBallCentreZ===null?p.z:
+      isolatedGroundDribbleBallCentreZ+0.018});
    bodies[i].setNextKinematicRotation(p.rotation);
   }
   positions=next;actualShoeFeet=newFeet;
