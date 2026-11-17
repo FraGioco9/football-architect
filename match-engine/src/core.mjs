@@ -485,6 +485,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticBasicRestartAttackSide,
     diagnosticB06bHalftimeTick,diagnosticB06bNativeShotSide,
     diagnosticSmallSidedSituation,diagnosticSmallSidedSide,
+    diagnosticSmallSidedVariantIndex,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
