@@ -23,7 +23,7 @@ test('standalone per-player prompt embeds the exact V4.1 canonical handoff once'
  const snapshot=await buildDiverseV4PortraitSnapshotForPlayer(row);
  const handoff=await buildChatGptDiverseV4PortraitExecutionFromSnapshot(snapshot);
  const canonical=await renderDiverseV4PortraitPromptFromSnapshot(snapshot);
- assert.equal(CHAT_PROMPT_EXPORT_VERSION,'single-player-chat-v1');
+ assert.equal(CHAT_PROMPT_EXPORT_VERSION,'single-player-chat-v2');
  assert.equal(result.id,44);
  assert.equal(result.fileName,'44-Giacinto-Lello.md');
  assert.equal(result.fingerprint,snapshot.appearance_fingerprint);
@@ -35,6 +35,15 @@ test('standalone per-player prompt embeds the exact V4.1 canonical handoff once'
  assert.match(result.content,/D1/);
  assert.match(result.content,/NOT VERIFIED/);
  assert.match(result.content,/PASS CON NOTA/);
+ assert.match(result.content,/\[\$github\]\(app:\/\/connector_/);
+ assert.match(result.content,/\[\$cloudflare\]\(app:\/\/asdk_app_/);
+ assert.match(result.content,/connected GitHub plugin/);
+ assert.match(result.content,/connected Cloudflare plugin/);
+ assert.match(result.content,/football-architect-dev/);
+ assert.match(result.content,/ONLY ChatGPT built-in ImageGen/);
+ assert.match(result.content,/NEVER use Canva/);
+ assert.match(result.content,/NEVER access or modify Production/);
+ assert.match(result.content,/issue #646/);
  assert.match(result.content,/adult male/);
  assert.ok(!result.content.includes('16-year'));
  assert.equal(Object.isFrozen(result),true);

@@ -13,6 +13,21 @@ I giocatori inclusi sono **44, 45–63, 98, 145, 148**, tutti attualmente con un
 I nuovi ritratti sono **V4.1 opt-in**: non sostituiscono gli asset esistenti e
 non aggiornano i vecchi snapshot V3.
 
+### Plugin da usare (NO Canva)
+
+Questa revisione usa `single-player-chat-v2`, senza modificare gli identikit V4.1.
+I prompt iniziano con i riferimenti alle app collegate **GitHub** e **Cloudflare**.
+Nella nuova chat ChatGPT deve usare GitHub per leggere il repository
+`FraGioco9/football-architect` e, quando permesso, registrare il QA nella
+issue #646; Cloudflare per sole verifiche **read-only** sul database DEV
+`football-architect-dev`. Il motore per creare il PNG è **esclusivamente
+ChatGPT ImageGen**: **non usare Canva, plugin Canva, template Canva o altri
+generatori di immagini**.
+
+Se un plugin non è disponibile, il controllo va indicato come **NOT VERIFIED**;
+non inventare letture o scritture riuscite. Non modificare D1 (DEV o Production),
+non aggiornare gli asset GitHub e non pubblicare sulla base del prompt.
+
 ### Procedura: una chat, un giocatore, una immagine
 
 1. Apri **una nuova chat nel progetto Football Architect** per il giocatore scelto.

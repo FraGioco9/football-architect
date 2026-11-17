@@ -1,13 +1,16 @@
-# Football Architect V4.1 — 23 prompt per chat separate
+# Football Architect V4.1 — 23 prompt per chat separate (GitHub + Cloudflare; NO Canva)
 
 Generati dal generatore canonico V4.1 del commit `0d9ada1534153b9c33b89080ac464bd1d5cc4fca`, con attributi iniziali verificati su DEV D1 (sola lettura).
 
-**Un giocatore per chat, una immagine alla volta.** Copia il contenuto del blocco del giocatore in una NUOVA chat. Non usare immagini vecchie come riferimento dell'identità. L'approvazione QA non autorizza pubblicazione, modifiche D1 o merge.
+**Prompt export:** `single-player-chat-v2`. La versione del volto V4.1 e i 23 fingerprint restano invariati.
 
+**Una chat nuova per giocatore, una sola immagine per generazione.** Usare i plugin connessi **GitHub** e **Cloudflare** solo per dati/QA; le immagini si creano esclusivamente con **ChatGPT ImageGen**, **mai Canva**. Se una verifica tramite plugin non è disponibile, marcarla `NOT VERIFIED`. Nessun upload, merge, deploy, o scrittura D1 automatica.
 ## 44 — Giacinto Lello (sturdy; fingerprint 46163acf3ae85a04)
 
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
+
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
 
 This entire chat is ONLY for 44 — Giacinto Lello.
 Metadata for QA (NEVER render as text in the image):
@@ -16,7 +19,13 @@ Player name: Giacinto Lello
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 46163acf3ae85a04
 Frozen physical class: sturdy
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -72,6 +81,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -83,6 +94,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 45 — Paolo Andrian.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 45
@@ -90,7 +103,13 @@ Player name: Paolo Andrian
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 62dfab1eb9a0156a
 Frozen physical class: muscular
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -146,6 +165,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -157,6 +178,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 46 — Gennaro Cassola.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 46
@@ -164,7 +187,13 @@ Player name: Gennaro Cassola
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 28858299f2a27664
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -220,6 +249,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -231,6 +262,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 47 — Matthew Tiamiyu.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 47
@@ -238,7 +271,13 @@ Player name: Matthew Tiamiyu
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: cd5632866931fc36
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -294,6 +333,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -305,6 +346,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 48 — Patrizio Cimmini.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 48
@@ -312,7 +355,13 @@ Player name: Patrizio Cimmini
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 9dafd2c35104e401
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -368,6 +417,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -379,6 +430,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 49 — Gianfranco Patry.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 49
@@ -386,7 +439,13 @@ Player name: Gianfranco Patry
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 243e072c6cd86198
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -442,6 +501,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -453,6 +514,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 50 — Severino Cerboni.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 50
@@ -460,7 +523,13 @@ Player name: Severino Cerboni
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 64856e8445673fc1
 Frozen physical class: sturdy
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -516,6 +585,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -527,6 +598,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 51 — Giampiero Caione.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 51
@@ -534,7 +607,13 @@ Player name: Giampiero Caione
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: ba69d6d23d2065c6
 Frozen physical class: sturdy
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -590,6 +669,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -601,6 +682,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 52 — Emilio Rigotto.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 52
@@ -608,7 +691,13 @@ Player name: Emilio Rigotto
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 5dacb214b01ccbb6
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -664,6 +753,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -675,6 +766,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 53 — Paolo Lacasa.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 53
@@ -682,7 +775,13 @@ Player name: Paolo Lacasa
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 5a1bae96432df5f4
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -738,6 +837,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -749,6 +850,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 54 — Massimo Bottineri.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 54
@@ -756,7 +859,13 @@ Player name: Massimo Bottineri
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 9ed4ab37138bc09a
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -812,6 +921,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -823,6 +934,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 55 — Mario Bodi.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 55
@@ -830,7 +943,13 @@ Player name: Mario Bodi
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 518256f221ccf658
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -886,6 +1005,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -897,6 +1018,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 56 — Ferdinando Guerriero.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 56
@@ -904,7 +1027,13 @@ Player name: Ferdinando Guerriero
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 2e29062272c334fe
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -960,6 +1089,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -971,6 +1102,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 57 — Gianni Cusenza.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 57
@@ -978,7 +1111,13 @@ Player name: Gianni Cusenza
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 1ea0d00b0b56b3ed
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1034,6 +1173,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -1045,6 +1186,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 58 — Antonio Simplici.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 58
@@ -1052,7 +1195,13 @@ Player name: Antonio Simplici
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: a66b2605ebc6f133
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1108,6 +1257,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -1119,6 +1270,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 59 — Andrea Cusenza.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 59
@@ -1126,7 +1279,13 @@ Player name: Andrea Cusenza
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 017ce26b3046699d
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1182,6 +1341,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -1193,6 +1354,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 60 — Enrico Pasi.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 60
@@ -1200,7 +1363,13 @@ Player name: Enrico Pasi
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 1a64070f9f1578a8
 Frozen physical class: sturdy
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1256,6 +1425,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -1267,6 +1438,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 61 — Emanuele Pizzica.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 61
@@ -1274,7 +1447,13 @@ Player name: Emanuele Pizzica
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 58f0516ad0b2cfdf
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1330,6 +1509,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -1341,6 +1522,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 62 — Angelo Mazzuca.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 62
@@ -1348,7 +1531,13 @@ Player name: Angelo Mazzuca
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: a00e0e83a582feb0
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1404,6 +1593,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -1415,6 +1606,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 63 — Fiorenzo Colarusso.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 63
@@ -1422,7 +1615,13 @@ Player name: Fiorenzo Colarusso
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: c580a3526d483791
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1478,6 +1677,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -1489,6 +1690,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 98 — Arthur Kiesel.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 98
@@ -1496,7 +1699,13 @@ Player name: Arthur Kiesel
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 1a25525aa385aac5
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1552,6 +1761,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -1563,6 +1774,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 145 — Steven Sellen.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 145
@@ -1570,7 +1783,13 @@ Player name: Steven Sellen
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 59c1cc5a389a8fe6
 Frozen physical class: sturdy
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1626,6 +1845,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.
@@ -1637,6 +1858,8 @@ The only permitted age wording is: adult male. Produce exactly one portrait firs
 ```text
 # FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT
 
+[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)
+
 This entire chat is ONLY for 148 — Craig Leaman.
 Metadata for QA (NEVER render as text in the image):
 Player ID: 148
@@ -1644,7 +1867,13 @@ Player name: Craig Leaman
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 59756ee2a93dab36
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v1
+Prompt export version: single-player-chat-v2
+
+PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
+- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
+- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1700,6 +1929,8 @@ AFTER THIS SINGLE IMAGE:
 - Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.
 - Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.
 - If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.
+- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.
+- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.
 - Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.
 
 The only permitted age wording is: adult male. Produce exactly one portrait first.

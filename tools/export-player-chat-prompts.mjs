@@ -13,7 +13,7 @@ import {
  buildChatGptDiverseV4PortraitExecutionFromSnapshot
 } from '../backend/src/player-portrait-chatgpt.mjs';
 
-export const CHAT_PROMPT_EXPORT_VERSION='single-player-chat-v1';
+export const CHAT_PROMPT_EXPORT_VERSION='single-player-chat-v2';
 
 function requireRow(row){
  if(!row||typeof row!=='object'||Array.isArray(row)||
@@ -37,6 +37,8 @@ export async function createSinglePlayerChatPrompt(row){
  const header=[
   '# FOOTBALL ARCHITECT — NEW INDIVIDUAL PORTRAIT CHAT',
   '',
+  '[$github](app://connector_76869538009648d5b282a4bb21c3d157) [$cloudflare](app://asdk_app_6abc2a9552748191b465859a06e90da3)',
+  '',
   'This entire chat is ONLY for '+title+'.',
   'Metadata for QA (NEVER render as text in the image):',
   'Player ID: '+player.id,
@@ -45,6 +47,12 @@ export async function createSinglePlayerChatPrompt(row){
   'Immutable appearance fingerprint: '+snapshot.appearance_fingerprint,
   'Frozen physical class: '+snapshot.body_profile,
   'Prompt export version: '+CHAT_PROMPT_EXPORT_VERSION,
+  '',
+  'PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:',
+  '- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.',
+  '- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.',
+  '- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.',
+  '- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.',
   '',
   'Start by generating EXACTLY ONE original PNG portrait of this one player.',
   'No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.',
@@ -61,6 +69,8 @@ export async function createSinglePlayerChatPrompt(row){
   '- Perform strict visual identity QA: exactly the specified complexion, face geometry, eyes, haircut texture/length/color, natural mouth/nose/ears, realistic body type, ordinary non-model face, regular-fit plain-white jersey. Wrong person is always FAIL even when dimensions are valid.',
   '- Report PASS, PASS CON NOTA or FAIL with the exact deviations. When BOTH technical and visual QA pass, automatically accept the candidate (retain notes) but DO NOT publish or update a database.',
   '- If FAIL, record why before considering a retry. Any retry must be a NEW single image, never an additional image in this same invocation, and must receive its own complete QA. Stop repeated wrong-person contamination.',
+  '- Use the connected GitHub plugin (not Canva) for QA traceability: reference issue #646, the player ID, immutable V4.1 fingerprint, original image generation identifier when available, SHA-256 for actual files when verifiable, technical/visual PASS/PASS CON NOTA/FAIL and deviations. If writing a QA comment is not possible, provide the report for the user to copy; do not claim a comment was posted.',
+  '- Use the connected Cloudflare plugin for read-only DEV confirmation when available. No status or asset_key changes, and never use a Production database for these candidate portraits.',
   '- Preserve the original generated PNG. Do not overwrite existing approved WebPs, update D1, merge a PR, or deploy. GitHub asset publication requires separate explicit authorisation.',
   '',
   'The only permitted age wording is: adult male. Produce exactly one portrait first.',
