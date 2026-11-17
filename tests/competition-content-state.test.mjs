@@ -321,3 +321,11 @@ test('confirmed-empty standings centers the translated message vertically in a f
  assert.match(css,/#competition-panel-standings #app-standings-compact-list \.app-world-mobile-empty\{[\s\S]*?display:flex;[\s\S]*?align-items:center;[\s\S]*?justify-content:center;/,
   'the mobile compact message is vertically centered within the same empty region');
 });
+
+test('Season 1 -> 0 DEV source change reconciles live standings even without a new data revision',()=>{
+ const page=read('assets/competition-page.js');
+ assert.match(page,/if\(season===0\)\{\s*selectSeason\(1\);[\s\S]*?standingsRefresh\?\.\(\);/,
+  'DEV Season 0 source transition always flushes stale roster nodes');
+ assert.match(page,/const expectedRows=mode==='debug-preview'\?division\.clubs\.length:1;/,
+  'only a real DEV season with explicit preview may keep the 16-club provisional list');
+});

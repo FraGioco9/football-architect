@@ -1222,7 +1222,14 @@
       // published yet; rebuild the correct first-paint shell for this source.
       if(window.faCompetitionContext)nextContext(window.faCompetitionContext.selectedSeason,null,{force:true});
     }
-    if(season===0)selectSeason(1);
+    if(season===0){
+      selectSeason(1);
+      // The DEV widget can change global progress without another context
+      // revision (e.g. when the viewed Season 1 already has null data).
+      // Explicitly reconcile the existing DOM so no Season 1 provisional
+      // club rows survive an unconfirmed Season 0 source switch.
+      standingsRefresh?.();
+    }
     return true;
   }
   function acceptSeasonData(data,expectedRevision,authoritative=false){
