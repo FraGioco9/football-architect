@@ -64,9 +64,22 @@ test('#628 body guard remains selected-only, exact-tick and deterministic in all
    assert.equal(zero.smallSidedNativeBodyGuard.tick,0);
    assert.deepEqual(zero.smallSidedNativeBodyGuard.selectedColliderIds,
     zero.smallSidedParticipants);
-   const next=enabledV01.step();
-   assert.equal(next.smallSidedNativeBodyGuard.tick,1);
-   assert.equal(next.officialMatchResult,null);
+   for(let expectedTick=1;expectedTick<=12;expectedTick++){
+    let next;
+    try{next=enabledV01.step();}
+    catch(error){throw new Error(
+     'V01 Bodies ON '+spec.id+' '+side+' tick '+expectedTick+
+     ' failed: '+error.message,{cause:error});}
+    assert.equal(next.smallSidedNativeBodyGuard.tick,expectedTick);
+    assert.equal(next.officialMatchResult,null);
+    if(next.refereeEvidence?.lastEvent){
+     process.stdout.write('ME_628_V01_BODIES_EARLY_EVENT '+
+      JSON.stringify({scene:spec.id,side,expectedTick,ball:next.ball,
+       referee:next.refereeEvidence.lastEvent,
+       guard:next.smallSidedNativeBodyGuard})+'\\n');
+     assert.fail('V01 native-body source must not force a dead ball within 12 ticks');
+    }
+   }
   }finally{enabledV01.dispose();}
   const ungated=createControlledActionLab(R,spec.id,{shotSide:side,variantIndex:1});
   try{assert.equal(ungated.snapshot().smallSidedNativeBodyGuard,null,
