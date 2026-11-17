@@ -7,7 +7,7 @@ import {parsePairedOptions,validateLocalSnapshot,DEFAULT_MEASURED_ROUTES} from '
 
 const a='1'.repeat(40),b='2'.repeat(40);
 const opts=extra=>parsePairedOptions([
- '--before='+a,'--after='+b,'--snapshot=/tmp/local-isolated-d1',
+ '--before='+a,'--after='+b,'--snapshot='+join(tmpdir(),'local-isolated-d1'),
  ...extra
 ]);
 test('PERF-API-657 pairs immutable served revisions, never names/remote API URLs',()=>{

@@ -139,8 +139,9 @@ function preparePlaywright(options,temp){
  if(!existsSync(entry))throw Error('Pinned Playwright entry missing after installation');
  return pathToFileURL(entry).href;
 }
-function stageCheckout(dir,sha,snapshot){
+function stageCheckout(dir,sha,snapshot,onAdded){
  command('git',['worktree','add','--detach',dir,sha]);
+ onAdded(dir);
  if(git(['rev-parse','HEAD'],dir)!==sha)throw Error('Served checkout HEAD mismatches declared SHA');
  cpSync(snapshot,join(dir,'backend','.wrangler','state'),{recursive:true,force:false,errorOnExist:true});
  command(process.platform==='win32'?'npm.cmd':'npm',['ci','--prefix','backend'],{cwd:dir});
@@ -166,8 +167,8 @@ async function run(){
   comparison:'perf-api-657-comparison-'+options.before.slice(0,10)+'-'+options.after.slice(0,10)+'.json'
  };
  try{
-  stageCheckout(beforeDir,options.before,options.snapshot);created.push(beforeDir);
-  stageCheckout(afterDir,options.after,options.snapshot);created.push(afterDir);
+  stageCheckout(beforeDir,options.before,options.snapshot,dir=>created.push(dir));
+  stageCheckout(afterDir,options.after,options.snapshot,dir=>created.push(dir));
   const playwright=preparePlaywright(options,temp);
   for(const [label,servedDir,sha] of [['before',beforeDir,options.before],['after',afterDir,options.after]]){
    await requireUnusedPorts();

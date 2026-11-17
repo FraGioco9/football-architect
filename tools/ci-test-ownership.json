@@ -272,6 +272,7 @@
     "tests/perf-api-01-real-contract-roster.mjs": "support",
     "tests/perf-api-01-compare.test.mjs": "site-node",
     "tests/perf-api-01-requests.test.mjs": "site-node",
+    "tests/perf-api-657-paired-local.test.mjs": "site-node",
     "tests/player-detail.test.mjs": "site-node",
     "tests/player-safe-return-browser.mjs": "browser",
     "tests/player-tables-parity-532.test.mjs": "site-node",
