@@ -2,18 +2,18 @@
 
 Competition > Stats > Players uses the selected competition/season's verified immutable `temporary-lineup-v1` receipts, including its postseason. The owner's approved order is:
 
-1. Test rating — mean of recorded ratings, with the number of rated appearances: `6.75 (20)`.
+1. Rating — mean of recorded ratings, with the number of rated appearances: `6.75 (20)`.
 2. Goals.
 3. Assists.
 4. Goals + assists per 90 minutes: `(goals + assists) × 90 / minutes`.
-5. Goalkeeper clean sheets.
+5. Goalkeeper clean sheets (appearances), e.g. `6 (13)`.
 6. Starts (substitute appearances): `12 (3)`.
 7. Red cards.
 8. Minutes.
 
-There is no yellow-card ranking. Five-row previews, Show all, tied ranks, deterministic sorting, five translations and circular face photos are shared by every supported competition. Photos use generic persistent-ID paths and CSS cropping; missing files use a neutral silhouette. Player/name links open Player Detail; recorded-club text links preserve historical club contributions.
+There is no yellow-card ranking. Five-row previews, Show all, tied ranks, deterministic sorting, five translations and circular face photos are shared by every supported competition. Photos use generic persistent-ID paths and CSS cropping; missing files use a neutral silhouette. Only the player name links to Player Detail; portraits and frozen-club labels are non-interactive. Club labels still represent the recorded club, not necessarily the current affiliation.
 
-Only recorded values enter rankings. Null metrics display a dash, never a fabricated zero. The current simulator does not record assists, red-card events or substitutes. Therefore assists, red cards and G+A/90 remain unavailable; existing frozen appearances are all starts and have zero actual substitute appearances. Those event models are not invented by the read API. Minutes remain actual frozen minutes; shootouts do not inflate goals or minutes.
+Only qualified recorded values enter rankings. Rating needs at least 5 rated appearances for domestic leagues (3 for international cups); goals, assists and red cards need at least 1 recorded event; G+A/90 needs 270 minutes and one contribution; goalkeeper clean sheets need at least one and 3 appearances; starts need 3; minutes need 270. Null metrics never become zero. An entirely unrecorded metric displays `Not recorded`; a recorded metric with no qualifying players displays `No players`. Each card reserves five row heights and a footer even when empty. The current simulator does not record assists, red-card events or substitutes. Therefore assists, red cards and G+A/90 remain unavailable; existing frozen appearances are all starts and have zero actual substitute appearances. Those event models are not invented by the read API. Minutes remain actual frozen minutes; shootouts do not inflate goals or minutes.
 
 Clean sheets are derived for the **actual frozen GK role only**, including an emergency goalkeeper playing that role, when the recorded appearance covers the complete match and the opponent scored no regulation/extra-time goals. Shootout goals do not affect clean sheets. Outfield players and incomplete keeper participation have null clean-sheet eligibility. A full participating keeper who conceded has recorded zero. This needs no receipt rewrite or resimulation.
 
