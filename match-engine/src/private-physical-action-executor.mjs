@@ -55,10 +55,14 @@ export function createPrivatePhysicalActionExecutor({
  let actualPriorPass=null,interrupted=false,firstCushion=null;
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
- function apply(nextTick,playerFrame,{suppressOriginalAction=false}={}){
+ function apply(nextTick,playerFrame,{
+  suppressOriginalAction=false,suppressPhysicalBodyContact=false
+ }={}){
   ensureOpen();
-  if(typeof suppressOriginalAction!=='boolean')
-   throw new TypeError('Only boolean original-source dead-ball suppression');
+  if(typeof suppressOriginalAction!=='boolean'||
+     typeof suppressPhysicalBodyContact!=='boolean'||
+     (suppressPhysicalBodyContact&&smallSidedDecisionContext===null))
+   throw new TypeError('Physical body-contact guard only in opt-in small-sided source');
   const contact=shoeBridge.snapshot();
   if(!Number.isSafeInteger(nextTick)||nextTick!==tick+1||
      !contact||contact.version!==FOOT_CONTACT_VERSION||
@@ -77,7 +81,7 @@ export function createPrivatePhysicalActionExecutor({
   // When the private B06b match is PAUSED for a real referee-issued
   // restart, advance this same original executor's tick but do not
   // apply an unrelated uniform impulse over the authentic kickoff.
-  const originalChoice=suppressOriginalAction?null:
+  const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,
     smallSidedDecisionContext});
   let researchCandidate=null;
@@ -154,7 +158,9 @@ export function createPrivatePhysicalActionExecutor({
    throw new Error('Rapier exclusive START and original action gates disagree');
   const currentAudit=Object.freeze({
    ...gates,actionSelected:chosen!==null,
-   noActionReason:chosen?null:suppressOriginalAction?
+   noActionReason:chosen?null:suppressPhysicalBodyContact?
+    'small-sided-native-body-ball-contact-no-extra-shoe-impulse':
+    suppressOriginalAction?
     'b06b-referee-physical-dead-ball-original-action-suppressed':researchCandidate?
     'experimental-receiving-cushion-preempts-uniform-action':
     deferOriginal?'m27-native-decision-defers-original-clearance':

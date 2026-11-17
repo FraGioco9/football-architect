@@ -15,7 +15,8 @@ const ordered=set=>Object.freeze(INITIAL_PLAYERS
 const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
- initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null}={}){
+ initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
+ isolatedPhysicalBodies=false}={}){
  if(!R||typeof R.EventQueue!=='function'||!world||
     typeof world.createRigidBody!=='function'||
     !ballCollider||ballCollider.handle===undefined||
@@ -34,6 +35,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  // A small-sided study must exclude unused Rapier shoe COLLIDERS,
  // rather than merely hiding them on the canvas. The canonical 22-person
  // motion frame still undergoes the same validation on every physics tick.
+ if(typeof isolatedPhysicalBodies!=='boolean'||
+    (isolatedPhysicalBodies&&activePlayerIds===null))
+  throw new TypeError('Body-isolated shoe groups require selected small-sided players');
  if(activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
    activePlayerIds.length<2||activePlayerIds.length>7||
    new Set(activePlayerIds).size!==activePlayerIds.length||
@@ -55,7 +59,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    .setRestitution(FOOT_CONTACT_RESTITUTION)
    .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS|
     R.ActiveEvents.CONTACT_FORCE_EVENTS);
-  if(sharedQueue!==null)shoeShape.setCollisionGroups(0x00010001);
+  if(sharedQueue!==null||isolatedPhysicalBodies)
+   shoeShape.setCollisionGroups(0x00010001);
   const collider=physicalIds===null||physicalIds.has(p.id)?
    world.createCollider(shoeShape,body):null;
   bodies.push(body);colliders.push(collider);

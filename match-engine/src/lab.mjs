@@ -342,6 +342,10 @@ function render() {
        lastInlineFootballAction.action.toUpperCase()+
        ' native shoe/impulse'+
        (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
+      (f.smallSidedNativeBodyGuard?.lowerLegBallContacts.length?
+       ' · real body–ball '+f.smallSidedNativeBodyGuard.lowerLegBallContacts.length:'')+
+      (f.smallSidedNativeBodyGuard?.nativeOpposingTorsoPairs.length?
+       ' · opposing body pairs '+f.smallSidedNativeBodyGuard.nativeOpposingTorsoPairs.length:'')+
       (f.refereeEvidence?.lastEvent?' · '+
        f.refereeEvidence.lastEvent.kind.toUpperCase()+' verified crossing':'')+
       (f.matchTimeline?' · provisional '+

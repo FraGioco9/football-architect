@@ -142,7 +142,8 @@ export function createControlledActionLab(RAPIER,id,{
   ...(smallSided?{
    diagnosticSmallSidedSituation:id,
    diagnosticSmallSidedSide:shotSide,
-   diagnosticSmallSidedVariantIndex:variantIndex
+   diagnosticSmallSidedVariantIndex:variantIndex,
+   diagnosticSmallSidedBodyGuardEnabled:variantIndex>0
   }:{}),
   ...(refereeMode?{diagnosticBasicRestartEnabled:true}:{}),
   ...(sourceRestart?{
@@ -422,6 +423,8 @@ export function createControlledActionLab(RAPIER,id,{
     ...(refereeMode||smallSided?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake,
      matchTimeline}:{}),
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
+     smallSidedNativeBodyGuard:variantIndex>0?
+      engine.smallSidedBodyGuardSnapshot():null,
      smallSidedVariantIndex:smallSided.variantIndex,
      genuinePhysicalPlayerCount:smallSided.genuinePhysicalPlayers,
      activeCollisionSource:'native-colliders-only',

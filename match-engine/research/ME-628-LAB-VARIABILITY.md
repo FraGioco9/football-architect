@@ -32,3 +32,15 @@ At a real, exclusive Rapier shoe START, with original 60 Hz movement, live ball 
 5. If no shot/pass/carry is viable, retain the original player action fallbacks. No official goal, score, pass completion, reception, save, interception or possession is manufactured.
 
 **QA**: pure seeded mirrored HOME/AWAY choice distribution for 29 variants, blocked-opportunity negative cases, 22-player/ordinary scenario fail-closed behavior, real physical first-attempt distributions in 1v1 vs goalkeeper and 2v1 with native shoe START and impulse. Further success/failure mechanics, player attributes and variable execution strength remain LAB-VAR-03/DRIBBLE-01 and are not claimed here.
+
+## LAB-VAR-02B / Phase 1 — physical body and ball-contact source (experimental)
+
+**Status: under physical/regression QA; NOT shielding complete.** The previous LAB decision selector's short carry is not a possession or true protective dribble. To avoid a fake "shield" label, V02–V30 now opt into an independent *native collider* experiment in the SAME original ball Rapier World, with no other world or physics step:
+
+- Selected 2–7 original canonical actors only (never instantiate physical colliders for the other 15–20 inactive actors); one dynamic zero-gravity body per selected actor, with upper torso sphere (native player/opponent body contact) and smaller lower-leg sphere (native ball collision only). Original shoe colliders exclude the body category; ball body/collider are not replaced.
+- Original 60Hz canonical mover velocity drives these physical bodies; the native solver alone determines whether body collisions and ball deflections occur. Body responses are explicitly NOT fed back to the canonical mover; authoritative full shielding/play/possession cannot be claimed from this isolation experiment.
+- Read exact post-step `world.contactPair` native solver manifolds for leg/ball and opposing torsos, with genuine starts, ends, active contacts and original body positions; never generate contacts, interpolate made-up events, or count nearby players as collisions.
+- Prevent a double autonomous shoe impulse on a tick that already has authentic native body/ball contact. The ball still responds physically from Rapier alone. V01, regular world, archived scenes and the 22-player match paths have the body guard **disabled by default** and fail closed if the guard is requested without an isolated V02–V30 actual shoe source.
+- The inline LAB shows native contact evidence only on ticks with actual contacts; every record continues to say `ballProtectionProven:false`, `successfulPossession:false`, no official goals or tackles.
+
+**Acceptance for complete LAB-VAR-02B remains OPEN:** measured repeated opponent intervention and actually retained/covered ball resulting from physical response, with the original player's kinematics respecting those solver responses. This foundation detects real collisions, but does not itself prove a successful shielding technique, or create virtual ball control.

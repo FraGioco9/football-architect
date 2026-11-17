@@ -9,6 +9,8 @@ import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {smallSidedSetup} from './small-sided-lab-scenarios.mjs';
+import {createSmallSidedNativeBodyGuard}
+ from './small-sided-native-body-guard.mjs';
 import {initialResearchBodyEncounterLineup}
  from './research-body-encounter-initial-lineup.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
@@ -113,6 +115,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSmallSidedSituation = null,
   diagnosticSmallSidedSide = null,
   diagnosticSmallSidedVariantIndex = 0,
+  diagnosticSmallSidedBodyGuardEnabled = false,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -144,6 +147,15 @@ export function createEngine(RAPIER, input = {}, {
    throw new TypeError('Small-sided situation and attacking side must be paired');
   if(diagnosticSmallSidedSituation===null&&diagnosticSmallSidedVariantIndex!==0)
    throw new TypeError('Small-sided variant requires a paired physical exercise');
+  if(typeof diagnosticSmallSidedBodyGuardEnabled!=='boolean'||
+     (diagnosticSmallSidedBodyGuardEnabled&&(
+      diagnosticSmallSidedSituation===null||
+      diagnosticSmallSidedVariantIndex===0||
+      !diagnosticPlayerFootContactsEnabled||
+      !diagnosticAutonomousFixtureActionEnabled||
+      diagnosticPlayerBodyCollidersEnabled||
+      diagnosticSharedContactEventsEnabled)))
+   throw new TypeError('LAB body collision requires isolated V02–V30 with actual shoe source');
   if(diagnosticSmallSidedSituation!==null){
    smallSidedSetup(diagnosticSmallSidedSituation,
     diagnosticSmallSidedSide,INITIAL_PLAYERS,
@@ -485,7 +497,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticBasicRestartAttackSide,
     diagnosticB06bHalftimeTick,diagnosticB06bNativeShotSide,
     diagnosticSmallSidedSituation,diagnosticSmallSidedSide,
-    diagnosticSmallSidedVariantIndex,
+    diagnosticSmallSidedVariantIndex,diagnosticSmallSidedBodyGuardEnabled,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
@@ -538,7 +550,10 @@ export function createEngine(RAPIER, input = {}, {
   const shoeBridge=diagnosticPlayerFootContactsEnabled?
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes,
      {...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{}),
-      ...(smallSided?{activePlayerIds:smallSided.activeIds}:{})}):null;
+      ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
+      ...(diagnosticSmallSidedBodyGuardEnabled?{
+       isolatedPhysicalBodies:true
+      }:{})}):null;
   // All 22 real body colliders remain isolated from ball, shoes and grass.
   const bodyBridge=diagnosticPlayerBodyCollidersEnabled?
     createPrivateRapier22BodyBridge(RAPIER,world,stagedShoes,{
@@ -546,6 +561,9 @@ export function createEngine(RAPIER, input = {}, {
      unstagedFeedback:diagnosticUnstagedBodyFeedbackEnabled,
      ...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{})
     }):null;
+  const smallBodyGuard=diagnosticSmallSidedBodyGuardEnabled?
+   createSmallSidedNativeBodyGuard(RAPIER,world,ballCollider,
+    stagedShoes,smallSided.activeIds):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
@@ -635,6 +653,7 @@ export function createEngine(RAPIER, input = {}, {
     const preStepBall=shoeBridge?snapshot().ball:null;
     if(shoeBridge)shoeBridge.prepare(playerFrame,tick+1);
     if(bodyBridge)bodyBridge.prepare(playerFrame,tick+1);
+    if(smallBodyGuard)smallBodyGuard.prepare(playerFrame,tick+1);
     // User forces are persistent in Rapier. Clear the previous tick's drag
     // BEFORE computing this tick's force, and never apply it on the grass.
     // The default=0 branch is identical to the accepted physics-v4 path.
@@ -711,6 +730,9 @@ export function createEngine(RAPIER, input = {}, {
       world.step(bodyBridge.eventQueue);
       bodyBridge.observe(tick+1);
     }else world.step();
+    // This is read exclusively from native post-step Rapier solver contact
+    // manifolds. Never inject player collisions or attribute a goal/possession.
+    if(smallBodyGuard)smallBodyGuard.observe(tick+1);
     // Exponential airborne-only decay after integration; zero rate preserves
     // the original physics-v4 path without any angular-velocity setter.
     if(diagnosticSpinDecayRatePerS>0 &&
@@ -725,7 +747,9 @@ export function createEngine(RAPIER, input = {}, {
     if(actionExecutor)actionExecutor.apply(tick,playerFrame,{
       suppressOriginalAction:diagnosticB06bNativeShotSide!==null&&(
        b06bGoalPending!==null||
-       (b06bHalftimePlacement!==null&&b06bKickoff===null))
+       (b06bHalftimePlacement!==null&&b06bKickoff===null)),
+      suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
+       .lowerLegBallContacts.length>0
     });
     return snapshot();
   }
@@ -1079,6 +1103,7 @@ export function createEngine(RAPIER, input = {}, {
       actionExecutor?.dispose();
       shoeBridge?.dispose();
       bodyBridge?.dispose();
+      smallBodyGuard?.dispose();
       sharedContactQueue?.free();
       world.free();
     }
@@ -1125,7 +1150,9 @@ export function createEngine(RAPIER, input = {}, {
       }:{})
     }:{}),
     ...(smallSided?{
-      originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds
+      originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds,
+      ...(smallBodyGuard?{smallSidedBodyGuardSnapshot:()=>
+       smallBodyGuard.snapshot()}:{})
     }:{}),
     ...(actionExecutor?{
       uniformAutonomousActionSnapshot:()=>actionExecutor.actionSnapshot(),

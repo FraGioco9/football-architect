@@ -1,0 +1,102 @@
+// #628 LAB-VAR-02B — one-world native body contact vs a real ball.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import * as rapier from '@dimforge/rapier3d-deterministic-compat';
+import {initializeRapier,createEngine} from '../src/core.mjs';
+import {INITIAL_PLAYERS,PLAYER_VERSION} from '../src/player-movement.mjs';
+import {createControlledActionLab} from '../src/action-labs.mjs';
+import {SMALL_SIDED_LAB_SCENARIOS} from '../src/small-sided-lab-scenarios.mjs';
+import {createSmallSidedNativeBodyGuard,SMALL_SIDED_BODY_VERSION}
+ from '../src/small-sided-native-body-guard.mjs';
+
+function oneWorldNativeContact(R,gap){
+ const world=new R.World({x:0,y:0,z:-9.81});
+ world.timestep=1/60;
+ const ballBody=world.createRigidBody(R.RigidBodyDesc.dynamic()
+  .setTranslation(40.19,0,0.11).setCcdEnabled(true));
+ const ballCollider=world.createCollider(R.ColliderDesc.ball(.11)
+  .setDensity(6).setFriction(.4),ballBody);
+ const staged=INITIAL_PLAYERS.map(p=>p.id==='home-10'?
+  {...p,x:40,y:0}:p.id==='away-2'?
+  {...p,x:40+gap,y:0}:p);
+ const bridge=createSmallSidedNativeBodyGuard(R,world,ballCollider,
+  staged,['home-10','away-2']);
+ const frame={version:PLAYER_VERSION,tick:1,players:staged.map(p=>({...p,vx:0,vy:0}))};
+ try{
+  assert.equal(bridge.snapshot().tick,0);
+  bridge.prepare(frame,1);
+  world.step();
+  const evidence=bridge.observe(1);
+  return {evidence,ball:{...ballBody.translation()}};
+ }finally{bridge.dispose();world.free();}
+}
+test('#628 native lower-leg ball and opponent torso response are genuine Rapier solver manifolds',
+ {timeout:30000},async()=>{
+ const R=await initializeRapier(rapier);
+ const sample=oneWorldNativeContact(R,0.99);
+ assert.equal(sample.evidence.version,SMALL_SIDED_BODY_VERSION);
+ assert.ok(sample.evidence.lowerLegBallStarts.includes('home-10'));
+ assert.ok(sample.evidence.nativeOpposingTorsoPairs.includes('away-2|home-10'));
+ assert.equal(sample.evidence.evidenceSource,'native-rapier-solver-manifold');
+ assert.equal(sample.evidence.ballProtectionProven,false);
+ assert.equal(sample.evidence.successfulPossession,false);
+ assert.equal(sample.evidence.officialMatchResult,null);
+ assert.ok(sample.ball.x>40.19,'body/ball must permit real solver motion');
+ assert.deepEqual(sample,oneWorldNativeContact(R,0.99),
+  'identical native physics input must replay exactly');
+ assert.deepEqual(oneWorldNativeContact(R,2.2).evidence.nativeOpposingTorsoPairs,[],
+  'an absent opponent cannot manufacture a native torso collision');
+});
+test('#628 body guard remains selected-only, exact-tick and deterministic in all 5 native LAB situations',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const spec of SMALL_SIDED_LAB_SCENARIOS)
+ for(const side of ['home','away']){
+  const baseline=createControlledActionLab(R,spec.id,{shotSide:side});
+  try{assert.equal(baseline.snapshot().smallSidedNativeBodyGuard,null);}
+  finally{baseline.dispose();}
+  for(const variantIndex of [1,9,21]){
+   const a=createControlledActionLab(R,spec.id,{shotSide:side,variantIndex});
+   const b=createControlledActionLab(R,spec.id,{shotSide:side,variantIndex});
+   try{
+    assert.equal(a.snapshot().smallSidedNativeBodyGuard.tick,0);
+    for(let tick=1;tick<=65;tick++){
+     const x=a.step(),y=b.step(),g=x.smallSidedNativeBodyGuard;
+     assert.equal(g.tick,tick);
+     assert.deepEqual(g,y.smallSidedNativeBodyGuard);
+     assert.deepEqual(x.ball,y.ball);
+     assert.deepEqual(g.selectedColliderIds,x.smallSidedParticipants);
+     assert.equal(g.selectedColliderIds.length,spec.focus.length);
+     for(const id of [...g.lowerLegBallContacts,...g.lowerLegBallStarts,
+      ...g.lowerLegBallEnds])assert.ok(g.selectedColliderIds.includes(id));
+     if(g.lowerLegBallContacts.length)assert.equal(x.action,null,
+      'no autonomous extra kick while native player lower leg contacts the ball');
+     assert.equal(g.ballProtectionProven,false);
+     assert.equal(g.successfulPossession,false);
+     assert.equal(g.tackleWon,false);
+     assert.equal(x.officialMatchResult,null);
+     if(x.refereeEvidence?.lastEvent)break;
+    }
+   }finally{a.dispose();b.dispose();}
+  }
+ }
+});
+test('#628 V01 and regular world cannot accidentally enable physical body guard',
+ {timeout:30000},async()=>{
+ const R=await initializeRapier(rapier);
+ const ball={preset:'roll',seed:'guard-off',x:0,y:0,z:0,vx:0,vy:0,vz:0};
+ assert.throws(()=>createEngine(R,ball,{
+  diagnosticSmallSidedBodyGuardEnabled:true}),TypeError);
+ assert.throws(()=>createEngine(R,ball,{
+  diagnosticSmallSidedSituation:'keeper-1v1',
+  diagnosticSmallSidedSide:'home',
+  diagnosticSmallSidedVariantIndex:0,
+  diagnosticPlayerFootContactsEnabled:true,
+  diagnosticAutonomousFixtureActionEnabled:true,
+  diagnosticSmallSidedBodyGuardEnabled:true
+ }),TypeError);
+ const routes=readFileSync(new URL('../../tools/dev-standings-preview.mjs',
+  import.meta.url),'utf8');
+ assert.ok(routes.includes("'/__fa_match_engine__/small-sided-native-body-guard.mjs':"));
+});
