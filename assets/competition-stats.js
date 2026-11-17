@@ -21,7 +21,9 @@
   const nav='<div class="fa-dev-stats-nav" role="group" aria-label="Stats" data-app-aria="competitionTabStats">'+views.map(([id,key,label])=>'<button type="button" class="language-trigger" data-stats-view="'+id+'" aria-pressed="'+(id===selected)+'" tabindex="'+(id===selected?'0':'-1')+'" data-app-i18n="'+key+'">'+label+'</button>').join('')+'</div>';
   if(selected==='overview')return nav+'<div class="app-competition-stat-grid fa-dev-stats-grid" aria-hidden="true">'+overview.map(([,key,label])=>'<div class="app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card"><span class="app-competition-stat-label" data-app-i18n="'+key+'">'+label+'</span><strong class="app-competition-stat-value">'+bar+'</strong></div>').join('')+'</div>';
   const player=selected==='players';
-  const row='<li><span class="fa-dev-stats-rank">'+bar+'</span><span class="app-world-club-identity"><span class="app-view-skeleton-crest-slot"></span><span class="fa-dev-stats-team-name">'+bar+'</span></span><strong>'+bar+'</strong></li>';
+  const label='<span class="fa-dev-stats-team-name">'+bar+'</span>';
+  const identityLabel=player?'<span class="fa-dev-stats-player-label">'+label+'<span class="fa-dev-stats-club-link">'+bar+'</span></span>':label;
+  const row='<li><span class="fa-dev-stats-rank">'+bar+'</span><span class="app-world-club-identity"><span class="app-view-skeleton-crest-slot"></span>'+identityLabel+'</span><strong>'+bar+'</strong></li>';
   return nav+'<section class="fa-dev-stats-section" aria-hidden="true"><div class="fa-dev-stats-leader-grid">'+(player?players:teams).map(([,key,label])=>'<section class="app-competition-stat-card '+(player?'app-competition-stat-card--compact':'app-competition-stat-card--fluid')+' fa-dev-stats-leader-card'+(player?'':' fa-dev-stats-team-card')+'"><h4 class="app-competition-stat-label fa-dev-stats-leader-title" data-app-i18n="'+key+'">'+label+'</h4><ol class="fa-dev-stats-top">'+row.repeat(5)+'</ol><span class="fa-dev-stats-expand app-view-skeleton-stats-expand" aria-hidden="true"><span class="app-view-skeleton-stats-expand-label" data-app-i18n="statsDevShowAll">Show all</span>'+bar+'</span></section>').join('')+'</div></section>';
  }
  function normalize(context){
@@ -87,10 +89,22 @@
    const clubRoute=window.faRoutesRegistry.buildRoute({kind:'club',country:match[1].toLowerCase(),id:match[2],view:'overview'});
    const name=create('a',player?(record.name??'#'+record.playerId):record.clubName,'fa-dev-stats-team-name app-world-standing-club-link');
    name.href=player?window.faRoutesRegistry.buildRoute({kind:'player',id:record.playerId}):clubRoute;
+   if(player)name.title=record.name??'#'+record.playerId;
    if(player){
-    const clubLink=create('a',undefined,'fa-dev-stats-club-link app-world-club-identity');clubLink.href=clubRoute;
-    clubLink.setAttribute('aria-label',club.primaryName);clubLink.title=club.primaryName;clubLink.append(crest);identityNode.append(clubLink,name);
-   }else identityNode.append(crest,name);li.append(create('span',rank,'fa-dev-stats-rank'),identityNode,create('strong',format(key,record[key])));return li;
+    const portrait=create('a',undefined,'fa-dev-stats-player-portrait');portrait.href=name.href;
+    // The adjacent name already supplies the accessible player link.
+    portrait.setAttribute('aria-hidden','true');portrait.tabIndex=-1;
+    portrait.dataset.portraitState='loading';
+    const photo=create('img');photo.alt='';photo.loading='lazy';photo.decoding='async';
+    photo.onload=()=>{portrait.dataset.portraitState='ready'};
+    photo.onerror=()=>{portrait.dataset.portraitState='missing';photo.removeAttribute('src')};
+    // Generic persistent-ID paths: no player-specific crop rules or asset list.
+    photo.src='/assets/players/portraits/'+record.playerId+'.webp';portrait.append(photo);
+    const label=create('span',undefined,'fa-dev-stats-player-label');
+    const clubLink=create('a',club.primaryName,'fa-dev-stats-club-link app-world-standing-club-link');clubLink.href=clubRoute;clubLink.title=club.primaryName;
+    label.append(name,clubLink);identityNode.append(portrait,label);
+   }else identityNode.append(crest,name);
+   li.append(create('span',rank,'fa-dev-stats-rank'),identityNode,create('strong',format(key,record[key])));return li;
   }
   function showAll(button,records,key,labelKey,label,player){
    removeDialog(false);opener=button;

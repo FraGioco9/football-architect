@@ -41,13 +41,13 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevGoals','statsDevAppearances','statsDevStarts','statsDevMinutes']);
    assert.equal(await cards.first().locator('li strong').first().textContent(),'1');
    assert.equal(await cards.first().locator('li strong').nth(1).textContent(),'0');
-   assert.equal(await cards.first().locator('li a[href="/players/2"]').count(),1);
-   assert.equal(await cards.first().locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').first().getAttribute('aria-label'),'QA Club 1');
+   assert.equal(await cards.first().locator('li .fa-dev-stats-team-name[href="/players/2"]').count(),1);
+   assert.equal(await cards.first().locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').first().textContent(),'QA Club 1');
    const before=await cards.first().boundingBox();
    const expand=cards.first().locator('.fa-dev-stats-expand');await expand.click();
    const dialog=page.locator('dialog[open]');
    assert.equal(await dialog.locator('li').count(),22);
-   assert.equal(await dialog.locator('a[href="/players/1"]').textContent(),'#1');
+   assert.equal(await dialog.locator('.fa-dev-stats-team-name[href="/players/1"]').textContent(),'#1');
    await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
    for(const mode of ['mixed','fallback','no-games','archive']){
     await page.evaluate(mode=>window.__stats643Supply(mode),mode);
@@ -57,7 +57,15 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
      assert.equal(await page.locator('dialog[open] li').count(),11);
      await page.keyboard.press('Escape');
     }else if(mode==='fallback'||mode==='no-games')assert.equal(await cards.locator('li').count(),0);
-    else assert.equal(await cards.locator('a[href="/players/58"]').count(),4);
+    else {
+     assert.equal(await cards.locator('.fa-dev-stats-team-name[href="/players/58"]').count(),4);
+     const portrait=cards.first().locator('.fa-dev-stats-player-portrait');
+     await portrait.locator('img').waitFor({state:'visible'});
+     const crop=await portrait.evaluate(el=>({radius:getComputedStyle(el).borderRadius,overflow:getComputedStyle(el).overflow,width:el.clientWidth,height:el.clientHeight,imageWidth:el.querySelector('img').getBoundingClientRect().width,state:el.dataset.portraitState}));
+     assert.equal(crop.radius,'50%');assert.equal(crop.overflow,'hidden');assert.equal(crop.width,crop.height);assert.equal(crop.state,'ready');assert.ok(crop.imageWidth>crop.width*2.7);
+     mkdirSync('int24-browser-artifacts',{recursive:true});
+     await page.screenshot({path:`int24-browser-artifacts/stats-643-face-${engine}-${id}-${width}.png`,fullPage:true});
+    }
    }
    await page.evaluate(()=>window.__stats643Supply('real'));
    const after=await cards.first().boundingBox();

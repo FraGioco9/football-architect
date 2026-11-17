@@ -1187,6 +1187,17 @@ svg.site-chevron>path{translate:0 .5px}
 
 .fa-dev-stats-top .app-world-club-crest-placeholder{flex-shrink:0}
 .fa-dev-stats-top .fa-dev-stats-team-name{display:block;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3;font-size:.82rem;font-weight:650}
+/* Generic face crop of the original full portrait; fixed slots match first paint. */
+.fa-dev-stats-player-portrait{display:block;position:relative;overflow:hidden;isolation:isolate;width:48px;height:48px;flex:0 0 48px;border-radius:50%;background:var(--surface-raised);color:var(--muted,#839994)}
+.fa-dev-stats-player-portrait img{display:block;position:absolute;width:280%;max-width:none;height:auto;left:50%;top:0;transform:translateX(-50%)}
+.fa-dev-stats-player-portrait:not([data-portrait-state="ready"]) img{visibility:hidden}
+.fa-dev-stats-player-portrait[data-portrait-state="missing"]::before{content:"";position:absolute;left:32%;top:17%;width:36%;height:39%;border-radius:50%;background:currentColor;opacity:.65}
+.fa-dev-stats-player-portrait[data-portrait-state="missing"]::after{content:"";position:absolute;left:17%;bottom:-9%;width:66%;height:48%;border-radius:50% 50% 0 0;background:currentColor;opacity:.65}
+.fa-dev-stats-player-label{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}
+.fa-dev-stats-player-label .fa-dev-stats-team-name,.fa-dev-stats-player-label .fa-dev-stats-club-link{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fa-dev-stats-player-label .fa-dev-stats-club-link{max-width:100%;font-size:.68rem;line-height:1.3;opacity:.7;overflow-wrap:anywhere}
+@media(max-width:620px){.fa-dev-stats-player-portrait{width:40px;height:40px;flex-basis:40px}}
+
 @media(max-width:420px){.fa-dev-stats-top li{grid-template-columns:20px minmax(0,1fr) minmax(3ch,auto);column-gap:6px}}
 
 /* UI refinement: compact Rules and international standings qualification. */

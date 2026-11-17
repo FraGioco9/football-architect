@@ -222,10 +222,10 @@ test('A03-04E2: supplied domestic and cup rankings link verified player IDs and 
   const links=walk(byClass(r,'fa-dev-stats-dialog')[0]).filter(n=>n.tagName==='a').map(n=>n.href).sort();
   const expected=c.seasonData.participants.map(club=>'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview').sort();
   assert.deepEqual(links,expected,id);assert.ok(calls.length>=count);
-  buttons(r)[2].emit('click');assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/1').length,4);
+  buttons(r)[2].emit('click');assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/1').length,8);
   assert.equal(byClass(r,'fa-dev-stats-club-link').length,4);
   assert.equal(byClass(r,'fa-dev-stats-club-link')[0].href,'/clubs/it/1/overview');
-  assert.equal(byClass(r,'fa-dev-stats-club-link')[0].getAttribute('aria-label'),'Team 01');
+  assert.equal(byClass(r,'fa-dev-stats-club-link')[0].textContent,'Team 01');
  }
 });
 
@@ -236,7 +236,7 @@ test('COMP-STATS-643: numeric ID breaks equal-name ties; show all preserves rank
  }));
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  const first=byClass(r,'fa-dev-stats-top')[0];
- assert.deepEqual(first.children.map(n=>n.children[1].children[1].href),[1,2,3,4,5].map(id=>'/players/'+id));
+ assert.deepEqual(first.children.map(n=>n.children[1].children[1].children[0].href),[1,2,3,4,5].map(id=>'/players/'+id));
  assert.deepEqual(first.children.map(n=>n.children[0].textContent),Array(5).fill('1'));
  byClass(r,'fa-dev-stats-expand')[0].emit('click');
  const dialog=byClass(r,'fa-dev-stats-dialog')[0];
@@ -248,7 +248,7 @@ test('COMP-STATS-643: missing name shows numeric identity; duplicate club/player
  const r=fixture(),c=supplied('int-1',24);c.seasonData.statistics.players=[record];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  assert.ok(contents(r.panel).includes('#58'));
- assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/58').length,4);
+ assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/58').length,8);
  for(const bad of [{playerId:'58'},{playerId:0},{starts:2},{minutes:null},{goals:-1},{name:''}]){
   const f=fixture(),next=supplied('int-1',24);next.seasonData.statistics.players=[{...record,...bad}];
   f.api.mount(f.panel,next);assert.ok(contents(f.panel).includes('Statistics are unavailable.'));
@@ -258,4 +258,22 @@ test('COMP-STATS-643: missing name shows numeric identity; duplicate club/player
  // The same player may have separate frozen contribution rows after a club change.
  const changed=fixture();c.seasonData.statistics.players=[record,{...record,clubKey:'IT-2'}];changed.api.mount(changed.panel,c);
  buttons(changed)[2].emit('click');assert.equal(changed.nodes().filter(n=>n.tagName==='li').length,8);
+});
+
+test('COMP-STATS-643: circular face photos use generic player paths and an honest missing-photo silhouette',()=>{
+ const r=fixture(),c=supplied('int-1',24);
+ c.seasonData.statistics.players=[{playerId:58,name:'Recorded Player',clubKey:'IT-1',appearances:1,starts:1,minutes:90,goals:0}];
+ r.api.mount(r.panel,c);buttons(r)[2].emit('click');
+ const portraits=byClass(r,'fa-dev-stats-player-portrait');assert.equal(portraits.length,4);
+ for(const portrait of portraits){
+  assert.equal(portrait.href,'/players/58');assert.equal(portrait.dataset.portraitState,'loading');
+  const photo=portrait.children[0];assert.equal(photo.src,'/assets/players/portraits/58.webp');
+  assert.equal(photo.alt,'');assert.equal(photo.loading,'lazy');
+  photo.onload();assert.equal(portrait.dataset.portraitState,'ready');
+  photo.onerror();assert.equal(portrait.dataset.portraitState,'missing');
+ }
+ assert.equal(r.nodes().filter(n=>n.dataset.clubCrest).length,0,'player cards must not display club logos');
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(css,/\.fa-dev-stats-player-portrait\{[^}]*overflow:hidden[^}]*width:48px;height:48px[^}]*border-radius:50%/);
+ assert.match(css,/\.fa-dev-stats-player-portrait img\{[^}]*width:280%[^}]*height:auto[^}]*left:50%;top:0/);
 });

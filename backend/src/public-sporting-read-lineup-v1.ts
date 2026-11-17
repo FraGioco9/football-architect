@@ -16,6 +16,7 @@ import type {LineupSportingScoreV1} from './lineup-sporting-day-plan.ts';
 import type {FrozenLineupMatchV1} from './lineup-season-replay.ts';
 import type {LineupMatchResultV1} from './temporary-lineup-v1.mjs';
 import {rankLeagueTable} from './league-standings.ts';
+import {withOfficialClubMatchIds} from './public-club-fixture-match-ids.ts';
 import type {Fixture} from './initial-schedule.ts';
 import {readSeasonKnockoutTies,readSeasonCalendarHash,readSeasonArchiveSummary,readSeasonCloseReceipt} from './season-evidence-repository.ts';
 interface Archive {generation:string;calendar_hash:string;results_hash:string;knockout_hash:string;archive_hash:string;results_count:number;days_count:number;ties_count:number;created_at:number}
@@ -253,8 +254,12 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
      a.marker.localeCompare(b.marker,'en')||a.id.localeCompare(b.id,'en'));
    if(fixtures.some(f=>!competitionIds.has(f.competitionId)||
      (f.result!==null)!==(f.day<=viewedWorld.day)))invalid();
+   // Carry persisted public IDs in the verified club response so the client
+   // does not download two full public competition match collections.
+   const linked=await withOfficialClubMatchIds(db,world.generation,selectedSeason,
+    fixturesClubKey,[...competitionIds],fixtures);
    const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},
-    competitions:[...competitionIds],fixtures};
+    competitions:[...competitionIds],fixtures:linked};
    await unchanged(db,world);
    return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
     provenance:{kind:'authoritative' as const,resultAuthority:'temporary-lineup-v1' as const,
