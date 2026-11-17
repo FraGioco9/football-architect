@@ -421,6 +421,17 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  newest.emit("pointerenter",{pointerType:"mouse"});
  assert.equal(tooltip.hidden,false);
  assert.equal(newest.attrs["aria-describedby"],"app-world-form-tooltip");
+ // After a mouse click the button can retain focus; pointer exit must still dismiss.
+ r.document.activeElement=newest;
+ newest.emit("focus");
+ newest.emit("click");
+ newest.emit("pointerleave",{pointerType:"mouse"});
+ assert.equal(newest.attrs["aria-describedby"],undefined);
+ assert.equal(tooltip.className,"app-world-form-tooltip is-closing");
+ tooltip.emit("animationend",{target:tooltip,animationName:"app-world-tooltip-out"});
+ assert.equal(tooltip.hidden,true);
+ r.document.activeElement=null;
+ newest.emit("pointerenter",{pointerType:"mouse"});
  assert.equal(metadata.children[0].children[1].textContent,"15");
  assert.match(scoreline.children[1].children.map(part=>part.textContent).join(""),/^(?:1 – 2|2 – 1|1 – 1)$/);
  assert.ok(scoreline.children[0].textContent);

@@ -1095,7 +1095,7 @@
       });
       button.addEventListener("pointerleave",event => {
         if ((event.pointerType === "mouse" || event.pointerType === "pen") &&
-            active === button && document.activeElement !== button) close();
+            active === button) close();
       });
       button.addEventListener("focus",() => open(entry));
       button.addEventListener("blur",() => { if (active === button) close(); });
