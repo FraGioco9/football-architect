@@ -342,6 +342,8 @@
     "backend/tests/lineup-day13-e2e-runtime.test.ts": "backend-runtime",
     "backend/tests/lineup-archive-v2-runtime.test.ts": "backend-runtime",
     "backend/tests/lineup-season56-e2e-runtime.test.ts": "backend-runtime",
+    "tests/standings-subviews-ui.test.mjs": "site-node",
+    "tests/standings-subviews.test.mjs": "site-node",
     "tests/v2-cutover.test.mjs": "site-node"
   }
 }

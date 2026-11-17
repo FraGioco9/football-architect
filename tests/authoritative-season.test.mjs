@@ -58,6 +58,28 @@ test('confirmed entrants hydrate an unranked zero-stat standings table without a
   r.lost===0&&r.gf===0&&r.ga===0&&r.gd===0&&r.pts===0&&r.recent.length===0));
  assert.ok(Object.isFrozen(data));
 });
+test('confirmed entrants use alphabetical primary names for domestic and international standings',()=>{
+ const international=manifest.competitions.find(c=>c.id==='int-1');
+ const selections=[[definition,clubs],
+  [international,manifest.divisions.filter(d=>d.tier===1).flatMap(d=>d.clubs.slice(0,3))]];
+ for(const [competition,members] of selections){
+  assert.equal(members.length,competition.capacity);
+  const raw=confirmedEntrants();
+  raw.competitionId=competition.id;
+  raw.data.rulesVersion=competition.rules.version;
+  const incoming=members.map(c=>c.countryId+'-'+c.clubId).reverse();
+  raw.data.participants=[...incoming];
+  const context={definition:competition,selectedSeason:1,revision:1};
+  const data=adaptAuthoritativeSeason(validateAuthoritativeSeason(raw,context,manifest),context,manifest);
+  const sorted=[...members].sort((a,b)=>a.primaryName.localeCompare(b.primaryName,'en',{sensitivity:'base'})||
+   (a.countryId+'-'+a.clubId).localeCompare(b.countryId+'-'+b.clubId,'en'));
+  assert.deepEqual(data.participants.map(c=>c.countryId+'-'+c.clubId),
+   sorted.map(c=>c.countryId+'-'+c.clubId),competition.id+' sorts by name, not membership ID');
+  assert.deepEqual(data.statistics.standings.map(row=>row.club),data.participants,
+   competition.id+' desktop and compact standings receive the same row order');
+  assert.deepEqual(raw.data.participants,incoming,'canonical transport membership order remains untouched');
+ }
+});
 test('confirmed entrants reject forged schedules, results, provenance and future-season leakage',()=>{
  for(const edit of [
   r=>{r.data.fixtures=[]},
