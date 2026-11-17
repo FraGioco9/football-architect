@@ -1,13 +1,24 @@
 # Competition player statistics (#643)
 
-Competition > Stats > Players shows goals, appearances, starts and minutes for the selected competition and season, including that competition's postseason. Values come exclusively from verified immutable `temporary-lineup-v1` appearances. Shootout goals, anonymous team-fallback goals and future matches never create player contributions. Team totals can therefore exceed attributed player totals.
+Competition > Stats > Players uses the selected competition/season's verified immutable `temporary-lineup-v1` receipts, including its postseason. The owner's approved order is:
 
-The existing public season response adds nullable `displayName` to each `statistics.players` row. One bound JSON ID-list query reads only persisted player names, without current affiliation joins or per-player HTTP calls. Sporting totals and `clubId` remain receipt-derived, including in archives. Name enrichment is presentation metadata, not part of the frozen receipt or archive digest. A missing identity label is `null`; the UI displays the numeric ID and links to the player route. Older responses without `displayName` remain readable.
+1. Test rating — mean of recorded ratings, with the number of rated appearances: `6.75 (20)`.
+2. Goals.
+3. Assists.
+4. Goals + assists per 90 minutes: `(goals + assists) × 90 / minutes`.
+5. Goalkeeper clean sheets.
+6. Starts (substitute appearances): `12 (3)`.
+7. Red cards.
+8. Minutes.
 
-The adapter retains only player ID, name, recorded club and the four supported counters. The existing four cards, five-row previews and Show all dialog are reused. Player rows display a circular CSS face crop from the generic persistent-ID portrait path; failed image loads show a neutral silhouette. Player photos/names link to the player, while the recorded club remains a separate text link. No per-player crop settings or portrait image bytes are changed. Rankings descend by value; ties share the same rank, followed by English name, club key and numeric player ID for stable ordering. A player with contributions for two clubs has separate club/player rows.
+There is no yellow-card ranking. Five-row previews, Show all, tied ranks, deterministic sorting, five translations and circular face photos are shared by every supported competition. Photos use generic persistent-ID paths and CSS cropping; missing files use a neutral silhouette. Player/name links open Player Detail; recorded-club text links preserve historical club contributions.
 
-Recorded zero is displayed as `0`. Assists, ratings, cards, shots and player clean sheets are not projected or displayed as zero. An unplayed season and a played season containing only fallback participants have honest empty player views. First-paint templates use the same four labels and geometry as hydration; labels are translated in EN/DE/ES/FR/IT.
+Only recorded values enter rankings. Null metrics display a dash, never a fabricated zero. The current simulator does not record assists, red-card events or substitutes. Therefore assists, red cards and G+A/90 remain unavailable; existing frozen appearances are all starts and have zero actual substitute appearances. Those event models are not invented by the read API. Minutes remain actual frozen minutes; shootouts do not inflate goals or minutes.
 
-Coverage lives in the existing authoritative-season and Stats view Node contracts, the isolated day-13 XI/mixed D1 E2E, and the season-56 fallback/archive D1 E2E. `competition-player-stats-browser.mjs` is a presentation fixture helper called by full Chromium, full WebKit and targeted competition browser owners. It covers domestic and both cup layouts at desktop/mobile widths, links, ties, unknown names, fallback, archive, season changes and absence of per-player HTTP calls. Browser fixtures are not hosted sporting evidence or physical iPhone Safari certification.
+Clean sheets are derived for the **actual frozen GK role only**, including an emergency goalkeeper playing that role, when the recorded appearance covers the complete match and the opponent scored no regulation/extra-time goals. Shootout goals do not affect clean sheets. Outfield players and incomplete keeper participation have null clean-sheet eligibility. A full participating keeper who conceded has recorded zero. This needs no receipt rewrite or resimulation.
 
-No migration, historical backfill, receipt rewrite, simulation change, remote D1 operation or deployment is required by this change. Club Stats, Player Detail Stats, Roster and directory integrations remain separate work.
+Ratings remain temporary `test-rating-v1` values, not a realistic evaluation model. The mean divides by **rated appearances**, excluding unrated historical receipts. Old unrated appearances remain in ordinary participation/minutes totals.
+
+The backend aggregate and dedicated per-match statistics API reuse `frozenMatchPlayerStatistics`; there is no second sporting authority. The existing competition response retains only public player ID, identity and supported counters. New receipts freeze ID, full name and primary nationality. Complete frozen identities need no live directory reads; legacy competition rows may obtain missing labels through one collective bound ID-list query, without current affiliations or per-player requests. The original club and sporting counters always come from receipts.
+
+Tests cover adapter/renderer contracts, mixed/XI/fallback matches, identity immutability, historical/unrated receipts, archive replay, a complete 56-day lifecycle and independent desktop/mobile match/statistics loading. Browser emulation is not physical iPhone Safari certification.

@@ -68,7 +68,7 @@ async function confirmedPublication(db:Database,row:PublicationSource):Promise<C
  return calendar;
 }
 
-export async function readPublicMatchLineupV1(db:Database,matchId:string){
+async function readVerifiedPublicMatchV1(db:Database,matchId:string){
  if(typeof matchId!=='string'||!/^[1-9][0-9]*$/.test(matchId))return missing();
  const numberId=Number(matchId);
  if(!Number.isSafeInteger(numberId)||numberId<1)return missing();
@@ -111,14 +111,28 @@ export async function readPublicMatchLineupV1(db:Database,matchId:string){
   after.seasonNumber!==world.seasonNumber||after.day!==world.day||after.phase!==world.phase)
   throw new ApiError(409,'stale_world');
  const result=frozen?.result??null;
- return {schemaVersion:1,providerId:'authoritative-world',matchId:String(mapping.id),season:row.season_number,
+ const match={schemaVersion:1,providerId:'authoritative-world',matchId:String(mapping.id),season:row.season_number,
   competitionId:row.competition_id,stageId:row.phase_id,
   round:row.round_number,day:row.scheduled_day,
   homeParticipant:{clubId:row.home_club_id},awayParticipant:{clubId:row.away_club_id},
   status:result?'completed':'scheduled',result,
-  lineup:frozen?.players??null,
   venue:(()=>{const name=matchSlotStadium(row.home_club_id,row.stadium_name);return name?{name}:null})(),kickoff:null,
   provenance:{kind:'authoritative',receiptHash:frozen?.provenance.receiptHash??null}};
+ return {match,statistics:frozen?.statistics??null};
+}
+
+
+/** Header/result transport never includes individual statistics. */
+export async function readPublicMatchLineupV1(db:Database,matchId:string){
+ return (await readVerifiedPublicMatchV1(db,matchId)).match;
+}
+/** The same verified receipt authority, dedicated player-statistics transport. */
+export async function readPublicMatchStatisticsV1(db:Database,matchId:string){
+ const {match,statistics}=await readVerifiedPublicMatchV1(db,matchId);
+ return {schemaVersion:1,providerId:'authoritative-world',matchId:match.matchId,
+  season:match.season,competitionId:match.competitionId,status:match.status,
+  homeClubId:match.homeParticipant?.clubId??null,awayClubId:match.awayParticipant?.clubId??null,
+  provenance:match.provenance,statistics};
 }
 
 /**
@@ -306,7 +320,7 @@ async function readPublicReservedKnockoutLineupV1(
  if(after.generation!==world.generation||after.revision!==world.revision||
   after.seasonNumber!==world.seasonNumber||after.day!==world.day||after.phase!==world.phase)
   throw new ApiError(409,'stale_world');
- return {schemaVersion:1,providerId:'authoritative-world',matchId:publicMatchId,season:row.season_number,
+ const match={schemaVersion:1,providerId:'authoritative-world',matchId:publicMatchId,season:row.season_number,
   competitionId:row.competition_id,stageId:row.phase_id,tieId:row.tie_id,
   round:row.round_number,day:row.scheduled_day,leg:row.leg,
   neutral:row.home_policy==='neutral',
@@ -315,9 +329,9 @@ async function readPublicReservedKnockoutLineupV1(
   awayParticipant:resolved?{clubId:resolved.awayClubId}:null,
   status:resolved?.result?'completed':resolved?'scheduled':'awaiting_participants',
   result:frozen?.result??null,
-  lineup:frozen?.players??null,
   venue:resolved&&row.home_policy!=='neutral'
    ?(()=>{const name=canonicalHomeStadium(resolved.homeClubId);return name?{name}:null})()
    :null,kickoff:null,
   provenance:{kind:'authoritative',receiptHash:frozen?.provenance.receiptHash??null}};
+ return {match,statistics:frozen?.statistics??null};
 }

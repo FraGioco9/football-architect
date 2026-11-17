@@ -21,6 +21,8 @@ export interface LineupMatchResultV1 {
  algorithmVersion:'temporary-lineup-v1';
  /** Absent on existing frozen pre-rating V2 receipts, never silently backfilled. */
  ratingVersion?:'test-rating-v1';
+ playerIdentityVersion?:'player-identity-v1';
+ playerIdentities?:Array<{playerId:number;name:string|null;nationality:string|null}>;
  mode:'xi_vs_xi'|'xi_vs_fallback'|'fallback_vs_xi'|'fallback_vs_fallback';
  matchKey:string;homeClubId:string;awayClubId:string;
  sourceSeedHash:string;context:LineupMatchContextV1;neutral:boolean;

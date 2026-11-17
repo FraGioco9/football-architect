@@ -43,7 +43,7 @@ function supplied(id,count){
  c.seasonData={season:1,rulesVersion:c.definition.rules.version,participants,fixtures:null,results:null,status:'partial',statistics:{overview:{matchesPlayed:12,totalGoals:36,goalsPerMatch:3},teams,players:[]}};
  return c;
 }
-test('STATS-PUBLIC: domestic and both cup contexts expose 3/7/4 empty cards with no fake zero values',()=>{
+test('STATS-PUBLIC: domestic and both cup contexts expose 3/7/8 empty cards with no fake zero values',()=>{
  for(const id of ['IT-1','int-1','int-2']){
   const r=fixture();assert.equal(typeof r.api?.mount,'function');
   r.api.mount(r.panel,context(id));
@@ -51,7 +51,7 @@ test('STATS-PUBLIC: domestic and both cup contexts expose 3/7/4 empty cards with
   assert.equal(byClass(r,'app-competition-stat-value').length,0);
   buttons(r)[1].emit('click');assert.equal(byClass(r,'fa-dev-stats-team-card').length,7);
   assert.equal(byClass(r,'fa-dev-stats-top').length,0);
-  buttons(r)[2].emit('click');assert.equal(byClass(r,'fa-dev-stats-leader-card').length,4);
+  buttons(r)[2].emit('click');assert.equal(byClass(r,'fa-dev-stats-leader-card').length,8);
   assert.equal(byClass(r,'fa-dev-stats-expand').length,0);
  }
 });
@@ -60,7 +60,7 @@ test('QA-11: loading-shell Stats selection survives hydration and season changes
   const r=fixture();r.panel.dataset.faStatsSelectedView='players';
   const mounted=r.api.mount(r.panel,context(id));
   assert.equal(r.panel.dataset.faStatsSelectedView,'players');
-  assert.equal(byClass(r,'fa-dev-stats-leader-card').length,4);
+  assert.equal(byClass(r,'fa-dev-stats-leader-card').length,8);
   r.panel.emit('fa:stats-shell-selection',{detail:'teams'});
   assert.equal(r.panel.dataset.faStatsSelectedView,'teams');
   assert.equal(byClass(r,'fa-dev-stats-team-card').length,7);
@@ -68,7 +68,7 @@ test('QA-11: loading-shell Stats selection survives hydration and season changes
   assert.equal(r.panel.dataset.faStatsSelectedView,'teams');
   assert.equal(byClass(r,'fa-dev-stats-top').length,7);
   r.panel.emit('fa:stats-shell-selection',{detail:'players'});
-  assert.equal(byClass(r,'fa-dev-stats-leader-card').length,4);
+  assert.equal(byClass(r,'fa-dev-stats-leader-card').length,8);
   mounted.update({...ready,revision:3,selectedSeason:2,seasonData:null});
   assert.equal(r.panel.dataset.faStatsSelectedView,'players');
   assert.equal(byClass(r,'fa-dev-stats-top').length,0);
@@ -76,7 +76,7 @@ test('QA-11: loading-shell Stats selection survives hydration and season changes
 });
 test('QA-11: Teams and Players loading crests match the Standings circular skeleton, not the missing-logo shield',()=>{
  const r=fixture();
- for(const [view,count] of [['teams',35],['players',20]]){
+ for(const [view,count] of [['teams',35],['players',40]]){
   const markup=r.api.renderSkeleton(view);
   assert.equal((markup.match(/class="app-view-skeleton-crest-slot"/g)||[]).length,count,view+' reserves one circle per pending row');
   assert.equal((markup.match(/app-world-club-crest-placeholder/g)||[]).length,0,view+' loading never renders the no-logo shield');
@@ -91,7 +91,7 @@ test('QA-11: Teams and Players loading crests match the Standings circular skele
 });
 test('QA-11: Stats skeleton cards reserve Show all size before hydration in domestic and international shells',()=>{
  const r=fixture();
- for(const [view,count] of [['teams',7],['players',4]]){
+ for(const [view,count] of [['teams',7],['players',8]]){
   const markup=r.api.renderSkeleton(view);
   assert.equal((markup.match(/class="fa-dev-stats-expand app-view-skeleton-stats-expand"/g)||[]).length,count,view+' reserves one footer per card');
   assert.equal((markup.match(/class="app-view-skeleton-stats-expand-label" data-app-i18n="statsDevShowAll">Show all<\/span>/g)||[]).length,count,view+' reserves translated button text metrics');
@@ -173,11 +173,11 @@ test('STATS-PLAYERS: recorded participation populates four supported rankings wi
  const r=fixture(),c=supplied('int-1',24);
  c.seasonData.statistics.players=[{playerId:1,name:'Supplied Player',clubKey:'IT-1',appearances:2,starts:2,minutes:150,goals:0}];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
- assert.equal(byClass(r,'fa-dev-stats-leader-card').length,4);
+ assert.equal(byClass(r,'fa-dev-stats-leader-card').length,8);
  assert.ok(contents(r.panel).includes('150'));assert.ok(contents(r.panel).includes('Supplied Player'));
- assert.deepEqual(byClass(r,'fa-dev-stats-leader-title').map(n=>n.dataset.appI18n),['statsDevGoals','statsDevAppearances','statsDevStarts','statsDevMinutes']);
+ assert.deepEqual(byClass(r,'fa-dev-stats-leader-title').map(n=>n.dataset.appI18n),['statsDevAverageRating','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevRedCards','statsDevMinutes']);
  assert.equal(byClass(r,'fa-dev-stats-top')[0].children[0].children.at(-1).textContent,'0','recorded zero is visible');
- assert.equal(r.nodes().filter(n=>n.tagName==='li').length,4);
+ assert.equal(r.nodes().filter(n=>n.tagName==='li').length,3);
 });
 test('STATS-PARTIAL: unplayed teams do not erase played statistics or enter rankings',()=>{
  const r=fixture(),c=supplied('int-1',24);
@@ -210,7 +210,7 @@ test('STATS-ERROR: invalid supplied records differ from an ordinary empty season
  r.api.mount(r.panel,c);
  assert.ok(r.nodes().some(node=>node.dataset.appI18n==='statsDevUnavailable'));
  assert.equal(byClass(r,'app-competition-stat-value').length,0);
- buttons(r)[2].emit('click');assert.equal(byClass(r,'fa-dev-stats-leader-card').length,4);
+ buttons(r)[2].emit('click');assert.equal(byClass(r,'fa-dev-stats-leader-card').length,8);
 });
 
 test('A03-04E2: supplied domestic and cup rankings link verified player IDs and recorded clubs',()=>{
@@ -222,8 +222,8 @@ test('A03-04E2: supplied domestic and cup rankings link verified player IDs and 
   const links=walk(byClass(r,'fa-dev-stats-dialog')[0]).filter(n=>n.tagName==='a').map(n=>n.href).sort();
   const expected=c.seasonData.participants.map(club=>'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview').sort();
   assert.deepEqual(links,expected,id);assert.ok(calls.length>=count);
-  buttons(r)[2].emit('click');assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/1').length,8);
-  assert.equal(byClass(r,'fa-dev-stats-club-link').length,4);
+  buttons(r)[2].emit('click');assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/1').length,6);
+  assert.equal(byClass(r,'fa-dev-stats-club-link').length,3);
   assert.equal(byClass(r,'fa-dev-stats-club-link')[0].href,'/clubs/it/1/overview');
   assert.equal(byClass(r,'fa-dev-stats-club-link')[0].textContent,'Team 01');
  }
@@ -248,7 +248,7 @@ test('COMP-STATS-643: missing name shows numeric identity; duplicate club/player
  const r=fixture(),c=supplied('int-1',24);c.seasonData.statistics.players=[record];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  assert.ok(contents(r.panel).includes('#58'));
- assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/58').length,8);
+ assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/58').length,6);
  for(const bad of [{playerId:'58'},{playerId:0},{starts:2},{minutes:null},{goals:-1},{name:''}]){
   const f=fixture(),next=supplied('int-1',24);next.seasonData.statistics.players=[{...record,...bad}];
   f.api.mount(f.panel,next);assert.ok(contents(f.panel).includes('Statistics are unavailable.'));
@@ -257,14 +257,14 @@ test('COMP-STATS-643: missing name shows numeric identity; duplicate club/player
  assert.ok(contents(dup.panel).includes('Statistics are unavailable.'));
  // The same player may have separate frozen contribution rows after a club change.
  const changed=fixture();c.seasonData.statistics.players=[record,{...record,clubKey:'IT-2'}];changed.api.mount(changed.panel,c);
- buttons(changed)[2].emit('click');assert.equal(changed.nodes().filter(n=>n.tagName==='li').length,8);
+ buttons(changed)[2].emit('click');assert.equal(changed.nodes().filter(n=>n.tagName==='li').length,6);
 });
 
 test('COMP-STATS-643: circular face photos use generic player paths and an honest missing-photo silhouette',()=>{
  const r=fixture(),c=supplied('int-1',24);
  c.seasonData.statistics.players=[{playerId:58,name:'Recorded Player',clubKey:'IT-1',appearances:1,starts:1,minutes:90,goals:0}];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
- const portraits=byClass(r,'fa-dev-stats-player-portrait');assert.equal(portraits.length,4);
+ const portraits=byClass(r,'fa-dev-stats-player-portrait');assert.equal(portraits.length,3);
  for(const portrait of portraits){
   assert.equal(portrait.href,'/players/58');assert.equal(portrait.dataset.portraitState,'loading');
   const photo=portrait.children[0];assert.equal(photo.src,'/assets/players/portraits/58.webp');
@@ -276,4 +276,15 @@ test('COMP-STATS-643: circular face photos use generic player paths and an hones
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  assert.match(css,/\.fa-dev-stats-player-portrait\{[^}]*overflow:hidden[^}]*width:48px;height:48px[^}]*border-radius:50%/);
  assert.match(css,/\.fa-dev-stats-player-portrait img\{[^}]*width:280%[^}]*height:auto[^}]*left:50%;top:0/);
+});
+
+test('COMP-STATS: rating uses rated appearances, starts display substitutes and unavailable metrics stay dashes',()=>{
+ const r=fixture(),c=supplied('int-1',24);
+ c.seasonData.statistics.players=[{playerId:58,name:'Keeper',nationality:'ITA',clubKey:'IT-1',appearances:13,starts:10,minutes:900,goals:0,assists:null,cleanSheets:6,redCards:null,averageRating:7.25,ratedAppearances:4}];
+ r.api.mount(r.panel,c);buttons(r)[2].emit('click');
+ const cards=byClass(r,'fa-dev-stats-leader-card');
+ assert.equal(cards[0].children[1].children[0].children.at(-1).textContent,'7.25 (4)');
+ assert.equal(cards[5].children[1].children[0].children.at(-1).textContent,'10 (3)');
+ for(const i of [2,3,6])assert.equal(cards[i].children[1].textContent,'—');
+ assert.ok(!byClass(r,'fa-dev-stats-leader-title').some(n=>/yellow/i.test(n.dataset.appI18n)));
 });

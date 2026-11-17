@@ -30,36 +30,38 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
      const next=structuredClone(data);
      next.statistics.players=mode==='fallback'?[]:Array.from({length:mode==='mixed'?11:22},(_,i)=>({playerId:i+1,name:i===0?null:'QA Player '+String(i+1).padStart(2,'0'),clubKey:mode==='mixed'||i<11?'IT-1':'IT-2',appearances:1,starts:1,minutes:i===0?75:90,goals:i===1?1:0}));
      if(mode==='no-games'){next.statistics.players=[];next.statistics.overview={matchesPlayed:0,totalGoals:0,goalsPerMatch:0};}
-     if(mode==='archive'){next.seasonState={day:56,phase:'closed'};next.status='available';next.statistics.players=[{playerId:58,name:'Archived Player',clubKey:'IT-1',appearances:30,starts:30,minutes:2700,goals:0}];}
+     if(mode==='archive'){next.seasonState={day:56,phase:'closed'};next.status='available';next.statistics.players=[{playerId:58,name:'Archived Player',clubKey:'IT-1',appearances:30,starts:30,minutes:2700,goals:0,averageRating:6.75,ratedAppearances:20,cleanSheets:10}];}
      if(!window.faCompetitionContextApi.replaceSeasonData(next,window.faCompetitionContext.revision))throw Error('Stats fixture rejected');
     };
     window.__stats643Supply('real');
    });
    await page.locator('#fa-dev-stats [data-stats-view="players"]').click();
    const cards=page.locator('#fa-dev-stats .fa-dev-stats-leader-card');
-   assert.equal(await cards.count(),4);
-   assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevGoals','statsDevAppearances','statsDevStarts','statsDevMinutes']);
-   assert.equal(await cards.first().locator('li strong').first().textContent(),'1');
-   assert.equal(await cards.first().locator('li strong').nth(1).textContent(),'0');
-   assert.equal(await cards.first().locator('li .fa-dev-stats-team-name[href="/players/2"]').count(),1);
-   assert.equal(await cards.first().locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').first().textContent(),'QA Club 1');
-   const before=await cards.first().boundingBox();
-   const expand=cards.first().locator('.fa-dev-stats-expand');await expand.click();
+   const goals=cards.filter({has:page.locator('[data-app-i18n="statsDevGoals"]')});
+   assert.equal(await cards.count(),8);
+   assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevAverageRating','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevRedCards','statsDevMinutes']);
+   assert.equal(await goals.locator('li strong').first().textContent(),'1');
+   assert.equal(await goals.locator('li strong').nth(1).textContent(),'0');
+   assert.equal(await cards.filter({has:page.locator('[data-app-i18n="statsDevAssists"]')}).locator('.fa-dev-stats-empty').textContent(),'—');
+   assert.equal(await goals.locator('li .fa-dev-stats-team-name[href="/players/2"]').count(),1);
+   assert.equal(await goals.locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').first().textContent(),'QA Club 1');
+   const before=await goals.boundingBox();
+   const expand=goals.locator('.fa-dev-stats-expand');await expand.click();
    const dialog=page.locator('dialog[open]');
    assert.equal(await dialog.locator('li').count(),22);
    assert.equal(await dialog.locator('.fa-dev-stats-team-name[href="/players/1"]').textContent(),'#1');
    await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
    for(const mode of ['mixed','fallback','no-games','archive']){
     await page.evaluate(mode=>window.__stats643Supply(mode),mode);
-    assert.equal(await cards.count(),4);
+    assert.equal(await cards.count(),8);
     if(mode==='mixed'){
-     await cards.first().locator('.fa-dev-stats-expand').click();
+     await goals.locator('.fa-dev-stats-expand').click();
      assert.equal(await page.locator('dialog[open] li').count(),11);
      await page.keyboard.press('Escape');
     }else if(mode==='fallback'||mode==='no-games')assert.equal(await cards.locator('li').count(),0);
     else {
-     assert.equal(await cards.locator('.fa-dev-stats-team-name[href="/players/58"]').count(),4);
-     const portrait=cards.first().locator('.fa-dev-stats-player-portrait');
+     assert.equal(await cards.locator('.fa-dev-stats-team-name[href="/players/58"]').count(),5);
+     const portrait=goals.locator('.fa-dev-stats-player-portrait');
      await portrait.locator('img').waitFor({state:'visible'});
      const crop=await portrait.evaluate(el=>({radius:getComputedStyle(el).borderRadius,overflow:getComputedStyle(el).overflow,width:el.clientWidth,height:el.clientHeight,imageWidth:el.querySelector('img').getBoundingClientRect().width,state:el.dataset.portraitState}));
      assert.equal(crop.radius,'50%');assert.equal(crop.overflow,'hidden');assert.equal(crop.width,crop.height);assert.equal(crop.state,'ready');assert.ok(crop.imageWidth>crop.width*2.7);
@@ -68,7 +70,7 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
     }
    }
    await page.evaluate(()=>window.__stats643Supply('real'));
-   const after=await cards.first().boundingBox();
+   const after=await goals.boundingBox();
    assert.deepEqual(after,before,'stable repeated hydration geometry');
    const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));
    assert.ok(dimensions.scroll<=dimensions.width+2,JSON.stringify(dimensions));

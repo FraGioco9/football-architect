@@ -2,6 +2,7 @@
  * immutable lineup receipts. Wired to HTTP in the Draft/HOLD branch; not deployed.
  * Never re-simulates a match or reads current affiliations on a public GET.
  */
+import {frozenMatchPlayerStatistics} from './match-player-statistics.mjs';
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import type {WorldV1} from './types.ts';
@@ -50,15 +51,16 @@ export function lineupTeamStatisticsV1(
 ){
  const teams=new Map(clubs.map(clubId=>[clubId,{clubId,played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,cleanSheets:0}]));
  let matchesPlayed=0,totalGoals=0;
- const players=new Map<string,{playerId:number;clubId:string;appearances:number;starts:number;minutes:number;goals:number}>();
+ const players=new Map<string,{playerId:number;clubId:string;displayName:string|null;nationality:string|null;appearances:number;starts:number;subAppearances:number;minutes:number;goals:number;assists:null;redCards:null;cleanSheets:number|null;ratedAppearances:number;ratingSum:number}>();
  for(const fixture of fixtures){
   const score=results.get(fixture.id);if(!score)continue;
   const frozen=frozenMatches.get(fixture.id);
   if(!frozen||frozen.fixtureId!==fixture.id||!Number.isSafeInteger(frozen.matchId))
    invalid();
   const complete=frozen.receipt.result as unknown as LineupMatchResultV1;
+  const recorded=frozenMatchPlayerStatistics(complete);
   for(const [kind,club] of [['home',fixture.homeClubId],['away',fixture.awayClubId]] as const){
-   const side=complete[kind];
+   const side=complete[kind],details=new Map(recorded[kind].players.map(p=>[p.playerId,p]));
    if(!side||!Array.isArray(side.appearances))invalid();
    for(const appearance of side.appearances){
     if(!Number.isSafeInteger(appearance.playerId)||appearance.playerId<1||
@@ -67,9 +69,14 @@ export function lineupTeamStatisticsV1(
       !Number.isSafeInteger(appearance.goals)||appearance.goals<0)invalid();
     const key=club+':'+appearance.playerId;
     const previous=players.get(key)??{
-     playerId:appearance.playerId,clubId:club,appearances:0,starts:0,minutes:0,goals:0
+     playerId:appearance.playerId,clubId:club,displayName:null,nationality:null,appearances:0,starts:0,subAppearances:0,minutes:0,goals:0,assists:null,redCards:null,cleanSheets:null,ratedAppearances:0,ratingSum:0
     };
     previous.appearances++;previous.starts++;previous.minutes+=appearance.minutes;
+    const detail=details.get(appearance.playerId);if(!detail)invalid();
+    previous.displayName=detail.name??previous.displayName;
+    previous.nationality=detail.nationality??previous.nationality;
+    if(detail.cleanSheets!==null)previous.cleanSheets=(previous.cleanSheets??0)+detail.cleanSheets;
+    if(detail.rating!==null){previous.ratedAppearances++;previous.ratingSum+=detail.rating;}
     previous.goals+=appearance.goals;players.set(key,previous);
    }
   }
@@ -86,23 +93,26 @@ export function lineupTeamStatisticsV1(
  }
  return {matchesPlayed,totalGoals,goalsPerMatch:matchesPlayed?totalGoals/matchesPlayed:0,
   teams:[...teams.values()].map(t=>({...t,goalDifference:t.goalsFor-t.goalsAgainst})),
-  players:[...players.values()].sort((a,b)=>a.clubId.localeCompare(b.clubId,'en')||a.playerId-b.playerId),
+  players:[...players.values()].map(({ratingSum,...p})=>({...p,averageRating:p.ratedAppearances?Math.round(ratingSum/p.ratedAppearances*100)/100:null})).sort((a,b)=>a.clubId.localeCompare(b.clubId,'en')||a.playerId-b.playerId),
   playerStatus:'available' as const};
 }
 /** Names are read-only identity enrichment; all sporting totals and club IDs
  * remain frozen receipt evidence. A single bound ID list avoids per-player GETs
  * and current-affiliation joins, including when viewing an archived season. */
 async function competitionPlayerIdentities(db:Database,players:ReturnType<typeof lineupTeamStatisticsV1>['players']){
- const ids=[...new Set(players.map(p=>p.playerId))];
- if(!ids.length)return [];
+ const ids=[...new Set(players.filter(p=>p.displayName===null||p.nationality===null).map(p=>p.playerId))];
+ if(!ids.length)return players;
  const rows=(await db.prepare(`SELECT id,
   COALESCE(NULLIF(TRIM(json_extract(payload_json,'$.display_name')),''),
-   TRIM(json_extract(payload_json,'$.first_name')||' '||json_extract(payload_json,'$.last_name'))) AS display_name
+   TRIM(json_extract(payload_json,'$.first_name')||' '||json_extract(payload_json,'$.last_name'))) AS display_name,
+  json_extract(payload_json,'$.nationality') AS nationality
   FROM generated_players WHERE id IN (SELECT value FROM json_each(?))`)
-  .bind(JSON.stringify(ids)).all<{id:number;display_name:string|null}>()).results;
- const names=new Map(rows.map(row=>[row.id,
-  typeof row.display_name==='string'&&row.display_name.trim()?row.display_name.trim():null]));
- return players.map(player=>({...player,displayName:names.get(player.playerId)??null}));
+  .bind(JSON.stringify(ids)).all<{id:number;display_name:string|null;nationality:string|null}>()).results;
+ const names=new Map(rows.map(row=>[row.id,{
+  name:typeof row.display_name==='string'&&row.display_name.trim()?row.display_name.trim():null,
+  nationality:typeof row.nationality==='string'&&/^[A-Z]{3}$/.test(row.nationality)?row.nationality:null}]));
+ return players.map(player=>({...player,displayName:player.displayName??names.get(player.playerId)?.name??null,
+  nationality:player.nationality??names.get(player.playerId)?.nationality??null}));
 }
 function projectFixtures(fixtures:readonly Fixture[],plans:readonly KnockoutTie[],results:ReadonlyMap<string,LineupSportingScoreV1>){
  const metadata=new Map(plans.flatMap(plan=>plan.fixtures.map(item=>[item.fixture.id,{phaseId:plan.phaseId,tieId:plan.tieId,leg:item.leg,neutral:item.neutral}] as const)));
