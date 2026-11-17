@@ -199,7 +199,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
     "document.querySelector('#preset-options [data-value=\"action:"+scene+"\"]').click();"+
     "document.getElementById('me-inline-side-trigger').click();"+
     "document.querySelector('#me-inline-side-options [data-value=\""+side+"\"]').click();"+
-    "for(let n=0;n<10;n++)document.getElementById('step').click();"+
+    "for(let n=0;n<"+(scene==='dribble-1v1'?60:10)+";n++)document.getElementById('step').click();"+
     "return {side:document.getElementById('me-inline-side').value,"+
     "tick:document.getElementById('tick').textContent,"+
     "observation:document.getElementById('me-inline-observation').textContent,"+
@@ -208,7 +208,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.equal(x.side,side);
    assert.equal(x.bodies,'true','new visible exercises default to native body physics');
    assert.equal(x.popup,false);
-   assert.match(x.tick,/^Tick 10/);
+   assert.match(x.tick,scene==='dribble-1v1'?/^Tick 60/:/^Tick 10/);
    assert.match(x.observation,new RegExp(actors+' real physical players'));
    assert.match(x.observation,/source events [1-9]/);
    assert.match(x.observation,/provisional 0–0/);

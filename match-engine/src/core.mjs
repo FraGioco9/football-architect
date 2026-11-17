@@ -557,7 +557,8 @@ export function createEngine(RAPIER, input = {}, {
      {...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
       ...(smallSided?.id==='dribble-1v1'?{
-       isolatedGroundDribbleBallCentreZ:BALL_RADIUS
+       isolatedGroundDribbleBallCentreZ:BALL_RADIUS,
+       dribbleAttackerId:smallSided.side+'-10'
       }:{}),
       ...(diagnosticSmallSidedBodyGuardEnabled?{
        isolatedPhysicalBodies:true

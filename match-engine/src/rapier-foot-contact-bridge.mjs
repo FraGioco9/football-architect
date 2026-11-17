@@ -16,7 +16,8 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
- isolatedPhysicalBodies=false,isolatedGroundDribbleBallCentreZ=null}={}){
+ isolatedPhysicalBodies=false,isolatedGroundDribbleBallCentreZ=null,
+ dribbleAttackerId=null}={}){
  if(!R||typeof R.EventQueue!=='function'||!world||
     typeof world.createRigidBody!=='function'||
     !ballCollider||ballCollider.handle===undefined||
@@ -49,11 +50,30 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     isolatedGroundDribbleBallCentreZ>0.13||
     activePlayerIds?.length!==2))
   throw new TypeError('Only isolated 1v1 original ground-ball shoe height');
+ if((dribbleAttackerId===null)!==(isolatedGroundDribbleBallCentreZ===null)||
+   (dribbleAttackerId!==null&&(
+    !activePlayerIds?.includes(dribbleAttackerId)||
+    !/^(home|away)-10$/.test(dribbleAttackerId))))
+  throw new TypeError('Original D-01 attacker only for native Rapier foot stride');
  const physicalIds=activePlayerIds===null?null:new Set(activePlayerIds);
  const eventQueue=sharedQueue??new R.EventQueue(true);
  const ownsEventQueue=sharedQueue===null;
  const colliders=[],bodies=[],idsByCollider=new Map();
- for(const p of initialPlayers){
+ // Short, continuous foot swing: one real Rapier kinematic collider, not
+ // extra contacts or impulses. 0.105m at 2.5 Hz <=1.65m/s relative shoe.
+ // The original canonical mover still sets player XY/heading, max 4m/s in D-01.
+ function shoeFeet(frame,stepTick){
+  if(dribbleAttackerId===null)return frame;
+  const swingM=-0.105*Math.cos(2*Math.PI*stepTick/24);
+  return Object.freeze(frame.map((p,i)=>{
+   if(initialPlayers[i].id!==dribbleAttackerId)return p;
+   return Object.freeze({...p,
+    x:p.x+swingM*Math.cos(p.facingRad),
+    y:p.y+swingM*Math.sin(p.facingRad)});
+  }));
+ }
+ const stagedFeet=shoeFeet(initialPlayers,0);
+ for(const p of stagedFeet){
   const pose=footProxyTransform(p);
   const groundPose=isolatedGroundDribbleBallCentreZ===null?pose:
    {...pose,z:isolatedGroundDribbleBallCentreZ};
@@ -77,10 +97,11 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   bodies.push(body);colliders.push(collider);
   if(collider)idsByCollider.set(collider.handle,p.id);
  }
- const timeline=createFootContactTimeline();
+ const timeline=createFootContactTimeline(stagedFeet);
  let positions=Object.freeze(initialPlayers.map(p=>
   Object.freeze({x:p.x,y:p.y,facingRad:p.facingRad}))),
   tick=0,disposed=false;
+ let actualShoeFeet=stagedFeet;
  let active=new Set(),solver=null;
  let current=Object.freeze({
   version:FOOT_CONTACT_VERSION,tick:0,
@@ -93,14 +114,20 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   if(nextTick!==tick+1)throw new RangeError('Nonconsecutive physical shoe tick');
   // Validate ALL actors, headings and physical displacement before mutation.
   const next=validateFootContactFrame(playerFrame,nextTick,positions);
-  const poses=next.map(footProxyTransform);
+  const newFeet=shoeFeet(next,nextTick);
+  const poses=newFeet.map(footProxyTransform);
   for(let i=0;i<poses.length;i++){
    const p=poses[i];
+   if(initialPlayers[i].id===dribbleAttackerId){
+    const previous=footProxyTransform(actualShoeFeet[i]);
+    if(Math.hypot(p.x-previous.x,p.y-previous.y)>7/60+1e-5)
+     throw new TypeError('D-01 real shoe exceeds original 7m/s continuity');
+   }
    bodies[i].setNextKinematicTranslation({x:p.x,y:p.y,
     z:isolatedGroundDribbleBallCentreZ??p.z});
    bodies[i].setNextKinematicRotation(p.rotation);
   }
-  positions=next;
+  positions=next;actualShoeFeet=newFeet;
  }
  function observe(nextTick,priorBall,postBall,sharedEvents=null){
   live();
@@ -134,7 +161,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    // Whole-ball delta includes gravity/turf; never shoe attribution.
    onsetBallDeltaVelocityMps:started.size?dv:null
   });
-  const observedTimeline=timeline.observe(collision,priorBall,positions);
+  const observedTimeline=timeline.observe(collision,priorBall,actualShoeFeet);
   const forces=[];
   const visitForce=(a,b,f,d,totalMagnitude,maxMagnitude)=>{
    const other=a===ballCollider.handle?b:
