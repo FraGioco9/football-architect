@@ -1137,7 +1137,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }
     console.log('A03-04D BROWSER PASS: immutable staged registry available before deferred consumers on competition, club, directory and calendar pages');
     // A03-04E: follow canonical links produced by migrated browser renderers.
-    await cmd('Page.navigate',{url:origin+'/competitions/it-1/standings?season=1'});
+    // Check actual navigation only after the explicit DEV source supplies identities.
+    await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1/standings?season=1'});
     await wait("document.readyState==='complete'&&!!document.querySelector('.app-world-standing-club-link[href=\"/clubs/it/1/overview\"]')");
     const clubDestinations=await run("[...new Set([...document.querySelectorAll('.app-world-standing-club-link[href^=\"/clubs/it/\"]')].map(a=>a.getAttribute('href')))].sort()");
     assert.deepEqual(clubDestinations,Array.from({length:16},(_,i)=>'/clubs/it/'+(i+1)+'/overview').sort());
