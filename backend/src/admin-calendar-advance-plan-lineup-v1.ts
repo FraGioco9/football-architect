@@ -5,6 +5,7 @@ import type {Database,Statement} from './database.ts';
 import type {WorldV1} from './types.ts';
 import {abortUnless} from './command-guards.ts';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
+import {readSeasonZeroAuthority,type SeasonZeroScope} from './season-zero-entrants.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {buildInitialSchedule,buildTrustedSeasonSchedule,type InitialSchedule} from './initial-schedule.ts';
 import {initialDrawOutcomes} from './initial-draws.ts';
@@ -29,8 +30,25 @@ export async function planAdministrativeAdvanceLineupV1(db:Database,world:WorldV
  // Validates unique positions, IDs, scopes and all dependency placement, including completed rows.
  dueAdministrativeMilestones(events,Math.max(1,world.day));
  if(events.some(e=>e.scope!=='season'&&e.day>12||e.day<world.day&&e.status!=='completed'))blocked();
- if(rows.some(r=>r.status==='completed'&&(r.scheduled_day>world.day||!r.receipt_hash||!Number.isSafeInteger(r.completed_at)||r.completed_at===null||r.completed_at<=0)||
+ // #675: verified Season 0 approvals are handed off as completed day-1 events
+ // before the Season 1 administrative clock starts. This is the only
+ // permitted future-dated completion; do not relax ordinary event ordering.
+ const early=rows.filter(r=>r.status==='completed'&&r.scheduled_day>world.day);
+ if(early.length&&(world.seasonNumber!==1||world.phase!=='preparing'||world.day!==0))invalid();
+ const zero=early.length?await readSeasonZeroAuthority(db,world):null;
+ const preapproved=(r:AdvanceEventRow)=>{
+  if(!zero||r.scheduled_day!==1||r.event_order<1||r.event_order>2)return false;
+  const scope=r.scope as SeasonZeroScope;
+  if(scope!=='domestic'&&scope!=='international')return false;
+  const receipt=zero.approved[scope];
+  return !!receipt&&r.event_id===scope+':entrants'&&r.kind==='confirm-'+scope+'-entrants'&&
+   r.completed_at===receipt.approved_at&&receipt.approved_revision<=world.revision;
+ };
+ if(rows.some(r=>r.status==='completed'&&
+      ((r.scheduled_day>world.day&&!preapproved(r))||!r.receipt_hash||
+       !Number.isSafeInteger(r.completed_at)||r.completed_at===null||r.completed_at<=0)||
     r.status==='scheduled'&&(r.completed_at!==null||r.receipt_hash!==null)))invalid();
+ if(zero)guards.push(...zero.guards);
  const authority=await loadSeasonSnapshotAuthority(db,world),snapshot=authority.snapshot;
  guards.push(...authority.guards);
  const stored=await db.prepare(`SELECT generation,participants_hash,rules_hash,snapshot_json FROM seasons WHERE season_number=${world.seasonNumber}`).first<{generation:string;participants_hash:string;rules_hash:string;snapshot_json:string}>();

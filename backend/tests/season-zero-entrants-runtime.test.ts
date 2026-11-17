@@ -93,6 +93,15 @@ it('hands off confirmed scopes into Season 1 official receipts without duplicate
  world=(await advanceAdministrativeClockLineupV1(db,session,'advance',meta(),'zero-handoff-advance-0001',now)).world;
  expect(world.day).toBe(2);
 });
+it('rejects forged pre-start completed milestones without a corresponding Season 0 approval',async()=>{
+ world=(await prepareSeason(db,session,meta(),'zero-no-approval-prepare-0001',await loadApprovedSnapshot(),now)).world;
+ world=(await initializeAdministrativeEvents(db,session,meta(),'zero-no-approval-initialize-0001',now)).world;
+ await db.prepare("UPDATE season_admin_events SET status='completed',completed_at=?,receipt_hash=? WHERE season_number=1 AND event_id='domestic:entrants'")
+  .bind(now,'f'.repeat(64)).run();
+ await expect(advanceAdministrativeClockLineupV1(db,session,'start',meta(),
+  'zero-forged-prestart-0001',now)).rejects.toMatchObject({status:422});
+ expect((await readWorld(db)).phase).toBe('preparing');
+});
 it('resets approved but unstarted Season 0 and rotates generation, without leaking old receipts',async()=>{
  const prior=world.generation;
  await approve('international','zero-reset-international-0001');
