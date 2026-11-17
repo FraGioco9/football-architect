@@ -1,8 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {readCompetitionCatalogue} from '../assets/club-competition-catalogue.mjs';
 import {validateCalendarDay,createCalendarLoader} from '../assets/authoritative-calendar.mjs';
 const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
+test('PERF-API-657 Calendar expands compact transport into the exact validated authoritative definitions',async()=>{
+ const source=readFileSync(new URL('../assets/authoritative-calendar.mjs',import.meta.url),'utf8');
+ assert.match(source,/readCompetitionCatalogue\\(\\{fetchJson,loadModel/);
+ assert.match(source,/import\\('\/assets\/competition-model\\.js'\)/);
+ assert.doesNotMatch(source,/fetchJson\\('\/competitions\/_shared\/manifest\\.json'\)/);
+ const model=createRequire(import.meta.url)(new URL('../assets/competition-model.js',import.meta.url).pathname);
+ const compact=JSON.parse(readFileSync(new URL('../competitions/_shared/compact.json',import.meta.url),'utf8'));
+ const observed=[];
+ const reconstructed=await readCompetitionCatalogue({
+  fetchJson:async path=>{observed.push(path);return compact},loadModel:async()=>model
+ });
+ assert.deepEqual(observed,['/competitions/_shared/compact.json']);
+ assert.deepEqual(reconstructed,manifest);
+ assert.equal(model.validManifest(reconstructed),true);
+ assert.deepEqual(validateCalendarDay(empty(),{season:1,day:1},reconstructed),empty());
+ const tampered=structuredClone(compact);
+ tampered.competitions[0].templateIndex=100;
+ await assert.rejects(readCompetitionCatalogue({fetchJson:async()=>tampered,loadModel:async()=>model}),/Invalid|Unverified/);
+ await assert.rejects(readCompetitionCatalogue({fetchJson:async()=>compact,loadModel:async()=>null}),/validator/);
+});
 const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:1,seasonNumber:1,day:1,phase:'active'};
 const empty=()=>({schemaVersion:1,providerId:'authoritative-world',scope:'calendar',selectedSeason:1,day:1,world,status:'empty',reason:'calendar-unpublished',provenance:{kind:'none',sourceRef:null,resultAuthority:null},data:null});
 test('validates exact viewed season/day and rejects fake clock/source identities',()=>{

@@ -1,5 +1,6 @@
 // Private read-only calendar transport. Browser events never confer world authority.
 import {validPublicWorld,scoreValid,viewedSeasonState} from './authoritative-season.mjs';
+import {readCompetitionCatalogue} from './club-competition-catalogue.mjs';
 const fail=()=>{throw TypeError('Invalid authoritative calendar')};
 const key=c=>c.countryId+'-'+c.clubId;
 export function validateCalendarDay(input,selection,manifest){
@@ -46,7 +47,12 @@ export function createCalendarLoader({getSelection,clear,commit,fetchJson,manife
 const words={en:['Loading season data…','Season data is unavailable.','No published season data yet.','No known fixtures for this day.','Scheduled','World day'],it:['Caricamento dei dati della stagione…','Dati della stagione non disponibili.','Nessun dato della stagione ancora pubblicato.','Nessuna partita definita per questo giorno.','In programma','Giorno del mondo'],de:['Saisondaten werden geladen…','Saisondaten sind nicht verfügbar.','Noch keine veröffentlichten Saisondaten.','Keine bekannten Spiele für diesen Tag.','Geplant','Welttag'],es:['Cargando datos de la temporada…','Los datos de la temporada no están disponibles.','Aún no hay datos publicados de la temporada.','No hay partidos definidos para este día.','Programado','Día mundial'],fr:['Chargement des données de la saison…','Les données de la saison sont indisponibles.','Aucune donnée de saison publiée pour le moment.','Aucune rencontre connue pour ce jour.','Prévu','Jour mondial']};
 export async function mountAuthoritativeCalendar({root,document=globalThis.document,window=globalThis.window,onWorld,isEnabled=()=>true}){
  const fetchJson=async(path,{signal}={})=>{const r=await window.fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!r.ok)throw Error('Calendar unavailable');return r.json()};
- const manifest=await fetchJson('/competitions/_shared/manifest.json'),catalog=new Map(manifest.divisions.flatMap(d=>d.clubs).map(c=>[key(c),c])),names=new Map(manifest.competitions.map(c=>[c.id,c.name]));
+ // Reconstruct the exact canonical model before any published sporting payload is accepted.
+ const manifest=await readCompetitionCatalogue({fetchJson,loadModel:async()=>{
+  if(!window.faCompetitionModel?.expandCompactManifest)
+   await import('/assets/competition-model.js');
+  return window.faCompetitionModel;
+ }}),catalog=new Map(manifest.divisions.flatMap(d=>d.clubs).map(c=>[key(c),c])),names=new Map(manifest.competitions.map(c=>[c.id,c.name]));
  if(!document.getElementById('calendar-event-dialog'))await new Promise(resolve=>{
   const finish=()=>{window.removeEventListener('fa:calendar-ui-ready',finish);document.removeEventListener('DOMContentLoaded',finish);window.removeEventListener('load',finish);resolve()};
   window.addEventListener('fa:calendar-ui-ready',finish);document.addEventListener('DOMContentLoaded',finish);window.addEventListener('load',finish);if(document.readyState==='complete')finish();
