@@ -61,3 +61,18 @@ owner publication authorisation remains separate.
 The new 2026-11-17 threshold changes **QA evaluation**, not the frozen
 canonical prompt, V4.1 fingerprint or original image generator. Do not
 retroactively call prior FAIL images PASS without inspecting the actual image.
+
+## Individual prompts with fixed PLAYER_ID
+
+For the eight repeatedly failing V4.1 IDs, use a **fully self-contained re-QA prompt with the correct PLAYER_ID already written**, in the original chat containing the particular image:
+
+- [#49 — Gianfranco Patry](portrait-reqa-prompts/49.md)
+- [#53 — Paolo Lacasa](portrait-reqa-prompts/53.md)
+- [#54 — Massimo Bottineri](portrait-reqa-prompts/54.md)
+- [#55 — Mario Bodi](portrait-reqa-prompts/55.md)
+- [#56 — Ferdinando Guerriero](portrait-reqa-prompts/56.md)
+- [#62 — Angelo Mazzuca](portrait-reqa-prompts/62.md)
+- [#98 — Arthur Kiesel](portrait-reqa-prompts/98.md)
+- [#148 — Craig Leaman](portrait-reqa-prompts/148.md)
+
+These are for **re-evaluating actual existing images only**, not generating new candidates. The 23 original image-generation prompts are unchanged.
