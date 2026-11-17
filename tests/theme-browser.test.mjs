@@ -388,11 +388,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("window.faFixtures.prepare(null)()");
         assert.equal(await run("document.getElementById('app-fixtures-round').getClientRects().length"),0,"removing schedule hides controls again");
         await run("document.getElementById('competition-tab-standings').click()");
-        // The tab switch is asynchronous and the DEV source may briefly
-        // replace the visible table with a first-paint skeleton. Focus QA
-        // must target an attached, visible row after the layout has settled.
+        // The fixture QA deliberately replaced the DEV schedule. Returning
+        // asynchronously to Standings may clear the synthetic style fixture;
+        // re-enter the isolated DEV route and install that fixture explicitly.
+        // Do not use unconfirmed public entrants as a fallback for visual QA.
+        await visitUnknownStandings("/competitions/it-1/standings",theme);
         await wait("document.getElementById('competition-panel-standings')?.hidden===false&&"+
-          "document.querySelector('#app-standings-body tr')?.getClientRects().length>0&&"+
+          "document.querySelectorAll('#app-standings-body tr[data-world-club]').length===16&&"+
           "getComputedStyle(document.querySelector('.app-world-standing-table')).visibility==='visible'");
         // UX-01B: desktop-only styling, sticky geometry and both themes.
         if(name==="desktop"){
