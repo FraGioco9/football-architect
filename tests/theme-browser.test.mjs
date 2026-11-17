@@ -287,6 +287,26 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const url=origin+route;await cmd("Page.navigate",{url});
       await wait("location.pathname.replace(/\\/$/,\"\")==="+JSON.stringify(new URL(url).pathname.replace(/\/$/, ""))+"&&document.readyState==='complete'&&("+condition+")");
     };
+    // Unconfirmed public pages must not mint entrants. Preserve the existing
+    // detailed CSS/theme QA by injecting *explicitly fictional* unknown-stat
+    // DEV rows, never interpreting the static manifest as public approval.
+    const visitUnknownStandings=async(route,theme)=>{
+      await cmd("Page.navigate",{url:devOrigin+"/settings/"});
+      await wait("document.readyState==='complete'&&!!document.getElementById('theme-"+theme+"')");
+      await run("document.getElementById('theme-"+theme+"').click()");
+      await run("sessionStorage.setItem('football-architect:debug-enabled','on');"+
+        "sessionStorage.setItem('football-architect:standings-dev-season','1');"+
+        "sessionStorage.setItem('football-architect:standings-dev-matchdays','0')");
+      await cmd("Page.navigate",{url:devOrigin+route});
+      await wait("document.readyState==='complete'&&window.faDebugEnabled===true&&"+
+        "!!window.faCompetitionContext&&!!window.faCompetitionDivision&&"+
+        "!!window.faStandingsMobile&&document.documentElement.dataset.faDevStandingsPending===undefined");
+      const accepted=await run("(()=>{const c=window.faCompetitionContext;return window.faCompetitionContextApi.replaceSeasonData({"+
+        "season:c.selectedSeason,rulesVersion:c.definition.rules.version,participants:window.faCompetitionDivision.clubs,"+
+        "fixtures:null,results:[],statistics:null,status:'partial'},c.revision)})()");
+      assert.equal(accepted,true,'isolated DEV unknown-stat standings accepted for style QA');
+      await wait("document.querySelectorAll('#app-standings-body tr[data-world-club]').length===16");
+    };
     const snap=async(label,w,h)=>{
       const out=await cmd("Page.captureScreenshot",{format:"png",captureBeyondViewport:false});
       const png=Buffer.from(out.data,"base64");
@@ -329,7 +349,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(search.bg,theme==="light"?"rgb(255, 255, 255)":"rgb(20, 43, 46)",name+" search colors");
         assert.ok(search.rect[0]>=-1&&search.rect[1]<=w+1,name+" search fits");
         await snap(name+" "+theme+" search",w,h);
-        await visit("/competitions/it-1/standings","document.querySelectorAll('#app-standings-body tr').length===16");
+        await visitUnknownStandings("/competitions/it-1/standings",theme);
         const table=await run("(()=>{const t=document.querySelector('.app-world-standing-table');return {rows:document.querySelectorAll('#app-standings-body tr').length,sticky:getComputedStyle(t.querySelector('tbody tr>*:first-child')).position,head:getComputedStyle(t.querySelector('thead th')).backgroundColor,logo:document.querySelector('.app-brand-symbol')?.getAttribute('src')}})()");
         assert.equal(table.rows,16);assert.equal(table.sticky,"sticky");
         assert.equal(table.head,theme==="light"?"rgb(232, 241, 235)":"rgb(23, 45, 48)");
@@ -465,7 +485,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           : standardRoutes;
         for(const route of gutterRoutes){
           const detail=route.startsWith("/competitions/")&&route!=="/competitions/";
-          await visit(route,detail?"document.querySelectorAll('#app-standings-body tr').length===16":"true");
+          await visit(route,detail?"!!window.faCompetitionContext":"true");
           const gutter=await run("(()=>{const scroll=document.querySelector('.fa-shell-content-scroll'),root=scroll||document.documentElement,measure=()=>scroll?scroll.clientWidth:document.body.getBoundingClientRect().width,oldWidth=measure(),probe=document.createElement('div');probe.style.cssText='height:2400px;flex:0 0 2400px;visibility:hidden';(scroll||document.body).appendChild(probe);const width=measure(),overflow=root.scrollHeight>root.clientHeight,mode=getComputedStyle(root).scrollbarGutter;probe.remove();return {mode,oldWidth,width,overflow,pageWidth:document.documentElement.scrollWidth,viewport:innerWidth}})()");
           assert.equal(gutter.mode,"stable","SCROLLBAR-GUTTER-01 "+route+" "+name+"/"+theme);
           assert.equal(gutter.width,gutter.oldWidth,"no horizontal shift "+route+" "+name+"/"+theme);
