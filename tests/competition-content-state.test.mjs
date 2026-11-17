@@ -309,3 +309,15 @@ test('confirmed pre-kickoff entrants show dash placeholders without real rank, p
  assert.doesNotMatch(read('assets/app.css'),/data-standings-prekickoff/,
   'compact view preserves its original full layout with unknown values');
 });
+
+test('confirmed-empty standings centers the translated message vertically in a full-height desktop/mobile empty region',()=>{
+ const page=read('assets/competition-page.js'),css=read('assets/app.css');
+ assert.match(page,/row\.className='app-standings-empty-row'/,
+  'the empty desktop row is distinct from unranked club identities');
+ assert.match(css,/#competition-panel-standings #app-standings-body tr\.app-standings-empty-row\{\s*height:clamp\(240px,40vh,360px\)/,
+  'a confirmed-empty desktop table reserves vertical room for the message');
+ assert.match(css,/#competition-panel-standings #app-standings-body td\.app-competition-empty-row\{[\s\S]*?display:table-cell!important;[\s\S]*?vertical-align:middle;/,
+  'the table cell uses native vertical middle alignment instead of display:block');
+ assert.match(css,/#competition-panel-standings #app-standings-compact-list \.app-world-mobile-empty\{[\s\S]*?display:flex;[\s\S]*?align-items:center;[\s\S]*?justify-content:center;/,
+  'the mobile compact message is vertically centered within the same empty region');
+});

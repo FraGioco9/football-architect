@@ -779,7 +779,7 @@
         const rows=division.clubs.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
         renderDOM.keyed(tbody,division.clubs.map(club=>createStandingsRow(club)),row=>row.dataset.worldClub);mobile.prepare(rows)(true);publishedFormTips?.clear();suppliedOwned=false;return;
       }
-      const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=11;
+      const row=document.createElement('tr'),cell=document.createElement('td');row.className='app-standings-empty-row';cell.colSpan=11;
       cell.className='app-competition-empty-row';cell.dataset.appI18n='competitionStandingsEmpty';cell.textContent='No standings available yet.';row.appendChild(cell);tbody.replaceChildren(row);
       // At mobile widths the desktop table is CSS-hidden: preserve the same
       // translated empty state instead of silently replacing it with nothing.

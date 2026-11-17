@@ -2071,3 +2071,25 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 .fa-bracket-card:has(.fa-bracket-match-link[data-fa-match-leg="1"]:focus-visible) .fa-bracket-row .fa-bracket-score:nth-child(2),
 .fa-bracket-card[data-fa-match-legs="2"]:has(.fa-bracket-match-link[data-fa-match-leg="2"]:focus-visible) .fa-bracket-row .fa-bracket-score:nth-child(3){outline:2px solid var(--focus);outline-offset:1px}
 @media(prefers-reduced-motion:reduce){.fa-bracket-score{transition:none}}
+
+/* A verified empty standings state occupies a visible region, rather than one
+   68px table row. Center the translated message within that region while
+   retaining the actual table header and the mobile/desktop shell geometry. */
+#competition-panel-standings #app-standings-body tr.app-standings-empty-row{
+ height:clamp(240px,40vh,360px);
+}
+#competition-panel-standings #app-standings-body td.app-competition-empty-row{
+ display:table-cell!important;
+ height:clamp(240px,40vh,360px);
+ vertical-align:middle;
+ padding:16px!important;
+ text-align:center;
+}
+#competition-panel-standings #app-standings-compact-list .app-world-mobile-empty{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ box-sizing:border-box;
+ min-height:clamp(240px,40vh,360px);
+ text-align:center;
+}

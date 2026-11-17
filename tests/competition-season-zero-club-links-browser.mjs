@@ -23,6 +23,20 @@ try{
    assert.equal(await page.locator('#app-standings-compact-list .app-world-mobile-empty').count(),1);
    assert.equal(await page.locator('#app-standings-body a.app-world-club-name,#app-standings-compact-list a.app-world-mobile-club-name').count(),0);
    assert.equal(await page.locator('#app-standings-body .app-competition-empty-row').textContent(),'No standings available yet.');
+   const emptyLayout=await page.evaluate(()=>{
+    const row=document.querySelector('#app-standings-body tr.app-standings-empty-row');
+    const cell=row?.querySelector('td.app-competition-empty-row');
+    const card=document.querySelector('#app-standings-compact-list .app-world-mobile-empty');
+    const note=card?.querySelector('.app-competition-status');
+    const centerGap=note&&card?Math.abs((note.getBoundingClientRect().top+note.getBoundingClientRect().bottom)/2-
+      (card.getBoundingClientRect().top+card.getBoundingClientRect().bottom)/2):null;
+    return {rowHeight:row?.getBoundingClientRect().height,cellAlign:cell?getComputedStyle(cell).verticalAlign:null,
+      cardHeight:card?.getBoundingClientRect().height,centerGap};
+   });
+   assert.ok(emptyLayout.rowHeight>=240,'empty table has vertical space to center the message');
+   assert.equal(emptyLayout.cellAlign,'middle','empty desktop cell centers translated text vertically');
+   assert.ok(emptyLayout.cardHeight>=240,'empty mobile card preserves its vertical message region');
+   assert.ok(emptyLayout.centerGap<=2,'empty mobile message is vertically centered');
    checks++;
   }finally{await context.close();}
  }
