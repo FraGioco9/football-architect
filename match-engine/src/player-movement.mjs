@@ -1803,7 +1803,7 @@ export function createPlayerMovement(options={}){
       Reflect.ownKeys(options).length!==2))||
     ((options.researchSmallSidedSituation===undefined)!==
      (options.researchSmallSidedSide===undefined))||
-    (options.researchBasicRestartSource!==undefined&&
+    (options.researchBasicRestartSource!==undefined&&(
       !['throw-in','corner','goal-kick'].includes(options.researchBasicRestartSource)||
       !['home','away'].includes(options.researchBasicRestartAttackSide)||
       !Object.hasOwn(options,'researchBasicRestartBall')||
