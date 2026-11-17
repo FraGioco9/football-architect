@@ -844,7 +844,7 @@ try {
     assert.equal(await page.locator('.fa-dev-stats-team-card').count(),7);
     assert.equal(await page.locator('.fa-dev-stats-expand').count(),0);
     await page.locator('[data-stats-view="players"]').click();
-    assert.equal(await page.locator('.fa-dev-stats-leader-card').count(),4);
+    assert.equal(await page.locator('.fa-dev-stats-leader-card').count(),8);
     await screenshot(page,cup+'-'+width+'-empty-stats.png');
     await page.locator('[data-stats-view="players"]').focus();await page.keyboard.press('Home');
     assert.equal(await page.locator('[data-stats-view="overview"]').evaluate(el=>document.activeElement===el),true);
