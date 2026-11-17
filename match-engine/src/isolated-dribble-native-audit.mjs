@@ -19,7 +19,8 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
   totalAttackerBallGapM=0,maxAttackerBallGapM=0,
   minPlayerGap=Infinity,maxActualPlayerSpeed=0,pressureTicks=0,
   nativeBodyBallTicks=0,nativeBodyPairsTicks=0,
-  peakGroundClearanceM=0,airborneFramesAbove2Cm=0,peakBallSpeedMps=0;
+  peakGroundClearanceM=0,airborneFramesAbove2Cm=0,peakBallSpeedMps=0,
+  peakBallSpeedWitness=null;
  const touchTicks=[],actionTicks=[],actionMagnitudes=[],directions=[];
  let latest=null;
  function observe({physics,playerFrame,foot,action,physicalBodies=null}={}){
@@ -61,11 +62,29 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
   peakGroundClearanceM=Math.max(peakGroundClearanceM,clearance);
   if(clearance>0.02)airborneFramesAbove2Cm++;
   const bv=physics.ball.velocity;
-  peakBallSpeedMps=Math.max(peakBallSpeedMps,Math.hypot(bv.x,bv.y));
+  const ballSpeedMps=Math.hypot(bv.x,bv.y);
   const attackerGap=Math.hypot(b.x-p.x,b.y-p.y);
   totalAttackerBallGapM+=attackerGap;
   maxAttackerBallGapM=Math.max(maxAttackerBallGapM,attackerGap);
   const distance=Math.hypot(b.x-d.x,b.y-d.y);
+  if(ballSpeedMps>peakBallSpeedMps){
+   peakBallSpeedMps=ballSpeedMps;
+   // A source timestamp and CO-OCCURRING real native contacts, not an
+   // attribution of the resulting acceleration or a physics intervention.
+   peakBallSpeedWitness=freeze({
+    tick:physics.tick,source:'original-post-step-rapier-ball-velocity',
+    ballSpeedMps,ballX:b.x,ballY:b.y,
+    ballVx:bv.x,ballVy:bv.y,
+    attackerGapM:attackerGap,defenderGapM:distance,
+    authenticShoeStarts:freeze([...foot.started]),
+    authenticShoeActive:freeze([...foot.active]),
+    appliedRealCarryThisTick:action?.action==='carry'&&
+     action.appliedByRapier===true,
+    nativeLegBallContacts:physicalBodies?.lowerLegBallContacts.length??null,
+    nativeTorsoPairs:physicalBodies?.nativeOpposingTorsoPairs.length??null,
+    causalAttribution:false,readOnly:true
+   });
+  }
   minimumGap=Math.min(minimumGap,distance);
   if(distance<3)pressureTicks++;
   if(physicalBodies?.lowerLegBallContacts.length)nativeBodyBallTicks++;
@@ -103,6 +122,7 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
    maximumRealAttackerBallGapM:maxAttackerBallGapM,
    measuredPressureTicks:pressureTicks,ballPath2DM:ballPath,
    peakGroundClearanceM,airborneFramesAbove2Cm,peakBallSpeedMps,
+   peakBallSpeedWitness,
    meanAppliedTouchIntervalTicks:actionTicks.length<2?null:
     (actionTicks[actionTicks.length-1]-actionTicks[0])/(actionTicks.length-1),
    ballForwardDistanceM:(b.x-firstBall.x)*(side==='home'?1:-1),

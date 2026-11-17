@@ -14,54 +14,6 @@ const empty=Object.freeze([]);
 const ordered=set=>Object.freeze(INITIAL_PLAYERS
  .filter(p=>set.has(p.id)).map(p=>p.id));
 const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
- // #628 D01-GAIT-01: current 60Hz canonical stride + REAL pre-step Rapier
- // ball position/velocity. This is a foot target only, never a collision,
- // impulse, synthetic START/END, possession or ball correction.
- const gaitClamp=(n,a,b)=>Math.max(a,Math.min(b,n));
- export function advanceD01LiveShoeGait({phaseRad,player,ball,defender=null,tick}={}){
-  if(!Number.isInteger(tick)||tick<1||
-     !Number.isFinite(phaseRad)||phaseRad<0||phaseRad>=2*Math.PI||
-     !player||!ball?.position||!ball?.velocity||
-     (defender!==null&&(!defender||
-       ![defender.x,defender.y].every(Number.isFinite)))||
-     ![player.x,player.y,player.vx,player.vy,player.facingRad,
-       ball.position.x,ball.position.y,ball.position.z,
-       ball.velocity.x,ball.velocity.y,ball.velocity.z]
-       .every(Number.isFinite))
-   throw new TypeError('Only real consecutive 60Hz canonical player and Rapier ball may cue D-01 shoe');
-  const cos=Math.cos(player.facingRad),sin=Math.sin(player.facingRad);
-  const relX=ball.position.x-player.x,relY=ball.position.y-player.y;
-  const aheadM=relX*cos+relY*sin;
-  const lateralM=-relX*sin+relY*cos;
-  const speedMps=Math.hypot(player.vx,player.vy);
-  // The opposing REAL defender can push the ball with native body/shoe
-  // contacts. Under close pressure keep the proven original stroke until
-  // actual space opens. Do not override its physically resulting velocity.
-  const defenderGapM=defender===null?Infinity:
-   Math.hypot(ball.position.x-defender.x,ball.position.y-defender.y);
-  const freeSpace=gaitClamp((defenderGapM-2.8)/1.8,0,1);
-  const desiredHz=2.45+0.25*gaitClamp(speedMps/4,0,1);
-  const frequencyHz=2.5+(desiredHz-2.5)*freeSpace;
-  const nextPhase=(phaseRad+2*Math.PI*frequencyHz/60)%(2*Math.PI);
-  const stroke=-Math.cos(nextPhase);
-  // At the original .50–.70m player/ball gap, a modest forward approach
-  // reduces missed shoes; backing stroke remains unchanged for native END.
-  const approachM=gaitClamp((aheadM-0.53)*0.40,0,0.055)*
-   Math.max(0,stroke)*freeSpace;
-  const forwardM=0.105*stroke+approachM;
-  const sideM=gaitClamp(lateralM*0.20,-0.03,0.03)*
-   Math.max(0,stroke)*freeSpace;
-  return Object.freeze({
-   phaseRad:nextPhase,frequencyHz,forwardM,sideM,
-   observedSpeedMps:speedMps,observedAheadM:aheadM,
-   observedLateralM:lateralM,observedDefenderGapM:defenderGapM,
-   freeSpace,observedBallSpeedMps:
-    Math.hypot(ball.velocity.x,ball.velocity.y),
-   nativeShoeEventCreated:false,ballImpulseCreated:false,
-   possessionAssigned:false
-  });
- }
-
 
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
@@ -108,18 +60,17 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  const eventQueue=sharedQueue??new R.EventQueue(true);
  const ownsEventQueue=sharedQueue===null;
  const colliders=[],bodies=[],idsByCollider=new Map();
- // One REAL kinematic shoe; the new observed source adapts its motion only,
- // preserving the existing native collider and 7m/s shoe continuity guard.
- function shoeFeet(frame,stepTick,gait=null){
+ // Short, continuous foot swing: one real Rapier kinematic collider, not
+ // extra contacts or impulses. 0.105m at 2.5 Hz <=1.65m/s relative shoe.
+ // The original canonical mover still sets player XY/heading, max 4m/s in D-01.
+ function shoeFeet(frame,stepTick){
   if(dribbleAttackerId===null)return frame;
-  const swingM=gait?.forwardM??-0.105*Math.cos(2*Math.PI*stepTick/24);
-  const lateralM=gait?.sideM??0;
+  const swingM=-0.105*Math.cos(2*Math.PI*stepTick/24);
   return Object.freeze(frame.map((p,i)=>{
    if(initialPlayers[i].id!==dribbleAttackerId)return p;
-   const c=Math.cos(p.facingRad),s=Math.sin(p.facingRad);
    return Object.freeze({...p,
-    x:p.x+swingM*c-lateralM*s,
-    y:p.y+swingM*s+lateralM*c});
+    x:p.x+swingM*Math.cos(p.facingRad),
+    y:p.y+swingM*Math.sin(p.facingRad)});
   }));
  }
  const stagedFeet=shoeFeet(initialPlayers,0);
@@ -152,7 +103,6 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   Object.freeze({x:p.x,y:p.y,facingRad:p.facingRad}))),
   tick=0,disposed=false;
  let actualShoeFeet=stagedFeet;
- let gaitPhaseRad=0;
  let active=new Set(),solver=null;
  let current=Object.freeze({
   version:FOOT_CONTACT_VERSION,tick:0,
@@ -160,19 +110,12 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   onsetBallDeltaVelocityMps:null
  });
  const live=()=>{if(disposed)throw new Error('Rapier contact bridge disposed');};
- function prepare(playerFrame,nextTick,preStepBall=null){
+ function prepare(playerFrame,nextTick){
   live();
   if(nextTick!==tick+1)throw new RangeError('Nonconsecutive physical shoe tick');
   // Validate ALL actors, headings and physical displacement before mutation.
   const next=validateFootContactFrame(playerFrame,nextTick,positions);
-  const actor=dribbleAttackerId===null?null:
-   playerFrame.players.find(p=>p.id===dribbleAttackerId);
-  const defender=actor?playerFrame.players.find(p=>
-   p.team!==actor.team&&p.number===2):null;
-  const gait=actor?advanceD01LiveShoeGait({
-   phaseRad:gaitPhaseRad,player:actor,defender,ball:preStepBall,tick:nextTick
-  }):null;
-  const proposed=shoeFeet(next,nextTick,gait);
+  const proposed=shoeFeet(next,nextTick);
   // The whole shoe also moves when its owner turns or advances. Clamp the
   // actual Rapier kinematic collider trajectory, NOT the canonical player,
   // to the original physical 7m/s ceiling (one 60Hz tick = 0.1167m).
@@ -208,7 +151,6 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    bodies[i].setNextKinematicRotation(p.rotation);
   }
   positions=next;actualShoeFeet=newFeet;
-  if(gait)gaitPhaseRad=gait.phaseRad;
  }
  function observe(nextTick,priorBall,postBall,sharedEvents=null){
   live();
