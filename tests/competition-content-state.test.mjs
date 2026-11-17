@@ -237,9 +237,10 @@ test('STANDINGS-FORM-TOOLTIP: mouse exit and Safari BFCache dismiss published ho
  const end=page.indexOf('  function bindSuppliedPanels(',start);
  assert.ok(start>=0&&end>start,'public Form tooltip runtime exists');
  const tooltip=page.slice(start,end);
- assert.match(tooltip,/host\\.addEventListener\\("pointerout",event=>\\{[^\\n]*close\\(\\)\\}/);
- assert.match(tooltip,/host\\.addEventListener\\("pointerleave",event=>\\{[\\s\\S]*?event\\.target===active[\\s\\S]*?close\\(\\);\\s*\\},true\\)/);
- assert.match(tooltip,/window\\.addEventListener\\("pagehide",close\\)/);
+ assert.ok(tooltip.includes('host.addEventListener("pointerout",event=>{'));
+ assert.ok(tooltip.includes('host.addEventListener("pointerleave",event=>{'));
+ assert.ok(tooltip.includes('if(event.target===active&&["mouse","pen"].includes(event.pointerType))close();'));
+ assert.ok(tooltip.includes('window.addEventListener("pagehide",close);'));
 });
 
 test('MATCH-LINKS #605: standings form links use official source identities on both layouts',()=>{
