@@ -52,7 +52,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
    }
    const file=publicRequestFile(path);
    if(!allowed.has(file)||(refuseCrests&&file.startsWith('assets/clubs/')))throw Error('Not public');
-   if(file==='clubs/_shared/manifest.json'&&manifestMode!=='ok'){if(manifestMode==='bad-json'){res.writeHead(200,{'Content-Type':'application/json'});res.end('{invalid');}else{res.writeHead(503);res.end('Unavailable')}return;}
+   if(file==='clubs/_shared/identity.json'&&manifestMode!=='ok'){if(manifestMode==='bad-json'){res.writeHead(200,{'Content-Type':'application/json'});res.end('{invalid');}else{res.writeHead(503);res.end('Unavailable')}return;}
    const send=()=>{res.writeHead(200,{'Content-Type':mime[extname(file)]});res.end(readFileSync(join(artifact,file)));};
    if(holdDeferred&&file.endsWith('.js')&&file!=='assets/theme.js')deferredResponses.push(send);else send();
   }catch{res.writeHead(404);res.end()}
@@ -337,6 +337,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)});`);
      await cmd('Page.navigate',{url:origin+'/clubs'});
      await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
+     if(width===390&&theme==='dark'&&lang==='en'){
+      const staticReads=await run("[...performance.getEntriesByType('resource')].map(entry=>new URL(entry.name).pathname).filter(path=>path==='/clubs/_shared/identity.json'||path==='/clubs/_shared/manifest.json')");
+      assert.deepEqual(staticReads,['/clubs/_shared/identity.json'],
+       'Explore must fetch the lightweight verified identity only, not the full Club manifest');
+     }
      const state=await run(`(()=>{const pane=document.querySelector('.fa-shell-content-scroll');const cards=document.querySelectorAll('.nav01-card');return {language:document.documentElement.lang,theme:document.documentElement.dataset.theme,count:cards.length,href:cards[0].getAttribute('href'),overflow:document.documentElement.scrollWidth>innerWidth+1||pane.scrollWidth>pane.clientWidth+1,labels:[...document.querySelectorAll('.nav01-filters select')].map(el=>el.getAttribute('aria-label'))}})()`);
      assert.equal(state.language,lang);assert.equal(state.theme,theme);assert.equal(state.count,320);
      assert.match(state.href,/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/overview$/);
@@ -424,7 +429,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     console.log('CLUBS_03B: HTTP error, JSON error, retry, localization and URL recovery passed');
     // QA-02: use an accented city/name from the actual public manifest, not invented fixtures.
-    const accentCase=await run("(async()=>{const manifest=await(await fetch('/clubs/_shared/manifest.json')).json();const normalize=s=>s.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();for(const club of manifest.clubs){for(const field of ['city','primaryName','fullName']){const value=club[field];if(value&&normalize(value)!==value.toLowerCase())return {term:value,plain:normalize(value),href:'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview'};}}return null})()");
+    const accentCase=await run("(async()=>{const manifest=await(await fetch('/clubs/_shared/identity.json')).json();const normalize=s=>s.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();for(const club of manifest.clubs){for(const field of ['city','primaryName','fullName']){const value=club[field];if(value&&normalize(value)!==value.toLowerCase())return {term:value,plain:normalize(value),href:'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview'};}}return null})()");
     assert.ok(accentCase,'The public manifest should contain a real accented club name or city');
     for(const term of [accentCase.term,accentCase.plain]){
       await cmd('Page.navigate',{url:origin+'/clubs?q='+encodeURIComponent(term)});
