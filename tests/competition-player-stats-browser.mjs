@@ -75,6 +75,7 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
       rows:rows.every(row=>Math.abs(bounds(row).height-bounds(sample).height)<.1),
       rowHeight:bounds(sample).height,portrait:bounds(portrait),
       nameWidth:bounds(bars[0]).width,clubWidth:bounds(bars[1]).width,
+      clubWidths:rows.map(row=>bounds(row.querySelector('.fa-dev-stats-club-link>.app-skeleton-bar')).width),
       valueWidths:pending.map(card=>bounds(card.querySelector('li>strong>.app-skeleton-bar')).width),
       noTooltip:!live.querySelector('.fa-dev-stats-player-label [title]')};
     }finally{shell.remove()}
@@ -85,6 +86,8 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    assert.equal(loadingGeometry.portrait.width,width===390?40:48);
    assert.equal(loadingGeometry.portrait.height,loadingGeometry.portrait.width);
    assert.ok(loadingGeometry.nameWidth>loadingGeometry.clubWidth*0.7&&loadingGeometry.clubWidth>0,'name and club bars are text-sized');
+   assert.equal(loadingGeometry.clubWidths.length,40);
+   assert.ok(loadingGeometry.clubWidths.every(value=>Math.abs(value-loadingGeometry.clubWidth)<.1),'club placeholders have identical widths across all rows and metric cards');
    assert.ok(loadingGeometry.valueWidths[0]>loadingGeometry.valueWidths[1]*1.5,'Rating includes coverage, unlike Goals');
    assert.ok(loadingGeometry.valueWidths[4]>loadingGeometry.valueWidths[1]*1.3,'Clean sheets include appearances');
    assert.equal(loadingGeometry.noTooltip,true,'no native hover tooltip on player names or clubs');
