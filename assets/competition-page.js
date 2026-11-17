@@ -409,7 +409,7 @@
     }
     if (breakpoint?.addEventListener) breakpoint.addEventListener("change", updateVisibility);
     window.addEventListener("resize", updateVisibility);
-    function prepare(rows,{preKickoff=false}={}) {
+    function prepare(rows) {
       if (!Array.isArray(rows) || rows.length !== definition.capacity)
         throw Error("Incomplete mobile standings model");
       const identities = new Set();
@@ -424,7 +424,7 @@
         identities.add(id);
         const li = element("li","app-world-mobile-item");
         li.dataset.worldClub = id;
-        decorateStanding(li, preKickoff?null:row.position ?? (row.played == null ? null : index + 1));
+        decorateStanding(li, row.position ?? (row.played == null ? null : index + 1));
         const name = element("span","app-world-mobile-name");
         const crest = createCrestHost(id);
         const clubLink = element("a","app-world-standing-club-link app-world-mobile-club-name",club.primaryName || club.abbr);
@@ -432,14 +432,6 @@
         clubLink.addEventListener("click",event=>event.stopPropagation());
         clubLink.addEventListener("keydown",event=>event.stopPropagation());
         name.append(crest,clubLink);
-        if(preKickoff){
-          // Confirmed identity only: no points badge, disclosure, form or
-          // statistical details until an official league match is played.
-          li.dataset.standingsPrekickoff="true";
-          const summary=element("div","app-world-mobile-summary");
-          summary.append(name);li.append(summary);
-          return li;
-        }
         const details = element("details","app-world-mobile-details");
         const summary = element("summary","app-world-mobile-summary");
         const pos = element("span","app-world-mobile-position",
@@ -864,14 +856,10 @@
             gf:null,ga:null,gd:null,pts:null,recent:[]})):
           projected||rows.map(row=>({...row,played:null,won:null,drawn:null,
             lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
-        const commitMobile=mobile.prepare(displayRows,{preKickoff});
+        const commitMobile=mobile.prepare(displayRows);
         const verifiedForms=verifiedPublishedForms(data,displayRows,definition,rules);
         const desktop=displayRows.map((row,index)=>{
           const tr=createStandingsRow(row.club);decorateStanding(tr,displayReady?index+1:null);
-          if(preKickoff){
-            tr.dataset.standingsPrekickoff="true";
-            for(const cell of tr.children)if(cell.tagName?.toLowerCase()==='td')cell.textContent='';
-          }
           if(displayReady){
             const values=[index+1,null,...['played','won','drawn','lost','gf','ga','gd','pts'].map(k=>row[k])];
             values.forEach((value,i)=>{if(i!==1)tr.children[i].textContent=String(value)});

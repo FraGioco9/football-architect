@@ -58,7 +58,10 @@ try{
     const mobile=[...document.querySelectorAll('#app-standings-compact-list li[data-world-club]')];
     const first=desktop[0],legend=document.querySelector('.app-standings-legend');
     return {desktop:desktop.length,mobile:mobile.length,names:desktop.map(row=>row.children[1].textContent.trim()),
-     emptyRank:desktop.every(row=>![...row.querySelectorAll('td')].some(cell=>cell.textContent.trim())),
+     dashedCells:desktop.every(row=>[...row.querySelectorAll('td')].every(cell=>cell.textContent.trim()==='—')),
+     mobileDashes:mobile.every(item=>item.querySelector('.app-world-mobile-position')?.textContent==='—'&&
+      item.querySelector('.app-world-mobile-points')?.firstChild?.textContent==='—'&&
+      [...item.querySelectorAll('.app-world-mobile-stat dd')].every(cell=>cell.textContent==='—')),
      bands:document.querySelectorAll('#app-standings-body [data-standing-rank],#app-standings-compact-list [data-standing-outcome]').length,
      badges:document.querySelectorAll('#app-standings-compact-list .app-world-mobile-points').length,
      disclosures:document.querySelectorAll('#app-standings-compact-list details').length,
@@ -69,11 +72,12 @@ try{
    const expected=id==='it-1'?16:24;
    assert.equal(before.desktop,expected);
    assert.equal(before.mobile,expected);
-   assert.ok(before.emptyRank,'no ranks/points/statistics before kickoff');
+   assert.ok(before.dashedCells,'every desktop unplayed sporting cell shows a dash');
+   assert.ok(before.mobileDashes,'mobile ranks, points and expanded statistics show dashes');
    assert.equal(before.bands,0,'no position highlights before kickoff');
-   assert.equal(before.badges,0,'no mobile points cards before kickoff');
-   assert.equal(before.disclosures,0,'no expandable sporting statistics before kickoff');
-   assert.equal(before.recent,0);
+   assert.equal(before.badges,expected,'mobile points keep reserved slots showing a dash');
+   assert.equal(before.disclosures,expected,'unplayed statistics remain accessible as dash placeholders');
+   assert.equal(before.recent,expected,'recent form shows the unknown marker');
    assert.equal(before.legendVisible,false);
    assert.deepEqual(before.names,[...before.names].sort((a,b)=>a.localeCompare(b,'en',{sensitivity:'base'})));
    const resumed=await page.evaluate(()=>{

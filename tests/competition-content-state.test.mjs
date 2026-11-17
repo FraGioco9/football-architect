@@ -278,7 +278,7 @@ test('Season 0 and unconfirmed public seasons suppress provisional entrants unti
    'source reset and confirmed-empty remove stale club identities');
 });
 
-test('confirmed pre-kickoff entrants are names only without points, ranks, highlights or legend',()=>{
+test('confirmed pre-kickoff entrants show dash placeholders without real rank, points, highlights or legend',()=>{
  const page=read('assets/competition-page.js');
  const begin=page.indexOf('  function hasPlayedLeagueMatches(');
  const end=page.indexOf('  function readStandingsSubview(',begin);
@@ -294,12 +294,18 @@ test('confirmed pre-kickoff entrants are names only without points, ranks, highl
   'unplayed participants cannot receive arbitrary displayed ranks');
  assert.match(page,/displayRows=preKickoff\?\[\.\.\.rows\]\.sort/,
   'pre-kickoff entrants are alphabetic and unranked');
- assert.match(page,/if\(preKickoff\)\{\s*tr\.dataset\.standingsPrekickoff="true";/,
-  'desktop numeric cells are cleared');
- assert.match(page,/if\(preKickoff\)\{[\s\S]*?li\.dataset\.standingsPrekickoff="true"/,
-  'compact mobile items contain no numeric badge, form or expandable statistics');
+ assert.match(page,/const tr=createStandingsRow\(row\.club\);decorateStanding\(tr,displayReady\?index\+1:null\)/,
+  'pre-kickoff desktop displays the canonical unknown-cell dash placeholders');
+ assert.doesNotMatch(page,/tr\.dataset\.standingsPrekickoff|cell\.textContent=''/,
+  'do not erase the dash values from the desktop standings');
+ assert.match(page,/const commitMobile=mobile\.prepare\(displayRows\)/,
+  'compact mobile uses the same dash-backed unknown values as the desktop table');
+ assert.match(page,/row\.played == null \? "—" : String\(index \+ 1\)/,
+  'pre-kickoff mobile rank is the unknown marker');
+ assert.match(page,/row\.pts == null \? "—" : String\(row\.pts\)/,
+  'pre-kickoff mobile points are shown as unknown, not hidden or zero');
  assert.match(page,/!hasPlayedLeagueMatches\(window\.faCompetitionContext\?\.seasonData\)/,
   'position outcome legend is withheld until a real game');
- assert.match(read('assets/app.css'),/grid-template-areas:"\. name \." "\. name \."/,
-  'mobile unranked names fill the existing reserved layout');
+ assert.doesNotMatch(read('assets/app.css'),/data-standings-prekickoff/,
+  'compact view preserves its original full layout with unknown values');
 });
