@@ -1,6 +1,7 @@
 import './club-fixtures.js';
 import {readClubFixtures,attachPublishedClubMatchLinks} from './club-fixtures-source.mjs';
 import {createClubPublicReadCache} from './club-public-read-cache.mjs';
+import {readClubCompetitionCatalogue} from './club-competition-catalogue.mjs';
 import './world-clock-adapter.js';
 import './competition-rules-view.js';
 import './competition-tabs.js';
@@ -154,11 +155,24 @@ export function mountClubFixtures({host,manifest}){
    return;
   }
   if(!current.world||current.worldStatus!=='ready'){
-   if(current.worldStatus==='unavailable')publish({coverage:'unavailable',rows:[],competitions:[]});return;
+   if(current.worldStatus==='unavailable')publish({coverage:'unavailable',rows:[],competitions:[]});
+   return; // No speculative read or false error while the public world is loading.
   }
   void (async()=>{
    try{
-    catalogue??=fetch('/competitions/_shared/manifest.json',{credentials:'omit'}).then(async r=>{if(!r.ok)throw Error('Competition catalogue unavailable');return r.json();}).catch(e=>{catalogue=null;throw e;});
+    catalogue??=readClubCompetitionCatalogue({
+     fetchJson:async path=>{
+      const response=await fetch(path,{credentials:'omit',redirect:'error'});
+      if(!response.ok)throw Error('Competition catalogue unavailable');
+      return response.json();
+     },
+     loadModel:async()=>{
+      // Club pages load this only on Fixtures, not for Overview/History/Roster.
+      if(!window.faCompetitionModel?.expandCompactManifest)
+       await import('/assets/competition-model.js');
+      return window.faCompetitionModel;
+     }
+    }).catch(e=>{catalogue=null;throw e;});
     const data=await catalogue;
     const result=await readClubFixtures({clubKey,season:selectedSeason,world:current.world,fetchJson:cache.read,manifest:data,signal});
     // Keep initial verified rows visible while their published IDs are resolved.
