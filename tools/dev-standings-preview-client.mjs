@@ -936,7 +936,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       });
       listen(btn,"pointerleave", e => {
         if ((e.pointerType === "mouse" || e.pointerType === "pen") &&
-            active === entry && document.activeElement !== btn) close();
+            active === entry) close();
       });
       listen(btn,"focus", () => open(entry));
       listen(btn,"blur", () => { if (active === entry) close(); });

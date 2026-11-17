@@ -673,6 +673,9 @@ test("STANDINGS-UX-01D: mobile compact form keeps its appearance and opens toolt
  assert.ok(client.includes('item.querySelectorAll(".app-world-mobile-form .app-world-form-dot")'));
  assert.ok(client.includes('if(entry.mobile){e.preventDefault();e.stopPropagation();}'));
  assert.ok(client.includes('[...entries,...mobileEntries]'));
+ // Hover exit must dismiss even when a preceding click left keyboard focus on the mark.
+ assert.match(client,/listen\(btn,"pointerleave", e => \{[\s\S]*?active === entry\) close\(\);/);
+ assert.doesNotMatch(client,/active === entry && document\.activeElement !== btn/);
  assert.ok(canonical.includes('element("span","app-world-form-dot app-world-form-"'));
  assert.ok(!client.includes('node("button","app-world-form-dot app-world-form-control app-world-form-"'));
 });
