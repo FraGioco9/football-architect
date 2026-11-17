@@ -51,3 +51,12 @@ test('controller passes trusted snapshot hash and CAS metadata, then refreshes o
  assert.equal(c.state().world.revision,2);
  await c.command('zeroInternational');assert.equal(calls.length,2);
 });
+
+test('canonical Admin template and published Calendar include both first-season controls',async()=>{
+ const {renderAdminSettings}=await import('../tools/render-admin-settings.mjs');
+ const {readFileSync}=await import('node:fs');
+ for(const html of [renderAdminSettings(),readFileSync(new URL('../admin/calendar/index.html',import.meta.url),'utf8')]){
+  assert.match(html,/data-admin-command="zeroDomestic"/);
+  assert.match(html,/data-admin-command="zeroInternational"/);
+ }
+});

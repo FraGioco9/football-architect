@@ -8,8 +8,10 @@ ROOT = Path(__file__).resolve().parents[1] / 'migrations'
 class SeasonZeroApprovalMigrationTest(unittest.TestCase):
     def setUp(self):
         self.db = sqlite3.connect(':memory:')
-        self.db.executescript((ROOT/'0001_world.sql').read_text())
-        self.db.execute("CREATE TABLE world_reset_permits(generation TEXT PRIMARY KEY, operation_id TEXT NOT NULL)")
+        for migration in sorted(ROOT.glob('*.sql')):
+            if migration.name >= '0032':
+                break
+            self.db.executescript(migration.read_text())
         self.before = self.db.execute("SELECT generation,revision,phase FROM world_state").fetchone()
         self.db.executescript((ROOT/'0032_season_zero_entrant_approvals.sql').read_text())
 
