@@ -33,10 +33,13 @@ try{
     return {rowHeight:row?.getBoundingClientRect().height,cellAlign:cell?getComputedStyle(cell).verticalAlign:null,
       cardHeight:card?.getBoundingClientRect().height,centerGap};
    });
-   assert.ok(emptyLayout.rowHeight>=240,'empty table has vertical space to center the message');
-   assert.equal(emptyLayout.cellAlign,'middle','empty desktop cell centers translated text vertically');
-   assert.ok(emptyLayout.cardHeight>=240,'empty mobile card preserves its vertical message region');
-   assert.ok(emptyLayout.centerGap<=2,'empty mobile message is vertically centered');
+   assert.equal(emptyLayout.cellAlign,'middle','empty desktop cell uses vertical middle alignment');
+   if(width>620){
+    assert.ok(emptyLayout.rowHeight>=240,'visible desktop table centers its empty message');
+   }else{
+    assert.ok(emptyLayout.cardHeight>=240,'visible mobile card preserves the empty-message region');
+    assert.ok(emptyLayout.centerGap<=2,'visible mobile message is vertically centered');
+   }
    checks++;
   }finally{await context.close();}
  }
