@@ -35,6 +35,11 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
     };
     window.__stats643Supply('real');
    });
+   const cardSizes=async selector=>page.locator(selector).evaluateAll(nodes=>nodes.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
+   await page.locator('#fa-dev-stats [data-stats-view="overview"]').click();
+   const overviewFilled=await cardSizes('#fa-dev-stats .fa-dev-stats-card');
+   await page.locator('#fa-dev-stats [data-stats-view="teams"]').click();
+   const teamsFilled=await cardSizes('#fa-dev-stats .fa-dev-stats-team-card');
    await page.locator('#fa-dev-stats [data-stats-view="players"]').click();
    const cards=page.locator('#fa-dev-stats .fa-dev-stats-leader-card');
    const goals=cards.filter({has:page.locator('[data-app-i18n="statsDevGoals"]')});
@@ -66,6 +71,13 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
      const emptySizes=await cards.evaluateAll(nodes=>nodes.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
      assert.deepEqual(emptySizes,filledSizes,'every card must keep exactly the same dimensions without players');
      assert.equal((await goals.boundingBox()).height,before.height,'empty leaderboard keeps its populated height');
+     if(mode==='no-games'){
+      await page.locator('#fa-dev-stats [data-stats-view="overview"]').click();
+      assert.deepEqual(await cardSizes('#fa-dev-stats .fa-dev-stats-card'),overviewFilled,'Overview box dimensions must match with and without data');
+      await page.locator('#fa-dev-stats [data-stats-view="teams"]').click();
+      assert.deepEqual(await cardSizes('#fa-dev-stats .fa-dev-stats-team-card'),teamsFilled,'Teams box dimensions must match with and without data');
+      await page.locator('#fa-dev-stats [data-stats-view="players"]').click();
+     }
     }
     else {
      assert.equal(await cards.locator('.fa-dev-stats-team-name[href="/players/58"]').count(),5);

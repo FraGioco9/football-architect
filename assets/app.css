@@ -1131,7 +1131,7 @@ svg.site-chevron>path{translate:0 .5px}
 .fa-dev-stats-nav button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .fa-dev-stats-nav button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .fa-dev-stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.fa-dev-stats-card.app-competition-stat-card--compact{display:grid;grid-template-rows:minmax(var(--fa-record-heading),max-content) minmax(0,1fr);gap:4px;min-width:0;padding:10px 12px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
+.fa-dev-stats-card.app-competition-stat-card--compact{display:grid;grid-template-rows:minmax(var(--fa-record-heading),max-content) 50px;gap:4px;min-width:0;padding:10px 12px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
 .fa-dev-stats-card strong{display:block;font-size:clamp(1.25rem,2.5vw,1.8rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .fa-dev-stats-section{margin:0 0 20px}
 .fa-dev-stats-leader-grid{--fa-stats-row-height:60px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
