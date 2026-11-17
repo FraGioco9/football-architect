@@ -123,7 +123,8 @@ export async function buildChatGptDiverseV4PortraitExecutionFromSnapshot(snapsho
   desiredAspectRatio:'3:4',
   prompt:[
    'CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.',
-   'The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.',
+   'ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.',
+   'The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.',
    '--- CANONICAL V4.1 PROMPT (VERBATIM) ---',
    canonicalPrompt,
    '--- END CANONICAL V4.1 PROMPT ---',

@@ -2,9 +2,9 @@
 
 Generati dal generatore canonico V4.1 del commit `0d9ada1534153b9c33b89080ac464bd1d5cc4fca`, con attributi iniziali verificati su DEV D1 (sola lettura).
 
-**Prompt export:** `single-player-chat-v2`. La versione del volto V4.1 e i 23 fingerprint restano invariati.
+**Prompt export:** `single-player-chat-v3`. La versione del volto V4.1 e i 23 fingerprint restano invariati.
 
-**Una chat nuova per giocatore, una sola immagine per generazione.** Usare i plugin connessi **GitHub** e **Cloudflare** solo per dati/QA; le immagini si creano esclusivamente con **ChatGPT ImageGen**, **mai Canva**. Se una verifica tramite plugin non è disponibile, marcarla `NOT VERIFIED`. Nessun upload, merge, deploy, o scrittura D1 automatica.
+**Solo generazione originale da testo, SENZA immagini di riferimento o input.** Se ImageGen richiede un'immagine target, segnalare `GENERATION_UNAVAILABLE / NO CANDIDATE` e non chiedere upload. **Una chat nuova per giocatore, una sola immagine per generazione.** Usare i plugin connessi **GitHub** e **Cloudflare** solo per dati/QA; le immagini si creano esclusivamente con **ChatGPT ImageGen**, **mai Canva**. Se una verifica tramite plugin non è disponibile, marcarla `NOT VERIFIED`. Nessun upload, merge, deploy, o scrittura D1 automatica.
 ## 44 — Giacinto Lello (sturdy; fingerprint 46163acf3ae85a04)
 
 ```text
@@ -19,13 +19,19 @@ Player name: Giacinto Lello
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 46163acf3ae85a04
 Frozen physical class: sturdy
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -35,7 +41,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -103,13 +111,19 @@ Player name: Paolo Andrian
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 62dfab1eb9a0156a
 Frozen physical class: muscular
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -119,7 +133,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -187,13 +203,19 @@ Player name: Gennaro Cassola
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 28858299f2a27664
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -203,7 +225,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -271,13 +295,19 @@ Player name: Matthew Tiamiyu
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: cd5632866931fc36
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -287,7 +317,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -355,13 +387,19 @@ Player name: Patrizio Cimmini
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 9dafd2c35104e401
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -371,7 +409,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -439,13 +479,19 @@ Player name: Gianfranco Patry
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 243e072c6cd86198
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -455,7 +501,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -523,13 +571,19 @@ Player name: Severino Cerboni
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 64856e8445673fc1
 Frozen physical class: sturdy
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -539,7 +593,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -607,13 +663,19 @@ Player name: Giampiero Caione
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: ba69d6d23d2065c6
 Frozen physical class: sturdy
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -623,7 +685,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -691,13 +755,19 @@ Player name: Emilio Rigotto
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 5dacb214b01ccbb6
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -707,7 +777,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -775,13 +847,19 @@ Player name: Paolo Lacasa
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 5a1bae96432df5f4
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -791,7 +869,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -859,13 +939,19 @@ Player name: Massimo Bottineri
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 9ed4ab37138bc09a
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -875,7 +961,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -943,13 +1031,19 @@ Player name: Mario Bodi
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 518256f221ccf658
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -959,7 +1053,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -1027,13 +1123,19 @@ Player name: Ferdinando Guerriero
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 2e29062272c334fe
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1043,7 +1145,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -1111,13 +1215,19 @@ Player name: Gianni Cusenza
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 1ea0d00b0b56b3ed
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1127,7 +1237,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -1195,13 +1307,19 @@ Player name: Antonio Simplici
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: a66b2605ebc6f133
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1211,7 +1329,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -1279,13 +1399,19 @@ Player name: Andrea Cusenza
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 017ce26b3046699d
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1295,7 +1421,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -1363,13 +1491,19 @@ Player name: Enrico Pasi
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 1a64070f9f1578a8
 Frozen physical class: sturdy
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1379,7 +1513,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -1447,13 +1583,19 @@ Player name: Emanuele Pizzica
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 58f0516ad0b2cfdf
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1463,7 +1605,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -1531,13 +1675,19 @@ Player name: Angelo Mazzuca
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: a00e0e83a582feb0
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1547,7 +1697,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -1615,13 +1767,19 @@ Player name: Fiorenzo Colarusso
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: c580a3526d483791
 Frozen physical class: average-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1631,7 +1789,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -1699,13 +1859,19 @@ Player name: Arthur Kiesel
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 1a25525aa385aac5
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1715,7 +1881,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -1783,13 +1951,19 @@ Player name: Steven Sellen
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 59c1cc5a389a8fe6
 Frozen physical class: sturdy
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1799,7 +1973,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 
@@ -1867,13 +2043,19 @@ Player name: Craig Leaman
 Immutable appearance version: player-portrait-v4.1
 Immutable appearance fingerprint: 59756ee2a93dab36
 Frozen physical class: lean-fit
-Prompt export version: single-player-chat-v2
+Prompt export version: single-player-chat-v3
 
 PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:
-- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.
+- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.
 - Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.
-- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.
+- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.
 - GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.
+
+IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:
+- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.
+- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.
+- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.
+- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.
 
 Start by generating EXACTLY ONE original PNG portrait of this one player.
 No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.
@@ -1883,7 +2065,9 @@ Treat nationality and name as bookkeeping metadata only; facial features come ex
 ===== FULL VERSIONED IMAGE PROMPT — APPLY VERBATIM =====
 CHATGPT IMAGE GENERATION V4.1 — EXACTLY ONE INDIVIDUAL IMAGE FOR THIS PLAYER ONLY.
 
-The immutable identity below is the ONLY allowed facial reference; ignore all prior players and their images. Never reuse a previous face or produce a collage.
+ORIGINAL TEXT-TO-IMAGE CREATION ONLY: create from scratch without an input photo, image ID, existing portrait, mask or image reference. This is not editing, variation or restoration.
+
+The immutable written identity below is the ONLY authority for facial appearance. Never use an earlier player or existing image as a visual reference. Never produce a collage.
 
 --- CANONICAL V4.1 PROMPT (VERBATIM) ---
 

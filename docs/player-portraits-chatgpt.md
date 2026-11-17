@@ -151,3 +151,7 @@ V4 even after this extension; unapproved future candidate requests may opt in
 to V4.1 with their own versioned snapshots and independent QA. Nothing here
 writes DEV D1, publishes assets, merges code or deploys.
 See [V4.1 diversity details](player-portraits-v41-diversity.md).
+
+## Single-player chat v3 — original text-to-image only (#646)
+
+The exported handoff is **text-to-image creation from scratch**, never editing or variation of a supplied picture. **No user reference image is necessary or permitted**. Existing approved WebPs may only be checked read-only as metadata and never passed as input images or pose/face references. The generator must receive only the immutable V4.1 text, with zero image targets/IDs/masks/attachments. If ChatGPT exposes only edit/variation mode or returns a missing-target error, mark `GENERATION_UNAVAILABLE / NO CANDIDATE`, do not request an upload and do not report visual/pixel QA as completed. This guard cannot make an unavailable text-to-image operation available. `single-player-chat-v3` updates execution instructions and packaging only; it does not alter any V4.1 canonical facial traits, fingerprints, frozen body profiles or the approved V3 assets.

@@ -13,7 +13,7 @@ import {
  buildChatGptDiverseV4PortraitExecutionFromSnapshot
 } from '../backend/src/player-portrait-chatgpt.mjs';
 
-export const CHAT_PROMPT_EXPORT_VERSION='single-player-chat-v2';
+export const CHAT_PROMPT_EXPORT_VERSION='single-player-chat-v3';
 
 function requireRow(row){
  if(!row||typeof row!=='object'||Array.isArray(row)||
@@ -49,10 +49,16 @@ export async function createSinglePlayerChatPrompt(row){
   'Prompt export version: '+CHAT_PROMPT_EXPORT_VERSION,
   '',
   'PERMITTED CONNECTORS AND IMAGE ENGINE — STRICT:',
-  '- Use the connected GitHub plugin for read-only repository context (FraGioco9/football-architect), versioned V4.1 instructions on PR #648 and the existing published asset for this ID. Use it to record the per-player QA outcome in issue #646 when permitted; never commit/publish/rewrite image assets or merge a PR without separate explicit approval.',
+  '- Use the connected GitHub plugin to read V4.1 instructions on PR #648 and to record QA in issue #646 when permitted. The old approved WebP may be checked for existence/metadata ONLY; it is NEVER a creation input or facial/pose reference. Never commit/publish/rewrite images or merge without separate approval.',
   '- Use the connected Cloudflare plugin ONLY for read-only verification against DEV D1 database football-architect-dev of this player ID and frozen initial physical attributes, and optionally Preview context. NEVER access or modify Production. Never write to any D1 table, snapshot, asset_key or status on the strength of this prompt.',
-  '- ONLY ChatGPT built-in ImageGen creates or edits the portrait. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party image generators, and do not suggest them as a workaround.',
+  '- ONLY ChatGPT built-in ImageGen ORIGINAL TEXT-TO-IMAGE CREATION may generate the portrait. Do not invoke image editing, remix, restoration, or image-to-image. NEVER use Canva, the Canva plugin, Canva designs, templates, external design services or third-party generators.',
   '- GitHub/Cloudflare are data and QA connectors, NOT rendering tools. If either connector cannot be accessed, say so and mark that verification NOT VERIFIED. The complete frozen V4.1 identity below remains binding; do not fabricate a connector result or derive a new identity from current/evolved stats.',
+  '',
+  'IMAGE CREATION MODE — ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES:',
+  '- Generate a NEW image from the written canonical description ONLY, starting from scratch. This is NOT an edit, variation, remix, restoration, or alteration of a photo.',
+  '- An uploaded reference image is NOT REQUIRED. Do not ask the user to upload, choose, locate or identify a reference photo for composition, framing, pose, appearance or any other reason.',
+  '- Call only the original text-to-image generation capability, without image IDs, existing portraits, attachments, input_image, masks, URLs or reference-image parameters. The existing approved WebP is NEVER the image input.',
+  '- If the tool is edit-only, requests a source/image target, or offers no original text-to-image generation, STOP and report GENERATION_UNAVAILABLE / NO CANDIDATE. Do not call an image-edit operation, request an upload, fabricate an output or claim any image QA passed.',
   '',
   'Start by generating EXACTLY ONE original PNG portrait of this one player.',
   'No collage, no contact sheet, no other footballer, no caption and no second image in the same generation.',

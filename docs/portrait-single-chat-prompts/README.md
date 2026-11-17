@@ -15,7 +15,9 @@ non aggiornano i vecchi snapshot V3.
 
 ### Plugin da usare (NO Canva)
 
-Questa revisione usa `single-player-chat-v2`, senza modificare gli identikit V4.1.
+Questa revisione usa `single-player-chat-v3`, senza modificare gli identikit V4.1.
+Il prompt richiede **creazione originale da testo (text-to-image)**: nessuna immagine di riferimento, foto caricata, WebP pubblicato o immagine-target è necessaria o ammessa. In particolare non usare la modalità modifica/variazione/restauro del generatore. Se il motore ha solo la modalità editing o chiede un'immagine da modificare, rispondere `GENERATION_UNAVAILABLE / NO CANDIDATE` senza chiedere foto all'utente e senza inventare QA.
+
 I prompt iniziano con i riferimenti alle app collegate **GitHub** e **Cloudflare**.
 Nella nuova chat ChatGPT deve usare GitHub per leggere il repository
 `FraGioco9/football-architect` e, quando permesso, registrare il QA nella
@@ -72,4 +74,4 @@ Otterrai un file `<id>-<Nome-Cognome>.md` per giocatore, con l'esatto prompt can
 
 Ogni nuova chat può riportare in una issue GitHub ID, versione dello snapshot, fingerprint, identificativo della generazione, SHA dei file e QA. Un registro centrale permette poi di integrare solo le candidate accettate, con un passaggio di pubblicazione esplicitamente approvato. Per gli attuali 23, mantenere intatti `assets/players/portraits/<id>.webp` finché le sostituzioni non sono verificate e approvate.
 
-**Nota sulla versione:** i prompt in questo pacchetto sono stati prodotti con V4.1 al commit `0d9ada1534153b9c33b89080ac464bd1d5cc4fca`. Se in futuro cambieranno le regole di identità, servirà una **nuova versione** e nuovi fingerprint, mai una modifica silenziosa ai prompt già approvati.
+**Nota sulla versione:** gli identikit e i fingerprint V4.1 rimangono quelli del commit `0d9ada1534153b9c33b89080ac464bd1d5cc4fca`; `single-player-chat-v3` cambia solo le istruzioni di esecuzione per evitare richieste di immagini di riferimento. Se in futuro cambieranno le regole di identità, servirà una **nuova versione** e nuovi fingerprint, mai una modifica silenziosa ai prompt già approvati.

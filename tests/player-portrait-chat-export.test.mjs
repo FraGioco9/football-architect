@@ -23,7 +23,7 @@ test('standalone per-player prompt embeds the exact V4.1 canonical handoff once'
  const snapshot=await buildDiverseV4PortraitSnapshotForPlayer(row);
  const handoff=await buildChatGptDiverseV4PortraitExecutionFromSnapshot(snapshot);
  const canonical=await renderDiverseV4PortraitPromptFromSnapshot(snapshot);
- assert.equal(CHAT_PROMPT_EXPORT_VERSION,'single-player-chat-v2');
+ assert.equal(CHAT_PROMPT_EXPORT_VERSION,'single-player-chat-v3');
  assert.equal(result.id,44);
  assert.equal(result.fileName,'44-Giacinto-Lello.md');
  assert.equal(result.fingerprint,snapshot.appearance_fingerprint);
@@ -31,6 +31,12 @@ test('standalone per-player prompt embeds the exact V4.1 canonical handoff once'
  assert.equal(result.content.split(handoff.prompt).length,2);
  assert.equal(result.content.split(canonical).length,2);
  assert.match(result.content,/EXACTLY ONE original PNG portrait/);
+ assert.match(result.content,/ORIGINAL TEXT-TO-IMAGE, ZERO INPUT IMAGES/);
+ assert.match(result.content,/uploaded reference image is NOT REQUIRED/);
+ assert.match(result.content,/do not ask the user to upload/i);
+ assert.match(result.content,/GENERATION_UNAVAILABLE \/ NO CANDIDATE/);
+ assert.match(result.content,/not editing, variation or restoration/i);
+ assert.doesNotMatch(result.content,/ONLY allowed facial reference/i);
  assert.match(result.content,/Finish|complete QA|Complete QA/i);
  assert.match(result.content,/D1/);
  assert.match(result.content,/NOT VERIFIED/);
