@@ -34,9 +34,41 @@
   const selectorScript=document.createElement('script');
   selectorScript.type='module';selectorScript.src='/assets/provider-selectors-bootstrap.mjs';
   document.head.append(selectorScript);
-  const response=await fetch('/clubs/_shared/manifest.json',{credentials:'same-origin'});
-  if(!response.ok)throw Error('Club manifest unavailable');
-  const manifest=await response.json();
+  // Every view reuses the canonical static identity catalogue. Overview adds
+  // only the selected club's biography and rivalries, never the full manifest.
+  const identityOnly=selected.view!=='overview';
+  const manifestPath='/clubs/_shared/identity.json';
+  const clubKey=selected.countryId+'-'+selected.clubId;
+  const profilePath=identityOnly?null:'/clubs/_profiles/'+clubKey+'.json';
+  const [response,profileResponse]=await Promise.all([
+   fetch(manifestPath,{credentials:'same-origin',cache:'force-cache'}),
+   profilePath?fetch(profilePath,{credentials:'same-origin',cache:'force-cache'}):Promise.resolve(null)
+  ]);
+  if(!response.ok)throw Error('Club identity catalogue unavailable');
+  const identity=await response.json();
+  if(identity?.schemaVersion!==1||identity.projection!=='club-identity-v1'||
+     !Array.isArray(identity.clubs)||identity.clubs.length!==320||
+     !Array.isArray(identity.divisions)||identity.divisions.length!==16||
+     !identity.clubCrests||typeof identity.clubCrests!=='object'||
+     !identity.countryFlags||typeof identity.countryFlags!=='object')
+   throw Error('Invalid club identity projection');
+  let manifest=identity;
+  if(profilePath){
+   if(!profileResponse?.ok)throw Error('Club Overview profile unavailable');
+   const profile=await profileResponse.json();
+   const base=identity.clubs.find(c=>c.countryId+'-'+c.clubId===clubKey);
+   if(profile?.schemaVersion!==1||profile.projection!=='club-overview-v1'||
+      profile.clubKey!==clubKey||!base||!profile.club||
+      profile.club.countryId!==selected.countryId||profile.club.clubId!==selected.clubId||
+      !Array.isArray(profile.rivalries)||!['en','de','es','fr','it'].every(lang=>
+       typeof profile.club.descriptions?.[lang]==='string')||
+      ['city','primaryName','fullName','compactName','abbr','divisionId'].some(k=>profile.club[k]!==base[k])||
+      profile.rivalries.some(r=>r.clubAId!==clubKey&&r.clubBId!==clubKey))
+    throw Error('Invalid canonical Club Overview profile');
+   manifest={...identity,clubs:identity.clubs.map(c=>
+    c.countryId+'-'+c.clubId===clubKey?profile.club:c),
+    rivalries:profile.rivalries};
+  }
   window.faClubCrests=manifest.clubCrests;
   // Move already-loaded crest hosts rather than tearing down images on navigation,
   // locale changes or a sporting summary refresh. Match within the relevant panel:
@@ -206,6 +238,9 @@
       if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
       const nextUrl=new URL(link.href),next=model.route(nextUrl.pathname);
       if(!next||next.base!==selected.base)return;
+      // The full Overview biography is a separate immutable document read.
+      // Follow its native link rather than painting an incomplete view.
+      if(typeof identityOnly!=='undefined'&&identityOnly&&next.view==='overview')return;
       event.preventDefault();
       // An active tab is a no-op: keep the Roster snapshot, URL and scroll position.
       if(next.view===selected.view)return;
@@ -603,6 +638,9 @@
   window.addEventListener('popstate',()=>{
    const next=model.route(location.pathname);
    if(next&&next.base===selected.base){
+    if(identityOnly&&next.view==='overview'){
+     location.replace(location.href);return;
+    }
     const queryOnly=selected.view==='roster'&&next.view==='roster';
     selected=next;paint(true);refreshClubHistory();refreshClubOverview();
     if(!queryOnly)refreshClubRoster();
