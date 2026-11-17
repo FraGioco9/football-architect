@@ -101,8 +101,10 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    for(let card=0;card<8;card++)for(let rank=0;rank<5;rank++)
     assert.ok(Math.abs(loadingGeometry.clubWidths[card*5+rank]-clubPattern[rank])<.1,'club widths repeat deterministically at the same rank in every player card');
    assert.equal(loadingGeometry.teamClubWidths.length,35,'seven Teams cards reserve five club names each');
+   const teamClubPattern=loadingGeometry.teamClubWidths.slice(0,5);
+   assert.equal(new Set(teamClubPattern.map(Math.round)).size,5,'Teams club bars vary by rank too');
    for(let card=0;card<7;card++)for(let rank=0;rank<5;rank++)
-    assert.ok(Math.abs(loadingGeometry.teamClubWidths[card*5+rank]-clubPattern[rank])<.1,'Teams skeleton uses the same club-width pattern as Players');
+    assert.ok(Math.abs(loadingGeometry.teamClubWidths[card*5+rank]-teamClubPattern[rank])<.1,'Teams skeleton repeats its club-width pattern at each rank');
    assert.ok(loadingGeometry.valueWidths[0]>loadingGeometry.valueWidths[1]*1.5,'Rating includes coverage, unlike Goals');
    assert.ok(loadingGeometry.valueWidths[4]>loadingGeometry.valueWidths[1]*1.3,'Clean sheets include appearances');
    assert.equal(loadingGeometry.noTooltip,true,'no native hover tooltip on player names or clubs');
