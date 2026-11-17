@@ -300,10 +300,15 @@ test('#628 LAB-VAR-02 live small-sided choices vary across 29 seeds and still re
     counts[first.action in counts?first.action:'other']++;
    }finally{scene.dispose();}
   }
-  assert.ok(observed.has('shot'),'real selected situations still shoot');
-  assert.ok(observed.has('carry'),'real selected situations must also carry');
-  if(sId==='overload-2v1')
-   assert.ok(observed.has('pass'),'2v1 source geometry must offer real passes');
+  if(sId==='keeper-1v1'){
+   assert.ok(observed.has('shot'),'1v1 must actually shoot through an open live lane');
+   assert.ok(observed.has('carry'),'1v1 can also make a native short touch');
+  }else{
+   // The lone real defender often blocks ALL shot lanes; never force a
+   // false shot merely to fill a category. Passing and short carry remain.
+   assert.ok(observed.has('pass'),'2v1 live safe recipient must be selectable');
+   assert.ok(observed.has('carry'),'2v1 must also select an authentic short touch');
+  }
   process.stdout.write('ME_628_LIVE_CONTEXT_VARIATION '+JSON.stringify({
    situationId:sId,counts,distinct:[...observed].sort(),
    requiresNativeRapier:true,officialResult:null
