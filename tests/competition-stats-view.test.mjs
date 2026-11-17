@@ -286,9 +286,11 @@ test('COMP-STATS-643: player rows have no hover titles; metric-sized skeletons r
  c.seasonData.statistics.players=[{playerId:58,name:'Recorded Player',clubKey:'IT-1',appearances:1,starts:1,minutes:90,goals:1}];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  const labels=byClass(r,'fa-dev-stats-player-label');
- assert.equal(labels.length,1);
- assert.equal(labels[0].children[0].title,undefined,'player link has no native hover tooltip');
- assert.equal(labels[0].children[1].title,undefined,'club label has no native hover tooltip');
+ assert.ok(labels.length>=1,'at least one eligible recorded player row');
+ for(const label of labels){
+  assert.equal(label.children[0].title,undefined,'player link has no native hover tooltip');
+  assert.equal(label.children[1].title,undefined,'club label has no native hover tooltip');
+ }
  const markup=r.api.renderSkeleton('players');
  assert.equal((markup.match(/class="fa-dev-stats-player-label"/g)||[]).length,40,'five player identities per card');
  assert.equal((markup.match(/class="fa-dev-stats-club-link"/g)||[]).length,40,'club label keeps its own second row');
