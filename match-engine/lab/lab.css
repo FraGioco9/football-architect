@@ -13,7 +13,7 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-speed-control{display:grid;gap:5px;flex:0 0 92px}
 /* Inline LAB mode reuses the original reserved field. Explicit [hidden]
    overrides flexible/grid panel display rules, including open <details>. */
-.me-inline-variant-control[hidden],.me-inline-side-control[hidden],.me-advanced[hidden],
+#me-inline-variant-control[hidden],.me-inline-side-control[hidden],.me-advanced[hidden],
 .me-players-toggle[hidden],.me-inline-observation[hidden]{display:none!important}
 .me-inline-observation{min-width:0;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.4}
 .me-inline-side-control{flex:0 0 80px}
