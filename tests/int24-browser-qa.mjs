@@ -1,9 +1,11 @@
 import {verifyCanonicalStateBrowser} from './canonical-state-browser.mjs';
 import {createPreviewStandings} from '../tools/dev-standings-preview-data.mjs';
 import {readFileSync} from 'node:fs';
+import competitionModel from '../assets/competition-model.js';
 import {chromium} from "playwright";
 import {verifyFe04AccessibilityBrowser} from "./fe-04-accessibility-browser.mjs";
 import {verifyPlayersScrollBrowser} from './players-scroll-browser-532.mjs';
+import {verifyCompetitionCompactNetwork} from './competition-compact-network-browser.mjs';
 import {mkdirSync} from "node:fs";
 import assert from "node:assert/strict";
 
@@ -23,6 +25,8 @@ const screenshot=async(page,name)=>{
  await page.screenshot({path:out+'/'+name,fullPage:true});screenshots++;
 };
 try {
+ // #657: capture network/refresh before the inherited #656 match-link checks.
+ checks+=await verifyCompetitionCompactNetwork(browser,{engine:'chromium'});
  checks+=await verifyPlayersScrollBrowser(browser);
  // #605 / #656 — actual browser navigation for official Standings forms.
  // Fixture data is isolated to this page and intercepted locally: never
@@ -342,7 +346,7 @@ try {
   await page.addInitScript(lang=>localStorage.setItem('football-architect:language',lang),lang);
   let release;const gate=new Promise(resolve=>release=resolve);
   const blocked=async route=>{await gate;try{await route.continue()}catch{}};
-  await page.route('**/competitions/_shared/manifest.json',blocked);
+  await page.route('**/competitions/_shared/compact.json',blocked);
   const route='/competitions/'+slug+'/'+view+'?season='+season+(view==='fixtures'?'&matchday=12':'');
   try{
    const response=await page.goto(base+route,{waitUntil:'domcontentloaded'});
@@ -461,9 +465,37 @@ try {
    }
    assert.deepEqual(errors,[],'no page exceptions '+route);
    checks++;
-  }finally{release();await page.unroute('**/competitions/_shared/manifest.json',blocked);await page.close()}
+  }finally{release();await page.unroute('**/competitions/_shared/compact.json',blocked);await page.close()}
  }
 
+ // PERF-API-657: verify a direct page and hard refresh request only the
+ // compact shared catalogue, keeping the public first-paint shell stable.
+ for(const path of ['/competitions/it-1/fixtures?season=1&matchday=12',
+                    '/competitions/int-1/postseason?season=1']){
+  const page=await browser.newPage({viewport:{width:390,height:900}});
+  const requests={compact:0,legacy:0};
+  const compactRoute=async route=>{requests.compact++;await route.continue()};
+  const legacyRoute=async route=>{requests.legacy++;await route.abort()};
+  await page.route('**/competitions/_shared/compact.json',compactRoute);
+  await page.route('**/competitions/_shared/manifest.json',legacyRoute);
+  try{
+   for(const mode of ['direct','refresh']){
+    if(mode==='direct')await page.goto(base+path,{waitUntil:'domcontentloaded'});
+    else await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1'||
+      window.faCompetitionContext?.definition?.id==='int-1');
+    const valid=await page.evaluate(async()=>window.faCompetitionModel.validManifest(
+      await window.faCompetitionManifestPromise));
+    assert.equal(valid,true,'verified full rules after compact hydrate '+mode+' '+path);
+    assert.equal(await page.locator('.app-competition-tabs [role=tab]').count(),7);
+    assert.equal(await page.locator('[data-competition-load-error]').count(),0);
+   }
+   assert.equal(requests.compact,2,'one compact fetch per document including hard refresh '+path);
+   assert.equal(requests.legacy,0,'never fetch heavy manifest '+path);
+  }finally{await page.unroute('**/competitions/_shared/compact.json',compactRoute);
+   await page.unroute('**/competitions/_shared/manifest.json',legacyRoute);await page.close()}
+  checks++;
+ }
  // PAGE-LOAD-03C: cold Rules and deferred-view shells before the shared manifest.
  // These are focused P06-P13 subchecks, not complete six-axis acceptance.
  for(const [slug,view,width,lang] of [
@@ -477,7 +509,7 @@ try {
   await page.addInitScript(language=>localStorage.setItem('football-architect:language',language),lang);
   let release;const gate=new Promise(resolve=>release=resolve);
   const intercepted=async route=>{await gate;try{await route.continue()}catch{}};
-  await page.route('**/competitions/_shared/manifest.json',intercepted);
+  await page.route('**/competitions/_shared/compact.json',intercepted);
   const path='/competitions/'+slug+'/'+view+'?season=1';
   try{
    const response=await page.goto(base+path,{waitUntil:'domcontentloaded'});
@@ -521,7 +553,7 @@ try {
    assert.deepEqual(errors,[],'no first-paint exceptions '+path);
    console.log('PAGE-LOAD-03C PREPAINT '+JSON.stringify({slug,view,width,lang,fullStaticRules:initial.rules,reservedView:initial.skeleton}));
    checks++;
-  }finally{release();await page.unroute('**/competitions/_shared/manifest.json',intercepted);await page.close()}
+  }finally{release();await page.unroute('**/competitions/_shared/compact.json',intercepted);await page.close()}
  }
  // PAGE-LOAD-03C2: synchronous Season 1 -> Season 2 source invalidation.
  // A transition must preserve the static shell and must not show old-season
@@ -589,7 +621,7 @@ try {
  for(const view of ['rules','history']){
   const page=await browser.newPage({viewport:{width:390,height:900}});
   const failure=route=>route.fulfill({status:503,contentType:'application/json',body:'{}'});
-  await page.route('**/competitions/_shared/manifest.json',failure);
+  await page.route('**/competitions/_shared/compact.json',failure);
   const path='/competitions/it-1/'+view+'?season=1';
   try{
    await page.goto(base+path,{waitUntil:'domcontentloaded'});
@@ -598,12 +630,12 @@ try {
    assert.equal(await page.locator('#competition-tab-'+view).getAttribute('aria-selected'),'true','failed manifest retains active tab '+path);
    assert.equal(await page.locator('#competition-panel-'+view).count(),1,'failed manifest retains selected panel '+path);
    if(view==='rules')assert.ok(await page.locator('#competition-panel-rules [data-rule-definition]').count()>0,'canonical Rules survive manifest failure');
-   await page.unroute('**/competitions/_shared/manifest.json',failure);
+   await page.unroute('**/competitions/_shared/compact.json',failure);
    await page.reload({waitUntil:"domcontentloaded"});
    await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1');
    assert.equal(await page.locator('[data-competition-load-error]').count(),0,'hard refresh recovers '+path);
    checks++;
-  }finally{await page.unroute('**/competitions/_shared/manifest.json',failure);await page.close()}
+  }finally{await page.unroute('**/competitions/_shared/compact.json',failure);await page.close()}
  }
 
  // Manifest 503 and invalid JSON must retain permanent identity/navigation and
@@ -611,7 +643,7 @@ try {
  for(const [kind,status,body] of [['503',503,'{}'],['invalid-json',200,'invalid json']]){
   const page=await browser.newPage({viewport:{width:390,height:900}});
   const broken=route=>route.fulfill({status,contentType:'application/json',body});
-  await page.route('**/competitions/_shared/manifest.json',broken);
+  await page.route('**/competitions/_shared/compact.json',broken);
   try{
    await page.goto(base+'/competitions/it-1/fixtures?season=1&matchday=12',{waitUntil:"domcontentloaded"});
    await page.locator('[data-competition-load-error] [role=alert]').waitFor();
@@ -623,12 +655,12 @@ try {
     falseEmpty:!document.getElementById('app-fixtures-empty')?.hidden
    }));
    assert.deepEqual(state,{shell:true,title:true,tabs:7,rows:0,falseEmpty:false},'confirmed failure leaves anonymous standings until catalog recovers: '+kind);
-   await page.unroute('**/competitions/_shared/manifest.json',broken);
+   await page.unroute('**/competitions/_shared/compact.json',broken);
    await page.reload({waitUntil:"domcontentloaded"});
    await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1');
    assert.equal(await page.locator('[data-competition-load-error]').count(),0,'recover on hard refresh '+kind);
    checks++;
-  }finally{await page.unroute('**/competitions/_shared/manifest.json',broken);await page.close()}
+  }finally{await page.unroute('**/competitions/_shared/compact.json',broken);await page.close()}
  }
  const firstPaint=await browser.newPage({viewport:{width:1440,height:900}});
  await firstPaint.route('**/assets/competition-page.js',route=>route.abort());
@@ -1053,8 +1085,9 @@ try {
  for(const id of ['IT-1','int-1','int-2']){
   const historyPage=await browser.newPage({viewport:{width:390,height:900}});
   await historyPage.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
-  await historyPage.route('**/competitions/_shared/manifest.json',async route=>{
-   const response=await route.fetch(),json=await response.json();
+  await historyPage.route('**/competitions/_shared/compact.json',async route=>{
+   const response=await route.fetch(),compact=await response.json();
+   const json=competitionModel.expandCompactManifest(compact);
    const definition=json.competitions.find(definition=>definition.id===id);definition.rules.phases[0].points.win=2;
    if(id==='IT-1'){definition.rules.phases[0].rankOutcomes[0].to=2;definition.rules.phases[0].rankOutcomes[1].from=3;}
    else{
@@ -1064,7 +1097,7 @@ try {
     definition.metrics.phases[phase.id]=definition.metrics.phases.playoffs;delete definition.metrics.phases.playoffs;
     definition.capabilities.phaseIds=definition.rules.phases.map(p=>p.id);
    }
-   await route.fulfill({response,json});
+   await route.fulfill({response,json:competitionModel.packCompactManifest(json)});
   });
   await historyPage.goto(base+'/competitions/'+id.toLowerCase()+'/rules',{waitUntil:"domcontentloaded"});
   await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='2');

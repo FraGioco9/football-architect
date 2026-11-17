@@ -113,6 +113,65 @@
     }
     return data.divisions.every(d=>names.has(d.id))&&names.has("int-1")&&names.has("int-2");
   }
+
+  // Transport-only de-duplication. Expand the canonical manifest before any
+  // sporting rules/fixtures/history code runs; never validate a partial rule.
+  const templateKeys=['rules','metrics','capabilities'];
+  const compactFormat='competition-catalog-dedup-v1';
+  function packCompactManifest(manifest){
+    if(!validManifest(manifest))throw Error('Invalid canonical source for compact competition catalogue');
+    const templates=[],seen=new Map();
+    const competitions=manifest.competitions.map(original=>{
+      const template=Object.fromEntries(templateKeys.map(key=>[key,original[key]]));
+      const signature=JSON.stringify(template);
+      let templateIndex=seen.get(signature);
+      if(templateIndex===undefined){
+        templateIndex=templates.length;
+        seen.set(signature,templateIndex);templates.push(template);
+      }
+      const row={};
+      for(const [key,value] of Object.entries(original))if(!templateKeys.includes(key))row[key]=value;
+      row.templateIndex=templateIndex;
+      return row;
+    });
+    return {catalogFormat:compactFormat,schemaVersion:manifest.schemaVersion,
+      approved:manifest.approved,profile:manifest.profile,clubCrests:manifest.clubCrests,
+      divisions:manifest.divisions,templates,competitions};
+  }
+  function expandCompactManifest(compact){
+    const fields=['catalogFormat','schemaVersion','approved','profile','clubCrests','divisions','templates','competitions'];
+    if(!compact||typeof compact!=='object'||Array.isArray(compact)||
+       Object.keys(compact).length!==fields.length||fields.some(k=>!Object.hasOwn(compact,k))||
+       compact.catalogFormat!==compactFormat||
+       !Array.isArray(compact.templates)||compact.templates.length<1||compact.templates.length>18||
+       !Array.isArray(compact.competitions)||compact.competitions.length!==18)
+      throw Error('Invalid compact competition catalogue');
+    for(const template of compact.templates)
+      if(!template||typeof template!=='object'||Array.isArray(template)||
+         Object.keys(template).length!==templateKeys.length||
+         templateKeys.some(k=>!Object.hasOwn(template,k)))
+        throw Error('Invalid compact competition template');
+    const competitions=compact.competitions.map(row=>{
+      if(!row||typeof row!=='object'||Array.isArray(row)||
+         !Number.isSafeInteger(row.templateIndex)||row.templateIndex<0||
+         row.templateIndex>=compact.templates.length||
+         templateKeys.some(k=>Object.hasOwn(row,k))||
+         ['__proto__','constructor','prototype'].some(k=>Object.hasOwn(row,k)))
+        throw Error('Invalid compact competition reference');
+      const result={};
+      for(const [key,value] of Object.entries(row))if(key!=='templateIndex')result[key]=value;
+      // Keep each competition's rule objects independent, exactly as when
+      // parsing the original full manifest. Historical/debug projections may
+      // replace one definition without mutating another competition.
+      for(const key of templateKeys)result[key]=JSON.parse(JSON.stringify(compact.templates[row.templateIndex][key]));
+      return result;
+    });
+    const manifest={schemaVersion:compact.schemaVersion,approved:compact.approved,
+      profile:compact.profile,clubCrests:compact.clubCrests,
+      competitions,divisions:compact.divisions};
+    if(!validManifest(manifest))throw Error('Invalid reconstructed competition manifest');
+    return manifest;
+  }
   const competitionById=(manifest,id)=>validManifest(manifest)?manifest.competitions.find(x=>x.id===id)||null:null;
   // Immutable migration archive captured at 13a3a07. Never regenerate it from
   // editable current catalogues: old records without snapshots must not drift.
@@ -157,5 +216,5 @@
     if(!rules)return null;
     try{return engine().normalizeCompetition({...definition,rules})}catch{return null;}
   }
-  return freeze({countries,tiers,profile,schedule,views,divisionCount,participantCount,firstClubId,validRound,validManifest,competitionById,resolveSeasonRules,resolveSeasonDefinition});
+  return freeze({countries,tiers,profile,schedule,views,divisionCount,participantCount,firstClubId,validRound,validManifest,packCompactManifest,expandCompactManifest,competitionById,resolveSeasonRules,resolveSeasonDefinition});
 });

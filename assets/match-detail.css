@@ -149,6 +149,16 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  text-decoration-line:underline;text-decoration-thickness:.1em;text-underline-offset:3px;text-decoration-skip-ink:auto;
 }
 .app-match-side-link:not([href]){cursor:default}
+/* Page structure is server-rendered: placeholders are painted in reserved
+   value cells without waiting on match, club, or competition requests. */
+.app-match-page:is([data-match-load="loading"],[data-match-load="unavailable"]) .app-match-side-link:empty::before{
+ content:"";display:block;width:min(110px,100%);height:1em;
+ border-radius:4px;background:color-mix(in srgb,var(--muted) 26%,transparent);
+}
+.app-match-page:is([data-match-load="loading"],[data-match-load="unavailable"]) [data-match-overview]:empty::before{
+ content:"";display:block;width:min(9ch,100%);height:.85em;margin:0 auto;
+ border-radius:3px;background:color-mix(in srgb,var(--muted) 22%,transparent);
+}
 .app-match-side-stats{display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr);gap:8px;align-items:start;width:100%;min-width:0;margin-bottom:14px}
 .app-match-side-fact{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;margin:0}
 .app-match-side-fact[hidden]{display:none}

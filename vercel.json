@@ -317,7 +317,7 @@
       "destination": "/admin/:section/index.html"
     },
     {
-      "source": "/competitions/_shared/:file(index.html|manifest.json)",
+      "source": "/competitions/_shared/:file(index.html|manifest.json|compact.json)",
       "destination": "/competitions/_shared/:file"
     },
     {

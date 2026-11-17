@@ -627,11 +627,21 @@
     tooltip.append(meta,scoreline,context);
     document.body.append(tooltip);
     let verified=new Map(),active=null,touchWasOpen=false;
-    const close=()=>{
+    const reducedMotion=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
+    const hide=()=>{tooltip.hidden=true;tooltip.className="app-world-form-tooltip";};
+    const close=(immediate=false)=>{
       active?.removeAttribute("aria-describedby");
-      active=null;tooltip.hidden=true;tooltip.className="app-world-form-tooltip";
+      active=null;
       tooltip.setAttribute("aria-hidden","true");
+      if(immediate||reducedMotion||tooltip.hidden){hide();return;}
+      // Keep the tooltip rendered until the 130ms CSS exit animation ends.
+      // Do not restart an animation already in progress.
+      if(tooltip.className!=="app-world-form-tooltip is-closing")
+        tooltip.className="app-world-form-tooltip is-closing";
     };
+    tooltip.addEventListener("animationend",event=>{
+      if(event.target===tooltip&&event.animationName==="app-world-tooltip-out"&&!active)hide();
+    });
     const place=()=>{
       if(!active||tooltip.hidden)return;
       const rect=active.getBoundingClientRect(),width=window.innerWidth,height=window.innerHeight;
@@ -677,6 +687,13 @@
     };
     host.addEventListener("pointerover",event=>{const node=target(event);if(node&&["mouse","pen"].includes(event.pointerType))open(node)});
     host.addEventListener("pointerout",event=>{const node=target(event);if(node&&active===node&&!node.contains(event.relatedTarget)&&["mouse","pen"].includes(event.pointerType))close()});
+    // A captured pointerleave also dismisses a focused mark when pointerout
+    // was lost during DOM replacement or a Safari history restoration.
+    host.addEventListener("pointerleave",event=>{
+      if(event.target===active&&["mouse","pen"].includes(event.pointerType))close();
+    },true);
+    // BFCache retains the tooltip DOM/state; never restore a stale hover.
+    window.addEventListener("pagehide",()=>close(true));
     host.addEventListener("focusin",event=>{const node=target(event);if(node)open(node)});
     host.addEventListener("focusout",event=>{const node=target(event);if(node&&active===node&&!node.contains(event.relatedTarget))close()});
     host.addEventListener("pointerdown",event=>{const node=target(event);touchWasOpen=!!node&&["touch","pen"].includes(event.pointerType)&&active===node});
@@ -701,9 +718,9 @@
     document.querySelector(".fa-shell-content-scroll")?.addEventListener("scroll",place,{passive:true});
     document.querySelector(".app-world-standing-scroll")?.addEventListener("scroll",place,{passive:true});
     return {
-      clear(){verified=new Map();close()},
+      clear(){verified=new Map();close(true)},
       sync(records,rows,definition,rules){
-        close();verified=records;
+        close(true);verified=records;
         const list=document.getElementById("app-standings-compact-list");
         const items=new Map([...list.children].map(li=>[li.dataset.worldClub,li]));
         for(const row of rows){
@@ -1114,7 +1131,7 @@
       });
       button.addEventListener("pointerleave",event => {
         if ((event.pointerType === "mouse" || event.pointerType === "pen") &&
-            active === button && document.activeElement !== button) close();
+            active === button) close();
       });
       button.addEventListener("focus",() => open(entry));
       button.addEventListener("blur",() => { if (active === button) close(); });
@@ -1266,9 +1283,9 @@
     // Share the one validated manifest read with the local DEV presenters.
     // The promise is installed synchronously before any dependent script boots.
     const manifest=await (window.faCompetitionManifestPromise ||= (async()=>{
-      const dataResponse=await fetch(new URL("manifest.json",root),{credentials:"same-origin"});
+      const dataResponse=await fetch(new URL("compact.json",root),{credentials:"same-origin"});
       if(!dataResponse.ok)throw Error("Competition data unavailable");
-      return dataResponse.json();
+      return model.expandCompactManifest(await dataResponse.json());
     })());
     if(!model.validManifest(manifest))throw Error("Invalid or approved competition manifest");
     definition=model.competitionById(manifest,routeId);
@@ -1409,7 +1426,10 @@
     {
       try{
         const initialExplicitSeason=requestedSeasonWasExplicit;let publicDefaultApplied=false;
-        const {createAuthoritativeLoader}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
+        const {createAuthoritativeLoader,createCompetitionSeasonReadCache}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
+        // Validated official snapshots only. Changing a view or selecting an
+        // already-visited season never needs to repeat a current-world API read.
+        const seasonReadCache=createCompetitionSeasonReadCache();
         const {mountAuthoritativeHistory}=await import(new URL('authoritative-history.mjs',sourceUrl).href);
         const historyPanel=document.getElementById('competition-panel-history');
         const history=historyPanel?mountAuthoritativeHistory(historyPanel,{manifest,isDev:()=>activeDebugSeason!==null,getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()}):null;
@@ -1418,7 +1438,15 @@
         // Each competition view owns its empty/loading shell; no global
         // "No published season data yet" banner is inserted above standings.
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');if(activeDebugSeason===null){publicStandingsState=state==='empty'?'empty':state==='partial'||state==='available'?'verified':'pending';if(state==='empty'||state==='unavailable')standingsRefresh?.();}/* No cross-view empty banner; retain panel-specific loading states. */},
+          commit:(data,revision)=>{
+            const selectedSeason=window.faCompetitionContext?.selectedSeason;
+            const accepted=acceptSeasonData(data,revision,true);
+            if(accepted)seasonReadCache.remember({
+              competitionId:definition.id,season:selectedSeason,
+              snapshot:window.faWorldState?.get?.(),data
+            });
+            return accepted;
+          },onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');if(activeDebugSeason===null){publicStandingsState=state==='empty'?'empty':state==='partial'||state==='available'?'verified':'pending';if(state==='empty'||state==='unavailable')standingsRefresh?.();}/* No cross-view empty banner; retain panel-specific loading states. */},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.
@@ -1455,9 +1483,38 @@
             if(pendingLoads===0)revalidateWorld(window.faWorldState?.get?.());
           });
         };
-        const select=()=>{if(activeDebugSeason!==null){loader.cancel();window.faStandingsLoading?.set('api',false);return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void load()};
+        const select=()=>{
+          if(activeDebugSeason!==null){
+            loader.cancel();seasonReadCache.clear();
+            window.faStandingsLoading?.set('api',false);return;
+          }
+          const c=window.faCompetitionContext,snapshot=window.faWorldState?.get?.();
+          const key=c?.definition.id+':'+c?.selectedSeason+':'+snapshot?.sourceRevision;
+          if(key===selection)return;
+          selection=key;
+          const cached=seasonReadCache.find({
+            competitionId:definition.id,season:c?.selectedSeason,snapshot
+          });
+          if(cached){
+            // Abort a stale in-flight season request before restoring the
+            // previously verified official snapshot for this exact world.
+            loader.cancel();
+            if(acceptSeasonData(cached.data,c.revision,true)){
+              lastSuccessfulRead=worldReadKey(window.faCompetitionContext,snapshot);
+              window.faStandingsLoading?.set('api',false);
+              return;
+            }
+          }
+          void load();
+        };
         window.addEventListener('fa:competition-context-change',select);
-        window.addEventListener('fa:source-change',()=>{if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;selection='';setDebugSeason(window.faDebugEnabled!==true?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select()});
+        window.addEventListener('fa:source-change',()=>{
+          // DEV and public world generations must never share cached sporting
+          // participants, historical rules, results, or match outcomes.
+          seasonReadCache.clear();
+          if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;
+          selection='';setDebugSeason(window.faDebugEnabled!==true?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select();
+        });
         window.faWorldState?.subscribe?.(revalidateWorld);
         window.addEventListener('pageshow',event=>{if(event.persisted)void load()});
         window.addEventListener('pagehide',event=>{

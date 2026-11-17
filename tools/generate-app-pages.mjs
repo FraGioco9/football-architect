@@ -14,6 +14,7 @@ import model from "../assets/competition-model.js";
 import {loadCompetitionCatalogue} from "./competition-catalogue.mjs";
 import {createCompetitionRenderer} from "./render-competition-page.mjs";
 import {clubCrestAssets} from "./club-crest-assets.mjs";
+import {renderMatchPublicContext} from "./render-match-public-context.mjs";
 import {validateProvisionalAllocations} from "./validate-provisional-allocations.mjs";
 import {validateDivisionAssets,renderDivisionLogo} from "./validate-division-assets.mjs";
 
@@ -154,7 +155,9 @@ const frontloadCompetitionShell=(source,id)=>{
  const readyAt=headerEnd+'          </header>'.length;
  return result.slice(0,readyAt)+'\n          <script data-fa-competition-first-paint-ready>if(!["standings","postseason","fixtures","stats","history","awards"].includes(document.documentElement.dataset.competitionView))document.documentElement.removeAttribute("data-fa-competition-prepaint");</script>'+result.slice(readyAt);
 };
-const competitionShellCss='<style data-fa-competition-shell>html[data-fa-competition-prepaint]:not([data-competition-view=\"history\"]) body{visibility:hidden}#app-divisions{display:flex;flex-direction:column}#app-divisions>.app-competition-header{order:0}#app-divisions>#app-competition-season-unavailable{order:0}#app-divisions>.app-competition-tabs{order:1;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap,28px);padding:0 0 7px;border-bottom:1px solid var(--line)}#app-divisions>.app-competition-panel{order:2}</style>';
+// Reveal the scroll pane independently after static competition skeletons have parsed;
+// WebKit must not retain inherited hidden visibility from the prepaint gate.
+const competitionShellCss='<style data-fa-competition-shell>html[data-fa-competition-prepaint]:not([data-competition-view=\"history\"]) .fa-shell-content-scroll{opacity:0}html[data-competition-view]:not([data-fa-competition-prepaint]):not([data-nav01-fragment=\"pending\"]) .fa-shell-content-scroll{opacity:1;visibility:visible}#app-divisions{display:flex;flex-direction:column}#app-divisions>.app-competition-header{order:0}#app-divisions>#app-competition-season-unavailable{order:0}#app-divisions>.app-competition-tabs{order:1;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap,28px);padding:0 0 7px;border-bottom:1px solid var(--line)}#app-divisions>.app-competition-panel{order:2}</style>';
 const competitionRoute = d=>{
  let html=template;
  for(const [token,value] of Object.entries(worldPageReplacements(d,d.category==="international")))html=html.replace(token,value);
@@ -349,6 +352,7 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
  writeOutput("clubs/index.html",html);
 }
 writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
+writeOutput("competitions/_shared/compact.json",JSON.stringify(model.packCompactManifest(competitionManifest))+"\n");
 if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 19 Competitions), 1 neutral snapshot structurally audited, 1 competition manifest, 1 club template and 1 club manifest");
 
 // Explore: public Players directory has its own canonical page, separate from Admin's generator.
@@ -375,6 +379,9 @@ for(const [source,output,mode] of [
  const html=readFileSync(new URL('../'+source,import.meta.url),'utf8').replace(/\r\n/g,'\n');
  writeOutput(output,renderPlayerDetailPage(html,mode));
 }
+
+// A compact, build-verified match identity projection replaces two heavy manifests.
+writeOutput("assets/match-public-context.mjs",renderMatchPublicContext(clubData,competitionManifest.competitions,clubCrestAssets().catalog));
 
 // #577: one reusable match shell; identities and outcomes arrive from the verified API.
 {

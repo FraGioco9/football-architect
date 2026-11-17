@@ -116,6 +116,7 @@
     translate();
     render();
     dialog.showModal();
+    loadDivisions();
     input.focus({preventScroll:true});
   }
   function finishClose() {
@@ -207,8 +208,11 @@
   new MutationObserver(translate).observe(document.documentElement,{attributes:true,attributeFilter:["lang"]});
   translate();
   const sourceUrl = document.currentScript?.src;
-  if (sourceUrl && typeof fetch === "function") {
-    fetch(new URL("../data/divisions.json", sourceUrl), {credentials:"same-origin"})
+  let divisionsRequested=false;
+  function loadDivisions(){
+   if(divisionsRequested||!sourceUrl||typeof fetch!=="function")return;
+   divisionsRequested=true;
+   fetch(new URL("../data/divisions.json", sourceUrl), {credentials:"same-origin"})
       .then(response => {
         if (!response.ok) throw new Error("Division catalogue unavailable");
         return response.json();
@@ -232,4 +236,6 @@
       })
       .catch(() => { /* Preserve normal page search when the catalogue cannot load. */ });
   }
+  // On every page, only opening Search needs the global division catalogue.
+  // One lazy request per document; irrelevant page loads do not need it.
 })();

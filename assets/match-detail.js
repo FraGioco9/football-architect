@@ -262,15 +262,25 @@
  function render(){
   const tr=text();
   if(errorKind){
-   root.dataset.matchLoad='missing';
+   root.dataset.matchLoad=errorKind==='missing'?'missing':'unavailable';
    const feedback=find('[data-match-feedback]');if(feedback){feedback.hidden=false;feedback.textContent=errorKind==='missing'?tr.notFound:tr.error}
    document.title=tr.match+' — Football Architect';return;
   }
   const pitch=find('[data-match-pitch]');if(pitch)pitch.setAttribute('aria-label',tr.pitch);
+  // Do not fill unknown participants or metadata before the verified match arrives.
+  // The static HTML already paints every panel; only fixed labels are localized.
+  if(!data){
+   root.querySelectorAll('[data-match-label]').forEach(node=>{
+    const key=node.dataset.matchLabel;
+    if(key&&tr[key])node.textContent=tr[key];
+   });
+   const panel=find('[data-match-overview-panel]');
+   if(panel)panel.setAttribute('aria-label',tr.overview);
+   return;
+  }
   renderOverview(tr);
   renderSides(tr);
   renderLineups(tr);
-  if(!data)return;
   root.dataset.matchLoad='ready';
   applyCompetition();
   // Scores are shown ONLY when provided as a verified completed result.
@@ -287,26 +297,55 @@
   }
   showTeam('home');showTeam('away');document.title=tr.match+' — Football Architect';
  }
+
+ function validMatch(item){
+  return item?.schemaVersion===1&&item?.providerId==='authoritative-world'&&
+   item.provenance?.kind==='authoritative'&&String(item.matchId)===matchId&&
+   ['awaiting_participants','scheduled','in_progress','completed','postponed','cancelled'].includes(item.status)&&
+   /^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(item.competitionId||'')&&
+   Number.isSafeInteger(item.season)&&item.season>=1&&
+   (item.status!=='completed'||Number.isSafeInteger(item.result?.homeGoals)&&
+    Number.isSafeInteger(item.result?.awayGoals)&&item.result.homeGoals>=0&&item.result.awayGoals>=0);
+ }
+ function validContext(context,item){
+  if(!context||!Array.isArray(context.clubs)||context.clubs.length>2||
+     !Array.isArray(context.competitions)||context.competitions.length!==1)return false;
+  const comp=context.competitions[0];
+  if(comp?.id!==item.competitionId||typeof comp.name!=='string')return false;
+  const participants=[item.homeParticipant?.clubId,item.awayParticipant?.clubId]
+   .map(clubKey).filter(Boolean);
+  const unique=[...new Set(participants)];
+  if(context.clubs.length!==unique.length)return false;
+  return context.clubs.every(club=>unique.includes(club?.countryId+'-'+club?.clubId)&&
+   typeof club.primaryName==='string'&&typeof club.abbr==='string'&&
+   typeof club.stadiumName==='string');
+ }
+ function embeddedMatch(){
+  const script=document.getElementById('fa-match-initial-data');
+  if(script?.tagName!=='SCRIPT'||script.type!=='application/json')return null;
+  try{
+   const value=JSON.parse(script.textContent||'');
+   return validMatch(value?.match)&&validContext(value.context,value.match)?value:null;
+  }catch{return null}
+ }
  async function load(){
   if(!numeric(matchId)){errorKind='missing';render();return}
+  const preloaded=embeddedMatch();
   const reads=await Promise.allSettled([
-   fetch('/api/matches/'+matchId,{credentials:'omit',cache:'no-store'}).then(async r=>{if(!r.ok)throw Error(r.status===404?'missing':'error');return r.json()}),
-   fetch('/clubs/_shared/manifest.json',{credentials:'omit',cache:'force-cache'}).then(r=>r.ok?r.json():null),
-   fetch('/competitions/_shared/manifest.json',{credentials:'omit',cache:'force-cache'}).then(r=>r.ok?r.json():null),
+   preloaded?Promise.resolve(preloaded.match):
+    fetch('/api/matches/'+matchId,{credentials:'omit',cache:'no-store'}).then(async r=>{if(!r.ok)throw Error(r.status===404?'missing':'error');return r.json()}),
+   preloaded?Promise.resolve(null):import('/assets/match-public-context.mjs'),
    import('/assets/match-scoreboard-themes.mjs')
   ]);
-  if(reads[1].status==='fulfilled'&&Array.isArray(reads[1].value?.clubs))clubs=reads[1].value;
-  if(reads[2].status==='fulfilled'&&Array.isArray(reads[2].value?.competitions))competitions=reads[2].value;
-  if(reads[3].status==='fulfilled'&&typeof reads[3].value?.resolveScoreboardTheme==='function')
-   themeResolver=reads[3].value.resolveScoreboardTheme;
+  if(reads[2].status==='fulfilled'&&typeof reads[2].value?.resolveScoreboardTheme==='function')
+   themeResolver=reads[2].value.resolveScoreboardTheme;
   if(reads[0].status!=='fulfilled'){errorKind=reads[0].reason?.message==='missing'?'missing':'error';render();return}
   const item=reads[0].value;
-  if(item?.schemaVersion!==1||item?.providerId!=='authoritative-world'||String(item.matchId)!==matchId||
-   !['awaiting_participants','scheduled','in_progress','completed','postponed','cancelled'].includes(item.status)||
-   !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(item.competitionId||'')||
-   !Number.isSafeInteger(item.season)||item.season<1||
-   item.status==='completed'&&(!Number.isSafeInteger(item.result?.homeGoals)||!Number.isSafeInteger(item.result?.awayGoals)||item.result.homeGoals<0||item.result.awayGoals<0)){
-   errorKind='error';render();return;
+  if(!validMatch(item)){errorKind='error';render();return;}
+  const context=preloaded?.context||(reads[1].status==='fulfilled'
+   ?reads[1].value?.matchPublicContext?.(item):null);
+  if(validContext(context,item)){
+   clubs={clubs:context.clubs};competitions={competitions:context.competitions};
   }
   data=item;errorKind=null;render();
   // Match data and the competition snapshot are read independently. Only
