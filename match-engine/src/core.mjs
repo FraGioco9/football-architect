@@ -572,7 +572,10 @@ export function createEngine(RAPIER, input = {}, {
   const smallBodyGuard=diagnosticSmallSidedBodyGuardEnabled?
    createSmallSidedNativeBodyGuard(RAPIER,world,ballCollider,
      stagedShoes,smallSided.activeIds,{
-      feedbackEnabled:diagnosticSmallSidedBodyFeedbackEnabled
+      feedbackEnabled:diagnosticSmallSidedBodyFeedbackEnabled,
+      ...(smallSided?.id==='dribble-1v1'?{
+       dribbleGroundBallCentreZ:BALL_RADIUS
+      }:{})
      }):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?

@@ -1878,6 +1878,8 @@ export function createPlayerMovement(options={}){
     x:0,y:0,z:0,vx:0,vy:0,vz:0
    }):INITIAL_PLAYERS;
  let tick=0;
+ // D-01: phase only after same-world actual shoe impulse, never synthetic.
+ let dribbleRecoveryUntilTick=-1;
  const players=initial.map(p=>({...p}));
  let b06bGoalKickoffTarget=null;
  function queueB06bOriginalGoalKickoff(event){
@@ -2147,13 +2149,23 @@ export function createPlayerMovement(options={}){
   });
  }
  function step(ballPosition={x:0,y:0},priorRealPass=null,
-  priorRealTap=null,realBallVelocity=null){
+  priorRealTap=null,realBallVelocity=null,priorRealDribbleAction=null){
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
   if(options.researchSmallSidedBodyFeedback===true&&
      smallBodyFeedbackTick!==tick)
    throw new TypeError('LAB native feedback requires the prior tick acknowledgment');
+  if(priorRealDribbleAction!==null&&(
+     smallSided?.id!=='dribble-1v1'||
+     priorRealDribbleAction?.action!=='carry'||
+     priorRealDribbleAction.playerId!==smallSided.side+'-10'||
+     priorRealDribbleAction.tick!==tick||
+     priorRealDribbleAction.appliedByRapier!==true||
+     priorRealDribbleAction.actualPhysicsImpulseApplied!==true||
+     priorRealDribbleAction.officialMatchAction!==false))
+   throw new TypeError('D-01 release follows only current actual Rapier carry');
+  if(priorRealDribbleAction!==null)dribbleRecoveryUntilTick=tick+15;
   const ball=ballXY(ballPosition);
   if(options.researchGoalkeeperSaveSide!==undefined&&(
      !realBallVelocity||
@@ -2401,8 +2413,19 @@ export function createPlayerMovement(options={}){
      return goalkeeperPosition(p.team,ball);
     const attack=smallSided.side==='home'?1:-1;
     if(p.team===smallSided.side){
-     if(p.id===smallSided.side+'-10')
+     if(p.id===smallSided.side+'-10'){
+      if(smallSided.id==='dribble-1v1'&&tick<dribbleRecoveryUntilTick){
+       const defender=players.find(x=>x.id===smallSided.opponent+'-2');
+       const lateral=Math.sign(ball.y-defender.y)||
+        (smallSided.variantIndex%2===0?1:-1);
+       return Object.freeze({
+        x:clamp(ball.x-attack*0.28,-PLAYER_KINEMATIC_LIMITS.maxX,
+         PLAYER_KINEMATIC_LIMITS.maxX),
+        y:clamp(ball.y+lateral*0.55,-PLAYER_KINEMATIC_LIMITS.maxY,
+         PLAYER_KINEMATIC_LIMITS.maxY)});
+      }
       return Object.freeze({x:ball.x-attack*0.08,y:ball.y});
+     }
      const wing=p.id.endsWith('-9')?-1:1;
      return Object.freeze({x:clamp(ball.x-attack*3,
       -PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),

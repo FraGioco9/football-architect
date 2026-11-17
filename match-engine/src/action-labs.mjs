@@ -467,7 +467,8 @@ export function createControlledActionLab(RAPIER,id,{
   let frame=mover.step(prior.ball.position,
    spec.mode==='control'?firstPhysicalPassAction:null,
    reachExperiment?engine.researchReceiverTapSnapshot():null,
-   goalkeeperSave?prior.ball.velocity:null);
+   goalkeeperSave?prior.ball.velocity:null,
+    id==='dribble-1v1'?engine.uniformAutonomousActionSnapshot():null);
   const initialAfter=engine.step(frame);
    if(smallSided&&bodyGuardEnabled){
     // Only post-step original native manifolds feed the canonical mover.

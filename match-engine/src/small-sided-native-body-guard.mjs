@@ -14,9 +14,14 @@ const freeze=Object.freeze;
 const idPair=(a,b)=>[a,b].sort().join('|');
 
 export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
- initialPlayers,activePlayerIds,{feedbackEnabled=false}={}){
+ initialPlayers,activePlayerIds,{feedbackEnabled=false,
+  dribbleGroundBallCentreZ=null}={}){
  if(typeof feedbackEnabled!=='boolean')
   throw new TypeError('LAB feedback option must be a boolean');
+ if(dribbleGroundBallCentreZ!==null&&(!Number.isFinite(dribbleGroundBallCentreZ)||
+   dribbleGroundBallCentreZ<0.09||dribbleGroundBallCentreZ>0.13||
+   activePlayerIds?.length!==2))
+  throw new TypeError('D-01 low-level ball/leg source requires genuine 1v1');
  if(!R?.RigidBodyDesc||!R?.ColliderDesc||
     typeof world?.createRigidBody!=='function'||
     typeof world?.contactPair!=='function'||
@@ -44,7 +49,9 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
    .setCollisionGroups((TORSO_CATEGORY<<16)|TORSO_CATEGORY),rigid);
   // Lower leg: can physically deflect the existing ball, but never touch
   // shoe colliders. Body contact is not automatically "ball protection".
-  const leg=world.createCollider(R.ColliderDesc.ball(LEG_RADIUS_M)
+  const leg=world.createCollider(R.ColliderDesc.ball(dribbleGroundBallCentreZ===null?LEG_RADIUS_M:0.14)
+   .setTranslation(0,0,dribbleGroundBallCentreZ===null?0:
+    dribbleGroundBallCentreZ-LEG_CENTRE_Z_M)
    .setDensity(80).setFriction(0.7).setRestitution(0)
    .setCollisionGroups((LEG_CATEGORY<<16)|BALL_CATEGORY),rigid);
   entries.push({id:actor.id,team:actor.team,rigid,torso,leg});
