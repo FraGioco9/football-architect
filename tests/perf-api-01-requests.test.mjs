@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {describeApiUrl,describeDataUrl,TRACKED_STATIC_DATA,describePageUrl,attachResourceTransferTimings,summarizeRequests,summarizeVisit,waitForApiCompletion,validateSamplerBackend,DEFAULT_ROUTES,IN_PAGE_SCENARIOS,CLUB_READ_AUDIT} from '../tools/perf-api-01-requests.mjs';
+import {describeApiUrl,describeDataUrl,PERF_CAPTURE_SCHEMA_VERSION,TRACKED_STATIC_DATA,TRACKED_STATIC_MODULES,describePageUrl,attachResourceTransferTimings,summarizeRequests,summarizeVisit,waitForApiCompletion,validateSamplerBackend,hasFailedTrackedRead,parseArgs,DEFAULT_ROUTES,IN_PAGE_SCENARIOS,CLUB_READ_AUDIT} from '../tools/perf-api-01-requests.mjs';
 
 test('API audit redacts secret values and ignores static assets',()=>{
  assert.equal(describeApiUrl('http://app.localhost:2000/assets/main.js'),null);
@@ -155,4 +155,55 @@ test('PERF-API-657 Club audit uses actual tab links and season options, without 
  assert.match(CLUB_READ_AUDIT.seasonOptions,/data-menu-value/);
  for(const route of ['/clubs/it/1/overview','/clubs/it/1/fixtures','/clubs/it/1/history'])
   assert.ok(DEFAULT_ROUTES.includes(route),route);
+});
+
+test('PERF-API-657 measures explicitly scoped module transport separately from API and catalogue reads',()=>{
+ assert.equal(PERF_CAPTURE_SCHEMA_VERSION,2);
+ for(const path of ['/assets/competition-model.js','/assets/club-competition-catalogue.mjs',
+  '/assets/club-fixtures-controller.mjs','/assets/club-history-source.mjs',
+  '/assets/competition-rules-view.js','/assets/competition-tabs.js']){
+  assert.ok(TRACKED_STATIC_MODULES.includes(path),path);
+  assert.deepEqual(describeDataUrl('http://app.localhost:2000'+path),
+   {path,queryKeys:[],comparisonKey:path,resourceKind:'module'});
+ }
+ for(const path of ['/assets/other.js','/assets/app.css','/assets/club-competition-catalogue.mjs/extra'])
+  assert.equal(describeDataUrl('http://app.localhost:2000'+path),null,path);
+ const api={...describeDataUrl('http://app.localhost:2000/api/world'),method:'GET',transferBytes:110};
+ const catalog={...describeDataUrl('http://app.localhost:2000/competitions/_shared/compact.json'),method:'GET',transferBytes:410};
+ const module={...describeDataUrl('http://app.localhost:2000/assets/competition-model.js?token=secret'),method:'GET',transferBytes:120};
+ const summary=summarizeRequests([api,catalog,module]);
+ assert.equal(summary.requestCount,3);
+ assert.equal(summary.apiRequestCount,1);
+ assert.equal(summary.catalogRequestCount,1);
+ assert.equal(summary.moduleRequestCount,1);
+ assert.equal(summary.transferBytes,640);
+ assert.equal(summary.endpoints.find(x=>x.resourceKind==='module').path,'/assets/competition-model.js');
+ assert.equal(JSON.stringify(summary).includes('secret'),false);
+ assert.equal(summarizeVisit([api,catalog,module],{complete:false}).moduleRequestCount,null);
+});
+
+test('PERF-API-657 rejects failed transport, 5xx and unexpected 4xx rather than reporting savings',()=>{
+ const ok=(path,status,kind='api')=>({method:'GET',resourceKind:kind,path,status});
+ assert.equal(hasFailedTrackedRead([]),false);
+ assert.equal(hasFailedTrackedRead([ok('/api/world',200),ok('/api/player/permissions',401),
+  ok('/api/admin/session',401),ok('/api/matches/seasons/1/competitions/it-1',404),
+  ok('/api/matches/seasons/2/competitions/int-2',404)]),false,
+  'only documented anonymous 401 and unpublished match collections 404 are valid');
+ for(const sample of [
+  ok('/competitions/_shared/compact.json',404,'catalog'),
+  ok('/assets/competition-model.js',404,'module'),
+  ok('/api/world',401),ok('/api/clubs/IT-1/history',404),
+  ok('/api/matches/seasons/1/competitions/it-1',403),
+  {...ok('/api/matches/seasons/1/competitions/it-1',404),method:'POST'},
+  ok('/api/world',503),{...ok('/api/world',200),failed:true},
+  {path:'/api/world',status:null,settled:true},{...ok('/api/world',200),settled:false}
+ ])assert.equal(hasFailedTrackedRead([sample]),true,JSON.stringify(sample));
+});
+
+test('PERF-API-657 distinguishes the served checkout from the sampler checkout',()=>{
+ const sha='a'.repeat(40);
+ assert.equal(parseArgs(['before','--served-head='+sha]).servedHead,sha);
+ assert.equal(parseArgs(['after','--runs=1']).servedHead,null);
+ assert.throws(()=>parseArgs(['before','--served-head=short']),/served-head/);
+ assert.throws(()=>parseArgs(['after','--served-head='+sha+'private']),/served-head/);
 });
