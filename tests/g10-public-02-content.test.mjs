@@ -108,13 +108,16 @@ test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{tim
     "primaryHex","secondaryHex","ivoryHex","rules"]);
   for(const division of divisionCatalogue)assert.equal(division.rules?.schemaVersion,1);
   const jsonPaths=debug.filter(path=>path.endsWith(".json")).sort();
-  assert.deepEqual(jsonPaths,[
+  const profiles=debug.filter(path=>path.startsWith("clubs/_profiles/")&&path.endsWith(".json")).sort();
+  assert.equal(profiles.length,320,'all immutable Club Overview profiles must be public');
+  assert.deepEqual(jsonPaths,[...profiles,
    "__fa_dev__/artifact-manifest.json",
+   "clubs/_shared/identity.json",
    "clubs/_shared/manifest.json",
    "competitions/_shared/manifest.json",
    "data/country-codes.json",
    "data/divisions.json",
    "vercel.json"
-  ]);
+  ].sort());
  }finally{rmSync(root,{recursive:true,force:true})}
 });
