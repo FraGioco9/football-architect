@@ -1,5 +1,6 @@
 import {loadSeasonOnePreview} from '../tools/load-season-one-preview.mjs';
 import test from 'node:test';
+import {projectClubIdentityManifest,projectClubOverviewProfile} from '../tools/generate-club-pages.mjs';
 import {runInNewContext as vmRunInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -850,4 +851,69 @@ test('CLUB-FIXTURES: DEV season initializes from protected bootstrap, not a publ
  assert.match(read('assets/club-fixtures-controller.mjs'),/season:displaySeason,/);
  assert.match(read('assets/club-fixtures-controller.mjs'),/currentSeason:/);
  assert.match(read('assets/club-fixtures-controller.mjs'),/explicitSeason:/);
+});
+
+test('PERF-API-657 club identity-only projection matches canonical data and renders non-Overview views',async()=>{
+ const full=JSON.parse(read('clubs/_shared/manifest.json'));
+ const slim=JSON.parse(read('clubs/_shared/identity.json'));
+ assert.deepEqual(slim,projectClubIdentityManifest(full));
+ assert.equal(slim.projection,'club-identity-v1');
+ assert.equal(slim.clubs.length,320);
+ assert.ok(read('clubs/_shared/identity.json').length<read('clubs/_shared/manifest.json').length*.25);
+ for(const c of slim.clubs){
+  const original=full.clubs.find(x=>x.countryId===c.countryId&&x.clubId===c.clubId);
+  assert.ok(original);
+  for(const key of ['primaryName','fullName','compactName','city','abbr','divisionId'])
+   assert.equal(c[key],original[key]);
+  for(const key of ['description','descriptions','nickname','rivalries'])
+   assert.equal(Object.hasOwn(c,key),false);
+ }
+ assert.equal(isAllowlistedPublicPath('clubs/_shared/identity.json'),true);
+ const {default:model}=await import('../assets/club-model.js');
+ for(const countryId of ['IT','ENG','DE','ES','FR','PT','NL','BR'])
+  for(const view of ['roster','fixtures','stats','history']){
+   const route=model.route('/clubs/'+countryId.toLowerCase()+'/1/'+view);
+   for(const locale of ['en','it'])
+    assert.equal(model.render(slim,route,locale,'?season=1'),
+     model.render(full,route,locale,'?season=1'),countryId+' '+view+' '+locale);
+  }
+});
+test('PERF-API-657 preserves full Overview and native navigation from a lightweight Club tab',()=>{
+ const source=read('assets/club-page.js');
+ assert.match(source,/const identityOnly=selected\.view!=='overview'/);
+ assert.match(source,/fetch\(manifestPath,\{credentials:'same-origin',cache:'force-cache'\}\)/);
+ assert.match(source,/if\(typeof identityOnly!=='undefined'&&identityOnly&&next\.view==='overview'\)return;/);
+ assert.match(source,/if\(identityOnly&&next\.view==='overview'\)\{\s*location\.replace\(location\.href\)/);
+});
+
+test('PERF-API-657 all Club Overview profiles reproduce canonical translations and rivalries',async()=>{
+ const full=JSON.parse(read('clubs/_shared/manifest.json'));
+ const identity=JSON.parse(read('clubs/_shared/identity.json'));
+ const {default:model}=await import('../assets/club-model.js');
+ let total=0;
+ for(const club of full.clubs){
+  const key=club.countryId+'-'+club.clubId,file='clubs/_profiles/'+key+'.json';
+  assert.equal(isAllowlistedPublicPath(file),true);
+  const profile=JSON.parse(read(file));
+  assert.deepEqual(profile,projectClubOverviewProfile(full,key));
+  assert.ok(read(file).length<12000,'profile should stay scoped: '+key);
+  if(![1,2,17,33,40].includes(club.clubId))continue;
+  const combined={...identity,clubs:identity.clubs.map(c=>
+   c.countryId+'-'+c.clubId===key?profile.club:c),rivalries:profile.rivalries};
+  const selected=model.route('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');
+  for(const lang of ['en','de','es','fr','it']){
+   assert.equal(model.render(combined,selected,lang),model.render(full,selected,lang),key+' '+lang);
+   total++;
+  }
+ }
+ assert.equal(total,8*5*5);
+ assert.equal(isAllowlistedPublicPath('clubs/_profiles/IT-41.json'),false);
+ assert.equal(isAllowlistedPublicPath('clubs/_profiles/IT-1/../IT-2.json'),false);
+});
+test('PERF-API-657 Overview never reads worldwide biographies or dynamic D1 to populate static identity',()=>{
+ const source=read('assets/club-page.js');
+ assert.match(source,/const manifestPath='\/clubs\/_shared\/identity\.json'/);
+ assert.match(source,/const profilePath=identityOnly\?null:'\/clubs\/_profiles\/'/);
+ assert.doesNotMatch(source,/fetch\('\/clubs\/_shared\/manifest\.json'/);
+ assert.match(source,/profile\.clubKey!==clubKey/);
 });

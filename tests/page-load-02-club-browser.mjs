@@ -71,6 +71,8 @@ try{
   ['eng',33,'stats',390],['br',40,'history',390]
  ]){
   const page=await browser.newPage({viewport:{width,height:900}});
+  const catalogPath='/clubs/_shared/identity.json';
+  const held='**'+catalogPath;
   let release;const gate=new Promise(resolve=>release=resolve),handler=async route=>{
    await gate;
    // If another assertion closes the page while the manifest is blocked,
@@ -80,7 +82,7 @@ try{
     if(!page.isClosed()&&!/Route is already handled|Target closed/i.test(String(error)))throw error;
    }
   };
-  await page.route('**/clubs/_shared/manifest.json',handler);
+  await page.route(held,handler);
   try{
    await page.goto(origin+'/clubs/'+country+'/'+id+'/'+view+(view==='roster'?'?view=technical':''),{waitUntil:'domcontentloaded'});
    await page.waitForFunction(()=>document.documentElement.dataset.clubShellReady==='true');
@@ -426,27 +428,99 @@ try{
     const afterBox=await page.locator('.club-header svg.club-country-flag').boundingBox();
     assert.ok(afterBox&&Math.abs(afterBox.width-20)<0.1&&Math.abs(afterBox.height-16)<0.1,'same flag after hydration');
    }
-  }finally{release();await page.unroute('**/clubs/_shared/manifest.json',handler);await page.close()}
+   // Explicit hard-refresh check: blocking the catalogue MUST NOT hide the
+   // parser-time Club header/tabs, create a false empty state or retain the
+   // previous document's data. Release and verify canonical hydration.
+   await page.unroute(held,handler);
+   const refreshedRequests=[];
+   const onRefreshedRequest=request=>refreshedRequests.push(new URL(request.url()).pathname);
+   page.on('request',onRefreshedRequest);
+   let unblock;
+   const refreshGate=new Promise(resolve=>unblock=resolve);
+   const refreshHandler=async route=>{
+    await refreshGate;
+    if(page.isClosed())return;
+    try{await route.continue()}catch(error){
+     if(!page.isClosed()&&!/Route is already handled|Target closed/i.test(String(error)))throw error;
+    }
+   };
+   await page.route(held,refreshHandler);
+   try{
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.documentElement.dataset.clubShellReady==='true');
+    const pendingRefresh=await page.evaluate(()=>({
+     ready:document.documentElement.dataset.clubReady==='true',
+     header:(()=>{const el=document.querySelector('#club-page > .club-header');return el&&getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility==='visible'})(),
+     fallback:document.querySelector('#club-title [data-club-title-fallback]')?.textContent,
+     name:document.querySelector('#club-title')?.textContent,
+     reservedName:!!document.querySelector('#club-title .club-fp-header-name'),
+     active:[...document.querySelectorAll('#club-page > .club-tabs a[aria-current="page"]')].map(x=>x.getAttribute('href')),
+     falseEmpty:!!document.querySelector('#club-page .club-empty p,#club-page .club-competition-next-empty'),
+     error:!!document.querySelector('#club-page [role="alert"]')
+    }));
+    assert.equal(pendingRefresh.ready,false,'refresh must await catalogue: '+view);
+    assert.equal(pendingRefresh.header,true,'refresh must paint the static header: '+view);
+    assert.equal(pendingRefresh.name,pendingRefresh.fallback,'refresh must not flash stale club identity: '+view);
+    assert.equal(pendingRefresh.reservedName,true,'refresh keeps its reserved name skeleton: '+view);
+    assert.deepEqual(pendingRefresh.active,['/clubs/'+country+'/'+id+'/'+view],'refresh preserves the requested tab: '+view);
+    assert.equal(pendingRefresh.falseEmpty,false,'refresh cannot flash no-data: '+view);
+    assert.equal(pendingRefresh.error,false,'pending refresh is not an error: '+view);
+    unblock();
+    await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true');
+    assert.equal(await page.locator('#club-title').getAttribute('aria-label'),identity.fullName,'canonical club after refresh: '+view);
+    assert.equal(await page.title(),identity.primaryName+' — Football Architect','title after refresh: '+view);
+    assert.equal(await page.locator('.club-tabs [aria-current="page"]').count(),1,'selected tab after refresh: '+view);
+    assert.ok(refreshedRequests.includes(catalogPath),'refresh requests the correct identity catalogue: '+view);
+    assert.equal(refreshedRequests.includes('/clubs/_shared/manifest.json'),false,'refresh never downloads all biographies: '+view);
+    const profilePath='/clubs/_profiles/'+country.toUpperCase()+'-'+id+'.json';
+    assert.equal(refreshedRequests.includes(profilePath),view==='overview','refresh downloads only the selected Overview profile: '+view);
+   }finally{
+    unblock();
+    await page.unroute(held,refreshHandler);
+    page.off('request',onRefreshedRequest);
+   }
+  }finally{release();await page.unroute(held,handler);await page.close()}
  }
  // Failed, malformed and missing manifests retain the skeleton shell and tabs, not guessed identities.
  for(const mode of ['503','bad-json','empty-json']){
   const page=await browser.newPage({viewport:{width:390,height:900}});
   const handler=route=>route.fulfill({status:mode==='503'?503:200,contentType:'application/json',
    body:mode==='503'?'unavailable':mode==='bad-json'?'{invalid':'{}'});
-  await page.route('**/clubs/_shared/manifest.json',handler);
+  const held='**/clubs/_shared/identity.json';
+  await page.route(held,handler);
   try{
    await page.goto(origin+'/clubs/it/40/history',{waitUntil:'domcontentloaded'});
    await page.locator('#club-page [role="alert"]').waitFor();
    assert.equal(await page.locator('#club-page > .club-header').count(),1);
    assert.equal(await page.locator('#club-page > .club-tabs a').count(),5);
    assert.equal(await page.locator('#club-page .club-competition-next-empty').count(),0);
-   await page.unroute('**/clubs/_shared/manifest.json',handler);
+   await page.unroute(held,handler);
    await page.reload({waitUntil:'domcontentloaded'});
    await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true');
    assert.equal(await page.locator('#club-page [role="alert"]').count(),0);
-  }finally{await page.unroute('**/clubs/_shared/manifest.json',handler);await page.close()}
+  }finally{await page.unroute(held,handler);await page.close()}
  }
- console.log('PAGE-LOAD-03A P17/P18 PASS: manifest held, 5 views and 503/invalid/empty recovery');
+ // An unavailable or malformed *selected* Overview profile preserves the
+ // static page boxes and must recover on a hard refresh without false empties.
+ for(const mode of ['503','bad-json','empty-json']){
+  const page=await browser.newPage({viewport:{width:390,height:900}});
+  const path='**/clubs/_profiles/IT-40.json';
+  const handler=route=>route.fulfill({status:mode==='503'?503:200,contentType:'application/json',
+   body:mode==='503'?'unavailable':mode==='bad-json'?'{invalid':'{}'});
+  await page.route(path,handler);
+  try{
+   await page.goto(origin+'/clubs/it/40/overview',{waitUntil:'domcontentloaded'});
+   await page.locator('#club-page [role="alert"]').waitFor();
+   assert.equal(await page.locator('#club-page > .club-header').count(),1);
+   assert.equal(await page.locator('#club-page > .club-tabs a').count(),5);
+   assert.equal(await page.locator('#club-page .club-competition-next-empty').count(),0);
+   await page.unroute(path,handler);
+   await page.reload({waitUntil:'domcontentloaded'});
+   await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true');
+   assert.equal(await page.locator('#club-page [role="alert"]').count(),0);
+  }finally{await page.unroute(path,handler);await page.close()}
+ }
+ console.log('PAGE-LOAD-03A P17/P18 PASS: identities and selected Overview profile held, refresh recovery');
 
  console.log('PAGE-LOAD-02 club browser PASS: 4 widths, 5 locales, focus, crest reuse, navigation and Back');
 }finally{

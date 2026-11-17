@@ -214,6 +214,43 @@ function buildClubShell(firstPaintScript){
   '<script data-fa-club-first-paint>'+firstPaintScript+'</script></div>'+
   '<noscript><p>JavaScript is required to display club pages.</p></noscript></section>';
 }
+
+/** Build-time, read-only identity projection for Club Roster/Fixtures/Stats/History.
+ * Club Overview retains full translations, biographies and rivalries.
+ */
+export function projectClubIdentityManifest(manifest){
+ if(manifest?.schemaVersion!==1||!Array.isArray(manifest.clubs)||manifest.clubs.length!==320||
+    !Array.isArray(manifest.divisions)||manifest.divisions.length!==16||
+    !manifest.countryFlags||typeof manifest.countryFlags!=='object'||
+    !manifest.clubCrests||typeof manifest.clubCrests!=='object')throw Error('Invalid canonical club source');
+ const keys=['countryId','clubId','city','primaryName','fullName','compactName','abbr','divisionId'];
+ const seen=new Set();
+ const clubs=manifest.clubs.map(club=>{
+  const id=club.countryId+'-'+club.clubId;
+  if(seen.has(id)||typeof club.countryId!=='string'||!Number.isInteger(club.clubId)||
+     !['city','primaryName','fullName','compactName','abbr'].every(k=>typeof club[k]==='string')||
+     !(club.divisionId===null||typeof club.divisionId==='string'))throw Error('Invalid club projection '+id);
+  seen.add(id);
+  return Object.fromEntries(keys.map(k=>[k,club[k]]));
+ });
+ return {schemaVersion:1,projection:'club-identity-v1',approved:manifest.approved,
+  clubCrests:manifest.clubCrests,countryFlags:manifest.countryFlags,
+  divisions:manifest.divisions,clubs};
+}
+
+
+/** Generated immutable profile for one Club Overview, excluding sporting state. */
+export function projectClubOverviewProfile(manifest,clubKey){
+ if(manifest?.schemaVersion!==1||!Array.isArray(manifest.clubs)||manifest.clubs.length!==320||
+    !Array.isArray(manifest.rivalries)||typeof clubKey!=='string'||!/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(clubKey))
+  throw Error('Invalid Club Overview projection source');
+ const club=manifest.clubs.find(c=>c.countryId+'-'+c.clubId===clubKey);
+ if(!club||!['en','de','es','fr','it'].every(lang=>typeof club.descriptions?.[lang]==='string'))
+  throw Error('Missing canonical club profile '+clubKey);
+ const rivalries=manifest.rivalries.filter(r=>r.clubAId===clubKey||r.clubBId===clubKey);
+ return {schemaVersion:1,projection:'club-overview-v1',clubKey,club,rivalries};
+}
+
 export function clubOutputs({template,replacements,clubs,divisions,allocations,countryFlags}){
  const catalog=loadWorldCatalog();
  const rivalries=catalog.rivalries;
@@ -233,5 +270,10 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations,c
  html=html.replace('<title>Competitions — Football Architect</title>','<title>Club — Football Architect</title>');
  html=html.replace('<body class="app-body">','<body class="app-body">\n  <a class="skip-link" href="#main-content">Skip to content</a>');
  return [{path:'clubs/_shared/index.html',content:html},
-  {path:'clubs/_shared/manifest.json',content:JSON.stringify(manifest,null,2)+'\n'}];
+  {path:'clubs/_shared/manifest.json',content:JSON.stringify(manifest,null,2)+'\n'},
+  {path:'clubs/_shared/identity.json',content:JSON.stringify(projectClubIdentityManifest(manifest))+'\n'},
+  ...manifest.clubs.map(c=>({
+   path:'clubs/_profiles/'+c.countryId+'-'+c.clubId+'.json',
+   content:JSON.stringify(projectClubOverviewProfile(manifest,c.countryId+'-'+c.clubId))+'\n'
+  }))];
 }
