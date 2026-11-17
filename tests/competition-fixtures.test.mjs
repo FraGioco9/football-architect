@@ -923,7 +923,8 @@ test('#605 published Postseason bracket gives each leg its own official match li
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(requests,1,'Postseason reuses the published competition lookup');
  assert.equal(cards.length,3,'two two-leg semifinal cards and the single final');
- const hrefs=cards.flatMap(({card})=>card.querySelectorAll('.fa-bracket-match-link').map(x=>x.href));
+ const hrefs=cards.flatMap(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+  .filter(x=>x.dataset.faMatchRow==='1').map(x=>x.href));
  assert.deepEqual(hrefs,slots.map(x=>'/matches/'+x.matchId),
   'separate first/second-leg score-column targets and the full final exist without squads');
  // Switching to the normal Fixtures page preserves the reserved match IDs;
@@ -939,6 +940,7 @@ test('#605 published Postseason bracket gives each leg its own official match li
  assert.ok(cards.filter(x=>x.tie.legs===1).every(x=>x.card.dataset.faMatchLegs==='1'));
  assert.ok(cards.filter(x=>x.tie.legs===2).every(x=>x.card.dataset.faMatchLegs==='2'));
  assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+   .filter(link=>link.dataset.faMatchRow==='1')
    .every(link=>/^Open match: /.test(link.attrs['aria-label']))));
  assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
   .every(link=>link.attrs.title===undefined)),
@@ -947,19 +949,20 @@ test('#605 published Postseason bracket gives each leg its own official match li
  r.events['fa:competition-route-change']();
  await Promise.resolve();
  assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+   .filter(link=>link.dataset.faMatchRow==='1')
    .every(link=>/^Apri partita: /.test(link.attrs['aria-label']))),
   'postseason links update accessible names for the selected locale');
  assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
   .every(link=>link.attrs.title===undefined)),
   'first/second-leg links do not show title tooltips after language updates');
  const final=cards.find(x=>x.tie.legs===1);
- assert.equal(final.card.querySelectorAll('.fa-bracket-match-link').length,1,
-  'the single final has one native score-box-only link');
+ assert.equal(final.card.querySelectorAll('.fa-bracket-match-link').length,2,
+  'the single final has two real native score-box links');
  const semis=cards.filter(x=>x.tie.legs===2);
- assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link').length===2),
-  'both legs use independent score-column links, even with TBD clubs');
+ assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link').length===4),
+  'both legs have two score-box targets each, even with TBD clubs');
  assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link')
-  .map(a=>a.dataset.faMatchLeg).join(',')==='1,2'),'leg identities remain distinct');
+   .filter(a=>a.dataset.faMatchRow==='1').map(a=>a.dataset.faMatchLeg).join(',')==='1,2'),'leg identities remain distinct');
  // The current published lookup remains stored while UI hydration is busy;
  // no numeric link or hover/click affordance may be exposed.
  r.document.documentElement.dataset.faStandingsLoading='true';
@@ -977,7 +980,8 @@ test('#605 published Postseason bracket gives each leg its own official match li
  r.document.documentElement.dataset.faStandingsLoading='false';
  r.route.set({view:'postseason'});
  r.events['fa:published-match-links-change']();
- assert.deepEqual(cards.flatMap(({card})=>card.querySelectorAll('.fa-bracket-match-link').map(x=>x.href)),hrefs,
+ assert.deepEqual(cards.flatMap(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+  .filter(x=>x.dataset.faMatchRow==='1').map(x=>x.href)),hrefs,
   'published knockout leg/final links reappear after hydration');
  r.route.set({view:'fixtures',matchday:'playoffs'});
  assert.ok(r.fields.get('app-fixtures-list').children.flatMap(visit)
@@ -1001,12 +1005,21 @@ test('#605 published Postseason bracket gives each leg its own official match li
   'first-leg hit area aligns with the first score column');
  assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline-end:calc\(var\(--fa-bracket-score-inset\) - 1px\);width:var\(--fa-bracket-score-width\)\}/,
   'single-leg hit area aligns with the rightmost score column');
- assert.match(css,/\.fa-bracket-match-link::before,\.fa-bracket-match-link::after\{content:"";position:absolute;inset-inline:0;block-size:28px;cursor:pointer;pointer-events:auto\}/,
-  'only the two 28px score boxes are pointer-active');
- assert.match(css,/\.fa-bracket-match-link::before\{inset-block-start:calc\(25% - 14px\)\}/);
- assert.match(css,/\.fa-bracket-match-link::after\{inset-block-start:calc\(75% - 14px\)\}/);
- assert.match(css,/html\[data-fa-standings-loading="true"\] \.fa-bracket-match-link::before,/,
-  'loading disables both score hit regions');
+ assert.match(css,/\.fa-bracket-match-link\{position:absolute;z-index:2;display:block;block-size:28px;cursor:pointer;pointer-events:auto\}/,
+  'real anchors own score-box hit areas, not Safari-fragile pseudo elements');
+ assert.match(css,/\.fa-bracket-match-link\[data-fa-match-row="1"\]\{inset-block-start:calc\(25% - 14px\)\}/);
+ assert.match(css,/\.fa-bracket-match-link\[data-fa-match-row="2"\]\{inset-block-start:calc\(75% - 14px\)\}/);
+ assert.doesNotMatch(css,/\.fa-bracket-match-link::(?:before|after)/,
+  'no pseudo-element-only click targets remain');
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+  .filter(link=>link.dataset.faMatchRow==='2')
+  .every(link=>link.attrs.tabindex==='-1'&&link.attrs['aria-hidden']==='true'&&
+    link.attrs['aria-label']===undefined)),
+  'second row anchors are pointer-only without duplicate keyboard focus');
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+  .filter(link=>link.dataset.faMatchRow==='1')
+  .every(link=>link.attrs.tabindex===undefined&&link.attrs['aria-hidden']===undefined)),
+  'each leg preserves exactly one accessible keyboard anchor');
  assert.doesNotMatch(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline:0;width:auto\}/,
   'single-leg links cannot cover the whole card');
  assert.doesNotMatch(css,/\.fa-bracket-card\[data-fa-match-legs="1"\]\{cursor:pointer\}/,
