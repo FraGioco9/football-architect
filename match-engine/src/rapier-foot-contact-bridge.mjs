@@ -60,13 +60,12 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  const eventQueue=sharedQueue??new R.EventQueue(true);
  const ownsEventQueue=sharedQueue===null;
  const colliders=[],bodies=[],idsByCollider=new Map();
- // D-01 native shoe: a controlled 3Hz continuous stride, preserving the
- // original 0.105m swing amplitude and physically bounded 7m/s trajectory.
- // Each carry still requires a real Rapier START after actual release;
- // no synthesized collision, touch, teleport or direct ball-speed clamp.
+ // Short, continuous foot swing: one real Rapier kinematic collider, not
+ // extra contacts or impulses. 0.105m at 2.5 Hz <=1.65m/s relative shoe.
+ // The original canonical mover still sets player XY/heading, max 4m/s in D-01.
  function shoeFeet(frame,stepTick){
   if(dribbleAttackerId===null)return frame;
-  const swingM=-0.105*Math.cos(2*Math.PI*stepTick/20);
+  const swingM=-0.105*Math.cos(2*Math.PI*stepTick/24);
   return Object.freeze(frame.map((p,i)=>{
    if(initialPlayers[i].id!==dribbleAttackerId)return p;
    return Object.freeze({...p,
