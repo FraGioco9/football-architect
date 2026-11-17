@@ -5,8 +5,9 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
-import {createPlayerMovement,INITIAL_PLAYERS} from '../src/player-movement.mjs';
-import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT}
+import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
+import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
+ keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
@@ -173,6 +174,51 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.match(browser,/ME_628_INLINE_MAIN_TRANSPORT/);
  assert.match(browser,/assert\.deepEqual\(actionNav,\{open:false/);
  assert.match(browser,/assert\.equal\(movementNav\.open,false\)/);
+});
+
+
+test('#628 goalkeeper 1v1 real 60Hz running approach and mirrored seed intent',()=>{
+ for(const side of ['home','away'])for(const index of [0,1,2,3,8,15,29]){
+  const scene=smallSidedSetup('keeper-1v1',side,INITIAL_PLAYERS,{variantIndex:index});
+  const actor=scene.staged.find(p=>p.id===side+'-10');
+  const dir=side==='home'?1:-1;
+  const runUp=keeperDuelAttackerTarget(side,index,actor,scene.ball);
+  assert.ok(dir*(runUp.x-scene.ball.x)>1,'run-up target passes real ball');
+  const base=goalkeeperPosition(side==='home'?'away':'home',scene.ball);
+  const keeper=keeperDuelGoalkeeperTarget(side,index,actor,scene.ball,base);
+  assert.ok(dir*(base.x-keeper.x)>=0,'keeper advances toward ball only');
+  const other=side==='home'?'away':'home';
+  const mirror=smallSidedSetup('keeper-1v1',other,INITIAL_PLAYERS,{variantIndex:index});
+  const mirrored=keeperDuelAttackerTarget(other,index,
+   mirror.staged.find(p=>p.id===other+'-10'),mirror.ball);
+  assert.equal(runUp.x,-mirrored.x);assert.equal(runUp.y,mirrored.y);
+  const mover=createPlayerMovement({researchSmallSidedSituation:'keeper-1v1',
+   researchSmallSidedSide:side,...(index?{researchSmallSidedVariantIndex:index}:{})});
+  let peak=0;
+  for(let tick=0;tick<24;tick++){
+   const frame=mover.step({x:scene.ball.x,y:scene.ball.y});
+   const moving=frame.players.find(p=>p.id===side+'-10');
+   peak=Math.max(peak,Math.hypot(moving.vx,moving.vy));
+  }
+  assert.ok(peak>2&&peak<=7+1e-8,'running pace through actual 60Hz movement');
+ }
+ assert.throws(()=>keeperDuelAttackerTarget('home',30,{},{}),TypeError);
+});
+
+test('#628 goalkeeper 1v1 V01 replay fixed, other styles differ and D-01 start unchanged',()=>{
+ const positions=new Set();
+ for(let index=0;index<30;index++){
+  const s=smallSidedSetup('keeper-1v1','home',INITIAL_PLAYERS,{variantIndex:index});
+  const actor=s.staged.find(p=>p.id==='home-10');
+  const base=goalkeeperPosition('away',s.ball);
+  const keeper=keeperDuelGoalkeeperTarget('home',index,actor,s.ball,base);
+  if(index===0)assert.deepEqual(keeper,base);
+  else positions.add((keeper.x-s.ball.x).toFixed(3)+'|'+keeper.y.toFixed(3));
+  assert.ok(Math.hypot(actor.x-s.ball.x,actor.y-s.ball.y)<0.85);
+ }
+ assert.ok(positions.size>=20,'V02–V30 differ in actual goalie targets');
+ assert.equal(smallSidedSetup('dribble-1v1','home',INITIAL_PLAYERS)
+  .staged.find(p=>p.id==='home-10').x,29.45);
 });
 
 test('#628 LAB-VAR-01 thirty deterministic geometries per scene are physically separated, mirrored and seed-identical',()=>{

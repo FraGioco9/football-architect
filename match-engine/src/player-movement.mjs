@@ -5,7 +5,8 @@ import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
-import {smallSidedSetup} from './small-sided-lab-scenarios.mjs';
+import {smallSidedSetup,keeperDuelAttackerTarget,
+ keeperDuelGoalkeeperTarget} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -132,6 +133,11 @@ const PLAYER_KINEMATIC_LIMITS=Object.freeze({
 // D-01 only: keep the native shoe/player at controllable dribbling pace.
 const D01_KINEMATIC_LIMITS=Object.freeze({
  ...PLAYER_KINEMATIC_LIMITS,maxSpeed:4.0,acceleration:6,braking:9
+});
+// Only a lost (>1.5m) actual dribble ball may be chased at running pace;
+// close-contact shoe touch speed and ball impulse remain unchanged.
+const D01_CHASE_KINEMATIC_LIMITS=Object.freeze({
+ ...D01_KINEMATIC_LIMITS,maxSpeed:6.0,acceleration:9,braking:12
 });
 const baseFormation=Object.freeze([
  [-48,0],[-35,-22],[-35,-8],[-35,8],[-35,22],
@@ -2401,12 +2407,18 @@ export function createPlayerMovement(options={}){
     // touch the ball; all others retain their own base positions.
     if(!smallActive.has(p.id))
      return Object.freeze({x:p.baseX,y:p.baseY});
-    if(p.id===smallSided.opponent+'-1')
-     return goalkeeperPosition(p.team,ball);
+    if(p.id===smallSided.opponent+'-1'){
+     const baseline=goalkeeperPosition(p.team,ball);
+     return smallSided.id==='keeper-1v1'?
+      keeperDuelGoalkeeperTarget(smallSided.side,smallSided.variantIndex,
+       players.find(a=>a.id===smallSided.side+'-10'),ball,baseline):baseline;
+    }
     const attack=smallSided.side==='home'?1:-1;
     if(p.team===smallSided.side){
      if(p.id===smallSided.side+'-10')
-      return Object.freeze({x:ball.x-attack*(smallSided.id==='dribble-1v1'?0.40:0.08),y:ball.y});
+      return smallSided.id==='keeper-1v1'?
+       keeperDuelAttackerTarget(smallSided.side,smallSided.variantIndex,p,ball):
+       Object.freeze({x:ball.x-attack*(smallSided.id==='dribble-1v1'?0.40:0.08),y:ball.y});
      const wing=p.id.endsWith('-9')?-1:1;
      return Object.freeze({x:clamp(ball.x-attack*3,
       -PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),
@@ -2574,8 +2586,12 @@ export function createPlayerMovement(options={}){
   // Fixed ordering and collision rejection make every replay byte-stable.
   for(let i=0;i<players.length;i++){
    const p=players[i],target=targets[i];
+   const recoveringDribbleBall=smallSided?.id==='dribble-1v1'&&
+     p.id===smallSided.side+'-10'&&
+     Math.hypot(ball.x-p.x,ball.y-p.y)>1.5;
    const limits=smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
-     D01_KINEMATIC_LIMITS:PLAYER_KINEMATIC_LIMITS;
+     recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:D01_KINEMATIC_LIMITS:
+     PLAYER_KINEMATIC_LIMITS;
     const free=advanceFreePlayerKinematics(p,target,limits);
    const shoe=lastNativeShoeFrame?.[i];
    if(shoe&&shoe.id!==p.id)

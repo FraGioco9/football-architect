@@ -52,6 +52,48 @@ const definitions=freeze([
   description:'Three forwards face three defenders and a goalkeeper. Keep the same Rapier world and canonical physics; inspect live support, blocked lanes and genuinely resulting actions.'})
 ]);
 const byId=new Map(definitions.map(s=>[s.id,s]));
+// Keeper 1v1: deterministic source-only 60Hz tactical targets, never a
+// physical impulse, teleport, scripted save, possession or match result.
+const bounded=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+function requireKeeperVariant(side,index){
+ if(!['home','away'].includes(side)||!Number.isSafeInteger(index)||
+    index<0||index>=SMALL_SIDED_VARIANT_COUNT)
+  throw new TypeError('Valid 1v1 goalkeeper side and variant required');
+}
+export function keeperDuelAttackerTarget(side,index,attacker,ball){
+ requireKeeperVariant(side,index);
+ if(!attacker||attacker.id!==side+'-10'||!ball||
+    ![attacker.x,attacker.y,ball.x,ball.y].every(Number.isFinite))
+  throw new TypeError('Actual live 1v1 attacker and ball required');
+ const dir=side==='home'?1:-1;
+ const ballAhead=(ball.x-attacker.x)*dir;
+ // Drive through the real ball instead of decelerating at a target 8 cm
+ // behind it. When overrun, recover via original capped kinematics.
+ return freeze({
+  x:bounded(ball.x+dir*(ballAhead>=-0.10?1.35:-0.32),-51.99,51.99),
+  y:bounded(ball.y,-33.49,33.49)
+ });
+}
+export function keeperDuelGoalkeeperTarget(side,index,attacker,ball,baseline){
+ requireKeeperVariant(side,index);
+ if(!attacker||attacker.id!==side+'-10'||!ball||!baseline||
+    ![attacker.x,attacker.y,ball.x,ball.y,baseline.x,baseline.y]
+     .every(Number.isFinite))
+  throw new TypeError('Actual live attacker, ball and keeper baseline required');
+ const dir=side==='home'?1:-1;
+ // V01 preserves original positioning. V02+ alternate three degrees
+ // of genuine keeper advance driven by CURRENT attacker/ball separation.
+ const style=index===0?0:1+(index-1)%3;
+ const gap=Math.hypot(ball.x-attacker.x,ball.y-attacker.y);
+ const threat=bounded((1.8-gap)/1.2,0,1);
+ const available=Math.max(0,(baseline.x-ball.x)*dir-1.5);
+ const advance=Math.min(available,style*1.1*threat);
+ return freeze({
+  x:bounded(baseline.x-dir*advance,-51.99,51.99),
+  y:bounded(baseline.y+bounded(ball.y-baseline.y,-4,4)*style*0.06*threat,
+   -33.49,33.49)
+ });
+}
 export const SMALL_SIDED_LAB_SCENARIOS=freeze(definitions.map(s=>
  freeze({...s,mode:'situation',goal:'situation',
   initial:freeze({preset:'roll',seed:'me-small-'+s.id+'-home',
@@ -97,7 +139,7 @@ export function smallSidedSetup(id,side,canonicalPlayers,{variantIndex=0}={}){
   }));
  }
  const original=new Map([
-  [side+'-10',[id==='dribble-1v1'?29.45:29.72,0]],
+  [side+'-10',[id==='dribble-1v1'?29.45:id==='keeper-1v1'?29.50:29.72,0]],
   [side+'-9',[32,-6]],
   [side+'-11',[32,7]],
   [opponent+'-2',[34,2.7]],
@@ -116,6 +158,8 @@ export function smallSidedSetup(id,side,canonicalPlayers,{variantIndex=0}={}){
    const positions=new Map([
     [side+'-10',id==='dribble-1v1'?
      [bx-0.50-random()*0.17,by+(random()-0.5)*0.20]:
+     id==='keeper-1v1'?
+     [bx-0.50-random()*0.22,by+(random()-0.5)*0.38]:
      [bx-0.25-random()*0.26,by+(random()-0.5)*0.20]],
     [side+'-9',[bx+1.8+random()*2.4,by-4.8-random()*2.8]],
     [side+'-11',[bx+1.8+random()*2.4,by+4.8+random()*2.8]],
