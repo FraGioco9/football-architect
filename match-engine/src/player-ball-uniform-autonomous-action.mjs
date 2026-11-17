@@ -230,7 +230,7 @@ export function inspectPhysicalActionRejection({
 export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
- allowPhysicalCarry=false
+ allowPhysicalCarry=false,activePlayerIds=null
 }){
  if(!Number.isSafeInteger(tick)||tick<1||
     !Array.isArray(contactStarted)||new Set(contactStarted).size!==contactStarted.length||
@@ -246,7 +246,11 @@ export function selectUniformAutonomousContactAction({
     !['x','y','z'].every(k=>finite(ballPosition[k])&&finite(ballVelocity[k]))||
     !Number.isSafeInteger(lastActionTick)||lastActionTick>tick||
     !finite(ballRadiusM)||ballRadiusM<0.05||ballRadiusM>0.2||
-    typeof allowPhysicalCarry!=='boolean')
+    typeof allowPhysicalCarry!=='boolean'||
+    (activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
+      activePlayerIds.length<2||activePlayerIds.length>7||
+      new Set(activePlayerIds).size!==activePlayerIds.length||
+      activePlayerIds.some(id=>!ids.includes(id)))))
   throw new TypeError('Verified same-tick movement, ball and real Rapier shoe starts required');
  // A4.2b.3: an ambiguous START/ACTIVE contact cannot confer a right
  // to kick the ball. Require one genuine START and no other active shoe.
@@ -258,12 +262,18 @@ export function selectUniformAutonomousContactAction({
     ballPosition.z>ballRadiusM+MAX_HEIGHT_M||
     Math.hypot(ballVelocity.x,ballVelocity.y)>14)
   return null;
- const actors=playerFrame.players;
+ // All 22 original identities remain validated; only truly collider-enabled
+ // participants enter small-sided tactical choices, never hidden 11v11 actors.
+ const allActors=playerFrame.players;
+ const actors=activePlayerIds===null?allActors:
+  allActors.filter(p=>activePlayerIds.includes(p.id));
  // Canonical frame is validated separately by createEngine before mutation.
- for(let i=0;i<actors.length;i++)
-  if(actors[i]?.id!==ids[i]||actors[i].team!==INITIAL_PLAYERS[i].team)
+ for(let i=0;i<allActors.length;i++)
+  if(allActors[i]?.id!==ids[i]||allActors[i].team!==INITIAL_PLAYERS[i].team)
    throw new TypeError('Trusted ordered 22-person movement required');
  for(const id of contactStarted){
+  if(activePlayerIds!==null&&!activePlayerIds.includes(id))
+   throw new TypeError('Inactive player has no authenticated Rapier shoe');
   const player=actors.find(p=>p.id===id);
   if(!player)continue;
   const gap=Math.hypot(player.x-ballPosition.x,player.y-ballPosition.y);

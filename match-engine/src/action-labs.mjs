@@ -19,7 +19,9 @@ import {createBasicReceiveDribbleObserverB04}
  from './basic-receive-dribble-b04.mjs';
 import {createRealOpponentBallContestAuditM31}
  from './real-opponent-ball-contest-m31.mjs';
-import {createPlayerMovement} from './player-movement.mjs';
+import {createPlayerMovement,INITIAL_PLAYERS} from './player-movement.mjs';
+import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup}
+ from './small-sided-lab-scenarios.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
 import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CROSS_LAB_STARTS,SAVE_LAB_STARTS,DEFENSE_LAB_STARTS,B05_LAB_STARTS,B05B_LAB_STARTS,CARRY_LAB_STARTS,
@@ -34,6 +36,8 @@ export function createControlledActionLab(RAPIER,id,{
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
  const spec=getActionLabScenario(id);
+ const smallSided=spec.mode==='situation'?
+  smallSidedSetup(id,shotSide,INITIAL_PLAYERS):null;
  const refereeMode=spec.mode==='referee';
  const sourceRestart=['throw-in','corner','goal-kick'].includes(id);
  const basicFootwork=['trap','dribble'].includes(id);
@@ -51,7 +55,7 @@ export function createControlledActionLab(RAPIER,id,{
     !['home','away'].includes(challengeSide)||
     !['contact','no-contact'].includes(challengeScene)||
     (id!=='challenge'&&(challengeSide!=='away'||challengeScene!=='contact'))||
-    (!['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(id)&&(shotSide!=='home'||shotLane!=='open'))||
+    (!['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(id)&&!smallSided&&(shotSide!=='home'||shotLane!=='open'))||
      (['cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(id)&&shotLane!=='open')||
     (id!=='carry'&&carrySide!=='home')||
     (id!=='control'&&controlScene!=='receive')||
@@ -59,13 +63,14 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('Only bounded SHOT, CARRY or CONTROL scenes supported');
  const selectedControlSide=spec.mode==='control'?
   (basicFootwork?shotSide:controlSide):null;
- const selectedShotSide=['shot','cross','save','tackle','interception','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(id)?shotSide:null;
+ const selectedShotSide=smallSided||['shot','cross','save','tackle','interception','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(id)?shotSide:null;
  const defenseExperiment=['tackle','interception'].includes(id);
   const goalkeeperSave=id==='save';
   const wideCross=id==='cross';
  const selectedCarrySide=id==='carry'?carrySide:null;
  const selectedChallengeSide=id==='challenge'?challengeSide:null;
- const initial=sourceRestart?
+ const initial=smallSided?smallSided.ball:
+  sourceRestart?
     B05B_LAB_STARTS[id==='throw-in'?'throwIn':id==='goal-kick'?'goalKick':id][selectedShotSide]:
   refereeMode?
    B05_LAB_STARTS[id==='goal-line-out'?'goalLine':id][selectedShotSide]:
@@ -95,7 +100,8 @@ export function createControlledActionLab(RAPIER,id,{
   ['receive-release','receive-contest','receive-challenge'].includes(effectiveControlScene);
  const adaptiveDecision=spec.mode==='control'&&controlDecisionEnabled&&
   ['receive-decide','receive-pressure-decide','receive-release','receive-contest','receive-challenge'].includes(effectiveControlScene);
- const focus=sourceRestart?
+ const focus=smallSided?smallSided.activeIds:
+  sourceRestart?
    Object.freeze((id==='corner'?
     [(selectedShotSide==='home'?'away':'home')+'-10',selectedShotSide+'-9']:
     [selectedShotSide+'-10',(selectedShotSide==='home'?'away':'home')+'-9'])
@@ -131,6 +137,10 @@ export function createControlledActionLab(RAPIER,id,{
  const engine=createEngine(RAPIER,initial,{
   diagnosticPlayerFootContactsEnabled:true,
   diagnosticAutonomousFixtureActionEnabled:!refereeMode,
+  ...(smallSided?{
+   diagnosticSmallSidedSituation:id,
+   diagnosticSmallSidedSide:shotSide
+  }:{}),
   ...(refereeMode?{diagnosticBasicRestartEnabled:true}:{}),
   ...(sourceRestart?{
    diagnosticBasicRestartSource:id,
@@ -141,7 +151,7 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticResearchDefensiveKind:id
    }:goalkeeperSave?{diagnosticResearchGoalkeeperSaveSide:selectedShotSide}:
     refereeMode?{}:
-    selectedShotSide?{diagnosticResearchShotAttacker:selectedShotSide}:{}),
+    selectedShotSide&&!smallSided?{diagnosticResearchShotAttacker:selectedShotSide}:{}),
   ...(blocked?{diagnosticResearchShotBlockedLane:true}:{}),
    ...(wideCross?{diagnosticResearchShotWideCross:true}:{}),
   ...(spec.mode==='control'?{
@@ -158,7 +168,9 @@ export function createControlledActionLab(RAPIER,id,{
   ...(selectedCarrySide?{diagnosticResearchCarrySide:selectedCarrySide}:{}),
   ...(spec.mode==='carry'?{diagnosticAutonomousCarryEnabled:true}:{})
  });
- const mover=createPlayerMovement(sourceRestart?{
+ const mover=createPlayerMovement(smallSided?{
+   researchSmallSidedSituation:id,researchSmallSidedSide:shotSide
+  }:sourceRestart?{
    researchBasicRestartSource:id,
    researchBasicRestartAttackSide:selectedShotSide,
    researchBasicRestartBall:initial
@@ -199,8 +211,13 @@ export function createControlledActionLab(RAPIER,id,{
   createNativeControlEvidenceGateM29():null;
  const releaseObserver=tapExperiment?createRealBallReleaseAuditM30():null;
  const contestObserver=tapExperiment?createRealOpponentBallContestAuditM31():null;
- const refereeObserver=refereeMode?createBasicMatchRefereeB05():null;
- const matchTimelineObserver=refereeMode?createBasicMatchTimelineB06():null;
+ if(smallSided&&JSON.stringify(engine.originalSmallSidedPhysicalShoeIds())!==
+   JSON.stringify(smallSided.activeIds))
+  throw new Error('Small-sided participants differ from physical Rapier shoe colliders');
+ const refereeObserver=(refereeMode||smallSided)?
+  createBasicMatchRefereeB05():null;
+ const matchTimelineObserver=(refereeMode||smallSided)?
+  createBasicMatchTimelineB06():null;
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
  function record(physics,playerFrame){
@@ -398,8 +415,12 @@ export function createControlledActionLab(RAPIER,id,{
      realOpponentContest}:{}),
     ...(reachExperiment?{realBallReachM32:playerFrame.realBallReachM32}:{}),
     ...(basicFootwork?{baseFootworkAudit}:{}),
-    ...(refereeMode?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake,
+    ...(refereeMode||smallSided?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake,
      matchTimeline}:{}),
+    ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
+     genuinePhysicalPlayerCount:smallSided.genuinePhysicalPlayers,
+     activeCollisionSource:'native-colliders-only',
+     no11v11Authority:true}:{}),
     ...(goalkeeperSave?{
       goalkeeperDiveIntent:playerFrame.goalkeeperDiveIntent,
       goalkeeperDiveIntentTicks:playerFrame.goalkeeperDiveIntentTicks
@@ -499,8 +520,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     !go||!pause||!step||!reset||
     !by('action-labs-open')||!by('action-labs-close'))
   throw new Error('Action LAB controls are missing');
- if(select.options.length!==ACTION_LAB_SCENARIOS.length||
-    ACTION_LAB_SCENARIOS.some((s,i)=>select.options[i].value!==s.id))
+ const all=[...ACTION_LAB_SCENARIOS,...SMALL_SIDED_LAB_SCENARIOS];
+ if(select.options.length!==all.length||
+    all.some((s,i)=>select.options[i].value!==s.id))
   throw new Error('Action LAB menu must match the single scenario catalog');
  let session=null,playing=false,lastTime=0,accumulator=0;
  let trail=[];
@@ -653,7 +675,18 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     snap.firstOpposingShoe.tick+' · no verified reception':'')+
    (snap.carryTrace?' · CARRY '+snap.carryTrace.team.toUpperCase()+
     ' · observed ground path '+number(snap.carryTrace.path2DM)+' m':'');
-  if(session.spec.mode==='referee'&&snap.b05bTake){
+  if(session.spec.mode==='situation'&&snap.refereeEvidence?.lastEvent){
+   const event=snap.refereeEvidence.lastEvent;
+   status.textContent='Real '+event.kind.toUpperCase()+
+    ' from original Rapier ball at tick '+event.tick+
+    ' · provisional '+snap.matchTimeline.provisionalScore.home+
+    '–'+snap.matchTimeline.provisionalScore.away+
+    ' · no official match result or unverified possession.';
+  }else if(session.spec.mode==='situation'&&snap.action){
+   status.textContent='Observed '+snap.action.team.toUpperCase()+' '+
+    snap.action.action.toUpperCase()+' · genuine original Rapier shoe START '+
+    'and impulse. No guaranteed pass, tackle, save or goal.';
+  }else if(session.spec.mode==='referee'&&snap.b05bTake){
    const t=snap.b05bTake;
    status.textContent=t.originalNativeShoeStart?
     'B05b physical '+t.type.toUpperCase()+
@@ -753,27 +786,29 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   // A dead-ball state with unknown legal restart owner is NOT live play.
   // Leave the last genuine full-ball crossing on screen; otherwise Rapier
   // continues falling past the finite grass after play has stopped.
-  if(session.spec.mode==='referee'&&
+  if((session.spec.mode==='referee'||session.spec.mode==='situation')&&
      session.snapshot().refereeEvidence?.lastEvent&&
      !session.snapshot().refereeEvidence?.restartApplied)return;
   const f=session.step();const p=f.ball.position;
   trail.push({x:p.x,y:p.y});
   if(trail.length>450)trail.shift();
   render();
-  if(session.spec.mode==='referee'&&
+  if((session.spec.mode==='referee'||session.spec.mode==='situation')&&
      f.refereeEvidence?.lastEvent&&!f.refereeEvidence.restartApplied){
    stop();go.disabled=true;step.disabled=true;
   }
  }
  function resetSession(){
   stop();step.disabled=false;if(session)session.dispose();
-  shotSideLabel.hidden=!['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick','carry','challenge'].includes(select.value);
+  shotSideLabel.hidden=!(['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick','carry','challenge'].includes(select.value)||
+    SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value));
   shotLaneLabel.hidden=select.value!=='shot';
   controlSceneLabel.hidden=select.value!=='control';
   challengeSceneLabel.hidden=select.value!=='challenge';
   by('action-labs-title').textContent=select.selectedOptions[0].textContent.trim();
   session=createControlledActionLab(getRapier(),select.value,{
-   shotSide:['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(select.value)?shotSide.value:'home',
+   shotSide:(['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(select.value)||
+    SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value))?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',
    carrySide:select.value==='carry'?shotSide.value:'home',
    controlScene:select.value==='control'?controlSceneChoice.value:'receive',
@@ -782,7 +817,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   });
   trail=[{x:session.snapshot().ball.position.x,
    y:session.snapshot().ball.position.y}];
-  description.textContent=['throw-in','corner','goal-kick'].includes(select.value)?
+  description.textContent=session.spec.mode==='situation'?
+   session.spec.description+' Only selected participants have real Rapier shoe colliders; the other canonical identities remain for motion validation. No 11v11 match or official result.':
+   ['throw-in','corner','goal-kick'].includes(select.value)?
     'B05b original native outbound shoe START, real full-ball exit and assigned restart. CORNER/GOAL KICK require a second genuine #9 shoe START to kick; THROW-IN uses an explicitly provisional same-ball hand-release proxy without simulated hands. No official result or possession.':
     session.spec.mode==='referee'?
     'B05 native 105×68m field referee: actual consecutive Rapier ball crossing, genuine last-shoe attribution or unresolved ownership; original same-world KICKOFF on a scored goal. No official competition result.':

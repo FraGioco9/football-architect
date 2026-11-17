@@ -1674,15 +1674,21 @@ byId('reset').addEventListener('click', () => { try { restart(); } catch (e) { s
 byId('apply').addEventListener('click', () => { try { restart(); } catch (e) { say(e.message, true); } });
 byId('compare').addEventListener('click', compareReplay);
 byId('measure').addEventListener('click', measurePhysics);
-// The ORIGINAL Scenario dropdown presents the three real source catalogs.
-// The two internal modal selects remain invisible; no second launcher.
+// The original Scenario dropdown now prioritizes progressive small-sided
+// exercises. Old isolated contact/movement fixtures remain executable through
+// their original internal catalogs for regression QA, not as basic UI clutter.
 function setupUnifiedScenarioMenu(){
  const menu=byId('preset-options');
  let count=menu.querySelectorAll('[role="option"][data-value]').length;
  if(count!==4)throw new Error('Original four ball presets missing');
+ const visibleSmall=new Set(['keeper-1v1','defender-1v1',
+  'overload-2v1','duel-2v2','duel-3v3']);
+ const visibleMovement=new Set(['post-pass','opposing-convergence',
+  'opposing-feedback','native-flank-left',
+  'secondary-pressure','secondary-pressure-observe']);
  for(const [group,kind,select] of [
-   ['Actions','action',byId('action-labs-choice')],
-   ['Movement and contacts','movement',byId('movement-labs-choice')]
+   ['Small-sided situations','action',byId('action-labs-choice')],
+   ['Advanced movement','movement',byId('movement-labs-choice')]
  ]){
   const heading=document.createElement('div');
   heading.className='me-scenario-group-label';
@@ -1690,6 +1696,8 @@ function setupUnifiedScenarioMenu(){
   heading.textContent=group;
   menu.append(heading);
   for(const entry of select.options){
+   if(kind==='action'?!visibleSmall.has(entry.value):
+     !visibleMovement.has(entry.value))continue;
    const option=document.createElement('div');
    option.className='language-option';
    option.setAttribute('role','option');
@@ -1701,8 +1709,8 @@ function setupUnifiedScenarioMenu(){
    count++;
   }
  }
- if(count!==51||menu.querySelectorAll('.me-scenario-group-label').length!==3)
-  throw new Error('Scenario must show all 4 ball + 17 action + 30 movement situations');
+ if(count!==15||menu.querySelectorAll('.me-scenario-group-label').length!==3)
+  throw new Error('Scenario must show 4 physics + 5 small-sided + 6 advanced movement situations');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')

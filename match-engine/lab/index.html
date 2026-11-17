@@ -536,8 +536,8 @@
 <dialog id="action-labs-dialog" class="me-metrics-dialog me-action-labs-dialog" aria-labelledby="action-labs-title">
   <div class="me-action-labs-header">
     <div>
-      <h2 id="action-labs-title">Controlled actions</h2>
-      <p class="me-hint">One genuine 60 Hz Rapier ball and physical shoe contacts. This is not an official match.</p>
+      <h2 id="action-labs-title">Small-sided situations</h2>
+      <p class="me-hint">Progressive 1v1–3v3 exercises before any 11v11 match. Only chosen participants have real Rapier shoe colliders. No official results.</p>
     </div>
     <button id="action-labs-close" type="button" class="me-button">Close</button>
   </div>
@@ -561,6 +561,11 @@
       <option value="corner">LAB-29 · Real-touch corner</option>
       <option value="goal-kick">LAB-30 · Real-touch goal kick</option>
       <option value="carry">LAB-18 · Carry</option>
+      <option value="keeper-1v1">S-01 · 1v1 vs goalkeeper</option>
+      <option value="defender-1v1">S-02 · 1v1 + goalkeeper</option>
+      <option value="overload-2v1">S-03 · 2v1 + goalkeeper</option>
+      <option value="duel-2v2">S-04 · 2v2 + goalkeeper</option>
+      <option value="duel-3v3">S-05 · 3v3 + goalkeeper</option>
     </select>
     <label id="action-labs-shot-side-label" class="me-action-labs-shot-side" for="action-labs-shot-side" hidden>Side
       <select id="action-labs-shot-side" class="me-inspect-select" aria-label="Action team">
@@ -606,7 +611,7 @@
   </div>
   <p id="action-labs-status" class="me-action-labs-status" role="status" aria-live="polite">Select an action to begin.</p>
   <p id="action-labs-readout" class="me-action-labs-readout" aria-live="off">Tick 0</p>
-  <p class="me-hint">Shown markers are a compact view of actors from the canonical 22-player physics. A contact is not automatically a successful tackle, pass completion, dribble, possession or goal.</p>
+  <p class="me-hint">Selected small-sided exercises use only 2–7 genuine Rapier shoe colliders; older basic action scenes remain test-only. A contact never automatically confirms a goal, pass, save, tackle, possession or official match. possession or goal.</p>
 </dialog>
 <button id="movement-labs-open" class="me-lab-internal-launch" type="button" hidden disabled aria-hidden="true" tabindex="-1">Open movement</button>
 <dialog id="movement-labs-dialog" class="me-metrics-dialog me-action-labs-dialog" aria-labelledby="movement-labs-title">

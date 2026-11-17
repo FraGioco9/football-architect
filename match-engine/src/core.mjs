@@ -8,6 +8,7 @@ import {createPrivateRapier22BodyBridge} from './rapier-22-body-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
+import {smallSidedSetup} from './small-sided-lab-scenarios.mjs';
 import {initialResearchBodyEncounterLineup}
  from './research-body-encounter-initial-lineup.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
@@ -109,6 +110,8 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticB06bOpeningKickoffEnabled = false,
   diagnosticB06bGoalRestartEnabled = false,
   diagnosticB06bNativeShotSide = null,
+  diagnosticSmallSidedSituation = null,
+  diagnosticSmallSidedSide = null,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -136,6 +139,26 @@ export function createEngine(RAPIER, input = {}, {
        diagnosticAutonomousFixtureActionEnabled||
        diagnosticAutonomousCarryEnabled)))
     throw new TypeError('Shared contact events require both native bridges without football action authority');
+  if((diagnosticSmallSidedSituation===null)!==(diagnosticSmallSidedSide===null))
+   throw new TypeError('Small-sided situation and attacking side must be paired');
+  if(diagnosticSmallSidedSituation!==null){
+   smallSidedSetup(diagnosticSmallSidedSituation,
+    diagnosticSmallSidedSide,INITIAL_PLAYERS);
+   if(!diagnosticPlayerFootContactsEnabled||
+      !diagnosticAutonomousFixtureActionEnabled||
+      diagnosticPlayerBodyCollidersEnabled||diagnosticSharedContactEventsEnabled||
+      diagnosticB06bHalftimeTick!==null||
+      diagnosticB06bNativeShotSide!==null||
+      diagnosticB06bOpeningKickoffEnabled||
+      diagnosticB06bGoalRestartEnabled||
+      diagnosticBasicRestartEnabled||diagnosticBasicRestartSource!==null||
+      diagnosticResearchShotAttacker!==null||
+      diagnosticResearchDefensiveSide!==null||
+      diagnosticResearchControlReceiver||
+      diagnosticResearchCarrySide!==null||
+      diagnosticResearchGoalkeeperSaveSide!==null)
+    throw new TypeError('Small-sided exercise exclusively requires original Rapier feet and uniform AI');
+  }
   if(typeof diagnosticAutonomousFixtureActionEnabled!=='boolean'||
      typeof diagnosticAutonomousCarryEnabled!=='boolean'||
      (diagnosticAutonomousFixtureActionEnabled&&!diagnosticPlayerFootContactsEnabled)||
@@ -330,7 +353,11 @@ export function createEngine(RAPIER, input = {}, {
     !diagnosticPlayerFootContactsEnabled||
     !diagnosticAutonomousFixtureActionEnabled))
   throw new TypeError('CARRY setup requires bounded genuine private shoe source');
- const stagedShoes=diagnosticB06bOpeningKickoffEnabled?
+ const smallSided=diagnosticSmallSidedSituation===null?null:
+  smallSidedSetup(diagnosticSmallSidedSituation,
+   diagnosticSmallSidedSide,INITIAL_PLAYERS);
+ const stagedShoes=smallSided?smallSided.staged:
+  diagnosticB06bOpeningKickoffEnabled?
    initialB06bOpeningLineup(INITIAL_PLAYERS):
   diagnosticBasicRestartSource!==null?
    basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
@@ -452,6 +479,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticBasicRestartEnabled,diagnosticBasicRestartSource,
     diagnosticBasicRestartAttackSide,
     diagnosticB06bHalftimeTick,diagnosticB06bNativeShotSide,
+    diagnosticSmallSidedSituation,diagnosticSmallSidedSide,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
@@ -503,7 +531,8 @@ export function createEngine(RAPIER, input = {}, {
    new RAPIER.EventQueue(true):null;
   const shoeBridge=diagnosticPlayerFootContactsEnabled?
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes,
-     sharedContactQueue?{sharedQueue:sharedContactQueue}:{}):null;
+     {...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{}),
+      ...(smallSided?{activePlayerIds:smallSided.activeIds}:{})}):null;
   // All 22 real body colliders remain isolated from ball, shoes and grass.
   const bodyBridge=diagnosticPlayerBodyCollidersEnabled?
     createPrivateRapier22BodyBridge(RAPIER,world,stagedShoes,{
@@ -516,6 +545,7 @@ export function createEngine(RAPIER, input = {}, {
     createPrivatePhysicalActionExecutor({
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled,
+      ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
       researchReceivingCushionSide:diagnosticResearchReceivingCushionEnabled?
        diagnosticResearchControlSide:null,
       researchReceivingDecisionSide:diagnosticResearchReceivingDecisionEnabled?
@@ -1079,6 +1109,9 @@ export function createEngine(RAPIER, input = {}, {
        acknowledgeNativePlayerResponse:frame=>
         bodyBridge.acknowledgeCanonicalResponse(frame)
       }:{})
+    }:{}),
+    ...(smallSided?{
+      originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds
     }:{}),
     ...(actionExecutor?{
       uniformAutonomousActionSnapshot:()=>actionExecutor.actionSnapshot(),

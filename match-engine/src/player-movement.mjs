@@ -5,6 +5,7 @@ import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
+import {smallSidedSetup} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -1653,6 +1654,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bOpeningKickoffEnabled'&&
      k!=='researchB06bGoalRestartEnabled'&&
      k!=='researchB06bNativeShotSide'&&
+     k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlCloseDefender'&&
@@ -1673,6 +1675,7 @@ export function createPlayerMovement(options={}){
      options.researchDefensiveSide===undefined&&
      options.researchBasicRestartSource===undefined&&
      options.researchB06bHalftimeTick===undefined&&
+     options.researchSmallSidedSituation===undefined&&
      options.researchBodyEncounter!==true&&
      options.researchOpposingPressConvergence!==true&&
      options.researchUnstagedNativeBodyFeedback!==true&&
@@ -1793,7 +1796,14 @@ export function createPlayerMovement(options={}){
       !Object.hasOwn(options,'researchShotBall')||
       options.researchShotBlockedLane!==undefined||
       options.researchShotWideCross!==undefined))||
-    (options.researchBasicRestartSource!==undefined&&(
+    (options.researchSmallSidedSituation!==undefined&&(
+      options.researchB06bHalftimeTick!==undefined||
+      options.researchShotAttacker!==undefined||
+      options.researchBodyEncounter!==undefined||
+      Reflect.ownKeys(options).length!==2))||
+    ((options.researchSmallSidedSituation===undefined)!==
+     (options.researchSmallSidedSide===undefined))||
+    (options.researchBasicRestartSource!==undefined&&
       !['throw-in','corner','goal-kick'].includes(options.researchBasicRestartSource)||
       !['home','away'].includes(options.researchBasicRestartAttackSide)||
       !Object.hasOwn(options,'researchBasicRestartBall')||
@@ -1824,7 +1834,12 @@ export function createPlayerMovement(options={}){
    basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
     options.researchBasicRestartAttackSide,options.researchBasicRestartBall,
     options.researchBasicRestartSource):null;
- const initial=options.researchB06bOpeningKickoffEnabled===true?
+ const smallSided=options.researchSmallSidedSituation===undefined?null:
+  smallSidedSetup(options.researchSmallSidedSituation,
+   options.researchSmallSidedSide,INITIAL_PLAYERS);
+ const smallActive=smallSided?new Set(smallSided.activeIds):null;
+ const initial=smallSided?smallSided.staged:
+  options.researchB06bOpeningKickoffEnabled===true?
   initialB06bOpeningLineup(INITIAL_PLAYERS):
   b05bStandby?b05bStandby.players:
   options.researchDefensiveSide?
@@ -2348,6 +2363,29 @@ export function createPlayerMovement(options={}){
    });
   };
   const targets=players.map(p=>{
+   if(smallSided){
+    // A genuine reduced-player session: only selected physical shoes can
+    // touch the ball; all others retain their own base positions.
+    if(!smallActive.has(p.id))
+     return Object.freeze({x:p.baseX,y:p.baseY});
+    if(p.id===smallSided.opponent+'-1')
+     return goalkeeperPosition(p.team,ball);
+    const attack=smallSided.side==='home'?1:-1;
+    if(p.team===smallSided.side){
+     if(p.id===smallSided.side+'-10')
+      return Object.freeze({x:ball.x-attack*0.08,y:ball.y});
+     const wing=p.id.endsWith('-9')?-1:1;
+     return Object.freeze({x:clamp(ball.x-attack*3,
+      -PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),
+      y:clamp(ball.y+wing*5,-PLAYER_KINEMATIC_LIMITS.maxY,
+       PLAYER_KINEMATIC_LIMITS.maxY)});
+    }
+    const lane=p.id.endsWith('-3')?-3:p.id.endsWith('-4')?4:0;
+    return Object.freeze({x:clamp(ball.x+attack*1.2,
+     -PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),
+     y:clamp(ball.y+lane,-PLAYER_KINEMATIC_LIMITS.maxY,
+      PLAYER_KINEMATIC_LIMITS.maxY)});
+   }
    if(b06bGoalKickoffTarget&&p.id===b06bGoalKickoffTarget.team+'-10')
     return Object.freeze({x:p.team==='home'?0.15:-0.15,y:0});
    // H2b2a DEV mini-research: when the other team took an original

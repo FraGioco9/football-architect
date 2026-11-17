@@ -15,7 +15,7 @@ const ordered=set=>Object.freeze(INITIAL_PLAYERS
 const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
- initialPlayers=INITIAL_PLAYERS,{sharedQueue=null}={}){
+ initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null}={}){
  if(!R||typeof R.EventQueue!=='function'||!world||
     typeof world.createRigidBody!=='function'||
     !ballCollider||ballCollider.handle===undefined||
@@ -31,6 +31,15 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     (typeof sharedQueue.drainCollisionEvents!=='function'||
      typeof sharedQueue.drainContactForceEvents!=='function'))
   throw new TypeError('Native shared Rapier event queue required');
+ // A small-sided study must exclude unused Rapier shoe COLLIDERS,
+ // rather than merely hiding them on the canvas. The canonical 22-person
+ // motion frame still undergoes the same validation on every physics tick.
+ if(activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
+   activePlayerIds.length<2||activePlayerIds.length>7||
+   new Set(activePlayerIds).size!==activePlayerIds.length||
+   activePlayerIds.some(id=>!INITIAL_PLAYERS.some(p=>p.id===id))))
+  throw new TypeError('Genuine small-sided source needs 2–7 unique physical shoes');
+ const physicalIds=activePlayerIds===null?null:new Set(activePlayerIds);
  const eventQueue=sharedQueue??new R.EventQueue(true);
  const ownsEventQueue=sharedQueue===null;
  const colliders=[],bodies=[],idsByCollider=new Map();
@@ -47,9 +56,10 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS|
     R.ActiveEvents.CONTACT_FORCE_EVENTS);
   if(sharedQueue!==null)shoeShape.setCollisionGroups(0x00010001);
-  const collider=world.createCollider(shoeShape,body);
+  const collider=physicalIds===null||physicalIds.has(p.id)?
+   world.createCollider(shoeShape,body):null;
   bodies.push(body);colliders.push(collider);
-  idsByCollider.set(collider.handle,p.id);
+  if(collider)idsByCollider.set(collider.handle,p.id);
  }
  const timeline=createFootContactTimeline();
  let positions=Object.freeze(initialPlayers.map(p=>
@@ -133,7 +143,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const manifolds=[];
   for(let i=0;i<INITIAL_PLAYERS.length;i++){
    const id=INITIAL_PLAYERS[i].id;
-   if(!relevant.has(id))continue;
+   if(!relevant.has(id)||colliders[i]===null)continue;
    world.contactPair(ballCollider,colliders[i],(m,flipped)=>{
     const geometricContacts=m.numContacts(),solverContacts=m.numSolverContacts();
     if(!geometricContacts&&!solverContacts)return;
@@ -152,6 +162,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  }}
  return Object.freeze({
   eventQueue,prepare,observe,dispose,
+  physicalColliderIds:Object.freeze(initialPlayers.filter(p=>
+   physicalIds===null||physicalIds.has(p.id)).map(p=>p.id)),
   snapshot:()=>{live();return current;},
   timeline:()=>{live();return timeline.snapshot();},
   solver:()=>{live();return solver;}

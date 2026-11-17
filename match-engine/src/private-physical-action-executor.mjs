@@ -17,8 +17,12 @@ export const PRIVATE_PHYSICAL_ACTION_EXECUTOR_VERSION=
 export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
- researchReceiverTapSide=null
+ researchReceiverTapSide=null,activePlayerIds=null
 }={}){
+ if(activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
+    activePlayerIds.length<2||activePlayerIds.length>7||
+    new Set(activePlayerIds).size!==activePlayerIds.length))
+  throw new TypeError('Small-sided active physical shoe set is invalid');
  if(!ballBody||typeof ballBody.translation!=='function'||
     typeof ballBody.linvel!=='function'||
     typeof ballBody.applyImpulse!=='function'||
@@ -64,7 +68,7 @@ export function createPrivatePhysicalActionExecutor({
   // restart, advance this same original executor's tick but do not
   // apply an unrelated uniform impulse over the authentic kickoff.
   const originalChoice=suppressOriginalAction?null:
-   selectUniformAutonomousContactAction(input);
+   selectUniformAutonomousContactAction({...input,activePlayerIds});
   let researchCandidate=null;
   const side=researchReceivingCushionSide;
   const receiverId=side===null?null:side+'-9';
