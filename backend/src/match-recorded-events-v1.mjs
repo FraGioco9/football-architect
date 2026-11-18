@@ -154,7 +154,7 @@ export async function planRecordedMatchTimelineV1({result,homeRoster,awayRoster}
    const available=state.bench.filter(p=>!state.used.has(p.playerId));
    const newcomer=select(available,await d('in'));
    if(!newcomer)continue;
-   const current=active().filter(id=>id!==state.secondTarget);
+   const current=active().filter(id=>id!==state.secondTarget&&state.people.get(id).entered!==item.minute);
    const gkEligible=newcomer.primaryPosition==='GK'||newcomer.secondaryPositions.includes('GK');
    const outgoing=current.filter(id=>state.on.get(id)!=='GK'||gkEligible);
    if(!outgoing.length)continue;
