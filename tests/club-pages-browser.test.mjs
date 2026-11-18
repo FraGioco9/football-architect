@@ -46,7 +46,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
    const path=new URL(req.url,'http://localhost').pathname;
    if(path==='/api/clubs/IT-1/roster/stats'){
     res.writeHead(200,{'Content-Type':'application/json'});
-    res.end(JSON.stringify({clubKey:'IT-1',season:1,count:1,players:[{id:1001,display_name:'Fixture Player',nationality:'ITA',primary_position:'CM',stats:{appearances:2,starts:1,minutes:110,goals:1}}]}));return;
+    res.end(JSON.stringify({clubKey:'IT-1',season:1,competitions:['IT-1','int-1'],count:1,players:[{id:1001,display_name:'Fixture Player',nationality:'ITA',primary_position:'CM',stats:{appearances:2,starts:1,minutes:110,goals:1},competitionStats:{'int-1':{appearances:1,starts:0,minutes:20,goals:0}}}]}));return;
    }
    if(path==='/api/clubs/IT-1/roster'&&holdRosterResponse){blockedRosterResponses.push(res);return;}
    if(path==='/api/clubs/IT-1/roster'&&mockEmptyRoster){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:0,players:[]}));return;}
@@ -713,6 +713,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-empty')+"')"),true);
      assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
     }
+    for(const query of ['view=attributes&group=physical','view=stats&competition=int-1']){
+     const response=await fetch(devOrigin+'/clubs/it/1/roster?'+query,{redirect:'manual'});
+     assert.equal(response.status,200,'DEV must serve a roster subview directly on reload');
+    }
     // A failed API response must not invent a selected subview or mutate /roster.
     await visit('/clubs/it/1/roster?view=attributes&group=mental');
     await wait("document.querySelector('.club-roster[aria-busy=false] .app-players-empty-row')!==null");
@@ -731,11 +735,15 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }
     await run("document.querySelector('[data-club-roster-view=stats]').click()");
     await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='110'");
+    await run("document.querySelector('[data-club-roster-control=competition] button').click();document.querySelector('[data-menu-value=int-1]').click()");
+    await wait("location.search==='?view=stats&competition=int-1'&&document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='20'");
+    await cmd('Page.reload',{ignoreCache:true});
+    await wait("location.search==='?view=stats&competition=int-1'&&document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='20'");
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await run("document.querySelector('[data-club-roster-view=attributes]').click()");
     await wait("location.search==='?view=attributes&group=technical'");
     assert.equal(await run("document.querySelector('.club-roster')?.dataset.rosterMode"),'attributes');
-    await run("document.querySelector('.club-roster-select').value='mental';document.querySelector('.club-roster-select').dispatchEvent(new Event('change',{bubbles:true}))");
+    await run("document.querySelector('[data-club-roster-control=group] button').click();document.querySelector('[data-menu-value=mental]').click()");
     await wait("location.search==='?view=attributes&group=mental'");
     assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'mental');
     await run("history.back()");
@@ -755,21 +763,20 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await run("document.querySelector('[data-club-roster-sort=positions]').click()");
     await wait("location.search==='?view=info&sort=positions&order=desc'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=positions]').closest('th').getAttribute('aria-sort')"),'descending');
-    // Real browser: pending View controls are grey, have no href/focus target,
-    // cannot navigate, and become enabled when the API delivers valid players.
+    // The category picker remains usable while player data is pending.
     mockReadyRoster=false;
     holdRosterResponse=true;
     await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
     await visit('/clubs/it/1/roster?view=attributes&group=technical');
-    await wait("document.querySelector('.club-roster[aria-busy=true] select')!==null");
-    await run("document.querySelector('.club-roster-select').value='mental';document.querySelector('.club-roster-select').dispatchEvent(new Event('change',{bubbles:true}))");
+    await wait("document.querySelector('.club-roster[aria-busy=true] [role=combobox]')!==null");
+    await run("document.querySelector('[data-club-roster-control=group] button').click();document.querySelector('[data-menu-value=mental]').click()");
     await wait("location.search==='?view=attributes&group=mental'");
     for(let i=0;i<100&&!blockedRosterResponses.length;i++)await delay(20);
     assert.ok(blockedRosterResponses.length>=1,'club roster request held until assertions complete');
     holdRosterResponse=false;
     const loadedRoster={schemaVersion:1,clubKey:'IT-1',count:1,players:[{id:1001,display_name:'Test Player',nationality:'ITA',primary_position:'CM',secondary_positions:[],age:20,height_cm:180,preferred_foot:'right',attributes:{}}]};
     blockedRosterResponses.splice(0).forEach(res=>{res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(loadedRoster))});
-    await wait("document.querySelector('.club-roster[aria-busy=false] select')?.value==='mental'");
+    await wait("document.querySelector('.club-roster[aria-busy=false] [role=combobox]')?.value==='mental'");
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     // Verified API count=0: desktop and mobile render only a localized paragraph,
     // with no subviews, player count, sort buttons, or table.

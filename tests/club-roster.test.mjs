@@ -39,9 +39,11 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
 
   assert.match(html,new RegExp('>'+expectedOverview[language]+'<'));
   const attributes=model.render(manifest,selected,language,'?view=attributes',null,1,null,snapshot);
-  for(const label of expectedCategories[language])assert.ok(attributes.includes('>'+label+'</option>'));
+  for(const label of expectedCategories[language])assert.ok(attributes.includes('>'+label+'</div>'));
   const stats=model.render(manifest,selected,language,'?view=stats',null,1,null,{...snapshot,season:2});
   assert.match(stats,/data-roster-mode="stats"/);
+  for(const panel of [attributes,stats])assert.match(panel,/data-club-roster-control="(?:group|competition)"[\s\S]+?<span class="club-roster-count">/);
+  assert.doesNotMatch(stats,/club-roster-scope/);
   assert.equal((stats.match(/class="club-roster-player-link"/g)||[]).length,65);
   assert.match(stats,/data-club-roster-sort="minutes"/);
   assert.doesNotMatch(html,/club-empty|pagination|pageSize|development_aptitude|initial_age|<h2>Roster/);

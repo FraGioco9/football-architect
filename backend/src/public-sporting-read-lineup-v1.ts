@@ -309,9 +309,12 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    if(fixtures.some(f=>!competitionIds.has(f.competitionId)||
      (f.result!==null)!==(f.day<=viewedWorld.day)))invalid();
    if(rosterStats){
-    const {complete,totals}=clubRosterTotals(fixturesClubKey,all,storedResults,replay.frozenMatches);
+    const clubFixtures=all.filter(f=>f.homeClubId===fixturesClubKey||f.awayClubId===fixturesClubKey);
+    const {complete,totals}=clubRosterTotals(fixturesClubKey,clubFixtures,storedResults,replay.frozenMatches);
+    const breakdown=[...competitionIds].map(id=>({id,...clubRosterTotals(fixturesClubKey,
+     clubFixtures.filter(f=>f.competitionId===id),storedResults,replay.frozenMatches)}));
     await unchanged(db,world);
-    return {...base,status:'available' as const,data:{complete,totals}};
+    return {...base,status:'available' as const,data:{complete,totals,breakdown}};
    }
    // Carry persisted public IDs in the verified club response so the client
    // does not download two full public competition match collections.
@@ -423,13 +426,19 @@ export async function readPublicRosterStats(db:Database,clubKey:string,season:nu
  const complete=data&&'complete' in data?data.complete:
   selectedSeason===0&&world.seasonNumber===0||(projection&&'reason' in projection&&projection.reason==='calendar-unpublished');
  const totals=new Map(data&&'totals' in data?data.totals.map(p=>[p.playerId,p]):[]);
+ const breakdown=data&&'breakdown' in data?data.breakdown.map(c=>({
+  id:c.id,complete:c.complete,rows:new Map(c.totals.map(p=>[p.playerId,p]))
+ })):[];
+ function numbers(recorded:boolean,row:{appearances:number;starts:number;minutes:number;goals:number}|undefined){
+  return recorded?{appearances:row?.appearances??0,starts:row?.starts??0,minutes:row?.minutes??0,goals:row?.goals??0}:null;
+ }
  const roster=await readPublicClubRoster(db,clubKey);
  await unchanged(db,world);
- return {...roster,season:selectedSeason,players:roster.players.map(player=>{
+ return {...roster,season:selectedSeason,competitions:breakdown.map(c=>c.id),players:roster.players.map(player=>{
   const row=totals.get(player.id);
   const {id,display_name,nationality,primary_position,secondary_positions}=player;
-  return {id,display_name,nationality,primary_position,secondary_positions,stats:complete?{appearances:row?.appearances??0,starts:row?.starts??0,
-   minutes:row?.minutes??0,goals:row?.goals??0}:null};
+  return {id,display_name,nationality,primary_position,secondary_positions,stats:numbers(!!complete,row),
+   competitionStats:Object.fromEntries(breakdown.map(c=>[c.id,numbers(c.complete,c.rows.get(id))]))};
  })};
 }
 /** Compact, validated club overview: exactly one public HTTP request per selected season. */

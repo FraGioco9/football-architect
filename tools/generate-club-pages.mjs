@@ -3,7 +3,7 @@ import fixtureUI from '../assets/club-fixtures.js';
 // CLUB-01: derive public presentation data without modifying canonical inputs.
 import {clubCrestAssets} from './club-crest-assets.mjs';
 import {loadWorldCatalog} from './load-world-catalog.mjs';
-function bootstrapClubFirstPaint(rosterLabels){
+function bootstrapClubFirstPaint(rosterLabels,menuMarkup,competitionNames){
  const match=location.pathname.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|stats|history)\/?$/);
  if(!match)return;
  const country=match[1],clubId=match[2],view=match[3];
@@ -63,23 +63,25 @@ function bootstrapClubFirstPaint(rosterLabels){
    const key=button.dataset.clubRosterView,active=key===(mode==='overview'?'info':mode);
    button.textContent=key==='info'?'Info':key==='stats'?labels[locale][3]:wordsForRoster[0];
    const query=new URLSearchParams(params);
-   query.set('view',key);query.delete('sort');query.delete('order');
+   query.set('view',key);if(key!=='stats')query.delete('competition');query.delete('sort');query.delete('order');
    if(key==='attributes')query.set('group',mode==='attributes'?group:'technical');else query.delete('group');
    button.href=location.pathname+'?'+query;
    button.classList.toggle('is-active',active);
    button.setAttribute('aria-selected',String(active));
    button.tabIndex=active?0:-1;
   }
-  if(mode==='attributes'){
-   const menu=document.createElement('select');menu.className='club-roster-select';menu.setAttribute('aria-label',wordsForRoster[0]);
-   Object.keys(keys).forEach((key,i)=>menu.add(new Option(w.groups[i],key,false,key===group)));
-   menu.onchange=()=>{const query=new URLSearchParams(params);query.set('group',menu.value);query.delete('sort');query.delete('order');location.search=query.toString();};
-   roster.querySelector('.club-roster-view-row').append(menu);
-  }
-  if(mode==='stats'){
-   const scope=document.createElement('div');scope.className='club-roster-scope';
-   scope.textContent=wordsForRoster[5]+' '+(params.get('season')??'…')+' · '+wordsForRoster[6];
-   roster.querySelector('.club-roster-view-row').after(scope);
+  if(mode==='attributes'||mode==='stats'){
+   const isGroup=mode==='attributes',id=isGroup?'group':'competition';
+   const picker=document.createElement('template');picker.innerHTML=menuMarkup[id];
+   const control=picker.content.firstElementChild,trigger=control.querySelector('button');
+   const fixtureWords=JSON.parse(document.querySelector('.club-fixtures').dataset.labels)[locale];
+   const label=isGroup?wordsForRoster[0]:fixtureWords.competition;
+   const requested=params.get('competition');
+   const value=isGroup?w.groups[Object.keys(keys).indexOf(group)]:Object.hasOwn(competitionNames,requested)?competitionNames[requested]:fixtureWords.all;
+   trigger.setAttribute('aria-label',label);control.querySelector('[role=listbox]').setAttribute('aria-label',label);
+   trigger.querySelector('span').textContent=value;
+   trigger.disabled=true;
+   roster.querySelector('.club-roster-count').before(control);
   }
   roster.querySelector('.club-roster-tabs').setAttribute('aria-label',w.title);
   const table=roster.querySelector('table');
@@ -275,7 +277,7 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations,c
    if(!localized||['en','de','es','fr','it'].some(lang=>!localized[lang]))throw Error('Missing club translations');
    return {...c,descriptions:localized,divisionId:catalog.getDivisionForClub(c.countryId+'-'+c.clubId)};
   })};
- const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+JSON.stringify(clubModel.rosterLabels)+');';
+ const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+[clubModel.rosterLabels,Object.fromEntries(['group','competition'].map(id=>[id,fixtureUI.control(id,'','',[],'club-roster')])),Object.fromEntries([...divisions.map(d=>[d.id,d.name]),['int-1','Sovereign Cup'],['int-2','Federation Cup']])].map(value=>JSON.stringify(value)).join(',')+');';
  const staticContent=buildClubShell(firstPaintScript);
  let html=template;
  for(const [token,value] of Object.entries({...replacements,'@@FA_WORLD_SECTION@@':staticContent}))html=html.replaceAll(token,value);

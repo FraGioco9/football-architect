@@ -162,13 +162,14 @@
   const query=new URLSearchParams(search);
   const attributes=Object.hasOwn(rosterGroups,view);
   query.set('view',attributes?'attributes':view);
+  if(view!=='stats')query.delete('competition');
   if(!attributes)query.delete('group');
   else query.set('group',view);
   const allowed=rosterSortKeys(view);
   if(!allowed.includes(query.get('sort'))){query.delete('sort');query.delete('order');}
   return query;
  }
- function renderRoster(clubKey,lang,t,snapshot,search=''){
+ function renderRoster(clubKey,lang,t,snapshot,search='',divisions=[]){
   const w=rosterWords[lang],params=new URLSearchParams(search);
   const view=rosterView(params);
   const mode=view==='info'?'overview':view==='stats'?'stats':'attributes';
@@ -189,6 +190,11 @@
   // localized text; unknown/loading states still reserve the table first paint.
   if(ready&&snapshot.count===0)
    return '<section class="club-roster" aria-busy="false" data-roster-mode="empty"><p class="club-roster-empty" role="status">'+escape(w.empty)+'</p></section>';
+  const competitions=snapshot?.competitions||[];
+  const requestedCompetition=params.get('competition');
+  const knownCompetition=divisions.some(d=>d.id===requestedCompetition)||['int-1','int-2'].includes(requestedCompetition);
+  const competition=competitions.includes(requestedCompetition)||pending&&knownCompetition?requestedCompetition:'all';
+  const competitionName=id=>divisions.find(d=>d.id===id)?.name||({'int-1':'Sovereign Cup','int-2':'Federation Cup'}[id])||id;
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
    :mode==='stats'?['',w.name,w.positions,...words.slice(1,5)]:['',w.name,w.positions,w.age,w.height,w.foot];
@@ -204,7 +210,8 @@
    const message=ready?w.empty:snapshot?.status===404?w.missingApi:w.unavailable;
    body='<tr class="app-players-empty-row"><td colspan="'+colCount+'"><strong role="status">'+escape(message)+'</strong></td></tr>';
   }else{
-   body=sortedRosterPlayers(snapshot.players,sort||'positions',sort?order:'desc').map(player=>{
+   const players=mode==='stats'&&competition!=='all'?snapshot.players.map(p=>({...p,stats:p.competitionStats?.[competition]})):snapshot.players;
+   body=sortedRosterPlayers(players,sort||'positions',sort?order:'desc').map(player=>{
     const id=Number(player.id),country=player.nationality;
     const code=Object.hasOwn(rosterFlags,country)?rosterFlags[country]:null;
     const flag=code?'<img class="app-players-nationality-flag" src="/assets/flags/'+escape(code)+'.svg" width="20" height="15" alt="'+escape(country)+'" title="'+escape(country)+'">':escape(country||'');
@@ -223,12 +230,17 @@
    const label=[w.tabs[0],t.stats,words[0]][i];
    return '<a role="tab" class="app-competition-tab'+(active?' is-active':'')+'" href="'+escape(href(key==='attributes'?group:key))+'" data-club-roster-view="'+key+'" aria-selected="'+active+'" tabindex="'+(active?'0':'-1')+'">'+escape(label)+'</a>';
   }).join('');
-  const selector=mode==='attributes'?'<select class="club-roster-select" aria-label="'+words[0]+'">'+Object.keys(rosterGroups).map((key,i)=>
-   '<option value="'+key+'"'+(group===key?' selected':'')+'>'+w.groups[i]+'</option>').join('')+'</select>':'';
-  const season=snapshot?.season??params.get('season');
-  const scope=mode==='stats'?'<div class="club-roster-scope">'+words[5]+' '+escape(season??'…')+' · '+words[6]+'</div>':'';
+  let selector='';
+  if(mode==='attributes'){
+   const options=Object.keys(rosterGroups).map((key,i)=>[key,w.groups[i]]);
+   selector=fixtureUI.control('group',words[0],options.find(([key])=>key===group)[1],options,'club-roster');
+  }else if(mode==='stats'){
+   const labels=fixtureUI.copy[lang];
+   selector=fixtureUI.control('competition',labels.competition,competition==='all'?labels.all:competitionName(competition),
+    [['all',labels.all],...competitions.map(id=>[id,competitionName(id)])],'club-roster');
+  }
   return '<section class="club-roster" aria-busy="'+pending+'" data-roster-mode="'+mode+'">'+
-   '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav><span class="club-roster-count">'+count+'</span>'+selector+'</div>'+scope+
+   '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav>'+selector+'<span class="club-roster-count">'+count+'</span></div>'+
    '<div class="app-players-table-scroll club-roster-table-scroll" role="region" aria-label="'+escape(t.roster)+'" tabindex="0"'+(pending?' aria-busy="true"':'')+'>'+
    '<table class="app-players-table club-roster-table" data-players-table-mode="'+mode+'" data-roster-group="'+group+'" aria-label="'+escape(t.roster)+'">'+
    columns+'<thead><tr>'+labels.map((label,i)=>{
@@ -380,7 +392,7 @@
     '<section class="app-panel club-competition" aria-labelledby="club-competition-title"><h2 id="club-competition-title">'+escape(t.competition)+'</h2>'+
     effectiveCompetitionCard+'</section></div>';
   }else if(selected.view==='roster'){
-   content=renderRoster(clubKey,lang,t,rosterSnapshot,search);
+   content=renderRoster(clubKey,lang,t,rosterSnapshot,search,manifest.divisions);
   }else if(selected.view==='history'){
    const words={
     en:{season:'Season',competition:'Competition',position:'Pos.',played:'MP',won:'W',drawn:'D',lost:'L',gf:'GF',ga:'GA',gd:'GD',points:'Pts',total:'Total',show:'Show competitions for',empty:'No games played',without:'No competitions this season.',unavailable:'Club history is temporarily unavailable.'},

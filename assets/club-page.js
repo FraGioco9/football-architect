@@ -2,6 +2,7 @@
 (async()=>{
  'use strict';
  const model=window.faClubModel,host=document.getElementById('club-page');
+ let rosterMenuEvents=null;
  let selected=model.route(location.pathname),competitionSnapshot={source:'loading'},historySnapshot={source:'loading'},rosterSnapshot={source:'loading'};
  let refreshClubHistory=()=>{},refreshClubOverview=()=>{},refreshClubRoster=()=>{},fixturesController=null;
  const language=()=>Object.hasOwn(model.copies,document.documentElement.lang)?document.documentElement.lang:'en';
@@ -199,6 +200,22 @@
    for(const child of [...staging.childNodes])if(child!==stagedHeader&&child!==stagedTabs&&!(retainedFixtures&&child.matches?.('.club-fixtures')))host.append(child);
    if(Number.isFinite(historyTableScroll)){const tableWrap=host.querySelector('.club-history-table-wrap');if(tableWrap)tableWrap.scrollLeft=historyTableScroll;}
    if(Number.isFinite(rosterTableScroll)){const rosterWrap=host.querySelector('.club-roster-table-scroll');if(rosterWrap)rosterWrap.scrollLeft=rosterTableScroll;}
+   rosterMenuEvents?.abort();
+   const control=host.querySelector('[data-club-roster-control]');
+   if(control){
+    rosterMenuEvents=new AbortController();
+    const trigger=control.querySelector('button'),menu=control.querySelector('[role=listbox]');
+    const group=control.dataset.clubRosterControl==='group';
+    const binding=window.faBindCompetitionMenu(trigger,menu,[...menu.children],value=>{
+     const query=group?model.rosterViewQuery(location.search,value):new URLSearchParams(location.search);
+     if(!group){if(value==='all')query.delete('competition');else query.set('competition',value);}
+     const next=location.pathname+'?'+query+location.hash;
+     if(next!==location.pathname+location.search+location.hash)history.pushState(null,'',next);
+     paint(true);host.querySelector('[data-club-roster-control] button')?.focus({preventScroll:true});
+    },control,{signal:rosterMenuEvents.signal});
+    const params=new URLSearchParams(location.search);
+    binding.sync(group?model.rosterView(params):rosterSnapshot.competitions?.includes(params.get('competition'))?params.get('competition'):'all');
+   }
    const rosterTabs=host.querySelector('.club-roster-tabs');
    if(rosterTabs){
     if(Number.isFinite(rosterTabScrollLeft))rosterTabs.scrollLeft=rosterTabScrollLeft;
@@ -322,6 +339,7 @@
     applyCompetitionSnapshot(incoming);
    }
   });
+  await import('/assets/competition-tabs.js');
   paint();
   // Reuse the loaded club snapshot for category switches without another request.
   host.addEventListener('click',event=>{
@@ -334,19 +352,12 @@
    }
    const target=control.dataset.clubRosterView;
    event.preventDefault();
-   const params=model.rosterViewQuery(location.search,target==='attributes'?(control.closest('.club-roster').querySelector('select')?.value||'technical'):target);
+   const params=model.rosterViewQuery(location.search,target==='attributes'?(control.closest('.club-roster').querySelector('[data-club-roster-control=group] button')?.value||'technical'):target);
    const next=location.pathname+'?'+params.toString()+location.hash;
    if(next===location.pathname+location.search+location.hash)return;
    history.pushState(null,'',next);
    refreshClubRoster();paint(true);
    host.querySelector('[data-club-roster-view="'+target+'"]')?.focus({preventScroll:true});
-  });
-  host.addEventListener('change',event=>{
-   if(!event.target.matches('.club-roster-select'))return;
-   const params=model.rosterViewQuery(location.search,event.target.value);
-   history.pushState(null,'',location.pathname+'?'+params+location.hash);
-   paint(true);
-   host.querySelector('.club-roster-select')?.focus({preventScroll:true});
   });
   // Identical sort cycle to /players: descending, ascending, reset.
   // Sort the in-memory club snapshot without repeating its public API request.

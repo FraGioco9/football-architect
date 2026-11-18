@@ -23,7 +23,7 @@ it('match navigation returns the neutral shell before any D1 read',async()=>{
  expect(poolReads).toBe(0);
 });
 it('routes canonical pages to shared physical HTML without forwarding credentials, tokens or source headers',async()=>{
- for(const [path,file] of [['/account/login?token=secret','/account/login/index.html'],['/competitions/it-1/fixtures?season=2','/competitions/it-1/index.html'],['/competitions/int-1/rules','/competitions/int-1/index.html'],['/clubs/it/3/fixtures?season=2','/clubs/_shared/index.html'],['/calendar?season=1&calendarView=week','/calendar/index.html'],['/players/44','/players/_shared/index.html'],['/players/44?view=info','/players/_shared/index.html']]){
+ for(const [path,file] of [['/account/login?token=secret','/account/login/index.html'],['/competitions/it-1/fixtures?season=2','/competitions/it-1/index.html'],['/competitions/int-1/rules','/competitions/int-1/index.html'],['/clubs/it/3/fixtures?season=2','/clubs/_shared/index.html'],['/clubs/it/3/roster?view=stats&competition=int-1','/clubs/_shared/index.html'],['/clubs/it/3/roster?view=attributes&group=mental','/clubs/_shared/index.html'],['/calendar?season=1&calendarView=week','/calendar/index.html'],['/players/44','/players/_shared/index.html'],['/players/44?view=info','/players/_shared/index.html']]){
   const r=await call(path,{headers:{Cookie:'private=secret',Authorization:'secret','CF-Connecting-IP':'192.0.2.1','X-CSRF-Token':'secret'}});expect(r.status).toBe(200);
   const asset=seen.at(-1)!;expect(new URL(asset.url).pathname).toBe(file);expect(new URL(asset.url).search).toBe('');
   for(const key of ['cookie','authorization','cf-connecting-ip','x-csrf-token'])expect(asset.headers.get(key)).toBeNull();
