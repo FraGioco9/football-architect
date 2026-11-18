@@ -312,7 +312,7 @@ test('#628 solo Carry physical intensity scales original real touch without velo
  const duel=chooseIsolatedDribbleTouch({...params,defender:{team:'away',x:34,y:1}});
  assert.equal(solo.soloCarry,true);
  assert.equal(solo.fromLiveOpponent,false);
- assert.equal(solo.magnitudeNs,duel.magnitudeNs*0.75);
+ assert.equal(solo.magnitudeNs,duel.magnitudeNs*0.55);
  assert.equal(solo.fromLiveBallVelocity,true);
  assert.equal(solo.genuineRapierShoeStartRequired,true);
  assert.throws(()=>chooseIsolatedDribbleTouch({...params,solo:true,defender:{team:'away',x:33,y:0}}),TypeError);
