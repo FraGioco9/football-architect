@@ -74,6 +74,14 @@ export function projectStandings(rows,fixtures,definition,mode){
     resultRows.push({...row,played:selected.length,won,drawn,lost,gf,ga,
       gd:gf-ga,pts:3*won+drawn,recent,position:null,_standingsKey:id});
   }
+  // With no played fixtures in this view, show entrants like an unplayed
+  // Overall table: alphabetical names, with no rank, statistics or form.
+  if(resultRows.every(row=>row.played===0)){
+    resultRows.sort((a,b)=>a.club.primaryName.localeCompare(b.club.primaryName,'en',{sensitivity:'base'})||
+      cmp(a._standingsKey,b._standingsKey));
+    return resultRows.map(({_standingsKey,...row})=>({...row,position:null,
+      played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
+  }
   resultRows.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||b.won-a.won||
     cmp(a._standingsKey,b._standingsKey));
   return resultRows.map(({_standingsKey,...row},index)=>({...row,position:index+1}));

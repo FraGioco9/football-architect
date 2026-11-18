@@ -983,11 +983,17 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       for(let index=0;index<nextRows.length;index++){
         const row=nextRows[index],id=row.club.countryId+"-"+row.club.clubId;
         const tr=desktop.get(id);
-        window.faStandingsOutcomes?.decorate(tr,index+1);
-        tr.cells[0].textContent=String(index+1);
+        const rank=row.played==null?null:index+1;
+        window.faStandingsOutcomes?.decorate(tr,rank);
+        tr.cells[0].textContent=rank==null?'—':String(rank);
+        tr.cells[0].className=rank==null?'app-world-stat-unknown':'app-world-stat-value';
         const numbers=[row.played,row.won,row.drawn,row.lost,row.gf,row.ga,
           row.gd>0?"+"+row.gd:row.gd,row.pts];
-        numbers.forEach((number,i)=>{tr.cells[i+2].textContent=String(number)});
+        numbers.forEach((number,i)=>{
+          const cell=tr.cells[i+2];
+          cell.textContent=number==null?'—':String(number);
+          cell.className=number==null?'app-world-stat-unknown':'app-world-stat-value';
+        });
         const strip=tr.querySelector(".app-world-form-strip");
         const buttons=[...strip.querySelectorAll(".app-world-form-control")];
         while(buttons.length>row.recent.length){
