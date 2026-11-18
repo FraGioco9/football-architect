@@ -8,7 +8,7 @@ const match={matchId:19,season:1,day:13,fixtureId:'season:1:IT-1:N01:IT-1:IT-2',
  competitionId:'IT-1',homeClubId:'IT-1',awayClubId:'IT-2',sourceHash:'a'.repeat(64)};
 const positions=['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW'];
 const row=(id,club,role='CM',strength=61,status='active')=>({id,club_key:club,
- payload_json:JSON.stringify({career_status:status,primary_position:role,
+ payload_json:JSON.stringify({career_status:status,first_name:'Frozen',last_name:'Player'+id,nationality:'ITA',primary_position:role,
   secondary_positions:[],attributes:Object.fromEntries(ATTRIBUTES.map(a=>[a,strength])),
   development_aptitude:99})});
 const home=()=>positions.map((role,i)=>row(i+1,'IT-1',role));
@@ -78,6 +78,10 @@ test('candidate official insert is staged with player/fixture guards, never comm
  assert.ok(planned.guards.length>=rows.length+5);
  assert.match(planned.receiptHash,/^[0-9a-f]{64}$/);
  assert.equal(planned.receipt.authority,'official');
+ assert.equal(planned.receipt.result.playerIdentityVersion,'player-identity-v1');
+ assert.equal(planned.receipt.result.playerIdentities.length,11);
+ assert.deepEqual(planned.receipt.result.playerIdentities[0],{playerId:1,name:'Frozen Player1',nationality:'ITA'});
+ assert.ok(!JSON.stringify(planned.receipt.result.playerIdentities).includes('development_aptitude'));
  assert.ok(calls.some(c=>c.sql.includes('INSERT INTO match_lineup_result_receipts')));
  assert.ok(calls.some(c=>c.sql.includes('NOT EXISTS(SELECT 1 FROM match_lineup_result_receipts')));
 });
