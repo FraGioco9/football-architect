@@ -79,9 +79,13 @@ export function soloCarryTwoFootPositions(player,gait=null){
  const ahead=gait?.observedAheadM??0.55;
  const lateral=gait?.observedLateralM??0;
  const sideAdjust=gaitClamp(lateral*0.20,-0.03,0.03);
- const leftForward=gait?.forwardM??forwardStroke*stroke;
- const rightForward=-forwardStroke*stroke+
-  gaitClamp((ahead-0.53)*0.40,0,0.055)*Math.max(0,-stroke);
+ // The former one-shoe stride is too aggressive when BOTH shoes collide:
+ // reduce real physical reach of each kinematic pad, never clamp ball speed.
+ const twoFootPhysicalReach=0.75;
+ const leftForward=(gait?.forwardM??forwardStroke*stroke)*twoFootPhysicalReach;
+ const rightForward=(-forwardStroke*stroke+
+  gaitClamp((ahead-0.53)*0.40,0,0.055)*Math.max(0,-stroke))*
+  twoFootPhysicalReach;
  const make=(forward,side)=>{
   const c=Math.cos(player.facingRad),si=Math.sin(player.facingRad);
   return Object.freeze({...player,
