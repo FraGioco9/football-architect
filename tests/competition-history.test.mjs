@@ -484,3 +484,36 @@ test('loaded DEV History mounts record groups before Season archive without affe
  assert.ok(makeArchive>0&&makeRecords>makeArchive&&reappend>makeRecords&&commit>reappend,
   'the archive is moved below the completed records just before committing the preview DOM');
 });
+
+test('Optional record +N stays on an existing grid row and cannot shift its club holder',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const assertRule=(selector,parts)=>{
+  const start=css.lastIndexOf(selector+'{');
+  assert.ok(start>=0,'Missing rule: '+selector);
+  const declaration=css.slice(start+selector.length+1,css.indexOf('}',start));
+  for(const part of parts)assert.ok(declaration.includes(part),selector+' must include '+part);
+ };
+ // Team records: the fourth DOM child is explicitly placed on the second
+ // track rather than creating an implicit fourth grid row below the holder.
+ assertRule('#competition-panel-history .app-history-dev-record',[
+  'grid-template-columns:minmax(0,1fr) auto','grid-template-rows:minmax(var(--fa-record-heading),max-content) auto minmax(0,1fr)'
+ ]);
+ assertRule('#competition-panel-history .app-history-dev-record>.app-history-record-holders',[
+  'grid-column:1/-1','grid-row:3','align-self:end'
+ ]);
+ assertRule('#competition-panel-history .app-history-dev-record>.app-history-player-detail',[
+  'grid-column:2','grid-row:2'
+ ]);
+ // The player +N shares the existing name row with the real player name.
+ // Reserving two lines also fixes the club's vertical position on skeletons.
+ assertRule('#competition-panel-history .app-history-player-name-row',[
+  'display:grid','grid-template-columns:minmax(0,1fr) auto','height:calc(2 * 1.35 * var(--history-name-size, .875rem))'
+ ]);
+ assertRule('#competition-panel-history .app-history-player-name-row>.app-history-player-detail',[
+  'grid-column:2','grid-row:1'
+ ]);
+ const markup=readFileSync(new URL('../tools/competition-view-skeletons.mjs',import.meta.url),'utf8');
+ assert.match(markup,/class="app-history-player-name-row"/);
+ assert.match(markup,/class="app-history-player-context"/);
+ assert.ok(markup.indexOf('class="app-history-player-context"')>markup.indexOf('class="app-history-player-name-row"'));
+});
