@@ -92,7 +92,7 @@ export async function resolvePublishedKnockoutV1(db,{match,world,published,conte
   let prior;
   try{prior=JSON.parse(frozen.receipt_json)}catch{fail('first leg JSON')}
   const oldFixture=prior?.fixture,oldResult=prior?.result;
-  if(prior?.schemaVersion!==1||prior.authority!=='official'||
+  if(![1,2].includes(prior?.schemaVersion)||prior.authority!=='official'||
    prior.algorithmVersion!=='temporary-lineup-v1'||
    oldFixture?.matchId!==frozen.public_match_id||
    oldFixture?.fixtureId!==first.id||oldFixture?.generation!==world.generation||
@@ -105,6 +105,17 @@ export async function resolvePublishedKnockoutV1(db,{match,world,published,conte
    !Number.isSafeInteger(oldResult.awayGoals)||oldResult.awayGoals<0||
    await hashString(JSON.stringify(prior))!==frozen.receipt_hash)
    fail('first leg receipt');
+  // Verify the full frozen scorer / event and candidate-digest evidence before
+  // using the first leg score to determine aggregate qualification. A matching
+  // persisted receipt SHA alone is not sufficient to authorize the result.
+  // Legacy schema-v1 remains byte-identical, while v2 validates its event
+  // timeline without consulting mutable club affiliations.
+  const {buildCandidateMatchReceiptV1}=await import('./temporary-lineup-v1.mjs');
+  try{
+   const candidate=await buildCandidateMatchReceiptV1(oldFixture,oldResult);
+   if(candidate.receiptDigest!==prior.sourceCandidateDigest||
+      candidate.schemaVersion!==prior.schemaVersion)fail('first leg candidate digest');
+  }catch{fail('first leg candidate evidence')}
   // A knockout plan's sourceCalendarHash attests the WORLD calendar model.
   // V2 day receipts instead bind to the hash of the entire approved fixture
   // schedule. These digests are different and must NEVER be interchanged.
