@@ -113,7 +113,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
    assert.ok(html.includes('<h1 id="club-title" class="app-page-title" aria-label="'+htmlEsc(c.fullName)+'">'),'H1 must retain accessible fullName for '+c.countryId+'-'+c.clubId);
    for(const [variant,name] of [['full',c.fullName],['primary',c.primaryName],['compact',c.compactName]])
     assert.ok(html.includes('<span data-club-name="'+variant+'">'+htmlEsc(name)+'</span>'),'Canonical '+variant+' name in Club H1 for '+c.countryId+'-'+c.clubId+' / '+view+' / '+lang);
-   assert.equal((html.match(/class="app-competition-tab(?: |")/g)||[]).length,view==='roster'?10:5);
+   assert.equal((html.match(/class="app-competition-tab(?: |")/g)||[]).length,view==='roster'?10:view==='records'?7:5);
    assert.equal((html.match(/class="app-competition-tabs club-tabs"/g)||[]).length,1);
    assert.ok(html.includes(base+'/roster"'));
    assert.ok(html.includes(model.copies[lang][view]));
@@ -124,7 +124,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
     for(const field of ['abbr','primaryColor','secondaryColor'])assert.ok(html.includes(c[field]));
     if(c.divisionId){assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));assert.equal((html.match(/data-club-division-link/g)||[]).length,1,'Only one division link in Competitions');assert.doesNotMatch(html,/club-header-division/);}
     else assert.ok(html.includes(model.copies[lang].noActiveCompetitions));
-   }else assert.ok(html.includes(view==='history'?'club-history-row-loading':view==='fixtures'?'club-fixtures':view==='roster'?'club-roster':'club-empty'));
+   }else assert.ok(html.includes(view==='history'?'club-history-row-loading':view==='fixtures'?'club-fixtures':view==='roster'?'club-roster':view==='records'?'club-records':'club-empty'));
    // Roster uses a canonical direct Info subview; only /app/ links are invalid.
    assert.doesNotMatch(html,/href="\/app\//);
   }
