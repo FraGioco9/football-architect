@@ -1,6 +1,6 @@
 # MATCH-STATS-EVENTS-01 — official event timeline proposal (#690)
 
-> **STATUS: PROPOSED / OWNER APPROVAL REQUIRED.** This document is a design artifact only.
+> **STATUS: OWNER-APPROVED RULES (2026-11-18); IMPLEMENTATION IN PROGRESS / DRAFT-HOLD.**
 > It does **not** authorize match-behavior code, a release, migration, remote D1 writes,
 > historical receipt edits, world resets, a merge, or a deployment.
 > Proposed numerical probabilities and substitution rules are interim game-design
@@ -258,4 +258,4 @@ requested changes:
   immutable schema-v1 evidence stays unreadjusted and unsupported
   counters stay null.
 
-**Until approved: this is design only, and implementation stays HOLD.**
+**Owner approved the listed rule choices on 2026-11-18.** Implementation is permitted on the Draft/HOLD branch. No merge, deployment, remote data changes or historical receipt rewriting is authorized.
