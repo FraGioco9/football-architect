@@ -63,7 +63,7 @@ export function summarizeFrozenLineupPlayersV1(
  }>();
  // Maintain EXACT legacy summary JSON for seasons containing only schema-v1
  // receipts. New event counters appear only when event evidence exists.
- const coverage=new Map<string,{seenV2:boolean;complete:boolean;assists:number;redCards:number;subAppearances:number}>();
+ const coverage=new Map<string,{seenV2:boolean;complete:boolean;assists:number;yellowCards:number;redCards:number;subAppearances:number}>();
  for(const frozen of frozenMatches.values()){
   const fixture=frozen.receipt.fixture;
   if(!fixture||typeof fixture.competitionId!=='string'||
@@ -75,6 +75,15 @@ export function summarizeFrozenLineupPlayersV1(
   const awayClubId=fixture.awayClubId as string;
   const result=frozen.receipt.result as unknown as LineupMatchResultV1;
   const identities=new Map((result.playerIdentityVersion==='player-identity-v1'?result.playerIdentities??[]:[]).map(p=>[p.playerId,p]));
+  // Cards are a verified event-derived stat, not an invented field in the
+  // immutable participant records. Keep schema-v1 archive bytes identical.
+  const yellowTotals=new Map<string,number>();
+  if(result.eventModelVersion==='lineup-events-v1')for(const event of result.events){
+   if(event.type==='yellow'){
+    const id=event.side+':'+event.playerId;
+    yellowTotals.set(id,(yellowTotals.get(id)??0)+1);
+   }
+  }
   for(const side of ['home','away'] as const){
    const clubId=side==='home'?homeClubId:awayClubId;
    for(const appearance of result[side].appearances){
@@ -89,12 +98,14 @@ export function summarizeFrozenLineupPlayersV1(
     };
     item.appearances++;if(appearance.started)item.starts++;item.minutes+=appearance.minutes;
     const v2=result.eventModelVersion==='lineup-events-v1';
-    const m=coverage.get(key)??{seenV2:false,complete:true,assists:0,redCards:0,subAppearances:0};
+    const m=coverage.get(key)??{seenV2:false,complete:true,assists:0,yellowCards:0,redCards:0,subAppearances:0};
     if(v2){
      const assists=appearance.assists,reds=appearance.redCards;
      if(typeof assists!=='number'||!Number.isSafeInteger(assists)||assists<0||
       typeof reds!=='number'||!Number.isSafeInteger(reds)||reds<0)invalid();
-     m.seenV2=true;m.assists+=assists as number;m.redCards+=reds as number;
+     m.seenV2=true;m.assists+=assists as number;
+     m.yellowCards+=yellowTotals.get(side+':'+appearance.playerId)??0;
+     m.redCards+=reds as number;
      if(!appearance.started)m.subAppearances++;
     }else m.complete=false;
     coverage.set(key,m);
@@ -109,6 +120,7 @@ export function summarizeFrozenLineupPlayersV1(
  return [...players.entries()].map(([key,item])=>{
   const m=coverage.get(key);
   return !m?.seenV2?item:{...item,assists:m.complete?m.assists:null,
+   yellowCards:m.complete?m.yellowCards:null,
    redCards:m.complete?m.redCards:null,subAppearances:m.complete?m.subAppearances:null};
  }).sort((a,b)=>a.competitionId.localeCompare(b.competitionId,'en')||
    a.clubId.localeCompare(b.clubId,'en')||a.playerId-b.playerId);

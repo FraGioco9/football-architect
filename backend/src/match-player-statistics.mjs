@@ -4,7 +4,16 @@
 export function frozenMatchPlayerStatistics(result){
  const identities=new Map((result.playerIdentityVersion==='player-identity-v1'?result.playerIdentities:[]).map(p=>[p.playerId,p]));
  const duration=result.extraTime?120:90,hasEvents=result.eventModelVersion==='lineup-events-v1';
- const side=(team,conceded)=>{
+ // A booking is counted from its verified frozen yellow event. In particular
+ // a second-yellow dismissal contributes TWO yellows plus ONE red.
+ // Legacy receipts did not record yellows and must continue to return null.
+ const yellowTotals={home:new Map(),away:new Map()};
+ if(hasEvents)for(const event of result.events){
+  if(event.type!=='yellow')continue;
+  const totals=yellowTotals[event.side];
+  totals.set(event.playerId,(totals.get(event.playerId)??0)+1);
+ }
+ const side=(team,conceded,name)=>{
   if(team.kind==='team_fallback')return {kind:team.kind,unattributedGoals:team.unattributedGoals,players:[]};
   const starters=new Map(team.starters.map(p=>[p.playerId,p]));
   return {kind:team.kind,unattributedGoals:0,players:team.appearances.map(p=>{
@@ -17,7 +26,9 @@ export function frozenMatchPlayerStatistics(result){
    return {playerId:p.playerId,name:identity?.name??null,nationality:identity?.nationality??null,
     role,started:p.started,subAppearances:hasEvents?(p.started?0:1):null,
     minutes:p.minutes,goals:p.goals,
-    assists:hasEvents?p.assists:null,redCards:hasEvents?p.redCards:null,
+    assists:hasEvents?p.assists:null,
+    yellowCards:hasEvents?(yellowTotals[name].get(p.playerId)??0):null,
+    redCards:hasEvents?p.redCards:null,
     cleanSheets:fullTimeGk?(conceded===0?1:0):null,
     rating:typeof rating==='number'?rating:null};
   })};
@@ -25,6 +36,6 @@ export function frozenMatchPlayerStatistics(result){
  // The public stats contract contains aggregates only. Event provenance stays
  // in the verified immutable receipt and is never serialized in this projection.
  return {ratingVersion:result.ratingVersion??null,
-  home:side(result.home,result.awayGoals),away:side(result.away,result.homeGoals)};
+  home:side(result.home,result.awayGoals,'home'),away:side(result.away,result.homeGoals,'away')};
 
 }

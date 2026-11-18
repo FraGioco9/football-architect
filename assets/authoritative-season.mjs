@@ -118,7 +118,7 @@ export function validateAuthoritativeSeason(input,context,manifest){
      (typeof p.nationality!=='string'||!/^[A-Z]{3}$/.test(p.nationality)))fail();
   if(p.subAppearances!==undefined&&p.subAppearances!==null&&
    (!count(p.subAppearances)||p.starts+p.subAppearances!==p.appearances))fail();
-  for(const metric of ['assists','redCards','cleanSheets'])if(p[metric]!==undefined&&p[metric]!==null&&(!count(p[metric])||metric==='cleanSheets'&&p[metric]>p.appearances))fail();
+  for(const metric of ['assists','yellowCards','redCards','cleanSheets'])if(p[metric]!==undefined&&p[metric]!==null&&(!count(p[metric])||metric==='cleanSheets'&&p[metric]>p.appearances))fail();
   if(p.ratedAppearances!==undefined&&(!count(p.ratedAppearances)||p.ratedAppearances>p.appearances))fail();
   if(p.averageRating!==undefined&&p.averageRating!==null&&
     (typeof p.averageRating!=='number'||!Number.isFinite(p.averageRating)||p.averageRating<4||p.averageRating>10||!p.ratedAppearances))fail();
@@ -190,7 +190,8 @@ export function adaptAuthoritativeSeason(source,context,manifest){
   teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),
   players:d.statistics.players.map(p=>({playerId:p.playerId,name:p.displayName??null,
    clubKey:p.clubId,nationality:p.nationality??null,appearances:p.appearances,starts:p.starts,subAppearances:p.subAppearances??null,
-   minutes:p.minutes,goals:p.goals,assists:p.assists??null,redCards:p.redCards??null,cleanSheets:p.cleanSheets??null,
+   minutes:p.minutes,goals:p.goals,assists:p.assists??null,yellowCards:p.yellowCards??null,
+   redCards:p.redCards??null,cleanSheets:p.cleanSheets??null,
    ratedAppearances:p.ratedAppearances??0,averageRating:p.averageRating??null,
    goalsAssistsPer90:typeof p.assists==='number'&&p.minutes>0?(p.goals+p.assists)*90/p.minutes:null}))};
  const currentChoice=viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?

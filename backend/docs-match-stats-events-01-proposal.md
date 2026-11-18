@@ -174,8 +174,11 @@
    requested competition/season. If even one counted appearance
    lacks assist coverage, assists and G+A/90 remain null for that
    aggregated row; do not divide a partial numerator by full minutes.
-   The same complete-coverage rule applies to red-card and substitute
-   totals on mixed old/new receipt populations.
+   The same complete-coverage rule applies to yellow-card, red-card and
+   substitute totals on mixed old/new receipt populations. A second-yellow
+   dismissal counts as two yellow cards and one red card; a direct red does
+   not itself add a yellow. Yellow totals are derived only from verified
+   frozen events, not added to or inferred for legacy receipts.
 5. Keep the existing **club-MP percentage thresholds**, ranking,
    no-players empty state, five-row cards, player portraits, translations
    and static first-paint geometry in #643. Preserve Teams and
@@ -208,7 +211,7 @@
 - `GET /api/matches/:id/stats` reads **verified frozen receipt**
   evidence but returns **only per-side player aggregates** and the existing
   `ratingVersion`: identities, roles, starts/sub appearances, minutes,
-  goals, assists, red cards, GK clean sheets and ratings (null when
+  goals, assists, **yellow cards**, red cards, GK clean sheets and ratings (null when
   historically unrecorded). It does **not** expose `events`,
   `eventModelVersion`, pass details, timestamps/ordinals, actor links,
   cards or substitutions as individual events.

@@ -2,7 +2,7 @@ import type {LineupMatchResultV1} from './temporary-lineup-v1.mjs';
 export interface MatchPlayerStatistics {
  playerId:number;name:string|null;nationality:string|null;role:string;started:boolean;
  subAppearances:number|null;minutes:number;goals:number;assists:number|null;
- redCards:number|null;cleanSheets:number|null;rating:number|null;
+ yellowCards:number|null;redCards:number|null;cleanSheets:number|null;rating:number|null;
 }
 export interface MatchStatistics {
  ratingVersion:'test-rating-v1'|null;
