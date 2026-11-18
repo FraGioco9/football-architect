@@ -45,9 +45,9 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
   for(const panel of [attributes,stats])assert.match(panel,/data-club-roster-control="(?:group|competition)"[\s\S]+?<span class="club-roster-count">/);
   assert.doesNotMatch(stats,/club-roster-scope/);
   assert.equal((stats.match(/class="club-roster-player-link"/g)||[]).length,65);
-  for(const key of ['averageRating','goals','assists','goalsAssistsPer90','cleanSheets','starts','redCards','minutes'])
+  for(const key of ['appearances','minutes','goals','assists','yellowCards','redCards','averageRating','cleanSheets','starts','goalsAssistsPer90'])
    assert.match(stats,new RegExp('data-club-roster-sort="'+key+'"'));
-  assert.equal((stats.match(/<th scope="col"/g)||[]).length,11,language);
+  assert.equal((stats.match(/<th scope="col"/g)||[]).length,13,language);
   assert.doesNotMatch(html,/club-empty|pagination|pageSize|development_aptitude|initial_age|<h2>Roster/);
   assert.ok(html.includes('65 '),language);
   for(const [group,length] of [['technical',11],['mental',7],['physical',7],['goalkeeping',7]]){
@@ -100,7 +100,7 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const club={countryId:'IT',clubId:1,view:'roster',base:'/clubs/it/1'};
  const make=(goals,assists,minutes,averageRating,ratedAppearances,cleanSheets,starts,subAppearances,redCards,appearances)=>({
-  appearances,starts,subAppearances,minutes,goals,assists,cleanSheets,redCards,
+  appearances,starts,subAppearances,minutes,goals,assists,cleanSheets,yellowCards:2,redCards,
   ratedAppearances,averageRating,
   goalsAssistsPer90:assists===null||!minutes?null:Math.round((goals+assists)*90/minutes*100)/100
  });
@@ -114,20 +114,24 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  const snapshot={source:'ready',clubKey:'IT-1',count:2,season:1,competitions:['IT-1','int-1'],players};
  const render=query=>model.render(manifest,club,'en',query,null,1,null,snapshot);
  const all=render('?view=stats');
- assert.ok(all.includes('>7.10 (6)</td>')&&all.includes('>8 (—)</td>'));
+ assert.ok(all.includes('>7.10</td>')&&all.includes('>9 (—)</td>')&&all.includes('>8</td>'));
+ assert.ok(all.includes('>2</td>'),'recorded yellow cards appear');
+ assert.ok(!all.includes('>7.10 (6)</td>')&&!all.includes('>0 (9)</td>'),'rating and clean sheets do not display appearance counts');
  assert.ok(!all.includes('>0.00</td>'),'unknown assists must not create a per-90 rate');
+ for(const word of ['Appearances (substitute appearances)','Minutes played','Yellow cards','Average match rating','Clean sheets'])
+  assert.ok(all.includes('data-roster-stat-help="'+word+'"'),word);
  const domesticHtml=render('?view=stats&competition=domestic');
- for(const value of ['>7.20 (5)</td>','>0.90</td>','>7 (1)</td>','>8</td>'])
+ for(const value of ['>7.20</td>','>0.90</td>','>8 (1)</td>','>7</td>'])
   assert.ok(domesticHtml.includes(value),value);
  const internationalHtml=render('?view=stats&competition=international');
- assert.ok(internationalHtml.includes('>1 (—)</td>')&&internationalHtml.includes('>0 (1)</td>'));
- assert.ok(!internationalHtml.includes('>7.20 (5)</td>'));
+ assert.ok(internationalHtml.includes('>1 (—)</td>')&&internationalHtml.includes('>1</td>')&&internationalHtml.includes('>0</td>'));
+ assert.ok(!internationalHtml.includes('>7.20</td>'));
  const sorted=render('?view=stats&competition=domestic&sort=goalsAssistsPer90&order=desc');
  assert.ok(sorted.includes('aria-sort="descending"'));
  assert.ok(sorted.indexOf('href="/players/1"')<sorted.indexOf('href="/players/2"'));
  assert.ok(render('?view=stats&competition=domestic&sort=assists&order=asc').includes('aria-sort="ascending"'));
  for(const language of ['en','de','es','fr','it'])
-  assert.equal((model.render(manifest,club,language,'?view=stats',null,1,null,snapshot).match(/<th scope="col"/g)||[]).length,11);
+  assert.equal((model.render(manifest,club,language,'?view=stats',null,1,null,snapshot).match(/<th scope="col"/g)||[]).length,13);
 });
 
 test('CLUB-ROSTER-01 orders all assigned players by the canonical pitch positions, and sorts each visible column',async()=>{
@@ -165,6 +169,8 @@ test('CLUB-ROSTER-01 keeps subview switching local and explains Worker route mis
  assert.match(js,/!control\.hasAttribute\('href'\)/);
  assert.doesNotMatch(js,/data-club-roster-group/);
  assert.match(js,/data-club-roster-sort/);
+ assert.match(js,/showRosterStatHelp/);
+ assert.match(js,/hideRosterStatHelp/);
  assert.match(js,/params\.get\('sort'\)!==key/);
  assert.match(js,/params\.get\('order'\)==='desc'/);
  assert.match(js,/params\.delete\('sort'\);params\.delete\('order'\)/);

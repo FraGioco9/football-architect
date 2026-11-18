@@ -140,14 +140,21 @@
   fr:{name:'Joueur',age:'Âge',positions:'Postes',height:'Taille',foot:'Pied',nationality:'Nationalité',one:'joueur',many:'joueurs',left:'Gauche',right:'Droit',tabs:['Info'],groups:['Techniques','Mentaux','Physiques','Gardien'],empty:'Aucun joueur n’est actuellement affecté à ce club.',unavailable:'L’effectif est temporairement indisponible.',missingApi:'L’API de l’effectif manque dans cette version. Redémarrez le serveur local depuis cette branche.',loading:'Chargement de l’effectif'},
   it:{name:'Giocatore',age:'Età',positions:'Posizioni',height:'Altezza',foot:'Piede',nationality:'Nazionalità',one:'giocatore',many:'giocatori',left:'Sinistro',right:'Destro',tabs:['Info'],groups:['Tecnici','Mentali','Fisici','Portiere'],empty:'Nessun giocatore è attualmente assegnato a questo club.',unavailable:'La rosa è temporaneamente non disponibile.',missingApi:'L’API della rosa non è disponibile in questa versione. Riavvia il server locale dal branch corrente.',loading:'Caricamento rosa'}
  };
- const statKeys=['averageRating','goals','assists','goalsAssistsPer90','cleanSheets','starts','redCards','minutes'];
- // The eight columns match Competition > Stats > Players.
+ // Match the Player Detail Stats ordering first; append Roster-only metrics.
+ const statKeys=['appearances','minutes','goals','assists','yellowCards','redCards','averageRating','cleanSheets','starts','goalsAssistsPer90'];
  const rosterLabels={
-  en:['Attributes','Rating','G','A','G+A/90','CS','XI (SUB)','RC','MIN','Domestic','International','Not recorded'],
-  it:['Attributi','Rating','G','A','G+A/90','CS','XI (SUB)','RC','MIN','Nazionali','Internazionali','Dato non registrato'],
-  de:['Attribute','Rating','G','A','G+A/90','CS','XI (SUB)','RC','MIN','National','International','Nicht erfasst'],
-  fr:['Attributs','Rating','G','A','G+A/90','CS','XI (SUB)','RC','MIN','Nationales','Internationales','Non enregistré'],
-  es:['Atributos','Rating','G','A','G+A/90','CS','XI (SUB)','RC','MIN','Nacionales','Internacionales','Sin registrar']
+  en:['Attributes','Apps (Subs)','Min','Gls','Ast','YC','RC','Rat.','CS','XI','G+A/90','Domestic','International','Not recorded'],
+  it:['Attributi','Pres. (Sub.)','Min','Gol','Assist','Gialli','Rossi','Val.','CS','XI','G+A/90','Nazionali','Internazionali','Dato non registrato'],
+  de:['Attribute','Sp. (Einw.)','Min','Tor.','Vor.','Gelb','Rot','Bew.','CS','XI','G+A/90','National','International','Nicht erfasst'],
+  fr:['Attributs','MJ (Entr.)','Min','Bts','PdD','Jaunes','Rouges','Not.','CS','XI','G+A/90','Nationales','Internationales','Non enregistré'],
+  es:['Atributos','PJ (Sup.)','Min','Gol','Asist.','Amar.','Rojas','Val.','CS','XI','G+A/90','Nacionales','Internacionales','Sin registrar']
+ };
+ const rosterStatHelp={
+  en:{appearances:'Appearances (substitute appearances)',minutes:'Minutes played',goals:'Goals',assists:'Assists',yellowCards:'Yellow cards',redCards:'Red cards',averageRating:'Average match rating',cleanSheets:'Clean sheets',starts:'Starts',goalsAssistsPer90:'Goals plus assists per 90 minutes played'},
+  it:{appearances:'Presenze (da subentrato)',minutes:'Minuti giocati',goals:'Gol segnati',assists:'Assist',yellowCards:'Cartellini gialli',redCards:'Cartellini rossi',averageRating:'Valutazione media',cleanSheets:'Clean sheet',starts:'Partite da titolare',goalsAssistsPer90:'Gol più assist ogni 90 minuti giocati'},
+  de:{appearances:'Spiele (Einwechslungen)',minutes:'Gespielte Minuten',goals:'Tore',assists:'Vorlagen',yellowCards:'Gelbe Karten',redCards:'Rote Karten',averageRating:'Durchschnittliche Bewertung',cleanSheets:'Spiele ohne Gegentor',starts:'Startelfeinsätze',goalsAssistsPer90:'Tore und Vorlagen pro 90 Minuten'},
+  fr:{appearances:'Matchs joués (entrées en jeu)',minutes:'Minutes jouées',goals:'Buts',assists:'Passes décisives',yellowCards:'Cartons jaunes',redCards:'Cartons rouges',averageRating:'Note moyenne',cleanSheets:'Matchs sans but encaissé',starts:'Titularisations',goalsAssistsPer90:'Buts et passes décisives par 90 minutes'},
+  es:{appearances:'Partidos jugados (entradas como suplente)',minutes:'Minutos jugados',goals:'Goles',assists:'Asistencias',yellowCards:'Tarjetas amarillas',redCards:'Tarjetas rojas',averageRating:'Valoración media',cleanSheets:'Porterías a cero',starts:'Titularidades',goalsAssistsPer90:'Goles más asistencias cada 90 minutos'}
  };
  function rosterCompetition(params){
   const scope=params.get('competition');
@@ -200,7 +207,7 @@
   const groupIds=competitions.filter(id=>id.startsWith('int-')===(scope==='international'));
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
-   :mode==='stats'?['',w.name,w.positions,...words.slice(1,9)]:['',w.name,w.positions,w.age,w.height,w.foot];
+   :mode==='stats'?['',w.name,w.positions,...words.slice(1,11)]:['',w.name,w.positions,w.age,w.height,w.foot];
   const columns='<colgroup><col class="app-players-flag-column"><col class="app-players-name-column">'+
    '<col class="app-players-view-third-column">'+'<col>'.repeat(labels.length-3)+'</colgroup>';
   const colCount=labels.length;
@@ -221,15 +228,13 @@
    const statText=(stats,key)=>{
     const value=stats?.[key];
     if(value===undefined||value===null)return null;
-    if(key==='averageRating')return value.toFixed(2)+' ('+stats.ratedAppearances+')';
-    if(key==='goalsAssistsPer90')return value.toFixed(2);
-    if(key==='cleanSheets')return value+' ('+stats.appearances+')';
-    if(key==='starts')return value+' ('+(stats.subAppearances??'—')+')';
+    if(key==='averageRating'||key==='goalsAssistsPer90')return value.toFixed(2);
+    if(key==='appearances')return value+' ('+(stats.subAppearances??'—')+')';
     return String(value);
    };
    const statCell=(stats,key)=>{
     const value=statText(stats,key);
-    return value===null?'<td><span title="'+escape(words[11])+'" aria-label="'+escape(words[11])+'">—</span></td>'
+    return value===null?'<td><span title="'+escape(words[13])+'" aria-label="'+escape(words[13])+'">—</span></td>'
      :'<td>'+escape(value)+'</td>';
    };
    body=sortedRosterPlayers(players,sort||'positions',sort?order:'desc').map(player=>{
@@ -257,8 +262,8 @@
    selector=fixtureUI.control('group',words[0],options.find(([key])=>key===group)[1],options,'club-roster');
   }else if(mode==='stats'){
    const labels=fixtureUI.copy[lang];
-   selector=fixtureUI.control('competition',labels.competition,scope==='all'?labels.all:words[scope==='international'?10:9],
-    [['all',labels.all],['domestic',words[9]],['international',words[10]]],'club-roster');
+   selector=fixtureUI.control('competition',labels.competition,scope==='all'?labels.all:words[scope==='international'?12:11],
+    [['all',labels.all],['domestic',words[11]],['international',words[12]]],'club-roster');
   }
   return '<section class="club-roster" aria-busy="'+pending+'" data-roster-mode="'+mode+'">'+
    '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav>'+selector+'<span class="club-roster-count"><span aria-hidden="true" class="club-roster-count-width">99 '+w.many+'</span><span>'+count+'</span></span></div>'+
@@ -268,7 +273,8 @@
     const key=columnSorts[i],active=sort===key;
     return '<th scope="col" aria-sort="'+(active?order==='desc'?'descending':'ascending':'none')+'"'+
      (i===0?' class="app-players-flag-col" aria-label="'+escape(w.nationality)+'"':'')+'>'+
-     '<button type="button" class="app-players-sort-button" data-club-roster-sort="'+key+'">'+
+     '<button type="button" class="app-players-sort-button" data-club-roster-sort="'+key+'"'+
+     (mode==='stats'&&i>=3?' data-roster-stat-help="'+escape(rosterStatHelp[lang][key])+'"':'')+'>'+
      '<span class="app-players-sort-label">'+(i===0?'<span class="sr-only">'+escape(w.nationality)+'</span>':escape(label))+
      rosterSortChevron+'</span></button></th>';
    }).join('')+

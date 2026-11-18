@@ -661,8 +661,9 @@ html:not([data-fa-fixture-hover-suspended]) .club-fixture-row.is-match-link:hove
  .club-roster-view-row .language-trigger{min-height:32px;height:32px;font-size:12px}
  .club-roster-view-row .language-trigger span{overflow:hidden;text-overflow:ellipsis}
  .club-roster-view-row .language-menu{left:auto;right:0}
-.club-roster-table[data-players-table-mode="stats"]{min-width:1400px}
-.club-roster-table[data-players-table-mode="stats"] th:nth-child(n+4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) / 8)}
+.club-roster-table[data-players-table-mode="stats"]{min-width:1580px}
+.club-roster-table[data-players-table-mode="stats"] th:nth-child(n+4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) / 10)}
+.club-roster-table[data-players-table-mode="stats"] [data-roster-stat-help]{cursor:help}
 .club-roster-table[data-players-table-mode="stats"] :is(th,td):nth-child(3){text-align:left}
 .club-roster-table[data-players-table-mode="stats"] th:nth-child(3) .app-players-sort-button{justify-content:flex-start}
 @media(max-width:620px){

@@ -435,11 +435,11 @@ export async function readPublicRosterStats(db:Database,clubKey:string,season:nu
   if(!recorded)return null;
   const appearances=row?.appearances??0,starts=row?.starts??0,minutes=row?.minutes??0,goals=row?.goals??0;
   const assists=row?row.assists:0,subAppearances=row?row.subAppearances:0;
-  const cleanSheets=row?row.cleanSheets:0,redCards=row?row.redCards:0;
+  const cleanSheets=row?row.cleanSheets:0,redCards=row?row.redCards:0,yellowCards=row?row.yellowCards:0;
   const ratedAppearances=row?.ratedAppearances??0,averageRating=row?.averageRating??null;
   const goalsAssistsPer90=assists!==null&&minutes>0
    ?Math.round((goals+assists)*90/minutes*100)/100:null;
-  return {appearances,starts,subAppearances,minutes,goals,assists,cleanSheets,redCards,
+  return {appearances,starts,subAppearances,minutes,goals,assists,cleanSheets,yellowCards,redCards,
    ratedAppearances,averageRating,goalsAssistsPer90};
  }
  const roster=await readPublicClubRoster(db,clubKey);

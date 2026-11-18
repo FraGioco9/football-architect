@@ -2,7 +2,7 @@
 (async()=>{
  'use strict';
  const model=window.faClubModel,host=document.getElementById('club-page');
- let rosterMenuEvents=null;
+ let rosterMenuEvents=null,rosterStatTip=null,rosterStatActive=null;
  let selected=model.route(location.pathname),competitionSnapshot={source:'loading'},historySnapshot={source:'loading'},rosterSnapshot={source:'loading'};
  let refreshClubHistory=()=>{},refreshClubOverview=()=>{},refreshClubRoster=()=>{},fixturesController=null;
  const language=()=>Object.hasOwn(model.copies,document.documentElement.lang)?document.documentElement.lang:'en';
@@ -143,7 +143,53 @@
    if(openHistorySeasons.has(key))openHistorySeasons.delete(key);else openHistorySeasons.add(key);
    syncHistoryRows();
   });
+  // Share Player Stats' compact, accessible floating tooltip appearance.
+  // Help is localized in the existing Roster render; sort remains independent.
+  const hideRosterStatHelp=()=>{
+   if(rosterStatActive)rosterStatActive.removeAttribute('aria-describedby');
+   rosterStatActive=null;
+   if(rosterStatTip)rosterStatTip.hidden=true;
+  };
+  const showRosterStatHelp=button=>{
+   if(selected.view!=='roster'||!button||!host.contains(button))return;
+   const description=button.dataset.rosterStatHelp;
+   if(!description)return;
+   if(!rosterStatTip){
+    rosterStatTip=document.createElement('div');
+    rosterStatTip.id='club-roster-stat-tooltip';
+    rosterStatTip.className='app-players-nationality-tooltip';
+    rosterStatTip.setAttribute('role','tooltip');
+    rosterStatTip.hidden=true;
+    document.body.append(rosterStatTip);
+   }
+   if(rosterStatActive&&rosterStatActive!==button)
+    rosterStatActive.removeAttribute('aria-describedby');
+   rosterStatActive=button;rosterStatTip.textContent=description;
+   rosterStatTip.hidden=false;button.setAttribute('aria-describedby',rosterStatTip.id);
+   const bounds=button.getBoundingClientRect();
+   const width=rosterStatTip.offsetWidth||200,height=rosterStatTip.offsetHeight||40;
+   rosterStatTip.style.left=Math.round(Math.max(8,Math.min(window.innerWidth-width-8,bounds.left+bounds.width/2-width/2)))+'px';
+   const above=bounds.top-height-8,below=bounds.bottom+8;
+   rosterStatTip.style.top=Math.round(above>=8?above:Math.max(8,Math.min(window.innerHeight-height-8,below)))+'px';
+  };
+  host.addEventListener('pointerover',e=>{
+   const button=e.target.closest?.('[data-roster-stat-help]');
+   if(button&&e.pointerType!=='touch')showRosterStatHelp(button);
+  });
+  host.addEventListener('pointerout',e=>{
+   if(rosterStatActive&&(e.target===rosterStatActive||rosterStatActive.contains(e.target))&&
+    !rosterStatActive.contains(e.relatedTarget))hideRosterStatHelp();
+  });
+  host.addEventListener('focusin',e=>{
+   const button=e.target.closest?.('[data-roster-stat-help]');
+   if(button)showRosterStatHelp(button);
+  });
+  host.addEventListener('focusout',e=>{if(e.target===rosterStatActive)hideRosterStatHelp()});
+  host.addEventListener('keydown',e=>{if(e.key==='Escape')hideRosterStatHelp()});
+  document.addEventListener('scroll',hideRosterStatHelp,true);
+  window.addEventListener('resize',hideRosterStatHelp);
   const paint=(preserveCrest=false,preserveFocus=false)=>{
+   hideRosterStatHelp();
    const active=preserveFocus&&host.contains(document.activeElement)?document.activeElement:null;
    const activeHref=active?.getAttribute('href');
    const activeTranslate=active?.hasAttribute('data-translate-club');
@@ -428,7 +474,7 @@
       const nullableRate=v=>v===null||typeof v==='number'&&Number.isFinite(v)&&v>=0;
       const validStats=s=>s===null||!!s&&
        ['appearances','starts','minutes','goals','ratedAppearances'].every(k=>count(s[k]))&&
-       ['subAppearances','assists','cleanSheets','redCards'].every(k=>nullableCount(s[k]))&&
+       ['subAppearances','assists','cleanSheets','yellowCards','redCards'].every(k=>nullableCount(s[k]))&&
        ['averageRating','goalsAssistsPer90'].every(k=>nullableRate(s[k]));
       if(!Number.isSafeInteger(data?.season)||data.season<0||
        !Array.isArray(data?.competitions)||!data.competitions.every(id=>typeof id==='string')||

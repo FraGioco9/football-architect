@@ -121,7 +121,7 @@ test('Stats defaults to the canonical season, retains every current member and d
  assert.equal(data.players.length,73);
  assert.deepEqual(data.players[72].stats,{
   appearances:0,starts:0,subAppearances:0,minutes:0,goals:0,assists:0,
-  cleanSheets:0,redCards:0,ratedAppearances:0,averageRating:null,goalsAssistsPer90:null
+  cleanSheets:0,yellowCards:0,redCards:0,ratedAppearances:0,averageRating:null,goalsAssistsPer90:null
  });
  const future=await (await get('?season=2')).json() as typeof data;
  assert.equal(future.players.length,73);
