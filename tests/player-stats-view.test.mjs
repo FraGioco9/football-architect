@@ -320,19 +320,27 @@ test('#578 numeric skeletons use rendered font metrics rather than guessed width
  const html=read('players/_shared/index.html'),clubShell=read('clubs/_shared/index.html');
  const rows=[...html.matchAll(/<tr class="app-player-stats-season-row[^"]*app-player-stats-loading"[^>]*>[\s\S]*?<\/tr>/g)].map(hit=>hit[0]);
  assert.equal(rows.length,2,'Career and Season use separate loading rows');
- const examples=[
-  {apps:'128 (24)',minutes:'9870',score:'32',assists:'21',yellow:'17',red:'2',rating:'7.50'},
-  {apps:'24 (5)',minutes:'2160',score:'12',assists:'8',yellow:'4',red:'1',rating:'7.50'}
- ];
- for(const [index,expected] of examples.entries())for(const [metric,sample] of Object.entries(expected)){
-  const at=rows[index].indexOf('data-metric="'+metric+'"');
-  assert.ok(at>=0,metric+' is present in '+(index===0?'Career':'Season'));
-  assert.ok(rows[index].slice(at,at+220).includes('data-skeleton-sample="'+sample+'"'),
-   metric+' uses a realistic glyph-measured digit count in '+(index===0?'Career':'Season'));
+ const samples={apps:'128 (24)',minutes:'9870',score:'32',assists:'21',yellow:'17',red:'2',rating:'7.50'};
+ const samplesByRow=rows.map((row,index)=>Object.fromEntries(Object.keys(samples).map(metric=>{
+  const at=row.indexOf('data-metric="'+metric+'"');
+  assert.ok(at>=0,metric+' exists on '+(index===0?'Career':'Season'));
+  const match=row.slice(at,at+220).match(/data-skeleton-sample="([^"]+)"/);
+  assert.ok(match,'glyph-measured bar for '+metric);
+  return [metric,match[1]];
+ })));
+ assert.deepEqual(samplesByRow[0],samples,'Career reserves representative digit widths');
+ assert.deepEqual(samplesByRow[1],samples,
+  'each metric column has precisely the same skeleton width in Career and Season');
+ assert.match(css,/\.app-player-stats-loading :is\(\.app-player-stats-skeleton-season,\.app-player-stats-skeleton-career\)\{width:70px\}/,
+  'even nonnumeric season/Career placeholder widths are identical');
+ for(const metric of Object.keys(samples)){
   assert.doesNotMatch(css,new RegExp('\\[data-metric="'+metric+'"\\] \\.app-skeleton-bar\\{width:'),
    metric+' must not hardcode a pixel or ch width');
  }
- assert.notEqual(examples[0].apps,examples[1].apps,'Career and Season widths reflect different scales');
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-number \.app-player-stats-value\{[^}]*justify-content:flex-end/,
+  'desktop values and skeletons use the same right-aligned value container');
+ assert.match(css,/\.app-player-stats-table tr>td\.app-player-stats-number \.app-player-stats-value\{[^}]*justify-content:center/,
+  'mobile values and skeletons use the same centered value container');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-value>\.app-skeleton-bar\[data-skeleton-sample\]\{/);
  assert.match(css,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;/);
  const history={played:'30',won:'18',drawn:'7',lost:'5',gf:'104',ga:'52',gd:'+52'};
