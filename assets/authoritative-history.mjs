@@ -1,4 +1,4 @@
-// Public History consumes only independently verified, closed-season sporting projections.
+// Public History consumes verified results from archived seasons and the current sporting day.
 // It never reads Admin routes or infers a champion from an active season.
 import {validateAuthoritativeSeason,adaptAuthoritativeSeason} from './authoritative-season.mjs';
 
@@ -8,11 +8,14 @@ const positive=(n,key)=>key==='historyBestGoalDifference'&&n>0?'+'+n:String(n);
 
 export function historyViewModel(context){
  const data=context?.seasonData,history=data?.history;
- if(data?.provenance?.kind!=='authoritative'||(data.seasonState?.phase??data.world?.phase)!=='closed'||data.season!==context.selectedSeason||history?.season!==context.selectedSeason||
-    !/^[a-f0-9]{64}$/.test(history?.archiveHash||'')||!Number.isSafeInteger(history.closedAt)||history.closedAt<=0)return null;
+ if(data?.provenance?.kind!=='authoritative'||data.season!==context.selectedSeason)return null;
+ const active=data.seasonState?.phase==='active'&&data.world?.seasonNumber===data.season;
+ if(!active&&((data.seasonState?.phase??data.world?.phase)!=='closed'||history?.season!==data.season||
+    !/^[a-f0-9]{64}$/.test(history?.archiveHash||'')||!Number.isSafeInteger(history.closedAt)||history.closedAt<=0))return null;
  const table=data.statistics?.standings,clubs=new Map((data.participants||[]).map(c=>[clubKey(c),c]));
- const champion=clubs.get(history.championClubId);
- if(!champion||!Array.isArray(table)||!table.length)return null;
+ const champion=clubs.get(history?.championClubId);
+ if((!active&&!champion)||!Array.isArray(table)||!table.length)return null;
+ if(active&&!data.statistics.teams?.some(t=>t.mp>0))return null;
  // Domestic records are based on the final 30-match league standings. For
  // international cups, league standings alone omit the verified knockout games:
  // use sealed competition-wide team totals for goals and wins, retaining the
@@ -32,10 +35,12 @@ export function historyViewModel(context){
   return {value,clubs:rows.filter(r=>r[field]===value).map(r=>r.club)};
  };
  const records={historyBestAttack:record('gf'),historyBestDefence:record('ga',true),historyMostSeasonWins:record('won'),historyMostSeasonPoints:record('pts'),historyBestGoalDifference:record('gd')};
- if(context.definition.category==='domestic'&&table.length>1)records.historyLargestTitleMargin={value:table[0].pts-table[1].pts,clubs:[champion]};
+ if(active)delete records.historyBestDefence;
+ if(!active&&context.definition.category==='domestic'&&table.length>1)records.historyLargestTitleMargin={value:table[0].pts-table[1].pts,clubs:[champion]};
  let podium;
  let semifinalLosers=[];
- if(context.definition.category==='domestic')podium=[table[0]?.club,table[1]?.club,table[2]?.club];
+ if(active)podium=[];
+ else if(context.definition.category==='domestic')podium=[table[0]?.club,table[1]?.club,table[2]?.club];
  else{
   const final=data.fixtures?.find(f=>f.phaseId==='final'&&f.homeId&&f.awayId);
   const other=final&&(final.homeId===history.championClubId?final.awayId:final.awayId===history.championClubId?final.homeId:null);
@@ -49,7 +54,7 @@ export function historyViewModel(context){
    if(eliminated.every(Boolean))semifinalLosers=eliminated;
   }
  }
- return {season:history.season,champion,podium,semifinalLosers,records,teams:totals.map(r=>({club:r.club,won:r.won,gf:r.gf,pts:r.pts})),players:history.playerCoverage===true?data.statistics.players:null,allTime:null};
+ return {season:data.season,active,champion,podium,semifinalLosers,records,teams:totals.map(r=>({club:r.club,won:r.won,gf:r.gf,pts:r.pts})),players:(active?data.playerCoverage:history.playerCoverage)===true?data.statistics.players:null,allTime:null};
 }
 
 // Every sealed season belongs to the archive: a two-season limit silently
@@ -88,7 +93,7 @@ export function historyAggregate(seasons){
  const allTime={};
  for(const [name,field] of [['historyMostTitles','titles'],['historyMostPodiums','podiums'],['historyLongestTitleStreak','streak'],['historyMostTotalWins','won'],['historyMostTotalGoals','gf'],['historyMostTotalPoints','pts']]){
   const candidates=[...teams.values()].filter(t=>field!=='podiums'||ordered.some(s=>s.podium[2]));
-  if(!candidates.length)continue;
+  if(!candidates.length||(['titles','streak'].includes(field)&&!ordered.some(s=>s.podium.length)))continue;
   const value=Math.max(...candidates.map(t=>t[field]));
   allTime[name]={value,entries:candidates.filter(t=>t[field]===value).map(t=>({club:t.club}))};
  }
@@ -152,7 +157,7 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
    if(panel.dataset)panel.dataset.faHistoryReadState='empty';
    refreshRecords();window.faAppRenderLanguage?.();return;
   }
-  window.faHistoryPlayerRecords?.applyClosedSeasons(items);
+  window.faHistoryPlayerRecords?.applyRecordSeasons(items);
   const aggregated=historyAggregate(items);
   for(const {node} of cards){
    const heading=node.querySelector('h5'),key=heading?.dataset.appI18n;
@@ -168,12 +173,14 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
    }
    node.append(holders);
   }
-  if(archive){
+  const sealed=items.filter(item=>!item.active);
+  if(!sealed.length)archive?.querySelector('[data-history-archive-empty]')?.removeAttribute('hidden');
+  if(archive&&sealed.length){
    const heading=make('div',undefined,'app-history-dev-archive-head');
    heading.setAttribute('aria-hidden','true');
    for(const [key,word] of [['historySeasonLabel','Season'],['historyChampionLabel','Champion'],['historyRunnerUp','Runner-up'],['historyThirdPlace','Third place']])heading.append(localized('span',key,word));
    const list=make('ol',undefined,'app-history-dev-archive');
-   for(const item of [...items].reverse()){
+   for(const item of [...sealed].reverse()){
     const row=make('li'),content=make('div',undefined,'app-history-dev-season-button');
     content.append(seasonLink(item.season));
     item.podium.forEach((club,i)=>{
@@ -224,18 +231,22 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
   if(generation!==group){stop();collection.clear();generation=group;ready='';}
   const completed=closedHistorySeasonNumbers(world);
   // Distinct world revisions must cancel obsolete in-flight historical reads.
-  const key=group+':'+world.revision+':'+completed.join(',');
   // Current-season data may be null: the canonical clock alone authorizes
   // fetching closed-season projections. Reuse current data only if world-matched.
   const own=data?.provenance?.kind==='authoritative'&&
    data.world?.generation===world.generation&&data.world.revision===world.revision?historyViewModel(ctx):null;
-  if(own)collection.set(own.season,own);
+  if(own&&!own.active)collection.set(own.season,own);
+  const fetchLive=world.phase==='active'&&ctx.selectedSeason!==world.seasonNumber;
+  const key=group+':'+world.revision+':'+completed.join(',')+':'+(own?.active?'live':fetchLive?'fetch':'archive');
+  let live=own?.active?own:null;
+  const records=()=>[...completed.map(n=>collection.get(n)),...(live?[live]:[])];
   if(ready===key){refreshRecords();window.faHistorySetReady?.(true);return;}
   if(running===key)return;
   stop();
   const missing=completed.filter(n=>!collection.has(n));
+  if(fetchLive)missing.push(world.seasonNumber);
   if(!missing.length){
-   paint(completed.map(n=>collection.get(n)));ready=key;window.faHistorySetReady?.(true);
+   paint(records());ready=key;window.faHistorySetReady?.(true);
    return;
   }
   running=key;const seq=counter,control=new AbortController();abort=control;
@@ -251,11 +262,12 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
     const checked=validateAuthoritativeSeason(input,target,manifest);
     const adapted=adaptAuthoritativeSeason(checked,target,manifest);
     const info=historyViewModel({...target,seasonData:adapted});
-    if(!info)throw Error('Unverified completed-season history');
+    if(fetchLive&&season===world.seasonNumber){live=info;continue;}
+    if(!info||info.active)throw Error('Unverified completed-season history');
     collection.set(season,info);
    }
    if(seq!==counter||isDev())return;
-   paint(completed.map(n=>collection.get(n)));ready=key;
+   paint(records());ready=key;
   }catch(e){
    if(seq!==counter||control.signal.aborted)return;
    reset();if(shell)shell.hidden=true;if(error)error.hidden=false;

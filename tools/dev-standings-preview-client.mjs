@@ -196,7 +196,7 @@ function historyRecords(seasons,played=seasons){
   const value=Math.max(0,...[...clubs.values()].map(entry=>entry[key]));
   return {value,clubs:[...clubs.values()].filter(entry=>entry[key]===value).map(entry=>entry.club)};
  };
- const seasonalRecord=(field,extreme,tables=seasons)=>{
+ const seasonalRecord=(field,extreme,tables=played)=>{
   const entries=[...tables].sort((a,b)=>a.season-b.season).flatMap(({season,rows})=>
    rows.filter(row=>Number.isFinite(row[field])).map(row=>({club:row.club,season,value:row[field]})));
   if(!entries.length)return {value:null,entries:[]};
@@ -204,7 +204,7 @@ function historyRecords(seasons,played=seasons){
   return {value,entries:entries.filter(entry=>entry.value===value).map(({club,season})=>({club,season}))};
  };
  const margins=seasons.map(({season,rows})=>({season,rows:Number.isFinite(rows[0]?.pts)&&Number.isFinite(rows[1]?.pts)?[{club:rows[0].club,margin:rows[0].pts-rows[1].pts}]:[]}));
- return {titles:record("titles"),podiums:record("podiums"),streak:record("streak"),attack:seasonalRecord("gf",Math.max),defence:seasonalRecord("ga",Math.min),wins:seasonalRecord("won",Math.max),totalWins:record("totalWins"),totalGoals:record("totalGoals"),points:seasonalRecord("pts",Math.max),goalDifference:seasonalRecord("gd",Math.max),margin:seasonalRecord("margin",Math.max,margins),totalPoints:record("totalPoints")};
+ return {titles:record("titles"),podiums:record("podiums"),streak:record("streak"),attack:seasonalRecord("gf",Math.max),defence:seasonalRecord("ga",Math.min,seasons),wins:seasonalRecord("won",Math.max),totalWins:record("totalWins"),totalGoals:record("totalGoals"),points:seasonalRecord("pts",Math.max),goalDifference:seasonalRecord("gd",Math.max),margin:seasonalRecord("margin",Math.max,margins),totalPoints:record("totalPoints")};
 }
 function historyRecordValue(metric,value){
  if(metric==="goalDifference")return value>0?"+"+value:value<0?"−"+Math.abs(value):"0";

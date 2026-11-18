@@ -155,12 +155,12 @@ test('Browsing seasons resolves prior/current/future days independently of Debug
  assert.deepEqual([...stored],before,'Browsing never rewrites Debug settings');
  assert.deepEqual(previewData.readPreviewProgress({getItem(){throw Error('blocked')}}),{season:1,matchdays:0});
 });
-test('History totals include the current partial season without awarding its title or seasonal records',()=>{
+test('History totals include the current partial season and recognize a new attack record before awarding a title',()=>{
  const completed=[{season:1,rows:[{club:club(1),won:20,gf:70,pts:65},{club:club(2),won:18,gf:60,pts:60}]}];
  const partial={season:2,rows:[{club:club(2),won:10,gf:99,pts:33},{club:club(1),won:5,gf:20,pts:18}]};
  const actual=records(completed,[...completed,partial]);
  assert.deepEqual(actual.titles,{value:1,clubs:[club(1)]});
- assert.deepEqual(actual.attack,{value:70,entries:[{club:club(1),season:1}]});
+ assert.deepEqual(actual.attack,{value:99,entries:[{club:club(2),season:2}]});
  assert.deepEqual(actual.totalWins,{value:28,clubs:[club(2)]});
  assert.deepEqual(actual.totalGoals,{value:159,clubs:[club(2)]});
  assert.deepEqual(actual.totalPoints,{value:93,clubs:[club(2)]});

@@ -292,7 +292,7 @@
     // The caller must supply approved, complete canonical player statistics.
     // The existing DEV fixture generator contains no player-level statistics.
     applyCanonicalHistory(payload){const checked=compute(payload);results=checked;render();},
-    applyClosedSeasons(seasons){
+    applyRecordSeasons(seasons){
       results={};
       partial=seasons.some(s=>!Array.isArray(s.players));
       for(const [field,suffix] of [["goals","Goals"],["appearances","Appearances"],["starts","Starts"],["minutes","Minutes"],["assists","Assists"],["cleanSheets","CleanSheets"]]){
