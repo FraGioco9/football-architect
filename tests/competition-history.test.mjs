@@ -96,37 +96,42 @@ test('Season archive links retain native navigation and guard in-page Standings 
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  assert.doesNotMatch(css,/app-history-dev-season-button\[aria-pressed=/);
 });
-test('Shared record holders expose all ties with an accessible reversible +N expander',()=>{
+test('Shared record ties keep +N adjacent to the club name without adding a card row',()=>{
  const start=client.indexOf('function historyExpandableHolders(');
  const end=client.indexOf('\nasync function renderHistoryPreview()',start);
  assert.ok(start>=0&&end>start);
  function node(tag,className='',textContent=''){
-  return {tag,className,textContent,children:[],dataset:{},attributes:{},hidden:false,events:{},
-   append(...items){this.children.push(...items)},
+  const item={tag,className,textContent,children:[],parent:null,dataset:{},attributes:{},hidden:false,events:{},
+   append(...children){for(const child of children){child.parent=this;this.children.push(child)}},
+   replaceWith(next){const i=this.parent.children.indexOf(this);this.parent.children.splice(i,1,next);next.parent=this.parent;this.parent=null},
+   querySelector(selector){const name=selector.slice(1);return this.children.find(c=>c.className?.split(' ').includes(name))||
+    this.children.map(c=>c.querySelector?.(selector)).find(Boolean)||null},
    addEventListener(kind,fn){this.events[kind]=fn},
    setAttribute(key,value){this.attributes[key]=value},
    getAttribute(key){return this.attributes[key]??null}};
+  return item;
  }
- const fn=runInNewContext(client.slice(start,end)+';historyExpandableHolders',{
-  historyNode:node,historyLabel:key=>{const item=node('span');item.dataset.appI18n=key;return item;}
- });
- for(const count of [0,1]){
+ const fn=runInNewContext(client.slice(start,end)+';historyExpandableHolders',{historyNode:node});
+ for(const count of [0,1,5]){
   const card=node('article'),holders=node('div');
-  for(let i=0;i<count;i++)holders.append(node('div'));
-  fn(card,holders,'attack');
-  assert.equal(card.children.length,0,'No expansion control for '+count+' tied entries');
-  assert.equal(holders.children.filter(entry=>entry.hidden).length,0);
+  for(let i=0;i<count;i++){
+   const entry=node('div'),identity=node('span','app-world-club-identity');
+   identity.append(node('span','app-world-club-name'));entry.append(identity);holders.append(entry);
+  }
+  fn(card,holders,'points');
+  assert.equal(card.children.length,0,'An expander must never become another card grid item');
+  assert.deepEqual(holders.children.map(row=>row.hidden),count===5?[false,true,true,true,true]:holders.children.map(()=>false));
+  if(count<2)continue;
+  const line=holders.children[0].querySelector('.app-history-tied-club');
+  assert.ok(line,'The holder name and +N share an inline wrapper');
+  assert.equal(line.children[0].className,'app-world-club-name');
+  const trigger=line.children[1];
+  assert.equal(trigger.dataset.historyRecordExpand,'points');
+  assert.equal(trigger.textContent,'+4');
+  assert.equal(trigger.getAttribute('aria-haspopup'),'dialog');
  }
- const card=node('article'),holders=node('div');
- for(let i=0;i<5;i++)holders.append(node('div'));
- fn(card,holders,'points');
- assert.equal(holders.children.length,5,'All tied results remain in DOM');
- assert.deepEqual(holders.children.map(row=>row.hidden),[false,true,true,true,true]);
- assert.equal(card.children.length,1);
- const trigger=card.children[0];
- assert.equal(trigger.dataset.historyRecordExpand,'points');
- assert.equal(trigger.textContent,'+4');
- assert.equal(trigger.getAttribute('aria-haspopup'),'dialog');
+ assert.match(client.slice(start,end),/copy\.querySelector\?\.\('\[data-history-record-expand\]'\)\?\.remove\(\)/,
+  'The dialog must not clone the inline +N control');
 });
 test('Browsing seasons resolves prior/current/future days independently of Debug progress',()=>{
  assert.equal(typeof previewData.previewSeasonMatchdays,'function');
@@ -514,7 +519,7 @@ test('loaded DEV History mounts record groups before Season archive without affe
   'the archive is moved below the completed records just before committing the preview DOM');
 });
 
-test('Optional record +N stays on an existing grid row and cannot shift its club holder',()=>{
+test('Optional +N stays beside the name while player and club lines match the skeleton',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  const assertRule=(selector,parts)=>{
   const start=css.lastIndexOf(selector+'{');
@@ -522,24 +527,26 @@ test('Optional record +N stays on an existing grid row and cannot shift its club
   const declaration=css.slice(start+selector.length+1,css.indexOf('}',start));
   for(const part of parts)assert.ok(declaration.includes(part),selector+' must include '+part);
  };
- // Team records: the fourth DOM child is explicitly placed on the second
- // track rather than creating an implicit fourth grid row below the holder.
+ // Team records use the same three rows for tied/untied values and skeletons.
  assertRule('#competition-panel-history .app-history-dev-record',[
-  'grid-template-columns:minmax(0,1fr) auto','grid-template-rows:minmax(var(--fa-record-heading),max-content) auto minmax(0,1fr)'
+  'grid-template-rows:minmax(var(--fa-record-heading),max-content) auto minmax(0,1fr)'
  ]);
  assertRule('#competition-panel-history .app-history-dev-record>.app-history-record-holders',[
   'grid-column:1/-1','grid-row:3','align-self:end'
  ]);
- assertRule('#competition-panel-history .app-history-dev-record>.app-history-player-detail',[
-  'grid-column:2','grid-row:2'
+ assertRule('.app-history-tied-club',[
+  'grid-column:2','grid-row:1','display:inline-flex','gap:5px','width:max-content'
  ]);
- // The player +N shares the existing name row with the real player name.
- // Reserving two lines also fixes the club's vertical position on skeletons.
+ // Both player rows are compact; the +N cannot stretch the name column.
+ assertRule('#competition-panel-history .app-history-player-labels',['row-gap:2px']);
  assertRule('#competition-panel-history .app-history-player-name-row',[
-  'display:grid','grid-template-columns:minmax(0,1fr) auto','height:calc(2 * 1.35 * var(--history-name-size, .875rem))'
+  'display:flex','justify-content:flex-start','height:calc(1.35 * var(--history-name-size, .875rem))'
+ ]);
+ assertRule('#competition-panel-history .app-history-player-name-row>.app-history-player-name',[
+  'text-overflow:ellipsis','white-space:nowrap'
  ]);
  assertRule('#competition-panel-history .app-history-player-name-row>.app-history-player-detail',[
-  'grid-column:2','grid-row:1'
+  'flex:0 0 auto','white-space:nowrap'
  ]);
  const markup=readFileSync(new URL('../tools/competition-view-skeletons.mjs',import.meta.url),'utf8');
  assert.match(markup,/class="app-history-player-name-row"/);

@@ -2141,8 +2141,9 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
  text-align:center;
 }
 
-.app-history-tied-club{grid-column:2;grid-row:1;display:flex;align-items:center;gap:4px;min-width:0}
-.app-history-tied-club .app-world-club-name{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.app-history-tied-club{grid-column:2;grid-row:1;display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;width:max-content;justify-self:start}
+.app-history-tied-club .app-world-club-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-history-tied-club>.app-history-player-detail{flex:0 0 auto;white-space:nowrap}
 
 .app-history-dev-record:has([aria-expanded="true"]){height:auto}
 
@@ -2206,9 +2207,8 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
  width:100%;max-width:100%;height:.76em;border-radius:4px
 }
 
-/* +N in team records belongs to the value row, never to an implicit fourth row.
-   The holder keeps its full card width and exactly the same bottom position
-   as the first-paint skeleton, regardless of whether there are ties. */
+/* Team-record ties now sit inline with the club name inside the existing holder
+   row; the card's fixed value/holder rows remain identical to first paint. */
 #competition-panel-history .app-history-dev-record{
  grid-template-columns:minmax(0,1fr) auto;
  grid-template-rows:minmax(var(--fa-record-heading),max-content) auto minmax(0,1fr)
@@ -2216,19 +2216,18 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 #competition-panel-history .app-history-dev-record>.app-competition-stat-label{grid-column:1/-1;grid-row:1}
 #competition-panel-history .app-history-dev-record>.app-competition-stat-value{grid-column:1;grid-row:2;min-width:0}
 #competition-panel-history .app-history-dev-record>.app-history-record-holders{grid-column:1/-1;grid-row:3;min-width:0;align-self:end}
-#competition-panel-history .app-history-dev-record>.app-history-player-detail{
- grid-column:2;grid-row:2;align-self:center;justify-self:end
-}
-
-/* The optional player +N can shorten the player name but never add another
-   line to the footprint above the club. The skeleton shares this row class. */
+/* The player +N immediately follows the visible name, never the right-hand
+   edge of the text column. One consistent line keeps club name and skeleton
+   directly underneath, with or without the expander. */
+#competition-panel-history .app-history-player-labels{row-gap:2px}
 #competition-panel-history .app-history-player-name-row{
- display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;column-gap:6px;
- height:calc(2 * 1.35 * var(--history-name-size, .875rem));min-height:0
+ display:flex;align-items:center;justify-content:flex-start;gap:5px;
+ height:calc(1.35 * var(--history-name-size, .875rem));min-height:0
 }
 #competition-panel-history .app-history-player-name-row>.app-history-player-name{
- grid-column:1;grid-row:1;max-width:100%;min-width:0;line-height:1.35
+ display:block;flex:0 1 auto;max-width:100%;min-width:0;line-height:1.35;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap
 }
 #competition-panel-history .app-history-player-name-row>.app-history-player-detail{
- grid-column:2;grid-row:1;justify-self:end;white-space:nowrap
+ flex:0 0 auto;white-space:nowrap
 }

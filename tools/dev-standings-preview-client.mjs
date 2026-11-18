@@ -259,10 +259,22 @@ function historyExpandableHolders(card,holders,metric){
   dialog.addEventListener("click",event=>{if(event.target===dialog)dismiss();});
   dialog.addEventListener("close",()=>{dialog.remove();trigger.focus();},{once:true});
   dialog.append(header);
-  for(const entry of entries){const copy=entry.cloneNode(true);copy.hidden=false;dialog.append(copy);}
+  for(const entry of entries){
+   const copy=entry.cloneNode(true);copy.hidden=false;
+   // The expander belongs to the compact card, not the dialog's cloned holder.
+   copy.querySelector?.('[data-history-record-expand]')?.remove();
+   dialog.append(copy);
+  }
   document.body.append(dialog);window.faHistoryDialog.show(dialog);close.focus();
  });
- card.append(trigger);
+ // Keep +N adjacent to the record-holder's club name, never beside the
+ // statistic value or in an extra card row. The existing crest/season slots stay fixed.
+ const first=entries[0],clubName=first.querySelector?.(".app-world-club-name");
+ if(clubName){
+  const line=historyNode("span","app-history-tied-club");
+  clubName.replaceWith(line);
+  line.append(clubName,trigger);
+ }else first.append(trigger);
 }
 async function renderHistoryPreview(){
  const version=++historyRenderVersion,route=window.faCompetitionRoute?.get?.(),progressDay=matchdays,progressSeason=debugSeason;
