@@ -69,7 +69,8 @@ export function lineupTeamStatisticsV1(
 ){
  const teams=new Map(clubs.map(clubId=>[clubId,{clubId,played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,cleanSheets:0}]));
  let matchesPlayed=0,totalGoals=0;
- const players=new Map<string,{playerId:number;clubId:string;displayName:string|null;nationality:string|null;appearances:number;starts:number;subAppearances:number;minutes:number;goals:number;assists:null;redCards:null;cleanSheets:number|null;ratedAppearances:number;ratingSum:number}>();
+ const players=new Map<string,{playerId:number;clubId:string;displayName:string|null;nationality:string|null;appearances:number;starts:number;subAppearances:number;minutes:number;goals:number;assists:number|null;redCards:number|null;cleanSheets:number|null;ratedAppearances:number;ratingSum:number;
+  assistCoverage:boolean;redCoverage:boolean;subCoverage:boolean}>();
  for(const fixture of fixtures){
   const score=results.get(fixture.id);if(!score)continue;
   const frozen=frozenMatches.get(fixture.id);
@@ -82,19 +83,27 @@ export function lineupTeamStatisticsV1(
    if(!side||!Array.isArray(side.appearances))invalid();
    for(const appearance of side.appearances){
     if(!Number.isSafeInteger(appearance.playerId)||appearance.playerId<1||
-      appearance.started!==true||!Number.isSafeInteger(appearance.minutes)||
+      typeof appearance.started!=='boolean'||!Number.isSafeInteger(appearance.minutes)||
       appearance.minutes<1||appearance.minutes>120||
       !Number.isSafeInteger(appearance.goals)||appearance.goals<0)invalid();
     const key=club+':'+appearance.playerId;
     const previous=players.get(key)??{
-     playerId:appearance.playerId,clubId:club,displayName:null,nationality:null,appearances:0,starts:0,subAppearances:0,minutes:0,goals:0,assists:null,redCards:null,cleanSheets:null,ratedAppearances:0,ratingSum:0
+     playerId:appearance.playerId,clubId:club,displayName:null,nationality:null,appearances:0,starts:0,subAppearances:0,minutes:0,goals:0,assists:0,redCards:0,cleanSheets:null,ratedAppearances:0,ratingSum:0,
+     assistCoverage:true,redCoverage:true,subCoverage:true
     };
-    previous.appearances++;previous.starts++;previous.minutes+=appearance.minutes;
+    previous.appearances++;if(appearance.started)previous.starts++;
+    previous.minutes+=appearance.minutes;
     const detail=details.get(appearance.playerId);if(!detail)invalid();
     previous.displayName=detail.name??previous.displayName;
     previous.nationality=detail.nationality??previous.nationality;
     if(detail.cleanSheets!==null)previous.cleanSheets=(previous.cleanSheets??0)+detail.cleanSheets;
     if(detail.rating!==null){previous.ratedAppearances++;previous.ratingSum+=detail.rating;}
+    previous.assistCoverage&&=detail.assists!==null;
+    previous.redCoverage&&=detail.redCards!==null;
+    previous.subCoverage&&=detail.subAppearances!==null;
+    previous.assists=(previous.assists??0)+(detail.assists??0);
+    previous.redCards=(previous.redCards??0)+(detail.redCards??0);
+    previous.subAppearances=(previous.subAppearances??0)+(detail.subAppearances??0);
     previous.goals+=appearance.goals;players.set(key,previous);
    }
   }
@@ -111,7 +120,11 @@ export function lineupTeamStatisticsV1(
  }
  return {matchesPlayed,totalGoals,goalsPerMatch:matchesPlayed?totalGoals/matchesPlayed:0,
   teams:[...teams.values()].map(t=>({...t,goalDifference:t.goalsFor-t.goalsAgainst})),
-  players:[...players.values()].map(({ratingSum,...p})=>({...p,averageRating:p.ratedAppearances?Math.round(ratingSum/p.ratedAppearances*100)/100:null})).sort((a,b)=>a.clubId.localeCompare(b.clubId,'en')||a.playerId-b.playerId),
+  players:[...players.values()].map(({ratingSum,assistCoverage,redCoverage,subCoverage,...p})=>({
+   ...p,assists:assistCoverage?p.assists:null,redCards:redCoverage?p.redCards:null,
+   subAppearances:subCoverage?p.subAppearances:null,
+   averageRating:p.ratedAppearances?Math.round(ratingSum/p.ratedAppearances*100)/100:null
+  })).sort((a,b)=>a.clubId.localeCompare(b.clubId,'en')||a.playerId-b.playerId),
   playerStatus:'available' as const};
 }
 /** Names are read-only identity enrichment; all sporting totals and club IDs
