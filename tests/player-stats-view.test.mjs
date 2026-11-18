@@ -1,0 +1,246 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {statsWords,formatApps,formatRating,createPlayerStatsView,aggregateVerifiedCareerStats} from '../assets/player-stats.mjs';
+import {renderPlayerDetailPage} from '../tools/render-player-detail.mjs';
+import {readFileSync} from 'node:fs';
+const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+test('#578 public Player Detail has an active Stats tab, with identical canonical generated output',()=>{
+ const html=renderPlayerDetailPage(read('players/index.html'),'public');
+ assert.equal(html,read('players/_shared/index.html'));
+ assert.match(html,/data-detail-view="stats"[^>]*aria-controls="player-detail-stats-panel"/);
+ assert.match(html,/data-detail-panel="stats" data-detail-stats/);
+ assert.match(html,/data-detail-stats-rows/);
+ assert.match(html,/data-detail-stats-heading="9"/);
+ assert.match(html,/get\("view"\)==="stats"/);
+ const draft=renderPlayerDetailPage(read('admin/players/preview/index.html'),'preview');
+ assert.equal(draft,read('admin/players/preview/player/index.html'));
+ assert.match(draft,/data-detail-view="stats"[^>]*disabled aria-disabled="true"/);
+ assert.doesNotMatch(draft,/data-detail-panel="stats"/);
+});
+test('#578 all supported languages label stats and keep genuine unavailable counters',()=>{
+ for(const lang of ['en','it','de','es','fr']){
+  assert.equal(statsWords[lang].headers.length,10);
+  assert.equal(statsWords[lang].keeper,'CS');
+ }
+ assert.equal(formatApps(24,5),'24 (5)');
+ assert.equal(formatApps(24,null),'24 (—)');
+ assert.equal(formatRating(null,0),'—');
+ assert.equal(formatRating(7.12,3),'7.12');
+});
+test('#578 backend Stats route accepts canonical numeric player ID',()=>{
+ const source=read('backend/src/index.ts');
+ assert.ok(source.includes("const playerStats=url.pathname.match(/^\\/api\\/players\\/([1-9][0-9]*)\\/stats$/);"));
+});
+test('#578 uses one lazily loaded personal Stats API and canonical competition/club links',()=>{
+ const script=read('assets/player-detail.js'),view=read('assets/player-stats.mjs'),css=read('assets/player-detail.css');
+ assert.ok(script.includes("import('/assets/player-stats.mjs')"));
+ assert.ok(script.includes("'/api/players/'+number+'/stats'"));
+ assert.ok(view.includes("'/competitions/'")&&view.includes("'/clubs/'"));
+ assert.ok(script.includes('competitionLookup=context.matchPublicContext'));
+ assert.ok(view.includes('competitionName?.(record.competitionId)'));
+ assert.match(css,/\.app-player-stats-table\{/);
+ assert.match(css,/html\[data-player-detail-view="stats"\]/);
+});
+
+test('#578 seven numeric header tooltips reuse the site animation and show expanded labels',()=>{
+ const source=read('assets/player-stats.mjs'),site=read('assets/app.css');
+ for(const lang of ['en','it','de','es','fr']){
+  assert.equal(statsWords[lang].help.length,10,lang);
+  assert.deepEqual(statsWords[lang].help.slice(0,3),[null,null,null],lang+' has no identity tooltip');
+  assert.ok(statsWords[lang].help.slice(3).every(v=>typeof v==='string'&&v.length>=4&&v.length<100),lang);
+  assert.ok(statsWords[lang].keeperHelp.length>=4&&statsWords[lang].keeperHelp.length<100,lang);
+ }
+ assert.match(source,/app-players-nationality-tooltip app-player-stats-tooltip/);
+ assert.match(source,/setAttribute\('role','tooltip'\)/);
+ assert.match(source,/setAttribute\('aria-describedby',tip.id\)/);
+ assert.match(source,/pointerover/);assert.match(source,/focusin/);
+ assert.match(source,/event.key==='Escape'/);
+ assert.match(source,/if\(index<3\)/,'identity headers are plain text');
+ assert.match(source,/index<3\|\|index>=10/,'only seven numeric headers can trigger a tooltip');
+ assert.match(site,/\.app-players-nationality-tooltip\.is-closing\{animation:app-world-tooltip-out 130ms/);
+ assert.match(site,/\.app-players-nationality-tooltip\{[^}]+animation:app-world-tooltip-in 170ms/);
+});
+test('#578 parser-time Stats skeleton uses the same responsive cells as loaded values',()=>{
+ const html=read('players/_shared/index.html'),css=read('assets/player-detail.css');
+ const tbody=html.match(/<tbody data-detail-stats-rows>([\s\S]*?)<\/tbody>/)?.[1];
+ assert.ok(tbody,'the first paint must reserve a table row');
+ assert.match(tbody,/app-player-stats-season-row app-player-stats-loading/);
+ assert.match(tbody,/app-player-stats-chevron-space/);
+ assert.match(tbody,/app-player-stats-skeleton-season/);
+ assert.match(tbody,/app-player-stats-skeleton-total/);
+ assert.doesNotMatch(tbody,/data-stats-toggle=/,'loading rows must not expose a fake disclosure');
+ const fields=['apps','minutes','score','assists','yellow','red','rating'];
+ assert.equal((tbody.match(/class="app-player-stats-number"/g)||[]).length,14,
+  'first paint reserves season and career numeric cells');
+ assert.equal((tbody.match(/app-player-stats-loading/g)||[]).length,2);
+ assert.match(tbody,/data-player-stats-career-skeleton="true"/);
+ assert.match(tbody,/app-player-stats-skeleton-career/);
+ assert.ok(tbody.indexOf('app-player-stats-skeleton-career')<tbody.indexOf('app-player-stats-skeleton-season'),
+  'Career skeleton is first on parser-time HTML');
+ assert.equal((tbody.match(/class="app-player-stats-value"/g)||[]).length,14,
+  'both skeleton rows reserve exactly seven shared numeric value slots');
+ assert.equal((tbody.match(/class="app-player-stats-total-value"/g)||[]).length,2,
+  'both total labels reserve the same left-aligned value slot as hydrated rows');
+ for(const key of fields){
+  assert.match(tbody,new RegExp('data-metric="'+key+'" data-mobile-label="[^"]+"'));
+  assert.ok(css.includes('.app-player-stats-loading [data-metric="'+key+'"] .app-skeleton-bar'));
+ }
+ assert.match(css,/--player-stats-row-height:56px/);
+ assert.ok(css.includes('.app-player-stats-table .app-player-stats-number .app-player-stats-value'));
+ assert.ok(css.includes('.app-player-stats-table .app-player-stats-total-value'));
+ assert.ok(css.includes('grid-row:2;min-height:16px;width:100%;align-self:center;justify-content:center'));
+ assert.match(css,/\.app-player-stats-table tr>td\.app-player-stats-number::before/);
+ assert.match(css,/\.app-player-stats-competition-row\[hidden\]\{display:none\}/);
+ assert.match(css,/transition:transform 120ms ease-out/);
+ assert.match(html,/data-detail-stats-heading="5">Gls<\/th>/);
+ assert.match(html,/data-detail-stats-heading="9">Rat\.<\/th>/);
+ assert.match(tbody,/data-metric="score" data-mobile-label="Gls"/);
+ assert.match(tbody,/data-metric="rating" data-mobile-label="Rat\."/);
+ assert.match(css,/\.app-player-stats-total-label\{color:var\(--muted\);text-align:left\}/);
+ assert.doesNotMatch(css,/\.app-player-stats-header-trigger:is\(:hover,:focus-visible\)\{text-decoration:underline/);
+});
+test('#578 toggling Stats keeps the same chevron node as Club History',async()=>{
+ const originalDocument=globalThis.document,originalWindow=globalThis.window;
+ const listeners={};
+ function item(tag){
+  const e={tagName:tag.toUpperCase(),children:[],dataset:{},attributes:{},style:{},hidden:false,textContent:'',className:'',
+   classList:{add(){},remove(){}},
+   setAttribute(key,value){this.attributes[key]=String(value)},
+   removeAttribute(key){delete this.attributes[key]},
+   getAttribute(key){return this.attributes[key]??null},
+   append(...nodes){for(const n of nodes){n.parent=this;this.children.push(n)}},
+   prepend(...nodes){for(const n of nodes)n.parent=this;this.children.unshift(...nodes)},
+   replaceChildren(...nodes){this.children=[];this.append(...nodes)},
+   contains(node){for(let p=node;p;p=p.parent)if(p===this)return true;return false},
+   closest(selector){for(let p=this;p;p=p.parent)if(p.matches(selector))return p;return null},
+   matches(selector){
+    const attr=/^\[data-([a-z-]+)(?:="([^"]+)")?\]$/.exec(selector);
+    if(!attr)return false;
+    const key=attr[1].replace(/-([a-z])/g,(_,c)=>c.toUpperCase());
+    return this.dataset[key]!==undefined&&(attr[2]===undefined||this.dataset[key]===attr[2]);
+   },
+   querySelectorAll(selector){
+    if(selector.includes(' ')||selector.startsWith('.'))return [];
+    const matches=[];
+    const visit=n=>{for(const child of n.children){if(child.matches(selector))matches.push(child);visit(child)}};
+    visit(this);return matches;
+   },
+   querySelector(selector){return this.querySelectorAll(selector)[0]??null},
+   focus(){globalThis.document.activeElement=this},
+   getBoundingClientRect(){return {left:20,top:100,width:100,height:20,bottom:120}}
+  };
+  return e;
+ }
+ const tbody=item('tbody'),note=item('p'),headers=Array.from({length:10},()=>item('th'));
+ const host={
+  attrs:{},
+  querySelector(s){return s==='[data-detail-stats-rows]'?tbody:s==='[data-detail-stats-note]'?note:null},
+  querySelectorAll(s){return s==='[data-detail-stats-heading]'?headers:[]},
+  contains(){return true},
+  setAttribute(k,v){this.attrs[k]=v},
+  addEventListener(k,listener){listeners[k]=listener}
+ };
+ const windowListeners={};
+ globalThis.document={body:item('body'),activeElement:null,createElement:item,addEventListener(){}};
+ globalThis.window={innerWidth:1100,innerHeight:720,matchMedia:()=>({matches:false}),
+  addEventListener(k,fn){windowListeners[k]=fn},clearTimeout(){},
+  setTimeout(fn){fn();return 1}};
+ const player={appearances:1,starts:1,subAppearances:0,minutes:90,goals:1,gkAppearances:0,cleanSheets:null,
+  assists:0,yellowCards:0,redCards:0,averageRating:7.5,ratedAppearances:1};
+ const payload={playerId:42,status:'available',seasons:[{season:1,status:'partial',
+  data:{total:player,competitions:[{...player,competitionId:'IT-1',clubId:'IT-1'}]}}]};
+ let lang='en';
+ try{
+  const view=createPlayerStatsView({host,id:42,position:()=> 'ST',locale:()=>lang,
+   fetchStats:async()=>payload});
+  await view.load();
+  assert.equal(tbody.children.length,3,'season, collapsed competition and Career row exist without extra reads');
+  assert.equal(tbody.children[0].dataset.playerStatsCareer,'true');
+  assert.equal(tbody.children[0].children[0].children[0].children[1].textContent,'Career');
+  assert.equal(tbody.children[0].children[3].children[0].textContent,'1 (0)');
+  assert.equal(tbody.children[0].children[4].children[0].textContent,'90');
+  assert.equal(tbody.children[0].children[1].children[0].className,'app-player-stats-total-value');
+  for(const cell of tbody.children[0].children.slice(3))
+   assert.equal(cell.children[0].className,'app-player-stats-value');
+  for(let i=0;i<3;i++){
+   assert.equal(headers[i].querySelector('[data-stats-help]'),null,'identity header has no tooltip');
+   assert.equal(headers[i].textContent,statsWords.en.headers[i]);
+  }
+  for(let i=3;i<10;i++)
+   assert.ok(headers[i].querySelector('[data-stats-help]'),'numeric header has tooltip');
+  assert.ok(tbody.children[0].children[1].className.includes('app-player-stats-total-label'));
+  const [,season,detail]=tbody.children,button=season.querySelector('[data-stats-toggle]');
+  const arrow=button.children[0];
+  assert.equal(detail.hidden,true);
+  assert.equal(button.getAttribute('aria-expanded'),'false');
+  listeners.click({target:button});
+  assert.equal(detail.hidden,false);
+  assert.equal(button.getAttribute('aria-expanded'),'true');
+  assert.strictEqual(tbody.children[1],season,'the table must not be rebuilt on toggle');
+  assert.strictEqual(button.children[0],arrow,'chevron must retain its transition element');
+  listeners.click({target:button});
+  assert.equal(detail.hidden,true);assert.equal(button.getAttribute('aria-expanded'),'false');
+  const tipTrigger=headers[3].querySelector('[data-stats-help]');
+  listeners.focusin({target:tipTrigger});
+  const tip=globalThis.document.body.children[0];
+  assert.equal(tip.getAttribute('role'),'tooltip');
+  assert.equal(tipTrigger.getAttribute('aria-describedby'),tip.id);
+  assert.equal(tip.textContent,statsWords.en.help[3]);
+  assert.equal(headers[5].querySelector('[data-stats-help]').textContent,'Gls');
+  assert.equal(headers[9].querySelector('[data-stats-help]').textContent,'Rat.');
+  lang='it';view.render();
+  assert.equal(headers[3].querySelector('[data-stats-help]').textContent,statsWords.it.headers[3]);
+  assert.equal(tbody.children[2].hidden,true);
+ }finally{globalThis.document=originalDocument;globalThis.window=originalWindow}
+});
+
+test('#578 Career sums official season totals and weights ratings by rated appearances',()=>{
+ const row=(season,overrides={})=>({
+  season,status:'available',data:{season,competitions:[],
+   total:{appearances:20,starts:17,subAppearances:3,minutes:1600,goals:6,assists:4,
+    yellowCards:5,redCards:1,gkAppearances:0,cleanSheets:null,ratedAppearances:15,
+    averageRating:7.2,...overrides}}
+ });
+ const rows=[row(1),row(2,{appearances:10,starts:8,subAppearances:2,minutes:800,
+  goals:4,assists:3,yellowCards:1,redCards:0,ratedAppearances:10,averageRating:8.1})];
+ const career=aggregateVerifiedCareerStats(rows);
+ assert.equal(career.appearances,30);
+ assert.equal(career.starts,25);
+ assert.equal(career.subAppearances,5);
+ assert.equal(career.minutes,2400);
+ assert.equal(career.goals,10);
+ assert.equal(career.assists,7);
+ assert.equal(career.yellowCards,6);
+ assert.equal(career.redCards,1);
+ assert.equal(career.ratedAppearances,25);
+ assert.equal(career.averageRating,7.56,'ratings are weighted by rated match count');
+ assert.equal(career.cleanSheets,null,'outfield appearances do not get goalkeeper clean sheets');
+ const missingEvent=aggregateVerifiedCareerStats([rows[0],row(2,{assists:null,subAppearances:null,yellowCards:null})]);
+ assert.equal(missingEvent.assists,null);
+ assert.equal(missingEvent.subAppearances,null);
+ assert.equal(missingEvent.yellowCards,null);
+ assert.equal(missingEvent.goals,12,'known goals survive missing unrelated event coverage');
+ assert.equal(aggregateVerifiedCareerStats([{...rows[0],status:'unavailable',data:null},rows[1]]),null,
+  'career must not imply complete coverage when any official season is missing');
+ assert.equal(aggregateVerifiedCareerStats([rows[0],rows[0]]),null,'duplicate season rejection');
+ const withoutNestedSeason={...rows[0],data:{total:rows[0].data.total,competitions:[]}};
+ assert.equal(aggregateVerifiedCareerStats([withoutNestedSeason]).appearances,20,
+  'actual public API puts season at top level, not inside data');
+ assert.equal(aggregateVerifiedCareerStats([]),null);
+});
+test('#578 goalkeeper Career CS respects eligibility and missing coverage',()=>{
+ const row=(season,gkAppearances,cleanSheets)=>({season,status:'partial',
+  data:{season,competitions:[],total:{appearances:12,starts:12,subAppearances:0,minutes:1080,
+   goals:0,assists:0,yellowCards:0,redCards:0,gkAppearances,cleanSheets,
+   ratedAppearances:12,averageRating:7}}});
+ assert.equal(aggregateVerifiedCareerStats([row(1,12,8),row(2,12,9)]).cleanSheets,17);
+ assert.equal(aggregateVerifiedCareerStats([row(1,12,8),row(2,12,null)]).cleanSheets,null);
+ assert.equal(aggregateVerifiedCareerStats([row(1,12,8),row(2,0,null)]).cleanSheets,8);
+});
+test('#578 History/Stats table gap is 5px on desktop and mobile',()=>{
+ const player=read('assets/player-detail.css'),club=read('assets/club-page.css');
+ for(const [label,css,selector] of [['Player',player,'.app-player-detail-stats'],['Club',club,'.club-history']]){
+  const expected=selector+'{margin-top:5px;min-width:0}';
+  assert.equal(css.split(expected).length-1,2,label+' uses 5px on desktop and mobile');
+ }
+});

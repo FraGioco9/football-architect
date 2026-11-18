@@ -10,6 +10,7 @@ import {requireDatabase} from './database.ts';
 import {readPublicSportingSeasonLineupV1 as readPublicSportingSeason,readPublicCalendarDayLineupV1 as readPublicCalendarDay,readPublicClubHistoryLineupV1 as readPublicClubHistory,readPublicClubFixturesLineupV1 as readPublicClubFixtures} from './public-sporting-read-lineup-v1.ts';
 import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
+import {readPublicPlayerStatsLineupV1} from './public-sporting-read-lineup-v1.ts';
 import {readPublicClubRoster} from './public-club-roster-read.ts';
 import {readPublicMatchLineupV1 as readPublicMatch,readPublicMatchStatisticsV1,readPublishedCompetitionMatchesLineupV1 as readPublishedCompetitionMatches,readPublishedClubFixturesBeforeCalendarLineupV1 as readPublishedClubFixturesBeforeCalendar} from './public-match-read-lineup-v1.ts';
 import {parsePublicPlayerQuery} from './public-players-filters.mjs';
@@ -81,6 +82,18 @@ export default {
         if(error instanceof ApiError&&(error.code==='not_found'||error.code==='stale_world'))
          return json(error.status,{error:{code:error.code}});
         return json(503,{error:{code:'match_unavailable'}});
+      }
+    }
+    const playerStats=url.pathname.match(/^\/api\/players\/([1-9][0-9]*)\/stats$/);
+    if(playerStats){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search||!Number.isSafeInteger(Number(playerStats[1])))
+        return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicPlayerStatsLineupV1(requireDatabase(env.DB),Number(playerStats[1])))}
+      catch(error){
+        if(error instanceof ApiError&&['player_not_found','stale_world'].includes(error.code))
+          return json(error.status,{error:{code:error.code}});
+        return json(503,{error:{code:'player_stats_unavailable'}});
       }
     }
     const playerDetail=url.pathname.match(/^\/api\/players\/([1-9][0-9]*)$/);

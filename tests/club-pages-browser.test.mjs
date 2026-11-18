@@ -529,12 +529,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          ['MP','W','D','L','GF','GA','GD','Pts'].map(x=>'<th>'+x+'</th>').join('')+'</tr></thead>'+
         '<tbody><tr class="club-history-season-row" data-club-history-summary="777-${width}">'+
          '<th scope="row" class="club-history-season-value"><button type="button" class="club-history-expand" data-club-history-toggle="777-${width}" aria-expanded="false"><span class="club-history-chevron"></span>Season 777</button></th>'+
-         '<td class="club-history-total-label">Total</td><td></td>'+
-         ['30','18','7','5','54','29','+25',''].map(x=>'<td>'+x+'</td>').join('')+'</tr>'+
+         '<td class="club-history-total-label"><span class="club-history-total-value">Total</span></td><td></td>'+
+         ['30','18','7','5','54','29','+25',''].map(x=>'<td><span class="club-history-stat-value">'+x+'</span></td>').join('')+'</tr>'+
         '<tr class="club-history-competition-row" data-club-history-detail="777-${width}" hidden>'+
          '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings?season=777"><span class="club-history-competition-text">Very Long International Competition Championship Name For Mobile</span></a></th>'+
          '<td title="Quarter-finals, second leg">Quarter-finals, second leg</td>'+
-         ['30','18','7','5','54','29','+25','61'].map(x=>'<td>'+x+'</td>').join('')+'</tr></tbody></table>';
+         ['30','18','7','5','54','29','+25','61'].map(x=>'<td><span class="club-history-stat-value">'+x+'</span></td>').join('')+'</tr></tbody></table>';
        // Give each viewport an independent synthetic season key: the real
        // controller retains expanded seasons across viewport changes.
        // Put the synthetic table at the first content position, matching a
@@ -565,12 +565,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(initial.detailHidden,true,'History competitions are collapsed initially at '+width);
       if(width<=620){
        assert.equal(initial.tabBorder,'1px','History view tabs preserve their separator at '+width);
-       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap)<=1,
-        'mobile History starts immediately below the view separator at '+width+': '+JSON.stringify(initial));
-       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap)<=1,
-        'first season row starts flush with the separator at '+width+': '+JSON.stringify(initial));
-       if(firstPaintGapBefore!==null)assert.ok(Math.abs(firstPaintGapBefore)<=1,
-        'pre-insertion first-paint History skeleton row starts flush with the separator at '+width+': '+firstPaintGapBefore);
+       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap-5)<=1,
+        'mobile History retains the approved 5px view separator gap at '+width+': '+JSON.stringify(initial));
+       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap-5)<=1,
+        'first season row begins 5px after the separator at '+width+': '+JSON.stringify(initial));
+       if(firstPaintGapBefore!==null)assert.ok(Math.abs(firstPaintGapBefore-5)<=1,
+        'pre-insertion first-paint History skeleton row starts 5px after the separator at '+width+': '+firstPaintGapBefore);
        assert.equal(initial.display,'grid','mobile season summary must use a 4-column grid at '+width);
        assert.ok(initial.table.width<=initial.wrap.width+1&&initial.shellOverflow<=2,
         'mobile History may not cause horizontal page overflow at '+width+': '+JSON.stringify(initial));
@@ -590,19 +590,22 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const cells=[...row.children].slice(3,10);
         const rect=n=>{const r=n.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,height:r.height};};
         const actual=cells.map(cell=>{
-         const range=document.createRange();range.selectNodeContents(cell);
+         const range=document.createRange();range.selectNodeContents(cell.querySelector('.club-history-stat-value'));
          const value=rect(range),slot=rect(cell);
          return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,height:slot.height};
         });
         const initial=cells.map(cell=>cell.innerHTML);
-        for(const cell of cells)cell.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+        for(const cell of cells){
+         cell.classList.add('club-history-skeleton-stat');
+         cell.querySelector('.club-history-stat-value').innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+        }
         row.classList.add('club-history-row-loading');
         const skeleton=cells.map(cell=>{
          const bar=rect(cell.querySelector('.club-fp-bar')),slot=rect(cell);
          return {dx:bar.cx-slot.cx,dy:bar.cy-slot.cy,height:slot.height};
         });
         row.classList.remove('club-history-row-loading');
-        cells.forEach((cell,i)=>cell.innerHTML=initial[i]);
+        cells.forEach((cell,i)=>{cell.classList.remove('club-history-skeleton-stat');cell.innerHTML=initial[i];});
         const header=row.querySelector('th:first-child');
         const button=header.querySelector('button');
         const text=button.lastChild;const range=document.createRange();range.selectNodeContents(text);

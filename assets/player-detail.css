@@ -92,6 +92,8 @@
 .app-player-detail-flag{display:block;flex:none;width:20px;height:15px;object-fit:contain}
 html[data-player-detail-view="info"] .app-player-detail-overview{display:none}
 html:not([data-player-detail-view="info"]) .app-player-detail-info-view{display:none}
+html[data-player-detail-view="stats"] .app-player-detail-overview{display:none}
+html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:none}
 .app-player-detail-status{font-size:13px;color:var(--muted);line-height:20px;margin:10px 0 0}
 .app-player-detail-status[hidden]{display:none!important}
 @media(max-width:1100px){.app-player-detail-top{grid-template-columns:minmax(0,1fr)}}
@@ -140,4 +142,147 @@ html:not([data-player-detail-view="info"]) .app-player-detail-info-view{display:
  .app-player-detail-header-meta{justify-content:center;flex-wrap:wrap;white-space:normal}
  .app-player-detail-affiliation{grid-column:1;grid-row:3}
  .app-player-detail-back{grid-column:1;grid-row:4;justify-self:center}
+}
+
+/* #578 Player Stats: reuse Club History's table geometry and disclosure motion. */
+.app-player-detail-stats{margin-top:5px;min-width:0}
+.app-player-stats-table-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;overscroll-behavior-x:contain}
+.app-player-stats-table{--player-stats-row-height:56px;width:100%;min-width:1060px;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.app-player-stats-col-season{width:140px}
+.app-player-stats-col-competition{width:190px}
+.app-player-stats-col-club{width:170px}
+.app-player-stats-col-number{width:auto}
+.app-player-stats-table tr{height:var(--player-stats-row-height)}
+.app-player-stats-table th,.app-player-stats-table td{
+ box-sizing:border-box;height:var(--player-stats-row-height);vertical-align:middle;
+ border-bottom:1px solid var(--line);padding:0 10px;line-height:1.35;
+ font-size:.86rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.app-player-stats-table thead th{color:var(--muted);font-size:.75rem;font-weight:600}
+.app-player-stats-table th:nth-child(-n+3),.app-player-stats-table td:nth-child(-n+3){text-align:left}
+.app-player-stats-table th:nth-child(n+4),.app-player-stats-table td:nth-child(n+4){text-align:right}
+.app-player-stats-header-trigger{
+ display:inline-flex;align-items:center;max-width:100%;min-height:28px;
+ padding:0;margin:0;border:0;border-radius:3px;background:none;
+ color:inherit;font:inherit;font-weight:inherit;text-align:inherit;white-space:nowrap;
+ text-decoration:none;cursor:help;
+}
+.app-player-stats-header-trigger:is(:hover,:focus-visible){text-decoration:none}
+.app-player-stats-header-trigger:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.app-player-stats-total-label{color:var(--muted);text-align:left}
+.app-player-stats-table .app-player-stats-total-value{
+ display:inline-flex;box-sizing:border-box;width:100%;min-width:0;min-height:16px;
+ align-items:center;justify-content:flex-start;line-height:16px;text-align:left;
+}
+.app-player-stats-season-row{background:var(--surface-raised)}
+.app-player-stats-season-row:has([data-stats-toggle]){cursor:pointer}
+.app-player-stats-season-row:has([data-stats-toggle]):hover{background:color-mix(in srgb,var(--muted) 9%,var(--surface-raised))}
+.app-player-stats-toggle{
+ display:inline-flex;align-items:center;max-width:100%;gap:10px;
+ padding:2px 0;border:0;background:transparent;color:var(--text);
+ font:inherit;font-weight:700;text-align:left;white-space:nowrap;cursor:pointer;
+}
+.app-player-stats-toggle:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:3px}
+.app-player-stats-chevron,.app-player-stats-chevron-space{box-sizing:border-box;width:8px;height:8px;flex:none}
+.app-player-stats-chevron{
+ border-right:2px solid currentColor;border-bottom:2px solid currentColor;
+ transform:rotate(-45deg);transition:transform 120ms ease-out;
+}
+.app-player-stats-chevron-space{border:0;visibility:hidden}
+.app-player-stats-toggle[aria-expanded="true"] .app-player-stats-chevron{transform:rotate(45deg)}
+.app-player-stats-static-label,.app-player-stats-skeleton-label{display:inline-flex;align-items:center;max-width:100%;gap:10px;font-weight:700}
+.app-player-stats-no-toggle{font-weight:700}
+.app-player-stats-competition-row[hidden]{display:none}
+.app-player-stats-competition-row{background:transparent}
+.app-player-stats-competition-row .app-player-stats-competition{padding-inline-start:18px}
+.app-player-stats-link{
+ display:inline-block;width:fit-content;max-width:100%;min-width:0;min-height:0;
+ margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;
+ color:inherit;font:inherit;font-weight:500;text-align:left;text-decoration:none;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:baseline;
+}
+.app-player-stats-link:is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
+.app-player-stats-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-player-stats-table .app-player-stats-number .app-player-stats-value{
+ display:inline-flex;box-sizing:border-box;width:100%;min-width:0;min-height:16px;
+ align-items:center;justify-content:flex-end;line-height:16px;text-align:right;
+}
+.app-player-stats-table .app-player-stats-loading .app-skeleton-bar{
+ display:block;min-width:0;height:12px;margin:0;
+}
+.app-player-stats-loading .app-player-stats-skeleton-season{width:66px}
+.app-player-stats-loading .app-player-stats-skeleton-career{width:70px}
+.app-player-stats-career-row{background:var(--surface-raised)}
+.app-player-stats-career-row>th:first-child{font-weight:700}
+.app-player-stats-loading .app-player-stats-skeleton-total{width:40px}
+.app-player-stats-table .app-player-stats-loading .app-player-stats-number .app-skeleton-bar{margin:0}
+.app-player-stats-loading [data-metric="apps"] .app-skeleton-bar{width:42px}
+.app-player-stats-loading [data-metric="minutes"] .app-skeleton-bar{width:38px}
+.app-player-stats-loading [data-metric="score"] .app-skeleton-bar{width:20px}
+.app-player-stats-loading [data-metric="assists"] .app-skeleton-bar{width:20px}
+.app-player-stats-loading [data-metric="yellow"] .app-skeleton-bar{width:18px}
+.app-player-stats-loading [data-metric="red"] .app-skeleton-bar{width:18px}
+.app-player-stats-loading [data-metric="rating"] .app-skeleton-bar{width:32px}
+.app-player-stats-note{margin:12px 0 0;color:var(--muted);font-size:.875rem;line-height:1.5}
+.app-player-stats-note[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){.app-player-stats-chevron{transition:none}}
+/* Mirror Club History's mobile 4-column grid, including first-paint tracks. */
+@media(max-width:620px){
+ .app-player-detail-stats{margin-top:5px;min-width:0}
+ .app-player-stats-table-wrap{width:100%;max-width:100%;overflow:visible}
+ .app-player-stats-table{display:block;width:100%;min-width:0;max-width:100%;table-layout:auto}
+ .app-player-stats-table colgroup{display:none}
+ .app-player-stats-table thead{
+  position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  overflow:hidden;clip-path:inset(50%);white-space:nowrap;
+ }
+ .app-player-stats-table tbody{display:block;width:100%}
+ .app-player-stats-table tr{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  box-sizing:border-box;width:100%;height:auto;min-height:0;padding:6px 8px 10px;
+  border-bottom:1px solid var(--line);
+ }
+ .app-player-stats-table tr>th,.app-player-stats-table tr>td{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-sizing:border-box;width:auto;height:auto;min-height:34px;padding:4px 2px;
+  border:0;white-space:normal;overflow:visible;text-overflow:clip;
+  font-size:12px;line-height:1.25;text-align:center;
+ }
+ .app-player-stats-table .app-player-stats-season-row>th:first-child{
+  grid-column:1/-1;align-items:flex-start;min-height:44px;text-align:left;font-size:14px;
+ }
+ .app-player-stats-table .app-player-stats-season-row .app-player-stats-toggle{min-height:44px;align-items:center}
+ .app-player-stats-table .app-player-stats-season-row>td:nth-child(2),
+ .app-player-stats-table .app-player-stats-season-row>td:nth-child(3){display:none}
+ .app-player-stats-table .app-player-stats-competition-row{padding-inline-start:12px}
+ .app-player-stats-table .app-player-stats-competition-row>td:first-child{display:none}
+ .app-player-stats-table .app-player-stats-competition-row>th:nth-child(2){
+  grid-column:1/-1;align-items:flex-start;justify-content:center;min-height:38px;
+  padding-inline-start:0;text-align:left;white-space:normal;overflow:visible;text-overflow:clip;
+ }
+ .app-player-stats-table .app-player-stats-competition-row>td:nth-child(3){
+  grid-column:1/-1;align-items:flex-start;min-height:28px;padding-inline-start:0;
+  text-align:left;color:var(--muted);
+ }
+ .app-player-stats-table .app-player-stats-competition-row .app-player-stats-link{
+  display:inline;white-space:normal;overflow:visible;text-overflow:clip;
+  overflow-wrap:anywhere;line-height:1.35;
+ }
+ .app-player-stats-table tr>td.app-player-stats-number{
+  display:grid;grid-template-rows:12px 16px;align-content:center;justify-items:center;
+  min-width:0;min-height:43px;gap:3px;padding:4px 2px;
+  font-size:12px;line-height:1.25;text-align:center;font-variant-numeric:tabular-nums;
+ }
+ .app-player-stats-table tr>td.app-player-stats-number::before{
+  display:block;grid-row:1;content:attr(data-mobile-label);font-size:10px;line-height:12px;
+  font-weight:600;color:var(--muted);
+ }
+ .app-player-stats-table tr>td.app-player-stats-number .app-player-stats-value{
+  grid-row:2;min-height:16px;width:100%;align-self:center;justify-content:center;text-align:center;
+ }
+ .app-player-stats-table .app-player-stats-loading .app-player-stats-number .app-skeleton-bar{
+  align-self:center;justify-self:center;margin:0;
+ }
+ .app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-label{min-height:44px}
+ .app-player-stats-table .app-player-stats-competition-row[hidden]{display:none}
 }

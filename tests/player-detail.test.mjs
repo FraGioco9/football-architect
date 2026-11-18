@@ -56,7 +56,8 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.match(html,/data-detail-pitch-markers/);
   assert.match(html,/class="app-player-detail-silhouette"/);
   for(const view of ['overview','info','stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"'));
-  for(const view of ['stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"[^>]* disabled aria-disabled="true"'));
+  for(const view of (mode==='preview'?['stats','history','progression']:['history','progression']))assert.match(html,new RegExp('data-detail-view="'+view+'"[^>]* disabled aria-disabled="true"'));
+  if(mode==='public')assert.match(html,/data-detail-view="stats"[^>]*aria-controls="player-detail-stats-panel"/);
   assert.doesNotMatch(html,/data-detail-view="attributes"|data-detail-group="technical"/);
   assert.match(html,/data-detail-value="nationality"/);
   assert.match(html,/data-detail-value="secondary_nationality"/);
@@ -67,7 +68,7 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.match(html,/data-detail-positions aria-labelledby="player-detail-positions-title"/);
   assert.match(html,/<h2 id="player-detail-positions-title" data-detail-section-title="positions">Positions<\/h2>/);
   assert.match(html,/data-detail-status role="status" aria-live="polite" hidden/);
-  assert.equal((html.match(/data-detail-panel="/g)||[]).length,2);
+  assert.equal((html.match(/data-detail-panel="/g)||[]).length,mode==="public"?3:2);
   assert.match(html,/data-detail-view="info"[^>]*aria-controls="player-detail-info-panel"/);
   for(const group of ['technical','mental','physical','goalkeeping'])assert.match(html,new RegExp('data-detail-attribute-group="'+group+'"'));
   assert.doesNotMatch(html,/data-players-filter-open|data-admin-players-confirmation/);
@@ -203,8 +204,11 @@ test('#555 default player Overview is a clean URL across initial load, tabs, leg
    pushState(_state,_title,next){actions.push('push');current=new URL(next,current);},
    replaceState(_state,_title,next){actions.push('replace');current=new URL(next,current);}
   };
-  const context={view:new URLSearchParams(current.search).get('view')==='info'?'info':'overview',
-   URL,URLSearchParams,location,history,views:[],render:()=>{},window:{addEventListener:(name,fn)=>{listeners[name]=fn;}}};
+  const preview=current.pathname==='/admin/players/preview/player';
+  const requested=new URLSearchParams(current.search).get('view');
+  const view=requested==='info'?'info':(!preview&&requested==='stats'?'stats':'overview');
+  const context={preview,view,URL,URLSearchParams,location,history,views:[],render:()=>{},
+   window:{addEventListener:(name,fn)=>{listeners[name]=fn;}}};
   const api=runInNewContext(script.slice(begin,end)+'\n({setView,normalizeViewUrl,currentView:()=>view})',context);
   return {api,actions,listeners,path:()=>current.pathname+current.search+current.hash,
    navigate:next=>{current=new URL(next,current);}};
@@ -227,6 +231,17 @@ test('#555 default player Overview is a clean URL across initial load, tabs, leg
  normal.listeners.popstate();
  assert.equal(normal.api.currentView(),'overview','Back/Forward restores Overview');
  assert.equal(normal.path(),'/players/33');
+ normal.api.setView('stats');
+ assert.equal(normal.path(),'/players/33?view=stats','public Stats has canonical query');
+ assert.equal(normal.api.currentView(),'stats');
+ normal.navigate('/players/33?view=info');
+ normal.listeners.popstate();
+ assert.equal(normal.api.currentView(),'info','Back/Forward restores Info after Stats');
+ normal.navigate('/players/33?view=stats');
+ normal.listeners.popstate();
+ assert.equal(normal.api.currentView(),'stats','Back/Forward restores public Stats');
+ normal.api.setView('overview');
+ assert.equal(normal.path(),'/players/33');
  const legacy=setup('/players/33?view=overview&group=technical#positions');
  legacy.api.normalizeViewUrl();
  assert.equal(legacy.path(),'/players/33?group=technical#positions');
@@ -234,6 +249,9 @@ test('#555 default player Overview is a clean URL across initial load, tabs, leg
  const preview=setup('/admin/players/preview/player?draftId=example&index=1&returnPage=2&view=overview#positions');
  preview.api.normalizeViewUrl();
  assert.equal(preview.path(),'/admin/players/preview/player?draftId=example&index=1&returnPage=2#positions','draft context and fragment remain intact');
+ preview.api.setView('stats');
+ assert.equal(preview.api.currentView(),'overview','unpublished Admin draft must not expose Stats');
+ assert.equal(preview.path(),'/admin/players/preview/player?draftId=example&index=1&returnPage=2#positions');
 });
 
 test('#502 skeleton footprint, pitch size, attribute separators and silent loading are stable',()=>{

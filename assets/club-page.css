@@ -379,7 +379,7 @@ body.app-body{--app-page-pad-top:8px}
 .club-first-paint-header .club-fp-header-location{display:block;width:min(52%,210px);height:14px;min-height:14px}
 
 /* CLUB-HISTORY-07: first-paint/hydrated title and uniform 56px table rows. */
-.club-history{margin-top:14px;min-width:0}
+.club-history{margin-top:5px;min-width:0}
 .club-history.club-first-paint-panel{min-height:0}
 .club-history-table-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;overscroll-behavior-x:contain}
 .club-history-table{--club-history-row-height:56px;width:100%;min-width:1020px;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
@@ -393,6 +393,10 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-table .club-history-season-col,.club-history-table .club-history-name-col{text-align:left}
 .club-history-table .club-history-season-value{text-align:left}
 .club-history-table .club-history-total-label{text-align:left;color:var(--muted)}
+.club-history-table .club-history-total-value{
+ display:inline-flex;box-sizing:border-box;width:100%;min-width:0;min-height:16px;
+ align-items:center;justify-content:flex-start;line-height:16px;text-align:left;
+}
 .club-history-table .club-history-competition-value{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-inline-start:18px}
 .club-history-table .club-history-competition-value a.club-history-competition-link{display:inline-block;width:fit-content;max-width:100%;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;color:inherit;font:inherit;font-weight:500;text-align:left;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:baseline}
 .club-history-table .club-history-competition-text{text-decoration:none}
@@ -412,10 +416,22 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-table .club-history-competition-row[hidden]{display:none}
 .club-history-table .club-history-competition-row{background:transparent}
 .club-history-table .club-history-competition-row th,.club-history-table .club-history-competition-row td{border-bottom-color:var(--line)}
+.club-history-table td:nth-child(n+4) .club-history-stat-value{
+ display:inline-flex;box-sizing:border-box;width:100%;min-width:0;min-height:16px;
+ align-items:center;justify-content:center;line-height:16px;text-align:center;
+}
 .club-history-table .club-fp-bar{display:block;width:24px;min-width:20px;height:12px;margin-inline:auto}
 .club-history-table .club-history-row-loading .club-history-skeleton-label{cursor:default;pointer-events:none}
-.club-history-table .club-history-row-loading .club-history-skeleton-label .club-fp-bar{width:62px;min-width:0;margin:0}
-.club-history-table .club-history-row-loading .club-history-total-label .club-fp-bar{width:42px;min-width:0;margin-inline-start:0}
+.club-history-table .club-history-row-loading .club-history-skeleton-label .club-fp-bar{width:66px;min-width:0;margin:0}
+.club-history-table .club-history-row-loading .club-history-total-label .club-fp-bar{width:40px;min-width:0;margin-inline-start:0}
+.club-history-table .club-history-row-loading .club-history-skeleton-stat .club-fp-bar{display:block;min-width:0;margin:0}
+.club-history-row-loading [data-club-history-skeleton="played"] .club-fp-bar{width:28px}
+.club-history-row-loading [data-club-history-skeleton="won"] .club-fp-bar,
+.club-history-row-loading [data-club-history-skeleton="drawn"] .club-fp-bar,
+.club-history-row-loading [data-club-history-skeleton="lost"] .club-fp-bar{width:18px}
+.club-history-row-loading [data-club-history-skeleton="gf"] .club-fp-bar,
+.club-history-row-loading [data-club-history-skeleton="ga"] .club-fp-bar{width:24px}
+.club-history-row-loading [data-club-history-skeleton="gd"] .club-fp-bar{width:30px}
 .club-history-status{margin:12px 0 0;color:var(--muted);font-size:.875rem;line-height:1.5}
 @media(prefers-reduced-motion:reduce){.club-history-chevron{transition:none}}
 @media(max-width:620px){
@@ -431,7 +447,7 @@ body.app-body{--app-page-pad-top:8px}
 @media(max-width:620px){
  /* Position the first History row directly below the Club view tabs border,
     on first paint and after hydration. Desktop spacing stays unchanged. */
- .club-history{margin-top:0;min-width:0}
+ .club-history{margin-top:5px;min-width:0}
  .club-history-table-wrap{width:100%;max-width:100%;overflow:visible}
  .club-history-table{
   --club-history-mobile-mp:"MP";--club-history-mobile-w:"W";
@@ -520,10 +536,13 @@ body.app-body{--app-page-pad-top:8px}
   min-width:0;min-height:43px;gap:3px;font-variant-numeric:tabular-nums;
  }
  .club-history-table tr>td:nth-child(n+4)::before{
-  display:block;font-size:10px;line-height:12px;font-weight:600;color:var(--muted);
+  display:block;grid-row:1;font-size:10px;line-height:12px;font-weight:600;color:var(--muted);
+ }
+ .club-history-table tr>td:nth-child(n+4) .club-history-stat-value{
+  grid-row:2;min-height:16px;width:100%;align-self:center;justify-content:center;
  }
  .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{
-  align-self:center;justify-self:center;margin-inline:auto;
+  align-self:center;justify-self:center;margin:0;
  }
  .club-history-table tr>td:nth-child(4)::before{content:var(--club-history-mobile-mp)}
  .club-history-table tr>td:nth-child(5)::before{content:var(--club-history-mobile-w)}
@@ -540,7 +559,7 @@ body.app-body{--app-page-pad-top:8px}
  .club-history-table .club-history-season-row:has(.club-history-empty-season)>td:nth-child(n+3){display:none}
  .club-history-table .club-history-row-loading .club-history-total-label{display:none}
  .club-history-table .club-history-row-loading .club-history-skeleton-label{min-height:44px}
- .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{margin-inline:auto}
+ .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{margin:0}
  .club-history-table .club-history-competition-row[hidden]{display:none}
 }
 

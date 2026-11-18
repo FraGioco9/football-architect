@@ -9,10 +9,10 @@ test('#560 History mobile uses a full-width four-column grid and leaves desktop 
  assert.ok(start>0,'standalone mobile-only History styling is present');
  const mobile=css.slice(start,css.indexOf('/* Club Fixtures:',start));
  assert.match(mobile,/@media\(max-width:620px\)\{/);
- assert.match(mobile,/\.club-history\{margin-top:0;min-width:0\}/,
-  'mobile History begins directly below the tabs separator without any gap');
- assert.match(css,/\.club-history\{margin-top:14px;min-width:0\}/,
-  'desktop keeps the existing 14px section margin');
+ assert.match(mobile,/\.club-history\{margin-top:5px;min-width:0\}/,
+  'mobile History retains the requested 5px separation from tabs');
+ assert.match(css,/\.club-history\{margin-top:5px;min-width:0\}/,
+  'desktop uses the same 5px separation as mobile');
  assert.match(mobile,/\.club-history-table\{[\s\S]*?display:block;width:100%;min-width:0;max-width:100%/);
  assert.match(mobile,/\.club-history-table tr\{[\s\S]*?display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
  assert.match(mobile,/\.club-history-table-wrap\{width:100%;max-width:100%;overflow:visible\}/);
@@ -40,8 +40,8 @@ test('#560 History mobile preserves disclosure DOM, statistics and competition l
  assert.match(html,/data-history-competition-row="int-1" hidden/);
  assert.match(html,/\/competitions\/it-1\/standings\?season=5/);
  assert.match(html,/\/competitions\/int-1\/standings\?season=5/);
- assert.ok(html.includes('<td>+25</td>'),'signed goal difference retained');
- assert.ok(html.includes('<td>61</td>'),'points retained');
+ assert.ok(html.includes('<td><span class="club-history-stat-value">+25</span></td>'),'signed goal difference retained');
+ assert.ok(html.includes('<td><span class="club-history-stat-value">61</span></td>'),'points retained');
  const skeleton=model.render(manifest,selected,'it','',null,5,{source:'loading'});
  assert.match(skeleton,/club-history-row-loading/);
  assert.match(skeleton,/club-history-chevron-space/);
@@ -76,4 +76,69 @@ test('#560 mobile History provides the eight localized numeric labels and noncli
  assert.match(mobile,/\.club-history-table tr>td:nth-child\(n\+4\)\{[^}]*grid-template-rows:12px 16px;align-content:center;justify-items:center/);
  assert.match(mobile,/\.club-history-table \.club-history-row-loading>td:nth-child\(n\+4\) \.club-fp-bar\{[^}]*align-self:center;justify-self:center/);
  assert.match(mobile,/\.club-history-table \.club-history-season-row:has\(\.club-history-empty-season\)>td:nth-child\(2\)\{/);
+});
+
+test('#578 Club History shows Season, Competition and Result header in all five languages',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const selected=model.route('/clubs/it/1/history');
+ const labels={
+  en:['Season','Competition','Result'],it:['Stagione','Competizione','Risultato'],
+  de:['Saison','Wettbewerb','Ergebnis'],es:['Temporada','Competición','Resultado'],
+  fr:['Saison','Compétition','Résultat']
+ };
+ for(const [lang,expected] of Object.entries(labels)){
+  const page=model.render(manifest,selected,lang,'',null,1,{source:'loading'});
+  const headings=[...page.matchAll(/<th scope="col" class="club-history-(?:season|name|position)-col" aria-label="([^"]+)">([^<]+)<\/th>/g)];
+  assert.equal(headings.length,3,lang+' keeps three semantic headers');
+  assert.deepEqual(headings.map(hit=>hit[2]),expected,lang+' shows headings instead of visually empty cells');
+  assert.deepEqual(headings.map(hit=>hit[1]),expected,lang+' preserves spoken labels');
+ }
+});
+
+test('#578 first-paint Club History skeleton matches hydrated column geometry',()=>{
+ const html=read('clubs/_shared/index.html'),generator=read('tools/generate-club-pages.mjs'),css=read('assets/club-page.css');
+ const start=html.indexOf('<section class="club-history club-first-paint-panel club-first-paint-other"');
+ assert.ok(start>=0,'first paint section exists');
+ const section=html.slice(start,html.indexOf('</section>',start)+10);
+ for(const [label,column] of [['Season','season'],['Competition','competition'],['Result','result']]){
+  const heading='data-club-history-label="'+column+'" aria-label="'+label+'">'+label+'</th>';
+  assert.ok(section.includes(heading),'static '+label+' is visible');
+  assert.ok(generator.includes(heading),'generator retains '+label);
+ }
+ const pendingStart=section.indexOf('<tr class="club-history-season-row club-history-row-loading"');
+ assert.ok(pendingStart>=0);
+ const pending=section.slice(pendingStart,section.indexOf('</tr>',pendingStart)+5);
+ assert.ok(pending.includes('club-history-chevron-space'));
+ assert.ok(pending.includes('club-history-total-label'));
+ assert.equal(pending.split('data-club-history-skeleton=').length-1,7);
+ for(const key of ['played','won','drawn','lost','gf','ga','gd']){
+  assert.ok(pending.includes('data-club-history-skeleton="'+key+'"><span class="club-history-stat-value">'));
+  assert.ok(css.includes('[data-club-history-skeleton="'+key+'"] .club-fp-bar'));
+ }
+ assert.ok(pending.endsWith('<td></td></tr>'),'points summary placeholder stays empty');
+ assert.ok(css.includes('--club-history-row-height:56px'));
+ assert.ok(css.includes('.club-history-table td:nth-child(n+4) .club-history-stat-value'));
+ assert.ok(css.includes('.club-history-table .club-history-total-value'));
+ assert.ok(css.includes('grid-row:2;min-height:16px;width:100%;align-self:center;justify-content:center'));
+ assert.ok(pending.includes('class="club-history-total-label"><span class="club-history-total-value">'));
+ assert.ok(generator.includes('const historyKeys=["season","competition","result"'));
+});
+
+test('#578 Club History hydrated values and skeletons share the same slots',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const route=model.route('/clubs/it/1/history');
+ const stats={played:30,won:18,drawn:7,lost:5,goalsFor:54,goalsAgainst:29,goalDifference:25};
+ const data={source:'authoritative',clubKey:'IT-1',coverage:'complete',
+  seasons:[{season:1,memberships:[{competitionId:'IT-1',category:'domestic',
+    name:'League',position:4,points:61,stats}]}]};
+ const ready=model.render(manifest,route,'en','',null,1,data);
+ const pending=model.render(manifest,route,'en','',null,1,{source:'loading'});
+ assert.equal((ready.match(/class="club-history-stat-value"/g)||[]).length,16,
+  'eight cells in summary and eight in competition use shared value geometry');
+ assert.equal((pending.match(/class="club-history-stat-value"/g)||[]).length,7,
+  'seven loading numeric cells use the same value geometry');
+ assert.ok(ready.includes('class="club-history-total-value">Total</span>'));
+ assert.ok(pending.includes('class="club-history-total-value"><span class="club-fp-bar"'));
 });

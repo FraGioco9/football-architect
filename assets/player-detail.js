@@ -44,6 +44,8 @@
  const back=preview?panel.querySelector('[data-detail-back]'):null,statusNode=panel.querySelector('[data-detail-status]');
  const views=[...panel.querySelectorAll('[data-detail-view]')];
  const viewBar=panel.querySelector('.app-player-detail-tabs');
+ const statsHost=preview?null:panel.querySelector('[data-detail-stats]');
+ let statsController=null,statsControllerPromise=null;
  const syncViewEdges=()=>{
   if(!viewBar)return;
   const max=Math.max(0,viewBar.scrollWidth-viewBar.clientWidth);
@@ -87,7 +89,7 @@
  const numeric=value=>typeof value==='string'&&/^[1-9][0-9]*$/.test(value)&&Number.isSafeInteger(Number(value));
  const draftPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  const params=new URLSearchParams(location.search);
- let view=params.get('view')==='info'?'info':'overview';
+ let view=params.get('view')==='info'?'info':(!preview&&params.get('view')==='stats'?'stats':'overview');
  const context={draftId:params.get('draftId'),index:params.get('index'),returnView:params.get('returnView'),returnGroup:params.get('returnGroup'),returnPage:params.get('returnPage'),returnScroll:params.get('returnScroll'),returnSort:params.get('returnSort'),returnOrder:params.get('returnOrder')};
  const idMatch=!preview&&/^\/players\/([1-9][0-9]*)$/.exec(location.pathname);
  const id=idMatch&&numeric(idMatch[1])?Number(idMatch[1]):null;
@@ -265,6 +267,35 @@
   clubCatalog=manifest;clubCatalogResolved=true;
   renderClub();
  }
+ function ensurePlayerStats(){
+  if(preview||!statsHost||!id||!player||state!=='ready')return;
+  if(statsController){statsController.render();void statsController.load();return;}
+  if(statsControllerPromise)return;
+  statsControllerPromise=import('/assets/player-stats.mjs').then(async module=>{
+   let labels=null,competitionLookup=null;
+   try{
+    const context=await import('/assets/match-public-context.mjs');
+    competitionLookup=context.matchPublicContext;
+    const catalog=await context.publicClubIdentityCatalog();
+    if(Array.isArray(catalog?.clubs))labels=new Map(catalog.clubs.map(item=>[item.countryId+'-'+item.clubId,item.primaryName]));
+   }catch{}
+   if(!player||state!=='ready')return;
+   statsController=module.createPlayerStatsView({host:statsHost,id,position:()=>player?.primary_position,
+    locale:language,clubName:key=>labels?.get(key),
+    competitionName:key=>competitionLookup?.({competitionId:key})?.competitions?.[0]?.name,
+    fetchStats:async number=>{
+     const response=await fetch('/api/players/'+number+'/stats',{credentials:'omit',cache:'no-store'});
+     if(!response.ok)throw Error('player_stats_unavailable');
+     return response.json();
+    }});
+   if(view==='stats')await statsController.load();
+   else statsController.render();
+  }).catch(()=>{
+   const note=statsHost.querySelector('[data-detail-stats-note]');
+   if(note){note.hidden=false;note.textContent='Statistics unavailable';}
+   statsHost.setAttribute('aria-busy','false');
+  }).finally(()=>{statsControllerPromise=null});
+ }
  function render(){
   const copy=tr(),e=ex(),labels=(attrLabels[language()]||attrLabels.en).split('|');
   // Browser title depends on public entity identity, not the selected tab.
@@ -284,6 +315,7 @@
    if(!tab.disabled)tab.tabIndex=selected?0:-1;
   });
   syncViewEdges();
+  if(view==='stats')void ensurePlayerStats();else statsController?.render();
   for(const [key,label] of [['positions',e.positions],['info',e.info],['attributes',e.attributes]]){
    panel.querySelector('[data-detail-section-title="'+key+'"]').textContent=label;
   }
@@ -392,7 +424,7 @@
   else url.searchParams.set('view',target);
  }
  function setView(next){
-  if(!['overview','info'].includes(next)||next===view)return;
+  if(!['overview','info',...(preview?[]:['stats'])].includes(next)||next===view)return;
   view=next;
   const url=new URL(location.href);
   syncViewParam(url,next);
@@ -417,7 +449,7 @@
   if(url.pathname+url.search+url.hash!==current)
    history.replaceState(history.state,'',url.pathname+url.search+url.hash);
  }
- window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':'overview';normalizeViewUrl();render();});
+ window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':(!preview&&new URLSearchParams(location.search).get('view')==='stats'?'stats':'overview');normalizeViewUrl();render();});
  window.addEventListener('pageshow',e=>{if(preview&&e.persisted)void load();});
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  normalizeViewUrl();render();void load();

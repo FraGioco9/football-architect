@@ -67,6 +67,40 @@ test('public sporting bridge permits only canonical GET paths and strips operato
  }finally{bridge.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))])}
 });
 
+test('#578 local Player Stats proxy forwards canonical anonymous GET and blocks unsafe variants',async()=>{
+ const seen=[];
+ const upstream=createServer((r,res)=>{
+  seen.push({path:r.url,method:r.method,cookie:r.headers.cookie,origin:r.headers.origin,csrf:r.headers['x-csrf-token']});
+  res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['private=secret']});
+  res.end('{"playerId":42,"status":"empty","seasons":[]}');
+ });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const target='http://127.0.0.1:'+upstream.address().port;
+ const bridge=createServer((r,res)=>proxyAdminApi(r,res,{target}));
+ bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ const send=(path,method='GET')=>new Promise((resolve,reject)=>{
+  const r=request({hostname:'127.0.0.1',port:bridge.address().port,path,method,
+   headers:{Host:'app.localhost:2000',Cookie:'secret=do-not-forward','X-CSRF-Token':'private'}},res=>{
+    let body='';res.on('data',v=>body+=v);res.on('end',()=>resolve({status:res.statusCode,body,cookie:res.headers['set-cookie']}));
+   });r.on('error',reject);r.end();
+ });
+ try{
+  const good=await send('/api/players/42/stats');
+  assert.equal(good.status,200);
+  assert.deepEqual(JSON.parse(good.body),{playerId:42,status:'empty',seasons:[]});
+  assert.equal(good.cookie,undefined);
+  assert.deepEqual(seen,[{path:'/api/players/42/stats',method:'GET',cookie:undefined,origin:undefined,csrf:undefined}]);
+  assert.equal((await send('/api/players/42/stats','POST')).status,405);
+  for(const path of ['/api/players/0/stats','/api/players/01/stats','/api/players/9007199254740992/stats','/api/players/42/stats/extra'])
+   assert.equal((await send(path)).status,404,path);
+  for(const path of ['/api/players/42/stats?season=1','/api/players/42/stats%2Fother'])
+   assert.equal((await send(path)).status,403,path);
+  assert.equal(seen.length,1,'denied requests never reach the Worker');
+ }finally{
+  bridge.closeAllConnections();upstream.closeAllConnections();
+  await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);
+ }
+});
+
 test('LAN opt-in serves only anonymous world and competition GETs on a verified local interface',async()=>{
  const upstream=createServer((request,res)=>{
   assert.ok(['/api/world','/api/competitions/int-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history','/api/clubs/IT-1/seasons/1/fixtures','/api/players?offset=0'].includes(request.url));
