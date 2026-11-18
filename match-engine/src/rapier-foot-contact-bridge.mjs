@@ -79,9 +79,12 @@ export function soloCarryTwoFootPositions(player,gait=null){
  const ahead=gait?.observedAheadM??0.55;
  const lateral=gait?.observedLateralM??0;
  const sideAdjust=gaitClamp(lateral*0.20,-0.03,0.03);
- // The former one-shoe stride is too aggressive when BOTH shoes collide:
- // reduce real physical reach of each kinematic pad, never clamp ball speed.
- const twoFootPhysicalReach=0.75;
+ // Control needs an actual early foot approach. Once the observed native
+ // speed/gap promotes Moderate/Sprint, use shorter physical forward reach
+ // to prevent two authentic shoes from over-driving the original ball.
+ // These are kinematic pad trajectories, NOT ball speed clamps or timed taps.
+ const twoFootPhysicalReach=gait?.carryPhase==='sprint'?0.75:
+  gait?.carryPhase==='moderate'?0.85:1.0;
  const leftForward=(gait?.forwardM??forwardStroke*stroke)*twoFootPhysicalReach;
  const rightForward=(-forwardStroke*stroke+
   gaitClamp((ahead-0.53)*0.40,0,0.055)*Math.max(0,-stroke))*
