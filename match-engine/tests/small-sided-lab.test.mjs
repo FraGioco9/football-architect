@@ -510,3 +510,61 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
   }finally{lab.dispose();}
  }
 });
+
+
+test('#628 60 native solo Carry variants preserve real speed, contact and phase safety',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const samples=[];
+ for(let variantIndex=0;variantIndex<30;variantIndex++)
+ for(const side of ['home','away']){
+  const lab=createControlledActionLab(R,'carry-solo',{shotSide:side,
+   variantIndex,bodyGuardEnabled:true});
+  try{
+   let maxBallSpeedMps=0,carries=0,maxLiftM=0,blockedTicks=0;
+   const phases=new Set();let transitions=0,latest=null;
+   for(let tick=1;tick<=180;tick++){
+    const f=lab.step();latest=f;
+    const actor=f.observedMovementPlayers.find(p=>p.id===side+'-10');
+    if(actor.blockedBy!==null)blockedTicks++;
+    const speed=Math.hypot(f.ball.velocity.x,f.ball.velocity.y);
+    maxBallSpeedMps=Math.max(maxBallSpeedMps,speed);
+    maxLiftM=Math.max(maxLiftM,f.nativeDribbleAudit.peakGroundClearanceM);
+    phases.add(f.soloCarryPhase.phase);
+    if(f.soloCarryPhase.changed)transitions++;
+    assert.deepEqual(f.smallSidedParticipants,[side+'-10']);
+    assert.deepEqual(f.smallSidedNativeBodyGuard.nativeOpposingTorsoPairs,[]);
+    assert.ok(f.starts.every(x=>x===side+'-10'));
+    if(f.action?.appliedByRapier===true&&f.action?.actualPhysicsImpulseApplied===true)
+     carries++;
+   }
+   samples.push({side,variantIndex,carries,maxBallSpeedMps,maxLiftM,
+    blockedTicks,transitions,phases:[...phases],
+    recontacts:latest.nativeDribbleAudit.independentRecontacts,
+    ballForwardM:latest.nativeDribbleAudit.ballForwardDistanceM});
+  }finally{lab.dispose();}
+ }
+ const maxBallSpeedMps=Math.max(...samples.map(x=>x.maxBallSpeedMps));
+ const maxGroundLiftM=Math.max(...samples.map(x=>x.maxLiftM));
+ const sprintSamples=samples.filter(x=>x.phases.includes('sprint')).length;
+ const maxTransitions=Math.max(...samples.map(x=>x.transitions));
+ const blockedSamples=samples.filter(x=>x.blockedTicks>0).length;
+ const weakSamples=samples.filter(x=>x.carries<2||x.recontacts<1||
+  x.ballForwardM<4).map(x=>({side:x.side,variantIndex:x.variantIndex,
+   carries:x.carries,recontacts:x.recontacts,forward:x.ballForwardM}));
+ process.stdout.write('ME_628_SOLO_CARRY_60_TRIAL_MATRIX '+
+  JSON.stringify({trials:samples.length,maxBallSpeedMps,maxGroundLiftM,
+   sprintSamples,maxTransitions,blockedSamples,weakSamples,
+   minimumForwardM:Math.min(...samples.map(x=>x.ballForwardM)),
+   meanCarries:samples.reduce((t,x)=>t+x.carries,0)/samples.length,
+   fastest:samples.toSorted((a,b)=>b.maxBallSpeedMps-a.maxBallSpeedMps).slice(0,5)})+'\\n');
+ assert.equal(samples.length,60);
+ assert.equal(blockedSamples,0,'Inactive canonical identities must never block solo Carry');
+ assert.ok(sprintSamples>=45,'Sprint must emerge from genuine speed/gap cues in most variants');
+ assert.ok(maxTransitions<=12,'Solo Carry phases must not flicker uncontrollably');
+ assert.ok(maxBallSpeedMps<=3.5+1e-6,
+  'All 60 real Rapier trials must respect 3.5m/s ground Carry ball guard');
+ assert.ok(maxGroundLiftM<=0.015+1e-6,
+  'All 60 real Rapier trials must keep ground ball lift below 1.5cm');
+ assert.equal(weakSamples.length,0,'Every variant should physically carry with recontacts');
+});
