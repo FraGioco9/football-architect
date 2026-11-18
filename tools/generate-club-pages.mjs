@@ -78,7 +78,7 @@ function bootstrapClubFirstPaint(rosterLabels,menuMarkup){
    const fixtureWords=JSON.parse(document.querySelector('.club-fixtures').dataset.labels)[locale];
    const label=isGroup?wordsForRoster[0]:fixtureWords.competition;
    const requested=params.get('competition');
-   const value=isGroup?w.groups[Object.keys(keys).indexOf(group)]:wordsForRoster[requested==='international'?6:5];
+   const value=isGroup?w.groups[Object.keys(keys).indexOf(group)]:requested==='domestic'?wordsForRoster[5]:requested==='international'?wordsForRoster[6]:fixtureWords.all;
    trigger.setAttribute('aria-label',label);control.querySelector('[role=listbox]').setAttribute('aria-label',label);
    trigger.querySelector('span').textContent=value;
    trigger.disabled=true;

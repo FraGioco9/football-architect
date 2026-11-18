@@ -738,19 +738,23 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.ok(await run("document.querySelector('.club-roster-tabs').scrollWidth<=document.querySelector('.club-roster-tabs').clientWidth+1"));
     }
     await run("document.querySelector('[data-club-roster-view=stats]').click()");
-    await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='90'");
+    await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='110'");
     for(const width of [320,1440]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===320});
      const gap=await run("document.querySelector('.club-roster-count').getBoundingClientRect().left-document.querySelector('[data-club-roster-control]').getBoundingClientRect().right");
-     assert.ok(gap>=0&&gap<=5,'dropdown and count stay adjacent: '+gap);
+     assert.equal(gap,12,'dropdown spacing stays consistent');
     }
     for(const view of ['attributes','stats','info','stats']){
      await run("document.querySelector('[data-club-roster-view="+view+"]').click()");
      await wait("document.querySelector('.club-roster[aria-busy=false]')!==null");
     }
     assert.deepEqual(rosterRequests,{info:initialReads.info+1,stats:initialReads.stats+1});
-    assert.deepEqual(await run("[...document.querySelectorAll('[data-club-roster-control] [data-menu-value]')].map(el=>el.dataset.menuValue)"),['domestic','international']);
-    await run("document.querySelector('[data-club-roster-control=competition] button').click();document.querySelector('[data-menu-value=international]').click()");
+    assert.deepEqual(await run("[...document.querySelectorAll('[data-club-roster-control] [data-menu-value]')].map(el=>el.dataset.menuValue)"),['all','domestic','international']);
+    for(const [scope,minutes] of [['domestic','90'],['all','110'],['international','20']]){
+     await run("document.querySelector('[data-club-roster-control=competition] button').click();document.querySelector('[data-menu-value="+scope+"]').click()");
+     await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='"+minutes+"'");
+    }
+    assert.deepEqual(rosterRequests,{info:initialReads.info+1,stats:initialReads.stats+1});
     await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='20'");
     await cmd('Page.reload',{ignoreCache:true});
     await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='20'");

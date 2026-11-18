@@ -208,13 +208,13 @@
     const group=control.dataset.clubRosterControl==='group';
     const binding=window.faBindCompetitionMenu(trigger,menu,[...menu.children],value=>{
      const query=group?model.rosterViewQuery(location.search,value):new URLSearchParams(location.search);
-     if(!group){if(value==='domestic')query.delete('competition');else query.set('competition',value);}
+     if(!group){if(value==='all')query.delete('competition');else query.set('competition',value);}
      const next=location.pathname+'?'+query+location.hash;
      if(next!==location.pathname+location.search+location.hash)history.pushState(null,'',next);
      paint(true);host.querySelector('[data-club-roster-control] button')?.focus({preventScroll:true});
     },control,{signal:rosterMenuEvents.signal});
     const params=new URLSearchParams(location.search);
-    binding.sync(group?model.rosterView(params):params.get('competition')==='international'?'international':'domestic');
+    binding.sync(group?model.rosterView(params):model.rosterCompetition(params));
    }
    const rosterTabs=host.querySelector('.club-roster-tabs');
    if(rosterTabs){

@@ -148,6 +148,10 @@
   fr:['Attributs','MJ','Tit','Min','Buts','Nationales','Internationales','Non enregistré'],
   es:['Atributos','PJ','Tit','Min','Goles','Nacionales','Internacionales','Sin registrar']
  };
+ function rosterCompetition(params){
+  const scope=params.get('competition');
+  return scope==='domestic'||scope==='international'?scope:'all';
+ }
  function rosterView(params){
   if(params.get('view')==='stats')return 'stats';
   if(params.get('view')!=='attributes')return 'info';
@@ -191,8 +195,8 @@
   if(ready&&snapshot.count===0)
    return '<section class="club-roster" aria-busy="false" data-roster-mode="empty"><p class="club-roster-empty" role="status">'+escape(w.empty)+'</p></section>';
   const competitions=snapshot?.competitions||[];
-  const international=params.get('competition')==='international';
-  const groupIds=competitions.filter(id=>id.startsWith('int-')===international);
+  const scope=rosterCompetition(params);
+  const groupIds=competitions.filter(id=>id.startsWith('int-')===(scope==='international'));
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
    :mode==='stats'?['',w.name,w.positions,...words.slice(1,5)]:['',w.name,w.positions,w.age,w.height,w.foot];
@@ -208,7 +212,7 @@
    const message=ready?w.empty:snapshot?.status===404?w.missingApi:w.unavailable;
    body='<tr class="app-players-empty-row"><td colspan="'+colCount+'"><strong role="status">'+escape(message)+'</strong></td></tr>';
   }else{
-   const players=mode==='stats'?snapshot.players.map(player=>{
+   const players=mode==='stats'&&scope!=='all'?snapshot.players.map(player=>{
     const rows=groupIds.map(id=>player.competitionStats?.[id]);
     const recorded=rows.length?rows.every(Boolean):competitions.length>0||!!player.stats;
     const stats=recorded?Object.fromEntries(statKeys.map(key=>[key,rows.reduce((sum,row)=>sum+row[key],0)])):null;
@@ -239,8 +243,8 @@
    selector=fixtureUI.control('group',words[0],options.find(([key])=>key===group)[1],options,'club-roster');
   }else if(mode==='stats'){
    const labels=fixtureUI.copy[lang];
-   selector=fixtureUI.control('competition',labels.competition,words[international?6:5],
-    [['domestic',words[5]],['international',words[6]]],'club-roster');
+   selector=fixtureUI.control('competition',labels.competition,scope==='all'?labels.all:words[scope==='international'?6:5],
+    [['all',labels.all],['domestic',words[5]],['international',words[6]]],'club-roster');
   }
   return '<section class="club-roster" aria-busy="'+pending+'" data-roster-mode="'+mode+'">'+
    '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav>'+selector+'<span class="club-roster-count"><span aria-hidden="true" class="club-roster-count-width">99 '+w.many+'</span><span>'+count+'</span></span></div>'+
@@ -483,5 +487,5 @@
    '<span data-club-name="compact">'+escape(c.compactName)+'</span></h1><p class="club-location">'+flag('header')+escape(c.city)+', '+escape(country)+'</p></div></header>'+tabs+
    content;
  }
- return {views,copies,route,render,renderRoster,rosterLabels,rosterView,rosterViewQuery,rosterSortKeys};
+ return {views,copies,route,render,renderRoster,rosterLabels,rosterCompetition,rosterView,rosterViewQuery,rosterSortKeys};
 });
