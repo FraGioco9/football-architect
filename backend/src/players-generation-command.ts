@@ -125,6 +125,20 @@ function parseApproval(input:unknown){
  if(Object.keys(data).sort().join(',')!=='confirmation,draftId'||data.confirmation!=='GENERATE PLAYERS'||typeof data.draftId!=='string'||!pattern.test(data.draftId))throw new ApiError(422,'players_approval_required');
  return data.draftId;
 }
+/** An idempotent replay succeeds only when ALL players have matching V4.2 profiles. */
+async function completeV42Batch(db:Database,batchId:string,generation:string,expected:number){
+ const result=await db.prepare(`SELECT
+  (SELECT COUNT(*) FROM generated_players WHERE batch_id=? AND world_generation=?) AS players,
+  (SELECT COUNT(*) FROM generated_players AS g
+   JOIN player_portrait_profiles AS p ON p.player_id=g.id
+   WHERE g.batch_id=? AND g.world_generation=?
+     AND p.schema_version='player-portraits-v5'
+     AND p.prompt_version='player-portrait-v4.2'
+     AND json_extract(p.snapshot_json,'$.player_id')=g.id) AS profiles`)
+  .bind(batchId,generation,batchId,generation)
+  .first<{players:number;profiles:number}>();
+ return result?.players===expected&&result.profiles===expected;
+}
 export async function commitPlayerGeneration(db:Database,session:AdminSession,input:unknown,now:number){
  const id=parseApproval(input);
  const draft=await db.prepare('SELECT id,world_generation,season_number,account_id,count,seed,status,expires_at,candidates_json FROM player_generation_drafts WHERE id=? AND account_id=?')
@@ -134,9 +148,9 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
  if(world.generation!==draft.world_generation||world.seasonNumber!==draft.season_number)
   throw new ApiError(409,'stale_players_preview');
  if(draft.status==='committed'){
-  const n=await db.prepare('SELECT COUNT(*) AS n FROM generated_players WHERE batch_id=? AND world_generation=?').bind(id,world.generation).first<{n:number}>();
-  if(n?.n!==draft.count)throw new ApiError(503,'players_commit_unavailable');
-  // Idempotent read-back: older already-committed batches may predate portrait migration.
+  if(!(await completeV42Batch(db,id,world.generation,draft.count)))
+   throw new ApiError(503,'players_commit_unavailable');
+  // Fail closed if an older committed batch lost its portraits during cutover.
   return {batchId:id,count:draft.count,alreadyCommitted:true,worldGeneration:world.generation};
  }
  if(draft.status!=='preview'||draft.expires_at<=now)throw new ApiError(409,'players_preview_expired');
@@ -196,8 +210,8 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
   // A racing retry may already have committed. Never write a partial batch.
   const row=await db.prepare('SELECT status FROM player_generation_drafts WHERE id=? AND account_id=?').bind(id,session.unified!.playerId).first<{status:string}>();
   if(row?.status==='committed'){
-   const n=await db.prepare('SELECT COUNT(*) AS n FROM generated_players WHERE batch_id=?').bind(id).first<{n:number}>();
-   if(n?.n===draft.count)return {batchId:id,count:draft.count,alreadyCommitted:true,worldGeneration:world.generation};
+   if(await completeV42Batch(db,id,world.generation,draft.count))
+    return {batchId:id,count:draft.count,alreadyCommitted:true,worldGeneration:world.generation};
   }
   const current=await readWorld(db);
   if(current.generation!==world.generation||current.seasonNumber!==world.seasonNumber)throw new ApiError(409,'stale_players_preview');

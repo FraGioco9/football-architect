@@ -14,7 +14,14 @@ CREATE TABLE player_portrait_profiles_v42_next (
  asset_key TEXT,
  created_at INTEGER NOT NULL CHECK(created_at>0),
  CHECK ((status='approved' AND asset_key IS NOT NULL) OR
-        (status!='approved' AND asset_key IS NULL))
+        (status!='approved' AND asset_key IS NULL)),
+ -- SQLite CHECK(NULL) passes: use IS for fail-closed missing JSON fields.
+ CHECK(json_type(snapshot_json,'$.schema_version') IS 'text'
+       AND json_extract(snapshot_json,'$.schema_version') IS 'player-portraits-v5'),
+ CHECK(json_type(snapshot_json,'$.prompt_version') IS 'text'
+       AND json_extract(snapshot_json,'$.prompt_version') IS 'player-portrait-v4.2'),
+ CHECK(json_type(snapshot_json,'$.player_id') IS 'integer'
+       AND json_extract(snapshot_json,'$.player_id') IS player_id)
 );
 DROP TABLE player_portrait_profiles;
 ALTER TABLE player_portrait_profiles_v42_next RENAME TO player_portrait_profiles;

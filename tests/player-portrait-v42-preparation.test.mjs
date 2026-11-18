@@ -48,20 +48,29 @@ test('D1 export envelopes use only read-only original generated-player payloads'
  assert.deepEqual(rowsFromD1Export([{results:[row]}]),[row]);
  assert.throws(()=>rowsFromD1Export({}),/invalid_v42_d1_export/);
 });
-test('reject inconsistent draft, changed attributes and ambiguous name matches',async()=>{
+test('rebuilds frozen V4.2 from original initial stats despite evolved gameplay',async()=>{
+ const before=await preparePlayerPortraitV42([record(47,first)],1);
+ const current={...first,id:47,age:41,career_status:'retired',primary_position:'CB',
+  attributes:{...first.attributes,strength:99,speed:12,agility:10,stamina:1}};
+ const after=await preparePlayerPortraitV42([{
+  ...record(47,first),payload_json:JSON.stringify(current)
+ }],1);
+ assert.deepEqual(after,before);
+});
+
+test('reject inconsistent draft, altered identity fields and ambiguous name matches',async()=>{
  const input=record(47,first);
  const bad=[
   {...input,matches:2},
   {...input,matches:0},
-  {...input,payload_json:JSON.stringify({...first,id:47,
-   attributes:{...first.attributes,strength:99}})},
+  {...input,payload_json:JSON.stringify({...first,id:47,nationality:'ENG'})},
   {...input,id:48},
   {...input,original_json:JSON.stringify({...first,id:47})},
   {...input,original_json:'null'}
  ];
  for(const record of bad)
   await assert.rejects(()=>preparePlayerPortraitV42([record],1),
-   /unverified_v42_player|invalid_v42_source_payload|original_initial_data_mismatch/);
+   /unverified_v42_player|invalid_v42_source_payload|original_initial_identity_mismatch/);
  await assert.rejects(()=>preparePlayerPortraitV42([input,input],2),
   /duplicate_v42_player_id/);
  await assert.rejects(()=>preparePlayerPortraitV42([input],2),

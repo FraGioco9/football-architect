@@ -48,8 +48,11 @@ generation drafts, **not** historical portrait identities.
 node tools/prepare-player-portrait-v42.mjs --input C:\Temp\verified-player-drafts.json --out C:\Temp\private-v42-snapshots.json --expected-count 150
 ```
 
-The tool checks exact original-draft equality, unique IDs, schema/prompt
-version, no duplicate fingerprints and canonical prompt replay, then writes
+The tool verifies frozen name, nationality, initial age, height and foot against
+the original committed draft, while allowing current gameplay age, attributes,
+position and career status to evolve. **Only original-draft attributes** define
+the portrait. It checks unique IDs, V4.2 version, unique fingerprints and
+canonical prompt replay, then writes
 **only** new V4.2 snapshots with `flag: 'wx'` (no overwrite). For the audited
 DEV roster, its manifest SHA-256 must equal the audit hash above. Any different
 hash indicates source/code/catalogue drift and blocks cutover. The private
@@ -59,7 +62,12 @@ activation, not during this read-only audit.
 ## Release checklist (separate gates)
 - [x] Read-only 150-player frozen-data provenance audit.
 - [x] V4.2 generation/export defaults and exclusive-version migration **coded**.
-- [ ] Exact-head tests / required CI green.
+- [x] New schema ensures the JSON snapshot's V4.2 version and player ID
+      match its database row; idempotent commits require complete V4.2 profiles.
+- [x] Previous exact-head FULL CI green (bd44c245).
+- [ ] Required FULL CI on this final audit commit, including 1/6-player commit,
+      missing-profile retry, 150-player cutover simulation and embedded snapshot
+      version/ID constraints.
 - [x] Recompute and validate all 150 canonical V4.2 snapshots in memory;
       independently reproducible full-roster manifest digest above.
 - [x] Prepare a local/offline V4.2-only snapshot exporter with strict

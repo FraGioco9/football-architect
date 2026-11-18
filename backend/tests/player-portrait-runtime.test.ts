@@ -78,6 +78,48 @@ it('saves an immutable appearance for every newly committed permanent ID, never 
  expect(await portraits()).toHaveLength(3);
 });
 
+it('commits one player and refuses successful replay without its V4.2 profile',async()=>{
+ const one=await draft(1,'one-player-v42');
+ expect((await commit(one.draftId)).status).toBe(200);
+ const players=await rows(),profiles=await portraits();
+ expect(players).toHaveLength(1);
+ expect(profiles).toHaveLength(1);
+ expect(JSON.parse(profiles[0].snapshot_json).player_id).toBe(players[0].id);
+ expect(JSON.parse(profiles[0].snapshot_json).prompt_version).toBe('player-portrait-v4.2');
+ expect((await commit(one.draftId)).status).toBe(200);
+ await db.prepare('DELETE FROM player_portrait_profiles WHERE player_id=?')
+  .bind(players[0].id).run();
+ expect((await commit(one.draftId)).status).toBe(503);
+ expect(await rows()).toHaveLength(1);
+ expect(await portraits()).toHaveLength(0);
+});
+
+it('rejects replay of a committed multi-player batch with a missing portrait',async()=>{
+ const p=await draft(6,'six-player-v42');
+ expect((await commit(p.draftId)).status).toBe(200);
+ expect(await portraits()).toHaveLength(6);
+ const id=(await rows())[3].id;
+ await db.prepare('DELETE FROM player_portrait_profiles WHERE player_id=?').bind(id).run();
+ expect((await commit(p.draftId)).status).toBe(503);
+ expect(await rows()).toHaveLength(6);
+ expect(await portraits()).toHaveLength(5);
+});
+
+it('uses dual-national name-bank evidence for a newly committed V4.2 player',async()=>{
+ const response=await req('/preview',{options:{count:1,seed:'v42-dual',
+  primaryNationality:'ITA',secondaryNationality:'NGA',firstName:'Matthew',
+  lastName:'Tiamiyu',primaryPosition:'ST'}});
+ expect(response.status).toBe(200);
+ const preview=await response.json() as any;
+ expect((await commit(preview.draftId)).status).toBe(200);
+ const profiles=await portraits();
+ expect(profiles).toHaveLength(1);
+ const s=JSON.parse(profiles[0].snapshot_json);
+ expect(s.name_origins).toEqual({first:'secondary',last:'secondary'});
+ expect(s.family_background).toBe('NGA');
+ expect(s.prompt_version).toBe('player-portrait-v4.2');
+});
+
 it('keeps frozen face/body/nationality after changes to gameplay records',async()=>{
  const p=await draft(1,'portrait-frozen');
  expect((await commit(p.draftId)).status).toBe(200);

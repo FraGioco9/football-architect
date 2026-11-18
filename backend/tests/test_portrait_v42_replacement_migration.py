@@ -72,6 +72,48 @@ class PortraitV42Migration(unittest.TestCase):
             ) VALUES (93,'player-portraits-v5','player-portrait-v4.2','{}','approved',NULL,1600000002)""")
         self.assertEqual(self.db.execute('SELECT COUNT(*) FROM player_portrait_profiles').fetchone()[0], 0)
 
+    
+    def test_150_player_cutover_keeps_players_but_drops_legacy_identities(self):
+        extra = list(range(94, 241))  # 147 additional players; 150 total
+        self.db.executemany('INSERT INTO generated_players(id,payload_json) VALUES (?,?)',
+                            [(i, '{}') for i in extra])
+        old = json.dumps({'schema_version': 'player-portraits-v2',
+                          'prompt_version': 'player-portrait-v3'})
+        self.db.executemany("""INSERT INTO player_portrait_profiles
+          (player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at)
+          VALUES (?,'player-portraits-v2','player-portrait-v3',?,'pending',NULL,1600000000)""",
+                            [(i, old) for i in extra])
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM generated_players').fetchone()[0], 150)
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM player_portrait_profiles').fetchone()[0], 149)
+        self.db.executescript(V42)
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM generated_players').fetchone()[0], 150)
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM player_portrait_profiles').fetchone()[0], 0)
+        self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(), [])
+
+    def test_version_and_player_id_inside_snapshot_are_enforced(self):
+        self.db.executescript(V42)
+        valid = {'schema_version': 'player-portraits-v5',
+                 'prompt_version': 'player-portrait-v4.2', 'player_id': 93}
+        for bad in [
+            {**valid, 'schema_version': 'player-portraits-v4'},
+            {**valid, 'prompt_version': 'player-portrait-v4.1'},
+            {**valid, 'player_id': 47},
+            {**valid, 'player_id': '93'},
+            {'schema_version': valid['schema_version'], 'prompt_version': valid['prompt_version']},
+            {}
+        ]:
+            with self.subTest(snapshot=bad):
+                with self.assertRaises(sqlite3.IntegrityError):
+                    self.db.execute("""INSERT INTO player_portrait_profiles(
+                       player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at
+                    ) VALUES (93,'player-portraits-v5','player-portrait-v4.2',?,'pending',NULL,1600000002)""",
+                                    (json.dumps(bad),))
+        self.db.execute("""INSERT INTO player_portrait_profiles(
+          player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at
+        ) VALUES (93,'player-portraits-v5','player-portrait-v4.2',?,'pending',NULL,1600000002)""",
+                        (json.dumps(valid),))
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM player_portrait_profiles').fetchone()[0], 1)
+
 
 if __name__ == '__main__':
     unittest.main()

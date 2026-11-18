@@ -16,12 +16,10 @@ export const V42_PREPARATION_FORMAT='player-portraits-v42-prepared-v1';
 const SHA=x=>createHash('sha256').update(x).digest('hex');
 const decoded=x=>typeof x==='string'?JSON.parse(x):x;
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
-function canonical(x){
- if(Array.isArray(x))return x.map(canonical);
- if(object(x))return Object.fromEntries(Object.entries(x).sort(([a],[b])=>a.localeCompare(b))
-  .map(([key,value])=>[key,canonical(value)]));
- return x;
-}
+const ORIGINAL_IDENTITY_KEYS=Object.freeze([
+ 'first_name','last_name','display_name','nationality','secondary_nationality',
+ 'initial_age','height_cm','preferred_foot'
+]);
 function validateSource(record){
  if(!object(record)||!Number.isSafeInteger(record.id)||record.id<1||
     record.matches!==1)throw new TypeError('unverified_v42_player');
@@ -29,9 +27,12 @@ function validateSource(record){
  if(!object(current)||!object(original)||('id' in original)||
     (current.id!==undefined&&current.id!==record.id))
   throw new TypeError('invalid_v42_source_payload');
- const copy={...current};delete copy.id;
- if(JSON.stringify(canonical(copy))!==JSON.stringify(canonical(original)))
-  throw new TypeError('original_initial_data_mismatch');
+ // Never reseed from evolving age, current attributes, position or career status.
+ // Immutable identity fields must still match the original committed draft.
+ for(const key of ORIGINAL_IDENTITY_KEYS){
+  if(JSON.stringify(current[key]??null)!==JSON.stringify(original[key]??null))
+   throw new TypeError('original_initial_identity_mismatch');
+ }
  if(typeof original.first_name!=='string'||!original.first_name||
     typeof original.last_name!=='string'||!original.last_name||
     original.display_name!==original.first_name+' '+original.last_name)
