@@ -100,6 +100,7 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
     attackerGapM:attackerGap,defenderGapM:distance,
     authenticShoeStarts:freeze([...foot.started]),
     authenticShoeActive:freeze([...foot.active]),
+    ...(solo?{physicalSoloFeet:foot.nativeSoloFeet??null}:{}),
     appliedRealCarryThisTick:action?.action==='carry'&&
      action.appliedByRapier===true,
     nativeLegBallContacts:physicalBodies?.lowerLegBallContacts.length??null,
