@@ -333,7 +333,9 @@ test('A04 browser baseline: public routes, provider states, delayed publications
   });
   // Catches a removed revision guard or a clock/navigation update that replaces historical records.
   await t.test('A06-12 X07/X09: historical navigation and clock advance reject obsolete provider publications',async()=>{
-   const records=()=>run("[...document.querySelectorAll('[data-history-filled=\"true\"]')].map(n=>[n.dataset.historyPlayerRecord,n.textContent])");
+   // Only canonical player-record entries belong to this lease-isolation probe.
+// Other Records UI summaries can be filled without being player records.
+   const records=()=>run("[...document.querySelectorAll('[data-history-player-record][data-history-filled=\"true\"]')].map(n=>[n.dataset.historyPlayerRecord,n.textContent])");
    const history={source:'canonical',competitionId:'IT-1',coverage:'complete',provenance:{approved:true},seasons:[{
     seasonId:1,status:'completed',dataStatus:'approved',playerStatsComplete:true,rulesVersion:definition.rules.version,rulesSnapshot:definition.rules,
     playerStats:[{playerId:'a06-player',playerName:'A06 Historical Player',countryId:'IT',clubId:1,goals:3,assists:1,appearances:2,cleanSheets:0}]}]};

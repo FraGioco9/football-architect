@@ -18,8 +18,8 @@ export const DEFAULT_ROUTES=Object.freeze([
 // control is reported as SKIPPED, never as evidence of zero network requests.
 export const IN_PAGE_SCENARIOS=Object.freeze([
  Object.freeze({routePattern:/^\/clubs\/[^/]+\/[^/]+\/roster(?:\?|$)/,
-  name:'roster-info-to-technical',selector:'a[data-club-roster-view="technical"]',
-  expectedView:'technical'})
+  name:'roster-info-to-technical',selector:'a[data-club-roster-view="attributes"]',
+  expectedView:'attributes'})
 ]);
 // Local read-only Club transitions: do not assume a second season exists.
 // Missing selectors or unavailable historical data are explicitly inconclusive.
