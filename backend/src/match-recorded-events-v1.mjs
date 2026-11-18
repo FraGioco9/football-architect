@@ -69,7 +69,7 @@ function closeInterval(state,id,minute){
  p.intervals.push({from:p.entered,to:minute,role});
  p.entered=minute;
 }
-function keeperRecovery(state,minute,side,events){
+function keeperRecovery(state,minute,side,sideName,events){
  if([...state.on.values()].includes('GK'))return;
  const active=[...state.on.keys()].sort((a,b)=>a-b);
  if(!active.length)fail('dismissed last player');
@@ -82,7 +82,7 @@ function keeperRecovery(state,minute,side,events){
  const selected=[...active].sort((a,b)=>strength(b)-strength(a)||a-b)[0];
  const prior=state.on.get(selected);
  closeInterval(state,selected,minute);state.on.set(selected,'GK');
- events.push({type:'role_change',minute,period:period(minute),playerId:selected,
+ events.push({type:'role_change',side:sideName,minute,period:period(minute),playerId:selected,
   fromRole:prior,toRole:'GK',reason:'emergency_goalkeeper'});
 }
 function finish(state){
@@ -186,7 +186,7 @@ export async function planRecordedMatchTimelineV1({result,homeRoster,awayRoster}
    push({type:'red',playerId:id,reason:item.kind==='second-red'?'second_yellow':'direct'});
    state.people.get(id).redCards++;state.dismissed.add(id);state.redCount++;
    closeInterval(state,id,item.minute);state.on.delete(id);
-   keeperRecovery(state,item.minute,side,events);
+   keeperRecovery(state,item.minute,side,item.side,events);
   }else if(item.kind==='goal'){
    const people=active(),preferred=item.goal.playerId;
    const scorer=state.on.has(preferred)?preferred:select(people,await d('scorer'));
@@ -220,5 +220,5 @@ export async function planRecordedMatchTimelineV1({result,homeRoster,awayRoster}
   if(!s.fallback&&(s.windows.size>3+(duration===120?1:0)||
    s.subCount>5+(duration===120?1:0)||s.on.size!==11-s.redCount))fail('substitution/dismissal limits');
  }
- return {eventModelVersion:MATCH_EVENT_MODEL_VERSION,events,home,away};
+ return {eventModelVersion:MATCH_EVENT_MODEL_VERSION,events:events.map((e,ordinal)=>({...e,ordinal})),home,away};
 }
