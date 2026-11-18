@@ -1,7 +1,7 @@
 /**
  * Generic two-step handoff. Step 1 exports image-only descriptions.
  * No repository/QA/connector/image-target instructions enter the first message.
- * Frozen V4.1 canonical identity is reconstructed from verified initial stats.
+ * V4.1 default or opt-in V4.2 uses verified frozen initial stats.
  * Image generation still occurs only through a user-operated ChatGPT chat.
  */
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
@@ -9,6 +9,10 @@ import {resolve,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {buildDiverseV4PortraitSnapshotForPlayer,renderDiverseV4PortraitPromptFromSnapshot}
  from '../backend/src/player-portrait-diversity-v41.mjs';
+import {buildFamilyV42PortraitSnapshotForPlayer,renderFamilyV42PortraitPromptFromSnapshot}
+ from '../backend/src/player-portrait-family-v42.mjs';
+import {resolveCatalogueNameOrigins}
+ from '../backend/src/player-portrait-name-origins.mjs';
 
 export const IMAGE_ONLY_PROMPT_EXPORT_VERSION='image-only-chat-v2';
 
@@ -52,10 +56,16 @@ function extractGenerationContent(canonical){
  * Text of first image-only message; excludes player ID, name, metadata, QA
  * steps, connectors, legacy portraits and any edit/target-image instructions.
  */
-export async function createImageOnlyPortraitPrompt(row){
+export async function createImageOnlyPortraitPrompt(row,version='v4.1'){
  const player=verify(row);
- const snapshot=await buildDiverseV4PortraitSnapshotForPlayer(player);
- const canonical=await renderDiverseV4PortraitPromptFromSnapshot(snapshot);
+ if(version!=='v4.1'&&version!=='v4.2')throw new TypeError('unsupported_portrait_export_version');
+ const snapshot=version==='v4.2'
+  ?await buildFamilyV42PortraitSnapshotForPlayer({...player,
+    name_origins:resolveCatalogueNameOrigins(player)})
+  :await buildDiverseV4PortraitSnapshotForPlayer(player);
+ const canonical=version==='v4.2'
+  ?await renderFamilyV42PortraitPromptFromSnapshot(snapshot)
+  :await renderDiverseV4PortraitPromptFromSnapshot(snapshot);
  const content=extractGenerationContent(canonical);
  if(!content.includes('young male')||!content.includes('21–25 years old')||content.includes('adult male'))
    throw new Error('wrong_image_only_age_cue');
@@ -67,7 +77,7 @@ export async function createImageOnlyPortraitPrompt(row){
  });
 }
 /** Export one clean first-message file per verified player, no overwrite. */
-export async function exportImageOnlyPortraitPrompts(rows,outputDirectory){
+export async function exportImageOnlyPortraitPrompts(rows,outputDirectory,version='v4.1'){
  if(!Array.isArray(rows)||rows.length===0||!outputDirectory)
    throw new TypeError('invalid_player_export_input');
  const ids=new Set(),out=[];
@@ -75,7 +85,7 @@ export async function exportImageOnlyPortraitPrompts(rows,outputDirectory){
   verify(row);
   if(ids.has(row.id))throw new TypeError('duplicate_player_export_id');
   ids.add(row.id);
-  out.push(await createImageOnlyPortraitPrompt(row));
+  out.push(await createImageOnlyPortraitPrompt(row,version));
  }
  const dir=resolve(outputDirectory);
  await mkdir(dir,{recursive:true});
@@ -84,13 +94,14 @@ export async function exportImageOnlyPortraitPrompts(rows,outputDirectory){
  return out.map(({id,name,bodyProfile,fingerprint,fileName})=>({id,name,bodyProfile,fingerprint,fileName}));
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- const args=process.argv.slice(2),i=args.indexOf('--input'),o=args.indexOf('--out');
- if(args.length!==4||i<0||o<0||!args[i+1]||!args[o+1]){
-  console.error('Usage: node tools/export-player-image-prompts.mjs --input verified-initial-players.json --out image-only-prompts');
+ const args=process.argv.slice(2),i=args.indexOf('--input'),o=args.indexOf('--out'),v=args.indexOf('--version');
+ if((args.length!==4&&args.length!==6)||i<0||o<0||!args[i+1]||!args[o+1]||
+    (args.length===6&&(v<0||!['v4.1','v4.2'].includes(args[v+1])))){
+  console.error('Usage: node tools/export-player-image-prompts.mjs --input verified-initial-players.json --out image-only-prompts [--version v4.2]');
   process.exitCode=2;
  }else try{
   const rows=JSON.parse(await readFile(args[i+1],'utf8'));
-  console.log(JSON.stringify(await exportImageOnlyPortraitPrompts(rows,args[o+1]),null,2));
+  console.log(JSON.stringify(await exportImageOnlyPortraitPrompts(rows,args[o+1],v<0?'v4.1':args[v+1]),null,2));
  }catch(error){
   console.error(JSON.stringify({status:'FAIL',error:error.message}));
   process.exitCode=1;

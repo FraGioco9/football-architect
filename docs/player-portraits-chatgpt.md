@@ -32,3 +32,7 @@ This repository contains the **generic rendering, QA and publication pipeline**,
 - `assets/player-detail.js` constructs the canonical portrait URL only for a loaded, confirmed numeric player ID, **never** for protected Admin draft preview.
 - `tools/publication-guard.mjs` publishes only regular files with canonical positive integer names and the `.webp` extension from the committed portrait directory. No PNGs, QA exports or per-player SQL can enter the public package.
 - Image/error handlers keep the portrait and fallback mutually exclusive; layout dimensions remain reserved during loading. The public package is checked against the source files by the publication guard.
+
+## Opt-in V4.2 fictional family-context prompts (unpublished)
+
+The canonical V4.1 workflow above remains the default. Use the optional `--version v4.2` exporter flag with **verified frozen initial player data** to select the new `player-portraits-v5` / `player-portrait-v4.2` family-context prompt, which cross-checks name-bank origin and both nationalities without assuming ethnicity. See [V4.2 family-context design and blocked activation](player-portraits-v42-family-context.md). The existing D1 version constraints do not permit V4.2 persistence without a future separately approved migration; there is no new-player cutover, remote write or publication in this change.
