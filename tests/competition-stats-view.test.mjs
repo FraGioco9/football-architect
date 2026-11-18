@@ -328,7 +328,7 @@ test('COMP-STATS-643: player rows have no hover titles; metric-sized skeletons r
 
 test('COMP-STATS: rating and GK clean sheets show appearances while missing metrics stay unavailable',()=>{
  const r=fixture(),c=supplied('int-1',24);
- c.seasonData.statistics.players=[{playerId:58,name:'Keeper',nationality:'ITA',clubKey:'IT-1',appearances:13,starts:10,minutes:900,goals:0,assists:null,cleanSheets:6,redCards:null,averageRating:7.25,ratedAppearances:5}];
+ c.seasonData.statistics.players=[{playerId:58,name:'Keeper',nationality:'ITA',clubKey:'IT-1',appearances:13,starts:10,subAppearances:3,minutes:900,goals:0,assists:null,cleanSheets:6,redCards:null,averageRating:7.25,ratedAppearances:5}];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  const cards=byClass(r,'fa-dev-stats-leader-card');
  assert.equal(cards[0].children[1].children[0].children.at(-1).textContent,'7.25 (5)');
