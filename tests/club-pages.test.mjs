@@ -83,11 +83,11 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views with shared De
    }
   }
   for(const [path,target] of [
-   ['/clubs/it/1/?view=stats&season=2&matchday=7','/clubs/it/1/stats?season=2&matchday=7'],
+   ['/clubs/it/1/?view=stats&season=2&matchday=7','/clubs/it/1/records?season=2&matchday=7'],
    ['/clubs/it/1/index.html?view=fixtures&season=3','/clubs/it/1/fixtures?season=3'],
    ['/clubs/it/1/overview?season=2&matchday=5','/clubs/it/1/overview'],
    ['/clubs/it/1/history/?season=3','/clubs/it/1/history'],
-   ['/clubs/br/40/stats/?season=2','/clubs/br/40/stats?season=2']]){
+   ['/clubs/br/40/stats/?season=2','/clubs/br/40/records?season=2']]){
     const page=await get(path);assert.equal(page.status,308);assert.equal(page.location,target);
   }
   for(const path of ['/clubs/it/41/overview','/clubs/it/1/wrong','/clubs/it/01','/app/clubs/it/1'])assert.equal((await get(path)).status,404);
@@ -140,7 +140,7 @@ test('CLUB-01 public rewrites cover exactly the declared IDs and five subpages',
  assert.ok(rule);
  const pattern=rule.source.replace(':country(it|eng|es|de|fr|pt|nl|br)','(?<country>it|eng|es|de|fr|pt|nl|br)')
   .replace(':club([1-9]|[1-3][0-9]|40)','(?<club>[1-9]|[1-3][0-9]|40)')
-  .replace(':view(overview|roster|fixtures|stats|history)','(?<view>overview|roster|fixtures|stats|history)');
+  .replace(':view(overview|roster|fixtures|records|history)','(?<view>overview|roster|fixtures|records|history)');
  const regex=new RegExp('^'+pattern+'$');
  for(const c of clubs)for(const view of clubViews)assert.ok(regex.test(clubSubpage(c.countryId.toLowerCase(),String(c.clubId),view)));
  for(const path of ['/clubs/it/01/overview','/clubs/it/41/overview','/clubs/it/1/wrong','/clubs/xx/1/overview','/clubs/it/1/overview/'])assert.equal(regex.test(path),false);
@@ -151,7 +151,7 @@ test('CLUB-01 public legacy redirects converge for all 320 clubs',()=>{
  const compile=source=>new RegExp('^'+source
   .replace(':country(it|eng|es|de|fr|pt|nl|br)','(?<country>it|eng|es|de|fr|pt|nl|br)')
   .replace(':club([1-9]|[1-3][0-9]|40)','(?<club>[1-9]|[1-3][0-9]|40)')
-  .replace(':view(overview|roster|fixtures|stats|history)','(?<view>overview|roster|fixtures|stats|history)')+'$');
+  .replace(':view(overview|roster|fixtures|records|history)','(?<view>overview|roster|fixtures|records|history)')+'$');
  const clubRules=redirects.filter(r=>r.source.startsWith('/clubs/')).map(rule=>({...rule,regex:compile(rule.source)}));
  const target=(path,view=null)=>{
   for(const rule of clubRules){
