@@ -81,8 +81,8 @@
     document.addEventListener('pointerdown',event=>{
       if(control.contains(event.target))return;
       if(!menu.hidden)close();
-    },true);
-    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu.hidden){event.preventDefault();close(true)}});
+    },{capture:true,signal:config.signal});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu.hidden){event.preventDefault();close(true)}},{signal:config.signal});
     return {close,update(next){close();options=next;active=0;bindOptions();if(search){search.value='';filter();}},sync(value){trigger.value=value;options.forEach(option=>option.setAttribute('aria-selected',String(option.dataset.menuValue===value)))}};
   };
   const tablist=document.querySelector(".app-competition-tabs");

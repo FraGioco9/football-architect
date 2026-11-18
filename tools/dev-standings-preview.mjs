@@ -268,7 +268,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         const params=new URL(req.url,"http://localhost").searchParams;
         const base=clubPath===clubRoute.base||clubPath===clubRoute.base+"/";
         const view=base&&clubViews.includes(params.get("view"))?params.get("view"):clubRoute.view;
-        params.delete("view");
+        if(base||view!=="roster")params.delete("view");
         if(view==="overview"||view==="history"){params.delete("season");params.delete("matchday");}
         const target=clubRoute.base+"/"+view+(params.size?"?"+params:"");
         if(req.url!==target){

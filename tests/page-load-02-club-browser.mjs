@@ -64,10 +64,14 @@ try{
  const manifest=JSON.parse(readFileSync(new URL('../clubs/_shared/manifest.json',import.meta.url),'utf8'));
  // The Overview color footprints must be identical before/after hydration
  // at the supported responsive widths, not just on the 390px baseline.
- for(const [country,id,view,width] of [
+ for(const [country,id,view,width,rosterQuery] of [
   ['br',1,'overview',320],['br',1,'overview',390],
   ['br',1,'overview',768],['br',1,'overview',1440],
-  ['it',17,'roster',390],['it',40,'fixtures',390],
+  ['it',17,'roster',390,'?view=attributes&group=technical'],
+  ['it',17,'roster',320,'?view=attributes&group=goalkeeping'],
+  ['it',17,'roster',390,'?view=stats&competition=domestic'],
+  ['it',17,'roster',1440,'?view=stats&competition=international'],
+  ['it',40,'fixtures',390],
   ['eng',33,'stats',390],['br',40,'history',390]
  ]){
   const page=await browser.newPage({viewport:{width,height:900}});
@@ -84,9 +88,9 @@ try{
   };
   await page.route(held,handler);
   try{
-   await page.goto(origin+'/clubs/'+country+'/'+id+'/'+view+(view==='roster'?'?view=technical':''),{waitUntil:'domcontentloaded'});
+   await page.goto(origin+'/clubs/'+country+'/'+id+'/'+view+(rosterQuery||''),{waitUntil:'domcontentloaded'});
    await page.waitForFunction(()=>document.documentElement.dataset.clubShellReady==='true');
-   if(view==='roster')assert.equal(new URL(page.url()).search,'','first paint strips a stale subview before the manifest resolves');
+   if(view==='roster')assert.equal(new URL(page.url()).search,rosterQuery,'first paint preserves Stats/Attributes deep links');
    assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.app-main')).paddingTop),
     '8px','Club page top padding is 8px at first paint for '+view+' '+width+'px');
    const identity=manifest.clubs.find(c=>c.countryId===country.toUpperCase()&&c.clubId===id);
@@ -390,10 +394,60 @@ try{
 
     for(const field of ['nameLabel','city','country'])assert.equal(initial.values.find(x=>x.key===field)?.text,'','field remains empty before catalog: '+field);
    }
+   // Parser-time Roster must have the same header count/order and table
+   // geometry as the asynchronously rendered model (including direct reload).
+   let firstPaintRoster=null;
+   const rosterLayout=selector=>page.evaluate(selector=>{
+    const roster=document.querySelector(selector),table=roster?.querySelector('table');
+    if(!table)return null;
+    const columns=[...table.querySelectorAll('thead th')],style=getComputedStyle(table);
+    const count=roster.querySelectorAll('.app-players-loading-row').length;
+    return {visible:getComputedStyle(roster).display!=='none',mode:roster.dataset.rosterMode,
+     keys:columns.map(col=>col.querySelector('[data-club-roster-sort]')?.dataset.clubRosterSort),
+     labels:columns.map(col=>col.querySelector('.app-players-sort-label')?.textContent.trim()),
+     widths:columns.map(col=>col.getBoundingClientRect().width),
+     colCount:table.querySelectorAll('colgroup col').length,
+     loading:count,spans:[...table.querySelectorAll('tbody td[colspan]')].map(cell=>cell.colSpan),
+     tooltipCount:roster.querySelectorAll('[data-roster-stat-help]').length,
+     value:roster.querySelector('[data-club-roster-control] button span')?.textContent.trim(),
+     identityWidths:['--app-players-flag-width','--app-players-name-width','--app-players-positions-width'].map(name=>parseFloat(style.getPropertyValue(name)))
+    };
+   },selector);
+   if(view==='roster'){
+    firstPaintRoster=await rosterLayout('.club-first-paint-roster');
+    const statsKeys=['nationality','name','positions','appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating'];
+    const technical=['nationality','name','positions','passing','technique','dribbling','shooting','crossing','tackling','marking','heading'];
+    const goalkeeper=['nationality','name','positions','gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
+    const expected=rosterQuery.includes('view=stats')?statsKeys:
+     rosterQuery.includes('group=goalkeeping')?goalkeeper:technical;
+    assert.ok(firstPaintRoster?.visible,'selected Roster scaffold visible before identity read');
+    assert.deepEqual(firstPaintRoster.keys,expected,'first-paint '+rosterQuery+' columns match hydrated ordering');
+    assert.equal(firstPaintRoster.colCount,expected.length,'colgroup reserves every column before API');
+    assert.equal(firstPaintRoster.loading,5,'five full-height pending rows before API');
+    assert.ok(firstPaintRoster.spans.every(x=>x===expected.length),'loading colspan matches final table width');
+    assert.ok(firstPaintRoster.identityWidths.every((x,i)=>Math.abs(firstPaintRoster.widths[i]-x)<2),
+     'fixed Flag/Player/Positions tracks match their actual shared width at '+width+'px');
+    if(rosterQuery.includes('view=stats')){
+     assert.equal(firstPaintRoster.tooltipCount,9,'first-paint Stats has all nine help triggers');
+     assert.equal(firstPaintRoster.value,rosterQuery.endsWith('international')?'International':'Domestic');
+     assert.ok(firstPaintRoster.widths[3]>firstPaintRoster.widths[5]&&
+      firstPaintRoster.widths[7]>firstPaintRoster.widths[8],
+      'first-paint Stats reserves weighted numeric column widths at '+width+'px');
+    }
+   }
    const asset=manifest.clubCrests[country.toUpperCase()+'-'+id];
    assert.equal(await page.locator('.club-header .app-club-crest-image').count(),0,'no crest URL is loaded before catalog');
    release();
    await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true');
+   if(view==='roster'){
+    await page.waitForFunction(()=>!!document.querySelector('.club-roster:not(.club-first-paint-roster) table'));
+    const loaded=await rosterLayout('.club-roster:not(.club-first-paint-roster)');
+    assert.deepEqual(loaded.keys,firstPaintRoster.keys,'first-paint/hydrated column identities stay stable');
+    assert.equal(loaded.colCount,firstPaintRoster.colCount,'first-paint/hydrated colgroup parity');
+    for(let i=0;i<3;i++)
+     assert.ok(Math.abs(loaded.widths[i]-firstPaintRoster.widths[i])<2,
+      'shared identity column '+i+' does not move during hydration');
+   }
    const final=await page.evaluate(()=>({
     header:window.clubFirstPaintNodes.header===document.querySelector('#club-page > .club-header'),
     title:window.clubFirstPaintNodes.title===document.querySelector('#club-title'),
