@@ -63,7 +63,8 @@ function finish(state,record,duration){
   state.subs>5+(duration===120?1:0))reject('headcount/sub limit');
  const inPlay=[...state.windows].filter(m=>m!==45&&m!==105);
  if(inPlay.length>3||state.windows.has(105)&&duration!==120||
-  state.pending.size)reject('window/unpaired final pass');
+  state.pending.size||[...state.on.values()].filter(r=>r==='GK').length!==1)
+  reject('window/unpaired final pass or keeper');
  const derived=[...state.people.values()].map(p=>({
   playerId:p.playerId,role:p.role,started:p.started,
   minutes:p.minutes,goals:p.goals,assists:p.assists,redCards:p.redCards,
@@ -93,7 +94,7 @@ export function validateRecordedMatchTimelineV1(result){
    ...rec.bench.map(x=>x.playerId)
   ]){if(all.has(id))reject('cross-side actor');all.add(id)}
  }
- const goals={home:0,away:0};
+ const goals={home:0,away:0},goalIds=new Set();
  let priorMinute=0;
  for(const [ordinal,event]of result.events.entries()){
   const name=event?.side;
@@ -124,8 +125,7 @@ export function validateRecordedMatchTimelineV1(result){
    state.on.delete(event.playerId);
    state.people.get(event.playerId).redCards++;
   }else if(event.type==='role_change'){
-   if(!on(event.playerId)||event.fromRole!=='GK'&&
-    event.fromRole!==state.on.get(event.playerId)||
+   if(!on(event.playerId)||event.fromRole!==state.on.get(event.playerId)||
     event.toRole!=='GK'||event.reason!=='emergency_goalkeeper'||
     [...state.on.values()].includes('GK'))reject('emergency goalkeeper');
    close(state,event.playerId,event.minute);
@@ -161,6 +161,7 @@ export function validateRecordedMatchTimelineV1(result){
     !event.goalId.startsWith(name+':')||
     !['open_play_solo','open_play_pass'].includes(event.creation))
     reject('goal scorer/creation');
+   if(goalIds.has(event.goalId))reject('duplicate goal ID');goalIds.add(event.goalId);
    const pending=state.pending.get(event.goalId);
    if(event.creation==='open_play_pass'){
     if(!pending||pending.minute!==event.minute||pending.to!==event.playerId||
