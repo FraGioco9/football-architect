@@ -422,7 +422,21 @@
      const response=await fetch('/api/clubs/'+clubKey+'/roster'+suffix,{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal,headers:{Accept:'application/json'}});
      if(!response.ok){const error=Error('roster_http_'+response.status);error.status=response.status;throw error;}
      const data=await response.json();
-     if(stats&&(!Number.isSafeInteger(data?.season)||data.season<0||!data.players?.every(p=>p.stats===null||['appearances','starts','minutes','goals'].every(k=>Number.isSafeInteger(p.stats?.[k])&&p.stats[k]>=0))))throw Error('invalid_roster_stats');
+     if(stats){
+      const count=v=>Number.isSafeInteger(v)&&v>=0;
+      const nullableCount=v=>v===null||count(v);
+      const nullableRate=v=>v===null||typeof v==='number'&&Number.isFinite(v)&&v>=0;
+      const validStats=s=>s===null||!!s&&
+       ['appearances','starts','minutes','goals','ratedAppearances'].every(k=>count(s[k]))&&
+       ['subAppearances','assists','cleanSheets','redCards'].every(k=>nullableCount(s[k]))&&
+       ['averageRating','goalsAssistsPer90'].every(k=>nullableRate(s[k]));
+      if(!Number.isSafeInteger(data?.season)||data.season<0||
+       !Array.isArray(data?.competitions)||!data.competitions.every(id=>typeof id==='string')||
+       !Array.isArray(data?.players)||!data.players.every(p=>validStats(p.stats)&&
+        p.competitionStats&&typeof p.competitionStats==='object'&&
+        data.competitions.every(id=>validStats(p.competitionStats[id]))))
+       throw Error('invalid_roster_stats');
+     }
      if(data?.clubKey!==clubKey||!Number.isSafeInteger(data.count)||data.count<0||
       !Array.isArray(data.players)||data.players.length!==data.count||
       data.players.some((p,i)=>!Number.isSafeInteger(p?.id)||p.id<1||

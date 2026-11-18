@@ -140,13 +140,14 @@
   fr:{name:'Joueur',age:'Âge',positions:'Postes',height:'Taille',foot:'Pied',nationality:'Nationalité',one:'joueur',many:'joueurs',left:'Gauche',right:'Droit',tabs:['Info'],groups:['Techniques','Mentaux','Physiques','Gardien'],empty:'Aucun joueur n’est actuellement affecté à ce club.',unavailable:'L’effectif est temporairement indisponible.',missingApi:'L’API de l’effectif manque dans cette version. Redémarrez le serveur local depuis cette branche.',loading:'Chargement de l’effectif'},
   it:{name:'Giocatore',age:'Età',positions:'Posizioni',height:'Altezza',foot:'Piede',nationality:'Nazionalità',one:'giocatore',many:'giocatori',left:'Sinistro',right:'Destro',tabs:['Info'],groups:['Tecnici','Mentali','Fisici','Portiere'],empty:'Nessun giocatore è attualmente assegnato a questo club.',unavailable:'La rosa è temporaneamente non disponibile.',missingApi:'L’API della rosa non è disponibile in questa versione. Riavvia il server locale dal branch corrente.',loading:'Caricamento rosa'}
  };
- const statKeys=['appearances','starts','minutes','goals'];
+ const statKeys=['averageRating','goals','assists','goalsAssistsPer90','cleanSheets','starts','redCards','minutes'];
+ // The eight columns match Competition > Stats > Players.
  const rosterLabels={
-  en:['Attributes','Apps','Starts','Min','Gls','Domestic','International','Not recorded'],
-  it:['Attributi','Pres','Tit','Min','Gol','Nazionali','Internazionali','Dato non registrato'],
-  de:['Attribute','Sp','Startelf','Min','Tore','National','International','Nicht erfasst'],
-  fr:['Attributs','MJ','Tit','Min','Buts','Nationales','Internationales','Non enregistré'],
-  es:['Atributos','PJ','Tit','Min','Goles','Nacionales','Internacionales','Sin registrar']
+  en:['Attributes','Rating','G','A','G+A/90','CS','XI (SUB)','RC','MIN','Domestic','International','Not recorded'],
+  it:['Attributi','Rating','G','A','G+A/90','CS','XI (SUB)','RC','MIN','Nazionali','Internazionali','Dato non registrato'],
+  de:['Attribute','Rating','G','A','G+A/90','CS','XI (SUB)','RC','MIN','National','International','Nicht erfasst'],
+  fr:['Attributs','Rating','G','A','G+A/90','CS','XI (SUB)','RC','MIN','Nationales','Internationales','Non enregistré'],
+  es:['Atributos','Rating','G','A','G+A/90','CS','XI (SUB)','RC','MIN','Nacionales','Internacionales','Sin registrar']
  };
  function rosterCompetition(params){
   const scope=params.get('competition');
@@ -199,7 +200,7 @@
   const groupIds=competitions.filter(id=>id.startsWith('int-')===(scope==='international'));
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
-   :mode==='stats'?['',w.name,w.positions,...words.slice(1,5)]:['',w.name,w.positions,w.age,w.height,w.foot];
+   :mode==='stats'?['',w.name,w.positions,...words.slice(1,9)]:['',w.name,w.positions,w.age,w.height,w.foot];
   const columns='<colgroup><col class="app-players-flag-column"><col class="app-players-name-column">'+
    '<col class="app-players-view-third-column">'+'<col>'.repeat(labels.length-3)+'</colgroup>';
   const colCount=labels.length;
@@ -212,19 +213,32 @@
    const message=ready?w.empty:snapshot?.status===404?w.missingApi:w.unavailable;
    body='<tr class="app-players-empty-row"><td colspan="'+colCount+'"><strong role="status">'+escape(message)+'</strong></td></tr>';
   }else{
-   const players=mode==='stats'&&scope!=='all'?snapshot.players.map(player=>{
-    const rows=groupIds.map(id=>player.competitionStats?.[id]);
-    const recorded=rows.length?rows.every(Boolean):competitions.length>0||!!player.stats;
-    const stats=recorded?Object.fromEntries(statKeys.map(key=>[key,rows.reduce((sum,row)=>sum+row[key],0)])):null;
-    return {...player,stats};
-   }):snapshot.players;
+   // At most one domestic and one international membership per club/season.
+   // Use each separately aggregated projection: do not add ratings or per-90 rates.
+   const players=mode==='stats'&&scope!=='all'?snapshot.players.map(player=>({
+    ...player,stats:groupIds.length===1?player.competitionStats?.[groupIds[0]]??null:null
+   })):snapshot.players;
+   const statText=(stats,key)=>{
+    const value=stats?.[key];
+    if(value===undefined||value===null)return null;
+    if(key==='averageRating')return value.toFixed(2)+' ('+stats.ratedAppearances+')';
+    if(key==='goalsAssistsPer90')return value.toFixed(2);
+    if(key==='cleanSheets')return value+' ('+stats.appearances+')';
+    if(key==='starts')return value+' ('+(stats.subAppearances??'—')+')';
+    return String(value);
+   };
+   const statCell=(stats,key)=>{
+    const value=statText(stats,key);
+    return value===null?'<td><span title="'+escape(words[11])+'" aria-label="'+escape(words[11])+'">—</span></td>'
+     :'<td>'+escape(value)+'</td>';
+   };
    body=sortedRosterPlayers(players,sort||'positions',sort?order:'desc').map(player=>{
     const id=Number(player.id),country=player.nationality;
     const code=Object.hasOwn(rosterFlags,country)?rosterFlags[country]:null;
     const flag=code?'<img class="app-players-nationality-flag" src="/assets/flags/'+escape(code)+'.svg" width="20" height="15" alt="'+escape(country)+'" title="'+escape(country)+'">':escape(country||'');
     const positions=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ');
     const value=v=>Number.isSafeInteger(v)?String(v):'—';
-    const cells=mode==='stats'?'<td>'+escape(positions||'—')+'</td>'+statKeys.map(key=>player.stats?'<td>'+value(player.stats[key])+'</td>':'<td><span title="'+words[7]+'" aria-label="'+words[7]+'">—</span></td>').join(''):mode==='attributes'
+    const cells=mode==='stats'?'<td>'+escape(positions||'—')+'</td>'+statKeys.map(key=>statCell(player.stats,key)).join(''):mode==='attributes'
      ?'<td>'+escape(positions||'—')+'</td>'+attributeKeys.map(key=>'<td>'+value(player.attributes?.[key])+'</td>').join('')
      :'<td>'+escape(positions||'—')+'</td><td>'+value(player.age)+'</td><td>'+(Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—')+'</td><td>'+escape(player.preferred_foot==='left'?w.left:player.preferred_foot==='right'?w.right:'—')+'</td>';
     return '<tr><td>'+flag+'</td><td><a class="club-roster-player-link" href="/players/'+id+'" data-mobile-name="'+escape(compactPlayerName(player.display_name))+'" aria-label="'+escape(player.display_name)+'"><span class="fa-player-full-name">'+escape(player.display_name)+'</span><span class="fa-player-short-name">'+escape(compactPlayerName(player.display_name))+'</span></a></td>'+cells+'</tr>';
@@ -243,8 +257,8 @@
    selector=fixtureUI.control('group',words[0],options.find(([key])=>key===group)[1],options,'club-roster');
   }else if(mode==='stats'){
    const labels=fixtureUI.copy[lang];
-   selector=fixtureUI.control('competition',labels.competition,scope==='all'?labels.all:words[scope==='international'?6:5],
-    [['all',labels.all],['domestic',words[5]],['international',words[6]]],'club-roster');
+   selector=fixtureUI.control('competition',labels.competition,scope==='all'?labels.all:words[scope==='international'?10:9],
+    [['all',labels.all],['domestic',words[9]],['international',words[10]]],'club-roster');
   }
   return '<section class="club-roster" aria-busy="'+pending+'" data-roster-mode="'+mode+'">'+
    '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav>'+selector+'<span class="club-roster-count"><span aria-hidden="true" class="club-roster-count-width">99 '+w.many+'</span><span>'+count+'</span></span></div>'+

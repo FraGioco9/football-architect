@@ -429,8 +429,18 @@ export async function readPublicRosterStats(db:Database,clubKey:string,season:nu
  const breakdown=data&&'breakdown' in data?data.breakdown.map(c=>({
   id:c.id,complete:c.complete,rows:new Map(c.totals.map(p=>[p.playerId,p]))
  })):[];
- function numbers(recorded:boolean,row:{appearances:number;starts:number;minutes:number;goals:number}|undefined){
-  return recorded?{appearances:row?.appearances??0,starts:row?.starts??0,minutes:row?.minutes??0,goals:row?.goals??0}:null;
+ // Preserve nullable event metrics from verified frozen receipts.
+ // Missing event coverage must never become a recorded zero.
+ function numbers(recorded:boolean,row:ReturnType<typeof clubRosterTotals>['totals'][number]|undefined){
+  if(!recorded)return null;
+  const appearances=row?.appearances??0,starts=row?.starts??0,minutes=row?.minutes??0,goals=row?.goals??0;
+  const assists=row?row.assists:0,subAppearances=row?row.subAppearances:0;
+  const cleanSheets=row?row.cleanSheets:0,redCards=row?row.redCards:0;
+  const ratedAppearances=row?.ratedAppearances??0,averageRating=row?.averageRating??null;
+  const goalsAssistsPer90=assists!==null&&minutes>0
+   ?Math.round((goals+assists)*90/minutes*100)/100:null;
+  return {appearances,starts,subAppearances,minutes,goals,assists,cleanSheets,redCards,
+   ratedAppearances,averageRating,goalsAssistsPer90};
  }
  const roster=await readPublicClubRoster(db,clubKey);
  await unchanged(db,world);
