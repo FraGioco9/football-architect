@@ -458,11 +458,20 @@ body.app-body{--app-page-pad-top:8px}
 /* System-ui's painted glyphs sit slightly above the 24px line-box center.
    Shift only placeholder paint, not the Season/Total/number text anchors.
    em-based adjustment follows responsive table typography automatically. */
-/* Align the painted bars to the visible glyphs rather than to the midpoint
-   of the font's EM rectangle. Labels and numbers have different ink centers. */
-.club-history-table .club-history-row-loading .club-history-skeleton-stat .club-fp-bar{translate:0 -0.025em}
-.club-history-table .club-history-row-loading .club-history-skeleton-label .club-fp-bar{translate:0 -0.04em}
-.club-history-table .club-history-row-loading .club-history-total-value .club-fp-bar{translate:0 -0.075em}
+/* Font-native strikeout paints a solid skeleton at the same font baseline
+   as hydrated data (including Segoe UI / system-ui / Safari). No guessed Y. */
+.club-history-table .club-history-row-loading .club-fp-bar{
+ display:inline-flex;align-items:center;justify-content:center;
+ background:transparent;translate:none;
+}
+.club-history-table .club-history-row-loading .club-fp-bar::before{
+ color:transparent;font:inherit;line-height:1.5;white-space:nowrap;
+ text-decoration-line:line-through;
+ text-decoration-color:color-mix(in srgb,var(--muted) 15%,var(--surface));
+ text-decoration-thickness:12px;text-decoration-skip-ink:none;
+}
+.club-history-table .club-history-row-loading .club-history-skeleton-label .club-fp-bar::before{content:"Season 11"}
+.club-history-table .club-history-row-loading .club-history-total-value .club-fp-bar::before{content:"Totals"}
 /* First paint and runtime pending rows reserve the actual numeric glyph
    widths, then center the bar on the same 16px track as verified data. */
 .club-history-table .club-history-row-loading .club-history-skeleton-stat .club-fp-bar[data-skeleton-sample]{
@@ -471,9 +480,7 @@ body.app-body{--app-page-pad-top:8px}
  height:12px;margin:0;
 }
 .club-history-table .club-history-row-loading .club-history-skeleton-stat .club-fp-bar[data-skeleton-sample]::before{
- content:attr(data-skeleton-sample);color:transparent;font:inherit;
-  font-variant-numeric:tabular-nums;
- line-height:1;white-space:nowrap;
+ content:attr(data-skeleton-sample);font-variant-numeric:tabular-nums;
 }
 /* Numeric bars are measured from actual sample glyphs, not ch guesses. */
 .club-history-status{margin:12px 0 0;color:var(--muted);font-size:.875rem;line-height:1.5}

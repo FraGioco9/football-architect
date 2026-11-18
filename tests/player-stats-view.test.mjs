@@ -101,14 +101,12 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-total-value'));
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading :is\(\.app-player-stats-skeleton-label,\.app-player-stats-total-value\)>\.app-skeleton-bar\{\s*align-self:center;flex:none;margin-inline:0;/,
   'Career/Season/Total skeleton bars follow the actual text flex origin');
- for(const [label,selector,shift] of [
-  ['numeric','app-player-stats-number','0.025'],
-  ['Season/Career','app-player-stats-skeleton-label','0.04'],
-  ['Total','app-player-stats-total-value','0.075']
- ])assert.match(css,new RegExp('\\.app-player-stats-table \\.app-player-stats-loading \\.'+selector+' \\.app-skeleton-bar\\{translate:0 -'+shift.replace('.','\\.')+'em\\}'),
-  'Player Stats '+label+' uses the ink-centered paint position');
- assert.match(css,/\.app-player-stats-score-heading-skeleton::after\{[^}]*translate:0 -0\.075em;/,
-  'neutral goals/clean-sheets heading receives the same optical correction');
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar::before\{[^}]*text-decoration-line:line-through;/,
+  'Career/Season/Total and numeric Stats skeleton paint on the font baseline');
+ assert.match(css,/text-decoration-thickness:12px;text-decoration-skip-ink:none;/,
+  'Stats skeleton strokes are 12px high');
+ assert.match(css,/\.app-player-stats-score-heading-skeleton::after\{[^}]*text-decoration-line:line-through;/,
+  'neutral score heading follows its eventual text baseline');
  assert.ok(css.includes('grid-row:2;min-height:24px;width:100%;align-self:center;justify-content:center'));
  assert.match(css,/\.app-player-stats-table tr>td\.app-player-stats-number::before/);
  assert.match(css,/grid-template-rows:12px 24px/,'mobile value track accommodates the full text line');
@@ -374,7 +372,7 @@ test('#578 numeric skeletons use rendered font metrics rather than guessed width
  assert.match(css,/\.app-player-stats-table tr>td\.app-player-stats-number \.app-player-stats-value\{[^}]*justify-content:center/,
   'mobile values and skeletons use the same centered value container');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-value>\.app-skeleton-bar\[data-skeleton-sample\]\{/);
- assert.match(css,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;/);
+ assert.match(css,/content:attr\(data-skeleton-sample\);font-variant-numeric:tabular-nums;/);
   assert.match(css,/font-variant-numeric:tabular-nums;/,
    'Player skeleton samples use the same tabular digits as hydrated values');
  const history={played:'30',won:'18',drawn:'10',lost:'12',gf:'104',ga:'104',gd:'+52'};

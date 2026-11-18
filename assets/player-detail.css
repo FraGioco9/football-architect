@@ -283,9 +283,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  height:12px;margin:0;
 }
 .app-player-stats-table .app-player-stats-loading .app-player-stats-value>.app-skeleton-bar[data-skeleton-sample]::before{
- content:attr(data-skeleton-sample);color:transparent;font:inherit;
-  font-variant-numeric:tabular-nums;
- line-height:1;white-space:nowrap;
+ content:attr(data-skeleton-sample);font-variant-numeric:tabular-nums;
 }
 .app-player-stats-table [data-detail-stats-heading="5"] .app-player-stats-score-heading-skeleton{
  /* Match the hydrated header button's 28px line box. */
@@ -293,19 +291,26 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  width:20px;height:28px;margin:0;vertical-align:middle;background:transparent;
 }
 .app-player-stats-table [data-detail-stats-heading="5"] .app-player-stats-score-heading-skeleton::after{
- content:"";display:block;width:20px;height:10px;border-radius:4px;
- background:color-mix(in srgb,var(--muted) 22%,var(--surface));
- /* Paint at the visible header-letter center, not the font line-box midpoint. */
- translate:0 -0.075em;
+ content:"Gls";font:inherit;line-height:1.5;color:transparent;
+ text-decoration-line:line-through;
+ text-decoration-color:color-mix(in srgb,var(--muted) 22%,var(--surface));
+ text-decoration-thickness:10px;text-decoration-skip-ink:none;white-space:nowrap;
 }
 .app-player-stats-table .app-player-stats-loading .app-skeleton-bar{
- display:block;min-width:0;height:12px;margin:0;
+ display:inline-flex;align-items:center;justify-content:center;
+ min-width:0;height:12px;margin:0;background:transparent;translate:none;
 }
-/* The verified painted glyph centers differ for numbers, bold Season/Career,
-   and the mixed-case Total label. Only the loading paint is adjusted. */
-.app-player-stats-table .app-player-stats-loading .app-player-stats-number .app-skeleton-bar{translate:0 -0.025em}
-.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-label .app-skeleton-bar{translate:0 -0.04em}
-.app-player-stats-table .app-player-stats-loading .app-player-stats-total-value .app-skeleton-bar{translate:0 -0.075em}
+/* All bars paint on the font's native baseline, no per-browser translation.
+   Unverified sample glyphs remain transparent; only a solid stripe is seen. */
+.app-player-stats-table .app-player-stats-loading .app-skeleton-bar::before{
+ color:transparent;font:inherit;line-height:1.5;white-space:nowrap;
+ text-decoration-line:line-through;
+ text-decoration-color:color-mix(in srgb,var(--muted) 22%,var(--surface));
+ text-decoration-thickness:12px;text-decoration-skip-ink:none;
+}
+.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-career::before{content:"Career"}
+.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-season::before{content:"Season 11"}
+.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-total::before{content:"Totals"}
 /* One column, one skeleton width: Career and Season labels share the same
    70px loading bar; numeric columns share the same glyph sample per metric. */
 .app-player-stats-loading :is(.app-player-stats-skeleton-season,.app-player-stats-skeleton-career){width:70px}

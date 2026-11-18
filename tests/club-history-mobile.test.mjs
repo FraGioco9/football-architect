@@ -151,12 +151,12 @@ test('#578 Club History loading bars and verified numeric values share one 24px 
  assert.match(css,/\.club-history-table \.club-history-total-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;/);
  assert.match(css,/\.club-history-table \.club-history-row-loading :is\(\.club-history-skeleton-label,\.club-history-total-value\)>\.club-fp-bar\{\s*align-self:center;flex:none;margin-inline-start:0;/,
   'Season and Total skeletons remain anchored to the verified text center and left edge');
- for(const [label,selector,shift] of [
-  ['numeric','club-history-skeleton-stat','0.025'],
-  ['Season','club-history-skeleton-label','0.04'],
-  ['Total','club-history-total-value','0.075']
- ])assert.match(css,new RegExp('\\.club-history-table \\.club-history-row-loading \\.'+selector+' \\.club-fp-bar\\{translate:0 -'+shift.replace('.','\\.')+'em\\}'),
-  'Club History '+label+' uses its measured text ink center rather than one global offset');
+ assert.match(css,/\.club-history-table \.club-history-row-loading \.club-fp-bar::before\{[^}]*text-decoration-line:line-through;/,
+  'Club History skeleton paints on the font-native baseline');
+ assert.match(css,/text-decoration-thickness:12px;text-decoration-skip-ink:none;/,
+  'Club History skeleton strokes are 12px high');
+ for(const marker of ['club-history-skeleton-label','club-history-total-value','club-history-skeleton-stat'])
+  assert.ok(css.includes(marker),'History loading geometry reserves '+marker);
  assert.match(css,/\.club-history-chevron,\.club-history-chevron-space\{\s*position:absolute;inset-inline-start:0;top:calc\(50% - 4px\);/,
   'Club History icon placement does not shift text or skeletons');
 });
@@ -179,7 +179,7 @@ test('#578 Club History pending skeleton samples match runtime and reserve actua
   assert.ok(firstPaint.includes(mark),'parser-time pending value '+key+' matches');
  }
  assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-skeleton-stat \.club-fp-bar\[data-skeleton-sample\]\{/);
- assert.match(css,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;/);
+ assert.match(css,/content:attr\(data-skeleton-sample\);font-variant-numeric:tabular-nums;/);
  assert.doesNotMatch(css,/\[data-club-history-skeleton="played"\] \.club-fp-bar\{width:/);
  assert.match(css,/\.club-history-competition-value a\.club-history-competition-link\{line-height:1\.5;vertical-align:middle\}/,
   'the competition link leaves full glyph and underline height');
