@@ -179,6 +179,8 @@ export async function replayLineupSeasonV1(
  const state=createProgression<LineupSportingScoreV1>(evidence.snapshot,evidence.schedule);
  const days:LineupDailyEvidenceV2[]=[];
  const frozenMatches=new Map<string,FrozenLineupMatchV1>();
+ // Proof for indexed single-match reads: no two frozen fixtures share a public ID.
+ const seenPublicMatchIds=new Set<number>();
  let resultCount=0;
  for(let day=1;day<=throughDay;day++){
   const row=rows[day-1];
@@ -199,8 +201,9 @@ export async function replayLineupSeasonV1(
     if(!match)return fail();
     const frozen=await verifyFrozenLineupMatchV1(match,f,context,source,world,
      source?undefined:leagueSlots.get(f.id));
-    if(frozenMatches.has(f.id))return fail();
+    if(frozenMatches.has(f.id)||seenPublicMatchIds.has(frozen.matchId))return fail();
     frozenMatches.set(f.id,frozen);
+    seenPublicMatchIds.add(frozen.matchId);
     entries.push({fixtureId:f.id,receiptHash:frozen.receiptHash,receipt:frozen.receipt});
     dueFixtures.push({fixtureId:f.id,matchId:frozen.matchId});
     return frozen.score;
