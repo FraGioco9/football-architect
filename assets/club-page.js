@@ -326,7 +326,6 @@
    }
   });
   paint();
-  // Each roster subview is a direct URL; no intermediate Attributes tab.
   // Reuse the loaded club snapshot for category switches without another request.
   host.addEventListener('click',event=>{
    const control=event.target.closest?.('a[data-club-roster-view]');
@@ -337,21 +336,8 @@
     return;
    }
    const target=control.dataset.clubRosterView;
-   const groups={
-    info:['age','height','foot'],
-    technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],
-    mental:['vision','positioning','decisions','composure'],
-    physical:['speed','strength','stamina','agility'],
-    goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']
-   };
-   if(!Object.hasOwn(groups,target))return;
    event.preventDefault();
-   const params=new URLSearchParams(location.search);
-   params.delete('view');params.delete('group');params.set('view',target);
-   const sort=params.get('sort');
-   if(sort&&!['nationality','name','positions',...groups[target]].includes(sort)){
-    params.delete('sort');params.delete('order');
-   }
+   const params=model.rosterViewQuery(location.search,target);
    const next=location.pathname+'?'+params.toString()+location.hash;
    if(next===location.pathname+location.search+location.hash)return;
    history.pushState(null,'',next);
@@ -365,7 +351,7 @@
    if(!button||selected.view!=='roster')return;
    const key=button.dataset.clubRosterSort;
    const params=new URLSearchParams(location.search);
-   const requested=params.get('view'),group=['technical','mental','physical','goalkeeping'].includes(requested)?requested:'info';
+   const group=model.rosterView(params);
    const common=['nationality','name','positions'];
    const byView={
     info:['age','height','foot'],
@@ -645,8 +631,7 @@
     selected=next;paint(true);refreshClubHistory();refreshClubOverview();
     if(!queryOnly)refreshClubRoster();
     if(queryOnly){
-     const requested=new URLSearchParams(location.search).get('view');
-     const mode=['technical','mental','physical','goalkeeping'].includes(requested)?requested:'info';
+     const mode=model.rosterView(new URLSearchParams(location.search));
      host.querySelector('[data-club-roster-view="'+mode+'"]')?.focus({preventScroll:true});
     }else host.querySelector('.club-tabs [aria-current="page"]')?.focus({preventScroll:true});
    }

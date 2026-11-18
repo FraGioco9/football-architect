@@ -87,7 +87,7 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
   assert.match(html,/&lt;Private &amp; Name&gt;/);
   assert.match(html,/CM, DM/);
   assert.match(html,/href="\/clubs\/it\/1\/roster\?view=info"/);
-  assert.match(html,/href="\/clubs\/it\/1\/roster\?view=technical"/);
+  assert.match(html,/href="\/clubs\/it\/1\/roster\?view=attributes&amp;group=technical"/);
    assert.doesNotMatch(html,/aria-disabled="true"/);
   assert.match(html,/<div class="club-roster-view-row"><nav[^>]+class="app-competition-tabs app-players-tabs club-roster-tabs"/);
   assert.match(html,/<\/nav><span class="club-roster-count">65 /);
@@ -98,7 +98,7 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
   assert.doesNotMatch(html,/club-empty|pagination|pageSize|development_aptitude|initial_age|<h2>Roster/);
   assert.ok(html.includes('65 '),language);
   for(const [group,length] of [['technical',11],['mental',7],['physical',7],['goalkeeping',7]]){
-   const rendered=model.render(manifest,selected,language,'?view='+group,null,1,null,snapshot);
+   const rendered=model.render(manifest,selected,language,'?view=attributes&group='+group,null,1,null,snapshot);
    assert.match(rendered,/data-roster-mode="attributes"/);
    assert.match(rendered,new RegExp('data-roster-group="'+group+'"'));
    assert.match(rendered,/CM, DM/);
@@ -115,7 +115,7 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
   it:'Nessun giocatore è attualmente assegnato a questo club.'
  };
  for(const language of locales)for(const view of ['info','technical','mental','physical','goalkeeping']){
-  const empty=model.render(manifest,selected,language,'?view='+view,null,1,null,{source:'ready',clubKey:'IT-1',count:0,players:[]});
+  const empty=model.render(manifest,selected,language,(view==='info'?'?view=info':'?view=attributes&group='+view),null,1,null,{source:'ready',clubKey:'IT-1',count:0,players:[]});
   const section=empty.match(/<section class="club-roster"[^>]*>[\s\S]*?<\/section>/)?.[0];
   assert.equal(section,
    '<section class="club-roster" aria-busy="false" data-roster-mode="empty"><p class="club-roster-empty" role="status">'+emptyMessages[language]+'</p></section>',
@@ -123,7 +123,7 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
   assert.doesNotMatch(section,/<table\b|<nav\b|<button\b|<tr\b|club-roster-count|app-players-loading-row|app-players-table-scroll|0 players/);
  }
  assert.match(read('assets/club-page.css'),/\.club-roster-empty\{margin:14px 0 0;color:var\(--muted\)/);
- const pending=model.render(manifest,selected,'en','?view=technical',null,1,null,{source:'loading'});
+ const pending=model.render(manifest,selected,'en','?view=attributes&group=technical',null,1,null,{source:'loading'});
  const pendingRoster=pending.match(/<section class="club-roster"[^>]*>[\s\S]*?<\/section>/)?.[0];
  assert.equal((pendingRoster.match(/aria-disabled="true"/g)||[]).length,5);
  assert.equal((pendingRoster.match(/tabindex="-1"/g)||[]).length,5);
@@ -132,8 +132,8 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
  assert.equal((pending.match(/app-players-loading-row/g)||[]).length,5);
  assert.match(pending,/colspan="11"/);
  assert.doesNotMatch(pending,/No players are currently assigned/);
- const legacy=model.render(manifest,selected,'en','?view=attributes&group=mental',null,1,null,snapshot);
- assert.match(legacy,/data-roster-group="mental"/);
+ const legacy=model.render(manifest,selected,'en','?view=mental',null,1,null,snapshot);
+ assert.match(legacy,/data-roster-mode="overview"/);
  const failed=model.render(manifest,selected,'en','',null,1,null,{source:'unavailable'});
  assert.equal((failed.match(/aria-disabled="true"/g)||[]).length,5,'API unavailable: keep tabs disabled');
  assert.doesNotMatch(failed,/data-club-roster-view="info"[^>]*href=/);
@@ -157,17 +157,17 @@ test('CLUB-ROSTER-01 orders all assigned players by the canonical pitch position
  const ids=query=>[...render(query).matchAll(/class="club-roster-player-link" href="\/players\/(\d+)"/g)].map(m=>Number(m[1]));
  const defaultIds=players.map(p=>p.id).reverse();
  assert.deepEqual(ids('?view=info'),defaultIds,'default uses GK -> ST independent of API row order');
- assert.deepEqual(ids('?view=technical'),defaultIds,'attribute views share the same default');
+ assert.deepEqual(ids('?view=attributes&group=technical'),defaultIds,'attribute views share the same default');
  assert.deepEqual(ids('?view=info&sort=positions&order=desc'),defaultIds);
  assert.deepEqual(ids('?view=info&sort=positions&order=asc'),[...defaultIds].reverse());
  assert.deepEqual(ids('?view=info&sort=age&order=desc'),defaultIds.slice());
- assert.deepEqual(ids('?view=technical&sort=passing&order=desc'),defaultIds);
- assert.deepEqual(ids('?view=technical&sort=passing&order=asc'),players.map(p=>p.id));
+ assert.deepEqual(ids('?view=attributes&group=technical&sort=passing&order=desc'),defaultIds);
+ assert.deepEqual(ids('?view=attributes&group=technical&sort=passing&order=asc'),players.map(p=>p.id));
  assert.deepEqual(ids('?view=info&sort=passing&order=desc'),defaultIds,'invalid Info sort falls back to pitch order');
  const sorted=render('?view=info&sort=age&order=desc');
  assert.match(sorted,/data-club-roster-sort="age"/);
  assert.match(sorted,/<th scope="col" aria-sort="descending"><button type="button" class="app-players-sort-button" data-club-roster-sort="age"/);
- assert.match(render('?view=technical&sort=passing&order=asc'),/<th scope="col" aria-sort="ascending"><button type="button" class="app-players-sort-button" data-club-roster-sort="passing"/);
+ assert.match(render('?view=attributes&group=technical&sort=passing&order=asc'),/<th scope="col" aria-sort="ascending"><button type="button" class="app-players-sort-button" data-club-roster-sort="passing"/);
  assert.deepEqual(players.map(p=>p.primary_position),[...pitch].reverse(),'rendering never mutates API snapshot');
 });
 test('CLUB-ROSTER-01 keeps subview switching local and explains Worker route mismatch',()=>{

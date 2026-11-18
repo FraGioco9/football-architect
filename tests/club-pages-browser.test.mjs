@@ -710,7 +710,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run('location.search'),['history','roster'].includes(view)?'':'?season=2&matchday=7');
     }
     // A failed API response must not invent a selected subview or mutate /roster.
-    await visit('/clubs/it/1/roster?view=mental');
+    await visit('/clubs/it/1/roster?view=attributes&group=mental');
     await wait("document.querySelector('.club-roster[aria-busy=false] .app-players-empty-row')!==null");
     assert.equal(await run('location.search'),'','failed roster read stays at /roster');
     assert.equal(await run("document.querySelectorAll('.club-roster-tabs [aria-disabled=true]').length"),5);
@@ -749,22 +749,22 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await run("document.querySelector('[data-club-roster-view=technical]').click()");
-    await wait("location.search==='?view=technical'");
+    await wait("location.search==='?view=attributes&group=technical'");
     assert.equal(await run("document.querySelector('.club-roster')?.dataset.rosterMode"),'attributes');
     await run("document.querySelector('[data-club-roster-view=mental]').click()");
-    await wait("location.search==='?view=mental'");
+    await wait("location.search==='?view=attributes&group=mental'");
     assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'mental');
     await run("history.back()");
-    await wait("location.search==='?view=technical'");
+    await wait("location.search==='?view=attributes&group=technical'");
     assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'technical');
     await run("document.querySelector('[data-club-roster-sort=passing]').click()");
-    await wait("location.search==='?view=technical&sort=passing&order=desc'");
+    await wait("location.search==='?view=attributes&group=technical&sort=passing&order=desc'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'descending');
     await run("document.querySelector('[data-club-roster-sort=passing]').click()");
-    await wait("location.search==='?view=technical&sort=passing&order=asc'");
+    await wait("location.search==='?view=attributes&group=technical&sort=passing&order=asc'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'ascending');
     await run("document.querySelector('[data-club-roster-sort=passing]').click()");
-    await wait("location.search==='?view=technical'");
+    await wait("location.search==='?view=attributes&group=technical'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'none');
     await run("document.querySelector('[data-club-roster-view=info]').click()");
     await wait("location.search==='?view=info'");
@@ -776,7 +776,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     mockReadyRoster=false;
     holdRosterResponse=true;
     await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
-    await visit('/clubs/it/1/roster?view=technical');
+    await visit('/clubs/it/1/roster?view=attributes&group=technical');
     await wait("document.querySelector('.club-roster[aria-busy=true] .club-roster-tabs [aria-disabled=true]')!==null");
     const pendingTabs=await run("(()=>{const root=document.querySelector('.club-roster'),tabs=[...root.querySelectorAll('[data-club-roster-view]')],style=getComputedStyle(tabs[0]);return {count:tabs.length,disabled:tabs.filter(a=>a.getAttribute('aria-disabled')==='true').length,hrefs:tabs.filter(a=>a.hasAttribute('href')).length,focus:tabs.map(a=>a.tabIndex),opacity:style.opacity,cursor:style.cursor}})()");
     assert.equal(pendingTabs.count,5);
@@ -809,14 +809,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelector('.club-roster [aria-selected=true]')?.dataset.clubRosterView"),'info','successful response activates Info');
     assert.equal(await run("document.querySelector('.club-roster-tabs [aria-disabled=true]')"),null);
     await run("document.querySelector('[data-club-roster-view=mental]').click()");
-    await wait("location.search==='?view=mental'");
+    await wait("location.search==='?view=attributes&group=mental'");
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     // Verified API count=0: desktop and mobile render only a localized paragraph,
     // with no subviews, player count, sort buttons, or table.
     mockEmptyRoster=true;
     for(const [width,view] of [[1440,'info'],[390,'technical'],[320,'goalkeeping']]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
-     await visit('/clubs/it/1/roster?view='+view);
+     await visit('/clubs/it/1/roster'+(view==='info'?'?view=info':'?view=attributes&group='+view));
      await wait("document.querySelector('.club-roster[data-roster-mode=empty] .club-roster-empty')!==null");
      assert.equal(await run('location.search'),'','empty verified squad stays /roster');
      const emptyState=await run("(()=>{const root=document.querySelector('.club-roster'),p=root?.querySelector('p');return {text:root?.textContent.trim(),lang:document.documentElement.lang,children:root?.children.length,paragraph:p?.className,status:p?.getAttribute('role'),extras:root?.querySelector('nav,table,button,.club-roster-count,.club-roster-table-scroll'),overflow:document.documentElement.scrollWidth>innerWidth+1}})()");

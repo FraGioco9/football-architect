@@ -140,14 +140,26 @@
   fr:{name:'Joueur',age:'Âge',positions:'Postes',height:'Taille',foot:'Pied',nationality:'Nationalité',one:'joueur',many:'joueurs',left:'Gauche',right:'Droit',tabs:['Info'],groups:['Techniques','Mentaux','Physiques','Gardien'],empty:'Aucun joueur n’est actuellement affecté à ce club.',unavailable:'L’effectif est temporairement indisponible.',missingApi:'L’API de l’effectif manque dans cette version. Redémarrez le serveur local depuis cette branche.',loading:'Chargement de l’effectif'},
   it:{name:'Giocatore',age:'Età',positions:'Posizioni',height:'Altezza',foot:'Piede',nationality:'Nazionalità',one:'giocatore',many:'giocatori',left:'Sinistro',right:'Destro',tabs:['Info'],groups:['Tecnici','Mentali','Fisici','Portiere'],empty:'Nessun giocatore è attualmente assegnato a questo club.',unavailable:'La rosa è temporaneamente non disponibile.',missingApi:'L’API della rosa non è disponibile in questa versione. Riavvia il server locale dal branch corrente.',loading:'Caricamento rosa'}
  };
+ function rosterView(params){
+  if(params.get('view')!=='attributes')return 'info';
+  const group=params.get('group');
+  return Object.hasOwn(rosterGroups,group)?group:'technical';
+ }
+ function rosterViewQuery(search,view){
+  const query=new URLSearchParams(search);
+  query.set('view',view==='info'?'info':'attributes');
+  if(view==='info')query.delete('group');
+  else query.set('group',view);
+  const allowed=view==='info'?rosterSortInfo:[...rosterSortCommon,...rosterGroups[view]];
+  if(!allowed.includes(query.get('sort'))){query.delete('sort');query.delete('order');}
+  return query;
+ }
  function renderRoster(clubKey,lang,t,snapshot,search=''){
   const w=rosterWords[lang],params=new URLSearchParams(search);
-  const requested=params.get('view');
-  const group=Object.hasOwn(rosterGroups,requested)?requested:
-   requested==='attributes'&&Object.hasOwn(rosterGroups,params.get('group'))?params.get('group'):'technical';
-  const mode=Object.hasOwn(rosterGroups,requested)||requested==='attributes'?'attributes':'overview';
+  const view=rosterView(params);
+  const mode=view==='info'?'overview':'attributes',group=view==='info'?'technical':view;
   const base='/clubs/'+clubKey.split('-')[0].toLowerCase()+'/'+clubKey.split('-')[1]+'/roster';
-  const href=view=>{const query=new URLSearchParams(search);query.delete('view');query.delete('group');query.set('view',view);return base+'?'+query.toString();};
+  const href=target=>base+'?'+rosterViewQuery(search,target);
   const attributeKeys=rosterGroups[group];
   const allowedSort=mode==='attributes'?[...rosterSortCommon,...attributeKeys]:rosterSortInfo;
   const requestedSort=params.get('sort')||'';
@@ -438,5 +450,5 @@
    '<span data-club-name="compact">'+escape(c.compactName)+'</span></h1><p class="club-location">'+flag('header')+escape(c.city)+', '+escape(country)+'</p></div></header>'+tabs+
    content;
  }
- return {views,copies,route,render};
+ return {views,copies,route,render,rosterView,rosterViewQuery};
 });
