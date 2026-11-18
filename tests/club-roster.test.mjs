@@ -45,9 +45,9 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
   for(const panel of [attributes,stats])assert.match(panel,/data-club-roster-control="(?:group|competition)"[\s\S]+?<span class="club-roster-count">/);
   assert.doesNotMatch(stats,/club-roster-scope/);
   assert.equal((stats.match(/class="club-roster-player-link"/g)||[]).length,65);
-  for(const key of ['appearances','minutes','goals','assists','yellowCards','redCards','averageRating','cleanSheets','starts','goalsAssistsPer90'])
+  for(const key of ['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating'])
    assert.match(stats,new RegExp('data-club-roster-sort="'+key+'"'));
-  assert.equal((stats.match(/<th scope="col"/g)||[]).length,13,language);
+  assert.equal((stats.match(/<th scope="col"/g)||[]).length,12,language);
   assert.doesNotMatch(html,/club-empty|pagination|pageSize|development_aptitude|initial_age|<h2>Roster/);
   assert.ok(html.includes('65 '),language);
   for(const [group,length] of [['technical',11],['mental',7],['physical',7],['goalkeeping',7]]){
@@ -116,6 +116,15 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  const all=render('?view=stats');
  assert.ok(all.includes('>7.10</td>')&&all.includes('>9 (—)</td>')&&all.includes('>8</td>'));
  assert.ok(all.includes('>2</td>'),'recorded yellow cards appear');
+ const keys=[...all.matchAll(/data-club-roster-sort="([^"]+)"/g)].map(m=>m[1]);
+ assert.deepEqual(keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating']);
+ assert.ok(!keys.includes('starts'),'XI removed from the Stats UI and sort');
+ assert.ok(!all.includes('data-roster-stat-help="Starts"'));
+ assert.equal((all.match(/data-roster-stat-help="/g)||[]).length,9);
+ assert.ok(all.indexOf('data-club-roster-sort="goalsAssistsPer90"')<
+  all.indexOf('data-club-roster-sort="yellowCards"'));
+ assert.ok(all.indexOf('data-club-roster-sort="averageRating"')>
+  all.indexOf('data-club-roster-sort="cleanSheets"'));
  assert.ok(!all.includes('>7.10 (6)</td>')&&!all.includes('>0 (9)</td>'),'rating and clean sheets do not display appearance counts');
  assert.ok(!all.includes('>0.00</td>'),'unknown assists must not create a per-90 rate');
  for(const word of ['Appearances (substitute appearances)','Minutes played','Yellow cards','Average match rating','Clean sheets'])
@@ -131,7 +140,16 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  assert.ok(sorted.indexOf('href="/players/1"')<sorted.indexOf('href="/players/2"'));
  assert.ok(render('?view=stats&competition=domestic&sort=assists&order=asc').includes('aria-sort="ascending"'));
  for(const language of ['en','de','es','fr','it'])
-  assert.equal((model.render(manifest,club,language,'?view=stats',null,1,null,snapshot).match(/<th scope="col"/g)||[]).length,13);
+  assert.equal((model.render(manifest,club,language,'?view=stats',null,1,null,snapshot).match(/<th scope="col"/g)||[]).length,12);
+ const css=read('assets/club-page.css');
+ assert.match(css,/--club-roster-stat-space:calc\(100% - var\(--app-players-flag-width\) - var\(--app-players-name-width\) - var\(--app-players-positions-width\)\)/);
+ const fractions=[...css.matchAll(/--club-roster-stat-share:\.(\d+)\}/g)].map(m=>Number('0.'+m[1]));
+ assert.equal(fractions.length,9);
+ assert.ok(Math.abs(fractions.reduce((a,b)=>a+b,0)-1)<1e-9);
+ assert.match(css,/thead th:last-child\{\s*background:#305c4c;color:#effff4;font-weight:800/);
+ assert.match(css,/tbody tr:not\(\.app-players-loading-row\):not\(\.app-players-empty-row\)>td:last-child\{\s*background:#26473e;color:#e6ffed;font-weight:800/);
+ assert.match(css,/html\[data-theme="light"\].*thead th:last-child\{\s*background:#B7DCC7;color:#173F30/);
+ assert.match(css,/html\[data-theme="light"\].*tbody tr:not\(\.app-players-loading-row\):not\(\.app-players-empty-row\)>td:last-child\{\s*background:#D4EBDD;color:#174936/);
 });
 
 test('CLUB-ROSTER-01 orders all assigned players by the canonical pitch positions, and sorts each visible column',async()=>{

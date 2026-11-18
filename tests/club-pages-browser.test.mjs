@@ -739,6 +739,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }
     await run("document.querySelector('[data-club-roster-view=stats]').click()");
     await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(5)')?.textContent==='110'");
+    // Real Chromium: shared identity tracks remain fixed, nine metric columns
+    // are differentiated and the last Rating column matches Standings Pts.
+    const statsLayout=await run("(()=>{const table=document.querySelector('.club-roster-table[data-players-table-mode=stats]');const headers=[...table.querySelectorAll('thead th')];return {keys:headers.map(h=>h.querySelector('[data-club-roster-sort]')?.dataset.clubRosterSort),widths:headers.map(h=>h.getBoundingClientRect().width),theme:document.documentElement.dataset.theme,headColor:getComputedStyle(headers.at(-1)).backgroundColor,cellColor:getComputedStyle(table.querySelector('tbody td:last-child')).backgroundColor};})()");
+    assert.deepEqual(statsLayout.keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating']);
+    assert.ok(Math.abs(statsLayout.widths[0]-54)<2&&Math.abs(statsLayout.widths[1]-248)<2&&Math.abs(statsLayout.widths[2]-200)<2,'Flag, Player, Positions unchanged');
+    assert.ok(statsLayout.widths[3]>statsLayout.widths[5]&&statsLayout.widths[7]>statsLayout.widths[8]&&statsLayout.widths[11]>statsLayout.widths[10],'numeric widths follow content');
+    assert.equal(statsLayout.headColor,statsLayout.theme==='light'?'rgb(183, 220, 199)':'rgb(48, 92, 76)');
+    assert.equal(statsLayout.cellColor,statsLayout.theme==='light'?'rgb(212, 235, 221)':'rgb(38, 71, 62)');
     for(const width of [320,1440]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===320});
      const gap=await run("document.querySelector('.club-roster-count').getBoundingClientRect().left-document.querySelector('[data-club-roster-control]').getBoundingClientRect().right");
