@@ -840,6 +840,11 @@ html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-col
 [data-standing-outcome="relegated"],.app-rules-outcome[data-outcome="relegated"]{--standing-outcome-color:#C75C61}
 html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>*:not(:nth-child(10)){background:color-mix(in srgb,var(--surface) 92%,var(--standing-outcome-color) 8%)}
 html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:first-child{box-shadow:inset 3px 0 var(--standing-outcome-color)}
+/* Ranked-row outcome bands must not suppress keyboard focus highlighting. */
+@media(min-width:621px){
+ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]:focus-within>*:not(:nth-child(10)){background:rgba(100,203,169,.075)}
+ html[data-theme="light"] .app-world-standing-table tbody tr[data-standing-outcome]:focus-within>*:not(:nth-child(10)){background:#E7F4EB}
+}
 .app-world-mobile-item[data-standing-outcome]{box-shadow:inset 3px 0 var(--standing-outcome-color);background:color-mix(in srgb,var(--surface) 92%,var(--standing-outcome-color) 8%)}
 .app-standings-legend{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;color:var(--text);font-size:12px;line-height:1.5}
 .app-standings-legend p{margin:0 0 8px;font-weight:750}
@@ -1126,39 +1131,40 @@ svg.site-chevron>path{translate:0 .5px}
 .fa-dev-stats-nav button:focus:not(:focus-visible){outline:none;box-shadow:none}
 .fa-dev-stats-nav button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .fa-dev-stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.fa-dev-stats-card.app-competition-stat-card--compact{display:grid;grid-template-rows:minmax(var(--fa-record-heading),max-content) minmax(0,1fr);gap:4px;min-width:0;padding:10px 12px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
+.fa-dev-stats-card.app-competition-stat-card--compact{display:grid;grid-template-rows:minmax(var(--fa-record-heading),max-content) 50px;gap:4px;min-width:0;padding:10px 12px;border:1px solid rgba(128,145,145,.14);border-radius:12px}
 .fa-dev-stats-card strong{display:block;font-size:clamp(1.25rem,2.5vw,1.8rem);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+/* Overview uses one stable 50px numeric track for values, empty copy and first-paint bars. */
+.fa-dev-stats-card .app-competition-stat-value{display:flex;align-items:center;align-self:stretch;height:50px;min-height:0}
 .fa-dev-stats-section{margin:0 0 20px}
-.fa-dev-stats-leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.fa-dev-stats-leader-grid{--fa-stats-row-height:60px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .fa-dev-stats-leader-card{min-width:0;border:1px solid rgba(128,145,145,.14);border-radius:12px;padding:10px 12px;background:transparent}
 .fa-dev-stats-leader-card.app-competition-stat-card--compact{padding:10px 12px;grid-template-rows:minmax(var(--fa-record-heading),max-content) minmax(0,1fr)}
+.fa-dev-stats-leader-card:is(.app-competition-stat-card--compact,.app-competition-stat-card--fluid){grid-template-rows:minmax(var(--fa-record-heading),max-content) calc(var(--fa-stats-row-height)*5) 36px}
 .fa-dev-stats-top{list-style:none;min-width:0;margin:0;padding:0}
-.fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(3.5ch,auto);align-items:center;column-gap:8px;min-width:0;min-height:38px;padding:5px 0;border-bottom:1px solid rgba(128,145,145,.2)}
+.fa-dev-stats-leader-card>.fa-dev-stats-top{height:calc(var(--fa-stats-row-height)*5)}
+.fa-dev-stats-top li{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(3.5ch,auto);align-items:center;column-gap:8px;min-width:0;height:var(--fa-stats-row-height);min-height:var(--fa-stats-row-height);box-sizing:border-box;padding:5px 0;border-bottom:1px solid rgba(128,145,145,.2)}
 .fa-dev-stats-top li:last-child{border-bottom:0}
 .fa-dev-stats-top li>strong{justify-self:end;min-width:3.5ch;max-width:100%;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:.84rem;line-height:1.3}
 .fa-dev-stats-empty{font-size:.85rem;opacity:.65}
-/* Align actual empty text with the unchanged large-value skeleton baseline. */
-/* Empty-state copy and the unchanged skeleton share the same value-row
-   vertical centre, regardless of viewport/font size or localization. */
+/* Keep the empty message in the same value track, without resizing the card. */
 .fa-dev-stats-grid .fa-dev-stats-card>.fa-dev-stats-empty{
- display:flex;align-items:center;
- min-height:calc(clamp(1.25rem,2.5vw,1.8rem) * 1.25);
+ display:flex;align-items:center;align-self:stretch;
+ height:50px;min-height:0;box-sizing:border-box;
  transform:none;
 }
 .fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
 /* Teams and Players: align empty-state copy with the first skeleton row,
    whose 48px crest slot determines its minimum height. */
 .fa-dev-stats-leader-card>.fa-dev-stats-empty{
- display:flex;align-items:center;min-height:58px;
- margin:0!important;padding:5px 0!important;
+ display:flex;align-items:center;justify-content:center;height:calc(var(--fa-stats-row-height)*5);min-height:0;box-sizing:border-box;
+ margin:0!important;padding:0!important;
  transform:none;
 }
-@media(max-width:620px){
- .fa-dev-stats-leader-card>.fa-dev-stats-empty{min-height:50px}
-}
+@media(max-width:620px){.fa-dev-stats-leader-grid{--fa-stats-row-height:52px}}
 .fa-dev-stats-rank{justify-self:center;min-width:0;font-size:.82rem;opacity:.7;font-variant-numeric:tabular-nums;text-align:center}
 .fa-dev-stats-top .app-world-club-identity{display:flex;align-items:center;min-width:0;gap:7px}
-.fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s}
+.fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;min-height:26px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s}
+.fa-dev-stats-expand-placeholder{display:block;height:26px;margin:10px auto 0}
 .fa-dev-stats-expand:hover{opacity:1;text-decoration:underline}
 .fa-dev-stats-expand:focus,.fa-dev-stats-expand:focus-visible{outline:none;box-shadow:none}
 .fa-dev-stats-dialog{width:min(520px,calc(100vw - 32px));max-height:min(80vh,760px);overflow:auto;padding:12px 20px 20px;border:1px solid rgba(128,145,145,.3);border-radius:12px;background:var(--surface,#20292a);color:inherit;box-shadow:0 16px 48px rgba(0,0,0,.35)}
@@ -1182,6 +1188,17 @@ svg.site-chevron>path{translate:0 .5px}
 
 .fa-dev-stats-top .app-world-club-crest-placeholder{flex-shrink:0}
 .fa-dev-stats-top .fa-dev-stats-team-name{display:block;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3;font-size:.82rem;font-weight:650}
+/* Generic face crop of the original full portrait; fixed slots match first paint. */
+.fa-dev-stats-player-portrait{display:block;position:relative;overflow:hidden;isolation:isolate;width:48px;height:48px;flex:0 0 48px;border-radius:50%;background:var(--surface-raised);color:var(--muted,#839994)}
+.fa-dev-stats-player-portrait img{display:block;position:absolute;width:280%;max-width:none;height:auto;left:50%;top:0;transform:translateX(-50%)}
+.fa-dev-stats-player-portrait:not([data-portrait-state="ready"]) img{visibility:hidden}
+.fa-dev-stats-player-portrait[data-portrait-state="missing"]::before{content:"";position:absolute;left:32%;top:17%;width:36%;height:39%;border-radius:50%;background:currentColor;opacity:.65}
+.fa-dev-stats-player-portrait[data-portrait-state="missing"]::after{content:"";position:absolute;left:17%;bottom:-9%;width:66%;height:48%;border-radius:50% 50% 0 0;background:currentColor;opacity:.65}
+.fa-dev-stats-player-label{display:grid;grid-template-rows:1.3em 1.3em;align-content:center;align-items:center;row-gap:2px;min-width:0;flex:1 1 0}
+.fa-dev-stats-player-label .fa-dev-stats-team-name,.fa-dev-stats-player-label .fa-dev-stats-club-link{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fa-dev-stats-player-label .fa-dev-stats-club-link{display:block;width:100%;max-width:100%;font-size:.68rem;line-height:1.3;opacity:.7;overflow-wrap:anywhere}
+@media(max-width:620px){.fa-dev-stats-player-portrait{width:40px;height:40px;flex-basis:40px}}
+
 @media(max-width:420px){.fa-dev-stats-top li{grid-template-columns:20px minmax(0,1fr) minmax(3ch,auto);column-gap:6px}}
 
 /* UI refinement: compact Rules and international standings qualification. */
@@ -1354,7 +1371,10 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 :is(#competition-panel-stats,#competition-panel-history,#competition-panel-awards){position:relative}
 .app-competition-view-skeleton .app-skeleton-bar{width:100%;max-width:100%;margin:0}
 .app-competition-view-skeleton .app-competition-stat-value{display:flex;align-items:center;min-height:1.25em}
-.app-competition-view-skeleton .app-competition-stat-value>.app-skeleton-bar{width:5ch;height:12px}
+.app-competition-view-skeleton .fa-dev-stats-grid .app-competition-stat-value>.app-skeleton-bar{display:block;height:.95em;width:4ch;border-radius:5px}
+.app-competition-view-skeleton .fa-dev-stats-grid .fa-dev-stats-card:nth-child(1) .app-competition-stat-value>.app-skeleton-bar{width:3ch}
+.app-competition-view-skeleton .fa-dev-stats-grid .fa-dev-stats-card:nth-child(2) .app-competition-stat-value>.app-skeleton-bar{width:4ch}
+.app-competition-view-skeleton .fa-dev-stats-grid .fa-dev-stats-card:nth-child(3) .app-competition-stat-value>.app-skeleton-bar{width:4.5ch}
 /* Stats loading uses the same anonymous circular crest skeleton as Standings, not the missing-logo shield. */
 .app-view-skeleton-crest-slot{display:block;flex:0 0 48px;width:48px;height:48px;border-radius:50%;background:var(--fa-crest-skeleton-fill)}
 .app-competition-view-skeleton .fa-dev-stats-team-name{width:110px;max-width:100%;min-width:0}
@@ -1364,6 +1384,32 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 .app-competition-view-skeleton .app-view-skeleton-stats-expand{position:relative;pointer-events:none;cursor:default}
 .app-competition-view-skeleton .app-view-skeleton-stats-expand-label{visibility:hidden}
 .app-competition-view-skeleton .app-view-skeleton-stats-expand>.app-skeleton-bar{position:absolute;left:50%;top:50%;translate:-50% -50%;width:56px;height:10px}
+
+/* The loading bars match the typography/footprints of recorded Stats values.
+   Keep the circular player portrait and both identity lines in their final slots. */
+.app-competition-view-skeleton .fa-dev-stats-leader-card{--fa-stats-skeleton-value-width:3.5ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(1){--fa-stats-skeleton-value-width:8.5ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(4){--fa-stats-skeleton-value-width:5.5ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(5){--fa-stats-skeleton-value-width:7.5ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(6){--fa-stats-skeleton-value-width:7ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(8){--fa-stats-skeleton-value-width:5.5ch}
+.app-competition-view-skeleton .fa-dev-stats-team-card:nth-child(5){--fa-stats-skeleton-value-width:5ch}
+.app-competition-view-skeleton .fa-dev-stats-top li>strong{width:var(--fa-stats-skeleton-value-width);min-width:var(--fa-stats-skeleton-value-width);display:flex;align-items:center;justify-content:flex-end;min-height:1.3em}
+.app-competition-view-skeleton .fa-dev-stats-top li>strong>.app-skeleton-bar{height:.85em;border-radius:3px}
+.app-competition-view-skeleton .fa-dev-stats-top .fa-dev-stats-rank>.app-skeleton-bar{height:.8em;border-radius:3px}
+.app-competition-view-skeleton .fa-dev-stats-top .fa-dev-stats-team-name>.app-skeleton-bar{height:.83em;border-radius:3px}
+/* Simulate natural name lengths without changing row geometry or introducing randomness.
+   Every card uses the same deterministic width per rank, on desktop and mobile. */
+.app-competition-view-skeleton .fa-dev-stats-top li{--fa-stats-skeleton-player-name:15ch;--fa-stats-skeleton-club-name:11ch}
+.app-competition-view-skeleton .fa-dev-stats-top li:nth-child(2){--fa-stats-skeleton-player-name:12ch;--fa-stats-skeleton-club-name:15ch}
+.app-competition-view-skeleton .fa-dev-stats-top li:nth-child(3){--fa-stats-skeleton-player-name:18ch;--fa-stats-skeleton-club-name:13ch}
+.app-competition-view-skeleton .fa-dev-stats-top li:nth-child(4){--fa-stats-skeleton-player-name:11ch;--fa-stats-skeleton-club-name:9ch}
+.app-competition-view-skeleton .fa-dev-stats-top li:nth-child(5){--fa-stats-skeleton-player-name:16ch;--fa-stats-skeleton-club-name:14ch}
+/* The Teams view represents club names, so its bar follows the same pattern. */
+.app-competition-view-skeleton .fa-dev-stats-team-card .fa-dev-stats-team-name{width:min(var(--fa-stats-skeleton-club-name),100%)}
+.app-competition-view-skeleton .fa-dev-stats-player-label .fa-dev-stats-team-name{display:flex;align-items:center;width:min(var(--fa-stats-skeleton-player-name),100%);height:1.3em}
+.app-competition-view-skeleton .fa-dev-stats-player-label .fa-dev-stats-club-link{display:flex;align-items:center;width:min(var(--fa-stats-skeleton-club-name),100%);height:1.3em}
+.app-competition-view-skeleton .fa-dev-stats-player-label .fa-dev-stats-club-link>.app-skeleton-bar{height:.75em;border-radius:3px}
 .app-view-skeleton-record-holder{display:flex;align-items:center;min-height:48px}
 .app-view-skeleton-record-holder>.app-skeleton-bar{max-width:140px}
 .app-view-skeleton-history-archive{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
@@ -2073,3 +2119,25 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 .fa-bracket-card:has(.fa-bracket-match-link[data-fa-match-leg="1"]:focus-visible) .fa-bracket-row .fa-bracket-score:nth-child(2),
 .fa-bracket-card[data-fa-match-legs="2"]:has(.fa-bracket-match-link[data-fa-match-leg="2"]:focus-visible) .fa-bracket-row .fa-bracket-score:nth-child(3){outline:2px solid var(--focus);outline-offset:1px}
 @media(prefers-reduced-motion:reduce){.fa-bracket-score{transition:none}}
+
+/* A verified empty standings state occupies a visible region, rather than one
+   68px table row. Center the translated message within that region while
+   retaining the actual table header and the mobile/desktop shell geometry. */
+#competition-panel-standings #app-standings-body tr.app-standings-empty-row{
+ height:clamp(240px,40vh,360px);
+}
+#competition-panel-standings #app-standings-body td.app-competition-empty-row{
+ display:table-cell!important;
+ height:clamp(240px,40vh,360px);
+ vertical-align:middle;
+ padding:16px!important;
+ text-align:center;
+}
+#competition-panel-standings #app-standings-compact-list .app-world-mobile-empty{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ box-sizing:border-box;
+ min-height:clamp(240px,40vh,360px);
+ text-align:center;
+}

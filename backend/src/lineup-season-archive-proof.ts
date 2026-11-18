@@ -58,7 +58,7 @@ export function summarizeFrozenLineupPlayersV1(
  frozenMatches:ReadonlyMap<string,FrozenLineupMatchV1>
 ){
  const players=new Map<string,{
-  playerId:number;clubId:string;competitionId:string;
+  playerId:number;clubId:string;competitionId:string;name?:string|null;nationality?:string|null;
   appearances:number;starts:number;minutes:number;goals:number
  }>();
  for(const frozen of frozenMatches.values()){
@@ -71,6 +71,7 @@ export function summarizeFrozenLineupPlayersV1(
   const homeClubId=fixture.homeClubId as string;
   const awayClubId=fixture.awayClubId as string;
   const result=frozen.receipt.result as unknown as LineupMatchResultV1;
+  const identities=new Map((result.playerIdentityVersion==='player-identity-v1'?result.playerIdentities??[]:[]).map(p=>[p.playerId,p]));
   for(const side of ['home','away'] as const){
    const clubId=side==='home'?homeClubId:awayClubId;
    for(const appearance of result[side].appearances){
@@ -84,6 +85,9 @@ export function summarizeFrozenLineupPlayersV1(
      appearances:0,starts:0,minutes:0,goals:0
     };
     item.appearances++;item.starts++;item.minutes+=appearance.minutes;
+    const identity=identities.get(appearance.playerId);
+    // Do not change the JSON/hash of historical archives lacking this version.
+    if(identity){item.name=identity.name;item.nationality=identity.nationality;}
     item.goals+=appearance.goals;players.set(key,item);
    }
   }

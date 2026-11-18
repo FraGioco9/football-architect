@@ -39,7 +39,7 @@ const devServer=createServer((req,res)=>{
    return end(body,...args);
   };
  }
- const pause=req.url.includes("manifest.json")?devManifestDelay:req.url.startsWith("/assets/competition-fixtures.js")?devFixturesDelay:0;
+ const pause=req.url.includes("manifest.json")?devManifestDelay:req.url.startsWith("/assets/competition-fixtures.js")?devFixturesDelay:req.url.startsWith("/assets/clubs/")?clubCrestDelay:0;
  if(pause)setTimeout(()=>devRouter.emit("request",req,res),pause);
  else devRouter.emit("request",req,res);
 });
@@ -287,6 +287,26 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const url=origin+route;await cmd("Page.navigate",{url});
       await wait("location.pathname.replace(/\\/$/,\"\")==="+JSON.stringify(new URL(url).pathname.replace(/\/$/, ""))+"&&document.readyState==='complete'&&("+condition+")");
     };
+    // Unconfirmed public pages must not mint entrants. Preserve the existing
+    // detailed CSS/theme QA by injecting *explicitly fictional* unknown-stat
+    // DEV rows, never interpreting the static manifest as public approval.
+    const visitUnknownStandings=async(route,theme)=>{
+      await cmd("Page.navigate",{url:devOrigin+"/settings/"});
+      await wait("document.readyState==='complete'&&!!document.getElementById('theme-"+theme+"')");
+      await run("document.getElementById('theme-"+theme+"').click()");
+      await run("sessionStorage.setItem('football-architect:debug-enabled','on');"+
+        "sessionStorage.setItem('football-architect:standings-dev-season','1');"+
+        "sessionStorage.setItem('football-architect:standings-dev-matchdays','0')");
+      await cmd("Page.navigate",{url:devOrigin+route});
+      await wait("document.readyState==='complete'&&window.faDebugEnabled===true&&"+
+        "!!window.faCompetitionContext&&!!window.faCompetitionDivision&&"+
+        "!!window.faStandingsMobile&&document.documentElement.dataset.faDevStandingsPending===undefined");
+      const accepted=await run("(()=>{const c=window.faCompetitionContext;return window.faCompetitionContextApi.replaceSeasonData({"+
+        "season:c.selectedSeason,rulesVersion:c.definition.rules.version,participants:window.faCompetitionDivision.clubs,"+
+        "fixtures:null,results:[],statistics:null,status:'partial'},c.revision)})()");
+      assert.equal(accepted,true,'isolated DEV unknown-stat standings accepted for style QA');
+      await wait("document.querySelectorAll('#app-standings-body tr[data-world-club]').length===16");
+    };
     const snap=async(label,w,h)=>{
       const out=await cmd("Page.captureScreenshot",{format:"png",captureBeyondViewport:false});
       const png=Buffer.from(out.data,"base64");
@@ -329,7 +349,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(search.bg,theme==="light"?"rgb(255, 255, 255)":"rgb(20, 43, 46)",name+" search colors");
         assert.ok(search.rect[0]>=-1&&search.rect[1]<=w+1,name+" search fits");
         await snap(name+" "+theme+" search",w,h);
-        await visit("/competitions/it-1/standings","document.querySelectorAll('#app-standings-body tr').length===16");
+        await visitUnknownStandings("/competitions/it-1/standings",theme);
         const table=await run("(()=>{const t=document.querySelector('.app-world-standing-table');return {rows:document.querySelectorAll('#app-standings-body tr').length,sticky:getComputedStyle(t.querySelector('tbody tr>*:first-child')).position,head:getComputedStyle(t.querySelector('thead th')).backgroundColor,logo:document.querySelector('.app-brand-symbol')?.getAttribute('src')}})()");
         assert.equal(table.rows,16);assert.equal(table.sticky,"sticky");
         assert.equal(table.head,theme==="light"?"rgb(232, 241, 235)":"rgb(23, 45, 48)");
@@ -337,6 +357,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await snap(name+" "+theme+" standings",w,h);
         await wait("!!window.faFixtures&&document.documentElement.dataset.faStandingsLoading==='false'");
         await run("document.getElementById('competition-tab-fixtures').click()");
+        // This QA route uses a DEV season to style the unknown-stat table,
+        // so clear its independently generated DEV fixtures before checking
+        // the genuinely unscheduled shell. Public Season 0 has no entrants.
+        await run("window.faFixtures.prepare(null)()");
         assert.equal(await run("['round','previous','next'].every(id=>document.getElementById('app-fixtures-'+id).getClientRects().length===0)"),true,"no matchday controls without a schedule");
         const fixtureDivision=JSON.parse(await readFile(join(root,"competitions/_shared/manifest.json"),"utf8")).divisions.find(d=>d.id==="IT-1");
         const fixtureModel=createPreviewStandings(fixtureDivision,30).fixtures.map(game=>({...game,kickoff:null,homeGoals:null,awayGoals:null}));
@@ -364,13 +388,23 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await run("window.faFixtures.prepare(null)()");
         assert.equal(await run("document.getElementById('app-fixtures-round').getClientRects().length"),0,"removing schedule hides controls again");
         await run("document.getElementById('competition-tab-standings').click()");
+        // The fixture QA deliberately replaced the DEV schedule. Returning
+        // asynchronously to Standings may clear the synthetic style fixture;
+        // re-enter the isolated DEV route and install that fixture explicitly.
+        // Do not use unconfirmed public entrants as a fallback for visual QA.
+        await visitUnknownStandings("/competitions/it-1/standings",theme);
+        await wait("document.getElementById('competition-panel-standings')?.hidden===false&&"+
+          "document.querySelectorAll('#app-standings-body tr[data-world-club]').length===16&&"+
+          "getComputedStyle(document.querySelector('.app-world-standing-table')).visibility==='visible'");
         // UX-01B: desktop-only styling, sticky geometry and both themes.
         if(name==="desktop"){
           for(const width of [621,1024,1159,1160,1440]){
             await cmd("Emulation.setDeviceMetricsOverride",
               {width,height:h,deviceScaleFactor:1,mobile:false,screenWidth:width,screenHeight:h});
-            await wait("innerWidth==="+width);
-            const desktop=await run("(()=>{const t=document.querySelector('.app-world-standing-table'),r=t.tBodies[0].rows[0],c=r.cells,style=e=>getComputedStyle(e),head=style(t.tHead.rows[0].cells[0]),club=style(r.querySelector('.app-world-club-name')),crest=style(r.querySelector('.app-world-club-crest-placeholder')),pts=style(c[9]);const input=document.createElement('button');input.type='button';input.textContent='Focus QA';input.setAttribute('aria-label','Focus QA');c[10].append(input);const before=style(c[0]).backgroundColor,ptsBefore=pts.backgroundColor;input.focus();const focus=style(c[0]).backgroundColor,ptsAfter=style(c[9]).backgroundColor;const focused=document.activeElement===input;input.remove();return {rows:t.tBodies[0].rows.length,cells:c.length,minWidth:style(t).minWidth,headHeight:head.height,cellHeight:style(c[0]).height,pos:style(c[0]).width,clubLeft:style(c[1]).left,sticky:style(c[1]).position,clubMin:style(c[1]).minWidth,clubFont:club.fontSize,clubWeight:club.fontWeight,crestWidth:crest.width,crestHeight:crest.height,numeric:style(c[2]).textAlign,pointsAlign:pts.textAlign,pointsSize:pts.fontSize,pointsWeight:pts.fontWeight,pointsText:c[9].textContent,pointsBg:pts.backgroundColor,formAlign:style(c[10]).textAlign,focusChanged:before!==focus,focusColor:focus,pointsStable:ptsBefore===ptsAfter,focused}})()");
+            await wait("innerWidth==="+width+"&&getComputedStyle(document.querySelector('.app-world-standing-table')).visibility==='visible'");
+            await run("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))");
+            await cmd("Input.dispatchMouseEvent",{type:"mouseMoved",x:2,y:2});
+            const desktop=await run("(async()=>{const t=document.querySelector('.app-world-standing-table'),r=t.tBodies[0].rows[0],c=r.cells,style=e=>getComputedStyle(e),head=style(t.tHead.rows[0].cells[0]),club=style(r.querySelector('.app-world-club-name')),crest=style(r.querySelector('.app-world-club-crest-placeholder')),pts=style(c[9]);const input=document.createElement('button');input.type='button';input.textContent='Focus QA';input.setAttribute('aria-label','Focus QA');c[10].append(input);document.getElementById('competition-tab-standings').focus();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const previouslyFocused=r.matches(':focus-within'),before=style(c[0]).backgroundColor,ptsBefore=pts.backgroundColor;input.focus();await new Promise(resolve=>setTimeout(resolve,220));const focus=style(c[0]).backgroundColor,ptsAfter=style(c[9]).backgroundColor;const focused=document.activeElement===input,rowFocused=r.matches(':focus-within');input.remove();return {rows:t.tBodies[0].rows.length,cells:c.length,minWidth:style(t).minWidth,headHeight:head.height,cellHeight:style(c[0]).height,pos:style(c[0]).width,clubLeft:style(c[1]).left,sticky:style(c[1]).position,clubMin:style(c[1]).minWidth,clubFont:club.fontSize,clubWeight:club.fontWeight,crestWidth:crest.width,crestHeight:crest.height,numeric:style(c[2]).textAlign,pointsAlign:pts.textAlign,pointsSize:pts.fontSize,pointsWeight:pts.fontWeight,pointsText:c[9].textContent,pointsBg:pts.backgroundColor,formAlign:style(c[10]).textAlign,focusChanged:before!==focus,focusColor:focus,beforeColor:before,previouslyFocused,pointsStable:ptsBefore===ptsAfter,focused,rowFocused}})()");
             const wide=width>=1160;
             assert.equal(desktop.rows,16,"UX-01B rows "+width);
             assert.equal(desktop.cells,11,"UX-01B canonical columns "+width);
@@ -385,9 +419,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
             assert.equal(desktop.crestWidth,"48px");assert.equal(desktop.crestHeight,"48px");
             assert.equal(desktop.numeric,"center");assert.equal(desktop.pointsAlign,"center");
             assert.equal(desktop.pointsSize,"14px");assert.equal(desktop.pointsWeight,"800");
-            assert.equal(desktop.formAlign,"center");assert.equal(desktop.pointsText,"—");
+            assert.equal(desktop.formAlign,"center");
+            assert.ok(["—","0"].includes(desktop.pointsText),"explicit DEV style fixture may show unplayed zeroes or reserved unknowns");
             assert.equal(desktop.pointsBg,theme==="light"?"rgb(212, 235, 221)":"rgb(38, 71, 62)");
-            assert.ok(desktop.focused&&desktop.focusChanged&&desktop.pointsStable,"UX-01B focus "+width);
+            assert.ok(desktop.focused&&desktop.rowFocused&&!desktop.previouslyFocused&&desktop.focusChanged&&desktop.pointsStable,
+              "UX-01B focus "+width+" "+JSON.stringify({focused:desktop.focused,rowFocused:desktop.rowFocused,previouslyFocused:desktop.previouslyFocused,focusChanged:desktop.focusChanged,focusColor:desktop.focusColor,beforeColor:desktop.beforeColor,pointsStable:desktop.pointsStable}));
           }
           await cmd("Emulation.setDeviceMetricsOverride",
             {width:w,height:h,deviceScaleFactor:1,mobile:false,screenWidth:w,screenHeight:h});
@@ -409,7 +445,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           assert.equal(state.cells,11,"full table keeps all 11 columns");
           assert.equal(state.stats,8,"eight statistics retained under disclosure");
           assert.equal(state.form,0,"ordinary public standings have no invented recent form");
-          assert.equal(state.points,"—","public points remain unknown");
+          assert.ok(["—","0"].includes(state.points),"DEV style fixture may expose synthetic zeroes; public pre-kickoff QA is separate");
           assert.equal(state.logo,true,"approved IT-1 badge survives shared hydration");
           assert.equal(state.summaryTag,"SUMMARY","native keyboard/touch disclosure");
           assert.equal(state.compact,!compactExpected,"compact visibility at "+width);
@@ -465,7 +501,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           : standardRoutes;
         for(const route of gutterRoutes){
           const detail=route.startsWith("/competitions/")&&route!=="/competitions/";
-          await visit(route,detail?"document.querySelectorAll('#app-standings-body tr').length===16":"true");
+          await visit(route,detail?"!!window.faCompetitionContext":"true");
           const gutter=await run("(()=>{const scroll=document.querySelector('.fa-shell-content-scroll'),root=scroll||document.documentElement,measure=()=>scroll?scroll.clientWidth:document.body.getBoundingClientRect().width,oldWidth=measure(),probe=document.createElement('div');probe.style.cssText='height:2400px;flex:0 0 2400px;visibility:hidden';(scroll||document.body).appendChild(probe);const width=measure(),overflow=root.scrollHeight>root.clientHeight,mode=getComputedStyle(root).scrollbarGutter;probe.remove();return {mode,oldWidth,width,overflow,pageWidth:document.documentElement.scrollWidth,viewport:innerWidth}})()");
           assert.equal(gutter.mode,"stable","SCROLLBAR-GUTTER-01 "+route+" "+name+"/"+theme);
           assert.equal(gutter.width,gutter.oldWidth,"no horizontal shift "+route+" "+name+"/"+theme);
@@ -949,8 +985,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await wait("location.pathname==='/competitions/it-1/stats'&&document.readyState==='complete'&&document.querySelector('#competition-tab-stats')?.getAttribute('aria-selected')==='true'&&document.querySelectorAll('#fa-dev-stats .fa-dev-stats-card').length===3&&[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-card')].every(card=>card.getBoundingClientRect().height>0)");
       await run("sessionStorage.removeItem('football-architect:standings-dev-preview');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
       // Diagnostic-only: sample layout after two paint frames without changing the acceptance thresholds.
-      const statsGeometry=await run(" (async()=>{const settle=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const dimensions=elements=>elements.map(e=>({height:e.getBoundingClientRect().height,scroll:e.scrollHeight,client:e.clientHeight})),offset=e=>{const m=e.querySelector('.fa-dev-stats-empty');return m?Math.round(m.getBoundingClientRect().top-e.getBoundingClientRect().top):null};await settle();const overview=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-card')],overviewDim=dimensions(overview),overviewOffsets=overview.map(offset),baseline=overviewOffsets[0],overviewAligned=overview.every((c,i)=>c.isConnected&&overviewOffsets[i]===baseline);for(let attempt=0;attempt<30;attempt++){const button=document.querySelector('#fa-dev-stats [data-stats-view=\"players\"]');if(!button)throw Error('Stats Players navigation missing');if(button.getAttribute('aria-pressed')!=='true')button.click();await settle();if(button.isConnected&&button.getAttribute('aria-pressed')==='true'&&document.querySelectorAll('#fa-dev-stats .fa-dev-stats-leader-card').length===4)break;}const players=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-leader-card')],playerDim=dimensions(players),playerOffsets=players.map(offset),expected=innerWidth<=650?71:57,aligned=baseline===expected&&overviewAligned&&players.every((c,i)=>c.isConnected&&playerOffsets[i]===baseline);document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click();return {overview:overviewDim,players:playerDim,teams:document.querySelectorAll('#fa-dev-stats .fa-dev-stats-team-card').length,aligned,baseline,expected,overviewOffsets,playerOffsets}})() ");
-      assert.ok(statsGeometry.overview.length===3&&statsGeometry.players.length===4&&statsGeometry.teams===7&&(statsGeometry.aligned||(statsGeometry.overviewOffsets.every(v=>v===null)&&statsGeometry.playerOffsets.every(v=>v===statsGeometry.expected)))&&[...statsGeometry.overview,...statsGeometry.players].every(c=>c.height>=107.5&&c.scroll<=c.client+1),'Stats Overview/Players use a shared label slot and grow without clipping at '+width+' '+theme+' '+JSON.stringify(statsGeometry));
+      const statsGeometry=await run(" (async()=>{const settle=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const dimensions=elements=>elements.map(e=>({height:e.getBoundingClientRect().height,scroll:e.scrollHeight,client:e.clientHeight})),offset=e=>{const m=e.querySelector('.fa-dev-stats-empty');return m?Math.round(m.getBoundingClientRect().top-e.getBoundingClientRect().top):null};await settle();const overview=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-card')],overviewDim=dimensions(overview),overviewOffsets=overview.map(offset),baseline=overviewOffsets[0],overviewAligned=overview.every((c,i)=>c.isConnected&&overviewOffsets[i]===baseline);for(let attempt=0;attempt<30;attempt++){const button=document.querySelector('#fa-dev-stats [data-stats-view=\"players\"]');if(!button)throw Error('Stats Players navigation missing');if(button.getAttribute('aria-pressed')!=='true')button.click();await settle();if(button.isConnected&&button.getAttribute('aria-pressed')==='true'&&document.querySelectorAll('#fa-dev-stats .fa-dev-stats-leader-card').length===8)break;}const players=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-leader-card')],playerDim=dimensions(players),playerOffsets=players.map(offset),expected=innerWidth<=650?71:57,aligned=baseline===expected&&overviewAligned&&players.every((c,i)=>c.isConnected&&playerOffsets[i]===baseline);document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click();return {overview:overviewDim,players:playerDim,teams:document.querySelectorAll('#fa-dev-stats .fa-dev-stats-team-card').length,aligned,baseline,expected,overviewOffsets,playerOffsets}})() ");
+      assert.ok(statsGeometry.overview.length===3&&statsGeometry.players.length===8&&statsGeometry.teams===7&&(statsGeometry.aligned||(statsGeometry.overviewOffsets.every(v=>v===null)&&statsGeometry.playerOffsets.every(v=>v===statsGeometry.expected)))&&[...statsGeometry.overview,...statsGeometry.players].every(c=>c.height>=107.5&&c.scroll<=c.client+1),'Stats Overview/Players use a shared label slot and grow without clipping at '+width+' '+theme+' '+JSON.stringify(statsGeometry));
       const statsLabelGeometry=await run("(()=>{const nav=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')],sample=()=>{const l=document.querySelector('#fa-dev-stats .app-competition-stat-label'),c=l.parentElement,s=getComputedStyle(l),a=l.getBoundingClientRect(),b=c.getBoundingClientRect();return {family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,line:s.lineHeight,color:s.color,spacing:s.letterSpacing,caps:s.textTransform,top:Math.round((a.top-b.top)*100)/100,left:Math.round((a.left-b.left)*100)/100,slot:getComputedStyle(c).getPropertyValue('--fa-record-heading').trim()}};const teams=sample();nav[2].click();const players=sample();nav[0].click();const overview=sample();return {teams,players,overview}})()");
       for(const [view,geometry] of Object.entries(statsLabelGeometry))assert.deepEqual(geometry,historyLabelGeometry,'History and Stats '+view+' labels have identical computed typography and placement at '+width+' '+theme);
       assert.ok(Math.abs(parseFloat(historyLabelGeometry.size)-14)<.1,'Shared Stats/History label uses 14px at '+width+' '+theme);
@@ -958,8 +994,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await wait("document.querySelectorAll('#fa-dev-stats .app-competition-stat-value').length===3");
       assert.equal(await run("[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-card')].every(c=>c.getBoundingClientRect().height>=107.5&&c.scrollHeight<=c.clientHeight+1&&!!c.querySelector('.app-competition-stat-value'))"),true,'Populated Stats Overview retains visible values with flexible height at '+width+' '+theme);
       await run("document.querySelectorAll('#fa-dev-stats .fa-dev-stats-nav button')[1].click()");
-      const teamsGeometry=await run("(()=>{const cards=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-team-card')],rows=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-team-card .fa-dev-stats-top>li')];const valid=rows.every(row=>{const [rank,identity,value]=row.children;if(!rank||!identity||!value)return false;const crest=identity.querySelector('.app-world-club-crest-placeholder'),name=identity.querySelector('.fa-dev-stats-team-name');if(!crest||!name)return false;const a=rank.getBoundingClientRect(),b=identity.getBoundingClientRect(),c=value.getBoundingClientRect(),d=crest.getBoundingClientRect();const style=getComputedStyle(name);return a.right<=b.left+1&&b.right<=c.left+1&&Math.abs((d.top+d.bottom)/2-(c.top+c.bottom)/2)<4&&style.whiteSpace==='normal'&&style.textOverflow!=='ellipsis'&&row.scrollWidth<=row.clientWidth+1});const first=rows[0],name=first?.querySelector('.fa-dev-stats-team-name'),before=first?.getBoundingClientRect().height||0;let after=before;if(name){const original=name.textContent;name.textContent='A Very Long Fictional Football Club Name Repeated Across Multiple Words And Regional Identities '.repeat(3).trim();after=first.getBoundingClientRect().height;name.textContent=original;}return {cards:cards.length,rows:rows.length,valid,grows:after>before,overflow:cards.some(c=>c.scrollWidth>c.clientWidth+1),nested:cards.some(c=>getComputedStyle(c).overflowY==='auto')}})()");
-      assert.ok(teamsGeometry.cards===7&&teamsGeometry.rows>=28&&teamsGeometry.valid&&teamsGeometry.grows&&!teamsGeometry.overflow&&!teamsGeometry.nested,'Stats Teams aligned and wrapping at '+width+' '+theme+' '+JSON.stringify(teamsGeometry));
+      const teamsGeometry=await run("(()=>{const cards=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-team-card')],rows=[...document.querySelectorAll('#fa-dev-stats .fa-dev-stats-team-card .fa-dev-stats-top>li')];const valid=rows.every(row=>{const [rank,identity,value]=row.children;if(!rank||!identity||!value)return false;const crest=identity.querySelector('.app-world-club-crest-placeholder'),name=identity.querySelector('.fa-dev-stats-team-name');if(!crest||!name)return false;const a=rank.getBoundingClientRect(),b=identity.getBoundingClientRect(),c=value.getBoundingClientRect(),d=crest.getBoundingClientRect();const style=getComputedStyle(name);return a.right<=b.left+1&&b.right<=c.left+1&&Math.abs((d.top+d.bottom)/2-(c.top+c.bottom)/2)<4&&style.whiteSpace==='normal'&&style.textOverflow!=='ellipsis'&&row.scrollWidth<=row.clientWidth+1});const first=rows[0],name=first?.querySelector('.fa-dev-stats-team-name'),before=first?.getBoundingClientRect().height||0;let after=before;if(name){const original=name.textContent;name.textContent='A Very Long Fictional Football Club Name Repeated Across Multiple Words And Regional Identities '.repeat(3).trim();after=first.getBoundingClientRect().height;name.textContent=original;}return {cards:cards.length,rows:rows.length,valid,stable:Math.abs(after-before)<1,overflow:cards.some(c=>c.scrollWidth>c.clientWidth+1),nested:cards.some(c=>getComputedStyle(c).overflowY==='auto')}})()");
+      assert.ok(teamsGeometry.cards===7&&teamsGeometry.rows>=28&&teamsGeometry.valid&&teamsGeometry.stable&&!teamsGeometry.overflow&&!teamsGeometry.nested,'Stats Teams aligned with fixed-height rows at '+width+' '+theme+' '+JSON.stringify(teamsGeometry));
       for(const lang of ['en','de','es','fr','it']){
         await run("document.documentElement.lang="+JSON.stringify(lang));
         const labelCheck=await run("(()=>{const root=document.getElementById('fa-dev-stats'),select=[...root.querySelectorAll('.fa-dev-stats-nav button')],cards=[...root.querySelectorAll('.fa-dev-stats-team-card')],label=cards[0].querySelector('[data-app-i18n]');return {lang:document.documentElement.lang,labels:select.map(n=>n.textContent),heading:label.textContent,keys:cards.every(c=>c.querySelector('[data-app-i18n]')?.textContent.trim()),nonEnglish:document.documentElement.lang==='en'||select[0].textContent!=='Overview'}})()");
@@ -978,9 +1014,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       for(const country of ['DE','BR','PT']){
         // The first-paint skeleton has separate canonical crest hosts.
         // Assert both hydrated projections, independently of the decorative skeleton.
-        await visit('/competitions/'+country.toLowerCase()+'-1/standings',
-          "!!window.faFixtures&&!!document.querySelector('#competition-panel-standings>.app-world-standings')"+
-          "&&getComputedStyle(document.querySelector('#competition-panel-standings>.app-world-standings')).visibility==='visible'");
+        // Public entrants are intentionally unavailable until confirmed by
+        // Admin; crest rendering requires explicit fictional DEV identities.
+        await visitUnknownStandings('/competitions/'+country.toLowerCase()+'-1/standings','dark');
         const selector='[data-club-crest="'+country+'-1"]';
         await wait("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify('.app-world-standings '+selector)+")];return hosts.length===2&&hosts.every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)})()");
         // Preserve the strict rendering assertion below, but sample it only
@@ -1001,7 +1037,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     for(const width of [1440,390])for(const theme of ['dark','light']){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
       await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
-      await visit('/competitions/de-1/standings',"[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");
+      await visitUnknownStandings('/competitions/de-1/standings',theme);
+      await wait("[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");
       for(const refresh of [false,true]){
         if(refresh){await run('window.__crestBeforeReload=true');await cmd('Page.reload',{ignoreCache:false});await wait("window.__crestBeforeReload!==true&&document.readyState==='complete'&&[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");}
         assert.ok(await run('window.__crestLoadingFrames>0'),'Slow SVG actually exercised the loading state');

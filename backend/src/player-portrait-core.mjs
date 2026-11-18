@@ -1,7 +1,7 @@
 /** #629 — Worker/Node portable immutable player-portrait core.
  * No node:* imports, network, GitHub, image service, file exporter or AI calls.
  * The V1 SHA-256 face seed and V3 prompt match the previously owner-reviewed
- * #609 identity rule; the approved #44/#98/#145 remain untouched.
+ * #609 identity rule; historical V3 snapshots remain reproducible.
  */
 const ARCHETYPES=Object.freeze({
  'lean':'A naturally slim footballer build with a relatively narrow upper body and relaxed, modestly developed arms.',
@@ -179,4 +179,144 @@ export async function renderPortraitPromptFromSnapshot(snapshot){
     snapshot.appearance_fingerprint!==canonical.appearance_fingerprint)
   throw new TypeError('noncanonical_appearance_snapshot');
  return buildPortraitPrompt({...canonical, ...snapshot,appearance_profile:canonical.appearance_profile});
+}
+/**
+ * #646 / Step B: independently versioned V4 portrait core.
+ * The existing V3 implementation above is immutable and remains callable.
+ * All V4 prompts describe an adult male; gameplay age is deliberately ignored.
+ */
+export const V4_PORTRAIT_SCHEMA_VERSION='player-portraits-v3';
+export const V4_PORTRAIT_PROMPT_VERSION='player-portrait-v4';
+
+const V4_BODIES=Object.freeze({
+ slim:'Naturally slender upper body with narrow relaxed shoulders, slim arms and no pronounced muscle definition.',
+ 'lean-fit':'Lean, lightly trained footballer build, modest shoulders and arms, with no sculpted or prominent bulk.',
+ 'average-fit':'Normal, proportionate body with ordinary shoulders, chest and arms, a little everyday fitness but no pronounced muscular definition.',
+ sturdy:'Naturally robust, somewhat broader or stockier build; substantial but unsculpted shoulders and arms, never a fitness-model physique.',
+ muscular:'Unusually strong but believable footballer build, with visibly more developed shoulders and arms than average, never bodybuilder size or deeply carved muscles.'
+});
+export const V4_BODY_ARCHETYPES=Object.freeze(Object.keys(V4_BODIES));
+
+/** Stamina is validated but intentionally cannot increase visible muscle tone. */
+export function classifyV4AthleticBody(attributes){
+ if(!attributes||typeof attributes!=='object'||Array.isArray(attributes))
+  throw new TypeError('missing_v4_athletic_attributes');
+ for(const key of ['strength','speed','stamina','agility']){
+  const v=attributes[key];
+  if(!Number.isInteger(v)||v<1||v>99)throw new TypeError('invalid_v4_athletic_'+key);
+ }
+ const mobility=(attributes.speed+attributes.agility)/2,strength=attributes.strength;
+ let body_profile='average-fit';
+ if(strength>=82&&strength-mobility>=12)body_profile='muscular';
+ else if(strength>=72)body_profile='sturdy';
+ else if(mobility>=72&&strength<=47)body_profile='slim';
+ else if(mobility>=67&&strength<72)body_profile='lean-fit';
+ return Object.freeze({body_profile});
+}
+
+const V4_TRAIT_VARIANTS=Object.freeze({
+ face:['ordinary oval face','rounded face with fuller cheeks','long face with subtle uneven contours',
+  'soft square face','broad face with fuller lower cheeks','narrow face with gentle asymmetry',
+  'slightly rectangular face with ordinary proportions','heart-shaped face with soft contours',
+  'rounded-oval face with modest cheek definition','broad forehead with softly tapering face'],
+ complexion:['very fair complexion','fair complexion','light warm complexion','light olive complexion',
+  'olive complexion','medium golden-brown complexion','medium brown complexion','warm tan complexion',
+  'deep brown complexion','very deep brown complexion'],
+ hairColor:['black hair','dark brown hair','medium brown hair','light brown hair','dark blond hair','blond hair','auburn hair'],
+ hairTexture:['straight hair','slightly wavy hair','wavy hair','loose curly hair','tight curly hair','coily hair'],
+ hairStyle:['short practical haircut','short natural textured cut','simple low fade','medium-length everyday haircut',
+  'closely cropped practical haircut','short unstyled haircut','understated side-part haircut','grown-out short haircut'],
+ hairline:['ordinary natural hairline','slightly uneven hairline','soft widow peak','gently rounded hairline','subtly higher temples'],
+ eyes:['dark brown eyes','brown eyes','hazel eyes','amber-brown eyes','green eyes','blue-gray eyes'],
+ eyebrows:['ordinary straight eyebrows','gently arched eyebrows','full irregular eyebrows','fine uneven eyebrows',
+  'naturally uneven eyebrows','soft low-set eyebrows'],
+ nose:['straight proportionate nose','rounded nose','prominent but natural nasal bridge','broad nose',
+  'slightly asymmetric nose','soft curved nose','somewhat wider nasal tip','subtly uneven nasal bridge'],
+ jaw:['soft unsculpted jawline','rounded jawline','modest square jawline','narrow ordinary jawline',
+  'broad gently rounded jawline','slightly asymmetric lower jaw'],
+ ears:['naturally proportioned ears','slightly prominent ears','small close-set ears',
+  'one ear subtly more prominent than the other','modestly larger ears'],
+ facialHair:['clean-shaven face','light uneven stubble','sparse natural facial hair','short ordinary beard',
+  'subtle mustache and stubble','patchy short facial hair'],
+ skinDetail:['visible natural skin texture and pores','subtle freckles and natural pores',
+  'mild under-eye shadows','one small facial mole and natural skin texture',
+  'a few unretouched skin blemishes','slightly uneven skin tone','subtle asymmetrical smile lines',
+  'tiny faint eyebrow mark with natural skin texture']
+});
+const V4_TRAIT_KEYS=Object.freeze(Object.keys(V4_TRAIT_VARIANTS));
+const V4_SNAPSHOT_FIELDS=Object.freeze([
+ 'schema_version','prompt_version','player_id','nationality','secondary_nationality',
+ 'appearance_traits','appearance_fingerprint','body_profile'
+].sort());
+
+function v4IdentityInput(player){
+ if(!player||typeof player!=='object'||Array.isArray(player))
+  throw new TypeError('invalid_v4_player_record');
+ if(!Number.isSafeInteger(player.id)||player.id<1)throw new TypeError('invalid_v4_player_id');
+ if(!Object.hasOwn(COUNTRY_NAMES,player.nationality))throw new TypeError('invalid_v4_nationality');
+ const secondary=player.secondary_nationality??null;
+ if(secondary!==null&&(!Object.hasOwn(COUNTRY_NAMES,secondary)||secondary===player.nationality))
+  throw new TypeError('invalid_v4_secondary_nationality');
+ return Object.freeze({player_id:player.id,nationality:player.nationality,
+  secondary_nationality:secondary,...classifyV4AthleticBody(player.attributes)});
+}
+
+async function v4CanonicalFace(id){
+ const bytes=await hash('football-architect:portrait-identity:v4:'+id+':0');
+ const traits={};
+ for(const [i,key] of V4_TRAIT_KEYS.entries())
+  traits[key]=V4_TRAIT_VARIANTS[key][bytes[i]%V4_TRAIT_VARIANTS[key].length];
+ const signature=Array.from(await hash(JSON.stringify(traits)),v=>v.toString(16).padStart(2,'0')).join('');
+ return Object.freeze({appearance_traits:Object.freeze(traits),appearance_fingerprint:signature.slice(0,16)});
+}
+
+/** Must be called with verified frozen INITIAL physical stats; no AI/DB calls. */
+export async function buildV4PortraitSnapshotForPlayer(player){
+ const subject=v4IdentityInput(player);
+ const face=await v4CanonicalFace(subject.player_id);
+ return Object.freeze({schema_version:V4_PORTRAIT_SCHEMA_VERSION,prompt_version:V4_PORTRAIT_PROMPT_VERSION,
+  ...subject,...face});
+}
+
+/** Renderer accepts ONLY the versioned and recomputed canonical ID traits. */
+export async function renderV4PortraitPromptFromSnapshot(snapshot){
+ if(!snapshot||typeof snapshot!=='object'||Array.isArray(snapshot)||
+    snapshot.schema_version!==V4_PORTRAIT_SCHEMA_VERSION||
+    snapshot.prompt_version!==V4_PORTRAIT_PROMPT_VERSION)
+  throw new TypeError('invalid_v4_portrait_version');
+ if(Object.keys(snapshot).sort().join(',')!==V4_SNAPSHOT_FIELDS.join(',')||
+    !Number.isSafeInteger(snapshot.player_id)||snapshot.player_id<1||
+    !Object.hasOwn(COUNTRY_NAMES,snapshot.nationality)||
+    (snapshot.secondary_nationality!==null&&
+     (!Object.hasOwn(COUNTRY_NAMES,snapshot.secondary_nationality)||
+      snapshot.secondary_nationality===snapshot.nationality)))
+  throw new TypeError('invalid_v4_portrait_snapshot');
+ if(!Object.hasOwn(V4_BODIES,snapshot.body_profile))throw new TypeError('invalid_v4_body_profile');
+ if(!snapshot.appearance_traits||typeof snapshot.appearance_traits!=='object'||
+    Array.isArray(snapshot.appearance_traits))throw new TypeError('invalid_v4_portrait_traits');
+ const canonical=await v4CanonicalFace(snapshot.player_id);
+ if(snapshot.appearance_fingerprint!==canonical.appearance_fingerprint||
+    JSON.stringify(snapshot.appearance_traits)!==JSON.stringify(canonical.appearance_traits))
+  throw new TypeError('noncanonical_v4_appearance_snapshot');
+ const t=snapshot.appearance_traits;
+ const nationality='Primary nationality: '+COUNTRY_NAMES[snapshot.nationality]+'. '+
+  (snapshot.secondary_nationality?'Secondary nationality: '+COUNTRY_NAMES[snapshot.secondary_nationality]+'. ':'');
+ const face=[t.face,t.complexion,t.hairColor,t.hairTexture,t.hairStyle,t.hairline,
+  t.eyes,t.eyebrows,t.nose,t.jaw,t.ears,t.facialHair,t.skinDetail].join('; ');
+ return [
+  'Create an ultra-photorealistic official club media-day photograph of EXACTLY ONE fictional adult male association football player.',
+  nationality+'Nationality is citizenship context, NEVER ethnicity or appearance rules. Secondary nationality does not imply mixed ancestry.',
+  'BINDING INDIVIDUAL FACIAL TRAITS: '+face+'.',
+  'BINDING BODY PROFILE: '+V4_BODIES[snapshot.body_profile]+
+   ' Do not increase muscle bulk or visible definition for stamina, endurance, position or athletic stereotypes.',
+  'Show an ordinary individual selected for football ability, not physical attractiveness. Some people may naturally be attractive; never idealize or beautify.',
+  'Preserve ordinary face proportions, natural asymmetry, visible pores, unretouched skin texture and minor imperfections.',
+  'No fashion-model or fitness-model appearance, beauty lighting, cosmetic retouching, smoothened skin, perfectly symmetrical features, sculpted jaw or cheekbones, glossy editorial hair, exaggerated eyes or lips.',
+  'Wear a completely plain pure-white short-sleeved football jersey, comfortable REGULAR MATCH FIT and natural loose fabric drape. No clingy fabric sculpting muscles, no logos, crests, sponsors, numbers, stripes, colored trim, text or accessories.',
+  'Stand upright facing forward, level shoulders, relaxed arms beside the body, neutral expression and direct eye contact. Show the COMPLETE head including all hair, both shoulders and arms, torso and waist DOWN TO HIP LEVEL. Center the subject in consistent vertical 3:4 framing, never crop the head or shrink the face just to fit large hair.',
+  'COMPOSITION TARGET for publication 320 x 362 WebP: upper silhouette margin 3-8 pixels; 0-12 pixels tolerated only if hair is intact. Measured downstream with alpha >= 64/255 and at least 3 foreground pixels in the same row. Leave transparent side padding and a centered body. The source remains a complete 3:4 PNG.',
+  'Use simple balanced club media-day studio light, natural colors, realistic anatomy. Not CGI, commercial advertising, fashion editorial or glamour photography.',
+  'ONE person in ONE image. Never a group, collage, triptych, repeated face or generic attractive athlete. Preserve every canonical facial feature. Adult male is the only age instruction: ignore gameplay age and do not add age bands.',
+  'GENUINELY TRANSPARENT RGBA PNG WITH ALPHA CHANNEL. No checkerboard, painted background, scenery, floor, shadows, watermark, extra objects or text. Clean naturally antialiased hair/jersey silhouette; no red, yellow, magenta, blue or green halos, matte spill, colored fringe or glow. Outside silhouette fully transparent.'
+ ].join('\n\n');
 }

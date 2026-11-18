@@ -12,7 +12,13 @@ const freeze=value=>{if(value&&typeof value==='object'){Object.values(value).for
 export const validPublicWorld=globalThis.faWorldClockAdapter.validPublicWorld;
 export function viewedSeasonState(input){
  const w=input?.world,d=input?.data,season=input?.selectedSeason;
- if(!validPublicWorld(w)||![1,2].includes(season)||!d||season>w.seasonNumber)return null;
+ if(!validPublicWorld(w)||![1,2].includes(season)||!d)return null;
+ if(w.seasonNumber===0){
+  const state=d.seasonState;
+  return season===1&&w.phase==='unstarted'&&d.entrantsOnly===true&&
+   state?.day===0&&state.phase==='unstarted'?{day:0,phase:'unstarted'}:null;
+ }
+ if(season>w.seasonNumber)return null;
  const state=d.seasonState??(season===w.seasonNumber?{day:w.day,phase:w.phase}:null);
  if(!state||!Number.isInteger(state.day)||state.day<0||state.day>56||!['preparing','active','closed'].includes(state.phase))return null;
  if(season===w.seasonNumber)return state.day===w.day&&state.phase===w.phase?state:null;
@@ -46,16 +52,23 @@ export function validateAuthoritativeSeason(input,context,manifest){
  const {data:d,world:w,provenance:p}=input,viewed=viewedSeasonState(input);
  const entrantsOnly=d?.entrantsOnly===true;
  const authority=entrantsOnly?'confirmed-entrants-v1':'temporary-lineup-v1';
- const sourceSuffix=entrantsOnly?'entrants:':'';
- if(!viewed||![1,2].includes(w.seasonNumber)||!object(d)||d.season!==input.selectedSeason||d.rulesVersion!==definition.rules.version||input.reason!==null||
-    p?.kind!=='authoritative'||p.resultAuthority!==authority||typeof p.sourceRef!=='string'||!new RegExp('^world:'+w.generation+':season:'+d.season+':'+sourceSuffix+'[a-f0-9]{64}$').test(p.sourceRef)||
+ const zeroEntrants=w.seasonNumber===0&&entrantsOnly&&input.selectedSeason===1;
+ const scope=definition.category==='international'?'international':'domestic';
+ const sourcePrefix=zeroEntrants?
+  'world:'+w.generation+':season:0:entrants:'+scope+':':
+  'world:'+w.generation+':season:'+d.season+':'+(entrantsOnly?'entrants:':'');
+ const validSource=typeof p?.sourceRef==='string'&&p.sourceRef.startsWith(sourcePrefix)&&
+  /^[a-f0-9]{64}$/.test(p.sourceRef.slice(sourcePrefix.length));
+ if(!viewed||!(zeroEntrants||[1,2].includes(w.seasonNumber))||!object(d)||
+    d.season!==input.selectedSeason||d.rulesVersion!==definition.rules.version||input.reason!==null||
+    p?.kind!=='authoritative'||p.resultAuthority!==authority||!validSource||
     (input.status==='available')!==(viewed.phase==='closed'))fail();
  const catalog=clubCatalog(manifest),ids=d.participants;
  if(!Array.isArray(ids)||ids.length!==definition.capacity||new Set(ids).size!==ids.length||ids.some(id=>!idPattern.test(id)||!catalog.has(id))||
     definition.category==='domestic'&&ids.some(id=>!id.startsWith(definition.id.split('-')[0]+'-')))fail();
  if(entrantsOnly){
   // Membership confirmation has no schedule, result, rank or archived history.
-  if(input.status!=='partial'||viewed.phase!=='active'||viewed.day<1||viewed.day>12||
+  if(input.status!=='partial'||!(zeroEntrants?viewed.phase==='unstarted'&&viewed.day===0:viewed.phase==='active'&&viewed.day>=1&&viewed.day<=12)||
      Object.keys(d).sort().join(',')!=='entrantsOnly,participants,rulesVersion,season,seasonState'||
      !object(d.seasonState)||d.seasonState.day!==viewed.day||d.seasonState.phase!==viewed.phase)fail();
   return freeze(structuredClone(input));
@@ -99,7 +112,14 @@ export function validateAuthoritativeSeason(input,context,manifest){
      // Frozen V2 appearances may be substituted before 90'; each counted
      // appearance contributes 1..120 playing minutes, never a mandatory 90.
      !count(p.minutes)||p.minutes<p.appearances||p.minutes>120*p.appearances||
-     !count(p.goals))fail();
+     !count(p.goals)||p.displayName!==undefined&&p.displayName!==null&&
+     (typeof p.displayName!=='string'||!p.displayName.trim()))fail();
+  if(p.nationality!==undefined&&p.nationality!==null&&
+     (typeof p.nationality!=='string'||!/^[A-Z]{3}$/.test(p.nationality)))fail();
+  for(const metric of ['assists','redCards','cleanSheets'])if(p[metric]!==undefined&&p[metric]!==null&&(!count(p[metric])||metric==='cleanSheets'&&p[metric]>p.appearances))fail();
+  if(p.ratedAppearances!==undefined&&(!count(p.ratedAppearances)||p.ratedAppearances>p.appearances))fail();
+  if(p.averageRating!==undefined&&p.averageRating!==null&&
+    (typeof p.averageRating!=='number'||!Number.isFinite(p.averageRating)||p.averageRating<4||p.averageRating>10||!p.ratedAppearances))fail();
   const identity=p.clubId+':'+p.playerId;
   if(playerIdentity.has(identity))fail();playerIdentity.add(identity);
   // One player cannot appear more often than their club has played, but
@@ -165,7 +185,12 @@ export function adaptAuthoritativeSeason(source,context,manifest){
  }));
  const statistics={overview:{matchesPlayed:d.statistics.matchesPlayed,totalGoals:d.statistics.totalGoals,goalsPerMatch:d.statistics.goalsPerMatch},
   standings:d.standings.rows.map(r=>({club:catalog.get(r.clubId),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,gf:r.goalsFor,ga:r.goalsAgainst,gd:r.goalDifference,pts:r.points,recent:recentDetails(r.clubId)})),
-  teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),players:[]};
+  teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),
+  players:d.statistics.players.map(p=>({playerId:p.playerId,name:p.displayName??null,
+   clubKey:p.clubId,nationality:p.nationality??null,appearances:p.appearances,starts:p.starts,subAppearances:p.appearances-p.starts,
+   minutes:p.minutes,goals:p.goals,assists:p.assists??null,redCards:p.redCards??null,cleanSheets:p.cleanSheets??null,
+   ratedAppearances:p.ratedAppearances??0,averageRating:p.averageRating??null,
+   goalsAssistsPer90:typeof p.assists==='number'&&p.minutes>0?(p.goals+p.assists)*90/p.minutes:null}))};
  const currentChoice=viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?
   globalThis.faCompetitionRules.currentFixtureChoice(definition,globalThis.faWorldCalendarModel.projectCompetition(d.season,definition.id),{current:{season:source.world.seasonNumber,day:source.world.day}}):null;
  return freeze({season:d.season,rulesVersion:d.rulesVersion,participants,fixtures:definition.category==='international'?fixtures:fixtures.filter(f=>f.phaseId==='league'),postseason,results,statistics,status:source.status,
@@ -189,7 +214,7 @@ export function createCompetitionSeasonReadCache({limit=8}={}){
      !Number.isSafeInteger(season)||season<1||
      snapshot?.source!=='authoritative'||snapshot.worldStatus!=='ready'||
      !Number.isSafeInteger(snapshot.sourceRevision)||snapshot.sourceRevision<0||
-     !validPublicWorld(world)||season>world.seasonNumber)return null;
+     !validPublicWorld(world)||season>world.seasonNumber&&(world.seasonNumber!==0||season!==1))return null;
   return JSON.stringify([competitionId,season,snapshot.sourceRevision,
    world.generation,world.revision,world.seasonNumber,world.day,world.phase]);
  };

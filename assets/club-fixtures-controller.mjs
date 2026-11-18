@@ -1,5 +1,5 @@
 import './club-fixtures.js';
-import {readClubFixtures,attachPublishedClubMatchLinks} from './club-fixtures-source.mjs';
+import {readClubFixtures} from './club-fixtures-source.mjs';
 import {createClubPublicReadCache} from './club-public-read-cache.mjs';
 import {readClubCompetitionCatalogue} from './club-competition-catalogue.mjs';
 import './world-clock-adapter.js';
@@ -175,9 +175,8 @@ export function mountClubFixtures({host,manifest}){
     }).catch(e=>{catalogue=null;throw e;});
     const data=await catalogue;
     const result=await readClubFixtures({clubKey,season:selectedSeason,world:current.world,fetchJson:cache.read,manifest:data,signal});
-    // Keep initial verified rows visible while their published IDs are resolved.
+    // Published match IDs now arrive on the same authoritative club read.
     publish(result);
-    if(result.coverage==='complete')publish(await attachPublishedClubMatchLinks(result,{fetchJson:cache.read,signal}));
    }catch{publish({coverage:'error',rows:[],competitions:[]});}
   })();
  }

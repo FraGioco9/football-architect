@@ -4,8 +4,6 @@ import {assertEnvironmentPool} from './environment-pool.ts';
 import {requireDatabase} from './database.ts';
 import {PREVIEW_RETENTION_CRON,pruneExpiredPlayerPreviews} from './player-preview-retention.ts';
 import {parseRoute,competitionViews,clubViews} from '../../assets/routes-registry.mjs';
-import {readPublicMatchLineupV1 as readPublicMatch} from './public-match-read-lineup-v1.ts';
-import {applyPublishedMatchDocument} from '../../tools/match-first-paint.mjs';
 export interface PreviewEnv extends Env {ASSETS:Pick<typeof globalThis,'fetch'>;PREVIEW_SOURCE_SHA?:string}
 const privateHeaders={'Cache-Control':'private, no-store, max-age=0','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow','X-Content-Type-Options':'nosniff'};
 // Only eligible missing documents receive the friendly HTML; resources keep
@@ -75,25 +73,10 @@ export default {
    headers.set('X-Content-Type-Options','nosniff');headers.set('X-Robots-Tag','noindex, nofollow');
    if(target.file!.endsWith('.html')||response.status!==200)for(const [key,value] of Object.entries(privateHeaders))headers.set(key,value);
    if(env.PREVIEW_SOURCE_SHA&&/^[a-f0-9]{40}$/.test(env.PREVIEW_SOURCE_SHA))headers.set('X-FA-Source-SHA',env.PREVIEW_SOURCE_SHA);
-   // Resolve a verified match against the SAME D1 pool before returning HTML.
-   // Do not rely on JS hydration, a build-time D1 snapshot or unauthorised
-   // HTTP fan-out. Failed/unpublished lookup leaves the unchanged neutral shell.
-   if(target.file==='/matches/_shared/index.html'&&response.status===200&&request.method==='GET'){
-    const id=/^\/matches\/([1-9][0-9]*)$/.exec(url.pathname)?.[1];
-    if(id&&Number.isSafeInteger(Number(id))){
-     let published:unknown=null;
-     try{
-      await assertEnvironmentPool(env);
-      published=await readPublicMatch(requireDatabase(env.DB),id);
-     }catch{/* Unpublished, missing or stale world: never guess branding. */}
-     if(published){
-      const html=await response.text();
-      const decorated=applyPublishedMatchDocument(html,published,id);
-      headers.delete('Content-Length');headers.delete('ETag');headers.delete('Content-Encoding');
-      return new Response(decorated,{status:200,headers});
-     }
-    }
-   }
+   // Match documents must reach the browser without waiting for D1. The
+   // reserved, neutral first-paint shell is fully static; match-detail.js
+   // fetches the official identity, context and colours asynchronously.
+   // Never gate navigation on a match lookup or emit stale embedded data.
    return new Response(request.method==='HEAD'?null:response.body,{status:response.status,headers});
   }catch{return error(503,'preview_unavailable')}
  },

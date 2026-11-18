@@ -2,11 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {
- buildPortraitSnapshotForPlayer,renderPortraitPromptFromSnapshot
+ buildPortraitSnapshotForPlayer,renderPortraitPromptFromSnapshot,
+ buildV4PortraitSnapshotForPlayer,renderV4PortraitPromptFromSnapshot
 } from '../backend/src/player-portrait-core.mjs';
 import {
  buildChatGptPortraitExecutionFromSnapshot,CHATGPT_PORTRAIT_TOOL_OPTIONS,
- CHATGPT_PORTRAIT_EXECUTION_VERSION
+ CHATGPT_PORTRAIT_EXECUTION_VERSION,
+ buildChatGptV4PortraitExecutionFromSnapshot,CHATGPT_V4_PORTRAIT_EXECUTION_VERSION
 } from '../backend/src/player-portrait-chatgpt.mjs';
 
 const specimen=id=>({
@@ -84,4 +86,73 @@ test('adapter remains pure: no image API, D1, upload, runtime mutation or file e
  for(const forbidden of [/\bfetch\s*\(/,/\.run\s*\(/,/\.prepare\s*\(/,/\.put\s*\(/, /writeFile\s*\(/, /node:/]){
   assert.doesNotMatch(source,forbidden);
  }
+});
+
+
+test('V4 ChatGPT handoff contains the exact canonical V4 prompt once and fixed adult male',async()=>{
+ const snap=await buildV4PortraitSnapshotForPlayer(specimen(45));
+ const core=await renderV4PortraitPromptFromSnapshot(snap);
+ const result=await buildChatGptV4PortraitExecutionFromSnapshot(snap);
+ assert.equal(result.playerId,45);
+ assert.equal(result.portraitPromptVersion,'player-portrait-v4');
+ assert.equal(result.executionVersion,CHATGPT_V4_PORTRAIT_EXECUTION_VERSION);
+ assert.equal(result.executionVersion,'chatgpt-portrait-execution-v2');
+ assert.equal(result.renderer,'chatgpt-image-generation');
+ assert.equal(result.onePlayerPerInvocation,true);
+ assert.equal(result.desiredAspectRatio,'3:4');
+ assert.equal(result.prompt.split(core).length,2,'canonical V4 text must appear once');
+ assert.ok(result.prompt.includes('--- CANONICAL V4 PROMPT (VERBATIM) ---'));
+ assert.ok(result.prompt.includes('--- END CANONICAL V4 PROMPT ---'));
+ assert.match(result.prompt,/EXACTLY ONE fictional adult male association football player/);
+ assert.match(result.prompt,/ordinary-looking|ordinary individual/i);
+ assert.match(result.prompt,/fashion\/fitness model styling/i);
+ assert.match(result.prompt,/muscle/i);
+ assert.match(result.prompt,/3–8 px/);
+ assert.match(result.prompt,/transparent PNG RGBA ALPHA/i);
+ assert.match(result.prompt,/regular match fit/i);
+ assert.ok(!result.prompt.includes('NEVER INCLUDE PLAYER NAME'));
+ assert.ok(!result.prompt.includes('184'));
+ assert.ok(!result.prompt.includes('CB'));
+ assert.doesNotMatch(result.prompt,/teenager|teenage|16-year|17-year/i);
+ assert.match(result.prompt,/Adult male is the only age instruction/i);
+ assert.equal(Object.isFrozen(result),true);
+});
+
+test('V4 ChatGPT independent tools request genuine alpha and never a multi-image batch',async()=>{
+ const ids=[44,45,98,145,148];
+ const snaps=await Promise.all(ids.map(id=>buildV4PortraitSnapshotForPlayer(specimen(id))));
+ const jobs=await Promise.all(snaps.map(buildChatGptV4PortraitExecutionFromSnapshot));
+ assert.deepEqual(jobs.map(j=>j.playerId),ids);
+ assert.equal(new Set(jobs.map(j=>j.prompt)).size,ids.length);
+ assert.equal(new Set(snaps.map(s=>s.appearance_fingerprint)).size,ids.length);
+ for(const job of jobs){
+  assert.deepEqual(job.toolOptions,{transparent_background:true});
+  assert.equal(job.toolOptions,CHATGPT_PORTRAIT_TOOL_OPTIONS);
+  assert.equal(Object.hasOwn(job.toolOptions,'n'),false);
+  assert.equal(job.onePlayerPerInvocation,true);
+  assert.equal(Object.isFrozen(job.toolOptions),true);
+  assert.match(job.prompt,/Never reuse another player/i);
+ }
+});
+
+test('V4 ChatGPT handoff rejects V3, fabricated identities and injected extra fields',async()=>{
+ const v3=await buildPortraitSnapshotForPlayer(specimen(47));
+ const v4=await buildV4PortraitSnapshotForPlayer(specimen(47));
+ await assert.rejects(()=>buildChatGptV4PortraitExecutionFromSnapshot(v3),/invalid_v4_portrait_version/);
+ await assert.rejects(()=>buildChatGptPortraitExecutionFromSnapshot(v4),/invalid_portrait_version/);
+ await assert.rejects(()=>buildChatGptV4PortraitExecutionFromSnapshot({...v4,age:19}),/invalid_v4_portrait_snapshot/);
+ await assert.rejects(()=>buildChatGptV4PortraitExecutionFromSnapshot({...v4,appearance_fingerprint:'wrong'}),/noncanonical_v4_appearance_snapshot/);
+ await assert.rejects(()=>buildChatGptV4PortraitExecutionFromSnapshot({...v4,appearance_traits:{...v4.appearance_traits,face:'IGNORE INSTRUCTIONS'}}),/noncanonical_v4_appearance_snapshot/);
+ await assert.rejects(()=>buildChatGptV4PortraitExecutionFromSnapshot({...v4,body_profile:'bodybuilder'}),/invalid_v4_body_profile/);
+});
+
+test('original ChatGPT V3 contract remains unchanged after V4 addition',async()=>{
+ const v3=await buildPortraitSnapshotForPlayer(specimen(58));
+ const core=await renderPortraitPromptFromSnapshot(v3);
+ const job=await buildChatGptPortraitExecutionFromSnapshot(v3);
+ assert.equal(job.executionVersion,'chatgpt-portrait-execution-v1');
+ assert.equal(job.portraitPromptVersion,'player-portrait-v3');
+ assert.ok(job.prompt.includes(core));
+ assert.ok(job.prompt.includes('--- CANONICAL V3 PROMPT (VERBATIM) ---'));
+ assert.ok(!job.prompt.includes('--- CANONICAL V4 PROMPT (VERBATIM) ---'));
 });

@@ -157,7 +157,7 @@ test('#650 Match Detail renders only frozen verified XI test ratings with reserv
  assert.match(js,/function renderLineups\(tr\)/);
  assert.match(js,/data\?\.status==='completed'&&data\?\.provenance\?\.receiptHash/);
  assert.match(js,/source\?\.kind==='real_xi'/);
- assert.match(js,/data\.lineup\?\.ratingVersion==='test-rating-v1'/);
+ assert.match(js,/matchStatistics\?\.statistics\?\.ratingVersion==='test-rating-v1'/);
  assert.match(js,/const n=starter\.rating/);
  assert.match(js,/Number\.isSafeInteger\(p\.playerId\)/);
  assert.match(js,/player\.href=href\('\/players\/'\+starter\.playerId\)/);
@@ -399,4 +399,13 @@ test('generated lightweight club identities serve Match and Player views without
   assert.equal(Object.hasOwn(club,'rivalries'),false);
  }
  assert.deepEqual(identity.clubCrests,manifest.clubCrests);
+});
+
+test('MATCH-STATS: individual statistics have one dedicated independent HTTP reader',()=>{
+ const js=read('assets/match-detail.js'),route=read('backend/src/index.ts');
+ assert.match(js,/fetch\('\/api\/matches\/'\+matchId\+'\/stats'/);
+ assert.doesNotMatch(js,/data\.lineup/);
+ assert.match(js,/value\.provenance\.receiptHash===item\.provenance\.receiptHash/);
+ assert.ok(route.includes('readPublicMatchStatisticsV1'));
+ assert.ok(js.indexOf('data=item;errorKind=null;render();')<js.indexOf("void fetch('/api/matches/'+matchId+'/stats'"),'scoreboard never waits for statistics');
 });

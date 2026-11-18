@@ -139,7 +139,7 @@
    const venueLabel=row.venue==='neutral'&&t===copy.en?'Neutral':t[row.venue];
    const canOpenMatch=snapshot.source==='authoritative'&&
     (snapshot.coverage==='partial'&&row.matchId===row.id||
-     snapshot.coverage==='complete'&&snapshot.linkAuthority==='published-match-index-v1')&&
+     snapshot.coverage==='complete'&&snapshot.linkAuthority==='club-fixtures-v1')&&
     typeof row.matchId==='string'&&/^[1-9][0-9]*$/.test(row.matchId)&&
     Number.isSafeInteger(Number(row.matchId));
    const scoreText='<strong aria-label="'+esc(t.result+': '+score)+'">'+esc(score)+'</strong>';

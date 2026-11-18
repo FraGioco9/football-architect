@@ -45,7 +45,10 @@ function projectPlayer(row){
   !raw.attributes||typeof raw.attributes!=='object'||
   ATTRIBUTES.some(k=>!Number.isInteger(raw.attributes[k])||raw.attributes[k]<1||raw.attributes[k]>99))
   fail('active footballer data');
- return {id:row.id,career_status:'active',primary_position:raw.primary_position,
+ return {id:row.id,career_status:'active',
+  name:typeof raw.first_name==='string'&&raw.first_name.trim()&&typeof raw.last_name==='string'&&raw.last_name.trim()?raw.first_name.trim()+' '+raw.last_name.trim():null,
+  nationality:typeof raw.nationality==='string'&&/^[A-Z]{3}$/.test(raw.nationality)?raw.nationality:null,
+  primary_position:raw.primary_position,
   secondary_positions:[...raw.secondary_positions],
   attributes:Object.fromEntries(ATTRIBUTES.map(k=>[k,raw.attributes[k]]))};
 }
@@ -117,6 +120,12 @@ export async function planMatchSimulationReceiptV1(db,{match,world,seed,context,
   matchKey:match.fixtureId,seed,homeClubId:match.homeClubId,
   awayClubId:match.awayClubId,context
  });
+ // Identity is frozen AFTER simulation, so names never influence seeded scores.
+ const identities=new Map([...snapshot.homeRoster,...snapshot.awayRoster].map(p=>[p.id,p]));
+ outcome.playerIdentityVersion='player-identity-v1';
+ outcome.playerIdentities=[...outcome.home.appearances,...outcome.away.appearances].map(p=>({
+  playerId:p.playerId,name:identities.get(p.playerId)?.name??null,nationality:identities.get(p.playerId)?.nationality??null
+ })).sort((a,b)=>a.playerId-b.playerId);
  const candidate=await buildCandidateMatchReceiptV1({
   matchId:match.matchId,fixtureId:match.fixtureId,competitionId:match.competitionId,
   season:match.season,day:match.day,generation:world.generation,sourceHash:match.sourceHash,
