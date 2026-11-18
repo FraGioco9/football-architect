@@ -100,7 +100,7 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
   'score placeholder is painted inside the text-centered heading track');
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-total-value'));
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading :is\(\.app-player-stats-skeleton-label,\.app-player-stats-total-value\)>\.app-skeleton-bar\{\s*align-self:center;flex:none;margin-inline:0;/,
-  'Career/Season/Total skeleton bars follow their loaded text's exact flex origin');
+  'Career/Season/Total skeleton bars follow the actual text flex origin');
  assert.ok(css.includes('grid-row:2;min-height:24px;width:100%;align-self:center;justify-content:center'));
  assert.match(css,/\.app-player-stats-table tr>td\.app-player-stats-number::before/);
  assert.match(css,/grid-template-rows:12px 24px/,'mobile value track accommodates the full text line');
@@ -108,8 +108,10 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
   'competition underline renders on text only');
  assert.match(css,/@media\(min-width:621px\)\{\s*\.app-player-stats-table \.app-player-stats-competition-row \.app-player-stats-competition\{position:relative\}/,
   'Player Stats Competition uses the independent desktop centerline');
- assert.match(css,/\.app-player-stats-competition-row a\.app-player-stats-competition-link\{\s*position:absolute;inset-inline-start:18px;top:50%;transform:translateY\(-50%\);\s*display:inline-flex;align-items:center;block-size:24px;min-height:24px;/,
+ assert.match(css,/\.app-player-stats-competition-row a\.app-player-stats-competition-link\{\s*position:absolute;inset-inline-start:10px;top:50%;transform:translateY\(-50%\);\s*display:inline-flex;align-items:center;block-size:24px;min-height:24px;/,
   'Competition text uses the same 24px line as verified stats');
+ assert.match(css,/\.app-player-stats-competition-row \.app-player-stats-competition\{padding-inline-start:10px\}/,
+  'Player Stats Competition has the same text inset as its header and Total skeleton');
  assert.match(read('assets/player-stats.mjs'),/link\.append\(el\('span',competitionName\?\./,
   'competition text uses its own unclipped underline span');
  assert.match(css,/\.app-player-stats-competition-row\[hidden\]\{display:none\}/);

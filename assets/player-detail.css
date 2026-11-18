@@ -226,13 +226,13 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 }
 .app-player-stats-competition-row[hidden]{display:none}
 .app-player-stats-competition-row{background:transparent}
-.app-player-stats-competition-row .app-player-stats-competition{padding-inline-start:18px}
-/* Competition and verified numeric/club text use the same centered 24px
-   desktop line. Links and decorations must not establish row alignment. */
+.app-player-stats-competition-row .app-player-stats-competition{padding-inline-start:10px}
+/* Competition starts on the same x as the header, Total and Total skeleton;
+   its 24px centered line tracks the verified club/stat text on y. */
 @media(min-width:621px){
  .app-player-stats-table .app-player-stats-competition-row .app-player-stats-competition{position:relative}
  .app-player-stats-table .app-player-stats-competition-row a.app-player-stats-competition-link{
-  position:absolute;inset-inline-start:18px;top:50%;transform:translateY(-50%);
+  position:absolute;inset-inline-start:10px;top:50%;transform:translateY(-50%);
   display:inline-flex;align-items:center;block-size:24px;min-height:24px;
   max-inline-size:calc(100% - 28px);
  }

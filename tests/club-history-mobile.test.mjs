@@ -179,8 +179,10 @@ test('#578 Club History pending skeleton samples match runtime and reserve actua
   'the competition link leaves full glyph and underline height');
  assert.match(css,/@media\(min-width:621px\)\{\s*\.club-history-table \.club-history-competition-row \.club-history-competition-value\{position:relative\}/,
   'desktop History Competition is positioned against its own row');
- assert.match(css,/\.club-history-competition-row \.club-history-competition-value a\.club-history-competition-link\{\s*position:absolute;inset-inline-start:18px;top:50%;transform:translateY\(-50%\);\s*display:inline-flex;align-items:center;block-size:24px;min-height:24px;/,
+ assert.match(css,/\.club-history-competition-row \.club-history-competition-value a\.club-history-competition-link\{\s*position:absolute;inset-inline-start:10px;top:50%;transform:translateY\(-50%\);\s*display:inline-flex;align-items:center;block-size:24px;min-height:24px;/,
   'Competition text uses the same 24px centerline as actual stats');
+ assert.match(css,/\.club-history-table \.club-history-competition-value\{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-inline-start:10px\}/,
+  'Club History Competition starts at the same 10px text origin as Total and the header');
  assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{\s*display:inline;max-width:100%;white-space:normal;/,
   'long mobile Competition names still wrap inside their own grid row');
  assert.match(css,/a\.club-history-competition-link:is\(:hover,:focus-visible\) \.club-history-competition-text\{/,

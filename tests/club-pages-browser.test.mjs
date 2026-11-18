@@ -677,13 +677,28 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const b=range.getBoundingClientRect();return b.top+b.height/2;};
        const compCell=row.querySelector('.club-history-competition-value');
        const compBox=compCell.getBoundingClientRect();
-       const competitionTextCenter=glyphCenter(row.querySelector('.club-history-competition-text'));
+       const competitionName=row.querySelector('.club-history-competition-text');
+       const competitionRange=document.createRange();competitionRange.selectNodeContents(competitionName);
+       const competitionStart=competitionRange.getBoundingClientRect().left-compBox.left;
+       const summary=wrap.querySelector('.club-history-season-row');
+       const total=summary.querySelector('.club-history-total-value');
+       const totalCell=total.closest('td'),totalBox=totalCell.getBoundingClientRect();
+       const totalRange=document.createRange();totalRange.selectNodeContents(total);
+       const totalStart=totalRange.getBoundingClientRect().left-totalBox.left;
+       const originalTotal=total.innerHTML;
+       total.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+       summary.classList.add('club-history-row-loading');
+       const totalSkeletonStart=total.querySelector('.club-fp-bar').getBoundingClientRect().left-totalBox.left;
+       summary.classList.remove('club-history-row-loading');
+       total.innerHTML=originalTotal;
+       const competitionTextCenter=glyphCenter(competitionName);
        const numericTextCenter=glyphCenter(row.querySelector('td:nth-child(4) .club-history-stat-value'));
        const position=row.querySelector('td:nth-child(3)');
        const positionLabel=getComputedStyle(position,'::before');
        const positionLayout=getComputedStyle(position);
        const stat=row.querySelector('td:nth-child(4)');
        return {expanded:button.getAttribute('aria-expanded'),hidden:row.hidden,
+        competitionStart,totalStart,totalSkeletonStart,
         competitionTextCenter,numericTextCenter,competitionCellCenter:compBox.top+compBox.height/2,
         competitionTextPosition:getComputedStyle(link).position,
         positionLayout:positionLayout.display,positionColumns:positionLayout.gridTemplateColumns,
@@ -705,6 +720,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(expanded.linkHref,'/competitions/it-1/standings?season=777');
       if(width>620){
        assert.equal(expanded.competitionTextPosition,'absolute','History Competition is anchored to its row');
+       assert.ok(Math.abs(expanded.competitionStart-expanded.totalStart)<=1 &&
+        Math.abs(expanded.competitionStart-expanded.totalSkeletonStart)<=1,
+        'Club History Competition, Total text and first-paint Total skeleton have identical x at '+width+': '+JSON.stringify(expanded));
        assert.ok(Math.abs(expanded.competitionTextCenter-expanded.numericTextCenter)<=2,
         'Club History Competition glyphs must center with actual numeric text at '+width+': '+JSON.stringify(expanded));
       }else{
@@ -881,7 +899,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const detailCells=[...link.closest('tr').querySelectorAll('.app-player-stats-number .app-player-stats-value')];
        const glyphCenter=node=>{const range=document.createRange();range.selectNodeContents(node);
         const box=range.getBoundingClientRect();return box.top+box.height/2;};
-       const compTextCenter=glyphCenter(probe.querySelector('.app-player-stats-competition-name'));
+       const compName=probe.querySelector('.app-player-stats-competition-name');
+       const compRange=document.createRange();compRange.selectNodeContents(compName);
+       const competitionStart=compRange.getBoundingClientRect().left-competitionLink.closest('th').getBoundingClientRect().left;
+       const compTextCenter=glyphCenter(compName);
        const clubTextCenter=glyphCenter(name);
        const detailNumberCenter=glyphCenter(detailCells[0]);
        detailCells.forEach((node,i)=>node.textContent=String(12345+i));
@@ -894,6 +915,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         crestTextGap:clubTextLeft-crestRight,
         competition:compVisual,clubCenterOffset,compTextCenter,clubTextCenter,detailNumberCenter,
         competitionPosition:competitionStyle.position,competitionCellCenter:compCell.y,
+        competitionStart,
         seasonTextOffset,loadingSeasonOffset,seasonLoadedX,loadingSeasonX,
         totalLoadedAnchor,totalPendingAnchor,loadingSeasonCenter,loadingTotalCenter,loadingSkeletonCenters,
         crestNameOffset:crestCenter-originalNameCenter,
@@ -935,6 +957,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        'competition and club identities stay vertically centered at '+width+': '+JSON.stringify(placement));
       if(width>620){
        assert.equal(placement.competitionPosition,'absolute','Player Competition is anchored to the desktop row');
+       assert.ok(Math.abs(placement.competitionStart-placement.totalLoadedAnchor.x)<=1 &&
+        Math.abs(placement.competitionStart-placement.totalPendingAnchor.x)<=1,
+        'Player Competition text must start where Total text and its skeleton start at '+width+': '+JSON.stringify(placement));
        assert.ok(Math.abs(placement.compTextCenter-placement.detailNumberCenter)<=2 &&
         Math.abs(placement.compTextCenter-placement.clubTextCenter)<=2,
         'Player Stats Competition glyphs align with actual club and statistic text at '+width+': '+JSON.stringify(placement));
