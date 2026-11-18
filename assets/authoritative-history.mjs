@@ -175,23 +175,13 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
     const trigger=make('button','+'+(record.entries.length-1),'app-history-player-detail');
     trigger.type='button';
     trigger.setAttribute('aria-label',heading.textContent+' (+'+(record.entries.length-1)+')');
-    trigger.addEventListener('click',()=>{
-     const dialog=make('dialog',undefined,'app-history-player-dialog');
-     dialog.setAttribute('aria-label',heading.textContent);
-     const {header,close}=window.faHistoryDialog.header(heading.textContent);
-     const dismiss=()=>window.faHistoryDialog.close(dialog);
-     close.addEventListener('click',dismiss);
-     dialog.addEventListener('cancel',e=>{e.preventDefault();dismiss();});
-     dialog.addEventListener('click',e=>{if(e.target===dialog)dismiss();});
-     dialog.append(header);
-     for(const item of record.entries){
-      const line=make('div',undefined,'app-history-dev-record-entry');
-      line.append(identity(item.club));if(item.season)line.append(seasonLink(item.season));
-      dialog.append(line);
-     }
-     dialog.addEventListener('close',()=>{dialog.remove();trigger.focus();},{once:true});
-     document.body.append(dialog);window.faHistoryDialog.show(dialog);close.focus();
-    });
+    trigger.setAttribute('aria-haspopup','dialog');
+    trigger.addEventListener('click',()=>window.faHistoryDialog.openClubs({
+     title:heading.textContent,
+     value:positive(record.value,key),
+     entries:record.entries,
+     trigger,identity,seasonLink
+    }));
     const line=holders.firstElementChild;
     const name=line.querySelector('.app-world-club-name');
     const label=make('span',undefined,'app-history-tied-club');

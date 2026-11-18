@@ -241,7 +241,7 @@ function openHistorySeason(season){
  if(shell)shell.scrollTop=0;
  if(document.scrollingElement)document.scrollingElement.scrollTop=0;
 }
-function historyExpandableHolders(card,holders,metric){
+function historyExpandableHolders(card,holders,metric,result){
  const entries=[...holders.children];
  if(entries.length<2)return;
  for(const entry of entries.slice(1))entry.hidden=true;
@@ -249,62 +249,19 @@ function historyExpandableHolders(card,holders,metric){
  trigger.type="button";trigger.dataset.historyRecordExpand=metric;
  trigger.setAttribute("aria-haspopup","dialog");
  trigger.addEventListener("click",()=>{
-  const title=card.querySelector("h5")?.textContent||"";
-  const dialog=historyNode("dialog","app-history-player-dialog app-history-club-dialog");
-  const {header,heading,close}=window.faHistoryDialog.header(title);
-  heading.id="app-history-club-dialog-title";
-  dialog.setAttribute("aria-labelledby",heading.id);
-  const dismiss=()=>window.faHistoryDialog.close(dialog);
-  const scroller=document.querySelector(".fa-shell-content-scroll");
-  const oldOverflow=scroller?.style.overflow;
-  close.addEventListener("click",dismiss);
-  dialog.addEventListener("cancel",event=>{event.preventDefault();dismiss();});
-  dialog.addEventListener("click",event=>{if(event.target===dialog)dismiss();});
-  dialog.addEventListener("close",()=>{
-   if(scroller)scroller.style.overflow=oldOverflow;
-   dialog.remove();trigger.focus({preventScroll:true});
-  },{once:true});
-  // The same club may hold this record in multiple seasons. Show it once,
-  // keeping every linked season beneath its name, like a player's club history.
-  const groups=new Map();
-  for(const [index,entry] of entries.entries()){
-   const crest=entry.querySelector(".app-world-club-crest-placeholder");
-   const name=entry.querySelector(".app-world-club-name");
-   const key=crest?.dataset.clubCrest||"entry-"+index;
-   if(!groups.has(key))groups.set(key,{crest:crest?.cloneNode(true),name:name?.cloneNode(true),seasons:[]});
-   const group=groups.get(key);
-   const season=entry.querySelector(".app-history-dev-season-link");
-   if(season&&!group.seasons.some(link=>link.href===season.href))group.seasons.push(season.cloneNode(true));
-  }
-  dialog.append(header);
-  const summary=historyNode("div","app-history-player-dialog-value");
-  const count=historyNode("span");
-  count.append(document.createTextNode(groups.size+" "),
-   historyLabel(groups.size===1?"historyClubSingular":"rulesClubs"));
-  summary.append(historyNode("strong","",card.querySelector(".app-competition-stat-value")?.textContent||""),count);
-  dialog.append(summary);
-  const list=historyNode("ol","app-history-player-holders app-history-club-holders");
-  for(const group of groups.values()){
-   const li=historyNode("li");
-   const identity=historyNode("div","app-history-dialog-club");
-   const info=historyNode("div","app-history-dialog-club-info");
-   if(group.name)info.append(group.name);
-   if(group.seasons.length){
-    const meta=historyNode("div","app-history-dialog-club-seasons");
-    for(const [index,season] of group.seasons.entries()){
-     if(index)meta.append(document.createTextNode(" · "));
-     meta.append(season);
-    }
-    info.append(meta);
+  const divisionId=window.faCompetitionDivision?.id||window.faCompetitionContext?.definition?.id;
+  window.faHistoryDialog.openClubs({
+   title:card.querySelector("h5")?.textContent||"",
+   value:card.querySelector(".app-competition-stat-value")?.textContent||"",
+   entries:result.entries||result.clubs.map(club=>({club})),
+   trigger,
+   identity:historyIdentity,
+   seasonLink:season=>{
+    const link=historyNode("a","app-history-dev-season-link app-world-standing-club-link");
+    link.href="/competitions/"+String(divisionId).toLowerCase()+"/standings?season="+encodeURIComponent(season);
+    link.append(historySeasonLabel(season));return link;
    }
-   if(group.crest)identity.append(group.crest);
-   identity.append(info);li.append(identity);list.append(li);
-  }
-  dialog.append(list);
-  document.body.append(dialog);
-  window.faAppRenderLanguage?.();
-  if(scroller)scroller.style.overflow="hidden";
-  window.faHistoryDialog.show(dialog);close.focus({preventScroll:true});
+  });
  });
  // Keep +N adjacent to the record-holder's club name, never beside the
  // statistic value or in an extra card row. The existing crest/season slots stay fixed.
@@ -404,7 +361,7 @@ async function renderHistoryPreview(){
     entry.append(historyIdentity(club));holders.append(entry);
    }
    card.append(holders);
-   historyExpandableHolders(card,holders,metric);
+   historyExpandableHolders(card,holders,metric,result);
    grid.append(card);
   }
   for(const scope of ["season","all-time"])if(shown[scope]===0){

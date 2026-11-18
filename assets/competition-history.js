@@ -275,7 +275,68 @@
     header.append(heading,close);
     return {header,heading,close};
   }
-  window.faHistoryDialog={show:showDialog,close:closeDialog,header:dialogHeader};
+  // Shared modal for verified club ties in both DEV previews and normal History.
+  // Keep formatting, focus, modal animations and scroll handling identical.
+  function openClubDialog({title,value,entries,trigger,identity,seasonLink}){
+    if(!Array.isArray(entries)||!entries.length)return;
+    const grouped=new Map();
+    for(const {club,season} of entries){
+      if(!club)continue;
+      const key=String(club.countryId)+"-"+String(club.clubId);
+      if(!grouped.has(key))grouped.set(key,{club,seasons:new Set()});
+      if(Number.isSafeInteger(season))grouped.get(key).seasons.add(season);
+    }
+    if(!grouped.size)return;
+    const node=element("dialog","app-history-player-dialog app-history-club-dialog");
+    const {header,heading,close}=dialogHeader(title);
+    heading.id="app-history-club-dialog-title";
+    node.setAttribute("aria-labelledby",heading.id);
+    node.append(header);
+    const summary=element("div","app-history-player-dialog-value");
+    const count=element("span");
+    count.append(document.createTextNode(grouped.size+" "));
+    const unit=element("span");
+    unit.dataset.appI18n=grouped.size===1?"historyClubSingular":"rulesClubs";
+    count.append(unit);
+    summary.append(element("strong","",value),count);
+    node.append(summary);
+    const list=element("ol","app-history-player-holders app-history-club-holders");
+    for(const {club,seasons} of grouped.values()){
+      const li=element("li");
+      const visual=identity(club);
+      const row=element("div","app-history-dialog-club");
+      const info=element("div","app-history-dialog-club-info");
+      const name=visual.querySelector(".app-world-club-name");
+      const crest=visual.querySelector(".app-world-club-crest-placeholder");
+      if(name)info.append(name);
+      if(seasons.size){
+        const meta=element("div","app-history-dialog-club-seasons");
+        for(const [index,season] of [...seasons].sort((a,b)=>a-b).entries()){
+          if(index)meta.append(document.createTextNode(" · "));
+          meta.append(seasonLink(season));
+        }
+        info.append(meta);
+      }
+      if(crest)row.append(crest);
+      row.append(info);li.append(row);list.append(li);
+    }
+    node.append(list);
+    const scroll=document.querySelector(".fa-shell-content-scroll");
+    const previousOverflow=scroll?.style.overflow;
+    const dismiss=()=>closeDialog(node);
+    close.addEventListener("click",dismiss);
+    node.addEventListener("cancel",event=>{event.preventDefault();dismiss();});
+    node.addEventListener("click",event=>{if(event.target===node)dismiss();});
+    node.addEventListener("close",()=>{
+      if(scroll)scroll.style.overflow=previousOverflow;
+      node.remove();trigger?.focus?.({preventScroll:true});
+    },{once:true});
+    document.body.append(node);
+    window.faAppRenderLanguage?.();
+    if(scroll)scroll.style.overflow="hidden";
+    showDialog(node);close.focus({preventScroll:true});
+  }
+  window.faHistoryDialog={show:showDialog,close:closeDialog,header:dialogHeader,openClubs:openClubDialog};
   function close(){if(dialog)closeDialog(dialog);}
   function open(metric,source){
     const record=results?.[metric];if(!record)return;

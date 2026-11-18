@@ -216,3 +216,12 @@ test('a verified active season breaks a record of two and contributes once at cl
  current.seasonData.history={...previous.seasonData.history,season:2};
  assert.equal(historyAggregate([archived,historyViewModel(current)])['all-time'].historyMostTotalGoals.value,5);
 });
+
+test('Public authoritative History uses the same club popup as Debug and Players',()=>{
+ const source=readFileSync(new URL('../assets/authoritative-history.mjs',import.meta.url),'utf8');
+ assert.match(source,/window\.faHistoryDialog\.openClubs\(/);
+ assert.match(source,/entries:record\.entries/);
+ assert.match(source,/trigger,identity,seasonLink/);
+ assert.match(source,/aria-haspopup','dialog/);
+ assert.doesNotMatch(source,/dialog\.append\(line\)/);
+});
