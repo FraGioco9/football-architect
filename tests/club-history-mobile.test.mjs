@@ -201,7 +201,7 @@ test('#578 Club History pending skeleton samples match runtime and reserve actua
   assert.ok(firstPaint.includes(mark),'parser-time pending value '+key+' matches');
  }
  assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-skeleton-stat \.club-fp-bar\[data-skeleton-sample\]\{/);
- assert.match(css,/content:attr\(data-skeleton-sample\);font-variant-numeric:tabular-nums;/);
+ assert.match(css,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;\s*font-variant-numeric:tabular-nums;/);
  assert.doesNotMatch(css,/\[data-club-history-skeleton="played"\] \.club-fp-bar\{width:/);
  assert.match(css,/\.club-history-competition-value a\.club-history-competition-link\{line-height:1\.5;vertical-align:middle\}/,
   'the competition link leaves full glyph and underline height');

@@ -261,15 +261,19 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         res.end(req.method === 'HEAD' ? undefined : bytes);
         return;
       }
-      // Club aliases share ROUTE-02 validation; temporal parameters belong only to Fixtures/Stats.
+      // Club aliases share ROUTE-02 validation; only Fixtures accepts matchday, while Records retains season.
       const clubPath=raw.replace(/\/index\.html$/,"");
       const clubRoute=resolveSubpage(clubPath);
       if(clubRoute?.kind==="club"){
         const params=new URL(req.url,"http://localhost").searchParams;
         const base=clubPath===clubRoute.base||clubPath===clubRoute.base+"/";
-        const view=base&&clubViews.includes(params.get("view"))?params.get("view"):clubRoute.view;
+        const legacyView=params.get("view");
+        const view=base&&(legacyView==="stats"||clubViews.includes(legacyView))
+          ?(legacyView==="stats"?"records":legacyView):clubRoute.view;
         params.delete("view");
         if(view==="overview"||view==="history"){params.delete("season");params.delete("matchday");}
+        if(view==="records"){params.delete("matchday");params.delete("competition");
+          if(!["season","verified"].includes(params.get("scope")))params.delete("scope");}
         const target=clubRoute.base+"/"+view+(params.size?"?"+params:"");
         if(req.url!==target){
           res.writeHead(308,{"Location":target,"Cache-Control":"no-store"});res.end();return;

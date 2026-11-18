@@ -1,21 +1,6 @@
 {
   "redirects": [
     {
-      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats/index.html",
-      "destination": "/clubs/:country/:club/records",
-      "permanent": true
-    },
-    {
-      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats/",
-      "destination": "/clubs/:country/:club/records",
-      "permanent": true
-    },
-    {
-      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats",
-      "destination": "/clubs/:country/:club/records",
-      "permanent": true
-    },
-    {
       "source": "/matches/:id([1-9][0-9]*)/",
       "destination": "/matches/:id",
       "permanent": true
@@ -339,6 +324,21 @@
     {
       "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards)/",
       "destination": "/competitions/:cup/:view",
+      "permanent": true
+    },
+    {
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats/index.html",
+      "destination": "/clubs/:country/:club/records",
+      "permanent": true
+    },
+    {
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats/",
+      "destination": "/clubs/:country/:club/records",
+      "permanent": true
+    },
+    {
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats",
+      "destination": "/clubs/:country/:club/records",
       "permanent": true
     }
   ],

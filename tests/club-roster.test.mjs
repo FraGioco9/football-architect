@@ -52,7 +52,8 @@ test('CLUB-ROSTER-01 first paint exposes five direct views without an Attributes
  assert.match(shared,/\.app-world-standing-scroll\{[^}]*scrollbar-width:thin/);
  assert.match(shared,/\.app-players-table-scroll\{[^}]*scrollbar-width:thin/);
  const playerDetail=read('assets/player-detail.js');
- assert.match(playerDetail,/viewBar\?\.addEventListener\('scroll',syncViewEdges/);
+ assert.match(playerDetail,/viewBar\?\.addEventListener\('scroll',\(\)=>\{syncViewEdges\(\);if\(viewScrollReady\)saveViewScroll\(\)/,
+  'Player View bar updates edge state and persists only after initial restoration');
  assert.match(playerDetail,/window\.addEventListener\('resize',syncViewEdges/);
 
 

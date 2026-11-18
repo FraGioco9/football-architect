@@ -83,7 +83,7 @@ test('CLUB-01 DEV redirects legacy URLs and serves all club views with shared De
    }
   }
   for(const [path,target] of [
-   ['/clubs/it/1/?view=stats&season=2&matchday=7','/clubs/it/1/records?season=2&matchday=7'],
+   ['/clubs/it/1/?view=stats&season=2&matchday=7','/clubs/it/1/records?season=2'],
    ['/clubs/it/1/index.html?view=fixtures&season=3','/clubs/it/1/fixtures?season=3'],
    ['/clubs/it/1/overview?season=2&matchday=5','/clubs/it/1/overview'],
    ['/clubs/it/1/history/?season=3','/clubs/it/1/history'],
@@ -268,7 +268,7 @@ test('A03-04C: club parser retains strict canonical acceptance and caller-facing
  const {default:model}=await import('../assets/club-model.js');
  for(const row of a03Baseline.clubParser)assert.deepEqual(model.route(row.input),row.expected,row.input);
 });
-test('A03-04C: active and inactive club tabs transfer only temporal context to Fixtures and Stats',async()=>{
+test('A03-04C: active and inactive club tabs transfer applicable temporal context to Fixtures and Records',async()=>{
  const {default:model}=await import('../assets/club-model.js');
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  for(const path of ['/clubs/it/1/overview','/clubs/br/40/overview']){
@@ -276,7 +276,7 @@ test('A03-04C: active and inactive club tabs transfer only temporal context to F
   const html=model.render(manifest,selected,'en','?view=history&season=3&matchday=7&x=1');
   const nav=html.match(/<nav class="app-competition-tabs club-tabs"[^>]*>(.*?)<\/nav>/)[1];
   const hrefs=[...nav.matchAll(/href="([^"]+)"/g)].map(m=>m[1].replaceAll('&amp;','&'));
-  assert.deepEqual(hrefs,[selected.base+'/overview',selected.base+'/roster',selected.base+'/fixtures?season=3&matchday=7',selected.base+'/stats?season=3&matchday=7',selected.base+'/history']);
+  assert.deepEqual(hrefs,[selected.base+'/overview',selected.base+'/roster',selected.base+'/fixtures?season=3&matchday=7',selected.base+'/records?season=3',selected.base+'/history']);
   assert.equal((nav.match(/aria-current="page"/g)||[]).length,1);
   if(path.includes('/40/'))assert.doesNotMatch(html,/href="\/competitions\//,'Unallocated club cannot invent a competition link');
   else assert.ok(html.includes('href="/competitions/it-1/standings?season=3"'));
@@ -304,7 +304,7 @@ test('A03-04E: club parser and rendered links delegate to the real shared regist
 
 test('A03-04E: all 1600 strict club routes retain canonical caller shapes',async()=>{
  const {default:model}=await import('../assets/club-model.js');
- for(const country of ['it','eng','es','de','fr','pt','nl','br'])for(let id=1;id<=40;id++)for(const view of ['overview','roster','fixtures','stats','history']){
+ for(const country of ['it','eng','es','de','fr','pt','nl','br'])for(let id=1;id<=40;id++)for(const view of ['overview','roster','fixtures','records','history']){
   const base='/clubs/'+country+'/'+id,path=base+'/'+view;
   assert.deepEqual(model.route(path),{countryId:country.toUpperCase(),clubId:id,view,base});
   assert.equal(model.route(path+'/'),null,'Caller must not accept a redirect candidate: '+path);
@@ -689,8 +689,8 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
  assert.match(read('assets/club-history-source.mjs'),/api\/clubs\/.*\/history/,'client reads the dedicated club History route');
  assert.match(script,/refreshClubHistory\(\);refreshClubOverview\(\)/,
   'tab navigation restores both data readers without redundant requests');
- assert.match(script,/if\(selected\.view!=='history'\)return;/,
-  'leaving History does not abort/restart its in-flight world-verified read');
+ assert.match(script,/if\(!\['history','records'\]\.includes\(selected\.view\)\)return;/,
+  'History and Records reuse the same world-verified read without aborting it when leaving either view');
  const cacheSource=read('assets/club-public-read-cache.mjs');
  assert.match(cacheSource,/sourceRevision,w\.generation,w\.revision,w\.seasonNumber,w\.day,w\.phase/,
   'per-world caching fences generation, revision, sporting day and source switches');
@@ -882,7 +882,7 @@ test('PERF-API-657 club identity-only projection matches canonical data and rend
  assert.equal(isAllowlistedPublicPath('clubs/_shared/identity.json'),true);
  const {default:model}=await import('../assets/club-model.js');
  for(const countryId of ['IT','ENG','DE','ES','FR','PT','NL','BR'])
-  for(const view of ['roster','fixtures','stats','history']){
+  for(const view of ['roster','fixtures','records','history']){
    const route=model.route('/clubs/'+countryId.toLowerCase()+'/1/'+view);
    for(const locale of ['en','it'])
     assert.equal(model.render(slim,route,locale,'?season=1'),
