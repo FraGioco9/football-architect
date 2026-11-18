@@ -35,6 +35,39 @@ describe('#613 V2 public read validation and frozen-player statistics',()=>{
   expect(()=>lineupTeamStatisticsV1([home,away],[f],new Map([[id,result]]),new Map()))
    .toThrow();
  },15000);
+ it('aggregates recorded domestic and international matches without including future fixtures',()=>{
+  for(const [competition,home,away] of [
+   ['IT-1','IT-1','IT-2'],['int-1','IT-1','ENG-1'],['int-2','IT-3','ENG-3']
+  ]){
+   const ids=[1,2,3].map(n=>`season:1:${competition}:N0${n}:${home}:${away}`);
+   const fixtures=ids.map(id=>({id,homeClubId:home,awayClubId:away}) as any);
+   const scores=new Map<string,any>([[ids[0],{homeGoals:2,awayGoals:1}],[ids[1],{homeGoals:0,awayGoals:1}]]);
+   const frozen=new Map(ids.slice(0,2).map((id,i)=>{
+    const score=scores.get(id) as any;
+    return [id,{fixtureId:id,matchId:i+1,receipt:{result:{
+     eventModelVersion:'lineup-events-v1',extraTime:null,
+     homeGoals:score.homeGoals,awayGoals:score.awayGoals,
+     home:{kind:'real_xi',starters:[{playerId:7,role:'ST'}],
+      appearances:[{playerId:7,started:true,role:'ST',minutes:90,goals:i===0?1:0,
+       assists:i===0?1:0,redCards:0,gkMinutes:0}]},
+     away:{kind:'team_fallback',unattributedGoals:score.awayGoals,appearances:[]},
+     events:i===0?[{type:'yellow',side:'home',playerId:7,minute:12}]:[]
+    }}} as any] as const;
+   }));
+   const out=lineupTeamStatisticsV1([home,away],fixtures,scores,frozen);
+   expect(out).toMatchObject({matchesPlayed:2,totalGoals:4,goalsPerMatch:2});
+   expect(out.teams.find(t=>t.clubId===home)).toMatchObject({
+    played:2,won:1,lost:1,goalsFor:2,goalsAgainst:2,cleanSheets:0
+   });
+   expect(out.players).toMatchObject([{
+    clubId:home,playerId:7,appearances:2,starts:2,subAppearances:0,
+    minutes:180,goals:1,assists:1,yellowCards:1,redCards:0,
+    cleanSheets:null,averageRating:null
+   }]);
+   expect(out.players).toHaveLength(1);
+  }
+ },15000);
+
 });
 
 describe('#690 per-season yellow-card coverage',()=>{

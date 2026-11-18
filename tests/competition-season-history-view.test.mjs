@@ -45,7 +45,7 @@ test('SEASON-CUP-DIALOG: actual History details retain country-qualified clubs a
   assert.ok(links.includes('/clubs/it/1/overview'));assert.ok(links.includes('/clubs/eng/1/overview'));
   assert.ok(links.includes('/competitions/'+id+'/standings?season=1'));
   assert.equal(JSON.stringify(payload),before);
-  const exit=walk(dialog).find(n=>n.className.split(' ').includes('app-history-player-close'));exit.emit('click');
+  const exit=walk(dialog).find(n=>n.className.split(' ').includes('app-history-player-close'));assert.ok(exit.className.includes('app-search-close'));assert.match(exit.innerHTML,/<svg\b/);exit.emit('click');
   assert.equal(dialog.open,false);assert.equal(r.document.activeElement,trigger);
  }
 });
@@ -70,6 +70,10 @@ test('SEASON-LEGACY-DIALOG: approved domestic player history links every divisio
   assert.equal(JSON.stringify(payload),before,definition.id+' payload remains unchanged');
   const close=walk(dialog).find(n=>n.className.split(' ').includes('app-history-player-close'));
   assert.ok(close,definition.id+' close control');
+  assert.ok(close.className.includes('app-search-close'),definition.id+' standard close button');
+  assert.match(close.innerHTML,/<svg\b/,definition.id+' SVG close icon');
+  assert.ok(close.className.includes('app-search-close'),definition.id+' standard close button');
+  assert.match(close.innerHTML,/<svg\b/,definition.id+' SVG close icon');
   close.emit('click');
   assert.equal(dialog.open,false,definition.id+' dialog closed');
   assert.equal(r.document.activeElement,trigger,definition.id+' trigger regains focus');

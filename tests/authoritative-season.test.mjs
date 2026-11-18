@@ -175,6 +175,21 @@ test('accepts only real, internally coherent frozen V2 player totals',()=>{
   const altered=structuredClone(raw);altered.data.statistics.players=[bad];
   assert.throws(()=>validateAuthoritativeSeason(altered,ctx(),manifest));
  }
+ // The real competition Stats view receives the recorded events and team
+ // counters from the validated authoritative season, not a client-side scorer.
+ const completeStats=structuredClone(raw);
+ Object.assign(completeStats.data.statistics.players[0],{
+  subAppearances:0,assists:1,yellowCards:2,redCards:1,cleanSheets:0,
+  ratedAppearances:1,averageRating:7.25
+ });
+ const recordedView=adaptAuthoritativeSeason(validateAuthoritativeSeason(completeStats,ctx(),manifest),ctx(),manifest);
+ assert.deepEqual(recordedView.statistics.overview,{matchesPlayed:8,totalGoals:1,goalsPerMatch:0.125});
+ assert.equal(recordedView.statistics.teams.find(t=>t.clubKey===fixture.homeClubId).gf,1);
+ assert.deepEqual(recordedView.statistics.players[0],{
+  playerId:58,name:'Recorded Player',nationality:null,clubKey:fixture.homeClubId,
+  appearances:1,starts:1,subAppearances:0,minutes:90,goals:1,assists:1,
+  yellowCards:2,redCards:1,cleanSheets:0,ratedAppearances:1,averageRating:7.25,goalsAssistsPer90:2
+ });
  const incoming=structuredClone(raw);
  incoming.data.statistics.players=[{...player,starts:0,subAppearances:1,minutes:26}];
  const incomingView=adaptAuthoritativeSeason(validateAuthoritativeSeason(incoming,ctx(),manifest),ctx(),manifest);
