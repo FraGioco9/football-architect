@@ -318,16 +318,24 @@ test('#578 History/Stats table gap is 5px on desktop and mobile',()=>{
 test('#578 numeric skeletons use rendered font metrics rather than guessed widths',()=>{
  const css=read('assets/player-detail.css'),club=read('assets/club-page.css');
  const html=read('players/_shared/index.html'),clubShell=read('clubs/_shared/index.html');
- const expected={apps:'1 (0)',minutes:'90',score:'1',assists:'0',yellow:'0',red:'0',rating:'7.50'};
- for(const [metric,sample] of Object.entries(expected)){
-  const re=new RegExp('data-metric="'+metric+'"[^>]*><span class="app-player-stats-value"><span class="app-skeleton-bar" data-skeleton-sample="'+sample.replace(/[()]/g,'\\$&')+'"','g');
-  assert.equal((html.match(re)||[]).length,2,metric+' parser-time metric samples match both row slots');
+ const rows=[...html.matchAll(/<tr class="app-player-stats-season-row[^"]*app-player-stats-loading"[^>]*>[\s\S]*?<\/tr>/g)].map(hit=>hit[0]);
+ assert.equal(rows.length,2,'Career and Season use separate loading rows');
+ const examples=[
+  {apps:'128 (24)',minutes:'9870',score:'32',assists:'21',yellow:'17',red:'2',rating:'7.50'},
+  {apps:'24 (5)',minutes:'2160',score:'12',assists:'8',yellow:'4',red:'1',rating:'7.50'}
+ ];
+ for(const [index,expected] of examples.entries())for(const [metric,sample] of Object.entries(expected)){
+  const at=rows[index].indexOf('data-metric="'+metric+'"');
+  assert.ok(at>=0,metric+' is present in '+(index===0?'Career':'Season'));
+  assert.ok(rows[index].slice(at,at+220).includes('data-skeleton-sample="'+sample+'"'),
+   metric+' uses a realistic glyph-measured digit count in '+(index===0?'Career':'Season'));
   assert.doesNotMatch(css,new RegExp('\\[data-metric="'+metric+'"\\] \\.app-skeleton-bar\\{width:'),
    metric+' must not hardcode a pixel or ch width');
  }
+ assert.notEqual(examples[0].apps,examples[1].apps,'Career and Season widths reflect different scales');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-value>\.app-skeleton-bar\[data-skeleton-sample\]\{/);
  assert.match(css,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;/);
- const history={played:'30',won:'18',drawn:'7',lost:'5',gf:'54',ga:'29',gd:'+25'};
+ const history={played:'30',won:'18',drawn:'7',lost:'5',gf:'104',ga:'52',gd:'+52'};
  for(const [metric,sample] of Object.entries(history)){
   assert.ok(clubShell.includes('data-club-history-skeleton="'+metric+'"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="'+sample+'"'),
    'Club History '+metric+' reserves natural glyph widths before JS');
@@ -336,6 +344,10 @@ test('#578 numeric skeletons use rendered font metrics rather than guessed width
  assert.match(club,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;/);
  assert.match(css,/\.app-player-stats-table \.app-player-stats-number \.app-player-stats-value\{[\s\S]*?justify-content:flex-end/);
  assert.match(club,/\.club-history-table td:nth-child\(n\+4\) \.club-history-stat-value\{[\s\S]*?justify-content:center/);
+ assert.ok(css.includes('.app-player-stats-table :is(.app-player-stats-toggle,.app-player-stats-static-label,.app-player-stats-skeleton-label)'),
+  'Season/Career labels and skeletons share a row centerline');
+ assert.ok(club.includes('.club-history-table :is(.club-history-expand,.club-history-skeleton-label)'),
+  'Club History labels and skeletons share a row centerline');
 });
 
 test('#578 initial Stats score is neutral until profile, then GK is CS in all languages',()=>{
