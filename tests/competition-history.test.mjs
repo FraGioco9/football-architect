@@ -559,9 +559,9 @@ test('Player record dialog uses compact centered rows and keeps +N hover without
  const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  const declaration=selector=>{
-  const start=css.lastIndexOf(selector+'{');
+  const start=css.lastIndexOf('\n'+selector+'{');
   assert.ok(start>=0,'Missing CSS rule '+selector);
-  return css.slice(start+selector.length+1,css.indexOf('}',start));
+  return css.slice(start+selector.length+2,css.indexOf('}',start));
  };
  assert.ok(source.includes('const info=element("div","app-history-dialog-player-info");'));
  assert.ok(source.includes('info.append(playerLabel(holder,"strong",""));'));
