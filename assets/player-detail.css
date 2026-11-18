@@ -155,7 +155,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-table tr{height:var(--player-stats-row-height)}
 .app-player-stats-table th,.app-player-stats-table td{
  box-sizing:border-box;height:var(--player-stats-row-height);vertical-align:middle;
- border-bottom:1px solid var(--line);padding:0 10px;line-height:1.35;
+ border-bottom:1px solid var(--line);padding:0 10px;line-height:1.5;
  font-size:.86rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .app-player-stats-table thead th{color:var(--muted);font-size:.75rem;font-weight:600}
@@ -171,8 +171,8 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-header-trigger:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .app-player-stats-total-label{color:var(--muted);text-align:left}
 .app-player-stats-table .app-player-stats-total-value{
- display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;
- align-items:center;justify-content:flex-start;line-height:16px;text-align:left;
+ display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;
+ align-items:center;justify-content:flex-start;line-height:1.5;text-align:left;
 }
 .app-player-stats-season-row{background:var(--surface-raised)}
 /* Career stays one 56px table row; a stronger divider separates all seasons. */
@@ -200,7 +200,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 /* All season/Career labels share the centered value/skeleton row centerline;
    the chevron's own geometry stays unchanged. */
 .app-player-stats-table :is(.app-player-stats-toggle,.app-player-stats-static-label,.app-player-stats-skeleton-label){
- box-sizing:border-box;min-height:24px;align-items:center;line-height:16px;vertical-align:middle;
+ box-sizing:border-box;min-height:24px;align-items:center;line-height:1.5;vertical-align:middle;
 }
 .app-player-stats-competition-row[hidden]{display:none}
 .app-player-stats-competition-row{background:transparent}
@@ -209,9 +209,14 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  display:inline-block;width:fit-content;max-width:100%;min-width:0;min-height:0;
  margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;
  color:inherit;font:inherit;font-weight:500;text-align:left;text-decoration:none;
- white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:baseline;
+ white-space:nowrap;overflow:visible;text-overflow:clip;vertical-align:middle;line-height:1.5;
 }
+/* Competition underline is painted only on its text, not a clipped anchor box. */
 .app-player-stats-link:is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
+.app-player-stats-table a.app-player-stats-competition-link:is(:hover,:focus-visible){text-decoration:none}
+.app-player-stats-table a.app-player-stats-competition-link:is(:hover,:focus-visible) .app-player-stats-competition-name{
+ text-decoration-line:underline;text-underline-offset:2px;text-decoration-thickness:.75px;text-decoration-skip-ink:auto;
+}
 /* The generic statistics link clips its overflow for long competition names.
    Club text must remain un-clipped so the offset underline can actually paint.
    Only the text link is interactive; the 24px crest is a passive sibling. */
@@ -231,11 +236,12 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  text-decoration-line:underline;text-underline-offset:2px;text-decoration-thickness:.75px;text-decoration-skip-ink:auto;
 }
 .app-player-stats-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.app-player-stats-table .app-player-stats-link{line-height:16px;vertical-align:middle}
+/* Center links without clipping descenders or their underline. */
+.app-player-stats-table .app-player-stats-link{line-height:1.5;vertical-align:middle}
 .app-player-stats-table .app-player-stats-club-identity{min-height:24px}
 .app-player-stats-table .app-player-stats-number .app-player-stats-value{
- display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;
- align-items:center;justify-content:flex-end;line-height:16px;text-align:right;
+ display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;
+ align-items:center;justify-content:flex-end;line-height:1.5;text-align:right;
 }
 /* Bars are sized by transparent sample glyphs in the exact same numeric
    font as hydrated values; right aligned edge and optical centers now match. */
@@ -288,7 +294,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   box-sizing:border-box;width:auto;height:auto;min-height:34px;padding:4px 2px;
   border:0;white-space:normal;overflow:visible;text-overflow:clip;
-  font-size:12px;line-height:1.25;text-align:center;
+  font-size:12px;line-height:1.5;text-align:center;
  }
  .app-player-stats-table .app-player-stats-season-row>th:first-child{
   grid-column:1/-1;align-items:flex-start;min-height:44px;text-align:left;font-size:14px;
@@ -308,19 +314,19 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  }
  .app-player-stats-table .app-player-stats-competition-row .app-player-stats-link{
   display:inline;white-space:normal;overflow:visible;text-overflow:clip;
-  overflow-wrap:anywhere;line-height:1.35;
+  overflow-wrap:anywhere;line-height:1.5;
  }
  .app-player-stats-table tr>td.app-player-stats-number{
-  display:grid;grid-template-rows:12px 16px;align-content:center;justify-items:center;
+  display:grid;grid-template-rows:12px 24px;align-content:center;justify-items:center;
   min-width:0;min-height:43px;gap:3px;padding:4px 2px;
-  font-size:12px;line-height:1.25;text-align:center;font-variant-numeric:tabular-nums;
+  font-size:12px;line-height:1.5;text-align:center;font-variant-numeric:tabular-nums;
  }
  .app-player-stats-table tr>td.app-player-stats-number::before{
   display:block;grid-row:1;content:attr(data-mobile-label);font-size:10px;line-height:12px;
   font-weight:600;color:var(--muted);
  }
  .app-player-stats-table tr>td.app-player-stats-number .app-player-stats-value{
-  grid-row:2;min-height:16px;width:100%;align-self:center;justify-content:center;text-align:center;
+  grid-row:2;min-height:24px;width:100%;align-self:center;justify-content:center;text-align:center;
  }
  .app-player-stats-table .app-player-stats-loading .app-player-stats-number .app-skeleton-bar{
   align-self:center;justify-self:center;margin:0;

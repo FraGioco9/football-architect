@@ -236,7 +236,8 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
     detail.hidden=!expanded.has(season.season);
     detail.append(el('td','','app-player-stats-season'));
     const competition=el('th','','app-player-stats-competition');competition.scope='row';
-    const link=el('a',competitionName?.(record.competitionId)||record.competitionId,'app-player-stats-link');
+    const link=el('a','','app-player-stats-link app-player-stats-competition-link');
+    link.append(el('span',competitionName?.(record.competitionId)||record.competitionId,'app-player-stats-competition-name'));
     link.href='/competitions/'+record.competitionId.toLowerCase()+'/standings?season='+season.season;
     competition.append(link);detail.append(competition);
     const club=el('td','','app-player-stats-club');

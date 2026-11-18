@@ -90,13 +90,18 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  }
  assert.match(css,/--player-stats-row-height:56px/);
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-number .app-player-stats-value'));
- assert.match(css,/display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;/,
-  'hydrated numbers and skeleton bars share one fixed-height value track');
+ assert.match(css,/display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;/,
+  'hydrated numbers and skeleton bars share one full-height centered value track');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-value>\.app-skeleton-bar\[data-skeleton-sample\]\{/);
  assert.match(css,/\.app-player-stats-table \[data-detail-stats-heading="5"\] \.app-player-stats-score-heading-skeleton\{/);
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-total-value'));
- assert.ok(css.includes('grid-row:2;min-height:16px;width:100%;align-self:center;justify-content:center'));
+ assert.ok(css.includes('grid-row:2;min-height:24px;width:100%;align-self:center;justify-content:center'));
  assert.match(css,/\.app-player-stats-table tr>td\.app-player-stats-number::before/);
+ assert.match(css,/grid-template-rows:12px 24px/,'mobile value track accommodates the full text line');
+ assert.match(css,/a\.app-player-stats-competition-link:is\(:hover,:focus-visible\) \.app-player-stats-competition-name\{/,
+  'competition underline renders on text only');
+ assert.match(read('assets/player-stats.mjs'),/link\.append\(el\('span',competitionName\?\./,
+  'competition text uses its own unclipped underline span');
  assert.match(css,/\.app-player-stats-competition-row\[hidden\]\{display:none\}/);
  assert.match(css,/transition:transform 120ms ease-out/);
  assert.match(html,/data-detail-stats-heading="5" aria-label="Goals or clean sheets"><span class="app-skeleton-bar app-player-stats-score-heading-skeleton" aria-hidden="true"><\/span><\/th>/);

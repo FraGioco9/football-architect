@@ -73,7 +73,7 @@ test('#560 mobile History provides the eight localized numeric labels and noncli
  assert.match(mobile,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{[^}]*white-space:normal;overflow:visible/);
  assert.match(mobile,/\.club-history-table \.club-history-competition-row td:nth-child\(3\)\{[^}]*grid-column:1\/-1;display:grid;grid-template-columns:max-content minmax\(0,1fr\);[^}]*align-items:baseline/);
  assert.match(mobile,/\.club-history-table \.club-history-competition-row td:nth-child\(3\):not\(:empty\)::before\{[^}]*font-size:12px;line-height:inherit;[^}]*align-self:baseline/);
- assert.match(mobile,/\.club-history-table tr>td:nth-child\(n\+4\)\{[^}]*grid-template-rows:12px 16px;align-content:center;justify-items:center/);
+ assert.match(mobile,/\.club-history-table tr>td:nth-child\(n\+4\)\{[^}]*grid-template-rows:12px 24px;align-content:center;justify-items:center/);
  assert.match(mobile,/\.club-history-table \.club-history-row-loading>td:nth-child\(n\+4\) \.club-fp-bar\{[^}]*align-self:center;justify-self:center/);
  assert.match(mobile,/\.club-history-table \.club-history-season-row:has\(\.club-history-empty-season\)>td:nth-child\(2\)\{/);
 });
@@ -121,7 +121,7 @@ test('#578 first-paint Club History skeleton matches hydrated column geometry',(
  assert.ok(css.includes('--club-history-row-height:56px'));
  assert.ok(css.includes('.club-history-table td:nth-child(n+4) .club-history-stat-value'));
  assert.ok(css.includes('.club-history-table .club-history-total-value'));
- assert.ok(css.includes('grid-row:2;min-height:16px;width:100%;align-self:center;justify-content:center'));
+ assert.ok(css.includes('grid-row:2;min-height:24px;width:100%;align-self:center;justify-content:center'));
  assert.ok(pending.includes('class="club-history-total-label"><span class="club-history-total-value">'));
  assert.ok(generator.includes('const historyKeys=["season","competition","result"'));
 });
@@ -144,11 +144,11 @@ test('#578 Club History hydrated values and skeletons share the same slots',asyn
  assert.ok(pending.includes('class="club-history-total-value"><span class="club-fp-bar"'));
 });
 
-test('#578 Club History loading bars and verified numeric values share one 16px centerline',()=>{
+test('#578 Club History loading bars and verified numeric values share one 24px centerline',()=>{
  const css=read('assets/club-page.css');
- assert.match(css,/\.club-history-table td:nth-child\(n\+4\) \.club-history-stat-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;/);
+ assert.match(css,/\.club-history-table td:nth-child\(n\+4\) \.club-history-stat-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;/);
  assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-stat-value>\.club-fp-bar\{\s*flex:0 0 auto;max-width:100%;/);
- assert.match(css,/\.club-history-table \.club-history-total-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;/);
+ assert.match(css,/\.club-history-table \.club-history-total-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;/);
 });
 
 test('#578 Club History pending skeleton samples match runtime and reserve actual numeric glyph widths',async()=>{
@@ -166,4 +166,8 @@ test('#578 Club History pending skeleton samples match runtime and reserve actua
  assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-skeleton-stat \.club-fp-bar\[data-skeleton-sample\]\{/);
  assert.match(css,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;/);
  assert.doesNotMatch(css,/\[data-club-history-skeleton="played"\] \.club-fp-bar\{width:/);
+ assert.match(css,/\.club-history-competition-value a\.club-history-competition-link\{line-height:1\.5;vertical-align:middle\}/,
+  'the competition link leaves full glyph and underline height');
+ assert.match(css,/a\.club-history-competition-link:is\(:hover,:focus-visible\) \.club-history-competition-text\{/,
+  'Club History keeps text-only competition underline');
 });
