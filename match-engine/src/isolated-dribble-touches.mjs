@@ -34,7 +34,9 @@ export function chooseIsolatedDribbleTouch({variantIndex,tick,attackingSide,ball
  // Solo has no opponent-induced pressure and a closer genuine pursuit target.
  // Reduce actual native shoe-triggered impulse, not ball speed after the fact.
  // Original D-01 two-person measured physics stays byte-identical.
- const magnitudeNs=solo?originalMagnitudeNs*0.55:originalMagnitudeNs;
+ // Two independently moving real shoes now provide more real contacts.
+ // Soften the NATIVE START-only solo impulse (no post-step ball clamp).
+ const magnitudeNs=solo?originalMagnitudeNs*0.44:originalMagnitudeNs;
  return Object.freeze({version:ISOLATED_DRIBBLE_TOUCH_VERSION,variantIndex,tick,
   dx:attack*8,dy:8*lateral,magnitudeNs,lateralRatio:lateral,
   fromLiveOpponent:!solo,soloCarry:solo,fromLiveBallVelocity:true,
