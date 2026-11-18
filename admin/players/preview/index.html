@@ -191,7 +191,10 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  </nav>
  <dialog class="app-players-preview-confirm-dialog" data-admin-preview-confirm-dialog aria-labelledby="admin-preview-confirm-heading">
   <div class="app-players-preview-confirm-content">
-   <h2 id="admin-preview-confirm-heading" data-admin-preview-confirm-heading>Generate players</h2>
+   <div class="app-players-preview-confirm-header">
+    <h2 id="admin-preview-confirm-heading" data-admin-preview-confirm-heading>Generate players</h2>
+    <button type="button" class="app-search-close" data-admin-preview-dismiss aria-label="Close confirmation"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+   </div>
    <label for="admin-preview-confirmation" data-admin-preview-confirm-label>Type GENERATE PLAYERS to confirm this generation</label>
    <input id="admin-preview-confirmation" type="text" data-admin-players-confirmation autocomplete="off" spellcheck="false" placeholder="GENERATE PLAYERS">
    <div class="app-players-preview-confirm-actions">

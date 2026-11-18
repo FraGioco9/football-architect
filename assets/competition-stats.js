@@ -181,7 +181,7 @@
    const current=create('dialog',undefined,'fa-dev-stats-dialog');dialog=current;
    const header=create('div',undefined,'fa-dev-stats-dialog-header'),title=localized('h3',labelKey,label);title.id='fa-dev-stats-dialog-title';
    current.setAttribute('aria-labelledby',title.id);
-   const close=create('button','×','fa-dev-stats-dialog-close');close.type='button';close.dataset.appAria='statsDevClose';close.setAttribute('aria-label','Close');
+   const close=create('button',undefined,'fa-dev-stats-dialog-close app-search-close');close.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';close.type='button';close.dataset.appAria='statsDevClose';close.setAttribute('aria-label','Close');
    let closing=false,pointerDismiss=false,pressedOutside=false;
    const finish=()=>{
     if(dialog!==current)return;
