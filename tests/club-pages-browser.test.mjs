@@ -595,11 +595,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,height:slot.height};
         });
         const initial=cells.map(cell=>cell.innerHTML);
-        for(const cell of cells){
+        for(const [index,cell] of cells.entries()){
          cell.classList.add('club-history-skeleton-stat');
          const slot=cell.querySelector('.club-history-stat-value');
-         const text=slot.textContent;
-         slot.innerHTML='<span class="club-fp-bar" data-skeleton-sample="'+text+'" aria-hidden="true"></span>';
+         // Compare real 2-digit GA to the shipped 3-digit GA placeholder.
+         const sample=['30','18','10','12','104','104','+52'][index];
+         slot.innerHTML='<span class="club-fp-bar" data-skeleton-sample="'+sample+'" aria-hidden="true"></span>';
         }
         row.classList.add('club-history-row-loading');
         const skeleton=cells.map(cell=>{
@@ -755,25 +756,25 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const cells=[...row.querySelectorAll('td.app-player-stats-number')];
        const seasonLabel=row.querySelector('.app-player-stats-no-toggle');
        const seasonHeader=row.querySelector('.app-player-stats-season');
-       const rect=n=>{const r=n.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,height:r.height};};
+       const rect=n=>{const r=n.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,right:r.right,height:r.height};};
        const seasonLabelRange=document.createRange();seasonLabelRange.selectNodeContents(seasonLabel);
        const seasonTextOffset=rect(seasonLabelRange).y-rect(seasonHeader).y;
        const actual=cells.map(cell=>{
         const range=document.createRange();range.selectNodeContents(cell.querySelector('.app-player-stats-value'));
-        const a=rect(range),b=rect(cell);return {dx:a.x-b.x,dy:a.y-b.y,height:b.height};
+        const a=rect(range),b=rect(cell);return {dx:a.x-b.x,dy:a.y-b.y,right:a.right,height:b.height};
        });
-       for(const cell of cells){
+       const sampleTexts=['128 (24)','9870','32','21','17','2','7.50'];
+       for(const [index,cell] of cells.entries()){
         const value=cell.querySelector('.app-player-stats-value');
-        const text=value.textContent;
-        value.innerHTML='<span class="app-skeleton-bar" data-skeleton-sample="'+text+'" aria-hidden="true"></span>';
+        // Compare real short values against the actual first-paint samples.
+        value.innerHTML='<span class="app-skeleton-bar" data-skeleton-sample="'+sampleTexts[index]+'" aria-hidden="true"></span>';
        }
        row.classList.add('app-player-stats-loading');
        const skeleton=cells.map(cell=>{
         const a=rect(cell.querySelector('.app-skeleton-bar')),b=rect(cell);
-        return {dx:a.x-b.x,dy:a.y-b.y,height:b.height};
+        return {dx:a.x-b.x,dy:a.y-b.y,right:a.right,height:b.height};
        });
        row.classList.remove('app-player-stats-loading');
-       const sampleTexts=['128 (24)','9870','32','21','17','2','7.50'];
        const loadingRow=document.createElement('tr');
        loadingRow.className='app-player-stats-season-row app-player-stats-loading';
        loadingRow.innerHTML='<th scope="row" class="app-player-stats-season"><span class="app-player-stats-skeleton-label">'+
@@ -816,8 +817,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       })()`);
       for(let i=0;i<7;i++){
        const a=placement.actual[i],s=placement.skeleton[i];
-       assert.ok(Math.abs(a.dx-s.dx)<=1,
-        'Player Stats bar '+i+' has the same visible value center at '+width+'px: '+JSON.stringify(placement));
+       assert.ok(width<=620?Math.abs(a.dx-s.dx)<=1:Math.abs(a.right-s.right)<=1,
+        'Player Stats bar '+i+' anchors to the actual text (right edge on desktop, center on mobile) even with different digit counts at '+width+'px: '+JSON.stringify(placement));
        assert.ok(Math.abs(a.dy-s.dy)<=3,
         'Player Stats bar '+i+' occupies the same value baseline at '+width+'px: '+JSON.stringify(placement));
        assert.ok(Math.abs(a.height-s.height)<=1,

@@ -268,6 +268,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 }
 .app-player-stats-table .app-player-stats-loading .app-player-stats-value>.app-skeleton-bar[data-skeleton-sample]::before{
  content:attr(data-skeleton-sample);color:transparent;font:inherit;
+  font-variant-numeric:tabular-nums;
  line-height:1;white-space:nowrap;
 }
 .app-player-stats-table [data-detail-stats-heading="5"] .app-player-stats-score-heading-skeleton{

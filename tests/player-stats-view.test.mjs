@@ -355,8 +355,11 @@ test('#578 numeric skeletons use rendered font metrics rather than guessed width
   'mobile values and skeletons use the same centered value container');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-value>\.app-skeleton-bar\[data-skeleton-sample\]\{/);
  assert.match(css,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;/);
- const history={played:'30',won:'18',drawn:'10',lost:'12',gf:'104',ga:'52',gd:'+52'};
- for(const [metric,sample] of Object.entries(history)){
+  assert.match(css,/font-variant-numeric:tabular-nums;/,
+   'Player skeleton samples use the same tabular digits as hydrated values');
+ const history={played:'30',won:'18',drawn:'10',lost:'12',gf:'104',ga:'104',gd:'+52'};
+ assert.equal(history.ga,history.gf,'History GA skeleton is the same size as GF');
+  for(const [metric,sample] of Object.entries(history)){
   assert.ok(clubShell.includes('data-club-history-skeleton="'+metric+'"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="'+sample+'"'),
    'Club History '+metric+' reserves natural glyph widths before JS');
  }
