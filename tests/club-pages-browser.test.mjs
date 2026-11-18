@@ -615,7 +615,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const nameLeft=range.getBoundingClientRect().left;
         const nameCenterY=rect(range).cy;
         const chevron=button.querySelector('.club-history-chevron');
-        const chevronRight=chevron.getBoundingClientRect().right;
+        const chevronRight=button.getBoundingClientRect().left+chevron.offsetLeft+chevron.offsetWidth;
         chevron.remove();
         const nameWithoutChevron=range.getBoundingClientRect().left;
         button.prepend(chevron);
