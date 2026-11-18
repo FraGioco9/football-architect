@@ -104,6 +104,7 @@ test('new event receipt v2 validates once; archived legacy candidate remains sch
  const old=await buildCandidateMatchReceiptV1(fixture,legacy);
  assert.equal(old.schemaVersion,1);
  assert.equal(frozenMatchPlayerStatistics(old.result).home.players[0].assists,null);
+ assert.equal(frozenMatchPlayerStatistics(old.result).home.players[0].yellowCards,null);
  const events=await planRecordedMatchTimelineV1({result:legacy,homeRoster:home,awayRoster:away});
  const official=attachTestRatingsV1({...legacy,...events,
   home:{...legacy.home,...events.home},away:{...legacy.away,...events.away}});
@@ -118,7 +119,13 @@ test('new event receipt v2 validates once; archived legacy candidate remains sch
  // The immutable future receipt retains its entire verified event timeline.
  assert.equal(candidate.result.eventModelVersion,'lineup-events-v1');
  assert.ok(candidate.result.events.every(e=>Number.isSafeInteger(e.ordinal)));
- assert.ok(projection.home.players.every(p=>Number.isSafeInteger(p.assists)&&Number.isSafeInteger(p.redCards)));
+ assert.ok(projection.home.players.every(p=>Number.isSafeInteger(p.assists)&&Number.isSafeInteger(p.yellowCards)&&Number.isSafeInteger(p.redCards)));
+ for(const name of ['home','away']){
+  for(const p of projection[name].players){
+   assert.equal(p.yellowCards,candidate.result.events.filter(e=>
+    e.type==='yellow'&&e.side===name&&e.playerId===p.playerId).length);
+  }
+ }
  assert.equal(projection.home.players.filter(p=>!p.started).length,
   candidate.result.home.appearances.filter(p=>!p.started).length);
  const tampered=structuredClone(official);

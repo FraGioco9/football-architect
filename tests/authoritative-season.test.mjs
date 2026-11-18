@@ -161,7 +161,7 @@ test('accepts only real, internally coherent frozen V2 player totals',()=>{
   const validated=validateAuthoritativeSeason(actual,ctx(),manifest);
   assert.equal(validated.data.statistics.players[0].minutes,minutes);
   const adapted=adaptAuthoritativeSeason(validated,ctx(),manifest);
-  assert.deepEqual(adapted.statistics.players,[{playerId:58,name:'Recorded Player',nationality:null,clubKey:fixture.homeClubId,appearances:1,starts:1,subAppearances:null,minutes,goals:1,assists:null,redCards:null,cleanSheets:null,ratedAppearances:0,averageRating:null,goalsAssistsPer90:null}]);
+  assert.deepEqual(adapted.statistics.players,[{playerId:58,name:'Recorded Player',nationality:null,clubKey:fixture.homeClubId,appearances:1,starts:1,subAppearances:null,minutes,goals:1,assists:null,yellowCards:null,redCards:null,cleanSheets:null,ratedAppearances:0,averageRating:null,goalsAssistsPer90:null}]);
   assert.ok(Object.isFrozen(adapted.statistics.players[0]));
   assert.equal(adapted.statistics.standings.length,16,'valid substitution retains standings');
   assert.equal(adapted.fixtures.find(f=>f.sourceFixtureId===fixture.id).homeGoals,1,

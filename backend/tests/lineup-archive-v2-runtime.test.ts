@@ -74,6 +74,20 @@ describe('#613 protected V2 archive and closure proof (unrouted)',()=>{
   expect(summarizeFrozenLineupPlayersV1(new Map([['named',named]]))).toEqual([
    {playerId:23,clubId:'IT-1',competitionId:'IT-1',appearances:1,starts:1,minutes:90,goals:2,name:'Frozen Name',nationality:'ITA'}
   ]);
+  const cards=structuredClone(frozen('IT-1',23,0,67)) as any;
+  cards.receipt.result.eventModelVersion='lineup-events-v1';
+  cards.receipt.result.home.appearances[0].assists=0;
+  cards.receipt.result.home.appearances[0].redCards=1;
+  cards.receipt.result.events=[
+   {type:'yellow',side:'home',playerId:23,minute:18},
+   {type:'yellow',side:'home',playerId:23,minute:67},
+   {type:'red',side:'home',playerId:23,minute:67,reason:'second_yellow'}
+  ];
+  expect(summarizeFrozenLineupPlayersV1(new Map([['cards',cards]]))).toMatchObject([
+   {playerId:23,clubId:'IT-1',yellowCards:2,redCards:1,assists:0,subAppearances:0}
+  ]);
+  expect(summarizeFrozenLineupPlayersV1(new Map([['cards',cards],['legacy',frozen('IT-1',23,0,90)]])))
+   .toMatchObject([{playerId:23,clubId:'IT-1',yellowCards:null,redCards:null,assists:null}]);
   expect(summarizeFrozenLineupPlayersV1(new Map())).toEqual([]);
   expect(()=>summarizeFrozenLineupPlayersV1(
    new Map([['bad',frozen('IT-1',23,0,-1)]]) as any

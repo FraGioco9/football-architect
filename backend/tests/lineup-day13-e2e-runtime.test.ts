@@ -149,7 +149,7 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(statsA.statistics).not.toHaveProperty('eventModelVersion');
  expect(a).not.toHaveProperty('lineup');expect(a).not.toHaveProperty('statistics');
  expect(statsA.statistics?.home.players).toHaveLength(11);
- expect(statsA.statistics?.home.players[0]).toMatchObject({name:expect.stringMatching(/^Test Player/),nationality:'ITA',assists:expect.any(Number),redCards:expect.any(Number)});
+ expect(statsA.statistics?.home.players[0]).toMatchObject({name:expect.stringMatching(/^Test Player/),nationality:'ITA',assists:expect.any(Number),yellowCards:expect.any(Number),redCards:expect.any(Number)});
  expect(a).toMatchObject({status:'completed',kickoff:null,provenance:{kind:'authoritative'}});
  expect(Object.keys(a.provenance).sort()).toEqual(['kind','receiptHash']);
  expect(statsA.statistics!.home.kind).toBe('real_xi');
@@ -189,6 +189,7 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
   expect(player.averageRating).toBeGreaterThanOrEqual(4);
   expect(player.minutes).toBeGreaterThan(0);
   expect(player.assists).toBeGreaterThanOrEqual(0);
+  expect(player.yellowCards).toBeGreaterThanOrEqual(0);
   expect(player.redCards).toBeGreaterThanOrEqual(0);
   expect(player.subAppearances).toBe(0);
  }
