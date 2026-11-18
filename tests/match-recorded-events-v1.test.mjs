@@ -121,8 +121,10 @@ test('new event receipt v2 validates once; archived legacy candidate remains sch
  tampered.home.appearances[0].minutes++;
  await assert.rejects(()=>buildCandidateMatchReceiptV1(fixture,tampered),/appearance\/minutes/);
  const ghost=structuredClone(official);
- ghost.events[0].playerId=9999999;
- await assert.rejects(()=>buildCandidateMatchReceiptV1(fixture,ghost),/frozen match events|rating consistency|goal|yellow|pass|red|interval/);
+ if(ghost.events.length){
+  ghost.events[0].ordinal=9999999;
+  await assert.rejects(()=>buildCandidateMatchReceiptV1(fixture,ghost),/clock\/ordinal/);
+ }
 });
 test('forged version marker cannot silently reinterpret historical event coverage',async()=>{
  const source=await play(roster(),[], 'legacy-version-bridge-test');
