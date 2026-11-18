@@ -774,7 +774,20 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);
       assert.equal(await run("!!document.querySelector('.app-history-dev [data-history-player-records] strong,.app-history-dev [data-history-player-records] [data-club-crest]')"),false);
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['titles','podiums','streak','totalWins','totalGoals','totalPoints']);
-      const tiedExpansion=await run("(()=>{const card=[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].find(c=>c.querySelector('[data-history-record-expand]'));if(!card)return null;const button=card.querySelector('[data-history-record-expand]'),list=document.getElementById(button.getAttribute('aria-controls')),rows=[...list.children],extra=rows.slice(2);const collapsed=rows.length>2&&rows.slice(0,2).every(row=>!row.hidden)&&extra.every(row=>row.hidden)&&button.getAttribute('aria-expanded')==='false'&&button.textContent.includes('+'+extra.length);button.click();const opened=extra.every(row=>!row.hidden)&&button.getAttribute('aria-expanded')==='true'&&!button.querySelector('[data-app-i18n=historyShowLess]').hidden;button.click();const restored=extra.every(row=>row.hidden)&&button.getAttribute('aria-expanded')==='false'&&!button.querySelector('[data-app-i18n=historyShowAll]').hidden;return {collapsed,opened,restored,entries:rows.length}})()");
+      const tiedExpansion=await run(`(async()=>{
+        const button=document.querySelector('.app-history-dev [data-history-record]:not([hidden]) [data-history-record-expand]');
+        if(!button)return null;
+        const rows=[...button.closest('article').querySelectorAll('.app-history-dev-record-entry')];
+        const collapsed=rows.filter(row=>!row.hidden).length===1&&button.textContent==='+'+(rows.length-1);
+        button.click();
+        const dialog=document.querySelector('.app-history-player-dialog[open]');
+        const opened=dialog?.querySelectorAll('.app-history-dev-record-entry').length===rows.length;
+        if(dialog){
+          const closed=new Promise(resolve=>dialog.addEventListener('close',resolve,{once:true}));
+          dialog.querySelector('button').click();await closed;
+        }
+        return {collapsed,opened,restored:!dialog?.open&&document.activeElement===button};
+      })()`);
       if(tiedExpansion){
         expansionChecks++;
         assert.ok(tiedExpansion.collapsed&&tiedExpansion.opened&&tiedExpansion.restored,division.id+' tied records expand/collapse accessibly '+JSON.stringify(tiedExpansion));

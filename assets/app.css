@@ -2143,3 +2143,11 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 #competition-panel-history .app-history-dev-record-entry:has(>.app-history-player-detail)>.app-world-club-identity{display:flex;min-width:0;flex:1}
 
 .app-history-dev-record:has([aria-expanded="true"]){height:auto}
+
+.app-history-player-name-row a,.app-history-player-holders a{width:fit-content;max-width:100%;text-underline-offset:.16em}
+.history-team-placeholder,.history-player-placeholder{gap:8px;align-self:end}
+.history-placeholder-lines{display:grid;gap:5px;min-width:0;width:min(15ch,100%)}
+.history-placeholder-lines>.app-skeleton-bar,.history-placeholder-season>.app-skeleton-bar{display:block;width:100%;height:.8em}
+.history-placeholder-lines>.app-skeleton-bar+span{width:76%;height:.7em}
+.history-placeholder-season{width:6ch;margin-inline-start:auto}
+.history-player-placeholder{min-height:38px}

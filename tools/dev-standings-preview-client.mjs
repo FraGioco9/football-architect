@@ -242,23 +242,28 @@ function openHistorySeason(season){
  if(document.scrollingElement)document.scrollingElement.scrollTop=0;
 }
 function historyExpandableHolders(card,holders,metric){
- const extra=[...holders.children].slice(1);
- if(!extra.length)return;
- holders.id="app-history-record-holders-"+metric;
- for(const entry of extra){entry.hidden=true;entry.dataset.historyTieExtra="";}
- const expand=historyNode("button","app-history-record-expand");
- expand.type="button";expand.dataset.historyRecordExpand=metric;
- expand.setAttribute("aria-controls",holders.id);expand.setAttribute("aria-expanded","false");
- const count=historyNode("span","app-history-record-more-count","+"+extra.length);
- const show=historyLabel("historyShowAll"),less=historyLabel("historyShowLess");
- less.hidden=true;expand.append(count,show,less);
- expand.addEventListener("click",()=>{
-  const opened=expand.getAttribute("aria-expanded")!=="true";
-  for(const entry of extra)entry.hidden=!opened;
-  count.hidden=opened;show.hidden=opened;less.hidden=!opened;
-  expand.setAttribute("aria-expanded",String(opened));
+ const entries=[...holders.children];
+ if(entries.length<2)return;
+ for(const entry of entries.slice(1))entry.hidden=true;
+ const trigger=historyNode("button","app-history-player-detail","+"+(entries.length-1));
+ trigger.type="button";trigger.dataset.historyRecordExpand=metric;
+ trigger.setAttribute("aria-haspopup","dialog");
+ trigger.addEventListener("click",()=>{
+  const title=card.querySelector("h5")?.textContent||"";
+  const dialog=historyNode("dialog","app-history-player-dialog");
+  dialog.setAttribute("aria-label",title);
+  const close=historyNode("button","app-history-player-close","×");
+  close.type="button";close.setAttribute("aria-label",({it:"Chiudi",de:"Schließen",es:"Cerrar",fr:"Fermer"})[document.documentElement.lang]||"Close");
+  const dismiss=()=>window.faHistoryDialog.close(dialog);
+  close.addEventListener("click",dismiss);
+  dialog.addEventListener("cancel",event=>{event.preventDefault();dismiss();});
+  dialog.addEventListener("click",event=>{if(event.target===dialog)dismiss();});
+  dialog.addEventListener("close",()=>{dialog.remove();trigger.focus();},{once:true});
+  dialog.append(close,historyNode("h3","",title));
+  for(const entry of entries){const copy=entry.cloneNode(true);copy.hidden=false;dialog.append(copy);}
+  document.body.append(dialog);window.faHistoryDialog.show(dialog);close.focus();
  });
- card.append(expand);
+ card.append(trigger);
 }
 async function renderHistoryPreview(){
  const version=++historyRenderVersion,route=window.faCompetitionRoute?.get?.(),progressDay=matchdays,progressSeason=debugSeason;

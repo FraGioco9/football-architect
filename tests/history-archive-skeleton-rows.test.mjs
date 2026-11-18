@@ -223,6 +223,9 @@ test('Season archive skeleton reserves one crest slot per podium club',()=>{
  for(const [id,expected] of [['IT-1',3],['int-1',4],['int-2',4]]){
   const competition=manifest.competitions.find(item=>item.id===id);
   const markup=renderViewSkeleton(competition,'history');
-  assert.equal((markup.match(/class="app-view-skeleton-crest-slot"/g)||[]).length,expected,id);
+  assert.equal((markup.match(/history-team-placeholder/g)||[]).length,6);
+  assert.equal((markup.match(/history-player-placeholder/g)||[]).length,6);
+  const archive=markup.slice(markup.indexOf('app-view-skeleton-history-archive'));
+  assert.equal((archive.match(/class="app-view-skeleton-crest-slot"/g)||[]).length,expected,id);
  }
 });

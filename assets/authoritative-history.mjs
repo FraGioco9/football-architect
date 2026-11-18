@@ -180,7 +180,10 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
      dialog.setAttribute('aria-label',heading.textContent);
      const close=make('button','×','app-history-player-close');
      close.type='button';close.setAttribute('aria-label',({it:'Chiudi',de:'Schließen',fr:'Fermer',es:'Cerrar'})[document.documentElement.lang]||'Close');
-     close.addEventListener('click',()=>dialog.close());
+     const dismiss=()=>window.faHistoryDialog.close(dialog);
+     close.addEventListener('click',dismiss);
+     dialog.addEventListener('cancel',e=>{e.preventDefault();dismiss();});
+     dialog.addEventListener('click',e=>{if(e.target===dialog)dismiss();});
      dialog.append(close,make('h3',heading.textContent));
      for(const item of record.entries){
       const line=make('div',undefined,'app-history-dev-record-entry');
@@ -188,7 +191,7 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
       dialog.append(line);
      }
      dialog.addEventListener('close',()=>{dialog.remove();trigger.focus();},{once:true});
-     document.body.append(dialog);dialog.showModal();close.focus();
+     document.body.append(dialog);window.faHistoryDialog.show(dialog);close.focus();
     });
     holders.firstElementChild.append(trigger);
    }

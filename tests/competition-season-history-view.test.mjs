@@ -84,5 +84,19 @@ test('closed season records combine transfers, preserve frozen identity and clea
  assert.equal(walk(r.card).find(n=>n.tagName==='a').textContent,'Archived name');
  records.applyRecordSeasons([{season:1,players:[row]},{season:2,players:null}]);
  assert.equal(r.card.dataset.historyFilled,'true');
- assert.ok(walk(r.card).some(n=>n.dataset.appI18n==='historyRecordedMatches'));
+ assert.equal(walk(r.card).find(n=>n.className==='app-competition-stat-value').textContent,'4');
+});
+
+test('goal contributions and red cards use recorded values and preserve unknown assists',()=>{
+ const r=fixture('int-1');
+ const row={playerId:8,clubKey:'IT-1',goals:3,assists:2,redCards:1};
+ for(const [metric,expected] of [['seasonContributions','5'],['totalRedCards','1']]){
+  r.card.dataset.historyPlayerRecord=metric;
+  r.window.faHistoryPlayerRecords.clear();
+  r.window.faHistoryPlayerRecords.applyRecordSeasons([{season:1,players:[row]}]);
+  assert.equal(walk(r.card).find(n=>n.className==='app-competition-stat-value').textContent,expected);
+ }
+ r.card.dataset.historyPlayerRecord='totalContributions';
+ r.window.faHistoryPlayerRecords.applyRecordSeasons([{season:1,players:[{...row,assists:null}]}]);
+ assert.equal(r.card.dataset.historyFilled,'false');
 });

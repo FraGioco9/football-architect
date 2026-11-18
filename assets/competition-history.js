@@ -151,7 +151,7 @@
   }
   function playerLabel(holder,tag,cls){
     if(!/^[1-9]\d*$/.test(holder.id))return element(tag,cls,holder.name);
-    const link=element("a",cls,holder.name);
+    const link=element("a",(cls+" app-world-standing-club-link").trim(),holder.name);
     link.href=window.faRoutesRegistry.buildRoute({kind:"player",id:Number(holder.id)});
     return link;
   }
@@ -196,10 +196,6 @@
           footer.append(button);
         }else footer.append(element("span","app-history-player-context",context));
       }
-      if(partial){
-        const note=element("small","app-history-player-context","Recorded matches");
-        note.dataset.appI18n="historyRecordedMatches";footer.append(note);
-      }
       card.append(footer);
     }
     // Keep the metric slots visible after an empty response.
@@ -218,13 +214,27 @@
     }
     window.faAppRenderLanguage?.();
   }
-  function close(){
-    if(dialog?.open)dialog.close();
+  const animated=dialog=>typeof dialog.animate==="function"&&!window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const frames=[{opacity:0,transform:"translateY(6px)"},{opacity:1,transform:"translateY(0)"}];
+  const closing=new WeakSet();
+  function showDialog(node){
+    node.showModal();
+    if(animated(node))node.animate(frames,{duration:160,easing:"ease-out"});
   }
+  function closeDialog(node){
+    if(!node.open||closing.has(node))return;
+    if(!animated(node)){node.close();return;}
+    closing.add(node);
+    node.animate(frames,{direction:"reverse",duration:130,easing:"ease-in",fill:"backwards"}).finished
+      .catch(()=>{}).then(()=>{closing.delete(node);if(node.open)node.close();});
+  }
+  window.faHistoryDialog={show:showDialog,close:closeDialog};
+  function close(){if(dialog)closeDialog(dialog);}
   function open(metric,source){
     const record=results?.[metric];if(!record)return;
     if(!dialog){
       dialog=element("dialog","app-history-player-dialog");
+      dialog.addEventListener("cancel",event=>{event.preventDefault();close();});
       dialog.addEventListener("click",event=>{if(event.target===dialog)close();});
       dialog.addEventListener("close",()=>{
         if(lockedScroll){lockedScroll.style.overflow=oldOverflow;lockedScroll=null;}
@@ -278,7 +288,7 @@
     returnFocus=source;
     lockedScroll=document.querySelector(".fa-shell-content-scroll");
     if(lockedScroll){oldOverflow=lockedScroll.style.overflow;lockedScroll.style.overflow="hidden";}
-    dialog.showModal();exit.focus({preventScroll:true});
+    showDialog(dialog);exit.focus({preventScroll:true});
   }
   panel.addEventListener("click",event=>{
     const trigger=event.target.closest("[data-history-detail]");
@@ -293,7 +303,7 @@
     applyRecordSeasons(seasons){
       results={};
       partial=seasons.some(s=>s.playerCoverage===false||!Array.isArray(s.players));
-      for(const [field,suffix] of [["goals","Goals"],["appearances","Appearances"],["starts","Starts"],["minutes","Minutes"],["assists","Assists"],["cleanSheets","CleanSheets"]]){
+      for(const [field,suffix] of [["goals","Goals"],["appearances","Appearances"],["contributions","Contributions"],["redCards","RedCards"],["assists","Assists"],["cleanSheets","CleanSheets"]]){
         for(const cumulative of [false,true]){
           const entries=new Map();
 
@@ -301,10 +311,11 @@
           for(const season of seasons){
             for(const row of season.players||[]){
               if(row[field]==null&&field==="cleanSheets")continue;
-              if(!safeInt(row[field])){verified=false;break;}
+              const amount=field==="contributions"&&safeInt(row.assists)&&safeInt(row.goals)?row.goals+row.assists:row[field];
+              if(!safeInt(amount)){verified=false;break;}
               const key=cumulative?row.playerId:row.playerId+":"+season.season;
               const item=entries.get(key)||{id:row.playerId,name:null,value:0,clubs:[]};
-              item.value+=row[field];
+              item.value+=amount;
               item.name=row.archivedName||item.name||"#"+row.playerId;
               item.clubs.push({clubId:row.clubKey,season:season.season});
               entries.set(key,item);
