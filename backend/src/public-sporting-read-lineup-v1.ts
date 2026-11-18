@@ -2,6 +2,7 @@
  * immutable lineup receipts. Wired to HTTP in the Draft/HOLD branch; not deployed.
  * Never re-simulates a match or reads current affiliations on a public GET.
  */
+import {frozenMatchPlayerStatistics} from './match-player-statistics.mjs';
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import type {WorldV1} from './types.ts';
@@ -18,13 +19,31 @@ import type {LineupMatchResultV1} from './temporary-lineup-v1.mjs';
 import {rankLeagueTable} from './league-standings.ts';
 import {withOfficialClubMatchIds} from './public-club-fixture-match-ids.ts';
 import type {Fixture} from './initial-schedule.ts';
-import {readSeasonKnockoutTies,readSeasonCalendarHash,readSeasonArchiveSummary,readSeasonCloseReceipt} from './season-evidence-repository.ts';
+import {readSeasonCalendarHash,readSeasonArchiveSummary,readSeasonCloseReceipt} from './season-evidence-repository.ts';
 interface Archive {generation:string;calendar_hash:string;results_hash:string;knockout_hash:string;archive_hash:string;results_count:number;days_count:number;ties_count:number;created_at:number}
-interface DayReceiptRow {day:number;outcome_hash:string;generation:string;calendar_hash:string;simulation_version:string;outcome_json:string}
+interface DayReceiptRow {day:number;outcome_hash:string}
+// The frozen replay already verifies receipt contents and generation.
+// This second read only needs ordered hashes for the sealed archive proof.
 async function readV2Days(db:Database,season:number):Promise<DayReceiptRow[]>{
  return (await db.prepare(
-  'SELECT day,outcome_hash,generation,calendar_hash,simulation_version,outcome_json FROM season_lineup_day_outcomes WHERE season_number=? ORDER BY day'
+  'SELECT day,outcome_hash FROM season_lineup_day_outcomes WHERE season_number=? ORDER BY day'
  ).bind(season).all<DayReceiptRow>()).results;
+}
+/** Read-only, independent season evidence metadata. The caller verifies all
+ * receipts against the frozen replay and archive before publishing any data.
+ * No mutable cache, weakened authority check or additional D1 query. */
+export async function readPublicSeasonReceiptBundle(db:Database,season:number){
+ if(!Number.isSafeInteger(season)||season<1)throw new ApiError(404,'not_found');
+ const receiptRead=readV2Days(db,season);
+ // Only hash order and cardinality are needed here. The replay above
+ // already independently validates the complete immutable knockout plans.
+ const tieRead=db.prepare(
+  'SELECT plan_hash FROM season_knockout_ties WHERE season_number=? ORDER BY competition_id,phase_id,tie_id'
+ ).bind(season).all<{plan_hash:string}>();
+ const archiveRead=db.prepare('SELECT * FROM season_archives WHERE season_number=?')
+  .bind(season).first<Archive>();
+ const [receipts,tieRows,archive]=await Promise.all([receiptRead,tieRead,archiveRead]);
+ return {receipts,ties:tieRows.results,archive};
 }
 async function countV2Days(db:Database,season:number):Promise<number>{
  const row=await db.prepare('SELECT COUNT(*) AS n FROM season_lineup_day_outcomes WHERE season_number=?')
@@ -50,15 +69,16 @@ export function lineupTeamStatisticsV1(
 ){
  const teams=new Map(clubs.map(clubId=>[clubId,{clubId,played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,cleanSheets:0}]));
  let matchesPlayed=0,totalGoals=0;
- const players=new Map<string,{playerId:number;clubId:string;appearances:number;starts:number;minutes:number;goals:number}>();
+ const players=new Map<string,{playerId:number;clubId:string;displayName:string|null;nationality:string|null;appearances:number;starts:number;subAppearances:number;minutes:number;goals:number;assists:null;redCards:null;cleanSheets:number|null;ratedAppearances:number;ratingSum:number}>();
  for(const fixture of fixtures){
   const score=results.get(fixture.id);if(!score)continue;
   const frozen=frozenMatches.get(fixture.id);
   if(!frozen||frozen.fixtureId!==fixture.id||!Number.isSafeInteger(frozen.matchId))
    invalid();
   const complete=frozen.receipt.result as unknown as LineupMatchResultV1;
+  const recorded=frozenMatchPlayerStatistics(complete);
   for(const [kind,club] of [['home',fixture.homeClubId],['away',fixture.awayClubId]] as const){
-   const side=complete[kind];
+   const side=complete[kind],details=new Map(recorded[kind].players.map(p=>[p.playerId,p]));
    if(!side||!Array.isArray(side.appearances))invalid();
    for(const appearance of side.appearances){
     if(!Number.isSafeInteger(appearance.playerId)||appearance.playerId<1||
@@ -67,9 +87,14 @@ export function lineupTeamStatisticsV1(
       !Number.isSafeInteger(appearance.goals)||appearance.goals<0)invalid();
     const key=club+':'+appearance.playerId;
     const previous=players.get(key)??{
-     playerId:appearance.playerId,clubId:club,appearances:0,starts:0,minutes:0,goals:0
+     playerId:appearance.playerId,clubId:club,displayName:null,nationality:null,appearances:0,starts:0,subAppearances:0,minutes:0,goals:0,assists:null,redCards:null,cleanSheets:null,ratedAppearances:0,ratingSum:0
     };
     previous.appearances++;previous.starts++;previous.minutes+=appearance.minutes;
+    const detail=details.get(appearance.playerId);if(!detail)invalid();
+    previous.displayName=detail.name??previous.displayName;
+    previous.nationality=detail.nationality??previous.nationality;
+    if(detail.cleanSheets!==null)previous.cleanSheets=(previous.cleanSheets??0)+detail.cleanSheets;
+    if(detail.rating!==null){previous.ratedAppearances++;previous.ratingSum+=detail.rating;}
     previous.goals+=appearance.goals;players.set(key,previous);
    }
   }
@@ -86,8 +111,26 @@ export function lineupTeamStatisticsV1(
  }
  return {matchesPlayed,totalGoals,goalsPerMatch:matchesPlayed?totalGoals/matchesPlayed:0,
   teams:[...teams.values()].map(t=>({...t,goalDifference:t.goalsFor-t.goalsAgainst})),
-  players:[...players.values()].sort((a,b)=>a.clubId.localeCompare(b.clubId,'en')||a.playerId-b.playerId),
+  players:[...players.values()].map(({ratingSum,...p})=>({...p,averageRating:p.ratedAppearances?Math.round(ratingSum/p.ratedAppearances*100)/100:null})).sort((a,b)=>a.clubId.localeCompare(b.clubId,'en')||a.playerId-b.playerId),
   playerStatus:'available' as const};
+}
+/** Names are read-only identity enrichment; all sporting totals and club IDs
+ * remain frozen receipt evidence. A single bound ID list avoids per-player GETs
+ * and current-affiliation joins, including when viewing an archived season. */
+async function competitionPlayerIdentities(db:Database,players:ReturnType<typeof lineupTeamStatisticsV1>['players']){
+ const ids=[...new Set(players.filter(p=>p.displayName===null||p.nationality===null).map(p=>p.playerId))];
+ if(!ids.length)return players;
+ const rows=(await db.prepare(`SELECT id,
+  COALESCE(NULLIF(TRIM(json_extract(payload_json,'$.display_name')),''),
+   TRIM(json_extract(payload_json,'$.first_name')||' '||json_extract(payload_json,'$.last_name'))) AS display_name,
+  json_extract(payload_json,'$.nationality') AS nationality
+  FROM generated_players WHERE id IN (SELECT value FROM json_each(?))`)
+  .bind(JSON.stringify(ids)).all<{id:number;display_name:string|null;nationality:string|null}>()).results;
+ const names=new Map(rows.map(row=>[row.id,{
+  name:typeof row.display_name==='string'&&row.display_name.trim()?row.display_name.trim():null,
+  nationality:typeof row.nationality==='string'&&/^[A-Z]{3}$/.test(row.nationality)?row.nationality:null}]));
+ return players.map(player=>({...player,displayName:player.displayName??names.get(player.playerId)?.name??null,
+  nationality:player.nationality??names.get(player.playerId)?.nationality??null}));
 }
 function projectFixtures(fixtures:readonly Fixture[],plans:readonly KnockoutTie[],results:ReadonlyMap<string,LineupSportingScoreV1>){
  const metadata=new Map(plans.flatMap(plan=>plan.fixtures.map(item=>[item.fixture.id,{phaseId:plan.phaseId,tieId:plan.tieId,leg:item.leg,neutral:item.neutral}] as const)));
@@ -204,12 +247,10 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
   // One verified frozen V2 chain is authoritative for all competitions.
   // Replaying progression does not resimulate a match or consult current rosters.
   const replay=await replayLineupSeasonV1(db,viewedWorld,evidence,viewedWorld.day);
-  const receipts=await readV2Days(db,selectedSeason);
+  const {receipts,ties,archive}=await readPublicSeasonReceiptBundle(db,selectedSeason);
   if(receipts.length!==replay.days.length)invalid();
-  const ties=await readSeasonKnockoutTies(db,selectedSeason);
   const state=replay.progression,storedResults=state.results;
   if(ties.length!==state.ties.size)invalid();
-  const archive=await db.prepare(`SELECT * FROM season_archives WHERE season_number=${selectedSeason}`).first<Archive>();
   // An archive may be sealed while its season is still active on day 56.
   // History becomes public only after the separate close event receipt.
   if(archive&&viewedWorld.phase!=='closed'&&viewedWorld.day!==56)invalid();
@@ -306,7 +347,8 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
   const fixtures=[...leagueFixtures,...plans.flatMap(t=>t.fixtures.map(f=>f.fixture))].sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id,'en'));
   const table=await rankLeagueTable(competitionId,binding.clubIds,leagueFixtures,storedResults,evidence.schedule.seed,{throughDay:viewedWorld.day});
   const standings={complete:leagueFixtures.every(f=>storedResults.has(f.id)),rows:table.map(({drawKey,...row})=>row)};
-  const stats=lineupTeamStatisticsV1(binding.clubIds,fixtures,storedResults,replay.frozenMatches);
+  const recordedStats=lineupTeamStatisticsV1(binding.clubIds,fixtures,storedResults,replay.frozenMatches);
+  const stats={...recordedStats,players:await competitionPlayerIdentities(db,recordedStats.players)};
   const final=fixtures.find(f=>f.marker===(competitionId==='int-1'?'SOVEREIGN-FINAL':'FEDERATION-FINAL'));
   const championClubId=competitionId.startsWith('int-')?(final?storedResults.get(final.id)?.winnerClubId:null):table[0]?.clubId;
   if(archive&&!championClubId)invalid();

@@ -1,14 +1,13 @@
 # Player portraits V4.1 — natural facial diversity and deterministic compatibility
 
-**Issue:** #646. **PR:** #648 (Draft/HOLD). **Status:** new opt-in
-identity contract, no migration, no image/asset/D1 edits or publication.
+**Scope:** Reusable V4.1 identity contract for any player. Never change
+previously frozen snapshots in place. Migrations and asset releases are
+separately authorised.
 
 ## Why V4.1 is a distinct version
 
 The original V4 seed `football-architect:portrait-identity:v4:<id>:0`
-and every historical V4 snapshot are permanent. Existing approved pilot
-portraits #82, #147, #64, #137, #65 and #151 must retain their V4
-fingerprints. Changing an old trait option list in place would silently
+and every historical V4 snapshot are permanent. Previously approved V4 snapshots must retain their immutable fingerprints. Changing an old trait option list in place would silently
 change those frozen faces. Therefore V4.1 uses:
 
 - Schema `player-portraits-v4`

@@ -13,6 +13,7 @@ export interface MatchLineupWorldV1 {
 export interface MatchLineupPlayerV1 {
  id:number;
  career_status:'active'|'retired';
+ name?:string|null;nationality?:string|null;
  primary_position?:string;
  secondary_positions?:string[];
  attributes?:Record<string,number>;

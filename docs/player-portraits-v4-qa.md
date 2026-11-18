@@ -30,7 +30,7 @@ The alpha silhouette begins on the first row containing at least 3 pixels whose 
 - Both files: at least 4% pixels with alpha exactly 0; all four corners entirely transparent; significant alpha foreground at least 8% of the canvas. Opaque/pseudo-transparent images FAIL.
 - Chromatic fringe: a conservative strongly saturated semi-transparent edge heuristic emits a NOTE when suspicious. It cannot reliably distinguish unusual natural skin/hair hues from a colored fringe and is not a standalone proof of contamination. Inspect edges on contrasting backgrounds.
 
-Previously approved composition references #44, #98 and #145 have measured top margins 7, 4, and 3 px respectively using this same robust-alpha method. They remain approved and untouched. Head/face scale still requires visual verification; hairstyle-dependent silhouette dimensions are not sufficient to measure anatomical face scale.
+Previously approved composition references retain their individually recorded QA measurements outside this general contract. Head/face scale still requires visual verification; hairstyle-dependent silhouette dimensions are not sufficient to measure anatomical face scale.
 
 ## QA verdicts and recommended actions
 
@@ -58,4 +58,4 @@ Unit tests cover: exact top-margin and alignment boundaries, alpha and empty/opa
 
 ## Preservation and release boundary
 
-This is Step D on Draft/HOLD PR #648, not a release. Existing V3 portrait snapshots and 23 approved assets stay unchanged. There are no production writes, Preview deploys, D1 changes, new player images, approvals or bulk migration in this step. Step E chooses a diverse 8–10-player pilot; Steps F–G require human QA before the 150-snapshot migration decision.
+This technical QA tool is read-only. Its output alone never authorises image approval, database writes, merge or deployment; obtain explicit owner approval and follow the generic portrait workflow.

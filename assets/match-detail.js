@@ -36,6 +36,7 @@
   const name=typeof venue==='string'?venue:venue&&typeof venue==='object'&&!Array.isArray(venue)?venue.name:null;
   return typeof name==='string'&&name.trim().length>0&&name.trim().length<=120?name.trim():'';
  };
+ let matchStatistics=null;
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null,sideProjection=null;
 
  // Use the approved SVG directly: its primary and secondary fills are
@@ -225,14 +226,14 @@
    const list=find('[data-match-lineup="'+side+'"] .app-match-lineup-rows');
    if(!list)return;
    const source=data?.status==='completed'&&data?.provenance?.receiptHash
-    ?data.lineup?.[side]:null;
-   const starters=source?.kind==='real_xi'&&Array.isArray(source.starters)&&
-    source.starters.length===11?source.starters:null;
+    ?matchStatistics?.statistics?.[side]:null;
+   const starters=source?.kind==='real_xi'&&Array.isArray(source.players)&&
+    source.players.length===11?source.players:null;
    const valid=starters&&new Set(starters.map(p=>p.playerId)).size===11&&
     starters.every(p=>Number.isSafeInteger(p.playerId)&&p.playerId>0&&
      /^[A-Z]{2,3}$/.test(p.role)&&
      (p.rating===null||typeof p.rating==='number'));
-   const rated=valid&&data.lineup?.ratingVersion==='test-rating-v1';
+   const rated=valid&&matchStatistics?.statistics?.ratingVersion==='test-rating-v1';
    for(const [i,row] of [...list.children].entries()){
     if(!valid||i>=starters.length){
      row.setAttribute('aria-hidden','true');
@@ -243,7 +244,8 @@
     const starter=starters[i];
     const role=document.createElement('span');role.className='app-match-lineup-role';role.textContent=starter.role;
     const player=document.createElement('a');player.className='app-match-lineup-player';
-    player.textContent=tr.player+' #'+starter.playerId;
+    player.textContent=typeof starter.name==='string'&&starter.name.trim()?starter.name:tr.player+' #'+starter.playerId;
+    if(starter.nationality)player.title=starter.nationality;
     player.href=href('/players/'+starter.playerId);
     player.target='_blank';player.rel='noopener noreferrer';
     const vote=document.createElement('span');vote.className='app-match-lineup-rating';
@@ -348,6 +350,12 @@
    clubs={clubs:context.clubs};competitions={competitions:context.competitions};
   }
   data=item;errorKind=null;render();
+  if(item.status==='completed')void fetch('/api/matches/'+matchId+'/stats',{credentials:'omit',cache:'no-store'})
+   .then(async response=>{if(!response.ok)return;const value=await response.json();
+    if(value?.schemaVersion===1&&value.providerId==='authoritative-world'&&value.matchId===matchId&&
+     value.season===item.season&&value.competitionId===item.competitionId&&value.status==='completed'&&
+     value.provenance?.kind==='authoritative'&&typeof item.provenance.receiptHash==='string'&&/^[a-f0-9]{64}$/.test(item.provenance.receiptHash)&&value.provenance.receiptHash===item.provenance.receiptHash){matchStatistics=value;render();}
+   }).catch(()=>{/* Statistics failures leave the independently loaded match intact. */});
   // Match data and the competition snapshot are read independently. Only
   // the immutable verified match identity is allowed to request this season.
   if(!Number.isSafeInteger(item.day)||item.day<1||

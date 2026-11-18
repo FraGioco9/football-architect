@@ -1,5 +1,5 @@
 /**
- * #646 Step D — read-only V4 portrait technical QA (Node 22).
+ * Read-only V4/V4.1 portrait technical QA (Node 22).
  *
  * No image edits, uploads, identity inference, D1 writes or publication.
  * For actual derivative pixels, FFmpeg must decode the exact WebP bytes;

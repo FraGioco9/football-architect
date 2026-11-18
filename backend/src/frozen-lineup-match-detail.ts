@@ -2,6 +2,7 @@
  * Never consults live affiliations; does not expose unfinished matches.
  * Not wired to a public route until the single-engine cutover is approved.
  */
+import {frozenMatchPlayerStatistics,type MatchStatistics} from './match-player-statistics.mjs';
 import type {LineupSeasonReplayV1} from './lineup-season-replay.ts';
 import type {LineupMatchResultV1} from './temporary-lineup-v1.mjs';
 
@@ -12,6 +13,7 @@ export interface FrozenLineupMatchDetailV1 {
   regulation:{home:number;away:number};extraTime:{home:number;away:number}|null;
   penalties:{home:number;away:number}|null;winnerClubId:string|null;
   resolution:'regulation'|'extra-time'|'penalties'};
+ statistics:MatchStatistics;
  players:{ratingVersion:'test-rating-v1'|null;
   home:{kind:'real_xi'|'team_fallback';starters:Array<{playerId:number;role:string;rating:number|null}>};
   away:{kind:'real_xi'|'team_fallback';starters:Array<{playerId:number;role:string;rating:number|null}>}};
@@ -52,6 +54,7 @@ export function frozenLineupMatchDetailV1(
   result:{homeGoals:result.homeGoals,awayGoals:result.awayGoals,
    regulation:result.regulation,extraTime:result.extraTime,penalties:result.penalties,
    winnerClubId:result.winnerClubId,resolution:result.resolution},
+  statistics:frozenMatchPlayerStatistics(result),
   players:{ratingVersion:result.ratingVersion==='test-rating-v1'?'test-rating-v1':null,
    home:side(result.home),away:side(result.away)},
   provenance:{kind:'immutable-lineup-v1',algorithmVersion:'temporary-lineup-v1',

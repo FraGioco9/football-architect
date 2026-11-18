@@ -356,7 +356,7 @@ test('MATCH-SLOTS: local DEV proxies numeric match IDs and published fixtures, b
  });
  try{
   const valid=['/api/matches/seasons/1/competitions/IT-1',
-   '/api/matches/seasons/1/competitions/int-2','/api/matches/1','/api/matches/3896'];
+   '/api/matches/seasons/1/competitions/int-2','/api/matches/1','/api/matches/3896','/api/matches/1/stats'];
   for(const path of valid){
    const result=await send(path);
    assert.equal(result.status,200,path);
@@ -365,7 +365,7 @@ test('MATCH-SLOTS: local DEV proxies numeric match IDs and published fixtures, b
   }
   assert.deepEqual(forwarded,valid);
   const invalid=[
-   ['/api/matches/0',404],['/api/matches/01',404],
+   ['/api/matches/0/stats',404],['/api/matches/01/stats',404],['/api/matches/1/stats?x=1',403],['/api/matches/1/stats/extra',404],['/api/matches/0',404],['/api/matches/01',404],
    ['/api/matches/m1_00ba05c95b47e3fa47eae54de51ba23d',404],
    ['/api/matches/9007199254740992',404],
    ['/api/matches/seasons/0/competitions/IT-1',404],

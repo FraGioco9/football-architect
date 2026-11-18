@@ -357,6 +357,15 @@ export async function buildCandidateMatchReceiptV1(match,outcome){
  const participantIds=new Set([...outcome.home.appearances,...outcome.away.appearances].map(p=>p.playerId));
  if(participantIds.size!==outcome.home.appearances.length+outcome.away.appearances.length)
   error('duplicate player across clubs');
+ // Additive identity snapshot: old receipts remain byte-identical and valid.
+ if(outcome.playerIdentityVersion!==undefined||outcome.playerIdentities!==undefined){
+  const people=outcome.playerIdentities;
+  if(outcome.playerIdentityVersion!=='player-identity-v1'||!Array.isArray(people)||
+   people.length!==participantIds.size||new Set(people.map(p=>p?.playerId)).size!==people.length||
+   people.some(p=>!p||!participantIds.has(p.playerId)||
+    p.name!==null&&(typeof p.name!=='string'||!p.name.trim()||p.name.trim()!==p.name||p.name!==p.name.normalize('NFC'))||
+    p.nationality!==null&&(typeof p.nationality!=='string'||!/^[A-Z]{3}$/.test(p.nationality))))error('receipt player identities');
+ }
  const fixture={matchId,season,day,generation,competitionId,fixtureId,homeClubId,awayClubId,sourceHash};
  const payload={schemaVersion:1,authority:'candidate-only',algorithmVersion:LINEUP_SIMULATOR_VERSION,
   fixture,result:outcome};
