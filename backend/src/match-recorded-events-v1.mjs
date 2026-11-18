@@ -43,7 +43,7 @@ function newState(side,roster,duration){
   on.set(p.playerId,p.role);people.set(p.playerId,person);
  }
  return {fallback:false,bench,on,people,used:new Set(),duration,
-  dismissed:new Set(),windows:new Set(),subCount:0,redCount:0,secondTarget:null,
+  dismissed:new Set(),yellowed:new Set(),windows:new Set(),subCount:0,redCount:0,secondTarget:null,
   cardCount:0,lastElapsed:0};
 }
 function advance(state,to){
@@ -172,13 +172,15 @@ export async function planRecordedMatchTimelineV1({result,homeRoster,awayRoster}
     outRole:role,inRole:role,window:item.minute===45?'half-time':
     item.minute===105?'extra-time':'in-play'});
   }else if(item.kind==='yellow'){
-   const id=select(active(),await d('actor'));if(id===null)continue;
-   push({type:'yellow',playerId:id});
+   const id=select(active().filter(id=>!state.yellowed.has(id)),await d('actor'));if(id===null)continue;
+   state.yellowed.add(id);push({type:'yellow',playerId:id});
   }else if(item.kind==='second-first'){
-   const candidates=active().filter(id=>state.on.get(id)!=='GK');
-   const id=select(candidates.length?candidates:active(),await d('actor'));
+   const candidates=active().filter(id=>state.on.get(id)!=='GK'&&!state.yellowed.has(id));
+   const alternatives=active().filter(id=>!state.yellowed.has(id));
+   const id=select(candidates.length?candidates:alternatives,await d('actor'));
    if(id===null)continue;
-   state.secondTarget=id;push({type:'yellow',playerId:id,secondYellowSequence:true});
+   state.secondTarget=id;state.yellowed.add(id);
+   push({type:'yellow',playerId:id,secondYellowSequence:true});
   }else if(item.kind==='direct-red'||item.kind==='second-red'){
    const id=item.kind==='second-red'?state.secondTarget:select(active(),await d('actor'));
    if(id===null||!state.on.has(id))fail('red eligibility');
