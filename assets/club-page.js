@@ -21,10 +21,7 @@
  };
  try{
   if(!selected)throw Error('Unknown club route');
-  // A refresh starts at /roster; the API will choose Info only after success.
-  if(selected.view==='roster'){
-   if(location.search)history.replaceState(null,'',location.pathname+location.hash);
-  }else{
+  if(selected.view!=='roster'){
    const params=new URLSearchParams(location.search);
    params.delete('view');
    if(['overview','history'].includes(selected.view)){params.delete('season');params.delete('matchday');}
@@ -337,12 +334,19 @@
    }
    const target=control.dataset.clubRosterView;
    event.preventDefault();
-   const params=model.rosterViewQuery(location.search,target);
+   const params=model.rosterViewQuery(location.search,target==='attributes'?(control.closest('.club-roster').querySelector('select')?.value||'technical'):target);
    const next=location.pathname+'?'+params.toString()+location.hash;
    if(next===location.pathname+location.search+location.hash)return;
    history.pushState(null,'',next);
-   paint(true);
+   refreshClubRoster();paint(true);
    host.querySelector('[data-club-roster-view="'+target+'"]')?.focus({preventScroll:true});
+  });
+  host.addEventListener('change',event=>{
+   if(!event.target.matches('.club-roster-select'))return;
+   const params=model.rosterViewQuery(location.search,event.target.value);
+   history.pushState(null,'',location.pathname+'?'+params+location.hash);
+   paint(true);
+   host.querySelector('.club-roster-select')?.focus({preventScroll:true});
   });
   // Identical sort cycle to /players: descending, ascending, reset.
   // Sort the in-memory club snapshot without repeating its public API request.
@@ -351,16 +355,7 @@
    if(!button||selected.view!=='roster')return;
    const key=button.dataset.clubRosterSort;
    const params=new URLSearchParams(location.search);
-   const group=model.rosterView(params);
-   const common=['nationality','name','positions'];
-   const byView={
-    info:['age','height','foot'],
-    technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],
-    mental:['vision','positioning','decisions','composure'],
-    physical:['speed','strength','stamina','agility'],
-    goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']
-   };
-   if(!common.includes(key)&&!byView[group].includes(key))return;
+   if(!model.rosterSortKeys(model.rosterView(params)).includes(key))return;
    if(params.get('sort')!==key){params.set('sort',key);params.set('order','desc');}
    else if(params.get('order')==='desc')params.set('order','asc');
    else{params.delete('sort');params.delete('order');}
@@ -382,27 +377,34 @@
   let rosterRequest=0,rosterAbort=null,rosterCacheClubKey=null;
   const canonicalRosterInfo=()=>{
    if(selected.view==='roster'&&rosterSnapshot.source==='ready'&&rosterSnapshot.count>0&&
-    !new URLSearchParams(location.search).has('view'))
-    history.replaceState(null,'',location.pathname+'?view=info'+location.hash);
+    !new URLSearchParams(location.search).has('view')){
+    const query=new URLSearchParams(location.search);query.set('view','info');
+    history.replaceState(null,'',location.pathname+'?'+query+location.hash);
+   }
   };
   refreshClubRoster=()=>{
    if(selected.view!=='roster')return;
    const clubKey=selected.countryId+'-'+selected.clubId;
+   const query=new URLSearchParams(location.search),stats=query.get('view')==='stats';
+   const season=query.get('season');
+   const suffix=stats?'/stats'+(season!==null?'?season='+encodeURIComponent(season):''):'';
+   const cacheKey=clubKey+suffix;
    // Reuse both completed and in-flight reads when revisiting this club.
    // An unavailable response can be retried on the next Roster entry.
-   if(rosterCacheClubKey===clubKey&&['loading','ready'].includes(rosterSnapshot.source)){
+   if(rosterCacheClubKey===cacheKey&&['loading','ready'].includes(rosterSnapshot.source)){
     canonicalRosterInfo();return;
    }
    const ticket=++rosterRequest;
    rosterAbort?.abort();rosterAbort=new AbortController();
-   rosterCacheClubKey=clubKey;
+   rosterCacheClubKey=cacheKey;
    if(rosterSnapshot.source!=='loading'){rosterSnapshot={source:'loading'};paint(true);}
    const {signal}=rosterAbort;
    void (async()=>{
     try{
-     const response=await fetch('/api/clubs/'+clubKey+'/roster',{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal,headers:{Accept:'application/json'}});
+     const response=await fetch('/api/clubs/'+clubKey+'/roster'+suffix,{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal,headers:{Accept:'application/json'}});
      if(!response.ok){const error=Error('roster_http_'+response.status);error.status=response.status;throw error;}
      const data=await response.json();
+     if(stats&&(!Number.isSafeInteger(data?.season)||data.season<0||!data.players?.every(p=>p.stats===null||['appearances','starts','minutes','goals'].every(k=>Number.isSafeInteger(p.stats?.[k])&&p.stats[k]>=0))))throw Error('invalid_roster_stats');
      if(data?.clubKey!==clubKey||!Number.isSafeInteger(data.count)||data.count<0||
       !Array.isArray(data.players)||data.players.length!==data.count||
       data.players.some((p,i)=>!Number.isSafeInteger(p?.id)||p.id<1||
@@ -476,6 +478,12 @@
     await import('/assets/world-clock-adapter.js');
     const state=window.faWorldState;
     if(!state)throw Error('Shared world state unavailable');
+    let rosterWorld=state.get().world;
+    state.subscribe(({world})=>{
+     if(rosterWorld?.generation===world?.generation&&rosterWorld?.revision===world?.revision)return;
+     const previous=rosterWorld;rosterWorld=world;
+     if(previous&&rosterCacheClubKey?.includes('/stats'))invalidateRoster();
+    });
     const sameWorld=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
     const refresh=()=>{
      // Other Club views have no competition overview panel. Keep a completed
@@ -629,10 +637,9 @@
     }
     const queryOnly=selected.view==='roster'&&next.view==='roster';
     selected=next;paint(true);refreshClubHistory();refreshClubOverview();
-    if(!queryOnly)refreshClubRoster();
+    refreshClubRoster();
     if(queryOnly){
-     const mode=model.rosterView(new URLSearchParams(location.search));
-     host.querySelector('[data-club-roster-view="'+mode+'"]')?.focus({preventScroll:true});
+     host.querySelector('.club-roster-tabs [aria-selected="true"]')?.focus({preventScroll:true});
     }else host.querySelector('.club-tabs [aria-current="page"]')?.focus({preventScroll:true});
    }
   });

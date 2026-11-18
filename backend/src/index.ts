@@ -7,7 +7,7 @@ import {gmailEmailDeliveries,type GmailDeliveryEnv} from './gmail-email-delivery
 import {localInboxDeliveries,handleLocalInbox,type LocalInboxEnv} from './local-dev-inbox.ts';
 import { ApiError } from './errors.ts';
 import {requireDatabase} from './database.ts';
-import {readPublicSportingSeasonLineupV1 as readPublicSportingSeason,readPublicCalendarDayLineupV1 as readPublicCalendarDay,readPublicClubHistoryLineupV1 as readPublicClubHistory,readPublicClubFixturesLineupV1 as readPublicClubFixtures} from './public-sporting-read-lineup-v1.ts';
+import {readPublicRosterStats,readPublicSportingSeasonLineupV1 as readPublicSportingSeason,readPublicCalendarDayLineupV1 as readPublicCalendarDay,readPublicClubHistoryLineupV1 as readPublicClubHistory,readPublicClubFixturesLineupV1 as readPublicClubFixtures} from './public-sporting-read-lineup-v1.ts';
 import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
 import {readPublicClubRoster} from './public-club-roster-read.ts';
@@ -104,6 +104,14 @@ export default {
         if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
         return json(503,{error:{code:'players_unavailable'}});
       }
+    }
+    const rosterStats=url.pathname.match(/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/roster\/stats$/);
+    if(rosterStats){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search&&!/^\?season=(0|[1-9][0-9]{0,8})$/.test(url.search))return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicRosterStats(requireDatabase(env.DB),rosterStats[1],url.search?Number(url.searchParams.get('season')):null))}
+      catch(error){if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:error.code}});
+        return json(503,{error:{code:'roster_unavailable'}});}
     }
     const roster=url.pathname.match(/^\/api\/clubs\/([^/]+)\/roster$/);
     if(roster){

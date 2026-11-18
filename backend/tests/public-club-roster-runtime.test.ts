@@ -110,3 +110,18 @@ test('public Worker roster route rejects query/pagination/mutations and unknown 
  assert.equal(invalid.status,404);
  assert.deepEqual(await invalid.json(),{error:{code:'club_not_found'}});
 });
+
+test('Stats defaults to the canonical season, retains every current member and distinguishes future data',async()=>{
+ const {db}=fixture(73);
+ const get=(query:string)=>worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/roster/stats'+query),{DB:db} as Env);
+ const current=await get('');
+ assert.equal(current.status,200);
+ const data=await current.json() as {season:number;players:Array<{stats:unknown}>};
+ assert.equal(data.season,0);
+ assert.equal(data.players.length,73);
+ assert.deepEqual(data.players[72].stats,{appearances:0,starts:0,minutes:0,goals:0});
+ const future=await (await get('?season=2')).json() as typeof data;
+ assert.equal(future.players.length,73);
+ assert.equal(future.players[0].stats,null);
+ assert.equal((await get('?season=2&season=1')).status,422);
+});

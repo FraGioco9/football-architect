@@ -86,7 +86,7 @@ try{
   try{
    await page.goto(origin+'/clubs/'+country+'/'+id+'/'+view+(view==='roster'?'?view=attributes&group=technical':''),{waitUntil:'domcontentloaded'});
    await page.waitForFunction(()=>document.documentElement.dataset.clubShellReady==='true');
-   if(view==='roster')assert.equal(new URL(page.url()).search,'','first paint strips a stale subview before the manifest resolves');
+   if(view==='roster')assert.equal(new URL(page.url()).search,'?view=attributes&group=technical','first paint preserves the selected category');
    assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.app-main')).paddingTop),
     '8px','Club page top padding is 8px at first paint for '+view+' '+width+'px');
    const identity=manifest.clubs.find(c=>c.countryId===country.toUpperCase()&&c.clubId===id);

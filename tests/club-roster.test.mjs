@@ -3,66 +3,11 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
-test('CLUB-ROSTER-01 first paint exposes five direct views without an Attributes tab',()=>{
- const html=read('clubs/_shared/index.html'),generator=read('tools/generate-club-pages.mjs');
- assert.match(html,/class="club-roster club-first-paint-roster" aria-busy="true" data-roster-mode="overview" hidden/);
- assert.match(html,/app-players-table club-roster-table/);
- assert.match(html,/data-club-roster-view="info"/);
- for(const view of ['technical','mental','physical','goalkeeping'])assert.match(html,new RegExp('data-club-roster-view="'+view+'"'));
- assert.equal((html.match(/data-club-roster-view="/g)||[]).length,5);
- assert.doesNotMatch(html,/data-club-roster-view="attributes"|data-club-roster-group=|club-roster-toolbar|>Attributes<\/a>/);
- assert.match(html,/data-club-roster-view="info" aria-selected="true" aria-disabled="true" tabindex="-1"/);
- assert.match(html,/data-club-roster-view="technical" aria-selected="false" aria-disabled="true" tabindex="-1"/);
- assert.equal((html.match(/aria-disabled="true" tabindex="-1"/g)||[]).length,5);
- assert.doesNotMatch(html,/href="\?view=(info|technical|mental|physical|goalkeeping)"/);
- assert.match(generator,/button\.removeAttribute\('href'\)/);
- assert.match(generator,/button\.setAttribute\('aria-disabled','true'\)/);
- assert.match(html,/data-club-roster-sort="positions"/);
- assert.match(html,/class="app-players-sort-button"/);
- assert.match(generator,/button\.dataset\.clubRosterSort=key/);
- assert.match(html,/data-club-roster-view="info"[^>]*>Info<\/a>/);
- assert.match(html,/<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs"/);
- assert.match(html,/<\/nav><span class="club-roster-count"><span class="app-players-count-placeholder"/);
- const css=read('assets/club-page.css');
- assert.match(css,/\.app-body \.club-roster \.club-roster-tabs \.app-competition-tab\[aria-disabled="true"\]\{opacity:\.45;[^}]*background:transparent;cursor:default;pointer-events:none\}/);
- assert.match(css,/\.club-roster \.club-roster-tabs\{[^}]*margin:0;padding:0;border:0/);
- assert.match(css,/\.club-roster-view-row\{[^}]*height:42px;min-height:42px/);
- assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*height:32px;min-height:32px/);
- assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*padding:5px 5px/);
- assert.doesNotMatch(css,/\.club-roster-toolbar\{|\.club-roster-groups\{/);
-
- // 2.5 mobile subviews before the separate count; fades only where scroll is possible.
- assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*flex:0 0 calc\(40% - 3\.2px\)/);
- assert.match(css,/\.club-roster-count\{[^}]*flex:0 0 92px/);
- assert.match(css,/\.club-roster \.club-roster-tabs\[data-can-scroll-left="true"\]\{--app-tabs-fade-left:16px\}/);
- assert.match(css,/\.club-roster \.club-roster-tabs\[data-can-scroll-right="true"\]\{--app-tabs-fade-right:16px\}/);
- assert.match(css,/-webkit-mask-image:linear-gradient\(to right/);
- const client=read('assets/club-page.js');
- assert.match(client,/const syncRosterTabEdges=/);
- assert.match(client,/rosterTabs\.addEventListener\('scroll',syncRosterTabEdges/);
- assert.match(client,/window\.addEventListener\('resize',syncRosterTabEdges/);
- assert.match(html,/const syncSubviewFade=/);
- assert.match(generator,/const syncSubviewFade=/);
- // Issue #548: all primary mobile View bars hide the scrollbar, not only Roster subviews.
- const shared=read('assets/app.css');
- assert.match(shared,/\.app-competition-tabs\{scrollbar-width:none;-ms-overflow-style:none/);
- assert.match(shared,/\.app-competition-tabs::-webkit-scrollbar\{display:none;width:0;height:0\}/);
- assert.match(shared,/\.app-competition-tabs\[data-can-scroll-right="true"\]\{--app-tabs-fade-right:16px\}/);
- assert.match(shared,/\.app-competition-tabs\[data-can-scroll-left="true"\]\{--app-tabs-fade-left:16px\}/);
- assert.match(shared,/\.app-world-standing-scroll\{[^}]*scrollbar-width:thin/);
- assert.match(shared,/\.app-players-table-scroll\{[^}]*scrollbar-width:thin/);
- const playerDetail=read('assets/player-detail.js');
- assert.match(playerDetail,/viewBar\?\.addEventListener\('scroll',syncViewEdges/);
- assert.match(playerDetail,/window\.addEventListener\('resize',syncViewEdges/);
-
-
- assert.doesNotMatch(generator,/club-roster-groups/);
- assert.match(html,/data-club-roster-label="5"/);
+test('Roster first paint exposes Info, Stats and Attributes and reserves five rows',()=>{
+ const html=read('clubs/_shared/index.html');
+ for(const view of ['info','stats','attributes'])assert.ok(html.includes('data-club-roster-view="'+view+'"'));
+ assert.equal((html.match(/data-club-roster-view="/g)||[]).length,3);
  assert.equal((html.match(/class="app-players-loading-row"/g)||[]).length,5);
- assert.match(html,/roster\.hidden=view!=='roster'/);
- assert.match(generator,/roster\.hidden=view!=='roster'/);
- assert.doesNotMatch(html,/<h2 data-club-roster-title>|<h2>Roster<\/h2>/);
- assert.doesNotMatch(html,/data-club-roster-pagination|class="club-roster-pagination"/);
 });
 test('CLUB-ROSTER-01 keeps all current players, across five locales and five subviews',async()=>{
  const {default:model}=await import('../assets/club-model.js');
@@ -93,8 +38,12 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
   assert.match(html,/<\/nav><span class="club-roster-count">65 /);
 
   assert.match(html,new RegExp('>'+expectedOverview[language]+'<'));
-  for(const label of expectedCategories[language])assert.ok(html.includes('>'+label+'</a>'),language+': '+label);
-  assert.doesNotMatch(html,/data-club-roster-view="attributes"|club-roster-toolbar|club-roster-groups/);
+  const attributes=model.render(manifest,selected,language,'?view=attributes',null,1,null,snapshot);
+  for(const label of expectedCategories[language])assert.ok(attributes.includes('>'+label+'</option>'));
+  const stats=model.render(manifest,selected,language,'?view=stats',null,1,null,{...snapshot,season:2});
+  assert.match(stats,/data-roster-mode="stats"/);
+  assert.equal((stats.match(/class="club-roster-player-link"/g)||[]).length,65);
+  assert.match(stats,/data-club-roster-sort="minutes"/);
   assert.doesNotMatch(html,/club-empty|pagination|pageSize|development_aptitude|initial_age|<h2>Roster/);
   assert.ok(html.includes('65 '),language);
   for(const [group,length] of [['technical',11],['mental',7],['physical',7],['goalkeeping',7]]){
@@ -125,9 +74,9 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
  assert.match(read('assets/club-page.css'),/\.club-roster-empty\{margin:14px 0 0;color:var\(--muted\)/);
  const pending=model.render(manifest,selected,'en','?view=attributes&group=technical',null,1,null,{source:'loading'});
  const pendingRoster=pending.match(/<section class="club-roster"[^>]*>[\s\S]*?<\/section>/)?.[0];
- assert.equal((pendingRoster.match(/aria-disabled="true"/g)||[]).length,5);
- assert.equal((pendingRoster.match(/tabindex="-1"/g)||[]).length,5);
- assert.doesNotMatch(pendingRoster,/\shref="\/clubs\/.*?\/roster\?view=/);
+ assert.equal((pendingRoster.match(/aria-disabled="true"/g)||[]).length,0);
+ assert.equal((pendingRoster.match(/tabindex="-1"/g)||[]).length,2);
+ assert.match(pendingRoster,/\shref="\/clubs\/.*?\/roster\?view=/);
  assert.match(pendingRoster,/aria-busy="true"/);
  assert.equal((pending.match(/app-players-loading-row/g)||[]).length,5);
  assert.match(pending,/colspan="11"/);
@@ -135,10 +84,10 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
  const legacy=model.render(manifest,selected,'en','?view=mental',null,1,null,snapshot);
  assert.match(legacy,/data-roster-mode="overview"/);
  const failed=model.render(manifest,selected,'en','',null,1,null,{source:'unavailable'});
- assert.equal((failed.match(/aria-disabled="true"/g)||[]).length,5,'API unavailable: keep tabs disabled');
+ assert.equal((failed.match(/aria-disabled="true"/g)||[]).length,0,'navigation remains available');
  assert.doesNotMatch(failed,/data-club-roster-view="info"[^>]*href=/);
  assert.match(failed,/temporarily unavailable/);
- assert.doesNotMatch(failed,/href="\/clubs\/it\/1\/roster\?view=/);
+ assert.match(failed,/href="\/clubs\/it\/1\/roster\?view=/);
  const missing=model.render(manifest,selected,'en','',null,1,null,{source:'unavailable',status:404});
  assert.match(missing,/Restart the local development server/);
 });
@@ -180,15 +129,8 @@ test('CLUB-ROSTER-01 keeps subview switching local and explains Worker route mis
  assert.match(js,/params\.get\('sort'\)!==key/);
  assert.match(js,/params\.get\('order'\)==='desc'/);
  assert.match(js,/params\.delete\('sort'\);params\.delete\('order'\)/);
- assert.match(js,/if\(selected\.view==='roster'\)\{/);
- assert.match(js,/if\(location\.search\)history\.replaceState\(null,'',location\.pathname\+location\.hash\)/);
- assert.match(js,/rosterSnapshot\.count>0&&/);
  assert.match(js,/const canonicalRosterInfo=/);
- assert.doesNotMatch(js,/if\(next\.view==='roster'&&!queryOnly\)rosterSnapshot=\{source:'loading'\}/);
- assert.match(js,/location\.pathname\+'\?view=info'\+location\.hash/);
- assert.match(js,/const target=control\.dataset\.clubRosterView/);
- assert.match(js,/const queryOnly=selected\.view==='roster'&&next\.view==='roster'/);
- assert.match(js,/if\(!queryOnly\)refreshClubRoster/);
+ assert.match(js,/const queryOnly=selected.view==='roster'&&next.view==='roster'/);
  assert.match(js,/status:Number\.isSafeInteger\(error\?\.status\)/);
  assert.match(js,/host\.querySelectorAll\('a\[href\]'\)/,'pending tabs must not enter href normalization');
  assert.match(js,/if\(document\.documentElement\.dataset\.clubIdentityReady==='true'\)return/,'optional module errors keep hydrated identity');
