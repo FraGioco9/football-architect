@@ -461,11 +461,11 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-table .club-history-row-loading .club-fp-bar{
  display:block;box-sizing:border-box;translate:none;
 }
-/* The full -1px desktop correction painted skeletons too high.
-   Use a half-pixel correction without changing the text tracks or the
-   native bar appearance. Mobile remains unshifted. */
+/* Previous negative desktop offsets made the skeleton bars visibly too high.
+   Paint the native 12px Club bar 1px below its line-box center. This changes
+   no row, glyph, chevron, x position, bar style or mobile layout. */
 @media(min-width:621px){
- .club-history-table .club-history-row-loading .club-fp-bar{translate:0 -0.5px}
+ .club-history-table .club-history-row-loading .club-fp-bar{translate:0 1px}
 }
 /* First paint and runtime pending rows reserve the actual numeric glyph
    widths, then center the bar on the same 16px track as verified data. */

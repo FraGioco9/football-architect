@@ -106,8 +106,8 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
   'Stats inherits the exact site-wide skeleton primitive');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar\{\s*display:block;box-sizing:border-box;min-width:0;height:10px;margin:0;translate:none;/,
   'Stats loading bars have the canonical filled 10px shape');
- assert.match(css,/@media\(min-width:621px\)\{\s*\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar\{translate:0 -0\.5px\}/,
-  'Player Stats desktop skeleton avoids the previous excessive upward shift');
+ assert.match(css,/@media\(min-width:621px\)\{\s*\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar\{translate:0 1px\}/,
+  'Player Stats desktop skeleton paints below the data center instead of above it');
  assert.doesNotMatch(css,/\.app-player-stats-loading \.app-skeleton-bar::before\{[^}]*text-decoration-line:line-through/,
   'Stats does not paint skeletons as text decorations');
  assert.doesNotMatch(css,/\.app-player-stats-skeleton-career::before|\.app-player-stats-skeleton-season::before/,

@@ -299,10 +299,10 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-table .app-player-stats-loading .app-skeleton-bar{
  display:block;box-sizing:border-box;min-width:0;height:10px;margin:0;translate:none;
 }
-/* The -1px correction painted desktop skeletons too high.
-   Reduce to half a pixel while retaining the native fill and 10px bar. */
+/* Move native Stats bars below their row-relative text line instead of
+   painting them above it. The 10px app-wide fill and mobile layout are intact. */
 @media(min-width:621px){
- .app-player-stats-table .app-player-stats-loading .app-skeleton-bar{translate:0 -0.5px}
+ .app-player-stats-table .app-player-stats-loading .app-skeleton-bar{translate:0 1px}
 }
 /* One column, one skeleton width: Career and Season labels share the same
    70px loading bar; numeric columns share the same glyph sample per metric. */
