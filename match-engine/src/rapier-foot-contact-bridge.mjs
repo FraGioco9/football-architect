@@ -107,14 +107,14 @@ export function soloCarryTwoFootPositions(player,gait=null){
   playerCatchingBall*gaitClamp((0.58-ahead)/0.18,0,1);
  const realRecoveryNeed=Math.max(approachingBall,catchupNeed);
  const openRun=gait?.carryPhase==='sprint'?1-realRecoveryNeed:0;
- const sprintTrackM=0.20-0.105*realRecoveryNeed;
+ const sprintTrackM=0.165-0.070*realRecoveryNeed;
  const lateralTrackM=gait?.carryPhase==='sprint'?sprintTrackM:
   gait?.carryPhase==='moderate'?0.11:0.085;
  // Shift the two-foot gait together when the ball is on one side, keeping
  // both actual shoe pads outside the rolling sphere. During a recovery,
  // release the shift so a shoe can approach and genuinely make contact.
  const runningLateralCenterM=gait?.carryPhase==='sprint'?
-  gaitClamp(lateral,-0.25,0.25)*openRun:0;
+  gaitClamp(lateral,-0.14,0.14)*openRun:0;
  const leftForward=(gait?.forwardM??forwardStroke*stroke)*
   twoFootPhysicalReach;
  const rightForward=(-forwardStroke*stroke+
@@ -272,17 +272,35 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    phaseRad:gaitPhaseRad,player:actor,ball:preStepBall,tick:nextTick,solo:soloCarry,
    carryPhase:soloCarry?playerFrame.soloCarryPhase?.phase:null
   }):null;
+  // Separate stride cadence from contact frequency without turning the
+  // foot into a 7 m/s lateral paddle. Genuine side-step motion is limited
+  // to 1.6 m/s in the solo research source; forward running retains the
+  // original 7 m/s whole-shoe continuity bound and Rapier collision solver.
+  const limitSoloFootLateralMotion=(desired,previous)=>{
+   if(!soloCarry)return desired;
+   const before=footProxyTransform(previous);
+   const after=footProxyTransform(desired);
+   const si=Math.sin(desired.facingRad),c=Math.cos(desired.facingRad);
+   const lateralDelta=-(after.x-before.x)*si+(after.y-before.y)*c;
+   const clipped=gaitClamp(lateralDelta,-1.6/60,1.6/60);
+   const excess=lateralDelta-clipped;
+   if(Math.abs(excess)<=1e-12)return desired;
+   return Object.freeze({...desired,
+    x:desired.x+excess*si,y:desired.y-excess*c});
+  };
   const proposed=shoeFeet(next,nextTick,gait);
   const rightDesired=soloCarry?
-   soloCarryTwoFootPositions(actor,gait).right:null;
+   limitSoloFootLateralMotion(soloCarryTwoFootPositions(actor,gait).right,
+    actualRightFoot):null;
   // The whole shoe also moves when its owner turns or advances. Clamp the
   // actual Rapier kinematic collider trajectory, NOT the canonical player,
   // to the original physical 7m/s ceiling (one 60Hz tick = 0.1167m).
   // This is a real, continuous shoe pose: no new START/END, impulse, or ball
   // ownership is synthesized.
   const newFeet=dribbleAttackerId===null?proposed:
-   Object.freeze(proposed.map((foot,i)=>{
-    if(initialPlayers[i].id!==dribbleAttackerId)return foot;
+   Object.freeze(proposed.map((rawFoot,i)=>{
+    if(initialPlayers[i].id!==dribbleAttackerId)return rawFoot;
+    const foot=limitSoloFootLateralMotion(rawFoot,actualShoeFeet[i]);
     const prior=footProxyTransform(actualShoeFeet[i]);
     const desired=footProxyTransform(foot);
     const dx=desired.x-prior.x,dy=desired.y-prior.y;
