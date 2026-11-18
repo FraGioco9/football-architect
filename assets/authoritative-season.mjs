@@ -128,13 +128,13 @@ export function validateAuthoritativeSeason(input,context,manifest){
   // eleven DISTINCT starters may each appear in that same match.
   const team=allTotals.get(p.clubId);
   if(!team||p.appearances>team.played)fail();
-  const total=playerTotals.get(p.clubId)??{appearances:0,goals:0};
-  total.appearances+=p.appearances;total.goals+=p.goals;
+  const total=playerTotals.get(p.clubId)??{appearances:0,starts:0,goals:0};
+  total.appearances+=p.appearances;total.starts+=p.starts;total.goals+=p.goals;
   playerTotals.set(p.clubId,total);
  }
  for(const [clubId,p] of playerTotals){
   const t=allTotals.get(clubId);
-  if(!t||p.appearances>17*t.played||p.goals>t.goalsFor)fail();
+  if(!t||p.appearances>17*t.played||p.starts>11*t.played||p.goals>t.goalsFor)fail();
  }
  if(!Array.isArray(d.calendar)||d.calendar.length!==56)fail();
  d.calendar.forEach((day,i)=>{
