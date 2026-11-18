@@ -11,7 +11,7 @@ import {runSpinDecayDiagnostics} from '/__fa_match_engine__/spin-decay-qa.mjs';
 import {reviewSpinRetentionEvidence} from '/__fa_match_engine__/spin-retention-evidence.mjs';
 import {reviewLiftInputContributions} from '/__fa_match_engine__/lift-input-qa.mjs';
 import {runContactImpactDiagnostics} from '/__fa_match_engine__/contact-impact-qa.mjs';
-import {mountControlledActionLabs,createControlledActionLab} from '/__fa_match_engine__/action-labs.mjs';
+import {mountControlledActionLabs,createControlledActionLab,projectActiveLabDecisions} from '/__fa_match_engine__/action-labs.mjs';
 import {mountControlledMovementLabs,createControlledMovementLab} from '/__fa_match_engine__/movement-labs.mjs';
 import {SMALL_SIDED_VARIANT_COUNT} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
 import {prepareFlightPlaybackPair,sampleFlightPlaybackPair,flightPlaybackWallTime} from '/__fa_match_engine__/flight-playback.mjs';
@@ -28,6 +28,77 @@ let inspectedPlayerId=null;
 // All visible scenes use the existing pitch/elevation/transport, never dialogs.
 let activeScene=null,activeLab=null,activeVariantIndex=0;
 let lastInlineFootballAction=null;
+let lastOnFieldAction=new Map(),lastMovementKinds=new Map();
+let onFieldDecisionEvents=[];
+const smallSidedDecisionLabels=Object.freeze({
+ 'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
+ 'support-run':'Support the attack','press-ball':'Close down the ball',
+ 'goalkeeping':'Protect the goal'
+});
+const humanPlayer=id=>id.replace('home-','HOME #').replace('away-','AWAY #');
+function appendDecisionEvent(event){
+ onFieldDecisionEvents.push(event);
+ if(onFieldDecisionEvents.length>40)onFieldDecisionEvents.shift();
+}
+function trackOnFieldDecisionChanges(frame){
+ const rows=projectActiveLabDecisions(frame,activeLab.focus);
+ for(const row of rows){
+  if(lastMovementKinds.get(row.id)!==row.kind){
+   appendDecisionEvent({tick:frame.physicsTick,id:row.id,
+    label:smallSidedDecisionLabels[row.kind],physical:false});
+   lastMovementKinds.set(row.id,row.kind);
+  }
+  if(row.actualAction!==null){
+   lastOnFieldAction.set(row.id,{tick:frame.physicsTick,kind:row.actualAction});
+   appendDecisionEvent({tick:frame.physicsTick,id:row.id,
+    label:'Real '+row.actualAction+' · Rapier shoe contact',physical:true});
+  }
+ }
+}
+function renderOnFieldDecisions(frame){
+ const list=byId('me-decisions-players'),events=byId('me-decisions-events');
+ const rows=projectActiveLabDecisions(frame,activeLab.focus);
+ byId('me-decisions-count').textContent=activeLab.focus.length+' on field';
+ const fragment=document.createDocumentFragment();
+ for(const id of activeLab.focus){
+  const row=rows.find(x=>x.id===id);
+  const card=document.createElement('div');
+  card.className='me-decision-row';
+  const header=document.createElement('strong');
+  header.textContent=humanPlayer(id);
+  const decision=document.createElement('span');
+  decision.textContent=row?
+    smallSidedDecisionLabels[row.kind]+
+    ' · '+row.speedMps.toFixed(1)+' m/s'+
+    (row.blockedBy?' · blocked by '+humanPlayer(row.blockedBy):''):
+    'Waiting for first movement tick';
+  card.append(header,decision);
+  if(row){
+   const target=document.createElement('small');
+   target.textContent='Target: '+row.target.x.toFixed(1)+', '+
+    row.target.y.toFixed(1)+' m';
+   card.append(target);
+  }
+  const last=lastOnFieldAction.get(id);
+  if(last){
+   const action=document.createElement('small');
+   action.textContent='Last verified action: '+last.kind+' · tick '+last.tick;
+   card.append(action);
+  }
+  fragment.append(card);
+ }
+ list.replaceChildren(fragment);
+ byId('me-decisions-event-count').textContent=
+  onFieldDecisionEvents.length+' changes/actions';
+ const history=document.createDocumentFragment();
+ for(const event of onFieldDecisionEvents.toReversed()){
+  const item=document.createElement('li');
+  item.textContent='T'+event.tick+' · '+humanPlayer(event.id)+' · '+event.label;
+  if(event.physical)item.className='me-decision-native';
+  history.append(item);
+ }
+ events.replaceChildren(history);
+}
 const inlinePhysics=s=>Object.freeze({
  tick:s.physicsTick??s.tick,
  time:s.timeS??(s.physicsTick??s.tick)*FIXED_DT,
@@ -41,6 +112,9 @@ function syncScenarioSurface(){
  byId('me-inline-variant-display').textContent=
   String(activeVariantIndex+1).padStart(2,'0')+' / '+SMALL_SIDED_VARIANT_COUNT;
  byId('me-inline-observation').hidden=!inline;
+ const showOnField=activeScene?.kind==='action';
+ byId('me-decisions-panel').hidden=!showOnField;
+ byId('me-elevation-panel').hidden=showOnField;
  byId('advanced-settings').hidden=inline;
  if(inline)byId('advanced-settings').open=false;
  byId('players-toggle').hidden=inline;
@@ -131,6 +205,8 @@ function restart() {
     if(engine){engine.dispose();engine=null;}
     activeLab=next;
     lastInlineFootballAction=null;
+    lastOnFieldAction=new Map();lastMovementKinds=new Map();
+    onFieldDecisionEvents=[];
     physicsTickSnapshot=inlinePhysics(next.snapshot());
     history=[physicsTickSnapshot];
     accumulator=0;playing=false;inspectedPlayerId=null;
@@ -166,6 +242,7 @@ function advance() {
       playing=false;return;
     }
     const observed=activeLab.step();
+    if(activeScene.kind==='action')trackOnFieldDecisionChanges(observed);
     if(activeScene.kind==='action'&&observed.action?.appliedByRapier)
       lastInlineFootballAction=Object.freeze({
        team:observed.action.team,action:observed.action.action,
@@ -335,6 +412,7 @@ function render() {
   }
   if(activeLab){
     const f=activeLab.snapshot();
+    if(activeScene.kind==='action')renderOnFieldDecisions(f);
     const detail=activeScene.kind==='action'?
       '· '+f.genuinePhysicalPlayerCount+' real physical players'+
       ' · source events '+f.eventCount+
@@ -1846,38 +1924,43 @@ byId('measure').addEventListener('click', measurePhysics);
 // their original internal catalogs for regression QA, not as basic UI clutter.
 function setupUnifiedScenarioMenu(){
  const menu=byId('preset-options');
- let count=menu.querySelectorAll('[role="option"][data-value]').length;
- if(count!==4)throw new Error('Original four ball presets missing');
- const visibleSmall=new Set(['dribble-1v1','keeper-1v1','defender-1v1',
-  'overload-2v1','duel-2v2','duel-3v3']);
- const visibleMovement=new Set(['post-pass','opposing-convergence',
-  'opposing-feedback','native-flank-left',
-  'secondary-pressure','secondary-pressure-observe']);
- for(const [group,kind,select] of [
-   ['Small-sided situations','action',byId('action-labs-choice')],
-   ['Advanced movement','movement',byId('movement-labs-choice')]
- ]){
-  const heading=document.createElement('div');
-  heading.className='me-scenario-group-label';
-  heading.setAttribute('role','presentation');
-  heading.textContent=group;
-  menu.append(heading);
-  for(const entry of select.options){
-   if(kind==='action'?!visibleSmall.has(entry.value):
-     !visibleMovement.has(entry.value))continue;
-   const option=document.createElement('div');
-   option.className='language-option';
-   option.setAttribute('role','option');
-   option.tabIndex=-1;
-   option.dataset.value=kind+':'+entry.value;
-   option.setAttribute('aria-selected','false');
-   option.textContent=entry.textContent;
-   menu.append(option);
-   count++;
-  }
+ // Keep all legacy physical scene definitions for isolated regression QA,
+ // but surface only the basic exercises useful for visual development.
+ const physics=[...menu.querySelectorAll('[role="option"][data-value]')]
+  .filter(node=>['drop','roll'].includes(node.dataset.value));
+ if(physics.length!==2)throw new Error('Original Ball Drop and Roll missing');
+ menu.replaceChildren();
+ const heading=title=>{
+  const node=document.createElement('div');
+  node.className='me-scenario-group-label';
+  node.setAttribute('role','presentation');
+  node.textContent=title;
+  menu.append(node);
+ };
+ heading('Player exercises');
+ const selected=[
+  ['dribble-1v1','Carry · run with the ball'],
+  ['keeper-1v1','1v1 · goalkeeper'],
+  ['overload-2v1','2v1 · attack and defend'],
+  ['duel-3v3','3v3 · team decisions']
+ ];
+ const defined=new Set([...byId('action-labs-choice').options].map(x=>x.value));
+ for(const [id,title] of selected){
+  if(!defined.has(id))throw new Error('Missing genuine small-sided exercise '+id);
+  const opt=document.createElement('div');
+  opt.className='language-option';
+  opt.setAttribute('role','option');
+  opt.tabIndex=-1;
+  opt.dataset.value='action:'+id;
+  opt.setAttribute('aria-selected','false');
+  opt.textContent=title;
+  menu.append(opt);
  }
- if(count!==16||menu.querySelectorAll('.me-scenario-group-label').length!==3)
-  throw new Error('Scenario must show 4 physics + 6 small-sided + 6 advanced movement situations');
+ heading('Ball physics');
+ for(const node of physics)menu.append(node);
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==6||
+    menu.querySelectorAll('.me-scenario-group-label').length!==2)
+  throw new Error('Lab should expose 4 player exercises and 2 ball experiments');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')

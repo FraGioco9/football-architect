@@ -437,6 +437,7 @@ export function createControlledActionLab(RAPIER,id,{
      matchTimeline}:{}),
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
+     smallSidedMovementDecisions:playerFrame.smallSidedMovementDecisions,
      smallSidedNativeBodyGuard:bodyGuardEnabled?
        engine.smallSidedBodyGuardSnapshot():null,
       smallSidedPhysicalFeedback:bodyGuardEnabled?
@@ -934,4 +935,47 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   catch(e){stop();status.textContent=e.message;}});
  stop();
  return Object.freeze({isOpen:()=>dialog.open});
+}
+
+
+/**
+ * Compact read-only view of every actual small-sided field participant.
+ * Each row is the canonical mover's SAME-tick chosen destination, not an
+ * invented pass, possession, successful carry, or other match outcome.
+ */
+export function projectActiveLabDecisions(frame,focus){
+ const ids=Array.isArray(focus)?focus:null;
+ if(!frame||!Number.isSafeInteger(frame.physicsTick)||frame.physicsTick<0||
+    !ids||ids.length<2||ids.length>7||
+    new Set(ids).size!==ids.length||
+    ids.some(id=>typeof id!=='string'||!/^(home|away)-(?:[1-9]|10|11)$/.test(id))||
+    !Array.isArray(frame.smallSidedMovementDecisions))
+  throw new TypeError('Only the original current small-sided decision source is permitted');
+ if(frame.physicsTick===0&&frame.smallSidedMovementDecisions.length===0)
+  return Object.freeze([]);
+ const byId=new Map();
+ for(const decision of frame.smallSidedMovementDecisions){
+  if(!ids.includes(decision.id)||byId.has(decision.id)||
+     decision.tick!==frame.physicsTick||decision.originalCanonicalMover!==true||
+     decision.readOnly!==true||decision.actionConfirmed!==false||
+     !['goalkeeping','press-ball','carry-ball','approach-ball','support-run'].includes(decision.kind)||
+     ![decision.target?.x,decision.target?.y,decision.speedMps].every(Number.isFinite))
+   throw new TypeError('Invalid current authoritative mover intent');
+  byId.set(decision.id,decision);
+ }
+ if(byId.size!==ids.length)
+  throw new TypeError('Every on-field player must have one real chosen target');
+ const action=frame.action?.appliedByRapier===true&&
+  frame.action.actualPhysicsImpulseApplied===true&&
+  frame.action.tick===frame.physicsTick?frame.action:null;
+ return Object.freeze(ids.map(id=>{
+  const d=byId.get(id);
+  return Object.freeze({
+   ...d,actualAction:action?.playerId===id?action.action:null,
+   actualActionTick:action?.playerId===id?frame.physicsTick:null,
+   contextualChoice:action?.playerId===id?
+    action.decisionContext?.smallSidedChoice?.selected??null:null,
+   officialResult:false
+  });
+ }));
 }

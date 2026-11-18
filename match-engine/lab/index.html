@@ -154,7 +154,19 @@
               </section>
             </section>
             <div class="me-side">
-              <section class="app-panel me-panel me-elevation-panel" aria-labelledby="side-heading">
+              <section id="me-decisions-panel" class="app-panel me-panel me-decisions-panel" aria-labelledby="me-decisions-heading" hidden>
+                <div class="me-decisions-heading">
+                  <h2 id="me-decisions-heading">On-field decisions</h2>
+                  <span id="me-decisions-count">0 on field</span>
+                </div>
+                <p class="me-hint">Every participant's current movement target. A ball action is confirmed only by a genuine Rapier shoe impulse.</p>
+                <div id="me-decisions-players" class="me-decisions-players" aria-live="off"></div>
+                <details class="me-decisions-log">
+                  <summary>Changes and verified actions <span id="me-decisions-event-count">0</span></summary>
+                  <ol id="me-decisions-events"></ol>
+                </details>
+              </section>
+              <section id="me-elevation-panel" class="app-panel me-panel me-elevation-panel" aria-labelledby="side-heading">
                 <div class="me-elevation-heading"><h2 id="side-heading">Ball height</h2><span id="bounce-result" class="me-bounce-result" role="status" aria-live="polite" hidden></span></div>
                 <div class="me-canvas-frame me-elevation-frame">
                   <canvas id="elevation" width="560" height="260" aria-label="Distance from ball underside to the pitch over simulated time"></canvas>

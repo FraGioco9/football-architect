@@ -1888,6 +1888,9 @@ export function createPlayerMovement(options={}){
     x:0,y:0,z:0,vx:0,vy:0,vz:0
    }):INITIAL_PLAYERS;
  let tick=0;
+ // D-01/small-sided: the exact chosen 60Hz movement target for each ACTUAL
+ // field participant, not an inferred action, result or second decision engine.
+ let lastSmallSidedMovementDecisions=Object.freeze([]);
  const players=initial.map(p=>({...p}));
  let b06bGoalKickoffTarget=null;
  function queueB06bOriginalGoalKickoff(event){
@@ -2002,6 +2005,7 @@ export function createPlayerMovement(options={}){
   return Object.freeze({
    version:PLAYER_VERSION,tick,timeS:tick*PLAYER_DT,
    ball:Object.freeze({...lastBall}),
+   ...(smallSided?{smallSidedMovementDecisions:lastSmallSidedMovementDecisions}:{}),
    observedMotion:Object.freeze({
     home:summarizeObservedPlayerMotion(players,'home'),
     away:summarizeObservedPlayerMotion(players,'away')
@@ -2720,6 +2724,23 @@ export function createPlayerMovement(options={}){
       balances[team]?.opponentId!==nextBalances[team]?.opponentId)
     balanceSwitches[team]++;
   }
+  if(smallSided)lastSmallSidedMovementDecisions=Object.freeze(players
+   .filter(p=>smallActive.has(p.id)).map(p=>{
+    const target=targets[players.indexOf(p)];
+    const kind=p.id===smallSided.opponent+'-1'?'goalkeeping':
+     p.team!==smallSided.side?'press-ball':
+     p.id===smallSided.side+'-10'?
+      (smallSided.id==='dribble-1v1'?'carry-ball':'approach-ball'):
+      'support-run';
+    return Object.freeze({
+     tick:tick+1,id:p.id,team:p.team,kind,
+     target:Object.freeze({x:target.x,y:target.y}),
+     speedMps:Math.hypot(p.vx,p.vy),
+     blockedBy:p.blockedBy??null,
+     originalCanonicalMover:true,readOnly:true,
+     actionConfirmed:false
+    });
+   }));
   tick+=1;lastBall=ball;pressers=nextPressers;coverers=nextCoverers;
   screens=nextScreens;supports=nextSupports;recoveries=nextRecoveries;
   balances=nextBalances;lineResponses=nextLineResponses;
