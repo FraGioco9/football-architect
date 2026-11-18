@@ -431,11 +431,18 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
   try{
    let carries=0,releaseRecontacts=0,playerSpeedSum=0,maximumBallSpeed=0,
     minimumObservedSpeed=Infinity;
+   const observedPhases=new Set(),phaseTransitions=[];
    for(let tick=1;tick<=180;tick++){
     const f=lab.step();
     assert.deepEqual(f.smallSidedParticipants,[side+'-10']);
     const actor=f.observedMovementPlayers.find(p=>p.id===side+'-10');
     const speed=Math.hypot(actor.vx,actor.vy);
+    assert.equal(f.soloCarryPhase.tick,f.physicsTick);
+    assert.equal(f.soloCarryPhase.originalCanonicalPlayer,true);
+    assert.equal(f.soloCarryPhase.originalRapierBall,true);
+    observedPhases.add(f.soloCarryPhase.phase);
+    if(f.soloCarryPhase.changed)
+     phaseTransitions.push({tick:f.physicsTick,to:f.soloCarryPhase.phase});
     playerSpeedSum+=speed;minimumObservedSpeed=Math.min(minimumObservedSpeed,speed);
     maximumBallSpeed=Math.max(maximumBallSpeed,Math.hypot(f.ball.velocity.x,f.ball.velocity.y));
     assert.equal(f.genuinePhysicalPlayerCount,1);
@@ -453,6 +460,7 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
     assert.equal(decisions.length,1);
     assert.equal(decisions[0].id,side+'-10');
     assert.equal(decisions[0].kind,'carry-ball');
+    assert.equal(decisions[0].carryPhase,f.soloCarryPhase.phase);
     assert.equal(decisions[0].blockedBy,null,
      'No ghost keeper or defender from inactive 22-player identities');
     if(f.action){
@@ -469,6 +477,9 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
    }
    assert.ok(carries>=2,'One actor must truly carry using repeated Rapier impulses');
    assert.ok(releaseRecontacts>=1,'One actor must release and recontact the ball');
+   assert.ok(observedPhases.has('control')&&observedPhases.has('moderate'),
+    'Real solo Carry must adapt from close control into free running');
+   assert.ok(phaseTransitions.length>=1,'Physical observations must change phase');
    process.stdout.write('ME_628_SOLO_CARRY_SPEED_GUARD '+JSON.stringify({
     side,variantIndex,maxBallSpeedMps:maximumBallSpeed,
     meanPlayerSpeedMps:playerSpeedSum/180,carries,releaseRecontacts,
@@ -482,6 +493,7 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
     side,variantIndex,activePhysicalPlayers:1,carries,releaseRecontacts,
     averagePlayerSpeedMps:playerSpeedSum/180,minimumObservedSpeed,
     maxBallSpeedMps:maximumBallSpeed,
+    phases:[...observedPhases],phaseTransitions,
     realBallForwardM:lab.snapshot().nativeDribbleAudit.ballForwardDistanceM
    })+'\\n');
   }finally{lab.dispose();}

@@ -43,10 +43,14 @@ function appendDecisionEvent(event){
 function trackOnFieldDecisionChanges(frame){
  const rows=projectActiveLabDecisions(frame,activeLab.focus);
  for(const row of rows){
-  if(lastMovementKinds.get(row.id)!==row.kind){
+  const observedPhase=row.carryPhase??null;
+  const decisionKey=row.kind+'|'+(observedPhase??'');
+  if(lastMovementKinds.get(row.id)!==decisionKey){
    appendDecisionEvent({tick:frame.physicsTick,id:row.id,
-    label:smallSidedDecisionLabels[row.kind],physical:false});
-   lastMovementKinds.set(row.id,row.kind);
+    label:smallSidedDecisionLabels[row.kind]+
+     (observedPhase?' · '+observedPhase.charAt(0).toUpperCase()+
+       observedPhase.slice(1):''),physical:false});
+   lastMovementKinds.set(row.id,decisionKey);
   }
   if(row.actualAction!==null){
    lastOnFieldAction.set(row.id,{tick:frame.physicsTick,kind:row.actualAction});
@@ -69,6 +73,8 @@ function renderOnFieldDecisions(frame){
   const decision=document.createElement('span');
   decision.textContent=row?
     smallSidedDecisionLabels[row.kind]+
+    (row.carryPhase?' · '+row.carryPhase.charAt(0).toUpperCase()+
+       row.carryPhase.slice(1):'')+
     ' · '+row.speedMps.toFixed(1)+' m/s'+
     (row.blockedBy?' · blocked by '+humanPlayer(row.blockedBy):''):
     'Waiting for first movement tick';

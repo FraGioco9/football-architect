@@ -7,6 +7,54 @@ import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
 import {chooseIsolatedDribbleTouch} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait} from '../src/rapier-foot-contact-bridge.mjs';
+import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
+ from '../src/solo-carry-phases.mjs';
+test('#628 solo Carry phases use only genuine ball/player speed and gap with hysteresis',()=>{
+ const control=advanceSoloCarryPhase({tick:1,
+  playerSpeedMps:0,ballSpeedMps:0,ballGapM:0.55});
+ assert.equal(control.phase,'control');
+ const moderate=advanceSoloCarryPhase({tick:2,previousPhase:'control',
+  playerSpeedMps:1.6,ballSpeedMps:1.3,ballGapM:0.52});
+ assert.equal(moderate.phase,'moderate');
+ const below=advanceSoloCarryPhase({tick:3,previousPhase:'moderate',
+  playerSpeedMps:2.7,ballSpeedMps:2.3,ballGapM:0.50});
+ assert.equal(below.phase,'moderate');
+ const sprint=advanceSoloCarryPhase({tick:4,previousPhase:'moderate',
+  playerSpeedMps:3.0,ballSpeedMps:2.6,ballGapM:0.56});
+ assert.equal(sprint.phase,'sprint');
+ const retained=advanceSoloCarryPhase({tick:5,previousPhase:'sprint',
+  playerSpeedMps:2.65,ballSpeedMps:2.1,ballGapM:0.48});
+ assert.equal(retained.phase,'sprint');
+ const decel=advanceSoloCarryPhase({tick:6,previousPhase:'sprint',
+  playerSpeedMps:2.2,ballSpeedMps:1.9,ballGapM:0.38});
+ assert.equal(decel.phase,'moderate');
+ const regain=advanceSoloCarryPhase({tick:7,previousPhase:'moderate',
+  playerSpeedMps:1,ballSpeedMps:0.45,ballGapM:0.35});
+ assert.equal(regain.phase,'control');
+ assert.ok(soloCarryPhaseConfiguration('sprint').maxSpeedMps>
+  soloCarryPhaseConfiguration('moderate').maxSpeedMps);
+ assert.ok(soloCarryPhaseConfiguration('control').maxSpeedMps<
+  soloCarryPhaseConfiguration('moderate').maxSpeedMps);
+ assert.ok(soloCarryPhaseConfiguration('sprint').shoeFrequencyBaseHz<
+  soloCarryPhaseConfiguration('moderate').shoeFrequencyBaseHz);
+ assert.throws(()=>advanceSoloCarryPhase({tick:1,
+  playerSpeedMps:0,ballSpeedMps:1,ballGapM:-1}),TypeError);
+ assert.throws(()=>soloCarryPhaseConfiguration('future'),TypeError);
+ assert.deepEqual(sprint,advanceSoloCarryPhase({tick:4,
+  previousPhase:'moderate',playerSpeedMps:3.0,ballSpeedMps:2.6,ballGapM:0.56}));
+ assert.equal(sprint.nativeShoeEventCreated,false);
+ assert.equal(sprint.ballImpulseCreated,false);
+ assert.equal(sprint.officialPossession,false);
+ const source={phaseRad:0,tick:4,
+  player:{x:29.45,y:0,vx:3,vy:0,facingRad:0},
+  ball:{position:{x:30,y:0,z:0.11},
+   velocity:{x:2.6,y:0,z:0}}};
+ const foot=advanceD01LiveShoeGait({...source,solo:true,carryPhase:'sprint'});
+ assert.equal(foot.carryPhase,'sprint');
+ assert.ok(foot.frequencyHz<advanceD01LiveShoeGait({...source,
+  solo:true,carryPhase:'moderate'}).frequencyHz);
+ assert.ok(foot.nativeShoeEventCreated===false&&foot.ballImpulseCreated===false);
+});
 test('#628 D01-GAIT-01 pure live player/ball foot target is mirrored, bounded and speed-coupled',()=>{
  const source={phaseRad:0,tick:1,
   player:{x:29.42,y:0.08,vx:2,vy:0,facingRad:0},

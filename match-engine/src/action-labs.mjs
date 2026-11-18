@@ -438,6 +438,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
      smallSidedMovementDecisions:playerFrame.smallSidedMovementDecisions,
+     ...(id==='carry-solo'?{soloCarryPhase:playerFrame.soloCarryPhase}:{}),
      smallSidedNativeBodyGuard:bodyGuardEnabled?
        engine.smallSidedBodyGuardSnapshot():null,
       smallSidedPhysicalFeedback:bodyGuardEnabled?
@@ -468,7 +469,7 @@ export function createControlledActionLab(RAPIER,id,{
   let frame=mover.step(prior.ball.position,
    spec.mode==='control'?firstPhysicalPassAction:null,
    reachExperiment?engine.researchReceiverTapSnapshot():null,
-   goalkeeperSave?prior.ball.velocity:null);
+   (goalkeeperSave||id==='carry-solo')?prior.ball.velocity:null);
   const initialAfter=engine.step(frame);
    if(smallSided&&bodyGuardEnabled){
     // Only post-step original native manifolds feed the canonical mover.

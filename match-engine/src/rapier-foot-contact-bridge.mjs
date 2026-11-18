@@ -1,6 +1,7 @@
 // #624 - opt-in private 22-shoe Rapier bridge for the EXISTING ball world.
 // This module creates no world, assigns no player movement and never kicks.
 import {INITIAL_PLAYERS} from './player-movement.mjs';
+import {soloCarryPhaseConfiguration} from './solo-carry-phases.mjs';
 import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_FORWARD_OFFSET_M,
  FOOT_CONTACT_HALF_WIDTH_M,FOOT_CONTACT_HALF_HEIGHT_M,
@@ -18,7 +19,8 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
  // ball position/velocity. This is a foot target only, never a collision,
  // impulse, synthetic START/END, possession or ball correction.
  const gaitClamp=(n,a,b)=>Math.max(a,Math.min(b,n));
- export function advanceD01LiveShoeGait({phaseRad,player,ball,tick,solo=false}={}){
+ export function advanceD01LiveShoeGait({phaseRad,player,ball,tick,solo=false,
+  carryPhase=null}={}){
   if(typeof solo!=='boolean'||!Number.isInteger(tick)||tick<1||
      !Number.isFinite(phaseRad)||phaseRad<0||phaseRad>=2*Math.PI||
      !player||!ball?.position||!ball?.velocity||
@@ -34,8 +36,11 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
   const speedMps=Math.hypot(player.vx,player.vy);
   // Do not increase the fixed mechanical frequency blindly. Respond smoothly
   // to REAL observed speed and preserve a true full release stroke.
+  const cue=solo&&carryPhase!==null?
+   soloCarryPhaseConfiguration(carryPhase):null;
   const frequencyHz=solo?
-   1.35+0.35*gaitClamp(speedMps/4,0,1):
+   (cue?cue.shoeFrequencyBaseHz+cue.shoeFrequencySpeedHz*
+    gaitClamp(speedMps/4,0,1):1.35+0.35*gaitClamp(speedMps/4,0,1)):
    2.45+0.25*gaitClamp(speedMps/4,0,1);
   const nextPhase=(phaseRad+2*Math.PI*frequencyHz/60)%(2*Math.PI);
   const stroke=-Math.cos(nextPhase);
@@ -43,11 +48,13 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
   // reduces missed shoes; backing stroke remains unchanged for native END.
   const approachM=gaitClamp((aheadM-0.53)*0.40,0,0.055)*
    Math.max(0,stroke);
-  const forwardM=(solo?0.075:0.105)*stroke+approachM;
+  const forwardM=(solo?(cue?.shoeForwardStrokeM??0.075):0.105)*stroke+
+   approachM;
   const sideM=gaitClamp(lateralM*0.20,-0.03,0.03)*
    Math.max(0,stroke);
   return Object.freeze({
    phaseRad:nextPhase,frequencyHz,forwardM,sideM,
+   ...(cue?{carryPhase}:{}),
    observedSpeedMps:speedMps,observedAheadM:aheadM,
    observedLateralM:lateralM,observedBallSpeedMps:
     Math.hypot(ball.velocity.x,ball.velocity.y),
@@ -166,7 +173,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const actor=dribbleAttackerId===null?null:
    playerFrame.players.find(p=>p.id===dribbleAttackerId);
   const gait=actor?advanceD01LiveShoeGait({
-   phaseRad:gaitPhaseRad,player:actor,ball:preStepBall,tick:nextTick,solo:soloCarry
+   phaseRad:gaitPhaseRad,player:actor,ball:preStepBall,tick:nextTick,solo:soloCarry,
+   carryPhase:soloCarry?playerFrame.soloCarryPhase?.phase:null
   }):null;
   const proposed=shoeFeet(next,nextTick,gait);
   // The whole shoe also moves when its owner turns or advances. Clamp the

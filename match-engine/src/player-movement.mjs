@@ -2,6 +2,7 @@
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
 import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual-kinematics.mjs';
+import {advanceSoloCarryPhase} from './solo-carry-phases.mjs';
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
@@ -138,6 +139,10 @@ const D01_KINEMATIC_LIMITS=Object.freeze({
 // close-contact shoe touch speed and ball impulse remain unchanged.
 const D01_CHASE_KINEMATIC_LIMITS=Object.freeze({
  ...D01_KINEMATIC_LIMITS,maxSpeed:6.0,acceleration:9,braking:12
+});
+const soloKinematicLimits=phase=>Object.freeze({
+ ...D01_KINEMATIC_LIMITS,maxSpeed:phase.maxSpeedMps,
+ acceleration:phase.accelerationMps2,braking:phase.brakingMps2
 });
 const baseFormation=Object.freeze([
  [-48,0],[-35,-22],[-35,-8],[-35,8],[-35,22],
@@ -1891,6 +1896,7 @@ export function createPlayerMovement(options={}){
  // D-01/solo carry/small-sided: the exact chosen 60Hz movement target for each ACTUAL
  // field participant, not an inferred action, result or second decision engine.
  let lastSmallSidedMovementDecisions=Object.freeze([]);
+ let currentSoloCarryPhase=null;
  const players=initial.map(p=>({...p}));
  let b06bGoalKickoffTarget=null;
  function queueB06bOriginalGoalKickoff(event){
@@ -2007,6 +2013,7 @@ export function createPlayerMovement(options={}){
    ball:Object.freeze({...lastBall}),
    // Solver feedback may update canonical velocity after the original target
    // choice. The target remains original; velocity is the final observed value.
+   ...(smallSided?.id==='carry-solo'?{soloCarryPhase:currentSoloCarryPhase}:{}),
    ...(smallSided?{smallSidedMovementDecisions:Object.freeze(
     lastSmallSidedMovementDecisions.map(d=>{
      const p=players.find(x=>x.id===d.id);
@@ -2176,6 +2183,18 @@ export function createPlayerMovement(options={}){
      smallBodyFeedbackTick!==tick)
    throw new TypeError('LAB native feedback requires the prior tick acknowledgment');
   const ball=ballXY(ballPosition);
+  if(smallSided?.id==='carry-solo'){
+   if(!realBallVelocity||
+      ![realBallVelocity.x,realBallVelocity.y].every(finite))
+    throw new TypeError('Solo phase requires the current original Rapier ball velocity');
+   const actor=players.find(p=>p.id===smallSided.side+'-10');
+   currentSoloCarryPhase=advanceSoloCarryPhase({
+    previousPhase:currentSoloCarryPhase?.phase??'control',tick:tick+1,
+    playerSpeedMps:Math.hypot(actor.vx,actor.vy),
+    ballSpeedMps:Math.hypot(realBallVelocity.x,realBallVelocity.y),
+    ballGapM:Math.hypot(ball.x-actor.x,ball.y-actor.y)
+   });
+  }
   if(options.researchGoalkeeperSaveSide!==undefined&&(
      !realBallVelocity||
      !['x','y','z'].every(k=>finite(realBallVelocity[k]))))
@@ -2429,7 +2448,8 @@ export function createPlayerMovement(options={}){
      if(p.id===smallSided.side+'-10')
       return smallSided.id==='keeper-1v1'?
        keeperDuelAttackerTarget(smallSided.side,smallSided.variantIndex,p,ball):
-       Object.freeze({x:ball.x+attack*(smallSided.id==='carry-solo'?-0.10:
+       Object.freeze({x:ball.x+attack*(smallSided.id==='carry-solo'?
+        currentSoloCarryPhase.ballTargetOffsetM:
         smallSided.id==='dribble-1v1'?-0.40:-0.08),y:ball.y});
      const wing=p.id.endsWith('-9')?-1:1;
      return Object.freeze({x:clamp(ball.x-attack*3,
@@ -2601,7 +2621,10 @@ export function createPlayerMovement(options={}){
    const recoveringDribbleBall=(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo')&&
      p.id===smallSided.side+'-10'&&
      Math.hypot(ball.x-p.x,ball.y-p.y)>1.5;
-   const limits=(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo')&&smallActive.has(p.id)?
+   const limits=smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
+     recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:
+      soloKinematicLimits(currentSoloCarryPhase):
+    smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
      recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:D01_KINEMATIC_LIMITS:
      PLAYER_KINEMATIC_LIMITS;
     const free=advanceFreePlayerKinematics(p,target,limits);
@@ -2746,6 +2769,7 @@ export function createPlayerMovement(options={}){
       'support-run';
     return Object.freeze({
      tick:tick+1,id:p.id,team:p.team,kind,
+     ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:{}),
      target:Object.freeze({x:target.x,y:target.y}),
      speedMps:Math.hypot(p.vx,p.vy),
      blockedBy:p.blockedBy??null,

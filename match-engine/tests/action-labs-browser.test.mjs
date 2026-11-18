@@ -238,7 +238,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.equal(carryDecisions.count,'1 on field');
   assert.equal(carryDecisions.rows.length,1);
   assert.equal(carryDecisions.ballChartHidden,true);
-  assert.ok(carryDecisions.rows.some(x=>/HOME #10.*Carry the ball.*Target:/s.test(x)));
+  assert.ok(carryDecisions.rows.some(x=>/HOME #10.*Carry the ball · (Control|Moderate|Sprint).*Target:/s.test(x)));
   assert.ok(carryDecisions.rows.every(x=>!x.includes('AWAY #')),
    'Carry has no defending player visible');
   assert.ok(carryDecisions.rows.some(x=>/Last verified action: carry/.test(x)),
