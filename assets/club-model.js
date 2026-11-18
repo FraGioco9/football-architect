@@ -372,7 +372,7 @@
    const columnWidths='<colgroup><col class="club-history-col-season"><col class="club-history-col-name"><col class="club-history-col-position">'+
     Array.from({length:8},()=>'<col class="club-history-col-number">').join('')+'</colgroup>';
    const bar='<span class="club-fp-bar" aria-hidden="true"></span>';
-   const sampleTotals={played:'30',won:'18',drawn:'7',lost:'5',gf:'104',ga:'52',gd:'+52'};
+   const sampleTotals={played:'30',won:'18',drawn:'10',lost:'12',gf:'104',ga:'52',gd:'+52'};
    const loadingStats=['played','won','drawn','lost','gf','ga','gd']
     .map(key=>'<td class="club-history-skeleton-stat" data-club-history-skeleton="'+key+'"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="'+sampleTotals[key]+'" aria-hidden="true"></span></span></td>').join('');
    const displayNumber=value=>value>0&&typeof value==='number'?'+'+value:String(value);

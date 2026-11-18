@@ -157,7 +157,11 @@ test('#578 Club History pending skeleton samples match runtime and reserve actua
  const route=model.route('/clubs/it/1/history');
  const loading=model.render(manifest,route,'it','',null,1,{source:'loading'});
  const firstPaint=read('clubs/_shared/index.html'),css=read('assets/club-page.css');
- const samples={played:'30',won:'18',drawn:'7',lost:'5',gf:'104',ga:'52',gd:'+52'};
+ const samples={played:'30',won:'18',drawn:'10',lost:'12',gf:'104',ga:'52',gd:'+52'};
+ assert.ok(Object.values(samples).every(sample=>sample.replace(/^[+-]/,'').length>=2),
+  'every Club History numeric skeleton represents at least two digit positions');
+ assert.equal(samples.gf.length,3,'GF reserves three digits when required');
+ assert.equal(samples.played.length,2,'played reserves two digits');
  for(const [key,text] of Object.entries(samples)){
   const mark='data-club-history-skeleton="'+key+'"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="'+text+'"';
   assert.ok(loading.includes(mark),'runtime pending value '+key+' measured with real glyphs');

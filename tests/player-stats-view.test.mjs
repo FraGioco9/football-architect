@@ -250,7 +250,12 @@ test('#578 Stats club crests are passive, bounded and separated from linked text
   'link remains text-only alongside passive crest');
  assert.match(bootstrap,/crests=catalog\.clubCrests/,'use the existing club catalog');
  assert.match(bootstrap,/clubCrest:key=>crests&&Object\.hasOwn\(crests,key\)/);
- assert.match(css,/\.app-player-stats-club-identity\{display:flex;align-items:center;gap:7px/);
+ assert.match(css,/\.app-player-stats-club-identity\{\s*display:inline-flex;align-items:center;justify-content:flex-start;gap:7px;/,
+  'crest and club name form a separate fixed-height identity group');
+ assert.match(css,/\.app-player-stats-club-identity \.app-player-stats-club-crest\{[\s\S]*?flex:0 0 24px;width:24px;height:24px;/,
+  'crest keeps its own 24px placement regardless of the other row cells');
+ assert.match(css,/\.app-player-stats-club-identity \.app-player-stats-club-link\{[\s\S]*?min-height:24px;line-height:1\.5;/,
+  'club name centers against the crest, not against the statistics');
  assert.match(css,/\.app-player-stats-table a\.app-player-stats-club-link:is\(:hover,:focus-visible\) \.app-player-stats-club-name\{/,
   'underline applies only to the hovered/focused club-name text');
  assert.match(css,/\.app-player-stats-table a\.app-player-stats-club-link\{[^}]*overflow:visible;text-overflow:clip;/,
@@ -348,7 +353,7 @@ test('#578 numeric skeletons use rendered font metrics rather than guessed width
   'mobile values and skeletons use the same centered value container');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-value>\.app-skeleton-bar\[data-skeleton-sample\]\{/);
  assert.match(css,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;/);
- const history={played:'30',won:'18',drawn:'7',lost:'5',gf:'104',ga:'52',gd:'+52'};
+ const history={played:'30',won:'18',drawn:'10',lost:'12',gf:'104',ga:'52',gd:'+52'};
  for(const [metric,sample] of Object.entries(history)){
   assert.ok(clubShell.includes('data-club-history-skeleton="'+metric+'"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="'+sample+'"'),
    'Club History '+metric+' reserves natural glyph widths before JS');
@@ -359,6 +364,8 @@ test('#578 numeric skeletons use rendered font metrics rather than guessed width
  assert.match(club,/\.club-history-table td:nth-child\(n\+4\) \.club-history-stat-value\{[\s\S]*?justify-content:center/);
  assert.ok(css.includes('.app-player-stats-table :is(.app-player-stats-toggle,.app-player-stats-static-label,.app-player-stats-skeleton-label)'),
   'Season/Career labels and skeletons share a row centerline');
+ assert.match(css,/min-height:28px;padding:2px 0;\s*align-items:center;line-height:1\.5/,
+  'Season labels, Career labels and loading placeholders share the same vertical padding');
  assert.ok(club.includes('.club-history-table :is(.club-history-expand,.club-history-skeleton-label)'),
   'Club History labels and skeletons share a row centerline');
 });

@@ -178,8 +178,22 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 /* Career stays one 56px table row; a stronger divider separates all seasons. */
 .app-player-stats-table .app-player-stats-career-row>th,
 .app-player-stats-table .app-player-stats-career-row>td{border-bottom:2px solid var(--border)}
-.app-player-stats-club-identity{display:flex;align-items:center;gap:7px;min-width:0;width:100%}
-/* Club marks inherit Players' 24px image/shield fallback without a second style. */
+/* The crest and its club name form an independently centered 24px identity.
+   Never align either child against the statistics cells in the same row. */
+.app-player-stats-club-identity{
+ display:inline-flex;align-items:center;justify-content:flex-start;gap:7px;
+ box-sizing:border-box;width:max-content;max-width:100%;min-width:0;height:24px;min-height:24px;
+ vertical-align:middle;
+}
+/* Reuse the Players 24px shield/crest; keep the mark fixed while names vary. */
+.app-player-stats-club-identity .app-player-stats-club-crest{
+ display:inline-flex;align-items:center;justify-content:center;
+ flex:0 0 24px;width:24px;height:24px;
+}
+.app-player-stats-club-identity .app-player-stats-club-link{
+ display:inline-flex;align-items:center;flex:0 1 auto;min-width:0;
+ min-height:24px;line-height:1.5;
+}
 .app-player-stats-season-row:has([data-stats-toggle]){cursor:pointer}
 .app-player-stats-season-row:has([data-stats-toggle]):hover{background:color-mix(in srgb,var(--muted) 9%,var(--surface-raised))}
 .app-player-stats-toggle{
@@ -199,8 +213,10 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-no-toggle{font-weight:700}
 /* All season/Career labels share the centered value/skeleton row centerline;
    the chevron's own geometry stays unchanged. */
+/* Season, Career and loading labels share an identical centered box. */
 .app-player-stats-table :is(.app-player-stats-toggle,.app-player-stats-static-label,.app-player-stats-skeleton-label){
- box-sizing:border-box;min-height:24px;align-items:center;line-height:1.5;vertical-align:middle;
+ box-sizing:border-box;min-height:28px;padding:2px 0;
+ align-items:center;line-height:1.5;vertical-align:middle;
 }
 .app-player-stats-competition-row[hidden]{display:none}
 .app-player-stats-competition-row{background:transparent}
@@ -222,7 +238,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
    Only the text link is interactive; the 24px crest is a passive sibling. */
 .app-player-stats-table a.app-player-stats-club-link{
  display:inline-flex;align-items:center;flex:0 1 auto;width:max-content;max-width:100%;min-width:0;
- overflow:visible;text-overflow:clip;line-height:1.45;
+ overflow:visible;text-overflow:clip;min-height:24px;line-height:1.5;
 }
 .app-player-stats-table .app-player-stats-club-link .app-player-stats-club-name{
  display:inline;text-decoration:none;
@@ -238,7 +254,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 /* Center links without clipping descenders or their underline. */
 .app-player-stats-table .app-player-stats-link{line-height:1.5;vertical-align:middle}
-.app-player-stats-table .app-player-stats-club-identity{min-height:24px}
+.app-player-stats-table .app-player-stats-club-identity{height:24px;min-height:24px}
 .app-player-stats-table .app-player-stats-number .app-player-stats-value{
  display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;
  align-items:center;justify-content:flex-end;line-height:1.5;text-align:right;

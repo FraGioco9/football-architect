@@ -412,8 +412,10 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-expand{display:inline-flex;align-items:center;max-width:100%;gap:10px;border:0;padding:2px 0;background:transparent;color:var(--text);font:inherit;font-weight:700;cursor:pointer;text-align:left;white-space:nowrap}
 .club-history-expand:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:3px}
 /* Loaded labels and first-paint bars share a centered row track; chevrons do not move. */
+/* Season text and first-paint placeholder share the same inset and center,
+   while the fixed chevron slot remains independent. */
 .club-history-table :is(.club-history-expand,.club-history-skeleton-label){
- box-sizing:border-box;min-height:24px;align-items:center;line-height:1.5;vertical-align:middle;
+ box-sizing:border-box;min-height:28px;align-items:center;line-height:1.5;vertical-align:middle;
 }
 .club-history-chevron,.club-history-chevron-space{box-sizing:border-box;width:8px;height:8px;flex:none}
 .club-history-chevron{border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform 120ms ease-out}

@@ -660,8 +660,8 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
  assert.match(html,/<section class="club-history" aria-busy="false"><div class="club-history-table-wrap">/,'hydrated table starts without a History heading');
  assert.doesNotMatch(html,/<section class="club-history"[^>]*><h2>/,'no hydrated History title');
  assert.match(html,/<a class="club-history-competition-link" href="[^"]+"><span class="club-history-competition-text">/,'competition names retain text-only links without a native tooltip');
- assert.match(css,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{display:inline-block;width:fit-content;max-width:100%;[^}]*padding:0;[^}]*text-overflow:ellipsis;/,
-  'the clickable area is a text-sized inline-block rather than the complete table cell');
+ assert.match(css,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{display:inline-block;width:fit-content;max-width:100%;[^}]*padding:0;[^}]*overflow:visible;text-overflow:clip;/,
+  'competition link remains text-sized, with unclipped glyphs and underline rather than a full-cell hit area');
  assert.match(css,/a\.club-history-competition-link:is\(:hover,:focus-visible\) \.club-history-competition-text\{text-decoration-line:underline;/,
   'competition hover and focus styling belongs only to its actual link');
  assert.doesNotMatch(css,/\.club-history-competition-row:(?:hover|focus-within) \.club-history-competition-text/,
