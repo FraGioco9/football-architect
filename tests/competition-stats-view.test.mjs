@@ -43,6 +43,21 @@ function supplied(id,count){
  c.seasonData={season:1,rulesVersion:c.definition.rules.version,participants,fixtures:null,results:null,status:'partial',statistics:{overview:{matchesPlayed:12,totalGoals:36,goalsPerMatch:3},teams,players:[]}};
  return c;
 }
+test('STATS-LABEL: goal contributions per 90 remains consistent across first paint and locale keys',()=>{
+ const r=fixture();
+ assert.ok(r.api.renderSkeleton('players').includes('Goal contributions per 90'));
+ assert.ok(!r.api.renderSkeleton('players').includes('Goals + assists per 90'));
+ const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+ assert.deepEqual([...app.matchAll(/statsDevGoalsAssists90:"([^"]+)"/g)].map(m=>m[1]),[
+  'Goal contributions per 90','Torbeiträge pro 90','Contribuciones de gol por 90',
+  'Contributions aux buts par 90','Contributi ai gol per 90'
+ ]);
+ for(const d of definitions){
+  const html=readFileSync(new URL('../competitions/'+d.slug+'/index.html',import.meta.url),'utf8');
+  assert.ok(html.includes('Goal contributions per 90'),d.slug+' first-paint skeleton');
+  assert.ok(!html.includes('Goals + assists per 90'),d.slug+' avoids stale label');
+ }
+});
 test('STATS-PUBLIC: domestic and both cup contexts expose 3/7/8 empty cards with no fake zero values',()=>{
  for(const id of ['IT-1','int-1','int-2']){
   const r=fixture();assert.equal(typeof r.api?.mount,'function');
@@ -141,7 +156,8 @@ test('STATS-SUPPLIED: averages retain two decimals and Show all uses actual 16/2
   const open=byClass(r,'fa-dev-stats-expand')[0];open.focus();open.emit('click');
   const dialog=byClass(r,'fa-dev-stats-dialog')[0];assert.equal(dialog.open,true);
   assert.equal(walk(dialog).filter(n=>n.tagName==='li').length,count);
-  assert.ok(walk(dialog).filter(n=>n.className==='fa-dev-stats-rank').every(n=>n.textContent==='1'));
+  const ranks=walk(dialog).filter(n=>n.className==='fa-dev-stats-rank').map(n=>Number(n.textContent));
+  assert.deepEqual(ranks.slice(0,3),[1,2,3],'recorded GD breaks equal-goals ties');
   const crests=walk(dialog).filter(n=>n.dataset.clubCrest).map(n=>n.dataset.clubCrest);
   assert.equal(new Set(crests).size,count);if(count===24){assert.ok(crests.includes('IT-1'));assert.ok(crests.includes('ENG-1'))}
   assert.ok(walk(dialog).filter(n=>n.tagName==='a').every(n=>/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/[1-9]\d?\/overview$/.test(n.href)));
@@ -247,8 +263,9 @@ test('A03-04E2: supplied domestic and cup rankings link verified player IDs and 
   assert.deepEqual(links,expected,id);assert.ok(calls.length>=count);
   buttons(r)[2].emit('click');assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/1').length,3);
   assert.equal(byClass(r,'fa-dev-stats-club-link').length,3);
-  assert.equal(byClass(r,'fa-dev-stats-club-link')[0].tagName,'span');
+  assert.equal(byClass(r,'fa-dev-stats-club-link')[0].tagName,'a');
   assert.equal(byClass(r,'fa-dev-stats-club-link')[0].textContent,'Team 01');
+  assert.ok(byClass(r,'fa-dev-stats-club-link').every(n=>n.href==='/clubs/it/1/overview'),id+' player rows and team labels navigate independently');
  }
 });
 
@@ -265,7 +282,10 @@ test('COMP-STATS-643: numeric ID breaks equal-name ties; show all preserves rank
  const dialog=byClass(r,'fa-dev-stats-dialog')[0];
  assert.equal(walk(dialog).filter(n=>n.tagName==='li').length,7);
  assert.ok(walk(dialog).some(n=>n.className==='fa-dev-stats-club-link'&&n.textContent==='Team 02'));
- assert.equal(walk(dialog).filter(n=>n.tagName==='a'&&n.href?.startsWith('/clubs/')).length,0);
+ const clubLinks=walk(dialog).filter(n=>n.tagName==='a'&&n.className==='fa-dev-stats-club-link');
+ assert.equal(clubLinks.length,7,'Show all preserves a separate club link per player');
+ assert.equal(clubLinks.filter(n=>n.href==='/clubs/it/2/overview').length,1);
+ assert.equal(clubLinks.filter(n=>n.href==='/clubs/it/1/overview').length,6);
 });
 test('COMP-STATS-643: missing name shows numeric identity; duplicate club/player pairs and malformed metrics fail closed',()=>{
  const record={playerId:58,name:null,clubKey:'IT-1',appearances:1,starts:1,minutes:75,goals:1};
@@ -359,7 +379,7 @@ test('COMP-STATS-643: scoring zeros and low-coverage ratings do not enter rankin
   }
   assert.equal(byClass(r,'fa-dev-stats-expand-placeholder').length,8);
   assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/2').length,8);
-  assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/clubs/it/1/overview').length,0);
+  assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/clubs/it/1/overview').length,8,'every qualified player leaderboard row links its recorded club');
  }
 });
 test('COMP-STATS-643: empty player cards and first-paint Overview skeleton preserve metric geometry',()=>{
@@ -402,6 +422,105 @@ test('COMP-STATS-643: percentages use each recorded club own played matches and 
   assert.ok(contents(later[1].children[1]).includes('Four of ten'),'fixed one-goal requirement does not change');
  }
 });
+
+test('STATS-TIEBREAK-TEAMS: all seven cards apply first and second criteria to positions',()=>{
+ const cases=[
+  ['gf',{gf:4,mp:2},{gf:4,mp:4},{gf:4,mp:2,gd:4},{gf:4,mp:2,gd:2}],
+  ['ga',{ga:2,mp:4},{ga:2,mp:2},{ga:2,mp:2,cs:2},{ga:2,mp:2,cs:1}],
+  ['w',{w:2,mp:2},{w:2,mp:4},{w:2,mp:2,gd:4},{w:2,mp:2,gd:2}],
+  ['cs',{cs:2,mp:2},{cs:2,mp:4},{cs:2,mp:2,ga:1},{cs:2,mp:2,ga:3}],
+  ['ppg',{ppg:1.5,gd:4,mp:2},{ppg:1.5,gd:4,mp:4},{ppg:1.5,gd:4,mp:2,gf:5},{ppg:1.5,gd:4,mp:2,gf:3}],
+  ['gd',{gd:4,mp:2},{gd:4,mp:4},{gd:4,mp:2,gf:6},{gd:4,mp:2,gf:4}],
+  ['unbeatenStreak',{unbeatenStreak:3,ppg:2},{unbeatenStreak:3,ppg:1.5},{unbeatenStreak:3,ppg:2,gd:4},{unbeatenStreak:3,ppg:2,gd:2}]
+ ];
+ const keys=['gf','ga','w','cs','ppg','gd','unbeatenStreak'];
+ for(const [key,...variants] of cases)for(let t=0;t<2;t++){
+  const r=fixture(),c=supplied('IT-1',16);
+  c.seasonData.statistics.teams.forEach((team,i)=>{team.mp=i<2?2:0});
+  const [a,b]=variants.slice(2*t,2*t+2);
+  Object.assign(c.seasonData.statistics.teams[0],{clubName:'Zulu',...a});
+  Object.assign(c.seasonData.statistics.teams[1],{clubName:'Alpha',...b});
+  r.api.mount(r.panel,c);buttons(r)[1].emit('click');
+  const card=byClass(r,'fa-dev-stats-team-card')[keys.indexOf(key)];
+  const rows=walk(card).filter(n=>n.tagName==='li');
+  assert.equal(rows.length,2,key+' criterion '+t);
+  assert.equal(walk(rows[0]).find(n=>n.tagName==='a').href,'/clubs/it/1/overview',key+' criterion '+t+' overrides alphabetic ordering');
+  assert.deepEqual(rows.map(n=>n.children[0].textContent),['1','2'],key+' criterion '+t+' assigns distinct ranks');
+ }
+});
+
+test('STATS-TIEBREAK-PLAYERS: all eight cards use recorded player metrics, not player names',()=>{
+ const base={clubKey:'IT-1',appearances:2,starts:2,subAppearances:0,minutes:180,goals:1,
+  assists:1,yellowCards:1,redCards:1,cleanSheets:1,ratedAppearances:2,averageRating:7.25,goalsAssistsPer90:1};
+ const cases=[
+  [{ratedAppearances:2},{ratedAppearances:1}],
+  [{minutes:90},{minutes:180}],
+  [{minutes:90},{minutes:180}],
+  [{goals:1,assists:1,minutes:180},{goals:1,assists:0,minutes:90}],
+  [{appearances:1,starts:1,minutes:90,ratedAppearances:1},{appearances:2,starts:2,minutes:180}],
+  [{appearances:2,starts:1,subAppearances:1,minutes:180},{appearances:1,starts:1,subAppearances:0,minutes:90,ratedAppearances:1}],
+  [{yellowCards:2},{yellowCards:1}],
+  [{starts:2},{starts:1,subAppearances:1}]
+ ];
+ for(const [i,[a,b]] of cases.entries()){
+  const r=fixture(),c=supplied('IT-1',16);
+  c.seasonData.statistics.players=[{...base,...a,playerId:9,name:'Zulu'},{...base,...b,playerId:8,name:'Alpha'}];
+  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
+  const rows=walk(byClass(r,'fa-dev-stats-leader-card')[i]).filter(n=>n.tagName==='li');
+  assert.equal(rows.length,2,'player card '+i);
+  assert.equal(walk(rows[0]).find(n=>n.tagName==='a').href,'/players/9','player card '+i+' resolves ties before alphabetic names');
+  assert.deepEqual(rows.map(n=>n.children[0].textContent),['1','2'],'player card '+i+' assigns distinct ranks');
+ }
+});
+
+test('STATS-TIEBREAK: visible decimal precision, equal ranks, missing evidence, Show all',()=>{
+ const prepare=(people,team=false)=>{
+  const r=fixture(),c=supplied('IT-1',16);
+  if(team){
+   c.seasonData.statistics.teams.forEach((row,i)=>{row.mp=i<2?2:0});
+   people.forEach((row,i)=>Object.assign(c.seasonData.statistics.teams[i],row));
+  }else c.seasonData.statistics.players=people;
+  r.api.mount(r.panel,c);buttons(r)[team?1:2].emit('click');return r;
+ };
+ const team=prepare([{clubName:'Zulu',ppg:1.231,gd:4},{clubName:'Alpha',ppg:1.234,gd:2}],true);
+ const ppg=walk(byClass(team,'fa-dev-stats-team-card')[4]).filter(n=>n.tagName==='li');
+ assert.equal(walk(ppg[0]).find(n=>n.tagName==='a').href,'/clubs/it/1/overview');
+ assert.deepEqual(ppg.map(n=>n.children.at(-1).textContent),['1.23','1.23']);
+ assert.deepEqual(ppg.map(n=>n.children[0].textContent),['1','2']);
+ const base={clubKey:'IT-1',appearances:2,starts:2,subAppearances:0,minutes:180,goals:1,
+  assists:1,redCards:0,cleanSheets:0,ratedAppearances:2,averageRating:7.25};
+ const rating=prepare([{...base,playerId:9,name:'Zulu',averageRating:7.251,ratedAppearances:2},
+  {...base,playerId:8,name:'Alpha',averageRating:7.254,ratedAppearances:1}]);
+ const rated=walk(byClass(rating,'fa-dev-stats-leader-card')[0]).filter(n=>n.tagName==='li');
+ assert.equal(walk(rated[0]).find(n=>n.tagName==='a').href,'/players/9','equal displayed rating prioritizes coverage');
+ assert.deepEqual(rated.map(n=>n.children.at(-1).textContent),['7.25 (2)','7.25 (1)']);
+ const rates=prepare([
+  {...base,playerId:9,name:'Zulu',appearances:3,starts:3,goals:2,assists:1,minutes:271,goalsAssistsPer90:270/271},
+  {...base,playerId:8,name:'Alpha',appearances:3,starts:3,goals:2,assists:1,minutes:269,goalsAssistsPer90:270/269}
+ ]);
+ const contrib=walk(byClass(rates,'fa-dev-stats-leader-card')[3]).filter(n=>n.tagName==='li');
+ assert.equal(walk(contrib[0]).find(n=>n.tagName==='a').href,'/players/9','equal displayed contributions choose more minutes');
+ assert.deepEqual(contrib.map(n=>n.children.at(-1).textContent),['1.00','1.00']);
+ const incomplete=prepare([
+  {...base,playerId:9,name:'Zulu',redCards:1,yellowCards:null,minutes:90},
+  {...base,playerId:8,name:'Alpha',redCards:1,yellowCards:0,minutes:180}
+ ]);
+ const reds=walk(byClass(incomplete,'fa-dev-stats-leader-card')[6]).filter(n=>n.tagName==='li');
+ assert.equal(walk(reds[0]).find(n=>n.tagName==='a').href,'/players/8','missing yellow data never counts as zero');
+ const same=prepare([{...base,playerId:9,name:'Zulu'},{...base,playerId:8,name:'Alpha'}]);
+ const tied=walk(byClass(same,'fa-dev-stats-leader-card')[1]).filter(n=>n.tagName==='li');
+ assert.deepEqual(tied.map(n=>n.children[0].textContent),['1','1'],'identical metrics share first rank');
+ assert.equal(walk(tied[0]).find(n=>n.tagName==='a').href,'/players/8','names only stabilize visual order');
+ const seven=prepare(Array.from({length:7},(_,i)=>({...base,playerId:i+1,name:'Same',goals:1,minutes:90+10*i})));
+ const goals=byClass(seven,'fa-dev-stats-leader-card')[1];
+ assert.deepEqual(walk(goals).filter(n=>n.tagName==='li').map(n=>n.children[0].textContent),['1','2','3','4','5']);
+ byClass(seven,'fa-dev-stats-expand')[0].emit('click');
+ const dialog=byClass(seven,'fa-dev-stats-dialog')[0];
+ assert.deepEqual(walk(dialog).filter(n=>n.tagName==='li').map(n=>n.children[0].textContent),['1','2','3','4','5','6','7']);
+ assert.deepEqual(walk(dialog).filter(n=>n.tagName==='a'&&n.href?.startsWith('/players/')).map(n=>n.href),
+  [1,2,3,4,5,6,7].map(id=>'/players/'+id),'Show all mirrors top-five rankings');
+});
+
 test('COMP-STATS-643: unavailable and low-coverage metrics always show the same No players message',()=>{
  const r=fixture(),c=supplied('IT-1',16);
  c.seasonData.statistics.teams.find(team=>team.clubKey==='IT-1').mp=20;
