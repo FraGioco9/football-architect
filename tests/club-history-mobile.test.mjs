@@ -55,7 +55,8 @@ test('#560 History mobile preserves disclosure DOM, statistics and competition l
 test('#560 table semantics are explicitly restored when CSS displays mobile grid rows',()=>{
  {const firstPaint=read('clubs/_shared/index.html'),generator=read('tools/generate-club-pages.mjs'),runtime=read('assets/club-page.js');
   for(const source of [firstPaint,generator]){
-   assert.ok(source.includes('let restoredTabScroll=false;'));
+   assert.ok(source.includes('let restoredTabScroll=false,initialTabOffset=null;'));
+   assert.ok(source.includes("window.addEventListener('pageshow',()=>{if(initialTabOffset!==null)tabs.scrollLeft=initialTabOffset},{once:true})"));
    assert.ok(source.includes('if(chosen&&!restoredTabScroll)'));
   }
   assert.ok(runtime.includes("if(tabs.dataset.clubInteractionsBound!=='true')"));

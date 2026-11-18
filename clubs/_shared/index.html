@@ -376,10 +376,14 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  other.setAttribute('aria-hidden',String(view!=='history'));
  if(view==='overview'){overview.removeAttribute('aria-hidden');overview.setAttribute('aria-busy','true');}
  const keyScroll='football-architect:club-tabs-scroll:/clubs/'+country+'/'+clubId;
- let restoredTabScroll=false;
+ let restoredTabScroll=false,initialTabOffset=null;
  try{const raw=sessionStorage.getItem(keyScroll),offset=Number(raw);if(raw!==null&&Number.isFinite(offset)&&offset>=0){
-  tabs.scrollLeft=offset;restoredTabScroll=true;
+  tabs.scrollLeft=offset;initialTabOffset=offset;restoredTabScroll=true;
  }}catch{}
+ // Browser native restoration can run after first paint and before pageshow,
+ // sometimes resetting nested horizontal scroll to zero. Replay the original
+ // stored value once more without reading any interim zero from storage.
+ window.addEventListener('pageshow',()=>{if(initialTabOffset!==null)tabs.scrollLeft=initialTabOffset},{once:true});
  const chosen=tabs.querySelector('[aria-current="page"]');
  // Preserve a user's manually scrolled View strip on reload, even when
  // the selected tab would otherwise be auto-revealed by the first-paint script.
