@@ -9,7 +9,8 @@ import {expiredPlayerPreviewDelete} from './player-preview-retention.ts';
 import {abortUnless} from './atomic-guard.ts';
 import {COUNTRIES,ATTRIBUTES,generateTrialWithCatalog,summarize} from './players-generator-core.mjs';
 import {loadRuntimePlayerCatalog} from './players-catalog.mjs';
-import {buildPortraitSnapshotForPlayer} from './player-portrait-core.mjs';
+import {buildFamilyV42PortraitSnapshotForPlayer} from './player-portrait-family-v42.mjs';
+import {resolveCatalogueNameOrigins} from './player-portrait-name-origins.mjs';
 
 const nationalityCodes=new Set(COUNTRIES.map((c:{code:string})=>c.code));
 const roles=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
@@ -143,7 +144,7 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
  // Permanent IDs are assigned from SQLite AUTOINCREMENT high-water (not MAX(id));
  // explicit allocation lets us generate ID-dependent faces BEFORE the atomic batch.
  // A transaction-scoped sqlite_sequence guard aborts if another batch got the IDs.
- let lastId=0,snapshots:Awaited<ReturnType<typeof buildPortraitSnapshotForPlayer>>[]=[];
+ let lastId=0,snapshots:Awaited<ReturnType<typeof buildFamilyV42PortraitSnapshotForPlayer>>[]=[];
  try{
   const row=await db.prepare("SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0) AS last_id").first<{last_id:number}>();
   lastId=row?.last_id??0;
@@ -152,7 +153,10 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
      candidates.length!==draft.count||!Number.isSafeInteger(lastId+draft.count))
    throw Error('Corrupt player preview or ID high-water');
   for(let i=0;i<candidates.length;i++)
-   snapshots.push(await buildPortraitSnapshotForPlayer({...candidates[i],id:lastId+i+1}));
+   snapshots.push(await buildFamilyV42PortraitSnapshotForPlayer({
+    ...candidates[i],id:lastId+i+1,
+    name_origins:resolveCatalogueNameOrigins(candidates[i])
+   }));
  }catch{throw new ApiError(503,'players_commit_unavailable');}
  try{
   // All-or-nothing D1 batch: authorization + current world + uncommitted draft +

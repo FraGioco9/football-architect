@@ -117,17 +117,17 @@ test('strict canonical snapshot binding blocks changed country, ancestry cue and
  assert.notEqual(v41.appearance_fingerprint,src.appearance_fingerprint);
 });
 
-test('opt-in image-only exporter includes the family cue but never identity metadata',async()=>{
+test('V4.2-only image exporter includes family cue and rejects previous versions',async()=>{
  const row=specimen(711);
- const v41=await createImageOnlyPortraitPrompt(row);
- const v42=await createImageOnlyPortraitPrompt(row,'v4.2');
- assert.notEqual(v41.fingerprint,v42.fingerprint);
+ const v42=await createImageOnlyPortraitPrompt(row);
+ assert.deepEqual(v42,await createImageOnlyPortraitPrompt(row,'v4.2'));
  assert.match(v42.content,/Fictional family-background cue/);
  assert.match(v42.content,/IMMUTABLE CANONICAL FACIAL DESCRIPTION/);
  assert.match(v42.content,/young male, approximately 21–25 years old/);
  assert.doesNotMatch(v42.content,/Tiamiyu|Matthew|Player ID|GitHub|Cloudflare|QA|WebP/);
- await assert.rejects(()=>createImageOnlyPortraitPrompt(row,'v5'),
-  /unsupported_portrait_export_version/);
+ for(const version of ['v3','v4.1','v5'])
+  await assert.rejects(()=>createImageOnlyPortraitPrompt(row,version),
+   /unsupported_portrait_export_version/);
 });
 
 test('V4.2 core stays pure and does not change V4.1 algorithm',async()=>{

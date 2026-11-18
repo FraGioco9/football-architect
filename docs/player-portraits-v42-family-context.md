@@ -1,4 +1,4 @@
-# Player portraits V4.2 — fictional family context (opt-in)
+# Player portraits V4.2 — canonical portrait version (rollout in HOLD)
 
 ## Name provenance and casting
 
@@ -13,19 +13,19 @@
 - Schema `player-portraits-v5`, prompt `player-portrait-v4.2`, independent seed `football-architect:portrait-identity:v4.2`.
 - Snapshot records the two nationalities, `name_origins` (first/last), one frozen `family_background` cue, version-pinned appearance traits/fingerprint and athletic body profile/variation. Never store a raw name or game age in the portrait snapshot.
 - Renderer recomputes the seed, background cue, all face traits, fingerprint and legacy-version body variation. Any tampered or extra snapshot fields fail closed.
-- Existing V3, V4 and V4.1 snapshots, accepted photos and original V4.1 seed remain unchanged. This is opt-in only and makes no image/API/provider call.
+- V4.2 is the sole target for new portraits and the proposed 150-player image remake. Historical V3/V4/V4.1 snapshots and approved photos stay recoverable until an authorised cutover; pure generation never calls an image API.
 
-## Read-only candidate workflow
+## Read-only V4.2 candidate workflow
 
 Use an initial-data export already verified for the correct environment. Supply each ID, `name` or `first_name`/`last_name`, `nationality`, `secondary_nationality`, frozen initial physical attributes, and `initial_verified:true`.
 
 ```sh
-node tools/export-player-image-prompts.mjs --input verified-initial-players.json --out ./private-v42-prompts --version v4.2
+node tools/export-player-image-prompts.mjs --input verified-initial-players.json --out ./private-v42-prompts
 node --test tests/player-portrait-v42-family.test.mjs tests/player-portrait-v41-diversity.test.mjs tests/player-portrait-chatgpt.test.mjs tests/player-portrait-chat-export.test.mjs
 ```
 
-The original exporter invocation without `--version` remains pinned to V4.1. The ChatGPT handoff exports `buildChatGptFamilyV42PortraitExecutionFromSnapshot` and includes the new canonical prompt verbatim. Continue single-image, native alpha and visual/technical QA rules.
+The exporter without `--version` uses V4.2. The previous V4.1 export option is rejected. The ChatGPT handoff exports `buildChatGptFamilyV42PortraitExecutionFromSnapshot` and includes the new canonical prompt verbatim. Continue single-image, native alpha and visual/technical QA rules.
 
 ## Activation is blocked pending separate authorisation
 
-The active D1 `player_portrait_profiles` constraint, introduced by migration `0031_portrait_v41_replacement.sql`, accepts only V3 and V4.1. V4.2 cannot be persisted without a **new, separately approved D1 migration**; do not edit migration history. A future activation requires guarded write and rollback logic, version-aware export/runtime, exact-head CI, DEV/Preview QA and explicit owner approval. Do not change live D1, generate or publish assets, merge, or deploy based on this opt-in module alone.
+The existing DEV D1 constraint accepts only V3 and V4.1. Migration `0033_portrait_v42_replacement.sql` is staged to admit the new V4.2 pair without editing history or changing rows. Applying this migration or executing the 150-player cutover still requires separate remote D1 authorisation. A future activation requires guarded write and rollback logic, version-aware export/runtime, exact-head CI, DEV/Preview QA and explicit owner approval. Do not change live D1, generate or publish assets, merge, or deploy based on this opt-in module alone.

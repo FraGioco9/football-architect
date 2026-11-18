@@ -359,6 +359,7 @@
     "tests/standings-subviews.test.mjs": "site-node",
     "tests/v2-cutover.test.mjs": "site-node",
     "backend/tests/test_portrait_v41_replacement_migration.py": "migration",
+    "backend/tests/test_portrait_v42_replacement_migration.py": "migration",
     "tests/player-portrait-v4.test.mjs": "site-node",
     "tests/player-portrait-v41-diversity.test.mjs": "site-node",
     "tests/player-portrait-v42-family.test.mjs": "site-node",

@@ -8,8 +8,9 @@ import {
  IMAGE_ONLY_PROMPT_EXPORT_VERSION
 } from '../tools/export-player-image-prompts.mjs';
 import {
- buildDiverseV4PortraitSnapshotForPlayer,renderDiverseV4PortraitPromptFromSnapshot
-} from '../backend/src/player-portrait-diversity-v41.mjs';
+ buildFamilyV42PortraitSnapshotForPlayer,renderFamilyV42PortraitPromptFromSnapshot
+} from '../backend/src/player-portrait-family-v42.mjs';
+import {resolveCatalogueNameOrigins} from '../backend/src/player-portrait-name-origins.mjs';
 
 // Synthetic input: no player-specific real-world IDs or saved portrait candidates.
 const fixture=(id=7,name='Sample Footballer')=>({
@@ -17,14 +18,14 @@ const fixture=(id=7,name='Sample Footballer')=>({
  initial_verified:true,attributes:{strength:73,speed:69,agility:82,stamina:64}
 });
 
-test('image-only V4.1 exporter preserves canonical identity and contains no QA or connector routing',async()=>{
+test('image-only V4.2 exporter preserves canonical identity and contains no QA or connector routing',async()=>{
  const row=fixture();
  const image=await createImageOnlyPortraitPrompt(row);
- const snapshot=await buildDiverseV4PortraitSnapshotForPlayer(row);
- const canonical=await renderDiverseV4PortraitPromptFromSnapshot(snapshot);
+ const snapshot=await buildFamilyV42PortraitSnapshotForPlayer({...row,name_origins:resolveCatalogueNameOrigins(row)});
+ const canonical=await renderFamilyV42PortraitPromptFromSnapshot(snapshot);
  const face=canonical.match(/IMMUTABLE CANONICAL FACIAL DESCRIPTION:[\s\S]*?(?=\n\nPHYSIQUE:)/)?.[0];
  assert.ok(face,'canonical facial text is present');
- assert.equal(IMAGE_ONLY_PROMPT_EXPORT_VERSION,'image-only-chat-v2');
+ assert.equal(IMAGE_ONLY_PROMPT_EXPORT_VERSION,'image-only-chat-v3');
  assert.equal(image.fingerprint,snapshot.appearance_fingerprint);
  assert.equal(image.bodyProfile,snapshot.body_profile);
  assert.equal(image.fileName,'7-Sample-Footballer.md');
@@ -32,7 +33,7 @@ test('image-only V4.1 exporter preserves canonical identity and contains no QA o
  assert.match(image.content,/Exactly one subject standing front-facing/);
  assert.match(image.content,/fictional young male footballer, approximately 21–25 years old/);
  assert.match(image.content,/Look like an ordinary real young male, approximately 21–25 years old/);
- assert.match(image.content,/native genuine TRANSPARENT RGBA PNG/);
+ assert.match(image.content,/genuine TRANSPARENT RGBA PNG/);
  assert.doesNotMatch(image.content,/GitHub|Cloudflare|QA|WebP|ImageGen|reference image|existing image|GENERATION_UNAVAILABLE|Canva|Player ID/i);
 });
 
