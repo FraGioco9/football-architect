@@ -166,7 +166,7 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
   .bind(full.public_id).first() as {receipt_json:string}|null;
  const frozenB=await db.prepare('SELECT receipt_json FROM match_lineup_result_receipts WHERE public_match_id=?')
   .bind(mixed.public_id).first() as {receipt_json:string}|null;
- expect(JSON.parse(frozenA!.receipt_json).result.events)
+ expect(JSON.parse(frozenA!.receipt_json).result.events.filter((e:{type:string})=>e.type==='goal'))
   .toHaveLength(a.result.homeGoals+a.result.awayGoals);
  expect(JSON.parse(frozenB!.receipt_json).result.events.filter((e:{side:string})=>e.side==='away'))
   .toHaveLength(0);
@@ -185,7 +185,9 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
   expect(player.ratedAppearances).toBe(1);
   expect(player.averageRating).toBeGreaterThanOrEqual(4);
   expect(player.minutes).toBeGreaterThan(0);
-  expect(player.assists).toBeNull();expect(player.redCards).toBeNull();
+  expect(player.assists).toBeGreaterThanOrEqual(0);
+  expect(player.redCards).toBeGreaterThanOrEqual(0);
+  expect(player.subAppearances).toBe(0);
  }
  const fullPlayers=season.data.statistics.players.filter((p:any)=>[full.home_club_id,full.away_club_id].includes(p.clubId));
  expect(fullPlayers).toHaveLength(22);
