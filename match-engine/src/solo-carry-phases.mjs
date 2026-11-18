@@ -14,7 +14,7 @@ const profiles=Object.freeze({
  }),
  sprint:Object.freeze({
   label:'Sprint',maxSpeedMps:4.5,accelerationMps2:8,brakingMps2:11,
-  ballTargetOffsetM:-0.04,shoeFrequencyBaseHz:1.17,
+  ballTargetOffsetM:-0.07,shoeFrequencyBaseHz:1.17,
   shoeFrequencySpeedHz:0.24,shoeForwardStrokeM:0.055
  })
 });
