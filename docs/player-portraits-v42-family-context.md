@@ -12,8 +12,8 @@
 
 - Schema `player-portraits-v5`, prompt `player-portrait-v4.2`, independent seed `football-architect:portrait-identity:v4.2`.
 - Snapshot records the two nationalities, `name_origins` (first/last), one frozen `family_background` cue, version-pinned appearance traits/fingerprint and athletic body profile/variation. Never store a raw name or game age in the portrait snapshot.
-- Renderer recomputes the seed, background cue, all face traits, fingerprint and legacy-version body variation. Any tampered or extra snapshot fields fail closed.
-- V4.2 is the sole target for new portraits and the proposed 150-player image remake. Historical V3/V4/V4.1 snapshots and approved photos stay recoverable until an authorised cutover; pure generation never calls an image API.
+- Renderer recomputes the seed, background cue, all face traits, fingerprint and frozen body variation. Any tampered or extra snapshot fields fail closed.
+- V4.2 is the **only supported persistent portrait identity** after cutover. All 150 V3/V4.1 profile rows and any legacy identity-backup table are removed at activation, without archival copies. Pure generation never calls an image API. The V4.1 trait sampler is reused internally to construct V4.2 identities; this is an implementation detail, not runtime or database compatibility.
 
 ## Read-only V4.2 candidate workflow
 
@@ -28,4 +28,4 @@ The exporter without `--version` uses V4.2. The previous V4.1 export option is r
 
 ## Activation is blocked pending separate authorisation
 
-The existing DEV D1 constraint accepts only V3 and V4.1. Migration `0033_portrait_v42_replacement.sql` is staged to admit the new V4.2 pair without editing history or changing rows. Applying this migration or executing the 150-player cutover still requires separate remote D1 authorisation. A future activation requires guarded write and rollback logic, version-aware export/runtime, exact-head CI, DEV/Preview QA and explicit owner approval. Do not change live D1, generate or publish assets, merge, or deploy based on this opt-in module alone.
+The existing DEV D1 database still has 23 approved V4.1 and 127 pending V3 portraits. Migration `0033_portrait_v42_replacement.sql` is an **irreversible, destructive V4.2-only cutover**: it deletes every old portrait row, destroys the prior identity-backup table, and starts with an empty V4.2-only table. It retains the 150 `generated_players` records, but *not* previous portrait descriptions or asset associations. There is no legacy-version read path, backup or rollback. To avoid a missing-portrait window, execute only when 150 independently validated V4.2 profiles and replacement portraits are ready for an explicitly authorised cutover. New image files must not be published or associated with a player before QA. No remote D1 migration, deletion, publication, deployment or merge is authorised by this code-only preparation; obtain separate approval for each protected step.

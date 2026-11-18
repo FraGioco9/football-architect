@@ -20,25 +20,31 @@ version-pinned descriptions, rather than preserving V4.1 faces for anyone.
 - One-nationality players **also** use V4.2. There is no V4.1 default or
   single-nationality exception.
 - New player generation and portrait text export target V4.2 on the branch.
-  The schema-only migration `0033_portrait_v42_replacement.sql` is staged.
-  Legacy schema/prompt pairs remain readable for rollback until cutover.
+  Migration `0033_portrait_v42_replacement.sql` is staged as a destructive
+  V4.2-only reset: historical portrait rows are deleted at execution, and
+  earlier schema/prompt pairs are rejected. No backup is created.
 - The 23 published V4.1 portraits are all scheduled for replacement. No
   existing photo is a source image/reference for a new face.
 
 ## Release checklist (separate gates)
 - [x] Read-only 150-player frozen-data provenance audit.
-- [x] V4.2 generation/export defaults and version-pair migration **coded**.
+- [x] V4.2 generation/export defaults and exclusive-version migration **coded**.
 - [ ] Exact-head tests / required CI green.
 - [ ] Build and freeze 150 V4.2 snapshots from verified initial player data.
 - [ ] Generate **one independent original transparent image per player** (150
       separate invocations); never collages, mixed identities or older versions.
 - [ ] Verify each source alpha, head/torso framing, 320x362 transparent WebP,
       traits and human visual QA; owner reviews before approval.
-- [ ] Guarded backup of all 150 pre-cutover portrait rows (including existing
-      status and image paths) with exact row-count/content checks.
+- [ ] After validation of all replacement identities and images, obtain
+      separate authorisation for the **irreversible** D1 reset that removes
+      all 150 previous portrait rows, including 23 approved asset references.
+- [ ] Atomically load the 150 V4.2 profiles and verify exact player ID, count,
+      fingerprints and new approved asset references; no V3/V4.1 profiles
+      or old identity backups may remain.
 - [ ] Separately authorised remote migration, cutover, upload/publication,
-      site deployment and PR merge. Keep rollback paths for the 23 old images.
+      site deployment and PR merge. No historical identity rollback.
 
 Until every gate is satisfied, the branch remains Draft/HOLD, DEV D1 stays as
-is, and the public images remain unchanged. "Sole target" does not mean
-retroactively rewriting approved published photos without QA.
+is, and the public images remain unchanged. Applying the V4.2-only migration
+without the validated replacement identities would leave the profile table
+empty and detach the old approved images; do not execute it independently.

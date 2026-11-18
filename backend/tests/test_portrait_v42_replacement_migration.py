@@ -27,43 +27,50 @@ class PortraitV42Migration(unittest.TestCase):
            (player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at)
            VALUES (47,'player-portraits-v4','player-portrait-v4.1',?,'approved',
              'assets/players/portraits/47.webp',1600000001)""", (approved,))
-        self.before = list(self.db.execute('SELECT * FROM player_portrait_profiles ORDER BY player_id'))
+        self.db.execute("""INSERT INTO player_portrait_v3_replacement_backup(
+            player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at)
+            VALUES (47,'player-portraits-v2','player-portrait-v3',?,'approved',
+              'assets/players/portraits/47.webp',1600000001)""", (old,))
+        self.db.commit()
 
     def tearDown(self):
         self.db.close()
 
-    def test_schema_only_migration_preserves_legacy_portraits_and_adds_v42(self):
+    def test_cutover_drops_old_identities_and_all_legacy_backup_tables(self):
         self.db.executescript(V42)
-        self.assertEqual(self.before, list(self.db.execute('SELECT * FROM player_portrait_profiles ORDER BY player_id')))
-        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM player_portrait_v42_replacement_backup').fetchone()[0], 0)
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM player_portrait_profiles').fetchone()[0], 0)
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM generated_players').fetchone()[0], 3)
         self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(), [])
+        names = {r[0] for r in self.db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        self.assertNotIn('player_portrait_v3_replacement_backup', names)
+        self.assertNotIn('player_portrait_v42_replacement_backup', names)
+        self.assertNotIn('player_portrait_profiles_v42_next', names)
+
         v42 = json.dumps({'schema_version': 'player-portraits-v5',
                           'prompt_version': 'player-portrait-v4.2', 'player_id': 93})
         self.db.execute("""INSERT INTO player_portrait_profiles
             (player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at)
             VALUES (93,'player-portraits-v5','player-portrait-v4.2',?,'pending',NULL,1600000002)""", (v42,))
-        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM player_portrait_profiles').fetchone()[0], 3)
-        self.db.execute("""INSERT INTO player_portrait_v42_replacement_backup
-          (player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at)
-          SELECT player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at
-          FROM player_portrait_profiles WHERE player_id IN (44,47)""")
-        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM player_portrait_v42_replacement_backup').fetchone()[0], 2)
-        self.db.execute('DELETE FROM generated_players WHERE id=47')
-        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM player_portrait_v42_replacement_backup').fetchone()[0], 1)
-        self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(), [])
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM player_portrait_profiles').fetchone()[0], 1)
 
-    def test_fails_closed_on_mismatched_versions_and_incomplete_assets(self):
+    def test_rejects_all_legacy_version_pairs_and_incorrect_asset_states(self):
         self.db.executescript(V42)
+        for schema, prompt in [
+            ('player-portraits-v2', 'player-portrait-v3'),
+            ('player-portraits-v4', 'player-portrait-v4.1'),
+            ('player-portraits-v5', 'player-portrait-v4.1'),
+            ('player-portraits-v2', 'player-portrait-v4.2')
+        ]:
+            with self.subTest(schema=schema, prompt=prompt):
+                with self.assertRaises(sqlite3.IntegrityError):
+                    self.db.execute("""INSERT INTO player_portrait_profiles(
+                      player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at
+                     ) VALUES (93,?,?, '{}','pending',NULL,1600000002)""", (schema, prompt))
         with self.assertRaises(sqlite3.IntegrityError):
-            self.db.execute("""UPDATE player_portrait_profiles
-             SET schema_version='player-portraits-v5' WHERE player_id=47""")
-        with self.assertRaises(sqlite3.IntegrityError):
-            self.db.execute("UPDATE player_portrait_profiles SET asset_key=NULL WHERE player_id=47")
-        with self.assertRaises(sqlite3.IntegrityError):
-            self.db.execute("""INSERT INTO player_portrait_profiles
-                (player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at)
-                VALUES (93,'player-portraits-v5','player-portrait-v4.1','{}','pending',NULL,1600000002)""")
-        self.assertEqual(self.before, list(self.db.execute('SELECT * FROM player_portrait_profiles ORDER BY player_id')))
+            self.db.execute("""INSERT INTO player_portrait_profiles(
+             player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at
+            ) VALUES (93,'player-portraits-v5','player-portrait-v4.2','{}','approved',NULL,1600000002)""")
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM player_portrait_profiles').fetchone()[0], 0)
 
 
 if __name__ == '__main__':
