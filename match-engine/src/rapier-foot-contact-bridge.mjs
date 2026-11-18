@@ -43,7 +43,7 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
   // reduces missed shoes; backing stroke remains unchanged for native END.
   const approachM=gaitClamp((aheadM-0.53)*0.40,0,0.055)*
    Math.max(0,stroke);
-  const forwardM=0.105*stroke+approachM;
+  const forwardM=(solo?0.075:0.105)*stroke+approachM;
   const sideM=gaitClamp(lateralM*0.20,-0.03,0.03)*
    Math.max(0,stroke);
   return Object.freeze({

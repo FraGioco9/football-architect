@@ -471,7 +471,8 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
    assert.ok(releaseRecontacts>=1,'One actor must release and recontact the ball');
    process.stdout.write('ME_628_SOLO_CARRY_SPEED_GUARD '+JSON.stringify({
     side,variantIndex,maxBallSpeedMps:maximumBallSpeed,
-    meanPlayerSpeedMps:playerSpeedSum/180,carries,releaseRecontacts
+    meanPlayerSpeedMps:playerSpeedSum/180,carries,releaseRecontacts,
+    peakSpeedWitness:lab.snapshot().nativeDribbleAudit.peakBallSpeedWitness
    })+'\\n');
    assert.ok(maximumBallSpeed<=3.5+1e-6,
     'Solo original Rapier ball must stay below established D-01 3.5m/s design guard');

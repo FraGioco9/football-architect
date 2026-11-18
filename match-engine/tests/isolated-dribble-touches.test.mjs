@@ -299,6 +299,7 @@ test('#628 solo-only actual-speed shoe cadence reduces low-pace stepping without
  assert.ok(duel.frequencyHz>2.4&&duel.frequencyHz<2.7);
  assert.ok(solo.frequencyHz>1.35&&solo.frequencyHz<1.7);
  assert.ok(solo.frequencyHz<duel.frequencyHz);
+ assert.ok(Math.abs(solo.forwardM)<Math.abs(duel.forwardM));
  assert.equal(solo.ballImpulseCreated,false);
  assert.equal(solo.nativeShoeEventCreated,false);
  const high=advanceD01LiveShoeGait({...source,solo:true,player:{...source.player,vx:4}});
