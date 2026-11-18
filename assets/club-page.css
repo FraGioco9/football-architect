@@ -461,12 +461,11 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-table .club-history-row-loading .club-fp-bar{
  display:block;box-sizing:border-box;translate:none;
 }
-/* Browser-verified optical alignment. Loaded text centers ~1px above the
-   desktop value track; move only the standard skeleton paint, never its
-   layout box, label origin, width, radius or animation. Mobile is already
-   within 0.5px and deliberately remains unshifted. */
+/* The full -1px desktop correction painted skeletons too high.
+   Use a half-pixel correction without changing the text tracks or the
+   native bar appearance. Mobile remains unshifted. */
 @media(min-width:621px){
- .club-history-table .club-history-row-loading .club-fp-bar{translate:0 -1px}
+ .club-history-table .club-history-row-loading .club-fp-bar{translate:0 -0.5px}
 }
 /* First paint and runtime pending rows reserve the actual numeric glyph
    widths, then center the bar on the same 16px track as verified data. */

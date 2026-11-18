@@ -299,10 +299,10 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-table .app-player-stats-loading .app-skeleton-bar{
  display:block;box-sizing:border-box;min-width:0;height:10px;margin:0;translate:none;
 }
-/* Native app skeletons share the desktop data's optical midpoint without
-   changing their global fill, 10px height or 4px rounded corners. */
+/* The -1px correction painted desktop skeletons too high.
+   Reduce to half a pixel while retaining the native fill and 10px bar. */
 @media(min-width:621px){
- .app-player-stats-table .app-player-stats-loading .app-skeleton-bar{translate:0 -1px}
+ .app-player-stats-table .app-player-stats-loading .app-skeleton-bar{translate:0 -0.5px}
 }
 /* One column, one skeleton width: Career and Season labels share the same
    70px loading bar; numeric columns share the same glyph sample per metric. */

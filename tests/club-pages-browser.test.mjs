@@ -680,6 +680,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          'stat '+i+' skeleton shares hydrated value-row center at '+width+': '+JSON.stringify(alignment));
         assert.ok(Math.abs(data.inkDy-skeleton.dy)<=1.25,
          'stat '+i+' loading bar follows painted numeric ink in its own cell at '+width+': '+JSON.stringify(alignment));
+        if(width>620)assert.ok(skeleton.dy-data.inkDy>=-0.5,
+         'History loading bar must not be painted too high above the verified number at '+width+': '+JSON.stringify(alignment));
         assert.ok(Math.abs(data.height-skeleton.height)<=1,
          'stat '+i+' keeps the same cell height during loading at '+width);
        }
@@ -1010,6 +1012,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         'Player Stats bar '+i+' occupies the same value baseline at '+width+'px: '+JSON.stringify(placement));
        assert.ok(Math.abs(a.inkDy-s.dy)<=1.25,
         'Player Stats bar '+i+' follows painted numeric ink in its own cell at '+width+'px: '+JSON.stringify(placement));
+       if(width>620)assert.ok(s.dy-a.inkDy>=-0.5,
+        'Stats loading bar must not be painted too high above verified numbers at '+width+': '+JSON.stringify(placement));
        assert.ok(Math.abs(a.height-s.height)<=1,
         'Player Stats pending and verified cell heights remain stable at '+width+'px');
       }
