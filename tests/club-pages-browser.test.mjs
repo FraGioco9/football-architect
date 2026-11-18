@@ -49,7 +49,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
    if(path==='/api/clubs/IT-1/roster/stats'){
     rosterRequests.stats++;
     res.writeHead(200,{'Content-Type':'application/json'});
-    res.end(JSON.stringify({clubKey:'IT-1',season:1,competitions:['IT-1','int-1'],count:1,players:[{id:1001,display_name:'Fixture Player',nationality:'ITA',primary_position:'CM',stats:{appearances:2,starts:1,minutes:110,goals:1},competitionStats:{'IT-1':{appearances:1,starts:1,minutes:90,goals:1},'int-1':{appearances:1,starts:0,minutes:20,goals:0}}}]}));return;
+    res.end(JSON.stringify({clubKey:'IT-1',season:1,competitions:['IT-1','int-1'],count:1,players:[{id:1001,display_name:'Fixture Player',nationality:'ITA',primary_position:'CM',stats:{appearances:2,starts:1,subAppearances:1,minutes:110,goals:1,assists:null,cleanSheets:null,redCards:null,ratedAppearances:0,averageRating:null,goalsAssistsPer90:null},competitionStats:{'IT-1':{appearances:1,starts:1,subAppearances:0,minutes:90,goals:1,assists:0,cleanSheets:null,redCards:0,ratedAppearances:1,averageRating:7.15,goalsAssistsPer90:1},'int-1':{appearances:1,starts:0,subAppearances:1,minutes:20,goals:0,assists:null,cleanSheets:null,redCards:null,ratedAppearances:0,averageRating:null,goalsAssistsPer90:null}}}]}));return;
    }
    if(path==='/api/clubs/IT-1/roster'&&holdRosterResponse){blockedRosterResponses.push(res);return;}
    if(path==='/api/clubs/IT-1/roster'&&mockEmptyRoster){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:0,players:[]}));return;}
@@ -738,7 +738,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.ok(await run("document.querySelector('.club-roster-tabs').scrollWidth<=document.querySelector('.club-roster-tabs').clientWidth+1"));
     }
     await run("document.querySelector('[data-club-roster-view=stats]').click()");
-    await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='110'");
+    await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(11)')?.textContent==='110'");
     for(const width of [320,1440]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===320});
      const gap=await run("document.querySelector('.club-roster-count').getBoundingClientRect().left-document.querySelector('[data-club-roster-control]').getBoundingClientRect().right");
@@ -752,12 +752,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.deepEqual(await run("[...document.querySelectorAll('[data-club-roster-control] [data-menu-value]')].map(el=>el.dataset.menuValue)"),['all','domestic','international']);
     for(const [scope,minutes] of [['domestic','90'],['all','110'],['international','20']]){
      await run("document.querySelector('[data-club-roster-control=competition] button').click();document.querySelector('[data-menu-value="+scope+"]').click()");
-     await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='"+minutes+"'");
+     await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(11)')?.textContent==='"+minutes+"'");
     }
     assert.deepEqual(rosterRequests,{info:initialReads.info+1,stats:initialReads.stats+1});
-    await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='20'");
+    await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(11)')?.textContent==='20'");
     await cmd('Page.reload',{ignoreCache:true});
-    await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='20'");
+    await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(11)')?.textContent==='20'");
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await run("document.querySelector('[data-club-roster-view=attributes]').click()");
     await wait("location.search==='?view=attributes&group=technical'");
