@@ -40,6 +40,7 @@ test('V4.2 samples fictional dual-national context and freezes it independent of
  assert.equal(a.schema_version,FAMILY_V42_SCHEMA_VERSION);
  assert.equal(a.prompt_version,FAMILY_V42_PROMPT_VERSION);
  assert.equal(a.name_origins.last,'secondary');
+ assert.equal(a.family_background,'NGA','both secondary catalogue names select NGA casting anchor');
  assert.ok(['ITA','NGA'].includes(a.family_background));
  assert.match(a.appearance_fingerprint,/^[a-f0-9]{16}$/);
  assert.equal(Object.hasOwn(a,'age'),false);

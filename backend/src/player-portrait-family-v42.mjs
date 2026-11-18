@@ -99,7 +99,10 @@ function pick(options,weights,random){
  return options.at(-1);
 }
 function secondaryProbability(src){
- if(src.last==='secondary')return src.first==='secondary'?.92:.85;
+ // Two independently verified secondary-bank names establish the fictional
+ // family casting anchor, but do NOT dictate any physical appearance.
+ if(src.first==='secondary'&&src.last==='secondary')return 1;
+ if(src.last==='secondary')return .85;
  if(src.last==='primary')return src.first==='secondary'?.35:.15;
  if(src.first==='secondary')return .65;
  if(src.first==='primary')return .35;
