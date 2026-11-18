@@ -51,7 +51,7 @@ export interface MatchReceiptPlanV1 {
  receiptHash:string;
  sourceDigest:string;
  receipt:{
-  schemaVersion:1;authority:'official';algorithmVersion:'temporary-lineup-v1';
+  schemaVersion:1|2;authority:'official';algorithmVersion:'temporary-lineup-v1';
   rosterSourceDigest:string;sourceCandidateDigest:string;
   fixture:Record<string,unknown>;result:Record<string,unknown>;
  };

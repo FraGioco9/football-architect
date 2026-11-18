@@ -135,3 +135,35 @@ test('forged version marker cannot silently reinterpret historical event coverag
  source.eventModelVersion='forged';
  await assert.rejects(()=>buildCandidateMatchReceiptV1(fixture,source),/event version/);
 });
+
+test('v2 replay rejects reordered final passes, forged period scores and invalid card sequences',async()=>{
+ const home=roster(0,9),away=roster(100,9),match={
+  matchId:171,season:1,day:13,generation:'test-generation',
+  competitionId:'IT-1',fixtureId:'season:1:IT-1:N01:IT-1:IT-2',
+  homeClubId:'IT-1',awayClubId:'IT-2',sourceHash:'d'.repeat(64)};
+ let passing=null,extra=null,carded=null;
+ for(let i=0;i<135;i++){
+  const base=await play(home,away,'strict-event-'+String(i).padStart(4,'0'),'single-knockout');
+  const events=await planRecordedMatchTimelineV1({result:base,homeRoster:home,awayRoster:away});
+  const full=attachTestRatingsV1({...base,...events,
+   home:{...base.home,...events.home},away:{...base.away,...events.away}});
+  assert.equal(validateRecordedMatchTimelineV1(full),true);
+  passing??=full.events.some(x=>x.type==='pass')?full:null;
+  extra??=full.extraTime&&full.events.some(x=>x.type==='goal'&&x.period==='regulation')?full:null;
+  carded??=full.events.some(x=>x.type==='yellow')?full:null;
+  if(passing&&extra&&carded)break;
+ }
+ assert.ok(passing&&extra&&carded);
+ const pass=structuredClone(passing);
+ const before=pass.events.findIndex(e=>e.type==='pass');
+ pass.events[before].fromPlayerId=999;
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(match,pass),/final pass/);
+ const extraForged=structuredClone(extra);
+ const goal=extraForged.events.find(e=>e.type==='goal'&&e.period==='regulation');
+ goal.minute=91;goal.period='extra-time';
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(match,extraForged),/event clock|scoring attribution/);
+ const cards=structuredClone(carded);
+ const yellow=cards.events.find(e=>e.type==='yellow');
+ yellow.secondYellowSequence=true;
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(match,cards),/yellow sequence|keeper|card|second/);
+});

@@ -17,7 +17,7 @@ function startSide(record,duration){
   if(record.starters!==null||record.appearances?.length!==0||
    !Array.isArray(record.bench)||record.bench.length)reject('fallback attribution');
   return {fallback:true,on:new Map(),people:new Map(),bench:new Set(),seen:new Set(),last:0,
-   yellow:new Map(),red:0,subs:0,windows:new Set(),pending:new Map()};
+   yellow:new Map(),red:0,subs:0,regulationSubs:0,windows:new Set(),pending:new Map(),otherYellows:0,secondTarget:null,secondComplete:false};
  }
  if(record.kind!=='real_xi'||!Array.isArray(record.starters)||record.starters.length!==11||
   !Array.isArray(record.bench)||record.bench.length>9||
@@ -39,7 +39,7 @@ function startSide(record,duration){
   bench.add(p.playerId);
  }
  return {fallback:false,on,people,seen,bench,last:0,yellow:new Map(),
-  red:0,subs:0,windows:new Set(),pending:new Map(),duration};
+  red:0,subs:0,regulationSubs:0,windows:new Set(),pending:new Map(),otherYellows:0,secondTarget:null,secondComplete:false,duration};
 }
 function advance(state,minute){
  if(minute<state.last||minute>state.duration)reject('timeline order');
@@ -60,10 +60,14 @@ function finish(state,record,duration){
  advance(state,duration);
  for(const id of state.on.keys())close(state,id,duration);
  if(state.on.size!==11-state.red||state.red>1||
-  state.subs>5+(duration===120?1:0))reject('headcount/sub limit');
- const inPlay=[...state.windows].filter(m=>m!==45&&m!==105);
- if(inPlay.length>3||state.windows.has(105)&&duration!==120||
-  state.pending.size||[...state.on.values()].filter(r=>r==='GK').length!==1)
+  state.subs>5+(duration===120?1:0)||state.regulationSubs>5)
+  reject('headcount/sub limit');
+ const regulationWindows=[...state.windows].filter(m=>m<90&&m!==45);
+ const extraWindows=[...state.windows].filter(m=>m>90&&m!==105);
+ if(regulationWindows.length>3||extraWindows.length>1||
+  state.windows.has(105)&&duration!==120||state.pending.size||
+  state.secondTarget!==null&&!state.secondComplete||
+  [...state.on.values()].filter(r=>r==='GK').length!==1)
   reject('window/unpaired final pass or keeper');
  const derived=[...state.people.values()].map(p=>({
   playerId:p.playerId,role:p.role,started:p.started,
@@ -94,8 +98,8 @@ export function validateRecordedMatchTimelineV1(result){
    ...rec.bench.map(x=>x.playerId)
   ]){if(all.has(id))reject('cross-side actor');all.add(id)}
  }
- const goals={home:0,away:0},goalIds=new Set();
- let priorMinute=0;
+ const goals={home:0,away:0},regGoals={home:0,away:0},etGoals={home:0,away:0},goalIds=new Set();
+ let priorMinute=0,pendingGlobal=null;
  for(const [ordinal,event]of result.events.entries()){
   const name=event?.side;
   if(!sideNames.includes(name)||event.ordinal!==ordinal||
@@ -103,6 +107,14 @@ export function validateRecordedMatchTimelineV1(result){
    event.minute>duration||event.minute<priorMinute||
    event.period!==(event.minute<=90?'regulation':'extra-time'))reject('event clock/ordinal');
   priorMinute=event.minute;
+  if(pendingGlobal){
+   if(name!==pendingGlobal.side||event.minute!==pendingGlobal.minute||
+    event.type!==pendingGlobal.type||
+    (pendingGlobal.playerId!==undefined&&event.playerId!==pendingGlobal.playerId)||
+    (pendingGlobal.goalId!==undefined&&event.goalId!==pendingGlobal.goalId))
+    reject('unpaired adjacent event');
+   pendingGlobal=null;
+  }
   const state=states[name];if(state.fallback)reject('fallback player event');
   advance(state,event.minute);
   const on=id=>valid(id)&&state.on.has(id);
@@ -110,28 +122,41 @@ export function validateRecordedMatchTimelineV1(result){
   if(event.type==='yellow'){
    if(!on(event.playerId))reject('yellow actor');
    const n=state.yellow.get(event.playerId)??0;
-   if(n===0&&event.secondYellowSequence!==undefined&&event.secondYellowSequence!==true)
-    reject('yellow marker');
-   if(n===1&&event.secondYellowSequence!==true)reject('missing second yellow marker');
    if(n>=2)reject('third yellow');
+   if(n===0&&event.secondYellowSequence===true){
+    if(state.secondTarget!==null)reject('duplicate second-yellow candidate');
+    state.secondTarget=event.playerId;
+   }else if(n===0&&event.secondYellowSequence===undefined){
+    state.otherYellows++;
+    if(state.otherYellows>3)reject('unrelated yellow-card limit');
+   }else if(n===1&&event.secondYellowSequence===true&&
+    state.secondTarget===event.playerId){
+    pendingGlobal={side:name,minute:event.minute,type:'red',playerId:event.playerId};
+   }else reject('yellow sequence linkage');
    state.yellow.set(event.playerId,n+1);
   }else if(event.type==='red'){
    if(!on(event.playerId)||state.red>=1||
     !['direct','second_yellow'].includes(event.reason))reject('red actor/reason');
-   if(event.reason==='second_yellow'&&state.yellow.get(event.playerId)!==2)
+   if(event.reason==='second_yellow'&&
+    (state.yellow.get(event.playerId)!==2||state.secondTarget!==event.playerId))
     reject('second yellow linkage');
+   if(event.reason==='direct'&&state.yellow.get(event.playerId)===2)
+    reject('misclassified second yellow');
+   if(event.reason==='second_yellow')state.secondComplete=true;
+   const lostKeeper=state.on.get(event.playerId)==='GK';
    state.red++;
    close(state,event.playerId,event.minute);
    state.on.delete(event.playerId);
    state.people.get(event.playerId).redCards++;
+   if(lostKeeper)pendingGlobal={side:name,minute:event.minute,type:'role_change'};
   }else if(event.type==='role_change'){
-   if(!on(event.playerId)||event.fromRole!==state.on.get(event.playerId)||
+   if(state.red===0||!on(event.playerId)||event.fromRole!==state.on.get(event.playerId)||
     event.toRole!=='GK'||event.reason!=='emergency_goalkeeper'||
     [...state.on.values()].includes('GK'))reject('emergency goalkeeper');
    close(state,event.playerId,event.minute);
    state.on.set(event.playerId,'GK');
   }else if(event.type==='substitution'){
-   if(!on(event.outPlayerId)||!state.bench.has(event.inPlayerId)||
+   if(event.playerId!==event.outPlayerId||!on(event.outPlayerId)||!state.bench.has(event.inPlayerId)||
     state.seen.has(event.inPlayerId)||state.subs>=5+(duration===120?1:0)||
     !allowedRoles.has(event.inRole)||event.inRole!==event.outRole||
     event.outRole!==state.on.get(event.outPlayerId))reject('substitution actors');
@@ -142,20 +167,22 @@ export function validateRecordedMatchTimelineV1(result){
    }
    const w=event.minute===45?'half-time':event.minute===105?'extra-time':'in-play';
    if(event.window!==w||w==='extra-time'&&duration!==120||
-    w==='in-play'&&event.minute>=90)reject('substitution window');
+    w==='in-play'&&event.minute===90)reject('substitution window');
    state.windows.add(event.minute);
+   if(event.minute<=90)state.regulationSubs++;
    state.subs++;close(state,event.outPlayerId,event.minute);
    state.on.delete(event.outPlayerId);state.on.set(event.inPlayerId,event.inRole);
    state.seen.add(event.inPlayerId);
    state.people.set(event.inPlayerId,player(event.inPlayerId,event.inRole,false,event.minute));
   }else if(event.type==='pass'){
-   if(!on(event.fromPlayerId)||!on(event.toPlayerId)||
+   if(event.playerId!==event.fromPlayerId||!on(event.fromPlayerId)||!on(event.toPlayerId)||
     event.fromPlayerId===event.toPlayerId||
     typeof event.goalId!=='string'||!event.goalId.startsWith(name+':')||
     event.purpose!=='deliberate_final_pass'||state.pending.has(event.goalId))
     reject('final pass provenance');
    state.pending.set(event.goalId,{minute:event.minute,
     from:event.fromPlayerId,to:event.toPlayerId});
+   pendingGlobal={side:name,minute:event.minute,type:'goal',goalId:event.goalId};
   }else if(event.type==='goal'){
    if(!on(event.playerId)||typeof event.goalId!=='string'||
     !event.goalId.startsWith(name+':')||
@@ -170,13 +197,20 @@ export function validateRecordedMatchTimelineV1(result){
     state.pending.delete(event.goalId);
    }else if(event.assistingPlayerId!==null||pending)reject('solo goal assist');
    state.people.get(event.playerId).goals++;goals[side]++;
+   if(event.period==='regulation')regGoals[side]++;
+   else etGoals[side]++;
   }else reject('unknown match event');
   if(state.on.size>11||state.on.size<10|| // at most one dismissal per side
     [...state.on.values()].filter(role=>role==='GK').length>1)
    reject('on-pitch participant count');
  }
+ if(pendingGlobal)reject('unfinished adjacent event');
  for(const name of sideNames){
   const side=result[name],n=goals[name];
+  if(side.kind==='real_xi'&&
+   (regGoals[name]!==result.regulation?.[name]||
+    etGoals[name]!==(result.extraTime?.[name]??0)))
+   reject('regulation/extra-time scoring attribution');
   if(!Number.isSafeInteger(side.unattributedGoals)||side.unattributedGoals<0||
    n+side.unattributedGoals!==result[name+'Goals'])reject('score reconciliation');
   finish(states[name],side,duration);
