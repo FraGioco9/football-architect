@@ -770,6 +770,10 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
 .app-history-player-name{min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;font-size:.86rem;font-weight:650}
 .app-history-player-detail,.app-history-player-context-button{font:inherit;color:var(--text);cursor:pointer}
 .app-history-player-detail{flex-shrink:0;padding:3px 6px;border:1px solid var(--line);border-radius:7px;background:transparent;font-size:.78rem}
+#competition-panel-history .app-history-player-detail:hover{
+ border-color:var(--focus);background:rgba(100,203,169,.075);
+ color:var(--text);text-decoration:underline;text-underline-offset:3px
+}
 .app-history-player-context{font-size:.76rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .app-history-player-context-button{width:max-content;max-width:100%;padding:0;border:0;background:transparent;text-decoration:underline;text-underline-offset:3px}
 .app-history-player-detail:focus-visible,.app-history-player-context-button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -2144,6 +2148,11 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 .app-history-tied-club{grid-column:2;grid-row:1;display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;width:max-content;justify-self:start}
 .app-history-tied-club .app-world-club-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .app-history-tied-club>.app-history-player-detail{flex:0 0 auto;white-space:nowrap}
+/* First paint and hydrated team holders use the same inline text wrapper.
+   The +N button can appear without moving the name slot. */
+#competition-panel-history .history-team-placeholder .app-history-tied-club{
+ grid-column:2;grid-row:1
+}
 
 .app-history-dev-record:has([aria-expanded="true"]){height:auto}
 
