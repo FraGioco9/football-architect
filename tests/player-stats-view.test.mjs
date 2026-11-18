@@ -106,8 +106,8 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
   'Stats inherits the exact site-wide skeleton primitive');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar\{\s*display:block;box-sizing:border-box;min-width:0;height:10px;margin:0;translate:none;/,
   'Stats loading bars have the canonical filled 10px shape');
- assert.match(css,/@media\(min-width:621px\)\{\s*\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar\{translate:0 -0\.5px\}/,
-  'Player Stats desktop skeleton avoids the previous excessive upward shift');
+ assert.match(css,/@media\(min-width:621px\)\{\s*\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar\{translate:0 1px\}/,
+  'Player Stats desktop skeleton paints below the data center instead of above it');
  assert.doesNotMatch(css,/\.app-player-stats-loading \.app-skeleton-bar::before\{[^}]*text-decoration-line:line-through/,
   'Stats does not paint skeletons as text decorations');
  assert.doesNotMatch(css,/\.app-player-stats-skeleton-career::before|\.app-player-stats-skeleton-season::before/,
@@ -140,6 +140,11 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  assert.doesNotMatch(css,/\.app-player-stats-header-trigger:is\(:hover,:focus-visible\)\{text-decoration:underline/);
 });
 test('#578 toggling Stats keeps the same chevron node as Club History',async()=>{
+ {const mobileCSS=read('assets/player-detail.css');
+  assert.ok(mobileCSS.includes('.app-player-stats-table .app-player-stats-season-row :is(.app-player-stats-toggle,.app-player-stats-static-label){min-height:34px;align-items:center}'));
+  assert.ok(mobileCSS.includes('.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-label{min-height:34px}'));
+ }
+
  const originalDocument=globalThis.document,originalWindow=globalThis.window;
  const listeners={};
  function item(tag){

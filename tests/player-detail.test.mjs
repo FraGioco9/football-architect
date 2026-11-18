@@ -39,6 +39,15 @@ test('#527 public mobile Player Detail text is centered against the portrait wit
 });
 
 test('#502 both generated detail shells match canonical renderer and reserve first-paint fields',()=>{
+ {const script=read('assets/player-detail.js'),style=read('assets/player-detail.css');
+  assert.ok(script.includes("'football-architect:player-views-scroll:'+location.pathname"),'per-player scroll storage');
+  assert.ok(script.includes('viewBar.scrollLeft=n'),'restore player horizontal View scroll');
+  assert.ok(script.includes("sessionStorage.setItem(viewScrollKey,String(viewBar.scrollLeft))"),'persist manual View scroll');
+  assert.ok(script.includes("window.addEventListener('pagehide',saveViewScroll)"),'save final scroll before refresh');
+  assert.ok(style.includes('.app-player-stats-table .app-player-stats-season-row{padding-top:0}'));
+  assert.ok(style.includes('.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-label{min-height:34px}'));
+ }
+
  for(const [src,output,mode] of [
   ['players/index.html','players/_shared/index.html','public'],
   ['admin/players/preview/index.html','admin/players/preview/player/index.html','preview']
