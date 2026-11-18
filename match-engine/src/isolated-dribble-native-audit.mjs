@@ -49,10 +49,13 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
     throw new TypeError('Original 7m/s speed guard was violated');
    for(let j=i+1;j<22;j++){
     const b=playerFrame.players[j];
-    minPlayerGap=Math.min(minPlayerGap,Math.hypot(a.x-b.x,a.y-b.y));
+    // In solo research only the real selected actor can collide; no
+    // phantom "22-player" overlap is meaningful with zero other bodies.
+    if(!solo)minPlayerGap=Math.min(minPlayerGap,
+     Math.hypot(a.x-b.x,a.y-b.y));
    }
   }
-  if(minPlayerGap<PLAYER_MIN_SEPARATION_M-1e-6)
+  if(!solo&&minPlayerGap<PLAYER_MIN_SEPARATION_M-1e-6)
    throw new TypeError('Original 0.98m hard separation was violated');
   const b=physics.ball.position;
   if(priorBall)ballPath+=Math.hypot(b.x-priorBall.x,b.y-priorBall.y);
@@ -131,7 +134,7 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
    ballLateralDisplacementM:b.y-firstBall.y,
    nativeBodyBallContactTicks:nativeBodyBallTicks,
    nativeOpposingTorsoContactTicks:nativeBodyPairsTicks,
-   minimumCanonicalSeparationM:minPlayerGap,
+   minimumCanonicalSeparationM:solo?null:minPlayerGap,
    maximumObservedCanonicalPlayerSpeedMps:maxActualPlayerSpeed,
    physicalRecontactAfterReleaseObserved:recontacts>0,
    multiTouchCarryObserved:actions>=2&&recontacts>0,

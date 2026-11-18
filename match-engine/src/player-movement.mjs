@@ -2429,7 +2429,8 @@ export function createPlayerMovement(options={}){
      if(p.id===smallSided.side+'-10')
       return smallSided.id==='keeper-1v1'?
        keeperDuelAttackerTarget(smallSided.side,smallSided.variantIndex,p,ball):
-       Object.freeze({x:ball.x-attack*((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?0.40:0.08),y:ball.y});
+       Object.freeze({x:ball.x+attack*(smallSided.id==='carry-solo'?-0.10:
+        smallSided.id==='dribble-1v1'?-0.40:-0.08),y:ball.y});
      const wing=p.id.endsWith('-9')?-1:1;
      return Object.freeze({x:clamp(ball.x-attack*3,
       -PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),
@@ -2611,10 +2612,14 @@ export function createPlayerMovement(options={}){
     dt:PLAYER_DT,maxSpeed:PLAYER_MAX_SPEED_MPS
    }):free;
    if(shoe&&candidate.clippedM>1e-10)shoePositionClamps++;
+   // Solo Carry physically has ONE actor. Inactive canonical identities
+   // preserve schema/ordered IDs but are not obstacles on this pitch.
+   // Every other LAB keeps the canonical 22-body separation unchanged.
    const blocker=players.find(other=>other!==p&&
+     (smallSided?.id!=='carry-solo'||smallActive.has(other.id))&&
      (candidate.x-other.x)**2+(candidate.y-other.y)**2<
       PLAYER_MIN_SEPARATION_M**2-1e-9);
-   // Canonical 22-body hard rejection remains here, never in free stepping.
+   // Genuine selected actors still reject same-world physical overlaps.
    p.blockedBy=blocker?.id??null;
    if(blocker){p.vx=0;p.vy=0;}
    else{p.x=candidate.x;p.y=candidate.y;p.vx=candidate.vx;p.vy=candidate.vy;}
@@ -2942,7 +2947,9 @@ export function createPlayerMovement(options={}){
      return reject('original-shoe-handoff');
    }
    for(let j=i+1;j<players.length;j++)
-    if(Math.hypot(n.x-candidate[j].x,n.y-candidate[j].y)<
+    if((smallSided.id!=='carry-solo'||
+      (smallActive.has(p.id)&&smallActive.has(players[j].id)))&&
+       Math.hypot(n.x-candidate[j].x,n.y-candidate[j].y)<
        PLAYER_MIN_SEPARATION_M-1e-8)
      return reject('original-22-player-separation');
   }

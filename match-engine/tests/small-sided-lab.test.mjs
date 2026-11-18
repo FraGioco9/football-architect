@@ -429,10 +429,15 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
    shotSide:side,variantIndex,bodyGuardEnabled:true
   });
   try{
-   let carries=0,releaseRecontacts=0;
+   let carries=0,releaseRecontacts=0,playerSpeedSum=0,maximumBallSpeed=0,
+    minimumObservedSpeed=Infinity;
    for(let tick=1;tick<=180;tick++){
     const f=lab.step();
     assert.deepEqual(f.smallSidedParticipants,[side+'-10']);
+    const actor=f.observedMovementPlayers.find(p=>p.id===side+'-10');
+    const speed=Math.hypot(actor.vx,actor.vy);
+    playerSpeedSum+=speed;minimumObservedSpeed=Math.min(minimumObservedSpeed,speed);
+    maximumBallSpeed=Math.max(maximumBallSpeed,Math.hypot(f.ball.velocity.x,f.ball.velocity.y));
     assert.equal(f.genuinePhysicalPlayerCount,1);
     assert.deepEqual(f.smallSidedNativeBodyGuard.selectedColliderIds,[side+'-10']);
     assert.deepEqual(f.smallSidedNativeBodyGuard.nativeOpposingTorsoPairs,[]);
@@ -441,11 +446,15 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
     assert.equal(f.nativeDribbleAudit.defenderShoeStarts,0);
     assert.equal(f.nativeDribbleAudit.minimumRealDefenderBallGapM,null);
     assert.equal(f.nativeDribbleAudit.measuredPressureTicks,null);
+    assert.equal(f.nativeDribbleAudit.minimumCanonicalSeparationM,null,
+     'No fake 22-player separation in a true one-body LAB');
     assert.equal(f.officialMatchPossession,false);
     const decisions=projectActiveLabDecisions(f,lab.focus);
     assert.equal(decisions.length,1);
     assert.equal(decisions[0].id,side+'-10');
     assert.equal(decisions[0].kind,'carry-ball');
+    assert.equal(decisions[0].blockedBy,null,
+     'No ghost keeper or defender from inactive 22-player identities');
     if(f.action){
      carries++;
      assert.equal(f.action.playerId,side+'-10');
@@ -461,7 +470,10 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
    assert.ok(carries>=2,'One actor must truly carry using repeated Rapier impulses');
    assert.ok(releaseRecontacts>=1,'One actor must release and recontact the ball');
    process.stdout.write('ME_628_SOLO_CARRY_REAL '+JSON.stringify({
-    side,variantIndex,activePhysicalPlayers:1,carries,releaseRecontacts
+    side,variantIndex,activePhysicalPlayers:1,carries,releaseRecontacts,
+    averagePlayerSpeedMps:playerSpeedSum/180,minimumObservedSpeed,
+    maxBallSpeedMps:maximumBallSpeed,
+    realBallForwardM:lab.snapshot().nativeDribbleAudit.ballForwardDistanceM
    })+'\\n');
   }finally{lab.dispose();}
  }

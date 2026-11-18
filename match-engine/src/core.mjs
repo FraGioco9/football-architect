@@ -559,7 +559,8 @@ export function createEngine(RAPIER, input = {}, {
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
       ...(isolatedCarry?{
        isolatedGroundDribbleBallCentreZ:BALL_RADIUS,
-       dribbleAttackerId:smallSided.side+'-10'
+       dribbleAttackerId:smallSided.side+'-10',
+       soloCarry:smallSided.id==='carry-solo'
       }:{}),
       ...(diagnosticSmallSidedBodyGuardEnabled?{
        isolatedPhysicalBodies:true

@@ -18,8 +18,8 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
  // ball position/velocity. This is a foot target only, never a collision,
  // impulse, synthetic START/END, possession or ball correction.
  const gaitClamp=(n,a,b)=>Math.max(a,Math.min(b,n));
- export function advanceD01LiveShoeGait({phaseRad,player,ball,tick}={}){
-  if(!Number.isInteger(tick)||tick<1||
+ export function advanceD01LiveShoeGait({phaseRad,player,ball,tick,solo=false}={}){
+  if(typeof solo!=='boolean'||!Number.isInteger(tick)||tick<1||
      !Number.isFinite(phaseRad)||phaseRad<0||phaseRad>=2*Math.PI||
      !player||!ball?.position||!ball?.velocity||
      ![player.x,player.y,player.vx,player.vy,player.facingRad,
@@ -34,7 +34,9 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
   const speedMps=Math.hypot(player.vx,player.vy);
   // Do not increase the fixed mechanical frequency blindly. Respond smoothly
   // to REAL observed speed and preserve a true full release stroke.
-  const frequencyHz=2.45+0.25*gaitClamp(speedMps/4,0,1);
+  const frequencyHz=solo?
+   1.35+0.35*gaitClamp(speedMps/4,0,1):
+   2.45+0.25*gaitClamp(speedMps/4,0,1);
   const nextPhase=(phaseRad+2*Math.PI*frequencyHz/60)%(2*Math.PI);
   const stroke=-Math.cos(nextPhase);
   // At the original .50–.70m player/ball gap, a modest forward approach
@@ -58,7 +60,7 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
  isolatedPhysicalBodies=false,isolatedGroundDribbleBallCentreZ=null,
- dribbleAttackerId=null}={}){
+ dribbleAttackerId=null,soloCarry=false}={}){
  if(!R||typeof R.EventQueue!=='function'||!world||
     typeof world.createRigidBody!=='function'||
     !ballCollider||ballCollider.handle===undefined||
@@ -96,6 +98,10 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     !activePlayerIds?.includes(dribbleAttackerId)||
     !/^(home|away)-10$/.test(dribbleAttackerId))))
   throw new TypeError('Original D-01 attacker only for native Rapier foot stride');
+ if(typeof soloCarry!=='boolean'||(soloCarry&&(
+    activePlayerIds?.length!==1||dribbleAttackerId===null||
+    activePlayerIds[0]!==dribbleAttackerId)))
+  throw new TypeError('Solo shoe stride needs exactly one original actor');
  const physicalIds=activePlayerIds===null?null:new Set(activePlayerIds);
  const eventQueue=sharedQueue??new R.EventQueue(true);
  const ownsEventQueue=sharedQueue===null;
@@ -160,7 +166,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const actor=dribbleAttackerId===null?null:
    playerFrame.players.find(p=>p.id===dribbleAttackerId);
   const gait=actor?advanceD01LiveShoeGait({
-   phaseRad:gaitPhaseRad,player:actor,ball:preStepBall,tick:nextTick
+   phaseRad:gaitPhaseRad,player:actor,ball:preStepBall,tick:nextTick,solo:soloCarry
   }):null;
   const proposed=shoeFeet(next,nextTick,gait);
   // The whole shoe also moves when its owner turns or advances. Clamp the

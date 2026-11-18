@@ -289,3 +289,18 @@ test('#628 D-01 all 30 real 60Hz variants HOME/AWAY Bodies ON/OFF source-only me
     s.forwardM>4&&s.peakClearanceM===0&&s.peakBallSpeedMps<3.5),
    'V01 HOME/AWAY Bodies ON/OFF must dribble forward on the grass with true recontacts');
 });
+
+test('#628 solo-only actual-speed shoe cadence reduces low-pace stepping without modifying D-01',()=>{
+ const source={phaseRad:0,tick:1,player:{
+  x:29.45,y:0,vx:1.8,vy:0,facingRad:0
+ },ball:{position:{x:30,y:0,z:0.11},
+  velocity:{x:1.5,y:0,z:0}}};
+ const duel=advanceD01LiveShoeGait(source),solo=advanceD01LiveShoeGait({...source,solo:true});
+ assert.ok(duel.frequencyHz>2.4&&duel.frequencyHz<2.7);
+ assert.ok(solo.frequencyHz>1.35&&solo.frequencyHz<1.7);
+ assert.ok(solo.frequencyHz<duel.frequencyHz);
+ assert.equal(solo.ballImpulseCreated,false);
+ assert.equal(solo.nativeShoeEventCreated,false);
+ const high=advanceD01LiveShoeGait({...source,solo:true,player:{...source.player,vx:4}});
+ assert.ok(high.frequencyHz>solo.frequencyHz);
+});
