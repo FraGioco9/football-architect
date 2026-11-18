@@ -167,10 +167,11 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  for(const language of ['en','de','es','fr','it'])
   assert.equal((model.render(manifest,club,language,'?view=stats',null,1,null,snapshot).match(/<th scope="col"/g)||[]).length,12);
  const css=read('assets/club-page.css');
- assert.match(css,/--club-roster-stat-space:calc\(100% - var\(--app-players-flag-width\) - var\(--app-players-name-width\) - var\(--app-players-positions-width\)\)/);
- const fractions=[...css.matchAll(/--club-roster-stat-share:\.(\d+)\}/g)].map(m=>Number('0.'+m[1]));
+ assert.match(css,/width:var\(--club-roster-stat-share\)/);
+ assert.doesNotMatch(css,/--club-roster-stat-space/,'mixed percentage/length calc breaks first-paint <col> geometry');
+ const fractions=[...css.matchAll(/--club-roster-stat-share:([\d.]+)%\}/g)].map(m=>Number(m[1]));
  assert.equal(fractions.length,9);
- assert.ok(Math.abs(fractions.reduce((a,b)=>a+b,0)-1)<1e-9);
+ assert.ok(Math.abs(fractions.reduce((a,b)=>a+b,0)-100)<1e-9);
  assert.match(css,/thead th:last-child\{\s*background:#305c4c;color:#effff4;font-weight:800/);
  assert.match(css,/tbody tr:not\(\.app-players-loading-row\):not\(\.app-players-empty-row\)>td:last-child\{\s*background:#26473e;color:#e6ffed;font-weight:800/);
  assert.match(css,/html\[data-theme="light"\].*thead th:last-child\{\s*background:#B7DCC7;color:#173F30/);

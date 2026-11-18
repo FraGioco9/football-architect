@@ -431,7 +431,7 @@ try{
      assert.equal(firstPaintRoster.tooltipCount,9,'first-paint Stats has all nine help triggers');
      assert.equal(firstPaintRoster.value,rosterQuery.endsWith('international')?'International':'Domestic');
      assert.ok(firstPaintRoster.widths[3]>firstPaintRoster.widths[5]&&
-      firstPaintRoster.widths[8]>firstPaintRoster.widths[7],
+      firstPaintRoster.widths[7]>firstPaintRoster.widths[8],
       'first-paint Stats reserves weighted numeric column widths at '+width+'px');
     }
    }

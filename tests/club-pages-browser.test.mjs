@@ -744,7 +744,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     const statsLayout=await run("(()=>{const table=document.querySelector('.club-roster-table[data-players-table-mode=stats]');const headers=[...table.querySelectorAll('thead th')];const style=getComputedStyle(table);const fixed=['--app-players-flag-width','--app-players-name-width','--app-players-positions-width'].map(k=>parseFloat(style.getPropertyValue(k)));return {keys:headers.map(h=>h.querySelector('[data-club-roster-sort]')?.dataset.clubRosterSort),widths:headers.map(h=>h.getBoundingClientRect().width),fixed,theme:document.documentElement.dataset.theme,headColor:getComputedStyle(headers.at(-1)).backgroundColor,cellColor:getComputedStyle(table.querySelector('tbody td:last-child')).backgroundColor};})()");
     assert.deepEqual(statsLayout.keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating']);
     assert.ok(statsLayout.fixed.every((v,i)=>Number.isFinite(v)&&Math.abs(statsLayout.widths[i]-v)<2),'Flag, Player, Positions retain shared responsive widths');
-    assert.ok(statsLayout.widths[3]>statsLayout.widths[5]&&statsLayout.widths[8]>statsLayout.widths[7]&&statsLayout.widths[11]>statsLayout.widths[10],'numeric widths follow content');
+    assert.ok(statsLayout.widths[3]>statsLayout.widths[5]&&statsLayout.widths[7]>statsLayout.widths[8]&&statsLayout.widths[11]>statsLayout.widths[10],'numeric widths follow content');
     assert.equal(statsLayout.headColor,statsLayout.theme==='light'?'rgb(183, 220, 199)':'rgb(48, 92, 76)');
     assert.equal(statsLayout.cellColor,statsLayout.theme==='light'?'rgb(212, 235, 221)':'rgb(38, 71, 62)');
     for(const width of [320,1440]){
