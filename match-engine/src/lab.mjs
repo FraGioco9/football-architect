@@ -438,6 +438,12 @@ function render() {
        (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
       (f.nativeDribbleAudit?' · real native carries '+
        f.nativeDribbleAudit.appliedCarryActions+
+       (f.nativeDribbleAudit.soloCarry?
+        ' · shoe contacts '+f.nativeDribbleAudit.nativePhysicalShoeStarts+
+        ' · STARTs without Carry '+
+         f.nativeDribbleAudit.nativeShoeStartsWithoutCarryImpulse+
+        ' · overlap frames '+
+         f.nativeDribbleAudit.nativeBothFeetActiveTicks:'')+
        ' · native releases '+f.nativeDribbleAudit.attackerShoeEnds+
        ' · independent recontacts '+f.nativeDribbleAudit.independentRecontacts+
        ' · ball path '+f.nativeDribbleAudit.ballPath2DM.toFixed(2)+' m'+

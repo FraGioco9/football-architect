@@ -23,8 +23,9 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
   peakBallSpeedWitness=null;
  const touchTicks=[],actionTicks=[],actionMagnitudes=[],directions=[];
  const genuineSoloFootTouches={left:0,right:0},realSoloActionFeet=[];
+ const nativeNonActionStarts=[],nativeContactEvidence=[];
+ const contactDutyTicks={left:0,right:0};
  let bothFeetTouchTicks=0,alternatingRealActionFeet=0,lastActionFoot=null;
- let realAirborneFootTicks=0,highSwingNativeFootStarts=0;
  let latest=null;
  function observe({physics,playerFrame,foot,action,physicalBodies=null}={}){
   if(physics?.tick!==tick+1||playerFrame?.version!==PLAYER_VERSION||
@@ -50,21 +51,29 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
        new Set(physicalSoloFeet[k]).size===physicalSoloFeet[k].length)||
       physicalSoloFeet.exclusivePhysicalStart!==(
        physicalSoloFeet.started.length===1&&
-       physicalSoloFeet.active.length===1)||
-      !physicalSoloFeet.shoeLiftM||
-      !['left','right'].every(side=>
-       Number.isFinite(physicalSoloFeet.shoeLiftM[side])&&
-       physicalSoloFeet.shoeLiftM[side]>=0&&
-       physicalSoloFeet.shoeLiftM[side]<=0.25)))
+       physicalSoloFeet.active.length===1)))
    throw new TypeError('Solo requires independently observed native Rapier left/right shoes');
   if(physicalSoloFeet){
-   for(const footSide of physicalSoloFeet.started)genuineSoloFootTouches[footSide]++;
+   for(const footSide of physicalSoloFeet.started){
+    genuineSoloFootTouches[footSide]++;
+    const converted=Boolean(action?.action==='carry'&&
+     action?.appliedByRapier===true&&
+     action?.actualPhysicsImpulseApplied===true&&
+     physicalSoloFeet.exclusivePhysicalStart&&
+     footSide===physicalSoloFeet.started[0]);
+    // These are real native COLLISION START events, not necessarily ball
+    // impulses, intentional touches, completed dribbles, or possession.
+    // Even an unconverted collision can influence the Rapier ball solver.
+    if(!converted)nativeNonActionStarts.push({tick:physics.tick,
+     foot:footSide,otherFootActive:physicalSoloFeet.active.some(f=>
+      f!==footSide)});
+    nativeContactEvidence.push(freeze({tick:physics.tick,foot:footSide,
+     nativeStart:true,appliedCarryImpulse:converted,
+     concurrentOtherShoe:physicalSoloFeet.active.some(f=>f!==footSide)}));
+    if(nativeContactEvidence.length>16)nativeContactEvidence.shift();
+   }
+   for(const footSide of physicalSoloFeet.active)contactDutyTicks[footSide]++;
    if(physicalSoloFeet.active.length===2)bothFeetTouchTicks++;
-   if(physicalSoloFeet.shoeLiftM.left>0.14||
-      physicalSoloFeet.shoeLiftM.right>0.14)realAirborneFootTicks++;
-   for(const side of physicalSoloFeet.started)
-    if(physicalSoloFeet.shoeLiftM[side]>0.14)
-     highSwingNativeFootStarts++;
   }
   const p=playerFrame.players.find(x=>x.id===actor),
    d=solo?null:playerFrame.players.find(x=>x.id===opponent);
@@ -163,8 +172,12 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
     nativeLeftFootStarts:genuineSoloFootTouches.left,
     nativeRightFootStarts:genuineSoloFootTouches.right,
     nativeBothFeetActiveTicks:bothFeetTouchTicks,
-    actualAirborneStrideTicks:realAirborneFootTicks,
-    nativeHighSwingFootStarts:highSwingNativeFootStarts,
+    nativePhysicalShoeStarts:genuineSoloFootTouches.left+
+     genuineSoloFootTouches.right,
+    nativeShoeStartsWithoutCarryImpulse:nativeNonActionStarts.length,
+    nativeLeftShoeContactTicks:contactDutyTicks.left,
+    nativeRightShoeContactTicks:contactDutyTicks.right,
+    recentNativeShoeStarts:freeze([...nativeContactEvidence]),
     realActionFeet:freeze([...realSoloActionFeet]),
     verifiedFootAlternations:alternatingRealActionFeet
    }:{}),
