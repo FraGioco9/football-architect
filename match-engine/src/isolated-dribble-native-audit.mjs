@@ -22,6 +22,8 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
   peakGroundClearanceM=0,airborneFramesAbove2Cm=0,peakBallSpeedMps=0,
   peakBallSpeedWitness=null;
  const touchTicks=[],actionTicks=[],actionMagnitudes=[],directions=[];
+ const genuineSoloFootTouches={left:0,right:0},realSoloActionFeet=[];
+ let bothFeetTouchTicks=0,alternatingRealActionFeet=0,lastActionFoot=null;
  let latest=null;
  function observe({physics,playerFrame,foot,action,physicalBodies=null}={}){
   if(physics?.tick!==tick+1||playerFrame?.version!==PLAYER_VERSION||
@@ -36,6 +38,23 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
      foot.active.some(id=>id!==actor&&id!==opponent)||
      (physicalBodies!==null&&physicalBodies.tick!==physics.tick))
    throw new TypeError('D-01 audit requires exact original Rapier source tick');
+  const physicalSoloFeet=solo&&physics.tick>0?foot.nativeSoloFeet:null;
+  if(solo&&physics.tick>0&&(!physicalSoloFeet||
+      physicalSoloFeet.actorId!==actor||
+      physicalSoloFeet.source!=='rapier-physical-collider-events'||
+      physicalSoloFeet.independentColliders!==2||
+      !['started','ended','active'].every(k=>
+       Array.isArray(physicalSoloFeet[k])&&
+       physicalSoloFeet[k].every(f=>f==='left'||f==='right')&&
+       new Set(physicalSoloFeet[k]).size===physicalSoloFeet[k].length)||
+      physicalSoloFeet.exclusivePhysicalStart!==(
+       physicalSoloFeet.started.length===1&&
+       physicalSoloFeet.active.length===1)))
+   throw new TypeError('Solo requires independently observed native Rapier left/right shoes');
+  if(physicalSoloFeet){
+   for(const footSide of physicalSoloFeet.started)genuineSoloFootTouches[footSide]++;
+   if(physicalSoloFeet.active.length===2)bothFeetTouchTicks++;
+  }
   const p=playerFrame.players.find(x=>x.id===actor),
    d=solo?null:playerFrame.players.find(x=>x.id===opponent);
   if(!p||(!solo&&!d))throw new TypeError('Genuine isolated player source required');
@@ -106,8 +125,16 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
       action.actualPhysicsImpulseApplied!==true||
       !foot.started.includes(actor)||foot.started.length!==1||
       foot.active.length!==1||foot.active[0]!==actor||
-      action.decisionContext?.isolatedDribbleTouch?.tick!==physics.tick)
+      action.decisionContext?.isolatedDribbleTouch?.tick!==physics.tick||
+      (solo&&!physicalSoloFeet.exclusivePhysicalStart))
     throw new TypeError('Only actual exclusive native D-01 carry impulses qualify');
+   if(solo){
+    const realFoot=physicalSoloFeet.started[0];
+    realSoloActionFeet.push(realFoot);
+    if(lastActionFoot!==null&&lastActionFoot!==realFoot)
+     alternatingRealActionFeet++;
+    lastActionFoot=realFoot;
+   }
    actions++;actionTicks.push(physics.tick);
    actionMagnitudes.push(Math.hypot(action.impulseNs.x,action.impulseNs.y));
    directions.push(Math.atan2(action.impulseNs.y,
@@ -119,6 +146,14 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
    attackerShoeStarts:nativeStarts,attackerShoeEnds:sourceEnds,
    independentRecontacts:recontacts,defenderShoeStarts:opposingStarts,
    appliedCarryActions:actions,actionTicks:freeze([...actionTicks]),
+   ...(solo?{
+    nativePhysicalShoeColliders:2,
+    nativeLeftFootStarts:genuineSoloFootTouches.left,
+    nativeRightFootStarts:genuineSoloFootTouches.right,
+    nativeBothFeetActiveTicks:bothFeetTouchTicks,
+    realActionFeet:freeze([...realSoloActionFeet]),
+    verifiedFootAlternations:alternatingRealActionFeet
+   }:{}),
    nativeAttackerStartTicks:freeze([...touchTicks]),
    realImpulseMagnitudesNs:freeze([...actionMagnitudes]),
    actualImpulseDirectionRad:freeze([...directions]),
