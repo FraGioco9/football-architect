@@ -53,9 +53,17 @@ function trackOnFieldDecisionChanges(frame){
    lastMovementKinds.set(row.id,decisionKey);
   }
   if(row.actualAction!==null){
-   lastOnFieldAction.set(row.id,{tick:frame.physicsTick,kind:row.actualAction});
+   // Show foot identity ONLY for an exclusive Rapier-confirmed solo action.
+   const realSoloFoot=frame.scenarioId==='carry-solo'&&
+    frame.soloNativeFeet?.exclusivePhysicalStart&&
+    row.actualAction==='carry'?
+     frame.soloNativeFeet.started[0]:null;
+   lastOnFieldAction.set(row.id,{tick:frame.physicsTick,
+    kind:row.actualAction,foot:realSoloFoot});
    appendDecisionEvent({tick:frame.physicsTick,id:row.id,
-    label:'Real '+row.actualAction+' · Rapier shoe contact',physical:true});
+    label:'Real '+row.actualAction+
+     (realSoloFoot?' · '+realSoloFoot+' foot':'')+
+     ' · Rapier shoe contact',physical:true});
   }
  }
 }
@@ -88,7 +96,8 @@ function renderOnFieldDecisions(frame){
   const last=lastOnFieldAction.get(id);
   if(last){
    const action=document.createElement('small');
-   action.textContent='Last verified action: '+last.kind+' · tick '+last.tick;
+   action.textContent='Last verified action: '+last.kind+
+    (last.foot?' · '+last.foot+' foot':'')+' · tick '+last.tick;
    card.append(action);
   }
   fragment.append(card);
