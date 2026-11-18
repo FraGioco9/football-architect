@@ -1,6 +1,7 @@
 /** #613 replacement-only daily evidence: do not recalculate frozen player results.
  * One version, one lineage, no score-only legacy adapter. No database effects.
  */
+import {validateRecordedMatchTimelineV1} from './match-event-validation-v1.mjs';
 export const LINEUP_DAY_VERSION='temporary-lineup-v1';
 const invalid=reason=>{throw new TypeError('Invalid lineup day evidence: '+reason)};
 const hashPattern=/^[a-f0-9]{64}$/;
@@ -31,14 +32,19 @@ function sourceFixtures(dueFixtures){
  }
  return byId;
 }
-function checkScorers(side,events,goals,sideName){
+function checkScorers(side,events,goals,sideName,v2){
  if(!side||!Array.isArray(side.appearances)||!Number.isSafeInteger(side.unattributedGoals)||
   side.unattributedGoals<0||!['team_fallback','real_xi'].includes(side.kind))invalid('side evidence');
- const records=events.filter(e=>e.side===sideName);
+ const records=events.filter(e=>e.side===sideName&&e.type==='goal');
  if(records.length+side.unattributedGoals!==goals)invalid('goal reconciliation');
  if(side.kind==='team_fallback'){
   if(side.starters!==null||side.appearances.length||side.unattributedGoals!==goals||records.length)
    invalid('fallback attribution');
+ }else if(v2){
+  if(!Array.isArray(side.starters)||side.starters.length!==11||
+   side.unattributedGoals!==0||side.appearances.filter(p=>p.started===true).length!==11||
+   side.appearances.some(p=>p.goals!==records.filter(e=>e.playerId===p.playerId).length))
+   invalid('v2 XI attribution');
  }else{
   const ids=side.appearances.map(p=>p.playerId);
   if(side.unattributedGoals!==0||!Array.isArray(side.starters)||side.starters.length!==11||
@@ -51,7 +57,7 @@ function checkScorers(side,events,goals,sideName){
 }
 function summary(entry,expectedMatchId,generation,season,day){
  if(!entry||!hashPattern.test(entry.receiptHash)||!entry.receipt||
-  entry.receipt.schemaVersion!==1||entry.receipt.authority!=='official'||
+  ![1,2].includes(entry.receipt.schemaVersion)||entry.receipt.authority!=='official'||
   entry.receipt.algorithmVersion!==LINEUP_DAY_VERSION||
   !hashPattern.test(entry.receipt.rosterSourceDigest)||!hashPattern.test(entry.receipt.sourceCandidateDigest))
   invalid('receipt envelope');
@@ -70,11 +76,14 @@ function summary(entry,expectedMatchId,generation,season,day){
   result.homeGoals!==result.regulation.home+(result.extraTime?.home??0)||
   result.awayGoals!==result.regulation.away+(result.extraTime?.away??0))
   invalid('score evidence');
- for(const event of result.events)if(!event||event.type!=='goal'||
+ const v2=entry.receipt.schemaVersion===2;
+ if(v2){try{validateRecordedMatchTimelineV1(result)}catch{invalid('v2 event projection')}}
+ for(const event of result.events)if(!event||!['goal','pass','yellow','red','substitution','role_change'].includes(event.type)||
+  !v2&&event.type!=='goal'||
   !['home','away'].includes(event.side)||!Number.isInteger(event.minute)||
   event.minute<1||event.minute>120)invalid('goal event');
- checkScorers(result.home,result.events,result.homeGoals,'home');
- checkScorers(result.away,result.events,result.awayGoals,'away');
+ checkScorers(result.home,result.events,result.homeGoals,'home',v2);
+ checkScorers(result.away,result.events,result.awayGoals,'away',v2);
  return {fixtureId:fixture.fixtureId,matchId:fixture.matchId,
   homeClubId:fixture.homeClubId,awayClubId:fixture.awayClubId,
   homeGoals:result.homeGoals,awayGoals:result.awayGoals,

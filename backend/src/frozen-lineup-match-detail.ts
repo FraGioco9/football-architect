@@ -34,10 +34,16 @@ export function frozenLineupMatchDetailV1(
   !['real_xi','team_fallback'].includes(result.away?.kind))return fail();
  const side=(team:LineupMatchResultV1['home'])=>{
   if(team.kind==='team_fallback')return {kind:team.kind,starters:[]};
+  const v2=result.eventModelVersion==='lineup-events-v1';
   if(!Array.isArray(team.starters)||team.starters.length!==11||
-     !Array.isArray(team.appearances)||team.appearances.length!==11)return fail();
+     !Array.isArray(team.appearances)||
+     (v2?team.appearances.filter(p=>p.started).length!==11||
+       team.appearances.length<11||team.appearances.length>17:
+       team.appearances.length!==11))return fail();
   const appearances=new Map(team.appearances.map(p=>[p.playerId,p]));
-  if(appearances.size!==11||new Set(team.starters.map(p=>p.playerId)).size!==11)return fail();
+  if(appearances.size!==team.appearances.length||
+     (!v2&&appearances.size!==11)||
+     new Set(team.starters.map(p=>p.playerId)).size!==11)return fail();
   const starters=team.starters.map(({playerId,role})=>{
    const appearance=appearances.get(playerId);
    if(!appearance||appearance.started!==true)return fail();

@@ -144,9 +144,12 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  const b=await readPublicMatchLineupV1(db,String(mixed.public_id)) as any;
  const statsA=await readPublicMatchStatisticsV1(db,String(full.public_id));
  const statsB=await readPublicMatchStatisticsV1(db,String(mixed.public_id));
+ expect(Object.keys(statsA.statistics!).sort()).toEqual(['away','home','ratingVersion']);
+ expect(statsA.statistics).not.toHaveProperty('events');
+ expect(statsA.statistics).not.toHaveProperty('eventModelVersion');
  expect(a).not.toHaveProperty('lineup');expect(a).not.toHaveProperty('statistics');
  expect(statsA.statistics?.home.players).toHaveLength(11);
- expect(statsA.statistics?.home.players[0]).toMatchObject({name:expect.stringMatching(/^Test Player/),nationality:'ITA',assists:null,redCards:null});
+ expect(statsA.statistics?.home.players[0]).toMatchObject({name:expect.stringMatching(/^Test Player/),nationality:'ITA',assists:expect.any(Number),yellowCards:expect.any(Number),redCards:expect.any(Number)});
  expect(a).toMatchObject({status:'completed',kickoff:null,provenance:{kind:'authoritative'}});
  expect(Object.keys(a.provenance).sort()).toEqual(['kind','receiptHash']);
  expect(statsA.statistics!.home.kind).toBe('real_xi');
@@ -166,7 +169,7 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
   .bind(full.public_id).first() as {receipt_json:string}|null;
  const frozenB=await db.prepare('SELECT receipt_json FROM match_lineup_result_receipts WHERE public_match_id=?')
   .bind(mixed.public_id).first() as {receipt_json:string}|null;
- expect(JSON.parse(frozenA!.receipt_json).result.events)
+ expect(JSON.parse(frozenA!.receipt_json).result.events.filter((e:{type:string})=>e.type==='goal'))
   .toHaveLength(a.result.homeGoals+a.result.awayGoals);
  expect(JSON.parse(frozenB!.receipt_json).result.events.filter((e:{side:string})=>e.side==='away'))
   .toHaveLength(0);
@@ -185,7 +188,10 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
   expect(player.ratedAppearances).toBe(1);
   expect(player.averageRating).toBeGreaterThanOrEqual(4);
   expect(player.minutes).toBeGreaterThan(0);
-  expect(player.assists).toBeNull();expect(player.redCards).toBeNull();
+  expect(player.assists).toBeGreaterThanOrEqual(0);
+  expect(player.yellowCards).toBeGreaterThanOrEqual(0);
+  expect(player.redCards).toBeGreaterThanOrEqual(0);
+  expect(player.subAppearances).toBe(0);
  }
  const fullPlayers=season.data.statistics.players.filter((p:any)=>[full.home_club_id,full.away_club_id].includes(p.clubId));
  expect(fullPlayers).toHaveLength(22);
@@ -224,6 +230,8 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(httpMatch).not.toHaveProperty('lineup');
  const httpStats=await get('/api/matches/'+full.public_id+'/stats');
  expect(httpStats.statistics).toEqual(statsA.statistics);
+ expect(httpStats.statistics).not.toHaveProperty('events');
+ expect(httpStats.statistics).not.toHaveProperty('eventModelVersion');
  expect(httpStats.provenance.receiptHash).toBe(httpMatch.provenance.receiptHash);
  expect((await worker.fetch(new Request('https://example.invalid/api/matches/'+full.public_id+'/stats?extra=1'),{DB:db})).status).toBe(422);
  expect((await worker.fetch(new Request('https://example.invalid/api/matches/'+full.public_id+'/stats',{method:'POST'}),{DB:db})).status).toBe(405);

@@ -1,5 +1,6 @@
 /** Unwired #613 pure simulation candidate. No DB reads, writes or official result side effects. */
 import {ATTRIBUTES,calculatePositionSuitability} from './players-generator-core.mjs';
+import {validateRecordedMatchTimelineV1,VERIFIED_EVENT_MODEL_VERSION} from './match-event-validation-v1.mjs';
 
 export const LINEUP_SIMULATOR_VERSION='temporary-lineup-v1';
 // #650: versioned test-only evidence, not a realistic player evaluation model.
@@ -255,7 +256,7 @@ function testRatingV1(result,sideName,appearance){
  const raw=6.5+(unit-.5)*4.8+Math.min(appearance.goals,3)*.8+(won?.2:lost?-.1:0);
  return Math.round(clamp(raw,4,10)*10)/10;
 }
-function attachTestRatingsV1(result){
+export function attachTestRatingsV1(result){
  result.ratingVersion=TEST_RATING_VERSION;
  for(const name of ['home','away']){
   const side=result[name];
@@ -296,6 +297,9 @@ export async function buildCandidateMatchReceiptV1(match,outcome){
   !regulation||![regulation.home,regulation.away].every(n=>Number.isInteger(n)&&n>=0&&n<=6)||
   !['regulation','extra-time','penalties'].includes(resolution)||
   !DIGEST.test(outcome.sourceSeedHash)||!Array.isArray(events))error('receipt result');
+ const eventV2=outcome.eventModelVersion===VERIFIED_EVENT_MODEL_VERSION;
+ if(outcome.eventModelVersion!==undefined&&!eventV2)error('receipt event version');
+ if(eventV2)validateRecordedMatchTimelineV1(outcome);
  const playedExtraTime=extraTime!==null;
  if(playedExtraTime&&(!extraTime||![extraTime.home,extraTime.away].every(n=>Number.isInteger(n)&&n>=0&&n<=2)))error('extra time goals');
  if(homeGoals!==regulation.home+(extraTime?.home??0)||awayGoals!==regulation.away+(extraTime?.away??0))
@@ -322,7 +326,7 @@ export async function buildCandidateMatchReceiptV1(match,outcome){
  if(outcome.mode!==(outcome.home.kind==='real_xi'
   ?outcome.away.kind==='real_xi'?'xi_vs_xi':'xi_vs_fallback'
   :outcome.away.kind==='real_xi'?'fallback_vs_xi':'fallback_vs_fallback'))error('receipt mode');
- if(events.some(event=>event.type!=='goal'||!['home','away'].includes(event.side)||
+ if(!eventV2&&events.some(event=>event.type!=='goal'||!['home','away'].includes(event.side)||
   !Number.isInteger(event.minute)||event.minute<1||event.minute>(playedExtraTime?120:90)||
   (event.period==='regulation'&&event.minute>90)||
   (event.period==='extra-time'&&(event.minute<91||!playedExtraTime))||
@@ -331,11 +335,14 @@ export async function buildCandidateMatchReceiptV1(match,outcome){
   const side=outcome[sideName],goals=sideName==='home'?homeGoals:awayGoals;
   if(!side||!Array.isArray(side.appearances)||!Number.isInteger(side.unattributedGoals)||
    side.unattributedGoals<0)error('receipt player record');
-  const recorded=events.filter(event=>event.side===sideName);
+  const recorded=events.filter(event=>event.side===sideName&&event.type==='goal');
   if(recorded.length+side.unattributedGoals!==goals)error('receipt scorer reconciliation');
   if(side.kind==='team_fallback'){
    if(side.starters!==null||side.appearances.length!==0||side.unattributedGoals!==goals||recorded.length)
     error('fallback player attribution');
+  }else if(side.kind==='real_xi'&&eventV2){
+   if(!Array.isArray(side.starters)||side.starters.length!==11||
+    !Array.isArray(side.bench)||side.unattributedGoals!==0)error('receipt v2 XI');
   }else if(side.kind==='real_xi'){
    if(!Array.isArray(side.starters)||side.starters.length!==11||side.appearances.length!==11||
     side.unattributedGoals!==0)error('receipt XI size');
@@ -367,7 +374,7 @@ export async function buildCandidateMatchReceiptV1(match,outcome){
     p.nationality!==null&&(typeof p.nationality!=='string'||!/^[A-Z]{3}$/.test(p.nationality))))error('receipt player identities');
  }
  const fixture={matchId,season,day,generation,competitionId,fixtureId,homeClubId,awayClubId,sourceHash};
- const payload={schemaVersion:1,authority:'candidate-only',algorithmVersion:LINEUP_SIMULATOR_VERSION,
+ const payload={schemaVersion:eventV2?2:1,authority:'candidate-only',algorithmVersion:LINEUP_SIMULATOR_VERSION,
   fixture,result:outcome};
  // Copy before freeze, never freeze or mutate the caller's own input objects.
  const detached=JSON.parse(JSON.stringify(payload));

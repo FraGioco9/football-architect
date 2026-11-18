@@ -120,7 +120,7 @@ export async function verifyFrozenLineupMatchV1(
  const receipt=parseObject(row.receipt_json);
  const frozen=receipt.fixture as Record<string,unknown>|null;
  const result=receipt.result as LineupMatchResultV1|null;
- if(receipt.schemaVersion!==1||receipt.authority!=='official'||
+ if(![1,2].includes(receipt.schemaVersion as number)||receipt.authority!=='official'||
   receipt.algorithmVersion!=='temporary-lineup-v1'||!hash64.test(String(receipt.rosterSourceDigest))||
   !hash64.test(String(receipt.sourceCandidateDigest))||!frozen||!result||
   frozen.matchId!==row.public_match_id||frozen.generation!==world.generation||

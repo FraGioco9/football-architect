@@ -281,6 +281,7 @@
     "tests/players-generator-runtime-parity.test.mjs": "site-node",
     "tests/match-detail.test.mjs": "site-node",
     "tests/match-player-statistics.test.mjs": "site-node",
+    "tests/match-recorded-events-v1.test.mjs": "site-node",
     "tests/match-first-paint-browser.mjs": "support",
     "tests/match-references.test.mjs": "site-node",
     "tests/players-mobile-574.test.mjs": "site-node",
