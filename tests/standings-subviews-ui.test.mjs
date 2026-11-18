@@ -52,6 +52,8 @@ test('standings subview switch is in-memory, route-preserving and handles histor
  assert.match(navigation,/window\.addEventListener\('popstate'/);
  assert.doesNotMatch(navigation,/fetch\(|\.load\(/);
  assert.match(controller,/projectStandings\?\.\(rows,data\.fixtures,definition,activeStandingsSubview\)/);
+ assert.ok(controller.includes('projected.some(row=>row.played>0)'),
+   'filtered views with no played games do not render numerical positions');
 });
 test('DEV preview updates active subview on existing renderer, not another API read',()=>{
  const start=dev.indexOf('const onSubviewChange=()=>');
@@ -59,6 +61,10 @@ test('DEV preview updates active subview on existing renderer, not another API r
  const handler=dev.slice(start,end);
  assert.ok(start>0&&end>start);
  assert.match(handler,/restore\.refresh\(projected,null,null/);
+ assert.ok(dev.includes("const rank=row.played==null?null:index+1"),
+   'DEV tables clear rank for empty filtered views');
+ assert.ok(dev.includes("cell.textContent=number==null?'—':String(number)"),
+   'DEV tables clear statistics for empty filtered views');
  assert.match(handler,/fa:standings-subview-change/);
  assert.doesNotMatch(handler,/fetch\(/);
 });
