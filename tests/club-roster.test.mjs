@@ -3,6 +3,31 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
+test('Roster generated first paint exactly matches the canonical bootstrap and Stats metadata',async()=>{
+ const generator=read('tools/generate-club-pages.mjs'),html=read('clubs/_shared/index.html');
+ const {default:model}=await import('../assets/club-model.js');
+ const embedded=html.match(/<script data-fa-club-first-paint>\((function bootstrapClubFirstPaint\([\s\S]*?\n\})\)\(([\s\S]*?)\);<\/script>/);
+ assert.ok(embedded,'embedded first-paint bootstrap is present');
+ const canonical=generator.match(/(function bootstrapClubFirstPaint\([\s\S]*?\n\})\nfunction buildClubShell/);
+ assert.ok(canonical);
+ assert.equal(embedded[1],canonical[1],'published HTML must be regenerated when first-paint code changes');
+ const [labels,menus,keys,help]=JSON.parse('['+embedded[2]+']');
+ const expected=model.rosterSortKeys('stats').slice(3);
+ assert.deepEqual(keys,expected,'parser-time Stats columns use the same sort keys as hydration');
+ assert.equal(keys.length,9,'Stats shows nine numerical columns, never legacy four-stat headers');
+ assert.deepEqual(labels,model.rosterLabels,'parser-time headers match the current five-language model');
+ assert.deepEqual(help,model.rosterStatHelp,'parser-time metric tooltips and labels match hydration');
+ assert.deepEqual(Object.keys(menus),['group','competition']);
+ for(const lang of ['en','de','es','fr','it']){
+  assert.equal(labels[lang].length,keys.length+4);
+  assert.ok(keys.every(k=>help[lang][k]));
+ }
+ assert.match(generator,/wordsForRoster\.slice\(1,1\+statKeys\.length\)/);
+ assert.match(generator,/\['nationality','name','positions',\.\.\.statKeys\]/);
+ assert.match(generator,/wordsForRoster\[statKeys\.length\+1\]/);
+ assert.match(generator,/wordsForRoster\[statKeys\.length\+2\]/);
+});
+
 test('Roster first paint exposes Info, Stats and Attributes and reserves five rows',()=>{
  const html=read('clubs/_shared/index.html');
  for(const view of ['info','stats','attributes'])assert.ok(html.includes('data-club-roster-view="'+view+'"'));

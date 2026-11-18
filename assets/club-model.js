@@ -507,5 +507,5 @@
    '<span data-club-name="compact">'+escape(c.compactName)+'</span></h1><p class="club-location">'+flag('header')+escape(c.city)+', '+escape(country)+'</p></div></header>'+tabs+
    content;
  }
- return {views,copies,route,render,renderRoster,rosterLabels,rosterCompetition,rosterView,rosterViewQuery,rosterSortKeys};
+ return {views,copies,route,render,renderRoster,rosterLabels,rosterStatHelp,rosterCompetition,rosterView,rosterViewQuery,rosterSortKeys};
 });
