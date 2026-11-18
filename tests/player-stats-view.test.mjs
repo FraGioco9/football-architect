@@ -83,13 +83,16 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
   'both total labels reserve the same left-aligned value slot as hydrated rows');
  for(const key of fields){
   assert.match(tbody,new RegExp('data-metric="'+key+'" data-mobile-label="'+(key==='score'?'':'[^"]+')+'"'));
-  assert.ok(css.includes('.app-player-stats-loading [data-metric="'+key+'"] .app-skeleton-bar'));
+  assert.ok(tbody.includes('data-metric="'+key+'"'),
+   'loading markup retains the verified '+key+' cell');
+  assert.match(tbody,new RegExp('data-metric="'+key+'"[^>]*><span class="app-player-stats-value"><span class="app-skeleton-bar" data-skeleton-sample="'),
+   'parser-time '+key+' uses glyph-measured skeleton sizing');
  }
  assert.match(css,/--player-stats-row-height:56px/);
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-number .app-player-stats-value'));
  assert.match(css,/display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;/,
   'hydrated numbers and skeleton bars share one fixed-height value track');
- assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-value>\.app-skeleton-bar\{/);
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-value>\.app-skeleton-bar\[data-skeleton-sample\]\{/);
  assert.match(css,/\.app-player-stats-table \[data-detail-stats-heading="5"\] \.app-player-stats-score-heading-skeleton\{/);
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-total-value'));
  assert.ok(css.includes('grid-row:2;min-height:16px;width:100%;align-self:center;justify-content:center'));
