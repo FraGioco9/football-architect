@@ -595,3 +595,19 @@ test('DEV club record ties use the shared popup and retain all-time and seasonal
  const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
  assert.equal((app.match(/historyClubSingular:/g)||[]).length,5);
 });
+
+
+test('Player club subtitles sit 4px lower without moving the player names or first-paint layout',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const declaration=selector=>{
+  const match=css.lastIndexOf(selector+'{');
+  assert.ok(match>=0,'Missing rule: '+selector);
+  return css.slice(match+selector.length+1,css.indexOf('}',match));
+ };
+ assert.match(declaration('#competition-panel-history .app-history-player-labels>.app-history-player-context'),/position:relative;top:4px/);
+ assert.match(declaration('.app-history-dialog-player-info>.app-history-player-clubs'),/position:relative;top:4px/);
+ assert.match(declaration('#competition-panel-history .app-history-player-name-row'),/height:calc\\(1\\.35 \\* var\\(--history-name-size, \\.875rem\\)\\)/);
+ assert.match(declaration('.app-history-dialog-player-info,.app-history-dialog-club-info'),/align-content:center;gap:2px/);
+ const markup=readFileSync(new URL('../tools/competition-view-skeletons.mjs',import.meta.url),'utf8');
+ assert.match(markup,/app-history-player-context/);
+});

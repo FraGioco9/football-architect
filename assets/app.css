@@ -791,6 +791,8 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
 .app-history-dialog-player,.app-history-dialog-club{display:flex;align-items:center;gap:8px;min-width:0;width:100%}
 .app-history-dialog-player-info,.app-history-dialog-club-info{display:grid;align-content:center;gap:2px;min-width:0;flex:1}
 .app-history-dialog-player-info>:is(a,strong){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Lower only the club metadata: keep the player name and portrait fixed. */
+.app-history-dialog-player-info>.app-history-player-clubs{position:relative;top:4px}
 .app-history-dialog-club-info>.app-world-club-name{min-width:0;overflow-wrap:anywhere}
 .app-history-dialog-club-seasons{min-width:0;line-height:1.35;color:var(--muted)}
 .app-history-dialog-club-seasons .app-history-dev-season-link{min-height:0}
@@ -2236,6 +2238,8 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
    edge of the text column. One consistent line keeps club name and skeleton
    directly underneath, with or without the expander. */
 #competition-panel-history .app-history-player-labels{row-gap:2px}
+/* Also applies to the first-paint skeleton, avoiding a loaded-state jump. */
+#competition-panel-history .app-history-player-labels>.app-history-player-context{position:relative;top:4px}
 #competition-panel-history .app-history-player-name-row{
  display:flex;align-items:center;justify-content:flex-start;gap:5px;
  height:calc(1.35 * var(--history-name-size, .875rem));min-height:0
