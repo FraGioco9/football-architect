@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ATTRIBUTES} from '../backend/src/players-generator-core.mjs';
-import {simulateMatchV1} from '../backend/src/temporary-lineup-v1.mjs';
+import {simulateMatchV1,attachTestRatingsV1,buildCandidateMatchReceiptV1} from '../backend/src/temporary-lineup-v1.mjs';
+import {validateRecordedMatchTimelineV1} from '../backend/src/match-event-validation-v1.mjs';
+import {frozenMatchPlayerStatistics} from '../backend/src/match-player-statistics.mjs';
 import {planRecordedMatchTimelineV1,MATCH_EVENT_MODEL_VERSION} from '../backend/src/match-recorded-events-v1.mjs';
 
 const roles=['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW'];
@@ -90,4 +92,44 @@ test('ET, penalties and dismissals never introduce extra player goals or phantom
   seenEt||=!!result.extraTime;
  }
  assert.ok(seenRed&&seenSub&&seenPass&&seenEt);
+});
+
+test('new event receipt v2 validates once; archived legacy candidate remains schema v1',async()=>{
+ const home=roster(0,9),away=roster(100,9),seed='verified-v2-receipt-2026';
+ const legacy=await play(home,away,seed);
+ const fixture={matchId:124,season:1,day:13,
+  generation:'test-generation',competitionId:'IT-1',
+  fixtureId:'season:1:IT-1:N01:IT-1:IT-2',
+  homeClubId:'IT-1',awayClubId:'IT-2',sourceHash:'b'.repeat(64)};
+ const old=await buildCandidateMatchReceiptV1(fixture,legacy);
+ assert.equal(old.schemaVersion,1);
+ assert.equal(frozenMatchPlayerStatistics(old.result).home.players[0].assists,null);
+ const events=await planRecordedMatchTimelineV1({result:legacy,homeRoster:home,awayRoster:away});
+ const official=attachTestRatingsV1({...legacy,...events,
+  home:{...legacy.home,...events.home},away:{...legacy.away,...events.away}});
+ assert.equal(validateRecordedMatchTimelineV1(official),true);
+ const candidate=await buildCandidateMatchReceiptV1(fixture,official);
+ assert.equal(candidate.schemaVersion,2);
+ assert.notEqual(old.receiptDigest,candidate.receiptDigest);
+ assert.deepEqual(candidate,await buildCandidateMatchReceiptV1(fixture,official));
+ const projection=frozenMatchPlayerStatistics(candidate.result);
+ assert.equal(projection.eventModelVersion,'lineup-events-v1');
+ assert.ok(projection.home.players.every(p=>Number.isSafeInteger(p.assists)&&Number.isSafeInteger(p.redCards)));
+ assert.equal(projection.home.players.filter(p=>!p.started).length,
+  candidate.result.home.appearances.filter(p=>!p.started).length);
+ const tampered=structuredClone(official);
+ tampered.home.appearances[0].minutes++;
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(fixture,tampered),/appearance\/minutes/);
+ const ghost=structuredClone(official);
+ ghost.events[0].playerId=9999999;
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(fixture,ghost),/frozen match events|rating consistency|goal|yellow|pass|red|interval/);
+});
+test('forged version marker cannot silently reinterpret historical event coverage',async()=>{
+ const source=await play(roster(),[], 'legacy-version-bridge-test');
+ const fixture={matchId:125,season:1,day:13,generation:'test-generation',
+  competitionId:'IT-1',fixtureId:'season:1:IT-1:N01:IT-1:IT-2',
+  homeClubId:'IT-1',awayClubId:'IT-2',sourceHash:'c'.repeat(64)};
+ assert.equal((await buildCandidateMatchReceiptV1(fixture,source)).schemaVersion,1);
+ source.eventModelVersion='forged';
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(fixture,source),/event version/);
 });
