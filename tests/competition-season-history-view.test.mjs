@@ -45,7 +45,7 @@ test('SEASON-CUP-DIALOG: actual History details retain country-qualified clubs a
   assert.ok(links.includes('/clubs/it/1/overview'));assert.ok(links.includes('/clubs/eng/1/overview'));
   assert.ok(links.includes('/competitions/'+id+'/standings?season=1'));
   assert.equal(JSON.stringify(payload),before);
-  const exit=walk(dialog).find(n=>n.className==='app-history-player-close');exit.emit('click');
+  const exit=walk(dialog).find(n=>n.className.split(' ').includes('app-history-player-close'));exit.emit('click');
   assert.equal(dialog.open,false);assert.equal(r.document.activeElement,trigger);
  }
 });
@@ -68,7 +68,7 @@ test('SEASON-LEGACY-DIALOG: approved domestic player history links every divisio
   assert.ok(links.includes('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview'),definition.id+' canonical member link');
   assert.ok(links.includes('/competitions/'+definition.id.toLowerCase()+'/standings?season=1'),definition.id+' season link');
   assert.equal(JSON.stringify(payload),before,definition.id+' payload remains unchanged');
-  const close=walk(dialog).find(n=>n.className==='app-history-player-close');
+  const close=walk(dialog).find(n=>n.className.split(' ').includes('app-history-player-close'));
   assert.ok(close,definition.id+' close control');
   close.emit('click');
   assert.equal(dialog.open,false,definition.id+' dialog closed');
@@ -107,5 +107,6 @@ test('a single holder has a face and independent player, recorded club and seaso
  const nodes=walk(r.card),links=nodes.filter(n=>n.tagName==='a');
  assert.deepEqual(links.map(a=>a.href),['/players/8','/clubs/eng/1/overview','/competitions/int-1/standings?season=2']);
  assert.ok(links.every(a=>a.className.includes('app-world-standing-club-link')));
+ assert.equal(links[2].parentElement.className,'app-history-player-footer');
  assert.equal(nodes.find(n=>n.tagName==='img').src,'/assets/players/portraits/8.webp');
 });

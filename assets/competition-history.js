@@ -210,10 +210,15 @@
       const item=contexts[0];
       if(item){
         const metadata=element("div","app-history-player-context");
-        metadata.append(clubLink(item.clubId),document.createTextNode(" · "),seasonLink(item.season));
+        metadata.append(clubLink(item.clubId));
         labels.append(metadata);
       }
       footer.append(portrait(holder.id),labels);
+      if(item){
+        const season=seasonLink(item.season);
+        season.classList.add("app-history-dev-season-link");
+        footer.append(season);
+      }
       card.append(footer);
     }
     // Keep the metric slots visible after an empty response.
@@ -246,7 +251,17 @@
     node.animate(frames,{direction:"reverse",duration:130,easing:"ease-in",fill:"backwards"}).finished
       .catch(()=>{}).then(()=>{closing.delete(node);if(node.open)node.close();});
   }
-  window.faHistoryDialog={show:showDialog,close:closeDialog};
+  function dialogHeader(title){
+    const header=element("div","app-history-player-dialog-header");
+    const heading=element("h3","",title);
+    const close=element("button","app-search-close app-history-player-close");
+    close.type="button";
+    close.setAttribute("aria-label",locale().close);
+    close.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+    header.append(heading,close);
+    return {header,heading,close};
+  }
+  window.faHistoryDialog={show:showDialog,close:closeDialog,header:dialogHeader};
   function close(){if(dialog)closeDialog(dialog);}
   function open(metric,source){
     const record=results?.[metric];if(!record)return;
@@ -263,12 +278,11 @@
     const card=source.closest("[data-history-player-record]");
     const title=card?.querySelector("h5")?.textContent||"";
     dialog.replaceChildren();
-    const header=element("div","app-history-player-dialog-header");
-    const heading=element("h3","",title);heading.id="app-history-player-dialog-title";
+    const {header,heading,close:exit}=dialogHeader(title);
+    heading.id="app-history-player-dialog-title";
     dialog.setAttribute("aria-labelledby",heading.id);
-    const exit=element("button","app-history-player-close","×");
-    exit.type="button";exit.setAttribute("aria-label",locale().close);exit.addEventListener("click",close);
-    header.append(heading,exit);dialog.append(header);
+    exit.addEventListener("click",close);
+    dialog.append(header);
     const summary=element("div","app-history-player-dialog-value");
     summary.append(element("strong","",record.value),
       element("span","",record.holders.length+" "+locale().holders));

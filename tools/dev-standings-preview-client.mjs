@@ -252,14 +252,13 @@ function historyExpandableHolders(card,holders,metric){
   const title=card.querySelector("h5")?.textContent||"";
   const dialog=historyNode("dialog","app-history-player-dialog");
   dialog.setAttribute("aria-label",title);
-  const close=historyNode("button","app-history-player-close","×");
-  close.type="button";close.setAttribute("aria-label",({it:"Chiudi",de:"Schließen",es:"Cerrar",fr:"Fermer"})[document.documentElement.lang]||"Close");
-  const dismiss=()=>window.faHistoryDialog.close(dialog);
+  const {header,close}=window.faHistoryDialog.header(title);
+     const dismiss=()=>window.faHistoryDialog.close(dialog);
   close.addEventListener("click",dismiss);
   dialog.addEventListener("cancel",event=>{event.preventDefault();dismiss();});
   dialog.addEventListener("click",event=>{if(event.target===dialog)dismiss();});
   dialog.addEventListener("close",()=>{dialog.remove();trigger.focus();},{once:true});
-  dialog.append(close,historyNode("h3","",title));
+  dialog.append(header);
   for(const entry of entries){const copy=entry.cloneNode(true);copy.hidden=false;dialog.append(copy);}
   document.body.append(dialog);window.faHistoryDialog.show(dialog);close.focus();
  });

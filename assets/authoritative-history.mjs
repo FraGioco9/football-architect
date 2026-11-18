@@ -178,13 +178,12 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
     trigger.addEventListener('click',()=>{
      const dialog=make('dialog',undefined,'app-history-player-dialog');
      dialog.setAttribute('aria-label',heading.textContent);
-     const close=make('button','×','app-history-player-close');
-     close.type='button';close.setAttribute('aria-label',({it:'Chiudi',de:'Schließen',fr:'Fermer',es:'Cerrar'})[document.documentElement.lang]||'Close');
+     const {header,close}=window.faHistoryDialog.header(heading.textContent);
      const dismiss=()=>window.faHistoryDialog.close(dialog);
      close.addEventListener('click',dismiss);
      dialog.addEventListener('cancel',e=>{e.preventDefault();dismiss();});
      dialog.addEventListener('click',e=>{if(e.target===dialog)dismiss();});
-     dialog.append(close,make('h3',heading.textContent));
+     dialog.append(header);
      for(const item of record.entries){
       const line=make('div',undefined,'app-history-dev-record-entry');
       line.append(identity(item.club));if(item.season)line.append(seasonLink(item.season));
@@ -193,7 +192,10 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
      dialog.addEventListener('close',()=>{dialog.remove();trigger.focus();},{once:true});
      document.body.append(dialog);window.faHistoryDialog.show(dialog);close.focus();
     });
-    holders.firstElementChild.append(trigger);
+    const line=holders.firstElementChild;
+    const name=line.querySelector('.app-world-club-name');
+    const label=make('span',undefined,'app-history-tied-club');
+    name.replaceWith(label);label.append(name,trigger);
    }
    node.append(holders);
   }

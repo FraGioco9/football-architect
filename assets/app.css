@@ -775,9 +775,8 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
 .app-history-player-detail:focus-visible,.app-history-player-context-button:focus-visible,.app-history-player-close:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-history-player-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 32px));max-height:min(80vh,700px);padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--surface,#172426);color:var(--text);box-shadow:0 14px 48px rgba(0,0,0,.28)}
 .app-history-player-dialog::backdrop{background:rgba(0,0,0,.62)}
-.app-history-player-dialog-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.app-history-player-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .app-history-player-dialog-header h3{margin:0;font-size:1.05rem}
-.app-history-player-close{border:0;border-radius:6px;background:transparent;color:inherit;font-size:1.5rem;line-height:1;cursor:pointer}
 .app-history-player-dialog-value{display:grid;justify-items:center;gap:4px;margin:18px 0;padding:14px;border-radius:10px;background:rgba(100,203,169,.065);font-size:.8rem;color:var(--muted)}
 .app-history-player-dialog-value strong{font-size:1.9rem;color:var(--text);font-variant-numeric:tabular-nums}
 .app-history-player-holders{list-style:none;padding:0;margin:0;display:grid;gap:10px}
@@ -921,13 +920,13 @@ html[data-fa-standings-loading="true"] .fa-bracket-team:not(:has([data-club-cres
 #competition-panel-history .app-history-dev-season-link:hover,#competition-panel-history .app-history-dev-season-link:focus-visible{color:var(--text)}
 
 /* History record: crest in its own column, club name and season on one text baseline. */
-#competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link){display:grid;grid-template-columns:48px minmax(0,1fr) max-content;column-gap:8px;align-items:center}
+#competition-panel-history :is(.app-history-player-footer,.app-view-skeleton-record-holder),#competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link){display:grid;grid-template-columns:48px minmax(0,1fr) max-content;column-gap:8px;align-items:center}
 #competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link)>.app-world-club-identity{display:contents}
 #competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link) .app-world-club-crest-placeholder{grid-column:1;grid-row:1}
 #competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link) .app-world-club-name{grid-column:2;grid-row:1;min-width:0;line-height:1.35}
 #competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link) .app-history-dev-season-link{grid-column:3;grid-row:1;min-height:0;align-self:center}
 @media(max-width:620px){
- #competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link){grid-template-columns:40px minmax(0,1fr) minmax(0,auto);column-gap:6px}
+ #competition-panel-history :is(.app-history-player-footer,.app-view-skeleton-record-holder),#competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link){grid-template-columns:40px minmax(0,1fr) minmax(0,auto);column-gap:6px}
  #competition-panel-history .app-history-dev-season-link{min-width:0;white-space:normal;overflow-wrap:anywhere}
  #competition-panel-history .app-history-dev-archive .app-world-club-identity .app-world-club-name{width:auto;max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere}
 }
@@ -2139,8 +2138,8 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
  text-align:center;
 }
 
-#competition-panel-history .app-history-dev-record-entry:has(>.app-history-player-detail){display:flex;flex-wrap:nowrap;gap:6px}
-#competition-panel-history .app-history-dev-record-entry:has(>.app-history-player-detail)>.app-world-club-identity{display:flex;min-width:0;flex:1}
+.app-history-tied-club{grid-column:2;grid-row:1;display:flex;align-items:center;gap:4px;min-width:0}
+.app-history-tied-club .app-world-club-name{min-width:0;overflow:hidden;text-overflow:ellipsis}
 
 .app-history-dev-record:has([aria-expanded="true"]){height:auto}
 
@@ -2162,3 +2161,9 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 @media(max-width:620px){.app-history-player-footer,.history-player-placeholder,.history-team-placeholder{gap:6px}}
 
 [data-history-scope-preview="all-time"] .history-team-placeholder .history-placeholder-season{display:none}
+#competition-panel-history .app-history-player-footer>.app-history-dev-season-link{grid-column:3;grid-row:1;min-height:0;justify-self:end}
+.app-history-record-group .app-competition-stat-value:has(>.app-skeleton-bar){display:flex;align-items:center;min-height:1.25em}
+.history-placeholder-season{position:relative;width:auto;font-size:inherit;line-height:1.35}
+.history-placeholder-season>span:first-child{visibility:hidden}
+.history-placeholder-season>.app-skeleton-bar{position:absolute;inset-inline:0;top:50%;transform:translateY(-50%)}
+@media(max-width:620px){.app-view-skeleton-record-holder{min-height:40px}}
