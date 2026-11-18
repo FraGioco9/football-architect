@@ -348,6 +348,7 @@
     "backend/tests/lineup-calendar-publish-runtime.test.ts": "backend-runtime",
     "backend/tests/lineup-admin-calendar-clock-runtime.test.ts": "backend-runtime",
     "backend/tests/public-season-receipt-bundle-runtime.test.ts": "backend-runtime",
+    "backend/tests/season-sporting-source-reads-runtime.test.ts": "backend-runtime",
     "backend/tests/public-sporting-lineup-runtime.test.ts": "backend-runtime",
     "backend/tests/public-sporting-lineup-integration-runtime.test.ts": "backend-runtime",
     "backend/tests/lineup-day13-e2e-runtime.test.ts": "backend-runtime",
