@@ -94,7 +94,7 @@ export function summarizeFrozenLineupPlayersV1(
      const assists=appearance.assists,reds=appearance.redCards;
      if(typeof assists!=='number'||!Number.isSafeInteger(assists)||assists<0||
       typeof reds!=='number'||!Number.isSafeInteger(reds)||reds<0)invalid();
-     m.seenV2=true;m.assists+=assists;m.redCards+=reds;
+     m.seenV2=true;m.assists+=assists as number;m.redCards+=reds as number;
      if(!appearance.started)m.subAppearances++;
     }else m.complete=false;
     coverage.set(key,m);
