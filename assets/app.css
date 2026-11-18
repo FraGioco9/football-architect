@@ -2185,3 +2185,20 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 .history-placeholder-lines>.app-skeleton-bar::after{content:"";width:100%;height:.76em;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
 .history-placeholder-meta{height:1.35em}
 .history-placeholder-meta>.app-skeleton-bar:only-child{width:min(11ch,86%)}
+
+/* Record skeletons borrow hydrated team/player DOM and typography instead of
+   approximating the club line with a separate flex layout. */
+.app-competition-view-skeleton .app-world-club-crest-placeholder.app-view-skeleton-crest-slot{
+ background:var(--fa-crest-skeleton-fill);border-radius:50%
+}
+.app-competition-view-skeleton .app-world-club-crest-placeholder.app-view-skeleton-crest-slot::before{content:none}
+.app-competition-view-skeleton .app-view-skeleton-name-slot{
+ display:inline-block;position:relative;box-sizing:border-box;vertical-align:baseline;
+ width:min(13ch,100%);max-width:100%;line-height:1.35;white-space:nowrap
+}
+.app-competition-view-skeleton .app-view-skeleton-player-club{width:min(11ch,100%)}
+.app-competition-view-skeleton .app-view-skeleton-name-slot>span:first-child{visibility:hidden}
+.app-competition-view-skeleton .app-view-skeleton-name-slot>.app-skeleton-bar{
+ display:block;position:absolute;left:0;top:50%;transform:translateY(-50%);
+ width:100%;max-width:100%;height:.76em;border-radius:4px
+}
