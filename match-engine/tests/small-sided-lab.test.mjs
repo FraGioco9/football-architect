@@ -469,6 +469,10 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
    }
    assert.ok(carries>=2,'One actor must truly carry using repeated Rapier impulses');
    assert.ok(releaseRecontacts>=1,'One actor must release and recontact the ball');
+   assert.ok(maximumBallSpeed<=3.5+1e-6,
+    'Solo original Rapier ball must stay below established D-01 3.5m/s design guard');
+   assert.ok(playerSpeedSum/180>=2.35,
+    'Solo movement should no longer appear stalled at walking pace');
    process.stdout.write('ME_628_SOLO_CARRY_REAL '+JSON.stringify({
     side,variantIndex,activePhysicalPlayers:1,carries,releaseRecontacts,
     averagePlayerSpeedMps:playerSpeedSum/180,minimumObservedSpeed,

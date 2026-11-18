@@ -304,3 +304,16 @@ test('#628 solo-only actual-speed shoe cadence reduces low-pace stepping without
  const high=advanceD01LiveShoeGait({...source,solo:true,player:{...source.player,vx:4}});
  assert.ok(high.frequencyHz>solo.frequencyHz);
 });
+
+test('#628 solo Carry physical intensity scales original real touch without velocity clamps',()=>{
+ const params={variantIndex:0,tick:20,attackingSide:'home',
+  ballPosition:{x:30,y:0},ballVelocity:{x:1,y:0}};
+ const solo=chooseIsolatedDribbleTouch({...params,solo:true});
+ const duel=chooseIsolatedDribbleTouch({...params,defender:{team:'away',x:34,y:1}});
+ assert.equal(solo.soloCarry,true);
+ assert.equal(solo.fromLiveOpponent,false);
+ assert.equal(solo.magnitudeNs,duel.magnitudeNs*0.75);
+ assert.equal(solo.fromLiveBallVelocity,true);
+ assert.equal(solo.genuineRapierShoeStartRequired,true);
+ assert.throws(()=>chooseIsolatedDribbleTouch({...params,solo:true,defender:{team:'away',x:33,y:0}}),TypeError);
+});
