@@ -3,7 +3,7 @@ import fixtureUI from '../assets/club-fixtures.js';
 // CLUB-01: derive public presentation data without modifying canonical inputs.
 import {clubCrestAssets} from './club-crest-assets.mjs';
 import {loadWorldCatalog} from './load-world-catalog.mjs';
-function bootstrapClubFirstPaint(rosterLabels,menuMarkup,competitionNames){
+function bootstrapClubFirstPaint(rosterLabels,menuMarkup){
  const match=location.pathname.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|stats|history)\/?$/);
  if(!match)return;
  const country=match[1],clubId=match[2],view=match[3];
@@ -59,6 +59,7 @@ function bootstrapClubFirstPaint(rosterLabels,menuMarkup,competitionNames){
   const mode=requested==='attributes'||requested==='stats'?requested:'overview';
   const wordsForRoster=rosterLabels[locale];
   roster.dataset.rosterMode=mode;
+  roster.querySelector('.club-roster-count-width').textContent='99 '+({en:'players',it:'giocatori',de:'Spieler',es:'jugadores',fr:'joueurs'})[locale];
   for(const button of roster.querySelectorAll('[data-club-roster-view]')){
    const key=button.dataset.clubRosterView,active=key===(mode==='overview'?'info':mode);
    button.textContent=key==='info'?'Info':key==='stats'?labels[locale][3]:wordsForRoster[0];
@@ -77,7 +78,7 @@ function bootstrapClubFirstPaint(rosterLabels,menuMarkup,competitionNames){
    const fixtureWords=JSON.parse(document.querySelector('.club-fixtures').dataset.labels)[locale];
    const label=isGroup?wordsForRoster[0]:fixtureWords.competition;
    const requested=params.get('competition');
-   const value=isGroup?w.groups[Object.keys(keys).indexOf(group)]:Object.hasOwn(competitionNames,requested)?competitionNames[requested]:fixtureWords.all;
+   const value=isGroup?w.groups[Object.keys(keys).indexOf(group)]:wordsForRoster[requested==='international'?6:5];
    trigger.setAttribute('aria-label',label);control.querySelector('[role=listbox]').setAttribute('aria-label',label);
    trigger.querySelector('span').textContent=value;
    trigger.disabled=true;
@@ -277,7 +278,7 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations,c
    if(!localized||['en','de','es','fr','it'].some(lang=>!localized[lang]))throw Error('Missing club translations');
    return {...c,descriptions:localized,divisionId:catalog.getDivisionForClub(c.countryId+'-'+c.clubId)};
   })};
- const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+[clubModel.rosterLabels,Object.fromEntries(['group','competition'].map(id=>[id,fixtureUI.control(id,'','',[],'club-roster')])),Object.fromEntries([...divisions.map(d=>[d.id,d.name]),['int-1','Sovereign Cup'],['int-2','Federation Cup']])].map(value=>JSON.stringify(value)).join(',')+');';
+ const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+[clubModel.rosterLabels,Object.fromEntries(['group','competition'].map(id=>[id,fixtureUI.control(id,'','',[],'club-roster')]))].map(value=>JSON.stringify(value)).join(',')+');';
  const staticContent=buildClubShell(firstPaintScript);
  let html=template;
  for(const [token,value] of Object.entries({...replacements,'@@FA_WORLD_SECTION@@':staticContent}))html=html.replaceAll(token,value);

@@ -41,12 +41,15 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
  assert.equal(mime['.mjs'],'text/javascript','Club public ES modules must be served with a JavaScript MIME type');
  assert.ok(allowed.has('assets/club-public-read-cache.mjs'),'shared Club HTTP cache module must be published');
  let refuseCrests=false,holdDeferred=false,manifestMode='ok',mockEmptyRoster=false,mockReadyRoster=false,holdRosterResponse=false;const deferredResponses=[],blockedRosterResponses=[];
+ const rosterRequests={info:0,stats:0};
  const server=createServer((req,res)=>{
   try{
    const path=new URL(req.url,'http://localhost').pathname;
+   if(path==='/api/clubs/IT-1/roster')rosterRequests.info++;
    if(path==='/api/clubs/IT-1/roster/stats'){
+    rosterRequests.stats++;
     res.writeHead(200,{'Content-Type':'application/json'});
-    res.end(JSON.stringify({clubKey:'IT-1',season:1,competitions:['IT-1','int-1'],count:1,players:[{id:1001,display_name:'Fixture Player',nationality:'ITA',primary_position:'CM',stats:{appearances:2,starts:1,minutes:110,goals:1},competitionStats:{'int-1':{appearances:1,starts:0,minutes:20,goals:0}}}]}));return;
+    res.end(JSON.stringify({clubKey:'IT-1',season:1,competitions:['IT-1','int-1'],count:1,players:[{id:1001,display_name:'Fixture Player',nationality:'ITA',primary_position:'CM',stats:{appearances:2,starts:1,minutes:110,goals:1},competitionStats:{'IT-1':{appearances:1,starts:1,minutes:90,goals:1},'int-1':{appearances:1,starts:0,minutes:20,goals:0}}}]}));return;
    }
    if(path==='/api/clubs/IT-1/roster'&&holdRosterResponse){blockedRosterResponses.push(res);return;}
    if(path==='/api/clubs/IT-1/roster'&&mockEmptyRoster){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:0,players:[]}));return;}
@@ -713,7 +716,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-empty')+"')"),true);
      assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
     }
-    for(const query of ['view=attributes&group=physical','view=stats&competition=int-1']){
+    for(const query of ['view=attributes&group=physical','view=stats&competition=international']){
      const response=await fetch(devOrigin+'/clubs/it/1/roster?'+query,{redirect:'manual'});
      assert.equal(response.status,200,'DEV must serve a roster subview directly on reload');
     }
@@ -724,6 +727,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelectorAll('.club-roster-tabs [aria-disabled=true]').length"),0);
     assert.equal(await run("document.querySelector('.club-load-error')"),null,'roster read failure is not a club identity failure');
     mockReadyRoster=true;
+    const initialReads={...rosterRequests};
     await visit('/clubs/it/1/roster?view=info');
     await wait("location.search==='?view=info'&&document.querySelector('.club-roster[aria-busy=false]')!==null");
     assert.equal(await run("document.querySelector('.club-roster-tabs [aria-selected=true]')?.textContent"),'Info');
@@ -734,11 +738,22 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.ok(await run("document.querySelector('.club-roster-tabs').scrollWidth<=document.querySelector('.club-roster-tabs').clientWidth+1"));
     }
     await run("document.querySelector('[data-club-roster-view=stats]').click()");
-    await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='110'");
-    await run("document.querySelector('[data-club-roster-control=competition] button').click();document.querySelector('[data-menu-value=int-1]').click()");
-    await wait("location.search==='?view=stats&competition=int-1'&&document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='20'");
+    await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='90'");
+    for(const width of [320,1440]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===320});
+     const gap=await run("document.querySelector('.club-roster-count').getBoundingClientRect().left-document.querySelector('[data-club-roster-control]').getBoundingClientRect().right");
+     assert.ok(gap>=0&&gap<=5,'dropdown and count stay adjacent: '+gap);
+    }
+    for(const view of ['attributes','stats','info','stats']){
+     await run("document.querySelector('[data-club-roster-view="+view+"]').click()");
+     await wait("document.querySelector('.club-roster[aria-busy=false]')!==null");
+    }
+    assert.deepEqual(rosterRequests,{info:initialReads.info+1,stats:initialReads.stats+1});
+    assert.deepEqual(await run("[...document.querySelectorAll('[data-club-roster-control] [data-menu-value]')].map(el=>el.dataset.menuValue)"),['domestic','international']);
+    await run("document.querySelector('[data-club-roster-control=competition] button').click();document.querySelector('[data-menu-value=international]').click()");
+    await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='20'");
     await cmd('Page.reload',{ignoreCache:true});
-    await wait("location.search==='?view=stats&competition=int-1'&&document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='20'");
+    await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(6)')?.textContent==='20'");
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await run("document.querySelector('[data-club-roster-view=attributes]').click()");
     await wait("location.search==='?view=attributes&group=technical'");

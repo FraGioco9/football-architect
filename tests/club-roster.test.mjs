@@ -35,7 +35,7 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
   assert.match(html,/href="\/clubs\/it\/1\/roster\?view=attributes&amp;group=technical"/);
    assert.doesNotMatch(html,/aria-disabled="true"/);
   assert.match(html,/<div class="club-roster-view-row"><nav[^>]+class="app-competition-tabs app-players-tabs club-roster-tabs"/);
-  assert.match(html,/<\/nav><span class="club-roster-count">65 /);
+  assert.match(html,/<\/nav><span class="club-roster-count">.*?<span>65 /);
 
   assert.match(html,new RegExp('>'+expectedOverview[language]+'<'));
   const attributes=model.render(manifest,selected,language,'?view=attributes',null,1,null,snapshot);
@@ -168,7 +168,7 @@ test('CLUB-ROSTER-01 clicking the already active main tab is inert without a Ros
 
 test('CLUB-ROSTER-API: revisiting the same club reuses one in-flight or completed read',async()=>{
  const js=read('assets/club-page.js');
- const match=js.match(/  let rosterRequest=0,[\s\S]*?window\.addEventListener\('pagehide',[^\n]+\);/);
+ const match=js.match(/  const rosterReads=new Map\(\);[\s\S]*?window\.addEventListener\('pagehide',[^\n]+\);/);
  assert.ok(match,'extract the real Roster request handler');
  const makeController=new Function('selected','fetch','history','location','window','paint',
   'let rosterSnapshot={source:"loading"},refreshClubRoster; '+match[0]+
@@ -210,7 +210,7 @@ test('CLUB-ROSTER-API: revisiting the same club reuses one in-flight or complete
 
 test('CLUB-ROSTER-API: empty squads are cached, transient failures can retry and stale reads are fenced',async()=>{
  const js=read('assets/club-page.js');
- const match=js.match(/  let rosterRequest=0,[\s\S]*?window\.addEventListener\('pagehide',[^\n]+\);/);
+ const match=js.match(/  const rosterReads=new Map\(\);[\s\S]*?window\.addEventListener\('pagehide',[^\n]+\);/);
  assert.ok(match);
  const makeController=new Function('selected','fetch','history','location','window','paint',
   'let rosterSnapshot={source:"loading"},refreshClubRoster; '+match[0]+

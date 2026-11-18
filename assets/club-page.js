@@ -208,13 +208,13 @@
     const group=control.dataset.clubRosterControl==='group';
     const binding=window.faBindCompetitionMenu(trigger,menu,[...menu.children],value=>{
      const query=group?model.rosterViewQuery(location.search,value):new URLSearchParams(location.search);
-     if(!group){if(value==='all')query.delete('competition');else query.set('competition',value);}
+     if(!group){if(value==='domestic')query.delete('competition');else query.set('competition',value);}
      const next=location.pathname+'?'+query+location.hash;
      if(next!==location.pathname+location.search+location.hash)history.pushState(null,'',next);
      paint(true);host.querySelector('[data-club-roster-control] button')?.focus({preventScroll:true});
     },control,{signal:rosterMenuEvents.signal});
     const params=new URLSearchParams(location.search);
-    binding.sync(group?model.rosterView(params):rosterSnapshot.competitions?.includes(params.get('competition'))?params.get('competition'):'all');
+    binding.sync(group?model.rosterView(params):params.get('competition')==='international'?'international':'domestic');
    }
    const rosterTabs=host.querySelector('.club-roster-tabs');
    if(rosterTabs){
@@ -385,7 +385,8 @@
    event.preventDefault();options[next].click();
   });
   // A current-state roster read is independent of sporting seasons and archives.
-  let rosterRequest=0,rosterAbort=null,rosterCacheClubKey=null;
+  const rosterReads=new Map();
+  let rosterCacheClubKey=null;
   const canonicalRosterInfo=()=>{
    if(selected.view==='roster'&&rosterSnapshot.source==='ready'&&rosterSnapshot.count>0&&
     !new URLSearchParams(location.search).has('view')){
@@ -402,14 +403,20 @@
    const cacheKey=clubKey+suffix;
    // Reuse both completed and in-flight reads when revisiting this club.
    // An unavailable response can be retried on the next Roster entry.
-   if(rosterCacheClubKey===cacheKey&&['loading','ready'].includes(rosterSnapshot.source)){
-    canonicalRosterInfo();return;
-   }
-   const ticket=++rosterRequest;
-   rosterAbort?.abort();rosterAbort=new AbortController();
    rosterCacheClubKey=cacheKey;
-   if(rosterSnapshot.source!=='loading'){rosterSnapshot={source:'loading'};paint(true);}
-   const {signal}=rosterAbort;
+   const cached=rosterReads.get(cacheKey);
+   if(cached){
+    const changed=rosterSnapshot!==cached.snapshot;
+    rosterSnapshot=cached.snapshot;canonicalRosterInfo();
+    if(changed)paint(true);
+    return;
+   }
+   const entry={controller:new AbortController(),snapshot:{source:'loading'}};
+   rosterReads.set(cacheKey,entry);
+   const needsPaint=rosterSnapshot.source!=='loading';
+   rosterSnapshot=entry.snapshot;
+   if(needsPaint)paint(true);
+   const {signal}=entry.controller;
    void (async()=>{
     try{
      const response=await fetch('/api/clubs/'+clubKey+'/roster'+suffix,{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal,headers:{Accept:'application/json'}});
@@ -422,28 +429,35 @@
        i>0&&p.id<=data.players[i-1].id||typeof p.display_name!=='string'||
        typeof p.nationality!=='string'||typeof p.primary_position!=='string'))
       throw Error('invalid_roster_response');
-     if(signal.aborted||ticket!==rosterRequest)return;
-     rosterSnapshot={source:'ready',...data};
-     // No table is shown for a verified empty squad; keep the neutral route.
-     // A positive response selects Info without creating a history entry.
-     canonicalRosterInfo();
+     if(signal.aborted)return;
+     entry.snapshot={source:'ready',...data};
     }catch(error){
-     if(signal.aborted||ticket!==rosterRequest)return;
-     rosterCacheClubKey=null;
-     rosterSnapshot={source:'unavailable',status:Number.isSafeInteger(error?.status)?error.status:0};
+     if(signal.aborted)return;
+     rosterReads.delete(cacheKey);
+     entry.snapshot={source:'unavailable',status:Number.isSafeInteger(error?.status)?error.status:0};
     }
-    if(selected.view==='roster')paint(true);
+    if(cacheKey!==rosterCacheClubKey)return;
+    rosterSnapshot=entry.snapshot;
+    if(selected.view==='roster'){canonicalRosterInfo();paint(true);}
    })();
   };
-  window.addEventListener('pagehide',()=>{rosterAbort?.abort();rosterRequest++;rosterCacheClubKey=null});
+  const clearRosterReads=(statsOnly=false)=>{
+   for(const [key,entry] of rosterReads){
+    if(statsOnly&&!key.includes('/stats'))continue;
+    entry.controller.abort();rosterReads.delete(key);
+   }
+   if(!statsOnly||rosterCacheClubKey?.includes('/stats'))rosterCacheClubKey=null;
+  };
+  window.addEventListener('pagehide',()=>clearRosterReads());
   // Contracts writes do not advance sporting-world revisions. A cross-tab
   // storage nonce invalidates only a previously loaded roster, not world data.
   const rosterSignalKey='fa:roster-affiliations:v1';
   const rosterSignal=()=>{try{return localStorage.getItem(rosterSignalKey)}catch{return null}};
   let lastRosterSignal=rosterSignal();
-  const invalidateRoster=()=>{
-   rosterAbort?.abort();rosterAbort=null;
-   ++rosterRequest;rosterCacheClubKey=null;rosterSnapshot={source:'loading'};
+  const invalidateRoster=(statsOnly=false)=>{
+   clearRosterReads(statsOnly);
+   if(rosterCacheClubKey!==null)return;
+   rosterSnapshot={source:'loading'};
    if(selected.view==='roster'){paint(true);refreshClubRoster()}
   };
   const checkRosterSignal=()=>{
@@ -493,7 +507,7 @@
     state.subscribe(({world})=>{
      if(rosterWorld?.generation===world?.generation&&rosterWorld?.revision===world?.revision)return;
      const previous=rosterWorld;rosterWorld=world;
-     if(previous&&rosterCacheClubKey?.includes('/stats'))invalidateRoster();
+     if(previous)invalidateRoster(true);
     });
     const sameWorld=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
     const refresh=()=>{

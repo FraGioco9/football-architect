@@ -142,11 +142,11 @@
  };
  const statKeys=['appearances','starts','minutes','goals'];
  const rosterLabels={
-  en:['Attributes','Apps','Starts','Min','Gls','Season','All competitions','Not recorded'],
-  it:['Attributi','Pres','Tit','Min','Gol','Stagione','Tutte le competizioni','Dato non registrato'],
-  de:['Attribute','Sp','Startelf','Min','Tore','Saison','Alle Wettbewerbe','Nicht erfasst'],
-  fr:['Attributs','MJ','Tit','Min','Buts','Saison','Toutes compétitions','Non enregistré'],
-  es:['Atributos','PJ','Tit','Min','Goles','Temporada','Todas las competiciones','Sin registrar']
+  en:['Attributes','Apps','Starts','Min','Gls','Domestic','International','Not recorded'],
+  it:['Attributi','Pres','Tit','Min','Gol','Nazionali','Internazionali','Dato non registrato'],
+  de:['Attribute','Sp','Startelf','Min','Tore','National','International','Nicht erfasst'],
+  fr:['Attributs','MJ','Tit','Min','Buts','Nationales','Internationales','Non enregistré'],
+  es:['Atributos','PJ','Tit','Min','Goles','Nacionales','Internacionales','Sin registrar']
  };
  function rosterView(params){
   if(params.get('view')==='stats')return 'stats';
@@ -169,7 +169,7 @@
   if(!allowed.includes(query.get('sort'))){query.delete('sort');query.delete('order');}
   return query;
  }
- function renderRoster(clubKey,lang,t,snapshot,search='',divisions=[]){
+ function renderRoster(clubKey,lang,t,snapshot,search=''){
   const w=rosterWords[lang],params=new URLSearchParams(search);
   const view=rosterView(params);
   const mode=view==='info'?'overview':view==='stats'?'stats':'attributes';
@@ -191,10 +191,8 @@
   if(ready&&snapshot.count===0)
    return '<section class="club-roster" aria-busy="false" data-roster-mode="empty"><p class="club-roster-empty" role="status">'+escape(w.empty)+'</p></section>';
   const competitions=snapshot?.competitions||[];
-  const requestedCompetition=params.get('competition');
-  const knownCompetition=divisions.some(d=>d.id===requestedCompetition)||['int-1','int-2'].includes(requestedCompetition);
-  const competition=competitions.includes(requestedCompetition)||pending&&knownCompetition?requestedCompetition:'all';
-  const competitionName=id=>divisions.find(d=>d.id===id)?.name||({'int-1':'Sovereign Cup','int-2':'Federation Cup'}[id])||id;
+  const international=params.get('competition')==='international';
+  const groupIds=competitions.filter(id=>id.startsWith('int-')===international);
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
    :mode==='stats'?['',w.name,w.positions,...words.slice(1,5)]:['',w.name,w.positions,w.age,w.height,w.foot];
@@ -210,7 +208,12 @@
    const message=ready?w.empty:snapshot?.status===404?w.missingApi:w.unavailable;
    body='<tr class="app-players-empty-row"><td colspan="'+colCount+'"><strong role="status">'+escape(message)+'</strong></td></tr>';
   }else{
-   const players=mode==='stats'&&competition!=='all'?snapshot.players.map(p=>({...p,stats:p.competitionStats?.[competition]})):snapshot.players;
+   const players=mode==='stats'?snapshot.players.map(player=>{
+    const rows=groupIds.map(id=>player.competitionStats?.[id]);
+    const recorded=rows.length?rows.every(Boolean):competitions.length>0||!!player.stats;
+    const stats=recorded?Object.fromEntries(statKeys.map(key=>[key,rows.reduce((sum,row)=>sum+row[key],0)])):null;
+    return {...player,stats};
+   }):snapshot.players;
    body=sortedRosterPlayers(players,sort||'positions',sort?order:'desc').map(player=>{
     const id=Number(player.id),country=player.nationality;
     const code=Object.hasOwn(rosterFlags,country)?rosterFlags[country]:null;
@@ -236,11 +239,11 @@
    selector=fixtureUI.control('group',words[0],options.find(([key])=>key===group)[1],options,'club-roster');
   }else if(mode==='stats'){
    const labels=fixtureUI.copy[lang];
-   selector=fixtureUI.control('competition',labels.competition,competition==='all'?labels.all:competitionName(competition),
-    [['all',labels.all],...competitions.map(id=>[id,competitionName(id)])],'club-roster');
+   selector=fixtureUI.control('competition',labels.competition,words[international?6:5],
+    [['domestic',words[5]],['international',words[6]]],'club-roster');
   }
   return '<section class="club-roster" aria-busy="'+pending+'" data-roster-mode="'+mode+'">'+
-   '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav>'+selector+'<span class="club-roster-count">'+count+'</span></div>'+
+   '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav>'+selector+'<span class="club-roster-count"><span aria-hidden="true" class="club-roster-count-width">99 '+w.many+'</span><span>'+count+'</span></span></div>'+
    '<div class="app-players-table-scroll club-roster-table-scroll" role="region" aria-label="'+escape(t.roster)+'" tabindex="0"'+(pending?' aria-busy="true"':'')+'>'+
    '<table class="app-players-table club-roster-table" data-players-table-mode="'+mode+'" data-roster-group="'+group+'" aria-label="'+escape(t.roster)+'">'+
    columns+'<thead><tr>'+labels.map((label,i)=>{
@@ -392,7 +395,7 @@
     '<section class="app-panel club-competition" aria-labelledby="club-competition-title"><h2 id="club-competition-title">'+escape(t.competition)+'</h2>'+
     effectiveCompetitionCard+'</section></div>';
   }else if(selected.view==='roster'){
-   content=renderRoster(clubKey,lang,t,rosterSnapshot,search,manifest.divisions);
+   content=renderRoster(clubKey,lang,t,rosterSnapshot,search);
   }else if(selected.view==='history'){
    const words={
     en:{season:'Season',competition:'Competition',position:'Pos.',played:'MP',won:'W',drawn:'D',lost:'L',gf:'GF',ga:'GA',gd:'GD',points:'Pts',total:'Total',show:'Show competitions for',empty:'No games played',without:'No competitions this season.',unavailable:'Club history is temporarily unavailable.'},
