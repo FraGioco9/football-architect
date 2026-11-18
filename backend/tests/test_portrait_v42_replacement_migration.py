@@ -52,7 +52,7 @@ class PortraitV42Migration(unittest.TestCase):
             self.db.execute("""INSERT INTO player_portrait_v42_cutover_candidates
              (player_id,snapshot_json,asset_key,image_sha256)
              VALUES (?,?,?,?)""", (pid, self.new_snapshot(pid),
-                                  f'assets/players/portraits/{pid}.webp', 'a' * 64))
+                                  f'assets/players/portraits/{pid}.webp', f'{pid:064x}'))
         self.db.commit()
 
     def test_fail_closed_when_no_replacement_package(self):
@@ -118,6 +118,7 @@ class PortraitV42Migration(unittest.TestCase):
             (47, base[1], 'assets/players/portraits/44.webp', base[3]),
             (47, base[1], base[2], 'not-a-sha'),
             (47, base[1], base[2], 'G' * 64),
+            (47, base[1], base[2], f'{44:064x}'),
         ]
         for row in bad:
             with self.subTest(row=row):

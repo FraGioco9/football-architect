@@ -65,7 +65,7 @@ export async function buildV42CutoverStagingSql(prepared,qa,assetsRoot,
    throw new TypeError('unapproved_or_duplicate_v42_image');
   images.set(row.player_id,row);
  }
- const ids=new Set(),fps=new Set(),tuples=[];
+ const ids=new Set(),fps=new Set(),seenImageHashes=new Set(),tuples=[];
  for(const s of ss){
   if(!obj(s)||!Number.isSafeInteger(s.player_id)||s.player_id<1||
      ids.has(s.player_id)||fps.has(s.appearance_fingerprint)||
@@ -83,6 +83,9 @@ export async function buildV42CutoverStagingSql(prepared,qa,assetsRoot,
   validateWebpHeader(bytes);
   if(SHA(bytes)!==entry.sha256)
    throw new TypeError('v42_image_bytes_not_approved');
+  if(seenImageHashes.has(entry.sha256))
+   throw new TypeError('duplicate_v42_webp_bytes');
+  seenImageHashes.add(entry.sha256);
   tuples.push('('+s.player_id+','+sqlQuote(JSON.stringify(s))+','+
    sqlQuote(assetKey)+','+sqlQuote(entry.sha256)+')');
  }

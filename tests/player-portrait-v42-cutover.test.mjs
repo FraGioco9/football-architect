@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {createHash} from 'node:crypto';
-import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';
+import {mkdtemp,mkdir,writeFile,readFile,copyFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {preparePlayerPortraitV42} from '../tools/prepare-player-portrait-v42.mjs';
@@ -15,11 +15,12 @@ const players=[
   nationality:'ITA',secondary_nationality:null,attributes:{strength:73,speed:58,agility:62,stamina:68}}
 ];
 const sha=x=>createHash('sha256').update(x).digest('hex');
-function alphaWebp(){
+function alphaWebp(id=0){
  const b=Buffer.alloc(30);
  b.write('RIFF',0,'ascii');b.writeUInt32LE(b.length-8,4);
  b.write('WEBP',8,'ascii');b.write('VP8X',12,'ascii');b.writeUInt32LE(10,16);
  b[20]=0x10; // VP8X alpha feature.
+ b[21]=id&0xff; // Distinct synthetic bytes per fixture player.
  b.writeUIntLE(319,24,3);b.writeUIntLE(361,27,3);
  return b;
 }
@@ -34,7 +35,7 @@ async function fixture(){
  for(const snap of prepared.snapshots){
   const path=join(root,'assets','players','portraits',snap.player_id+'.webp');
   await mkdir(join(root,'assets','players','portraits'),{recursive:true});
-  const bytes=alphaWebp();await writeFile(path,bytes);
+  const bytes=alphaWebp(snap.player_id);await writeFile(path,bytes);
   images.push({player_id:snap.player_id,appearance_fingerprint:snap.appearance_fingerprint,
    approved:true,sha256:sha(bytes)});
  }
@@ -66,8 +67,9 @@ test('no staging without all images, owner approval and the exact immutable iden
    {...x.qa,images:[{...x.qa.images[0],appearance_fingerprint:'0'.repeat(16)},x.qa.images[1]]},
    {...x.qa,images:[{...x.qa.images[0],sha256:'f'.repeat(64)},x.qa.images[1]]},
    {...x.qa,images:[x.qa.images[0],x.qa.images[0]]},
+   {...x.qa,images:[x.qa.images[0],{...x.qa.images[1],sha256:x.qa.images[0].sha256}]},
   ])await assert.rejects(()=>buildV42CutoverStagingSql(x.prepared,bad,x.root,opts),
-   /invalid_v42_image_qa_package|unapproved_or_duplicate_v42_image|v42_image_identity_mismatch|v42_image_bytes_not_approved/);
+   /invalid_v42_image_qa_package|unapproved_or_duplicate_v42_image|v42_image_identity_mismatch|v42_image_bytes_not_approved|duplicate_v42_webp_bytes/);
   await assert.rejects(()=>buildV42CutoverStagingSql(x.prepared,x.qa,x.root,{
    ...opts,expectedManifest:'0'.repeat(64)}),/v42_manifest_digest_mismatch/);
   await assert.rejects(()=>buildV42CutoverStagingSql({...x.prepared,count:3},x.qa,x.root,opts),
@@ -79,13 +81,27 @@ test('no staging without all images, owner approval and the exact immutable iden
    /invalid_or_duplicate_v42_identity|v42_manifest_digest_mismatch/);
  }finally{await rm(x.root,{recursive:true,force:true});}
 });
+test('two different identities cannot share the exact same WebP bytes',async()=>{
+ const x=await fixture(),[a,b]=x.prepared.snapshots;
+ const root=join(x.root,'assets','players','portraits');
+ try{
+  await copyFile(join(root,a.player_id+'.webp'),join(root,b.player_id+'.webp'));
+  const qa={...x.qa,images:x.qa.images.map(entry=>({...entry}))};
+  const firstHash=x.qa.images.find(x=>x.player_id===a.player_id).sha256;
+  const second=qa.images.find(x=>x.player_id===b.player_id);
+  second.sha256=firstHash;
+  await assert.rejects(()=>buildV42CutoverStagingSql(x.prepared,qa,x.root,{
+   expectedCount:2,expectedManifest:x.prepared.fingerprint_manifest_sha256
+  }),/duplicate_v42_webp_bytes/);
+ }finally{await rm(x.root,{recursive:true,force:true});}
+});
 test('refuse alpha-less or wrongly sized WebP even if QA hash matches',async()=>{
  const x=await fixture(),s=x.prepared.snapshots[0];
  const asset=join(x.root,'assets','players','portraits',s.player_id+'.webp');
  const opts={expectedCount:2,expectedManifest:x.prepared.fingerprint_manifest_sha256};
  try{
   for(const change of [b=>{b[20]=0},b=>{b.writeUIntLE(320,24,3)},b=>{b.write('NOTW',8,'ascii')}]) {
-   const bad=alphaWebp();change(bad);await writeFile(asset,bad);
+   const bad=alphaWebp(s.player_id);change(bad);await writeFile(asset,bad);
    const qa={...x.qa,images:x.qa.images.map(row=>row.player_id===s.player_id?{
     ...row,sha256:sha(bad)}:row)};
    await assert.rejects(()=>buildV42CutoverStagingSql(x.prepared,qa,x.root,opts),

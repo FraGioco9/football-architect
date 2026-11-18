@@ -74,8 +74,8 @@ The example shows the required schema for one entry; the real manifest
 Do not use the placeholder text as a real hash.
 
 The staging tool uses the physical WebP files to verify actual SHA-256,
-alpha-capable WebP format, 320×362 dimensions and one-to-one portrait ID
-and fingerprint. It **cannot** automate subjective visual QA or prove
+alpha-capable WebP format, 320×362 dimensions, **different WebP bytes for
+every player**, and one-to-one portrait ID and fingerprint. It **cannot** automate subjective visual QA or prove
 the picture is an original; human approval is a separate gate.
 
 ## Stage creation (requires separate authorisation; DO NOT RUN NOW)

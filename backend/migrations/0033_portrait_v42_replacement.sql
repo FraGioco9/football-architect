@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS player_portrait_v42_cutover_candidates (
  snapshot_json TEXT NOT NULL
   CHECK(json_valid(snapshot_json) AND json_type(snapshot_json)='object'),
  asset_key TEXT NOT NULL UNIQUE,
- image_sha256 TEXT NOT NULL CHECK(
+ image_sha256 TEXT NOT NULL UNIQUE CHECK(
    length(image_sha256)=64 AND
    image_sha256 NOT GLOB '*[^0-9a-f]*'
  ),
