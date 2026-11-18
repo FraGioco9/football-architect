@@ -93,29 +93,33 @@ export function soloCarryTwoFootPositions(player,gait=null){
  // These are kinematic pad trajectories, NOT ball speed clamps or timed taps.
  const twoFootPhysicalReach=gait?.carryPhase==='sprint'?0.75:
   gait?.carryPhase==='moderate'?0.85:1.0;
- // Running steps are NOT touches. In open space, when the original
- // Rapier ball is already rolling ahead at close to the runner's
- // measured forward speed, the toe stays behind it. As friction slows
- // the ball or the runner closes the gap, this toe clearance naturally
- // disappears and the NEXT touch must still come from a real collision.
- // Both feet keep moving on every physical tick: no timed skipped
- // contacts, no hidden ball correction and no invented START.
- const forwardRelativeMps=gait===null?0:
-  gait.observedBallForwardMps-gait.observedPlayerForwardMps;
- const rollingAheadCue=gait===null?0:
-  gaitClamp((gait.observedBallSpeedMps-1.6)/1.0,0,1)*
-  gaitClamp((forwardRelativeMps+0.45)/0.65,0,1);
- const ballSpacingCue=gait===null?0:
-  gaitClamp((ahead-0.38)/0.15,0,1);
- const runningToeClearanceM=(
-  gait?.carryPhase==='sprint'?0.11:
-  gait?.carryPhase==='moderate'?0.035:0)*
-  ballSpacingCue*rollingAheadCue;
+ // A runner's boots need not repeatedly strike the ball. Sprinting feet
+ // step to EITHER SIDE of a freely rolling ball. Once the canonical runner
+ // catches up or the original Rapier ball approaches the toes, both tracks
+ // smoothly narrow for an actual native shoe-ball collision.
+ // No synthetic contact, impulse, possession or post-step ball correction.
+ const playerCatchingBall=gait===null?0:
+  gaitClamp((gait.observedPlayerForwardMps-
+   gait.observedBallForwardMps+0.25)/0.75,0,1);
+ const approachingBall=gait===null?0:
+  gaitClamp((0.43-ahead)/0.12,0,1);
+ const catchupNeed=gait===null?0:
+  playerCatchingBall*gaitClamp((0.58-ahead)/0.18,0,1);
+ const realRecoveryNeed=Math.max(approachingBall,catchupNeed);
+ const openRun=gait?.carryPhase==='sprint'?1-realRecoveryNeed:0;
+ const sprintTrackM=0.20-0.105*realRecoveryNeed;
+ const lateralTrackM=gait?.carryPhase==='sprint'?sprintTrackM:
+  gait?.carryPhase==='moderate'?0.11:0.085;
+ // Shift the two-foot gait together when the ball is on one side, keeping
+ // both actual shoe pads outside the rolling sphere. During a recovery,
+ // release the shift so a shoe can approach and genuinely make contact.
+ const runningLateralCenterM=gait?.carryPhase==='sprint'?
+  gaitClamp(lateral,-0.25,0.25)*openRun:0;
  const leftForward=(gait?.forwardM??forwardStroke*stroke)*
-  twoFootPhysicalReach-runningToeClearanceM;
+  twoFootPhysicalReach;
  const rightForward=(-forwardStroke*stroke+
   gaitClamp((ahead-0.53)*0.40,0,0.055)*Math.max(0,-stroke))*
-  twoFootPhysicalReach-runningToeClearanceM;
+  twoFootPhysicalReach;
  const make=(forward,side)=>{
   const c=Math.cos(player.facingRad),si=Math.sin(player.facingRad);
   return Object.freeze({...player,
@@ -123,8 +127,10 @@ export function soloCarryTwoFootPositions(player,gait=null){
    y:player.y+forward*si+side*c});
  };
  return Object.freeze({
-  left:make(leftForward,0.085+(gait?.sideM??0)),
-  right:make(rightForward,-0.085+sideAdjust*Math.max(0,-stroke)),
+  left:make(leftForward,runningLateralCenterM+lateralTrackM+
+   (gait?.sideM??0)),
+  right:make(rightForward,runningLateralCenterM-lateralTrackM+
+   sideAdjust*Math.max(0,-stroke)),
   source:'original-canonical-stride-targets',
   realContactsOnly:true,physicsImposed:false
  });

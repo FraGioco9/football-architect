@@ -443,28 +443,29 @@ test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
   JSON.stringify(samples)+'\\n');
 });
 
-test('#628 running steps separate from real Carry touches using forward Rapier ball evidence',()=>{
+test('#628 running steps separate from real Carry touches using live Rapier relative speed',()=>{
  const p={x:29.45,y:0,vx:2.8,vy:0,facingRad:0};
- const makeGait=(ballSpeed,phase='sprint',x=30)=>
+ const makeGait=(ballSpeed,phase='sprint',x=29.92)=>
   advanceD01LiveShoeGait({phaseRad:0,tick:1,player:p,
    ball:{position:{x,y:0,z:0.11},velocity:{x:ballSpeed,y:0,z:0}},
    solo:true,carryPhase:phase});
  const running=makeGait(3.1),catching=makeGait(1.2);
- const open=soloCarryTwoFootPositions(p,running),reach=soloCarryTwoFootPositions(p,catching);
+ const open=soloCarryTwoFootPositions(p,running);
+ const recover=soloCarryTwoFootPositions(p,catching);
  assert.ok(running.observedBallForwardMps>running.observedPlayerForwardMps);
- assert.ok(open.left.x<reach.left.x-0.05);
- assert.ok(open.right.x<reach.right.x-0.05,
-  'both physical toes must give a freely rolling ball room to run');
+ assert.ok(open.left.y>recover.left.y+0.04);
+ assert.ok(open.right.y<recover.right.y-0.04,
+  'open sprint moves both actual foot tracks AROUND the rolling ball');
  const tight=soloCarryTwoFootPositions(p,makeGait(3.1,'sprint',29.79));
- assert.ok(tight.left.x>open.left.x+0.04,
-  'real near-ball gap recovers the original physical contact reach');
+ assert.ok(tight.left.y<open.left.y-0.04,
+  'actual short runner-ball gap narrows both tracks for a real contact');
  const controlOpen=soloCarryTwoFootPositions(p,makeGait(3.1,'control'));
  const controlSlow=soloCarryTwoFootPositions(p,makeGait(1.2,'control'));
- assert.equal(controlOpen.left.x,controlSlow.left.x,
-  'short control keeps its physical toe reach regardless of ball roll');
+ assert.equal(controlOpen.left.y,controlSlow.left.y,
+  'close control does not dodge the ball based on speed');
  const away={...p,x:-p.x,vx:-p.vx,facingRad:Math.PI};
  const mirroredGait=advanceD01LiveShoeGait({phaseRad:0,tick:1,player:away,
-  ball:{position:{x:-30,y:0,z:0.11},velocity:{x:-3.1,y:0,z:0}},
+  ball:{position:{x:-29.92,y:0,z:0.11},velocity:{x:-3.1,y:0,z:0}},
   solo:true,carryPhase:'sprint'});
  const mirror=soloCarryTwoFootPositions(away,mirroredGait);
  assert.ok(Math.abs(mirror.left.x+open.left.x)<1e-10);
