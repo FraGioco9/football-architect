@@ -449,6 +449,11 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-table .club-history-row-loading .club-history-skeleton-label{cursor:default;pointer-events:none}
 .club-history-table .club-history-row-loading .club-history-skeleton-label .club-fp-bar{width:66px;min-width:0;margin:0}
 .club-history-table .club-history-row-loading .club-history-total-label .club-fp-bar{width:40px;min-width:0;margin-inline-start:0}
+/* The visible Season / Total bars follow the loaded label's flex line box.
+   No icon or inline baseline can shift their left edge or vertical center. */
+.club-history-table .club-history-row-loading :is(.club-history-skeleton-label,.club-history-total-value)>.club-fp-bar{
+ align-self:center;flex:none;margin-inline-start:0;
+}
 /* First paint and runtime pending rows reserve the actual numeric glyph
    widths, then center the bar on the same 16px track as verified data. */
 .club-history-table .club-history-row-loading .club-history-skeleton-stat .club-fp-bar[data-skeleton-sample]{

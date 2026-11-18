@@ -595,6 +595,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,height:slot.height};
         });
         const initial=cells.map(cell=>cell.innerHTML);
+        const totalSlot=row.querySelector('.club-history-total-value');
+        const totalCell=totalSlot.closest('td');
+        const totalRange=document.createRange();totalRange.selectNodeContents(totalSlot);
+        const totalLoaded=totalRange.getBoundingClientRect(),totalLoadedCell=totalCell.getBoundingClientRect();
+        const totalOriginal=totalSlot.innerHTML;
+        totalSlot.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
         for(const [index,cell] of cells.entries()){
          cell.classList.add('club-history-skeleton-stat');
          const slot=cell.querySelector('.club-history-stat-value');
@@ -607,7 +613,15 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          const bar=rect(cell.querySelector('.club-fp-bar')),slot=rect(cell);
          return {dx:bar.cx-slot.cx,dy:bar.cy-slot.cy,y:bar.cy,height:slot.height};
         });
+        const totalBar=totalSlot.querySelector('.club-fp-bar').getBoundingClientRect();
+        const totalSkeletonCell=totalCell.getBoundingClientRect();
+        const totalAlignment={
+         dx:(totalBar.left-totalSkeletonCell.left)-(totalLoaded.left-totalLoadedCell.left),
+         dy:(totalBar.top+totalBar.height/2-totalSkeletonCell.top-totalSkeletonCell.height/2)-
+          (totalLoaded.top+totalLoaded.height/2-totalLoadedCell.top-totalLoadedCell.height/2)
+        };
         row.classList.remove('club-history-row-loading');
+        totalSlot.innerHTML=totalOriginal;
         cells.forEach((cell,i)=>{cell.classList.remove('club-history-skeleton-stat');cell.innerHTML=initial[i];});
         const header=row.querySelector('th:first-child');
         const button=header.querySelector('button');
@@ -627,7 +641,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const skeletonNameLeft=header.querySelector('.club-fp-bar').getBoundingClientRect().left;
         const skeletonNameCenterY=rect(header.querySelector('.club-fp-bar')).cy;
         header.innerHTML=original;
-        return {actual,skeleton,nameOffset:skeletonNameLeft-nameLeft,
+        return {actual,skeleton,totalAlignment,nameOffset:skeletonNameLeft-nameLeft,
          nameCenterOffset:skeletonNameCenterY-nameCenterY,seasonSkeletonY:skeletonNameCenterY,
          chevronShift:nameWithoutChevron-nameLeft,chevronRestoreShift:nameRestored-nameLeft,
          chevronGap:nameLeft-chevronRight};
@@ -645,6 +659,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         'season skeleton starts exactly where the loaded name starts at '+width+': '+JSON.stringify(alignment));
        assert.ok(Math.abs(alignment.nameCenterOffset)<=3.5,
         'Club History season text and its skeleton share a vertical center at '+width+': '+JSON.stringify(alignment));
+       if(width>620)assert.ok(Math.abs(alignment.totalAlignment.dx)<=1&&Math.abs(alignment.totalAlignment.dy)<=3,
+        'Club History Total skeleton matches the actual Total text origin and center at '+width+': '+JSON.stringify(alignment));
        assert.ok(Math.abs(alignment.chevronShift)<=0.5&&Math.abs(alignment.chevronRestoreShift)<=0.5,
         'Club History text cannot move when the chevron is removed/restored at '+width+': '+JSON.stringify(alignment));
        assert.ok(Math.abs(alignment.chevronGap-10)<=1,
@@ -787,6 +803,15 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const rect=n=>{const r=n.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,right:r.right,height:r.height};};
        const seasonLabelRange=document.createRange();seasonLabelRange.selectNodeContents(seasonLabel);
        const seasonTextOffset=rect(seasonLabelRange).y-rect(seasonHeader).y;
+       const seasonLoadedX=seasonLabelRange.getBoundingClientRect().left-seasonHeader.getBoundingClientRect().left;
+       const summaryTotal=row.querySelector('.app-player-stats-total-value');
+       const summaryTotalCell=summaryTotal.closest('td');
+       const summaryRange=document.createRange();summaryRange.selectNodeContents(summaryTotal);
+       const summaryText=summaryRange.getBoundingClientRect(),summaryCell=summaryTotalCell.getBoundingClientRect();
+       const totalLoadedAnchor={
+        x:summaryText.left-summaryCell.left,
+        y:(summaryText.top+summaryText.height/2)-(summaryCell.top+summaryCell.height/2)
+       };
        const seasonTextLeft=seasonLabel.getBoundingClientRect().left;
        const seasonChevron=seasonHeader.querySelector('.app-player-stats-chevron-space');
        const seasonChevronRight=seasonChevron.getBoundingClientRect().right;
@@ -823,6 +848,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const loadingHeader=loadingRow.querySelector('th');
        const loadingSeasonBar=loadingHeader.querySelector('.app-player-stats-skeleton-season');
        const loadingSeasonOffset=rect(loadingSeasonBar).y-rect(loadingHeader).y;
+       const loadingSeasonX=loadingSeasonBar.getBoundingClientRect().left-loadingHeader.getBoundingClientRect().left;
+       const pendingTotalBar=loadingRow.querySelector('.app-player-stats-skeleton-total');
+       const pendingTotalCell=pendingTotalBar.closest('td');
+       const pendingBar=pendingTotalBar.getBoundingClientRect(),pendingCell=pendingTotalCell.getBoundingClientRect();
+       const totalPendingAnchor={
+        x:pendingBar.left-pendingCell.left,
+        y:(pendingBar.top+pendingBar.height/2)-(pendingCell.top+pendingCell.height/2)
+       };
        const loadingSkeletonCenters=[...loadingRow.querySelectorAll('.app-player-stats-number .app-skeleton-bar')].map(node=>rect(node).y);
        const loadingTotalCenter=rect(loadingRow.querySelector('.app-player-stats-skeleton-total')).y;
        const loadingSeasonCenter=rect(loadingSeasonBar).y;
@@ -861,7 +894,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         crestTextGap:clubTextLeft-crestRight,
         competition:compVisual,clubCenterOffset,compTextCenter,clubTextCenter,detailNumberCenter,
         competitionPosition:competitionStyle.position,competitionCellCenter:compCell.y,
-        seasonTextOffset,loadingSeasonOffset,loadingSeasonCenter,loadingTotalCenter,loadingSkeletonCenters,
+        seasonTextOffset,loadingSeasonOffset,seasonLoadedX,loadingSeasonX,
+        totalLoadedAnchor,totalPendingAnchor,loadingSeasonCenter,loadingTotalCenter,loadingSkeletonCenters,
         crestNameOffset:crestCenter-originalNameCenter,
         independentCrestOffset:independentCrestCenter-crestCenter,
         independentNameOffset:independentNameCenter-originalNameCenter,
@@ -878,6 +912,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       }
       assert.ok(Math.abs(placement.seasonTextOffset-placement.loadingSeasonOffset)<=3,
        'Player Stats: loaded Season and skeleton share the same vertical track at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.seasonLoadedX-placement.loadingSeasonX)<=1,
+       'Player Stats Season/Career loading bar must start exactly where the text starts at '+width+': '+JSON.stringify(placement));
+      if(width>620)assert.ok(
+       Math.abs(placement.totalLoadedAnchor.x-placement.totalPendingAnchor.x)<=1&&
+       Math.abs(placement.totalLoadedAnchor.y-placement.totalPendingAnchor.y)<=3,
+       'Player Stats Total skeleton occupies the real Total text origin/center at '+width+': '+JSON.stringify(placement));
       assert.ok(Math.abs(placement.chevronTextShift)<=0.5&&Math.abs(placement.chevronTextGap-10)<=1,
        'Player Stats Season text remains fixed when chevron is removed at '+width+': '+JSON.stringify(placement));
       assert.ok(Math.abs(placement.crestTextShift)<=0.5&&Math.abs(placement.crestRestoreTextShift)<=0.5&&

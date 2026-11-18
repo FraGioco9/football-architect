@@ -288,7 +288,13 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  line-height:1;white-space:nowrap;
 }
 .app-player-stats-table [data-detail-stats-heading="5"] .app-player-stats-score-heading-skeleton{
- display:inline-block;width:20px;height:10px;margin:0;vertical-align:middle;
+ /* Match the hydrated header button's 28px line box. */
+ display:inline-flex;box-sizing:border-box;align-items:center;justify-content:flex-end;
+ width:20px;height:28px;margin:0;vertical-align:middle;background:transparent;
+}
+.app-player-stats-table [data-detail-stats-heading="5"] .app-player-stats-score-heading-skeleton::after{
+ content:"";display:block;width:20px;height:10px;border-radius:4px;
+ background:color-mix(in srgb,var(--muted) 22%,var(--surface));
 }
 .app-player-stats-table .app-player-stats-loading .app-skeleton-bar{
  display:block;min-width:0;height:12px;margin:0;
@@ -299,6 +305,11 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-career-row{background:var(--surface-raised)}
 .app-player-stats-career-row>th:first-child{font-weight:700}
 .app-player-stats-loading .app-player-stats-skeleton-total{width:40px}
+/* Loading Career/Season/Total use the verified text's line-box center and
+   left origin rather than a separately centered skeleton row. */
+.app-player-stats-table .app-player-stats-loading :is(.app-player-stats-skeleton-label,.app-player-stats-total-value)>.app-skeleton-bar{
+ align-self:center;flex:none;margin-inline:0;
+}
 .app-player-stats-table .app-player-stats-loading .app-player-stats-number .app-skeleton-bar{margin:0}
 /* Metric widths come from the same font's glyphs via data-skeleton-sample. */
 .app-player-stats-note{margin:12px 0 0;color:var(--muted);font-size:.875rem;line-height:1.5}
