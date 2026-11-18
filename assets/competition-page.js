@@ -877,7 +877,7 @@
         const projected=activeStandingsSubview==='overall'?rows:
           projectStandings?.(rows,data.fixtures,definition,activeStandingsSubview);
         const preKickoff=Boolean(supplied&&!hasPlayedLeagueMatches(data));
-        const displayReady=Boolean(supplied&&projected&&!preKickoff);
+        const displayReady=Boolean(supplied&&projected&&!preKickoff&&projected.some(row=>row.played>0));
         // Before the first real match, display verified entrants alphabetically
         // without adopting the backend's technical zero-point tie-break order.
         const displayRows=preKickoff?[...rows].sort((a,b)=>
