@@ -105,6 +105,7 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
  function item(tag){
   const e={tagName:tag.toUpperCase(),children:[],dataset:{},attributes:{},style:{},hidden:false,textContent:'',className:'',
    classList:{add(){},remove(){}},
+   addEventListener(){},remove(){this.hidden=true},
    setAttribute(key,value){this.attributes[key]=String(value)},
    removeAttribute(key){delete this.attributes[key]},
    getAttribute(key){return this.attributes[key]??null},
@@ -148,13 +149,17 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
  const player={appearances:1,starts:1,subAppearances:0,minutes:90,goals:1,gkAppearances:0,cleanSheets:null,
   assists:0,yellowCards:0,redCards:0,averageRating:7.5,ratedAppearances:1};
  const payload={playerId:42,status:'available',seasons:[{season:1,status:'partial',
-  data:{total:player,competitions:[{...player,competitionId:'IT-1',clubId:'IT-1'}]}}]};
+  data:{total:player,competitions:[
+   {...player,competitionId:'IT-1',clubId:'IT-1'},
+   {...player,competitionId:'int-1',clubId:'IT-2'}]}}]};
  let lang='en';
  try{
   const view=createPlayerStatsView({host,id:42,position:()=> 'ST',locale:()=>lang,
+   clubName:key=>key==='IT-1'?'AC Meneghina':'Club Two',
+   clubCrest:key=>key==='IT-1'?'assets/clubs/IT/1/crest.svg':'https://other.example/crest.svg',
    fetchStats:async()=>payload});
   await view.load();
-  assert.equal(tbody.children.length,3,'season, collapsed competition and Career row exist without extra reads');
+  assert.equal(tbody.children.length,4,'Career, season and both collapsed competition rows exist without extra reads');
   assert.equal(tbody.children[0].dataset.playerStatsCareer,'true');
   assert.equal(tbody.children[0].children[0].children[0].children[1].textContent,'Career');
   assert.equal(tbody.children[0].children[3].children[0].textContent,'1 (0)');
@@ -169,17 +174,38 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
   for(let i=3;i<10;i++)
    assert.ok(headers[i].querySelector('[data-stats-help]'),'numeric header has tooltip');
   assert.ok(tbody.children[0].children[1].className.includes('app-player-stats-total-label'));
-  const [,season,detail]=tbody.children,button=season.querySelector('[data-stats-toggle]');
+  const [,season,detail,otherDetail]=tbody.children,button=season.querySelector('[data-stats-toggle]');
+  const decorated=detail.children[2].children[0],crest=decorated.children[0],clubLink=decorated.children[1];
+  assert.equal(decorated.className,'app-player-stats-club-identity');
+  assert.equal(crest.className,'app-players-club-mark app-player-stats-club-crest');
+  assert.equal(crest.getAttribute('aria-hidden'),'true');
+  assert.equal(crest.children[0].src,'/assets/clubs/IT/1/crest.svg');
+  assert.equal(crest.children[0].className,'app-players-club-crest');
+  assert.equal(crest.children[0].alt,'');
+  assert.equal(crest.children[0].width,24);
+  assert.equal(crest.children[0].height,24);
+  assert.equal(clubLink.textContent,'AC Meneghina');
+  assert.equal(clubLink.href,'/clubs/it/1/overview');
+  assert.equal(otherDetail.children[2].children[0].children.length,2,
+   'unknown official crest retains shield fallback and the valid name link');
+  assert.equal(otherDetail.children[2].children[0].children[0].className,
+   'app-players-club-mark app-player-stats-club-crest');
+  assert.equal(otherDetail.children[2].children[0].children[0].children.length,0,
+   'untrusted crest path cannot render an image');
+  assert.equal(otherDetail.children[2].children[0].children[1].href,'/clubs/it/2/overview');
   const arrow=button.children[0];
   assert.equal(detail.hidden,true);
+  assert.equal(otherDetail.hidden,true);
   assert.equal(button.getAttribute('aria-expanded'),'false');
   listeners.click({target:button});
   assert.equal(detail.hidden,false);
+  assert.equal(otherDetail.hidden,false);
   assert.equal(button.getAttribute('aria-expanded'),'true');
   assert.strictEqual(tbody.children[1],season,'the table must not be rebuilt on toggle');
   assert.strictEqual(button.children[0],arrow,'chevron must retain its transition element');
   listeners.click({target:button});
-  assert.equal(detail.hidden,true);assert.equal(button.getAttribute('aria-expanded'),'false');
+  assert.equal(detail.hidden,true);assert.equal(otherDetail.hidden,true);
+  assert.equal(button.getAttribute('aria-expanded'),'false');
   const tipTrigger=headers[3].querySelector('[data-stats-help]');
   listeners.focusin({target:tipTrigger});
   const tip=globalThis.document.body.children[0];
@@ -194,6 +220,30 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
  }finally{globalThis.document=originalDocument;globalThis.window=originalWindow}
 });
 
+test('#578 Stats club crests are passive, bounded and separated from linked text',()=>{
+ const stats=read('assets/player-stats.mjs');
+ const bootstrap=read('assets/player-detail.js');
+ const css=read('assets/player-detail.css');
+ assert.match(stats,/clubCrest\?\.\(record\.clubId\)/,'crest is resolved from canonical club key');
+ assert.match(stats,/asset==='assets\/clubs\/'\+match\[1\]/,'only canonical paths are rendered');
+ assert.match(stats,/crest\.setAttribute\('aria-hidden','true'\)/,'crest is not a second link');
+ assert.match(stats,/image\.alt=''/,'crest has decorative alternative text');
+ assert.match(stats,/identity\.append\(clubLink\);club\.append\(identity\)/,
+  'link remains text-only alongside passive crest');
+ assert.match(bootstrap,/crests=catalog\.clubCrests/,'use the existing club catalog');
+ assert.match(bootstrap,/clubCrest:key=>crests&&Object\.hasOwn\(crests,key\)/);
+ assert.match(css,/\.app-player-stats-club-identity\{display:flex;align-items:center;gap:7px/);
+ const shared=read('assets/app.css');
+ assert.match(shared,/\.app-players-club-mark\{[^}]*width:24px;height:24px/);
+ assert.match(shared,/\.app-players-club-mark::before\{[^}]*clip-path:var\(--fa-crest-shield-shape\)/);
+ assert.match(shared,/\.app-players-club-crest\{[^}]*width:24px;height:24px/);
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-career-row>th,/);
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-career-row>td\{border-bottom:2px solid var\(--border\)\}/);
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-career-row\{border-bottom:2px solid var\(--border\)\}/,
+  'mobile grid keeps a visibly thicker career divider');
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-career-row>td\{border-bottom:0\}/,
+  'mobile cells do not duplicate the row separator');
+});
 test('#578 Career sums official season totals and weights ratings by rated appearances',()=>{
  const row=(season,overrides={})=>({
   season,status:'available',data:{season,competitions:[],

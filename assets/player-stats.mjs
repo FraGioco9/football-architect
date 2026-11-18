@@ -58,7 +58,7 @@ export function aggregateVerifiedCareerStats(seasons){
 }
 const competitionPattern=/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/;
 const clubPattern=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/;
-export function createPlayerStatsView({host,id,locale,position,fetchStats,clubName,competitionName}){
+export function createPlayerStatsView({host,id,locale,position,fetchStats,clubName,clubCrest,competitionName}){
  if(!host||!Number.isSafeInteger(id)||id<1)throw TypeError('Invalid player Stats view');
  const tbody=host.querySelector('[data-detail-stats-rows]');
  const headers=[...host.querySelectorAll('[data-detail-stats-heading]')];
@@ -240,9 +240,24 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
     link.href='/competitions/'+record.competitionId.toLowerCase()+'/standings?season='+season.season;
     competition.append(link);detail.append(competition);
     const club=el('td','','app-player-stats-club');
+    const identity=el('span','','app-player-stats-club-identity');
+    // Same passive 24px crest slot and shield fallback as the Players directory.
+    // Only the official manifest's exact asset path may replace that fallback.
+    const crest=el('span','','app-players-club-mark app-player-stats-club-crest');
+    crest.setAttribute('aria-hidden','true');
+    const asset=clubCrest?.(record.clubId);
+    if(asset==='assets/clubs/'+match[1]+'/'+Number(match[2])+'/crest.svg'){
+     const image=el('img','','app-players-club-crest');
+     image.src='/'+asset;image.alt='';image.width=24;image.height=24;
+     image.loading='lazy';image.decoding='async';image.draggable=false;
+     image.addEventListener('error',()=>image.remove(),{once:true});
+     crest.append(image);
+    }
+    identity.append(crest);
     const clubLink=el('a',clubName?.(record.clubId)||record.clubId,'app-player-stats-link');
     clubLink.href='/clubs/'+match[1].toLowerCase()+'/'+Number(match[2])+'/overview';
-    club.append(clubLink);detail.append(club,...numericCells(record,w));resultRows.push(detail);
+    identity.append(clubLink);club.append(identity);
+    detail.append(club,...numericCells(record,w));resultRows.push(detail);
    }
   }
   // Career is shown first and includes the still-active official season.

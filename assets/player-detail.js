@@ -272,16 +272,20 @@
   if(statsController){statsController.render();void statsController.load();return;}
   if(statsControllerPromise)return;
   statsControllerPromise=import('/assets/player-stats.mjs').then(async module=>{
-   let labels=null,competitionLookup=null;
+   let labels=null,crests=null,competitionLookup=null;
    try{
     const context=await import('/assets/match-public-context.mjs');
     competitionLookup=context.matchPublicContext;
     const catalog=await context.publicClubIdentityCatalog();
-    if(Array.isArray(catalog?.clubs))labels=new Map(catalog.clubs.map(item=>[item.countryId+'-'+item.clubId,item.primaryName]));
+    if(Array.isArray(catalog?.clubs)){
+     labels=new Map(catalog.clubs.map(item=>[item.countryId+'-'+item.clubId,item.primaryName]));
+     crests=catalog.clubCrests;
+    }
    }catch{}
    if(!player||state!=='ready')return;
    statsController=module.createPlayerStatsView({host:statsHost,id,position:()=>player?.primary_position,
     locale:language,clubName:key=>labels?.get(key),
+    clubCrest:key=>crests&&Object.hasOwn(crests,key)?crests[key]:null,
     competitionName:key=>competitionLookup?.({competitionId:key})?.competitions?.[0]?.name,
     fetchStats:async number=>{
      const response=await fetch('/api/players/'+number+'/stats',{credentials:'omit',cache:'no-store'});
