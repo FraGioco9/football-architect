@@ -369,7 +369,7 @@ test('confirmed pre-kickoff entrants show dash placeholders without real rank, p
  assert.equal(started({statistics:{standings:[{played:0},{played:1}]}}),true,
   'the first played league game activates the sport table for that competition');
  assert.match(page,/const preKickoff=Boolean\(supplied&&!hasPlayedLeagueMatches\(data\)\)/);
- assert.match(page,/const displayReady=Boolean\(supplied&&projected&&!preKickoff\)/,
+ assert.match(page,/const displayReady=Boolean\(supplied&&projected&&!preKickoff&&projected\.some\(row=>row\.played>0\)\)/,
   'unplayed participants cannot receive arbitrary displayed ranks');
  assert.match(page,/displayRows=preKickoff\?\[\.\.\.rows\]\.sort/,
   'pre-kickoff entrants are alphabetic and unranked');
