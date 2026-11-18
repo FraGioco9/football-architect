@@ -22,16 +22,19 @@ export function frozenMatchPlayerStatistics(result){
    const role=hasEvents?p.role:starter.role;
    if(typeof role!=='string')throw TypeError('Missing frozen player role');
    const rating=result.ratingVersion==='test-rating-v1'?p.rating:null;
-   // Credit only the player's actual full-match GK assignment, never a natural
-   // GK position or a team clean sheet earned while deployed outfield.
-   const fullTimeGk=role==='GK'&&p.minutes===duration&&(!hasEvents||p.gkMinutes===duration);
+   // Require at least 60 verified minutes playing GK, regardless of the player's
+   // natural/initial role. V2 records role-change minutes; legacy only has the
+   // frozen starting role and played minutes, so never infer missing GK minutes.
+   const eligibleGk=hasEvents
+    ?Number.isSafeInteger(p.gkMinutes)&&p.gkMinutes>=60&&p.gkMinutes<=p.minutes
+    :role==='GK'&&p.minutes>=60;
    return {playerId:p.playerId,name:identity?.name??null,nationality:identity?.nationality??null,
     role,started:p.started,subAppearances:hasEvents?(p.started?0:1):null,
     minutes:p.minutes,goals:p.goals,
     assists:hasEvents?p.assists:null,
     yellowCards:hasEvents?(yellowTotals[name].get(p.playerId)??0):null,
     redCards:hasEvents?p.redCards:null,
-    cleanSheets:fullTimeGk?(conceded===0?1:0):null,
+    cleanSheets:eligibleGk?(conceded===0?1:0):null,
     rating:typeof rating==='number'?rating:null};
   })};
  };
