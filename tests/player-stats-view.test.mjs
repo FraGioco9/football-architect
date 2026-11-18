@@ -256,6 +256,8 @@ test('#578 Stats club crests are passive, bounded and separated from linked text
   'crest keeps its own 24px placement regardless of the other row cells');
  assert.match(css,/\.app-player-stats-club-identity \.app-player-stats-club-link\{[\s\S]*?min-height:24px;line-height:1\.5;/,
   'club name centers against the crest, not against the statistics');
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-competition-row a\.app-player-stats-club-link\{\s*display:inline-flex;align-items:center;min-height:24px;line-height:1\.5;/,
+  'mobile retains independent crest/name flex alignment');
  assert.match(css,/\.app-player-stats-table a\.app-player-stats-club-link:is\(:hover,:focus-visible\) \.app-player-stats-club-name\{/,
   'underline applies only to the hovered/focused club-name text');
  assert.match(css,/\.app-player-stats-table a\.app-player-stats-club-link\{[^}]*overflow:visible;text-overflow:clip;/,

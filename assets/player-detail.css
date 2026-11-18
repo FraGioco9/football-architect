@@ -332,6 +332,11 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
   display:inline;white-space:normal;overflow:visible;text-overflow:clip;
   overflow-wrap:anywhere;line-height:1.5;
  }
+ /* Retain the crest/name's private flex alignment in the mobile grid too.
+    Competition links remain plain inline text and can wrap normally. */
+ .app-player-stats-table .app-player-stats-competition-row a.app-player-stats-club-link{
+  display:inline-flex;align-items:center;min-height:24px;line-height:1.5;
+ }
  .app-player-stats-table tr>td.app-player-stats-number{
   display:grid;grid-template-rows:12px 24px;align-content:center;justify-items:center;
   min-width:0;min-height:43px;gap:3px;padding:4px 2px;
