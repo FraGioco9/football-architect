@@ -33,7 +33,10 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
   const relX=ball.position.x-player.x,relY=ball.position.y-player.y;
   const aheadM=relX*cos+relY*sin;
   const lateralM=-relX*sin+relY*cos;
+
   const speedMps=Math.hypot(player.vx,player.vy);
+  const playerForwardMps=player.vx*cos+player.vy*sin;
+  const ballForwardMps=ball.velocity.x*cos+ball.velocity.y*sin;
   // Do not increase the fixed mechanical frequency blindly. Respond smoothly
   // to REAL observed speed and preserve a true full release stroke.
   const cue=solo&&carryPhase!==null?
@@ -58,6 +61,8 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
    observedSpeedMps:speedMps,observedAheadM:aheadM,
    observedLateralM:lateralM,observedBallSpeedMps:
     Math.hypot(ball.velocity.x,ball.velocity.y),
+   observedPlayerForwardMps:playerForwardMps,
+   observedBallForwardMps:ballForwardMps,
    nativeShoeEventCreated:false,ballImpulseCreated:false,
    possessionAssigned:false
   });
@@ -70,6 +75,9 @@ export function soloCarryTwoFootPositions(player,gait=null){
  if(!player||![player.x,player.y,player.facingRad].every(Number.isFinite)||
     (gait!==null&&(!Number.isFinite(gait.phaseRad)||
      !Number.isFinite(gait.observedAheadM)||!Number.isFinite(gait.observedLateralM)||
+     !Number.isFinite(gait.observedPlayerForwardMps)||
+     !Number.isFinite(gait.observedBallForwardMps)||
+     !Number.isFinite(gait.observedBallSpeedMps)||
      !Number.isFinite(gait.forwardM))))
   throw new TypeError('Two-foot Carry requires canonical player and live stride');
  const angle=gait?.phaseRad??0;
@@ -85,10 +93,29 @@ export function soloCarryTwoFootPositions(player,gait=null){
  // These are kinematic pad trajectories, NOT ball speed clamps or timed taps.
  const twoFootPhysicalReach=gait?.carryPhase==='sprint'?0.75:
   gait?.carryPhase==='moderate'?0.85:1.0;
- const leftForward=(gait?.forwardM??forwardStroke*stroke)*twoFootPhysicalReach;
+ // Running steps are NOT touches. In open space, when the original
+ // Rapier ball is already rolling ahead at close to the runner's
+ // measured forward speed, the toe stays behind it. As friction slows
+ // the ball or the runner closes the gap, this toe clearance naturally
+ // disappears and the NEXT touch must still come from a real collision.
+ // Both feet keep moving on every physical tick: no timed skipped
+ // contacts, no hidden ball correction and no invented START.
+ const forwardRelativeMps=gait===null?0:
+  gait.observedBallForwardMps-gait.observedPlayerForwardMps;
+ const rollingAheadCue=gait===null?0:
+  gaitClamp((gait.observedBallSpeedMps-1.6)/1.0,0,1)*
+  gaitClamp((forwardRelativeMps+0.45)/0.65,0,1);
+ const ballSpacingCue=gait===null?0:
+  gaitClamp((ahead-0.38)/0.15,0,1);
+ const runningToeClearanceM=(
+  gait?.carryPhase==='sprint'?0.11:
+  gait?.carryPhase==='moderate'?0.035:0)*
+  ballSpacingCue*rollingAheadCue;
+ const leftForward=(gait?.forwardM??forwardStroke*stroke)*
+  twoFootPhysicalReach-runningToeClearanceM;
  const rightForward=(-forwardStroke*stroke+
   gaitClamp((ahead-0.53)*0.40,0,0.055)*Math.max(0,-stroke))*
-  twoFootPhysicalReach;
+  twoFootPhysicalReach-runningToeClearanceM;
  const make=(forward,side)=>{
   const c=Math.cos(player.facingRad),si=Math.sin(player.facingRad);
   return Object.freeze({...player,

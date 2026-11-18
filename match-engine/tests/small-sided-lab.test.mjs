@@ -541,7 +541,11 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
    samples.push({side,variantIndex,carries,maxBallSpeedMps,maxLiftM,
     blockedTicks,transitions,phases:[...phases],
     recontacts:latest.nativeDribbleAudit.independentRecontacts,
-    ballForwardM:latest.nativeDribbleAudit.ballForwardDistanceM});
+    ballForwardM:latest.nativeDribbleAudit.ballForwardDistanceM,
+    physicalFootStarts:latest.nativeDribbleAudit.nativeLeftFootStarts+
+     latest.nativeDribbleAudit.nativeRightFootStarts,
+    actionTicks:latest.nativeDribbleAudit.actionTicks,
+    realActionFeet:latest.nativeDribbleAudit.realActionFeet});
   }finally{lab.dispose();}
  }
  const maxBallSpeedMps=Math.max(...samples.map(x=>x.maxBallSpeedMps));
@@ -549,6 +553,11 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
  const sprintSamples=samples.filter(x=>x.phases.includes('sprint')).length;
  const maxTransitions=Math.max(...samples.map(x=>x.transitions));
  const blockedSamples=samples.filter(x=>x.blockedTicks>0).length;
+ const meanCarries=samples.reduce((t,x)=>t+x.carries,0)/samples.length;
+ const distinctTouchIntervals=new Set(samples.flatMap(x=>x.actionTicks.slice(1)
+  .map((tick,j)=>tick-x.actionTicks[j])));
+ const meanPhysicalFootStarts=samples.reduce((t,x)=>t+x.physicalFootStarts,0)/
+  samples.length;
  const weakSamples=samples.filter(x=>x.carries<2||x.recontacts<1||
   x.ballForwardM<4).map(x=>({side:x.side,variantIndex:x.variantIndex,
    carries:x.carries,recontacts:x.recontacts,forward:x.ballForwardM}));
@@ -556,7 +565,8 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
   JSON.stringify({trials:samples.length,maxBallSpeedMps,maxGroundLiftM,
    sprintSamples,maxTransitions,blockedSamples,weakSamples,
    minimumForwardM:Math.min(...samples.map(x=>x.ballForwardM)),
-   meanCarries:samples.reduce((t,x)=>t+x.carries,0)/samples.length,
+   meanCarries,meanPhysicalFootStarts,
+   distinctTouchIntervals:distinctTouchIntervals.size,
    fastest:samples.toSorted((a,b)=>b.maxBallSpeedMps-a.maxBallSpeedMps).slice(0,5)})+'\\n');
  assert.equal(samples.length,60);
  assert.equal(blockedSamples,0,'Inactive canonical identities must never block solo Carry');
@@ -567,4 +577,9 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
  assert.ok(maxGroundLiftM<=0.015+1e-6,
   'All 60 real Rapier trials must keep ground ball lift below 1.5cm');
  assert.equal(weakSamples.length,0,'Every variant should physically carry with recontacts');
+ assert.ok(meanCarries<5,'Native open-running contacts must be meaningfully less frequent than the prior ~6.05 actions/3s');
+ assert.ok(distinctTouchIntervals.size>=3,
+  'Real ball distance/relative speed must vary inter-touch timing, not act like a metronome');
+ assert.ok(samples.every(x=>x.physicalFootStarts>=x.carries),
+  'All real impulses must have a true original Rapier shoe event');
 });

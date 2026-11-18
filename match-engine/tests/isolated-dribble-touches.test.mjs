@@ -442,3 +442,34 @@ test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
  process.stdout.write('ME_628_SOLO_TWO_REAL_FEET '+
   JSON.stringify(samples)+'\\n');
 });
+
+test('#628 running steps separate from real Carry touches using forward Rapier ball evidence',()=>{
+ const p={x:29.45,y:0,vx:2.8,vy:0,facingRad:0};
+ const makeGait=(ballSpeed,phase='sprint',x=30)=>
+  advanceD01LiveShoeGait({phaseRad:0,tick:1,player:p,
+   ball:{position:{x,y:0,z:0.11},velocity:{x:ballSpeed,y:0,z:0}},
+   solo:true,carryPhase:phase});
+ const running=makeGait(3.1),catching=makeGait(1.2);
+ const open=soloCarryTwoFootPositions(p,running),reach=soloCarryTwoFootPositions(p,catching);
+ assert.ok(running.observedBallForwardMps>running.observedPlayerForwardMps);
+ assert.ok(open.left.x<reach.left.x-0.05);
+ assert.ok(open.right.x<reach.right.x-0.05,
+  'both physical toes must give a freely rolling ball room to run');
+ const tight=soloCarryTwoFootPositions(p,makeGait(3.1,'sprint',29.79));
+ assert.ok(tight.left.x>open.left.x+0.04,
+  'real near-ball gap recovers the original physical contact reach');
+ const controlOpen=soloCarryTwoFootPositions(p,makeGait(3.1,'control'));
+ const controlSlow=soloCarryTwoFootPositions(p,makeGait(1.2,'control'));
+ assert.equal(controlOpen.left.x,controlSlow.left.x,
+  'short control keeps its physical toe reach regardless of ball roll');
+ const away={...p,x:-p.x,vx:-p.vx,facingRad:Math.PI};
+ const mirroredGait=advanceD01LiveShoeGait({phaseRad:0,tick:1,player:away,
+  ball:{position:{x:-30,y:0,z:0.11},velocity:{x:-3.1,y:0,z:0}},
+  solo:true,carryPhase:'sprint'});
+ const mirror=soloCarryTwoFootPositions(away,mirroredGait);
+ assert.ok(Math.abs(mirror.left.x+open.left.x)<1e-10);
+ assert.ok(Math.abs(mirror.right.x+open.right.x)<1e-10);
+ assert.equal(running.ballImpulseCreated,false);
+ assert.equal(open.realContactsOnly,true);
+ assert.equal(open.physicsImposed,false);
+});
