@@ -514,7 +514,7 @@ test('STATS-TIEBREAK: visible decimal precision, equal ranks, missing evidence, 
  const seven=prepare(Array.from({length:7},(_,i)=>({...base,playerId:i+1,name:'Same',goals:1,minutes:90+10*i})));
  const goals=byClass(seven,'fa-dev-stats-leader-card')[1];
  assert.deepEqual(walk(goals).filter(n=>n.tagName==='li').map(n=>n.children[0].textContent),['1','2','3','4','5']);
- byClass(seven,'fa-dev-stats-expand')[0].emit('click');
+ walk(goals).find(n=>n.className==='fa-dev-stats-expand').emit('click');
  const dialog=byClass(seven,'fa-dev-stats-dialog')[0];
  assert.deepEqual(walk(dialog).filter(n=>n.tagName==='li').map(n=>n.children[0].textContent),['1','2','3','4','5','6','7']);
  assert.deepEqual(walk(dialog).filter(n=>n.tagName==='a'&&n.href?.startsWith('/players/')).map(n=>n.href),
