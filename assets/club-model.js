@@ -7,6 +7,7 @@
  'use strict';
  const compactPlayerName=full=>{const m=/^(\S+)\s+(.+)$/u.exec(String(full||'').trim());return m&&!/^\p{L}\.$/u.test(m[1])?Array.from(m[1])[0]+'. '+m[2]:String(full||'').trim()};
  const fixtureUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./club-fixtures.js'):globalThis.faClubFixtures;
+ const recordsUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./club-records.js'):globalThis.faClubRecords;
  const views=['overview','roster','fixtures','records','history'];
  const rosterFlags=Object.freeze({
   ESP:'es',ARG:'ar',FRA:'fr',ENG:'gb-eng',POR:'pt',BRA:'br',MAR:'ma',BEL:'be',NED:'nl',MEX:'mx',
@@ -317,7 +318,8 @@
   const temporal=new URLSearchParams();
   for(const key of ['season','matchday'])if(params.has(key)&&(key!=='season'||explicit))temporal.set(key,params.get(key));
   const tabs='<nav class="app-competition-tabs club-tabs" aria-label="'+escape(t.navigation)+'">'+views.map(view=>{
-   const suffix=['fixtures','records'].includes(view)&&temporal.size?'?'+temporal:'';
+   const query=view==='fixtures'?temporal:view==='records'&&temporal.has('season')?new URLSearchParams([['season',temporal.get('season')]]):null;
+   const suffix=query?.size?'?'+query:'';
    return '<a class="app-competition-tab'+(view===selected.view?' is-active':'')+'" href="'+routes.buildRoute({kind:'club',country:selected.countryId.toLowerCase(),id:selected.clubId,view})+suffix+'"'+(view===selected.view?' aria-current="page"':'')+'>'+escape(t[view])+'</a>';
   }).join('')+'</nav>';
   const swatch=key=>{
@@ -351,6 +353,8 @@
     effectiveCompetitionCard+'</section></div>';
   }else if(selected.view==='roster'){
    content=renderRoster(clubKey,lang,t,rosterSnapshot,search);
+  }else if(selected.view==='records'){
+   content=recordsUI.render({selected,historySnapshot,language:lang,search,divisions:manifest.divisions});
   }else if(selected.view==='history'){
    const words={
     en:{season:'Season',competition:'Competition',result:'Result',played:'MP',won:'W',drawn:'D',lost:'L',gf:'GF',ga:'GA',gd:'GD',points:'Pts',total:'Total',show:'Show competitions for',empty:'No games played',without:'No competitions this season.',unavailable:'Club history is temporarily unavailable.'},

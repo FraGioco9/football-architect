@@ -28,6 +28,10 @@
    const params=new URLSearchParams(location.search);
    params.delete('view');
    if(['overview','history'].includes(selected.view)){params.delete('season');params.delete('matchday');}
+   if(selected.view==='records'){
+    params.delete('matchday');params.delete('competition');
+    if(!['season','verified'].includes(params.get('scope')))params.delete('scope');
+   }
    const query=params.size?'?'+params:'';
    if(query!==location.search)history.replaceState(null,'',location.pathname+query+location.hash);
   }
@@ -551,7 +555,7 @@
     const state=window.faWorldState;if(!state)throw Error('World state unavailable');
     let epoch=0,abort=null,lastKey=null;
     const same=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
-    const publish=value=>{historySnapshot=value;if(selected.view==='history')paint(true)};
+    const publish=value=>{historySnapshot=value;if(['history','records'].includes(selected.view))paint(true)};
     // DEV-only preview arrives from the protected local client, never through
     // the public HTTP reader. Validate its provenance and current source/day.
     const devHistory=value=>{
@@ -571,7 +575,7 @@
     const refresh=()=>{
      // Switching tabs does not invalidate a verified world snapshot. Finish
      // in-flight History reads and reuse them when returning to this tab.
-     if(selected.view!=='history')return;
+     if(!['history','records'].includes(selected.view))return;
      const current=state.get();
      if(current.source==='dev'){
       abort?.abort();abort=null;epoch++;lastKey=null;
@@ -619,7 +623,7 @@
     window.addEventListener('fa:source-change',()=>{lastKey=null;refresh()});
     window.addEventListener('pagehide',()=>{abort?.abort();epoch++});
     refresh();
-   }catch{historySnapshot={source:'unavailable'};if(selected.view==='history')paint(true)}
+   }catch{historySnapshot={source:'unavailable'};if(['history','records'].includes(selected.view))paint(true)}
   };
   void enableClubHistory();
   const fixtureModule=await import('/assets/club-fixtures-controller.mjs');

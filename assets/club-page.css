@@ -720,3 +720,30 @@ html:not([data-fa-fixture-hover-suspended]) .club-fixture-row.is-match-link:hove
  .club-roster .club-roster-tabs .app-competition-tab{flex:0 0 calc(40% - 3.2px);width:calc(40% - 3.2px);min-width:calc(40% - 3.2px);max-width:calc(40% - 3.2px);height:32px;min-height:32px;padding-inline:4px}
  .club-roster-count{flex:0 0 92px;min-width:92px;font-size:11px}
 }
+
+/* #697: Club Records, stable loading and hydrated table. */
+.club-records{margin-top:5px;min-width:0;font-variant-numeric:tabular-nums}
+.club-records-scopes,.club-records-season-nav{display:flex;align-items:center;gap:6px;min-height:36px;overflow-x:auto;scrollbar-width:thin}
+.club-records-scopes .app-competition-tab{display:inline-flex;align-items:center;justify-content:center;min-height:32px;white-space:nowrap;text-decoration:none}
+.club-records-scopes .app-competition-tab.is-active{background:var(--surface-raised);color:var(--text)}
+.club-records-season-link{display:inline-block;white-space:nowrap;padding:5px 8px;color:var(--muted);text-decoration:none;border-radius:4px}
+.club-records-season-link.is-active{background:var(--surface-raised);color:var(--text);font-weight:700}
+.club-records-scopes a:focus-visible,.club-records-season-link:focus-visible,.club-records-source-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.club-records-note{min-height:21px;line-height:1.5;margin:4px 0 8px;color:var(--muted);font-size:.82rem}
+.club-records-table-wrap{width:100%;max-width:100%;overflow-x:auto;scrollbar-width:thin}
+.club-records-table{width:100%;min-width:560px;table-layout:fixed;border-collapse:collapse;font-size:.86rem}
+.club-records-table th,.club-records-table td{height:56px;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle;line-height:1.5}
+.club-records-table thead th{height:40px;text-align:left;color:var(--muted);font-size:.75rem;font-weight:600}
+.club-records-table th:first-child{width:38%;text-align:left}
+.club-records-table th:nth-child(2),.club-records-table td:nth-child(2){width:16%;text-align:center}
+.club-records-table th:nth-child(3),.club-records-table td:nth-child(3){width:46%;text-align:left}
+.club-records-table tbody th{font-weight:500}
+.club-records-value{font-weight:700}
+.club-records-source{color:var(--muted)}
+.club-records-source-link{display:inline;color:inherit;text-decoration:none}
+.club-records-source-link:is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:3px}
+.club-records-status{margin:10px 0;color:var(--muted);font-size:.875rem}
+.club-records-table .club-records-placeholder{display:block;margin:0 auto;width:30px;height:12px}
+.club-records-table .club-records-placeholder-source{display:block;width:110px;height:12px}
+.club-first-paint-records[hidden]{display:none}
+@media(max-width:620px){.club-records-table{min-width:540px;font-size:.8rem}.club-records-table th,.club-records-table td{padding-inline:8px}.club-records-scopes .app-competition-tab{font-size:.8rem}}
