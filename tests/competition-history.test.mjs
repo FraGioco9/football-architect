@@ -606,7 +606,7 @@ test('Player club subtitles sit 4px lower without moving the player names or fir
  };
  assert.match(declaration('#competition-panel-history .app-history-player-labels>.app-history-player-context'),/position:relative;top:4px/);
  assert.match(declaration('.app-history-dialog-player-info>.app-history-player-clubs'),/position:relative;top:4px/);
- assert.match(declaration('#competition-panel-history .app-history-player-name-row'),/height:calc\\(1\\.35 \\* var\\(--history-name-size, \\.875rem\\)\\)/);
+ assert.ok(declaration('#competition-panel-history .app-history-player-name-row').includes('height:calc(1.35 * var(--history-name-size, .875rem))'));
  assert.match(declaration('.app-history-dialog-player-info,.app-history-dialog-club-info'),/align-content:center;gap:2px/);
  const markup=readFileSync(new URL('../tools/competition-view-skeletons.mjs',import.meta.url),'utf8');
  assert.match(markup,/app-history-player-context/);
