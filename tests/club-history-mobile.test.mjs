@@ -149,6 +149,8 @@ test('#578 Club History loading bars and verified numeric values share one 24px 
  assert.match(css,/\.club-history-table td:nth-child\(n\+4\) \.club-history-stat-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;/);
  assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-stat-value>\.club-fp-bar\{\s*flex:0 0 auto;max-width:100%;/);
  assert.match(css,/\.club-history-table \.club-history-total-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;/);
+ assert.match(css,/\.club-history-chevron,\.club-history-chevron-space\{\s*position:absolute;inset-inline-start:0;top:calc\(50% - 4px\);/,
+  'Club History icon placement does not shift text or skeletons');
 });
 
 test('#578 Club History pending skeleton samples match runtime and reserve actual numeric glyph widths',async()=>{

@@ -637,10 +637,14 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
   'first paint translates the visible header labels');
  assert.match(css,/table-layout:fixed/);
  assert.match(css,/--club-history-row-height:56px/,'fixed uniform height token');
- assert.match(css,/\.club-history-chevron,\.club-history-chevron-space\{box-sizing:border-box;width:8px;height:8px;flex:none\}/,
-  'placeholder and loaded chevron reserve identical width and height');
+ assert.match(css,/\.club-history-chevron,\.club-history-chevron-space\{\s*position:absolute;inset-inline-start:0;top:calc\(50% - 4px\);\s*box-sizing:border-box;width:8px;height:8px;flex:none;/,
+  'Club History chevrons are positioned after the Season text');
  assert.match(css,/\.club-history-chevron-space\{border:0;visibility:hidden\}/,
   'loading chevron placeholder never renders an arrow');
+ assert.match(css,/\.club-history-table :is\(\.club-history-expand,\.club-history-skeleton-label\)\{\s*position:relative;display:inline-flex;box-sizing:border-box;min-height:28px;\s*padding-inline-start:18px;/,
+  'Club History Season text and skeleton share the same starting position');
+ assert.match(css,/\.club-history-table \.club-history-season-row:has\(\.club-history-empty-season\)>\.club-history-season-value\{padding-inline-start:28px\}/,
+  'the season label stays aligned even when there are no competitions');
  assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-skeleton-label \.club-fp-bar\{width:66px;min-width:0;margin:0\}/,
   'Season bar starts after its real chevron instead of the cell edge');
  assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-total-label \.club-fp-bar\{width:40px;min-width:0;margin-inline-start:0\}/,

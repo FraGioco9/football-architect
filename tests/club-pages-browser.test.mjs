@@ -614,6 +614,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const text=button.lastChild;const range=document.createRange();range.selectNodeContents(text);
         const nameLeft=range.getBoundingClientRect().left;
         const nameCenterY=rect(range).cy;
+        const chevron=button.querySelector('.club-history-chevron');
+        const chevronRight=chevron.getBoundingClientRect().right;
+        chevron.remove();
+        const nameWithoutChevron=range.getBoundingClientRect().left;
+        button.prepend(chevron);
+        const nameRestored=range.getBoundingClientRect().left;
         const original=header.innerHTML;
         header.innerHTML='<span class="club-history-expand club-history-skeleton-label">'+
          '<span class="club-history-chevron-space" aria-hidden="true"></span>'+
@@ -622,7 +628,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const skeletonNameCenterY=rect(header.querySelector('.club-fp-bar')).cy;
         header.innerHTML=original;
         return {actual,skeleton,nameOffset:skeletonNameLeft-nameLeft,
-         nameCenterOffset:skeletonNameCenterY-nameCenterY,seasonSkeletonY:skeletonNameCenterY};
+         nameCenterOffset:skeletonNameCenterY-nameCenterY,seasonSkeletonY:skeletonNameCenterY,
+         chevronShift:nameWithoutChevron-nameLeft,chevronRestoreShift:nameRestored-nameLeft,
+         chevronGap:nameLeft-chevronRight};
        })()`);
        for(let i=0;i<7;i++){
         const data=alignment.actual[i],skeleton=alignment.skeleton[i];
@@ -637,6 +645,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         'season skeleton starts exactly where the loaded name starts at '+width+': '+JSON.stringify(alignment));
        assert.ok(Math.abs(alignment.nameCenterOffset)<=3.5,
         'Club History season text and its skeleton share a vertical center at '+width+': '+JSON.stringify(alignment));
+       assert.ok(Math.abs(alignment.chevronShift)<=0.5&&Math.abs(alignment.chevronRestoreShift)<=0.5,
+        'Club History text cannot move when the chevron is removed/restored at '+width+': '+JSON.stringify(alignment));
+       assert.ok(Math.abs(alignment.chevronGap-10)<=1,
+        'Club History chevron sits outside the fixed Season text position at '+width+': '+JSON.stringify(alignment));
        if(width===1440)assert.ok(alignment.skeleton.every(v=>Math.abs(v.y-alignment.seasonSkeletonY)<=2),
         'desktop History: numeric skeletons share the Season skeleton row: '+JSON.stringify(alignment));
       }
@@ -759,6 +771,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const rect=n=>{const r=n.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,right:r.right,height:r.height};};
        const seasonLabelRange=document.createRange();seasonLabelRange.selectNodeContents(seasonLabel);
        const seasonTextOffset=rect(seasonLabelRange).y-rect(seasonHeader).y;
+       const seasonTextLeft=seasonLabel.getBoundingClientRect().left;
+       const seasonChevron=seasonHeader.querySelector('.app-player-stats-chevron-space');
+       const seasonChevronRight=seasonChevron.getBoundingClientRect().right;
+       seasonChevron.remove();
+       const seasonTextWithoutChevron=seasonLabel.getBoundingClientRect().left;
+       seasonHeader.querySelector('.app-player-stats-static-label').prepend(seasonChevron);
        const actual=cells.map(cell=>{
         const range=document.createRange();range.selectNodeContents(cell.querySelector('.app-player-stats-value'));
         const a=rect(range),b=rect(cell);return {dx:a.x-b.x,dy:a.y-b.y,right:a.right,height:b.height};
@@ -803,11 +821,23 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const clubCenterOffset=bounds.y-clubCell.y;
        const crest=probe.querySelector('.app-player-stats-club-crest');
        const crestCenter=rect(crest).y;
+       const identity=crest.parentElement;
+       const clubTextLeft=name.getBoundingClientRect().left;
+       const crestRight=crest.getBoundingClientRect().right;
+       crest.remove();
+       const nameWithoutCrest=name.getBoundingClientRect().left;
+       identity.prepend(crest);
+       const nameRestoredAfterCrest=name.getBoundingClientRect().left;
        const originalNameCenter=bounds.y;
        const detailCells=[...link.closest('tr').querySelectorAll('.app-player-stats-number .app-player-stats-value')];
        detailCells.forEach((node,i)=>node.textContent=String(12345+i));
        const independentCrestCenter=rect(crest).y, independentNameCenter=rect(name).y;
        return {actual,skeleton,link:{x:bounds.x,y:bounds.y},linkOverflow:getComputedStyle(link).overflow,
+        chevronTextShift:seasonTextWithoutChevron-seasonTextLeft,
+        chevronTextGap:seasonTextLeft-seasonChevronRight,
+        crestTextShift:nameWithoutCrest-clubTextLeft,
+        crestRestoreTextShift:nameRestoredAfterCrest-clubTextLeft,
+        crestTextGap:clubTextLeft-crestRight,
         competition:compVisual,clubCenterOffset,
         seasonTextOffset,loadingSeasonOffset,loadingSeasonCenter,loadingTotalCenter,loadingSkeletonCenters,
         crestNameOffset:crestCenter-originalNameCenter,
@@ -826,6 +856,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       }
       assert.ok(Math.abs(placement.seasonTextOffset-placement.loadingSeasonOffset)<=3,
        'Player Stats: loaded Season and skeleton share the same vertical track at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.chevronTextShift)<=0.5&&Math.abs(placement.chevronTextGap-10)<=1,
+       'Player Stats Season text remains fixed when chevron is removed at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.crestTextShift)<=0.5&&Math.abs(placement.crestRestoreTextShift)<=0.5&&
+       Math.abs(placement.crestTextGap-7)<=1,
+       'club text is fixed before attaching the 24px crest at '+width+': '+JSON.stringify(placement));
       if(width===1440)assert.ok(placement.loadingSkeletonCenters.every(y=>Math.abs(y-placement.loadingSeasonCenter)<2) &&
        Math.abs(placement.loadingTotalCenter-placement.loadingSeasonCenter)<2,
        'desktop Player Stats: numeric and Total skeletons share the Season skeleton row: '+JSON.stringify(placement));

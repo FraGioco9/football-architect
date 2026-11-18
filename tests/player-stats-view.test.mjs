@@ -250,10 +250,10 @@ test('#578 Stats club crests are passive, bounded and separated from linked text
   'link remains text-only alongside passive crest');
  assert.match(bootstrap,/crests=catalog\.clubCrests/,'use the existing club catalog');
  assert.match(bootstrap,/clubCrest:key=>crests&&Object\.hasOwn\(crests,key\)/);
- assert.match(css,/\.app-player-stats-club-identity\{\s*display:inline-flex;align-items:center;justify-content:flex-start;gap:7px;/,
-  'crest and club name form a separate fixed-height identity group');
- assert.match(css,/\.app-player-stats-club-identity \.app-player-stats-club-crest\{[\s\S]*?flex:0 0 24px;width:24px;height:24px;/,
-  'crest keeps its own 24px placement regardless of the other row cells');
+ assert.match(css,/\.app-player-stats-club-identity\{\s*display:inline-flex;align-items:center;justify-content:flex-start;gap:0;[\s\S]*?position:relative;padding-inline-start:31px;/,
+  'club text has a stable 31px inset that does not depend on the crest');
+ assert.match(css,/\.app-player-stats-club-identity \.app-player-stats-club-crest\{\s*position:absolute;inset-inline-start:0;top:50%;transform:translateY\(-50%\);[\s\S]*?flex:0 0 24px;width:24px;height:24px;/,
+  'crest is overlaid after positioning club-name text');
  assert.match(css,/\.app-player-stats-club-identity \.app-player-stats-club-link\{[\s\S]*?min-height:24px;line-height:1\.5;/,
   'club name centers against the crest, not against the statistics');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-competition-row a\.app-player-stats-club-link\{\s*display:inline-flex;align-items:center;min-height:24px;line-height:1\.5;/,
@@ -369,8 +369,10 @@ test('#578 numeric skeletons use rendered font metrics rather than guessed width
  assert.match(club,/\.club-history-table td:nth-child\(n\+4\) \.club-history-stat-value\{[\s\S]*?justify-content:center/);
  assert.ok(css.includes('.app-player-stats-table :is(.app-player-stats-toggle,.app-player-stats-static-label,.app-player-stats-skeleton-label)'),
   'Season/Career labels and skeletons share a row centerline');
- assert.match(css,/min-height:28px;padding:2px 0;\s*align-items:center;line-height:1\.5/,
-  'Season labels, Career labels and loading placeholders share the same vertical padding');
+ assert.match(css,/min-height:28px;\s*padding:2px 0;padding-inline-start:18px;\s*align-items:center;line-height:1\.5/,
+  'Career, Season and skeleton labels use the same 18px text inset');
+ assert.match(css,/\.app-player-stats-chevron,\.app-player-stats-chevron-space\{\s*position:absolute;inset-inline-start:0;top:calc\(50% - 4px\);/,
+  'chevrons do not enter Player Stats text flow');
  assert.ok(club.includes('.club-history-table :is(.club-history-expand,.club-history-skeleton-label)'),
   'Club History labels and skeletons share a row centerline');
 });

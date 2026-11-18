@@ -181,12 +181,15 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 /* The crest and its club name form an independently centered 24px identity.
    Never align either child against the statistics cells in the same row. */
 .app-player-stats-club-identity{
- display:inline-flex;align-items:center;justify-content:flex-start;gap:7px;
- box-sizing:border-box;width:max-content;max-width:100%;min-width:0;height:24px;min-height:24px;
+ display:inline-flex;align-items:center;justify-content:flex-start;gap:0;
+ /* Text/name anchor is fixed first. The 24px crest is positioned afterwards. */
+ position:relative;padding-inline-start:31px;
+ box-sizing:border-box;width:max-content;max-width:100%;min-width:0;min-height:24px;
  vertical-align:middle;
 }
 /* Reuse the Players 24px shield/crest; keep the mark fixed while names vary. */
 .app-player-stats-club-identity .app-player-stats-club-crest{
+ position:absolute;inset-inline-start:0;top:50%;transform:translateY(-50%);
  display:inline-flex;align-items:center;justify-content:center;
  flex:0 0 24px;width:24px;height:24px;
 }
@@ -197,25 +200,28 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-season-row:has([data-stats-toggle]){cursor:pointer}
 .app-player-stats-season-row:has([data-stats-toggle]):hover{background:color-mix(in srgb,var(--muted) 9%,var(--surface-raised))}
 .app-player-stats-toggle{
- display:inline-flex;align-items:center;max-width:100%;gap:10px;
+ display:inline-flex;align-items:center;max-width:100%;gap:0;
  padding:2px 0;border:0;background:transparent;color:var(--text);
  font:inherit;font-weight:700;text-align:left;white-space:nowrap;cursor:pointer;
 }
 .app-player-stats-toggle:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:3px}
-.app-player-stats-chevron,.app-player-stats-chevron-space{box-sizing:border-box;width:8px;height:8px;flex:none}
+.app-player-stats-chevron,.app-player-stats-chevron-space{
+ position:absolute;inset-inline-start:0;top:calc(50% - 4px);
+ box-sizing:border-box;width:8px;height:8px;flex:none;
+}
 .app-player-stats-chevron{
  border-right:2px solid currentColor;border-bottom:2px solid currentColor;
  transform:rotate(-45deg);transition:transform 120ms ease-out;
 }
 .app-player-stats-chevron-space{border:0;visibility:hidden}
 .app-player-stats-toggle[aria-expanded="true"] .app-player-stats-chevron{transform:rotate(45deg)}
-.app-player-stats-static-label,.app-player-stats-skeleton-label{display:inline-flex;align-items:center;max-width:100%;gap:10px;font-weight:700}
+.app-player-stats-static-label,.app-player-stats-skeleton-label{display:inline-flex;align-items:center;max-width:100%;gap:0;font-weight:700}
 .app-player-stats-no-toggle{font-weight:700}
-/* All season/Career labels share the centered value/skeleton row centerline;
-   the chevron's own geometry stays unchanged. */
-/* Season, Career and loading labels share an identical centered box. */
+/* Text-first: Career/Season and their bars get identical coordinates,
+   before the chevron is painted in the independently reserved inset. */
 .app-player-stats-table :is(.app-player-stats-toggle,.app-player-stats-static-label,.app-player-stats-skeleton-label){
- box-sizing:border-box;min-height:28px;padding:2px 0;
+ position:relative;display:inline-flex;box-sizing:border-box;min-height:28px;
+ padding:2px 0;padding-inline-start:18px;
  align-items:center;line-height:1.5;vertical-align:middle;
 }
 .app-player-stats-competition-row[hidden]{display:none}
@@ -254,7 +260,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 /* Center links without clipping descenders or their underline. */
 .app-player-stats-table .app-player-stats-link{line-height:1.5;vertical-align:middle}
-.app-player-stats-table .app-player-stats-club-identity{height:24px;min-height:24px}
+.app-player-stats-table .app-player-stats-club-identity{height:auto;min-height:24px}
 .app-player-stats-table .app-player-stats-number .app-player-stats-value{
  display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;
  align-items:center;justify-content:flex-end;line-height:1.5;text-align:right;

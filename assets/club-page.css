@@ -406,18 +406,22 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-table .club-history-competition-value a.club-history-competition-link{line-height:1.5;vertical-align:middle}
 .club-history-table .club-history-competition-row td:nth-child(3){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .club-history-table .club-history-empty-season{text-align:left;color:var(--muted);font-weight:400}
+.club-history-table .club-history-season-row:has(.club-history-empty-season)>.club-history-season-value{padding-inline-start:28px}
 .club-history-table .club-history-season-row{background:var(--surface-raised)}
 .club-history-table .club-history-season-row:has([data-club-history-toggle]){cursor:pointer}
 .club-history-table .club-history-season-row:has([data-club-history-toggle]):hover{background:color-mix(in srgb,var(--muted) 9%,var(--surface-raised))}
-.club-history-expand{display:inline-flex;align-items:center;max-width:100%;gap:10px;border:0;padding:2px 0;background:transparent;color:var(--text);font:inherit;font-weight:700;cursor:pointer;text-align:left;white-space:nowrap}
+.club-history-expand{display:inline-flex;align-items:center;max-width:100%;gap:0;border:0;padding:2px 0;background:transparent;color:var(--text);font:inherit;font-weight:700;cursor:pointer;text-align:left;white-space:nowrap}
 .club-history-expand:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:3px}
-/* Loaded labels and first-paint bars share a centered row track; chevrons do not move. */
-/* Season text and first-paint placeholder share the same inset and center,
-   while the fixed chevron slot remains independent. */
+/* Text-first: the Season label and first-paint skeleton use the same
+   inset/center. Chevrons are added afterward, outside normal text flow. */
 .club-history-table :is(.club-history-expand,.club-history-skeleton-label){
- box-sizing:border-box;min-height:28px;align-items:center;line-height:1.5;vertical-align:middle;
+ position:relative;display:inline-flex;box-sizing:border-box;min-height:28px;
+ padding-inline-start:18px;align-items:center;line-height:1.5;vertical-align:middle;
 }
-.club-history-chevron,.club-history-chevron-space{box-sizing:border-box;width:8px;height:8px;flex:none}
+.club-history-chevron,.club-history-chevron-space{
+ position:absolute;inset-inline-start:0;top:calc(50% - 4px);
+ box-sizing:border-box;width:8px;height:8px;flex:none;
+}
 .club-history-chevron{border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform 120ms ease-out}
 .club-history-chevron-space{border:0;visibility:hidden}
 .club-history-expand[aria-expanded="true"] .club-history-chevron{transform:rotate(45deg)}
@@ -573,6 +577,7 @@ body.app-body{--app-page-pad-top:8px}
   min-height:28px;text-align:left;white-space:normal;color:var(--muted);
  }
  .club-history-table .club-history-season-row:has(.club-history-empty-season)>td:nth-child(n+3){display:none}
+ .club-history-table .club-history-season-row:has(.club-history-empty-season)>.club-history-season-value{padding-inline-start:20px}
  .club-history-table .club-history-row-loading .club-history-total-label{display:none}
  .club-history-table .club-history-row-loading .club-history-skeleton-label{min-height:44px}
  .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{margin:0}
