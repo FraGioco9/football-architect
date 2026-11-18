@@ -25,14 +25,14 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
   throw new TypeError('LAB feedback option must be a boolean');
  if(dribbleGroundBallCentreZ!==null&&(!Number.isFinite(dribbleGroundBallCentreZ)||
    dribbleGroundBallCentreZ<0.09||dribbleGroundBallCentreZ>0.13||
-   activePlayerIds?.length!==2))
+   ![1,2].includes(activePlayerIds?.length)))
   throw new TypeError('D-01 low-level ball/leg source requires genuine 1v1');
  if(!R?.RigidBodyDesc||!R?.ColliderDesc||
     typeof world?.createRigidBody!=='function'||
     typeof world?.contactPair!=='function'||
     ballCollider?.handle===undefined||
     !Array.isArray(initialPlayers)||initialPlayers.length!==22||
-    !Array.isArray(activePlayerIds)||activePlayerIds.length<2||
+    !Array.isArray(activePlayerIds)||activePlayerIds.length<1||
     activePlayerIds.length>7||
     new Set(activePlayerIds).size!==activePlayerIds.length||
     initialPlayers.some((p,i)=>p?.id!==INITIAL_PLAYERS[i].id||

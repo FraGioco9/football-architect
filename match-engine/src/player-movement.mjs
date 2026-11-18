@@ -1888,7 +1888,7 @@ export function createPlayerMovement(options={}){
     x:0,y:0,z:0,vx:0,vy:0,vz:0
    }):INITIAL_PLAYERS;
  let tick=0;
- // D-01/small-sided: the exact chosen 60Hz movement target for each ACTUAL
+ // D-01/solo carry/small-sided: the exact chosen 60Hz movement target for each ACTUAL
  // field participant, not an inferred action, result or second decision engine.
  let lastSmallSidedMovementDecisions=Object.freeze([]);
  const players=initial.map(p=>({...p}));
@@ -2429,7 +2429,7 @@ export function createPlayerMovement(options={}){
      if(p.id===smallSided.side+'-10')
       return smallSided.id==='keeper-1v1'?
        keeperDuelAttackerTarget(smallSided.side,smallSided.variantIndex,p,ball):
-       Object.freeze({x:ball.x-attack*(smallSided.id==='dribble-1v1'?0.40:0.08),y:ball.y});
+       Object.freeze({x:ball.x-attack*((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?0.40:0.08),y:ball.y});
      const wing=p.id.endsWith('-9')?-1:1;
      return Object.freeze({x:clamp(ball.x-attack*3,
       -PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),
@@ -2597,10 +2597,10 @@ export function createPlayerMovement(options={}){
   // Fixed ordering and collision rejection make every replay byte-stable.
   for(let i=0;i<players.length;i++){
    const p=players[i],target=targets[i];
-   const recoveringDribbleBall=smallSided?.id==='dribble-1v1'&&
+   const recoveringDribbleBall=(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo')&&
      p.id===smallSided.side+'-10'&&
      Math.hypot(ball.x-p.x,ball.y-p.y)>1.5;
-   const limits=smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
+   const limits=(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo')&&smallActive.has(p.id)?
      recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:D01_KINEMATIC_LIMITS:
      PLAYER_KINEMATIC_LIMITS;
     const free=advanceFreePlayerKinematics(p,target,limits);
@@ -2737,7 +2737,7 @@ export function createPlayerMovement(options={}){
     const kind=p.id===smallSided.opponent+'-1'?'goalkeeping':
      p.team!==smallSided.side?'press-ball':
      p.id===smallSided.side+'-10'?
-      (smallSided.id==='dribble-1v1'?'carry-ball':'approach-ball'):
+      ((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?'carry-ball':'approach-ball'):
       'support-run';
     return Object.freeze({
      tick:tick+1,id:p.id,team:p.team,kind,

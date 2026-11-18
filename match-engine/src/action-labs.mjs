@@ -230,8 +230,8 @@ export function createControlledActionLab(RAPIER,id,{
   createBasicMatchRefereeB05():null;
  const matchTimelineObserver=(refereeMode||smallSided)?
   createBasicMatchTimelineB06():null;
- const isolatedDribbleAudit=id==='dribble-1v1'?
-  createIsolatedDribbleNativeAudit({side:shotSide,variantIndex}):null;
+ const isolatedDribbleAudit=['dribble-1v1','carry-solo'].includes(id)?
+  createIsolatedDribbleNativeAudit({side:shotSide,variantIndex,solo:id==='carry-solo'}):null;
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
  function record(physics,playerFrame){
@@ -946,7 +946,7 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
 export function projectActiveLabDecisions(frame,focus){
  const ids=Array.isArray(focus)?focus:null;
  if(!frame||!Number.isSafeInteger(frame.physicsTick)||frame.physicsTick<0||
-    !ids||ids.length<2||ids.length>7||
+    !ids||ids.length<1||ids.length>7||
     new Set(ids).size!==ids.length||
     ids.some(id=>typeof id!=='string'||!/^(home|away)-(?:[1-9]|10|11)$/.test(id))||
     !Array.isArray(frame.smallSidedMovementDecisions))

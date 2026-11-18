@@ -214,7 +214,7 @@ export function inspectPhysicalActionRejection({
   contactStarted[0]===contactActive[0];
  const actor=exclusive?players.find(p=>p.id===contactStarted[0]):null;
  const gap=actor?Math.hypot(actor.x-ballPosition.x,actor.y-ballPosition.y):null;
- const requiredCooldown=isolatedDribbleContext?.situationId==='dribble-1v1'?
+ const requiredCooldown=['dribble-1v1','carry-solo'].includes(isolatedDribbleContext?.situationId)?
   4:UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
  const firstFailedGate=!exclusive?'no-exclusive-shoe-start':
   tick-lastActionTick<requiredCooldown?'cooldown':
@@ -254,17 +254,17 @@ export function selectUniformAutonomousContactAction({
     !finite(ballRadiusM)||ballRadiusM<0.05||ballRadiusM>0.2||
     typeof allowPhysicalCarry!=='boolean'||
     (activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
-      activePlayerIds.length<2||activePlayerIds.length>7||
+      activePlayerIds.length<1||activePlayerIds.length>7||
       new Set(activePlayerIds).size!==activePlayerIds.length||
       activePlayerIds.some(id=>!ids.includes(id))))||
     (isolatedDribbleContext!==null&&(
-      isolatedDribbleContext?.situationId!=='dribble-1v1'||
+      !['dribble-1v1','carry-solo'].includes(isolatedDribbleContext?.situationId)||
       !['home','away'].includes(isolatedDribbleContext?.attackingSide)||
       !Number.isSafeInteger(isolatedDribbleContext?.variantIndex)||
       isolatedDribbleContext.variantIndex<0||isolatedDribbleContext.variantIndex>29||
-      activePlayerIds===null||activePlayerIds.length!==2||
+      activePlayerIds===null||activePlayerIds.length!==(isolatedDribbleContext.situationId==='carry-solo'?1:2)||
       !activePlayerIds.includes(isolatedDribbleContext.attackingSide+'-10')||
-      !activePlayerIds.includes((isolatedDribbleContext.attackingSide==='home'?'away':'home')+'-2')||
+      (isolatedDribbleContext.situationId==='dribble-1v1'&&!activePlayerIds.includes((isolatedDribbleContext.attackingSide==='home'?'away':'home')+'-2'))||
       allowPhysicalCarry!==true))||
     (smallSidedDecisionContext!==null&&(
       activePlayerIds===null||allowPhysicalCarry!==true||
@@ -353,7 +353,9 @@ export function selectUniformAutonomousContactAction({
    chooseIsolatedDribbleTouch({
     variantIndex:isolatedDribbleContext.variantIndex,tick,
     attackingSide:isolatedDribbleContext.attackingSide,
-    ballPosition,ballVelocity,defender:actors.find(p=>p.team!==player.team)
+    ballPosition,ballVelocity,
+    solo:isolatedDribbleContext.situationId==='carry-solo',
+    defender:isolatedDribbleContext.situationId==='carry-solo'?null:actors.find(p=>p.team!==player.team)
    });
   let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
   if(dribbleTouch!==null){

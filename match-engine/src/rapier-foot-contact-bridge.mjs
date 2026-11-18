@@ -81,7 +81,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     (isolatedPhysicalBodies&&activePlayerIds===null))
   throw new TypeError('Body-isolated shoe groups require selected small-sided players');
  if(activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
-   activePlayerIds.length<2||activePlayerIds.length>7||
+   activePlayerIds.length<1||activePlayerIds.length>7||
    new Set(activePlayerIds).size!==activePlayerIds.length||
    activePlayerIds.some(id=>!INITIAL_PLAYERS.some(p=>p.id===id))))
   throw new TypeError('Genuine small-sided source needs 2–7 unique physical shoes');
@@ -89,7 +89,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     !Number.isFinite(isolatedGroundDribbleBallCentreZ)||
     isolatedGroundDribbleBallCentreZ<0.09||
     isolatedGroundDribbleBallCentreZ>0.13||
-    activePlayerIds?.length!==2))
+    ![1,2].includes(activePlayerIds?.length)))
   throw new TypeError('Only isolated 1v1 original ground-ball shoe height');
  if((dribbleAttackerId===null)!==(isolatedGroundDribbleBallCentreZ===null)||
    (dribbleAttackerId!==null&&(

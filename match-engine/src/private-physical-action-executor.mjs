@@ -22,7 +22,7 @@ export function createPrivatePhysicalActionExecutor({
  physicalBodyGuardEnabled=false
 }={}){
  if(activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
-    activePlayerIds.length<2||activePlayerIds.length>7||
+    activePlayerIds.length<1||activePlayerIds.length>7||
     new Set(activePlayerIds).size!==activePlayerIds.length))
   throw new TypeError('Small-sided active physical shoe set is invalid');
  if(typeof physicalBodyGuardEnabled!=='boolean'||
@@ -39,12 +39,12 @@ export function createPrivatePhysicalActionExecutor({
   throw new TypeError('Seeded contextual LAB choice needs an active real physical shoe set');
  if(isolatedDribbleContext!==null&&(
     !['home','away'].includes(isolatedDribbleContext?.attackingSide)||
-    isolatedDribbleContext?.situationId!=='dribble-1v1'||
+    !['dribble-1v1','carry-solo'].includes(isolatedDribbleContext?.situationId)||
     !Number.isSafeInteger(isolatedDribbleContext?.variantIndex)||
     isolatedDribbleContext.variantIndex<0||isolatedDribbleContext.variantIndex>29||
-    activePlayerIds===null||activePlayerIds.length!==2||
+    activePlayerIds===null||activePlayerIds.length!==(isolatedDribbleContext.situationId==='carry-solo'?1:2)||
     !activePlayerIds.includes(isolatedDribbleContext.attackingSide+'-10')||
-    !activePlayerIds.includes((isolatedDribbleContext.attackingSide==='home'?'away':'home')+'-2')||
+    (isolatedDribbleContext.situationId==='dribble-1v1'&&!activePlayerIds.includes((isolatedDribbleContext.attackingSide==='home'?'away':'home')+'-2'))||
     allowPhysicalCarry!==true))
   throw new TypeError('Isolated dribble requires paired genuine Rapier shoes');
  if(!ballBody||typeof ballBody.translation!=='function'||

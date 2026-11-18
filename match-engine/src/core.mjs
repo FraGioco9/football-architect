@@ -377,6 +377,7 @@ export function createEngine(RAPIER, input = {}, {
   smallSidedSetup(diagnosticSmallSidedSituation,
    diagnosticSmallSidedSide,INITIAL_PLAYERS,
    {variantIndex:diagnosticSmallSidedVariantIndex});
+ const isolatedCarry=smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo';
  const stagedShoes=smallSided?smallSided.staged:
   diagnosticB06bOpeningKickoffEnabled?
    initialB06bOpeningLineup(INITIAL_PLAYERS):
@@ -516,7 +517,7 @@ export function createEngine(RAPIER, input = {}, {
   // XY = field surface. Physics Z = center height, scenario Z = bottom clearance.
   // The floor top is exactly z=0 and a grounded ball center starts at its radius.
   const ground = RAPIER.ColliderDesc.cuboid(52.5, 34, 0.2)
-    .setTranslation(0, 0, -0.2).setFriction(0.65).setRestitution(smallSided?.id==='dribble-1v1'?0:GROUND_RESTITUTION);
+    .setTranslation(0, 0, -0.2).setFriction(0.65).setRestitution(isolatedCarry?0:GROUND_RESTITUTION);
   world.createCollider(ground);
   const desc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(scenario.x, scenario.y, toCenterHeight(scenario.z))
@@ -531,7 +532,7 @@ export function createEngine(RAPIER, input = {}, {
       {x: 0, y: 0, z: 0},
       {x: BALL_INERTIA_KG_M2, y: BALL_INERTIA_KG_M2, z: BALL_INERTIA_KG_M2},
       {w: 1, x: 0, y: 0, z: 0})
-    .setFriction(0.45).setRestitution(smallSided?.id==='dribble-1v1'?0:BALL_RESTITUTION);
+    .setFriction(0.45).setRestitution(isolatedCarry?0:BALL_RESTITUTION);
   // In M9 only, category 0x1 shoes/ball can interact with each other
   // and ground but NOT player-body category 0x20. Default path untouched.
   if(diagnosticSharedContactEventsEnabled)
@@ -556,7 +557,7 @@ export function createEngine(RAPIER, input = {}, {
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes,
      {...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
-      ...(smallSided?.id==='dribble-1v1'?{
+      ...(isolatedCarry?{
        isolatedGroundDribbleBallCentreZ:BALL_RADIUS,
        dribbleAttackerId:smallSided.side+'-10'
       }:{}),
@@ -574,7 +575,7 @@ export function createEngine(RAPIER, input = {}, {
    createSmallSidedNativeBodyGuard(RAPIER,world,ballCollider,
      stagedShoes,smallSided.activeIds,{
       feedbackEnabled:diagnosticSmallSidedBodyFeedbackEnabled,
-      ...(smallSided?.id==='dribble-1v1'?{
+      ...(isolatedCarry?{
        dribbleGroundBallCentreZ:BALL_RADIUS
       }:{})
      }):null;
@@ -584,9 +585,9 @@ export function createEngine(RAPIER, input = {}, {
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
-       smallSided?.id==='dribble-1v1'||(smallSided?.variantIndex>0),
+       isolatedCarry||(smallSided?.variantIndex>0),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
-      ...(smallSided?.id==='dribble-1v1'?{
+      ...(isolatedCarry?{
        isolatedDribbleContext:Object.freeze({
         situationId:smallSided.id,attackingSide:smallSided.side,
         variantIndex:smallSided.variantIndex

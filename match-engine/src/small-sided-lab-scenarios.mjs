@@ -30,7 +30,7 @@ function physicallySeparated(players,minimumM){
  return true;
 }
 
-const ids=freeze(['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3']);
+const ids=freeze(['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3','carry-solo']);
 const definitions=freeze([
  freeze({id:ids[0],title:'Dribbling · 1v1 (no goalkeeper)',
   attackers:freeze([10]),defenders:freeze([2]),includeGoalkeeper:false,
@@ -49,7 +49,10 @@ const definitions=freeze([
   description:'Two forwards against two defenders and a goalkeeper. Original 60 Hz movement, individual shoe collisions, pressure and shot/pass selection, not an 11v11 simulation.'}),
  freeze({id:ids[5],title:'3v3 + goalkeeper',
   attackers:freeze([10,9,11]),defenders:freeze([2,3,4]),
-  description:'Three forwards face three defenders and a goalkeeper. Keep the same Rapier world and canonical physics; inspect live support, blocked lanes and genuinely resulting actions.'})
+  description:'Three forwards face three defenders and a goalkeeper. Keep the same Rapier world and canonical physics; inspect live support, blocked lanes and genuinely resulting actions.'}),
+ freeze({id:ids[6],title:'Carry · solo',attackers:freeze([10]),
+  defenders:freeze([]),includeGoalkeeper:false,
+  description:'One original Rapier player carries the ball by genuine shoe START/END and physical impulses. No defender, goalkeeper or other active player.'})
 ]);
 const byId=new Map(definitions.map(s=>[s.id,s]));
 // Keeper 1v1: deterministic source-only 60Hz tactical targets, never a
@@ -139,7 +142,7 @@ export function smallSidedSetup(id,side,canonicalPlayers,{variantIndex=0}={}){
   }));
  }
  const original=new Map([
-  [side+'-10',[id==='dribble-1v1'?29.45:id==='keeper-1v1'?29.50:29.72,0]],
+  [side+'-10',[(id==='dribble-1v1'||id==='carry-solo')?29.45:id==='keeper-1v1'?29.50:29.72,0]],
   [side+'-9',[32,-6]],
   [side+'-11',[32,7]],
   [opponent+'-2',[34,2.7]],
@@ -156,7 +159,7 @@ export function smallSidedSetup(id,side,canonicalPlayers,{variantIndex=0}={}){
   for(let attempt=0;attempt<96&&!accepted;attempt++){
    const bx=27+random()*6,by=-6+random()*12;
    const positions=new Map([
-    [side+'-10',id==='dribble-1v1'?
+    [side+'-10',(id==='dribble-1v1'||id==='carry-solo')?
      [bx-0.50-random()*0.17,by+(random()-0.5)*0.20]:
      id==='keeper-1v1'?
      [bx-0.50-random()*0.22,by+(random()-0.5)*0.38]:

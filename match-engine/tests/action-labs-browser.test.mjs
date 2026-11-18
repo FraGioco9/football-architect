@@ -178,7 +178,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   // All four curated situations both directions, using the VISIBLE selectors,
   // original main Step, original pitch and source-only Rapier evidence.
   for(const [scene,actors] of [
-   ['dribble-1v1',2],['keeper-1v1',2],['overload-2v1',4],
+   ['carry-solo',1],['keeper-1v1',2],['overload-2v1',4],
    ['duel-3v3',7]
   ])for(const side of ['home','away']){
    const x=await evalJs("(()=>{"+
@@ -186,7 +186,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
     "document.querySelector('#preset-options [data-value=\"action:"+scene+"\"]').click();"+
     "document.getElementById('me-inline-side-trigger').click();"+
     "document.querySelector('#me-inline-side-options [data-value=\""+side+"\"]').click();"+
-    "for(let n=0;n<"+(scene==='dribble-1v1'?60:10)+";n++)document.getElementById('step').click();"+
+    "for(let n=0;n<"+(scene==='carry-solo'?60:10)+";n++)document.getElementById('step').click();"+
     "return {side:document.getElementById('me-inline-side').value,"+
     "tick:document.getElementById('tick').textContent,"+
     "observation:document.getElementById('me-inline-observation').textContent,"+
@@ -195,7 +195,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.equal(x.side,side);
    assert.equal(x.bodyControlAbsent,true,'visible LAB must not expose a body toggle');
    assert.equal(x.popup,false);
-   assert.match(x.tick,scene==='dribble-1v1'?/^Tick 60/:/^Tick 10/);
+   assert.match(x.tick,scene==='carry-solo'?/^Tick 60/:/^Tick 10/);
    assert.match(x.observation,new RegExp(actors+' real physical players'));
    assert.match(x.observation,/source events [1-9]/);
    assert.match(x.observation,/provisional 0–0/);
@@ -226,7 +226,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   // manufacture a carry, completed pass, possession or defender action.
   const carryDecisions=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
-   "document.querySelector('#preset-options [data-value=\\\"action:dribble-1v1\\\"]').click();"+
+   "document.querySelector('#preset-options [data-value=\\\"action:carry-solo\\\"]').click();"+
    "document.getElementById('me-inline-side-trigger').click();"+
    "document.querySelector('#me-inline-side-options [data-value=\\\"home\\\"]').click();"+
    "for(let n=0;n<60;n++)document.getElementById('step').click();"+
@@ -235,17 +235,18 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "count:el('me-decisions-count').textContent,ballChartHidden:el('me-elevation-panel').hidden,"+
    "log:el('me-decisions-event-count').textContent};})()");
   assert.equal(carryDecisions.visible,true);
-  assert.equal(carryDecisions.count,'2 on field');
-  assert.equal(carryDecisions.rows.length,2);
+  assert.equal(carryDecisions.count,'1 on field');
+  assert.equal(carryDecisions.rows.length,1);
   assert.equal(carryDecisions.ballChartHidden,true);
   assert.ok(carryDecisions.rows.some(x=>/HOME #10.*Carry the ball.*Target:/s.test(x)));
-  assert.ok(carryDecisions.rows.some(x=>/AWAY #2.*Close down the ball.*Target:/s.test(x)));
+  assert.ok(carryDecisions.rows.every(x=>!x.includes('AWAY #')),
+   'Carry has no defending player visible');
   assert.ok(carryDecisions.rows.some(x=>/Last verified action: carry/.test(x)),
    'Carry must reflect an original native Rapier touch');
   await evalJs("document.getElementById('reset').click()");
   const resetDecisions=await evalJs("(()=>{const p=document.getElementById('me-decisions-panel');"+
    "return {players:p.querySelectorAll('.me-decision-row').length,events:document.getElementById('me-decisions-event-count').textContent};})()");
-  assert.equal(resetDecisions.players,2);
+  assert.equal(resetDecisions.players,1);
   assert.equal(resetDecisions.events,'0 changes/actions');
   process.stdout.write('ME_628_CARRY_CURRENT_DECISIONS '+JSON.stringify({carryDecisions,resetDecisions})+'\\n');
   // Only the *hidden* DEV fixture launcher is allowed to open the old

@@ -14,15 +14,15 @@ import {createControlledActionLab,projectActiveLabDecisions} from '../src/action
 test('#628 small-sided catalog replaces only visible elementary exercise UI; archives remain for regression',()=>{
  const ids=SMALL_SIDED_LAB_SCENARIOS.map(s=>s.id);
  assert.deepEqual(ids,['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1',
-  'duel-2v2','duel-3v3']);
+  'duel-2v2','duel-3v3','carry-solo']);
  assert.deepEqual(SMALL_SIDED_LAB_SCENARIOS.map(s=>s.focus.length),
-  [2,2,3,4,5,7]);
+  [2,2,3,4,5,7,1]);
  const html=readFileSync(new URL('../lab/index.html',import.meta.url),'utf8');
  const ui=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
  for(const id of ids)
   assert.match(html,new RegExp('<option value="'+id+'">'),
    'original research scene stays in hidden regression catalog');
- for(const id of ['dribble-1v1','keeper-1v1','overload-2v1','duel-3v3'])
+ for(const id of ['carry-solo','keeper-1v1','overload-2v1','duel-3v3'])
   assert.match(ui,new RegExp("'"+id+"'"));
  assert.match(ui,/length!==8/);
  assert.doesNotMatch(ui,/visibleMovement/);
@@ -43,7 +43,7 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
   assert.equal(scene.staged.length,22);
   assert.equal(scene.staged.find(p=>p.id===side+'-10').role,'forward');
   assert.equal(scene.activeIds.includes((side==='home'?'away':'home')+'-1'),
-    s.id!=='dribble-1v1');
+    !['dribble-1v1','carry-solo'].includes(s.id));
   for(let i=0;i<scene.staged.length;i++)for(let j=i+1;j<scene.staged.length;j++)
    assert.ok(Math.hypot(scene.staged[i].x-scene.staged[j].x,
      scene.staged[i].y-scene.staged[j].y)>=0.98-1e-8);
@@ -381,7 +381,7 @@ test('#628 LAB-VAR-02 local preview must serve actual seed-choice module before 
 test('#628 every actual on-field small-sided player has exactly one current mover decision',
  {timeout:60000},async()=>{
  const R=await initializeRapier(rapier);
- for(const [scene,count] of [['dribble-1v1',2],['keeper-1v1',2],
+ for(const [scene,count] of [['carry-solo',1],['dribble-1v1',2],['keeper-1v1',2],
   ['overload-2v1',4],['duel-3v3',7]])
  for(const side of ['home','away']){
   const lab=createControlledActionLab(R,scene,{shotSide:side,
@@ -414,6 +414,55 @@ test('#628 every actual on-field small-sided player has exactly one current move
    assert.throws(()=>projectActiveLabDecisions(frame,['home-10','home-10']),TypeError);
    assert.throws(()=>projectActiveLabDecisions({...frame,
     smallSidedMovementDecisions:[]},lab.focus),TypeError);
+  }finally{lab.dispose();}
+ }
+});
+
+// Solo means one original player has native colliders, not a hidden defender.
+test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HOME/AWAY',
+ {timeout:100000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['home','away'])for(const variantIndex of [0,3]){
+  const setup=smallSidedSetup('carry-solo',side,INITIAL_PLAYERS,{variantIndex});
+  assert.deepEqual(setup.activeIds,[side+'-10']);
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide:side,variantIndex,bodyGuardEnabled:true
+  });
+  try{
+   let carries=0,releaseRecontacts=0;
+   for(let tick=1;tick<=180;tick++){
+    const f=lab.step();
+    assert.deepEqual(f.smallSidedParticipants,[side+'-10']);
+    assert.equal(f.genuinePhysicalPlayerCount,1);
+    assert.deepEqual(f.smallSidedNativeBodyGuard.selectedColliderIds,[side+'-10']);
+    assert.deepEqual(f.smallSidedNativeBodyGuard.nativeOpposingTorsoPairs,[]);
+    assert.ok(f.starts.every(id=>id===side+'-10'));
+    assert.equal(f.nativeDribbleAudit.soloCarry,true);
+    assert.equal(f.nativeDribbleAudit.defenderShoeStarts,0);
+    assert.equal(f.nativeDribbleAudit.minimumRealDefenderBallGapM,null);
+    assert.equal(f.nativeDribbleAudit.measuredPressureTicks,null);
+    assert.equal(f.officialMatchPossession,false);
+    const decisions=projectActiveLabDecisions(f,lab.focus);
+    assert.equal(decisions.length,1);
+    assert.equal(decisions[0].id,side+'-10');
+    assert.equal(decisions[0].kind,'carry-ball');
+    if(f.action){
+     carries++;
+     assert.equal(f.action.playerId,side+'-10');
+     assert.equal(f.action.action,'carry');
+     assert.equal(f.action.appliedByRapier,true);
+     assert.equal(f.action.actualPhysicsImpulseApplied,true);
+     assert.equal(f.action.decisionContext.isolatedDribbleTouch.soloCarry,true);
+     assert.equal(f.action.decisionContext.isolatedDribbleTouch.fromLiveOpponent,false);
+    }
+    releaseRecontacts=f.nativeDribbleAudit.independentRecontacts;
+    if(f.refereeEvidence?.lastEvent)break;
+   }
+   assert.ok(carries>=2,'One actor must truly carry using repeated Rapier impulses');
+   assert.ok(releaseRecontacts>=1,'One actor must release and recontact the ball');
+   process.stdout.write('ME_628_SOLO_CARRY_REAL '+JSON.stringify({
+    side,variantIndex,activePhysicalPlayers:1,carries,releaseRecontacts
+   })+'\\n');
   }finally{lab.dispose();}
  }
 });

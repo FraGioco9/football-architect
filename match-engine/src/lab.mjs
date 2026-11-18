@@ -1938,7 +1938,7 @@ function setupUnifiedScenarioMenu(){
  };
  heading('Player exercises');
  const selected=[
-  ['dribble-1v1','Carry · run with the ball'],
+  ['carry-solo','Carry · run with the ball'],
   ['keeper-1v1','1v1 · goalkeeper'],
   ['overload-2v1','2v1 · attack and defend'],
   ['duel-3v3','3v3 · team decisions']

@@ -8,11 +8,11 @@ import {PLAYER_VERSION,PLAYER_MAX_SPEED_MPS,PLAYER_MIN_SEPARATION_M}
 export const ISOLATED_DRIBBLE_AUDIT_VERSION='me-628-d01-native-touches-audit-v1';
 const freeze=Object.freeze;
 const finite=Number.isFinite;
-export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
+export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}={}){
  if(!['home','away'].includes(side)||!Number.isSafeInteger(variantIndex)||
-    variantIndex<0||variantIndex>29)
+    variantIndex<0||variantIndex>29||typeof solo!=='boolean')
   throw new TypeError('Only D-01 paired HOME/AWAY variant may audit Rapier');
- const actor=side+'-10',opponent=(side==='home'?'away':'home')+'-2';
+ const actor=side+'-10',opponent=solo?null:(side==='home'?'away':'home')+'-2';
  let tick=-1,priorBall=null,firstBall=null,sourceEnds=0,
   nativeStarts=0,recontacts=0,opposingStarts=0,actions=0;
  let lastEnd=-1,hasEnded=false,ballPath=0,minimumGap=Infinity,
@@ -37,8 +37,8 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
      (physicalBodies!==null&&physicalBodies.tick!==physics.tick))
    throw new TypeError('D-01 audit requires exact original Rapier source tick');
   const p=playerFrame.players.find(x=>x.id===actor),
-   d=playerFrame.players.find(x=>x.id===opponent);
-  if(!p||!d)throw new TypeError('Genuine two-player D-01 required');
+   d=solo?null:playerFrame.players.find(x=>x.id===opponent);
+  if(!p||(!solo&&!d))throw new TypeError('Genuine isolated player source required');
   for(let i=0;i<22;i++){
    const a=playerFrame.players[i];
    if(![a.x,a.y,a.vx,a.vy].every(finite))
@@ -66,7 +66,7 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
   const attackerGap=Math.hypot(b.x-p.x,b.y-p.y);
   totalAttackerBallGapM+=attackerGap;
   maxAttackerBallGapM=Math.max(maxAttackerBallGapM,attackerGap);
-  const distance=Math.hypot(b.x-d.x,b.y-d.y);
+  const distance=solo?null:Math.hypot(b.x-d.x,b.y-d.y);
   if(ballSpeedMps>peakBallSpeedMps){
    peakBallSpeedMps=ballSpeedMps;
    // A source timestamp and CO-OCCURRING real native contacts, not an
@@ -85,8 +85,10 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
     causalAttribution:false,readOnly:true
    });
   }
-  minimumGap=Math.min(minimumGap,distance);
-  if(distance<3)pressureTicks++;
+  if(!solo){
+   minimumGap=Math.min(minimumGap,distance);
+   if(distance<3)pressureTicks++;
+  }
   if(physicalBodies?.lowerLegBallContacts.length)nativeBodyBallTicks++;
   if(physicalBodies?.nativeOpposingTorsoPairs.length)nativeBodyPairsTicks++;
   if(foot.ended.includes(actor)){sourceEnds++;lastEnd=physics.tick;hasEnded=true;}
@@ -110,17 +112,17 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex}={}){
   }
   tick=physics.tick;
   latest=freeze({version:ISOLATED_DRIBBLE_AUDIT_VERSION,tick,
-   side,variantIndex,originalRapierShoeSource:true,oneWorldActionSource:true,
+   side,variantIndex,soloCarry:solo,originalRapierShoeSource:true,oneWorldActionSource:true,
    attackerShoeStarts:nativeStarts,attackerShoeEnds:sourceEnds,
    independentRecontacts:recontacts,defenderShoeStarts:opposingStarts,
    appliedCarryActions:actions,actionTicks:freeze([...actionTicks]),
    nativeAttackerStartTicks:freeze([...touchTicks]),
    realImpulseMagnitudesNs:freeze([...actionMagnitudes]),
    actualImpulseDirectionRad:freeze([...directions]),
-   minimumRealDefenderBallGapM:minimumGap,
+   minimumRealDefenderBallGapM:solo?null:minimumGap,
    averageRealAttackerBallGapM:totalAttackerBallGapM/(tick+2),
    maximumRealAttackerBallGapM:maxAttackerBallGapM,
-   measuredPressureTicks:pressureTicks,ballPath2DM:ballPath,
+   measuredPressureTicks:solo?null:pressureTicks,ballPath2DM:ballPath,
    peakGroundClearanceM,airborneFramesAbove2Cm,peakBallSpeedMps,
    peakBallSpeedWitness,
    meanAppliedTouchIntervalTicks:actionTicks.length<2?null:
