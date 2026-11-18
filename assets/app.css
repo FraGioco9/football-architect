@@ -2167,3 +2167,21 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 .history-placeholder-season>span:first-child{visibility:hidden}
 .history-placeholder-season>.app-skeleton-bar{position:absolute;inset-inline:0;top:50%;transform:translateY(-50%)}
 @media(max-width:620px){.app-view-skeleton-record-holder{min-height:40px}}
+
+/* Record holders and their placeholders share the same type scale and line boxes. */
+:is(#competition-panel-history,.app-history-player-dialog){
+ --history-name-size:.875rem;
+ --history-meta-size:.8125rem;
+}
+:is(#competition-panel-history,.app-history-player-dialog) :is(.app-history-dev-record-entry .app-world-club-name,.app-history-player-name,.app-history-dialog-player>a,.history-placeholder-lines){
+ font-size:var(--history-name-size);line-height:1.35;font-weight:650;color:var(--text)
+}
+:is(#competition-panel-history,.app-history-player-dialog) :is(.app-history-dev-season-link,.app-history-season,.history-placeholder-season,.app-history-player-context,.app-history-player-clubs,.history-placeholder-meta){
+ font-size:var(--history-meta-size);line-height:1.35;font-weight:400;color:var(--muted)
+}
+:is(#competition-panel-history,.app-history-player-dialog) .app-history-dev-season-link .app-history-dev-season{font:inherit;color:inherit}
+:is(#competition-panel-history,.app-history-player-dialog) a.app-world-standing-club-link:is(:hover,:focus-visible){color:var(--text);text-decoration:underline}
+.history-placeholder-lines>.app-skeleton-bar{margin-block:0;height:1.35em;background:none;display:flex;align-items:center}
+.history-placeholder-lines>.app-skeleton-bar::after{content:"";width:100%;height:.76em;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
+.history-placeholder-meta{height:1.35em}
+.history-placeholder-meta>.app-skeleton-bar:only-child{width:min(11ch,86%)}

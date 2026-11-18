@@ -148,7 +148,7 @@
     return link;
   }
   function seasonLink(season){
-    const link=element("a","app-world-standing-club-link",locale().season+" "+season);
+    const link=element("a","app-world-standing-club-link app-history-season",locale().season+" "+season);
     const id=competitionId.toLowerCase();
     const route=window.faRoutesRegistry.parseRoute("/competitions/"+id+"/standings");
     link.href=window.faRoutesRegistry.buildRoute({kind:route.kind,id,view:"standings"})+"?season="+season;
