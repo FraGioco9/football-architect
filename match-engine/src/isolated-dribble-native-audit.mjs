@@ -24,6 +24,7 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
  const touchTicks=[],actionTicks=[],actionMagnitudes=[],directions=[];
  const genuineSoloFootTouches={left:0,right:0},realSoloActionFeet=[];
  let bothFeetTouchTicks=0,alternatingRealActionFeet=0,lastActionFoot=null;
+ let realAirborneFootTicks=0,highSwingNativeFootStarts=0;
  let latest=null;
  function observe({physics,playerFrame,foot,action,physicalBodies=null}={}){
   if(physics?.tick!==tick+1||playerFrame?.version!==PLAYER_VERSION||
@@ -49,11 +50,21 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
        new Set(physicalSoloFeet[k]).size===physicalSoloFeet[k].length)||
       physicalSoloFeet.exclusivePhysicalStart!==(
        physicalSoloFeet.started.length===1&&
-       physicalSoloFeet.active.length===1)))
+       physicalSoloFeet.active.length===1)||
+      !physicalSoloFeet.shoeLiftM||
+      !['left','right'].every(side=>
+       Number.isFinite(physicalSoloFeet.shoeLiftM[side])&&
+       physicalSoloFeet.shoeLiftM[side]>=0&&
+       physicalSoloFeet.shoeLiftM[side]<=0.25)))
    throw new TypeError('Solo requires independently observed native Rapier left/right shoes');
   if(physicalSoloFeet){
    for(const footSide of physicalSoloFeet.started)genuineSoloFootTouches[footSide]++;
    if(physicalSoloFeet.active.length===2)bothFeetTouchTicks++;
+   if(physicalSoloFeet.shoeLiftM.left>0.14||
+      physicalSoloFeet.shoeLiftM.right>0.14)realAirborneFootTicks++;
+   for(const side of physicalSoloFeet.started)
+    if(physicalSoloFeet.shoeLiftM[side]>0.14)
+     highSwingNativeFootStarts++;
   }
   const p=playerFrame.players.find(x=>x.id===actor),
    d=solo?null:playerFrame.players.find(x=>x.id===opponent);
@@ -152,6 +163,8 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
     nativeLeftFootStarts:genuineSoloFootTouches.left,
     nativeRightFootStarts:genuineSoloFootTouches.right,
     nativeBothFeetActiveTicks:bothFeetTouchTicks,
+    actualAirborneStrideTicks:realAirborneFootTicks,
+    nativeHighSwingFootStarts:highSwingNativeFootStarts,
     realActionFeet:freeze([...realSoloActionFeet]),
     verifiedFootAlternations:alternatingRealActionFeet
    }:{}),

@@ -126,17 +126,26 @@ export function soloCarryTwoFootPositions(player,gait=null){
   (leftStep<0?rearwardRecovery:1);
  const rightForward=rightStep*twoFootPhysicalReach*
   (rightStep<0?rearwardRecovery:1);
- const make=(forward,side)=>{
+ // An advancing foot swings over the grass instead of scraping through
+ // the ball at every stride. Lift is a REAL collider Z translation; the
+ // opposite planted foot remains on turf. Both return to Z=0 at landing.
+ // No event suppression, fake impulses, ball edits or new Rapier world.
+ const swing= Math.sin(angle);
+ const peakSwingLiftM=gait?.carryPhase==='sprint'?0.19:
+  gait?.carryPhase==='moderate'?0.16:0.12;
+ const leftLiftM=peakSwingLiftM*Math.max(0,swing)**2;
+ const rightLiftM=peakSwingLiftM*Math.max(0,-swing)**2;
+ const make=(forward,side,shoeLiftM)=>{
   const c=Math.cos(player.facingRad),si=Math.sin(player.facingRad);
   return Object.freeze({...player,
    x:player.x+forward*c-side*si,
-   y:player.y+forward*si+side*c});
+   y:player.y+forward*si+side*c,shoeLiftM});
  };
  return Object.freeze({
   left:make(leftForward,runningLateralCenterM+lateralTrackM+
-   (gait?.sideM??0)),
+   (gait?.sideM??0),leftLiftM),
   right:make(rightForward,runningLateralCenterM-lateralTrackM+
-   sideAdjust*Math.max(0,-stroke)),
+   sideAdjust*Math.max(0,-stroke),rightLiftM),
   source:'original-canonical-stride-targets',
   realContactsOnly:true,physicsImposed:false
  });
@@ -310,7 +319,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     const prior=footProxyTransform(actualShoeFeet[i]);
     const desired=footProxyTransform(foot);
     const dx=desired.x-prior.x,dy=desired.y-prior.y;
-    const travelled=Math.hypot(dx,dy);
+    const dz=(foot.shoeLiftM??0)-
+     (actualShoeFeet[i].shoeLiftM??0);
+    const travelled=Math.hypot(dx,dy,dz);
     const maxM=7/60-1e-6;
     if(travelled<=maxM)return foot;
     const fraction=maxM/travelled;
@@ -318,13 +329,16 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
      x:prior.x+dx*fraction-
       FOOT_CONTACT_FORWARD_OFFSET_M*Math.cos(foot.facingRad),
      y:prior.y+dy*fraction-
-      FOOT_CONTACT_FORWARD_OFFSET_M*Math.sin(foot.facingRad)});
+      FOOT_CONTACT_FORWARD_OFFSET_M*Math.sin(foot.facingRad),
+     ...(soloCarry?{shoeLiftM:(actualShoeFeet[i].shoeLiftM??0)+
+      dz*fraction}:{})});
    }));
   const clampActualFoot=(desired,previous)=>{
    const prior=footProxyTransform(previous);
    const target=footProxyTransform(desired);
    const dx=target.x-prior.x,dy=target.y-prior.y;
-   const travelled=Math.hypot(dx,dy);
+   const dz=(desired.shoeLiftM??0)-(previous.shoeLiftM??0);
+   const travelled=Math.hypot(dx,dy,dz);
    const maxM=7/60-1e-6;
    if(travelled<=maxM)return desired;
    const ratio=maxM/travelled;
@@ -332,7 +346,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     x:prior.x+dx*ratio-
      FOOT_CONTACT_FORWARD_OFFSET_M*Math.cos(desired.facingRad),
     y:prior.y+dy*ratio-
-     FOOT_CONTACT_FORWARD_OFFSET_M*Math.sin(desired.facingRad)});
+     FOOT_CONTACT_FORWARD_OFFSET_M*Math.sin(desired.facingRad),
+    shoeLiftM:(previous.shoeLiftM??0)+dz*ratio});
   };
   const rightFoot=rightDesired?
    clampActualFoot(rightDesired,actualRightFoot):null;
@@ -341,21 +356,26 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    const p=poses[i];
    if(initialPlayers[i].id===dribbleAttackerId){
     const previous=footProxyTransform(actualShoeFeet[i]);
-    if(Math.hypot(p.x-previous.x,p.y-previous.y)>7/60+1e-5)
-     throw new TypeError('D-01 real shoe exceeds original 7m/s continuity');
+    const dz=soloCarry?(newFeet[i].shoeLiftM??0)-
+     (actualShoeFeet[i].shoeLiftM??0):0;
+    if(Math.hypot(p.x-previous.x,p.y-previous.y,dz)>7/60+1e-5)
+     throw new TypeError('D-01 real shoe exceeds original 3D 7m/s continuity');
    }
    bodies[i].setNextKinematicTranslation({x:p.x,y:p.y,
     z:isolatedGroundDribbleBallCentreZ===null?p.z:
-      isolatedGroundDribbleBallCentreZ+0.018});
+      isolatedGroundDribbleBallCentreZ+0.018+
+       (soloCarry?(newFeet[i].shoeLiftM??0):0)});
    bodies[i].setNextKinematicRotation(p.rotation);
   }
   if(rightFoot){
    const current=footProxyTransform(actualRightFoot);
    const target=footProxyTransform(rightFoot);
-   if(Math.hypot(target.x-current.x,target.y-current.y)>7/60+1e-5)
-    throw new TypeError('Solo right shoe exceeds actual 7m/s bound');
+   const dz=(rightFoot.shoeLiftM??0)-(actualRightFoot.shoeLiftM??0);
+   if(Math.hypot(target.x-current.x,target.y-current.y,dz)>7/60+1e-5)
+    throw new TypeError('Solo right shoe exceeds actual 3D 7m/s bound');
    rightBody.setNextKinematicTranslation({
-    x:target.x,y:target.y,z:isolatedGroundDribbleBallCentreZ+0.018
+    x:target.x,y:target.y,z:isolatedGroundDribbleBallCentreZ+0.018+
+     (rightFoot.shoeLiftM??0)
    });
    rightBody.setNextKinematicRotation(target.rotation);
    actualRightFoot=rightFoot;
@@ -414,6 +434,11 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     ended:Object.freeze(['left','right'].filter(x=>footEnds.has(x))),
     active:Object.freeze(['left','right'].filter(x=>nextSoloFeet.has(x))),
     independentColliders:2,
+    shoeLiftM:Object.freeze({
+     left:actualShoeFeet.find((p,i)=>
+      initialPlayers[i].id===dribbleAttackerId)?.shoeLiftM??0,
+     right:actualRightFoot?.shoeLiftM??0
+    }),
     exclusivePhysicalStart:footStarts.size===1&&nextSoloFeet.size===1
    })}:{}),
    // Whole-ball delta includes gravity/turf; never shoe attribution.

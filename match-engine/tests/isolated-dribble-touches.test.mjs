@@ -407,6 +407,11 @@ test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
     assert.equal(f.genuinePhysicalPlayerCount,1);
     assert.equal(shoes?.source,'rapier-physical-collider-events');
     assert.equal(shoes.independentColliders,2);
+    assert.ok(shoes.shoeLiftM.left>=0&&shoes.shoeLiftM.right>=0);
+    assert.ok(shoes.shoeLiftM.left===0||shoes.shoeLiftM.right===0);
+    for(const name of shoes.started)
+     assert.ok(shoes.shoeLiftM[name]<=0.14,
+      'raised native shoe must not collide with the grounded real ball');
     assert.deepEqual(shoes.active,
      ['left','right'].filter(name=>shoes.active.includes(name)));
     assert.equal(shoes.exclusivePhysicalStart,
@@ -473,4 +478,27 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
  assert.equal(running.ballImpulseCreated,false);
  assert.equal(open.realContactsOnly,true);
  assert.equal(open.physicsImposed,false);
+});
+
+test('#628 solo swing shoes physically lift one at a time, remain on 3D Rapier gait',()=>{
+ const p={x:29.45,y:0,vx:2.8,vy:0,facingRad:0};
+ const ball={position:{x:29.95,y:0,z:0.11},
+  velocity:{x:3,y:0,z:0}};
+ const at=(phaseRad,carryPhase='sprint')=>soloCarryTwoFootPositions(p,
+  {...advanceD01LiveShoeGait({phaseRad:0,tick:1,player:p,ball,
+   solo:true,carryPhase}),phaseRad});
+ const forwardSwing=at(Math.PI/2),backSwing=at(3*Math.PI/2);
+ assert.ok(forwardSwing.left.shoeLiftM>0.18);
+ assert.equal(forwardSwing.right.shoeLiftM,0);
+ assert.ok(backSwing.right.shoeLiftM>0.18);
+ assert.equal(backSwing.left.shoeLiftM,0);
+ const landing=at(Math.PI),start=at(0);
+ assert.ok(landing.left.shoeLiftM<1e-20);
+ assert.ok(landing.right.shoeLiftM<1e-20);
+ assert.equal(start.left.shoeLiftM,0);
+ assert.equal(start.right.shoeLiftM,0);
+ const moderate=at(Math.PI/2,'moderate');
+ assert.ok(moderate.left.shoeLiftM<forwardSwing.left.shoeLiftM);
+ assert.equal(forwardSwing.physicsImposed,false);
+ assert.equal(forwardSwing.realContactsOnly,true);
 });

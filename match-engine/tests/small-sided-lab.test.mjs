@@ -545,6 +545,8 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
     peakSpeedWitness:latest.nativeDribbleAudit.peakBallSpeedWitness,
     maxRealActorBallGapM:latest.nativeDribbleAudit.maximumRealAttackerBallGapM,
     bothFeetActiveTicks:latest.nativeDribbleAudit.nativeBothFeetActiveTicks,
+    actualAirborneStrideTicks:latest.nativeDribbleAudit.actualAirborneStrideTicks,
+    nativeHighSwingFootStarts:latest.nativeDribbleAudit.nativeHighSwingFootStarts,
     physicalFootStarts:latest.nativeDribbleAudit.nativeLeftFootStarts+
      latest.nativeDribbleAudit.nativeRightFootStarts,
     actionTicks:latest.nativeDribbleAudit.actionTicks,
@@ -571,6 +573,9 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
    meanCarries,meanPhysicalFootStarts,
    meanBothFeetActiveTicks:samples.reduce((t,x)=>t+x.bothFeetActiveTicks,0)/
     samples.length,
+   meanAirborneStrideTicks:samples.reduce((t,x)=>t+x.actualAirborneStrideTicks,0)/
+    samples.length,
+   raisedShoeContactStarts:samples.reduce((t,x)=>t+x.nativeHighSwingFootStarts,0),
    maxRealActorBallGapM:Math.max(...samples.map(x=>x.maxRealActorBallGapM)),
    distinctTouchIntervals:distinctTouchIntervals.size,
    fastest:samples.toSorted((a,b)=>b.maxBallSpeedMps-a.maxBallSpeedMps).slice(0,5)})+'\\n');
@@ -588,4 +593,10 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
   'Real ball distance/relative speed must vary inter-touch timing, not act like a metronome');
  assert.ok(samples.every(x=>x.physicalFootStarts>=x.carries),
   'All real impulses must have a true original Rapier shoe event');
+ assert.ok(meanPhysicalFootStarts<8.8,
+  'Physically elevated running shoes should produce fewer grazing START events');
+ assert.ok(samples.every(x=>x.actualAirborneStrideTicks>0),
+  'Real swing foot must physically rise during each 3s trial');
+ assert.equal(samples.reduce((t,x)=>t+x.nativeHighSwingFootStarts,0),0,
+  'Foot raised >14cm must never touch 11cm ground ball');
 });
