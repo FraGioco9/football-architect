@@ -155,6 +155,8 @@ test('#578 Club History loading bars and verified numeric values share one 24px 
   'History inherits the original Club skeleton bar');
  assert.match(css,/\.club-history-table \.club-history-row-loading \.club-fp-bar\{\s*display:block;box-sizing:border-box;translate:none;/,
   'History uses filled bars instead of stroke decoration');
+ assert.match(css,/@media\(min-width:621px\)\{\s*\.club-history-table \.club-history-row-loading \.club-fp-bar\{translate:0 -1px\}/,
+  'History first-paint skeleton paint receives the measured 1px desktop optical adjustment');
  assert.match(css,/\.club-history-row-loading \.club-history-skeleton-label\{[^}]*font-weight:700\}/,
   'History Season uses the verified label typography');
  assert.doesNotMatch(css,/\.club-history-row-loading \.club-fp-bar::before\{[^}]*text-decoration-line:line-through/,
