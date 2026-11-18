@@ -787,10 +787,13 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
 .app-history-player-holders{list-style:none;padding:0;margin:0;display:grid;gap:0}
 .app-history-player-holders>li{padding:6px 0;border-top:1px solid var(--line);min-width:0}
 .app-history-player-clubs{list-style:none;margin:0;padding:0;color:var(--muted);font-size:.85rem;display:grid;gap:2px}
-/* Keep the entire player name + club/season block centered alongside the portrait. */
-.app-history-dialog-player{width:100%}
-.app-history-dialog-player-info{display:grid;align-content:center;gap:2px;min-width:0;flex:1}
+/* Club and player record popups use the same compact, centered holder rows. */
+.app-history-dialog-player,.app-history-dialog-club{display:flex;align-items:center;gap:8px;min-width:0;width:100%}
+.app-history-dialog-player-info,.app-history-dialog-club-info{display:grid;align-content:center;gap:2px;min-width:0;flex:1}
 .app-history-dialog-player-info>:is(a,strong){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-history-dialog-club-info>.app-world-club-name{min-width:0;overflow-wrap:anywhere}
+.app-history-dialog-club-seasons{min-width:0;line-height:1.35;color:var(--muted)}
+.app-history-dialog-club-seasons .app-history-dev-season-link{min-height:0}
 @media(max-width:620px){.app-history-player-dialog{max-height:calc(100dvh - 32px)}}
 
 /* Historical player records show one localized empty state until approved data exists. */
@@ -2190,10 +2193,10 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
  --history-name-size:.875rem;
  --history-meta-size:.8125rem;
 }
-:is(#competition-panel-history,.app-history-player-dialog) :is(.app-history-dev-record-entry .app-world-club-name,.app-history-player-name,.app-history-dialog-player-info>:is(a,strong),.history-placeholder-lines){
+:is(#competition-panel-history,.app-history-player-dialog) :is(.app-history-dev-record-entry .app-world-club-name,.app-history-player-name,.app-history-dialog-player-info>:is(a,strong),.app-history-dialog-club-info>.app-world-club-name,.history-placeholder-lines){
  font-size:var(--history-name-size);line-height:1.35;font-weight:650;color:var(--text)
 }
-:is(#competition-panel-history,.app-history-player-dialog) :is(.app-history-dev-season-link,.app-history-season,.history-placeholder-season,.app-history-player-context,.app-history-player-clubs,.history-placeholder-meta){
+:is(#competition-panel-history,.app-history-player-dialog) :is(.app-history-dev-season-link,.app-history-season,.history-placeholder-season,.app-history-player-context,.app-history-player-clubs,.app-history-dialog-club-seasons,.history-placeholder-meta){
  font-size:var(--history-meta-size);line-height:1.35;font-weight:400;color:var(--muted)
 }
 :is(#competition-panel-history,.app-history-player-dialog) .app-history-dev-season-link .app-history-dev-season{font:inherit;color:inherit}

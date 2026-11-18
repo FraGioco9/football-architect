@@ -130,8 +130,8 @@ test('Shared record ties keep +N adjacent to the club name without adding a card
   assert.equal(trigger.textContent,'+4');
   assert.equal(trigger.getAttribute('aria-haspopup'),'dialog');
  }
- assert.match(client.slice(start,end),/copy\.querySelector\?\.\('\[data-history-record-expand\]'\)\?\.remove\(\)/,
-  'The dialog must not clone the inline +N control');
+ assert.match(client.slice(start,end),/name:name\?\.cloneNode\(true\)/,
+  'Only the club name is cloned, so +N cannot appear inside the popup');
 });
 test('Browsing seasons resolves prior/current/future days independently of Debug progress',()=>{
  assert.equal(typeof previewData.previewSeasonMatchdays,'function');
@@ -571,4 +571,26 @@ test('Player record dialog uses compact centered rows and keeps +N hover without
  assert.match(declaration('.app-history-dialog-player-info'),/align-content:center/);
  assert.match(declaration('.app-history-player-clubs'),/margin:0/);
  assert.match(declaration('#competition-panel-history .app-history-player-detail:hover'),/text-decoration:none/);
+});
+
+test('Club record popups match player popups, consolidate repeated clubs and keep linked seasons',()=>{
+ const source=client.slice(client.indexOf('function historyExpandableHolders('),
+  client.indexOf('\nasync function renderHistoryPreview()'));
+ for(const expression of [
+  /app-history-player-dialog app-history-club-dialog/,
+  /app-history-player-dialog-value/,
+  /app-history-player-holders app-history-club-holders/,
+  /groups=new Map\(\)/,
+  /groups\.has\(key\)/,
+  /group\.seasons\.some\(link=>link\.href===season\.href\)/,
+  /historyLabel\(groups\.size===1\?"historyClubSingular":"rulesClubs"\)/,
+  /dialog\.setAttribute\("aria-labelledby",heading\.id\)/,
+  /trigger\.focus\(\{preventScroll:true\}\)/
+ ])assert.match(source,expression);
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(css,/\.app-history-dialog-player,\.app-history-dialog-club\{display:flex;align-items:center;gap:8px/);
+ assert.match(css,/\.app-history-dialog-player-info,\.app-history-dialog-club-info\{display:grid;align-content:center;gap:2px/);
+ assert.match(css,/\.app-history-dialog-club-seasons \.app-history-dev-season-link\{min-height:0\}/);
+ const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+ assert.equal((app.match(/historyClubSingular:/g)||[]).length,5);
 });
