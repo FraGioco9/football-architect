@@ -689,12 +689,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         'Club History season text and its skeleton share a vertical center at '+width+': '+JSON.stringify(alignment));
        assert.ok(Math.abs(alignment.seasonInkOffset)<=1.5,
         'Club History Season bar follows the actual letter ink center at '+width+': '+JSON.stringify(alignment));
-       assert.ok(alignment.skeletonPaint.decoration.includes('line-through')&&
-        alignment.skeletonPaint.thickness==='12px'&&alignment.skeletonPaint.translation==='none'&&
-        alignment.skeletonPaint.bg==='rgba(0, 0, 0, 0)'&&
-        alignment.skeletonPaint.overflow==='hidden'&&alignment.skeletonPaint.radius==='5px'&&
-        alignment.skeletonPaint.justify==='flex-start'&&alignment.skeletonPaint.weight==='700',
-        'History Season uses the original rounded bar, left-aligned with the bold text at '+width+': '+JSON.stringify(alignment));
+       assert.ok(alignment.skeletonPaint.bg!=='rgba(0, 0, 0, 0)'&&
+        alignment.skeletonPaint.radius==='5px'&&
+        !alignment.skeletonPaint.decoration.includes('line-through')&&
+        !alignment.skeletonPaint.sample.includes('Season'),
+        'History Season uses the same real filled/rounded bar as Club Overview at '+width+': '+JSON.stringify(alignment));
        if(width>620)assert.ok(Math.abs(alignment.totalAlignment.inkDy)<=1.5,
         'Club History Total bar follows painted Total glyphs at '+width+': '+JSON.stringify(alignment));
        if(width>620)assert.ok(Math.abs(alignment.totalAlignment.dx)<=1&&Math.abs(alignment.totalAlignment.dy)<=3,
@@ -1018,19 +1017,17 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        'Player Stats: loaded Season and skeleton share the same vertical track at '+width+': '+JSON.stringify(placement));
       assert.ok(Math.abs(placement.seasonInkOffset)<=1.5,
        'Player Stats Season placeholder matches the visible letters at '+width+': '+JSON.stringify(placement));
-      assert.ok(placement.samplePaint.decoration.includes('line-through')&&
-       placement.samplePaint.thickness==='12px'&&placement.samplePaint.translation==='none'&&
-       placement.samplePaint.bg==='rgba(0, 0, 0, 0)'&&
-       placement.samplePaint.radius==='4px'&&placement.samplePaint.overflow==='hidden'&&
-       placement.samplePaint.justify==='flex-start',
-       'Season renders a rounded standard skeleton beginning at the actual text origin at '+width+': '+JSON.stringify(placement));
-      assert.ok(Math.abs(placement.careerPaint.left-placement.careerTextLeft)<=1&&
-       Math.abs(placement.careerInkOffset)<=1.5&&
-       placement.careerPaint.justify==='flex-start'&&placement.careerPaint.overflow==='hidden'&&
-       placement.careerPaint.radius==='4px'&&
-       placement.careerPaint.sample===placement.samplePaint.sample,
-       'Career and Season share the loaded text origin, font baseline and 70px rounded fill at '+width+': '+JSON.stringify(placement));
-      if(width>620)assert.ok(Math.abs(placement.totalInkOffset)<=1.5,
+      assert.ok(placement.samplePaint.bg!=='rgba(0, 0, 0, 0)'&&
+        placement.samplePaint.radius==='4px'&&
+        !placement.samplePaint.decoration.includes('line-through')&&
+        !placement.samplePaint.sample.includes('Season'),
+        'Player Season uses the global rounded app skeleton rather than ghost text at '+width+': '+JSON.stringify(placement));
+       assert.ok(Math.abs(placement.careerPaint.left-placement.careerTextLeft)<=1&&
+        Math.abs(placement.careerInkOffset)<=1.5&&
+        placement.careerPaint.radius==='4px'&&
+        placement.careerPaint.sample===placement.samplePaint.sample,
+        'Career and Season skeletons start at the actual text position and share the same shape at '+width+': '+JSON.stringify(placement));
+       if(width>620)assert.ok(Math.abs(placement.totalInkOffset)<=1.5,
        'Player Stats Total placeholder matches painted Total letters at '+width+': '+JSON.stringify(placement));
       assert.ok(Math.abs(placement.seasonLoadedX-placement.loadingSeasonX)<=1,
        'Player Stats Season/Career loading bar must start exactly where the text starts at '+width+': '+JSON.stringify(placement));

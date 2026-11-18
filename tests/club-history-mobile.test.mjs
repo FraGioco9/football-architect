@@ -151,16 +151,14 @@ test('#578 Club History loading bars and verified numeric values share one 24px 
  assert.match(css,/\.club-history-table \.club-history-total-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;/);
  assert.match(css,/\.club-history-table \.club-history-row-loading :is\(\.club-history-skeleton-label,\.club-history-total-value\)>\.club-fp-bar\{\s*align-self:center;flex:none;margin-inline-start:0;/,
   'Season and Total skeletons remain anchored to the verified text center and left edge');
- assert.match(css,/\.club-history-table \.club-history-row-loading \.club-fp-bar\{[^}]*overflow:hidden;border-radius:5px;/,
-  'Club History skeleton stroke is cropped to the standard 12px rounded shape');
- assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-skeleton-label\{[^}]*font-weight:700\}/,
-  'Season skeleton matches the real Season label weight');
- assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-skeleton-label>\.club-fp-bar\{justify-content:flex-start\}/,
-  'Season skeleton ink starts exactly where loaded Season text starts');
- assert.match(css,/\.club-history-table \.club-history-row-loading \.club-fp-bar::before\{[^}]*text-decoration-line:line-through;/,
-  'Club History skeleton still paints on the font-native baseline');
- assert.match(css,/text-decoration-thickness:12px;text-decoration-skip-ink:none;/,
-  'Club History skeleton strokes are 12px high');
+ assert.match(css,/\.club-fp-bar\{display:block;inline-size:[^}]*block-size:12px;border-radius:5px;background:/,
+  'History inherits the original Club skeleton bar');
+ assert.match(css,/\.club-history-table \.club-history-row-loading \.club-fp-bar\{\s*display:block;box-sizing:border-box;translate:none;/,
+  'History uses filled bars instead of stroke decoration');
+ assert.match(css,/\.club-history-row-loading \.club-history-skeleton-label\{[^}]*font-weight:700\}/,
+  'History Season uses the verified label typography');
+ assert.doesNotMatch(css,/\.club-history-row-loading \.club-fp-bar::before\{[^}]*text-decoration-line:line-through/,
+  'History has no ghost-text-based skeleton painter');
  for(const marker of ['club-history-skeleton-label','club-history-total-value','club-history-skeleton-stat'])
   assert.ok(css.includes(marker),'History loading geometry reserves '+marker);
  assert.match(css,/\.club-history-chevron,\.club-history-chevron-space\{\s*position:absolute;inset-inline-start:0;top:calc\(50% - 4px\);/,

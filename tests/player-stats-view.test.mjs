@@ -101,18 +101,17 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-total-value'));
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading :is\(\.app-player-stats-skeleton-label,\.app-player-stats-total-value\)>\.app-skeleton-bar\{\s*align-self:center;flex:none;margin-inline:0;/,
   'Career/Season/Total skeleton bars follow the actual text flex origin');
- assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar\{[^}]*overflow:hidden;border-radius:4px;/,
-  'Stats skeletons keep the same rounded corners as generic site skeletons');
- assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-skeleton-label>\.app-skeleton-bar\{justify-content:flex-start\}/,
-  'Season/Career skeleton paint must begin at the loaded text origin');
- assert.match(css,/\.app-player-stats-loading :is\(\.app-player-stats-skeleton-career,\.app-player-stats-skeleton-season\)::before\{content:"Season 11 Season 11"\}/,
-  'Season/Career strokes must both fill the same 70px width');
- assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar::before\{[^}]*text-decoration-line:line-through;/,
-  'the font baseline remains the skeleton paint reference');
- assert.match(css,/text-decoration-thickness:12px;text-decoration-skip-ink:none;/,
-  'Stats skeleton strokes are 12px high');
- assert.match(css,/\.app-player-stats-score-heading-skeleton::after\{[^}]*height:10px;border-radius:4px;/,
-  'neutral score heading uses the same rounded 10px placeholder as the rest of the site');
+ const appCSS=read('assets/app.css');
+ assert.match(appCSS,/\.app-skeleton-bar\{display:block;width:50%;height:10px;margin-inline:auto;border-radius:4px;background:/,
+  'Stats inherits the exact site-wide skeleton primitive');
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar\{\s*display:block;box-sizing:border-box;min-width:0;height:10px;margin:0;translate:none;/,
+  'Stats loading bars have the canonical filled 10px shape');
+ assert.doesNotMatch(css,/\.app-player-stats-loading \.app-skeleton-bar::before\{[^}]*text-decoration-line:line-through/,
+  'Stats does not paint skeletons as text decorations');
+ assert.doesNotMatch(css,/\.app-player-stats-skeleton-career::before|\.app-player-stats-skeleton-season::before/,
+  'Career and Season are plain standard bars');
+ assert.match(css,/\.app-player-stats-loading :is\(\.app-player-stats-skeleton-season,\.app-player-stats-skeleton-career\)\{width:70px\}/,
+  'Career and Season retain identical 70px loading slots');
  assert.ok(css.includes('grid-row:2;min-height:24px;width:100%;align-self:center;justify-content:center'));
  assert.match(css,/\.app-player-stats-table tr>td\.app-player-stats-number::before/);
  assert.match(css,/grid-template-rows:12px 24px/,'mobile value track accommodates the full text line');

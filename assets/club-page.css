@@ -455,24 +455,12 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-table .club-history-row-loading :is(.club-history-skeleton-label,.club-history-total-value)>.club-fp-bar{
  align-self:center;flex:none;margin-inline-start:0;
 }
-/* Keep the site-wide rounded skeleton appearance while retaining the verified
-   font-baseline paint position: clip the ink stroke inside the standard 12px
-   pill. No offsets or cell geometry changes. */
+/* The exact filled, rounded and animated skeleton used elsewhere on Club
+   pages. Season/Total are real fixed-width bars; numbers reserve glyph width
+   without letting invisible text determine the visible paint position. */
 .club-history-table .club-history-row-loading .club-fp-bar{
- display:inline-flex;align-items:center;justify-content:center;
- background:transparent;translate:none;overflow:hidden;border-radius:5px;
+ display:block;box-sizing:border-box;translate:none;
 }
-.club-history-table .club-history-row-loading .club-fp-bar::before{
- color:transparent;font:inherit;line-height:1.5;white-space:nowrap;
- text-decoration-line:line-through;
- text-decoration-color:color-mix(in srgb,var(--muted) 15%,var(--surface));
- text-decoration-thickness:12px;text-decoration-skip-ink:none;
-}
-/* Full-width, left-anchored Season placeholder; the transparent ink
-   intentionally overflows and is cropped to the reserved 66px width. */
-.club-history-table .club-history-row-loading .club-history-skeleton-label>.club-fp-bar{justify-content:flex-start}
-.club-history-table .club-history-row-loading .club-history-skeleton-label .club-fp-bar::before{content:"Season 11 Season 11"}
-.club-history-table .club-history-row-loading .club-history-total-value .club-fp-bar::before{content:"Totals"}
 /* First paint and runtime pending rows reserve the actual numeric glyph
    widths, then center the bar on the same 16px track as verified data. */
 .club-history-table .club-history-row-loading .club-history-skeleton-stat .club-fp-bar[data-skeleton-sample]{
@@ -481,7 +469,8 @@ body.app-body{--app-page-pad-top:8px}
  height:12px;margin:0;
 }
 .club-history-table .club-history-row-loading .club-history-skeleton-stat .club-fp-bar[data-skeleton-sample]::before{
- content:attr(data-skeleton-sample);font-variant-numeric:tabular-nums;
+ content:attr(data-skeleton-sample);color:transparent;font:inherit;
+ font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap;
 }
 /* Numeric bars are measured from actual sample glyphs, not ch guesses. */
 .club-history-status{margin:12px 0 0;color:var(--muted);font-size:.875rem;line-height:1.5}
