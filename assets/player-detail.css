@@ -207,9 +207,18 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:baseline;
 }
 .app-player-stats-link:is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
-.app-player-stats-table .app-player-stats-club-link .app-player-stats-club-name{text-decoration:none}
-.app-player-stats-table .app-player-stats-club-link:is(:hover,:focus-visible) .app-player-stats-club-name{
- text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto;
+/* The generic statistics link clips its overflow for long competition names.
+   Club text must remain un-clipped so the offset underline can actually paint.
+   Only the text link is interactive; the 24px crest is a passive sibling. */
+.app-player-stats-table a.app-player-stats-club-link{
+ display:inline-flex;align-items:center;flex:0 1 auto;width:max-content;max-width:100%;min-width:0;
+ overflow:visible;text-overflow:clip;line-height:1.45;
+}
+.app-player-stats-table .app-player-stats-club-link .app-player-stats-club-name{
+ display:inline;text-decoration:none;
+}
+.app-player-stats-table a.app-player-stats-club-link:is(:hover,:focus-visible) .app-player-stats-club-name{
+ text-decoration-line:underline;text-underline-offset:2px;text-decoration-thickness:1px;text-decoration-skip-ink:auto;
 }
 .app-player-stats-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-player-stats-table .app-player-stats-number .app-player-stats-value{
@@ -231,13 +240,13 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-career-row>th:first-child{font-weight:700}
 .app-player-stats-loading .app-player-stats-skeleton-total{width:40px}
 .app-player-stats-table .app-player-stats-loading .app-player-stats-number .app-skeleton-bar{margin:0}
-.app-player-stats-loading [data-metric="apps"] .app-skeleton-bar{width:42px}
-.app-player-stats-loading [data-metric="minutes"] .app-skeleton-bar{width:38px}
-.app-player-stats-loading [data-metric="score"] .app-skeleton-bar{width:20px}
-.app-player-stats-loading [data-metric="assists"] .app-skeleton-bar{width:20px}
-.app-player-stats-loading [data-metric="yellow"] .app-skeleton-bar{width:18px}
-.app-player-stats-loading [data-metric="red"] .app-skeleton-bar{width:18px}
-.app-player-stats-loading [data-metric="rating"] .app-skeleton-bar{width:32px}
+.app-player-stats-loading [data-metric="apps"] .app-skeleton-bar{width:4ch}
+.app-player-stats-loading [data-metric="minutes"] .app-skeleton-bar{width:2.5ch}
+.app-player-stats-loading [data-metric="score"] .app-skeleton-bar{width:1.5ch}
+.app-player-stats-loading [data-metric="assists"] .app-skeleton-bar{width:1.5ch}
+.app-player-stats-loading [data-metric="yellow"] .app-skeleton-bar{width:1.5ch}
+.app-player-stats-loading [data-metric="red"] .app-skeleton-bar{width:1.5ch}
+.app-player-stats-loading [data-metric="rating"] .app-skeleton-bar{width:4ch}
 .app-player-stats-note{margin:12px 0 0;color:var(--muted);font-size:.875rem;line-height:1.5}
 .app-player-stats-note[hidden]{display:none}
 @media(prefers-reduced-motion:reduce){.app-player-stats-chevron{transition:none}}

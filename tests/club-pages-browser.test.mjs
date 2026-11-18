@@ -582,7 +582,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       }else{
        assert.equal(initial.display,'table-row','tablet/desktop preserve the native table at '+width);
       }
-      if(width<=620){
+      if(width<=620||width===1440){
        // Compare the exact seven first-paint skeleton centers to the seven
        // hydrated aggregate-number centers in their shared grid tracks.
        const alignment=await run(`(()=>{
@@ -707,6 +707,75 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await clickHistory(historyHitBoxes.label);
     assert.equal(await run('window.__historyProbeClickCount'),1,'clicking the actual text activates the link');
     await run("document.getElementById('club-history-link-hitbox-probe').remove()");
+
+    // #578: real Chromium geometry regression for Player Stats. The previous
+    // bars were too wide: sharing the numeric cell kept their right edges
+    // aligned, but displaced their visible centers by 6-12px.
+    await run("new Promise((ok,fail)=>{const link=document.createElement('link');link.rel='stylesheet';link.href='/assets/player-detail.css';link.onload=()=>ok(true);link.onerror=()=>fail(Error('Missing Player Stats stylesheet'));document.head.append(link)})");
+    for(const width of [1440,390]){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<=620});
+      const placement=await run(`(()=>{
+       const old=document.getElementById('player-stats-alignment-probe');if(old)old.remove();
+       const probe=document.createElement('div');probe.id='player-stats-alignment-probe';
+       probe.style.cssText='position:fixed;top:96px;left:8px;z-index:2147483647;background:var(--surface);width:calc(100vw - 16px);max-width:1100px';
+       const keys=['apps','minutes','score','assists','yellow','red','rating'];
+       const text=['1 (0)','90','1','0','0','0','7.50'];
+       const labels=['Apps (Subs)','Min','Gls','Ast','YC','RC','Rat.'];
+       const metrics=()=>keys.map((key,i)=>'<td class="app-player-stats-number" data-metric="'+key+'" data-mobile-label="'+labels[i]+'"><span class="app-player-stats-value">'+text[i]+'</span></td>').join('');
+       probe.innerHTML='<table class="app-player-stats-table"><colgroup>'+
+        '<col class="app-player-stats-col-season"><col class="app-player-stats-col-competition"><col class="app-player-stats-col-club">'+
+        Array.from({length:7},()=>'<col class="app-player-stats-col-number">').join('')+'</colgroup><tbody>'+
+        '<tr class="app-player-stats-season-row"><th scope="row" class="app-player-stats-season">Season 1</th>'+
+        '<td class="app-player-stats-competition"><span class="app-player-stats-total-value">Total</span></td>'+
+        '<td class="app-player-stats-club"></td>'+metrics()+'</tr>'+
+        '<tr class="app-player-stats-competition-row"><td></td><th>League</th>'+
+        '<td class="app-player-stats-club"><span class="app-player-stats-club-identity">'+
+        '<span class="app-players-club-mark app-player-stats-club-crest" aria-hidden="true"></span>'+
+        '<a class="app-player-stats-link app-player-stats-club-link" href="/clubs/it/1/overview">'+
+        '<span class="app-player-stats-club-name">AC Meneghina</span></a></span></td>'+
+        metrics()+'</tr></tbody></table>';
+       document.body.append(probe);
+       const row=probe.querySelector('.app-player-stats-season-row');
+       const cells=[...row.querySelectorAll('td.app-player-stats-number')];
+       const rect=n=>{const r=n.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,height:r.height};};
+       const actual=cells.map(cell=>{
+        const range=document.createRange();range.selectNodeContents(cell.querySelector('.app-player-stats-value'));
+        const a=rect(range),b=rect(cell);return {dx:a.x-b.x,dy:a.y-b.y,height:b.height};
+       });
+       for(const cell of cells)cell.querySelector('.app-player-stats-value').innerHTML='<span class="app-skeleton-bar" aria-hidden="true"></span>';
+       row.classList.add('app-player-stats-loading');
+       const skeleton=cells.map(cell=>{
+        const a=rect(cell.querySelector('.app-skeleton-bar')),b=rect(cell);
+        return {dx:a.x-b.x,dy:a.y-b.y,height:b.height};
+       });
+       row.classList.remove('app-player-stats-loading');
+       const link=probe.querySelector('.app-player-stats-club-link'),name=link.querySelector('.app-player-stats-club-name');
+       const bounds=rect(name);
+       return {actual,skeleton,link:{x:bounds.x,y:bounds.y},linkOverflow:getComputedStyle(link).overflow,
+        tracks:getComputedStyle(cells[0]).gridTemplateRows};
+      })()`);
+      for(let i=0;i<7;i++){
+       const a=placement.actual[i],s=placement.skeleton[i];
+       assert.ok(Math.abs(a.dx-s.dx)<=4,
+        'Player Stats bar '+i+' has the same visible value center at '+width+'px: '+JSON.stringify(placement));
+       assert.ok(Math.abs(a.dy-s.dy)<=3,
+        'Player Stats bar '+i+' occupies the same value baseline at '+width+'px: '+JSON.stringify(placement));
+       assert.ok(Math.abs(a.height-s.height)<=1,
+        'Player Stats pending and verified cell heights remain stable at '+width+'px');
+      }
+      if(width<=620)assert.equal(placement.tracks,'12px 16px','mobile Player Stats reserve identical tracks');
+      if(width===1440){
+       assert.equal(placement.linkOverflow,'visible','the real underline is not clipped');
+       await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:placement.link.x,y:placement.link.y,button:'none'});
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-name')).textDecorationLine"),'underline',
+        'moving the mouse over the club name visibly underlines its text');
+       await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:4,y:4,button:'none'});
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-name')).textDecorationLine"),'none',
+        'moving away removes the club-name underline');
+      }
+      await run("document.getElementById('player-stats-alignment-probe').remove()");
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     for(const view of ['roster','fixtures','stats','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
      assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-empty')+"')"),true);

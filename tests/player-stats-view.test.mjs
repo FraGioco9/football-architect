@@ -243,9 +243,11 @@ test('#578 Stats club crests are passive, bounded and separated from linked text
  assert.match(bootstrap,/crests=catalog\.clubCrests/,'use the existing club catalog');
  assert.match(bootstrap,/clubCrest:key=>crests&&Object\.hasOwn\(crests,key\)/);
  assert.match(css,/\.app-player-stats-club-identity\{display:flex;align-items:center;gap:7px/);
- assert.match(css,/\.app-player-stats-table \.app-player-stats-club-link:is\(:hover,:focus-visible\) \.app-player-stats-club-name\{/,
+ assert.match(css,/\.app-player-stats-table a\.app-player-stats-club-link:is\(:hover,:focus-visible\) \.app-player-stats-club-name\{/,
   'underline applies only to the hovered/focused club-name text');
- assert.match(css,/text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px/);
+ assert.match(css,/\.app-player-stats-table a\.app-player-stats-club-link\{[^}]*overflow:visible;text-overflow:clip;/,
+  'the generic clipped table link must not cut off the underline');
+ assert.match(css,/text-decoration-line:underline;text-underline-offset:2px;text-decoration-thickness:1px/);
  const shared=read('assets/app.css');
  assert.match(shared,/\.app-players-club-mark\{[^}]*width:24px;height:24px/);
  assert.match(shared,/\.app-players-club-mark::before\{[^}]*clip-path:var\(--fa-crest-shield-shape\)/);
@@ -308,6 +310,28 @@ test('#578 History/Stats table gap is 5px on desktop and mobile',()=>{
  }
 });
 
+test('#578 numeric skeletons match typical right-aligned text center instead of oversized bars',()=>{
+ const css=read('assets/player-detail.css'),club=read('assets/club-page.css');
+ const expected={apps:'4ch',minutes:'2.5ch',score:'1.5ch',assists:'1.5ch',yellow:'1.5ch',red:'1.5ch',rating:'4ch'};
+ for(const [metric,width] of Object.entries(expected)){
+  const rule='.app-player-stats-loading [data-metric="'+metric+'"] .app-skeleton-bar{width:'+width+'}';
+  assert.ok(css.includes(rule),metric+' must approximate the rendered digit width');
+  assert.doesNotMatch(css,new RegExp('\\[data-metric="'+metric+'"\\] \\.app-skeleton-bar\\{width:[0-9]+px\\}'),
+   metric+' must not use fixed oversized pixel bars');
+ }
+ const history={played:'2ch',won:'1.5ch',drawn:'1.5ch',lost:'1.5ch',gf:'2ch',ga:'2ch',gd:'2.5ch'};
+ for(const [metric,width] of Object.entries(history)){
+  assert.ok(club.includes('[data-club-history-skeleton="'+metric+'"] .club-fp-bar'),
+   'Club History has a metric-specific slot for '+metric);
+  if(['won','drawn','gf'].includes(metric))continue; // these selectors share the last group member's width rule
+  assert.ok(club.includes('[data-club-history-skeleton="'+metric+'"] .club-fp-bar{width:'+width+'}'),
+   'Club History '+metric+' uses glyph-relative geometry');
+ }
+ assert.match(club,/\[data-club-history-skeleton="won"\] \.club-fp-bar,\s*\.club-history-row-loading \[data-club-history-skeleton="drawn"\] \.club-fp-bar,/);
+ assert.match(club,/\[data-club-history-skeleton="gf"\] \.club-fp-bar,\s*\.club-history-row-loading \[data-club-history-skeleton="ga"\] \.club-fp-bar/);
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-number \.app-player-stats-value\{[\s\S]*?justify-content:flex-end/);
+ assert.match(club,/\.club-history-table td:nth-child\(n\+4\) \.club-history-stat-value\{[\s\S]*?justify-content:center/);
+});
 test('#578 initial Stats score is neutral until profile, then GK is CS in all languages',()=>{
  const source=read('assets/player-detail.js'),html=read('players/_shared/index.html');
  const start=source.indexOf(' function syncStatsScoreLabel(){');
