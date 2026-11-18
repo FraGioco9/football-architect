@@ -104,7 +104,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   await send('Page.navigate',{
    url:'http://app.localhost:2000/dev/match-engine'
   });
-  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===16");
+  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===8");
   // Verify the visible small-sided scenario runs IN the main 105x68 field.
   const inline=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
@@ -120,7 +120,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "advancedHidden:document.getElementById('advanced-settings').hidden};})()");
   assert.equal(inline.popup,false);
   assert.equal(inline.movementPopup,false);
-  assert.equal(inline.selected,'S-01 · 1v1 vs goalkeeper');
+  assert.equal(inline.selected,'1v1 · goalkeeper');
   assert.match(inline.tick,/^Tick 0/);
   assert.match(inline.physical,/2 real physical players/);
   assert.ok(inline.mainPitch>300);
@@ -164,7 +164,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "document.getElementById('me-inline-variant-next').click();"+
    "const v03={absent:absent(),variation:document.getElementById('me-inline-variant-display').textContent};"+
    "document.getElementById('preset-trigger').click();"+
-   "([...document.querySelectorAll('#preset-options [data-value]')].find(e=>e.dataset.value==='action:defender-1v1')).click();"+
+   "([...document.querySelectorAll('#preset-options [data-value]')].find(e=>e.dataset.value==='action:overload-2v1')).click();"+
    "const newScene={absent:absent(),variation:document.getElementById('me-inline-variant-display').textContent};"+
    "return {initial,v02,reset,v03,newScene,popup:document.getElementById('action-labs-dialog').open};})()");
   assert.equal(physicalBodies.initial,true);
@@ -175,11 +175,11 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.equal(physicalBodies.popup,false);
   process.stdout.write('ME_628_NATIVE_BODIES_ALWAYS_ON_CHROME '+
    JSON.stringify(physicalBodies)+'\\n');
-  // All five situations both directions, using the VISIBLE selectors,
+  // All four curated situations both directions, using the VISIBLE selectors,
   // original main Step, original pitch and source-only Rapier evidence.
   for(const [scene,actors] of [
-   ['dribble-1v1',2],['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],
-   ['duel-2v2',5],['duel-3v3',7]
+   ['dribble-1v1',2],['keeper-1v1',2],['overload-2v1',4],
+   ['duel-3v3',7]
   ])for(const side of ['home','away']){
    const x=await evalJs("(()=>{"+
     "document.getElementById('preset-trigger').click();"+
@@ -222,6 +222,30 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.equal(reset.popup,false);
   process.stdout.write('ME_628_INLINE_MAIN_TRANSPORT '+
    JSON.stringify({pauseTick,inlineStepped,reset})+'\n');
+  // Real current-tick decisions for all on-field participants; never
+  // manufacture a carry, completed pass, possession or defender action.
+  const carryDecisions=await evalJs("(()=>{"+
+   "document.getElementById('preset-trigger').click();"+
+   "document.querySelector('#preset-options [data-value=\\\"action:dribble-1v1\\\"]').click();"+
+   "for(let n=0;n<60;n++)document.getElementById('step').click();"+
+   "const el=id=>document.getElementById(id),panel=el('me-decisions-panel');"+
+   "return {visible:!panel.hidden,rows:[...panel.querySelectorAll('.me-decision-row')].map(x=>x.textContent),"+
+   "count:el('me-decisions-count').textContent,ballChartHidden:el('me-elevation-panel').hidden,"+
+   "log:el('me-decisions-event-count').textContent};})()");
+  assert.equal(carryDecisions.visible,true);
+  assert.equal(carryDecisions.count,'2 on field');
+  assert.equal(carryDecisions.rows.length,2);
+  assert.equal(carryDecisions.ballChartHidden,true);
+  assert.ok(carryDecisions.rows.some(x=>/HOME #10.*Carry the ball.*Target:/s.test(x)));
+  assert.ok(carryDecisions.rows.some(x=>/AWAY #2.*Close down the ball.*Target:/s.test(x)));
+  assert.ok(carryDecisions.rows.some(x=>/Last verified action: carry/.test(x)),
+   'Carry must reflect an original native Rapier touch');
+  await evalJs("document.getElementById('reset').click()");
+  const resetDecisions=await evalJs("(()=>{const p=document.getElementById('me-decisions-panel');"+
+   "return {players:p.querySelectorAll('.me-decision-row').length,events:document.getElementById('me-decisions-event-count').textContent};})()");
+  assert.equal(resetDecisions.players,2);
+  assert.equal(resetDecisions.events,'0 changes/actions');
+  process.stdout.write('ME_628_CARRY_CURRENT_DECISIONS '+JSON.stringify({carryDecisions,resetDecisions})+'\\n');
   // Only the *hidden* DEV fixture launcher is allowed to open the old
   // one-action regression dialog; visible Scenario never does this.
   await evalJs("document.getElementById('action-labs-open').click()");
@@ -582,8 +606,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");
   assert.equal(close,true);
-  // One visible original Scenario dropdown: 4 physics, 5 small-sided,
-  // 6 advanced movement; old one-action and movement fixtures stay internal.
+  // Simple Scenario: four physical field exercises and four physics presets.
+  // Research and negative-control fixtures are still available internally.
   const nav=await evalJs("(()=>{const menu=document.getElementById('preset-options');"+
    "const trigger=document.getElementById('preset-trigger');"+
    "return {items:menu.querySelectorAll('[role=option][data-value]').length,"+
@@ -595,8 +619,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "unique:document.querySelectorAll('[data-me-dropdown=preset]').length===1,"+
    "noSecondSelector:document.getElementById('lab-all-situations')===null,"+
    "current:trigger.textContent.trim()};})()");
-  assert.equal(nav.items,16);
-  assert.deepEqual(nav.groups,['Ball physics','Small-sided situations','Advanced movement']);
+  assert.equal(nav.items,8);
+  assert.deepEqual(nav.groups,['Player exercises','Ball physics']);
   for(const key of ['hiddenLaunches','hiddenChoices','unique','noSecondSelector'])
    assert.equal(nav[key],true,key);
   const ballNav=await evalJs("(()=>{const t=document.getElementById('preset-trigger');"+
@@ -610,30 +634,19 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "document.getElementById('preset-opt-drop').click();})()");
   // Visible scene switching keeps the same field, no popup.
   const actionNav=await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
-   "document.querySelector('#preset-options [data-value=\"action:duel-2v2\"]').click();"+
+   "document.querySelector('#preset-options [data-value=\"action:duel-3v3\"]').click();"+
    "return {open:document.getElementById('action-labs-dialog').open,"+
    "choice:document.getElementById('preset-value').textContent,"+
    "tick:document.getElementById('tick').textContent};})()");
-  assert.deepEqual(actionNav,{open:false,choice:'S-04 · 2v2 + goalkeeper',tick:'Tick 0 · 0.00 s'});
+  assert.deepEqual(actionNav,{open:false,choice:'3v3 · team decisions',tick:'Tick 0 · 0.00 s'});
   await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
    "document.getElementById('preset-opt-drop').click();})()");
   await wait("document.getElementById('preset-value').textContent==='LAB-01 · Ball Drop'");
-  const movementNav=await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
-   "document.querySelector('#preset-options [data-value=\"movement:secondary-pressure\"]').click();"+
-   "document.getElementById('step').click();"+
-   "return {open:document.getElementById('movement-labs-dialog').open,"+
-   "choice:document.getElementById('preset-value').textContent,"+
-   "tick:document.getElementById('tick').textContent,"+
-   "observation:document.getElementById('me-inline-observation').textContent};})()");
-  assert.equal(movementNav.open,false);
-  assert.equal(movementNav.choice,'M-29 · Second defender ON · live');
-  assert.match(movementNav.tick,/^Tick 1/);
-  assert.match(movementNav.observation,/movement/);
-  await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
-   "document.getElementById('preset-opt-drop').click();})()");
-  await wait("document.getElementById('preset-value').textContent==='LAB-01 · Ball Drop'");
+  const hiddenMovement=await evalJs(
+   "document.querySelectorAll('#preset-options [data-value^=\\\"movement:\\\"]').length");
+  assert.equal(hiddenMovement,0,'advanced movement research must stay out of simplified Scenario');
   process.stdout.write('ME_628_SINGLE_INLINE_SCENARIO_NAV '+
-   JSON.stringify({nav,ball:ballNav,action:actionNav,movement:movementNav})+'\n');
+   JSON.stringify({nav,ball:ballNav,action:actionNav,hiddenMovement})+'\n');
   // #628 M2: actual desktop movement dialog on the same DEV page.
   // It has no Rapier shoe colliders; do not confuse measured motion with
   // the seventeen real same-world ball/feet Action LABs above.
