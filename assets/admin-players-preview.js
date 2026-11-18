@@ -313,6 +313,7 @@
   confirmation.value='';render();confirmationDialog.showModal();confirmation.focus();
  });
  confirmCancel.addEventListener('click',()=>confirmationDialog.close());
+ confirmationDialog.querySelector('[data-admin-preview-dismiss]')?.addEventListener('click',()=>confirmationDialog.close());
  confirmAction.addEventListener('click',()=>{void save();});
  confirmation.addEventListener('keydown',event=>{
   if(event.key==='Enter'&&!confirmAction.disabled){event.preventDefault();void save();}

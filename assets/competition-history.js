@@ -232,7 +232,7 @@
     const header=element("div","app-history-player-dialog-header");
     const heading=element("h3","",title);heading.id="app-history-player-dialog-title";
     dialog.setAttribute("aria-labelledby",heading.id);
-    const exit=element("button","app-history-player-close","×");
+    const exit=element("button","app-history-player-close app-search-close");exit.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     exit.type="button";exit.setAttribute("aria-label",locale().close);exit.addEventListener("click",close);
     header.append(heading,exit);dialog.append(header);
     const summary=element("div","app-history-player-dialog-value");

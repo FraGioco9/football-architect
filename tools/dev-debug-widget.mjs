@@ -54,10 +54,14 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   ".fa-dev-disclosure-chevron{flex:none;transition:transform 120ms ease;transform:rotate(0deg)}",
   ".fa-dev-widget-section[open]>summary .fa-dev-disclosure-chevron{transform:rotate(180deg)}",
   "@media(prefers-reduced-motion:reduce){.fa-dev-disclosure-chevron{transition:none}}",
-  ".fa-dev-widget-close{display:none;cursor:pointer}",
+  ".fa-dev-widget-close{display:grid;place-items:center;float:right;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:#c8d8d0;cursor:pointer}",
+  ".fa-dev-widget-close:hover{background:#244040}",
+  'html[data-theme="light"] .fa-dev-widget-close{color:#3D6555}',
+  'html[data-theme="light"] .fa-dev-widget-close:hover{background:#E8F3EB}',
+  ".fa-dev-widget-close:focus-visible{outline:2px solid #a2c0b4;outline-offset:2px}",
   ".fa-dev-widget-backdrop{display:none;position:fixed;inset:0;z-index:2147483000}",
   ".fa-dev-widget-panel[hidden]{display:none!important}",
-  "@media(max-width:600px){.fa-dev-widget-panel{position:fixed!important;left:0!important;top:auto!important;bottom:0;width:100vw;max-height:85dvh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}.fa-dev-widget-close{display:block;float:right;border:0;background:transparent;color:inherit;font-size:24px}.fa-dev-widget-backdrop:not([hidden]){display:block;position:fixed;inset:0;background:#0007;z-index:1}.fa-dev-widget-panel{z-index:2}.fa-dev-widget-button{position:relative;z-index:2}.fa-dev-widget:has(.fa-dev-widget-panel:not([hidden])){z-index:2147483000}}",
+  "@media(max-width:600px){.fa-dev-widget-panel{position:fixed!important;left:0!important;top:auto!important;bottom:0;width:100vw;max-height:85dvh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}.fa-dev-widget-backdrop:not([hidden]){display:block;position:fixed;inset:0;background:#0007;z-index:1}.fa-dev-widget-panel{z-index:2}.fa-dev-widget-button{position:relative;z-index:2}.fa-dev-widget:has(.fa-dev-widget-panel:not([hidden])){z-index:2147483000}}",
 
   ".fa-dev-widget-panel{width:260px;padding:14px;border-color:var(--border,#568378);border-radius:14px;background:var(--surface,#17302f);color:var(--text,#f3f8f5);box-shadow:0 12px 36px #0005;font:inherit;font-size:13px;line-height:1.45;max-height:65vh;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb,#63877c) transparent;transition:opacity .18s ease,transform .18s ease}",
   ".fa-dev-widget-panel:not([hidden]){animation:fa-dev-panel-in .18s ease both}",
@@ -120,7 +124,7 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
  panel.hidden=true;
  button.setAttribute("aria-controls",panel.id);
  panel.append(element("h2","fa-dev-widget-title","Debug Settings"));
- const closeButton=element("button","fa-dev-widget-close","×");closeButton.type="button";closeButton.setAttribute("aria-label","Close Debug Settings");panel.prepend(closeButton);
+ const closeButton=element("button","fa-dev-widget-close app-search-close");closeButton.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';closeButton.type="button";closeButton.setAttribute("aria-label","Close Debug Settings");panel.prepend(closeButton);
  const sections=new Map();
  for(const [id,label] of [["general","All settings"]]){
   const details=element("details","fa-dev-widget-section");details.dataset.section=id;

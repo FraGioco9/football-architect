@@ -78,7 +78,7 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-metrics-dialog::backdrop{background:rgba(0,0,0,.65)}
 .me-metrics-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}
 .me-metrics-header h2{font-size:18px;line-height:1.3;margin:0 0 3px}
-.me-metrics-header .me-button{flex:none;min-height:32px}
+.me-metrics-header .app-search-close,.me-action-labs-header .app-search-close{flex:none}
 .me-metrics-dialog section+section{border-top:1px solid var(--line);margin-top:15px;padding-top:12px}
 .me-metrics-dialog h3{font-size:13px;line-height:1.4;margin:0 0 6px;font-weight:750}
 .me-metrics-dialog section>.me-hint{margin:5px 0!important}
