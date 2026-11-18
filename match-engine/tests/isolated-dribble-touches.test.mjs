@@ -386,7 +386,7 @@ test('#628 solo physical foot targets oppose stride without creating contacts',(
   'Opposite half stride makes left shoe overtake right foot');
  const away=soloCarryTwoFootPositions({...p,x:-p.x,facingRad:Math.PI},
   {...gait,observedAheadM:gait.observedAheadM});
- assert.ok(away.left.x<away.right.x);
+ assert.ok(away.left.x>away.right.x,'Mirrored local foot order rotates with player facing');
  assert.throws(()=>soloCarryTwoFootPositions(null),TypeError);
  assert.throws(()=>soloCarryTwoFootPositions(p,{phaseRad:NaN}),TypeError);
 });
