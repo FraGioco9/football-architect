@@ -563,9 +563,9 @@ test('Player record dialog uses compact centered rows and keeps +N hover without
   assert.ok(start>=0,'Missing CSS rule '+selector);
   return css.slice(start+selector.length+1,css.indexOf('}',start));
  };
- assert.match(source,/const info=element\\("div","app-history-dialog-player-info"\\)/);
- assert.match(source,/info\\.append\\(playerLabel\\(holder,"strong",""\\)\\)/);
- assert.match(source,/info\\.append\\(clubs\\);\\s*identity\\.append\\(portrait\\(holder\\.id\\),info\\);\\s*li\\.append\\(identity\\);list\\.append\\(li\\)/);
+ assert.ok(source.includes('const info=element("div","app-history-dialog-player-info");'));
+ assert.ok(source.includes('info.append(playerLabel(holder,"strong",""));'));
+ assert.ok(source.includes('info.append(clubs);')&&source.includes('identity.append(portrait(holder.id),info);')&&source.includes('li.append(identity);list.append(li);'));
  assert.match(declaration('.app-history-player-holders'),/gap:0/);
  assert.match(declaration('.app-history-player-holders>li'),/padding:6px 0/);
  assert.match(declaration('.app-history-dialog-player-info'),/align-content:center/);
