@@ -29,7 +29,7 @@ describe('#613 V2 public read validation and frozen-player statistics',()=>{
    new Map([[id,result]]),new Map([[id,frozen]]));
   expect(out.matchesPlayed).toBe(1);
   expect(out.totalGoals).toBe(3);
-  expect(out.players).toMatchObject([{playerId:7,clubId:home,appearances:1,starts:1,subAppearances:0,minutes:90,goals:2,cleanSheets:null,assists:null,redCards:null,averageRating:null,ratedAppearances:0}]);
+  expect(out.players).toMatchObject([{playerId:7,clubId:home,appearances:1,starts:1,subAppearances:null,minutes:90,goals:2,cleanSheets:null,assists:null,redCards:null,averageRating:null,ratedAppearances:0}]);
   expect(out.teams.find(t=>t.clubId===home)).toMatchObject({won:1,goalsFor:2,goalsAgainst:1});
   expect(out.teams.find(t=>t.clubId===away)).toMatchObject({lost:1});
   expect(()=>lineupTeamStatisticsV1([home,away],[f],new Map([[id,result]]),new Map()))
