@@ -254,7 +254,8 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
      crest.append(image);
     }
     identity.append(crest);
-    const clubLink=el('a',clubName?.(record.clubId)||record.clubId,'app-player-stats-link');
+    const clubLink=el('a','','app-player-stats-link app-player-stats-club-link');
+    clubLink.append(el('span',clubName?.(record.clubId)||record.clubId,'app-player-stats-club-name'));
     clubLink.href='/clubs/'+match[1].toLowerCase()+'/'+Number(match[2])+'/overview';
     identity.append(clubLink);club.append(identity);
     detail.append(club,...numericCells(record,w));resultRows.push(detail);

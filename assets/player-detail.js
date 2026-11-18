@@ -267,6 +267,22 @@
   clubCatalog=manifest;clubCatalogResolved=true;
   renderClub();
  }
+ function syncStatsScoreLabel(){
+  // A shared static player shell cannot know whether its owner is a goalkeeper.
+  // Keep a neutral header/skeleton before identity is verified, then replace it
+  // synchronously on the first player-profile paint (before Stats is fetched).
+  if(!statsHost||!player)return;
+  const outfield={en:'Gls',it:'Gol',de:'Tor.',es:'Gol',fr:'Bts'};
+  const label=player.primary_position==='GK'?'CS':outfield[language()]||outfield.en;
+  const header=statsHost.querySelector('[data-detail-stats-heading="5"]');
+  if(header){
+   const trigger=header.querySelector('[data-stats-help]');
+   (trigger||header).textContent=label;
+   header.setAttribute('aria-label',label);
+  }
+  for(const cell of statsHost.querySelectorAll('.app-player-stats-loading [data-metric="score"]'))
+   cell.dataset.mobileLabel=label;
+ }
  function ensurePlayerStats(){
   if(preview||!statsHost||!id||!player||state!=='ready')return;
   if(statsController){statsController.render();void statsController.load();return;}
@@ -319,6 +335,7 @@
    if(!tab.disabled)tab.tabIndex=selected?0:-1;
   });
   syncViewEdges();
+  syncStatsScoreLabel();
   if(view==='stats')void ensurePlayerStats();else statsController?.render();
   for(const [key,label] of [['positions',e.positions],['info',e.info],['attributes',e.attributes]]){
    panel.querySelector('[data-detail-section-title="'+key+'"]').textContent=label;

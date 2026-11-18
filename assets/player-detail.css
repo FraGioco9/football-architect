@@ -171,7 +171,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-header-trigger:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .app-player-stats-total-label{color:var(--muted);text-align:left}
 .app-player-stats-table .app-player-stats-total-value{
- display:inline-flex;box-sizing:border-box;width:100%;min-width:0;min-height:16px;
+ display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;
  align-items:center;justify-content:flex-start;line-height:16px;text-align:left;
 }
 .app-player-stats-season-row{background:var(--surface-raised)}
@@ -207,10 +207,20 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:baseline;
 }
 .app-player-stats-link:is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
+.app-player-stats-table .app-player-stats-club-link .app-player-stats-club-name{text-decoration:none}
+.app-player-stats-table .app-player-stats-club-link:is(:hover,:focus-visible) .app-player-stats-club-name{
+ text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto;
+}
 .app-player-stats-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-player-stats-table .app-player-stats-number .app-player-stats-value{
- display:inline-flex;box-sizing:border-box;width:100%;min-width:0;min-height:16px;
+ display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;
  align-items:center;justify-content:flex-end;line-height:16px;text-align:right;
+}
+.app-player-stats-table .app-player-stats-loading .app-player-stats-value>.app-skeleton-bar{
+ flex:0 0 auto;max-width:100%;
+}
+.app-player-stats-table [data-detail-stats-heading="5"] .app-player-stats-score-heading-skeleton{
+ display:inline-block;width:20px;height:10px;margin:0;vertical-align:middle;
 }
 .app-player-stats-table .app-player-stats-loading .app-skeleton-bar{
  display:block;min-width:0;height:12px;margin:0;

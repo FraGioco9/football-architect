@@ -82,19 +82,26 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  assert.equal((tbody.match(/class="app-player-stats-total-value"/g)||[]).length,2,
   'both total labels reserve the same left-aligned value slot as hydrated rows');
  for(const key of fields){
-  assert.match(tbody,new RegExp('data-metric="'+key+'" data-mobile-label="[^"]+"'));
+  assert.match(tbody,new RegExp('data-metric="'+key+'" data-mobile-label="'+(key==='score'?'':'[^"]+')+'"'));
   assert.ok(css.includes('.app-player-stats-loading [data-metric="'+key+'"] .app-skeleton-bar'));
  }
  assert.match(css,/--player-stats-row-height:56px/);
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-number .app-player-stats-value'));
+ assert.match(css,/display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;/,
+  'hydrated numbers and skeleton bars share one fixed-height value track');
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-value>\.app-skeleton-bar\{/);
+ assert.match(css,/\.app-player-stats-table \[data-detail-stats-heading="5"\] \.app-player-stats-score-heading-skeleton\{/);
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-total-value'));
  assert.ok(css.includes('grid-row:2;min-height:16px;width:100%;align-self:center;justify-content:center'));
  assert.match(css,/\.app-player-stats-table tr>td\.app-player-stats-number::before/);
  assert.match(css,/\.app-player-stats-competition-row\[hidden\]\{display:none\}/);
  assert.match(css,/transition:transform 120ms ease-out/);
- assert.match(html,/data-detail-stats-heading="5">Gls<\/th>/);
+ assert.match(html,/data-detail-stats-heading="5" aria-label="Goals or clean sheets"><span class="app-skeleton-bar app-player-stats-score-heading-skeleton" aria-hidden="true"><\/span><\/th>/);
+ assert.doesNotMatch(html,/data-detail-stats-heading="5">Gls<\/th>/,
+  'a goalkeeper must never see outfield Goals before identity is fetched');
  assert.match(html,/data-detail-stats-heading="9">Rat\.<\/th>/);
- assert.match(tbody,/data-metric="score" data-mobile-label="Gls"/);
+ assert.equal((tbody.match(/data-metric="score" data-mobile-label=""/g)||[]).length,2,
+  'mobile first-paint score labels stay neutral until position is known');
  assert.match(tbody,/data-metric="rating" data-mobile-label="Rat\."/);
  assert.match(css,/\.app-player-stats-total-label\{color:var\(--muted\);text-align:left\}/);
  assert.doesNotMatch(css,/\.app-player-stats-header-trigger:is\(:hover,:focus-visible\)\{text-decoration:underline/);
@@ -184,7 +191,9 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
   assert.equal(crest.children[0].alt,'');
   assert.equal(crest.children[0].width,24);
   assert.equal(crest.children[0].height,24);
-  assert.equal(clubLink.textContent,'AC Meneghina');
+  assert.equal(clubLink.className,'app-player-stats-link app-player-stats-club-link');
+  assert.equal(clubLink.children[0].className,'app-player-stats-club-name');
+  assert.equal(clubLink.children[0].textContent,'AC Meneghina');
   assert.equal(clubLink.href,'/clubs/it/1/overview');
   assert.equal(otherDetail.children[2].children[0].children.length,2,
    'unknown official crest retains shield fallback and the valid name link');
@@ -228,11 +237,15 @@ test('#578 Stats club crests are passive, bounded and separated from linked text
  assert.match(stats,/asset==='assets\/clubs\/'\+match\[1\]/,'only canonical paths are rendered');
  assert.match(stats,/crest\.setAttribute\('aria-hidden','true'\)/,'crest is not a second link');
  assert.match(stats,/image\.alt=''/,'crest has decorative alternative text');
+ assert.match(stats,/clubLink\.append\(el\('span',clubName\?\.\(record\.clubId\)\|\|record\.clubId,'app-player-stats-club-name'\)\)/);
  assert.match(stats,/identity\.append\(clubLink\);club\.append\(identity\)/,
   'link remains text-only alongside passive crest');
  assert.match(bootstrap,/crests=catalog\.clubCrests/,'use the existing club catalog');
  assert.match(bootstrap,/clubCrest:key=>crests&&Object\.hasOwn\(crests,key\)/);
  assert.match(css,/\.app-player-stats-club-identity\{display:flex;align-items:center;gap:7px/);
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-club-link:is\(:hover,:focus-visible\) \.app-player-stats-club-name\{/,
+  'underline applies only to the hovered/focused club-name text');
+ assert.match(css,/text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px/);
  const shared=read('assets/app.css');
  assert.match(shared,/\.app-players-club-mark\{[^}]*width:24px;height:24px/);
  assert.match(shared,/\.app-players-club-mark::before\{[^}]*clip-path:var\(--fa-crest-shield-shape\)/);
@@ -292,5 +305,31 @@ test('#578 History/Stats table gap is 5px on desktop and mobile',()=>{
  for(const [label,css,selector] of [['Player',player,'.app-player-detail-stats'],['Club',club,'.club-history']]){
   const expected=selector+'{margin-top:5px;min-width:0}';
   assert.equal(css.split(expected).length-1,2,label+' uses 5px on desktop and mobile');
+ }
+});
+
+test('#578 initial Stats score is neutral until profile, then GK is CS in all languages',()=>{
+ const source=read('assets/player-detail.js'),html=read('players/_shared/index.html');
+ const start=source.indexOf(' function syncStatsScoreLabel(){');
+ const end=source.indexOf('\n function ensurePlayerStats(){',start);
+ assert.ok(start>=0&&end>start,'score label identity hook exists');
+ const implementation=source.slice(start,end);
+ assert.ok(source.indexOf('  syncStatsScoreLabel();')<source.indexOf("if(view==='stats')void ensurePlayerStats()"),
+  'identity-specific header and mobile labels synchronize before Stats loader');
+ const scoreHeader={textContent:'',attributes:{},setAttribute(k,v){this.attributes[k]=v},
+  querySelector(){return null}};
+ const cells=[{dataset:{mobileLabel:''}},{dataset:{mobileLabel:''}}];
+ const host={querySelector:s=>s==='[data-detail-stats-heading="5"]'?scoreHeader:null,
+  querySelectorAll:s=>s==='.app-player-stats-loading [data-metric="score"]'?cells:[]};
+ assert.equal((html.match(/data-metric="score" data-mobile-label=""/g)||[]).length,2);
+ for(const [lang,outfield] of Object.entries({en:'Gls',it:'Gol',de:'Tor.',es:'Gol',fr:'Bts'})){
+  const identitySync=new Function('statsHost','player','language',implementation+'\nreturn syncStatsScoreLabel;');
+  identitySync(host,{primary_position:'GK'},()=>lang)();
+  assert.equal(scoreHeader.textContent,'CS',lang+' GK header');
+  assert.equal(scoreHeader.attributes['aria-label'],'CS');
+  assert.deepEqual(cells.map(x=>x.dataset.mobileLabel),['CS','CS'],lang+' GK mobile');
+  identitySync(host,{primary_position:'ST'},()=>lang)();
+  assert.equal(scoreHeader.textContent,outfield,lang+' outfield header');
+  assert.deepEqual(cells.map(x=>x.dataset.mobileLabel),[outfield,outfield]);
  }
 });

@@ -142,3 +142,10 @@ test('#578 Club History hydrated values and skeletons share the same slots',asyn
  assert.ok(ready.includes('class="club-history-total-value">Total</span>'));
  assert.ok(pending.includes('class="club-history-total-value"><span class="club-fp-bar"'));
 });
+
+test('#578 Club History loading bars and verified numeric values share one 16px centerline',()=>{
+ const css=read('assets/club-page.css');
+ assert.match(css,/\.club-history-table td:nth-child\(n\+4\) \.club-history-stat-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;/);
+ assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-stat-value>\.club-fp-bar\{\s*flex:0 0 auto;max-width:100%;/);
+ assert.match(css,/\.club-history-table \.club-history-total-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;/);
+});

@@ -394,7 +394,7 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-table .club-history-season-value{text-align:left}
 .club-history-table .club-history-total-label{text-align:left;color:var(--muted)}
 .club-history-table .club-history-total-value{
- display:inline-flex;box-sizing:border-box;width:100%;min-width:0;min-height:16px;
+ display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;
  align-items:center;justify-content:flex-start;line-height:16px;text-align:left;
 }
 .club-history-table .club-history-competition-value{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-inline-start:18px}
@@ -417,8 +417,11 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-table .club-history-competition-row{background:transparent}
 .club-history-table .club-history-competition-row th,.club-history-table .club-history-competition-row td{border-bottom-color:var(--line)}
 .club-history-table td:nth-child(n+4) .club-history-stat-value{
- display:inline-flex;box-sizing:border-box;width:100%;min-width:0;min-height:16px;
+ display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;
  align-items:center;justify-content:center;line-height:16px;text-align:center;
+}
+.club-history-table .club-history-row-loading .club-history-stat-value>.club-fp-bar{
+ flex:0 0 auto;max-width:100%;
 }
 .club-history-table .club-fp-bar{display:block;width:24px;min-width:20px;height:12px;margin-inline:auto}
 .club-history-table .club-history-row-loading .club-history-skeleton-label{cursor:default;pointer-events:none}

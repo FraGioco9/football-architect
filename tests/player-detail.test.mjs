@@ -772,3 +772,12 @@ test('#634 mobile header grid reserves portrait and prevents nationality wrappin
  }
  assert.match(renderer,/data-detail-header-nationality/);
 });
+
+test('#578 verified Player Stats score position is set before any table fetch',()=>{
+ const js=read('assets/player-detail.js'),html=read('players/_shared/index.html');
+ assert.match(js,/function syncStatsScoreLabel\(\)\{/);
+ assert.match(js,/player\.primary_position==='GK'\?'CS'/);
+ assert.ok(js.indexOf('syncStatsScoreLabel();')<js.indexOf("if(view==='stats')void ensurePlayerStats()"));
+ assert.doesNotMatch(html,/data-detail-stats-heading="5">Gls<\/th>/);
+ assert.match(html,/data-detail-stats-heading="5" aria-label="Goals or clean sheets"/);
+});
