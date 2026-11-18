@@ -17,7 +17,7 @@
 
 ## Read-only V4.2 candidate workflow
 
-Use an initial-data export already verified for the correct environment. Supply each ID, `name` or `first_name`/`last_name`, `nationality`, `secondary_nationality`, frozen initial physical attributes, and `initial_verified:true`.
+Use an initial-data export already verified for the correct environment. Supply each ID, `name` or `first_name`/`last_name`, `nationality`, `secondary_nationality`, frozen initial physical attributes, and `initial_verified:true`. The strict offline 150-player exporter is `tools/prepare-player-portrait-v42.mjs` with the read-only source query `tools/prepare-player-portrait-v42.sql`. It validates original draft payloads and writes only fresh V4.2 candidate snapshots outside Git.
 
 ```sh
 node tools/export-player-image-prompts.mjs --input verified-initial-players.json --out ./private-v42-prompts
