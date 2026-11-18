@@ -6,7 +6,8 @@ import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
 import {chooseIsolatedDribbleTouch} from '../src/isolated-dribble-touches.mjs';
-import {advanceD01LiveShoeGait} from '../src/rapier-foot-contact-bridge.mjs';
+import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
+ from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
  from '../src/solo-carry-phases.mjs';
 test('#628 solo Carry phases use only genuine ball/player speed and gap with hysteresis',()=>{
@@ -365,4 +366,79 @@ test('#628 solo Carry physical intensity scales original real touch without velo
  assert.equal(solo.fromLiveBallVelocity,true);
  assert.equal(solo.genuineRapierShoeStartRequired,true);
  assert.throws(()=>chooseIsolatedDribbleTouch({...params,solo:true,defender:{team:'away',x:33,y:0}}),TypeError);
+});
+
+test('#628 solo physical foot targets oppose stride without creating contacts',()=>{
+ const p={x:29.45,y:0,facingRad:0,vx:2,vy:0};
+ const b={position:{x:30,y:0,z:0.11},velocity:{x:1.6,y:0,z:0}};
+ const gait=advanceD01LiveShoeGait({
+  phaseRad:0,tick:1,player:p,ball:b,solo:true,carryPhase:'moderate'});
+ const a=soloCarryTwoFootPositions(p,gait);
+ assert.equal(a.realContactsOnly,true);
+ assert.equal(a.physicsImposed,false);
+ assert.ok(a.left.y>a.right.y);
+ assert.ok(a.left.y-a.right.y>=0.14,
+  'Real lateral shoe tracks must not collapse into one overlapping shoe');
+ assert.ok(a.left.x<a.right.x,'At this phase right foot advances while left recovers');
+ const next=soloCarryTwoFootPositions(p,{...gait,phaseRad:Math.PI,
+  forwardM:0.075,sideM:0});
+ assert.ok(next.left.x>next.right.x,
+  'Opposite half stride makes left shoe overtake right foot');
+ const away=soloCarryTwoFootPositions({...p,x:-p.x,facingRad:Math.PI},
+  {...gait,observedAheadM:gait.observedAheadM});
+ assert.ok(away.left.x<away.right.x);
+ assert.throws(()=>soloCarryTwoFootPositions(null),TypeError);
+ assert.throws(()=>soloCarryTwoFootPositions(p,{phaseRad:NaN}),TypeError);
+});
+
+test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const samples=[];
+ for(const side of ['home','away'])for(const variantIndex of [0,3]){
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide:side,variantIndex,bodyGuardEnabled:true});
+  let nativeFootStarts=0,actions=0;
+  const footNames=new Set();
+  try{
+   for(let tick=1;tick<=180;tick++){
+    const f=lab.step(),shoes=f.soloNativeFeet;
+    assert.equal(f.physicsTick,tick);
+    assert.equal(f.genuinePhysicalPlayerCount,1);
+    assert.equal(shoes?.source,'rapier-physical-collider-events');
+    assert.equal(shoes.independentColliders,2);
+    assert.deepEqual(shoes.active,
+     ['left','right'].filter(name=>shoes.active.includes(name)));
+    assert.equal(shoes.exclusivePhysicalStart,
+     shoes.started.length===1&&shoes.active.length===1);
+    nativeFootStarts+=shoes.started.length;
+    for(const name of shoes.started)footNames.add(name);
+    if(f.action?.action==='carry'){
+     actions++;
+     assert.equal(shoes.exclusivePhysicalStart,true);
+     assert.equal(f.action.appliedByRapier,true);
+     assert.equal(f.action.actualPhysicsImpulseApplied,true);
+     assert.equal(f.action.playerId,side+'-10');
+     assert.ok(f.starts.includes(side+'-10'));
+    }
+    assert.ok(f.nativeDribbleAudit.peakGroundClearanceM<=0.015);
+    assert.equal(f.nativeDribbleAudit.airborneFramesAbove2Cm,0);
+    assert.ok(f.nativeDribbleAudit.peakBallSpeedMps<=3.5);
+   }
+   const evidence=lab.snapshot().nativeDribbleAudit;
+   assert.equal(evidence.nativePhysicalShoeColliders,2);
+   assert.equal(evidence.realActionFeet.length,actions);
+   assert.equal(evidence.nativeLeftFootStarts+
+    evidence.nativeRightFootStarts,nativeFootStarts);
+   assert.ok(evidence.verifiedFootAlternations<=Math.max(0,actions-1));
+   assert.ok(nativeFootStarts>=actions);
+   samples.push({side,variantIndex,nativeFootStarts,actions,
+    physicalFeet:[...footNames],realActionFeet:evidence.realActionFeet,
+    verifiedFootAlternations:evidence.verifiedFootAlternations,
+    peakBallSpeedMps:evidence.peakBallSpeedMps,
+    peakGroundClearanceM:evidence.peakGroundClearanceM});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_SOLO_TWO_REAL_FEET '+
+  JSON.stringify(samples)+'\\n');
 });
