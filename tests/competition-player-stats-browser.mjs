@@ -75,7 +75,7 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    assert.equal(await goals.locator('li strong').nth(1).textContent(),'1');
    assert.equal(await cards.filter({has:page.locator('[data-app-i18n="statsDevAssists"]')}).locator('.fa-dev-stats-empty').textContent(),width===390?'Nessun giocatore':'No players');
    assert.equal(await goals.locator('li .fa-dev-stats-team-name[href="/players/2"]').count(),1);
-   assert.equal(await goals.locator('span.fa-dev-stats-club-link').first().textContent(),'QA Club 1');
+   assert.equal(await goals.locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').first().textContent(),'QA Club 1');
    const before=await goals.boundingBox();
    const filledSizes=await cards.evaluateAll(nodes=>nodes.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
    assert.ok(filledSizes.every(size=>size.height===filledSizes[0].height),'all eight populated cards reserve equal height');
@@ -138,6 +138,7 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    const dialog=page.locator('dialog[open]');
    assert.equal(await dialog.locator('li').count(),8);
    assert.equal(await dialog.locator('.fa-dev-stats-team-name[href="/players/1"]').textContent(),'#1');
+   assert.equal(await dialog.locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').count(),8,'Show all links each player to their recorded club');
    await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
    for(const mode of ['mixed','fallback','no-games','archive']){
     await page.evaluate(mode=>window.__stats643Supply(mode),mode);
@@ -166,7 +167,8 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
      await portrait.locator('img').waitFor({state:'visible'});
      const crop=await portrait.evaluate(el=>({radius:getComputedStyle(el).borderRadius,overflow:getComputedStyle(el).overflow,width:el.clientWidth,height:el.clientHeight,imageWidth:el.querySelector('img').getBoundingClientRect().width,state:el.dataset.portraitState}));
      assert.equal(await portrait.evaluate(el=>el.tagName),'SPAN');
-     assert.equal(await goals.locator('li a').count(),1,'the only player-row link is the name');
+     assert.equal(await goals.locator('li a').count(),2,'player name and club name have independent links');
+     assert.equal(await goals.locator('li a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').count(),1);
      assert.equal(crop.radius,'50%');assert.equal(crop.overflow,'hidden');assert.equal(crop.width,crop.height);assert.equal(crop.state,'ready');assert.ok(crop.imageWidth>crop.width*2.7);
      mkdirSync('int24-browser-artifacts',{recursive:true});
      await page.screenshot({path:`int24-browser-artifacts/stats-643-face-${engine}-${id}-${width}.png`,fullPage:true});
