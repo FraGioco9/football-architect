@@ -657,10 +657,13 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const skeletonNameLeft=header.querySelector('.club-fp-bar').getBoundingClientRect().left;
         const skeletonNameCenterY=rect(header.querySelector('.club-fp-bar')).cy;
         const skeletonInkStyle=getComputedStyle(header.querySelector('.club-fp-bar'),'::before');
+        const skeletonBarStyle=getComputedStyle(header.querySelector('.club-fp-bar'));
         const skeletonPaint={decoration:skeletonInkStyle.textDecorationLine,
          thickness:skeletonInkStyle.textDecorationThickness,
-         bg:getComputedStyle(header.querySelector('.club-fp-bar')).backgroundColor,
-         translation:getComputedStyle(header.querySelector('.club-fp-bar')).translate};
+         bg:skeletonBarStyle.backgroundColor,translation:skeletonBarStyle.translate,
+         overflow:skeletonBarStyle.overflow,radius:skeletonBarStyle.borderRadius,
+         justify:skeletonBarStyle.justifyContent,weight:skeletonInkStyle.fontWeight,
+         sample:skeletonInkStyle.content};
         row.classList.remove('club-history-row-loading');
         header.innerHTML=original;
         return {actual,skeleton,totalAlignment,skeletonPaint,nameOffset:skeletonNameLeft-nameLeft,
@@ -688,8 +691,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         'Club History Season bar follows the actual letter ink center at '+width+': '+JSON.stringify(alignment));
        assert.ok(alignment.skeletonPaint.decoration.includes('line-through')&&
         alignment.skeletonPaint.thickness==='12px'&&alignment.skeletonPaint.translation==='none'&&
-        alignment.skeletonPaint.bg==='rgba(0, 0, 0, 0)',
-        'History skeleton uses font-native baseline instead of a guessed Y offset at '+width+': '+JSON.stringify(alignment));
+        alignment.skeletonPaint.bg==='rgba(0, 0, 0, 0)'&&
+        alignment.skeletonPaint.overflow==='hidden'&&alignment.skeletonPaint.radius==='5px'&&
+        alignment.skeletonPaint.justify==='flex-start'&&alignment.skeletonPaint.weight==='700',
+        'History Season uses the original rounded bar, left-aligned with the bold text at '+width+': '+JSON.stringify(alignment));
        if(width>620)assert.ok(Math.abs(alignment.totalAlignment.inkDy)<=1.5,
         'Club History Total bar follows painted Total glyphs at '+width+': '+JSON.stringify(alignment));
        if(width>620)assert.ok(Math.abs(alignment.totalAlignment.dx)<=1&&Math.abs(alignment.totalAlignment.dy)<=3,
@@ -927,10 +932,29 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const loadingTotalCenter=rect(loadingRow.querySelector('.app-player-stats-skeleton-total')).y;
        const loadingSeasonCenter=rect(loadingSeasonBar).y;
        const samplePaintStyle=getComputedStyle(loadingSeasonBar,'::before');
+       const labelPaintStyle=getComputedStyle(loadingSeasonBar);
        const samplePaint={decoration:samplePaintStyle.textDecorationLine,
         thickness:samplePaintStyle.textDecorationThickness,
-        translation:getComputedStyle(loadingSeasonBar).translate,
-        bg:getComputedStyle(loadingSeasonBar).backgroundColor};
+        translation:labelPaintStyle.translate,bg:labelPaintStyle.backgroundColor,
+        radius:labelPaintStyle.borderRadius,overflow:labelPaintStyle.overflow,
+        justify:labelPaintStyle.justifyContent,
+        sample:samplePaintStyle.content};
+       // Same cell/row geometry, but the two distinct loaded labels.
+       // Recreate the Career variant to catch its formerly inset ghost stroke.
+       const seasonTextOriginal=seasonLabel.textContent;
+       seasonLabel.textContent='Career';
+       const careerRange=document.createRange();careerRange.selectNodeContents(seasonLabel);
+       const careerTextLeft=careerRange.getBoundingClientRect().left-seasonHeader.getBoundingClientRect().left;
+       const careerInkOffset=(rect(loadingSeasonBar).y-rect(loadingHeader).y)-
+        (glyphInkY(seasonLabel,careerRange)-rect(seasonHeader).y);
+       loadingSeasonBar.classList.replace('app-player-stats-skeleton-season','app-player-stats-skeleton-career');
+       const careerBarStyle=getComputedStyle(loadingSeasonBar);
+       const careerPaint={left:loadingSeasonBar.getBoundingClientRect().left-loadingHeader.getBoundingClientRect().left,
+        justify:careerBarStyle.justifyContent,overflow:careerBarStyle.overflow,
+        radius:careerBarStyle.borderRadius,
+        sample:getComputedStyle(loadingSeasonBar,'::before').content};
+       loadingSeasonBar.classList.replace('app-player-stats-skeleton-career','app-player-stats-skeleton-season');
+       seasonLabel.textContent=seasonTextOriginal;
        const link=probe.querySelector('.app-player-stats-club-link'),name=link.querySelector('.app-player-stats-club-name');
        const competitionLink=probe.querySelector('.app-player-stats-competition-link');
        const bounds=rect(name),compBounds=rect(competitionLink);
@@ -972,6 +996,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         competitionStart,
         seasonTextOffset,loadingSeasonOffset,seasonLoadedX,loadingSeasonX,
         totalLoadedAnchor,totalPendingAnchor,seasonInkOffset,totalInkOffset,samplePaint,
+        careerPaint,careerTextLeft,careerInkOffset,
         loadingSeasonCenter,loadingTotalCenter,loadingSkeletonCenters,
         crestNameOffset:crestCenter-originalNameCenter,
         independentCrestOffset:independentCrestCenter-crestCenter,
@@ -995,8 +1020,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        'Player Stats Season placeholder matches the visible letters at '+width+': '+JSON.stringify(placement));
       assert.ok(placement.samplePaint.decoration.includes('line-through')&&
        placement.samplePaint.thickness==='12px'&&placement.samplePaint.translation==='none'&&
-       placement.samplePaint.bg==='rgba(0, 0, 0, 0)',
-       'Stats skeleton uses font-native baseline rather than a manual Y offset at '+width+': '+JSON.stringify(placement));
+       placement.samplePaint.bg==='rgba(0, 0, 0, 0)'&&
+       placement.samplePaint.radius==='4px'&&placement.samplePaint.overflow==='hidden'&&
+       placement.samplePaint.justify==='flex-start',
+       'Season renders a rounded standard skeleton beginning at the actual text origin at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.careerPaint.left-placement.careerTextLeft)<=1&&
+       Math.abs(placement.careerInkOffset)<=1.5&&
+       placement.careerPaint.justify==='flex-start'&&placement.careerPaint.overflow==='hidden'&&
+       placement.careerPaint.radius==='4px'&&
+       placement.careerPaint.sample===placement.samplePaint.sample,
+       'Career and Season share the loaded text origin, font baseline and 70px rounded fill at '+width+': '+JSON.stringify(placement));
       if(width>620)assert.ok(Math.abs(placement.totalInkOffset)<=1.5,
        'Player Stats Total placeholder matches painted Total letters at '+width+': '+JSON.stringify(placement));
       assert.ok(Math.abs(placement.seasonLoadedX-placement.loadingSeasonX)<=1,

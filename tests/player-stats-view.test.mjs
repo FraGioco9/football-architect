@@ -101,12 +101,18 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-total-value'));
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading :is\(\.app-player-stats-skeleton-label,\.app-player-stats-total-value\)>\.app-skeleton-bar\{\s*align-self:center;flex:none;margin-inline:0;/,
   'Career/Season/Total skeleton bars follow the actual text flex origin');
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar\{[^}]*overflow:hidden;border-radius:4px;/,
+  'Stats skeletons keep the same rounded corners as generic site skeletons');
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-skeleton-label>\.app-skeleton-bar\{justify-content:flex-start\}/,
+  'Season/Career skeleton paint must begin at the loaded text origin');
+ assert.match(css,/\.app-player-stats-loading :is\(\.app-player-stats-skeleton-career,\.app-player-stats-skeleton-season\)::before\{content:"Season 11 Season 11"\}/,
+  'Season/Career strokes must both fill the same 70px width');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar::before\{[^}]*text-decoration-line:line-through;/,
-  'Career/Season/Total and numeric Stats skeleton paint on the font baseline');
+  'the font baseline remains the skeleton paint reference');
  assert.match(css,/text-decoration-thickness:12px;text-decoration-skip-ink:none;/,
   'Stats skeleton strokes are 12px high');
- assert.match(css,/\.app-player-stats-score-heading-skeleton::after\{[^}]*text-decoration-line:line-through;/,
-  'neutral score heading follows its eventual text baseline');
+ assert.match(css,/\.app-player-stats-score-heading-skeleton::after\{[^}]*height:10px;border-radius:4px;/,
+  'neutral score heading uses the same rounded 10px placeholder as the rest of the site');
  assert.ok(css.includes('grid-row:2;min-height:24px;width:100%;align-self:center;justify-content:center'));
  assert.match(css,/\.app-player-stats-table tr>td\.app-player-stats-number::before/);
  assert.match(css,/grid-template-rows:12px 24px/,'mobile value track accommodates the full text line');
@@ -382,7 +388,7 @@ test('#578 numeric skeletons use rendered font metrics rather than guessed width
    'Club History '+metric+' reserves natural glyph widths before JS');
  }
  assert.match(club,/\.club-history-table \.club-history-row-loading \.club-history-skeleton-stat \.club-fp-bar\[data-skeleton-sample\]\{/);
- assert.match(club,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;/);
+ assert.match(club,/content:attr\(data-skeleton-sample\);font-variant-numeric:tabular-nums;/);
  assert.match(css,/\.app-player-stats-table \.app-player-stats-number \.app-player-stats-value\{[\s\S]*?justify-content:flex-end/);
  assert.match(club,/\.club-history-table td:nth-child\(n\+4\) \.club-history-stat-value\{[\s\S]*?justify-content:center/);
  assert.ok(css.includes('.app-player-stats-table :is(.app-player-stats-toggle,.app-player-stats-static-label,.app-player-stats-skeleton-label)'),

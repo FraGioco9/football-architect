@@ -291,14 +291,13 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  width:20px;height:28px;margin:0;vertical-align:middle;background:transparent;
 }
 .app-player-stats-table [data-detail-stats-heading="5"] .app-player-stats-score-heading-skeleton::after{
- content:"Gls";font:inherit;line-height:1.5;color:transparent;
- text-decoration-line:line-through;
- text-decoration-color:color-mix(in srgb,var(--muted) 22%,var(--surface));
- text-decoration-thickness:10px;text-decoration-skip-ink:none;white-space:nowrap;
+ content:"";display:block;width:20px;height:10px;border-radius:4px;
+ background:color-mix(in srgb,var(--muted) 22%,var(--surface));
 }
 .app-player-stats-table .app-player-stats-loading .app-skeleton-bar{
  display:inline-flex;align-items:center;justify-content:center;
  min-width:0;height:12px;margin:0;background:transparent;translate:none;
+ overflow:hidden;border-radius:4px;
 }
 /* All bars paint on the font's native baseline, no per-browser translation.
    Unverified sample glyphs remain transparent; only a solid stripe is seen. */
@@ -308,8 +307,11 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  text-decoration-color:color-mix(in srgb,var(--muted) 22%,var(--surface));
  text-decoration-thickness:12px;text-decoration-skip-ink:none;
 }
-.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-career::before{content:"Career"}
-.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-season::before{content:"Season 11"}
+/* Career and Season must paint from the SAME text origin across the whole
+   reserved 70px width. Short centered ghost words previously made Career
+   appear 12px to the right despite a correctly positioned bar container. */
+.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-label>.app-skeleton-bar{justify-content:flex-start}
+.app-player-stats-table .app-player-stats-loading :is(.app-player-stats-skeleton-career,.app-player-stats-skeleton-season)::before{content:"Season 11 Season 11"}
 .app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-total::before{content:"Totals"}
 /* One column, one skeleton width: Career and Season labels share the same
    70px loading bar; numeric columns share the same glyph sample per metric. */
