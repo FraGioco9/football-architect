@@ -204,6 +204,35 @@ test('Seasonal wins and all-time wins and goals keep distinct winners and tied i
  assert.deepEqual(result.totalWins,{value:40,clubs:[club(2),club(3)]});
  assert.deepEqual(result.totalGoals,{value:160,clubs:[club(2),club(3)]});
 });
+test('Public History shows a single empty message only for scopes without verified records',()=>{
+ const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
+ const start=source.indexOf('// History record scope'),end=source.indexOf('/* HISTORY-UI-11',start);
+ const group=(scopeWithValue,which)=>{
+  const grid={hidden:false},empty={hidden:false},selector=which==='team'?'[data-history-team-empty]':'[data-history-player-empty]';
+  const cards=['season','all-time'].map(scope=>({dataset:{historyScope:scope},hidden:false,
+   querySelector:key=>key==='.app-competition-stat-value'&&scope===scopeWithValue?{}:null}));
+  return {grid,empty,cards,querySelector:key=>key==='.app-competition-stat-grid'?grid:key===selector?empty:null,
+   querySelectorAll:key=>key==='[data-history-scope]'?cards:[]};
+ };
+ const team=group('season','team'),players=group('all-time','player');
+ const controls=['season','all-time'].map(scope=>({dataset:{historyRecordScope:scope},setAttribute(){}}));
+ const events={};
+ const panel={dataset:{},querySelectorAll:key=>
+  key==='[data-history-team-records]'?[team]:
+  key==='[data-history-player-records]'?[players]:
+  key==='[data-history-record-scope]'?controls:
+  key==='[data-history-scope]'?[...team.cards,...players.cards]:[],
+  addEventListener:(event,callback)=>{events[event]=callback},contains:()=>true};
+ const window={};runInNewContext(source.slice(start,end),{window,document:{getElementById:()=>panel}});
+ assert.deepEqual([team.grid.hidden,team.empty.hidden,players.grid.hidden,players.empty.hidden],[false,true,true,false],
+  'Season shows verified team rows and one player empty message');
+ events.click({target:{closest:()=>controls[1]}});
+ assert.deepEqual([team.grid.hidden,team.empty.hidden,players.grid.hidden,players.empty.hidden],[true,false,false,true],
+  'All-time shows one team empty message and verified player rows');
+ events.click({target:{closest:()=>controls[0]}});
+ assert.deepEqual([team.grid.hidden,team.empty.hidden,players.grid.hidden,players.empty.hidden],[false,true,true,false],
+  'Changing scope never leaves an empty grid visible');
+});
 test('History scope switch updates all matching controls and cards without changing the route',()=>{
  const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
  const start=source.indexOf('// History record scope');assert.ok(start>=0);
