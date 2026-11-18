@@ -227,6 +227,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   const carryDecisions=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
    "document.querySelector('#preset-options [data-value=\\\"action:dribble-1v1\\\"]').click();"+
+   "document.getElementById('me-inline-side-trigger').click();"+
+   "document.querySelector('#me-inline-side-options [data-value=\\\"home\\\"]').click();"+
    "for(let n=0;n<60;n++)document.getElementById('step').click();"+
    "const el=id=>document.getElementById(id),panel=el('me-decisions-panel');"+
    "return {visible:!panel.hidden,rows:[...panel.querySelectorAll('.me-decision-row')].map(x=>x.textContent),"+
