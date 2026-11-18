@@ -9,7 +9,7 @@ import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/pl
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
  keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget}
  from '../src/small-sided-lab-scenarios.mjs';
-import {createControlledActionLab} from '../src/action-labs.mjs';
+import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
 
 test('#628 small-sided catalog replaces only visible elementary exercise UI; archives remain for regression',()=>{
  const ids=SMALL_SIDED_LAB_SCENARIOS.map(s=>s.id);
@@ -19,14 +19,15 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
   [2,2,3,4,5,7]);
  const html=readFileSync(new URL('../lab/index.html',import.meta.url),'utf8');
  const ui=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
- for(const id of ids){
-  assert.match(html,new RegExp('<option value="'+id+'">'));
+ for(const id of ids)
+  assert.match(html,new RegExp('<option value="'+id+'">'),
+   'original research scene stays in hidden regression catalog');
+ for(const id of ['dribble-1v1','keeper-1v1','overload-2v1','duel-3v3'])
   assert.match(ui,new RegExp("'"+id+"'"));
- }
- assert.match(ui,/count!==16/);
- assert.doesNotMatch(ui,/count!==51/);
- assert.match(ui,/visibleMovement/);
- assert.match(html,/Small-sided situations/);
+ assert.match(ui,/length!==8/);
+ assert.doesNotMatch(ui,/visibleMovement/);
+ assert.match(ui,/Player exercises/);
+ assert.match(html,/On-field decisions/);
  assert.match(html,/Original|Rapier/i);
  assert.match(html,/<option value="pass">/,'old scenes preserved as internal automated regression');
  for(const side of ['home','away'])for(const s of SMALL_SIDED_LAB_SCENARIOS){
@@ -375,4 +376,44 @@ test('#628 LAB-VAR-02 local preview must serve actual seed-choice module before 
  const nodePolicy=readFileSync(new URL('../src/player-ball-uniform-autonomous-action.mjs',
   import.meta.url),'utf8');
  assert.ok(nodePolicy.includes("from './small-sided-context-choice.mjs'"));
+});
+
+test('#628 every actual on-field small-sided player has exactly one current mover decision',
+ {timeout:60000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const [scene,count] of [['dribble-1v1',2],['keeper-1v1',2],
+  ['overload-2v1',4],['duel-3v3',7]])
+ for(const side of ['home','away']){
+  const lab=createControlledActionLab(R,scene,{shotSide:side,
+   variantIndex:0,bodyGuardEnabled:true});
+  try{
+   let frame=lab.snapshot();
+   assert.deepEqual(projectActiveLabDecisions(frame,lab.focus),[],
+    'no fake decisions before original step');
+   for(let i=0;i<15;i++){
+    frame=lab.step();
+    const decisions=projectActiveLabDecisions(frame,lab.focus);
+    assert.equal(decisions.length,count);
+    assert.deepEqual(decisions.map(d=>d.id),lab.focus);
+    for(const d of decisions){
+     assert.equal(d.tick,frame.physicsTick);
+     assert.equal(d.originalCanonicalMover,true);
+     assert.equal(d.readOnly,true);
+     assert.equal(d.officialResult,false);
+     assert.ok(Number.isFinite(d.target.x)&&Number.isFinite(d.target.y));
+     assert.ok(Number.isFinite(d.speedMps));
+     const original=frame.observedMovementPlayers.find(p=>p.id===d.id);
+     assert.ok(Math.abs(d.speedMps-Math.hypot(original.vx,original.vy))<1e-9);
+     if(d.actualAction!==null){
+      assert.equal(frame.action?.playerId,d.id);
+      assert.equal(frame.action?.appliedByRapier,true);
+      assert.equal(frame.action?.actualPhysicsImpulseApplied,true);
+     }
+    }
+   }
+   assert.throws(()=>projectActiveLabDecisions(frame,['home-10','home-10']),TypeError);
+   assert.throws(()=>projectActiveLabDecisions({...frame,
+    smallSidedMovementDecisions:[]},lab.focus),TypeError);
+  }finally{lab.dispose();}
+ }
 });
