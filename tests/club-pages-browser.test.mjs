@@ -652,6 +652,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         header.innerHTML='<span class="club-history-expand club-history-skeleton-label">'+
          '<span class="club-history-chevron-space" aria-hidden="true"></span>'+
          '<span class="club-fp-bar" aria-hidden="true"></span></span>';
+        // Mirror the actual parser-time row state while probing its paint.
+        row.classList.add('club-history-row-loading');
         const skeletonNameLeft=header.querySelector('.club-fp-bar').getBoundingClientRect().left;
         const skeletonNameCenterY=rect(header.querySelector('.club-fp-bar')).cy;
         const skeletonInkStyle=getComputedStyle(header.querySelector('.club-fp-bar'),'::before');
@@ -659,6 +661,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          thickness:skeletonInkStyle.textDecorationThickness,
          bg:getComputedStyle(header.querySelector('.club-fp-bar')).backgroundColor,
          translation:getComputedStyle(header.querySelector('.club-fp-bar')).translate};
+        row.classList.remove('club-history-row-loading');
         header.innerHTML=original;
         return {actual,skeleton,totalAlignment,skeletonPaint,nameOffset:skeletonNameLeft-nameLeft,
          nameCenterOffset:skeletonNameCenterY-nameCenterY,
