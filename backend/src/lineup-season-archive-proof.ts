@@ -91,9 +91,10 @@ export function summarizeFrozenLineupPlayersV1(
     const v2=result.eventModelVersion==='lineup-events-v1';
     const m=coverage.get(key)??{seenV2:false,complete:true,assists:0,redCards:0,subAppearances:0};
     if(v2){
-     if(!Number.isSafeInteger(appearance.assists)||appearance.assists<0||
-      !Number.isSafeInteger(appearance.redCards)||appearance.redCards<0)invalid();
-     m.seenV2=true;m.assists+=appearance.assists;m.redCards+=appearance.redCards;
+     const assists=appearance.assists,reds=appearance.redCards;
+     if(typeof assists!=='number'||!Number.isSafeInteger(assists)||assists<0||
+      typeof reds!=='number'||!Number.isSafeInteger(reds)||reds<0)invalid();
+     m.seenV2=true;m.assists+=assists;m.redCards+=reds;
      if(!appearance.started)m.subAppearances++;
     }else m.complete=false;
     coverage.set(key,m);
