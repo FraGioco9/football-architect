@@ -569,12 +569,14 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
  assert.match(html,/data-history-competition-row="int-1" hidden/);
  assert.match(html,/\/competitions\/int-1\/standings\?season=1/);
  assert.match(html,/class="club-history-competition-link"/,'competition names use a dedicated plain-text link');
+ assert.doesNotMatch(historySection,/\stitle="/,
+  'Club History has no native title tooltips anywhere inside the table');
  assert.doesNotMatch(html,/<th scope="row" class="club-history-competition-value"><a class="app-link"/,'no globally boxed app-link for competition rows');
  const styles=read('assets/club-page.css');
  assert.match(styles,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{display:inline-block;width:fit-content;max-width:100%;min-width:0;min-height:0;margin:0;padding:0;border:0/,'competition links remain text-sized and unboxed instead of occupying the full cell');
  assert.doesNotMatch(styles,/\.club-history-table \.club-history-competition-row:hover \.club-history-competition-text/,'row hover must not underline the competition text');
  assert.match(styles,/text-decoration-line:underline;text-underline-offset:3px/,'match regular site link behavior');
- assert.match(html,/<td title="Quarti di finale">Quarti di finale<\/td>/,'international Pos. is the verified knockout stage, not the league position');
+ assert.match(html,/<td>Quarti di finale<\/td>/,'international Result is the verified knockout stage, not the league position');
  assert.doesNotMatch(html,/<td>8º<\/td>/,'international position must never display the league stage rank');
  assert.doesNotMatch(html,/Historical overview|Seasons played|Best league finish/);
  const loading=model.render(manifest,selected,'it','',null,2,{source:'loading'});

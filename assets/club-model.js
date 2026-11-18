@@ -372,8 +372,9 @@
    const columnWidths='<colgroup><col class="club-history-col-season"><col class="club-history-col-name"><col class="club-history-col-position">'+
     Array.from({length:8},()=>'<col class="club-history-col-number">').join('')+'</colgroup>';
    const bar='<span class="club-fp-bar" aria-hidden="true"></span>';
+   const sampleTotals={played:'30',won:'18',drawn:'7',lost:'5',gf:'54',ga:'29',gd:'+25'};
    const loadingStats=['played','won','drawn','lost','gf','ga','gd']
-    .map(key=>'<td class="club-history-skeleton-stat" data-club-history-skeleton="'+key+'"><span class="club-history-stat-value">'+bar+'</span></td>').join('');
+    .map(key=>'<td class="club-history-skeleton-stat" data-club-history-skeleton="'+key+'"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="'+sampleTotals[key]+'" aria-hidden="true"></span></span></td>').join('');
    const displayNumber=value=>value>0&&typeof value==='number'?'+'+value:String(value);
    let body='';
    if(verified&&!historySnapshot.seasons.some(entry=>entry.memberships.some(m=>m.stats?.played>0)))
@@ -419,8 +420,8 @@
        displayNumber(stats.goalDifference),m.points];
       return '<tr class="club-history-competition-row" data-club-history-detail="'+year+'"'+
        ' data-history-competition-row="'+escape(m.competitionId)+'" hidden>'+
-       '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="'+escape(href)+'" title="'+escape(title)+'"><span class="club-history-competition-text">'+escape(title)+'</span></a></th>'+
-       values.map((value,i)=>i===0?'<td'+(value?' title="'+escape(value)+'"':'')+'>'+escape(value)+'</td>':'<td><span class="club-history-stat-value">'+escape(value)+'</span></td>').join('')+'</tr>';
+       '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="'+escape(href)+'"><span class="club-history-competition-text">'+escape(title)+'</span></a></th>'+
+       values.map((value,i)=>i===0?'<td>'+escape(value)+'</td>':'<td><span class="club-history-stat-value">'+escape(value)+'</span></td>').join('')+'</tr>';
      }).join('');
      return summary+details;
     }).join('');

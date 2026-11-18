@@ -217,16 +217,29 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-table .app-player-stats-club-link .app-player-stats-club-name{
  display:inline;text-decoration:none;
 }
+/* The inherited link underline and the nested name underline used to draw
+   twice. Keep exactly one fine line on the text, never on the crest. */
+.app-player-stats-table a.app-player-stats-club-link:is(:hover,:focus-visible){
+ text-decoration:none;
+}
 .app-player-stats-table a.app-player-stats-club-link:is(:hover,:focus-visible) .app-player-stats-club-name{
- text-decoration-line:underline;text-underline-offset:2px;text-decoration-thickness:1px;text-decoration-skip-ink:auto;
+ text-decoration-line:underline;text-underline-offset:2px;text-decoration-thickness:.75px;text-decoration-skip-ink:auto;
 }
 .app-player-stats-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-player-stats-table .app-player-stats-number .app-player-stats-value{
  display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;
  align-items:center;justify-content:flex-end;line-height:16px;text-align:right;
 }
-.app-player-stats-table .app-player-stats-loading .app-player-stats-value>.app-skeleton-bar{
- flex:0 0 auto;max-width:100%;
+/* Bars are sized by transparent sample glyphs in the exact same numeric
+   font as hydrated values; right aligned edge and optical centers now match. */
+.app-player-stats-table .app-player-stats-loading .app-player-stats-value>.app-skeleton-bar[data-skeleton-sample]{
+ display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;
+ box-sizing:border-box;inline-size:max-content;width:max-content;min-width:0;max-width:100%;
+ height:12px;margin:0;
+}
+.app-player-stats-table .app-player-stats-loading .app-player-stats-value>.app-skeleton-bar[data-skeleton-sample]::before{
+ content:attr(data-skeleton-sample);color:transparent;font:inherit;
+ line-height:1;white-space:nowrap;
 }
 .app-player-stats-table [data-detail-stats-heading="5"] .app-player-stats-score-heading-skeleton{
  display:inline-block;width:20px;height:10px;margin:0;vertical-align:middle;
@@ -240,13 +253,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-career-row>th:first-child{font-weight:700}
 .app-player-stats-loading .app-player-stats-skeleton-total{width:40px}
 .app-player-stats-table .app-player-stats-loading .app-player-stats-number .app-skeleton-bar{margin:0}
-.app-player-stats-loading [data-metric="apps"] .app-skeleton-bar{width:4ch}
-.app-player-stats-loading [data-metric="minutes"] .app-skeleton-bar{width:2.5ch}
-.app-player-stats-loading [data-metric="score"] .app-skeleton-bar{width:1.5ch}
-.app-player-stats-loading [data-metric="assists"] .app-skeleton-bar{width:1.5ch}
-.app-player-stats-loading [data-metric="yellow"] .app-skeleton-bar{width:1.5ch}
-.app-player-stats-loading [data-metric="red"] .app-skeleton-bar{width:1.5ch}
-.app-player-stats-loading [data-metric="rating"] .app-skeleton-bar{width:4ch}
+/* Metric widths come from the same font's glyphs via data-skeleton-sample. */
 .app-player-stats-note{margin:12px 0 0;color:var(--muted);font-size:.875rem;line-height:1.5}
 .app-player-stats-note[hidden]{display:none}
 @media(prefers-reduced-motion:reduce){.app-player-stats-chevron{transition:none}}

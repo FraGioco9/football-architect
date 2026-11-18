@@ -533,7 +533,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          ['30','18','7','5','54','29','+25',''].map(x=>'<td><span class="club-history-stat-value">'+x+'</span></td>').join('')+'</tr>'+
         '<tr class="club-history-competition-row" data-club-history-detail="777-${width}" hidden>'+
          '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings?season=777"><span class="club-history-competition-text">Very Long International Competition Championship Name For Mobile</span></a></th>'+
-         '<td title="Quarter-finals, second leg">Quarter-finals, second leg</td>'+
+         '<td>Quarter-finals, second leg</td>'+
          ['30','18','7','5','54','29','+25','61'].map(x=>'<td><span class="club-history-stat-value">'+x+'</span></td>').join('')+'</tr></tbody></table>';
        // Give each viewport an independent synthetic season key: the real
        // controller retains expanded seasons across viewport changes.
@@ -597,7 +597,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const initial=cells.map(cell=>cell.innerHTML);
         for(const cell of cells){
          cell.classList.add('club-history-skeleton-stat');
-         cell.querySelector('.club-history-stat-value').innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+         const slot=cell.querySelector('.club-history-stat-value');
+         const text=slot.textContent;
+         slot.innerHTML='<span class="club-fp-bar" data-skeleton-sample="'+text+'" aria-hidden="true"></span>';
         }
         row.classList.add('club-history-row-loading');
         const skeleton=cells.map(cell=>{
@@ -620,7 +622,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        })()`);
        for(let i=0;i<7;i++){
         const data=alignment.actual[i],skeleton=alignment.skeleton[i];
-        assert.ok(Math.abs(data.dx-skeleton.dx)<=2,
+        assert.ok(Math.abs(data.dx-skeleton.dx)<=1,
          'stat '+i+' skeleton shares hydrated horizontal center at '+width+': '+JSON.stringify(alignment));
         assert.ok(Math.abs(data.dy-skeleton.dy)<=3,
          'stat '+i+' skeleton shares hydrated value-row center at '+width+': '+JSON.stringify(alignment));
@@ -742,7 +744,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const range=document.createRange();range.selectNodeContents(cell.querySelector('.app-player-stats-value'));
         const a=rect(range),b=rect(cell);return {dx:a.x-b.x,dy:a.y-b.y,height:b.height};
        });
-       for(const cell of cells)cell.querySelector('.app-player-stats-value').innerHTML='<span class="app-skeleton-bar" aria-hidden="true"></span>';
+       for(const cell of cells){
+        const value=cell.querySelector('.app-player-stats-value');
+        const text=value.textContent;
+        value.innerHTML='<span class="app-skeleton-bar" data-skeleton-sample="'+text+'" aria-hidden="true"></span>';
+       }
        row.classList.add('app-player-stats-loading');
        const skeleton=cells.map(cell=>{
         const a=rect(cell.querySelector('.app-skeleton-bar')),b=rect(cell);
@@ -756,7 +762,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       })()`);
       for(let i=0;i<7;i++){
        const a=placement.actual[i],s=placement.skeleton[i];
-       assert.ok(Math.abs(a.dx-s.dx)<=4,
+       assert.ok(Math.abs(a.dx-s.dx)<=1,
         'Player Stats bar '+i+' has the same visible value center at '+width+'px: '+JSON.stringify(placement));
        assert.ok(Math.abs(a.dy-s.dy)<=3,
         'Player Stats bar '+i+' occupies the same value baseline at '+width+'px: '+JSON.stringify(placement));
@@ -769,6 +775,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:placement.link.x,y:placement.link.y,button:'none'});
        assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-name')).textDecorationLine"),'underline',
         'moving the mouse over the club name visibly underlines its text');
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-link')).textDecorationLine"),'none',
+        'the club anchor itself must not paint a second underline');
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-name')).textDecorationThickness"),'0.75px',
+        'club name uses exactly one 0.75px underline');
        await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:4,y:4,button:'none'});
        assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-name')).textDecorationLine"),'none',
         'moving away removes the club-name underline');

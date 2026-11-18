@@ -114,7 +114,8 @@ test('#578 first-paint Club History skeleton matches hydrated column geometry',(
  assert.equal(pending.split('data-club-history-skeleton=').length-1,7);
  for(const key of ['played','won','drawn','lost','gf','ga','gd']){
   assert.ok(pending.includes('data-club-history-skeleton="'+key+'"><span class="club-history-stat-value">'));
-  assert.ok(css.includes('[data-club-history-skeleton="'+key+'"] .club-fp-bar'));
+  assert.ok(pending.includes('data-club-history-skeleton="'+key+'"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="'),
+   'first-paint metric '+key+' uses a font-measured bar');
  }
  assert.ok(pending.endsWith('<td></td></tr>'),'points summary placeholder stays empty');
  assert.ok(css.includes('--club-history-row-height:56px'));
@@ -148,4 +149,21 @@ test('#578 Club History loading bars and verified numeric values share one 16px 
  assert.match(css,/\.club-history-table td:nth-child\(n\+4\) \.club-history-stat-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;/);
  assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-stat-value>\.club-fp-bar\{\s*flex:0 0 auto;max-width:100%;/);
  assert.match(css,/\.club-history-table \.club-history-total-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:16px;min-height:16px;/);
+});
+
+test('#578 Club History pending skeleton samples match runtime and reserve actual numeric glyph widths',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const route=model.route('/clubs/it/1/history');
+ const loading=model.render(manifest,route,'it','',null,1,{source:'loading'});
+ const firstPaint=read('clubs/_shared/index.html'),css=read('assets/club-page.css');
+ const samples={played:'30',won:'18',drawn:'7',lost:'5',gf:'54',ga:'29',gd:'+25'};
+ for(const [key,text] of Object.entries(samples)){
+  const mark='data-club-history-skeleton="'+key+'"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="'+text+'"';
+  assert.ok(loading.includes(mark),'runtime pending value '+key+' measured with real glyphs');
+  assert.ok(firstPaint.includes(mark),'parser-time pending value '+key+' matches');
+ }
+ assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-skeleton-stat \.club-fp-bar\[data-skeleton-sample\]\{/);
+ assert.match(css,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;/);
+ assert.doesNotMatch(css,/\[data-club-history-skeleton="played"\] \.club-fp-bar\{width:/);
 });
