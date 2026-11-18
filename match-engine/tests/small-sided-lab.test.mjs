@@ -546,6 +546,10 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
     maxRealActorBallGapM:latest.nativeDribbleAudit.maximumRealAttackerBallGapM,
     bothFeetActiveTicks:latest.nativeDribbleAudit.nativeBothFeetActiveTicks,
     physicalStartsWithoutCarry:latest.nativeDribbleAudit.nativeShoeStartsWithoutCarryImpulse,
+    nonActionWithForceEvents:latest.nativeDribbleAudit.nonActionStartsWithNativeForceEvents,
+    nonActionWithSolverContacts:latest.nativeDribbleAudit.nonActionStartsWithSolverContacts,
+    nonActionWithGeometricContacts:latest.nativeDribbleAudit.nonActionStartsWithGeometricContacts,
+    peakUnconvertedWorldDelta:latest.nativeDribbleAudit.peakNonActionWorldStepBallDeltaMps,
     physicalFootStarts:latest.nativeDribbleAudit.nativeLeftFootStarts+
      latest.nativeDribbleAudit.nativeRightFootStarts,
     actionTicks:latest.nativeDribbleAudit.actionTicks,
@@ -572,6 +576,14 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
    meanCarries,meanPhysicalFootStarts,
    meanPhysicalStartsWithoutCarry:samples.reduce((t,x)=>t+
     x.physicalStartsWithoutCarry,0)/samples.length,
+   meanUnconvertedWithForceEvents:samples.reduce((t,x)=>t+
+    x.nonActionWithForceEvents,0)/samples.length,
+   meanUnconvertedWithSolverContacts:samples.reduce((t,x)=>t+
+    x.nonActionWithSolverContacts,0)/samples.length,
+   meanUnconvertedWithGeometricContacts:samples.reduce((t,x)=>t+
+    x.nonActionWithGeometricContacts,0)/samples.length,
+   maxUnconvertedWorldStepBallDeltaMps:Math.max(...samples.map(x=>
+    x.peakUnconvertedWorldDelta)),
    meanBothFeetActiveTicks:samples.reduce((t,x)=>t+x.bothFeetActiveTicks,0)/
     samples.length,
    maxRealActorBallGapM:Math.max(...samples.map(x=>x.maxRealActorBallGapM)),
@@ -592,4 +604,12 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
  assert.ok(samples.every(x=>x.physicalFootStarts>=x.carries&&
   x.physicalFootStarts-x.carries===x.physicalStartsWithoutCarry),
   'Audit must reconcile all real physical STARTs and actual applied actions');
+ assert.ok(samples.every(x=>x.nonActionWithForceEvents>=0&&
+  x.nonActionWithForceEvents<=x.physicalStartsWithoutCarry&&
+  x.nonActionWithSolverContacts>=0&&
+  x.nonActionWithSolverContacts<=x.physicalStartsWithoutCarry&&
+  x.nonActionWithGeometricContacts>=0&&
+  x.nonActionWithGeometricContacts<=x.physicalStartsWithoutCarry&&
+  Number.isFinite(x.peakUnconvertedWorldDelta)),
+  'Read-only per-foot solver and world-step witnesses must reconcile for all 60 variants');
 });

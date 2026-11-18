@@ -26,6 +26,9 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
  const nativeNonActionStarts=[],nativeContactEvidence=[];
  const contactDutyTicks={left:0,right:0};
  let bothFeetTouchTicks=0,alternatingRealActionFeet=0,lastActionFoot=null;
+ let nonActionStartsWithNativeForceEvents=0,nonActionStartsWithSolverContacts=0,
+  nonActionStartsWithGeometricContacts=0,peakNonActionWorldStepDelta=0;
+ let largestNonActionWorldStepDeltaWitness=null;
  let latest=null;
  function observe({physics,playerFrame,foot,action,physicalBodies=null}={}){
   if(physics?.tick!==tick+1||playerFrame?.version!==PLAYER_VERSION||
@@ -54,6 +57,29 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
        physicalSoloFeet.active.length===1)))
    throw new TypeError('Solo requires independently observed native Rapier left/right shoes');
   if(physicalSoloFeet){
+   const dynamics=physicalSoloFeet.dynamics;
+   if(!dynamics||
+      dynamics.source!=='native-rapier-world-step-before-carry-action'||
+      dynamics.tick!==physics.tick||dynamics.causalAttribution!==false||
+      dynamics.readOnly!==true||
+      !['left','right'].every(side=>{
+       const evidence=dynamics.feet?.[side];
+       return evidence&&typeof evidence.started==='boolean'&&
+        typeof evidence.active==='boolean'&&
+        evidence.started===physicalSoloFeet.started.includes(side)&&
+        evidence.active===physicalSoloFeet.active.includes(side)&&
+        [evidence.nativeForceEventCount,evidence.totalReportedForceMagnitudeN,
+         evidence.peakReportedForceMagnitudeN,evidence.nativeManifoldCount,
+         evidence.geometricContacts,evidence.solverContacts].every(x=>
+         Number.isFinite(x)&&x>=0);
+      })||
+      !Number.isFinite(dynamics.worldStepBallVelocityDeltaMps?.magnitude)||
+      Math.abs(Math.hypot(
+       dynamics.worldStepBallVelocityDeltaMps.x,
+       dynamics.worldStepBallVelocityDeltaMps.y,
+       dynamics.worldStepBallVelocityDeltaMps.z)-
+       dynamics.worldStepBallVelocityDeltaMps.magnitude)>1e-9)
+    throw new TypeError('Solo per-foot dynamics must be native same-step pre-action Rapier evidence');
    for(const footSide of physicalSoloFeet.started){
     genuineSoloFootTouches[footSide]++;
     const converted=Boolean(action?.action==='carry'&&
@@ -64,12 +90,41 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
     // These are real native COLLISION START events, not necessarily ball
     // impulses, intentional touches, completed dribbles, or possession.
     // Even an unconverted collision can influence the Rapier ball solver.
-    if(!converted)nativeNonActionStarts.push({tick:physics.tick,
-     foot:footSide,otherFootActive:physicalSoloFeet.active.some(f=>
-      f!==footSide)});
+    const footPhysics=dynamics.feet[footSide];
+    const worldDelta=dynamics.worldStepBallVelocityDeltaMps.magnitude;
+    if(!converted){
+     nativeNonActionStarts.push({tick:physics.tick,
+      foot:footSide,otherFootActive:physicalSoloFeet.active.some(f=>
+       f!==footSide)});
+     if(footPhysics.nativeForceEventCount>0)
+      nonActionStartsWithNativeForceEvents++;
+     if(footPhysics.solverContacts>0)
+      nonActionStartsWithSolverContacts++;
+     if(footPhysics.geometricContacts>0)
+      nonActionStartsWithGeometricContacts++;
+     if(worldDelta>peakNonActionWorldStepDelta){
+      peakNonActionWorldStepDelta=worldDelta;
+      largestNonActionWorldStepDeltaWitness=freeze({
+       tick:physics.tick,foot:footSide,
+       worldStepBallVelocityDeltaMps:worldDelta,
+       nativeForceEventCount:footPhysics.nativeForceEventCount,
+       peakReportedForceMagnitudeN:footPhysics.peakReportedForceMagnitudeN,
+       solverContacts:footPhysics.solverContacts,
+       causalAttribution:false
+      });
+     }
+    }
     nativeContactEvidence.push(freeze({tick:physics.tick,foot:footSide,
      nativeStart:true,appliedCarryImpulse:converted,
-     concurrentOtherShoe:physicalSoloFeet.active.some(f=>f!==footSide)}));
+     concurrentOtherShoe:physicalSoloFeet.active.some(f=>f!==footSide),
+     nativeForceEventCount:footPhysics.nativeForceEventCount,
+     totalReportedForceMagnitudeN:footPhysics.totalReportedForceMagnitudeN,
+     peakReportedForceMagnitudeN:footPhysics.peakReportedForceMagnitudeN,
+     nativeManifoldCount:footPhysics.nativeManifoldCount,
+     geometricContacts:footPhysics.geometricContacts,
+     solverContacts:footPhysics.solverContacts,
+     worldStepBallVelocityDeltaMps:worldDelta,
+     causalAttribution:false}));
     if(nativeContactEvidence.length>16)nativeContactEvidence.shift();
    }
    for(const footSide of physicalSoloFeet.active)contactDutyTicks[footSide]++;
@@ -175,6 +230,11 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
     nativePhysicalShoeStarts:genuineSoloFootTouches.left+
      genuineSoloFootTouches.right,
     nativeShoeStartsWithoutCarryImpulse:nativeNonActionStarts.length,
+    nonActionStartsWithNativeForceEvents,
+    nonActionStartsWithSolverContacts,
+    nonActionStartsWithGeometricContacts,
+    peakNonActionWorldStepBallDeltaMps:peakNonActionWorldStepDelta,
+    peakNonActionWorldStepBallDeltaWitness:largestNonActionWorldStepDeltaWitness,
     nativeLeftShoeContactTicks:contactDutyTicks.left,
     nativeRightShoeContactTicks:contactDutyTicks.right,
     recentNativeShoeStarts:freeze([...nativeContactEvidence]),

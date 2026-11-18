@@ -407,6 +407,24 @@ test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
     assert.equal(f.genuinePhysicalPlayerCount,1);
     assert.equal(shoes?.source,'rapier-physical-collider-events');
     assert.equal(shoes.independentColliders,2);
+    const dyn=shoes.dynamics;
+    assert.equal(dyn?.source,'native-rapier-world-step-before-carry-action');
+    assert.equal(dyn.tick,tick);
+    assert.equal(dyn.causalAttribution,false);
+    assert.equal(dyn.readOnly,true);
+    assert.ok(Object.isFrozen(dyn)&&Object.isFrozen(dyn.feet));
+    const dv=dyn.worldStepBallVelocityDeltaMps;
+    assert.ok(Math.abs(Math.hypot(dv.x,dv.y,dv.z)-dv.magnitude)<1e-9);
+    for(const footSide of ['left','right']){
+     const source=dyn.feet[footSide];
+     assert.equal(source.started,shoes.started.includes(footSide));
+     assert.equal(source.active,shoes.active.includes(footSide));
+     assert.ok(Object.isFrozen(source));
+     assert.ok(Number.isFinite(source.totalReportedForceMagnitudeN));
+     assert.ok(Number.isInteger(source.nativeForceEventCount));
+     assert.ok(Number.isInteger(source.solverContacts));
+     assert.ok(Number.isInteger(source.geometricContacts));
+    }
     assert.deepEqual(shoes.active,
      ['left','right'].filter(name=>shoes.active.includes(name)));
     assert.equal(shoes.exclusivePhysicalStart,
@@ -440,7 +458,21 @@ test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
    assert.ok(evidence.recentNativeShoeStarts.every(x=>
     x.nativeStart&&['left','right'].includes(x.foot)&&
     typeof x.appliedCarryImpulse==='boolean'&&
-    typeof x.concurrentOtherShoe==='boolean'));
+    typeof x.concurrentOtherShoe==='boolean'&&
+    Number.isFinite(x.worldStepBallVelocityDeltaMps)&&
+    Number.isFinite(x.peakReportedForceMagnitudeN)&&
+    x.causalAttribution===false));
+   assert.ok(evidence.nonActionStartsWithNativeForceEvents>=0&&
+    evidence.nonActionStartsWithNativeForceEvents<=
+     evidence.nativeShoeStartsWithoutCarryImpulse);
+   assert.ok(evidence.nonActionStartsWithSolverContacts>=0&&
+    evidence.nonActionStartsWithSolverContacts<=
+     evidence.nativeShoeStartsWithoutCarryImpulse);
+   if(evidence.peakNonActionWorldStepBallDeltaWitness){
+    assert.equal(evidence.peakNonActionWorldStepBallDeltaWitness.causalAttribution,false);
+    assert.equal(evidence.peakNonActionWorldStepBallDeltaWitness.worldStepBallVelocityDeltaMps,
+     evidence.peakNonActionWorldStepBallDeltaMps);
+   }
    assert.ok(evidence.verifiedFootAlternations<=Math.max(0,actions-1));
    assert.ok(nativeFootStarts>=actions);
    samples.push({side,variantIndex,nativeFootStarts,actions,

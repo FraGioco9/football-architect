@@ -420,12 +420,21 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    onsetBallDeltaVelocityMps:started.size?dv:null
   });
   const observedTimeline=timeline.observe(collision,priorBall,actualShoeFeet);
-  const forcePairs=new Map();
+  const forcePairs=new Map(),soloFootForces=new Map();
   const visitForce=(a,b,f,d,totalMagnitude,maxMagnitude)=>{
    const other=a===ballCollider.handle?b:
     b===ballCollider.handle?a:null;
    const physical=idsByCollider.get(other);
    if(!physical)return;
+   if(soloCarry&&physical.id===dribbleAttackerId){
+    const foot=physical.foot;
+    const old=soloFootForces.get(foot);
+    soloFootForces.set(foot,{
+     eventCount:(old?.eventCount??0)+1,
+     totalReportedMagnitudeN:(old?.totalReportedMagnitudeN??0)+totalMagnitude,
+     maxReportedMagnitudeN:Math.max(old?.maxReportedMagnitudeN??0,maxMagnitude)
+    });
+   }
    const id=physical.id,existing=forcePairs.get(id);
    if(!existing){
     forcePairs.set(id,{id,totalForceWorldN:{...vector(f)},
@@ -457,7 +466,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   }
   const forces=[...forcePairs.values()];
   const relevant=new Set([...next,...started,...ended,...forces.map(x=>x.id)]);
-  const manifolds=[];
+  const manifolds=[],soloFootManifolds=[];
   for(let i=0;i<INITIAL_PLAYERS.length;i++){
    const id=INITIAL_PLAYERS[i].id;
    if(!relevant.has(id)||colliders[i]===null)continue;
@@ -466,6 +475,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     if(!geometricContacts&&!solverContacts)return;
     manifolds.push({id,flipped,normalWorld:vector(m.normal()),
      geometricContacts,solverContacts});
+    if(soloCarry&&id===dribbleAttackerId)
+     soloFootManifolds.push({foot:'left',geometricContacts,solverContacts});
    });
   }
   if(rightCollider&&relevant.has(dribbleAttackerId)){
@@ -474,13 +485,47 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     if(!geometricContacts&&!solverContacts)return;
     manifolds.push({id:dribbleAttackerId,flipped,
      normalWorld:vector(m.normal()),geometricContacts,solverContacts});
+    soloFootManifolds.push({foot:'right',geometricContacts,solverContacts});
    });
   }
   const observedSolver=summarizeFootSolverEvidence(
    collision,forces,manifolds);
+  // Exact source tick: these per-foot force reports and contact manifolds
+  // come from the SAME native world.step as the shoe STARTs. The ball
+  // velocity delta is measured BEFORE the later autonomous action impulse.
+  // World-step delta includes gravity, grass and all collisions; co-occurrence
+  // is NOT a causal attribution to either shoe, even for an exclusive START.
+  const footDynamics=soloCarry?Object.freeze({
+   source:'native-rapier-world-step-before-carry-action',tick:nextTick,
+   preStepBallVelocityMps:vector(priorBall.velocity),
+   postStepBallVelocityMps:vector(postBall.velocity),
+   worldStepBallVelocityDeltaMps:Object.freeze({
+    x:postBall.velocity.x-priorBall.velocity.x,
+    y:postBall.velocity.y-priorBall.velocity.y,
+    z:postBall.velocity.z-priorBall.velocity.z,
+    magnitude:dv
+   }),
+   feet:Object.freeze(Object.fromEntries(['left','right'].map(foot=>{
+    const force=soloFootForces.get(foot);
+    const contact=soloFootManifolds.filter(x=>x.foot===foot);
+    return [foot,Object.freeze({
+     started:footStarts.has(foot),active:nextSoloFeet.has(foot),
+     nativeForceEventCount:force?.eventCount??0,
+     totalReportedForceMagnitudeN:force?.totalReportedMagnitudeN??0,
+     peakReportedForceMagnitudeN:force?.maxReportedMagnitudeN??0,
+     nativeManifoldCount:contact.length,
+     geometricContacts:contact.reduce((n,x)=>n+x.geometricContacts,0),
+     solverContacts:contact.reduce((n,x)=>n+x.solverContacts,0)
+    })];
+   }))),
+   causalAttribution:false,readOnly:true
+  }):null;
   tick=nextTick;active=next;activeSoloFeet=nextSoloFeet;
-  current=collision;solver=observedSolver;
-  return Object.freeze({collision,timeline:observedTimeline,solver});
+  current=footDynamics?Object.freeze({...collision,
+   nativeSoloFeet:Object.freeze({...collision.nativeSoloFeet,
+    dynamics:footDynamics})}):collision;
+  solver=observedSolver;
+  return Object.freeze({collision:current,timeline:observedTimeline,solver});
  }
  function dispose(){if(!disposed){
   disposed=true;
