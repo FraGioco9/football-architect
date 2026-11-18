@@ -1,5 +1,5 @@
 /**
- * #646 — Safe two-step handoff. Step 1 exports image-only descriptions.
+ * Generic two-step handoff. Step 1 exports image-only descriptions.
  * No repository/QA/connector/image-target instructions enter the first message.
  * Frozen V4.1 canonical identity is reconstructed from verified initial stats.
  * Image generation still occurs only through a user-operated ChatGPT chat.

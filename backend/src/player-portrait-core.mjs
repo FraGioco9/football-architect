@@ -1,7 +1,7 @@
 /** #629 — Worker/Node portable immutable player-portrait core.
  * No node:* imports, network, GitHub, image service, file exporter or AI calls.
  * The V1 SHA-256 face seed and V3 prompt match the previously owner-reviewed
- * #609 identity rule; the approved #44/#98/#145 remain untouched.
+ * #609 identity rule; historical V3 snapshots remain reproducible.
  */
 const ARCHETYPES=Object.freeze({
  'lean':'A naturally slim footballer build with a relatively narrow upper body and relaxed, modestly developed arms.',

@@ -19,13 +19,31 @@ import type {LineupMatchResultV1} from './temporary-lineup-v1.mjs';
 import {rankLeagueTable} from './league-standings.ts';
 import {withOfficialClubMatchIds} from './public-club-fixture-match-ids.ts';
 import type {Fixture} from './initial-schedule.ts';
-import {readSeasonKnockoutTies,readSeasonCalendarHash,readSeasonArchiveSummary,readSeasonCloseReceipt} from './season-evidence-repository.ts';
+import {readSeasonCalendarHash,readSeasonArchiveSummary,readSeasonCloseReceipt} from './season-evidence-repository.ts';
 interface Archive {generation:string;calendar_hash:string;results_hash:string;knockout_hash:string;archive_hash:string;results_count:number;days_count:number;ties_count:number;created_at:number}
-interface DayReceiptRow {day:number;outcome_hash:string;generation:string;calendar_hash:string;simulation_version:string;outcome_json:string}
+interface DayReceiptRow {day:number;outcome_hash:string}
+// The frozen replay already verifies receipt contents and generation.
+// This second read only needs ordered hashes for the sealed archive proof.
 async function readV2Days(db:Database,season:number):Promise<DayReceiptRow[]>{
  return (await db.prepare(
-  'SELECT day,outcome_hash,generation,calendar_hash,simulation_version,outcome_json FROM season_lineup_day_outcomes WHERE season_number=? ORDER BY day'
+  'SELECT day,outcome_hash FROM season_lineup_day_outcomes WHERE season_number=? ORDER BY day'
  ).bind(season).all<DayReceiptRow>()).results;
+}
+/** Read-only, independent season evidence metadata. The caller verifies all
+ * receipts against the frozen replay and archive before publishing any data.
+ * No mutable cache, weakened authority check or additional D1 query. */
+export async function readPublicSeasonReceiptBundle(db:Database,season:number){
+ if(!Number.isSafeInteger(season)||season<1)throw new ApiError(404,'not_found');
+ const receiptRead=readV2Days(db,season);
+ // Only hash order and cardinality are needed here. The replay above
+ // already independently validates the complete immutable knockout plans.
+ const tieRead=db.prepare(
+  'SELECT plan_hash FROM season_knockout_ties WHERE season_number=? ORDER BY competition_id,phase_id,tie_id'
+ ).bind(season).all<{plan_hash:string}>();
+ const archiveRead=db.prepare('SELECT * FROM season_archives WHERE season_number=?')
+  .bind(season).first<Archive>();
+ const [receipts,tieRows,archive]=await Promise.all([receiptRead,tieRead,archiveRead]);
+ return {receipts,ties:tieRows.results,archive};
 }
 async function countV2Days(db:Database,season:number):Promise<number>{
  const row=await db.prepare('SELECT COUNT(*) AS n FROM season_lineup_day_outcomes WHERE season_number=?')
@@ -229,12 +247,10 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
   // One verified frozen V2 chain is authoritative for all competitions.
   // Replaying progression does not resimulate a match or consult current rosters.
   const replay=await replayLineupSeasonV1(db,viewedWorld,evidence,viewedWorld.day);
-  const receipts=await readV2Days(db,selectedSeason);
+  const {receipts,ties,archive}=await readPublicSeasonReceiptBundle(db,selectedSeason);
   if(receipts.length!==replay.days.length)invalid();
-  const ties=await readSeasonKnockoutTies(db,selectedSeason);
   const state=replay.progression,storedResults=state.results;
   if(ties.length!==state.ties.size)invalid();
-  const archive=await db.prepare(`SELECT * FROM season_archives WHERE season_number=${selectedSeason}`).first<Archive>();
   // An archive may be sealed while its season is still active on day 56.
   // History becomes public only after the separate close event receipt.
   if(archive&&viewedWorld.phase!=='closed'&&viewedWorld.day!==56)invalid();

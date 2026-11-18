@@ -30,18 +30,24 @@ const missing=():never=>{throw new ApiError(404,'not_found')};
 const corrupt=():never=>{throw new ApiError(503,'match_unavailable')};
 
 interface PublicationSource {generation:string;season_number:number;competition_id:string;source_kind:'calendar'|'domestic'|'international';source_hash:string;published_at:number}
-async function confirmedPublication(db:Database,row:PublicationSource):Promise<Calendar|null> {
- const calendar=await db.prepare('SELECT calendar_hash,created_at FROM season_calendars WHERE season_number=?')
+/** Check immutable publication independently of the client-facing match read.
+ * Calendar publication needs only one D1 read; domestic/international proofs
+ * require three independent, read-only rows, started together.
+ */
+export async function confirmedPublication(db:Database,row:PublicationSource):Promise<Calendar|null> {
+ const calendarRead=db.prepare('SELECT calendar_hash,created_at FROM season_calendars WHERE season_number=?')
   .bind(row.season_number).first<Calendar>();
  if(row.source_kind==='calendar'){
+  const calendar=await calendarRead;
   if(!calendar||calendar.calendar_hash!==row.source_hash||calendar.created_at!==row.published_at)return corrupt();
   return calendar;
  }
- const stage=await db.prepare('SELECT generation,seed,fixtures_hash,participants_hash,rules_hash,created_at FROM season_domestic_stages WHERE season_number=?')
+ const stageRead=db.prepare('SELECT generation,seed,fixtures_hash,participants_hash,rules_hash,created_at FROM season_domestic_stages WHERE season_number=?')
   .bind(row.season_number).first<Stage>();
  const eventId=row.source_kind==='domestic'?'domestic:calendar':'international:draw';
- const event=await db.prepare('SELECT status,receipt_hash,completed_at FROM season_admin_events WHERE season_number=? AND event_id=?')
+ const eventRead=db.prepare('SELECT status,receipt_hash,completed_at FROM season_admin_events WHERE season_number=? AND event_id=?')
   .bind(row.season_number,eventId).first<Event>();
+ const [calendar,stage,event]=await Promise.all([calendarRead,stageRead,eventRead]);
  if(!event||event.status!=='completed')return missing();
  if(!stage||stage.generation!==row.generation||!event.receipt_hash||
     event.completed_at!==row.published_at)return corrupt();
@@ -167,10 +173,10 @@ export async function readPublishedCompetitionMatchesLineupV1(db:Database,season
  ).bind(season,competitionId).all<ReservedKnockout>()).results;
  const expectedBrackets=competitionId.startsWith('int-')?21:competitionId.endsWith('-1')?2:5;
  if(brackets.length!==expectedBrackets)return corrupt();
- const definitions=(await buildKnockoutSlotReservations(world.generation,season,sample.source_kind))
-  .filter(s=>s.competitionId===competitionId);
- if(definitions.length!==expectedBrackets)return corrupt();
+ // Generate and hash the canonical bracket reservation set only once.
  const canonical=await buildKnockoutSlotReservations(world.generation,season,sample.source_kind);
+ const definitions=canonical.filter(s=>s.competitionId===competitionId);
+ if(definitions.length!==expectedBrackets)return corrupt();
  for(const bracket of brackets){
   if(!Number.isSafeInteger((bracket as ReservedKnockout&{public_id:number}).public_id)||bracket.generation!==world.generation||bracket.source_kind!==sample.source_kind||
      bracket.source_hash!==sample.source_hash||bracket.published_at!==sample.published_at)return corrupt();

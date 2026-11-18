@@ -75,6 +75,7 @@
     "backend/tests/preview-package.test.mts": "backend-operator",
     "backend/tests/production-bundle.test.mts": "backend-operator",
     "backend/tests/public-club-fixture-match-ids-runtime.test.ts": "backend-runtime",
+    "backend/tests/public-match-publication-read-runtime.test.ts": "backend-runtime",
     "backend/tests/public-club-roster-runtime.test.ts": "backend-runtime",
     "backend/tests/public-player-detail-runtime.test.ts": "backend-runtime",
     "backend/tests/public-players-directory-runtime.test.ts": "backend-runtime",
@@ -346,6 +347,7 @@
     "backend/tests/lineup-preseason-evidence-runtime.test.ts": "backend-runtime",
     "backend/tests/lineup-calendar-publish-runtime.test.ts": "backend-runtime",
     "backend/tests/lineup-admin-calendar-clock-runtime.test.ts": "backend-runtime",
+    "backend/tests/public-season-receipt-bundle-runtime.test.ts": "backend-runtime",
     "backend/tests/public-sporting-lineup-runtime.test.ts": "backend-runtime",
     "backend/tests/public-sporting-lineup-integration-runtime.test.ts": "backend-runtime",
     "backend/tests/lineup-day13-e2e-runtime.test.ts": "backend-runtime",
@@ -357,7 +359,6 @@
     "backend/tests/test_portrait_v41_replacement_migration.py": "migration",
     "tests/player-portrait-v4.test.mjs": "site-node",
     "tests/player-portrait-v41-diversity.test.mjs": "site-node",
-    "tests/player-portrait-v41-cutover.test.mjs": "site-node",
     "tests/player-portrait-chat-export.test.mjs": "site-node",
     "tests/player-portrait-v4-qa.test.mjs": "site-node"
   }

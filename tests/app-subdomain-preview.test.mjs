@@ -59,12 +59,11 @@ test('canonical local launcher advertises one consistent site/app URL split',()=
  assert.equal(readme.includes('Use `node tools/dev-standings-preview.mjs` for canonical local routing on `http://127.0.0.1:2000`'),false);
 });
 
-test('local Match Detail first paint only applies server-verified identity',async()=>{
- const official={schemaVersion:1,providerId:'authoritative-world',matchId:'123',
-  season:2,competitionId:'IT-1',stageId:'league',round:1,day:1,
-  provenance:{kind:'authoritative'}};
+test('local Match Detail returns its skeleton before a blocked official match lookup',async()=>{
  const calls=[];
- const server=createPreviewServer({subdomains:true,readInitialMatch:async id=>{calls.push(id);return official}});
+ const server=createPreviewServer({subdomains:true,readInitialMatch:async id=>{
+  calls.push(id);return new Promise(()=>{});
+ }});
  server.listen(0,'127.0.0.1');await once(server,'listening');
  const get=path=>new Promise((resolve,reject)=>{
   const req=request({host:'127.0.0.1',port:server.address().port,path,
@@ -73,11 +72,13 @@ test('local Match Detail first paint only applies server-verified identity',asyn
   });req.on('error',reject);req.end();
  });
  try{
-  const valid=await get('/matches/123');
-  assert.equal(valid.status,200);assert.match(valid.body,/data-fa-match-first-paint/);
-  assert.match(valid.body,/--app-match-surface:#155F50/);
-  const wrong=await get('/matches/124');
-  assert.equal(wrong.status,200);assert.doesNotMatch(wrong.body,/data-fa-match-first-paint/);
-  assert.deepEqual(calls,['123','124']);
+  for(const path of ['/matches/123','/matches/124']){
+   const response=await get(path);
+   assert.equal(response.status,200);
+   assert.match(response.body,/data-match-detail data-match-load="loading"/);
+   assert.match(response.body,/data-scoreboard-theme="neutral"/);
+   assert.doesNotMatch(response.body,/data-fa-match-first-paint|fa-match-initial-data/);
+  }
+  assert.deepEqual(calls,[],'No match read may delay the HTML response');
  }finally{server.closeAllConnections();await new Promise(r=>server.close(r))}
 });
