@@ -438,10 +438,10 @@ export async function readPublicRosterStats(db:Database,clubKey:string,season:nu
  const data=projection?.data;
  const complete=data&&'complete' in data?data.complete:
   selectedSeason===0&&world.seasonNumber===0||(projection&&'reason' in projection&&projection.reason==='calendar-unpublished');
- const totals=new Map(data&&'totals' in data?data.totals.map(p=>[p.playerId,p]):[]);
- const breakdown=data&&'breakdown' in data?data.breakdown.map(c=>({
+ const totals=new Map(data&&'totals' in data?(data.totals?.map(p=>[p.playerId,p])??[]):[]);
+ const breakdown=data&&'breakdown' in data?(data.breakdown?.map(c=>({
   id:c.id,complete:c.complete,rows:new Map(c.totals.map(p=>[p.playerId,p]))
- })):[];
+ }))??[]):[];
  // Preserve nullable event metrics from verified frozen receipts.
  // Missing event coverage must never become a recorded zero.
  function numbers(recorded:boolean,row:ReturnType<typeof clubRosterTotals>['totals'][number]|undefined){
@@ -522,6 +522,10 @@ export async function readPublicPlayerStatsLineupV1(db:Database,playerId:number)
  await unchanged(db,world);
  return {schemaVersion:1 as const,providerId:'authoritative-world' as const,playerId,world,
   status:world.seasonNumber===0?'empty' as const:'available' as const,reason:world.seasonNumber===0?'season-zero':null,
-  seasons:seasons.reverse().map(({selectedSeason,status,reason,provenance,data})=>({
-   season:selectedSeason,status,reason,provenance,data}))};
+  seasons:seasons.reverse().map(item=>{
+   // Player projections carry authority metadata; roster-only projections do not.
+   // Fail closed rather than implying verified coverage for a mismatched scope.
+   if(!('reason' in item)||!('provenance' in item))throw new ApiError(503,'sporting_data_unavailable');
+   return {season:item.selectedSeason,status:item.status,reason:item.reason,provenance:item.provenance,data:item.data};
+  })};
 }
