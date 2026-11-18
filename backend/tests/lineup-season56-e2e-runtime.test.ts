@@ -211,6 +211,8 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(sport.data.fixtures.every((fixture:any)=>fixture.result!==null)).toBe(true);
  expect(sport.data.fixtures).toHaveLength(242); // 240 league + 2 Tier-1 playout legs
  expect(sport.data.statistics.matchesPlayed).toBe(242);
+ expect(sport.data.statistics.players,'fallback-only archive has no attributed players').toEqual([]);
+ expect(sport.data.history.statistics).toEqual(sport.data.statistics);
  expect(await count('season_day_outcomes')).toBe(0);
  expect(await count('match_lineup_result_receipts')).toBe(4082);
  // V2 cutover includes the qualification authority feeding the *next* season.

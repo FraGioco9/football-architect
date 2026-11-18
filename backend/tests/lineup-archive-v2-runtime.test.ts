@@ -68,6 +68,12 @@ describe('#613 protected V2 archive and closure proof (unrouted)',()=>{
    {playerId:23,clubId:'IT-2',competitionId:'IT-1',
     appearances:1,starts:1,minutes:90,goals:1}
   ]);
+  const named=structuredClone(frozen('IT-1',23,2,90)) as any;
+  named.receipt.result.playerIdentityVersion='player-identity-v1';
+  named.receipt.result.playerIdentities=[{playerId:23,name:'Frozen Name',nationality:'ITA'}];
+  expect(summarizeFrozenLineupPlayersV1(new Map([['named',named]]))).toEqual([
+   {playerId:23,clubId:'IT-1',competitionId:'IT-1',appearances:1,starts:1,minutes:90,goals:2,name:'Frozen Name',nationality:'ITA'}
+  ]);
   expect(summarizeFrozenLineupPlayersV1(new Map())).toEqual([]);
   expect(()=>summarizeFrozenLineupPlayersV1(
    new Map([['bad',frozen('IT-1',23,0,-1)]]) as any

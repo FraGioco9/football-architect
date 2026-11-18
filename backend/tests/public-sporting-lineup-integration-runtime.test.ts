@@ -89,7 +89,7 @@ describe('#613 new V2 public competition, club, calendar projections (unrouted)'
   const upcoming=await readPublicMatchLineupV1(db,String(league.public_id)) as any;
   expect(upcoming).toMatchObject({
    matchId:String(league.public_id),status:'scheduled',result:null,
-   lineup:null,provenance:{kind:'authoritative',receiptHash:null}
+   provenance:{kind:'authoritative',receiptHash:null}
   });
   expect(upcoming).not.toHaveProperty('events');
   expect(upcoming).not.toHaveProperty('slotId');
@@ -101,7 +101,7 @@ describe('#613 new V2 public competition, club, calendar projections (unrouted)'
   ).first()) as {public_id:number};
   const reserved=await readPublicMatchLineupV1(db,String(knockout.public_id)) as any;
   expect(reserved).toMatchObject({
-   status:'awaiting_participants',result:null,lineup:null,
+   status:'awaiting_participants',result:null,
    provenance:{kind:'authoritative',receiptHash:null}
   });
   expect(reserved).not.toHaveProperty('events');
