@@ -229,3 +229,24 @@ test('Season archive skeleton reserves one crest slot per podium club',()=>{
   assert.equal((archive.match(/class="app-view-skeleton-crest-slot"/g)||[]).length,expected,id);
  }
 });
+
+
+test('History club skeletons occupy the hydrated team and player text slots',()=>{
+ const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
+ const competition=manifest.competitions.find(item=>item.id==='IT-1');
+ const markup=renderViewSkeleton(competition,'history');
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ // Team records use the same identity wrapper and direct grid cells as real season records.
+ assert.equal((markup.match(/class="app-history-record-holders"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-history-dev-record-entry app-view-skeleton-record-holder history-team-placeholder"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-world-club-name app-world-standing-club-link app-view-skeleton-name-slot app-view-skeleton-team-name"/g)||[]).length,6);
+ // Player records reuse both hydrated label rows; the second line is the club.
+ assert.equal((markup.match(/class="app-history-player-footer app-view-skeleton-record-holder history-player-placeholder"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-history-player-labels"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-history-player-context"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-world-standing-club-link app-view-skeleton-name-slot app-view-skeleton-player-club"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-history-dev-season-link history-placeholder-season"/g)||[]).length,12);
+ assert.match(css,/\.app-competition-view-skeleton \.app-view-skeleton-name-slot\{[^}]*vertical-align:baseline/);
+ assert.match(css,/\.app-competition-view-skeleton \.app-world-club-crest-placeholder\.app-view-skeleton-crest-slot::before\{content:none\}/);
+ assert.match(css,/\.app-competition-view-skeleton \.app-view-skeleton-name-slot>\.app-skeleton-bar\{[^}]*top:50%;transform:translateY\(-50%\)/);
+});
