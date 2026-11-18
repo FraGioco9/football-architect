@@ -257,5 +257,5 @@ test('History club skeletons occupy the hydrated team and player text slots',()=
  assert.match(css,/#competition-panel-history \.app-history-player-labels\{row-gap:2px\}/);
  assert.match(css,/#competition-panel-history \.history-team-placeholder \.app-history-tied-club\{[^}]*grid-column:2;grid-row:1/);
  assert.match(css,/#competition-panel-history \.app-history-player-detail:hover\{[^}]*border-color:var\(--focus\);background:rgba\(100,203,169,\.075\)/);
- assert.match(css,/#competition-panel-history \.app-history-player-detail:hover\{[^}]*text-decoration:underline/);
+ assert.match(css,/#competition-panel-history \.app-history-player-detail:hover\{[^}]*text-decoration:none/);
 });

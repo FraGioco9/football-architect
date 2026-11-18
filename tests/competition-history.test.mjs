@@ -319,7 +319,7 @@ test('History improved layout preserves archive navigation, confirmed records an
  assert.doesNotMatch(css,/\.app-history-player-empty-state|\.app-history-team-empty-state/);
  assert.match(page,/data-history-team-empty/);
  assert.match(page,/data-history-player-empty/);
- assert.match(page,/grid\.hidden=false;empty\.hidden=true/);
+ assert.match(page,/grid\.hidden=!filled;empty\.hidden=filled/);
  assert.match(css,/\.app-history-dev-archive-champion\{opacity:1;font-weight:750\}/);
  assert.match(css,/@media\(max-width:360px\)/);
  for(const lang of ['en','de','es','fr','it']){
@@ -522,9 +522,9 @@ test('loaded DEV History mounts record groups before Season archive without affe
 test('Optional +N stays beside the name while player and club lines match the skeleton',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  const assertRule=(selector,parts)=>{
-  const start=css.lastIndexOf(selector+'{');
+  const start=css.lastIndexOf('\n'+selector+'{');
   assert.ok(start>=0,'Missing rule: '+selector);
-  const declaration=css.slice(start+selector.length+1,css.indexOf('}',start));
+  const declaration=css.slice(start+selector.length+2,css.indexOf('}',start));
   for(const part of parts)assert.ok(declaration.includes(part),selector+' must include '+part);
  };
  // Team records use the same three rows for tied/untied values and skeletons.
@@ -568,7 +568,7 @@ test('Player record dialog uses compact centered rows and keeps +N hover without
  assert.ok(source.includes('info.append(clubs);')&&source.includes('identity.append(portrait(holder.id),info);')&&source.includes('li.append(identity);list.append(li);'));
  assert.match(declaration('.app-history-player-holders'),/gap:0/);
  assert.match(declaration('.app-history-player-holders>li'),/padding:6px 0/);
- assert.match(declaration('.app-history-dialog-player-info'),/align-content:center/);
+ assert.match(declaration('.app-history-dialog-player-info,.app-history-dialog-club-info'),/align-content:center/);
  assert.match(declaration('.app-history-player-clubs'),/margin:0/);
  assert.match(declaration('#competition-panel-history .app-history-player-detail:hover'),/text-decoration:none/);
 });

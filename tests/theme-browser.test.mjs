@@ -782,7 +782,14 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         const collapsed=rows.filter(row=>!row.hidden).length===1&&button.textContent==='+'+(rows.length-1);
         button.click();
         const dialog=document.querySelector('.app-history-player-dialog[open]');
-        const opened=dialog?.querySelectorAll('.app-history-dev-record-entry').length===rows.length;
+        // The popup groups repeated seasons for the same club; it no longer
+        // clones one full card row per season. Verify every distinct club and season.
+        const expected=[...new Set(rows.map(row=>row.querySelector('[data-club-crest]')?.dataset.clubCrest))];
+        const modalRows=[...dialog?.querySelectorAll('.app-history-club-holders>li')||[]];
+        const actual=modalRows.map(row=>row.querySelector('[data-club-crest]')?.dataset.clubCrest);
+        const seasonCount=rows.filter(row=>row.querySelector('.app-history-dev-season-link')).length;
+        const modalSeasons=dialog?.querySelectorAll('.app-history-dialog-club-seasons .app-history-dev-season-link').length||0;
+        const opened=!!dialog&&actual.length===expected.length&&expected.every((club,index)=>actual[index]===club)&&modalSeasons===seasonCount;
         if(dialog){
           const closed=new Promise(resolve=>dialog.addEventListener('close',resolve,{once:true}));
           dialog.querySelector('button').click();await closed;
