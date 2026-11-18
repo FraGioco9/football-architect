@@ -174,7 +174,7 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.match(browser,/ME_628_INLINE_CHROME/);
  assert.match(browser,/ME_628_INLINE_MAIN_TRANSPORT/);
  assert.match(browser,/assert\.deepEqual\(actionNav,\{open:false/);
- assert.match(browser,/assert\.equal\(movementNav\.open,false\)/);
+ assert.match(browser,/assert\.equal\(hiddenMovement,0/);
 });
 
 

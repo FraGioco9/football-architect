@@ -2005,7 +2005,14 @@ export function createPlayerMovement(options={}){
   return Object.freeze({
    version:PLAYER_VERSION,tick,timeS:tick*PLAYER_DT,
    ball:Object.freeze({...lastBall}),
-   ...(smallSided?{smallSidedMovementDecisions:lastSmallSidedMovementDecisions}:{}),
+   // Solver feedback may update canonical velocity after the original target
+   // choice. The target remains original; velocity is the final observed value.
+   ...(smallSided?{smallSidedMovementDecisions:Object.freeze(
+    lastSmallSidedMovementDecisions.map(d=>{
+     const p=players.find(x=>x.id===d.id);
+     return Object.freeze({...d,
+      speedMps:Math.hypot(p.vx,p.vy),blockedBy:p.blockedBy??null});
+    }))}:{}),
    observedMotion:Object.freeze({
     home:summarizeObservedPlayerMotion(players,'home'),
     away:summarizeObservedPlayerMotion(players,'away')

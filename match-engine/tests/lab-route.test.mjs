@@ -436,7 +436,9 @@ test('ME-01 compact pitch caps desktop dimensions and uses canonical site chevro
   assert.match(markup,/<legend>Position · m<\/legend>/);
   assert.match(markup,/<legend>Velocity · m\/s<\/legend>/);
   assert.match(markup,/id="compare-result"[^>]*hidden/);
-  const advanced=markup.slice(markup.indexOf('id="advanced-settings"'),markup.indexOf('</details>'));
+  const advancedStart=markup.indexOf('id="advanced-settings"');
+   const advanced=markup.slice(advancedStart,markup.indexOf('</details>',advancedStart));
+   assert.ok(advancedStart>0,'advanced settings must follow the on-field decisions panel');
   for(const id of ['x','y','z','vx','vy','vz','seed','apply','compare','position','velocity'])
     assert.match(advanced,new RegExp('id="'+id+'"'));
   assert.match(stylesheet,/\.me-pitch-frame canvas\{[^}]*height:auto;aspect-ratio:105\/68/);

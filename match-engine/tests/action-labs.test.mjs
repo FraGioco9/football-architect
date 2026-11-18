@@ -93,7 +93,7 @@ test('seventeen base-action LABs retain negative authorization boundaries',()=>{
  const dev=readFileSync(new URL('../../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
  const client=readFileSync(new URL('../src/action-labs.mjs',import.meta.url),'utf8');
  const unified=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
- assert.match(unified,/count!==16/,'4 physics + 6 small-sided + 6 advanced movement entries');
+ assert.match(unified,/length!==8/,'four real player exercises and four ball physics calibrations');
  assert.doesNotMatch(unified,/count!==48/);
  for(const spec of ACTION_LAB_SCENARIOS)
   assert.match(html,new RegExp('<option value="'+spec.id+'">'));
