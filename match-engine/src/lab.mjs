@@ -414,7 +414,7 @@ function render() {
     const f=activeLab.snapshot();
     if(activeScene.kind==='action')renderOnFieldDecisions(f);
     const detail=activeScene.kind==='action'?
-      '· '+f.genuinePhysicalPlayerCount+' real physical players'+
+      '· '+f.genuinePhysicalPlayerCount+' real physical '+(f.genuinePhysicalPlayerCount===1?'player':'players')+
       ' · source events '+f.eventCount+
       (lastInlineFootballAction?' · last '+
        lastInlineFootballAction.team.toUpperCase()+' '+

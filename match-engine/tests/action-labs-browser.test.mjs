@@ -196,7 +196,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.equal(x.bodyControlAbsent,true,'visible LAB must not expose a body toggle');
    assert.equal(x.popup,false);
    assert.match(x.tick,scene==='carry-solo'?/^Tick 60/:/^Tick 10/);
-   assert.match(x.observation,new RegExp(actors+' real physical players'));
+   assert.match(x.observation,new RegExp(actors+' real physical '+(actors===1?'player':'players')));
    assert.match(x.observation,/source events [1-9]/);
    assert.match(x.observation,/provisional 0–0/);
    assert.match(x.observation,/no official result/);
