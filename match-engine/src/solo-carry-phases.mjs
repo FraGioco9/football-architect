@@ -14,7 +14,7 @@ const profiles=Object.freeze({
  }),
  sprint:Object.freeze({
   label:'Sprint',maxSpeedMps:4.5,accelerationMps2:8,brakingMps2:11,
-  ballTargetOffsetM:0.25,shoeFrequencyBaseHz:1.17,
+  ballTargetOffsetM:0.12,shoeFrequencyBaseHz:1.17,
   shoeFrequencySpeedHz:0.24,shoeForwardStrokeM:0.055
  })
 });
@@ -38,7 +38,7 @@ export function advanceSoloCarryPhase({previousPhase='control',tick,
  }else if(previousPhase==='moderate'){
   if(playerSpeedMps<1.0||ballSpeedMps<0.55||ballGapM<0.31)
    phase='control';
-  else if(playerSpeedMps>=2.85&&ballSpeedMps>=2.20&&ballGapM>=0.46)
+  else if(playerSpeedMps>=2.58&&ballSpeedMps>=2.20&&ballGapM>=0.46)
    phase='sprint';
  }else if(playerSpeedMps<2.45||ballSpeedMps<1.75||ballGapM<0.38){
   phase='moderate';

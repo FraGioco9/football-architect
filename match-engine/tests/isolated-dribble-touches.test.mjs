@@ -17,10 +17,10 @@ test('#628 solo Carry phases use only genuine ball/player speed and gap with hys
   playerSpeedMps:1.6,ballSpeedMps:1.3,ballGapM:0.52});
  assert.equal(moderate.phase,'moderate');
  const below=advanceSoloCarryPhase({tick:3,previousPhase:'moderate',
-  playerSpeedMps:2.7,ballSpeedMps:2.3,ballGapM:0.50});
+  playerSpeedMps:2.45,ballSpeedMps:2.3,ballGapM:0.50});
  assert.equal(below.phase,'moderate');
  const sprint=advanceSoloCarryPhase({tick:4,previousPhase:'moderate',
-  playerSpeedMps:3.0,ballSpeedMps:2.6,ballGapM:0.56});
+  playerSpeedMps:2.7,ballSpeedMps:2.6,ballGapM:0.56});
  assert.equal(sprint.phase,'sprint');
  const retained=advanceSoloCarryPhase({tick:5,previousPhase:'sprint',
   playerSpeedMps:2.65,ballSpeedMps:2.1,ballGapM:0.48});
@@ -41,7 +41,7 @@ test('#628 solo Carry phases use only genuine ball/player speed and gap with hys
   playerSpeedMps:0,ballSpeedMps:1,ballGapM:-1}),TypeError);
  assert.throws(()=>soloCarryPhaseConfiguration('future'),TypeError);
  assert.deepEqual(sprint,advanceSoloCarryPhase({tick:4,
-  previousPhase:'moderate',playerSpeedMps:3.0,ballSpeedMps:2.6,ballGapM:0.56}));
+  previousPhase:'moderate',playerSpeedMps:2.7,ballSpeedMps:2.6,ballGapM:0.56}));
  assert.equal(sprint.nativeShoeEventCreated,false);
  assert.equal(sprint.ballImpulseCreated,false);
  assert.equal(sprint.officialPossession,false);

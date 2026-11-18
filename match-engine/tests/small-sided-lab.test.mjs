@@ -484,9 +484,11 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
    }
    assert.ok(carries>=2,'One actor must truly carry using repeated Rapier impulses');
    assert.ok(releaseRecontacts>=1,'One actor must release and recontact the ball');
-   assert.ok(observedPhases.has('control')&&observedPhases.has('moderate'),
-    'Real solo Carry must adapt from close control into free running');
-   assert.ok(phaseTransitions.length>=1,'Physical observations must change phase');
+   assert.ok(observedPhases.has('control')&&observedPhases.has('moderate')&&
+    observedPhases.has('sprint'),
+    'Every genuine 3s solo carry trial should reach Control, Moderate, Sprint');
+   assert.ok(phaseTransitions.length>=2&&phaseTransitions.length<=12,
+    'Physical phases must switch with bounded, hysteretic motion');
    process.stdout.write('ME_628_SOLO_CARRY_SPEED_GUARD '+JSON.stringify({
     side,variantIndex,maxBallSpeedMps:maximumBallSpeed,
     meanPlayerSpeedMps:playerSpeedSum/180,carries,releaseRecontacts,
