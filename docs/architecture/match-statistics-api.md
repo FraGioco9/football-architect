@@ -10,7 +10,7 @@ Both readers use the same independently verified immutable receipt chain. This s
 Scheduled and unresolved matches return `statistics: null`. Completed evidence exposes `ratingVersion`, home/away sides and recorded goal events. Each side contains its mode, unattributed team goals and verified real player participation rows. Fallback sides have no player IDs. Each player row contains:
 
 - `playerId`, nullable frozen `name`, nullable ISO-3 primary `nationality`, and actual frozen `role`.
-- `started`, `minutes`, `goals`, nullable `rating`, nullable goalkeeper-only `cleanSheets`.
+- `started`, `minutes`, `goals`, nullable `rating`, nullable goalkeeper-only `cleanSheets` (requires at least 60 recorded minutes playing GK, regardless of natural position; team concedes zero goals).
 - Nullable `assists` and `redCards`, currently unavailable because those events are not modeled.
 
 Goal events carry scorer ID/name/nationality, side, minute and period. There are no internal attributes, suitability, seed or private generator fields. Penalty-shootout kicks are not scored-goal events.
