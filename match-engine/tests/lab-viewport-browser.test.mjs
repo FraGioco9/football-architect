@@ -56,9 +56,11 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
       socket.addEventListener('error',fail,{once:true});
     });
     let id=0;
-    const pending=new Map();
+    const pending=new Map(),browserErrors=[];
     socket.addEventListener('message',event=>{
       const data=JSON.parse(event.data);
+      if(data.method==='Runtime.exceptionThrown')browserErrors.push(data.params.exceptionDetails.exception?.description??data.params.exceptionDetails.text);
+      if(data.method==='Log.entryAdded'&&data.params.entry.level==='error')browserErrors.push(data.params.entry.text);
       const found=pending.get(data.id);
       if(!found)return;
       clearTimeout(found.timeout);
@@ -85,10 +87,11 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
         try{if(await evaluate(expr))return;}catch{}
         await delay(100);
       }
-      throw Error('Timed out waiting for: '+expr+' '+JSON.stringify(await evaluate("({status:document.querySelector('#status')?.textContent,resources:performance.getEntriesByType('resource').filter(r=>r.name.includes('__fa_match_engine__')).slice(-12).map(r=>r.name),body:document.body?.textContent?.slice(-450)})")));
+      throw Error('Timed out waiting for: '+expr+' browserErrors='+JSON.stringify(browserErrors.slice(-12))+' '+JSON.stringify(await evaluate("({status:document.querySelector('#status')?.textContent,resources:performance.getEntriesByType('resource').filter(r=>r.name.includes('__fa_match_engine__')).slice(-12).map(r=>r.name),body:document.body?.textContent?.slice(-450)})")));
     }
     await cmd('Page.enable');
     await cmd('Runtime.enable');
+    await cmd('Log.enable');
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await cmd('Page.navigate',{url:'http://app.localhost:2000/dev/match-engine'});
     await waitFor("document.readyState==='complete'&&document.querySelector('#advanced-settings')&&document.querySelector('#pitch')");
