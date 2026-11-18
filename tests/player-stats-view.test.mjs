@@ -140,6 +140,11 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  assert.doesNotMatch(css,/\.app-player-stats-header-trigger:is\(:hover,:focus-visible\)\{text-decoration:underline/);
 });
 test('#578 toggling Stats keeps the same chevron node as Club History',async()=>{
+ {const mobileCSS=read('assets/player-detail.css');
+  assert.ok(mobileCSS.includes('.app-player-stats-table .app-player-stats-season-row :is(.app-player-stats-toggle,.app-player-stats-static-label){min-height:34px;align-items:center}'));
+  assert.ok(mobileCSS.includes('.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-label{min-height:34px}'));
+ }
+
  const originalDocument=globalThis.document,originalWindow=globalThis.window;
  const listeners={};
  function item(tag){

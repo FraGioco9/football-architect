@@ -360,9 +360,14 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  other.setAttribute('aria-hidden',String(view!=='history'));
  if(view==='overview'){overview.removeAttribute('aria-hidden');overview.setAttribute('aria-busy','true');}
  const keyScroll='football-architect:club-tabs-scroll:/clubs/'+country+'/'+clubId;
- try{const raw=sessionStorage.getItem(keyScroll),offset=Number(raw);if(raw!==null&&Number.isFinite(offset)&&offset>=0)tabs.scrollLeft=offset}catch{}
+ let restoredTabScroll=false;
+ try{const raw=sessionStorage.getItem(keyScroll),offset=Number(raw);if(raw!==null&&Number.isFinite(offset)&&offset>=0){
+  tabs.scrollLeft=offset;restoredTabScroll=true;
+ }}catch{}
  const chosen=tabs.querySelector('[aria-current="page"]');
- if(chosen){
+ // Preserve a user's manually scrolled View strip on reload, even when
+ // the selected tab would otherwise be auto-revealed by the first-paint script.
+ if(chosen&&!restoredTabScroll){
   const bounds=tabs.getBoundingClientRect(),selected=chosen.getBoundingClientRect();
   if(selected.right>bounds.right)tabs.scrollLeft+=selected.right-bounds.right;
   else if(selected.left<bounds.left)tabs.scrollLeft+=selected.left-bounds.left;

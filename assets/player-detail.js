@@ -46,14 +46,33 @@
  const viewBar=panel.querySelector('.app-player-detail-tabs');
  const statsHost=preview?null:panel.querySelector('[data-detail-stats]');
  let statsController=null,statsControllerPromise=null;
+ // Safari does not consistently restore nested horizontal scroll on refresh.
+ // Use the player path rather than ?view= so a view change shares its position.
+ const viewScrollKey=preview?null:'football-architect:player-views-scroll:'+location.pathname;
+ const restoreViewScroll=()=>{
+  if(!viewBar||!viewScrollKey)return;
+  try{const raw=sessionStorage.getItem(viewScrollKey),n=Number(raw);
+   if(raw!==null&&Number.isFinite(n)&&n>=0)viewBar.scrollLeft=n;
+  }catch{}
+ };
+ const saveViewScroll=()=>{
+  if(!viewBar||!viewScrollKey)return;
+  try{sessionStorage.setItem(viewScrollKey,String(viewBar.scrollLeft))}catch{}
+ };
+ restoreViewScroll();
  const syncViewEdges=()=>{
   if(!viewBar)return;
   const max=Math.max(0,viewBar.scrollWidth-viewBar.clientWidth);
   viewBar.dataset.canScrollLeft=String(max>1&&viewBar.scrollLeft>1);
   viewBar.dataset.canScrollRight=String(max>1&&viewBar.scrollLeft<max-1);
  };
- viewBar?.addEventListener('scroll',syncViewEdges,{passive:true});
+ viewBar?.addEventListener('scroll',()=>{syncViewEdges();saveViewScroll()},{passive:true});
  window.addEventListener('resize',syncViewEdges,{passive:true});
+ window.addEventListener('pagehide',saveViewScroll);
+ window.addEventListener('pageshow',event=>{
+  if(!event.persisted)restoreViewScroll();
+  syncViewEdges();
+ });
  const groups=Object.freeze({technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],mental:['vision','positioning','decisions','composure'],physical:['speed','strength','stamina','agility'],goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']});
  const attrKeys=['speed','strength','stamina','agility','passing','technique','dribbling','shooting','crossing','tackling','marking','heading','vision','positioning','decisions','composure','gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
  const attrLabels={

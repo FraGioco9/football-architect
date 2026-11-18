@@ -53,6 +53,15 @@ test('#560 History mobile preserves disclosure DOM, statistics and competition l
 });
 
 test('#560 table semantics are explicitly restored when CSS displays mobile grid rows',()=>{
+ {const firstPaint=read('clubs/_shared/index.html'),generator=read('tools/generate-club-pages.mjs'),runtime=read('assets/club-page.js');
+  for(const source of [firstPaint,generator]){
+   assert.ok(source.includes('let restoredTabScroll=false;'));
+   assert.ok(source.includes('if(chosen&&!restoredTabScroll)'));
+  }
+  assert.ok(runtime.includes("if(tabs.dataset.clubInteractionsBound!=='true')"));
+  assert.ok(runtime.includes('if(!restored&&Number.isFinite(tabScrollLeft))tabs.scrollLeft=tabScrollLeft'));
+ }
+
  const js=read('assets/club-page.js');
  assert.match(js,/for\(const table of host\.querySelectorAll\('\.club-history-table'\)\)\{/);
  assert.match(js,/table\.setAttribute\('role','table'\)/);
@@ -64,6 +73,12 @@ test('#560 table semantics are explicitly restored when CSS displays mobile grid
 });
 
 test('#560 mobile History provides the eight localized numeric labels and nonclipped links',()=>{
+ {const style=read('assets/club-page.css');
+  assert.ok(style.includes('.club-history-table .club-history-season-row{padding-top:0}'));
+  assert.ok(style.includes('.club-history-table .club-history-season-row .club-history-expand{min-height:34px;align-items:center}'));
+  assert.ok(style.includes('.club-history-table .club-history-row-loading .club-history-skeleton-label{min-height:34px}'));
+ }
+
  const css=read('assets/club-page.css');
  const mobile=css.slice(css.indexOf('/* CLUB-HISTORY-MOBILE:'),css.indexOf('/* Club Fixtures:',css.indexOf('/* CLUB-HISTORY-MOBILE:')));
  for(const n of [4,5,6,7,8,9,10,11])

@@ -504,6 +504,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.activeElement===document.querySelector('.club-tabs [aria-current=\"page\"]')"),true,'Keyboard activation retains focus on the active tab');
     await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
     assert.equal(await run("document.querySelectorAll('.club-history').length"),1);
+    // A mobile reload must restore the manually scrolled View strip exactly,
+    // rather than shifting it back to the beginning or auto-centering History.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
+    const savedClubTabScroll=await run("(()=>{const nav=document.querySelector('.club-tabs'),max=nav.scrollWidth-nav.clientWidth;const offset=Math.min(70,max);nav.scrollLeft=offset;sessionStorage.setItem('football-architect:club-tabs-scroll:/clubs/it/1',String(offset));return offset})()");
+    assert.ok(savedClubTabScroll>1,'mobile View strip must overflow for reload QA');
+    await cmd('Page.reload');
+    await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
+    const restoredClubTabScroll=await run("document.querySelector('.club-tabs').scrollLeft");
+    assert.ok(Math.abs(restoredClubTabScroll-savedClubTabScroll)<2,
+     'mobile Club View tab strip must retain horizontal scroll on reload: '+savedClubTabScroll+' / '+restoredClubTabScroll);
     // #560: Club History's true mobile presentation is a four-column grid,
     // with expansion, localized headings and untruncated competition labels.
     // A synthetic verified row pair is used to isolate layout from the
@@ -517,6 +527,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const tabs=document.querySelector('.club-tabs');
        const row=document.querySelector('.club-history .club-history-row-loading');
        return tabs&&row?row.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null;
+      })()`);
+      const firstPaintBarGapBefore=await run(`(()=>{
+       const tabs=document.querySelector('.club-tabs');
+       const bar=document.querySelector('.club-history .club-history-row-loading .club-history-skeleton-label .club-fp-bar');
+       return tabs&&bar?bar.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null;
       })()`);
       await run(`(()=>{
        const old=document.getElementById('history-mobile-560-probe');if(old)old.remove();
@@ -571,6 +586,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         'first season row begins 5px after the separator at '+width+': '+JSON.stringify(initial));
        if(firstPaintGapBefore!==null)assert.ok(Math.abs(firstPaintGapBefore-5)<=1,
         'pre-insertion first-paint History skeleton row starts 5px after the separator at '+width+': '+firstPaintGapBefore);
+       if(firstPaintBarGapBefore!==null)assert.ok(firstPaintBarGapBefore>=8&&firstPaintBarGapBefore<=25,
+        'painted mobile History skeleton begins close to the View separator at '+width+': '+firstPaintBarGapBefore);
        assert.equal(initial.display,'grid','mobile season summary must use a 4-column grid at '+width);
        assert.ok(initial.table.width<=initial.wrap.width+1&&initial.shellOverflow<=2,
         'mobile History may not cause horizontal page overflow at '+width+': '+JSON.stringify(initial));

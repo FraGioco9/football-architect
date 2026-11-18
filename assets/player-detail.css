@@ -345,10 +345,12 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
   border:0;white-space:normal;overflow:visible;text-overflow:clip;
   font-size:12px;line-height:1.5;text-align:center;
  }
+ /* Loading and verified Season/Career labels use the same compact track. */
+ .app-player-stats-table .app-player-stats-season-row{padding-top:0}
  .app-player-stats-table .app-player-stats-season-row>th:first-child{
-  grid-column:1/-1;align-items:flex-start;min-height:44px;text-align:left;font-size:14px;
+  grid-column:1/-1;align-items:flex-start;min-height:34px;text-align:left;font-size:14px;
  }
- .app-player-stats-table .app-player-stats-season-row .app-player-stats-toggle{min-height:44px;align-items:center}
+ .app-player-stats-table .app-player-stats-season-row :is(.app-player-stats-toggle,.app-player-stats-static-label){min-height:34px;align-items:center}
  .app-player-stats-table .app-player-stats-season-row>td:nth-child(2),
  .app-player-stats-table .app-player-stats-season-row>td:nth-child(3){display:none}
  .app-player-stats-table .app-player-stats-competition-row{padding-inline-start:12px}
@@ -385,6 +387,6 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  .app-player-stats-table .app-player-stats-loading .app-player-stats-number .app-skeleton-bar{
   align-self:center;justify-self:center;margin:0;
  }
- .app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-label{min-height:44px}
+ .app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-label{min-height:34px}
  .app-player-stats-table .app-player-stats-competition-row[hidden]{display:none}
 }
