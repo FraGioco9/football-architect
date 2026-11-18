@@ -9,7 +9,7 @@ import {publicRequestFile,isAllowlistedPublicPath} from '../tools/publication-gu
 const directory=readFileSync(new URL('../assets/clubs-directory.js',import.meta.url),'utf8');
 const sidebar=readFileSync(new URL('../assets/sidebar-evolution.js',import.meta.url),'utf8');
 test('NAV-01B directory links use canonical country/id/overview paths',()=>{
- const m=JSON.parse(readFileSync(new URL('../clubs/_shared/manifest.json',import.meta.url),'utf8'));
+ const m=JSON.parse(readFileSync(new URL('../clubs/_shared/identity.json',import.meta.url),'utf8'));
  const start=directory.indexOf('function paint(){'),end=directory.indexOf('// Warm the same crest URL',start);
  assert.ok(start>=0&&end>start,'Actual directory paint function must be available');
  const header={},out={innerHTML:'',querySelectorAll:()=>[]},input={value:'',setAttribute(){}},count={};
@@ -27,6 +27,23 @@ test('NAV-01B directory links use canonical country/id/overview paths',()=>{
  assert.equal(hrefs.length,320);
  assert.deepEqual([...hrefs].sort(),m.clubs.map(c=>'/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview').sort());
  for(const href of hrefs){const route=resolveSubpage(href);assert.equal(route?.kind,'club');assert.equal(route?.redirect,false);assert.equal(publicRequestFile(href),'clubs/_shared/index.html');}
+});
+test('PERF-API-657 Explore uses the canonical scoped directory projection without losing searchable identities',()=>{
+ const fullText=readFileSync(new URL('../clubs/_shared/manifest.json',import.meta.url),'utf8');
+ const smallText=readFileSync(new URL('../clubs/_shared/identity.json',import.meta.url),'utf8');
+ const full=JSON.parse(fullText),small=JSON.parse(smallText);
+ assert.equal(small.schemaVersion,1);assert.equal(small.projection,'club-identity-v1');
+ assert.equal(small.clubs.length,320);assert.equal(small.divisions.length,16);
+ assert.ok(smallText.length*4<fullText.length,'static UTF-8 payload is smaller than one quarter of original, not a wire-size claim');
+ assert.deepEqual(small.clubCrests,full.clubCrests,'all approved crest sources remain identical');
+ assert.deepEqual(small.divisions,full.divisions,'all country and tier labels remain identical');
+ const fields=['countryId','clubId','primaryName','fullName','city','divisionId'];
+ assert.deepEqual(small.clubs.map(c=>fields.map(field=>c[field])),
+  full.clubs.map(c=>fields.map(field=>c[field])),
+  'full-name/accent-insensitive search, city filters, links and division tier semantics retain 320 canonical identities');
+ assert.ok(directory.includes("fetch('/clubs/_shared/identity.json')"));
+ assert.ok(!directory.includes("fetch('/clubs/_shared/manifest.json')"));
+ assert.ok(directory.includes("m?.projection!=='club-identity-v1'"),'reject malformed/unverified projections');
 });
 test('NAV-01A sidebar keeps five language keys and accessible expansion',()=>{
  for(const code of ['en','de','es','fr','it'])assert.ok(sidebar.includes(code+':['));
