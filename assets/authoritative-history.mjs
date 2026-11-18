@@ -10,7 +10,7 @@ export function historyViewModel(context){
  const data=context?.seasonData,history=data?.history;
  if(data?.provenance?.kind!=='authoritative'||data.season!==context.selectedSeason)return null;
  const active=data.seasonState?.phase==='active'&&data.world?.seasonNumber===data.season;
- if(!active&&((data.seasonState?.phase??data.world?.phase)!=='closed'||history?.season!==data.season||
+ if(!active&&((data.seasonState?.phase??data.world?.phase)!=='closed'||history?.season!==context.selectedSeason||
     !/^[a-f0-9]{64}$/.test(history?.archiveHash||'')||!Number.isSafeInteger(history.closedAt)||history.closedAt<=0))return null;
  const table=data.statistics?.standings,clubs=new Map((data.participants||[]).map(c=>[clubKey(c),c]));
  const champion=clubs.get(history?.championClubId);
@@ -54,7 +54,7 @@ export function historyViewModel(context){
    if(eliminated.every(Boolean))semifinalLosers=eliminated;
   }
  }
- return {season:data.season,active,champion,podium,semifinalLosers,records,teams:totals.map(r=>({club:r.club,won:r.won,gf:r.gf,pts:r.pts})),players:(active?data.playerCoverage:history.playerCoverage)===true?data.statistics.players:null,allTime:null};
+ return {season:data.season,active,champion,podium,semifinalLosers,records,teams:totals.map(r=>({club:r.club,won:r.won,gf:r.gf,pts:r.pts})),playerCoverage:(active?data.playerCoverage:history.playerCoverage)===true,players:data.statistics.players??null,allTime:null};
 }
 
 // Every sealed season belongs to the archive: a two-season limit silently
@@ -165,11 +165,32 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
    if(!record)continue;
    node.replaceChildren(heading,make('strong',positive(record.value,key),'app-competition-stat-value'));
    const holders=make('div',undefined,'app-history-record-holders');
-   for(const entry of record.entries){
+   for(const entry of record.entries.slice(0,1)){
     const line=make('div',undefined,'app-history-dev-record-entry');
     line.append(identity(entry.club));
     if(entry.season)line.append(seasonLink(entry.season));
     holders.append(line);
+   }
+   if(record.entries.length>1){
+    const trigger=make('button','+'+(record.entries.length-1),'app-history-player-detail');
+    trigger.type='button';
+    trigger.setAttribute('aria-label',heading.textContent+' (+'+(record.entries.length-1)+')');
+    trigger.addEventListener('click',()=>{
+     const dialog=make('dialog',undefined,'app-history-player-dialog');
+     dialog.setAttribute('aria-label',heading.textContent);
+     const close=make('button','×','app-history-player-close');
+     close.type='button';close.setAttribute('aria-label',({it:'Chiudi',de:'Schließen',fr:'Fermer',es:'Cerrar'})[document.documentElement.lang]||'Close');
+     close.addEventListener('click',()=>dialog.close());
+     dialog.append(close,make('h3',heading.textContent));
+     for(const item of record.entries){
+      const line=make('div',undefined,'app-history-dev-record-entry');
+      line.append(identity(item.club));if(item.season)line.append(seasonLink(item.season));
+      dialog.append(line);
+     }
+     dialog.addEventListener('close',()=>{dialog.remove();trigger.focus();},{once:true});
+     document.body.append(dialog);dialog.showModal();close.focus();
+    });
+    holders.firstElementChild.append(trigger);
    }
    node.append(holders);
   }

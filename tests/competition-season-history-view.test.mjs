@@ -83,5 +83,6 @@ test('closed season records combine transfers, preserve frozen identity and clea
  assert.equal(walk(r.card).find(n=>n.className==='app-competition-stat-value').textContent,'6');
  assert.equal(walk(r.card).find(n=>n.tagName==='a').textContent,'Archived name');
  records.applyRecordSeasons([{season:1,players:[row]},{season:2,players:null}]);
- assert.equal(r.card.dataset.historyFilled,'false');
+ assert.equal(r.card.dataset.historyFilled,'true');
+ assert.ok(walk(r.card).some(n=>n.dataset.appI18n==='historyRecordedMatches'));
 });

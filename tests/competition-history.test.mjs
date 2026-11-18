@@ -110,7 +110,7 @@ test('Shared record holders expose all ties with an accessible reversible +N exp
  const fn=runInNewContext(client.slice(start,end)+';historyExpandableHolders',{
   historyNode:node,historyLabel:key=>{const item=node('span');item.dataset.appI18n=key;return item;}
  });
- for(const count of [0,1,2]){
+ for(const count of [0,1]){
   const card=node('article'),holders=node('div');
   for(let i=0;i<count;i++)holders.append(node('div'));
   fn(card,holders,'attack');
@@ -121,14 +121,14 @@ test('Shared record holders expose all ties with an accessible reversible +N exp
  for(let i=0;i<5;i++)holders.append(node('div'));
  fn(card,holders,'points');
  assert.equal(holders.children.length,5,'All tied results remain in DOM');
- assert.deepEqual(holders.children.map(row=>row.hidden),[false,false,true,true,true]);
- assert.ok(holders.children.slice(2).every(row=>Object.hasOwn(row.dataset,'historyTieExtra')));
+ assert.deepEqual(holders.children.map(row=>row.hidden),[false,true,true,true,true]);
+ assert.ok(holders.children.slice(1).every(row=>Object.hasOwn(row.dataset,'historyTieExtra')));
  assert.equal(card.children.length,1);
  const toggle=card.children[0];
  assert.equal(toggle.dataset.historyRecordExpand,'points');
  assert.equal(toggle.getAttribute('aria-expanded'),'false');
  assert.equal(toggle.getAttribute('aria-controls'),holders.id);
- assert.equal(toggle.children[0].textContent,'+3');
+ assert.equal(toggle.children[0].textContent,'+4');
  assert.equal(toggle.children[1].dataset.appI18n,'historyShowAll');
  assert.equal(toggle.children[2].dataset.appI18n,'historyShowLess');
  assert.equal(toggle.children[2].hidden,true);
@@ -140,7 +140,7 @@ test('Shared record holders expose all ties with an accessible reversible +N exp
  assert.equal(toggle.children[2].hidden,false);
  toggle.events.click();
  assert.equal(toggle.getAttribute('aria-expanded'),'false');
- assert.deepEqual(holders.children.map(row=>row.hidden),[false,false,true,true,true]);
+ assert.deepEqual(holders.children.map(row=>row.hidden),[false,true,true,true,true]);
 });
 test('Browsing seasons resolves prior/current/future days independently of Debug progress',()=>{
  assert.equal(typeof previewData.previewSeasonMatchdays,'function');
@@ -264,7 +264,7 @@ test('Stats and History use a shared card with uniform bold labels and empty mes
  assert.match(css,/\.app-competition-stat-label\{[^}]*font-weight:700/);
  assert.match(css,/\.app-competition-stat-card>\.app-competition-empty,\.app-competition-stat-card>\.fa-dev-stats-empty\{/);
  assert.match(css,/\.app-competition-stat-card\{--fa-record-heading:42px;[^}]*padding:10px 12px/);
- assert.match(css,/\.app-history-record-group \.app-competition-stat-card\{min-height:128px/);
+ assert.match(css,/\.app-history-record-group \.app-competition-stat-card\{box-sizing:border-box;height:180px;min-height:180px/);
  assert.doesNotMatch(css,/\.app-history-record-group \.app-competition-stat-card\{--fa-record-heading:/);
  assert.match(css,/\.app-history-record-group \.app-competition-stat-card:has\(\.app-competition-stat-value\)\{min-height:160px/);
  assert.match(css,/@media\(max-width:650px\)\{[\s\S]*--fa-record-heading:56px/);
@@ -299,7 +299,7 @@ test('History improved layout preserves archive navigation, confirmed records an
  assert.doesNotMatch(css,/\.app-history-player-empty-state|\.app-history-team-empty-state/);
  assert.match(page,/data-history-team-empty/);
  assert.match(page,/data-history-player-empty/);
- assert.match(page,/grid\.hidden=!filled;empty\.hidden=filled/);
+ assert.match(page,/grid\.hidden=false;empty\.hidden=true/);
  assert.match(css,/\.app-history-dev-archive-champion\{opacity:1;font-weight:750\}/);
  assert.match(css,/@media\(max-width:360px\)/);
  for(const lang of ['en','de','es','fr','it']){

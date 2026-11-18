@@ -191,7 +191,7 @@ test('All generated first-paint History pages hide the empty-archive copy until 
   assert.equal((html.match(/panel\.querySelector\('\[data-history-archive-empty\]'\)\?\.removeAttribute\('hidden'\)/g)||[]).length,3,slug+' DEV Season0 still reveals verified static empty archive');
  }
  const loading=readFileSync(new URL('../assets/standings-loading.js',import.meta.url),'utf8');
- assert.match(loading,/historyBusy=Boolean\(local\.history\)\|\|historyPending/);
+ assert.match(loading,/historyBusy=loading\|\|Boolean\(local\.history\)\|\|historyPending/);
  assert.match(loading,/const busy=view==='history'\?historyBusy:loading\|\|Boolean\(local\[view\]\)/);
 });
 

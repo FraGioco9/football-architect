@@ -29,7 +29,7 @@
       const panel=root.document.getElementById('competition-panel-'+view);
       if(!panel?.querySelector||!root.document.querySelector)return;
       let current=panel.querySelector('[data-competition-skeleton-root]');
-      if(!loading||confirmedEmpty(panel,root.faCompetitionContext,root.faCompetitionRoute?.get?.())){current?.remove();return;}
+      if(!loading||view!=='history'&&confirmedEmpty(panel,root.faCompetitionContext,root.faCompetitionRoute?.get?.())){current?.remove();return;}
       const preview=root.faDebugEnabled===true&&root.document.documentElement.dataset.faDevSeasons!==undefined;
       const season=Number((preview?root.document.documentElement.dataset.faDevCurrentSeason:undefined)??(preview?root.faFixturesInitialProgress?.currentSeason:undefined)??1);
       if(view==='history'&&preview&&season===0){
@@ -72,7 +72,7 @@
       // A global bootstrap may settle before the History-specific provider.
       // Keep the real panel's shell until its own data/verified empty state is committed.
       const historyPending=history?.dataset.faHistoryContentReady!=='true';
-      const historyBusy=Boolean(local.history)||historyPending;
+      const historyBusy=loading||Boolean(local.history)||historyPending;
       if(state.faStandingsLoading!==String(loading))state.faStandingsLoading=String(loading);
       if(state.faHistoryLoading!==String(historyBusy))state.faHistoryLoading=String(historyBusy);
       for(const view of ['standings','fixtures','postseason',...views]){

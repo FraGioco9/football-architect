@@ -669,7 +669,7 @@ html[data-competition-season-unavailable="true"] .app-competition-panel{display:
 .app-history-record-group>h4{margin:0;font-size:.9rem;font-weight:650}
 /* Stats and History use one shared card label slot, padding and typography. */
 .app-history-record-group .app-competition-stat-grid{align-items:stretch}
-.app-history-record-group .app-competition-stat-card{min-height:128px}
+.app-history-record-group .app-competition-stat-card{box-sizing:border-box;height:180px;min-height:180px}
 .app-history-record-group .app-competition-stat-card:has(.app-competition-stat-value){min-height:160px}
 /* QA-05: shrink actual History grid tracks at every phone width; no page-level clipping. */
 @media(max-width:620px){
@@ -761,7 +761,7 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
 
 
 /* Populated records retain a 160px minimum, and grow for verified metadata. */
-.app-history-player-card{min-height:128px!important}
+.app-history-player-card{min-height:180px}
 .app-history-player-card[data-history-filled="true"]{grid-template-rows:minmax(var(--fa-record-heading),max-content) auto minmax(0,1fr);min-height:160px!important}
 .app-history-player-card[data-history-filled="true"] .app-history-player-footer{align-self:end}
 .app-history-player-footer{align-self:end}
@@ -1458,10 +1458,7 @@ html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-hist
 
 /* Static History matches the archive top edge without an intermediate loading shell. */
 
-/* First-paint pre-season History: show the final empty-state text, never placeholder cards. */
-html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-empty] .app-competition-stat-grid{display:none!important}
-html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-team-empty],
-html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-player-empty]{display:block!important}
+
 
 
 /* FE-02 (#366): viewport geometry and approved mobile touch targets.
@@ -2141,3 +2138,8 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
  min-height:clamp(240px,40vh,360px);
  text-align:center;
 }
+
+#competition-panel-history .app-history-dev-record-entry:has(>.app-history-player-detail){display:flex;flex-wrap:nowrap;gap:6px}
+#competition-panel-history .app-history-dev-record-entry:has(>.app-history-player-detail)>.app-world-club-identity{display:flex;min-width:0;flex:1}
+
+.app-history-dev-record:has([aria-expanded="true"]){height:auto}

@@ -10,16 +10,13 @@
   // empty grid with a single localized status. This also covers public History.
   for(const group of panel.querySelectorAll('[data-history-team-records]')){
    const grid=group.querySelector?.('.app-competition-stat-grid');if(!grid)continue;
-   const records=[...grid.querySelectorAll('.app-competition-stat-card[data-history-scope]')];
-   const hasRecords=records.some(card=>card.dataset.historyScope===scope&&
-    card.querySelector('.app-competition-stat-value'));
    let empty=group.querySelector('[data-history-team-empty]');
    if(!empty){
     empty=document.createElement('p');empty.className='app-competition-status app-history-record-empty-state';
     empty.dataset.appI18n='historyNoData';empty.dataset.historyTeamEmpty='';
     group.append(empty);
    }
-   grid.hidden=!hasRecords;empty.hidden=hasRecords;
+   grid.hidden=false;empty.hidden=true;
   }
  };
  panel.addEventListener("click",event=>{
@@ -199,15 +196,16 @@
           footer.append(button);
         }else footer.append(element("span","app-history-player-context",context));
       }
+      if(partial){
+        const note=element("small","app-history-player-context","Recorded matches");
+        note.dataset.appI18n="historyRecordedMatches";footer.append(note);
+      }
       card.append(footer);
     }
-    // In the absence of approved player data, one message replaces seven
-    // identical empty cards. Preserve the cards for later canonical hydration.
+    // Keep the metric slots visible after an empty response.
     for(const group of panel.querySelectorAll('[data-history-player-records]')){
       const grid=group.querySelector('.app-competition-stat-grid');
       if(!grid)continue;
-      const filled=[...group.querySelectorAll('[data-history-player-record]')]
-        .some(card=>card.dataset.historyFilled==='true');
       let empty=group.querySelector('[data-history-player-empty]');
       if(!empty){
         empty=element('p','app-competition-status app-history-record-empty-state','No historical player data available yet.');
@@ -216,7 +214,7 @@
         group.append(empty);
       }
       empty.dataset.appI18n=partial?"historyPlayerPartial":"historyPlayerNoData";
-      grid.hidden=!filled;empty.hidden=filled;
+      grid.hidden=false;empty.hidden=true;
     }
     window.faAppRenderLanguage?.();
   }
@@ -294,14 +292,14 @@
     applyCanonicalHistory(payload){const checked=compute(payload);results=checked;render();},
     applyRecordSeasons(seasons){
       results={};
-      partial=seasons.some(s=>!Array.isArray(s.players));
+      partial=seasons.some(s=>s.playerCoverage===false||!Array.isArray(s.players));
       for(const [field,suffix] of [["goals","Goals"],["appearances","Appearances"],["starts","Starts"],["minutes","Minutes"],["assists","Assists"],["cleanSheets","CleanSheets"]]){
         for(const cumulative of [false,true]){
           const entries=new Map();
-          if(partial)continue;
+
           let verified=true;
           for(const season of seasons){
-            for(const row of season.players){
+            for(const row of season.players||[]){
               if(row[field]==null&&field==="cleanSheets")continue;
               if(!safeInt(row[field])){verified=false;break;}
               const key=cumulative?row.playerId:row.playerId+":"+season.season;

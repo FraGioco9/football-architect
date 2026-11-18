@@ -242,7 +242,7 @@ function openHistorySeason(season){
  if(document.scrollingElement)document.scrollingElement.scrollTop=0;
 }
 function historyExpandableHolders(card,holders,metric){
- const extra=[...holders.children].slice(2);
+ const extra=[...holders.children].slice(1);
  if(!extra.length)return;
  holders.id="app-history-record-holders-"+metric;
  for(const entry of extra){entry.hidden=true;entry.dataset.historyTieExtra="";}
