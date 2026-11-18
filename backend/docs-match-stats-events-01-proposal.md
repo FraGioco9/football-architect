@@ -206,11 +206,17 @@
   altering old rows. Do not add a migration unless an implementation
   proves it necessary and is separately authorized.
 - `GET /api/matches/:id/stats` reads **verified frozen receipt**
-  evidence and includes supported ordered events and players with
-  coverage/status flags. `GET /api/matches/:id` remains lean and
-  metadata/score-only. Competition aggregates use the same verified
-  projection, one collective identity read when needed, and no
-  per-player API fan-out. No future match data is published.
+  evidence but returns **only per-side player aggregates** and the existing
+  `ratingVersion`: identities, roles, starts/sub appearances, minutes,
+  goals, assists, red cards, GK clean sheets and ratings (null when
+  historically unrecorded). It does **not** expose `events`,
+  `eventModelVersion`, pass details, timestamps/ordinals, actor links,
+  cards or substitutions as individual events.
+  The detailed timeline stays internal to immutable schema-v2 receipts
+  for verification and aggregation, not the public statistics payload.
+  `GET /api/matches/:id` remains lean and score-only. Competition
+  aggregates use the same verified projection; no per-player API fan-out
+  or future-match leakage. Refined following owner API feedback on 2026-11-18.
 - Do not change advanced physical Match Engine #452/#628, existing
   score output, historical receipts, club/team statistics schema,
   competition layout, or any remote environment as part of this

@@ -22,21 +22,9 @@ export function frozenMatchPlayerStatistics(result){
     rating:typeof rating==='number'?rating:null};
   })};
  };
- return {eventModelVersion:hasEvents?'lineup-events-v1':null,ratingVersion:result.ratingVersion??null,
-  home:side(result.home,result.awayGoals),away:side(result.away,result.homeGoals),
-  events:result.events.map(event=>{
-   const person=identities.get(event.playerId);
-   return {type:event.type,minute:event.minute,period:event.period,side:event.side,
-    playerId:event.playerId,name:person?.name??null,nationality:person?.nationality??null,
-    ...(hasEvents?{
-     ordinal:event.ordinal,goalId:event.goalId??null,
-     assistingPlayerId:event.assistingPlayerId??null,
-     assistingName:event.assistingPlayerId?identities.get(event.assistingPlayerId)?.name??null:null,
-     creation:event.creation??null,reason:event.reason??null,
-     fromPlayerId:event.fromPlayerId??null,toPlayerId:event.toPlayerId??null,
-     outPlayerId:event.outPlayerId??null,inPlayerId:event.inPlayerId??null,
-     fromRole:event.fromRole??null,toRole:event.toRole??null,
-     outRole:event.outRole??null,inRole:event.inRole??null
-    }: {})};
-  })};
+ // The public stats contract contains aggregates only. Event provenance stays
+ // in the verified immutable receipt and is never serialized in this projection.
+ return {ratingVersion:result.ratingVersion??null,
+  home:side(result.home,result.awayGoals),away:side(result.away,result.homeGoals)};
+
 }
