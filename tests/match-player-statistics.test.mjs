@@ -34,6 +34,35 @@ test('old identities/ratings and partial-keeper evidence remain explicitly unava
  assert.equal(frozenMatchPlayerStatistics(extra).home.players[0].cleanSheets,1);
 });
 
+test('v2 clean sheets follow the deployed GK role, not the natural position',()=>{
+ const input=result();input.eventModelVersion='lineup-events-v1';
+ // The naturally GK player is deployed at RB; the naturally RB player is in goal.
+ input.home.starters=[{playerId:1,role:'RB',primaryPosition:'GK'},
+  {playerId:2,role:'GK',primaryPosition:'RB'}];
+ input.home.appearances=[
+  {...player(1,'RB'),gkMinutes:0,assists:0,redCards:0},
+  {...player(2,'GK',1),gkMinutes:90,assists:0,redCards:0}
+ ];
+ let stats=frozenMatchPlayerStatistics(input);
+ assert.equal(stats.home.players[0].cleanSheets,null,'natural keeper at RB does not earn a clean sheet');
+ assert.equal(stats.home.players[1].cleanSheets,1,'outfield specialist playing full match at GK does earn one');
+ // Never trust an inconsistent goalkeeper-minute counter when the frozen role is outfield.
+ input.home.appearances[0].gkMinutes=90;
+ assert.equal(frozenMatchPlayerStatistics(input).home.players[0].cleanSheets,null);
+ input.home.appearances[1].gkMinutes=75;
+ assert.equal(frozenMatchPlayerStatistics(input).home.players[1].cleanSheets,null,'partial GK coverage is ineligible');
+ input.home.appearances[1].gkMinutes=90;input.awayGoals=1;
+ assert.equal(frozenMatchPlayerStatistics(input).home.players[1].cleanSheets,0,'conceding in goal is a recorded zero');
+});
+test('legacy clean sheets likewise follow the frozen match role',()=>{
+ const input=result();
+ input.home.starters=[{playerId:1,role:'LB',primaryPosition:'GK'},
+  {playerId:2,role:'GK',primaryPosition:'LB'}];
+ const stats=frozenMatchPlayerStatistics(input);
+ assert.equal(stats.home.players[0].cleanSheets,null);
+ assert.equal(stats.home.players[1].cleanSheets,1);
+});
+
 // Disciplinary counts come from verified v2 yellow events, not the public
 // event timeline or an inferred suspension; second yellow counts twice.
 test('yellow card counters are recorded for v2, including second-yellow red',()=>{

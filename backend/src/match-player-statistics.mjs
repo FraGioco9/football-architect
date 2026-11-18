@@ -22,7 +22,9 @@ export function frozenMatchPlayerStatistics(result){
    const role=hasEvents?p.role:starter.role;
    if(typeof role!=='string')throw TypeError('Missing frozen player role');
    const rating=result.ratingVersion==='test-rating-v1'?p.rating:null;
-   const fullTimeGk=hasEvents?p.gkMinutes===duration:role==='GK'&&p.minutes===duration;
+   // Credit only the player's actual full-match GK assignment, never a natural
+   // GK position or a team clean sheet earned while deployed outfield.
+   const fullTimeGk=role==='GK'&&p.minutes===duration&&(!hasEvents||p.gkMinutes===duration);
    return {playerId:p.playerId,name:identity?.name??null,nationality:identity?.nationality??null,
     role,started:p.started,subAppearances:hasEvents?(p.started?0:1):null,
     minutes:p.minutes,goals:p.goals,
