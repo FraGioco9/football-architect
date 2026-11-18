@@ -108,7 +108,7 @@ export function validateAuthoritativeSeason(input,context,manifest){
  const playerIdentity=new Set(),playerTotals=new Map();
  for(const p of stats.players){
   if(!object(p)||!count(p.playerId)||p.playerId===0||!ids.includes(p.clubId)||
-     !count(p.appearances)||p.appearances===0||!count(p.starts)||p.starts!==p.appearances||
+     !count(p.appearances)||p.appearances===0||!count(p.starts)||p.starts>p.appearances||
      // Frozen V2 appearances may be substituted before 90'; each counted
      // appearance contributes 1..120 playing minutes, never a mandatory 90.
      !count(p.minutes)||p.minutes<p.appearances||p.minutes>120*p.appearances||
@@ -116,6 +116,8 @@ export function validateAuthoritativeSeason(input,context,manifest){
      (typeof p.displayName!=='string'||!p.displayName.trim()))fail();
   if(p.nationality!==undefined&&p.nationality!==null&&
      (typeof p.nationality!=='string'||!/^[A-Z]{3}$/.test(p.nationality)))fail();
+  if(p.subAppearances!==undefined&&p.subAppearances!==null&&
+   (!count(p.subAppearances)||p.starts+p.subAppearances!==p.appearances))fail();
   for(const metric of ['assists','redCards','cleanSheets'])if(p[metric]!==undefined&&p[metric]!==null&&(!count(p[metric])||metric==='cleanSheets'&&p[metric]>p.appearances))fail();
   if(p.ratedAppearances!==undefined&&(!count(p.ratedAppearances)||p.ratedAppearances>p.appearances))fail();
   if(p.averageRating!==undefined&&p.averageRating!==null&&
@@ -132,7 +134,7 @@ export function validateAuthoritativeSeason(input,context,manifest){
  }
  for(const [clubId,p] of playerTotals){
   const t=allTotals.get(clubId);
-  if(!t||p.appearances>11*t.played||p.goals>t.goalsFor)fail();
+  if(!t||p.appearances>17*t.played||p.goals>t.goalsFor)fail();
  }
  if(!Array.isArray(d.calendar)||d.calendar.length!==56)fail();
  d.calendar.forEach((day,i)=>{
@@ -187,7 +189,7 @@ export function adaptAuthoritativeSeason(source,context,manifest){
   standings:d.standings.rows.map(r=>({club:catalog.get(r.clubId),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,gf:r.goalsFor,ga:r.goalsAgainst,gd:r.goalDifference,pts:r.points,recent:recentDetails(r.clubId)})),
   teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),
   players:d.statistics.players.map(p=>({playerId:p.playerId,name:p.displayName??null,
-   clubKey:p.clubId,nationality:p.nationality??null,appearances:p.appearances,starts:p.starts,subAppearances:p.appearances-p.starts,
+   clubKey:p.clubId,nationality:p.nationality??null,appearances:p.appearances,starts:p.starts,subAppearances:p.subAppearances??null,
    minutes:p.minutes,goals:p.goals,assists:p.assists??null,redCards:p.redCards??null,cleanSheets:p.cleanSheets??null,
    ratedAppearances:p.ratedAppearances??0,averageRating:p.averageRating??null,
    goalsAssistsPer90:typeof p.assists==='number'&&p.minutes>0?(p.goals+p.assists)*90/p.minutes:null}))};
