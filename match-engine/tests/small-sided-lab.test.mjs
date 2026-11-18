@@ -432,6 +432,8 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
    let carries=0,releaseRecontacts=0,playerSpeedSum=0,maximumBallSpeed=0,
     minimumObservedSpeed=Infinity;
    const observedPhases=new Set(),phaseTransitions=[];
+   let maxObservedActorSpeedMps=0,maxObservedGapM=0,maxObservedBallSpeedMps=0;
+   let paceEligibleTicks=0,spaceEligibleTicks=0;
    for(let tick=1;tick<=180;tick++){
     const f=lab.step();
     assert.deepEqual(f.smallSidedParticipants,[side+'-10']);
@@ -440,6 +442,11 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
     assert.equal(f.soloCarryPhase.tick,f.physicsTick);
     assert.equal(f.soloCarryPhase.originalCanonicalPlayer,true);
     assert.equal(f.soloCarryPhase.originalRapierBall,true);
+    maxObservedActorSpeedMps=Math.max(maxObservedActorSpeedMps,f.soloCarryPhase.playerSpeedMps);
+    maxObservedGapM=Math.max(maxObservedGapM,f.soloCarryPhase.ballGapM);
+    maxObservedBallSpeedMps=Math.max(maxObservedBallSpeedMps,f.soloCarryPhase.ballSpeedMps);
+    if(f.soloCarryPhase.playerSpeedMps>=2.85)paceEligibleTicks++;
+    if(f.soloCarryPhase.ballGapM>=0.46)spaceEligibleTicks++;
     observedPhases.add(f.soloCarryPhase.phase);
     if(f.soloCarryPhase.changed)
      phaseTransitions.push({tick:f.physicsTick,to:f.soloCarryPhase.phase});
@@ -494,6 +501,8 @@ test('#628 solo Carry has one Rapier actor and repeated genuine shoe actions, HO
     averagePlayerSpeedMps:playerSpeedSum/180,minimumObservedSpeed,
     maxBallSpeedMps:maximumBallSpeed,
     phases:[...observedPhases],phaseTransitions,
+    maxObservedActorSpeedMps,maxObservedGapM,maxObservedBallSpeedMps,
+    paceEligibleTicks,spaceEligibleTicks,
     realBallForwardM:lab.snapshot().nativeDribbleAudit.ballForwardDistanceM
    })+'\\n');
   }finally{lab.dispose();}
