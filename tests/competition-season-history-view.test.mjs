@@ -75,3 +75,13 @@ test('SEASON-LEGACY-DIALOG: approved domestic player history links every divisio
   assert.equal(r.document.activeElement,trigger,definition.id+' trigger regains focus');
  }
 });
+
+test('closed season records combine transfers, preserve frozen identity and clear incomplete history',()=>{
+ const r=fixture('int-1'),records=r.window.faHistoryPlayerRecords;
+ const row={playerId:8,name:'Current name',archivedName:'Archived name',clubKey:'IT-1',goals:4,assists:null};
+ records.applyClosedSeasons([{season:1,players:[row,{...row,clubKey:'ENG-1',goals:2}]},{season:2,players:[{...row,goals:5}]}]);
+ assert.equal(walk(r.card).find(n=>n.className==='app-competition-stat-value').textContent,'6');
+ assert.equal(walk(r.card).find(n=>n.tagName==='a').textContent,'Archived name');
+ records.applyClosedSeasons([{season:1,players:[row]},{season:2,players:null}]);
+ assert.equal(r.card.dataset.historyFilled,'false');
+});

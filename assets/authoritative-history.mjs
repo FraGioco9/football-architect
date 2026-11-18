@@ -49,7 +49,7 @@ export function historyViewModel(context){
    if(eliminated.every(Boolean))semifinalLosers=eliminated;
   }
  }
- return {season:history.season,champion,podium,semifinalLosers,records,teams:totals.map(r=>({club:r.club,won:r.won,gf:r.gf,pts:r.pts})),players:null,allTime:null};
+ return {season:history.season,champion,podium,semifinalLosers,records,teams:totals.map(r=>({club:r.club,won:r.won,gf:r.gf,pts:r.pts})),players:history.playerCoverage===true?data.statistics.players:null,allTime:null};
 }
 
 // Every sealed season belongs to the archive: a two-season limit silently
@@ -132,6 +132,7 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
  };
  let collection=new Map(),generation='',running='',ready='',abort=null,finish=()=>{},counter=0;
  function reset(){
+  window.faHistoryPlayerRecords?.clear();
   for(const {node,html} of cards)node.innerHTML=html;
   if(archive){
    archive.innerHTML=initialArchive;
@@ -151,6 +152,7 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
    if(panel.dataset)panel.dataset.faHistoryReadState='empty';
    refreshRecords();window.faAppRenderLanguage?.();return;
   }
+  window.faHistoryPlayerRecords?.applyClosedSeasons(items);
   const aggregated=historyAggregate(items);
   for(const {node} of cards){
    const heading=node.querySelector('h5'),key=heading?.dataset.appI18n;

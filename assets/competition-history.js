@@ -68,6 +68,7 @@
   }
   const compare=(a,b)=>a.name.localeCompare(b.name,"en",{sensitivity:"base"})||
     key(a.id).localeCompare(key(b.id),"en");
+  let partial=false;
   let results=null,dialog=null,returnFocus=null,lockedScroll=null,oldOverflow="",previousPresentation=null,previousCards=null;
   function compute(payload){
     if(!payload||payload.source!=="canonical"||payload.competitionId!==competitionId||
@@ -148,13 +149,19 @@
     if(ids.length>1)return label.many;
     const club=ids.length===1?clubName(ids[0]):null;
     const seasons=[...new Set(holder.clubs.map(item=>item.season))];
-    return [club,seasons.length===1?label.season+" "+seasons[0]:seasons.length>1?label.seasons:null]
+    return [club||ids[0],seasons.length===1?label.season+" "+seasons[0]:seasons.length>1?label.seasons:null]
       .filter(Boolean).join(" · ");
+  }
+  function playerLabel(holder,tag,cls){
+    if(!/^[1-9]\d*$/.test(holder.id))return element(tag,cls,holder.name);
+    const link=element("a",cls,holder.name);
+    link.href=window.faRoutesRegistry.buildRoute({kind:"player",id:Number(holder.id)});
+    return link;
   }
   function render(){
     const context=window.faCompetitionContext;
     const clubs=context?.seasonData?.participants||(context?.definition?.category==='domestic'?window.faCompetitionDivision?.clubs:[])||[];
-    const presentation=JSON.stringify([document.documentElement.lang,results,clubs.map(c=>[c.countryId,c.clubId,c.primaryName])]);
+    const presentation=JSON.stringify([document.documentElement.lang,partial,results,clubs.map(c=>[c.countryId,c.clubId,c.primaryName])]);
     const cards=[...panel.querySelectorAll("[data-history-player-record]")];
     if(presentation===previousPresentation&&previousCards?.length===cards.length&&
       previousCards.every((card,index)=>card===cards[index])){window.faAppRenderLanguage?.();return;}
@@ -175,7 +182,7 @@
       const holder=record.holders[0];
       const footer=element("div","app-history-player-footer");
       const line=element("div","app-history-player-name-row");
-      line.append(element("span","app-history-player-name",holder.name));
+      line.append(playerLabel(holder,"span","app-history-player-name"));
       if(record.holders.length>1){
         const plus=element("button","app-history-player-detail","+"+(record.holders.length-1));
         plus.type="button";plus.dataset.historyDetail=metric;
@@ -185,7 +192,7 @@
       footer.append(line);
       const context=details(holder);
       if(context){
-        if(new Set(holder.clubs.map(item=>item.clubId)).size>1&&record.holders.length===1){
+        if((record.verified||new Set(holder.clubs.map(item=>item.clubId)).size>1)&&record.holders.length===1){
           const button=element("button","app-history-player-context app-history-player-context-button",context);
           button.type="button";button.dataset.historyDetail=metric;
           button.setAttribute("aria-label",locale().details);
@@ -208,6 +215,7 @@
         empty.dataset.historyPlayerEmpty='';
         group.append(empty);
       }
+      empty.dataset.appI18n=partial?"historyPlayerPartial":"historyPlayerNoData";
       grid.hidden=!filled;empty.hidden=filled;
     }
     window.faAppRenderLanguage?.();
@@ -242,7 +250,7 @@
     const list=element("ol","app-history-player-holders");
     for(const holder of record.holders){
       const li=element("li","");
-      li.append(element("strong","",holder.name));
+      li.append(playerLabel(holder,"strong",""));
       const groups=new Map();
       for(const item of holder.clubs){
         if(!groups.has(item.clubId))groups.set(item.clubId,new Set());
@@ -252,8 +260,8 @@
       for(const [clubId,seasons] of groups){
         const line=element("li","");
         const name=clubName(clubId),[country,number]=clubId.split('-');
-        if(name&&country&&number){
-          const link=element("a","app-world-standing-club-link",name);
+        if(country&&number){
+          const link=element("a","app-world-standing-club-link",name||clubId);
           link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:country.toLowerCase(),id:number,view:"overview"});
           line.append(link);
         }else line.append(element("span","",name||locale().unknown));
@@ -284,7 +292,34 @@
     // The caller must supply approved, complete canonical player statistics.
     // The existing DEV fixture generator contains no player-level statistics.
     applyCanonicalHistory(payload){const checked=compute(payload);results=checked;render();},
-    clear(){results=null;render();}
+    applyClosedSeasons(seasons){
+      results={};
+      partial=seasons.some(s=>!Array.isArray(s.players));
+      for(const [field,suffix] of [["goals","Goals"],["appearances","Appearances"],["starts","Starts"],["minutes","Minutes"],["assists","Assists"],["cleanSheets","CleanSheets"]]){
+        for(const cumulative of [false,true]){
+          const entries=new Map();
+          if(partial)continue;
+          let verified=true;
+          for(const season of seasons){
+            for(const row of season.players){
+              if(row[field]==null&&field==="cleanSheets")continue;
+              if(!safeInt(row[field])){verified=false;break;}
+              const key=cumulative?row.playerId:row.playerId+":"+season.season;
+              const item=entries.get(key)||{id:row.playerId,name:null,value:0,clubs:[]};
+              item.value+=row[field];
+              item.name=row.archivedName||item.name||"#"+row.playerId;
+              item.clubs.push({clubId:row.clubKey,season:season.season});
+              entries.set(key,item);
+            }
+          }
+          if(!verified)continue;
+          const value=Array.from(entries.values()).reduce((max,row)=>Math.max(max,row.value),0);
+          if(value>0)results[(cumulative?"total":"season")+suffix]={verified:true,value,holders:[...entries.values()].filter(row=>row.value===value).sort(compare)};
+        }
+      }
+      render();
+    },
+    clear(){partial=false;results=null;render();}
   });
   render();
 })();
