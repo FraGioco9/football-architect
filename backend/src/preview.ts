@@ -22,8 +22,9 @@ function route(url:URL){
  let changedQuery=false;
  if(parsed?.kind==='club'){
   const view=path===parsed.base&&clubViews.includes(params.get('view')??'')?params.get('view')!:parsed.view!;
+  const rosterSubview=path!==parsed.base&&view==='roster';
   path=parsed.base+'/'+view;
-  if(params.has('view')){params.delete('view');changedQuery=true}
+  if(!rosterSubview&&params.has('view')){params.delete('view');changedQuery=true}
   if(view==='overview'||view==='history')for(const key of ['season','matchday'])if(params.has(key)){params.delete(key);changedQuery=true}
  }else if(parsed?.kind==='competition'&&path===parsed.base){
   const view=competitionViews.includes(params.get('view')??'')?params.get('view')!:'overview';

@@ -215,7 +215,7 @@ test('QA-05 History providers publish completion only after content and DEV clea
  assert.equal((dev.match(/panel\.querySelector\(':scope > \.app-history-dev'\)\?\.remove\(\)/g)||[]).length,3);
 });
 
-test('QA-12: completed History becomes visible even if unrelated current-season Standings is loading',()=>{
+test('QA-12: History waits for the current-season API after archives are ready',()=>{
  const skeleton={dataset:{competitionSkeletonRoot:'history-preview',skeletonLastLeagueDay:'50',skeletonLeagueRounds:'30'},
   querySelectorAll:()=>[],querySelector:()=>null,remove(){this.removed=true}};
  const panel={dataset:{},querySelector(selector){return selector==='[data-competition-skeleton-root]'?skeleton:null},setAttribute(){}};
@@ -226,7 +226,12 @@ test('QA-12: completed History becomes visible even if unrelated current-season 
  window.faStandingsLoading.set('api',true);
  assert.equal(dataset.faStandingsLoading,'true');
  window.faHistorySetReady(true);
- assert.equal(dataset.faHistoryLoading,'false','History readiness is independent of the current-season public provider');
+ assert.equal(dataset.faHistoryLoading,'true');
+ assert.notEqual(skeleton.removed,true);
+ window.faStandingsLoading.set('bootstrap',false);
+ assert.equal(dataset.faHistoryLoading,'true');
+ window.faStandingsLoading.set('api',false);
+ assert.equal(dataset.faHistoryLoading,'false');
  assert.equal(skeleton.removed,true);
 });
 

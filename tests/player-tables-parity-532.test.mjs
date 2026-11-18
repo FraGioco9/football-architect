@@ -33,7 +33,7 @@ test('#532 Club Roster Info follows public Positions-before-Age while preserving
    ['nationality','name','positions','age','height','foot'],language+' header order');
   assert.match(table,/<colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><col class="app-players-view-third-column">/);
   assert.match(table,/<a class="club-roster-player-link" href="\/players\/17" data-mobile-name="M. Example" aria-label="Marco Example"><span class="fa-player-full-name">Marco Example<\/span><span class="fa-player-short-name">M. Example<\/span><\/a><\/td><td>CM, DM<\/td><td>23<\/td>/,language+' data order');
-  const attrsHtml=model.render(manifest,club,language,'?view=technical',null,1,null,snap);
+  const attrsHtml=model.render(manifest,club,language,'?view=attributes&group=technical',null,1,null,snap);
   assert.match(attrsHtml,/data-roster-mode="attributes"/);
   assert.match(attrsHtml,/data-club-roster-sort="positions"/);
  }

@@ -41,9 +41,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
  assert.equal(mime['.mjs'],'text/javascript','Club public ES modules must be served with a JavaScript MIME type');
  assert.ok(allowed.has('assets/club-public-read-cache.mjs'),'shared Club HTTP cache module must be published');
  let refuseCrests=false,holdDeferred=false,manifestMode='ok',mockEmptyRoster=false,mockReadyRoster=false,holdRosterResponse=false;const deferredResponses=[],blockedRosterResponses=[];
+ const rosterRequests={info:0,stats:0};
  const server=createServer((req,res)=>{
   try{
    const path=new URL(req.url,'http://localhost').pathname;
+   if(path==='/api/clubs/IT-1/roster')rosterRequests.info++;
+   if(path==='/api/clubs/IT-1/roster/stats'){
+    rosterRequests.stats++;
+    res.writeHead(200,{'Content-Type':'application/json'});
+    res.end(JSON.stringify({clubKey:'IT-1',season:1,competitions:['IT-1','int-1'],count:1,players:[{id:1001,display_name:'Fixture Player',nationality:'ITA',primary_position:'CM',stats:{appearances:2,starts:1,subAppearances:1,minutes:110,goals:1,assists:null,cleanSheets:null,yellowCards:1,redCards:null,ratedAppearances:0,averageRating:null,goalsAssistsPer90:null},competitionStats:{'IT-1':{appearances:1,starts:1,subAppearances:0,minutes:90,goals:1,assists:0,cleanSheets:null,yellowCards:1,redCards:0,ratedAppearances:1,averageRating:7.15,goalsAssistsPer90:1},'int-1':{appearances:1,starts:0,subAppearances:1,minutes:20,goals:0,assists:null,cleanSheets:null,yellowCards:null,redCards:null,ratedAppearances:0,averageRating:null,goalsAssistsPer90:null}}}]}));return;
+   }
    if(path==='/api/clubs/IT-1/roster'&&holdRosterResponse){blockedRosterResponses.push(res);return;}
    if(path==='/api/clubs/IT-1/roster'&&mockEmptyRoster){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:0,players:[]}));return;}
    if(path==='/api/clubs/IT-1/roster'&&mockReadyRoster){
@@ -1123,118 +1130,105 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     for(const view of ['roster','fixtures','stats','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
      assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-empty')+"')"),true);
-     assert.equal(await run('location.search'),['history','roster'].includes(view)?'':'?season=2&matchday=7');
+     assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
+    }
+    for(const query of ['view=attributes&group=physical','view=stats&competition=international']){
+     const response=await fetch(devOrigin+'/clubs/it/1/roster?'+query,{redirect:'manual'});
+     assert.equal(response.status,200,'DEV must serve a roster subview directly on reload');
     }
     // A failed API response must not invent a selected subview or mutate /roster.
-    await visit('/clubs/it/1/roster?view=mental');
+    await visit('/clubs/it/1/roster?view=attributes&group=mental');
     await wait("document.querySelector('.club-roster[aria-busy=false] .app-players-empty-row')!==null");
-    assert.equal(await run('location.search'),'','failed roster read stays at /roster');
-    assert.equal(await run("document.querySelectorAll('.club-roster-tabs [aria-disabled=true]').length"),5);
+    assert.equal(await run('location.search'),'?view=attributes&group=mental','failure preserves deep links');
+    assert.equal(await run("document.querySelectorAll('.club-roster-tabs [aria-disabled=true]').length"),0);
     assert.equal(await run("document.querySelector('.club-load-error')"),null,'roster read failure is not a club identity failure');
     mockReadyRoster=true;
+    const initialReads={...rosterRequests};
     await visit('/clubs/it/1/roster?view=info');
     await wait("location.search==='?view=info'&&document.querySelector('.club-roster[aria-busy=false]')!==null");
     assert.equal(await run("document.querySelector('.club-roster-tabs [aria-selected=true]')?.textContent"),'Info');
     assert.equal(await run("document.querySelector('.club-roster-tabs [data-club-roster-view=info]')?.getAttribute('href')"),'/clubs/it/1/roster?view=info');
-    assert.equal(await run("document.querySelector('.club-roster-toolbar,.club-roster-groups')"),null,
-      'Roster has five peer views and no Attributes sub-navigation');
-    assert.deepEqual(await run("[...document.querySelectorAll('.club-roster-tabs [data-club-roster-view]')].map(el=>el.dataset.clubRosterView)"),
-      ['info','technical','mental','physical','goalkeeping']);
-    // Roster mobile: exactly 2.5 tabs before player count and edge-aware fade.
+    assert.deepEqual(await run("[...document.querySelectorAll('.club-roster-tabs a')].map(a=>a.dataset.clubRosterView)"),['info','stats','attributes']);
     for(const width of [320,390]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:true});
-     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='true'");
-     const measured=await run("(()=>{const nav=document.querySelector('.club-roster-tabs'),count=document.querySelector('.club-roster-count'),row=document.querySelector('.club-roster-view-row'),buttons=[...nav.querySelectorAll('a')],n=nav.getBoundingClientRect(),third=buttons[2].getBoundingClientRect(),style=getComputedStyle(nav),item=buttons[0].getBoundingClientRect();return {rowHeight:row.getBoundingClientRect().height,navWidth:n.width,tabWidth:item.width,gap:parseFloat(style.columnGap),thirdVisible:Math.min(n.right,third.right)-Math.max(n.left,third.left),countAfter:count.getBoundingClientRect().left>=n.right,overflows:nav.scrollWidth>nav.clientWidth,fade:style.maskImage,right:nav.dataset.canScrollRight,left:nav.dataset.canScrollLeft}})()");
-     // The main View strip restores scrollLeft from sessionStorage on navigation.
-     // Exercise the left edge explicitly rather than assuming a fresh position.
-     await run("document.querySelector('.club-tabs').scrollLeft=0;window.dispatchEvent(new Event('resize'))");
-     await wait("(()=>{const nav=document.querySelector('.club-tabs');if(!nav)return false;const max=Math.max(0,nav.scrollWidth-nav.clientWidth);return nav.scrollLeft<1&&nav.dataset.canScrollLeft==='false'&&nav.dataset.canScrollRight===String(max>1)})()");
-     const primary=await run("(()=>{const nav=document.querySelector('.club-tabs'),style=getComputedStyle(nav),scrollbar=getComputedStyle(nav,'::-webkit-scrollbar');return {width:style.scrollbarWidth,webkitDisplay:scrollbar.display,right:nav.dataset.canScrollRight,left:nav.dataset.canScrollLeft,overflow:nav.scrollWidth>nav.clientWidth}})()");
-     assert.equal(primary.width,'none','primary Club View scrollbar is hidden at '+width);
-     assert.equal(primary.webkitDisplay,'none','WebKit primary View scrollbar is hidden at '+width);
-     assert.equal(primary.right,String(primary.overflow),'right fade matches actual mobile View overflow at '+width);
-     assert.equal(primary.left,'false','no left fade at start at '+width);
-     assert.equal(measured.rowHeight,42,'42px row at '+width);
-     assert.ok(Math.abs(measured.navWidth-(2.5*measured.tabWidth+2*measured.gap))<2,'2.5 mobile tabs: '+JSON.stringify(measured));
-     assert.ok(Math.abs(measured.thirdVisible/measured.tabWidth-0.5)<0.06,'half third tab: '+JSON.stringify(measured));
-     assert.ok(measured.countAfter&&measured.overflows&&measured.fade!=='none'&&measured.right==='true'&&measured.left==='false','player count and right fade at '+width);
-     await run("document.querySelector('.club-roster-tabs').scrollLeft=9999");
-     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='false'&&document.querySelector('.club-roster-tabs')?.dataset.canScrollLeft==='true'");
-     await run("document.querySelector('.club-roster-tabs').scrollLeft=0");
-     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollLeft==='false'&&document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='true'");
+     assert.ok(await run("document.querySelector('.club-roster-tabs').scrollWidth<=document.querySelector('.club-roster-tabs').clientWidth+1"));
     }
+    await run("document.querySelector('[data-club-roster-view=stats]').click()");
+    await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(5)')?.textContent==='110'");
+    // Real Chromium: shared identity tracks remain fixed, nine metric columns
+    // are differentiated and the last Rating column matches Standings Pts.
+    const statsLayout=await run("(()=>{const table=document.querySelector('.club-roster-table[data-players-table-mode=stats]');const headers=[...table.querySelectorAll('thead th')];const style=getComputedStyle(table);const fixed=['--app-players-flag-width','--app-players-name-width','--app-players-positions-width'].map(k=>parseFloat(style.getPropertyValue(k)));return {keys:headers.map(h=>h.querySelector('[data-club-roster-sort]')?.dataset.clubRosterSort),widths:headers.map(h=>h.getBoundingClientRect().width),fixed,theme:document.documentElement.dataset.theme,headColor:getComputedStyle(headers.at(-1)).backgroundColor,cellColor:getComputedStyle(table.querySelector('tbody td:last-child')).backgroundColor};})()");
+    assert.deepEqual(statsLayout.keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating']);
+    assert.ok(statsLayout.fixed.every((v,i)=>Number.isFinite(v)&&Math.abs(statsLayout.widths[i]-v)<2),'Flag, Player, Positions retain shared responsive widths');
+    assert.ok(statsLayout.widths[3]>statsLayout.widths[5]&&statsLayout.widths[7]>statsLayout.widths[8]&&statsLayout.widths[11]>statsLayout.widths[10],'numeric widths follow content');
+    assert.equal(statsLayout.headColor,statsLayout.theme==='light'?'rgb(183, 220, 199)':'rgb(48, 92, 76)');
+    assert.equal(statsLayout.cellColor,statsLayout.theme==='light'?'rgb(212, 235, 221)':'rgb(38, 71, 62)');
+    for(const width of [320,1440]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===320});
+     const gap=await run("document.querySelector('.club-roster-count').getBoundingClientRect().left-document.querySelector('[data-club-roster-control]').getBoundingClientRect().right");
+     assert.equal(gap,12,'dropdown spacing stays consistent');
+    }
+    for(const view of ['attributes','stats','info','stats']){
+     await run("document.querySelector('[data-club-roster-view="+view+"]').click()");
+     await wait("document.querySelector('.club-roster[aria-busy=false]')!==null");
+    }
+    assert.deepEqual(rosterRequests,{info:initialReads.info+1,stats:initialReads.stats+1});
+    assert.deepEqual(await run("[...document.querySelectorAll('[data-club-roster-control] [data-menu-value]')].map(el=>el.dataset.menuValue)"),['all','domestic','international']);
+    for(const [scope,minutes] of [['domestic','90'],['all','110'],['international','20']]){
+     await run("document.querySelector('[data-club-roster-control=competition] button').click();document.querySelector('[data-menu-value="+scope+"]').click()");
+     await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(5)')?.textContent==='"+minutes+"'");
+    }
+    assert.deepEqual(rosterRequests,{info:initialReads.info+1,stats:initialReads.stats+1});
+    await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(5)')?.textContent==='20'");
+    await cmd('Page.reload',{ignoreCache:true});
+    await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(5)')?.textContent==='20'");
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
-    await run("document.querySelector('[data-club-roster-view=technical]').click()");
-    await wait("location.search==='?view=technical'");
+    await run("document.querySelector('[data-club-roster-view=attributes]').click()");
+    await wait("location.search==='?view=attributes&group=technical'");
     assert.equal(await run("document.querySelector('.club-roster')?.dataset.rosterMode"),'attributes');
-    await run("document.querySelector('[data-club-roster-view=mental]').click()");
-    await wait("location.search==='?view=mental'");
+    await run("document.querySelector('[data-club-roster-control=group] button').click();document.querySelector('[data-menu-value=mental]').click()");
+    await wait("location.search==='?view=attributes&group=mental'");
     assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'mental');
     await run("history.back()");
-    await wait("location.search==='?view=technical'");
+    await wait("location.search==='?view=attributes&group=technical'");
     assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'technical');
     await run("document.querySelector('[data-club-roster-sort=passing]').click()");
-    await wait("location.search==='?view=technical&sort=passing&order=desc'");
+    await wait("location.search==='?view=attributes&group=technical&sort=passing&order=desc'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'descending');
     await run("document.querySelector('[data-club-roster-sort=passing]').click()");
-    await wait("location.search==='?view=technical&sort=passing&order=asc'");
+    await wait("location.search==='?view=attributes&group=technical&sort=passing&order=asc'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'ascending');
     await run("document.querySelector('[data-club-roster-sort=passing]').click()");
-    await wait("location.search==='?view=technical'");
+    await wait("location.search==='?view=attributes&group=technical'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'none');
     await run("document.querySelector('[data-club-roster-view=info]').click()");
     await wait("location.search==='?view=info'");
     await run("document.querySelector('[data-club-roster-sort=positions]').click()");
     await wait("location.search==='?view=info&sort=positions&order=desc'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=positions]').closest('th').getAttribute('aria-sort')"),'descending');
-    // Real browser: pending View controls are grey, have no href/focus target,
-    // cannot navigate, and become enabled when the API delivers valid players.
+    // The category picker remains usable while player data is pending.
     mockReadyRoster=false;
     holdRosterResponse=true;
     await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
-    await visit('/clubs/it/1/roster?view=technical');
-    await wait("document.querySelector('.club-roster[aria-busy=true] .club-roster-tabs [aria-disabled=true]')!==null");
-    const pendingTabs=await run("(()=>{const root=document.querySelector('.club-roster'),tabs=[...root.querySelectorAll('[data-club-roster-view]')],style=getComputedStyle(tabs[0]);return {count:tabs.length,disabled:tabs.filter(a=>a.getAttribute('aria-disabled')==='true').length,hrefs:tabs.filter(a=>a.hasAttribute('href')).length,focus:tabs.map(a=>a.tabIndex),opacity:style.opacity,cursor:style.cursor}})()");
-    assert.equal(pendingTabs.count,5);
-    assert.equal(pendingTabs.disabled,5);
-    assert.equal(pendingTabs.hrefs,0);
-    assert.deepEqual(pendingTabs.focus,[-1,-1,-1,-1,-1]);
-    assert.ok(Number(pendingTabs.opacity)<0.6&&pendingTabs.cursor==='default','loading subviews look disabled');
-    assert.equal(await run("document.querySelector('.club-load-error')"),null,'loading roster must not show the generic Club info error');
-    assert.equal(await run("document.documentElement.dataset.clubIdentityReady"),'true','club identity loads while the roster waits');
-    // Pending views are grey and non-interactive on desktop, including the active tab.
-    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
-    const desktopPending=await run("(()=>{const tabs=[...document.querySelectorAll('.club-roster-tabs [data-club-roster-view]')];return tabs.map(el=>{const css=getComputedStyle(el);return {opacity:css.opacity,background:css.backgroundColor,pointer:css.pointerEvents,disabled:el.getAttribute('aria-disabled'),href:el.getAttribute('href')}})})()");
-    assert.equal(desktopPending.length,5);
-    for(const [index,tab] of desktopPending.entries()){
-     assert.ok(Math.abs(Number(tab.opacity)-0.45)<0.02,'desktop disabled opacity: '+index);
-     assert.ok(tab.background==='rgba(0, 0, 0, 0)'||tab.background==='transparent','desktop disabled background: '+index+' '+tab.background);
-     assert.equal(tab.pointer,'none','desktop disabled pointer events '+index);
-     assert.equal(tab.disabled,'true','desktop aria-disabled '+index);
-     assert.equal(tab.href,null,'desktop must not expose nonfunctional URLs');
-    }
-    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
-    await run("document.querySelector('[data-club-roster-view=mental]').click()");
-    assert.equal(await run('location.search'),'','loading subviews cannot navigate; stay at /roster');
+    await visit('/clubs/it/1/roster?view=attributes&group=technical');
+    await wait("document.querySelector('.club-roster[aria-busy=true] [role=combobox]')!==null");
+    await run("document.querySelector('[data-club-roster-control=group] button').click();document.querySelector('[data-menu-value=mental]').click()");
+    await wait("location.search==='?view=attributes&group=mental'");
     for(let i=0;i<100&&!blockedRosterResponses.length;i++)await delay(20);
     assert.ok(blockedRosterResponses.length>=1,'club roster request held until assertions complete');
     holdRosterResponse=false;
     const loadedRoster={schemaVersion:1,clubKey:'IT-1',count:1,players:[{id:1001,display_name:'Test Player',nationality:'ITA',primary_position:'CM',secondary_positions:[],age:20,height_cm:180,preferred_foot:'right',attributes:{}}]};
     blockedRosterResponses.splice(0).forEach(res=>{res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(loadedRoster))});
-    await wait("location.search==='?view=info'&&document.querySelector('.club-roster[aria-busy=false] [data-club-roster-view=mental][href]')?.getAttribute('aria-disabled')===null");
-    assert.equal(await run("document.querySelector('.club-roster [aria-selected=true]')?.dataset.clubRosterView"),'info','successful response activates Info');
-    assert.equal(await run("document.querySelector('.club-roster-tabs [aria-disabled=true]')"),null);
-    await run("document.querySelector('[data-club-roster-view=mental]').click()");
-    await wait("location.search==='?view=mental'");
+    await wait("document.querySelector('.club-roster[aria-busy=false] [role=combobox]')?.value==='mental'");
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     // Verified API count=0: desktop and mobile render only a localized paragraph,
     // with no subviews, player count, sort buttons, or table.
     mockEmptyRoster=true;
     for(const [width,view] of [[1440,'info'],[390,'technical'],[320,'goalkeeping']]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
-     await visit('/clubs/it/1/roster?view='+view);
+     await visit('/clubs/it/1/roster'+(view==='info'?'?view=info':'?view=attributes&group='+view));
      await wait("document.querySelector('.club-roster[data-roster-mode=empty] .club-roster-empty')!==null");
-     assert.equal(await run('location.search'),'','empty verified squad stays /roster');
+     assert.equal(await run('location.search'),view==='info'?'?view=info':'?view=attributes&group='+view);
      const emptyState=await run("(()=>{const root=document.querySelector('.club-roster'),p=root?.querySelector('p');return {text:root?.textContent.trim(),lang:document.documentElement.lang,children:root?.children.length,paragraph:p?.className,status:p?.getAttribute('role'),extras:root?.querySelector('nav,table,button,.club-roster-count,.club-roster-table-scroll'),overflow:document.documentElement.scrollWidth>innerWidth+1}})()");
      const emptyWords={en:'No players are currently assigned to this club.',de:'Diesem Verein sind derzeit keine Spieler zugeordnet.',es:'Actualmente no hay jugadores asignados a este club.',fr:'Aucun joueur n’est actuellement affecté à ce club.',it:'Nessun giocatore è attualmente assegnato a questo club.'};
      assert.equal(emptyState.text,emptyWords[emptyState.lang]||emptyWords.en,'empty roster copy at '+width);

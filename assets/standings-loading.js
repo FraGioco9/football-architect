@@ -29,7 +29,7 @@
       const panel=root.document.getElementById('competition-panel-'+view);
       if(!panel?.querySelector||!root.document.querySelector)return;
       let current=panel.querySelector('[data-competition-skeleton-root]');
-      if(!loading||confirmedEmpty(panel,root.faCompetitionContext,root.faCompetitionRoute?.get?.())){current?.remove();return;}
+      if(!loading||view!=='history'&&confirmedEmpty(panel,root.faCompetitionContext,root.faCompetitionRoute?.get?.())){current?.remove();return;}
       const preview=root.faDebugEnabled===true&&root.document.documentElement.dataset.faDevSeasons!==undefined;
       const season=Number((preview?root.document.documentElement.dataset.faDevCurrentSeason:undefined)??(preview?root.faFixturesInitialProgress?.currentSeason:undefined)??1);
       if(view==='history'&&preview&&season===0){
@@ -45,6 +45,22 @@
         if(template){current?.remove();panel.append(template.content.cloneNode(true));current=panel.querySelector('[data-competition-skeleton-root]');root.faAppRenderLanguage?.();}
       }
       if(view==='history'&&current?.querySelectorAll){
+        // On refresh, keep the same labels and footer geometry as the selected scope.
+        const scope=panel.dataset.historyRecordScope==='all-time'?'all-time':'season';
+        if(current.dataset.historyScopePreview!==scope){
+          current.dataset.historyScopePreview=scope;
+          const shellGroups=current.querySelectorAll('.app-history-record-group');
+          for(const [index,selector] of ['[data-history-team-records]','[data-history-player-records]'].entries()){
+            const labels=panel.querySelector(selector)?.querySelectorAll('[data-history-scope="'+scope+'"] h5')||[];
+            const headings=shellGroups[index]?.querySelectorAll('h5')||[];
+            headings.forEach((heading,n)=>{
+              if(labels[n]){
+                heading.dataset.appI18n=labels[n].dataset.appI18n;
+                heading.textContent=labels[n].textContent;
+              }
+            });
+          }
+        }
         const progress=preview?(root.faFixturesInitialProgress||{}):{},knownSeason=(preview?root.document.documentElement.dataset.faDevCurrentSeason:undefined)??progress.currentSeason,season=Number(knownSeason??1);
         const day=preview?(root.faDevWorldClockSnapshot?.current?.day??progress.day):undefined,last=Number(current.dataset.skeletonLastLeagueDay),rounds=Number(current.dataset.skeletonLeagueRounds);
         const knownCompleted=knownSeason!==undefined&&(day!==undefined||progress.matchdays!==undefined);
@@ -72,7 +88,7 @@
       // A global bootstrap may settle before the History-specific provider.
       // Keep the real panel's shell until its own data/verified empty state is committed.
       const historyPending=history?.dataset.faHistoryContentReady!=='true';
-      const historyBusy=Boolean(local.history)||historyPending;
+      const historyBusy=loading||Boolean(local.history)||historyPending;
       if(state.faStandingsLoading!==String(loading))state.faStandingsLoading=String(loading);
       if(state.faHistoryLoading!==String(historyBusy))state.faHistoryLoading=String(historyBusy);
       for(const view of ['standings','fixtures','postseason',...views]){

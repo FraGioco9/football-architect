@@ -1,8 +1,9 @@
+import clubModel from '../assets/club-model.js';
 import fixtureUI from '../assets/club-fixtures.js';
 // CLUB-01: derive public presentation data without modifying canonical inputs.
 import {clubCrestAssets} from './club-crest-assets.mjs';
 import {loadWorldCatalog} from './load-world-catalog.mjs';
-function bootstrapClubFirstPaint(){
+function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp){
  const match=location.pathname.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|stats|history)\/?$/);
  if(!match)return;
  const country=match[1],clubId=match[2],view=match[3];
@@ -17,8 +18,6 @@ function bootstrapClubFirstPaint(){
  const locale=Object.hasOwn(labels,document.documentElement.lang)?document.documentElement.lang:'en';
  const header=document.querySelector('#club-page > .club-header'),tabs=document.querySelector('#club-page > .club-tabs');
  if(!header||!tabs)return;
- // Reset even a bookmarked subview at document refresh. First paint stays neutral.
- if(view==='roster'&&location.search)history.replaceState(null,'',location.pathname+location.hash);
  const params=new URLSearchParams(location.search),context=new URLSearchParams();
  for(const key of ['season','matchday'])if(params.has(key))context.set(key,params.get(key));
  const activeIndex=names.indexOf(view);
@@ -56,24 +55,40 @@ function bootstrapClubFirstPaint(){
    it:{title:'Rosa',tabs:['Info'],groups:['Tecnici','Mentali','Fisici','Portiere'],cols:['','Giocatore','Posizioni','Età','Altezza','Piede'],nationality:'Nazionalità'}
   };
   const w=words[locale],requested=params.get('view');
-  const group=Object.hasOwn(keys,requested)?requested:
-   requested==='attributes'&&Object.hasOwn(keys,params.get('group'))?params.get('group'):'technical';
-  const mode=Object.hasOwn(keys,requested)||requested==='attributes'?'attributes':'overview';
+  const group=Object.hasOwn(keys,params.get('group'))?params.get('group'):'technical';
+  const mode=requested==='attributes'||requested==='stats'?requested:'overview';
+  const wordsForRoster=rosterLabels[locale];
   roster.dataset.rosterMode=mode;
+  roster.querySelector('.club-roster-count-width').textContent='99 '+({en:'players',it:'giocatori',de:'Spieler',es:'jugadores',fr:'joueurs'})[locale];
   for(const button of roster.querySelectorAll('[data-club-roster-view]')){
-   const key=button.dataset.clubRosterView,active=key===(mode==='overview'?'info':group);
-   button.textContent=key==='info'?w.tabs[0]:w.groups[Object.keys(keys).indexOf(key)];
-   button.removeAttribute('href');
-   button.setAttribute('aria-disabled','true');
+   const key=button.dataset.clubRosterView,active=key===(mode==='overview'?'info':mode);
+   button.textContent=key==='info'?'Info':key==='stats'?labels[locale][3]:wordsForRoster[0];
+   const query=new URLSearchParams(params);
+   query.set('view',key);if(key!=='stats')query.delete('competition');query.delete('sort');query.delete('order');
+   if(key==='attributes')query.set('group',mode==='attributes'?group:'technical');else query.delete('group');
+   button.href=location.pathname+'?'+query;
    button.classList.toggle('is-active',active);
    button.setAttribute('aria-selected',String(active));
-   button.tabIndex=-1;
+   button.tabIndex=active?0:-1;
+  }
+  if(mode==='attributes'||mode==='stats'){
+   const isGroup=mode==='attributes',id=isGroup?'group':'competition';
+   const picker=document.createElement('template');picker.innerHTML=menuMarkup[id];
+   const control=picker.content.firstElementChild,trigger=control.querySelector('button');
+   const fixtureWords=JSON.parse(document.querySelector('.club-fixtures').dataset.labels)[locale];
+   const label=isGroup?wordsForRoster[0]:fixtureWords.competition;
+   const requested=params.get('competition');
+   const value=isGroup?w.groups[Object.keys(keys).indexOf(group)]:requested==='domestic'?wordsForRoster[statKeys.length+1]:requested==='international'?wordsForRoster[statKeys.length+2]:fixtureWords.all;
+   trigger.setAttribute('aria-label',label);control.querySelector('[role=listbox]').setAttribute('aria-label',label);
+   trigger.querySelector('span').textContent=value;
+   trigger.disabled=true;
+   roster.querySelector('.club-roster-count').before(control);
   }
   roster.querySelector('.club-roster-tabs').setAttribute('aria-label',w.title);
   const table=roster.querySelector('table');
   table.dataset.playersTableMode=mode;table.dataset.rosterGroup=group;table.setAttribute('aria-label',w.title);
-  const fields=mode==='attributes'?[w.cols[0],w.cols[1],w.cols[2],...keys[group].map(key=>names[locale].split('|')[allAttrs.indexOf(key)])]:w.cols;
-  const columnSorts=mode==='attributes'?['nationality','name','positions',...keys[group]]:['nationality','name','positions','age','height','foot'];
+  const fields=mode==='attributes'?[w.cols[0],w.cols[1],w.cols[2],...keys[group].map(key=>names[locale].split('|')[allAttrs.indexOf(key)])]:mode==='stats'?[...w.cols.slice(0,3),...wordsForRoster.slice(1,1+statKeys.length)]:w.cols;
+  const columnSorts=mode==='attributes'?['nationality','name','positions',...keys[group]]:mode==='stats'?['nationality','name','positions',...statKeys]:['nationality','name','positions','age','height','foot'];
   const sort=columnSorts.includes(params.get('sort'))?params.get('sort'):'';
   const order=sort&&['asc','desc'].includes(params.get('order'))?params.get('order'):
    sort?['name','nationality','positions','foot'].includes(sort)?'asc':'desc':'';
@@ -94,6 +109,7 @@ function bootstrapClubFirstPaint(){
    if(index===0){th.className='app-players-flag-col';th.setAttribute('aria-label',w.nationality);}
    const button=document.createElement('button');button.type='button';button.className='app-players-sort-button';
    button.dataset.clubRosterSort=key;
+   if(mode==='stats'&&index>=3)button.dataset.rosterStatHelp=statHelp[locale][key];
    const label=document.createElement('span');label.className='app-players-sort-label';
    if(index===0){const hidden=document.createElement('span');hidden.className='sr-only';hidden.textContent=w.nationality;label.append(hidden);}
    else label.append(document.createTextNode(text));
@@ -206,7 +222,9 @@ function bootstrapClubFirstPaint(){
  document.documentElement.dataset.clubShellReady='true';
 }
 function buildClubShell(firstPaintScript){
- const rosterShell="<section class=\"club-roster club-first-paint-roster\" aria-busy=\"true\" data-roster-mode=\"overview\" hidden><div class=\"club-roster-view-row\"><nav class=\"app-competition-tabs app-players-tabs club-roster-tabs\" role=\"tablist\" aria-label=\"Roster\"><a role=\"tab\" class=\"app-competition-tab is-active\" data-club-roster-view=\"info\" aria-selected=\"true\" aria-disabled=\"true\" tabindex=\"-1\">Info</a><a role=\"tab\" class=\"app-competition-tab\" data-club-roster-view=\"technical\" aria-selected=\"false\" aria-disabled=\"true\" tabindex=\"-1\">Technical</a><a role=\"tab\" class=\"app-competition-tab\" data-club-roster-view=\"mental\" aria-selected=\"false\" aria-disabled=\"true\" tabindex=\"-1\">Mental</a><a role=\"tab\" class=\"app-competition-tab\" data-club-roster-view=\"physical\" aria-selected=\"false\" aria-disabled=\"true\" tabindex=\"-1\">Physical</a><a role=\"tab\" class=\"app-competition-tab\" data-club-roster-view=\"goalkeeping\" aria-selected=\"false\" aria-disabled=\"true\" tabindex=\"-1\">Goalkeeper</a></nav><span class=\"club-roster-count\"><span class=\"app-players-count-placeholder\" aria-hidden=\"true\"></span></span></div><div class=\"app-players-table-scroll club-roster-table-scroll\" role=\"region\" aria-label=\"Roster\" tabindex=\"0\" aria-busy=\"true\"><table class=\"app-players-table club-roster-table\" data-players-table-mode=\"overview\" data-roster-group=\"technical\" aria-label=\"Roster\"><colgroup><col class=\"app-players-flag-column\"><col class=\"app-players-name-column\"><col class=\"app-players-view-third-column\"><col><col><col></colgroup><thead><tr><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"0\" class=\"app-players-flag-col\" aria-label=\"Nationality\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"nationality\"><span class=\"app-players-sort-label\"><span class=\"sr-only\">Nationality</span><svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"1\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"name\"><span class=\"app-players-sort-label\">Player<svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"2\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"positions\"><span class=\"app-players-sort-label\">Positions<svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"3\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"age\"><span class=\"app-players-sort-label\">Age<svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"4\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"height\"><span class=\"app-players-sort-label\">Height<svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"5\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"foot\"><span class=\"app-players-sort-label\">Foot<svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th></tr></thead><tbody><tr class=\"app-players-loading-row\"><td colspan=\"6\"><span class=\"sr-only\" role=\"status\">Loading roster</span></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr></tbody></table></div></section>";
+ const rosterShell=clubModel.renderRoster('IT-1','en',clubModel.copies.en,null)
+  .replace('<section class="club-roster"', '<section hidden class="club-roster club-first-paint-roster"')
+  .replaceAll('/clubs/it/1/roster?', '?');
  return '<section id="app-divisions" class="app-view app-world-view" aria-labelledby="club-title">'+
   '<div id="club-page" aria-live="polite">'+
   '<header class="club-header club-first-paint-header" aria-hidden="true"><span class="app-world-club-crest-placeholder club-crest fa-crest-loading"></span><div>'+
@@ -270,7 +288,7 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations,c
    if(!localized||['en','de','es','fr','it'].some(lang=>!localized[lang]))throw Error('Missing club translations');
    return {...c,descriptions:localized,divisionId:catalog.getDivisionForClub(c.countryId+'-'+c.clubId)};
   })};
- const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')();';
+ const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+[clubModel.rosterLabels,Object.fromEntries(['group','competition'].map(id=>[id,fixtureUI.control(id,'','',[],'club-roster')])),clubModel.rosterSortKeys('stats').slice(3),clubModel.rosterStatHelp].map(value=>JSON.stringify(value)).join(',')+');';
  const staticContent=buildClubShell(firstPaintScript);
  let html=template;
  for(const [token,value] of Object.entries({...replacements,'@@FA_WORLD_SECTION@@':staticContent}))html=html.replaceAll(token,value);

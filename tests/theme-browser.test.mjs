@@ -769,12 +769,33 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const marginCard=await run("(()=>{const c=document.querySelector('[data-history-record=margin]');return {value:Number(c.querySelector('strong').textContent),entries:[...c.querySelectorAll('[data-history-record-season]')].map(n=>({season:Number(n.dataset.historyRecordSeason),club:n.querySelector('[data-club-crest]').dataset.clubCrest}))}})()");
       assert.deepEqual(marginCard,{value:marginValue,entries:margins.filter(item=>item.value===marginValue).map(({season,club})=>({season,club}))});
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['attack','defence','wins','points','goalDifference','margin']);
-      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),3);
+      // HISTORY-UI: both scopes reserve six metrics; unverified player data must remain empty, not shrink the grid.
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),6,'Six seasonal player record slots');
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
-      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),6,'Six all-time player record slots');
       assert.equal(await run("!!document.querySelector('.app-history-dev [data-history-player-records] strong,.app-history-dev [data-history-player-records] [data-club-crest]')"),false);
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['titles','podiums','streak','totalWins','totalGoals','totalPoints']);
-      const tiedExpansion=await run("(()=>{const card=[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].find(c=>c.querySelector('[data-history-record-expand]'));if(!card)return null;const button=card.querySelector('[data-history-record-expand]'),list=document.getElementById(button.getAttribute('aria-controls')),rows=[...list.children],extra=rows.slice(2);const collapsed=rows.length>2&&rows.slice(0,2).every(row=>!row.hidden)&&extra.every(row=>row.hidden)&&button.getAttribute('aria-expanded')==='false'&&button.textContent.includes('+'+extra.length);button.click();const opened=extra.every(row=>!row.hidden)&&button.getAttribute('aria-expanded')==='true'&&!button.querySelector('[data-app-i18n=historyShowLess]').hidden;button.click();const restored=extra.every(row=>row.hidden)&&button.getAttribute('aria-expanded')==='false'&&!button.querySelector('[data-app-i18n=historyShowAll]').hidden;return {collapsed,opened,restored,entries:rows.length}})()");
+      const tiedExpansion=await run(`(async()=>{
+        const button=document.querySelector('.app-history-dev [data-history-record]:not([hidden]) [data-history-record-expand]');
+        if(!button)return null;
+        const rows=[...button.closest('article').querySelectorAll('.app-history-dev-record-entry')];
+        const collapsed=rows.filter(row=>!row.hidden).length===1&&button.textContent==='+'+(rows.length-1);
+        button.click();
+        const dialog=document.querySelector('.app-history-player-dialog[open]');
+        // The popup groups repeated seasons for the same club; it no longer
+        // clones one full card row per season. Verify every distinct club and season.
+        const expected=[...new Set(rows.map(row=>row.querySelector('[data-club-crest]')?.dataset.clubCrest))];
+        const modalRows=[...dialog?.querySelectorAll('.app-history-club-holders>li')||[]];
+        const actual=modalRows.map(row=>row.querySelector('[data-club-crest]')?.dataset.clubCrest);
+        const seasonCount=rows.filter(row=>row.querySelector('.app-history-dev-season-link')).length;
+        const modalSeasons=dialog?.querySelectorAll('.app-history-dialog-club-seasons .app-history-dev-season-link').length||0;
+        const opened=!!dialog&&actual.length===expected.length&&expected.every((club,index)=>actual[index]===club)&&modalSeasons===seasonCount;
+        if(dialog){
+          const closed=new Promise(resolve=>dialog.addEventListener('close',resolve,{once:true}));
+          dialog.querySelector('button').click();await closed;
+        }
+        return {collapsed,opened,restored:!dialog?.open&&document.activeElement===button};
+      })()`);
       if(tiedExpansion){
         expansionChecks++;
         assert.ok(tiedExpansion.collapsed&&tiedExpansion.opened&&tiedExpansion.restored,division.id+' tied records expand/collapse accessibly '+JSON.stringify(tiedExpansion));
@@ -954,8 +975,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           'History box area stays within its panel at '+width+' '+theme+' '+lang+' '+JSON.stringify(recordScroll));
         const labelFit=await run("(()=>{const cards=[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].filter(c=>c.getClientRects().length>0);return cards.every(c=>{const l=c.querySelector('.app-competition-stat-label'),next=l?.nextElementSibling;if(!l||!next)return true;const label=l.getBoundingClientRect(),content=next.getBoundingClientRect();return l.scrollHeight<=l.clientHeight+1&&label.bottom<=content.top+1})})()");
         assert.equal(labelFit,true,width+' '+theme+' '+lang+' History labels fit inside their slots');
-        const cards=await run("[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].filter(c=>c.getClientRects().length>0).map(c=>{const s=getComputedStyle(c);return {expected:c.querySelector('.app-competition-stat-value')?160:128,min:parseFloat(s.minHeight),height:c.getBoundingClientRect().height,overflow:c.scrollHeight>c.clientHeight+1,max:s.maxHeight,align:s.justifyContent}})");
-        assert.ok(cards.every(c=>c.min===c.expected&&c.height>=c.expected-.5&&!c.overflow&&c.max==='none'),width+' '+theme+' '+lang+' History cards keep minimum heights and grow with content');
+        const cards=await run("[...document.querySelectorAll('.app-history-dev .app-competition-stat-card:not([hidden])')].filter(c=>c.getClientRects().length>0).map(c=>{const s=getComputedStyle(c);return {expected:c.querySelector('.app-competition-stat-value')?160:c.classList.contains('app-history-player-card')?180:128,min:parseFloat(s.minHeight),height:c.getBoundingClientRect().height,overflow:c.scrollHeight>c.clientHeight+1,max:s.maxHeight,align:s.justifyContent}})");
+        assert.ok(cards.every(c=>c.min===c.expected&&c.height>=c.expected-.5&&!c.overflow&&c.max==='none'),width+' '+theme+' '+lang+' History cards keep minimum heights and grow with content '+JSON.stringify(cards));
       }
       const scrollCheck=await run("(()=>{const s=document.querySelector('.fa-shell-content-scroll');s.scrollTop=Math.min(180,s.scrollHeight-s.clientHeight);const top=s.scrollTop;const results=[];for(const scope of ['all-time','season','all-time','season']){document.querySelector('.app-history-dev [data-history-record-scope=\"'+scope+'\"]').click();results.push(s.scrollTop)}return {top,results,period:!!document.querySelector('.app-history-record-period')}})()");
       assert.ok(scrollCheck.results.every(value=>value>=0&&value<=scrollCheck.top),'History scroll remains in range at '+width+' '+theme);
@@ -977,7 +998,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await waitForHistoryArchive('/competitions/it-1/history');
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])').length"),6,'DEV History supports All-time scope');
-      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),6,'Six all-time player record slots');
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
       await snap('HISTORY '+width+' '+theme,width,900);
       const historyLabelGeometry=await run("(()=>{const l=document.querySelector('.app-history-dev [data-history-record=attack]>.app-competition-stat-label'),c=l.parentElement,s=getComputedStyle(l),a=l.getBoundingClientRect(),b=c.getBoundingClientRect();return {family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,line:s.lineHeight,color:s.color,spacing:s.letterSpacing,caps:s.textTransform,top:Math.round((a.top-b.top)*100)/100,left:Math.round((a.left-b.left)*100)/100,slot:getComputedStyle(c).getPropertyValue('--fa-record-heading').trim()}})()");

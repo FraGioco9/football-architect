@@ -188,7 +188,7 @@ export function adaptAuthoritativeSeason(source,context,manifest){
  const statistics={overview:{matchesPlayed:d.statistics.matchesPlayed,totalGoals:d.statistics.totalGoals,goalsPerMatch:d.statistics.goalsPerMatch},
   standings:d.standings.rows.map(r=>({club:catalog.get(r.clubId),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,gf:r.goalsFor,ga:r.goalsAgainst,gd:r.goalDifference,pts:r.points,recent:recentDetails(r.clubId)})),
   teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),
-  players:d.statistics.players.map(p=>({playerId:p.playerId,name:p.displayName??null,
+  players:d.statistics.players.map(p=>({playerId:p.playerId,name:p.displayName??null,...(d.history||d.playerRecordVersion===1?{archivedName:typeof p.archivedName==="string"?p.archivedName:null}:{}),
    clubKey:p.clubId,nationality:p.nationality??null,appearances:p.appearances,starts:p.starts,subAppearances:p.subAppearances??null,
    minutes:p.minutes,goals:p.goals,assists:p.assists??null,yellowCards:p.yellowCards??null,
    redCards:p.redCards??null,cleanSheets:p.cleanSheets??null,
@@ -197,7 +197,8 @@ export function adaptAuthoritativeSeason(source,context,manifest){
  const currentChoice=viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?
   globalThis.faCompetitionRules.currentFixtureChoice(definition,globalThis.faWorldCalendarModel.projectCompetition(d.season,definition.id),{current:{season:source.world.seasonNumber,day:source.world.day}}):null;
  return freeze({season:d.season,rulesVersion:d.rulesVersion,participants,fixtures:definition.category==='international'?fixtures:fixtures.filter(f=>f.phaseId==='league'),postseason,results,statistics,status:source.status,
-  history:d.history?{season:d.history.season,archiveHash:d.history.archiveHash,closedAt:d.history.closedAt,championClubId:d.history.championClubId}:null,
+  playerCoverage:d.playerRecordVersion===1&&d.playerCoverage===true,
+  history:d.history?{season:d.history.season,archiveHash:d.history.archiveHash,closedAt:d.history.closedAt,playerCoverage:d.history.playerRecordVersion===1&&d.history.playerCoverage===true,championClubId:d.history.championClubId}:null,
   provenance:{kind:'authoritative',sourceRef:source.provenance.sourceRef,resultAuthority:source.provenance.resultAuthority},world:source.world,seasonState:viewedSeasonState(source),
   currentMatchday:viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?currentChoice:null});
 }

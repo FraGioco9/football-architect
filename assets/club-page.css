@@ -697,12 +697,15 @@ html:not([data-fa-fixture-hover-suspended]) .club-fixture-row.is-match-link:hove
 .club-roster{width:100%;min-width:0}
 .club-roster[hidden],.club-first-paint-roster[hidden]{display:none}
 .club-roster-empty{margin:14px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
-.club-roster-view-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;height:42px;min-height:42px}
+.club-roster-view-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;height:42px;min-height:42px}
 .club-roster .club-roster-tabs{display:flex;align-items:center;flex:1 1 auto;width:auto;min-width:0;min-height:32px;gap:4px;overflow-x:auto;overflow-y:hidden;margin:0;padding:0;border:0;scrollbar-width:none;-webkit-mask-image:none;mask-image:none}
 .club-roster .club-roster-tabs .app-competition-tab{box-sizing:border-box;flex:0 0 92px;width:92px;min-width:92px;max-width:92px;height:32px;min-height:32px;padding:5px 5px;border-radius:6px;font-size:11px;line-height:1.2;cursor:pointer}
 /* Disabled from the first paint until roster data is ready. */
 .app-body .club-roster .club-roster-tabs .app-competition-tab[aria-disabled="true"]{opacity:.45;color:var(--muted);background:transparent;cursor:default;pointer-events:none}
-.club-roster-count{display:flex;align-items:center;justify-content:flex-end;flex:0 0 110px;min-width:110px;height:36px;white-space:nowrap;color:var(--muted);font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;text-align:right}
+.club-roster-count{display:grid;align-items:center;flex:0 0 auto;height:36px;white-space:nowrap;color:var(--muted);font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;text-align:right}
+.club-roster-count>span{grid-area:1/1}
+.club-roster-count-width{visibility:hidden}
+.club-roster-count .app-players-count-placeholder{width:auto}
 .club-roster-table-scroll{margin-top:0}
 .club-roster-table td:nth-child(2){text-align:left;font-weight:650}
 .club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"]{min-width:1462px}
@@ -720,5 +723,54 @@ html:not([data-fa-fixture-hover-suspended]) .club-fixture-row.is-match-link:hove
  .club-roster .club-roster-tabs[data-can-scroll-right="true"]{--app-tabs-fade-right:16px}
  .club-roster .club-roster-tabs[data-can-scroll-right="false"]{--app-tabs-fade-right:0px}
  .club-roster .club-roster-tabs .app-competition-tab{flex:0 0 calc(40% - 3.2px);width:calc(40% - 3.2px);min-width:calc(40% - 3.2px);max-width:calc(40% - 3.2px);height:32px;min-height:32px;padding-inline:4px}
- .club-roster-count{flex:0 0 92px;min-width:92px;font-size:11px}
+ .club-roster-count{font-size:11px}
+}
+
+ .club-roster-view-row .club-fixture-select{flex:0 1 auto;min-width:120px;max-width:min(240px,58%)}
+ .club-roster-view-row .language-trigger{min-height:32px;height:32px;font-size:12px}
+ .club-roster-view-row .language-trigger span{overflow:hidden;text-overflow:ellipsis}
+ .club-roster-view-row .language-menu{left:auto;right:0}
+/* Fixed table layout: preserve Flag | Player | Positions exactly as in /players.
+ * Nine numeric col widths are percentage weights summing to 100%. Chromium
+ * normalizes their over-subscription into the space remaining after the three
+ * fixed pixel columns. A mixed %-px calc on <col> resolves as auto during
+ * first paint, making every stat width equal, so do not use one here. */
+.club-roster-table[data-players-table-mode="stats"]{min-width:1300px}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(n+4){
+ width:var(--club-roster-stat-share);
+}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(4){--club-roster-stat-share:17%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(5){--club-roster-stat-share:12%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(6){--club-roster-stat-share:8.5%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(7){--club-roster-stat-share:8.5%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(8){--club-roster-stat-share:15%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(9){--club-roster-stat-share:9%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(10){--club-roster-stat-share:9%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(11){--club-roster-stat-share:9%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(12){--club-roster-stat-share:12%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(th,td):nth-child(n+4){text-align:center}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] th:nth-child(n+4) .app-players-sort-button{justify-content:center}
+.club-roster-table[data-players-table-mode="stats"] [data-roster-stat-help]{cursor:help}
+.club-roster-table[data-players-table-mode="stats"] :is(th,td):nth-child(3){text-align:left}
+.club-roster-table[data-players-table-mode="stats"] th:nth-child(3) .app-players-sort-button{justify-content:flex-start}
+/* Match Standings Pts styling, including its light and dark themes.
+ * Exclude the five pending/empty colspan rows from the green data cell. */
+.app-players-table.club-roster-table[data-players-table-mode="stats"] thead th:last-child{
+ background:#305c4c;color:#effff4;font-weight:800;box-shadow:inset 1px 0 #3b7060,inset -1px 0 #3b7060;
+}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] tbody tr:not(.app-players-loading-row):not(.app-players-empty-row)>td:last-child{
+ background:#26473e;color:#e6ffed;font-weight:800;box-shadow:inset 1px 0 #3b7060,inset -1px 0 #3b7060;
+}
+html[data-theme="light"] .app-players-table.club-roster-table[data-players-table-mode="stats"] thead th:last-child{
+ background:#B7DCC7;color:#173F30;box-shadow:inset 1px 0 #A5CCB2,inset -1px 0 #A5CCB2;
+}
+html[data-theme="light"] .app-players-table.club-roster-table[data-players-table-mode="stats"] tbody tr:not(.app-players-loading-row):not(.app-players-empty-row)>td:last-child{
+ background:#D4EBDD;color:#174936;box-shadow:inset 1px 0 #A5CCB2,inset -1px 0 #A5CCB2;
+}
+@media(max-width:620px){
+ .club-roster-view-row{flex-wrap:wrap;height:auto;row-gap:0}
+ .club-roster .club-roster-tabs{flex:1 0 100%;mask-image:none;-webkit-mask-image:none}
+ .club-roster .club-roster-tabs .app-competition-tab{flex:1;width:auto;min-width:0;max-width:none}
+ .club-roster-view-row .club-fixture-select,.club-roster-count:only-of-type{margin-left:auto}
+ .club-roster-view-row .club-fixture-select+.club-roster-count{margin-left:0}
 }
