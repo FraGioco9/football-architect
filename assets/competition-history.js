@@ -141,13 +141,31 @@
     const clubs=context?.seasonData?.participants||(context?.definition.category==='domestic'?window.faCompetitionDivision?.clubs:[])||[];
     return clubs.find(club=>club.countryId+'-'+club.clubId===id)?.primaryName||null;
   }
-  function details(holder){
-    const label=locale(),ids=[...new Set(holder.clubs.map(item=>item.clubId))];
-    if(ids.length>1)return label.many;
-    const club=ids.length===1?clubName(ids[0]):null;
-    const seasons=[...new Set(holder.clubs.map(item=>item.season))];
-    return [club||ids[0],seasons.length===1?label.season+" "+seasons[0]:seasons.length>1?label.seasons:null]
-      .filter(Boolean).join(" · ");
+  function clubLink(id){
+    const [country,number]=id.split("-");
+    const link=element("a","app-world-standing-club-link",clubName(id)||id);
+    link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:country.toLowerCase(),id:number,view:"overview"});
+    return link;
+  }
+  function seasonLink(season){
+    const link=element("a","app-world-standing-club-link",locale().season+" "+season);
+    const id=competitionId.toLowerCase();
+    const route=window.faRoutesRegistry.parseRoute("/competitions/"+id+"/standings");
+    link.href=window.faRoutesRegistry.buildRoute({kind:route.kind,id,view:"standings"})+"?season="+season;
+    return link;
+  }
+  function portrait(id){
+    const slot=element("span","fa-dev-stats-player-portrait");
+    slot.setAttribute("aria-hidden","true");
+    slot.dataset.portraitState="missing";
+    if(!/^[1-9]\d*$/.test(id))return slot;
+    const image=element("img","");
+    image.alt="";image.loading="lazy";image.decoding="async";
+    slot.dataset.portraitState="loading";
+    image.onload=()=>{slot.dataset.portraitState="ready";};
+    image.onerror=()=>{slot.dataset.portraitState="missing";image.removeAttribute("src");};
+    image.src="/assets/players/portraits/"+id+".webp";
+    slot.append(image);return slot;
   }
   function playerLabel(holder,tag,cls){
     if(!/^[1-9]\d*$/.test(holder.id))return element(tag,cls,holder.name);
@@ -180,22 +198,22 @@
       const footer=element("div","app-history-player-footer");
       const line=element("div","app-history-player-name-row");
       line.append(playerLabel(holder,"span","app-history-player-name"));
-      if(record.holders.length>1){
-        const plus=element("button","app-history-player-detail","+"+(record.holders.length-1));
+      const contexts=holder.clubs;
+      if(record.holders.length>1||contexts.length>1){
+        const plus=element("button","app-history-player-detail","+"+(record.holders.length>1?record.holders.length-1:contexts.length-1));
         plus.type="button";plus.dataset.historyDetail=metric;
         plus.setAttribute("aria-label",locale().details+": "+record.holders.length+" "+(record.holders.length===1?locale().holder:locale().holders));
         line.append(plus);
       }
-      footer.append(line);
-      const context=details(holder);
-      if(context){
-        if((record.verified||new Set(holder.clubs.map(item=>item.clubId)).size>1)&&record.holders.length===1){
-          const button=element("button","app-history-player-context app-history-player-context-button",context);
-          button.type="button";button.dataset.historyDetail=metric;
-          button.setAttribute("aria-label",locale().details);
-          footer.append(button);
-        }else footer.append(element("span","app-history-player-context",context));
+      const labels=element("div","app-history-player-labels");
+      labels.append(line);
+      const item=contexts[0];
+      if(item){
+        const metadata=element("div","app-history-player-context");
+        metadata.append(clubLink(item.clubId),document.createTextNode(" · "),seasonLink(item.season));
+        labels.append(metadata);
       }
+      footer.append(portrait(holder.id),labels);
       card.append(footer);
     }
     // Keep the metric slots visible after an empty response.
@@ -258,7 +276,8 @@
     const list=element("ol","app-history-player-holders");
     for(const holder of record.holders){
       const li=element("li","");
-      li.append(playerLabel(holder,"strong",""));
+      const identity=element("div","app-history-dialog-player");
+      identity.append(portrait(holder.id),playerLabel(holder,"strong",""));li.append(identity);
       const groups=new Map();
       for(const item of holder.clubs){
         if(!groups.has(item.clubId))groups.set(item.clubId,new Set());
@@ -267,18 +286,9 @@
       const clubs=element("ul","app-history-player-clubs");
       for(const [clubId,seasons] of groups){
         const line=element("li","");
-        const name=clubName(clubId),[country,number]=clubId.split('-');
-        if(country&&number){
-          const link=element("a","app-world-standing-club-link",name||clubId);
-          link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:country.toLowerCase(),id:number,view:"overview"});
-          line.append(link);
-        }else line.append(element("span","",name||locale().unknown));
+        line.append(clubLink(clubId));
         for(const season of [...seasons].sort((a,b)=>a-b)){
-          line.append(document.createTextNode(" · "));
-          const link=element("a","app-world-standing-club-link",locale().season+" "+season);
-          const id=competitionId.toLowerCase(),identity=window.faRoutesRegistry.parseRoute("/competitions/"+id+"/standings");
-          link.href=window.faRoutesRegistry.buildRoute({kind:identity.kind,id,view:"standings"})+"?season="+encodeURIComponent(season);
-          line.append(link);
+          line.append(document.createTextNode(" · "),seasonLink(season));
         }
         clubs.append(line);
       }

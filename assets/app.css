@@ -2145,9 +2145,20 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 .app-history-dev-record:has([aria-expanded="true"]){height:auto}
 
 .app-history-player-name-row a,.app-history-player-holders a{width:fit-content;max-width:100%;text-underline-offset:.16em}
-.history-team-placeholder,.history-player-placeholder{gap:8px;align-self:end}
-.history-placeholder-lines{display:grid;gap:5px;min-width:0;width:min(15ch,100%)}
-.history-placeholder-lines>.app-skeleton-bar,.history-placeholder-season>.app-skeleton-bar{display:block;width:100%;height:.8em}
-.history-placeholder-lines>.app-skeleton-bar+span{width:76%;height:.7em}
-.history-placeholder-season{width:6ch;margin-inline-start:auto}
-.history-player-placeholder{min-height:38px}
+/* A record has the same three slots before and after the season response. */
+.app-history-record-group .app-competition-stat-card{grid-template-rows:minmax(var(--fa-record-heading),max-content) auto minmax(0,1fr)}
+.app-history-record-group .app-competition-stat-value>.app-skeleton-bar{width:2.4ch;height:.7em;max-width:100%}
+.app-history-player-footer,.app-history-dialog-player,.history-team-placeholder,.history-player-placeholder{display:flex;align-items:center;gap:8px;min-width:0}
+.app-history-record-holders,.app-history-player-footer,.history-team-placeholder,.history-player-placeholder{align-self:end}
+.app-history-player-labels,.history-placeholder-lines{display:grid;align-content:center;gap:4px;min-width:0;flex:1}
+.app-history-player-context{display:flex;align-items:baseline;gap:.3em}
+.app-history-player-context a{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-history-player-context a:last-child{flex-shrink:0}
+.history-placeholder-lines>.app-skeleton-bar{display:block;width:min(13ch,92%);height:.78em}
+.history-placeholder-meta{display:flex;align-items:center;gap:6px;font-size:.76rem}
+.history-placeholder-meta>.app-skeleton-bar{width:min(8ch,50%);height:.72em}
+.history-placeholder-meta>.app-skeleton-bar:last-child,.history-placeholder-season{width:5.5ch}
+.history-placeholder-season>.app-skeleton-bar{display:block;width:100%;height:.72em}
+@media(max-width:620px){.app-history-player-footer,.history-player-placeholder,.history-team-placeholder{gap:6px}}
+
+[data-history-scope-preview="all-time"] .history-team-placeholder .history-placeholder-season{display:none}

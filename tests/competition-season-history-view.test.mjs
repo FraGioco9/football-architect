@@ -100,3 +100,12 @@ test('goal contributions and red cards use recorded values and preserve unknown 
  r.window.faHistoryPlayerRecords.applyRecordSeasons([{season:1,players:[{...row,assists:null}]}]);
  assert.equal(r.card.dataset.historyFilled,'false');
 });
+
+test('a single holder has a face and independent player, recorded club and season links on the card',()=>{
+ const r=fixture('int-1');
+ r.window.faHistoryPlayerRecords.applyRecordSeasons([{season:2,players:[{playerId:8,archivedName:'Historical Player',clubKey:'ENG-1',goals:3}]}]);
+ const nodes=walk(r.card),links=nodes.filter(n=>n.tagName==='a');
+ assert.deepEqual(links.map(a=>a.href),['/players/8','/clubs/eng/1/overview','/competitions/int-1/standings?season=2']);
+ assert.ok(links.every(a=>a.className.includes('app-world-standing-club-link')));
+ assert.equal(nodes.find(n=>n.tagName==='img').src,'/assets/players/portraits/8.webp');
+});

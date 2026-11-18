@@ -45,6 +45,22 @@
         if(template){current?.remove();panel.append(template.content.cloneNode(true));current=panel.querySelector('[data-competition-skeleton-root]');root.faAppRenderLanguage?.();}
       }
       if(view==='history'&&current?.querySelectorAll){
+        // On refresh, keep the same labels and footer geometry as the selected scope.
+        const scope=panel.dataset.historyRecordScope==='all-time'?'all-time':'season';
+        if(current.dataset.historyScopePreview!==scope){
+          current.dataset.historyScopePreview=scope;
+          const shellGroups=current.querySelectorAll('.app-history-record-group');
+          for(const [index,selector] of ['[data-history-team-records]','[data-history-player-records]'].entries()){
+            const labels=panel.querySelector(selector)?.querySelectorAll('[data-history-scope="'+scope+'"] h5')||[];
+            const headings=shellGroups[index]?.querySelectorAll('h5')||[];
+            headings.forEach((heading,n)=>{
+              if(labels[n]){
+                heading.dataset.appI18n=labels[n].dataset.appI18n;
+                heading.textContent=labels[n].textContent;
+              }
+            });
+          }
+        }
         const progress=preview?(root.faFixturesInitialProgress||{}):{},knownSeason=(preview?root.document.documentElement.dataset.faDevCurrentSeason:undefined)??progress.currentSeason,season=Number(knownSeason??1);
         const day=preview?(root.faDevWorldClockSnapshot?.current?.day??progress.day):undefined,last=Number(current.dataset.skeletonLastLeagueDay),rounds=Number(current.dataset.skeletonLeagueRounds);
         const knownCompleted=knownSeason!==undefined&&(day!==undefined||progress.matchdays!==undefined);
