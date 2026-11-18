@@ -43,7 +43,7 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  // #612: official published match lists and numeric match details are public GETs.
  // Keep the proxy as strict as the Worker; reject unsafe, encoded and query paths.
  const matchList=/^\/api\/matches\/seasons\/([1-9][0-9]*)\/competitions\/((?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12]))$/.exec(raw);
- const matchDetail=/^\/api\/matches\/([1-9][0-9]*)$/.exec(raw);
+ const matchDetail=/^\/api\/matches\/([1-9][0-9]*)(?:\/stats)?$/.exec(raw);
  const matchesRead=(!!matchList&&Number.isSafeInteger(Number(matchList[1])))||
   (!!matchDetail&&Number.isSafeInteger(Number(matchDetail[1])));
  // Contracts is a protected Admin route. Forward only the exact, bounded GET

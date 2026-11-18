@@ -11,7 +11,7 @@ import {readPublicSportingSeasonLineupV1 as readPublicSportingSeason,readPublicC
 import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
 import {readPublicClubRoster} from './public-club-roster-read.ts';
-import {readPublicMatchLineupV1 as readPublicMatch,readPublishedCompetitionMatchesLineupV1 as readPublishedCompetitionMatches,readPublishedClubFixturesBeforeCalendarLineupV1 as readPublishedClubFixturesBeforeCalendar} from './public-match-read-lineup-v1.ts';
+import {readPublicMatchLineupV1 as readPublicMatch,readPublicMatchStatisticsV1,readPublishedCompetitionMatchesLineupV1 as readPublishedCompetitionMatches,readPublishedClubFixturesBeforeCalendarLineupV1 as readPublishedClubFixturesBeforeCalendar} from './public-match-read-lineup-v1.ts';
 import {parsePublicPlayerQuery} from './public-players-filters.mjs';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
@@ -59,6 +59,16 @@ export default {
       catch(error){
         if(error instanceof ApiError&&(error.code==='not_found'||error.code==='stale_world'))
          return json(error.status,{error:{code:error.code}});
+        return json(503,{error:{code:'match_unavailable'}});
+      }
+    }
+    const matchStatistics=url.pathname.match(/^\/api\/matches\/([1-9][0-9]*)\/stats$/);
+    if(matchStatistics){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search)return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicMatchStatisticsV1(requireDatabase(env.DB),matchStatistics[1]))}
+      catch(error){
+        if(error instanceof ApiError&&(error.code==='not_found'||error.code==='stale_world'))return json(error.status,{error:{code:error.code}});
         return json(503,{error:{code:'match_unavailable'}});
       }
     }
