@@ -191,7 +191,7 @@ test('All generated first-paint History pages hide the empty-archive copy until 
   assert.equal((html.match(/panel\.querySelector\('\[data-history-archive-empty\]'\)\?\.removeAttribute\('hidden'\)/g)||[]).length,3,slug+' DEV Season0 still reveals verified static empty archive');
  }
  const loading=readFileSync(new URL('../assets/standings-loading.js',import.meta.url),'utf8');
- assert.match(loading,/historyBusy=Boolean\(local\.history\)\|\|historyPending/);
+ assert.match(loading,/historyBusy=loading\|\|Boolean\(local\.history\)\|\|historyPending/);
  assert.match(loading,/const busy=view==='history'\?historyBusy:loading\|\|Boolean\(local\[view\]\)/);
 });
 
@@ -223,6 +223,39 @@ test('Season archive skeleton reserves one crest slot per podium club',()=>{
  for(const [id,expected] of [['IT-1',3],['int-1',4],['int-2',4]]){
   const competition=manifest.competitions.find(item=>item.id===id);
   const markup=renderViewSkeleton(competition,'history');
-  assert.equal((markup.match(/class="app-view-skeleton-crest-slot"/g)||[]).length,expected,id);
+  assert.equal((markup.match(/history-team-placeholder/g)||[]).length,6);
+  assert.equal((markup.match(/history-player-placeholder/g)||[]).length,6);
+  const archive=markup.slice(markup.indexOf('app-view-skeleton-history-archive'));
+  assert.equal((archive.match(/class="app-view-skeleton-crest-slot"/g)||[]).length,expected,id);
  }
+});
+
+
+test('History club skeletons occupy the hydrated team and player text slots',()=>{
+ const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
+ const competition=manifest.competitions.find(item=>item.id==='IT-1');
+ const markup=renderViewSkeleton(competition,'history');
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ // Team records use the same identity wrapper and direct grid cells as real season records.
+ assert.equal((markup.match(/class="app-history-record-holders"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-competition-stat-card app-history-dev-record"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-history-dev-record-entry app-view-skeleton-record-holder history-team-placeholder"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-history-tied-club"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-world-club-name app-world-standing-club-link app-view-skeleton-name-slot app-view-skeleton-team-name"/g)||[]).length,6);
+ // Player records reuse both hydrated label rows; the second line is the club.
+ assert.equal((markup.match(/class="app-competition-stat-card app-history-player-card" data-history-filled="true"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-history-player-footer app-view-skeleton-record-holder history-player-placeholder"/g)||[]).length,6);
+ assert.equal((markup.match(/class="fa-dev-stats-player-portrait app-view-skeleton-crest-slot"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-history-player-labels"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-history-player-context"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-world-standing-club-link app-view-skeleton-name-slot app-view-skeleton-player-club"/g)||[]).length,6);
+ assert.equal((markup.match(/class="app-history-dev-season-link history-placeholder-season"/g)||[]).length,12);
+ assert.match(css,/\.app-competition-view-skeleton \.app-view-skeleton-name-slot\{[^}]*vertical-align:baseline/);
+ assert.match(css,/\.app-competition-view-skeleton \.app-world-club-crest-placeholder\.app-view-skeleton-crest-slot::before\{content:none\}/);
+ assert.match(css,/\.app-competition-view-skeleton \.app-view-skeleton-name-slot>\.app-skeleton-bar\{[^}]*top:50%;transform:translateY\(-50%\)/);
+ assert.match(css,/#competition-panel-history \.app-history-player-name-row\{[^}]*height:calc\(1\.35 \* var\(--history-name-size, \.875rem\)\)/);
+ assert.match(css,/#competition-panel-history \.app-history-player-labels\{row-gap:2px\}/);
+ assert.match(css,/#competition-panel-history \.history-team-placeholder \.app-history-tied-club\{[^}]*grid-column:2;grid-row:1/);
+ assert.match(css,/#competition-panel-history \.app-history-player-detail:hover\{[^}]*border-color:var\(--focus\);background:rgba\(100,203,169,\.075\)/);
+ assert.match(css,/#competition-panel-history \.app-history-player-detail:hover\{[^}]*text-decoration:none/);
 });

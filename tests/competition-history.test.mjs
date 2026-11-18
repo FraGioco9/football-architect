@@ -96,51 +96,42 @@ test('Season archive links retain native navigation and guard in-page Standings 
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  assert.doesNotMatch(css,/app-history-dev-season-button\[aria-pressed=/);
 });
-test('Shared record holders expose all ties with an accessible reversible +N expander',()=>{
+test('Shared record ties keep +N adjacent to the club name without adding a card row',()=>{
  const start=client.indexOf('function historyExpandableHolders(');
  const end=client.indexOf('\nasync function renderHistoryPreview()',start);
  assert.ok(start>=0&&end>start);
  function node(tag,className='',textContent=''){
-  return {tag,className,textContent,children:[],dataset:{},attributes:{},hidden:false,events:{},
-   append(...items){this.children.push(...items)},
+  const item={tag,className,textContent,children:[],parent:null,dataset:{},attributes:{},hidden:false,events:{},
+   append(...children){for(const child of children){child.parent=this;this.children.push(child)}},
+   replaceWith(next){const i=this.parent.children.indexOf(this);this.parent.children.splice(i,1,next);next.parent=this.parent;this.parent=null},
+   querySelector(selector){const name=selector.slice(1);return this.children.find(c=>c.className?.split(' ').includes(name))||
+    this.children.map(c=>c.querySelector?.(selector)).find(Boolean)||null},
    addEventListener(kind,fn){this.events[kind]=fn},
    setAttribute(key,value){this.attributes[key]=value},
    getAttribute(key){return this.attributes[key]??null}};
+  return item;
  }
- const fn=runInNewContext(client.slice(start,end)+';historyExpandableHolders',{
-  historyNode:node,historyLabel:key=>{const item=node('span');item.dataset.appI18n=key;return item;}
- });
- for(const count of [0,1,2]){
+ const fn=runInNewContext(client.slice(start,end)+';historyExpandableHolders',{historyNode:node});
+ for(const count of [0,1,5]){
   const card=node('article'),holders=node('div');
-  for(let i=0;i<count;i++)holders.append(node('div'));
-  fn(card,holders,'attack');
-  assert.equal(card.children.length,0,'No expansion control for '+count+' tied entries');
-  assert.equal(holders.children.filter(entry=>entry.hidden).length,0);
+  for(let i=0;i<count;i++){
+   const entry=node('div'),identity=node('span','app-world-club-identity');
+   identity.append(node('span','app-world-club-name'));entry.append(identity);holders.append(entry);
+  }
+  fn(card,holders,'points');
+  assert.equal(card.children.length,0,'An expander must never become another card grid item');
+  assert.deepEqual(holders.children.map(row=>row.hidden),count===5?[false,true,true,true,true]:holders.children.map(()=>false));
+  if(count<2)continue;
+  const line=holders.children[0].querySelector('.app-history-tied-club');
+  assert.ok(line,'The holder name and +N share an inline wrapper');
+  assert.equal(line.children[0].className,'app-world-club-name');
+  const trigger=line.children[1];
+  assert.equal(trigger.dataset.historyRecordExpand,'points');
+  assert.equal(trigger.textContent,'+4');
+  assert.equal(trigger.getAttribute('aria-haspopup'),'dialog');
  }
- const card=node('article'),holders=node('div');
- for(let i=0;i<5;i++)holders.append(node('div'));
- fn(card,holders,'points');
- assert.equal(holders.children.length,5,'All tied results remain in DOM');
- assert.deepEqual(holders.children.map(row=>row.hidden),[false,false,true,true,true]);
- assert.ok(holders.children.slice(2).every(row=>Object.hasOwn(row.dataset,'historyTieExtra')));
- assert.equal(card.children.length,1);
- const toggle=card.children[0];
- assert.equal(toggle.dataset.historyRecordExpand,'points');
- assert.equal(toggle.getAttribute('aria-expanded'),'false');
- assert.equal(toggle.getAttribute('aria-controls'),holders.id);
- assert.equal(toggle.children[0].textContent,'+3');
- assert.equal(toggle.children[1].dataset.appI18n,'historyShowAll');
- assert.equal(toggle.children[2].dataset.appI18n,'historyShowLess');
- assert.equal(toggle.children[2].hidden,true);
- toggle.events.click();
- assert.equal(toggle.getAttribute('aria-expanded'),'true');
- assert.deepEqual(holders.children.map(row=>row.hidden),[false,false,false,false,false]);
- assert.equal(toggle.children[0].hidden,true);
- assert.equal(toggle.children[1].hidden,true);
- assert.equal(toggle.children[2].hidden,false);
- toggle.events.click();
- assert.equal(toggle.getAttribute('aria-expanded'),'false');
- assert.deepEqual(holders.children.map(row=>row.hidden),[false,false,true,true,true]);
+ assert.match(client.slice(start,end),/faHistoryDialog\.openClubs\(/,
+  'DEV club +N must open the shared club dialog');
 });
 test('Browsing seasons resolves prior/current/future days independently of Debug progress',()=>{
  assert.equal(typeof previewData.previewSeasonMatchdays,'function');
@@ -155,12 +146,12 @@ test('Browsing seasons resolves prior/current/future days independently of Debug
  assert.deepEqual([...stored],before,'Browsing never rewrites Debug settings');
  assert.deepEqual(previewData.readPreviewProgress({getItem(){throw Error('blocked')}}),{season:1,matchdays:0});
 });
-test('History totals include the current partial season without awarding its title or seasonal records',()=>{
+test('History totals include the current partial season and recognize a new attack record before awarding a title',()=>{
  const completed=[{season:1,rows:[{club:club(1),won:20,gf:70,pts:65},{club:club(2),won:18,gf:60,pts:60}]}];
  const partial={season:2,rows:[{club:club(2),won:10,gf:99,pts:33},{club:club(1),won:5,gf:20,pts:18}]};
  const actual=records(completed,[...completed,partial]);
  assert.deepEqual(actual.titles,{value:1,clubs:[club(1)]});
- assert.deepEqual(actual.attack,{value:70,entries:[{club:club(1),season:1}]});
+ assert.deepEqual(actual.attack,{value:99,entries:[{club:club(2),season:2}]});
  assert.deepEqual(actual.totalWins,{value:28,clubs:[club(2)]});
  assert.deepEqual(actual.totalGoals,{value:159,clubs:[club(2)]});
  assert.deepEqual(actual.totalPoints,{value:93,clubs:[club(2)]});
@@ -172,17 +163,17 @@ test('Season 1 Matchday 0 has no historical statistics, holders or champions',()
   assert.deepEqual(metric.clubs??metric.entries,[]);
  }
 });
-test('Every History route offers exactly three seasonal and four all-time player records without invented data',()=>{
+test('Every History route offers exactly six seasonal and six all-time player records without invented data',()=>{
  const routes=['_shared',...manifest.divisions.map(d=>d.id.toLowerCase())];
  for(const route of routes){
   const html=readFileSync(new URL('../competitions/'+route+'/index.html',import.meta.url),'utf8');
   const section=html.match(/<section[^>]*data-history-player-records[^>]*>([\s\S]*?)<\/section>/)?.[1];
   assert.ok(section,route+' has player records');
   const cards=[...section.matchAll(/<article([^>]*)>([\s\S]*?)<\/article>/g)];
-  assert.equal(cards.length,7,route);
-  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="season"')).length,3);
-  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="all-time"')&&c[1].includes(' hidden')).length,4);
-  assert.equal(new Set(cards.map(c=>c[1].match(/data-history-player-record="([^"]+)"/)[1])).size,7);
+  assert.equal(cards.length,12,route);
+  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="season"')).length,6);
+  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="all-time"')&&c[1].includes(' hidden')).length,6);
+  assert.equal(new Set(cards.map(c=>c[1].match(/data-history-player-record="([^"]+)"/)[1])).size,12);
   assert.ok(cards.every(c=>c[2].includes('data-app-i18n="historyPlayerNoData"')&&!/<strong|data-club-crest/.test(c[2])));
  }
 });
@@ -217,6 +208,35 @@ test('Seasonal wins and all-time wins and goals keep distinct winners and tied i
  assert.deepEqual(result.wins,{value:25,entries:[{club:club(1),season:1}]});
  assert.deepEqual(result.totalWins,{value:40,clubs:[club(2),club(3)]});
  assert.deepEqual(result.totalGoals,{value:160,clubs:[club(2),club(3)]});
+});
+test('Public History shows a single empty message only for scopes without verified records',()=>{
+ const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
+ const start=source.indexOf('// History record scope'),end=source.indexOf('/* HISTORY-UI-11',start);
+ const group=(scopeWithValue,which)=>{
+  const grid={hidden:false},empty={hidden:false},selector=which==='team'?'[data-history-team-empty]':'[data-history-player-empty]';
+  const cards=['season','all-time'].map(scope=>({dataset:{historyScope:scope},hidden:false,
+   querySelector:key=>key==='.app-competition-stat-value'&&scope===scopeWithValue?{}:null}));
+  return {grid,empty,cards,querySelector:key=>key==='.app-competition-stat-grid'?grid:key===selector?empty:null,
+   querySelectorAll:key=>key==='[data-history-scope]'?cards:[]};
+ };
+ const team=group('season','team'),players=group('all-time','player');
+ const controls=['season','all-time'].map(scope=>({dataset:{historyRecordScope:scope},setAttribute(){}}));
+ const events={};
+ const panel={dataset:{},querySelectorAll:key=>
+  key==='[data-history-team-records]'?[team]:
+  key==='[data-history-player-records]'?[players]:
+  key==='[data-history-record-scope]'?controls:
+  key==='[data-history-scope]'?[...team.cards,...players.cards]:[],
+  addEventListener:(event,callback)=>{events[event]=callback},contains:()=>true};
+ const window={};runInNewContext(source.slice(start,end),{window,document:{getElementById:()=>panel}});
+ assert.deepEqual([team.grid.hidden,team.empty.hidden,players.grid.hidden,players.empty.hidden],[false,true,true,false],
+  'Season shows verified team rows and one player empty message');
+ events.click({target:{closest:()=>controls[1]}});
+ assert.deepEqual([team.grid.hidden,team.empty.hidden,players.grid.hidden,players.empty.hidden],[true,false,false,true],
+  'All-time shows one team empty message and verified player rows');
+ events.click({target:{closest:()=>controls[0]}});
+ assert.deepEqual([team.grid.hidden,team.empty.hidden,players.grid.hidden,players.empty.hidden],[false,true,true,false],
+  'Changing scope never leaves an empty grid visible');
 });
 test('History scope switch updates all matching controls and cards without changing the route',()=>{
  const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
@@ -264,7 +284,7 @@ test('Stats and History use a shared card with uniform bold labels and empty mes
  assert.match(css,/\.app-competition-stat-label\{[^}]*font-weight:700/);
  assert.match(css,/\.app-competition-stat-card>\.app-competition-empty,\.app-competition-stat-card>\.fa-dev-stats-empty\{/);
  assert.match(css,/\.app-competition-stat-card\{--fa-record-heading:42px;[^}]*padding:10px 12px/);
- assert.match(css,/\.app-history-record-group \.app-competition-stat-card\{min-height:128px/);
+ assert.match(css,/\.app-history-record-group \.app-competition-stat-card\{box-sizing:border-box;height:180px;min-height:180px/);
  assert.doesNotMatch(css,/\.app-history-record-group \.app-competition-stat-card\{--fa-record-heading:/);
  assert.match(css,/\.app-history-record-group \.app-competition-stat-card:has\(\.app-competition-stat-value\)\{min-height:160px/);
  assert.match(css,/@media\(max-width:650px\)\{[\s\S]*--fa-record-heading:56px/);
@@ -497,4 +517,97 @@ test('loaded DEV History mounts record groups before Season archive without affe
  const commit=client.indexOf('panel.append(root);',makeRecords);
  assert.ok(makeArchive>0&&makeRecords>makeArchive&&reappend>makeRecords&&commit>reappend,
   'the archive is moved below the completed records just before committing the preview DOM');
+});
+
+test('Optional +N stays beside the name while player and club lines match the skeleton',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const assertRule=(selector,parts)=>{
+  const start=css.lastIndexOf('\n'+selector+'{');
+  assert.ok(start>=0,'Missing rule: '+selector);
+  const declaration=css.slice(start+selector.length+2,css.indexOf('}',start));
+  for(const part of parts)assert.ok(declaration.includes(part),selector+' must include '+part);
+ };
+ // Team records use the same three rows for tied/untied values and skeletons.
+ assertRule('#competition-panel-history .app-history-dev-record',[
+  'grid-template-rows:minmax(var(--fa-record-heading),max-content) auto minmax(0,1fr)'
+ ]);
+ assertRule('#competition-panel-history .app-history-dev-record>.app-history-record-holders',[
+  'grid-column:1/-1','grid-row:3','align-self:end'
+ ]);
+ assertRule('.app-history-tied-club',[
+  'grid-column:2','grid-row:1','display:inline-flex','gap:5px','width:max-content'
+ ]);
+ // Both player rows are compact; the +N cannot stretch the name column.
+ assertRule('#competition-panel-history .app-history-player-labels',['row-gap:2px']);
+ assertRule('#competition-panel-history .app-history-player-name-row',[
+  'display:flex','justify-content:flex-start','height:calc(1.35 * var(--history-name-size, .875rem))'
+ ]);
+ assertRule('#competition-panel-history .app-history-player-name-row>.app-history-player-name',[
+  'text-overflow:ellipsis','white-space:nowrap'
+ ]);
+ assertRule('#competition-panel-history .app-history-player-name-row>.app-history-player-detail',[
+  'flex:0 0 auto','white-space:nowrap'
+ ]);
+ const markup=readFileSync(new URL('../tools/competition-view-skeletons.mjs',import.meta.url),'utf8');
+ assert.match(markup,/class="app-history-player-name-row"/);
+ assert.match(markup,/class="app-history-player-context"/);
+ assert.ok(markup.indexOf('class="app-history-player-context"')>markup.indexOf('class="app-history-player-name-row"'));
+});
+
+
+test('Player record dialog uses compact centered rows and keeps +N hover without underline',()=>{
+ const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const declaration=selector=>{
+  const start=css.lastIndexOf('\n'+selector+'{');
+  assert.ok(start>=0,'Missing CSS rule '+selector);
+  return css.slice(start+selector.length+2,css.indexOf('}',start));
+ };
+ assert.ok(source.includes('const info=element("div","app-history-dialog-player-info");'));
+ assert.ok(source.includes('info.append(playerLabel(holder,"strong",""));'));
+ assert.ok(source.includes('info.append(clubs);')&&source.includes('identity.append(portrait(holder.id),info);')&&source.includes('li.append(identity);list.append(li);'));
+ assert.match(declaration('.app-history-player-holders'),/gap:0/);
+ assert.match(declaration('.app-history-player-holders>li'),/padding:6px 0/);
+ assert.match(declaration('.app-history-dialog-player-info,.app-history-dialog-club-info'),/align-content:center/);
+ assert.match(declaration('.app-history-player-clubs'),/margin:0/);
+ assert.match(declaration('#competition-panel-history .app-history-player-detail:hover'),/text-decoration:none/);
+});
+
+test('DEV club record ties use the shared popup and retain all-time and seasonal entries',()=>{
+ const source=client.slice(client.indexOf('function historyExpandableHolders('),
+  client.indexOf('\nasync function renderHistoryPreview()'));
+ assert.match(source,/faHistoryDialog\.openClubs\(/);
+ assert.match(source,/entries:result\.entries\|\|result\.clubs\.map\(club=>\(\{club\}\)\)/);
+ assert.match(client,/historyExpandableHolders\(card,holders,metric,result\)/);
+ assert.match(source,/identity:historyIdentity/);
+ const shared=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
+ assert.match(shared,/function openClubDialog\(/);
+ assert.match(shared,/app-history-player-dialog app-history-club-dialog/);
+ assert.match(shared,/app-history-player-dialog-value/);
+ assert.match(shared,/app-history-player-holders app-history-club-holders/);
+ assert.match(shared,/grouped=new Map\(\)/);
+ assert.match(shared,/historyClubSingular/);
+ assert.match(shared,/seasonLink\(season\)/);
+ assert.match(shared,/trigger\?\.focus\?\.\(\{preventScroll:true\}\)/);
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(css,/\.app-history-dialog-player,\.app-history-dialog-club\{display:flex;align-items:center;gap:8px/);
+ assert.match(css,/\.app-history-dialog-player-info,\.app-history-dialog-club-info\{display:grid;align-content:center;gap:2px/);
+ const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
+ assert.equal((app.match(/historyClubSingular:/g)||[]).length,5);
+});
+
+
+test('Player club subtitles sit 4px lower without moving the player names or first-paint layout',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const declaration=selector=>{
+  const match=css.lastIndexOf(selector+'{');
+  assert.ok(match>=0,'Missing rule: '+selector);
+  return css.slice(match+selector.length+1,css.indexOf('}',match));
+ };
+ assert.match(declaration('#competition-panel-history .app-history-player-labels>.app-history-player-context'),/position:relative;top:4px/);
+ assert.match(declaration('.app-history-dialog-player-info>.app-history-player-clubs'),/position:relative;top:4px/);
+ assert.ok(declaration('#competition-panel-history .app-history-player-name-row').includes('height:calc(1.35 * var(--history-name-size, .875rem))'));
+ assert.match(declaration('.app-history-dialog-player-info,.app-history-dialog-club-info'),/align-content:center;gap:2px/);
+ const markup=readFileSync(new URL('../tools/competition-view-skeletons.mjs',import.meta.url),'utf8');
+ assert.match(markup,/app-history-player-context/);
 });

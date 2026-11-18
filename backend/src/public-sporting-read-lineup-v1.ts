@@ -364,14 +364,20 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
   const table=await rankLeagueTable(competitionId,binding.clubIds,leagueFixtures,storedResults,evidence.schedule.seed,{throughDay:viewedWorld.day});
   const standings={complete:leagueFixtures.every(f=>storedResults.has(f.id)),rows:table.map(({drawKey,...row})=>row)};
   const recordedStats=lineupTeamStatisticsV1(binding.clubIds,fixtures,storedResults,replay.frozenMatches);
-  const stats={...recordedStats,players:await competitionPlayerIdentities(db,recordedStats.players)};
+  const enriched=await competitionPlayerIdentities(db,recordedStats.players);
+  const stats={...recordedStats,players:enriched.map((p,i)=>({...p,archivedName:recordedStats.players[i]!.displayName}))};
+  const playerCoverage=fixtures.every(f=>{
+   if(!storedResults.has(f.id))return true;
+   const match=replay.frozenMatches.get(f.id)?.receipt.result as unknown as LineupMatchResultV1|undefined;
+   return match?.home.kind==='real_xi'&&match.away.kind==='real_xi';
+  });
   const final=fixtures.find(f=>f.marker===(competitionId==='int-1'?'SOVEREIGN-FINAL':'FEDERATION-FINAL'));
   const championClubId=competitionId.startsWith('int-')?(final?storedResults.get(final.id)?.winnerClubId:null):table[0]?.clubId;
   if(archive&&!championClubId)invalid();
   const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},rulesVersion:binding.rulesVersion,participants:[...binding.clubIds],
-   fixtures:projectFixtures(fixtures,plans,storedResults),standings,statistics:stats,
+   playerRecordVersion:1,playerCoverage,fixtures:projectFixtures(fixtures,plans,storedResults),standings,statistics:stats,
    calendar:Array.from({length:56},(_,i)=>({day:i+1,fixtureIds:fixtures.filter(f=>f.day===i+1).map(f=>f.id),played:fixtures.filter(f=>f.day===i+1&&storedResults.has(f.id)).length})),
-   history:viewedWorld.phase==='closed'&&archive?{season:selectedSeason,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,finalStandings:standings.rows,statistics:stats}:null};
+   history:viewedWorld.phase==='closed'&&archive?{season:selectedSeason,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,playerRecordVersion:1,playerCoverage,finalStandings:standings.rows,statistics:stats}:null};
   await unchanged(db,world);
   return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
    provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:`world:${world.generation}:season:${selectedSeason}:${evidence.calendar.calendar_hash}`},data};
