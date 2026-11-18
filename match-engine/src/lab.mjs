@@ -1926,9 +1926,8 @@ function setupUnifiedScenarioMenu(){
  const menu=byId('preset-options');
  // Keep all legacy physical scene definitions for isolated regression QA,
  // but surface only the basic exercises useful for visual development.
- const physics=[...menu.querySelectorAll('[role="option"][data-value]')]
-  .filter(node=>['drop','roll'].includes(node.dataset.value));
- if(physics.length!==2)throw new Error('Original Ball Drop and Roll missing');
+ const physics=[...menu.querySelectorAll('[role="option"][data-value]')];
+ if(physics.length!==4)throw new Error('Original physics calibration presets missing');
  menu.replaceChildren();
  const heading=title=>{
   const node=document.createElement('div');
@@ -1958,9 +1957,9 @@ function setupUnifiedScenarioMenu(){
  }
  heading('Ball physics');
  for(const node of physics)menu.append(node);
- if(menu.querySelectorAll('[role="option"][data-value]').length!==6||
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==8||
     menu.querySelectorAll('.me-scenario-group-label').length!==2)
-  throw new Error('Lab should expose 4 player exercises and 2 ball experiments');
+  throw new Error('Lab should expose 4 real player exercises and 4 ball physics presets');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')
