@@ -504,6 +504,19 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.activeElement===document.querySelector('.club-tabs [aria-current=\"page\"]')"),true,'Keyboard activation retains focus on the active tab');
     await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
     assert.equal(await run("document.querySelectorAll('.club-history').length"),1);
+    // Public Player View tabs also preserve manual horizontal scrolling across
+    // refresh, without borrowing the Club strip's session storage key.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
+    await cmd('Page.navigate',{url:origin+'/players/1?view=stats'});
+    await wait("document.readyState==='complete'&&document.querySelector('.app-player-detail-tabs')?.scrollWidth>document.querySelector('.app-player-detail-tabs')?.clientWidth");
+    const savedPlayerTabScroll=await run("(()=>{const nav=document.querySelector('.app-player-detail-tabs'),max=nav.scrollWidth-nav.clientWidth,offset=Math.min(64,max);nav.scrollLeft=offset;sessionStorage.setItem('football-architect:player-views-scroll:/players/1',String(offset));return offset})()");
+    assert.ok(savedPlayerTabScroll>1,'mobile Player View strip must overflow for reload QA');
+    await cmd('Page.reload');
+    await wait("document.readyState==='complete'&&document.querySelector('.app-player-detail-tabs')");
+    const restoredPlayerTabScroll=await run("document.querySelector('.app-player-detail-tabs').scrollLeft");
+    assert.ok(Math.abs(restoredPlayerTabScroll-savedPlayerTabScroll)<2,
+     'mobile Player View tab strip must retain horizontal scroll on reload: '+savedPlayerTabScroll+' / '+restoredPlayerTabScroll);
+    await visit('/clubs/it/1/history');
     // A mobile reload must restore the manually scrolled View strip exactly,
     // rather than shifting it back to the beginning or auto-centering History.
     await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
