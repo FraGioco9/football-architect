@@ -95,7 +95,16 @@ export function createPrivatePhysicalActionExecutor({
   // When the private B06b match is PAUSED for a real referee-issued
   // restart, advance this same original executor's tick but do not
   // apply an unrelated uniform impulse over the authentic kickoff.
-  const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact?null:
+  // Solo Carry has two REAL native collider sources. The actor-level START
+  // is insufficient for an impulse when both shoes touch simultaneously:
+  // require one (and only one) actual native foot START and active shoe.
+  const solo=isolatedDribbleContext?.situationId==='carry-solo';
+  const isolatedNativeShoeSourceValid=!solo||(
+   contact.nativeSoloFeet?.actorId===isolatedDribbleContext.attackingSide+'-10'&&
+   contact.nativeSoloFeet?.independentColliders===2&&
+   contact.nativeSoloFeet?.exclusivePhysicalStart===true);
+  const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact||
+   !isolatedNativeShoeSourceValid?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,
     smallSidedDecisionContext,isolatedDribbleContext});
   let researchCandidate=null;
@@ -175,7 +184,8 @@ export function createPrivatePhysicalActionExecutor({
    noActionReason:chosen?null:suppressPhysicalBodyContact?
     'small-sided-native-body-ball-contact-no-extra-shoe-impulse':
     suppressOriginalAction?
-    'b06b-referee-physical-dead-ball-original-action-suppressed':researchCandidate?
+    'b06b-referee-physical-dead-ball-original-action-suppressed':
+    !isolatedNativeShoeSourceValid?'solo-ambiguous-real-foot-contact':researchCandidate?
     'experimental-receiving-cushion-preempts-uniform-action':
     deferOriginal?'m27-native-decision-defers-original-clearance':
     (gates.firstFailedGate??'not-selected-after-input-gates')
