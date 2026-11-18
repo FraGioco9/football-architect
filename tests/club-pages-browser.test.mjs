@@ -1090,10 +1090,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       await run("document.getElementById('player-stats-alignment-probe').remove()");
     }
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
-    for(const view of ['roster','fixtures','stats','history']){
+    for(const view of ['roster','fixtures','records','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
-     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-empty')+"')"),true);
-     assert.equal(await run('location.search'),['history','roster'].includes(view)?'':'?season=2&matchday=7');
+     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-records')+"')"),true);
+     assert.equal(await run('location.search'),['history','roster'].includes(view)?'':view==='records'?'?season=2':'?season=2&matchday=7');
     }
     // A failed API response must not invent a selected subview or mutate /roster.
     await visit('/clubs/it/1/roster?view=mental');
@@ -1501,13 +1501,13 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
       assert.equal(await currentUrl(),row.expected,'A03-04C club refresh '+lang);
      }
-     await visit('/clubs/it/1/stats?season=3&matchday=7');
+     await visit('/clubs/it/1/records?season=3');
      await run("document.querySelector('.club-tabs a[href*=\"/fixtures?\"]').click()");
-     assert.equal(await currentUrl(),'/clubs/it/1/fixtures?season=3&matchday=7');
-     await run('history.back()');await wait("location.pathname==='/clubs/it/1/stats'");
-     assert.equal(await currentUrl(),'/clubs/it/1/stats?season=3&matchday=7');
+     assert.equal(await currentUrl(),'/clubs/it/1/fixtures?season=3');
+     await run('history.back()');await wait("location.pathname==='/clubs/it/1/records'");
+     assert.equal(await currentUrl(),'/clubs/it/1/records?season=3');
      await run('history.forward()');await wait("location.pathname==='/clubs/it/1/fixtures'");
-     assert.equal(await currentUrl(),'/clubs/it/1/fixtures?season=3&matchday=7');
+     assert.equal(await currentUrl(),'/clubs/it/1/fixtures?season=3');
      await cmd('Page.navigate',{url:origin+'/competitions/it-1/fixtures?season=1&matchday=12'});await wait(competitionReady);
      await run("document.getElementById('competition-tab-stats').click()");
      assert.equal(await currentUrl(),'/competitions/it-1/stats?season=1');

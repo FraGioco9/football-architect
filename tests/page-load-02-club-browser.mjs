@@ -68,7 +68,7 @@ try{
   ['br',1,'overview',320],['br',1,'overview',390],
   ['br',1,'overview',768],['br',1,'overview',1440],
   ['it',17,'roster',390],['it',40,'fixtures',390],
-  ['eng',33,'stats',390],['br',40,'history',390]
+  ['eng',33,'records',390],['br',40,'history',390]
  ]){
   const page=await browser.newPage({viewport:{width,height:900}});
   const catalogPath='/clubs/_shared/identity.json';
