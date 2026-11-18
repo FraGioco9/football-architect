@@ -515,7 +515,8 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
    competitionId:'int-1',category:'international',name:'Sovereign Cup',position:4,points:4,
    cupStatus:null,nextMatch:null,stats:liveStats
   }]}]});
- assert.match(liveCup,/<td title="Group Stage">Group Stage<\/td>/,'ongoing international phase is Group Stage when no result stage has been reached');
+ assert.match(liveCup,/<td>Group Stage<\/td>/,'ongoing international phase is Group Stage when no result stage has been reached');
+ assert.doesNotMatch(liveCup,/\stitle="/,'History stage cells have no native tooltip');
  const noGames=model.render(manifest,selected,'en','',null,1,{
   source:'authoritative',clubKey:'IT-1',coverage:'empty',seasons:[{season:1,ongoing:true,memberships:[{
    competitionId:'IT-1',category:'domestic',name:'Italy First',position:null,points:0,cupStatus:null,
@@ -658,7 +659,7 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
  assert.match(firstPaint,/other\.hidden=view!=='history'/,'generated first-paint bootstrap keeps History hidden outside its view');
  assert.match(html,/<section class="club-history" aria-busy="false"><div class="club-history-table-wrap">/,'hydrated table starts without a History heading');
  assert.doesNotMatch(html,/<section class="club-history"[^>]*><h2>/,'no hydrated History title');
- assert.match(html,/<a class="club-history-competition-link" href="[^"]+" title="[^"]+"><span class="club-history-competition-text">/,'inner text retains native underline without link overflow clipping');
+ assert.match(html,/<a class="club-history-competition-link" href="[^"]+"><span class="club-history-competition-text">/,'competition names retain text-only links without a native tooltip');
  assert.match(css,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{display:inline-block;width:fit-content;max-width:100%;[^}]*padding:0;[^}]*text-overflow:ellipsis;/,
   'the clickable area is a text-sized inline-block rather than the complete table cell');
  assert.match(css,/a\.club-history-competition-link:is\(:hover,:focus-visible\) \.club-history-competition-text\{text-decoration-line:underline;/,
