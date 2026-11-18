@@ -104,7 +104,7 @@
    if(restore&&opener?.isConnected)opener.focus({preventScroll:true});opener=null;
   };
   const empty=(player=false)=>localized('p',invalid?'statsDevUnavailable':player?'statsDevNoPlayerData':'statsDevNoData',invalid?'Statistics are unavailable.':player?'No players':'No statistics yet.','fa-dev-stats-empty');
-  const format=(key,value,record)=>key==='averageRating'?value.toFixed(2)+' ('+record.ratedAppearances+')':key==='starts'?String(value)+' ('+(record.appearances-record.starts)+')':key==='cleanSheets'?String(value)+' ('+record.appearances+')':['ppg','goalsPerMatch','goalsAssistsPer90'].includes(key)?value.toFixed(2):String(value);
+  const format=(key,value,record)=>key==='averageRating'?value.toFixed(2)+' ('+record.ratedAppearances+')':key==='starts'?String(value)+' ('+(record.subAppearances??'—')+')':key==='cleanSheets'?String(value)+' ('+record.appearances+')':['ppg','goalsPerMatch','goalsAssistsPer90'].includes(key)?value.toFixed(2):String(value);
   function row(record,index,list,key,player=false){
    const li=create('li'),rank=list.findIndex(candidate=>candidate[key]===record[key])+1;
    const identityNode=create('span',undefined,'app-world-club-identity'),crest=create('span',undefined,'app-world-club-crest-placeholder');
