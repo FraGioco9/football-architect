@@ -168,7 +168,7 @@ export async function planRecordedMatchTimelineV1({result,homeRoster,awayRoster}
     gkMinutes:0,intervals:[],rating:null});
    state.subCount++;
    if(item.minute!==45&&item.minute!==105)state.windows.add(item.minute);
-   push({type:'substitution',outPlayerId:out,inPlayerId:newcomer.playerId,
+   push({type:'substitution',playerId:out,outPlayerId:out,inPlayerId:newcomer.playerId,
     outRole:role,inRole:role,window:item.minute===45?'half-time':
     item.minute===105?'extra-time':'in-play'});
   }else if(item.kind==='yellow'){
@@ -204,7 +204,7 @@ export async function planRecordedMatchTimelineV1({result,homeRoster,awayRoster}
    const passer=hasPass?select(others,await d('assister'),weight):null;
    const goalId=item.side+':'+item.idx;
    if(passer!==null){
-    push({type:'pass',fromPlayerId:passer,toPlayerId:scorer,goalId,
+    push({type:'pass',playerId:passer,fromPlayerId:passer,toPlayerId:scorer,goalId,
      purpose:'deliberate_final_pass'});
     state.people.get(passer).assists++;
    }
