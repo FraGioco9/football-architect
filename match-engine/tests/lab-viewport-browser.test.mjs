@@ -85,7 +85,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
         try{if(await evaluate(expr))return;}catch{}
         await delay(100);
       }
-      throw Error('Timed out waiting for: '+expr+' '+(await evaluate('document.body?.textContent?.slice(0,300)')));
+      throw Error('Timed out waiting for: '+expr+' '+JSON.stringify(await evaluate("({status:document.querySelector('#status')?.textContent,resources:performance.getEntriesByType('resource').filter(r=>r.name.includes('__fa_match_engine__')).slice(-12).map(r=>r.name),body:document.body?.textContent?.slice(-450)})")));
     }
     await cmd('Page.enable');
     await cmd('Runtime.enable');
