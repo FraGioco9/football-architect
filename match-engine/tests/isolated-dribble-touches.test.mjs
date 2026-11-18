@@ -453,11 +453,11 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
  const open=soloCarryTwoFootPositions(p,running);
  const recover=soloCarryTwoFootPositions(p,catching);
  assert.ok(running.observedBallForwardMps>running.observedPlayerForwardMps);
- assert.ok(open.left.y>recover.left.y+0.04);
- assert.ok(open.right.y<recover.right.y-0.04,
+ assert.ok(open.left.y>recover.left.y+0.025);
+ assert.ok(open.right.y<recover.right.y-0.025,
   'open sprint moves both actual foot tracks AROUND the rolling ball');
  const tight=soloCarryTwoFootPositions(p,makeGait(3.1,'sprint',29.79));
- assert.ok(tight.left.y<open.left.y-0.04,
+ assert.ok(tight.left.y<open.left.y-0.025,
   'actual short runner-ball gap narrows both tracks for a real contact');
  const controlOpen=soloCarryTwoFootPositions(p,makeGait(3.1,'control'));
  const controlSlow=soloCarryTwoFootPositions(p,makeGait(1.2,'control'));

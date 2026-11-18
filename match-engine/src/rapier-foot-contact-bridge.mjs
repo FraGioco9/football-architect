@@ -107,19 +107,25 @@ export function soloCarryTwoFootPositions(player,gait=null){
   playerCatchingBall*gaitClamp((0.58-ahead)/0.18,0,1);
  const realRecoveryNeed=Math.max(approachingBall,catchupNeed);
  const openRun=gait?.carryPhase==='sprint'?1-realRecoveryNeed:0;
- const sprintTrackM=0.165-0.070*realRecoveryNeed;
+ const sprintTrackM=0.145-0.055*realRecoveryNeed;
  const lateralTrackM=gait?.carryPhase==='sprint'?sprintTrackM:
   gait?.carryPhase==='moderate'?0.11:0.085;
  // Shift the two-foot gait together when the ball is on one side, keeping
  // both actual shoe pads outside the rolling sphere. During a recovery,
  // release the shift so a shoe can approach and genuinely make contact.
  const runningLateralCenterM=gait?.carryPhase==='sprint'?
-  gaitClamp(lateral,-0.14,0.14)*openRun:0;
- const leftForward=(gait?.forwardM??forwardStroke*stroke)*
-  twoFootPhysicalReach;
- const rightForward=(-forwardStroke*stroke+
-  gaitClamp((ahead-0.53)*0.40,0,0.055)*Math.max(0,-stroke))*
-  twoFootPhysicalReach;
+  gaitClamp(lateral,-0.10,0.10)*openRun:0;
+ // A planted foot must also LEAVE the ball: a deeper genuine recovery
+ // step (never a forward hit) avoids both physical shoes touching at once.
+ const rearwardRecovery=gait?.carryPhase==='sprint'?1.45:
+  gait?.carryPhase==='moderate'?1.15:1;
+ const leftStep=gait?.forwardM??forwardStroke*stroke;
+ const rightStep=-forwardStroke*stroke+
+  gaitClamp((ahead-0.53)*0.40,0,0.055)*Math.max(0,-stroke);
+ const leftForward=leftStep*twoFootPhysicalReach*
+  (leftStep<0?rearwardRecovery:1);
+ const rightForward=rightStep*twoFootPhysicalReach*
+  (rightStep<0?rearwardRecovery:1);
  const make=(forward,side)=>{
   const c=Math.cos(player.facingRad),si=Math.sin(player.facingRad);
   return Object.freeze({...player,

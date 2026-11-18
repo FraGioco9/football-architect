@@ -544,6 +544,7 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
     ballForwardM:latest.nativeDribbleAudit.ballForwardDistanceM,
     peakSpeedWitness:latest.nativeDribbleAudit.peakBallSpeedWitness,
     maxRealActorBallGapM:latest.nativeDribbleAudit.maximumRealAttackerBallGapM,
+    bothFeetActiveTicks:latest.nativeDribbleAudit.nativeBothFeetActiveTicks,
     physicalFootStarts:latest.nativeDribbleAudit.nativeLeftFootStarts+
      latest.nativeDribbleAudit.nativeRightFootStarts,
     actionTicks:latest.nativeDribbleAudit.actionTicks,
@@ -568,6 +569,8 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
    sprintSamples,maxTransitions,blockedSamples,weakSamples,
    minimumForwardM:Math.min(...samples.map(x=>x.ballForwardM)),
    meanCarries,meanPhysicalFootStarts,
+   meanBothFeetActiveTicks:samples.reduce((t,x)=>t+x.bothFeetActiveTicks,0)/
+    samples.length,
    maxRealActorBallGapM:Math.max(...samples.map(x=>x.maxRealActorBallGapM)),
    distinctTouchIntervals:distinctTouchIntervals.size,
    fastest:samples.toSorted((a,b)=>b.maxBallSpeedMps-a.maxBallSpeedMps).slice(0,5)})+'\\n');
