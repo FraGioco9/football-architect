@@ -30,8 +30,10 @@ test('CLUB-RECORDS-01: ongoing season cannot set archived records; verified zero
  const closed=records.select(snapshot.seasons,'verified',2);
  assert.equal(closed.selected.length,1);
  assert.equal(closed.records.find(r=>r.key==='rank').value,4);
- assert.equal(closed.records.find(r=>r.key==='wins').value,18);
+ assert.equal(closed.records.find(r=>r.key==='wins').value,21);
  assert.equal(closed.records.find(r=>r.key==='clean').value,1);
+ assert.equal(closed.records.find(r=>r.key==='goals').value,66,'season records sum league and cup goals');
+ assert.equal(closed.records.find(r=>r.key==='gd').value,14,'season records sum league and cup goal differences');
  const current=records.select(snapshot.seasons,'season',2);
  assert.equal(current.records.find(r=>r.key==='rank').value,1);
  assert.equal(current.records.find(r=>r.key==='gd').value,42);

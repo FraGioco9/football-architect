@@ -22,14 +22,25 @@
  ];
  function select(seasons,scope,season){
   const selected=scope==='verified'?seasons.filter(s=>s.ongoing===false):seasons.filter(s=>s.season===season);
-  const entries=selected.flatMap(s=>(s.memberships||[]).filter(m=>m.stats?.played>0).map(m=>({season:s.season,m})));
+  const aggregates=selected.map(s=>{
+   const played=(s.memberships||[]).filter(m=>m.stats?.played>0);
+   const league=played.find(m=>m.category==='domestic'&&Number.isSafeInteger(m.position)&&m.position>=1);
+   const totals={won:0,goalsFor:0,cleanSheets:0,goalDifference:0};
+   for(const m of played)for(const key of Object.keys(totals))totals[key]+=m.stats[key];
+   return {season:s.season,played,league,position:league?.position??null,...totals};
+  }).filter(s=>s.played.length>0);
+  const entries=aggregates.flatMap(s=>s.played.map(m=>({season:s.season,m})));
+  // League finish belongs to the domestic competition; other records are
+  // whole-season totals across every recorded competition, never per-cup maxima.
   const records=metrics.map(metric=>{
-   const relevant=entries.filter(({m})=>(!metric.domestic||m.category==='domestic')&&
-    Number.isSafeInteger(metric.field==='position'?m.position:m.stats[metric.field]));
+   const relevant=aggregates.filter(s=>Number.isSafeInteger(s[metric.field])&&
+    (metric.field!=='position'||s.position>=1));
    if(!relevant.length)return {key:metric.key,value:null,sources:[]};
-   const values=relevant.map(({m})=>metric.field==='position'?m.position:m.stats[metric.field]);
-   const value=metric.min?Math.min(...values):Math.max(...values);
-   return {key:metric.key,value,sources:relevant.filter((_,i)=>values[i]===value)};
+   const value=metric.min?Math.min(...relevant.map(s=>s[metric.field])):
+    Math.max(...relevant.map(s=>s[metric.field]));
+   const sources=relevant.filter(s=>s[metric.field]===value).flatMap(s=>
+    (metric.domestic?[s.league]:s.played).filter(Boolean).map(m=>({season:s.season,m})));
+   return {key:metric.key,value,sources};
   });
   return {selected,entries,records};
  }
@@ -66,7 +77,7 @@
    if(scope==='verified'){
     note=eligible.length?w.coverage+': '+eligible.map(s=>w.season+' '+s.season).join(', ')+'. '+w.closed:w.closed;
    }else if(eligible[0]?.ongoing)note=w.partial;
-   if(!eligible.length||!entries.length)contents=status(scope==='verified'?w.noArchive:w.noMatches);
+   if(!eligible.length||!entries.length)contents=status(scope==='verified'&&!eligible.length?w.noArchive:w.noMatches);
    else{
     const names=new Map(divisions.map(d=>[d.id,d.name]));
     contents=table('<tbody>'+records.map(record=>{
