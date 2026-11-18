@@ -9,6 +9,8 @@ import {readWorld} from '../src/world-repository.ts';
 import {matchIdForSlot} from '../src/domain/calendar/match-slot-identity.ts';
 import {ATTRIBUTES} from '../src/players-generator-core.mjs';
 import {planMatchSimulationReceiptV1} from '../src/match-lineup-snapshot-v1.mjs';
+import {frozenLineupMatchDetailV1} from '../src/frozen-lineup-match-detail.ts';
+import type {LineupSeasonReplayV1} from '../src/lineup-season-replay.ts';
 
 const bindings=env as unknown as {DB:Database;TEST_MIGRATIONS:Parameters<typeof applyD1Migrations>[1]};
 const db=bindings.DB;
@@ -92,5 +94,38 @@ describe('#613 local Worker D1 guarded match receipts (not wired to official clo
   const preserved=await db.prepare('SELECT receipt_hash,receipt_json FROM match_lineup_result_receipts WHERE public_match_id=?')
    .bind(matchId).first<{receipt_hash:string;receipt_json:string}>();
   expect(preserved).toEqual(row);
+ });
+});
+
+describe('#690 aggregate-only match statistics payload',()=>{
+ it('accepts frozen substitutes and never exposes the immutable event timeline',()=>{
+  const starters=Array.from({length:11},(_,i)=>({playerId:i+1,role:i===0?'GK':'ST'}));
+  const player=(playerId:number,started:boolean,minutes:number,goals:number)=>({
+   playerId,role:playerId===1?'GK':'ST',started,minutes,goals,
+   assists:0,redCards:0,gkMinutes:playerId===1?90:0,
+   rating:7,intervals:[] as Array<{from:number;to:number;role:string}>
+  });
+  const home={kind:'real_xi' as const,starters,unattributedGoals:0,
+   appearances:[...starters.map(p=>player(p.playerId,true,p.playerId===2?45:90,p.playerId===3?1:0)),
+    player(12,false,45,0)]};
+  const receipt={fixture:{matchId:901,season:1,competitionId:'IT-1',day:13,
+    homeClubId:'IT-1',awayClubId:'IT-2'},
+   result:{algorithmVersion:'temporary-lineup-v1',eventModelVersion:'lineup-events-v1',
+    ratingVersion:'test-rating-v1',homeGoals:1,awayGoals:0,regulation:{home:1,away:0},
+    extraTime:null,penalties:null,winnerClubId:'IT-1',resolution:'regulation',
+    home,away:{kind:'team_fallback',starters:null,unattributedGoals:0,appearances:[]},
+    events:[{type:'substitution',minute:45,ordinal:0,side:'home',playerId:2,
+      inPlayerId:12,outPlayerId:2}]}
+  };
+  const replay={frozenMatches:new Map([['fixture', {matchId:901,fixtureId:'fixture',
+    receiptHash:'a'.repeat(64),receipt}]])} as unknown as LineupSeasonReplayV1;
+  const view=frozenLineupMatchDetailV1(replay,901);
+  expect(view?.statistics.home.players).toHaveLength(12);
+  expect(view?.statistics.home.players.find(p=>p.playerId===12)).toMatchObject({
+   started:false,subAppearances:1,minutes:45,goals:0,assists:0,redCards:0});
+  expect(view?.statistics).not.toHaveProperty('events');
+  expect(view?.statistics).not.toHaveProperty('eventModelVersion');
+  expect(view?.players.home.starters).toHaveLength(11);
+  expect(receipt.result.events).toHaveLength(1);
  });
 });

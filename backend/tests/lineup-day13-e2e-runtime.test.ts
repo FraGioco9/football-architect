@@ -144,6 +144,9 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  const b=await readPublicMatchLineupV1(db,String(mixed.public_id)) as any;
  const statsA=await readPublicMatchStatisticsV1(db,String(full.public_id));
  const statsB=await readPublicMatchStatisticsV1(db,String(mixed.public_id));
+ expect(Object.keys(statsA.statistics!).sort()).toEqual(['away','home','ratingVersion']);
+ expect(statsA.statistics).not.toHaveProperty('events');
+ expect(statsA.statistics).not.toHaveProperty('eventModelVersion');
  expect(a).not.toHaveProperty('lineup');expect(a).not.toHaveProperty('statistics');
  expect(statsA.statistics?.home.players).toHaveLength(11);
  expect(statsA.statistics?.home.players[0]).toMatchObject({name:expect.stringMatching(/^Test Player/),nationality:'ITA',assists:expect.any(Number),redCards:expect.any(Number)});
@@ -226,6 +229,8 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(httpMatch).not.toHaveProperty('lineup');
  const httpStats=await get('/api/matches/'+full.public_id+'/stats');
  expect(httpStats.statistics).toEqual(statsA.statistics);
+ expect(httpStats.statistics).not.toHaveProperty('events');
+ expect(httpStats.statistics).not.toHaveProperty('eventModelVersion');
  expect(httpStats.provenance.receiptHash).toBe(httpMatch.provenance.receiptHash);
  expect((await worker.fetch(new Request('https://example.invalid/api/matches/'+full.public_id+'/stats?extra=1'),{DB:db})).status).toBe(422);
  expect((await worker.fetch(new Request('https://example.invalid/api/matches/'+full.public_id+'/stats',{method:'POST'}),{DB:db})).status).toBe(405);

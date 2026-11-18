@@ -113,7 +113,11 @@ test('new event receipt v2 validates once; archived legacy candidate remains sch
  assert.notEqual(old.receiptDigest,candidate.receiptDigest);
  assert.deepEqual(candidate,await buildCandidateMatchReceiptV1(fixture,official));
  const projection=frozenMatchPlayerStatistics(candidate.result);
- assert.equal(projection.eventModelVersion,'lineup-events-v1');
+ assert.equal(Object.hasOwn(projection,'events'),false);
+ assert.equal(Object.hasOwn(projection,'eventModelVersion'),false);
+ // The immutable future receipt retains its entire verified event timeline.
+ assert.equal(candidate.result.eventModelVersion,'lineup-events-v1');
+ assert.ok(candidate.result.events.every(e=>Number.isSafeInteger(e.ordinal)));
  assert.ok(projection.home.players.every(p=>Number.isSafeInteger(p.assists)&&Number.isSafeInteger(p.redCards)));
  assert.equal(projection.home.players.filter(p=>!p.started).length,
   candidate.result.home.appearances.filter(p=>!p.started).length);

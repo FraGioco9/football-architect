@@ -17,7 +17,9 @@ test('one frozen projection provides real identities, roles, minutes, goals and 
  assert.equal(stats.home.players[1].goals,1);
  assert.equal(stats.home.players[1].assists,null);assert.equal(stats.home.players[1].redCards,null);
  assert.equal(stats.home.players[1].rating,6.7);
- assert.equal(stats.events[0].name,'Frozen Scorer');
+ assert.deepEqual(Object.keys(stats).sort(),['away','home','ratingVersion']);
+ assert.equal(Object.hasOwn(stats,'events'),false);
+ assert.equal(Object.hasOwn(stats,'eventModelVersion'),false);
  assert.deepEqual(stats.away.players,[]);
  assert.ok(stats.home.players.every(p=>!('attributes' in p)&&!('suitability' in p)));
 });
