@@ -657,11 +657,19 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const wrap=document.getElementById('history-mobile-560-probe'),button=wrap.querySelector('button');
        const row=wrap.querySelector('.club-history-competition-row'),link=row.querySelector('a');
        const r=row.getBoundingClientRect(),lr=link.getBoundingClientRect();
+       const glyphCenter=node=>{const range=document.createRange();range.selectNodeContents(node);
+        const b=range.getBoundingClientRect();return b.top+b.height/2;};
+       const compCell=row.querySelector('.club-history-competition-value');
+       const compBox=compCell.getBoundingClientRect();
+       const competitionTextCenter=glyphCenter(row.querySelector('.club-history-competition-text'));
+       const numericTextCenter=glyphCenter(row.querySelector('td:nth-child(4) .club-history-stat-value'));
        const position=row.querySelector('td:nth-child(3)');
        const positionLabel=getComputedStyle(position,'::before');
        const positionLayout=getComputedStyle(position);
        const stat=row.querySelector('td:nth-child(4)');
        return {expanded:button.getAttribute('aria-expanded'),hidden:row.hidden,
+        competitionTextCenter,numericTextCenter,competitionCellCenter:compBox.top+compBox.height/2,
+        competitionTextPosition:getComputedStyle(link).position,
         positionLayout:positionLayout.display,positionColumns:positionLayout.gridTemplateColumns,
         positionAlign:positionLayout.alignItems,positionLabelSize:positionLabel.fontSize,
         positionValueSize:positionLayout.fontSize,
@@ -679,6 +687,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(expanded.explicitCellRole,'cell','expanded numeric cell preserves its semantic role at '+width);
       assert.equal(expanded.hidden,false,'History competition row appears at '+width);
       assert.equal(expanded.linkHref,'/competitions/it-1/standings?season=777');
+      if(width>620){
+       assert.equal(expanded.competitionTextPosition,'absolute','History Competition is anchored to its row');
+       assert.ok(Math.abs(expanded.competitionTextCenter-expanded.numericTextCenter)<=2,
+        'Club History Competition glyphs must center with actual numeric text at '+width+': '+JSON.stringify(expanded));
+      }else{
+       assert.ok(Math.abs(expanded.competitionTextCenter-expanded.competitionCellCenter)<=3,
+        'Club History mobile Competition wraps and centers within its own row at '+width+': '+JSON.stringify(expanded));
+      }
       if(width<=620){
        assert.ok(expanded.rowHeight>100,'expanded mobile row reveals all eight statistics at '+width);
        assert.equal(expanded.positionLayout,'grid','position and its label use explicit grid columns at '+width);
@@ -830,6 +846,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const nameRestoredAfterCrest=name.getBoundingClientRect().left;
        const originalNameCenter=bounds.y;
        const detailCells=[...link.closest('tr').querySelectorAll('.app-player-stats-number .app-player-stats-value')];
+       const glyphCenter=node=>{const range=document.createRange();range.selectNodeContents(node);
+        const box=range.getBoundingClientRect();return box.top+box.height/2;};
+       const compTextCenter=glyphCenter(probe.querySelector('.app-player-stats-competition-name'));
+       const clubTextCenter=glyphCenter(name);
+       const detailNumberCenter=glyphCenter(detailCells[0]);
        detailCells.forEach((node,i)=>node.textContent=String(12345+i));
        const independentCrestCenter=rect(crest).y, independentNameCenter=rect(name).y;
        return {actual,skeleton,link:{x:bounds.x,y:bounds.y},linkOverflow:getComputedStyle(link).overflow,
@@ -838,7 +859,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         crestTextShift:nameWithoutCrest-clubTextLeft,
         crestRestoreTextShift:nameRestoredAfterCrest-clubTextLeft,
         crestTextGap:clubTextLeft-crestRight,
-        competition:compVisual,clubCenterOffset,
+        competition:compVisual,clubCenterOffset,compTextCenter,clubTextCenter,detailNumberCenter,
+        competitionPosition:competitionStyle.position,competitionCellCenter:compCell.y,
         seasonTextOffset,loadingSeasonOffset,loadingSeasonCenter,loadingTotalCenter,loadingSkeletonCenters,
         crestNameOffset:crestCenter-originalNameCenter,
         independentCrestOffset:independentCrestCenter-crestCenter,
@@ -871,6 +893,15 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       if(width<=620)assert.equal(placement.tracks,'12px 24px','mobile Player Stats reserve identical tracks');
       assert.ok(Math.abs(placement.competition.centerOffset)<3.5 && Math.abs(placement.clubCenterOffset)<3.5,
        'competition and club identities stay vertically centered at '+width+': '+JSON.stringify(placement));
+      if(width>620){
+       assert.equal(placement.competitionPosition,'absolute','Player Competition is anchored to the desktop row');
+       assert.ok(Math.abs(placement.compTextCenter-placement.detailNumberCenter)<=2 &&
+        Math.abs(placement.compTextCenter-placement.clubTextCenter)<=2,
+        'Player Stats Competition glyphs align with actual club and statistic text at '+width+': '+JSON.stringify(placement));
+      }else{
+       assert.ok(Math.abs(placement.compTextCenter-placement.competitionCellCenter)<=3,
+        'Player Stats Competition remains centered in its mobile row at '+width+': '+JSON.stringify(placement));
+      }
       assert.ok(placement.competition.lineHeight>=placement.competition.fontSize*1.45 &&
        placement.competition.overflow==='visible',
        'Player Stats competition text leaves room for g/p descenders and underline at '+width);

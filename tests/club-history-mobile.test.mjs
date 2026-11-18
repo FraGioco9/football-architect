@@ -175,6 +175,12 @@ test('#578 Club History pending skeleton samples match runtime and reserve actua
  assert.doesNotMatch(css,/\[data-club-history-skeleton="played"\] \.club-fp-bar\{width:/);
  assert.match(css,/\.club-history-competition-value a\.club-history-competition-link\{line-height:1\.5;vertical-align:middle\}/,
   'the competition link leaves full glyph and underline height');
+ assert.match(css,/@media\(min-width:621px\)\{\s*\.club-history-table \.club-history-competition-row \.club-history-competition-value\{position:relative\}/,
+  'desktop History Competition is positioned against its own row');
+ assert.match(css,/\.club-history-competition-row \.club-history-competition-value a\.club-history-competition-link\{\s*position:absolute;inset-inline-start:18px;top:50%;transform:translateY\(-50%\);\s*display:inline-flex;align-items:center;block-size:24px;min-height:24px;/,
+  'Competition text uses the same 24px centerline as actual stats');
+ assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{\s*display:inline;max-width:100%;white-space:normal;/,
+  'long mobile Competition names still wrap inside their own grid row');
  assert.match(css,/a\.club-history-competition-link:is\(:hover,:focus-visible\) \.club-history-competition-text\{/,
   'Club History keeps text-only competition underline');
 });

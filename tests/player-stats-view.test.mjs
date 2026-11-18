@@ -100,6 +100,10 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  assert.match(css,/grid-template-rows:12px 24px/,'mobile value track accommodates the full text line');
  assert.match(css,/a\.app-player-stats-competition-link:is\(:hover,:focus-visible\) \.app-player-stats-competition-name\{/,
   'competition underline renders on text only');
+ assert.match(css,/@media\(min-width:621px\)\{\s*\.app-player-stats-table \.app-player-stats-competition-row \.app-player-stats-competition\{position:relative\}/,
+  'Player Stats Competition uses the independent desktop centerline');
+ assert.match(css,/\.app-player-stats-competition-row a\.app-player-stats-competition-link\{\s*position:absolute;inset-inline-start:18px;top:50%;transform:translateY\(-50%\);\s*display:inline-flex;align-items:center;block-size:24px;min-height:24px;/,
+  'Competition text uses the same 24px line as verified stats');
  assert.match(read('assets/player-stats.mjs'),/link\.append\(el\('span',competitionName\?\./,
   'competition text uses its own unclipped underline span');
  assert.match(css,/\.app-player-stats-competition-row\[hidden\]\{display:none\}/);

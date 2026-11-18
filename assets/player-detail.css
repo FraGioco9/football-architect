@@ -227,6 +227,16 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-competition-row[hidden]{display:none}
 .app-player-stats-competition-row{background:transparent}
 .app-player-stats-competition-row .app-player-stats-competition{padding-inline-start:18px}
+/* Competition and verified numeric/club text use the same centered 24px
+   desktop line. Links and decorations must not establish row alignment. */
+@media(min-width:621px){
+ .app-player-stats-table .app-player-stats-competition-row .app-player-stats-competition{position:relative}
+ .app-player-stats-table .app-player-stats-competition-row a.app-player-stats-competition-link{
+  position:absolute;inset-inline-start:18px;top:50%;transform:translateY(-50%);
+  display:inline-flex;align-items:center;block-size:24px;min-height:24px;
+  max-inline-size:calc(100% - 28px);
+ }
+}
 .app-player-stats-link{
  display:inline-block;width:fit-content;max-width:100%;min-width:0;min-height:0;
  margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;
