@@ -553,3 +553,22 @@ test('Optional +N stays beside the name while player and club lines match the sk
  assert.match(markup,/class="app-history-player-context"/);
  assert.ok(markup.indexOf('class="app-history-player-context"')>markup.indexOf('class="app-history-player-name-row"'));
 });
+
+
+test('Player record dialog uses compact centered rows and keeps +N hover without underline',()=>{
+ const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const declaration=selector=>{
+  const start=css.lastIndexOf(selector+'{');
+  assert.ok(start>=0,'Missing CSS rule '+selector);
+  return css.slice(start+selector.length+1,css.indexOf('}',start));
+ };
+ assert.match(source,/const info=element\\("div","app-history-dialog-player-info"\\)/);
+ assert.match(source,/info\\.append\\(playerLabel\\(holder,"strong",""\\)\\)/);
+ assert.match(source,/info\\.append\\(clubs\\);\\s*identity\\.append\\(portrait\\(holder\\.id\\),info\\);\\s*li\\.append\\(identity\\);list\\.append\\(li\\)/);
+ assert.match(declaration('.app-history-player-holders'),/gap:0/);
+ assert.match(declaration('.app-history-player-holders>li'),/padding:6px 0/);
+ assert.match(declaration('.app-history-dialog-player-info'),/align-content:center/);
+ assert.match(declaration('.app-history-player-clubs'),/margin:0/);
+ assert.match(declaration('#competition-panel-history .app-history-player-detail:hover'),/text-decoration:none/);
+});

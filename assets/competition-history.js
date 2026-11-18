@@ -305,7 +305,8 @@
     for(const holder of record.holders){
       const li=element("li","");
       const identity=element("div","app-history-dialog-player");
-      identity.append(portrait(holder.id),playerLabel(holder,"strong",""));li.append(identity);
+      const info=element("div","app-history-dialog-player-info");
+      info.append(playerLabel(holder,"strong",""));
       const groups=new Map();
       for(const item of holder.clubs){
         if(!groups.has(item.clubId))groups.set(item.clubId,new Set());
@@ -320,7 +321,9 @@
         }
         clubs.append(line);
       }
-      li.append(clubs);list.append(li);
+      info.append(clubs);
+      identity.append(portrait(holder.id),info);
+      li.append(identity);list.append(li);
     }
     dialog.append(list);
     returnFocus=source;
