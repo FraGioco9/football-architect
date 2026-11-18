@@ -101,8 +101,12 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-total-value'));
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading :is\(\.app-player-stats-skeleton-label,\.app-player-stats-total-value\)>\.app-skeleton-bar\{\s*align-self:center;flex:none;margin-inline:0;/,
   'Career/Season/Total skeleton bars follow the actual text flex origin');
- assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar\{[^}]*translate:0 -0\.075em;/,
-  'all Player Stats loading bars share the optical text-ink offset');
+ for(const [label,selector,shift] of [
+  ['numeric','app-player-stats-number','0.025'],
+  ['Season/Career','app-player-stats-skeleton-label','0.04'],
+  ['Total','app-player-stats-total-value','0.075']
+ ])assert.match(css,new RegExp('\\.app-player-stats-table \\.app-player-stats-loading \\.'+selector+' \\.app-skeleton-bar\\{translate:0 -'+shift.replace('.','\\.')+'em\\}'),
+  'Player Stats '+label+' uses the ink-centered paint position');
  assert.match(css,/\.app-player-stats-score-heading-skeleton::after\{[^}]*translate:0 -0\.075em;/,
   'neutral goals/clean-sheets heading receives the same optical correction');
  assert.ok(css.includes('grid-row:2;min-height:24px;width:100%;align-self:center;justify-content:center'));

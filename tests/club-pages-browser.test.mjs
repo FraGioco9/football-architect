@@ -667,8 +667,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          'stat '+i+' skeleton shares hydrated horizontal center at '+width+': '+JSON.stringify(alignment));
         assert.ok(Math.abs(data.dy-skeleton.dy)<=3,
          'stat '+i+' skeleton shares hydrated value-row center at '+width+': '+JSON.stringify(alignment));
-        assert.ok(Math.abs(data.inkDy-skeleton.dy)<=1.5,
-         'stat '+i+' skeleton tracks PAINTED number ink, not just line-box center at '+width+': '+JSON.stringify(alignment));
+        assert.ok(Math.abs(data.inkDy-skeleton.dy)<=1.25,
+         'stat '+i+' loading bar follows painted numeric ink in its own cell at '+width+': '+JSON.stringify(alignment));
         assert.ok(Math.abs(data.height-skeleton.height)<=1,
          'stat '+i+' keeps the same cell height during loading at '+width);
        }
@@ -898,7 +898,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const loadingHeader=loadingRow.querySelector('th');
        const loadingSeasonBar=loadingHeader.querySelector('.app-player-stats-skeleton-season');
        const loadingSeasonOffset=rect(loadingSeasonBar).y-rect(loadingHeader).y;
-       const seasonInkOffset=rect(loadingSeasonBar).y-seasonInkY;
+       const seasonInkOffset=
+        (rect(loadingSeasonBar).y-rect(loadingHeader).y)-
+        (seasonInkY-rect(seasonHeader).y);
        const loadingSeasonX=loadingSeasonBar.getBoundingClientRect().left-loadingHeader.getBoundingClientRect().left;
        const pendingTotalBar=loadingRow.querySelector('.app-player-stats-skeleton-total');
        const pendingTotalCell=pendingTotalBar.closest('td');
@@ -965,8 +967,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         'Player Stats bar '+i+' anchors to the actual text (right edge on desktop, center on mobile) even with different digit counts at '+width+'px: '+JSON.stringify(placement));
        assert.ok(Math.abs(a.dy-s.dy)<=3,
         'Player Stats bar '+i+' occupies the same value baseline at '+width+'px: '+JSON.stringify(placement));
-       assert.ok(Math.abs(a.inkDy-s.dy)<=1.5,
-        'Player Stats bar '+i+' centers on the painted number ink at '+width+'px: '+JSON.stringify(placement));
+       assert.ok(Math.abs(a.inkDy-s.dy)<=1.25,
+        'Player Stats bar '+i+' follows painted numeric ink in its own cell at '+width+'px: '+JSON.stringify(placement));
        assert.ok(Math.abs(a.height-s.height)<=1,
         'Player Stats pending and verified cell heights remain stable at '+width+'px');
       }

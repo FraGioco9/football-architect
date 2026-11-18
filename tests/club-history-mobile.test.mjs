@@ -151,8 +151,12 @@ test('#578 Club History loading bars and verified numeric values share one 24px 
  assert.match(css,/\.club-history-table \.club-history-total-value\{\s*display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;/);
  assert.match(css,/\.club-history-table \.club-history-row-loading :is\(\.club-history-skeleton-label,\.club-history-total-value\)>\.club-fp-bar\{\s*align-self:center;flex:none;margin-inline-start:0;/,
   'Season and Total skeletons remain anchored to the verified text center and left edge');
- assert.match(css,/\.club-history-table \.club-history-row-loading \.club-fp-bar\{translate:0 -0\.075em\}/,
-  'every Club History loading bar uses the same optical text-ink correction');
+ for(const [label,selector,shift] of [
+  ['numeric','club-history-skeleton-stat','0.025'],
+  ['Season','club-history-skeleton-label','0.04'],
+  ['Total','club-history-total-value','0.075']
+ ])assert.match(css,new RegExp('\\.club-history-table \\.club-history-row-loading \\.'+selector+' \\.club-fp-bar\\{translate:0 -'+shift.replace('.','\\.')+'em\\}'),
+  'Club History '+label+' uses its measured text ink center rather than one global offset');
  assert.match(css,/\.club-history-chevron,\.club-history-chevron-space\{\s*position:absolute;inset-inline-start:0;top:calc\(50% - 4px\);/,
   'Club History icon placement does not shift text or skeletons');
 });

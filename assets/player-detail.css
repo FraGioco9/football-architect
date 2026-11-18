@@ -300,11 +300,12 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 }
 .app-player-stats-table .app-player-stats-loading .app-skeleton-bar{
  display:block;min-width:0;height:12px;margin:0;
- /* A 1px-class optical correction for painted system-ui text ink.
-    Applies equally to Career, Season, Total and every numeric sample.
-    No table row, cell, icon, logo or loaded value is repositioned. */
- translate:0 -0.075em;
 }
+/* The verified painted glyph centers differ for numbers, bold Season/Career,
+   and the mixed-case Total label. Only the loading paint is adjusted. */
+.app-player-stats-table .app-player-stats-loading .app-player-stats-number .app-skeleton-bar{translate:0 -0.025em}
+.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-label .app-skeleton-bar{translate:0 -0.04em}
+.app-player-stats-table .app-player-stats-loading .app-player-stats-total-value .app-skeleton-bar{translate:0 -0.075em}
 /* One column, one skeleton width: Career and Season labels share the same
    70px loading bar; numeric columns share the same glyph sample per metric. */
 .app-player-stats-loading :is(.app-player-stats-skeleton-season,.app-player-stats-skeleton-career){width:70px}

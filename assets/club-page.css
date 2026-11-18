@@ -458,7 +458,11 @@ body.app-body{--app-page-pad-top:8px}
 /* System-ui's painted glyphs sit slightly above the 24px line-box center.
    Shift only placeholder paint, not the Season/Total/number text anchors.
    em-based adjustment follows responsive table typography automatically. */
-.club-history-table .club-history-row-loading .club-fp-bar{translate:0 -0.075em}
+/* Align the painted bars to the visible glyphs rather than to the midpoint
+   of the font's EM rectangle. Labels and numbers have different ink centers. */
+.club-history-table .club-history-row-loading .club-history-skeleton-stat .club-fp-bar{translate:0 -0.025em}
+.club-history-table .club-history-row-loading .club-history-skeleton-label .club-fp-bar{translate:0 -0.04em}
+.club-history-table .club-history-row-loading .club-history-total-value .club-fp-bar{translate:0 -0.075em}
 /* First paint and runtime pending rows reserve the actual numeric glyph
    widths, then center the bar on the same 16px track as verified data. */
 .club-history-table .club-history-row-loading .club-history-skeleton-stat .club-fp-bar[data-skeleton-sample]{
