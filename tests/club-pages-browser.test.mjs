@@ -589,16 +589,28 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const row=document.querySelector('#history-mobile-560-probe .club-history-season-row');
         const cells=[...row.children].slice(3,10);
         const rect=n=>{const r=n.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,height:r.height};};
+        // Range gives the font's EM rectangle, not the painted glyph bbox.
+        // Canvas actualBoundingBox* lets us compare visually aligned centers.
+        const glyphInkY=(element,range)=>{
+         const style=getComputedStyle(element),ctx=document.createElement('canvas').getContext('2d');
+         ctx.font=[style.fontStyle,style.fontWeight,style.fontSize,style.fontFamily].join(' ');
+         const metrics=ctx.measureText(range.toString());
+         return range.getBoundingClientRect().bottom-metrics.fontBoundingBoxDescent-
+          (metrics.actualBoundingBoxAscent-metrics.actualBoundingBoxDescent)/2;
+        };
         const actual=cells.map(cell=>{
-         const range=document.createRange();range.selectNodeContents(cell.querySelector('.club-history-stat-value'));
+         const valueElement=cell.querySelector('.club-history-stat-value');
+         const range=document.createRange();range.selectNodeContents(valueElement);
          const value=rect(range),slot=rect(cell);
-         return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,height:slot.height};
+         return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,
+          inkDy:glyphInkY(valueElement,range)-slot.cy,height:slot.height};
         });
         const initial=cells.map(cell=>cell.innerHTML);
         const totalSlot=row.querySelector('.club-history-total-value');
         const totalCell=totalSlot.closest('td');
         const totalRange=document.createRange();totalRange.selectNodeContents(totalSlot);
         const totalLoaded=totalRange.getBoundingClientRect(),totalLoadedCell=totalCell.getBoundingClientRect();
+        const totalPaintY=glyphInkY(totalSlot,totalRange);
         const totalOriginal=totalSlot.innerHTML;
         totalSlot.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
         for(const [index,cell] of cells.entries()){
@@ -618,7 +630,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const totalAlignment={
          dx:(totalBar.left-totalSkeletonCell.left)-(totalLoaded.left-totalLoadedCell.left),
          dy:(totalBar.top+totalBar.height/2-totalSkeletonCell.top-totalSkeletonCell.height/2)-
-          (totalLoaded.top+totalLoaded.height/2-totalLoadedCell.top-totalLoadedCell.height/2)
+          (totalLoaded.top+totalLoaded.height/2-totalLoadedCell.top-totalLoadedCell.height/2),
+         inkDy:(totalBar.top+totalBar.height/2)-totalPaintY
         };
         row.classList.remove('club-history-row-loading');
         totalSlot.innerHTML=totalOriginal;
@@ -628,6 +641,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const text=button.lastChild;const range=document.createRange();range.selectNodeContents(text);
         const nameLeft=range.getBoundingClientRect().left;
         const nameCenterY=rect(range).cy;
+        const seasonPaintY=glyphInkY(button,range);
         const chevron=button.querySelector('.club-history-chevron');
         const chevronRight=button.getBoundingClientRect().left+chevron.offsetLeft+chevron.offsetWidth;
         chevron.remove();
@@ -642,7 +656,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const skeletonNameCenterY=rect(header.querySelector('.club-fp-bar')).cy;
         header.innerHTML=original;
         return {actual,skeleton,totalAlignment,nameOffset:skeletonNameLeft-nameLeft,
-         nameCenterOffset:skeletonNameCenterY-nameCenterY,seasonSkeletonY:skeletonNameCenterY,
+         nameCenterOffset:skeletonNameCenterY-nameCenterY,
+         seasonInkOffset:skeletonNameCenterY-seasonPaintY,seasonSkeletonY:skeletonNameCenterY,
          chevronShift:nameWithoutChevron-nameLeft,chevronRestoreShift:nameRestored-nameLeft,
          chevronGap:nameLeft-chevronRight};
        })()`);
@@ -652,6 +667,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          'stat '+i+' skeleton shares hydrated horizontal center at '+width+': '+JSON.stringify(alignment));
         assert.ok(Math.abs(data.dy-skeleton.dy)<=3,
          'stat '+i+' skeleton shares hydrated value-row center at '+width+': '+JSON.stringify(alignment));
+        assert.ok(Math.abs(data.inkDy-skeleton.dy)<=1.5,
+         'stat '+i+' skeleton tracks PAINTED number ink, not just line-box center at '+width+': '+JSON.stringify(alignment));
         assert.ok(Math.abs(data.height-skeleton.height)<=1,
          'stat '+i+' keeps the same cell height during loading at '+width);
        }
@@ -659,6 +676,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         'season skeleton starts exactly where the loaded name starts at '+width+': '+JSON.stringify(alignment));
        assert.ok(Math.abs(alignment.nameCenterOffset)<=3.5,
         'Club History season text and its skeleton share a vertical center at '+width+': '+JSON.stringify(alignment));
+       assert.ok(Math.abs(alignment.seasonInkOffset)<=1.5,
+        'Club History Season bar follows the actual letter ink center at '+width+': '+JSON.stringify(alignment));
+       if(width>620)assert.ok(Math.abs(alignment.totalAlignment.inkDy)<=1.5,
+        'Club History Total bar follows painted Total glyphs at '+width+': '+JSON.stringify(alignment));
        if(width>620)assert.ok(Math.abs(alignment.totalAlignment.dx)<=1&&Math.abs(alignment.totalAlignment.dy)<=3,
         'Club History Total skeleton matches the actual Total text origin and center at '+width+': '+JSON.stringify(alignment));
        assert.ok(Math.abs(alignment.chevronShift)<=0.5&&Math.abs(alignment.chevronRestoreShift)<=0.5,
@@ -819,13 +840,22 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const seasonLabel=row.querySelector('.app-player-stats-no-toggle');
        const seasonHeader=row.querySelector('.app-player-stats-season');
        const rect=n=>{const r=n.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,right:r.right,height:r.height};};
+       const glyphInkY=(element,range)=>{
+        const style=getComputedStyle(element),ctx=document.createElement('canvas').getContext('2d');
+        ctx.font=[style.fontStyle,style.fontWeight,style.fontSize,style.fontFamily].join(' ');
+        const m=ctx.measureText(range.toString());
+        return range.getBoundingClientRect().bottom-m.fontBoundingBoxDescent-
+         (m.actualBoundingBoxAscent-m.actualBoundingBoxDescent)/2;
+       };
        const seasonLabelRange=document.createRange();seasonLabelRange.selectNodeContents(seasonLabel);
        const seasonTextOffset=rect(seasonLabelRange).y-rect(seasonHeader).y;
+       const seasonInkY=glyphInkY(seasonLabel,seasonLabelRange);
        const seasonLoadedX=seasonLabelRange.getBoundingClientRect().left-seasonHeader.getBoundingClientRect().left;
        const summaryTotal=row.querySelector('.app-player-stats-total-value');
        const summaryTotalCell=summaryTotal.closest('td');
        const summaryRange=document.createRange();summaryRange.selectNodeContents(summaryTotal);
        const summaryText=summaryRange.getBoundingClientRect(),summaryCell=summaryTotalCell.getBoundingClientRect();
+       const totalInkY=glyphInkY(summaryTotal,summaryRange);
        const totalLoadedAnchor={
         x:summaryText.left-summaryCell.left,
         y:(summaryText.top+summaryText.height/2)-(summaryCell.top+summaryCell.height/2)
@@ -837,8 +867,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const seasonTextWithoutChevron=seasonLabel.getBoundingClientRect().left;
        seasonHeader.querySelector('.app-player-stats-static-label').prepend(seasonChevron);
        const actual=cells.map(cell=>{
-        const range=document.createRange();range.selectNodeContents(cell.querySelector('.app-player-stats-value'));
-        const a=rect(range),b=rect(cell);return {dx:a.x-b.x,dy:a.y-b.y,right:a.right,height:b.height};
+        const value=cell.querySelector('.app-player-stats-value');
+        const range=document.createRange();range.selectNodeContents(value);
+        const a=rect(range),b=rect(cell);
+        return {dx:a.x-b.x,dy:a.y-b.y,inkDy:glyphInkY(value,range)-b.y,right:a.right,height:b.height};
        });
        const sampleTexts=['128 (24)','9870','32','21','17','2','7.50'];
        for(const [index,cell] of cells.entries()){
@@ -866,10 +898,13 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const loadingHeader=loadingRow.querySelector('th');
        const loadingSeasonBar=loadingHeader.querySelector('.app-player-stats-skeleton-season');
        const loadingSeasonOffset=rect(loadingSeasonBar).y-rect(loadingHeader).y;
+       const seasonInkOffset=rect(loadingSeasonBar).y-seasonInkY;
        const loadingSeasonX=loadingSeasonBar.getBoundingClientRect().left-loadingHeader.getBoundingClientRect().left;
        const pendingTotalBar=loadingRow.querySelector('.app-player-stats-skeleton-total');
        const pendingTotalCell=pendingTotalBar.closest('td');
        const pendingBar=pendingTotalBar.getBoundingClientRect(),pendingCell=pendingTotalCell.getBoundingClientRect();
+       const totalInkOffset=(pendingBar.top+pendingBar.height/2)-totalInkY-
+        ((pendingCell.top+pendingCell.height/2)-(summaryCell.top+summaryCell.height/2));
        const totalPendingAnchor={
         x:pendingBar.left-pendingCell.left,
         y:(pendingBar.top+pendingBar.height/2)-(pendingCell.top+pendingCell.height/2)
@@ -917,7 +952,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         competitionPosition:competitionStyle.position,competitionCellCenter:compCell.y,
         competitionStart,
         seasonTextOffset,loadingSeasonOffset,seasonLoadedX,loadingSeasonX,
-        totalLoadedAnchor,totalPendingAnchor,loadingSeasonCenter,loadingTotalCenter,loadingSkeletonCenters,
+        totalLoadedAnchor,totalPendingAnchor,seasonInkOffset,totalInkOffset,
+        loadingSeasonCenter,loadingTotalCenter,loadingSkeletonCenters,
         crestNameOffset:crestCenter-originalNameCenter,
         independentCrestOffset:independentCrestCenter-crestCenter,
         independentNameOffset:independentNameCenter-originalNameCenter,
@@ -929,11 +965,17 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         'Player Stats bar '+i+' anchors to the actual text (right edge on desktop, center on mobile) even with different digit counts at '+width+'px: '+JSON.stringify(placement));
        assert.ok(Math.abs(a.dy-s.dy)<=3,
         'Player Stats bar '+i+' occupies the same value baseline at '+width+'px: '+JSON.stringify(placement));
+       assert.ok(Math.abs(a.inkDy-s.dy)<=1.5,
+        'Player Stats bar '+i+' centers on the painted number ink at '+width+'px: '+JSON.stringify(placement));
        assert.ok(Math.abs(a.height-s.height)<=1,
         'Player Stats pending and verified cell heights remain stable at '+width+'px');
       }
       assert.ok(Math.abs(placement.seasonTextOffset-placement.loadingSeasonOffset)<=3,
        'Player Stats: loaded Season and skeleton share the same vertical track at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.seasonInkOffset)<=1.5,
+       'Player Stats Season placeholder matches the visible letters at '+width+': '+JSON.stringify(placement));
+      if(width>620)assert.ok(Math.abs(placement.totalInkOffset)<=1.5,
+       'Player Stats Total placeholder matches painted Total letters at '+width+': '+JSON.stringify(placement));
       assert.ok(Math.abs(placement.seasonLoadedX-placement.loadingSeasonX)<=1,
        'Player Stats Season/Career loading bar must start exactly where the text starts at '+width+': '+JSON.stringify(placement));
       if(width>620)assert.ok(

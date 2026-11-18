@@ -101,6 +101,10 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  assert.ok(css.includes('.app-player-stats-table .app-player-stats-total-value'));
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading :is\(\.app-player-stats-skeleton-label,\.app-player-stats-total-value\)>\.app-skeleton-bar\{\s*align-self:center;flex:none;margin-inline:0;/,
   'Career/Season/Total skeleton bars follow the actual text flex origin');
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-skeleton-bar\{[^}]*translate:0 -0\.075em;/,
+  'all Player Stats loading bars share the optical text-ink offset');
+ assert.match(css,/\.app-player-stats-score-heading-skeleton::after\{[^}]*translate:0 -0\.075em;/,
+  'neutral goals/clean-sheets heading receives the same optical correction');
  assert.ok(css.includes('grid-row:2;min-height:24px;width:100%;align-self:center;justify-content:center'));
  assert.match(css,/\.app-player-stats-table tr>td\.app-player-stats-number::before/);
  assert.match(css,/grid-template-rows:12px 24px/,'mobile value track accommodates the full text line');
