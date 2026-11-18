@@ -438,7 +438,10 @@ export function createControlledActionLab(RAPIER,id,{
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
      smallSidedMovementDecisions:playerFrame.smallSidedMovementDecisions,
-     ...(id==='carry-solo'?{soloCarryPhase:playerFrame.soloCarryPhase}:{}),
+     ...(id==='carry-solo'?{
+      soloCarryPhase:playerFrame.soloCarryPhase,
+      soloNativeFeet:foot.nativeSoloFeet??null
+     }:{}),
      smallSidedNativeBodyGuard:bodyGuardEnabled?
        engine.smallSidedBodyGuardSnapshot():null,
       smallSidedPhysicalFeedback:bodyGuardEnabled?
