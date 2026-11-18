@@ -250,3 +250,27 @@ test('official HTTP routing selects frozen V2 only and retires direct legacy sta
  assert.match(source('season-two-candidate-read.ts'),/verifyLineupSeasonArchiveV1/);
  assert.match(source('lineup-sporting-day-plan.ts'),/processSportingDayWithResolver/);
 });
+
+test('frozen player identity extension preserves old receipts and never changes seeded sporting results',async()=>{
+ const result=await contextPlay(roster(),opponentRoster(),{mode:'regulation'});
+ const legacy=await buildCandidateMatchReceiptV1(receiptMatch,result);
+ const named=await contextPlay(roster().map(p=>({...p,name:'Any Name',nationality:'ITA'})),opponentRoster(),{mode:'regulation'});
+ assert.deepEqual(named,result,'identity presentation must not influence match randomness');
+ const enriched=structuredClone(result);
+ enriched.playerIdentityVersion='player-identity-v1';
+ enriched.playerIdentities=[...result.home.appearances,...result.away.appearances].map(p=>({playerId:p.playerId,name:'Frozen Player '+p.playerId,nationality:'ITA'}));
+ const frozen=await buildCandidateMatchReceiptV1(receiptMatch,enriched);
+ assert.ok(Object.isFrozen(frozen.result.playerIdentities));
+ assert.notEqual(frozen.receiptDigest,legacy.receiptDigest,'snapshot is bound by the immutable receipt hash');
+ assert.deepEqual(frozen.result.events,result.events);
+ for(const change of [
+  r=>delete r.playerIdentityVersion,
+  r=>r.playerIdentityVersion='unknown',
+  r=>r.playerIdentities.pop(),
+  r=>r.playerIdentities.push(r.playerIdentities[0]),
+  r=>r.playerIdentities[0].nationality='italy',
+  r=>r.playerIdentities[0].name='',
+  r=>r.playerIdentities[0].playerId=99999
+ ]){const invalid=structuredClone(enriched);change(invalid);await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,invalid),/identit/);}
+ assert.deepEqual(await buildCandidateMatchReceiptV1(receiptMatch,result),legacy,'old frozen receipts are neither backfilled nor rewritten');
+});

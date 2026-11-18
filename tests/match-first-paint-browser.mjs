@@ -24,6 +24,43 @@ let count=0;
 for(const [engine,driver] of Object.entries(engines)){
  const browser=await driver.launch({headless:true});
  try{
+  // Dedicated stats are delayed or unavailable without gating the scoreboard.
+  for(const scenario of [{width:390,valid:true},{width:1440,valid:false}]){
+   const ctx=await browser.newContext({viewport:{width:scenario.width,height:900}});
+   const page=await ctx.newPage();let release;
+   const gate=new Promise(resolve=>release=resolve);
+   const played={...match,day:13,status:'completed',homeParticipant:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'},
+    result:{homeGoals:2,awayGoals:1,resolution:'regulation',regulation:{home:2,away:1},extraTime:null,penalties:null,winnerClubId:'IT-1'},
+    provenance:{kind:'authoritative',receiptHash:'a'.repeat(64)}};
+   const document=applyPublishedMatchDocument(shell,played,'123');
+   try{
+    await page.route('**/matches/123',route=>route.fulfill({status:200,contentType:'text/html',body:document}));
+    await page.route('**/api/competitions/IT-1/seasons/1',route=>route.fulfill({status:503,contentType:'application/json',body:'{}'}));
+    await page.route('**/api/matches/123',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(played)}));
+    await page.route('**/api/matches/123/stats',async route=>{
+     await gate;
+     const people=Array.from({length:11},(_,i)=>({playerId:i+1,name:'Frozen Player '+(i+1),nationality:'ITA',role:i===0?'GK':'CM',started:true,minutes:90,goals:0,assists:null,redCards:null,cleanSheets:i===0?0:null,rating:6.5}));
+     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({schemaVersion:1,providerId:'authoritative-world',matchId:'123',season:1,competitionId:'IT-1',status:'completed',
+      provenance:{kind:'authoritative',receiptHash:(scenario.valid?'a':'b').repeat(64)},
+      statistics:{ratingVersion:'test-rating-v1',home:{kind:'real_xi',players:people},away:{kind:'team_fallback',players:[]}}})});
+    });
+    await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
+    assert.equal(await page.locator('[data-match-home-score]').textContent(),'2');
+    assert.equal(await page.locator('.app-match-lineup-player').count(),0);
+    const response=page.waitForResponse('**/api/matches/123/stats');release();await response;
+    if(scenario.valid){
+     await page.waitForFunction(()=>document.querySelectorAll('.app-match-lineup-player').length===11);
+     assert.equal(await page.locator('.app-match-lineup-player').first().textContent(),'Frozen Player 1');
+     assert.equal(await page.locator('.app-match-lineup-player').first().getAttribute('title'),'ITA');
+    }else{
+     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+     assert.equal(await page.locator('.app-match-lineup-player').count(),0,'mismatched receipt statistics are ignored');
+    }
+    assert.equal(await page.locator('[data-match-home-score]').textContent(),'2');
+    count++;
+   }finally{release?.();await ctx.close()}
+  }
   for(const theme of ['dark','light'])for(const device of cases){
    const ctx=await browser.newContext({viewport:{width:device.width,height:844},reducedMotion:'reduce'});
    try{

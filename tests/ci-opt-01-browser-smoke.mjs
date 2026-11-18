@@ -1,3 +1,4 @@
+import {verifyCompetitionPlayerStats} from './competition-player-stats-browser.mjs';
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
@@ -37,7 +38,7 @@ export async function runArea(browser,area,engine='chromium'){
    throw error;
   }finally{await context.close()}
  }
- if(area==='competitions')checks+=await verifyCompetitionCompactNetwork(browser,{engine});
+ if(area==='competitions'){checks+=await verifyCompetitionCompactNetwork(browser,{engine});checks+=await verifyCompetitionPlayerStats(browser,{engine});}
  console.log('TARGETED '+engine+' PASS: '+area+' '+checks+' cases (pairwise widths/locales/themes; touch + keyboard)');
  return checks;
 }
