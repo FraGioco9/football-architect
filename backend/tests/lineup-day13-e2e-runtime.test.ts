@@ -17,7 +17,8 @@ import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {loadSeasonSportingEvidence} from '../src/season-sporting-evidence.ts';
 import {replayLineupSeasonV1} from '../src/lineup-season-replay.ts';
-import {readPublicMatchLineupV1,readPublicMatchStatisticsV1} from '../src/public-match-read-lineup-v1.ts';
+import {readPublicMatchLineupV1,readPublicMatchStatisticsV1,
+ readPublishedCompetitionMatchesLineupV1} from '../src/public-match-read-lineup-v1.ts';
 import worker from '../src/index.ts';
 import {handleAdmin} from '../src/http-admin.ts';
 import {seedUnifiedAdminHttp} from './fixtures/unified-admin-http.ts';
@@ -62,6 +63,14 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(rows).toHaveLength(8);
  const [full,mixed]=rows;
  expect(new Set([full.home_club_id,full.away_club_id,mixed.home_club_id,mixed.away_club_id]).size).toBe(4);
+ // #702: the narrow league SELECT preserves complete verified public fixtures
+ // and source identity while knockout reservations retain their full proof.
+ const published=await readPublishedCompetitionMatchesLineupV1(db,1,'IT-1');
+ expect(published.fixtures.filter(f=>f.phaseId==='league')).toHaveLength(240);
+ expect(published.fixtures.filter(f=>f.phaseId!=='league')).toHaveLength(2);
+ expect(published.fixtures.find(f=>f.matchId===String(full.public_id)))
+  .toMatchObject({sourceFixtureId:full.fixture_id,homeClubId:full.home_club_id,
+   awayClubId:full.away_club_id});
  const draftId='11111111-1111-4111-8111-111111111113';
  await db.prepare('INSERT INTO player_generation_drafts (id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,status,created_at,expires_at,committed_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)')
   .bind(draftId,world.generation,0,session.actor.id,'{}','[]',43,'lineup-day13-seed','committed',now-20,now+7200,now-10).run();
