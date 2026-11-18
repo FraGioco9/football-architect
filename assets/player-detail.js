@@ -50,27 +50,32 @@
  // Use the player path rather than ?view= so a view change shares its position.
  const viewScrollKey=preview?null:'football-architect:player-views-scroll:'+location.pathname;
  const restoreViewScroll=()=>{
-  if(!viewBar||!viewScrollKey)return;
+  if(!viewBar||!viewScrollKey)return null;
   try{const raw=sessionStorage.getItem(viewScrollKey),n=Number(raw);
-   if(raw!==null&&Number.isFinite(n)&&n>=0)viewBar.scrollLeft=n;
+   if(raw!==null&&Number.isFinite(n)&&n>=0){viewBar.scrollLeft=n;return n}
   }catch{}
+  return null;
  };
  const saveViewScroll=()=>{
   if(!viewBar||!viewScrollKey)return;
   try{sessionStorage.setItem(viewScrollKey,String(viewBar.scrollLeft))}catch{}
  };
- restoreViewScroll();
+ // Keep the startup snapshot until pageshow: a browser-native nested-scroll
+ // reset can otherwise emit a scroll event and overwrite the saved offset.
+ const initialViewScroll=restoreViewScroll();
+ let viewScrollReady=false;
  const syncViewEdges=()=>{
   if(!viewBar)return;
   const max=Math.max(0,viewBar.scrollWidth-viewBar.clientWidth);
   viewBar.dataset.canScrollLeft=String(max>1&&viewBar.scrollLeft>1);
   viewBar.dataset.canScrollRight=String(max>1&&viewBar.scrollLeft<max-1);
  };
- viewBar?.addEventListener('scroll',()=>{syncViewEdges();saveViewScroll()},{passive:true});
+ viewBar?.addEventListener('scroll',()=>{syncViewEdges();if(viewScrollReady)saveViewScroll()},{passive:true});
  window.addEventListener('resize',syncViewEdges,{passive:true});
  window.addEventListener('pagehide',saveViewScroll);
  window.addEventListener('pageshow',event=>{
-  if(!event.persisted)restoreViewScroll();
+  if(!event.persisted&&initialViewScroll!==null&&viewBar)viewBar.scrollLeft=initialViewScroll;
+  viewScrollReady=true;
   syncViewEdges();
  });
  const groups=Object.freeze({technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],mental:['vision','positioning','decisions','composure'],physical:['speed','strength','stamina','agility'],goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']});
