@@ -535,3 +535,26 @@ response shapes remain **unchanged**: event transport is separate. The
 event timeline **visual UI is not included** in this contract-only block
 until placement and first-paint/mobile behavior are approved. No data
 migration, deploy, D1 write or altered match simulation.
+
+
+### Match starting formation in the official statistics read (#577)
+
+The existing anonymous `GET /api/matches/:id/stats` response now includes
+`statistics.home.formation` and `statistics.away.formation`, both typed
+`'4-3-3' | null`. These describe the **initial tactical shape at kickoff**,
+not a tactical change after a dismissal, a goalkeeper's role change or a
+substitution. The route is already receipt-verified and the `players`
+array already identifies every `started:true` player; there is no need to
+duplicate eleven starters or add them to the lightweight match-header read.
+
+The currently versioned `temporary-lineup-v1` match engine has one fixed
+XI arrangement: `GK, RB, CB, CB, LB, CM, DM, CM, RW, ST, LW`, which is
+4-3-3. Old and new official frozen receipts retain that ordered XI even
+though they do not carry a standalone formation label. The projection
+returns `'4-3-3'` **only** for the matching version, exactly eleven
+unique and confirmed frozen starters, and the exact canonical role signature.
+Otherwise it returns `null`: team fallback, unfinished match, incomplete
+or inconsistent starting XI, or future unknown tactical signatures.
+No inferred 4-3-3 is added to immutable stored receipts, and no database
+backfill, simulation change or new endpoint is needed. The existing
+`/api/matches/:id` and `/events` responses stay unchanged.

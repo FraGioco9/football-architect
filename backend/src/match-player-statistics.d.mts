@@ -7,7 +7,8 @@ export interface MatchPlayerStatistics {
 export interface MatchStatistics {
  mvp:import('./match-mvp-v1.mjs').MatchMvpProjectionV1;
  ratingVersion:'test-rating-v1'|null;
- home:{kind:'real_xi'|'team_fallback';unattributedGoals:number;players:MatchPlayerStatistics[]};
- away:{kind:'real_xi'|'team_fallback';unattributedGoals:number;players:MatchPlayerStatistics[]};
+ /** Initial verified tactical shape, not a live formation or substitutions. */
+ home:{kind:'real_xi'|'team_fallback';formation:'4-3-3'|null;unattributedGoals:number;players:MatchPlayerStatistics[]};
+ away:{kind:'real_xi'|'team_fallback';formation:'4-3-3'|null;unattributedGoals:number;players:MatchPlayerStatistics[]};
 }
 export function frozenMatchPlayerStatistics(result:LineupMatchResultV1):MatchStatistics;

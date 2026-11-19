@@ -2,6 +2,34 @@
  * New event counters come ONLY from frozen v2 receipts; legacy events remain null.
  */
 import {frozenMatchMvpV1} from './match-mvp-v1.mjs';
+
+// The temporary-lineup-v1 simulator declares one fixed initial XI:
+// GK / RB CB CB LB / CM DM CM / RW ST LW.
+// Historic receipts contain these ordered, frozen starting roles rather than
+// an explicit formation label. Expose the only proven shape, never infer a
+// tactical system from appearances, substitutions or a later role change.
+// A future simulator with alternative tactics must record its own versioned
+// formation authority instead of interpreting new XI shapes as 4-3-3.
+const V1_STARTING_SLOTS=['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW'];
+function verifiedStartingFormation(result,team){
+ if(result?.algorithmVersion!=='temporary-lineup-v1'||team?.kind!=='real_xi'||
+    !Array.isArray(team.starters)||team.starters.length!==V1_STARTING_SLOTS.length||
+    !Array.isArray(team.appearances))return null;
+ const starters=team.appearances.filter(p=>p?.started===true);
+ if(starters.length!==11)return null;
+ const confirmedIds=new Set(starters.map(p=>p.playerId));
+ if(confirmedIds.size!==11)return null;
+ const seen=new Set();
+ for(let i=0;i<V1_STARTING_SLOTS.length;i++){
+  const p=team.starters[i];
+  if(!Number.isSafeInteger(p?.playerId)||p.playerId<1||
+     seen.has(p.playerId)||!confirmedIds.has(p.playerId)||
+     p.role!==V1_STARTING_SLOTS[i])return null;
+  seen.add(p.playerId);
+ }
+ return '4-3-3';
+}
+
 export function frozenMatchPlayerStatistics(result){
  const identities=new Map((result.playerIdentityVersion==='player-identity-v1'?result.playerIdentities:[]).map(p=>[p.playerId,p]));
  const duration=result.extraTime?120:90,hasEvents=result.eventModelVersion==='lineup-events-v1';
@@ -15,9 +43,9 @@ export function frozenMatchPlayerStatistics(result){
   totals.set(event.playerId,(totals.get(event.playerId)??0)+1);
  }
  const side=(team,conceded,name)=>{
-  if(team.kind==='team_fallback')return {kind:team.kind,unattributedGoals:team.unattributedGoals,players:[]};
+  if(team.kind==='team_fallback')return {kind:team.kind,formation:null,unattributedGoals:team.unattributedGoals,players:[]};
   const starters=new Map(team.starters.map(p=>[p.playerId,p]));
-  return {kind:team.kind,unattributedGoals:0,players:team.appearances.map(p=>{
+  return {kind:team.kind,formation:verifiedStartingFormation(result,team),unattributedGoals:0,players:team.appearances.map(p=>{
    const starter=starters.get(p.playerId),identity=identities.get(p.playerId);
    if(!starter&&!hasEvents)throw TypeError('Unidentified frozen appearance');
    const role=hasEvents?p.role:starter.role;

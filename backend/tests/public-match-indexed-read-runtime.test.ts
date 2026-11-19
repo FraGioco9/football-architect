@@ -29,8 +29,8 @@ test('indexed match header resolves one fixture without scanning season and omit
  assert.equal(header?.fixtureId,fixtureId);
  const detail=frozenLineupMatchDetailV1(replay,73,fixtureId);
  assert.deepEqual(detail?.statistics,{mvp:{status:'unavailable'},ratingVersion:null,
-  home:{kind:'team_fallback',unattributedGoals:0,players:[]},
-  away:{kind:'team_fallback',unattributedGoals:0,players:[]}});
+  home:{kind:'team_fallback',formation:null,unattributedGoals:0,players:[]},
+  away:{kind:'team_fallback',formation:null,unattributedGoals:0,players:[]}});
  assert.deepEqual(header?.result,detail?.result);
  assert.deepEqual(header?.provenance,detail?.provenance);
  assert.deepEqual(projectPublishedMatchEventsV1(record.receipt.result),
