@@ -806,5 +806,4 @@ html[data-theme="light"] .app-players-table.club-roster-table[data-players-table
 .club-records .app-history-player-footer[hidden]{display:none}
 .club-records .app-history-player-footer .app-history-season{color:var(--muted);font-size:.78rem}
 .club-records .app-history-player-name-row .app-skeleton-bar{width:8ch;height:.7em}
-.club-records .app-history-player-context .app-skeleton-bar{width:6ch;height:.65em}
 .club-records .app-history-player-detail:hover{border-color:var(--focus);text-decoration:none}

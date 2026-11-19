@@ -338,7 +338,7 @@
   }
   window.faHistoryDialog={show:showDialog,close:closeDialog,header:dialogHeader,openClubs:openClubDialog};
   function close(){if(dialog)closeDialog(dialog);}
-  function openPlayers(record,source,clubContext){
+  function openPlayers(record,source,{showClub=true}={}){
     if(!record?.holders?.length)return;
     if(!dialog){
       dialog=element("dialog","app-history-player-dialog");
@@ -376,13 +376,14 @@
       const clubs=element("ul","app-history-player-clubs");
       for(const [clubId,seasons] of groups){
         const line=element("li","");
-        line.append(clubContext?clubLink(clubId,clubContext.name):clubLink(clubId));
+        if(showClub)line.append(clubLink(clubId));
         for(const season of [...seasons].filter(Number.isSafeInteger).sort((a,b)=>a-b)){
-          line.append(document.createTextNode(" · "),clubContext?locale().season+" "+season:seasonLink(season));
+          if(line.hasChildNodes())line.append(document.createTextNode(" · "));
+          line.append(showClub?seasonLink(season):locale().season+" "+season);
         }
-        clubs.append(line);
+        if(line.hasChildNodes())clubs.append(line);
       }
-      info.append(clubs);
+      if(clubs.hasChildNodes())info.append(clubs);
       identity.append(portrait(holder.id),info);
       li.append(identity);list.append(li);
     }

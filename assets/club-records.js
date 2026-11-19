@@ -128,16 +128,13 @@
    const extra=count?'<button type="button" class="app-history-player-detail" aria-haspopup="dialog" data-club-record-detail="'+key+
     '" aria-label="'+escape(w.details)+' (+'+count+')">+'+count+'</button>':'';
    const name=first?'<a class="app-history-player-name app-world-standing-club-link" href="/players/'+first.id+'">'+escape(first.name)+'</a>':'';
-   const club=index?.clubs.get(clubKey)?.primaryName||clubKey;
-   const subtitle=first?'<a class="app-world-standing-club-link" href="'+escape(selected.base)+'/overview">'+escape(club)+'</a>':'';
    const season=first?.clubs[0].season;
    const slot='<span class="fa-dev-stats-player-portrait" aria-hidden="true"'+(first?' data-club-record-portrait="'+first.id+'"':'')+'></span>';
    const bar='<span class="app-skeleton-bar"></span>';
    return '<article class="app-competition-stat-card" data-club-player-card><h5 class="app-competition-stat-label">'+label(key)+'</h5>'+
     '<strong class="app-competition-stat-value">'+(loading?bar:value??'—')+'</strong>'+
     '<div class="app-history-player-footer"'+(!loading&&!first?' hidden':'')+'>'+slot+'<div class="app-history-player-labels">'+
-    '<div class="app-history-player-name-row">'+(loading?bar:name+extra)+'</div>'+
-    '<div class="app-history-player-context">'+(loading?bar:subtitle)+'</div></div>'+
+    '<div class="app-history-player-name-row">'+(loading?bar:name+extra)+'</div></div>'+
     (season?'<span class="app-history-season">'+escape(w.season+' '+season)+'</span>':'')+'</div></article>';
   }
   function group(key,cards,message=''){

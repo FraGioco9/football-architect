@@ -412,8 +412,7 @@
     const scope=host.querySelector('[data-record-scope][aria-pressed="true"]').dataset.recordScope;
     const record=window.faClubRecords.select(historySnapshot.seasons,scope).players.find(p=>p.key===trigger.dataset.clubRecordDetail);
     if(record){
-     const club=manifest.clubs.find(c=>c.countryId+'-'+c.clubId===clubKey);
-     window.faHistoryPlayerUI.openPlayers({value:record.value,holders:window.faClubRecords.playerHolders(record.sources,clubKey)},trigger,{name:club?.primaryName||clubKey});
+     window.faHistoryPlayerUI.openPlayers({value:record.value,holders:window.faClubRecords.playerHolders(record.sources,clubKey)},trigger,{showClub:false});
     }
     return;
    }
