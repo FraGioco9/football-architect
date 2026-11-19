@@ -55,7 +55,9 @@ test('season leaders retain ties, career leaders combine spells under the frozen
  const career=records.select(snapshot.seasons,'verified').players;
  assert.deepEqual(career.map(p=>p.value),[14,7,3,10,4]);
  assert.match(render(),/href="\/players\/1"/);
- assert.match(render(),/class="club-record-ties"/);
+ assert.match(render(),/aria-haspopup="dialog" data-club-record-detail="playerGoals"[^>]*>\+1<\/button>/);
+ assert.match(render(),/data-club-record-portrait="1"/);
+ assert.equal(records.playerHolders([{id:1,name:'One',season:1},{id:1,name:'One',season:2}], 'IT-17')[0].clubs.length,2);
 });
 test('incomplete player and fixture coverage cannot produce a partial historical record',()=>{
  const legacy=[first,{...last,players:null,matches:undefined}];
@@ -74,6 +76,6 @@ test('five locales and first paint share the approved cards; MVP waits for offic
  const firstPaint=readFileSync(new URL('../clubs/_shared/index.html',import.meta.url),'utf8');
  assert.equal((firstPaint.match(/class="app-competition-stat-card"/g)||[]).length,11);
  const loading=render({historySnapshot:{source:'loading'}});
- assert.equal((loading.match(/class="app-skeleton-bar"/g)||[]).length,11);
+ assert.equal((loading.match(/class="app-competition-stat-value"><span class="app-skeleton-bar"/g)||[]).length,11);
  assert.match(render({historySnapshot:{source:'dev'}}),/Verified club records are unavailable/);
 });

@@ -46,7 +46,7 @@
 (() => {
   "use strict";
   const panel=document.getElementById("competition-panel-history");
-  if(!panel)return;
+  if(!panel&&!document.getElementById("club-page"))return;
   const competitionId=window.faCompetitionContext?.definition.id||document.querySelector('meta[name="fa-competition"]')?.content;
   const fields={
     seasonGoals:["goals",true],seasonAssists:["assists",true],
@@ -152,9 +152,9 @@
     const clubs=context?.seasonData?.participants||(context?.definition.category==='domestic'?window.faCompetitionDivision?.clubs:[])||[];
     return clubs.find(club=>club.countryId+'-'+club.clubId===id)?.primaryName||null;
   }
-  function clubLink(id){
+  function clubLink(id,name=clubName(id)){
     const [country,number]=id.split("-");
-    const link=element("a","app-world-standing-club-link",clubName(id)||id);
+    const link=element("a","app-world-standing-club-link",name||id);
     link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:country.toLowerCase(),id:number,view:"overview"});
     return link;
   }
@@ -338,8 +338,8 @@
   }
   window.faHistoryDialog={show:showDialog,close:closeDialog,header:dialogHeader,openClubs:openClubDialog};
   function close(){if(dialog)closeDialog(dialog);}
-  function open(metric,source){
-    const record=results?.[metric];if(!record)return;
+  function openPlayers(record,source,clubContext){
+    if(!record?.holders?.length)return;
     if(!dialog){
       dialog=element("dialog","app-history-player-dialog");
       dialog.addEventListener("cancel",event=>{event.preventDefault();close();});
@@ -350,7 +350,7 @@
       });
       document.body.append(dialog);
     }
-    const card=source.closest("[data-history-player-record]");
+    const card=source.closest("article")||source.closest("[data-history-player-record]");
     const title=card?.querySelector("h5")?.textContent||"";
     dialog.replaceChildren();
     const {header,heading,close:exit}=dialogHeader(title);
@@ -376,9 +376,9 @@
       const clubs=element("ul","app-history-player-clubs");
       for(const [clubId,seasons] of groups){
         const line=element("li","");
-        line.append(clubLink(clubId));
-        for(const season of [...seasons].sort((a,b)=>a-b)){
-          line.append(document.createTextNode(" · "),seasonLink(season));
+        line.append(clubContext?clubLink(clubId,clubContext.name):clubLink(clubId));
+        for(const season of [...seasons].filter(Number.isSafeInteger).sort((a,b)=>a-b)){
+          line.append(document.createTextNode(" · "),clubContext?locale().season+" "+season:seasonLink(season));
         }
         clubs.append(line);
       }
@@ -392,9 +392,11 @@
     if(lockedScroll){oldOverflow=lockedScroll.style.overflow;lockedScroll.style.overflow="hidden";}
     showDialog(dialog);exit.focus({preventScroll:true});
   }
+  window.faHistoryPlayerUI={portrait,openPlayers};
+  if(!panel)return;
   panel.addEventListener("click",event=>{
     const trigger=event.target.closest("[data-history-detail]");
-    if(trigger&&panel.contains(trigger))open(trigger.dataset.historyDetail,trigger);
+    if(trigger&&panel.contains(trigger))openPlayers(results?.[trigger.dataset.historyDetail],trigger);
   });
   const previous=window.faSyncHistoryRecords;
   window.faSyncHistoryRecords=()=>{previous?.();render();};

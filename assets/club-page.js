@@ -248,6 +248,8 @@
    reuseCrests(host,staging,true);
    for(const child of [...host.childNodes])if(child!==header&&child!==tabs&&child!==retainedFixtures)child.remove();
    for(const child of [...staging.childNodes])if(child!==stagedHeader&&child!==stagedTabs&&!(retainedFixtures&&child.matches?.('.club-fixtures')))host.append(child);
+   for(const slot of host.querySelectorAll('[data-club-record-portrait]'))
+    slot.replaceWith(window.faHistoryPlayerUI.portrait(slot.dataset.clubRecordPortrait));
    if(Number.isFinite(historyTableScroll)){const tableWrap=host.querySelector('.club-history-table-wrap');if(tableWrap)tableWrap.scrollLeft=historyTableScroll;}
    if(Number.isFinite(rosterTableScroll)){const rosterWrap=host.querySelector('.club-roster-table-scroll');if(rosterWrap)rosterWrap.scrollLeft=rosterTableScroll;}
    rosterMenuEvents?.abort();
@@ -405,6 +407,16 @@
   paint();
   host.addEventListener('click',event=>{
    if(selected.view!=='records')return;
+   const trigger=event.target.closest?.('[data-club-record-detail]');
+   if(trigger){
+    const scope=host.querySelector('[data-record-scope][aria-pressed="true"]').dataset.recordScope;
+    const record=window.faClubRecords.select(historySnapshot.seasons,scope).players.find(p=>p.key===trigger.dataset.clubRecordDetail);
+    if(record){
+     const club=manifest.clubs.find(c=>c.countryId+'-'+c.clubId===clubKey);
+     window.faHistoryPlayerUI.openPlayers({value:record.value,holders:window.faClubRecords.playerHolders(record.sources,clubKey)},trigger,{name:club?.primaryName||clubKey});
+    }
+    return;
+   }
    const button=event.target.closest?.('[data-record-scope]');
    if(!button||event.defaultPrevented||button.getAttribute('aria-pressed')==='true')return;
    const url=new URL(location.href);

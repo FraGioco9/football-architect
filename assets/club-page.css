@@ -795,3 +795,17 @@ html[data-theme="light"] .app-players-table.club-roster-table[data-players-table
 .club-record-ties summary{cursor:pointer}
 .club-record-ties[open]{width:100%}
 .club-first-paint-records[hidden]{display:none}
+.club-records .app-competition-stat-grid:has([data-club-player-card]){
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr));grid-auto-rows:180px
+}
+.club-records .app-history-record-group [data-club-player-card]{
+ width:94%;justify-self:center;
+ grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);
+ align-content:start;padding:10px 12px;gap:8px
+}
+.club-records .app-history-player-footer{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:8px;align-items:center}
+.club-records .app-history-player-footer[hidden]{display:none}
+.club-records .app-history-player-footer .app-history-season{color:var(--muted);font-size:.78rem}
+.club-records .app-history-player-name-row .app-skeleton-bar{width:8ch;height:.7em}
+.club-records .app-history-player-context .app-skeleton-bar{width:6ch;height:.65em}
+.club-records .app-history-player-detail:hover{border-color:var(--focus);text-decoration:none}

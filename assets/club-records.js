@@ -66,6 +66,18 @@
   });
   return {records,players};
  }
+ function playerHolders(sources,clubId){
+  const holders=new Map();
+  for(const source of sources){
+   let holder=holders.get(source.id);
+   if(!holder){
+    holder={id:source.id,name:source.name||'#'+source.id,clubs:[]};
+    holders.set(source.id,holder);
+   }
+   holder.clubs.push({clubId,season:source.season});
+  }
+  return [...holders.values()];
+ }
  function render({selected,historySnapshot,language='en',search='',ordinal,index}){
   const w=words[language]||words.en,clubKey=selected.countryId+'-'+selected.clubId;
   const params=new URLSearchParams(search),scope=['verified','all-time'].includes(params.get('scope'))?'verified':'season';
@@ -102,13 +114,31 @@
    return '<article class="app-competition-stat-card"><h5 class="app-competition-stat-label">'+label(key)+'</h5>'+
     '<strong class="app-competition-stat-value">'+amount+'</strong>'+(first?'<div class="club-records-sources"><span>'+context(first)+'</span>'+more+'</div>':'')+'</article>';
   }
+  function playerCard({key,value,sources}){
+   const holders=playerHolders(sources,clubKey),first=holders[0];
+   const count=first?(holders.length>1?holders.length-1:first.clubs.length-1):0;
+   const extra=count?'<button type="button" class="app-history-player-detail" aria-haspopup="dialog" data-club-record-detail="'+key+
+    '" aria-label="'+escape(w.details)+' (+'+count+')">+'+count+'</button>':'';
+   const name=first?'<a class="app-history-player-name app-world-standing-club-link" href="/players/'+first.id+'">'+escape(first.name)+'</a>':'';
+   const club=index?.clubs.get(clubKey)?.primaryName||clubKey;
+   const subtitle=first?'<a class="app-world-standing-club-link" href="'+escape(selected.base)+'/overview">'+escape(club)+'</a>':'';
+   const season=first?.clubs[0].season;
+   const slot='<span class="fa-dev-stats-player-portrait" aria-hidden="true"'+(first?' data-club-record-portrait="'+first.id+'"':'')+'></span>';
+   const bar='<span class="app-skeleton-bar"></span>';
+   return '<article class="app-competition-stat-card" data-club-player-card><h5 class="app-competition-stat-label">'+label(key)+'</h5>'+
+    '<strong class="app-competition-stat-value">'+(loading?bar:value??'—')+'</strong>'+
+    '<div class="app-history-player-footer"'+(!loading&&!first?' hidden':'')+'>'+slot+'<div class="app-history-player-labels">'+
+    '<div class="app-history-player-name-row">'+(loading?bar:name+extra)+'</div>'+
+    '<div class="app-history-player-context">'+(loading?bar:subtitle)+'</div></div>'+
+    (season?'<span class="app-history-season">'+escape(w.season+' '+season)+'</span>':'')+'</div></article>';
+  }
   function group(key,cards,message=''){
    return '<section class="app-history-record-group"><h4>'+label(key)+'</h4>'+
     '<div class="app-competition-stat-grid">'+cards+'</div>'+(message?'<p class="club-records-note" role="status">'+escape(message)+'</p>':'')+'</section>';
   }
   return '<section class="club-records" aria-busy="'+loading+'">'+controls+
    group('team',data.records.map(card).join(''),note)+
-   group('player',data.players.map(card).join(''))+'</section>';
+   group('player',data.players.map(playerCard).join(''))+'</section>';
  }
- return Object.freeze({words,seasonKeys,careerKeys,select,render});
+ return Object.freeze({words,seasonKeys,careerKeys,select,playerHolders,render});
 });
