@@ -7,7 +7,8 @@ export interface VerifiedPlayerMatch {
   penalties:{home:number;away:number}|null};
  performance:{started:boolean;minutes:number;positions:string[];goals:number;
   assists:number|null;yellowCards:number|null;redCards:number|null;
-  cleanSheets:number|null;rating:number|null;ratingVersion:'test-rating-v1'|null};
+  cleanSheets:number|null;rating:number|null;ratingVersion:'test-rating-v1'|null;
+  mvp:boolean|null};
 }
 export interface VerifiedMatchMeta {kind:string;phaseId:string;neutral:boolean;leg:number|null;round:number;marker:string}
 export function collectFrozenPlayerMatches(

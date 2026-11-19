@@ -5,6 +5,7 @@ export interface MatchPlayerStatistics {
  yellowCards:number|null;redCards:number|null;cleanSheets:number|null;rating:number|null;
 }
 export interface MatchStatistics {
+ mvp:import('./match-mvp-v1.mjs').MatchMvpProjectionV1;
  ratingVersion:'test-rating-v1'|null;
  home:{kind:'real_xi'|'team_fallback';unattributedGoals:number;players:MatchPlayerStatistics[]};
  away:{kind:'real_xi'|'team_fallback';unattributedGoals:number;players:MatchPlayerStatistics[]};

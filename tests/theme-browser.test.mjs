@@ -770,9 +770,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.deepEqual(marginCard,{value:marginValue,entries:margins.filter(item=>item.value===marginValue).map(({season,club})=>({season,club}))});
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['attack','defence','wins','points','goalDifference','margin']);
       // HISTORY-UI: both scopes reserve six metrics; unverified player data must remain empty, not shrink the grid.
-      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),6,'Six seasonal player record slots');
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])') .length"),6,'Six seasonal player record slots');
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
-      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),6,'Six all-time player record slots');
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])') .length"),6,'Six all-time player record slots');
       assert.equal(await run("!!document.querySelector('.app-history-dev [data-history-player-records] strong,.app-history-dev [data-history-player-records] [data-club-crest]')"),false);
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])')].map(c=>c.dataset.historyRecord)"),['titles','podiums','streak','totalWins','totalGoals','totalPoints']);
       const tiedExpansion=await run(`(async()=>{
@@ -998,7 +998,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await waitForHistoryArchive('/competitions/it-1/history');
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])').length"),6,'DEV History supports All-time scope');
-      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),6,'Six all-time player record slots');
+      assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])') .length"),6,'Six all-time player record slots');
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"season\"]').click()");
       await snap('HISTORY '+width+' '+theme,width,900);
       const historyLabelGeometry=await run("(()=>{const l=document.querySelector('.app-history-dev [data-history-record=attack]>.app-competition-stat-label'),c=l.parentElement,s=getComputedStyle(l),a=l.getBoundingClientRect(),b=c.getBoundingClientRect();return {family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,line:s.lineHeight,color:s.color,spacing:s.letterSpacing,caps:s.textTransform,top:Math.round((a.top-b.top)*100)/100,left:Math.round((a.left-b.left)*100)/100,slot:getComputedStyle(c).getPropertyValue('--fa-record-heading').trim()}})()");

@@ -1,6 +1,7 @@
 /** Unwired #613 pure simulation candidate. No DB reads, writes or official result side effects. */
 import {ATTRIBUTES,calculatePositionSuitability} from './players-generator-core.mjs';
 import {validateRecordedMatchTimelineV1,VERIFIED_EVENT_MODEL_VERSION} from './match-event-validation-v1.mjs';
+import {validateMatchMvpV1} from './match-mvp-v1.mjs';
 
 export const LINEUP_SIMULATOR_VERSION='temporary-lineup-v1';
 // #650: versioned test-only evidence, not a realistic player evaluation model.
@@ -373,6 +374,7 @@ export async function buildCandidateMatchReceiptV1(match,outcome){
     p.name!==null&&(typeof p.name!=='string'||!p.name.trim()||p.name.trim()!==p.name||p.name!==p.name.normalize('NFC'))||
     p.nationality!==null&&(typeof p.nationality!=='string'||!/^[A-Z]{3}$/.test(p.nationality))))error('receipt player identities');
  }
+ validateMatchMvpV1(outcome); // Old unversioned receipts remain unchanged.
  const fixture={matchId,season,day,generation,competitionId,fixtureId,homeClubId,awayClubId,sourceHash};
  const payload={schemaVersion:eventV2?2:1,authority:'candidate-only',algorithmVersion:LINEUP_SIMULATOR_VERSION,
   fixture,result:outcome};

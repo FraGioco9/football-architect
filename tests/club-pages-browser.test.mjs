@@ -567,7 +567,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          '<td class="club-history-total-label"><span class="club-history-total-value">Total</span></td><td></td>'+
          ['30','18','10','12','104','52','+52',''].map(x=>'<td><span class="club-history-stat-value">'+x+'</span></td>').join('')+'</tr>'+
         '<tr class="club-history-competition-row" data-club-history-detail="777-${width}" hidden>'+
-         '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings?season=777"><span class="club-history-competition-text">Very Long International Competition Championship Name For Mobile</span></a></th>'+
+         '<td></td><th scope="row" class="club-history-competition-value"><span class="club-history-competition-identity"><span class="fa-competition-mark" aria-hidden="true"></span><a class="club-history-competition-link" href="/competitions/it-1/standings?season=777"><span class="club-history-competition-text">Very Long International Competition Championship Name For Mobile</span></a></span></th>'+
          '<td>Quarter-finals, second leg</td>'+
          ['30','18','7','5','54','29','+25','61'].map(x=>'<td><span class="club-history-stat-value">'+x+'</span></td>').join('')+'</tr></tbody></table>';
        // Give each viewport an independent synthetic season key: the real
@@ -754,8 +754,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const compCell=row.querySelector('.club-history-competition-value');
        const compBox=compCell.getBoundingClientRect();
        const competitionName=row.querySelector('.club-history-competition-text');
+       const competitionIdentity=row.querySelector('.club-history-competition-identity');
+       const competitionLogo=row.querySelector('.fa-competition-mark');
        const competitionRange=document.createRange();competitionRange.selectNodeContents(competitionName);
-       const competitionStart=competitionRange.getBoundingClientRect().left-compBox.left;
+       const competitionStart=competitionIdentity.getBoundingClientRect().left-compBox.left;
+       const competitionTextInset=competitionRange.getBoundingClientRect().left-competitionIdentity.getBoundingClientRect().left;
        const summary=wrap.querySelector('.club-history-season-row');
        const total=summary.querySelector('.club-history-total-value');
        const totalCell=total.closest('td'),totalBox=totalCell.getBoundingClientRect();
@@ -774,9 +777,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const positionLayout=getComputedStyle(position);
        const stat=row.querySelector('td:nth-child(4)');
        return {expanded:button.getAttribute('aria-expanded'),hidden:row.hidden,
-        competitionStart,totalStart,totalSkeletonStart,
+        competitionStart,competitionTextInset,totalStart,totalSkeletonStart,
         competitionTextCenter,numericTextCenter,competitionCellCenter:compBox.top+compBox.height/2,
-        competitionTextPosition:getComputedStyle(link).position,
+        competitionTextPosition:getComputedStyle(competitionIdentity).position,
+        competitionLinkPosition:getComputedStyle(link).position,
+        logoAriaHidden:competitionLogo.getAttribute('aria-hidden'),
         positionLayout:positionLayout.display,positionColumns:positionLayout.gridTemplateColumns,
         positionAlign:positionLayout.alignItems,positionLabelSize:positionLabel.fontSize,
         positionValueSize:positionLayout.fontSize,
@@ -795,7 +800,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(expanded.hidden,false,'History competition row appears at '+width);
       assert.equal(expanded.linkHref,'/competitions/it-1/standings?season=777');
       if(width>620){
-       assert.equal(expanded.competitionTextPosition,'absolute','History Competition is anchored to its row');
+       assert.equal(expanded.competitionTextPosition,'absolute','History Competition identity is anchored to its row');
+       assert.equal(expanded.competitionLinkPosition,'static','the linked name is not an absolutely positioned oversized click target');
+       assert.equal(expanded.logoAriaHidden,'true','History logo stays decorative');
+       assert.ok(Math.abs(expanded.competitionTextInset-31)<=1,'name follows the separate 24px icon and 7px gap');
        assert.ok(Math.abs(expanded.competitionStart-expanded.totalStart)<=1 &&
         Math.abs(expanded.competitionStart-expanded.totalSkeletonStart)<=1,
         'Club History Competition, Total text and first-paint Total skeleton have identical x at '+width+': '+JSON.stringify(expanded));
@@ -827,9 +835,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       probe.id='club-history-link-hitbox-probe';
       const width=Math.min(380,window.innerWidth-24);
       probe.style.cssText='position:fixed;top:96px;left:12px;z-index:2147483647;background:var(--surface);width:'+width+'px';
-      probe.innerHTML='<table class="club-history-table" style="width:100%;min-width:0"><colgroup><col style="width:44px"><col></colgroup><tbody><tr class="club-history-competition-row"><td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings"><span class="club-history-competition-text">League gyp</span></a></th></tr></tbody></table>';
+      probe.innerHTML='<table class="club-history-table" style="width:100%;min-width:0"><colgroup><col style="width:44px"><col></colgroup><tbody><tr class="club-history-competition-row"><td></td><th scope="row" class="club-history-competition-value"><span class="club-history-competition-identity"><span class="fa-competition-mark" aria-hidden="true"></span><a class="club-history-competition-link" href="/competitions/it-1/standings"><span class="club-history-competition-text">League gyp</span></a></span></th></tr></tbody></table>';
       document.body.append(probe);
       const link=probe.querySelector('a'),cell=probe.querySelector('th'),label=probe.querySelector('.club-history-competition-text');
+      const mark=probe.querySelector('.fa-competition-mark');
       window.__historyProbeClickCount=0;
       link.addEventListener('click',e=>{e.preventDefault();window.__historyProbeClickCount++});
       const a=link.getBoundingClientRect(),c=cell.getBoundingClientRect(),t=label.getBoundingClientRect();
@@ -837,6 +846,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       if(c.right-a.right<24)throw Error('History competition link unexpectedly occupies its empty cell');
       return {
         blank:{x:Math.floor((a.right+c.right)/2),y:Math.floor((a.top+a.bottom)/2)},
+        logo:{x:Math.floor((mark.getBoundingClientRect().left+mark.getBoundingClientRect().right)/2),
+         y:Math.floor((mark.getBoundingClientRect().top+mark.getBoundingClientRect().bottom)/2)},
         label:{x:Math.floor((t.left+t.right)/2),y:Math.floor((t.top+t.bottom)/2)},
         lineHeight:parseFloat(style.lineHeight),fontSize:parseFloat(style.fontSize),overflow:style.overflow
       };
@@ -853,6 +864,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       'the empty cell must not underline competition text');
     await clickHistory(historyHitBoxes.blank);
     assert.equal(await run('window.__historyProbeClickCount'),0,'the empty cell is not clickable');
+    await moveToHistory(historyHitBoxes.logo);
+    assert.equal(await run("getComputedStyle(document.querySelector('#club-history-link-hitbox-probe .club-history-competition-text')).textDecorationLine"),'none',
+      'hovering the passive competition mark cannot underline its linked name');
+    await clickHistory(historyHitBoxes.logo);
+    assert.equal(await run('window.__historyProbeClickCount'),0,'clicking the competition mark never opens the link');
     await moveToHistory(historyHitBoxes.label);
     assert.equal(await run("getComputedStyle(document.querySelector('#club-history-link-hitbox-probe .club-history-competition-text')).textDecorationLine"),'underline',
       'hovering the actual name underlines only that name');
@@ -882,8 +898,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         '<td class="app-player-stats-competition"><span class="app-player-stats-total-value">Total</span></td>'+
         '<td class="app-player-stats-club"></td>'+metrics()+'</tr>'+
         '<tr class="app-player-stats-competition-row"><td></td><th class="app-player-stats-competition">'+
+        '<span class="app-player-stats-competition-identity"><span class="fa-competition-mark" aria-hidden="true"></span>'+
         '<a class="app-player-stats-link app-player-stats-competition-link" href="/competitions/it-1/standings">'+
-        '<span class="app-player-stats-competition-name">League gyp</span></a></th>'+
+        '<span class="app-player-stats-competition-name">League gyp</span></a></span></th>'+
         '<td class="app-player-stats-club"><span class="app-player-stats-club-identity">'+
         '<span class="app-players-club-mark app-player-stats-club-crest" aria-hidden="true"></span>'+
         '<a class="app-player-stats-link app-player-stats-club-link" href="/clubs/it/1/overview">'+
@@ -995,6 +1012,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        seasonLabel.textContent=seasonTextOriginal;
        const link=probe.querySelector('.app-player-stats-club-link'),name=link.querySelector('.app-player-stats-club-name');
        const competitionLink=probe.querySelector('.app-player-stats-competition-link');
+       const competitionIdentity=probe.querySelector('.app-player-stats-competition-identity');
+       const competitionMark=probe.querySelector('.app-player-stats-competition-identity .fa-competition-mark');
        const bounds=rect(name),compBounds=rect(competitionLink);
        const compCell=rect(competitionLink.closest('th')),clubCell=rect(link.closest('td'));
        const competitionStyle=getComputedStyle(competitionLink);
@@ -1017,7 +1036,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         const box=range.getBoundingClientRect();return box.top+box.height/2;};
        const compName=probe.querySelector('.app-player-stats-competition-name');
        const compRange=document.createRange();compRange.selectNodeContents(compName);
-       const competitionStart=compRange.getBoundingClientRect().left-competitionLink.closest('th').getBoundingClientRect().left;
+       const competitionStart=competitionIdentity.getBoundingClientRect().left-competitionLink.closest('th').getBoundingClientRect().left;
+       const competitionTextInset=compRange.getBoundingClientRect().left-competitionIdentity.getBoundingClientRect().left;
        const compTextCenter=glyphCenter(compName);
        const clubTextCenter=glyphCenter(name);
        const detailNumberCenter=glyphCenter(detailCells[0]);
@@ -1030,8 +1050,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         crestRestoreTextShift:nameRestoredAfterCrest-clubTextLeft,
         crestTextGap:clubTextLeft-crestRight,
         competition:compVisual,clubCenterOffset,compTextCenter,clubTextCenter,detailNumberCenter,
-        competitionPosition:competitionStyle.position,competitionCellCenter:compCell.y,
-        competitionStart,
+        competitionPosition:getComputedStyle(competitionIdentity).position,
+        competitionLinkPosition:competitionStyle.position,competitionCellCenter:compCell.y,
+        competitionStart,competitionTextInset,competitionMarkCenter:rect(competitionMark),
         seasonTextOffset,loadingSeasonOffset,seasonLoadedX,loadingSeasonX,
         totalLoadedAnchor,totalPendingAnchor,seasonInkOffset,totalInkOffset,samplePaint,
         careerPaint,careerTextLeft,careerInkOffset,
@@ -1092,7 +1113,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.ok(Math.abs(placement.competition.centerOffset)<3.5 && Math.abs(placement.clubCenterOffset)<3.5,
        'competition and club identities stay vertically centered at '+width+': '+JSON.stringify(placement));
       if(width>620){
-       assert.equal(placement.competitionPosition,'absolute','Player Competition is anchored to the desktop row');
+       assert.equal(placement.competitionPosition,'absolute','Player Competition identity is anchored to the desktop row');
+       assert.equal(placement.competitionLinkPosition,'static','only the Player Stats name is clickable');
+       assert.ok(Math.abs(placement.competitionTextInset-31)<=1,'the Player Stats name follows the passive logo');
        assert.ok(Math.abs(placement.competitionStart-placement.totalLoadedAnchor.x)<=1 &&
         Math.abs(placement.competitionStart-placement.totalPendingAnchor.x)<=1,
         'Player Competition text must start where Total text and its skeleton start at '+width+': '+JSON.stringify(placement));
@@ -1108,6 +1131,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        'Player Stats competition text leaves room for g/p descenders and underline at '+width);
       if(width===1440){
        assert.equal(placement.linkOverflow,'visible','the real underline is not clipped');
+       await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:placement.competitionMarkCenter.x,y:placement.competitionMarkCenter.y,button:'none'});
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-competition-name')).textDecorationLine"),'none',
+        'hovering the passive Player Stats logo cannot underline the linked name');
        await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:placement.competition.x,y:placement.competition.y,button:'none'});
        assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-competition-name')).textDecorationLine"),'underline',
         'Player Stats competition name restores the visible text-only underline');
@@ -1184,12 +1210,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }
     await run("document.querySelector('[data-club-roster-view=stats]').click()");
     await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(5)')?.textContent==='110'");
-    // Real Chromium: shared identity tracks remain fixed, nine metric columns
+    // Real Chromium: shared identity tracks remain fixed, ten metric columns
     // are differentiated and the last Rating column matches Standings Pts.
     const statsLayout=await run("(()=>{const table=document.querySelector('.club-roster-table[data-players-table-mode=stats]');const headers=[...table.querySelectorAll('thead th')];const style=getComputedStyle(table);const fixed=['--app-players-flag-width','--app-players-name-width','--app-players-positions-width'].map(k=>parseFloat(style.getPropertyValue(k)));return {keys:headers.map(h=>h.querySelector('[data-club-roster-sort]')?.dataset.clubRosterSort),widths:headers.map(h=>h.getBoundingClientRect().width),fixed,theme:document.documentElement.dataset.theme,headColor:getComputedStyle(headers.at(-1)).backgroundColor,cellColor:getComputedStyle(table.querySelector('tbody td:last-child')).backgroundColor};})()");
-    assert.deepEqual(statsLayout.keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating']);
+    assert.deepEqual(statsLayout.keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','mvpAwards','averageRating']);
     assert.ok(statsLayout.fixed.every((v,i)=>Number.isFinite(v)&&Math.abs(statsLayout.widths[i]-v)<2),'Flag, Player, Positions retain shared responsive widths');
-    assert.ok(statsLayout.widths[3]>statsLayout.widths[5]&&statsLayout.widths[7]>statsLayout.widths[8]&&statsLayout.widths[11]>statsLayout.widths[10],'numeric widths follow content');
+    assert.ok(statsLayout.widths[3]>statsLayout.widths[5]&&statsLayout.widths[7]>statsLayout.widths[8]&&statsLayout.widths[12]>statsLayout.widths[11],'numeric widths follow content');
     assert.equal(statsLayout.headColor,statsLayout.theme==='light'?'rgb(183, 220, 199)':'rgb(48, 92, 76)');
     assert.equal(statsLayout.cellColor,statsLayout.theme==='light'?'rgb(212, 235, 221)':'rgb(38, 71, 62)');
     for(const width of [320,1440]){

@@ -149,7 +149,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 /* #578 Player Stats: reuse Club History's table geometry and disclosure motion. */
 .app-player-detail-stats{margin-top:5px;min-width:0}
 .app-player-stats-table-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;overscroll-behavior-x:contain}
-.app-player-stats-table{--player-stats-row-height:56px;width:100%;min-width:1060px;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.app-player-stats-table{--player-stats-row-height:56px;width:100%;min-width:1120px;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .app-player-stats-col-season{width:140px}
 .app-player-stats-col-competition{width:190px}
 .app-player-stats-col-club{width:170px}
@@ -229,14 +229,29 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-stats-competition-row[hidden]{display:none}
 .app-player-stats-competition-row{background:transparent}
 .app-player-stats-competition-row .app-player-stats-competition{padding-inline-start:10px}
+/* #724: the passive competition logo sits beside the text-only link. */
+.app-player-stats-table .app-player-stats-competition-identity{
+ display:inline-flex;align-items:center;gap:7px;min-width:0;max-width:100%;min-height:24px;
+ vertical-align:middle;
+}
+.app-player-stats-table .app-player-stats-competition-identity .fa-competition-mark{
+ display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;
+ width:24px;height:24px;overflow:hidden;color:var(--muted);
+}
+.app-player-stats-table .app-player-stats-competition-identity .fa-competition-mark :is(img,svg){
+ display:block;width:100%;height:100%;object-fit:contain;
+}
+.app-player-stats-table .app-player-stats-competition-identity .app-player-stats-competition-link{flex:0 1 auto;min-width:0}
+.app-player-stats-table .app-player-stats-competition-identity .app-player-stats-competition-name{
+ min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 /* Competition starts on the same x as the header, Total and Total skeleton;
    its 24px centered line tracks the verified club/stat text on y. */
 @media(min-width:621px){
  .app-player-stats-table .app-player-stats-competition-row .app-player-stats-competition{position:relative}
- .app-player-stats-table .app-player-stats-competition-row a.app-player-stats-competition-link{
+ .app-player-stats-table .app-player-stats-competition-row .app-player-stats-competition-identity{
   position:absolute;inset-inline-start:10px;top:50%;transform:translateY(-50%);
-  display:inline-flex;align-items:center;block-size:24px;min-height:24px;
-  max-inline-size:calc(100% - 28px);
+  block-size:24px;min-height:24px;max-inline-size:calc(100% - 28px);
  }
 }
 .app-player-stats-link{
@@ -369,8 +384,14 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
   display:inline;white-space:normal;overflow:visible;text-overflow:clip;
   overflow-wrap:anywhere;line-height:1.5;
  }
- /* Retain the crest/name's private flex alignment in the mobile grid too.
-    Competition links remain plain inline text and can wrap normally. */
+ /* The passive competition mark stays beside a wrapping name. */
+ .app-player-stats-table .app-player-stats-competition-row .app-player-stats-competition-identity{
+  display:inline-flex;align-items:center;gap:7px;max-width:100%;white-space:normal;
+ }
+ .app-player-stats-table .app-player-stats-competition-row .app-player-stats-competition-name{
+  white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;
+ }
+ /* Retain the crest/name's private flex alignment in the mobile grid too. */
  .app-player-stats-table .app-player-stats-competition-row a.app-player-stats-club-link{
   display:inline-flex;align-items:center;min-height:24px;line-height:1.5;
  }
@@ -423,6 +444,8 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-matches-value{display:inline-flex;box-sizing:border-box;align-items:center;min-height:24px;height:24px;line-height:1.5;vertical-align:middle}
 .app-player-matches-number>.app-player-matches-value{width:100%;justify-content:flex-end;text-align:right}
 .app-player-matches-venue>.app-player-matches-value{justify-content:center}
+/* Loading Venue uses the same centered track as the hydrated 18px icon. */
+.app-player-matches-loading>:nth-child(5)>.app-player-matches-value{justify-content:center}
 .app-player-matches-club>.app-player-matches-value{flex:1 1 auto;min-width:0}
 /* Match the fixed-size, pulsing Club Fixtures bars and circular crest skeleton. */
 .app-player-matches-loading .club-fp-bar{
@@ -457,7 +480,10 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  .app-player-matches-row[data-player-match-href]:hover{background:color-mix(in srgb,var(--fa-shell-accent) 11%,var(--surface))}
 }
 .app-player-matches-row[data-player-match-href]:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
-.app-player-matches-venue-icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;vertical-align:middle}
+.app-player-matches-venue-icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;vertical-align:middle;cursor:help}
+.app-player-matches-venue-icon:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:3px}
+.calendar-marker-tooltip.app-player-matches-venue-tooltip{display:block!important}
+.calendar-marker-tooltip.app-player-matches-venue-tooltip[hidden]{display:none!important}
 .app-player-matches-venue-icon svg{display:block;width:18px;height:18px}
 .app-player-matches-club{display:flex;align-items:center;gap:6px;min-width:0;max-width:100%}
 .app-player-matches-crest{position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;flex:0 0 24px;width:24px;height:24px;min-width:24px}

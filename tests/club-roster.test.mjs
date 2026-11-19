@@ -11,17 +11,20 @@ test('Roster generated first paint exactly matches the canonical bootstrap and S
  const canonical=generator.match(/(function bootstrapClubFirstPaint\([\s\S]*?\n\})\nfunction buildClubShell/);
  assert.ok(canonical);
  assert.equal(embedded[1],canonical[1],'published HTML must be regenerated when first-paint code changes');
- const [labels,menus,keys,help]=JSON.parse('['+embedded[2]+']');
+ const [labels,tabs,menus,keys,help]=JSON.parse('['+embedded[2]+']');
  const expected=model.rosterSortKeys('stats').slice(3);
  assert.deepEqual(keys,expected,'parser-time Stats columns use the same sort keys as hydration');
- assert.equal(keys.length,9,'Stats shows nine numerical columns, never legacy four-stat headers');
+ assert.equal(keys.length,10,'Stats shows ten numerical columns, never legacy four-stat headers');
  assert.deepEqual(labels,model.rosterLabels,'parser-time headers match the current five-language model');
+ assert.deepEqual(tabs,model.rosterTabs,'parser-time Roster subview labels match hydration in all five languages');
  assert.deepEqual(help,model.rosterStatHelp,'parser-time metric tooltips and labels match hydration');
  assert.deepEqual(Object.keys(menus),['group','competition']);
  for(const lang of ['en','de','es','fr','it']){
   assert.equal(labels[lang].length,keys.length+4);
   assert.ok(keys.every(k=>help[lang][k]));
+  assert.equal(tabs[lang][1],({en:'Stats',de:'Statistiken',es:'Estadísticas',fr:'Statistiques',it:'Statistiche'})[lang]);
  }
+ assert.match(generator,/rosterTabs\[locale\]\[1\]/);
  assert.match(generator,/wordsForRoster\.slice\(1,1\+statKeys\.length\)/);
  assert.match(generator,/\['nationality','name','positions',\.\.\.statKeys\]/);
  assert.match(generator,/wordsForRoster\[statKeys\.length\+1\]/);
@@ -32,6 +35,8 @@ test('Roster first paint exposes Info, Stats and Attributes and reserves five ro
  const html=read('clubs/_shared/index.html');
  for(const view of ['info','stats','attributes'])assert.ok(html.includes('data-club-roster-view="'+view+'"'));
  assert.equal((html.match(/data-club-roster-view="/g)||[]).length,3);
+ assert.match(html,/data-club-roster-view="stats"[^>]*>Stats<\/a>/);
+ assert.doesNotMatch(html,/data-club-roster-view="stats"[^>]*>undefined<\/a>/);
  assert.equal((html.match(/class="app-players-loading-row"/g)||[]).length,5);
 });
 test('CLUB-ROSTER-01 keeps all current players, across five locales and five subviews',async()=>{
@@ -67,12 +72,14 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
   for(const label of expectedCategories[language])assert.ok(attributes.includes('>'+label+'</div>'));
   const stats=model.render(manifest,selected,language,'?view=stats',null,1,null,{...snapshot,season:2});
   assert.match(stats,/data-roster-mode="stats"/);
+  assert.match(stats,new RegExp('data-club-roster-view="stats"[^>]*>'+model.rosterTabs[language][1]+'</a>'));
+  assert.doesNotMatch(stats,/data-club-roster-view="stats"[^>]*>undefined<\/a>/);
   for(const panel of [attributes,stats])assert.match(panel,/data-club-roster-control="(?:group|competition)"[\s\S]+?<span class="club-roster-count">/);
   assert.doesNotMatch(stats,/club-roster-scope/);
   assert.equal((stats.match(/class="club-roster-player-link"/g)||[]).length,65);
-  for(const key of ['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating'])
+  for(const key of ['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','mvpAwards','averageRating'])
    assert.match(stats,new RegExp('data-club-roster-sort="'+key+'"'));
-  assert.equal((stats.match(/<th scope="col"/g)||[]).length,12,language);
+  assert.equal((stats.match(/<th scope="col"/g)||[]).length,13,language);
   assert.doesNotMatch(html,/club-empty|pagination|pageSize|development_aptitude|initial_age|<h2>Roster/);
   assert.ok(html.includes('65 '),language);
   for(const [group,length] of [['technical',11],['mental',7],['physical',7],['goalkeeping',7]]){
@@ -130,7 +137,8 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
   goalsAssistsPer90:assists===null||!minutes?null:Math.round((goals+assists)*90/minutes*100)/100
  });
  const domestic=make(4,2,600,7.2,5,null,7,1,1,8);
- const international=make(0,null,90,null,0,0,1,null,null,1);
+ const international=make(0,null,15,null,0,0,0,1,null,1);
+ international.mvpAwards=0;international.mvpCoveredAppearances=1;
  const combined=make(4,null,690,7.1,6,null,8,null,null,9);
  const players=[
   {id:1,display_name:'First Player',nationality:'ITA',primary_position:'ST',secondary_positions:[],stats:combined,competitionStats:{'IT-1':domestic,'int-1':international}},
@@ -142,10 +150,10 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  assert.ok(all.includes('>7.1</td>')&&all.includes('>9 (—)</td>'),'Rating and Apps (Subs) retain recorded values without a visible XI column');
  assert.ok(all.includes('>2</td>'),'recorded yellow cards appear');
  const keys=[...all.matchAll(/data-club-roster-sort="([^"]+)"/g)].map(m=>m[1]);
- assert.deepEqual(keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating']);
+ assert.deepEqual(keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','mvpAwards','averageRating']);
  assert.ok(!keys.includes('starts'),'XI removed from the Stats UI and sort');
  assert.ok(!all.includes('data-roster-stat-help="Starts"'));
- assert.equal((all.match(/data-roster-stat-help="/g)||[]).length,9);
+ assert.equal((all.match(/data-roster-stat-help="/g)||[]).length,10);
  assert.ok(all.indexOf('data-club-roster-sort="goalsAssistsPer90"')<
   all.indexOf('data-club-roster-sort="yellowCards"'));
  assert.ok(all.indexOf('data-club-roster-sort="averageRating"')>
@@ -158,19 +166,22 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  for(const value of ['>7.2</td>','>0.90</td>','>8 (1)</td>'])
   assert.ok(domesticHtml.includes(value),value);
  const internationalHtml=render('?view=stats&competition=international');
- assert.ok(internationalHtml.includes('>1 (—)</td>')&&internationalHtml.includes('>0</td>'),'international scope excludes the removed XI display');
+ assert.ok(internationalHtml.includes('>1 (1)</td>')&&internationalHtml.includes('>0</td>'),'international scope excludes the removed XI display');
+ assert.match(internationalHtml,/>0<\/td><td><span[^>]*>—<\/span><\/td><\/tr>/,'a substitute with no recorded award has zero MVPs before Rating');
  assert.ok(!internationalHtml.includes('>7.2</td>'));
+ assert.match(all,/<td><span[^>]*>—<\/span><\/td><td>7\.1<\/td>/,
+  'legacy coverage remains unavailable in the all-competitions MVP column');
  const sorted=render('?view=stats&competition=domestic&sort=goalsAssistsPer90&order=desc');
  assert.ok(sorted.includes('aria-sort="descending"'));
  assert.ok(sorted.indexOf('href="/players/1"')<sorted.indexOf('href="/players/2"'));
  assert.ok(render('?view=stats&competition=domestic&sort=assists&order=asc').includes('aria-sort="ascending"'));
  for(const language of ['en','de','es','fr','it'])
-  assert.equal((model.render(manifest,club,language,'?view=stats',null,1,null,snapshot).match(/<th scope="col"/g)||[]).length,12);
+  assert.equal((model.render(manifest,club,language,'?view=stats',null,1,null,snapshot).match(/<th scope="col"/g)||[]).length,13);
  const css=read('assets/club-page.css');
  assert.match(css,/width:var\(--club-roster-stat-share\)/);
  assert.doesNotMatch(css,/--club-roster-stat-space/,'mixed percentage/length calc breaks first-paint <col> geometry');
  const fractions=[...css.matchAll(/--club-roster-stat-share:([\d.]+)%\}/g)].map(m=>Number(m[1]));
- assert.equal(fractions.length,9);
+ assert.equal(fractions.length,10);
  assert.ok(Math.abs(fractions.reduce((a,b)=>a+b,0)-100)<1e-9);
  assert.match(css,/thead th:last-child\{\s*background:#305c4c;color:#effff4;font-weight:800/);
  assert.match(css,/tbody tr:not\(\.app-players-loading-row\):not\(\.app-players-empty-row\)>td:last-child\{\s*background:#26473e;color:#e6ffed;font-weight:800/);

@@ -17,7 +17,7 @@ test('one frozen projection provides real identities, roles, minutes, goals and 
  assert.equal(stats.home.players[1].goals,1);
  assert.equal(stats.home.players[1].assists,null);assert.equal(stats.home.players[1].yellowCards,null);assert.equal(stats.home.players[1].redCards,null);
  assert.equal(stats.home.players[1].rating,6.7);
- assert.deepEqual(Object.keys(stats).sort(),['away','home','ratingVersion']);
+ assert.deepEqual(Object.keys(stats).sort(),['away','home','mvp','ratingVersion']);
  assert.equal(Object.hasOwn(stats,'events'),false);
  assert.equal(Object.hasOwn(stats,'eventModelVersion'),false);
  assert.deepEqual(stats.away.players,[]);
@@ -98,7 +98,7 @@ test('yellow card counters are recorded for v2, including second-yellow red',()=
  assert.equal(stats.home.players.find(p=>p.playerId===2).yellowCards,2);
  assert.equal(stats.home.players.find(p=>p.playerId===2).redCards,1);
  assert.equal(stats.home.players.find(p=>p.playerId===1).yellowCards,0);
- assert.deepEqual(Object.keys(stats).sort(),['away','home','ratingVersion']);
+ assert.deepEqual(Object.keys(stats).sort(),['away','home','mvp','ratingVersion']);
  const direct=structuredClone(match);
  direct.events=[{type:'red',side:'home',playerId:2,minute:67,reason:'direct'}];
  assert.equal(frozenMatchPlayerStatistics(direct).home.players[1].yellowCards,0);

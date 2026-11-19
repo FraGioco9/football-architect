@@ -64,7 +64,7 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.ok(section.includes('data-match-pitch role="img"'));
   assert.doesNotMatch(section,/role="tablist"|role="tab"|role="tabpanel"|data-match-view-selector|data-match-view-content|data-match-view="(?:overview|stats|events)"/);
   assert.equal((section.match(/class="app-match-overview"/g)||[]).length,1);
-  assert.equal((section.match(/class="app-match-overview-fact"/g)||[]).length,6);
+  assert.equal((section.match(/class="app-match-overview-fact"/g)||[]).length,7);
   assert.equal((section.match(/class="app-match-overview-row app-match-overview-row-/g)||[]).length,3);
   assert.ok(section.includes('data-match-overview="competition"></a>'));
   assert.ok(section.includes('class="app-match-info-value app-match-overview-competition-link"'));
@@ -73,7 +73,7 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.ok(section.includes('data-match-overview-panel'));
   assert.ok(section.includes('<div class="app-match-pitch-frame">'));
   assert.ok(section.includes('<div class="app-match-pitch-overlay">'));
-  for(const field of ['competition','season','round','date','stadium','status'])
+  for(const field of ['competition','season','round','date','stadium','status','mvp'])
    assert.ok(section.includes('data-match-overview="'+field+'"'));
   assert.ok(section.indexOf('app-match-pitch-overlay')<section.indexOf('data-match-pitch role="img"'));
   assert.match(section,/data-match-overview="status"[\s\S]*<\/div>\s*<div class="app-match-pitch" data-match-pitch/);

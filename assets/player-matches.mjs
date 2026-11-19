@@ -74,6 +74,7 @@ export function createPlayerMatchesView({host,id,locale,fetchMatches,clubName,cl
  const loadingMarkup=tbody.innerHTML;
  let status='loading',reading=null,items=[],available=null,revision=null,season='all',competition='all',visibleCount=20,ticket=0;
  let tooltip=null,activeHeader=null,closeTimer=null;
+ let venueTooltip=null,activeVenue=null;
  const words=()=>copy[locale()]||copy.en;
  function tooltipNode(){
   if(tooltip)return tooltip;
@@ -105,6 +106,29 @@ export function createPlayerMatchesView({host,id,locale,fetchMatches,clubName,cl
   const left=Math.max(8,Math.min(window.innerWidth-width-8,rect.left+rect.width/2-width/2));
   const top=rect.top-height-8>=8?rect.top-height-8:Math.min(rect.bottom+8,window.innerHeight-height-8);
   tip.style.left=Math.round(left)+'px';tip.style.top=Math.round(Math.max(8,top))+'px';
+ }
+ function venueTooltipNode(){
+  if(venueTooltip)return venueTooltip;
+  venueTooltip=document.createElement('div');venueTooltip.id='app-player-matches-venue-tooltip';
+  venueTooltip.className='calendar-marker-tooltip app-player-matches-venue-tooltip';
+  venueTooltip.setAttribute('role','tooltip');venueTooltip.hidden=true;document.body.append(venueTooltip);
+  return venueTooltip;
+ }
+ function hideVenueTooltip(){
+  activeVenue?.removeAttribute('aria-describedby');activeVenue=null;
+  if(venueTooltip)venueTooltip.hidden=true;
+ }
+ function showVenueTooltip(trigger){
+  if(!trigger||!host.contains(trigger))return;
+  if(activeVenue!==trigger)hideVenueTooltip();
+  activeVenue=trigger;const tip=venueTooltipNode();
+  tip.textContent=trigger.getAttribute('aria-label')||'';tip.hidden=false;
+  trigger.setAttribute('aria-describedby',tip.id);
+  const r=trigger.getBoundingClientRect(),width=tip.offsetWidth,height=tip.offsetHeight;
+  const gap=8,edge=8,above=r.top-height-gap,below=r.bottom+gap;
+  const top=above>=edge?above:below+height<=window.innerHeight-edge?below:r.top>=window.innerHeight-r.bottom?above:below;
+  tip.style.left=Math.max(edge,Math.min(window.innerWidth-width-edge,r.left+r.width/2-width/2))+'px';
+  tip.style.top=Math.max(edge,Math.min(window.innerHeight-height-edge,top))+'px';
  }
  function renderHeaders(){
   const w=words(),mobile=window.matchMedia?.('(max-width:620px)').matches;
@@ -242,7 +266,7 @@ export function createPlayerMatchesView({host,id,locale,fetchMatches,clubName,cl
   const venue=el('td','','app-player-matches-number app-player-matches-venue');
   const venueLabel=w.venue[item.venue==='neutral'?2:item.venue==='away'?1:0];
   const icon=el('span','','app-player-matches-venue-icon');
-  icon.setAttribute('role','img');icon.setAttribute('aria-label',venueLabel);icon.title=venueLabel;
+  icon.setAttribute('role','img');icon.setAttribute('aria-label',venueLabel);icon.tabIndex=0;icon.dataset.playerMatchesVenue='';
   icon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">'+venueIcons[item.venue]+'</svg>';
   venue.append(textTrack(icon));tr.append(venue);
   const result=el('td','','app-player-matches-number app-player-matches-result');
@@ -257,6 +281,7 @@ export function createPlayerMatchesView({host,id,locale,fetchMatches,clubName,cl
   return tr;
  }
  function render(){
+  hideVenueTooltip();
   const w=words();
   host.querySelector('.app-player-matches-table').setAttribute('aria-label',tableTitles[locale()]||tableTitles.en);
   renderHeaders();
@@ -340,6 +365,8 @@ export function createPlayerMatchesView({host,id,locale,fetchMatches,clubName,cl
  bindMenu(seasonControl,'season');
  more.addEventListener('click',()=>{if(status==='ready'){visibleCount+=20;render();}});
  host.addEventListener('click',event=>{
+  const venue=event.target.closest?.('[data-player-matches-venue]');
+  if(venue){showVenueTooltip(venue);return;}
   const tip=event.target.closest?.('[data-player-matches-help]');if(tip){showTooltip(tip);return;}
   if(event.defaultPrevented||event.target.closest?.('a,button,[role="option"]'))return;
   const row=event.target.closest?.('.app-player-matches-row[data-player-match-href]');
@@ -347,25 +374,42 @@ export function createPlayerMatchesView({host,id,locale,fetchMatches,clubName,cl
  });
  host.addEventListener('keydown',event=>{
   const row=event.target;
+  if(row.matches?.('[data-player-matches-venue]')&&(event.key==='Enter'||event.key===' ')){
+   event.preventDefault();showVenueTooltip(row);return;
+  }
   if(row.matches?.('.app-player-matches-row[data-player-match-href]')&&
      (event.key==='Enter'||event.key===' ')){
    event.preventDefault();window.location.assign(row.dataset.playerMatchHref);
   }
  });
  host.addEventListener('pointerover',event=>{
+  const venue=event.target.closest?.('[data-player-matches-venue]');
+  if(venue&&event.pointerType!=='touch'){showVenueTooltip(venue);return;}
   const trigger=event.target.closest?.('[data-player-matches-help]');
   if(trigger&&event.pointerType!=='touch')showTooltip(trigger);
  });
  host.addEventListener('pointerout',event=>{
+  if(activeVenue&&(event.target===activeVenue||activeVenue.contains(event.target))&&
+     !activeVenue.contains(event.relatedTarget)&&activeVenue!==document.activeElement)hideVenueTooltip();
   if(activeHeader&&(event.target===activeHeader||activeHeader.contains(event.target))&&
      !activeHeader.contains(event.relatedTarget))hideTooltip();
  });
  host.addEventListener('focusin',event=>{
+  const venue=event.target.closest?.('[data-player-matches-venue]');
+  if(venue){showVenueTooltip(venue);return;}
   const trigger=event.target.closest?.('[data-player-matches-help]');if(trigger)showTooltip(trigger);
  });
- host.addEventListener('focusout',event=>{if(event.target===activeHeader)hideTooltip();});
- host.addEventListener('keydown',event=>{if(event.key==='Escape')hideTooltip();});
- document.addEventListener('scroll',hideTooltip,true);
- window.addEventListener('resize',()=>{hideTooltip();renderHeaders();});
+ host.addEventListener('focusout',event=>{
+  if(event.target===activeHeader)hideTooltip();
+  if(event.target===activeVenue)hideVenueTooltip();
+ });
+ host.addEventListener('keydown',event=>{if(event.key==='Escape'){hideTooltip();hideVenueTooltip();}});
+ document.addEventListener('scroll',()=>{
+  hideTooltip();
+  if(activeVenue===document.activeElement)showVenueTooltip(activeVenue);
+  else hideVenueTooltip();
+ },true);
+ window.addEventListener('resize',()=>{hideTooltip();hideVenueTooltip();renderHeaders();});
+ window.addEventListener('pagehide',hideVenueTooltip);
  return {render,load};
 }

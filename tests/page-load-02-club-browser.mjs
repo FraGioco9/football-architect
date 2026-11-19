@@ -415,7 +415,7 @@ try{
    },selector);
    if(view==='roster'){
     firstPaintRoster=await rosterLayout('.club-first-paint-roster');
-    const statsKeys=['nationality','name','positions','appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating'];
+    const statsKeys=['nationality','name','positions','appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','mvpAwards','averageRating'];
     const technical=['nationality','name','positions','passing','technique','dribbling','shooting','crossing','tackling','marking','heading'];
     const goalkeeper=['nationality','name','positions','gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
     const expected=rosterQuery.includes('view=stats')?statsKeys:
@@ -428,7 +428,7 @@ try{
     assert.ok(firstPaintRoster.identityWidths.every((x,i)=>Math.abs(firstPaintRoster.widths[i]-x)<2),
      'fixed Flag/Player/Positions tracks match their actual shared width at '+width+'px');
     if(rosterQuery.includes('view=stats')){
-     assert.equal(firstPaintRoster.tooltipCount,9,'first-paint Stats has all nine help triggers');
+     assert.equal(firstPaintRoster.tooltipCount,10,'first-paint Stats has all ten help triggers');
      assert.equal(firstPaintRoster.value,rosterQuery.endsWith('international')?'International':'Domestic');
      assert.ok(firstPaintRoster.widths[3]>firstPaintRoster.widths[5]&&
       firstPaintRoster.widths[7]>firstPaintRoster.widths[8],

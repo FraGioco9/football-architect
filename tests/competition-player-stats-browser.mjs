@@ -70,7 +70,7 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    const cards=page.locator('#fa-dev-stats .fa-dev-stats-leader-card');
    const goals=cards.filter({has:page.locator('[data-app-i18n="statsDevGoals"]')});
    assert.equal(await cards.count(),8);
-   assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevAverageRating','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevRedCards','statsDevMinutes']);
+   assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevAverageRating','statsDevMvpAwards','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevMinutes']);
    assert.equal(await goals.locator('li strong').first().textContent(),'2');
    assert.equal(await goals.locator('li strong').nth(1).textContent(),'1');
    assert.equal(await cards.filter({has:page.locator('[data-app-i18n="statsDevAssists"]')}).locator('.fa-dev-stats-empty').textContent(),width===390?'Nessun giocatore':'No players');
@@ -78,7 +78,7 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    assert.equal(await goals.locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').first().textContent(),'QA Club 1');
    const before=await goals.boundingBox();
    const filledSizes=await cards.evaluateAll(nodes=>nodes.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
-   assert.ok(filledSizes.every(size=>size.height===filledSizes[0].height),'all eight populated cards reserve equal height');
+   assert.ok(filledSizes.every(size=>size.height===filledSizes[0].height),'all nine player cards reserve equal height');
 
    // Off-screen first-paint oracle: all pending player cards/rows must occupy
    // the same slots as the hydrated presentation at this viewport.
@@ -131,8 +131,8 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    assert.equal(new Set(teamClubPattern.map(Math.round)).size,5,'Teams club bars vary by rank too');
    for(let card=0;card<7;card++)for(let rank=0;rank<5;rank++)
     assert.ok(Math.abs(loadingGeometry.teamClubWidths[card*5+rank]-teamClubPattern[rank])<.1,'Teams skeleton repeats its club-width pattern at each rank');
-   assert.ok(loadingGeometry.valueWidths[0]>loadingGeometry.valueWidths[1]*1.5,'Rating includes coverage, unlike Goals');
-   assert.ok(loadingGeometry.valueWidths[4]>loadingGeometry.valueWidths[1]*1.3,'Clean sheets include appearances');
+   assert.ok(loadingGeometry.valueWidths[0]>loadingGeometry.valueWidths[2]*1.5,'Rating includes coverage, unlike Goals');
+   assert.ok(loadingGeometry.valueWidths[5]>loadingGeometry.valueWidths[2]*1.3,'Clean sheets include appearances');
    assert.equal(loadingGeometry.noTooltip,true,'no native hover tooltip on player names or clubs');
    const expand=goals.locator('.fa-dev-stats-expand');await expand.click();
    const dialog=page.locator('dialog[open]');

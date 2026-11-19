@@ -56,10 +56,10 @@ test('career team records use final league tier, match margin and cumulative tot
 });
 test('season leaders retain ties, career leaders combine spells under the frozen player ID',()=>{
  const season=records.select(snapshot.seasons,'season').players;
- assert.deepEqual(season.map(p=>p.value),[10,6,3,9,4]);
+ assert.deepEqual(season.map(p=>p.value),[10,6,3,9,4,null]);
  assert.deepEqual(get(season,'playerGoals').sources.map(p=>[p.id,p.season]),[[1,1],[2,2]]);
  const career=records.select(snapshot.seasons,'verified').players;
- assert.deepEqual(career.map(p=>p.value),[14,7,3,10,4]);
+ assert.deepEqual(career.map(p=>p.value),[14,7,3,10,4,null]);
  assert.match(render(),/href="\/players\/1"/);
  assert.match(render(),/aria-haspopup="dialog" data-club-record-detail="playerGoals"[^>]*>\+1<\/button>/);
  assert.match(render(),/data-club-record-portrait="1"/);
@@ -72,19 +72,31 @@ test('incomplete player and fixture coverage cannot produce a partial historical
  assert.equal(get(records.select(legacy,'verified').records,'largest').value,null);
  const incomplete=[{...first,players:[{...first.players[0],assists:null}]}];
  assert.equal(get(records.select(incomplete,'season').players,'combined').value,null);
+ assert.equal(get(records.select(snapshot.seasons,'verified').players,'mvpAwards').value,null,'legacy coverage stays unknown');
+ const verified=[{...first,players:first.players.map(p=>({...p,mvpAwards:2,mvpCoveredAppearances:p.appearances}))},
+  {...last,players:last.players.map(p=>({...p,mvpAwards:p.id===1?1:3,mvpCoveredAppearances:p.appearances}))}];
+ assert.equal(get(records.select(verified,'verified').players,'mvpAwards').value,3);
+ assert.equal(get(records.select(verified,'season').players,'mvpAwards').value,3);
+ const partial=[...verified,{...last,season:3,players:[{...last.players[0],mvpAwards:null,mvpCoveredAppearances:0}]}];
+ assert.equal(get(records.select(partial,'verified').players,'mvpAwards').value,null);
+ assert.equal(get(records.select(partial,'season').players,'mvpAwards').value,null);
+ const partialWinner=[...verified,{...last,season:3,players:[{...last.players[0],mvpAwards:1,mvpCoveredAppearances:1}]}];
+ assert.equal(get(records.select(partialWinner,'verified').players,'mvpAwards').value,null,
+  'an award from a partially covered player cannot be an all-time record');
 });
-test('five locales and first paint share the approved cards; MVP waits for official data',()=>{
+test('five locales and first paint reserve official MVP records even for legacy unavailable',()=>{
  for(const language of Object.keys(records.words))for(const search of ['','?scope=all-time']){
   const html=render({language,search});
-  assert.equal((html.match(/class="app-competition-stat-card"/g)||[]).length,11);
-  assert.doesNotMatch(html,/undefined|MVP|club-records-season-nav/);
+  assert.equal((html.match(/class="app-competition-stat-card"/g)||[]).length,12);
+  assert.doesNotMatch(html,/undefined|club-records-season-nav/);
+  assert.match(html,/data-record-label="mvpAwards"/);
  }
  const firstPaint=readFileSync(new URL('../clubs/_shared/index.html',import.meta.url),'utf8');
- assert.equal((firstPaint.match(/class="app-competition-stat-card"/g)||[]).length,11);
+ assert.equal((firstPaint.match(/class="app-competition-stat-card"/g)||[]).length,12);
  const loading=render({historySnapshot:{source:'loading'}});
- assert.equal((loading.match(/class="app-competition-stat-value"><span class="app-skeleton-bar"/g)||[]).length,11);
- assert.equal((loading.match(/class="app-history-player-name club-record-name-placeholder"/g)||[]).length,5);
- assert.equal((loading.match(/class="fa-dev-stats-player-portrait club-record-portrait-placeholder"/g)||[]).length,5);
+ assert.equal((loading.match(/class="app-competition-stat-value"><span class="app-skeleton-bar"/g)||[]).length,12);
+ assert.equal((loading.match(/class="app-history-player-name club-record-name-placeholder"/g)||[]).length,6);
+ assert.equal((loading.match(/class="fa-dev-stats-player-portrait club-record-portrait-placeholder"/g)||[]).length,6);
  assert.match(render({search:'?scope=all-time',historySnapshot:{source:'loading'}}),/data-record-period="verified"/);
  assert.doesNotMatch(render({historySnapshot:{source:'dev'}}),/club-records-note|Verified club records are unavailable/);
 });
@@ -131,14 +143,14 @@ test('CLUB-RECORDS-01: loading bars use hydrated value and season centerlines on
  const markup=readFileSync(new URL('../clubs/_shared/index.html',import.meta.url),'utf8');
  for(const search of ['', '?scope=all-time']){
   const pending=render({search,historySnapshot:{source:'loading'}});
-  assert.equal((pending.match(/class="app-competition-stat-card"/g)||[]).length,11);
-  assert.equal((pending.match(/class="app-history-season club-record-season-placeholder" data-record-placeholder="season"/g)||[]).length,5,
+  assert.equal((pending.match(/class="app-competition-stat-card"/g)||[]).length,12);
+  assert.equal((pending.match(/class="app-history-season club-record-season-placeholder" data-record-placeholder="season"/g)||[]).length,6,
    'player season placeholder is the same direct grid item as the hydrated season link');
-  assert.equal((pending.match(/data-record-placeholder="season"/g)||[]).length,9,
-   'all nine season-source slots remain reserved in both periods');
+  assert.equal((pending.match(/data-record-placeholder="season"/g)||[]).length,10,
+   'all ten season-source slots remain reserved in both periods');
   assert.doesNotMatch(pending,/<span data-record-placeholder="season"><span/);
  }
- assert.equal((markup.match(/class="app-history-season club-record-season-placeholder" data-record-placeholder="season"/g)||[]).length,5);
+ assert.equal((markup.match(/class="app-history-season club-record-season-placeholder" data-record-placeholder="season"/g)||[]).length,6);
  assert.doesNotMatch(markup,/<span data-record-placeholder="season"><span class="app-history-season/);
  assert.doesNotMatch(css,/\[data-record-period="verified"\] \[data-record-placeholder="season"\]\{display:none\}/,
   'all-time season sources must retain their loading skeletons');

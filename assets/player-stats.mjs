@@ -1,10 +1,10 @@
 /** #578: multi-season Player Stats from a single verified public read. */
 export const statsWords={
- en:{headers:["Season","Competition","Club","Apps (Subs)","Min","Gls","Ast","YC","RC","Rat."],keeper:'CS',career:'Career',incomplete:'Incomplete coverage',total:'Total',season:'Season',empty:'No games played',unavailable:'Player statistics are unavailable.',unsupported:'Official statistics unavailable',unprepared:'Season not prepared',show:'Show competitions for',rated:'rated matches',missing:'Not recorded',help:[null,null,null,"Appearances (Substitute appearances)","Minutes played","Goals","Assists","Yellow cards","Red cards","Rating"],keeperHelp:"Clean sheets"},
- it:{headers:["Stagione","Competizione","Club","Pres. (Sub.)","Min","Gol","Assist","Gialli","Rossi","Val."],keeper:'CS',career:'Carriera',incomplete:'Copertura incompleta',total:'Totale',season:'Stagione',empty:'Nessuna partita giocata',unavailable:'Statistiche del giocatore non disponibili.',unsupported:'Statistiche ufficiali non disponibili',unprepared:'Stagione non preparata',show:'Mostra competizioni della',rated:'partite valutate',missing:'Non registrato',help:[null,null,null,"Presenze (da subentrato)","Minuti giocati","Gol segnati","Assist","Cartellini gialli","Cartellini rossi","Valutazione"],keeperHelp:"Clean sheet"},
- de:{headers:["Saison","Wettbewerb","Verein","Sp. (Einw.)","Min","Tor.","Vor.","Gelb","Rot","Bew."],keeper:'CS',career:'Karriere',incomplete:'Unvollständige Daten',total:'Gesamt',season:'Saison',empty:'Noch keine Spiele gespielt',unavailable:'Spielerstatistiken sind nicht verfügbar.',unsupported:'Offizielle Statistiken nicht verfügbar',unprepared:'Saison nicht vorbereitet',show:'Wettbewerbe anzeigen für',rated:'bewertete Spiele',missing:'Nicht erfasst',help:[null,null,null,"Spiele (Einwechslungen)","Gespielte Minuten","Tore","Vorlagen","Gelbe Karten","Rote Karten","Bewertung"],keeperHelp:"Spiele ohne Gegentor"},
- es:{headers:["Temporada","Competición","Club","PJ (Sup.)","Min","Gol","Asist.","Amar.","Rojas","Val."],keeper:'CS',career:'Carrera',incomplete:'Datos incompletos',total:'Total',season:'Temporada',empty:'Ningún partido disputado',unavailable:'Estadísticas del jugador no disponibles.',unsupported:'Estadísticas oficiales no disponibles',unprepared:'Temporada no preparada',show:'Mostrar competiciones de',rated:'partidos valorados',missing:'No registrado',help:[null,null,null,"Partidos jugados (Entradas como suplente)","Minutos jugados","Goles","Asistencias","Tarjetas amarillas","Tarjetas rojas","Valoración"],keeperHelp:"Porterías a cero"},
- fr:{headers:["Saison","Compétition","Club","MJ (Entr.)","Min","Bts","PdD","Jaunes","Rouges","Not."],keeper:'CS',career:'Carrière',incomplete:'Données incomplètes',total:'Total',season:'Saison',empty:'Aucun match joué',unavailable:'Statistiques du joueur indisponibles.',unsupported:'Statistiques officielles indisponibles',unprepared:'Saison non préparée',show:'Afficher les compétitions de',rated:'matches évalués',missing:'Non enregistré',help:[null,null,null,"Matches joués (Entrées en jeu)","Minutes jouées","Buts","Passes décisives","Cartons jaunes","Cartons rouges","Note"],keeperHelp:"Matches sans but encaissé"}
+ en:{headers:["Season","Competition","Club","Apps (Subs)","Min","Gls","Ast","YC","RC","MVP","Rat."],keeper:'CS',career:'Career',incomplete:'Incomplete coverage',total:'Total',season:'Season',empty:'No games played',unavailable:'Player statistics are unavailable.',unsupported:'Official statistics unavailable',unprepared:'Season not prepared',show:'Show competitions for',rated:'rated matches',missing:'Not recorded',help:[null,null,null,"Appearances (Substitute appearances)","Minutes played","Goals","Assists","Yellow cards","Red cards","Player of the match awards","Rating"],keeperHelp:"Clean sheets"},
+ it:{headers:["Stagione","Competizione","Club","Pres. (Sub.)","Min","Gol","Assist","Gialli","Rossi","MVP","Val."],keeper:'CS',career:'Carriera',incomplete:'Copertura incompleta',total:'Totale',season:'Stagione',empty:'Nessuna partita giocata',unavailable:'Statistiche del giocatore non disponibili.',unsupported:'Statistiche ufficiali non disponibili',unprepared:'Stagione non preparata',show:'Mostra competizioni della',rated:'partite valutate',missing:'Non registrato',help:[null,null,null,"Presenze (da subentrato)","Minuti giocati","Gol segnati","Assist","Cartellini gialli","Cartellini rossi","Premi migliore in campo","Valutazione"],keeperHelp:"Clean sheet"},
+ de:{headers:["Saison","Wettbewerb","Verein","Sp. (Einw.)","Min","Tor.","Vor.","Gelb","Rot","MVP","Bew."],keeper:'CS',career:'Karriere',incomplete:'Unvollständige Daten',total:'Gesamt',season:'Saison',empty:'Noch keine Spiele gespielt',unavailable:'Spielerstatistiken sind nicht verfügbar.',unsupported:'Offizielle Statistiken nicht verfügbar',unprepared:'Saison nicht vorbereitet',show:'Wettbewerbe anzeigen für',rated:'bewertete Spiele',missing:'Nicht erfasst',help:[null,null,null,"Spiele (Einwechslungen)","Gespielte Minuten","Tore","Vorlagen","Gelbe Karten","Rote Karten","Auszeichnungen als Spieler des Spiels","Bewertung"],keeperHelp:"Spiele ohne Gegentor"},
+ es:{headers:["Temporada","Competición","Club","PJ (Sup.)","Min","Gol","Asist.","Amar.","Rojas","MVP","Val."],keeper:'CS',career:'Carrera',incomplete:'Datos incompletos',total:'Total',season:'Temporada',empty:'Ningún partido disputado',unavailable:'Estadísticas del jugador no disponibles.',unsupported:'Estadísticas oficiales no disponibles',unprepared:'Temporada no preparada',show:'Mostrar competiciones de',rated:'partidos valorados',missing:'No registrado',help:[null,null,null,"Partidos jugados (Entradas como suplente)","Minutos jugados","Goles","Asistencias","Tarjetas amarillas","Tarjetas rojas","Premios al mejor jugador del partido","Valoración"],keeperHelp:"Porterías a cero"},
+ fr:{headers:["Saison","Compétition","Club","MJ (Entr.)","Min","Bts","PdD","Jaunes","Rouges","MVP","Not."],keeper:'CS',career:'Carrière',incomplete:'Données incomplètes',total:'Total',season:'Saison',empty:'Aucun match joué',unavailable:'Statistiques du joueur indisponibles.',unsupported:'Statistiques officielles indisponibles',unprepared:'Saison non préparée',show:'Afficher les compétitions de',rated:'matches évalués',missing:'Non enregistré',help:[null,null,null,"Matches joués (Entrées en jeu)","Minutes jouées","Buts","Passes décisives","Cartons jaunes","Cartons rouges","Distinctions de joueur du match","Note"],keeperHelp:"Matches sans but encaissé"}
 };
 export const formatApps=(appearances,subs)=>Number.isSafeInteger(appearances)&&appearances>=0
  ?appearances+' ('+(Number.isSafeInteger(subs)&&subs>=0?subs:'—')+')':'—';
@@ -17,7 +17,7 @@ export function aggregateVerifiedCareerStats(seasons){
  if(!Array.isArray(seasons)||!seasons.length)return null;
  const totals={appearances:0,starts:0,subAppearances:0,minutes:0,goals:0,assists:0,
   yellowCards:0,redCards:0,gkAppearances:0,cleanSheets:0,
-  ratedAppearances:0,averageRating:null};
+  ratedAppearances:0,averageRating:null,mvpAwards:0,mvpCoveredAppearances:0};
  const keys=['appearances','starts','minutes','goals','gkAppearances','ratedAppearances'];
  const optional=['subAppearances','assists','yellowCards','redCards'];
  let ratedSum=0,ratingComplete=true,keepersComplete=true;
@@ -32,6 +32,13 @@ export function aggregateVerifiedCareerStats(seasons){
    row.starts>row.appearances||row.ratedAppearances>row.appearances||
    row.gkAppearances>row.appearances)return null;
   for(const key of keys)totals[key]+=row[key];
+   const covered=row.mvpCoveredAppearances??0;
+   if(!Number.isSafeInteger(covered)||covered<0||covered>row.appearances)return null;
+   totals.mvpCoveredAppearances+=covered;
+   if(row.mvpAwards!=null){
+    if(!Number.isSafeInteger(row.mvpAwards)||row.mvpAwards<0||row.mvpAwards>covered)return null;
+    totals.mvpAwards+=row.mvpAwards;
+   }
   for(const key of optional){
    if(row[key]===null){totals[key]=null;continue;}
    if(!Number.isSafeInteger(row[key])||row[key]<0)return null;
@@ -54,9 +61,20 @@ export function aggregateVerifiedCareerStats(seasons){
  totals.cleanSheets=totals.gkAppearances>0&&keepersComplete?totals.cleanSheets:null;
  totals.averageRating=ratingComplete&&totals.ratedAppearances>0
   ?Math.round(ratedSum/totals.ratedAppearances*100)/100:null;
+ if(!totals.mvpAwards&&totals.mvpCoveredAppearances<totals.appearances)totals.mvpAwards=null;
  return totals;
 }
+const domesticCompetitionPattern=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/;
+// Only canonical competition names can resolve actual published division SVGs.
+// A missing or unverified name yields no guessed asset request.
+export function competitionDivisionLogoPath(id,name){
+ if(!domesticCompetitionPattern.test(id)||typeof name!=='string'||!name.trim())return null;
+ const slug=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+  .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+ return slug?'/assets/divisions/'+id.toLowerCase()+'-'+slug+'/compact.svg':null;
+}
 const competitionPattern=/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/;
+const neutralCupMark='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg>';
 const clubPattern=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/;
 export function createPlayerStatsView({host,id,locale,position,fetchStats,clubName,clubCrest,competitionName}){
  if(!host||!Number.isSafeInteger(id)||id<1)throw TypeError('Invalid player Stats view');
@@ -109,7 +127,7 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
  function showTooltip(trigger){
   if(!trigger||!host.contains(trigger))return;
   const index=Number(trigger.dataset.statsHelp);
-  if(!Number.isSafeInteger(index)||index<3||index>=10)return;
+  if(!Number.isSafeInteger(index)||index<3||index>=11)return;
   if(activeHeader&&activeHeader!==trigger)activeHeader.removeAttribute('aria-describedby');
   activeHeader=trigger;
   const tip=tooltipNode(),w=words();
@@ -140,7 +158,7 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
   }
   if(activeHeader&&!tooltip?.hidden)showTooltip(activeHeader);
   for(const cell of tbody.querySelectorAll('.app-player-stats-loading [data-metric]')){
-   const index=['apps','minutes','score','assists','yellow','red','rating'].indexOf(cell.dataset.metric);
+   const index=['apps','minutes','score','assists','yellow','red','mvp','rating'].indexOf(cell.dataset.metric);
    if(index>=0)cell.dataset.mobileLabel=labels[index+3];
   }
  }
@@ -149,16 +167,16 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
    formatApps(record.appearances,record.subAppearances),value(record.minutes),
    isKeeper()?value(record.cleanSheets):value(record.goals),
    value(record.assists),value(record.yellowCards),value(record.redCards),
-   formatRating(record.averageRating,record.ratedAppearances)
+   value(record.mvpAwards),formatRating(record.averageRating,record.ratedAppearances)
   ];
   return displayed.map((v,i)=>{
    const cell=el('td','','app-player-stats-number');
    cell.append(el('span',v,'app-player-stats-value'));
-   cell.dataset.metric=['apps','minutes','score','assists','yellow','red','rating'][i];
+   cell.dataset.metric=['apps','minutes','score','assists','yellow','red','mvp','rating'][i];
    cell.dataset.mobileLabel=labels[i+3];
    cell.setAttribute('aria-label',labels[i+3]+': '+v);
    if(v==='—'||v.includes('(—)'))cell.title=w.missing;
-   if(i===6&&v!=='—')cell.title=record.ratedAppearances+'/'+record.appearances+' '+w.rated;
+   if(i===7&&v!=='—')cell.title=record.ratedAppearances+'/'+record.appearances+' '+w.rated;
    return cell;
   });
  }
@@ -228,7 +246,7 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
     season.status==='unavailable'?w.unsupported:w.unprepared,'app-player-stats-total-value'));
    summary.append(heading,totalCell,el('td','','app-player-stats-club'));
    if(available)summary.append(...numericCells(season.data.total,w));
-   else for(let i=0;i<7;i++)summary.append(el('td','','app-player-stats-number'));
+   else for(let i=0;i<8;i++)summary.append(el('td','','app-player-stats-number'));
    resultRows.push(summary);
    for(const record of groups){
     if(!competitionPattern.test(record.competitionId))continue;
@@ -239,9 +257,22 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
     detail.append(el('td','','app-player-stats-season'));
     const competition=el('th','','app-player-stats-competition');competition.scope='row';
     const link=el('a','','app-player-stats-link app-player-stats-competition-link');
-    link.append(el('span',competitionName?.(record.competitionId)||record.competitionId,'app-player-stats-competition-name'));
+    const canonicalName=competitionName?.(record.competitionId);
+    const mark=el('span','','fa-competition-mark');
+    mark.setAttribute('aria-hidden','true');
+    const logoPath=competitionDivisionLogoPath(record.competitionId,canonicalName);
+    if(logoPath){
+     const image=el('img');
+     image.src=logoPath;image.width=24;image.height=24;image.alt='';
+     image.loading='lazy';image.decoding='async';image.draggable=false;
+     image.addEventListener('error',()=>image.remove(),{once:true});
+     mark.append(image);
+    }else if(/^int-[12]$/.test(record.competitionId))mark.innerHTML=neutralCupMark;
+    link.append(el('span',canonicalName||record.competitionId,'app-player-stats-competition-name'));
     link.href='/competitions/'+record.competitionId.toLowerCase()+'/standings?season='+season.season;
-    competition.append(link);detail.append(competition);
+    const competitionIdentity=el('span','','app-player-stats-competition-identity');
+    competitionIdentity.append(mark,link); // Passive logo; only the name is linked.
+    competition.append(competitionIdentity);detail.append(competition);
     const club=el('td','','app-player-stats-club');
     const identity=el('span','','app-player-stats-club-identity');
     // Same passive 24px crest slot and shield fallback as the Players directory.
@@ -284,7 +315,7 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
   else {
    const missing={appearances:null,subAppearances:null,minutes:null,goals:null,
     cleanSheets:null,assists:null,yellowCards:null,redCards:null,
-    averageRating:null,ratedAppearances:0};
+    averageRating:null,ratedAppearances:0,mvpAwards:null,mvpCoveredAppearances:0};
    careerRow.append(...numericCells(missing,w));
   }
   resultRows.unshift(careerRow);

@@ -91,10 +91,10 @@ test('closed season records combine transfers, preserve frozen identity and clea
  assert.equal(walk(r.card).find(n=>n.className==='app-competition-stat-value').textContent,'4');
 });
 
-test('goal contributions and red cards use recorded values and preserve unknown assists',()=>{
+test('goal contributions and MVP awards use recorded values and preserve unknown assists',()=>{
  const r=fixture('int-1');
- const row={playerId:8,clubKey:'IT-1',goals:3,assists:2,redCards:1};
- for(const [metric,expected] of [['seasonContributions','5'],['totalRedCards','1']]){
+ const row={playerId:8,clubKey:'IT-1',goals:3,assists:2,appearances:2,mvpAwards:1,mvpCoveredAppearances:2};
+ for(const [metric,expected] of [['seasonContributions','5'],['totalMvpAwards','1']]){
   r.card.dataset.historyPlayerRecord=metric;
   r.window.faHistoryPlayerRecords.clear();
   r.window.faHistoryPlayerRecords.applyRecordSeasons([{season:1,players:[row]}]);
@@ -103,6 +103,16 @@ test('goal contributions and red cards use recorded values and preserve unknown 
  r.card.dataset.historyPlayerRecord='totalContributions';
  r.window.faHistoryPlayerRecords.applyRecordSeasons([{season:1,players:[{...row,assists:null}]}]);
  assert.equal(r.card.dataset.historyFilled,'false');
+ r.card.dataset.historyPlayerRecord='totalMvpAwards';
+ for(const mixed of [
+  [{season:1,players:[row]},{season:2,players:[{...row,mvpAwards:null,mvpCoveredAppearances:0}]}],
+  [{season:1,players:[row]},{season:2,players:[{...row,mvpAwards:1,mvpCoveredAppearances:1}]}],
+  [{season:1,players:[row]},{season:2,players:null}]
+ ]){
+  r.window.faHistoryPlayerRecords.applyRecordSeasons(mixed);
+  assert.equal(r.card.dataset.historyFilled,'false',
+   'unverified seasons and positive partial awards must not become all-time records');
+ }
 });
 
 test('a single holder has a face and independent player, recorded club and season links on the card',()=>{

@@ -372,6 +372,8 @@
     "tests/player-portrait-v42-preparation.test.mjs": "site-node",
     "tests/player-portrait-v42-cutover.test.mjs": "site-node",
     "tests/player-match-history.test.mjs": "site-node",
-    "tests/player-matches-view.test.mjs": "site-node"
+    "tests/player-matches-view.test.mjs": "site-node",
+    "tests/match-mvp-v1.test.mjs": "site-node",
+    "tests/player-mvp-aggregation.test.mjs": "site-node"
   }
 }

@@ -204,6 +204,9 @@ try{
    const measured=await page.evaluate(async()=>{
     const table=document.querySelector('.app-player-matches-table');
     if(!table||!table.tBodies[0])throw Error('Matches public table missing');
+    const columns=Array.from(table.querySelectorAll('colgroup col'));
+    const ratingIndex=columns.findIndex(col=>col.classList.contains('app-player-matches-col-rating'));
+    if(ratingIndex<0)throw Error('Matches rating column missing');
     const preloaded=new Image();
     preloaded.src='/assets/clubs/IT/1/crest.svg';
     await preloaded.decode();
@@ -218,7 +221,7 @@ try{
     const makeRow=(loading,fallback=false)=>{
      const tr=document.createElement('tr');
      tr.className='app-player-matches-row'+(loading?' app-player-matches-loading':'');
-     for(let i=1;i<=13;i++){
+     for(let i=1;i<=columns.length;i++){
       const td=document.createElement(i===1?'th':'td');
       td.className=i===1?'app-player-matches-match':i===4?'app-player-matches-identity':i===2?'app-player-matches-competition':'app-player-matches-number';
       if(i===4){
@@ -233,8 +236,8 @@ try{
        addText(identity,'Subalpina Torino',loading,105);
        td.append(identity);
       }else{
-       const value=i===1?'Season 1 · Day 3':i===6?'2–1':i===7?'90':i===13?'7.4':'—';
-       addText(td,value,loading,i===13?26:i===6?32:90);
+       const value=i===1?'Season 1 · Day 3':i===6?'2–1':i===7?'90':i===ratingIndex+1?'7.4':'—';
+       addText(td,value,loading,i===ratingIndex+1?26:i===6?32:90);
       }
       tr.append(td);
      }
@@ -259,8 +262,8 @@ try{
      neutralUnderReal:getComputedStyle(realMark,'::before').display,
      neutralFallback:getComputedStyle(fallbackMark,'::before').display,
      minutesDisplay:getComputedStyle(loaded.children[6]).display,
-     ratingDisplay:getComputedStyle(loaded.children[12]).display,
-     ratingText:loaded.children[12].textContent,
+     ratingDisplay:getComputedStyle(loaded.children[ratingIndex]).display,
+     ratingText:loaded.children[ratingIndex].textContent,
      mobilePadding:getComputedStyle(loaded).paddingLeft,
      overflow:document.documentElement.scrollWidth-innerWidth,
      activeView:document.documentElement.dataset.playerDetailView

@@ -1,6 +1,7 @@
 /** One read-only projection of already verified immutable match evidence.
  * New event counters come ONLY from frozen v2 receipts; legacy events remain null.
  */
+import {frozenMatchMvpV1} from './match-mvp-v1.mjs';
 export function frozenMatchPlayerStatistics(result){
  const identities=new Map((result.playerIdentityVersion==='player-identity-v1'?result.playerIdentities:[]).map(p=>[p.playerId,p]));
  const duration=result.extraTime?120:90,hasEvents=result.eventModelVersion==='lineup-events-v1';
@@ -40,7 +41,7 @@ export function frozenMatchPlayerStatistics(result){
  };
  // The public stats contract contains aggregates only. Event provenance stays
  // in the verified immutable receipt and is never serialized in this projection.
- return {ratingVersion:result.ratingVersion??null,
+ return {mvp:frozenMatchMvpV1(result),ratingVersion:result.ratingVersion??null,
   home:side(result.home,result.awayGoals,'home'),away:side(result.away,result.homeGoals,'away')};
 
 }
