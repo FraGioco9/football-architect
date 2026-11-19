@@ -422,7 +422,7 @@
     applyRecordSeasons(seasons){
       results={};
       partial=seasons.some(s=>s.playerCoverage===false||!Array.isArray(s.players));
-      for(const [field,suffix] of [["goals","Goals"],["appearances","Appearances"],["contributions","Contributions"],["redCards","RedCards"],["assists","Assists"],["cleanSheets","CleanSheets"]]){
+      for(const [field,suffix] of [["goals","Goals"],["appearances","Appearances"],["contributions","Contributions"],["redCards","RedCards"],["assists","Assists"],["cleanSheets","CleanSheets"],["mvpAwards","MvpAwards"]]){
         for(const cumulative of [false,true]){
           const entries=new Map();
 
@@ -430,6 +430,10 @@
           for(const season of seasons){
             for(const row of season.players||[]){
               if(row[field]==null&&field==="cleanSheets")continue;
+              // Legacy seasons without a sealed MVP proof are unavailable, not zero.
+              if(field==="mvpAwards"&&(row.mvpAwards===null||row.mvpAwards===undefined)){
+                verified=false;break;
+              }
               const amount=field==="contributions"&&safeInt(row.assists)&&safeInt(row.goals)?row.goals+row.assists:row[field];
               if(!safeInt(amount)){verified=false;break;}
               const key=cumulative?row.playerId:row.playerId+":"+season.season;
