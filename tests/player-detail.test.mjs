@@ -100,7 +100,12 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
  assert.doesNotMatch(script,/localStorage|sessionStorage|innerHTML/);
  assert.match(script,/if\(preview\)root\.hidden=true/);
  assert.match(index,/const playerDetail=url\.pathname\.match/);
- assert.match(publicApi,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p\s+LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id WHERE p\.id=\?/);
+ assert.match(publicApi,/SELECT p\.id,p\.payload_json,a\.club_key,/);
+ assert.match(publicApi,/LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id/);
+ assert.match(publicApi,/LEFT JOIN player_portrait_profiles portrait ON portrait\.player_id=p\.id/);
+ assert.match(publicApi,/portrait\.status='approved'/);
+ assert.match(publicApi,/portrait\.prompt_version='player-portrait-v4\.2'/);
+ assert.match(script,/player\.portraitAssetKey==='assets\/players\/portraits\/'\+id\+'\.webp'/);
  assert.match(publicApi,/projectPublicFootballerDirectoryRecord/);
 });
 
