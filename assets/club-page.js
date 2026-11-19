@@ -279,8 +279,14 @@
    host.dataset.clubBase=selected.base;
    if(tabs){
     const key='football-architect:club-tabs-scroll:'+selected.base;
-    if(Number.isFinite(tabScrollLeft))tabs.scrollLeft=tabScrollLeft;
-    else try{const saved=sessionStorage.getItem(key),n=Number(saved);if(saved!==null&&Number.isFinite(n)&&n>=0)tabs.scrollLeft=n}catch{}
+    // First hydration must prefer the stored manual scroll, not the transient
+    // parser-time scrollLeft=0. Later paints preserve the current DOM offset.
+    let restored=false;
+    if(tabs.dataset.clubInteractionsBound!=='true')try{
+     const saved=sessionStorage.getItem(key),n=Number(saved);
+     if(saved!==null&&Number.isFinite(n)&&n>=0){tabs.scrollLeft=n;restored=true}
+    }catch{}
+    if(!restored&&Number.isFinite(tabScrollLeft))tabs.scrollLeft=tabScrollLeft;
     const syncTabEdges=()=>{
      const maximum=Math.max(0,tabs.scrollWidth-tabs.clientWidth);
      tabs.dataset.canScrollLeft=String(maximum>1&&tabs.scrollLeft>1);
@@ -290,6 +296,12 @@
     if(tabs.dataset.clubInteractionsBound!=='true'){
      tabs.dataset.clubInteractionsBound='true';
      tabs.addEventListener('scroll',()=>{syncTabEdges();try{sessionStorage.setItem(key,String(tabs.scrollLeft))}catch{}},{passive:true});
+     window.addEventListener('pagehide',()=>{try{sessionStorage.setItem(key,String(tabs.scrollLeft))}catch{}});
+     window.addEventListener('pageshow',event=>{
+      if(!event.persisted)return;
+      try{const saved=sessionStorage.getItem(key),n=Number(saved);if(saved!==null&&Number.isFinite(n)&&n>=0)tabs.scrollLeft=n}catch{}
+      syncTabEdges();
+     });
      // Overflow and fades must follow a desktop/mobile breakpoint change even
      // when scrollLeft stays at zero and therefore emits no scroll event.
      window.addEventListener('resize',syncTabEdges,{passive:true});

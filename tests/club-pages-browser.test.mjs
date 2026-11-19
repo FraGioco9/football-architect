@@ -511,6 +511,29 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.activeElement===document.querySelector('.club-tabs [aria-current=\"page\"]')"),true,'Keyboard activation retains focus on the active tab');
     await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
     assert.equal(await run("document.querySelectorAll('.club-history').length"),1);
+    // Public Player View tabs also preserve manual horizontal scrolling across
+    // refresh, without borrowing the Club strip's session storage key.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
+    await cmd('Page.navigate',{url:origin+'/players/1?view=stats'});
+    await wait("document.readyState==='complete'&&document.querySelector('.app-player-detail-tabs')?.scrollWidth>document.querySelector('.app-player-detail-tabs')?.clientWidth");
+    const savedPlayerTabScroll=await run("(()=>{const nav=document.querySelector('.app-player-detail-tabs'),max=nav.scrollWidth-nav.clientWidth,offset=Math.min(64,max);nav.scrollLeft=offset;sessionStorage.setItem('football-architect:player-views-scroll:/players/1',String(offset));return offset})()");
+    assert.ok(savedPlayerTabScroll>1,'mobile Player View strip must overflow for reload QA');
+    await cmd('Page.reload');
+    await wait("document.readyState==='complete'&&document.querySelector('.app-player-detail-tabs')");
+    const restoredPlayerTabScroll=await run("document.querySelector('.app-player-detail-tabs').scrollLeft");
+    assert.ok(Math.abs(restoredPlayerTabScroll-savedPlayerTabScroll)<2,
+     'mobile Player View tab strip must retain horizontal scroll on reload: '+savedPlayerTabScroll+' / '+restoredPlayerTabScroll);
+    await visit('/clubs/it/1/history');
+    // A mobile reload must restore the manually scrolled View strip exactly,
+    // rather than shifting it back to the beginning or auto-centering History.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
+    const savedClubTabScroll=await run("(()=>{const nav=document.querySelector('.club-tabs'),max=nav.scrollWidth-nav.clientWidth;const offset=Math.min(70,max);nav.scrollLeft=offset;sessionStorage.setItem('football-architect:club-tabs-scroll:/clubs/it/1',String(offset));return offset})()");
+    assert.ok(savedClubTabScroll>1,'mobile View strip must overflow for reload QA');
+    await cmd('Page.reload');
+    await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
+    const restoredClubTabScroll=await run("document.querySelector('.club-tabs').scrollLeft");
+    assert.ok(Math.abs(restoredClubTabScroll-savedClubTabScroll)<2,
+     'mobile Club View tab strip must retain horizontal scroll on reload: '+savedClubTabScroll+' / '+restoredClubTabScroll);
     // #560: Club History's true mobile presentation is a four-column grid,
     // with expansion, localized headings and untruncated competition labels.
     // A synthetic verified row pair is used to isolate layout from the
@@ -525,6 +548,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const row=document.querySelector('.club-history .club-history-row-loading');
        return tabs&&row?row.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null;
       })()`);
+      const firstPaintBarGapBefore=await run(`(()=>{
+       const tabs=document.querySelector('.club-tabs');
+       const bar=document.querySelector('.club-history .club-history-row-loading .club-history-skeleton-label .club-fp-bar');
+       return tabs&&bar?bar.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null;
+      })()`);
       await run(`(()=>{
        const old=document.getElementById('history-mobile-560-probe');if(old)old.remove();
        const wrap=document.createElement('div');wrap.id='history-mobile-560-probe';
@@ -536,12 +564,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          ['MP','W','D','L','GF','GA','GD','Pts'].map(x=>'<th>'+x+'</th>').join('')+'</tr></thead>'+
         '<tbody><tr class="club-history-season-row" data-club-history-summary="777-${width}">'+
          '<th scope="row" class="club-history-season-value"><button type="button" class="club-history-expand" data-club-history-toggle="777-${width}" aria-expanded="false"><span class="club-history-chevron"></span>Season 777</button></th>'+
-         '<td class="club-history-total-label">Total</td><td></td>'+
-         ['30','18','7','5','54','29','+25',''].map(x=>'<td>'+x+'</td>').join('')+'</tr>'+
+         '<td class="club-history-total-label"><span class="club-history-total-value">Total</span></td><td></td>'+
+         ['30','18','10','12','104','52','+52',''].map(x=>'<td><span class="club-history-stat-value">'+x+'</span></td>').join('')+'</tr>'+
         '<tr class="club-history-competition-row" data-club-history-detail="777-${width}" hidden>'+
          '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings?season=777"><span class="club-history-competition-text">Very Long International Competition Championship Name For Mobile</span></a></th>'+
-         '<td title="Quarter-finals, second leg">Quarter-finals, second leg</td>'+
-         ['30','18','7','5','54','29','+25','61'].map(x=>'<td>'+x+'</td>').join('')+'</tr></tbody></table>';
+         '<td>Quarter-finals, second leg</td>'+
+         ['30','18','7','5','54','29','+25','61'].map(x=>'<td><span class="club-history-stat-value">'+x+'</span></td>').join('')+'</tr></tbody></table>';
        // Give each viewport an independent synthetic season key: the real
        // controller retains expanded seasons across viewport changes.
        // Put the synthetic table at the first content position, matching a
@@ -572,12 +600,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(initial.detailHidden,true,'History competitions are collapsed initially at '+width);
       if(width<=620){
        assert.equal(initial.tabBorder,'1px','History view tabs preserve their separator at '+width);
-       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap)<=1,
-        'mobile History starts immediately below the view separator at '+width+': '+JSON.stringify(initial));
-       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap)<=1,
-        'first season row starts flush with the separator at '+width+': '+JSON.stringify(initial));
-       if(firstPaintGapBefore!==null)assert.ok(Math.abs(firstPaintGapBefore)<=1,
-        'pre-insertion first-paint History skeleton row starts flush with the separator at '+width+': '+firstPaintGapBefore);
+       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap-5)<=1,
+        'mobile History retains the approved 5px view separator gap at '+width+': '+JSON.stringify(initial));
+       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap-5)<=1,
+        'first season row begins 5px after the separator at '+width+': '+JSON.stringify(initial));
+       if(firstPaintGapBefore!==null)assert.ok(Math.abs(firstPaintGapBefore-5)<=1,
+        'pre-insertion first-paint History skeleton row starts 5px after the separator at '+width+': '+firstPaintGapBefore);
+       if(firstPaintBarGapBefore!==null)assert.ok(firstPaintBarGapBefore>=8&&firstPaintBarGapBefore<=25,
+        'painted mobile History skeleton begins close to the View separator at '+width+': '+firstPaintBarGapBefore);
        assert.equal(initial.display,'grid','mobile season summary must use a 4-column grid at '+width);
        assert.ok(initial.table.width<=initial.wrap.width+1&&initial.shellOverflow<=2,
         'mobile History may not cause horizontal page overflow at '+width+': '+JSON.stringify(initial));
@@ -589,61 +619,164 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       }else{
        assert.equal(initial.display,'table-row','tablet/desktop preserve the native table at '+width);
       }
-      if(width<=620){
+      if(width<=620||width===1440){
        // Compare the exact seven first-paint skeleton centers to the seven
        // hydrated aggregate-number centers in their shared grid tracks.
        const alignment=await run(`(()=>{
         const row=document.querySelector('#history-mobile-560-probe .club-history-season-row');
         const cells=[...row.children].slice(3,10);
         const rect=n=>{const r=n.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,height:r.height};};
+        // Range gives the font's EM rectangle, not the painted glyph bbox.
+        // Canvas actualBoundingBox* lets us compare visually aligned centers.
+        const glyphInkY=(element,range)=>{
+         const style=getComputedStyle(element),ctx=document.createElement('canvas').getContext('2d');
+         ctx.font=[style.fontStyle,style.fontWeight,style.fontSize,style.fontFamily].join(' ');
+         const metrics=ctx.measureText(range.toString());
+         return range.getBoundingClientRect().bottom-metrics.fontBoundingBoxDescent-
+          (metrics.actualBoundingBoxAscent-metrics.actualBoundingBoxDescent)/2;
+        };
         const actual=cells.map(cell=>{
-         const range=document.createRange();range.selectNodeContents(cell);
+         const valueElement=cell.querySelector('.club-history-stat-value');
+         const range=document.createRange();range.selectNodeContents(valueElement);
          const value=rect(range),slot=rect(cell);
-         return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,height:slot.height};
+         return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,
+          inkDy:glyphInkY(valueElement,range)-slot.cy,height:slot.height};
         });
         const initial=cells.map(cell=>cell.innerHTML);
-        for(const cell of cells)cell.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+        const totalSlot=row.querySelector('.club-history-total-value');
+        const totalCell=totalSlot.closest('td');
+        const totalRange=document.createRange();totalRange.selectNodeContents(totalSlot);
+        const totalLoaded=totalRange.getBoundingClientRect(),totalLoadedCell=totalCell.getBoundingClientRect();
+        const totalPaintY=glyphInkY(totalSlot,totalRange);
+        const totalOriginal=totalSlot.innerHTML;
+        totalSlot.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+        for(const [index,cell] of cells.entries()){
+         cell.classList.add('club-history-skeleton-stat');
+         const slot=cell.querySelector('.club-history-stat-value');
+         // Compare real 2-digit GA to the shipped 3-digit GA placeholder.
+         const sample=['30','18','10','12','104','104','+52'][index];
+         slot.innerHTML='<span class="club-fp-bar" data-skeleton-sample="'+sample+'" aria-hidden="true"></span>';
+        }
         row.classList.add('club-history-row-loading');
         const skeleton=cells.map(cell=>{
          const bar=rect(cell.querySelector('.club-fp-bar')),slot=rect(cell);
-         return {dx:bar.cx-slot.cx,dy:bar.cy-slot.cy,height:slot.height};
+         return {dx:bar.cx-slot.cx,dy:bar.cy-slot.cy,y:bar.cy,height:slot.height};
         });
+        const totalBar=totalSlot.querySelector('.club-fp-bar').getBoundingClientRect();
+        const totalSkeletonCell=totalCell.getBoundingClientRect();
+        const totalAlignment={
+         dx:(totalBar.left-totalSkeletonCell.left)-(totalLoaded.left-totalLoadedCell.left),
+         dy:(totalBar.top+totalBar.height/2-totalSkeletonCell.top-totalSkeletonCell.height/2)-
+          (totalLoaded.top+totalLoaded.height/2-totalLoadedCell.top-totalLoadedCell.height/2),
+         inkDy:(totalBar.top+totalBar.height/2)-totalPaintY
+        };
         row.classList.remove('club-history-row-loading');
-        cells.forEach((cell,i)=>cell.innerHTML=initial[i]);
+        totalSlot.innerHTML=totalOriginal;
+        cells.forEach((cell,i)=>{cell.classList.remove('club-history-skeleton-stat');cell.innerHTML=initial[i];});
         const header=row.querySelector('th:first-child');
         const button=header.querySelector('button');
         const text=button.lastChild;const range=document.createRange();range.selectNodeContents(text);
         const nameLeft=range.getBoundingClientRect().left;
+        const nameCenterY=rect(range).cy;
+        const seasonPaintY=glyphInkY(button,range);
+        const chevron=button.querySelector('.club-history-chevron');
+        const chevronRight=button.getBoundingClientRect().left+chevron.offsetLeft+chevron.offsetWidth;
+        chevron.remove();
+        const nameWithoutChevron=range.getBoundingClientRect().left;
+        button.prepend(chevron);
+        const nameRestored=range.getBoundingClientRect().left;
         const original=header.innerHTML;
         header.innerHTML='<span class="club-history-expand club-history-skeleton-label">'+
          '<span class="club-history-chevron-space" aria-hidden="true"></span>'+
          '<span class="club-fp-bar" aria-hidden="true"></span></span>';
+        // Mirror the actual parser-time row state while probing its paint.
+        row.classList.add('club-history-row-loading');
         const skeletonNameLeft=header.querySelector('.club-fp-bar').getBoundingClientRect().left;
+        const skeletonNameCenterY=rect(header.querySelector('.club-fp-bar')).cy;
+        const skeletonInkStyle=getComputedStyle(header.querySelector('.club-fp-bar'),'::before');
+        const skeletonBarStyle=getComputedStyle(header.querySelector('.club-fp-bar'));
+        const skeletonPaint={decoration:skeletonInkStyle.textDecorationLine,
+         thickness:skeletonInkStyle.textDecorationThickness,
+         bg:skeletonBarStyle.backgroundColor,translation:skeletonBarStyle.translate,
+         overflow:skeletonBarStyle.overflow,radius:skeletonBarStyle.borderRadius,
+         justify:skeletonBarStyle.justifyContent,weight:skeletonInkStyle.fontWeight,
+         sample:skeletonInkStyle.content};
+        row.classList.remove('club-history-row-loading');
         header.innerHTML=original;
-        return {actual,skeleton,nameOffset:skeletonNameLeft-nameLeft};
+        return {actual,skeleton,totalAlignment,skeletonPaint,nameOffset:skeletonNameLeft-nameLeft,
+         nameCenterOffset:skeletonNameCenterY-nameCenterY,
+         seasonInkOffset:skeletonNameCenterY-seasonPaintY,seasonSkeletonY:skeletonNameCenterY,
+         chevronShift:nameWithoutChevron-nameLeft,chevronRestoreShift:nameRestored-nameLeft,
+         chevronGap:nameLeft-chevronRight};
        })()`);
        for(let i=0;i<7;i++){
         const data=alignment.actual[i],skeleton=alignment.skeleton[i];
-        assert.ok(Math.abs(data.dx-skeleton.dx)<=2,
+        assert.ok(Math.abs(data.dx-skeleton.dx)<=1,
          'stat '+i+' skeleton shares hydrated horizontal center at '+width+': '+JSON.stringify(alignment));
-        assert.ok(Math.abs(data.dy-skeleton.dy)<=3,
+        assert.ok(Math.abs(data.dy-skeleton.dy)<=(width>620?2.5:1),
          'stat '+i+' skeleton shares hydrated value-row center at '+width+': '+JSON.stringify(alignment));
+        assert.ok(Math.abs(data.inkDy-skeleton.dy)<=(width>620?3:1.25),
+         'stat '+i+' loading bar follows painted numeric ink in its own cell at '+width+': '+JSON.stringify(alignment));
+        if(width>620)assert.ok(skeleton.dy-data.dy>=0.4,
+         'History loading bar must be below the verified text-line center at '+width+': '+JSON.stringify(alignment));
         assert.ok(Math.abs(data.height-skeleton.height)<=1,
          'stat '+i+' keeps the same cell height during loading at '+width);
        }
        assert.ok(Math.abs(alignment.nameOffset)<=2,
         'season skeleton starts exactly where the loaded name starts at '+width+': '+JSON.stringify(alignment));
+       assert.ok(Math.abs(alignment.nameCenterOffset)<=(width>620?2.5:1),
+        'Club History season text and its skeleton share a vertical center at '+width+': '+JSON.stringify(alignment));
+       assert.ok(Math.abs(alignment.seasonInkOffset)<=(width>620?3:1.5),
+        'Club History Season bar follows the actual letter ink center at '+width+': '+JSON.stringify(alignment));
+       assert.ok(alignment.skeletonPaint.bg!=='rgba(0, 0, 0, 0)'&&
+        alignment.skeletonPaint.radius==='5px'&&
+        !alignment.skeletonPaint.decoration.includes('line-through')&&
+        !alignment.skeletonPaint.sample.includes('Season'),
+        'History Season uses the same real filled/rounded bar as Club Overview at '+width+': '+JSON.stringify(alignment));
+       if(width>620)assert.ok(Math.abs(alignment.totalAlignment.inkDy)<=3,
+        'Club History Total bar follows painted Total glyphs at '+width+': '+JSON.stringify(alignment));
+       if(width>620)assert.ok(Math.abs(alignment.totalAlignment.dx)<=1&&Math.abs(alignment.totalAlignment.dy)<=2.5,
+        'Club History Total skeleton matches the actual Total text origin and center at '+width+': '+JSON.stringify(alignment));
+       assert.ok(Math.abs(alignment.chevronShift)<=0.5&&Math.abs(alignment.chevronRestoreShift)<=0.5,
+        'Club History text cannot move when the chevron is removed/restored at '+width+': '+JSON.stringify(alignment));
+       assert.ok(Math.abs(alignment.chevronGap-10)<=1,
+        'Club History chevron sits outside the fixed Season text position at '+width+': '+JSON.stringify(alignment));
+       if(width===1440)assert.ok(alignment.skeleton.every(v=>Math.abs(v.y-alignment.seasonSkeletonY)<=2),
+        'desktop History: numeric skeletons share the Season skeleton row: '+JSON.stringify(alignment));
       }
       await run("document.querySelector('#history-mobile-560-probe [data-club-history-toggle]').click()");
       const expanded=await run(`(()=>{
        const wrap=document.getElementById('history-mobile-560-probe'),button=wrap.querySelector('button');
        const row=wrap.querySelector('.club-history-competition-row'),link=row.querySelector('a');
        const r=row.getBoundingClientRect(),lr=link.getBoundingClientRect();
+       const glyphCenter=node=>{const range=document.createRange();range.selectNodeContents(node);
+        const b=range.getBoundingClientRect();return b.top+b.height/2;};
+       const compCell=row.querySelector('.club-history-competition-value');
+       const compBox=compCell.getBoundingClientRect();
+       const competitionName=row.querySelector('.club-history-competition-text');
+       const competitionRange=document.createRange();competitionRange.selectNodeContents(competitionName);
+       const competitionStart=competitionRange.getBoundingClientRect().left-compBox.left;
+       const summary=wrap.querySelector('.club-history-season-row');
+       const total=summary.querySelector('.club-history-total-value');
+       const totalCell=total.closest('td'),totalBox=totalCell.getBoundingClientRect();
+       const totalRange=document.createRange();totalRange.selectNodeContents(total);
+       const totalStart=totalRange.getBoundingClientRect().left-totalBox.left;
+       const originalTotal=total.innerHTML;
+       total.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+       summary.classList.add('club-history-row-loading');
+       const totalSkeletonStart=total.querySelector('.club-fp-bar').getBoundingClientRect().left-totalBox.left;
+       summary.classList.remove('club-history-row-loading');
+       total.innerHTML=originalTotal;
+       const competitionTextCenter=glyphCenter(competitionName);
+       const numericTextCenter=glyphCenter(row.querySelector('td:nth-child(4) .club-history-stat-value'));
        const position=row.querySelector('td:nth-child(3)');
        const positionLabel=getComputedStyle(position,'::before');
        const positionLayout=getComputedStyle(position);
        const stat=row.querySelector('td:nth-child(4)');
        return {expanded:button.getAttribute('aria-expanded'),hidden:row.hidden,
+        competitionStart,totalStart,totalSkeletonStart,
+        competitionTextCenter,numericTextCenter,competitionCellCenter:compBox.top+compBox.height/2,
+        competitionTextPosition:getComputedStyle(link).position,
         positionLayout:positionLayout.display,positionColumns:positionLayout.gridTemplateColumns,
         positionAlign:positionLayout.alignItems,positionLabelSize:positionLabel.fontSize,
         positionValueSize:positionLayout.fontSize,
@@ -661,12 +794,23 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(expanded.explicitCellRole,'cell','expanded numeric cell preserves its semantic role at '+width);
       assert.equal(expanded.hidden,false,'History competition row appears at '+width);
       assert.equal(expanded.linkHref,'/competitions/it-1/standings?season=777');
+      if(width>620){
+       assert.equal(expanded.competitionTextPosition,'absolute','History Competition is anchored to its row');
+       assert.ok(Math.abs(expanded.competitionStart-expanded.totalStart)<=1 &&
+        Math.abs(expanded.competitionStart-expanded.totalSkeletonStart)<=1,
+        'Club History Competition, Total text and first-paint Total skeleton have identical x at '+width+': '+JSON.stringify(expanded));
+       assert.ok(Math.abs(expanded.competitionTextCenter-expanded.numericTextCenter)<=2,
+        'Club History Competition glyphs must center with actual numeric text at '+width+': '+JSON.stringify(expanded));
+      }else{
+       assert.ok(Math.abs(expanded.competitionTextCenter-expanded.competitionCellCenter)<=3,
+        'Club History mobile Competition wraps and centers within its own row at '+width+': '+JSON.stringify(expanded));
+      }
       if(width<=620){
        assert.ok(expanded.rowHeight>100,'expanded mobile row reveals all eight statistics at '+width);
        assert.equal(expanded.positionLayout,'grid','position and its label use explicit grid columns at '+width);
        assert.equal(expanded.positionAlign,'baseline','position and label share the text baseline at '+width);
        assert.equal(expanded.positionLabelSize,expanded.positionValueSize,'position label and value use the same font size at '+width);
-       assert.equal(expanded.statTracks,'12px 16px','numeric data and skeletons reserve identical label/value tracks at '+width);
+       assert.equal(expanded.statTracks,'12px 24px','numeric data and skeletons reserve identical label/value tracks at '+width);
        assert.equal(expanded.linkWhiteSpace,'normal','long mobile link may wrap at '+width);
        assert.equal(expanded.linkOverflow,'visible','long mobile link text is not clipped at '+width);
        assert.ok(expanded.overflow<=2,'expanded History must not overflow the page at '+width);
@@ -683,16 +827,18 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       probe.id='club-history-link-hitbox-probe';
       const width=Math.min(380,window.innerWidth-24);
       probe.style.cssText='position:fixed;top:96px;left:12px;z-index:2147483647;background:var(--surface);width:'+width+'px';
-      probe.innerHTML='<table class="club-history-table" style="width:100%;min-width:0"><colgroup><col style="width:44px"><col></colgroup><tbody><tr class="club-history-competition-row"><td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings"><span class="club-history-competition-text">League A</span></a></th></tr></tbody></table>';
+      probe.innerHTML='<table class="club-history-table" style="width:100%;min-width:0"><colgroup><col style="width:44px"><col></colgroup><tbody><tr class="club-history-competition-row"><td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings"><span class="club-history-competition-text">League gyp</span></a></th></tr></tbody></table>';
       document.body.append(probe);
       const link=probe.querySelector('a'),cell=probe.querySelector('th'),label=probe.querySelector('.club-history-competition-text');
       window.__historyProbeClickCount=0;
       link.addEventListener('click',e=>{e.preventDefault();window.__historyProbeClickCount++});
       const a=link.getBoundingClientRect(),c=cell.getBoundingClientRect(),t=label.getBoundingClientRect();
+      const style=getComputedStyle(link);
       if(c.right-a.right<24)throw Error('History competition link unexpectedly occupies its empty cell');
       return {
         blank:{x:Math.floor((a.right+c.right)/2),y:Math.floor((a.top+a.bottom)/2)},
-        label:{x:Math.floor((t.left+t.right)/2),y:Math.floor((t.top+t.bottom)/2)}
+        label:{x:Math.floor((t.left+t.right)/2),y:Math.floor((t.top+t.bottom)/2)},
+        lineHeight:parseFloat(style.lineHeight),fontSize:parseFloat(style.fontSize),overflow:style.overflow
       };
     })()`);
     const moveToHistory=async({x,y})=>cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x,y,button:'none'});
@@ -700,6 +846,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       await cmd('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',clickCount:1});
       await cmd('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',clickCount:1});
     };
+    assert.ok(historyHitBoxes.lineHeight>=historyHitBoxes.fontSize*1.45 && historyHitBoxes.overflow==='visible',
+      'Club History competition text leaves room for g/p descenders and its underline');
     await moveToHistory(historyHitBoxes.blank);
     assert.equal(await run("getComputedStyle(document.querySelector('#club-history-link-hitbox-probe .club-history-competition-text')).textDecorationLine"),'none',
       'the empty cell must not underline competition text');
@@ -711,6 +859,274 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await clickHistory(historyHitBoxes.label);
     assert.equal(await run('window.__historyProbeClickCount'),1,'clicking the actual text activates the link');
     await run("document.getElementById('club-history-link-hitbox-probe').remove()");
+
+    // #578: real Chromium geometry regression for Player Stats. The previous
+    // bars were too wide: sharing the numeric cell kept their right edges
+    // aligned, but displaced their visible centers by 6-12px.
+    await run("new Promise((ok,fail)=>{const link=document.createElement('link');link.rel='stylesheet';link.href='/assets/player-detail.css';link.onload=()=>ok(true);link.onerror=()=>fail(Error('Missing Player Stats stylesheet'));document.head.append(link)})");
+    for(const width of [1440,390]){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<=620});
+      const placement=await run(`(()=>{
+       const old=document.getElementById('player-stats-alignment-probe');if(old)old.remove();
+       const probe=document.createElement('div');probe.id='player-stats-alignment-probe';
+       probe.style.cssText='position:fixed;top:96px;left:8px;z-index:2147483647;background:var(--surface);width:calc(100vw - 16px);max-width:1100px';
+       const keys=['apps','minutes','score','assists','yellow','red','rating'];
+       const text=['1 (0)','90','1','0','0','0','7.50'];
+       const labels=['Apps (Subs)','Min','Gls','Ast','YC','RC','Rat.'];
+       const metrics=()=>keys.map((key,i)=>'<td class="app-player-stats-number" data-metric="'+key+'" data-mobile-label="'+labels[i]+'"><span class="app-player-stats-value">'+text[i]+'</span></td>').join('');
+       probe.innerHTML='<table class="app-player-stats-table"><colgroup>'+
+        '<col class="app-player-stats-col-season"><col class="app-player-stats-col-competition"><col class="app-player-stats-col-club">'+
+        Array.from({length:7},()=>'<col class="app-player-stats-col-number">').join('')+'</colgroup><tbody>'+
+        '<tr class="app-player-stats-season-row"><th scope="row" class="app-player-stats-season">'+
+        '<span class="app-player-stats-static-label"><span class="app-player-stats-chevron-space" aria-hidden="true"></span><span class="app-player-stats-no-toggle">Season 1</span></span></th>'+
+        '<td class="app-player-stats-competition"><span class="app-player-stats-total-value">Total</span></td>'+
+        '<td class="app-player-stats-club"></td>'+metrics()+'</tr>'+
+        '<tr class="app-player-stats-competition-row"><td></td><th class="app-player-stats-competition">'+
+        '<a class="app-player-stats-link app-player-stats-competition-link" href="/competitions/it-1/standings">'+
+        '<span class="app-player-stats-competition-name">League gyp</span></a></th>'+
+        '<td class="app-player-stats-club"><span class="app-player-stats-club-identity">'+
+        '<span class="app-players-club-mark app-player-stats-club-crest" aria-hidden="true"></span>'+
+        '<a class="app-player-stats-link app-player-stats-club-link" href="/clubs/it/1/overview">'+
+        '<span class="app-player-stats-club-name">AC Meneghina</span></a></span></td>'+
+        metrics()+'</tr></tbody></table>';
+       document.body.append(probe);
+       const row=probe.querySelector('.app-player-stats-season-row');
+       const cells=[...row.querySelectorAll('td.app-player-stats-number')];
+       const seasonLabel=row.querySelector('.app-player-stats-no-toggle');
+       const seasonHeader=row.querySelector('.app-player-stats-season');
+       const rect=n=>{const r=n.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,right:r.right,height:r.height};};
+       const glyphInkY=(element,range)=>{
+        const style=getComputedStyle(element),ctx=document.createElement('canvas').getContext('2d');
+        ctx.font=[style.fontStyle,style.fontWeight,style.fontSize,style.fontFamily].join(' ');
+        const m=ctx.measureText(range.toString());
+        return range.getBoundingClientRect().bottom-m.fontBoundingBoxDescent-
+         (m.actualBoundingBoxAscent-m.actualBoundingBoxDescent)/2;
+       };
+       const seasonLabelRange=document.createRange();seasonLabelRange.selectNodeContents(seasonLabel);
+       const seasonTextOffset=rect(seasonLabelRange).y-rect(seasonHeader).y;
+       const seasonInkY=glyphInkY(seasonLabel,seasonLabelRange);
+       const seasonLoadedX=seasonLabelRange.getBoundingClientRect().left-seasonHeader.getBoundingClientRect().left;
+       const summaryTotal=row.querySelector('.app-player-stats-total-value');
+       const summaryTotalCell=summaryTotal.closest('td');
+       const summaryRange=document.createRange();summaryRange.selectNodeContents(summaryTotal);
+       const summaryText=summaryRange.getBoundingClientRect(),summaryCell=summaryTotalCell.getBoundingClientRect();
+       const totalInkY=glyphInkY(summaryTotal,summaryRange);
+       const totalLoadedAnchor={
+        x:summaryText.left-summaryCell.left,
+        y:(summaryText.top+summaryText.height/2)-(summaryCell.top+summaryCell.height/2)
+       };
+       const seasonTextLeft=seasonLabel.getBoundingClientRect().left;
+       const seasonChevron=seasonHeader.querySelector('.app-player-stats-chevron-space');
+       const seasonChevronRight=seasonChevron.getBoundingClientRect().right;
+       seasonChevron.remove();
+       const seasonTextWithoutChevron=seasonLabel.getBoundingClientRect().left;
+       seasonHeader.querySelector('.app-player-stats-static-label').prepend(seasonChevron);
+       const actual=cells.map(cell=>{
+        const value=cell.querySelector('.app-player-stats-value');
+        const range=document.createRange();range.selectNodeContents(value);
+        const a=rect(range),b=rect(cell);
+        return {dx:a.x-b.x,dy:a.y-b.y,inkDy:glyphInkY(value,range)-b.y,right:a.right,height:b.height};
+       });
+       const sampleTexts=['128 (24)','9870','32','21','17','2','7.50'];
+       for(const [index,cell] of cells.entries()){
+        const value=cell.querySelector('.app-player-stats-value');
+        // Compare real short values against the actual first-paint samples.
+        value.innerHTML='<span class="app-skeleton-bar" data-skeleton-sample="'+sampleTexts[index]+'" aria-hidden="true"></span>';
+       }
+       row.classList.add('app-player-stats-loading');
+       const skeleton=cells.map(cell=>{
+        const a=rect(cell.querySelector('.app-skeleton-bar')),b=rect(cell);
+        return {dx:a.x-b.x,dy:a.y-b.y,right:a.right,height:b.height};
+       });
+       row.classList.remove('app-player-stats-loading');
+       const loadingRow=document.createElement('tr');
+       loadingRow.className='app-player-stats-season-row app-player-stats-loading';
+       loadingRow.innerHTML='<th scope="row" class="app-player-stats-season"><span class="app-player-stats-skeleton-label">'+
+        '<span class="app-player-stats-chevron-space" aria-hidden="true"></span>'+
+        '<span class="app-skeleton-bar app-player-stats-skeleton-season" aria-hidden="true"></span></span></th>'+
+        '<td class="app-player-stats-competition"><span class="app-player-stats-total-value">'+
+        '<span class="app-skeleton-bar app-player-stats-skeleton-total"></span></span></td><td></td>'+
+        keys.map((key,i)=>'<td class="app-player-stats-number" data-metric="'+key+'" data-mobile-label="'+labels[i]+'">'+
+         '<span class="app-player-stats-value"><span class="app-skeleton-bar" data-skeleton-sample="'+
+         sampleTexts[i]+'" aria-hidden="true"></span></span></td>').join('');
+       row.parentNode.append(loadingRow);
+       const loadingHeader=loadingRow.querySelector('th');
+       const loadingSeasonBar=loadingHeader.querySelector('.app-player-stats-skeleton-season');
+       const loadingSeasonOffset=rect(loadingSeasonBar).y-rect(loadingHeader).y;
+       const seasonInkOffset=
+        (rect(loadingSeasonBar).y-rect(loadingHeader).y)-
+        (seasonInkY-rect(seasonHeader).y);
+       const loadingSeasonX=loadingSeasonBar.getBoundingClientRect().left-loadingHeader.getBoundingClientRect().left;
+       const pendingTotalBar=loadingRow.querySelector('.app-player-stats-skeleton-total');
+       const pendingTotalCell=pendingTotalBar.closest('td');
+       const pendingBar=pendingTotalBar.getBoundingClientRect(),pendingCell=pendingTotalCell.getBoundingClientRect();
+       const totalInkOffset=(pendingBar.top+pendingBar.height/2)-totalInkY-
+        ((pendingCell.top+pendingCell.height/2)-(summaryCell.top+summaryCell.height/2));
+       const totalPendingAnchor={
+        x:pendingBar.left-pendingCell.left,
+        y:(pendingBar.top+pendingBar.height/2)-(pendingCell.top+pendingCell.height/2)
+       };
+       const loadingSkeletonCenters=[...loadingRow.querySelectorAll('.app-player-stats-number .app-skeleton-bar')].map(node=>rect(node).y);
+       const loadingTotalCenter=rect(loadingRow.querySelector('.app-player-stats-skeleton-total')).y;
+       const loadingSeasonCenter=rect(loadingSeasonBar).y;
+       const samplePaintStyle=getComputedStyle(loadingSeasonBar,'::before');
+       const labelPaintStyle=getComputedStyle(loadingSeasonBar);
+       const samplePaint={decoration:samplePaintStyle.textDecorationLine,
+        thickness:samplePaintStyle.textDecorationThickness,
+        translation:labelPaintStyle.translate,bg:labelPaintStyle.backgroundColor,
+        radius:labelPaintStyle.borderRadius,overflow:labelPaintStyle.overflow,
+        justify:labelPaintStyle.justifyContent,
+        sample:samplePaintStyle.content};
+       // Same cell/row geometry, but the two distinct loaded labels.
+       // Recreate the Career variant to catch its formerly inset ghost stroke.
+       const seasonTextOriginal=seasonLabel.textContent;
+       seasonLabel.textContent='Career';
+       const careerRange=document.createRange();careerRange.selectNodeContents(seasonLabel);
+       const careerTextLeft=careerRange.getBoundingClientRect().left-seasonHeader.getBoundingClientRect().left;
+       const careerInkOffset=(rect(loadingSeasonBar).y-rect(loadingHeader).y)-
+        (glyphInkY(seasonLabel,careerRange)-rect(seasonHeader).y);
+       loadingSeasonBar.classList.replace('app-player-stats-skeleton-season','app-player-stats-skeleton-career');
+       const careerBarStyle=getComputedStyle(loadingSeasonBar);
+       const careerPaint={left:loadingSeasonBar.getBoundingClientRect().left-loadingHeader.getBoundingClientRect().left,
+        justify:careerBarStyle.justifyContent,overflow:careerBarStyle.overflow,
+        radius:careerBarStyle.borderRadius,
+        sample:getComputedStyle(loadingSeasonBar,'::before').content};
+       loadingSeasonBar.classList.replace('app-player-stats-skeleton-career','app-player-stats-skeleton-season');
+       seasonLabel.textContent=seasonTextOriginal;
+       const link=probe.querySelector('.app-player-stats-club-link'),name=link.querySelector('.app-player-stats-club-name');
+       const competitionLink=probe.querySelector('.app-player-stats-competition-link');
+       const bounds=rect(name),compBounds=rect(competitionLink);
+       const compCell=rect(competitionLink.closest('th')),clubCell=rect(link.closest('td'));
+       const competitionStyle=getComputedStyle(competitionLink);
+       const compVisual={x:compBounds.x,y:compBounds.y,centerOffset:compBounds.y-compCell.y,
+        lineHeight:parseFloat(competitionStyle.lineHeight),fontSize:parseFloat(competitionStyle.fontSize),
+        overflow:competitionStyle.overflow};
+       const clubCenterOffset=bounds.y-clubCell.y;
+       const crest=probe.querySelector('.app-player-stats-club-crest');
+       const crestCenter=rect(crest).y;
+       const identity=crest.parentElement;
+       const clubTextLeft=name.getBoundingClientRect().left;
+       const crestRight=crest.getBoundingClientRect().right;
+       crest.remove();
+       const nameWithoutCrest=name.getBoundingClientRect().left;
+       identity.prepend(crest);
+       const nameRestoredAfterCrest=name.getBoundingClientRect().left;
+       const originalNameCenter=bounds.y;
+       const detailCells=[...link.closest('tr').querySelectorAll('.app-player-stats-number .app-player-stats-value')];
+       const glyphCenter=node=>{const range=document.createRange();range.selectNodeContents(node);
+        const box=range.getBoundingClientRect();return box.top+box.height/2;};
+       const compName=probe.querySelector('.app-player-stats-competition-name');
+       const compRange=document.createRange();compRange.selectNodeContents(compName);
+       const competitionStart=compRange.getBoundingClientRect().left-competitionLink.closest('th').getBoundingClientRect().left;
+       const compTextCenter=glyphCenter(compName);
+       const clubTextCenter=glyphCenter(name);
+       const detailNumberCenter=glyphCenter(detailCells[0]);
+       detailCells.forEach((node,i)=>node.textContent=String(12345+i));
+       const independentCrestCenter=rect(crest).y, independentNameCenter=rect(name).y;
+       return {actual,skeleton,link:{x:bounds.x,y:bounds.y},linkOverflow:getComputedStyle(link).overflow,
+        chevronTextShift:seasonTextWithoutChevron-seasonTextLeft,
+        chevronTextGap:seasonTextLeft-seasonChevronRight,
+        crestTextShift:nameWithoutCrest-clubTextLeft,
+        crestRestoreTextShift:nameRestoredAfterCrest-clubTextLeft,
+        crestTextGap:clubTextLeft-crestRight,
+        competition:compVisual,clubCenterOffset,compTextCenter,clubTextCenter,detailNumberCenter,
+        competitionPosition:competitionStyle.position,competitionCellCenter:compCell.y,
+        competitionStart,
+        seasonTextOffset,loadingSeasonOffset,seasonLoadedX,loadingSeasonX,
+        totalLoadedAnchor,totalPendingAnchor,seasonInkOffset,totalInkOffset,samplePaint,
+        careerPaint,careerTextLeft,careerInkOffset,
+        loadingSeasonCenter,loadingTotalCenter,loadingSkeletonCenters,
+        crestNameOffset:crestCenter-originalNameCenter,
+        independentCrestOffset:independentCrestCenter-crestCenter,
+        independentNameOffset:independentNameCenter-originalNameCenter,
+        tracks:getComputedStyle(cells[0]).gridTemplateRows};
+      })()`);
+      for(let i=0;i<7;i++){
+       const a=placement.actual[i],s=placement.skeleton[i];
+       assert.ok(width<=620?Math.abs(a.dx-s.dx)<=1:Math.abs(a.right-s.right)<=1,
+        'Player Stats bar '+i+' anchors to the actual text (right edge on desktop, center on mobile) even with different digit counts at '+width+'px: '+JSON.stringify(placement));
+       assert.ok(Math.abs(a.dy-s.dy)<=(width>620?2.5:1),
+        'Player Stats bar '+i+' occupies the same value baseline at '+width+'px: '+JSON.stringify(placement));
+       assert.ok(Math.abs(a.inkDy-s.dy)<=(width>620?3:1.25),
+        'Player Stats bar '+i+' follows painted numeric ink in its own cell at '+width+'px: '+JSON.stringify(placement));
+       if(width>620)assert.ok(s.dy-a.dy>=0.4,
+        'Stats loading bar must be below the verified text-line center at '+width+': '+JSON.stringify(placement));
+       assert.ok(Math.abs(a.height-s.height)<=1,
+        'Player Stats pending and verified cell heights remain stable at '+width+'px');
+      }
+      assert.ok(Math.abs(placement.seasonTextOffset-placement.loadingSeasonOffset)<=(width>620?2.5:1),
+       'Player Stats: loaded Season and skeleton share the same vertical track at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.seasonInkOffset)<=(width>620?3:1.5),
+       'Player Stats Season placeholder matches the visible letters at '+width+': '+JSON.stringify(placement));
+      assert.ok(placement.samplePaint.bg!=='rgba(0, 0, 0, 0)'&&
+        placement.samplePaint.radius==='4px'&&
+        !placement.samplePaint.decoration.includes('line-through')&&
+        !placement.samplePaint.sample.includes('Season'),
+        'Player Season uses the global rounded app skeleton rather than ghost text at '+width+': '+JSON.stringify(placement));
+       assert.ok(Math.abs(placement.careerPaint.left-placement.careerTextLeft)<=1&&
+        Math.abs(placement.careerInkOffset)<=(width>620?3:1.5)&&
+        placement.careerPaint.radius==='4px'&&
+        placement.careerPaint.sample===placement.samplePaint.sample,
+        'Career and Season skeletons start at the actual text position and share the same shape at '+width+': '+JSON.stringify(placement));
+       if(width>620)assert.ok(Math.abs(placement.totalInkOffset)<=3,
+       'Player Stats Total placeholder matches painted Total letters at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.seasonLoadedX-placement.loadingSeasonX)<=1,
+       'Player Stats Season/Career loading bar must start exactly where the text starts at '+width+': '+JSON.stringify(placement));
+      if(width>620)assert.ok(
+       Math.abs(placement.totalLoadedAnchor.x-placement.totalPendingAnchor.x)<=1&&
+       Math.abs(placement.totalLoadedAnchor.y-placement.totalPendingAnchor.y)<=2.5,
+       'Player Stats Total skeleton occupies the real Total text origin/center at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.chevronTextShift)<=0.5&&Math.abs(placement.chevronTextGap-10)<=1,
+       'Player Stats Season text remains fixed when chevron is removed at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.crestTextShift)<=0.5&&Math.abs(placement.crestRestoreTextShift)<=0.5&&
+       Math.abs(placement.crestTextGap-7)<=1,
+       'club text is fixed before attaching the 24px crest at '+width+': '+JSON.stringify(placement));
+      if(width===1440)assert.ok(placement.loadingSkeletonCenters.every(y=>Math.abs(y-placement.loadingSeasonCenter)<2) &&
+       Math.abs(placement.loadingTotalCenter-placement.loadingSeasonCenter)<2,
+       'desktop Player Stats: numeric and Total skeletons share the Season skeleton row: '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.crestNameOffset)<=3 &&
+       Math.abs(placement.independentCrestOffset)<=1 &&
+       Math.abs(placement.independentNameOffset)<=1,
+       'crest and club name stay independently centered when the other stats change: '+JSON.stringify(placement));
+      if(width<=620)assert.equal(placement.tracks,'12px 24px','mobile Player Stats reserve identical tracks');
+      assert.ok(Math.abs(placement.competition.centerOffset)<3.5 && Math.abs(placement.clubCenterOffset)<3.5,
+       'competition and club identities stay vertically centered at '+width+': '+JSON.stringify(placement));
+      if(width>620){
+       assert.equal(placement.competitionPosition,'absolute','Player Competition is anchored to the desktop row');
+       assert.ok(Math.abs(placement.competitionStart-placement.totalLoadedAnchor.x)<=1 &&
+        Math.abs(placement.competitionStart-placement.totalPendingAnchor.x)<=1,
+        'Player Competition text must start where Total text and its skeleton start at '+width+': '+JSON.stringify(placement));
+       assert.ok(Math.abs(placement.compTextCenter-placement.detailNumberCenter)<=2 &&
+        Math.abs(placement.compTextCenter-placement.clubTextCenter)<=2,
+        'Player Stats Competition glyphs align with actual club and statistic text at '+width+': '+JSON.stringify(placement));
+      }else{
+       assert.ok(Math.abs(placement.compTextCenter-placement.competitionCellCenter)<=3,
+        'Player Stats Competition remains centered in its mobile row at '+width+': '+JSON.stringify(placement));
+      }
+      assert.ok(placement.competition.lineHeight>=placement.competition.fontSize*1.45 &&
+       placement.competition.overflow==='visible',
+       'Player Stats competition text leaves room for g/p descenders and underline at '+width);
+      if(width===1440){
+       assert.equal(placement.linkOverflow,'visible','the real underline is not clipped');
+       await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:placement.competition.x,y:placement.competition.y,button:'none'});
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-competition-name')).textDecorationLine"),'underline',
+        'Player Stats competition name restores the visible text-only underline');
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-competition-link')).textDecorationLine"),'none',
+        'competition anchor must not paint a second underline');
+       await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:placement.link.x,y:placement.link.y,button:'none'});
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-name')).textDecorationLine"),'underline',
+        'moving the mouse over the club name visibly underlines its text');
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-link')).textDecorationLine"),'none',
+        'the club anchor itself must not paint a second underline');
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-name')).textDecorationThickness"),'0.75px',
+        'club name uses exactly one 0.75px underline');
+       await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:4,y:4,button:'none'});
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-name')).textDecorationLine"),'none',
+        'moving away removes the club-name underline');
+      }
+      await run("document.getElementById('player-stats-alignment-probe').remove()");
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     for(const view of ['roster','fixtures','stats','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
      assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-empty')+"')"),true);
