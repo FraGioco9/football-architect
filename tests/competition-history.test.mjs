@@ -171,8 +171,8 @@ test('Every History route offers exactly seven seasonal and seven all-time playe
   assert.ok(section,route+' has player records');
   const cards=[...section.matchAll(/<article([^>]*)>([\s\S]*?)<\/article>/g)];
   assert.equal(cards.length,14,route);
-  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="season"')).length,6);
-  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="all-time"')&&c[1].includes(' hidden')).length,6);
+  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="season"')).length,7);
+  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="all-time"')&&c[1].includes(' hidden')).length,7);
   assert.equal(new Set(cards.map(c=>c[1].match(/data-history-player-record="([^"]+)"/)[1])).size,14);
   assert.ok(cards.every(c=>c[2].includes('data-app-i18n="historyPlayerNoData"')&&!/<strong|data-club-crest/.test(c[2])));
  }
