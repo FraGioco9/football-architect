@@ -355,10 +355,8 @@ export function selectUniformAutonomousContactAction({
   // action authority only abstains while the runner is not catching up.
   // No timer, synthetic cooldown, altered shoe geometry or ball velocity.
   if(isolatedDribbleContext?.situationId==='carry-solo'&&
-     attack*ballVelocity.x>=2.75&&
-     attack*(ballPosition.x-player.x)>=0.45&&
-     Math.abs(ballPosition.y-player.y)<=0.25&&
-     attack*ballVelocity.x>=attack*player.vx-0.10)
+     attack*ballVelocity.x>=2.65&&
+     attack*(ballPosition.x-player.x)>=0.42)
    return null;
   const dribbleTouch=isolatedDribbleContext===null?null:
    chooseIsolatedDribbleTouch({
