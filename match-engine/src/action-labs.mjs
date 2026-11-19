@@ -33,7 +33,8 @@ export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
  controlSide='home',controlDecisionEnabled=true,
  challengeSide='away',challengeScene='contact',variantIndex=0,
- bodyGuardEnabled=false,soloShoeWidthScale=1
+ bodyGuardEnabled=false,soloShoeWidthScale=1,
+ soloShoeLengthScale=1,soloRecoveryStepScale=1
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -47,6 +48,11 @@ export function createControlledActionLab(RAPIER,id,{
     (id!=='carry-solo'&&soloShoeWidthScale!==1)||
     (soloShoeWidthScale!==1&&!bodyGuardEnabled))
   throw new TypeError('Counterfactual widths require solo Carry with native body guard');
+ if(![0.9,1,1.1].includes(soloShoeLengthScale)||
+    ![0.85,1,1.15].includes(soloRecoveryStepScale)||
+    ((soloShoeLengthScale!==1||soloRecoveryStepScale!==1)&&
+     (id!=='carry-solo'||!bodyGuardEnabled)))
+  throw new TypeError('Longitudinal native shoe study requires guarded solo Carry');
  const smallSided=spec.mode==='situation'?
   smallSidedSetup(id,shotSide,INITIAL_PLAYERS,{variantIndex}):null;
  const refereeMode=spec.mode==='referee';
@@ -152,7 +158,11 @@ export function createControlledActionLab(RAPIER,id,{
    diagnosticSmallSidedSituation:id,
    diagnosticSmallSidedSide:shotSide,
    diagnosticSmallSidedVariantIndex:variantIndex,
-   ...(id==='carry-solo'?{diagnosticSoloShoeWidthScale:soloShoeWidthScale}:{}),
+   ...(id==='carry-solo'?{
+    diagnosticSoloShoeWidthScale:soloShoeWidthScale,
+    diagnosticSoloShoeLengthScale:soloShoeLengthScale,
+    diagnosticSoloRecoveryStepScale:soloRecoveryStepScale
+   }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
   }:{}),

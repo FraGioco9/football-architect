@@ -614,123 +614,139 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
   'Read-only per-foot solver and world-step witnesses must reconcile for all 60 variants');
 });
 
-test('#628 paired independent Rapier worlds compare solo shoe width only without adopting it',
- {timeout:120000},async()=>{
+test('#628 controlled paired longitudinal toe/recovery Rapier study keeps original geometry', 
+ {timeout:240000},async()=>{
  const R=await initializeRapier(rapier);
- const scales=[1,0.9,1.1];
- const stats=Object.fromEntries(scales.map(scale=>[scale,{
-  trials:0,weak:0,ballSpeedBreaches:0,liftBreaches:0,
-  totalStarts:0,totalNonActionStarts:0,totalCarries:0,
-  totalSolverNonActionStarts:0,totalNativeForceNonActionStarts:0,
-  totalBothFeetTicks:0,peakBallSpeedMps:0,peakLiftM:0,
-  minForwardM:Infinity,totalEndpointDeltaM:0,changedEndpointTrials:0
+ const variants=Object.freeze([
+  {id:'baseline',length:1,recovery:1},
+  {id:'short-toe',length:0.9,recovery:1},
+  {id:'long-toe',length:1.1,recovery:1},
+  {id:'short-recovery',length:1,recovery:0.85},
+  {id:'long-recovery',length:1,recovery:1.15}
+ ]);
+ const stats=Object.fromEntries(variants.map(v=>[v.id,{
+  trials:0,weak:0,speedBreaches:0,liftBreaches:0,
+  starts:0,nonActionStarts:0,carryActions:0,
+  solverNonActions:0,nativeForceNonActions:0,
+  bothFeetTicks:0,peakBallSpeedMps:0,peakGroundLiftM:0,
+  minForwardM:Infinity,maxGapM:0,endpointDeltaSumM:0,changedEndpoints:0,
+  maxShoeStartsIn3S:0
  }]));
- // Each branch owns its own genuine Rapier world, canonical mover and ball.
- // The ONLY difference is both actual rounded shoe collider half-widths.
- // Worlds evolve independently after the shared initial state: differences
- // are total replay outcomes, not proof that a particular START caused Δv.
+ // Each test uses a new one-world native Rapier ball; variants share
+ // identical pre-step ball and canonical player states at T=0. Only
+ // physical toe length OR negative-stroke recovery differs, not both.
  for(let variantIndex=0;variantIndex<30;variantIndex++)
  for(const side of ['home','away']){
-  const labs=scales.map(scale=>createControlledActionLab(R,'carry-solo',{
+  const labs=variants.map(v=>createControlledActionLab(R,'carry-solo',{
    shotSide:side,variantIndex,bodyGuardEnabled:true,
-   soloShoeWidthScale:scale}));
+   soloShoeLengthScale:v.length,soloRecoveryStepScale:v.recovery
+  }));
   try{
    const initial=labs.map(l=>l.snapshot());
-   assert.deepEqual(initial[0].ball,initial[1].ball);
-   assert.deepEqual(initial[0].ball,initial[2].ball);
-   assert.deepEqual(initial[0].observedMovementPlayers,
-    initial[1].observedMovementPlayers);
-   assert.deepEqual(initial[0].observedMovementPlayers,
-    initial[2].observedMovementPlayers);
-   let ends=[];
-   for(let j=0;j<labs.length;j++){
-    const scale=scales[j],lab=labs[j],s=stats[scale];
-    let peakBallSpeed=0,peakLift=0,actions=0,frame=null;
+   for(const x of initial.slice(1)){
+    assert.deepEqual(x.ball,initial[0].ball,
+     'Paired original Rapier worlds must begin at the same ball state');
+    assert.deepEqual(x.observedMovementPlayers,
+     initial[0].observedMovementPlayers,
+     'Paired actual players must begin in the same canonical state');
+   }
+   const endpoints=[];
+   for(let j=0;j<variants.length;j++){
+    const v=variants[j],s=stats[v.id],lab=labs[j];
+    let peakSpeed=0,peakLift=0,actions=0,frame=null;
     for(let tick=1;tick<=180;tick++){
      frame=lab.step();
      assert.equal(frame.physicsTick,tick);
-     assert.equal(frame.soloNativeFeet.geometrySource,
-      'native-rapier-collider-width');
-     assert.ok(Math.abs(frame.soloNativeFeet.physicalColliderHalfWidthM-
-      0.052*scale)<1e-12);
-     assert.equal(frame.soloNativeFeet.dynamics.tick,tick);
-     const source=frame.nativeDribbleAudit;
-     assert.equal(source.nativePhysicalShoeColliders,2);
+     const shoe=frame.soloNativeFeet,foot=shoe.dynamics;
+     assert.equal(shoe.independentColliders,2);
+     assert.equal(foot.tick,tick);
+     assert.equal(shoe.geometrySource,'native-rapier-collider-width');
+     assert.ok(Math.abs(shoe.physicalColliderHalfLengthM-
+      0.105*v.length)<1e-12);
+     assert.ok(Math.abs(shoe.physicalColliderHalfWidthM-0.052)<1e-12);
+     assert.equal(shoe.recoveryStepScale,v.recovery);
      assert.equal(frame.genuinePhysicalPlayerCount,1);
-     assert.equal(frame.smallSidedNativeBodyGuard.nativeOpposingTorsoPairs.length,0);
-     const v=frame.ball.velocity;
-     peakBallSpeed=Math.max(peakBallSpeed,Math.hypot(v.x,v.y));
-     peakLift=Math.max(peakLift,source.peakGroundClearanceM);
+     const speed=Math.hypot(frame.ball.velocity.x,frame.ball.velocity.y);
+     peakSpeed=Math.max(peakSpeed,speed);
+     peakLift=Math.max(peakLift,
+      frame.nativeDribbleAudit.peakGroundClearanceM);
      if(frame.action?.action==='carry'){
-      assert.equal(frame.soloNativeFeet.exclusivePhysicalStart,true);
+      assert.equal(shoe.exclusivePhysicalStart,true);
       assert.equal(frame.action.appliedByRapier,true);
+      assert.equal(frame.action.actualPhysicsImpulseApplied,true);
       actions++;
      }
     }
-    assert.equal(frame.nativeDribbleAudit.appliedCarryActions,actions);
     const a=frame.nativeDribbleAudit,non=a.nativeShoeStartsWithoutCarryImpulse;
+    assert.equal(a.appliedCarryActions,actions);
     assert.equal(a.nativePhysicalShoeStarts,actions+non);
-    assert.ok(a.nonActionStartsWithSolverContacts<=non);
-    assert.ok(a.nonActionStartsWithNativeForceEvents<=non);
+    assert.equal(a.nonActionStartsWithSolverContacts<=non,true);
+    assert.equal(a.nonActionStartsWithNativeForceEvents<=non,true);
     s.trials++;
-    s.totalStarts+=a.nativePhysicalShoeStarts;
-    s.totalNonActionStarts+=non;
-    s.totalCarries+=actions;
-    s.totalSolverNonActionStarts+=a.nonActionStartsWithSolverContacts;
-    s.totalNativeForceNonActionStarts+=a.nonActionStartsWithNativeForceEvents;
-    s.totalBothFeetTicks+=a.nativeBothFeetActiveTicks;
-    s.peakBallSpeedMps=Math.max(s.peakBallSpeedMps,peakBallSpeed);
-    s.peakLiftM=Math.max(s.peakLiftM,peakLift);
+    s.starts+=a.nativePhysicalShoeStarts;
+    s.nonActionStarts+=non;
+    s.carryActions+=actions;
+    s.solverNonActions+=a.nonActionStartsWithSolverContacts;
+    s.nativeForceNonActions+=a.nonActionStartsWithNativeForceEvents;
+    s.bothFeetTicks+=a.nativeBothFeetActiveTicks;
+    s.maxShoeStartsIn3S=Math.max(s.maxShoeStartsIn3S,
+     a.nativePhysicalShoeStarts);
+    s.peakBallSpeedMps=Math.max(s.peakBallSpeedMps,peakSpeed);
+    s.peakGroundLiftM=Math.max(s.peakGroundLiftM,peakLift);
+    s.maxGapM=Math.max(s.maxGapM,a.maximumRealAttackerBallGapM);
     s.minForwardM=Math.min(s.minForwardM,a.ballForwardDistanceM);
     if(actions<2||a.independentRecontacts<1||a.ballForwardDistanceM<4)
      s.weak++;
-    if(peakBallSpeed>3.5+1e-6)s.ballSpeedBreaches++;
+    if(peakSpeed>3.5+1e-6)s.speedBreaches++;
     if(peakLift>0.015+1e-6)s.liftBreaches++;
-    ends.push(frame.ball);
+    endpoints.push(frame.ball);
    }
-   for(let j=1;j<scales.length;j++){
-    const delta=Math.hypot(ends[j].position.x-ends[0].position.x,
-     ends[j].position.y-ends[0].position.y);
-    const s=stats[scales[j]];
-    s.totalEndpointDeltaM+=delta;
-    if(delta>0.0001)s.changedEndpointTrials++;
+   for(let j=1;j<variants.length;j++){
+    const delta=Math.hypot(endpoints[j].position.x-endpoints[0].position.x,
+     endpoints[j].position.y-endpoints[0].position.y);
+    stats[variants[j].id].endpointDeltaSumM+=delta;
+    if(delta>0.0001)stats[variants[j].id].changedEndpoints++;
    }
-  }finally{for(const lab of labs)lab.dispose();}
+  }finally{for(const l of labs)l.dispose();}
  }
- const summary=Object.fromEntries(scales.map(scale=>{
-  const s=stats[scale],n=s.trials;
-  return [scale,{trials:n,
-   meanPhysicalShoeStarts:s.totalStarts/n,
-   meanStartsWithoutCarry:s.totalNonActionStarts/n,
-   meanCarries:s.totalCarries/n,
-   meanSolverNonActionStarts:s.totalSolverNonActionStarts/n,
-   meanForceEventNonActionStarts:s.totalNativeForceNonActionStarts/n,
-   meanBothFeetTicks:s.totalBothFeetTicks/n,
+ const summary=Object.fromEntries(variants.map(v=>{
+  const s=stats[v.id],n=s.trials;
+  return [v.id,{
+   trials:n,actualColliderLengthScale:v.length,actualRecoveryStepScale:v.recovery,
+   meanNativeStarts:s.starts/n,meanCarryActions:s.carryActions/n,
+   meanStartsWithoutCarry:s.nonActionStarts/n,
+   meanSolverNonActions:s.solverNonActions/n,
+   meanForceEventNonActions:s.nativeForceNonActions/n,
+   meanBothFeetTicks:s.bothFeetTicks/n,
    peakBallSpeedMps:s.peakBallSpeedMps,
-   peakGroundLiftM:s.peakLiftM,minForwardM:s.minForwardM,
-   weakTrials:s.weak,ballSpeedBreaches:s.ballSpeedBreaches,
+   peakGroundLiftM:s.peakGroundLiftM,minForwardM:s.minForwardM,
+   maxActorBallGapM:s.maxGapM,
+   weakTrials:s.weak,ballSpeedBreaches:s.speedBreaches,
    liftBreaches:s.liftBreaches,
-   meanEndpointDeltaFromBaselineM:s.totalEndpointDeltaM/n,
-   changedEndpointTrials:s.changedEndpointTrials,
-   allGuardsPassed:s.weak===0&&s.ballSpeedBreaches===0&&
-    s.liftBreaches===0}];
+   meanEndDeltaFromBaselineM:s.endpointDeltaSumM/n,
+   changedEndpointTrials:s.changedEndpoints,
+   eligibleForVisualReview:s.weak===0&&s.speedBreaches===0&&
+    s.liftBreaches===0&&s.starts<stats.baseline.starts&&
+    s.carryActions<=stats.baseline.carryActions
+  }];
  }));
- process.stdout.write('ME_628_SOLO_REAL_COLLIDER_WIDTH_COUNTERFACTUAL '+
-  JSON.stringify(summary)+'\\n');
- // Baseline is the previously accepted 60-way actual Rapier source.
- // Variants are diagnostic counterfactuals, NOT automatically approved.
- assert.equal(summary[1].trials,60);
- assert.equal(summary[1].weakTrials,0);
- assert.equal(summary[1].ballSpeedBreaches,0);
- assert.equal(summary[1].liftBreaches,0);
- assert.ok(Math.abs(summary[1].meanCarries-4.866666666666666)<0.05);
- assert.ok(Math.abs(summary[1].meanPhysicalShoeStarts-9.1)<0.05);
- for(const scale of [0.9,1.1]){
-  assert.equal(summary[scale].trials,60);
-  assert.ok(summary[scale].changedEndpointTrials>=1,
-   'A different real Rapier shoe width must change native 180-tick path');
-  assert.ok(summary[scale].meanEndpointDeltaFromBaselineM>0);
-  assert.equal(stats[scale].totalStarts,
-   stats[scale].totalCarries+stats[scale].totalNonActionStarts);
+ process.stdout.write('ME_628_SOLO_LONGITUDINAL_RAPIER_COUNTERFACTUAL '+
+  JSON.stringify(summary)+'\n');
+ // Gate the unchanged APPROVED baseline only. Experimental arms may FAIL:
+ // that is empirical evidence, not a reason to relax source-level guards.
+ assert.equal(summary.baseline.trials,60);
+ assert.equal(summary.baseline.weakTrials,0);
+ assert.equal(summary.baseline.ballSpeedBreaches,0);
+ assert.equal(summary.baseline.liftBreaches,0);
+ assert.ok(Math.abs(summary.baseline.meanNativeStarts-9.1)<0.05);
+ assert.ok(Math.abs(summary.baseline.meanCarryActions-4.866666666666666)<0.05);
+ for(const variant of variants.slice(1)){
+  const s=summary[variant.id],totals=stats[variant.id];
+  assert.equal(s.trials,60);
+  assert.equal(totals.starts,totals.carryActions+totals.nonActionStarts);
+  assert.ok(s.changedEndpointTrials>0);
+  assert.ok(s.meanEndDeltaFromBaselineM>0);
+  assert.ok(s.meanSolverNonActions<=s.meanStartsWithoutCarry);
+  assert.ok(s.meanForceEventNonActions<=s.meanStartsWithoutCarry);
  }
 });

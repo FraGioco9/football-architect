@@ -116,6 +116,8 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSmallSidedSide = null,
   diagnosticSmallSidedVariantIndex = 0,
   diagnosticSoloShoeWidthScale = 1,
+  diagnosticSoloShoeLengthScale = 1,
+  diagnosticSoloRecoveryStepScale = 1,
   diagnosticSmallSidedBodyGuardEnabled = false,
    diagnosticSmallSidedBodyFeedbackEnabled = false,
   diagnosticResearchControlReceiver = false,
@@ -158,6 +160,15 @@ export function createEngine(RAPIER, input = {}, {
        !diagnosticAutonomousFixtureActionEnabled||
        !diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Only isolated solo Carry counterfactual shoe widths 0.9/1/1.1');
+  if(![0.9,1,1.1].includes(diagnosticSoloShoeLengthScale)||
+     ![0.85,1,1.15].includes(diagnosticSoloRecoveryStepScale)||
+     ((diagnosticSoloShoeLengthScale!==1||
+       diagnosticSoloRecoveryStepScale!==1)&&
+      (diagnosticSmallSidedSituation!=='carry-solo'||
+       !diagnosticPlayerFootContactsEnabled||
+       !diagnosticAutonomousFixtureActionEnabled||
+       !diagnosticSmallSidedBodyGuardEnabled)))
+   throw new TypeError('Longitudinal solo shoe experiments require guarded native Carry');
   if(typeof diagnosticSmallSidedBodyFeedbackEnabled!=='boolean'||
       (diagnosticSmallSidedBodyFeedbackEnabled&&
        diagnosticSmallSidedBodyGuardEnabled!==true))
@@ -513,6 +524,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticB06bHalftimeTick,diagnosticB06bNativeShotSide,
     diagnosticSmallSidedSituation,diagnosticSmallSidedSide,
     diagnosticSmallSidedVariantIndex,diagnosticSoloShoeWidthScale,
+    diagnosticSoloShoeLengthScale,diagnosticSoloRecoveryStepScale,
     diagnosticSmallSidedBodyGuardEnabled,
      diagnosticSmallSidedBodyFeedbackEnabled,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
@@ -573,7 +585,9 @@ export function createEngine(RAPIER, input = {}, {
        dribbleAttackerId:smallSided.side+'-10',
        soloCarry:smallSided.id==='carry-solo',
        ...(smallSided.id==='carry-solo'?{
-        soloShoeWidthScale:diagnosticSoloShoeWidthScale
+        soloShoeWidthScale:diagnosticSoloShoeWidthScale,
+        soloShoeLengthScale:diagnosticSoloShoeLengthScale,
+        soloRecoveryStepScale:diagnosticSoloRecoveryStepScale
        }:{})
       }:{}),
       ...(diagnosticSmallSidedBodyGuardEnabled?{
