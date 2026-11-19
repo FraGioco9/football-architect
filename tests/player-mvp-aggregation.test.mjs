@@ -26,6 +26,10 @@ test('#719 legacy coverage never becomes zero; non-winner is zero',()=>{
  const data=aggregateFrozenPlayerSeasonStats(42,[a,b]);
  assert.equal(data.total.mvpAwards,null);assert.equal(data.total.mvpCoveredAppearances,1);
  assert.equal(aggregateFrozenPlayerSeasonStats(42,[b]).total.mvpAwards,0);
+ const mixed=aggregateFrozenPlayerSeasonStats(42,[a,fixture(5)]);
+ assert.equal(mixed.total.mvpAwards,1);
+ assert.equal(mixed.total.mvpCoveredAppearances,1);
+ assert.equal(mixed.competitions[0].mvpAwards,1);
 });
 test('#719 player Matches flags are true, false, null across transfers',()=>{
  const items=[fixture(1),fixture(2,'IT-3','int-1','other'),fixture(3,'IT-4','IT-2','legacy')];

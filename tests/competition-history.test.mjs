@@ -163,17 +163,17 @@ test('Season 1 Matchday 0 has no historical statistics, holders or champions',()
   assert.deepEqual(metric.clubs??metric.entries,[]);
  }
 });
-test('Every History route offers exactly seven seasonal and seven all-time player records without invented data',()=>{
+test('Every History route offers exactly six seasonal and six all-time player records without invented data',()=>{
  const routes=['_shared',...manifest.divisions.map(d=>d.id.toLowerCase())];
  for(const route of routes){
   const html=readFileSync(new URL('../competitions/'+route+'/index.html',import.meta.url),'utf8');
   const section=html.match(/<section[^>]*data-history-player-records[^>]*>([\s\S]*?)<\/section>/)?.[1];
   assert.ok(section,route+' has player records');
   const cards=[...section.matchAll(/<article([^>]*)>([\s\S]*?)<\/article>/g)];
-  assert.equal(cards.length,14,route);
-  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="season"')).length,7);
-  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="all-time"')&&c[1].includes(' hidden')).length,7);
-  assert.equal(new Set(cards.map(c=>c[1].match(/data-history-player-record="([^"]+)"/)[1])).size,14);
+  assert.equal(cards.length,12,route);
+  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="season"')).length,6);
+  assert.equal(cards.filter(c=>c[1].includes('data-history-scope="all-time"')&&c[1].includes(' hidden')).length,6);
+  assert.equal(new Set(cards.map(c=>c[1].match(/data-history-player-record="([^"]+)"/)[1])).size,12);
   assert.ok(cards.every(c=>c[2].includes('data-app-i18n="historyPlayerNoData"')&&!/<strong|data-club-crest/.test(c[2])));
  }
 });

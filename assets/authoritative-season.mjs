@@ -122,7 +122,7 @@ export function validateAuthoritativeSeason(input,context,manifest){
   if(p.ratedAppearances!==undefined&&(!count(p.ratedAppearances)||p.ratedAppearances>p.appearances))fail();
    if(p.mvpCoveredAppearances!==undefined&&(!count(p.mvpCoveredAppearances)||p.mvpCoveredAppearances>p.appearances))fail();
    if(p.mvpAwards!==undefined&&p.mvpAwards!==null&&(!count(p.mvpAwards)||
-     p.mvpAwards>(p.mvpCoveredAppearances??0)||p.mvpCoveredAppearances!==p.appearances))fail();
+     p.mvpAwards>(p.mvpCoveredAppearances??0)||(p.mvpAwards===0&&p.mvpCoveredAppearances!==p.appearances)))fail();
   if(p.averageRating!==undefined&&p.averageRating!==null&&
     (typeof p.averageRating!=='number'||!Number.isFinite(p.averageRating)||p.averageRating<4||p.averageRating>10||!p.ratedAppearances))fail();
   const identity=p.clubId+':'+p.playerId;

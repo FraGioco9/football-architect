@@ -35,9 +35,10 @@ export function aggregateVerifiedCareerStats(seasons){
    const covered=row.mvpCoveredAppearances??0;
    if(!Number.isSafeInteger(covered)||covered<0||covered>row.appearances)return null;
    totals.mvpCoveredAppearances+=covered;
-   if(covered!==row.appearances||!Number.isSafeInteger(row.mvpAwards)||
-      row.mvpAwards<0||row.mvpAwards>covered)totals.mvpAwards=null;
-   else if(totals.mvpAwards!==null)totals.mvpAwards+=row.mvpAwards;
+   if(row.mvpAwards!=null){
+    if(!Number.isSafeInteger(row.mvpAwards)||row.mvpAwards<0||row.mvpAwards>covered)return null;
+    totals.mvpAwards+=row.mvpAwards;
+   }
   for(const key of optional){
    if(row[key]===null){totals[key]=null;continue;}
    if(!Number.isSafeInteger(row[key])||row[key]<0)return null;
@@ -60,6 +61,7 @@ export function aggregateVerifiedCareerStats(seasons){
  totals.cleanSheets=totals.gkAppearances>0&&keepersComplete?totals.cleanSheets:null;
  totals.averageRating=ratingComplete&&totals.ratedAppearances>0
   ?Math.round(ratedSum/totals.ratedAppearances*100)/100:null;
+ if(!totals.mvpAwards&&totals.mvpCoveredAppearances<totals.appearances)totals.mvpAwards=null;
  return totals;
 }
 const domesticCompetitionPattern=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/;

@@ -47,7 +47,7 @@ function finish(t){
   gkAppearances:t.gkAppearances,
   cleanSheets:t.gkAppearances&&t.keeperCoverage?t.cleanSheets:null,
   mvpCoveredAppearances:t.mvpCoveredAppearances,
-   mvpAwards:t.mvpCoveredAppearances===t.appearances?t.mvpAwards:null,
+   mvpAwards:t.mvpAwards>0||t.mvpCoveredAppearances===t.appearances?t.mvpAwards:null,
    ratedAppearances:t.ratedAppearances,
   averageRating:t.ratedAppearances?Math.round(t.ratingSum/t.ratedAppearances*100)/100:null};
 }

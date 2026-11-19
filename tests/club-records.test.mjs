@@ -78,7 +78,7 @@ test('incomplete player and fixture coverage cannot produce a partial historical
  assert.equal(get(records.select(verified,'verified').players,'mvpAwards').value,3);
  assert.equal(get(records.select(verified,'season').players,'mvpAwards').value,3);
  const partial=[...verified,{...last,season:3,players:[{...last.players[0],mvpAwards:null}]}];
- assert.equal(get(records.select(partial,'verified').players,'mvpAwards').value,null);
+ assert.equal(get(records.select(partial,'verified').players,'mvpAwards').value,3);
 });
 test('five locales and first paint reserve official MVP records even for legacy unavailable',()=>{
  for(const language of Object.keys(records.words))for(const search of ['','?scope=all-time']){

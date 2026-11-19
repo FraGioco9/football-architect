@@ -53,7 +53,7 @@
    const candidates=[],totals=new Map();
    if((key==='assists'||key==='combined')&&appearances.some(p=>p.assists===null))return best(key,[]);
    // A historical missing/partial MVP award cannot become a zero in records.
-   if(key==='mvpAwards'&&appearances.some(p=>!Number.isSafeInteger(p.mvpAwards)||p.mvpAwards<0||p.mvpAwards>p.appearances))return best(key,[]);
+   if(key==='mvpAwards'&&appearances.some(p=>p.mvpAwards!=null&&(!Number.isSafeInteger(p.mvpAwards)||p.mvpAwards<0||p.mvpAwards>p.appearances)))return best(key,[]);
    for(const p of appearances){
     const value={appearances:p.appearances,playerGoals:p.goals,assists:p.assists,
      combined:p.assists===null?null:p.goals+p.assists,playerClean:p.clean,mvpAwards:p.mvpAwards}[key];

@@ -133,7 +133,7 @@ export function lineupTeamStatisticsV1(
  return {matchesPlayed,totalGoals,goalsPerMatch:matchesPlayed?totalGoals/matchesPlayed:0,
   teams:[...teams.values()].map(t=>({...t,goalDifference:t.goalsFor-t.goalsAgainst})),
   players:[...players.values()].map(({ratingSum,assistCoverage,yellowCoverage,redCoverage,subCoverage,...p})=>({
-   ...p,mvpAwards:p.mvpCoveredAppearances===p.appearances?p.mvpAwards:null,
+   ...p,mvpAwards:p.mvpAwards>0||p.mvpCoveredAppearances===p.appearances?p.mvpAwards:null,
     assists:assistCoverage?p.assists:null,
    yellowCards:yellowCoverage?p.yellowCards:null,redCards:redCoverage?p.redCards:null,
    subAppearances:subCoverage?p.subAppearances:null,
