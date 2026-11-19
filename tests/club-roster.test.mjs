@@ -138,6 +138,7 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  });
  const domestic=make(4,2,600,7.2,5,null,7,1,1,8);
  const international=make(0,null,15,null,0,0,0,1,null,1);
+ international.mvpAwards=0;international.mvpCoveredAppearances=1;
  const combined=make(4,null,690,7.1,6,null,8,null,null,9);
  const players=[
   {id:1,display_name:'First Player',nationality:'ITA',primary_position:'ST',secondary_positions:[],stats:combined,competitionStats:{'IT-1':domestic,'int-1':international}},
@@ -168,6 +169,8 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  assert.ok(internationalHtml.includes('>1 (1)</td>')&&internationalHtml.includes('>0</td>'),'international scope excludes the removed XI display');
  assert.match(internationalHtml,/>0<\/td><td><span[^>]*>—<\/span><\/td><\/tr>/,'a substitute with no recorded award has zero MVPs before Rating');
  assert.ok(!internationalHtml.includes('>7.2</td>'));
+ assert.match(all,/<td><span[^>]*>—<\/span><\/td><td>7\.1<\/td>/,
+  'legacy coverage remains unavailable in the all-competitions MVP column');
  const sorted=render('?view=stats&competition=domestic&sort=goalsAssistsPer90&order=desc');
  assert.ok(sorted.includes('aria-sort="descending"'));
  assert.ok(sorted.indexOf('href="/players/1"')<sorted.indexOf('href="/players/2"'));

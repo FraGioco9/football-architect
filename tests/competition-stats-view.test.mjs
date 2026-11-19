@@ -473,7 +473,7 @@ test('STATS-TIEBREAK-PLAYERS: all eight cards use recorded player metrics, not p
  }
 });
 
-test('MVP ranking uses awards, displayed rating and fewer minutes, then shares rank',()=>{
+test('MVP ranking uses awards, displayed rating and more minutes, then shares rank',()=>{
  const r=fixture(),c=supplied('IT-1',16);
  const player=(playerId,name,mvpAwards,averageRating,minutes)=>({
   playerId,name,clubKey:'IT-1',appearances:2,starts:2,goals:0,minutes,
@@ -487,7 +487,7 @@ test('MVP ranking uses awards, displayed rating and fewer minutes, then shares r
  const card=byClass(r,'fa-dev-stats-leader-card').find(node=>node.children[0].dataset.appI18n==='statsDevMvpAwards');
  const rows=walk(card).filter(node=>node.tagName==='li');
  assert.deepEqual(rows.map(row=>[row.children[0].textContent,walk(row).find(node=>node.tagName==='a').href]),[
-  ['1','/players/1'],['2','/players/3'],['2','/players/2'],['4','/players/4'],['5','/players/5']
+  ['1','/players/1'],['2','/players/4'],['3','/players/3'],['3','/players/2'],['5','/players/5']
  ]);
 });
 

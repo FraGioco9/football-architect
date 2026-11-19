@@ -73,12 +73,16 @@ test('incomplete player and fixture coverage cannot produce a partial historical
  const incomplete=[{...first,players:[{...first.players[0],assists:null}]}];
  assert.equal(get(records.select(incomplete,'season').players,'combined').value,null);
  assert.equal(get(records.select(snapshot.seasons,'verified').players,'mvpAwards').value,null,'legacy coverage stays unknown');
- const verified=[{...first,players:first.players.map(p=>({...p,mvpAwards:2}))},
-  {...last,players:last.players.map(p=>({...p,mvpAwards:p.id===1?1:3}))}];
+ const verified=[{...first,players:first.players.map(p=>({...p,mvpAwards:2,mvpCoveredAppearances:p.appearances}))},
+  {...last,players:last.players.map(p=>({...p,mvpAwards:p.id===1?1:3,mvpCoveredAppearances:p.appearances}))}];
  assert.equal(get(records.select(verified,'verified').players,'mvpAwards').value,3);
  assert.equal(get(records.select(verified,'season').players,'mvpAwards').value,3);
- const partial=[...verified,{...last,season:3,players:[{...last.players[0],mvpAwards:null}]}];
- assert.equal(get(records.select(partial,'verified').players,'mvpAwards').value,3);
+ const partial=[...verified,{...last,season:3,players:[{...last.players[0],mvpAwards:null,mvpCoveredAppearances:0}]}];
+ assert.equal(get(records.select(partial,'verified').players,'mvpAwards').value,null);
+ assert.equal(get(records.select(partial,'season').players,'mvpAwards').value,null);
+ const partialWinner=[...verified,{...last,season:3,players:[{...last.players[0],mvpAwards:1,mvpCoveredAppearances:1}]}];
+ assert.equal(get(records.select(partialWinner,'verified').players,'mvpAwards').value,null,
+  'an award from a partially covered player cannot be an all-time record');
 });
 test('five locales and first paint reserve official MVP records even for legacy unavailable',()=>{
  for(const language of Object.keys(records.words))for(const search of ['','?scope=all-time']){
