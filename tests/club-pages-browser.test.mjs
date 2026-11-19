@@ -1132,6 +1132,34 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-records')+"')"),true);
      assert.equal(await run('location.search'),view==='history'?'':view==='records'?'?season=2':'?season=2&matchday=7');
     }
+    await visit('/clubs/it/1/records');
+    for(const width of [1440,390]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===390});
+     const geometry=await run(`(()=>{
+      const host=document.querySelector('.club-records');
+      const probe=document.createElement('div');
+      host.after(probe);
+      const options={selected:{countryId:'IT',clubId:1,base:'/clubs/it/1'},ordinal:window.faClubModel.ordinal};
+      const measure=()=>[...probe.querySelectorAll('article')].map(card=>{
+       const rect=card.getBoundingClientRect();return [rect.width,rect.height];
+      });
+      probe.innerHTML=window.faClubRecords.render(options);
+      const loading=measure();
+      const membership={category:'domestic',position:1,stats:{played:4,won:2,goalsFor:6,cleanSheets:2,goalDifference:2}};
+      probe.innerHTML=window.faClubRecords.render({...options,historySnapshot:{source:'authoritative',clubKey:'IT-1',
+       coverage:'complete',world:{seasonNumber:1},seasons:[{season:1,ongoing:true,memberships:[membership]}]}});
+      const cards=[...probe.querySelectorAll('article')];
+      const rowCount=cards.filter(card=>card.getBoundingClientRect().top===cards[0].getBoundingClientRect().top).length;
+      const source=cards[0].querySelector('.club-records-sources');
+      const rightGap=source.getBoundingClientRect().right-source.firstElementChild.getBoundingClientRect().right;
+      const loaded=measure();probe.remove();
+      return {loading,loaded,rowCount,rightGap};
+     })()`);
+     assert.deepEqual(geometry.loaded,geometry.loading,'identical pending and loaded record card dimensions at '+width);
+     assert.ok(geometry.rowCount>=(width===1440?4:2),'compact Club Records grid at '+width);
+     assert.ok(Math.abs(geometry.rightGap)<1,'season label aligns to the right edge at '+width);
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     for(const query of ['view=attributes&group=physical','view=stats&competition=international']){
      const response=await fetch(devOrigin+'/clubs/it/1/roster?'+query,{redirect:'manual'});
      assert.equal(response.status,200,'DEV must serve a roster subview directly on reload');
