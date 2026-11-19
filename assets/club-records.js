@@ -1,17 +1,16 @@
 /* CLUB-RECORDS-01: small, source-fenced team records derived from the shared Club History read. */
 ((root,factory)=>{
- const routes=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./routes-registry.js'):root.faRoutesRegistry;
- const ui=factory(routes);root.faClubRecords=ui;
+ const ui=factory();root.faClubRecords=ui;
  if(typeof module!=='undefined'&&module.exports)module.exports=ui;
-})(typeof window!=='undefined'?window:globalThis,(routes)=>{
+})(typeof window!=='undefined'?window:globalThis,()=>{
  'use strict';
  const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const words={
-  en:{allTime:'All time',team:'Team records',player:'Player records',appearances:'Most appearances',playerGoals:'Most goals',assists:'Most assists',playerUnavailable:'Player records unavailable.',season:'Season',verified:'Verified seasons',choose:'Select season',metric:'Record',value:'Value',source:'Season / Competition',rank:'Best league finish',wins:'Most wins',goals:'Most goals scored',clean:'Most clean sheets',gd:'Best goal difference',partial:'Ongoing season: figures may change and are not historical records.',closed:'Only completed and officially verified seasons are compared.',coverage:'Verified coverage',noMatches:'No matches played.',noArchive:'No verified completed seasons yet.',unavailable:'Verified club records are unavailable.'},
-  de:{allTime:'Gesamtzeit',team:'Mannschaftsrekorde',player:'Spielerrekorde',appearances:'Meiste Einsätze',playerGoals:'Meiste Tore',assists:'Meiste Vorlagen',playerUnavailable:'Spielerrekorde nicht verfügbar.',season:'Saison',verified:'Verifizierte Saisons',choose:'Saison wählen',metric:'Rekord',value:'Wert',source:'Saison / Wettbewerb',rank:'Beste Ligaplatzierung',wins:'Meiste Siege',goals:'Meiste Tore',clean:'Meiste Spiele ohne Gegentor',gd:'Beste Tordifferenz',partial:'Laufende Saison: Diese Werte können sich ändern und sind keine historischen Rekorde.',closed:'Nur abgeschlossene und offiziell verifizierte Saisons werden verglichen.',coverage:'Verifizierter Zeitraum',noMatches:'Noch keine Spiele gespielt.',noArchive:'Noch keine verifizierte abgeschlossene Saison.',unavailable:'Verifizierte Vereinsrekorde sind nicht verfügbar.'},
-  es:{allTime:'Histórico',team:'Récords del equipo',player:'Récords de jugadores',appearances:'Más apariciones',playerGoals:'Más goles',assists:'Más asistencias',playerUnavailable:'Récords de jugadores no disponibles.',season:'Temporada',verified:'Temporadas verificadas',choose:'Elegir temporada',metric:'Récord',value:'Valor',source:'Temporada / Competición',rank:'Mejor posición en liga',wins:'Más victorias',goals:'Más goles marcados',clean:'Más porterías a cero',gd:'Mejor diferencia de goles',partial:'Temporada en curso: las cifras pueden cambiar y no son récords históricos.',closed:'Solo se comparan temporadas completas y verificadas oficialmente.',coverage:'Cobertura verificada',noMatches:'No se han jugado partidos.',noArchive:'Todavía no hay temporadas completas verificadas.',unavailable:'Los récords verificados del club no están disponibles.'},
-  fr:{allTime:'Toutes saisons',team:'Records d’équipe',player:'Records des joueurs',appearances:'Plus de matchs joués',playerGoals:'Plus de buts',assists:'Plus de passes décisives',playerUnavailable:'Records des joueurs indisponibles.',season:'Saison',verified:'Saisons vérifiées',choose:'Choisir la saison',metric:'Record',value:'Valeur',source:'Saison / Compétition',rank:'Meilleur classement en championnat',wins:'Plus de victoires',goals:'Plus de buts marqués',clean:'Plus de matchs sans encaisser',gd:'Meilleure différence de buts',partial:'Saison en cours : ces données peuvent changer et ne sont pas des records historiques.',closed:'Seules les saisons terminées et officiellement vérifiées sont comparées.',coverage:'Période vérifiée',noMatches:'Aucun match joué.',noArchive:'Aucune saison terminée et vérifiée pour le moment.',unavailable:'Les records vérifiés du club ne sont pas disponibles.'},
-  it:{allTime:'Di sempre',team:'Record di squadra',player:'Record dei giocatori',appearances:'Più presenze',playerGoals:'Più gol',assists:'Più assist',playerUnavailable:'Record dei giocatori non disponibili.',season:'Stagione',verified:'Stagioni verificate',choose:'Seleziona stagione',metric:'Record',value:'Valore',source:'Stagione / Competizione',rank:'Miglior piazzamento in campionato',wins:'Più vittorie',goals:'Più gol segnati',clean:'Più clean sheet',gd:'Migliore differenza reti',partial:'Stagione in corso: i valori possono cambiare e non sono record storici.',closed:'Si confrontano soltanto le stagioni concluse e verificate ufficialmente.',coverage:'Copertura verificata',noMatches:'Nessuna partita giocata.',noArchive:'Nessuna stagione conclusa e verificata.',unavailable:'I record verificati del club non sono disponibili.'}
+  en:{allTime:'All time',team:'Team records',player:'Player records',appearances:'Most appearances',playerGoals:'Most goals',assists:'Most assists',season:'Season',verified:'Verified seasons',choose:'Select season',metric:'Record',value:'Value',source:'Season / Competition',rank:'Best league finish',wins:'Most wins',goals:'Most goals scored',clean:'Most clean sheets',gd:'Best goal difference',closed:'Only completed and officially verified seasons are compared.',coverage:'Verified coverage',noMatches:'No matches played.',noArchive:'No verified completed seasons yet.',unavailable:'Verified club records are unavailable.'},
+  de:{allTime:'Gesamtzeit',team:'Mannschaftsrekorde',player:'Spielerrekorde',appearances:'Meiste Einsätze',playerGoals:'Meiste Tore',assists:'Meiste Vorlagen',season:'Saison',verified:'Verifizierte Saisons',choose:'Saison wählen',metric:'Rekord',value:'Wert',source:'Saison / Wettbewerb',rank:'Beste Ligaplatzierung',wins:'Meiste Siege',goals:'Meiste Tore',clean:'Meiste Spiele ohne Gegentor',gd:'Beste Tordifferenz',closed:'Nur abgeschlossene und offiziell verifizierte Saisons werden verglichen.',coverage:'Verifizierter Zeitraum',noMatches:'Noch keine Spiele gespielt.',noArchive:'Noch keine verifizierte abgeschlossene Saison.',unavailable:'Verifizierte Vereinsrekorde sind nicht verfügbar.'},
+  es:{allTime:'Histórico',team:'Récords del equipo',player:'Récords de jugadores',appearances:'Más apariciones',playerGoals:'Más goles',assists:'Más asistencias',season:'Temporada',verified:'Temporadas verificadas',choose:'Elegir temporada',metric:'Récord',value:'Valor',source:'Temporada / Competición',rank:'Mejor posición en liga',wins:'Más victorias',goals:'Más goles marcados',clean:'Más porterías a cero',gd:'Mejor diferencia de goles',closed:'Solo se comparan temporadas completas y verificadas oficialmente.',coverage:'Cobertura verificada',noMatches:'No se han jugado partidos.',noArchive:'Todavía no hay temporadas completas verificadas.',unavailable:'Los récords verificados del club no están disponibles.'},
+  fr:{allTime:'Toutes saisons',team:'Records d’équipe',player:'Records des joueurs',appearances:'Plus de matchs joués',playerGoals:'Plus de buts',assists:'Plus de passes décisives',season:'Saison',verified:'Saisons vérifiées',choose:'Choisir la saison',metric:'Record',value:'Valeur',source:'Saison / Compétition',rank:'Meilleur classement en championnat',wins:'Plus de victoires',goals:'Plus de buts marqués',clean:'Plus de matchs sans encaisser',gd:'Meilleure différence de buts',closed:'Seules les saisons terminées et officiellement vérifiées sont comparées.',coverage:'Période vérifiée',noMatches:'Aucun match joué.',noArchive:'Aucune saison terminée et vérifiée pour le moment.',unavailable:'Les records vérifiés du club ne sont pas disponibles.'},
+  it:{allTime:'Di sempre',team:'Record di squadra',player:'Record dei giocatori',appearances:'Più presenze',playerGoals:'Più gol',assists:'Più assist',season:'Stagione',verified:'Stagioni verificate',choose:'Seleziona stagione',metric:'Record',value:'Valore',source:'Stagione / Competizione',rank:'Miglior piazzamento in campionato',wins:'Più vittorie',goals:'Più gol segnati',clean:'Più clean sheet',gd:'Migliore differenza reti',closed:'Si confrontano soltanto le stagioni concluse e verificate ufficialmente.',coverage:'Copertura verificata',noMatches:'Nessuna partita giocata.',noArchive:'Nessuna stagione conclusa e verificata.',unavailable:'I record verificati del club non sono disponibili.'}
  };
  const metrics=[
   {key:'rank',field:'position',min:true,domestic:true},
@@ -44,7 +43,7 @@
   });
   return {selected,entries,records};
  }
- function render({selected,historySnapshot,language='en',search='',divisions=[]}){
+ function render({selected,historySnapshot,language='en',search='',ordinal}){
   const w=words[language]||words.en,clubKey=selected.countryId+'-'+selected.clubId,base=selected.base+'/records';
   const params=new URLSearchParams(search),scope=['verified','all-time'].includes(params.get('scope'))?'verified':'season';
   const valid=historySnapshot?.source==='authoritative'&&historySnapshot.clubKey===clubKey&&
@@ -67,26 +66,21 @@
   if(unavailable)note=w.unavailable;
   else if(valid){
    if(scope==='verified')note=data.selected.length?w.coverage+': '+data.selected.map(s=>w.season+' '+s.season).join(', ')+'. '+w.closed:w.noArchive;
-   else if(data.selected[0]?.ongoing)note=w.partial;
    if(!data.entries.length&&(scope==='season'||data.selected.length))note=[note,w.noMatches].filter(Boolean).join(' ');
   }
-  const names=new Map(divisions.map(d=>[d.id,d.name]));
   function card({key,value=null,sources=[]}){
-   const amount=loading?'<span class="app-skeleton-bar"></span>':value===null?'—':escape(key==='gd'&&value>0?'+'+value:value);
-   const links=sources.map(({season:year,m})=>{
-    const href=routes.buildRoute({kind:m.category==='domestic'?'competition':'cup',id:m.competitionId.toLowerCase(),view:'standings'})+'?season='+year;
-    return '<a class="club-records-source-link" href="'+escape(href)+'">'+escape(w.season+' '+year+' · '+(names.get(m.competitionId)||m.name))+'</a>';
-   }).join('');
+   const amount=loading?'<span class="app-skeleton-bar"></span>':value===null?'—':key==='rank'?ordinal(value,language):escape(key==='gd'&&value>0?'+'+value:value);
+   const seasons=[...new Set(sources.map(source=>source.season))].map(year=>'<span>'+escape(w.season+' '+year)+'</span>').join('');
    return '<article class="app-competition-stat-card"><h5 class="app-competition-stat-label">'+label(key)+'</h5>'+
-    '<strong class="app-competition-stat-value">'+amount+'</strong>'+(links?'<div class="club-records-sources">'+links+'</div>':'')+'</article>';
+    '<strong class="app-competition-stat-value">'+amount+'</strong>'+(seasons?'<div class="club-records-sources">'+seasons+'</div>':'')+'</article>';
   }
-  function group(key,cards,message){
+  function group(key,cards,message=''){
    return '<section class="app-history-record-group"><h4>'+label(key)+'</h4>'+
-    '<div class="app-competition-stat-grid">'+cards+'</div><p class="club-records-note" role="status">'+escape(message)+'</p></section>';
+    '<div class="app-competition-stat-grid">'+cards+'</div>'+(message?'<p class="club-records-note" role="status">'+escape(message)+'</p>':'')+'</section>';
   }
   return '<section class="club-records" aria-busy="'+loading+'">'+controls+seasonNav+
    group('team',data.records.map(card).join(''),note)+
-   group('player',['appearances','playerGoals','assists'].map(key=>card({key})).join(''),loading?'':w.playerUnavailable)+'</section>';
+   group('player',['appearances','playerGoals','assists'].map(key=>card({key})).join(''))+'</section>';
  }
  return Object.freeze({words,metrics,select,render});
 });

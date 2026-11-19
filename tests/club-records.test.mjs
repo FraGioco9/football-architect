@@ -6,7 +6,7 @@ const require=createRequire(import.meta.url);
 const records=require('../assets/club-records.js');
 const routes=require('../assets/routes-registry.js');
 const selected={countryId:'IT',clubId:17,base:'/clubs/it/17',view:'records'};
-const divisions=[{id:'IT-1',name:'Italian First Division'}];
+const {ordinal}=require('../assets/club-model.js');
 const membership=(competitionId,position,stats)=>({competitionId,category:competitionId.startsWith('int-')?'international':'domestic',name:competitionId,position,stats});
 const team=(won,goalsFor,cleanSheets,goalDifference)=>({played:30,won,drawn:5,lost:30-won-5,goalsFor,goalsAgainst:goalsFor-goalDifference,goalDifference,cleanSheets});
 const snapshot={
@@ -16,7 +16,7 @@ const snapshot={
   {season:2,ongoing:true,memberships:[membership('IT-1',1,team(22,71,12,42))]}
  ]
 };
-const render=(extra={})=>records.render({selected,historySnapshot:snapshot,language:'en',search:'',divisions,...extra});
+const render=(extra={})=>records.render({selected,historySnapshot:snapshot,language:'en',search:'',ordinal,...extra});
 test('CLUB-RECORDS-01: Club Stats aliases redirect to Records but Competition Stats is unchanged',()=>{
  assert.deepEqual(routes.clubViews,['overview','roster','fixtures','records','history']);
  assert.equal(routes.parseRoute('/clubs/it/17/stats').canonical,'/clubs/it/17/records');
@@ -40,16 +40,15 @@ test('CLUB-RECORDS-01: ongoing season cannot set archived records; verified zero
  const noCups=records.select([{season:1,ongoing:false,memberships:[snapshot.seasons[0].memberships[0]]}],'verified',2);
  assert.equal(noCups.records.find(r=>r.key==='clean').value,0);
 });
-test('CLUB-RECORDS-01: source links and coverage refer only to verified completed seasons',()=>{
+test('Record cards show each contributing season once and use ordinal league positions',()=>{
  const historical=render({search:'?scope=verified'});
  assert.match(historical,/Verified coverage: Season 1/);
- assert.match(historical,/\/competitions\/it-1\/standings\?season=1/);
- assert.match(historical,/\/competitions\/int-1\/standings\?season=1/);
- assert.doesNotMatch(historical, /\/standings\?season=2/);
+ assert.equal((historical.match(/class="club-records-sources"><span>Season 1<\/span><\/div>/g)||[]).length,5);
+ assert.doesNotMatch(historical,/standings|Italian First Division/);
+ assert.match(historical,/>4th<\/strong>/);
  const live=render({search:'?season=2'});
- assert.match(live,/Ongoing season/);
- assert.match(live,/\/competitions\/it-1\/standings\?season=2/);
- assert.match(live,/class="app-competition-stat-value">1<\/strong>/);
+ assert.match(live,/>1st<\/strong>/);
+ assert.doesNotMatch(live,/Ongoing season|Player records unavailable|club-records-note/);
 });
 test('CLUB-RECORDS-01: Season 0, incomplete authority, DEV, no matches and invalid future season never fabricate records',()=>{
  const zero=render({historySnapshot:{source:'authoritative',clubKey:'IT-17',coverage:'empty',world:{seasonNumber:0},seasons:[]}});
@@ -62,7 +61,7 @@ test('CLUB-RECORDS-01: Season 0, incomplete authority, DEV, no matches and inval
  assert.match(dev,/Verified club records are unavailable/);
  assert.doesNotMatch(dev,/\/standings\?/);
  const future=render({search:'?season=99'});
- assert.match(future,/Ongoing season/);
+ assert.equal(future,render());
  const empty=render({historySnapshot:{...snapshot,seasons:[{season:1,ongoing:false,memberships:[]},{season:2,ongoing:true,memberships:[]}]}});
  assert.match(empty,/No matches played/);
 });

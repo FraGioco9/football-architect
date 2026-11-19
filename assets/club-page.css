@@ -783,6 +783,5 @@ html[data-theme="light"] .app-players-table.club-roster-table[data-players-table
 .club-records-season-link[aria-current]{background:var(--surface-raised);color:var(--text);font-weight:700}
 .club-records-note{min-height:1.5em;margin:0;color:var(--muted);font-size:.82rem}
 .club-records-sources{display:grid;align-self:end;gap:2px;overflow:auto;max-height:100%;font-size:.78rem}
-.club-records-source-link{color:var(--muted);overflow-wrap:anywhere}
 .club-first-paint-records[hidden]{display:none}
 @media(max-width:620px){.club-records .app-competition-stat-grid{grid-template-columns:minmax(0,1fr)}}
