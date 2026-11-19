@@ -85,7 +85,7 @@ test('#720 Matches controls and row navigation follow shared site patterns',()=>
  assert.doesNotMatch(ui,/data-player-match-toggle|data-player-match-detail|aria-expanded.*match/);
  assert.match(ui,/const rows=filtered\.slice\(0,visibleCount\)\.map\(rowFor\);tbody\.replaceChildren\(\.\.\.rows\)/);
  assert.match(ui,/first\.append\(textTrack\(link\)\);tr\.append\(first\)/);
- assert.match(ui,/value\.toFixed\(2\)/);
+ assert.match(ui,/value\.toFixed\(1\)/);
  assert.match(ui,/fmt\(p\[metric\],metric\)/);
  assert.match(ui,/note\.textContent=message;return;/);
  for(const glyph of ['home','away','neutral']){
@@ -202,7 +202,7 @@ test('#720 Mobile rating replaces minutes, with side padding and no sticky touch
  assert.ok(mobile.includes('>:nth-child(13) .app-player-matches-value{justify-content:flex-end}'));
  assert.ok(!mobile.includes('>:nth-child(7)::before{content:"Min"}'));
  assert.ok(!mobile.includes('>:nth-child(7){grid-column:3'));
- // The rating and its 36px skeleton already occupy the thirteenth column.
+ // The rating and its 26px skeleton occupy the thirteenth column.
  assert.match(ui,/for\(const metric of \['minutes','goals','assists','yellowCards','redCards','cleanSheets','rating'\]\)/);
  assert.match(css,/@media\(hover:hover\) and \(pointer:fine\)\{\s*\.app-player-matches-row\[data-player-match-href\]:hover/);
  assert.match(css,/\.app-player-matches-row\[data-player-match-href\]:is\(:focus-visible,:has\(:focus-visible\)\)/);
@@ -232,4 +232,21 @@ test('#720 CS/Rating header tooltip wording is identical to Player Stats in each
   assert.ok(statsLine.includes('keeperHelp:"'+clean+'"'),lang+' Stats keeper help parity');
   assert.ok(statsLine.includes('"'+rating+'"]'),lang+' Stats Rating help parity');
  }
+});
+
+test('#720 desktop/mobile crests suppress the neutral shield and share exact image/placeholder geometry',()=>{
+ const css=read('assets/player-detail.css'),shared=read('assets/app.css');
+ const js=read('assets/player-matches.mjs'),html=read('players/_shared/index.html');
+ assert.match(shared,/\.app-players-club-mark:has\(>img\.app-players-club-crest\)::before\{display:none\}/);
+ assert.match(shared,/\.app-players-club-mark::before\{[^}]*clip-path:var\(--fa-crest-shield-shape\)/);
+ assert.match(js,/mark\.append\(img\)/);
+ assert.match(js,/img\.addEventListener\('error',\(\)=>img\.remove\(\),\{once:true\}\)/);
+ assert.match(css,/\.app-player-matches-crest\{[^}]*flex:0 0 24px;width:24px;height:24px;min-width:24px/);
+ assert.match(css,/\.app-player-matches-crest img\{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain\}/);
+ const mobile=css.slice(css.indexOf('@media(max-width:620px){\n .app-player-matches-toolbar'));
+ assert.match(mobile,/\.app-player-matches-crest\{flex:0 0 20px;width:20px;height:20px;min-width:20px\}/);
+ assert.match(mobile,/\.app-player-matches-crest img\{width:100%;height:100%;min-width:0\}/);
+ assert.match(mobile,/\.app-player-matches-loading \.app-player-matches-skeleton-crest\{width:20px;height:20px;min-width:20px/);
+ assert.equal((html.match(/width:26px;height:10px/g)||[]).length,5,'one-decimal rating skeletons at first paint');
+ assert.doesNotMatch(html,/width:36px;height:10px/);
 });

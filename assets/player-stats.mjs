@@ -9,7 +9,7 @@ export const statsWords={
 export const formatApps=(appearances,subs)=>Number.isSafeInteger(appearances)&&appearances>=0
  ?appearances+' ('+(Number.isSafeInteger(subs)&&subs>=0?subs:'—')+')':'—';
 export const formatRating=(average,rated)=>typeof average==='number'&&Number.isFinite(average)&&
- Number.isSafeInteger(rated)&&rated>0?average.toFixed(2):'—';
+ Number.isSafeInteger(rated)&&rated>0?average.toFixed(1):'—';
 /** Compute career values only from verified season totals already delivered by the
  * authoritative Stats read. Never use present club, future matches, partial
  * aggregates with missing seasons, or a naive average of per-season ratings. */

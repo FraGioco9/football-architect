@@ -25,7 +25,9 @@ test('#578 all supported languages label stats and keep genuine unavailable coun
  assert.equal(formatApps(24,5),'24 (5)');
  assert.equal(formatApps(24,null),'24 (—)');
  assert.equal(formatRating(null,0),'—');
- assert.equal(formatRating(7.12,3),'7.12');
+ assert.equal(formatRating(7.12,3),'7.1');
+ assert.equal(formatRating(7.26,3),'7.3');
+ assert.equal(formatRating(7,3),'7.0');
 });
 test('#578 backend Stats route accepts canonical numeric player ID',()=>{
  const source=read('backend/src/index.ts');
@@ -298,6 +300,7 @@ test('#578 Stats club crests are passive, bounded and separated from linked text
  const shared=read('assets/app.css');
  assert.match(shared,/\.app-players-club-mark\{[^}]*width:24px;height:24px/);
  assert.match(shared,/\.app-players-club-mark::before\{[^}]*clip-path:var\(--fa-crest-shield-shape\)/);
+ assert.match(shared,/\.app-players-club-mark:has\(>img\.app-players-club-crest\)::before\{display:none\}/);
  assert.match(shared,/\.app-players-club-crest\{[^}]*width:24px;height:24px/);
  assert.match(css,/\.app-player-stats-table \.app-player-stats-career-row>th,/);
  assert.match(css,/\.app-player-stats-table \.app-player-stats-career-row>td\{border-bottom:2px solid var\(--border\)\}/);
@@ -362,7 +365,7 @@ test('#578 numeric skeletons use rendered font metrics rather than guessed width
  const html=read('players/_shared/index.html'),clubShell=read('clubs/_shared/index.html');
  const rows=[...html.matchAll(/<tr class="app-player-stats-season-row[^"]*app-player-stats-loading"[^>]*>[\s\S]*?<\/tr>/g)].map(hit=>hit[0]);
  assert.equal(rows.length,2,'Career and Season use separate loading rows');
- const samples={apps:'128 (24)',minutes:'9870',score:'32',assists:'21',yellow:'17',red:'2',rating:'7.50'};
+ const samples={apps:'128 (24)',minutes:'9870',score:'32',assists:'21',yellow:'17',red:'2',rating:'7.5'};
  const samplesByRow=rows.map((row,index)=>Object.fromEntries(Object.keys(samples).map(metric=>{
   const at=row.indexOf('data-metric="'+metric+'"');
   assert.ok(at>=0,metric+' exists on '+(index===0?'Career':'Season'));

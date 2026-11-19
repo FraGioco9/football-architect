@@ -148,7 +148,7 @@ export function createPlayerMatchesView({host,id,locale,fetchMatches,clubName,cl
   return cell;
  }
  const fmt=(value,metric)=>value===null||value===undefined?'—':
-  metric==='rating'?(typeof value==='number'&&Number.isFinite(value)?value.toFixed(2):'—'):printable(value);
+  metric==='rating'?(typeof value==='number'&&Number.isFinite(value)?value.toFixed(1):'—'):printable(value);
  function resultText(item){
   const score=item.result;
   if(!Number.isSafeInteger(score?.homeGoals)||!Number.isSafeInteger(score?.awayGoals))return '—';

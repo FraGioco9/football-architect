@@ -155,11 +155,11 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  for(const word of ['Appearances (substitute appearances)','Minutes played','Yellow cards','Average match rating','Clean sheets'])
   assert.ok(all.includes('data-roster-stat-help="'+word+'"'),word);
  const domesticHtml=render('?view=stats&competition=domestic');
- for(const value of ['>7.20</td>','>0.90</td>','>8 (1)</td>'])
+ for(const value of ['>7.2</td>','>0.90</td>','>8 (1)</td>'])
   assert.ok(domesticHtml.includes(value),value);
  const internationalHtml=render('?view=stats&competition=international');
  assert.ok(internationalHtml.includes('>1 (—)</td>')&&internationalHtml.includes('>0</td>'),'international scope excludes the removed XI display');
- assert.ok(!internationalHtml.includes('>7.20</td>'));
+ assert.ok(!internationalHtml.includes('>7.2</td>'));
  const sorted=render('?view=stats&competition=domestic&sort=goalsAssistsPer90&order=desc');
  assert.ok(sorted.includes('aria-sort="descending"'));
  assert.ok(sorted.indexOf('href="/players/1"')<sorted.indexOf('href="/players/2"'));

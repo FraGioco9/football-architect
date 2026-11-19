@@ -351,7 +351,7 @@ test('COMP-STATS: rating and GK clean sheets show appearances while missing metr
  c.seasonData.statistics.players=[{playerId:58,name:'Keeper',nationality:'ITA',clubKey:'IT-1',appearances:13,starts:10,subAppearances:3,minutes:900,goals:0,assists:null,cleanSheets:6,redCards:null,averageRating:7.25,ratedAppearances:5}];
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  const cards=byClass(r,'fa-dev-stats-leader-card');
- assert.equal(cards[0].children[1].children[0].children.at(-1).textContent,'7.25 (5)');
+ assert.equal(cards[0].children[1].children[0].children.at(-1).textContent,'7.3 (5)');
  assert.equal(cards[4].children[1].children[0].children.at(-1).textContent,'6 (13)');
  assert.equal(cards[5].children[1].children[0].children.at(-1).textContent,'10 (3)');
  for(const i of [2,3,6])assert.equal(cards[i].children[1].textContent,'No players');
@@ -493,7 +493,7 @@ test('STATS-TIEBREAK: visible decimal precision, equal ranks, missing evidence, 
   {...base,playerId:8,name:'Alpha',averageRating:7.254,ratedAppearances:1}]);
  const rated=walk(byClass(rating,'fa-dev-stats-leader-card')[0]).filter(n=>n.tagName==='li');
  assert.equal(walk(rated[0]).find(n=>n.tagName==='a').href,'/players/9','equal displayed rating prioritizes coverage');
- assert.deepEqual(rated.map(n=>n.children.at(-1).textContent),['7.25 (2)','7.25 (1)']);
+ assert.deepEqual(rated.map(n=>n.children.at(-1).textContent),['7.3 (2)','7.3 (1)']);
  const rates=prepare([
   {...base,playerId:9,name:'Zulu',appearances:3,starts:3,goals:2,assists:1,minutes:271,goalsAssistsPer90:270/271},
   {...base,playerId:8,name:'Alpha',appearances:3,starts:3,goals:2,assists:1,minutes:269,goalsAssistsPer90:270/269}
