@@ -115,6 +115,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSmallSidedSituation = null,
   diagnosticSmallSidedSide = null,
   diagnosticSmallSidedVariantIndex = 0,
+  diagnosticSoloShoeWidthScale = 1,
   diagnosticSmallSidedBodyGuardEnabled = false,
    diagnosticSmallSidedBodyFeedbackEnabled = false,
   diagnosticResearchControlReceiver = false,
@@ -148,6 +149,15 @@ export function createEngine(RAPIER, input = {}, {
    throw new TypeError('Small-sided situation and attacking side must be paired');
   if(diagnosticSmallSidedSituation===null&&diagnosticSmallSidedVariantIndex!==0)
    throw new TypeError('Small-sided variant requires a paired physical exercise');
+  // STRICT opt-in: only the isolated one-actor DEV experiment may vary
+  // actual Rapier shoe collider width. No general match or 1v1 override.
+  if(![0.9,1,1.1].includes(diagnosticSoloShoeWidthScale)||
+     (diagnosticSoloShoeWidthScale!==1&&
+      (diagnosticSmallSidedSituation!=='carry-solo'||
+       !diagnosticPlayerFootContactsEnabled||
+       !diagnosticAutonomousFixtureActionEnabled||
+       !diagnosticSmallSidedBodyGuardEnabled)))
+   throw new TypeError('Only isolated solo Carry counterfactual shoe widths 0.9/1/1.1');
   if(typeof diagnosticSmallSidedBodyFeedbackEnabled!=='boolean'||
       (diagnosticSmallSidedBodyFeedbackEnabled&&
        diagnosticSmallSidedBodyGuardEnabled!==true))
@@ -502,7 +512,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticBasicRestartAttackSide,
     diagnosticB06bHalftimeTick,diagnosticB06bNativeShotSide,
     diagnosticSmallSidedSituation,diagnosticSmallSidedSide,
-    diagnosticSmallSidedVariantIndex,diagnosticSmallSidedBodyGuardEnabled,
+    diagnosticSmallSidedVariantIndex,diagnosticSoloShoeWidthScale,
+    diagnosticSmallSidedBodyGuardEnabled,
      diagnosticSmallSidedBodyFeedbackEnabled,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
@@ -560,7 +571,10 @@ export function createEngine(RAPIER, input = {}, {
       ...(isolatedCarry?{
        isolatedGroundDribbleBallCentreZ:BALL_RADIUS,
        dribbleAttackerId:smallSided.side+'-10',
-       soloCarry:smallSided.id==='carry-solo'
+       soloCarry:smallSided.id==='carry-solo',
+       ...(smallSided.id==='carry-solo'?{
+        soloShoeWidthScale:diagnosticSoloShoeWidthScale
+       }:{})
       }:{}),
       ...(diagnosticSmallSidedBodyGuardEnabled?{
        isolatedPhysicalBodies:true

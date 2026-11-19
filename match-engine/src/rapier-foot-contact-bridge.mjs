@@ -145,7 +145,7 @@ export function soloCarryTwoFootPositions(player,gait=null){
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
  isolatedPhysicalBodies=false,isolatedGroundDribbleBallCentreZ=null,
- dribbleAttackerId=null,soloCarry=false}={}){
+ dribbleAttackerId=null,soloCarry=false,soloShoeWidthScale=1}={}){
  if(!R||typeof R.EventQueue!=='function'||!world||
     typeof world.createRigidBody!=='function'||
     !ballCollider||ballCollider.handle===undefined||
@@ -187,6 +187,10 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     activePlayerIds?.length!==1||dribbleAttackerId===null||
     activePlayerIds[0]!==dribbleAttackerId)))
   throw new TypeError('Solo shoe stride needs exactly one original actor');
+ if(![0.9,1,1.1].includes(soloShoeWidthScale)||
+    (soloShoeWidthScale!==1&&!soloCarry))
+  throw new TypeError('DEV counterfactual shoe widths require genuine solo Carry');
+ const soloShoeHalfWidthM=FOOT_CONTACT_HALF_WIDTH_M*soloShoeWidthScale;
  const physicalIds=activePlayerIds===null?null:new Set(activePlayerIds);
  const eventQueue=sharedQueue??new R.EventQueue(true);
  const ownsEventQueue=sharedQueue===null;
@@ -216,7 +220,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     .setTranslation(groundPose.x,groundPose.y,groundPose.z)
      .setRotation(pose.rotation));
   const shoeShape=R.ColliderDesc.roundCuboid(
-   FOOT_CONTACT_HALF_LENGTH_M,FOOT_CONTACT_HALF_WIDTH_M,
+   FOOT_CONTACT_HALF_LENGTH_M,
+   soloCarry&&p.id===dribbleAttackerId?
+    soloShoeHalfWidthM:FOOT_CONTACT_HALF_WIDTH_M,
    isolatedGroundDribbleBallCentreZ===null?FOOT_CONTACT_HALF_HEIGHT_M:0.015,
    isolatedGroundDribbleBallCentreZ===null?FOOT_CONTACT_ROUNDING_M:0.01)
    .setFriction(FOOT_CONTACT_FRICTION)
@@ -246,7 +252,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     .setTranslation(pose.x,pose.y,isolatedGroundDribbleBallCentreZ+0.018)
     .setRotation(pose.rotation));
   rightCollider=world.createCollider(R.ColliderDesc.roundCuboid(
-   FOOT_CONTACT_HALF_LENGTH_M,FOOT_CONTACT_HALF_WIDTH_M,0.015,0.01)
+   FOOT_CONTACT_HALF_LENGTH_M,soloShoeHalfWidthM,0.015,0.01)
     .setFriction(FOOT_CONTACT_FRICTION).setRestitution(0)
     .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS|
      R.ActiveEvents.CONTACT_FORCE_EVENTS)
@@ -414,6 +420,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     ended:Object.freeze(['left','right'].filter(x=>footEnds.has(x))),
     active:Object.freeze(['left','right'].filter(x=>nextSoloFeet.has(x))),
     independentColliders:2,
+    physicalColliderHalfWidthM:soloShoeHalfWidthM,
+    geometrySource:'native-rapier-collider-width',
     exclusivePhysicalStart:footStarts.size===1&&nextSoloFeet.size===1
    })}:{}),
    // Whole-ball delta includes gravity/turf; never shoe attribution.
