@@ -57,7 +57,7 @@
    cleanSheets:[[r=>ratio(r.cleanSheets,r.appearances),false],[r=>r.minutes,false]],
    starts:[[r=>r.minutes,false],[r=>r.subAppearances,true]],
    minutes:[[r=>r.starts,false],[r=>r.appearances,false]],
-   mvpAwards:[[r=>r.minutes,false],[r=>r.averageRating,false]]
+   mvpAwards:[[r=>finite(r.averageRating)?displayedMetric('averageRating',r.averageRating):null,false],[r=>r.minutes,true]]
   }
  };
  // The primary value is compared at its displayed precision, never its hidden decimals.

@@ -454,7 +454,7 @@ test('STATS-TIEBREAK-PLAYERS: all eight cards use recorded player metrics, not p
   assists:1,yellowCards:1,redCards:1,cleanSheets:1,ratedAppearances:2,averageRating:7.25,goalsAssistsPer90:1};
  const cases=[
   [{ratedAppearances:2},{ratedAppearances:1}],
-  [{mvpAwards:1,mvpCoveredAppearances:1,minutes:180},{mvpAwards:1,mvpCoveredAppearances:2,minutes:90}],
+  [{mvpAwards:1,mvpCoveredAppearances:2,averageRating:7.8,minutes:180},{mvpAwards:1,mvpCoveredAppearances:2,averageRating:7.2,minutes:90}],
   [{minutes:90},{minutes:180}],
   [{minutes:90},{minutes:180}],
   [{goals:1,assists:1,minutes:180},{goals:1,assists:0,minutes:90}],
@@ -471,6 +471,24 @@ test('STATS-TIEBREAK-PLAYERS: all eight cards use recorded player metrics, not p
   assert.equal(walk(rows[0]).find(n=>n.tagName==='a').href,'/players/9','player card '+i+' resolves ties before alphabetic names');
   assert.deepEqual(rows.map(n=>n.children[0].textContent),['1','2'],'player card '+i+' assigns distinct ranks');
  }
+});
+
+test('MVP ranking uses awards, displayed rating and fewer minutes, then shares rank',()=>{
+ const r=fixture(),c=supplied('IT-1',16);
+ const player=(playerId,name,mvpAwards,averageRating,minutes)=>({
+  playerId,name,clubKey:'IT-1',appearances:2,starts:2,goals:0,minutes,
+  mvpAwards,mvpCoveredAppearances:2,averageRating,ratedAppearances:averageRating===null?0:2
+ });
+ c.seasonData.statistics.players=[
+  player(1,'One',2,7.0,180),player(2,'Zulu',1,8.21,90),player(3,'Alpha',1,8.23,90),
+  player(4,'Four',1,8.22,120),player(5,'Five',1,null,60)
+ ];
+ r.api.mount(r.panel,c);buttons(r)[2].emit('click');
+ const card=byClass(r,'fa-dev-stats-leader-card').find(node=>node.children[0].dataset.appI18n==='statsDevMvpAwards');
+ const rows=walk(card).filter(node=>node.tagName==='li');
+ assert.deepEqual(rows.map(row=>[row.children[0].textContent,walk(row).find(node=>node.tagName==='a').href]),[
+  ['1','/players/1'],['2','/players/3'],['2','/players/2'],['4','/players/4'],['5','/players/5']
+ ]);
 });
 
 test('STATS-TIEBREAK: visible decimal precision, equal ranks, missing evidence, Show all',()=>{
