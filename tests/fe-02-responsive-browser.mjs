@@ -195,6 +195,105 @@ try{
   });
  }
 
+
+ // #720: real browser geometry for Matches crest/skeleton parity at phone and desktop widths.
+ // A verified fixture image is used because empty public worlds have no recorded match rows.
+ for(const width of [320,390,768,1440]){
+  await visit({width,height:844,language:"it",theme:"dark"},"/players/33?view=matches",async page=>{
+   await page.evaluate(()=>document.fonts.ready);
+   const measured=await page.evaluate(async()=>{
+    const table=document.querySelector('.app-player-matches-table');
+    if(!table||!table.tBodies[0])throw Error('Matches public table missing');
+    const preloaded=new Image();
+    preloaded.src='/assets/clubs/IT/1/crest.svg';
+    await preloaded.decode();
+    const addText=(parent,text,loading,width)=>{
+     const track=document.createElement('span');track.className='app-player-matches-value';
+     if(loading){
+      const bar=document.createElement('span');bar.className='club-fp-bar';
+      bar.style.width=width+'px';bar.style.height='10px';track.append(bar);
+     }else track.textContent=text;
+     parent.append(track);
+    };
+    const makeRow=(loading,fallback=false)=>{
+     const tr=document.createElement('tr');
+     tr.className='app-player-matches-row'+(loading?' app-player-matches-loading':'');
+     for(let i=1;i<=13;i++){
+      const td=document.createElement(i===1?'th':'td');
+      td.className=i===1?'app-player-matches-match':i===4?'app-player-matches-identity':i===2?'app-player-matches-competition':'app-player-matches-number';
+      if(i===4){
+       const identity=document.createElement('span');identity.className='app-player-matches-club';
+       const mark=document.createElement('span');
+       mark.className=loading?'app-world-club-crest-placeholder fa-crest-loading app-player-matches-skeleton-crest':'app-players-club-mark app-player-matches-crest';
+       if(!loading&&!fallback){
+        const img=document.createElement('img');img.className='app-players-club-crest';
+        img.alt='';img.src=preloaded.src;mark.append(img);
+       }
+       identity.append(mark);
+       addText(identity,'Subalpina Torino',loading,105);
+       td.append(identity);
+      }else{
+       const value=i===1?'Season 1 · Day 3':i===6?'2–1':i===7?'90':i===13?'7.4':'—';
+       addText(td,value,loading,i===13?26:i===6?32:90);
+      }
+      tr.append(td);
+     }
+     return tr;
+    };
+    const skeleton=makeRow(true),loaded=makeRow(false),fallback=makeRow(false,true);
+    table.tBodies[0].replaceChildren(skeleton,loaded,fallback);
+    await loaded.children[3].querySelector('img').decode();
+    const rectangle=element=>{
+     const r=element.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,cx:r.x+r.width/2,cy:r.y+r.height/2};
+    };
+    const skeletonMark=skeleton.children[3].querySelector('.app-player-matches-skeleton-crest');
+    const realMark=loaded.children[3].querySelector('.app-player-matches-crest');
+    const image=realMark.querySelector('img'),fallbackMark=fallback.children[3].querySelector('.app-player-matches-crest');
+    const sr=rectangle(skeleton),lr=rectangle(loaded);
+    return {
+     skeleton:rectangle(skeletonMark),real:rectangle(realMark),image:rectangle(image),
+     skeletonRow:sr,loadedRow:lr,
+     skeletonText:rectangle(skeleton.children[3].querySelector('.app-player-matches-value')),
+     loadedText:rectangle(loaded.children[3].querySelector('.app-player-matches-value')),
+     actualImageLoaded:image.complete&&image.naturalWidth>0,
+     neutralUnderReal:getComputedStyle(realMark,'::before').display,
+     neutralFallback:getComputedStyle(fallbackMark,'::before').display,
+     minutesDisplay:getComputedStyle(loaded.children[6]).display,
+     ratingDisplay:getComputedStyle(loaded.children[12]).display,
+     ratingText:loaded.children[12].textContent,
+     mobilePadding:getComputedStyle(loaded).paddingLeft,
+     overflow:document.documentElement.scrollWidth-innerWidth,
+     activeView:document.documentElement.dataset.playerDetailView
+    };
+   });
+   const expectedSize=width<=620?20:24;
+   assert.equal(measured.activeView,'matches','Matches route remains selected at '+width);
+   assert.ok(measured.actualImageLoaded,'verified club SVG loaded at '+width);
+   assert.equal(measured.neutralUnderReal,'none','neutral shield hidden behind actual SVG at '+width);
+   assert.notEqual(measured.neutralFallback,'none','missing crest retains neutral shield at '+width);
+   for(const which of ['skeleton','real','image']){
+    assert.ok(Math.abs(measured[which].width-expectedSize)<=1,
+     which+' crest uses '+expectedSize+'px slot at '+width+': '+JSON.stringify(measured));
+   }
+   assert.ok(Math.abs(measured.skeleton.cx-measured.real.cx)<=1,
+    'skeleton and real crest share x center at '+width+': '+JSON.stringify(measured));
+   assert.ok(Math.abs((measured.skeleton.cy-measured.skeletonRow.y)-(measured.real.cy-measured.loadedRow.y))<=1.5,
+    'skeleton and real crest share vertical row offset at '+width+': '+JSON.stringify(measured));
+   assert.ok(Math.abs(measured.skeletonText.x-measured.loadedText.x)<=1,
+    'skeleton and hydrated name share text anchor at '+width+': '+JSON.stringify(measured));
+   assert.equal(measured.ratingText,'7.4','Rating retains one decimal at '+width);
+   assert.notEqual(measured.ratingDisplay,'none','rating is visible at '+width);
+   if(width<=620){
+    assert.equal(measured.minutesDisplay,'none','minutes hidden only on mobile');
+    assert.equal(measured.mobilePadding,'12px','mobile rows reserve 12px per side');
+   }else assert.notEqual(measured.minutesDisplay,'none','desktop minutes remain visible');
+   assert.ok(measured.overflow<=2,'Matches does not overflow viewport at '+width);
+   await page.locator('.app-player-matches-table').scrollIntoViewIfNeeded();
+   mkdirSync('int24-browser-artifacts',{recursive:true});
+   await page.screenshot({path:'int24-browser-artifacts/fe-02-'+engine+'-player-matches-'+width+'.png'}); 
+  });
+ }
+
  // #527: Players subgroup tabs must behave like Club Roster on mobile.
  // Measure the real scrolling strip at the requested mobile widths, not only a CSS contract.
  for(const width of [320,375,390,430,768,1440]){

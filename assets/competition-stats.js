@@ -60,7 +60,7 @@
   }
  };
  // The primary value is compared at its displayed precision, never its hidden decimals.
- const displayedMetric=(key,value)=>['ppg','averageRating','goalsAssistsPer90'].includes(key)?Number(value.toFixed(2)):value;
+ const displayedMetric=(key,value)=>key==='averageRating'?Number(value.toFixed(1)):['ppg','goalsAssistsPer90'].includes(key)?Number(value.toFixed(2)):value;
  const compareNumber=(left,right,ascending=false)=>{
   const a=finite(left)?left:null,b=finite(right)?right:null;
   if(a===null||b===null)return a===null&&b===null?0:a===null?1:-1;
@@ -150,7 +150,7 @@
    if(restore&&opener?.isConnected)opener.focus({preventScroll:true});opener=null;
   };
   const empty=(player=false)=>localized('p',invalid?'statsDevUnavailable':player?'statsDevNoPlayerData':'statsDevNoData',invalid?'Statistics are unavailable.':player?'No players':'No statistics yet.','fa-dev-stats-empty');
-  const format=(key,value,record)=>key==='averageRating'?value.toFixed(2)+' ('+record.ratedAppearances+')':key==='starts'?String(value)+' ('+(record.subAppearances??'—')+')':key==='cleanSheets'?String(value)+' ('+record.appearances+')':['ppg','goalsPerMatch','goalsAssistsPer90'].includes(key)?value.toFixed(2):String(value);
+  const format=(key,value,record)=>key==='averageRating'?value.toFixed(1)+' ('+record.ratedAppearances+')':key==='starts'?String(value)+' ('+(record.subAppearances??'—')+')':key==='cleanSheets'?String(value)+' ('+record.appearances+')':['ppg','goalsPerMatch','goalsAssistsPer90'].includes(key)?value.toFixed(2):String(value);
   function row(record,rank,key,player=false){
    const li=create('li');
    const identityNode=create('span',undefined,'app-world-club-identity'),crest=create('span',undefined,'app-world-club-crest-placeholder');

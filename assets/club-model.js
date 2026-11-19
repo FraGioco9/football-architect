@@ -229,7 +229,8 @@
    const statText=(stats,key)=>{
     const value=stats?.[key];
     if(value===undefined||value===null)return null;
-    if(key==='averageRating'||key==='goalsAssistsPer90')return value.toFixed(2);
+    if(key==='averageRating')return value.toFixed(1);
+    if(key==='goalsAssistsPer90')return value.toFixed(2);
     if(key==='appearances')return value+' ('+(stats.subAppearances??'—')+')';
     return String(value);
    };

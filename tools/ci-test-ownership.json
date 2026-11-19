@@ -370,6 +370,8 @@
     "backend/tests/test_portrait_v42_replacement_migration.py": "migration",
     "tests/player-portrait-v42-family.test.mjs": "site-node",
     "tests/player-portrait-v42-preparation.test.mjs": "site-node",
-    "tests/player-portrait-v42-cutover.test.mjs": "site-node"
+    "tests/player-portrait-v42-cutover.test.mjs": "site-node",
+    "tests/player-match-history.test.mjs": "site-node",
+    "tests/player-matches-view.test.mjs": "site-node"
   }
 }

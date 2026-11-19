@@ -46,6 +46,10 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.ok(script.includes("window.addEventListener('pagehide',saveViewScroll)"),'save final scroll before refresh');
   assert.ok(style.includes('.app-player-stats-table .app-player-stats-season-row{padding-top:0}'));
   assert.ok(style.includes('.app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-label{min-height:34px}'));
+  assert.doesNotMatch(script,/localStorage|innerHTML/);
+  assert.match(script,/const viewScrollKey=preview\?null:'football-architect:player-views-scroll:'\+location\.pathname;/);
+  assert.match(script,/try\{const raw=sessionStorage\.getItem\(viewScrollKey\)/);
+  assert.match(script,/sessionStorage\.setItem\(viewScrollKey,String\(viewBar\.scrollLeft\)\)/);
  }
 
  for(const [src,output,mode] of [
@@ -66,7 +70,10 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.match(html,/class="app-player-detail-silhouette"/);
   for(const view of ['overview','info','stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"'));
   for(const view of (mode==='preview'?['stats','history','progression']:['history','progression']))assert.match(html,new RegExp('data-detail-view="'+view+'"[^>]* disabled aria-disabled="true"'));
-  if(mode==='public')assert.match(html,/data-detail-view="stats"[^>]*aria-controls="player-detail-stats-panel"/);
+  if(mode==='public'){
+   assert.match(html,/data-detail-view="stats"[^>]*aria-controls="player-detail-stats-panel"/);
+   assert.match(html,/data-detail-view="matches"[^>]*aria-controls="player-detail-matches-panel"/);
+  }else assert.doesNotMatch(html,/data-detail-view="matches"|data-detail-panel="matches"/);
   assert.doesNotMatch(html,/data-detail-view="attributes"|data-detail-group="technical"/);
   assert.match(html,/data-detail-value="nationality"/);
   assert.match(html,/data-detail-value="secondary_nationality"/);
@@ -77,7 +84,7 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.match(html,/data-detail-positions aria-labelledby="player-detail-positions-title"/);
   assert.match(html,/<h2 id="player-detail-positions-title" data-detail-section-title="positions">Positions<\/h2>/);
   assert.match(html,/data-detail-status role="status" aria-live="polite" hidden/);
-  assert.equal((html.match(/data-detail-panel="/g)||[]).length,mode==="public"?3:2);
+  assert.equal((html.match(/data-detail-panel="/g)||[]).length,mode==="public"?4:2);
   assert.match(html,/data-detail-view="info"[^>]*aria-controls="player-detail-info-panel"/);
   for(const group of ['technical','mental','physical','goalkeeping'])assert.match(html,new RegExp('data-detail-attribute-group="'+group+'"'));
   assert.doesNotMatch(html,/data-players-filter-open|data-admin-players-confirmation/);
@@ -108,12 +115,6 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
  assert.match(script,/\/api\/admin\/players\/draft/);
  assert.match(script,/p\.preview_id!=='trial-'/);
  assert.doesNotMatch(script,/localStorage|innerHTML/);
- assert.match(script,/const viewScrollKey=preview\?null:'football-architect:player-views-scroll:'\+location\.pathname;/,
-  'session scroll persistence is disabled for protected draft previews');
- assert.match(script,/try\{const raw=sessionStorage\.getItem\(viewScrollKey\)/,
-  'scroll restoration reads only the public player View offset');
- assert.match(script,/try\{sessionStorage\.setItem\(viewScrollKey,String\(viewBar\.scrollLeft\)\)/,
-  'the only persisted public detail value is the View strip scroll offset');
  assert.match(script,/if\(preview\)root\.hidden=true/);
  assert.match(index,/const playerDetail=url\.pathname\.match/);
  assert.match(publicApi,/SELECT p\.id,p\.payload_json,a\.club_key,/);

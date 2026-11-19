@@ -5,6 +5,7 @@ import {readPublicClubRoster} from './public-club-roster-read.ts';
  */
 import {frozenMatchPlayerStatistics} from './match-player-statistics.mjs';
 import {aggregateFrozenPlayerSeasonStats} from './player-season-statistics.mjs';
+import {collectFrozenPlayerMatches,paginateVerifiedPlayerMatches} from './player-match-history.mjs';
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import type {WorldV1} from './types.ts';
@@ -228,7 +229,8 @@ export function clubRosterTotals(clubKey:string,fixtures:readonly Fixture[],
 async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number,rosterStats=false,includeClubRecords=false){
  const clubKey=competitionId.startsWith('club:')?competitionId.slice('club:'.length):null;
  const fixturesClubKey=competitionId.startsWith('club-fixtures:')?competitionId.slice('club-fixtures:'.length):null;
- const playerKey=/^player:([1-9][0-9]*)$/.exec(competitionId);
+ const playerKey=/^player(?:-matches)?:([1-9][0-9]*)$/.exec(competitionId);
+ const playerMatches=competitionId.startsWith('player-matches:');
  const playerId=playerKey&&Number.isSafeInteger(Number(playerKey[1]))?Number(playerKey[1]):null;
  if((competitionId!=='world'&&!competitionPattern.test(competitionId)&&!(clubKey&&clubPattern.test(clubKey))&&!(fixturesClubKey&&clubPattern.test(fixturesClubKey))&&!playerId)||!Number.isSafeInteger(selectedSeason)||selectedSeason<1||competitionId==='world'&&(typeof calendarDay!=='number'||!Number.isInteger(calendarDay)||calendarDay<1||calendarDay>56))throw new ApiError(404,'not_found');
  const world=await readWorld(db);
@@ -296,6 +298,22 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    if(await canonicalHash(JSON.parse(summary.summary_json))!==summary.summary_hash)invalid();
   }else if(archive){
    if(viewedWorld.day!==56||archive.generation!==world.generation)invalid();
+  }
+  // #712 shares the exact Stats replay/archive and publication fences.
+  // Do not query or re-simulate individual matches for a public listing.
+  if(playerId&&playerMatches){
+   const metadata=new Map<string,{kind:string;phaseId:string;neutral:boolean;leg:number|null;round:number;marker:string}>();
+   for(const fixture of evidence.schedule.fixtures)
+    metadata.set(fixture.id,{kind:'league',phaseId:'league',neutral:false,leg:null,round:fixture.round,marker:fixture.marker});
+   for(const tie of state.ties.values())for(const entry of tie.fixtures)
+    metadata.set(entry.fixture.id,{kind:'knockout',phaseId:tie.phaseId,neutral:entry.neutral,leg:entry.leg,
+     round:entry.fixture.round,marker:entry.fixture.marker});
+   const matches=collectFrozenPlayerMatches(playerId,selectedSeason,replay.frozenMatches.values(),metadata);
+   await unchanged(db,world);
+   return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
+    provenance:{kind:'authoritative' as const,resultAuthority:'temporary-lineup-v1' as const,
+     sourceRef:'player-matches:'+world.generation+':season:'+selectedSeason+':'+evidence.calendar.calendar_hash},
+    data:{season:selectedSeason,matches}};
   }
   // Player Stats reuses this same verified season/archive replay exactly once.
   // No per-competition or per-match public calls or live-affiliation inference.
@@ -453,6 +471,9 @@ export async function readPublicRosterStats(db:Database,clubKey:string,season:nu
  const data=projection?.data;
  const complete=data&&'complete' in data?data.complete:
   selectedSeason===0&&world.seasonNumber===0||(projection&&'reason' in projection&&projection.reason==='calendar-unpublished');
+ // The standard fixtures projection does not expose roster aggregates.
+ // Only the verified stats projection has these optional arrays; keep absent
+ // fields separate from recorded zero-valued match statistics.
  const totals=new Map(data&&'totals' in data?(data.totals?.map(p=>[p.playerId,p])??[]):[]);
  const breakdown=data&&'breakdown' in data?(data.breakdown?.map(c=>({
   id:c.id,complete:c.complete,rows:new Map(c.totals.map(p=>[p.playerId,p]))
@@ -543,4 +564,60 @@ export async function readPublicPlayerStatsLineupV1(db:Database,playerId:number)
    if(!('reason' in item)||!('provenance' in item))throw new ApiError(503,'sporting_data_unavailable');
    return {season:item.selectedSeason,status:item.status,reason:item.reason,provenance:item.provenance,data:item.data};
   })};
+}
+
+
+/** #712: anonymous batched, verified chronological appearances, capped at 50.
+ * Page cursor binds both filters and the same canonical world generation/revision.
+ */
+export async function readPublicPlayerMatchesLineupV1(
+ db:Database,playerId:number,options:{season:'all'|number;competition:string;cursor:string|null;limit:number}
+){
+ if(!Number.isSafeInteger(playerId)||playerId<1||!options||
+  !(options.season==='all'||Number.isSafeInteger(options.season)&&options.season>=1&&options.season<=2)||
+  !(options.competition==='all'||competitionPattern.test(options.competition))||
+  !Number.isSafeInteger(options.limit)||options.limit<1||options.limit>50||
+  !(options.cursor===null||typeof options.cursor==='string'&&options.cursor.length<=512))
+  throw new ApiError(422,'invalid_public_request');
+ const world=await readWorld(db);
+ const exists=await db.prepare('SELECT id FROM generated_players WHERE id=?').bind(playerId).first<{id:number}>();
+ if(!exists)throw new ApiError(404,'player_not_found');
+ const base={schemaVersion:1 as const,providerId:'authoritative-world' as const,playerId,world};
+ if(![0,1,2].includes(world.seasonNumber)){
+  await unchanged(db,world);
+  return {...base,status:'unavailable' as const,reason:'unsupported-world-season',
+   filters:{seasons:[],competitions:[]},items:[],nextCursor:null,total:0};
+ }
+ if(world.seasonNumber===0){
+  await unchanged(db,world);
+  return {...base,status:'empty' as const,reason:'season-zero',
+   filters:{seasons:[],competitions:[]},items:[],nextCursor:null,total:0};
+ }
+ const seasons=await Promise.all(Array.from({length:world.seasonNumber},(_,i)=>i+1)
+  .map(season=>readPublicProjection(db,'player-matches:'+playerId,season)));
+ if(seasons.some(item=>item.world.generation!==world.generation||item.world.revision!==world.revision||
+   item.world.seasonNumber!==world.seasonNumber||item.world.day!==world.day||item.world.phase!==world.phase))
+  throw new ApiError(409,'stale_world');
+ if(seasons.some(item=>item.status==='unavailable')) {
+  await unchanged(db,world);
+  return {...base,status:'unavailable' as const,reason:'incomplete-evidence',
+   filters:{seasons:[],competitions:[]},items:[],nextCursor:null,total:0};
+ }
+ const matches=seasons.flatMap(item=>{
+  const data=item.data as {matches?:ReturnType<typeof collectFrozenPlayerMatches>}|null;
+  return data?.matches??[];
+ });
+ const optionsAvailable={seasons:[...new Set(matches.map(item=>item.season))].sort((a,b)=>b-a),
+  competitions:[...new Set(matches.map(item=>item.competitionId))].sort()};
+ let page;
+ try{page=paginateVerifiedPlayerMatches(matches,world,options)}
+ catch(error){
+  if(error instanceof RangeError)throw new ApiError(409,'stale_world');
+  throw new ApiError(422,'invalid_public_request');
+ }
+ await unchanged(db,world);
+ return {...base,status:page.total?'available' as const:'empty' as const,reason:page.total?null:'no-appearances',
+  provenance:{kind:'authoritative' as const,resultAuthority:'temporary-lineup-v1' as const,
+   sourceRef:'player-matches:'+world.generation+':revision:'+world.revision},
+  filters:optionsAvailable,...page};
 }
