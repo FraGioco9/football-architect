@@ -1,3 +1,4 @@
+import {readPublicClubRoster} from './public-club-roster-read.ts';
 /** #613: V2-only anonymous sporting projections from independently verified
  * immutable lineup receipts. Wired to HTTP in the Draft/HOLD branch; not deployed.
  * Never re-simulates a match or reads current affiliations on a public GET.
@@ -213,7 +214,18 @@ async function confirmedEntrantsBeforeCalendar(db:Database,world:WorldV1,competi
  if(!binding)return invalid();
  return {binding,participantsHash:snapshot.participantsHash};
 }
-async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number){
+export function clubRosterTotals(clubKey:string,fixtures:readonly Fixture[],
+ results:ReadonlyMap<string,LineupSportingScoreV1>,frozenMatches:ReadonlyMap<string,FrozenLineupMatchV1>){
+ const played=fixtures.filter(f=>results.has(f.id)&&(f.homeClubId===clubKey||f.awayClubId===clubKey));
+ const complete=played.every(f=>{
+  const result=frozenMatches.get(f.id)?.receipt.result as unknown as LineupMatchResultV1|undefined;
+  return result?.[f.homeClubId===clubKey?'home':'away']?.kind==='real_xi';
+ });
+ const clubs=[...new Set(played.flatMap(f=>[f.homeClubId,f.awayClubId]))];
+ const totals=complete?lineupTeamStatisticsV1(clubs,played,results,frozenMatches).players.filter(p=>p.clubId===clubKey):[];
+ return {complete,totals};
+}
+async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number,rosterStats=false){
  const clubKey=competitionId.startsWith('club:')?competitionId.slice('club:'.length):null;
  const fixturesClubKey=competitionId.startsWith('club-fixtures:')?competitionId.slice('club-fixtures:'.length):null;
  const playerKey=/^player:([1-9][0-9]*)$/.exec(competitionId);
@@ -309,6 +321,14 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
      a.marker.localeCompare(b.marker,'en')||a.id.localeCompare(b.id,'en'));
    if(fixtures.some(f=>!competitionIds.has(f.competitionId)||
      (f.result!==null)!==(f.day<=viewedWorld.day)))invalid();
+   if(rosterStats){
+    const clubFixtures=all.filter(f=>f.homeClubId===fixturesClubKey||f.awayClubId===fixturesClubKey);
+    const {complete,totals}=clubRosterTotals(fixturesClubKey,clubFixtures,storedResults,replay.frozenMatches);
+    const breakdown=[...competitionIds].map(id=>({id,...clubRosterTotals(fixturesClubKey,
+     clubFixtures.filter(f=>f.competitionId===id),storedResults,replay.frozenMatches)}));
+    await unchanged(db,world);
+    return {...base,status:'available' as const,data:{complete,totals,breakdown}};
+   }
    // Carry persisted public IDs in the verified club response so the client
    // does not download two full public competition match collections.
    const linked=await withOfficialClubMatchIds(db,world.generation,selectedSeason,
@@ -377,14 +397,20 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
   const table=await rankLeagueTable(competitionId,binding.clubIds,leagueFixtures,storedResults,evidence.schedule.seed,{throughDay:viewedWorld.day});
   const standings={complete:leagueFixtures.every(f=>storedResults.has(f.id)),rows:table.map(({drawKey,...row})=>row)};
   const recordedStats=lineupTeamStatisticsV1(binding.clubIds,fixtures,storedResults,replay.frozenMatches);
-  const stats={...recordedStats,players:await competitionPlayerIdentities(db,recordedStats.players)};
+  const enriched=await competitionPlayerIdentities(db,recordedStats.players);
+  const stats={...recordedStats,players:enriched.map((p,i)=>({...p,archivedName:recordedStats.players[i]!.displayName}))};
+  const playerCoverage=fixtures.every(f=>{
+   if(!storedResults.has(f.id))return true;
+   const match=replay.frozenMatches.get(f.id)?.receipt.result as unknown as LineupMatchResultV1|undefined;
+   return match?.home.kind==='real_xi'&&match.away.kind==='real_xi';
+  });
   const final=fixtures.find(f=>f.marker===(competitionId==='int-1'?'SOVEREIGN-FINAL':'FEDERATION-FINAL'));
   const championClubId=competitionId.startsWith('int-')?(final?storedResults.get(final.id)?.winnerClubId:null):table[0]?.clubId;
   if(archive&&!championClubId)invalid();
   const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},rulesVersion:binding.rulesVersion,participants:[...binding.clubIds],
-   fixtures:projectFixtures(fixtures,plans,storedResults),standings,statistics:stats,
+   playerRecordVersion:1,playerCoverage,fixtures:projectFixtures(fixtures,plans,storedResults),standings,statistics:stats,
    calendar:Array.from({length:56},(_,i)=>({day:i+1,fixtureIds:fixtures.filter(f=>f.day===i+1).map(f=>f.id),played:fixtures.filter(f=>f.day===i+1&&storedResults.has(f.id)).length})),
-   history:viewedWorld.phase==='closed'&&archive?{season:selectedSeason,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,finalStandings:standings.rows,statistics:stats}:null};
+   history:viewedWorld.phase==='closed'&&archive?{season:selectedSeason,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,playerRecordVersion:1,playerCoverage,finalStandings:standings.rows,statistics:stats}:null};
   await unchanged(db,world);
   return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
    provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:`world:${world.generation}:season:${selectedSeason}:${evidence.calendar.calendar_hash}`},data};
@@ -401,6 +427,42 @@ export function readPublicCalendarDayLineupV1(db:Database,selectedSeason:number,
 export function readPublicClubFixturesLineupV1(db:Database,clubKey:string,selectedSeason:number){
  if(!clubPattern.test(clubKey))throw new ApiError(404,'not_found');
  return readPublicProjection(db,'club-fixtures:'+clubKey,selectedSeason);
+}
+export async function readPublicRosterStats(db:Database,clubKey:string,season:number|null){
+ const world=await readWorld(db);
+ const selectedSeason=season??world.seasonNumber;
+ const projection=selectedSeason>0?await readPublicProjection(db,'club-fixtures:'+clubKey,selectedSeason,undefined,true).catch(error=>{
+  if(error instanceof ApiError&&error.code==='sporting_data_unavailable')return null;
+  throw error;
+ }):null;
+ const data=projection?.data;
+ const complete=data&&'complete' in data?data.complete:
+  selectedSeason===0&&world.seasonNumber===0||(projection&&'reason' in projection&&projection.reason==='calendar-unpublished');
+ const totals=new Map(data&&'totals' in data?(data.totals?.map(p=>[p.playerId,p])??[]):[]);
+ const breakdown=data&&'breakdown' in data?(data.breakdown?.map(c=>({
+  id:c.id,complete:c.complete,rows:new Map(c.totals.map(p=>[p.playerId,p]))
+ }))??[]):[];
+ // Preserve nullable event metrics from verified frozen receipts.
+ // Missing event coverage must never become a recorded zero.
+ function numbers(recorded:boolean,row:ReturnType<typeof clubRosterTotals>['totals'][number]|undefined){
+  if(!recorded)return null;
+  const appearances=row?.appearances??0,starts=row?.starts??0,minutes=row?.minutes??0,goals=row?.goals??0;
+  const assists=row?row.assists:0,subAppearances=row?row.subAppearances:0;
+  const cleanSheets=row?row.cleanSheets:0,redCards=row?row.redCards:0,yellowCards=row?row.yellowCards:0;
+  const ratedAppearances=row?.ratedAppearances??0,averageRating=row?.averageRating??null;
+  const goalsAssistsPer90=assists!==null&&minutes>0
+   ?Math.round((goals+assists)*90/minutes*100)/100:null;
+  return {appearances,starts,subAppearances,minutes,goals,assists,cleanSheets,yellowCards,redCards,
+   ratedAppearances,averageRating,goalsAssistsPer90};
+ }
+ const roster=await readPublicClubRoster(db,clubKey);
+ await unchanged(db,world);
+ return {...roster,season:selectedSeason,competitions:breakdown.map(c=>c.id),players:roster.players.map(player=>{
+  const row=totals.get(player.id);
+  const {id,display_name,nationality,primary_position,secondary_positions}=player;
+  return {id,display_name,nationality,primary_position,secondary_positions,stats:numbers(!!complete,row),
+   competitionStats:Object.fromEntries(breakdown.map(c=>[c.id,numbers(c.complete,c.rows.get(id))]))};
+ })};
 }
 /** Compact, validated club overview: exactly one public HTTP request per selected season. */
 export function readPublicClubOverviewLineupV1(db:Database,clubKey:string,selectedSeason:number){
@@ -460,6 +522,10 @@ export async function readPublicPlayerStatsLineupV1(db:Database,playerId:number)
  await unchanged(db,world);
  return {schemaVersion:1 as const,providerId:'authoritative-world' as const,playerId,world,
   status:world.seasonNumber===0?'empty' as const:'available' as const,reason:world.seasonNumber===0?'season-zero':null,
-  seasons:seasons.reverse().map(({selectedSeason,status,reason,provenance,data})=>({
-   season:selectedSeason,status,reason,provenance,data}))};
+  seasons:seasons.reverse().map(item=>{
+   // Player projections carry authority metadata; roster-only projections do not.
+   // Fail closed rather than implying verified coverage for a mismatched scope.
+   if(!('reason' in item)||!('provenance' in item))throw new ApiError(503,'sporting_data_unavailable');
+   return {season:item.selectedSeason,status:item.status,reason:item.reason,provenance:item.provenance,data:item.data};
+  })};
 }

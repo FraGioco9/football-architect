@@ -197,3 +197,31 @@ test('QA-12: a changed current-world revision restarts the prior-season record r
   assert.equal(requests[1].signal.aborted,true);
  }finally{if(before===undefined)delete globalThis.window;else globalThis.window=before}
 });
+
+test('a verified active season breaks a record of two and contributes once at closure',()=>{
+ const previous=context();
+ previous.seasonData.statistics.standings=[{...row,gf:2}];
+ const archived=historyViewModel(previous);
+ const current=context();
+ current.selectedSeason=current.seasonData.season=2;
+ Object.assign(current.seasonData,{history:null,world:{seasonNumber:2,phase:'active'},seasonState:{phase:'active'},playerCoverage:true});
+ Object.assign(current.seasonData.statistics,{standings:[{...row,gf:3}],teams:[{mp:1}],players:[{playerId:8,goals:3}]});
+ const live=historyViewModel(current);
+ assert.equal(live.players[0].goals,3);
+ assert.deepEqual(live.podium,[]);
+ const summary=historyAggregate([archived,live]);
+ assert.equal(summary.season.historyBestAttack.value,3);
+ assert.equal(summary['all-time'].historyMostTotalGoals.value,5);
+ current.seasonData.seasonState.phase='closed';
+ current.seasonData.history={...previous.seasonData.history,season:2};
+ assert.equal(historyAggregate([archived,historyViewModel(current)])['all-time'].historyMostTotalGoals.value,5);
+});
+
+test('Public authoritative History uses the same club popup as Debug and Players',()=>{
+ const source=readFileSync(new URL('../assets/authoritative-history.mjs',import.meta.url),'utf8');
+ assert.match(source,/window\.faHistoryDialog\.openClubs\(/);
+ assert.match(source,/entries:record\.entries/);
+ assert.match(source,/trigger,identity,seasonLink/);
+ assert.match(source,/aria-haspopup','dialog/);
+ assert.doesNotMatch(source,/dialog\.append\(line\)/);
+});

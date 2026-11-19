@@ -15,7 +15,7 @@ import {publishInternationalCalendarLineupV1} from '../src/admin-calendar-publis
 import {executeLineupLifecycleV1} from '../src/lineup-lifecycle-command.ts';
 import {
  readPublicSportingSeasonLineupV1,readPublicCalendarDayLineupV1,
- readPublicClubOverviewLineupV1,readPublicClubFixturesLineupV1,
+ readPublicClubOverviewLineupV1,readPublicClubFixturesLineupV1,readPublicRosterStats,
  readPublicClubHistoryLineupV1,lineupTeamStatisticsV1
 } from '../src/public-sporting-read-lineup-v1.ts';
 import {readPublicMatchLineupV1,
@@ -137,6 +137,9 @@ describe('#613 new V2 public competition, club, calendar projections (unrouted)'
   const clubFixtures=await readPublicClubFixturesLineupV1(db,'IT-1',1) as any;
   expect(clubFixtures.data?.fixtures).toHaveLength(36);
   expect(clubFixtures.data?.fixtures.every((f:any)=>f.result===null)).toBe(true);
+  const roster=await readPublicRosterStats(db,'IT-1',1);
+  expect(roster.competitions.slice().sort()).toEqual(clubFixtures.data.competitions.slice().sort());
+  expect(roster.competitions).toHaveLength(2);
   const history=await readPublicClubHistoryLineupV1(db,'IT-1') as any;
   expect(history.data?.overviews).toHaveLength(1);
   expect(history.provenance.resultAuthority).toBe('temporary-lineup-v1');

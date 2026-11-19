@@ -37,7 +37,7 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  // #553: match only the canonical anonymous club-season fixtures GET.
  const clubFixtures=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/seasons\/([1-9][0-9]*)\/fixtures$/.exec(raw);
  const clubFixturesRead=!!clubFixtures&&Number.isSafeInteger(Number(clubFixtures[2]));
- const clubRoster=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/roster$/.test(raw);
+ const clubRoster=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/roster(?:\/stats(?:\?season=(?:0|[1-9][0-9]{0,8}))?)?$/.test(raw);
  const singlePlayer=/^\/api\/players\/[1-9][0-9]*$/.test(raw)&&Number.isSafeInteger(Number(raw.slice('/api/players/'.length)));
  // #578: allow exact numeric Player Detail Stats reads through both local
  // and shared DEV bridges. No query, suffix or encoded path is authorized.
@@ -59,7 +59,7 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  const anonymousRead=publicRead||raw==='/api/world';
  const localClient=loopback(req.socket.remoteAddress)&&hostPattern.test(req.headers.host||'');
  const lanPublic=lanEnabled&&anonymousRead&&req.method==='GET'&&privateIPv4(req.socket.remoteAddress)&&lanHostAllowed(req.headers.host,lanHosts);
- if(!(localClient||lanPublic)||(raw.includes('%')&&!playersRead)||raw.includes('\\')||(raw.includes('?')&&!playersRead&&!contractsListQuery)||raw.includes('#')||/\/\.{1,2}(?:\/|$)/.test(raw))return reply(res,403,'forbidden');
+ if(!(localClient||lanPublic)||(raw.includes('%')&&!playersRead)||raw.includes('\\')||(raw.includes('?')&&!playersRead&&!clubRoster&&!contractsListQuery)||raw.includes('#')||/\/\.{1,2}(?:\/|$)/.test(raw))return reply(res,403,'forbidden');
  const adminRoutes={"/api/admin/contracts":"GET|POST","/api/admin/players":"GET","/api/admin/players/preview":"POST","/api/admin/players/draft":"POST","/api/admin/players/commit":"POST","/api/admin/session":"GET","/api/admin/login":"POST","/api/admin/logout":"POST","/api/admin/world":"GET","/api/admin/seasons/events":"GET","/api/admin/seasons/archives":"GET","/api/admin/seasons/next-candidate":"GET","/api/admin/seasons/next-approve":"POST","/api/admin/seasons/next-prepare":"POST","/api/admin/seasons/prepare":"POST","/api/admin/seasons/calendar":"POST","/api/admin/seasons/start":"POST","/api/admin/seasons/advance":"POST","/api/admin/seasons/archive":"POST","/api/admin/seasons/close":"POST","/api/admin/world/reset":"POST","/api/admin/seasons/events/initialize":"POST","/api/admin/seasons/events/start":"POST","/api/admin/seasons/events/advance":"POST","/api/admin/seasons/events/confirm":"POST","/api/admin/seasons/events/reschedule":"POST","/api/admin/seasons/events/domestic-calendar":"POST","/api/admin/seasons/events/international-draw":"POST","/api/admin/seasons/events/international-calendar":"POST"};
  const playerRoutes={'/api/player/login':'POST','/api/player/logout':'POST','/api/player/session':'GET','/api/player/sessions':'GET','/api/player/permissions':'GET','/api/player/register':'POST','/api/player/verify-email':'POST','/api/player/password-reset/request':'POST','/api/player/password-reset/complete':'POST','/api/player/account/change-password':'POST','/api/player/account/change-email':'POST','/api/player/account/profile':'POST','/api/player/account/revoke-other-sessions':'POST','/api/player/account/delete':'POST','/api/player/admin/world':'GET'};
  const inbox=raw==='/api/local-dev/inbox';

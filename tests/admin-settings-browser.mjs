@@ -823,8 +823,8 @@ try{
    await roster.bringToFront();
    await roster.locator('.club-roster-player-link').filter({hasText:'Synthetic Player'}).waitFor();
    assert.equal(rosterGets,2,'One accepted contract write triggers exactly one fresh Roster GET');
-   await roster.locator('[data-club-roster-view="technical"]').click();
-   await roster.waitForURL(u=>u.searchParams.get('view')==='technical');
+   await roster.locator('[data-club-roster-view="attributes"]').click();
+   await roster.waitForURL(u=>u.searchParams.get('view')==='attributes'&&u.searchParams.get('group')==='technical');
    assert.equal(rosterGets,2,'Roster subview reuses the refreshed data');
    await admin.bringToFront();
    await admin.locator('[data-contracts-check="1"]').waitFor();

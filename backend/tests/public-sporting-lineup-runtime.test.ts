@@ -3,7 +3,7 @@ import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import {clearTestWorld} from './fixtures/test-world.ts';
 import {readPublicSportingSeasonLineupV1,readPublicClubHistoryLineupV1,
- lineupTeamStatisticsV1} from '../src/public-sporting-read-lineup-v1.ts';
+ clubRosterTotals,lineupTeamStatisticsV1} from '../src/public-sporting-read-lineup-v1.ts';
 
 const bindings=env as any,db=bindings.DB;
 beforeAll(async()=>applyD1Migrations(db,bindings.TEST_MIGRATIONS));
@@ -27,6 +27,13 @@ describe('#613 V2 public read validation and frozen-player statistics',()=>{
   }}} as any;
   const out=lineupTeamStatisticsV1([home,away],[f],
    new Map([[id,result]]),new Map([[id,frozen]]));
+  const previous={...f,id:'previous-club',homeClubId:'IT-3',awayClubId:away};
+  const future={...f,id:'future'};
+  const fixtures=[f,previous,future];
+  const scores=new Map([[id,result],[previous.id,result]]);
+  const receipts=new Map([[id,frozen],[previous.id,{...frozen,fixtureId:previous.id}]]);
+  expect(clubRosterTotals(home,fixtures,scores,receipts)).toMatchObject({complete:true,totals:[{playerId:7,appearances:1,starts:1,minutes:90,goals:2}]});
+  expect(clubRosterTotals(away,fixtures,scores,receipts)).toEqual({complete:false,totals:[]});
   expect(out.matchesPlayed).toBe(1);
   expect(out.totalGoals).toBe(3);
   expect(out.players).toMatchObject([{playerId:7,clubId:home,appearances:1,starts:1,subAppearances:null,minutes:90,goals:2,cleanSheets:null,assists:null,yellowCards:null,redCards:null,averageRating:null,ratedAppearances:0}]);

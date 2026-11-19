@@ -270,7 +270,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         const legacyView=params.get("view");
         const view=base&&(legacyView==="stats"||clubViews.includes(legacyView))
           ?(legacyView==="stats"?"records":legacyView):clubRoute.view;
-        params.delete("view");
+        if(base||view!=="roster")params.delete("view");
         if(view==="overview"||view==="history"){params.delete("season");params.delete("matchday");}
         if(view==="records"){params.delete("matchday");params.delete("competition");
           if(!["season","verified"].includes(params.get("scope")))params.delete("scope");}

@@ -69,8 +69,8 @@ export async function verifyRealContractRoster(browser,{origin,email,password}){
    !!document.querySelector('.club-roster-player-link[href="/players/150"]'));
   assert.equal(rosterRequests.length,2,
    'Accepted D1 assignment makes the other tab issue exactly one new roster GET');
-  await publicRoster.locator('[data-club-roster-view="technical"]').click();
-  await publicRoster.waitForURL(u=>u.searchParams.get('view')==='technical');
+  await publicRoster.locator('[data-club-roster-view="attributes"]').click();
+  await publicRoster.waitForURL(u=>u.searchParams.get('view')==='attributes'&&u.searchParams.get('group')==='technical');
   assert.equal(rosterRequests.length,2,'In-page Roster view change adds zero network GETs');
 
   await operator.bringToFront();

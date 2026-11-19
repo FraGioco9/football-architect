@@ -114,7 +114,7 @@
   if(key==='age')return player.age;
   if(key==='height')return player.height_cm;
   if(key==='foot')return player.preferred_foot;
-  return player.attributes?.[key];
+  return statKeys.includes(key)?player.stats?.[key]:player.attributes?.[key];
  }
  function sortedRosterPlayers(players,key,order){
   const direction=order==='desc'?-1:1;
@@ -141,16 +141,56 @@
   fr:{name:'Joueur',age:'Âge',positions:'Postes',height:'Taille',foot:'Pied',nationality:'Nationalité',one:'joueur',many:'joueurs',left:'Gauche',right:'Droit',tabs:['Info'],groups:['Techniques','Mentaux','Physiques','Gardien'],empty:'Aucun joueur n’est actuellement affecté à ce club.',unavailable:'L’effectif est temporairement indisponible.',missingApi:'L’API de l’effectif manque dans cette version. Redémarrez le serveur local depuis cette branche.',loading:'Chargement de l’effectif'},
   it:{name:'Giocatore',age:'Età',positions:'Posizioni',height:'Altezza',foot:'Piede',nationality:'Nazionalità',one:'giocatore',many:'giocatori',left:'Sinistro',right:'Destro',tabs:['Info'],groups:['Tecnici','Mentali','Fisici','Portiere'],empty:'Nessun giocatore è attualmente assegnato a questo club.',unavailable:'La rosa è temporaneamente non disponibile.',missingApi:'L’API della rosa non è disponibile in questa versione. Riavvia il server locale dal branch corrente.',loading:'Caricamento rosa'}
  };
+ // Match the Player Detail Stats ordering first; append Roster-only metrics.
+ const statKeys=['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating'];
+ const rosterLabels={
+  en:['Attributes','Apps (Subs)','Min','Gls','Ast','G+A/90','YC','RC','CS','Rat.','Domestic','International','Not recorded'],
+  it:['Attributi','Pres. (Sub.)','Min','Gol','Assist','G+A/90','Gialli','Rossi','CS','Val.','Nazionali','Internazionali','Dato non registrato'],
+  de:['Attribute','Sp. (Einw.)','Min','Tor.','Vor.','G+A/90','Gelb','Rot','CS','Bew.','National','International','Nicht erfasst'],
+  fr:['Attributs','MJ (Entr.)','Min','Bts','PdD','G+A/90','Jaunes','Rouges','CS','Not.','Nationales','Internationales','Non enregistré'],
+  es:['Atributos','PJ (Sup.)','Min','Gol','Asist.','G+A/90','Amar.','Rojas','CS','Val.','Nacionales','Internacionales','Sin registrar']
+ };
+ const rosterStatHelp={
+  en:{appearances:'Appearances (substitute appearances)',minutes:'Minutes played',goals:'Goals',assists:'Assists',goalsAssistsPer90:'Goals plus assists per 90 minutes played',yellowCards:'Yellow cards',redCards:'Red cards',cleanSheets:'Clean sheets',averageRating:'Average match rating'},
+  it:{appearances:'Presenze (da subentrato)',minutes:'Minuti giocati',goals:'Gol segnati',assists:'Assist',goalsAssistsPer90:'Gol più assist ogni 90 minuti giocati',yellowCards:'Cartellini gialli',redCards:'Cartellini rossi',cleanSheets:'Clean sheet',averageRating:'Valutazione media'},
+  de:{appearances:'Spiele (Einwechslungen)',minutes:'Gespielte Minuten',goals:'Tore',assists:'Vorlagen',goalsAssistsPer90:'Tore und Vorlagen pro 90 Minuten',yellowCards:'Gelbe Karten',redCards:'Rote Karten',cleanSheets:'Spiele ohne Gegentor',averageRating:'Durchschnittliche Bewertung'},
+  fr:{appearances:'Matchs joués (entrées en jeu)',minutes:'Minutes jouées',goals:'Buts',assists:'Passes décisives',goalsAssistsPer90:'Buts et passes décisives par 90 minutes',yellowCards:'Cartons jaunes',redCards:'Cartons rouges',cleanSheets:'Matchs sans but encaissé',averageRating:'Note moyenne'},
+  es:{appearances:'Partidos jugados (entradas como suplente)',minutes:'Minutos jugados',goals:'Goles',assists:'Asistencias',goalsAssistsPer90:'Goles más asistencias cada 90 minutos',yellowCards:'Tarjetas amarillas',redCards:'Tarjetas rojas',cleanSheets:'Porterías a cero',averageRating:'Valoración media'}
+ };
+ function rosterCompetition(params){
+  const scope=params.get('competition');
+  return scope==='domestic'||scope==='international'?scope:'all';
+ }
+ function rosterView(params){
+  if(params.get('view')==='stats')return 'stats';
+  if(params.get('view')!=='attributes')return 'info';
+  const group=params.get('group');
+  return Object.hasOwn(rosterGroups,group)?group:'technical';
+ }
+ function rosterSortKeys(view){
+  if(view==='info')return rosterSortInfo;
+  return [...rosterSortCommon,...(view==='stats'?statKeys:rosterGroups[view])];
+ }
+ function rosterViewQuery(search,view){
+  const query=new URLSearchParams(search);
+  const attributes=Object.hasOwn(rosterGroups,view);
+  query.set('view',attributes?'attributes':view);
+  if(view!=='stats')query.delete('competition');
+  if(!attributes)query.delete('group');
+  else query.set('group',view);
+  const allowed=rosterSortKeys(view);
+  if(!allowed.includes(query.get('sort'))){query.delete('sort');query.delete('order');}
+  return query;
+ }
  function renderRoster(clubKey,lang,t,snapshot,search=''){
   const w=rosterWords[lang],params=new URLSearchParams(search);
-  const requested=params.get('view');
-  const group=Object.hasOwn(rosterGroups,requested)?requested:
-   requested==='attributes'&&Object.hasOwn(rosterGroups,params.get('group'))?params.get('group'):'technical';
-  const mode=Object.hasOwn(rosterGroups,requested)||requested==='attributes'?'attributes':'overview';
+  const view=rosterView(params);
+  const mode=view==='info'?'overview':view==='stats'?'stats':'attributes';
+  const group=mode==='attributes'?view:'technical',words=rosterLabels[lang];
   const base='/clubs/'+clubKey.split('-')[0].toLowerCase()+'/'+clubKey.split('-')[1]+'/roster';
-  const href=view=>{const query=new URLSearchParams(search);query.delete('view');query.delete('group');query.set('view',view);return base+'?'+query.toString();};
+  const href=target=>base+'?'+rosterViewQuery(search,target);
   const attributeKeys=rosterGroups[group];
-  const allowedSort=mode==='attributes'?[...rosterSortCommon,...attributeKeys]:rosterSortInfo;
+  const allowedSort=rosterSortKeys(view);
   const requestedSort=params.get('sort')||'';
   const sort=allowedSort.includes(requestedSort)?requestedSort:'';
   const order=sort?['desc','asc'].includes(params.get('order'))?params.get('order'):
@@ -163,13 +203,16 @@
   // localized text; unknown/loading states still reserve the table first paint.
   if(ready&&snapshot.count===0)
    return '<section class="club-roster" aria-busy="false" data-roster-mode="empty"><p class="club-roster-empty" role="status">'+escape(w.empty)+'</p></section>';
+  const competitions=snapshot?.competitions||[];
+  const scope=rosterCompetition(params);
+  const groupIds=competitions.filter(id=>id.startsWith('int-')===(scope==='international'));
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
-   :['',w.name,w.positions,w.age,w.height,w.foot];
+   :mode==='stats'?['',w.name,w.positions,...words.slice(1,10)]:['',w.name,w.positions,w.age,w.height,w.foot];
   const columns='<colgroup><col class="app-players-flag-column"><col class="app-players-name-column">'+
-   '<col class="app-players-view-third-column">'+(mode==='attributes'?attributeKeys.map(()=>'<col>').join(''):'<col><col><col>')+'</colgroup>';
+   '<col class="app-players-view-third-column">'+'<col>'.repeat(labels.length-3)+'</colgroup>';
   const colCount=labels.length;
-  const columnSorts=mode==='attributes'?['nationality','name','positions',...attributeKeys]:rosterSortInfo;
+  const columnSorts=allowedSort;
   let body;
   if(pending){
    body=Array.from({length:5},(_,i)=>'<tr class="app-players-loading-row"'+(i?' aria-hidden="true"':'')+'><td colspan="'+colCount+'">'+
@@ -178,13 +221,30 @@
    const message=ready?w.empty:snapshot?.status===404?w.missingApi:w.unavailable;
    body='<tr class="app-players-empty-row"><td colspan="'+colCount+'"><strong role="status">'+escape(message)+'</strong></td></tr>';
   }else{
-   body=sortedRosterPlayers(snapshot.players,sort||'positions',sort?order:'desc').map(player=>{
+   // At most one domestic and one international membership per club/season.
+   // Use each separately aggregated projection: do not add ratings or per-90 rates.
+   const players=mode==='stats'&&scope!=='all'?snapshot.players.map(player=>({
+    ...player,stats:groupIds.length===1?player.competitionStats?.[groupIds[0]]??null:null
+   })):snapshot.players;
+   const statText=(stats,key)=>{
+    const value=stats?.[key];
+    if(value===undefined||value===null)return null;
+    if(key==='averageRating'||key==='goalsAssistsPer90')return value.toFixed(2);
+    if(key==='appearances')return value+' ('+(stats.subAppearances??'—')+')';
+    return String(value);
+   };
+   const statCell=(stats,key)=>{
+    const value=statText(stats,key);
+    return value===null?'<td><span title="'+escape(words[12])+'" aria-label="'+escape(words[12])+'">—</span></td>'
+     :'<td>'+escape(value)+'</td>';
+   };
+   body=sortedRosterPlayers(players,sort||'positions',sort?order:'desc').map(player=>{
     const id=Number(player.id),country=player.nationality;
     const code=Object.hasOwn(rosterFlags,country)?rosterFlags[country]:null;
     const flag=code?'<img class="app-players-nationality-flag" src="/assets/flags/'+escape(code)+'.svg" width="20" height="15" alt="'+escape(country)+'" title="'+escape(country)+'">':escape(country||'');
     const positions=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ');
     const value=v=>Number.isSafeInteger(v)?String(v):'—';
-    const cells=mode==='attributes'
+    const cells=mode==='stats'?'<td>'+escape(positions||'—')+'</td>'+statKeys.map(key=>statCell(player.stats,key)).join(''):mode==='attributes'
      ?'<td>'+escape(positions||'—')+'</td>'+attributeKeys.map(key=>'<td>'+value(player.attributes?.[key])+'</td>').join('')
      :'<td>'+escape(positions||'—')+'</td><td>'+value(player.age)+'</td><td>'+(Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—')+'</td><td>'+escape(player.preferred_foot==='left'?w.left:player.preferred_foot==='right'?w.right:'—')+'</td>';
     return '<tr><td>'+flag+'</td><td><a class="club-roster-player-link" href="/players/'+id+'" data-mobile-name="'+escape(compactPlayerName(player.display_name))+'" aria-label="'+escape(player.display_name)+'"><span class="fa-player-full-name">'+escape(player.display_name)+'</span><span class="fa-player-short-name">'+escape(compactPlayerName(player.display_name))+'</span></a></td>'+cells+'</tr>';
@@ -192,21 +252,30 @@
   }
   const count=ready?new Intl.NumberFormat(lang).format(snapshot.count)+' '+(snapshot.count===1?w.one:w.many)
    :'<span class="app-players-count-placeholder" aria-hidden="true"></span>';
-  const tabsDisabled=!ready;
-  const viewTabs=['info',...Object.keys(rosterGroups)].map((key,i)=>{
-   const active=key===(mode==='overview'?'info':group);
-   const label=i===0?w.tabs[0]:w.groups[i-1];
-   return '<a role="tab" class="app-competition-tab'+(active?' is-active':'')+'"'+(tabsDisabled?'':' href="'+escape(href(key))+'"')+' data-club-roster-view="'+key+'" aria-selected="'+active+'"'+(tabsDisabled?' aria-disabled="true"':'')+' tabindex="'+(tabsDisabled?'-1':active?'0':'-1')+'">'+escape(label)+'</a>';
+  const viewTabs=['info','stats','attributes'].map((key,i)=>{
+   const active=key===(mode==='overview'?'info':mode);
+   const label=[w.tabs[0],t.stats,words[0]][i];
+   return '<a role="tab" class="app-competition-tab'+(active?' is-active':'')+'" href="'+escape(href(key==='attributes'?group:key))+'" data-club-roster-view="'+key+'" aria-selected="'+active+'" tabindex="'+(active?'0':'-1')+'">'+escape(label)+'</a>';
   }).join('');
+  let selector='';
+  if(mode==='attributes'){
+   const options=Object.keys(rosterGroups).map((key,i)=>[key,w.groups[i]]);
+   selector=fixtureUI.control('group',words[0],options.find(([key])=>key===group)[1],options,'club-roster');
+  }else if(mode==='stats'){
+   const labels=fixtureUI.copy[lang];
+   selector=fixtureUI.control('competition',labels.competition,scope==='all'?labels.all:words[scope==='international'?11:10],
+    [['all',labels.all],['domestic',words[10]],['international',words[11]]],'club-roster');
+  }
   return '<section class="club-roster" aria-busy="'+pending+'" data-roster-mode="'+mode+'">'+
-   '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav><span class="club-roster-count">'+count+'</span></div>'+
+   '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav>'+selector+'<span class="club-roster-count"><span aria-hidden="true" class="club-roster-count-width">99 '+w.many+'</span><span>'+count+'</span></span></div>'+
    '<div class="app-players-table-scroll club-roster-table-scroll" role="region" aria-label="'+escape(t.roster)+'" tabindex="0"'+(pending?' aria-busy="true"':'')+'>'+
    '<table class="app-players-table club-roster-table" data-players-table-mode="'+mode+'" data-roster-group="'+group+'" aria-label="'+escape(t.roster)+'">'+
    columns+'<thead><tr>'+labels.map((label,i)=>{
     const key=columnSorts[i],active=sort===key;
     return '<th scope="col" aria-sort="'+(active?order==='desc'?'descending':'ascending':'none')+'"'+
      (i===0?' class="app-players-flag-col" aria-label="'+escape(w.nationality)+'"':'')+'>'+
-     '<button type="button" class="app-players-sort-button" data-club-roster-sort="'+key+'">'+
+     '<button type="button" class="app-players-sort-button" data-club-roster-sort="'+key+'"'+
+     (mode==='stats'&&i>=3?' data-roster-stat-help="'+escape(rosterStatHelp[lang][key])+'"':'')+'>'+
      '<span class="app-players-sort-label">'+(i===0?'<span class="sr-only">'+escape(w.nationality)+'</span>':escape(label))+
      rosterSortChevron+'</span></button></th>';
    }).join('')+
@@ -445,5 +514,5 @@
    '<span data-club-name="compact">'+escape(c.compactName)+'</span></h1><p class="club-location">'+flag('header')+escape(c.city)+', '+escape(country)+'</p></div></header>'+tabs+
    content;
  }
- return {views,copies,route,render};
+ return {views,copies,route,render,renderRoster,rosterLabels,rosterStatHelp,rosterCompetition,rosterView,rosterViewQuery,rosterSortKeys};
 });

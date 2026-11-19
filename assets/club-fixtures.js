@@ -105,8 +105,8 @@
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const icons={home:'<path d="m3 10 9-7 9 7v11h-7v-7h-4v7H3Z"/>',away:'<path d="M12 2c-1 0-1.5 1-1.5 3v4L3 13v2l7.5-2v5L8 20v2l4-1 4 1v-2l-2.5-2v-5L21 15v-2l-7.5-4V5C13.5 3 13 2 12 2Z"/>',neutral:'<circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4" ry="10"/><path d="M2 12h20"/>'};
  const text=(key,t)=>'<span data-club-fixture-text="'+key+'">'+esc(t[key])+'</span>';
- function control(id,label,selected,options){
-  return '<div class="language-control club-fixture-select" data-club-fixture-control="'+id+'"><button type="button" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="club-fixture-'+id+'-menu" aria-label="'+esc(label)+'"><span data-club-fixture-value>'+esc(selected)+'</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="language-menu" role="listbox" aria-label="'+esc(label)+'" id="club-fixture-'+id+'-menu" hidden>'+options.map(([value,label],i)=>'<div class="language-option" role="option" id="club-fixture-'+id+'-'+i+'" data-menu-value="'+esc(value)+'">'+esc(label)+'</div>').join('')+'</div></div>';
+ function control(id,label,selected,options,prefix='club-fixture'){
+  return '<div class="language-control club-fixture-select" data-'+prefix+'-control="'+id+'"><button type="button" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="'+prefix+'-'+id+'-menu" aria-label="'+esc(label)+'"><span data-club-fixture-value>'+esc(selected)+'</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="language-menu" role="listbox" aria-label="'+esc(label)+'" id="'+prefix+'-'+id+'-menu" hidden>'+options.map(([value,label],i)=>'<div class="language-option" role="option" id="'+prefix+'-'+id+'-'+i+'" data-menu-value="'+esc(value)+'">'+esc(label)+'</div>').join('')+'</div></div>';
  }
  // Only the active season can have a navigable next match. Reuse this rule in
  // both the renderer and click handler so historical, finished and loading
@@ -161,5 +161,5 @@
   const chosen=requested===null&&rememberedValid?Math.min(Number(remembered),limit):choice.season;
   return {season:chosen,seasons:Array.from({length:limit},(_,i)=>limit-i),confirmed:true};
  }
- return {copy,render,resolveSeason,nextFixture};
+ return {copy,control,render,resolveSeason,nextFixture};
 });
