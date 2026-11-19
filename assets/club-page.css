@@ -796,10 +796,9 @@ html[data-theme="light"] .app-players-table.club-roster-table[data-players-table
 .club-record-ties[open]{width:100%}
 .club-first-paint-records[hidden]{display:none}
 .club-records .app-competition-stat-grid:has([data-club-player-card]){
- grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr));grid-auto-rows:180px
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr));grid-auto-rows:180px
 }
 .club-records .app-history-record-group [data-club-player-card]{
- width:94%;justify-self:center;
  grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);
  align-content:start;padding:10px 12px;gap:8px
 }
