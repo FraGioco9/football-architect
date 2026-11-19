@@ -118,6 +118,8 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSoloShoeWidthScale = 1,
   diagnosticSoloShoeLengthScale = 1,
   diagnosticSoloRecoveryStepScale = 1,
+  diagnosticSoloSprintCadenceScale = 1,
+  diagnosticSoloSprintLateralTrackScale = 1,
   diagnosticSmallSidedBodyGuardEnabled = false,
    diagnosticSmallSidedBodyFeedbackEnabled = false,
   diagnosticResearchControlReceiver = false,
@@ -169,6 +171,15 @@ export function createEngine(RAPIER, input = {}, {
        !diagnosticAutonomousFixtureActionEnabled||
        !diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Longitudinal solo shoe experiments require guarded native Carry');
+  if(![0.9,1,1.1].includes(diagnosticSoloSprintCadenceScale)||
+     ![0.9,1,1.1].includes(diagnosticSoloSprintLateralTrackScale)||
+     ((diagnosticSoloSprintCadenceScale!==1||
+       diagnosticSoloSprintLateralTrackScale!==1)&&
+      (diagnosticSmallSidedSituation!=='carry-solo'||
+       !diagnosticPlayerFootContactsEnabled||
+       !diagnosticAutonomousFixtureActionEnabled||
+       !diagnosticSmallSidedBodyGuardEnabled)))
+   throw new TypeError('Sprint gait research requires original guarded solo Carry');
   if(typeof diagnosticSmallSidedBodyFeedbackEnabled!=='boolean'||
       (diagnosticSmallSidedBodyFeedbackEnabled&&
        diagnosticSmallSidedBodyGuardEnabled!==true))
@@ -525,6 +536,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticSmallSidedSituation,diagnosticSmallSidedSide,
     diagnosticSmallSidedVariantIndex,diagnosticSoloShoeWidthScale,
     diagnosticSoloShoeLengthScale,diagnosticSoloRecoveryStepScale,
+    diagnosticSoloSprintCadenceScale,diagnosticSoloSprintLateralTrackScale,
     diagnosticSmallSidedBodyGuardEnabled,
      diagnosticSmallSidedBodyFeedbackEnabled,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
@@ -587,7 +599,9 @@ export function createEngine(RAPIER, input = {}, {
        ...(smallSided.id==='carry-solo'?{
         soloShoeWidthScale:diagnosticSoloShoeWidthScale,
         soloShoeLengthScale:diagnosticSoloShoeLengthScale,
-        soloRecoveryStepScale:diagnosticSoloRecoveryStepScale
+        soloRecoveryStepScale:diagnosticSoloRecoveryStepScale,
+        soloSprintCadenceScale:diagnosticSoloSprintCadenceScale,
+        soloSprintLateralTrackScale:diagnosticSoloSprintLateralTrackScale
        }:{})
       }:{}),
       ...(diagnosticSmallSidedBodyGuardEnabled?{

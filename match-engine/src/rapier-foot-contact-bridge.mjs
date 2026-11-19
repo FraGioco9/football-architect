@@ -20,8 +20,10 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
  // impulse, synthetic START/END, possession or ball correction.
  const gaitClamp=(n,a,b)=>Math.max(a,Math.min(b,n));
  export function advanceD01LiveShoeGait({phaseRad,player,ball,tick,solo=false,
-  carryPhase=null}={}){
-  if(typeof solo!=='boolean'||!Number.isInteger(tick)||tick<1||
+  carryPhase=null,sprintCadenceScale=1}={}){
+  if(![0.9,1,1.1].includes(sprintCadenceScale)||
+     (sprintCadenceScale!==1&&!solo)||
+     typeof solo!=='boolean'||!Number.isInteger(tick)||tick<1||
      !Number.isFinite(phaseRad)||phaseRad<0||phaseRad>=2*Math.PI||
      !player||!ball?.position||!ball?.velocity||
      ![player.x,player.y,player.vx,player.vy,player.facingRad,
@@ -41,10 +43,14 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
   // to REAL observed speed and preserve a true full release stroke.
   const cue=solo&&carryPhase!==null?
    soloCarryPhaseConfiguration(carryPhase):null;
-  const frequencyHz=solo?
+  const baseFrequencyHz=solo?
    (cue?cue.shoeFrequencyBaseHz+cue.shoeFrequencySpeedHz*
     gaitClamp(speedMps/4,0,1):1.35+0.35*gaitClamp(speedMps/4,0,1)):
    2.45+0.25*gaitClamp(speedMps/4,0,1);
+  // The physical swing phase is integrated at the same canonical 60Hz.
+  // Research opt-in only during observed Sprint, never timer-driven touches.
+  const frequencyHz=baseFrequencyHz*
+   (solo&&carryPhase==='sprint'?sprintCadenceScale:1);
   const nextPhase=(phaseRad+2*Math.PI*frequencyHz/60)%(2*Math.PI);
   const stroke=-Math.cos(nextPhase);
   // At the original .50–.70m player/ball gap, a modest forward approach
@@ -72,9 +78,10 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 // #628: two independently positioned native shoes, only for solo Carry.
 // A cyclic target NEVER creates Rapier START/END or applies a ball impulse.
 export function soloCarryTwoFootPositions(player,gait=null,{
- recoveryStepScale=1
+ recoveryStepScale=1,sprintLateralTrackScale=1
 }={}){
  if(![0.85,0.925,1,1.15].includes(recoveryStepScale)||
+    ![0.9,1,1.1].includes(sprintLateralTrackScale)||
     !player||![player.x,player.y,player.facingRad].every(Number.isFinite)||
     (gait!==null&&(!Number.isFinite(gait.phaseRad)||
      !Number.isFinite(gait.observedAheadM)||!Number.isFinite(gait.observedLateralM)||
@@ -110,7 +117,8 @@ export function soloCarryTwoFootPositions(player,gait=null,{
   playerCatchingBall*gaitClamp((0.58-ahead)/0.18,0,1);
  const realRecoveryNeed=Math.max(approachingBall,catchupNeed);
  const openRun=gait?.carryPhase==='sprint'?1-realRecoveryNeed:0;
- const sprintTrackM=0.145-0.055*realRecoveryNeed;
+ const sprintTrackM=(0.145-0.055*realRecoveryNeed)*
+  sprintLateralTrackScale;
  const lateralTrackM=gait?.carryPhase==='sprint'?sprintTrackM:
   gait?.carryPhase==='moderate'?0.11:0.085;
  // Shift the two-foot gait together when the ball is on one side, keeping
@@ -150,7 +158,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
  isolatedPhysicalBodies=false,isolatedGroundDribbleBallCentreZ=null,
  dribbleAttackerId=null,soloCarry=false,soloShoeWidthScale=1,
- soloShoeLengthScale=1,soloRecoveryStepScale=1}={}){
+ soloShoeLengthScale=1,soloRecoveryStepScale=1,
+ soloSprintCadenceScale=1,soloSprintLateralTrackScale=1}={}){
  if(!R||typeof R.EventQueue!=='function'||!world||
     typeof world.createRigidBody!=='function'||
     !ballCollider||ballCollider.handle===undefined||
@@ -199,6 +208,10 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     ![0.85,0.925,1,1.15].includes(soloRecoveryStepScale)||
     ((soloShoeLengthScale!==1||soloRecoveryStepScale!==1)&&!soloCarry))
   throw new TypeError('DEV longitudinal toe/recovery variants require genuine solo Carry');
+ if(![0.9,1,1.1].includes(soloSprintCadenceScale)||
+    ![0.9,1,1.1].includes(soloSprintLateralTrackScale)||
+    ((soloSprintCadenceScale!==1||soloSprintLateralTrackScale!==1)&&!soloCarry))
+  throw new TypeError('DEV Sprint cadence and tracks require genuine solo Carry');
  const soloShoeHalfWidthM=FOOT_CONTACT_HALF_WIDTH_M*soloShoeWidthScale;
  const soloShoeHalfLengthM=FOOT_CONTACT_HALF_LENGTH_M*soloShoeLengthScale;
  const physicalIds=activePlayerIds===null?null:new Set(activePlayerIds);
@@ -214,7 +227,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   return Object.freeze(frame.map((p,i)=>{
    if(initialPlayers[i].id!==dribbleAttackerId)return p;
    if(soloCarry)return soloCarryTwoFootPositions(p,gait,{
-    recoveryStepScale:soloRecoveryStepScale
+    recoveryStepScale:soloRecoveryStepScale,
+    sprintLateralTrackScale:soloSprintLateralTrackScale
    }).left;
    const c=Math.cos(p.facingRad),s=Math.sin(p.facingRad);
    return Object.freeze({...p,
@@ -257,7 +271,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   initialPlayers.find(p=>p.id===dribbleAttackerId):null;
  let actualRightFoot=soloActor?
   soloCarryTwoFootPositions(soloActor,null,{
-   recoveryStepScale:soloRecoveryStepScale
+   recoveryStepScale:soloRecoveryStepScale,
+   sprintLateralTrackScale:soloSprintLateralTrackScale
   }).right:null;
  let rightBody=null,rightCollider=null;
  if(soloActor){
@@ -280,7 +295,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   Object.freeze({x:p.x,y:p.y,facingRad:p.facingRad}))),
   tick=0,disposed=false;
  let actualShoeFeet=stagedFeet;
- let gaitPhaseRad=0;
+ let gaitPhaseRad=0,lastGaitFrequencyHz=null;
  let active=new Set(),activeSoloFeet=new Set(),solver=null;
  let current=Object.freeze({
   version:FOOT_CONTACT_VERSION,tick:0,
@@ -297,8 +312,10 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    playerFrame.players.find(p=>p.id===dribbleAttackerId);
   const gait=actor?advanceD01LiveShoeGait({
    phaseRad:gaitPhaseRad,player:actor,ball:preStepBall,tick:nextTick,solo:soloCarry,
-   carryPhase:soloCarry?playerFrame.soloCarryPhase?.phase:null
+   carryPhase:soloCarry?playerFrame.soloCarryPhase?.phase:null,
+   sprintCadenceScale:soloCarry?soloSprintCadenceScale:1
   }):null;
+  if(soloCarry)lastGaitFrequencyHz=gait.frequencyHz;
   // Separate stride cadence from contact frequency without turning the
   // foot into a 7 m/s lateral paddle. Genuine side-step motion is limited
   // to 1.6 m/s in the solo research source; forward running retains the
@@ -318,7 +335,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const proposed=shoeFeet(next,nextTick,gait);
   const rightDesired=soloCarry?
    limitSoloFootLateralMotion(soloCarryTwoFootPositions(actor,gait,{
-    recoveryStepScale:soloRecoveryStepScale
+    recoveryStepScale:soloRecoveryStepScale,
+    sprintLateralTrackScale:soloSprintLateralTrackScale
    }).right,
     actualRightFoot):null;
   // The whole shoe also moves when its owner turns or advances. Clamp the
@@ -440,6 +458,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     physicalColliderHalfWidthM:soloShoeHalfWidthM,
     physicalColliderHalfLengthM:soloShoeHalfLengthM,
     recoveryStepScale:soloRecoveryStepScale,
+    sprintCadenceScale:soloSprintCadenceScale,
+    sprintLateralTrackScale:soloSprintLateralTrackScale,
+    nativeObservedGaitFrequencyHz:lastGaitFrequencyHz,
     geometrySource:'native-rapier-collider-width',
     exclusivePhysicalStart:footStarts.size===1&&nextSoloFeet.size===1
    })}:{}),
