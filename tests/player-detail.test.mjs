@@ -116,7 +116,12 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
   'the only persisted public detail value is the View strip scroll offset');
  assert.match(script,/if\(preview\)root\.hidden=true/);
  assert.match(index,/const playerDetail=url\.pathname\.match/);
- assert.match(publicApi,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p\s+LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id WHERE p\.id=\?/);
+ assert.match(publicApi,/SELECT p\.id,p\.payload_json,a\.club_key,/);
+ assert.match(publicApi,/LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id/);
+ assert.match(publicApi,/LEFT JOIN player_portrait_profiles portrait ON portrait\.player_id=p\.id/);
+ assert.match(publicApi,/portrait\.status='approved'/);
+ assert.match(publicApi,/portrait\.prompt_version='player-portrait-v4\.2'/);
+ assert.match(script,/player\.portraitAssetKey==='assets\/players\/portraits\/'\+id\+'\.webp'/);
  assert.match(publicApi,/projectPublicFootballerDirectoryRecord/);
 });
 
@@ -557,7 +562,9 @@ test('#623 public player portrait and fallback: staged/approved IDs only, stable
   .filter(name=>/^[1-9][0-9]*\.webp$/.test(name)).map(name=>'assets/players/portraits/'+name);
  assert.ok(paths.length>0,'approved portrait directory cannot be empty');
  for(const path of paths)assert.equal(isAllowlistedPublicPath(path),true,path);
- assert.ok(js.includes("'/assets/players/portraits/'+id+'.webp'"),'portrait URL is derived from the canonical ID');
+ assert.ok(js.includes("player.portraitAssetKey==='assets/players/portraits/'+id+'.webp'"),
+  'portrait URL requires a server-approved canonical V4.2 asset, never a stale legacy WebP');
+ assert.ok(js.includes("portraitImage.src=source;"),'approved portrait key is the only displayed image source');
  assert.doesNotMatch(js,/const portraitSources=/,'no per-player JS portrait map');
  for(const path of ['assets/players/portraits/1.png','assets/players/portraits/01.webp','assets/players/portraits/does-not-exist.webp','assets/players/portraits/1.jpg','assets/players/portraits/1.svg'])
   assert.equal(isAllowlistedPublicPath(path),false,path);

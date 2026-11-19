@@ -4,7 +4,8 @@ import {applyD1Migrations} from 'cloudflare:test';
 import {clearTestWorld} from './fixtures/test-world.ts';
 import {seedUnifiedAdminHttp} from './fixtures/unified-admin-http.ts';
 import {handleAdmin} from '../src/http-admin.ts';
-import {buildPortraitSnapshotForPlayer,renderPortraitPromptFromSnapshot} from '../src/player-portrait-core.mjs';
+import {buildFamilyV42PortraitSnapshotForPlayer,renderFamilyV42PortraitPromptFromSnapshot} from '../src/player-portrait-family-v42.mjs';
+import {resolveCatalogueNameOrigins} from '../src/player-portrait-name-origins.mjs';
 import type {Database} from '../src/database.ts';
 
 const db=(env as any).DB as Database;
@@ -55,20 +56,21 @@ it('saves an immutable appearance for every newly committed permanent ID, never 
   const snapshot=JSON.parse(profiles[i].snapshot_json);
   expect(profiles[i].player_id).toBe(persisted[i].id);
   expect(snapshot.player_id).toBe(persisted[i].id);
-  expect(snapshot.schema_version).toBe('player-portraits-v2');
-  expect(snapshot.prompt_version).toBe('player-portrait-v3');
+  expect(snapshot.schema_version).toBe('player-portraits-v5');
+  expect(snapshot.prompt_version).toBe('player-portrait-v4.2');
   expect(snapshot.body_profile).toBeDefined();
   expect(snapshot.appearance_fingerprint).toMatch(/^[a-f0-9]{16}$/);
   expect(profiles[i].status).toBe('pending');
   expect(profiles[i].asset_key).toBeNull();
   expect('portrait_prompt' in snapshot).toBe(false);
   expect('attributes' in snapshot).toBe(false);
-  const expected=await buildPortraitSnapshotForPlayer(player);
+  const expected=await buildFamilyV42PortraitSnapshotForPlayer({...player,
+   name_origins:resolveCatalogueNameOrigins(player)});
   expect(snapshot).toEqual(expected);
   // The portrait prompt is rendered directly from its immutable D1 snapshot,
   // without requiring an Admin HTTP endpoint.
-  const prompt=await renderPortraitPromptFromSnapshot(snapshot);
-  expect(prompt).toContain('pure-white short-sleeved football jersey');
+  const prompt=await renderFamilyV42PortraitPromptFromSnapshot(snapshot);
+  expect(prompt).toContain('Plain PURE WHITE short-sleeved REGULAR-FIT football jersey');
  }
  const replay=await commit(pending.draftId);
  expect(replay.status).toBe(200);
@@ -76,18 +78,60 @@ it('saves an immutable appearance for every newly committed permanent ID, never 
  expect(await portraits()).toHaveLength(3);
 });
 
+it('commits one player and refuses successful replay without its V4.2 profile',async()=>{
+ const one=await draft(1,'one-player-v42');
+ expect((await commit(one.draftId)).status).toBe(200);
+ const players=await rows(),profiles=await portraits();
+ expect(players).toHaveLength(1);
+ expect(profiles).toHaveLength(1);
+ expect(JSON.parse(profiles[0].snapshot_json).player_id).toBe(players[0].id);
+ expect(JSON.parse(profiles[0].snapshot_json).prompt_version).toBe('player-portrait-v4.2');
+ expect((await commit(one.draftId)).status).toBe(200);
+ await db.prepare('DELETE FROM player_portrait_profiles WHERE player_id=?')
+  .bind(players[0].id).run();
+ expect((await commit(one.draftId)).status).toBe(503);
+ expect(await rows()).toHaveLength(1);
+ expect(await portraits()).toHaveLength(0);
+});
+
+it('rejects replay of a committed multi-player batch with a missing portrait',async()=>{
+ const p=await draft(6,'six-player-v42');
+ expect((await commit(p.draftId)).status).toBe(200);
+ expect(await portraits()).toHaveLength(6);
+ const id=(await rows())[3].id;
+ await db.prepare('DELETE FROM player_portrait_profiles WHERE player_id=?').bind(id).run();
+ expect((await commit(p.draftId)).status).toBe(503);
+ expect(await rows()).toHaveLength(6);
+ expect(await portraits()).toHaveLength(5);
+});
+
+it('uses dual-national name-bank evidence for a newly committed V4.2 player',async()=>{
+ const response=await req('/preview',{options:{count:1,seed:'v42-dual',
+  primaryNationality:'ITA',secondaryNationality:'NGA',firstName:'Matthew',
+  lastName:'Tiamiyu',primaryPosition:'ST'}});
+ expect(response.status).toBe(200);
+ const preview=await response.json() as any;
+ expect((await commit(preview.draftId)).status).toBe(200);
+ const profiles=await portraits();
+ expect(profiles).toHaveLength(1);
+ const s=JSON.parse(profiles[0].snapshot_json);
+ expect(s.name_origins).toEqual({first:'secondary',last:'secondary'});
+ expect(s.family_background).toBe('NGA');
+ expect(s.prompt_version).toBe('player-portrait-v4.2');
+});
+
 it('keeps frozen face/body/nationality after changes to gameplay records',async()=>{
  const p=await draft(1,'portrait-frozen');
  expect((await commit(p.draftId)).status).toBe(200);
  const id=(await rows())[0].id;
  const before=(await portraits())[0].snapshot_json;
- const first=await renderPortraitPromptFromSnapshot(JSON.parse(before));
+ const first=await renderFamilyV42PortraitPromptFromSnapshot(JSON.parse(before));
  await db.prepare(`UPDATE generated_players
   SET payload_json=json_set(payload_json,'$.nationality','BRA','$.attributes.strength',99,'$.attributes.stamina',5)
   WHERE id=?`).bind(id).run();
  const afterSnapshot=(await portraits())[0].snapshot_json;
  expect(afterSnapshot).toBe(before);
- const after=await renderPortraitPromptFromSnapshot(JSON.parse(afterSnapshot));
+ const after=await renderFamilyV42PortraitPromptFromSnapshot(JSON.parse(afterSnapshot));
  expect(after).toBe(first);
 });
 
@@ -143,13 +187,13 @@ it('validates the version-pinned immutable snapshot without exposing a prompt en
  const p=await draft(1,'versioned-portrait');
  expect((await commit(p.draftId)).status).toBe(200);
  const snapshot=JSON.parse((await portraits())[0].snapshot_json);
- const prompt=await renderPortraitPromptFromSnapshot(snapshot);
+ const prompt=await renderFamilyV42PortraitPromptFromSnapshot(snapshot);
  expect(prompt).toContain('EXACTLY ONE fictional adult male');
- await expect(renderPortraitPromptFromSnapshot({...snapshot,prompt_version:'player-portrait-v4'}))
-  .rejects.toThrow('invalid_portrait_version');
- await expect(renderPortraitPromptFromSnapshot({...snapshot,player_id:0}))
-  .rejects.toThrow('invalid_portrait_snapshot');
- await expect(renderPortraitPromptFromSnapshot({...snapshot,appearance_fingerprint:'0000000000000000'}))
-  .rejects.toThrow('noncanonical_appearance_snapshot');
+ await expect(renderFamilyV42PortraitPromptFromSnapshot({...snapshot,prompt_version:'player-portrait-v4'}))
+  .rejects.toThrow('invalid_v42_portrait_version');
+ await expect(renderFamilyV42PortraitPromptFromSnapshot({...snapshot,player_id:0}))
+  .rejects.toThrow('invalid_v42_portrait_snapshot');
+ await expect(renderFamilyV42PortraitPromptFromSnapshot({...snapshot,appearance_fingerprint:'0000000000000000'}))
+  .rejects.toThrow('noncanonical_v42_portrait_snapshot');
  expect((await req('/portrait?playerId='+snapshot.player_id)).status).toBe(404);
 });
