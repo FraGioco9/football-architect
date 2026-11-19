@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'vitest';
 import {frozenLineupMatchDetailV1} from '../src/frozen-lineup-match-detail.ts';
+import {projectPublishedMatchEventsV1} from '../src/match-public-events-v1.mjs';
 import type {LineupSeasonReplayV1} from '../src/lineup-season-replay.ts';
 
 const fixtureId='season:1:IT-1:N01:IT-1:IT-2';
@@ -32,6 +33,8 @@ test('indexed match header resolves one fixture without scanning season and omit
   away:{kind:'team_fallback',unattributedGoals:0,players:[]}});
  assert.deepEqual(header?.result,detail?.result);
  assert.deepEqual(header?.provenance,detail?.provenance);
+ assert.deepEqual(projectPublishedMatchEventsV1(record.receipt.result),
+  {kind:'not_recorded',eventModelVersion:null,events:null});
 });
 
 test('indexed lookup rejects wrong public match identity; missing future fixture stays absent',()=>{

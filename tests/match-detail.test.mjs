@@ -404,7 +404,10 @@ test('match first paint retains every box before hydration and during transient 
  for(const marker of ['app-match-scoreboard','app-match-stage','app-match-side-home',
   'app-match-side-away','app-match-visual','app-match-overview','app-match-pitch'])
   assert.ok(html.includes(marker),marker);
- assert.ok(css.includes('[data-match-load="loading"],[data-match-load="unavailable"]'));
+ assert.ok(css.includes('.app-match-page[data-match-load="loading"] .app-match-side-link:empty::before'));
+ assert.ok(css.includes('.app-match-page[data-match-load="loading"] [data-match-overview]:empty::before'));
+ assert.ok(css.includes('.app-match-team-crest{visibility:hidden}'),
+  'Terminal errors retain layout without remaining loading skeletons');
  assert.ok(js.includes("root.dataset.matchLoad=errorKind==='missing'?'missing':'unavailable'"));
  assert.match(js,/if\(!data\)\{[\s\S]*?return;\s*\}\s*renderOverview\(tr\)/);
 });
@@ -432,4 +435,20 @@ test('MATCH-STATS: individual statistics have one dedicated independent HTTP rea
  assert.match(js,/value\.provenance\.receiptHash===item\.provenance\.receiptHash/);
  assert.ok(route.includes('readPublicMatchStatisticsV1'));
  assert.ok(js.indexOf('data=item;errorKind=null;render();')<js.indexOf("void fetch('/api/matches/'+matchId+'/stats'"),'scoreboard never waits for statistics');
+});
+
+test('#577 recorded event API uses the same canonical read and never leaks into header/stats',()=>{
+ const api=read('backend/src/index.ts'),source=read('backend/src/public-match-read-lineup-v1.ts');
+ const projection=read('backend/src/match-public-events-v1.mjs');
+ assert.match(api,/const matchEvents=url\.pathname\.match/);
+ assert.match(api,/readPublicMatchEventsV1\(requireDatabase\(env\.DB\),matchEvents\[1\]\)/);
+ assert.match(source,/export async function readPublicMatchEventsV1\(db:Database,matchId:string\)/);
+ assert.match(source,/readVerifiedPublicMatchV1\(db,matchId,false,true\)/);
+ assert.match(source,/verifiedTimeline\(replay,row\.source_fixture_id,frozen\.provenance\.receiptHash\)/);
+ assert.match(source,/verifiedTimeline\(replay,resolved\.id,frozen\.provenance\.receiptHash\)/);
+ assert.match(projection,/validateRecordedMatchTimelineV1\(result\)/);
+ assert.match(projection,/kind:'not_recorded',eventModelVersion:null,events:null/);
+ for(const fragment of ["kind:'recorded'","case 'goal'","case 'pass'","case 'substitution'","case 'red'","case 'yellow'","case 'role_change'"])
+  assert.ok(projection.includes(fragment),fragment);
+ assert.doesNotMatch(projection,/seed:|sourceSeedHash:|attributes:/);
 });

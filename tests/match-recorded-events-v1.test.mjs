@@ -5,6 +5,7 @@ import {simulateMatchV1,attachTestRatingsV1,buildCandidateMatchReceiptV1} from '
 import {validateRecordedMatchTimelineV1} from '../backend/src/match-event-validation-v1.mjs';
 import {frozenMatchPlayerStatistics} from '../backend/src/match-player-statistics.mjs';
 import {planRecordedMatchTimelineV1,MATCH_EVENT_MODEL_VERSION} from '../backend/src/match-recorded-events-v1.mjs';
+import {projectPublishedMatchEventsV1} from '../backend/src/match-public-events-v1.mjs';
 
 const roles=['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW'];
 const player=(id,role='CM')=>({id,career_status:'active',primary_position:role,
@@ -114,6 +115,16 @@ test('new event receipt v2 validates once; archived legacy candidate remains sch
  assert.notEqual(old.receiptDigest,candidate.receiptDigest);
  assert.deepEqual(candidate,await buildCandidateMatchReceiptV1(fixture,official));
  const projection=frozenMatchPlayerStatistics(candidate.result);
+ const visibleEvents=projectPublishedMatchEventsV1(candidate.result);
+ assert.equal(visibleEvents.kind,'recorded');
+ assert.equal(visibleEvents.eventModelVersion,'lineup-events-v1');
+ assert.equal(visibleEvents.events.length,candidate.result.events.length);
+ assert.ok(visibleEvents.events.every((e,i)=>e.ordinal===i&&
+  Number.isInteger(e.minute)&&['home','away'].includes(e.side)));
+ assert.ok(!JSON.stringify(visibleEvents).includes('sourceSeedHash'));
+ assert.ok(!JSON.stringify(visibleEvents).includes('attributes'));
+ const unrecordedEvents=projectPublishedMatchEventsV1(old.result);
+ assert.deepEqual(unrecordedEvents,{kind:'not_recorded',eventModelVersion:null,events:null});
  assert.equal(Object.hasOwn(projection,'events'),false);
  assert.equal(Object.hasOwn(projection,'eventModelVersion'),false);
  // The immutable future receipt retains its entire verified event timeline.
@@ -133,6 +144,9 @@ test('new event receipt v2 validates once; archived legacy candidate remains sch
  await assert.rejects(()=>buildCandidateMatchReceiptV1(fixture,tampered),/appearance\/minutes/);
  const ghost=structuredClone(official);
  if(ghost.events.length){
+  const corrupted=structuredClone(candidate.result);
+  corrupted.events[0].ordinal=9999999;
+  assert.throws(()=>projectPublishedMatchEventsV1(corrupted),/event clock\/ordinal/);
   ghost.events[0].ordinal=9999999;
   await assert.rejects(()=>buildCandidateMatchReceiptV1(fixture,ghost),/clock\/ordinal/);
  }

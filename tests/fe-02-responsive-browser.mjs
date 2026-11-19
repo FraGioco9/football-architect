@@ -472,6 +472,8 @@ try{
   await visit(profile,"/clubs/it/1/overview",async page=>{
    await page.waitForFunction(()=>document.documentElement.dataset.clubReady==="true");
    const league=page.locator(".club-competition-name a[data-club-division-link]");
+   // clubReady is not the asynchronous competition summary readiness.
+   await league.waitFor({state:"visible"});
    assert.equal(await league.count(),1);
    await league.click();await page.waitForURL("**/competitions/it-1/standings**");
   });

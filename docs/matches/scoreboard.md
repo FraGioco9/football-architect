@@ -495,3 +495,43 @@ unknown playoff participants and link safety, plus both terminal errors.
 No public backend transport, simulation, kickoff/neutral venue assignment,
 remote D1 or deployment change. Recorded event timelines remain a separate
 pending publication-contract/UI decision under #577.
+
+
+### Official recorded-match event API (#577, 2026-11-19)
+
+An anonymous **read-only** `GET /api/matches/<positive-number>/events`
+endpoint now uses the same canonical public match-number, world generation,
+season/draw publication, finished-match receipt replay, current-world
+revision guard and fixture/receipt-hash checks as `/api/matches/:id` and
+`/api/matches/:id/stats`. It never looks up the current club roster or
+simulates an event, and cannot reveal unpublished fixtures or future scores.
+
+The response has `schemaVersion:1`, `providerId:'authoritative-world'`,
+`matchId`, `season`, `competitionId`, `status`, the verified
+`homeClubId/awayClubId` (nullable when unresolved), matching
+`provenance.receiptHash` and a single `timeline` object:
+
+- `{kind:'not_played',eventModelVersion:null,events:null}` — a published
+  fixture not yet completed.
+- `{kind:'not_recorded',eventModelVersion:null,events:null}` — an immutable
+  completed **legacy** receipt without V2 event evidence. Aggregate goals or
+  counts cannot be reverse-engineered into event history.
+- `{kind:'recorded',eventModelVersion:'lineup-events-v1',events:[...]}` —
+  a verified immutable V2 receipt; the array may legitimately contain zero
+  events. This is not the same as missing data.
+
+Every V2 timeline is independently checked by
+`validateRecordedMatchTimelineV1` for actual eligible actors, ordering,
+minutes, goals, final passes/assists, yellows/reds and substitutions.
+The projection copies only whitelisted event fields: ordinal/minute/period,
+side/type/player ID and verified per-type fields (scorer and assist,
+substitution in/out/roles, reason or linked goal ID). No private player
+attributes, seed, full receipt, internal source hash or synthetic rating
+details are serialized. Unknown event types fail closed.
+
+Method and query validation, 404/409 and 503 mapping follow the existing
+public match transport. The existing scoreboard/Match header and `/stats`
+response shapes remain **unchanged**: event transport is separate. The
+event timeline **visual UI is not included** in this contract-only block
+until placement and first-paint/mobile behavior are approved. No data
+migration, deploy, D1 write or altered match simulation.
