@@ -56,7 +56,17 @@ export function aggregateVerifiedCareerStats(seasons){
   ?Math.round(ratedSum/totals.ratedAppearances*100)/100:null;
  return totals;
 }
+const domesticCompetitionPattern=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/;
+// Only canonical competition names can resolve actual published division SVGs.
+// A missing or unverified name yields no guessed asset request.
+export function competitionDivisionLogoPath(id,name){
+ if(!domesticCompetitionPattern.test(id)||typeof name!=='string'||!name.trim())return null;
+ const slug=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+  .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+ return slug?'/assets/divisions/'+id.toLowerCase()+'-'+slug+'/compact.svg':null;
+}
 const competitionPattern=/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/;
+const neutralCupMark='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg>';
 const clubPattern=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/;
 export function createPlayerStatsView({host,id,locale,position,fetchStats,clubName,clubCrest,competitionName}){
  if(!host||!Number.isSafeInteger(id)||id<1)throw TypeError('Invalid player Stats view');
@@ -239,9 +249,22 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
     detail.append(el('td','','app-player-stats-season'));
     const competition=el('th','','app-player-stats-competition');competition.scope='row';
     const link=el('a','','app-player-stats-link app-player-stats-competition-link');
-    link.append(el('span',competitionName?.(record.competitionId)||record.competitionId,'app-player-stats-competition-name'));
+    const canonicalName=competitionName?.(record.competitionId);
+    const mark=el('span','','fa-competition-mark');
+    mark.setAttribute('aria-hidden','true');
+    const logoPath=competitionDivisionLogoPath(record.competitionId,canonicalName);
+    if(logoPath){
+     const image=el('img');
+     image.src=logoPath;image.width=24;image.height=24;image.alt='';
+     image.loading='lazy';image.decoding='async';image.draggable=false;
+     image.addEventListener('error',()=>image.remove(),{once:true});
+     mark.append(image);
+    }else if(/^int-[12]$/.test(record.competitionId))mark.innerHTML=neutralCupMark;
+    link.append(el('span',canonicalName||record.competitionId,'app-player-stats-competition-name'));
     link.href='/competitions/'+record.competitionId.toLowerCase()+'/standings?season='+season.season;
-    competition.append(link);detail.append(competition);
+    const competitionIdentity=el('span','','app-player-stats-competition-identity');
+    competitionIdentity.append(mark,link); // Passive logo; only the name is linked.
+    competition.append(competitionIdentity);detail.append(competition);
     const club=el('td','','app-player-stats-club');
     const identity=el('span','','app-player-stats-club-identity');
     // Same passive 24px crest slot and shield fallback as the Players directory.
