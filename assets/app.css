@@ -1435,7 +1435,7 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 .app-competition-view-skeleton .app-view-skeleton-history-archive .app-history-dev-season-link{pointer-events:none}
 .app-competition-view-skeleton .app-view-skeleton-history-archive .app-history-dev-season{display:flex;align-items:center;min-width:0}
 .app-competition-view-skeleton .app-view-skeleton-history-archive .app-history-dev-season .app-skeleton-bar{width:9ch;max-width:100%}
-.app-competition-view-skeleton .app-view-skeleton-history-archive .app-world-club-name{display:block;width:190px;max-width:100%}
+.app-competition-view-skeleton .app-view-skeleton-history-archive .app-world-club-name{display:block;width:148px;max-width:100%}
 .app-competition-view-skeleton .app-view-skeleton-history-archive .app-world-club-name .app-skeleton-bar{width:100%;max-width:100%}
 @media(min-width:621px){.app-competition-view-skeleton .app-view-skeleton-history-archive .app-history-dev-season-button{min-height:71px}}
 .app-view-skeleton-champion{display:flex;align-items:center;min-height:24px}
@@ -2218,9 +2218,9 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
  display:inline-block;position:relative;box-sizing:border-box;vertical-align:baseline;
  width:min(13ch,100%);max-width:100%;line-height:1.35;white-space:nowrap
 }
-/* Club-name skeleton bars should approximate full club names without changing their line boxes. */
+/* Lengthen only the club-name skeleton in Competition History Team Records. */
 .app-competition-view-skeleton .app-view-skeleton-team-name{width:min(20ch,100%)}
-.app-competition-view-skeleton .app-view-skeleton-player-club{width:min(17ch,100%)}
+.app-competition-view-skeleton .app-view-skeleton-player-club{width:min(11ch,100%)}
 .app-competition-view-skeleton .app-view-skeleton-name-slot>span:first-child{visibility:hidden}
 .app-competition-view-skeleton .app-view-skeleton-name-slot>.app-skeleton-bar{
  display:block;position:absolute;left:0;top:50%;transform:translateY(-50%);
