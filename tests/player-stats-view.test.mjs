@@ -384,7 +384,8 @@ test('#578 numeric skeletons use rendered font metrics rather than guessed width
  assert.match(css,/\.app-player-stats-table tr>td\.app-player-stats-number \.app-player-stats-value\{[^}]*justify-content:center/,
   'mobile values and skeletons use the same centered value container');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-value>\.app-skeleton-bar\[data-skeleton-sample\]\{/);
- assert.match(css,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;\s*font-variant-numeric:tabular-nums;/);
+ assert.match(css,/\.app-player-stats-table \.app-player-stats-loading \.app-player-stats-value>\.app-skeleton-bar\[data-skeleton-sample\]::before\{\s*content:attr\(data-skeleton-sample\);color:transparent;font:inherit;\s*font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap;/,
+  'transparent representative glyphs size the native filled Player Stats bars');
   assert.match(css,/font-variant-numeric:tabular-nums;/,
    'Player skeleton samples use the same tabular digits as hydrated values');
  const history={played:'30',won:'18',drawn:'10',lost:'12',gf:'104',ga:'104',gd:'+52'};
@@ -394,7 +395,8 @@ test('#578 numeric skeletons use rendered font metrics rather than guessed width
    'Club History '+metric+' reserves natural glyph widths before JS');
  }
  assert.match(club,/\.club-history-table \.club-history-row-loading \.club-history-skeleton-stat \.club-fp-bar\[data-skeleton-sample\]\{/);
- assert.match(club,/content:attr\(data-skeleton-sample\);color:transparent;font:inherit;\s*font-variant-numeric:tabular-nums;/);
+ assert.match(club,/\.club-history-table \.club-history-row-loading \.club-history-skeleton-stat \.club-fp-bar\[data-skeleton-sample\]::before\{\s*content:attr\(data-skeleton-sample\);color:transparent;font:inherit;\s*font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap;/,
+  'transparent glyph measurement remains active in Club History');
  assert.match(css,/\.app-player-stats-table \.app-player-stats-number \.app-player-stats-value\{[\s\S]*?justify-content:flex-end/);
  assert.match(club,/\.club-history-table td:nth-child\(n\+4\) \.club-history-stat-value\{[\s\S]*?justify-content:center/);
  assert.ok(css.includes('.app-player-stats-table :is(.app-player-stats-toggle,.app-player-stats-static-label,.app-player-stats-skeleton-label)'),
