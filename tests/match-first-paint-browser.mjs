@@ -172,7 +172,7 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(await page.locator('.app-match-overview-row').count(),3);
     assert.equal(await page.locator('.app-match-pitch-frame').evaluate(el=>getComputedStyle(el).position),'relative');
     assert.equal(await page.locator('.app-match-pitch-overlay').evaluate(el=>getComputedStyle(el).position),'absolute');
-    assert.deepEqual(await page.locator('[data-match-overview]').evaluateAll(els=>els.map(el=>el.textContent)),['','','','','','']);
+    assert.deepEqual(await page.locator('[data-match-overview]').evaluateAll(els=>els.map(el=>el.textContent)),['','','','','','','']);
     assert.deepEqual(stage.firstPaintNames,['','']);
     assert.deepEqual(stage.firstPaintNameLinks,[{hasHref:false,content:''},{hasHref:false,content:''}]);
     for(let i=0;i<stage.facts.length;i++){
