@@ -434,3 +434,11 @@ test('#578 initial Stats score is neutral until profile, then GK is CS in all la
   assert.deepEqual(cells.map(x=>x.dataset.mobileLabel),[outfield,outfield]);
  }
 });
+
+test('#697 player Stats supports Club Records deep links after async hydration',()=>{
+ const source=read('assets/player-stats.mjs'),css=read('assets/player-detail.css');
+ assert.match(source,/summary\.id='player-stats-season-'\+season\.season/);
+ assert.match(source,/tbody\.replaceChildren\(\.\.\.resultRows\);[\s\S]*?target\.scrollIntoView/);
+ assert.match(source,/expanded\.add\(Number\(targetMatch\[1\]\)\)/);
+ assert.match(css,/\.app-player-stats-season-row:target/);
+});

@@ -35,7 +35,7 @@
     gd:sum('goalDifference'),league,fewest:s.ongoing===false?league?.leagueGoalsAgainst:null,streak:s.matches?streak:null};
   }).filter(s=>s.played>0);
   const seasonBest=(key,min=false)=>best(key,rows.map(s=>({season:s.season,value:s[key]})),min);
-  const total=(key,field)=>({key,value:rows.reduce((n,s)=>n+s[field],0),sources:[]});
+  const total=(key,field)=>({key,value:rows.reduce((n,s)=>n+s[field],0),sources:[],periods:rows.map(s=>s.season)});
   const leagues=rows.filter(s=>s.ongoing===false&&s.league?.position);
   const tier=Math.min(...leagues.map(s=>Number(s.league.competitionId.split('-')[1])));
   const rank=best('rank',leagues.filter(s=>Number(s.league.competitionId.split('-')[1])===tier)
@@ -59,7 +59,7 @@
     if(!career)candidates.push({id:p.id,name:p.name,season:p.season,value});
     else{
      const prior=totals.get(p.id);
-     totals.set(p.id,{id:p.id,name:p.name||prior?.name,value:value+(prior?.value||0)});
+     totals.set(p.id,{id:p.id,name:p.name||prior?.name,value:value+(prior?.value||0),seasons:[...(prior?.seasons||[]),p.season]});
     }
    }
    return best(key,career?[...totals.values()]:candidates);
@@ -74,7 +74,8 @@
     holder={id:source.id,name:source.name||'#'+source.id,clubs:[]};
     holders.set(source.id,holder);
    }
-   holder.clubs.push({clubId,season:source.season});
+   for(const season of (source.seasons||[source.season]))
+    if(Number.isSafeInteger(season)&&season>0&&!holder.clubs.some(c=>c.season===season))holder.clubs.push({clubId,season});
   }
   return [...holders.values()];
  }
@@ -92,15 +93,21 @@
   const loading=!valid&&!unavailable;
   const data=select(valid?historySnapshot.seasons:[],scope);
   const note=unavailable?w.unavailable:valid&&historySnapshot.coverage==='empty'?w.noMatches:'';
+  const historyHref=season=>selected.base+'/history#club-history-season-'+season;
+  const playerStatsHref=(id,season)=>'/players/'+id+'?view=stats'+(season?'#player-stats-season-'+season:'');
+  const standingsHref=source=>'/competitions/'+source.division.toLowerCase()+'/standings?season='+source.season;
   function context(source){
    const details=[];
    if(source.id)details.push('<a href="/players/'+Number(source.id)+'">'+escape(source.name||'#'+source.id)+'</a>');
-   if(source.division)details.push(escape(index?.divisions.get(source.division)?.name||source.division));
+   if(source.division)details.push('<a class="app-world-standing-club-link" href="'+standingsHref(source)+'">'+
+    escape(index?.divisions.get(source.division)?.name||source.division)+'</a>');
    if(source.opponent){
     const prefix=source.venue==='away'?'@ ':source.venue?'vs ':'';
     details.push(prefix+escape(index?.clubs.get(source.opponent)?.primaryName||source.opponent));
    }
-   if(source.season)details.push(escape(w.season+' '+source.season));
+   if(Number.isSafeInteger(source.season)&&source.season>0)
+    details.push('<a class="app-world-standing-club-link app-history-season" href="'+historyHref(source.season)+'">'+
+     escape(w.season+' '+source.season)+'</a>');
    return details.join(' · ');
   }
   function matchScore(match){
@@ -111,12 +118,12 @@
   const bar='<span class="app-skeleton-bar" aria-hidden="true"></span>';
   const seasonPlaceholder='<span class="app-history-season club-record-season-placeholder" aria-hidden="true">'+
    '<span>'+label('season')+' 1</span>'+bar+'</span>';
-  function card({key,value,sources},position){
+  function card({key,value,sources,periods},position){
    const first=sources[0];
    let amount='—';
    if(loading)amount='<span class="app-skeleton-bar"></span>';
    else if(valid&&value!==null){
-    if(key==='rank')amount=ordinal(value,language);
+    if(key==='rank')amount='<a class="app-world-standing-club-link" href="'+standingsHref(first)+'">'+escape(ordinal(value,language))+'</a>';
     else if(key==='largest')amount=matchScore(first);
     else amount=escape(key==='gd'&&value>0?'+'+value:value);
    }
@@ -124,7 +131,9 @@
     sources.slice(1).map(s=>'<div>'+(key==='largest'?matchScore(s)+' · ':'')+context(s)+'</div>').join('')+'</details>':'';
    return '<article class="app-competition-stat-card"><h5 class="app-competition-stat-label">'+label(key)+'</h5>'+
     '<strong class="app-competition-stat-value">'+amount+'</strong>'+(loading?
-     '<div class="club-records-sources" data-record-placeholder="'+(position<2?'both':'season')+'">'+(position<2?'<span class="club-record-context-placeholder" aria-hidden="true">'+bar+'</span>':'')+seasonPlaceholder+'</div>':first?'<div class="club-records-sources"><span>'+context(first)+'</span>'+more+'</div>':'')+'</article>';
+     '<div class="club-records-sources" data-record-placeholder="'+(position<2?'both':'season')+'">'+(position<2?'<span class="club-record-context-placeholder" aria-hidden="true">'+bar+'</span>':'')+seasonPlaceholder+'</div>':first?'<div class="club-records-sources"><span>'+context(first)+'</span>'+more+'</div>':
+    valid&&periods?.length?'<div class="club-records-sources"><a class="app-world-standing-club-link" href="'+selected.base+'/history">'+
+     escape(w.verified+' '+periods.join(', '))+'</a></div>':'')+'</article>';
   }
   function playerCard({key,value,sources}){
    const holders=playerHolders(sources,clubKey),first=holders[0];
@@ -133,12 +142,15 @@
     '" aria-label="'+escape(w.details)+' (+'+count+')">+'+count+'</button>':'';
    const name=first?'<a class="app-history-player-name app-world-standing-club-link" href="/players/'+first.id+'">'+escape(first.name)+'</a>':'';
    const season=first?.clubs[0].season;
+   const seasons=first?.clubs.map(c=>c.season)||[];
    const slot='<span class="fa-dev-stats-player-portrait'+(loading?' club-record-portrait-placeholder':'')+'" aria-hidden="true"'+(first?' data-club-record-portrait="'+first.id+'"':'')+'></span>';
    return '<article class="app-competition-stat-card" data-club-player-card><h5 class="app-competition-stat-label">'+label(key)+'</h5>'+
     '<strong class="app-competition-stat-value">'+(loading?bar:value??'—')+'</strong>'+
     '<div class="app-history-player-footer"'+(!loading&&!first?' hidden':'')+'>'+slot+'<div class="app-history-player-labels">'+
     '<div class="app-history-player-name-row">'+(loading?'<span class="app-history-player-name club-record-name-placeholder">'+bar+'</span>':name+extra)+'</div></div>'+
-    (loading?'<span data-record-placeholder="season">'+seasonPlaceholder+'</span>':season?'<span class="app-history-season">'+escape(w.season+' '+season)+'</span>':'')+'</div></article>';
+    (loading?'<span data-record-placeholder="season">'+seasonPlaceholder+'</span>':first&&seasons.length?
+     '<a class="app-history-season app-world-standing-club-link" href="'+playerStatsHref(first.id,scope==='season'?season:null)+'">'+
+     escape(scope==='season'?w.season+' '+season:w.verified+' '+seasons.join(', '))+'</a>':'')+'</div></article>';
   }
   function group(key,cards,message=''){
    return '<section class="app-history-record-group"><h4>'+label(key)+'</h4>'+

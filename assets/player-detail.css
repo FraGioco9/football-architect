@@ -390,3 +390,8 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  .app-player-stats-table .app-player-stats-loading .app-player-stats-skeleton-label{min-height:34px}
  .app-player-stats-table .app-player-stats-competition-row[hidden]{display:none}
 }
+
+/* Highlight the verified season reached via Club Records without layout shift. */
+.app-player-stats-table .app-player-stats-season-row:target{
+ background:color-mix(in srgb,var(--focus) 12%,var(--surface-raised))
+}

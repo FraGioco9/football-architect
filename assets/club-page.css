@@ -824,3 +824,16 @@ html[data-theme="light"] .app-players-table.club-roster-table[data-players-table
  .club-records .club-records-sources,.club-records .app-history-player-footer .app-history-season{font-size:.875rem}
 }
 .club-records .app-history-player-detail:hover{border-color:var(--focus);text-decoration:none}
+
+/* Deep-link targets retain the same row dimensions as unselected history. */
+.club-history-table .club-history-season-row:target{
+ background:color-mix(in srgb,var(--focus) 12%,var(--surface-raised))
+}
+.club-records .app-history-season:is(a){color:inherit}
+.club-records .club-records-sources a,.club-records .app-competition-stat-value a{
+ color:inherit;text-decoration:none
+}
+.club-records .club-records-sources a:is(:hover,:focus-visible),
+.club-records .app-competition-stat-value a:is(:hover,:focus-visible){
+ text-decoration:underline;text-underline-offset:3px
+}

@@ -106,6 +106,7 @@
   // One accessible disclosure per completed season; no competition filter.
   // Expanded rows persist on language change and world/source redraws.
   const openHistorySeasons=new Set();
+  let lastHistoryTarget=null;
   const syncHistoryRows=()=>{
    // On narrow screens CSS displays native table rows as grids. Explicit roles
    // retain the table/row/header structure for Safari VoiceOver and other AT.
@@ -284,6 +285,19 @@
     rosterTabs.addEventListener('scroll',syncRosterTabEdges,{passive:true});
    }
    syncHistoryRows();
+   const historyAnchor=/^#club-history-season-([1-9][0-9]*)$/.exec(location.hash);
+   if(selected.view==='history'&&historyAnchor&&historySnapshot.source==='authoritative'){
+    const season=historyAnchor[1];
+    const target=host.querySelector('[data-club-history-summary="'+season+'"]');
+    if(target){
+     if(!openHistorySeasons.has(season)){openHistorySeasons.add(season);syncHistoryRows();}
+     const key=location.pathname+location.hash;
+     if(lastHistoryTarget!==key){
+      lastHistoryTarget=key;
+      target.scrollIntoView({block:'center'});
+     }
+    }
+   }
    host.dataset.clubBase=selected.base;
    if(tabs){
     const key='football-architect:club-tabs-scroll:'+selected.base;
@@ -414,7 +428,9 @@
     const scope=host.querySelector('[data-record-scope][aria-pressed="true"]').dataset.recordScope;
     const record=window.faClubRecords.select(historySnapshot.seasons,scope).players.find(p=>p.key===trigger.dataset.clubRecordDetail);
     if(record){
-     window.faHistoryPlayerUI.openPlayers({value:record.value,holders:window.faClubRecords.playerHolders(record.sources,clubKey)},trigger,{showClub:false});
+     window.faHistoryPlayerUI.openPlayers({value:record.value,holders:window.faClubRecords.playerHolders(record.sources,clubKey)},trigger,{
+       showClub:false,seasonHref:(id,season)=>'/players/'+id+'?view=stats#player-stats-season-'+season
+      });
     }
     return;
    }
@@ -755,6 +771,7 @@
    renderedLanguage=nextLanguage;
    paint(false,true);
   }).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+  window.addEventListener('hashchange',()=>{if(selected.view==='history')paint(true);});
   window.addEventListener('popstate',()=>{
    const next=model.route(location.pathname);
    if(next&&next.base===selected.base){

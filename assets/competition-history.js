@@ -347,7 +347,7 @@
   }
   window.faHistoryDialog={show:showDialog,close:closeDialog,header:dialogHeader,openClubs:openClubDialog};
   function close(){if(dialog)closeDialog(dialog);}
-  function openPlayers(record,source,{showClub=true}={}){
+  function openPlayers(record,source,{showClub=true,seasonHref=null}={}){
     if(!record?.holders?.length)return;
     if(!dialog){
       dialog=element("dialog","app-history-player-dialog");
@@ -388,7 +388,11 @@
         if(showClub)line.append(clubLink(clubId));
         for(const season of [...seasons].filter(Number.isSafeInteger).sort((a,b)=>a-b)){
           if(line.hasChildNodes())line.append(document.createTextNode(" · "));
-          line.append(showClub?seasonLink(season):locale().season+" "+season);
+          if(showClub)line.append(seasonLink(season));
+          else if(typeof seasonHref==="function"){
+            const link=element("a","app-world-standing-club-link app-history-season",locale().season+" "+season);
+            link.href=seasonHref(holder.id,season);line.append(link);
+          }else line.append(locale().season+" "+season);
         }
         if(line.hasChildNodes())clubs.append(line);
       }

@@ -88,3 +88,26 @@ test('five locales and first paint share the approved cards; MVP waits for offic
  assert.match(render({search:'?scope=all-time',historySnapshot:{source:'loading'}}),/data-record-period="verified"/);
  assert.match(render({historySnapshot:{source:'dev'}}),/Verified club records are unavailable/);
 });
+
+test('CLUB-RECORDS-01 linked evidence preserves season, all-time and tie contexts',()=>{
+ const season=render();
+ assert.match(season,/href="\/clubs\/it\/17\/history#club-history-season-2">Season 2<\/a>/);
+ assert.match(season,/href="\/players\/2\?view=stats#player-stats-season-2">Season 2<\/a>/);
+ const verified=render({search:'?scope=all-time'});
+ assert.match(verified,/href="\/competitions\/it-1\/standings\?season=1">4th<\/a>/);
+ assert.match(verified,/href="\/competitions\/it-1\/standings\?season=1">IT-1<\/a>/);
+ assert.match(verified,/href="\/clubs\/it\/17\/history">Verified seasons 1, 2<\/a>/);
+ assert.match(verified,/href="\/players\/1\?view=stats">Verified seasons 1, 2<\/a>/);
+ assert.match(verified,/href="\/matches\/15">3–0<\/a>/);
+ const holders=records.playerHolders(records.select(snapshot.seasons,'verified').players[0].sources,'IT-17');
+ assert.deepEqual(holders[0].clubs,[{clubId:'IT-17',season:1},{clubId:'IT-17',season:2}]);
+ const clubModel=readFileSync(new URL('../assets/club-model.js',import.meta.url),'utf8');
+ const clubController=readFileSync(new URL('../assets/club-page.js',import.meta.url),'utf8');
+ const playerStats=readFileSync(new URL('../assets/player-stats.mjs',import.meta.url),'utf8');
+ const dialog=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
+ assert.match(clubModel,/id="club-history-season-/);
+ assert.match(clubController,/target\.scrollIntoView\(\{block:'center'\}\)/);
+ assert.match(playerStats,/summary\.id='player-stats-season-'\+season\.season/);
+ assert.match(playerStats,/target\.scrollIntoView\(\{block:'center'\}\)/);
+ assert.match(dialog,/seasonHref\(holder\.id,season\)/);
+});

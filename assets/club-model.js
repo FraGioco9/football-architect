@@ -465,7 +465,7 @@
      const year=entry.season;
      const members=[...entry.memberships].sort((a,b)=>
       a.category===b.category?a.competitionId.localeCompare(b.competitionId,'en'):a.category==='domestic'?-1:1);
-     if(!members.length)return '<tr data-club-history-summary="'+year+'" class="club-history-season-row">'+
+     if(!members.length)return '<tr id="club-history-season-'+year+'" data-club-history-summary="'+year+'" class="club-history-season-row">'+
       '<th scope="row" class="club-history-season-value">'+escape(words.season)+' '+year+'</th>'+
       '<td class="club-history-empty-season">'+escape(words.empty)+'</td>'+
       '<td></td>'+Array.from({length:8},()=>'<td></td>').join('')+'</tr>';
@@ -475,7 +475,7 @@
      },{played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,goalDifference:0});
      const numeric=[totals.played,totals.won,totals.drawn,totals.lost,totals.goalsFor,
       totals.goalsAgainst,displayNumber(totals.goalDifference),''];
-     const summary='<tr class="club-history-season-row" data-club-history-summary="'+year+'">'+
+     const summary='<tr id="club-history-season-'+year+'" class="club-history-season-row" data-club-history-summary="'+year+'">'+
       '<th scope="row" class="club-history-season-value"><button type="button" class="club-history-expand"'+
       ' data-club-history-toggle="'+year+'" aria-expanded="false" aria-label="'+escape(words.show+' '+words.season+' '+year)+'">'+
       '<span class="club-history-chevron" aria-hidden="true"></span>'+escape(words.season)+' '+year+'</button></th>'+
