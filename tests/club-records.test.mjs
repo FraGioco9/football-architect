@@ -96,8 +96,8 @@ test('CLUB-RECORDS-01 linked evidence preserves season, all-time and tie context
  const verified=render({search:'?scope=all-time'});
  assert.match(verified,/href="\/competitions\/it-1\/standings\?season=1">4th<\/a>/);
  assert.match(verified,/href="\/competitions\/it-1\/standings\?season=1">IT-1<\/a>/);
- assert.match(verified,/href="\/clubs\/it\/17\/history">Verified seasons 1, 2<\/a>/);
- assert.match(verified,/href="\/players\/1\?view=stats">Verified seasons 1, 2<\/a>/);
+ assert.match(verified,/href="\/clubs\/it\/17\/history">Season 1, 2<\/a>/);
+ assert.match(verified,/href="\/players\/1\?view=stats">Season 1, 2<\/a>/);
  assert.match(verified,/href="\/matches\/15">3–0<\/a>/);
  const holders=records.playerHolders(records.select(snapshot.seasons,'verified').players[0].sources,'IT-17');
  assert.deepEqual(holders[0].clubs,[{clubId:'IT-17',season:1},{clubId:'IT-17',season:2}]);

@@ -133,7 +133,7 @@
     '<strong class="app-competition-stat-value">'+amount+'</strong>'+(loading?
      '<div class="club-records-sources" data-record-placeholder="'+(position<2?'both':'season')+'">'+(position<2?'<span class="club-record-context-placeholder" aria-hidden="true">'+bar+'</span>':'')+seasonPlaceholder+'</div>':first?'<div class="club-records-sources"><span>'+context(first)+'</span>'+more+'</div>':
     valid&&periods?.length?'<div class="club-records-sources"><a class="app-world-standing-club-link" href="'+selected.base+'/history">'+
-     escape(w.verified+' '+periods.join(', '))+'</a></div>':'')+'</article>';
+     escape(w.season+' '+periods.join(', '))+'</a></div>':'')+'</article>';
   }
   function playerCard({key,value,sources}){
    const holders=playerHolders(sources,clubKey),first=holders[0];
@@ -150,7 +150,7 @@
     '<div class="app-history-player-name-row">'+(loading?'<span class="app-history-player-name club-record-name-placeholder">'+bar+'</span>':name+extra)+'</div></div>'+
     (loading?'<span data-record-placeholder="season">'+seasonPlaceholder+'</span>':first&&seasons.length?
      '<a class="app-history-season app-world-standing-club-link" href="'+playerStatsHref(first.id,scope==='season'?season:null)+'">'+
-     escape(scope==='season'?w.season+' '+season:w.verified+' '+seasons.join(', '))+'</a>':'')+'</div></article>';
+     escape(scope==='season'?w.season+' '+season:w.season+' '+seasons.join(', '))+'</a>':'')+'</div></article>';
   }
   function group(key,cards,message=''){
    return '<section class="app-history-record-group"><h4>'+label(key)+'</h4>'+
