@@ -43,7 +43,14 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  // and shared DEV bridges. No query, suffix or encoded path is authorized.
  const playerStatsMatch=/^\/api\/players\/([1-9][0-9]*)\/stats$/.exec(raw);
  const singlePlayerStats=!!playerStatsMatch&&Number.isSafeInteger(Number(playerStatsMatch[1]));
- const playersRead=isAllowedPublicPlayersPath(raw)||singlePlayer||singlePlayerStats;
+ const matchesPlayer=/^\/api\/players\/([1-9][0-9]*)\/matches(?:\?(.*))?$/.exec(raw);
+ const playerMatchesRead=!!matchesPlayer&&Number.isSafeInteger(Number(matchesPlayer[1]))&&(()=>{
+  if(matchesPlayer[2]===undefined)return true;
+  const query=new URLSearchParams(matchesPlayer[2]);
+  return [...query.keys()].every(key=>['season','competition','limit','cursor'].includes(key))&&
+   new Set(query.keys()).size===[...query.keys()].length;
+ })();
+ const playersRead=isAllowedPublicPlayersPath(raw)||singlePlayer||singlePlayerStats||playerMatchesRead;
  // #612: official published match lists and numeric match details are public GETs.
  // Keep the proxy as strict as the Worker; reject unsafe, encoded and query paths.
  const matchList=/^\/api\/matches\/seasons\/([1-9][0-9]*)\/competitions\/((?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12]))$/.exec(raw);

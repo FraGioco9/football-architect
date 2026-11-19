@@ -1733,6 +1733,9 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-club-label-anchor{display:contents}
 .app-players-club-mark{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;width:24px;height:24px;overflow:hidden}
 .app-players-club-mark::before{content:"";display:block;width:20px;height:23px;clip-path:var(--fa-crest-shield-shape);background:var(--muted);opacity:.45}
+/* Only display the neutral shield when no validated real crest image exists.
+   This applies equally to Players Directory, Player Stats and Player Matches. */
+.app-players-club-mark:has(>img.app-players-club-crest)::before{display:none}
 .app-players-club-crest{position:absolute;inset:0;display:block;width:24px;height:24px;object-fit:contain}
 .app-players-table .app-player-club-link{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .app-players-table .app-player-club-name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

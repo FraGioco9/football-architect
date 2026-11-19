@@ -139,7 +139,7 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  const snapshot={source:'ready',clubKey:'IT-1',count:2,season:1,competitions:['IT-1','int-1'],players};
  const render=query=>model.render(manifest,club,'en',query,null,1,null,snapshot);
  const all=render('?view=stats');
- assert.ok(all.includes('>7.10</td>')&&all.includes('>9 (—)</td>'),'Rating and Apps (Subs) retain recorded values without a visible XI column');
+ assert.ok(all.includes('>7.1</td>')&&all.includes('>9 (—)</td>'),'Rating and Apps (Subs) retain recorded values without a visible XI column');
  assert.ok(all.includes('>2</td>'),'recorded yellow cards appear');
  const keys=[...all.matchAll(/data-club-roster-sort="([^"]+)"/g)].map(m=>m[1]);
  assert.deepEqual(keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating']);
@@ -150,16 +150,16 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
   all.indexOf('data-club-roster-sort="yellowCards"'));
  assert.ok(all.indexOf('data-club-roster-sort="averageRating"')>
   all.indexOf('data-club-roster-sort="cleanSheets"'));
- assert.ok(!all.includes('>7.10 (6)</td>')&&!all.includes('>0 (9)</td>'),'rating and clean sheets do not display appearance counts');
+ assert.ok(!all.includes('>7.1 (6)</td>')&&!all.includes('>0 (9)</td>'),'rating and clean sheets do not display appearance counts');
  assert.ok(!all.includes('>0.00</td>'),'unknown assists must not create a per-90 rate');
  for(const word of ['Appearances (substitute appearances)','Minutes played','Yellow cards','Average match rating','Clean sheets'])
   assert.ok(all.includes('data-roster-stat-help="'+word+'"'),word);
  const domesticHtml=render('?view=stats&competition=domestic');
- for(const value of ['>7.20</td>','>0.90</td>','>8 (1)</td>'])
+ for(const value of ['>7.2</td>','>0.90</td>','>8 (1)</td>'])
   assert.ok(domesticHtml.includes(value),value);
  const internationalHtml=render('?view=stats&competition=international');
  assert.ok(internationalHtml.includes('>1 (—)</td>')&&internationalHtml.includes('>0</td>'),'international scope excludes the removed XI display');
- assert.ok(!internationalHtml.includes('>7.20</td>'));
+ assert.ok(!internationalHtml.includes('>7.2</td>'));
  const sorted=render('?view=stats&competition=domestic&sort=goalsAssistsPer90&order=desc');
  assert.ok(sorted.includes('aria-sort="descending"'));
  assert.ok(sorted.indexOf('href="/players/1"')<sorted.indexOf('href="/players/2"'));
