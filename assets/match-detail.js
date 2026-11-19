@@ -8,6 +8,14 @@
   es:{match:'Partido',tbd:'Por determinar',round:'Jornada',leagueRank:'Puesto en liga',tieWinner:'Ganador de eliminatoria',winnerCode:'GAN',afterExtraTime:'Tras la prórroga',penaltyShootout:'Penaltis',home:'Local',away:'Visitante',position:'Posición',form:'Forma',lineup:'Alineación',player:'Jugador',rating:'Nota de prueba',formW:'G',formD:'E',formL:'P',outcomeW:'Victoria',outcomeD:'Empate',outcomeL:'Derrota',overview:'Resumen',competition:'Competición',season:'Temporada',date:'Fecha',stadium:'Estadio',status:'Estado',mvp:'Jugador del partido',mvpNone:'Sin premio',mvpUnknown:'No registrado',statusNames:{awaiting_participants:'Equipos pendientes',scheduled:'Programado',in_progress:'En curso',completed:'Finalizado',postponed:'Aplazado',cancelled:'Cancelado'},pitch:'Campo vacío; visualización del partido todavía no disponible',notFound:'Partido no encontrado o no publicado.',error:'Información del partido temporalmente no disponible.'},
   fr:{match:'Match',tbd:'À déterminer',round:'Journée',leagueRank:'Place en championnat',tieWinner:'Vainqueur du duel',winnerCode:'VAI',afterExtraTime:'Après prolongation',penaltyShootout:'Tirs au but',home:'Domicile',away:'Extérieur',position:'Position',form:'Forme',lineup:'Composition',player:'Joueur',rating:'Note de test',formW:'V',formD:'N',formL:'D',outcomeW:'Victoire',outcomeD:'Nul',outcomeL:'Défaite',overview:'Aperçu',competition:'Compétition',season:'Saison',date:'Date',stadium:'Stade',status:'Statut',mvp:'Joueur du match',mvpNone:'Aucune distinction',mvpUnknown:'Non enregistré',statusNames:{awaiting_participants:'Équipes à déterminer',scheduled:'Programmé',in_progress:'En cours',completed:'Terminé',postponed:'Reporté',cancelled:'Annulé'},pitch:'Terrain vide; visualisation du match pas encore disponible',notFound:'Match introuvable ou non publié.',error:'Informations temporairement indisponibles.'}
  };
+ // Timeline labels are independent of score, club and match metadata.
+ const eventCopies={
+  en:{events:'Match events',goal:'Goal',assist:'Assist',yellow:'Yellow card',red:'Red card',secondYellow:'Second yellow',substitution:'Substitution',roleChange:'Role change',notRecorded:'Event timeline not recorded',noEvents:'No major events recorded',pending:'Events available after the match'},
+  it:{events:'Eventi partita',goal:'Gol',assist:'Assist',yellow:'Ammonizione',red:'Espulsione',secondYellow:'Seconda ammonizione',substitution:'Sostituzione',roleChange:'Cambio di ruolo',notRecorded:'Cronologia non registrata',noEvents:'Nessun evento rilevante registrato',pending:'Eventi disponibili dopo la partita'},
+  de:{events:'Spielereignisse',goal:'Tor',assist:'Vorlage',yellow:'Gelbe Karte',red:'Rote Karte',secondYellow:'Zweite Gelbe',substitution:'Wechsel',roleChange:'Positionswechsel',notRecorded:'Keine Ereignischronik erfasst',noEvents:'Keine wichtigen Ereignisse erfasst',pending:'Ereignisse nach dem Spiel verfügbar'},
+  es:{events:'Eventos del partido',goal:'Gol',assist:'Asistencia',yellow:'Tarjeta amarilla',red:'Tarjeta roja',secondYellow:'Segunda amarilla',substitution:'Sustitución',roleChange:'Cambio de posición',notRecorded:'Cronología no registrada',noEvents:'Sin eventos destacados registrados',pending:'Eventos disponibles después del partido'},
+  fr:{events:'Événements du match',goal:'But',assist:'Passe décisive',yellow:'Carton jaune',red:'Carton rouge',secondYellow:'Deuxième jaune',substitution:'Remplacement',roleChange:'Changement de poste',notRecorded:'Chronologie non enregistrée',noEvents:'Aucun événement majeur enregistré',pending:'Événements disponibles après le match'}
+ };
  const numeric=x=>typeof x==='string'&&/^[1-9][0-9]*$/.test(x)&&Number.isSafeInteger(Number(x));
  const lang=()=>{const code=document.documentElement.lang?.slice(0,2).toLowerCase();return Object.hasOwn(copies,code)?code:'en'};
  const text=()=>copies[lang()];
@@ -61,7 +69,7 @@
    return tr.penaltyShootout+' '+result.penalties.home+'–'+result.penalties.away;
   return '';
  };
- let matchStatistics=null;
+ let matchStatistics=null,matchTimeline=null;
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null,sideProjection=null;
 
  // Use the approved SVG directly: its primary and secondary fills are
@@ -287,6 +295,12 @@
     new Set(appearances.map(p=>p.playerId)).size===appearances.length&&
     starters.length===11&&starters.every(p=>/^[A-Z]{2,3}$/.test(p.role)&&
      (p.rating===null||typeof p.rating==='number'));
+   const badge=find('[data-match-formation="'+side+'"]');
+   if(badge){
+    badge.textContent=valid&&source?.formation==='4-3-3'?'4-3-3':'';
+    if(badge.textContent)badge.setAttribute('aria-label',tr.lineup+' · '+badge.textContent);
+    else badge.removeAttribute('aria-label');
+   }
    const rated=valid&&matchStatistics?.statistics?.ratingVersion==='test-rating-v1';
    for(const [i,row] of [...list.children].entries()){
     if(!valid||i>=starters.length){
@@ -315,8 +329,79 @@
    else list.setAttribute('aria-hidden','true');
   }
  }
+ // Pure visual projection of the independent verified /events response.
+ // Goal assist is attached to its scorer; the preparatory pass is not a
+ // second scoring incident. Never infer events from the final score.
+ function renderTimeline(tr){
+  const list=find('[data-match-events-list]'),note=find('[data-match-events-empty]');
+  const title=find('[data-match-events-heading]'),panel=find('[data-match-events-panel]');
+  const copy=eventCopies[lang()];
+  if(title)title.textContent=copy.events;
+  if(panel)panel.setAttribute('aria-label',copy.events);
+  if(!list||!note)return;
+  list.replaceChildren();note.textContent='';
+  if(!data)return;
+  if(data.status!=='completed'){note.textContent=copy.pending;return;}
+  if(!matchTimeline)return;
+  const timeline=matchTimeline.timeline;
+  if(timeline.kind==='not_recorded'){note.textContent=copy.notRecorded;return;}
+  if(timeline.kind!=='recorded')return;
+  const person=(side,id)=>{
+   const people=matchStatistics?.statistics?.[side]?.players;
+   const p=Array.isArray(people)?people.find(p=>p.playerId===id):null;
+   return typeof p?.name==='string'&&p.name.trim()?p.name:tr.player+' #'+id;
+  };
+  const noteworthy=timeline.events.filter(e=>e.type!=='pass');
+  if(noteworthy.length===0){note.textContent=copy.noEvents;return;}
+  for(const event of noteworthy){
+   const side=event.side,actor=person(side,event.playerId);
+   const row=document.createElement('li');row.className='app-match-event';row.dataset.eventSide=side;
+   const minute=document.createElement('span');minute.className='app-match-event-minute';
+   minute.textContent=event.minute+'′';
+   const detail=document.createElement('span');detail.className='app-match-event-detail';
+   const label=document.createElement('span');label.className='app-match-event-main';
+   if(event.type==='goal')label.textContent=copy.goal+' · '+actor;
+   else if(event.type==='yellow')label.textContent=(event.secondYellowSequence?copy.secondYellow:copy.yellow)+' · '+actor;
+   else if(event.type==='red')label.textContent=copy.red+' · '+actor;
+   else if(event.type==='substitution')
+    label.textContent=copy.substitution+' · '+person(side,event.inPlayerId)+' ⇄ '+person(side,event.outPlayerId);
+   else if(event.type==='role_change')label.textContent=copy.roleChange+' · '+actor+' ('+event.fromRole+' → '+event.toRole+')';
+   else continue;
+   detail.append(label);
+   if(event.type==='goal'&&Number.isSafeInteger(event.assistingPlayerId)&&event.assistingPlayerId>0){
+    const assist=document.createElement('span');assist.className='app-match-event-assist';
+    assist.textContent=copy.assist+' · '+person(side,event.assistingPlayerId);
+    detail.append(assist);
+   }
+   row.append(minute,detail);list.append(row);
+  }
+ }
+ // Check the complete match identity and immutable receipt before displaying
+ // historical events. An unavailable endpoint must never erase the scoreboard.
+ function verifiedEventRead(value,item){
+  if(value?.schemaVersion!==1||value.providerId!=='authoritative-world'||
+     value.matchId!==matchId||value.season!==item.season||value.competitionId!==item.competitionId||
+     value.status!=='completed'||value.provenance?.kind!=='authoritative'||
+     !/^[a-f0-9]{64}$/.test(item.provenance?.receiptHash||'')||
+     value.provenance.receiptHash!==item.provenance.receiptHash||
+     (value.homeClubId??null)!==(item.homeParticipant?.clubId??null)||
+     (value.awayClubId??null)!==(item.awayParticipant?.clubId??null))return false;
+  const timeline=value.timeline;
+  if(timeline?.kind==='not_recorded')
+   return timeline.eventModelVersion===null&&timeline.events===null;
+  if(timeline?.kind!=='recorded'||timeline.eventModelVersion!=='lineup-events-v1'||
+     !Array.isArray(timeline.events)||timeline.events.length>1024)return false;
+  return timeline.events.every((event,i)=>
+   event&&event.ordinal===i&&Number.isSafeInteger(event.minute)&&event.minute>=1&&event.minute<=120&&
+   ['home','away'].includes(event.side)&&['goal','pass','yellow','red','substitution','role_change'].includes(event.type)&&
+   Number.isSafeInteger(event.playerId)&&event.playerId>0&&
+   (event.type!=='substitution'||Number.isSafeInteger(event.inPlayerId)&&event.inPlayerId>0&&
+    Number.isSafeInteger(event.outPlayerId)&&event.outPlayerId>0)&&
+   (event.type!=='role_change'||typeof event.fromRole==='string'&&typeof event.toRole==='string'));
+ }
  function render(){
   const tr=text();
+  renderTimeline(tr);
   if(errorKind){
    root.dataset.matchLoad=errorKind==='missing'?'missing':'unavailable';
    const feedback=find('[data-match-feedback]');if(feedback){feedback.hidden=false;feedback.textContent=errorKind==='missing'?tr.notFound:tr.error}
@@ -337,6 +422,7 @@
   renderOverview(tr);
   renderSides(tr);
   renderLineups(tr);
+  renderTimeline(tr);
   root.dataset.matchLoad='ready';
   applyCompetition();
   // Scores are shown ONLY when provided as a verified completed result.
@@ -404,6 +490,10 @@
    clubs={clubs:context.clubs};competitions={competitions:context.competitions};
   }
   data=item;errorKind=null;render();
+  if(item.status==='completed')void fetch('/api/matches/'+matchId+'/events',{credentials:'omit',cache:'no-store'})
+   .then(async response=>{if(!response.ok)return;const value=await response.json();
+    if(verifiedEventRead(value,item)){matchTimeline=value;render();}
+   }).catch(()=>{/* Timeline is optional; no score or lineup changes on errors. */});
   if(item.status==='completed')void fetch('/api/matches/'+matchId+'/stats',{credentials:'omit',cache:'no-store'})
    .then(async response=>{if(!response.ok)return;const value=await response.json();
     if(value?.schemaVersion===1&&value.providerId==='authoritative-world'&&value.matchId===matchId&&

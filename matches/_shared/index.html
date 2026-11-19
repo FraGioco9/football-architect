@@ -248,7 +248,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </div>
             </div>
             <div class="app-match-side-lineup" data-match-lineup="home">
-              <h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3>
+              <div class="app-match-lineup-header"><h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3><span class="app-match-formation" data-match-formation="home"></span></div>
               <ol class="app-match-lineup-rows" aria-hidden="true">
                 <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
                 <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
@@ -296,6 +296,11 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
               </svg>
             </div>
             </div>
+                      <section class="app-match-events" data-match-events-panel aria-label="Match events">
+              <h3 class="app-match-events-heading" data-match-events-heading>Match events</h3>
+              <p class="app-match-events-empty" data-match-events-empty></p>
+              <ol class="app-match-events-list" data-match-events-list></ol>
+            </section>
           </section>
           <aside class="app-match-side app-match-side-away" data-match-side="away" aria-label="Away team">
             <header class="app-match-team-identity">
@@ -313,7 +318,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </div>
             </div>
             <div class="app-match-side-lineup" data-match-lineup="away">
-              <h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3>
+              <div class="app-match-lineup-header"><h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3><span class="app-match-formation" data-match-formation="away"></span></div>
               <ol class="app-match-lineup-rows" aria-hidden="true">
                 <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
                 <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>

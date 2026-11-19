@@ -461,3 +461,28 @@ test('#577 recorded event API uses the same canonical read and never leaks into 
   assert.ok(projection.includes(fragment),fragment);
  assert.doesNotMatch(projection,/seed:|sourceSeedHash:|attributes:/);
 });
+
+test('#577 match timeline is reserved beneath green pitch with localized receipt-only event render',()=>{
+ const html=read('matches/_shared/index.html'),template=read('templates/match-detail-content.html');
+ const css=read('assets/match-detail.css'),js=read('assets/match-detail.js');
+ for(const page of [html,template]){
+  assert.equal((page.match(/data-match-formation=/g)||[]).length,2);
+  assert.equal((page.match(/data-match-events-panel/g)||[]).length,1);
+  assert.ok(page.indexOf('data-match-pitch role="img"')<page.indexOf('data-match-events-panel'));
+  assert.ok(page.indexOf('data-match-events-panel')<page.indexOf('app-match-side app-match-side-away'));
+  assert.equal((page.match(/class="app-match-lineup-row"/g)||[]).length,22);
+ }
+ assert.ok(css.includes('background:#205C43'));
+ assert.ok(css.includes('.app-match-events{'));
+ assert.ok(css.includes('.app-match-formation{'));
+ assert.match(css,/\\.app-match-overview-row-status\\{grid-template-columns:repeat\\(2,minmax\\(0,1fr\\)\\)\\}/);
+ for(const term of ["const eventCopies=", "function renderTimeline(tr)", "function verifiedEventRead(value,item)",
+   "timeline.events.filter(e=>e.type!=='pass')", "event.assistingPlayerId", "matchTimeline=value;render();",
+   "data-match-formation", "source?.formation==='4-3-3'"])
+  assert.ok(js.includes(term),term);
+ assert.match(js,/fetch\\('\\/api\\/matches\\/'\\+matchId\\+'\\/events'/);
+ assert.match(js,/value.provenance.receiptHash!==item.provenance.receiptHash/);
+ assert.match(js,/if\\(item.status==='completed'\\)void fetch\\('\\/api\\/matches\\/'\\+matchId\\+'\\/events'/);
+ for(const locale of ['en','it','de','es','fr'])assert.ok(js.includes('  '+locale+':{events:'));
+ assert.doesNotMatch(js,/matchTimeline=.*result\\.homeGoals/);
+});

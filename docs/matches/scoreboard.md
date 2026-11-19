@@ -558,3 +558,38 @@ or inconsistent starting XI, or future unknown tactical signatures.
 No inferred 4-3-3 is added to immutable stored receipts, and no database
 backfill, simulation change or new endpoint is needed. The existing
 `/api/matches/:id` and `/events` responses stay unchanged.
+
+
+### Official match page visual refinement (#577)
+
+The existing centered five-track scoreboard and green pitch (`#205C43`)
+remain unchanged. The static generated match shell now reserves a fixed
+formation badge beside each of the two XI headings, and a separate match
+timeline panel immediately **beneath the field** (inside the central
+visualization column). The Overview overlay is slightly more compact while
+retaining its three rows, seven facts and centered Status/MVP presentation.
+Desktop and mobile preserve the same static first-paint sections.
+
+A `4-3-3` badge appears only after the same independently receipt-verified
+`/api/matches/:id/stats` response that powers the frozen XI confirms eleven
+distinct real starters and supplies an official `formation: '4-3-3'` field.
+Other formations, missing stats, not-played matches and team fallbacks
+remain blank; no tactical guess is rendered.
+
+Completed matches request `GET /api/matches/:id/events` independently after
+the main scoreboard has rendered. The browser requires the same match ID,
+season, competition, home/away clubs, completed status and frozen receipt
+digest. Only verified `lineup-events-v1` projections are shown. The panel
+displays goals (with the recorded assist), bookings, dismissals,
+substitutions and role changes in official receipt order, without rendering
+the final-pass event as a second scoring incident. Player names are resolved
+only through the already-verified match statistics; until then, the real
+numeric player ID is shown. Legacy `not_recorded` receipts explicitly
+say no timeline was recorded; completed V2 receipts with no major events
+show a different empty message; unplayed matches promise no invented data.
+The panel stays independent of missing event services, and localization
+covers EN, IT, DE, ES and FR.
+
+The browser QA and static contract tests protect the pitch colour, the
+two-column Overview Status/MVP layout, fixed XI geometry and recorded-event
+provenance checks. No new gameplay generation, D1 write or remote deploy.

@@ -145,5 +145,6 @@ test('official v1 starting-slot signature publishes only the verified 4-3-3 in /
 
  const duplicate=structuredClone(input);
  duplicate.home.starters[10].playerId=1;
- assert.equal(frozenMatchPlayerStatistics(duplicate).home.formation,null);
+ assert.throws(()=>frozenMatchPlayerStatistics(duplicate),/Unidentified frozen appearance/,
+  'invalid legacy player records fail closed before tactical projection');
 });
