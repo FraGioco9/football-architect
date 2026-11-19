@@ -411,7 +411,8 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    });
    const roster=includeClubRecords?clubRosterTotals(clubKey,clubFixtures,storedResults,replay.frozenMatches):null;
    const players=roster?.complete?(await competitionPlayerIdentities(db,roster.totals)).map(p=>({
-    id:p.playerId,name:p.displayName,appearances:p.appearances,goals:p.goals,assists:p.assists,clean:p.cleanSheets,mvpAwards:p.mvpAwards
+    id:p.playerId,name:p.displayName,appearances:p.appearances,goals:p.goals,assists:p.assists,clean:p.cleanSheets,
+    mvpAwards:p.mvpAwards,mvpCoveredAppearances:p.mvpCoveredAppearances
    })):null;
    const data={season:selectedSeason,memberships,...(includeClubRecords?{matches,players}:{})};
    await unchanged(db,world);

@@ -49,11 +49,15 @@
     matchesComplete?seasonBest('streak'):best('streak',[])];
   const complete=rows.every(s=>Array.isArray(s.players));
   const appearances=complete?rows.flatMap(s=>s.players.map(p=>({...p,season:s.season}))):[];
+  // All compared player appearances must have recorded MVP evidence.
+  const mvpComplete=complete&&appearances.every(p=>
+   Number.isSafeInteger(p.mvpCoveredAppearances)&&p.mvpCoveredAppearances===p.appearances&&
+   Number.isSafeInteger(p.mvpAwards)&&p.mvpAwards>=0&&p.mvpAwards<=p.mvpCoveredAppearances);
   const players=playerKeys.map(key=>{
    const candidates=[],totals=new Map();
    if((key==='assists'||key==='combined')&&appearances.some(p=>p.assists===null))return best(key,[]);
-   // A historical missing/partial MVP award cannot become a zero in records.
-   if(key==='mvpAwards'&&appearances.some(p=>p.mvpAwards!=null&&(!Number.isSafeInteger(p.mvpAwards)||p.mvpAwards<0||p.mvpAwards>p.appearances)))return best(key,[]);
+   // Partial or legacy award coverage cannot claim a season/all-time record.
+   if(key==='mvpAwards'&&!mvpComplete)return best(key,[]);
    for(const p of appearances){
     const value={appearances:p.appearances,playerGoals:p.goals,assists:p.assists,
      combined:p.assists===null?null:p.goals+p.assists,playerClean:p.clean,mvpAwards:p.mvpAwards}[key];

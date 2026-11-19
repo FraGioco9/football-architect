@@ -108,7 +108,9 @@
  const rosterSortCommon=Object.freeze(['nationality','name','positions']);
  const rosterSortInfo=Object.freeze(['nationality','name','positions','age','height','foot']);
  function rosterStatValue(stats,key){
-  if(key==='mvpAwards'&&stats?.appearances>0)return stats.mvpAwards??0;
+  // Unknown legacy awards cannot be inferred as zero; played-and-covered is zero.
+  if(key==='mvpAwards'&&stats?.appearances>0)return stats.mvpAwards??
+   (stats.mvpCoveredAppearances===stats.appearances?0:null);
   return stats?.[key];
  }
  function rosterSortValue(player,key){
