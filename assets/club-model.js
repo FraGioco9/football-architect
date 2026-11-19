@@ -107,6 +107,10 @@
  const rosterPositionRank=new Map(rosterPitchPositions.map((code,index)=>[code,rosterPitchPositions.length-index]));
  const rosterSortCommon=Object.freeze(['nationality','name','positions']);
  const rosterSortInfo=Object.freeze(['nationality','name','positions','age','height','foot']);
+ function rosterStatValue(stats,key){
+  if(key==='mvpAwards'&&stats?.appearances>0)return stats.mvpAwards??0;
+  return stats?.[key];
+ }
  function rosterSortValue(player,key){
   if(key==='positions')return rosterPositionRank.get(player.primary_position)??0;
   if(key==='name')return player.display_name;
@@ -114,7 +118,7 @@
   if(key==='age')return player.age;
   if(key==='height')return player.height_cm;
   if(key==='foot')return player.preferred_foot;
-  return statKeys.includes(key)?player.stats?.[key]:player.attributes?.[key];
+  return statKeys.includes(key)?rosterStatValue(player.stats,key):player.attributes?.[key];
  }
  function sortedRosterPlayers(players,key,order){
   const direction=order==='desc'?-1:1;
@@ -228,7 +232,7 @@
     ...player,stats:groupIds.length===1?player.competitionStats?.[groupIds[0]]??null:null
    })):snapshot.players;
    const statText=(stats,key)=>{
-    const value=stats?.[key];
+    const value=rosterStatValue(stats,key);
     if(value===undefined||value===null)return null;
     if(key==='averageRating')return value.toFixed(1);
     if(key==='goalsAssistsPer90')return value.toFixed(2);

@@ -17,14 +17,14 @@ test('#712 parser-time and hydrated Matches retain identical table track signatu
  const html=read('players/_shared/index.html');
  const shell=html.match(/<section class="app-player-detail-matches"[\s\S]*?<\/section>/)?.[0];
  assert.ok(shell);
- assert.equal((shell.match(/data-player-matches-heading="/g)||[]).length,14);
- assert.equal((shell.match(/<col class="app-player-matches-col-/g)||[]).length,14);
+ assert.equal((shell.match(/data-player-matches-heading="/g)||[]).length,13);
+ assert.equal((shell.match(/<col class="app-player-matches-col-/g)||[]).length,13);
  assert.equal((shell.match(/data-player-matches-loading/g)||[]).length,5);
- assert.equal((shell.match(/app-player-matches-value/g)||[]).length,70);
+ assert.equal((shell.match(/app-player-matches-value/g)||[]).length,65);
  assert.equal((shell.match(/app-player-matches-toggle-space/g)||[]).length,0);
  assert.equal((shell.match(/app-player-matches-skeleton-crest/g)||[]).length,10);
  assert.equal((shell.match(/<span class="app-player-matches-club">/g)||[]).length,10);
- assert.equal((shell.match(/class="club-fp-bar/g)||[]).length,70);
+ assert.equal((shell.match(/class="club-fp-bar/g)||[]).length,65);
  assert.equal((shell.match(/class="app-skeleton-bar" style="width:/g)||[]).length,0);
  assert.equal((shell.match(/app-player-matches-row app-player-matches-loading/g)||[]).length,5);
  const css=read('assets/player-detail.css');
@@ -33,7 +33,7 @@ test('#712 parser-time and hydrated Matches retain identical table track signatu
  assert.match(css,/grid-template-rows:28px 28px/);
  assert.match(css,/app-player-matches-row>:nth-child\(4\)/);
  assert.match(css,/app-player-matches-row>:nth-child\(6\)/);
- assert.match(css,/app-player-matches-row>:nth-child\(14\)/);
+ assert.match(css,/app-player-matches-row>:nth-child\(13\)/);
  assert.doesNotMatch(css,/app-player-matches-toggle-space/);
  assert.match(css,/\.app-player-matches-loading \.app-player-matches-skeleton-crest\{/);
  assert.match(css,/\.app-player-matches-loading \.club-fp-bar\{/);
@@ -41,6 +41,10 @@ test('#712 parser-time and hydrated Matches retain identical table track signatu
  assert.match(css,/\.app-player-matches-value\{[^}]*height:24px/);
  assert.match(css,/\.app-player-matches-number>\.app-player-matches-value\{[^}]*width:100%/);
  assert.match(css,/\.app-player-matches-venue>\.app-player-matches-value\{justify-content:center\}/);
+ assert.match(css,/\.app-player-matches-loading>:nth-child\(5\)>\.app-player-matches-value\{justify-content:center\}/,
+  'first-paint Venue skeleton must align with the centered hydrated icon');
+ assert.match(html,/<td class="app-player-matches-number"><span class="app-player-matches-value"><span class="club-fp-bar club-fixture-skeleton-venue"/,
+  'loading Venue keeps the fixed-size 18px icon placeholder');
  assert.match(css,/\.app-player-matches-club>\.app-player-matches-value\{[^}]*min-width:0/);
  assert.match(css,/\.app-player-matches-loading \.app-player-matches-value>\.club-fp-bar:not\(\.club-fixture-skeleton-venue\)\{translate:0 1px\}/);
  assert.match(css,/\.app-player-matches-loading \.app-player-matches-skeleton-crest\{[\s\S]*?margin-right:0/);
@@ -173,12 +177,12 @@ test('#720 mobile Matches uses stable two-line text/skeleton tracks at phone wid
  assert.ok(mobile.includes('>:nth-child(1){grid-column:1;grid-row:1}'));
  assert.ok(mobile.includes('>:nth-child(4){grid-column:1;grid-row:2}'));
  assert.ok(mobile.includes('>:nth-child(6){grid-column:2;grid-row:1 / span 2;justify-content:center}'));
- assert.ok(mobile.includes('>:nth-child(14){grid-column:3;grid-row:1 / span 2;justify-content:flex-end}'));
+ assert.ok(mobile.includes('>:nth-child(13){grid-column:3;grid-row:1 / span 2;justify-content:flex-end}'));
  assert.ok(mobile.includes('.app-player-matches-club{width:100%;gap:5px}'));
  assert.ok(mobile.includes('text-overflow:ellipsis;white-space:nowrap'));
  assert.ok(mobile.includes('-webkit-line-clamp:2'));
  assert.ok(mobile.includes('>:nth-child(6)::before{content:var(--app-player-matches-mobile-result)}'));
- assert.ok(mobile.includes('>:nth-child(14)::before{content:var(--app-player-matches-mobile-rating)}'));
+ assert.ok(mobile.includes('>:nth-child(13)::before{content:var(--app-player-matches-mobile-rating)}'));
  assert.ok(mobile.includes('.app-player-matches-more{min-height:44px;width:100%'));
  assert.ok(mobile.includes('clip-path:inset(50%);white-space:nowrap'));
  assert.ok(!mobile.includes('colgroup,.app-player-matches-table thead{display:none}'));
@@ -196,14 +200,14 @@ test('#720 Mobile rating replaces minutes, with side padding and no sticky touch
  assert.ok(mobile.includes('padding:9px 12px 10px;border-bottom:1px solid var(--line)'));
  assert.ok(mobile.includes('.app-player-matches-toolbar{')&&mobile.includes('margin-bottom:8px;padding-inline:12px'));
  assert.ok(mobile.includes('.app-player-matches-footer{padding-inline:12px}'));
- assert.ok(mobile.includes('>:nth-child(14){grid-column:3;grid-row:1 / span 2;justify-content:flex-end}'));
- assert.ok(mobile.includes('>:not(:nth-child(1)):not(:nth-child(4)):not(:nth-child(6)):not(:nth-child(14)){display:none}'));
- assert.ok(mobile.includes('>:nth-child(14)::before{content:var(--app-player-matches-mobile-rating)}'));
- assert.ok(mobile.includes('>:nth-child(14) .app-player-matches-value{justify-content:flex-end}'));
+ assert.ok(mobile.includes('>:nth-child(13){grid-column:3;grid-row:1 / span 2;justify-content:flex-end}'));
+ assert.ok(mobile.includes('>:not(:nth-child(1)):not(:nth-child(4)):not(:nth-child(6)):not(:nth-child(13)){display:none}'));
+ assert.ok(mobile.includes('>:nth-child(13)::before{content:var(--app-player-matches-mobile-rating)}'));
+ assert.ok(mobile.includes('>:nth-child(13) .app-player-matches-value{justify-content:flex-end}'));
  assert.ok(!mobile.includes('>:nth-child(7)::before{content:"Min"}'));
  assert.ok(!mobile.includes('>:nth-child(7){grid-column:3'));
- // The rating and its 26px skeleton occupy the fourteenth column.
- assert.match(ui,/for\(const metric of \['minutes','goals','assists','yellowCards','redCards','cleanSheets','mvp','rating'\]\)/);
+ // The rating and its 26px skeleton occupy the thirteenth column.
+ assert.match(ui,/for\(const metric of \['minutes','goals','assists','yellowCards','redCards','cleanSheets','rating'\]\)/);
  assert.match(css,/@media\(hover:hover\) and \(pointer:fine\)\{\s*\.app-player-matches-row\[data-player-match-href\]:hover/);
  assert.match(css,/\.app-player-matches-row\[data-player-match-href\]:is\(:focus-visible,:has\(:focus-visible\)\)/);
  assert.doesNotMatch(css,/\.app-player-matches-row\[data-player-match-href\]:is\(:hover,:focus-within/);
@@ -220,15 +224,15 @@ test('#720 CS/Rating header tooltip wording is identical to Player Stats in each
  const matches=read('assets/player-matches.mjs');
  const stats=read('assets/player-stats.mjs');
  const pairs=[
-  ['en','Clean sheets','Player of the match','Rating'],['it','Clean sheet','Migliore in campo','Valutazione'],
-  ['de','Spiele ohne Gegentor','Spieler des Spiels','Bewertung'],['es','Porterías a cero','Jugador del partido','Valoración'],
-  ['fr','Matches sans but encaissé','Joueur du match','Note']
+  ['en','Clean sheets','Rating'],['it','Clean sheet','Valutazione'],
+  ['de','Spiele ohne Gegentor','Bewertung'],['es','Porterías a cero','Valoración'],
+  ['fr','Matches sans but encaissé','Note']
  ];
- for(const [lang,clean,mvp,rating] of pairs){
+ for(const [lang,clean,rating] of pairs){
   const matchLine=matches.split('\n').find(line=>line.startsWith(' '+lang+':{headers:'));
   const statsLine=stats.split('\n').find(line=>line.startsWith(' '+lang+':{headers:'));
   assert.ok(matchLine&&statsLine,lang+' localization exists');
-  assert.ok(matchLine.endsWith(',"'+clean+'","'+mvp+'","'+rating+'"],'),lang+' Matches tooltip parity');
+  assert.ok(matchLine.endsWith(',"'+clean+'","'+rating+'"],'),lang+' Matches tooltip parity');
   assert.ok(statsLine.includes('keeperHelp:"'+clean+'"'),lang+' Stats keeper help parity');
   assert.ok(statsLine.includes('"'+rating+'"]'),lang+' Stats Rating help parity');
  }
@@ -249,4 +253,22 @@ test('#720 desktop/mobile crests suppress the neutral shield and share exact ima
  assert.match(mobile,/\.app-player-matches-loading \.app-player-matches-skeleton-crest\{width:20px;height:20px;min-width:20px/);
  assert.equal((html.match(/width:26px;height:10px/g)||[]).length,5,'one-decimal rating skeletons at first paint');
  assert.doesNotMatch(html,/width:36px;height:10px/);
+});
+
+test('Player Matches venue reuses Club Fixtures tooltip on hover, focus and touch without navigating',()=>{
+ const ui=read('assets/player-matches.mjs'),css=read('assets/player-detail.css');
+ assert.match(ui,/venueTooltip.className='calendar-marker-tooltip app-player-matches-venue-tooltip'/);
+ assert.match(ui,/venueTooltip.setAttribute\('role','tooltip'\)/);
+ assert.match(ui,/icon.dataset.playerMatchesVenue=''/);
+ assert.match(ui,/icon.tabIndex=0/);
+ assert.match(ui,/icon.setAttribute\('aria-label',venueLabel\)/);
+ assert.doesNotMatch(ui,/icon.title=venueLabel/,'native browser tooltip must not duplicate the custom tooltip');
+ assert.match(ui,/trigger.setAttribute\('aria-describedby',tip.id\)/);
+ assert.match(ui,/if\(venue\)\{showVenueTooltip\(venue\);return;\}/,'venue click does not activate the row');
+ assert.match(ui,/event.pointerType!=='touch'/,'pointer hover excludes synthetic touch hover');
+ assert.match(ui,/event.key==='Escape'\)\{hideTooltip\(\);hideVenueTooltip\(\);\}/);
+ assert.match(ui,/if\(row.matches\?\.\('\[data-player-matches-venue\]'\)/,'venue keyboard activation precedes row navigation');
+ assert.match(css,/\.calendar-marker-tooltip\.app-player-matches-venue-tooltip\{display:block!important\}/,'touch retains the Club Fixtures tooltip');
+ assert.match(css,/\.calendar-marker-tooltip\.app-player-matches-venue-tooltip\[hidden\]\{display:none!important\}/);
+ assert.match(css,/\.app-player-matches-venue-icon:focus-visible\{/);
 });

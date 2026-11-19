@@ -7,7 +7,7 @@
  const views=[['overview','statsDevOverview','Overview'],['teams','statsDevTeams','Teams'],['players','statsDevPlayers','Players']];
  const overview=[['matchesPlayed','statsDevMatchesPlayed','Matches played'],['totalGoals','statsDevTotalGoals','Total goals'],['goalsPerMatch','statsDevGoalsPerMatch','Goals per match']];
  const teams=[['gf','statsDevGoalsScored','Goals scored',false],['ga','statsDevFewestConceded','Fewest conceded',true],['w','statsDevWins','Wins',false],['cs','statsDevCleanSheets','Clean sheets',false],['ppg','statsDevPointsPerMatch','Points per match',false],['gd','statsDevGoalDifference','Goal difference',false],['unbeatenStreak','statsDevUnbeatenStreak','Unbeaten streak',false]];
- const players=[['averageRating','statsDevAverageRating','Rating'],['goals','statsDevGoals','Goals'],['assists','statsDevAssists','Assists'],['goalsAssistsPer90','statsDevGoalsAssists90','Goal contributions per 90'],['cleanSheets','statsDevCleanSheets','Clean sheets'],['starts','statsDevStartsSubstitutes','Starts (substitutes)'],['mvpAwards','statsDevMvpAwards','MVP awards'],['minutes','statsDevMinutes','Minutes']];
+ const players=[['averageRating','statsDevAverageRating','Rating'],['mvpAwards','statsDevMvpAwards','MVP awards'],['goals','statsDevGoals','Goals'],['assists','statsDevAssists','Assists'],['goalsAssistsPer90','statsDevGoalsAssists90','Goal contributions per 90'],['cleanSheets','statsDevCleanSheets','Clean sheets'],['starts','statsDevStartsSubstitutes','Starts (substitutes)'],['minutes','statsDevMinutes','Minutes']];
  // Ranking qualifications scale with the recorded club's played matches.
  // Never modify frozen individual counters and never rank unavailable metrics.
  const eligible=(key,record,clubMatches)=>{

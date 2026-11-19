@@ -137,7 +137,7 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
   goalsAssistsPer90:assists===null||!minutes?null:Math.round((goals+assists)*90/minutes*100)/100
  });
  const domestic=make(4,2,600,7.2,5,null,7,1,1,8);
- const international=make(0,null,90,null,0,0,1,null,null,1);
+ const international=make(0,null,15,null,0,0,0,1,null,1);
  const combined=make(4,null,690,7.1,6,null,8,null,null,9);
  const players=[
   {id:1,display_name:'First Player',nationality:'ITA',primary_position:'ST',secondary_positions:[],stats:combined,competitionStats:{'IT-1':domestic,'int-1':international}},
@@ -165,7 +165,8 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  for(const value of ['>7.2</td>','>0.90</td>','>8 (1)</td>'])
   assert.ok(domesticHtml.includes(value),value);
  const internationalHtml=render('?view=stats&competition=international');
- assert.ok(internationalHtml.includes('>1 (—)</td>')&&internationalHtml.includes('>0</td>'),'international scope excludes the removed XI display');
+ assert.ok(internationalHtml.includes('>1 (1)</td>')&&internationalHtml.includes('>0</td>'),'international scope excludes the removed XI display');
+ assert.match(internationalHtml,/>0<\/td><td><span[^>]*>—<\/span><\/td><\/tr>/,'a substitute with no recorded award has zero MVPs before Rating');
  assert.ok(!internationalHtml.includes('>7.2</td>'));
  const sorted=render('?view=stats&competition=domestic&sort=goalsAssistsPer90&order=desc');
  assert.ok(sorted.includes('aria-sort="descending"'));

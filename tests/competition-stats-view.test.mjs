@@ -214,7 +214,7 @@ test('STATS-PLAYERS: qualified recorded contributions populate rankings without 
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  assert.equal(byClass(r,'fa-dev-stats-leader-card').length,8);
  assert.ok(contents(r.panel).includes('450'));assert.ok(contents(r.panel).includes('Supplied Player'));
- assert.deepEqual(byClass(r,'fa-dev-stats-leader-title').map(n=>n.dataset.appI18n),['statsDevAverageRating','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevMvpAwards','statsDevMinutes']);
+ assert.deepEqual(byClass(r,'fa-dev-stats-leader-title').map(n=>n.dataset.appI18n),['statsDevAverageRating','statsDevMvpAwards','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevMinutes']);
  assert.equal(byClass(r,'fa-dev-stats-top')[0].children[0].children.at(-1).textContent,'1','only recorded scoring contributions qualify');
  assert.equal(r.nodes().filter(n=>n.tagName==='li').length,3);
 });
@@ -339,7 +339,7 @@ test('COMP-STATS-643: player rows have no hover titles; metric-sized skeletons r
  assert.equal((markup.match(/class="fa-dev-stats-club-link"/g)||[]).length,40,'club label keeps its own second row');
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-leader-card:not\(\.fa-dev-stats-team-card\):nth-child\(1\)\{--fa-stats-skeleton-value-width:8\.5ch\}/);
- assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-leader-card:not\(\.fa-dev-stats-team-card\):nth-child\(5\)\{--fa-stats-skeleton-value-width:7\.5ch\}/);
+ assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-leader-card:not\(\.fa-dev-stats-team-card\):nth-child\(6\)\{--fa-stats-skeleton-value-width:7\.5ch\}/);
  assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-player-label \.fa-dev-stats-team-name\{[^}]*width:min\(var\(--fa-stats-skeleton-player-name\),100%\);height:1\.3em/);
  assert.match(css,/\.app-competition-view-skeleton \.fa-dev-stats-player-label \.fa-dev-stats-club-link\{[^}]*width:min\(var\(--fa-stats-skeleton-club-name\),100%\);height:1\.3em/);
  assert.deepEqual([...css.matchAll(/--fa-stats-skeleton-club-name:(\d+)ch/g)].map(match=>Number(match[1])),[11,15,13,9,14],'club skeleton widths vary deterministically by rank');
@@ -352,10 +352,10 @@ test('COMP-STATS: rating and GK clean sheets show appearances while missing metr
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  const cards=byClass(r,'fa-dev-stats-leader-card');
  assert.equal(cards[0].children[1].children[0].children.at(-1).textContent,'7.3 (5)');
- assert.equal(cards[4].children[1].children[0].children.at(-1).textContent,'6 (13)');
- assert.equal(cards[5].children[1].children[0].children.at(-1).textContent,'10 (3)');
- for(const i of [2,3,6])assert.equal(cards[i].children[1].textContent,'No players');
- assert.equal(cards[1].children[1].textContent,'No players');
+ assert.equal(cards[5].children[1].children[0].children.at(-1).textContent,'6 (13)');
+ assert.equal(cards[6].children[1].children[0].children.at(-1).textContent,'10 (3)');
+ for(const i of [3,4,1])assert.equal(cards[i].children[1].textContent,'No players');
+ assert.equal(cards[2].children[1].textContent,'No players');
  assert.ok(!byClass(r,'fa-dev-stats-leader-title').some(n=>/yellow/i.test(n.dataset.appI18n)));
 });
 
@@ -406,20 +406,20 @@ test('COMP-STATS-643: percentages use each recorded club own played matches and 
   const mounted=r.api.mount(r.panel,c);buttons(r)[2].emit('click');
   const cards=byClass(r,'fa-dev-stats-leader-card');
   const names=index=>contents(cards[index].children[1]);
-  for(const index of [0,4,5,7]){
+  for(const index of [0,5,6,7]){
    assert.ok(!names(index).includes('Four of ten'),competition+' category '+index+' below 50%');
    assert.ok(names(index).includes('Five of ten')&&names(index).includes('Two of four'),competition+' thresholds follow club games');
   }
-  for(const index of [1,2,6])assert.ok(names(index).includes('Four of ten'),'event counts stay at one');
-  assert.ok(!names(3).includes('Four of ten'),'per-90 minutes require 40% of club games');
-  assert.ok(names(3).includes('Two of four'),'per-90 minutes scale with club coverage');
+  for(const index of [2,3,1])assert.ok(names(index).includes('Four of ten'),'event counts stay at one');
+  assert.ok(!names(4).includes('Four of ten'),'per-90 minutes require 40% of club games');
+  assert.ok(names(4).includes('Two of four'),'per-90 minutes scale with club coverage');
   const next=structuredClone(c.seasonData);
   next.statistics.teams.find(team=>team.clubKey==='IT-1').mp=12;
   mounted.update({...c,revision:2,seasonData:next});
   const later=byClass(r,'fa-dev-stats-leader-card');
   assert.ok(!contents(later[0].children[1]).includes('Five of ten'),'50% threshold rises as team plays');
   assert.ok(contents(later[0].children[1]).includes('Two of four'),'other club threshold is unchanged');
-  assert.ok(contents(later[1].children[1]).includes('Four of ten'),'fixed one-goal requirement does not change');
+  assert.ok(contents(later[2].children[1]).includes('Four of ten'),'fixed one-goal requirement does not change');
  }
 });
 
@@ -454,12 +454,12 @@ test('STATS-TIEBREAK-PLAYERS: all eight cards use recorded player metrics, not p
   assists:1,yellowCards:1,redCards:1,cleanSheets:1,ratedAppearances:2,averageRating:7.25,goalsAssistsPer90:1};
  const cases=[
   [{ratedAppearances:2},{ratedAppearances:1}],
+  [{mvpAwards:1,mvpCoveredAppearances:1,minutes:180},{mvpAwards:1,mvpCoveredAppearances:2,minutes:90}],
   [{minutes:90},{minutes:180}],
   [{minutes:90},{minutes:180}],
   [{goals:1,assists:1,minutes:180},{goals:1,assists:0,minutes:90}],
   [{appearances:1,starts:1,minutes:90,ratedAppearances:1},{appearances:2,starts:2,minutes:180}],
   [{appearances:2,starts:1,subAppearances:1,minutes:180},{appearances:1,starts:1,subAppearances:0,minutes:90,ratedAppearances:1}],
-  [{mvpAwards:1,mvpCoveredAppearances:1,minutes:180},{mvpAwards:1,mvpCoveredAppearances:2,minutes:90}],
   [{starts:2},{starts:1,subAppearances:1}]
  ];
  for(const [i,[a,b]] of cases.entries()){
@@ -498,22 +498,22 @@ test('STATS-TIEBREAK: visible decimal precision, equal ranks, missing evidence, 
   {...base,playerId:9,name:'Zulu',appearances:3,starts:3,goals:2,assists:1,minutes:271,goalsAssistsPer90:270/271},
   {...base,playerId:8,name:'Alpha',appearances:3,starts:3,goals:2,assists:1,minutes:269,goalsAssistsPer90:270/269}
  ]);
- const contrib=walk(byClass(rates,'fa-dev-stats-leader-card')[3]).filter(n=>n.tagName==='li');
+ const contrib=walk(byClass(rates,'fa-dev-stats-leader-card')[4]).filter(n=>n.tagName==='li');
  assert.equal(walk(contrib[0]).find(n=>n.tagName==='a').href,'/players/9','equal displayed contributions choose more minutes');
  assert.deepEqual(contrib.map(n=>n.children.at(-1).textContent),['1.00','1.00']);
  const incomplete=prepare([
   {...base,playerId:9,name:'Zulu',mvpAwards:null,mvpCoveredAppearances:0,minutes:90},
   {...base,playerId:8,name:'Alpha',mvpAwards:1,mvpCoveredAppearances:1,minutes:180}
  ]);
- const awards=walk(byClass(incomplete,'fa-dev-stats-leader-card')[6]).filter(n=>n.tagName==='li');
+ const awards=walk(byClass(incomplete,'fa-dev-stats-leader-card')[1]).filter(n=>n.tagName==='li');
  assert.equal(awards.length,1);
  assert.equal(walk(awards[0]).find(n=>n.tagName==='a').href,'/players/8','verified awards survive partial coverage');
  const same=prepare([{...base,playerId:9,name:'Zulu'},{...base,playerId:8,name:'Alpha'}]);
- const tied=walk(byClass(same,'fa-dev-stats-leader-card')[1]).filter(n=>n.tagName==='li');
+ const tied=walk(byClass(same,'fa-dev-stats-leader-card')[2]).filter(n=>n.tagName==='li');
  assert.deepEqual(tied.map(n=>n.children[0].textContent),['1','1'],'identical metrics share first rank');
  assert.equal(walk(tied[0]).find(n=>n.tagName==='a').href,'/players/8','names only stabilize visual order');
  const seven=prepare(Array.from({length:7},(_,i)=>({...base,playerId:i+1,name:'Same',goals:1,minutes:90+10*i})));
- const goals=byClass(seven,'fa-dev-stats-leader-card')[1];
+ const goals=byClass(seven,'fa-dev-stats-leader-card')[2];
  assert.deepEqual(walk(goals).filter(n=>n.tagName==='li').map(n=>n.children[0].textContent),['1','2','3','4','5']);
  walk(goals).find(n=>n.className==='fa-dev-stats-expand').emit('click');
  const dialog=byClass(seven,'fa-dev-stats-dialog')[0];
