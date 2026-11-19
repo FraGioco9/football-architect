@@ -458,6 +458,12 @@ test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
    assert.ok(evidence.recentNativeShoeStarts.every(x=>
     x.nativeStart&&['left','right'].includes(x.foot)&&
     typeof x.appliedCarryImpulse==='boolean'&&
+    typeof x.nativeActorStart==='boolean'&&
+    ['control','moderate','sprint'].includes(x.observedCarryPhase)&&
+    ['simultaneousFootStarts','otherFootAlreadyActive',
+     'exclusiveActorStartNoImpulse','unreleasedSingleFootStart',
+     'native-exclusive-actor-carry'].includes(x.classification)&&
+    Object.isFrozen(x.priorShoeActive)&&
     typeof x.concurrentOtherShoe==='boolean'&&
     Number.isFinite(x.worldStepBallVelocityDeltaMps)&&
     Number.isFinite(x.peakReportedForceMagnitudeN)&&
@@ -473,6 +479,32 @@ test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
     assert.equal(evidence.peakNonActionWorldStepBallDeltaWitness.worldStepBallVelocityDeltaMps,
      evidence.peakNonActionWorldStepBallDeltaMps);
    }
+   const reasons=evidence.nonActionStartReasons;
+   const totalNonAction=Object.values(reasons).reduce((n,x)=>n+x,0);
+   assert.equal(totalNonAction,evidence.nativeShoeStartsWithoutCarryImpulse);
+   assert.ok(Object.isFrozen(reasons));
+   assert.ok(evidence.nativeActorContactOnsets>=actions);
+   assert.ok(evidence.nativeActorContactOnsets<=nativeFootStarts);
+   assert.ok(evidence.nativeActorFullReleaseEvents<=
+    evidence.nativeActorContactOnsets);
+   assert.ok(evidence.nativeActorStartsAfterFullRelease<=
+    evidence.nativeActorFullReleaseEvents);
+   assert.ok(evidence.recentFullReleaseToActorStartGaps.length<=16);
+   assert.ok(evidence.recentFullReleaseToActorStartGaps.every(x=>
+    x.startTick>x.releaseTick&&x.emptyToActorStartGapTicks>0));
+   const phaseCounts=['control','moderate','sprint'].map(phase=>{
+    const r=evidence.nonActionReasonsByPhase[phase];
+    const starts=evidence.nativeStartsByPhase[phase];
+    assert.ok(Object.isFrozen(r)&&Object.isFrozen(starts));
+    assert.equal(Object.values(r).reduce((n,x)=>n+x,0),
+     starts.withoutCarry);
+    assert.equal(starts.nativeShoeStarts,
+     starts.appliedCarry+starts.withoutCarry);
+    return starts;
+   });
+   assert.equal(phaseCounts.reduce((n,x)=>n+x.nativeShoeStarts,0),
+    nativeFootStarts);
+   assert.equal(phaseCounts.reduce((n,x)=>n+x.appliedCarry,0),actions);
    assert.ok(evidence.verifiedFootAlternations<=Math.max(0,actions-1));
    assert.ok(nativeFootStarts>=actions);
    samples.push({side,variantIndex,nativeFootStarts,actions,

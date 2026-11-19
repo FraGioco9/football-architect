@@ -796,6 +796,10 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
   secondHalfWeak:[],speedBreaches:[],liftBreaches:[],stalls:[],
   earlyPhases:new Set(),latePhases:new Set(),endpointDeltas:[],
   nativeForceStarts:0,solverStarts:0,alternations:0,
+  startReasonTotals:{
+   simultaneousFootStarts:0,otherFootAlreadyActive:0,
+   exclusiveActorStartNoImpulse:0,unreleasedSingleFootStart:0
+  },actorOnsetTotal:0,completeReleaseTotal:0,releaseGapTotal:0,
   maxActualObservedGaitFrequencyHz:0,sprintPhaseCount:0
  });
  const stats=Object.fromEntries(arms.map(arm=>[arm.id,fresh()]));
@@ -879,6 +883,19 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
     assert.equal(end.starts,end.actions+end.nonAction);
     assert.ok(a.nonActionStartsWithNativeForceEvents<=end.nonAction);
     assert.ok(a.nonActionStartsWithSolverContacts<=end.nonAction);
+    // 360-tick source-level diagnosis must reconcile each physical shoe
+    // START and each phase with the actual original action authority.
+    assert.equal(Object.values(a.nonActionStartReasons)
+     .reduce((sum,n)=>sum+n,0),end.nonAction);
+    assert.equal(a.nativeActorContactOnsets>=end.actions,true);
+    assert.equal(a.nativeActorFullReleaseEvents<=
+     a.nativeActorContactOnsets,true);
+    assert.equal(a.nativeActorStartsAfterFullRelease<=
+     a.nativeActorFullReleaseEvents,true);
+    assert.equal(['control','moderate','sprint'].reduce((sum,phase)=>
+     sum+a.nativeStartsByPhase[phase].nativeShoeStarts,0),end.starts);
+    assert.equal(['control','moderate','sprint'].reduce((sum,phase)=>
+     sum+a.nativeStartsByPhase[phase].appliedCarry,0),end.actions);
     const later={
      starts:end.starts-first.starts,
      actions:end.actions-first.actions,
@@ -915,6 +932,11 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
     st.nativeForceStarts+=a.nonActionStartsWithNativeForceEvents;
     st.solverStarts+=a.nonActionStartsWithSolverContacts;
     st.alternations+=a.verifiedFootAlternations;
+    for(const reason of Object.keys(st.startReasonTotals))
+     st.startReasonTotals[reason]+=a.nonActionStartReasons[reason];
+    st.actorOnsetTotal+=a.nativeActorContactOnsets;
+    st.completeReleaseTotal+=a.nativeActorFullReleaseEvents;
+    st.releaseGapTotal+=a.nativeActorStartsAfterFullRelease;
     for(const x of earlyPhases)st.earlyPhases.add(x);
     for(const x of latePhases)st.latePhases.add(x);
     if(arm.id==='baseline')baselineEnd=last.ball;
@@ -944,6 +966,13 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
    meanNonActionWithForceEvent:st.nativeForceStarts/n,
    meanNonActionWithSolverContacts:st.solverStarts/n,
    meanVerifiedFootAlternations:st.alternations/n,
+   meanNonActionReasons:Object.fromEntries(
+    Object.entries(st.startReasonTotals).map(([reason,total])=>[
+     reason,total/n
+    ])),
+   meanNativeActorContactOnsets:st.actorOnsetTotal/n,
+   meanCompleteNativeReleases:st.completeReleaseTotal/n,
+   meanActorStartsAfterCompleteRelease:st.releaseGapTotal/n,
    maxGaitFrequencyHz:st.maxActualObservedGaitFrequencyHz,
    min6sBallForwardM:st.minForward,
    meanLateBallForwardM:st.lateForwardSum/n,
@@ -985,6 +1014,10 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
    st.earlyUnconverted+st.lateUnconverted);
   assert.ok(s.meanNonActionWithSolverContacts<=s.meanNonActionStarts6s);
   assert.ok(s.meanNonActionWithForceEvent<=s.meanNonActionStarts6s);
+  assert.ok(Math.abs(Object.values(s.meanNonActionReasons)
+   .reduce((sum,n)=>sum+n,0)-s.meanNonActionStarts6s)<1e-8);
+  assert.ok(s.meanNativeActorContactOnsets>=s.meanCarryActions6s);
+  assert.ok(s.meanCompleteNativeReleases<=s.meanNativeActorContactOnsets);
   assert.ok(s.earlyPhases.includes('sprint'));
   assert.ok(s.latePhases.includes('sprint'));
   if(arm.id!=='baseline'){

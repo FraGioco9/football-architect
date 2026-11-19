@@ -8,6 +8,15 @@ import {PLAYER_VERSION,PLAYER_MAX_SPEED_MPS,PLAYER_MIN_SEPARATION_M}
 export const ISOLATED_DRIBBLE_AUDIT_VERSION='me-628-d01-native-touches-audit-v1';
 const freeze=Object.freeze;
 const finite=Number.isFinite;
+// Observational categories, not diagnoses of intent or interventions.
+// A Rapier START is solver-level contact, even without a Carry impulse.
+const soloNoActionReasons=freeze([
+ 'simultaneousFootStarts','otherFootAlreadyActive',
+ 'exclusiveActorStartNoImpulse','unreleasedSingleFootStart'
+]);
+const soloCarryPhases=freeze(['control','moderate','sprint']);
+const zeroReasons=()=>Object.fromEntries(soloNoActionReasons.map(k=>[k,0]));
+const zeroPhase=()=>({nativeShoeStarts:0,appliedCarry:0,withoutCarry:0});
 export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}={}){
  if(!['home','away'].includes(side)||!Number.isSafeInteger(variantIndex)||
     variantIndex<0||variantIndex>29||typeof solo!=='boolean')
@@ -29,6 +38,21 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
  let nonActionStartsWithNativeForceEvents=0,nonActionStartsWithSolverContacts=0,
   nonActionStartsWithGeometricContacts=0,peakNonActionWorldStepDelta=0;
  let largestNonActionWorldStepDeltaWitness=null;
+ // Same-tick original actor START/END and per-shoe START/END are distinct.
+ // Track completed releases so a later shoe start cannot be misidentified as
+ // an actor re-contact while the opposite real shoe remained planted.
+ const soloNoActionBreakdown=zeroReasons();
+ const soloNoActionByPhase=Object.fromEntries(soloCarryPhases.map(x=>[
+  x,zeroReasons()
+ ]));
+ const soloStartsByPhase=Object.fromEntries(soloCarryPhases.map(x=>[
+  x,zeroPhase()
+ ]));
+ let priorSoloPhysicalActive=freeze([]),nativeActorContactOnsets=0,
+  nativeActorFullReleaseEvents=0,nativeActorStartsAfterFullRelease=0,
+  lastNativeFullReleaseTick=null,releaseToActorStartGapTotal=0,
+  releaseToActorStartGapMax=0;
+ const releaseToActorStartGapWitnesses=[];
  let latest=null;
  function observe({physics,playerFrame,foot,action,physicalBodies=null}={}){
   if(physics?.tick!==tick+1||playerFrame?.version!==PLAYER_VERSION||
@@ -57,6 +81,40 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
        physicalSoloFeet.active.length===1)))
    throw new TypeError('Solo requires independently observed native Rapier left/right shoes');
   if(physicalSoloFeet){
+   const phase=playerFrame.soloCarryPhase?.phase;
+   if(!soloCarryPhases.includes(phase))
+    throw new TypeError('Solo contact phase must be canonical original mover phase');
+   // The original actor-level gate deliberately observes a transition from
+   // ZERO active shoes to at least one. A second shoe START during an
+   // existing overlap is not a new actor START and is never synthesized.
+   const actorNewStart=foot.started.includes(actor);
+   const actorFullRelease=foot.ended.includes(actor);
+   const previousCount=priorSoloPhysicalActive.length;
+   const currentCount=physicalSoloFeet.active.length;
+   if(actorNewStart!==(previousCount===0&&currentCount>0)||
+      actorFullRelease!==(previousCount>0&&currentCount===0))
+    throw new TypeError('Native actor contact transitions must match per-foot release source');
+   if(actorNewStart){
+    nativeActorContactOnsets++;
+    if(lastNativeFullReleaseTick!==null){
+     const gap=physics.tick-lastNativeFullReleaseTick;
+     if(!Number.isSafeInteger(gap)||gap<=0)
+      throw new TypeError('An actor recontact must follow a genuine full release');
+     nativeActorStartsAfterFullRelease++;
+     releaseToActorStartGapTotal+=gap;
+     releaseToActorStartGapMax=Math.max(releaseToActorStartGapMax,gap);
+     releaseToActorStartGapWitnesses.push(freeze({
+      releaseTick:lastNativeFullReleaseTick,startTick:physics.tick,
+      emptyToActorStartGapTicks:gap,phase
+     }));
+     if(releaseToActorStartGapWitnesses.length>16)
+      releaseToActorStartGapWitnesses.shift();
+    }
+   }
+   if(actorFullRelease){
+    nativeActorFullReleaseEvents++;
+    lastNativeFullReleaseTick=physics.tick;
+   }
    const dynamics=physicalSoloFeet.dynamics;
    if(!dynamics||
       dynamics.source!=='native-rapier-world-step-before-carry-action'||
@@ -92,10 +150,24 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
     // Even an unconverted collision can influence the Rapier ball solver.
     const footPhysics=dynamics.feet[footSide];
     const worldDelta=dynamics.worldStepBallVelocityDeltaMps.magnitude;
+    const reason=converted?null:
+     physicalSoloFeet.started.length===2?'simultaneousFootStarts':
+     physicalSoloFeet.active.some(f=>f!==footSide)?
+      'otherFootAlreadyActive':
+     actorNewStart?'exclusiveActorStartNoImpulse':
+      'unreleasedSingleFootStart';
+    const phaseSource=soloStartsByPhase[phase];
+    phaseSource.nativeShoeStarts++;
+    if(converted)phaseSource.appliedCarry++;
+    else phaseSource.withoutCarry++;
     if(!converted){
+     soloNoActionBreakdown[reason]++;
+     soloNoActionByPhase[phase][reason]++;
      nativeNonActionStarts.push({tick:physics.tick,
-      foot:footSide,otherFootActive:physicalSoloFeet.active.some(f=>
-       f!==footSide)});
+      foot:footSide,reason,phase,
+      priorShoeActive:freeze([...priorSoloPhysicalActive]),
+      nativeActorStart:actorNewStart,
+      otherFootActive:physicalSoloFeet.active.some(f=>f!==footSide)});
      if(footPhysics.nativeForceEventCount>0)
       nonActionStartsWithNativeForceEvents++;
      if(footPhysics.solverContacts>0)
@@ -116,6 +188,9 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
     }
     nativeContactEvidence.push(freeze({tick:physics.tick,foot:footSide,
      nativeStart:true,appliedCarryImpulse:converted,
+     classification:reason??'native-exclusive-actor-carry',
+     observedCarryPhase:phase,nativeActorStart:actorNewStart,
+     priorShoeActive:freeze([...priorSoloPhysicalActive]),
      concurrentOtherShoe:physicalSoloFeet.active.some(f=>f!==footSide),
      nativeForceEventCount:footPhysics.nativeForceEventCount,
      totalReportedForceMagnitudeN:footPhysics.totalReportedForceMagnitudeN,
@@ -129,6 +204,7 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
    }
    for(const footSide of physicalSoloFeet.active)contactDutyTicks[footSide]++;
    if(physicalSoloFeet.active.length===2)bothFeetTouchTicks++;
+   priorSoloPhysicalActive=freeze([...physicalSoloFeet.active]);
   }
   const p=playerFrame.players.find(x=>x.id===actor),
    d=solo?null:playerFrame.players.find(x=>x.id===opponent);
@@ -233,6 +309,23 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
     nonActionStartsWithNativeForceEvents,
     nonActionStartsWithSolverContacts,
     nonActionStartsWithGeometricContacts,
+    // Counts are per genuine shoe START, not per actor, contact frame or
+    // inferred intention. Only source-observed arrangements are asserted.
+    nonActionStartReasons:freeze({...soloNoActionBreakdown}),
+    nonActionReasonsByPhase:freeze(Object.fromEntries(
+     soloCarryPhases.map(phase=>[phase,
+      freeze({...soloNoActionByPhase[phase]})]))),
+    nativeStartsByPhase:freeze(Object.fromEntries(
+     soloCarryPhases.map(phase=>[phase,
+      freeze({...soloStartsByPhase[phase]})]))),
+    nativeActorContactOnsets,nativeActorFullReleaseEvents,
+    nativeActorStartsAfterFullRelease,
+    releaseToActorStartGapMaxTicks:releaseToActorStartGapMax,
+    releaseToActorStartGapMeanTicks:nativeActorStartsAfterFullRelease?
+     releaseToActorStartGapTotal/nativeActorStartsAfterFullRelease:null,
+    recentFullReleaseToActorStartGaps:freeze([
+     ...releaseToActorStartGapWitnesses
+    ]),
     peakNonActionWorldStepBallDeltaMps:peakNonActionWorldStepDelta,
     peakNonActionWorldStepBallDeltaWitness:largestNonActionWorldStepDeltaWitness,
     nativeLeftShoeContactTicks:contactDutyTicks.left,
