@@ -160,8 +160,8 @@ export function createEngine(RAPIER, input = {}, {
        !diagnosticAutonomousFixtureActionEnabled||
        !diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Only isolated solo Carry counterfactual shoe widths 0.9/1/1.1');
-  if(![0.9,1,1.1].includes(diagnosticSoloShoeLengthScale)||
-     ![0.85,1,1.15].includes(diagnosticSoloRecoveryStepScale)||
+  if(![0.9,1,1.05,1.075,1.1].includes(diagnosticSoloShoeLengthScale)||
+     ![0.85,0.925,1,1.15].includes(diagnosticSoloRecoveryStepScale)||
      ((diagnosticSoloShoeLengthScale!==1||
        diagnosticSoloRecoveryStepScale!==1)&&
       (diagnosticSmallSidedSituation!=='carry-solo'||

@@ -48,8 +48,8 @@ export function createControlledActionLab(RAPIER,id,{
     (id!=='carry-solo'&&soloShoeWidthScale!==1)||
     (soloShoeWidthScale!==1&&!bodyGuardEnabled))
   throw new TypeError('Counterfactual widths require solo Carry with native body guard');
- if(![0.9,1,1.1].includes(soloShoeLengthScale)||
-    ![0.85,1,1.15].includes(soloRecoveryStepScale)||
+ if(![0.9,1,1.05,1.075,1.1].includes(soloShoeLengthScale)||
+    ![0.85,0.925,1,1.15].includes(soloRecoveryStepScale)||
     ((soloShoeLengthScale!==1||soloRecoveryStepScale!==1)&&
      (id!=='carry-solo'||!bodyGuardEnabled)))
   throw new TypeError('Longitudinal native shoe study requires guarded solo Carry');

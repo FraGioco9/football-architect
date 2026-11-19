@@ -74,7 +74,7 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 export function soloCarryTwoFootPositions(player,gait=null,{
  recoveryStepScale=1
 }={}){
- if(![0.85,1,1.15].includes(recoveryStepScale)||
+ if(![0.85,0.925,1,1.15].includes(recoveryStepScale)||
     !player||![player.x,player.y,player.facingRad].every(Number.isFinite)||
     (gait!==null&&(!Number.isFinite(gait.phaseRad)||
      !Number.isFinite(gait.observedAheadM)||!Number.isFinite(gait.observedLateralM)||
@@ -195,8 +195,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  if(![0.9,1,1.1].includes(soloShoeWidthScale)||
     (soloShoeWidthScale!==1&&!soloCarry))
   throw new TypeError('DEV counterfactual shoe widths require genuine solo Carry');
- if(![0.9,1,1.1].includes(soloShoeLengthScale)||
-    ![0.85,1,1.15].includes(soloRecoveryStepScale)||
+ if(![0.9,1,1.05,1.075,1.1].includes(soloShoeLengthScale)||
+    ![0.85,0.925,1,1.15].includes(soloRecoveryStepScale)||
     ((soloShoeLengthScale!==1||soloRecoveryStepScale!==1)&&!soloCarry))
   throw new TypeError('DEV longitudinal toe/recovery variants require genuine solo Carry');
  const soloShoeHalfWidthM=FOOT_CONTACT_HALF_WIDTH_M*soloShoeWidthScale;
