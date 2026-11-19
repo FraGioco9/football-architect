@@ -72,7 +72,7 @@ try{
   ['it',17,'roster',390,'?view=stats&competition=domestic'],
   ['it',17,'roster',1440,'?view=stats&competition=international'],
   ['it',40,'fixtures',390],
-  ['eng',33,'stats',390],['br',40,'history',390]
+  ['eng',33,'records',390],['br',40,'history',390]
  ]){
   const page=await browser.newPage({viewport:{width,height:900}});
   const catalogPath='/clubs/_shared/identity.json';

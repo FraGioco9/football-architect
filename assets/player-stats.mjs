@@ -65,6 +65,7 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
  const note=host.querySelector('[data-detail-stats-note]');
  const expanded=new Set();
  let status='loading',payload=null,reading=null,activeHeader=null,tooltip=null,closeTimer=null;
+ let lastRecordTarget=null;
  const words=()=>statsWords[locale()]||statsWords.en;
  const el=(tag,txt='',cls='')=>{
   const node=document.createElement(tag);node.textContent=txt===null?'':String(txt);
@@ -202,6 +203,7 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
    const groups=available?season.data.competitions:[],expandable=groups.length>0;
    const summary=row();summary.className='app-player-stats-season-row';
    summary.dataset.playerStatsSeason=String(season.season);
+   summary.id='player-stats-season-'+season.season;
    summary.dataset.playerStatsSummary=String(season.season);
    const heading=el('th','','app-player-stats-season');heading.scope='row';
    if(expandable){
@@ -287,7 +289,15 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
   }
   resultRows.unshift(careerRow);
   tbody.replaceChildren(...resultRows);
+  const targetMatch=/^#player-stats-season-([1-9][0-9]*)$/.exec(window.location?.hash||'');
+  const target=targetMatch&&tbody.querySelector('[data-player-stats-season="'+targetMatch[1]+'"]');
+  if(target&&new URLSearchParams(window.location?.search||'').get('view')==='stats')
+   expanded.add(Number(targetMatch[1]));
   tableRoles();syncDisclosures();
+  if(target&&new URLSearchParams(window.location?.search||'').get('view')==='stats'&&lastRecordTarget!==targetMatch[0]){
+   lastRecordTarget=targetMatch[0];
+   target.scrollIntoView({block:'center'});
+  }
   if(focused!==null&&focused!==undefined)
    tbody.querySelector('[data-stats-toggle="'+focused+'"]')?.focus({preventScroll:true});
  }
@@ -319,6 +329,7 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
  host.addEventListener('keydown',event=>{if(event.key==='Escape')hideTooltip();});
  document.addEventListener('scroll',hideTooltip,true);
  window.addEventListener('resize',()=>{hideTooltip();headerControls();});
+ window.addEventListener('hashchange',()=>{lastRecordTarget=null;if(status==='ready')render();});
  return {render,load(){
   if(status==='ready'||reading)return reading??Promise.resolve();
   render(); // Localize header + mobile skeleton labels while the read is pending.

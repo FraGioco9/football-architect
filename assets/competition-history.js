@@ -46,7 +46,7 @@
 (() => {
   "use strict";
   const panel=document.getElementById("competition-panel-history");
-  if(!panel)return;
+  if(!panel&&!document.getElementById("club-page"))return;
   const competitionId=window.faCompetitionContext?.definition.id||document.querySelector('meta[name="fa-competition"]')?.content;
   const fields={
     seasonGoals:["goals",true],seasonAssists:["assists",true],
@@ -152,9 +152,9 @@
     const clubs=context?.seasonData?.participants||(context?.definition.category==='domestic'?window.faCompetitionDivision?.clubs:[])||[];
     return clubs.find(club=>club.countryId+'-'+club.clubId===id)?.primaryName||null;
   }
-  function clubLink(id){
+  function clubLink(id,name=clubName(id)){
     const [country,number]=id.split("-");
-    const link=element("a","app-world-standing-club-link",clubName(id)||id);
+    const link=element("a","app-world-standing-club-link",name||id);
     link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:country.toLowerCase(),id:number,view:"overview"});
     return link;
   }
@@ -178,11 +178,20 @@
     image.src="/assets/players/portraits/"+id+".webp";
     slot.append(image);return slot;
   }
+  function responsivePlayerName(node){
+    const full=node.textContent.trim();
+    const parts=/^(\S+)\s+(.+)$/u.exec(full);
+    if(!parts||/^\p{L}\.$/u.test(parts[1]))return node;
+    const short=Array.from(parts[1])[0]+". "+parts[2];
+    node.setAttribute("aria-label",full);
+    node.replaceChildren(element("span","fa-player-full-name",full),element("span","fa-player-short-name",short));
+    return node;
+  }
   function playerLabel(holder,tag,cls){
-    if(!/^[1-9]\d*$/.test(holder.id))return element(tag,cls,holder.name);
+    if(!/^[1-9]\d*$/.test(holder.id))return responsivePlayerName(element(tag,cls,holder.name));
     const link=element("a",(cls+" app-world-standing-club-link").trim(),holder.name);
     link.href=window.faRoutesRegistry.buildRoute({kind:"player",id:Number(holder.id)});
-    return link;
+    return responsivePlayerName(link);
   }
   function render(){
     const context=window.faCompetitionContext;
@@ -338,8 +347,8 @@
   }
   window.faHistoryDialog={show:showDialog,close:closeDialog,header:dialogHeader,openClubs:openClubDialog};
   function close(){if(dialog)closeDialog(dialog);}
-  function open(metric,source){
-    const record=results?.[metric];if(!record)return;
+  function openPlayers(record,source,{showClub=true,seasonHref=null}={}){
+    if(!record?.holders?.length)return;
     if(!dialog){
       dialog=element("dialog","app-history-player-dialog");
       dialog.addEventListener("cancel",event=>{event.preventDefault();close();});
@@ -350,7 +359,7 @@
       });
       document.body.append(dialog);
     }
-    const card=source.closest("[data-history-player-record]");
+    const card=source.closest("article")||source.closest("[data-history-player-record]");
     const title=card?.querySelector("h5")?.textContent||"";
     dialog.replaceChildren();
     const {header,heading,close:exit}=dialogHeader(title);
@@ -363,6 +372,7 @@
       element("span","",record.holders.length+" "+locale().holders));
     dialog.append(summary);
     const list=element("ol","app-history-player-holders");
+    const hasNodes=node=>typeof node.hasChildNodes==="function"?node.hasChildNodes():node.children.length>0;
     for(const holder of record.holders){
       const li=element("li","");
       const identity=element("div","app-history-dialog-player");
@@ -376,13 +386,18 @@
       const clubs=element("ul","app-history-player-clubs");
       for(const [clubId,seasons] of groups){
         const line=element("li","");
-        line.append(clubLink(clubId));
-        for(const season of [...seasons].sort((a,b)=>a-b)){
-          line.append(document.createTextNode(" · "),seasonLink(season));
+        if(showClub)line.append(clubLink(clubId));
+        for(const season of [...seasons].filter(Number.isSafeInteger).sort((a,b)=>a-b)){
+          if(hasNodes(line))line.append(document.createTextNode(" · "));
+          if(showClub)line.append(seasonLink(season));
+          else if(typeof seasonHref==="function"){
+            const link=element("a","app-world-standing-club-link app-history-season app-records-season-link",locale().season+" "+season);
+            link.href=seasonHref(holder.id,season);line.append(link);
+          }else line.append(locale().season+" "+season);
         }
-        clubs.append(line);
+        if(hasNodes(line))clubs.append(line);
       }
-      info.append(clubs);
+      if(hasNodes(clubs))info.append(clubs);
       identity.append(portrait(holder.id),info);
       li.append(identity);list.append(li);
     }
@@ -392,9 +407,11 @@
     if(lockedScroll){oldOverflow=lockedScroll.style.overflow;lockedScroll.style.overflow="hidden";}
     showDialog(dialog);exit.focus({preventScroll:true});
   }
+  window.faHistoryPlayerUI={portrait,openPlayers,responsivePlayerName};
+  if(!panel)return;
   panel.addEventListener("click",event=>{
     const trigger=event.target.closest("[data-history-detail]");
-    if(trigger&&panel.contains(trigger))open(trigger.dataset.historyDetail,trigger);
+    if(trigger&&panel.contains(trigger))openPlayers(results?.[trigger.dataset.historyDetail],trigger);
   });
   const previous=window.faSyncHistoryRecords;
   window.faSyncHistoryRecords=()=>{previous?.();render();};

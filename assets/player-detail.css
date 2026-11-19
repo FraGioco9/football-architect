@@ -542,3 +542,8 @@ html:lang(fr) .app-player-matches-table{--app-player-matches-mobile-result:"Rés
  .app-player-matches-row[data-player-match-href]{transition:none}
  .app-player-matches-loading .club-fp-bar{animation:none}
 }
+
+/* Highlight the verified season reached via Club Records without layout shift. */
+.app-player-stats-table .app-player-stats-season-row:target{
+ background:color-mix(in srgb,var(--focus) 12%,var(--surface-raised))
+}

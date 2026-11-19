@@ -26,6 +26,10 @@
    const params=new URLSearchParams(location.search);
    params.delete('view');
    if(['overview','history'].includes(selected.view)){params.delete('season');params.delete('matchday');}
+   if(selected.view==='records'){
+    params.delete('matchday');params.delete('competition');
+    if(!['season','verified','all-time'].includes(params.get('scope')))params.delete('scope');
+   }
    const query=params.size?'?'+params:'';
    if(query!==location.search)history.replaceState(null,'',location.pathname+query+location.hash);
   }
@@ -102,6 +106,7 @@
   // One accessible disclosure per completed season; no competition filter.
   // Expanded rows persist on language change and world/source redraws.
   const openHistorySeasons=new Set();
+  let lastHistoryTarget=null;
   const syncHistoryRows=()=>{
    // On narrow screens CSS displays native table rows as grids. Explicit roles
    // retain the table/row/header structure for Safari VoiceOver and other AT.
@@ -244,6 +249,10 @@
    reuseCrests(host,staging,true);
    for(const child of [...host.childNodes])if(child!==header&&child!==tabs&&child!==retainedFixtures)child.remove();
    for(const child of [...staging.childNodes])if(child!==stagedHeader&&child!==stagedTabs&&!(retainedFixtures&&child.matches?.('.club-fixtures')))host.append(child);
+   for(const link of host.querySelectorAll('[data-club-player-card] a.app-history-player-name'))
+    window.faHistoryPlayerUI.responsivePlayerName(link);
+   for(const slot of host.querySelectorAll('[data-club-record-portrait]'))
+    slot.replaceWith(window.faHistoryPlayerUI.portrait(slot.dataset.clubRecordPortrait));
    if(Number.isFinite(historyTableScroll)){const tableWrap=host.querySelector('.club-history-table-wrap');if(tableWrap)tableWrap.scrollLeft=historyTableScroll;}
    if(Number.isFinite(rosterTableScroll)){const rosterWrap=host.querySelector('.club-roster-table-scroll');if(rosterWrap)rosterWrap.scrollLeft=rosterTableScroll;}
    rosterMenuEvents?.abort();
@@ -276,6 +285,19 @@
     rosterTabs.addEventListener('scroll',syncRosterTabEdges,{passive:true});
    }
    syncHistoryRows();
+   const historyAnchor=/^#club-history-season-([1-9][0-9]*)$/.exec(location.hash);
+   if(selected.view==='history'&&historyAnchor&&historySnapshot.source==='authoritative'){
+    const season=historyAnchor[1];
+    const target=host.querySelector('[data-club-history-summary="'+season+'"]');
+    if(target){
+     if(!openHistorySeasons.has(season)){openHistorySeasons.add(season);syncHistoryRows();}
+     const key=location.pathname+location.hash;
+     if(lastHistoryTarget!==key){
+      lastHistoryTarget=key;
+      target.scrollIntoView({block:'center'});
+     }
+    }
+   }
    host.dataset.clubBase=selected.base;
    if(tabs){
     const key='football-architect:club-tabs-scroll:'+selected.base;
@@ -399,6 +421,29 @@
   });
   await import('/assets/competition-tabs.js');
   paint();
+  host.addEventListener('click',event=>{
+   if(selected.view!=='records')return;
+   const trigger=event.target.closest?.('[data-club-record-detail]');
+   if(trigger){
+    const scope=host.querySelector('[data-record-scope][aria-pressed="true"]').dataset.recordScope;
+    const record=window.faClubRecords.select(historySnapshot.seasons,scope).players.find(p=>p.key===trigger.dataset.clubRecordDetail);
+    if(record){
+     window.faHistoryPlayerUI.openPlayers({value:record.value,holders:window.faClubRecords.playerHolders(record.sources,clubKey)},trigger,{
+       showClub:false,seasonHref:(id,season)=>'/players/'+id+'?view=stats#player-stats-season-'+season
+      });
+    }
+    return;
+   }
+   const button=event.target.closest?.('[data-record-scope]');
+   if(!button||event.defaultPrevented||button.getAttribute('aria-pressed')==='true')return;
+   const url=new URL(location.href);
+   if(button.dataset.recordScope==='verified')url.searchParams.set('scope','all-time');
+   else url.searchParams.delete('scope');
+   url.searchParams.delete('season');
+   history.pushState(null,'',url);
+   paint(true);
+   host.querySelector('[data-record-scope][aria-pressed="true"]')?.focus({preventScroll:true});
+  });
   // Reuse the loaded club snapshot for category switches without another request.
   host.addEventListener('click',event=>{
    const control=event.target.closest?.('a[data-club-roster-view]');
@@ -642,7 +687,7 @@
     const state=window.faWorldState;if(!state)throw Error('World state unavailable');
     let epoch=0,abort=null,lastKey=null;
     const same=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
-    const publish=value=>{historySnapshot=value;if(selected.view==='history')paint(true)};
+    const publish=value=>{historySnapshot=value;if(['history','records'].includes(selected.view))paint(true)};
     // DEV-only preview arrives from the protected local client, never through
     // the public HTTP reader. Validate its provenance and current source/day.
     const devHistory=value=>{
@@ -662,7 +707,7 @@
     const refresh=()=>{
      // Switching tabs does not invalidate a verified world snapshot. Finish
      // in-flight History reads and reuse them when returning to this tab.
-     if(selected.view!=='history')return;
+     if(!['history','records'].includes(selected.view))return;
      const current=state.get();
      if(current.source==='dev'){
       abort?.abort();abort=null;epoch++;lastKey=null;
@@ -710,7 +755,7 @@
     window.addEventListener('fa:source-change',()=>{lastKey=null;refresh()});
     window.addEventListener('pagehide',()=>{abort?.abort();epoch++});
     refresh();
-   }catch{historySnapshot={source:'unavailable'};if(selected.view==='history')paint(true)}
+   }catch{historySnapshot={source:'unavailable'};if(['history','records'].includes(selected.view))paint(true)}
   };
   void enableClubHistory();
   const fixtureModule=await import('/assets/club-fixtures-controller.mjs');
@@ -726,11 +771,17 @@
    renderedLanguage=nextLanguage;
    paint(false,true);
   }).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+  window.addEventListener('hashchange',()=>{if(selected.view==='history')paint(true);});
   window.addEventListener('popstate',()=>{
    const next=model.route(location.pathname);
    if(next&&next.base===selected.base){
     if(identityOnly&&next.view==='overview'){
      location.replace(location.href);return;
+    }
+    if(selected.view==='records'&&next.view==='records'){
+     paint(true);
+     host.querySelector('[data-record-scope][aria-pressed="true"]')?.focus({preventScroll:true});
+     return;
     }
     const queryOnly=selected.view==='roster'&&next.view==='roster';
     selected=next;paint(true);refreshClubHistory();refreshClubOverview();

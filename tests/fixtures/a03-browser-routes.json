@@ -235,8 +235,8 @@
       "expected": "/clubs/br/40/history?x=1#anchor"
     },
     {
-      "input": "/clubs/it/1/stats?view=history&season=3&matchday=7&x=1#anchor",
-      "expected": "/clubs/it/1/stats?season=3&matchday=7&x=1#anchor"
+      "input": "/clubs/it/1/records?view=history&season=3&matchday=7&x=1#anchor",
+      "expected": "/clubs/it/1/records?season=3&x=1#anchor"
     }
   ]
 }
