@@ -163,30 +163,31 @@
   const homeStadium=!isNeutral?publishedStadium(homeClub?.stadiumName):'';
   write('[data-match-overview="stadium"]',data?(publishedStadium(data.venue)||homeStadium):'');
   write('[data-match-overview="status"]',data?(tr.statusNames[data.status]||''):'');
- const awardSlot=find('[data-match-overview="mvp"]');
- if(awardSlot){
-  awardSlot.replaceChildren();
-  const proof=data?.status==='completed'&&matchStatistics?.provenance?.receiptHash===data.provenance?.receiptHash
-   ?matchStatistics.statistics?.mvp:null;
-  if(proof?.status==='none')awardSlot.textContent=tr.mvpNone;
-  else if(proof?.status==='unavailable')awardSlot.textContent=tr.mvpUnknown;
-  else if(proof?.status==='awarded'&&Number.isSafeInteger(proof.playerId)&&proof.playerId>0&&
-   ['home','away'].includes(proof.side)&&clubKey(proof.clubId)){
-   const participants=matchStatistics.statistics?.[proof.side]?.players;
-   const recorded=Array.isArray(participants)?participants.find(p=>p.playerId===proof.playerId):null;
-   const matchClub=proof.side==='home'?data.homeParticipant?.clubId:data.awayParticipant?.clubId;
-   if(recorded&&proof.clubId===matchClub){
-    const player=document.createElement('a');player.href=href('/players/'+proof.playerId);
-    player.textContent=recorded.name||tr.player+' #'+proof.playerId;
-    player.className='app-match-mvp-link';awardSlot.append(player);
-    const club=clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===proof.clubId);
-    const team=document.createElement('a');
-    team.href=href('/clubs/'+proof.clubId.split('-')[0].toLowerCase()+'/'+Number(proof.clubId.split('-')[1])+'/overview');
-    team.textContent=club?.primaryName||proof.clubId;team.className='app-match-mvp-link';
-    awardSlot.append(document.createTextNode(' · '),team);
+  const awardSlot=find('[data-match-overview="mvp"]');
+  if(awardSlot){
+   awardSlot.replaceChildren();
+   const receiptHash=data?.provenance?.receiptHash;
+   const proof=data?.status==='completed'&&receiptHash&&matchStatistics?.provenance?.receiptHash===receiptHash
+    ?matchStatistics.statistics?.mvp:null;
+   if(proof?.status==='none')awardSlot.textContent=tr.mvpNone;
+   else if(proof?.status==='unavailable'||(data?.status==='completed'&&!receiptHash))awardSlot.textContent=tr.mvpUnknown;
+   else if(proof?.status==='awarded'&&Number.isSafeInteger(proof.playerId)&&proof.playerId>0&&
+    ['home','away'].includes(proof.side)&&clubKey(proof.clubId)){
+    const participants=matchStatistics.statistics?.[proof.side]?.players;
+    const recorded=Array.isArray(participants)?participants.find(p=>p.playerId===proof.playerId):null;
+    const matchClub=proof.side==='home'?data.homeParticipant?.clubId:data.awayParticipant?.clubId;
+    if(recorded&&proof.clubId===matchClub){
+     const player=document.createElement('a');player.href=href('/players/'+proof.playerId);
+     player.textContent=recorded.name||tr.player+' #'+proof.playerId;
+     player.className='app-match-mvp-link';awardSlot.append(player);
+     const club=clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===proof.clubId);
+     const team=document.createElement('a');
+     team.href=href('/clubs/'+proof.clubId.split('-')[0].toLowerCase()+'/'+Number(proof.clubId.split('-')[1])+'/overview');
+     team.textContent=club?.primaryName||proof.clubId;team.className='app-match-mvp-link';
+     awardSlot.append(document.createTextNode(' · '),team);
+    }
    }
   }
- }
 
   const panel=find('[data-match-overview-panel]');
   if(panel)panel.setAttribute('aria-label',tr.overview);
