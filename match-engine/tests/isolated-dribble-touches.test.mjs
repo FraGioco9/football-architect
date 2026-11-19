@@ -464,6 +464,13 @@ test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
      'exclusiveActorStartNoImpulse','unreleasedSingleFootStart',
      'native-exclusive-actor-carry'].includes(x.classification)&&
     Object.isFrozen(x.priorShoeActive)&&
+    Object.isFrozen(x.nativeShoeEnds)&&
+    Object.isFrozen(x.nativeShoeStarts)&&
+    (x.classification!=='unreleasedSingleFootStart'?
+     x.unreleasedHandoffKind===null:
+     ['oppositeFootEndStartSameTick','sameFootEndRestartSameTick',
+      'multipleFootEndStartSameTick',
+      'startWithoutMatchingSameTickEnd'].includes(x.unreleasedHandoffKind))&&
     typeof x.concurrentOtherShoe==='boolean'&&
     Number.isFinite(x.worldStepBallVelocityDeltaMps)&&
     Number.isFinite(x.peakReportedForceMagnitudeN)&&
@@ -483,6 +490,31 @@ test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
    const totalNonAction=Object.values(reasons).reduce((n,x)=>n+x,0);
    assert.equal(totalNonAction,evidence.nativeShoeStartsWithoutCarryImpulse);
    assert.ok(Object.isFrozen(reasons));
+   const handoffs=evidence.unreleasedSingleFootEndStartKinds;
+   assert.ok(Object.isFrozen(handoffs));
+   assert.equal(Object.values(handoffs).reduce((n,x)=>n+x,0),
+    reasons.unreleasedSingleFootStart,
+    'Every unreleased native shoe START has exactly one event arrangement');
+   assert.ok(evidence.recentUnreleasedSingleFootEvents.length<=16);
+   for(const ev of evidence.recentUnreleasedSingleFootEvents){
+    assert.equal(ev.originalRapierEvent,true);
+    assert.equal(ev.causalAttribution,false);
+    assert.equal(ev.subTickOrderingKnown,false);
+    assert.ok(Object.isFrozen(ev.priorActive));
+    assert.ok(Object.isFrozen(ev.nativeEnds));
+    assert.ok(Object.isFrozen(ev.nativeStarts));
+    assert.ok(Object.isFrozen(ev.afterActive));
+    assert.ok(ev.nativeStarts.includes(ev.foot));
+    assert.ok(Number.isInteger(ev.solverContacts));
+    assert.ok(Number.isInteger(ev.nativeForceEventCount));
+    assert.equal(handoffs[ev.kind]>=1,true);
+    if(ev.kind==='oppositeFootEndStartSameTick'){
+     const other=ev.foot==='left'?'right':'left';
+     assert.ok(ev.priorActive.includes(other));
+     assert.ok(ev.nativeEnds.includes(other));
+     assert.ok(!ev.priorActive.includes(ev.foot));
+    }
+   }
    assert.ok(evidence.nativeActorContactOnsets>=actions);
    assert.ok(evidence.nativeActorContactOnsets<=nativeFootStarts);
    assert.ok(evidence.nativeActorFullReleaseEvents<=
@@ -500,6 +532,8 @@ test('#628 solo two real Rapier colliders: exclusive per-foot actions only',
      starts.withoutCarry);
     assert.equal(starts.nativeShoeStarts,
      starts.appliedCarry+starts.withoutCarry);
+    assert.equal(Object.values(evidence.unreleasedHandoffKindsByPhase[phase])
+     .reduce((n,x)=>n+x,0),r.unreleasedSingleFootStart);
     return starts;
    });
    assert.equal(phaseCounts.reduce((n,x)=>n+x.nativeShoeStarts,0),

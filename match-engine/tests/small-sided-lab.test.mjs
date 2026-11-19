@@ -799,6 +799,9 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
   startReasonTotals:{
    simultaneousFootStarts:0,otherFootAlreadyActive:0,
    exclusiveActorStartNoImpulse:0,unreleasedSingleFootStart:0
+  },handoffTotals:{
+   oppositeFootEndStartSameTick:0,sameFootEndRestartSameTick:0,
+   multipleFootEndStartSameTick:0,startWithoutMatchingSameTickEnd:0
   },actorOnsetTotal:0,completeReleaseTotal:0,releaseGapTotal:0,
   maxActualObservedGaitFrequencyHz:0,sprintPhaseCount:0
  });
@@ -887,6 +890,13 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
     // START and each phase with the actual original action authority.
     assert.equal(Object.values(a.nonActionStartReasons)
      .reduce((sum,n)=>sum+n,0),end.nonAction);
+    assert.equal(Object.values(a.unreleasedSingleFootEndStartKinds)
+     .reduce((sum,n)=>sum+n,0),
+     a.nonActionStartReasons.unreleasedSingleFootStart);
+    for(const phase of ['control','moderate','sprint'])
+     assert.equal(Object.values(a.unreleasedHandoffKindsByPhase[phase])
+      .reduce((sum,n)=>sum+n,0),
+      a.nonActionReasonsByPhase[phase].unreleasedSingleFootStart);
     assert.equal(a.nativeActorContactOnsets>=end.actions,true);
     assert.equal(a.nativeActorFullReleaseEvents<=
      a.nativeActorContactOnsets,true);
@@ -934,6 +944,8 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
     st.alternations+=a.verifiedFootAlternations;
     for(const reason of Object.keys(st.startReasonTotals))
      st.startReasonTotals[reason]+=a.nonActionStartReasons[reason];
+    for(const kind of Object.keys(st.handoffTotals))
+     st.handoffTotals[kind]+=a.unreleasedSingleFootEndStartKinds[kind];
     st.actorOnsetTotal+=a.nativeActorContactOnsets;
     st.completeReleaseTotal+=a.nativeActorFullReleaseEvents;
     st.releaseGapTotal+=a.nativeActorStartsAfterFullRelease;
@@ -969,6 +981,10 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
    meanNonActionReasons:Object.fromEntries(
     Object.entries(st.startReasonTotals).map(([reason,total])=>[
      reason,total/n
+    ])),
+   meanUnreleasedSingleFootEndStartKinds:Object.fromEntries(
+    Object.entries(st.handoffTotals).map(([kind,total])=>[
+     kind,total/n
     ])),
    meanNativeActorContactOnsets:st.actorOnsetTotal/n,
    meanCompleteNativeReleases:st.completeReleaseTotal/n,
@@ -1016,6 +1032,9 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
   assert.ok(s.meanNonActionWithForceEvent<=s.meanNonActionStarts6s);
   assert.ok(Math.abs(Object.values(s.meanNonActionReasons)
    .reduce((sum,n)=>sum+n,0)-s.meanNonActionStarts6s)<1e-8);
+  assert.ok(Math.abs(Object.values(s.meanUnreleasedSingleFootEndStartKinds)
+   .reduce((sum,n)=>sum+n,0)-
+   s.meanNonActionReasons.unreleasedSingleFootStart)<1e-8);
   assert.ok(s.meanNativeActorContactOnsets>=s.meanCarryActions6s);
   assert.ok(s.meanCompleteNativeReleases<=s.meanNativeActorContactOnsets);
   assert.ok(s.earlyPhases.includes('sprint'));

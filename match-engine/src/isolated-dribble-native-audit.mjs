@@ -15,6 +15,16 @@ const soloNoActionReasons=freeze([
  'exclusiveActorStartNoImpulse','unreleasedSingleFootStart'
 ]);
 const soloCarryPhases=freeze(['control','moderate','sprint']);
+// Observed discrete-tick END/START arrangements, not a sub-tick ordering
+// or proof that both shoes were out of contact between the two events.
+const singleFootHandoffKinds=freeze([
+ 'oppositeFootEndStartSameTick',
+ 'sameFootEndRestartSameTick',
+ 'multipleFootEndStartSameTick',
+ 'startWithoutMatchingSameTickEnd'
+]);
+const zeroHandoffs=()=>Object.fromEntries(
+ singleFootHandoffKinds.map(k=>[k,0]));
 const zeroReasons=()=>Object.fromEntries(soloNoActionReasons.map(k=>[k,0]));
 const zeroPhase=()=>({nativeShoeStarts:0,appliedCarry:0,withoutCarry:0});
 export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}={}){
@@ -48,6 +58,10 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
  const soloStartsByPhase=Object.fromEntries(soloCarryPhases.map(x=>[
   x,zeroPhase()
  ]));
+ const unreleasedHandoffKinds=zeroHandoffs();
+ const unreleasedHandoffsByPhase=Object.fromEntries(
+  soloCarryPhases.map(x=>[x,zeroHandoffs()]));
+ const recentUnreleasedHandoffs=[];
  let priorSoloPhysicalActive=freeze([]),nativeActorContactOnsets=0,
   nativeActorFullReleaseEvents=0,nativeActorStartsAfterFullRelease=0,
   lastNativeFullReleaseTick=null,releaseToActorStartGapTotal=0,
@@ -156,6 +170,38 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
       'otherFootAlreadyActive':
      actorNewStart?'exclusiveActorStartNoImpulse':
       'unreleasedSingleFootStart';
+    const otherSide=footSide==='left'?'right':'left';
+    const priorOther=priorSoloPhysicalActive.includes(otherSide);
+    const priorOwn=priorSoloPhysicalActive.includes(footSide);
+    const otherEnd=physicalSoloFeet.ended.includes(otherSide)&&priorOther;
+    const ownEnd=physicalSoloFeet.ended.includes(footSide)&&priorOwn;
+    // Classification uses only source-observed discrete Rapier events.
+    // END and START in the SAME simulation tick are co-occurring events:
+    // their physical sub-tick order, and any transient no-contact gap,
+    // cannot be inferred from the event queue.
+    const unreleasedSubtype=reason==='unreleasedSingleFootStart'?
+     otherEnd&&ownEnd?'multipleFootEndStartSameTick':
+     otherEnd&&!priorOwn?'oppositeFootEndStartSameTick':
+     ownEnd?'sameFootEndRestartSameTick':
+     'startWithoutMatchingSameTickEnd':null;
+    if(unreleasedSubtype!==null){
+     unreleasedHandoffKinds[unreleasedSubtype]++;
+     unreleasedHandoffsByPhase[phase][unreleasedSubtype]++;
+     recentUnreleasedHandoffs.push(freeze({
+      tick:physics.tick,foot:footSide,phase,
+      kind:unreleasedSubtype,
+      priorActive:freeze([...priorSoloPhysicalActive]),
+      nativeEnds:freeze([...physicalSoloFeet.ended]),
+      nativeStarts:freeze([...physicalSoloFeet.started]),
+      afterActive:freeze([...physicalSoloFeet.active]),
+      solverContacts:dynamics.feet[footSide].solverContacts,
+      nativeForceEventCount:dynamics.feet[footSide].nativeForceEventCount,
+      originalRapierEvent:true,causalAttribution:false,
+      subTickOrderingKnown:false
+     }));
+     if(recentUnreleasedHandoffs.length>16)
+      recentUnreleasedHandoffs.shift();
+    }
     const phaseSource=soloStartsByPhase[phase];
     phaseSource.nativeShoeStarts++;
     if(converted)phaseSource.appliedCarry++;
@@ -189,6 +235,9 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
     nativeContactEvidence.push(freeze({tick:physics.tick,foot:footSide,
      nativeStart:true,appliedCarryImpulse:converted,
      classification:reason??'native-exclusive-actor-carry',
+     unreleasedHandoffKind:unreleasedSubtype,
+     nativeShoeEnds:freeze([...physicalSoloFeet.ended]),
+     nativeShoeStarts:freeze([...physicalSoloFeet.started]),
      observedCarryPhase:phase,nativeActorStart:actorNewStart,
      priorShoeActive:freeze([...priorSoloPhysicalActive]),
      concurrentOtherShoe:physicalSoloFeet.active.some(f=>f!==footSide),
@@ -312,6 +361,13 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
     // Counts are per genuine shoe START, not per actor, contact frame or
     // inferred intention. Only source-observed arrangements are asserted.
     nonActionStartReasons:freeze({...soloNoActionBreakdown}),
+    unreleasedSingleFootEndStartKinds:freeze({...unreleasedHandoffKinds}),
+    unreleasedHandoffKindsByPhase:freeze(Object.fromEntries(
+     soloCarryPhases.map(phase=>[phase,
+      freeze({...unreleasedHandoffsByPhase[phase]})]))),
+    recentUnreleasedSingleFootEvents:freeze([
+     ...recentUnreleasedHandoffs
+    ]),
     nonActionReasonsByPhase:freeze(Object.fromEntries(
      soloCarryPhases.map(phase=>[phase,
       freeze({...soloNoActionByPhase[phase]})]))),
