@@ -2218,6 +2218,9 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
  display:inline-block;position:relative;box-sizing:border-box;vertical-align:baseline;
  width:min(13ch,100%);max-width:100%;line-height:1.35;white-space:nowrap
 }
+/* Lengthen only the club-name skeleton in Competition History Team Records. */
+.app-competition-view-skeleton .app-view-skeleton-team-name{width:20ch;max-width:100%}
+@media(max-width:620px){.app-competition-view-skeleton .app-view-skeleton-team-name{width:14ch}}
 .app-competition-view-skeleton .app-view-skeleton-player-club{width:min(11ch,100%)}
 .app-competition-view-skeleton .app-view-skeleton-name-slot>span:first-child{visibility:hidden}
 .app-competition-view-skeleton .app-view-skeleton-name-slot>.app-skeleton-bar{
