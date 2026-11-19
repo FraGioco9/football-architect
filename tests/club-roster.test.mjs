@@ -11,17 +11,20 @@ test('Roster generated first paint exactly matches the canonical bootstrap and S
  const canonical=generator.match(/(function bootstrapClubFirstPaint\([\s\S]*?\n\})\nfunction buildClubShell/);
  assert.ok(canonical);
  assert.equal(embedded[1],canonical[1],'published HTML must be regenerated when first-paint code changes');
- const [labels,menus,keys,help]=JSON.parse('['+embedded[2]+']');
+ const [labels,tabs,menus,keys,help]=JSON.parse('['+embedded[2]+']');
  const expected=model.rosterSortKeys('stats').slice(3);
  assert.deepEqual(keys,expected,'parser-time Stats columns use the same sort keys as hydration');
  assert.equal(keys.length,9,'Stats shows nine numerical columns, never legacy four-stat headers');
  assert.deepEqual(labels,model.rosterLabels,'parser-time headers match the current five-language model');
+ assert.deepEqual(tabs,model.rosterTabs,'parser-time Roster subview labels match hydration in all five languages');
  assert.deepEqual(help,model.rosterStatHelp,'parser-time metric tooltips and labels match hydration');
  assert.deepEqual(Object.keys(menus),['group','competition']);
  for(const lang of ['en','de','es','fr','it']){
   assert.equal(labels[lang].length,keys.length+4);
   assert.ok(keys.every(k=>help[lang][k]));
+  assert.equal(tabs[lang][1],({en:'Stats',de:'Statistiken',es:'Estadísticas',fr:'Statistiques',it:'Statistiche'})[lang]);
  }
+ assert.match(generator,/rosterTabs\[locale\]\[1\]/);
  assert.match(generator,/wordsForRoster\.slice\(1,1\+statKeys\.length\)/);
  assert.match(generator,/\['nationality','name','positions',\.\.\.statKeys\]/);
  assert.match(generator,/wordsForRoster\[statKeys\.length\+1\]/);
@@ -32,6 +35,8 @@ test('Roster first paint exposes Info, Stats and Attributes and reserves five ro
  const html=read('clubs/_shared/index.html');
  for(const view of ['info','stats','attributes'])assert.ok(html.includes('data-club-roster-view="'+view+'"'));
  assert.equal((html.match(/data-club-roster-view="/g)||[]).length,3);
+ assert.match(html,/data-club-roster-view="stats"[^>]*>Stats<\/a>/);
+ assert.doesNotMatch(html,/data-club-roster-view="stats"[^>]*>undefined<\/a>/);
  assert.equal((html.match(/class="app-players-loading-row"/g)||[]).length,5);
 });
 test('CLUB-ROSTER-01 keeps all current players, across five locales and five subviews',async()=>{
@@ -67,6 +72,8 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
   for(const label of expectedCategories[language])assert.ok(attributes.includes('>'+label+'</div>'));
   const stats=model.render(manifest,selected,language,'?view=stats',null,1,null,{...snapshot,season:2});
   assert.match(stats,/data-roster-mode="stats"/);
+  assert.match(stats,new RegExp('data-club-roster-view="stats"[^>]*>'+model.rosterTabs[language][1]+'</a>'));
+  assert.doesNotMatch(stats,/data-club-roster-view="stats"[^>]*>undefined<\/a>/);
   for(const panel of [attributes,stats])assert.match(panel,/data-club-roster-control="(?:group|competition)"[\s\S]+?<span class="club-roster-count">/);
   assert.doesNotMatch(stats,/club-roster-scope/);
   assert.equal((stats.match(/class="club-roster-player-link"/g)||[]).length,65);
