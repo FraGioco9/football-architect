@@ -349,15 +349,6 @@ export function selectUniformAutonomousContactAction({
     canPass:contextualRecipient!==null,
     canCarry:carryPossible
    }):null;
-  // Solo runner can let an already-fast, clearly leading real ball roll:
-  // no extra deliberate Carry impulse on this authentic shoe START.
-  // The shoe/ball Rapier collision remains fully physical and observable;
-  // action authority only abstains while the runner is not catching up.
-  // No timer, synthetic cooldown, altered shoe geometry or ball velocity.
-  if(isolatedDribbleContext?.situationId==='carry-solo'&&
-     attack*ballVelocity.x>=3.05&&
-     attack*(ballPosition.x-player.x)>=0.44)
-   return null;
   const dribbleTouch=isolatedDribbleContext===null?null:
    chooseIsolatedDribbleTouch({
     variantIndex:isolatedDribbleContext.variantIndex,tick,
