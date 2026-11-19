@@ -190,7 +190,7 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
   };
   return e;
  }
- const tbody=item('tbody'),note=item('p'),headers=Array.from({length:10},()=>item('th'));
+ const tbody=item('tbody'),note=item('p'),headers=Array.from({length:11},()=>item('th'));
  const host={
   attrs:{},
   querySelector(s){return s==='[data-detail-stats-rows]'?tbody:s==='[data-detail-stats-note]'?note:null},
