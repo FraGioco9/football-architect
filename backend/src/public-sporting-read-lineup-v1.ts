@@ -375,9 +375,12 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    const clubFixtures=includeClubRecords?[...evidence.schedule.fixtures,...plans.flatMap(p=>p.fixtures.map(x=>x.fixture))]
     .filter(f=>(f.homeClubId===clubKey||f.awayClubId===clubKey)&&storedResults.has(f.id))
     .sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id,'en')):[];
+   const neutralFixtures=new Set(plans.flatMap(plan=>plan.fixtures.filter(item=>item.neutral).map(item=>item.fixture.id)));
    const matches=clubFixtures.map(f=>{
     const score=storedResults.get(f.id)!,home=f.homeClubId===clubKey;
-    return {opponent:home?f.awayClubId:f.homeClubId,scored:home?score.homeGoals:score.awayGoals,
+    const match=replay.frozenMatches.get(f.id);
+    if(!match)return invalid();
+    return {matchId:match.matchId,venue:neutralFixtures.has(f.id)?'neutral':home?'home':'away',opponent:home?f.awayClubId:f.homeClubId,scored:home?score.homeGoals:score.awayGoals,
      conceded:home?score.awayGoals:score.homeGoals};
    });
    const roster=includeClubRecords?clubRosterTotals(clubKey,clubFixtures,storedResults,replay.frozenMatches):null;

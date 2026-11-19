@@ -28,7 +28,7 @@ test('CLUB-RECORDS-01: Club Stats aliases redirect to Records but Competition St
 });
 const [first,last]=snapshot.seasons;
 first.memberships[0].leagueGoalsAgainst=19;
-first.matches=[{scored:3,conceded:0,opponent:'IT-2'},{scored:0,conceded:1,opponent:'IT-3'}];
+first.matches=[{matchId:15,venue:'away',scored:3,conceded:0,opponent:'IT-2'},{scored:0,conceded:1,opponent:'IT-3'}];
 last.matches=[{scored:1,conceded:0,opponent:'IT-4'},{scored:2,conceded:2,opponent:'IT-5'}];
 first.players=[{id:1,name:'One',appearances:9,goals:6,assists:2,clean:null}];
 last.players=[{id:1,name:'One',appearances:5,goals:1,assists:1,clean:null},
@@ -46,7 +46,13 @@ test('career team records use final league tier, match margin and cumulative tot
  assert.equal(get(team,'largest').sources[0].opponent,'IT-2');
  const lower={...last,ongoing:false,memberships:[{...last.memberships[0],competitionId:'IT-2'}]};
  assert.equal(records.select([first,lower],'verified').records[0].value,4);
- assert.match(render({search:'?scope=all-time'}),/3–0/);
+ const winning=render({search:'?scope=all-time'});
+ assert.match(winning,/href="\/matches\/15">3–0<\/a>/);
+ assert.match(winning,/@ IT-2/);
+ const tied={...last,matches:[{matchId:28,venue:'home',scored:4,conceded:1,opponent:'IT-3'}]};
+ const ties=render({search:'?scope=all-time',historySnapshot:{...snapshot,seasons:[first,tied]}});
+ assert.match(ties,/href="\/matches\/28">4–1<\/a>/);
+ assert.match(ties,/vs IT-3/);
 });
 test('season leaders retain ties, career leaders combine spells under the frozen player ID',()=>{
  const season=records.select(snapshot.seasons,'season').players;

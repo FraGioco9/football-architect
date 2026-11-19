@@ -96,9 +96,17 @@
    const details=[];
    if(source.id)details.push('<a href="/players/'+Number(source.id)+'">'+escape(source.name||'#'+source.id)+'</a>');
    if(source.division)details.push(escape(index?.divisions.get(source.division)?.name||source.division));
-   if(source.opponent)details.push(escape(index?.clubs.get(source.opponent)?.primaryName||source.opponent));
+   if(source.opponent){
+    const prefix=source.venue==='away'?'@ ':source.venue?'vs ':'';
+    details.push(prefix+escape(index?.clubs.get(source.opponent)?.primaryName||source.opponent));
+   }
    if(source.season)details.push(escape(w.season+' '+source.season));
    return details.join(' · ');
+  }
+  function matchScore(match){
+   const score=match.scored+'–'+match.conceded;
+   return Number.isSafeInteger(match.matchId)&&match.matchId>0?
+    '<a class="app-world-standing-club-link" href="/matches/'+match.matchId+'">'+score+'</a>':score;
   }
   function card({key,value,sources}){
    const first=sources[0];
@@ -106,11 +114,11 @@
    if(loading)amount='<span class="app-skeleton-bar"></span>';
    else if(valid&&value!==null){
     if(key==='rank')amount=ordinal(value,language);
-    else if(key==='largest')amount=first.scored+'–'+first.conceded;
+    else if(key==='largest')amount=matchScore(first);
     else amount=escape(key==='gd'&&value>0?'+'+value:value);
    }
    const more=sources.length>1?'<details class="club-record-ties"><summary aria-label="'+escape(w.details)+'">+'+(sources.length-1)+'</summary>'+
-    sources.slice(1).map(s=>'<div>'+(key==='largest'?s.scored+'–'+s.conceded+' · ':'')+context(s)+'</div>').join('')+'</details>':'';
+    sources.slice(1).map(s=>'<div>'+(key==='largest'?matchScore(s)+' · ':'')+context(s)+'</div>').join('')+'</details>':'';
    return '<article class="app-competition-stat-card"><h5 class="app-competition-stat-label">'+label(key)+'</h5>'+
     '<strong class="app-competition-stat-value">'+amount+'</strong>'+(first?'<div class="club-records-sources"><span>'+context(first)+'</span>'+more+'</div>':'')+'</article>';
   }
