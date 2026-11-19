@@ -72,7 +72,7 @@ export function lineupTeamStatisticsV1(
 ){
  const teams=new Map(clubs.map(clubId=>[clubId,{clubId,played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,cleanSheets:0}]));
  let matchesPlayed=0,totalGoals=0;
- const players=new Map<string,{playerId:number;clubId:string;displayName:string|null;nationality:string|null;appearances:number;starts:number;subAppearances:number;minutes:number;goals:number;assists:number|null;yellowCards:number|null;redCards:number|null;cleanSheets:number|null;ratedAppearances:number;ratingSum:number;
+ const players=new Map<string,{playerId:number;clubId:string;displayName:string|null;nationality:string|null;appearances:number;starts:number;subAppearances:number;minutes:number;goals:number;assists:number|null;yellowCards:number|null;redCards:number|null;cleanSheets:number|null;ratedAppearances:number;ratingSum:number;mvpAwards:number;mvpCoveredAppearances:number;
   assistCoverage:boolean;yellowCoverage:boolean;redCoverage:boolean;subCoverage:boolean}>();
  for(const fixture of fixtures){
   const score=results.get(fixture.id);if(!score)continue;
@@ -91,7 +91,7 @@ export function lineupTeamStatisticsV1(
       !Number.isSafeInteger(appearance.goals)||appearance.goals<0)invalid();
     const key=club+':'+appearance.playerId;
     const previous=players.get(key)??{
-     playerId:appearance.playerId,clubId:club,displayName:null,nationality:null,appearances:0,starts:0,subAppearances:0,minutes:0,goals:0,assists:0,yellowCards:0,redCards:0,cleanSheets:null,ratedAppearances:0,ratingSum:0,
+     playerId:appearance.playerId,clubId:club,displayName:null,nationality:null,appearances:0,starts:0,subAppearances:0,minutes:0,goals:0,assists:0,yellowCards:0,redCards:0,cleanSheets:null,ratedAppearances:0,ratingSum:0,mvpAwards:0,mvpCoveredAppearances:0,
      assistCoverage:true,yellowCoverage:true,redCoverage:true,subCoverage:true
     };
     previous.appearances++;if(appearance.started)previous.starts++;
@@ -101,6 +101,13 @@ export function lineupTeamStatisticsV1(
     previous.nationality=detail.nationality??previous.nationality;
     if(detail.cleanSheets!==null)previous.cleanSheets=(previous.cleanSheets??0)+detail.cleanSheets;
     if(detail.rating!==null){previous.ratedAppearances++;previous.ratingSum+=detail.rating;}
+     if(recorded.mvp.status!=='unavailable'){
+      previous.mvpCoveredAppearances++;
+      if(recorded.mvp.status==='awarded'&&recorded.mvp.playerId===appearance.playerId){
+       if(recorded.mvp.clubId!==club)invalid();
+       previous.mvpAwards++;
+      }
+     }
     previous.assistCoverage&&=detail.assists!==null;
     previous.yellowCoverage&&=detail.yellowCards!==null;
     previous.redCoverage&&=detail.redCards!==null;
@@ -126,7 +133,8 @@ export function lineupTeamStatisticsV1(
  return {matchesPlayed,totalGoals,goalsPerMatch:matchesPlayed?totalGoals/matchesPlayed:0,
   teams:[...teams.values()].map(t=>({...t,goalDifference:t.goalsFor-t.goalsAgainst})),
   players:[...players.values()].map(({ratingSum,assistCoverage,yellowCoverage,redCoverage,subCoverage,...p})=>({
-   ...p,assists:assistCoverage?p.assists:null,
+   ...p,mvpAwards:p.mvpCoveredAppearances===p.appearances?p.mvpAwards:null,
+    assists:assistCoverage?p.assists:null,
    yellowCards:yellowCoverage?p.yellowCards:null,redCards:redCoverage?p.redCards:null,
    subAppearances:subCoverage?p.subAppearances:null,
    averageRating:p.ratedAppearances?Math.round(ratingSum/p.ratedAppearances*100)/100:null
@@ -486,10 +494,11 @@ export async function readPublicRosterStats(db:Database,clubKey:string,season:nu
   const assists=row?row.assists:0,subAppearances=row?row.subAppearances:0;
   const cleanSheets=row?row.cleanSheets:0,redCards=row?row.redCards:0,yellowCards=row?row.yellowCards:0;
   const ratedAppearances=row?.ratedAppearances??0,averageRating=row?.averageRating??null;
+   const mvpCoveredAppearances=row?.mvpCoveredAppearances??0,mvpAwards=row?row.mvpAwards:0;
   const goalsAssistsPer90=assists!==null&&minutes>0
    ?Math.round((goals+assists)*90/minutes*100)/100:null;
   return {appearances,starts,subAppearances,minutes,goals,assists,cleanSheets,yellowCards,redCards,
-   ratedAppearances,averageRating,goalsAssistsPer90};
+   ratedAppearances,averageRating,goalsAssistsPer90,mvpAwards,mvpCoveredAppearances};
  }
  const roster=await readPublicClubRoster(db,clubKey);
  await unchanged(db,world);
