@@ -83,5 +83,8 @@ test('five locales and first paint share the approved cards; MVP waits for offic
  assert.equal((firstPaint.match(/class="app-competition-stat-card"/g)||[]).length,11);
  const loading=render({historySnapshot:{source:'loading'}});
  assert.equal((loading.match(/class="app-competition-stat-value"><span class="app-skeleton-bar"/g)||[]).length,11);
+ assert.equal((loading.match(/class="app-history-player-name club-record-name-placeholder"/g)||[]).length,5);
+ assert.equal((loading.match(/class="fa-dev-stats-player-portrait club-record-portrait-placeholder"/g)||[]).length,5);
+ assert.match(render({search:'?scope=all-time',historySnapshot:{source:'loading'}}),/data-record-period="verified"/);
  assert.match(render({historySnapshot:{source:'dev'}}),/Verified club records are unavailable/);
 });

@@ -36,6 +36,7 @@ function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp,recor
   records.hidden=view!=='records';
   records.setAttribute('aria-hidden',String(view!=='records'));
   const scope=['verified','all-time'].includes(params.get('scope'))?'verified':'season';
+  records.dataset.recordPeriod=scope;
   for(const node of records.querySelectorAll('[data-record-label]')){
    const key=node.dataset.recordLabel;
    node.textContent=recordLabels[locale][scope==='verified'?(recordScopes[key]||key):key];
