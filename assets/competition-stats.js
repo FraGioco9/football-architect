@@ -7,12 +7,13 @@
  const views=[['overview','statsDevOverview','Overview'],['teams','statsDevTeams','Teams'],['players','statsDevPlayers','Players']];
  const overview=[['matchesPlayed','statsDevMatchesPlayed','Matches played'],['totalGoals','statsDevTotalGoals','Total goals'],['goalsPerMatch','statsDevGoalsPerMatch','Goals per match']];
  const teams=[['gf','statsDevGoalsScored','Goals scored',false],['ga','statsDevFewestConceded','Fewest conceded',true],['w','statsDevWins','Wins',false],['cs','statsDevCleanSheets','Clean sheets',false],['ppg','statsDevPointsPerMatch','Points per match',false],['gd','statsDevGoalDifference','Goal difference',false],['unbeatenStreak','statsDevUnbeatenStreak','Unbeaten streak',false]];
- const players=[['averageRating','statsDevAverageRating','Rating'],['goals','statsDevGoals','Goals'],['assists','statsDevAssists','Assists'],['goalsAssistsPer90','statsDevGoalsAssists90','Goal contributions per 90'],['cleanSheets','statsDevCleanSheets','Clean sheets'],['starts','statsDevStartsSubstitutes','Starts (substitutes)'],['redCards','statsDevRedCards','Red cards'],['minutes','statsDevMinutes','Minutes']];
+ const players=[['averageRating','statsDevAverageRating','Rating'],['goals','statsDevGoals','Goals'],['assists','statsDevAssists','Assists'],['goalsAssistsPer90','statsDevGoalsAssists90','Goal contributions per 90'],['cleanSheets','statsDevCleanSheets','Clean sheets'],['starts','statsDevStartsSubstitutes','Starts (substitutes)'],['redCards','statsDevRedCards','Red cards'],['minutes','statsDevMinutes','Minutes'],['mvpAwards','statsDevMvpAwards','MVP awards']];
  // Ranking qualifications scale with the recorded club's played matches.
  // Never modify frozen individual counters and never rank unavailable metrics.
  const eligible=(key,record,clubMatches)=>{
   if(record[key]===undefined||record[key]===null||!Number.isSafeInteger(clubMatches)||clubMatches<1)return false;
   const halfGames=Math.ceil(clubMatches*0.5),halfMinutes=clubMatches*90*0.5;
+  if(key==='mvpAwards')return record.mvpAwards>=1&&record.mvpCoveredAppearances===record.appearances;
   if(key==='goals'||key==='assists'||key==='redCards')return record[key]>=1;
   if(key==='averageRating')return record.ratedAppearances>=halfGames;
   if(key==='cleanSheets')return record.cleanSheets>=1&&record.appearances>=halfGames;
@@ -56,7 +57,8 @@
    cleanSheets:[[r=>ratio(r.cleanSheets,r.appearances),false],[r=>r.minutes,false]],
    starts:[[r=>r.minutes,false],[r=>r.subAppearances,true]],
    redCards:[[r=>r.yellowCards,false],[r=>r.minutes,true]],
-   minutes:[[r=>r.starts,false],[r=>r.appearances,false]]
+   minutes:[[r=>r.starts,false],[r=>r.appearances,false]],
+   mvpAwards:[[r=>r.minutes,false],[r=>r.averageRating,false]]
   }
  };
  // The primary value is compared at its displayed precision, never its hidden decimals.

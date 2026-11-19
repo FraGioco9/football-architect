@@ -66,7 +66,7 @@ test('STATS-PUBLIC: domestic and both cup contexts expose 3/7/8 empty cards with
   assert.equal(byClass(r,'app-competition-stat-value').length,0);
   buttons(r)[1].emit('click');assert.equal(byClass(r,'fa-dev-stats-team-card').length,7);
   assert.equal(byClass(r,'fa-dev-stats-top').length,0);
-  buttons(r)[2].emit('click');assert.equal(byClass(r,'fa-dev-stats-leader-card').length,8);
+  buttons(r)[2].emit('click');assert.equal(byClass(r,'fa-dev-stats-leader-card').length,9);
   assert.equal(byClass(r,'fa-dev-stats-expand').length,0);
  }
 });
@@ -214,7 +214,7 @@ test('STATS-PLAYERS: qualified recorded contributions populate rankings without 
  r.api.mount(r.panel,c);buttons(r)[2].emit('click');
  assert.equal(byClass(r,'fa-dev-stats-leader-card').length,8);
  assert.ok(contents(r.panel).includes('450'));assert.ok(contents(r.panel).includes('Supplied Player'));
- assert.deepEqual(byClass(r,'fa-dev-stats-leader-title').map(n=>n.dataset.appI18n),['statsDevAverageRating','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevRedCards','statsDevMinutes']);
+ assert.deepEqual(byClass(r,'fa-dev-stats-leader-title').map(n=>n.dataset.appI18n),['statsDevAverageRating','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevRedCards','statsDevMinutes','statsDevMvpAwards']);
  assert.equal(byClass(r,'fa-dev-stats-top')[0].children[0].children.at(-1).textContent,'1','only recorded scoring contributions qualify');
  assert.equal(r.nodes().filter(n=>n.tagName==='li').length,3);
 });
@@ -369,7 +369,7 @@ test('COMP-STATS-643: scoring zeros and low-coverage ratings do not enter rankin
   ];
   r.api.mount(r.panel,c);buttons(r)[2].emit('click');
   const cards=byClass(r,'fa-dev-stats-leader-card');
-  assert.equal(cards.length,8);
+  assert.equal(cards.length,9);
   for(let i=0;i<8;i++){
    const list=cards[i].children[1];
    assert.equal(list.tagName,'ol',competition+' category '+i);
@@ -377,14 +377,14 @@ test('COMP-STATS-643: scoring zeros and low-coverage ratings do not enter rankin
    assert.ok(contents(list).includes('Qualified'));
    assert.ok(!contents(list).includes('One Match'));
   }
-  assert.equal(byClass(r,'fa-dev-stats-expand-placeholder').length,8);
+  assert.equal(byClass(r,'fa-dev-stats-expand-placeholder').length,9);
   assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/players/2').length,8);
   assert.equal(r.nodes().filter(n=>n.tagName==='a'&&n.href==='/clubs/it/1/overview').length,8,'every qualified player leaderboard row links its recorded club');
  }
 });
 test('COMP-STATS-643: empty player cards and first-paint Overview skeleton preserve metric geometry',()=>{
  const r=fixture(),c=supplied('IT-1',16);r.api.mount(r.panel,c);buttons(r)[2].emit('click');
- assert.equal(byClass(r,'fa-dev-stats-expand-placeholder').length,8);
+ assert.equal(byClass(r,'fa-dev-stats-expand-placeholder').length,9);
  assert.equal(byClass(r,'fa-dev-stats-empty').length,8);
  assert.ok(byClass(r,'fa-dev-stats-empty').every(n=>n.textContent==='No players'));
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
@@ -449,7 +449,7 @@ test('STATS-TIEBREAK-TEAMS: all seven cards apply first and second criteria to p
  }
 });
 
-test('STATS-TIEBREAK-PLAYERS: all eight cards use recorded player metrics, not player names',()=>{
+test('STATS-TIEBREAK-PLAYERS: the eight original cards use recorded player metrics, not player names',()=>{
  const base={clubKey:'IT-1',appearances:2,starts:2,subAppearances:0,minutes:180,goals:1,
   assists:1,yellowCards:1,redCards:1,cleanSheets:1,ratedAppearances:2,averageRating:7.25,goalsAssistsPer90:1};
  const cases=[

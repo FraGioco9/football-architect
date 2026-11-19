@@ -69,8 +69,8 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    await page.locator('#fa-dev-stats [data-stats-view="players"]').click();
    const cards=page.locator('#fa-dev-stats .fa-dev-stats-leader-card');
    const goals=cards.filter({has:page.locator('[data-app-i18n="statsDevGoals"]')});
-   assert.equal(await cards.count(),8);
-   assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevAverageRating','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevRedCards','statsDevMinutes']);
+   assert.equal(await cards.count(),9);
+   assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevAverageRating','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevRedCards','statsDevMinutes','statsDevMvpAwards']);
    assert.equal(await goals.locator('li strong').first().textContent(),'2');
    assert.equal(await goals.locator('li strong').nth(1).textContent(),'1');
    assert.equal(await cards.filter({has:page.locator('[data-app-i18n="statsDevAssists"]')}).locator('.fa-dev-stats-empty').textContent(),width===390?'Nessun giocatore':'No players');
@@ -78,7 +78,7 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    assert.equal(await goals.locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').first().textContent(),'QA Club 1');
    const before=await goals.boundingBox();
    const filledSizes=await cards.evaluateAll(nodes=>nodes.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
-   assert.ok(filledSizes.every(size=>size.height===filledSizes[0].height),'all eight populated cards reserve equal height');
+   assert.ok(filledSizes.every(size=>size.height===filledSizes[0].height),'all nine player cards reserve equal height');
 
    // Off-screen first-paint oracle: all pending player cards/rows must occupy
    // the same slots as the hydrated presentation at this viewport.
@@ -116,15 +116,15 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
     }finally{shell.remove()}
    });
    assert.deepEqual(loadingGeometry.cards,filledSizes,'first-paint player cards must match their hydrated dimensions');
-   assert.equal(loadingGeometry.rows,true,'all 40 pending player rows have the same height');
+   assert.equal(loadingGeometry.rows,true,'all 45 pending player rows have the same height');
    assert.equal(loadingGeometry.rowHeight,width===390?52:60);
    assert.equal(loadingGeometry.portrait.width,width===390?40:48);
    assert.equal(loadingGeometry.portrait.height,loadingGeometry.portrait.width);
    assert.ok(loadingGeometry.nameWidth>loadingGeometry.clubWidth*0.7&&loadingGeometry.clubWidth>0,'name and club bars are text-sized');
-   assert.equal(loadingGeometry.clubWidths.length,40);
+   assert.equal(loadingGeometry.clubWidths.length,45);
    const clubPattern=loadingGeometry.clubWidths.slice(0,5);
    assert.equal(new Set(clubPattern.map(Math.round)).size,5,'club placeholders have realistic, distinct lengths within a card');
-   for(let card=0;card<8;card++)for(let rank=0;rank<5;rank++)
+   for(let card=0;card<9;card++)for(let rank=0;rank<5;rank++)
     assert.ok(Math.abs(loadingGeometry.clubWidths[card*5+rank]-clubPattern[rank])<.1,'club widths repeat deterministically at the same rank in every player card');
    assert.equal(loadingGeometry.teamClubWidths.length,35,'seven Teams cards reserve five club names each');
    const teamClubPattern=loadingGeometry.teamClubWidths.slice(0,5);
