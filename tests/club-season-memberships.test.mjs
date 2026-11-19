@@ -196,7 +196,7 @@ test('QA-16: first paint panels, flags and short anonymous skeletons are preserv
  const html=read('clubs/_shared/index.html'),generator=read('tools/generate-club-pages.mjs'),css=read('assets/club-page.css');
  const first=html.indexOf('<div class="club-overview-layout club-first-paint-overview"');
  assert.ok(first>0);
- const end=html.indexOf('<section class="club-roster club-first-paint-roster"',first);
+ const end=html.indexOf('<section hidden class="club-roster club-first-paint-roster"',first);
  assert.ok(end>first,'Overview first paint is isolated from Roster, Records, and History skeletons');
  const part=html.slice(first,end);
  assert.equal((part.match(/class="app-panel /g)||[]).length,3);
