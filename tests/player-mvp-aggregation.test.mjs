@@ -6,11 +6,11 @@ const a=(id,r=7.1)=>({playerId:id,role:'ST',started:true,minutes:90,goals:0,rati
 function fixture(matchId,club='IT-1',competitionId='IT-1',mvp='winner'){
  const result={homeClubId:club,awayClubId:'IT-40',homeGoals:0,awayGoals:0,
   resolution:'regulation',penalties:null,extraTime:null,ratingVersion:'test-rating-v1',
-  home:{kind:'real_xi',starters:[{playerId:42,role:'ST'},{playerId:43,role:'ST'}],appearances:[a(42),a(43,6.8)]},
+  home:{kind:'real_xi',starters:[{playerId:42,role:'ST'},{playerId:43,role:'ST'}],appearances:[a(42),a(43,mvp==='other'?7.6:6.8)]},
   away:{kind:'team_fallback',appearances:[]},events:[]};
  if(mvp!=='legacy'){result.mvpVersion='match-mvp-v1';result.mvp=
   mvp==='winner'?{status:'awarded',playerId:42,clubId:club,side:'home',rating:7.1}:
-  mvp==='none'?{status:'none'}:{status:'awarded',playerId:43,clubId:club,side:'home',rating:6.8};}
+  mvp==='none'?{status:'none'}:{status:'awarded',playerId:43,clubId:club,side:'home',rating:7.6};}
  const info={season:1,fixtureId:'match-'+matchId,homeClubId:club,awayClubId:'IT-40',
   day:matchId,competitionId};
  return {matchId,receipt:{fixture:info,result},meta:{kind:'league',phaseId:'league',neutral:false,leg:null,round:matchId,marker:'D'+matchId}};
