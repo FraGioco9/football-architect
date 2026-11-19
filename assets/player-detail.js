@@ -44,14 +44,40 @@
  const back=preview?panel.querySelector('[data-detail-back]'):null,statusNode=panel.querySelector('[data-detail-status]');
  const views=[...panel.querySelectorAll('[data-detail-view]')];
  const viewBar=panel.querySelector('.app-player-detail-tabs');
+ const statsHost=preview?null:panel.querySelector('[data-detail-stats]');
+ let statsController=null,statsControllerPromise=null;
+ // Safari does not consistently restore nested horizontal scroll on refresh.
+ // Use the player path rather than ?view= so a view change shares its position.
+ const viewScrollKey=preview?null:'football-architect:player-views-scroll:'+location.pathname;
+ const restoreViewScroll=()=>{
+  if(!viewBar||!viewScrollKey)return null;
+  try{const raw=sessionStorage.getItem(viewScrollKey),n=Number(raw);
+   if(raw!==null&&Number.isFinite(n)&&n>=0){viewBar.scrollLeft=n;return n}
+  }catch{}
+  return null;
+ };
+ const saveViewScroll=()=>{
+  if(!viewBar||!viewScrollKey)return;
+  try{sessionStorage.setItem(viewScrollKey,String(viewBar.scrollLeft))}catch{}
+ };
+ // Keep the startup snapshot until pageshow: a browser-native nested-scroll
+ // reset can otherwise emit a scroll event and overwrite the saved offset.
+ const initialViewScroll=restoreViewScroll();
+ let viewScrollReady=false;
  const syncViewEdges=()=>{
   if(!viewBar)return;
   const max=Math.max(0,viewBar.scrollWidth-viewBar.clientWidth);
   viewBar.dataset.canScrollLeft=String(max>1&&viewBar.scrollLeft>1);
   viewBar.dataset.canScrollRight=String(max>1&&viewBar.scrollLeft<max-1);
  };
- viewBar?.addEventListener('scroll',syncViewEdges,{passive:true});
+ viewBar?.addEventListener('scroll',()=>{syncViewEdges();if(viewScrollReady)saveViewScroll()},{passive:true});
  window.addEventListener('resize',syncViewEdges,{passive:true});
+ window.addEventListener('pagehide',saveViewScroll);
+ window.addEventListener('pageshow',event=>{
+  if(!event.persisted&&initialViewScroll!==null&&viewBar)viewBar.scrollLeft=initialViewScroll;
+  viewScrollReady=true;
+  syncViewEdges();
+ });
  const groups=Object.freeze({technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],mental:['vision','positioning','decisions','composure'],physical:['speed','strength','stamina','agility'],goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']});
  const attrKeys=['speed','strength','stamina','agility','passing','technique','dribbling','shooting','crossing','tackling','marking','heading','vision','positioning','decisions','composure','gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
  const attrLabels={
@@ -87,7 +113,7 @@
  const numeric=value=>typeof value==='string'&&/^[1-9][0-9]*$/.test(value)&&Number.isSafeInteger(Number(value));
  const draftPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  const params=new URLSearchParams(location.search);
- let view=params.get('view')==='info'?'info':'overview';
+ let view=params.get('view')==='info'?'info':(!preview&&params.get('view')==='stats'?'stats':'overview');
  const context={draftId:params.get('draftId'),index:params.get('index'),returnView:params.get('returnView'),returnGroup:params.get('returnGroup'),returnPage:params.get('returnPage'),returnScroll:params.get('returnScroll'),returnSort:params.get('returnSort'),returnOrder:params.get('returnOrder')};
  const idMatch=!preview&&/^\/players\/([1-9][0-9]*)$/.exec(location.pathname);
  const id=idMatch&&numeric(idMatch[1])?Number(idMatch[1]):null;
@@ -265,6 +291,55 @@
   clubCatalog=manifest;clubCatalogResolved=true;
   renderClub();
  }
+ function syncStatsScoreLabel(){
+  // A shared static player shell cannot know whether its owner is a goalkeeper.
+  // Keep a neutral header/skeleton before identity is verified, then replace it
+  // synchronously on the first player-profile paint (before Stats is fetched).
+  if(!statsHost||!player)return;
+  const outfield={en:'Gls',it:'Gol',de:'Tor.',es:'Gol',fr:'Bts'};
+  const label=player.primary_position==='GK'?'CS':outfield[language()]||outfield.en;
+  const header=statsHost.querySelector('[data-detail-stats-heading="5"]');
+  if(header){
+   const trigger=header.querySelector('[data-stats-help]');
+   (trigger||header).textContent=label;
+   header.setAttribute('aria-label',label);
+  }
+  for(const cell of statsHost.querySelectorAll('.app-player-stats-loading [data-metric="score"]'))
+   cell.dataset.mobileLabel=label;
+ }
+ function ensurePlayerStats(){
+  if(preview||!statsHost||!id||!player||state!=='ready')return;
+  if(statsController){statsController.render();void statsController.load();return;}
+  if(statsControllerPromise)return;
+  statsControllerPromise=import('/assets/player-stats.mjs').then(async module=>{
+   let labels=null,crests=null,competitionLookup=null;
+   try{
+    const context=await import('/assets/match-public-context.mjs');
+    competitionLookup=context.matchPublicContext;
+    const catalog=await context.publicClubIdentityCatalog();
+    if(Array.isArray(catalog?.clubs)){
+     labels=new Map(catalog.clubs.map(item=>[item.countryId+'-'+item.clubId,item.primaryName]));
+     crests=catalog.clubCrests;
+    }
+   }catch{}
+   if(!player||state!=='ready')return;
+   statsController=module.createPlayerStatsView({host:statsHost,id,position:()=>player?.primary_position,
+    locale:language,clubName:key=>labels?.get(key),
+    clubCrest:key=>crests&&Object.hasOwn(crests,key)?crests[key]:null,
+    competitionName:key=>competitionLookup?.({competitionId:key})?.competitions?.[0]?.name,
+    fetchStats:async number=>{
+     const response=await fetch('/api/players/'+number+'/stats',{credentials:'omit',cache:'no-store'});
+     if(!response.ok)throw Error('player_stats_unavailable');
+     return response.json();
+    }});
+   if(view==='stats')await statsController.load();
+   else statsController.render();
+  }).catch(()=>{
+   const note=statsHost.querySelector('[data-detail-stats-note]');
+   if(note){note.hidden=false;note.textContent='Statistics unavailable';}
+   statsHost.setAttribute('aria-busy','false');
+  }).finally(()=>{statsControllerPromise=null});
+ }
  function render(){
   const copy=tr(),e=ex(),labels=(attrLabels[language()]||attrLabels.en).split('|');
   // Browser title depends on public entity identity, not the selected tab.
@@ -284,6 +359,8 @@
    if(!tab.disabled)tab.tabIndex=selected?0:-1;
   });
   syncViewEdges();
+  syncStatsScoreLabel();
+  if(view==='stats')void ensurePlayerStats();else statsController?.render();
   for(const [key,label] of [['positions',e.positions],['info',e.info],['attributes',e.attributes]]){
    panel.querySelector('[data-detail-section-title="'+key+'"]').textContent=label;
   }
@@ -392,7 +469,7 @@
   else url.searchParams.set('view',target);
  }
  function setView(next){
-  if(!['overview','info'].includes(next)||next===view)return;
+  if(!['overview','info',...(preview?[]:['stats'])].includes(next)||next===view)return;
   view=next;
   const url=new URL(location.href);
   syncViewParam(url,next);
@@ -417,7 +494,7 @@
   if(url.pathname+url.search+url.hash!==current)
    history.replaceState(history.state,'',url.pathname+url.search+url.hash);
  }
- window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':'overview';normalizeViewUrl();render();});
+ window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':(!preview&&new URLSearchParams(location.search).get('view')==='stats'?'stats':'overview');normalizeViewUrl();render();});
  window.addEventListener('pageshow',e=>{if(preview&&e.persisted)void load();});
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  normalizeViewUrl();render();void load();

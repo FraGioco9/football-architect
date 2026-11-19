@@ -23,7 +23,7 @@ import worker from '../src/index.ts';
 import {handleAdmin} from '../src/http-admin.ts';
 import {seedUnifiedAdminHttp} from './fixtures/unified-admin-http.ts';
 import {
- readPublicSportingSeasonLineupV1,readPublicCalendarDayLineupV1
+ readPublicSportingSeasonLineupV1,readPublicCalendarDayLineupV1,readPublicPlayerStatsLineupV1
 } from '../src/public-sporting-read-lineup-v1.ts';
 import {ATTRIBUTES} from '../src/players-generator-core.mjs';
 const LINEUP_V1_SLOTS=['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW'] as const;
@@ -233,6 +233,28 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
   expect(response.status).toBe(200);
   return response.json() as Promise<any>;
  };
+ // #578: exercise the actual public player Stats route at Day 13,
+ // including a recorded player, a player without an eligible appearance,
+ // the same server-side aggregate shape as the direct verified reader,
+ // and authorization-free Season 0 after reset.
+ const directPlayerStats=await readPublicPlayerStatsLineupV1(db,1);
+ const httpPlayerStats=await get('/api/players/1/stats');
+ expect(httpPlayerStats.status).toBe('available');
+ expect(httpPlayerStats.playerId).toBe(1);
+ expect(httpPlayerStats.seasons).toHaveLength(1);
+ expect(httpPlayerStats.seasons[0]).toMatchObject({season:1,status:'partial',
+  data:{total:{appearances:1,starts:1,minutes:expect.any(Number),
+    goals:expect.any(Number),subAppearances:expect.any(Number),
+    assists:expect.any(Number),yellowCards:expect.any(Number),redCards:expect.any(Number)},
+   competitions:[{competitionId:'IT-1',clubId:full.home_club_id}]}});
+ expect(httpPlayerStats).toEqual(directPlayerStats);
+ const fallbackPlayerStats=await get('/api/players/43/stats');
+ expect(fallbackPlayerStats.seasons[0].data.total.appearances).toBe(0);
+ expect(fallbackPlayerStats.seasons[0].data.competitions).toEqual([]);
+ const badStatsQuery=await worker.fetch(new Request('https://example.invalid/api/players/1/stats?season=1'),{DB:db});
+ expect(badStatsQuery.status).toBe(422);
+ const badStatsMethod=await worker.fetch(new Request('https://example.invalid/api/players/1/stats',{method:'POST'}),{DB:db});
+ expect(badStatsMethod.status).toBe(405);
  const httpMatch=await get('/api/matches/'+full.public_id);
  expect(httpMatch.status).toBe('completed');
  expect(httpMatch.result).toEqual(a.result);
@@ -312,6 +334,9 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(await count('world_reset_permits')).toBe(0);
  expect(await count('generated_players')).toBe(existingPlayers);
  expect(await count('player_club_affiliations')).toBe(existingLinks);
+ const seasonZeroStats=await readPublicPlayerStatsLineupV1(db,1);
+ expect(seasonZeroStats).toMatchObject({playerId:1,status:'empty',seasons:[]});
+ expect((await get('/api/players/1/stats'))).toMatchObject({playerId:1,status:'empty',seasons:[]});
  await expect(resetWorld(db,session,resetCommand,'day13-reset-qa-000001',now))
   .rejects.toMatchObject({status:409});
 },180000);

@@ -58,7 +58,7 @@ test('HTTPS activation is explicit and rejects ambiguous, local and credentialed
  const res=await run(req(),()=>{throw Error('must not send')},{pool:undefined});assert.equal(res.status,503);
 });
 test('public world, seasons, fixtures/results and calendar reads never forward credentials or set cookies',async()=>{
- for(const path of ['/api/world','/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/history','/api/clubs/IT-1/seasons/1/fixtures','/api/matches/seasons/1/competitions/IT-1','/api/matches/1','/api/matches/1/stats']){
+ for(const path of ['/api/world','/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/history','/api/clubs/IT-1/seasons/1/fixtures','/api/matches/seasons/1/competitions/IT-1','/api/matches/1','/api/matches/1/stats','/api/players/42/stats']){
   let n=0;const res=await run(req({path,headers:{cookie:`fa_player_local=${token}`,'x-csrf-token':'secret'}}),async(url,options)=>{
    n++;if(n===1)return context();
    assert.equal(url.pathname,path,'shared bridge forwards the exact public URL');
