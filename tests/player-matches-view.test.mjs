@@ -41,6 +41,10 @@ test('#712 parser-time and hydrated Matches retain identical table track signatu
  assert.match(css,/\.app-player-matches-value\{[^}]*height:24px/);
  assert.match(css,/\.app-player-matches-number>\.app-player-matches-value\{[^}]*width:100%/);
  assert.match(css,/\.app-player-matches-venue>\.app-player-matches-value\{justify-content:center\}/);
+ assert.match(css,/\.app-player-matches-loading>:nth-child\(5\)>\.app-player-matches-value\{justify-content:center\}/,
+  'first-paint Venue skeleton must align with the centered hydrated icon');
+ assert.match(html,/<td class="app-player-matches-number"><span class="app-player-matches-value"><span class="club-fp-bar club-fixture-skeleton-venue"/,
+  'loading Venue keeps the fixed-size 18px icon placeholder');
  assert.match(css,/\.app-player-matches-club>\.app-player-matches-value\{[^}]*min-width:0/);
  assert.match(css,/\.app-player-matches-loading \.app-player-matches-value>\.club-fp-bar:not\(\.club-fixture-skeleton-venue\)\{translate:0 1px\}/);
  assert.match(css,/\.app-player-matches-loading \.app-player-matches-skeleton-crest\{[\s\S]*?margin-right:0/);
@@ -249,4 +253,22 @@ test('#720 desktop/mobile crests suppress the neutral shield and share exact ima
  assert.match(mobile,/\.app-player-matches-loading \.app-player-matches-skeleton-crest\{width:20px;height:20px;min-width:20px/);
  assert.equal((html.match(/width:26px;height:10px/g)||[]).length,5,'one-decimal rating skeletons at first paint');
  assert.doesNotMatch(html,/width:36px;height:10px/);
+});
+
+test('Player Matches venue reuses Club Fixtures tooltip on hover, focus and touch without navigating',()=>{
+ const ui=read('assets/player-matches.mjs'),css=read('assets/player-detail.css');
+ assert.match(ui,/venueTooltip.className='calendar-marker-tooltip app-player-matches-venue-tooltip'/);
+ assert.match(ui,/venueTooltip.setAttribute\('role','tooltip'\)/);
+ assert.match(ui,/icon.dataset.playerMatchesVenue=''/);
+ assert.match(ui,/icon.tabIndex=0/);
+ assert.match(ui,/icon.setAttribute\('aria-label',venueLabel\)/);
+ assert.doesNotMatch(ui,/icon.title=venueLabel/,'native browser tooltip must not duplicate the custom tooltip');
+ assert.match(ui,/trigger.setAttribute\('aria-describedby',tip.id\)/);
+ assert.match(ui,/if\(venue\)\{showVenueTooltip\(venue\);return;\}/,'venue click does not activate the row');
+ assert.match(ui,/event.pointerType!=='touch'/,'pointer hover excludes synthetic touch hover');
+ assert.match(ui,/event.key==='Escape'\)\{hideTooltip\(\);hideVenueTooltip\(\);\}/);
+ assert.match(ui,/if\(row.matches\?\.\('\[data-player-matches-venue\]'\)/,'venue keyboard activation precedes row navigation');
+ assert.match(css,/\.calendar-marker-tooltip\.app-player-matches-venue-tooltip\{display:block!important\}/,'touch retains the Club Fixtures tooltip');
+ assert.match(css,/\.calendar-marker-tooltip\.app-player-matches-venue-tooltip\[hidden\]\{display:none!important\}/);
+ assert.match(css,/\.app-player-matches-venue-icon:focus-visible\{/);
 });
