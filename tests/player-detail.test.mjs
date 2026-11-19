@@ -107,7 +107,12 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
  assert.match(script,/authorizedDraft\(\)/);
  assert.match(script,/\/api\/admin\/players\/draft/);
  assert.match(script,/p\.preview_id!=='trial-'/);
- assert.doesNotMatch(script,/localStorage|sessionStorage|innerHTML/);
+ assert.doesNotMatch(script,/localStorage|innerHTML/);
+ assert.match(script,/const viewScrollKey=preview\?null:'football-architect:player-views-scroll:'\+location\.pathname;/,
+  'session scroll persistence is disabled for protected draft previews');
+ assert.match(script,/try\{sessionStorage\.getItem\(viewScrollKey\)/);
+ assert.match(script,/try\{sessionStorage\.setItem\(viewScrollKey,String\(viewBar\.scrollLeft\)\)/,
+  'the only persisted public detail value is the View strip scroll offset');
  assert.match(script,/if\(preview\)root\.hidden=true/);
  assert.match(index,/const playerDetail=url\.pathname\.match/);
  assert.match(publicApi,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p\s+LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id WHERE p\.id=\?/);
