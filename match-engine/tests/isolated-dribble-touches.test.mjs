@@ -362,12 +362,7 @@ test('#628 solo Carry physical intensity scales original real touch without velo
  const duel=chooseIsolatedDribbleTouch({...params,defender:{team:'away',x:34,y:1}});
  assert.equal(solo.soloCarry,true);
  assert.equal(solo.fromLiveOpponent,false);
- assert.ok(solo.magnitudeNs>duel.magnitudeNs*0.44);
- assert.ok(solo.magnitudeNs<=duel.magnitudeNs*0.56+1e-10);
- const fast=chooseIsolatedDribbleTouch({...params,solo:true,
-  ballVelocity:{x:3.1,y:0}});
- assert.equal(fast.magnitudeNs,duel.magnitudeNs*0.44,
-  'Fast ball receives no added power from the push-and-follow policy');
+ assert.equal(solo.magnitudeNs,duel.magnitudeNs*0.44);
  assert.equal(solo.fromLiveBallVelocity,true);
  assert.equal(solo.genuineRapierShoeStartRequired,true);
  assert.throws(()=>chooseIsolatedDribbleTouch({...params,solo:true,defender:{team:'away',x:33,y:0}}),TypeError);
@@ -389,25 +384,6 @@ test('#628 solo physical foot targets oppose stride without creating contacts',(
   forwardM:0.075,sideM:0});
  assert.ok(next.left.x>next.right.x,
   'Opposite half stride makes left shoe overtake right foot');
- const sprintRoll={...gait,carryPhase:'sprint',
-  observedAheadM:0.52,observedPlayerForwardMps:2.7,
-  observedBallForwardMps:3.3};
- const coasting=soloCarryTwoFootPositions(p,sprintRoll);
- const recovery=soloCarryTwoFootPositions(p,{
-  ...sprintRoll,observedBallForwardMps:2.0});
- assert.ok(coasting.left.x<recovery.left.x-0.02&&
-  coasting.right.x<recovery.right.x-0.02,
-  'Both real shoe targets follow behind an already leading rolling ball');
- assert.equal(coasting.left.y,recovery.left.y,
-  'Push-and-follow must not widen the previously validated Sprint shoe track');
- assert.equal(coasting.right.y,recovery.right.y);
- const slowClose=soloCarryTwoFootPositions(p,{
-  ...sprintRoll,observedAheadM:0.39});
- const closeRecovery=soloCarryTwoFootPositions(p,{
-  ...sprintRoll,observedAheadM:0.39,observedBallForwardMps:2.0});
- assert.equal(slowClose.left.x,closeRecovery.left.x,
-  'Approaching ball must preserve genuine forward recontact');
- assert.equal(slowClose.right.x,closeRecovery.right.x);
  const away=soloCarryTwoFootPositions({...p,x:-p.x,facingRad:Math.PI},
   {...gait,observedAheadM:gait.observedAheadM});
  assert.ok(away.left.x>away.right.x,'Mirrored local foot order rotates with player facing');

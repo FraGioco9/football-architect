@@ -35,11 +35,8 @@ export function chooseIsolatedDribbleTouch({variantIndex,tick,attackingSide,ball
  // Reduce actual native shoe-triggered impulse, not ball speed after the fact.
  // Original D-01 two-person measured physics stays byte-identical.
  // Two independently moving real shoes now provide more real contacts.
- // A genuine slow-ball push is firmer, then smoothly returns to the
- // original gentle touch when the physical ball already has running speed.
- // No extra START, fake contact, cooldown, or post-step speed correction.
- const soloStrength=0.44+0.12*clamp((2.8-forwardSpeed)/2.0,0,1);
- const magnitudeNs=solo?originalMagnitudeNs*soloStrength:originalMagnitudeNs;
+ // Soften the NATIVE START-only solo impulse (no post-step ball clamp).
+ const magnitudeNs=solo?originalMagnitudeNs*0.44:originalMagnitudeNs;
  return Object.freeze({version:ISOLATED_DRIBBLE_TOUCH_VERSION,variantIndex,tick,
   dx:attack*8,dy:8*lateral,magnitudeNs,lateralRatio:lateral,
   fromLiveOpponent:!solo,soloCarry:solo,fromLiveBallVelocity:true,
