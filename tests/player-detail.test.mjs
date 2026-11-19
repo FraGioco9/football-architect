@@ -110,7 +110,8 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
  assert.doesNotMatch(script,/localStorage|innerHTML/);
  assert.match(script,/const viewScrollKey=preview\?null:'football-architect:player-views-scroll:'\+location\.pathname;/,
   'session scroll persistence is disabled for protected draft previews');
- assert.match(script,/try\{sessionStorage\.getItem\(viewScrollKey\)/);
+ assert.match(script,/try\{const raw=sessionStorage\.getItem\(viewScrollKey\)/,
+  'scroll restoration reads only the public player View offset');
  assert.match(script,/try\{sessionStorage\.setItem\(viewScrollKey,String\(viewBar\.scrollLeft\)\)/,
   'the only persisted public detail value is the View strip scroll offset');
  assert.match(script,/if\(preview\)root\.hidden=true/);
