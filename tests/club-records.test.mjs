@@ -86,7 +86,7 @@ test('five locales and first paint share the approved cards; MVP waits for offic
  assert.equal((loading.match(/class="app-history-player-name club-record-name-placeholder"/g)||[]).length,5);
  assert.equal((loading.match(/class="fa-dev-stats-player-portrait club-record-portrait-placeholder"/g)||[]).length,5);
  assert.match(render({search:'?scope=all-time',historySnapshot:{source:'loading'}}),/data-record-period="verified"/);
- assert.match(render({historySnapshot:{source:'dev'}}),/Verified club records are unavailable/);
+ assert.doesNotMatch(render({historySnapshot:{source:'dev'}}),/club-records-note|Verified club records are unavailable/);
 });
 
 test('CLUB-RECORDS-01 linked evidence preserves season, all-time and tie contexts',()=>{
@@ -110,4 +110,18 @@ test('CLUB-RECORDS-01 linked evidence preserves season, all-time and tie context
  assert.match(playerStats,/summary\.id='player-stats-season-'\+season\.season/);
  assert.match(playerStats,/target\.scrollIntoView\(\{block:'center'\}\)/);
  assert.match(dialog,/seasonHref\(holder\.id,season\)/);
+});
+
+test('CLUB-RECORDS-01: Season links share one text-only underline style across records and ties',()=>{
+ const season=render(),career=render({search:'?scope=all-time'});
+ assert.match(season,/class="app-world-standing-club-link app-history-season app-records-season-link"/);
+ assert.match(season,/class="app-history-season app-world-standing-club-link app-records-season-link"/);
+ assert.match(career,/class="app-world-standing-club-link app-records-season-link" href="\/clubs\/it\/17\/history"/);
+ const css=readFileSync(new URL('../assets/club-page.css',import.meta.url),'utf8');
+ const dialog=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
+ assert.match(css,/:is\(\.club-records,\.app-history-player-dialog\) a\.app-records-season-link:is\(:hover,:focus-visible\)/);
+ assert.match(css,/text-decoration-thickness:1px;text-underline-offset:3px/);
+ assert.match(dialog,/app-world-standing-club-link app-history-season app-records-season-link/);
+ for(const locale of Object.keys(records.words))
+  assert.doesNotMatch(render({language:locale,historySnapshot:{source:'unavailable'}}),/club-records-note/);
 });

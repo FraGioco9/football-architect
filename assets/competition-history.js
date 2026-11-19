@@ -390,7 +390,7 @@
           if(line.hasChildNodes())line.append(document.createTextNode(" · "));
           if(showClub)line.append(seasonLink(season));
           else if(typeof seasonHref==="function"){
-            const link=element("a","app-world-standing-club-link app-history-season",locale().season+" "+season);
+            const link=element("a","app-world-standing-club-link app-history-season app-records-season-link",locale().season+" "+season);
             link.href=seasonHref(holder.id,season);line.append(link);
           }else line.append(locale().season+" "+season);
         }

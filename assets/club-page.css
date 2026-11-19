@@ -837,3 +837,14 @@ html[data-theme="light"] .app-players-table.club-roster-table[data-players-table
 .club-records .app-competition-stat-value a:is(:hover,:focus-visible){
  text-decoration:underline;text-underline-offset:3px
 }
+
+/* Identical text-only season underline for Team, Player and tie-dialog records. */
+:is(.club-records,.app-history-player-dialog) a.app-records-season-link{
+ display:inline;width:fit-content;max-width:100%;min-height:0;
+ color:inherit;text-decoration:none;text-underline-offset:3px;
+ text-decoration-thickness:1px;text-decoration-skip-ink:auto;
+}
+.club-records .app-history-player-footer>a.app-records-season-link{justify-self:end}
+:is(.club-records,.app-history-player-dialog) a.app-records-season-link:is(:hover,:focus-visible){
+ text-decoration-line:underline;text-decoration-thickness:1px;text-underline-offset:3px;
+}
