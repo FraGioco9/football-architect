@@ -93,6 +93,8 @@
 html[data-player-detail-view="info"] .app-player-detail-overview{display:none}
 html:not([data-player-detail-view="info"]) .app-player-detail-info-view{display:none}
 html[data-player-detail-view="stats"] .app-player-detail-overview{display:none}
+html[data-player-detail-view="matches"] .app-player-detail-overview{display:none}
+html:not([data-player-detail-view="matches"]) .app-player-detail-matches{display:none}
 html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:none}
 .app-player-detail-status{font-size:13px;color:var(--muted);line-height:20px;margin:10px 0 0}
 .app-player-detail-status[hidden]{display:none!important}

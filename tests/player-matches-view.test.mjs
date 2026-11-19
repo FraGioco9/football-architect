@@ -129,3 +129,17 @@ test('#720 Date header, localized shared tooltips and complete cached filter mod
  assert.match(ui,/visibleCount\+=20;render\(\)/);
  assert.doesNotMatch(ui,/more\.addEventListener\([^\n]*load\(/);
 });
+
+test('#720 Matches panel is isolated to Matches view at first paint and after navigation',()=>{
+ const css=read('assets/player-detail.css');
+ const html=read('players/_shared/index.html');
+ const controller=read('assets/player-detail.js');
+ // These selectors are necessary because all tabpanels are present in the static shell.
+ assert.match(css,/html\[data-player-detail-view="matches"\] \.app-player-detail-overview\{display:none\}/);
+ assert.match(css,/html:not\(\[data-player-detail-view="matches"\]\) \.app-player-detail-matches\{display:none\}/);
+ assert.match(css,/html:not\(\[data-player-detail-view="stats"\]\) \.app-player-detail-stats\{display:none\}/);
+ assert.match(css,/html:not\(\[data-player-detail-view="info"\]\) \.app-player-detail-info-view\{display:none\}/);
+ assert.match(html,/data-detail-panel="matches" data-detail-matches/);
+ assert.match(html,/data-player-detail-first-paint/);
+ assert.match(controller,/document\.documentElement\.dataset\.playerDetailView=view/);
+});
