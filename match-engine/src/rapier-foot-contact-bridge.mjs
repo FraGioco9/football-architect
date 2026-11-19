@@ -134,10 +134,23 @@ export function soloCarryTwoFootPositions(player,gait=null,{
  const leftStep=gait?.forwardM??forwardStroke*stroke;
  const rightStep=-forwardStroke*stroke+
   gaitClamp((ahead-0.53)*0.40,0,0.055)*Math.max(0,-stroke);
+ // Push-and-follow: while the ORIGINAL grounded Rapier ball runs ahead of
+ // the player, both genuine shoe trajectories trail the rolling ball.
+ // A recovering runner smoothly brings the boots forward again; no timer,
+ // synthetic event, disabled collision or direct ball-velocity adjustment.
+ // Control uses its original close-touch geometry. A runner who catches the
+ // ball or whose ball slows retains the original opportunity to recontact.
+ const runningPhaseWeight=gait?.carryPhase==='sprint'?1:
+  gait?.carryPhase==='moderate'?0.65:0;
+ const freeRollLead=gait===null?0:
+  gaitClamp((ahead-0.40)/0.15,0,1)*
+  gaitClamp((gait.observedBallForwardMps-
+   gait.observedPlayerForwardMps+0.20)/0.70,0,1);
+ const followingClearanceM=0.075*runningPhaseWeight*freeRollLead;
  const leftForward=leftStep*twoFootPhysicalReach*
-  (leftStep<0?rearwardRecovery:1);
+  (leftStep<0?rearwardRecovery:1)-followingClearanceM;
  const rightForward=rightStep*twoFootPhysicalReach*
-  (rightStep<0?rearwardRecovery:1);
+  (rightStep<0?rearwardRecovery:1)-followingClearanceM;
  const make=(forward,side)=>{
   const c=Math.cos(player.facingRad),si=Math.sin(player.facingRad);
   return Object.freeze({...player,
