@@ -15,4 +15,8 @@ export type PublishedMatchTimelineV1 =
  | {kind:'not_recorded';eventModelVersion:null;events:null}
  | {kind:'recorded';eventModelVersion:'lineup-events-v1';events:PublishedMatchEventV1[]};
 
-export function projectPublishedMatchEventsV1(result:LineupMatchResultV1):PublishedMatchTimelineV1;
+// Frozen replay retains a structural JSON object; the independent validator
+// checks any V2 payload before exposing a whitelisted event projection.
+export function projectPublishedMatchEventsV1(
+ result:LineupMatchResultV1|Record<string,unknown>|null
+):PublishedMatchTimelineV1;
