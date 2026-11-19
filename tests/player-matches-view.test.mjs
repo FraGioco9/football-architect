@@ -29,7 +29,8 @@ test('#712 parser-time and hydrated Matches retain identical table track signatu
  assert.equal((shell.match(/app-player-matches-row app-player-matches-loading/g)||[]).length,5);
  const css=read('assets/player-detail.css');
  assert.match(css,/\.app-player-matches-table tr\.app-player-matches-row\{height:56px\}/);
- assert.match(css,/grid-template-columns:minmax\(0,1\.3fr\) minmax\(0,1fr\) 58px 40px/);
+ assert.ok(css.includes('grid-template-columns:minmax(0,1fr) 62px 44px'));
+ assert.match(css,/grid-template-rows:28px 28px/);
  assert.match(css,/app-player-matches-row>:nth-child\(4\)/);
  assert.match(css,/app-player-matches-row>:nth-child\(6\)/);
  assert.match(css,/app-player-matches-row>:nth-child\(7\)/);
@@ -160,6 +161,30 @@ test('#720 Matches numeric/identity values share the first-paint text tracks',()
  assert.match(css,/\.app-player-matches-value\{[^}]*height:24px/);
  assert.match(css,/\.app-player-matches-number>\.app-player-matches-value\{[^}]*justify-content:flex-end/);
  assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?app-player-matches-table tr\.app-player-matches-row>:nth-child\(6\) \.app-player-matches-value\{justify-content:center\}/);
+});
+test('#720 mobile Matches uses stable two-line text/skeleton tracks at phone widths',()=>{
+ const css=read('assets/player-detail.css');
+ const html=read('players/_shared/index.html');
+ const mobile=css.slice(css.indexOf('@media(max-width:620px){\n .app-player-matches-toolbar'));
+ assert.ok(mobile.startsWith('@media(max-width:620px){'));
+ assert.ok(mobile.includes('grid-template-columns:minmax(0,1fr) 62px 44px'));
+ assert.ok(mobile.includes('grid-template-rows:28px 28px'));
+ assert.ok(mobile.includes('min-height:76px;height:76px'));
+ assert.ok(mobile.includes('>:nth-child(1){grid-column:1;grid-row:1}'));
+ assert.ok(mobile.includes('>:nth-child(4){grid-column:1;grid-row:2}'));
+ assert.ok(mobile.includes('>:nth-child(6){grid-column:2;grid-row:1 / span 2;justify-content:center}'));
+ assert.ok(mobile.includes('>:nth-child(7){grid-column:3;grid-row:1 / span 2;justify-content:flex-end}'));
+ assert.ok(mobile.includes('.app-player-matches-club{width:100%;gap:5px}'));
+ assert.ok(mobile.includes('text-overflow:ellipsis;white-space:nowrap'));
+ assert.ok(mobile.includes('-webkit-line-clamp:2'));
+ assert.ok(mobile.includes('>:nth-child(6)::before{content:var(--app-player-matches-mobile-result)}'));
+ assert.ok(mobile.includes('>:nth-child(7)::before{content:"Min"}'));
+ assert.ok(mobile.includes('.app-player-matches-more{min-height:44px;width:100%'));
+ assert.ok(mobile.includes('clip-path:inset(50%);white-space:nowrap'));
+ assert.ok(!mobile.includes('colgroup,.app-player-matches-table thead{display:none}'));
+ for(const language of ['it','de','es','fr'])
+  assert.ok(css.includes('html:lang('+language+') .app-player-matches-table'));
+ assert.equal((html.match(/app-player-matches-row app-player-matches-loading/g)||[]).length,5);
 });
 test('#720 CS/Rating header tooltip wording is identical to Player Stats in each locale',()=>{
  const matches=read('assets/player-matches.mjs');
