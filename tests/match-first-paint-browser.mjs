@@ -205,6 +205,23 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(await page.locator('[data-match-card], .app-match-context, [data-match-visual-title]').count(),0);
     assert.equal(await page.locator('[data-match-view-selector], [data-match-view], [role="tab"], [role="tabpanel"]').count(),0);
     assert.equal(await page.locator('[data-match-overview-panel]').count(),1);
+    // Real rendered styles must survive conflict resolution. A missing ')'
+    // in the Overview status grid can swallow every following CSS rule.
+    const fieldStyles=await page.locator('.app-match-pitch-frame').evaluate(frame=>{
+     const field=frame.querySelector('[data-match-pitch]');
+     const overview=frame.querySelector('[data-match-overview-panel]');
+     const status=frame.querySelector('.app-match-overview-row-status');
+     const fieldCss=getComputedStyle(field),overviewCss=getComputedStyle(overview),statusCss=getComputedStyle(status);
+     return {fieldColor:fieldCss.backgroundColor,fieldRadius:fieldCss.borderTopLeftRadius,
+      overviewDisplay:overviewCss.display,overviewBackground:overviewCss.backgroundColor,
+      statusDisplay:statusCss.display,statusColumns:statusCss.gridTemplateColumns.trim().split(' ')};
+    });
+    assert.equal(fieldStyles.fieldColor,'rgb(32, 92, 67)',JSON.stringify({engine,theme,device,fieldStyles}));
+    assert.equal(fieldStyles.fieldRadius,'12px');
+    assert.equal(fieldStyles.overviewDisplay,'flex');
+    assert.notEqual(fieldStyles.overviewBackground,'rgba(0, 0, 0, 0)');
+    assert.equal(fieldStyles.statusDisplay,'grid');
+    assert.equal(fieldStyles.statusColumns.length,2,JSON.stringify({engine,theme,device,fieldStyles}));
     const fonts=await page.locator('[data-match-overview-panel]').evaluate(el=>({
      heading:parseFloat(getComputedStyle(el.querySelector('.app-match-overview-heading')).fontSize),
      label:parseFloat(getComputedStyle(el.querySelector('.app-match-info-label')).fontSize),

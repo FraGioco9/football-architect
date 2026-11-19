@@ -437,6 +437,15 @@ test('MATCH-STATS: individual statistics have one dedicated independent HTTP rea
  assert.ok(js.indexOf('data=item;errorKind=null;render();')<js.indexOf("void fetch('/api/matches/'+matchId+'/stats'"),'scoreboard never waits for statistics');
 });
 
+test('#577 merge conflict preserves green pitch and the two-column Status/MVP overview layout',()=>{
+ const css=read('assets/match-detail.css');
+ assert.ok(css.includes('.app-match-overview-row-status{grid-template-columns:repeat(2,minmax(0,1fr))}'));
+ assert.ok(css.includes('background:#205C43;color:rgba(255,255,255,.74)'));
+ assert.ok(css.includes('.app-match-overview{'));
+ assert.ok(css.includes('.app-match-pitch-overlay{'));
+ assert.ok(css.includes('.app-match-mvp-link{'));
+});
+
 test('#577 recorded event API uses the same canonical read and never leaks into header/stats',()=>{
  const api=read('backend/src/index.ts'),source=read('backend/src/public-match-read-lineup-v1.ts');
  const projection=read('backend/src/match-public-events-v1.mjs');
