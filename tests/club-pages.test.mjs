@@ -663,7 +663,9 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
  assert.match(firstPaint,/other\.hidden=view!=='history'/,'generated first-paint bootstrap keeps History hidden outside its view');
  assert.match(html,/<section class="club-history" aria-busy="false"><div class="club-history-table-wrap">/,'hydrated table starts without a History heading');
  assert.doesNotMatch(html,/<section class="club-history"[^>]*><h2>/,'no hydrated History title');
- assert.match(html,/<a class="club-history-competition-link" href="[^"]+"><span class="club-history-competition-text">/,'competition names retain text-only links without a native tooltip');
+ assert.match(html,/<a class="club-history-competition-link" href="[^"]+"><span class="fa-competition-mark" aria-hidden="true">/,'competition logos share the existing accessible text link');
+ assert.match(html,/data-history-competition-row="IT-1" hidden>[\s\S]*?<img src="\/assets\/divisions\/it-1-lega-federale\/compact\.svg"/,'Club History reuses the official Italian division artwork');
+ assert.match(html,/data-history-competition-row="int-1" hidden>[\s\S]*?class="fa-competition-mark" aria-hidden="true"><svg/,'unpublished international logos use the existing neutral trophy mark');
  assert.match(css,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{display:inline-block;width:fit-content;max-width:100%;[^}]*padding:0;[^}]*overflow:visible;text-overflow:clip;/,
   'competition link remains text-sized, with unclipped glyphs and underline rather than a full-cell hit area');
  assert.match(css,/a\.club-history-competition-link:is\(:hover,:focus-visible\) \.club-history-competition-text\{text-decoration-line:underline;/,

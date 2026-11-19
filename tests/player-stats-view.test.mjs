@@ -1,9 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {statsWords,formatApps,formatRating,createPlayerStatsView,aggregateVerifiedCareerStats} from '../assets/player-stats.mjs';
+import {statsWords,formatApps,formatRating,createPlayerStatsView,aggregateVerifiedCareerStats,competitionDivisionLogoPath} from '../assets/player-stats.mjs';
 import {renderPlayerDetailPage} from '../tools/render-player-detail.mjs';
-import {readFileSync} from 'node:fs';
+import {readFileSync,existsSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+test('#724 resolves every published domestic division logo from canonical registry names',()=>{
+ const divisions=JSON.parse(read('data/divisions.json'));
+ assert.equal(divisions.length,16);
+ for(const division of divisions){
+  const logo=competitionDivisionLogoPath(division.id,division.name);
+  assert.ok(logo&&existsSync(new URL('..'+logo,import.meta.url)),division.id+' must have a published compact SVG');
+ }
+ assert.equal(competitionDivisionLogoPath('int-1','Sovereign Cup'),null);
+ assert.equal(competitionDivisionLogoPath('IT-1',''),null);
+ assert.equal(competitionDivisionLogoPath('../bad','Lega Federale'),null);
+});
 test('#578 public Player Detail has an active Stats tab, with identical canonical generated output',()=>{
  const html=renderPlayerDetailPage(read('players/index.html'),'public');
  assert.equal(html,read('players/_shared/index.html'));
@@ -127,7 +138,7 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
   'Competition text uses the same 24px line as verified stats');
  assert.match(css,/\.app-player-stats-competition-row \.app-player-stats-competition\{padding-inline-start:10px\}/,
   'Player Stats Competition has the same text inset as its header and Total skeleton');
- assert.match(read('assets/player-stats.mjs'),/link\.append\(el\('span',competitionName\?\./,
+ assert.match(read('assets/player-stats.mjs'),/link\.append\(mark,el\('span',canonicalName\|\|record\.competitionId/,
   'competition text uses its own unclipped underline span');
  assert.match(css,/\.app-player-stats-competition-row\[hidden\]\{display:none\}/);
  assert.match(css,/transition:transform 120ms ease-out/);
@@ -204,6 +215,7 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
   const view=createPlayerStatsView({host,id:42,position:()=> 'ST',locale:()=>lang,
    clubName:key=>key==='IT-1'?'AC Meneghina':'Club Two',
    clubCrest:key=>key==='IT-1'?'assets/clubs/IT/1/crest.svg':'https://other.example/crest.svg',
+   competitionName:key=>key==='IT-1'?'Lega Federale':key==='int-1'?'Sovereign Cup':null,
    fetchStats:async()=>payload});
   await view.load();
   assert.equal(tbody.children.length,4,'Career, season and both collapsed competition rows exist without extra reads');
@@ -222,6 +234,14 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
    assert.ok(headers[i].querySelector('[data-stats-help]'),'numeric header has tooltip');
   assert.ok(tbody.children[0].children[1].className.includes('app-player-stats-total-label'));
   const [,season,detail,otherDetail]=tbody.children,button=season.querySelector('[data-stats-toggle]');
+  const domesticLink=detail.children[1].children[0];
+  const internationalLink=otherDetail.children[1].children[0];
+  assert.equal(domesticLink.children[0].getAttribute('aria-hidden'),'true');
+  assert.equal(domesticLink.children[0].children[0].src,'/assets/divisions/it-1-lega-federale/compact.svg');
+  assert.equal(domesticLink.children[0].children[0].width,24);
+  assert.equal(domesticLink.children[1].textContent,'Lega Federale');
+  assert.equal(internationalLink.children[1].textContent,'Sovereign Cup');
+  assert.match(internationalLink.children[0].innerHTML,/<svg viewBox="0 0 24 24"/);
   const decorated=detail.children[2].children[0],crest=decorated.children[0],clubLink=decorated.children[1];
   assert.equal(decorated.className,'app-player-stats-club-identity');
   assert.equal(crest.className,'app-players-club-mark app-player-stats-club-crest');

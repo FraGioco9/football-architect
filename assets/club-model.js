@@ -489,12 +489,21 @@
       const position=domestic?(m.position===null?'':ordinal(m.position,lang)):
        (internationalStatusLabels[lang][m.cupStatus]||
         (entry.ongoing&&m.stats.played>0?internationalStatusLabels[lang].groupStage:''));
+      // Official division logos come from the same validated competition identity
+      // already used in Club Overview. International cups currently have no
+      // published logo assets, so retain the existing neutral cup mark.
+      const logo=domestic&&def?'/assets/divisions/'+def.id.toLowerCase()+'-'+
+       def.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+        .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg':null;
+      const badge='<span class="fa-competition-mark" aria-hidden="true">'+
+       (logo?'<img src="'+escape(logo)+'" width="24" height="24" alt="" loading="lazy" decoding="async">':
+        !domestic?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg>':'')+'</span>';
       const stats=m.stats;
       const values=[position,stats.played,stats.won,stats.drawn,stats.lost,stats.goalsFor,stats.goalsAgainst,
        displayNumber(stats.goalDifference),m.points];
       return '<tr class="club-history-competition-row" data-club-history-detail="'+year+'"'+
        ' data-history-competition-row="'+escape(m.competitionId)+'" hidden>'+
-       '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="'+escape(href)+'"><span class="club-history-competition-text">'+escape(title)+'</span></a></th>'+
+       '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="'+escape(href)+'">'+badge+'<span class="club-history-competition-text">'+escape(title)+'</span></a></th>'+
        values.map((value,i)=>i===0?'<td>'+escape(value)+'</td>':'<td><span class="club-history-stat-value">'+escape(value)+'</span></td>').join('')+'</tr>';
      }).join('');
      return summary+details;
