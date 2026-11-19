@@ -149,7 +149,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 /* #578 Player Stats: reuse Club History's table geometry and disclosure motion. */
 .app-player-detail-stats{margin-top:5px;min-width:0}
 .app-player-stats-table-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;overscroll-behavior-x:contain}
-.app-player-stats-table{--player-stats-row-height:56px;width:100%;min-width:1060px;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.app-player-stats-table{--player-stats-row-height:56px;width:100%;min-width:1120px;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .app-player-stats-col-season{width:140px}
 .app-player-stats-col-competition{width:190px}
 .app-player-stats-col-club{width:170px}

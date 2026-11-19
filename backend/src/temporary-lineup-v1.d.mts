@@ -24,6 +24,8 @@ export interface LineupMatchResultV1 {
  algorithmVersion:'temporary-lineup-v1';
  /** Absent on existing frozen pre-rating V2 receipts, never silently backfilled. */
  ratingVersion?:'test-rating-v1';
+ mvpVersion?:'match-mvp-v1';
+ mvp?:import('./match-mvp-v1.mjs').FrozenMatchMvpV1;
  /** New match-only event evidence; absent from immutable legacy receipts. */
  eventModelVersion?:'lineup-events-v1';
  playerIdentityVersion?:'player-identity-v1';

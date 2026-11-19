@@ -107,6 +107,12 @@
  const rosterPositionRank=new Map(rosterPitchPositions.map((code,index)=>[code,rosterPitchPositions.length-index]));
  const rosterSortCommon=Object.freeze(['nationality','name','positions']);
  const rosterSortInfo=Object.freeze(['nationality','name','positions','age','height','foot']);
+ function rosterStatValue(stats,key){
+  // Unknown legacy awards cannot be inferred as zero; played-and-covered is zero.
+  if(key==='mvpAwards'&&stats?.appearances>0)return stats.mvpAwards??
+   (stats.mvpCoveredAppearances===stats.appearances?0:null);
+  return stats?.[key];
+ }
  function rosterSortValue(player,key){
   if(key==='positions')return rosterPositionRank.get(player.primary_position)??0;
   if(key==='name')return player.display_name;
@@ -114,7 +120,7 @@
   if(key==='age')return player.age;
   if(key==='height')return player.height_cm;
   if(key==='foot')return player.preferred_foot;
-  return statKeys.includes(key)?player.stats?.[key]:player.attributes?.[key];
+  return statKeys.includes(key)?rosterStatValue(player.stats,key):player.attributes?.[key];
  }
  function sortedRosterPlayers(players,key,order){
   const direction=order==='desc'?-1:1;
@@ -143,20 +149,20 @@
  };
  const rosterTabs=Object.fromEntries(Object.entries(rosterWords).map(([lang,words])=>[lang,words.tabs]));
  // Match the Player Detail Stats ordering first; append Roster-only metrics.
- const statKeys=['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating'];
+ const statKeys=['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','mvpAwards','averageRating'];
  const rosterLabels={
-  en:['Attributes','Apps (Subs)','Min','Gls','Ast','G+A/90','YC','RC','CS','Rat.','Domestic','International','Not recorded'],
-  it:['Attributi','Pres. (Sub.)','Min','Gol','Assist','G+A/90','Gialli','Rossi','CS','Val.','Nazionali','Internazionali','Dato non registrato'],
-  de:['Attribute','Sp. (Einw.)','Min','Tor.','Vor.','G+A/90','Gelb','Rot','CS','Bew.','National','International','Nicht erfasst'],
-  fr:['Attributs','MJ (Entr.)','Min','Bts','PdD','G+A/90','Jaunes','Rouges','CS','Not.','Nationales','Internationales','Non enregistré'],
-  es:['Atributos','PJ (Sup.)','Min','Gol','Asist.','G+A/90','Amar.','Rojas','CS','Val.','Nacionales','Internacionales','Sin registrar']
+  en:['Attributes','Apps (Subs)','Min','Gls','Ast','G+A/90','YC','RC','CS','MVP','Rat.','Domestic','International','Not recorded'],
+  it:['Attributi','Pres. (Sub.)','Min','Gol','Assist','G+A/90','Gialli','Rossi','CS','MVP','Val.','Nazionali','Internazionali','Dato non registrato'],
+  de:['Attribute','Sp. (Einw.)','Min','Tor.','Vor.','G+A/90','Gelb','Rot','CS','MVP','Bew.','National','International','Nicht erfasst'],
+  fr:['Attributs','MJ (Entr.)','Min','Bts','PdD','G+A/90','Jaunes','Rouges','CS','MVP','Not.','Nationales','Internationales','Non enregistré'],
+  es:['Atributos','PJ (Sup.)','Min','Gol','Asist.','G+A/90','Amar.','Rojas','CS','MVP','Val.','Nacionales','Internacionales','Sin registrar']
  };
  const rosterStatHelp={
-  en:{appearances:'Appearances (substitute appearances)',minutes:'Minutes played',goals:'Goals',assists:'Assists',goalsAssistsPer90:'Goals plus assists per 90 minutes played',yellowCards:'Yellow cards',redCards:'Red cards',cleanSheets:'Clean sheets',averageRating:'Average match rating'},
-  it:{appearances:'Presenze (da subentrato)',minutes:'Minuti giocati',goals:'Gol segnati',assists:'Assist',goalsAssistsPer90:'Gol più assist ogni 90 minuti giocati',yellowCards:'Cartellini gialli',redCards:'Cartellini rossi',cleanSheets:'Clean sheet',averageRating:'Valutazione media'},
-  de:{appearances:'Spiele (Einwechslungen)',minutes:'Gespielte Minuten',goals:'Tore',assists:'Vorlagen',goalsAssistsPer90:'Tore und Vorlagen pro 90 Minuten',yellowCards:'Gelbe Karten',redCards:'Rote Karten',cleanSheets:'Spiele ohne Gegentor',averageRating:'Durchschnittliche Bewertung'},
-  fr:{appearances:'Matchs joués (entrées en jeu)',minutes:'Minutes jouées',goals:'Buts',assists:'Passes décisives',goalsAssistsPer90:'Buts et passes décisives par 90 minutes',yellowCards:'Cartons jaunes',redCards:'Cartons rouges',cleanSheets:'Matchs sans but encaissé',averageRating:'Note moyenne'},
-  es:{appearances:'Partidos jugados (entradas como suplente)',minutes:'Minutos jugados',goals:'Goles',assists:'Asistencias',goalsAssistsPer90:'Goles más asistencias cada 90 minutos',yellowCards:'Tarjetas amarillas',redCards:'Tarjetas rojas',cleanSheets:'Porterías a cero',averageRating:'Valoración media'}
+  en:{appearances:'Appearances (substitute appearances)',minutes:'Minutes played',goals:'Goals',assists:'Assists',goalsAssistsPer90:'Goals plus assists per 90 minutes played',yellowCards:'Yellow cards',redCards:'Red cards',cleanSheets:'Clean sheets',mvpAwards:'Player of the match awards',averageRating:'Average match rating'},
+  it:{appearances:'Presenze (da subentrato)',minutes:'Minuti giocati',goals:'Gol segnati',assists:'Assist',goalsAssistsPer90:'Gol più assist ogni 90 minuti giocati',yellowCards:'Cartellini gialli',redCards:'Cartellini rossi',cleanSheets:'Clean sheet',mvpAwards:'Premi migliore in campo',averageRating:'Valutazione media'},
+  de:{appearances:'Spiele (Einwechslungen)',minutes:'Gespielte Minuten',goals:'Tore',assists:'Vorlagen',goalsAssistsPer90:'Tore und Vorlagen pro 90 Minuten',yellowCards:'Gelbe Karten',redCards:'Rote Karten',cleanSheets:'Spiele ohne Gegentor',mvpAwards:'Auszeichnungen als Spieler des Spiels',averageRating:'Durchschnittliche Bewertung'},
+  fr:{appearances:'Matchs joués (entrées en jeu)',minutes:'Minutes jouées',goals:'Buts',assists:'Passes décisives',goalsAssistsPer90:'Buts et passes décisives par 90 minutes',yellowCards:'Cartons jaunes',redCards:'Cartons rouges',cleanSheets:'Matchs sans but encaissé',mvpAwards:'Distinctions de joueur du match',averageRating:'Note moyenne'},
+  es:{appearances:'Partidos jugados (entradas como suplente)',minutes:'Minutos jugados',goals:'Goles',assists:'Asistencias',goalsAssistsPer90:'Goles más asistencias cada 90 minutos',yellowCards:'Tarjetas amarillas',redCards:'Tarjetas rojas',cleanSheets:'Porterías a cero',mvpAwards:'Premios al mejor jugador del partido',averageRating:'Valoración media'}
  };
  function rosterCompetition(params){
   const scope=params.get('competition');
@@ -209,7 +215,7 @@
   const groupIds=competitions.filter(id=>id.startsWith('int-')===(scope==='international'));
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
-   :mode==='stats'?['',w.name,w.positions,...words.slice(1,10)]:['',w.name,w.positions,w.age,w.height,w.foot];
+   :mode==='stats'?['',w.name,w.positions,...words.slice(1,1+statKeys.length)]:['',w.name,w.positions,w.age,w.height,w.foot];
   const columns='<colgroup><col class="app-players-flag-column"><col class="app-players-name-column">'+
    '<col class="app-players-view-third-column">'+'<col>'.repeat(labels.length-3)+'</colgroup>';
   const colCount=labels.length;
@@ -228,7 +234,7 @@
     ...player,stats:groupIds.length===1?player.competitionStats?.[groupIds[0]]??null:null
    })):snapshot.players;
    const statText=(stats,key)=>{
-    const value=stats?.[key];
+    const value=rosterStatValue(stats,key);
     if(value===undefined||value===null)return null;
     if(key==='averageRating')return value.toFixed(1);
     if(key==='goalsAssistsPer90')return value.toFixed(2);
@@ -237,7 +243,7 @@
    };
    const statCell=(stats,key)=>{
     const value=statText(stats,key);
-    return value===null?'<td><span title="'+escape(words[12])+'" aria-label="'+escape(words[12])+'">—</span></td>'
+    return value===null?'<td><span title="'+escape(words[13])+'" aria-label="'+escape(words[12])+'">—</span></td>'
      :'<td>'+escape(value)+'</td>';
    };
    body=sortedRosterPlayers(players,sort||'positions',sort?order:'desc').map(player=>{
@@ -265,8 +271,8 @@
    selector=fixtureUI.control('group',words[0],options.find(([key])=>key===group)[1],options,'club-roster');
   }else if(mode==='stats'){
    const labels=fixtureUI.copy[lang];
-   selector=fixtureUI.control('competition',labels.competition,scope==='all'?labels.all:words[scope==='international'?11:10],
-    [['all',labels.all],['domestic',words[10]],['international',words[11]]],'club-roster');
+   selector=fixtureUI.control('competition',labels.competition,scope==='all'?labels.all:words[scope==='international'?12:11],
+    [['all',labels.all],['domestic',words[11]],['international',words[12]]],'club-roster');
   }
   return '<section class="club-roster" aria-busy="'+pending+'" data-roster-mode="'+mode+'">'+
    '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav>'+selector+'<span class="club-roster-count"><span aria-hidden="true" class="club-roster-count-width">99 '+w.many+'</span><span>'+count+'</span></span></div>'+

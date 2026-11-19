@@ -139,7 +139,10 @@ export async function readClubHistory({clubKey,world,fetchJson,signal}){
    throw TypeError('Invalid verified record fixtures');
   if(players!=null&&(!Array.isArray(players)||new Set(players.map(p=>p.id)).size!==players.length||
    !players.every(p=>safe(p.id)&&p.id>0&&(p.name===null||typeof p.name==='string')&&safe(p.appearances)&&
-    safe(p.goals)&&(p.assists===null||safe(p.assists))&&(p.clean===null||safe(p.clean)))))
+    safe(p.goals)&&(p.assists===null||safe(p.assists))&&(p.clean===null||safe(p.clean))&&
+     (p.mvpCoveredAppearances===undefined||safe(p.mvpCoveredAppearances)&&p.mvpCoveredAppearances<=p.appearances)&&
+     (p.mvpAwards===undefined||p.mvpAwards===null||safe(p.mvpAwards)&&
+      p.mvpAwards<=(p.mvpCoveredAppearances??p.appearances)))))
    throw TypeError('Invalid verified player record totals');
   return Object.freeze({season,ongoing:!closed,memberships:Object.freeze(memberships),
    ...(matches?{matches,players}: {})});

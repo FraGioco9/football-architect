@@ -23,7 +23,8 @@ export function collectFrozenPlayerMatches(playerId,season,frozenMatches,fixture
   const meta=fixtureMeta.get(fixture.fixtureId);
   if(!meta||typeof meta.marker!=='string'||!Number.isSafeInteger(meta.round)||
      !['league','knockout'].includes(meta.kind))throw TypeError('Unverified fixture metadata');
-  const player=frozenMatchPlayerStatistics(result)[side].players.filter(p=>p.playerId===playerId);
+  const source=frozenMatchPlayerStatistics(result);
+   const player=source[side].players.filter(p=>p.playerId===playerId);
   if(player.length!==1||!Number.isSafeInteger(player[0].minutes)||player[0].minutes<1)
    throw TypeError('Unverified player metrics');
   const stats=player[0],clubId=side==='home'?fixture.homeClubId:fixture.awayClubId;
@@ -50,6 +51,8 @@ export function collectFrozenPlayerMatches(playerId,season,frozenMatches,fixture
     positions,goals:stats.goals,assists:stats.assists,
     yellowCards:stats.yellowCards,redCards:stats.redCards,
     cleanSheets:stats.cleanSheets,rating:stats.rating,
+     mvp:source.mvp.status==='unavailable'?null:
+      source.mvp.status==='awarded'&&source.mvp.playerId===playerId&&source.mvp.clubId===clubId,
     ratingVersion:result.ratingVersion==='test-rating-v1'?'test-rating-v1':null}
   });
  }

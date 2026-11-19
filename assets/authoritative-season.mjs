@@ -120,6 +120,9 @@ export function validateAuthoritativeSeason(input,context,manifest){
    (!count(p.subAppearances)||p.starts+p.subAppearances!==p.appearances))fail();
   for(const metric of ['assists','yellowCards','redCards','cleanSheets'])if(p[metric]!==undefined&&p[metric]!==null&&(!count(p[metric])||metric==='cleanSheets'&&p[metric]>p.appearances))fail();
   if(p.ratedAppearances!==undefined&&(!count(p.ratedAppearances)||p.ratedAppearances>p.appearances))fail();
+   if(p.mvpCoveredAppearances!==undefined&&(!count(p.mvpCoveredAppearances)||p.mvpCoveredAppearances>p.appearances))fail();
+   if(p.mvpAwards!==undefined&&p.mvpAwards!==null&&(!count(p.mvpAwards)||
+     p.mvpAwards>(p.mvpCoveredAppearances??0)||(p.mvpAwards===0&&p.mvpCoveredAppearances!==p.appearances)))fail();
   if(p.averageRating!==undefined&&p.averageRating!==null&&
     (typeof p.averageRating!=='number'||!Number.isFinite(p.averageRating)||p.averageRating<4||p.averageRating>10||!p.ratedAppearances))fail();
   const identity=p.clubId+':'+p.playerId;
@@ -193,6 +196,7 @@ export function adaptAuthoritativeSeason(source,context,manifest){
    minutes:p.minutes,goals:p.goals,assists:p.assists??null,yellowCards:p.yellowCards??null,
    redCards:p.redCards??null,cleanSheets:p.cleanSheets??null,
    ratedAppearances:p.ratedAppearances??0,averageRating:p.averageRating??null,
+    mvpAwards:p.mvpAwards??null,mvpCoveredAppearances:p.mvpCoveredAppearances??0,
    goalsAssistsPer90:typeof p.assists==='number'&&p.minutes>0?(p.goals+p.assists)*90/p.minutes:null}))};
  const currentChoice=viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?
   globalThis.faCompetitionRules.currentFixtureChoice(definition,globalThis.faWorldCalendarModel.projectCompetition(d.season,definition.id),{current:{season:source.world.seasonNumber,day:source.world.day}}):null;

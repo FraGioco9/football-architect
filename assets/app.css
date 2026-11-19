@@ -1403,9 +1403,9 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
    Keep the circular player portrait and both identity lines in their final slots. */
 .app-competition-view-skeleton .fa-dev-stats-leader-card{--fa-stats-skeleton-value-width:3.5ch}
 .app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(1){--fa-stats-skeleton-value-width:8.5ch}
-.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(4){--fa-stats-skeleton-value-width:5.5ch}
-.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(5){--fa-stats-skeleton-value-width:7.5ch}
-.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(6){--fa-stats-skeleton-value-width:7ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(5){--fa-stats-skeleton-value-width:5.5ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(6){--fa-stats-skeleton-value-width:7.5ch}
+.app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(7){--fa-stats-skeleton-value-width:7ch}
 .app-competition-view-skeleton .fa-dev-stats-leader-card:not(.fa-dev-stats-team-card):nth-child(8){--fa-stats-skeleton-value-width:5.5ch}
 .app-competition-view-skeleton .fa-dev-stats-team-card:nth-child(5){--fa-stats-skeleton-value-width:5ch}
 .app-competition-view-skeleton .fa-dev-stats-top li>strong{width:var(--fa-stats-skeleton-value-width);min-width:var(--fa-stats-skeleton-value-width);display:flex;align-items:center;justify-content:flex-end;min-height:1.3em}

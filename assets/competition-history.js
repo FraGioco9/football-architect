@@ -422,7 +422,13 @@
     applyRecordSeasons(seasons){
       results={};
       partial=seasons.some(s=>s.playerCoverage===false||!Array.isArray(s.players));
-      for(const [field,suffix] of [["goals","Goals"],["appearances","Appearances"],["contributions","Contributions"],["redCards","RedCards"],["assists","Assists"],["cleanSheets","CleanSheets"]]){
+      const mvpComplete=seasons.length>0&&seasons.every(s=>s.playerCoverage!==false&&
+       Array.isArray(s.players)&&s.players.every(row=>
+        safeInt(row.appearances)&&safeInt(row.mvpCoveredAppearances)&&
+        row.mvpCoveredAppearances===row.appearances&&safeInt(row.mvpAwards)&&
+        row.mvpAwards<=row.mvpCoveredAppearances));
+      for(const [field,suffix] of [["goals","Goals"],["appearances","Appearances"],["contributions","Contributions"],["assists","Assists"],["cleanSheets","CleanSheets"],["mvpAwards","MvpAwards"]]){
+        if(field==='mvpAwards'&&!mvpComplete)continue;
         for(const cumulative of [false,true]){
           const entries=new Map();
 
