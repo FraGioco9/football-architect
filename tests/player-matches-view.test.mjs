@@ -37,7 +37,11 @@ test('#712 parser-time and hydrated Matches retain identical table track signatu
  assert.match(css,/\.app-player-matches-loading \.app-player-matches-skeleton-crest\{/);
  assert.match(css,/\.app-player-matches-loading \.club-fp-bar\{/);
  assert.match(css,/\.app-player-matches-loading \.app-player-matches-skeleton-crest::before\{/);
- assert.match(css,/\.app-player-matches-loading \.app-player-matches-value\{[\s\S]*?height:24px/);
+ assert.match(css,/\.app-player-matches-value\{[^}]*height:24px/);
+ assert.match(css,/\.app-player-matches-number>\.app-player-matches-value\{[^}]*width:100%/);
+ assert.match(css,/\.app-player-matches-venue>\.app-player-matches-value\{justify-content:center\}/);
+ assert.match(css,/\.app-player-matches-club>\.app-player-matches-value\{[^}]*min-width:0/);
+ assert.match(css,/\.app-player-matches-loading \.app-player-matches-value>\.club-fp-bar:not\(\.club-fixture-skeleton-venue\)\{translate:0 1px\}/);
  assert.match(css,/\.app-player-matches-loading \.app-player-matches-skeleton-crest\{[\s\S]*?margin-right:0/);
 });
 test('#712 API and UI use verified read, only canonical match routes, five languages',()=>{
@@ -79,7 +83,7 @@ test('#720 Matches controls and row navigation follow shared site patterns',()=>
  assert.doesNotMatch(ui,/app-player-matches-(?:toggle|chevron|details)/);
  assert.doesNotMatch(ui,/data-player-match-toggle|data-player-match-detail|aria-expanded.*match/);
  assert.match(ui,/const rows=filtered\.slice\(0,visibleCount\)\.map\(rowFor\);tbody\.replaceChildren\(\.\.\.rows\)/);
- assert.match(ui,/first\.append\(link\);tr\.append\(first\)/);
+ assert.match(ui,/first\.append\(textTrack\(link\)\);tr\.append\(first\)/);
  assert.match(ui,/value\.toFixed\(2\)/);
  assert.match(ui,/fmt\(p\[metric\],metric\)/);
  assert.match(ui,/note\.textContent=message;return;/);
@@ -142,4 +146,35 @@ test('#720 Matches panel is isolated to Matches view at first paint and after na
  assert.match(html,/data-detail-panel="matches" data-detail-matches/);
  assert.match(html,/data-player-detail-first-paint/);
  assert.match(controller,/document\.documentElement\.dataset\.playerDetailView=view/);
+});
+
+test('#720 Matches numeric/identity values share the first-paint text tracks',()=>{
+ const ui=read('assets/player-matches.mjs'),css=read('assets/player-detail.css');
+ assert.match(ui,/const textTrack=child=>\{/);
+ assert.match(ui,/cell\.append\(textTrack\(link\)\)/);
+ assert.match(ui,/competitionCell\.append\(textTrack\(a\)\)/);
+ assert.match(ui,/venue\.append\(textTrack\(icon\)\)/);
+ assert.match(ui,/result\.append\(textTrack\(resultText\(item\)\)\)/);
+ assert.match(ui,/cell\.append\(textTrack\(fmt\(p\[metric\],metric\)\)\)/);
+ assert.doesNotMatch(ui,/cell\.title=w\.rate/,'Rating must not have a second native tooltip');
+ assert.match(css,/\.app-player-matches-value\{[^}]*height:24px/);
+ assert.match(css,/\.app-player-matches-number>\.app-player-matches-value\{[^}]*justify-content:flex-end/);
+ assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?app-player-matches-table tr\.app-player-matches-row>:nth-child\(6\) \.app-player-matches-value\{justify-content:center\}/);
+});
+test('#720 CS/Rating header tooltip wording is identical to Player Stats in each locale',()=>{
+ const matches=read('assets/player-matches.mjs');
+ const stats=read('assets/player-stats.mjs');
+ const pairs=[
+  ['en','Clean sheets','Rating'],['it','Clean sheet','Valutazione'],
+  ['de','Spiele ohne Gegentor','Bewertung'],['es','Porterías a cero','Valoración'],
+  ['fr','Matches sans but encaissé','Note']
+ ];
+ for(const [lang,clean,rating] of pairs){
+  const matchLine=matches.split('\n').find(line=>line.startsWith(' '+lang+':{headers:'));
+  const statsLine=stats.split('\n').find(line=>line.startsWith(' '+lang+':{headers:'));
+  assert.ok(matchLine&&statsLine,lang+' localization exists');
+  assert.ok(matchLine.endsWith(',"'+clean+'","'+rating+'"],'),lang+' Matches tooltip parity');
+  assert.ok(statsLine.includes('keeperHelp:"'+clean+'"'),lang+' Stats keeper help parity');
+  assert.ok(statsLine.includes('"'+rating+'"]'),lang+' Stats Rating help parity');
+ }
 });

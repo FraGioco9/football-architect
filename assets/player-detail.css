@@ -420,7 +420,10 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-matches-table th:nth-child(-n+4),.app-player-matches-table td:nth-child(-n+4){text-align:left}
 .app-player-matches-table :is(th,td):nth-child(n+5){text-align:right}
 .app-player-matches-table :is(th,td):nth-child(5){text-align:center}
-.app-player-matches-value{display:inline-flex;align-items:center;min-height:16px;vertical-align:middle}
+.app-player-matches-value{display:inline-flex;box-sizing:border-box;align-items:center;min-height:24px;height:24px;line-height:1.5;vertical-align:middle}
+.app-player-matches-number>.app-player-matches-value{width:100%;justify-content:flex-end;text-align:right}
+.app-player-matches-venue>.app-player-matches-value{justify-content:center}
+.app-player-matches-club>.app-player-matches-value{flex:1 1 auto;min-width:0}
 /* Match the fixed-size, pulsing Club Fixtures bars and circular crest skeleton. */
 .app-player-matches-loading .club-fp-bar{
  display:block;box-sizing:border-box;inline-size:var(--club-fp-width,75%);max-inline-size:100%;
@@ -429,11 +432,11 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  animation:club-fp-pulse 1.5s ease-in-out infinite alternate;
 }
 @keyframes club-fp-pulse{to{opacity:.55}}
-.app-player-matches-loading .app-player-matches-value{
- display:inline-flex;box-sizing:border-box;align-items:center;
- min-height:24px;height:24px;line-height:1.5;vertical-align:middle;
-}
 .app-player-matches-loading .app-player-matches-value>.club-fp-bar{display:block;margin:0}
+@media(min-width:621px){
+ /* Stats uses the same 24px text line and lowers native 10px bars by 1px. */
+ .app-player-matches-loading .app-player-matches-value>.club-fp-bar:not(.club-fixture-skeleton-venue){translate:0 1px}
+}
 .app-player-matches-loading .app-player-matches-skeleton-crest{
  display:inline-grid;place-items:center;box-sizing:border-box;
  flex:none;width:24px;height:24px;min-width:24px;
@@ -443,9 +446,6 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  content:"";display:block;width:85%;aspect-ratio:1;border-radius:50%;
  clip-path:none;background:var(--fa-crest-skeleton-fill);
 }
-.app-player-matches-loading .app-player-matches-identity>.app-player-matches-value{vertical-align:middle}
-.app-player-matches-loading :is(th,td):nth-child(n+5) .app-player-matches-value{justify-content:flex-end}
-.app-player-matches-loading :is(th,td):nth-child(5) .app-player-matches-value{justify-content:center}
 .app-player-matches-link{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);text-decoration:none;vertical-align:middle}
 .app-player-matches-link:is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
 .app-player-matches-match{white-space:nowrap}
@@ -485,9 +485,9 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  .app-player-matches-club{gap:3px}
  .app-player-matches-crest,.app-player-matches-crest img{width:20px;height:20px;min-width:20px}
  .app-player-matches-loading .app-player-matches-skeleton-crest{width:20px;height:20px;min-width:20px;margin-right:0;flex:none}
- .app-player-matches-loading .app-player-matches-value{width:auto;max-width:100%;justify-content:flex-start}
- .app-player-matches-loading :is(th,td):nth-child(6) .app-player-matches-value{margin-inline:auto}
- .app-player-matches-loading :is(th,td):nth-child(7) .app-player-matches-value{margin-left:auto}
+ .app-player-matches-loading :is(th,td):nth-child(-n+4) .app-player-matches-value{width:auto;max-width:100%;justify-content:flex-start}
+ .app-player-matches-table tr.app-player-matches-row>:nth-child(6) .app-player-matches-value{justify-content:center}
+ .app-player-matches-table tr.app-player-matches-row>:nth-child(7) .app-player-matches-value{justify-content:flex-end}
  .app-player-matches-loading .app-player-matches-value>.club-fp-bar{max-width:90%}
  .app-player-matches-empty{display:block}.app-player-matches-empty td{display:block;width:100%;height:64px}
 }
