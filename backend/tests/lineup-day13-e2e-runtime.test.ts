@@ -153,7 +153,8 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  const b=await readPublicMatchLineupV1(db,String(mixed.public_id)) as any;
  const statsA=await readPublicMatchStatisticsV1(db,String(full.public_id));
  const statsB=await readPublicMatchStatisticsV1(db,String(mixed.public_id));
- expect(Object.keys(statsA.statistics!).sort()).toEqual(['away','home','ratingVersion']);
+ expect(Object.keys(statsA.statistics!).sort()).toEqual(['away','home','mvp','ratingVersion']);
+ expect(statsA.statistics?.mvp).toMatchObject({status:'awarded'});
  expect(statsA.statistics).not.toHaveProperty('events');
  expect(statsA.statistics).not.toHaveProperty('eventModelVersion');
  expect(a).not.toHaveProperty('lineup');expect(a).not.toHaveProperty('statistics');

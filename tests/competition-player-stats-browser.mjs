@@ -142,7 +142,7 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
    for(const mode of ['mixed','fallback','no-games','archive']){
     await page.evaluate(mode=>window.__stats643Supply(mode),mode);
-    assert.equal(await cards.count(),8);
+    assert.equal(await cards.count(),9);
     if(mode==='mixed'){
      await goals.locator('.fa-dev-stats-expand').click();
      assert.equal(await page.locator('dialog[open] li').count(),8);
