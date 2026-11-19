@@ -145,7 +145,7 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  assert.match(html,/data-detail-stats-heading="5" aria-label="Goals or clean sheets"><span class="app-skeleton-bar app-player-stats-score-heading-skeleton" aria-hidden="true"><\/span><\/th>/);
  assert.doesNotMatch(html,/data-detail-stats-heading="5">Gls<\/th>/,
   'a goalkeeper must never see outfield Goals before identity is fetched');
- assert.match(html,/data-detail-stats-heading="9">Rat\.<\/th>/);
+ assert.match(html,/data-detail-stats-heading="10">Rat\.<\/th>/);
  assert.equal((tbody.match(/data-metric="score" data-mobile-label=""/g)||[]).length,2,
   'mobile first-paint score labels stay neutral until position is known');
  assert.match(tbody,/data-metric="rating" data-mobile-label="Rat\."/);
