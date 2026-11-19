@@ -32,7 +32,7 @@ test('CLUB-RECORDS-01: ongoing season cannot set archived records; verified zero
  assert.equal(closed.records.find(r=>r.key==='rank').value,4);
  assert.equal(closed.records.find(r=>r.key==='wins').value,21);
  assert.equal(closed.records.find(r=>r.key==='clean').value,1);
- assert.equal(closed.records.find(r=>r.key==='goals').value,66,'season records sum league and cup goals');
+ assert.equal(closed.records.find(r=>r.key==='totalGoals').value,137,'career total includes both competitions and the ongoing season');
  assert.equal(closed.records.find(r=>r.key==='gd').value,14,'season records sum league and cup goal differences');
  const current=records.select(snapshot.seasons,'season',2);
  assert.equal(current.records.find(r=>r.key==='rank').value,1);
@@ -43,7 +43,7 @@ test('CLUB-RECORDS-01: ongoing season cannot set archived records; verified zero
 test('Record cards show each contributing season once and use ordinal league positions',()=>{
  const historical=render({search:'?scope=verified'});
  assert.match(historical,/Verified coverage: Season 1/);
- assert.equal((historical.match(/class="club-records-sources"><span>Season 1<\/span><\/div>/g)||[]).length,5);
+ assert.equal((historical.match(/class="club-records-sources"><span>Season 1<\/span><\/div>/g)||[]).length,4);
  assert.doesNotMatch(historical,/standings|Italian First Division/);
  assert.match(historical,/>4th<\/strong>/);
  const live=render({search:'?season=2'});
@@ -81,4 +81,13 @@ test('Season and All time share the History card layout and keep unavailable pla
  assert.match(all,/Player records/);
  assert.equal((all.match(/class="app-history-record-group"/g)||[]).length,2);
  assert.equal((all.match(/class="app-competition-stat-value">—/g)||[]).length,3);
+});
+
+test('Season goals compare whole seasons regardless of selected year and retain all ties',()=>{
+ const tied=[snapshot.seasons[0],{...snapshot.seasons[1],memberships:[membership('IT-1',2,team(8,66,3,5))]}];
+ const best=records.select(tied,'season',2).records.find(r=>r.key==='goals');
+ assert.equal(best.value,66);
+ assert.deepEqual([...new Set(best.sources.map(s=>s.season))],[1,2]);
+ assert.equal(records.select(snapshot.seasons,'season',1).records.find(r=>r.key==='goals').value,71);
+ assert.match(render({search:'?scope=all-time'}),/Total goals scored<.*?>137<\/strong>/);
 });

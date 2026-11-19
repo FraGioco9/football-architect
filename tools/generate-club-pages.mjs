@@ -35,8 +35,11 @@ function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp,recor
  if(records){
   records.hidden=view!=='records';
   records.setAttribute('aria-hidden',String(view!=='records'));
-  for(const node of records.querySelectorAll('[data-record-label]'))node.textContent=recordLabels[locale][node.dataset.recordLabel];
   const scope=['verified','all-time'].includes(params.get('scope'))?'verified':'season';
+  for(const node of records.querySelectorAll('[data-record-label]')){
+   const key=node.dataset.recordLabel;
+   node.textContent=recordLabels[locale][scope==='verified'&&key==='goals'?'totalGoals':key];
+  }
   for(const button of records.querySelectorAll('[data-record-scope]')){
    button.setAttribute('aria-pressed',String(button.dataset.recordScope===scope));
    button.disabled=true;
