@@ -548,7 +548,7 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
  assert.doesNotMatch(html,/<select|data-club-history-select|club-history-choice|class="club-history-summary"/);
  const yearRows=[...html.matchAll(/data-club-history-summary="(\d+)"/g)].map(match=>Number(match[1]));
  assert.deepEqual(yearRows,[2,1],'most recent season shown first');
- const seasonOne=html.match(/<tr class="club-history-season-row" data-club-history-summary="1">([\s\S]*?)<\/tr>/)?.[1];
+ const seasonOne=html.match(/<tr id="club-history-season-1" class="club-history-season-row" data-club-history-summary="1">([\s\S]*?)<\/tr>/)?.[1];
  assert.ok(seasonOne,'Season 1 aggregate row');
  assert.match(seasonOne,/>Stagione 1<\/button>/);
  assert.match(seasonOne,/class="club-history-total-value">Totale<\/span><\/td><td><\/td>/,'aggregate result is blank');
@@ -560,7 +560,7 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
  const seasonWithNoMemberships=model.render(manifest,selected,'en','',null,3,{
   ...verified,seasons:[{season:1,memberships},{season:3,ongoing:true,memberships:[]}]
  });
- const emptySeason=seasonWithNoMemberships.match(/<tr data-club-history-summary="3" class="club-history-season-row">([\s\S]*?)<\/tr>/)?.[1];
+ const emptySeason=seasonWithNoMemberships.match(/<tr id="club-history-season-3" data-club-history-summary="3" class="club-history-season-row">([\s\S]*?)<\/tr>/)?.[1];
  assert.ok(emptySeason?.includes('No games played'),'unplayed current season remains visible after a played season');
  assert.equal((emptySeason.match(/<td><\/td>/g)||[]).length,9,'all absent statistic cells stay blank');
  const historySection=html.match(/<section class="club-history"[^>]*>([\s\S]*?)<\/section>/)?.[1];

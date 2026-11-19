@@ -289,12 +289,12 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
   }
   resultRows.unshift(careerRow);
   tbody.replaceChildren(...resultRows);
-  const targetMatch=/^#player-stats-season-([1-9][0-9]*)$/.exec(window.location.hash);
+  const targetMatch=/^#player-stats-season-([1-9][0-9]*)$/.exec(window.location?.hash||'');
   const target=targetMatch&&tbody.querySelector('[data-player-stats-season="'+targetMatch[1]+'"]');
-  if(target&&new URLSearchParams(window.location.search).get('view')==='stats')
+  if(target&&new URLSearchParams(window.location?.search||'').get('view')==='stats')
    expanded.add(Number(targetMatch[1]));
   tableRoles();syncDisclosures();
-  if(target&&new URLSearchParams(window.location.search).get('view')==='stats'&&lastRecordTarget!==targetMatch[0]){
+  if(target&&new URLSearchParams(window.location?.search||'').get('view')==='stats'&&lastRecordTarget!==targetMatch[0]){
    lastRecordTarget=targetMatch[0];
    target.scrollIntoView({block:'center'});
   }

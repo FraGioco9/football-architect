@@ -372,6 +372,7 @@
       element("span","",record.holders.length+" "+locale().holders));
     dialog.append(summary);
     const list=element("ol","app-history-player-holders");
+    const hasNodes=node=>typeof node.hasChildNodes==="function"?node.hasChildNodes():node.children.length>0;
     for(const holder of record.holders){
       const li=element("li","");
       const identity=element("div","app-history-dialog-player");
@@ -387,16 +388,16 @@
         const line=element("li","");
         if(showClub)line.append(clubLink(clubId));
         for(const season of [...seasons].filter(Number.isSafeInteger).sort((a,b)=>a-b)){
-          if(line.hasChildNodes())line.append(document.createTextNode(" · "));
+          if(hasNodes(line))line.append(document.createTextNode(" · "));
           if(showClub)line.append(seasonLink(season));
           else if(typeof seasonHref==="function"){
             const link=element("a","app-world-standing-club-link app-history-season app-records-season-link",locale().season+" "+season);
             link.href=seasonHref(holder.id,season);line.append(link);
           }else line.append(locale().season+" "+season);
         }
-        if(line.hasChildNodes())clubs.append(line);
+        if(hasNodes(line))clubs.append(line);
       }
-      if(clubs.hasChildNodes())info.append(clubs);
+      if(hasNodes(clubs))info.append(clubs);
       identity.append(portrait(holder.id),info);
       li.append(identity);list.append(li);
     }
