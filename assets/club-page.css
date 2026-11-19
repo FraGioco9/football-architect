@@ -761,15 +761,16 @@ html:not([data-fa-fixture-hover-suspended]) .club-fixture-row.is-match-link:hove
 .app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(n+4){
  width:var(--club-roster-stat-share);
 }
-.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(4){--club-roster-stat-share:17%}
-.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(5){--club-roster-stat-share:12%}
-.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(6){--club-roster-stat-share:8.5%}
-.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(7){--club-roster-stat-share:8.5%}
-.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(8){--club-roster-stat-share:15%}
-.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(9){--club-roster-stat-share:9%}
-.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(10){--club-roster-stat-share:9%}
-.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(11){--club-roster-stat-share:9%}
-.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(12){--club-roster-stat-share:12%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(4){--club-roster-stat-share:16%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(5){--club-roster-stat-share:11%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(6){--club-roster-stat-share:8%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(7){--club-roster-stat-share:8%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(8){--club-roster-stat-share:14%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(9){--club-roster-stat-share:8.5%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(10){--club-roster-stat-share:8.5%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(11){--club-roster-stat-share:8.5%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(12){--club-roster-stat-share:6.5%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(13){--club-roster-stat-share:11%}
 .app-players-table.club-roster-table[data-players-table-mode="stats"] :is(th,td):nth-child(n+4){text-align:center}
 .app-players-table.club-roster-table[data-players-table-mode="stats"] th:nth-child(n+4) .app-players-sort-button{justify-content:center}
 .club-roster-table[data-players-table-mode="stats"] [data-roster-stat-help]{cursor:help}

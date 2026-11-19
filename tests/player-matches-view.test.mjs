@@ -33,7 +33,7 @@ test('#712 parser-time and hydrated Matches retain identical table track signatu
  assert.match(css,/grid-template-rows:28px 28px/);
  assert.match(css,/app-player-matches-row>:nth-child\(4\)/);
  assert.match(css,/app-player-matches-row>:nth-child\(6\)/);
- assert.match(css,/app-player-matches-row>:nth-child\(13\)/);
+ assert.match(css,/app-player-matches-row>:nth-child\(14\)/);
  assert.doesNotMatch(css,/app-player-matches-toggle-space/);
  assert.match(css,/\.app-player-matches-loading \.app-player-matches-skeleton-crest\{/);
  assert.match(css,/\.app-player-matches-loading \.club-fp-bar\{/);
@@ -220,15 +220,15 @@ test('#720 CS/Rating header tooltip wording is identical to Player Stats in each
  const matches=read('assets/player-matches.mjs');
  const stats=read('assets/player-stats.mjs');
  const pairs=[
-  ['en','Clean sheets','Rating'],['it','Clean sheet','Valutazione'],
-  ['de','Spiele ohne Gegentor','Bewertung'],['es','Porterías a cero','Valoración'],
-  ['fr','Matches sans but encaissé','Note']
+  ['en','Clean sheets','Player of the match','Rating'],['it','Clean sheet','Migliore in campo','Valutazione'],
+  ['de','Spiele ohne Gegentor','Spieler des Spiels','Bewertung'],['es','Porterías a cero','Jugador del partido','Valoración'],
+  ['fr','Matches sans but encaissé','Joueur du match','Note']
  ];
- for(const [lang,clean,rating] of pairs){
+ for(const [lang,clean,mvp,rating] of pairs){
   const matchLine=matches.split('\n').find(line=>line.startsWith(' '+lang+':{headers:'));
   const statsLine=stats.split('\n').find(line=>line.startsWith(' '+lang+':{headers:'));
   assert.ok(matchLine&&statsLine,lang+' localization exists');
-  assert.ok(matchLine.endsWith(',"'+clean+'","'+rating+'"],'),lang+' Matches tooltip parity');
+  assert.ok(matchLine.endsWith(',"'+clean+'","'+mvp+'","'+rating+'"],'),lang+' Matches tooltip parity');
   assert.ok(statsLine.includes('keeperHelp:"'+clean+'"'),lang+' Stats keeper help parity');
   assert.ok(statsLine.includes('"'+rating+'"]'),lang+' Stats Rating help parity');
  }

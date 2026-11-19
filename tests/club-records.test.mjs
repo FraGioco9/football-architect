@@ -142,8 +142,8 @@ test('CLUB-RECORDS-01: loading bars use hydrated value and season centerlines on
   assert.equal((pending.match(/class="app-competition-stat-card"/g)||[]).length,12);
   assert.equal((pending.match(/class="app-history-season club-record-season-placeholder" data-record-placeholder="season"/g)||[]).length,6,
    'player season placeholder is the same direct grid item as the hydrated season link');
-  assert.equal((pending.match(/data-record-placeholder="season"/g)||[]).length,9,
-   'all nine season-source slots remain reserved in both periods');
+  assert.equal((pending.match(/data-record-placeholder="season"/g)||[]).length,10,
+   'all ten season-source slots remain reserved in both periods');
   assert.doesNotMatch(pending,/<span data-record-placeholder="season"><span/);
  }
  assert.equal((markup.match(/class="app-history-season club-record-season-placeholder" data-record-placeholder="season"/g)||[]).length,6);

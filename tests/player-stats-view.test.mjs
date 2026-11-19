@@ -285,7 +285,7 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
   assert.equal(tipTrigger.getAttribute('aria-describedby'),tip.id);
   assert.equal(tip.textContent,statsWords.en.help[3]);
   assert.equal(headers[5].querySelector('[data-stats-help]').textContent,'Gls');
-  assert.equal(headers[9].querySelector('[data-stats-help]').textContent,'Rat.');
+  assert.equal(headers[10].querySelector('[data-stats-help]').textContent,'Rat.');
   lang='it';view.render();
   assert.equal(headers[3].querySelector('[data-stats-help]').textContent,statsWords.it.headers[3]);
   assert.equal(tbody.children[2].hidden,true);
