@@ -1,9 +1,10 @@
 import clubModel from '../assets/club-model.js';
+import recordsUI from '../assets/club-records.js';
 import fixtureUI from '../assets/club-fixtures.js';
 // CLUB-01: derive public presentation data without modifying canonical inputs.
 import {clubCrestAssets} from './club-crest-assets.mjs';
 import {loadWorldCatalog} from './load-world-catalog.mjs';
-function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp){
+function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp,recordLabels){
  const match=location.pathname.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|records|history)\/?$/);
  if(!match)return;
  const country=match[1],clubId=match[2],view=match[3];
@@ -34,16 +35,12 @@ function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp){
  if(records){
   records.hidden=view!=='records';
   records.setAttribute('aria-hidden',String(view!=='records'));
-  const labels={
-   en:['Season','Verified seasons','Record','Value','Season / Competition','Best league finish','Most wins','Most goals scored','Most clean sheets','Best goal difference'],
-   de:['Saison','Verifizierte Saisons','Rekord','Wert','Saison / Wettbewerb','Beste Ligaplatzierung','Meiste Siege','Meiste Tore','Meiste Spiele ohne Gegentor','Beste Tordifferenz'],
-   es:['Temporada','Temporadas verificadas','Récord','Valor','Temporada / Competición','Mejor posición en liga','Más victorias','Más goles marcados','Más porterías a cero','Mejor diferencia de goles'],
-   fr:['Saison','Saisons vérifiées','Record','Valeur','Saison / Compétition','Meilleur classement en championnat','Plus de victoires','Plus de buts marqués','Plus de matchs sans encaisser','Meilleure différence de buts'],
-   it:['Stagione','Stagioni verificate','Record','Valore','Stagione / Competizione','Miglior piazzamento in campionato','Più vittorie','Più gol segnati','Più clean sheet','Migliore differenza reti']
-  };
-  for(const node of records.querySelectorAll('[data-club-records-first-paint]'))node.textContent=labels[locale][Number(node.dataset.clubRecordsFirstPaint)];
-  const scope=params.get('scope')==='verified'?'verified':'season';
-  for(const node of records.querySelectorAll('[data-club-records-scope]'))node.classList.toggle('is-active',node.dataset.clubRecordsScope===scope);
+  for(const node of records.querySelectorAll('[data-record-label]'))node.textContent=recordLabels[locale][node.dataset.recordLabel];
+  const scope=['verified','all-time'].includes(params.get('scope'))?'verified':'season';
+  for(const button of records.querySelectorAll('[data-record-scope]')){
+   button.setAttribute('aria-pressed',String(button.dataset.recordScope===scope));
+   button.disabled=true;
+  }
  }
  const roster=document.querySelector('.club-first-paint-roster');
  if(roster){
@@ -237,7 +234,8 @@ function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp){
  document.documentElement.dataset.clubShellReady='true';
 }
 function buildClubShell(firstPaintScript){
- const recordsShell="<section class=\"club-records club-first-paint-records\" aria-hidden=\"true\" aria-busy=\"true\" hidden><nav class=\"club-records-scopes\" aria-label=\"Records\"><span class=\"app-competition-tab is-active\" data-club-records-scope=\"season\" data-club-records-first-paint=\"0\">Season</span><span class=\"app-competition-tab\" data-club-records-scope=\"verified\" data-club-records-first-paint=\"1\">Verified seasons</span></nav><nav class=\"club-records-season-nav\" aria-hidden=\"true\"><span class=\"club-fp-bar\" style=\"width:62px;height:12px\"></span></nav><p class=\"club-records-note\" aria-hidden=\"true\"></p><div class=\"club-records-table-wrap\"><table class=\"club-records-table\" aria-label=\"Records\"><thead><tr><th scope=\"col\" data-club-records-first-paint=\"2\">Record</th><th scope=\"col\" data-club-records-first-paint=\"3\">Value</th><th scope=\"col\" data-club-records-first-paint=\"4\">Season / Competition</th></tr></thead><tbody><tr><th scope=\"row\" data-club-records-first-paint=\"5\">Best league finish</th><td><span class=\"club-records-placeholder club-fp-bar\" aria-hidden=\"true\"></span></td><td><span class=\"club-records-placeholder-source club-fp-bar\" aria-hidden=\"true\"></span></td></tr><tr><th scope=\"row\" data-club-records-first-paint=\"6\">Most wins</th><td><span class=\"club-records-placeholder club-fp-bar\" aria-hidden=\"true\"></span></td><td><span class=\"club-records-placeholder-source club-fp-bar\" aria-hidden=\"true\"></span></td></tr><tr><th scope=\"row\" data-club-records-first-paint=\"7\">Most goals scored</th><td><span class=\"club-records-placeholder club-fp-bar\" aria-hidden=\"true\"></span></td><td><span class=\"club-records-placeholder-source club-fp-bar\" aria-hidden=\"true\"></span></td></tr><tr><th scope=\"row\" data-club-records-first-paint=\"8\">Most clean sheets</th><td><span class=\"club-records-placeholder club-fp-bar\" aria-hidden=\"true\"></span></td><td><span class=\"club-records-placeholder-source club-fp-bar\" aria-hidden=\"true\"></span></td></tr><tr><th scope=\"row\" data-club-records-first-paint=\"9\">Best goal difference</th><td><span class=\"club-records-placeholder club-fp-bar\" aria-hidden=\"true\"></span></td><td><span class=\"club-records-placeholder-source club-fp-bar\" aria-hidden=\"true\"></span></td></tr></tbody></table></div></section>";
+ const recordsShell=recordsUI.render({selected:{countryId:'IT',clubId:1,base:'/clubs/it/1'}})
+  .replace('<section class="club-records"', '<section hidden class="club-records club-first-paint-records"');
  const rosterShell=clubModel.renderRoster('IT-1','en',clubModel.copies.en,null)
   .replace('<section class="club-roster"', '<section hidden class="club-roster club-first-paint-roster"')
   .replaceAll('/clubs/it/1/roster?', '?');
@@ -305,7 +303,7 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations,c
    if(!localized||['en','de','es','fr','it'].some(lang=>!localized[lang]))throw Error('Missing club translations');
    return {...c,descriptions:localized,divisionId:catalog.getDivisionForClub(c.countryId+'-'+c.clubId)};
   })};
- const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+[clubModel.rosterLabels,Object.fromEntries(['group','competition'].map(id=>[id,fixtureUI.control(id,'','',[],'club-roster')])),clubModel.rosterSortKeys('stats').slice(3),clubModel.rosterStatHelp].map(value=>JSON.stringify(value)).join(',')+');';
+ const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+[clubModel.rosterLabels,Object.fromEntries(['group','competition'].map(id=>[id,fixtureUI.control(id,'','',[],'club-roster')])),clubModel.rosterSortKeys('stats').slice(3),clubModel.rosterStatHelp,recordsUI.words].map(value=>JSON.stringify(value)).join(',')+');';
  const staticContent=buildClubShell(firstPaintScript);
  let html=template;
  for(const [token,value] of Object.entries({...replacements,'@@FA_WORLD_SECTION@@':staticContent}))html=html.replaceAll(token,value);

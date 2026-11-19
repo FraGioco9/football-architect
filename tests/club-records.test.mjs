@@ -49,7 +49,7 @@ test('CLUB-RECORDS-01: source links and coverage refer only to verified complete
  const live=render({search:'?season=2'});
  assert.match(live,/Ongoing season/);
  assert.match(live,/\/competitions\/it-1\/standings\?season=2/);
- assert.match(live,/class="club-records-value">1<\/td>/);
+ assert.match(live,/class="app-competition-stat-value">1<\/strong>/);
 });
 test('CLUB-RECORDS-01: Season 0, incomplete authority, DEV, no matches and invalid future season never fabricate records',()=>{
  const zero=render({historySnapshot:{source:'authoritative',clubKey:'IT-17',coverage:'empty',world:{seasonNumber:0},seasons:[]}});
@@ -57,7 +57,7 @@ test('CLUB-RECORDS-01: Season 0, incomplete authority, DEV, no matches and inval
  assert.doesNotMatch(zero,/\/standings\?/);
  const loading=render({historySnapshot:{source:'loading'}});
  assert.match(loading,/aria-busy="true"/);
- assert.equal((loading.match(/class="club-records-placeholder club-fp-bar"/g)||[]).length,5);
+ assert.equal((loading.match(/class="app-skeleton-bar"/g)||[]).length,8);
  const dev=render({historySnapshot:{...snapshot,source:'dev'}});
  assert.match(dev,/Verified club records are unavailable/);
  assert.doesNotMatch(dev,/\/standings\?/);
@@ -71,6 +71,15 @@ test('CLUB-RECORDS-01: all five locale copies and static first-paint structure a
  const html=readFileSync(new URL('../clubs/_shared/index.html',import.meta.url),'utf8');
  assert.match(html,/data-club-first-paint-tab="records"/);
  assert.match(html,/class="club-records club-first-paint-records"/);
- assert.equal((html.match(/data-club-records-first-paint="(?:5|6|7|8|9)"/g)||[]).length,5);
+ assert.equal((html.match(/class="app-competition-stat-card"/g)||[]).length,8);
  assert.match(html,/src="\/assets\/club-records\.js" defer/);
+});
+test('Season and All time share the History card layout and keep unavailable player records empty',()=>{
+ const all=render({search:'?scope=all-time'});
+ assert.match(all,/data-record-scope="verified" aria-pressed="true"/);
+ assert.match(all,/Verified coverage: Season 1/);
+ assert.match(all,/Team records/);
+ assert.match(all,/Player records/);
+ assert.equal((all.match(/class="app-history-record-group"/g)||[]).length,2);
+ assert.equal((all.match(/class="app-competition-stat-value">—/g)||[]).length,3);
 });

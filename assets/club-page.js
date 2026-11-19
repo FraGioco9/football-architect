@@ -28,7 +28,7 @@
    if(['overview','history'].includes(selected.view)){params.delete('season');params.delete('matchday');}
    if(selected.view==='records'){
     params.delete('matchday');params.delete('competition');
-    if(!['season','verified'].includes(params.get('scope')))params.delete('scope');
+    if(!['season','verified','all-time'].includes(params.get('scope')))params.delete('scope');
    }
    const query=params.size?'?'+params:'';
    if(query!==location.search)history.replaceState(null,'',location.pathname+query+location.hash);
@@ -403,6 +403,23 @@
   });
   await import('/assets/competition-tabs.js');
   paint();
+  host.addEventListener('click',event=>{
+   if(selected.view!=='records')return;
+   const button=event.target.closest?.('[data-record-scope]');
+   const link=event.target.closest?.('.club-records-season-link');
+   if(!button&&!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+   event.preventDefault();
+   const url=new URL(link?link.href:location.href);
+   if(button){
+    if(button.getAttribute('aria-pressed')==='true')return;
+    if(button.dataset.recordScope==='verified')url.searchParams.set('scope','all-time');
+    else url.searchParams.delete('scope');
+   }
+   if(url.href===location.href)return;
+   history.pushState(null,'',url);
+   paint(true);
+   host.querySelector(button?'[data-record-scope][aria-pressed="true"]':'.club-records-season-link[aria-current]')?.focus({preventScroll:true});
+  });
   // Reuse the loaded club snapshot for category switches without another request.
   host.addEventListener('click',event=>{
    const control=event.target.closest?.('a[data-club-roster-view]');
@@ -735,6 +752,11 @@
    if(next&&next.base===selected.base){
     if(identityOnly&&next.view==='overview'){
      location.replace(location.href);return;
+    }
+    if(selected.view==='records'&&next.view==='records'){
+     paint(true);
+     host.querySelector('[data-record-scope][aria-pressed="true"]')?.focus({preventScroll:true});
+     return;
     }
     const queryOnly=selected.view==='roster'&&next.view==='roster';
     selected=next;paint(true);refreshClubHistory();refreshClubOverview();
