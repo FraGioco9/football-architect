@@ -248,6 +248,8 @@
    reuseCrests(host,staging,true);
    for(const child of [...host.childNodes])if(child!==header&&child!==tabs&&child!==retainedFixtures)child.remove();
    for(const child of [...staging.childNodes])if(child!==stagedHeader&&child!==stagedTabs&&!(retainedFixtures&&child.matches?.('.club-fixtures')))host.append(child);
+   for(const link of host.querySelectorAll('[data-club-player-card] a.app-history-player-name'))
+    window.faHistoryPlayerUI.responsivePlayerName(link);
    for(const slot of host.querySelectorAll('[data-club-record-portrait]'))
     slot.replaceWith(window.faHistoryPlayerUI.portrait(slot.dataset.clubRecordPortrait));
    if(Number.isFinite(historyTableScroll)){const tableWrap=host.querySelector('.club-history-table-wrap');if(tableWrap)tableWrap.scrollLeft=historyTableScroll;}

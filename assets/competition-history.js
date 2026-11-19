@@ -178,11 +178,20 @@
     image.src="/assets/players/portraits/"+id+".webp";
     slot.append(image);return slot;
   }
+  function responsivePlayerName(node){
+    const full=node.textContent.trim();
+    const parts=/^(\S+)\s+(.+)$/u.exec(full);
+    if(!parts||/^\p{L}\.$/u.test(parts[1]))return node;
+    const short=Array.from(parts[1])[0]+". "+parts[2];
+    node.setAttribute("aria-label",full);
+    node.replaceChildren(element("span","fa-player-full-name",full),element("span","fa-player-short-name",short));
+    return node;
+  }
   function playerLabel(holder,tag,cls){
-    if(!/^[1-9]\d*$/.test(holder.id))return element(tag,cls,holder.name);
+    if(!/^[1-9]\d*$/.test(holder.id))return responsivePlayerName(element(tag,cls,holder.name));
     const link=element("a",(cls+" app-world-standing-club-link").trim(),holder.name);
     link.href=window.faRoutesRegistry.buildRoute({kind:"player",id:Number(holder.id)});
-    return link;
+    return responsivePlayerName(link);
   }
   function render(){
     const context=window.faCompetitionContext;
@@ -393,7 +402,7 @@
     if(lockedScroll){oldOverflow=lockedScroll.style.overflow;lockedScroll.style.overflow="hidden";}
     showDialog(dialog);exit.focus({preventScroll:true});
   }
-  window.faHistoryPlayerUI={portrait,openPlayers};
+  window.faHistoryPlayerUI={portrait,openPlayers,responsivePlayerName};
   if(!panel)return;
   panel.addEventListener("click",event=>{
     const trigger=event.target.closest("[data-history-detail]");

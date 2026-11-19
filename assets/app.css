@@ -2256,3 +2256,7 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
  :is(#competition-panel-history,.club-records) .app-history-record-group .app-competition-stat-value{font-size:1.625rem}
  :is(#competition-panel-history,.app-history-player-dialog){--history-name-size:1rem;--history-meta-size:.875rem}
 }
+@media(max-width:620px){
+ :is(.app-history-player-name,.app-history-dialog-player-info) .fa-player-full-name{display:none}
+ :is(.app-history-player-name,.app-history-dialog-player-info) .fa-player-short-name{display:inline}
+}
