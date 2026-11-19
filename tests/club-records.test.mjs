@@ -125,3 +125,24 @@ test('CLUB-RECORDS-01: Season links share one text-only underline style across r
  for(const locale of Object.keys(records.words))
   assert.doesNotMatch(render({language:locale,historySnapshot:{source:'unavailable'}}),/club-records-note/);
 });
+
+test('CLUB-RECORDS-01: loading bars use hydrated value and season centerlines on desktop/mobile',()=>{
+ const css=readFileSync(new URL('../assets/club-page.css',import.meta.url),'utf8');
+ const markup=readFileSync(new URL('../clubs/_shared/index.html',import.meta.url),'utf8');
+ for(const search of ['', '?scope=all-time']){
+  const pending=render({search,historySnapshot:{source:'loading'}});
+  assert.equal((pending.match(/class="app-competition-stat-card"/g)||[]).length,11);
+  assert.equal((pending.match(/class="app-history-season club-record-season-placeholder" data-record-placeholder="season"/g)||[]).length,5,
+   'player season placeholder is the same direct grid item as the hydrated season link');
+  assert.equal((pending.match(/data-record-placeholder="season"/g)||[]).length,9,
+   'all nine season-source slots remain reserved in both periods');
+  assert.doesNotMatch(pending,/<span data-record-placeholder="season"><span/);
+ }
+ assert.equal((markup.match(/class="app-history-season club-record-season-placeholder" data-record-placeholder="season"/g)||[]).length,5);
+ assert.doesNotMatch(markup,/<span data-record-placeholder="season"><span class="app-history-season/);
+ assert.doesNotMatch(css,/\[data-record-period="verified"\] \[data-record-placeholder="season"\]\{display:none\}/,
+  'all-time season sources must retain their loading skeletons');
+ assert.match(css,/\.club-record-context-placeholder::before\{content:"Division";visibility:hidden\}/);
+ assert.match(css,/\.club-records \.app-history-player-footer>\.club-record-season-placeholder\{[\s\S]*?justify-self:end;align-self:center/);
+ assert.match(css,/\.club-records \.app-competition-stat-value:has\(>\.app-skeleton-bar\)::before\{content:"00";visibility:hidden\}/);
+});

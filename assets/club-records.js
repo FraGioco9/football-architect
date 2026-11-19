@@ -116,7 +116,8 @@
     '<a class="app-world-standing-club-link" href="/matches/'+match.matchId+'">'+score+'</a>':score;
   }
   const bar='<span class="app-skeleton-bar" aria-hidden="true"></span>';
-  const seasonPlaceholder='<span class="app-history-season club-record-season-placeholder" aria-hidden="true">'+
+  const seasonPlaceholder=(player=false)=>'<span class="app-history-season club-record-season-placeholder"'+
+   (player?' data-record-placeholder="season"':'')+' aria-hidden="true">'+
    '<span>'+label('season')+' 1</span>'+bar+'</span>';
   function card({key,value,sources,periods},position){
    const first=sources[0];
@@ -131,7 +132,7 @@
     sources.slice(1).map(s=>'<div>'+(key==='largest'?matchScore(s)+' · ':'')+context(s)+'</div>').join('')+'</details>':'';
    return '<article class="app-competition-stat-card"><h5 class="app-competition-stat-label">'+label(key)+'</h5>'+
     '<strong class="app-competition-stat-value">'+amount+'</strong>'+(loading?
-     '<div class="club-records-sources" data-record-placeholder="'+(position<2?'both':'season')+'">'+(position<2?'<span class="club-record-context-placeholder" aria-hidden="true">'+bar+'</span>':'')+seasonPlaceholder+'</div>':first?'<div class="club-records-sources"><span>'+context(first)+'</span>'+more+'</div>':
+     '<div class="club-records-sources" data-record-placeholder="'+(position<2?'both':'season')+'">'+(position<2?'<span class="club-record-context-placeholder" aria-hidden="true">'+bar+'</span>':'')+seasonPlaceholder()+'</div>':first?'<div class="club-records-sources"><span>'+context(first)+'</span>'+more+'</div>':
     valid&&periods?.length?'<div class="club-records-sources"><a class="app-world-standing-club-link app-records-season-link" href="'+selected.base+'/history">'+
      escape(w.season+' '+periods.join(', '))+'</a></div>':'')+'</article>';
   }
@@ -148,7 +149,7 @@
     '<strong class="app-competition-stat-value">'+(loading?bar:value??'—')+'</strong>'+
     '<div class="app-history-player-footer"'+(!loading&&!first?' hidden':'')+'>'+slot+'<div class="app-history-player-labels">'+
     '<div class="app-history-player-name-row">'+(loading?'<span class="app-history-player-name club-record-name-placeholder">'+bar+'</span>':name+extra)+'</div></div>'+
-    (loading?'<span data-record-placeholder="season">'+seasonPlaceholder+'</span>':first&&seasons.length?
+    (loading?seasonPlaceholder(true):first&&seasons.length?
      '<a class="app-history-season app-world-standing-club-link app-records-season-link" href="'+playerStatsHref(first.id,scope==='season'?season:null)+'">'+
      escape(scope==='season'?w.season+' '+season:w.season+' '+seasons.join(', '))+'</a>':'')+'</div></article>';
   }

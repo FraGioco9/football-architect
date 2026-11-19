@@ -805,19 +805,37 @@ html[data-theme="light"] .app-players-table.club-roster-table[data-players-table
 .club-records .app-history-player-footer{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:8px;align-items:center}
 .club-records .app-history-player-footer[hidden]{display:none}
 .club-records .app-history-player-footer .app-history-season{color:var(--muted);font-size:.78rem}
-.club-records[data-record-period="verified"] [data-record-placeholder="season"]{display:none}
-.club-record-context-placeholder{display:none}
-.club-records[data-record-period="verified"] .club-record-context-placeholder{display:flex;align-items:center}
-.club-record-context-placeholder>.app-skeleton-bar{width:8ch;height:.72em;margin:0}
+/* All loading tracks preserve the hydrated text line box and its centerline. */
+.club-record-context-placeholder{display:none;position:relative;line-height:inherit;white-space:nowrap}
+.club-records[data-record-period="verified"] .club-record-context-placeholder{display:inline-block}
+.club-record-context-placeholder::before{content:"Division";visibility:hidden}
+.club-record-context-placeholder>.app-skeleton-bar{
+ position:absolute;inset-inline-start:0;top:50%;transform:translateY(-50%);
+ width:100%;height:.72em;margin:0
+}
 .club-record-portrait-placeholder{background:var(--fa-crest-skeleton-fill)}
-.club-record-name-placeholder{display:flex;align-items:center;width:min(13ch,100%);height:1.35em}
+.club-record-name-placeholder{
+ display:inline-flex;align-items:center;width:min(13ch,100%);
+ height:1.35em;line-height:1.35
+}
 .club-record-name-placeholder>.app-skeleton-bar{width:100%;height:.76em;margin:0}
-.club-record-season-placeholder{position:relative;display:inline-block;white-space:nowrap}
+.club-record-season-placeholder{
+ position:relative;display:inline-block;white-space:nowrap;line-height:inherit;vertical-align:baseline
+}
 .club-record-season-placeholder>span:first-child{visibility:hidden}
-.club-record-season-placeholder>.app-skeleton-bar{position:absolute;inset-inline:0;top:50%;transform:translateY(-50%);width:100%;height:.72em}
+.club-record-season-placeholder>.app-skeleton-bar{
+ position:absolute;inset-inline:0;top:50%;transform:translateY(-50%);
+ width:100%;height:.72em;margin:0
+}
+.club-records .app-history-player-footer>.club-record-season-placeholder{
+ justify-self:end;align-self:center
+}
 .club-records .app-competition-stat-value:has(>.app-skeleton-bar){display:block;position:relative}
 .club-records .app-competition-stat-value:has(>.app-skeleton-bar)::before{content:"00";visibility:hidden}
-.club-records .app-competition-stat-value>.app-skeleton-bar{position:absolute;inset-inline-start:0;top:50%;transform:translateY(-50%);width:2ch;margin:0}
+.club-records .app-competition-stat-value>.app-skeleton-bar{
+ position:absolute;inset-inline-start:0;top:50%;transform:translateY(-50%);
+ width:2ch;margin:0
+}
 @media(max-width:620px){
  .club-records .app-history-player-footer{grid-template-columns:40px minmax(0,1fr) auto}
  .club-records .app-history-player-name{font-size:1rem}
