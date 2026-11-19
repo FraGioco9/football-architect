@@ -4,7 +4,7 @@ import fixtureUI from '../assets/club-fixtures.js';
 // CLUB-01: derive public presentation data without modifying canonical inputs.
 import {clubCrestAssets} from './club-crest-assets.mjs';
 import {loadWorldCatalog} from './load-world-catalog.mjs';
-function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp,recordLabels,recordScopes){
+function bootstrapClubFirstPaint(rosterLabels,rosterTabs,menuMarkup,statKeys,statHelp,recordLabels,recordScopes){
  const match=location.pathname.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|records|history)\/?$/);
  if(!match)return;
  const country=match[1],clubId=match[2],view=match[3];
@@ -78,7 +78,7 @@ function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp,recor
   roster.querySelector('.club-roster-count-width').textContent='99 '+({en:'players',it:'giocatori',de:'Spieler',es:'jugadores',fr:'joueurs'})[locale];
   for(const button of roster.querySelectorAll('[data-club-roster-view]')){
    const key=button.dataset.clubRosterView,active=key===(mode==='overview'?'info':mode);
-   button.textContent=key==='info'?'Info':key==='stats'?labels[locale][3]:wordsForRoster[0];
+   button.textContent=key==='info'?'Info':key==='stats'?rosterTabs[locale][1]:wordsForRoster[0];
    const query=new URLSearchParams(params);
    query.set('view',key);if(key!=='stats')query.delete('competition');query.delete('sort');query.delete('order');
    if(key==='attributes')query.set('group',mode==='attributes'?group:'technical');else query.delete('group');
@@ -307,7 +307,7 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations,c
    if(!localized||['en','de','es','fr','it'].some(lang=>!localized[lang]))throw Error('Missing club translations');
    return {...c,descriptions:localized,divisionId:catalog.getDivisionForClub(c.countryId+'-'+c.clubId)};
   })};
- const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+[clubModel.rosterLabels,Object.fromEntries(['group','competition'].map(id=>[id,fixtureUI.control(id,'','',[],'club-roster')])),clubModel.rosterSortKeys('stats').slice(3),clubModel.rosterStatHelp,recordsUI.words,Object.fromEntries(recordsUI.seasonKeys.map((key,i)=>[key,recordsUI.careerKeys[i]]))].map(value=>JSON.stringify(value)).join(',')+');';
+ const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+[clubModel.rosterLabels,clubModel.rosterTabs,Object.fromEntries(['group','competition'].map(id=>[id,fixtureUI.control(id,'','',[],'club-roster')])),clubModel.rosterSortKeys('stats').slice(3),clubModel.rosterStatHelp,recordsUI.words,Object.fromEntries(recordsUI.seasonKeys.map((key,i)=>[key,recordsUI.careerKeys[i]]))].map(value=>JSON.stringify(value)).join(',')+');';
  const staticContent=buildClubShell(firstPaintScript);
  let html=template;
  for(const [token,value] of Object.entries({...replacements,'@@FA_WORLD_SECTION@@':staticContent}))html=html.replaceAll(token,value);
