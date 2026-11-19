@@ -2,11 +2,11 @@
 (()=>{'use strict';
  const root=document.querySelector('[data-match-detail]');if(!root)return;
  const copies={
-  en:{match:'Match',tbd:'To be determined',round:'Round',home:'Home',away:'Away',position:'Position',form:'Form',lineup:'Lineup',player:'Player',rating:'Test rating',formW:'W',formD:'D',formL:'L',outcomeW:'Win',outcomeD:'Draw',outcomeL:'Loss',overview:'Overview',competition:'Competition',season:'Season',date:'Date',stadium:'Stadium',status:'Status',statusNames:{awaiting_participants:'Awaiting teams',scheduled:'Scheduled',in_progress:'In progress',completed:'Completed',postponed:'Postponed',cancelled:'Cancelled'},pitch:'Empty football pitch; match visualization is not yet available',notFound:'Match not found or not published.',error:'Match information is temporarily unavailable.'},
-  it:{match:'Partita',tbd:'Da determinare',round:'Giornata',home:'Casa',away:'Trasferta',position:'Posizione',form:'Forma',lineup:'Formazione',player:'Giocatore',rating:'Voto di prova',formW:'V',formD:'N',formL:'P',outcomeW:'Vittoria',outcomeD:'Pareggio',outcomeL:'Sconfitta',overview:'Panoramica',competition:'Competizione',season:'Stagione',date:'Data',stadium:'Stadio',status:'Stato',statusNames:{awaiting_participants:'In attesa delle squadre',scheduled:'Programmata',in_progress:'In corso',completed:'Conclusa',postponed:'Rinviata',cancelled:'Annullata'},pitch:'Campo vuoto; visualizzazione della partita non ancora disponibile',notFound:'Partita inesistente o non pubblicata.',error:'Informazioni sulla partita temporaneamente non disponibili.'},
-  de:{match:'Spiel',tbd:'Noch offen',round:'Spieltag',home:'Heim',away:'Gast',position:'Platz',form:'Form',lineup:'Aufstellung',player:'Spieler',rating:'Testnote',formW:'S',formD:'U',formL:'N',outcomeW:'Sieg',outcomeD:'Remis',outcomeL:'Niederlage',overview:'Übersicht',competition:'Wettbewerb',season:'Saison',date:'Datum',stadium:'Stadion',status:'Status',statusNames:{awaiting_participants:'Teilnehmer offen',scheduled:'Geplant',in_progress:'Läuft',completed:'Beendet',postponed:'Verschoben',cancelled:'Abgesagt'},pitch:'Leeres Spielfeld; Spielvisualisierung noch nicht verfügbar',notFound:'Spiel nicht gefunden oder nicht veröffentlicht.',error:'Spielinformationen derzeit nicht verfügbar.'},
-  es:{match:'Partido',tbd:'Por determinar',round:'Jornada',home:'Local',away:'Visitante',position:'Posición',form:'Forma',lineup:'Alineación',player:'Jugador',rating:'Nota de prueba',formW:'G',formD:'E',formL:'P',outcomeW:'Victoria',outcomeD:'Empate',outcomeL:'Derrota',overview:'Resumen',competition:'Competición',season:'Temporada',date:'Fecha',stadium:'Estadio',status:'Estado',statusNames:{awaiting_participants:'Equipos pendientes',scheduled:'Programado',in_progress:'En curso',completed:'Finalizado',postponed:'Aplazado',cancelled:'Cancelado'},pitch:'Campo vacío; visualización del partido todavía no disponible',notFound:'Partido no encontrado o no publicado.',error:'Información del partido temporalmente no disponible.'},
-  fr:{match:'Match',tbd:'À déterminer',round:'Journée',home:'Domicile',away:'Extérieur',position:'Position',form:'Forme',lineup:'Composition',player:'Joueur',rating:'Note de test',formW:'V',formD:'N',formL:'D',outcomeW:'Victoire',outcomeD:'Nul',outcomeL:'Défaite',overview:'Aperçu',competition:'Compétition',season:'Saison',date:'Date',stadium:'Stade',status:'Statut',statusNames:{awaiting_participants:'Équipes à déterminer',scheduled:'Programmé',in_progress:'En cours',completed:'Terminé',postponed:'Reporté',cancelled:'Annulé'},pitch:'Terrain vide; visualisation du match pas encore disponible',notFound:'Match introuvable ou non publié.',error:'Informations temporairement indisponibles.'}
+  en:{match:'Match',tbd:'To be determined',round:'Round',leagueRank:'League place',tieWinner:'Winner of tie',winnerCode:'WIN',afterExtraTime:'After extra time',penaltyShootout:'Penalties',home:'Home',away:'Away',position:'Position',form:'Form',lineup:'Lineup',player:'Player',rating:'Test rating',formW:'W',formD:'D',formL:'L',outcomeW:'Win',outcomeD:'Draw',outcomeL:'Loss',overview:'Overview',competition:'Competition',season:'Season',date:'Date',stadium:'Stadium',status:'Status',statusNames:{awaiting_participants:'Awaiting teams',scheduled:'Scheduled',in_progress:'In progress',completed:'Completed',postponed:'Postponed',cancelled:'Cancelled'},pitch:'Empty football pitch; match visualization is not yet available',notFound:'Match not found or not published.',error:'Match information is temporarily unavailable.'},
+  it:{match:'Partita',tbd:'Da determinare',round:'Giornata',leagueRank:'Posizione in campionato',tieWinner:'Vincente incontro',winnerCode:'VIN',afterExtraTime:'Dopo i supplementari',penaltyShootout:'Rigori',home:'Casa',away:'Trasferta',position:'Posizione',form:'Forma',lineup:'Formazione',player:'Giocatore',rating:'Voto di prova',formW:'V',formD:'N',formL:'P',outcomeW:'Vittoria',outcomeD:'Pareggio',outcomeL:'Sconfitta',overview:'Panoramica',competition:'Competizione',season:'Stagione',date:'Data',stadium:'Stadio',status:'Stato',statusNames:{awaiting_participants:'In attesa delle squadre',scheduled:'Programmata',in_progress:'In corso',completed:'Conclusa',postponed:'Rinviata',cancelled:'Annullata'},pitch:'Campo vuoto; visualizzazione della partita non ancora disponibile',notFound:'Partita inesistente o non pubblicata.',error:'Informazioni sulla partita temporaneamente non disponibili.'},
+  de:{match:'Spiel',tbd:'Noch offen',round:'Spieltag',leagueRank:'Ligaplatz',tieWinner:'Sieger des Duells',winnerCode:'SIE',afterExtraTime:'Nach Verlängerung',penaltyShootout:'Elfmeterschießen',home:'Heim',away:'Gast',position:'Platz',form:'Form',lineup:'Aufstellung',player:'Spieler',rating:'Testnote',formW:'S',formD:'U',formL:'N',outcomeW:'Sieg',outcomeD:'Remis',outcomeL:'Niederlage',overview:'Übersicht',competition:'Wettbewerb',season:'Saison',date:'Datum',stadium:'Stadion',status:'Status',statusNames:{awaiting_participants:'Teilnehmer offen',scheduled:'Geplant',in_progress:'Läuft',completed:'Beendet',postponed:'Verschoben',cancelled:'Abgesagt'},pitch:'Leeres Spielfeld; Spielvisualisierung noch nicht verfügbar',notFound:'Spiel nicht gefunden oder nicht veröffentlicht.',error:'Spielinformationen derzeit nicht verfügbar.'},
+  es:{match:'Partido',tbd:'Por determinar',round:'Jornada',leagueRank:'Puesto en liga',tieWinner:'Ganador de eliminatoria',winnerCode:'GAN',afterExtraTime:'Tras la prórroga',penaltyShootout:'Penaltis',home:'Local',away:'Visitante',position:'Posición',form:'Forma',lineup:'Alineación',player:'Jugador',rating:'Nota de prueba',formW:'G',formD:'E',formL:'P',outcomeW:'Victoria',outcomeD:'Empate',outcomeL:'Derrota',overview:'Resumen',competition:'Competición',season:'Temporada',date:'Fecha',stadium:'Estadio',status:'Estado',statusNames:{awaiting_participants:'Equipos pendientes',scheduled:'Programado',in_progress:'En curso',completed:'Finalizado',postponed:'Aplazado',cancelled:'Cancelado'},pitch:'Campo vacío; visualización del partido todavía no disponible',notFound:'Partido no encontrado o no publicado.',error:'Información del partido temporalmente no disponible.'},
+  fr:{match:'Match',tbd:'À déterminer',round:'Journée',leagueRank:'Place en championnat',tieWinner:'Vainqueur du duel',winnerCode:'VAI',afterExtraTime:'Après prolongation',penaltyShootout:'Tirs au but',home:'Domicile',away:'Extérieur',position:'Position',form:'Forme',lineup:'Composition',player:'Joueur',rating:'Note de test',formW:'V',formD:'N',formL:'D',outcomeW:'Victoire',outcomeD:'Nul',outcomeL:'Défaite',overview:'Aperçu',competition:'Compétition',season:'Saison',date:'Date',stadium:'Stade',status:'Statut',statusNames:{awaiting_participants:'Équipes à déterminer',scheduled:'Programmé',in_progress:'En cours',completed:'Terminé',postponed:'Reporté',cancelled:'Annulé'},pitch:'Terrain vide; visualisation du match pas encore disponible',notFound:'Match introuvable ou non publié.',error:'Informations temporairement indisponibles.'}
  };
  const numeric=x=>typeof x==='string'&&/^[1-9][0-9]*$/.test(x)&&Number.isSafeInteger(Number(x));
  const lang=()=>{const code=document.documentElement.lang?.slice(0,2).toLowerCase();return Object.hasOwn(copies,code)?code:'en'};
@@ -16,6 +16,18 @@
  const matchId=(/^\/matches\/([1-9][0-9]*)$/.exec(location.pathname)||[])[1];
  const clubKey=value=>{const m=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.exec(value||'');return m?m[1]+'-'+Number(m[2]):null};
  const href=path=>typeof window.faAppHref==='function'?window.faAppHref(path):path;
+ // Bracket slots expose typed, immutable dependencies before clubs exist.
+ // A/B are seeds, never fabricated home/away club identities.
+ const unresolvedParticipant=(side,tr)=>{
+  const participant=side==='home'?data?.participantA:data?.participantB;
+  if(participant?.kind==='leagueRank'&&Number.isSafeInteger(participant.rank)&&
+     participant.rank>=1&&participant.rank<=16)
+   return {short:'#'+participant.rank,full:tr.leagueRank+' '+participant.rank};
+  if(participant?.kind==='tieWinner'&&typeof participant.tieId==='string'&&
+     /^[A-Za-z0-9_-]{1,64}$/.test(participant.tieId))
+   return {short:tr.winnerCode,full:tr.tieWinner+' '+participant.tieId};
+  return {short:tr.tbd,full:tr.tbd};
+ };
  const competitionHref=id=>/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(id||'')
   ?href('/competitions/'+id.toLowerCase()+'/fixtures'):null;
  // Current public match responses have venue:null and kickoff:null.
@@ -36,6 +48,19 @@
   const name=typeof venue==='string'?venue:venue&&typeof venue==='object'&&!Array.isArray(venue)?venue.name:null;
   return typeof name==='string'&&name.trim().length>0&&name.trim().length<=120?name.trim():'';
  };
+ const verifiedScorePair=pair=>Number.isSafeInteger(pair?.home)&&pair.home>=0&&
+  Number.isSafeInteger(pair?.away)&&pair.away>=0;
+ // Receipt-only outcome context; the scoreboard result is never altered.
+ const verifiedResolution=(match,tr)=>{
+  if(match?.status!=='completed'||!/^[a-f0-9]{64}$/.test(match?.provenance?.receiptHash||''))return '';
+  const result=match.result;
+  if(result?.resolution==='extra-time'&&verifiedScorePair(result.extraTime))
+   return tr.afterExtraTime;
+  if(result?.resolution==='penalties'&&verifiedScorePair(result.penalties)&&
+     result.penalties.home!==result.penalties.away)
+   return tr.penaltyShootout+' '+result.penalties.home+'–'+result.penalties.away;
+  return '';
+ };
  let matchStatistics=null;
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null,sideProjection=null;
 
@@ -45,15 +70,12 @@
   const name=find('[data-match-'+side+'-name]');if(!name)return;
   const id=clubKey(data?.[side+'Participant']?.clubId);
   const club=id&&clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===id);
-  const participant=side==='home'?data?.participantA:data?.participantB;
-  let fallback=text().tbd;
-  if(!id&&participant?.kind==='leagueRank'&&Number.isSafeInteger(participant.rank)&&participant.rank>0)
-   fallback=text().round+' '+participant.rank;
-  const full=club?.primaryName||id||fallback;
+  const unresolved=unresolvedParticipant(side,text());
+  const full=club?.primaryName||id||unresolved.full;
   // Use the canonical club abbreviation (manifest field "abbr") on both
   // desktop and mobile; retain the primary name for accessible descriptions.
   const abbreviation=typeof club?.abbr==='string'&&/^[A-Z0-9]{2,5}$/.test(club.abbr)
-   ?club.abbr:club?.compactName||full;
+   ?club.abbr:club?.compactName||id||unresolved.short;
   name.textContent=abbreviation;
   name.setAttribute('aria-label',full);
   name.removeAttribute('title');
@@ -162,7 +184,9 @@
   const isNeutral=data?.neutral===true;
   const homeStadium=!isNeutral?publishedStadium(homeClub?.stadiumName):'';
   write('[data-match-overview="stadium"]',data?(publishedStadium(data.venue)||homeStadium):'');
-  write('[data-match-overview="status"]',data?(tr.statusNames[data.status]||''):'');
+  const resolution=data?verifiedResolution(data,tr):'';
+  write('[data-match-overview="status"]',data?(tr.statusNames[data.status]||'')+
+   (resolution?' · '+resolution:''):'');
   const panel=find('[data-match-overview-panel]');
   if(panel)panel.setAttribute('aria-label',tr.overview);
  }
@@ -176,7 +200,7 @@
    const club=id&&clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===id);
    const title=find('[data-match-side-name="'+side+'"]');
    if(title){
-    title.textContent=club?.primaryName||id||tr[side];
+    title.textContent=club?.primaryName||id||unresolvedParticipant(side,tr).full;
     // Only a verified club identity can navigate to the canonical overview.
     // Match the scoreboard links; unresolved participants remain plain text.
     if(id){

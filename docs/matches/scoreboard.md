@@ -464,3 +464,34 @@ regression cases cover 11 starters, 14 appearances including three
 substitutes, dismissals, 10/12 starters, duplicate IDs, fallback, stale
 receipt and API 503. No event timeline, backend simulation-rule change,
 migration, reset or deployment is included.
+
+
+### Verified match resolution and unresolved bracket state (#577, 2026-11-19)
+
+For completed matches with an immutable receipt hash, the existing Overview
+**Status** field may display `After extra time` or `Penalties H–A` when
+the authoritative result explicitly provides that resolution and a valid
+recorded extra-time or penalty score. The qualifier is localized in all five
+supported languages (EN, IT, DE, ES, FR). Malformed or unrecorded resolution
+details never produce a qualifier. The five-track symmetric scoreboard
+continues to show only the authoritative match score; its dimensions and
+the three fixed Overview rows are unchanged.
+
+Published but unresolved knockout reservations may identify the participating
+slots using the verified `participantA`/`participantB` types. A valid
+`leagueRank` (1–16) is shown with compact `#N` and a descriptive localized
+league-place label; a validated `tieWinner` reference uses a compact
+winner code with its verified original tie ID in the accessible and side-panel
+descriptions. Neither placeholder pretends to be a club, gains a club link
+or crest, or creates a result, date or event. Resolved, verified clubs always
+take precedence over the underlying bracket references.
+
+The 404 and 503 terminal states preserve reserved panel dimensions and the
+explicit accessible feedback, while hiding the loading-only name/crest
+skeletons. This prevents a failed read from appearing perpetually loading.
+Chromium/WebKit coverage now exercises the five-locale resolution text,
+unknown playoff participants and link safety, plus both terminal errors.
+
+No public backend transport, simulation, kickoff/neutral venue assignment,
+remote D1 or deployment change. Recorded event timelines remain a separate
+pending publication-contract/UI decision under #577.

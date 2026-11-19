@@ -29,6 +29,8 @@ for(const [engine,driver] of Object.entries(engines)){
    {width:390,kind:'eleven',shown:true},
    {width:1440,kind:'substitutions',shown:true},
    {width:320,kind:'dismissal',shown:true},
+   {width:900,kind:'extra-time',shown:true},
+   {width:390,kind:'penalties',shown:true},
    {width:390,kind:'ten-starters',shown:false},
    {width:1440,kind:'twelve-starters',shown:false},
    {width:390,kind:'duplicate-id',shown:false},
@@ -40,9 +42,13 @@ for(const [engine,driver] of Object.entries(engines)){
    const ctx=await browser.newContext({viewport:{width:scenario.width,height:900}});
    const page=await ctx.newPage();let release;
    const gate=new Promise(resolve=>release=resolve);
+   const result=scenario.kind==='penalties'
+    ?{homeGoals:1,awayGoals:1,resolution:'penalties',regulation:{home:1,away:1},extraTime:{home:0,away:0},penalties:{home:4,away:3},winnerClubId:'IT-1'}
+    :scenario.kind==='extra-time'
+    ?{homeGoals:2,awayGoals:1,resolution:'extra-time',regulation:{home:1,away:1},extraTime:{home:1,away:0},penalties:null,winnerClubId:'IT-1'}
+    :{homeGoals:2,awayGoals:1,resolution:'regulation',regulation:{home:2,away:1},extraTime:null,penalties:null,winnerClubId:'IT-1'};
    const played={...match,day:13,status:'completed',homeParticipant:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'},
-    result:{homeGoals:2,awayGoals:1,resolution:'regulation',regulation:{home:2,away:1},extraTime:null,penalties:null,winnerClubId:'IT-1'},
-    provenance:{kind:'authoritative',receiptHash:'a'.repeat(64)}};
+    result,provenance:{kind:'authoritative',receiptHash:'a'.repeat(64)}};
    const document=applyPublishedMatchDocument(shell,played,'123');
    try{
     await page.route('**/matches/123',route=>route.fulfill({status:200,contentType:'text/html',body:document}));
@@ -64,7 +70,7 @@ for(const [engine,driver] of Object.entries(engines)){
     });
     await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
-    assert.equal(await page.locator('[data-match-home-score]').textContent(),'2');
+    assert.equal(await page.locator('[data-match-home-score]').textContent(),String(result.homeGoals));
     assert.equal(await page.locator('.app-match-lineup-player').count(),0);
     const response=page.waitForResponse('**/api/matches/123/stats');release();await response;
     if(scenario.shown){
@@ -81,10 +87,73 @@ for(const [engine,driver] of Object.entries(engines)){
       'unverified, unavailable or incomplete frozen starting XI stays hidden: '+scenario.kind);
     }
     assert.equal(await page.locator('.app-match-lineup-row').count(),22,'fixed XI geometry');
-    assert.equal(await page.locator('[data-match-away-score]').textContent(),'1');
-    assert.equal(await page.locator('[data-match-home-score]').textContent(),'2');
+    assert.equal(await page.locator('[data-match-away-score]').textContent(),String(result.awayGoals));
+    assert.equal(await page.locator('[data-match-home-score]').textContent(),String(result.homeGoals));
+    if(scenario.kind==='extra-time'||scenario.kind==='penalties'){
+     const messages=scenario.kind==='penalties'?
+      {en:'Completed · Penalties 4–3',it:'Conclusa · Rigori 4–3',
+       de:'Beendet · Elfmeterschießen 4–3',es:'Finalizado · Penaltis 4–3',
+       fr:'Terminé · Tirs au but 4–3'}:
+      {en:'Completed · After extra time',it:'Conclusa · Dopo i supplementari',
+       de:'Beendet · Nach Verlängerung',es:'Finalizado · Tras la prórroga',
+       fr:'Terminé · Après prolongation'};
+     for(const [locale,expected] of Object.entries(messages)){
+      await page.evaluate(code=>document.documentElement.lang=code,locale);
+      await page.waitForFunction(expected=>document.querySelector('[data-match-overview="status"]')?.textContent===expected,expected);
+     }
+     assert.equal(await page.locator('.app-match-score-separator').textContent(),'–');
+    }
     count++;
    }finally{release?.();await ctx.close()}
+  }
+  // Bracket reservations are typed dependencies, not speculative clubs.
+  {
+   const ctx=await browser.newContext({viewport:{width:390,height:900}});
+   const page=await ctx.newPage();
+   const reserved={...match,stageId:'playoff',round:null,day:31,status:'awaiting_participants',
+    participantA:{kind:'leagueRank',rank:5},participantB:{kind:'tieWinner',tieId:'playoff-sf-1'},
+    homeParticipant:null,awayParticipant:null,result:null,venue:null,kickoff:null,
+    provenance:{kind:'authoritative',receiptHash:null}};
+   const html=applyPublishedMatchDocument(shell,reserved,'123');
+   try{
+    await page.route('**/matches/123',route=>route.fulfill({status:200,contentType:'text/html',body:html}));
+    await page.route('**/api/matches/123',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(reserved)}));
+    await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
+    assert.equal(await page.locator('[data-match-home-name]').textContent(),'#5');
+    assert.equal(await page.locator('[data-match-home-name]').getAttribute('aria-label'),'League place 5');
+    assert.equal(await page.locator('[data-match-away-name]').textContent(),'WIN');
+    assert.equal(await page.locator('[data-match-away-name]').getAttribute('aria-label'),'Winner of tie playoff-sf-1');
+    assert.equal(await page.locator('[data-match-side-name="home"]').textContent(),'League place 5');
+    assert.equal(await page.locator('[data-match-side-name="away"]').textContent(),'Winner of tie playoff-sf-1');
+    for(const side of ['home','away']){
+     assert.equal(await page.locator('[data-match-'+side+'-name]').getAttribute('href'),null);
+     assert.equal(await page.locator('[data-match-side-name="'+side+'"]').getAttribute('href'),null);
+     assert.equal(await page.locator('[data-match-'+side+'-score]').textContent(),'');
+    }
+    await page.evaluate(()=>document.documentElement.lang='it');
+    await page.waitForFunction(()=>document.querySelector('[data-match-away-name]')?.textContent==='VIN');
+    assert.equal(await page.locator('[data-match-side-name="home"]').textContent(),'Posizione in campionato 5');
+    assert.equal(await page.locator('[data-match-side-name="away"]').textContent(),'Vincente incontro playoff-sf-1');
+    count++;
+   }finally{await ctx.close()}
+  }
+  // Terminal 404/503 must not leave the initial loading indicators active.
+  for(const failure of [{status:404,state:'missing',message:'Match not found or not published.'},
+                      {status:503,state:'unavailable',message:'Match information is temporarily unavailable.'}]){
+   const ctx=await browser.newContext({viewport:{width:390,height:900}});
+   const page=await ctx.newPage();
+   try{
+    await page.route('**/matches/123',route=>route.fulfill({status:200,contentType:'text/html',body:decorated}));
+    await page.route('**/api/matches/123',route=>route.fulfill({status:failure.status,contentType:'application/json',body:'{}'}));
+    await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(state=>document.querySelector('[data-match-detail]')?.dataset.matchLoad===state,failure.state);
+    assert.equal(await page.locator('[data-match-feedback]').textContent(),failure.message);
+    assert.equal(await page.locator('[data-match-feedback]').isVisible(),true);
+    assert.equal(await page.locator('.app-match-side-link').first().evaluate(el=>getComputedStyle(el,'::before').content),'none');
+    assert.equal(await page.locator('.app-match-team-crest').first().evaluate(el=>getComputedStyle(el).visibility),'hidden');
+    count++;
+   }finally{await ctx.close()}
   }
   for(const theme of ['dark','light'])for(const device of cases){
    const ctx=await browser.newContext({viewport:{width:device.width,height:844},reducedMotion:'reduce'});

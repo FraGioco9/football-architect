@@ -173,6 +173,26 @@ test('#650 Match Detail renders only frozen verified XI test ratings with reserv
   assert.ok(js.includes(phrase),phrase);
  assert.doesNotMatch(js,/Math\.random\(/);
 });
+test('#577 match result context and typed bracket dependencies are receipt-only',()=>{
+ const js=read('assets/match-detail.js'),css=read('assets/match-detail.css');
+ assert.match(js,/const verifiedResolution=\(match,tr\)=>/);
+ assert.match(js,/match\?\.status!=='completed'/);
+ assert.ok(js.includes("/^[a-f0-9]{64}$/.test(match?.provenance?.receiptHash||'')"));
+ assert.match(js,/result\?\.resolution==='extra-time'/);
+ assert.match(js,/result\?\.resolution==='penalties'/);
+ assert.match(js,/result\.penalties\.home!==result\.penalties\.away/);
+ assert.match(js,/const unresolvedParticipant=\(side,tr\)=>/);
+ assert.match(js,/participant\?\.kind==='leagueRank'/);
+ assert.match(js,/participant\?\.kind==='tieWinner'/);
+ for(const locale of ['en','it','de','es','fr'])
+  assert.ok(js.includes('  '+locale+':{match:'),locale);
+ for(const k of ['afterExtraTime','penaltyShootout','leagueRank','tieWinner','winnerCode'])
+  assert.equal((js.match(new RegExp(k+':', 'g'))||[]).length,5,k);
+ assert.match(css,/\.app-match-page\[data-match-load="loading"\] \[data-match-overview\]:empty::before/);
+ assert.doesNotMatch(css,/\[data-match-load="unavailable"\]\) \[data-match-overview\]:empty::before/);
+ assert.ok(css.includes('.app-match-team-link .app-skeleton-bar,'));
+ assert.ok(css.includes('.app-match-team-crest{visibility:hidden}'));
+});
 test('#577 never fabricates scores, lineups, competition branding or match outcomes',()=>{
  const js=read('assets/match-detail.js');
  const html=read('matches/_shared/index.html');
@@ -213,7 +233,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/Number\.isSafeInteger\(data\?\.round\)/);
  assert.match(js,/tr\.statusNames\[data\.status\]/);
  assert.doesNotMatch(js,/renderMatchView|activeMatchView|matchViews|data-match-view-selector/);
- for(const fragment of ["club?.primaryName||id||tr[side]","crest.dataset.clubCrest=id",
+ for(const fragment of ["club?.primaryName||id||unresolvedParticipant(side,tr).full","crest.dataset.clubCrest=id",
  "data-match-side-crest","renderSides(tr)"])assert.ok(js.includes(fragment),fragment);
  assert.doesNotMatch(js,/assets\/clubs\/.*crest\.svg/);
  assert.match(js,/title\.href=href\('\/clubs\/'\+id\.split\('-'\)\[0\]\.toLowerCase\(\)/);
@@ -239,7 +259,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/link\.removeAttribute\('href'\);link\.removeAttribute\('target'\);link\.removeAttribute\('rel'\)/);
  assert.match(js,/if\(!numeric\(matchId\)\)/);
  assert.match(js,/const abbreviation=typeof club\?\.abbr==='string'/);
- assert.match(js,/\?club\.abbr:club\?\.compactName\|\|full/);
+ assert.match(js,/\?club\.abbr:club\?\.compactName\|\|id\|\|unresolved\.short/);
  assert.match(js,/name\.textContent=abbreviation/);
  assert.match(js,/name\.href=href\('\/clubs\/'\+id\.split\('-'\)\[0\]\.toLowerCase\(\)\+'\/'\+Number\(id\.split\('-'\)\[1\]\)\+'\/overview'\)/);
  assert.match(js,/name\.removeAttribute\('href'\);name\.removeAttribute\('target'\);name\.removeAttribute\('rel'\)/);
