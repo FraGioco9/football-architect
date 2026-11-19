@@ -1,34 +1,34 @@
 /** #712: Player Detail > Matches. One batched, world-fenced read per page. */
 const copy={
- en:{headers:["Date","Competition","Club","Opponent","Venue","Result","Min","Gls","Ast","YC","RC","CS","Rat."],help:["Season and official matchday; calendar date not recorded","Competition played","Player's club in this match","Opposing club","Home, away or neutral venue","Final score from the player's perspective","Minutes played","Goals scored","Assists","Yellow cards","Red cards","Clean sheets","Rating"],
+ en:{headers:["Date","Competition","Club","Opponent","Venue","Result","Min","Gls","Ast","YC","RC","CS","MVP","Rat."],help:["Season and official matchday; calendar date not recorded","Competition played","Player's club in this match","Opposing club","Home, away or neutral venue","Final score from the player's perspective","Minutes played","Goals scored","Assists","Yellow cards","Red cards","Clean sheets","Player of the match","Rating"],
  season:'Season',day:'Day',allSeasons:'All seasons',allCompetitions:'All competitions',
  loading:'Loading verified appearances…',empty:'No official appearances recorded.',filteredEmpty:"No matches for these filters.",
  unavailable:'Official match evidence is not available.',error:'Unable to load matches.',
  more:'Load more',details:'Match performance details',starter:'Started',sub:'Substitute',
  positions:'Position played',venue:['Home','Away','Neutral'],resolution:'Resolution',penalties:'Penalties',
  noRecord:'Not recorded'},
- it:{headers:["Data","Competizione","Club","Avversario","Sede","Risultato","Min","Gol","Assist","Gialli","Rossi","CS","Val."],help:["Stagione e giornata ufficiale; data di calendario non registrata","Competizione disputata","Club del giocatore nella partita","Club avversario","Casa, trasferta o campo neutro","Risultato dalla prospettiva del giocatore","Minuti giocati","Gol segnati","Assist","Cartellini gialli","Cartellini rossi","Clean sheet","Valutazione"],
+ it:{headers:["Data","Competizione","Club","Avversario","Sede","Risultato","Min","Gol","Assist","Gialli","Rossi","CS","MVP","Val."],help:["Stagione e giornata ufficiale; data di calendario non registrata","Competizione disputata","Club del giocatore nella partita","Club avversario","Casa, trasferta o campo neutro","Risultato dalla prospettiva del giocatore","Minuti giocati","Gol segnati","Assist","Cartellini gialli","Cartellini rossi","Clean sheet","Migliore in campo","Valutazione"],
  season:'Stagione',day:'Giornata',allSeasons:'Tutte le stagioni',allCompetitions:'Tutte le competizioni',
  loading:'Caricamento presenze verificate…',empty:'Nessuna presenza ufficiale registrata.',filteredEmpty:"Nessuna partita per questi filtri.",
  unavailable:'Dati ufficiali delle partite non disponibili.',error:'Impossibile caricare le partite.',
  more:'Carica altre',details:'Dettagli prestazione',starter:'Titolare',sub:'Subentrato',
  positions:'Posizioni giocate',venue:['Casa','Trasferta','Neutro'],resolution:'Esito',penalties:'Rigori',
  noRecord:'Non registrato'},
- de:{headers:["Datum","Wettbewerb","Verein","Gegner","Ort","Ergebnis","Min","Tor.","Vor.","Gelb","Rot","CS","Bew."],help:["Saison und offizieller Spieltag; Kalenderdatum nicht erfasst","Gespielter Wettbewerb","Verein des Spielers in diesem Spiel","Gegnerischer Verein","Heim, auswärts oder neutral","Endstand aus Sicht des Spielers","Gespielte Minuten","Tore","Vorlagen","Gelbe Karten","Rote Karten","Spiele ohne Gegentor","Bewertung"],
+ de:{headers:["Datum","Wettbewerb","Verein","Gegner","Ort","Ergebnis","Min","Tor.","Vor.","Gelb","Rot","CS","MVP","Bew."],help:["Saison und offizieller Spieltag; Kalenderdatum nicht erfasst","Gespielter Wettbewerb","Verein des Spielers in diesem Spiel","Gegnerischer Verein","Heim, auswärts oder neutral","Endstand aus Sicht des Spielers","Gespielte Minuten","Tore","Vorlagen","Gelbe Karten","Rote Karten","Spiele ohne Gegentor","Spieler des Spiels","Bewertung"],
  season:'Saison',day:'Spieltag',allSeasons:'Alle Saisons',allCompetitions:'Alle Wettbewerbe',
  loading:'Verifizierte Einsätze werden geladen…',empty:'Keine offiziellen Einsätze erfasst.',filteredEmpty:"Keine Spiele für diese Filter.",
  unavailable:'Offizielle Spieldaten nicht verfügbar.',error:'Spiele können nicht geladen werden.',
  more:'Mehr laden',details:'Spieldetails',starter:'Startelf',sub:'Eingewechselt',
  positions:'Gespielte Positionen',venue:['Heim','Gast','Neutral'],resolution:'Entscheidung',penalties:'Elfmeterschießen',
  noRecord:'Nicht erfasst'},
- es:{headers:["Fecha","Competición","Club","Rival","Sede","Resultado","Min","Gol","Asist.","Amar.","Rojas","CS","Val."],help:["Temporada y jornada oficial; fecha de calendario no registrada","Competición disputada","Club del jugador en ese partido","Club rival","Local, visitante o neutral","Marcador desde la perspectiva del jugador","Minutos jugados","Goles","Asistencias","Tarjetas amarillas","Tarjetas rojas","Porterías a cero","Valoración"],
+ es:{headers:["Fecha","Competición","Club","Rival","Sede","Resultado","Min","Gol","Asist.","Amar.","Rojas","CS","Val."],help:["Temporada y jornada oficial; fecha de calendario no registrada","Competición disputada","Club del jugador en ese partido","Club rival","Local, visitante o neutral","Marcador desde la perspectiva del jugador","Minutos jugados","Goles","Asistencias","Tarjetas amarillas","Tarjetas rojas","Porterías a cero","Jugador del partido","Valoración"],
  season:'Temporada',day:'Jornada',allSeasons:'Todas las temporadas',allCompetitions:'Todas las competiciones',
  loading:'Cargando apariciones verificadas…',empty:'No hay apariciones oficiales registradas.',filteredEmpty:"No hay partidos con estos filtros.",
  unavailable:'Datos oficiales de partidos no disponibles.',error:'No se pudieron cargar los partidos.',
  more:'Cargar más',details:'Detalles del partido',starter:'Titular',sub:'Suplente utilizado',
  positions:'Posiciones jugadas',venue:['Local','Visitante','Neutral'],resolution:'Resolución',penalties:'Penaltis',
  noRecord:'No registrado'},
- fr:{headers:["Date","Compétition","Club","Adversaire","Lieu","Résultat","Min","Bts","PdD","Jaunes","Rouges","CS","Not."],help:["Saison et journée officielle ; date calendaire non enregistrée","Compétition disputée","Club du joueur lors du match","Club adverse","Domicile, extérieur ou terrain neutre","Score final du point de vue du joueur","Minutes jouées","Buts marqués","Passes décisives","Cartons jaunes","Cartons rouges","Matches sans but encaissé","Note"],
+ fr:{headers:["Date","Compétition","Club","Adversaire","Lieu","Résultat","Min","Bts","PdD","Jaunes","Rouges","CS","MVP","Not."],help:["Saison et journée officielle ; date calendaire non enregistrée","Compétition disputée","Club du joueur lors du match","Club adverse","Domicile, extérieur ou terrain neutre","Score final du point de vue du joueur","Minutes jouées","Buts marqués","Passes décisives","Cartons jaunes","Cartons rouges","Matches sans but encaissé","Joueur du match","Note"],
  season:'Saison',day:'Journée',allSeasons:'Toutes les saisons',allCompetitions:'Toutes les compétitions',
  loading:'Chargement des apparitions vérifiées…',empty:'Aucune apparition officielle enregistrée.',filteredEmpty:"Aucun match pour ces filtres.",
  unavailable:'Données officielles indisponibles.',error:'Impossible de charger les matchs.',
@@ -148,6 +148,7 @@ export function createPlayerMatchesView({host,id,locale,fetchMatches,clubName,cl
   return cell;
  }
  const fmt=(value,metric)=>value===null||value===undefined?'—':
+   metric==='mvp'?(value===true?'1':value===false?'0':'—'):
   metric==='rating'?(typeof value==='number'&&Number.isFinite(value)?value.toFixed(1):'—'):printable(value);
  function resultText(item){
   const score=item.result;
@@ -248,7 +249,7 @@ export function createPlayerMatchesView({host,id,locale,fetchMatches,clubName,cl
   const result=el('td','','app-player-matches-number app-player-matches-result');
   result.append(textTrack(resultText(item)));tr.append(result);
   const p=item.performance||{};
-  for(const metric of ['minutes','goals','assists','yellowCards','redCards','cleanSheets','rating']){
+  for(const metric of ['minutes','goals','assists','yellowCards','redCards','cleanSheets','mvp','rating']){
    const cell=el('td','','app-player-matches-number');
    cell.dataset.metric=metric;
    cell.append(textTrack(fmt(p[metric],metric)));
@@ -274,7 +275,7 @@ export function createPlayerMatchesView({host,id,locale,fetchMatches,clubName,cl
    const message=status==='error'?w.error:status==='unavailable'?w.unavailable:
     items.length===0?w.empty:w.filteredEmpty;
    tbody.replaceChildren();
-   const tr=el('tr','','app-player-matches-empty'),td=el('td',message);td.colSpan=13;
+   const tr=el('tr','','app-player-matches-empty'),td=el('td',message);td.colSpan=14;
    tr.append(td);tbody.append(tr);note.textContent=message;return;
   }
   const focusedRow=host.contains(document.activeElement)?

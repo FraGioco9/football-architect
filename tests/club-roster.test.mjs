@@ -14,7 +14,7 @@ test('Roster generated first paint exactly matches the canonical bootstrap and S
  const [labels,tabs,menus,keys,help]=JSON.parse('['+embedded[2]+']');
  const expected=model.rosterSortKeys('stats').slice(3);
  assert.deepEqual(keys,expected,'parser-time Stats columns use the same sort keys as hydration');
- assert.equal(keys.length,9,'Stats shows nine numerical columns, never legacy four-stat headers');
+ assert.equal(keys.length,10,'Stats shows ten numerical columns, never legacy four-stat headers');
  assert.deepEqual(labels,model.rosterLabels,'parser-time headers match the current five-language model');
  assert.deepEqual(tabs,model.rosterTabs,'parser-time Roster subview labels match hydration in all five languages');
  assert.deepEqual(help,model.rosterStatHelp,'parser-time metric tooltips and labels match hydration');
@@ -77,9 +77,9 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
   for(const panel of [attributes,stats])assert.match(panel,/data-club-roster-control="(?:group|competition)"[\s\S]+?<span class="club-roster-count">/);
   assert.doesNotMatch(stats,/club-roster-scope/);
   assert.equal((stats.match(/class="club-roster-player-link"/g)||[]).length,65);
-  for(const key of ['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating'])
+  for(const key of ['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','mvpAwards','averageRating'])
    assert.match(stats,new RegExp('data-club-roster-sort="'+key+'"'));
-  assert.equal((stats.match(/<th scope="col"/g)||[]).length,12,language);
+  assert.equal((stats.match(/<th scope="col"/g)||[]).length,13,language);
   assert.doesNotMatch(html,/club-empty|pagination|pageSize|development_aptitude|initial_age|<h2>Roster/);
   assert.ok(html.includes('65 '),language);
   for(const [group,length] of [['technical',11],['mental',7],['physical',7],['goalkeeping',7]]){
@@ -149,10 +149,10 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  assert.ok(all.includes('>7.1</td>')&&all.includes('>9 (—)</td>'),'Rating and Apps (Subs) retain recorded values without a visible XI column');
  assert.ok(all.includes('>2</td>'),'recorded yellow cards appear');
  const keys=[...all.matchAll(/data-club-roster-sort="([^"]+)"/g)].map(m=>m[1]);
- assert.deepEqual(keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','averageRating']);
+ assert.deepEqual(keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','mvpAwards','averageRating']);
  assert.ok(!keys.includes('starts'),'XI removed from the Stats UI and sort');
  assert.ok(!all.includes('data-roster-stat-help="Starts"'));
- assert.equal((all.match(/data-roster-stat-help="/g)||[]).length,9);
+ assert.equal((all.match(/data-roster-stat-help="/g)||[]).length,10);
  assert.ok(all.indexOf('data-club-roster-sort="goalsAssistsPer90"')<
   all.indexOf('data-club-roster-sort="yellowCards"'));
  assert.ok(all.indexOf('data-club-roster-sort="averageRating"')>
@@ -172,12 +172,12 @@ test('Roster Stats mirrors Player Stats including zero, unavailable and competit
  assert.ok(sorted.indexOf('href="/players/1"')<sorted.indexOf('href="/players/2"'));
  assert.ok(render('?view=stats&competition=domestic&sort=assists&order=asc').includes('aria-sort="ascending"'));
  for(const language of ['en','de','es','fr','it'])
-  assert.equal((model.render(manifest,club,language,'?view=stats',null,1,null,snapshot).match(/<th scope="col"/g)||[]).length,12);
+  assert.equal((model.render(manifest,club,language,'?view=stats',null,1,null,snapshot).match(/<th scope="col"/g)||[]).length,13);
  const css=read('assets/club-page.css');
  assert.match(css,/width:var\(--club-roster-stat-share\)/);
  assert.doesNotMatch(css,/--club-roster-stat-space/,'mixed percentage/length calc breaks first-paint <col> geometry');
  const fractions=[...css.matchAll(/--club-roster-stat-share:([\d.]+)%\}/g)].map(m=>Number(m[1]));
- assert.equal(fractions.length,9);
+ assert.equal(fractions.length,10);
  assert.ok(Math.abs(fractions.reduce((a,b)=>a+b,0)-100)<1e-9);
  assert.match(css,/thead th:last-child\{\s*background:#305c4c;color:#effff4;font-weight:800/);
  assert.match(css,/tbody tr:not\(\.app-players-loading-row\):not\(\.app-players-empty-row\)>td:last-child\{\s*background:#26473e;color:#e6ffed;font-weight:800/);

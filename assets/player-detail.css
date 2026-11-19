@@ -149,7 +149,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 /* #578 Player Stats: reuse Club History's table geometry and disclosure motion. */
 .app-player-detail-stats{margin-top:5px;min-width:0}
 .app-player-stats-table-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;overscroll-behavior-x:contain}
-.app-player-stats-table{--player-stats-row-height:56px;width:100%;min-width:1060px;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.app-player-stats-table{--player-stats-row-height:56px;width:100%;min-width:1120px;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .app-player-stats-col-season{width:140px}
 .app-player-stats-col-competition{width:190px}
 .app-player-stats-col-club{width:170px}
@@ -413,7 +413,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-matches-col-venue{width:50px}.app-player-matches-col-result{width:75px}
 .app-player-matches-col-minutes{width:58px}
 .app-player-matches-col-goals,.app-player-matches-col-assists,.app-player-matches-col-yellow,.app-player-matches-col-red,.app-player-matches-col-clean{width:54px}
-.app-player-matches-col-rating{width:72px}
+.app-player-matches-col-mvp{width:54px}.app-player-matches-col-rating{width:72px}
 .app-player-matches-table tr.app-player-matches-row{height:56px}
 .app-player-matches-table th,.app-player-matches-table td{box-sizing:border-box;height:56px;padding:8px 7px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:13px}
 .app-player-matches-table thead th{color:var(--muted);font-size:12px;font-weight:600}
@@ -499,8 +499,8 @@ html:lang(fr) .app-player-matches-table{--app-player-matches-mobile-result:"Rés
  .app-player-matches-table tr.app-player-matches-row>:nth-child(1){grid-column:1;grid-row:1}
  .app-player-matches-table tr.app-player-matches-row>:nth-child(4){grid-column:1;grid-row:2}
  .app-player-matches-table tr.app-player-matches-row>:nth-child(6){grid-column:2;grid-row:1 / span 2;justify-content:center}
- .app-player-matches-table tr.app-player-matches-row>:nth-child(13){grid-column:3;grid-row:1 / span 2;justify-content:flex-end}
- .app-player-matches-table tr.app-player-matches-row>:not(:nth-child(1)):not(:nth-child(4)):not(:nth-child(6)):not(:nth-child(13)){display:none}
+ .app-player-matches-table tr.app-player-matches-row>:nth-child(14){grid-column:3;grid-row:1 / span 2;justify-content:flex-end}
+ .app-player-matches-table tr.app-player-matches-row>:not(:nth-child(1)):not(:nth-child(4)):not(:nth-child(6)):not(:nth-child(14)){display:none}
  .app-player-matches-match>.app-player-matches-value{min-height:28px;height:28px;max-width:100%}
  .app-player-matches-match .app-player-matches-link{
   display:-webkit-box;max-width:100%;max-height:28px;overflow:hidden;
@@ -516,20 +516,20 @@ html:lang(fr) .app-player-matches-table{--app-player-matches-mobile-result:"Rés
  .app-player-matches-loading .app-player-matches-skeleton-crest{width:20px;height:20px;min-width:20px;margin-right:0;flex:none}
  /* Both labels and data stay in the same vertically centered grid cells. */
  .app-player-matches-table tr.app-player-matches-row>:nth-child(6),
- .app-player-matches-table tr.app-player-matches-row>:nth-child(13){
+ .app-player-matches-table tr.app-player-matches-row>:nth-child(14){
   height:56px;flex-direction:column;align-items:center;justify-content:center;gap:2px;
  }
- .app-player-matches-table tr.app-player-matches-row>:nth-child(13){align-items:flex-end}
+ .app-player-matches-table tr.app-player-matches-row>:nth-child(14){align-items:flex-end}
  .app-player-matches-table tr.app-player-matches-row>:nth-child(6)::before,
- .app-player-matches-table tr.app-player-matches-row>:nth-child(13)::before{
+ .app-player-matches-table tr.app-player-matches-row>:nth-child(14)::before{
   display:block;height:12px;line-height:12px;font-size:10px;font-weight:600;
   color:var(--muted);white-space:nowrap;
  }
  .app-player-matches-table tr.app-player-matches-row>:nth-child(6)::before{content:var(--app-player-matches-mobile-result)}
- .app-player-matches-table tr.app-player-matches-row>:nth-child(13)::before{content:var(--app-player-matches-mobile-rating)}
+ .app-player-matches-table tr.app-player-matches-row>:nth-child(14)::before{content:var(--app-player-matches-mobile-rating)}
  .app-player-matches-loading :is(th,td):nth-child(-n+4) .app-player-matches-value{width:auto;max-width:100%;justify-content:flex-start}
  .app-player-matches-table tr.app-player-matches-row>:nth-child(6) .app-player-matches-value{justify-content:center}
- .app-player-matches-table tr.app-player-matches-row>:nth-child(13) .app-player-matches-value{justify-content:flex-end}
+ .app-player-matches-table tr.app-player-matches-row>:nth-child(14) .app-player-matches-value{justify-content:flex-end}
  .app-player-matches-loading .app-player-matches-value>.club-fp-bar{max-width:100%}
  .app-player-matches-footer{padding-inline:12px}
  .app-player-matches-more{min-height:44px;width:100%;text-align:center}

@@ -19,7 +19,7 @@ test('#578 public Player Detail has an active Stats tab, with identical canonica
 });
 test('#578 all supported languages label stats and keep genuine unavailable counters',()=>{
  for(const lang of ['en','it','de','es','fr']){
-  assert.equal(statsWords[lang].headers.length,10);
+  assert.equal(statsWords[lang].headers.length,11);
   assert.equal(statsWords[lang].keeper,'CS');
  }
  assert.equal(formatApps(24,5),'24 (5)');
@@ -47,7 +47,7 @@ test('#578 uses one lazily loaded personal Stats API and canonical competition/c
 test('#578 seven numeric header tooltips reuse the site animation and show expanded labels',()=>{
  const source=read('assets/player-stats.mjs'),site=read('assets/app.css');
  for(const lang of ['en','it','de','es','fr']){
-  assert.equal(statsWords[lang].help.length,10,lang);
+  assert.equal(statsWords[lang].help.length,11,lang);
   assert.deepEqual(statsWords[lang].help.slice(0,3),[null,null,null],lang+' has no identity tooltip');
   assert.ok(statsWords[lang].help.slice(3).every(v=>typeof v==='string'&&v.length>=4&&v.length<100),lang);
   assert.ok(statsWords[lang].keeperHelp.length>=4&&statsWords[lang].keeperHelp.length<100,lang);
@@ -58,7 +58,7 @@ test('#578 seven numeric header tooltips reuse the site animation and show expan
  assert.match(source,/pointerover/);assert.match(source,/focusin/);
  assert.match(source,/event.key==='Escape'/);
  assert.match(source,/if\(index<3\)/,'identity headers are plain text');
- assert.match(source,/index<3\|\|index>=10/,'only seven numeric headers can trigger a tooltip');
+ assert.match(source,/index<3\|\|index>=11/,'eight numeric headers can trigger a tooltip');
  assert.match(site,/\.app-players-nationality-tooltip\.is-closing\{animation:app-world-tooltip-out 130ms/);
  assert.match(site,/\.app-players-nationality-tooltip\{[^}]+animation:app-world-tooltip-in 170ms/);
 });
@@ -71,15 +71,15 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
  assert.match(tbody,/app-player-stats-skeleton-season/);
  assert.match(tbody,/app-player-stats-skeleton-total/);
  assert.doesNotMatch(tbody,/data-stats-toggle=/,'loading rows must not expose a fake disclosure');
- const fields=['apps','minutes','score','assists','yellow','red','rating'];
- assert.equal((tbody.match(/class="app-player-stats-number"/g)||[]).length,14,
+ const fields=['apps','minutes','score','assists','yellow','red','mvp','rating'];
+ assert.equal((tbody.match(/class="app-player-stats-number"/g)||[]).length,16,
   'first paint reserves season and career numeric cells');
  assert.equal((tbody.match(/app-player-stats-loading/g)||[]).length,2);
  assert.match(tbody,/data-player-stats-career-skeleton="true"/);
  assert.match(tbody,/app-player-stats-skeleton-career/);
  assert.ok(tbody.indexOf('app-player-stats-skeleton-career')<tbody.indexOf('app-player-stats-skeleton-season'),
   'Career skeleton is first on parser-time HTML');
- assert.equal((tbody.match(/class="app-player-stats-value"/g)||[]).length,14,
+ assert.equal((tbody.match(/class="app-player-stats-value"/g)||[]).length,16,
   'both skeleton rows reserve exactly seven shared numeric value slots');
  assert.equal((tbody.match(/class="app-player-stats-total-value"/g)||[]).length,2,
   'both total labels reserve the same left-aligned value slot as hydrated rows');
