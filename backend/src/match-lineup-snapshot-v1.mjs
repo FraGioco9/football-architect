@@ -4,6 +4,7 @@
 import {ATTRIBUTES} from './players-generator-core.mjs';
 import {simulateMatchV1,attachTestRatingsV1,buildCandidateMatchReceiptV1,LINEUP_SIMULATOR_VERSION} from './temporary-lineup-v1.mjs';
 import {planRecordedMatchTimelineV1} from './match-recorded-events-v1.mjs';
+import {sealMatchMvpV1} from './match-mvp-v1.mjs';
 import {resolvePublishedKnockoutV1} from './match-knockout-binding-v1.mjs';
 
 const clubPattern=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/;
@@ -134,6 +135,7 @@ export async function planMatchSimulationReceiptV1(db,{match,world,seed,context,
  outcome.playerIdentities=[...outcome.home.appearances,...outcome.away.appearances].map(p=>({
   playerId:p.playerId,name:identities.get(p.playerId)?.name??null,nationality:identities.get(p.playerId)?.nationality??null
  })).sort((a,b)=>a.playerId-b.playerId);
+ sealMatchMvpV1(outcome); // Versioned MVP proof, sealed with this new receipt.
  const candidate=await buildCandidateMatchReceiptV1({
   matchId:match.matchId,fixtureId:match.fixtureId,competitionId:match.competitionId,
   season:match.season,day:match.day,generation:world.generation,sourceHash:match.sourceHash,
