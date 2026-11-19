@@ -7,7 +7,8 @@
  const portraitFallback=panel.querySelector('[data-detail-portrait-placeholder]');
  // SVGElement.hidden is not reliably reflected in the DOM; use the actual
  // hidden attribute. Keep both photo and fallback hidden until resolved.
- // Public portrait paths are derived from canonical IDs; missing photos use the silhouette.
+ // Only the public API may authorise a V4.2-approved portrait; a physical
+ // old WebP file at the same ID is NOT proof that a new face is approved.
  // Protected Admin previews never request a public portrait.
  let portraitRequest=0;
  function resetPortrait(){
@@ -20,7 +21,8 @@
   resetPortrait();
   const source=!preview&&state==='ready'&&player&&Number.isSafeInteger(id)
    &&id>0&&(!Number.isSafeInteger(player.id)||player.id===id)
-   ?'/assets/players/portraits/'+id+'.webp':null;
+   &&player.portraitAssetKey==='assets/players/portraits/'+id+'.webp'
+   ?'/'+player.portraitAssetKey:null;
   if(!source){
    // Once a player is known, a missing portrait uses the silhouette.
    if(state==='ready')portraitFallback.removeAttribute('hidden');
