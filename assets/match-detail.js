@@ -227,11 +227,15 @@
    if(!list)return;
    const source=data?.status==='completed'&&data?.provenance?.receiptHash
     ?matchStatistics?.statistics?.[side]:null;
-   const starters=source?.kind==='real_xi'&&Array.isArray(source.players)&&
-    source.players.length===11?source.players:null;
-   const valid=starters&&new Set(starters.map(p=>p.playerId)).size===11&&
-    starters.every(p=>Number.isSafeInteger(p.playerId)&&p.playerId>0&&
-     /^[A-Z]{2,3}$/.test(p.role)&&
+   // Frozen V2 statistics include substitute appearances as well as starters.
+   // Preserve the eleven-row XI without replacing starters with substitutes.
+   const appearances=source?.kind==='real_xi'&&Array.isArray(source.players)?source.players:null;
+   const starters=appearances?.filter(p=>p?.started===true);
+   const valid=appearances&&appearances.length>=11&&appearances.length<=17&&
+    appearances.every(p=>p&&typeof p.started==='boolean'&&
+     Number.isSafeInteger(p.playerId)&&p.playerId>0)&&
+    new Set(appearances.map(p=>p.playerId)).size===appearances.length&&
+    starters.length===11&&starters.every(p=>/^[A-Z]{2,3}$/.test(p.role)&&
      (p.rating===null||typeof p.rating==='number'));
    const rated=valid&&matchStatistics?.statistics?.ratingVersion==='test-rating-v1';
    for(const [i,row] of [...list.children].entries()){

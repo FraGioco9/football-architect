@@ -24,8 +24,19 @@ let count=0;
 for(const [engine,driver] of Object.entries(engines)){
  const browser=await driver.launch({headless:true});
  try{
-  // Dedicated stats are delayed or unavailable without gating the scoreboard.
-  for(const scenario of [{width:390,valid:true},{width:1440,valid:false}]){
+  // Dedicated statistics may include substitutes and can arrive after the score.
+  const lineupScenarios=[
+   {width:390,kind:'eleven',shown:true},
+   {width:1440,kind:'substitutions',shown:true},
+   {width:320,kind:'dismissal',shown:true},
+   {width:390,kind:'ten-starters',shown:false},
+   {width:1440,kind:'twelve-starters',shown:false},
+   {width:390,kind:'duplicate-id',shown:false},
+   {width:1440,kind:'fallback',shown:false},
+   {width:390,kind:'receipt-mismatch',shown:false},
+   {width:390,kind:'unavailable',shown:false}
+  ];
+  for(const scenario of lineupScenarios){
    const ctx=await browser.newContext({viewport:{width:scenario.width,height:900}});
    const page=await ctx.newPage();let release;
    const gate=new Promise(resolve=>release=resolve);
@@ -39,24 +50,38 @@ for(const [engine,driver] of Object.entries(engines)){
     await page.route('**/api/matches/123',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(played)}));
     await page.route('**/api/matches/123/stats',async route=>{
      await gate;
-     const people=Array.from({length:11},(_,i)=>({playerId:i+1,name:'Frozen Player '+(i+1),nationality:'ITA',role:i===0?'GK':'CM',started:true,minutes:90,goals:0,assists:null,redCards:null,cleanSheets:i===0?0:null,rating:6.5}));
+     if(scenario.kind==='unavailable')return route.fulfill({status:503,contentType:'application/json',body:'{}'});
+     const people=Array.from({length:11},(_,i)=>({playerId:i+1,name:'Frozen Player '+(i+1),nationality:'ITA',role:i===0?'GK':'CM',started:true,minutes:scenario.kind==='dismissal'&&i===2?67:90,goals:0,assists:null,redCards:null,cleanSheets:i===0?0:null,rating:6.5}));
+     if(['substitutions','twelve-starters','duplicate-id'].includes(scenario.kind)){
+      people.push(...Array.from({length:3},(_,i)=>({playerId:i+12,name:'Substitute '+(i+12),nationality:'ITA',role:'CM',started:false,minutes:22,goals:0,assists:0,redCards:0,cleanSheets:null,rating:6.1})));
+     }
+     if(scenario.kind==='ten-starters')people[10].started=false;
+     if(scenario.kind==='twelve-starters')people[11].started=true;
+     if(scenario.kind==='duplicate-id')people[11].playerId=1;
      return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({schemaVersion:1,providerId:'authoritative-world',matchId:'123',season:1,competitionId:'IT-1',status:'completed',
-      provenance:{kind:'authoritative',receiptHash:(scenario.valid?'a':'b').repeat(64)},
-      statistics:{ratingVersion:'test-rating-v1',home:{kind:'real_xi',players:people},away:{kind:'team_fallback',players:[]}}})});
+      provenance:{kind:'authoritative',receiptHash:(scenario.kind==='receipt-mismatch'?'b':'a').repeat(64)},
+      statistics:{ratingVersion:'test-rating-v1',home:{kind:scenario.kind==='fallback'?'team_fallback':'real_xi',players:scenario.kind==='fallback'?[]:people},away:{kind:'team_fallback',players:[]}}})});
     });
     await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
     assert.equal(await page.locator('[data-match-home-score]').textContent(),'2');
     assert.equal(await page.locator('.app-match-lineup-player').count(),0);
     const response=page.waitForResponse('**/api/matches/123/stats');release();await response;
-    if(scenario.valid){
+    if(scenario.shown){
      await page.waitForFunction(()=>document.querySelectorAll('.app-match-lineup-player').length===11);
      assert.equal(await page.locator('.app-match-lineup-player').first().textContent(),'Frozen Player 1');
      assert.equal(await page.locator('.app-match-lineup-player').first().getAttribute('title'),'ITA');
+     const names=await page.locator('.app-match-lineup-player').allTextContents();
+     assert.equal(names.length,11);
+     assert.ok(names.every(name=>name.startsWith('Frozen Player ')),JSON.stringify({engine,scenario,names}));
+     assert.equal(await page.locator('[data-match-lineup="home"] .app-match-lineup-rows').getAttribute('aria-hidden'),null);
     }else{
      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-     assert.equal(await page.locator('.app-match-lineup-player').count(),0,'mismatched receipt statistics are ignored');
+     assert.equal(await page.locator('.app-match-lineup-player').count(),0,
+      'unverified, unavailable or incomplete frozen starting XI stays hidden: '+scenario.kind);
     }
+    assert.equal(await page.locator('.app-match-lineup-row').count(),22,'fixed XI geometry');
+    assert.equal(await page.locator('[data-match-away-score]').textContent(),'1');
     assert.equal(await page.locator('[data-match-home-score]').textContent(),'2');
     count++;
    }finally{release?.();await ctx.close()}

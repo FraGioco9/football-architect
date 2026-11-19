@@ -157,6 +157,10 @@ test('#650 Match Detail renders only frozen verified XI test ratings with reserv
  assert.match(js,/function renderLineups\(tr\)/);
  assert.match(js,/data\?\.status==='completed'&&data\?\.provenance\?\.receiptHash/);
  assert.match(js,/source\?\.kind==='real_xi'/);
+ assert.match(js,/appearances\?\.filter\(p=>p\?\.started===true\)/);
+ assert.match(js,/starters\.length===11/);
+ assert.match(js,/new Set\(appearances\.map\(p=>p\.playerId\)\)\.size===appearances\.length/);
+ assert.doesNotMatch(js,/source\.players\.length===11\?source\.players:null/);
  assert.match(js,/matchStatistics\?\.statistics\?\.ratingVersion==='test-rating-v1'/);
  assert.match(js,/const n=starter\.rating/);
  assert.match(js,/Number\.isSafeInteger\(p\.playerId\)/);

@@ -444,3 +444,23 @@ Chromium and WebKit QA now verify the center dash against main, equal track widt
 ### Owner refinement: reattached independent ivory badge (2026-11-16)
 
 The previously implemented 8px **empty gap between the ivory badge and the bar is removed**. The independent 48px competition badge now has `left:-48px` relative to the perfectly centered five-track core, and the bar's painted `::before` background extends 36px to the left behind the badge. This recovers the **original visual connection and overlap**: the ivory tile projects 12px beyond the bar and covers its leftmost 36px. Crucially, the badge remains independent of the five symmetrical Home/score/dash/score/Away tracks, so the dash stays exactly on the padded main-content axis. The 8px **Home abbreviation cell inset** is unchanged and remains distinct from the no-gap tile-to-bar attachment. No pitch, Overview, stadium API, schedule or D1 changes. Chromium/WebKit checks explicitly measure 0px tile-to-core separation, 12px tile projection, 36px overlay, centered dash and mobile viewport containment. This section supersedes the prior documentation claiming an 8px tile-to-bar gap.
+
+ 
+### V2 starting-XI read from frozen appearances (#577, 2026-11-19)
+
+A verified `GET /api/matches/:id/stats` result includes all recorded
+appearances: exactly eleven starting players plus zero to six substitutes in
+event-capable V2 receipts. Match Detail now projects its fixed eleven lineup
+rows from `started === true`, requiring exactly eleven distinct valid starters
+and a unique 11–17 player appearance set. A dismissed starter remains a
+starter; a later replacement remains a substitute and never takes over the
+preallocated starting-XI row.
+
+Invalid records, mismatched receipt hashes, unavailable statistics,
+team-level fallback and future matches keep their original empty reserved rows
+instead of inventing players. Recorded ratings remain explicitly temporary
+test ratings; the score loads separately from statistics. Chromium/WebKit
+regression cases cover 11 starters, 14 appearances including three
+substitutes, dismissals, 10/12 starters, duplicate IDs, fallback, stale
+receipt and API 503. No event timeline, backend simulation-rule change,
+migration, reset or deployment is included.
