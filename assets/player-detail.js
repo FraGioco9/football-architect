@@ -45,6 +45,8 @@
  const views=[...panel.querySelectorAll('[data-detail-view]')];
  const viewBar=panel.querySelector('.app-player-detail-tabs');
  const statsHost=preview?null:panel.querySelector('[data-detail-stats]');
+ const matchesHost=preview?null:panel.querySelector('[data-detail-matches]');
+ let matchesController=null,matchesControllerPromise=null;
  let statsController=null,statsControllerPromise=null;
  // Safari does not consistently restore nested horizontal scroll on refresh.
  // Use the player path rather than ?view= so a view change shares its position.
@@ -96,11 +98,11 @@
  };
 
  const extra={
-  en:{views:['Overview','Info','Stats','History','Progression'],positions:'Positions',info:'Info',attributes:'Attributes',primary:'Primary position',secondary:'Secondary positions',club:'Club',positionLabel:'Playable positions',legend:'Legend',core:'Key attributes',support:'Supporting attributes'},
-  it:{views:['Panoramica','Info','Statistiche','Storia','Progressione'],positions:'Posizioni',info:'Info',attributes:'Attributi',primary:'Posizione principale',secondary:'Posizioni secondarie',club:'Club',positionLabel:'Posizioni utilizzabili',legend:'Legenda',core:'Attributi fondamentali',support:'Attributi di supporto'},
-  de:{views:['Übersicht','Info','Statistik','Historie','Entwicklung'],positions:'Positionen',info:'Info',attributes:'Attribute',primary:'Hauptposition',secondary:'Nebenpositionen',club:'Verein',positionLabel:'Spielbare Positionen',legend:'Legende',core:'Kernattribute',support:'Ergänzende Attribute'},
-  es:{views:['Resumen','Info','Estadísticas','Historial','Progresión'],positions:'Posiciones',info:'Info',attributes:'Atributos',primary:'Posición principal',secondary:'Posiciones secundarias',club:'Club',positionLabel:'Posiciones posibles',legend:'Leyenda',core:'Atributos esenciales',support:'Atributos de apoyo'},
-  fr:{views:['Vue d’ensemble','Info','Statistiques','Historique','Progression'],positions:'Postes',info:'Info',attributes:'Attributs',primary:'Poste principal',secondary:'Postes secondaires',club:'Club',positionLabel:'Postes jouables',legend:'Légende',core:'Attributs essentiels',support:'Attributs de soutien'}
+  en:{views:['Overview','Info','Stats','Matches','History','Progression'],positions:'Positions',info:'Info',attributes:'Attributes',primary:'Primary position',secondary:'Secondary positions',club:'Club',positionLabel:'Playable positions',legend:'Legend',core:'Key attributes',support:'Supporting attributes'},
+  it:{views:['Panoramica','Info','Statistiche','Partite','Storia','Progressione'],positions:'Posizioni',info:'Info',attributes:'Attributi',primary:'Posizione principale',secondary:'Posizioni secondarie',club:'Club',positionLabel:'Posizioni utilizzabili',legend:'Legenda',core:'Attributi fondamentali',support:'Attributi di supporto'},
+  de:{views:['Übersicht','Info','Statistik','Spiele','Historie','Entwicklung'],positions:'Positionen',info:'Info',attributes:'Attribute',primary:'Hauptposition',secondary:'Nebenpositionen',club:'Verein',positionLabel:'Spielbare Positionen',legend:'Legende',core:'Kernattribute',support:'Ergänzende Attribute'},
+  es:{views:['Resumen','Info','Estadísticas','Partidos','Historial','Progresión'],positions:'Posiciones',info:'Info',attributes:'Atributos',primary:'Posición principal',secondary:'Posiciones secundarias',club:'Club',positionLabel:'Posiciones posibles',legend:'Leyenda',core:'Atributos esenciales',support:'Atributos de apoyo'},
+  fr:{views:['Vue d’ensemble','Info','Statistiques','Matchs','Historique','Progression'],positions:'Postes',info:'Info',attributes:'Attributs',primary:'Poste principal',secondary:'Postes secondaires',club:'Club',positionLabel:'Postes jouables',legend:'Légende',core:'Attributs essentiels',support:'Attributs de soutien'}
  };
  const language=()=>document.documentElement.lang.toLowerCase().slice(0,2);
  const tr=()=>copies[language()]||copies.en;
@@ -113,7 +115,7 @@
  const numeric=value=>typeof value==='string'&&/^[1-9][0-9]*$/.test(value)&&Number.isSafeInteger(Number(value));
  const draftPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  const params=new URLSearchParams(location.search);
- let view=params.get('view')==='info'?'info':(!preview&&params.get('view')==='stats'?'stats':'overview');
+ let view=params.get('view')==='info'?'info':(!preview&&params.get('view')==='stats'?'stats':!preview&&params.get('view')==='matches'?'matches':'overview');
  const context={draftId:params.get('draftId'),index:params.get('index'),returnView:params.get('returnView'),returnGroup:params.get('returnGroup'),returnPage:params.get('returnPage'),returnScroll:params.get('returnScroll'),returnSort:params.get('returnSort'),returnOrder:params.get('returnOrder')};
  const idMatch=!preview&&/^\/players\/([1-9][0-9]*)$/.exec(location.pathname);
  const id=idMatch&&numeric(idMatch[1])?Number(idMatch[1]):null;
@@ -340,6 +342,43 @@
    statsHost.setAttribute('aria-busy','false');
   }).finally(()=>{statsControllerPromise=null});
  }
+ function ensurePlayerMatches(){
+  if(preview||!matchesHost||!id||!player||state!=='ready')return;
+  if(matchesController){matchesController.render();void matchesController.load();return;}
+  if(matchesControllerPromise)return;
+  matchesControllerPromise=import('/assets/player-matches.mjs').then(async module=>{
+   let labels=null,crests=null,competitionLookup=null;
+   try{
+    const context=await import('/assets/match-public-context.mjs');
+    competitionLookup=context.matchPublicContext;
+    const catalog=await context.publicClubIdentityCatalog();
+    if(Array.isArray(catalog?.clubs)){
+     labels=new Map(catalog.clubs.map(item=>[item.countryId+'-'+item.clubId,item.primaryName]));
+     crests=catalog.clubCrests;
+    }
+   }catch{}
+   if(!player||state!=='ready')return;
+   matchesController=module.createPlayerMatchesView({host:matchesHost,id,locale:language,
+    clubName:key=>labels?.get(key),
+    clubCrest:key=>crests&&Object.hasOwn(crests,key)?crests[key]:null,
+    competitionName:key=>competitionLookup?.({competitionId:key})?.competitions?.[0]?.name,
+    fetchMatches:async(number,filters)=>{
+     const query=new URLSearchParams();
+     if(filters.season!=='all')query.set('season',String(filters.season));
+     if(filters.competition!=='all')query.set('competition',filters.competition);
+     query.set('limit',String(filters.limit));
+     if(filters.cursor)query.set('cursor',filters.cursor);
+     const response=await fetch('/api/players/'+number+'/matches?'+query,{credentials:'omit',cache:'no-store'});
+     if(!response.ok)throw Error('player_matches_unavailable');
+     return response.json();
+    }});
+   if(view==='matches')await matchesController.load();else matchesController.render();
+  }).catch(()=>{
+   const note=matchesHost.querySelector('[data-player-matches-note]');
+   if(note){note.hidden=false;note.textContent='Matches unavailable';}
+   matchesHost.setAttribute('aria-busy','false');
+  }).finally(()=>{matchesControllerPromise=null});
+ }
  function render(){
   const copy=tr(),e=ex(),labels=(attrLabels[language()]||attrLabels.en).split('|');
   // Browser title depends on public entity identity, not the selected tab.
@@ -361,6 +400,7 @@
   syncViewEdges();
   syncStatsScoreLabel();
   if(view==='stats')void ensurePlayerStats();else statsController?.render();
+  if(view==='matches')void ensurePlayerMatches();else matchesController?.render();
   for(const [key,label] of [['positions',e.positions],['info',e.info],['attributes',e.attributes]]){
    panel.querySelector('[data-detail-section-title="'+key+'"]').textContent=label;
   }
@@ -469,7 +509,7 @@
   else url.searchParams.set('view',target);
  }
  function setView(next){
-  if(!['overview','info',...(preview?[]:['stats'])].includes(next)||next===view)return;
+  if(!['overview','info',...(preview?[]:['stats','matches'])].includes(next)||next===view)return;
   view=next;
   const url=new URL(location.href);
   syncViewParam(url,next);
@@ -494,7 +534,7 @@
   if(url.pathname+url.search+url.hash!==current)
    history.replaceState(history.state,'',url.pathname+url.search+url.hash);
  }
- window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':(!preview&&new URLSearchParams(location.search).get('view')==='stats'?'stats':'overview');normalizeViewUrl();render();});
+ window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':(!preview&&new URLSearchParams(location.search).get('view')==='stats'?'stats':!preview&&new URLSearchParams(location.search).get('view')==='matches'?'matches':'overview');normalizeViewUrl();render();});
  window.addEventListener('pageshow',e=>{if(preview&&e.persisted)void load();});
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  normalizeViewUrl();render();void load();

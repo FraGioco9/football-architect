@@ -23,7 +23,7 @@ import worker from '../src/index.ts';
 import {handleAdmin} from '../src/http-admin.ts';
 import {seedUnifiedAdminHttp} from './fixtures/unified-admin-http.ts';
 import {
- readPublicSportingSeasonLineupV1,readPublicCalendarDayLineupV1,readPublicPlayerStatsLineupV1
+ readPublicSportingSeasonLineupV1,readPublicCalendarDayLineupV1,readPublicPlayerStatsLineupV1,readPublicPlayerMatchesLineupV1
 } from '../src/public-sporting-read-lineup-v1.ts';
 import {ATTRIBUTES} from '../src/players-generator-core.mjs';
 const LINEUP_V1_SLOTS=['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW'] as const;
@@ -255,6 +255,32 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(badStatsQuery.status).toBe(422);
  const badStatsMethod=await worker.fetch(new Request('https://example.invalid/api/players/1/stats',{method:'POST'}),{DB:db});
  expect(badStatsMethod.status).toBe(405);
+ // #712 — same verified immutable receipts, one anonymous chronological read;
+ // affiliation was already edited above without altering official match identity.
+ const directPlayerMatches=await readPublicPlayerMatchesLineupV1(db,1,{
+  season:'all',competition:'all',cursor:null,limit:20
+ });
+ const httpPlayerMatches=await get('/api/players/1/matches');
+ expect(httpPlayerMatches).toEqual(directPlayerMatches);
+ expect(httpPlayerMatches).toMatchObject({schemaVersion:1,providerId:'authoritative-world',
+  status:'available',playerId:1,total:1,nextCursor:null,
+  items:[{matchId:String(full.public_id),season:1,competitionId:'IT-1',
+   clubId:full.home_club_id,opponentId:full.away_club_id,side:'home',venue:'home',
+   performance:{started:true,minutes:expect.any(Number),rating:expect.any(Number)}}]});
+ expect(httpPlayerMatches.items.every((entry:{day:number})=>entry.day<=13)).toBe(true);
+ expect((await get('/api/players/43/matches'))).toMatchObject({
+  status:'empty',total:0,items:[],nextCursor:null
+ });
+ expect((await get('/api/players/1/matches?season=1&competition=IT-1&limit=1'))
+  .items).toHaveLength(1);
+ expect((await get('/api/players/1/matches?competition=int-1')).items).toHaveLength(0);
+ for(const unsafe of ['?season=999','?season=1&season=1','?limit=51',
+   '?competition=FAKE','?cursor=not-json','?unknown=x']){
+  const response=await worker.fetch(new Request('https://example.invalid/api/players/1/matches'+unsafe),{DB:db});
+  expect(response.status).toBe(422);
+ }
+ const invalidMatchesMethod=await worker.fetch(new Request('https://example.invalid/api/players/1/matches',{method:'POST'}),{DB:db});
+ expect(invalidMatchesMethod.status).toBe(405);
  const httpMatch=await get('/api/matches/'+full.public_id);
  expect(httpMatch.status).toBe('completed');
  expect(httpMatch.result).toEqual(a.result);
@@ -337,6 +363,7 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  const seasonZeroStats=await readPublicPlayerStatsLineupV1(db,1);
  expect(seasonZeroStats).toMatchObject({playerId:1,status:'empty',seasons:[]});
  expect((await get('/api/players/1/stats'))).toMatchObject({playerId:1,status:'empty',seasons:[]});
+ expect((await get('/api/players/1/matches'))).toMatchObject({playerId:1,status:'empty',items:[],nextCursor:null});
  await expect(resetWorld(db,session,resetCommand,'day13-reset-qa-000001',now))
   .rejects.toMatchObject({status:409});
 },180000);

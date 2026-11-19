@@ -365,6 +365,8 @@
     "tests/player-portrait-v4-qa.test.mjs": "site-node",
     "backend/tests/public-match-indexed-read-runtime.test.ts": "backend-runtime",
     "tests/player-season-statistics.test.mjs": "site-node",
-    "tests/player-stats-view.test.mjs": "site-node"
+    "tests/player-stats-view.test.mjs": "site-node",
+    "tests/player-match-history.test.mjs": "site-node",
+    "tests/player-matches-view.test.mjs": "site-node"
   }
 }
