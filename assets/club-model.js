@@ -503,7 +503,7 @@
        displayNumber(stats.goalDifference),m.points];
       return '<tr class="club-history-competition-row" data-club-history-detail="'+year+'"'+
        ' data-history-competition-row="'+escape(m.competitionId)+'" hidden>'+
-       '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="'+escape(href)+'">'+badge+'<span class="club-history-competition-text">'+escape(title)+'</span></a></th>'+
+       '<td></td><th scope="row" class="club-history-competition-value"><span class="club-history-competition-identity">'+badge+'<a class="club-history-competition-link" href="'+escape(href)+'"><span class="club-history-competition-text">'+escape(title)+'</span></a></span></th>'+
        values.map((value,i)=>i===0?'<td>'+escape(value)+'</td>':'<td><span class="club-history-stat-value">'+escape(value)+'</span></td>').join('')+'</tr>';
      }).join('');
      return summary+details;

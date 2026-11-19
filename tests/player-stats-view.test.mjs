@@ -134,12 +134,12 @@ test('#578 parser-time Stats skeleton uses the same responsive cells as loaded v
   'competition underline renders on text only');
  assert.match(css,/@media\(min-width:621px\)\{\s*\.app-player-stats-table \.app-player-stats-competition-row \.app-player-stats-competition\{position:relative\}/,
   'Player Stats Competition uses the independent desktop centerline');
- assert.match(css,/\.app-player-stats-competition-row a\.app-player-stats-competition-link\{\s*position:absolute;inset-inline-start:10px;top:50%;transform:translateY\(-50%\);\s*display:inline-flex;align-items:center;block-size:24px;min-height:24px;/,
+ assert.match(css,/\.app-player-stats-competition-row \.app-player-stats-competition-identity\{\s*position:absolute;inset-inline-start:10px;top:50%;transform:translateY\(-50%\);\s*block-size:24px;min-height:24px;/,
   'Competition text uses the same 24px line as verified stats');
  assert.match(css,/\.app-player-stats-competition-row \.app-player-stats-competition\{padding-inline-start:10px\}/,
   'Player Stats Competition has the same text inset as its header and Total skeleton');
- assert.match(read('assets/player-stats.mjs'),/link\.append\(mark,el\('span',canonicalName\|\|record\.competitionId/,
-  'competition text uses its own unclipped underline span');
+ assert.match(read('assets/player-stats.mjs'),/competitionIdentity\.append\(mark,link\)/,
+  'competition artwork stays outside the linked name');
  assert.match(css,/\.app-player-stats-competition-row\[hidden\]\{display:none\}/);
  assert.match(css,/transition:transform 120ms ease-out/);
  assert.match(html,/data-detail-stats-heading="5" aria-label="Goals or clean sheets"><span class="app-skeleton-bar app-player-stats-score-heading-skeleton" aria-hidden="true"><\/span><\/th>/);
@@ -234,14 +234,17 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
    assert.ok(headers[i].querySelector('[data-stats-help]'),'numeric header has tooltip');
   assert.ok(tbody.children[0].children[1].className.includes('app-player-stats-total-label'));
   const [,season,detail,otherDetail]=tbody.children,button=season.querySelector('[data-stats-toggle]');
-  const domesticLink=detail.children[1].children[0];
-  const internationalLink=otherDetail.children[1].children[0];
-  assert.equal(domesticLink.children[0].getAttribute('aria-hidden'),'true');
-  assert.equal(domesticLink.children[0].children[0].src,'/assets/divisions/it-1-lega-federale/compact.svg');
-  assert.equal(domesticLink.children[0].children[0].width,24);
-  assert.equal(domesticLink.children[1].textContent,'Lega Federale');
-  assert.equal(internationalLink.children[1].textContent,'Sovereign Cup');
-  assert.match(internationalLink.children[0].innerHTML,/<svg viewBox="0 0 24 24"/);
+  const domesticIdentity=detail.children[1].children[0];
+  const internationalIdentity=otherDetail.children[1].children[0];
+  assert.equal(domesticIdentity.className,'app-player-stats-competition-identity');
+  assert.equal(domesticIdentity.children[0].getAttribute('aria-hidden'),'true');
+  assert.equal(domesticIdentity.children[0].children[0].src,'/assets/divisions/it-1-lega-federale/compact.svg');
+  assert.equal(domesticIdentity.children[0].children[0].width,24);
+  assert.equal(domesticIdentity.children[1].tagName,'A');
+  assert.equal(domesticIdentity.children[1].children[0].textContent,'Lega Federale');
+  assert.equal(domesticIdentity.children[1].href,'/competitions/it-1/standings?season=1');
+  assert.equal(internationalIdentity.children[1].children[0].textContent,'Sovereign Cup');
+  assert.match(internationalIdentity.children[0].innerHTML,/<svg viewBox="0 0 24 24"/);
   const decorated=detail.children[2].children[0],crest=decorated.children[0],clubLink=decorated.children[1];
   assert.equal(decorated.className,'app-player-stats-club-identity');
   assert.equal(crest.className,'app-players-club-mark app-player-stats-club-crest');

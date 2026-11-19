@@ -400,16 +400,20 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-table .club-history-competition-value{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-inline-start:10px}
 .club-history-table .club-history-competition-value a.club-history-competition-link{display:inline-block;width:fit-content;max-width:100%;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;color:inherit;font:inherit;font-weight:500;text-align:left;text-decoration:none;white-space:nowrap;overflow:visible;text-overflow:clip;vertical-align:middle;line-height:1.5}
 .club-history-table .club-history-competition-text{text-decoration:none}
-/* #724: fixed-size competition artwork shares the text link, with text-only underline. */
-.club-history-table .club-history-competition-link{gap:7px}
-.club-history-table .club-history-competition-link .fa-competition-mark{
+/* #724: fixed-size competition artwork sits outside the text-only link. */
+.club-history-table .club-history-competition-identity{
+ display:inline-flex;align-items:center;gap:7px;min-width:0;max-width:100%;min-height:24px;
+ vertical-align:middle;
+}
+.club-history-table .club-history-competition-identity .fa-competition-mark{
  display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;
  width:24px;height:24px;overflow:hidden;color:var(--muted);
 }
-.club-history-table .club-history-competition-link .fa-competition-mark :is(img,svg){
+.club-history-table .club-history-competition-identity .fa-competition-mark :is(img,svg){
  display:block;width:100%;height:100%;object-fit:contain;
 }
-.club-history-table .club-history-competition-link .club-history-competition-text{
+.club-history-table .club-history-competition-identity .club-history-competition-link{flex:0 1 auto;min-width:0}
+.club-history-table .club-history-competition-identity .club-history-competition-text{
  min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .club-history-table .club-history-competition-value a.club-history-competition-link:is(:hover,:focus-visible) .club-history-competition-text{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
@@ -421,10 +425,9 @@ body.app-body{--app-page-pad-top:8px}
    No inline baseline or separate 8px detail inset shifts the data. */
 @media(min-width:621px){
  .club-history-table .club-history-competition-row .club-history-competition-value{position:relative}
- .club-history-table .club-history-competition-row .club-history-competition-value a.club-history-competition-link{
+ .club-history-table .club-history-competition-row .club-history-competition-value .club-history-competition-identity{
   position:absolute;inset-inline-start:10px;top:50%;transform:translateY(-50%);
-  display:inline-flex;align-items:center;block-size:24px;min-height:24px;
-  max-inline-size:calc(100% - 28px);
+  block-size:24px;min-height:24px;max-inline-size:calc(100% - 28px);
  }
 }
 .club-history-table .club-history-competition-row td:nth-child(3){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -576,8 +579,8 @@ body.app-body{--app-page-pad-top:8px}
   display:inline;max-width:100%;white-space:normal;overflow:visible;
   text-overflow:clip;overflow-wrap:anywhere;line-height:1.5;
  }
- /* Keep the 24px competition mark alongside wrapped names in the mobile grid. */
- .club-history-table .club-history-competition-row .club-history-competition-value a.club-history-competition-link{
+ /* Keep the passive 24px mark alongside wrapped linked names on mobile. */
+ .club-history-table .club-history-competition-row .club-history-competition-identity{
   display:inline-flex;align-items:center;gap:7px;max-width:100%;white-space:normal;
  }
  .club-history-table .club-history-competition-row .club-history-competition-text{

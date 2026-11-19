@@ -260,9 +260,11 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
      image.addEventListener('error',()=>image.remove(),{once:true});
      mark.append(image);
     }else if(/^int-[12]$/.test(record.competitionId))mark.innerHTML=neutralCupMark;
-    link.append(mark,el('span',canonicalName||record.competitionId,'app-player-stats-competition-name'));
+    link.append(el('span',canonicalName||record.competitionId,'app-player-stats-competition-name'));
     link.href='/competitions/'+record.competitionId.toLowerCase()+'/standings?season='+season.season;
-    competition.append(link);detail.append(competition);
+    const competitionIdentity=el('span','','app-player-stats-competition-identity');
+    competitionIdentity.append(mark,link); // Passive logo; only the name is linked.
+    competition.append(competitionIdentity);detail.append(competition);
     const club=el('td','','app-player-stats-club');
     const identity=el('span','','app-player-stats-club-identity');
     // Same passive 24px crest slot and shield fallback as the Players directory.
