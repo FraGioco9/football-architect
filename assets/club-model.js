@@ -423,7 +423,7 @@
   }else if(selected.view==='roster'){
    content=renderRoster(clubKey,lang,t,rosterSnapshot,search);
   }else if(selected.view==='records'){
-   content=recordsUI.render({selected,historySnapshot,language:lang,search,ordinal});
+   content=recordsUI.render({selected,historySnapshot,language:lang,search,ordinal,index});
   }else if(selected.view==='history'){
    const words={
     en:{season:'Season',competition:'Competition',result:'Result',played:'MP',won:'W',drawn:'D',lost:'L',gf:'GF',ga:'GA',gd:'GD',points:'Pts',total:'Total',show:'Show competitions for',empty:'No games played',without:'No competitions this season.',unavailable:'Club history is temporarily unavailable.'},

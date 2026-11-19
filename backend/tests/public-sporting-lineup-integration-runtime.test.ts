@@ -142,6 +142,10 @@ describe('#613 new V2 public competition, club, calendar projections (unrouted)'
   expect(roster.competitions).toHaveLength(2);
   const history=await readPublicClubHistoryLineupV1(db,'IT-1') as any;
   expect(history.data?.overviews).toHaveLength(1);
+  const recordSeason=history.data.overviews[0].data;
+  expect(recordSeason.matches).toEqual([]);
+  expect(recordSeason.players).toEqual([]);
+  expect(recordSeason.memberships.find((m:any)=>m.category==='domestic').leagueGoalsAgainst).toBe(0);
   expect(history.provenance.resultAuthority).toBe('temporary-lineup-v1');
   const after=await readWorld(db);
   expect(after).toEqual(world); // public GET projections must be read-only

@@ -406,19 +406,14 @@
   host.addEventListener('click',event=>{
    if(selected.view!=='records')return;
    const button=event.target.closest?.('[data-record-scope]');
-   const link=event.target.closest?.('.club-records-season-link');
-   if(!button&&!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
-   event.preventDefault();
-   const url=new URL(link?link.href:location.href);
-   if(button){
-    if(button.getAttribute('aria-pressed')==='true')return;
-    if(button.dataset.recordScope==='verified')url.searchParams.set('scope','all-time');
-    else url.searchParams.delete('scope');
-   }
-   if(url.href===location.href)return;
+   if(!button||event.defaultPrevented||button.getAttribute('aria-pressed')==='true')return;
+   const url=new URL(location.href);
+   if(button.dataset.recordScope==='verified')url.searchParams.set('scope','all-time');
+   else url.searchParams.delete('scope');
+   url.searchParams.delete('season');
    history.pushState(null,'',url);
    paint(true);
-   host.querySelector(button?'[data-record-scope][aria-pressed="true"]':'.club-records-season-link[aria-current]')?.focus({preventScroll:true});
+   host.querySelector('[data-record-scope][aria-pressed="true"]')?.focus({preventScroll:true});
   });
   // Reuse the loaded club snapshot for category switches without another request.
   host.addEventListener('click',event=>{

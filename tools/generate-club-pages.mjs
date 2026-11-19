@@ -4,7 +4,7 @@ import fixtureUI from '../assets/club-fixtures.js';
 // CLUB-01: derive public presentation data without modifying canonical inputs.
 import {clubCrestAssets} from './club-crest-assets.mjs';
 import {loadWorldCatalog} from './load-world-catalog.mjs';
-function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp,recordLabels){
+function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp,recordLabels,recordScopes){
  const match=location.pathname.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|records|history)\/?$/);
  if(!match)return;
  const country=match[1],clubId=match[2],view=match[3];
@@ -38,7 +38,7 @@ function bootstrapClubFirstPaint(rosterLabels,menuMarkup,statKeys,statHelp,recor
   const scope=['verified','all-time'].includes(params.get('scope'))?'verified':'season';
   for(const node of records.querySelectorAll('[data-record-label]')){
    const key=node.dataset.recordLabel;
-   node.textContent=recordLabels[locale][scope==='verified'&&key==='goals'?'totalGoals':key];
+   node.textContent=recordLabels[locale][scope==='verified'?(recordScopes[key]||key):key];
   }
   for(const button of records.querySelectorAll('[data-record-scope]')){
    button.setAttribute('aria-pressed',String(button.dataset.recordScope===scope));
@@ -306,7 +306,7 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations,c
    if(!localized||['en','de','es','fr','it'].some(lang=>!localized[lang]))throw Error('Missing club translations');
    return {...c,descriptions:localized,divisionId:catalog.getDivisionForClub(c.countryId+'-'+c.clubId)};
   })};
- const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+[clubModel.rosterLabels,Object.fromEntries(['group','competition'].map(id=>[id,fixtureUI.control(id,'','',[],'club-roster')])),clubModel.rosterSortKeys('stats').slice(3),clubModel.rosterStatHelp,recordsUI.words].map(value=>JSON.stringify(value)).join(',')+');';
+ const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+[clubModel.rosterLabels,Object.fromEntries(['group','competition'].map(id=>[id,fixtureUI.control(id,'','',[],'club-roster')])),clubModel.rosterSortKeys('stats').slice(3),clubModel.rosterStatHelp,recordsUI.words,Object.fromEntries(recordsUI.seasonKeys.map((key,i)=>[key,recordsUI.careerKeys[i]]))].map(value=>JSON.stringify(value)).join(',')+');';
  const staticContent=buildClubShell(firstPaintScript);
  let html=template;
  for(const [token,value] of Object.entries({...replacements,'@@FA_WORLD_SECTION@@':staticContent}))html=html.replaceAll(token,value);

@@ -225,7 +225,7 @@ export function clubRosterTotals(clubKey:string,fixtures:readonly Fixture[],
  const totals=complete?lineupTeamStatisticsV1(clubs,played,results,frozenMatches).players.filter(p=>p.clubId===clubKey):[];
  return {complete,totals};
 }
-async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number,rosterStats=false){
+async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number,rosterStats=false,includeClubRecords=false){
  const clubKey=competitionId.startsWith('club:')?competitionId.slice('club:'.length):null;
  const fixturesClubKey=competitionId.startsWith('club-fixtures:')?competitionId.slice('club-fixtures:'.length):null;
  const playerKey=/^player:([1-9][0-9]*)$/.exec(competitionId);
@@ -370,9 +370,21 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
      position:row.played?row.rank:null,points:row.points,
      cupStatus:isInternational?deriveInternationalClubStatus(clubKey,row.rank,leagueFixtures.every(f=>storedResults.has(f.id)),competitionPlans,storedResults):null,
      nextMatch:future?{day:future.day,round:future.round,phaseId:phase,homeId:future.homeClubId,awayId:future.awayClubId}:null,
-     stats};
+     ...(includeClubRecords&&!isInternational?{leagueGoalsAgainst:row.goalsAgainst}:{}),stats};
    }));
-   const data={season:selectedSeason,memberships};
+   const clubFixtures=includeClubRecords?[...evidence.schedule.fixtures,...plans.flatMap(p=>p.fixtures.map(x=>x.fixture))]
+    .filter(f=>(f.homeClubId===clubKey||f.awayClubId===clubKey)&&storedResults.has(f.id))
+    .sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id,'en')):[];
+   const matches=clubFixtures.map(f=>{
+    const score=storedResults.get(f.id)!,home=f.homeClubId===clubKey;
+    return {opponent:home?f.awayClubId:f.homeClubId,scored:home?score.homeGoals:score.awayGoals,
+     conceded:home?score.awayGoals:score.homeGoals};
+   });
+   const roster=includeClubRecords?clubRosterTotals(clubKey,clubFixtures,storedResults,replay.frozenMatches):null;
+   const players=roster?.complete?(await competitionPlayerIdentities(db,roster.totals)).map(p=>({
+    id:p.playerId,name:p.displayName,appearances:p.appearances,goals:p.goals,assists:p.assists,clean:p.cleanSheets
+   })):null;
+   const data={season:selectedSeason,memberships,...(includeClubRecords?{matches,players}:{})};
    await unchanged(db,world);
    return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
     provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:`club:${world.generation}:season:${selectedSeason}:${evidence.calendar.calendar_hash}`},data};
@@ -486,7 +498,7 @@ export async function readPublicClubHistoryLineupV1(db:Database,clubKey:string){
  }
  const overviews=await Promise.all(
   Array.from({length:world.seasonNumber},(_,i)=>i+1)
-   .map(season=>readPublicClubOverviewLineupV1(db,clubKey,season))
+   .map(season=>readPublicProjection(db,'club:'+clubKey,season,undefined,false,true))
  );
  // Do not combine season snapshots across a reset, new generation, or advance.
  if(overviews.some(v=>v.world.generation!==world.generation||
