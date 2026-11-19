@@ -1156,7 +1156,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       return {loading,loaded,rowCount,rightGap};
      })()`);
      assert.deepEqual(geometry.loaded,geometry.loading,'identical pending and loaded record card dimensions at '+width);
-     assert.ok(geometry.rowCount>=(width===1440?4:2),'compact Club Records grid at '+width);
+     if(width===390)assert.equal(geometry.rowCount,1,'full-width record cards on phones');
+     else assert.ok(geometry.rowCount>=3,'multi-column record cards on desktop');
      assert.ok(Math.abs(geometry.rightGap)<1,'season label aligns to the right edge at '+width);
     }
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
