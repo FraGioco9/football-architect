@@ -770,3 +770,188 @@ test('#628 paired real Rapier worlds: combined toe-length and recovery controls'
   assert.ok(s.meanForceEventNonActionStarts<=s.meanShoeStartsWithoutCarry);
  }
 });
+
+
+test('#628 actual Rapier Carry endurance: baseline vs toe +5% / recovery +15% for 6s',
+ {timeout:180000},async()=>{
+ const R=await initializeRapier(rapier);
+ const arms=Object.freeze([
+  {id:'original',length:1,recovery:1},
+  {id:'candidate',length:1.05,recovery:1.15}
+ ]);
+ const empty=()=>({
+  trials:0,peakSpeed:0,peakLift:0,peakGap:0,minTravel:Infinity,
+  totalStarts:0,totalActions:0,totalNonAction:0,totalBothFeet:0,
+  lastHalfStarts:0,lastHalfActions:0,lastHalfNonAction:0,
+  lastHalfOverlaps:0,firstHalfWeak:[],lastHalfWeak:[],
+  speedBreaches:[],liftBreaches:[],stalls:[],firstHalfPhases:new Set(),
+  lastHalfPhases:new Set(),totalLastHalfForward:0,
+  endpointDeltas:[],sourceRecontacts:0
+ });
+ const stats=Object.fromEntries(arms.map(v=>[v.id,empty()]));
+ for(let variantIndex=0;variantIndex<30;variantIndex++)
+ for(const side of ['home','away']){
+  let initial=null,baselineEndpoint=null;
+  for(const arm of arms){
+   const lab=createControlledActionLab(R,'carry-solo',{
+    shotSide:side,variantIndex,bodyGuardEnabled:true,
+    soloShoeLengthScale:arm.length,soloRecoveryStepScale:arm.recovery
+   });
+   try{
+    const start=lab.snapshot();
+    if(initial===null)initial=start;
+    else{
+     assert.deepEqual(start.ball,initial.ball,
+      'Both independent worlds start with exact same native Rapier ball');
+     assert.deepEqual(start.observedMovementPlayers,initial.observedMovementPlayers,
+      'Both worlds start from exact same real canonical player frame');
+    }
+    const st=stats[arm.id];
+    let firstHalf=null,latest=null,peakSpeed=0,peakLift=0,peakGap=0;
+    const phaseA=new Set(),phaseB=new Set();
+    for(let tick=1;tick<=360;tick++){
+     const f=lab.step();latest=f;
+     assert.equal(f.physicsTick,tick);
+     assert.equal(f.nativeDribbleAudit.tick,tick);
+     assert.equal(f.soloNativeFeet.dynamics.tick,tick);
+     assert.equal(f.soloNativeFeet.independentColliders,2);
+     assert.ok(Math.abs(f.soloNativeFeet.physicalColliderHalfLengthM-
+      0.105*arm.length)<1e-12);
+     assert.equal(f.soloNativeFeet.recoveryStepScale,arm.recovery);
+     assert.equal(f.genuinePhysicalPlayerCount,1);
+     assert.deepEqual(f.smallSidedParticipants,[side+'-10']);
+     assert.deepEqual(f.smallSidedNativeBodyGuard.nativeOpposingTorsoPairs,[]);
+     const v=f.ball.velocity,speed=Math.hypot(v.x,v.y);
+     peakSpeed=Math.max(peakSpeed,speed);
+     peakLift=Math.max(peakLift,f.nativeDribbleAudit.peakGroundClearanceM);
+     peakGap=Math.max(peakGap,f.nativeDribbleAudit.maximumRealAttackerBallGapM);
+     (tick<=180?phaseA:phaseB).add(f.soloCarryPhase.phase);
+     if(f.action?.action==='carry'){
+      assert.equal(f.action.appliedByRapier,true);
+      assert.equal(f.action.actualPhysicsImpulseApplied,true);
+      assert.equal(f.soloNativeFeet.exclusivePhysicalStart,true);
+     }
+     if(tick===180){
+      const a=f.nativeDribbleAudit;
+      firstHalf={
+       starts:a.nativePhysicalShoeStarts,
+       actions:a.appliedCarryActions,
+       nonAction:a.nativeShoeStartsWithoutCarryImpulse,
+       overlap:a.nativeBothFeetActiveTicks,
+       recontacts:a.independentRecontacts,
+       forward:a.ballForwardDistanceM,
+       ball:Object.freeze({...f.ball,position:{...f.ball.position},
+        velocity:{...f.ball.velocity}})
+      };
+      assert.equal(firstHalf.starts,
+       firstHalf.actions+firstHalf.nonAction);
+     }
+    }
+    const a=latest.nativeDribbleAudit;
+    const end={
+     starts:a.nativePhysicalShoeStarts,
+     actions:a.appliedCarryActions,
+     nonAction:a.nativeShoeStartsWithoutCarryImpulse,
+     overlap:a.nativeBothFeetActiveTicks,
+     forward:a.ballForwardDistanceM,
+     recontacts:a.independentRecontacts
+    };
+    assert.equal(end.starts,end.actions+end.nonAction,
+     '360 authentic Rapier shoe STARTs must reconcile with real Carry actions');
+    const later={
+     starts:end.starts-firstHalf.starts,
+     actions:end.actions-firstHalf.actions,
+     nonAction:end.nonAction-firstHalf.nonAction,
+     overlap:end.overlap-firstHalf.overlap,
+     recontacts:end.recontacts-firstHalf.recontacts,
+     forward:end.forward-firstHalf.forward
+    };
+    assert.equal(later.starts,later.actions+later.nonAction);
+    assert.ok([later.starts,later.actions,later.nonAction,
+     later.overlap,later.recontacts,later.forward].every(Number.isFinite));
+    const caseId={side,variantIndex};
+    const provenance={...caseId,firstHalf,secondHalf:later,
+     totalActions:end.actions,peakSpeedMps:peakSpeed,peakLiftM:peakLift,
+     maxActorBallGapM:peakGap};
+    if(firstHalf.actions<2||firstHalf.recontacts<1||firstHalf.forward<4)
+     st.firstHalfWeak.push(provenance);
+    if(later.actions<2||later.recontacts<1||later.forward<4)
+     st.lastHalfWeak.push(provenance);
+    if(peakSpeed>3.5+1e-6)st.speedBreaches.push(provenance);
+    if(peakLift>0.015+1e-6)st.liftBreaches.push(provenance);
+    if(later.forward<=0||later.actions===0)st.stalls.push(provenance);
+    st.trials++;
+    st.peakSpeed=Math.max(st.peakSpeed,peakSpeed);
+    st.peakLift=Math.max(st.peakLift,peakLift);
+    st.peakGap=Math.max(st.peakGap,peakGap);
+    st.minTravel=Math.min(st.minTravel,end.forward);
+    st.totalStarts+=end.starts;
+    st.totalActions+=end.actions;
+    st.totalNonAction+=end.nonAction;
+    st.totalBothFeet+=end.overlap;
+    st.lastHalfStarts+=later.starts;
+    st.lastHalfActions+=later.actions;
+    st.lastHalfNonAction+=later.nonAction;
+    st.lastHalfOverlaps+=later.overlap;
+    st.totalLastHalfForward+=later.forward;
+    st.sourceRecontacts+=a.independentRecontacts;
+    for(const name of phaseA)st.firstHalfPhases.add(name);
+    for(const name of phaseB)st.lastHalfPhases.add(name);
+    if(arm.id==='original')baselineEndpoint=latest.ball;
+    else st.endpointDeltas.push(Math.hypot(
+     latest.ball.position.x-baselineEndpoint.position.x,
+     latest.ball.position.y-baselineEndpoint.position.y));
+   }finally{lab.dispose();}
+  }
+ }
+ const summary=Object.fromEntries(arms.map(arm=>{
+  const st=stats[arm.id],n=st.trials;
+  return [arm.id,{
+   trials:n,durationS:6,toeLengthScale:arm.length,
+   negativeRecoveryScale:arm.recovery,
+   meanNativeStarts6s:st.totalStarts/n,
+   meanActualCarryActions6s:st.totalActions/n,
+   meanUnconvertedStarts6s:st.totalNonAction/n,
+   meanBothFeetTicks6s:st.totalBothFeet/n,
+   meanNativeStartsLast3s:st.lastHalfStarts/n,
+   meanActualCarryActionsLast3s:st.lastHalfActions/n,
+   meanUnconvertedStartsLast3s:st.lastHalfNonAction/n,
+   meanBothFeetTicksLast3s:st.lastHalfOverlaps/n,
+   meanLastHalfBallForwardM:st.totalLastHalfForward/n,
+   min6sBallForwardM:st.minTravel,
+   peakBallSpeedMps:st.peakSpeed,
+   maxGroundLiftM:st.peakLift,
+   maxActorBallGapM:st.peakGap,
+   firstHalfPhases:[...st.firstHalfPhases],
+   secondHalfPhases:[...st.lastHalfPhases],
+   firstHalfWeakCases:st.firstHalfWeak,
+   secondHalfWeakCases:st.lastHalfWeak,
+   speedBreaches:st.speedBreaches,
+   liftBreaches:st.liftBreaches,
+   stalledCases:st.stalls,
+   meanEndpointDeltaM:st.endpointDeltas.length?
+    st.endpointDeltas.reduce((a,b)=>a+b,0)/n:0,
+   candidateEligibleForLongerVisualQA:
+    st.firstHalfWeak.length===0&&st.lastHalfWeak.length===0&&
+    st.speedBreaches.length===0&&st.liftBreaches.length===0&&
+    st.stalls.length===0
+  }];
+ }));
+ process.stdout.write('ME_628_SOLO_EXTENDED_6S_COUNTERFACTUAL '+
+  JSON.stringify(summary)+'\n');
+ assert.equal(summary.original.trials,60);
+ assert.equal(summary.candidate.trials,60);
+ // The exact 3-second source suite above still gates accepted baseline.
+ // The extra half is a probe, not a reason to silently adopt a candidate or
+ // suppress real physical contacts if the original design itself stalls.
+ assert.equal(stats.original.totalStarts,
+  stats.original.totalActions+stats.original.totalNonAction);
+ assert.equal(stats.candidate.totalStarts,
+  stats.candidate.totalActions+stats.candidate.totalNonAction);
+ assert.ok(Number.isFinite(summary.candidate.meanEndpointDeltaM));
+ assert.ok(summary.candidate.meanEndpointDeltaM>0);
+ assert.deepEqual(summary.original.firstHalfWeakCases,[]);
+ assert.deepEqual(summary.candidate.firstHalfWeakCases,[]);
+ assert.ok(Math.abs(stats.original.totalStarts/60-
+  9.1)<25,'Six-second study must accumulate actual native source STARTs');
+});
