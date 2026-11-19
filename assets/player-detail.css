@@ -444,6 +444,8 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-matches-value{display:inline-flex;box-sizing:border-box;align-items:center;min-height:24px;height:24px;line-height:1.5;vertical-align:middle}
 .app-player-matches-number>.app-player-matches-value{width:100%;justify-content:flex-end;text-align:right}
 .app-player-matches-venue>.app-player-matches-value{justify-content:center}
+/* Loading Venue uses the same centered track as the hydrated 18px icon. */
+.app-player-matches-loading>:nth-child(5)>.app-player-matches-value{justify-content:center}
 .app-player-matches-club>.app-player-matches-value{flex:1 1 auto;min-width:0}
 /* Match the fixed-size, pulsing Club Fixtures bars and circular crest skeleton. */
 .app-player-matches-loading .club-fp-bar{

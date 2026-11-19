@@ -41,6 +41,10 @@ test('#712 parser-time and hydrated Matches retain identical table track signatu
  assert.match(css,/\.app-player-matches-value\{[^}]*height:24px/);
  assert.match(css,/\.app-player-matches-number>\.app-player-matches-value\{[^}]*width:100%/);
  assert.match(css,/\.app-player-matches-venue>\.app-player-matches-value\{justify-content:center\}/);
+ assert.match(css,/\.app-player-matches-loading>:nth-child\(5\)>\.app-player-matches-value\{justify-content:center\}/,
+  'first-paint Venue skeleton must align with the centered hydrated icon');
+ assert.match(html,/<td class="app-player-matches-number"><span class="app-player-matches-value"><span class="club-fp-bar club-fixture-skeleton-venue"/,
+  'loading Venue keeps the fixed-size 18px icon placeholder');
  assert.match(css,/\.app-player-matches-club>\.app-player-matches-value\{[^}]*min-width:0/);
  assert.match(css,/\.app-player-matches-loading \.app-player-matches-value>\.club-fp-bar:not\(\.club-fixture-skeleton-venue\)\{translate:0 1px\}/);
  assert.match(css,/\.app-player-matches-loading \.app-player-matches-skeleton-crest\{[\s\S]*?margin-right:0/);
