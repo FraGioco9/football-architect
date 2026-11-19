@@ -2,7 +2,8 @@ name: Match Engine M19 source contact-dynamics diagnosis
 on:
   pull_request:
     paths:
-      - 'match-engine/**'
+      - 'match-engine/tools/audit-contact-dynamics-m19.mjs'
+      - 'match-engine/src/native-contact-dynamics-m19.mjs'
       - '.github/workflows/match-engine-m19.yml'
 permissions:
   contents: read

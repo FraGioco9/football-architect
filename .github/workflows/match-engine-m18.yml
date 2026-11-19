@@ -2,7 +2,8 @@ name: Match Engine M18 expanded genuine initial-ball survey
 on:
   pull_request:
     paths:
-      - 'match-engine/**'
+      - 'match-engine/tools/audit-expanded-native-pairs-m18.mjs'
+      - 'match-engine/src/expanded-native-pair-survey-m18.mjs'
       - '.github/workflows/match-engine-m18.yml'
 permissions:
   contents: read

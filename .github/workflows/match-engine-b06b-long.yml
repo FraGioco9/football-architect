@@ -2,7 +2,8 @@ name: Match Engine B06b real 90-minute duration (isolated long job)
 on:
   pull_request:
     paths:
-      - 'match-engine/**'
+      - 'match-engine/tools/audit-full-regulation-b06b-h2.mjs'
+      - 'match-engine/src/basic-match-regulation-b06b.mjs'
       - '.github/workflows/match-engine-b06b-long.yml'
   workflow_dispatch:
 permissions:

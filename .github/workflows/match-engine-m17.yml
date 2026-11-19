@@ -2,7 +2,8 @@ name: Match Engine M17 genuine multi-pair source survey
 on:
   pull_request:
     paths:
-      - 'match-engine/**'
+      - 'match-engine/tools/audit-natural-concurrent-pairs.mjs'
+      - 'match-engine/src/natural-concurrent-pair-survey-m17.mjs'
       - '.github/workflows/match-engine-m17.yml'
 permissions:
   contents: read

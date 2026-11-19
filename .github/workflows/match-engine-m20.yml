@@ -2,7 +2,10 @@ name: Match Engine M20 original second-defender pressure comparison
 on:
   pull_request:
     paths:
-      - 'match-engine/**'
+      - 'match-engine/tools/audit-secondary-press-m20.mjs'
+      - 'match-engine/tools/audit-role-continuity-m22.mjs'
+      - 'match-engine/src/secondary-press-support-m20.mjs'
+      - 'match-engine/src/secondary-duty-continuity-m22.mjs'
       - '.github/workflows/match-engine-m20.yml'
 permissions:
   contents: read

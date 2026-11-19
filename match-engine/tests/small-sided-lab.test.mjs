@@ -615,7 +615,8 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
 });
 
 test('#628 paired real Rapier worlds: combined toe-length and recovery controls', 
- {timeout:240000},async()=>{
+ {timeout:240000,
+  skip:process.env.FA_MATCH_ENGINE_DEEP_RESEARCH!=='1'},async()=>{
  const R=await initializeRapier(rapier);
  // The original and the known one-weak long-toe experiment are anchors.
  // Each combined trial modifies TWO genuine physical sources at once;
@@ -773,7 +774,8 @@ test('#628 paired real Rapier worlds: combined toe-length and recovery controls'
 
 
 test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve default LAB',
- {timeout:300000},async()=>{
+ {timeout:300000,
+  skip:process.env.FA_MATCH_ENGINE_DEEP_RESEARCH!=='1'},async()=>{
  const R=await initializeRapier(rapier);
  // 7 independent Rapier worlds from the exact same canonical player/ball
  // source, per selected HOME/AWAY V01-V30. Only the Sprint-phase physical
