@@ -1,3 +1,4 @@
+import './world-clock-adapter.js';
 import {matchPublicContext,publicClubIdentityCatalog} from './match-public-context.mjs';
 import {resolveScoreboardTheme} from './match-scoreboard-themes.mjs';
 
@@ -128,8 +129,8 @@ async function refresh(){
  try{
   const data=await get('/api/matches?season='+s.season+'&day='+s.day);
   if(ticket!==epoch)return;
-  if(data.world.generation!==world.generation||data.world.revision!==world.revision){await start();return}
-  if(data.selectedSeason!==s.season||data.day!==s.day||!Array.isArray(data.fixtures))throw Error('Invalid directory');
+  if(!window.faWorldClockAdapter.sameWorld(data.world,world)){await start();return}
+  if(data.schemaVersion!==1||data.providerId!=='authoritative-world'||!['published','partial','unpublished','unavailable'].includes(data.publication)||data.selectedSeason!==s.season||data.day!==s.day||!Array.isArray(data.fixtures))throw Error('Invalid directory');
   state=data.publication;rows=data.fixtures;loaded=id;
  }catch{if(ticket!==epoch)return;state='error'}
  if(ticket===epoch){pending='';render()}
@@ -138,7 +139,7 @@ async function start(){
  const ticket=++epoch;world=null;pending=loaded='';state='loading';render();
  try{
   const data=await get('/api/world');if(ticket!==epoch)return;
-  if(!Number.isSafeInteger(data.world?.seasonNumber)||data.world.seasonNumber<0)throw Error('Invalid world');
+  if(!window.faWorldClockAdapter.validPublicWorld(data.world))throw Error('Invalid world');
   world=data.world;state=world.seasonNumber?'loading':'zero';await refresh();
  }catch{if(ticket===epoch){state='error';render()}}
 }
@@ -154,6 +155,8 @@ el('prev').onclick=()=>updateURL({day:selection().day-1});
 el('next').onclick=()=>updateURL({day:selection().day+1});
 el('current').onclick=()=>updateURL({season:'',day:''});
 addEventListener('popstate',refresh);
+addEventListener('fa:source-change',start);
+addEventListener('fa:world-invalidated',start);
 addEventListener('pageshow',e=>{if(e.persisted)start()});
 new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 start();

@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const git=(cwd,...args)=>execFileSync('git',args,{cwd,encoding:'utf8',stdio:['ignore','pipe','pipe']});
 
-const generatorFixturePaths=['backend/catalogues','clubs','tools','data','account','admin','dashboard','calendar','settings','competitions','players','matches','templates','assets/flags','assets/divisions','assets/clubs','assets/world-catalog.mjs','assets/sporting-contract.js','assets/routes-registry.mjs','assets/routes-registry.js','assets/rules-registry.js','assets/club-fixtures.js','assets/club-model.js','assets/club-records.js','assets/competition-model.js','assets/competition-rules.js','assets/competition-rules-view.js','assets/competition-stats.js','assets/world-calendar-model.js','assets/sidebar-evolution.js','assets/sidebar-first-paint.js','assets/match-public-context.mjs'];
+const generatorFixturePaths=['404.html','backend/catalogues','clubs','tools','data','account','admin','dashboard','calendar','settings','competitions','players','matches','templates','assets/flags','assets/divisions','assets/clubs','assets/world-catalog.mjs','assets/sporting-contract.js','assets/routes-registry.mjs','assets/routes-registry.js','assets/rules-registry.js','assets/club-fixtures.js','assets/club-model.js','assets/club-records.js','assets/competition-model.js','assets/competition-rules.js','assets/competition-rules-view.js','assets/competition-stats.js','assets/world-calendar-model.js','assets/sidebar-evolution.js','assets/sidebar-first-paint.js','assets/match-public-context.mjs'];
 function copyGeneratorFixture(fixture){
  for(const path of generatorFixturePaths){
   const destination=join(fixture,path);mkdirSync(join(destination,'..'),{recursive:true});

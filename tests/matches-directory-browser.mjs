@@ -10,7 +10,7 @@ export async function verifyMatchesDirectory(browser){
   await page.route('**/api/world',route=>route.fulfill({json:{world}}));
   await page.route('**/api/matches?*',route=>{
    const day=Number(new URL(route.request().url()).searchParams.get('day'));requests++;
-   return route.fulfill({json:{world,selectedSeason:1,day,publication:'published',fixtures:day===13?[
+   return route.fulfill({json:{schemaVersion:1,providerId:'authoritative-world',world,selectedSeason:1,day,publication:'published',fixtures:day===13?[
     {matchId:'17',competitionId:'IT-1',phaseId:'league',round:1,homeClubId:'IT-1',awayClubId:'IT-2',result:{homeGoals:2,awayGoals:1},status:'completed'}
    ]:[]}});
   });
