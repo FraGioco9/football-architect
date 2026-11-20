@@ -11,7 +11,9 @@ export async function verifyMatchesDirectory(browser){
   const pendingLogo=new Promise(resolve=>{releaseLogo=resolve});
   await page.route('**/assets/divisions/**/*.svg',async route=>{await pendingLogo;await route.abort()});
   await page.route('**/assets/clubs/**/*.svg',route=>route.abort());
-  await page.route('**/api/world',route=>route.fulfill({json:{world}}));
+  let releaseWorld;
+  const initialWorld=new Promise(resolve=>{releaseWorld=resolve});
+  await page.route('**/api/world',async route=>{await initialWorld;await route.fulfill({json:{world}})});
   await page.route('**/api/matches?*',route=>{
    const day=Number(new URL(route.request().url()).searchParams.get('day'));requests++;
    return route.fulfill({json:{schemaVersion:1,providerId:'authoritative-world',world,selectedSeason:1,day,publication:'published',fixtures:day===13?[
@@ -20,6 +22,9 @@ export async function verifyMatchesDirectory(browser){
   });
   await page.goto('http://app.localhost:2000/matches',{waitUntil:'domcontentloaded'});
   const match=page.locator('#md-list .md-score');
+  assert.equal(await page.locator('#md-season-value').textContent(),'');
+  assert.equal(await page.locator('#md-day-value').textContent(),'');
+  releaseWorld();
   await match.waitFor();
   assert.equal(new URL(await match.getAttribute('href'),page.url()).pathname,'/matches/17');
   assert.equal(await page.locator('#md-list h2 a .md-logo').count(),0);
@@ -28,7 +33,8 @@ export async function verifyMatchesDirectory(browser){
   assert.equal(await page.locator('#md-list h2 > .app-competition-logo-placeholder').count(),0);
   releaseLogo();
   await page.locator('#md-list h2 > .app-competition-logo-placeholder').waitFor();
-  assert.equal(await page.locator('.md-row small').innerText(),'Round 1');
+  assert.equal(await page.locator('#md-list h2 small').innerText(),'Round 1');
+  assert.equal(await page.locator('.md-row').getByText('Round 1').count(),0);
   assert.equal(await page.locator('.md-row .md-team:first-child > a + .md-logo').count(),1);
   assert.equal(await page.locator('.md-row .md-team:last-of-type > .md-logo + a').count(),1);
   assert.equal(await page.locator('#md-list img').count(),0,'failed images keep the placeholders');
@@ -46,6 +52,11 @@ export async function verifyMatchesDirectory(browser){
     assert.equal(arrow.width,day.height);
     assert.equal(arrow.height,day.height);
     assert.equal(arrow.y,day.y);
+   }
+   for(const id of ['prev','next']){
+    const button=page.locator('#md-'+id),box=await button.boundingBox(),icon=await button.locator('path').boundingBox();
+    assert(Math.abs(box.x+box.width/2-icon.x-icon.width/2)<1);
+    assert(Math.abs(box.y+box.height/2-icon.y-icon.height/2)<1);
    }
    assert(prev.x+prev.width<=day.x&&day.x+day.width<=next.x);
    assert.equal(searchBox.height,filterBox.height,'search and filter heights match');
@@ -71,8 +82,19 @@ export async function verifyMatchesDirectory(browser){
   await page.getByText('No matches on this day.').waitFor();
   assert(await page.locator('#md-current').isEnabled());
   await page.locator('#md-next').click();await match.waitFor();
-  assert.equal(await page.locator('.md-row small').innerText(),'Round 2');
+  assert.equal(await page.locator('#md-list h2 small').innerText(),'Round 2');
+  const href=new URL(await page.locator('#md-list h2 a').getAttribute('href'),page.url());
+  assert.equal(href.pathname,'/competitions/it-1/fixtures');
+  assert.equal(href.searchParams.get('matchday'),'2');
+  assert.equal(href.searchParams.get('season'),'1');
+  await page.goBack();await page.getByText('No matches on this day.').waitFor();
+  await page.goForward();await match.waitFor();
   await page.locator('#md-current').click();await match.waitFor();
+  assert.equal(requests,3,'Back, Forward and Current day reuse all visited days, including empty ones');
+  world.revision++;
+  await page.evaluate(()=>dispatchEvent(new Event('fa:world-invalidated')));
+  await match.waitFor();
+  assert.equal(requests,4,'refresh after world invalidation');
   await page.locator('#md-q').fill('xxxx');
   await page.getByText('No matching fixtures.').waitFor();
   assert.deepEqual(errors,[]);

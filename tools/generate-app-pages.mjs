@@ -410,7 +410,7 @@ writeOutput("assets/match-public-context.mjs",renderMatchPublicContext(clubData,
  const content=template.replace('@@ROWS@@',skeleton).replace(/@@PICKER\((\w+),([^)]*)\)@@/g,(_,key,label)=>{
   const id='md-'+key;
   return `<div class="md-field"><span data-word="${key}" id="${id}-label">${label}</span>
-   <div class="language-control"><button id="${id}" class="language-trigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="${id}-label ${id}-value" aria-controls="${id}-menu" disabled><span id="${id}-value">${['season','day'].includes(key)?'—':'All'}</span><svg class="language-chevron" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+   <div class="language-control"><button id="${id}" class="language-trigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="${id}-label ${id}-value" aria-controls="${id}-menu" disabled><span id="${id}-value">${['season','day'].includes(key)?'':'All'}</span><svg class="language-chevron" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
    <div class="language-menu" id="${id}-menu" role="listbox" aria-labelledby="${id}-label" hidden></div></div></div>`;
  });
  const html=(source.slice(0,start)+content+source.slice(end))

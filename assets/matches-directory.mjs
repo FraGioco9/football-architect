@@ -18,6 +18,7 @@ const vocabulary={
 };
 const keys='title season day current country competition search all international england prev next empty filtered unpublished partial zero unavailable retry scheduled tbd rank winner round leg neutral league playoffs playout quarterfinals semifinals final loading'.split(' ');
 let words,locale,world=null,rows=[],state='loading',epoch=0,loaded='',pending='';
+let dayCache=new Map(),cacheWorld=null;
 const skeleton=el('list').innerHTML;
 function node(tag,text,className){
  const element=document.createElement(tag);
@@ -65,7 +66,7 @@ function options(id,items,value){
  }
  trigger.disabled=false;
  picker.binding.sync(String(value));
- el(id+'-value').textContent=items.find(([v])=>String(v)===String(value))?.[1]??'—';
+ el(id+'-value').textContent=items.find(([v])=>String(v)===String(value))?.[1]??'';
 }
 function selection(){
  const params=new URLSearchParams(location.search);
@@ -101,9 +102,10 @@ function fixture(f){
  score.className='md-score';
  score.setAttribute('aria-label',[teams.get(f.homeClubId)?.primaryName??words.tbd,score.textContent,teams.get(f.awayClubId)?.primaryName??words.tbd].join(' '));
  row.append(participant(f.homeClubId,f.participantA,true),score,participant(f.awayClubId,f.participantB));
- const info=[f.phaseId==='league'?'':words[f.phaseId]??f.phaseId,f.round?words.round+' '+f.round:'',f.leg?words.leg+' '+f.leg:'',
+ const info=[f.leg?words.leg+' '+f.leg:'',
   r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',f.status==='awaiting_participants'?words.tbd:'',f.neutral?words.neutral:f.venue];
- row.append(node('small',info.filter(Boolean).join(' · ')));
+ const detail=info.filter(Boolean).join(' · ');
+ if(detail)row.append(node('small',detail));
  row.addEventListener('click',event=>{if(!event.target.closest('a')&&!window.getSelection()?.toString())location.assign(score.href)});
  return row;
 }
@@ -116,8 +118,8 @@ function render(){
  root.querySelectorAll('[data-word]').forEach(n=>n.textContent=words[n.dataset.word]);
  el('current').textContent=words.current;
  for(const k of ['prev','next'])el(k).setAttribute('aria-label',words[k]);
- options('season',world?Array.from({length:Math.max(1,world.seasonNumber)},(_,i)=>[world.seasonNumber-i,world.seasonNumber-i]):[['','—']],world?s.season:'');
- options('day',s.season?Array.from({length:56},(_,i)=>[i+1,i+1]):[['','—']],s.season?s.day:'');
+ options('season',world?Array.from({length:Math.max(1,world.seasonNumber)},(_,i)=>[world.seasonNumber-i,world.seasonNumber-i]):[],world?s.season:'');
+ options('day',s.season?Array.from({length:56},(_,i)=>[i+1,i+1]):[],s.season?s.day:'');
  options('country',[['',words.all],...countries.map(c=>[c,region(c)])],s.country);
  options('competition',[['',words.all],...s.ids.map(c=>[c.id,c.name])],s.competition);
  if(el('q').value!==s.q)el('q').value=s.q;
@@ -134,9 +136,19 @@ function render(){
   if(s.competition&&c.id!==s.competition)continue;
   const filtered=rows.filter(f=>f.competitionId===c.id&&(!needle||[f.homeClubId,f.awayClubId].some(id=>fold(teams.get(id)?.primaryName??'').includes(needle))));
   if(!filtered.length)continue;
-  const group=node('section'),heading=node('h2'),a=link('/competitions/'+c.id.toLowerCase()+'/fixtures?season='+s.season,c.name);
-  heading.append(logo(resolveScoreboardTheme(c).logoAsset,c.id));
-  heading.append(a);group.append(heading,...filtered.map(fixture));list.append(group);
+  const rounds=new Map();
+  for(const f of filtered){
+   const token=f.phaseId==='league'?f.round:f.phaseId==='promotionPlayoffs'?'playoffs':f.phaseId;
+   if(!rounds.has(token))rounds.set(token,[]);
+   rounds.get(token).push(f);
+  }
+  for(const [round,fixtures] of rounds){
+   const group=node('section'),heading=node('h2');
+   const href='/competitions/'+c.id.toLowerCase()+'/fixtures?season='+s.season+'&matchday='+encodeURIComponent(round);
+   const caption=fixtures[0].phaseId==='league'?words.round+' '+round:words[round]??round;
+   heading.append(logo(resolveScoreboardTheme(c).logoAsset,c.id),link(href,c.name),node('small',caption));
+   group.append(heading,...fixtures.map(fixture));list.append(group);
+  }
  }
  if(state==='partial')status.textContent=words.partial;
  if(!list.childElementCount&&(state!=='partial'||s.country||s.q||s.competition))
@@ -158,14 +170,29 @@ async function refresh(){
  if(params.toString()!==location.search.slice(1))history.replaceState(null,'','/matches'+(params.size?'?'+params:''));
  const id=[world.generation,world.revision,s.season,s.day].join('/');
  if(id===loaded||id===pending){render();return}
- const ticket=++epoch;pending=id;loaded='';state='loading';render();
+ const ticket=++epoch;
+ const cache=dayCache;
+ let entry=cache.get(id);
+ pending=id;loaded='';
  try{
-  const data=await get('/api/matches?season='+s.season+'&day='+s.day);
+  if(!entry){
+   entry={request:get('/api/matches?season='+s.season+'&day='+s.day)};
+   cache.set(id,entry);
+  }
+  if(!entry.data){
+   state='loading';render();
+   const data=await entry.request;
+   if(ticket!==epoch)return;
+   if(!window.faWorldClockAdapter.sameWorld(data.world,world)){cache.delete(id);await start();return}
+   if(data.schemaVersion!==1||data.providerId!=='authoritative-world'||!['published','partial','unpublished','unavailable'].includes(data.publication)||data.selectedSeason!==s.season||data.day!==s.day||!Array.isArray(data.fixtures))throw Error('Invalid directory');
+   entry.data=data;
+  }
+  state=entry.data.publication;rows=entry.data.fixtures;loaded=id;
+ }catch{
+  if(cache.get(id)===entry)cache.delete(id);
   if(ticket!==epoch)return;
-  if(!window.faWorldClockAdapter.sameWorld(data.world,world)){await start();return}
-  if(data.schemaVersion!==1||data.providerId!=='authoritative-world'||!['published','partial','unpublished','unavailable'].includes(data.publication)||data.selectedSeason!==s.season||data.day!==s.day||!Array.isArray(data.fixtures))throw Error('Invalid directory');
-  state=data.publication;rows=data.fixtures;loaded=id;
- }catch{if(ticket!==epoch)return;state='error'}
+  state='error';
+ }
  if(ticket===epoch){pending='';render()}
 }
 async function start(){
@@ -173,7 +200,8 @@ async function start(){
  try{
   const data=await get('/api/world');if(ticket!==epoch)return;
   if(!window.faWorldClockAdapter.validPublicWorld(data.world))throw Error('Invalid world');
-  world=data.world;state=world.seasonNumber?'loading':'zero';await refresh();
+  if(!window.faWorldClockAdapter.sameWorld(cacheWorld,data.world))dayCache=new Map();
+  cacheWorld=data.world;world=data.world;state=world.seasonNumber?'loading':'zero';await refresh();
  }catch{if(ticket===epoch){state='error';render()}}
 }
 function chooseFilter(key,value){
@@ -195,8 +223,8 @@ el('prev').onclick=()=>updateURL({day:selection().day-1});
 el('next').onclick=()=>updateURL({day:selection().day+1});
 el('current').onclick=()=>updateURL({season:'',day:''});
 addEventListener('popstate',refresh);
-addEventListener('fa:source-change',start);
-addEventListener('fa:world-invalidated',start);
+addEventListener('fa:source-change',()=>{dayCache=new Map();start()});
+addEventListener('fa:world-invalidated',()=>{dayCache=new Map();start()});
 addEventListener('pageshow',e=>{if(e.persisted)start()});
 new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 start();
