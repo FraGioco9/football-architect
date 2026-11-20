@@ -282,7 +282,7 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-team-identity{flex-direction:column;justify-content:center;gap:5px;min-height:74px;margin-bottom:10px}
  .app-match-team-crest{width:40px;height:40px;flex-basis:40px}
  .app-match-side-title{text-align:center;font-size:12px;min-height:2.7em;line-height:1.35}
- .app-match-side-stats{grid-template-columns:minmax(0,.32fr) minmax(0,1.68fr);gap:3px}
+ .app-match-side-stats{grid-template-columns:minmax(0,.29fr) minmax(0,1.71fr);gap:3px}
  .app-match-side-label{font-size:10px}
  .app-match-position{font-size:21px;line-height:25px;min-height:25px}
  .app-match-form{gap:3px;min-height:25px}

@@ -502,7 +502,7 @@ test('#577 responsive Match Detail: no visible events, official XI slots, portra
  assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-control + .app-world-form-control{margin-left:0}'));
  assert.ok(css.includes('.app-match-form{gap:3px;min-height:25px}'));
  assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-control{width:21px;height:21px}'));
- assert.ok(css.includes('.app-match-side-stats{grid-template-columns:minmax(0,.32fr) minmax(0,1.68fr);gap:3px}'));
+ assert.ok(css.includes('.app-match-side-stats{grid-template-columns:minmax(0,.29fr) minmax(0,1.71fr);gap:3px}'));
  assert.ok(css.includes('.app-match-side{padding:10px 2px 12px}'));
  assert.ok(css.includes('.app-match-stage{gap:8px}'));
  assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-glyph{width:20px;height:20px}'));
