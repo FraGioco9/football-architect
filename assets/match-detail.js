@@ -384,7 +384,6 @@
      cell.setAttribute('aria-label',tr['outcome'+game.outcome.toUpperCase()]+' · '+tr.round+' '+(game.fixture.round??game.fixture.day));
      if(matchId){
       cell.href=href('/matches/'+matchId);
-      cell.target='_blank';cell.rel='noopener noreferrer';
      }else{cell.dataset.noLink='true';cell.tabIndex=0;}
      cell.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')showFormTooltip(cell,game,tr);});
      cell.addEventListener('pointerleave',()=>hideFormTooltip());
