@@ -280,7 +280,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
   'align-items:stretch;gap:clamp(12px,1.1vw,22px);width:100%;max-width:none;margin:24px 0 0;',
   '.app-match-team-identity{display:flex;align-items:center;gap:10px;',
   '.app-match-side-stats{display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr)',
-  'grid-template-rows:repeat(11,minmax(18px,1fr))',
+  'grid-template-rows:repeat(11,minmax(24px,1fr))',
   'font-size:32px;font-weight:800',
   '.app-match-team-crest{flex:0 0 64px;width:64px;height:64px}',
   'background:color-mix(in srgb,var(--surface) 82%,transparent)',
