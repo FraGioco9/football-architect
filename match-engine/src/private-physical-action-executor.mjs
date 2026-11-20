@@ -5,6 +5,7 @@ import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,
  UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS}
  from './player-ball-uniform-autonomous-action.mjs';
 import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
+import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {calculateRealReceivingCushion}
  from './physical-receiving-cushion-m25.mjs';
 import {choosePhysicalReceiverSecondTouch}
@@ -19,8 +20,14 @@ export function createPrivatePhysicalActionExecutor({
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
  smallSidedDecisionContext=null,isolatedDribbleContext=null,
- physicalBodyGuardEnabled=false
+ physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false
 }={}){
+ if(typeof intentDrivenSoloCarry!=='boolean'||
+    (intentDrivenSoloCarry&&(
+     isolatedDribbleContext?.situationId!=='carry-solo'||
+     physicalBodyGuardEnabled||researchReceivingCushionSide!==null||
+     researchReceivingDecisionSide!==null||researchReceiverTapSide!==null)))
+  throw new TypeError('Intent gameplay touch is exclusive to unopposed DEV Carry Solo');
  if(activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
     activePlayerIds.length<1||activePlayerIds.length>7||
     new Set(activePlayerIds).size!==activePlayerIds.length))
@@ -83,6 +90,47 @@ export function createPrivatePhysicalActionExecutor({
      contact.tick!==nextTick)
    throw new RangeError('Current genuine shoe event tick required');
   // This is called solely by the core after its single Rapier world.step().
+  // In the optional GAMEPLAY intent mode, the football remains dynamic but
+  // native shoe colliders are non-interacting and cannot masquerade as START.
+  if(intentDrivenSoloCarry){
+   if(contact.started.length!==0||contact.active.length!==0||
+      contact.nativeSoloFeet?.started.length!==0||
+      contact.nativeSoloFeet?.active.length!==0||
+      suppressPhysicalBodyContact)
+    throw new Error('Intent-driven Solo Carry must not count native shoe contacts');
+   const actor=playerFrame?.players?.find(p=>
+    p.id===isolatedDribbleContext.attackingSide+'-10');
+   if(playerFrame?.tick!==nextTick)
+    throw new TypeError('Same-tick original canonical movement required');
+   const proposed=suppressOriginalAction?null:chooseIntentSoloCarryTouch({
+    tick:nextTick,lastTouchTick:lastActionTick,
+    attackingSide:isolatedDribbleContext.attackingSide,
+    phase:playerFrame.soloCarryPhase?.phase,player:actor,
+    ballPosition:ballBody.translation(),ballVelocity:ballBody.linvel(),
+    ballRadiusM
+   });
+   let result=null;
+   if(proposed){
+    ballBody.applyImpulse(proposed.impulseNs,true);
+    result=Object.freeze({...proposed,appliedByRapier:true,
+     actualPhysicsImpulseApplied:true,
+     actionSource:'internal-solo-gameplay-intent',
+     physicalTrigger:'live-player-ball-gap-no-shoe-claim',
+     decisionContext:Object.freeze({
+      intentDrivenSoloCarry:true,nativeShoeStart:false,
+      officialMatchAction:false
+     })});
+    lastActionTick=nextTick;
+   }
+   tick=nextTick;action=result;
+   audit=Object.freeze({
+    tick:nextTick,intentDrivenSoloCarry:true,
+    originalRapierBall:true,authenticNativeShoeStarts:0,
+    selectedIntent:result!==null,officialMatchAction:false,
+    noActionReason:result?null:'not-close-or-not-time-for-next-push'
+   });
+   return Object.freeze({tick,action,audit});
+  }
   // No caller-selected action, injected START, custom impulse or player ID.
   const input={
    tick:nextTick,

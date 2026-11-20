@@ -120,6 +120,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSoloRecoveryStepScale = 1,
   diagnosticSoloSprintCadenceScale = 1,
   diagnosticSoloSprintLateralTrackScale = 1,
+  diagnosticIntentDrivenSoloCarryEnabled = false,
   diagnosticSmallSidedBodyGuardEnabled = false,
    diagnosticSmallSidedBodyFeedbackEnabled = false,
   diagnosticResearchControlReceiver = false,
@@ -153,6 +154,18 @@ export function createEngine(RAPIER, input = {}, {
    throw new TypeError('Small-sided situation and attacking side must be paired');
   if(diagnosticSmallSidedSituation===null&&diagnosticSmallSidedVariantIndex!==0)
    throw new TypeError('Small-sided variant requires a paired physical exercise');
+  if(typeof diagnosticIntentDrivenSoloCarryEnabled!=='boolean'||
+     (diagnosticIntentDrivenSoloCarryEnabled&&(
+      diagnosticSmallSidedSituation!=='carry-solo'||
+      !diagnosticPlayerFootContactsEnabled||
+      !diagnosticAutonomousFixtureActionEnabled||
+      diagnosticSmallSidedBodyGuardEnabled||
+      diagnosticSoloShoeWidthScale!==1||
+      diagnosticSoloShoeLengthScale!==1||
+      diagnosticSoloRecoveryStepScale!==1||
+      diagnosticSoloSprintCadenceScale!==1||
+      diagnosticSoloSprintLateralTrackScale!==1)))
+   throw new TypeError('Intent SOLO gameplay is DEV-only and cannot alter native modes');
   // STRICT opt-in: only the isolated one-actor DEV experiment may vary
   // actual Rapier shoe collider width. No general match or 1v1 override.
   if(![0.9,1,1.1].includes(diagnosticSoloShoeWidthScale)||
@@ -537,6 +550,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticSmallSidedVariantIndex,diagnosticSoloShoeWidthScale,
     diagnosticSoloShoeLengthScale,diagnosticSoloRecoveryStepScale,
     diagnosticSoloSprintCadenceScale,diagnosticSoloSprintLateralTrackScale,
+    diagnosticIntentDrivenSoloCarryEnabled,
     diagnosticSmallSidedBodyGuardEnabled,
      diagnosticSmallSidedBodyFeedbackEnabled,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
@@ -601,7 +615,8 @@ export function createEngine(RAPIER, input = {}, {
         soloShoeLengthScale:diagnosticSoloShoeLengthScale,
         soloRecoveryStepScale:diagnosticSoloRecoveryStepScale,
         soloSprintCadenceScale:diagnosticSoloSprintCadenceScale,
-        soloSprintLateralTrackScale:diagnosticSoloSprintLateralTrackScale
+        soloSprintLateralTrackScale:diagnosticSoloSprintLateralTrackScale,
+        intentDrivenSoloCarry:diagnosticIntentDrivenSoloCarryEnabled
        }:{})
       }:{}),
       ...(diagnosticSmallSidedBodyGuardEnabled?{
@@ -627,6 +642,7 @@ export function createEngine(RAPIER, input = {}, {
     createPrivatePhysicalActionExecutor({
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
+      intentDrivenSoloCarry:diagnosticIntentDrivenSoloCarryEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
        isolatedCarry||(smallSided?.variantIndex>0),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),

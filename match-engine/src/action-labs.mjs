@@ -35,10 +35,17 @@ export function createControlledActionLab(RAPIER,id,{
  challengeSide='away',challengeScene='contact',variantIndex=0,
  bodyGuardEnabled=false,soloShoeWidthScale=1,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
- soloSprintCadenceScale=1,soloSprintLateralTrackScale=1
+ soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
+ intentDrivenSoloCarry=false
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
+ if(typeof intentDrivenSoloCarry!=='boolean'||
+    (intentDrivenSoloCarry&&(id!=='carry-solo'||bodyGuardEnabled||
+     soloShoeWidthScale!==1||soloShoeLengthScale!==1||
+     soloRecoveryStepScale!==1||soloSprintCadenceScale!==1||
+     soloSprintLateralTrackScale!==1)))
+  throw new TypeError('Intent mode is only available in simple Solo Carry');
  const spec=getActionLabScenario(id);
  if(typeof bodyGuardEnabled!=='boolean'||
     (bodyGuardEnabled&&spec.mode!=='situation'))
@@ -169,7 +176,8 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticSoloShoeLengthScale:soloShoeLengthScale,
     diagnosticSoloRecoveryStepScale:soloRecoveryStepScale,
     diagnosticSoloSprintCadenceScale:soloSprintCadenceScale,
-    diagnosticSoloSprintLateralTrackScale:soloSprintLateralTrackScale
+    diagnosticSoloSprintLateralTrackScale:soloSprintLateralTrackScale,
+    diagnosticIntentDrivenSoloCarryEnabled:intentDrivenSoloCarry
    }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
@@ -253,7 +261,8 @@ export function createControlledActionLab(RAPIER,id,{
   createBasicMatchRefereeB05():null;
  const matchTimelineObserver=(refereeMode||smallSided)?
   createBasicMatchTimelineB06():null;
- const isolatedDribbleAudit=['dribble-1v1','carry-solo'].includes(id)?
+ const isolatedDribbleAudit=(!intentDrivenSoloCarry&&
+  ['dribble-1v1','carry-solo'].includes(id))?
   createIsolatedDribbleNativeAudit({side:shotSide,variantIndex,solo:id==='carry-solo'}):null;
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
@@ -459,6 +468,12 @@ export function createControlledActionLab(RAPIER,id,{
     ...(refereeMode||smallSided?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake,
      matchTimeline}:{}),
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
+    ...(intentDrivenSoloCarry?{
+     intentDrivenCarry:true,
+     intentCarryImpulseThisTick:action?.action==='carry'&&
+      action?.decisionContext?.intentDrivenSoloCarry===true,
+     nativeShoeContactClaimed:false
+    }:{}),
     ...(smallSided?{smallSidedParticipants:smallSided.activeIds,
      smallSidedMovementDecisions:playerFrame.smallSidedMovementDecisions,
      ...(id==='carry-solo'?{

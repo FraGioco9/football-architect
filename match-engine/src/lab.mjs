@@ -61,9 +61,11 @@ function trackOnFieldDecisionChanges(frame){
    lastOnFieldAction.set(row.id,{tick:frame.physicsTick,
     kind:row.actualAction,foot:realSoloFoot});
    appendDecisionEvent({tick:frame.physicsTick,id:row.id,
-    label:'Real '+row.actualAction+
-     (realSoloFoot?' · '+realSoloFoot+' foot':'')+
-     ' · Rapier shoe contact',physical:true});
+    label:frame.intentDrivenCarry?
+      'Intent '+row.actualAction+' · live proximity · Rapier ball impulse':
+      'Real '+row.actualAction+
+      (realSoloFoot?' · '+realSoloFoot+' foot':'')+
+      ' · Rapier shoe contact',physical:true});
   }
  }
 }
@@ -214,7 +216,9 @@ function restart() {
       throw new TypeError('Original small-sided situation requires HOME/AWAY');
     const next=kind==='action'?
       createControlledActionLab(rapier,id,{shotSide:side,
-       variantIndex:activeVariantIndex,bodyGuardEnabled:true}):
+       variantIndex:activeVariantIndex,
+       bodyGuardEnabled:id!=='carry-solo',
+       intentDrivenSoloCarry:id==='carry-solo'}):
       createControlledMovementLab(rapier,id,{side});
     if(activeLab)activeLab.dispose();
     if(engine){engine.dispose();engine=null;}
@@ -434,8 +438,10 @@ function render() {
       (lastInlineFootballAction?' · last '+
        lastInlineFootballAction.team.toUpperCase()+' '+
        lastInlineFootballAction.action.toUpperCase()+
-       ' native shoe/impulse'+
+       (f.intentDrivenCarry?' gameplay intent / Rapier ball impulse':
+        ' native shoe/impulse')+
        (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
+      (f.intentDrivenCarry?' · Solo Carry intent (no shoe-contact claims)':'')+
       (f.nativeDribbleAudit?' · real native carries '+
        f.nativeDribbleAudit.appliedCarryActions+
        (f.nativeDribbleAudit.soloCarry?

@@ -159,7 +159,11 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  isolatedPhysicalBodies=false,isolatedGroundDribbleBallCentreZ=null,
  dribbleAttackerId=null,soloCarry=false,soloShoeWidthScale=1,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
- soloSprintCadenceScale=1,soloSprintLateralTrackScale=1}={}){
+ soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
+ intentDrivenSoloCarry=false}={}){
+ if(typeof intentDrivenSoloCarry!=='boolean'||
+    (intentDrivenSoloCarry&&(!soloCarry||dribbleAttackerId===null)))
+  throw new TypeError('Intent dribble may only isolate the original Solo Carry shoes');
  if(!R||typeof R.EventQueue!=='function'||!world||
     typeof world.createRigidBody!=='function'||
     !ballCollider||ballCollider.handle===undefined||
@@ -257,7 +261,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     FOOT_CONTACT_RESTITUTION:0)
    .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS|
     R.ActiveEvents.CONTACT_FORCE_EVENTS);
-  if(sharedQueue!==null||isolatedPhysicalBodies)
+  if(intentDrivenSoloCarry&&soloCarry&&p.id===dribbleAttackerId)
+   shoeShape.setCollisionGroups(0);
+  else if(sharedQueue!==null||isolatedPhysicalBodies)
    shoeShape.setCollisionGroups(0x00010001);
   const collider=physicalIds===null||physicalIds.has(p.id)?
    world.createCollider(shoeShape,body):null;
@@ -286,7 +292,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     .setFriction(FOOT_CONTACT_FRICTION).setRestitution(0)
     .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS|
      R.ActiveEvents.CONTACT_FORCE_EVENTS)
-    .setCollisionGroups(0x00010001),rightBody);
+    .setCollisionGroups(intentDrivenSoloCarry?0:0x00010001),rightBody);
   idsByCollider.set(rightCollider.handle,
    Object.freeze({id:dribbleAttackerId,foot:'right'}));
  }
