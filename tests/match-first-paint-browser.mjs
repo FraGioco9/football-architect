@@ -665,15 +665,26 @@ for(const [engine,driver] of Object.entries(engines)){
        const glyph=getComputedStyle(els[0].querySelector('.app-world-form-glyph'));
        const first=els[0].getBoundingClientRect(),second=els[1].getBoundingClientRect();
        const strip=getComputedStyle(els[0].parentElement);
+       const rect=els[0].querySelector('.app-world-form-glyph').getBoundingClientRect();
        return {control:css.width,glyph:glyph.width,gap:strip.gap,
+        centering:{x:Math.abs((first.left+first.right-rect.left-rect.right)/2),
+         y:Math.abs((first.top+first.bottom-rect.top-rect.bottom)/2)},
+        glyphDisplay:glyph.display,placeItems:glyph.placeItems,
+        textAlign:glyph.textAlign,lineHeight:glyph.lineHeight,
         leftMargin:getComputedStyle(els[1]).marginLeft,
         physicalGap:second.left-first.right,
         overflow:els[els.length-1].getBoundingClientRect().right-
          els[0].parentElement.getBoundingClientRect().right};
       });
-      assert.equal(markSizes.control,'19px');
-      assert.equal(markSizes.glyph,'17px');
+      assert.equal(markSizes.control,'21px');
+      assert.equal(markSizes.glyph,'20px');
       assert.equal(markSizes.gap,'3px');
+      assert.ok(markSizes.centering.x<=0.5&&markSizes.centering.y<=0.5,
+       JSON.stringify({engine,theme,markSizes}));
+      assert.equal(markSizes.glyphDisplay,'grid');
+      assert.equal(markSizes.placeItems,'center');
+      assert.equal(markSizes.textAlign,'center');
+      assert.equal(markSizes.lineHeight,'10px');
       assert.equal(markSizes.leftMargin,'0px');
       assert.ok(markSizes.physicalGap>=2.5&&markSizes.overflow<=1,JSON.stringify({engine,theme,markSizes}));
       await page.waitForFunction(()=>document.querySelector('[data-match-form="home"] a.app-match-form-control')?.getAttribute('href')==='/matches/901');
