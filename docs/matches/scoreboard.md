@@ -560,7 +560,7 @@ backfill, simulation change or new endpoint is needed. The existing
 `/api/matches/:id` and `/events` responses stay unchanged.
 
 
-### Official match page visual refinement (#577)
+### Earlier Match Detail timeline iteration (#577; UI superseded)
 
 The existing centered five-track scoreboard and green pitch (`#205C43`)
 remain unchanged. The static generated match shell now reserves a fixed
@@ -593,3 +593,51 @@ covers EN, IT, DE, ES and FR.
 The browser QA and static contract tests protect the pitch colour, the
 two-column Overview Status/MVP layout, fixed XI geometry and recorded-event
 provenance checks. No new gameplay generation, D1 write or remote deploy.
+
+
+### Match Detail: wider team panels, tactical XI order and Form links (current #577)
+
+This iteration intentionally **removes the Match events panel from the page**
+and stops requesting `/api/matches/:id/events` from the browser. The backend
+read-only verified event API and its contract tests remain for a future iteration.
+The canonical five-track scoreboard, field's green `#205C43`, and seven-fact
+centered Overview remain intact. The desktop stage gives each team panel
+1.25fr and the field 2.5fr, instead of the former 1fr / 3.4fr / 1fr.
+At tablet and phone sizes, the two teams remain below the full-width field.
+
+The official read `GET /api/matches/:id/stats` now includes, on every played
+player, `startingSlot: 1..11 | null` and
+`startingRole: string | null`. They are projected directly from the frozen
+starting XI receipt, not from numeric ID, final appearance order or later
+role changes. Substitutes have null values. The List view sorts the eleven
+starters by these slots; older unsigned fixtures fall back to role order,
+stably preserving player order among ties. The lineup remains a fixed
+eleven-row first-paint structure.
+
+Each row reserves a small circular portrait. Only the independent public
+`GET /api/players/:id` response can authorize displaying a V4.2-approved
+`portraitAssetKey`; a physical existing WebP is **not** sufficient. Portrait
+reads are deferred until the row enters the viewport and cached per player.
+Failed or unapproved images retain a passive silhouette. **Only the player
+name text is linked**; portrait, role and rating remain passive. The
+List / Pitch controls are visibly present in both panels and localized in
+EN/IT/DE/ES/FR, with List selected and Pitch explicitly disabled until
+its own implementation.
+
+Position uses a localized ordinal (EN: `1st`, `2nd`, `3rd`,
+`4th`; IT `1º`; DE `1.`, ES `1.º`, FR `1er` or `2e`).
+Rank remains absent for unverified or historically unknowable positions.
+The five Form marks share the vertical center of the Position value.
+Each result uses a floating tooltip in the **existing Standings style**,
+showing the recorded matchday, known opponents, verified score and
+home/away perspective. An active link is produced only when the published
+`GET /api/matches/seasons/:season/competitions/:competition` collection
+confirms a matching source fixture ID, round, day, competition and season.
+Without such evidence, the mark remains informational, never a guessed
+match link. Native anchors handle navigation, hover/focus and keyboard.
+
+The canonical match template remains the only edit source: the generated
+`matches/_shared/index.html` is kept byte-equivalent using the same
+`tools/generate-app-pages.mjs` eight-space line prefix, fixing the
+previous Site FULL generator-parity failure. No simulated event, DB write,
+portrait approval modification, deploy, route migration or merger is included.

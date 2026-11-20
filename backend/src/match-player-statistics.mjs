@@ -44,7 +44,9 @@ export function frozenMatchPlayerStatistics(result){
  }
  const side=(team,conceded,name)=>{
   if(team.kind==='team_fallback')return {kind:team.kind,formation:null,unattributedGoals:team.unattributedGoals,players:[]};
-  const starters=new Map(team.starters.map(p=>[p.playerId,p]));
+  // Preserve the initial frozen tactical slot, even when V2 recording has
+  // reordered appearances or changed the player's live role later.
+  const starters=new Map(team.starters.map((p,index)=>[p.playerId,{...p,startingSlot:index+1}]));
   return {kind:team.kind,formation:verifiedStartingFormation(result,team),unattributedGoals:0,players:team.appearances.map(p=>{
    const starter=starters.get(p.playerId),identity=identities.get(p.playerId);
    if(!starter&&!hasEvents)throw TypeError('Unidentified frozen appearance');
@@ -58,7 +60,10 @@ export function frozenMatchPlayerStatistics(result){
     ?Number.isSafeInteger(p.gkMinutes)&&p.gkMinutes>=60&&p.gkMinutes<=p.minutes
     :role==='GK'&&p.minutes>=60;
    return {playerId:p.playerId,name:identity?.name??null,nationality:identity?.nationality??null,
-    role,started:p.started,subAppearances:hasEvents?(p.started?0:1):null,
+    role,started:p.started,
+    startingRole:p.started?(starter?.role??null):null,
+    startingSlot:p.started?(starter?.startingSlot??null):null,
+    subAppearances:hasEvents?(p.started?0:1):null,
     minutes:p.minutes,goals:p.goals,
     assists:hasEvents?p.assists:null,
     yellowCards:hasEvents?(yellowTotals[name].get(p.playerId)??0):null,

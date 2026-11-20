@@ -1,6 +1,8 @@
 import type {LineupMatchResultV1} from './temporary-lineup-v1.mjs';
 export interface MatchPlayerStatistics {
  playerId:number;name:string|null;nationality:string|null;role:string;started:boolean;
+ /** 1-based immutable starting XI slot / original starting role; null for substitutes. */
+ startingSlot:number|null;startingRole:string|null;
  subAppearances:number|null;minutes:number;goals:number;assists:number|null;
  yellowCards:number|null;redCards:number|null;cleanSheets:number|null;rating:number|null;
 }

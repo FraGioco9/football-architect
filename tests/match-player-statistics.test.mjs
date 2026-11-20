@@ -148,3 +148,21 @@ test('official v1 starting-slot signature publishes only the verified 4-3-3 in /
  assert.throws(()=>frozenMatchPlayerStatistics(duplicate),/Unidentified frozen appearance/,
   'invalid legacy player records fail closed before tactical projection');
 });
+
+// The API, not a guess from player IDs or current role, owns formation order.
+test('stats keeps immutable 1-based starting slots across shuffled V2 appearances',()=>{
+ const input=result();
+ input.eventModelVersion='lineup-events-v1';
+ input.home.starters=[{playerId:93,role:'GK'},{playerId:8,role:'RB'}];
+ input.home.appearances=[
+  {playerId:8,started:true,role:'CM',gkMinutes:0,assists:0,redCards:0,
+   minutes:90,goals:0,rating:6.5},
+  {playerId:77,started:false,role:'RW',gkMinutes:0,assists:0,redCards:0,
+   minutes:12,goals:0,rating:6.2},
+  {playerId:93,started:true,role:'GK',gkMinutes:90,assists:0,redCards:0,
+   minutes:90,goals:0,rating:6.8}
+ ];
+ const players=frozenMatchPlayerStatistics(input).home.players;
+ assert.deepEqual(players.map(p=>[p.playerId,p.startingSlot,p.startingRole]),
+  [[8,2,'RB'],[77,null,null],[93,1,'GK']]);
+});

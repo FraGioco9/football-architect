@@ -462,27 +462,35 @@ test('#577 recorded event API uses the same canonical read and never leaks into 
  assert.doesNotMatch(projection,/seed:|sourceSeedHash:|attributes:/);
 });
 
-test('#577 match timeline is reserved beneath green pitch with localized receipt-only event render',()=>{
+test('#577 responsive Match Detail: no visible events, official XI slots, portraits and form controls',()=>{
  const html=read('matches/_shared/index.html'),template=read('templates/match-detail-content.html');
  const css=read('assets/match-detail.css'),js=read('assets/match-detail.js');
+ const stats=read('backend/src/match-player-statistics.mjs');
  for(const page of [html,template]){
   assert.equal(page.split('data-match-formation=').length-1,2);
-  assert.equal(page.split('data-match-events-panel').length-1,1);
-  assert.ok(page.indexOf('data-match-pitch role="img"')<page.indexOf('data-match-events-panel'));
-  assert.ok(page.indexOf('data-match-events-panel')<page.indexOf('app-match-side app-match-side-away'));
+  assert.equal(page.split('data-match-events-panel').length-1,0);
+  assert.equal(page.split('data-match-lineup-view="list"').length-1,2);
+  assert.equal(page.split('data-match-lineup-view="pitch"').length-1,2);
   assert.equal(page.split('class="app-match-lineup-row"').length-1,22);
+  assert.match(page,/data-match-lineup-view="pitch"[^>]*disabled/);
+  assert.ok(page.includes('data-match-pitch role="img"'));
  }
- for(const expected of ['background:#205C43','.app-match-events{','.app-match-formation{',
+ for(const literal of ['background:#205C43','minmax(218px,1.25fr) minmax(0,2.5fr) minmax(218px,1.25fr)',
+  '.app-match-lineup-avatar{','.app-match-form-control{',
   '.app-match-overview-row-status{grid-template-columns:repeat(2,minmax(0,1fr))}'])
-  assert.ok(css.includes(expected),expected);
- for(const expected of ["const eventCopies=", "function renderTimeline(tr)",
-  "function verifiedEventRead(value,item)", "timeline.events.filter(e=>e.type!=='pass')",
-  "event.assistingPlayerId", "matchTimeline=value;render();",
-  "data-match-formation", "source?.formation==='4-3-3'",
-  "fetch('/api/matches/'+matchId+'/events'",
-  "if(item.status==='completed')void fetch('/api/matches/'+matchId+'/events'",
-  "value.provenance.receiptHash!==item.provenance.receiptHash"])
-  assert.ok(js.includes(expected),expected);
- for(const locale of ['en','it','de','es','fr'])assert.ok(js.includes('  '+locale+':{events:'));
- assert.ok(!js.includes('matchTimeline=data.result.homeGoals'));
+  assert.ok(css.includes(literal),literal);
+ for(const literal of ["function positionLabel(rank)", "rank+suffix",
+  "function publishedFormLink(fixture)", "publishedMatchIndex.bySource",
+  "indexPublishedMatchLinks(payload,item.season,item.competitionId)",
+  "function showFormTooltip(anchor,game,tr)", "app-world-form-tooltip",
+  "function showApprovedPortrait(slot,id)", "player.portraitAssetKey==='assets/players/portraits/'+id+'.webp'",
+  "a.startingSlot-b.startingSlot", "observePortrait(avatar,starter.playerId)",
+  "row.replaceChildren(role,avatar,nameBox,vote)", "player.target='_blank'",
+  "source?.formation==='4-3-3'"])
+  assert.ok(js.includes(literal),literal);
+ assert.ok(!js.includes("fetch('/api/matches/'+matchId+'/events'"));
+ assert.ok(!js.includes('function renderTimeline(tr)'));
+ assert.ok(!css.includes('.app-match-events{'));
+ assert.match(stats,/startingSlot:index\+1/);
+ assert.match(stats,/startingRole:p\.started/);
 });

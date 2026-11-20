@@ -106,62 +106,71 @@ for(const [engine,driver] of Object.entries(engines)){
     count++;
    }finally{release?.();await ctx.close()}
   }
-  // Independently verified event timeline and frozen formation on both engines.
+  // Formation order follows frozen starting slots (not IDs); portraits
+  // require the separately approved V4.2 asset key from the public player API.
   for(const width of [390,1440]){
    const ctx=await browser.newContext({viewport:{width,height:900}});
    const page=await ctx.newPage();
-   const played={...match,day:13,status:'completed',homeParticipant:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'},
+   const played={...match,day:13,status:'completed',
+    homeParticipant:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'},
     result:{homeGoals:1,awayGoals:0,resolution:'regulation',regulation:{home:1,away:0},
      extraTime:null,penalties:null,winnerClubId:'IT-1'},
     provenance:{kind:'authoritative',receiptHash:'a'.repeat(64)}};
    const wrap=(body)=>({status:200,contentType:'application/json',body:JSON.stringify(body)});
-   const common={schemaVersion:1,providerId:'authoritative-world',matchId:'123',season:1,
-    competitionId:'IT-1',status:'completed',provenance:played.provenance};
-   const people=Array.from({length:11},(_,i)=>({playerId:i+1,name:'Frozen Player '+(i+1),
-    nationality:'ITA',role:i===0?'GK':'CM',started:true,minutes:90,goals:0,rating:6.5}));
-   people.push({playerId:12,name:'Frozen Substitute',role:'CM',started:false,minutes:20,rating:6.2});
-   const event=(ordinal,minute,type,playerId,more={})=>({ordinal,minute,period:'regulation',side:'home',
-    type,playerId,...more});
-   const events=[
-    event(0,25,'pass',2,{goalId:'home:1',fromPlayerId:2,toPlayerId:1}),
-    event(1,25,'goal',1,{goalId:'home:1',assistingPlayerId:2,creation:'open_play_pass'}),
-    event(2,30,'yellow',3),
-    {...event(3,40,'red',20,{reason:'direct'}),side:'away'},
-    event(4,65,'substitution',10,{outPlayerId:10,inPlayerId:12,inRole:'CM',outRole:'CM',window:'in-play'}),
-    event(5,75,'role_change',1,{fromRole:'GK',toRole:'RB',reason:'emergency_goalkeeper'})
-   ];
+   const roles=['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW'];
+   const people=roles.map((role,i)=>({
+    playerId:11-i,name:'Frozen Player '+(11-i),nationality:'ITA',role,
+    startingRole:role,startingSlot:i+1,started:true,minutes:90,goals:0,rating:6.5
+   })).reverse(); // API order deliberately wrong.
    try{
     await page.route('**/matches/123',route=>route.fulfill({status:200,contentType:'text/html',
      body:applyPublishedMatchDocument(shell,played,'123')}));
     await page.route('**/api/matches/123',route=>route.fulfill(wrap(played)));
     await page.route('**/api/competitions/IT-1/seasons/1',route=>route.fulfill({status:503,body:'{}'}));
-    await page.route('**/api/matches/123/stats',route=>route.fulfill(wrap({...common,
+    await page.route('**/api/matches/123/stats',route=>route.fulfill(wrap({
+     schemaVersion:1,providerId:'authoritative-world',matchId:'123',season:1,competitionId:'IT-1',
+     status:'completed',provenance:played.provenance,
      statistics:{ratingVersion:'test-rating-v1',home:{kind:'real_xi',formation:'4-3-3',players:people},
-      away:{kind:'team_fallback',formation:null,players:[]}}})));
-    await page.route('**/api/matches/123/events',route=>route.fulfill(wrap({...common,
-     homeClubId:'IT-1',awayClubId:'IT-2',
-     timeline:{kind:'recorded',eventModelVersion:'lineup-events-v1',events}})));
+      away:{kind:'team_fallback',formation:null,players:[]}}
+    })));
+    await page.route('**/api/players/*',route=>{
+     const id=Number(route.request().url().split('/').pop());
+     return route.fulfill(wrap({player:{id,portraitAssetKey:id===11?'assets/players/portraits/11.webp':null}}));
+    });
+    await page.route('**/assets/players/portraits/11.webp',route=>route.fulfill({
+     status:200,contentType:'image/webp',
+     body:readFileSync(new URL('../assets/players/portraits/44.webp',import.meta.url))
+    }));
+    let eventsRequested=0;
+    await page.route('**/api/matches/123/events',route=>{eventsRequested++;return route.abort();});
     await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
-    await page.waitForFunction(()=>document.querySelectorAll('.app-match-event').length===5&&
-     document.querySelector('[data-match-formation="home"]')?.textContent==='4-3-3'&&
-     document.querySelector('.app-match-event')?.textContent.includes('Frozen Player 1'));
+    await page.waitForFunction(()=>document.querySelectorAll('.app-match-lineup-player').length===11&&
+     document.querySelector('[data-match-formation="home"]')?.textContent==='4-3-3');
+    assert.deepEqual(await page.locator('.app-match-lineup-player').allTextContents(),
+     roles.map((_,i)=>'Frozen Player '+(11-i)));
+    assert.deepEqual(await page.locator('.app-match-lineup-role').allTextContents(),roles);
     assert.equal(await page.locator('[data-match-formation="away"]').textContent(),'');
-    assert.equal(await page.locator('.app-match-event-assist').count(),1);
-    assert.match(await page.locator('.app-match-event').first().textContent(),/25′Goal · Frozen Player 1/);
-    assert.match(await page.locator('.app-match-event').first().textContent(),/Assist · Frozen Player 2/);
-    assert.equal(await page.locator('.app-match-event').nth(2).getAttribute('data-event-side'),'away');
+    assert.equal(await page.locator('[data-match-events-panel]').count(),0);
+    assert.equal(eventsRequested,0);
+    assert.equal(await page.locator('[data-match-lineup-view="list"]').count(),2);
+    assert.equal(await page.locator('[data-match-lineup-view="pitch"]:disabled').count(),2);
+    const link=page.locator('.app-match-lineup-player').first();
+    assert.equal(await link.evaluate(el=>el.parentElement.className),'app-match-lineup-name');
+    assert.equal(await link.getAttribute('href'),'/players/11');
+    await page.waitForFunction(()=>document.querySelector('.app-match-lineup-avatar[data-match-portrait-id="11"] img')?.naturalWidth>0);
+    assert.equal(await page.locator('.app-match-lineup-avatar[data-match-portrait-id="11"]').getAttribute('data-photo-ready'),'true');
+    assert.equal(await page.locator('.app-match-lineup-avatar img').count(),1,
+     'only public V4.2-approved faces may be shown');
     const layout=await page.evaluate(()=>{
      const pitch=document.querySelector('[data-match-pitch]');
-     return {green:getComputedStyle(pitch).backgroundColor,
-      bottom:pitch.getBoundingClientRect().bottom,
-      events:document.querySelector('[data-match-events-panel]').getBoundingClientRect().top,
+     const frame=document.querySelector('.app-match-stage');
+     const columns=[...frame.children].map(el=>el.getBoundingClientRect().width);
+     return {green:getComputedStyle(pitch).backgroundColor,columns,
       overflow:document.documentElement.scrollWidth-innerWidth};
     });
     assert.equal(layout.green,'rgb(32, 92, 67)');
-    assert.ok(layout.events>=layout.bottom&&layout.overflow<=1,JSON.stringify({engine,width,layout}));
-    await page.evaluate(()=>document.documentElement.lang='it');
-    await page.waitForFunction(()=>document.querySelector('[data-match-events-heading]')?.textContent==='Eventi partita');
-    assert.match(await page.locator('.app-match-event').first().textContent(),/Gol · Frozen Player 1/);
+    if(width>1000)assert.ok(layout.columns[0]>layout.columns[1]*.38,JSON.stringify(layout));
+    assert.ok(layout.overflow<=1,JSON.stringify({engine,width,layout}));
     count++;
    }finally{await ctx.close()}
   }
@@ -264,8 +273,9 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(await page.locator('[data-match-card], .app-match-context, [data-match-visual-title]').count(),0);
     assert.equal(await page.locator('[data-match-view-selector], [data-match-view], [role="tab"], [role="tabpanel"]').count(),0);
     assert.equal(await page.locator('[data-match-overview-panel]').count(),1);
-    assert.equal(await page.locator('[data-match-events-panel]').count(),1);
-    assert.equal(await page.locator('[data-match-events-list] .app-match-event').count(),0);
+    assert.equal(await page.locator('[data-match-events-panel]').count(),0);
+    assert.equal(await page.locator('[data-match-lineup-view="list"]').count(),2);
+    assert.equal(await page.locator('[data-match-lineup-view="pitch"]:disabled').count(),2);
     assert.deepEqual(await page.locator('[data-match-formation]').allTextContents(),['','']);
     // Real rendered styles must survive conflict resolution. A missing ')'
     // in the Overview status grid can swallow every following CSS rule.
@@ -561,7 +571,8 @@ for(const [engine,driver] of Object.entries(engines)){
       neutral:currentStatus==='in_progress'})
 
     }));
-    const leagueFixtures=[{"id":"f1","day":1,"homeClubId":"IT-1","awayClubId":"IT-7","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f2","day":2,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":1}},{"id":"f3","day":4,"homeClubId":"IT-4","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":1,"awayGoals":1}},{"id":"f4","day":5,"homeClubId":"IT-5","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":3,"awayGoals":2}},{"id":"f5","day":7,"homeClubId":"IT-1","awayClubId":"IT-5","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":2}},{"id":"f6","day":8,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":0}},{"id":"f7","day":11,"homeClubId":"IT-9","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f8","day":12,"homeClubId":"IT-7","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f9","day":13,"homeClubId":"IT-1","awayClubId":"IT-10","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f10","day":14,"homeClubId":"IT-2","awayClubId":"IT-8","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":3}},{"id":"f11","day":16,"homeClubId":"IT-1","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":99}},{"id":"f12","day":19,"homeClubId":"IT-1","awayClubId":"IT-4","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":0}}];
+    const officialSource='season:1:IT-1:N01:IT-1:IT-7';
+    const leagueFixtures=[{"id":officialSource,"round":1,"phaseId":"league","day":1,"homeClubId":"IT-1","awayClubId":"IT-7","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f2","day":2,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":1}},{"id":"f3","day":4,"homeClubId":"IT-4","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":1,"awayGoals":1}},{"id":"f4","day":5,"homeClubId":"IT-5","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":3,"awayGoals":2}},{"id":"f5","day":7,"homeClubId":"IT-1","awayClubId":"IT-5","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":2}},{"id":"f6","day":8,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":0}},{"id":"f7","day":11,"homeClubId":"IT-9","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f8","day":12,"homeClubId":"IT-7","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f9","day":13,"homeClubId":"IT-1","awayClubId":"IT-10","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f10","day":14,"homeClubId":"IT-2","awayClubId":"IT-8","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":3}},{"id":"f11","day":16,"homeClubId":"IT-1","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":99}},{"id":"f12","day":19,"homeClubId":"IT-1","awayClubId":"IT-4","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":0}}];
     await page.route('**/api/competitions/IT-1/seasons/1',route=>route.fulfill({
      status:200,contentType:'application/json',
      body:JSON.stringify({
@@ -571,6 +582,14 @@ for(const [engine,driver] of Object.entries(engines)){
        standings:{rows:[{clubId:'IT-1',rank:3,played:5},{clubId:'IT-2',rank:5,played:5}]},
        fixtures:currentStatus==='postponed'?leagueFixtures.filter(f=>f.id==='f1'||f.id==='f3'):
         currentStatus==='cancelled'?[]:leagueFixtures}
+     })
+    }));
+    await page.route('**/api/matches/seasons/1/competitions/IT-1',route=>route.fulfill({
+     status:200,contentType:'application/json',body:JSON.stringify({
+      schemaVersion:1,providerId:'authoritative-world',status:'published',
+      season:1,competitionId:'IT-1',provenance:{kind:'authoritative'},
+      fixtures:[{matchId:'901',phaseId:'league',sourceFixtureId:officialSource,
+       marker:'N01',day:1,round:1}]
      })
     }));
     for(const status of ['awaiting_participants','scheduled','in_progress','postponed','cancelled','completed']){
@@ -632,12 +651,25 @@ for(const [engine,driver] of Object.entries(engines)){
      assert.equal(await page.locator('[data-match-card], .app-match-context, [data-match-visual-title]').count(),0);
      assert.equal(await page.locator('[data-match-pitch] svg').count(),1);
      if(status==='scheduled'){
-      await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3');
-      assert.deepEqual(await page.locator('[data-match-position]').allTextContents(),['3','5']);
+      await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3rd');
+      assert.deepEqual(await page.locator('[data-match-position]').allTextContents(),['3rd','5th']);
       const form=await page.locator('[data-match-form]').evaluateAll(els=>els.map(el=>
        [...el.children].map(x=>x.dataset.outcome||'-').join('')
       ));
       assert.deepEqual(form,['wdlww','wldwl']);
+      await page.waitForFunction(()=>document.querySelector('[data-match-form="home"] a.app-match-form-control')?.getAttribute('href')==='/matches/901');
+      const firstForm=page.locator('[data-match-form="home"] a.app-match-form-control').first();
+      await firstForm.hover();
+      await page.waitForFunction(()=>document.getElementById('app-match-published-form-tooltip')?.hidden===false);
+      assert.match(await page.locator('#app-match-published-form-tooltip').textContent(),/IT-1|Frozen|2/);
+      const formAlignment=await page.locator('[data-match-side="home"]').evaluate(side=>{
+       const pos=side.querySelector('.app-match-position').getBoundingClientRect();
+       const form=side.querySelector('.app-match-form').getBoundingClientRect();
+       return {top:Math.abs(pos.top-form.top),height:Math.abs(pos.height-form.height)};
+      });
+      assert.ok(formAlignment.top<=1&&formAlignment.height<=1,JSON.stringify({engine,formAlignment}));
+      await page.mouse.move(0,0);
+
       assert.equal(await page.locator('[data-match-overview="season"]').textContent(),'1');
       assert.equal(await page.locator('[data-match-overview="round"]').textContent(),'1');
       assert.ok((await page.locator('[data-match-overview="competition"]').textContent()).length>0);
@@ -654,6 +686,9 @@ for(const [engine,driver] of Object.entries(engines)){
       // Language changes update glyphs, not recorded results.
       await page.evaluate(()=>document.documentElement.lang='it');
       await page.waitForFunction(()=>document.querySelector('[data-match-label="position"]')?.textContent==='Posizione');
+      assert.deepEqual(await page.locator('[data-match-position]').allTextContents(),['3º','5º']);
+      assert.deepEqual(await page.locator('[data-match-lineup-view="list"]').allTextContents(),['Elenco','Elenco']);
+      assert.deepEqual(await page.locator('[data-match-lineup-view="pitch"]').allTextContents(),['Campo','Campo']);
       assert.equal(await page.locator('[data-match-side-title="home"]').textContent(),officialClub('IT-1').primaryName,
        'Localization never replaces an official club name with a generic Home label');
       assert.deepEqual(await page.locator('[data-match-form="home"] .app-match-form-cell').allTextContents(),['V','N','P','V','V']);

@@ -218,7 +218,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </section>
           </div>
         </section>
-                <section id="app-divisions" class="app-view app-match-page" aria-label="Match" data-match-detail data-match-load="loading">
+                        <section id="app-divisions" class="app-view app-match-page" aria-label="Match" data-match-detail data-match-load="loading">
           <section class="app-match-scoreboard" data-scoreboard-theme="neutral" aria-label="Match scoreboard">
             <a class="app-match-competition-logo" data-match-competition-link aria-label="Competition" target="_blank" rel="noopener noreferrer">
               <span data-match-competition-logo aria-hidden="true"></span>
@@ -248,7 +248,13 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </div>
             </div>
             <div class="app-match-side-lineup" data-match-lineup="home">
+              <div class="app-match-lineup-top">
               <div class="app-match-lineup-header"><h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3><span class="app-match-formation" data-match-formation="home"></span></div>
+              <div class="app-match-lineup-views" aria-label="Lineup views">
+                <button type="button" class="app-match-lineup-view" data-match-lineup-view="list" aria-pressed="true" data-match-label="listView">List</button>
+                <button type="button" class="app-match-lineup-view" data-match-lineup-view="pitch" aria-pressed="false" data-match-label="pitchView" disabled>Pitch</button>
+              </div>
+            </div>
               <ol class="app-match-lineup-rows" aria-hidden="true">
                 <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
                 <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
@@ -296,11 +302,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
               </svg>
             </div>
             </div>
-                      <section class="app-match-events" data-match-events-panel aria-label="Match events">
-              <h3 class="app-match-events-heading" data-match-events-heading>Match events</h3>
-              <p class="app-match-events-empty" data-match-events-empty></p>
-              <ol class="app-match-events-list" data-match-events-list></ol>
-            </section>
+              
           </section>
           <aside class="app-match-side app-match-side-away" data-match-side="away" aria-label="Away team">
             <header class="app-match-team-identity">
@@ -318,7 +320,13 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </div>
             </div>
             <div class="app-match-side-lineup" data-match-lineup="away">
+              <div class="app-match-lineup-top">
               <div class="app-match-lineup-header"><h3 class="app-match-side-label" data-match-label="lineup">Lineup</h3><span class="app-match-formation" data-match-formation="away"></span></div>
+              <div class="app-match-lineup-views" aria-label="Lineup views">
+                <button type="button" class="app-match-lineup-view" data-match-lineup-view="list" aria-pressed="true" data-match-label="listView">List</button>
+                <button type="button" class="app-match-lineup-view" data-match-lineup-view="pitch" aria-pressed="false" data-match-label="pitchView" disabled>Pitch</button>
+              </div>
+            </div>
               <ol class="app-match-lineup-rows" aria-hidden="true">
                 <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>
                 <li class="app-match-lineup-row" aria-hidden="true"><span class="app-match-lineup-reserved"></span></li>

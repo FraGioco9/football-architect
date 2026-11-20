@@ -132,7 +132,7 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 /* Match stage: two translucent team panels flank the slightly smaller field.
    Only position, form and 11 reserved lineup slots belong in the panels. */
 .app-match-stage{
- box-sizing:border-box;display:grid;grid-template-columns:minmax(185px,1fr) minmax(0,3.4fr) minmax(185px,1fr);
+ box-sizing:border-box;display:grid;grid-template-columns:minmax(218px,1.25fr) minmax(0,2.5fr) minmax(218px,1.25fr);
  align-items:stretch;gap:clamp(12px,1.1vw,22px);width:100%;max-width:none;margin:24px 0 0;
 }
 .app-match-side{
@@ -167,13 +167,19 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 .app-match-side-fact[hidden]{display:none}
 .app-match-side-label{display:block;margin:0;color:var(--muted);font-size:12px;line-height:1.35;font-weight:650;text-align:center}
 .app-match-position{display:block;min-height:35px;line-height:35px;font-size:32px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
-.app-match-form{display:flex;align-items:center;justify-content:center;gap:4px;min-height:21px;max-width:100%}
+.app-match-form{display:flex;align-items:center;justify-content:center;gap:4px;min-height:35px;max-width:100%}
 .app-match-form-cell{box-sizing:border-box;display:grid;place-items:center;flex:none;width:clamp(11px,1.3vw,21px);height:clamp(11px,1.3vw,21px);
  border-radius:4px;background:var(--surface-raised,var(--border));font-size:clamp(8px,.8vw,11px);font-weight:800;line-height:1;color:#f7fbf8}
 .app-match-form-cell[data-outcome="w"]{background:#237c59}
 .app-match-form-cell[data-outcome="d"]{background:#667b82}
 .app-match-form-cell[data-outcome="l"]{background:#98504d}
 .app-match-side-lineup{display:flex;flex:1;flex-direction:column;min-height:0;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.app-match-lineup-top{display:flex;flex-direction:column;gap:8px;min-width:0}
+.app-match-lineup-views{display:flex;align-items:center;gap:3px;border-radius:6px;padding:2px;background:color-mix(in srgb,var(--text) 7%,transparent)}
+.app-match-lineup-view{flex:1 1 0;min-width:0;border:0;border-radius:4px;padding:4px 6px;line-height:1.4;font-size:11px;font-weight:650;color:var(--muted);background:transparent;cursor:pointer}
+.app-match-lineup-view[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.app-match-lineup-view:disabled{opacity:.45;cursor:not-allowed}
+.app-match-lineup-view:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-match-lineup-header{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:18px}
 .app-match-lineup-header .app-match-side-label{text-align:left}
 .app-match-formation{display:block;flex:0 0 auto;min-width:4.4ch;min-height:1.35em;padding:1px 4px;
@@ -184,29 +190,23 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 .app-match-lineup-row{box-sizing:border-box;display:flex;align-items:center;min-height:18px;padding:0 6px}
 .app-match-lineup-reserved{display:block;width:100%;height:1px;background:var(--line);opacity:.7}
 .app-match-lineup-row{gap:6px;min-width:0;font-size:clamp(10px,.85vw,12px)}
+.app-match-lineup-avatar{display:block;position:relative;flex:0 0 24px;width:24px;height:24px;min-width:24px;border-radius:50%;overflow:hidden;background:var(--surface-raised,var(--border));color:var(--muted);pointer-events:none}
+.app-match-lineup-avatar:not([data-photo-ready])::before{content:"";position:absolute;left:32%;top:16%;width:36%;height:37%;border-radius:50%;background:currentColor;opacity:.5}
+.app-match-lineup-avatar:not([data-photo-ready])::after{content:"";position:absolute;left:17%;top:52%;width:66%;height:49%;border-radius:50% 50% 0 0;background:currentColor;opacity:.5}
+.app-match-lineup-avatar img{width:260%;max-width:none;height:auto;position:absolute;top:0;left:50%;transform:translateX(-50%);display:block}
+.app-match-lineup-name{display:flex;flex:1 1 auto;align-items:center;min-width:0}
+
 .app-match-lineup-role{flex:0 0 25px;color:var(--muted);font-size:10px;font-weight:700}
-.app-match-lineup-player{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)!important;text-decoration:none}
+.app-match-lineup-player{display:inline-block;flex:0 1 auto;width:max-content;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)!important;text-decoration:none}
 .app-match-lineup-player:hover,.app-match-lineup-player:focus-visible{text-decoration:underline;text-underline-offset:2px}
 .app-match-lineup-rating{flex:0 0 29px;text-align:right;color:var(--text);font-variant-numeric:tabular-nums;font-weight:750}
 .app-match-lineup-rows[aria-hidden="true"] .app-match-lineup-row{pointer-events:none}
-.app-match-visual{display:flex;flex-direction:column;gap:12px;min-width:0;margin:0}
-.app-match-events{box-sizing:border-box;min-width:0;width:100%;padding:11px 13px;
- border:1px solid var(--border);border-radius:12px;
- background:color-mix(in srgb,var(--surface) 84%,transparent)}
-.app-match-events-heading{margin:0;font-size:14px;font-weight:750;line-height:1.4;color:var(--text);text-align:center}
-.app-match-events-empty{min-height:1.3em;margin:8px 0 0;font-size:12px;text-align:center;color:var(--muted);line-height:1.4}
-.app-match-events-empty:empty{visibility:hidden}
-.app-match-events-list{display:grid;gap:0;list-style:none;margin:8px 0 0;padding:0;min-width:0}
-.app-match-event{display:grid;grid-template-columns:44px minmax(0,1fr);align-items:start;column-gap:10px;
- padding:7px 3px;border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent);min-width:0}
-.app-match-event-minute{font-size:12px;font-variant-numeric:tabular-nums;font-weight:750;color:var(--muted);text-align:center}
-.app-match-event-detail{min-width:0;font-size:12px;line-height:1.4;overflow-wrap:anywhere;color:var(--text)}
-.app-match-event-main{font-weight:750}
-.app-match-event-assist{display:block;color:var(--muted);font-size:11px}
-.app-match-event[data-event-side="away"]{direction:rtl}
-.app-match-event[data-event-side="away"] .app-match-event-detail,
-.app-match-event[data-event-side="away"] .app-match-event-minute{direction:ltr;text-align:right}
+.app-match-form-control{cursor:pointer;text-decoration:none}
+.app-match-form-control:is(:hover,:focus-visible){filter:brightness(1.15)}
+.app-match-form-control:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-match-form-cell[data-no-link]{cursor:default}
 
+.app-match-visual{min-width:0;margin:0}
 .app-match-pitch-frame{position:relative;isolation:isolate;width:100%;aspect-ratio:105/68;min-width:0}
 .app-match-pitch-overlay{
  position:absolute;z-index:2;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -268,16 +268,20 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-info-label{font-size:10px;line-height:1.15}
  .app-match-info-value{font-size:12px;line-height:1.2;min-height:1.2em}
  .app-match-side{padding:10px 7px 12px}
+ .app-match-lineup-avatar{width:20px;height:20px;min-width:20px;flex-basis:20px}
+ .app-match-lineup-row{padding:0 2px;gap:3px}
+ .app-match-lineup-role{flex-basis:20px;font-size:9px}
+ .app-match-lineup-rating{flex-basis:23px}
+ .app-match-lineup-views{gap:2px}
+ .app-match-lineup-view{padding:3px;font-size:10px}
  .app-match-formation{font-size:10px;padding:1px 2px}
- .app-match-events{padding:9px 8px}
- .app-match-event{grid-template-columns:36px minmax(0,1fr);gap:6px}
  .app-match-team-identity{flex-direction:column;justify-content:center;gap:5px;min-height:74px;margin-bottom:10px}
  .app-match-team-crest{width:40px;height:40px;flex-basis:40px}
  .app-match-side-title{text-align:center;font-size:12px;min-height:2.7em;line-height:1.35}
  .app-match-side-stats{grid-template-columns:minmax(0,.48fr) minmax(0,1.52fr);gap:3px}
  .app-match-side-label{font-size:10px}
  .app-match-position{font-size:21px;line-height:25px;min-height:25px}
- .app-match-form{gap:2px;min-height:12px}
+ .app-match-form{gap:2px;min-height:25px}
  .app-match-form-cell{width:clamp(8px,2.7vw,12px);height:clamp(8px,2.7vw,12px);font-size:8px;border-radius:2px}
 }
 
