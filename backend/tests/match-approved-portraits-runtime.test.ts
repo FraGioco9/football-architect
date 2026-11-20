@@ -1,4 +1,4 @@
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import type {Database} from '../src/database.ts';
 import type {MatchStatistics,MatchPlayerStatistics} from '../src/match-player-statistics.mjs';
