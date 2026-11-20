@@ -98,6 +98,7 @@ function participant(id,ref,home=false){
  const side=node('span',null,'md-team');
  const crest=logo(clubCrests[id]);
  const label=c?link('/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview',name):node('span',name);
+ label.className='md-team-label';label.title=name;
  if(home)side.append(label,crest);else side.append(crest,label);
  return side;
 }
@@ -111,7 +112,7 @@ function fixture(f){
  const info=[f.leg?words.leg+' '+f.leg:'',
   r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',f.status==='awaiting_participants'?words.tbd:'',f.neutral?words.neutral:f.venue];
  const detail=info.filter(Boolean).join(' · ');
- row.append(node('small',detail));
+ const metadata=node('small',detail);metadata.title=detail;row.append(metadata);
  row.addEventListener('click',event=>{if(!event.target.closest('a')&&!window.getSelection()?.toString())location.assign(score.href)});
  return row;
 }

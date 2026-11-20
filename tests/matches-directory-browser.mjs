@@ -17,14 +17,14 @@ export async function verifyMatchesDirectory(browser){
   await page.route('**/api/matches?*',route=>{
    const day=Number(new URL(route.request().url()).searchParams.get('day'));requests++;
    return route.fulfill({json:{schemaVersion:1,providerId:'authoritative-world',world,selectedSeason:1,day,publication:'published',fixtures:day===13?[
-    {matchId:'17',competitionId:'IT-1',phaseId:'league',round:1,homeClubId:'IT-1',awayClubId:'IT-2',venue:'Stadio Comunale',result:{homeGoals:2,awayGoals:1},status:'completed'}
+    {matchId:'17',competitionId:'BR-2',phaseId:'league',round:1,homeClubId:'BR-34',awayClubId:'BR-29',venue:'Estádio das Charqueadas',result:{homeGoals:2,awayGoals:1},status:'completed'}
    ]:day===15?[{matchId:'18',competitionId:'IT-1',phaseId:'league',round:2,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'}]:[]}});
   });
   await page.goto('http://app.localhost:2000/matches',{waitUntil:'domcontentloaded'});
   const match=page.locator('#md-list .md-score');
   assert.equal(await page.locator('#md-season-value').textContent(),'');
   assert.equal(await page.locator('#md-day-value').textContent(),'');
-  const widths=[320,390,768,1440],loading=new Map();
+  const widths=[320,375,390,540,541,768,1440],loading=new Map();
   for(const width of widths){
    await page.setViewportSize({width,height:800});
    const name=await page.locator('#md-list .md-name-bar').boundingBox();
