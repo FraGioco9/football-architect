@@ -581,7 +581,7 @@ for(const [engine,driver] of Object.entries(engines)){
       status:'partial',provenance:{kind:'authoritative'},
       data:{season:1,seasonState:{day:currentStatus==='completed'?20:14},
        standings:{rows:[{clubId:'IT-1',rank:3,played:5},{clubId:'IT-2',rank:5,played:5}]},
-       fixtures:currentStatus==='postponed'?leagueFixtures.filter(f=>f.id==='f1'||f.id==='f3'):
+       fixtures:currentStatus==='postponed'?leagueFixtures.filter(f=>f.id===officialSource||f.id==='f3'):
         currentStatus==='cancelled'?[]:leagueFixtures}
      })
     }));
