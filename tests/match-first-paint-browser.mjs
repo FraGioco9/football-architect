@@ -660,8 +660,22 @@ for(const [engine,driver] of Object.entries(engines)){
       assert.deepEqual(form,['wdlww','wldwl']);
       const controls=page.locator('[data-match-form="home"] .app-world-form-control');
       assert.equal(await controls.count(),5);
-      assert.equal(await controls.first().evaluate(el=>getComputedStyle(el).width),'18px');
-      assert.equal(await controls.first().locator('.app-world-form-glyph').evaluate(el=>getComputedStyle(el).width),'15px');
+      const markSizes=await controls.evaluateAll(els=>{
+       const css=getComputedStyle(els[0]);
+       const glyph=getComputedStyle(els[0].querySelector('.app-world-form-glyph'));
+       const first=els[0].getBoundingClientRect(),second=els[1].getBoundingClientRect();
+       const strip=getComputedStyle(els[0].parentElement);
+       return {control:css.width,glyph:glyph.width,gap:strip.gap,
+        leftMargin:getComputedStyle(els[1]).marginLeft,
+        physicalGap:second.left-first.right,
+        overflow:els[els.length-1].getBoundingClientRect().right-
+         els[0].parentElement.getBoundingClientRect().right};
+      });
+      assert.equal(markSizes.control,'19px');
+      assert.equal(markSizes.glyph,'17px');
+      assert.equal(markSizes.gap,'3px');
+      assert.equal(markSizes.leftMargin,'0px');
+      assert.ok(markSizes.physicalGap>=2.5&&markSizes.overflow<=1,JSON.stringify({engine,theme,markSizes}));
       await page.waitForFunction(()=>document.querySelector('[data-match-form="home"] a.app-match-form-control')?.getAttribute('href')==='/matches/901');
       const firstForm=page.locator('[data-match-form="home"] a.app-match-form-control').first();
       await firstForm.hover();

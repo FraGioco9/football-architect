@@ -496,6 +496,14 @@ test('#577 responsive Match Detail: no visible events, official XI slots, portra
  for(const outcome of ['w','d','l'])
   assert.ok(shared.includes('.app-world-form-control.app-world-form-'+outcome+' .app-world-form-glyph'));
  assert.ok(shared.includes('.app-world-form-strip .app-world-form-control{width:18px;height:18px'));
+ assert.ok(css.includes('.app-match-form{display:flex;align-items:center;justify-content:center;gap:4px;'));
+ assert.ok(css.includes('width:clamp(18px,1.6vw,22px);height:clamp(18px,1.6vw,22px)'));
+ assert.ok(css.includes('width:clamp(16px,1.37vw,19px);height:clamp(16px,1.37vw,19px)'));
+ assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-control + .app-world-form-control{margin-left:0}'));
+ assert.ok(css.includes('.app-match-form{gap:3px;min-height:25px}'));
+ assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-control{width:19px;height:19px}'));
+ assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-glyph{width:17px;height:17px}'));
+ assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-control{width:17px;height:17px}'));
  const db=read('backend/src/match-approved-portraits.ts');
  assert.ok(db.includes("status='approved'")&&db.includes("prompt_version='player-portrait-v4.2'"));
  assert.ok(read('backend/src/public-match-read-lineup-v1.ts').includes("approvedMatchPortraitKeys(db,statistics)"));
