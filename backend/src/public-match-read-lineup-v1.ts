@@ -11,9 +11,12 @@ import {matchIdForSlot} from './domain/calendar/match-slot-identity.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {replayLineupSeasonV1} from './lineup-season-replay.ts';
 import {frozenLineupMatchDetailV1} from './frozen-lineup-match-detail.ts';
+import {projectPublishedMatchEventsV1} from './match-public-events-v1.mjs';
+import type {LineupSeasonReplayV1} from './lineup-season-replay.ts';
 import {buildKnockoutSlotReservations,type BracketScope} from './domain/calendar/knockout-slot-reservations.ts';
 import {readPublicSportingSeasonLineupV1} from './public-sporting-read-lineup-v1.ts';
 import {canonicalHomeStadium,matchSlotStadium} from './match-venues.ts';
+import {approvedMatchPortraitKeys} from './match-approved-portraits.ts';
 
 interface MatchRow {
  match_id:string;generation:string;season_number:number;competition_id:string;phase_id:string;
@@ -78,7 +81,14 @@ export async function confirmedPublication(db:Database,row:PublicationSource):Pr
  return calendar;
 }
 
-async function readVerifiedPublicMatchV1(db:Database,matchId:string,includeStatistics=true){
+const notPlayedTimeline=()=>({kind:'not_played',eventModelVersion:null,events:null});
+/** Only a verified frozen replay and matching receipt hash may yield events. */
+function verifiedTimeline(replay:LineupSeasonReplayV1,fixtureId:string,receiptHash:string){
+ const record=replay.frozenMatches.get(fixtureId);
+ if(!record||record.fixtureId!==fixtureId||record.receiptHash!==receiptHash)return corrupt();
+ return projectPublishedMatchEventsV1(record.receipt.result);
+}
+async function readVerifiedPublicMatchV1(db:Database,matchId:string,includeStatistics=true,includeEvents=false){
  if(typeof matchId!=='string'||!/^[1-9][0-9]*$/.test(matchId))return missing();
  const numberId=Number(matchId);
  if(!Number.isSafeInteger(numberId)||numberId<1)return missing();
@@ -89,7 +99,7 @@ async function readVerifiedPublicMatchV1(db:Database,matchId:string,includeStati
  const world=await readWorld(db);
  if(mapping.generation!==world.generation||world.seasonNumber===0||mapping.season_number>world.seasonNumber)return missing();
  const row=await db.prepare('SELECT * FROM season_match_slots WHERE match_id=?').bind(internalId).first<MatchRow>();
- if(!row)return readPublicReservedKnockoutLineupV1(db,internalId,world,String(mapping.id),includeStatistics);
+ if(!row)return readPublicReservedKnockoutLineupV1(db,internalId,world,String(mapping.id),includeStatistics,includeEvents);
  if(row.generation!==world.generation||world.seasonNumber===0||
     row.season_number>world.seasonNumber)return missing();
  const season=await db.prepare('SELECT generation FROM seasons WHERE season_number=?')
@@ -102,6 +112,7 @@ async function readVerifiedPublicMatchV1(db:Database,matchId:string,includeStati
   return corrupt();
  const calendar=await confirmedPublication(db,row);
  let frozen:ReturnType<typeof frozenLineupMatchDetailV1>=null;
+ let timeline:ReturnType<typeof projectPublishedMatchEventsV1>|null=null;
  const visibleDay=row.season_number===world.seasonNumber?world.day:56;
  if(calendar&&row.scheduled_day<=visibleDay){
   const viewedWorld=row.season_number===world.seasonNumber?world:{
@@ -115,6 +126,7 @@ async function readVerifiedPublicMatchV1(db:Database,matchId:string,includeStati
     frozen.competitionId!==row.competition_id||
     frozen.homeClubId!==row.home_club_id||frozen.awayClubId!==row.away_club_id)
    return corrupt();
+  if(includeEvents)timeline=verifiedTimeline(replay,row.source_fixture_id,frozen.provenance.receiptHash);
  }
  const after=await readWorld(db);
  if(after.generation!==world.generation||after.revision!==world.revision||
@@ -128,7 +140,8 @@ async function readVerifiedPublicMatchV1(db:Database,matchId:string,includeStati
   status:result?'completed':'scheduled',result,
   venue:(()=>{const name=matchSlotStadium(row.home_club_id,row.stadium_name);return name?{name}:null})(),kickoff:null,
   provenance:{kind:'authoritative',receiptHash:frozen?.provenance.receiptHash??null}};
- return {match,statistics:frozen?.statistics??null};
+ return {match,statistics:frozen?.statistics??null,
+  timeline:includeEvents?(timeline??notPlayedTimeline()):null};
 }
 
 
@@ -136,13 +149,22 @@ async function readVerifiedPublicMatchV1(db:Database,matchId:string,includeStati
 export async function readPublicMatchLineupV1(db:Database,matchId:string){
  return (await readVerifiedPublicMatchV1(db,matchId,false)).match;
 }
-/** The same verified receipt authority, dedicated player-statistics transport. */
-export async function readPublicMatchStatisticsV1(db:Database,matchId:string){
- const {match,statistics}=await readVerifiedPublicMatchV1(db,matchId);
+/** Separately verified timeline; never added to header or statistics response. */
+export async function readPublicMatchEventsV1(db:Database,matchId:string){
+ const {match,timeline}=await readVerifiedPublicMatchV1(db,matchId,false,true);
  return {schemaVersion:1,providerId:'authoritative-world',matchId:match.matchId,
   season:match.season,competitionId:match.competitionId,status:match.status,
   homeClubId:match.homeParticipant?.clubId??null,awayClubId:match.awayParticipant?.clubId??null,
-  provenance:match.provenance,statistics};
+  provenance:match.provenance,timeline:timeline??notPlayedTimeline()};
+}
+/** The same verified receipt authority, dedicated player-statistics transport. */
+export async function readPublicMatchStatisticsV1(db:Database,matchId:string){
+ const {match,statistics}=await readVerifiedPublicMatchV1(db,matchId);
+ const withPortraits=statistics?await approvedMatchPortraitKeys(db,statistics):null;
+ return {schemaVersion:1,providerId:'authoritative-world',matchId:match.matchId,
+  season:match.season,competitionId:match.competitionId,status:match.status,
+  homeClubId:match.homeParticipant?.clubId??null,awayClubId:match.awayParticipant?.clubId??null,
+  provenance:match.provenance,statistics:withPortraits};
 }
 
 /**
@@ -288,7 +310,7 @@ async function validKnockoutSlot(row:ReservedKnockout,canonical?:Awaited<ReturnT
 }
 async function readPublicReservedKnockoutLineupV1(
  db:Database,matchId:string,world:Awaited<ReturnType<typeof readWorld>>,publicMatchId:string,
- includeStatistics=true
+ includeStatistics=true,includeEvents=false
 ){
  const row=await db.prepare('SELECT * FROM season_knockout_match_slots WHERE match_id=?')
   .bind(matchId).first<ReservedKnockout>();
@@ -313,6 +335,7 @@ async function readPublicReservedKnockoutLineupV1(
   resolved=matching[0];
  }
  let frozen:ReturnType<typeof frozenLineupMatchDetailV1>=null;
+ let timeline:ReturnType<typeof projectPublishedMatchEventsV1>|null=null;
  if(resolved?.result){
   const viewedWorld=row.season_number===world.seasonNumber?world:{
    ...world,seasonNumber:row.season_number,day:56,phase:'closed' as const
@@ -327,6 +350,7 @@ async function readPublicReservedKnockoutLineupV1(
    frozen.homeClubId!==resolved.homeClubId||frozen.awayClubId!==resolved.awayClubId||
    frozen.result.homeGoals!==(resolved.result as {homeGoals:number}).homeGoals||
    frozen.result.awayGoals!==(resolved.result as {awayGoals:number}).awayGoals)return corrupt();
+  if(includeEvents)timeline=verifiedTimeline(replay,resolved.id,frozen.provenance.receiptHash);
  }else if(resolved&&resolved.day<=(row.season_number===world.seasonNumber?world.day:56)){
   return corrupt();
  }
@@ -347,5 +371,6 @@ async function readPublicReservedKnockoutLineupV1(
    ?(()=>{const name=canonicalHomeStadium(resolved.homeClubId);return name?{name}:null})()
    :null,kickoff:null,
   provenance:{kind:'authoritative',receiptHash:frozen?.provenance.receiptHash??null}};
- return {match,statistics:frozen?.statistics??null};
+ return {match,statistics:frozen?.statistics??null,
+  timeline:includeEvents?(timeline??notPlayedTimeline()):null};
 }

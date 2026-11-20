@@ -160,6 +160,15 @@ jobs:
             echo "Network footprint baseline is diagnostic-only; skipped on regular FULL runs."
           fi
           node tools/ci-run.mjs 6-int24-browser-qa -- node tests/clean-ui-03-webkit-iphone.mjs
+          # Match Detail's real first-paint and independently verified match
+          # timeline are covered in Chromium + WebKit when their source changes.
+          # Other PRs skip this relatively heavy dual-engine test.
+          if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD --             assets/match-detail.js assets/match-detail.css matches/_shared/index.html             templates/match-detail-content.html tests/match-first-paint-browser.mjs | grep -q .; then
+            node tools/ci-run.mjs match-detail-dual-engine -- node tests/match-first-paint-browser.mjs
+          else
+            echo "Match Detail source unchanged (or not a PR); dual-engine dedicated QA not applicable."
+          fi
+
       - name: FULL coverage completed
         if: needs.scope.outputs.mode == 'full'
         run: echo 'All Browser FULL source checks completed on exact HEAD.'
