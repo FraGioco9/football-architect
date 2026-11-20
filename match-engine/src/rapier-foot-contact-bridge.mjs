@@ -244,6 +244,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     y:p.y+swingM*s+lateralM*c});
   }));
  }
+ // Must exist before the initial native shoe positions are calculated.
+ // Only a real later Rapier START can arm this state.
+ let soloFollowAfterNativeStart=false;
  const stagedFeet=shoeFeet(initialPlayers,0);
  for(const p of stagedFeet){
   const pose=footProxyTransform(p);
@@ -304,8 +307,6 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   tick=0,disposed=false;
  let actualShoeFeet=stagedFeet;
  let gaitPhaseRad=0,lastGaitFrequencyHz=null;
- // Discrete event-informed recovery state: no timers or synthetic touches.
- let soloFollowAfterNativeStart=false;
  let active=new Set(),activeSoloFeet=new Set(),solver=null;
  let current=Object.freeze({
   version:FOOT_CONTACT_VERSION,tick:0,
