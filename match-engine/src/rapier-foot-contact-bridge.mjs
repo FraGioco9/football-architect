@@ -78,9 +78,10 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 // #628: two independently positioned native shoes, only for solo Carry.
 // A cyclic target NEVER creates Rapier START/END or applies a ball impulse.
 export function soloCarryTwoFootPositions(player,gait=null,{
- recoveryStepScale=1,sprintLateralTrackScale=1
+ recoveryStepScale=1,sprintLateralTrackScale=1,contactFollow=false
 }={}){
- if(![0.85,0.925,1,1.15].includes(recoveryStepScale)||
+ if(typeof contactFollow!=='boolean'||
+    ![0.85,0.925,1,1.15].includes(recoveryStepScale)||
     ![0.9,1,1.1].includes(sprintLateralTrackScale)||
     !player||![player.x,player.y,player.facingRad].every(Number.isFinite)||
     (gait!==null&&(!Number.isFinite(gait.phaseRad)||
@@ -119,8 +120,14 @@ export function soloCarryTwoFootPositions(player,gait=null,{
  const openRun=gait?.carryPhase==='sprint'?1-realRecoveryNeed:0;
  const sprintTrackM=(0.145-0.055*realRecoveryNeed)*
   sprintLateralTrackScale;
- const lateralTrackM=gait?.carryPhase==='sprint'?sprintTrackM:
+ const basicLateralTrackM=gait?.carryPhase==='sprint'?sprintTrackM:
   gait?.carryPhase==='moderate'?0.11:0.085;
+ // Real native shoe START is the only event that can arm FOLLOW.
+ // While the ball is already rolling clear, the player's feet run on
+ // either side, not through the ball. Close again only upon real catch-up.
+ // All actual shoes remain genuine Rapier kinematic colliders.
+ const lateralTrackM=basicLateralTrackM+
+  (contactFollow&&gait?.carryPhase!=='control'?0.10:0);
  // Shift the two-foot gait together when the ball is on one side, keeping
  // both actual shoe pads outside the rolling sphere. During a recovery,
  // release the shift so a shoe can approach and genuinely make contact.
@@ -228,7 +235,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    if(initialPlayers[i].id!==dribbleAttackerId)return p;
    if(soloCarry)return soloCarryTwoFootPositions(p,gait,{
     recoveryStepScale:soloRecoveryStepScale,
-    sprintLateralTrackScale:soloSprintLateralTrackScale
+    sprintLateralTrackScale:soloSprintLateralTrackScale,
+    contactFollow:soloFollowAfterNativeStart&&gait?.carryPhase!=='control'
    }).left;
    const c=Math.cos(p.facingRad),s=Math.sin(p.facingRad);
    return Object.freeze({...p,
@@ -296,6 +304,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   tick=0,disposed=false;
  let actualShoeFeet=stagedFeet;
  let gaitPhaseRad=0,lastGaitFrequencyHz=null;
+ // Discrete event-informed recovery state: no timers or synthetic touches.
+ let soloFollowAfterNativeStart=false;
  let active=new Set(),activeSoloFeet=new Set(),solver=null;
  let current=Object.freeze({
   version:FOOT_CONTACT_VERSION,tick:0,
@@ -315,7 +325,16 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    carryPhase:soloCarry?playerFrame.soloCarryPhase?.phase:null,
    sprintCadenceScale:soloCarry?soloSprintCadenceScale:1
   }):null;
-  if(soloCarry)lastGaitFrequencyHz=gait.frequencyHz;
+  if(soloCarry){
+   lastGaitFrequencyHz=gait.frequencyHz;
+   // End free roll only when the ACTUAL runner closes on the physical ball;
+   // the source collision remains untouched and can genuinely recontact.
+   if(gait.observedAheadM<=0.43||
+      gait.observedPlayerForwardMps>=gait.observedBallForwardMps+0.22)
+    soloFollowAfterNativeStart=false;
+  }
+  const contactFollow=soloCarry&&soloFollowAfterNativeStart&&
+   gait?.carryPhase!=='control';
   // Separate stride cadence from contact frequency without turning the
   // foot into a 7 m/s lateral paddle. Genuine side-step motion is limited
   // to 1.6 m/s in the solo research source; forward running retains the
@@ -336,7 +355,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const rightDesired=soloCarry?
    limitSoloFootLateralMotion(soloCarryTwoFootPositions(actor,gait,{
     recoveryStepScale:soloRecoveryStepScale,
-    sprintLateralTrackScale:soloSprintLateralTrackScale
+    sprintLateralTrackScale:soloSprintLateralTrackScale,
+    contactFollow
    }).right,
     actualRightFoot):null;
   // The whole shoe also moves when its owner turns or advances. Clamp the
@@ -437,6 +457,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   if(soloCarry){
    if(activeSoloFeet.size===0&&nextSoloFeet.size>0){
     started.add(dribbleAttackerId);next.add(dribbleAttackerId);
+    // A genuine released-to-contact transition, not an inferred stride.
+    // The following physical frame can then widen both shoe tracks.
+    soloFollowAfterNativeStart=footStarts.size===1;
    }else if(activeSoloFeet.size>0&&nextSoloFeet.size===0){
     ended.add(dribbleAttackerId);next.delete(dribbleAttackerId);
    }
@@ -461,6 +484,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     sprintCadenceScale:soloSprintCadenceScale,
     sprintLateralTrackScale:soloSprintLateralTrackScale,
     nativeObservedGaitFrequencyHz:lastGaitFrequencyHz,
+    contactFollowArmedByNativeStart:soloFollowAfterNativeStart,
     geometrySource:'native-rapier-collider-width',
     exclusivePhysicalStart:footStarts.size===1&&nextSoloFeet.size===1
    })}:{}),

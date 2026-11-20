@@ -598,7 +598,10 @@ test('#628 60 native solo Carry variants preserve real speed, contact and phase 
  assert.ok(maxGroundLiftM<=0.015+1e-6,
   'All 60 real Rapier trials must keep ground ball lift below 1.5cm');
  assert.equal(weakSamples.length,0,'Every variant should physically carry with recontacts');
- assert.ok(meanCarries<5,'Native open-running contacts must be meaningfully less frequent than the prior ~6.05 actions/3s');
+ assert.ok(meanCarries<4.866667,
+  'Event-armed push-and-follow must reduce genuine applied Carry actions');
+ assert.ok(meanPhysicalFootStarts<9.1,
+  'Event-armed push-and-follow must reduce actual physical shoe STARTs');
  assert.ok(distinctTouchIntervals.size>=3,
   'Real ball distance/relative speed must vary inter-touch timing, not act like a metronome');
  assert.ok(samples.every(x=>x.physicalFootStarts>=x.carries&&
