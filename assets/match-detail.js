@@ -65,7 +65,7 @@
  let matchStatistics=null;
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null,sideProjection=null;
  let publishedMatchIndex=null;
- const approvedPortraits=new Map();
+ let lastLineupStatistics=null,lastLineupData=null,lastLineupLanguage='';
 
  // Use the approved SVG directly: its primary and secondary fills are
  // identical in Dark and Light, without recolouring or injected outlines.
@@ -245,37 +245,30 @@
   formTooltip.style.left=Math.round(Math.max(8,Math.min(rect.left+rect.width/2-w/2,innerWidth-w-8)))+'px';
   formTooltip.style.top=Math.round(Math.max(minTop,Math.min(top,maxBottom-h)))+'px';
  }
- // The published player API is the *only* authority for V4.2-approved faces.
- // The presence of an old .webp file is not sufficient to show a portrait.
+ // Only the receipt-verified /stats response can authorize a portrait.
+ // Never request 22 individual /api/players/:id records. The transport already
+ // includes V4.2 approvals from one parameterized backend read.
  let portraitObserver=null;
  function showApprovedPortrait(slot,id){
-  if(!Number.isSafeInteger(id)||id<1)return;
-  let claim=approvedPortraits.get(id);
-  if(!claim){
-   claim=fetch('/api/players/'+id,{credentials:'omit',cache:'no-store'})
-    .then(async r=>r.ok?r.json():null).then(value=>{
-     const player=value?.player;
-     return player?.id===id&&player.portraitAssetKey==='assets/players/portraits/'+id+'.webp'
-      ?'/'+player.portraitAssetKey:null;
-    }).catch(()=>null);
-   approvedPortraits.set(id,claim);
-  }
-  void claim.then(source=>{
-   if(!source||!slot.isConnected||slot.dataset.matchPortraitId!==String(id))return;
-   const img=document.createElement('img');img.alt='';img.loading='lazy';img.decoding='async';
-   img.onload=()=>{if(slot.contains(img))slot.dataset.photoReady='true';};
-   img.onerror=()=>{delete slot.dataset.photoReady;img.remove();};
-   slot.append(img);img.src=source;
-  });
+  const expected='/assets/players/portraits/'+id+'.webp';
+  if(!slot.isConnected||slot.dataset.matchPortraitAsset!==expected||
+     slot.dataset.matchPortraitId!==String(id))return;
+  const img=document.createElement('img');
+  img.alt='';img.loading='lazy';img.decoding='async';
+  img.onload=()=>{if(slot.contains(img))slot.dataset.photoReady='true'};
+  img.onerror=()=>{delete slot.dataset.photoReady;img.remove()};
+  slot.append(img);img.src=expected;
  }
- function observePortrait(slot,id){
+ function observePortrait(slot,id,approvedKey){
+  if(!Number.isSafeInteger(id)||id<1||
+     approvedKey!=='assets/players/portraits/'+id+'.webp')return;
   slot.dataset.matchPortraitId=String(id);
+  slot.dataset.matchPortraitAsset='/'+approvedKey;
   if(typeof IntersectionObserver!=='function'){showApprovedPortrait(slot,id);return;}
   if(!portraitObserver)portraitObserver=new IntersectionObserver(entries=>{
    for(const entry of entries)if(entry.isIntersecting){
     portraitObserver.unobserve(entry.target);
-    const id=Number(entry.target.dataset.matchPortraitId);
-    showApprovedPortrait(entry.target,id);
+    showApprovedPortrait(entry.target,Number(entry.target.dataset.matchPortraitId));
    }
   },{rootMargin:'120px'});
   portraitObserver.observe(slot);
@@ -375,16 +368,22 @@
    const form=find('[data-match-form="'+side+'"]');
    if(form){
     form.setAttribute('aria-label',tr[side]+' · '+tr.form);
-    form.replaceChildren(...facts.form.map(game=>{
+    form.classList.add('app-world-form-strip');
+    form.replaceChildren(...facts.form.map((game,i)=>{
      const matchId=game.matchId;
-     const cell=document.createElement(matchId?'a':'span');
-     cell.className='app-match-form-cell'+(matchId?' app-match-form-control':'');
-     cell.textContent=tr['form'+game.outcome.toUpperCase()];
+     const cell=document.createElement(matchId?'a':'button');
+     if(!matchId)cell.type='button';
+     cell.className='app-match-form-cell app-match-form-control app-world-form-dot app-world-form-control app-world-form-'+game.outcome+
+      (i===0?' app-world-form-last':'');
+     const glyph=document.createElement('span');
+     glyph.className='app-world-form-glyph';
+     glyph.textContent=tr['form'+game.outcome.toUpperCase()];
+     cell.append(glyph);
      cell.dataset.outcome=game.outcome;
      cell.setAttribute('aria-label',tr['outcome'+game.outcome.toUpperCase()]+' · '+tr.round+' '+(game.fixture.round??game.fixture.day));
      if(matchId){
       cell.href=href('/matches/'+matchId);
-     }else{cell.dataset.noLink='true';cell.tabIndex=0;}
+     }else cell.dataset.noLink='true';
      cell.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')showFormTooltip(cell,game,tr);});
      cell.addEventListener('pointerleave',()=>hideFormTooltip());
      cell.addEventListener('focus',()=>showFormTooltip(cell,game,tr));
@@ -397,6 +396,10 @@
  // Keep all eleven rows preallocated. Only verified frozen real XI
  // participants appear; missing/unplayed/fallback sides retain placeholders.
  function renderLineups(tr){
+  // Re-render the XI only when its proof, match or language changes.
+  // Form/Position and published-link hydration must not destroy the portraits.
+  if(lastLineupStatistics===matchStatistics&&lastLineupData===data&&lastLineupLanguage===lang())return;
+  lastLineupStatistics=matchStatistics;lastLineupData=data;lastLineupLanguage=lang();
   portraitObserver?.disconnect();
   for(const side of ['home','away']){
    const list=find('[data-match-lineup="'+side+'"] .app-match-lineup-rows');
@@ -456,7 +459,7 @@
     vote.setAttribute('aria-label',tr.rating+': '+vote.textContent);
     vote.title=tr.rating;
     row.replaceChildren(role,avatar,nameBox,vote);
-    observePortrait(avatar,starter.playerId);
+    observePortrait(avatar,starter.playerId,starter.portraitAssetKey);
    }
    if(valid)list.removeAttribute('aria-hidden');
    else list.setAttribute('aria-hidden','true');
@@ -561,32 +564,25 @@
   // the immutable verified match identity is allowed to request this season.
   if(!Number.isSafeInteger(item.day)||item.day<1||
    !clubKey(item.homeParticipant?.clubId)&&!clubKey(item.awayParticipant?.clubId))return;
-  try{
-   const response=await fetch('/api/competitions/'+item.competitionId+'/seasons/'+item.season,
-    {credentials:'omit',cache:'no-store'});
-   if(!response.ok)return;
-   const snapshot=await response.json();
-   if(verifiedProjection(snapshot)){
-    sideProjection=snapshot;publishedMatchIndex=null;render();
-    // As with Standings, only the fully published match list can enable
-    // navigation from a recent result to an official /matches/:id route.
-    // A stale or absent collection leaves informational, non-link badges.
-    try{
-     const [reply,module]=await Promise.all([
-      fetch('/api/matches/seasons/'+item.season+'/competitions/'+item.competitionId,
-       {credentials:'omit',cache:'no-store'}),
-      import('/assets/published-match-links.mjs')
-     ]);
-     if(reply.ok){
-      const payload=await reply.json();
-      const index=module.indexPublishedMatchLinks(payload,item.season,item.competitionId);
-      if(data===item&&sideProjection===snapshot){
-       publishedMatchIndex=index;render();
-      }
-     }
-    }catch{/* No invented links; preserve the published outcome badges. */}
-   }
-  }catch{/* Unavailable context remains empty; match and scoreboard stay intact. */}
+  // Both official form sources depend only on the verified match identity:
+  // start in parallel; neither waits for the other.
+  void fetch('/api/competitions/'+item.competitionId+'/seasons/'+item.season,
+   {credentials:'omit',cache:'no-store'})
+   .then(async response=>response.ok?response.json():null)
+   .then(snapshot=>{
+    if(data!==item||!verifiedProjection(snapshot))return;
+    sideProjection=snapshot;render();
+   }).catch(()=>{/* Official standings unavailable; keep the result intact. */});
+  void Promise.all([
+   fetch('/api/matches/seasons/'+item.season+'/competitions/'+item.competitionId,
+    {credentials:'omit',cache:'no-store'}),
+   import('/assets/published-match-links.mjs')
+  ]).then(async ([reply,module])=>{
+   if(!reply.ok)return;
+   const payload=await reply.json();
+   const index=module.indexPublishedMatchLinks(payload,item.season,item.competitionId);
+   if(data===item){publishedMatchIndex=index;render();}
+  }).catch(()=>{/* No fabricated match links when index is unavailable. */});
  }
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  render();void load();

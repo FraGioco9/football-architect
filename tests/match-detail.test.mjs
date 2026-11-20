@@ -280,13 +280,11 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
   'align-items:stretch;gap:clamp(12px,1.1vw,22px);width:100%;max-width:none;margin:24px 0 0;',
   '.app-match-team-identity{display:flex;align-items:center;gap:10px;',
   '.app-match-side-stats{display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr)',
-  'grid-template-rows:repeat(11,minmax(24px,1fr))',
+  'grid-template-rows:repeat(11,minmax(38px,1fr))',
   'font-size:32px;font-weight:800',
   '.app-match-team-crest{flex:0 0 64px;width:64px;height:64px}',
   'background:color-mix(in srgb,var(--surface) 82%,transparent)',
-  '.app-match-form-cell[data-outcome="w"]{background:#237c59}',
-  '.app-match-form-cell[data-outcome="d"]{background:#667b82}',
-  '.app-match-form-cell[data-outcome="l"]{background:#98504d}',
+  '.app-match-form .app-world-form-control{color:inherit;text-decoration:none}',
   '.app-match-visual{grid-column:1/-1;grid-row:1}',
   '@media(max-width:1000px)'
  ])assert.ok(css.includes(fragment),fragment);
@@ -465,6 +463,7 @@ test('#577 recorded event API uses the same canonical read and never leaks into 
 test('#577 responsive Match Detail: no visible events, official XI slots, portraits and form controls',()=>{
  const html=read('matches/_shared/index.html'),template=read('templates/match-detail-content.html');
  const css=read('assets/match-detail.css'),js=read('assets/match-detail.js');
+ const shared=read('assets/app.css');
  const stats=read('backend/src/match-player-statistics.mjs');
  for(const page of [html,template]){
   assert.equal(page.split('data-match-formation=').length-1,2);
@@ -483,12 +482,23 @@ test('#577 responsive Match Detail: no visible events, official XI slots, portra
   "function publishedFormLink(fixture)", "publishedMatchIndex.bySource",
   "indexPublishedMatchLinks(payload,item.season,item.competitionId)",
   "function showFormTooltip(anchor,game,tr)", "app-world-form-tooltip",
-  "function showApprovedPortrait(slot,id)", "player.portraitAssetKey==='assets/players/portraits/'+id+'.webp'",
-  "a.startingSlot-b.startingSlot", "observePortrait(avatar,starter.playerId)",
+  "function showApprovedPortrait(slot,id)", "starter.portraitAssetKey",
+  "a.startingSlot-b.startingSlot", "observePortrait(avatar,starter.playerId,starter.portraitAssetKey)",
   "row.replaceChildren(role,avatar,nameBox,vote)", "player.target='_blank'",
   "source?.formation==='4-3-3'"])
   assert.ok(js.includes(literal),literal);
  assert.ok(!js.includes("fetch('/api/matches/'+matchId+'/events'"));
+ assert.ok(!js.includes("fetch('/api/players/"));
+ assert.ok(js.includes("void Promise.all(["));
+ assert.ok(js.includes("form.classList.add('app-world-form-strip')"));
+ assert.ok(js.includes("glyph.className='app-world-form-glyph'"));
+ assert.ok(css.includes('grid-template-rows:repeat(11,minmax(32px,1fr))'));
+ for(const outcome of ['w','d','l'])
+  assert.ok(shared.includes('.app-world-form-control.app-world-form-'+outcome+' .app-world-form-glyph'));
+ assert.ok(shared.includes('.app-world-form-strip .app-world-form-control{width:18px;height:18px'));
+ const db=read('backend/src/match-approved-portraits.ts');
+ assert.ok(db.includes("status='approved'")&&db.includes("prompt_version='player-portrait-v4.2'"));
+ assert.ok(read('backend/src/public-match-read-lineup-v1.ts').includes("approvedMatchPortraitKeys(db,statistics)"));
  assert.ok(!js.includes('function renderTimeline(tr)'));
  assert.ok(!css.includes('.app-match-events{'));
  assert.match(stats,/startingSlot:index\+1/);

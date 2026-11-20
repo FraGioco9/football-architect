@@ -167,12 +167,9 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 .app-match-side-fact[hidden]{display:none}
 .app-match-side-label{display:block;margin:0;color:var(--muted);font-size:12px;line-height:1.35;font-weight:650;text-align:center}
 .app-match-position{display:block;min-height:35px;line-height:35px;font-size:32px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
-.app-match-form{display:flex;align-items:center;justify-content:center;gap:4px;min-height:35px;max-width:100%}
-.app-match-form-cell{box-sizing:border-box;display:grid;place-items:center;flex:none;width:clamp(11px,1.3vw,21px);height:clamp(11px,1.3vw,21px);
- border-radius:4px;background:var(--surface-raised,var(--border));font-size:clamp(8px,.8vw,11px);font-weight:800;line-height:1;color:#f7fbf8}
-.app-match-form-cell[data-outcome="w"]{background:#237c59}
-.app-match-form-cell[data-outcome="d"]{background:#667b82}
-.app-match-form-cell[data-outcome="l"]{background:#98504d}
+.app-match-form{display:flex;align-items:center;justify-content:center;gap:0;min-height:35px;max-width:100%}
+/* The 18px Standings form controls/glyphs come from shared app.css. */
+.app-match-form .app-world-form-control{color:inherit;text-decoration:none}
 .app-match-side-lineup{display:flex;flex:1;flex-direction:column;min-height:0;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .app-match-lineup-top{display:flex;flex-direction:column;gap:8px;min-width:0}
 .app-match-lineup-views{display:flex;align-items:center;gap:3px;border-radius:6px;padding:2px;background:color-mix(in srgb,var(--text) 7%,transparent)}
@@ -186,11 +183,11 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  border-radius:5px;text-align:center;color:var(--text);font-size:11px;line-height:1.35;
  font-weight:750;font-variant-numeric:tabular-nums}
 .app-match-formation:not(:empty){background:color-mix(in srgb,var(--text) 8%,transparent)}
-.app-match-lineup-rows{display:grid;flex:1;grid-template-rows:repeat(11,minmax(24px,1fr));gap:5px;margin:10px 0 0;padding:0;list-style:none}
-.app-match-lineup-row{box-sizing:border-box;display:flex;align-items:center;min-height:24px;padding:0 6px}
+.app-match-lineup-rows{display:grid;flex:1;grid-template-rows:repeat(11,minmax(38px,1fr));gap:6px;margin:10px 0 0;padding:0;list-style:none}
+.app-match-lineup-row{box-sizing:border-box;display:flex;align-items:center;min-height:38px;padding:0 8px}
 .app-match-lineup-reserved{display:block;width:100%;height:1px;background:var(--line);opacity:.7}
 .app-match-lineup-row{gap:6px;min-width:0;font-size:clamp(10px,.85vw,12px)}
-.app-match-lineup-avatar{display:block;position:relative;flex:0 0 24px;width:24px;height:24px;min-width:24px;border-radius:50%;overflow:hidden;background:var(--surface-raised,var(--border));color:var(--muted);pointer-events:none}
+.app-match-lineup-avatar{display:block;position:relative;flex:0 0 30px;width:30px;height:30px;min-width:30px;border-radius:50%;overflow:hidden;background:var(--surface-raised,var(--border));color:var(--muted);pointer-events:none}
 .app-match-lineup-avatar:not([data-photo-ready])::before{content:"";position:absolute;left:32%;top:16%;width:36%;height:37%;border-radius:50%;background:currentColor;opacity:.5}
 .app-match-lineup-avatar:not([data-photo-ready])::after{content:"";position:absolute;left:17%;top:52%;width:66%;height:49%;border-radius:50% 50% 0 0;background:currentColor;opacity:.5}
 .app-match-lineup-avatar img{width:260%;max-width:none;height:auto;position:absolute;top:0;left:50%;transform:translateX(-50%);display:block}
@@ -202,9 +199,7 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 .app-match-lineup-rating{flex:0 0 29px;text-align:right;color:var(--text);font-variant-numeric:tabular-nums;font-weight:750}
 .app-match-lineup-rows[aria-hidden="true"] .app-match-lineup-row{pointer-events:none}
 .app-match-form-control{cursor:pointer;text-decoration:none}
-.app-match-form-control:is(:hover,:focus-visible){filter:brightness(1.15)}
 .app-match-form-control:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.app-match-form-cell[data-no-link]{cursor:default}
 
 .app-match-visual{min-width:0;margin:0}
 .app-match-pitch-frame{position:relative;isolation:isolate;width:100%;aspect-ratio:105/68;min-width:0}
@@ -254,8 +249,6 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 }
 @media(max-width:350px){
  .app-match-stage{gap:8px}
- .app-match-form{gap:3px}
- .app-match-form-cell{width:clamp(8px,2.6vw,15px);height:clamp(8px,2.6vw,15px);font-size:clamp(7px,1.8vw,10px)}
 }
 @media(max-width:620px){
  .app-match-pitch-overlay{padding:6px}
@@ -268,9 +261,9 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-info-label{font-size:10px;line-height:1.15}
  .app-match-info-value{font-size:12px;line-height:1.2;min-height:1.2em}
  .app-match-side{padding:10px 7px 12px}
- .app-match-lineup-avatar{width:20px;height:20px;min-width:20px;flex-basis:20px}
- .app-match-lineup-rows{grid-template-rows:repeat(11,minmax(20px,1fr))}
- .app-match-lineup-row{min-height:20px;padding:0 2px;gap:3px}
+ .app-match-lineup-avatar{width:24px;height:24px;min-width:24px;flex-basis:24px}
+ .app-match-lineup-rows{grid-template-rows:repeat(11,minmax(32px,1fr))}
+ .app-match-lineup-row{min-height:32px;padding:0 3px;gap:4px}
  .app-match-lineup-role{flex-basis:20px;font-size:9px}
  .app-match-lineup-rating{flex-basis:23px}
  .app-match-lineup-views{gap:2px}
@@ -282,8 +275,8 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-side-stats{grid-template-columns:minmax(0,.48fr) minmax(0,1.52fr);gap:3px}
  .app-match-side-label{font-size:10px}
  .app-match-position{font-size:21px;line-height:25px;min-height:25px}
- .app-match-form{gap:2px;min-height:25px}
- .app-match-form-cell{width:clamp(8px,2.7vw,12px);height:clamp(8px,2.7vw,12px);font-size:8px;border-radius:2px}
+ .app-match-form{gap:0;min-height:25px}
+ .app-match-form .app-world-form-control{width:18px;height:18px}
 }
 
 /* When Form is absent, Position spans the row at all breakpoints. */

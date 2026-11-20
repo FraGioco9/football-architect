@@ -16,6 +16,7 @@ import type {LineupSeasonReplayV1} from './lineup-season-replay.ts';
 import {buildKnockoutSlotReservations,type BracketScope} from './domain/calendar/knockout-slot-reservations.ts';
 import {readPublicSportingSeasonLineupV1} from './public-sporting-read-lineup-v1.ts';
 import {canonicalHomeStadium,matchSlotStadium} from './match-venues.ts';
+import {approvedMatchPortraitKeys} from './match-approved-portraits.ts';
 
 interface MatchRow {
  match_id:string;generation:string;season_number:number;competition_id:string;phase_id:string;
@@ -159,10 +160,11 @@ export async function readPublicMatchEventsV1(db:Database,matchId:string){
 /** The same verified receipt authority, dedicated player-statistics transport. */
 export async function readPublicMatchStatisticsV1(db:Database,matchId:string){
  const {match,statistics}=await readVerifiedPublicMatchV1(db,matchId);
+ const withPortraits=statistics?await approvedMatchPortraitKeys(db,statistics):null;
  return {schemaVersion:1,providerId:'authoritative-world',matchId:match.matchId,
   season:match.season,competitionId:match.competitionId,status:match.status,
   homeClubId:match.homeParticipant?.clubId??null,awayClubId:match.awayParticipant?.clubId??null,
-  provenance:match.provenance,statistics};
+  provenance:match.provenance,statistics:withPortraits};
 }
 
 /**

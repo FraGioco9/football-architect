@@ -641,3 +641,10 @@ The canonical match template remains the only edit source: the generated
 `tools/generate-app-pages.mjs` eight-space line prefix, fixing the
 previous Site FULL generator-parity failure. No simulated event, DB write,
 portrait approval modification, deploy, route migration or merger is included.
+
+
+### Match page network reduction & Standings parity (2026-11-20)
+
+Match Detail's verified `/stats` transport now includes `players[].portraitAssetKey` only for V4.2-approved starting XI players. Its server-side projection performs **one parameterized SELECT across both sides**, never one `/api/players/:id` HTTP request per player; the public Client reads the approved key from the existing receipt-verified stats response and lazy-loads only the corresponding static WebP path. Pending/unknown IDs show silhouettes. This preserves the current database approval gate until issue #733 delivers a deployment-specific **static-approved image manifest** without runtime approval API reads anywhere on the site. No D1 changes or new portrait generation.
+
+The verified competition standings and published match-index HTTP reads are now started concurrently after the match header is accepted, removing a serial waterfall. XI row rendering is memoized across Form/Position index hydration so previously loaded portraits are not discarded and reloaded. Site form controls use the exact shared Standings `.app-world-form-dot`, `.app-world-form-control`, `.app-world-form-glyph` and `app-world-form-strip` styles. Lineup row minimums increase to 38 px desktop / 32 px mobile, including first-paint reserved slots.

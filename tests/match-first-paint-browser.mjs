@@ -107,7 +107,7 @@ for(const [engine,driver] of Object.entries(engines)){
    }finally{release?.();await ctx.close()}
   }
   // Formation order follows frozen starting slots (not IDs); portraits
-  // require the separately approved V4.2 asset key from the public player API.
+  // require the one approved portrait key carried by verified Match Stats.
   for(const width of [390,1440]){
    const ctx=await browser.newContext({viewport:{width,height:900}});
    const page=await ctx.newPage();
@@ -120,7 +120,8 @@ for(const [engine,driver] of Object.entries(engines)){
    const roles=['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW'];
    const people=roles.map((role,i)=>({
     playerId:11-i,name:'Frozen Player '+(11-i),nationality:'ITA',role,
-    startingRole:role,startingSlot:i+1,started:true,minutes:90,goals:0,rating:6.5
+    startingRole:role,startingSlot:i+1,started:true,minutes:90,goals:0,rating:6.5,
+    portraitAssetKey:i===0?'assets/players/portraits/11.webp':null
    })).reverse(); // API order deliberately wrong.
    try{
     await page.route('**/matches/123',route=>route.fulfill({status:200,contentType:'text/html',
@@ -133,10 +134,8 @@ for(const [engine,driver] of Object.entries(engines)){
      statistics:{ratingVersion:'test-rating-v1',home:{kind:'real_xi',formation:'4-3-3',players:people},
       away:{kind:'team_fallback',formation:null,players:[]}}
     })));
-    await page.route('**/api/players/*',route=>{
-     const id=Number(route.request().url().split('/').pop());
-     return route.fulfill(wrap({player:{id,portraitAssetKey:id===11?'assets/players/portraits/11.webp':null}}));
-    });
+    let playerApiCalls=0;
+    await page.route('**/api/players/*',route=>{playerApiCalls++;return route.abort();});
     await page.route('**/assets/players/portraits/11.webp',route=>route.fulfill({
      status:200,contentType:'image/webp',
      body:readFileSync(new URL('../assets/players/portraits/44.webp',import.meta.url))
@@ -152,6 +151,7 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(await page.locator('[data-match-formation="away"]').textContent(),'');
     assert.equal(await page.locator('[data-match-events-panel]').count(),0);
     assert.equal(eventsRequested,0);
+    assert.equal(playerApiCalls,0,'no one-by-one portrait API calls');
     assert.equal(await page.locator('[data-match-lineup-view="list"]').count(),2);
     assert.equal(await page.locator('[data-match-lineup-view="pitch"]:disabled').count(),2);
     const link=page.locator('.app-match-lineup-player').first();
@@ -159,6 +159,7 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(await link.getAttribute('href'),'/players/11');
     await page.waitForFunction(()=>document.querySelector('.app-match-lineup-avatar[data-match-portrait-id="11"] img')?.naturalWidth>0);
     assert.equal(await page.locator('.app-match-lineup-avatar[data-match-portrait-id="11"]').getAttribute('data-photo-ready'),'true');
+    assert.equal(playerApiCalls,0);
     assert.equal(await page.locator('.app-match-lineup-avatar img').count(),1,
      'only public V4.2-approved faces may be shown');
     const layout=await page.evaluate(()=>{
@@ -657,6 +658,10 @@ for(const [engine,driver] of Object.entries(engines)){
        [...el.children].map(x=>x.dataset.outcome||'-').join('')
       ));
       assert.deepEqual(form,['wdlww','wldwl']);
+      const controls=page.locator('[data-match-form="home"] .app-world-form-control');
+      assert.equal(await controls.count(),5);
+      assert.equal(await controls.first().evaluate(el=>getComputedStyle(el).width),'18px');
+      assert.equal(await controls.first().locator('.app-world-form-glyph').evaluate(el=>getComputedStyle(el).width),'15px');
       await page.waitForFunction(()=>document.querySelector('[data-match-form="home"] a.app-match-form-control')?.getAttribute('href')==='/matches/901');
       const firstForm=page.locator('[data-match-form="home"] a.app-match-form-control').first();
       await firstForm.hover();
