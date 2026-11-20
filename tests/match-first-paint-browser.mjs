@@ -742,7 +742,7 @@ for(const [engine,driver] of Object.entries(engines)){
      if(status==='cancelled'){
       assert.equal(await page.locator('[data-match-overview="date"]').textContent(),'');
       assert.equal(await page.locator('[data-match-overview="stadium"]').textContent(),'Stadio dei Navigli');
-      await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3');
+      await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3rd');
       assert.deepEqual(await page.locator('[data-match-form-fact]').evaluateAll(els=>els.map(el=>el.hidden)),[true,true]);
       assert.equal(await page.locator('.app-match-form-cell').count(),0);
      }
