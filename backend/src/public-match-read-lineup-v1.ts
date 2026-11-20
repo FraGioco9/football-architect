@@ -15,7 +15,7 @@ import {buildKnockoutSlotReservations,type BracketScope} from './domain/calendar
 import {readPublicSportingSeasonLineupV1} from './public-sporting-read-lineup-v1.ts';
 import {canonicalHomeStadium,matchSlotStadium} from './match-venues.ts';
 
-interface MatchRow {
+export interface MatchRow {
  match_id:string;generation:string;season_number:number;competition_id:string;phase_id:string;
  slot_id:string;source_fixture_id:string;marker:string;scheduled_day:number;round_number:number;
  home_club_id:string;away_club_id:string;stadium_name:string|null;source_kind:'calendar'|'domestic'|'international';
@@ -263,7 +263,7 @@ export async function readPublishedClubFixturesBeforeCalendarLineupV1(db:Databas
    competitionId:p.competitionId,sourceKind:p.provenance.sourceKind,sourceHash:p.provenance.sourceHash}))):null};
 }
 
-interface ReservedKnockout extends PublicationSource {
+export interface ReservedKnockout extends PublicationSource {
  match_id:string;phase_id:string;tie_id:string;leg:number;slot_id:string;
  marker:string;scheduled_day:number;round_number:number|null;
  home_policy:string;rules_version:string;participant_a_json:string;participant_b_json:string;
@@ -273,7 +273,7 @@ interface ResolvedFixture {
  phaseId:string;tieId:string|null;leg:number|null;result:unknown;
 }
 /** Re-derive immutable slot proof from approved brackets, not from its database row. */
-async function validKnockoutSlot(row:ReservedKnockout,canonical?:Awaited<ReturnType<typeof buildKnockoutSlotReservations>>) {
+export async function validKnockoutSlot(row:ReservedKnockout,canonical?:Awaited<ReturnType<typeof buildKnockoutSlotReservations>>) {
  const scope=row.source_kind as BracketScope;
  const expected=(canonical??await buildKnockoutSlotReservations(row.generation,row.season_number,scope))
   .find(x=>x.matchId===row.match_id);

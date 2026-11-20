@@ -1,3 +1,4 @@
+import {verifyMatchesDirectory} from './matches-directory-browser.mjs';
 import {verifyCompetitionPlayerStats} from './competition-player-stats-browser.mjs';
 // FE-02: measured viewport geometry in the real loopback app, Chromium/WebKit.
 import assert from "node:assert/strict";
@@ -70,6 +71,7 @@ async function visit(profile,path,verify){
  }finally{await context.close()}
 }
 try{
+ await verifyMatchesDirectory(browser);
  if(engine==='webkit')checks.push({scope:'Competition player Stats',cases:await verifyCompetitionPlayerStats(browser,{engine})});
  for(const profile of profiles){
   await visit(profile,"/clubs",async page=>{

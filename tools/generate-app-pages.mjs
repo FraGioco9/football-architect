@@ -395,6 +395,31 @@ writeOutput("assets/match-public-context.mjs",renderMatchPublicContext(clubData,
   .replace('  <script src="/assets/players-directory.js" defer></script>','  <script src="/assets/match-detail.js" defer></script>')
   .replace('  <script src="/assets/players-nationality-tooltip.js" defer></script>\n','')
   .replace('</head>',`  <script>window.faClubCrests=${JSON.stringify(clubCrestAssets().catalog)};</script>\n  <script src="/assets/club-crests.js" defer></script>\n  <link rel="stylesheet" href="/assets/match-detail.css">\n</head>`)
-  .replace('const selected=onPlayers?',"const selected=path.startsWith('/matches/')?null:onPlayers?");
+  .replace('const selected=path===',"const selected=path.startsWith('/matches/')?null:path===");
  writeOutput("matches/_shared/index.html",html);
+}
+
+// The directory and the numeric detail share only the generated application shell.
+{
+ const source=readFileSync(new URL('../players/index.html',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+ const template=readFileSync(new URL('../templates/matches-directory.html',import.meta.url),'utf8').trim();
+ const start=source.indexOf('<section id="app-divisions"');
+ const end=source.indexOf('\n      </main>',start);
+ if(start<0||end<0)throw Error('Missing directory shell');
+ const skeleton='<div class="md-row md-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>'.repeat(8);
+ const html=(source.slice(0,start)+template.replace('@@ROWS@@',skeleton)+source.slice(end))
+  .replace('<title>Players','<title>Matches')
+  .replace('  <script src="/assets/players-nationality-tooltip.js" defer></script>','  <link rel="stylesheet" href="/assets/matches-directory.css">')
+  .replace('<script src="/assets/players-directory.js" defer></script>','<script type="module" src="/assets/matches-directory.mjs"></script>');
+ writeOutput('matches/index.html',html);
+}
+
+// Keep Explore on the standalone 404 in sync with the canonical sidebar.
+{
+ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
+ const group=/<section class="fa-shell-nav-group" aria-labelledby="nav01-world-title">[\s\S]*?<\/section>/;
+ const source=read('dashboard/index.html').match(group);
+ if(!source||!group.test(read('404.html')))throw Error('Missing Explore navigation');
+ writeOutput('404.html',read('404.html').replace(group,()=>source[0])
+  .replace(/const lang=\{en:\['World'[^\n]+/,read('assets/sidebar-first-paint.js').match(/const lang=\{en:\['World'[^\n]+/)[0]));
 }

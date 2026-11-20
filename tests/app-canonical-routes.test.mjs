@@ -13,7 +13,7 @@ test('canonical navigation has no /app prefix and all app routes load with asset
     });req.on('error',reject);req.end();
   });
   try {
-    for(const path of ['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/competitions/it-1/fixtures?season=2']) {
+    for(const path of ['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/matches','/competitions/it-1/fixtures?season=2']) {
       const page=await get(path);assert.equal(page.status,200,path);
       assert.doesNotMatch(page.body,/<a\b[^>]*href=["']\/app(?:\/|["'])/);
       const base=page.body.match(/<base href="([^"]+)"/)?.[1]||path;
@@ -39,7 +39,7 @@ test('canonical navigation has no /app prefix and all app routes load with asset
 test('publication aliases map canonical app URLs to the same allowlisted DEV files', async()=>{
   const {publicRequestFile,isAllowlistedPublicPath}=await import('../tools/publication-guard.mjs');
   const config=JSON.parse(read('vercel.json'));
-  const tokens=[[':page(dashboard|calendar|settings|admin|competitions|players)','(?<page>dashboard|calendar|settings|admin|competitions|players)'],
+  const tokens=[[':page(dashboard|calendar|settings|admin|competitions|players|matches)','(?<page>dashboard|calendar|settings|admin|competitions|players|matches)'],
     [':division((?:it|eng|es|de|fr|pt|nl|br)-[12])','(?<division>(?:it|eng|es|de|fr|pt|nl|br)-[12])'],
     [':file(index.html|manifest.json|compact.json)','(?<file>index.html|manifest.json|compact.json)'],
     [':section(calendar|players|contracts)','(?<section>calendar|players|contracts)']];
