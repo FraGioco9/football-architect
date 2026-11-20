@@ -26,3 +26,13 @@
 #md-list i{border-radius:.25rem;display:inline-block;width:min(7rem,75%);height:.75rem;background:color-mix(in srgb,currentColor 15%,transparent)}
 .md-skeleton i:first-child{justify-self:end}.md-skeleton i:nth-child(2){width:2.5rem;justify-self:center}
 @media(max-width:540px){.md-controls{gap:.35rem}.md-controls :is(label,.md-field){max-width:100%}.md-row{gap:.2rem .25rem;font-size:.9rem}.md-team{gap:.25rem}#md-list .md-logo{width:20px;height:20px}}
+
+.matches-directory{container-type:inline-size}
+.md-filters{display:grid;grid-template-columns:9rem 15rem minmax(0,25rem)}
+.md-filters :is(.language-trigger,input){box-sizing:border-box;width:100%;height:var(--fa-control-height-regular);min-height:var(--fa-control-height-regular)}
+.md-filters .language-trigger>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#md-current:disabled{cursor:default;pointer-events:none}
+@container(max-width:44rem){
+ .md-filters{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}
+ .md-filters label{grid-column:1/-1}
+}

@@ -28,14 +28,16 @@ function node(tag,text,className){
 function link(href,text){const a=node('a',text);a.href=window.faAppHref?.(href)??href;return a}
 function logo(src,competitionId){
  const fallback=competitionId?'app-competition-logo-placeholder':'app-world-club-crest-placeholder';
- const slot=node('span',competitionId??'',fallback+' md-logo');
+ const slot=node('span',null,'md-logo');
+ const showPlaceholder=()=>{slot.classList.add(fallback);slot.textContent=competitionId??''};
  slot.setAttribute('aria-hidden','true');
  if(src){
   const img=node('img');
   img.alt='';
   img.addEventListener('load',()=>slot.replaceChildren(img),{once:true});
+  img.addEventListener('error',showPlaceholder,{once:true});
   img.src='/'+src;
- }
+ }else showPlaceholder();
  return slot;
 }
 function region(id){
@@ -99,8 +101,8 @@ function fixture(f){
  score.className='md-score';
  score.setAttribute('aria-label',[teams.get(f.homeClubId)?.primaryName??words.tbd,score.textContent,teams.get(f.awayClubId)?.primaryName??words.tbd].join(' '));
  row.append(participant(f.homeClubId,f.participantA,true),score,participant(f.awayClubId,f.participantB));
- const info=[words[f.phaseId]??f.phaseId,f.round?words.round+' '+f.round:'',f.leg?words.leg+' '+f.leg:'',
-  r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',!r?f.status==='scheduled'?words.scheduled:words.tbd:'',f.neutral?words.neutral:f.venue];
+ const info=[f.phaseId==='league'?'':words[f.phaseId]??f.phaseId,f.round?words.round+' '+f.round:'',f.leg?words.leg+' '+f.leg:'',
+  r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',f.status==='awaiting_participants'?words.tbd:'',f.neutral?words.neutral:f.venue];
  row.append(node('small',info.filter(Boolean).join(' · ')));
  row.addEventListener('click',event=>{if(!event.target.closest('a')&&!window.getSelection()?.toString())location.assign(score.href)});
  return row;
@@ -120,7 +122,8 @@ function render(){
  options('competition',[['',words.all],...s.ids.map(c=>[c.id,c.name])],s.competition);
  if(el('q').value!==s.q)el('q').value=s.q;
  el('prev').disabled=!s.season||s.day<=1;el('next').disabled=!s.season||s.day>=56;
- el('current').disabled=!world?.seasonNumber;el('season').disabled=!world?.seasonNumber;el('day').disabled=!s.season;
+ el('current').disabled=!world?.seasonNumber||(s.season===world.seasonNumber&&s.day===Math.max(1,world.day));
+ el('season').disabled=!world?.seasonNumber;el('day').disabled=!s.season;
  list.setAttribute('aria-busy',String(state==='loading'));
  if(state==='loading'){list.innerHTML=skeleton;status.textContent='';return}
  list.replaceChildren();status.textContent='';

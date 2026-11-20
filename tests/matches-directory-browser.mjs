@@ -7,21 +7,28 @@ export async function verifyMatchesDirectory(browser){
   page.on('pageerror',error=>errors.push(error.message));
   const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:15,seasonNumber:1,day:13,phase:'active'};
   let requests=0;
-  await page.route('**/assets/divisions/**/*.svg',route=>route.abort());
+  let releaseLogo;
+  const pendingLogo=new Promise(resolve=>{releaseLogo=resolve});
+  await page.route('**/assets/divisions/**/*.svg',async route=>{await pendingLogo;await route.abort()});
   await page.route('**/assets/clubs/**/*.svg',route=>route.abort());
   await page.route('**/api/world',route=>route.fulfill({json:{world}}));
   await page.route('**/api/matches?*',route=>{
    const day=Number(new URL(route.request().url()).searchParams.get('day'));requests++;
    return route.fulfill({json:{schemaVersion:1,providerId:'authoritative-world',world,selectedSeason:1,day,publication:'published',fixtures:day===13?[
     {matchId:'17',competitionId:'IT-1',phaseId:'league',round:1,homeClubId:'IT-1',awayClubId:'IT-2',result:{homeGoals:2,awayGoals:1},status:'completed'}
-   ]:[]}});
+   ]:day===15?[{matchId:'18',competitionId:'IT-1',phaseId:'league',round:2,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'}]:[]}});
   });
-  await page.goto('http://app.localhost:2000/matches');
+  await page.goto('http://app.localhost:2000/matches',{waitUntil:'domcontentloaded'});
   const match=page.locator('#md-list .md-score');
   await match.waitFor();
   assert.equal(new URL(await match.getAttribute('href'),page.url()).pathname,'/matches/17');
   assert.equal(await page.locator('#md-list h2 a .md-logo').count(),0);
-  assert.equal(await page.locator('#md-list h2 > .app-competition-logo-placeholder').count(),1);
+  assert(await page.locator('#md-current').isDisabled());
+  assert.equal(await page.locator('#md-list h2 > .md-logo').textContent(),'');
+  assert.equal(await page.locator('#md-list h2 > .app-competition-logo-placeholder').count(),0);
+  releaseLogo();
+  await page.locator('#md-list h2 > .app-competition-logo-placeholder').waitFor();
+  assert.equal(await page.locator('.md-row small').innerText(),'Round 1');
   assert.equal(await page.locator('.md-row .md-team:first-child > a + .md-logo').count(),1);
   assert.equal(await page.locator('.md-row .md-team:last-of-type > .md-logo + a').count(),1);
   assert.equal(await page.locator('#md-list img').count(),0,'failed images keep the placeholders');
@@ -33,15 +40,22 @@ export async function verifyMatchesDirectory(browser){
   await page.waitForFunction(()=>!document.querySelector('.matches-directory[data-scrolling]'));
   for(const width of [320,390,768,1440]){
    await page.setViewportSize({width,height:800});
+   const searchBox=await page.locator('#md-q').boundingBox(),filterBox=await page.locator('#md-country').boundingBox();
+   assert.equal(searchBox.height,filterBox.height,'search and filter heights match');
    assert(await page.locator('.matches-directory').evaluate(n=>n.clientWidth>0&&n.scrollWidth<=n.clientWidth+1),'directory overflow '+width);
   }
+  const searchBefore=await page.locator('#md-q').boundingBox();
   await page.locator('#md-country').click();
   await page.locator('#md-country-menu [data-menu-value="ENG"]').click();
+  assert.deepEqual(await page.locator('#md-q').boundingBox(),searchBefore);
   assert.equal(await match.count(),0);
   await page.goBack();await match.waitFor();
   assert.equal(requests,1,'filter and Back reuse the same day');
   await page.locator('#md-next').click();
   await page.getByText('No matches on this day.').waitFor();
+  assert(await page.locator('#md-current').isEnabled());
+  await page.locator('#md-next').click();await match.waitFor();
+  assert.equal(await page.locator('.md-row small').innerText(),'Round 2');
   await page.locator('#md-current').click();await match.waitFor();
   await page.locator('#md-q').fill('xxxx');
   await page.getByText('No matching fixtures.').waitFor();
