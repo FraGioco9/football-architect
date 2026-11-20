@@ -276,7 +276,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/\.app-match-page\{box-sizing:border-box;width:100%;min-width:0;padding-top:0;overflow:visible\}/);
  assert.ok(css.includes('aspect-ratio:105 / 68'));
  for(const fragment of [
-  'grid-template-columns:minmax(185px,1fr) minmax(0,3.4fr) minmax(185px,1fr)',
+  'grid-template-columns:minmax(218px,1.25fr) minmax(0,2.5fr) minmax(218px,1.25fr)',
   'align-items:stretch;gap:clamp(12px,1.1vw,22px);width:100%;max-width:none;margin:24px 0 0;',
   '.app-match-team-identity{display:flex;align-items:center;gap:10px;',
   '.app-match-side-stats{display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr)',
@@ -292,7 +292,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  ])assert.ok(css.includes(fragment),fragment);
  assert.ok(css.includes('.app-match-page[data-match-load="missing"] .app-match-visual{display:none}'));
  assert.ok(css.includes('align-items:center;justify-content:center;'));
- assert.ok(css.includes('width:min(86%,560px)'));
+ assert.ok(css.includes('width:min(89%,560px)'));
  assert.ok(css.includes('.app-match-overview-row-primary{grid-template-columns:'));
  assert.ok(css.includes('.app-match-overview-row-secondary{grid-template-columns:'));
  assert.ok(css.includes('.app-match-overview-row-status{grid-template-columns:'));
