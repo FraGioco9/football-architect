@@ -159,8 +159,9 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.match(html,/id="step"/);
  assert.match(html,/id="reset"/);
  assert.ok(js.includes('createControlledActionLab(rapier,id,{shotSide:side,')&&
-  js.includes('variantIndex:activeVariantIndex,bodyGuardEnabled:true}'),
-  'visible LAB must always use original native physical bodies');
+  js.includes("bodyGuardEnabled:id!=='carry-solo'")&&
+  js.includes("intentDrivenSoloCarry:id==='carry-solo'"),
+  'Visible LAB must isolate the intentional Solo Carry mode and preserve native bodies in opposed scenes');
  assert.doesNotMatch(js,/me-inline-bodyguard|activeBodyGuardEnabled/);
  assert.doesNotMatch(html,/id="me-inline-bodyguard"/);
  assert.match(js,/createControlledMovementLab\(rapier,id,\{side\}\)/);
