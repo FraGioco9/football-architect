@@ -72,8 +72,9 @@ function projectedMotion(ball,previous,current,id){
 
 // Timeline is a compact, immutable CURRENT-tick readout. No growing history.
 // An event begins/ends only when Rapier reports that transition.
-export function createFootContactTimeline(){
- let tick=0,previousFeet=initialFootPositions(),open=new Map();
+export function createFootContactTimeline(initialFeet=initialFootPositions()){
+ validateFeet(initialFeet);
+ let tick=0,previousFeet=initialFeet,open=new Map();
  let current=Object.freeze({
   version:FOOT_CONTACT_TIMELINE_VERSION,tick:0,
   onsets:empty,completed:empty,ongoing:empty,simultaneous:false

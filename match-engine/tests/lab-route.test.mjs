@@ -31,7 +31,7 @@ async function fetchLocal(server,path,{host='app.localhost:2000',method='GET'}={
 test('ME-01 lab is accessible on local DEV app host with strict headers and assets',async()=>{
  const server=await getServer({subdomains:true});
  try{
-  for(const path of ['/dev/match-engine','/__fa_match_engine__/core.mjs','/__fa_match_engine__/action-labs.mjs','/__fa_match_engine__/action-lab-scenarios.mjs','/__fa_match_engine__/research-shot-initial-lineup.mjs','/__fa_match_engine__/research-control-initial-lineup.mjs','/__fa_match_engine__/research-carry-initial-lineup.mjs','/__fa_match_engine__/rapier-foot-contact-bridge.mjs','/__fa_match_engine__/private-physical-action-executor.mjs','/__fa_match_engine__/player-ball-uniform-autonomous-action.mjs','/__fa_match_engine__/player-foot-contact.mjs','/__fa_match_engine__/player-foot-contact-timeline.mjs','/__fa_match_engine__/player-foot-contact-solver.mjs','/__fa_match_engine__/aerodynamics.mjs','/__fa_match_engine__/magnus.mjs','/__fa_match_engine__/calibration-evidence.mjs','/__fa_match_engine__/universal-ball-readiness.mjs','/__fa_match_engine__/calibration-dataset-intake.mjs','/__fa_match_engine__/ball3d-trajectory-adapter.mjs','/__fa_match_engine__/literature-aero-candidate.mjs','/__fa_match_engine__/flight-playback.mjs','/__fa_match_engine__/aero-model-review.mjs','/__fa_match_engine__/spin-axis-qa.mjs','/__fa_match_engine__/spin-decay-qa.mjs','/__fa_match_engine__/spin-retention-evidence.mjs','/__fa_match_engine__/lift-input-qa.mjs','/__fa_match_engine__/contact-impact-qa.mjs','/__fa_match_engine__/player-movement.mjs','/__fa_match_engine__/lab.mjs','/__fa_match_engine__/lab.css','/__fa_match_engine__/sidebar-first-paint.js','/__fa_match_engine__/pitch-markings.mjs','/__fa_match_engine__/numeric-controls.mjs','/__fa_match_engine__/rebound-metrics.mjs','/__fa_match_engine__/physics-diagnostics.mjs']){
+  for(const path of ['/dev/match-engine','/__fa_match_engine__/core.mjs','/__fa_match_engine__/action-labs.mjs','/__fa_match_engine__/physical-football-decision-evidence-m23.mjs','/__fa_match_engine__/real-post-contact-ball-continuity-m24.mjs','/__fa_match_engine__/real-pressured-first-touch-m26.mjs','/__fa_match_engine__/physical-receiver-choice-m27.mjs','/__fa_match_engine__/real-second-touch-follow-through-m28.mjs','/__fa_match_engine__/native-control-evidence-gate-m29.mjs','/__fa_match_engine__/physical-receiver-tap-m30.mjs','/__fa_match_engine__/real-ball-release-audit-m30.mjs','/__fa_match_engine__/real-opponent-ball-contest-m31.mjs','/__fa_match_engine__/original-challenger-ball-reach-m32.mjs','/__fa_match_engine__/action-lab-scenarios.mjs','/__fa_match_engine__/research-shot-initial-lineup.mjs','/__fa_match_engine__/goalkeeper-save-foundation-b02.mjs','/__fa_match_engine__/basic-defensive-physical-actions-b03.mjs','/__fa_match_engine__/basic-receive-dribble-b04.mjs','/__fa_match_engine__/basic-match-referee-b05.mjs','/__fa_match_engine__/basic-restart-source-lineup-b05b.mjs','/__fa_match_engine__/basic-match-clock-score-b06.mjs','/__fa_match_engine__/basic-match-regulation-b06b.mjs','/__fa_match_engine__/basic-opening-kickoff-lineup-b06b.mjs','/__fa_match_engine__/research-control-initial-lineup.mjs','/__fa_match_engine__/research-carry-initial-lineup.mjs','/__fa_match_engine__/rapier-foot-contact-bridge.mjs','/__fa_match_engine__/private-physical-action-executor.mjs','/__fa_match_engine__/physical-receiving-cushion-m25.mjs','/__fa_match_engine__/player-ball-uniform-autonomous-action.mjs','/__fa_match_engine__/player-foot-contact.mjs','/__fa_match_engine__/player-foot-contact-timeline.mjs','/__fa_match_engine__/player-foot-contact-solver.mjs','/__fa_match_engine__/aerodynamics.mjs','/__fa_match_engine__/magnus.mjs','/__fa_match_engine__/calibration-evidence.mjs','/__fa_match_engine__/universal-ball-readiness.mjs','/__fa_match_engine__/calibration-dataset-intake.mjs','/__fa_match_engine__/ball3d-trajectory-adapter.mjs','/__fa_match_engine__/literature-aero-candidate.mjs','/__fa_match_engine__/flight-playback.mjs','/__fa_match_engine__/aero-model-review.mjs','/__fa_match_engine__/spin-axis-qa.mjs','/__fa_match_engine__/spin-decay-qa.mjs','/__fa_match_engine__/spin-retention-evidence.mjs','/__fa_match_engine__/lift-input-qa.mjs','/__fa_match_engine__/contact-impact-qa.mjs','/__fa_match_engine__/player-movement.mjs','/__fa_match_engine__/individual-kinematics.mjs','/__fa_match_engine__/solo-carry-phases.mjs','/__fa_match_engine__/native-shoe-body-handoff.mjs','/__fa_match_engine__/secondary-press-support-m20.mjs','/__fa_match_engine__/natural-movement-research-lab-m21.mjs','/__fa_match_engine__/movement-labs.mjs','/__fa_match_engine__/rapier-22-body-bridge.mjs','/__fa_match_engine__/research-body-encounter-initial-lineup.mjs','/__fa_match_engine__/movement-lab-scenarios.mjs','/__fa_match_engine__/lab.mjs','/__fa_match_engine__/lab.css','/__fa_match_engine__/sidebar-first-paint.js','/__fa_match_engine__/pitch-markings.mjs','/__fa_match_engine__/numeric-controls.mjs','/__fa_match_engine__/rebound-metrics.mjs','/__fa_match_engine__/physics-diagnostics.mjs']){
    const r=await fetchLocal(server,path);
    assert.equal(r.status,200,path);
    assert.equal(r.headers['cache-control'],'private, no-store');
@@ -45,6 +45,13 @@ test('ME-01 lab is accessible on local DEV app host with strict headers and asse
   assert.equal(wasm.status,200,'compat ESM module missing. Package files='+installedFiles.join(',')+
     ', module='+String(packageMeta.module)+', exports='+JSON.stringify(packageMeta.exports));
   const page = await fetchLocal(server,'/dev/match-engine');
+  assert.doesNotMatch(page.body,/id="lab-all-situations"|class="me-lab-launches"/);
+  assert.match(page.body,/id="preset-options" role="listbox"/);
+  assert.match(page.body,/me-scenario-group-label/);
+  assert.match(page.body,/id="action-labs-open"[^>]*hidden/);
+  assert.match(page.body,/id="movement-labs-open"[^>]*hidden/);
+  assert.match(page.body,/id="action-labs-choice"[^>]*hidden/);
+  assert.match(page.body,/id="movement-labs-choice"[^>]*hidden/);
   assert.match(page.body,/LAB-01/);
   assert.match(page.body,/LAB-04 · Ball Roll \(Grass\)/);
   assert.match(page.body,/LAB-05 · Ball Bounce \(2 m\)/);
@@ -190,9 +197,25 @@ test('ME-01 lab is denied for public mode, shared/non-DEV modes and other hosts'
    const host=options.devPreview===false?'app.localhost:2000':'localhost:2000';
    assert.ok([403,404].includes((await fetchLocal(server,'/dev/match-engine',{host})).status));
    assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/core.mjs',{host})).status));
+   assert.ok([403,404].includes((await fetchLocal(server,
+    '/__fa_match_engine__/native-shoe-body-handoff.mjs',{host})).status));
+   assert.ok([403,404].includes((await fetchLocal(server,
+    '/__fa_match_engine__/secondary-press-support-m20.mjs',{host})).status));
+   assert.ok([403,404].includes((await fetchLocal(server,
+    '/__fa_match_engine__/natural-movement-research-lab-m21.mjs',{host})).status));
    for(const file of ['action-labs.mjs','action-lab-scenarios.mjs',
-     'research-shot-initial-lineup.mjs','research-control-initial-lineup.mjs',
-     'research-carry-initial-lineup.mjs']){
+     'research-shot-initial-lineup.mjs','goalkeeper-save-foundation-b02.mjs','basic-defensive-physical-actions-b03.mjs','basic-receive-dribble-b04.mjs','basic-match-referee-b05.mjs','basic-restart-source-lineup-b05b.mjs','basic-match-clock-score-b06.mjs','basic-match-regulation-b06b.mjs','basic-opening-kickoff-lineup-b06b.mjs','research-control-initial-lineup.mjs',
+     'research-carry-initial-lineup.mjs',
+     'physical-football-decision-evidence-m23.mjs',
+     'real-post-contact-ball-continuity-m24.mjs',
+      'physical-receiving-cushion-m25.mjs',
+      'real-pressured-first-touch-m26.mjs',
+      'physical-receiver-choice-m27.mjs',
+       'real-second-touch-follow-through-m28.mjs',
+       'native-control-evidence-gate-m29.mjs',
+       'physical-receiver-tap-m30.mjs','real-ball-release-audit-m30.mjs',
+       'real-opponent-ball-contest-m31.mjs',
+       'original-challenger-ball-reach-m32.mjs']){
     const result=await fetchLocal(server,'/__fa_match_engine__/'+file,{host});
     assert.ok([403,404].includes(result.status),
      'Action LAB code must remain DEV-only: '+file+' '+result.status);
@@ -334,8 +357,16 @@ test('ME-01 custom lab dropdown script parses and references shared menu semanti
 
 test('ME-01 paths are excluded from all public artifacts and canonical route allowlists',()=>{
  const actionSources=['action-labs.mjs','action-lab-scenarios.mjs',
-  'research-shot-initial-lineup.mjs','research-control-initial-lineup.mjs',
-  'research-carry-initial-lineup.mjs'];
+  'research-shot-initial-lineup.mjs','goalkeeper-save-foundation-b02.mjs','basic-match-clock-score-b06.mjs','basic-match-regulation-b06b.mjs','basic-opening-kickoff-lineup-b06b.mjs','research-control-initial-lineup.mjs',
+  'research-carry-initial-lineup.mjs','individual-kinematics.mjs',
+  'native-shoe-body-handoff.mjs','secondary-press-support-m20.mjs',
+  'natural-movement-research-lab-m21.mjs',
+  'real-second-touch-follow-through-m28.mjs',
+  'native-control-evidence-gate-m29.mjs',
+  'physical-receiver-tap-m30.mjs','real-ball-release-audit-m30.mjs',
+  'real-opponent-ball-contest-m31.mjs',
+  'original-challenger-ball-reach-m32.mjs',
+  'movement-labs.mjs','movement-lab-scenarios.mjs','rapier-22-body-bridge.mjs','research-body-encounter-initial-lineup.mjs'];
  for(const file of actionSources){
   assert.equal(isAllowlistedPublicPath('match-engine/src/'+file),false,file);
   assert.equal(isAllowlistedPublicPath('__fa_match_engine__/'+file),false,file);
@@ -405,7 +436,9 @@ test('ME-01 compact pitch caps desktop dimensions and uses canonical site chevro
   assert.match(markup,/<legend>Position · m<\/legend>/);
   assert.match(markup,/<legend>Velocity · m\/s<\/legend>/);
   assert.match(markup,/id="compare-result"[^>]*hidden/);
-  const advanced=markup.slice(markup.indexOf('id="advanced-settings"'),markup.indexOf('</details>'));
+  const advancedStart=markup.indexOf('id="advanced-settings"');
+   const advanced=markup.slice(advancedStart,markup.indexOf('</details>',advancedStart));
+   assert.ok(advancedStart>0,'advanced settings must follow the on-field decisions panel');
   for(const id of ['x','y','z','vx','vy','vz','seed','apply','compare','position','velocity'])
     assert.match(advanced,new RegExp('id="'+id+'"'));
   assert.match(stylesheet,/\.me-pitch-frame canvas\{[^}]*height:auto;aspect-ratio:105\/68/);

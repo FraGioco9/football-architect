@@ -11,17 +11,40 @@ export const CONTROL_OPPONENT_FIRST_INITIAL=Object.freeze({
  alternative:Object.freeze({id:'home-11',x:-30,y:18}),
  opponent:Object.freeze({id:'away-7',x:-2.95,y:-2})
 });
-export function initialResearchControlLineup(players,ball,{opponentFirst=false}={}){
+// Bounded alternative starting geometry, NEVER a staged collision:
+// the existing autonomous mover and physical shoe world run unchanged.
+export const CONTROL_CLOSE_DEFENDER_INITIAL=Object.freeze({
+ id:'away-7',x:-2.8,y:-3.8
+});
+export const CONTROL_SPACE_DEFENDER_INITIAL=Object.freeze({id:'away-7',x:2,y:-3.8});
+// M31: before-tick-zero legitimate challenger formation. Rapier determines
+// whether any shoe contact really happens, never the scene fixture.
+export const CONTROL_CONTEST_DEFENDER_INITIAL=Object.freeze({
+ id:'away-7',x:0,y:-3.8
+});
+export function initialResearchControlLineup(players,ball,{
+ opponentFirst=false,side='home',closeDefender=false,spaceDefender=false,
+ contestDefender=false
+}={}){
+ if(!['home','away'].includes(side)||(opponentFirst&&side!=='home'))
+  throw new TypeError('Bounded CONTROL side; opponent-first HOME only');
+ if(typeof spaceDefender!=='boolean'||(spaceDefender&&(closeDefender||opponentFirst||contestDefender)))
+  throw new TypeError('M27 space research cannot share close or opponent-first state');
+ if(typeof closeDefender!=='boolean'||(closeDefender&&(opponentFirst||contestDefender)))
+  throw new TypeError('Close-defender research must be distinct from opponent-first');
+ if(typeof contestDefender!=='boolean'||(contestDefender&&(opponentFirst||spaceDefender||closeDefender)))
+  throw new TypeError('M31 contested fixture must be isolated');
  if(typeof opponentFirst!=='boolean')
   throw new TypeError('Bounded opponent-first flag must be boolean');
  if(!Array.isArray(players)||players.length!==22||!ball||
     ![ball.x,ball.y,ball.z,ball.vx,ball.vy,ball.vz].every(finite)||
-    Math.abs(ball.x+4.96)>1e-6||ball.y!==0||ball.z!==0||
-    Math.abs(ball.vx-0.3)>1e-6||ball.vy!==0||ball.vz!==0)
+    Math.abs(ball.x-(side==='home'?-4.96:4.96))>1e-6||
+    ball.y!==0||ball.z!==0||
+    Math.abs(ball.vx-(side==='home'?0.3:-0.3))>1e-6||ball.vy!==0||ball.vz!==0)
   throw new TypeError('Closed deterministic grounded CONTROL starting setup required');
  const target=opponentFirst?CONTROL_OPPONENT_FIRST_INITIAL.receiver:
   CONTROL_RECEIVER_INITIAL;
- if(players.filter(p=>p.id==='home-9'&&p.team==='home'&&
+ if(players.filter(p=>p.id===side+'-9'&&p.team===side&&
      p.role==='forward').length!==1)
   throw new TypeError('Canonical genuine receiving teammate required');
  if(opponentFirst&&(
@@ -30,11 +53,28 @@ export function initialResearchControlLineup(players,ball,{opponentFirst=false}=
     players.filter(p=>p.id==='home-11'&&p.team==='home'&&
       p.role==='forward').length!==1))
   throw new TypeError('Canonical opponent and safe recipient alternative required');
+ if((closeDefender||spaceDefender||contestDefender)&&players.filter(p=>p.id===(side==='home'?'away':'home')+'-7'&&
+     p.team!==(side)&&p.role==='midfielder').length!==1)
+  throw new TypeError('M26 requires canonical original opposing midfielder #7');
  const stagedPositions=opponentFirst?[
   target,CONTROL_OPPONENT_FIRST_INITIAL.alternative,
   CONTROL_OPPONENT_FIRST_INITIAL.opponent
+ ]:(closeDefender||spaceDefender||contestDefender)?[
+  target,CONTROL_OPPONENT_FIRST_INITIAL.alternative,{
+   ...(contestDefender?CONTROL_CONTEST_DEFENDER_INITIAL:
+     spaceDefender?CONTROL_SPACE_DEFENDER_INITIAL:CONTROL_CLOSE_DEFENDER_INITIAL),
+   id:side==='home'?'away-7':'home-7'
+  }
  ]:[target];
- const positions=new Map(stagedPositions.map(p=>[p.id,p]));
+ // HOME coordinates and HOME IDs are canonical; reverse pitch X and
+ // mirror team IDs only for the bounded AWAY receiving fixture.
+ const mirror=p=>side==='home'?p:Object.freeze({
+  id:p.id.replace(/^home-/,'away-').replace(/^away-7$/,'home-7'),
+  x:-p.x,y:p.y
+ });
+ const positions=new Map(stagedPositions.map(p=>{
+  const position=mirror(p);return [position.id,position];
+ }));
  const staged=players.map(p=>{
   const pos=positions.get(p.id);
   return pos?Object.freeze({...p,x:pos.x,y:pos.y,

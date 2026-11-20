@@ -36,9 +36,7 @@
           <div class="me-page-heading">
             <div>
               <h1 class="app-page-title" id="lab-title">Match Engine</h1>
-              <p class="me-subtitle">3D physics · 2D visual tests</p>
             </div>
-            <button id="action-labs-open" class="me-button" type="button" disabled>Action LABs</button>
           </div>
           <p id="status" class="me-status" role="status" aria-live="polite">Loading physics…</p>
           <div class="me-layout">
@@ -53,11 +51,34 @@
                       <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                     <div class="language-menu" id="preset-options" role="listbox" aria-labelledby="preset-label" hidden>
+                      <div class="me-scenario-group-label" role="presentation">Ball physics</div>
                       <div class="language-option" role="option" tabindex="-1" id="preset-opt-drop" data-value="drop" aria-selected="true">LAB-01 · Ball Drop</div>
                       <div class="language-option" role="option" tabindex="-1" id="preset-opt-launch" data-value="launch" aria-selected="false">LAB-02 · Ball Launch</div>
                       <div class="language-option" role="option" tabindex="-1" id="preset-opt-roll" data-value="roll" aria-selected="false">LAB-04 · Ball Roll (Grass)</div>
                       <div class="language-option" role="option" tabindex="-1" id="preset-opt-bounce" data-value="bounce" aria-selected="false">LAB-05 · Ball Bounce (2 m)</div>
                     </div>
+                  </div>
+                </div>
+                <div class="me-speed-control me-inline-side-control" id="me-inline-side-control" hidden>
+                  <span class="me-field-label" id="me-inline-side-label">Side</span>
+                  <div class="language-control me-dropdown" data-me-dropdown="inline-side">
+                    <input type="hidden" id="me-inline-side" value="home">
+                    <button type="button" class="language-trigger" id="me-inline-side-trigger" role="combobox" aria-labelledby="me-inline-side-label me-inline-side-value" aria-haspopup="listbox" aria-controls="me-inline-side-options" aria-expanded="false">
+                      <span id="me-inline-side-value">HOME</span>
+                      <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <div class="language-menu" id="me-inline-side-options" role="listbox" aria-labelledby="me-inline-side-label" hidden>
+                      <div class="language-option" role="option" tabindex="-1" data-value="home" aria-selected="true">HOME</div>
+                      <div class="language-option" role="option" tabindex="-1" data-value="away" aria-selected="false">AWAY</div>
+                    </div>
+                  </div>
+                </div>
+                <div id="me-inline-variant-control" class="me-variant-control" hidden>
+                  <span class="me-field-label">Variation</span>
+                  <div class="me-variant-buttons" role="group" aria-label="Starting variation (Reset replays identical seed)">
+                    <button id="me-inline-variant-prev" class="me-button" type="button" aria-label="Previous variation" title="Previous variation">−</button>
+                    <output id="me-inline-variant-display" aria-live="polite">01 / 30</output>
+                    <button id="me-inline-variant-next" class="me-button" type="button" aria-label="Next variation" title="Next variation">Next</button>
                   </div>
                 </div>
                 <div class="me-button-group" aria-label="Simulation controls">
@@ -84,7 +105,7 @@
                 </div>
               </div>
               <div class="me-canvas-frame me-pitch-frame">
-                <canvas id="pitch" width="1050" height="680" aria-label="Complete 105 by 68 meter football field with ball trajectory and autonomous players when enabled"></canvas>
+                <canvas id="pitch" width="1050" height="680" aria-label="Complete 105 by 68 meter football field, showing the selected scenario with authentic Rapier ball and player movement"></canvas>
               </div>
               <div class="me-at-a-glance" aria-live="off">
                 <span>Time <strong id="tick">0 · 0.00 s</strong></span>
@@ -92,6 +113,7 @@
                 <span>Ball <strong id="ground">—</strong></span>
                 <span>Ground speed <strong id="ground-speed">—</strong></span>
                 <button id="players-toggle" class="me-button me-players-toggle" type="button" aria-pressed="false" aria-controls="player-controls">Players (22)</button>
+                <span id="me-inline-observation" class="me-inline-observation" aria-live="off" hidden></span>
               </div>
               <section id="player-controls" class="me-player-controls" aria-label="ME-PLAYER-01 autonomous team movement" hidden>
                 <div class="me-player-controls-main">
@@ -132,7 +154,19 @@
               </section>
             </section>
             <div class="me-side">
-              <section class="app-panel me-panel me-elevation-panel" aria-labelledby="side-heading">
+              <section id="me-decisions-panel" class="app-panel me-panel me-decisions-panel" aria-labelledby="me-decisions-heading" hidden>
+                <div class="me-decisions-heading">
+                  <h2 id="me-decisions-heading">On-field decisions</h2>
+                  <span id="me-decisions-count">0 on field</span>
+                </div>
+                <p class="me-hint">Every participant's current movement target. A ball action is confirmed only by a genuine Rapier shoe impulse.</p>
+                <div id="me-decisions-players" class="me-decisions-players" aria-live="off"></div>
+                <details class="me-decisions-log">
+                  <summary>Changes and verified actions <span id="me-decisions-event-count">0</span></summary>
+                  <ol id="me-decisions-events"></ol>
+                </details>
+              </section>
+              <section id="me-elevation-panel" class="app-panel me-panel me-elevation-panel" aria-labelledby="side-heading">
                 <div class="me-elevation-heading"><h2 id="side-heading">Ball height</h2><span id="bounce-result" class="me-bounce-result" role="status" aria-live="polite" hidden></span></div>
                 <div class="me-canvas-frame me-elevation-frame">
                   <canvas id="elevation" width="560" height="260" aria-label="Distance from ball underside to the pitch over simulated time"></canvas>
@@ -533,25 +567,45 @@
   </section>
   <p class="me-hint">Observations only: 430 g · 0.62 restitution · grass deceleration 0.8 m/s². No default/gameplay physics parameters are changed.</p>
 </dialog>
+<button id="action-labs-open" class="me-lab-internal-launch" type="button" hidden disabled aria-hidden="true" tabindex="-1">Open action</button>
 <dialog id="action-labs-dialog" class="me-metrics-dialog me-action-labs-dialog" aria-labelledby="action-labs-title">
   <div class="me-action-labs-header">
     <div>
-      <h2 id="action-labs-title">Controlled actions</h2>
-      <p class="me-hint">One genuine 60 Hz Rapier ball and physical shoe contacts. This is not an official match.</p>
+      <h2 id="action-labs-title">Small-sided situations</h2>
+      <p class="me-hint">Progressive 1v1–3v3 exercises before any 11v11 match. Only chosen participants have real Rapier shoe colliders. No official results.</p>
     </div>
     <button id="action-labs-close" type="button" class="app-search-close" aria-label="Close action LABs"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="me-action-labs-toolbar">
-    <label for="action-labs-choice">Action</label>
-    <select id="action-labs-choice" class="me-inspect-select">
+    <label for="action-labs-choice" hidden>Action</label>
+    <select id="action-labs-choice" class="me-inspect-select me-lab-internal-choice" hidden tabindex="-1">
       <option value="pass">LAB-14 · Pass</option>
       <option value="shot">LAB-15 · Shot</option>
+      <option value="cross">LAB-19 · Cross</option>
+      <option value="save">LAB-20 · Goalkeeper save</option>
+      <option value="tackle">LAB-21 · Tackle</option>
+      <option value="interception">LAB-22 · Interception</option>
       <option value="challenge">LAB-16 · Physical challenge</option>
       <option value="control">LAB-17 · Control</option>
+      <option value="trap">LAB-23 · Receive / trap</option>
+      <option value="dribble">LAB-24 · Dribble attempt</option>
+      <option value="goal">LAB-25 · Goal crossing / kickoff</option>
+      <option value="touchline">LAB-26 · Touchline / throw-in</option>
+      <option value="goal-line-out">LAB-27 · Goal line / set piece</option>
+      <option value="throw-in">LAB-28 · Real-touch throw-in</option>
+      <option value="corner">LAB-29 · Real-touch corner</option>
+      <option value="goal-kick">LAB-30 · Real-touch goal kick</option>
       <option value="carry">LAB-18 · Carry</option>
+      <option value="dribble-1v1">D-01 · Dribbling 1v1 (no GK)</option>
+       <option value="keeper-1v1">S-01 · 1v1 vs goalkeeper</option>
+      <option value="defender-1v1">S-02 · 1v1 + goalkeeper</option>
+      <option value="overload-2v1">S-03 · 2v1 + goalkeeper</option>
+      <option value="duel-2v2">S-04 · 2v2 + goalkeeper</option>
+      <option value="duel-3v3">S-05 · 3v3 + goalkeeper</option>
+      <option value="carry-solo">Carry · solo (no defenders)</option>
     </select>
     <label id="action-labs-shot-side-label" class="me-action-labs-shot-side" for="action-labs-shot-side" hidden>Side
-      <select id="action-labs-shot-side" class="me-inspect-select" aria-label="Shot attacking team">
+      <select id="action-labs-shot-side" class="me-inspect-select" aria-label="Action team">
         <option value="home">HOME</option>
         <option value="away">AWAY</option>
       </select>
@@ -570,7 +624,14 @@
     </label>
     <label id="action-labs-control-scene-label" class="me-action-labs-shot-lane" for="action-labs-control-scene" hidden>Scene
       <select id="action-labs-control-scene" class="me-inspect-select" aria-label="Control contact scene">
-        <option value="receive">Receiving shoe</option>
+        <option value="receive">Receiving shoe · baseline</option>
+        <option value="receive-cushion">M25 · Real first-touch cushion</option>
+        <option value="receive-pressure">M26 · Real defender pressure</option>
+        <option value="receive-decide">M27 · Adaptive receiver (space)</option>
+        <option value="receive-release">M30 · Genuine ball release / recontact</option>
+        <option value="receive-contest">M31 · Live opposing ball challenge</option>
+        <option value="receive-challenge">M32 · Genuine challenger ball reach</option>
+        <option value="receive-pressure-decide">M27 · Adaptive receiver (pressure)</option>
         <option value="opponent-first">Opponent first</option>
       </select>
     </label>
@@ -587,7 +648,71 @@
   </div>
   <p id="action-labs-status" class="me-action-labs-status" role="status" aria-live="polite">Select an action to begin.</p>
   <p id="action-labs-readout" class="me-action-labs-readout" aria-live="off">Tick 0</p>
-  <p class="me-hint">Shown markers are a compact view of actors from the canonical 22-player physics. A contact is not automatically a successful tackle, pass completion, dribble, possession or goal.</p>
+  <p class="me-hint">Selected small-sided exercises use only 2–7 genuine Rapier shoe colliders; older basic action scenes remain test-only. A contact never automatically confirms a goal, pass, save, tackle, possession or official match.</p>
+</dialog>
+<button id="movement-labs-open" class="me-lab-internal-launch" type="button" hidden disabled aria-hidden="true" tabindex="-1">Open movement</button>
+<dialog id="movement-labs-dialog" class="me-metrics-dialog me-action-labs-dialog" aria-labelledby="movement-labs-title">
+  <div class="me-action-labs-header">
+    <div>
+      <h2 id="movement-labs-title">Controlled movement</h2>
+      <p class="me-hint">All original movement situations: early motion-only cases, authentic shoe/body physics, negative controls and M20 secondary pressing. Each scene shows its real source; no official match outcome.</p>
+    </div>
+    <button id="movement-labs-close" type="button" class="me-button">Close</button>
+  </div>
+  <div class="me-action-labs-toolbar">
+    <label for="movement-labs-choice" hidden>Movement</label>
+    <select id="movement-labs-choice" class="me-inspect-select me-lab-internal-choice" hidden tabindex="-1">
+      <option value="approach">M-01 · Approach</option>
+      <option value="brake">M-02 · Brake</option>
+      <option value="turn">M-03 · Turn</option>
+      <option value="recovery">M-04 · Recovery</option>
+      <option value="recovery-response">M-05 · Goal-side recovery</option>
+      <option value="recovery-empty">M-06 · No opponent (negative)</option>
+      <option value="post-pass">M-07 · Run after real PASS (HOME/AWAY)</option>
+      <option value="opponent-contact">M-08 · Opposing shoe contest (HOME)</option>
+      <option value="support-lane">M-09 · Measured support lane</option>
+      <option value="support-neutral">M-10 · No support (negative)</option>
+      <option value="body-world">M-11 · 22 native Rapier bodies (research)</option>
+      <option value="body-off">M-12 · 22 native bodies OFF (control)</option>
+      <option value="body-encounter">M-13 · Real body encounter + feedback</option>
+      <option value="body-encounter-off">M-14 · Encounter with bodies OFF</option>
+      <option value="shared-contacts">M-15 · Shared native shoe + body events</option>
+      <option value="shared-contacts-off">M-16 · Shared contacts OFF (control)</option>
+      <option value="pressure-support">M-17 · Unstaged support + opposing press</option>
+      <option value="pressure-neutral">M-18 · Neutral support negative</option>
+      <option value="opposing-convergence">M-19 · Natural opposing press convergence</option>
+      <option value="opposing-convergence-off">M-20 · Press convergence OFF (control)</option>
+      <option value="opposing-feedback">M-21 · Unstaged native body feedback</option>
+      <option value="opposing-feedback-off">M-22 · Native body feedback OFF (control)</option>
+      <option value="native-roll-observe">M-23 · Rolling ball · Rapier observation</option>
+      <option value="native-roll-feedback">M-24 · Rolling ball · physical feedback</option>
+      <option value="native-roll-control">M-25 · Rolling ball · feedback OFF</option>
+      <option value="native-flank-left">M-26 · Left flank · physical feedback</option>
+      <option value="native-flank-right">M-27 · Right flank · physical feedback</option>
+      <option value="secondary-pressure-off">M-28 · Second defender OFF · baseline</option>
+      <option value="secondary-pressure">M-29 · Second defender ON · live</option>
+      <option value="secondary-pressure-observe">M-30 · Second defender · observe only</option>
+    </select>
+    <label class="me-action-labs-shot-side" for="movement-labs-side">Side
+      <select id="movement-labs-side" class="me-inspect-select" aria-label="Movement observation side">
+        <option value="home">HOME</option>
+        <option value="away">AWAY</option>
+      </select>
+    </label>
+    <div class="me-action-labs-buttons" role="group" aria-label="Movement simulation controls">
+      <button id="movement-labs-play" class="me-button me-button-primary" type="button">Play</button>
+      <button id="movement-labs-pause" class="me-button" type="button">Pause</button>
+      <button id="movement-labs-step" class="me-button" type="button">Step</button>
+      <button id="movement-labs-reset" class="me-button" type="button">Reset</button>
+    </div>
+  </div>
+  <p class="me-hint" id="movement-labs-description"></p>
+  <div class="me-action-labs-pitch-frame">
+    <canvas id="movement-labs-pitch" width="1050" height="680" aria-label="Measured 22-player movement with focus player orientation and one physical ball"></canvas>
+  </div>
+  <p id="movement-labs-status" class="me-action-labs-status" role="status" aria-live="polite">Select a movement scene.</p>
+  <p id="movement-labs-readout" class="me-action-labs-readout" aria-live="off">Tick 0</p>
+  <p class="me-hint">Earlier M scenes are movement-only unless explicitly marked. M-23–M-30 show authentic 22-player native Rapier body and shoe events in one world; feedback and control variants remain distinct. Nothing awards a tackle, possession, pass completion or goal.</p>
 </dialog>
 <script type="module" src="/__fa_match_engine__/lab.mjs"></script>
 </body>

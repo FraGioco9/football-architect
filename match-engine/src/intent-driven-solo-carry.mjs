@@ -1,0 +1,54 @@
+// #628 — DEV-only intentional dribble. This is a GAMEPLAY touch at genuine
+// 60Hz player/ball proximity, not a Rapier shoe-contact observation.
+// The sole football remains the original unmodified Rapier dynamic body.
+// Other scenarios retain their original physical shoe contact authority.
+export const INTENT_SOLO_CARRY_VERSION='me-628-intent-solo-carry-v1';
+const finite=Number.isFinite;
+export function chooseIntentSoloCarryTouch({
+ tick,lastTouchTick,attackingSide,phase,player,ballPosition,ballVelocity,
+ ballRadiusM
+}={}){
+ if(!Number.isSafeInteger(tick)||tick<1||
+    !Number.isSafeInteger(lastTouchTick)||lastTouchTick>=tick||
+    !['home','away'].includes(attackingSide)||
+    !['control','moderate','sprint'].includes(phase)||
+    player?.id!==attackingSide+'-10'||player?.team!==attackingSide||
+    !ballPosition||!ballVelocity||!finite(ballRadiusM)||
+    ballRadiusM<0.05||ballRadiusM>0.2||
+    ![player.x,player.y,player.vx,player.vy,ballPosition.x,
+      ballPosition.y,ballPosition.z,ballVelocity.x,ballVelocity.y,
+      ballVelocity.z].every(finite))
+  throw new TypeError('A current canonical solo runner and real grounded Rapier ball are required');
+ const forward=attackingSide==='home'?1:-1;
+ const dx=forward*(ballPosition.x-player.x),dy=ballPosition.y-player.y;
+ const gapM=Math.hypot(dx,dy);
+ const speedMps=forward*ballVelocity.x;
+ // Purposeful push then follow: spacing is perceptible at 60Hz.
+ // Control is still more responsive than a longer Sprint push.
+ const spacingTicks=phase==='sprint'?70:phase==='moderate'?58:48;
+ const targetSpeedMps=phase==='sprint'?3.35:
+  phase==='moderate'?3.05:2.6;
+ // A purposeful push cannot happen while the ball is far away, behind,
+ // airborne, moving already faster than needed, or the player just pushed.
+ if(tick-lastTouchTick<spacingTicks||gapM>1.25||dx<0.08||
+    dx>1.25||Math.abs(dy)>0.45||
+    Math.abs(ballPosition.z-ballRadiusM)>0.017||
+    Math.abs(ballVelocity.z)>0.5||speedMps>=targetSpeedMps-0.2)
+  return null;
+ // An ordinary football has mass ~0.43kg; this is a genuine Rapier impulse,
+ // not a setLinvel, scripted ball attachment or fake native shoe START.
+ const magnitudeNs=Math.min(1.10,Math.max(0.09,
+  (targetSpeedMps-Math.max(0,speedMps))*0.43));
+ const sidewaysNs=Math.max(-0.07,Math.min(0.07,-dy*0.16));
+ return Object.freeze({
+  version:INTENT_SOLO_CARRY_VERSION,tick,playerId:player.id,
+  team:attackingSide,action:'carry',phase,spacingTicks,
+  ballGapM:gapM,ballSpeedMps:speedMps,
+  intendedTargetSpeedMps:targetSpeedMps,
+  impulseNs:Object.freeze({x:forward*magnitudeNs,y:sidewaysNs,z:0}),
+  trigger:'canonical-player-ball-proximity-and-pacing',
+  nativeShoeContactVerified:false,actualRapierBallRequired:true,
+  officialMatchAction:false,officialPossession:false,
+  dribbleCompleted:false
+ });
+}
