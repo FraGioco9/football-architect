@@ -1,15 +1,15 @@
 <section id="app-divisions" class="app-view matches-directory" aria-labelledby="md-title">
  <h1 class="app-page-title" id="md-title">Matches</h1>
  <div class="md-controls">
-  <label><span data-word="season">Season</span><select id="md-season" disabled><option>—</option></select></label>
-  <label><span data-word="day">Sporting day</span><select id="md-day" disabled><option>—</option></select></label>
-  <button id="md-prev" disabled aria-label="Previous day">‹</button>
-  <button id="md-next" disabled aria-label="Next day">›</button>
-  <button id="md-current" disabled>Current day</button>
+  @@PICKER(season,Season)@@
+  @@PICKER(day,Sporting day)@@
+  <button id="md-prev" class="language-trigger app-fixtures-arrow" disabled aria-label="Previous day"><svg class="site-chevron site-chevron-left" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button id="md-next" class="language-trigger app-fixtures-arrow" disabled aria-label="Next day"><svg class="site-chevron site-chevron-right" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button id="md-current" class="language-trigger" disabled>Current day</button>
  </div>
  <div class="md-controls">
-  <label><span data-word="country">Country</span><select id="md-country"><option>All</option></select></label>
-  <label><span data-word="competition">Competition</span><select id="md-competition"><option>All</option></select></label>
+  @@PICKER(country,Country)@@
+  @@PICKER(competition,Competition)@@
   <label><span data-word="search">Search team</span><input type="search" id="md-q" maxlength="100"></label>
  </div>
  <p id="md-status" role="status"></p>

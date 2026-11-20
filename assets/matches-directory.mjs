@@ -1,4 +1,5 @@
 import './world-clock-adapter.js';
+import './competition-tabs.js';
 import {matchPublicContext,publicClubIdentityCatalog} from './match-public-context.mjs';
 import {resolveScoreboardTheme} from './match-scoreboard-themes.mjs';
 
@@ -25,16 +26,44 @@ function node(tag,text,className){
  return element;
 }
 function link(href,text){const a=node('a',text);a.href=window.faAppHref?.(href)??href;return a}
-function image(src){const img=node('img');img.src='/'+src;img.alt='';return img}
+function logo(src,competitionId){
+ const fallback=competitionId?'app-competition-logo-placeholder':'app-world-club-crest-placeholder';
+ const slot=node('span',competitionId??'',fallback+' md-logo');
+ slot.setAttribute('aria-hidden','true');
+ if(src){
+  const img=node('img');
+  img.alt='';
+  img.addEventListener('load',()=>slot.replaceChildren(img),{once:true});
+  img.src='/'+src;
+ }
+ return slot;
+}
 function region(id){
  if(id==='ENG')return words.england;
  if(id==='int')return words.international;
  return new Intl.DisplayNames([locale],{type:'region'}).of(id);
 }
+const menus=new Map();
 function options(id,items,value){
- const select=el(id);
- select.replaceChildren(...items.map(([k,v])=>new Option(v,k)));
- select.value=String(value);
+ const trigger=el(id),menu=el(id+'-menu'),key=JSON.stringify(items);
+ let picker=menus.get(id);
+ if(picker?.key!==key){
+  const choices=items.map(([v,label],index)=>{
+   const option=node('div',label,'language-option');
+   option.id=menu.id+'-'+index;
+   option.dataset.menuValue=String(v);
+   option.setAttribute('role','option');
+   return option;
+  });
+  menu.replaceChildren(...choices);
+  if(picker)picker.binding.update(choices);
+  else picker={binding:window.faBindCompetitionMenu(trigger,menu,choices,choice=>chooseFilter(id,choice),trigger.parentElement,{fitViewport:true,boundary:root.closest('.fa-shell-content-scroll')})};
+  picker.key=key;
+  menus.set(id,picker);
+ }
+ trigger.disabled=false;
+ picker.binding.sync(String(value));
+ el(id+'-value').textContent=items.find(([v])=>String(v)===String(value))?.[1]??'—';
 }
 function selection(){
  const params=new URLSearchParams(location.search);
@@ -54,12 +83,13 @@ function updateURL(changes,replace=false){
  if(href!==location.pathname+location.search)history[replace?'replaceState':'pushState'](null,'',href);
  refresh();
 }
-function participant(id,ref){
+function participant(id,ref,home=false){
  const c=teams.get(id);
  const name=c?.primaryName??(ref?.kind==='leagueRank'?words.rank+' '+ref.rank:ref?.kind==='tieWinner'?words.winner+' '+ref.tieId:words.tbd);
  const side=node('span',null,'md-team');
- const crest=clubCrests[id]?image(clubCrests[id]):node('span',null,'md-crest');
- side.append(crest,c?link('/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview',name):node('span',name));
+ const crest=logo(clubCrests[id]);
+ const label=c?link('/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview',name):node('span',name);
+ if(home)side.append(label,crest);else side.append(crest,label);
  return side;
 }
 function fixture(f){
@@ -68,7 +98,7 @@ function fixture(f){
  const score=link(href,r?r.homeGoals+' – '+r.awayGoals:'—');
  score.className='md-score';
  score.setAttribute('aria-label',[teams.get(f.homeClubId)?.primaryName??words.tbd,score.textContent,teams.get(f.awayClubId)?.primaryName??words.tbd].join(' '));
- row.append(participant(f.homeClubId,f.participantA),score,participant(f.awayClubId,f.participantB));
+ row.append(participant(f.homeClubId,f.participantA,true),score,participant(f.awayClubId,f.participantB));
  const info=[words[f.phaseId]??f.phaseId,f.round?words.round+' '+f.round:'',f.leg?words.leg+' '+f.leg:'',
   r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',!r?f.status==='scheduled'?words.scheduled:words.tbd:'',f.neutral?words.neutral:f.venue];
  row.append(node('small',info.filter(Boolean).join(' · ')));
@@ -92,7 +122,7 @@ function render(){
  el('prev').disabled=!s.season||s.day<=1;el('next').disabled=!s.season||s.day>=56;
  el('current').disabled=!world?.seasonNumber;el('season').disabled=!world?.seasonNumber;el('day').disabled=!s.season;
  list.setAttribute('aria-busy',String(state==='loading'));
- if(state==='loading'){list.innerHTML=skeleton;status.textContent=words.loading;return}
+ if(state==='loading'){list.innerHTML=skeleton;status.textContent='';return}
  list.replaceChildren();status.textContent='';
  if(state==='error'){const retry=node('button',words.retry);retry.onclick=()=>start();status.append(words.unavailable+' ',retry);return}
  if(['zero','unpublished','unavailable'].includes(state)){status.textContent=words[state];return}
@@ -102,7 +132,7 @@ function render(){
   const filtered=rows.filter(f=>f.competitionId===c.id&&(!needle||[f.homeClubId,f.awayClubId].some(id=>fold(teams.get(id)?.primaryName??'').includes(needle))));
   if(!filtered.length)continue;
   const group=node('section'),heading=node('h2'),a=link('/competitions/'+c.id.toLowerCase()+'/fixtures?season='+s.season,c.name);
-  const logo=resolveScoreboardTheme(c).logoAsset;if(logo)a.prepend(image(logo));
+  heading.append(logo(resolveScoreboardTheme(c).logoAsset,c.id));
   heading.append(a);group.append(heading,...filtered.map(fixture));list.append(group);
  }
  if(state==='partial')status.textContent=words.partial;
@@ -143,13 +173,20 @@ async function start(){
   world=data.world;state=world.seasonNumber?'loading':'zero';await refresh();
  }catch{if(ticket===epoch){state='error';render()}}
 }
-for(const key of ['season','day','country','competition']){
- el(key).onchange=()=>{const changes={[key]:el(key).value};
-  if(key==='country'&&changes.country&&!el('competition').value.startsWith(changes.country+'-'))changes.competition='';
-  if(key==='season')changes.day=Number(changes.season)===world.seasonNumber?Math.max(1,world.day):1;
-  updateURL(changes);
- };
+function chooseFilter(key,value){
+ const changes={[key]:value};
+ if(key==='country'&&value&&!el('competition').value.startsWith(value+'-'))changes.competition='';
+ if(key==='season')changes.day=Number(value)===world.seasonNumber?Math.max(1,world.day):1;
+ updateURL(changes);
 }
+// A scroll can synthesize pointer events at the same position.
+let pointerX,pointerY;
+window.addEventListener('scroll',()=>{root.dataset.scrolling='true'},{capture:true,passive:true});
+window.addEventListener('pointermove',event=>{
+ if(event.pointerType!=='mouse')return;
+ if(pointerX!==event.clientX||pointerY!==event.clientY)delete root.dataset.scrolling;
+ pointerX=event.clientX;pointerY=event.clientY;
+},{passive:true});
 el('q').oninput=()=>updateURL({q:el('q').value},true);
 el('prev').onclick=()=>updateURL({day:selection().day-1});
 el('next').onclick=()=>updateURL({day:selection().day+1});
