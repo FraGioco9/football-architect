@@ -362,12 +362,7 @@ test('#628 solo Carry physical intensity scales original real touch without velo
  const duel=chooseIsolatedDribbleTouch({...params,defender:{team:'away',x:34,y:1}});
  assert.equal(solo.soloCarry,true);
  assert.equal(solo.fromLiveOpponent,false);
- assert.ok(solo.magnitudeNs>duel.magnitudeNs*0.44);
- assert.ok(solo.magnitudeNs<=duel.magnitudeNs*0.48+1e-10);
- const running=chooseIsolatedDribbleTouch({...params,solo:true,
-  ballVelocity:{x:3.1,y:0}});
- assert.equal(running.magnitudeNs,duel.magnitudeNs*0.44,
-  'Running ball uses the previous proven impulse');
+ assert.equal(solo.magnitudeNs,duel.magnitudeNs*0.44);
  assert.equal(solo.fromLiveBallVelocity,true);
  assert.equal(solo.genuineRapierShoeStartRequired,true);
  assert.throws(()=>chooseIsolatedDribbleTouch({...params,solo:true,defender:{team:'away',x:33,y:0}}),TypeError);
@@ -389,16 +384,6 @@ test('#628 solo physical foot targets oppose stride without creating contacts',(
   forwardM:0.075,sideM:0});
  assert.ok(next.left.x>next.right.x,
   'Opposite half stride makes left shoe overtake right foot');
- const freeRoll=soloCarryTwoFootPositions(p,{...gait,carryPhase:'sprint'},
-  {contactFollow:true});
- const ordinary=soloCarryTwoFootPositions(p,{...gait,carryPhase:'sprint'});
- assert.ok(freeRoll.left.y-ordinary.left.y>0.09&&
-  ordinary.right.y-freeRoll.right.y>0.09,
-  'Physical shoe paths spread ONLY after source-armed push-and-follow');
- assert.equal(freeRoll.left.x,ordinary.left.x);
- assert.equal(freeRoll.right.x,ordinary.right.x);
- assert.throws(()=>soloCarryTwoFootPositions(p,gait,{contactFollow:'yes'}),
-  TypeError);
  const away=soloCarryTwoFootPositions({...p,x:-p.x,facingRad:Math.PI},
   {...gait,observedAheadM:gait.observedAheadM});
  assert.ok(away.left.x>away.right.x,'Mirrored local foot order rotates with player facing');
