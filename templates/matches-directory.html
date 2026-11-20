@@ -2,15 +2,17 @@
  <h1 class="app-page-title" id="md-title">Matches</h1>
  <div class="md-controls">
   @@PICKER(season,Season)@@
-  @@PICKER(day,Sporting day)@@
-  <button id="md-prev" class="language-trigger app-fixtures-arrow" disabled aria-label="Previous day"><svg class="site-chevron site-chevron-left" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-  <button id="md-next" class="language-trigger app-fixtures-arrow" disabled aria-label="Next day"><svg class="site-chevron site-chevron-right" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <div class="md-day-navigation">
+   <button id="md-prev" class="language-trigger md-day-arrow" disabled aria-label="Previous day"><svg class="site-chevron site-chevron-left" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+   @@PICKER(day,Sporting day)@@
+   <button id="md-next" class="language-trigger md-day-arrow" disabled aria-label="Next day"><svg class="site-chevron site-chevron-right" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
   <button id="md-current" class="language-trigger" disabled>Current day</button>
  </div>
  <div class="md-controls md-filters">
   @@PICKER(country,Country)@@
   @@PICKER(competition,Competition)@@
-  <label><span data-word="search">Search team</span><input type="search" id="md-q" maxlength="100"></label>
+  <div class="md-field md-search"><span id="md-search-label" data-word="search">Search team</span><input type="search" id="md-q" aria-labelledby="md-search-label" maxlength="100"></div>
  </div>
  <p id="md-status" role="status"></p>
  <div id="md-list" aria-busy="true"><h2 aria-hidden="true"><i></i></h2>@@ROWS@@</div>

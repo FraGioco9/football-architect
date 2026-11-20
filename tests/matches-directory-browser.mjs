@@ -41,9 +41,25 @@ export async function verifyMatchesDirectory(browser){
   for(const width of [320,390,768,1440]){
    await page.setViewportSize({width,height:800});
    const searchBox=await page.locator('#md-q').boundingBox(),filterBox=await page.locator('#md-country').boundingBox();
+   const [prev,day,next]=await Promise.all(['prev','day','next'].map(id=>page.locator('#md-'+id).boundingBox()));
+   for(const arrow of [prev,next]){
+    assert.equal(arrow.width,day.height);
+    assert.equal(arrow.height,day.height);
+    assert.equal(arrow.y,day.y);
+   }
+   assert(prev.x+prev.width<=day.x&&day.x+day.width<=next.x);
    assert.equal(searchBox.height,filterBox.height,'search and filter heights match');
    assert(await page.locator('.matches-directory').evaluate(n=>n.clientWidth>0&&n.scrollWidth<=n.clientWidth+1),'directory overflow '+width);
   }
+  for(const key of ['season','day','country','competition','search']){
+   const caption=page.locator('.md-field > [data-word="'+key+'"]');
+   await caption.hover();
+   assert.equal(await page.locator('.md-controls :is(button,input):hover').count(),0);
+   await caption.click();
+   assert.equal(await page.locator('.md-controls :is(input:focus,button:focus,[aria-expanded="true"])').count(),0);
+  }
+  await page.getByRole('searchbox',{name:'Search team'}).click();
+  assert(await page.locator('#md-q').evaluate(input=>input===document.activeElement));
   const searchBefore=await page.locator('#md-q').boundingBox();
   await page.locator('#md-country').click();
   await page.locator('#md-country-menu [data-menu-value="ENG"]').click();
