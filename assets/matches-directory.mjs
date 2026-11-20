@@ -41,6 +41,12 @@ function logo(src,competitionId){
  }else showPlaceholder();
  return slot;
 }
+const headerLogos=new Map();
+function competitionLogo(c,index){
+ let slots=headerLogos.get(c.id);
+ if(!slots){slots=[];headerLogos.set(c.id,slots)}
+ return slots[index]??=logo(resolveScoreboardTheme(c).logoAsset,c.id);
+}
 function region(id){
  if(id==='ENG')return words.england;
  if(id==='int')return words.international;
@@ -105,7 +111,7 @@ function fixture(f){
  const info=[f.leg?words.leg+' '+f.leg:'',
   r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',f.status==='awaiting_participants'?words.tbd:'',f.neutral?words.neutral:f.venue];
  const detail=info.filter(Boolean).join(' · ');
- if(detail)row.append(node('small',detail));
+ row.append(node('small',detail));
  row.addEventListener('click',event=>{if(!event.target.closest('a')&&!window.getSelection()?.toString())location.assign(score.href)});
  return row;
 }
@@ -142,11 +148,12 @@ function render(){
    if(!rounds.has(token))rounds.set(token,[]);
    rounds.get(token).push(f);
   }
+  let headingIndex=0;
   for(const [round,fixtures] of rounds){
    const group=node('section'),heading=node('h2');
    const href='/competitions/'+c.id.toLowerCase()+'/fixtures?season='+s.season+'&matchday='+encodeURIComponent(round);
    const caption=fixtures[0].phaseId==='league'?words.round+' '+round:words[round]??round;
-   heading.append(logo(resolveScoreboardTheme(c).logoAsset,c.id),link(href,c.name),node('small',caption));
+   heading.append(competitionLogo(c,headingIndex++),link(href,c.name),node('small',caption));
    group.append(heading,...fixtures.map(fixture));list.append(group);
   }
  }
