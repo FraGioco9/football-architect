@@ -269,7 +269,7 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-overview-fact{gap:2px}
  .app-match-info-label{font-size:10px;line-height:1.15}
  .app-match-info-value{font-size:12px;line-height:1.2;min-height:1.2em}
- .app-match-side{padding:10px 7px 12px}
+ .app-match-side{padding:10px 4px 12px}
  .app-match-lineup-avatar{width:24px;height:24px;min-width:24px;flex-basis:24px}
  .app-match-lineup-rows{grid-template-rows:repeat(11,minmax(32px,1fr))}
  .app-match-lineup-row{min-height:32px;padding:0 3px;gap:4px}
@@ -281,7 +281,7 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-team-identity{flex-direction:column;justify-content:center;gap:5px;min-height:74px;margin-bottom:10px}
  .app-match-team-crest{width:40px;height:40px;flex-basis:40px}
  .app-match-side-title{text-align:center;font-size:12px;min-height:2.7em;line-height:1.35}
- .app-match-side-stats{grid-template-columns:minmax(0,.48fr) minmax(0,1.52fr);gap:3px}
+ .app-match-side-stats{grid-template-columns:minmax(0,.36fr) minmax(0,1.64fr);gap:3px}
  .app-match-side-label{font-size:10px}
  .app-match-position{font-size:21px;line-height:25px;min-height:25px}
  .app-match-form{gap:3px;min-height:25px}
