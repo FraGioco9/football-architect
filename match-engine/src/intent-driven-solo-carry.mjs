@@ -23,7 +23,9 @@ export function chooseIntentSoloCarryTouch({
  const dx=forward*(ballPosition.x-player.x),dy=ballPosition.y-player.y;
  const gapM=Math.hypot(dx,dy);
  const speedMps=forward*ballVelocity.x;
- const spacingTicks=phase==='sprint'?45:phase==='moderate'?34:24;
+ // Purposeful push then follow: spacing is perceptible at 60Hz.
+ // Control is still more responsive than a longer Sprint push.
+ const spacingTicks=phase==='sprint'?70:phase==='moderate'?58:48;
  const targetSpeedMps=phase==='sprint'?3.35:
   phase==='moderate'?3.05:2.6;
  // A purposeful push cannot happen while the ball is far away, behind,
