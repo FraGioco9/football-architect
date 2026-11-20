@@ -42,6 +42,7 @@ test('#628 optional Intent Carry: fewer stronger GAMEPLAY pushes, real freely mo
    shotSide:side,variantIndex,intentDrivenSoloCarry:true
   });
   try{
+   const initialBallX=lab.snapshot().ball.position.x;
    let kicks=0,maxSpeed=0,nativeStarts=0,lastTouch=null;
    const phases=new Set();
    let end;
@@ -64,7 +65,7 @@ test('#628 optional Intent Carry: fewer stronger GAMEPLAY pushes, real freely mo
     }
    }
    const advance=(side==='home'?1:-1)*
-    (end.ball.position.x-lab.spec.initial.x);
+    (end.ball.position.x-initialBallX);
    process.stdout.write('ME_628_INTENT_CARRY '+JSON.stringify({
     side,variantIndex,kicks,nativeStarts,maxSpeed,advance,
     phases:[...phases]

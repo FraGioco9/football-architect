@@ -284,8 +284,12 @@ export function createControlledActionLab(RAPIER,id,{
     passingTick:firstRealPass.tick,realShoeStart:true,
     officialInterception:false,tackleConfirmed:null
    });
+  // A gameplay-proximity impulse is NOT native shoe evidence. Keep the
+  // actual Rapier ball action visible, but do not feed it to any observer
+  // whose proofs require a genuine shoe START.
+  const nativeAction=intentDrivenSoloCarry?null:action;
   const evidence=classifyActionLabEvidence(spec,{
-   tick:physics.tick,action,starts,priorPass:firstRealPass,
+   tick:physics.tick,action:nativeAction,starts,priorPass:firstRealPass,
    opponentEarlier:firstOpposingShoe!==null,
    challengeSide:selectedChallengeSide??'away'
   });
@@ -345,7 +349,8 @@ export function createControlledActionLab(RAPIER,id,{
   }
   // Carry is a single observed Rapier impulse plus ball motion after it,
   // not a trap, multi-touch success or virtual dribble.
-  if(action?.action==='carry'&&evidence.verifiedShoeImpulse&&!carryTrace){
+  if(action?.action==='carry'&&
+     (evidence.verifiedShoeImpulse||intentDrivenSoloCarry)&&!carryTrace){
    carryTrace=Object.freeze({
     tick:physics.tick,actorId:action.playerId,team:action.team,
     origin:Object.freeze({...p}),last:Object.freeze({...p}),
@@ -387,35 +392,39 @@ export function createControlledActionLab(RAPIER,id,{
   // Only the closed one-World Action LAB supplies these same-tick samples.
   // No new impulse, tackle, reception or possession is authorized.
   const decisionEvidence=decisionObserver.observe({
-   physics,playerFrame,foot,action
+   physics,playerFrame,foot,action:nativeAction
   });
   const physicalFirstTouch=engine.researchReceivingCushionSnapshot?.()??null;
   const physicalReceiverChoice=engine.researchReceiverChoiceSnapshot?.()??null;
   const physicalReceiverTap=engine.researchReceiverTapSnapshot?.()??null;
   const postDeferContinuity=followThroughObserver?.observe({
-   physics,playerFrame,foot,physicalFirstTouch,physicalReceiverChoice,action
+   physics,playerFrame,foot,physicalFirstTouch,physicalReceiverChoice,
+   action:nativeAction
   })??null;
   const realReleaseSequence=releaseObserver?.observe({
    physics,playerFrame,foot,
    solver:engine.footContactSolverSnapshot(),
-   choice:physicalReceiverChoice,tap:physicalReceiverTap,action
+   choice:physicalReceiverChoice,tap:physicalReceiverTap,
+   action:nativeAction
   })??null;
   const realOpponentContest=contestObserver?.observe({
    physics,playerFrame,foot,
    solver:engine.footContactSolverSnapshot(),
-   tap:physicalReceiverTap,m30:realReleaseSequence,action
+   tap:physicalReceiverTap,m30:realReleaseSequence,
+   action:nativeAction
   })??null;
   const physicalControlEvidence=controlGateObserver?.observe({
    physics,playerFrame,foot,
-   solver:engine.footContactSolverSnapshot(),m28:postDeferContinuity,action
+   solver:engine.footContactSolverSnapshot(),m28:postDeferContinuity,
+   action:nativeAction
   })??null;
   const pressureEvidence=pressureObserver?.observe({
-   physics,playerFrame,foot,physicalFirstTouch,action
+   physics,playerFrame,foot,physicalFirstTouch,action:nativeAction
   })??null;
   const baseFootworkAudit=baseFootworkObserver?.observe({
    physics,playerFrame,foot,
    solver:engine.footContactSolverSnapshot(),
-   action,priorPass:firstRealPass,
+   action:nativeAction,priorPass:firstRealPass,
    cushion:physicalFirstTouch,tap:physicalReceiverTap,
    releaseSequence:realReleaseSequence
   })??null;
@@ -426,7 +435,8 @@ export function createControlledActionLab(RAPIER,id,{
    })].slice(-12));
   }
   const refereeEvidence=refereeObserver?.observe({
-   physics,playerFrame,foot,solver:engine.footContactSolverSnapshot(),action
+   physics,playerFrame,foot,solver:engine.footContactSolverSnapshot(),
+   action:nativeAction
   })??null;
   if(refereeEvidence?.lastEvent?.tick===physics.tick){
    count++;
