@@ -46,6 +46,23 @@ export async function verifyMatchesDirectory(browser){
    const {top,bottom}=row.getBoundingClientRect();
    return [top,bottom];
   }));
+  const headingBaselineGaps=()=>page.locator('#md-list h2:has(a):has(small)').evaluateAll(headings=>headings.map(heading=>{
+   const bottom=node=>{
+    const text=node?.firstChild;
+    if(!text||text.nodeType!==Node.TEXT_NODE)return null;
+    const range=document.createRange();
+    range.selectNodeContents(text);
+    return [...range.getClientRects()].at(-1)?.bottom??null;
+   };
+   const name=bottom(heading.querySelector('a'));
+   const round=bottom(heading.querySelector('small'));
+   return {alignment:getComputedStyle(heading).alignItems,gap:name!==null&&round!==null?name-round:null};
+  }));
+  const verifyHeadingBaselines=async width=>{
+   const measured=await headingBaselineGaps();
+   assert(measured.length>0&&measured.every(({alignment,gap})=>alignment==='last baseline'&&
+    gap!==null&&Math.abs(gap)<=1.5),'competition and round text bottoms align at '+width+'px: '+JSON.stringify(measured));
+  };
   for(const width of widths){
    await page.setViewportSize({width,height:800});
    const name=await page.locator('#md-list .md-name-bar').boundingBox();
@@ -89,6 +106,7 @@ export async function verifyMatchesDirectory(browser){
   for(const width of widths){
    await page.setViewportSize({width,height:800});
    assert.deepEqual(await rowEdges(),loading.get(width).edges,'row boundaries at '+width+'px');
+   await verifyHeadingBaselines(width);
    assert.equal((await page.locator('#md-list h2 a').boundingBox()).x,loading.get(width).nameX);
    const searchBox=await page.locator('#md-q').boundingBox(),filterBox=await page.locator('#md-country').boundingBox();
    const [prev,day,next]=await Promise.all(['prev','day','next'].map(id=>page.locator('#md-'+id).boundingBox()));
@@ -166,6 +184,7 @@ export async function verifyMatchesDirectory(browser){
   const headingDesktop=['Round 2','Playoffs · Leg 1','Playoffs · Leg 2','Playoffs · Leg 1','Quarter-finals · Leg 1','Quarter-finals · Leg 2','Semi-finals · Leg 1','Semi-finals · Leg 2','Final'];
   const headingMobile=['Round 2','Playoffs','Playoffs','Playoffs','Quarter-finals','Quarter-finals','Semi-finals','Semi-finals','Final'];
   assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),headingDesktop,'two-leg knockout headers retain leg labels but a single-leg final does not');
+  await verifyHeadingBaselines(1440);
   const deepLinks=await page.locator('#md-list h2 a').evaluateAll(links=>links.map(a=>{
    const url=new URL(a.href);
    return [url.pathname,url.searchParams.get('season'),url.searchParams.get('matchday')];
@@ -235,6 +254,7 @@ export async function verifyMatchesDirectory(browser){
   for(const width of [320,375,390,540]){
    await page.setViewportSize({width,height:800});
    assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),headingMobile,'hide Leg text only on small screens '+width);
+   await verifyHeadingBaselines(width);
    assert.equal(await page.locator('#md-list h2 .md-leg:visible').count(),0,'hide every Leg label at '+width);
    for(const [higher,lower] of playoffPairs){
     const slot=page.locator('#md-list .md-team-label[aria-label="Winner of playoff '+higher+' vs '+lower+'"]').first();
