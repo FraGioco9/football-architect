@@ -225,3 +225,61 @@ test('Public authoritative History uses the same club popup as Debug and Players
  assert.match(source,/aria-haspopup','dialog/);
  assert.doesNotMatch(source,/dialog\.append\(line\)/);
 });
+
+
+test('PERF-API-02: History avoids a duplicate HTTP season GET only for a verified warm season, invalidates on revision',async()=>{
+ const previous=globalThis.window;
+ const currentWorld={schemaVersion:1,generation:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  seasonNumber:2,revision:4,day:7,phase:'active'};
+ const cached={...context().seasonData,world:{...currentWorld},
+  seasonState:{day:56,phase:'closed'}};
+ let revisionListener;
+ const requests=[],cacheReads=[],readiness=[];
+ const snapshot=()=>({source:'authoritative',sourceRevision:0,worldStatus:'ready',world:currentWorld});
+ globalThis.window={
+  faWorldState:{get:snapshot,subscribe(fn){revisionListener=fn;return ()=>{revisionListener=null}}},
+  faCompetitionRoute:{get:()=>({view:'history',season:'2'})},
+  faStandingsLoading:{beginView:()=>()=>{}},
+  faHistorySetReady(ready){readiness.push(ready)}
+ };
+ const mount=(findCached)=>mountAuthoritativeHistory(
+  {querySelectorAll:()=>[],querySelector:()=>null,dataset:{}},{
+   getContext:()=>({selectedSeason:2,definition:{id:'IT-1',category:'domestic'},
+    currentDefinition:{id:'IT-1',category:'domestic'},seasonData:null}),
+   manifest:{},document:{},
+   readCachedSeason:findCached,
+   fetchJson:async path=>{requests.push(path);throw Error('Intentional network trace boundary')}
+  });
+ try{
+  // Cold baseline: the historical reader starts exactly one genuine API GET.
+  const cold=mount(()=>null);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(requests,['/api/competitions/IT-1/seasons/1']);
+  cold.destroy();requests.length=0;
+  // Standings previously selected and verified Season 1 under the same world.
+  const warm=mount(args=>{cacheReads.push(args);return {data:cached}});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(cacheReads.length,1);
+  assert.equal(cacheReads[0].snapshot.world.revision,4);
+  assert.deepEqual(requests,[],'warm History uses 0 feature GETs for the already verified Season 1');
+  assert.equal(readiness.at(-1),true);
+  // An advancing world must not reuse the previous revision or old archive.
+  currentWorld.revision=5;
+  revisionListener();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(requests,['/api/competitions/IT-1/seasons/1'],
+   'revision mismatch causes the canonical public HTTP read to run again');
+  assert.equal(readiness.at(-1),true,'failed fresh read settles without leaking old records');
+  warm.destroy();
+ }finally{if(previous===undefined)delete globalThis.window;else globalThis.window=previous}
+});
+
+test('PERF-API-02: History source integration preserves canonical cache keys and validation fallback',()=>{
+ const source=readFileSync(new URL('../assets/authoritative-history.mjs',import.meta.url),'utf8');
+ const page=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
+ assert.match(page,/readCachedSeason:\(\{competitionId,season,snapshot\}\)=>seasonReadCache\.find/);
+ assert.match(source,/validateAuthoritativeSeason\(input,target,manifest\)/);
+ assert.match(source,/adaptAuthoritativeSeason\(checked,target,manifest\)/);
+ assert.match(source,/clock\.sourceRevision/);
+ assert.match(source,/world\.revision,world\.seasonNumber,world\.day,world\.phase/);
+});

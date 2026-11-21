@@ -1,9 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {existsSync} from 'node:fs';
+import {fileURLToPath} from 'node:url';
 import {clubCrestUrl,competitionLogoUrl,playerPortraitUrl} from '../assets/public-image-urls.mjs';
 test('#733 competition logos are deterministic and validated by ID',()=>{
  assert.equal(competitionLogoUrl('IT-1'),'/assets/competitions/IT-1/compact.svg');
- assert.equal(competitionLogoUrl('int-2','primary'),'/assets/competitions/int-2/primary.svg');
+ // No approved international SVGs exist: no speculative requests / 404s.
+ for(const id of ['int-1','int-2'])for(const variant of ['primary','compact'])
+  assert.equal(competitionLogoUrl(id,variant),null);
+ // Every emitted URL must correspond to a physically published asset.
+ for(const country of ['IT','ENG','ES','DE','FR','PT','NL','BR'])for(const tier of [1,2]){
+  const id=country+'-'+tier;
+  for(const variant of ['primary','compact']){
+   const url=competitionLogoUrl(id,variant);
+   assert.equal(url,'/assets/competitions/'+id+'/'+variant+'.svg');
+   assert.ok(existsSync(fileURLToPath(new URL('..'+url,import.meta.url))),url);
+  }
+ }
  for(const id of ['it-1','ZZ-1','IT-3','../IT-1','IT-1/../X',null])
   assert.equal(competitionLogoUrl(id),null);
  for(const variant of ['../../../file','thumbnail',null,'COMPACT'])
