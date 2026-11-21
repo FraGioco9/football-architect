@@ -3,13 +3,17 @@
  'use strict';
  const catalog=window.faClubCrests;
  if(!catalog||typeof catalog!=='object')return;
+ // Generated Match Detail uses only published IDs; older club pages still use
+ // the validated canonical ID-to-path registry until their manifest cutover.
+ const publishedIds=Array.isArray(catalog)?new Set(catalog):null;
  const rendered=new WeakMap();
  function render(host){
   const id=host.dataset.clubCrest;
   // The catalogue proves membership; the URL is derived from the public key.
   const key=typeof id==='string'?id.match(/^([A-Z]{2,3})-([1-9]\d*)$/):null;
   const expected=key?'assets/clubs/'+key[1]+'/'+key[2]+'/crest.svg':null;
-  const asset=expected&&Object.hasOwn(catalog,id)&&catalog[id]===expected?expected:null;
+  const allowed=publishedIds?publishedIds.has(id):Object.hasOwn(catalog,id)&&catalog[id]===expected;
+  const asset=expected&&allowed?expected:null;
   if(rendered.has(host)&&rendered.get(host)===asset)return;
   rendered.set(host,asset);
   const existing=host.querySelector?.('.app-club-crest-image');
