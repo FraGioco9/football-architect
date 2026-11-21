@@ -461,8 +461,21 @@ test('FIXTURES unresolved participants follow #732 rank/winner wording and use o
  assert.match(css,/#competition-panel-fixtures \.app-fixtures-toolbar\{[\s\S]*?z-index:10/,'selector toolbar stacks above linked score cards');
  assert.match(css,/#competition-panel-fixtures \.app-fixtures-list\{position:relative;z-index:0\}/);
  assert.match(css,/#competition-panel-fixtures \.app-fixtures-picker\{z-index:12\}/);
+ assert.ok(css.includes('.app-fixture-club>.app-fixture-name{display:-webkit-box;flex:0 1 auto;'), 'long compactNames may wrap in their mobile track');
+ assert.ok(read('assets/competition-fixtures.js').includes('fitViewport:Boolean(fixtureScrollBoundary&&typeof picker.getBoundingClientRect'), 'matchday popup follows the scroll viewport');
  for(const width of [36,30,24])assert.ok(css.includes('app-fixtures-skeleton-crest{flex-basis:'+width+'px;width:'+width+'px;height:'+width+'px}'),
   'skeleton and real mobile crest widths match at each breakpoint');
+});
+
+test('FIXTURES pending domestic playout follows the documented home-order reversal',()=>{
+ const division=divisions.find(d=>d.id==='IT-1'),r=setup(division);
+ r.view.prepare(schedule(division),{postseason:[]})();
+ r.route.set({matchday:'playout'});
+ const rows=r.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch);
+ const name=(row,side)=>row.children[side].children.find(n=>n.className?.split(' ').includes('app-fixture-name')).children[0].textContent;
+ assert.equal(rows.length,2);
+ assert.deepEqual([name(rows[0],0),name(rows[0],2)],['Rank 14','Rank 13']);
+ assert.deepEqual([name(rows[1],0),name(rows[1],2)],['Rank 13','Rank 14']);
 });
 
 test('FIXTURES-07: result groups show full time or supplied date above the score and the canonical home stadium below',()=>{

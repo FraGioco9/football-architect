@@ -631,6 +631,13 @@ html[data-fa-standings-loading="true"] :is(.app-fixture-score-link,.app-fixture-
 }
 @media(max-width:420px){.app-fixture-match{grid-template-columns:minmax(0,1fr) 90px;gap:6px;padding-inline:8px}.app-fixture-club{gap:5px}.app-fixture-club .app-world-club-crest-placeholder{flex-basis:30px;width:30px;height:30px}}
 @media(max-width:360px){.app-fixture-club .app-world-club-crest-placeholder{flex-basis:24px;width:24px;height:24px}}
+/* Retain canonical compactNames at 320–620px. The general standings-link
+   flex:none/max-content rule must not force the club past its fixture track. */
+@media(max-width:620px){
+ .app-fixture-club>.app-fixture-name{display:-webkit-box;flex:0 1 auto;width:auto;min-width:0;max-width:100%;
+  -webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;
+  white-space:normal;overflow-wrap:anywhere}
+}
 
 /* Prevent a different view/season flashing before URL state is bound. */
 html[data-competition-view="standings"] .app-competition-panel:not(#competition-panel-standings){display:none}
