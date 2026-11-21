@@ -194,6 +194,7 @@
     "tests/canonical-state-browser.mjs": "support",
     "tests/canonical-world-state.test.mjs": "site-node",
     "tests/chrome-profile.test.mjs": "site-node",
+    "tests/ci-browser-timing.test.mjs": "site-node",
     "tests/ci-diagnostics.test.mjs": "site-node",
     "tests/ci-fast-scope.test.mjs": "site-node",
     "tests/ci-opt-01-browser-cases.mjs": "support",
