@@ -34,7 +34,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
           node tools/ci-discovery.mjs
           if [ "${{ github.event.pull_request.draft }}" = "true" ] && [ "${{ contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}" != "true" ]; then
-            node tools/ci-opt-01-impact.mjs >> "$GITHUB_OUTPUT"
+            node tools/ci-opt-06-admin-impact.mjs >> "$GITHUB_OUTPUT"
           else
             echo 'mode=full' >> "$GITHUB_OUTPUT"
           fi

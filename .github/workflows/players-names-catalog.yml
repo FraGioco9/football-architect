@@ -5,7 +5,6 @@ on:
     paths:
       - data/players/names/**
       - tests/players-names-catalog.test.mjs
-      - tools/ci-test-ownership.json
       - .github/workflows/players-names-catalog.yml
 permissions:
   contents: read

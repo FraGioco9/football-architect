@@ -116,3 +116,44 @@ test('Admin targeted contracts include approved Season2 controls; shared season 
  assert.equal(result.mode,'targeted');assert.ok(result.tests.includes('tests/season-two-controls.test.mjs'));
  for(const path of ['assets/authoritative-season.mjs','assets/authoritative-calendar.mjs','backend/tools/run-contracts.mjs','tests/admin-world-lifecycle-browser.mjs'])assert.equal(classifyImpact([path]).mode,'full',path);
 });
+
+
+test('CI-OPT-06: unrelated reviewed public-page Draft changes do not start heavy Admin checks',async()=>{
+ const {classifyAdminScope}=await import('../tools/ci-opt-06-admin-impact.mjs');
+ for(const file of ['calendar/index.html','clubs/it/1/overview/index.html',
+   'competitions/it-1/standings/index.html','guide/index.html','docs/ci/notes.md']){
+   assert.equal(classifyAdminScope([file]),'fast',file);
+ }
+ for(const file of ['assets/admin-settings.js','settings/index.html','tests/admin-settings.test.mjs']){
+   assert.equal(classifyAdminScope([file]),'targeted',file);
+ }
+ for(const paths of [['assets/app.js'],['assets/app.css'],['assets/routes-registry.mjs'],
+   ['backend/src/index.ts'],['tools/ci-opt-01-impact.mjs'],['.github/workflows/admin-world-checks.yml'],
+   ['calendar/index.html','clubs/index.html'],['calendar/index.html','backend/src/index.ts'],[],['../bad']]){
+   assert.equal(classifyAdminScope(paths),'full',paths.join(','));
+ }
+ const {readFileSync}=await import('node:fs');
+ const admin=readFileSync(new URL('../.github/workflows/admin-world-checks.yml',import.meta.url),'utf8');
+ assert.match(admin,/node tools\/ci-opt-06-admin-impact\.mjs >> "\$GITHUB_OUTPUT"/);
+ assert.match(admin,/echo 'mode=full'/);
+ assert.match(admin,/needs\.scope\.outputs\.mode == 'full'/);
+ assert.match(admin,/admin-world-final-verification/);
+});
+
+test('CI-OPT-06: catalog workflow triggers are narrow and surname tests never skip on test-only changes',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const names=readFileSync(new URL('../.github/workflows/players-names-catalog.yml',import.meta.url),'utf8');
+ const surnames=readFileSync(new URL('../.github/workflows/surnames-01.yml',import.meta.url),'utf8');
+ for(const [workflow,required] of [[names,'tests/players-names-catalog.test.mjs'],[surnames,'tests/surnames-01-catalog.test.mjs']]){
+   const triggers=workflow.split('    paths:')[1]?.split('\npermissions:')[0];
+   assert.ok(triggers);
+   assert.ok(triggers.includes(required),'catalog regression edits still trigger');
+   assert.ok(triggers.includes('data/players/'),'data edits still trigger');
+   assert.ok(!triggers.includes('ci-test-ownership.json'),'ownership changes must not launch the dedicated job');
+ }
+ assert.match(surnames,/echo 'run_tests=true'/);
+ assert.match(surnames,/tests\/surnames-01-catalog\\\.test\\\.mjs\$/);
+ assert.match(surnames,/if: steps\.surname_scope\.outputs\.run_tests == 'true'/);
+ assert.match(surnames,/Out-of-scope changes in SURNAMES-01 PR/);
+ assert.match(surnames,/PLAYERS-03 names must not change/);
+});
