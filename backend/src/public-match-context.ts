@@ -43,7 +43,8 @@ export function compactPublicMatchContext(
  if(!object(target)||target.day!==selected.day||target.competitionId!==competitionId||
    target.homeClubId!==selected.homeClubId||target.awayClubId!==selected.awayClubId)invalid();
  const home=selected.homeClubId as string,away=selected.awayClubId as string,day=selected.day as number;
- const previous=(club:string)=>data.fixtures
+ const validatedFixtures=data.fixtures;
+ const previous=(club:string)=>validatedFixtures
   .filter((f:unknown)=>object(f)&&f.competitionId===competitionId&&
    typeof f.day==='number'&&Number.isSafeInteger(f.day)&&f.day>0&&f.day<day&&
    (f.homeClubId===club||f.awayClubId===club)&&object(f.result)&&
