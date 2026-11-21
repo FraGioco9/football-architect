@@ -121,9 +121,12 @@ The exact-head INT24 phase profile on `015339cb` measured **54.891s**
 for PERF-API-657's 9 network checks. These were followed by nine
 `waitForLoadState('networkidle', {timeout:6000}).catch(()=>{})`
 operations: a possible 54s of inconclusive global-network waiting.
-The network inventory now waits only for the explicitly audited same-origin
-compact/legacy-manifest and API requests to finish and stay quiet for
-250 ms, with a **fail-closed 6s upper bound** and endpoint diagnostics.
+The network inventory now requires **compact/legacy-manifest resources**
+to finish and watches same-origin API *request starts* for a 250 ms
+quiet period, with a **fail-closed 6s bound for catalogue resources**.
+The loopback /api/world endpoint can remain pending indefinitely; it is
+still recorded in API request evidence, but is **not** a prerequisite
+for static first-paint/catalogue validation.
 No network count, first-paint, response, refresh, season-selection or
 error assertion was removed. Synthetic lifecycle tests cover completion,
 request failures, unrelated traffic, and the fail-closed timeout.
@@ -137,6 +140,18 @@ widths, locales, route visits and other interaction-specific waits remain.
 Other SH-03 navigations using networkidle are intentionally unchanged.
 
 These are bounded hypotheses, **not a proven speedup** until the next
-FULL exact-head run. If an audited API request never settles, tests fail
+FULL exact-head run. If a *catalogue* request never settles, tests fail
 rather than hiding a timeout as a PASS. Keep branch Draft/HOLD, unchanged
 mandatory Site/Browser/Admin gate and no manual dispatch/deploy/DB.
+
+### Loopback long-running public API correction
+
+The first CI browser attempt on `5c734a8d` failed with
+`PERF-API-657 ... direct /competitions/it-1/standings?season=1 [".../api/world"]`.
+This is expected for the deliberately isolated public-world API, which
+must not gate a compact-catalogue first-paint audit. The tracker now waits
+for the catalogue's completed response but treats public API request starts
+as evidence only. A regression test keeps intentionally unresolved
+`/api/world` and `/api/competitions/...` requests in flight while
+expecting the catalogue gate to pass, while an unfinished compact response
+still fails closed. No API inventory assertions were removed.

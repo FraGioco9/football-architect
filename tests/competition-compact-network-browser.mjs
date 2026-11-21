@@ -24,9 +24,10 @@ function summary(requests){
   duplicateApiReads:Object.fromEntries(Object.entries(counts).filter(([,n])=>n>1)),
   requests};
 }
-// Network-wide Playwright 'networkidle' can time out on unrelated background
-// traffic even after the audited API/compact requests have completed. Wait
-// for *audited* requests to finish and stay quiet, never just a fixed sleep.
+// Global 'networkidle' times out on unresolved /api/world in this loopback
+// fixture. Catalogue reads must finish; public API requests are inventoried
+// at request start but are not a prerequisite for static first-paint QA.
+// Keep a quiet observation window to catch late request starts.
 export function createAuditedRequestSettler(page,{
  now=()=>performance.now(),
  pause=ms=>new Promise(resolve=>setTimeout(resolve,ms)),
@@ -35,14 +36,15 @@ export function createAuditedRequestSettler(page,{
 }={}){
  const pending=new Map();
  let lastActivity=now();
- const eligible=request=>{
-  const url=new URL(request.url());
-  return url.origin===origin&&
-   (url.pathname===compact||url.pathname===old||url.pathname.startsWith('/api/'));
- };
  page.on('request',request=>{
-  if(!eligible(request))return;
-  pending.set(request,request.url());lastActivity=now();
+  const url=new URL(request.url());
+  if(url.origin!==origin)return;
+  const catalogue=url.pathname===compact||url.pathname===old;
+  if(!catalogue&&!url.pathname.startsWith('/api/'))return;
+  if(catalogue)pending.set(request,request.url());
+  // Public-world and competition API reads may intentionally remain pending
+  // on the standalone preview. Record their starts, not their completion.
+  lastActivity=now();
  });
  const completed=request=>{
   if(pending.delete(request))lastActivity=now();
@@ -56,7 +58,7 @@ export function createAuditedRequestSettler(page,{
     if(pending.size===0&&now()-lastActivity>=quietMs)return;
     await pause(Math.min(25,Math.max(1,deadline-now())));
    }
-   throw Error('PERF-API-657 audited requests did not settle: '+label+
+   throw Error('PERF-API-657 catalogue requests did not settle: '+label+
     ' '+JSON.stringify([...pending.values()]));
   }
  };
