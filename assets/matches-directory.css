@@ -31,7 +31,7 @@
 #md-list i{border-radius:.25rem;display:inline-block;width:min(7rem,75%);height:.75rem;background:color-mix(in srgb,currentColor 15%,transparent)}
 #md-list .md-name-bar{width:8rem;align-self:center}
 .md-skeleton .md-logo{border-radius:50%;background:color-mix(in srgb,currentColor 10%,transparent)}
-#md-list .md-team-bar{height:calc(var(--md-team-lines) * var(--md-team-line-height));min-width:0;background:repeating-linear-gradient(to bottom,transparent 0 .15em,color-mix(in srgb,currentColor 15%,transparent) .15em 1.1em,transparent 1.1em 1.25em)}
+#md-list .md-team-bar{height:.75rem;min-width:0;background:color-mix(in srgb,currentColor 15%,transparent)}
 .md-skeleton :is(.md-score,small){display:grid;place-items:center}
 .md-skeleton .md-score{line-height:inherit;min-height:1lh}
 .md-skeleton small{min-height:var(--md-detail-line-height)}
@@ -53,7 +53,7 @@
  .md-day-navigation{display:grid;grid-template-columns:var(--fa-control-height-regular) minmax(0,1fr) var(--fa-control-height-regular);gap:.35rem;min-width:0;width:100%}
  .md-day-navigation>.md-field{min-width:0}
  .md-controls:not(.md-filters)>#md-current{grid-column:1/-1;justify-self:center;width:max-content;max-width:100%;padding-inline:1rem;display:inline-grid;place-items:center;text-align:center}
- .md-row{--md-team-line-height:1.18em;--md-detail-line-height:1.05rem;--md-detail-lines:1;font-size:.84rem;column-gap:.22rem;row-gap:.12rem;min-height:0;padding:.22rem .3rem}
+ .md-row{--md-team-line-height:1.18em;--md-detail-line-height:1.05rem;--md-detail-lines:1;font-size:.84rem;grid-template-columns:minmax(0,1fr) minmax(2.75rem,max-content) minmax(0,1fr);column-gap:.15rem;row-gap:.12rem;min-height:0;padding:.22rem .3rem}
  .md-team{gap:.2rem}
  .md-filters{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}
  .md-filters .md-search{grid-column:1/-1}
@@ -62,7 +62,5 @@
 #md-list h2 small{font-weight:400;color:var(--muted,currentColor)}
 @container(max-width:24rem){#md-list h2{min-height:calc(3.1em + 1.3rem)}}
 @container(max-width:36rem){
- .md-row{--md-team-lines:2}
  .md-team-name-full{display:none}
  .md-team-name-compact{display:inline}}
-@container(max-width:16rem){.md-row{--md-team-lines:3}}
