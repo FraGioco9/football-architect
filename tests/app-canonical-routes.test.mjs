@@ -143,3 +143,20 @@ test('404 and Dashboard use the same local DEV sidebar additions and link rewrit
   assert.doesNotMatch(aside(missing.body),/id="app-nav-dashboard"[^>]*aria-current="page"/);
  }finally{await new Promise(resolve=>server.close(resolve))}
 });
+
+test('Matches sidebar renders a football icon before hydration',()=>{
+ const pages=[
+  '404.html','dashboard/index.html','calendar/index.html','clubs/index.html',
+  'players/index.html','matches/index.html','matches/_shared/index.html',
+  'competitions/it-1/index.html'
+ ];
+ for(const page of pages){
+  const html=read(page);
+  const icon=html.match(/<a class="fa-shell-link" href="\/matches" data-nav01-matches>([\s\S]*?)<span data-nav01="8">Matches<\/span>/)?.[1];
+  assert.ok(icon,'Missing Matches sidebar icon: '+page);
+  assert.match(icon,/<circle cx="12" cy="12" r="10"\/>/,'Football outline: '+page);
+  assert.match(icon,/fill="currentColor" stroke="none"/,'Football panel: '+page);
+  assert.doesNotMatch(icon,/<rect x="2" y="5"/,'Old pitch icon must be removed: '+page);
+ }
+ assert.match(read('tools/render-sidebar.mjs'),/m12 7-4\.3 3\.2/,'The sidebar generator uses the same football symbol');
+});
