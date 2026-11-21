@@ -140,7 +140,7 @@ function fixture(f){
  score.setAttribute('aria-label',[participantNames(f.homeClubId,homeRef).name,score.textContent,participantNames(f.awayClubId,awayRef).name].join(' '));
  row.append(participant(f.homeClubId,homeRef,true),score,participant(f.awayClubId,awayRef));
  const info=[
-  r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',f.status==='awaiting_participants'?words.tbd:'',f.neutral?words.neutral:f.venue];
+  r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',f.status==='awaiting_participants'&&!f.neutral?words.tbd:'',f.neutral?words.neutral:f.venue];
  const detail=info.filter(Boolean).join(' · ');
  const metadata=node('small',detail);row.append(metadata);
  row.addEventListener('click',event=>{if(!event.target.closest('a')&&!window.getSelection()?.toString())location.assign(score.href)});
