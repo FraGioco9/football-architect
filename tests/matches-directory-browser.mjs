@@ -18,7 +18,11 @@ export async function verifyMatchesDirectory(browser){
    const day=Number(new URL(route.request().url()).searchParams.get('day'));requests++;
    return route.fulfill({json:{schemaVersion:1,providerId:'authoritative-world',world,selectedSeason:1,day,publication:'published',fixtures:day===13?Array.from({length:8},(_,i)=>(
     {matchId:String(17+i),competitionId:'BR-2',phaseId:'league',round:1,homeClubId:'BR-34',awayClubId:'BR-29',venue:'Estádio das Charqueadas',result:{homeGoals:2,awayGoals:1},status:'completed'}
-   )):day===15?[{matchId:'18',competitionId:'IT-1',phaseId:'league',round:2,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'}]:[]}});
+   )):day===15?[
+    {matchId:'18',competitionId:'IT-1',phaseId:'league',round:2,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'},
+    {matchId:'19',competitionId:'IT-1',phaseId:'promotionPlayoffs',round:2,leg:1,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'},
+    {matchId:'20',competitionId:'IT-1',phaseId:'promotionPlayoffs',round:2,leg:2,homeClubId:'IT-2',awayClubId:'IT-1',result:null,status:'scheduled'}
+   ]:[]}});
   });
   await page.goto('http://app.localhost:2000/matches',{waitUntil:'domcontentloaded'});
   const match=page.locator('#md-list a.md-score').first();
@@ -144,8 +148,9 @@ export async function verifyMatchesDirectory(browser){
   await page.getByText('No matches on this day.').waitFor();
   assert(await page.locator('#md-current').isEnabled());
   await page.locator('#md-next').click();await match.waitFor();
-  assert.equal(await page.locator('#md-list h2 small').innerText(),'Round 2');
-  const href=new URL(await page.locator('#md-list h2 a').getAttribute('href'),page.url());
+  assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),['Round 2','Playoffs · Leg 1','Playoffs · Leg 2'],'each knockout leg appears beside its phase heading');
+  assert.equal(await page.locator('#md-list .md-row small').filter({hasText:/Leg [12]/}).count(),0,'do not repeat Leg per fixture');
+  const href=new URL(await page.locator('#md-list h2 a').first().getAttribute('href'),page.url());
   assert.equal(href.pathname,'/competitions/it-1/fixtures');
   assert.equal(href.searchParams.get('matchday'),'2');
   assert.equal(href.searchParams.get('season'),'1');
