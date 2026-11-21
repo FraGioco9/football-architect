@@ -409,17 +409,3 @@ test('MATCH-STATS: individual statistics have one dedicated independent HTTP rea
  assert.ok(route.includes('readPublicMatchStatisticsV1'));
  assert.ok(js.indexOf('data=item;errorKind=null;render();')<js.indexOf("void fetch('/api/matches/'+matchId+'/stats'"),'scoreboard never waits for statistics');
 });
-
-
-test('#734 Match Detail opts into one frozen match+stats response without breaking legacy readers',()=>{
- const js=read('assets/match-detail.js');
- const router=read('backend/src/index.ts');
- const reader=read('backend/src/public-match-read-lineup-v1.ts');
- assert.match(js,/fetch\('\/api\/matches\/'\+matchId\+'\?include=stats'/);
- assert.match(js,/if\(preloaded\)\{/);
- assert.match(js,/acceptStatistics\(item\)/);
- assert.match(js,/fetch\('\/api\/matches\/'\+matchId\+'\/stats'/);
- assert.match(router,/url\.search!=='\?include=stats'/);
- assert.match(reader,/readPublicMatchLineupWithStatisticsV1/);
- assert.match(reader,/readVerifiedPublicMatchV1\(db,matchId,true\)/);
-});

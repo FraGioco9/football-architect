@@ -136,12 +136,6 @@ async function readVerifiedPublicMatchV1(db:Database,matchId:string,includeStati
 export async function readPublicMatchLineupV1(db:Database,matchId:string){
  return (await readVerifiedPublicMatchV1(db,matchId,false)).match;
 }
-/** Opt-in detail projection: return header and statistics from one verified
- * immutable receipt. Existing header and /stats contracts stay unchanged. */
-export async function readPublicMatchLineupWithStatisticsV1(db:Database,matchId:string){
- const {match,statistics}=await readVerifiedPublicMatchV1(db,matchId,true);
- return {...match,statistics};
-}
 /** The same verified receipt authority, dedicated player-statistics transport. */
 export async function readPublicMatchStatisticsV1(db:Database,matchId:string){
  const {match,statistics}=await readVerifiedPublicMatchV1(db,matchId);

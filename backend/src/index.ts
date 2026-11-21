@@ -13,7 +13,7 @@ import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
 import {readPublicPlayerStatsLineupV1,readPublicPlayerMatchesLineupV1} from './public-sporting-read-lineup-v1.ts';
 import {readPublicClubRoster} from './public-club-roster-read.ts';
-import {readPublicMatchLineupV1 as readPublicMatch,readPublicMatchLineupWithStatisticsV1 as readPublicMatchWithStats,readPublicMatchStatisticsV1,readPublishedCompetitionMatchesLineupV1 as readPublishedCompetitionMatches,readPublishedClubFixturesBeforeCalendarLineupV1 as readPublishedClubFixturesBeforeCalendar} from './public-match-read-lineup-v1.ts';
+import {readPublicMatchLineupV1 as readPublicMatch,readPublicMatchStatisticsV1,readPublishedCompetitionMatchesLineupV1 as readPublishedCompetitionMatches,readPublishedClubFixturesBeforeCalendarLineupV1 as readPublishedClubFixturesBeforeCalendar} from './public-match-read-lineup-v1.ts';
 import {parsePublicPlayerQuery} from './public-players-filters.mjs';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
@@ -88,11 +88,8 @@ export default {
     const matchDetail=url.pathname.match(/^\/api\/matches\/([1-9][0-9]*)$/);
     if(matchDetail){
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
-      // Only the explicit opt-in transport adds verified player statistics.
-      if(url.search&&url.search!=='?include=stats')return json(422,{error:{code:'invalid_public_request'}});
-      try{return json(200,await (url.search
-       ?readPublicMatchWithStats(requireDatabase(env.DB),matchDetail[1])
-       :readPublicMatch(requireDatabase(env.DB),matchDetail[1])))}
+      if(url.search)return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicMatch(requireDatabase(env.DB),matchDetail[1]))}
       catch(error){
         if(error instanceof ApiError&&(error.code==='not_found'||error.code==='stale_world'))
          return json(error.status,{error:{code:error.code}});
