@@ -191,11 +191,11 @@ export async function verifyMatchesDirectory(browser){
    assert(await slot.locator('.md-team-name-full').isVisible(),'descriptive seed winner on desktop');
   }
   await page.evaluate(()=>document.documentElement.lang='it');
-  await page.locator('#md-list .md-team-label[aria-label="Vincente playoff 8 vs 9"]').waitFor();
+  await page.locator('#md-list .md-team-label[aria-label="Vincente playoff 8 vs 9"]').first().waitFor();
   assert.equal(await page.locator('#md-list .md-team-label[aria-label="Vincente playoff 5 vs 12"] .md-team-name-compact').textContent(),'Vincente 5–12','Italian translation preserves seed ranks');
   assert.deepEqual((await fixtureSides('24')).names,['Posizione 1','Vincente playoff 8 vs 9'],'Italian second-leg placeholder follows home-away order');
   await page.evaluate(()=>document.documentElement.lang='en');
-  await page.locator('#md-list .md-team-label[aria-label="Winner of playoff 8 vs 9"]').waitFor();
+  await page.locator('#md-list .md-team-label[aria-label="Winner of playoff 8 vs 9"]').first().waitFor();
   assert.equal(await page.locator('#md-list .md-row small').filter({hasText:/Leg [12]/}).count(),0,'do not repeat Leg per fixture');
   const href=new URL(await page.locator('#md-list h2 a').first().getAttribute('href'),page.url());
   assert.equal(href.pathname,'/competitions/it-1/fixtures');
