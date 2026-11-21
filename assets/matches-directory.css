@@ -41,7 +41,7 @@
 
 .matches-directory{container-type:inline-size}
 .md-filters{display:grid;grid-template-columns:9rem 15rem minmax(0,25rem);margin-block-end:.35rem}
-#md-status:empty{display:none}
+#md-status:empty{min-height:0;margin:0}
 .md-filters :is(.language-trigger,input){box-sizing:border-box;width:100%;height:var(--fa-control-height-regular);min-height:var(--fa-control-height-regular)}
 .md-filters .language-trigger>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #md-current:disabled{cursor:default;pointer-events:none}
