@@ -255,16 +255,15 @@
     const club=clubs.get(id);
     if(!club){
       const pending=pendingName(game,home);
-      return {...pending,abbr:pending.compact};
+      return pending;
     }
     const full=club.primaryName||club.abbr;
-    return {full,compact:club.compactName||club.abbr||full,abbr:club.abbr||club.compactName||full};
+    return {full,compact:club.compactName||full};
   }
   function nameSpans(name){
     return [
       element('span','app-fixture-name-full',name.full),
-      element('span','app-fixture-name-compact',name.compact),
-      element('span','app-fixture-name-abbr',name.abbr)
+      element('span','app-fixture-name-compact',name.compact)
     ];
   }
   function identity(id,home,game){
