@@ -76,8 +76,14 @@
   }
   // Preserve each club crest host (and its loaded image) when the matchday changes.
   const crestHosts=new Map();
+  // Reuse the viewport-aware menu placement for all 30 matchday options.
+  // DOM-only unit stubs have no layout primitives and keep their original path.
+  const fixtureScrollBoundary=document.querySelector('.fa-shell-content-scroll');
   const roundMenu=window.faBindCompetitionMenu(fields.round,picker,choices,value=>select(value),
-    document.querySelector(".app-fixtures-select"));
+    document.querySelector(".app-fixtures-select"),{
+      fitViewport:Boolean(fixtureScrollBoundary&&typeof picker.getBoundingClientRect==='function'),
+      boundary:fixtureScrollBoundary
+    });
   const element=(tag,cls="",text="")=>{
     const item=document.createElement(tag);item.className=cls;item.textContent=text;return item;
   };

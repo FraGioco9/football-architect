@@ -367,7 +367,8 @@ function renderedClubIdentity(club,fixture=false){
  const walk=node=>[node,...node.children.flatMap(walk)];
  const source=read(fixture?'assets/competition-fixtures.js':'assets/competition-page.js');
  const name=fixture?'identity':'createStandingsRow';
- const start=source.indexOf('  function '+name+'('),end=source.indexOf(fixture?'  function matchRow(':'  function bindSuppliedPanels(',start);
+ const start=source.indexOf(fixture?'  function participantName(':'  function '+name+'('),end=source.indexOf(fixture?'  function matchRow(':'  function bindSuppliedPanels(',start);
+ // Include real participantName/nameSpans dependencies before evaluating identity.
  assert.ok(start>=0&&end>start);
  const key=ruleEngine.clubKey(club);
  const render=runInNewContext(source.slice(start,end)+';'+name,{

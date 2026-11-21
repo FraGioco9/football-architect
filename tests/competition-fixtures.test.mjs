@@ -461,8 +461,32 @@ test('FIXTURES unresolved participants follow #732 rank/winner wording and use o
  assert.match(css,/#competition-panel-fixtures \.app-fixtures-toolbar\{[\s\S]*?z-index:10/,'selector toolbar stacks above linked score cards');
  assert.match(css,/#competition-panel-fixtures \.app-fixtures-list\{position:relative;z-index:0\}/);
  assert.match(css,/#competition-panel-fixtures \.app-fixtures-picker\{z-index:12\}/);
+ assert.ok(css.includes('.app-competition-header:has(#app-competition-season-menu:not([hidden])){z-index:20}'),
+  'open season menu raises its ancestor above Fixtures navigation');
+ assert.ok(css.includes('.app-fixture-club>.app-fixture-name{display:-webkit-box;flex:0 1 auto;'), 'long compactNames may wrap in their mobile track');
+ assert.ok(css.includes('grid-template-columns:minmax(0,1fr) 86px;gap:4px 6px;padding:7px 8px'), 'mobile fixture cards use compact rows');
+ assert.ok(css.includes('.app-fixture-club{font-size:12px;gap:6px;min-height:42px}'), 'both actual and skeleton club rows reserve the same 42px height');
+ assert.ok(css.includes('grid-template-columns:minmax(0,1fr) 78px;gap:4px 5px;padding-inline:7px'), 'small phones dedicate more width to compactName');
+ assert.match(css,/\.app-fixture-result\{grid-column:2;grid-row:1\/3;align-self:stretch;display:grid;/,
+  'mobile results stretch across both club rows');
+ assert.match(css,/grid-template-rows:minmax\(0,1fr\) auto minmax\(0,1fr\);align-items:center;/,
+  'score is positioned on the midpoint independent of metadata heights');
+ assert.match(css,/\.app-fixture-result>:is\(\.app-fixture-score,\.app-fixture-score-link\)\{align-self:center;justify-self:center\}/,
+  'linked and unlinked results share the score anchor');
+ assert.ok(read('assets/competition-fixtures.js').includes('fitViewport:Boolean(fixtureScrollBoundary&&typeof picker.getBoundingClientRect'), 'matchday popup follows the scroll viewport');
  for(const width of [36,30,24])assert.ok(css.includes('app-fixtures-skeleton-crest{flex-basis:'+width+'px;width:'+width+'px;height:'+width+'px}'),
   'skeleton and real mobile crest widths match at each breakpoint');
+});
+
+test('FIXTURES pending domestic playout follows the documented home-order reversal',()=>{
+ const division=divisions.find(d=>d.id==='IT-1'),r=setup(division);
+ r.view.prepare(schedule(division),{postseason:[]})();
+ r.route.set({matchday:'playout'});
+ const rows=r.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch);
+ const name=(row,side)=>row.children[side].children.find(n=>n.className?.split(' ').includes('app-fixture-name')).children[0].textContent;
+ assert.equal(rows.length,2);
+ assert.deepEqual([name(rows[0],0),name(rows[0],2)],['Rank 14','Rank 13']);
+ assert.deepEqual([name(rows[1],0),name(rows[1],2)],['Rank 13','Rank 14']);
 });
 
 test('FIXTURES-07: result groups show full time or supplied date above the score and the canonical home stadium below',()=>{

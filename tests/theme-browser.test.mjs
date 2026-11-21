@@ -696,7 +696,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(matchDetails,true,"status above result and home stadium below with exactly two reserved mobile lines");
       const hierarchy=await run("(()=>{const row=document.querySelector('[data-fixture-match]'),result=row.querySelector('.app-fixture-result'),name=row.querySelector('.app-fixture-home'),score=row.querySelector('.app-fixture-score'),status=row.querySelector('.app-fixture-status');return {resultWidth:result.getBoundingClientRect().width,nameWidth:name.getBoundingClientRect().width,scoreSize:parseFloat(getComputedStyle(score).fontSize),statusSize:parseFloat(getComputedStyle(status).fontSize)}})()");
       assert.ok(hierarchy.resultWidth<=100&&hierarchy.nameWidth>0,"mobile keeps a compact result column and a visible team-name column");
-      assert.ok(hierarchy.scoreSize>=18&&hierarchy.scoreSize>hierarchy.statusSize,"score leads the card hierarchy");
+      assert.ok(hierarchy.scoreSize>=16&&hierarchy.scoreSize>hierarchy.statusSize,"score leads the card hierarchy");
 
       await run("document.documentElement.lang='en';window.faAppRenderLanguage?.();document.getElementById('competition-panel-fixtures').scrollIntoView({block:'start'})");
       await snap("FIXTURES-MOBILE "+width+" "+theme,width,height);

@@ -20,8 +20,8 @@ export async function verifyMatchesDirectory(browser){
     {matchId:String(17+i),competitionId:'BR-2',phaseId:'league',round:1,homeClubId:'BR-34',awayClubId:'BR-29',venue:'Estádio das Charqueadas',result:{homeGoals:2,awayGoals:1},status:'completed'}
    )):day===15?[
     {matchId:'18',competitionId:'IT-1',phaseId:'league',round:2,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'},
-    {matchId:'19',competitionId:'IT-1',phaseId:'promotionPlayoffs',round:2,leg:1,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'},
-    {matchId:'20',competitionId:'IT-1',phaseId:'promotionPlayoffs',round:2,leg:2,homeClubId:'IT-2',awayClubId:'IT-1',result:null,status:'scheduled'},
+    {matchId:'19',competitionId:'IT-2',phaseId:'promotionPlayoffs',round:2,leg:1,homeClubId:'IT-17',awayClubId:'IT-18',result:null,status:'scheduled'},
+    {matchId:'20',competitionId:'IT-2',phaseId:'promotionPlayoffs',round:2,leg:2,homeClubId:'IT-18',awayClubId:'IT-17',result:null,status:'scheduled'},
     {matchId:'25',competitionId:'IT-2',phaseId:'promotionPlayoffs',round:3,tieId:'final',leg:1,homeClubId:null,awayClubId:null,participantA:{kind:'tieWinner',tieId:'semi36'},participantB:{kind:'tieWinner',tieId:'semi45'},result:null,status:'awaiting_participants'},
     {matchId:'21',competitionId:'int-1',phaseId:'quarterfinals',round:1,leg:1,homeClubId:null,awayClubId:null,participantA:{kind:'tieWinner',tieId:'p89'},participantB:{kind:'tieWinner',tieId:'p512'},result:null,status:'awaiting_participants'},
     {matchId:'22',competitionId:'int-1',phaseId:'quarterfinals',round:1,leg:1,homeClubId:null,awayClubId:null,participantA:{kind:'tieWinner',tieId:'p611'},participantB:{kind:'tieWinner',tieId:'p710'},result:null,status:'awaiting_participants'},
@@ -324,7 +324,7 @@ export async function verifyMatchesDirectory(browser){
   await page.locator('#md-list h2 a').nth(8).waitFor();
   const navigationCases=[
    {index:0,id:'it-1',round:2},
-   {index:1,id:'it-1',round:'playoffs'},
+   {index:1,id:'it-2',round:'playoffs'},
    {index:4,id:'int-1',round:'quarterfinals:1'},
    {index:8,id:'int-1',round:'final:1'}
   ];
