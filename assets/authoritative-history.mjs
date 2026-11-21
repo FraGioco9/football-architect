@@ -102,7 +102,7 @@ export function historyAggregate(seasons){
 
 // The static History shell stays in the DOM from first paint. Only verified
 // historical values and archive rows are inserted when public reads complete.
-export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>false,document=globalThis.document,refreshRecords=()=>{},fetchJson=async(path,{signal})=>{
+export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>false,document=globalThis.document,refreshRecords=()=>{},readCachedSeason=()=>null,fetchJson=async(path,{signal})=>{
  const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});
  if(!response.ok)throw Error('Public historical season unavailable');
  return response.json();
@@ -243,8 +243,11 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
    window.faHistorySetReady?.(false);
    return;
   }
-  const group=world.generation+':'+ctx.definition.id;
-  if(generation!==group){stop();collection.clear();generation=group;ready='';}
+  // A completed archive view is never shared across public source revisions.
+  // Even closed-season records must be revalidated after a world change.
+  const group=JSON.stringify([clock.sourceRevision,ctx.definition.id,world.generation,
+   world.revision,world.seasonNumber,world.day,world.phase]);
+  if(generation!==group){stop();collection.clear();generation=group;ready='';reset();}
   const completed=closedHistorySeasonNumbers(world);
   // Distinct world revisions must cancel obsolete in-flight historical reads.
   // Current-season data may be null: the canonical clock alone authorizes
@@ -271,13 +274,24 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
   (async()=>{
    try{
    for(const season of missing){
-    const input=await fetchJson('/api/competitions/'+ctx.definition.id+'/seasons/'+season,{signal:control.signal});
-    if(seq!==counter||isDev())return;
-    if(input?.world?.generation!==world.generation||input.world.seasonNumber!==world.seasonNumber||input.world.revision!==world.revision)throw Error('Stale public historical world');
     const target={...ctx,selectedSeason:season,definition:ctx.currentDefinition||ctx.definition};
-    const checked=validateAuthoritativeSeason(input,target,manifest);
-    const adapted=adaptAuthoritativeSeason(checked,target,manifest);
-    const info=historyViewModel({...target,seasonData:adapted});
+    // The Standings loader has already validated and adapted this snapshot.
+    // Reuse it only under the *exact* canonical world; otherwise run the
+    // original fully validated public read, including archive/receipt checks.
+    const cached=readCachedSeason({competitionId:ctx.definition.id,season,snapshot:clock})?.data;
+    const verifiedCached=cached?.season===season&&cached.provenance?.kind==='authoritative'&&
+     ['generation','revision','seasonNumber','day','phase'].every(key=>cached.world?.[key]===world[key]);
+    let info=verifiedCached?historyViewModel({...target,seasonData:cached}):null;
+    if(!info){
+     const input=await fetchJson('/api/competitions/'+ctx.definition.id+'/seasons/'+season,{signal:control.signal});
+     if(seq!==counter||isDev())return;
+     if(['generation','revision','seasonNumber','day','phase'].some(key=>input?.world?.[key]!==world[key]))
+      throw Error('Stale public historical world');
+     const checked=validateAuthoritativeSeason(input,target,manifest);
+     const adapted=adaptAuthoritativeSeason(checked,target,manifest);
+     info=historyViewModel({...target,seasonData:adapted});
+    }
+    if(seq!==counter||isDev())return;
     if(fetchLive&&season===world.seasonNumber){live=info;continue;}
     if(!info||info.active)throw Error('Unverified completed-season history');
     collection.set(season,info);
