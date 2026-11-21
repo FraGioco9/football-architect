@@ -1,3 +1,4 @@
+import {readMatchDirectory} from '../src/public-match-directory.ts';
 /** #613 FULL 56-day V2 authority on isolated local Worker D1.
  * Deliberately a single immutable-fixture test. Never reset the user's world.
  * Runs the real protected day writer, archive and close, with no legacy score.
@@ -230,6 +231,9 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
   'lineup-season2-prepare-0001',now);
  world=prepared.world;
  expect(world).toMatchObject({seasonNumber:2,day:0,phase:'preparing'});
+ const finals=await readMatchDirectory(db,1,54);
+ expect(finals.publication).toBe('published');
+ expect(finals.fixtures).toContainEqual(expect.objectContaining({competitionId:'int-1',phaseId:'final',status:'completed'}));
  const historical=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
  expect(historical.data.statistics.matchesPlayed).toBe(242);
  expect(await count('season_day_outcomes')).toBe(0);

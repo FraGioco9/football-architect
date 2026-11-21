@@ -1,0 +1,314 @@
+import './world-clock-adapter.js';
+import './competition-tabs.js';
+import {matchPublicContext,publicClubIdentityCatalog} from './match-public-context.mjs';
+import {resolveScoreboardTheme} from './match-scoreboard-themes.mjs';
+
+const root=document.querySelector('.matches-directory');
+const el=id=>root.querySelector('#md-'+id);
+const countries=['IT','ENG','ES','DE','FR','PT','NL','BR','int'];
+const competitions=countries.flatMap(c=>[1,2].map(n=>matchPublicContext({competitionId:c+'-'+n}).competitions[0]));
+const competitionIds=new Set(competitions.map(c=>c.id));
+const {clubs,clubCrests}=publicClubIdentityCatalog();
+const teams=new Map(clubs.map(c=>[c.countryId+'-'+c.clubId,c]));
+const vocabulary={
+ en:'Matches|Season|Sporting day|Current day|Country|Competition|Search team|All|International|England|Previous day|Next day|No matches on this day.|No matching fixtures.|Fixtures have not been published.|Publication in progress.|The world has not started.|Matches unavailable.|Retry|Scheduled|To be confirmed|Rank|Winner|Round|Leg|Neutral venue|League|Playoffs|Playout|Quarter-finals|Semi-finals|Final|Loading matches|Winner of playoff|Winner|Winner of semifinal|Winner of quarter-final|QF|SF',
+ it:'Partite|Stagione|Giorno sportivo|Giorno corrente|Paese|Competizione|Cerca squadra|Tutti|Internazionale|Inghilterra|Giorno precedente|Giorno successivo|Nessuna partita in questo giorno.|Nessuna partita corrispondente.|Incontri non ancora pubblicati.|Pubblicazione in corso.|Il mondo non è ancora iniziato.|Partite non disponibili.|Riprova|In programma|Da definire|Posizione|Vincente|Turno|Gara|Campo neutro|Campionato|Playoff|Playout|Quarti di finale|Semifinali|Finale|Caricamento partite|Vincente playoff|Vincente|Vincente semifinale|Vincente quarto di finale|QF|SF',
+ de:'Spiele|Saison|Spieltag|Aktueller Tag|Land|Wettbewerb|Team suchen|Alle|International|England|Vorheriger Tag|Nächster Tag|Keine Spiele an diesem Tag.|Keine passenden Spiele.|Spiele noch nicht veröffentlicht.|Veröffentlichung läuft.|Die Saison hat noch nicht begonnen.|Spiele nicht verfügbar.|Erneut versuchen|Angesetzt|Noch offen|Rang|Sieger|Runde|Spiel|Neutraler Platz|Liga|Playoffs|Playout|Viertelfinale|Halbfinale|Finale|Spiele werden geladen|Sieger aus Playoff|Sieger|Sieger des Halbfinals|Sieger des Viertelfinals|VF|HF',
+ es:'Partidos|Temporada|Día deportivo|Día actual|País|Competición|Buscar equipo|Todos|Internacional|Inglaterra|Día anterior|Día siguiente|No hay partidos este día.|Ningún partido coincide.|Partidos aún sin publicar.|Publicación en curso.|El mundo aún no ha comenzado.|Partidos no disponibles.|Reintentar|Programado|Por confirmar|Puesto|Ganador|Ronda|Partido|Campo neutral|Liga|Playoffs|Permanencia|Cuartos de final|Semifinales|Final|Cargando partidos|Ganador del playoff|Ganador|Ganador de semifinal|Ganador de cuarto de final|CF|SF',
+ fr:'Matchs|Saison|Journée sportive|Jour actuel|Pays|Compétition|Rechercher une équipe|Tous|International|Angleterre|Jour précédent|Jour suivant|Aucun match ce jour.|Aucun match correspondant.|Matchs pas encore publiés.|Publication en cours.|Le monde n’a pas encore démarré.|Matchs indisponibles.|Réessayer|Programmé|À déterminer|Rang|Vainqueur|Tour|Manche|Terrain neutre|Championnat|Barrages|Maintien|Quarts de finale|Demi-finales|Finale|Chargement des matchs|Vainqueur du barrage|Vainqueur|Vainqueur de demi-finale|Vainqueur du quart de finale|QF|DF'
+};
+const keys='title season day current country competition search all international england prev next empty filtered unpublished partial zero unavailable retry scheduled tbd rank winner round leg neutral league playoffs playout quarterfinals semifinals final loading playoffWinner playoffSlot semifinalWinner quarterfinalWinner quarterfinalShort semifinalShort'.split(' ');
+let words,locale,world=null,rows=[],state='loading',epoch=0,loaded='',pending='';
+let dayCache=new Map(),cacheWorld=null;
+const skeleton=el('list').innerHTML;
+function node(tag,text,className){
+ const element=document.createElement(tag);
+ if(text!=null)element.textContent=text;
+ if(className)element.className=className;
+ return element;
+}
+function link(href,text){const a=node('a',text);a.href=window.faAppHref?.(href)??href;return a}
+function logo(src,competitionId){
+ const fallback=competitionId?'app-competition-logo-placeholder':'app-world-club-crest-placeholder';
+ const slot=node('span',null,'md-logo');
+ const showPlaceholder=()=>{slot.classList.add(fallback);slot.textContent=competitionId??''};
+ slot.setAttribute('aria-hidden','true');
+ if(src){
+  const img=node('img');
+  img.alt='';
+  img.addEventListener('load',()=>slot.replaceChildren(img),{once:true});
+  img.addEventListener('error',showPlaceholder,{once:true});
+  img.src='/'+src;
+ }else showPlaceholder();
+ return slot;
+}
+const headerLogos=new Map();
+function competitionLogo(c,index){
+ let slots=headerLogos.get(c.id);
+ if(!slots){slots=[];headerLogos.set(c.id,slots)}
+ return slots[index]??=logo(resolveScoreboardTheme(c).logoAsset,c.id);
+}
+function region(id){
+ if(id==='ENG')return words.england;
+ if(id==='int')return words.international;
+ return new Intl.DisplayNames([locale],{type:'region'}).of(id);
+}
+const menus=new Map();
+function options(id,items,value){
+ const trigger=el(id),menu=el(id+'-menu'),key=JSON.stringify(items);
+ let picker=menus.get(id);
+ if(picker?.key!==key){
+  const choices=items.map(([v,label],index)=>{
+   const option=node('div',label,'language-option');
+   option.id=menu.id+'-'+index;
+   option.dataset.menuValue=String(v);
+   option.setAttribute('role','option');
+   return option;
+  });
+  menu.replaceChildren(...choices);
+  if(picker)picker.binding.update(choices);
+  else picker={binding:window.faBindCompetitionMenu(trigger,menu,choices,choice=>chooseFilter(id,choice),trigger.parentElement,{fitViewport:true,boundary:root.closest('.fa-shell-content-scroll')})};
+  picker.key=key;
+  menus.set(id,picker);
+ }
+ trigger.disabled=false;
+ picker.binding.sync(String(value));
+ el(id+'-value').textContent=items.find(([v])=>String(v)===String(value))?.[1]??'';
+}
+function selection(){
+ const params=new URLSearchParams(location.search);
+ const season=Number(params.get('season')||world?.seasonNumber);
+ const selectedSeason=season>0&&Number.isInteger(season)&&season<=world?.seasonNumber?season:world?.seasonNumber??0;
+ const rawDay=Number(params.get('day'));
+ const day=Number.isInteger(rawDay)&&rawDay>=1&&rawDay<=56?rawDay:Math.max(1,Math.min(56,selectedSeason===world?.seasonNumber?world.day:1));
+ const country=countries.includes(params.get('country'))?params.get('country'):'';
+ const ids=competitions.filter(c=>!country||c.id.split('-')[0]===country);
+ const competition=ids.some(c=>c.id===params.get('competition'))?params.get('competition'):'';
+ return {season:selectedSeason,day,country,competition,q:(params.get('q')||'').slice(0,100),ids};
+}
+function updateURL(changes,replace=false){
+ const params=new URLSearchParams(location.search);
+ for(const [k,v] of Object.entries(changes)){if(v)params.set(k,v);else params.delete(k)}
+ const href='/matches'+(params.size?'?'+params:'');
+ if(href!==location.pathname+location.search)history[replace?'replaceState':'pushState'](null,'',href);
+ refresh();
+}
+// Public bracket labels follow the canonical league-rank pairings and round ordinals.
+// Never expose internal tie IDs (p89, semi36, q1, s1) in player-facing labels.
+const tieWinnerRankPairs={
+ p512:{ranks:[5,12],stage:'playoffWinner'},p611:{ranks:[6,11],stage:'playoffWinner'},
+ p710:{ranks:[7,10],stage:'playoffWinner'},p89:{ranks:[8,9],stage:'playoffWinner'},
+ semi36:{ranks:[3,6],stage:'semifinalWinner'},semi45:{ranks:[4,5],stage:'semifinalWinner'}
+};
+function participantNames(id,ref){
+ const c=teams.get(id);
+ if(c)return {name:c.primaryName,compact:c.compactName};
+ if(ref?.kind==='leagueRank')return {name:words.rank+' '+ref.rank};
+ if(ref?.kind==='tieWinner'){
+  const tieId=String(ref.tieId??'').toLowerCase();
+  const pairing=tieWinnerRankPairs[tieId];
+  if(pairing)return {name:words[pairing.stage]+' '+pairing.ranks.join(' vs '),compact:words.playoffSlot+' '+pairing.ranks.join('–')};
+  const quarterfinal=/^q([1-4])$/.exec(tieId);
+  if(quarterfinal)return {name:words.quarterfinalWinner+' '+quarterfinal[1],compact:words.playoffSlot+' '+words.quarterfinalShort+' '+quarterfinal[1]};
+  const semifinal=/^s([1-2])$/.exec(tieId);
+  if(semifinal)return {name:words.semifinalWinner+' '+semifinal[1],compact:words.playoffSlot+' '+words.semifinalShort+' '+semifinal[1]};
+  return {name:words.tbd};
+ }
+ return {name:words.tbd};
+}
+function participant(id,ref,home=false){
+ const c=teams.get(id),{name,compact}=participantNames(id,ref);
+ const side=node('span',null,'md-team');
+ const crest=logo(clubCrests[id]);
+ const label=c?link('/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview',null):node('span');
+ label.className='md-team-label';
+ label.setAttribute('aria-label',name);
+ if(compact)label.append(node('span',name,'md-team-name-full'),node('span',compact,'md-team-name-compact'));
+ else label.textContent=name;
+ if(home)side.append(label,crest);else side.append(crest,label);
+ return side;
+}
+// The destination must use the competition fixture picker's public matchday token.
+function fixtureMatchday(f){
+ return f.phaseId==='league'?f.round:f.phaseId==='promotionPlayoffs'?'playoffs':f.phaseId;
+}
+function fixture(f){
+ const row=node('div',null,'md-row'),href='/matches/'+f.matchId;
+ const r=f.result;
+ // Bracket A/B is not a home/away ordering: the lower seed hosts leg 1,
+ // while the higher seed hosts leg 2. Resolved club IDs are already authoritative.
+ const unresolvedTwoLegFirst=f.leg===1&&!f.neutral&&f.tieId&&f.tieId!=='final'&&!f.homeClubId&&!f.awayClubId;
+ const homeRef=unresolvedTwoLegFirst?f.participantB:f.participantA;
+ const awayRef=unresolvedTwoLegFirst?f.participantA:f.participantB;
+ const score=link(href,r?r.homeGoals+' – '+r.awayGoals:'—');
+ score.className='md-score';
+ score.setAttribute('aria-label',[participantNames(f.homeClubId,homeRef).name,score.textContent,participantNames(f.awayClubId,awayRef).name].join(' '));
+ row.append(participant(f.homeClubId,homeRef,true),score,participant(f.awayClubId,awayRef));
+ const info=[
+  r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',f.status==='awaiting_participants'&&!f.neutral?words.tbd:'',f.neutral?words.neutral:f.venue];
+ const detail=info.filter(Boolean).join(' · ');
+ const metadata=node('small',detail);row.append(metadata);
+ row.addEventListener('click',event=>{if(!event.target.closest('a')&&!window.getSelection()?.toString())location.assign(score.href)});
+ return row;
+}
+const fold=value=>value.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().trim();
+function render(){
+ const s=selection(),list=el('list'),status=el('status');
+ locale=Object.hasOwn(vocabulary,document.documentElement.lang)?document.documentElement.lang:'en';
+ words=Object.fromEntries(vocabulary[locale].split('|').map((v,i)=>[keys[i],v]));
+ el('title').textContent=words.title;document.title=words.title+' — Football Architect';
+ root.querySelectorAll('[data-word]').forEach(n=>n.textContent=words[n.dataset.word]);
+ el('current').textContent=words.current;
+ for(const k of ['prev','next'])el(k).setAttribute('aria-label',words[k]);
+ options('season',world?Array.from({length:Math.max(1,world.seasonNumber)},(_,i)=>[world.seasonNumber-i,world.seasonNumber-i]):[],world?s.season:'');
+ options('day',s.season?Array.from({length:56},(_,i)=>[i+1,i+1]):[],s.season?s.day:'');
+ options('country',[['',words.all],...countries.map(c=>[c,region(c)])],s.country);
+ options('competition',[['',words.all],...s.ids.map(c=>[c.id,c.name])],s.competition);
+ if(el('q').value!==s.q)el('q').value=s.q;
+ el('prev').disabled=!s.season||s.day<=1;el('next').disabled=!s.season||s.day>=56;
+ el('current').disabled=!world?.seasonNumber||(s.season===world.seasonNumber&&s.day===Math.max(1,world.day));
+ el('season').disabled=!world?.seasonNumber;el('day').disabled=!s.season;
+ list.setAttribute('aria-busy',String(state==='loading'));
+ if(state==='loading'){list.innerHTML=skeleton;status.textContent='';return}
+ list.replaceChildren();status.textContent='';
+ if(state==='error'){const retry=node('button',words.retry);retry.onclick=()=>start();status.append(words.unavailable+' ',retry);return}
+ if(['zero','unpublished','unavailable'].includes(state)){status.textContent=words[state];return}
+ const needle=fold(s.q);
+ for(const c of s.ids){
+  if(s.competition&&c.id!==s.competition)continue;
+  const filtered=rows.filter(f=>f.competitionId===c.id&&(!needle||[f.homeClubId,f.awayClubId].some(id=>fold(teams.get(id)?.primaryName??'').includes(needle))));
+  if(!filtered.length)continue;
+  const rounds=new Map();
+  for(const f of filtered){
+   const round=fixtureMatchday(f);
+   const leg=f.leg??null;
+   // Distinguish playoff semifinals and finals with the same public label/leg.
+   const key=JSON.stringify([round,leg,f.round]);
+   if(!rounds.has(key))rounds.set(key,{round,leg,fixtures:[]});
+   rounds.get(key).fixtures.push(f);
+  }
+  let headingIndex=0;
+  for(const {round,leg,fixtures} of rounds.values()){
+   const group=node('section'),heading=node('h2');
+   const href='/competitions/'+c.id.toLowerCase()+'/fixtures?season='+s.season+'&matchday='+encodeURIComponent(round);
+   const caption=fixtures[0].phaseId==='league'?words.round+' '+round:words[round]??round;
+   const phaseLabel=node('small',caption);
+   if(leg!=null&&!(round==='final'&&fixtures.every(f=>f.leg===1)))phaseLabel.append(node('span',' · '+words.leg+' '+leg,'md-leg'));
+   heading.append(competitionLogo(c,headingIndex++),link(href,c.name),phaseLabel);
+   group.append(heading,...fixtures.map(fixture));list.append(group);
+  }
+ }
+ if(state==='partial')status.textContent=words.partial;
+ if(!list.childElementCount&&(state!=='partial'||s.country||s.q||s.competition))
+  status.append(' '+(s.country||s.q||s.competition?words.filtered:words.empty));
+}
+// Fail closed on malformed or duplicate match IDs rather than rendering broken links.
+const directoryPhases=new Set(['league','playout','promotionPlayoffs','playoffs','quarterfinals','semifinals','final']);
+const validScore=value=>Number.isSafeInteger(value)&&value>=0;
+function validDirectoryFixture(f){
+ if(!f||typeof f!=='object'||typeof f.matchId!=='string'||!/^[1-9]\d*$/.test(f.matchId)||
+    !Number.isSafeInteger(Number(f.matchId))||!competitionIds.has(f.competitionId)||
+    !directoryPhases.has(f.phaseId)||!['completed','scheduled','awaiting_participants'].includes(f.status)||
+    (f.homeClubId!=null&&!teams.has(f.homeClubId))||(f.awayClubId!=null&&!teams.has(f.awayClubId))||
+    (f.venue!=null&&typeof f.venue!=='string')||
+    (f.neutral!=null&&typeof f.neutral!=='boolean'))return false;
+ if(f.phaseId==='league'){
+  const max=f.competitionId.startsWith('int-')?6:30;
+  if(!Number.isInteger(f.round)||f.round<1||f.round>max||!teams.has(f.homeClubId)||!teams.has(f.awayClubId)||
+     f.leg!=null)return false;
+ }else if(!Number.isInteger(f.leg)||f.leg<1||f.leg>2)return false;
+ const completed=f.result!=null;
+ if(completed!==(f.status==='completed')||
+    (f.status==='scheduled'&&(!f.homeClubId||!f.awayClubId)))return false;
+ if(completed){
+  const r=f.result;
+  if(typeof r!=='object'||!validScore(r.homeGoals)||!validScore(r.awayGoals)||
+     (r.penalties!=null&&(!validScore(r.penalties.home)||!validScore(r.penalties.away))))return false;
+ }
+ return true;
+}
+function validDirectoryPayload(data,s){
+ if(!data||data.schemaVersion!==1||data.providerId!=='authoritative-world'||
+    !['published','partial','unpublished','unavailable'].includes(data.publication)||
+    data.selectedSeason!==s.season||data.day!==s.day||!Array.isArray(data.fixtures))return false;
+ const ids=new Set();
+ for(const f of data.fixtures){
+  if(!validDirectoryFixture(f)||ids.has(f.matchId))return false;
+  ids.add(f.matchId);
+ }
+ return true;
+}
+async function get(path){
+ const response=await fetch(path,{credentials:'omit',cache:'no-store'});
+ if(!response.ok)throw Error(String(response.status));
+ return response.json();
+}
+async function refresh(){
+ const s=selection();
+ if(!world||!s.season){render();return}
+ const params=new URLSearchParams(location.search);
+ for(const key of ['season','day','country','competition','q']){
+  if(!params.has(key))continue;
+  if(s[key])params.set(key,String(s[key]));else params.delete(key);
+ }
+ if(params.toString()!==location.search.slice(1))history.replaceState(null,'','/matches'+(params.size?'?'+params:''));
+ const id=[world.generation,world.revision,s.season,s.day].join('/');
+ if(id===loaded||id===pending){render();return}
+ const ticket=++epoch;
+ const cache=dayCache;
+ let entry=cache.get(id);
+ pending=id;loaded='';
+ try{
+  if(!entry){
+   entry={request:get('/api/matches?season='+s.season+'&day='+s.day)};
+   cache.set(id,entry);
+  }
+  if(!entry.data){
+   state='loading';render();
+   const data=await entry.request;
+   if(ticket!==epoch)return;
+   if(!window.faWorldClockAdapter.sameWorld(data.world,world)){cache.delete(id);await start();return}
+   if(!validDirectoryPayload(data,s))throw Error('Invalid directory');
+   entry.data=data;
+  }
+  state=entry.data.publication;rows=entry.data.fixtures;loaded=id;
+ }catch{
+  if(cache.get(id)===entry)cache.delete(id);
+  if(ticket!==epoch)return;
+  state='error';
+ }
+ if(ticket===epoch){pending='';render()}
+}
+async function start(){
+ const ticket=++epoch;world=null;pending=loaded='';state='loading';render();
+ try{
+  const data=await get('/api/world');if(ticket!==epoch)return;
+  if(!window.faWorldClockAdapter.validPublicWorld(data.world))throw Error('Invalid world');
+  if(!window.faWorldClockAdapter.sameWorld(cacheWorld,data.world))dayCache=new Map();
+  cacheWorld=data.world;world=data.world;state=world.seasonNumber?'loading':'zero';await refresh();
+ }catch{if(ticket===epoch){state='error';render()}}
+}
+function chooseFilter(key,value){
+ const changes={[key]:value};
+ if(key==='country'&&value&&!el('competition').value.startsWith(value+'-'))changes.competition='';
+ if(key==='season')changes.day=Number(value)===world.seasonNumber?Math.max(1,world.day):1;
+ updateURL(changes);
+}
+// A scroll can synthesize pointer events at the same position.
+let pointerX,pointerY;
+window.addEventListener('scroll',()=>{root.dataset.scrolling='true'},{capture:true,passive:true});
+window.addEventListener('pointermove',event=>{
+ if(event.pointerType!=='mouse')return;
+ if(pointerX!==event.clientX||pointerY!==event.clientY)delete root.dataset.scrolling;
+ pointerX=event.clientX;pointerY=event.clientY;
+},{passive:true});
+el('q').oninput=()=>updateURL({q:el('q').value},true);
+el('prev').onclick=()=>updateURL({day:selection().day-1});
+el('next').onclick=()=>updateURL({day:selection().day+1});
+el('current').onclick=()=>updateURL({season:'',day:''});
+addEventListener('popstate',refresh);
+addEventListener('fa:source-change',()=>{dayCache=new Map();start()});
+addEventListener('fa:world-invalidated',()=>{dayCache=new Map();start()});
+addEventListener('pageshow',e=>{if(e.persisted)start()});
+new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+start();

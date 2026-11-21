@@ -13,7 +13,7 @@ test('canonical navigation has no /app prefix and all app routes load with asset
     });req.on('error',reject);req.end();
   });
   try {
-    for(const path of ['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/competitions/it-1/fixtures?season=2']) {
+    for(const path of ['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/matches','/competitions/it-1/fixtures?season=2']) {
       const page=await get(path);assert.equal(page.status,200,path);
       assert.doesNotMatch(page.body,/<a\b[^>]*href=["']\/app(?:\/|["'])/);
       const base=page.body.match(/<base href="([^"]+)"/)?.[1]||path;
@@ -39,7 +39,7 @@ test('canonical navigation has no /app prefix and all app routes load with asset
 test('publication aliases map canonical app URLs to the same allowlisted DEV files', async()=>{
   const {publicRequestFile,isAllowlistedPublicPath}=await import('../tools/publication-guard.mjs');
   const config=JSON.parse(read('vercel.json'));
-  const tokens=[[':page(dashboard|calendar|settings|admin|competitions|players)','(?<page>dashboard|calendar|settings|admin|competitions|players)'],
+  const tokens=[[':page(dashboard|calendar|settings|admin|competitions|players|matches)','(?<page>dashboard|calendar|settings|admin|competitions|players|matches)'],
     [':division((?:it|eng|es|de|fr|pt|nl|br)-[12])','(?<division>(?:it|eng|es|de|fr|pt|nl|br)-[12])'],
     [':file(index.html|manifest.json|compact.json)','(?<file>index.html|manifest.json|compact.json)'],
     [':section(calendar|players|contracts)','(?<section>calendar|players|contracts)']];
@@ -142,4 +142,28 @@ test('404 and Dashboard use the same local DEV sidebar additions and link rewrit
   assert.deepEqual(hrefs(missing.body),hrefs(dashboard.body),'404 and Dashboard navigation links must agree');
   assert.doesNotMatch(aside(missing.body),/id="app-nav-dashboard"[^>]*aria-current="page"/);
  }finally{await new Promise(resolve=>server.close(resolve))}
+});
+
+test('Matches sidebar uses the provided traced SVG before hydration',()=>{
+ const pages=[
+  '404.html','dashboard/index.html','calendar/index.html','clubs/index.html',
+  'players/index.html','matches/index.html','matches/_shared/index.html',
+  'competitions/it-1/index.html'
+ ];
+ const expected=read('assets/matches-ball.svg').trim();
+ assert.match(expected,/fill-rule="evenodd"/,'Tracing preserves the original panel cutouts');
+ assert.match(expected,/width="18" height="18"/,'Matches icon uses the same 18×18 viewport as Players and Clubs');
+ assert.match(expected,/viewBox="-48 -48 608 608"/,'Matches ball has optical padding to match neighboring icons');
+ assert.equal(Math.round(18*512/608*10)/10,15.2,'Visible ball diameter matches surrounding sidebar glyphs');
+ assert.match(expected,/M197,355 314,355/,'Source uses the new solid-panel football design');
+ assert.doesNotMatch(expected,/M200,349 L311,349/,'Previous traced artwork must not remain');
+ for(const page of pages){
+  const html=read(page),start='<a class="fa-shell-link" href="/matches" data-nav01-matches>',end='<span data-nav01="8">Matches</span>';
+  const a=html.indexOf(start),b=html.indexOf(end,a);
+  assert.ok(a>=0&&b>a,'Missing Matches sidebar icon: '+page);
+  const icon=html.slice(a+start.length,b);
+  assert.equal(icon,expected,'Sidebar uses the exact same SVG as the source: '+page);
+  assert.doesNotMatch(icon,/m12 7-4\.3 3\.2/,'Previous stylized icon must not remain');
+ }
+ assert.match(read('tools/render-sidebar.mjs'),/assets\/matches-ball\.svg/,'Generator reuses source SVG');
 });

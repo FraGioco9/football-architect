@@ -1,3 +1,4 @@
+import {readMatchDirectory} from '../src/public-match-directory.ts';
 /** Isolated Worker D1 day-13 E2E. Immutable V2 rows are never torn down. */
 import {beforeAll,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
@@ -53,6 +54,10 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
    'day13-confirm-'+eventId,now));
  await step(advanceAdministrativeClockLineupV1(db,session,'advance',cmd(),'day13-admin2-000001',now));
  await step(stageDomesticCalendar(db,session,cmd(),'day13-domestic-00001',now));
+ const partial=await readMatchDirectory(db,1,13);
+ expect(partial.publication).toBe('partial');
+ expect(partial.fixtures).toHaveLength(128);
+ expect(partial.fixtures.every(f=>(f as {result:unknown}).result===null)).toBe(true);
  await step(advanceAdministrativeClockLineupV1(db,session,'advance',cmd(),'day13-admin3-000001',now));
  await step(executeInternationalDraw(db,session,cmd(),'day13-draw-00000001',now));
  await step(publishInternationalCalendarLineupV1(db,session,cmd(),'day13-publish-000001',now));
@@ -160,6 +165,10 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(a).not.toHaveProperty('lineup');expect(a).not.toHaveProperty('statistics');
  expect(statsA.statistics?.home.players).toHaveLength(11);
  expect(statsA.statistics?.home.players[0]).toMatchObject({name:expect.stringMatching(/^Test Player/),nationality:'ITA',assists:expect.any(Number),yellowCards:expect.any(Number),redCards:expect.any(Number)});
+ const directory=await readMatchDirectory(db,1,13);
+ expect(directory.publication).toBe('published');
+ expect(directory.fixtures).toHaveLength(128);
+ expect(directory.fixtures).toContainEqual(expect.objectContaining({matchId:a.matchId,result:expect.objectContaining({homeGoals:a.result.homeGoals,awayGoals:a.result.awayGoals})}));
  expect(a).toMatchObject({status:'completed',kickoff:null,provenance:{kind:'authoritative'}});
  expect(Object.keys(a.provenance).sort()).toEqual(['kind','receiptHash']);
  expect(statsA.statistics!.home.kind).toBe('real_xi');

@@ -234,7 +234,7 @@ export function clubRosterTotals(clubKey:string,fixtures:readonly Fixture[],
  const totals=complete?lineupTeamStatisticsV1(clubs,played,results,frozenMatches).players.filter(p=>p.clubId===clubKey):[];
  return {complete,totals};
 }
-async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number,rosterStats=false,includeClubRecords=false){
+async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number,rosterStats=false,includeClubRecords=false,dayReceiptIds?:Map<string,number>){
  const clubKey=competitionId.startsWith('club:')?competitionId.slice('club:'.length):null;
  const fixturesClubKey=competitionId.startsWith('club-fixtures:')?competitionId.slice('club-fixtures:'.length):null;
  const playerKey=/^player(?:-matches)?:([1-9][0-9]*)$/.exec(competitionId);
@@ -423,6 +423,10 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    const plans=[...state.ties.values()];
    const all=[...evidence.schedule.fixtures,...plans.flatMap(p=>p.fixtures.map(item=>item.fixture))].filter(f=>f.day===calendarDay);
    const canonical=(await import('../../assets/world-calendar-model.js')).default.createSeason(selectedSeason) as {days:{events:{marker:string}[]}[]};
+   if(dayReceiptIds)for(const f of all){
+    const receipt=replay.frozenMatches.get(f.id);
+    if(receipt)dayReceiptIds.set(f.id,receipt.matchId);
+   }
    const priorities=new Map(canonical.days[calendarDay!-1].events.map((e,i)=>[e.marker,i]));
    all.sort((a,b)=>(Number(priorities.get(a.marker))-Number(priorities.get(b.marker)))||a.competitionId.localeCompare(b.competitionId,'en')||a.id.localeCompare(b.id,'en'));
    const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},day:calendarDay,calendarHash:evidence.calendar.calendar_hash,rulesHash:evidence.snapshot.rulesHash,
@@ -463,7 +467,7 @@ export function readPublicSportingSeasonLineupV1(db:Database,competitionId:strin
  if(!competitionPattern.test(competitionId))throw new ApiError(404,'not_found');
  return readPublicProjection(db,competitionId,selectedSeason);
 }
-export function readPublicCalendarDayLineupV1(db:Database,selectedSeason:number,day:number){return readPublicProjection(db,'world',selectedSeason,day)}
+export function readPublicCalendarDayLineupV1(db:Database,selectedSeason:number,day:number,receiptIds?:Map<string,number>){return readPublicProjection(db,'world',selectedSeason,day,false,false,receiptIds)}
 
 /** One read-only, canonically validated club-season fixtures response. */
 export function readPublicClubFixturesLineupV1(db:Database,clubKey:string,selectedSeason:number){

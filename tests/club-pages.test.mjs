@@ -387,7 +387,8 @@ test('PAGE-LOAD-04 B02: Club and Fixtures reuse the standings circular crest loa
  assert.match(club,/club-crest fa-crest-loading/,'hydrated Club header keeps the loading slot');
  assert.match(styles,/--fa-crest-skeleton-fill/,'shared token defines the circle');
  assert.match(styles,/app-fixtures-skeleton-crest::before/,'Fixtures uses the same primitive');
- assert.match(read('assets/competition-fixtures.js'),/app-world-club-crest-placeholder fa-crest-loading/,'loaded Fixtures use the same shape before the asset resolves');
+ assert.ok(read('assets/competition-fixtures.js').includes("app-world-club-crest-placeholder'+(club?' fa-crest-loading':''"),
+  'loaded Fixtures enable the shared circle only for known club crests');
  assert.match(read('assets/club-crests.js'),/fa-crest-loading/,'missing crests fall back to a shield only on confirmed absence');
 });
 test('PAGE-LOAD-04 B02: Club History renders only verified seasons without guessed records',async()=>{
