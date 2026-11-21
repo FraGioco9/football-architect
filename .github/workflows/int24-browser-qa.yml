@@ -138,8 +138,20 @@ jobs:
           node tools/ci-run.mjs 3-int24-browser-qa -- node tests/int24-browser-qa.mjs
           node tools/ci-run.mjs 7-int24-browser-qa -- node tests/page-load-02-club-browser.mjs
           node tools/ci-run.mjs fe-05-visual -- node tests/fe-05-visual-browser.mjs
-          node tools/ci-run.mjs fe-02-chromium -- node tests/fe-02-responsive-browser.mjs
-          FA_BROWSER_ENGINE=webkit node tools/ci-run.mjs fe-02-webkit -- node tests/fe-02-responsive-browser.mjs
+          # Run FE-02 engines in parallel within one job, retaining each failure.
+          # They have independent Playwright browsers and engine-prefixed artifacts.
+          node tools/ci-run.mjs fe-02-chromium -- node tests/fe-02-responsive-browser.mjs &
+          fe02_chromium_pid=$!
+          FA_BROWSER_ENGINE=webkit node tools/ci-run.mjs fe-02-webkit -- node tests/fe-02-responsive-browser.mjs &
+          fe02_webkit_pid=$!
+          fe02_chromium_exit=0
+          fe02_webkit_exit=0
+          wait "$fe02_chromium_pid" || fe02_chromium_exit=$?
+          wait "$fe02_webkit_pid" || fe02_webkit_exit=$?
+          if [ "$fe02_chromium_exit" -ne 0 ] || [ "$fe02_webkit_exit" -ne 0 ]; then
+            echo "::error::FE-02 browser failures: chromium=$fe02_chromium_exit webkit=$fe02_webkit_exit" >&2
+            exit 1
+          fi
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE="${{ github.event.pull_request.base.sha }}"
             test "$BASE" != ""

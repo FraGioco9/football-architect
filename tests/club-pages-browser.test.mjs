@@ -113,8 +113,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       return out.result.value;
     };
     const waitUnprofiled=async expr=>{
-      // Preserve the same nominal 10-second readiness budget, checking every 50ms.
-      for(let i=0;i<200;i++){try{if(await run(expr))return;}catch{}await delay(50);}
+      // Preserve the same nominal 10-second readiness budget, checking every 20ms.
+      for(let i=0;i<500;i++){try{if(await run(expr))return;}catch{}await delay(20);}
       throw Error("Timed out: "+expr+"; "+await run("document.body.textContent.slice(0,500)"));
     };
     const wait=expr=>profile.measure('readiness-wait',()=>waitUnprofiled(expr));

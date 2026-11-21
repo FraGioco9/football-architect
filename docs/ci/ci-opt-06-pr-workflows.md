@@ -67,3 +67,23 @@ workflow counts alone.
 
 Verify automatically triggered FULL CI once on the final exact HEAD.
 Retain Draft/HOLD; no merge without separate owner authorization.
+
+## Follow-up: reduce FULL browser latency without trimming coverage
+
+Pre-change Site FULL #44845366417 executed 196 Node files and 1,672 tests
+in 293.2s. Club Chrome test took 80.7s with 874 readiness polls; Theme
+Chrome took 79.8s with 586 readiness polls. Both now check readiness
+at 20ms intervals rather than 50ms, with 500 instead of 200 maximum
+polls to retain the original nominal ten-second wait budget. All
+screenshots, routes, locales, viewports and assertions are unchanged.
+
+Pre-change Browser FULL #44845366390 spent about 502s inside one browser
+command. FE-02 Chromium and WebKit now execute concurrently in the same
+job with separate browser contexts and engine-specific artifacts; both
+results are awaited and either failure fails FULL. Real-shell contract
+tests inject failure in each engine independently to prevent masking.
+This adds no workflows, jobs, manual dispatches or skipped coverage.
+
+These are bounded optimizations, not a proven savings claim until exact-head
+FULL reruns measure elapsed time and failure rate. The stale Node audit
+fingerprints are intentionally left fail-closed until independently reviewed.
