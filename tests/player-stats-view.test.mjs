@@ -239,7 +239,7 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
   const internationalIdentity=otherDetail.children[1].children[0];
   assert.equal(domesticIdentity.className,'app-player-stats-competition-identity');
   assert.equal(domesticIdentity.children[0].getAttribute('aria-hidden'),'true');
-  assert.equal(domesticIdentity.children[0].children[0].src,'/assets/divisions/it-1-lega-federale/compact.svg');
+  assert.equal(domesticIdentity.children[0].children[0].src,'/assets/competitions/IT-1/compact.svg');
   assert.equal(domesticIdentity.children[0].children[0].width,24);
   assert.equal(domesticIdentity.children[1].tagName,'A');
   assert.equal(domesticIdentity.children[1].children[0].textContent,'Lega Federale');
