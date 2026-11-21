@@ -113,6 +113,14 @@ test('account engine matrix is independent of Worker contracts and preserves bot
  const matrix=source.split('\n  account-browser:')[1]?.split('\n  operator-final:')[0];
  assert.ok(matrix,'separate account job');assert.match(matrix,/needs: scope/);assert.doesNotMatch(matrix,/needs:.*password-policy/);
  assert.match(matrix,/fail-fast: false/);assert.match(matrix,/engine: \[chromium, webkit\]/);
- for(const suite of ['player-safe-return','account-pages','account-feedback','account-usability','control-focus','profile-navigation','account-interaction','account-layout','competition-season-zero-club-links'])assert.ok(matrix.includes('tests/'+suite+'-browser.mjs'),suite);
+ for(const suite of ['player-safe-return','account-pages','account-feedback','account-usability','control-focus','profile-navigation','account-interaction-layout','competition-season-zero-club-links'])assert.ok(matrix.includes('tests/'+suite+'-browser.mjs'),suite);
+ const bundled=readFileSync('tests/account-interaction-layout-browser.mjs','utf8');
+ for(const [name,exported,expected] of [
+  ['account-interaction-browser.mjs','runAccountInteractionMatrix',100],
+  ['account-layout-browser.mjs','runAccountLayoutMatrix',80]
+ ]){
+  assert.match(bundled,new RegExp("from './"+name.replaceAll('.','\\.')+"'"),name+' import retained');
+  assert.ok(bundled.includes("name:'"+name+"',expected:"+expected+",run:"+exported),name+' must execute every original case');
+ }
  assert.match(matrix,/tests\/admin-settings-browser\.mjs/);assert.match(matrix,/FA_AUTH_BROWSER: \$\{\{ matrix.engine \}\}/);
 });
