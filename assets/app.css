@@ -1372,9 +1372,17 @@ html[data-fa-standings-loading="true"] #competition-panel-fixtures[data-fa-conte
 html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-fixtures{visibility:visible!important}
 @media(max-width:620px){
  #competition-panel-fixtures .app-fixtures-select{font-size:clamp(12px,3vw,13px)}
- #competition-panel-fixtures .app-fixtures-skeleton-crest{flex-basis:56px;width:56px;height:56px}
- #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name{max-width:calc(100% - 64px)}
+ #competition-panel-fixtures .app-fixtures-skeleton-crest{flex-basis:36px;width:36px;height:36px}
+ #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name{max-width:calc(100% - 42px)}
  #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-stadium{width:100%;height:2.8em}
+}
+@media(max-width:420px){
+ #competition-panel-fixtures .app-fixtures-skeleton-crest{flex-basis:30px;width:30px;height:30px}
+ #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name{max-width:calc(100% - 35px)}
+}
+@media(max-width:360px){
+ #competition-panel-fixtures .app-fixtures-skeleton-crest{flex-basis:24px;width:24px;height:24px}
+ #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name{max-width:calc(100% - 29px)}
 }
 @media(max-width:620px){
  /* Reserve the current-round action below the wider selector on narrow screens. */

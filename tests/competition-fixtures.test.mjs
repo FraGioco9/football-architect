@@ -457,6 +457,8 @@ test('FIXTURES unresolved participants follow #732 rank/winner wording and use o
  const css=read('assets/app.css');
  assert.match(css,/@media\\(max-width:620px\\)[^\\n]*\\.app-fixture-name-compact\\{display:inline\\}/);
  assert.match(css,/@media\\(max-width:360px\\)[^\\n]*\\.app-fixture-name-abbr\\{display:inline\\}/);
+ for(const width of [36,30,24])assert.ok(css.includes('app-fixtures-skeleton-crest{flex-basis:'+width+'px;width:'+width+'px;height:'+width+'px}'),
+  'skeleton and real mobile crest widths match at each breakpoint');
 });
 
 test('FIXTURES-07: result groups show full time or supplied date above the score and the canonical home stadium below',()=>{
