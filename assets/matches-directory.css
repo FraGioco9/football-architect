@@ -13,7 +13,7 @@
 .md-controls .md-field:has([aria-expanded="true"]){position:relative;z-index:50}
 .md-controls button:disabled{opacity:.5}
 #md-status{min-height:1.6em;margin:.6rem 0}#md-list{min-height:26rem}
-#md-list h2{display:grid;grid-auto-flow:column;grid-template-rows:minmax(1.55em,auto);align-content:center;justify-content:start;align-items:end;gap:.45rem;font-size:1rem;padding:.65rem;margin:0;min-height:2.8rem}
+#md-list h2{display:grid;grid-auto-flow:column;grid-template-rows:minmax(1.55em,auto);align-content:center;justify-content:start;align-items:end;align-items:last baseline;gap:.45rem;font-size:1rem;padding:.65rem;margin:0;min-height:2.8rem}
 #md-list a{color:inherit;text-decoration:none}#md-list :is(.md-team,h2) a:hover{text-decoration:underline}
 #md-list h2>.md-logo{align-self:center}
 .md-team{display:flex;align-items:center;gap:.45rem;min-width:0}
