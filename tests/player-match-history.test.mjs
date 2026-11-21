@@ -93,3 +93,21 @@ test('neutral away player retains true side for player-oriented match and penalt
  assert.equal(shown.opponentId,'IT-1');
  assert.equal(shown.result.awayGoals,1);
 });
+
+
+test('#734 player appearance batch returns up to 100 items in one verified page',()=>{
+ const matches=Array.from({length:73},(_,i)=>({matchId:String(i+1),season:i<39?2:1,day:(i%39)+1,competitionId:'IT-1'}));
+ const single=paginateVerifiedPlayerMatches(matches,world,{limit:100});
+ assert.equal(single.total,73);
+ assert.equal(single.items.length,73);
+ assert.equal(single.nextCursor,null,'two-season history can be loaded in one request');
+ const larger=Array.from({length:103},(_,i)=>({matchId:String(i+1),season:2,day:(i%56)+1,competitionId:'IT-1'}));
+ const first=paginateVerifiedPlayerMatches(larger,world,{limit:100});
+ const next=paginateVerifiedPlayerMatches(larger,world,{limit:100,cursor:first.nextCursor});
+ assert.equal(first.items.length,100);
+ assert.equal(next.items.length,3);
+ assert.equal(next.nextCursor,null,'cursor fallback remains available for long histories');
+ assert.equal(new Set([...first.items,...next.items].map(item=>item.matchId)).size,103);
+ for(const limit of [0,101,-1,1.5,Number.NaN])
+  assert.throws(()=>paginateVerifiedPlayerMatches(matches,world,{limit}),TypeError);
+});
