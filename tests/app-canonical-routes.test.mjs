@@ -144,19 +144,22 @@ test('404 and Dashboard use the same local DEV sidebar additions and link rewrit
  }finally{await new Promise(resolve=>server.close(resolve))}
 });
 
-test('Matches sidebar renders a football icon before hydration',()=>{
+test('Matches sidebar uses the provided traced SVG before hydration',()=>{
  const pages=[
   '404.html','dashboard/index.html','calendar/index.html','clubs/index.html',
   'players/index.html','matches/index.html','matches/_shared/index.html',
   'competitions/it-1/index.html'
  ];
+ const expected=read('assets/matches-ball.svg').trim();
+ assert.match(expected,/fill-rule="evenodd"/,'Tracing preserves the original panel cutouts');
+ assert.match(expected,/d="M241,0 /,'SVG source comes from the supplied soccer-ball outline');
  for(const page of pages){
-  const html=read(page);
-  const icon=html.match(/<a class="fa-shell-link" href="\/matches" data-nav01-matches>([\s\S]*?)<span data-nav01="8">Matches<\/span>/)?.[1];
-  assert.ok(icon,'Missing Matches sidebar icon: '+page);
-  assert.match(icon,/<circle cx="12" cy="12" r="10"\/>/,'Football outline: '+page);
-  assert.match(icon,/fill="currentColor" stroke="none"/,'Football panel: '+page);
-  assert.doesNotMatch(icon,/<rect x="2" y="5"/,'Old pitch icon must be removed: '+page);
+  const html=read(page),start='<a class="fa-shell-link" href="/matches" data-nav01-matches>',end='<span data-nav01="8">Matches</span>';
+  const a=html.indexOf(start),b=html.indexOf(end,a);
+  assert.ok(a>=0&&b>a,'Missing Matches sidebar icon: '+page);
+  const icon=html.slice(a+start.length,b);
+  assert.equal(icon,expected,'Sidebar uses the exact same SVG as the source: '+page);
+  assert.doesNotMatch(icon,/m12 7-4\.3 3\.2/,'Previous stylized icon must not remain');
  }
- assert.match(read('tools/render-sidebar.mjs'),/m12 7-4\.3 3\.2/,'The sidebar generator uses the same football symbol');
+ assert.match(read('tools/render-sidebar.mjs'),/assets\/matches-ball\.svg/,'Generator reuses source SVG');
 });
