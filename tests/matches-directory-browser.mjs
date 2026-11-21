@@ -202,6 +202,7 @@ export async function verifyMatchesDirectory(browser){
   assert.deepEqual((await fixtureSides('27')).names,['Winner of quarter-final 3','Winner of quarter-final 4'],'second leg retains expected home-away placeholder order');
   assert.deepEqual((await fixtureSides('28')).names,['Winner of semifinal 1','Winner of semifinal 2'],'international final has readable semifinal winners');
   assert(!/playoff (89|512|611|710)\b/i.test(await page.locator('#md-list').innerText()),'never display encoded tie IDs');
+  assert(!/\b(?:p512|p611|p710|p89|q[1-4]|s[1-2]|semi36|semi45)\b/i.test(await page.locator('#md-list').innerText()),'all bracket IDs are presentation-only and never shown');
   assert.equal(await page.locator('#md-list [title]').count(),0,'no tooltips on unresolved participants or fixture details');
   for(const width of [320,375,390,540]){
    await page.setViewportSize({width,height:800});
@@ -234,6 +235,20 @@ export async function verifyMatchesDirectory(browser){
   assert.equal(await page.locator('#md-list .md-team-label[aria-label="Vincente quarto di finale 1"] .md-team-name-compact').textContent(),'Vincente QF 1','Italian quarter-final winner has a compact, readable label');
   assert.equal(await page.locator('#md-list .md-team-label[aria-label="Vincente semifinale 2"] .md-team-name-compact').textContent(),'Vincente SF 2','Italian semifinal winner has a compact, readable label');
   assert.deepEqual((await fixtureSides('24')).names,['Posizione 1','Vincente playoff 8 vs 9'],'Italian second-leg placeholder follows home-away order');
+  for(const [lang,quarter,shortQuarter,semi,shortSemi,domestic,shortDomestic] of [
+   ['de','Sieger des Viertelfinals 1','Sieger VF 1','Sieger des Halbfinals 2','Sieger HF 2','Sieger des Halbfinals 3 vs 6','Sieger 3–6'],
+   ['es','Ganador de cuarto de final 1','Ganador CF 1','Ganador de semifinal 2','Ganador SF 2','Ganador de semifinal 3 vs 6','Ganador 3–6'],
+   ['fr','Vainqueur du quart de finale 1','Vainqueur QF 1','Vainqueur de demi-finale 2','Vainqueur DF 2','Vainqueur de demi-finale 3 vs 6','Vainqueur 3–6']
+  ]){
+   await page.evaluate(lang=>{document.documentElement.lang=lang},lang);
+   const quarterSlot=page.locator('#md-list .md-team-label[aria-label="'+quarter+'"]');
+   await quarterSlot.waitFor();
+   assert.equal(await quarterSlot.locator('.md-team-name-compact').textContent(),shortQuarter,'localized quarter-final abbreviation '+lang);
+   const semiSlot=page.locator('#md-list .md-team-label[aria-label="'+semi+'"]');
+   assert.equal(await semiSlot.locator('.md-team-name-compact').textContent(),shortSemi,'localized international semifinal abbreviation '+lang);
+   const domesticSlot=page.locator('#md-list .md-team-label[aria-label="'+domestic+'"]');
+   assert.equal(await domesticSlot.locator('.md-team-name-compact').textContent(),shortDomestic,'localized domestic semifinal abbreviation '+lang);
+  }
   await page.evaluate(()=>document.documentElement.lang='en');
   await page.locator('#md-list .md-team-label[aria-label="Winner of playoff 8 vs 9"]').first().waitFor();
   assert.equal(await page.locator('#md-list .md-row small').filter({hasText:/Leg [12]/}).count(),0,'do not repeat Leg per fixture');
