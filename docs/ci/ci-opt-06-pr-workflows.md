@@ -1,84 +1,69 @@
-# CI-OPT-06 — PR CI launch and Admin-scope closeout
+# CI-OPT-06 — Reduce redundant pull-request workflow launches
 
-## Measured baseline (20–21 November 2026)
+## Verified historical baseline
 
-Historical GitHub Actions observations, not controlled before/after benchmarks.
-Draft PR #732 source HEADs (workflow execution window, seconds, including pending FULL evidence observation):
+On 20–21 November 2026, four representative Draft heads of PR #732
+(`60abbd0b`, `999af2a8`, `003fd68a`, `ebd903d8`)
+each launched **8** GitHub Actions workflows. Their observed longest
+completion intervals were 462, 494, 441 and 463 seconds, respectively.
+These are historical, not matched before/after controlled comparisons.
 
-| HEAD | Workflows launched | Slowest completion (s) |
-| --- | ---: | ---: |
-| `60abbd0b` | 8 | 462 |
-| `999af2a8` | 8 | 494 |
-| `003fd68a` | 8 | 441 |
-| `ebd903d8` | 8 | 463 |
+The eight were Site, Browser, Admin, exact-head FULL evidence, first-name
+catalog, surname catalog, Match Engine, and a skipped Cloudflare Preview
+package run. The latter package was conditional on the historical PR #496,
+already merged. The separate RENDER-01 workflow only admitted PR #263,
+also already merged. Both had dead automatic trigger paths.
 
-The 8 workflows include Site, Browser, Admin, FULL observer, first-name catalog,
-surname catalog, Match Engine targeted and a skipped Preview package. These four
-heads all edited `tools/ci-test-ownership.json`, triggering both catalog workflows.
-The baseline is **not** evidence of any speedup yet. A new CI workflow change
-will necessarily trigger FULL during the implementation PR.
+## Changes in Draft/HOLD PR #737
 
-## Focused implementation
+- First-name and surname **dedicated workflows removed**. Their catalog
+  tests remain discoverable, each executed once in the mandatory
+  `Site checks` FULL Node runner. The source-only surname catalog
+  scope guard and PLAYERS-03 isolation check are integrated into the
+  Site job; a data edit with unrelated paths fails conservatively.
+- Match Engine workflow launches only for `match-engine/**` or an edit
+  to that workflow, **not** for
+  `tools/dev-standings-preview.mjs`. Existing physics tests,
+  real Chromium QA, benchmarks and exact PR HEAD checkout are preserved.
+  Edits to the Match Engine workflow **in this PR** legitimately trigger
+  its own run; evaluate routine PRs separately.
+- The separate Cloudflare Preview package workflow is removed:
+  it only admitted the already-merged `feat/dev-preview-shared-d1`
+  branch, and launched an irrelevant skipped workflow on ordinary
+  backend/frontend edits. The **owner-only, exact-main-HEAD,
+  `workflow_dispatch`** Cloudflare DEV Preview release workflow
+  remains unchanged. Its builder, immutable package verification,
+  local Worker/D1 security contracts and publication guards remain.
+- The legacy RENDER-01 workflow is removed: its job had a strict
+  `pull_request.number == 263` gate. The standalone benchmark tool
+  remains available; the workflow never validated other PRs.
+- Admin Draft classifier reuses the reviewed Site scope map. Isolated
+  public-calendar, clubs, competitions, guide and documentation edits
+  can skip unrelated Admin full-runtime checks. Shared, backend,
+  security, CSS, unknown, cross-area and CI changes fail closed to FULL.
 
-1. Removed the shared test-ownership manifest from the *dedicated* first-name and
-   surname catalog workflow path triggers. Ownership/discovery enforcement remains
-   in all primary Site, Browser, and Admin source jobs. Both catalog workflows
-   still trigger on their own catalog, test, or workflow edits. No catalog test removed.
-2. Fixed the surname catalog workflow: a PR changing only the surname regression
-   test now runs that test, rather than reporting a skipped catalog validation.
-   The catalog-only scope guard and first-name isolation rule remain enforced
-   when the surname data itself changes.
-3. Added a conservative Admin-only Draft scope router, built from the **existing**
-   reviewed single-area Site selector. Pure public calendar, clubs, competition,
-   guide or documentation updates can run Admin FAST contracts rather than
-   installing Worker/browser engines and repeating all account QA. Draft Admin
-   changes stay TARGETED; unknown, shared CSS/JS, backend, auth, cross-area, CI,
-   unsafe or malformed changes stay FULL. This does **not** change Site/Browser
-   selection, final-verification opt-in, or protected merge checks.
+## Safety boundaries
 
-## Expected versus observed outcome
+The four primary workflows remain:
+`landing-checks.yml`, `int24-browser-qa.yml`,
+`admin-world-checks.yml`, `ci-opt-03-full-gate.yml`.
+Protected `main` still requires `landing` and
+`CI FULL exact-head evidence` on the exact current PR HEAD/base.
+Retain full Chromium/WebKit, Worker/D1, admin, security, publication
+and five-locales contracts; do not infer PASS from skipped or narrow
+runs. No manual workflow dispatch, deployment or remote DB action.
 
-- For ownership-registry-only updates: *expected* dedicated catalog workflow
-  launches **2 → 0**, while source ownership checks and FULL Node suite remain.
-- For reviewed single-area public-page Draft changes: *expected* Admin mode
-  **TARGETED → FAST**, retaining its syntax and CI safety-contract checks;
-  Account Chromium/WebKit and Worker/D1 complete FULL remain mandatory at final
-  ready-for-review or explicit final verification.
-- The overall time-to-green improvement and runner-minute savings are **not yet
-  measured** on comparable post-merge feature PRs. Do not claim the ≥25% target
-  as achieved merely because the CI-OPT-06 implementation PR passes.
+**Expected routine trigger reduction:** from the historically observed
+8 launches to 4, for a comparable broad feature PR where optional
+workflow paths do not match. The implementation PR legitimately starts
+Match Engine because it edits its own workflow; it is *not* a routine
+feature-PR sample.
 
-## Mandatory verification
+**Performance:** fewer launched workflows do not prove faster critical
+path. Wall time, runner-minutes, flakiness and matched Draft/Ready
+comparisons remain unverified until equivalent change sets exist.
+Do not claim the issue's >=25% wall-time target as achieved from these
+workflow counts alone.
 
-Run selector contract tests and CI-discovery, plus all automatically triggered
-FULL source checks on the single final exact PR HEAD. Verify the FULL evidence
-gate is PASS, and no `skipped`, `pending`, `cancelled` or reused partial job
-is counted as new exact-head FULL proof. Repeat measured Draft scenarios only
-when natural qualifying PRs occur; avoid wasting repeated FULL runs just to
-collect performance numbers.
-
-No change to branch rules, production deploy, remote D1, security assertions,
-all five supported locales, or Chromium + WebKit FULL regression coverage.
-Keep CI-OPT-06 PR Draft/HOLD. No merge without separate owner authorization.
-
-## Owner refinement — remove unnecessary workflow entries entirely
-
-The two dedicated **first-name** and **surname** pull-request workflows are removed:
-`tests/players-names-catalog.test.mjs` and `tests/surnames-01-catalog.test.mjs`
-remain in the Site FULL Node discovery runner, exactly once each. The surname
-source-only validation (including PLAYERS-03 isolation) now runs in the Site
-job before expensive suites when surname catalog data changes. This preserves
-relevant assertions without starting another pair of GitHub Actions runs.
-
-The Match Engine workflow stays available **only** on `match-engine/**` or edits
-to its own workflow; shared `tools/dev-standings-preview.mjs` changes no longer
-start it. The Site/Browser workflows continue to test preview routing. The
-Match Engine workflow retains its physics, real Chrome viewport and benchmark
-checks for engine changes and now checks out the exact source PR HEAD.
-
-For the representative #732 historical changes touching `tools/ci-test-ownership.json`
-and `tools/dev-standings-preview.mjs` without `match-engine/**`, expected
-workflow launches go from eight to **five**, including the already-skipped
-Cloudflare Preview package workflow; this is a trigger-count projection, not
-a newly measured CI time saving. Required Site, Browser, Admin and exact-head
-FULL gate remain in place.
+Verify automatically triggered FULL CI once on the final exact HEAD.
+Retain Draft/HOLD; no merge without separate owner authorization.
