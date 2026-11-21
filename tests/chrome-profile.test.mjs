@@ -32,11 +32,14 @@ test('Chrome profile requires an explicit label',()=>{
  assert.throws(()=>createChromeProfile(null),/non-empty suite/);
 });
 
-test('Site Chrome readiness contract keeps the 10-second budget with 50ms checks',async()=>{
+test('Site Chrome readiness contract keeps a 10-second budget while permitting faster checks',async()=>{
  const {readFileSync}=await import('node:fs');
  for(const path of ['club-pages-browser.test.mjs','theme-browser.test.mjs']){
   const source=readFileSync(new URL(path,import.meta.url),'utf8');
-  assert.ok(source.includes('for(let i=0;i<200;i++){try{if(await run(expr))return;}catch{}await delay(50);}'),path);
-  assert.ok(!source.includes('for(let i=0;i<100;i++){try{if(await run(expr))return;}catch{}await delay(100);}'),path);
+  const match=source.match(/for\(let i=0;i<(\d+);i\+\+\)\{try\{if\(await run\(expr\)\)return;\}catch\{\}await delay\((\d+)\);\}/);
+  assert.ok(match,'Readiness polling must be present in '+path);
+  const attempts=Number(match[1]), intervalMs=Number(match[2]);
+  assert.equal(attempts*intervalMs,10_000,path+' must preserve ten seconds');
+  assert.ok(intervalMs>0&&intervalMs<=50,path+' may poll faster, never slower');
  }
 });

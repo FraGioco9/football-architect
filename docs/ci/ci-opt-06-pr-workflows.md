@@ -87,3 +87,30 @@ This adds no workflows, jobs, manual dispatches or skipped coverage.
 These are bounded optimizations, not a proven savings claim until exact-head
 FULL reruns measure elapsed time and failure rate. The stale Node audit
 fingerprints are intentionally left fail-closed until independently reviewed.
+
+## Next follow-up — exact-head failure repair and scoped Browser preflight
+
+The first attempt on `502e15086ab8` exposed one **real CI-contract
+failure**: `tests/chrome-profile.test.mjs` still hard-coded the former
+200×50ms polling implementation. It is now a parameterized contract
+requiring exactly 10,000ms total and a positive interval <=50ms; both
+real Chrome suites still have 500×20ms and all original checks.
+The fail-closed FULL observer correctly rejected the failing Site run.
+
+The extra Browser `ci-opt-01-scenarios.mjs --browser` scenario matrix
+previously launched for *any* file under `.github/workflows/`. Its
+last measured runs took ~85.7s in total, primarily the Competitions
+scenario (70.3s). It is now triggered only by the scenario code,
+impact classifier, browser fixtures or the Browser workflow itself.
+Mandatory Browser FULL still runs independently on all review/main
+changes, including workflow-only updates. A real-shell Git diff test
+demonstrates that an unrelated workflow edit skips only the optional
+preflight, while an edit to the Browser workflow triggers it.
+
+INT24 Chromium now emits read-only `INT24_PHASE|{...}` milestones for
+compact network, player stats, player scrolling, canonical initial
+navigation, standings transitions, competition history/matrix, form
+layout and accessibility. Timing does not change browser behavior,
+assertion counts, locales, viewports, screenshot capture or exit
+semantics. Compare durations on the next exact-head result before
+considering further changes; no parallelization of INT24 suites yet.

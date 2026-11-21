@@ -160,6 +160,35 @@ test('Site Chrome readiness polling keeps the nominal ten-second budget',()=>{
   assert.ok(s.includes('same nominal 10-second readiness budget'),name);
  }
 });
+test('extra TARGETED browser preflight is not repeated for unrelated workflow edits',()=>temporary(root=>{
+ git(root,'init','-q');
+ writeFileSync(join(root,'baseline'),'base');git(root,'add','.');git(root,'commit','-qm','base');
+ const base=git(root,'rev-parse','HEAD'),bin=join(root,'bin'),record=join(root,'calls');
+ mkdirSync(bin);
+ writeFileSync(join(bin,'node'),
+  '#!/bin/sh\n[ "$1" != tools/dev-standings-preview.mjs ] || exit 0\n'+
+  'if [ "$1" = tools/ci-run.mjs ]; then shift 4; fi\n'+
+  'printf "%s\\n" "$*" >> "$FA_RECORD"\n',{mode:0o755});
+ writeFileSync(join(bin,'curl'),'#!/bin/sh\nexit 0\n',{mode:0o755});
+ const script=render(stepScript(read('int24-browser-qa.yml'),'Run loopback preview and browser checks'),{
+  'github.event_name':'pull_request','github.event.pull_request.base.sha':base,
+  'needs.scope.outputs.mode':'full','needs.scope.outputs.area':''
+ }).replaceAll('/tmp/int24-preview.log',join(root,'preview.log'));
+ const execute=()=>{
+  writeFileSync(record,'');
+  const run=spawnSync('bash',['-e','-o','pipefail','-c',script],{cwd:root,encoding:'utf8',
+   env:{...process.env,PATH:bin+':'+process.env.PATH,FA_RECORD:record}});
+  assert.equal(run.status,0,run.stderr);
+  return readFileSync(record,'utf8').split('\n').filter(Boolean);
+ };
+ mkdirSync(join(root,'.github','workflows'),{recursive:true});
+ writeFileSync(join(root,'.github','workflows','unrelated.yml'),'name: unrelated');
+ git(root,'add','.');git(root,'commit','-qm','unrelated workflow');
+ assert.equal(execute().some(x=>x.includes('ci-opt-01-scenarios.mjs')),false);
+ writeFileSync(join(root,'.github','workflows','int24-browser-qa.yml'),'name: browser changes');
+ git(root,'add','.');git(root,'commit','-qm','browser workflow');
+ assert.equal(execute().filter(x=>x.includes('ci-opt-01-scenarios.mjs')).length,1);
+}));
 test('PR with missing base fails closed instead of reporting successful FULL',()=>{
  assert.notEqual(browserCommands({base:'',css:true}).result.status,0);
 });

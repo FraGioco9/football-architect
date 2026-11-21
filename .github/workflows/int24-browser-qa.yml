@@ -132,7 +132,10 @@ jobs:
             FA_BROWSER_ENGINE=webkit FA_TARGET_AREA="${{ needs.scope.outputs.area }}" node tools/ci-run.mjs 2-int24-browser-qa -- node tests/ci-opt-01-browser-smoke.mjs
             exit 0
           fi
-          if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- 'tools/ci-opt-01-*' 'tests/ci-opt-01-*' .github/workflows | grep -q .; then
+          # Re-run the costly TARGETED browser scenario matrix only when its
+          # selector, browser fixtures or this Browser workflow change. Other
+          # workflows are validated by their owners and mandatory FULL QA below.
+          if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- tools/ci-opt-01-impact.mjs tools/ci-opt-01-scenarios.mjs tests/ci-opt-01-browser-smoke.mjs tests/ci-opt-01-browser-cases.mjs .github/workflows/int24-browser-qa.yml | grep -q .; then
             node tools/ci-opt-01-scenarios.mjs --browser
           fi
           node tools/ci-run.mjs 3-int24-browser-qa -- node tests/int24-browser-qa.mjs
