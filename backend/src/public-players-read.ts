@@ -107,7 +107,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
    db.prepare(pageSql).bind(...values,PUBLIC_PLAYER_PAGE_SIZE,0)
   ]);
   const value=(countResult?.results?.[0] as {n?:number}|undefined)?.n;
-  if(!Number.isSafeInteger(value)||value<0||!pageResult?.results)
+  if(typeof value!=='number'||!Number.isSafeInteger(value)||value<0||!pageResult?.results)
    throw new ApiError(503,'players_unavailable');
   count=value;
   rows=pageResult.results as StoredRow[];

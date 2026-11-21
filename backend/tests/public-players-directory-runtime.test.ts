@@ -262,6 +262,6 @@ test('#734 Players paginated reads still recount and skip expired pages',async()
 
 test('#734 Players malformed D1 batch results never publish a false empty directory',async()=>{
  const {db}=mockDb();
- db.batch=async()=>[{results:[]},{results:[]}];
+ db.batch=async()=>[{results:[],meta:{changes:0}},{results:[],meta:{changes:0}}];
  await assert.rejects(readPublicPlayers(db,1),/players_unavailable/);
 });
