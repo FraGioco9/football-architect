@@ -113,7 +113,7 @@ function fixture(f){
  score.className='md-score';
  score.setAttribute('aria-label',[teams.get(f.homeClubId)?.primaryName??words.tbd,score.textContent,teams.get(f.awayClubId)?.primaryName??words.tbd].join(' '));
  row.append(participant(f.homeClubId,f.participantA,true),score,participant(f.awayClubId,f.participantB));
- const info=[f.leg?words.leg+' '+f.leg:'',
+ const info=[
   r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',f.status==='awaiting_participants'?words.tbd:'',f.neutral?words.neutral:f.venue];
  const detail=info.filter(Boolean).join(' · ');
  const metadata=node('small',detail);metadata.title=detail;row.append(metadata);
@@ -152,15 +152,17 @@ function render(){
   if(!filtered.length)continue;
   const rounds=new Map();
   for(const f of filtered){
-   const token=f.phaseId==='league'?f.round:f.phaseId==='promotionPlayoffs'?'playoffs':f.phaseId;
-   if(!rounds.has(token))rounds.set(token,[]);
-   rounds.get(token).push(f);
+   const round=f.phaseId==='league'?f.round:f.phaseId==='promotionPlayoffs'?'playoffs':f.phaseId;
+   const leg=f.leg??null;
+   const key=JSON.stringify([round,leg]);
+   if(!rounds.has(key))rounds.set(key,{round,leg,fixtures:[]});
+   rounds.get(key).fixtures.push(f);
   }
   let headingIndex=0;
-  for(const [round,fixtures] of rounds){
+  for(const {round,leg,fixtures} of rounds.values()){
    const group=node('section'),heading=node('h2');
    const href='/competitions/'+c.id.toLowerCase()+'/fixtures?season='+s.season+'&matchday='+encodeURIComponent(round);
-   const caption=fixtures[0].phaseId==='league'?words.round+' '+round:words[round]??round;
+   const caption=(fixtures[0].phaseId==='league'?words.round+' '+round:words[round]??round)+(leg!=null?' · '+words.leg+' '+leg:'');
    heading.append(competitionLogo(c,headingIndex++),link(href,c.name),node('small',caption));
    group.append(heading,...fixtures.map(fixture));list.append(group);
   }
@@ -200,8 +202,6 @@ async function refresh(){
    if(ticket!==epoch)return;
    if(!window.faWorldClockAdapter.sameWorld(data.world,world)){
     cache.delete(id);
-    // Refresh the shared clock first: a stale snapshot must never start a
-    // loop of match requests against the previous world revision.
     dispatchEvent(new Event('fa:world-invalidated'));
     return;
    }
@@ -219,10 +219,7 @@ async function refresh(){
 async function start(){
  const ticket=++epoch;world=null;pending=loaded='';state='loading';render();
  try{
-  // The app shell already reads the authoritative clock. Reuse it instead of
-  // issuing a second /api/world GET before loading the selected day.
-  // Debug currently has no authoritative shared clock: preserve its existing
-  // official-world fallback until the separate Debug API audit.
+  // Share the shell's canonical world read instead of a second GET.
   const snapshot=window.faWorldState?.get?.();
   const nextWorld=snapshot?.source==='dev'
    ?(await get('/api/world')).world

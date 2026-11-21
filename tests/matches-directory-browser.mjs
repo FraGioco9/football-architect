@@ -18,7 +18,11 @@ export async function verifyMatchesDirectory(browser){
    const day=Number(new URL(route.request().url()).searchParams.get('day'));requests++;
    return route.fulfill({json:{schemaVersion:1,providerId:'authoritative-world',world,selectedSeason:1,day,publication:'published',fixtures:day===13?Array.from({length:8},(_,i)=>(
     {matchId:String(17+i),competitionId:'BR-2',phaseId:'league',round:1,homeClubId:'BR-34',awayClubId:'BR-29',venue:'Estádio das Charqueadas',result:{homeGoals:2,awayGoals:1},status:'completed'}
-   )):day===15?[{matchId:'18',competitionId:'IT-1',phaseId:'league',round:2,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'}]:[]}});
+   )):day===15?[
+    {matchId:'18',competitionId:'IT-1',phaseId:'league',round:2,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'},
+    {matchId:'19',competitionId:'IT-1',phaseId:'promotionPlayoffs',round:2,leg:1,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'},
+    {matchId:'20',competitionId:'IT-1',phaseId:'promotionPlayoffs',round:2,leg:2,homeClubId:'IT-2',awayClubId:'IT-1',result:null,status:'scheduled'}
+   ]:[]}});
   });
   await page.goto('http://app.localhost:2000/matches',{waitUntil:'domcontentloaded'});
   const match=page.locator('#md-list a.md-score').first();
@@ -34,6 +38,18 @@ export async function verifyMatchesDirectory(browser){
    const name=await page.locator('#md-list .md-name-bar').boundingBox();
    assert(name.width>0);
    loading.set(width,{nameX:name.x,edges:await rowEdges()});
+   if(width<=540){
+    const skeleton=await page.locator('#md-list .md-row.md-skeleton').first().evaluate(row=>{
+     const bars=[...row.querySelectorAll('.md-team-bar')];
+     return {lines:getComputedStyle(row).getPropertyValue('--md-team-lines').trim(),
+      count:bars.length,heights:bars.map(bar=>bar.getBoundingClientRect().height),
+      backgrounds:bars.map(bar=>getComputedStyle(bar).backgroundImage)};
+    });
+    assert.equal(skeleton.lines,'1','mobile club name reserves one line '+width);
+    assert.equal(skeleton.count,2,'one name skeleton per club '+width);
+    assert(skeleton.heights.every(height=>height>0&&height<16),'mobile club skeletons stay single-height '+width);
+    assert(skeleton.backgrounds.every(background=>background==='none'),'mobile club skeletons do not render repeated bars '+width);
+   }
   }
   releaseWorld();
   await match.waitFor();
@@ -83,11 +99,31 @@ export async function verifyMatchesDirectory(browser){
     const rowFont=await page.locator('#md-list .md-row').first().evaluate(row=>parseFloat(getComputedStyle(row).fontSize));
     assert(Math.abs(season.x-controls.x)<2,'season starts at content edge '+width);
     assert(Math.abs(next.x+next.width-(controls.x+controls.width))<2,'day navigation fills the remaining width '+width);
-    assert(Math.abs(current.x-controls.x)<2&&Math.abs(current.width-controls.width)<2,'current day fills mobile row '+width);
+    assert(current.width<controls.width,'current day stays content-sized on mobile '+width);
+    assert(Math.abs(current.x+current.width/2-controls.x-controls.width/2)<2,'current day button stays centered '+width);
     assert.equal(await page.locator('#md-current').evaluate(button=>getComputedStyle(button).textAlign),'center');
     assert(heading.y-searchBox.y-searchBox.height<20,'no empty status gap after search '+width);
     assert(firstRow.height<70,'mobile fixture row stays compact '+width);
+    const horizontalPadding=await page.locator('#md-list .md-row').first().evaluate(row=>{const style=getComputedStyle(row);return [parseFloat(style.paddingLeft),parseFloat(style.paddingRight)]});
+    assert.deepEqual(horizontalPadding,[0,0],'mobile fixture row has no side padding '+width);
     assert(rowFont<14,'mobile fixture typography stays compact '+width);
+    const logoScoreGaps=await page.locator('.md-row:not(.md-skeleton)').first().evaluate(row=>{
+     const score=row.querySelector('.md-score'),range=document.createRange();
+     range.selectNodeContents(score);
+     const text=range.getBoundingClientRect();
+     const logos=row.querySelectorAll('.md-team > .md-logo');
+     return [text.left-logos[0].getBoundingClientRect().right,logos[1].getBoundingClientRect().left-text.right];
+    });
+    assert(logoScoreGaps.every(gap=>gap>=-1&&gap<20),'both mobile crests stay close to the actual score text '+width);
+    const team=page.locator('.md-row .md-team-label').first();
+    assert.equal(await team.getAttribute('aria-label'),'Esportivo das Charqueadas','full club name remains accessible '+width);
+    assert.equal(await team.locator('.md-team-name-compact').textContent(),'Charqueadas','use canonical compact club name '+width);
+    assert(await team.locator('.md-team-name-compact').isVisible(),'compact club name shown on small screens '+width);
+    assert(!await team.locator('.md-team-name-full').isVisible(),'full club name hidden visually on small screens '+width);
+   }else if(width===1440){
+    const team=page.locator('.md-row .md-team-label').first();
+    assert(await team.locator('.md-team-name-full').isVisible(),'desktop retains full club name');
+    assert(!await team.locator('.md-team-name-compact').isVisible(),'desktop hides compact club name');
    }
    assert(await page.locator('.matches-directory').evaluate(n=>n.clientWidth>0&&n.scrollWidth<=n.clientWidth+1),'directory overflow '+width);
   }
@@ -108,13 +144,14 @@ export async function verifyMatchesDirectory(browser){
   await page.goBack();await match.waitFor();
   assert(await divisionLogo.evaluate(slot=>slot===document.querySelector('#md-list h2 > .md-logo')),'reuse the resolved logo on return');
   assert.equal(requests,1,'filter and Back reuse the same day');
-  assert.equal(worldRequests,1,'Matches shares the app shell world GET on cold load');
+  assert.equal(worldRequests,1,'Matches shares the shell world request');
   await page.locator('#md-next').click();
   await page.getByText('No matches on this day.').waitFor();
   assert(await page.locator('#md-current').isEnabled());
   await page.locator('#md-next').click();await match.waitFor();
-  assert.equal(await page.locator('#md-list h2 small').innerText(),'Round 2');
-  const href=new URL(await page.locator('#md-list h2 a').getAttribute('href'),page.url());
+  assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),['Round 2','Playoffs · Leg 1','Playoffs · Leg 2'],'each knockout leg appears beside its phase heading');
+  assert.equal(await page.locator('#md-list .md-row small').filter({hasText:/Leg [12]/}).count(),0,'do not repeat Leg per fixture');
+  const href=new URL(await page.locator('#md-list h2 a').first().getAttribute('href'),page.url());
   assert.equal(href.pathname,'/competitions/it-1/fixtures');
   assert.equal(href.searchParams.get('matchday'),'2');
   assert.equal(href.searchParams.get('season'),'1');
@@ -126,7 +163,7 @@ export async function verifyMatchesDirectory(browser){
   await page.evaluate(()=>dispatchEvent(new Event('fa:world-invalidated')));
   await match.waitFor();
   assert.equal(requests,4,'refresh after world invalidation');
-  assert.equal(worldRequests,2,'invalidation refreshes the shared world only once');
+  assert.equal(worldRequests,2,'one shared world read after invalidation');
   await page.locator('#md-q').fill('xxxx');
   await page.getByText('No matching fixtures.').waitFor();
   assert.deepEqual(errors,[]);
