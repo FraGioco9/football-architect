@@ -1,0 +1,235 @@
+{
+  "schema": "player-portraits-v42-dev-evidence-candidate-v1",
+  "target": "dev-preview",
+  "NOT_A_RELEASE_MANIFEST": true,
+  "releaseAuthorized": false,
+  "source": {
+    "repository": "FraGioco9/football-architect",
+    "approvedWebpBaselineCommit": "0cb49c25c70298f673fb82db7acf88d53cd99a59",
+    "devIdentityTupleSha256": "29029a993424f920f41056f0d37e71c1b806695d8c335eb873cc47460ba3d409",
+    "documentedOwnerDevQa": "https://github.com/FraGioco9/football-architect/issues/722"
+  },
+  "devProfileAudit": {
+    "total": 150,
+    "approved": 26,
+    "pending": 124,
+    "schemaVersion": "player-portraits-v5",
+    "promptVersion": "player-portrait-v4.2"
+  },
+  "releaseEvidenceMissing": [
+    "independently-reviewed-per-image-approval-receipts",
+    "immutable-reviewed-approval-registry",
+    "owner-approved-dev-release-manifest",
+    "externally-pinned-dev-release-manifest-sha256"
+  ],
+  "portraits": [
+    {
+      "playerId": 44,
+      "appearanceFingerprint": "0e356537083778e2",
+      "identitySnapshotSha256": "fccc07d0a84353a89380e3271e0c413bff847a2e01893b306c66820a63dd6f4f",
+      "assetPath": "assets/players/portraits/44.webp",
+      "imageSha256": "099eb1d0676936af2fd12ae17dd4e3cb2754a36917c25271943f57a554bc1533",
+      "gitBlobSha1": "4804e61dc392aa0cd9a4751688d7042c57a94397"
+    },
+    {
+      "playerId": 45,
+      "appearanceFingerprint": "2a80554c1400f005",
+      "identitySnapshotSha256": "aebcc61e3f5338cd9786d84329679688c872b91c9f65665b380d11006d0d3958",
+      "assetPath": "assets/players/portraits/45.webp",
+      "imageSha256": "8308934049897a974cc8cae9a108b447f2fcb2beba27be08ca1a626da9fd648c",
+      "gitBlobSha1": "1c2a1215e7b5a51c049f07a3168de09197c1a83d"
+    },
+    {
+      "playerId": 46,
+      "appearanceFingerprint": "cd1e5b6efe7e00a9",
+      "identitySnapshotSha256": "eeaea0c1c167e28b2bf60ba410975cdafe0850765fba9e827ee59dd583f867d7",
+      "assetPath": "assets/players/portraits/46.webp",
+      "imageSha256": "ce459e6dd0d71b4a0d0464420fbb9e4475d1a5e126ef3111d5f5a58e0b99c745",
+      "gitBlobSha1": "8459d05261f1125aac18f70f329e47e74223c0b3"
+    },
+    {
+      "playerId": 47,
+      "appearanceFingerprint": "3afeeb55beb39b3b",
+      "identitySnapshotSha256": "02a98fe64e667af4b905566919c3a9d069dcbdc6b5ed975c1f97de7958308be1",
+      "assetPath": "assets/players/portraits/47.webp",
+      "imageSha256": "c2271088934c488855ef2a0df1421153ef25322d06a03ba14d8e2604315534b8",
+      "gitBlobSha1": "9be0c1455e0cfd9925ad8812d619571fc04859cd"
+    },
+    {
+      "playerId": 48,
+      "appearanceFingerprint": "e52d7b3e1f769545",
+      "identitySnapshotSha256": "db9c51ea747fef91696c68caf4aa940a9ed1a28778cbb95caa7a53452ae99e17",
+      "assetPath": "assets/players/portraits/48.webp",
+      "imageSha256": "7e8990263162dd06350006777dba1f0bce97bd53bbdabce08090d140f1b730fa",
+      "gitBlobSha1": "0b0a4bccf39df8409a14338e39886bb5c5a406ab"
+    },
+    {
+      "playerId": 49,
+      "appearanceFingerprint": "1900ea8b921ce560",
+      "identitySnapshotSha256": "20b36ba4957ab8f5937e9621f17bdba75f8c0a289dffba54e527ab5a7498cc98",
+      "assetPath": "assets/players/portraits/49.webp",
+      "imageSha256": "ae0a2ba8a3ef9c4620bea165928d3e2b90cbd5f15bbc56bb0ae8400f254e5172",
+      "gitBlobSha1": "4f8d0edb339012d1422ff0a30c3e6b1a61b3d93d"
+    },
+    {
+      "playerId": 50,
+      "appearanceFingerprint": "f07553dcdc92c0cd",
+      "identitySnapshotSha256": "aded75b0c7e7efab5eb28ca6dcc6ee5be170fd4207f746bd013b7ef4332bf3b9",
+      "assetPath": "assets/players/portraits/50.webp",
+      "imageSha256": "55f44e5a5dc16f953184fa5773c6b7ecc61905d3a31cc659a45a291de9933937",
+      "gitBlobSha1": "9047cd87b3cdf8f3cdf29b331ece03b17cb3f6b0"
+    },
+    {
+      "playerId": 51,
+      "appearanceFingerprint": "01457a958d82d28c",
+      "identitySnapshotSha256": "86dfe286ad60d3bf6ee1a0be1445b1325f2bbc34135ed6d7aca867c14d00af03",
+      "assetPath": "assets/players/portraits/51.webp",
+      "imageSha256": "6b1bb7c0da34b56bd28546889a520f7ab4e6d11a99a8213532d39e387ac5313f",
+      "gitBlobSha1": "15281d70b289f600ef3b5b5a8df23b39a3aba970"
+    },
+    {
+      "playerId": 52,
+      "appearanceFingerprint": "e2503e29f97b3736",
+      "identitySnapshotSha256": "a24395d41aba6ec81af58f76fd12cd7cd47c0d91b23581125c7329ec61f5d448",
+      "assetPath": "assets/players/portraits/52.webp",
+      "imageSha256": "cd292023f3124c5e741f6abdfc89389f3bca0b66a439308e9844ee579fa4f0e7",
+      "gitBlobSha1": "dcdc19ff056cbdd77b5213a2ca4f5453ef681c8d"
+    },
+    {
+      "playerId": 53,
+      "appearanceFingerprint": "1914c47f46c94080",
+      "identitySnapshotSha256": "f79cc80531bfceb3e208b54af75564b12965b5e260a9ac5a902108a59506b9cf",
+      "assetPath": "assets/players/portraits/53.webp",
+      "imageSha256": "b97ce68b905e280aa70abc7f60bc532e326030e09a4ce6281af2e2354be3eb4a",
+      "gitBlobSha1": "0a40f9653d8f7e8d9c4c3fcab2ad62007e089b54"
+    },
+    {
+      "playerId": 54,
+      "appearanceFingerprint": "e95df1f382bc22ee",
+      "identitySnapshotSha256": "dcc1949fadf0d8ad919a546ac85fa1cbe334b1bdfef19feaa144db7807a8d0ce",
+      "assetPath": "assets/players/portraits/54.webp",
+      "imageSha256": "6d430af5584dbb6b1d307a85b5554c6a3648d7433ac1415177f33fa2139fa272",
+      "gitBlobSha1": "dd0ebde6f309ea5bbd02dee518302d9fa807505f"
+    },
+    {
+      "playerId": 55,
+      "appearanceFingerprint": "ca1590ed708d4131",
+      "identitySnapshotSha256": "c27cfdc6198a9ab608e9e827b43adece6c8d9238659e1134c042b83b01e47e14",
+      "assetPath": "assets/players/portraits/55.webp",
+      "imageSha256": "d032aa110aa43fc1787e86fdd68d7c849fb382cb311cd97e16f2d722a6ae6f5c",
+      "gitBlobSha1": "e55aeac89dba622b3d3695022674dd574eeebbe9"
+    },
+    {
+      "playerId": 56,
+      "appearanceFingerprint": "9ad864c3b0f77f5d",
+      "identitySnapshotSha256": "726bd674560e9a9321e0720570f01f4fe6d4959e320c7d071ea57ed480ad22a5",
+      "assetPath": "assets/players/portraits/56.webp",
+      "imageSha256": "5023463d216dbfa87e6fd30c3ba841daa9ad1bb835a56761db2dd300ddab39e6",
+      "gitBlobSha1": "67252c705f3a408893f9881d0931ba0f0392a2b2"
+    },
+    {
+      "playerId": 57,
+      "appearanceFingerprint": "9ec5f6e4aba84ad3",
+      "identitySnapshotSha256": "a581966e7b23097e6f6cff94cc45b488e5e136e740e678d6ad305e99b9a9fdc5",
+      "assetPath": "assets/players/portraits/57.webp",
+      "imageSha256": "9f1005381b2986a89592e8eea11ceb2edf9bcceef362dc9f4d1f7644542219c2",
+      "gitBlobSha1": "e9094bcfb411e6b0d714a48488a76225189f3076"
+    },
+    {
+      "playerId": 58,
+      "appearanceFingerprint": "43ae5b1b1cc372b4",
+      "identitySnapshotSha256": "c01be6d14ef5813f770bb9f119365faab7fa327333ac808316ee7f8f319db4a7",
+      "assetPath": "assets/players/portraits/58.webp",
+      "imageSha256": "bba0fbddc13cbeccb66c0052b437612d527f1d72a96eef01a006777bf547ca3a",
+      "gitBlobSha1": "11053d31c3d1f45bd98085ca97eb1006fe646b01"
+    },
+    {
+      "playerId": 59,
+      "appearanceFingerprint": "e11651ff80913479",
+      "identitySnapshotSha256": "f24ecd5175248e19bc849170c849e29bf1c251710bb0a3181bb1eba2c50ca43b",
+      "assetPath": "assets/players/portraits/59.webp",
+      "imageSha256": "d069845b145b38908096de82ead3f1b63d254d64b5b3b04c5c8dd67a5cbeed88",
+      "gitBlobSha1": "1f708176cf63d55d64a361ad07869e7ec0e3ec35"
+    },
+    {
+      "playerId": 60,
+      "appearanceFingerprint": "1b8bc604127e3ca7",
+      "identitySnapshotSha256": "d9b2241bfaf3017633e70ad6b53ffae0cfa8e70905d2a2f66c5af540aedb2c99",
+      "assetPath": "assets/players/portraits/60.webp",
+      "imageSha256": "17bd6fe178439da614fd1c97fcf46164c94c6ef5518af1dc6c8e40607596b2b8",
+      "gitBlobSha1": "e60bf86d395a2df6e6b9db1c411916c77c9148e3"
+    },
+    {
+      "playerId": 61,
+      "appearanceFingerprint": "63b730be4ff16b19",
+      "identitySnapshotSha256": "3d2c50df20f48cdec6a6e6517d98149d5380b47a0d464c17f19948fd1d3c72cf",
+      "assetPath": "assets/players/portraits/61.webp",
+      "imageSha256": "875949565cc689d087bab5bdb7c4556f893a1b4fea8d027d29430da9d3d88ebd",
+      "gitBlobSha1": "ff446bad687bc2508882078aba2b180f2bfecae7"
+    },
+    {
+      "playerId": 62,
+      "appearanceFingerprint": "dd41c0c9225dccbb",
+      "identitySnapshotSha256": "3a891b52887b4dac5c14b2e21f797d443a3da0fa3fba695bb0950fbd37444165",
+      "assetPath": "assets/players/portraits/62.webp",
+      "imageSha256": "74dab482259268ec39e72e7669d76df81d46658eb914e65f48f73ee3b9ea8eb2",
+      "gitBlobSha1": "01363388ae8d26e31abe7dfbcfb4e9cb6c96b78f"
+    },
+    {
+      "playerId": 63,
+      "appearanceFingerprint": "3697293dc0a3c3d2",
+      "identitySnapshotSha256": "1132ba474b1f080de6e2d66b0f6bb89deb7365c773756e8b1f3835e72d2932ae",
+      "assetPath": "assets/players/portraits/63.webp",
+      "imageSha256": "893dbf5265f18e3d94e999507fa9b0be9f3a4b06401dcd24d31d8b8c45e88d7f",
+      "gitBlobSha1": "05a7df9b59a8b24184f4bb90f52d6533b1af3631"
+    },
+    {
+      "playerId": 93,
+      "appearanceFingerprint": "8adeadc68960279d",
+      "identitySnapshotSha256": "fe89f7039d680b9180c5b602f42d554558b23e7cc6f2c802994e9dfe2740d46e",
+      "assetPath": "assets/players/portraits/93.webp",
+      "imageSha256": "14b14c489860cc160eb3d02c27c4ce6920a2b7c77b555b73a6d2ca13a6c0f4f4",
+      "gitBlobSha1": "8a1426601c07a52dc16de7308b1c82e7519188d8"
+    },
+    {
+      "playerId": 98,
+      "appearanceFingerprint": "965e8b88abd4493e",
+      "identitySnapshotSha256": "9cf00eb57a67e5b048cebbe819ac7f8d7bdad6c59ac254d4ef461096ea070bb7",
+      "assetPath": "assets/players/portraits/98.webp",
+      "imageSha256": "e4c55a97aa0890b6b569d1bd74ed52d6d42ddd9bedc4aaf63708e110f89001ca",
+      "gitBlobSha1": "83bc660e6e0c34e45b83a77059cd6f08a5c7bd40"
+    },
+    {
+      "playerId": 141,
+      "appearanceFingerprint": "0e9346abee9506f4",
+      "identitySnapshotSha256": "c9a6f5f6617e9e89620babf209b7dfcf8f935f3f68abcb0e2941964661d57507",
+      "assetPath": "assets/players/portraits/141.webp",
+      "imageSha256": "31e16d2b1a87f7c8b2e858f88ed168801a0dba86fc84bbb122a79d85325fa369",
+      "gitBlobSha1": "2cefff6f29a4aea7fc4c1731567c4a7cc102ae22"
+    },
+    {
+      "playerId": 145,
+      "appearanceFingerprint": "36b2b0c0cb4c08fa",
+      "identitySnapshotSha256": "bbb772fb040e388823ab827a813344ea3d7568ca37704c6729fdecb7fcdc1e7e",
+      "assetPath": "assets/players/portraits/145.webp",
+      "imageSha256": "8e5b9f4561c0f8414a5d031c12d4a3fe8b36559ec153bfc198f44c71aa7c9921",
+      "gitBlobSha1": "928728a82ae23d8c5922a8e2671b8d76bd13208a"
+    },
+    {
+      "playerId": 148,
+      "appearanceFingerprint": "d13b1a9062c2e2b5",
+      "identitySnapshotSha256": "b7c57d4c2b0af5d3a7e134775c8f3a835c2dd29d7c7dd8355c3854002c95ad5d",
+      "assetPath": "assets/players/portraits/148.webp",
+      "imageSha256": "a022afcc5cff12f74aa19f98f09dca4b8c6b3dd08b8f875b8656637070830fe0",
+      "gitBlobSha1": "eee562fc98eeacda6e5de19962bfa388f0d4feba"
+    },
+    {
+      "playerId": 190,
+      "appearanceFingerprint": "b8057d217b228ff6",
+      "identitySnapshotSha256": "6c13939d9a4eb7d938c21f8b0d90ad5fd652319365d4b390a283ce139569bf10",
+      "assetPath": "assets/players/portraits/190.webp",
+      "imageSha256": "48faff5bf73e7a71a2d9502ca466b00e448af9360704a85d00a8c4421fc1824f",
+      "gitBlobSha1": "6ba4fc7f5be1556a3d3fd986f0b2c8d2176f161d"
+    }
+  ]
+}
