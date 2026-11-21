@@ -4,6 +4,8 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {browserCases,areaRoutes,verifyArea} from './ci-opt-01-browser-cases.mjs';
 import {verifyCompetitionCompactNetwork} from './competition-compact-network-browser.mjs';
+import {verifyCompetitionPublishedNetwork} from './competition-published-734-browser.mjs';
+import {verifyClubBfcacheNetwork} from './club-api-bfcache-browser.mjs';
 
 export async function runArea(browser,area,engine='chromium'){
  assert.ok(Object.hasOwn(areaRoutes,area),'Unknown area');
@@ -38,7 +40,8 @@ export async function runArea(browser,area,engine='chromium'){
    throw error;
   }finally{await context.close()}
  }
- if(area==='competitions'){checks+=await verifyCompetitionCompactNetwork(browser,{engine});checks+=await verifyCompetitionPlayerStats(browser,{engine});}
+ if(area==='clubs')checks+=await verifyClubBfcacheNetwork(browser,{engine});
+ if(area==='competitions'){checks+=await verifyCompetitionCompactNetwork(browser,{engine});checks+=await verifyCompetitionPlayerStats(browser,{engine});checks+=await verifyCompetitionPublishedNetwork(browser,{engine});}
  console.log('TARGETED '+engine+' PASS: '+area+' '+checks+' cases (pairwise widths/locales/themes; touch + keyboard)');
  return checks;
 }

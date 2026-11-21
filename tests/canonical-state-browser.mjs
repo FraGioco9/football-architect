@@ -56,6 +56,11 @@ export async function verifyCanonicalStateBrowser(browser,engine){
    // Cancellation of the held request is expected when the user changes season.
    try{return await json(route,200,payload)}catch(error){if(!/closed|handled|cancel|invalid|intercept/i.test(error.message))throw error;return;}
   }
+  // The SH-03 synthetic world has no published numeric match index.
+  // Match the Worker's public missing-publication response, not protected-API 401.
+  // Keep genuine JS/page errors fatal (including in WebKit).
+  if(/^\/api\/matches\/seasons\/[1-9][0-9]*\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(path))
+   return json(route,404,{error:{code:'not_found'}});
   const day=path.match(/^\/api\/calendar\/seasons\/(\d+)\/days\/(\d+)$/);
   if(day&&populated&&day[1]==='2'&&day[2]==='13')return json(route,200,calendarPublished(2,13,apiWorld));
   if(day)return json(route,200,{schemaVersion:1,providerId:'authoritative-world',scope:'calendar',selectedSeason:Number(day[1]),day:Number(day[2]),world:apiWorld,status:'empty',reason:'calendar-unpublished',data:null,provenance:unavailable});
