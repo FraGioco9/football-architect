@@ -3,15 +3,21 @@ import {readFileSync,lstatSync,readdirSync} from "node:fs";
 import {createHash} from "node:crypto";
 import {join} from "node:path";
 import {fileURLToPath} from "node:url";
+import {competitionLogoUrl} from "../assets/public-image-urls.mjs";
 const ROOT=fileURLToPath(new URL("../",import.meta.url));
 const CANONICAL=JSON.parse(readFileSync(new URL("../data/divisions.json",import.meta.url),"utf8"));
 // SHA-256 of sorted (UTF-8 relative path + NUL + original bytes), approved ZIP.
 const APPROVED_SHA256="5850305468a3e61a1f5a88a2d427f3f86fdb9cd4a0e7063ab61a64ced7e80e8d";
 const fail=message=>{throw Error("Division assets invalid: "+message);};
-export const divisionAssetPath=(division,variant)=>{
- if(!["primary","compact"].includes(variant))fail("variant");
+// Original approved ZIP names are digest labels, not published URL paths.
+const approvedArchivePath=(division,variant)=>{
  const slug=division.id.toLowerCase()+"-"+division.name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
- return `assets/divisions/${slug}/${variant}.svg`;
+ return 'assets/divisions/'+slug+'/'+variant+'.svg';
+};
+export const divisionAssetPath=(division,variant)=>{
+ const url=competitionLogoUrl(division?.id,variant);
+ if(!url)fail("division ID or variant");
+ return url.slice(1);
 };
 // Deliberately narrow XML/CSS grammar for the approved path-only artwork.
 // Everything outside this grammar is rejected, including entities and references.
@@ -68,17 +74,17 @@ export function validateDivisionAssets(root=ROOT){
   const variants={};
   for(const variant of ["primary","compact"]){
    const path=divisionAssetPath(division,variant),full=join(root,path);
-   for(const directory of ["assets","assets/divisions",path.slice(0,path.lastIndexOf("/"))])
+   for(const directory of ["assets","assets/competitions",path.slice(0,path.lastIndexOf("/"))])
     if(lstatSync(join(root,directory)).isSymbolicLink())fail("directory symlink");
    if(lstatSync(full).isSymbolicLink()||!lstatSync(full).isFile())fail("not ordinary file");
    const raw=readFileSync(full);
    variants[variant]=validateDivisionSvg(raw,division);
-   paths.add(path);bytes.set(path,raw);
+   paths.add(path);bytes.set(approvedArchivePath(division,variant),raw);
   }
   divisions.set(division.id,variants);
  }
  const hash=createHash("sha256");
- for(const path of [...paths].sort())hash.update(path+"\0").update(bytes.get(path));
+ for(const path of [...bytes.keys()].sort())hash.update(path+"\0").update(bytes.get(path));
  if(hash.digest("hex")!==APPROVED_SHA256)fail("approved SVG integrity");
  const actual=[];
  const walk=dir=>{for(const entry of readdirSync(join(root,dir),{withFileTypes:true})){
@@ -86,7 +92,7 @@ export function validateDivisionAssets(root=ROOT){
   if(entry.isSymbolicLink())fail("symlink");
   if(entry.isDirectory())walk(path);else actual.push(path);
  }};
- walk("assets/divisions");
+ walk("assets/competitions");
  if(actual.length!==32||actual.some(p=>!paths.has(p)))fail("unexpected division asset");
  return {divisions,paths};
 }
