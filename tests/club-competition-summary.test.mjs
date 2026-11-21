@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as preview from '../tools/dev-standings-preview-data.mjs';
+import {competitionLogoUrl} from '../assets/public-image-urls.mjs';
 const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
 test('Club summary uses the current standings and never exposes unplayed scores',()=>{
  assert.equal(typeof preview.createPreviewClubSummary,'function');
@@ -86,6 +87,8 @@ test('Club competition cards render current own-club snapshots for every divisio
    assert.ok(html.includes('/competitions/'+division.id.toLowerCase()+'/standings"'),context+' current standings route');
    assert.doesNotMatch(html,/data-club-position><a/,context+' rank is not a link');
    assert.doesNotMatch(html,/data-club-points/,context+' no points');
+   assert.ok(html.includes('src="'+competitionLogoUrl(division.id,'compact')+'"'),context+' logo uses immutable division ID');
+   assert.doesNotMatch(html,/assets\/divisions\//,context+' never renders a legacy name-slugged logo');
    assert.ok(html.includes('fixtures?matchday=16'),context+' round 16 link');
    assert.ok(html.includes(names),context+' actual fixture names safely escaped');
    assert.ok(html.includes('>'+model.copies[lang].nextMatchLabel+'</span>'),context+' next match localized');
@@ -108,5 +111,13 @@ test('A01-10 repeated rendering keeps identical snapshots and rejects foreign cl
   const html=model.render(clubs,selected,'en','?season=3&matchday=15',snapshot);
   assert.equal(model.render(clubs,selected,'en','?season=3&matchday=15',snapshot),html,division.id+' stable repeated output');
   assert.notEqual(model.render(clubs,selected,'en','?season=3&matchday=15',{...snapshot,clubId:division.clubs[1].clubId}),html,division.id+' wrong-club summary');
+ }
+});
+
+test('#733 club model never rebuilds competition artwork slugs from names',()=>{
+ const source=readFileSync(new URL('../assets/club-model.js',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/assets\/divisions\//);
+ for(const division of manifest.divisions){
+  assert.equal(competitionLogoUrl(division.id,'compact'),'/assets/competitions/'+division.id+'/compact.svg');
  }
 });
