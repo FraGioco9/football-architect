@@ -10,13 +10,13 @@ const competitions=countries.flatMap(c=>[1,2].map(n=>matchPublicContext({competi
 const {clubs,clubCrests}=publicClubIdentityCatalog();
 const teams=new Map(clubs.map(c=>[c.countryId+'-'+c.clubId,c]));
 const vocabulary={
- en:'Matches|Season|Sporting day|Current day|Country|Competition|Search team|All|International|England|Previous day|Next day|No matches on this day.|No matching fixtures.|Fixtures have not been published.|Publication in progress.|The world has not started.|Matches unavailable.|Retry|Scheduled|To be confirmed|Rank|Winner|Round|Leg|Neutral venue|League|Playoffs|Playout|Quarter-finals|Semi-finals|Final|Loading matches|Winner of playoff|Winner|Winner of semifinal',
- it:'Partite|Stagione|Giorno sportivo|Giorno corrente|Paese|Competizione|Cerca squadra|Tutti|Internazionale|Inghilterra|Giorno precedente|Giorno successivo|Nessuna partita in questo giorno.|Nessuna partita corrispondente.|Incontri non ancora pubblicati.|Pubblicazione in corso.|Il mondo non è ancora iniziato.|Partite non disponibili.|Riprova|In programma|Da definire|Posizione|Vincente|Turno|Gara|Campo neutro|Campionato|Playoff|Playout|Quarti di finale|Semifinali|Finale|Caricamento partite|Vincente playoff|Vincente|Vincente semifinale',
- de:'Spiele|Saison|Spieltag|Aktueller Tag|Land|Wettbewerb|Team suchen|Alle|International|England|Vorheriger Tag|Nächster Tag|Keine Spiele an diesem Tag.|Keine passenden Spiele.|Spiele noch nicht veröffentlicht.|Veröffentlichung läuft.|Die Saison hat noch nicht begonnen.|Spiele nicht verfügbar.|Erneut versuchen|Angesetzt|Noch offen|Rang|Sieger|Runde|Spiel|Neutraler Platz|Liga|Playoffs|Playout|Viertelfinale|Halbfinale|Finale|Spiele werden geladen|Sieger aus Playoff|Sieger|Sieger des Halbfinals',
- es:'Partidos|Temporada|Día deportivo|Día actual|País|Competición|Buscar equipo|Todos|Internacional|Inglaterra|Día anterior|Día siguiente|No hay partidos este día.|Ningún partido coincide.|Partidos aún sin publicar.|Publicación en curso.|El mundo aún no ha comenzado.|Partidos no disponibles.|Reintentar|Programado|Por confirmar|Puesto|Ganador|Ronda|Partido|Campo neutral|Liga|Playoffs|Permanencia|Cuartos de final|Semifinales|Final|Cargando partidos|Ganador del playoff|Ganador|Ganador de semifinal',
- fr:'Matchs|Saison|Journée sportive|Jour actuel|Pays|Compétition|Rechercher une équipe|Tous|International|Angleterre|Jour précédent|Jour suivant|Aucun match ce jour.|Aucun match correspondant.|Matchs pas encore publiés.|Publication en cours.|Le monde n’a pas encore démarré.|Matchs indisponibles.|Réessayer|Programmé|À déterminer|Rang|Vainqueur|Tour|Manche|Terrain neutre|Championnat|Barrages|Maintien|Quarts de finale|Demi-finales|Finale|Chargement des matchs|Vainqueur du barrage|Vainqueur|Vainqueur de demi-finale'
+ en:'Matches|Season|Sporting day|Current day|Country|Competition|Search team|All|International|England|Previous day|Next day|No matches on this day.|No matching fixtures.|Fixtures have not been published.|Publication in progress.|The world has not started.|Matches unavailable.|Retry|Scheduled|To be confirmed|Rank|Winner|Round|Leg|Neutral venue|League|Playoffs|Playout|Quarter-finals|Semi-finals|Final|Loading matches|Winner of playoff|Winner|Winner of semifinal|Winner of quarter-final|QF|SF',
+ it:'Partite|Stagione|Giorno sportivo|Giorno corrente|Paese|Competizione|Cerca squadra|Tutti|Internazionale|Inghilterra|Giorno precedente|Giorno successivo|Nessuna partita in questo giorno.|Nessuna partita corrispondente.|Incontri non ancora pubblicati.|Pubblicazione in corso.|Il mondo non è ancora iniziato.|Partite non disponibili.|Riprova|In programma|Da definire|Posizione|Vincente|Turno|Gara|Campo neutro|Campionato|Playoff|Playout|Quarti di finale|Semifinali|Finale|Caricamento partite|Vincente playoff|Vincente|Vincente semifinale|Vincente quarto di finale|QF|SF',
+ de:'Spiele|Saison|Spieltag|Aktueller Tag|Land|Wettbewerb|Team suchen|Alle|International|England|Vorheriger Tag|Nächster Tag|Keine Spiele an diesem Tag.|Keine passenden Spiele.|Spiele noch nicht veröffentlicht.|Veröffentlichung läuft.|Die Saison hat noch nicht begonnen.|Spiele nicht verfügbar.|Erneut versuchen|Angesetzt|Noch offen|Rang|Sieger|Runde|Spiel|Neutraler Platz|Liga|Playoffs|Playout|Viertelfinale|Halbfinale|Finale|Spiele werden geladen|Sieger aus Playoff|Sieger|Sieger des Halbfinals|Sieger des Viertelfinals|VF|HF',
+ es:'Partidos|Temporada|Día deportivo|Día actual|País|Competición|Buscar equipo|Todos|Internacional|Inglaterra|Día anterior|Día siguiente|No hay partidos este día.|Ningún partido coincide.|Partidos aún sin publicar.|Publicación en curso.|El mundo aún no ha comenzado.|Partidos no disponibles.|Reintentar|Programado|Por confirmar|Puesto|Ganador|Ronda|Partido|Campo neutral|Liga|Playoffs|Permanencia|Cuartos de final|Semifinales|Final|Cargando partidos|Ganador del playoff|Ganador|Ganador de semifinal|Ganador de cuarto de final|CF|SF',
+ fr:'Matchs|Saison|Journée sportive|Jour actuel|Pays|Compétition|Rechercher une équipe|Tous|International|Angleterre|Jour précédent|Jour suivant|Aucun match ce jour.|Aucun match correspondant.|Matchs pas encore publiés.|Publication en cours.|Le monde n’a pas encore démarré.|Matchs indisponibles.|Réessayer|Programmé|À déterminer|Rang|Vainqueur|Tour|Manche|Terrain neutre|Championnat|Barrages|Maintien|Quarts de finale|Demi-finales|Finale|Chargement des matchs|Vainqueur du barrage|Vainqueur|Vainqueur de demi-finale|Vainqueur du quart de finale|QF|DF'
 };
-const keys='title season day current country competition search all international england prev next empty filtered unpublished partial zero unavailable retry scheduled tbd rank winner round leg neutral league playoffs playout quarterfinals semifinals final loading playoffWinner playoffSlot semifinalWinner'.split(' ');
+const keys='title season day current country competition search all international england prev next empty filtered unpublished partial zero unavailable retry scheduled tbd rank winner round leg neutral league playoffs playout quarterfinals semifinals final loading playoffWinner playoffSlot semifinalWinner quarterfinalWinner quarterfinalShort semifinalShort'.split(' ');
 let words,locale,world=null,rows=[],state='loading',epoch=0,loaded='',pending='';
 let dayCache=new Map(),cacheWorld=null;
 const skeleton=el('list').innerHTML;
@@ -92,6 +92,8 @@ function updateURL(changes,replace=false){
  if(href!==location.pathname+location.search)history[replace?'replaceState':'pushState'](null,'',href);
  refresh();
 }
+// Public bracket labels follow the canonical league-rank pairings and round ordinals.
+// Never expose internal tie IDs (p89, semi36, q1, s1) in player-facing labels.
 const tieWinnerRankPairs={
  p512:{ranks:[5,12],stage:'playoffWinner'},p611:{ranks:[6,11],stage:'playoffWinner'},
  p710:{ranks:[7,10],stage:'playoffWinner'},p89:{ranks:[8,9],stage:'playoffWinner'},
@@ -102,9 +104,14 @@ function participantNames(id,ref){
  if(c)return {name:c.primaryName,compact:c.compactName};
  if(ref?.kind==='leagueRank')return {name:words.rank+' '+ref.rank};
  if(ref?.kind==='tieWinner'){
-  const pairing=tieWinnerRankPairs[String(ref.tieId??'').toLowerCase()];
+  const tieId=String(ref.tieId??'').toLowerCase();
+  const pairing=tieWinnerRankPairs[tieId];
   if(pairing)return {name:words[pairing.stage]+' '+pairing.ranks.join(' vs '),compact:words.playoffSlot+' '+pairing.ranks.join('–')};
-  return {name:words.winner+' '+ref.tieId};
+  const quarterfinal=/^q([1-4])$/.exec(tieId);
+  if(quarterfinal)return {name:words.quarterfinalWinner+' '+quarterfinal[1],compact:words.playoffSlot+' '+words.quarterfinalShort+' '+quarterfinal[1]};
+  const semifinal=/^s([1-2])$/.exec(tieId);
+  if(semifinal)return {name:words.semifinalWinner+' '+semifinal[1],compact:words.playoffSlot+' '+words.semifinalShort+' '+semifinal[1]};
+  return {name:words.tbd};
  }
  return {name:words.tbd};
 }
