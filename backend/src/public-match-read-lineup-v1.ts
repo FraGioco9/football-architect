@@ -172,7 +172,7 @@ export async function readPublicMatchStatisticsV1(db:Database,matchId:string){
  * between domestic and international draws. Does not publish standings or
  * future match results before a sporting receipt exists.
  */
-export async function readPublishedCompetitionMatchesLineupV1(db:Database,season:number,competitionId:string){
+export async function readPublishedCompetitionMatchesLineupV1(db:Database,season:number,competitionId:string,includeWorld=false){
  if(!Number.isSafeInteger(season)||season<1||
     !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(competitionId))return missing();
  const world=await readWorld(db);
@@ -227,7 +227,8 @@ export async function readPublishedCompetitionMatchesLineupV1(db:Database,season
      tieId:r.tie_id,leg:r.leg,homeClubId:null,awayClubId:null,venue:null,
      participantA:JSON.parse(r.participant_a_json),participantB:JSON.parse(r.participant_b_json)}))
   ].sort((a,b)=>a.day-b.day||a.matchId.localeCompare(b.matchId,'en')),
-  provenance:{kind:'authoritative',sourceKind:sample.source_kind,sourceHash:sample.source_hash}};
+  provenance:{kind:'authoritative',sourceKind:sample.source_kind,sourceHash:sample.source_hash},
+  ...(includeWorld?{world}:{})};
 }
 
 

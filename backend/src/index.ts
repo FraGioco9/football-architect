@@ -1,4 +1,5 @@
 import {readMatchDirectory} from './public-match-directory.ts';
+import {readPublicMatchContextV1} from './public-match-context.ts';
 import {httpJson,routeMethod} from './http-contract.ts';
 import {assertEnvironmentPool,resolveAccountConfiguration} from './environment-pool.ts';
 import {handleAdmin,type AdminEnv} from './http-admin.ts';
@@ -106,6 +107,25 @@ export default {
         if(error instanceof ApiError&&(error.code==='not_found'||error.code==='stale_world'))
          return json(error.status,{error:{code:error.code}});
         return json(503,{error:{code:'match_unavailable'}});
+      }
+    }
+    // Separate, compact auxiliary Form/position read. Never blocks scoreboard
+    // or the independent frozen /stats response.
+    const matchContext=url.pathname.match(/^\/api\/matches\/([1-9][0-9]*)\/context$/);
+    if(matchContext){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(!Number.isSafeInteger(Number(matchContext[1]))||url.searchParams.size!==2||
+         [...url.searchParams.keys()].some(key=>!['season','competition'].includes(key))||
+         [...new Set(url.searchParams.keys())].length!==2)return json(422,{error:{code:'invalid_public_request'}});
+      const season=url.searchParams.get('season')??'',competition=url.searchParams.get('competition')??'';
+      if(!/^[1-9][0-9]{0,8}$/.test(season)||!Number.isSafeInteger(Number(season))||
+         !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(competition))
+        return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicMatchContextV1(requireDatabase(env.DB),matchContext[1],Number(season),competition))}
+      catch(error){
+        if(error instanceof ApiError&&['invalid_public_request','not_found','stale_world'].includes(error.code))
+         return json(error.status,{error:{code:error.code}});
+        return json(503,{error:{code:'match_context_unavailable'}});
       }
     }
     const playerMatches=url.pathname.match(/^\/api\/players\/([1-9][0-9]*)\/matches$/);

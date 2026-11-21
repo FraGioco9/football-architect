@@ -593,8 +593,39 @@ for(const [engine,driver] of Object.entries(engines)){
        marker:'N01',day:1,round:1}]
      })
     }));
+    // #734 — observed optional Match Detail GETs with intercepted synthetic data.
+    const contextWorld={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',
+     revision:9,seasonNumber:1,day:14,phase:'active'};
+    await page.route('**/api/world',route=>route.fulfill({json:{world:contextWorld}}));
+    const featureGets=[];
+    page.on('request',request=>{
+     const path=new URL(request.url()).pathname;
+     if(request.method()==='GET'&&(
+       path==='/api/matches/123'||path==='/api/matches/123/stats'||
+       path==='/api/matches/123/context'||
+       path==='/api/competitions/IT-1/seasons/1'||
+       path==='/api/matches/seasons/1/competitions/IT-1'))
+      featureGets.push(path);
+    });
+    await page.route('**/api/matches/123/context?*',route=>route.fulfill({
+     status:200,contentType:'application/json',body:JSON.stringify({
+      schemaVersion:1,providerId:'authoritative-world',matchId:'123',season:1,
+      competitionId:'IT-1',day:16,homeClubId:'IT-1',awayClubId:'IT-2',world:contextWorld,
+      projection:{schemaVersion:1,providerId:'authoritative-world',
+       competitionId:'IT-1',selectedSeason:1,status:'partial',provenance:{kind:'authoritative'},
+       data:{season:1,seasonState:{day:currentStatus==='completed'?20:14,phase:'active'},
+        standings:{rows:[{clubId:'IT-1',rank:3,played:5},{clubId:'IT-2',rank:5,played:5}]},
+        fixtures:currentStatus==='postponed'?leagueFixtures.filter(f=>f.id===officialSource||f.id==='f3'):
+         currentStatus==='cancelled'?[]:leagueFixtures}},
+      published:{schemaVersion:1,providerId:'authoritative-world',status:'published',
+       season:1,competitionId:'IT-1',provenance:{kind:'authoritative'},
+       fixtures:[{matchId:'901',phaseId:'league',sourceFixtureId:officialSource,
+        marker:'N01',day:1,round:1}]}
+     })
+    }));
     for(const status of ['awaiting_participants','scheduled','in_progress','postponed','cancelled','completed']){
      currentStatus=status;
+     const featureStart=featureGets.length;
      const response=await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
      assert.equal(response?.status(),200,engine+' '+theme+' '+status);
      await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
@@ -654,6 +685,10 @@ for(const [engine,driver] of Object.entries(engines)){
      if(status==='scheduled'){
       await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3rd');
       assert.deepEqual(await page.locator('[data-match-position]').allTextContents(),['3rd','5th']);
+      assert.deepEqual(featureGets.slice(featureStart),
+       ['/api/matches/123','/api/matches/123/context'],
+       engine+' scheduled Match Detail sends exactly 2 feature HTTP GETs');
+
       const form=await page.locator('[data-match-form]').evaluateAll(els=>els.map(el=>
        [...el.children].map(x=>x.dataset.outcome||'-').join('')
       ));
@@ -750,6 +785,10 @@ for(const [engine,driver] of Object.entries(engines)){
       await page.waitForFunction(()=>document.querySelector('[data-match-form="home"]')?.children[0]?.dataset.outcome==='w');
       assert.deepEqual(await page.locator('[data-match-position]').allTextContents(),['–','–'],
        'Historical positions cannot be inferred from later standings');
+      assert.deepEqual(featureGets.slice(featureStart).slice().sort(),
+       ['/api/matches/123','/api/matches/123/context','/api/matches/123/stats'].sort(),
+       engine+' completed Match Detail sends exactly 3 feature HTTP GETs');
+
      }
      assert.ok(Math.abs(state.centreOffset)<=0.5,JSON.stringify({engine,theme,status,state}));
      // Real authorised club IDs link to club pages even before a score
