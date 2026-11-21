@@ -182,6 +182,7 @@
     "tests/ci-opt-01-workflow-events.test.mjs": "site-node",
     "tests/ci-opt-02-workflow-contract.test.mjs": "site-node",
     "tests/ci-opt-04-05.test.mjs": "site-node",
+    "tests/ci-opt-06-account-matrix.test.mjs": "site-node",
     "tests/ci-opt-06-cup-matrix.test.mjs": "site-node",
     "tests/ci-opt-06-request-settle.test.mjs": "site-node",
     "tests/ci-repair-benchmark.test.mjs": "site-node",

@@ -97,12 +97,8 @@ jobs:
       - name: Defer full browser checks on draft or provider-only PR
         if: ${{ (needs.scope.outputs.mode == 'fast') && !needs.scope.outputs.reuse }}
         run: echo 'Full browser suite deferred to ready-for-review or main; fast-safe scope.'
-      - name: Restore pinned Playwright browser cache
-        if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-browsers-1.58.2-v3
+      # The official pinned Playwright container already owns /ms-playwright.
+      # A ~/.cache/ms-playwright cache never feeds this browser path.
       - name: Install isolated browser test dependency
         if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
         run: |

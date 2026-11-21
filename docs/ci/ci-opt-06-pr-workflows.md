@@ -177,3 +177,34 @@ This is a controlled experiment: compare real exact-head Browser time and
 run stability with `e89e0942`; revert if Chromium resource contention
 outweighs savings. Maintain Draft/HOLD; no merge, deploy, manual dispatch
 or remote database changes.
+
+## Final scoped optimization trial — Account and container cache (2026-11-21)
+
+At verified `502ce5d1` the critical jobs were Browser 379s, Site 363s,
+Account WebKit 368s (Chromium 235s). Inside Site, stale reviewed
+fingerprints deliberately made **all 198 files serial**; do **not** silently
+rebaseline an audited dependency just to achieve parallelism.
+
+Two independent Account matrices (interaction and layout) now overlap the
+**dark/light themes only** (at most two concurrent contexts). Each theme's
+viewports remain serial; languages complete in order. Each test script keeps
+its own local preview server on port 2000 and therefore the nine scripts
+remain strictly serial. Counts remain 100 interaction cases and 80 layout
+cases per browser engine, with all five languages and responsive widths.
+The helper waits for both themes and fails FULL on either or both errors;
+its dedicated site-owned tests verify the exact coverage, concurrency cap,
+ordering and injected failures. It logs `CI_OPT_06_ACCOUNT_MATRIX` timing
+by locale to compare contention versus elapsed-time savings.
+
+The official pinned Playwright container uses `PLAYWRIGHT_BROWSERS_PATH=/ms-playwright`;
+its Browser and Account jobs no longer restore a mismatched
+`~/.cache/ms-playwright` cache. The non-container Admin lifecycle job retains
+its legitimate cache. Site FULL retains its exact Node inventory and
+serial safety fallback but now logs `CI_OPT_06_SITE_LANE` elapsed time and
+fingerprint validity. No assertions are removed, no optional suite is
+misreported as PASS, and no required gates are changed.
+
+This is **unverified until automatic exact-head FULL CI**. If Account WebKit
+contention or flakiness regresses, revert the scoped theme overlap; do not
+claim >=25% matched median speedup from a single run. Maintain Draft/HOLD;
+no manual dispatch, merge, deploy, remote D1 or ruleset changes.

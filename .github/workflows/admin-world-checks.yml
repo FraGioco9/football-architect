@@ -161,12 +161,8 @@ jobs:
           node-version: '22'
       - name: Discover test ownership before expensive checks
         run: node tools/ci-discovery.mjs
-      - name: Cache pinned account engine
-        if: ${{ !needs.scope.outputs.reuse }}
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ matrix.engine }}-1.58.2
+      # In the official image the pinned engines live in /ms-playwright.
+      # Do not restore an unrelated ~/.cache/ms-playwright path in this job.
       - name: Install isolated pinned account engine
         if: ${{ !needs.scope.outputs.reuse }}
         env:
