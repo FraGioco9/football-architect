@@ -259,11 +259,11 @@
   img.onerror=()=>{delete slot.dataset.photoReady;img.remove()};
   slot.append(img);img.src=expected;
  }
- function observePortrait(slot,id,approvedKey){
+ function observePortrait(slot,id,portraitApproved){
   if(!Number.isSafeInteger(id)||id<1||
-     approvedKey!=='assets/players/portraits/'+id+'.webp')return;
+     portraitApproved!==true)return;
   slot.dataset.matchPortraitId=String(id);
-  slot.dataset.matchPortraitAsset='/'+approvedKey;
+  slot.dataset.matchPortraitAsset='/assets/players/portraits/'+id+'.webp';
   if(typeof IntersectionObserver!=='function'){showApprovedPortrait(slot,id);return;}
   if(!portraitObserver)portraitObserver=new IntersectionObserver(entries=>{
    for(const entry of entries)if(entry.isIntersecting){
@@ -459,7 +459,7 @@
     vote.setAttribute('aria-label',tr.rating+': '+vote.textContent);
     vote.title=tr.rating;
     row.replaceChildren(role,avatar,nameBox,vote);
-    observePortrait(avatar,starter.playerId,starter.portraitAssetKey);
+    observePortrait(avatar,starter.playerId,starter.portraitApproved);
    }
    if(valid)list.removeAttribute('aria-hidden');
    else list.setAttribute('aria-hidden','true');

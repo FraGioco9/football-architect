@@ -9,7 +9,7 @@ const payload={first_name:'Andrea',last_name:'Rossi',nationality:'ITA',secondary
  age:18,initial_age:16,career_status:'active',height_cm:180,preferred_foot:'right',primary_position:'CM',
  secondary_positions:['DM'],attributes:Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map((k,i)=>[k,i+1])),
  development_aptitude:99,seed:'never-public',preview_id:'not-persisted'};
-function fixture(found=true,changed=false,clubKey:string|null=null,portraitAssetKey:string|null=null){
+function fixture(found=true,changed=false,clubKey:string|null=null,portraitApproved=false){
  let worldReads=0;
  const calls:{sql:string;args:unknown[]}[]=[];
  const db={prepare(sql:string){
@@ -19,7 +19,7 @@ function fixture(found=true,changed=false,clubKey:string|null=null,portraitAsset
     calls.push({sql,args});
     if(sql.includes('FROM world_state'))return {schema_version:1,generation:changed&&++worldReads>1?'650e8400-e29b-41d4-a716-446655440000':generation,revision:0,season_number:0,day:0,phase:'unstarted'};
     if(sql.includes('FROM generated_players p'))return found?{id:42,payload_json:JSON.stringify(payload),club_key:clubKey,
-     portrait_asset_key:portraitAssetKey}:null;
+     portrait_approved:portraitApproved?1:0}:null;
     throw Error('Unexpected SQL: '+sql);
    },
    async all(){return {results:[],meta:{changes:0}}},
@@ -35,7 +35,8 @@ test('GET player profile projects the same permitted fields as the directory and
  assert.equal(result.player.display_name,'Andrea Rossi');
  assert.equal(result.player.age,18);
  assert.equal(result.player.clubKey,null);
- assert.equal(result.player.portraitAssetKey,null);
+ assert.equal(result.player.portraitApproved,false);
+ assert.equal(Object.hasOwn(result.player,'portraitAssetKey'),false);
  assert.equal(result.player.nationality,'ITA');
  assert.equal(result.player.secondary_nationality,'FRA');
  assert.equal(result.player.attributes.shooting,8);
@@ -72,12 +73,12 @@ test('public player detail exposes only verified current affiliation key, never 
  assert.deepEqual(calls.find(x=>x.sql.includes('FROM generated_players p'))?.args,[42]);
 });
 
-test('only an approved V4.2 portrait key is returned to the public player detail',async()=>{
- const {db}=fixture(true,false,null,'assets/players/portraits/42.webp');
+test('approved V4.2 status is a boolean; the API contains no image path',async()=>{
+ const {db}=fixture(true,false,null,true);
  const player=(await readPublicPlayer(db,42)).player;
- assert.equal(player.portraitAssetKey,'assets/players/portraits/42.webp');
- // The SQL projection is an approved V4.2 CASE, so legacy/placeholder rows
- // cannot be returned by an actual D1 database even if a stale WebP exists.
+ assert.equal(player.portraitApproved,true);
+ assert.equal(Object.hasOwn(player,'portraitAssetKey'),false);
+ assert.doesNotMatch(JSON.stringify(player),/assets\/players\/portraits\//);
  const {db:missing}=fixture();
- assert.equal((await readPublicPlayer(missing,42)).player.portraitAssetKey,null);
+ assert.equal((await readPublicPlayer(missing,42)).player.portraitApproved,false);
 });

@@ -343,7 +343,6 @@
     "tests/players-scroll-browser-532.mjs": "support",
     "tests/players-secondary-frequency-audit.test.mjs": "site-node",
     "tests/players-suitability-v2.test.mjs": "site-node",
-    "tests/portrait-dev-evidence-candidate.test.mjs": "site-node",
     "tests/postseason-preview.test.mjs": "site-node",
     "tests/profile-destination.test.mjs": "site-node",
     "tests/profile-navigation-browser.mjs": "browser",

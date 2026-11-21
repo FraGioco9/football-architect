@@ -12,7 +12,7 @@ if(clubNames.size!==320)throw Error('Invalid canonical club catalogue');
 const FILTER_ATTRIBUTE_KEYS=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
 interface StoredPlayer extends InternalFootballer {age?:number}
 interface StoredRow {id:number;payload_json:string;club_key:string|null}
-interface StoredDetailRow extends StoredRow {club_key:string|null;portrait_asset_key:string|null}
+interface StoredDetailRow extends StoredRow {club_key:string|null;portrait_approved:number}
 
 /** Count and page over the exact same server-side predicate, never a client-side 50-row filter. */
 export async function readPublicPlayers(db:Database,page:number,filters:PublicPlayerFilters={}){
@@ -147,7 +147,7 @@ export async function readPublicPlayer(db:Database,id:number){
     AND portrait.schema_version='player-portraits-v5'
     AND portrait.prompt_version='player-portrait-v4.2'
     AND portrait.asset_key=('assets/players/portraits/' || p.id || '.webp')
-    THEN portrait.asset_key ELSE NULL END AS portrait_asset_key
+    THEN 1 ELSE 0 END AS portrait_approved
   FROM generated_players p
   LEFT JOIN player_club_affiliations a ON a.player_id=p.id
   LEFT JOIN player_portrait_profiles portrait ON portrait.player_id=p.id
@@ -162,5 +162,5 @@ export async function readPublicPlayer(db:Database,id:number){
  if(clubKey!==null&&(!/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(clubKey)))
   throw new ApiError(503,'players_unavailable');
  return {player:{...projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age}),
-  clubKey,portraitAssetKey:row.portrait_asset_key??null}};
+  clubKey,portraitApproved:row.portrait_approved===1}};
 }

@@ -21,8 +21,8 @@
   resetPortrait();
   const source=!preview&&state==='ready'&&player&&Number.isSafeInteger(id)
    &&id>0&&(!Number.isSafeInteger(player.id)||player.id===id)
-   &&player.portraitAssetKey==='assets/players/portraits/'+id+'.webp'
-   ?'/'+player.portraitAssetKey:null;
+   &&player.portraitApproved===true
+   ?'/assets/players/portraits/'+id+'.webp':null;
   if(!source){
    // Once a player is known, a missing portrait uses the silhouette.
    if(state==='ready')portraitFallback.removeAttribute('hidden');

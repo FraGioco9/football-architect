@@ -490,8 +490,8 @@ test('#577 responsive Match Detail: no visible events, official XI slots, portra
   "function publishedFormLink(fixture)", "publishedMatchIndex.bySource",
   "indexPublishedMatchLinks(payload,item.season,item.competitionId)",
   "function showFormTooltip(anchor,game,tr)", "app-world-form-tooltip",
-  "function showApprovedPortrait(slot,id)", "starter.portraitAssetKey",
-  "a.startingSlot-b.startingSlot", "observePortrait(avatar,starter.playerId,starter.portraitAssetKey)",
+  "function showApprovedPortrait(slot,id)", "starter.portraitApproved",
+  "a.startingSlot-b.startingSlot", "observePortrait(avatar,starter.playerId,starter.portraitApproved)",
   "row.replaceChildren(role,avatar,nameBox,vote)", "player.target='_blank'",
   "source?.formation==='4-3-3'"])
   assert.ok(js.includes(literal),literal);
