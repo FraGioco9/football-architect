@@ -34,6 +34,18 @@ export async function verifyMatchesDirectory(browser){
    const name=await page.locator('#md-list .md-name-bar').boundingBox();
    assert(name.width>0);
    loading.set(width,{nameX:name.x,edges:await rowEdges()});
+   if(width<=540){
+    const skeleton=await page.locator('#md-list .md-row.md-skeleton').first().evaluate(row=>{
+     const bars=[...row.querySelectorAll('.md-team-bar')];
+     return {lines:getComputedStyle(row).getPropertyValue('--md-team-lines').trim(),
+      count:bars.length,heights:bars.map(bar=>bar.getBoundingClientRect().height),
+      backgrounds:bars.map(bar=>getComputedStyle(bar).backgroundImage)};
+    });
+    assert.equal(skeleton.lines,'1','mobile club name reserves one line '+width);
+    assert.equal(skeleton.count,2,'one name skeleton per club '+width);
+    assert(skeleton.heights.every(height=>height>0&&height<16),'mobile club skeletons stay single-height '+width);
+    assert(skeleton.backgrounds.every(background=>background==='none'),'mobile club skeletons do not render repeated bars '+width);
+   }
   }
   releaseWorld();
   await match.waitFor();
@@ -89,6 +101,14 @@ export async function verifyMatchesDirectory(browser){
     assert(heading.y-searchBox.y-searchBox.height<20,'no empty status gap after search '+width);
     assert(firstRow.height<70,'mobile fixture row stays compact '+width);
     assert(rowFont<14,'mobile fixture typography stays compact '+width);
+    const logoScoreGaps=await page.locator('.md-row:not(.md-skeleton)').first().evaluate(row=>{
+     const score=row.querySelector('.md-score'),range=document.createRange();
+     range.selectNodeContents(score);
+     const text=range.getBoundingClientRect();
+     const logos=row.querySelectorAll('.md-team > .md-logo');
+     return [text.left-logos[0].getBoundingClientRect().right,logos[1].getBoundingClientRect().left-text.right];
+    });
+    assert(logoScoreGaps.every(gap=>gap>=-1&&gap<20),'both mobile crests stay close to the actual score text '+width);
     const team=page.locator('.md-row .md-team-label').first();
     assert.equal(await team.getAttribute('aria-label'),'Esportivo das Charqueadas','full club name remains accessible '+width);
     assert.equal(await team.locator('.md-team-name-compact').textContent(),'Charqueadas','use canonical compact club name '+width);
