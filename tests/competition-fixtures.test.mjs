@@ -461,6 +461,8 @@ test('FIXTURES unresolved participants follow #732 rank/winner wording and use o
  assert.match(css,/#competition-panel-fixtures \.app-fixtures-toolbar\{[\s\S]*?z-index:10/,'selector toolbar stacks above linked score cards');
  assert.match(css,/#competition-panel-fixtures \.app-fixtures-list\{position:relative;z-index:0\}/);
  assert.match(css,/#competition-panel-fixtures \.app-fixtures-picker\{z-index:12\}/);
+ assert.ok(css.includes('.app-competition-header:has(#app-competition-season-menu:not([hidden])){z-index:20}'),
+  'open season menu raises its ancestor above Fixtures navigation');
  assert.ok(css.includes('.app-fixture-club>.app-fixture-name{display:-webkit-box;flex:0 1 auto;'), 'long compactNames may wrap in their mobile track');
  assert.ok(css.includes('grid-template-columns:minmax(0,1fr) 86px;gap:4px 6px;padding:7px 8px'), 'mobile fixture cards use compact rows');
  assert.ok(css.includes('.app-fixture-club{font-size:12px;gap:6px;min-height:42px}'), 'both actual and skeleton club rows reserve the same 42px height');

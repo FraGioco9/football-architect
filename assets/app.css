@@ -270,6 +270,9 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 .app-division-card-copy{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;width:100%;min-width:0}
 .app-division-card-copy strong{font-size:14px;font-weight:700;color:var(--text);overflow-wrap:anywhere}
 .app-division-card-copy small{font-size:11px;color:var(--muted)}
+/* An open season menu must escape the header's lower stacking level and paint
+   above mobile matchday navigation without raising the closed header. */
+.app-competition-header:has(#app-competition-season-menu:not([hidden])){z-index:20}
 .app-competition-header{position:relative;z-index:2;--app-competition-heading-size:var(--app-page-title-size);--app-competition-logo-size:82px;display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin:0}
 .app-competition-logo-placeholder-large{width:var(--app-competition-logo-size);height:var(--app-competition-logo-size);border-radius:13px;font-size:15px}
 .app-competition-identity{flex:1 1 260px;min-width:0;align-self:center}
