@@ -62,5 +62,6 @@
 #md-list h2 small{font-weight:400;color:var(--muted,currentColor)}
 @container(max-width:24rem){#md-list h2{min-height:calc(3.1em + 1.3rem)}}
 @container(max-width:36rem){
+ #md-list h2 .md-leg{display:none}
  .md-team-name-full{display:none}
  .md-team-name-compact{display:inline}}
