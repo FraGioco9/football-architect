@@ -14,5 +14,12 @@ for(const [area,path] of Object.entries(paths)){
  const args=process.argv.includes('--node')?['--test','--test-concurrency=1',...selected.tests]:['tests/ci-opt-01-browser-smoke.mjs'];
  const result=spawnSync(process.execPath,args,{stdio:'inherit',env:{...process.env,FA_TARGET_AREA:selected.area}});
  if(result.error||result.status!==0)throw Error('TARGETED scenario failed: '+area);
+ // The FULL selector exercises the Club matrix in Chromium; its standalone
+ // WebKit evidence probe costs only two additional page round trips.
+ if(!process.argv.includes('--node')&&area==='clubs'){
+  const webkit=spawnSync(process.execPath,['tests/club-api-bfcache-browser.mjs'],
+   {stdio:'inherit',env:{...process.env,FA_BROWSER_ENGINE:'webkit'}});
+  if(webkit.error||webkit.status!==0)throw Error('Club BFCache WebKit HTTP evidence failed');
+ }
  console.log('CI-OPT-01 scenario '+area+' '+JSON.stringify({kind:process.argv.includes('--node')?'node':'browser',milliseconds:Math.round(performance.now()-start),files:selected.tests.length}));
 }

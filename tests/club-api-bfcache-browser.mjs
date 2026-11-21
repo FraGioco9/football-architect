@@ -3,6 +3,7 @@
 // This is a read-only measurement; no product code or cache behavior is changed.
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
+import {pathToFileURL} from 'node:url';
 import {published} from './canonical-state-browser.mjs';
 
 const origin='http://app.localhost:2000';
@@ -100,4 +101,11 @@ export async function verifyClubBfcacheNetwork(browser,{engine='chromium'}={}){
  }
  console.log('PERF-API-02 '+engine+' Club BFCache browser GET evidence: '+JSON.stringify(results));
  return results.length;
+}
+
+// FULL CI runs this narrow probe in WebKit without repeating the 20-case area matrix.
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
+ const {webkit}=await import('playwright');
+ const browser=await webkit.launch({headless:true});
+ try{await verifyClubBfcacheNetwork(browser,{engine:'webkit'});}finally{await browser.close();}
 }
