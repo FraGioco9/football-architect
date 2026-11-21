@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 import {runIndependentAccountMatrix} from '../tools/ci-opt-06-account-matrix.mjs';
-const playwright=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright'),engine=process.env.FA_AUTH_BROWSER||'chromium';
-const browser=await playwright[engine].launch({headless:true,...(process.env.FA_ACCOUNT_CHROME&&engine==='chromium'?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
-const server=createPreviewServer({subdomains:true,devPreview:false});let checks=0;
+import {isDirectExecution,runAccountBrowserBatch} from '../tools/ci-opt-07-account-browser-batch.mjs';
+
+export async function runAccountLayoutMatrix({browser,engine}){
+ const server=createPreviewServer({subdomains:true,devPreview:false});let checks=0;
 try{
  server.listen(2000,'127.0.0.1');await once(server,'listening');
  await runIndependentAccountMatrix(['en','de','es','fr','it'],['dark','light'],[[1366,768],[390,844],[320,568]],async({language,theme,variant:[width,height]})=>{
@@ -87,4 +88,11 @@ try{
   }finally{await context.close();}
  }
  console.log(engine+' account spacing and dropdown placement PASS: '+checks+' cases');
-}finally{server.closeAllConnections();await new Promise(r=>server.close(r));await browser.close();}
+}finally{server.closeAllConnections();await new Promise(r=>server.close(r));}
+ return checks;
+}
+
+// Standalone CLI QA remains supported, including Chromium/WebKit selection.
+if(isDirectExecution(import.meta.url))await runAccountBrowserBatch([
+ {name:'account-layout-browser.mjs',expected:80,run:runAccountLayoutMatrix}
+]);

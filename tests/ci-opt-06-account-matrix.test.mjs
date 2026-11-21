@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runIndependentAccountMatrix} from '../tools/ci-opt-06-account-matrix.mjs';
+import {runAccountBrowserBatch} from '../tools/ci-opt-07-account-browser-batch.mjs';
 
 test('all languages, themes and variants are visited, with at most two isolated contexts',async()=>{
  const visits=[],active=new Set();
@@ -99,5 +100,44 @@ test('official browser containers do not restore a cache at a different browser 
    assert.doesNotMatch(account,/path: ~\/\.cache\/ms-playwright/);
    assert.match(src,/name: Cache pinned lifecycle Chromium binaries/,'noncontainer lifecycle cache remains');
   }
+ }
+});
+
+test('TEST-SUITE-02 Account batching reuses one browser, executes both suites sequentially and preserves case counts',async()=>{
+ const visits=[],reports=[];let launches=0,closes=0;
+ const results=await runAccountBrowserBatch([
+  {name:'interaction',expected:100,run:async({browser,engine})=>{visits.push('interaction');assert.equal(engine,'webkit');assert.ok(browser);return 100;}},
+  {name:'layout',expected:80,run:async()=>{visits.push('layout');return 80;}}
+ ],{launch:async()=>{launches++;return {engine:'webkit',browser:{close:async()=>{closes++}}}},
+     report:event=>reports.push(event)});
+ assert.equal(launches,1);assert.equal(closes,1);
+ assert.deepEqual(visits,['interaction','layout']);
+ assert.deepEqual(results.map(({actual})=>actual),[100,80]);
+ assert.deepEqual(reports.map(({status})=>status),['PASS','PASS']);
+});
+
+test('TEST-SUITE-02 a missing scenario or failed first suite cannot yield a green batch',async()=>{
+ let closed=0,second=0;
+ await assert.rejects(runAccountBrowserBatch([
+  {name:'interaction',expected:100,run:async()=>99},
+  {name:'layout',expected:80,run:async()=>{second++;return 80}}
+ ],{launch:async()=>({engine:'webkit',browser:{close:async()=>{closed++}}}),report:()=>{}}),
+ error=>error instanceof AggregateError&&error.errors.length===1&&
+  error.errors[0].message.includes('lost required scenario coverage'));
+ assert.equal(second,1,'second suite is still executed after the first failure');
+ assert.equal(closed,1,'browser is always closed on failure');
+});
+
+test('TEST-SUITE-02 the workflow uses the one-process pilot without dropping either Account suite',()=>{
+ const workflow=readFileSync(new URL('../.github/workflows/admin-world-checks.yml',import.meta.url),'utf8');
+ const runner=readFileSync(new URL('./account-interaction-layout-browser.mjs',import.meta.url),'utf8');
+ assert.match(workflow,/node tools\/ci-run\.mjs "account-.*" -- node "\$suite"/);
+ assert.match(workflow,/tests\/account-interaction-layout-browser\.mjs/);
+ assert.doesNotMatch(workflow,/for suite in[^\n]*tests\/account-interaction-browser\.mjs/);
+ for(const [name,count] of [['account-interaction-browser.mjs',100],['account-layout-browser.mjs',80]]){
+  assert.ok(runner.includes("name:'"+name+"',expected:"+count),name+' coverage must not be skipped');
+  const content=readFileSync(new URL('./'+name,import.meta.url),'utf8');
+  assert.match(content,/isDirectExecution\(import\.meta\.url\)/,name+' retains standalone CLI');
+  assert.match(content,/maxConcurrent:engine==='webkit'\?1:2/,name+' preserves serial WebKit');
  }
 });

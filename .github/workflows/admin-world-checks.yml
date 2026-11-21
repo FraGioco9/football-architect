@@ -80,6 +80,8 @@ jobs:
           node --check assets/authoritative-calendar.mjs
           node --check assets/authoritative-history.mjs
           node --check tests/admin-settings-browser.mjs
+          node --check tests/account-interaction-layout-browser.mjs
+          node --check tools/ci-opt-07-account-browser-batch.mjs
           node --check tests/admin-world-lifecycle-browser.mjs
           node --check tests/admin-world-lifecycle-runner.mts
           node --check tests/season-two-navigation-browser.mjs
@@ -183,7 +185,7 @@ jobs:
           FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
           FA_PLAYER_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
         run: |
-          for suite in tests/player-safe-return-browser.mjs tests/account-pages-browser.mjs tests/account-feedback-browser.mjs tests/account-usability-browser.mjs tests/control-focus-browser.mjs tests/profile-navigation-browser.mjs tests/account-interaction-browser.mjs tests/account-layout-browser.mjs tests/competition-season-zero-club-links-browser.mjs; do
+          for suite in tests/player-safe-return-browser.mjs tests/account-pages-browser.mjs tests/account-feedback-browser.mjs tests/account-usability-browser.mjs tests/control-focus-browser.mjs tests/profile-navigation-browser.mjs tests/account-interaction-layout-browser.mjs tests/competition-season-zero-club-links-browser.mjs; do
             node tools/ci-run.mjs "account-${{ matrix.engine }}-${suite##*/}" -- node "$suite"
           done
       - name: Verify dedicated Admin access and Settings isolation
