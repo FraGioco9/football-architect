@@ -148,7 +148,14 @@ export async function verifyMatchesDirectory(browser){
   await page.getByText('No matches on this day.').waitFor();
   assert(await page.locator('#md-current').isEnabled());
   await page.locator('#md-next').click();await match.waitFor();
-  assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),['Round 2','Playoffs · Leg 1','Playoffs · Leg 2'],'each knockout leg appears beside its phase heading');
+  assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),['Round 2','Playoffs · Leg 1','Playoffs · Leg 2'],'each knockout leg appears beside its phase heading on desktop');
+  for(const width of [320,375,390,540]){
+   await page.setViewportSize({width,height:800});
+   assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),['Round 2','Playoffs','Playoffs'],'hide Leg text only on small screens '+width);
+   assert.equal(await page.locator('#md-list h2 .md-leg:visible').count(),0,'hide every Leg label at '+width);
+  }
+  await page.setViewportSize({width:1440,height:800});
+  assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),['Round 2','Playoffs · Leg 1','Playoffs · Leg 2'],'restore Leg labels on desktop');
   assert.equal(await page.locator('#md-list .md-row small').filter({hasText:/Leg [12]/}).count(),0,'do not repeat Leg per fixture');
   const href=new URL(await page.locator('#md-list h2 a').first().getAttribute('href'),page.url());
   assert.equal(href.pathname,'/competitions/it-1/fixtures');
