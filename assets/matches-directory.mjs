@@ -7,6 +7,7 @@ const root=document.querySelector('.matches-directory');
 const el=id=>root.querySelector('#md-'+id);
 const countries=['IT','ENG','ES','DE','FR','PT','NL','BR','int'];
 const competitions=countries.flatMap(c=>[1,2].map(n=>matchPublicContext({competitionId:c+'-'+n}).competitions[0]));
+const competitionIds=new Set(competitions.map(c=>c.id));
 const {clubs,clubCrests}=publicClubIdentityCatalog();
 const teams=new Map(clubs.map(c=>[c.countryId+'-'+c.clubId,c]));
 const vocabulary={
@@ -127,6 +128,10 @@ function participant(id,ref,home=false){
  if(home)side.append(label,crest);else side.append(crest,label);
  return side;
 }
+// The destination must use the competition fixture picker's public matchday token.
+function fixtureMatchday(f){
+ return f.phaseId==='league'?f.round:f.phaseId==='promotionPlayoffs'?'playoffs':f.phaseId;
+}
 function fixture(f){
  const row=node('div',null,'md-row'),href='/matches/'+f.matchId;
  const r=f.result;
@@ -175,7 +180,7 @@ function render(){
   if(!filtered.length)continue;
   const rounds=new Map();
   for(const f of filtered){
-   const round=f.phaseId==='league'?f.round:f.phaseId==='promotionPlayoffs'?'playoffs':f.phaseId;
+   const round=fixtureMatchday(f);
    const leg=f.leg??null;
    const key=JSON.stringify([round,leg]);
    if(!rounds.has(key))rounds.set(key,{round,leg,fixtures:[]});
@@ -187,7 +192,7 @@ function render(){
    const href='/competitions/'+c.id.toLowerCase()+'/fixtures?season='+s.season+'&matchday='+encodeURIComponent(round);
    const caption=fixtures[0].phaseId==='league'?words.round+' '+round:words[round]??round;
    const phaseLabel=node('small',caption);
-   if(leg!=null)phaseLabel.append(node('span',' · '+words.leg+' '+leg,'md-leg'));
+   if(leg!=null&&!(round==='final'&&fixtures.every(f=>f.leg===1)))phaseLabel.append(node('span',' · '+words.leg+' '+leg,'md-leg'));
    heading.append(competitionLogo(c,headingIndex++),link(href,c.name),phaseLabel);
    group.append(heading,...fixtures.map(fixture));list.append(group);
   }
@@ -195,6 +200,42 @@ function render(){
  if(state==='partial')status.textContent=words.partial;
  if(!list.childElementCount&&(state!=='partial'||s.country||s.q||s.competition))
   status.append(' '+(s.country||s.q||s.competition?words.filtered:words.empty));
+}
+// Fail closed on malformed or duplicate match IDs rather than rendering broken links.
+const directoryPhases=new Set(['league','playout','promotionPlayoffs','playoffs','quarterfinals','semifinals','final']);
+const validScore=value=>Number.isSafeInteger(value)&&value>=0;
+function validDirectoryFixture(f){
+ if(!f||typeof f!=='object'||typeof f.matchId!=='string'||!/^[1-9]\d*$/.test(f.matchId)||
+    !Number.isSafeInteger(Number(f.matchId))||!competitionIds.has(f.competitionId)||
+    !directoryPhases.has(f.phaseId)||!['completed','scheduled','awaiting_participants'].includes(f.status)||
+    (f.homeClubId!=null&&!teams.has(f.homeClubId))||(f.awayClubId!=null&&!teams.has(f.awayClubId))||
+    (f.venue!=null&&typeof f.venue!=='string')||
+    (f.neutral!=null&&typeof f.neutral!=='boolean'))return false;
+ if(f.phaseId==='league'){
+  const max=f.competitionId.startsWith('int-')?6:30;
+  if(!Number.isInteger(f.round)||f.round<1||f.round>max||!teams.has(f.homeClubId)||!teams.has(f.awayClubId)||
+     f.leg!=null)return false;
+ }else if(!Number.isInteger(f.leg)||f.leg<1||f.leg>2)return false;
+ const completed=f.result!=null;
+ if(completed!==(f.status==='completed')||
+    (f.status==='scheduled'&&(!f.homeClubId||!f.awayClubId)))return false;
+ if(completed){
+  const r=f.result;
+  if(typeof r!=='object'||!validScore(r.homeGoals)||!validScore(r.awayGoals)||
+     (r.penalties!=null&&(!validScore(r.penalties.home)||!validScore(r.penalties.away))))return false;
+ }
+ return true;
+}
+function validDirectoryPayload(data,s){
+ if(!data||data.schemaVersion!==1||data.providerId!=='authoritative-world'||
+    !['published','partial','unpublished','unavailable'].includes(data.publication)||
+    data.selectedSeason!==s.season||data.day!==s.day||!Array.isArray(data.fixtures))return false;
+ const ids=new Set();
+ for(const f of data.fixtures){
+  if(!validDirectoryFixture(f)||ids.has(f.matchId))return false;
+  ids.add(f.matchId);
+ }
+ return true;
 }
 async function get(path){
  const response=await fetch(path,{credentials:'omit',cache:'no-store'});
@@ -230,7 +271,7 @@ async function refresh(){
     dispatchEvent(new Event('fa:world-invalidated'));
     return;
    }
-   if(data.schemaVersion!==1||data.providerId!=='authoritative-world'||!['published','partial','unpublished','unavailable'].includes(data.publication)||data.selectedSeason!==s.season||data.day!==s.day||!Array.isArray(data.fixtures))throw Error('Invalid directory');
+   if(!validDirectoryPayload(data,s))throw Error('Invalid directory');
    entry.data=data;
   }
   state=entry.data.publication;rows=entry.data.fixtures;loaded=id;

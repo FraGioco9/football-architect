@@ -152,7 +152,9 @@ test('Matches sidebar uses the provided traced SVG before hydration',()=>{
  ];
  const expected=read('assets/matches-ball.svg').trim();
  assert.match(expected,/fill-rule="evenodd"/,'Tracing preserves the original panel cutouts');
- assert.match(expected,/viewBox="0 0 512 512"/,'Source uses the new image geometry');
+ assert.match(expected,/width="18" height="18"/,'Matches icon uses the same 18×18 viewport as Players and Clubs');
+ assert.match(expected,/viewBox="-48 -48 608 608"/,'Matches ball has optical padding to match neighboring icons');
+ assert.equal(Math.round(18*512/608*10)/10,15.2,'Visible ball diameter matches surrounding sidebar glyphs');
  assert.match(expected,/M197,355 314,355/,'Source uses the new solid-panel football design');
  assert.doesNotMatch(expected,/M200,349 L311,349/,'Previous traced artwork must not remain');
  for(const page of pages){

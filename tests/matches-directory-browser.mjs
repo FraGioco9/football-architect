@@ -33,6 +33,11 @@ export async function verifyMatchesDirectory(browser){
    ]:[]}});
   });
   await page.goto('http://app.localhost:2000/matches',{waitUntil:'domcontentloaded'});
+  const sidebarIconSizes=await page.evaluate(()=>['players','clubs','matches'].map(name=>{
+   const icon=document.querySelector('[data-nav01-'+name+'] .fa-icon'),rect=icon?.getBoundingClientRect();
+   return [rect?.width,rect?.height];
+  }));
+  assert.deepEqual(sidebarIconSizes,[[18,18],[18,18],[18,18]],'Matches sidebar icon has the same rendered box as Players and Clubs');
   const match=page.locator('#md-list a.md-score').first();
   assert.equal(await page.locator('#md-season-value').textContent(),'');
   assert.equal(await page.locator('#md-day-value').textContent(),'');
@@ -158,9 +163,24 @@ export async function verifyMatchesDirectory(browser){
   await page.getByText('No matches on this day.').waitFor();
   assert(await page.locator('#md-current').isEnabled());
   await page.locator('#md-next').click();await match.waitFor();
-  const headingDesktop=['Round 2','Playoffs · Leg 1','Playoffs · Leg 2','Playoffs · Leg 1','Quarter-finals · Leg 1','Quarter-finals · Leg 2','Semi-finals · Leg 1','Semi-finals · Leg 2','Final · Leg 1'];
+  const headingDesktop=['Round 2','Playoffs · Leg 1','Playoffs · Leg 2','Playoffs · Leg 1','Quarter-finals · Leg 1','Quarter-finals · Leg 2','Semi-finals · Leg 1','Semi-finals · Leg 2','Final'];
   const headingMobile=['Round 2','Playoffs','Playoffs','Playoffs','Quarter-finals','Quarter-finals','Semi-finals','Semi-finals','Final'];
-  assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),headingDesktop,'each knockout leg appears beside its phase heading on desktop');
+  assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),headingDesktop,'two-leg knockout headers retain leg labels but a single-leg final does not');
+  const deepLinks=await page.locator('#md-list h2 a').evaluateAll(links=>links.map(a=>{
+   const url=new URL(a.href);
+   return [url.pathname,url.searchParams.get('season'),url.searchParams.get('matchday')];
+  }));
+  assert.deepEqual(deepLinks,[
+   ['/competitions/it-1/fixtures','1','2'],
+   ['/competitions/it-1/fixtures','1','playoffs'],
+   ['/competitions/it-1/fixtures','1','playoffs'],
+   ['/competitions/it-2/fixtures','1','playoffs'],
+   ['/competitions/int-1/fixtures','1','quarterfinals'],
+   ['/competitions/int-1/fixtures','1','quarterfinals'],
+   ['/competitions/int-1/fixtures','1','semifinals'],
+   ['/competitions/int-1/fixtures','1','semifinals'],
+   ['/competitions/int-1/fixtures','1','final']
+  ],'competition links use the public fixture-picker tokens for every knockout stage');
   const playoffPairs=[[8,9],[5,12],[6,11],[7,10]];
   for(const [higher,lower] of playoffPairs){
    const name='Winner of playoff '+higher+' vs '+lower;
@@ -208,6 +228,10 @@ export async function verifyMatchesDirectory(browser){
   assert(!/playoff (89|512|611|710)\b/i.test(await page.locator('#md-list').innerText()),'never display encoded tie IDs');
   assert(!/\b(?:p512|p611|p710|p89|q[1-4]|s[1-2]|semi36|semi45)\b/i.test(await page.locator('#md-list').innerText()),'all bracket IDs are presentation-only and never shown');
   assert.equal(await page.locator('#md-list [title]').count(),0,'no tooltips on unresolved participants or fixture details');
+  const scoreLink=page.locator('#md-list a.md-score').first();
+  await scoreLink.focus();
+  assert(await scoreLink.evaluate(a=>a===document.activeElement),'match detail remains keyboard-focusable');
+  assert.equal(await scoreLink.getAttribute('aria-label'),'AC Meneghina — US Capitolina','score link has both club names for screen readers');
   for(const width of [320,375,390,540]){
    await page.setViewportSize({width,height:800});
    assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),headingMobile,'hide Leg text only on small screens '+width);
@@ -272,5 +296,60 @@ export async function verifyMatchesDirectory(browser){
   await page.locator('#md-q').fill('xxxx');
   await page.getByText('No matching fixtures.').waitFor();
   assert.deepEqual(errors,[]);
+
+  // The full 128-match domestic day tests DOM scale, widths, local filtering and Back cache.
+  const dense=await context.newPage();
+  const scopes=['IT','ENG','ES','DE','FR','PT','NL','BR'].flatMap(c=>[1,2].map(n=>c+'-'+n));
+  const denseFixtures=scopes.flatMap((competitionId,i)=>Array.from({length:8},(_,j)=>({
+   matchId:String(1000+i*8+j),competitionId,phaseId:'league',round:1,
+   homeClubId:'BR-34',awayClubId:'BR-29',venue:'Estádio das Charqueadas',
+   result:{homeGoals:2,awayGoals:1},status:'completed'
+  })));
+  let denseRequests=0;
+  await dense.route('**/api/world',route=>route.fulfill({json:{world}}));
+  await dense.route('**/api/matches?*',route=>{
+   denseRequests++;
+   return route.fulfill({json:{schemaVersion:1,providerId:'authoritative-world',world,
+    selectedSeason:1,day:13,publication:'published',fixtures:denseFixtures}});
+  });
+  await dense.goto('http://app.localhost:2000/matches?season=1&day=13',{waitUntil:'domcontentloaded'});
+  await dense.waitForFunction(()=>document.querySelectorAll('#md-list .md-row:not(.md-skeleton)').length===128);
+  assert.equal(await dense.locator('#md-list section').count(),16,'all sixteen domestic groups render');
+  for(const width of [320,390,540,768,1440]){
+   await dense.setViewportSize({width,height:800});
+   const w=await dense.locator('#md-list').evaluate(n=>[n.scrollWidth,n.clientWidth]);
+   assert(w[0]<=w[1]+1,'128 fixtures stay within the page at '+width+'px');
+  }
+  await dense.locator('.fa-shell-content-scroll').evaluate(n=>{n.scrollTop=n.scrollHeight});
+  assert.equal(await dense.locator('#md-list .md-row').last().count(),1,'last fixture survives scrolling');
+  await dense.locator('#md-country').click();
+  await dense.locator('#md-country-menu [data-menu-value="BR"]').click();
+  assert.equal(await dense.locator('#md-list .md-row').count(),16,'country filtering stays local');
+  await dense.goBack();
+  await dense.waitForFunction(()=>document.querySelectorAll('#md-list .md-row').length===128);
+  assert.equal(denseRequests,1,'return to cached day/filter never refetches');
+
+  // Reject a duplicate official ID before rendering a link; retry a valid playout day.
+  const corrupt=await context.newPage();
+  let retries=0;
+  const playout={matchId:'41',competitionId:'IT-1',phaseId:'playout',round:31,leg:1,
+   tieId:'playout',homeClubId:null,awayClubId:null,
+   participantA:{kind:'leagueRank',rank:13},participantB:{kind:'leagueRank',rank:14},
+   result:null,status:'awaiting_participants'};
+  await corrupt.route('**/api/world',route=>route.fulfill({json:{world}}));
+  await corrupt.route('**/api/matches?*',route=>{
+   retries++;
+   return route.fulfill({json:{schemaVersion:1,providerId:'authoritative-world',world,
+    selectedSeason:1,day:13,publication:'published',
+    fixtures:retries===1?[playout,{...playout}]:[playout]}});
+  });
+  await corrupt.goto('http://app.localhost:2000/matches?season=1&day=13',{waitUntil:'domcontentloaded'});
+  await corrupt.getByText('Matches unavailable.').waitFor();
+  assert.equal(await corrupt.locator('#md-list a.md-score').count(),0,'corrupt data never renders links');
+  await corrupt.getByRole('button',{name:'Retry'}).click();
+  await corrupt.locator('#md-list a.md-score').first().waitFor();
+  const url=new URL(await corrupt.locator('#md-list h2 a').first().getAttribute('href'),corrupt.url());
+  assert.equal(url.searchParams.get('matchday'),'playout','domestic playout deep link');
+  assert.equal(retries,2,'retry recovers with one fresh request');
  }finally{await context.close()}
 }
