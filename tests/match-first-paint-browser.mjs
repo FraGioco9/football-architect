@@ -121,7 +121,7 @@ for(const [engine,driver] of Object.entries(engines)){
    const people=roles.map((role,i)=>({
     playerId:11-i,name:'Frozen Player '+(11-i),nationality:'ITA',role,
     startingRole:role,startingSlot:i+1,started:true,minutes:90,goals:0,rating:6.5,
-    portraitAssetKey:i===0?'assets/players/portraits/11.webp':null
+    portraitApproved:i===0
    })).reverse(); // API order deliberately wrong.
    try{
     await page.route('**/matches/123',route=>route.fulfill({status:200,contentType:'text/html',
