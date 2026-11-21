@@ -152,7 +152,9 @@ test('Matches sidebar uses the provided traced SVG before hydration',()=>{
  ];
  const expected=read('assets/matches-ball.svg').trim();
  assert.match(expected,/fill-rule="evenodd"/,'Tracing preserves the original panel cutouts');
- assert.match(expected,/d="M241,0 /,'SVG source comes from the supplied soccer-ball outline');
+ assert.match(expected,/viewBox="0 0 512 512"/,'Source uses the new image geometry');
+ assert.match(expected,/M197,355 314,355/,'Source uses the new solid-panel football design');
+ assert.doesNotMatch(expected,/M200,349 L311,349/,'Previous traced artwork must not remain');
  for(const page of pages){
   const html=read(page),start='<a class="fa-shell-link" href="/matches" data-nav01-matches>',end='<span data-nav01="8">Matches</span>';
   const a=html.indexOf(start),b=html.indexOf(end,a);
