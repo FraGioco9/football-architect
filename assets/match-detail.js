@@ -361,7 +361,7 @@
   const preloaded=embeddedMatch();
   const reads=await Promise.allSettled([
    preloaded?Promise.resolve(preloaded.match):
-    fetch('/api/matches/'+matchId,{credentials:'omit',cache:'no-store'}).then(async r=>{if(!r.ok)throw Error(r.status===404?'missing':'error');return r.json()}),
+    fetch('/api/matches/'+matchId+'?include=stats',{credentials:'omit',cache:'no-store'}).then(async r=>{if(!r.ok)throw Error(r.status===404?'missing':'error');return r.json()}),
    preloaded?Promise.resolve(null):import('/assets/match-public-context.mjs'),
    import('/assets/match-scoreboard-themes.mjs')
   ]);
@@ -376,12 +376,25 @@
    clubs={clubs:context.clubs};competitions={competitions:context.competitions};
   }
   data=item;errorKind=null;render();
-  if(item.status==='completed')void fetch('/api/matches/'+matchId+'/stats',{credentials:'omit',cache:'no-store'})
-   .then(async response=>{if(!response.ok)return;const value=await response.json();
-    if(value?.schemaVersion===1&&value.providerId==='authoritative-world'&&value.matchId===matchId&&
-     value.season===item.season&&value.competitionId===item.competitionId&&value.status==='completed'&&
-     value.provenance?.kind==='authoritative'&&typeof item.provenance.receiptHash==='string'&&/^[a-f0-9]{64}$/.test(item.provenance.receiptHash)&&value.provenance.receiptHash===item.provenance.receiptHash){matchStatistics=value;render();}
-   }).catch(()=>{/* Statistics failures leave the independently loaded match intact. */});
+  const acceptStatistics=value=>{
+   if(value?.schemaVersion===1&&value.providerId==='authoritative-world'&&value.matchId===matchId&&
+    value.season===item.season&&value.competitionId===item.competitionId&&value.status==='completed'&&
+    value.statistics!==undefined&&value.provenance?.kind==='authoritative'&&
+    typeof item.provenance.receiptHash==='string'&&/^[a-f0-9]{64}$/.test(item.provenance.receiptHash)&&
+    value.provenance.receiptHash===item.provenance.receiptHash){matchStatistics=value;render();}
+  };
+  if(item.status==='completed'){
+   if(preloaded){
+    // Embedded HTML supplies the header only; preserve its optional stats
+    // request instead of issuing a redundant second header read.
+    void fetch('/api/matches/'+matchId+'/stats',{credentials:'omit',cache:'no-store'})
+     .then(async response=>{if(response.ok)acceptStatistics(await response.json())})
+     .catch(()=>{/* The verified match remains available without statistics. */});
+   }else{
+    // The same verified match response contains its own frozen statistics.
+    acceptStatistics(item);
+   }
+  }
   // Match data and the competition snapshot are read independently. Only
   // the immutable verified match identity is allowed to request this season.
   if(!Number.isSafeInteger(item.day)||item.day<1||

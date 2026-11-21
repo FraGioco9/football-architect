@@ -18,7 +18,7 @@ import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {loadSeasonSportingEvidence} from '../src/season-sporting-evidence.ts';
 import {replayLineupSeasonV1} from '../src/lineup-season-replay.ts';
-import {readPublicMatchLineupV1,readPublicMatchStatisticsV1,
+import {readPublicMatchLineupV1,readPublicMatchLineupWithStatisticsV1,readPublicMatchStatisticsV1,
  readPublishedCompetitionMatchesLineupV1} from '../src/public-match-read-lineup-v1.ts';
 import worker from '../src/index.ts';
 import {handleAdmin} from '../src/http-admin.ts';
@@ -102,6 +102,8 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(await count('match_lineup_result_receipts')).toBe(0);
  expect(await readPublicMatchLineupV1(db,String(full.public_id)))
   .toMatchObject({status:'scheduled',result:null,kickoff:null});
+ const scheduledBundle=await readPublicMatchLineupWithStatisticsV1(db,String(full.public_id));
+ expect(scheduledBundle).toMatchObject({status:'scheduled',result:null,statistics:null});
  expect((await readPublicMatchStatisticsV1(db,String(full.public_id))).statistics).toBeNull();
  const oldWorld=world,oldCommand=cmd();
  await db.prepare("CREATE TRIGGER fail_day13_audit BEFORE INSERT ON admin_operations WHEN NEW.command='advance-season-v1' BEGIN SELECT RAISE(ABORT,'late day13 failure'); END").run();
@@ -296,6 +298,15 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect(httpMatch.result).toEqual(a.result);
  expect(httpMatch).not.toHaveProperty('lineup');
  const httpStats=await get('/api/matches/'+full.public_id+'/stats');
+ // Combined projection must match both existing independent public contracts.
+ const combined=await get('/api/matches/'+full.public_id+'?include=stats');
+ const {statistics:bundledStats,...matchHeader}=combined;
+ expect(matchHeader).toEqual(httpMatch);
+ expect(bundledStats).toEqual(httpStats.statistics);
+ for(const query of ['?include=stats&include=stats','?include=events','?include=stats&other=x']){
+  const bad=await worker.fetch(new Request('https://example.invalid/api/matches/'+full.public_id+query),{DB:db});
+  expect(bad.status).toBe(422);
+ }
  expect(httpStats.statistics).toEqual(statsA.statistics);
  expect(httpStats.statistics).not.toHaveProperty('events');
  expect(httpStats.statistics).not.toHaveProperty('eventModelVersion');
