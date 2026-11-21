@@ -140,7 +140,10 @@ function render(){
  list.setAttribute('aria-busy',String(state==='loading'));
  if(state==='loading'){list.innerHTML=skeleton;status.textContent='';return}
  list.replaceChildren();status.textContent='';
- if(state==='error'){const retry=node('button',words.retry);retry.onclick=()=>start();status.append(words.unavailable+' ',retry);return}
+ if(state==='error'){const retry=node('button',words.retry);retry.onclick=()=>{
+   if(window.faWorldState?.get?.().worldStatus==='unavailable')dispatchEvent(new Event('fa:world-invalidated'));
+   else void start();
+  };status.append(words.unavailable+' ',retry);return}
  if(['zero','unpublished','unavailable'].includes(state)){status.textContent=words[state];return}
  const needle=fold(s.q);
  for(const c of s.ids){
@@ -195,7 +198,13 @@ async function refresh(){
    state='loading';render();
    const data=await entry.request;
    if(ticket!==epoch)return;
-   if(!window.faWorldClockAdapter.sameWorld(data.world,world)){cache.delete(id);await start();return}
+   if(!window.faWorldClockAdapter.sameWorld(data.world,world)){
+    cache.delete(id);
+    // Refresh the shared clock first: a stale snapshot must never start a
+    // loop of match requests against the previous world revision.
+    dispatchEvent(new Event('fa:world-invalidated'));
+    return;
+   }
    if(data.schemaVersion!==1||data.providerId!=='authoritative-world'||!['published','partial','unpublished','unavailable'].includes(data.publication)||data.selectedSeason!==s.season||data.day!==s.day||!Array.isArray(data.fixtures))throw Error('Invalid directory');
    entry.data=data;
   }
@@ -210,10 +219,18 @@ async function refresh(){
 async function start(){
  const ticket=++epoch;world=null;pending=loaded='';state='loading';render();
  try{
-  const data=await get('/api/world');if(ticket!==epoch)return;
-  if(!window.faWorldClockAdapter.validPublicWorld(data.world))throw Error('Invalid world');
-  if(!window.faWorldClockAdapter.sameWorld(cacheWorld,data.world))dayCache=new Map();
-  cacheWorld=data.world;world=data.world;state=world.seasonNumber?'loading':'zero';await refresh();
+  // The app shell already reads the authoritative clock. Reuse it instead of
+  // issuing a second /api/world GET before loading the selected day.
+  // Debug currently has no authoritative shared clock: preserve its existing
+  // official-world fallback until the separate Debug API audit.
+  const snapshot=window.faWorldState?.get?.();
+  const nextWorld=snapshot?.source==='dev'
+   ?(await get('/api/world')).world
+   :await window.faWorldState.waitForWorld();
+  if(ticket!==epoch)return;
+  if(!window.faWorldClockAdapter.validPublicWorld(nextWorld))throw Error('Invalid world');
+  if(!window.faWorldClockAdapter.sameWorld(cacheWorld,nextWorld))dayCache=new Map();
+  cacheWorld=nextWorld;world=nextWorld;state=world.seasonNumber?'loading':'zero';await refresh();
  }catch{if(ticket===epoch){state='error';render()}}
 }
 function chooseFilter(key,value){
@@ -235,8 +252,8 @@ el('prev').onclick=()=>updateURL({day:selection().day-1});
 el('next').onclick=()=>updateURL({day:selection().day+1});
 el('current').onclick=()=>updateURL({season:'',day:''});
 addEventListener('popstate',refresh);
-addEventListener('fa:source-change',()=>{dayCache=new Map();start()});
-addEventListener('fa:world-invalidated',()=>{dayCache=new Map();start()});
-addEventListener('pageshow',e=>{if(e.persisted)start()});
+addEventListener('fa:source-change',()=>{dayCache=new Map();queueMicrotask(start)});
+addEventListener('fa:world-invalidated',()=>{dayCache=new Map();queueMicrotask(start)});
+addEventListener('pageshow',e=>{if(e.persisted)queueMicrotask(start)});
 new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 start();
