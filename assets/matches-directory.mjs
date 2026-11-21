@@ -159,8 +159,10 @@ function render(){
   for(const {round,leg,fixtures} of rounds.values()){
    const group=node('section'),heading=node('h2');
    const href='/competitions/'+c.id.toLowerCase()+'/fixtures?season='+s.season+'&matchday='+encodeURIComponent(round);
-   const caption=(fixtures[0].phaseId==='league'?words.round+' '+round:words[round]??round)+(leg!=null?' · '+words.leg+' '+leg:'');
-   heading.append(competitionLogo(c,headingIndex++),link(href,c.name),node('small',caption));
+   const caption=fixtures[0].phaseId==='league'?words.round+' '+round:words[round]??round;
+   const phaseLabel=node('small',caption);
+   if(leg!=null)phaseLabel.append(node('span',' · '+words.leg+' '+leg,'md-leg'));
+   heading.append(competitionLogo(c,headingIndex++),link(href,c.name),phaseLabel);
    group.append(heading,...fixtures.map(fixture));list.append(group);
   }
  }
