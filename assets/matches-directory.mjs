@@ -182,7 +182,8 @@ function render(){
   for(const f of filtered){
    const round=fixtureMatchday(f);
    const leg=f.leg??null;
-   const key=JSON.stringify([round,leg]);
+   // Distinguish playoff semifinals and finals with the same public label/leg.
+   const key=JSON.stringify([round,leg,f.round]);
    if(!rounds.has(key))rounds.set(key,{round,leg,fixtures:[]});
    rounds.get(key).fixtures.push(f);
   }
@@ -285,8 +286,7 @@ async function refresh(){
 async function start(){
  const ticket=++epoch;world=null;pending=loaded='';state='loading';render();
  try{
-  // Share the shell's canonical world GET in authoritative mode.
-  // Preserve the Debug fallback until its separate API audit.
+  // Reuse the shell's canonical world GET in authoritative mode, keep Debug fallback.
   const snapshot=window.faWorldState?.get?.();
   const nextWorld=snapshot?.source==='dev'
    ?(await get('/api/world')).world

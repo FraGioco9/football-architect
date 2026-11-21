@@ -1107,10 +1107,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await wait("location.pathname==='/competitions/pt-1/fixtures'&&!!document.querySelector('#app-fixtures-list [data-club-crest=\"PT-1\"][data-club-crest-loaded=\"true\"] img')?.naturalWidth");
     for(const width of [1440,390,320]){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
-      const expected=width<620?56:64;
+      const expected=width<=360?24:width<=420?30:width<=620?36:64;
       await wait("(()=>{const list=document.getElementById('app-fixtures-list');if(!list||getComputedStyle(list).visibility!=='visible')return false;const hosts=[...list.querySelectorAll('[data-club-crest]')];return hosts.length===16&&hosts.every(h=>{const r=h.getBoundingClientRect();return r.width==="+expected+"&&r.height==="+expected+"})})()");
       const sizes=await run("[...document.querySelectorAll('#app-fixtures-list [data-club-crest]')].map(h=>({w:h.getBoundingClientRect().width,h:h.getBoundingClientRect().height}))");
-      assert.ok(sizes.length===16&&sizes.every(b=>b.w===(width<620?56:64)&&b.h===(width<620?56:64)),'Larger fixture crests: '+JSON.stringify({width,sizes}));
+      assert.ok(sizes.length===16&&sizes.every(b=>b.w===expected&&b.h===expected),'Fixture crests match the approved mobile card sizes: '+JSON.stringify({width,expected,sizes}));
       assert.equal(await run("document.documentElement.scrollWidth>innerWidth"),false,'No page overflow from large fixture crests');
       await snap('CLUB-CRESTS FIXTURES '+width,width,900);
     }
