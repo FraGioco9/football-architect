@@ -32,71 +32,14 @@ export function validateCalendarDay(input,selection,manifest){
  for(const event of events.filter(e=>e.phase==='league'))for(const id of event.competitionIds){const games=d.fixtures.filter(f=>f.competitionId===id&&f.marker===event.marker);if(games.length!==definitions.get(id).capacity/2||new Set(games.flatMap(f=>[f.homeClubId,f.awayClubId])).size!==definitions.get(id).capacity)fail()}
  return structuredClone(input);
 }
-// #734: keep the verified daily projections for the current sporting-world
-// revision only. Reusing a day never skips the final server-side world fence.
-export function createCalendarLoader({getSelection,clear,commit,fetchJson,manifest,onState=()=>{},isEnabled=()=>true,worldState=globalThis.faWorldState}){
- let selection,cacheIdentity=null,inFlight=null;
- const maxDays=16,days=new Map();
- const clearCache=()=>{days.clear();cacheIdentity=null};
- const worldIdentity=()=>{
-  const snapshot=worldState?.get?.(),w=snapshot?.world;
-  if(snapshot?.source!=='authoritative'||snapshot.worldStatus!=='ready'||!validPublicWorld(w))return null;
-  return JSON.stringify([snapshot.sourceRevision,w.generation,w.revision,w.seasonNumber,w.day,w.phase]);
- };
- const cacheScope=()=>{
-  const identity=worldIdentity();
-  if(identity!==cacheIdentity){days.clear();cacheIdentity=identity}
-  return identity;
- };
- const dayKey=()=>selection.season+':'+selection.day;
- const reader=globalThis.faWorldClockAdapter.createSnapshotReader({
-  worldState,useSharedWorld:true,
+export function createCalendarLoader({getSelection,clear,commit,fetchJson,manifest,onState=()=>{},isEnabled=()=>true}){
+ let selection;
+ return globalThis.faWorldClockAdapter.createSnapshotReader({
   isEnabled,getIdentity:()=>{const s=getSelection();return JSON.stringify([s?.season,s?.day,s?.sourceRevision])},
   clear:()=>{clear();selection={...getSelection()}},onState,
   fetchWorld:async options=>(await fetchJson('/api/world',options))?.world,
-  read:options=>{
-   // Cache hits avoid the daily projection GET only. The adapter still checks
-   // /api/world after every read, including a cached response.
-   const scope=cacheScope(),key=dayKey();
-   if(scope&&days.has(key)){
-    const hit=days.get(key);days.delete(key);days.set(key,hit);
-    return hit;
-   }
-   return fetchJson(`/api/calendar/seasons/${selection.season}/days/${selection.day}`,options);
-  },
-  validate:payload=>validateCalendarDay(payload,selection,manifest),
-  commit:payload=>{
-   const accepted=commit(payload);
-   if(accepted===false)return false;
-   const scope=cacheScope();
-   if(scope&&['partial','available','empty'].includes(payload.status)&&
-      globalThis.faWorldClockAdapter.sameWorld(payload.world,worldState?.get?.().world)){
-    const key=dayKey();
-    days.delete(key);days.set(key,payload);
-    if(days.size>maxDays)days.delete(days.keys().next().value);
-   }
-   return accepted;
-  }
- });
- const loadIdentity=()=>{
-  const selected=getSelection(),snapshot=worldState?.get?.(),w=snapshot?.world;
-  return JSON.stringify([selected?.season,selected?.day,selected?.sourceRevision,
-   snapshot?.source,snapshot?.sourceRevision,snapshot?.readRevision,snapshot?.worldStatus,
-   w?.generation,w?.revision]);
- };
- return Object.freeze({
-  load(){
-   const identity=loadIdentity();
-   if(inFlight?.identity===identity)return inFlight.promise;
-   const promise=reader.load();
-   inFlight={identity,promise};
-   void promise.then(()=>{if(inFlight?.promise===promise)inFlight=null},
-    ()=>{if(inFlight?.promise===promise)inFlight=null});
-   return promise;
-  },
-  cancel(){inFlight=null;reader.cancel()},
-  clearCache,
-  dispose(){inFlight=null;clearCache();reader.dispose()}
+  read:options=>fetchJson(`/api/calendar/seasons/${selection.season}/days/${selection.day}`,options),
+  validate:payload=>validateCalendarDay(payload,selection,manifest),commit
  });
 }
 
@@ -138,10 +81,7 @@ export async function mountAuthoritativeCalendar({root,document=globalThis.docum
  const loader=createCalendarLoader({manifest,getSelection,fetchJson,isEnabled,clear:()=>{const s=getSelection(),key=s.season+':'+s.day;if(key!==loadedSelection){payload=null;onWorld(null);loadedSelection=key;render()}},commit:data=>{payload=data;onWorld(data.world)},onState:s=>{state=s;if(s==='unavailable'){payload=null;onWorld(null)}render()}});
  const reload=event=>{if(!isEnabled()){if(!disabledCleared){disabledCleared=true;loader.cancel();payload=null;selectionKey='';loadedSelection='';onWorld(null);render()}return;}disabledCleared=false;const s=getSelection(),next=s.season+':'+s.day+':'+window.faWorldState?.get?.().sourceRevision;if(next===selectionKey&&!event?.detail?.refresh){render();return;}selectionKey=next;void loader.load()};
  window.addEventListener('fa:calendar-selection-change',reload);
- window.addEventListener('fa:source-change',event=>{loader.clearCache();reload(event)});
- // World invalidation belongs to the shell; start after its handler has made
- // the shared state pending, so reset data cannot reuse an old day entry.
- window.addEventListener('fa:world-invalidated',()=>{loader.clearCache();selectionKey='';queueMicrotask(()=>reload({detail:{refresh:true}}))});
+ window.addEventListener('fa:source-change',reload);
  window.addEventListener('focus',()=>void loader.load());
  window.addEventListener('pageshow',e=>{if(e.persisted)void loader.load()});
  window.addEventListener('pagehide',e=>{if(!e.persisted)loader.dispose()});
