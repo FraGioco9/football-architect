@@ -128,7 +128,7 @@ test('#720 Date header, localized shared tooltips and complete cached filter mod
  assert.doesNotMatch(ui,/app-player-matches-header-trigger/);
  assert.match(ui,/trigger\.setAttribute\('aria-describedby',tip\.id\)/);
  assert.match(css,/\.app-player-stats-header-trigger\{/);
- assert.match(ui,/fetchMatches\(id,\{season:'all',competition:'all',limit:50,cursor\}\)/);
+ assert.match(ui,/fetchMatches\(id,\{season:'all',competition:'all',limit:100,cursor\}\)/);
  assert.match(ui,/if\(seenCursors\.has\(cursor\)/);
  assert.match(ui,/gathered\.length!==total/);
  const selectHandler=ui.slice(ui.indexOf('const choose=value=>'),ui.indexOf('trigger.addEventListener(\'click\'',ui.indexOf('const choose=value=>')));

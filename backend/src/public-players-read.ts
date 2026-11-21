@@ -95,14 +95,34 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
   ?sortExpression+' COLLATE NOCASE '+(filters.order==='desc'?'DESC':'ASC')+', id ASC'
   :'id DESC';
  const where=predicates.length?' WHERE '+predicates.join(' AND '):'';
- const countRow=await db.prepare('SELECT COUNT(*) AS n FROM generated_players'+where)
-  .bind(...values).first<{n:number}>();
- const count=countRow?.n??0;
+ const countSql='SELECT COUNT(*) AS n FROM generated_players'+where;
+ const pageSql='SELECT p.id,p.payload_json,a.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a.player_id=p.id'+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?';
+ let count:number,rows:StoredRow[];
+ if(page===1){
+  // The first page always needs both results, even when the directory is
+  // empty. D1 batch executes them in one transaction/round trip, without
+  // changing the exact count, selected public fields or 50-row contract.
+  const [countResult,pageResult]=await db.batch([
+   db.prepare(countSql).bind(...values),
+   db.prepare(pageSql).bind(...values,PUBLIC_PLAYER_PAGE_SIZE,0)
+  ]);
+  const value=(countResult?.results?.[0] as {n?:number}|undefined)?.n;
+  if(typeof value!=='number'||!Number.isSafeInteger(value)||value<0||!pageResult?.results)
+   throw new ApiError(503,'players_unavailable');
+  count=value;
+  rows=pageResult.results as unknown as StoredRow[];
+ }else{
+  // Preserve the current no-page-SELECT behavior for expired deep links.
+  // OFFSET pages must recount: generation alone cannot detect new players
+  // or affiliation writes, so reusing a client-supplied count is unsafe.
+  const countRow=await db.prepare(countSql).bind(...values).first<{n:number}>();
+  count=countRow?.n??0;
+  const totalPages=Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE));
+  rows=page<=totalPages
+   ?(await db.prepare(pageSql).bind(...values,PUBLIC_PLAYER_PAGE_SIZE,(page-1)*PUBLIC_PLAYER_PAGE_SIZE).all<StoredRow>()).results
+   :[];
+ }
  const totalPages=Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE));
- const rows=page<=totalPages
-  ?(await db.prepare('SELECT p.id,p.payload_json,a.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a.player_id=p.id'+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?')
-    .bind(...values,PUBLIC_PLAYER_PAGE_SIZE,(page-1)*PUBLIC_PLAYER_PAGE_SIZE).all<StoredRow>()).results
-  :[];
  const after=await readWorld(db);
  if(after.generation!==before.generation)throw new ApiError(409,'stale_world');
  return {

@@ -534,6 +534,62 @@
    return validMatch(value?.match)&&validContext(value.context,value.match)?value:null;
   }catch{return null}
  }
+ // For unavailable new context (e.g. early draw, reserved knockout or old backend),
+ // keep both established optional reads independently. They never gate the score.
+ function loadLegacyContext(item){
+  // Both official form sources depend only on the verified match identity:
+  // start in parallel; neither waits for the other.
+  void fetch('/api/competitions/'+item.competitionId+'/seasons/'+item.season,
+   {credentials:'omit',cache:'no-store'})
+   .then(async response=>response.ok?response.json():null)
+   .then(snapshot=>{
+    if(data!==item||!verifiedProjection(snapshot))return;
+    sideProjection=snapshot;render();
+   }).catch(()=>{/* Official standings unavailable; keep the result intact. */});
+  void Promise.all([
+   fetch('/api/matches/seasons/'+item.season+'/competitions/'+item.competitionId,
+    {credentials:'omit',cache:'no-store'}),
+   import('/assets/published-match-links.mjs')
+  ]).then(async ([reply,module])=>{
+   if(!reply.ok)return;
+   const payload=await reply.json();
+   const index=module.indexPublishedMatchLinks(payload,item.season,item.competitionId);
+   if(data===item){publishedMatchIndex=index;render();}
+  }).catch(()=>{/* No fabricated match links when index is unavailable. */});
+ }
+ async function loadCompactContext(item){
+  try{
+   const query=new URLSearchParams({season:String(item.season),competition:item.competitionId});
+   const response=await fetch('/api/matches/'+matchId+'/context?'+query,
+    {credentials:'omit',cache:'no-store'});
+   if(!response.ok)throw Error('Compact match context unavailable');
+   const value=await response.json();
+   if(value?.schemaVersion!==1||value.providerId!=='authoritative-world'||
+      value.matchId!==matchId||value.season!==item.season||
+      value.competitionId!==item.competitionId||value.day!==item.day||
+      value.homeClubId!==clubKey(item.homeParticipant?.clubId)||
+      value.awayClubId!==clubKey(item.awayParticipant?.clubId)||
+      !verifiedProjection(value.projection))throw Error('Invalid compact match context');
+   const current=window.faWorldState?.get?.();
+   if(current?.source==='authoritative'&&current.worldStatus==='ready'&&current.world&&
+      ['generation','revision','seasonNumber','day','phase']
+       .some(key=>current.world[key]!==value.world?.[key]))
+    throw Error('Stale compact match context');
+   let links=null;
+   if(value.published){
+    const module=await import('/assets/published-match-links.mjs');
+    links=module.indexPublishedMatchLinks(value.published,item.season,item.competitionId);
+   }
+   if(data!==item)return;
+   sideProjection=value.projection;
+   publishedMatchIndex=links;
+   render();
+  }catch{
+   // 404/409/503 or a malformed compact response must not lose form and
+   // publication link functionality for the existing independent endpoints.
+   if(data===item)loadLegacyContext(item);
+  }
+ }
  async function load(){
   if(!numeric(matchId)){errorKind='missing';render();return}
   const preloaded=embeddedMatch();
@@ -564,25 +620,12 @@
   // the immutable verified match identity is allowed to request this season.
   if(!Number.isSafeInteger(item.day)||item.day<1||
    !clubKey(item.homeParticipant?.clubId)&&!clubKey(item.awayParticipant?.clubId))return;
-  // Both official form sources depend only on the verified match identity:
-  // start in parallel; neither waits for the other.
-  void fetch('/api/competitions/'+item.competitionId+'/seasons/'+item.season,
-   {credentials:'omit',cache:'no-store'})
-   .then(async response=>response.ok?response.json():null)
-   .then(snapshot=>{
-    if(data!==item||!verifiedProjection(snapshot))return;
-    sideProjection=snapshot;render();
-   }).catch(()=>{/* Official standings unavailable; keep the result intact. */});
-  void Promise.all([
-   fetch('/api/matches/seasons/'+item.season+'/competitions/'+item.competitionId,
-    {credentials:'omit',cache:'no-store'}),
-   import('/assets/published-match-links.mjs')
-  ]).then(async ([reply,module])=>{
-   if(!reply.ok)return;
-   const payload=await reply.json();
-   const index=module.indexPublishedMatchLinks(payload,item.season,item.competitionId);
-   if(data===item){publishedMatchIndex=index;render();}
-  }).catch(()=>{/* No fabricated match links when index is unavailable. */});
+  // The optional context starts only after the verified header paints.
+  // Knockout and partly resolved fixtures keep the legacy independent reads.
+  if(item.stageId==='league'&&clubKey(item.homeParticipant?.clubId)&&
+     clubKey(item.awayParticipant?.clubId))
+    void loadCompactContext(item);
+  else loadLegacyContext(item);
  }
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  render();void load();

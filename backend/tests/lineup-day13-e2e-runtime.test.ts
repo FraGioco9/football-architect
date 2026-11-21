@@ -284,7 +284,8 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  expect((await get('/api/players/1/matches?season=1&competition=IT-1&limit=1'))
   .items).toHaveLength(1);
  expect((await get('/api/players/1/matches?competition=int-1')).items).toHaveLength(0);
- for(const unsafe of ['?season=999','?season=1&season=1','?limit=51',
+ expect((await get('/api/players/1/matches?limit=100')).items).toHaveLength(1);
+ for(const unsafe of ['?season=999','?season=1&season=1','?limit=101',
    '?competition=FAKE','?cursor=not-json','?unknown=x']){
   const response=await worker.fetch(new Request('https://example.invalid/api/players/1/matches'+unsafe),{DB:db});
   expect(response.status).toBe(422);

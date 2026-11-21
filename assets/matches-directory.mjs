@@ -267,7 +267,11 @@ async function refresh(){
    state='loading';render();
    const data=await entry.request;
    if(ticket!==epoch)return;
-   if(!window.faWorldClockAdapter.sameWorld(data.world,world)){cache.delete(id);await start();return}
+   if(!window.faWorldClockAdapter.sameWorld(data.world,world)){
+    cache.delete(id);
+    dispatchEvent(new Event('fa:world-invalidated'));
+    return;
+   }
    if(!validDirectoryPayload(data,s))throw Error('Invalid directory');
    entry.data=data;
   }
@@ -282,10 +286,15 @@ async function refresh(){
 async function start(){
  const ticket=++epoch;world=null;pending=loaded='';state='loading';render();
  try{
-  const data=await get('/api/world');if(ticket!==epoch)return;
-  if(!window.faWorldClockAdapter.validPublicWorld(data.world))throw Error('Invalid world');
-  if(!window.faWorldClockAdapter.sameWorld(cacheWorld,data.world))dayCache=new Map();
-  cacheWorld=data.world;world=data.world;state=world.seasonNumber?'loading':'zero';await refresh();
+  // Reuse the shell's canonical world GET in authoritative mode, keep Debug fallback.
+  const snapshot=window.faWorldState?.get?.();
+  const nextWorld=snapshot?.source==='dev'
+   ?(await get('/api/world')).world
+   :await window.faWorldState.waitForWorld();
+  if(ticket!==epoch)return;
+  if(!window.faWorldClockAdapter.validPublicWorld(nextWorld))throw Error('Invalid world');
+  if(!window.faWorldClockAdapter.sameWorld(cacheWorld,nextWorld))dayCache=new Map();
+  cacheWorld=nextWorld;world=nextWorld;state=world.seasonNumber?'loading':'zero';await refresh();
  }catch{if(ticket===epoch){state='error';render()}}
 }
 function chooseFilter(key,value){
@@ -307,8 +316,8 @@ el('prev').onclick=()=>updateURL({day:selection().day-1});
 el('next').onclick=()=>updateURL({day:selection().day+1});
 el('current').onclick=()=>updateURL({season:'',day:''});
 addEventListener('popstate',refresh);
-addEventListener('fa:source-change',()=>{dayCache=new Map();start()});
-addEventListener('fa:world-invalidated',()=>{dayCache=new Map();start()});
-addEventListener('pageshow',e=>{if(e.persisted)start()});
+addEventListener('fa:source-change',()=>{dayCache=new Map();queueMicrotask(start)});
+addEventListener('fa:world-invalidated',()=>{dayCache=new Map();queueMicrotask(start)});
+addEventListener('pageshow',e=>{if(e.persisted)queueMicrotask(start)});
 new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 start();

@@ -6,14 +6,14 @@ export async function verifyMatchesDirectory(browser){
   const page=await context.newPage(),errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:15,seasonNumber:1,day:13,phase:'active'};
-  let requests=0;
+  let requests=0,worldRequests=0;
   let releaseLogo;
   const pendingLogo=new Promise(resolve=>{releaseLogo=resolve});
   await page.route('**/assets/divisions/**/*.svg',async route=>{await pendingLogo;await route.abort()});
   await page.route('**/assets/clubs/**/*.svg',route=>route.abort());
   let releaseWorld;
   const initialWorld=new Promise(resolve=>{releaseWorld=resolve});
-  await page.route('**/api/world',async route=>{await initialWorld;await route.fulfill({json:{world}})});
+  await page.route('**/api/world',async route=>{worldRequests++;await initialWorld;await route.fulfill({json:{world}})});
   await page.route('**/api/matches?*',route=>{
    const day=Number(new URL(route.request().url()).searchParams.get('day'));requests++;
    return route.fulfill({json:{schemaVersion:1,providerId:'authoritative-world',world,selectedSeason:1,day,publication:'published',fixtures:day===13?Array.from({length:8},(_,i)=>(
@@ -176,6 +176,7 @@ export async function verifyMatchesDirectory(browser){
   await page.goBack();await match.waitFor();
   assert(await divisionLogo.evaluate(slot=>slot===document.querySelector('#md-list h2 > .md-logo')),'reuse the resolved logo on return');
   assert.equal(requests,1,'filter and Back reuse the same day');
+  assert.equal(worldRequests,1,'Matches reuses global shell world on cold load');
   await page.locator('#md-next').click();
   await page.getByText('No matches on this day.').waitFor();
   assert(await page.locator('#md-current').isEnabled());
@@ -311,6 +312,7 @@ export async function verifyMatchesDirectory(browser){
   await page.evaluate(()=>dispatchEvent(new Event('fa:world-invalidated')));
   await match.waitFor();
   assert.equal(requests,4,'refresh after world invalidation');
+  assert.equal(worldRequests,2,'shared world invalidation triggers one canonical read');
   await page.locator('#md-q').fill('xxxx');
   await page.getByText('No matching fixtures.').waitFor();
   assert.deepEqual(errors,[]);

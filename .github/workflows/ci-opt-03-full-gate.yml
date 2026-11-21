@@ -1,7 +1,7 @@
 name: CI-OPT-03 FULL evidence gate
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft, edited]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -22,6 +22,9 @@ concurrency:
 jobs:
   full-evidence:
     name: CI FULL exact-head evidence
+    # Stacked PRs cannot provide main-base FULL evidence. SKIP (not PASS) here;
+    # run the original strict observer when the PR targets main or is dispatched.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.base.ref == 'main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
