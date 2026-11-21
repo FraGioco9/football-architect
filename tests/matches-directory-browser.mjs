@@ -33,6 +33,11 @@ export async function verifyMatchesDirectory(browser){
    ]:[]}});
   });
   await page.goto('http://app.localhost:2000/matches',{waitUntil:'domcontentloaded'});
+  const sidebarIconSizes=await page.evaluate(()=>['players','clubs','matches'].map(name=>{
+   const icon=document.querySelector('[data-nav01-'+name+'] .fa-icon'),rect=icon?.getBoundingClientRect();
+   return [rect?.width,rect?.height];
+  }));
+  assert.deepEqual(sidebarIconSizes,[[18,18],[18,18],[18,18]],'Matches sidebar icon has the same rendered box as Players and Clubs');
   const match=page.locator('#md-list a.md-score').first();
   assert.equal(await page.locator('#md-season-value').textContent(),'');
   assert.equal(await page.locator('#md-day-value').textContent(),'');
