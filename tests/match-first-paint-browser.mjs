@@ -24,14 +24,31 @@ let count=0;
 for(const [engine,driver] of Object.entries(engines)){
  const browser=await driver.launch({headless:true});
  try{
-  // Dedicated stats are delayed or unavailable without gating the scoreboard.
-  for(const scenario of [{width:390,valid:true},{width:1440,valid:false}]){
+  // Dedicated statistics may include substitutes and can arrive after the score.
+  const lineupScenarios=[
+   {width:390,kind:'eleven',shown:true},
+   {width:1440,kind:'substitutions',shown:true},
+   {width:320,kind:'dismissal',shown:true},
+   {width:900,kind:'extra-time',shown:true},
+   {width:390,kind:'penalties',shown:true},
+   {width:390,kind:'ten-starters',shown:false},
+   {width:1440,kind:'twelve-starters',shown:false},
+   {width:390,kind:'duplicate-id',shown:false},
+   {width:1440,kind:'fallback',shown:false},
+   {width:390,kind:'receipt-mismatch',shown:false},
+   {width:390,kind:'unavailable',shown:false}
+  ];
+  for(const scenario of lineupScenarios){
    const ctx=await browser.newContext({viewport:{width:scenario.width,height:900}});
    const page=await ctx.newPage();let release;
    const gate=new Promise(resolve=>release=resolve);
+   const result=scenario.kind==='penalties'
+    ?{homeGoals:1,awayGoals:1,resolution:'penalties',regulation:{home:1,away:1},extraTime:{home:0,away:0},penalties:{home:4,away:3},winnerClubId:'IT-1'}
+    :scenario.kind==='extra-time'
+    ?{homeGoals:2,awayGoals:1,resolution:'extra-time',regulation:{home:1,away:1},extraTime:{home:1,away:0},penalties:null,winnerClubId:'IT-1'}
+    :{homeGoals:2,awayGoals:1,resolution:'regulation',regulation:{home:2,away:1},extraTime:null,penalties:null,winnerClubId:'IT-1'};
    const played={...match,day:13,status:'completed',homeParticipant:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'},
-    result:{homeGoals:2,awayGoals:1,resolution:'regulation',regulation:{home:2,away:1},extraTime:null,penalties:null,winnerClubId:'IT-1'},
-    provenance:{kind:'authoritative',receiptHash:'a'.repeat(64)}};
+    result,provenance:{kind:'authoritative',receiptHash:'a'.repeat(64)}};
    const document=applyPublishedMatchDocument(shell,played,'123');
    try{
     await page.route('**/matches/123',route=>route.fulfill({status:200,contentType:'text/html',body:document}));
@@ -39,27 +56,173 @@ for(const [engine,driver] of Object.entries(engines)){
     await page.route('**/api/matches/123',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(played)}));
     await page.route('**/api/matches/123/stats',async route=>{
      await gate;
-     const people=Array.from({length:11},(_,i)=>({playerId:i+1,name:'Frozen Player '+(i+1),nationality:'ITA',role:i===0?'GK':'CM',started:true,minutes:90,goals:0,assists:null,redCards:null,cleanSheets:i===0?0:null,rating:6.5}));
+     if(scenario.kind==='unavailable')return route.fulfill({status:503,contentType:'application/json',body:'{}'});
+     const people=Array.from({length:11},(_,i)=>({playerId:i+1,name:'Frozen Player '+(i+1),nationality:'ITA',role:i===0?'GK':'CM',started:true,minutes:scenario.kind==='dismissal'&&i===2?67:90,goals:0,assists:null,redCards:null,cleanSheets:i===0?0:null,rating:6.5}));
+     if(['substitutions','twelve-starters','duplicate-id'].includes(scenario.kind)){
+      people.push(...Array.from({length:3},(_,i)=>({playerId:i+12,name:'Substitute '+(i+12),nationality:'ITA',role:'CM',started:false,minutes:22,goals:0,assists:0,redCards:0,cleanSheets:null,rating:6.1})));
+     }
+     if(scenario.kind==='ten-starters')people[10].started=false;
+     if(scenario.kind==='twelve-starters')people[11].started=true;
+     if(scenario.kind==='duplicate-id')people[11].playerId=1;
      return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({schemaVersion:1,providerId:'authoritative-world',matchId:'123',season:1,competitionId:'IT-1',status:'completed',
-      provenance:{kind:'authoritative',receiptHash:(scenario.valid?'a':'b').repeat(64)},
-      statistics:{ratingVersion:'test-rating-v1',home:{kind:'real_xi',players:people},away:{kind:'team_fallback',players:[]}}})});
+      provenance:{kind:'authoritative',receiptHash:(scenario.kind==='receipt-mismatch'?'b':'a').repeat(64)},
+      statistics:{ratingVersion:'test-rating-v1',home:{kind:scenario.kind==='fallback'?'team_fallback':'real_xi',players:scenario.kind==='fallback'?[]:people},away:{kind:'team_fallback',players:[]}}})});
     });
     await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
-    assert.equal(await page.locator('[data-match-home-score]').textContent(),'2');
+    assert.equal(await page.locator('[data-match-home-score]').textContent(),String(result.homeGoals));
     assert.equal(await page.locator('.app-match-lineup-player').count(),0);
     const response=page.waitForResponse('**/api/matches/123/stats');release();await response;
-    if(scenario.valid){
+    if(scenario.shown){
      await page.waitForFunction(()=>document.querySelectorAll('.app-match-lineup-player').length===11);
      assert.equal(await page.locator('.app-match-lineup-player').first().textContent(),'Frozen Player 1');
      assert.equal(await page.locator('.app-match-lineup-player').first().getAttribute('title'),'ITA');
+     const names=await page.locator('.app-match-lineup-player').allTextContents();
+     assert.equal(names.length,11);
+     assert.ok(names.every(name=>name.startsWith('Frozen Player ')),JSON.stringify({engine,scenario,names}));
+     assert.equal(await page.locator('[data-match-lineup="home"] .app-match-lineup-rows').getAttribute('aria-hidden'),null);
     }else{
      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-     assert.equal(await page.locator('.app-match-lineup-player').count(),0,'mismatched receipt statistics are ignored');
+     assert.equal(await page.locator('.app-match-lineup-player').count(),0,
+      'unverified, unavailable or incomplete frozen starting XI stays hidden: '+scenario.kind);
     }
-    assert.equal(await page.locator('[data-match-home-score]').textContent(),'2');
+    assert.equal(await page.locator('.app-match-lineup-row').count(),22,'fixed XI geometry');
+    assert.equal(await page.locator('[data-match-away-score]').textContent(),String(result.awayGoals));
+    assert.equal(await page.locator('[data-match-home-score]').textContent(),String(result.homeGoals));
+    if(scenario.kind==='extra-time'||scenario.kind==='penalties'){
+     const messages=scenario.kind==='penalties'?
+      {en:'Completed · Penalties 4–3',it:'Conclusa · Rigori 4–3',
+       de:'Beendet · Elfmeterschießen 4–3',es:'Finalizado · Penaltis 4–3',
+       fr:'Terminé · Tirs au but 4–3'}:
+      {en:'Completed · After extra time',it:'Conclusa · Dopo i supplementari',
+       de:'Beendet · Nach Verlängerung',es:'Finalizado · Tras la prórroga',
+       fr:'Terminé · Après prolongation'};
+     for(const [locale,expected] of Object.entries(messages)){
+      await page.evaluate(code=>document.documentElement.lang=code,locale);
+      await page.waitForFunction(expected=>document.querySelector('[data-match-overview="status"]')?.textContent===expected,expected);
+     }
+     assert.equal(await page.locator('.app-match-score-separator').textContent(),'–');
+    }
     count++;
    }finally{release?.();await ctx.close()}
+  }
+  // Formation order follows frozen starting slots (not IDs); portraits
+  // require the one approved portrait key carried by verified Match Stats.
+  for(const width of [390,1440]){
+   const ctx=await browser.newContext({viewport:{width,height:900}});
+   const page=await ctx.newPage();
+   const played={...match,day:13,status:'completed',
+    homeParticipant:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'},
+    result:{homeGoals:1,awayGoals:0,resolution:'regulation',regulation:{home:1,away:0},
+     extraTime:null,penalties:null,winnerClubId:'IT-1'},
+    provenance:{kind:'authoritative',receiptHash:'a'.repeat(64)}};
+   const wrap=(body)=>({status:200,contentType:'application/json',body:JSON.stringify(body)});
+   const roles=['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW'];
+   const people=roles.map((role,i)=>({
+    playerId:11-i,name:'Frozen Player '+(11-i),nationality:'ITA',role,
+    startingRole:role,startingSlot:i+1,started:true,minutes:90,goals:0,rating:6.5,
+    portraitAssetKey:i===0?'assets/players/portraits/11.webp':null
+   })).reverse(); // API order deliberately wrong.
+   try{
+    await page.route('**/matches/123',route=>route.fulfill({status:200,contentType:'text/html',
+     body:applyPublishedMatchDocument(shell,played,'123')}));
+    await page.route('**/api/matches/123',route=>route.fulfill(wrap(played)));
+    await page.route('**/api/competitions/IT-1/seasons/1',route=>route.fulfill({status:503,body:'{}'}));
+    await page.route('**/api/matches/123/stats',route=>route.fulfill(wrap({
+     schemaVersion:1,providerId:'authoritative-world',matchId:'123',season:1,competitionId:'IT-1',
+     status:'completed',provenance:played.provenance,
+     statistics:{ratingVersion:'test-rating-v1',home:{kind:'real_xi',formation:'4-3-3',players:people},
+      away:{kind:'team_fallback',formation:null,players:[]}}
+    })));
+    let playerApiCalls=0;
+    await page.route('**/api/players/*',route=>{playerApiCalls++;return route.abort();});
+    await page.route('**/assets/players/portraits/11.webp',route=>route.fulfill({
+     status:200,contentType:'image/webp',
+     body:readFileSync(new URL('../assets/players/portraits/44.webp',import.meta.url))
+    }));
+    let eventsRequested=0;
+    await page.route('**/api/matches/123/events',route=>{eventsRequested++;return route.abort();});
+    await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.querySelectorAll('.app-match-lineup-player').length===11&&
+     document.querySelector('[data-match-formation="home"]')?.textContent==='4-3-3');
+    assert.deepEqual(await page.locator('.app-match-lineup-player').allTextContents(),
+     roles.map((_,i)=>'Frozen Player '+(11-i)));
+    assert.deepEqual(await page.locator('.app-match-lineup-role').allTextContents(),roles);
+    assert.equal(await page.locator('[data-match-formation="away"]').textContent(),'');
+    assert.equal(await page.locator('[data-match-events-panel]').count(),0);
+    assert.equal(eventsRequested,0);
+    assert.equal(playerApiCalls,0,'no one-by-one portrait API calls');
+    assert.equal(await page.locator('[data-match-lineup-view="list"]').count(),2);
+    assert.equal(await page.locator('[data-match-lineup-view="pitch"]:disabled').count(),2);
+    const link=page.locator('.app-match-lineup-player').first();
+    assert.equal(await link.evaluate(el=>el.parentElement.className),'app-match-lineup-name');
+    assert.equal(await link.getAttribute('href'),'/players/11');
+    await page.waitForFunction(()=>document.querySelector('.app-match-lineup-avatar[data-match-portrait-id="11"] img')?.naturalWidth>0);
+    assert.equal(await page.locator('.app-match-lineup-avatar[data-match-portrait-id="11"]').getAttribute('data-photo-ready'),'true');
+    assert.equal(playerApiCalls,0);
+    assert.equal(await page.locator('.app-match-lineup-avatar img').count(),1,
+     'only public V4.2-approved faces may be shown');
+    const layout=await page.evaluate(()=>{
+     const pitch=document.querySelector('[data-match-pitch]');
+     const frame=document.querySelector('.app-match-stage');
+     const columns=[...frame.children].map(el=>el.getBoundingClientRect().width);
+     return {green:getComputedStyle(pitch).backgroundColor,columns,
+      overflow:document.documentElement.scrollWidth-innerWidth};
+    });
+    assert.equal(layout.green,'rgb(32, 92, 67)');
+    if(width>1000)assert.ok(layout.columns[0]>layout.columns[1]*.38,JSON.stringify(layout));
+    assert.ok(layout.overflow<=1,JSON.stringify({engine,width,layout}));
+    count++;
+   }finally{await ctx.close()}
+  }
+  // Bracket reservations are typed dependencies, not speculative clubs.
+  {
+   const ctx=await browser.newContext({viewport:{width:390,height:900}});
+   const page=await ctx.newPage();
+   const reserved={...match,stageId:'playoff',round:null,day:31,status:'awaiting_participants',
+    participantA:{kind:'leagueRank',rank:5},participantB:{kind:'tieWinner',tieId:'playoff-sf-1'},
+    homeParticipant:null,awayParticipant:null,result:null,venue:null,kickoff:null,
+    provenance:{kind:'authoritative',receiptHash:null}};
+   const html=applyPublishedMatchDocument(shell,reserved,'123');
+   try{
+    await page.route('**/matches/123',route=>route.fulfill({status:200,contentType:'text/html',body:html}));
+    await page.route('**/api/matches/123',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(reserved)}));
+    await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
+    assert.equal(await page.locator('[data-match-home-name]').textContent(),'#5');
+    assert.equal(await page.locator('[data-match-home-name]').getAttribute('aria-label'),'League place 5');
+    assert.equal(await page.locator('[data-match-away-name]').textContent(),'WIN');
+    assert.equal(await page.locator('[data-match-away-name]').getAttribute('aria-label'),'Winner of tie playoff-sf-1');
+    assert.equal(await page.locator('[data-match-side-name="home"]').textContent(),'League place 5');
+    assert.equal(await page.locator('[data-match-side-name="away"]').textContent(),'Winner of tie playoff-sf-1');
+    for(const side of ['home','away']){
+     assert.equal(await page.locator('[data-match-'+side+'-name]').getAttribute('href'),null);
+     assert.equal(await page.locator('[data-match-side-name="'+side+'"]').getAttribute('href'),null);
+     assert.equal(await page.locator('[data-match-'+side+'-score]').textContent(),'');
+    }
+    await page.evaluate(()=>document.documentElement.lang='it');
+    await page.waitForFunction(()=>document.querySelector('[data-match-away-name]')?.textContent==='VIN');
+    assert.equal(await page.locator('[data-match-side-name="home"]').textContent(),'Posizione in campionato 5');
+    assert.equal(await page.locator('[data-match-side-name="away"]').textContent(),'Vincente incontro playoff-sf-1');
+    count++;
+   }finally{await ctx.close()}
+  }
+  // Terminal 404/503 must not leave the initial loading indicators active.
+  for(const failure of [{status:404,state:'missing',message:'Match not found or not published.'},
+                      {status:503,state:'unavailable',message:'Match information is temporarily unavailable.'}]){
+   const ctx=await browser.newContext({viewport:{width:390,height:900}});
+   const page=await ctx.newPage();
+   try{
+    await page.route('**/matches/123',route=>route.fulfill({status:200,contentType:'text/html',body:decorated}));
+    await page.route('**/api/matches/123',route=>route.fulfill({status:failure.status,contentType:'application/json',body:'{}'}));
+    await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(state=>document.querySelector('[data-match-detail]')?.dataset.matchLoad===state,failure.state);
+    assert.equal(await page.locator('[data-match-feedback]').textContent(),failure.message);
+    assert.equal(await page.locator('[data-match-feedback]').isVisible(),true);
+    assert.equal(await page.locator('.app-match-side-link').first().evaluate(el=>getComputedStyle(el,'::before').content),'none');
+    assert.equal(await page.locator('.app-match-team-crest').first().evaluate(el=>getComputedStyle(el).visibility),'hidden');
+    count++;
+   }finally{await ctx.close()}
   }
   for(const theme of ['dark','light'])for(const device of cases){
    const ctx=await browser.newContext({viewport:{width:device.width,height:844},reducedMotion:'reduce'});
@@ -111,6 +274,27 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(await page.locator('[data-match-card], .app-match-context, [data-match-visual-title]').count(),0);
     assert.equal(await page.locator('[data-match-view-selector], [data-match-view], [role="tab"], [role="tabpanel"]').count(),0);
     assert.equal(await page.locator('[data-match-overview-panel]').count(),1);
+    assert.equal(await page.locator('[data-match-events-panel]').count(),0);
+    assert.equal(await page.locator('[data-match-lineup-view="list"]').count(),2);
+    assert.equal(await page.locator('[data-match-lineup-view="pitch"]:disabled').count(),2);
+    assert.deepEqual(await page.locator('[data-match-formation]').allTextContents(),['','']);
+    // Real rendered styles must survive conflict resolution. A missing ')'
+    // in the Overview status grid can swallow every following CSS rule.
+    const fieldStyles=await page.locator('.app-match-pitch-frame').evaluate(frame=>{
+     const field=frame.querySelector('[data-match-pitch]');
+     const overview=frame.querySelector('[data-match-overview-panel]');
+     const status=frame.querySelector('.app-match-overview-row-status');
+     const fieldCss=getComputedStyle(field),overviewCss=getComputedStyle(overview),statusCss=getComputedStyle(status);
+     return {fieldColor:fieldCss.backgroundColor,fieldRadius:fieldCss.borderTopLeftRadius,
+      overviewDisplay:overviewCss.display,overviewBackground:overviewCss.backgroundColor,
+      statusDisplay:statusCss.display,statusColumns:statusCss.gridTemplateColumns.trim().split(' ')};
+    });
+    assert.equal(fieldStyles.fieldColor,'rgb(32, 92, 67)',JSON.stringify({engine,theme,device,fieldStyles}));
+    assert.equal(fieldStyles.fieldRadius,'12px');
+    assert.equal(fieldStyles.overviewDisplay,'flex');
+    assert.notEqual(fieldStyles.overviewBackground,'rgba(0, 0, 0, 0)');
+    assert.equal(fieldStyles.statusDisplay,'grid');
+    assert.equal(fieldStyles.statusColumns.length,2,JSON.stringify({engine,theme,device,fieldStyles}));
     const fonts=await page.locator('[data-match-overview-panel]').evaluate(el=>({
      heading:parseFloat(getComputedStyle(el.querySelector('.app-match-overview-heading')).fontSize),
      label:parseFloat(getComputedStyle(el.querySelector('.app-match-info-label')).fontSize),
@@ -388,7 +572,8 @@ for(const [engine,driver] of Object.entries(engines)){
       neutral:currentStatus==='in_progress'})
 
     }));
-    const leagueFixtures=[{"id":"f1","day":1,"homeClubId":"IT-1","awayClubId":"IT-7","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f2","day":2,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":1}},{"id":"f3","day":4,"homeClubId":"IT-4","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":1,"awayGoals":1}},{"id":"f4","day":5,"homeClubId":"IT-5","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":3,"awayGoals":2}},{"id":"f5","day":7,"homeClubId":"IT-1","awayClubId":"IT-5","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":2}},{"id":"f6","day":8,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":0}},{"id":"f7","day":11,"homeClubId":"IT-9","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f8","day":12,"homeClubId":"IT-7","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f9","day":13,"homeClubId":"IT-1","awayClubId":"IT-10","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f10","day":14,"homeClubId":"IT-2","awayClubId":"IT-8","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":3}},{"id":"f11","day":16,"homeClubId":"IT-1","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":99}},{"id":"f12","day":19,"homeClubId":"IT-1","awayClubId":"IT-4","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":0}}];
+    const officialSource='season:1:IT-1:N01:IT-1:IT-7';
+    const leagueFixtures=[{"id":officialSource,"round":1,"phaseId":"league","day":1,"homeClubId":"IT-1","awayClubId":"IT-7","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f2","day":2,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":1}},{"id":"f3","day":4,"homeClubId":"IT-4","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":1,"awayGoals":1}},{"id":"f4","day":5,"homeClubId":"IT-5","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":3,"awayGoals":2}},{"id":"f5","day":7,"homeClubId":"IT-1","awayClubId":"IT-5","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":2}},{"id":"f6","day":8,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":0}},{"id":"f7","day":11,"homeClubId":"IT-9","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f8","day":12,"homeClubId":"IT-7","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f9","day":13,"homeClubId":"IT-1","awayClubId":"IT-10","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f10","day":14,"homeClubId":"IT-2","awayClubId":"IT-8","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":3}},{"id":"f11","day":16,"homeClubId":"IT-1","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":99}},{"id":"f12","day":19,"homeClubId":"IT-1","awayClubId":"IT-4","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":0}}];
     await page.route('**/api/competitions/IT-1/seasons/1',route=>route.fulfill({
      status:200,contentType:'application/json',
      body:JSON.stringify({
@@ -396,8 +581,16 @@ for(const [engine,driver] of Object.entries(engines)){
       status:'partial',provenance:{kind:'authoritative'},
       data:{season:1,seasonState:{day:currentStatus==='completed'?20:14},
        standings:{rows:[{clubId:'IT-1',rank:3,played:5},{clubId:'IT-2',rank:5,played:5}]},
-       fixtures:currentStatus==='postponed'?leagueFixtures.filter(f=>f.id==='f1'||f.id==='f3'):
+       fixtures:currentStatus==='postponed'?leagueFixtures.filter(f=>f.id===officialSource||f.id==='f3'):
         currentStatus==='cancelled'?[]:leagueFixtures}
+     })
+    }));
+    await page.route('**/api/matches/seasons/1/competitions/IT-1',route=>route.fulfill({
+     status:200,contentType:'application/json',body:JSON.stringify({
+      schemaVersion:1,providerId:'authoritative-world',status:'published',
+      season:1,competitionId:'IT-1',provenance:{kind:'authoritative'},
+      fixtures:[{matchId:'901',phaseId:'league',sourceFixtureId:officialSource,
+       marker:'N01',day:1,round:1}]
      })
     }));
     for(const status of ['awaiting_participants','scheduled','in_progress','postponed','cancelled','completed']){
@@ -459,12 +652,54 @@ for(const [engine,driver] of Object.entries(engines)){
      assert.equal(await page.locator('[data-match-card], .app-match-context, [data-match-visual-title]').count(),0);
      assert.equal(await page.locator('[data-match-pitch] svg').count(),1);
      if(status==='scheduled'){
-      await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3');
-      assert.deepEqual(await page.locator('[data-match-position]').allTextContents(),['3','5']);
+      await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3rd');
+      assert.deepEqual(await page.locator('[data-match-position]').allTextContents(),['3rd','5th']);
       const form=await page.locator('[data-match-form]').evaluateAll(els=>els.map(el=>
        [...el.children].map(x=>x.dataset.outcome||'-').join('')
       ));
       assert.deepEqual(form,['wdlww','wldwl']);
+      const controls=page.locator('[data-match-form="home"] .app-world-form-control');
+      assert.equal(await controls.count(),5);
+      const markSizes=await controls.evaluateAll(els=>{
+       const css=getComputedStyle(els[0]);
+       const glyph=getComputedStyle(els[0].querySelector('.app-world-form-glyph'));
+       const first=els[0].getBoundingClientRect(),second=els[1].getBoundingClientRect();
+       const strip=getComputedStyle(els[0].parentElement);
+       const rect=els[0].querySelector('.app-world-form-glyph').getBoundingClientRect();
+       return {control:css.width,glyph:glyph.width,gap:strip.gap,
+        centering:{x:Math.abs((first.left+first.right-rect.left-rect.right)/2),
+         y:Math.abs((first.top+first.bottom-rect.top-rect.bottom)/2)},
+        glyphDisplay:glyph.display,placeItems:glyph.placeItems,
+        textAlign:glyph.textAlign,lineHeight:glyph.lineHeight,
+        leftMargin:getComputedStyle(els[1]).marginLeft,
+        physicalGap:second.left-first.right,
+        overflow:els[els.length-1].getBoundingClientRect().right-
+         els[0].parentElement.getBoundingClientRect().right};
+      });
+      assert.equal(markSizes.control,'21px');
+      assert.equal(markSizes.glyph,'20px');
+      assert.equal(markSizes.gap,'3px');
+      assert.ok(markSizes.centering.x<=0.5&&markSizes.centering.y<=0.5,
+       JSON.stringify({engine,theme,markSizes}));
+      assert.equal(markSizes.glyphDisplay,'grid');
+      assert.equal(markSizes.placeItems,'center');
+      assert.equal(markSizes.textAlign,'center');
+      assert.equal(markSizes.lineHeight,'10px');
+      assert.equal(markSizes.leftMargin,'0px');
+      assert.ok(markSizes.physicalGap>=2.5&&markSizes.overflow<=1,JSON.stringify({engine,theme,markSizes}));
+      await page.waitForFunction(()=>document.querySelector('[data-match-form="home"] a.app-match-form-control')?.getAttribute('href')==='/matches/901');
+      const firstForm=page.locator('[data-match-form="home"] a.app-match-form-control').first();
+      await firstForm.hover();
+      await page.waitForFunction(()=>document.getElementById('app-match-published-form-tooltip')?.hidden===false);
+      assert.match(await page.locator('#app-match-published-form-tooltip').textContent(),/IT-1|Frozen|2/);
+      const formAlignment=await page.locator('[data-match-side="home"]').evaluate(side=>{
+       const pos=side.querySelector('.app-match-position').getBoundingClientRect();
+       const form=side.querySelector('.app-match-form').getBoundingClientRect();
+       return {top:Math.abs(pos.top-form.top),height:Math.abs(pos.height-form.height)};
+      });
+      assert.ok(formAlignment.top<=1&&formAlignment.height<=1,JSON.stringify({engine,formAlignment}));
+      await page.mouse.move(0,0);
+
       assert.equal(await page.locator('[data-match-overview="season"]').textContent(),'1');
       assert.equal(await page.locator('[data-match-overview="round"]').textContent(),'1');
       assert.ok((await page.locator('[data-match-overview="competition"]').textContent()).length>0);
@@ -481,6 +716,9 @@ for(const [engine,driver] of Object.entries(engines)){
       // Language changes update glyphs, not recorded results.
       await page.evaluate(()=>document.documentElement.lang='it');
       await page.waitForFunction(()=>document.querySelector('[data-match-label="position"]')?.textContent==='Posizione');
+      assert.deepEqual(await page.locator('[data-match-position]').allTextContents(),['3º','5º']);
+      assert.deepEqual(await page.locator('[data-match-lineup-view="list"]').allTextContents(),['Elenco','Elenco']);
+      assert.deepEqual(await page.locator('[data-match-lineup-view="pitch"]').allTextContents(),['Campo','Campo']);
       assert.equal(await page.locator('[data-match-side-title="home"]').textContent(),officialClub('IT-1').primaryName,
        'Localization never replaces an official club name with a generic Home label');
       assert.deepEqual(await page.locator('[data-match-form="home"] .app-match-form-cell').allTextContents(),['V','N','P','V','V']);
@@ -504,7 +742,7 @@ for(const [engine,driver] of Object.entries(engines)){
      if(status==='cancelled'){
       assert.equal(await page.locator('[data-match-overview="date"]').textContent(),'');
       assert.equal(await page.locator('[data-match-overview="stadium"]').textContent(),'Stadio dei Navigli');
-      await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3');
+      await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3rd');
       assert.deepEqual(await page.locator('[data-match-form-fact]').evaluateAll(els=>els.map(el=>el.hidden)),[true,true]);
       assert.equal(await page.locator('.app-match-form-cell').count(),0);
      }

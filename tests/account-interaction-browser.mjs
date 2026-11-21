@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
+import {runIndependentAccountMatrix} from '../tools/ci-opt-06-account-matrix.mjs';
 const playwright=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright');
 const engine=process.env.FA_AUTH_BROWSER||'chromium';
 const browser=await playwright[engine].launch({headless:true,...(process.env.FA_ACCOUNT_CHROME&&engine==='chromium'?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
@@ -9,7 +10,7 @@ const server=createPreviewServer({subdomains:true,devPreview:false});let checks=
 const surfaces='input:not([type=hidden]),textarea,.language-trigger';
 try{
  server.listen(2000,'127.0.0.1');await once(server,'listening');
- for(const language of ['en','de','es','fr','it'])for(const theme of ['dark','light'])for(const mobile of [false,true]){
+ await runIndependentAccountMatrix(['en','de','es','fr','it'],['dark','light'],[false,true],async({language,theme,variant:mobile})=>{
   const context=await browser.newContext({viewport:{width:mobile?390:1440,height:1000},isMobile:mobile,hasTouch:mobile});
   try{
    await context.addInitScript(({language,theme})=>{localStorage.setItem('football-architect:language',language);localStorage.setItem('football-architect:theme',theme);},{language,theme});
@@ -76,6 +77,6 @@ try{
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);checks++;console.log(engine,language,theme,mobile?'mobile':'desktop',route,'PASS');
    }
   }finally{await context.close();}
- }
+ },{maxConcurrent:engine==='webkit'?1:2});
  console.log(engine+' account interaction matrix PASS: '+checks+' cases');
 }finally{server.closeAllConnections();await new Promise(r=>server.close(r));await browser.close();}

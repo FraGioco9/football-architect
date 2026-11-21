@@ -2,12 +2,13 @@
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
+import {runIndependentAccountMatrix} from '../tools/ci-opt-06-account-matrix.mjs';
 const playwright=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright'),engine=process.env.FA_AUTH_BROWSER||'chromium';
 const browser=await playwright[engine].launch({headless:true,...(process.env.FA_ACCOUNT_CHROME&&engine==='chromium'?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
 const server=createPreviewServer({subdomains:true,devPreview:false});let checks=0;
 try{
  server.listen(2000,'127.0.0.1');await once(server,'listening');
- for(const language of ['en','de','es','fr','it'])for(const theme of ['dark','light'])for(const [width,height] of [[1366,768],[390,844],[320,568]]){
+ await runIndependentAccountMatrix(['en','de','es','fr','it'],['dark','light'],[[1366,768],[390,844],[320,568]],async({language,theme,variant:[width,height]})=>{
   const context=await browser.newContext({viewport:{width,height}});
   try{
    await context.addInitScript(({language,theme})=>{localStorage.setItem('football-architect:language',language);localStorage.setItem('football-architect:theme',theme)},{language,theme});
@@ -30,7 +31,7 @@ try{
     checks++;
    }
   }finally{await context.close();}
- }
+ },{maxConcurrent:engine==='webkit'?1:2});
  // Removing the visible back control must not consume the hidden post-sign-in destination.
  for(const language of ['en','de','es','fr','it'])for(const route of ['login','register','recover','verify-email']){
   const context=await browser.newContext({viewport:{width:390,height:844}});

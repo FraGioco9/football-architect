@@ -79,8 +79,14 @@ export async function verifyCanonicalStateBrowser(browser,engine){
    await page.setViewportSize({width,height:844});
    await page.evaluate(({lang,theme})=>window.name=JSON.stringify({lang,theme}),{lang,theme});
    for(const refresh of [false,true]){
-    if(refresh)await page.reload({waitUntil:'networkidle'});else await page.goto(origin+path,{waitUntil:'networkidle'});
-    await page.waitForFunction(()=>window.faWorldState?.get().world?.seasonNumber===2);
+    if(refresh)await page.reload({waitUntil:'domcontentloaded'});else await page.goto(origin+path,{waitUntil:'domcontentloaded'});
+    // Wait for the *actual public world and localized header*, not 500ms of
+    // unrelated quiet network activity on every route/refresh pair.
+    await page.waitForFunction(({lang,theme})=>
+     window.faWorldState?.get().world?.seasonNumber===2&&
+     document.querySelector('.fa-shell-date-full')?.textContent?.includes('20/56')&&
+     document.documentElement.lang===lang&&document.documentElement.dataset.theme===theme,
+     {lang,theme});
     const state=await page.evaluate(()=>({source:window.faWorldState.get().source,current:window.faWorldState.get().current,lang:document.documentElement.lang,theme:document.documentElement.dataset.theme,overflow:document.documentElement.scrollWidth>innerWidth+2,calendar:document.getElementById('app-nav-calendar')?.getAttribute('href'),progress:document.querySelector('.fa-shell-date-full')?.textContent}));
     assert.equal(state.source,'authoritative',path);assert.deepEqual(state.current,{season:2,day:20});assert.ok(state.progress.includes('2')&&state.progress.includes('20/56'),path+' shared header progress');
     assert.equal(state.lang,lang);assert.equal(state.theme,theme);assert.equal(state.overflow,false,path+' overflow');
@@ -154,8 +160,9 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   // Protected source ignores API data and retains its own empty Season 0 after reset/reload.
   const callsBefore=worldCalls;
   for(const path of routes){
-   await page.goto(debugOrigin+path,{waitUntil:'networkidle'});
-   await page.waitForFunction(()=>window.faWorldState?.get().source==='dev');
+   await page.goto(debugOrigin+path,{waitUntil:'domcontentloaded'});
+   await page.waitForFunction(()=>window.faWorldState?.get().source==='dev'&&
+    window.faWorldState.get().current?.season===0&&window.faWorldState.get().current?.day===0);
    assert.deepEqual(await page.evaluate(()=>window.faWorldState.get().current),{season:0,day:0},'protected '+path);checks++;
   }
   assert.equal(worldCalls,callsBefore,'Debug pages must not read public world');

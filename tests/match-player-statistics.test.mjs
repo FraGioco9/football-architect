@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {frozenMatchPlayerStatistics} from '../backend/src/match-player-statistics.mjs';
+import {LINEUP_V1_SLOTS} from '../backend/src/temporary-lineup-v1.mjs';
 const player=(id,role,goals=0)=>({playerId:id,role,started:true,minutes:90,goals,rating:6.7});
 const result=()=>({ratingVersion:'test-rating-v1',homeGoals:1,awayGoals:0,extraTime:null,
  home:{kind:'real_xi',starters:[{playerId:1,role:'GK'},{playerId:2,role:'ST'}],appearances:[player(1,'GK'),player(2,'ST',1)]},
@@ -21,6 +22,8 @@ test('one frozen projection provides real identities, roles, minutes, goals and 
  assert.equal(Object.hasOwn(stats,'events'),false);
  assert.equal(Object.hasOwn(stats,'eventModelVersion'),false);
  assert.deepEqual(stats.away.players,[]);
+ assert.equal(stats.home.formation,null,'two roles cannot prove a full tactical shape');
+ assert.equal(stats.away.formation,null,'team fallback has no proven starting formation');
  assert.ok(stats.home.players.every(p=>!('attributes' in p)&&!('suitability' in p)));
 });
 test('legacy frozen GK role needs 60 minutes, including extra time',()=>{
@@ -102,4 +105,64 @@ test('yellow card counters are recorded for v2, including second-yellow red',()=
  const direct=structuredClone(match);
  direct.events=[{type:'red',side:'home',playerId:2,minute:67,reason:'direct'}];
  assert.equal(frozenMatchPlayerStatistics(direct).home.players[1].yellowCards,0);
+});
+
+// Tactical formation is an independently verified initial XI projection, not
+// a guess from the final on-pitch roles, goals or who appeared as a substitute.
+test('official v1 starting-slot signature publishes only the verified 4-3-3 in /stats',()=>{
+ const canonical=['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW'];
+ assert.deepEqual(LINEUP_V1_SLOTS,canonical,'do not drift from the versioned simulation slots');
+ const input=result();
+ input.algorithmVersion='temporary-lineup-v1';
+ input.home.starters=canonical.map((role,i)=>({playerId:i+1,role}));
+ input.home.appearances=canonical.map((role,i)=>player(i+1,role));
+ assert.equal(frozenMatchPlayerStatistics(input).home.formation,'4-3-3');
+ assert.equal(frozenMatchPlayerStatistics(input).away.formation,null);
+
+ const v2=structuredClone(input);
+ v2.eventModelVersion='lineup-events-v1';
+ v2.home.appearances=v2.home.appearances.map(p=>({...p,gkMinutes:p.role==='GK'?90:0,
+  assists:0,redCards:0}));
+ v2.home.appearances.push({playerId:90,role:'CM',started:false,minutes:22,goals:0,
+  gkMinutes:0,assists:0,redCards:0,rating:6.2});
+ assert.equal(frozenMatchPlayerStatistics(v2).home.formation,'4-3-3',
+  'substitutions do not change the match starting formation');
+ v2.home.appearances[1].role='GK';
+ assert.equal(frozenMatchPlayerStatistics(v2).home.formation,'4-3-3',
+  'later role changes do not change the immutable starting slots');
+
+ const unknownVersion=structuredClone(input);
+ unknownVersion.algorithmVersion='future-tactics-v2';
+ assert.equal(frozenMatchPlayerStatistics(unknownVersion).home.formation,null);
+
+ const nonCanonical=structuredClone(input);
+ nonCanonical.home.starters[8].role='CM';
+ assert.equal(frozenMatchPlayerStatistics(nonCanonical).home.formation,null);
+
+ const incomplete=structuredClone(input);
+ incomplete.home.appearances[10].started=false;
+ assert.equal(frozenMatchPlayerStatistics(incomplete).home.formation,null);
+
+ const duplicate=structuredClone(input);
+ duplicate.home.starters[10].playerId=1;
+ assert.throws(()=>frozenMatchPlayerStatistics(duplicate),/Unidentified frozen appearance/,
+  'invalid legacy player records fail closed before tactical projection');
+});
+
+// The API, not a guess from player IDs or current role, owns formation order.
+test('stats keeps immutable 1-based starting slots across shuffled V2 appearances',()=>{
+ const input=result();
+ input.eventModelVersion='lineup-events-v1';
+ input.home.starters=[{playerId:93,role:'GK'},{playerId:8,role:'RB'}];
+ input.home.appearances=[
+  {playerId:8,started:true,role:'CM',gkMinutes:0,assists:0,redCards:0,
+   minutes:90,goals:0,rating:6.5},
+  {playerId:77,started:false,role:'RW',gkMinutes:0,assists:0,redCards:0,
+   minutes:12,goals:0,rating:6.2},
+  {playerId:93,started:true,role:'GK',gkMinutes:90,assists:0,redCards:0,
+   minutes:90,goals:0,rating:6.8}
+ ];
+ const players=frozenMatchPlayerStatistics(input).home.players;
+ assert.deepEqual(players.map(p=>[p.playerId,p.startingSlot,p.startingRole]),
+  [[8,2,'RB'],[77,null,null],[93,1,'GK']]);
 });

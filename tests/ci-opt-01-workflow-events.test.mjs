@@ -85,7 +85,15 @@ for(const workflow of workflows){
  }));
 }
 
-function browserCommands({event='pull_request',mode='full',area='',css=false,base='a'.repeat(40),failFull=false}={}){
+function normalizeFe02Calls(calls){
+ // Concurrent engines may complete in either order. Do not drop either.
+ const at=calls.findIndex(c=>c.command==='tests/fe-02-responsive-browser.mjs');
+ if(at<0)return calls;
+ const pair=calls.slice(at,at+2);
+ if(pair.length!==2||pair.some(c=>c.command!=='tests/fe-02-responsive-browser.mjs'))return calls;
+ return [...calls.slice(0,at),...pair.sort((a,b)=>a.engine.localeCompare(b.engine)),...calls.slice(at+2)];
+}
+function browserCommands({event='pull_request',mode='full',area='',css=false,base='a'.repeat(40),failFull=false,failFe02Engine=''}={}){
  return temporary(root=>{
   const bin=join(root,'bin'),record=join(root,'calls');mkdirSync(bin);writeFileSync(record,'');
   const executable=(name,source)=>writeFileSync(join(bin,name),'#!/bin/sh\n'+source,{mode:0o755});
@@ -96,6 +104,7 @@ if [ "$1" = tests/clean-ui-03-css-parity.mjs ]; then
   [ "\${PR_BASE_SHA:-}" = "$FA_EXPECTED_BASE" ] || exit 77
 fi
 if [ "$1" = tests/int24-browser-qa.mjs ] && [ "$FA_FAIL_FULL" = 1 ]; then exit 42; fi
+if [ "$1" = tests/fe-02-responsive-browser.mjs ] && [ "\${FA_FAIL_FE02_ENGINE:-}" = "\${FA_BROWSER_ENGINE:-chromium}" ]; then exit 84; fi
 `);
   executable('curl','exit 0\n');
   executable('git',`for arg do
@@ -109,11 +118,12 @@ exit 0
   }).replaceAll('/tmp/int24-preview.log',join(root,'preview.log'));
   const result=spawnSync('bash',['-e','-o','pipefail','-c',script],{cwd:root,encoding:'utf8',env:{
    ...process.env,PATH:bin+':'+process.env.PATH,PR_BASE_SHA:'',FA_RECORD:record,
-   FA_EXPECTED_BASE:base,FA_CSS_CHANGED:css?'1':'0',FA_FAIL_FULL:failFull?'1':'0'
+   FA_EXPECTED_BASE:base,FA_CSS_CHANGED:css?'1':'0',FA_FAIL_FULL:failFull?'1':'0',FA_FAIL_FE02_ENGINE:failFe02Engine
   }});
-  return {result,calls:readFileSync(record,'utf8').trim().split('\n').filter(Boolean).map(line=>{
+  const calls=readFileSync(record,'utf8').trim().split('\n').filter(Boolean).map(line=>{
    const [command,engine,area,base]=line.split('|');return {command,engine,area,base};
-  })};
+  });
+  return {result,calls:normalizeFe02Calls(calls)};
  });
 }
 
@@ -133,6 +143,52 @@ test('PR without CSS retains full browsers and omits screenshot parity',()=>{
  const {result,calls}=browserCommands();assert.equal(result.status,0,result.stderr);
  assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...fe05Browsers,...fe02Browsers,'tests/clean-ui-03-webkit-iphone.mjs']);
 });
+test('FULL fails when either FE-02 engine fails; both engines are awaited',()=>{
+ for(const failed of ['chromium','webkit']){
+  const {result,calls}=browserCommands({failFe02Engine:failed});
+  assert.equal(result.status,1,failed+': '+result.stderr);
+  assert.match(result.stderr,/FE-02 browser failures/);
+  const fe02=calls.filter(c=>c.command==='tests/fe-02-responsive-browser.mjs');
+  assert.deepEqual(fe02.map(c=>c.engine),['chromium','webkit']);
+  assert.equal(calls.some(c=>c.command==='tests/clean-ui-03-webkit-iphone.mjs'),false);
+ }
+});
+test('Site Chrome readiness polling keeps the nominal ten-second budget',()=>{
+ for(const name of ['club-pages-browser.test.mjs','theme-browser.test.mjs']){
+  const s=readFileSync(new URL('../tests/'+name,import.meta.url),'utf8');
+  assert.ok(s.includes('for(let i=0;i<500;i++){try{if(await run(expr))return;}catch{}await delay(20);}'),name);
+  assert.ok(s.includes('same nominal 10-second readiness budget'),name);
+ }
+});
+test('extra TARGETED browser preflight is not repeated for unrelated workflow edits',()=>temporary(root=>{
+ git(root,'init','-q');
+ writeFileSync(join(root,'baseline'),'base');git(root,'add','.');git(root,'commit','-qm','base');
+ const base=git(root,'rev-parse','HEAD'),bin=join(root,'bin'),record=join(root,'calls');
+ mkdirSync(bin);
+ writeFileSync(join(bin,'node'),
+  '#!/bin/sh\n[ "$1" != tools/dev-standings-preview.mjs ] || exit 0\n'+
+  'if [ "$1" = tools/ci-run.mjs ]; then shift 4; fi\n'+
+  'printf "%s\\n" "$*" >> "$FA_RECORD"\n',{mode:0o755});
+ writeFileSync(join(bin,'curl'),'#!/bin/sh\nexit 0\n',{mode:0o755});
+ const script=render(stepScript(read('int24-browser-qa.yml'),'Run loopback preview and browser checks'),{
+  'github.event_name':'pull_request','github.event.pull_request.base.sha':base,
+  'needs.scope.outputs.mode':'full','needs.scope.outputs.area':''
+ }).replaceAll('/tmp/int24-preview.log',join(root,'preview.log'));
+ const execute=()=>{
+  writeFileSync(record,'');
+  const run=spawnSync('bash',['-e','-o','pipefail','-c',script],{cwd:root,encoding:'utf8',
+   env:{...process.env,PATH:bin+':'+process.env.PATH,FA_RECORD:record}});
+  assert.equal(run.status,0,run.stderr);
+  return readFileSync(record,'utf8').split('\n').filter(Boolean);
+ };
+ mkdirSync(join(root,'.github','workflows'),{recursive:true});
+ writeFileSync(join(root,'.github','workflows','unrelated.yml'),'name: unrelated');
+ git(root,'add','.');git(root,'commit','-qm','unrelated workflow');
+ assert.equal(execute().some(x=>x.includes('ci-opt-01-scenarios.mjs')),false);
+ writeFileSync(join(root,'.github','workflows','int24-browser-qa.yml'),'name: browser changes');
+ git(root,'add','.');git(root,'commit','-qm','browser workflow');
+ assert.equal(execute().filter(x=>x.includes('ci-opt-01-scenarios.mjs')).length,1);
+}));
 test('PR with missing base fails closed instead of reporting successful FULL',()=>{
  assert.notEqual(browserCommands({base:'',css:true}).result.status,0);
 });

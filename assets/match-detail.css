@@ -132,7 +132,7 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 /* Match stage: two translucent team panels flank the slightly smaller field.
    Only position, form and 11 reserved lineup slots belong in the panels. */
 .app-match-stage{
- box-sizing:border-box;display:grid;grid-template-columns:minmax(185px,1fr) minmax(0,3.4fr) minmax(185px,1fr);
+ box-sizing:border-box;display:grid;grid-template-columns:minmax(218px,1.25fr) minmax(0,2.5fr) minmax(218px,1.25fr);
  align-items:stretch;gap:clamp(12px,1.1vw,22px);width:100%;max-width:none;margin:24px 0 0;
 }
 .app-match-side{
@@ -151,35 +151,65 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 .app-match-side-link:not([href]){cursor:default}
 /* Page structure is server-rendered: placeholders are painted in reserved
    value cells without waiting on match, club, or competition requests. */
-.app-match-page:is([data-match-load="loading"],[data-match-load="unavailable"]) .app-match-side-link:empty::before{
+.app-match-page[data-match-load="loading"] .app-match-side-link:empty::before{
  content:"";display:block;width:min(110px,100%);height:1em;
  border-radius:4px;background:color-mix(in srgb,var(--muted) 26%,transparent);
 }
-.app-match-page:is([data-match-load="loading"],[data-match-load="unavailable"]) [data-match-overview]:empty::before{
+.app-match-page[data-match-load="loading"] [data-match-overview]:empty::before{
  content:"";display:block;width:min(9ch,100%);height:.85em;margin:0 auto;
  border-radius:3px;background:color-mix(in srgb,var(--muted) 22%,transparent);
 }
+/* Error states retain geometry without leaving fake loading skeletons. */
+.app-match-page:is([data-match-load="missing"],[data-match-load="unavailable"]) .app-match-team-link .app-skeleton-bar,
+.app-match-page:is([data-match-load="missing"],[data-match-load="unavailable"]) .app-match-team-crest{visibility:hidden}
 .app-match-side-stats{display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr);gap:8px;align-items:start;width:100%;min-width:0;margin-bottom:14px}
 .app-match-side-fact{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;margin:0}
 .app-match-side-fact[hidden]{display:none}
 .app-match-side-label{display:block;margin:0;color:var(--muted);font-size:12px;line-height:1.35;font-weight:650;text-align:center}
 .app-match-position{display:block;min-height:35px;line-height:35px;font-size:32px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
-.app-match-form{display:flex;align-items:center;justify-content:center;gap:4px;min-height:21px;max-width:100%}
-.app-match-form-cell{box-sizing:border-box;display:grid;place-items:center;flex:none;width:clamp(11px,1.3vw,21px);height:clamp(11px,1.3vw,21px);
- border-radius:4px;background:var(--surface-raised,var(--border));font-size:clamp(8px,.8vw,11px);font-weight:800;line-height:1;color:#f7fbf8}
-.app-match-form-cell[data-outcome="w"]{background:#237c59}
-.app-match-form-cell[data-outcome="d"]{background:#667b82}
-.app-match-form-cell[data-outcome="l"]{background:#98504d}
+.app-match-form{display:flex;align-items:center;justify-content:center;gap:clamp(3px,.32vw,5px);min-height:35px;max-width:100%}
+/* The 18px Standings form controls/glyphs come from shared app.css. */
+.app-match-form .app-world-form-control{color:inherit;text-decoration:none}
+/* Scoped Match Detail enlargement: keep Standings' global form controls unchanged. */
+.app-match-form.app-world-form-strip .app-world-form-control{
+ width:clamp(20px,1.9vw,26px);height:clamp(20px,1.9vw,26px)
+}
+.app-match-form.app-world-form-strip .app-world-form-control + .app-world-form-control{margin-left:0}
+.app-match-form.app-world-form-strip .app-world-form-glyph{
+ display:grid;place-items:center;text-align:center;line-height:1;
+ width:clamp(18px,1.75vw,24px);height:clamp(18px,1.75vw,24px);font-size:clamp(10px,.8vw,11px)
+}
 .app-match-side-lineup{display:flex;flex:1;flex-direction:column;min-height:0;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
-.app-match-lineup-rows{display:grid;flex:1;grid-template-rows:repeat(11,minmax(18px,1fr));gap:5px;margin:10px 0 0;padding:0;list-style:none}
-.app-match-lineup-row{box-sizing:border-box;display:flex;align-items:center;min-height:18px;padding:0 6px}
+.app-match-lineup-top{display:flex;flex-direction:column;gap:8px;min-width:0}
+.app-match-lineup-views{display:flex;align-items:center;gap:3px;border-radius:6px;padding:2px;background:color-mix(in srgb,var(--text) 7%,transparent)}
+.app-match-lineup-view{flex:1 1 0;min-width:0;border:0;border-radius:4px;padding:4px 6px;line-height:1.4;font-size:11px;font-weight:650;color:var(--muted);background:transparent;cursor:pointer}
+.app-match-lineup-view[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.app-match-lineup-view:disabled{opacity:.45;cursor:not-allowed}
+.app-match-lineup-view:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-match-lineup-header{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:18px}
+.app-match-lineup-header .app-match-side-label{text-align:left}
+.app-match-formation{display:block;flex:0 0 auto;min-width:4.4ch;min-height:1.35em;padding:1px 4px;
+ border-radius:5px;text-align:center;color:var(--text);font-size:11px;line-height:1.35;
+ font-weight:750;font-variant-numeric:tabular-nums}
+.app-match-formation:not(:empty){background:color-mix(in srgb,var(--text) 8%,transparent)}
+.app-match-lineup-rows{display:grid;flex:1;grid-template-rows:repeat(11,minmax(38px,1fr));gap:6px;margin:10px 0 0;padding:0;list-style:none}
+.app-match-lineup-row{box-sizing:border-box;display:flex;align-items:center;min-height:38px;padding:0 8px}
 .app-match-lineup-reserved{display:block;width:100%;height:1px;background:var(--line);opacity:.7}
 .app-match-lineup-row{gap:6px;min-width:0;font-size:clamp(10px,.85vw,12px)}
+.app-match-lineup-avatar{display:block;position:relative;flex:0 0 30px;width:30px;height:30px;min-width:30px;border-radius:50%;overflow:hidden;background:var(--surface-raised,var(--border));color:var(--muted);pointer-events:none}
+.app-match-lineup-avatar:not([data-photo-ready])::before{content:"";position:absolute;left:32%;top:16%;width:36%;height:37%;border-radius:50%;background:currentColor;opacity:.5}
+.app-match-lineup-avatar:not([data-photo-ready])::after{content:"";position:absolute;left:17%;top:52%;width:66%;height:49%;border-radius:50% 50% 0 0;background:currentColor;opacity:.5}
+.app-match-lineup-avatar img{width:260%;max-width:none;height:auto;position:absolute;top:0;left:50%;transform:translateX(-50%);display:block}
+.app-match-lineup-name{display:flex;flex:1 1 auto;align-items:center;min-width:0}
+
 .app-match-lineup-role{flex:0 0 25px;color:var(--muted);font-size:10px;font-weight:700}
-.app-match-lineup-player{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)!important;text-decoration:none}
+.app-match-lineup-player{display:inline-block;flex:0 1 auto;width:max-content;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)!important;text-decoration:none}
 .app-match-lineup-player:hover,.app-match-lineup-player:focus-visible{text-decoration:underline;text-underline-offset:2px}
 .app-match-lineup-rating{flex:0 0 29px;text-align:right;color:var(--text);font-variant-numeric:tabular-nums;font-weight:750}
 .app-match-lineup-rows[aria-hidden="true"] .app-match-lineup-row{pointer-events:none}
+.app-match-form-control{cursor:pointer;text-decoration:none}
+.app-match-form-control:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
 .app-match-visual{min-width:0;margin:0}
 .app-match-pitch-frame{position:relative;isolation:isolate;width:100%;aspect-ratio:105/68;min-width:0}
 .app-match-pitch-overlay{
@@ -187,17 +217,17 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  box-sizing:border-box;padding:clamp(6px,1.2vw,12px);pointer-events:none;
 }
 .app-match-overview{
- box-sizing:border-box;display:flex;flex-direction:column;gap:8px;
- width:min(86%,560px);max-width:100%;max-height:100%;min-width:0;overflow-y:auto;
- padding:12px 15px;border:1px solid var(--border);border-radius:10px;
+ box-sizing:border-box;display:flex;flex-direction:column;gap:6px;
+ width:min(89%,560px);max-width:100%;max-height:100%;min-width:0;overflow-y:auto;
+ padding:10px 12px;border:1px solid var(--border);border-radius:10px;
  background:color-mix(in srgb,var(--surface) 80%,transparent);pointer-events:auto;
 }
 .app-match-overview-heading{margin:0;color:var(--text);font-size:18px;line-height:1.3;font-weight:750;text-align:center}
-.app-match-overview-row{display:grid;gap:10px;min-width:0}
+.app-match-overview-row{display:grid;gap:8px;min-width:0}
 .app-match-overview-row-primary{grid-template-columns:minmax(0,1.8fr) minmax(0,.8fr) minmax(0,.8fr)}
 .app-match-overview-row-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}
 .app-match-overview-row-status{grid-template-columns:repeat(2,minmax(0,1fr))}
-.app-match-overview-row+.app-match-overview-row{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent);padding-top:7px}
+.app-match-overview-row+.app-match-overview-row{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent);padding-top:5px}
 .app-match-overview-fact{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;gap:4px;text-align:center}
 .app-match-info-label{color:var(--muted);font-size:12px;line-height:1.3;font-weight:650}
 .app-match-info-value{display:block;min-height:1.3em;max-width:100%;color:var(--text);font-size:clamp(13px,1.15vw,17px);line-height:1.3;font-weight:750;overflow-wrap:anywhere}
@@ -228,8 +258,6 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 }
 @media(max-width:350px){
  .app-match-stage{gap:8px}
- .app-match-form{gap:3px}
- .app-match-form-cell{width:clamp(8px,2.6vw,15px);height:clamp(8px,2.6vw,15px);font-size:clamp(7px,1.8vw,10px)}
 }
 @media(max-width:620px){
  .app-match-pitch-overlay{padding:6px}
@@ -241,15 +269,32 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-overview-fact{gap:2px}
  .app-match-info-label{font-size:10px;line-height:1.15}
  .app-match-info-value{font-size:12px;line-height:1.2;min-height:1.2em}
- .app-match-side{padding:10px 7px 12px}
+ .app-match-stage{gap:8px}
+ .app-match-side{padding:10px 2px 12px}
+ .app-match-lineup-avatar{width:24px;height:24px;min-width:24px;flex-basis:24px}
+ .app-match-lineup-rows{grid-template-rows:repeat(11,minmax(32px,1fr))}
+ .app-match-lineup-row{min-height:32px;padding:0 3px;gap:4px}
+ .app-match-lineup-role{flex-basis:20px;font-size:9px}
+ .app-match-lineup-rating{flex-basis:23px}
+ .app-match-lineup-views{gap:2px}
+ .app-match-lineup-view{padding:3px;font-size:10px}
+ .app-match-formation{font-size:10px;padding:1px 2px}
  .app-match-team-identity{flex-direction:column;justify-content:center;gap:5px;min-height:74px;margin-bottom:10px}
  .app-match-team-crest{width:40px;height:40px;flex-basis:40px}
  .app-match-side-title{text-align:center;font-size:12px;min-height:2.7em;line-height:1.35}
- .app-match-side-stats{grid-template-columns:minmax(0,.48fr) minmax(0,1.52fr);gap:3px}
+ .app-match-side-stats{grid-template-columns:minmax(0,.29fr) minmax(0,1.71fr);gap:3px}
  .app-match-side-label{font-size:10px}
  .app-match-position{font-size:21px;line-height:25px;min-height:25px}
- .app-match-form{gap:2px;min-height:12px}
- .app-match-form-cell{width:clamp(8px,2.7vw,12px);height:clamp(8px,2.7vw,12px);font-size:8px;border-radius:2px}
+ .app-match-form{gap:3px;min-height:25px}
+ .app-match-form.app-world-form-strip .app-world-form-control{width:21px;height:21px}
+ .app-match-form.app-world-form-strip .app-world-form-glyph{width:20px;height:20px}
+}
+
+/* Narrow phones retain visible gaps without overflowing the twin team panels. */
+@media(max-width:350px){
+ .app-match-form{gap:2px}
+ .app-match-form.app-world-form-strip .app-world-form-control{width:18px;height:18px}
+ .app-match-form.app-world-form-strip .app-world-form-glyph{width:17px;height:17px}
 }
 
 /* When Form is absent, Position spans the row at all breakpoints. */

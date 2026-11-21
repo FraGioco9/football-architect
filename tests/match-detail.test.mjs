@@ -157,6 +157,10 @@ test('#650 Match Detail renders only frozen verified XI test ratings with reserv
  assert.match(js,/function renderLineups\(tr\)/);
  assert.match(js,/data\?\.status==='completed'&&data\?\.provenance\?\.receiptHash/);
  assert.match(js,/source\?\.kind==='real_xi'/);
+ assert.match(js,/appearances\?\.filter\(p=>p\?\.started===true\)/);
+ assert.match(js,/starters\.length===11/);
+ assert.match(js,/new Set\(appearances\.map\(p=>p\.playerId\)\)\.size===appearances\.length/);
+ assert.doesNotMatch(js,/source\.players\.length===11\?source\.players:null/);
  assert.match(js,/matchStatistics\?\.statistics\?\.ratingVersion==='test-rating-v1'/);
  assert.match(js,/const n=starter\.rating/);
  assert.match(js,/Number\.isSafeInteger\(p\.playerId\)/);
@@ -168,6 +172,26 @@ test('#650 Match Detail renders only frozen verified XI test ratings with reserv
  for(const phrase of ['Test rating','Voto di prova','Testnote','Nota de prueba','Note de test'])
   assert.ok(js.includes(phrase),phrase);
  assert.doesNotMatch(js,/Math\.random\(/);
+});
+test('#577 match result context and typed bracket dependencies are receipt-only',()=>{
+ const js=read('assets/match-detail.js'),css=read('assets/match-detail.css');
+ assert.match(js,/const verifiedResolution=\(match,tr\)=>/);
+ assert.match(js,/match\?\.status!=='completed'/);
+ assert.ok(js.includes("/^[a-f0-9]{64}$/.test(match?.provenance?.receiptHash||'')"));
+ assert.match(js,/result\?\.resolution==='extra-time'/);
+ assert.match(js,/result\?\.resolution==='penalties'/);
+ assert.match(js,/result\.penalties\.home!==result\.penalties\.away/);
+ assert.match(js,/const unresolvedParticipant=\(side,tr\)=>/);
+ assert.match(js,/participant\?\.kind==='leagueRank'/);
+ assert.match(js,/participant\?\.kind==='tieWinner'/);
+ for(const locale of ['en','it','de','es','fr'])
+  assert.ok(js.includes('  '+locale+':{match:'),locale);
+ for(const k of ['afterExtraTime','penaltyShootout','leagueRank','tieWinner','winnerCode'])
+  assert.equal((js.match(new RegExp(k+':', 'g'))||[]).length,5,k);
+ assert.match(css,/\.app-match-page\[data-match-load="loading"\] \[data-match-overview\]:empty::before/);
+ assert.doesNotMatch(css,/\[data-match-load="unavailable"\]\) \[data-match-overview\]:empty::before/);
+ assert.ok(css.includes('.app-match-team-link .app-skeleton-bar,'));
+ assert.ok(css.includes('.app-match-team-crest{visibility:hidden}'));
 });
 test('#577 never fabricates scores, lineups, competition branding or match outcomes',()=>{
  const js=read('assets/match-detail.js');
@@ -209,7 +233,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/Number\.isSafeInteger\(data\?\.round\)/);
  assert.match(js,/tr\.statusNames\[data\.status\]/);
  assert.doesNotMatch(js,/renderMatchView|activeMatchView|matchViews|data-match-view-selector/);
- for(const fragment of ["club?.primaryName||id||tr[side]","crest.dataset.clubCrest=id",
+ for(const fragment of ["club?.primaryName||id||unresolvedParticipant(side,tr).full","crest.dataset.clubCrest=id",
  "data-match-side-crest","renderSides(tr)"])assert.ok(js.includes(fragment),fragment);
  assert.doesNotMatch(js,/assets\/clubs\/.*crest\.svg/);
  assert.match(js,/title\.href=href\('\/clubs\/'\+id\.split\('-'\)\[0\]\.toLowerCase\(\)/);
@@ -235,7 +259,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/link\.removeAttribute\('href'\);link\.removeAttribute\('target'\);link\.removeAttribute\('rel'\)/);
  assert.match(js,/if\(!numeric\(matchId\)\)/);
  assert.match(js,/const abbreviation=typeof club\?\.abbr==='string'/);
- assert.match(js,/\?club\.abbr:club\?\.compactName\|\|full/);
+ assert.match(js,/\?club\.abbr:club\?\.compactName\|\|id\|\|unresolved\.short/);
  assert.match(js,/name\.textContent=abbreviation/);
  assert.match(js,/name\.href=href\('\/clubs\/'\+id\.split\('-'\)\[0\]\.toLowerCase\(\)\+'\/'\+Number\(id\.split\('-'\)\[1\]\)\+'\/overview'\)/);
  assert.match(js,/name\.removeAttribute\('href'\);name\.removeAttribute\('target'\);name\.removeAttribute\('rel'\)/);
@@ -252,23 +276,21 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/\.app-match-page\{box-sizing:border-box;width:100%;min-width:0;padding-top:0;overflow:visible\}/);
  assert.ok(css.includes('aspect-ratio:105 / 68'));
  for(const fragment of [
-  'grid-template-columns:minmax(185px,1fr) minmax(0,3.4fr) minmax(185px,1fr)',
+  'grid-template-columns:minmax(218px,1.25fr) minmax(0,2.5fr) minmax(218px,1.25fr)',
   'align-items:stretch;gap:clamp(12px,1.1vw,22px);width:100%;max-width:none;margin:24px 0 0;',
   '.app-match-team-identity{display:flex;align-items:center;gap:10px;',
   '.app-match-side-stats{display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr)',
-  'grid-template-rows:repeat(11,minmax(18px,1fr))',
+  'grid-template-rows:repeat(11,minmax(38px,1fr))',
   'font-size:32px;font-weight:800',
   '.app-match-team-crest{flex:0 0 64px;width:64px;height:64px}',
   'background:color-mix(in srgb,var(--surface) 82%,transparent)',
-  '.app-match-form-cell[data-outcome="w"]{background:#237c59}',
-  '.app-match-form-cell[data-outcome="d"]{background:#667b82}',
-  '.app-match-form-cell[data-outcome="l"]{background:#98504d}',
+  '.app-match-form .app-world-form-control{color:inherit;text-decoration:none}',
   '.app-match-visual{grid-column:1/-1;grid-row:1}',
   '@media(max-width:1000px)'
  ])assert.ok(css.includes(fragment),fragment);
  assert.ok(css.includes('.app-match-page[data-match-load="missing"] .app-match-visual{display:none}'));
  assert.ok(css.includes('align-items:center;justify-content:center;'));
- assert.ok(css.includes('width:min(86%,560px)'));
+ assert.ok(css.includes('width:min(89%,560px)'));
  assert.ok(css.includes('.app-match-overview-row-primary{grid-template-columns:'));
  assert.ok(css.includes('.app-match-overview-row-secondary{grid-template-columns:'));
  assert.ok(css.includes('.app-match-overview-row-status{grid-template-columns:'));
@@ -380,7 +402,10 @@ test('match first paint retains every box before hydration and during transient 
  for(const marker of ['app-match-scoreboard','app-match-stage','app-match-side-home',
   'app-match-side-away','app-match-visual','app-match-overview','app-match-pitch'])
   assert.ok(html.includes(marker),marker);
- assert.ok(css.includes('[data-match-load="loading"],[data-match-load="unavailable"]'));
+ assert.ok(css.includes('.app-match-page[data-match-load="loading"] .app-match-side-link:empty::before'));
+ assert.ok(css.includes('.app-match-page[data-match-load="loading"] [data-match-overview]:empty::before'));
+ assert.ok(css.includes('.app-match-team-crest{visibility:hidden}'),
+  'Terminal errors retain layout without remaining loading skeletons');
  assert.ok(js.includes("root.dataset.matchLoad=errorKind==='missing'?'missing':'unavailable'"));
  assert.match(js,/if\(!data\)\{[\s\S]*?return;\s*\}\s*renderOverview\(tr\)/);
 });
@@ -408,4 +433,87 @@ test('MATCH-STATS: individual statistics have one dedicated independent HTTP rea
  assert.match(js,/value\.provenance\.receiptHash===item\.provenance\.receiptHash/);
  assert.ok(route.includes('readPublicMatchStatisticsV1'));
  assert.ok(js.indexOf('data=item;errorKind=null;render();')<js.indexOf("void fetch('/api/matches/'+matchId+'/stats'"),'scoreboard never waits for statistics');
+});
+
+test('#577 merge conflict preserves green pitch and the two-column Status/MVP overview layout',()=>{
+ const css=read('assets/match-detail.css');
+ assert.ok(css.includes('.app-match-overview-row-status{grid-template-columns:repeat(2,minmax(0,1fr))}'));
+ assert.ok(css.includes('background:#205C43;color:rgba(255,255,255,.74)'));
+ assert.ok(css.includes('.app-match-overview{'));
+ assert.ok(css.includes('.app-match-pitch-overlay{'));
+ assert.ok(css.includes('.app-match-mvp-link{'));
+});
+
+test('#577 recorded event API uses the same canonical read and never leaks into header/stats',()=>{
+ const api=read('backend/src/index.ts'),source=read('backend/src/public-match-read-lineup-v1.ts');
+ const projection=read('backend/src/match-public-events-v1.mjs');
+ assert.match(api,/const matchEvents=url\.pathname\.match/);
+ assert.match(api,/readPublicMatchEventsV1\(requireDatabase\(env\.DB\),matchEvents\[1\]\)/);
+ assert.match(source,/export async function readPublicMatchEventsV1\(db:Database,matchId:string\)/);
+ assert.match(source,/readVerifiedPublicMatchV1\(db,matchId,false,true\)/);
+ assert.match(source,/verifiedTimeline\(replay,row\.source_fixture_id,frozen\.provenance\.receiptHash\)/);
+ assert.match(source,/verifiedTimeline\(replay,resolved\.id,frozen\.provenance\.receiptHash\)/);
+ assert.match(projection,/validateRecordedMatchTimelineV1\(result\)/);
+ assert.match(projection,/kind:'not_recorded',eventModelVersion:null,events:null/);
+ for(const fragment of ["kind:'recorded'","case 'goal'","case 'pass'","case 'substitution'","case 'red'","case 'yellow'","case 'role_change'"])
+  assert.ok(projection.includes(fragment),fragment);
+ assert.doesNotMatch(projection,/seed:|sourceSeedHash:|attributes:/);
+});
+
+test('#577 responsive Match Detail: no visible events, official XI slots, portraits and form controls',()=>{
+ const html=read('matches/_shared/index.html'),template=read('templates/match-detail-content.html');
+ const css=read('assets/match-detail.css'),js=read('assets/match-detail.js');
+ const shared=read('assets/app.css');
+ const stats=read('backend/src/match-player-statistics.mjs');
+ for(const page of [html,template]){
+  assert.equal(page.split('data-match-formation=').length-1,2);
+  assert.equal(page.split('data-match-events-panel').length-1,0);
+  assert.equal(page.split('data-match-lineup-view="list"').length-1,2);
+  assert.equal(page.split('data-match-lineup-view="pitch"').length-1,2);
+  assert.equal(page.split('class="app-match-lineup-row"').length-1,22);
+  assert.match(page,/data-match-lineup-view="pitch"[^>]*disabled/);
+  assert.ok(page.includes('data-match-pitch role="img"'));
+ }
+ for(const literal of ['background:#205C43','minmax(218px,1.25fr) minmax(0,2.5fr) minmax(218px,1.25fr)',
+  '.app-match-lineup-avatar{','.app-match-form-control{',
+  '.app-match-overview-row-status{grid-template-columns:repeat(2,minmax(0,1fr))}'])
+  assert.ok(css.includes(literal),literal);
+ for(const literal of ["function positionLabel(rank)", "rank+suffix",
+  "function publishedFormLink(fixture)", "publishedMatchIndex.bySource",
+  "indexPublishedMatchLinks(payload,item.season,item.competitionId)",
+  "function showFormTooltip(anchor,game,tr)", "app-world-form-tooltip",
+  "function showApprovedPortrait(slot,id)", "starter.portraitAssetKey",
+  "a.startingSlot-b.startingSlot", "observePortrait(avatar,starter.playerId,starter.portraitAssetKey)",
+  "row.replaceChildren(role,avatar,nameBox,vote)", "player.target='_blank'",
+  "source?.formation==='4-3-3'"])
+  assert.ok(js.includes(literal),literal);
+ assert.ok(!js.includes("fetch('/api/matches/'+matchId+'/events'"));
+ assert.ok(!js.includes("fetch('/api/players/"));
+ assert.ok(js.includes("void Promise.all(["));
+ assert.ok(js.includes("form.classList.add('app-world-form-strip')"));
+ assert.ok(js.includes("glyph.className='app-world-form-glyph'"));
+ assert.ok(css.includes('grid-template-rows:repeat(11,minmax(32px,1fr))'));
+ for(const outcome of ['w','d','l'])
+  assert.ok(shared.includes('.app-world-form-control.app-world-form-'+outcome+' .app-world-form-glyph'));
+ assert.ok(shared.includes('.app-world-form-strip .app-world-form-control{width:18px;height:18px'));
+ assert.ok(css.includes('.app-match-form{display:flex;align-items:center;justify-content:center;gap:clamp(3px,.32vw,5px);'));
+ assert.ok(css.includes('width:clamp(20px,1.9vw,26px);height:clamp(20px,1.9vw,26px)'));
+ assert.ok(css.includes('width:clamp(18px,1.75vw,24px);height:clamp(18px,1.75vw,24px)'));
+ assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-control + .app-world-form-control{margin-left:0}'));
+ assert.ok(css.includes('.app-match-form{gap:3px;min-height:25px}'));
+ assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-control{width:21px;height:21px}'));
+ assert.ok(css.includes('.app-match-side-stats{grid-template-columns:minmax(0,.29fr) minmax(0,1.71fr);gap:3px}'));
+ assert.ok(css.includes('.app-match-side{padding:10px 2px 12px}'));
+ assert.ok(css.includes('.app-match-stage{gap:8px}'));
+ assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-glyph{width:20px;height:20px}'));
+ assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-control{width:18px;height:18px}'));
+ assert.ok(css.includes('display:grid;place-items:center;text-align:center;line-height:1;'));
+ assert.ok(css.includes('.app-match-form.app-world-form-strip .app-world-form-glyph{width:17px;height:17px}'));
+ const db=read('backend/src/match-approved-portraits.ts');
+ assert.ok(db.includes("status='approved'")&&db.includes("prompt_version='player-portrait-v4.2'"));
+ assert.ok(read('backend/src/public-match-read-lineup-v1.ts').includes("approvedMatchPortraitKeys(db,statistics)"));
+ assert.ok(!js.includes('function renderTimeline(tr)'));
+ assert.ok(!css.includes('.app-match-events{'));
+ assert.match(stats,/startingSlot:index\+1/);
+ assert.match(stats,/startingRole:p\.started/);
 });
