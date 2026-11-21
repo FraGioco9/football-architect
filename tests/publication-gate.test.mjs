@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {existsSync,mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,readdirSync,unlinkSync} from "node:fs";
 import {join} from "node:path";
+import {createHash} from "node:crypto";
+import {approvedPortraitPaths,PORTRAIT_RELEASE_SCHEMA} from "../tools/portrait-release-gate.mjs";
 import {tmpdir} from "node:os";
 import {repositoryRoot,planPublicFiles,assertPublicArtifact,stagePublicArtifact,isAllowlistedPublicPath,publicRequestFile} from "../tools/publication-guard.mjs";
 
@@ -243,4 +245,59 @@ test('PERF-API-657: compact manifest is a required public asset at its canonical
  assert.ok(planPublicFiles().includes(path));
  assert.equal(isAllowlistedPublicPath('competitions/_shared/compact-broken.json'),false);
  assert.equal(isAllowlistedPublicPath('competitions/_shared/not-allowed.json'),false);
+});
+
+
+test('#733: checked-in WebP never grants static publication in any environment',()=>{
+ const path='assets/players/portraits/44.webp';
+ assert.ok(existsSync(join(repositoryRoot,path)),'fixture is physically present');
+ assert.equal(isAllowlistedPublicPath(path),false,'file existence is not approval');
+ assert.equal(planPublicFiles().some(p=>p.startsWith('assets/players/portraits/')),false);
+ assert.equal(planPublicFiles(repositoryRoot,{target:'dev-preview'}).includes(path),false);
+ assert.equal(planPublicFiles(repositoryRoot,{target:'production'}).includes(path),false);
+ assert.throws(()=>planPublicFiles(repositoryRoot,{target:'production',portraitReleaseSha256:'0'.repeat(64)}),
+  /manifest missing or unsafe/,'a guessed production approval digest cannot publish DEV files');
+ const root=mkdtempSync(join(tmpdir(),'fa-733-unreleased-'));
+ try {
+  const destination=join(root,'public');
+  const files=stagePublicArtifact(repositoryRoot,destination,{target:'dev-preview'});
+  assert.ok(files.every(p=>!p.startsWith('assets/players/portraits/')));
+  assert.ok(!existsSync(join(destination,path)));
+  assert.deepEqual(assertPublicArtifact(destination,{sourceRoot:repositoryRoot,target:'dev-preview'}),files);
+ }finally{rmSync(root,{recursive:true,force:true})}
+});
+
+test('#733: independently pinned V4.2 manifests are target-bound and hash-verified',()=>{
+ const root=mkdtempSync(join(tmpdir(),'fa-733-release-'));
+ const sha=data=>createHash('sha256').update(data).digest('hex');
+ const image=Buffer.from('RIFF0000WEBPVP8Lsynthetic');
+ const portrait='assets/players/portraits/44.webp';
+ const release='release-manifests/player-portraits-v42-dev-preview.json';
+ const row={playerId:44,appearanceFingerprint:'a'.repeat(16),
+  identitySnapshotSha256:'b'.repeat(64),approvalReceiptSha256:'c'.repeat(64),imageSha256:sha(image)};
+ const manifest={schema:PORTRAIT_RELEASE_SCHEMA,target:'dev-preview',
+  identitySchema:'player-portraits-v5',promptVersion:'player-portrait-v4.2',
+  approvalRegistrySha256:'d'.repeat(64),portraits:[row]};
+ try{
+  mkdirSync(join(root,'assets/players/portraits'),{recursive:true});
+  mkdirSync(join(root,'release-manifests'),{recursive:true});
+  writeFileSync(join(root,portrait),image);
+  const write=obj=>{const bytes=JSON.stringify(obj)+'\n';writeFileSync(join(root,release),bytes);return sha(bytes)};
+  const pinned=write(manifest);
+  assert.deepEqual([...approvedPortraitPaths(root,{target:'dev-preview'})],[],
+   'even a checked-in manifest is not approval without an external pin');
+  assert.deepEqual([...approvedPortraitPaths(root,{target:'dev-preview',expectedManifestSha256:pinned})],[portrait]);
+  assert.deepEqual([...approvedPortraitPaths(root,{target:'production'})],[]);
+  assert.throws(()=>approvedPortraitPaths(root,{target:'production',expectedManifestSha256:pinned}),/manifest missing or unsafe/);
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview',expectedManifestSha256:'0'.repeat(64)}),/digest mismatch/);
+  assert.throws(()=>approvedPortraitPaths(root,{target:'unreleased',expectedManifestSha256:pinned}),/cannot target unreleased/);
+  assert.throws(()=>approvedPortraitPaths(root,{target:'staging'}),/Unknown portrait release target/);
+  writeFileSync(join(root,portrait),Buffer.from('RIFF0000WEBPVP8Ltampered'));
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview',expectedManifestSha256:pinned}),/image integrity mismatch/);
+  writeFileSync(join(root,portrait),image);
+  const duplicate=write({...manifest,portraits:[row,row]});
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview',expectedManifestSha256:duplicate}),/duplicate/);
+  const badIdentity=write({...manifest,portraits:[{...row,identitySnapshotSha256:'invalid'}]});
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview',expectedManifestSha256:badIdentity}),/release entry/);
+ }finally{rmSync(root,{recursive:true,force:true})}
 });

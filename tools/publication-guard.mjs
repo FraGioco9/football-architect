@@ -7,6 +7,7 @@ import {join,resolve,dirname} from "node:path";
 import {fileURLToPath} from "node:url";
 import {validateDivisionAssets} from "./validate-division-assets.mjs";
 import {clubCrestAssets} from "./club-crest-assets.mjs";
+import {approvedPortraitPaths} from "./portrait-release-gate.mjs";
 import competitionModel from "../assets/competition-model.js";
 
 export const repositoryRoot=fileURLToPath(new URL("../",import.meta.url));
@@ -33,7 +34,7 @@ const runtimeAssets=new Set(["profile-navigation.js","account-ui.js","account.cs
 // Only explicit canonical routes are allowed; no hosting, auth or build overrides.
 const competitionRouting={"redirects":[{"source":"/matches/:id([1-9][0-9]*)/","destination":"/matches/:id","permanent":true},{"source":"/players/:id([1-9][0-9]*)/","destination":"/players/:id","permanent":true},{"source":"/admin/players/preview/player/","destination":"/admin/players/preview/player","permanent":true},{"source":"/admin/players/preview/player/index.html","destination":"/admin/players/preview/player","permanent":true},{"source":"/clubs/","destination":"/clubs","permanent":true},{"source":"/clubs/index.html","destination":"/clubs","permanent":true},{"source":"/:page(dashboard|calendar|settings|admin|competitions|players|matches)/","destination":"/:page","permanent":true},{"source":"/:page(dashboard|calendar|settings|admin|competitions|players|matches)/index.html","destination":"/:page","permanent":true},{"source":"/admin/:section(calendar|players|contracts)/","destination":"/admin/:section","permanent":true},{"source":"/admin/:section(calendar|players|contracts)/index.html","destination":"/admin/:section","permanent":true},{"source":"/admin/players/preview/","destination":"/admin/players/preview","permanent":true},{"source":"/admin/players/preview/index.html","destination":"/admin/players/preview","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/index.html","destination":"/competitions/:division","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/competitions/:division/overview","permanent":true},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)/","destination":"/competitions/:division/:view","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)","has":[{"type":"query","key":"view","value":"overview"}],"destination":"/clubs/:country/:club/overview","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)","has":[{"type":"query","key":"view","value":"roster"}],"destination":"/clubs/:country/:club/roster","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)","has":[{"type":"query","key":"view","value":"fixtures"}],"destination":"/clubs/:country/:club/fixtures","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)","has":[{"type":"query","key":"view","value":"stats"}],"destination":"/clubs/:country/:club/records","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)","has":[{"type":"query","key":"view","value":"records"}],"destination":"/clubs/:country/:club/records","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)","has":[{"type":"query","key":"view","value":"history"}],"destination":"/clubs/:country/:club/history","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)","destination":"/clubs/:country/:club/overview","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/","has":[{"type":"query","key":"view","value":"overview"}],"destination":"/clubs/:country/:club/overview","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/","has":[{"type":"query","key":"view","value":"roster"}],"destination":"/clubs/:country/:club/roster","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/","has":[{"type":"query","key":"view","value":"fixtures"}],"destination":"/clubs/:country/:club/fixtures","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/","has":[{"type":"query","key":"view","value":"stats"}],"destination":"/clubs/:country/:club/records","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/","has":[{"type":"query","key":"view","value":"records"}],"destination":"/clubs/:country/:club/records","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/","has":[{"type":"query","key":"view","value":"history"}],"destination":"/clubs/:country/:club/history","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/","destination":"/clubs/:country/:club/overview","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/index.html","has":[{"type":"query","key":"view","value":"overview"}],"destination":"/clubs/:country/:club/overview","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/index.html","has":[{"type":"query","key":"view","value":"roster"}],"destination":"/clubs/:country/:club/roster","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/index.html","has":[{"type":"query","key":"view","value":"fixtures"}],"destination":"/clubs/:country/:club/fixtures","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/index.html","has":[{"type":"query","key":"view","value":"stats"}],"destination":"/clubs/:country/:club/records","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/index.html","has":[{"type":"query","key":"view","value":"records"}],"destination":"/clubs/:country/:club/records","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/index.html","has":[{"type":"query","key":"view","value":"history"}],"destination":"/clubs/:country/:club/history","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/index.html","destination":"/clubs/:country/:club/overview","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/:view(overview|roster|fixtures|records|history)/","destination":"/clubs/:country/:club/:view","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/:view(overview|roster|fixtures|records|history)/index.html","destination":"/clubs/:country/:club/:view","permanent":true},{"source":"/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards)/","destination":"/competitions/:cup/:view","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats/index.html","destination":"/clubs/:country/:club/records","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats/","destination":"/clubs/:country/:club/records","permanent":true},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats","destination":"/clubs/:country/:club/records","permanent":true}],"rewrites":[{"source":"/matches/:id([1-9][0-9]*)","destination":"/matches/_shared/index.html"},{"source":"/players/:id([1-9][0-9]*)","destination":"/players/_shared/index.html"},{"source":"/admin/players/preview/player","destination":"/admin/players/preview/player/index.html"},{"source":"/clubs","destination":"/clubs/index.html"},{"source":"/:page(dashboard|calendar|settings|admin|competitions|players|matches)","destination":"/:page/index.html"},{"source":"/admin/:section(calendar|players|contracts)","destination":"/admin/:section/index.html"},{"source":"/competitions/_shared/:file(index.html|manifest.json|compact.json)","destination":"/competitions/_shared/:file"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])","destination":"/competitions/:division/index.html"},{"source":"/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)","destination":"/competitions/:division/index.html"},{"source":"/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards)","destination":"/competitions/:cup/index.html"},{"source":"/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/:view(overview|roster|fixtures|records|history)","destination":"/clubs/_shared/index.html"}],"headers":[{"source":"/account/:path*","headers":[{"key":"Cache-Control","value":"private, no-store, max-age=0"},{"key":"Referrer-Policy","value":"no-referrer"},{"key":"X-Robots-Tag","value":"noindex, nofollow"},{"key":"X-Content-Type-Options","value":"nosniff"}]},{"source":"/admin/players/preview/:path*","headers":[{"key":"Cache-Control","value":"private, no-store, max-age=0"},{"key":"Referrer-Policy","value":"no-referrer"},{"key":"X-Robots-Tag","value":"noindex, nofollow"}]}]};
 
-export function isAllowlistedPublicPath(path,sourceRoot=repositoryRoot) {
+function isAllowedPublicPath(path,sourceRoot,approvedPortraits) {
  if(path.startsWith("clubs/_profiles/"))
   return /^clubs\/_profiles\/(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)\.json$/.test(path);
  if(path.startsWith("assets/clubs/"))return clubCrestAssets(sourceRoot).paths.has(path);
@@ -41,17 +42,17 @@ export function isAllowlistedPublicPath(path,sourceRoot=repositoryRoot) {
  if(rootFiles.has(path)||divisions.includes(path))return true;
  if(path.startsWith("assets/brand/"))
   return /^assets\/brand\/[a-z0-9-]+\.(?:svg|png)$/.test(path);
- if(path.startsWith("assets/players/portraits/")){
-  // A canonical numeric WebP committed here is the explicit publication boundary.
-  if(!/^assets\/players\/portraits\/[1-9][0-9]*\.webp$/.test(path))return false;
-  const file=join(sourceRoot,path);
-  return existsSync(file)&&lstatSync(file).isFile()&&!lstatSync(file).isSymbolicLink();
- }
+ if(path.startsWith("assets/players/portraits/"))
+  return approvedPortraits.has(path);
  if(path.startsWith("assets/flags/"))
   return path==="assets/flags/LICENSE"||/^assets\/flags\/[a-z0-9-]+\.svg$/.test(path);
  if(path.startsWith("assets/"))
   return runtimeAssets.has(path.slice("assets/".length));
  return false;
+}
+// Unqualified checks never authorize a portrait, even when a file exists.
+export function isAllowlistedPublicPath(path,sourceRoot=repositoryRoot) {
+ return isAllowedPublicPath(path,sourceRoot,new Set());
 }
 export function listFiles(root,relative="") {
  const files=[];
@@ -65,7 +66,8 @@ export function listFiles(root,relative="") {
  }
  return files.sort();
 }
-export function planPublicFiles(sourceRoot=repositoryRoot) {
+export function planPublicFiles(sourceRoot=repositoryRoot,{target="unreleased",portraitReleaseSha256=null}={}) {
+ const approvedPortraits=approvedPortraitPaths(sourceRoot,{target,expectedManifestSha256:portraitReleaseSha256});
  const routing=JSON.parse(readFileSync(join(sourceRoot,"vercel.json"),"utf8"));
  if(!isDeepStrictEqual(routing,competitionRouting))throw Error("Unexpected competition routing configuration");
  const crests=clubCrestAssets(sourceRoot);
@@ -75,7 +77,8 @@ export function planPublicFiles(sourceRoot=repositoryRoot) {
  if(!isDeepStrictEqual(compact,competitionModel.packCompactManifest(manifest))||
     !isDeepStrictEqual(competitionModel.expandCompactManifest(compact),manifest))
   throw Error("Compact competition catalogue does not match canonical manifest");
- const files=listFiles(sourceRoot).filter(path=>isAllowlistedPublicPath(path,sourceRoot));
+ const files=listFiles(sourceRoot).filter(path=>isAllowedPublicPath(path,sourceRoot,approvedPortraits));
+ for(const path of approvedPortraits)if(!files.includes(path))throw Error("Approved portrait missing from public inventory: "+path);
  const clubIdentity=JSON.parse(readFileSync(join(sourceRoot,'clubs/_shared/identity.json'),'utf8'));
  if(clubIdentity?.projection!=='club-identity-v1'||!Array.isArray(clubIdentity.clubs)||clubIdentity.clubs.length!==320)
   throw Error('Club identity catalogue missing or invalid');
@@ -91,14 +94,15 @@ export function planPublicFiles(sourceRoot=repositoryRoot) {
   if(!files.includes(path))throw Error("Required approved division asset missing: "+path);
  return files;
 }
-export function assertPublicArtifact(publicRoot,{sourceRoot=repositoryRoot}={}) {
+export function assertPublicArtifact(publicRoot,{sourceRoot=repositoryRoot,target="unreleased",portraitReleaseSha256=null}={}) {
+ const approvedPortraits=approvedPortraitPaths(sourceRoot,{target,expectedManifestSha256:portraitReleaseSha256});
  if(resolve(publicRoot)===resolve(sourceRoot))
   throw Error("Repository root is not a safe public artifact");
  if(!existsSync(publicRoot))throw Error("Public artifact missing");
  const actual=listFiles(publicRoot);
- const expected=planPublicFiles(sourceRoot);
+ const expected=planPublicFiles(sourceRoot,{target,portraitReleaseSha256});
  for(const path of actual)
-  if(!isAllowlistedPublicPath(path,sourceRoot))throw Error("Not allowlisted for publication: "+path);
+  if(!isAllowedPublicPath(path,sourceRoot,approvedPortraits))throw Error("Not allowlisted for publication: "+path);
  if(actual.length!==expected.length||actual.some((path,i)=>path!==expected[i]))
   throw Error("Public artifact does not match exact approved manifest");
  for(const path of expected){
@@ -111,17 +115,17 @@ export function assertPublicArtifact(publicRoot,{sourceRoot=repositoryRoot}={}) 
  }
  return actual;
 }
-export function stagePublicArtifact(sourceRoot,destination) {
+export function stagePublicArtifact(sourceRoot,destination,{target="unreleased",portraitReleaseSha256=null}={}) {
  if(existsSync(destination))throw Error("Refusing to overwrite an artifact");
  if(resolve(destination)===resolve(sourceRoot))
   throw Error("Repository root cannot be published");
- const files=planPublicFiles(sourceRoot);
+ const files=planPublicFiles(sourceRoot,{target,portraitReleaseSha256});
  for(const path of files){
   const target=join(destination,path);
   mkdirSync(dirname(target),{recursive:true});
   copyFileSync(join(sourceRoot,path),target);
  }
- assertPublicArtifact(destination,{sourceRoot});
+ assertPublicArtifact(destination,{sourceRoot,target,portraitReleaseSha256});
  return files;
 }
 
