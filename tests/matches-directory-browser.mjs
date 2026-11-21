@@ -162,7 +162,7 @@ export async function verifyMatchesDirectory(browser){
    assert.equal(await slot.locator('.md-team-name-full').textContent(),name);
    assert.equal(await slot.locator('.md-team-name-compact').textContent(),'Winner '+higher+'–'+lower);
   }
-  assert(!/playoff (89|512|611|710)\\b/i.test(await page.locator('#md-list').innerText()),'never display encoded tie IDs');
+  assert(!/playoff (89|512|611|710)\b/i.test(await page.locator('#md-list').innerText()),'never display encoded tie IDs');
   assert.equal(await page.locator('#md-list [title]').count(),0,'no tooltips on unresolved participants or fixture details');
   for(const width of [320,375,390,540]){
    await page.setViewportSize({width,height:800});
