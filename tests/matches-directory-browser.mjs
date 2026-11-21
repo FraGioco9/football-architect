@@ -315,6 +315,33 @@ export async function verifyMatchesDirectory(browser){
   await page.getByText('No matching fixtures.').waitFor();
   assert.deepEqual(errors,[]);
 
+  // Follow real Matches heading anchors into the competition router, not only
+  // checking the generated href. One representative of each route family
+  // ensures the page resolves its public season and selected fixture round.
+  await page.goto('http://app.localhost:2000/matches?season=1&day=15',{waitUntil:'domcontentloaded'});
+  await page.locator('#md-list h2 a').nth(8).waitFor();
+  const navigationCases=[
+   {index:0,id:'it-1',round:2},
+   {index:1,id:'it-1',round:'playoffs'},
+   {index:4,id:'int-1',round:'quarterfinals:1'},
+   {index:8,id:'int-1',round:'final:1'}
+  ];
+  for(const target of navigationCases){
+   await page.locator('#md-list h2 a').nth(target.index).click();
+   await page.waitForFunction(()=>window.faCompetitionRoute?.get?.()?.view==='fixtures');
+   const selected=await page.evaluate(()=>({
+    route:window.faCompetitionRoute.get(),
+    path:location.pathname,
+    picker:document.getElementById('app-fixtures-round')?.value
+   }));
+   assert.equal(selected.path,'/competitions/'+target.id+'/fixtures','Matches opens the correct competition');
+   assert.equal(String(selected.route.season),'1','Fixtures retains the selected season');
+   assert.equal(selected.route.matchday,target.round,'Fixtures resolves the requested round or knockout phase');
+   await page.waitForFunction(round=>document.getElementById('app-fixtures-round')?.value===String(round),target.round);
+   await page.goBack({waitUntil:'domcontentloaded'});
+   await page.locator('#md-list h2 a').nth(8).waitFor();
+  }
+
   // The full 128-match domestic day tests DOM scale, widths, local filtering and Back cache.
   const dense=await context.newPage();
   const scopes=['IT','ENG','ES','DE','FR','PT','NL','BR'].flatMap(c=>[1,2].map(n=>c+'-'+n));
@@ -369,5 +396,10 @@ export async function verifyMatchesDirectory(browser){
   const url=new URL(await corrupt.locator('#md-list h2 a').first().getAttribute('href'),corrupt.url());
   assert.equal(url.searchParams.get('matchday'),'playout','domestic playout deep link');
   assert.equal(retries,2,'retry recovers with one fresh request');
+  await corrupt.locator('#md-list h2 a').first().click();
+  await corrupt.waitForFunction(()=>window.faCompetitionRoute?.get?.()?.view==='fixtures');
+  const playoutState=await corrupt.evaluate(()=>window.faCompetitionRoute.get());
+  assert.equal(playoutState.matchday,'playout','the opened domestic Fixtures page selects the playout');
+  assert.equal(String(playoutState.season),'1','playout deep link retains the season');
  }finally{await context.close()}
 }
