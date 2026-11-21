@@ -164,14 +164,16 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
     else {
      assert.equal(await cards.locator('.fa-dev-stats-team-name[href="/players/58"]').count(),5);
      const portrait=goals.locator('.fa-dev-stats-player-portrait');
-     await portrait.locator('img').waitFor({state:'visible'});
-     const crop=await portrait.evaluate(el=>({radius:getComputedStyle(el).borderRadius,overflow:getComputedStyle(el).overflow,width:el.clientWidth,height:el.clientHeight,imageWidth:el.querySelector('img').getBoundingClientRect().width,state:el.dataset.portraitState}));
+     // Without a verified release manifest, a WebP checked into git
+     // must fall back rather than display as a published portrait.
+     await portrait.locator('img:not([src])').waitFor({state:'attached'});
+     const crop=await portrait.evaluate(el=>({radius:getComputedStyle(el).borderRadius,overflow:getComputedStyle(el).overflow,width:el.clientWidth,height:el.clientHeight,state:el.dataset.portraitState,hasSrc:el.querySelector('img').hasAttribute('src')}));
      assert.equal(await portrait.evaluate(el=>el.tagName),'SPAN');
      assert.equal(await goals.locator('li a').count(),2,'player name and club name have independent links');
      assert.equal(await goals.locator('li a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').count(),1);
-     assert.equal(crop.radius,'50%');assert.equal(crop.overflow,'hidden');assert.equal(crop.width,crop.height);assert.equal(crop.state,'ready');assert.ok(crop.imageWidth>crop.width*2.7);
+     assert.equal(crop.radius,'50%');assert.equal(crop.overflow,'hidden');assert.equal(crop.width,crop.height);assert.equal(crop.state,'missing');assert.equal(crop.hasSrc,false);
      mkdirSync('int24-browser-artifacts',{recursive:true});
-     await page.screenshot({path:`int24-browser-artifacts/stats-643-face-${engine}-${id}-${width}.png`,fullPage:true});
+     await page.screenshot({path:`int24-browser-artifacts/stats-643-fallback-${engine}-${id}-${width}.png`,fullPage:true});
     }
    }
    await page.evaluate(()=>window.__stats643Supply('real'));

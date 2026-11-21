@@ -561,8 +561,9 @@ test('#623 public player portrait and fallback: staged/approved IDs only, stable
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
  const paths=readdirSync(new URL('../assets/players/portraits/',import.meta.url))
   .filter(name=>/^[1-9][0-9]*\.webp$/.test(name)).map(name=>'assets/players/portraits/'+name);
- assert.ok(paths.length>0,'approved portrait directory cannot be empty');
- for(const path of paths)assert.equal(isAllowlistedPublicPath(path),true,path);
+ assert.ok(paths.length>0,'portrait asset directory cannot be empty');
+ // A committed V4.2 QA image is not a target-specific release approval.
+ for(const path of paths)assert.equal(isAllowlistedPublicPath(path),false,'Unpinned portrait must not be published: '+path);
  assert.ok(js.includes("player.portraitAssetKey==='assets/players/portraits/'+id+'.webp'"),
   'portrait URL requires a server-approved canonical V4.2 asset, never a stale legacy WebP');
  assert.ok(js.includes("portraitImage.src=source;"),'approved portrait key is the only displayed image source');
@@ -585,7 +586,7 @@ test('#623 public player portrait and fallback: staged/approved IDs only, stable
  }
 });
 
-test('committed portrait WebPs are automatically discoverable and structurally valid',()=>{
+test('committed portrait WebPs are structurally valid but not automatically public',()=>{
  const published=new Set(planPublicFiles());
  const root=new URL('../assets/players/portraits/',import.meta.url);
  const names=readdirSync(root).filter(name=>/^[1-9][0-9]*\.webp$/.test(name));
@@ -611,7 +612,7 @@ test('committed portrait WebPs are automatically discoverable and structurally v
   assert.equal(height,362,path+' height');
   assert.equal(hasAlpha,true,path+' transparency');
   assert.ok(data.length>0&&data.length<150_000,path+' size budget');
-  assert.ok(published.has(path),'Public artifact missing '+path);
+  assert.equal(published.has(path),false,'Unpinned portrait must not publish: '+path);
  }
 });
 

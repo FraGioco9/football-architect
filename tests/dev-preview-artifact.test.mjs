@@ -125,7 +125,8 @@ test("DEBUG-INFRA-05: Cloudflare publishes only the public contract, not protect
  assert.match(workflow,/verifyPreviewPackage/);
  assert.match(workflow,/actions\/upload-artifact@v4/);
  assert.match(workflow,/actions\/download-artifact@v4/);
- assert.match(builder,/guard\.stagePublicArtifact\(source,join\(output,'assets'\)\)/);
+ assert.match(builder,/guard\.stagePublicArtifact\(source,join\(output,'assets'\),\{target:'dev-preview'\}\)/);
+ assert.doesNotMatch(builder,/guard\.stagePublicArtifact\(source,join\(output,'assets'\)\);/,'Preview staging must name its target');
  assert.doesNotMatch(workflow,/artifact_contract:|expected_debug_manifest_sha256:|stageProtectedDebugArtifact|assertProtectedDebugArtifact|protected_debug/);
  assert.doesNotMatch(builder,/stageProtectedDebugArtifact|assertProtectedDebugArtifact|__fa_dev__/);
  assert.ok(planProtectedDebugFiles().some(p=>p.startsWith("__fa_dev__/")));
