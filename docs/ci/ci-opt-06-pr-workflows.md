@@ -114,3 +114,29 @@ layout and accessibility. Timing does not change browser behavior,
 assertion counts, locales, viewports, screenshot capture or exit
 semantics. Compare durations on the next exact-head result before
 considering further changes; no parallelization of INT24 suites yet.
+
+## Follow-up — INT24 critical path: resource-specific readiness (2026-11-21)
+
+The exact-head INT24 phase profile on `015339cb` measured **54.891s**
+for PERF-API-657's 9 network checks. These were followed by nine
+`waitForLoadState('networkidle', {timeout:6000}).catch(()=>{})`
+operations: a possible 54s of inconclusive global-network waiting.
+The network inventory now waits only for the explicitly audited same-origin
+compact/legacy-manifest and API requests to finish and stay quiet for
+250 ms, with a **fail-closed 6s upper bound** and endpoint diagnostics.
+No network count, first-paint, response, refresh, season-selection or
+error assertion was removed. Synthetic lifecycle tests cover completion,
+request failures, unrelated traffic, and the fail-closed timeout.
+
+The canonical-state SH-03 browser matrix now navigates by
+`domcontentloaded` for the original public-route/refresh and protected
+Debug-route loops. Instead of global `networkidle`, each navigation must
+observe the required world season, correct localized header/theme, or
+explicit protected source and empty season/day. All former assertions,
+widths, locales, route visits and other interaction-specific waits remain.
+Other SH-03 navigations using networkidle are intentionally unchanged.
+
+These are bounded hypotheses, **not a proven speedup** until the next
+FULL exact-head run. If an audited API request never settles, tests fail
+rather than hiding a timeout as a PASS. Keep branch Draft/HOLD, unchanged
+mandatory Site/Browser/Admin gate and no manual dispatch/deploy/DB.
