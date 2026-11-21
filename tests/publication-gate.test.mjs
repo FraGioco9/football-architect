@@ -26,8 +26,33 @@ test("PLAYER-AUTH public artifact includes only the approved account pages and s
    {key:"Cache-Control",value:"private, no-store, max-age=0"},
    {key:"Referrer-Policy",value:"no-referrer"},
    {key:"X-Robots-Tag",value:"noindex, nofollow"}
+  ]},
+  {source:"/assets/clubs/:path*",headers:[
+   {key:"Cache-Control",value:"public, max-age=300, s-maxage=300, must-revalidate"},
+   {key:"X-Content-Type-Options",value:"nosniff"}
+  ]},
+  {source:"/assets/competitions/:path*",headers:[
+   {key:"Cache-Control",value:"public, max-age=300, s-maxage=300, must-revalidate"},
+   {key:"X-Content-Type-Options",value:"nosniff"}
+  ]},
+  {source:"/assets/players/portraits/:path*",headers:[
+   {key:"Cache-Control",value:"public, max-age=60, s-maxage=60, must-revalidate"},
+   {key:"X-Content-Type-Options",value:"nosniff"}
   ]}
  ]);
+});
+
+test("#733: replaceable ID-based images use bounded, revalidating Vercel cache policies",()=>{
+ const {headers}=JSON.parse(readFileSync(join(repositoryRoot,"vercel.json"),"utf8"));
+ const imageRules=headers.filter(rule=>rule.source.startsWith("/assets/"));
+ assert.equal(imageRules.length,3,"only approved static image families receive public cache headers");
+ for(const rule of imageRules){
+  const cache=rule.headers.find(h=>h.key==="Cache-Control")?.value;
+  const ttl=rule.source.includes("/players/portraits/")?60:300;
+  assert.equal(cache,`public, max-age=${ttl}, s-maxage=${ttl}, must-revalidate`);
+  assert.ok(!cache.includes("immutable"),"stable image IDs must revalidate after replacement");
+  assert.ok(rule.headers.some(h=>h.key==="X-Content-Type-Options"&&h.value==="nosniff"));
+ }
 });
 
 test("INT24-PUBLIC: shared rules and stats are self-contained public dependencies",()=>{
