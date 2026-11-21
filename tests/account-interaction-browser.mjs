@@ -77,6 +77,6 @@ try{
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);checks++;console.log(engine,language,theme,mobile?'mobile':'desktop',route,'PASS');
    }
   }finally{await context.close();}
- });
+ },{maxConcurrent:engine==='webkit'?1:2});
  console.log(engine+' account interaction matrix PASS: '+checks+' cases');
 }finally{server.closeAllConnections();await new Promise(r=>server.close(r));await browser.close();}

@@ -31,7 +31,7 @@ try{
     checks++;
    }
   }finally{await context.close();}
- });
+ },{maxConcurrent:engine==='webkit'?1:2});
  // Removing the visible back control must not consume the hidden post-sign-in destination.
  for(const language of ['en','de','es','fr','it'])for(const route of ['login','register','recover','verify-email']){
   const context=await browser.newContext({viewport:{width:390,height:844}});

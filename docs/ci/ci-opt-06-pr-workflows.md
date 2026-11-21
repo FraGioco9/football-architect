@@ -208,3 +208,27 @@ This is **unverified until automatic exact-head FULL CI**. If Account WebKit
 contention or flakiness regresses, revert the scoped theme overlap; do not
 claim >=25% matched median speedup from a single run. Maintain Draft/HOLD;
 no manual dispatch, merge, deploy, remote D1 or ruleset changes.
+
+## Selective WebKit serial fallback (2026-11-21)
+
+Exact-head `70bb95c` passed all five automatic FULL workflows including required
+`landing` and `CI FULL exact-head evidence`, but total gate time rose from
+407s to 529s in one comparison. Account Chromium job improved 235s to
+206s while Account WebKit worsened 368s to 421s. The changed interaction
+and layout suites together were ~61.6s to ~38.1s on Chromium, but
+~98.4s to ~105.2s on WebKit. Even unchanged INT24 407-check browser
+coverage rose 75.931s to 94.548s, so one run is not a causal benchmark.
+
+To avoid accepting a speculative WebKit concurrency benefit, the Account
+interaction and layout matrices now use **serial themes on WebKit**, while
+retaining at-most-two theme contexts on Chromium. Both themes still execute
+even after an earlier failure and surface all errors. All case counts, locales,
+routes, mobile widths and assertions remain intact, with independent preview
+servers still started **serially** per suite. A site-owned contract covers both
+failed WebKit themes, exact ordering, the concurrency cap and caller policy.
+
+This is a risk-reduction follow-up, **not a verified runtime saving**.
+Run only automatically triggered required CI, measure and report the next
+exact-head result honestly, keep #735 open for matched Draft median evidence,
+and keep #737 Draft/HOLD without merge, deployment, manual dispatch, remote
+database or main-protection changes.

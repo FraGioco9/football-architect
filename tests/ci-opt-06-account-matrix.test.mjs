@@ -45,6 +45,40 @@ test('simultaneous theme failures are both surfaced',async()=>{
    error.errors.some(e=>e.message.includes('dark'))&&error.errors.some(e=>e.message.includes('light'))
  );
 });
+
+test('WebKit fallback visits both themes strictly serially, including both failures',async()=>{
+ const visited=[],active={n:0,max:0};
+ await assert.rejects(
+  runIndependentAccountMatrix(['it'],['dark','light'],[390,320],async({theme,variant})=>{
+   active.n++;active.max=Math.max(active.max,active.n);visited.push(theme+':'+variant);
+   await Promise.resolve();
+   active.n--;
+   if(variant===320)throw Error('failed '+theme);
+  },{maxConcurrent:1}),
+  error=>error instanceof AggregateError&&error.errors.length===2&&
+   error.errors.some(e=>e.message.includes('failed dark'))&&
+   error.errors.some(e=>e.message.includes('failed light'))
+ );
+ assert.equal(active.max,1,'WebKit never overlaps isolated contexts');
+ assert.deepEqual(visited,['dark:390','dark:320','light:390','light:320']);
+});
+
+test('both Account browser matrices request serial WebKit and bounded Chromium',()=>{
+ for(const path of ['account-interaction-browser.mjs','account-layout-browser.mjs']){
+  const src=readFileSync(new URL('./'+path,import.meta.url),'utf8');
+  assert.match(src,/maxConcurrent:engine==='webkit'\?1:2/,path);
+  assert.match(src,/runIndependentAccountMatrix\(/,path);
+ }
+});
+
+test('concurrency outside reviewed limits is rejected',async()=>{
+ for(const maxConcurrent of [0,3,-1,1.5,'2'])
+  await assert.rejects(
+   runIndependentAccountMatrix(['en'],['dark','light'],[390],async()=>{},{maxConcurrent}),
+   /Account matrix must retain/
+  );
+});
+
 test('an empty or unbounded matrix fails closed',async()=>{
  for(const axes of [
   [[],['dark','light'],[390]], [['en'],[],[390]],
