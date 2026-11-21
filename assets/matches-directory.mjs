@@ -97,8 +97,12 @@ function participant(id,ref,home=false){
  const name=c?.primaryName??(ref?.kind==='leagueRank'?words.rank+' '+ref.rank:ref?.kind==='tieWinner'?words.winner+' '+ref.tieId:words.tbd);
  const side=node('span',null,'md-team');
  const crest=logo(clubCrests[id]);
- const label=c?link('/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview',name):node('span',name);
+ const label=c?link('/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview',null):node('span',name);
  label.className='md-team-label';label.title=name;
+ if(c){
+  label.setAttribute('aria-label',name);
+  label.append(node('span',name,'md-team-name-full'),node('span',c.compactName||name,'md-team-name-compact'));
+ }
  if(home)side.append(label,crest);else side.append(crest,label);
  return side;
 }
