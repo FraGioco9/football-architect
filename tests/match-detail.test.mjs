@@ -241,7 +241,10 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.ok(read('assets/match-detail.css').includes('.app-match-side-link[href]:hover'));
  assert.ok(html.includes('src="/assets/club-crests.js" defer'));
  assert.ok(html.includes('window.faClubCrests='));
- assert.ok(read('tools/generate-app-pages.mjs').includes('JSON.stringify(clubCrestAssets().catalog)'));
+ const publishedCrestIds=Object.keys(publicClubIdentityCatalog().clubCrests).sort();
+ assert.ok(read('tools/generate-app-pages.mjs').includes('JSON.stringify(Object.keys(clubCrestAssets().catalog).sort())'));
+ assert.ok(html.includes('window.faClubCrests='+JSON.stringify(publishedCrestIds)+';'));
+ assert.doesNotMatch(html,/window\.faClubCrests=\{/);
  for(const fragment of [
   "function verifiedProjection(projection)",
   "projection.provenance?.kind==='authoritative'",

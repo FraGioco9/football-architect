@@ -414,7 +414,9 @@ test('#535 header shows position chain, nationality/age and canonical club or Fr
  assert.match(js,/import\('\/assets\/match-public-context\.mjs'\)/);
  assert.doesNotMatch(js,/fetch\('\/clubs\/_shared\/manifest\.json'/);
  assert.match(js,/clubCatalog\.clubs\.find\(/);
- assert.match(js,/clubCatalog\.clubCrests\?\.\[key\]/);
+ assert.match(js,/const crest=verifiedClubCrest\(key,clubCatalog\.clubCrests\)/);
+ assert.match(js,/return registry\[key\]===expected\?expected:null/);
+ assert.doesNotMatch(js,/clubCatalog\.clubCrests\?\.\[key\]/);
  assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+number\+'\/overview'/);
  assert.doesNotMatch(js,/fetch\('\/api\/admin\/contracts'/);
  assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:126px;background:var\(--line\)/);
