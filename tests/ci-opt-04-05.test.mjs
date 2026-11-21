@@ -76,6 +76,13 @@ test('unknown paths fail closed and direct dependent contracts are selected',asy
  assert.ok(classifyImpact(['assets/competition-overview-teams.mjs']).tests.includes('tests/competition-overview-teams.test.mjs'));
 });
 
+test('stacked PRs skip FULL gate, but main-base verification remains strict on base edits',()=>{
+ const source=readFileSync('.github/workflows/ci-opt-03-full-gate.yml','utf8');
+ assert.match(source,/types: \[[^\]]*edited\]/);
+ assert.match(source,/if: \$\{\{ github\.event_name == 'workflow_dispatch' \|\| github\.event\.pull_request\.base\.ref == 'main' \}\}/);
+ assert.match(source,/pr\.base\.ref!=='main'/);
+});
+
 test('gate executes its tested observer inline, without evaluating candidate code',()=>{
  const source=readFileSync('.github/workflows/ci-opt-03-full-gate.yml','utf8');
  const observer=readFileSync('tools/ci-full-evidence.cjs','utf8').split('\n').filter(l=>!l.startsWith('module.exports=')).join('\n').trim();

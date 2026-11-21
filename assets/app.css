@@ -585,7 +585,8 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 .app-fixture-club .app-world-club-crest-placeholder{flex-basis:64px;width:64px;height:64px}
 .app-fixture-club{display:flex;align-items:center;gap:8px;min-width:0;font-size:14px;font-weight:700}
 .app-fixture-home{flex-direction:row-reverse;text-align:right}
-.app-fixture-name{min-width:0;overflow-wrap:anywhere}
+.app-fixture-name{min-width:0;overflow-wrap:anywhere;line-height:1.25}
+.app-fixture-name-compact{display:none}
 .app-fixture-score{display:grid;grid-template-columns:2ch 1ch 2ch;text-align:center;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
 /* #605: keep the score as the keyboard match link. A native whole-card
  * anchor allows right-click, middle-click and Ctrl/Cmd-click to open a new tab
@@ -620,7 +621,7 @@ html[data-fa-standings-loading="true"] :is(.app-fixture-score-link,.app-fixture-
 .app-fixture-status{font-weight:650}
 .app-fixture-stadium{min-width:0;width:320px;max-width:none;white-space:nowrap}
 .app-fixtures-list[hidden]{display:none}
-@media(max-width:620px){.app-fixture-match{grid-template-columns:minmax(0,1fr) 100px minmax(0,1fr);gap:8px;padding:12px 10px}.app-fixture-club{font-size:12px;gap:8px;min-height:72px}.app-fixture-club .app-world-club-crest-placeholder{flex-basis:56px;width:56px;height:56px}.app-fixture-score{font-size:18px}}
+@media(max-width:620px){.app-fixture-match{grid-template-columns:minmax(0,1fr) 100px minmax(0,1fr);gap:8px;padding:12px 10px}.app-fixture-club{font-size:12px;gap:6px;min-height:60px}.app-fixture-club .app-world-club-crest-placeholder{flex-basis:36px;width:36px;height:36px}.app-fixture-score{font-size:18px}.app-fixture-name-full{display:none}.app-fixture-name-compact{display:inline}.app-fixture-club-pending{font-size:11px}}
 @media(max-width:620px){
  .app-fixture-home{grid-column:1;grid-row:1;flex-direction:row;text-align:left}
  .app-fixture-club:not(.app-fixture-home){grid-column:1;grid-row:2}
@@ -628,7 +629,8 @@ html[data-fa-standings-loading="true"] :is(.app-fixture-score-link,.app-fixture-
  .app-fixture-status,.app-fixture-stadium{font-size:10px}
  .app-fixture-stadium{width:auto;max-width:100%;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;white-space:normal;height:2.8em;overflow:hidden}
 }
-@media(max-width:420px){.app-fixture-match{grid-template-columns:minmax(0,1fr) 100px}}
+@media(max-width:420px){.app-fixture-match{grid-template-columns:minmax(0,1fr) 90px;gap:6px;padding-inline:8px}.app-fixture-club{gap:5px}.app-fixture-club .app-world-club-crest-placeholder{flex-basis:30px;width:30px;height:30px}}
+@media(max-width:360px){.app-fixture-club .app-world-club-crest-placeholder{flex-basis:24px;width:24px;height:24px}}
 
 /* Prevent a different view/season flashing before URL state is bound. */
 html[data-competition-view="standings"] .app-competition-panel:not(#competition-panel-standings){display:none}
@@ -1370,9 +1372,17 @@ html[data-fa-standings-loading="true"] #competition-panel-fixtures[data-fa-conte
 html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-fixtures{visibility:visible!important}
 @media(max-width:620px){
  #competition-panel-fixtures .app-fixtures-select{font-size:clamp(12px,3vw,13px)}
- #competition-panel-fixtures .app-fixtures-skeleton-crest{flex-basis:56px;width:56px;height:56px}
- #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name{max-width:calc(100% - 64px)}
+ #competition-panel-fixtures .app-fixtures-skeleton-crest{flex-basis:36px;width:36px;height:36px}
+ #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name{max-width:calc(100% - 42px)}
  #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-stadium{width:100%;height:2.8em}
+}
+@media(max-width:420px){
+ #competition-panel-fixtures .app-fixtures-skeleton-crest{flex-basis:30px;width:30px;height:30px}
+ #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name{max-width:calc(100% - 35px)}
+}
+@media(max-width:360px){
+ #competition-panel-fixtures .app-fixtures-skeleton-crest{flex-basis:24px;width:24px;height:24px}
+ #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name{max-width:calc(100% - 29px)}
 }
 @media(max-width:620px){
  /* Reserve the current-round action below the wider selector on narrow screens. */
@@ -1587,10 +1597,15 @@ html[data-calendar-view="week"][data-calendar-week-pending] #world-calendar .cal
 /* QA-02 V06: center the matchday trio against the full Fixtures toolbar.
    Equal side tracks reserve a permanent right slot for the Current/Reset
    shortcut: toggling that action never shifts the matchday selector. */
+/* Keep the open matchday list above linked fixture cards. The card's
+   focusable/navigational anchors use z-index:2 and must not outrank the menu. */
 #competition-panel-fixtures .app-fixtures-toolbar{
  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
- column-gap:0;align-items:center;min-height:36px;
+ column-gap:0;align-items:center;min-height:36px;z-index:10;
 }
+#competition-panel-fixtures .app-fixtures-list{position:relative;z-index:0}
+#competition-panel-fixtures .app-fixtures-select:has(.app-fixtures-trigger[aria-expanded="true"]){z-index:11}
+#competition-panel-fixtures .app-fixtures-picker{z-index:12}
 #competition-panel-fixtures .app-fixtures-toolbar[hidden]{display:none}
 #competition-panel-fixtures .app-fixtures-navigation{
  grid-column:2;grid-row:1;display:flex;align-items:center;justify-self:center;
