@@ -493,6 +493,8 @@ try{
       sample.right<=sample.trackRight+1&&sample.bottom<=sample.trackBottom+1&&
       sample.height<=2*sample.lineHeight+3,
       'Canonical long compactName stays in two lines within its club track: '+JSON.stringify({phoneWidth,sample}));
+     assert.ok(sample.rowHeight<=124&&sample.skeletonHeight<=124,
+      'Compact mobile fixture cards reserve at most 124px in the ordinary two-row case: '+JSON.stringify({phoneWidth,sample}));
      assert.ok(Math.abs(sample.rowHeight-sample.skeletonHeight)<=8,
       'Loading skeleton must reserve the match row height: '+JSON.stringify({phoneWidth,sample}));
     }
