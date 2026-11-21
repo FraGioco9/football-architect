@@ -110,7 +110,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
   if(typeof value!=='number'||!Number.isSafeInteger(value)||value<0||!pageResult?.results)
    throw new ApiError(503,'players_unavailable');
   count=value;
-  rows=pageResult.results as StoredRow[];
+  rows=pageResult.results as unknown as StoredRow[];
  }else{
   // Preserve the current no-page-SELECT behavior for expired deep links.
   // OFFSET pages must recount: generation alone cannot detect new players
