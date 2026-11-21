@@ -1446,7 +1446,9 @@
         const seasonReadCache=createCompetitionSeasonReadCache();
         const {mountAuthoritativeHistory}=await import(new URL('authoritative-history.mjs',sourceUrl).href);
         const historyPanel=document.getElementById('competition-panel-history');
-        const history=historyPanel?mountAuthoritativeHistory(historyPanel,{manifest,isDev:()=>activeDebugSeason!==null,getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()}):null;
+        const history=historyPanel?mountAuthoritativeHistory(historyPanel,{manifest,isDev:()=>activeDebugSeason!==null,getContext:()=>window.faCompetitionContext,
+          readCachedSeason:({competitionId,season,snapshot})=>seasonReadCache.find({competitionId,season,snapshot}),
+          refreshRecords:()=>window.faSyncHistoryRecords?.()}):null;
         if(history){window.addEventListener('fa:competition-context-change',history.render);window.addEventListener('fa:competition-route-change',history.render);window.addEventListener('fa:source-change',history.render);new MutationObserver(history.render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});}
 
         // Each competition view owns its empty/loading shell; no global
