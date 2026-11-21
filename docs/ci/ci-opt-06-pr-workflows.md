@@ -60,3 +60,25 @@ collect performance numbers.
 No change to branch rules, production deploy, remote D1, security assertions,
 all five supported locales, or Chromium + WebKit FULL regression coverage.
 Keep CI-OPT-06 PR Draft/HOLD. No merge without separate owner authorization.
+
+## Owner refinement — remove unnecessary workflow entries entirely
+
+The two dedicated **first-name** and **surname** pull-request workflows are removed:
+`tests/players-names-catalog.test.mjs` and `tests/surnames-01-catalog.test.mjs`
+remain in the Site FULL Node discovery runner, exactly once each. The surname
+source-only validation (including PLAYERS-03 isolation) now runs in the Site
+job before expensive suites when surname catalog data changes. This preserves
+relevant assertions without starting another pair of GitHub Actions runs.
+
+The Match Engine workflow stays available **only** on `match-engine/**` or edits
+to its own workflow; shared `tools/dev-standings-preview.mjs` changes no longer
+start it. The Site/Browser workflows continue to test preview routing. The
+Match Engine workflow retains its physics, real Chrome viewport and benchmark
+checks for engine changes and now checks out the exact source PR HEAD.
+
+For the representative #732 historical changes touching `tools/ci-test-ownership.json`
+and `tools/dev-standings-preview.mjs` without `match-engine/**`, expected
+workflow launches go from eight to **five**, including the already-skipped
+Cloudflare Preview package workflow; this is a trigger-count projection, not
+a newly measured CI time saving. Required Site, Browser, Admin and exact-head
+FULL gate remain in place.

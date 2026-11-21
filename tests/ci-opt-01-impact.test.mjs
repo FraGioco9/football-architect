@@ -140,20 +140,51 @@ test('CI-OPT-06: unrelated reviewed public-page Draft changes do not start heavy
  assert.match(admin,/admin-world-final-verification/);
 });
 
-test('CI-OPT-06: catalog workflow triggers are narrow and surname tests never skip on test-only changes',async()=>{
+test('CI-OPT-06: catalog tests are owned by Site FULL without separate launches',async()=>{
+ const {readFileSync,existsSync}=await import('node:fs');
+ const {buildPlan}=await import('../tools/ci-opt-01-node-runner.mjs');
+ for(const file of ['players-names-catalog.yml','surnames-01.yml'])
+   assert.equal(existsSync(new URL('../.github/workflows/'+file,import.meta.url)),false,file);
+ const plan=buildPlan();
+ for(const file of ['tests/players-names-catalog.test.mjs','tests/surnames-01-catalog.test.mjs'])
+   assert.equal([...plan.parallel,...plan.serial].filter(p=>p===file).length,1,file);
+ const site=readFileSync(new URL('../.github/workflows/landing-checks.yml',import.meta.url),'utf8');
+ assert.ok(site.includes('node tools/ci-opt-01-node-runner.mjs'));
+ assert.ok(site.includes('node tools/ci-opt-06-surname-scope.mjs'));
+ assert.ok(site.includes('Restore SURNAMES-01 provenance for FULL contracts'));
+ assert.ok(site.includes("needs.head-exact.outputs.mode == 'full'"));
+});
+
+test('CI-OPT-06: surname data scope keeps the original cross-catalog guard',async()=>{
+ const {validateSurnameScope}=await import('../tools/ci-opt-06-surname-scope.mjs');
+ for(const changed of [[],['docs/example.md'],['tests/surnames-01-catalog.test.mjs']])
+   assert.equal(validateSurnameScope(changed),false);
+ for(const changed of [['data/players/surnames/catalog-v1.json'],
+   ['data/players/surnames/countries/ITA.json','tests/surnames-01-catalog.test.mjs','tools/ci-test-ownership.json'],
+   ['data/players/surnames/README.md']])
+   assert.equal(validateSurnameScope(changed),true);
+ for(const changed of [
+   ['data/players/surnames/catalog-v1.json','data/players/names/catalog-v1.json'],
+   ['data/players/surnames/catalog-v1.json','assets/app.js'],
+   ['data/players/surnames/unknown.json'],
+   ['data/players/surnames/countries/ita.json'],
+   ['data/players/surnames/catalog-v1.json','../bad'],
+   [''],
+ ])
+   assert.throws(()=>validateSurnameScope(changed),/SURNAMES-01|Invalid/,changed.join(','));
+});
+
+test('CI-OPT-06: Match Engine checks only engine changes, never generic DEV preview',async()=>{
  const {readFileSync}=await import('node:fs');
- const names=readFileSync(new URL('../.github/workflows/players-names-catalog.yml',import.meta.url),'utf8');
- const surnames=readFileSync(new URL('../.github/workflows/surnames-01.yml',import.meta.url),'utf8');
- for(const [workflow,required] of [[names,'tests/players-names-catalog.test.mjs'],[surnames,'tests/surnames-01-catalog.test.mjs']]){
-   const triggers=workflow.split('    paths:')[1]?.split('\npermissions:')[0];
-   assert.ok(triggers);
-   assert.ok(triggers.includes(required),'catalog regression edits still trigger');
-   assert.ok(triggers.includes('data/players/'),'data edits still trigger');
-   assert.ok(!triggers.includes('ci-test-ownership.json'),'ownership changes must not launch the dedicated job');
- }
- assert.match(surnames,/echo 'run_tests=true'/);
- assert.match(surnames,/tests\/surnames-01-catalog\\\.test\\\.mjs\$/);
- assert.match(surnames,/if: steps\.surname_scope\.outputs\.run_tests == 'true'/);
- assert.match(surnames,/Out-of-scope changes in SURNAMES-01 PR/);
- assert.match(surnames,/PLAYERS-03 names must not change/);
+ const me=readFileSync(new URL('../.github/workflows/match-engine-01.yml',import.meta.url),'utf8');
+ const triggers=me.split('    paths:')[1]?.split('jobs:')[0];
+ assert.ok(triggers);
+ assert.ok(triggers.includes('match-engine/**'));
+ assert.ok(triggers.includes('.github/workflows/match-engine-01.yml'));
+ for(const unrelated of ['dev-standings-preview','ci-test-ownership','assets/'])
+   assert.ok(!triggers.includes(unrelated),unrelated);
+ assert.ok(me.includes('ref: ${{ github.event.pull_request.head.sha }}'));
+ for(const mandatory of ['npm --prefix match-engine test','match-engine/tests/lab-viewport-browser.test.mjs',
+   'npm --prefix match-engine run bench'])
+   assert.ok(me.includes(mandatory),mandatory);
 });

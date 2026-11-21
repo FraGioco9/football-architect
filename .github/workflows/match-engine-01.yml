@@ -3,7 +3,6 @@ on:
   pull_request:
     paths:
       - 'match-engine/**'
-      - 'tools/dev-standings-preview.mjs'
       - '.github/workflows/match-engine-01.yml'
 jobs:
   match-engine:
@@ -11,6 +10,13 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact PR HEAD
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
