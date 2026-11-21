@@ -32,3 +32,19 @@ test('browser suites retain pass markers, WebKit serialization, and cleanup tele
   for(const fragment of ["timing.mark('browser-ready')","timing.mark('preview-ready')","timing.mark('cases-complete')","timing.mark('cleanup-complete');timing.report()",...specific])assert.ok(source.includes(fragment),path+': '+fragment);
  }
 });
+
+// Guard against accidental coverage loss when adding observational browser timing.
+test('WebKit profiling preserves canonical-state, responsive and supplemental journeys',async()=>{
+ const {browserCases,areaRoutes}=await import('./ci-opt-01-browser-cases.mjs');
+ assert.equal(browserCases().length,20);
+ assert.deepEqual(Object.keys(areaRoutes),['calendar','clubs','competitions','guide','admin']);
+ const entry=readFileSync('tests/clean-ui-03-webkit-iphone.mjs','utf8');
+ const area=readFileSync('tests/ci-opt-01-browser-smoke.mjs','utf8');
+ const canonical=readFileSync('tests/canonical-state-browser.mjs','utf8');
+ for(const s of ["await verifyCanonicalStateBrowser(browser,'webkit')","Object.keys(areaRoutes)","await runArea(browser,area,\"webkit\")","for(const route of pages)","timing.mark('cleanup-complete');timing.report()"])
+  assert.ok(entry.includes(s),'WebKit: '+s);
+ for(const s of ["for(const config of browserCases())","await verifyArea(page,area,config)","await verifyCompetitionCompactNetwork(browser,{engine})","await verifyCompetitionPlayerStats(browser,{engine})","await verifyCompetitionPublishedNetwork(browser,{engine})","await verifyClubBfcacheNetwork(browser,{engine})","timing.mark('pairwise-complete')","timing.sample('competition-published-network'","timing.report()"])
+  assert.ok(area.includes(s),'Area: '+s);
+ for(const s of ["for(const [i,path] of routes.entries())","for(const path of routes)","SH-03 '+engine+' PASS: '+checks","timing.mark('public-route-matrix-complete')","timing.mark('stale-world-invalidation-complete')","timing.report()"])
+  assert.ok(canonical.includes(s),'SH-03: '+s);
+});
