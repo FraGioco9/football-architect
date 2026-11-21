@@ -449,7 +449,7 @@ test('FIXTURES unresolved participants follow #732 rank/winner wording and use o
   'pending rows are rebuilt on language change without inferred results');
  const first=division.clubs[0];
  r.route.set({matchday:1});
- const leagueRow=rows().find(row=>row.dataset.fixtureMatch.includes(':'+first.clubId+':'));
+ const leagueRow=rows().find(row=>row.dataset.fixtureMatch.split(':').slice(1).some(id=>Number(id)===first.clubId));
  assert.ok(leagueRow,'known clubs remain on the league fixtures');
  const names=[...label(leagueRow,0).children,...label(leagueRow,2).children].map(n=>n.textContent);
  assert.ok(names.includes(first.compactName),'the official compactName is available for mobile');
