@@ -12,6 +12,7 @@ const stored={first_name:'Andrea',last_name:'Rossi',nationality:'ITA',secondary_
  secondary_positions:['DM'],attributes:attrs,development_aptitude:99,seed:'never-expose'};
 function mockDb(clubKey:string|null=null){
  const calls:{sql:string;params:unknown[]}[]=[];
+ let batches=0;
  const db={prepare(sql:string){
   const statement=(params:unknown[])=>({
    bind(...values:unknown[]){return statement(values)},
@@ -23,13 +24,16 @@ function mockDb(clubKey:string|null=null){
    },
    async all(){
     calls.push({sql,params});
+    if(sql.includes('COUNT(*)'))return {results:[{n:1}],meta:{changes:0}};
     return {results:[{id:42,payload_json:JSON.stringify(stored),club_key:clubKey}],meta:{changes:0}};
    },
    async run(){return {results:[],meta:{changes:0}}}
   });
   return statement([]);
- },async batch(){return []}} as unknown as Database;
- return {db,calls};
+ },async batch(statements:Array<{all:()=>Promise<unknown>}>){
+  batches++;return Promise.all(statements.map(statement=>statement.all()));
+ }} as unknown as Database;
+ return {db,calls,batches:()=>batches};
 }
 test('public page uses persisted numeric IDs, includes approved JSON and excludes internals',async()=>{
  const {db}=mockDb();
@@ -173,7 +177,7 @@ test('Players server-side sorting uses an allowlisted SQL expression with stable
  */
 function mockSizedDirectory(size:number,changeGeneration=false){
  const calls:{sql:string;params:unknown[]}[]=[];
- let worldReads=0;
+ let worldReads=0,batches=0;
  const statement=(sql:string,params:unknown[])=>({
   bind(...next:unknown[]){return statement(sql,next)},
   async first(){
@@ -189,22 +193,27 @@ function mockSizedDirectory(size:number,changeGeneration=false){
   },
   async all(){
    calls.push({sql,params});
+   if(sql.includes('COUNT(*)'))return {results:[{n:size}],meta:{changes:0}};
    const limit=Number(params[params.length-2]),offset=Number(params[params.length-1]);
    return {results:Array.from({length:Math.max(0,Math.min(limit,size-offset))},(_,i)=>({
     id:size-offset-i,payload_json:JSON.stringify(stored),club_key:null
-   }))};
+   })),meta:{changes:0}};
   },
   async run(){return {results:[],meta:{changes:0}}}
  });
- const db={prepare(sql:string){return statement(sql,[])},async batch(){return []}} as unknown as Database;
- return {db,calls};
+ const db={prepare(sql:string){return statement(sql,[])},
+  async batch(statements:Array<{all:()=>Promise<unknown>}>){
+   batches++;return Promise.all(statements.map(s=>s.all()));
+  }} as unknown as Database;
+ return {db,calls,batches:()=>batches};
 }
 
 test('#532 directory returns correct 0/1/50/51 cardinalities and page boundaries',async()=>{
  for(const count of [0,1,50,51]){
-  const {db,calls}=mockSizedDirectory(count);
+  const {db,calls,batches}=mockSizedDirectory(count);
   const first=await readPublicPlayers(db,1);
   const second=await readPublicPlayers(db,2);
+  assert.equal(batches(),1,'first page count and data share one D1 batch; later pages stay sequential');
   assert.equal(first.count,count);
   assert.equal(first.page,1);
   assert.equal(first.pageSize,50);
@@ -227,4 +236,32 @@ test('#532 directory rejects a world-generation transition between count and rea
  const {db,calls}=mockSizedDirectory(51,true);
  await assert.rejects(readPublicPlayers(db,1),/stale_world/);
  assert.equal(calls.filter(call=>call.sql.includes('FROM world_state')).length,2);
+});
+
+
+test('#734 Players first page batches COUNT and rows while preserving before/after world reads',async()=>{
+ const {db,calls,batches}=mockDb('IT-1');
+ const result=await readPublicPlayers(db,1);
+ assert.equal(batches(),1);
+ assert.equal(result.count,1);assert.equal(result.players.length,1);
+ assert.equal(result.players[0].clubKey,'IT-1');
+ assert.deepEqual(calls.map(x=>x.sql.includes('FROM world_state')?'world':
+  x.sql.includes('COUNT(*)')?'count':'page'),['world','count','page','world']);
+});
+
+test('#734 Players paginated reads still recount and skip expired pages',async()=>{
+ const {db,calls,batches}=mockSizedDirectory(51);
+ const second=await readPublicPlayers(db,2);
+ assert.equal(batches(),0);
+ assert.equal(second.count,51);assert.deepEqual(second.players.map(p=>p.id),[1]);
+ const expired=await readPublicPlayers(db,3);
+ assert.equal(expired.count,51);assert.deepEqual(expired.players,[]);
+ assert.equal(calls.filter(x=>x.sql.includes('COUNT(*)')).length,2);
+ assert.equal(calls.filter(x=>x.sql.includes('LIMIT ? OFFSET ?')).length,1);
+});
+
+test('#734 Players malformed D1 batch results never publish a false empty directory',async()=>{
+ const {db}=mockDb();
+ db.batch=async()=>[{results:[]},{results:[]}];
+ await assert.rejects(readPublicPlayers(db,1),/players_unavailable/);
 });
