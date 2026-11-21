@@ -10,13 +10,13 @@ const competitions=countries.flatMap(c=>[1,2].map(n=>matchPublicContext({competi
 const {clubs,clubCrests}=publicClubIdentityCatalog();
 const teams=new Map(clubs.map(c=>[c.countryId+'-'+c.clubId,c]));
 const vocabulary={
- en:'Matches|Season|Sporting day|Current day|Country|Competition|Search team|All|International|England|Previous day|Next day|No matches on this day.|No matching fixtures.|Fixtures have not been published.|Publication in progress.|The world has not started.|Matches unavailable.|Retry|Scheduled|To be confirmed|Rank|Winner|Round|Leg|Neutral venue|League|Playoffs|Playout|Quarter-finals|Semi-finals|Final|Loading matches',
- it:'Partite|Stagione|Giorno sportivo|Giorno corrente|Paese|Competizione|Cerca squadra|Tutti|Internazionale|Inghilterra|Giorno precedente|Giorno successivo|Nessuna partita in questo giorno.|Nessuna partita corrispondente.|Incontri non ancora pubblicati.|Pubblicazione in corso.|Il mondo non è ancora iniziato.|Partite non disponibili.|Riprova|In programma|Da definire|Posizione|Vincente|Turno|Gara|Campo neutro|Campionato|Playoff|Playout|Quarti di finale|Semifinali|Finale|Caricamento partite',
- de:'Spiele|Saison|Spieltag|Aktueller Tag|Land|Wettbewerb|Team suchen|Alle|International|England|Vorheriger Tag|Nächster Tag|Keine Spiele an diesem Tag.|Keine passenden Spiele.|Spiele noch nicht veröffentlicht.|Veröffentlichung läuft.|Die Saison hat noch nicht begonnen.|Spiele nicht verfügbar.|Erneut versuchen|Angesetzt|Noch offen|Rang|Sieger|Runde|Spiel|Neutraler Platz|Liga|Playoffs|Playout|Viertelfinale|Halbfinale|Finale|Spiele werden geladen',
- es:'Partidos|Temporada|Día deportivo|Día actual|País|Competición|Buscar equipo|Todos|Internacional|Inglaterra|Día anterior|Día siguiente|No hay partidos este día.|Ningún partido coincide.|Partidos aún sin publicar.|Publicación en curso.|El mundo aún no ha comenzado.|Partidos no disponibles.|Reintentar|Programado|Por confirmar|Puesto|Ganador|Ronda|Partido|Campo neutral|Liga|Playoffs|Permanencia|Cuartos de final|Semifinales|Final|Cargando partidos',
- fr:'Matchs|Saison|Journée sportive|Jour actuel|Pays|Compétition|Rechercher une équipe|Tous|International|Angleterre|Jour précédent|Jour suivant|Aucun match ce jour.|Aucun match correspondant.|Matchs pas encore publiés.|Publication en cours.|Le monde n’a pas encore démarré.|Matchs indisponibles.|Réessayer|Programmé|À déterminer|Rang|Vainqueur|Tour|Manche|Terrain neutre|Championnat|Barrages|Maintien|Quarts de finale|Demi-finales|Finale|Chargement des matchs'
+ en:'Matches|Season|Sporting day|Current day|Country|Competition|Search team|All|International|England|Previous day|Next day|No matches on this day.|No matching fixtures.|Fixtures have not been published.|Publication in progress.|The world has not started.|Matches unavailable.|Retry|Scheduled|To be confirmed|Rank|Winner|Round|Leg|Neutral venue|League|Playoffs|Playout|Quarter-finals|Semi-finals|Final|Loading matches|Winner of playoff|Winner',
+ it:'Partite|Stagione|Giorno sportivo|Giorno corrente|Paese|Competizione|Cerca squadra|Tutti|Internazionale|Inghilterra|Giorno precedente|Giorno successivo|Nessuna partita in questo giorno.|Nessuna partita corrispondente.|Incontri non ancora pubblicati.|Pubblicazione in corso.|Il mondo non è ancora iniziato.|Partite non disponibili.|Riprova|In programma|Da definire|Posizione|Vincente|Turno|Gara|Campo neutro|Campionato|Playoff|Playout|Quarti di finale|Semifinali|Finale|Caricamento partite|Vincente playoff|Vincente',
+ de:'Spiele|Saison|Spieltag|Aktueller Tag|Land|Wettbewerb|Team suchen|Alle|International|England|Vorheriger Tag|Nächster Tag|Keine Spiele an diesem Tag.|Keine passenden Spiele.|Spiele noch nicht veröffentlicht.|Veröffentlichung läuft.|Die Saison hat noch nicht begonnen.|Spiele nicht verfügbar.|Erneut versuchen|Angesetzt|Noch offen|Rang|Sieger|Runde|Spiel|Neutraler Platz|Liga|Playoffs|Playout|Viertelfinale|Halbfinale|Finale|Spiele werden geladen|Sieger aus Playoff|Sieger',
+ es:'Partidos|Temporada|Día deportivo|Día actual|País|Competición|Buscar equipo|Todos|Internacional|Inglaterra|Día anterior|Día siguiente|No hay partidos este día.|Ningún partido coincide.|Partidos aún sin publicar.|Publicación en curso.|El mundo aún no ha comenzado.|Partidos no disponibles.|Reintentar|Programado|Por confirmar|Puesto|Ganador|Ronda|Partido|Campo neutral|Liga|Playoffs|Permanencia|Cuartos de final|Semifinales|Final|Cargando partidos|Ganador del playoff|Ganador',
+ fr:'Matchs|Saison|Journée sportive|Jour actuel|Pays|Compétition|Rechercher une équipe|Tous|International|Angleterre|Jour précédent|Jour suivant|Aucun match ce jour.|Aucun match correspondant.|Matchs pas encore publiés.|Publication en cours.|Le monde n’a pas encore démarré.|Matchs indisponibles.|Réessayer|Programmé|À déterminer|Rang|Vainqueur|Tour|Manche|Terrain neutre|Championnat|Barrages|Maintien|Quarts de finale|Demi-finales|Finale|Chargement des matchs|Vainqueur du barrage|Vainqueur'
 };
-const keys='title season day current country competition search all international england prev next empty filtered unpublished partial zero unavailable retry scheduled tbd rank winner round leg neutral league playoffs playout quarterfinals semifinals final loading'.split(' ');
+const keys='title season day current country competition search all international england prev next empty filtered unpublished partial zero unavailable retry scheduled tbd rank winner round leg neutral league playoffs playout quarterfinals semifinals final loading playoffWinner playoffSlot'.split(' ');
 let words,locale,world=null,rows=[],state='loading',epoch=0,loaded='',pending='';
 let dayCache=new Map(),cacheWorld=null;
 const skeleton=el('list').innerHTML;
@@ -92,31 +92,46 @@ function updateURL(changes,replace=false){
  if(href!==location.pathname+location.search)history[replace?'replaceState':'pushState'](null,'',href);
  refresh();
 }
-function participant(id,ref,home=false){
+const playoffRankPairs={p512:[5,12],p611:[6,11],p710:[7,10],p89:[8,9]};
+function participantNames(id,ref){
  const c=teams.get(id);
- const name=c?.primaryName??(ref?.kind==='leagueRank'?words.rank+' '+ref.rank:ref?.kind==='tieWinner'?words.winner+' '+ref.tieId:words.tbd);
+ if(c)return {name:c.primaryName,compact:c.compactName};
+ if(ref?.kind==='leagueRank')return {name:words.rank+' '+ref.rank};
+ if(ref?.kind==='tieWinner'){
+  const ranks=playoffRankPairs[String(ref.tieId??'').toLowerCase()];
+  if(ranks)return {name:words.playoffWinner+' '+ranks.join(' vs '),compact:words.playoffSlot+' '+ranks.join('–')};
+  return {name:words.winner+' '+ref.tieId};
+ }
+ return {name:words.tbd};
+}
+function participant(id,ref,home=false){
+ const c=teams.get(id),{name,compact}=participantNames(id,ref);
  const side=node('span',null,'md-team');
  const crest=logo(clubCrests[id]);
- const label=c?link('/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview',null):node('span',name);
- label.className='md-team-label';label.title=name;
- if(c){
-  label.setAttribute('aria-label',name);
-  label.append(node('span',name,'md-team-name-full'),node('span',c.compactName||name,'md-team-name-compact'));
- }
+ const label=c?link('/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview',null):node('span');
+ label.className='md-team-label';
+ label.setAttribute('aria-label',name);
+ if(compact)label.append(node('span',name,'md-team-name-full'),node('span',compact,'md-team-name-compact'));
+ else label.textContent=name;
  if(home)side.append(label,crest);else side.append(crest,label);
  return side;
 }
 function fixture(f){
  const row=node('div',null,'md-row'),href='/matches/'+f.matchId;
  const r=f.result;
+ // Bracket A/B is not a home/away ordering: the lower seed hosts leg 1,
+ // while the higher seed hosts leg 2. Resolved club IDs are already authoritative.
+ const unresolvedTwoLegFirst=f.leg===1&&!f.neutral&&f.tieId&&f.tieId!=='final'&&!f.homeClubId&&!f.awayClubId;
+ const homeRef=unresolvedTwoLegFirst?f.participantB:f.participantA;
+ const awayRef=unresolvedTwoLegFirst?f.participantA:f.participantB;
  const score=link(href,r?r.homeGoals+' – '+r.awayGoals:'—');
  score.className='md-score';
- score.setAttribute('aria-label',[teams.get(f.homeClubId)?.primaryName??words.tbd,score.textContent,teams.get(f.awayClubId)?.primaryName??words.tbd].join(' '));
- row.append(participant(f.homeClubId,f.participantA,true),score,participant(f.awayClubId,f.participantB));
+ score.setAttribute('aria-label',[participantNames(f.homeClubId,homeRef).name,score.textContent,participantNames(f.awayClubId,awayRef).name].join(' '));
+ row.append(participant(f.homeClubId,homeRef,true),score,participant(f.awayClubId,awayRef));
  const info=[
   r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',f.status==='awaiting_participants'?words.tbd:'',f.neutral?words.neutral:f.venue];
  const detail=info.filter(Boolean).join(' · ');
- const metadata=node('small',detail);metadata.title=detail;row.append(metadata);
+ const metadata=node('small',detail);row.append(metadata);
  row.addEventListener('click',event=>{if(!event.target.closest('a')&&!window.getSelection()?.toString())location.assign(score.href)});
  return row;
 }
@@ -162,8 +177,10 @@ function render(){
   for(const {round,leg,fixtures} of rounds.values()){
    const group=node('section'),heading=node('h2');
    const href='/competitions/'+c.id.toLowerCase()+'/fixtures?season='+s.season+'&matchday='+encodeURIComponent(round);
-   const caption=(fixtures[0].phaseId==='league'?words.round+' '+round:words[round]??round)+(leg!=null?' · '+words.leg+' '+leg:'');
-   heading.append(competitionLogo(c,headingIndex++),link(href,c.name),node('small',caption));
+   const caption=fixtures[0].phaseId==='league'?words.round+' '+round:words[round]??round;
+   const phaseLabel=node('small',caption);
+   if(leg!=null)phaseLabel.append(node('span',' · '+words.leg+' '+leg,'md-leg'));
+   heading.append(competitionLogo(c,headingIndex++),link(href,c.name),phaseLabel);
    group.append(heading,...fixtures.map(fixture));list.append(group);
   }
  }
@@ -219,7 +236,8 @@ async function refresh(){
 async function start(){
  const ticket=++epoch;world=null;pending=loaded='';state='loading';render();
  try{
-  // Share the shell's canonical world read instead of a second GET.
+  // Share the shell's canonical world GET in authoritative mode.
+  // Preserve the Debug fallback until its separate API audit.
   const snapshot=window.faWorldState?.get?.();
   const nextWorld=snapshot?.source==='dev'
    ?(await get('/api/world')).world
