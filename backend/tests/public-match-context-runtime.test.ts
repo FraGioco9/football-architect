@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {test} from 'vitest';
 import {compactPublicMatchContext} from '../src/public-match-context.ts';
+import worker from '../src/index.ts';
+import type {Env} from '../src/index.ts';
 
 const world={generation:'550e8400-e29b-41d4-a716-446655440000',
  revision:9,seasonNumber:1,day:12,phase:'active'};
@@ -34,10 +36,10 @@ test('match context uses one scope and sends only two clubs last five VERIFIED p
  const result=compactPublicMatchContext(sporting,published,matchId,season,comp);
  assert.equal(result.matchId,matchId);
  assert.equal(result.day,13);
- assert.deepEqual(result.projection.data.standings.rows.map(r=>r.clubId),['IT-1','IT-2']);
+ assert.deepEqual(result.projection.data.standings.rows.map((r:Record<string,unknown>)=>r.clubId),['IT-1','IT-2']);
  assert.equal(result.projection.data.fixtures.length,10);
  assert.equal(result.published?.fixtures.length,10);
- assert.ok(result.projection.data.fixtures.every(f=>f.day<13));
+ assert.ok(result.projection.data.fixtures.every(f=>Number(f.day)<13));
  assert.ok(result.projection.data.fixtures.every(f=>f.result.homeGoals!==99));
  assert.equal(new Set(result.projection.data.fixtures.map(f=>f.id)).size,10);
  assert.ok(JSON.stringify(result).length<JSON.stringify({sporting,published}).length,
@@ -69,5 +71,21 @@ test('historical or early results never expose future score from a later day',()
  sporting.data.fixtures.push(fixture(19,12,'IT-1','IT-2',null));
  const result=compactPublicMatchContext(sporting,published,matchId,season,comp);
  assert.equal(result.projection.data.fixtures.length,10);
- assert.ok(result.projection.data.fixtures.every(f=>f.result.homeGoals<99));
+ assert.ok(result.projection.data.fixtures.every(f=>Number(f.result.homeGoals)<99));
+});
+
+test('compact Match Context HTTP contract rejects invalid query shape and write methods',async()=>{
+ const env={DB:{prepare:()=>({first:async()=>null})}} as unknown as Env;
+ const url=(path:string)=>'https://example.invalid'+path;
+ for(const query of [
+  '', '?season=1', '?season=1&competition=IT-1&unexpected=1',
+  '?season=0&competition=IT-1', '?season=1&competition=IT-3',
+  '?season=1&season=2&competition=IT-1',
+  '?season=1&competition=IT-1&competition=IT-2'
+ ]){
+  const response=await worker.fetch(new Request(url('/api/matches/123/context'+query)),env);
+  assert.equal(response.status,422,query);
+ }
+ const denied=await worker.fetch(new Request(url('/api/matches/123/context?season=1&competition=IT-1'),{method:'POST'}),env);
+ assert.equal(denied.status,405);
 });

@@ -21,7 +21,8 @@ const competitionIdPattern=/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/;
 export function compactPublicMatchContext(
  sporting:unknown,published:unknown,matchId:string,season:number,competitionId:string
 ){
- if(!object(sporting)||!object(published)||sporting.schemaVersion!==1||
+ if(!object(sporting)||!object(published))invalid();
+ if(sporting.schemaVersion!==1||
    sporting.providerId!=='authoritative-world'||sporting.competitionId!==competitionId||
    sporting.selectedSeason!==season||!['partial','available'].includes(String(sporting.status))||
    !object(sporting.provenance)||sporting.provenance.kind!=='authoritative'||
