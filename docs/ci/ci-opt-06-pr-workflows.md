@@ -155,3 +155,25 @@ as evidence only. A regression test keeps intentionally unresolved
 `/api/world` and `/api/competitions/...` requests in flight while
 expecting the catalogue gate to pass, while an unfinished compact response
 still fails closed. No API inventory assertions were removed.
+
+## CI-OPT-06 follow-up — bounded INT24 cup matrix concurrency (2026-11-21)
+
+The exact-head green baseline `e89e0942` gives 53.146s for the
+combined Competition/History matrix and 106.965s for all 407 INT24
+checks/52 screenshots. The two international cups (Sovereign and
+Federation) have fully separate Playwright pages/contexts, source fixtures,
+URLs and artifact filenames; within each cup the **four widths and seven
+views stay serial**, retaining real cold-document navigation and all
+original assertions. The two cups may therefore run at the same time,
+with a hard concurrency cap of **two**, while both results are awaited.
+The code reports `INT24_MATRIX` per cup/width timing and elapsed matrix
+time for benchmark comparison; the existing `INT24_PHASE` aggregate remains
+unchanged for meaningful comparisons. Five Node contracts verify all
+8 cup-width visits, intra-cup ordering, a strict 2-cup limit, and both
+single and simultaneous failures. No screenshot, browser, language, locale,
+view, assertion, source payload, or required CI check is skipped.
+
+This is a controlled experiment: compare real exact-head Browser time and
+run stability with `e89e0942`; revert if Chromium resource contention
+outweighs savings. Maintain Draft/HOLD; no merge, deploy, manual dispatch
+or remote database changes.

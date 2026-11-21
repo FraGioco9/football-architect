@@ -7,6 +7,7 @@ import {chromium} from "playwright";
 import {verifyFe04AccessibilityBrowser} from "./fe-04-accessibility-browser.mjs";
 import {verifyPlayersScrollBrowser} from './players-scroll-browser-532.mjs';
 import {verifyCompetitionCompactNetwork} from './competition-compact-network-browser.mjs';
+import {runIndependentCupMatrix} from '../tools/ci-opt-06-cup-matrix.mjs';
 import {mkdirSync} from "node:fs";
 import assert from "node:assert/strict";
 import {performance} from "node:perf_hooks";
@@ -731,7 +732,12 @@ try {
    'First-paint connections match exactly the same-row round pairs at '+width+'px');
  }
  await firstPaint.close();
- for(const cup of cups)for(const width of widths){
+ // Each cup has its own isolated Playwright page/context and distinct artifacts.
+ // Keep widths and the seven direct routes serial *inside* each cup; allow
+ // at most two independent cups in flight to shorten this FULL critical path.
+ const matrixStarted=performance.now();
+ await runIndependentCupMatrix(cups,widths,async(cup,width)=>{
+  const cupWidthStarted=performance.now();
   const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
   const errors=[];
   page.on("pageerror",e=>errors.push(e.message));
@@ -971,7 +977,9 @@ try {
   checks++;
   assert.deepEqual(errors,[],"JS errors "+cup+" "+width);
   await page.close();
- }
+  console.log('INT24_MATRIX|'+JSON.stringify({cup,width,elapsedMs:Math.round(performance.now()-cupWidthStarted)}));
+ });
+ console.log('INT24_MATRIX|'+JSON.stringify({phase:'all-cup-widths',elapsedMs:Math.round(performance.now()-matrixStarted)}));
  // Season 0 is a DEV-only inactive state shared by cups, domestic divisions,
  // Calendar and Club; it never creates a simulated season 0.
  const page=await browser.newPage({viewport:{width:390,height:900}});
