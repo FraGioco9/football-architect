@@ -97,7 +97,7 @@ function participantNames(id,ref){
  if(c)return {name:c.primaryName,compact:c.compactName};
  if(ref?.kind==='leagueRank')return {name:words.rank+' '+ref.rank};
  if(ref?.kind==='tieWinner'){
-  const playoff=/^P(\\d+)$/i.exec(String(ref.tieId??''));
+  const playoff=/^P([0-9]+)$/i.exec(String(ref.tieId??''));
   if(playoff)return {name:words.playoffWinner+' '+playoff[1],compact:words.playoffSlot+' '+playoff[1]};
   return {name:words.winner+' '+ref.tieId};
  }
