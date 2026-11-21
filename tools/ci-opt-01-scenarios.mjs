@@ -21,5 +21,11 @@ for(const [area,path] of Object.entries(paths)){
    {stdio:'inherit',env:{...process.env,FA_BROWSER_ENGINE:'webkit'}});
   if(webkit.error||webkit.status!==0)throw Error('Club BFCache WebKit HTTP evidence failed');
  }
+ // One bounded WebKit competition HTTP probe, not a second 20-case matrix.
+ if(!process.argv.includes('--node')&&area==='competitions'){
+  const webkit=spawnSync(process.execPath,['tests/competition-published-734-browser.mjs'],
+   {stdio:'inherit',env:{...process.env,FA_BROWSER_ENGINE:'webkit'}});
+  if(webkit.error||webkit.status!==0)throw Error('Competition published-ID WebKit evidence failed');
+ }
  console.log('CI-OPT-01 scenario '+area+' '+JSON.stringify({kind:process.argv.includes('--node')?'node':'browser',milliseconds:Math.round(performance.now()-start),files:selected.tests.length}));
 }

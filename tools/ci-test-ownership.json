@@ -216,6 +216,7 @@
     "tests/club-roster.test.mjs": "site-node",
     "tests/club-season-memberships.test.mjs": "site-node",
     "tests/competition-compact-network-browser.mjs": "support",
+    "tests/competition-published-734-browser.mjs": "support",
     "tests/competition-content-state.test.mjs": "site-node",
     "tests/competition-fixtures.test.mjs": "site-node",
     "tests/competition-history.test.mjs": "site-node",
