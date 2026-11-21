@@ -15,7 +15,7 @@ data/clubs-registry.csv text eol=lf
 # Inline flag markup must be deterministic across Windows and Unix checkouts.
 assets/flags/*.svg text eol=lf
 # Approved SVG integrity is computed over original bytes; never convert them.
-assets/divisions/**/*.svg -text
+assets/competitions/**/*.svg -text
 # Preserve uploaded club crest artwork bytes on every platform.
 assets/clubs/**/*.svg -text
 

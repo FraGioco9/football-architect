@@ -116,7 +116,7 @@
    board.dataset.scoreboardTheme=theme.kind;
   }
   const slot=find('[data-match-competition-logo]');if(!slot)return;
-  // Brand assets are already published at assets/divisions/<slug>/compact.svg.
+  // Brand assets are keyed by immutable public competition IDs.
   // Do not request an unapproved path or show an unrelated Football Architect logo.
   const intended=theme.logoAsset?'/'+theme.logoAsset:'';
   if(slot.dataset.matchLogoPath===intended)return;

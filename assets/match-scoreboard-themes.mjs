@@ -4,26 +4,27 @@
  * Brand colours are never sourced from club kits or match payloads.
  * Logo assets are opt-in: do not add a path until its approved SVG exists.
  */
+import {competitionLogoUrl} from './public-image-urls.mjs';
 export const scoreboardThemes=Object.freeze({
- 'BR-1':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/br-1-liga-das-associacoes/compact.svg'},
- 'BR-2':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/br-2-liga-das-regioes/compact.svg'},
- 'DE-1':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/de-1-meisterliga/compact.svg'},
- 'DE-2':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/de-2-vereinsliga/compact.svg'},
- 'ENG-1':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/eng-1-crown-league/compact.svg'},
- 'ENG-2':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/eng-2-shield-league/compact.svg'},
- 'ES-1':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/es-1-liga-de-la-union/compact.svg'},
- 'ES-2':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/es-2-liga-de-las-regiones/compact.svg'},
- 'FR-1':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/fr-1-ligue-des-societes/compact.svg'},
- 'FR-2':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/fr-2-ligue-des-regions/compact.svg'},
- 'IT-1':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/it-1-lega-federale/compact.svg'},
- 'IT-2':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/it-2-lega-delle-citta/compact.svg'},
- 'NL-1':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/nl-1-oranjeliga/compact.svg'},
- 'NL-2':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/nl-2-bondsklasse/compact.svg'},
- 'PT-1':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/pt-1-liga-lusitana/compact.svg'},
- 'PT-2':{surface:'primary',ink:'ivory',accent:'secondary',logoAsset:'assets/divisions/pt-2-liga-atlantica/compact.svg'},
+ 'BR-1':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'BR-2':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'DE-1':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'DE-2':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'ENG-1':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'ENG-2':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'ES-1':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'ES-2':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'FR-1':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'FR-2':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'IT-1':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'IT-2':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'NL-1':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'NL-2':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'PT-1':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
+ 'PT-2':{surface:'primary',ink:'ivory',accent:'secondary',logoVariant:'compact'},
  // No dedicated approved international palette/logo assets yet.
- 'int-1':{surface:'neutral',ink:'ivory',accent:'ivory',logoAsset:null},
- 'int-2':{surface:'neutral',ink:'ivory',accent:'ivory',logoAsset:null}
+ 'int-1':{surface:'neutral',ink:'ivory',accent:'ivory',logoVariant:null},
+ 'int-2':{surface:'neutral',ink:'ivory',accent:'ivory',logoVariant:null}
 });
 const approvedPrimary=Object.freeze({
  'BR-1':'#225B4C','BR-2':'#4B7651',
@@ -34,25 +35,6 @@ const approvedPrimary=Object.freeze({
  'IT-1':'#155F50','IT-2':'#41746A',
  'NL-1':'#8B5129','NL-2':'#88683C',
  'PT-1':'#745064','PT-2':'#675F7D'
-});
-// Canonical, already-published and integrity-verified DIV-ASSET compact/primary SVGs.
-const approvedDivisionSlugs=Object.freeze({
- 'BR-1':'br-1-liga-das-associacoes',
- 'BR-2':'br-2-liga-das-regioes',
- 'DE-1':'de-1-meisterliga',
- 'DE-2':'de-2-vereinsliga',
- 'ENG-1':'eng-1-crown-league',
- 'ENG-2':'eng-2-shield-league',
- 'ES-1':'es-1-liga-de-la-union',
- 'ES-2':'es-2-liga-de-las-regiones',
- 'FR-1':'fr-1-ligue-des-societes',
- 'FR-2':'fr-2-ligue-des-regions',
- 'IT-1':'it-1-lega-federale',
- 'IT-2':'it-2-lega-delle-citta',
- 'NL-1':'nl-1-oranjeliga',
- 'NL-2':'nl-2-bondsklasse',
- 'PT-1':'pt-1-liga-lusitana',
- 'PT-2':'pt-2-liga-atlantica'
 });
 const validHex=/^#[0-9A-F]{6}$/;
 const neutral=Object.freeze({backgroundHex:'#243039',foregroundHex:'#F5F1E8',accentHex:'#F5F1E8',logoAsset:null,kind:'neutral'});
@@ -82,11 +64,9 @@ export function resolveScoreboardTheme(competition){
  if(!backgroundHex||!foregroundHex||!accentHex||contrastRatio(backgroundHex,foregroundHex)<4.5)return neutral;
  // The logo must match one of the two published, integrity-verified SVGs
  // for this exact division. Configured compact by default for small scoreboards.
- const slug=approvedDivisionSlugs[competition.id];
- const approvedBase=slug?'assets/divisions/'+slug+'/':null;
- const logoAsset=approvedBase&&
-  (choice.logoAsset===approvedBase+'compact.svg'||choice.logoAsset===approvedBase+'primary.svg')
-  ?choice.logoAsset:null;
+ const url=choice.logoVariant==='compact'||choice.logoVariant==='primary'
+  ?competitionLogoUrl(competition.id,choice.logoVariant):null;
+ const logoAsset=url?url.slice(1):null;
  return {backgroundHex,foregroundHex,accentHex,logoAsset,kind:'competition'};
 }
 

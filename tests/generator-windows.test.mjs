@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const git=(cwd,...args)=>execFileSync('git',args,{cwd,encoding:'utf8',stdio:['ignore','pipe','pipe']});
 
-const generatorFixturePaths=['404.html','backend/catalogues','clubs','tools','data','account','admin','dashboard','calendar','settings','competitions','players','matches','templates','assets/flags','assets/divisions','assets/clubs','assets/matches-ball.svg','assets/world-catalog.mjs','assets/sporting-contract.js','assets/routes-registry.mjs','assets/routes-registry.js','assets/rules-registry.js','assets/club-fixtures.js','assets/club-model.js','assets/club-records.js','assets/competition-model.js','assets/competition-rules.js','assets/competition-rules-view.js','assets/competition-stats.js','assets/world-calendar-model.js','assets/sidebar-evolution.js','assets/sidebar-first-paint.js','assets/match-public-context.mjs'];
+const generatorFixturePaths=['404.html','backend/catalogues','clubs','tools','data','account','admin','dashboard','calendar','settings','competitions','players','matches','templates','assets/flags','assets/competitions','assets/clubs','assets/public-image-urls.mjs','assets/matches-ball.svg','assets/world-catalog.mjs','assets/sporting-contract.js','assets/routes-registry.mjs','assets/routes-registry.js','assets/rules-registry.js','assets/club-fixtures.js','assets/club-model.js','assets/club-records.js','assets/competition-model.js','assets/competition-rules.js','assets/competition-rules-view.js','assets/competition-stats.js','assets/world-calendar-model.js','assets/sidebar-evolution.js','assets/sidebar-first-paint.js','assets/match-public-context.mjs'];
 function copyGeneratorFixture(fixture){
  for(const path of generatorFixturePaths){
   const destination=join(fixture,path);mkdirSync(join(destination,'..'),{recursive:true});
@@ -35,7 +35,7 @@ test('Windows Git checkout preserves approved SVG bytes and canonical LF flags',
  const fixture=mkdtempSync(join(tmpdir(),'fa-windows-checkout-'));
  try{
   const source=join(fixture,'source'),checkout=join(fixture,'checkout');mkdirSync(source);
-  for(const path of ['.gitattributes','assets/flags/gb-eng.svg','assets/divisions']){
+  for(const path of ['.gitattributes','assets/flags/gb-eng.svg','assets/competitions']){
    const destination=join(source,path);mkdirSync(join(destination,'..'),{recursive:true});
    cpSync(join(root,path),destination,{recursive:true});
   }
@@ -45,9 +45,9 @@ test('Windows Git checkout preserves approved SVG bytes and canonical LF flags',
   const flag='assets/flags/gb-eng.svg';
   const flagBytes=Buffer.from(readFileSync(join(root,flag),'utf8').replace(/\r\n/g,'\n'));
   assert.deepEqual(readFileSync(join(checkout,flag)),flagBytes,'Flags must retain LF on checkout');
-  for(const division of readdirSync(join(root,'assets/divisions'))){
+  for(const division of readdirSync(join(root,'assets/competitions'))){
    for(const variant of ['primary.svg','compact.svg']){
-    const path=join('assets/divisions',division,variant);
+    const path=join('assets/competitions',division,variant);
     assert.deepEqual(readFileSync(join(checkout,path)),readFileSync(join(root,path)),'Approved artwork bytes: '+path);
    }
   }

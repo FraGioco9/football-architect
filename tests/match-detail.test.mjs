@@ -118,12 +118,12 @@ test('#577 every competition has an explicit theme and only approved HEX roles a
   assert.match(theme.accentHex,/^#[0-9A-F]{6}$/);
   if(competition.category==='international'){
    assert.equal(theme.kind,'neutral','No dedicated international colour approved yet');
-   assert.equal(config.logoAsset,null,'International cup logo not yet published');
+   assert.equal(config.logoVariant,null,'International cup logo not yet published');
    assert.equal(theme.logoAsset,null);
   }else{
    const allowed=[competition.primaryHex,competition.secondaryHex,competition.ivoryHex];
-   assert.equal(theme.logoAsset,config.logoAsset,competition.id);
-   assert.match(theme.logoAsset,/^assets\/divisions\/[a-z0-9-]+\/compact\.svg$/);
+   assert.equal(theme.logoAsset,'assets/competitions/'+competition.id+'/compact.svg',competition.id);
+   assert.match(theme.logoAsset,/^assets\/competitions\/(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]\/compact\.svg$/);
    assert.equal(isAllowlistedPublicPath(theme.logoAsset),true);
    assert.equal(theme.kind,'competition',competition.id);
    for(const field of ['backgroundHex','foregroundHex','accentHex'])
@@ -149,7 +149,7 @@ test('#577 refuses arbitrary palette entries or fake logos',()=>{
   'A valid-looking but unapproved HEX must be rejected');
  assert.equal(resolveScoreboardTheme({...sample,primaryHex:'orange'}).kind,'neutral');
  assert.equal(resolveScoreboardTheme({...sample,ivoryHex:'var(--unsafe)'}).kind,'neutral');
- assert.equal(resolveScoreboardTheme(sample).logoAsset,'assets/divisions/it-1-lega-federale/compact.svg');
+ assert.equal(resolveScoreboardTheme(sample).logoAsset,'assets/competitions/IT-1/compact.svg');
 });
 test('#650 Match Detail renders only frozen verified XI test ratings with reserved first paint',()=>{
  const js=read('assets/match-detail.js'),css=read('assets/match-detail.css');

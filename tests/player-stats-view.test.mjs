@@ -4,7 +4,7 @@ import {statsWords,formatApps,formatRating,createPlayerStatsView,aggregateVerifi
 import {renderPlayerDetailPage} from '../tools/render-player-detail.mjs';
 import {readFileSync,existsSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-test('#724 resolves every published domestic division logo from canonical registry names',()=>{
+test('#733 resolves every published domestic division logo from immutable competition IDs',()=>{
  const divisions=JSON.parse(read('data/divisions.json'));
  assert.equal(divisions.length,16);
  for(const division of divisions){
@@ -12,7 +12,8 @@ test('#724 resolves every published domestic division logo from canonical regist
   assert.ok(logo&&existsSync(new URL('..'+logo,import.meta.url)),division.id+' must have a published compact SVG');
  }
  assert.equal(competitionDivisionLogoPath('int-1','Sovereign Cup'),null);
- assert.equal(competitionDivisionLogoPath('IT-1',''),null);
+ assert.equal(competitionDivisionLogoPath('IT-1',''),'/assets/competitions/IT-1/compact.svg');
+ assert.equal(competitionDivisionLogoPath('IT-1','Wrong Name'),'/assets/competitions/IT-1/compact.svg');
  assert.equal(competitionDivisionLogoPath('../bad','Lega Federale'),null);
 });
 test('#578 public Player Detail has an active Stats tab, with identical canonical generated output',()=>{
