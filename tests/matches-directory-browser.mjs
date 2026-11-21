@@ -190,8 +190,8 @@ export async function verifyMatchesDirectory(browser){
   }));
   assert.deepEqual(deepLinks,[
    ['/competitions/it-1/fixtures','1','2'],
-   ['/competitions/it-1/fixtures','1','playoffs'],
-   ['/competitions/it-1/fixtures','1','playoffs'],
+   ['/competitions/it-2/fixtures','1','playoffs'],
+   ['/competitions/it-2/fixtures','1','playoffs'],
    ['/competitions/it-2/fixtures','1','playoffs'],
    ['/competitions/int-1/fixtures','1','quarterfinals'],
    ['/competitions/int-1/fixtures','1','quarterfinals'],

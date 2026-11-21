@@ -182,7 +182,8 @@ function render(){
   for(const f of filtered){
    const round=fixtureMatchday(f);
    const leg=f.leg??null;
-   const key=JSON.stringify([round,leg]);
+   // Distinguish playoff semifinals and finals with the same public label/leg.
+   const key=JSON.stringify([round,leg,f.round]);
    if(!rounds.has(key))rounds.set(key,{round,leg,fixtures:[]});
    rounds.get(key).fixtures.push(f);
   }
