@@ -201,6 +201,9 @@ export async function verifyMatchesDirectory(browser){
   assert.deepEqual((await fixtureSides('26')).names,['Winner of quarter-final 2','Winner of quarter-final 1'],'first leg uses expected home-away placeholder order');
   assert.deepEqual((await fixtureSides('27')).names,['Winner of quarter-final 3','Winner of quarter-final 4'],'second leg retains expected home-away placeholder order');
   assert.deepEqual((await fixtureSides('28')).names,['Winner of semifinal 1','Winner of semifinal 2'],'international final has readable semifinal winners');
+  const fixtureDetail=async id=>page.locator('#md-list .md-row:has(a.md-score[href="/matches/'+id+'"]) small').innerText();
+  assert.equal(await fixtureDetail('28'),'Neutral venue','neutral final does not redundantly show To be confirmed');
+  assert.equal(await fixtureDetail('25'),'To be confirmed','unresolved non-neutral final still shows participant status');
   assert(!/playoff (89|512|611|710)\b/i.test(await page.locator('#md-list').innerText()),'never display encoded tie IDs');
   assert(!/\b(?:p512|p611|p710|p89|q[1-4]|s[1-2]|semi36|semi45)\b/i.test(await page.locator('#md-list').innerText()),'all bracket IDs are presentation-only and never shown');
   assert.equal(await page.locator('#md-list [title]').count(),0,'no tooltips on unresolved participants or fixture details');
