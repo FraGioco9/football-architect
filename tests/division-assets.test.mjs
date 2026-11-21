@@ -19,8 +19,9 @@ test('ASSET-01: exactly 32 approved SVGs use deterministic paths and pass ZIP in
   const source=readFileSync(join(root,path),'utf8');
   assert.equal(verified.divisions.get(d.id)[variant],source.replace(/^<\?xml[^?]+\?>\s*/,'').trim());
  }
- for(const path of ['assets/divisions/it-2/test.png','assets/divisions/it-1-lega-federale/manifest.json',
-  'assets/divisions/it-1-lega-federale/source.psd','assets/divisions/it-1-lega-federale/primary-dark.svg'])
+ for(const path of ['assets/competitions/IT-2/test.png','assets/competitions/IT-1/manifest.json',
+  'assets/competitions/IT-1/source.psd','assets/competitions/IT-1/primary-dark.svg',
+  'assets/divisions/it-1-lega-federale/compact.svg'])
   assert.equal(isAllowlistedPublicPath(path),false,path);
 });
 

@@ -6,7 +6,10 @@
  const rendered=new WeakMap();
  function render(host){
   const id=host.dataset.clubCrest;
-  const asset=Object.hasOwn(catalog,id)?catalog[id]:null;
+  // The catalogue proves membership; the URL is derived from the public key.
+  const key=typeof id==='string'?id.match(/^([A-Z]{2,3})-([1-9]\d*)$/):null;
+  const expected=key?'assets/clubs/'+key[1]+'/'+key[2]+'/crest.svg':null;
+  const asset=expected&&Object.hasOwn(catalog,id)&&catalog[id]===expected?expected:null;
   if(rendered.has(host)&&rendered.get(host)===asset)return;
   rendered.set(host,asset);
   const existing=host.querySelector?.('.app-club-crest-image');
@@ -21,8 +24,7 @@
   delete host.dataset.clubCrestLoaded;
   delete host.dataset.clubCrestPending;
   if(typeof asset!=='string'){if(host.classList?.contains('club-crest')||host.classList?.contains('fa-crest-loading'))host.dataset.clubCrestFallback='true';return;}
-  const match=id.match(/^([A-Z]{2,3})-([1-9]\d*)$/);
-  if(!match||asset!==`assets/clubs/${match[1]}/${match[2]}/crest.svg`)return;
+  if(!asset)return;
   host.dataset.clubCrestPending='true';
   const image=document.createElement('img');
   image.className='app-club-crest-image';image.alt='';image.draggable=false;

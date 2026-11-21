@@ -67,7 +67,7 @@ test("#605: shipped Club Fixtures includes the published match-reference module 
 
 test("PUBLIC-01: only explicit public assets are eligible; demo fixture is excluded",()=>{
  const files=planPublicFiles();
-  const divisionAssets=files.filter(p=>p.startsWith("assets/divisions/"));
+  const divisionAssets=files.filter(p=>p.startsWith("assets/competitions/"));
   assert.equal(divisionAssets.length,32);
   assert.ok(divisionAssets.every(p=>p.endsWith("/primary.svg")||p.endsWith("/compact.svg")));
   assert.ok(!files.includes("assets/division-logos.js"));
