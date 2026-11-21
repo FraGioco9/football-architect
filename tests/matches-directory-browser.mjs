@@ -74,6 +74,21 @@ export async function verifyMatchesDirectory(browser){
    }
    assert(prev.x+prev.width<=day.x&&day.x+day.width<=next.x);
    assert.equal(searchBox.height,filterBox.height,'search and filter heights match');
+   if(width<=540){
+    const controls=await page.locator('.md-controls:not(.md-filters)').boundingBox();
+    const season=await page.locator('#md-season').boundingBox();
+    const current=await page.locator('#md-current').boundingBox();
+    const heading=await page.locator('#md-list h2').first().boundingBox();
+    const firstRow=await page.locator('#md-list .md-row').first().boundingBox();
+    const rowFont=await page.locator('#md-list .md-row').first().evaluate(row=>parseFloat(getComputedStyle(row).fontSize));
+    assert(Math.abs(season.x-controls.x)<2,'season starts at content edge '+width);
+    assert(Math.abs(next.x+next.width-(controls.x+controls.width))<2,'day navigation fills the remaining width '+width);
+    assert(Math.abs(current.x-controls.x)<2&&Math.abs(current.width-controls.width)<2,'current day fills mobile row '+width);
+    assert.equal(await page.locator('#md-current').evaluate(button=>getComputedStyle(button).textAlign),'center');
+    assert(heading.y-searchBox.y-searchBox.height<20,'no empty status gap after search '+width);
+    assert(firstRow.height<70,'mobile fixture row stays compact '+width);
+    assert(rowFont<14,'mobile fixture typography stays compact '+width);
+   }
    assert(await page.locator('.matches-directory').evaluate(n=>n.clientWidth>0&&n.scrollWidth<=n.clientWidth+1),'directory overflow '+width);
   }
   for(const key of ['season','day','country','competition','search']){
