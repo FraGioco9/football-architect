@@ -83,11 +83,21 @@ export async function verifyMatchesDirectory(browser){
     const rowFont=await page.locator('#md-list .md-row').first().evaluate(row=>parseFloat(getComputedStyle(row).fontSize));
     assert(Math.abs(season.x-controls.x)<2,'season starts at content edge '+width);
     assert(Math.abs(next.x+next.width-(controls.x+controls.width))<2,'day navigation fills the remaining width '+width);
-    assert(Math.abs(current.x-controls.x)<2&&Math.abs(current.width-controls.width)<2,'current day fills mobile row '+width);
+    assert(current.width<controls.width,'current day stays content-sized on mobile '+width);
+    assert(Math.abs(current.x+current.width/2-controls.x-controls.width/2)<2,'current day button stays centered '+width);
     assert.equal(await page.locator('#md-current').evaluate(button=>getComputedStyle(button).textAlign),'center');
     assert(heading.y-searchBox.y-searchBox.height<20,'no empty status gap after search '+width);
     assert(firstRow.height<70,'mobile fixture row stays compact '+width);
     assert(rowFont<14,'mobile fixture typography stays compact '+width);
+    const team=page.locator('.md-row .md-team-label').first();
+    assert.equal(await team.getAttribute('aria-label'),'Esportivo das Charqueadas','full club name remains accessible '+width);
+    assert.equal(await team.locator('.md-team-name-compact').textContent(),'Charqueadas','use canonical compact club name '+width);
+    assert(await team.locator('.md-team-name-compact').isVisible(),'compact club name shown on small screens '+width);
+    assert(!await team.locator('.md-team-name-full').isVisible(),'full club name hidden visually on small screens '+width);
+   }else if(width===1440){
+    const team=page.locator('.md-row .md-team-label').first();
+    assert(await team.locator('.md-team-name-full').isVisible(),'desktop retains full club name');
+    assert(!await team.locator('.md-team-name-compact').isVisible(),'desktop hides compact club name');
    }
    assert(await page.locator('.matches-directory').evaluate(n=>n.clientWidth>0&&n.scrollWidth<=n.clientWidth+1),'directory overflow '+width);
   }
