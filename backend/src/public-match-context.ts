@@ -13,8 +13,8 @@ type RecordLike=Record<string,unknown>;
 const object=(value:unknown):value is RecordLike=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const sameWorld=(a:unknown,b:unknown)=>object(a)&&object(b)&&
  ['generation','revision','seasonNumber','day','phase'].every(key=>a[key]===b[key]);
-const invalid=():never=>{throw new ApiError(503,'match_context_unavailable')};
-const unavailable=():never=>{throw new ApiError(404,'not_found')};
+function invalid():never{throw new ApiError(503,'match_context_unavailable')}
+function unavailable():never{throw new ApiError(404,'not_found')}
 const numberId=(id:string)=>/^[1-9][0-9]*$/.test(id)&&Number.isSafeInteger(Number(id));
 const competitionIdPattern=/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/;
 
