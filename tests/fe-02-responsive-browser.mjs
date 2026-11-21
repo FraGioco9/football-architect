@@ -1,3 +1,4 @@
+import {verifyMatchesDirectory} from './matches-directory-browser.mjs';
 import {verifyCompetitionPlayerStats} from './competition-player-stats-browser.mjs';
 // FE-02: measured viewport geometry in the real loopback app, Chromium/WebKit.
 import assert from "node:assert/strict";
@@ -70,6 +71,7 @@ async function visit(profile,path,verify){
  }finally{await context.close()}
 }
 try{
+ await verifyMatchesDirectory(browser);
  if(engine==='webkit')checks.push({scope:'Competition player Stats',cases:await verifyCompetitionPlayerStats(browser,{engine})});
  for(const profile of profiles){
   await visit(profile,"/clubs",async page=>{
@@ -438,6 +440,83 @@ try{
    };
    const actionLayout=await measureControls();
    checkControls(actionLayout,width+"px",width<=360?118:132,width<=360?28:30);
+   // Test actual browser hit targets, not just z-index source declarations.
+   // The 30-option popup must stay within the scrolling pane and cover links.
+   await page.waitForFunction(()=>!document.getElementById('app-fixtures-round')?.disabled&&
+    !!document.querySelector('#app-fixtures-list .app-fixture-match'));
+   await page.locator('#app-fixtures-round').click();
+   await page.waitForFunction(()=>!document.getElementById('app-fixtures-picker').hidden);
+   const dropdown=await page.evaluate(()=>{
+    const menu=document.getElementById('app-fixtures-picker'),pane=document.querySelector('.fa-shell-content-scroll');
+    const bounds=menu.getBoundingClientRect(),visible=pane.getBoundingClientRect();
+    const x=Math.min(bounds.right-12,bounds.left+20),y=Math.min(bounds.bottom-12,bounds.top+18);
+    const hit=document.elementFromPoint(x,y);
+    return {placement:menu.dataset.menuPlacement,top:bounds.top,bottom:bounds.bottom,
+     paneTop:visible.top,paneBottom:visible.bottom,hit:hit===menu||menu.contains(hit),
+     height:bounds.height,expanded:document.getElementById('app-fixtures-round').getAttribute('aria-expanded')};
+   });
+   assert.ok(['above','below'].includes(dropdown.placement)&&dropdown.height>=30&&
+    dropdown.top>=dropdown.paneTop-2&&dropdown.bottom<=dropdown.paneBottom+2&&
+    dropdown.hit&&dropdown.expanded==='true',
+    'Matchday dropdown must overlay fixture cards inside the viewport: '+JSON.stringify({width,dropdown}));
+   await page.locator('#app-fixtures-picker [data-fixture-round-choice="2"]').click();
+   await page.waitForFunction(()=>document.getElementById('app-fixtures-round-number')?.textContent?.trim()==='2');
+   assert.equal(await page.locator('#app-fixtures-picker').isHidden(),true,'Selecting matchday closes menu');
+   await page.locator('#app-fixtures-round').click();
+   await page.keyboard.press('Escape');
+   assert.equal(await page.locator('#app-fixtures-picker').isHidden(),true,'Escape closes menu');
+   if(width===390){
+    // Four responsive widths in one browser session, without extra navigation.
+    // Stress only DOM text geometry; never create sporting match data.
+    for(const phoneWidth of [320,360,375,390]){
+     await page.setViewportSize({width:phoneWidth,height:844});
+     const sample=await page.evaluate(()=>{
+      const row=document.querySelector('#app-fixtures-list .app-fixture-match');
+      const club=row.querySelector('.app-fixture-club'),label=club.querySelector('.app-fixture-name');
+      const compact=label.querySelector('.app-fixture-name-compact'),full=label.querySelector('.app-fixture-name-full');
+      const logo=club.querySelector('.app-world-club-crest-placeholder');
+      const old=compact.textContent;compact.textContent='Münchner Freiheit';
+      const name=label.getBoundingClientRect(),track=club.getBoundingClientRect(),crest=logo.getBoundingClientRect();
+      const lineHeight=parseFloat(getComputedStyle(label).lineHeight);
+      const compactVisible=getComputedStyle(compact).display!=='none'&&getComputedStyle(full).display==='none';
+      compact.textContent=old;
+      const height=row.getBoundingClientRect().height;
+      const skeleton=document.getElementById('app-fixtures-skeleton'),prior=skeleton.style.display;
+      skeleton.style.display='grid';
+      const skeletonRow=skeleton.querySelector('.app-fixture-match');
+      const skeletonHeight=skeletonRow.getBoundingClientRect().height;
+      const middle=(match)=>{
+       const home=match.querySelector('.app-fixture-home').getBoundingClientRect();
+       const away=match.querySelector('.app-fixture-club:not(.app-fixture-home)').getBoundingClientRect();
+       const score=match.querySelector('.app-fixture-score').getBoundingClientRect();
+       const target=(home.top+home.height/2+away.top+away.height/2)/2;
+       return {delta:score.top+score.height/2-target,
+        x:score.left+score.width/2-match.getBoundingClientRect().left,
+        resultDisplay:getComputedStyle(match.querySelector('.app-fixture-result')).display};
+      };
+      const loadedAlignment=middle(row),skeletonAlignment=middle(skeletonRow);
+      skeleton.style.display=prior;
+      return {compactVisible,left:name.left,right:name.right,bottom:name.bottom,
+       height:name.height,trackRight:track.right,trackBottom:track.bottom,
+       crestRight:crest.right,lineHeight,rowHeight:height,skeletonHeight,
+       loadedAlignment,skeletonAlignment};
+     });
+     assert.ok(sample.compactVisible&&sample.left>=sample.crestRight-1&&
+      sample.right<=sample.trackRight+1&&sample.bottom<=sample.trackBottom+1&&
+      sample.height<=2*sample.lineHeight+3,
+      'Canonical long compactName stays in two lines within its club track: '+JSON.stringify({phoneWidth,sample}));
+     assert.ok(sample.rowHeight<=124&&sample.skeletonHeight<=124,
+      'Compact mobile fixture cards reserve at most 124px in the ordinary two-row case: '+JSON.stringify({phoneWidth,sample}));
+     assert.ok(Math.abs(sample.rowHeight-sample.skeletonHeight)<=8,
+      'Loading skeleton must reserve the match row height: '+JSON.stringify({phoneWidth,sample}));
+     assert.ok(sample.loadedAlignment.resultDisplay==='grid'&&sample.skeletonAlignment.resultDisplay==='grid'&&
+      Math.abs(sample.loadedAlignment.delta)<=1.5&&Math.abs(sample.skeletonAlignment.delta)<=1.5&&
+      Math.abs(sample.loadedAlignment.x-sample.skeletonAlignment.x)<=1,
+      'Loaded score and skeleton score must share the home/away midpoint: '+
+       JSON.stringify({phoneWidth,sample}));
+    }
+    await page.setViewportSize({width,height:844});
+   }
    if(width===390){
     for(const desktop of [768,1440]){
      await page.setViewportSize({width:desktop,height:900});

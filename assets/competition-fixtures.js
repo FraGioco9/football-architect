@@ -76,8 +76,14 @@
   }
   // Preserve each club crest host (and its loaded image) when the matchday changes.
   const crestHosts=new Map();
+  // Reuse the viewport-aware menu placement for all 30 matchday options.
+  // DOM-only unit stubs have no layout primitives and keep their original path.
+  const fixtureScrollBoundary=document.querySelector('.fa-shell-content-scroll');
   const roundMenu=window.faBindCompetitionMenu(fields.round,picker,choices,value=>select(value),
-    document.querySelector(".app-fixtures-select"));
+    document.querySelector(".app-fixtures-select"),{
+      fitViewport:Boolean(fixtureScrollBoundary&&typeof picker.getBoundingClientRect==='function'),
+      boundary:fixtureScrollBoundary
+    });
   const element=(tag,cls="",text="")=>{
     const item=document.createElement(tag);item.className=cls;item.textContent=text;return item;
   };
@@ -214,13 +220,68 @@
     for(const games of byRound.values())if(games.length&&(games.length!==matchesPerRound||new Set(games.flatMap(g=>[g.homeId,g.awayId])).size!==capacity))throw Error('Incomplete cup round');
     byRound.postseason=post;return byRound;
   }
-  function identity(id,home){
-    const club=clubs.get(id),item=element("span","app-fixture-club"+(home?" app-fixture-home":""));
-    if(!club){item.append(word(home?"fixturesHome":"fixturesAway",home?"Home":"Away","sr-only"),element("span","app-world-club-crest-placeholder"),element("span","app-fixture-name","TBD"));return item;}
-    const crest=element("span","app-world-club-crest-placeholder fa-crest-loading");
-    crest.dataset.clubCrest=rules.clubKey(club);crest.setAttribute("aria-hidden","true");
-    item.append(word(home?"fixturesHome":"fixturesAway",home?"Home":"Away","sr-only"),crest,
-      (()=>{const link=element("a","app-fixture-name app-world-standing-club-link",club.primaryName||club.abbr);link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:club.countryId.toLowerCase(),id:club.clubId,view:"overview"});return link})());
+
+  // The same rank/tie wording and compact ordinals as the #732 Matches directory.
+  // Use configured references only: no participant is inferred from a future result.
+  const participantCopy={
+    en:{rank:'Rank',tbc:'To be confirmed',winner:'Winner',playoff:'Winner of playoff',semifinal:'Winner of semifinal',quarterfinal:'Winner of quarter-final',qf:'QF',sf:'SF'},
+    it:{rank:'Posizione',tbc:'Da definire',winner:'Vincente',playoff:'Vincente playoff',semifinal:'Vincente semifinale',quarterfinal:'Vincente quarto di finale',qf:'QF',sf:'SF'},
+    de:{rank:'Rang',tbc:'Noch offen',winner:'Sieger',playoff:'Sieger aus Playoff',semifinal:'Sieger des Halbfinals',quarterfinal:'Sieger des Viertelfinals',qf:'VF',sf:'HF'},
+    es:{rank:'Puesto',tbc:'Por confirmar',winner:'Ganador',playoff:'Ganador del playoff',semifinal:'Ganador de semifinal',quarterfinal:'Ganador de cuarto de final',qf:'CF',sf:'SF'},
+    fr:{rank:'Rang',tbc:'À déterminer',winner:'Vainqueur',playoff:'Vainqueur du barrage',semifinal:'Vainqueur de demi-finale',quarterfinal:'Vainqueur du quart de finale',qf:'QF',sf:'DF'}
+  };
+  const winnerPairings={
+    p512:{ranks:[5,12],stage:'playoff'},p611:{ranks:[6,11],stage:'playoff'},
+    p710:{ranks:[7,10],stage:'playoff'},p89:{ranks:[8,9],stage:'playoff'},
+    semi36:{ranks:[3,6],stage:'semifinal'},semi45:{ranks:[4,5],stage:'semifinal'}
+  };
+  function pendingName(game,home){
+    const lang=document.documentElement.lang,words=participantCopy[lang]||participantCopy.en;
+    const tie=knockoutPhases.flatMap(phase=>phase.ties).find(t=>t.id===game.tieId);
+    if(!tie||!Array.isArray(tie.participants)||tie.participants.length!==2)
+      return {full:words.tbc,compact:words.tbc};
+    // As in #732, leg 1 of a two-leg tie has participant B at home;
+    // leg 2 reverses it. Neutral single-leg finals retain A/B ordering.
+    const reverse=tie.legs===2&&game.leg===1&&tie.homePolicy!=='neutral';
+    const index=(home?0:1)^(reverse?1:0),ref=tie.participants[index];
+    if(ref?.phaseId==='league'&&Number.isSafeInteger(ref.rank))
+      return {full:words.rank+' '+ref.rank,compact:words.rank+' '+ref.rank};
+    if(typeof ref?.tieId==='string'){
+      const id=ref.tieId.toLowerCase(),pair=winnerPairings[id];
+      if(pair)return {full:words[pair.stage]+' '+pair.ranks.join(' vs '),
+        compact:words.winner+' '+pair.ranks.join('–')};
+      const q=/^q([1-4])$/.exec(id);
+      if(q)return {full:words.quarterfinal+' '+q[1],compact:words.winner+' '+words.qf+' '+q[1]};
+      const s=/^s([1-2])$/.exec(id);
+      if(s)return {full:words.semifinal+' '+s[1],compact:words.winner+' '+words.sf+' '+s[1]};
+    }
+    return {full:words.tbc,compact:words.tbc};
+  }
+  function participantName(id,game,home){
+    const club=clubs.get(id);
+    if(!club){
+      const pending=pendingName(game,home);
+      return pending;
+    }
+    const full=club.primaryName||club.abbr;
+    return {full,compact:club.compactName||full};
+  }
+  function nameSpans(name){
+    return [
+      element('span','app-fixture-name-full',name.full),
+      element('span','app-fixture-name-compact',name.compact)
+    ];
+  }
+  function identity(id,home,game){
+    const club=clubs.get(id),name=participantName(id,game,home);
+    const item=element('span','app-fixture-club'+(home?' app-fixture-home':'')+(!club?' app-fixture-club-pending':''));
+    const crest=element('span','app-world-club-crest-placeholder'+(club?' fa-crest-loading':''));
+    if(club){crest.dataset.clubCrest=rules.clubKey(club);crest.setAttribute('aria-hidden','true');}
+    const label=element(club?'a':'span','app-fixture-name'+(club?' app-world-standing-club-link':''));
+    label.setAttribute('aria-label',name.full);
+    label.append(...nameSpans(name));
+    if(club)label.href=window.faRoutesRegistry.buildRoute({kind:'club',country:club.countryId.toLowerCase(),id:club.clubId,view:'overview'});
+    item.append(word(home?'fixturesHome':'fixturesAway',home?'Home':'Away','sr-only'),crest,label);
     return item;
   }
   function matchRow(game){
@@ -240,7 +301,7 @@
         status.append(word('postseasonPenalties','Penalties'),element('strong','', ' '+game.penalties.homeGoals+'–'+game.penalties.awayGoals));
       }
     }
-    else if(game.kickoff===null)status=word("fixturesTimingUnknown","Date TBD","app-fixture-status");
+    else if(game.kickoff===null)status=word("fixturesTimingUnknown","To be confirmed","app-fixture-status");
     else{
       status=element("time","app-fixture-status");status.dateTime=game.kickoff;
       status.textContent=new Intl.DateTimeFormat(document.documentElement.lang||"en",
@@ -261,7 +322,7 @@
       const action={en:'Open match',de:'Spiel öffnen',es:'Abrir partido',fr:'Ouvrir le match',it:'Apri partita'};
       const locale=document.documentElement.lang||'en';
       link.setAttribute('aria-label',(action[locale]||action.en)+': '+
-        (clubs.get(game.homeId)?.primaryName||'Home')+' – '+(clubs.get(game.awayId)?.primaryName||'Away'));
+        participantName(game.homeId,game,true).full+' – '+participantName(game.awayId,game,false).full);
       link.append(score);scoreContent=link;
     }
     result.append(status,scoreContent,
@@ -277,7 +338,7 @@
       hit.setAttribute('aria-hidden','true');
       result.append(hit);
     }
-    item.append(identity(game.homeId,true),result,identity(game.awayId,false));
+    item.append(identity(game.homeId,true,game),result,identity(game.awayId,false,game));
     return item;
   }
   function render(){
@@ -331,7 +392,7 @@
         for(let leg=1;leg<=legs;leg++){
           const games=postseason.filter(g=>g.phaseId===phase.id&&g.leg===leg);
           // DEV and unpublished international phases remain empty exactly as
-          // before. A TBD match row exists only for an official published slot.
+          // before. An unresolved match row exists only for an official published slot.
           const pending=games.length?games:showPublishedReservations?
             phase.ties.filter(tie=>publishedLookup.bySlot[[phase.id,tie.id,leg].join(':')]).map(tie=>({
             phaseId:phase.id,tieId:tie.id,leg,round:phase.id+':'+leg,
@@ -366,8 +427,10 @@
       .map(item=>[item.dataset.fixtureMatch,item]));
     const next=matches.map(item=>{
       const previous=existing.get(item.dataset.fixtureMatch);
-      if(!previous)return item;
-      // Club identities are immutable for a given match key; only results change.
+      // Pending participants are language-sensitive: rebuild their tiny text
+      // hosts when the locale changes, without replacing known-club crest hosts.
+      if(!previous||item.dataset.fixtureMatch.startsWith('pending:'))return item;
+      // Resolved club identities are immutable for a given match key.
       const oldResult=previous.querySelector?.(".app-fixture-result");
       const newResult=item.querySelector?.(".app-fixture-result");
       if(oldResult&&newResult&&!oldResult.isEqualNode?.(newResult))oldResult.replaceWith(newResult);

@@ -1,3 +1,4 @@
+import {readMatchDirectory} from './public-match-directory.ts';
 import {httpJson,routeMethod} from './http-contract.ts';
 import {assertEnvironmentPool,resolveAccountConfiguration} from './environment-pool.ts';
 import {handleAdmin,type AdminEnv} from './http-admin.ts';
@@ -50,6 +51,17 @@ export default {
       } catch (error) {
         if (error instanceof ApiError) return json(error.status, { error: { code: error.code } });
         return json(503, { error: { code: 'world_unavailable' } });
+      }
+    }
+    if(url.pathname==='/api/matches'){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      const query=url.searchParams,season=query.get('season')??'',day=query.get('day')??'';
+      if(query.size!==2||!/^[1-9][0-9]{0,8}$/.test(season)||!/^(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(day))
+        return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readMatchDirectory(requireDatabase(env.DB),Number(season),Number(day)))}
+      catch(error){
+        if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:error.code}});
+        return json(503,{error:{code:'match_unavailable'}});
       }
     }
     const matchList=url.pathname.match(/^\/api\/matches\/seasons\/([1-9][0-9]*)\/competitions\/((?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12]))$/);
