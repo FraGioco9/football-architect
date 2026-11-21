@@ -424,6 +424,11 @@ test('generated lightweight club identities serve Match and Player views without
   assert.equal(Object.hasOwn(club,'rivalries'),false);
  }
  assert.deepEqual(identity.clubCrests,manifest.clubCrests);
+ const generated=read('assets/match-public-context.mjs');
+ const published=generated.match(/^const publishedCrestIds=(\[[^;\n]*\]);$/m);
+ assert.ok(published,'public club identity projection must store only crest IDs');
+ assert.deepEqual(JSON.parse(published[1]),Object.keys(manifest.clubCrests).sort());
+ assert.doesNotMatch(generated,/^const clubCrests=\{/m,'duplicated crest URL map must not be bundled');
 });
 
 test('MATCH-STATS: individual statistics have one dedicated independent HTTP reader',()=>{

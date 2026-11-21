@@ -17,10 +17,17 @@ export function renderMatchPublicContext(clubs,competitions,clubCrests){
   compEntries.add(c.id);
   return [c.id,{id:c.id,name:c.name,primaryHex:c.primaryHex,secondaryHex:c.secondaryHex,ivoryHex:c.ivoryHex}];
  }));
+ const crestIds=Object.keys(clubCrests).sort();
+ for(const id of crestIds){
+  const m=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.exec(id);
+  if(!m||!entries.has(id)||clubCrests[id]!=='assets/clubs/'+m[1]+'/'+m[2]+'/crest.svg')
+   throw Error('Noncanonical published crest '+id);
+ }
  return "/** Generated from canonical club + competition sources; no rules, history or personal data. */\n"+
   "const clubs="+JSON.stringify(clubById)+";\n"+
   "const competitions="+JSON.stringify(competitionById)+";\n"+
-  "const clubCrests="+JSON.stringify(clubCrests)+";\n"+
+  "const publishedCrestIds="+JSON.stringify(crestIds)+";\n"+
+  "const clubCrests=Object.fromEntries(publishedCrestIds.map(id=>{const [country,number]=id.split('-');return [id,'assets/clubs/'+country+'/'+number+'/crest.svg'];}));\n"+
   "export function matchPublicContext(match){\n"+
   " if(!match||typeof match!=='object'||!Object.hasOwn(competitions,match.competitionId))return null;\n"+
   " const ids=[match.homeParticipant?.clubId,match.awayParticipant?.clubId];\n"+
