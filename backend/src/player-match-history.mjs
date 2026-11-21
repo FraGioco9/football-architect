@@ -60,7 +60,7 @@ export function collectFrozenPlayerMatches(playerId,season,frozenMatches,fixture
 }
 
 export function paginateVerifiedPlayerMatches(items,world,{season='all',competition='all',cursor=null,limit=20}={}){
- if(!Array.isArray(items)||!world||!Number.isSafeInteger(limit)||limit<1||limit>50)
+ if(!Array.isArray(items)||!world||!Number.isSafeInteger(limit)||limit<1||limit>100)
   throw TypeError('Invalid pagination input');
  const selected=items.filter(item=>(season==='all'||item.season===season)&&
   (competition==='all'||item.competitionId===competition))

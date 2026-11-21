@@ -113,7 +113,7 @@ export default {
       const cursor=params.get('cursor');
       if(!(seasonParam==='all'||/^[1-2]$/.test(seasonParam))||
          !(competition==='all'||/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(competition))||
-         !/^[1-9][0-9]?$/.test(limitParam)||Number(limitParam)>50||
+         !/^(?:[1-9][0-9]?|100)$/.test(limitParam)||
          cursor!==null&&(!cursor||cursor.length>512))
         return json(422,{error:{code:'invalid_public_request'}});
       try{return json(200,await readPublicPlayerMatchesLineupV1(requireDatabase(env.DB),Number(playerMatches[1]),{

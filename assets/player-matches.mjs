@@ -318,7 +318,7 @@ export function createPlayerMatchesView({host,id,locale,fetchMatches,clubName,cl
    const gathered=[],seen=new Set(),seenCursors=new Set();
    do{
     // Acquire the complete verified set once. Filtering and "Load more" are local.
-    const payload=await fetchMatches(id,{season:'all',competition:'all',limit:50,cursor});
+    const payload=await fetchMatches(id,{season:'all',competition:'all',limit:100,cursor});
     if(current!==ticket)return;
     if(!payload||payload.providerId!=='authoritative-world'||payload.playerId!==id||
        !['available','empty','unavailable'].includes(payload.status)||

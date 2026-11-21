@@ -590,7 +590,7 @@ export async function readPublicPlayerMatchesLineupV1(
  if(!Number.isSafeInteger(playerId)||playerId<1||!options||
   !(options.season==='all'||Number.isSafeInteger(options.season)&&options.season>=1&&options.season<=2)||
   !(options.competition==='all'||competitionPattern.test(options.competition))||
-  !Number.isSafeInteger(options.limit)||options.limit<1||options.limit>50||
+  !Number.isSafeInteger(options.limit)||options.limit<1||options.limit>100||
   !(options.cursor===null||typeof options.cursor==='string'&&options.cursor.length<=512))
   throw new ApiError(422,'invalid_public_request');
  const world=await readWorld(db);
