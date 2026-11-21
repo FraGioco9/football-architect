@@ -100,6 +100,8 @@ export async function verifyMatchesDirectory(browser){
     assert.equal(await page.locator('#md-current').evaluate(button=>getComputedStyle(button).textAlign),'center');
     assert(heading.y-searchBox.y-searchBox.height<20,'no empty status gap after search '+width);
     assert(firstRow.height<70,'mobile fixture row stays compact '+width);
+    const horizontalPadding=await page.locator('#md-list .md-row').first().evaluate(row=>{const style=getComputedStyle(row);return [parseFloat(style.paddingLeft),parseFloat(style.paddingRight)]});
+    assert.deepEqual(horizontalPadding,[0,0],'mobile fixture row has no side padding '+width);
     assert(rowFont<14,'mobile fixture typography stays compact '+width);
     const logoScoreGaps=await page.locator('.md-row:not(.md-skeleton)').first().evaluate(row=>{
      const score=row.querySelector('.md-score'),range=document.createRange();
