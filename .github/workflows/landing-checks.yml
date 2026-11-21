@@ -119,6 +119,22 @@ jobs:
         run: |
           git fetch --no-tags origin '+refs/pull/439/head:refs/remotes/origin/ci-surnames-01-provenance'
           git cat-file -e d27a46a5b0f5ac086d16e2de7786590820214255:data/players/surnames/countries/ESP.json
+      # Site FULL has legacy CDP contracts requiring a Chrome executable.
+      # Browser QA uses the pinned Playwright image; the Site runner does not.
+      # Provision only when absent and only in the FULL lane; keep the node
+      # test inventory unchanged rather than silently skipping browser tests.
+      - name: Prepare Chrome for FULL Site browser contracts
+        if: ${{ (needs.head-exact.outputs.mode == 'full') && !needs.head-exact.outputs.reuse }}
+        run: |
+          CHROME=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)
+          if [ -z "$CHROME" ]; then
+            npm install --no-save --no-package-lock playwright@1.58.2
+            npx playwright install chromium
+            CHROME=$(node -e "process.stdout.write(require('playwright').chromium.executablePath())")
+          fi
+          test -x "$CHROME"
+          "$CHROME" --version
+          echo "CHROME_BIN=$CHROME" >> "$GITHUB_ENV"
       - name: Site contracts (full)
         if: ${{ (needs.head-exact.outputs.mode == 'full') && !needs.head-exact.outputs.reuse }}
         run: |

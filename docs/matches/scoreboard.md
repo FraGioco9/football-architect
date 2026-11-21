@@ -444,3 +444,207 @@ Chromium and WebKit QA now verify the center dash against main, equal track widt
 ### Owner refinement: reattached independent ivory badge (2026-11-16)
 
 The previously implemented 8px **empty gap between the ivory badge and the bar is removed**. The independent 48px competition badge now has `left:-48px` relative to the perfectly centered five-track core, and the bar's painted `::before` background extends 36px to the left behind the badge. This recovers the **original visual connection and overlap**: the ivory tile projects 12px beyond the bar and covers its leftmost 36px. Crucially, the badge remains independent of the five symmetrical Home/score/dash/score/Away tracks, so the dash stays exactly on the padded main-content axis. The 8px **Home abbreviation cell inset** is unchanged and remains distinct from the no-gap tile-to-bar attachment. No pitch, Overview, stadium API, schedule or D1 changes. Chromium/WebKit checks explicitly measure 0px tile-to-core separation, 12px tile projection, 36px overlay, centered dash and mobile viewport containment. This section supersedes the prior documentation claiming an 8px tile-to-bar gap.
+
+ 
+### V2 starting-XI read from frozen appearances (#577, 2026-11-19)
+
+A verified `GET /api/matches/:id/stats` result includes all recorded
+appearances: exactly eleven starting players plus zero to six substitutes in
+event-capable V2 receipts. Match Detail now projects its fixed eleven lineup
+rows from `started === true`, requiring exactly eleven distinct valid starters
+and a unique 11–17 player appearance set. A dismissed starter remains a
+starter; a later replacement remains a substitute and never takes over the
+preallocated starting-XI row.
+
+Invalid records, mismatched receipt hashes, unavailable statistics,
+team-level fallback and future matches keep their original empty reserved rows
+instead of inventing players. Recorded ratings remain explicitly temporary
+test ratings; the score loads separately from statistics. Chromium/WebKit
+regression cases cover 11 starters, 14 appearances including three
+substitutes, dismissals, 10/12 starters, duplicate IDs, fallback, stale
+receipt and API 503. No event timeline, backend simulation-rule change,
+migration, reset or deployment is included.
+
+
+### Verified match resolution and unresolved bracket state (#577, 2026-11-19)
+
+For completed matches with an immutable receipt hash, the existing Overview
+**Status** field may display `After extra time` or `Penalties H–A` when
+the authoritative result explicitly provides that resolution and a valid
+recorded extra-time or penalty score. The qualifier is localized in all five
+supported languages (EN, IT, DE, ES, FR). Malformed or unrecorded resolution
+details never produce a qualifier. The five-track symmetric scoreboard
+continues to show only the authoritative match score; its dimensions and
+the three fixed Overview rows are unchanged.
+
+Published but unresolved knockout reservations may identify the participating
+slots using the verified `participantA`/`participantB` types. A valid
+`leagueRank` (1–16) is shown with compact `#N` and a descriptive localized
+league-place label; a validated `tieWinner` reference uses a compact
+winner code with its verified original tie ID in the accessible and side-panel
+descriptions. Neither placeholder pretends to be a club, gains a club link
+or crest, or creates a result, date or event. Resolved, verified clubs always
+take precedence over the underlying bracket references.
+
+The 404 and 503 terminal states preserve reserved panel dimensions and the
+explicit accessible feedback, while hiding the loading-only name/crest
+skeletons. This prevents a failed read from appearing perpetually loading.
+Chromium/WebKit coverage now exercises the five-locale resolution text,
+unknown playoff participants and link safety, plus both terminal errors.
+
+No public backend transport, simulation, kickoff/neutral venue assignment,
+remote D1 or deployment change. Recorded event timelines remain a separate
+pending publication-contract/UI decision under #577.
+
+
+### Official recorded-match event API (#577, 2026-11-19)
+
+An anonymous **read-only** `GET /api/matches/<positive-number>/events`
+endpoint now uses the same canonical public match-number, world generation,
+season/draw publication, finished-match receipt replay, current-world
+revision guard and fixture/receipt-hash checks as `/api/matches/:id` and
+`/api/matches/:id/stats`. It never looks up the current club roster or
+simulates an event, and cannot reveal unpublished fixtures or future scores.
+
+The response has `schemaVersion:1`, `providerId:'authoritative-world'`,
+`matchId`, `season`, `competitionId`, `status`, the verified
+`homeClubId/awayClubId` (nullable when unresolved), matching
+`provenance.receiptHash` and a single `timeline` object:
+
+- `{kind:'not_played',eventModelVersion:null,events:null}` — a published
+  fixture not yet completed.
+- `{kind:'not_recorded',eventModelVersion:null,events:null}` — an immutable
+  completed **legacy** receipt without V2 event evidence. Aggregate goals or
+  counts cannot be reverse-engineered into event history.
+- `{kind:'recorded',eventModelVersion:'lineup-events-v1',events:[...]}` —
+  a verified immutable V2 receipt; the array may legitimately contain zero
+  events. This is not the same as missing data.
+
+Every V2 timeline is independently checked by
+`validateRecordedMatchTimelineV1` for actual eligible actors, ordering,
+minutes, goals, final passes/assists, yellows/reds and substitutions.
+The projection copies only whitelisted event fields: ordinal/minute/period,
+side/type/player ID and verified per-type fields (scorer and assist,
+substitution in/out/roles, reason or linked goal ID). No private player
+attributes, seed, full receipt, internal source hash or synthetic rating
+details are serialized. Unknown event types fail closed.
+
+Method and query validation, 404/409 and 503 mapping follow the existing
+public match transport. The existing scoreboard/Match header and `/stats`
+response shapes remain **unchanged**: event transport is separate. The
+event timeline **visual UI is not included** in this contract-only block
+until placement and first-paint/mobile behavior are approved. No data
+migration, deploy, D1 write or altered match simulation.
+
+
+### Match starting formation in the official statistics read (#577)
+
+The existing anonymous `GET /api/matches/:id/stats` response now includes
+`statistics.home.formation` and `statistics.away.formation`, both typed
+`'4-3-3' | null`. These describe the **initial tactical shape at kickoff**,
+not a tactical change after a dismissal, a goalkeeper's role change or a
+substitution. The route is already receipt-verified and the `players`
+array already identifies every `started:true` player; there is no need to
+duplicate eleven starters or add them to the lightweight match-header read.
+
+The currently versioned `temporary-lineup-v1` match engine has one fixed
+XI arrangement: `GK, RB, CB, CB, LB, CM, DM, CM, RW, ST, LW`, which is
+4-3-3. Old and new official frozen receipts retain that ordered XI even
+though they do not carry a standalone formation label. The projection
+returns `'4-3-3'` **only** for the matching version, exactly eleven
+unique and confirmed frozen starters, and the exact canonical role signature.
+Otherwise it returns `null`: team fallback, unfinished match, incomplete
+or inconsistent starting XI, or future unknown tactical signatures.
+No inferred 4-3-3 is added to immutable stored receipts, and no database
+backfill, simulation change or new endpoint is needed. The existing
+`/api/matches/:id` and `/events` responses stay unchanged.
+
+
+### Earlier Match Detail timeline iteration (#577; UI superseded)
+
+The existing centered five-track scoreboard and green pitch (`#205C43`)
+remain unchanged. The static generated match shell now reserves a fixed
+formation badge beside each of the two XI headings, and a separate match
+timeline panel immediately **beneath the field** (inside the central
+visualization column). The Overview overlay is slightly more compact while
+retaining its three rows, seven facts and centered Status/MVP presentation.
+Desktop and mobile preserve the same static first-paint sections.
+
+A `4-3-3` badge appears only after the same independently receipt-verified
+`/api/matches/:id/stats` response that powers the frozen XI confirms eleven
+distinct real starters and supplies an official `formation: '4-3-3'` field.
+Other formations, missing stats, not-played matches and team fallbacks
+remain blank; no tactical guess is rendered.
+
+Completed matches request `GET /api/matches/:id/events` independently after
+the main scoreboard has rendered. The browser requires the same match ID,
+season, competition, home/away clubs, completed status and frozen receipt
+digest. Only verified `lineup-events-v1` projections are shown. The panel
+displays goals (with the recorded assist), bookings, dismissals,
+substitutions and role changes in official receipt order, without rendering
+the final-pass event as a second scoring incident. Player names are resolved
+only through the already-verified match statistics; until then, the real
+numeric player ID is shown. Legacy `not_recorded` receipts explicitly
+say no timeline was recorded; completed V2 receipts with no major events
+show a different empty message; unplayed matches promise no invented data.
+The panel stays independent of missing event services, and localization
+covers EN, IT, DE, ES and FR.
+
+The browser QA and static contract tests protect the pitch colour, the
+two-column Overview Status/MVP layout, fixed XI geometry and recorded-event
+provenance checks. No new gameplay generation, D1 write or remote deploy.
+
+
+### Match Detail: wider team panels, tactical XI order and Form links (current #577)
+
+This iteration intentionally **removes the Match events panel from the page**
+and stops requesting `/api/matches/:id/events` from the browser. The backend
+read-only verified event API and its contract tests remain for a future iteration.
+The canonical five-track scoreboard, field's green `#205C43`, and seven-fact
+centered Overview remain intact. The desktop stage gives each team panel
+1.25fr and the field 2.5fr, instead of the former 1fr / 3.4fr / 1fr.
+At tablet and phone sizes, the two teams remain below the full-width field.
+
+The official read `GET /api/matches/:id/stats` now includes, on every played
+player, `startingSlot: 1..11 | null` and
+`startingRole: string | null`. They are projected directly from the frozen
+starting XI receipt, not from numeric ID, final appearance order or later
+role changes. Substitutes have null values. The List view sorts the eleven
+starters by these slots; older unsigned fixtures fall back to role order,
+stably preserving player order among ties. The lineup remains a fixed
+eleven-row first-paint structure.
+
+Each row reserves a small circular portrait. Only the independent public
+`GET /api/players/:id` response can authorize displaying a V4.2-approved
+`portraitAssetKey`; a physical existing WebP is **not** sufficient. Portrait
+reads are deferred until the row enters the viewport and cached per player.
+Failed or unapproved images retain a passive silhouette. **Only the player
+name text is linked**; portrait, role and rating remain passive. The
+List / Pitch controls are visibly present in both panels and localized in
+EN/IT/DE/ES/FR, with List selected and Pitch explicitly disabled until
+its own implementation.
+
+Position uses a localized ordinal (EN: `1st`, `2nd`, `3rd`,
+`4th`; IT `1º`; DE `1.`, ES `1.º`, FR `1er` or `2e`).
+Rank remains absent for unverified or historically unknowable positions.
+The five Form marks share the vertical center of the Position value.
+Each result uses a floating tooltip in the **existing Standings style**,
+showing the recorded matchday, known opponents, verified score and
+home/away perspective. An active link is produced only when the published
+`GET /api/matches/seasons/:season/competitions/:competition` collection
+confirms a matching source fixture ID, round, day, competition and season.
+Without such evidence, the mark remains informational, never a guessed
+match link. Native anchors handle navigation, hover/focus and keyboard.
+
+The canonical match template remains the only edit source: the generated
+`matches/_shared/index.html` is kept byte-equivalent using the same
+`tools/generate-app-pages.mjs` eight-space line prefix, fixing the
+previous Site FULL generator-parity failure. No simulated event, DB write,
+portrait approval modification, deploy, route migration or merger is included.
+
+
+### Match page network reduction & Standings parity (2026-11-20)
+
+Match Detail's verified `/stats` transport now includes `players[].portraitAssetKey` only for V4.2-approved starting XI players. Its server-side projection performs **one parameterized SELECT across both sides**, never one `/api/players/:id` HTTP request per player; the public Client reads the approved key from the existing receipt-verified stats response and lazy-loads only the corresponding static WebP path. Pending/unknown IDs show silhouettes. This preserves the current database approval gate until issue #733 delivers a deployment-specific **static-approved image manifest** without runtime approval API reads anywhere on the site. No D1 changes or new portrait generation.
+
+The verified competition standings and published match-index HTTP reads are now started concurrently after the match header is accepted, removing a serial waterfall. XI row rendering is memoized across Form/Position index hydration so previously loaded portraits are not discarded and reloaded. Site form controls use the exact shared Standings `.app-world-form-dot`, `.app-world-form-control`, `.app-world-form-glyph` and `app-world-form-strip` styles. Lineup row minimums increase to 38 px desktop / 32 px mobile, including first-paint reserved slots.
