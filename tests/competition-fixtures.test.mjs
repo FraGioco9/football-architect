@@ -426,6 +426,39 @@ test('FIXTURES-06: matchday controls hide only when no loaded schedule is availa
 });
 
 
+
+test('FIXTURES unresolved participants follow #732 rank/winner wording and use official mobile names',()=>{
+ const division=divisions.find(d=>d.id==='IT-2');
+ const r=setup(division),list=r.fields.get('app-fixtures-list');
+ r.view.prepare(schedule(division),{postseason:[]})();
+ r.route.set({matchday:'playoffs'});
+ const rows=()=>list.children.filter(x=>x.dataset.fixtureMatch);
+ const label=(row,side)=>row.children[side].children.find(n=>n.className?.split(' ').includes('app-fixture-name'));
+ const spans=(row,side)=>label(row,side).children.map(n=>n.textContent);
+ assert.equal(rows().length,5,'the two semifinal legs and final remain present');
+ assert.deepEqual(spans(rows()[0],0),['Rank 6','Rank 6','Rank 6'],'lower seed hosts the first leg');
+ assert.deepEqual(spans(rows()[0],2),['Rank 3','Rank 3','Rank 3']);
+ assert.deepEqual(spans(rows()[2],0),['Rank 3','Rank 3','Rank 3'],'the second leg reverses home/away');
+ assert.deepEqual(spans(rows()[2],2),['Rank 6','Rank 6','Rank 6']);
+ assert.deepEqual(spans(rows()[4],0),['Winner of semifinal 3 vs 6','Winner 3–6','Winner 3–6']);
+ assert.deepEqual(spans(rows()[4],2),['Winner of semifinal 4 vs 5','Winner 4–5','Winner 4–5']);
+ assert.ok(!contents(list).includes('TBD'),'unknown clubs and fixture timing never display TBD');
+ r.document.documentElement.lang='it';
+ r.route.set({matchday:'playoffs'});
+ assert.deepEqual(spans(rows()[4],0),['Vincente semifinale 3 vs 6','Vincente 3–6','Vincente 3–6'],
+  'pending rows are rebuilt on language change without inferred results');
+ const first=division.clubs[0];
+ r.route.set({matchday:1});
+ const leagueRow=rows().find(row=>row.dataset.fixtureMatch.includes(':'+first.clubId+':'));
+ assert.ok(leagueRow,'known clubs remain on the league fixtures');
+ const names=[...label(leagueRow,0).children,...label(leagueRow,2).children].map(n=>n.textContent);
+ assert.ok(names.includes(first.compactName),'the official compactName is available for mobile');
+ assert.ok(names.includes(first.abbr),'the official abbreviation is available on narrow screens');
+ const css=read('assets/app.css');
+ assert.match(css,/@media\\(max-width:620px\\)[^\\n]*\\.app-fixture-name-compact\\{display:inline\\}/);
+ assert.match(css,/@media\\(max-width:360px\\)[^\\n]*\\.app-fixture-name-abbr\\{display:inline\\}/);
+});
+
 test('FIXTURES-07: result groups show full time or supplied date above the score and the canonical home stadium below',()=>{
  const canonical=JSON.parse(read('data/clubs.json'));
  for(const d of divisions){
@@ -446,7 +479,7 @@ test('FIXTURES-07: result groups show full time or supplied date above the score
     if(played){assert.equal(contents(status),'Full time');assert.equal(status.tagName,'span');}
     else if(row===fields.get('app-fixtures-list').children[0]){
      assert.equal(status.tagName,'time');assert.equal(status.dateTime,'2026-10-20T12:30:00Z');
-    }else assert.equal(contents(status),'Date TBD');
+    }else assert.equal(contents(status),'To be confirmed');
    }
   };
   check(true);route.set({matchday:16});check(false);

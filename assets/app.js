@@ -117,7 +117,7 @@
       fixturesAway:"Away",
       fixturesFullTime:"Full time",
       fixturesScheduled:"Scheduled",
-      fixturesTimingUnknown:"Date TBD",
+      fixturesTimingUnknown:"To be confirmed",
       fixturesMatchCount:"8 matches",
       fixturesMatchUnit:"matches",
       competitionFixturesEmpty:"No scheduled matches or results are available.",
