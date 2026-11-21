@@ -143,3 +143,25 @@ test('404 and Dashboard use the same local DEV sidebar additions and link rewrit
   assert.doesNotMatch(aside(missing.body),/id="app-nav-dashboard"[^>]*aria-current="page"/);
  }finally{await new Promise(resolve=>server.close(resolve))}
 });
+
+test('Matches sidebar uses the provided traced SVG before hydration',()=>{
+ const pages=[
+  '404.html','dashboard/index.html','calendar/index.html','clubs/index.html',
+  'players/index.html','matches/index.html','matches/_shared/index.html',
+  'competitions/it-1/index.html'
+ ];
+ const expected=read('assets/matches-ball.svg').trim();
+ assert.match(expected,/fill-rule="evenodd"/,'Tracing preserves the original panel cutouts');
+ assert.match(expected,/viewBox="0 0 512 512"/,'Source uses the new image geometry');
+ assert.match(expected,/M197,355 314,355/,'Source uses the new solid-panel football design');
+ assert.doesNotMatch(expected,/M200,349 L311,349/,'Previous traced artwork must not remain');
+ for(const page of pages){
+  const html=read(page),start='<a class="fa-shell-link" href="/matches" data-nav01-matches>',end='<span data-nav01="8">Matches</span>';
+  const a=html.indexOf(start),b=html.indexOf(end,a);
+  assert.ok(a>=0&&b>a,'Missing Matches sidebar icon: '+page);
+  const icon=html.slice(a+start.length,b);
+  assert.equal(icon,expected,'Sidebar uses the exact same SVG as the source: '+page);
+  assert.doesNotMatch(icon,/m12 7-4\.3 3\.2/,'Previous stylized icon must not remain');
+ }
+ assert.match(read('tools/render-sidebar.mjs'),/assets\/matches-ball\.svg/,'Generator reuses source SVG');
+});
