@@ -455,7 +455,9 @@ test('FIXTURES unresolved participants follow #732 rank/winner wording and use o
  assert.ok(names.includes(first.compactName),'the official compactName is available for mobile');
  assert.ok(!label(leagueRow,0).children.some(n=>n.className==='app-fixture-name-abbr'),'fixture names never expose a third abbreviation variant');
  const css=read('assets/app.css');
- assert.match(css,/@media\\(max-width:620px\\)[^\\n]*\\.app-fixture-name-compact\\{display:inline\\}/);
+ const compactMedia=css.split('\n').find(line=>line.startsWith('@media(max-width:620px){.app-fixture-match{'));
+ assert.ok(compactMedia?.includes('.app-fixture-name-compact{display:inline}'),
+  'official compactName is visible inside the mobile fixture media rule');
  assert.doesNotMatch(css,/\.app-fixture-name-abbr/,'no abbreviation-only mobile breakpoint');
  assert.match(css,/@media\(max-width:360px\)\{\.app-fixture-club/,'narrow phones retain the compact label');
  assert.match(css,/#competition-panel-fixtures \.app-fixtures-toolbar\{[\s\S]*?z-index:10/,'selector toolbar stacks above linked score cards');
