@@ -483,11 +483,23 @@ try{
       const height=row.getBoundingClientRect().height;
       const skeleton=document.getElementById('app-fixtures-skeleton'),prior=skeleton.style.display;
       skeleton.style.display='grid';
-      const skeletonHeight=skeleton.querySelector('.app-fixture-match').getBoundingClientRect().height;
+      const skeletonRow=skeleton.querySelector('.app-fixture-match');
+      const skeletonHeight=skeletonRow.getBoundingClientRect().height;
+      const middle=(match)=>{
+       const home=match.querySelector('.app-fixture-home').getBoundingClientRect();
+       const away=match.querySelector('.app-fixture-club:not(.app-fixture-home)').getBoundingClientRect();
+       const score=match.querySelector('.app-fixture-score').getBoundingClientRect();
+       const target=(home.top+home.height/2+away.top+away.height/2)/2;
+       return {delta:score.top+score.height/2-target,
+        x:score.left+score.width/2-match.getBoundingClientRect().left,
+        resultDisplay:getComputedStyle(match.querySelector('.app-fixture-result')).display};
+      };
+      const loadedAlignment=middle(row),skeletonAlignment=middle(skeletonRow);
       skeleton.style.display=prior;
       return {compactVisible,left:name.left,right:name.right,bottom:name.bottom,
        height:name.height,trackRight:track.right,trackBottom:track.bottom,
-       crestRight:crest.right,lineHeight,rowHeight:height,skeletonHeight};
+       crestRight:crest.right,lineHeight,rowHeight:height,skeletonHeight,
+       loadedAlignment,skeletonAlignment};
      });
      assert.ok(sample.compactVisible&&sample.left>=sample.crestRight-1&&
       sample.right<=sample.trackRight+1&&sample.bottom<=sample.trackBottom+1&&
@@ -497,6 +509,11 @@ try{
       'Compact mobile fixture cards reserve at most 124px in the ordinary two-row case: '+JSON.stringify({phoneWidth,sample}));
      assert.ok(Math.abs(sample.rowHeight-sample.skeletonHeight)<=8,
       'Loading skeleton must reserve the match row height: '+JSON.stringify({phoneWidth,sample}));
+     assert.ok(sample.loadedAlignment.resultDisplay==='grid'&&sample.skeletonAlignment.resultDisplay==='grid'&&
+      Math.abs(sample.loadedAlignment.delta)<=1.5&&Math.abs(sample.skeletonAlignment.delta)<=1.5&&
+      Math.abs(sample.loadedAlignment.x-sample.skeletonAlignment.x)<=1,
+      'Loaded score and skeleton score must share the home/away midpoint: '+
+       JSON.stringify({phoneWidth,sample}));
     }
     await page.setViewportSize({width,height:844});
    }

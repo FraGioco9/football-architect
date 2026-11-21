@@ -465,6 +465,12 @@ test('FIXTURES unresolved participants follow #732 rank/winner wording and use o
  assert.ok(css.includes('grid-template-columns:minmax(0,1fr) 86px;gap:4px 6px;padding:7px 8px'), 'mobile fixture cards use compact rows');
  assert.ok(css.includes('.app-fixture-club{font-size:12px;gap:6px;min-height:42px}'), 'both actual and skeleton club rows reserve the same 42px height');
  assert.ok(css.includes('grid-template-columns:minmax(0,1fr) 78px;gap:4px 5px;padding-inline:7px'), 'small phones dedicate more width to compactName');
+ assert.match(css,/\.app-fixture-result\{grid-column:2;grid-row:1\/3;align-self:stretch;display:grid;/,
+  'mobile results stretch across both club rows');
+ assert.match(css,/grid-template-rows:minmax\(0,1fr\) auto minmax\(0,1fr\);align-items:center;/,
+  'score is positioned on the midpoint independent of metadata heights');
+ assert.match(css,/\.app-fixture-result>:is\(\.app-fixture-score,\.app-fixture-score-link\)\{align-self:center;justify-self:center\}/,
+  'linked and unlinked results share the score anchor');
  assert.ok(read('assets/competition-fixtures.js').includes('fitViewport:Boolean(fixtureScrollBoundary&&typeof picker.getBoundingClientRect'), 'matchday popup follows the scroll viewport');
  for(const width of [36,30,24])assert.ok(css.includes('app-fixtures-skeleton-crest{flex-basis:'+width+'px;width:'+width+'px;height:'+width+'px}'),
   'skeleton and real mobile crest widths match at each breakpoint');
