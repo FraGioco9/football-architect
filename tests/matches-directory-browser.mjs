@@ -234,8 +234,8 @@ export async function verifyMatchesDirectory(browser){
   }));
   assert.deepEqual(await fixtureSides('23'),{names:['Winner of playoff 8 vs 9','Rank 1'],scoreName:'Winner of playoff 8 vs 9 — Rank 1'},'unresolved first leg has lower seed at home');
   assert.deepEqual(await fixtureSides('24'),{names:['Rank 1','Winner of playoff 8 vs 9'],scoreName:'Rank 1 — Winner of playoff 8 vs 9'},'unresolved second leg reverses home and away');
-  assert.deepEqual((await fixtureSides('19')).names,['AC Meneghina','US Capitolina'],'resolved first leg retains authoritative clubs');
-  assert.deepEqual((await fixtureSides('20')).names,['US Capitolina','AC Meneghina'],'resolved second leg is not flipped twice');
+  assert.deepEqual((await fixtureSides('19')).names,['AC Marassi','US Scaligera'],'resolved first leg retains authoritative division-2 clubs');
+  assert.deepEqual((await fixtureSides('20')).names,['US Scaligera','AC Marassi'],'resolved second leg is not flipped twice');
   assert.deepEqual((await fixtureSides('25')).names,['Winner of semifinal 3 vs 6','Winner of semifinal 4 vs 5'],'domestic final preserves bracket participant order');
   assert.deepEqual((await fixtureSides('26')).names,['Winner of quarter-final 2','Winner of quarter-final 1'],'first leg uses expected home-away placeholder order');
   assert.deepEqual((await fixtureSides('27')).names,['Winner of quarter-final 3','Winner of quarter-final 4'],'second leg retains expected home-away placeholder order');
