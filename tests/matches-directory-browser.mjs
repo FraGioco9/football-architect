@@ -20,8 +20,10 @@ export async function verifyMatchesDirectory(browser){
     {matchId:String(17+i),competitionId:'BR-2',phaseId:'league',round:1,homeClubId:'BR-34',awayClubId:'BR-29',venue:'Estádio das Charqueadas',result:{homeGoals:2,awayGoals:1},status:'completed'}
    )):day===15?[
     {matchId:'18',competitionId:'IT-1',phaseId:'league',round:2,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'},
-    {matchId:'19',competitionId:'IT-1',phaseId:'promotionPlayoffs',round:2,leg:1,homeClubId:null,participantA:{kind:'tieWinner',tieId:'P1'},awayClubId:'IT-2',result:null,status:'awaiting_participants'},
-    {matchId:'20',competitionId:'IT-1',phaseId:'promotionPlayoffs',round:2,leg:2,homeClubId:'IT-2',awayClubId:'IT-1',result:null,status:'scheduled'}
+    {matchId:'19',competitionId:'IT-1',phaseId:'promotionPlayoffs',round:2,leg:1,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'},
+    {matchId:'20',competitionId:'IT-1',phaseId:'promotionPlayoffs',round:2,leg:2,homeClubId:'IT-2',awayClubId:'IT-1',result:null,status:'scheduled'},
+    {matchId:'21',competitionId:'int-1',phaseId:'quarterfinals',round:1,leg:1,homeClubId:null,awayClubId:null,participantA:{kind:'tieWinner',tieId:'p89'},participantB:{kind:'tieWinner',tieId:'p512'},result:null,status:'awaiting_participants'},
+    {matchId:'22',competitionId:'int-1',phaseId:'quarterfinals',round:1,leg:1,homeClubId:null,awayClubId:null,participantA:{kind:'tieWinner',tieId:'p611'},participantB:{kind:'tieWinner',tieId:'p710'},result:null,status:'awaiting_participants'}
    ]:[]}});
   });
   await page.goto('http://app.localhost:2000/matches',{waitUntil:'domcontentloaded'});
@@ -149,21 +151,39 @@ export async function verifyMatchesDirectory(browser){
   await page.getByText('No matches on this day.').waitFor();
   assert(await page.locator('#md-current').isEnabled());
   await page.locator('#md-next').click();await match.waitFor();
-  assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),['Round 2','Playoffs · Leg 1','Playoffs · Leg 2'],'each knockout leg appears beside its phase heading on desktop');
-  const playoffSlot=page.locator('#md-list .md-team-label[aria-label="Winner of playoff 1"]');
-  assert.equal(await playoffSlot.count(),1,'playoff tie uses a descriptive placeholder');
-  assert.equal(await playoffSlot.locator('.md-team-name-full').textContent(),'Winner of playoff 1');
-  assert.equal(await playoffSlot.locator('.md-team-name-compact').textContent(),'Playoff 1');
+  const headingDesktop=['Round 2','Playoffs · Leg 1','Playoffs · Leg 2','Quarter-finals · Leg 1'];
+  const headingMobile=['Round 2','Playoffs','Playoffs','Quarter-finals'];
+  assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),headingDesktop,'each knockout leg appears beside its phase heading on desktop');
+  const playoffPairs=[[8,9],[5,12],[6,11],[7,10]];
+  for(const [higher,lower] of playoffPairs){
+   const name='Winner of playoff '+higher+' vs '+lower;
+   const slot=page.locator('#md-list .md-team-label[aria-label="'+name+'"]');
+   assert.equal(await slot.count(),1,'playoff seed ranks are shown for '+higher+' vs '+lower);
+   assert.equal(await slot.locator('.md-team-name-full').textContent(),name);
+   assert.equal(await slot.locator('.md-team-name-compact').textContent(),'Winner '+higher+'–'+lower);
+  }
+  assert(!/playoff (89|512|611|710)\\b/i.test(await page.locator('#md-list').innerText()),'never display encoded tie IDs');
   assert.equal(await page.locator('#md-list [title]').count(),0,'no tooltips on unresolved participants or fixture details');
   for(const width of [320,375,390,540]){
    await page.setViewportSize({width,height:800});
-   assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),['Round 2','Playoffs','Playoffs'],'hide Leg text only on small screens '+width);
+   assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),headingMobile,'hide Leg text only on small screens '+width);
    assert.equal(await page.locator('#md-list h2 .md-leg:visible').count(),0,'hide every Leg label at '+width);
-   assert(await playoffSlot.locator('.md-team-name-compact').isVisible(),'short playoff placeholder on mobile '+width);
+   for(const [higher,lower] of playoffPairs){
+    const slot=page.locator('#md-list .md-team-label[aria-label="Winner of playoff '+higher+' vs '+lower+'"]');
+    assert(await slot.locator('.md-team-name-compact').isVisible(),'short playoff seed placeholder on mobile '+width);
+   }
   }
   await page.setViewportSize({width:1440,height:800});
-  assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),['Round 2','Playoffs · Leg 1','Playoffs · Leg 2'],'restore Leg labels on desktop');
-  assert(await playoffSlot.locator('.md-team-name-full').isVisible(),'descriptive playoff winner on desktop');
+  assert.deepEqual(await page.locator('#md-list h2 small').allInnerTexts(),headingDesktop,'restore Leg labels on desktop');
+  for(const [higher,lower] of playoffPairs){
+   const slot=page.locator('#md-list .md-team-label[aria-label="Winner of playoff '+higher+' vs '+lower+'"]');
+   assert(await slot.locator('.md-team-name-full').isVisible(),'descriptive seed winner on desktop');
+  }
+  await page.evaluate(()=>document.documentElement.lang='it');
+  await page.locator('#md-list .md-team-label[aria-label="Vincente playoff 8 vs 9"]').waitFor();
+  assert.equal(await page.locator('#md-list .md-team-label[aria-label="Vincente playoff 5 vs 12"] .md-team-name-compact').textContent(),'Vincente 5–12','Italian translation preserves seed ranks');
+  await page.evaluate(()=>document.documentElement.lang='en');
+  await page.locator('#md-list .md-team-label[aria-label="Winner of playoff 8 vs 9"]').waitFor();
   assert.equal(await page.locator('#md-list .md-row small').filter({hasText:/Leg [12]/}).count(),0,'do not repeat Leg per fixture');
   const href=new URL(await page.locator('#md-list h2 a').first().getAttribute('href'),page.url());
   assert.equal(href.pathname,'/competitions/it-1/fixtures');
