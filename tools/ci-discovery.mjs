@@ -20,7 +20,25 @@ export function auditDiscovery({extra=[],manifest=JSON.parse(readFileSync(manife
   if(owner==='backend-import'&&file!=='backend/tests/import-graph.test.mjs')throw Error('Unexecuted backend import test: '+file);
   if(owner==='browser'){
    const workflows=['landing-checks.yml','int24-browser-qa.yml','admin-world-checks.yml'].map(f=>readFileSync(new URL('../.github/workflows/'+f,import.meta.url),'utf8')).join('\n');
-   if(!workflows.includes(file))throw Error('Unexecuted browser test: '+file);
+   // TEST-SUITE-02: two Account suites have a reviewed direct entrypoint
+   // that executes both sequentially in a shared Playwright browser. Do not
+   // treat arbitrary indirect imports as executable test evidence.
+   const delegates={
+    'tests/account-interaction-browser.mjs':{runner:'tests/account-interaction-layout-browser.mjs',
+     importer:"import {runAccountInteractionMatrix} from './account-interaction-browser.mjs';",
+     invocation:"{name:'account-interaction-browser.mjs',expected:100,run:runAccountInteractionMatrix}"},
+    'tests/account-layout-browser.mjs':{runner:'tests/account-interaction-layout-browser.mjs',
+     importer:"import {runAccountLayoutMatrix} from './account-layout-browser.mjs';",
+     invocation:"{name:'account-layout-browser.mjs',expected:80,run:runAccountLayoutMatrix}"}
+   };
+   if(!workflows.includes(file)){
+    const delegate=delegates[file];
+    if(!delegate||!workflows.includes(delegate.runner))throw Error('Unexecuted browser test: '+file);
+    const runner=readFileSync(new URL('../'+delegate.runner,import.meta.url),'utf8');
+    if(!runner.includes(delegate.importer)||!runner.includes(delegate.invocation)||
+       !runner.includes('await runAccountBrowserBatch(['))
+     throw Error('Unexecuted delegated browser test: '+file);
+   }
   }
   if(owner==='migration'&&!/^backend\/tests\/test_.*migration\.py$/.test(file))throw Error('Migration runner cannot discover: '+file);
   if(owner==='site-node'&&!/^tests\/[^/]+\.test\.mjs$/.test(file))throw Error('Site runner cannot discover: '+file);

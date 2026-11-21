@@ -137,6 +137,7 @@
     "tests/a06-08-world-season-integration.test.mjs": "site-node",
     "tests/account-feedback-browser.mjs": "browser",
     "tests/account-interaction-browser.mjs": "browser",
+    "tests/account-interaction-layout-browser.mjs": "browser",
     "tests/account-layout-browser.mjs": "browser",
     "tests/account-pages-browser.mjs": "browser",
     "tests/account-ui.test.mjs": "site-node",
