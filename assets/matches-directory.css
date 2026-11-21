@@ -17,13 +17,13 @@
 #md-list a{color:inherit;text-decoration:none}#md-list :is(.md-team,h2) a:hover{text-decoration:underline}
 #md-list h2>.md-logo{align-self:center}
 .md-team{display:flex;align-items:center;gap:.45rem;min-width:0}
-.md-team:first-child{justify-content:flex-end;text-align:right}.md-team-label{min-width:0;line-height:var(--md-team-line-height,1.25);overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--md-team-lines);overflow:hidden}
+.md-team:first-child{justify-content:flex-end;text-align:right}.md-team-label{min-width:0;line-height:var(--md-team-line-height,1.25em);overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--md-team-lines);overflow:hidden}
 #md-list .md-logo{width:24px;height:24px;flex:none;position:relative;display:inline-grid;place-items:center;overflow:hidden}
 #md-list .md-logo:has(img){border:0;background:transparent}
 #md-list .md-logo:has(img)::before{display:none}
 #md-list .md-logo img{width:100%;height:100%;object-fit:contain}
 #md-list .app-competition-logo-placeholder{font-size:.5rem}
-.md-row{--md-team-lines:1;--md-detail-lines:1;--md-team-line-height:1.25;--md-detail-line-height:1.25rem;display:grid;grid-template-rows:max(1.5rem,calc(var(--md-team-lines) * var(--md-team-line-height) * 1em)) calc(var(--md-detail-lines) * var(--md-detail-line-height));grid-template-columns:minmax(0,1fr) minmax(4rem,auto) minmax(0,1fr);align-items:center;gap:.2rem .6rem;min-height:3.4rem;padding:.35rem;border-top:1px solid color-mix(in srgb,currentColor 18%,transparent);cursor:pointer}
+.md-row{--md-team-lines:1;--md-detail-lines:1;--md-team-line-height:1.25em;--md-detail-line-height:1.25rem;display:grid;grid-template-rows:max(1.5rem,calc(var(--md-team-lines) * var(--md-team-line-height))) calc(var(--md-detail-lines) * var(--md-detail-line-height));grid-template-columns:minmax(0,1fr) minmax(4rem,auto) minmax(0,1fr);align-items:center;gap:.2rem .6rem;min-height:3.4rem;padding:.35rem;border-top:1px solid color-mix(in srgb,currentColor 18%,transparent);cursor:pointer}
 @media(hover:hover) and (pointer:fine){.matches-directory:not([data-scrolling]) .md-row:not(.md-skeleton):hover{background:color-mix(in srgb,var(--fa-shell-accent) 11%,var(--surface))}}
 .md-row:has(.md-score:focus-visible){background:color-mix(in srgb,var(--fa-shell-accent) 11%,var(--surface));outline:2px solid var(--focus);outline-offset:-2px}
 .md-score{text-align:center;font-weight:700;font-variant-numeric:tabular-nums}.md-row:not(.md-skeleton) small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--md-detail-lines);overflow:hidden}
@@ -31,7 +31,7 @@
 #md-list i{border-radius:.25rem;display:inline-block;width:min(7rem,75%);height:.75rem;background:color-mix(in srgb,currentColor 15%,transparent)}
 #md-list .md-name-bar{width:8rem;align-self:center}
 .md-skeleton .md-logo{border-radius:50%;background:color-mix(in srgb,currentColor 10%,transparent)}
-#md-list .md-team-bar{height:calc(var(--md-team-lines) * var(--md-team-line-height) * 1em);min-width:0;background:repeating-linear-gradient(to bottom,transparent 0 .15em,color-mix(in srgb,currentColor 15%,transparent) .15em 1.1em,transparent 1.1em 1.25em)}
+#md-list .md-team-bar{height:calc(var(--md-team-lines) * var(--md-team-line-height));min-width:0;background:repeating-linear-gradient(to bottom,transparent 0 .15em,color-mix(in srgb,currentColor 15%,transparent) .15em 1.1em,transparent 1.1em 1.25em)}
 .md-skeleton :is(.md-score,small){display:grid;place-items:center}
 .md-skeleton .md-score{line-height:inherit;min-height:1lh}
 .md-skeleton small{min-height:var(--md-detail-line-height)}
@@ -53,7 +53,7 @@
  .md-day-navigation{display:grid;grid-template-columns:var(--fa-control-height-regular) minmax(0,1fr) var(--fa-control-height-regular);gap:.35rem;min-width:0;width:100%}
  .md-day-navigation>.md-field{min-width:0}
  .md-controls:not(.md-filters)>#md-current{grid-column:1/-1;width:100%;text-align:center}
- .md-row{--md-team-line-height:1.18;--md-detail-line-height:1.05rem;--md-detail-lines:1;font-size:.84rem;column-gap:.22rem;row-gap:.12rem;min-height:0;padding:.22rem .3rem}
+ .md-row{--md-team-line-height:1.18em;--md-detail-line-height:1.05rem;--md-detail-lines:1;font-size:.84rem;column-gap:.22rem;row-gap:.12rem;min-height:0;padding:.22rem .3rem}
  .md-team{gap:.2rem}
  .md-filters{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}
  .md-filters .md-search{grid-column:1/-1}
