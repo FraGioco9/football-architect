@@ -119,10 +119,15 @@ function participant(id,ref,home=false){
 function fixture(f){
  const row=node('div',null,'md-row'),href='/matches/'+f.matchId;
  const r=f.result;
+ // Bracket A/B is not a home/away ordering: the lower seed hosts leg 1,
+ // while the higher seed hosts leg 2. Resolved club IDs are already authoritative.
+ const unresolvedTwoLegFirst=f.leg===1&&!f.neutral&&f.tieId&&f.tieId!=='final'&&!f.homeClubId&&!f.awayClubId;
+ const homeRef=unresolvedTwoLegFirst?f.participantB:f.participantA;
+ const awayRef=unresolvedTwoLegFirst?f.participantA:f.participantB;
  const score=link(href,r?r.homeGoals+' – '+r.awayGoals:'—');
  score.className='md-score';
- score.setAttribute('aria-label',[participantNames(f.homeClubId,f.participantA).name,score.textContent,participantNames(f.awayClubId,f.participantB).name].join(' '));
- row.append(participant(f.homeClubId,f.participantA,true),score,participant(f.awayClubId,f.participantB));
+ score.setAttribute('aria-label',[participantNames(f.homeClubId,homeRef).name,score.textContent,participantNames(f.awayClubId,awayRef).name].join(' '));
+ row.append(participant(f.homeClubId,homeRef,true),score,participant(f.awayClubId,awayRef));
  const info=[
   r?.penalties?'('+r.penalties.home+' – '+r.penalties.away+' pen.)':r?.extraTime?'AET':'',f.status==='awaiting_participants'?words.tbd:'',f.neutral?words.neutral:f.venue];
  const detail=info.filter(Boolean).join(' · ');
