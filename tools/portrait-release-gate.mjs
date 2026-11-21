@@ -7,12 +7,14 @@
  * process OUTSIDE the same source tree. Source files, DEV approval and a
  * self-declared manifest are not authorization for Production.
  *
- * No manifest digest => publish no portraits (including on DEV/Preview).
+ * DEV may reuse the immutable already-owner-approved #722/PR #730 snapshot;
+ * new portraits and Production still require the independent target gate.
  * Never read D1, an HTTP API or a mutable "latest" approval at build time.
  */
 import {createHash} from 'node:crypto';
 import {existsSync,lstatSync,readFileSync} from 'node:fs';
 import {join} from 'node:path';
+import {approvedDevPortraitSha256} from './approved-dev-portraits.mjs';
 
 export const PORTRAIT_RELEASE_SCHEMA='player-portraits-v42-release-v1';
 const DIGEST=/^[a-f0-9]{64}$/;
@@ -35,6 +37,22 @@ export function approvedPortraitPaths(sourceRoot,{target='unreleased',expectedMa
   return new Set();
  }
  if(!targets.has(target))throw Error('Unknown portrait release target');
+ if(target==='dev-preview'&&expectedManifestSha256===null){
+  // Reuse the 26 approved/published DEV faces; never infer approval from new files.
+  // Snapshot hash integrity fails closed if any previously approved file drifts.
+  const files=new Set();
+  for(const [id,sha] of Object.entries(approvedDevPortraitSha256)){
+   const path='assets/players/portraits/'+id+'.webp';
+   const full=join(sourceRoot,path);
+   if(!regularFile(full))throw Error('Approved DEV portrait missing or unsafe: '+path);
+   const bytes=readFileSync(full);
+   if(bytes.length<12||bytes.toString('ascii',0,4)!=='RIFF'||
+      bytes.toString('ascii',8,12)!=='WEBP'||digest(bytes)!==sha)
+    throw Error('Approved DEV portrait hash mismatch: '+path);
+   files.add(path);
+  }
+  return files;
+ }
  if(expectedManifestSha256===null)return new Set();
  if(typeof expectedManifestSha256!=='string'||!DIGEST.test(expectedManifestSha256))
   throw Error('Invalid externally pinned portrait release digest');

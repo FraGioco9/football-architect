@@ -273,22 +273,37 @@ test('PERF-API-657: compact manifest is a required public asset at its canonical
 });
 
 
-test('#733: checked-in WebP never grants static publication in any environment',()=>{
+test('#733: DEV reuses exactly the 26 already approved V4.2 WebPs; Production stays fenced',()=>{
  const path='assets/players/portraits/44.webp';
- assert.ok(existsSync(join(repositoryRoot,path)),'fixture is physically present');
- assert.equal(isAllowlistedPublicPath(path),false,'file existence is not approval');
+ assert.ok(existsSync(join(repositoryRoot,path)),'accepted DEV WebP exists');
+ assert.equal(isAllowlistedPublicPath(path),false,'file existence alone is never approval');
  assert.equal(planPublicFiles().some(p=>p.startsWith('assets/players/portraits/')),false);
- assert.equal(planPublicFiles(repositoryRoot,{target:'dev-preview'}).includes(path),false);
  assert.equal(planPublicFiles(repositoryRoot,{target:'production'}).includes(path),false);
  assert.throws(()=>planPublicFiles(repositoryRoot,{target:'production',portraitReleaseSha256:'0'.repeat(64)}),
-  /manifest missing or unsafe/,'a guessed production approval digest cannot publish DEV files');
- const root=mkdtempSync(join(tmpdir(),'fa-733-unreleased-'));
+  /manifest missing or unsafe/,'DEV approval never authorizes Production');
+ const expected=[...Array.from({length:20},(_,i)=>44+i),93,98,141,145,148,190]
+  .map(id=>'assets/players/portraits/'+id+'.webp').sort();
+ const dev=planPublicFiles(repositoryRoot,{target:'dev-preview'}).filter(p=>p.startsWith('assets/players/portraits/'));
+ assert.deepEqual(dev,expected);
+ const root=mkdtempSync(join(tmpdir(),'fa-733-dev-preview-'));
  try {
   const destination=join(root,'public');
   const files=stagePublicArtifact(repositoryRoot,destination,{target:'dev-preview'});
-  assert.ok(files.every(p=>!p.startsWith('assets/players/portraits/')));
-  assert.ok(!existsSync(join(destination,path)));
+  assert.deepEqual(files.filter(p=>p.startsWith('assets/players/portraits/')),expected);
+  for(const file of expected)assert.ok(existsSync(join(destination,file)),file);
   assert.deepEqual(assertPublicArtifact(destination,{sourceRoot:repositoryRoot,target:'dev-preview'}),files);
+ }finally{rmSync(root,{recursive:true,force:true})}
+});
+
+test('#733: prior DEV approval is byte-bound and not transferable to arbitrary files',()=>{
+ const root=mkdtempSync(join(tmpdir(),'fa-733-tamper-'));
+ try {
+  const path='assets/players/portraits/44.webp';
+  mkdirSync(join(root,'assets/players/portraits'),{recursive:true});
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview'}),/missing or unsafe/);
+  writeFileSync(join(root,path),Buffer.from('RIFF0000WEBPVP8Ltampered'));
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview'}),/hash mismatch/);
+  assert.deepEqual([...approvedPortraitPaths(root,{target:'production'})],[]);
  }finally{rmSync(root,{recursive:true,force:true})}
 });
 
@@ -309,8 +324,8 @@ test('#733: independently pinned V4.2 manifests are target-bound and hash-verifi
   writeFileSync(join(root,portrait),image);
   const write=obj=>{const bytes=JSON.stringify(obj)+'\n';writeFileSync(join(root,release),bytes);return sha(bytes)};
   const pinned=write(manifest);
-  assert.deepEqual([...approvedPortraitPaths(root,{target:'dev-preview'})],[],
-   'even a checked-in manifest is not approval without an external pin');
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview'}),/hash mismatch/,
+   'the existing DEV approval cannot authorize a synthetic replacement file');
   assert.deepEqual([...approvedPortraitPaths(root,{target:'dev-preview',expectedManifestSha256:pinned})],[portrait]);
   assert.deepEqual([...approvedPortraitPaths(root,{target:'production'})],[]);
   assert.throws(()=>approvedPortraitPaths(root,{target:'production',expectedManifestSha256:pinned}),/manifest missing or unsafe/);
