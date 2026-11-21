@@ -526,7 +526,7 @@ for(const [engine,driver] of Object.entries(engines)){
      const slot=document.querySelector('[data-match-competition-logo]');
      const img=document.createElement('img');
      img.width=44;img.height=44;img.alt='';
-     img.src='/assets/divisions/it-1-lega-federale/compact.svg';
+     img.src='/assets/competitions/IT-1/compact.svg';
      slot.append(img);
      await img.decode();
     });

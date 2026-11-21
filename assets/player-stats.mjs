@@ -1,4 +1,5 @@
 /** #578: multi-season Player Stats from a single verified public read. */
+import {competitionLogoUrl} from './public-image-urls.mjs';
 export const statsWords={
  en:{headers:["Season","Competition","Club","Apps (Subs)","Min","Gls","Ast","YC","RC","MVP","Rat."],keeper:'CS',career:'Career',incomplete:'Incomplete coverage',total:'Total',season:'Season',empty:'No games played',unavailable:'Player statistics are unavailable.',unsupported:'Official statistics unavailable',unprepared:'Season not prepared',show:'Show competitions for',rated:'rated matches',missing:'Not recorded',help:[null,null,null,"Appearances (Substitute appearances)","Minutes played","Goals","Assists","Yellow cards","Red cards","Player of the match awards","Rating"],keeperHelp:"Clean sheets"},
  it:{headers:["Stagione","Competizione","Club","Pres. (Sub.)","Min","Gol","Assist","Gialli","Rossi","MVP","Val."],keeper:'CS',career:'Carriera',incomplete:'Copertura incompleta',total:'Totale',season:'Stagione',empty:'Nessuna partita giocata',unavailable:'Statistiche del giocatore non disponibili.',unsupported:'Statistiche ufficiali non disponibili',unprepared:'Stagione non preparata',show:'Mostra competizioni della',rated:'partite valutate',missing:'Non registrato',help:[null,null,null,"Presenze (da subentrato)","Minuti giocati","Gol segnati","Assist","Cartellini gialli","Cartellini rossi","Premi migliore in campo","Valutazione"],keeperHelp:"Clean sheet"},
@@ -64,14 +65,11 @@ export function aggregateVerifiedCareerStats(seasons){
  if(!totals.mvpAwards&&totals.mvpCoveredAppearances<totals.appearances)totals.mvpAwards=null;
  return totals;
 }
-const domesticCompetitionPattern=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/;
-// Only canonical competition names can resolve actual published division SVGs.
-// A missing or unverified name yields no guessed asset request.
-export function competitionDivisionLogoPath(id,name){
- if(!domesticCompetitionPattern.test(id)||typeof name!=='string'||!name.trim())return null;
- const slug=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
-  .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
- return slug?'/assets/divisions/'+id.toLowerCase()+'-'+slug+'/compact.svg':null;
+// An immutable competition ID is sufficient. The presentation name must
+// never be used as a URL slug or as approval of a static logo.
+export function competitionDivisionLogoPath(id,_name){
+ if(!/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(id))return null;
+ return competitionLogoUrl(id,'compact');
 }
 const competitionPattern=/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/;
 const neutralCupMark='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg>';

@@ -53,7 +53,7 @@ export function inventoryAssetReferences(root=".",io={readdirSync,readFileSync})
     totalFiles:paths.length,totalAssets:assets.length,sourceFilesScanned:sourceText.size,
     explicitlyReferenced:assets.filter(p=>mentions.get(p).length).length,
     unresolved:assets.filter(p=>!mentions.get(p).length).map(path=>({
-      path,reason:path.startsWith("assets/flags/")?"flag-code-resolved-dynamically":path.startsWith("assets/clubs/")?"crest-path-resolved-dynamically":path.startsWith("assets/divisions/")?"division-artwork-catalogue-or-generator":"requires-dynamic-and-publication-review"
+      path,reason:path.startsWith("assets/flags/")?"flag-code-resolved-dynamically":path.startsWith("assets/clubs/")?"crest-path-resolved-dynamically":path.startsWith("assets/competitions/")?"division-artwork-catalogue-or-generator":"requires-dynamic-and-publication-review"
     })),
     sampleReferences:assets.filter(p=>mentions.get(p).length).slice(0,30).map(path=>({path,referencedBy:mentions.get(path).slice(0,4)}))
   };
