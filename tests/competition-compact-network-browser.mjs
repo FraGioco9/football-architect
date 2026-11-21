@@ -1,6 +1,7 @@
 // #657 — real browser request inventory, static first paint and refresh.
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
+import {performance} from 'node:perf_hooks';
 
 const origin='http://app.localhost:2000';
 const compact='/competitions/_shared/compact.json';
@@ -23,6 +24,46 @@ function summary(requests){
   duplicateApiReads:Object.fromEntries(Object.entries(counts).filter(([,n])=>n>1)),
   requests};
 }
+// Global 'networkidle' times out on unresolved /api/world in this loopback
+// fixture. Catalogue reads must finish; public API requests are inventoried
+// at request start but are not a prerequisite for static first-paint QA.
+// Keep a quiet observation window to catch late request starts.
+export function createAuditedRequestSettler(page,{
+ now=()=>performance.now(),
+ pause=ms=>new Promise(resolve=>setTimeout(resolve,ms)),
+ quietMs=250,
+ timeoutMs=6000
+}={}){
+ const pending=new Map();
+ let lastActivity=now();
+ page.on('request',request=>{
+  const url=new URL(request.url());
+  if(url.origin!==origin)return;
+  const catalogue=url.pathname===compact||url.pathname===old;
+  if(!catalogue&&!url.pathname.startsWith('/api/'))return;
+  if(catalogue)pending.set(request,request.url());
+  // Public-world and competition API reads may intentionally remain pending
+  // on the standalone preview. Record their starts, not their completion.
+  lastActivity=now();
+ });
+ const completed=request=>{
+  if(pending.delete(request))lastActivity=now();
+ };
+ page.on('requestfinished',completed);
+ page.on('requestfailed',completed);
+ return {
+  async settle(label){
+   const deadline=now()+timeoutMs;
+   while(now()<deadline){
+    if(pending.size===0&&now()-lastActivity>=quietMs)return;
+    await pause(Math.min(25,Math.max(1,deadline-now())));
+   }
+   throw Error('PERF-API-657 catalogue requests did not settle: '+label+
+    ' '+JSON.stringify([...pending.values()]));
+  }
+ };
+}
+
 export async function verifyCompetitionCompactNetwork(browser,{engine='chromium'}={}){
  const report={name:'PERF-API-657',engine,origin,scope:'isolated loopback browser; no DB mutations',runs:[]};
  let checks=0;
@@ -31,6 +72,7 @@ export async function verifyCompetitionCompactNetwork(browser,{engine='chromium'
    const context=await browser.newContext({viewport:{width:390,height:844},
     reducedMotion:'reduce',serviceWorkers:'block'});
    const page=await context.newPage();
+   const auditRequests=createAuditedRequestSettler(page);
    let phase='direct';
    const collected={direct:[],refresh:[],season:[]},errors=[];
    page.on('pageerror',e=>errors.push(e.message));
@@ -116,7 +158,7 @@ export async function verifyCompetitionCompactNetwork(browser,{engine='chromium'
       await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id===id,spec.id);
       assert.equal(await page.evaluate(async()=>window.faCompetitionModel.validManifest(
        await window.faCompetitionManifestPromise)),true,'canonical validation after hydration');
-      await page.waitForLoadState('networkidle',{timeout:6000}).catch(()=>{});
+      await auditRequests.settle(mode+' '+spec.url);
       const requests=summary(collected[mode]);
       assert.equal(requests.compactRequests,1,'one compact read '+mode+' '+spec.url);
       assert.equal(requests.obsoleteManifestRequests,0,'no full manifest '+mode+' '+spec.url);
@@ -131,7 +173,7 @@ export async function verifyCompetitionCompactNetwork(browser,{engine='chromium'
     phase='season';
     assert.equal(await page.evaluate(()=>window.faCompetitionContextApi.selectSeason(2)),true);
     await page.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===2);
-    await page.waitForLoadState('networkidle',{timeout:6000}).catch(()=>{});
+    await auditRequests.settle('season '+spec.url);
     const switched=await page.evaluate(()=>({
      selectedSeason:window.faCompetitionContext?.selectedSeason,
      retainedPriorData:window.faCompetitionContext?.seasonData!==null,

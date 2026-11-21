@@ -111,6 +111,13 @@ jobs:
           node --check assets/competition-page.js
           node --check assets/competition-fixtures.js
           node --check tools/validate-division-assets.mjs
+      # Catalog integrity is owned by Site FULL; no duplicate catalog PR jobs.
+      # Preserve the historical SURNAMES-only source scope rule on the PR HEAD.
+      - name: Guard SURNAMES-01 catalog scope (only on catalog changes)
+        if: ${{ github.event_name == 'pull_request' && !needs.head-exact.outputs.reuse }}
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node tools/ci-opt-06-surname-scope.mjs
       # The source research branches were deleted after the cumulative surname merge.
       # Its preserved PR ref still contains baseline d27a46a and original pool blobs,
       # required by the catalog provenance tests during FULL checks.

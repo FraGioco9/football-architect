@@ -44,8 +44,10 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   }
   console.log('CI-OPT-01 controlled trials: '+JSON.stringify(trials));
  }else{
-  run(plan.parallel,2);
-  run(plan.serial,1);
+  const audited=run(plan.parallel,2);
+  console.log('CI_OPT_06_SITE_LANE|'+JSON.stringify({lane:'audited-parallel',files:plan.parallel.length,elapsedMs:audited.milliseconds,reviewValid:plan.reviewValid}));
+  const conservative=run(plan.serial,1);
+  console.log('CI_OPT_06_SITE_LANE|'+JSON.stringify({lane:'conservative-serial',files:plan.serial.length,elapsedMs:conservative.milliseconds,reviewValid:plan.reviewValid}));
   console.log('FULL Node partition PASS: '+plan.total+' files; no files excluded.');
  }
 }
