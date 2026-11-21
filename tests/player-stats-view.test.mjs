@@ -305,7 +305,7 @@ test('#578 Stats club crests are passive, bounded and separated from linked text
  assert.match(stats,/identity\.append\(clubLink\);club\.append\(identity\)/,
   'link remains text-only alongside passive crest');
  assert.match(bootstrap,/crests=catalog\.clubCrests/,'use the existing club catalog');
- assert.match(bootstrap,/clubCrest:key=>crests&&Object\.hasOwn\(crests,key\)/);
+ assert.match(bootstrap,/clubCrest:key=>verifiedClubCrest\(key,crests\)/);
  assert.match(css,/\.app-player-stats-club-identity\{\s*display:inline-flex;align-items:center;justify-content:flex-start;gap:0;[\s\S]*?position:relative;padding-inline-start:31px;/,
   'club text has a stable 31px inset that does not depend on the crest');
  assert.match(css,/\.app-player-stats-club-identity \.app-player-stats-club-crest\{\s*position:absolute;inset-inline-start:0;top:50%;transform:translateY\(-50%\);[\s\S]*?flex:0 0 24px;width:24px;height:24px;/,

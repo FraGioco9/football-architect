@@ -7,6 +7,25 @@ import {publicRequestFile,isAllowlistedPublicPath,planPublicFiles} from '../tool
 import {renderPlayerDetailPage} from '../tools/render-player-detail.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
+test('#733 Player Detail derives published club crests from stable IDs',()=>{
+ const source=read('assets/player-detail.js');
+ const begin=source.indexOf(' function verifiedClubCrest('),end=source.indexOf('\n function renderClub()',begin);
+ assert.ok(begin>0&&end>begin,'shared Player Overview/Stats/Matches crest verifier');
+ const resolve=runInNewContext('('+source.slice(begin,end).trim()+')',{});
+ const canonical='assets/clubs/IT/1/crest.svg';
+ assert.equal(resolve('IT-1',{'IT-1':canonical}),canonical);
+ for(const [id,registry] of [
+  ['IT-1',{}],['IT-1',{'IT-1':'https://evil.invalid/logo.svg'}],
+  ['IT-1',{'IT-1':'assets/clubs/PT/1/crest.svg'}],
+  ['IT-01',{'IT-01':'assets/clubs/IT/01/crest.svg'}],
+  ['XX-1',{'XX-1':'assets/clubs/XX/1/crest.svg'}],
+  ['IT-1',null],['IT-1',[]]
+ ])assert.equal(resolve(id,registry),null,'invalid or unpublished crest: '+id);
+ assert.match(source,/const crest=verifiedClubCrest\(key,clubCatalog\.clubCrests\)/);
+ assert.equal((source.match(/clubCrest:key=>verifiedClubCrest\(key,crests\)/g)||[]).length,2,
+  'Stats and Matches must use the same ID/registry guard');
+});
+
 test('#502 persisted and protected preview detail routes are canonical and statically publishable',()=>{
  assert.equal(buildRoute({kind:'player',id:42}),'/players/42');
  assert.equal(parseRoute('/players/42')?.kind,'player');

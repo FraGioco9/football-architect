@@ -306,7 +306,12 @@
    .replace(/href="#([^"]+)"/g,(_,id)=>'href="#club-'+placement+'-'+id+'"');
   const link=division?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'standings'}):null;
   const fact=(label,value)=>'<div><dt>'+escape(t[label])+'</dt><dd>'+value+'</dd></div>';
-  const crest=()=>'<span class="app-world-club-crest-placeholder club-crest fa-crest-loading" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'"'+(Object.hasOwn(manifest.clubCrests||{},c.countryId+'-'+c.clubId)?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'">'+(manifest.clubCrests?.[c.countryId+'-'+c.clubId]?'<img class="app-club-crest-image" src="/'+escape(manifest.clubCrests[c.countryId+'-'+c.clubId])+'" alt="" decoding="sync">':'')+'</span>';
+  const crestId=c.countryId+'-'+c.clubId;
+  const crestMatch=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.exec(crestId);
+  const crestSource=crestMatch&&Object.hasOwn(manifest.clubCrests||{},crestId)&&
+   manifest.clubCrests[crestId]==='assets/clubs/'+crestMatch[1]+'/'+crestMatch[2]+'/crest.svg'
+   ?'/assets/clubs/'+crestMatch[1]+'/'+crestMatch[2]+'/crest.svg':null;
+  const crest=()=>'<span class="app-world-club-crest-placeholder club-crest fa-crest-loading" data-club-crest="'+escape(crestId)+'"'+(crestSource?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'">'+(crestSource?'<img class="app-club-crest-image" src="'+escape(crestSource)+'" alt="" decoding="sync">':'')+'</span>';
   const divisionLogo=division?domesticLogoUrl(division.id):null;
   const summary=division&&snapshot?.source==='dev'&&snapshot.divisionId===division.id&&snapshot.clubId===c.clubId&&
    Number.isInteger(snapshot.season)&&snapshot.season>=1&&snapshot.season<=4&&

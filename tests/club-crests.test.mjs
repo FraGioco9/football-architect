@@ -170,6 +170,11 @@ test('club pages show one accessible, loadable crest per view and locale with a 
   }
   const missing=clubModel.render({...base,clubCrests:{}},route('overview'),'en');
   assert.equal((missing.match(/data-club-crest-pending="true"/g)||[]).length,0,id+' missing asset falls back');
+  const tampered=clubModel.render({...base,clubCrests:{[id]:'https://evil.invalid/crest.svg'}},route('overview'),'en');
+  assert.equal((tampered.match(/data-club-crest-pending="true"/g)||[]).length,0,
+   id+' tampered catalog cannot claim a crest is loading');
+  assert.doesNotMatch(tampered,/app-club-crest-image|evil\.invalid/,
+   'first-paint must not render the registry URL as an image source');
  }
 });
 
