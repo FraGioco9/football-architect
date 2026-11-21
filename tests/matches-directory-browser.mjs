@@ -16,20 +16,24 @@ export async function verifyMatchesDirectory(browser){
   await page.route('**/api/world',async route=>{await initialWorld;await route.fulfill({json:{world}})});
   await page.route('**/api/matches?*',route=>{
    const day=Number(new URL(route.request().url()).searchParams.get('day'));requests++;
-   return route.fulfill({json:{schemaVersion:1,providerId:'authoritative-world',world,selectedSeason:1,day,publication:'published',fixtures:day===13?[
-    {matchId:'17',competitionId:'BR-2',phaseId:'league',round:1,homeClubId:'BR-34',awayClubId:'BR-29',venue:'Estádio das Charqueadas',result:{homeGoals:2,awayGoals:1},status:'completed'}
-   ]:day===15?[{matchId:'18',competitionId:'IT-1',phaseId:'league',round:2,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'}]:[]}});
+   return route.fulfill({json:{schemaVersion:1,providerId:'authoritative-world',world,selectedSeason:1,day,publication:'published',fixtures:day===13?Array.from({length:8},(_,i)=>(
+    {matchId:String(17+i),competitionId:'BR-2',phaseId:'league',round:1,homeClubId:'BR-34',awayClubId:'BR-29',venue:'Estádio das Charqueadas',result:{homeGoals:2,awayGoals:1},status:'completed'}
+   )):day===15?[{matchId:'18',competitionId:'IT-1',phaseId:'league',round:2,homeClubId:'IT-1',awayClubId:'IT-2',result:null,status:'scheduled'}]:[]}});
   });
   await page.goto('http://app.localhost:2000/matches',{waitUntil:'domcontentloaded'});
-  const match=page.locator('#md-list .md-score');
+  const match=page.locator('#md-list a.md-score').first();
   assert.equal(await page.locator('#md-season-value').textContent(),'');
   assert.equal(await page.locator('#md-day-value').textContent(),'');
   const widths=[320,375,390,540,541,768,1440],loading=new Map();
+  const rowEdges=()=>page.locator('#md-list .md-row').evaluateAll(rows=>rows.map(row=>{
+   const {top,bottom}=row.getBoundingClientRect();
+   return [top,bottom];
+  }));
   for(const width of widths){
    await page.setViewportSize({width,height:800});
    const name=await page.locator('#md-list .md-name-bar').boundingBox();
    assert(name.width>0);
-   loading.set(width,{nameX:name.x,height:(await page.locator('.md-skeleton').first().boundingBox()).height});
+   loading.set(width,{nameX:name.x,edges:await rowEdges()});
   }
   releaseWorld();
   await match.waitFor();
@@ -42,8 +46,8 @@ export async function verifyMatchesDirectory(browser){
   await page.locator('#md-list h2 > .app-competition-logo-placeholder').waitFor();
   assert.equal(await page.locator('#md-list h2 small').innerText(),'Round 1');
   assert.equal(await page.locator('.md-row').getByText('Round 1').count(),0);
-  assert.equal(await page.locator('.md-row .md-team:first-child > a + .md-logo').count(),1);
-  assert.equal(await page.locator('.md-row .md-team:last-of-type > .md-logo + a').count(),1);
+  assert.equal(await page.locator('.md-row .md-team:first-child > a + .md-logo').count(),8);
+  assert.equal(await page.locator('.md-row .md-team:last-of-type > .md-logo + a').count(),8);
   assert.equal(await page.locator('#md-list img').count(),0,'failed images keep the placeholders');
   await match.hover();
   assert.equal(await match.evaluate(a=>getComputedStyle(a).textDecorationLine),'none');
@@ -54,7 +58,7 @@ export async function verifyMatchesDirectory(browser){
   const divisionLogo=await page.locator('#md-list h2 > .md-logo').elementHandle();
   for(const width of widths){
    await page.setViewportSize({width,height:800});
-   assert.equal((await page.locator('.md-row').boundingBox()).height,loading.get(width).height);
+   assert.deepEqual(await rowEdges(),loading.get(width).edges,'row boundaries at '+width+'px');
    assert.equal((await page.locator('#md-list h2 a').boundingBox()).x,loading.get(width).nameX);
    const searchBox=await page.locator('#md-q').boundingBox(),filterBox=await page.locator('#md-country').boundingBox();
    const [prev,day,next]=await Promise.all(['prev','day','next'].map(id=>page.locator('#md-'+id).boundingBox()));

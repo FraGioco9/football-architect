@@ -406,7 +406,11 @@ writeOutput("assets/match-public-context.mjs",renderMatchPublicContext(clubData,
  const start=source.indexOf('<section id="app-divisions"');
  const end=source.indexOf('\n      </main>',start);
  if(start<0||end<0)throw Error('Missing directory shell');
- const skeleton='<div class="md-row md-skeleton" aria-hidden="true"><i></i><i></i><i></i><small><i></i></small></div>'.repeat(8);
+ const teamBar='<i class="md-team-bar"></i>';
+ const crestSlot='<span class="md-logo"></span>';
+ const skeleton=(`<div class="md-row md-skeleton" aria-hidden="true">
+  <span class="md-team">${teamBar}${crestSlot}</span><span class="md-score"><i></i></span>
+  <span class="md-team">${crestSlot}${teamBar}</span><small><i></i></small></div>`).repeat(8);
  const content=template.replace('@@ROWS@@',skeleton).replace(/@@PICKER\((\w+),([^)]*)\)@@/g,(_,key,label)=>{
   const id='md-'+key;
   return `<div class="md-field"><span data-word="${key}" id="${id}-label">${label}</span>

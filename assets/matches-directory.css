@@ -13,7 +13,7 @@
 .md-controls .md-field:has([aria-expanded="true"]){position:relative;z-index:50}
 .md-controls button:disabled{opacity:.5}
 #md-status{min-height:1.6em;margin:.6rem 0}#md-list{min-height:26rem}
-#md-list h2{display:grid;grid-auto-flow:column;align-content:center;justify-content:start;align-items:end;gap:.45rem;font-size:1rem;padding:.65rem;margin:0;min-height:2.8rem}
+#md-list h2{display:grid;grid-auto-flow:column;grid-template-rows:minmax(1.55em,auto);align-content:center;justify-content:start;align-items:end;gap:.45rem;font-size:1rem;padding:.65rem;margin:0;min-height:2.8rem}
 #md-list a{color:inherit;text-decoration:none}#md-list :is(.md-team,h2) a:hover{text-decoration:underline}
 #md-list h2>.md-logo{align-self:center}
 .md-team{display:flex;align-items:center;gap:.45rem;min-width:0}
@@ -30,9 +30,13 @@
 .md-row small{line-height:1.25rem;text-align:center;grid-column:1/-1;opacity:.8}
 #md-list i{border-radius:.25rem;display:inline-block;width:min(7rem,75%);height:.75rem;background:color-mix(in srgb,currentColor 15%,transparent)}
 #md-list .md-name-bar{width:8rem;align-self:center}
-.md-skeleton small{display:grid;place-items:center}
+.md-skeleton .md-logo{border-radius:50%;background:color-mix(in srgb,currentColor 10%,transparent)}
+#md-list .md-team-bar{height:calc(var(--md-team-lines) * 1.25em);min-width:0;background:repeating-linear-gradient(to bottom,transparent 0 .15em,color-mix(in srgb,currentColor 15%,transparent) .15em 1.1em,transparent 1.1em 1.25em)}
+.md-skeleton :is(.md-score,small){display:grid;place-items:center}
+.md-skeleton .md-score{line-height:inherit;min-height:1lh}
+.md-skeleton small{min-height:1.25rem}
 .md-skeleton small i{max-width:5rem}
-.md-skeleton>i:first-child{justify-self:end}.md-skeleton>i:nth-child(2){width:2.5rem;justify-self:center}
+#md-list .md-skeleton .md-score i{width:2.5rem;height:1em}
 @media(max-width:540px){.md-controls{gap:.35rem}.md-controls .md-field{max-width:100%}.md-row{line-height:1.25;gap:.2rem .25rem;font-size:.9rem}.md-team{gap:.25rem}#md-list .md-logo{width:20px;height:20px}}
 
 .matches-directory{container-type:inline-size}
@@ -46,5 +50,7 @@
 }
 
 #md-list h2 small{font-weight:400;color:var(--muted,currentColor)}
-@container(max-width:36rem){.md-row{--md-team-lines:2;--md-detail-lines:2}}
+@container(max-width:24rem){#md-list h2{min-height:calc(3.1em + 1.3rem)}}
+@container(max-width:36rem){
+ .md-row{--md-team-lines:2;--md-detail-lines:2}}
 @container(max-width:16rem){.md-row{--md-team-lines:3}}
