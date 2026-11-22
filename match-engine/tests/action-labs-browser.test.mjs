@@ -197,7 +197,17 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.equal(x.popup,false);
    assert.match(x.tick,scene==='carry-solo'?/^Tick 60/:/^Tick 10/);
    assert.match(x.observation,new RegExp(actors+' real physical '+(actors===1?'player':'players')));
-   assert.match(x.observation,/source events [1-9]/);
+   if(scene==='carry-solo'){
+    // Intent-driven solo Carry applies an actual Rapier ball impulse, but
+    // is explicitly NOT evidence of a native shoe START. Never counterfeit one.
+    assert.match(x.observation,/source events 0\b/);
+    assert.match(x.observation,/CARRY gameplay intent \/ Rapier ball impulse/);
+    assert.match(x.observation,/Solo Carry intent \(no shoe-contact claims\)/);
+    assert.doesNotMatch(x.observation,/CARRY native shoe\/impulse|real native carries/);
+   }else{
+    // All other visible exercises retain source-grounded real Rapier events.
+    assert.match(x.observation,/source events [1-9]/);
+   }
    assert.match(x.observation,/provisional 0–0/);
    assert.match(x.observation,/no official result/);
    process.stdout.write('ME_628_INLINE_CHROME '+JSON.stringify({scene,side,...x})+'\n');
@@ -242,7 +252,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.ok(carryDecisions.rows.every(x=>!x.includes('AWAY #')),
    'Carry has no defending player visible');
   assert.ok(carryDecisions.rows.some(x=>/Last verified action: carry/.test(x)),
-   'Carry must reflect an original native Rapier touch');
+   'Carry must reflect a real Rapier ball impulse without asserting shoe contact');
   await evalJs("document.getElementById('reset').click()");
   const resetDecisions=await evalJs("(()=>{const p=document.getElementById('me-decisions-panel');"+
    "return {players:p.querySelectorAll('.me-decision-row').length,events:document.getElementById('me-decisions-event-count').textContent};})()");
