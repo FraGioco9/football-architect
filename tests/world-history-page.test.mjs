@@ -244,9 +244,11 @@ test('#581: seasons default newest open; each header independently toggles and s
  function element(tag,className='',value=''){
   const e={
    tag,className,textContent:value,children:[],attributes:new Map(),listeners:new Map(),hidden:false,
-   states:new Map(),
-   append(...nodes){this.children.push(...nodes)},
-   replaceChildren(...nodes){this.children=[...nodes]},
+   states:new Map(),dataset:{},parent:null,
+   append(...nodes){for(const node of nodes){node.parent=this;this.children.push(node)}},
+   replaceChildren(...nodes){this.children=[...nodes];for(const node of nodes)node.parent=this},
+   contains(target){return this===target||this.children.some(node=>node.contains?.(target))},
+   remove(){if(this.parent){const index=this.parent.children.indexOf(this);if(index>=0)this.parent.children.splice(index,1);this.parent=null}},
    setAttribute(k,v){this.attributes.set(k,String(v))},
    getAttribute(k){return this.attributes.get(k)||null},
    addEventListener(k,listener){this.listeners.set(k,listener)},
@@ -269,7 +271,10 @@ test('#581: seasons default newest open; each header independently toggles and s
   make:element,compLabel:id=>id,competitionMark:id=>element('span','fa-world-history-logo',id),
  };
  const render=runInNewContext(source+'\nrender',env);
- render();
+ status.textContent='Old Loading…';status.hidden=false;env.loading=true;render();
+ assert.equal(status.textContent,'','no Loading copy visible over the skeleton');
+ assert.equal(status.hidden,true,'status stays hidden until a result or error');
+ env.loading=false;render();
  assert.deepEqual(archive.children.map(el=>el.children[0].children[0].children[0].textContent),
   ['Season 3','Season 2','Season 1'],'sort by latest sporting season, not API order');
  const seasons=archive.children;
@@ -294,6 +299,30 @@ test('#581: seasons default newest open; each header independently toggles and s
  const club=list(seasons[0]).children[0].children[1].children.at(-1);
  assert.equal(club.href,'/clubs/it/1/history#club-history-season-3',
   'club History deep-link preserves the winning season');
+ const clubHolder=list(seasons[0]).children[0].children[1];
+ const missingCrest=clubHolder.children[0];
+ assert.match(missingCrest.className,/app-world-club-crest-placeholder/);
+ assert.equal(missingCrest.dataset.clubCrestFallback,'true','missing approved crest uses shared shield');
+ assert.equal(missingCrest.children.length,0,'unpublished club crest never requests an invented image');
+ // A published crest stays blank while pending, then displays its real SVG.
+ env.clubCrests.set('IT-1','assets/clubs/IT/1/crest.svg');
+ render();
+ const pending=list(archive.children[0]).children[0].children[1].children[0];
+ assert.equal(pending.dataset.clubCrestPending,'true','published SVG loads without shield flash');
+ assert.equal(pending.dataset.clubCrestFallback,undefined);
+ const pendingImage=pending.children[0];
+ assert.equal(pendingImage.src,'/assets/clubs/IT/1/crest.svg');
+ pendingImage.listeners.get('load')();
+ assert.equal(pending.dataset.clubCrestLoaded,'true');
+ assert.equal(pending.dataset.clubCrestPending,undefined);
+ render();
+ const failed=list(archive.children[0]).children[0].children[1].children[0];
+ failed.children[0].listeners.get('error')();
+ assert.equal(failed.dataset.clubCrestFallback,'true','network failure displays shared club shield');
+ assert.equal(failed.dataset.clubCrestLoaded,undefined);
+ assert.equal(failed.children.length,0,'broken image removed without layout collapse');
+ env.clubCrests.delete('IT-1');
+ render();
  assert.equal(head(seasons[0]).children.length,2,'header is just season name and chevron');
  assert.equal(head(seasons[0]).children[0].textContent,'Season 3');
  const older=seasons[1],button=head(older);
@@ -345,3 +374,31 @@ test('#581: first paint and Debug transitions preserve accurately aligned skelet
  assert.doesNotMatch(runtime,/archive\.replaceChildren\(\);\s*setFilterDisabled\(true\);retry\.hidden/,'no blank archive on Debug source transitions');
 });
 
+
+test('#581: no loading text on first paint or protected/public source changes',()=>{
+ const html=read('history/index.html');
+ const renderer=renderWorldHistoryPage();
+ const js=read('assets/world-history.js'),css=read('assets/world-history.css');
+ assert.ok(html.includes(renderer),'first paint and generated markup agree');
+ assert.match(renderer,/id="world-history-status"[^>]*hidden><\/p>/);
+ assert.doesNotMatch(renderer,/Loading verified archive|Loading\.\.\.|Loading…/);
+ assert.doesNotMatch(js,/debugLoading:|loading:'Loading/,'no unused localized loading messages');
+ assert.match(js,/if\(loading\)\{status\.textContent='';status\.hidden=true;return;\}/);
+ assert.match(js,/status\.textContent='';status\.hidden=true;/);
+ assert.match(css,/\.fa-world-history \.fa-world-history-status\[hidden\]\{display:block!important;visibility:hidden\}/);
+ assert.match(js,/debugError:|error:'Verified history/,'real error messages remain available');
+});
+
+test('#581: club crest shield reuses the shared site primitive at the final 29px geometry',()=>{
+ const js=read('assets/world-history.js'),css=read('assets/world-history.css');
+ const shared=read('assets/app.css');
+ assert.match(js,/app-world-club-crest-placeholder fa-world-history-club-crest/);
+ assert.match(js,/crestSlot\.dataset\.clubCrestPending='true'/);
+ assert.match(js,/crestSlot\.dataset\.clubCrestFallback='true'/);
+ assert.match(js,/crestSlot\.dataset\.clubCrestLoaded='true'/);
+ assert.match(js,/img\.addEventListener\('error'/);
+ assert.match(css,/\.fa-world-history-row \.fa-world-history-club-crest\.app-world-club-crest-placeholder\{[^}]*width:29px;height:29px;flex:0 0 29px/);
+ assert.match(shared,/\.app-world-club-crest-placeholder::before\{[^}]*clip-path:var\(--fa-crest-shield-shape\)/);
+ assert.match(shared,/\.app-world-club-crest-placeholder\[data-club-crest-pending="true"\]::before/);
+ assert.match(shared,/\.app-world-club-crest-placeholder\[data-club-crest-loaded="true"\]>.app-club-crest-image/);
+});

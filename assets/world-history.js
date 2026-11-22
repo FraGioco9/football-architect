@@ -5,11 +5,11 @@
  const competitionIds=ids.flatMap(c=>[1,2].map(t=>c+'-'+t)).concat('int-1','int-2');
  const clubPattern=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/;
  const copy={
-  en:{debugTag:'Debug',debugLoading:'Loading fictional Debug history…',debugUnstarted:'Debug is at Season 0. No completed seasons.',debugEmpty:'No completed Debug seasons yet. Advance to a later season or the final sporting day.',debugError:'Debug history is unavailable. No winners were substituted.',title:'World History',season:'Season',country:'Champion country',competition:'Competition',allSeasons:'All seasons',allCountries:'All countries',allCompetitions:'All competitions',loading:'Loading verified archive…',unstarted:'The world has not started. No seasons have been completed.',empty:'No completed seasons are available yet.',filtered:'No champions match these filters.',error:'Verified history is unavailable. No results were substituted.',retry:'Retry',count:'champions',first:'First division',second:'Second division',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italy','England','Spain','Germany','France','Portugal','Netherlands','Brazil']},
-  de:{debugTag:'Debug',debugLoading:'Fiktive Debug-Historie wird geladen…',debugUnstarted:'Debug steht auf Saison 0. Keine abgeschlossenen Saisons.',debugEmpty:'Noch keine abgeschlossenen Debug-Saisons.',debugError:'Debug-Historie nicht verfügbar. Keine erfundenen Ersatzdaten.',title:'Weltgeschichte',season:'Saison',country:'Land des Meisters',competition:'Wettbewerb',allSeasons:'Alle Saisons',allCountries:'Alle Länder',allCompetitions:'Alle Wettbewerbe',loading:'Bestätigtes Archiv wird geladen…',unstarted:'Die Welt hat noch nicht begonnen. Es gibt keine abgeschlossenen Saisons.',empty:'Noch keine abgeschlossenen Saisons verfügbar.',filtered:'Keine Meister entsprechen diesen Filtern.',error:'Bestätigte Historie ist nicht verfügbar. Keine Ersatzresultate.',retry:'Erneut versuchen',count:'Meister',first:'Erste Liga',second:'Zweite Liga',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italien','England','Spanien','Deutschland','Frankreich','Portugal','Niederlande','Brasilien']},
-  es:{debugTag:'Debug',debugLoading:'Cargando historia Debug ficticia…',debugUnstarted:'Debug está en la temporada 0. No hay temporadas completadas.',debugEmpty:'Todavía no hay temporadas Debug completadas.',debugError:'Historial Debug no disponible.',title:'Historia mundial',season:'Temporada',country:'País del campeón',competition:'Competición',allSeasons:'Todas las temporadas',allCountries:'Todos los países',allCompetitions:'Todas las competiciones',loading:'Cargando archivo verificado…',unstarted:'El mundo aún no ha comenzado. No hay temporadas completadas.',empty:'Todavía no hay temporadas completadas.',filtered:'Ningún campeón coincide con estos filtros.',error:'El historial verificado no está disponible. No se han sustituido resultados.',retry:'Reintentar',count:'campeones',first:'Primera división',second:'Segunda división',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italia','Inglaterra','España','Alemania','Francia','Portugal','Países Bajos','Brasil']},
-  fr:{debugTag:'Debug',debugLoading:'Chargement de l’historique Debug fictif…',debugUnstarted:'Debug est à la saison 0. Aucune saison terminée.',debugEmpty:'Aucune saison Debug terminée pour le moment.',debugError:'Historique Debug indisponible.',title:'Histoire mondiale',season:'Saison',country:'Pays du champion',competition:'Compétition',allSeasons:'Toutes les saisons',allCountries:'Tous les pays',allCompetitions:'Toutes les compétitions',loading:'Chargement des archives vérifiées…',unstarted:'Le monde n’a pas encore commencé. Aucune saison terminée.',empty:'Aucune saison terminée disponible.',filtered:'Aucun champion ne correspond à ces filtres.',error:'Historique vérifié indisponible. Aucun résultat de substitution.',retry:'Réessayer',count:'champions',first:'Première division',second:'Deuxième division',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italie','Angleterre','Espagne','Allemagne','France','Portugal','Pays-Bas','Brésil']},
-  it:{debugTag:'Debug',debugLoading:'Caricamento storico Debug fittizio…',debugUnstarted:'Debug è alla Stagione 0. Nessuna stagione completata.',debugEmpty:'Nessuna stagione Debug completata. Avanza alla stagione successiva o all’ultimo giorno sportivo.',debugError:'Storico Debug non disponibile. Nessun vincitore sostitutivo.',title:'Storia mondiale',season:'Stagione',country:'Paese del campione',competition:'Competizione',allSeasons:'Tutte le stagioni',allCountries:'Tutti i paesi',allCompetitions:'Tutte le competizioni',loading:'Caricamento archivio verificato…',unstarted:'Il mondo non è ancora iniziato. Nessuna stagione completata.',empty:'Non ci sono ancora stagioni completate.',filtered:'Nessun campione corrisponde ai filtri.',error:'Archivio verificato non disponibile. Nessun risultato sostitutivo.',retry:'Riprova',count:'campioni',first:'Prima divisione',second:'Seconda divisione',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italia','Inghilterra','Spagna','Germania','Francia','Portogallo','Paesi Bassi','Brasile']}
+  en:{debugTag:'Debug',debugUnstarted:'Debug is at Season 0. No completed seasons.',debugEmpty:'No completed Debug seasons yet. Advance to a later season or the final sporting day.',debugError:'Debug history is unavailable. No winners were substituted.',title:'World History',season:'Season',country:'Champion country',competition:'Competition',allSeasons:'All seasons',allCountries:'All countries',allCompetitions:'All competitions',unstarted:'The world has not started. No seasons have been completed.',empty:'No completed seasons are available yet.',filtered:'No champions match these filters.',error:'Verified history is unavailable. No results were substituted.',retry:'Retry',count:'champions',first:'First division',second:'Second division',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italy','England','Spain','Germany','France','Portugal','Netherlands','Brazil']},
+  de:{debugTag:'Debug',debugUnstarted:'Debug steht auf Saison 0. Keine abgeschlossenen Saisons.',debugEmpty:'Noch keine abgeschlossenen Debug-Saisons.',debugError:'Debug-Historie nicht verfügbar. Keine erfundenen Ersatzdaten.',title:'Weltgeschichte',season:'Saison',country:'Land des Meisters',competition:'Wettbewerb',allSeasons:'Alle Saisons',allCountries:'Alle Länder',allCompetitions:'Alle Wettbewerbe',unstarted:'Die Welt hat noch nicht begonnen. Es gibt keine abgeschlossenen Saisons.',empty:'Noch keine abgeschlossenen Saisons verfügbar.',filtered:'Keine Meister entsprechen diesen Filtern.',error:'Bestätigte Historie ist nicht verfügbar. Keine Ersatzresultate.',retry:'Erneut versuchen',count:'Meister',first:'Erste Liga',second:'Zweite Liga',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italien','England','Spanien','Deutschland','Frankreich','Portugal','Niederlande','Brasilien']},
+  es:{debugTag:'Debug',debugUnstarted:'Debug está en la temporada 0. No hay temporadas completadas.',debugEmpty:'Todavía no hay temporadas Debug completadas.',debugError:'Historial Debug no disponible.',title:'Historia mundial',season:'Temporada',country:'País del campeón',competition:'Competición',allSeasons:'Todas las temporadas',allCountries:'Todos los países',allCompetitions:'Todas las competiciones',unstarted:'El mundo aún no ha comenzado. No hay temporadas completadas.',empty:'Todavía no hay temporadas completadas.',filtered:'Ningún campeón coincide con estos filtros.',error:'El historial verificado no está disponible. No se han sustituido resultados.',retry:'Reintentar',count:'campeones',first:'Primera división',second:'Segunda división',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italia','Inglaterra','España','Alemania','Francia','Portugal','Países Bajos','Brasil']},
+  fr:{debugTag:'Debug',debugUnstarted:'Debug est à la saison 0. Aucune saison terminée.',debugEmpty:'Aucune saison Debug terminée pour le moment.',debugError:'Historique Debug indisponible.',title:'Histoire mondiale',season:'Saison',country:'Pays du champion',competition:'Compétition',allSeasons:'Toutes les saisons',allCountries:'Tous les pays',allCompetitions:'Toutes les compétitions',unstarted:'Le monde n’a pas encore commencé. Aucune saison terminée.',empty:'Aucune saison terminée disponible.',filtered:'Aucun champion ne correspond à ces filtres.',error:'Historique vérifié indisponible. Aucun résultat de substitution.',retry:'Réessayer',count:'champions',first:'Première division',second:'Deuxième division',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italie','Angleterre','Espagne','Allemagne','France','Portugal','Pays-Bas','Brésil']},
+  it:{debugTag:'Debug',debugUnstarted:'Debug è alla Stagione 0. Nessuna stagione completata.',debugEmpty:'Nessuna stagione Debug completata. Avanza alla stagione successiva o all’ultimo giorno sportivo.',debugError:'Storico Debug non disponibile. Nessun vincitore sostitutivo.',title:'Storia mondiale',season:'Stagione',country:'Paese del campione',competition:'Competizione',allSeasons:'Tutte le stagioni',allCountries:'Tutti i paesi',allCompetitions:'Tutte le competizioni',unstarted:'Il mondo non è ancora iniziato. Nessuna stagione completata.',empty:'Non ci sono ancora stagioni completate.',filtered:'Nessun campione corrisponde ai filtri.',error:'Archivio verificato non disponibile. Nessun risultato sostitutivo.',retry:'Riprova',count:'campioni',first:'Prima divisione',second:'Seconda divisione',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italia','Inghilterra','Spagna','Germania','Francia','Portogallo','Paesi Bassi','Brasile']}
  };
  const locale=()=>copy[document.documentElement.lang]||copy.en;
  const seasons=root.querySelector('#world-history-season'),countries=root.querySelector('#world-history-country'),comps=root.querySelector('#world-history-competition');
@@ -138,7 +138,7 @@
  }
  function render(){
   const w=locale();
-  if(loading){status.textContent=debugActive()?w.debugLoading:w.loading;status.hidden=false;return;}
+  if(loading){status.textContent='';status.hidden=true;return;}
   archive.setAttribute('aria-busy','false');
   if(error){status.textContent=debugActive()?w.debugError:w.error;status.hidden=false;count.textContent='';archive.replaceChildren();return;}
   if(!payload)return;
@@ -192,11 +192,31 @@
      '/standings?view=standings&season='+season.seasonNumber;
     competition.append(competitionMark(champion.competitionId),competitionLink);
     const holder=make('span','fa-world-history-club');
+    // Match the shared club crest lifecycle: blank while a known SVG loads,
+    // the site's neutral shield only for a missing or failed approved SVG.
+    const crestSlot=make('span','app-world-club-crest-placeholder fa-world-history-club-crest');
+    crestSlot.setAttribute('aria-hidden','true');
     const crest=clubCrests.get(champion.championClubId);
     if(crest){
-     const img=make('img','fa-world-history-crest');img.src='/'+crest;img.alt='';img.loading='lazy';img.decoding='async';
-     holder.append(img);
-    }
+     crestSlot.dataset.clubCrestPending='true';
+     const img=make('img','app-club-crest-image fa-world-history-crest');
+     img.alt='';img.loading='lazy';img.decoding='async';
+     img.addEventListener('load',()=>{
+      if(!crestSlot.contains(img))return;
+      delete crestSlot.dataset.clubCrestPending;
+      delete crestSlot.dataset.clubCrestFallback;
+      crestSlot.dataset.clubCrestLoaded='true';
+     },{once:true});
+     img.addEventListener('error',()=>{
+      if(!crestSlot.contains(img))return;
+      delete crestSlot.dataset.clubCrestPending;
+      delete crestSlot.dataset.clubCrestLoaded;
+      crestSlot.dataset.clubCrestFallback='true';
+      img.remove();
+     },{once:true});
+     crestSlot.append(img);img.src='/'+crest;
+    }else crestSlot.dataset.clubCrestFallback='true';
+    holder.append(crestSlot);
     const club=make('a','',clubNames.get(champion.championClubId)||champion.championClubId);
     const [country,id]=champion.championClubId.split('-');
     club.href='/clubs/'+country.toLowerCase()+'/'+id+'/history#club-history-season-'+season.seasonNumber;
@@ -257,7 +277,7 @@
   }
   showSkeleton();
   setFilterDisabled(true);
-  status.hidden=false;status.textContent=locale().loading;
+  status.textContent='';status.hidden=true;
   try{
    const reply=await fetch('/api/world/history',{credentials:'omit',cache:'no-store',redirect:'error'});
    if(!reply.ok)throw Error('archive unavailable');
