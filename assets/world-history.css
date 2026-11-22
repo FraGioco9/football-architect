@@ -17,8 +17,6 @@
 .fa-world-history-season h2{font-size:18px;font-weight:750;margin:0;padding:0;border-bottom:1px solid var(--line)}
 .fa-world-history-season.is-collapsed h2{border-bottom:0}
 .fa-world-history-season-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:17px 20px;border:0;background:transparent;color:var(--text);font:inherit;font-weight:inherit;text-align:left;cursor:pointer}
-.fa-world-history-season-heading{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;min-width:0}
-.fa-world-history-season-count{font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
 .fa-world-history-season-toggle:hover{background:var(--surface-raised)}
 .fa-world-history-season-toggle:focus-visible{outline:2px solid var(--focus);outline-offset:-3px;border-radius:3px}
 .fa-world-history-season-chevron{display:block;width:18px;height:18px;flex:0 0 18px;transition:transform 120ms ease}
@@ -37,11 +35,20 @@
 .fa-world-history-logo.app-competition-logo-placeholder{width:40px;height:40px;border:0;border-radius:0;background:transparent}
 .fa-world-history-row .fa-world-history-club{display:flex;align-items:center;gap:10px;min-width:0}
 .fa-world-history-row .fa-world-history-crest{display:block;width:29px;height:29px;flex:0 0 29px;object-fit:contain}
-.fa-world-history-skeleton{display:grid;gap:1px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line)}
-.fa-world-history-skeleton-row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px;padding:12px 20px;background:var(--surface)}
-.fa-world-history-skeleton-row span{display:block;width:34%;height:14px;border-radius:5px;background:var(--line)}
-.fa-world-history-skeleton-row span:last-child{width:25%}
+.fa-world-history-skeleton-header{display:flex;align-items:center;justify-content:space-between;gap:12px;box-sizing:border-box;min-height:60px;padding:17px 20px;border-bottom:1px solid var(--line)}
+.fa-world-history-skeleton-bar{display:block;height:14px;border-radius:5px;background:var(--line)}
+.fa-world-history-skeleton-title{width:105px;height:18px}
+.fa-world-history-skeleton-chevron{display:block;width:18px;height:18px;flex:0 0 18px;border-radius:5px;background:var(--line)}
+.fa-world-history-skeleton-list{list-style:none;margin:0;padding:0}
+.fa-world-history-skeleton-row+.fa-world-history-skeleton-row{border-top:1px solid var(--line)}
+.fa-world-history-skeleton-cell{display:flex;align-items:center;gap:10px;min-width:0}
+.fa-world-history-skeleton-mark{display:block;flex:none;background:var(--line);border-radius:6px}
+.fa-world-history-skeleton-logo{width:40px;height:40px}
+.fa-world-history-skeleton-crest{width:29px;height:29px}
+.fa-world-history-skeleton-comp-name{width:clamp(75px,48%,230px)}
+.fa-world-history-skeleton-club-name{width:clamp(65px,46%,200px)}
+.fa-world-history .fa-world-history-status[hidden]{display:block!important;visibility:hidden}
 .fa-world-history-retry{margin-top:12px}
 @media(max-width:800px){.fa-world-history-controls.nav01-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:500px){.fa-world-history-controls.nav01-filters{grid-template-columns:minmax(0,1fr);padding:13px;gap:10px}.fa-world-history-row{grid-template-columns:minmax(0,1fr);gap:6px;padding:12px 16px}.fa-world-history-season-toggle{padding:14px 16px}.fa-world-history-skeleton-row{padding:12px 16px}}
+@media(max-width:500px){.fa-world-history-controls.nav01-filters{grid-template-columns:minmax(0,1fr);padding:13px;gap:10px}.fa-world-history-row{grid-template-columns:minmax(0,1fr);gap:6px;padding:12px 16px}.fa-world-history-season-toggle{padding:14px 16px}.fa-world-history-skeleton-header{padding:14px 16px}}
 @media(prefers-reduced-motion:reduce){.fa-world-history-row,.fa-world-history-season-chevron{transition:none}}

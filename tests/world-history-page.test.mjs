@@ -270,7 +270,7 @@ test('#581: seasons default newest open; each header independently toggles and s
  };
  const render=runInNewContext(source+'\nrender',env);
  render();
- assert.deepEqual(archive.children.map(el=>el.children[0].children[0].children[0].children[0].textContent),
+ assert.deepEqual(archive.children.map(el=>el.children[0].children[0].children[0].textContent),
   ['Season 3','Season 2','Season 1'],'sort by latest sporting season, not API order');
  const seasons=archive.children;
  const head=s=>s.children[0].children[0];
@@ -294,8 +294,8 @@ test('#581: seasons default newest open; each header independently toggles and s
  const club=list(seasons[0]).children[0].children[1].children.at(-1);
  assert.equal(club.href,'/clubs/it/1/history#club-history-season-3',
   'club History deep-link preserves the winning season');
- assert.equal(head(seasons[0]).children[0].children[1].textContent,'1 competition');
- assert.equal(head(seasons[1]).children[0].children[1].textContent,'1 competition');
+ assert.equal(head(seasons[0]).children.length,2,'header is just season name and chevron');
+ assert.equal(head(seasons[0]).children[0].textContent,'Season 3');
  const older=seasons[1],button=head(older);
  button.listeners.get('click')();
  assert.equal(button.getAttribute('aria-expanded'),'true');
@@ -314,12 +314,34 @@ test('#581: seasons default newest open; each header independently toggles and s
 });
 
 
-test('#581: seasonal competition count is translated, local and responsive',()=>{
- const js=read('assets/world-history.js'),css=read('assets/world-history.css');
- for(const label of ['competitions','Wettbewerbe','competiciones','compétitions','competizioni'])
-  assert.ok(js.includes("competitionsCount:'"+label+"'"),label);
- assert.match(js,/season\.champions\.length===1\?w\.competition\.toLocaleLowerCase\(\):w\.competitionsCount/,'singular and plural labels for each filtered season');
- assert.match(css,/\.fa-world-history-season-heading\{[^}]*flex-wrap:wrap/,'count wraps on narrow screens');
- assert.match(css,/\.fa-world-history-season-count\{[^}]*white-space:nowrap/);
- assert.match(css,/\.fa-world-history-logo img,\.fa-world-history-logo svg\{[^}]*object-fit:contain/);
+test('#581: History season titles have no competitions count',()=>{
+ const js=read('assets/world-history.js');
+ const css=read('assets/world-history.css');
+ assert.doesNotMatch(js,/competitionsCount|fa-world-history-season-count|fa-world-history-season-heading/);
+ assert.doesNotMatch(css,/fa-world-history-season-count|fa-world-history-season-heading/);
+ assert.match(js,/toggle\.append\(make\('span','fa-world-history-season-name',w\.season\+' '\+season\.seasonNumber\)\)/);
 });
+
+test('#581: first paint and Debug transitions preserve accurately aligned skeletons',()=>{
+ const html=read('history/index.html'),rendered=renderWorldHistoryPage();
+ const css=read('assets/world-history.css'),runtime=read('assets/world-history.js');
+ assert.ok(html.includes(rendered),'the renderer and checked-in HTML have identical skeleton DOM');
+ assert.match(rendered,/fa-world-history-skeleton-header/,'same accordion header shape as the final view');
+ const rows=[...rendered.matchAll(/class="fa-world-history-skeleton-row fa-world-history-row"/g)];
+ assert.equal(rows.length,18,'authoritative archive has 18 competitions in one completed season');
+ assert.equal((rendered.match(/fa-world-history-skeleton-logo/g)||[]).length,18);
+ assert.equal((rendered.match(/fa-world-history-skeleton-crest/g)||[]).length,18);
+ assert.match(rendered,/fa-world-history-skeleton fa-world-history-season"[^>]*aria-hidden="true"/);
+ assert.match(css,/\.fa-world-history-skeleton-logo\{width:40px;height:40px\}/,'competition logo skeleton exactly matches 40px real logo');
+ assert.match(css,/\.fa-world-history-skeleton-crest\{width:29px;height:29px\}/,'club crest skeleton matches final 29px');
+ assert.match(css,/\.fa-world-history-skeleton-row\+\.fa-world-history-skeleton-row/,'same row dividers');
+ assert.match(css,/\.fa-world-history-row\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/,'reuse two equal final columns');
+ assert.match(css,/@media\(max-width:500px\)\{[\s\S]*?\.fa-world-history-row\{grid-template-columns:minmax\(0,1fr\)/,'skeleton and real rows use same mobile layout');
+ assert.match(css,/\.fa-world-history \.fa-world-history-status\[hidden\]\{display:block!important;visibility:hidden\}/,'status line stays reserved after load');
+ assert.match(runtime,/const skeletonMarkup=archive\.innerHTML/);
+ assert.match(runtime,/const showSkeleton=\(\)=>/);
+ assert.match(runtime,/\.slice\(16\)\)row\.remove\(\)/,'protected Debug skeleton reflects 16 domestic competitions');
+ assert.match(runtime,/function pendingDebug\(\)\{[\s\S]*?showSkeleton\(\)/,'Debug progress changes reuse the skeleton');
+ assert.doesNotMatch(runtime,/archive\.replaceChildren\(\);\s*setFilterDisabled\(true\);retry\.hidden/,'no blank archive on Debug source transitions');
+});
+
