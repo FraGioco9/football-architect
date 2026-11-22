@@ -44,13 +44,15 @@ test('#581: World History is a full-size World sidebar link and uses shared site
  const submenu=nav.indexOf('id="nav01-children"'),submenuEnd=nav.indexOf('</div>',submenu);
  const link=nav.indexOf('id="app-nav-world-history"'),explore=nav.indexOf('data-nav01="3"');
  assert.ok(submenu>0&&link>submenuEnd&&link<explore,'History is a World sibling, not a hidden nested submenu item');
- assert.match(nav,/id="app-nav-world-history" href="\/history" data-nav01-history><svg class="fa-icon" width="18" height="18"/);
+ assert.match(nav,/id="app-nav-world-history" href="\/history" data-nav01-history aria-current="page"><svg class="fa-icon" width="18" height="18"/);
  assert.equal((nav.match(/id="app-nav-world-history"/g)||[]).length,1,'one History item in initial HTML');
+ assert.equal((nav.match(/aria-current="page"/g)||[]).length,1,'History is the unique active item before JavaScript runs');
+ assert.doesNotMatch(nav,/id="app-nav-divisions"[^>]*aria-current="page"/,'no Comp/History active collision');
  assert.match(html,/href="\/assets\/clubs-directory\.css"/,'reuse Clubs filter styles');
  assert.ok(html.indexOf('src="/assets/competition-tabs.js"')<html.indexOf('src="/assets/world-history.js"'));
  for(const id of ['season','country','competition']){
   assert.match(html,new RegExp('id="world-history-'+id+'-trigger"[^>]+role="combobox"[^>]+aria-haspopup="listbox"'));
-  assert.match(html,new RegExp('id="world-history-'+id+'-menu"[^>]+role="listbox"'));
+  assert.match(html,new RegExp('role="listbox" id="world-history-'+id+'-menu"'));
   assert.match(html,new RegExp('id="world-history-'+id+'"[^>]+hidden[^>]+aria-hidden="true"'));
   assert.match(html,new RegExp('id="world-history-'+id+'-label"'));
  }

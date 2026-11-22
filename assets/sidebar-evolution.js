@@ -5,17 +5,13 @@
 // ships it in the initial navigation so there is no page-specific blank slot.
 const historyChildren=nav.querySelector('#nav01-children');
 let historyLink=nav.querySelector('[data-nav01-history]');
-if(historyChildren){
- if(!historyLink){
-  const wrapper=document.createElement('div');wrapper.innerHTML="<a class=\"fa-shell-link\" id=\"app-nav-world-history\" href=\"/history\" data-nav01-history><svg class=\"fa-icon\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"5\" rx=\"1\"/><path d=\"M5 8v12h14V8M10 13h4\"/></svg><span data-world-history-nav-label>History</span></a>";
-  historyLink=wrapper.firstElementChild;
- }
- if(historyLink){
-  historyLink.className='fa-shell-link';
-  historyLink.id='app-nav-world-history';
-  historyLink.innerHTML="<svg class=\"fa-icon\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"5\" rx=\"1\"/><path d=\"M5 8v12h14V8M10 13h4\"/></svg><span data-world-history-nav-label>History</span>";
-  historyChildren.insertAdjacentElement('afterend',historyLink);
- }
+// The normal generated shell already contains History. Only repair legacy shells;
+// moving an existing item after DOMContentLoaded causes sidebar layout shifts.
+if(historyChildren&&!historyLink){
+ const wrapper=document.createElement('div');
+ wrapper.innerHTML="<a class=\"fa-shell-link\" id=\"app-nav-world-history\" href=\"/history\" data-nav01-history><svg class=\"fa-icon\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"5\" rx=\"1\"/><path d=\"M5 8v12h14V8M10 13h4\"/></svg><span data-nav01=\"9\">History</span></a>";
+ historyLink=wrapper.firstElementChild;
+ historyChildren.insertAdjacentElement('afterend',historyLink);
 }
 const historyLabels={en:'History',de:'Geschichte',es:'Historia',fr:'Histoire',it:'Storia'};
 function syncHistoryNav(){
@@ -24,7 +20,7 @@ function syncHistoryNav(){
  const active=location.pathname.replace(/^\/app(?=\/)/,'').replace(/\/+$/,'')==='/history';
  if(active){
   for(const other of nav.querySelectorAll('.fa-shell-link[aria-current="page"]')){
-   other.removeAttribute('aria-current');other.classList.remove('is-active');
+   if(other!==link){other.removeAttribute('aria-current');other.classList.remove('is-active');}
   }
   link.classList.add('is-active');link.setAttribute('aria-current','page');
  }else{link.classList.remove('is-active');link.removeAttribute('aria-current');}
@@ -118,7 +114,7 @@ if(nav.dataset.nav01Bound==='true'){
  for(const link of nav.querySelectorAll('a[href]'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
  window.faSidebarPaint?.();syncHistoryNav();return;
 }
-const lang={en:['World','Domestic','International','Explore','Clubs','Guide','Competitions','Players','Matches'],de:['Welt','National','International','Entdecken','Vereine','Handbuch','Wettbewerbe','Spieler','Spiele'],es:['Mundo','Nacionales','Internacionales','Explorar','Clubes','Guía','Competiciones','Jugadores','Partidos'],fr:['Monde','Nationales','Internationales','Explorer','Clubs','Guide','Compétitions','Joueurs','Matchs'],it:['Mondo','Nazionali','Internazionali','Esplora','Club','Guida','Competizioni','Giocatori','Partite']};
+const lang={en:['World','Domestic','International','Explore','Clubs','Guide','Competitions','Players','Matches','History'],de:['Welt','National','International','Entdecken','Vereine','Handbuch','Wettbewerbe','Spieler','Spiele','Geschichte'],es:['Mundo','Nacionales','Internacionales','Explorar','Clubes','Guía','Competiciones','Jugadores','Partidos','Historia'],fr:['Monde','Nationales','Internationales','Explorer','Clubs','Guide','Compétitions','Joueurs','Matchs','Histoire'],it:['Mondo','Nazionali','Internazionali','Esplora','Club','Guida','Competizioni','Giocatori','Partite','Storia']};
 const baseLabels={en:['Home','Dashboard','Calendar','Settings','Career pages'],de:['Start','Dashboard','Kalender','Einstellungen','Karriereseiten'],es:['Inicio','Panel','Calendario','Ajustes','Páginas de carrera'],fr:['Accueil','Tableau de bord','Calendrier','Paramètres','Pages de carrière'],it:['Inizio','Dashboard','Calendario','Impostazioni','Pagine della carriera']};
 const expandLabels={en:'Expand world navigation',de:'Weltnavigation aufklappen',es:'Expandir navegación del mundo',fr:'Développer la navigation du monde',it:'Espandi navigazione del mondo'};
 const collapseLabels={en:'Collapse world navigation',de:'Weltnavigation zuklappen',es:'Contraer navegación del mundo',fr:'Réduire la navigation du monde',it:'Comprimi navigazione del mondo'};
