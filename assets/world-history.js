@@ -5,19 +5,33 @@
  const competitionIds=ids.flatMap(c=>[1,2].map(t=>c+'-'+t)).concat('int-1','int-2');
  const clubPattern=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/;
  const copy={
-  en:{title:'World History',intro:'Verified champions of completed seasons across all competitions.',season:'Season',country:'Champion country',competition:'Competition',allSeasons:'All seasons',allCountries:'All countries',allCompetitions:'All competitions',loading:'Loading verified archive…',unstarted:'The world has not started. No seasons have been completed.',empty:'No completed seasons are available yet.',filtered:'No champions match these filters.',error:'Verified history is unavailable. No results were substituted.',retry:'Retry',count:'champions',first:'First division',second:'Second division',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italy','England','Spain','Germany','France','Portugal','Netherlands','Brazil']},
-  de:{title:'Weltgeschichte',intro:'Bestätigte Meister abgeschlossener Saisons in allen Wettbewerben.',season:'Saison',country:'Land des Meisters',competition:'Wettbewerb',allSeasons:'Alle Saisons',allCountries:'Alle Länder',allCompetitions:'Alle Wettbewerbe',loading:'Bestätigtes Archiv wird geladen…',unstarted:'Die Welt hat noch nicht begonnen. Es gibt keine abgeschlossenen Saisons.',empty:'Noch keine abgeschlossenen Saisons verfügbar.',filtered:'Keine Meister entsprechen diesen Filtern.',error:'Bestätigte Historie ist nicht verfügbar. Keine Ersatzresultate.',retry:'Erneut versuchen',count:'Meister',first:'Erste Liga',second:'Zweite Liga',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italien','England','Spanien','Deutschland','Frankreich','Portugal','Niederlande','Brasilien']},
-  es:{title:'Historia mundial',intro:'Campeones verificados de temporadas finalizadas en todas las competiciones.',season:'Temporada',country:'País del campeón',competition:'Competición',allSeasons:'Todas las temporadas',allCountries:'Todos los países',allCompetitions:'Todas las competiciones',loading:'Cargando archivo verificado…',unstarted:'El mundo aún no ha comenzado. No hay temporadas completadas.',empty:'Todavía no hay temporadas completadas.',filtered:'Ningún campeón coincide con estos filtros.',error:'El historial verificado no está disponible. No se han sustituido resultados.',retry:'Reintentar',count:'campeones',first:'Primera división',second:'Segunda división',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italia','Inglaterra','España','Alemania','Francia','Portugal','Países Bajos','Brasil']},
-  fr:{title:'Histoire mondiale',intro:'Champions vérifiés des saisons terminées dans toutes les compétitions.',season:'Saison',country:'Pays du champion',competition:'Compétition',allSeasons:'Toutes les saisons',allCountries:'Tous les pays',allCompetitions:'Toutes les compétitions',loading:'Chargement des archives vérifiées…',unstarted:'Le monde n’a pas encore commencé. Aucune saison terminée.',empty:'Aucune saison terminée disponible.',filtered:'Aucun champion ne correspond à ces filtres.',error:'Historique vérifié indisponible. Aucun résultat de substitution.',retry:'Réessayer',count:'champions',first:'Première division',second:'Deuxième division',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italie','Angleterre','Espagne','Allemagne','France','Portugal','Pays-Bas','Brésil']},
-  it:{title:'Storia mondiale',intro:'Campioni verificati delle stagioni concluse in tutte le competizioni.',season:'Stagione',country:'Paese del campione',competition:'Competizione',allSeasons:'Tutte le stagioni',allCountries:'Tutti i paesi',allCompetitions:'Tutte le competizioni',loading:'Caricamento archivio verificato…',unstarted:'Il mondo non è ancora iniziato. Nessuna stagione completata.',empty:'Non ci sono ancora stagioni completate.',filtered:'Nessun campione corrisponde ai filtri.',error:'Archivio verificato non disponibile. Nessun risultato sostitutivo.',retry:'Riprova',count:'campioni',first:'Prima divisione',second:'Seconda divisione',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italia','Inghilterra','Spagna','Germania','Francia','Portogallo','Paesi Bassi','Brasile']}
+  en:{debugIntro:'Debug preview · Fictional domestic champions only. International cups are unavailable.',debugTag:'Debug',debugLoading:'Loading fictional Debug history…',debugUnstarted:'Debug is at Season 0. No completed seasons.',debugEmpty:'No completed Debug seasons yet. Advance to a later season or the final sporting day.',debugError:'Debug history is unavailable. No winners were substituted.',title:'World History',intro:'Verified champions of completed seasons across all competitions.',season:'Season',country:'Champion country',competition:'Competition',allSeasons:'All seasons',allCountries:'All countries',allCompetitions:'All competitions',loading:'Loading verified archive…',unstarted:'The world has not started. No seasons have been completed.',empty:'No completed seasons are available yet.',filtered:'No champions match these filters.',error:'Verified history is unavailable. No results were substituted.',retry:'Retry',count:'champions',first:'First division',second:'Second division',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italy','England','Spain','Germany','France','Portugal','Netherlands','Brazil']},
+  de:{debugIntro:'Debug-Vorschau · Nur fiktive nationale Meister. Internationale Pokale sind nicht verfügbar.',debugTag:'Debug',debugLoading:'Fiktive Debug-Historie wird geladen…',debugUnstarted:'Debug steht auf Saison 0. Keine abgeschlossenen Saisons.',debugEmpty:'Noch keine abgeschlossenen Debug-Saisons.',debugError:'Debug-Historie nicht verfügbar. Keine erfundenen Ersatzdaten.',title:'Weltgeschichte',intro:'Bestätigte Meister abgeschlossener Saisons in allen Wettbewerben.',season:'Saison',country:'Land des Meisters',competition:'Wettbewerb',allSeasons:'Alle Saisons',allCountries:'Alle Länder',allCompetitions:'Alle Wettbewerbe',loading:'Bestätigtes Archiv wird geladen…',unstarted:'Die Welt hat noch nicht begonnen. Es gibt keine abgeschlossenen Saisons.',empty:'Noch keine abgeschlossenen Saisons verfügbar.',filtered:'Keine Meister entsprechen diesen Filtern.',error:'Bestätigte Historie ist nicht verfügbar. Keine Ersatzresultate.',retry:'Erneut versuchen',count:'Meister',first:'Erste Liga',second:'Zweite Liga',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italien','England','Spanien','Deutschland','Frankreich','Portugal','Niederlande','Brasilien']},
+  es:{debugIntro:'Vista Debug · Solo campeones nacionales ficticios. Copas internacionales no disponibles.',debugTag:'Debug',debugLoading:'Cargando historia Debug ficticia…',debugUnstarted:'Debug está en la temporada 0. No hay temporadas completadas.',debugEmpty:'Todavía no hay temporadas Debug completadas.',debugError:'Historial Debug no disponible.',title:'Historia mundial',intro:'Campeones verificados de temporadas finalizadas en todas las competiciones.',season:'Temporada',country:'País del campeón',competition:'Competición',allSeasons:'Todas las temporadas',allCountries:'Todos los países',allCompetitions:'Todas las competiciones',loading:'Cargando archivo verificado…',unstarted:'El mundo aún no ha comenzado. No hay temporadas completadas.',empty:'Todavía no hay temporadas completadas.',filtered:'Ningún campeón coincide con estos filtros.',error:'El historial verificado no está disponible. No se han sustituido resultados.',retry:'Reintentar',count:'campeones',first:'Primera división',second:'Segunda división',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italia','Inglaterra','España','Alemania','Francia','Portugal','Países Bajos','Brasil']},
+  fr:{debugIntro:'Aperçu Debug · Champions nationaux fictifs uniquement. Coupes internationales indisponibles.',debugTag:'Debug',debugLoading:'Chargement de l’historique Debug fictif…',debugUnstarted:'Debug est à la saison 0. Aucune saison terminée.',debugEmpty:'Aucune saison Debug terminée pour le moment.',debugError:'Historique Debug indisponible.',title:'Histoire mondiale',intro:'Champions vérifiés des saisons terminées dans toutes les compétitions.',season:'Saison',country:'Pays du champion',competition:'Compétition',allSeasons:'Toutes les saisons',allCountries:'Tous les pays',allCompetitions:'Toutes les compétitions',loading:'Chargement des archives vérifiées…',unstarted:'Le monde n’a pas encore commencé. Aucune saison terminée.',empty:'Aucune saison terminée disponible.',filtered:'Aucun champion ne correspond à ces filtres.',error:'Historique vérifié indisponible. Aucun résultat de substitution.',retry:'Réessayer',count:'champions',first:'Première division',second:'Deuxième division',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italie','Angleterre','Espagne','Allemagne','France','Portugal','Pays-Bas','Brésil']},
+  it:{debugIntro:'Anteprima Debug · Solo campioni nazionali fittizi. Coppe internazionali non disponibili.',debugTag:'Debug',debugLoading:'Caricamento storico Debug fittizio…',debugUnstarted:'Debug è alla Stagione 0. Nessuna stagione completata.',debugEmpty:'Nessuna stagione Debug completata. Avanza alla stagione successiva o all’ultimo giorno sportivo.',debugError:'Storico Debug non disponibile. Nessun vincitore sostitutivo.',title:'Storia mondiale',intro:'Campioni verificati delle stagioni concluse in tutte le competizioni.',season:'Stagione',country:'Paese del campione',competition:'Competizione',allSeasons:'Tutte le stagioni',allCountries:'Tutti i paesi',allCompetitions:'Tutte le competizioni',loading:'Caricamento archivio verificato…',unstarted:'Il mondo non è ancora iniziato. Nessuna stagione completata.',empty:'Non ci sono ancora stagioni completate.',filtered:'Nessun campione corrisponde ai filtri.',error:'Archivio verificato non disponibile. Nessun risultato sostitutivo.',retry:'Riprova',count:'campioni',first:'Prima divisione',second:'Seconda divisione',sovereign:'Sovereign Cup',federation:'Federation Cup',countries:['Italia','Inghilterra','Spagna','Germania','Francia','Portogallo','Paesi Bassi','Brasile']}
  };
  const locale=()=>copy[document.documentElement.lang]||copy.en;
  const seasons=root.querySelector('#world-history-season'),countries=root.querySelector('#world-history-country'),comps=root.querySelector('#world-history-competition');
  const archive=root.querySelector('#world-history-archive'),status=root.querySelector('#world-history-status'),count=root.querySelector('#world-history-count'),retry=root.querySelector('#world-history-retry');
- let payload=null,clubNames=new Map(),clubCrests=new Map(),loading=false,error=false;
+ let payload=null,clubNames=new Map(),clubCrests=new Map(),loading=false,error=false,request=0;
+ const debugActive=()=>window.faDevPreviewMode===true&&window.faDebugEnabled===true;
  const text=(node,value)=>{node.textContent=value;return node};
  const make=(tag,cls,content)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(content!==undefined)el.textContent=content;return el};
  const compLabel=(id,w)=>id==='int-1'?w.sovereign:id==='int-2'?w.federation:id.split('-')[0]+' · '+(id.endsWith('-1')?w.first:w.second);
+ const safeDebugPayload=p=>p&&p.schemaVersion===1&&p.providerId==='dev-world-history'&&
+  p.provenance?.kind==='fictional'&&p.provenance?.sourceRef==='dev-fictional-preview'&&
+  p.provenance?.approved===false&&p.coverage==='domestic-only'&&
+  ['empty','available'].includes(p.status)&&p.world&&
+  Number.isSafeInteger(p.world.seasonNumber)&&p.world.seasonNumber>=0&&
+  Array.isArray(p.seasons)&&p.seasons.every(s=>Number.isSafeInteger(s.seasonNumber)&&
+   s.seasonNumber>=1&&s.seasonNumber<=4&&
+   Array.isArray(s.champions)&&s.champions.length===16&&
+   new Set(s.champions.map(c=>c.competitionId)).size===16&&
+   s.champions.every(c=>competitionIds.slice(0,16).includes(c.competitionId)&&
+    clubPattern.test(c.championClubId)&&c.championClubId.startsWith(c.competitionId.split('-')[0]+'-')))&&
+  new Set(p.seasons.map(s=>s.seasonNumber)).size===p.seasons.length&&
+  (p.status==='empty')===(p.seasons.length===0);
  const safePayload=p=>p&&p.schemaVersion===1&&p.providerId==='authoritative-world-history'&&
   p.provenance?.kind==='authoritative'&&p.provenance?.source==='closed-season-archive'&&
   ['empty','available'].includes(p.status)&&p.world&&Number.isSafeInteger(p.world.seasonNumber)&&
@@ -92,20 +106,20 @@
  }
  function labels(){
   const w=locale();text(root.querySelector('#world-history-title'),w.title);
-  text(root.querySelector('#world-history-intro'),w.intro);
+  text(root.querySelector('#world-history-intro'),debugActive()?w.debugIntro:w.intro);
   for(const [id,label] of [['season',w.season],['country',w.country],['competition',w.competition]])
    text(root.querySelector('#world-history-'+id+'-label'),label);
   text(retry,w.retry);
   choose(filterControls[0],(payload?.seasons||[]).map(s=>[String(s.seasonNumber),w.season+' '+s.seasonNumber]),w.allSeasons);
   choose(filterControls[1],ids.map((code,i)=>[code,w.countries[i]]),w.allCountries);
-  choose(filterControls[2],competitionIds.map(id=>[id,compLabel(id,w)]),w.allCompetitions);
+  choose(filterControls[2],(debugActive()?competitionIds.slice(0,16):competitionIds).map(id=>[id,compLabel(id,w)]),w.allCompetitions);
   root.querySelector('.fa-world-history-controls').setAttribute('aria-label',w.title+' — '+w.competition);
  }
  function render(){
   const w=locale();
-  if(loading){status.textContent=w.loading;status.hidden=false;return;}
+  if(loading){status.textContent=debugActive()?w.debugLoading:w.loading;status.hidden=false;return;}
   archive.setAttribute('aria-busy','false');
-  if(error){status.textContent=w.error;status.hidden=false;count.textContent='';archive.replaceChildren();return;}
+  if(error){status.textContent=debugActive()?w.debugError:w.error;status.hidden=false;count.textContent='';archive.replaceChildren();return;}
   if(!payload)return;
   const wanted=payload.seasons.filter(s=>!seasons.value||String(s.seasonNumber)===seasons.value)
    .map(s=>({...s,champions:s.champions.filter(c=>
@@ -136,34 +150,53 @@
    }
    section.append(list);archive.append(section);
   }
-  count.textContent=total?total+' '+w.count:'';
+  count.textContent=total?total+' '+w.count+(debugActive()?' · '+w.debugTag:''):'';
   status.hidden=total>0;
   if(!total)status.textContent=payload.seasons.length===0?
-   (payload.world.seasonNumber===0?w.unstarted:w.empty):w.filtered;
+   (debugActive()?payload.world.seasonNumber===0?w.debugUnstarted:w.debugEmpty:
+    payload.world.seasonNumber===0?w.unstarted:w.empty):w.filtered;
+ }
+ let identityRequest=null;
+ function useIdentity(identity){
+  if(identity?.schemaVersion===1&&identity.projection==='club-identity-v1'&&
+     Array.isArray(identity.clubs)&&identity.clubs.length===320){
+   clubNames=new Map(identity.clubs.filter(c=>clubPattern.test(c.countryId+'-'+c.clubId)&&typeof c.primaryName==='string').map(c=>[c.countryId+'-'+c.clubId,c.primaryName]));
+   const publicCrests=identity.clubCrests||{};
+   clubCrests=new Map(Object.entries(publicCrests).filter(([key,path])=>
+    clubPattern.test(key)&&typeof path==='string'&&/^assets\/clubs\/(?:IT|ENG|ES|DE|FR|PT|NL|BR)\/(?:[1-9]|[1-3][0-9]|40)\/crest\.svg$/.test(path)));
+  }
+ }
+ function loadIdentity(){
+  identityRequest??=fetch('/clubs/_shared/identity.json',{credentials:'omit'})
+   .then(r=>r.ok?r.json():null).then(identity=>{
+    useIdentity(identity);
+    if(payload)render();
+   }).catch(()=>{identityRequest=null});
+  return identityRequest;
  }
  async function load(){
-  if(loading)return;loading=true;error=false;retry.hidden=true;
+  const token=++request;
+  loading=true;error=false;retry.hidden=true;
+  if(debugActive()){
+   payload=null;labels();archive.setAttribute('aria-busy','true');
+   void loadIdentity();
+   setFilterDisabled(true);render();return;
+  }
   archive.setAttribute('aria-busy','true');
   setFilterDisabled(true);
   status.hidden=false;status.textContent=locale().loading;
   try{
-   const [reply,identity]=await Promise.all([
-    fetch('/api/world/history',{credentials:'omit',cache:'no-store',redirect:'error'}),
-    fetch('/clubs/_shared/identity.json',{credentials:'omit'}).then(r=>r.ok?r.json():null).catch(()=>null)
-   ]);
+   const reply=await fetch('/api/world/history',{credentials:'omit',cache:'no-store',redirect:'error'});
    if(!reply.ok)throw Error('archive unavailable');
    const data=await reply.json();
    if(!safePayload(data))throw Error('invalid archive');
+   if(token!==request||debugActive())return;
    payload=data;
-   if(identity?.schemaVersion===1&&identity.projection==='club-identity-v1'&&
-      Array.isArray(identity.clubs)&&identity.clubs.length===320){
-    clubNames=new Map(identity.clubs.filter(c=>clubPattern.test(c.countryId+'-'+c.clubId)&&typeof c.primaryName==='string').map(c=>[c.countryId+'-'+c.clubId,c.primaryName]));
-    const publicCrests=identity.clubCrests||{};
-    clubCrests=new Map(Object.entries(publicCrests).filter(([key,path])=>
-     clubPattern.test(key)&&typeof path==='string'&&/^assets\/clubs\/(?:IT|ENG|ES|DE|FR|PT|NL|BR)\/(?:[1-9]|[1-3][0-9]|40)\/crest\.svg$/.test(path)));
-   }
-  }catch{payload=null;error=true}
+   void loadIdentity();
+
+  }catch{if(token===request&&!debugActive()){payload=null;error=true}}
   finally{
+   if(token!==request||debugActive())return;
    loading=false;
    labels();
    setFilterDisabled(error||!payload?.seasons.length);
@@ -172,7 +205,32 @@
    render();
   }
  }
- retry.addEventListener('click',load);
+ function pendingDebug(){
+  if(!debugActive())return;
+  ++request;payload=null;error=false;loading=true;
+  archive.setAttribute('aria-busy','true');archive.replaceChildren();
+  setFilterDisabled(true);retry.hidden=true;labels();render();
+ }
+ window.addEventListener('fa:source-change',()=>{
+  if(debugActive())pendingDebug();
+  else {++request;loading=false;void load();}
+ });
+ for(const event of ['fa:dev-progress-change','fa:dev-world-day-change'])
+  window.addEventListener(event,pendingDebug);
+ window.addEventListener('fa:dev-world-history',event=>{
+  if(!debugActive())return;
+  ++request;
+  loading=false;error=!safeDebugPayload(event.detail);
+  payload=error?null:event.detail;
+  retry.hidden=!error;
+  labels();setFilterDisabled(error||!payload?.seasons.length);
+  if(!error)fromUrl();
+  render();
+ });
+ retry.addEventListener('click',()=>{
+  if(debugActive()){pendingDebug();window.dispatchEvent(new Event('fa:dev-world-history-retry'))}
+  else void load();
+ });
  window.addEventListener('popstate',()=>{if(payload){fromUrl();render()}});
  new MutationObserver(()=>{labels();render()})
   .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});

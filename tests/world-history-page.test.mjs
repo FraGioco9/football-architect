@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {request} from 'node:http';
+import {once} from 'node:events';
+import {createPreviewStandings,createPreviewWorldHistory} from '../tools/dev-standings-preview-data.mjs';
+import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 import {parseRoute,buildRoute} from '../assets/routes-registry.mjs';
 import {renderWorldHistoryPage} from '../tools/render-world-history.mjs';
 import {isAllowlistedPublicPath} from '../tools/publication-guard.mjs';
@@ -86,4 +90,95 @@ test('#581: local anonymous bridge accepts exact History API and backend support
  const backend=read('backend/src/public-world-history.ts');
  assert.match(backend,/Math\.max\(0,before\.seasonNumber-1\)/);
  assert.doesNotMatch(backend,/last<0\)invalid\(\)/);
+});
+
+
+test('#581 Debug: league champions come from exactly the same deterministic standings as other DEV pages',()=>{
+ const manifest=JSON.parse(read('competitions/_shared/manifest.json'));
+ const cases=[
+  {progress:{season:0,matchdays:0},years:[]},
+  {progress:{season:1,matchdays:0},years:[]},
+  {progress:{season:1,matchdays:30},years:[]},
+  {progress:{season:1,matchdays:33},years:[1]},
+  {progress:{season:2,matchdays:0},years:[1]},
+  {progress:{season:2,matchdays:30},years:[1]},
+  {progress:{season:2,matchdays:33},years:[2,1]},
+  {progress:{season:4,matchdays:0},years:[3,2,1]}
+ ];
+ for(const {progress,years} of cases){
+  const projection=createPreviewWorldHistory(manifest,progress);
+  assert.equal(projection.providerId,'dev-world-history');
+  assert.deepEqual(projection.provenance,{kind:'fictional',sourceRef:'dev-fictional-preview',approved:false});
+  assert.equal(projection.coverage,'domestic-only');
+  assert.deepEqual(projection.seasons.map(s=>s.seasonNumber),years);
+  assert.equal(projection.status,years.length?'available':'empty');
+  for(const season of projection.seasons){
+   assert.equal(season.champions.length,16);
+   assert.equal(new Set(season.champions.map(c=>c.competitionId)).size,16);
+   for(const {competitionId,championClubId} of season.champions){
+    assert.doesNotMatch(competitionId,/^int-/,'international cups have no DEV winner evidence');
+    const division=manifest.divisions.find(x=>x.id===competitionId);
+    assert.ok(division);
+    const winner=createPreviewStandings(division,30,season.seasonNumber).rows[0].club;
+    assert.equal(championClubId,winner.countryId+'-'+winner.clubId);
+   }
+  }
+ }
+ assert.throws(()=>createPreviewWorldHistory(manifest,{season:5,matchdays:0}),/Invalid DEV/);
+ assert.throws(()=>createPreviewWorldHistory(manifest,{season:2,matchdays:34}),/Invalid DEV/);
+ assert.throws(()=>createPreviewWorldHistory({...manifest,divisions:[]},{season:2,matchdays:0}),/Invalid DEV|Missing DEV/);
+});
+
+test('#581 Debug: localhost injects protected widget and source; public artifacts never include DEV scripts',async()=>{
+ const server=createPreviewServer({devPreview:true,subdomains:true});
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ const send=(path,host='app.localhost:2000')=>new Promise((resolve,reject)=>{
+  const req=request({hostname:'127.0.0.1',port:server.address().port,path,headers:{host}},res=>{
+   let body='';res.on('data',chunk=>body+=chunk);
+   res.on('end',()=>resolve({status:res.statusCode,body}));
+  });req.on('error',reject);req.end();
+ });
+ try{
+  const local=await send('/history');
+  assert.equal(local.status,200);
+  assert.match(local.body,/faDevPreviewMode=true/);
+  assert.match(local.body,/\/__fa_dev__\/debug-settings\.mjs/);
+  assert.match(local.body,/faDevCurrentSeason/);
+  assert.equal((local.body.match(/src="\/__fa_dev__\/debug-settings\.mjs"/g)||[]).length,1);
+  assert.ok(local.body.includes('id="world-history"'));
+  const publicHtml=read('history/index.html');
+  assert.doesNotMatch(publicHtml,/\/__fa_dev__\//);
+  const protectedScript=await send('/__fa_dev__/standings-client.mjs');
+  assert.equal(protectedScript.status,200);
+  assert.match(protectedScript.body,/createPreviewWorldHistory/);
+  assert.match(protectedScript.body,/fa:dev-world-history/);
+  const missing=await send('/__fa_dev__/unknown-history-module.mjs');
+  assert.equal(missing.status,404);
+ }finally{
+  server.closeAllConnections();
+  await new Promise(resolve=>server.close(resolve));
+ }
+});
+
+test('#581 Debug: History switches sources, retains filters, and excludes DEV winners from public API',()=>{
+ const publicRuntime=read('assets/world-history.js');
+ const devClient=read('tools/dev-standings-preview-client.mjs');
+ const artifact=read('tools/dev-preview-artifact.mjs');
+ const server=read('tools/dev-standings-preview.mjs');
+ assert.match(publicRuntime,/safeDebugPayload/);
+ assert.match(publicRuntime,/event\.detail/);
+ assert.match(publicRuntime,/window\.addEventListener\('fa:dev-world-history'/);
+ assert.match(publicRuntime,/if\(debugActive\(\)\)/);
+ assert.match(publicRuntime,/competitionIds\.slice\(0,16\)/);
+ assert.match(publicRuntime,/debugIntro/);
+ assert.match(publicRuntime,/fetch\('\/api\/world\/history'/);
+ assert.match(devClient,/historyPath\|\|/);
+ assert.match(devClient,/fa:dev-progress-change/);
+ assert.match(devClient,/fa:dev-world-history-retry/);
+ assert.match(artifact,/path==="history\/index\.html"/);
+ assert.match(server,/file==="history\/index\.html"/);
+ assert.doesNotMatch(read('backend/src/public-world-history.ts'),/dev-world-history|fictional-preview/);
+ for(const path of ['tools/dev-standings-preview-client.mjs','tools/dev-standings-preview-data.mjs'])
+  assert.equal(isAllowlistedPublicPath(path),false,'DEV sporting generator is never a public asset');
+ assert.doesNotThrow(()=>new Function(publicRuntime),'public History controller parses');
 });
