@@ -5,6 +5,9 @@
  if(typeof module!=='undefined'&&module.exports)module.exports=model;
 })(typeof window!=='undefined'?window:globalThis,(routes)=>{
  'use strict';
+ // Classic-script companion to public-image-urls.mjs; only immutable published domestic IDs.
+ const domesticLogoUrl=id=>typeof id==='string'&&/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(id)
+  ?'/assets/competitions/'+id+'/compact.svg':null;
  const compactPlayerName=full=>{const m=/^(\S+)\s+(.+)$/u.exec(String(full||'').trim());return m&&!/^\p{L}\.$/u.test(m[1])?Array.from(m[1])[0]+'. '+m[2]:String(full||'').trim()};
  const fixtureUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./club-fixtures.js'):globalThis.faClubFixtures;
  const recordsUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./club-records.js'):globalThis.faClubRecords;
@@ -303,8 +306,13 @@
    .replace(/href="#([^"]+)"/g,(_,id)=>'href="#club-'+placement+'-'+id+'"');
   const link=division?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'standings'}):null;
   const fact=(label,value)=>'<div><dt>'+escape(t[label])+'</dt><dd>'+value+'</dd></div>';
-  const crest=()=>'<span class="app-world-club-crest-placeholder club-crest fa-crest-loading" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'"'+(Object.hasOwn(manifest.clubCrests||{},c.countryId+'-'+c.clubId)?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'">'+(manifest.clubCrests?.[c.countryId+'-'+c.clubId]?'<img class="app-club-crest-image" src="/'+escape(manifest.clubCrests[c.countryId+'-'+c.clubId])+'" alt="" decoding="sync">':'')+'</span>';
-  const divisionLogo=division?'/assets/divisions/'+division.id.toLowerCase()+'-'+division.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg':null;
+  const crestId=c.countryId+'-'+c.clubId;
+  const crestMatch=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.exec(crestId);
+  const crestSource=crestMatch&&Object.hasOwn(manifest.clubCrests||{},crestId)&&
+   manifest.clubCrests[crestId]==='assets/clubs/'+crestMatch[1]+'/'+crestMatch[2]+'/crest.svg'
+   ?'/assets/clubs/'+crestMatch[1]+'/'+crestMatch[2]+'/crest.svg':null;
+  const crest=()=>'<span class="app-world-club-crest-placeholder club-crest fa-crest-loading" data-club-crest="'+escape(crestId)+'"'+(crestSource?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'">'+(crestSource?'<img class="app-club-crest-image" src="'+escape(crestSource)+'" alt="" decoding="sync">':'')+'</span>';
+  const divisionLogo=division?domesticLogoUrl(division.id):null;
   const summary=division&&snapshot?.source==='dev'&&snapshot.divisionId===division.id&&snapshot.clubId===c.clubId&&
    Number.isInteger(snapshot.season)&&snapshot.season>=1&&snapshot.season<=4&&
    (snapshot.position===null||Number.isInteger(snapshot.position)&&snapshot.position>=1&&snapshot.position<=16)&&
@@ -362,7 +370,7 @@
    const def=index.divisions.get(membership.competitionId),isDomestic=membership.category==='domestic';
    const title=isDomestic?(def?.name||membership.name):membership.name;
    const target=seasonLink(routes.buildRoute({kind:isDomestic?'competition':'cup',id:membership.competitionId.toLowerCase(),view:'standings'}),membership.season);
-   const badge=isDomestic&&def?'<img class="club-competition-logo" src="/assets/divisions/'+escape(def.id.toLowerCase()+'-'+def.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg')+'" width="64" height="64" alt="">':
+   const badge=isDomestic&&def?'<img class="club-competition-logo" src="'+escape(domesticLogoUrl(def.id))+'" width="64" height="64" alt="">':
     '<span class="club-competition-cup-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg></span>';
    const next=membership.nextMatch;
    const home=next&&index.clubs.get(next.homeId),away=next&&index.clubs.get(next.awayId);
@@ -499,9 +507,7 @@
       // Official division logos come from the same validated competition identity
       // already used in Club Overview. International cups currently have no
       // published logo assets, so retain the existing neutral cup mark.
-      const logo=domestic&&def?'/assets/divisions/'+def.id.toLowerCase()+'-'+
-       def.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
-        .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg':null;
+      const logo=domestic&&def?domesticLogoUrl(def.id):null;
       const badge='<span class="fa-competition-mark" aria-hidden="true">'+
        (logo?'<img src="'+escape(logo)+'" width="24" height="24" alt="" loading="lazy" decoding="async">':
         !domestic?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg>':'')+'</span>';

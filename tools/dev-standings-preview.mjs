@@ -14,6 +14,7 @@ import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces } from "node:os";
 import { isAllowlistedPublicPath, publicRequestFile } from "./publication-guard.mjs";
+import { approvedPortraitPaths } from "./portrait-release-gate.mjs";
 import { DEBUG_MODE_BOOTSTRAP, DEBUG_FIRST_PAINT, DEBUG_SEASONS, DEBUG_SEASON_BOOTSTRAP, CLUB_SUMMARY_INJECTION } from "./dev-preview-artifact.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
@@ -310,7 +311,12 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       } else {
         const appHost = subdomains && req.headers.host === "app.localhost:2000";
         const file = publicRequestFile(appHost && (raw === "/" || raw === "/index.html") ? "/dashboard" : raw);
-        if (!isAllowlistedPublicPath(file)) return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});
+        // The public release helper defaults to no portraits: a local server is
+        // a DEV target, not an unreleased Production artifact. Verify the same
+        // SHA-pinned 26-image V4.2 DEV allowlist before serving WebP bytes.
+        const devPortrait=file.startsWith('assets/players/portraits/')&&
+          approvedPortraitPaths(root,{target:'dev-preview'}).has(file);
+        if (!devPortrait&&!isAllowlistedPublicPath(file,root)) return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});

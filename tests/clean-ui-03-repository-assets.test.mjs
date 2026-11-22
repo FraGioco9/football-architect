@@ -33,7 +33,7 @@ test("classification never marks unreferenced asset safe to remove",()=>{
 });
 
 test("dynamic classification includes specific provenance and no deletion authorization",()=>{
- const report=inventoryAssetReferences(".",fake({"assets/flags/gb-eng.svg":"<svg/>","assets/clubs/FR/1/crest.svg":"<svg/>","assets/divisions/it-1.svg":"<svg/>"}));
+ const report=inventoryAssetReferences(".",fake({"assets/flags/gb-eng.svg":"<svg/>","assets/clubs/FR/1/crest.svg":"<svg/>","assets/competitions/IT-1/compact.svg":"<svg/>"}));
  assert.equal(report.provenUnused.length,0);
  for(const entry of report.classification){assert.equal(entry.status,"dynamic-or-catalogue");assert.ok(entry.evidence[0].startsWith("tools/"));}
 });

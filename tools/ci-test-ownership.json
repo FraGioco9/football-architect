@@ -386,6 +386,7 @@
     "tests/player-matches-view.test.mjs": "site-node",
     "tests/match-mvp-v1.test.mjs": "site-node",
     "tests/player-mvp-aggregation.test.mjs": "site-node",
-    "tests/ci-browser-timing.test.mjs": "site-node"
+    "tests/ci-browser-timing.test.mjs": "site-node",
+    "tests/public-image-urls.test.mjs": "site-node"
   }
 }

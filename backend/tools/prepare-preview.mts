@@ -41,8 +41,8 @@ export async function preparePreview(t:PreviewTarget&{repository?:string;output:
  try{
   const source=join(temp,'source');await mkdir(source);
   const archive=join(temp,'source.tar');git('archive',t.sourceSha,'--format=tar','--output',archive);execFileSync('tar',['-xf',archive,'-C',source]);
-  const guard=await import(pathToFileURL(join(source,'tools/publication-guard.mjs')).href) as {stagePublicArtifact:(root:string,dest:string)=>string[]};
-  await mkdir(output,{recursive:true});guard.stagePublicArtifact(source,join(output,'assets'));
+  const guard=await import(pathToFileURL(join(source,'tools/publication-guard.mjs')).href) as {stagePublicArtifact:(root:string,dest:string,options?:{target:'dev-preview'|'production'|'unreleased';portraitReleaseSha256?:string|null})=>string[]};
+  await mkdir(output,{recursive:true});guard.stagePublicArtifact(source,join(output,'assets'),{target:'dev-preview'});
   const localBackend=fileURLToPath(new URL('../',import.meta.url));
   if(!(await readFile(join(source,'backend/package-lock.json'))).equals(await readFile(join(localBackend,'package-lock.json'))))throw Error('Pinned toolchain lock differs from requested source');
   // Compiler-only dependency link is created AFTER guarded staging, outside assets.

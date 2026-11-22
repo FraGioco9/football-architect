@@ -4,7 +4,7 @@ import {statsWords,formatApps,formatRating,createPlayerStatsView,aggregateVerifi
 import {renderPlayerDetailPage} from '../tools/render-player-detail.mjs';
 import {readFileSync,existsSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-test('#724 resolves every published domestic division logo from canonical registry names',()=>{
+test('#733 resolves every published domestic division logo from immutable competition IDs',()=>{
  const divisions=JSON.parse(read('data/divisions.json'));
  assert.equal(divisions.length,16);
  for(const division of divisions){
@@ -12,7 +12,8 @@ test('#724 resolves every published domestic division logo from canonical regist
   assert.ok(logo&&existsSync(new URL('..'+logo,import.meta.url)),division.id+' must have a published compact SVG');
  }
  assert.equal(competitionDivisionLogoPath('int-1','Sovereign Cup'),null);
- assert.equal(competitionDivisionLogoPath('IT-1',''),null);
+ assert.equal(competitionDivisionLogoPath('IT-1',''),'/assets/competitions/IT-1/compact.svg');
+ assert.equal(competitionDivisionLogoPath('IT-1','Wrong Name'),'/assets/competitions/IT-1/compact.svg');
  assert.equal(competitionDivisionLogoPath('../bad','Lega Federale'),null);
 });
 test('#578 public Player Detail has an active Stats tab, with identical canonical generated output',()=>{
@@ -238,7 +239,7 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
   const internationalIdentity=otherDetail.children[1].children[0];
   assert.equal(domesticIdentity.className,'app-player-stats-competition-identity');
   assert.equal(domesticIdentity.children[0].getAttribute('aria-hidden'),'true');
-  assert.equal(domesticIdentity.children[0].children[0].src,'/assets/divisions/it-1-lega-federale/compact.svg');
+  assert.equal(domesticIdentity.children[0].children[0].src,'/assets/competitions/IT-1/compact.svg');
   assert.equal(domesticIdentity.children[0].children[0].width,24);
   assert.equal(domesticIdentity.children[1].tagName,'A');
   assert.equal(domesticIdentity.children[1].children[0].textContent,'Lega Federale');
@@ -304,7 +305,7 @@ test('#578 Stats club crests are passive, bounded and separated from linked text
  assert.match(stats,/identity\.append\(clubLink\);club\.append\(identity\)/,
   'link remains text-only alongside passive crest');
  assert.match(bootstrap,/crests=catalog\.clubCrests/,'use the existing club catalog');
- assert.match(bootstrap,/clubCrest:key=>crests&&Object\.hasOwn\(crests,key\)/);
+ assert.match(bootstrap,/clubCrest:key=>verifiedClubCrest\(key,crests\)/);
  assert.match(css,/\.app-player-stats-club-identity\{\s*display:inline-flex;align-items:center;justify-content:flex-start;gap:0;[\s\S]*?position:relative;padding-inline-start:31px;/,
   'club text has a stable 31px inset that does not depend on the crest');
  assert.match(css,/\.app-player-stats-club-identity \.app-player-stats-club-crest\{\s*position:absolute;inset-inline-start:0;top:50%;transform:translateY\(-50%\);[\s\S]*?flex:0 0 24px;width:24px;height:24px;/,

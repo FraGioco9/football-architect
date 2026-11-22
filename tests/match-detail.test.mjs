@@ -118,12 +118,12 @@ test('#577 every competition has an explicit theme and only approved HEX roles a
   assert.match(theme.accentHex,/^#[0-9A-F]{6}$/);
   if(competition.category==='international'){
    assert.equal(theme.kind,'neutral','No dedicated international colour approved yet');
-   assert.equal(config.logoAsset,null,'International cup logo not yet published');
+   assert.equal(config.logoVariant,null,'International cup logo not yet published');
    assert.equal(theme.logoAsset,null);
   }else{
    const allowed=[competition.primaryHex,competition.secondaryHex,competition.ivoryHex];
-   assert.equal(theme.logoAsset,config.logoAsset,competition.id);
-   assert.match(theme.logoAsset,/^assets\/divisions\/[a-z0-9-]+\/compact\.svg$/);
+   assert.equal(theme.logoAsset,'assets/competitions/'+competition.id+'/compact.svg',competition.id);
+   assert.match(theme.logoAsset,/^assets\/competitions\/(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]\/compact\.svg$/);
    assert.equal(isAllowlistedPublicPath(theme.logoAsset),true);
    assert.equal(theme.kind,'competition',competition.id);
    for(const field of ['backgroundHex','foregroundHex','accentHex'])
@@ -149,7 +149,7 @@ test('#577 refuses arbitrary palette entries or fake logos',()=>{
   'A valid-looking but unapproved HEX must be rejected');
  assert.equal(resolveScoreboardTheme({...sample,primaryHex:'orange'}).kind,'neutral');
  assert.equal(resolveScoreboardTheme({...sample,ivoryHex:'var(--unsafe)'}).kind,'neutral');
- assert.equal(resolveScoreboardTheme(sample).logoAsset,'assets/divisions/it-1-lega-federale/compact.svg');
+ assert.equal(resolveScoreboardTheme(sample).logoAsset,'assets/competitions/IT-1/compact.svg');
 });
 test('#650 Match Detail renders only frozen verified XI test ratings with reserved first paint',()=>{
  const js=read('assets/match-detail.js'),css=read('assets/match-detail.css');
@@ -241,7 +241,10 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.ok(read('assets/match-detail.css').includes('.app-match-side-link[href]:hover'));
  assert.ok(html.includes('src="/assets/club-crests.js" defer'));
  assert.ok(html.includes('window.faClubCrests='));
- assert.ok(read('tools/generate-app-pages.mjs').includes('JSON.stringify(clubCrestAssets().catalog)'));
+ const publishedCrestIds=Object.keys(publicClubIdentityCatalog().clubCrests).sort();
+ assert.ok(read('tools/generate-app-pages.mjs').includes('JSON.stringify(Object.keys(clubCrestAssets().catalog).sort())'));
+ assert.ok(html.includes('window.faClubCrests='+JSON.stringify(publishedCrestIds)+';'));
+ assert.doesNotMatch(html,/window\.faClubCrests=\{/);
  for(const fragment of [
   "function verifiedProjection(projection)",
   "projection.provenance?.kind==='authoritative'",
@@ -424,6 +427,11 @@ test('generated lightweight club identities serve Match and Player views without
   assert.equal(Object.hasOwn(club,'rivalries'),false);
  }
  assert.deepEqual(identity.clubCrests,manifest.clubCrests);
+ const generated=read('assets/match-public-context.mjs');
+ const published=generated.match(/^const publishedCrestIds=(\[[^;\n]*\]);$/m);
+ assert.ok(published,'public club identity projection must store only crest IDs');
+ assert.deepEqual(JSON.parse(published[1]),Object.keys(manifest.clubCrests).sort());
+ assert.doesNotMatch(generated,/^const clubCrests=\{/m,'duplicated crest URL map must not be bundled');
 });
 
 test('MATCH-STATS: individual statistics have one dedicated independent HTTP reader',()=>{
@@ -482,8 +490,8 @@ test('#577 responsive Match Detail: no visible events, official XI slots, portra
   "function publishedFormLink(fixture)", "publishedMatchIndex.bySource",
   "indexPublishedMatchLinks(payload,item.season,item.competitionId)",
   "function showFormTooltip(anchor,game,tr)", "app-world-form-tooltip",
-  "function showApprovedPortrait(slot,id)", "starter.portraitAssetKey",
-  "a.startingSlot-b.startingSlot", "observePortrait(avatar,starter.playerId,starter.portraitAssetKey)",
+  "function showApprovedPortrait(slot,id)", "starter.portraitApproved",
+  "a.startingSlot-b.startingSlot", "observePortrait(avatar,starter.playerId,starter.portraitApproved)",
   "row.replaceChildren(role,avatar,nameBox,vote)", "player.target='_blank'",
   "source?.formation==='4-3-3'"])
   assert.ok(js.includes(literal),literal);

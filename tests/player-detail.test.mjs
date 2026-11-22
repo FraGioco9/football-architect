@@ -7,6 +7,25 @@ import {publicRequestFile,isAllowlistedPublicPath,planPublicFiles} from '../tool
 import {renderPlayerDetailPage} from '../tools/render-player-detail.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
+test('#733 Player Detail derives published club crests from stable IDs',()=>{
+ const source=read('assets/player-detail.js');
+ const begin=source.indexOf(' function verifiedClubCrest('),end=source.indexOf('\n function renderClub()',begin);
+ assert.ok(begin>0&&end>begin,'shared Player Overview/Stats/Matches crest verifier');
+ const resolve=runInNewContext('('+source.slice(begin,end).trim()+')',{});
+ const canonical='assets/clubs/IT/1/crest.svg';
+ assert.equal(resolve('IT-1',{'IT-1':canonical}),canonical);
+ for(const [id,registry] of [
+  ['IT-1',{}],['IT-1',{'IT-1':'https://evil.invalid/logo.svg'}],
+  ['IT-1',{'IT-1':'assets/clubs/PT/1/crest.svg'}],
+  ['IT-01',{'IT-01':'assets/clubs/IT/01/crest.svg'}],
+  ['XX-1',{'XX-1':'assets/clubs/XX/1/crest.svg'}],
+  ['IT-1',null],['IT-1',[]]
+ ])assert.equal(resolve(id,registry),null,'invalid or unpublished crest: '+id);
+ assert.match(source,/const crest=verifiedClubCrest\(key,clubCatalog\.clubCrests\)/);
+ assert.equal((source.match(/clubCrest:key=>verifiedClubCrest\(key,crests\)/g)||[]).length,2,
+  'Stats and Matches must use the same ID/registry guard');
+});
+
 test('#502 persisted and protected preview detail routes are canonical and statically publishable',()=>{
  assert.equal(buildRoute({kind:'player',id:42}),'/players/42');
  assert.equal(parseRoute('/players/42')?.kind,'player');
@@ -122,7 +141,8 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
  assert.match(publicApi,/LEFT JOIN player_portrait_profiles portrait ON portrait\.player_id=p\.id/);
  assert.match(publicApi,/portrait\.status='approved'/);
  assert.match(publicApi,/portrait\.prompt_version='player-portrait-v4\.2'/);
- assert.match(script,/player\.portraitAssetKey==='assets\/players\/portraits\/'\+id\+'\.webp'/);
+ assert.match(script,/player\.portraitApproved===true/);
+ assert.ok(script.includes("'/assets/players/portraits/'+id+'.webp'"));
  assert.match(publicApi,/projectPublicFootballerDirectoryRecord/);
 });
 
@@ -395,7 +415,9 @@ test('#535 header shows position chain, nationality/age and canonical club or Fr
  assert.match(js,/import\('\/assets\/match-public-context\.mjs'\)/);
  assert.doesNotMatch(js,/fetch\('\/clubs\/_shared\/manifest\.json'/);
  assert.match(js,/clubCatalog\.clubs\.find\(/);
- assert.match(js,/clubCatalog\.clubCrests\?\.\[key\]/);
+ assert.match(js,/const crest=verifiedClubCrest\(key,clubCatalog\.clubCrests\)/);
+ assert.match(js,/return registry\[key\]===expected\?expected:null/);
+ assert.doesNotMatch(js,/clubCatalog\.clubCrests\?\.\[key\]/);
  assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+number\+'\/overview'/);
  assert.doesNotMatch(js,/fetch\('\/api\/admin\/contracts'/);
  assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:126px;background:var\(--line\)/);
@@ -561,10 +583,12 @@ test('#623 public player portrait and fallback: staged/approved IDs only, stable
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
  const paths=readdirSync(new URL('../assets/players/portraits/',import.meta.url))
   .filter(name=>/^[1-9][0-9]*\.webp$/.test(name)).map(name=>'assets/players/portraits/'+name);
- assert.ok(paths.length>0,'approved portrait directory cannot be empty');
- for(const path of paths)assert.equal(isAllowlistedPublicPath(path),true,path);
- assert.ok(js.includes("player.portraitAssetKey==='assets/players/portraits/'+id+'.webp'"),
-  'portrait URL requires a server-approved canonical V4.2 asset, never a stale legacy WebP');
+ assert.ok(paths.length>0,'portrait asset directory cannot be empty');
+ // A committed V4.2 QA image is not a target-specific release approval.
+ for(const path of paths)assert.equal(isAllowlistedPublicPath(path),false,'Unpinned portrait must not be published: '+path);
+ assert.ok(js.includes('player.portraitApproved===true'),
+  'only approved V4.2 records can trigger the ID-derived image URL');
+ assert.ok(js.includes("'/assets/players/portraits/'+id+'.webp'"));
  assert.ok(js.includes("portraitImage.src=source;"),'approved portrait key is the only displayed image source');
  assert.doesNotMatch(js,/const portraitSources=/,'no per-player JS portrait map');
  for(const path of ['assets/players/portraits/1.png','assets/players/portraits/01.webp','assets/players/portraits/does-not-exist.webp','assets/players/portraits/1.jpg','assets/players/portraits/1.svg'])
@@ -585,7 +609,7 @@ test('#623 public player portrait and fallback: staged/approved IDs only, stable
  }
 });
 
-test('committed portrait WebPs are automatically discoverable and structurally valid',()=>{
+test('committed portrait WebPs are structurally valid but not automatically public',()=>{
  const published=new Set(planPublicFiles());
  const root=new URL('../assets/players/portraits/',import.meta.url);
  const names=readdirSync(root).filter(name=>/^[1-9][0-9]*\.webp$/.test(name));
@@ -611,7 +635,7 @@ test('committed portrait WebPs are automatically discoverable and structurally v
   assert.equal(height,362,path+' height');
   assert.equal(hasAlpha,true,path+' transparency');
   assert.ok(data.length>0&&data.length<150_000,path+' size budget');
-  assert.ok(published.has(path),'Public artifact missing '+path);
+  assert.equal(published.has(path),false,'Unpinned portrait must not publish: '+path);
  }
 });
 

@@ -57,6 +57,22 @@ function setup(catalog=expected){
   change(node,id){node.dataset.clubCrest=id;observe([{type:'attributes',target:node}])}};
 }
 
+test('#733 Match Detail publishes crest IDs, never redundant path strings',()=>{
+ const html=read('matches/_shared/index.html');
+ const inline=html.match(/window\.faClubCrests=(\[[^;\n]*\]);<\/script>/);
+ assert.ok(inline,'Match Detail must embed one ID-only crest publication list');
+ const ids=JSON.parse(inline[1]);
+ assert.deepEqual(ids,Object.keys(clubCrestAssets().catalog).sort());
+ assert.ok(ids.every(id=>/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(id)));
+ assert.ok(!inline[1].includes('/'),'no per-club file paths or URLs shipped in the shell');
+ const allowed=setup(['DE-1','BR-1']);
+ assert.deepEqual([...allowed.requests].sort(),['/assets/clubs/BR/1/crest.svg','/assets/clubs/DE/1/crest.svg']);
+ assert.equal(allowed.hosts.find(n=>n.dataset.clubCrest==='PT-1').children.length,0,
+  'an unpublished ID must keep its reserved fallback, never probe a guessed URL');
+ const invalid=setup(['ZZ-1','IT-01','BR-1']);
+ assert.deepEqual(invalid.requests,['/assets/clubs/BR/1/crest.svg']);
+});
+
 test('CLUB-01: cached prepaint crest is settled after passive renderer initialization',()=>{
  // The native image can finish decoding before club-crests.js is loaded;
  // complete/naturalWidth alone are not proof the host has been reconciled.
@@ -154,6 +170,11 @@ test('club pages show one accessible, loadable crest per view and locale with a 
   }
   const missing=clubModel.render({...base,clubCrests:{}},route('overview'),'en');
   assert.equal((missing.match(/data-club-crest-pending="true"/g)||[]).length,0,id+' missing asset falls back');
+  const tampered=clubModel.render({...base,clubCrests:{[id]:'https://evil.invalid/crest.svg'}},route('overview'),'en');
+  assert.equal((tampered.match(/data-club-crest-pending="true"/g)||[]).length,0,
+   id+' tampered catalog cannot claim a crest is loading');
+  assert.doesNotMatch(tampered,/app-club-crest-image|evil\.invalid/,
+   'first-paint must not render the registry URL as an image source');
  }
 });
 

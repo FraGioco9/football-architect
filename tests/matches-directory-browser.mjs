@@ -9,7 +9,7 @@ export async function verifyMatchesDirectory(browser){
   let requests=0,worldRequests=0;
   let releaseLogo;
   const pendingLogo=new Promise(resolve=>{releaseLogo=resolve});
-  await page.route('**/assets/divisions/**/*.svg',async route=>{await pendingLogo;await route.abort()});
+  await page.route('**/assets/competitions/**/*.svg',async route=>{await pendingLogo;await route.abort()});
   await page.route('**/assets/clubs/**/*.svg',route=>route.abort());
   let releaseWorld;
   const initialWorld=new Promise(resolve=>{releaseWorld=resolve});

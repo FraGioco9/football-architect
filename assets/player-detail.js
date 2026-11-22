@@ -21,8 +21,8 @@
   resetPortrait();
   const source=!preview&&state==='ready'&&player&&Number.isSafeInteger(id)
    &&id>0&&(!Number.isSafeInteger(player.id)||player.id===id)
-   &&player.portraitAssetKey==='assets/players/portraits/'+id+'.webp'
-   ?'/'+player.portraitAssetKey:null;
+   &&player.portraitApproved===true
+   ?'/assets/players/portraits/'+id+'.webp':null;
   if(!source){
    // Once a player is known, a missing portrait uses the silhouette.
    if(state==='ready')portraitFallback.removeAttribute('hidden');
@@ -258,6 +258,13 @@
   }
   clubNode.replaceChildren(wrapper);
  }
+ // The catalog is publication membership, not a source of arbitrary URLs.
+ function verifiedClubCrest(key,registry){
+  const match=typeof key==='string'?/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.exec(key):null;
+  if(!match||!registry||!Object.hasOwn(registry,key))return null;
+  const expected='assets/clubs/'+match[1]+'/'+match[2]+'/crest.svg';
+  return registry[key]===expected?expected:null;
+ }
  function renderClub(){
   if(!player)return;
   if(preview||player.clubKey===null){setContent(clubNode,'Free Agent');return;}
@@ -272,8 +279,8 @@
   const stack=document.createElement('div');stack.className='app-player-detail-club-stack';
   const link=document.createElement('a');link.className='app-player-detail-club-link';
   link.href='/clubs/'+country.toLowerCase()+'/'+number+'/overview';
-  const crest=clubCatalog.clubCrests?.[key];
-  if(typeof crest==='string'&&/^assets\/clubs\/(?:IT|ENG|ES|DE|FR|PT|NL|BR)\/(?:[1-9]|[1-3][0-9]|40)\/crest\.svg$/.test(crest)){
+  const crest=verifiedClubCrest(key,clubCatalog.clubCrests);
+  if(crest){
    const img=document.createElement('img');img.className='app-player-detail-club-crest';img.src='/'+crest;img.alt='';
    img.width=72;img.height=72;stack.append(img);
   }else{
@@ -329,7 +336,7 @@
    if(!player||state!=='ready')return;
    statsController=module.createPlayerStatsView({host:statsHost,id,position:()=>player?.primary_position,
     locale:language,clubName:key=>labels?.get(key),
-    clubCrest:key=>crests&&Object.hasOwn(crests,key)?crests[key]:null,
+    clubCrest:key=>verifiedClubCrest(key,crests),
     competitionName:key=>competitionLookup?.({competitionId:key})?.competitions?.[0]?.name,
     fetchStats:async number=>{
      const response=await fetch('/api/players/'+number+'/stats',{credentials:'omit',cache:'no-store'});
@@ -362,7 +369,7 @@
    if(!player||state!=='ready')return;
    matchesController=module.createPlayerMatchesView({host:matchesHost,id,locale:language,
     clubName:key=>labels?.get(key),
-    clubCrest:key=>crests&&Object.hasOwn(crests,key)?crests[key]:null,
+    clubCrest:key=>verifiedClubCrest(key,crests),
     competitionName:key=>competitionLookup?.({competitionId:key})?.competitions?.[0]?.name,
     fetchMatches:async(number,filters)=>{
      const query=new URLSearchParams();

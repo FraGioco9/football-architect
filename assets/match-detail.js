@@ -116,7 +116,7 @@
    board.dataset.scoreboardTheme=theme.kind;
   }
   const slot=find('[data-match-competition-logo]');if(!slot)return;
-  // Brand assets are already published at assets/divisions/<slug>/compact.svg.
+  // Brand assets are keyed by immutable public competition IDs.
   // Do not request an unapproved path or show an unrelated Football Architect logo.
   const intended=theme.logoAsset?'/'+theme.logoAsset:'';
   if(slot.dataset.matchLogoPath===intended)return;
@@ -259,11 +259,11 @@
   img.onerror=()=>{delete slot.dataset.photoReady;img.remove()};
   slot.append(img);img.src=expected;
  }
- function observePortrait(slot,id,approvedKey){
+ function observePortrait(slot,id,portraitApproved){
   if(!Number.isSafeInteger(id)||id<1||
-     approvedKey!=='assets/players/portraits/'+id+'.webp')return;
+     portraitApproved!==true)return;
   slot.dataset.matchPortraitId=String(id);
-  slot.dataset.matchPortraitAsset='/'+approvedKey;
+  slot.dataset.matchPortraitAsset='/assets/players/portraits/'+id+'.webp';
   if(typeof IntersectionObserver!=='function'){showApprovedPortrait(slot,id);return;}
   if(!portraitObserver)portraitObserver=new IntersectionObserver(entries=>{
    for(const entry of entries)if(entry.isIntersecting){
@@ -459,7 +459,7 @@
     vote.setAttribute('aria-label',tr.rating+': '+vote.textContent);
     vote.title=tr.rating;
     row.replaceChildren(role,avatar,nameBox,vote);
-    observePortrait(avatar,starter.playerId,starter.portraitAssetKey);
+    observePortrait(avatar,starter.playerId,starter.portraitApproved);
    }
    if(valid)list.removeAttribute('aria-hidden');
    else list.setAttribute('aria-hidden','true');
