@@ -35,6 +35,22 @@ test('#628 intentional Solo Carry uses real proximity and a stronger single Rapi
   player:{...args.player,id:'away-10'}}),TypeError);
 });
 
+test('#628 fixed Moderate and Sprint start a real kick without affecting automatic Carry',()=>{
+ assert.equal(chooseIntentSoloCarryTouch({...args,phase:'sprint',lastTouchTick:-12}),null);
+ for(const phase of ['moderate','sprint']){
+  const kick=chooseIntentSoloCarryTouch({...args,phase,lastTouchTick:-12,
+   fixedPhaseLab:true});
+  assert.ok(kick,'fixed phase must kick before running over stationary ball');
+  assert.equal(kick.fixedPhaseLab,true);
+  assert.equal(kick.nativeShoeContactVerified,false);
+  assert.ok(kick.impulseNs.x>1.2);
+  assert.equal(chooseIntentSoloCarryTouch({...args,phase,tick:2,
+   lastTouchTick:1,fixedPhaseLab:true}),null,
+   'normal minimum interval still applies after first observed touch');
+ }
+ assert.throws(()=>chooseIntentSoloCarryTouch({...args,fixedPhaseLab:1}),TypeError);
+});
+
 test('#628 optional Intent Carry: fewer stronger GAMEPLAY pushes, real freely moving ball, no native shoe START', {timeout:40000},async()=>{
  const R=await initializeRapier(rapier);
  for(const side of ['home','away'])for(const variantIndex of [0,3]){

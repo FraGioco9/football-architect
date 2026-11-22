@@ -47,10 +47,19 @@ export function advanceSoloCarryPhase({previousPhase='control',tick,
     (playerSpeedMps<2.45||ballSpeedMps<1.75||ballGapM<0.38)){
   phase='moderate';
  }
+ const fixedProfile=lockedPhase===null?null:
+  phase==='moderate'?Object.freeze({
+   maxSpeedMps:4.7,accelerationMps2:9,brakingMps2:11,
+   ballTargetOffsetM:-0.36
+  }):phase==='sprint'?Object.freeze({
+   maxSpeedMps:6.0,accelerationMps2:11,brakingMps2:13,
+   ballTargetOffsetM:-0.44
+  }):null;
  return Object.freeze({
   tick,phase,previousPhase,changed:phase!==previousPhase,
   ...(lockedPhase!==null?{lockedPhase}:{}),
   playerSpeedMps,ballSpeedMps,ballGapM,...profiles[phase],
+  ...(fixedProfile??{}),
   originalCanonicalPlayer:true,originalRapierBall:true,
   nativeShoeEventCreated:false,ballImpulseCreated:false,
   officialPossession:false

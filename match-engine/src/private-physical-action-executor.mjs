@@ -105,7 +105,9 @@ export function createPrivatePhysicalActionExecutor({
    const proposed=suppressOriginalAction?null:chooseIntentSoloCarryTouch({
     tick:nextTick,lastTouchTick:lastActionTick,
     attackingSide:isolatedDribbleContext.attackingSide,
-    phase:playerFrame.soloCarryPhase?.phase,player:actor,
+    phase:playerFrame.soloCarryPhase?.phase,
+    fixedPhaseLab:playerFrame.soloCarryPhase?.lockedPhase!==undefined,
+    player:actor,
     ballPosition:ballBody.translation(),ballVelocity:ballBody.linvel(),
     ballRadiusM
    });

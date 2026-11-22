@@ -466,11 +466,18 @@ test('#628 three fixed solo Carry LABs retain source physics and never alter aut
   });
   try{
    let impulses=0,first=null,latest=null;
+   const startBallX=lab.snapshot().ball.position.x;
+   let firstImpulseTick=null,peakBallSpeedMps=0,maxPlayerSpeedMps=0;
    assert.equal(lab.snapshot().soloCarryPhase,null);
    for(let tick=1;tick<=120;tick++){
     const f=lab.step();
     if(tick===1)first=f;
     latest=f;
+    peakBallSpeedMps=Math.max(peakBallSpeedMps,
+     Math.hypot(f.ball.velocity.x,f.ball.velocity.y));
+    const runner=f.observedMovementPlayers.find(p=>p.id===shotSide+'-10');
+    maxPlayerSpeedMps=Math.max(maxPlayerSpeedMps,
+     Math.hypot(runner.vx,runner.vy));
     assert.equal(f.physicsTick,tick);
     assert.equal(f.soloCarryPhase.phase,lockedPhase);
     assert.equal(f.soloCarryPhase.lockedPhase,lockedPhase);
@@ -490,16 +497,31 @@ test('#628 three fixed solo Carry LABs retain source physics and never alter aut
      assert.equal(f.action.appliedByRapier,true);
      assert.equal(f.action.actualPhysicsImpulseApplied,true);
      impulses++;
+     firstImpulseTick??=tick;
     }
     assert.equal(f.intentCarryImpulseCount,impulses);
    }
    assert.equal(first.soloCarryPhase.phase,lockedPhase);
    assert.equal(latest.soloCarryPhase.phase,lockedPhase);
-   // No synthetic native START is ever credited to gameplay proximity.
+   // Rapier ball travels from its own original initial state, not an
+   // assigned target or an invented dribble/reception result.
    assert.equal(latest.eventCount,0);
+   const forwardDistanceM=(shotSide==='home'?1:-1)*
+    (latest.ball.position.x-startBallX);
    process.stdout.write('ME_628_LOCKED_SOLO_CARRY '+
     JSON.stringify({lockedPhase,shotSide,ticks:120,impulses,
-     ballX:latest.ball.position.x})+'\n');
+     firstImpulseTick,forwardDistanceM,peakBallSpeedMps,maxPlayerSpeedMps,
+     ballX:latest.ball.position.x})+'\\n');
+   if(lockedPhase!=='control'){
+    assert.ok(firstImpulseTick!==null&&firstImpulseTick<=6,
+     'Moderate and Sprint kick the stationary ball immediately');
+    assert.ok(forwardDistanceM>2.5,
+     'Moderate and Sprint move the real Rapier ball forward in two seconds');
+    assert.ok(maxPlayerSpeedMps>2.5,
+     'Fixed-phase runner must accelerate rather than stall over the ball');
+    assert.ok(peakBallSpeedMps<=4.5,
+     'Fixed-phase ball speed must stay within plausible design ceiling');
+   }
   }finally{lab.dispose();}
  }
 });

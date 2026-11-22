@@ -6,10 +6,11 @@ export const INTENT_SOLO_CARRY_VERSION='me-628-intent-solo-carry-v1';
 const finite=Number.isFinite;
 export function chooseIntentSoloCarryTouch({
  tick,lastTouchTick,attackingSide,phase,player,ballPosition,ballVelocity,
- ballRadiusM
+ ballRadiusM,fixedPhaseLab=false
 }={}){
  if(!Number.isSafeInteger(tick)||tick<1||
     !Number.isSafeInteger(lastTouchTick)||lastTouchTick>=tick||
+    typeof fixedPhaseLab!=='boolean'||
     !['home','away'].includes(attackingSide)||
     !['control','moderate','sprint'].includes(phase)||
     player?.id!==attackingSide+'-10'||player?.team!==attackingSide||
@@ -25,24 +26,34 @@ export function chooseIntentSoloCarryTouch({
  const speedMps=forward*ballVelocity.x;
  // Purposeful push then follow: spacing is perceptible at 60Hz.
  // Control is still more responsive than a longer Sprint push.
- const spacingTicks=phase==='sprint'?70:phase==='moderate'?58:48;
- const targetSpeedMps=phase==='sprint'?3.35:
-  phase==='moderate'?3.05:2.6;
+ const spacingTicks=fixedPhaseLab?
+  (phase==='sprint'?55:phase==='moderate'?44:48):
+  phase==='sprint'?70:phase==='moderate'?58:48;
+ // DEV fixed-phase trials distinguish ball pace. Automatic Carry is unchanged.
+ const targetSpeedMps=fixedPhaseLab&&phase==='sprint'?4.2:
+  fixedPhaseLab&&phase==='moderate'?3.55:
+  phase==='sprint'?3.35:phase==='moderate'?3.05:2.6;
  // A purposeful push cannot happen while the ball is far away, behind,
  // airborne, moving already faster than needed, or the player just pushed.
- if(tick-lastTouchTick<spacingTicks||gapM>1.25||dx<0.08||
+ // The common executor starts at -12 ticks: enforcing 44-55 ticks before
+ // the first fixed-phase push lets the runner overrun a stationary ball.
+ const firstFixedTouch=fixedPhaseLab&&phase!=='control'&&lastTouchTick<0;
+ if((!firstFixedTouch&&tick-lastTouchTick<spacingTicks)||
+    gapM>1.25||dx<0.08||
     dx>1.25||Math.abs(dy)>0.45||
     Math.abs(ballPosition.z-ballRadiusM)>0.017||
     Math.abs(ballVelocity.z)>0.5||speedMps>=targetSpeedMps-0.2)
   return null;
  // An ordinary football has mass ~0.43kg; this is a genuine Rapier impulse,
  // not a setLinvel, scripted ball attachment or fake native shoe START.
- const magnitudeNs=Math.min(1.10,Math.max(0.09,
+ const magnitudeNs=Math.min(fixedPhaseLab&&phase==='sprint'?1.8:
+  fixedPhaseLab&&phase==='moderate'?1.5:1.10,Math.max(0.09,
   (targetSpeedMps-Math.max(0,speedMps))*0.43));
  const sidewaysNs=Math.max(-0.07,Math.min(0.07,-dy*0.16));
  return Object.freeze({
   version:INTENT_SOLO_CARRY_VERSION,tick,playerId:player.id,
   team:attackingSide,action:'carry',phase,spacingTicks,
+  ...(fixedPhaseLab?{fixedPhaseLab:true}:{}),
   ballGapM:gapM,ballSpeedMps:speedMps,
   intendedTargetSpeedMps:targetSpeedMps,
   impulseNs:Object.freeze({x:forward*magnitudeNs,y:sidewaysNs,z:0}),
