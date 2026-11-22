@@ -366,6 +366,7 @@
     "tests/sh-02-competition-rendering.test.mjs": "site-node",
     "tests/sh-04-frontend-cleanup.test.mjs": "site-node",
     "tests/shared-nonproduction-proxy.test.mjs": "site-node",
+    "tests/shared-shell-734-browser.mjs": "support",
     "tests/standings-subviews-ui.test.mjs": "site-node",
     "tests/standings-subviews.test.mjs": "site-node",
     "tests/static-provider.test.mjs": "site-node",

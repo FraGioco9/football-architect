@@ -104,6 +104,14 @@ export async function verifyCanonicalStateBrowser(browser,engine){
     assert.equal(state.lang,lang);assert.equal(state.theme,theme);assert.equal(state.overflow,false,path+' overflow');
     assert.equal(new URL(state.calendar,origin).searchParams.has('season'),false,path+' global sidebar must follow the implicit current season');
     if(path.includes('?season=1'))assert.equal(new URL(page.url()).searchParams.get('season'),'1',path+' historical URL');
+    // The public-route matrix verifies bootstrap/locale, not navigation
+    // with pending match-index reads. The historical standings page starts
+    // a separate synthetic 404 lookup after world/header hydration.
+    // Settle it before reload/navigation, rather than triggering a
+    // WebKit-native access-control diagnostic on document teardown.
+    // The deliberate stale-season response race below is unchanged.
+    if(path==='/competitions/it-1/standings?season=1')
+     await page.waitForLoadState('networkidle');
     checks++;
    }
   }
@@ -137,6 +145,9 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',season:'2',matchday:3}));
   await page.waitForURL('**/fixtures?matchday=3');
   await page.goBack();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='standings'&&window.faCompetitionRoute?.get().season==='1');
+  // Back may issue a historical match-index request; finish it before
+  // Forward replaces the page. Native WebKit errors remain fatal.
+  await page.waitForLoadState('networkidle');
   await page.goForward();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='fixtures'&&window.faCompetitionRoute?.get().season==='2');checks++;
   let release;holdSeasonOne=new Promise(resolve=>release=resolve);const started=new Promise(resolve=>heldStarted=resolve);
   await page.goto(origin+'/competitions/it-1/standings?season=1',{waitUntil:'domcontentloaded'});await bounded(started,'held Season 1 API request');
