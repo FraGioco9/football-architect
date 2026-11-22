@@ -244,7 +244,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.match(rated.ninety.tick,/^Tick 120 /);
   assert.match(rated.ninety.readout,/attributes 90\/99/);
   assert.match(rated.ninety.readout,/ball forward [0-9.]+ m/);
-  assert.match(rated.ninety.readout,/peak player [0-9.]+ m\/s/);
+  assert.match(rated.ninety.readout,/peak player [0-9.]+ km\/h/);
   assert.match(rated.ninety.readout,/mean gap [0-9.]+ m/);
   assert.equal(rated.twentyFive.rating,'25');
   assert.equal(rated.twentyFive.tick,'Tick 0 · 0.00 s');
