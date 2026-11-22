@@ -336,7 +336,8 @@ test("PAGE-DASH-01 generates a standalone world overview without a separate worl
  for(const id of ["recent","next","events"])assert.match(source,new RegExp('data-dash-list="'+id+'"'));
  assert.doesNotMatch(client,/fetch\(\s*["']\/api\/world/);
  assert.match(client,/\/api\/matches\?season=/);
- assert.match(pages.dashboard,/href="\/competitions#domestic"/);
+ assert.match(pages.dashboard,/href="\/competitions\/it-1\/standings"/);
+ assert.match(pages.dashboard,/href="\/competitions\/int-1\/standings"/);
  assert.match(pages.dashboard,/href="\/guide"/);
 });
 test("PAGE-DASH-01 official day window and receipt-gated matches",async()=>{

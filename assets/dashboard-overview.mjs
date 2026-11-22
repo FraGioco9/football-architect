@@ -60,7 +60,7 @@ if(typeof document!=='undefined'){
    progress.setAttribute('aria-label',t('calendarPosition'));
    const names=new Intl.DisplayNames([language()],{type:'region'});
    root.querySelectorAll('[data-dash-region]').forEach(el=>{
-    const region=el.dataset.dashRegion,translated=names.of(region==='ENG'?'GB':region);
+    const region=el.dataset.dashRegion,translated=region==='ENG'?({en:'England',it:'Inghilterra',de:'England',es:'Inglaterra',fr:'Angleterre'}[language()]):names.of(region);
     el.textContent=translated;
     const links=el.parentElement.querySelectorAll('a');
     links.forEach((link,i)=>link.setAttribute('aria-label',translated+' · '+t('division')+' '+(i+1)));
