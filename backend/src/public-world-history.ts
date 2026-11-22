@@ -14,37 +14,37 @@ const invalid=():never=>{throw new ApiError(422,'archive_invalid')};
 export function projectWorldHistoryChampions(summary:unknown,season:number){
  if(!validObject(summary)||summary.schemaVersion!==1||summary.sourceSeason!==season||
   !Array.isArray(summary.divisions)||summary.divisions.length!==16||
-  !Array.isArray(summary.cupWinners)||summary.cupWinners.length!==2)invalid();
+  !Array.isArray(summary.cupWinners)||summary.cupWinners.length!==2)throw new ApiError(422,'archive_invalid');
  const divisions=new Map<string,string>();
  for(const item of summary.divisions){
   if(!validObject(item)||typeof item.competitionId!=='string'||
     !Array.isArray(item.table)||item.table.length!==16||
-    divisions.has(item.competitionId))invalid();
+    divisions.has(item.competitionId))throw new ApiError(422,'archive_invalid');
   const clubIds=new Set<string>();
   for(const row of item.table){
    if(!validObject(row)||typeof row.clubId!=='string'||!clubPattern.test(row.clubId)||
-     clubIds.has(row.clubId))invalid();
+     clubIds.has(row.clubId))throw new ApiError(422,'archive_invalid');
    clubIds.add(row.clubId);
   }
   const winner=item.table[0];
-  if(!validObject(winner)||typeof winner.clubId!=='string')invalid();
+  if(!validObject(winner)||typeof winner.clubId!=='string')throw new ApiError(422,'archive_invalid');
   divisions.set(item.competitionId,winner.clubId);
  }
  const champions:{competitionId:string;championClubId:string}[]=[];
  for(const country of countries)for(const tier of [1,2]){
   const id=country+'-'+tier,winner=divisions.get(id);
-  if(!winner||!winner.startsWith(country+'-'))invalid();
+  if(!winner||!winner.startsWith(country+'-'))throw new ApiError(422,'archive_invalid');
   champions.push({competitionId:id,championClubId:winner});
  }
  const cups=new Map<string,string>();
  for(const item of summary.cupWinners){
   if(!validObject(item)||!['int-1','int-2'].includes(String(item.competitionId))||
    typeof item.championClubId!=='string'||!clubPattern.test(item.championClubId)||
-   cups.has(String(item.competitionId)))invalid();
+   cups.has(String(item.competitionId)))throw new ApiError(422,'archive_invalid');
   cups.set(String(item.competitionId),item.championClubId);
  }
  for(const id of ['int-1','int-2']){
-  const winner=cups.get(id);if(!winner)invalid();
+  const winner=cups.get(id);if(!winner)throw new ApiError(422,'archive_invalid');
   champions.push({competitionId:id,championClubId:winner});
  }
  return champions;
