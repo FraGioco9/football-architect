@@ -28,10 +28,13 @@ function node(tag,text,className){
  return element;
 }
 function link(href,text){const a=node('a',text);a.href=window.faAppHref?.(href)??href;return a}
+// Match the established neutral cup used by Player Stats. This is a fallback,
+// not newly approved international artwork.
+const neutralCupMark='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg>';
 function logo(src,competitionId){
  const fallback=competitionId?'app-competition-logo-placeholder':'app-world-club-crest-placeholder';
  const slot=node('span',null,'md-logo');
- const showPlaceholder=()=>{slot.classList.add(fallback);slot.textContent=competitionId??''};
+ const showPlaceholder=()=>{slot.classList.add(fallback);if(competitionId)slot.innerHTML=neutralCupMark;else slot.textContent=''};
  slot.setAttribute('aria-hidden','true');
  if(src){
   const img=node('img');

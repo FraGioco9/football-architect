@@ -90,6 +90,8 @@ export async function verifyMatchesDirectory(browser){
   assert.equal(await page.locator('#md-list h2 > .app-competition-logo-placeholder').count(),0);
   releaseLogo();
   await page.locator('#md-list h2 > .app-competition-logo-placeholder').waitFor();
+  assert.equal(await page.locator('#md-list h2 > .app-competition-logo-placeholder svg').count(),1,'missing competition artwork uses the neutral cup mark');
+  assert.equal(await page.locator('#md-list h2 > .app-competition-logo-placeholder').textContent(),'','no clipped competition ID in fallback');
   assert.equal(await page.locator('#md-list h2 small').innerText(),'Round 1');
   assert.equal(await page.locator('.md-row').getByText('Round 1').count(),0);
   assert.equal(await page.locator('.md-row .md-team:first-child > a + .md-logo').count(),8);
@@ -345,6 +347,9 @@ export async function verifyMatchesDirectory(browser){
   }
 
   // The full 128-match domestic day tests DOM scale, widths, local filtering and Back cache.
+  // The earlier failure-path checks abort logo requests intentionally. For the
+  // 16-competition layout gate, load the actual published SVGs from the app.
+  await context.unroute('**/assets/competitions/**/*.svg');
   const dense=await context.newPage();
   const scopes=['IT','ENG','ES','DE','FR','PT','NL','BR'].flatMap(c=>[1,2].map(n=>c+'-'+n));
   const denseFixtures=scopes.flatMap((competitionId,i)=>Array.from({length:8},(_,j)=>({
@@ -362,10 +367,23 @@ export async function verifyMatchesDirectory(browser){
   await dense.goto('http://app.localhost:2000/matches?season=1&day=13',{waitUntil:'domcontentloaded'});
   await dense.waitForFunction(()=>document.querySelectorAll('#md-list .md-row:not(.md-skeleton)').length===128);
   assert.equal(await dense.locator('#md-list section').count(),16,'all sixteen domestic groups render');
+  await dense.waitForFunction(()=>document.querySelectorAll('#md-list h2 > .md-logo img').length===16);
   for(const width of [320,390,540,768,1440]){
    await dense.setViewportSize({width,height:800});
    const w=await dense.locator('#md-list').evaluate(n=>[n.scrollWidth,n.clientWidth]);
    assert(w[0]<=w[1]+1,'128 fixtures stay within the page at '+width+'px');
+   const geometry=await dense.locator('#md-list h2 > .md-logo').evaluateAll(slots=>slots.map(slot=>{
+    const image=slot.querySelector('img'),frame=slot.getBoundingClientRect(),art=image.getBoundingClientRect();
+    return {frame:[frame.width,frame.height],art:[art.width,art.height],
+     inset:[art.left-frame.left,art.top-frame.top,frame.right-art.right,frame.bottom-art.bottom],
+     overflow:getComputedStyle(slot).overflow,fit:getComputedStyle(image).objectFit};
+   }));
+   const frameSize=width<=540?24:28,artSize=width<=540?20:24;
+   assert.equal(geometry.length,16,'all sixteen domestic logos loaded at '+width+'px');
+   assert(geometry.every(logo=>logo.frame.every(v=>Math.abs(v-frameSize)<.1)&&
+    logo.art.every(v=>Math.abs(v-artSize)<.1)&&
+    logo.inset.every(v=>Math.abs(v-2)<.1)&&logo.overflow==='visible'&&logo.fit==='contain'),
+    'all approved logos retain a centered 2px safety inset without clipping at '+width+'px: '+JSON.stringify(geometry));
   }
   await dense.locator('.fa-shell-content-scroll').evaluate(n=>{n.scrollTop=n.scrollHeight});
   assert.equal(await dense.locator('#md-list .md-row').last().count(),1,'last fixture survives scrolling');
