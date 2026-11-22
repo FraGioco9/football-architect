@@ -1,22 +1,15 @@
-# PAGE-DASH-01 (#575) — Dashboard World HQ, Football Manager-inspired rebuild
+# PAGE-DASH-01 (#575) — Compact World HQ
 
-**Status:** Owner explicitly requested a from-scratch redesign inspired by Football Manager, following the initial approved MVP in Draft PR #752. This is a visual and layout transformation on the same /dashboard route, not a grant of additional sporting capabilities, merge or deploy.
+Owner-approved content simplification in Draft PR #752; retain the existing /dashboard route. **No merge or deploy authorized.**
 
-## Information architecture
-A management-game command centre, not generic equal-sized cards: editorial title with fast Calendar/Matches access, dense authoritative world-status strip, a dominant tonal-green sporting day hero with calendar position, a World agenda rail, a Match Centre with featured verified next fixture and compact scoreboards, and a 16-division + 2-cup navigator.
-The subtle pitch geometry is original CSS, not a copied Football Manager screenshot or game asset. The current Football Architect navigation shell, first-paint geometry, light/dark themes and five languages remain. No fictitious manager, press news, standings, scorers, player stats or playable Continue action.
+## Layout
+- Compact season/day/phase authoritative world-status bar with truthful Season 0, Debug, preparing and unavailable notes.
+- Primary Match Centre: up to four verified upcoming fixtures and four recent results, including club names, their competition and day or completed score. These are bounded previews rather than exhaustive global results. Canonical numeric match links.
+- Secondary calendar: next three planned markers with canonical season/week deep links. Planned never means played.
+- Removed duplicate featured fixture, oversized pitch hero and progress, repeated next event, all-18-competitions catalogue, redundant toolbar, decorative kicker/subtitle, Guide/site footer.
 
-## Data authority
-- Reuse canonical shared faWorldState; do not duplicate /api/world GET or mutate simulation.
-- Read at most two preceding and two current/future official calendar days from public no-store GET /api/matches?season=N&day=D: narrow preview samples, not exhaustive history.
-- Require exact world generation/revision/phase and selected season/day; reject invalid and duplicate IDs and unverified scores. Scores only for completed matches with a result, featured fixture only for published scheduled matches with resolved clubs.
-- World calendar model provides planned future markers only, not evidence of played games. Progress measures position in the 56-day planned calendar, not matches played.
-- Season 0, preparing day 0, closed, unavailable, Debug and partial/unpublished/failed API states stay explicit. Competition list is a catalogue; not a claim that all 18 are active.
-- Canonical deep links: /matches/<numeric ID>, /calendar?season=N&calendarView=week&week=W, /competitions/<slug>/standings, /guide.
+## Data and QA
+Keep shared faWorldState without a second world GET; up to two past and two current/future calendar-day requests, with published receipt/result and world generation/revision/phase checks. Preserve empty/partial/errors, retry, accessibility, localization EN/DE/ES/FR/IT, light/dark, first-paint geometry, responsive Safari and BFCache.
+Source: templates/dashboard-overview.html, generated dashboard/index.html, assets/dashboard-overview.mjs and .css; tests/app-home.test.mjs. Verify generated synchronization and exact-head CI; manual QA outstanding.
 
-## Ownership & QA
-templates/dashboard-overview.html is the authored Dashboard; tools/generate-app-pages.mjs produces dashboard/index.html. Dedicated assets/dashboard-overview.mjs and .css are explicitly allowlisted by the fail-closed tools/publication-guard.mjs. No new endpoint or DB schema.
-Targeted: node tools/generate-app-pages.mjs --check; node --test tests/app-home.test.mjs; node --test tests/a04-provider-baseline-evidence.test.mjs. Then exact-head Site, Browser, Admin and FULL.
-Manual: Chrome desktop and iPhone Safari narrow/tablet; EN/IT/DE/ES/FR, light/dark, keyboard focus and screenreader, Season 0/day0/day1/day56, incomplete/unavailable/stale API, retry, Back/Forward/BFCache and source change. Do not claim unexecuted QA.
-
-Keep PR Draft/HOLD. No merge, deploy, remote DB or manual workflow dispatch.
+PR #752 remains Draft/HOLD. No API/schema, remote D1, manual CI dispatch, deploy or merge.

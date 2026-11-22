@@ -39,13 +39,6 @@ if(typeof document!=='undefined'){
   const lookup=(kind,name)=>root.querySelector('[data-dash-'+kind+'="'+name+'"]');
   const lists=Object.fromEntries(['recent','next','events'].map(k=>[k,lookup('list',k)]));
   const skeletons=Object.fromEntries(Object.entries(lists).map(([k,el])=>[k,el.innerHTML]));
-  const featured=root.querySelector('[data-dash-featured]');
-  const featureSkeleton=featured.innerHTML;
-  const featureDay=root.querySelector('[data-dash-featured-day]');
-  const highlight=root.querySelector('[data-dash-highlight]');
-  const progress=root.querySelector('[data-dash-progress]');
-  const progressFill=root.querySelector('[data-dash-progress-fill]');
-  const progressPercent=root.querySelector('[data-dash-progress-percent]');
   const retry=root.querySelector('[data-dash-retry]');
   const teams=new Map(publicClubIdentityCatalog().clubs.map(c=>[c.countryId+'-'+c.clubId,c]));
   const state=window.faWorldState;
@@ -57,73 +50,45 @@ if(typeof document!=='undefined'){
   function localize(){
    root.querySelectorAll('[data-dash-text]').forEach(el=>el.textContent=t(el.dataset.dashText));
    root.querySelectorAll('[data-dash-aria]').forEach(el=>el.setAttribute('aria-label',t(el.dataset.dashAria)));
-   progress.setAttribute('aria-label',t('calendarPosition'));
-   const names=new Intl.DisplayNames([language()],{type:'region'});
-   root.querySelectorAll('[data-dash-region]').forEach(el=>{
-    const region=el.dataset.dashRegion,translated=region==='ENG'?({en:'England',it:'Inghilterra',de:'England',es:'Inglaterra',fr:'Angleterre'}[language()]):names.of(region);
-    el.textContent=translated;
-    const links=el.parentElement.querySelectorAll('a');
-    links.forEach((link,i)=>link.setAttribute('aria-label',translated+' · '+t('division')+' '+(i+1)));
-   });
   }
   function blank(){
    for(const [k,el] of Object.entries(lists)){el.innerHTML=skeletons[k];el.setAttribute('aria-busy','true')}
-   featured.innerHTML=featureSkeleton;featured.setAttribute('aria-busy','true');featureDay.textContent='';
    for(const name of ['recent','next','events'])write('note',name,'');
    retry.hidden=true;
   }
   function clock(w,debug=false){
    write('value','season',w?String(w.seasonNumber):'—');
    write('value','day',w?(w.day?w.day+' / 56':'—'):'—');
-   write('value','dayBig',w?.day?String(w.day):'—');
    write('value','phase',debug?'Debug':w?.phase==='unstarted'?t('unstarted'):w?.phase==='preparing'?t('preparing'):w?.phase==='active'?t('active'):w?.phase==='closed'?t('closed'):'—');
    write('note','world',debug?t('debug'):!w?t('unavailable'):w.phase==='unstarted'?t('unstarted'):w.phase==='preparing'?t('preparing'):'');
-   const day=w?.day??0;
-   progress.setAttribute('aria-valuenow',String(day));
-   progressFill.style.width=(day/56*100)+'%';
-   progressPercent.textContent=w?day+' / 56':'—';
-   highlight.textContent=debug?t('debug'):!w?t('unavailable'):w.seasonNumber===0?t('unstarted'):t('loading');
   }
   function put(kind,items){lists[kind].replaceChildren(...items);lists[kind].setAttribute('aria-busy','false')}
   function club(id){return teams.get(id)??null}
+  function competitionName(id){
+   if(id==='int-1')return 'Sovereign Cup';
+   if(id==='int-2')return 'Federation Cup';
+   const [region,division]=id.split('-');
+   const country=region==='ENG'?({en:'England',it:'Inghilterra',de:'England',es:'Inglaterra',fr:'Angleterre'}[language()]):new Intl.DisplayNames([language()],{type:'region'}).of(region);
+   return country+' · '+t('division')+' '+division;
+  }
   function matchItems(rows){
    return rows.flatMap(f=>{
     const home=club(f.homeClubId),away=club(f.awayClubId);
     if(!home||!away)return [];
     const li=document.createElement('li'),a=document.createElement('a');
-    const link='/matches/'+f.matchId;
-    a.href=window.faAppHref?.(link)??link;
+    const href='/matches/'+f.matchId;a.href=window.faAppHref?.(href)??href;
+    const content=document.createElement('span');content.className='fa-dash-match-copy';
     const names=document.createElement('span');names.className='fa-dashboard-names';
     names.textContent=home.compactName+' – '+away.compactName;
+    const context=document.createElement('small');context.className='fa-dash-match-competition';
+    context.textContent=competitionName(f.competitionId);
+    content.append(names,context);
     const detail=document.createElement('strong');
     detail.textContent=f.status==='completed'?f.result.homeGoals+' – '+f.result.awayGoals:t('gameDay')+' '+f.day;
-    a.append(names,detail);
-    a.setAttribute('aria-label',home.primaryName+' – '+away.primaryName+', '+detail.textContent);
+    a.append(content,detail);
+    a.setAttribute('aria-label',home.primaryName+' – '+away.primaryName+', '+context.textContent+', '+detail.textContent);
     li.append(a);return [li];
    });
-  }
-  function showFeatured(rows,empty){
-   featureDay.textContent='';
-   const next=rows.find(f=>club(f.homeClubId)&&club(f.awayClubId));
-   if(!next){
-    const paragraph=document.createElement('p');
-    paragraph.className='fa-dash-feature-unavailable';paragraph.textContent=empty;
-    featured.replaceChildren(paragraph);featured.setAttribute('aria-busy','false');return;
-   }
-   const home=club(next.homeClubId),away=club(next.awayClubId);
-   const a=document.createElement('a');a.className='fa-dash-featured-link';
-   const href='/matches/'+next.matchId;a.href=window.faAppHref?.(href)??href;
-   function team(value){
-    const cell=document.createElement('span');cell.className='fa-dash-feature-team';
-    const badge=document.createElement('span');badge.textContent=value.abbr||value.compactName.slice(0,3).toUpperCase();
-    const name=document.createElement('strong');name.textContent=value.primaryName;
-    cell.append(badge,name);return cell;
-   }
-   const versus=document.createElement('span');versus.className='fa-dash-feature-versus';versus.textContent='VS';
-   a.append(team(home),versus,team(away));
-   a.setAttribute('aria-label',home.primaryName+' – '+away.primaryName+' · '+t('gameDay')+' '+next.day);
-   featureDay.textContent=next.competitionId+' · '+t('gameDay')+' '+next.day;
-   featured.replaceChildren(a);featured.setAttribute('aria-busy','false');
   }
   function markerName(event){
    return event.marker==='FEDERATION-FINAL'?t('federationFinal'):
@@ -133,12 +98,10 @@ if(typeof document!=='undefined'){
   function events(){
    if(!world?.seasonNumber){
     put('events',[]);write('note','events',t('noSeasonEvents'));
-    if(world)highlight.textContent=t('unstarted');
     return;
    }
    const days=window.faWorldCalendarModel.createSeason(world.seasonNumber).days;
    const next=days.filter(d=>d.day>=Math.max(1,world.day)&&d.events.length).slice(0,3);
-   highlight.textContent=next.length?next[0].events.map(markerName).join(' · ')+' · '+t('gameDay')+' '+next[0].day:t('noEvents');
    put('events',next.map(d=>{
     const li=document.createElement('li'),a=document.createElement('a');
     const href='/calendar?season='+world.seasonNumber+'&calendarView=week&week='+Math.ceil(d.day/7);
@@ -160,7 +123,6 @@ if(typeof document!=='undefined'){
    const incomplete=verified.incomplete;
    write('note','recent',incomplete?t('missing'):selection.recent.length?'':t('noRecent'));
    write('note','next',incomplete?t('missing'):selection.next.length?'':t('noNext'));
-   showFeatured(selection.next,incomplete?t('missing'):t('featuredUnavailable'));
    retry.hidden=!verified.failed;
    events();
   }
@@ -171,7 +133,7 @@ if(typeof document!=='undefined'){
    if(!w.seasonNumber){
     put('recent',[]);put('next',[]);
     write('note','recent',t('unstarted'));write('note','next',t('unstarted'));
-    showFeatured([],t('unstarted'));return;
+    return;
    }
    const days=chooseDashboardDays(window.faWorldCalendarModel.createSeason(w.seasonNumber).days,w.day);
    if(!days.length){verified={days:[],failed:false,incomplete:false};show();return}
@@ -204,14 +166,14 @@ if(typeof document!=='undefined'){
     clock({seasonNumber:snapshot.current?.season??0,day:snapshot.current?.day??0,phase:'debug'},true);
     put('recent',[]);put('next',[]);
     write('note','recent',t('debug'));write('note','next',t('debug'));
-    showFeatured([],t('debug'));events();return;
+    events();return;
    }
    if(snapshot?.worldStatus!=='ready'||!window.faWorldClockAdapter.validPublicWorld(snapshot.world)){
     stop();blank();world=null;
     if(snapshot?.worldStatus==='unavailable'){
      clock(null);put('recent',[]);put('next',[]);
      write('note','recent',t('unavailable'));write('note','next',t('unavailable'));
-     showFeatured([],t('unavailable'));events();
+     events();
     }else write('note','world',t('loading'));
     return;
    }
