@@ -24,7 +24,7 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
    'original research scene stays in hidden regression catalog');
  for(const id of ['carry-solo','keeper-1v1','overload-2v1','duel-3v3'])
   assert.match(ui,new RegExp("'"+id+"'"));
- assert.match(ui,/length!==8/);
+ assert.match(ui,/length!==11/);
  assert.doesNotMatch(ui,/visibleMovement/);
  assert.match(ui,/Ball handling/);
  assert.match(ui,/Small-sided situations/);
