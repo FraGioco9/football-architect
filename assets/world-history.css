@@ -1,0 +1,30 @@
+/* #581: new archive page; reuse app tokens rather than fixed theme colors. */
+.fa-world-history{max-width:1140px;min-width:0}
+.fa-world-history-intro{color:var(--muted);margin:12px 0 0;line-height:1.5}
+.fa-world-history-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:var(--app-page-section-gap)}
+.fa-world-history-control{display:grid;gap:8px;min-width:0}
+.fa-world-history-control label{font-size:13px;font-weight:650;color:var(--muted)}
+.fa-world-history-control select{width:100%;min-width:0;height:44px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font:inherit;font-size:14px}
+.fa-world-history-control select:focus-visible,.fa-world-history-retry:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.fa-world-history-control select:disabled{opacity:.65}
+.fa-world-history-count{min-height:18px;margin:20px 0 10px;font-size:13px;color:var(--muted)}
+.fa-world-history-status{min-height:24px;margin:4px 0 14px;color:var(--muted)}
+.fa-world-history-archive{display:grid;gap:20px;min-width:0}
+.fa-world-history-season{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
+.fa-world-history-season h2{font-size:18px;font-weight:750;margin:0;padding:17px 20px;border-bottom:1px solid var(--line)}
+.fa-world-history-list{list-style:none;padding:0;margin:0}
+.fa-world-history-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:12px;min-height:64px;padding:10px 20px}
+.fa-world-history-row+li{border-top:1px solid var(--line)}
+.fa-world-history-row a{color:var(--text);text-decoration:none;font-weight:650;overflow-wrap:anywhere}
+.fa-world-history-row a:hover{text-decoration:underline;text-underline-offset:3px}
+.fa-world-history-row a:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.fa-world-history-row .fa-world-history-club{display:flex;align-items:center;gap:10px;min-width:0}
+.fa-world-history-row .fa-world-history-crest{display:block;width:29px;height:29px;flex:0 0 29px;object-fit:contain}
+.fa-world-history-skeleton{display:grid;gap:1px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--line)}
+.fa-world-history-skeleton-row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px;padding:12px 20px;background:var(--surface)}
+.fa-world-history-skeleton-row span{display:block;width:34%;height:14px;border-radius:5px;background:var(--line)}
+.fa-world-history-skeleton-row span:last-child{width:25%}
+.fa-world-history-retry{margin-top:12px}
+.fa-world-history-retry[hidden]{display:none}
+html[data-theme="light"] .fa-world-history-season,html[data-theme="light"] .fa-world-history-skeleton-row,html[data-theme="light"] .fa-world-history-control select{background:var(--surface);color:var(--text)}
+@media(max-width:700px){.fa-world-history-controls{grid-template-columns:minmax(0,1fr)}.fa-world-history-row{grid-template-columns:minmax(0,1fr);gap:6px;padding:12px 16px}.fa-world-history-season h2{padding:14px 16px}.fa-world-history-skeleton-row{padding:12px 16px}}
