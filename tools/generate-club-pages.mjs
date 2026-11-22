@@ -1,36 +1,51 @@
+import clubModel from '../assets/club-model.js';
+import recordsUI from '../assets/club-records.js';
 import fixtureUI from '../assets/club-fixtures.js';
 // CLUB-01: derive public presentation data without modifying canonical inputs.
 import {clubCrestAssets} from './club-crest-assets.mjs';
 import {loadWorldCatalog} from './load-world-catalog.mjs';
-function bootstrapClubFirstPaint(){
- const match=location.pathname.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|stats|history)\/?$/);
+function bootstrapClubFirstPaint(rosterLabels,rosterTabs,menuMarkup,statKeys,statHelp,recordLabels,recordScopes){
+ const match=location.pathname.match(/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/(overview|roster|fixtures|records|history)\/?$/);
  if(!match)return;
  const country=match[1],clubId=match[2],view=match[3];
- const names=['overview','roster','fixtures','stats','history'];
+ const names=['overview','roster','fixtures','records','history'];
  const labels={
-  en:['Overview','Roster','Fixtures','Stats','History'],
-  de:['Übersicht','Kader','Spielplan','Statistiken','Historie'],
-  es:['Resumen','Plantilla','Partidos','Estadísticas','Historial'],
-  fr:['Présentation','Effectif','Matchs','Statistiques','Historique'],
-  it:['Panoramica','Rosa','Partite','Statistiche','Storia']
+  en:['Overview','Roster','Fixtures','Records','History'],
+  de:['Übersicht','Kader','Spielplan','Rekorde','Historie'],
+  es:['Resumen','Plantilla','Partidos','Récords','Historial'],
+  fr:['Présentation','Effectif','Matchs','Records','Historique'],
+  it:['Panoramica','Rosa','Partite','Record','Storia']
  };
  const locale=Object.hasOwn(labels,document.documentElement.lang)?document.documentElement.lang:'en';
  const header=document.querySelector('#club-page > .club-header'),tabs=document.querySelector('#club-page > .club-tabs');
  if(!header||!tabs)return;
- // Reset even a bookmarked subview at document refresh. First paint stays neutral.
- if(view==='roster'&&location.search)history.replaceState(null,'',location.pathname+location.hash);
  const params=new URLSearchParams(location.search),context=new URLSearchParams();
  for(const key of ['season','matchday'])if(params.has(key))context.set(key,params.get(key));
  const activeIndex=names.indexOf(view);
  for(const link of tabs.querySelectorAll('[data-club-first-paint-tab]')){
   const id=link.dataset.clubFirstPaintTab,active=id===view;
-  link.href='/clubs/'+country+'/'+clubId+'/'+id+(['fixtures','stats'].includes(id)&&context.size?'?'+context:'');
+  link.href='/clubs/'+country+'/'+clubId+'/'+id+(['fixtures','records'].includes(id)&&context.size?'?'+context:'');
   link.textContent=labels[locale][names.indexOf(id)];
   link.classList.toggle('is-active',active);
   if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
  }
  const overview=document.querySelector('.club-first-paint-overview'),other=document.querySelector('.club-first-paint-other');
  overview.hidden=view!=='overview';other.hidden=view!=='history';
+ const records=document.querySelector('.club-first-paint-records');
+ if(records){
+  records.hidden=view!=='records';
+  records.setAttribute('aria-hidden',String(view!=='records'));
+  const scope=['verified','all-time'].includes(params.get('scope'))?'verified':'season';
+  records.dataset.recordPeriod=scope;
+  for(const node of records.querySelectorAll('[data-record-label]')){
+   const key=node.dataset.recordLabel;
+   node.textContent=recordLabels[locale][scope==='verified'?(recordScopes[key]||key):key];
+  }
+  for(const button of records.querySelectorAll('[data-record-scope]')){
+   button.setAttribute('aria-pressed',String(button.dataset.recordScope===scope));
+   button.disabled=true;
+  }
+ }
  const roster=document.querySelector('.club-first-paint-roster');
  if(roster){
   roster.hidden=view!=='roster';
@@ -56,24 +71,40 @@ function bootstrapClubFirstPaint(){
    it:{title:'Rosa',tabs:['Info'],groups:['Tecnici','Mentali','Fisici','Portiere'],cols:['','Giocatore','Posizioni','Età','Altezza','Piede'],nationality:'Nazionalità'}
   };
   const w=words[locale],requested=params.get('view');
-  const group=Object.hasOwn(keys,requested)?requested:
-   requested==='attributes'&&Object.hasOwn(keys,params.get('group'))?params.get('group'):'technical';
-  const mode=Object.hasOwn(keys,requested)||requested==='attributes'?'attributes':'overview';
+  const group=Object.hasOwn(keys,params.get('group'))?params.get('group'):'technical';
+  const mode=requested==='attributes'||requested==='stats'?requested:'overview';
+  const wordsForRoster=rosterLabels[locale];
   roster.dataset.rosterMode=mode;
+  roster.querySelector('.club-roster-count-width').textContent='99 '+({en:'players',it:'giocatori',de:'Spieler',es:'jugadores',fr:'joueurs'})[locale];
   for(const button of roster.querySelectorAll('[data-club-roster-view]')){
-   const key=button.dataset.clubRosterView,active=key===(mode==='overview'?'info':group);
-   button.textContent=key==='info'?w.tabs[0]:w.groups[Object.keys(keys).indexOf(key)];
-   button.removeAttribute('href');
-   button.setAttribute('aria-disabled','true');
+   const key=button.dataset.clubRosterView,active=key===(mode==='overview'?'info':mode);
+   button.textContent=key==='info'?'Info':key==='stats'?rosterTabs[locale][1]:wordsForRoster[0];
+   const query=new URLSearchParams(params);
+   query.set('view',key);if(key!=='stats')query.delete('competition');query.delete('sort');query.delete('order');
+   if(key==='attributes')query.set('group',mode==='attributes'?group:'technical');else query.delete('group');
+   button.href=location.pathname+'?'+query;
    button.classList.toggle('is-active',active);
    button.setAttribute('aria-selected',String(active));
-   button.tabIndex=-1;
+   button.tabIndex=active?0:-1;
+  }
+  if(mode==='attributes'||mode==='stats'){
+   const isGroup=mode==='attributes',id=isGroup?'group':'competition';
+   const picker=document.createElement('template');picker.innerHTML=menuMarkup[id];
+   const control=picker.content.firstElementChild,trigger=control.querySelector('button');
+   const fixtureWords=JSON.parse(document.querySelector('.club-fixtures').dataset.labels)[locale];
+   const label=isGroup?wordsForRoster[0]:fixtureWords.competition;
+   const requested=params.get('competition');
+   const value=isGroup?w.groups[Object.keys(keys).indexOf(group)]:requested==='domestic'?wordsForRoster[statKeys.length+1]:requested==='international'?wordsForRoster[statKeys.length+2]:fixtureWords.all;
+   trigger.setAttribute('aria-label',label);control.querySelector('[role=listbox]').setAttribute('aria-label',label);
+   trigger.querySelector('span').textContent=value;
+   trigger.disabled=true;
+   roster.querySelector('.club-roster-count').before(control);
   }
   roster.querySelector('.club-roster-tabs').setAttribute('aria-label',w.title);
   const table=roster.querySelector('table');
   table.dataset.playersTableMode=mode;table.dataset.rosterGroup=group;table.setAttribute('aria-label',w.title);
-  const fields=mode==='attributes'?[w.cols[0],w.cols[1],w.cols[2],...keys[group].map(key=>names[locale].split('|')[allAttrs.indexOf(key)])]:w.cols;
-  const columnSorts=mode==='attributes'?['nationality','name','positions',...keys[group]]:['nationality','name','positions','age','height','foot'];
+  const fields=mode==='attributes'?[w.cols[0],w.cols[1],w.cols[2],...keys[group].map(key=>names[locale].split('|')[allAttrs.indexOf(key)])]:mode==='stats'?[...w.cols.slice(0,3),...wordsForRoster.slice(1,1+statKeys.length)]:w.cols;
+  const columnSorts=mode==='attributes'?['nationality','name','positions',...keys[group]]:mode==='stats'?['nationality','name','positions',...statKeys]:['nationality','name','positions','age','height','foot'];
   const sort=columnSorts.includes(params.get('sort'))?params.get('sort'):'';
   const order=sort&&['asc','desc'].includes(params.get('order'))?params.get('order'):
    sort?['name','nationality','positions','foot'].includes(sort)?'asc':'desc':'';
@@ -94,6 +125,7 @@ function bootstrapClubFirstPaint(){
    if(index===0){th.className='app-players-flag-col';th.setAttribute('aria-label',w.nationality);}
    const button=document.createElement('button');button.type='button';button.className='app-players-sort-button';
    button.dataset.clubRosterSort=key;
+   if(mode==='stats'&&index>=3)button.dataset.rosterStatHelp=statHelp[locale][key];
    const label=document.createElement('span');label.className='app-players-sort-label';
    if(index===0){const hidden=document.createElement('span');hidden.className='sr-only';hidden.textContent=w.nationality;label.append(hidden);}
    else label.append(document.createTextNode(text));
@@ -143,9 +175,18 @@ function bootstrapClubFirstPaint(){
  other.setAttribute('aria-hidden',String(view!=='history'));
  if(view==='overview'){overview.removeAttribute('aria-hidden');overview.setAttribute('aria-busy','true');}
  const keyScroll='football-architect:club-tabs-scroll:/clubs/'+country+'/'+clubId;
- try{const raw=sessionStorage.getItem(keyScroll),offset=Number(raw);if(raw!==null&&Number.isFinite(offset)&&offset>=0)tabs.scrollLeft=offset}catch{}
+ let restoredTabScroll=false,initialTabOffset=null;
+ try{const raw=sessionStorage.getItem(keyScroll),offset=Number(raw);if(raw!==null&&Number.isFinite(offset)&&offset>=0){
+  tabs.scrollLeft=offset;initialTabOffset=offset;restoredTabScroll=true;
+ }}catch{}
+ // Browser native restoration can run after first paint and before pageshow,
+ // sometimes resetting nested horizontal scroll to zero. Replay the original
+ // stored value once more without reading any interim zero from storage.
+ window.addEventListener('pageshow',()=>{if(initialTabOffset!==null)tabs.scrollLeft=initialTabOffset},{once:true});
  const chosen=tabs.querySelector('[aria-current="page"]');
- if(chosen){
+ // Preserve a user's manually scrolled View strip on reload, even when
+ // the selected tab would otherwise be auto-revealed by the first-paint script.
+ if(chosen&&!restoredTabScroll){
   const bounds=tabs.getBoundingClientRect(),selected=chosen.getBoundingClientRect();
   if(selected.right>bounds.right)tabs.scrollLeft+=selected.right-bounds.right;
   else if(selected.left<bounds.left)tabs.scrollLeft+=selected.left-bounds.left;
@@ -175,18 +216,18 @@ function bootstrapClubFirstPaint(){
   if(index>=0)label.textContent=factLabels[locale][index];
  }
  const historyLabels={
-  en:["Season","Competition","Pos.","MP","W","D","L","GF","GA","GD","Pts"],
-  de:["Saison","Wettbewerb","Pl.","Sp","S","U","N","T+","T−","TD","Pkt"],
-  es:["Temporada","Competición","Pos.","PJ","G","E","P","GF","GC","DG","Pts"],
-  fr:["Saison","Compétition","Pl.","MJ","V","N","D","BP","BC","DB","Pts"],
-  it:["Stagione","Competizione","Pos.","PG","V","N","P","GF","GS","DR","Pt"]
+  en:["Season","Competition","Result","MP","W","D","L","GF","GA","GD","Pts"],
+  de:["Saison","Wettbewerb","Ergebnis","Sp","S","U","N","T+","T−","TD","Pkt"],
+  es:["Temporada","Competición","Resultado","PJ","G","E","P","GF","GC","DG","Pts"],
+  fr:["Saison","Compétition","Résultat","MJ","V","N","D","BP","BC","DB","Pts"],
+  it:["Stagione","Competizione","Risultato","PG","V","N","P","GF","GS","DR","Pt"]
  };
- const historyKeys=["season","competition","position","played","won","drawn","lost","gf","ga","gd","points"];
+ const historyKeys=["season","competition","result","played","won","drawn","lost","gf","ga","gd","points"];
  for(const label of other.querySelectorAll('[data-club-history-label]')){
   const index=historyKeys.indexOf(label.dataset.clubHistoryLabel);
   if(index>=0){
-   if(index<3){label.textContent='';label.setAttribute('aria-label',historyLabels[locale][index]);}
-   else label.textContent=historyLabels[locale][index];
+   label.textContent=historyLabels[locale][index];
+   if(index<3)label.setAttribute('aria-label',historyLabels[locale][index]);
   }
  }
  header.removeAttribute('aria-hidden');
@@ -197,7 +238,11 @@ function bootstrapClubFirstPaint(){
  document.documentElement.dataset.clubShellReady='true';
 }
 function buildClubShell(firstPaintScript){
- const rosterShell="<section class=\"club-roster club-first-paint-roster\" aria-busy=\"true\" data-roster-mode=\"overview\" hidden><div class=\"club-roster-view-row\"><nav class=\"app-competition-tabs app-players-tabs club-roster-tabs\" role=\"tablist\" aria-label=\"Roster\"><a role=\"tab\" class=\"app-competition-tab is-active\" data-club-roster-view=\"info\" aria-selected=\"true\" aria-disabled=\"true\" tabindex=\"-1\">Info</a><a role=\"tab\" class=\"app-competition-tab\" data-club-roster-view=\"technical\" aria-selected=\"false\" aria-disabled=\"true\" tabindex=\"-1\">Technical</a><a role=\"tab\" class=\"app-competition-tab\" data-club-roster-view=\"mental\" aria-selected=\"false\" aria-disabled=\"true\" tabindex=\"-1\">Mental</a><a role=\"tab\" class=\"app-competition-tab\" data-club-roster-view=\"physical\" aria-selected=\"false\" aria-disabled=\"true\" tabindex=\"-1\">Physical</a><a role=\"tab\" class=\"app-competition-tab\" data-club-roster-view=\"goalkeeping\" aria-selected=\"false\" aria-disabled=\"true\" tabindex=\"-1\">Goalkeeper</a></nav><span class=\"club-roster-count\"><span class=\"app-players-count-placeholder\" aria-hidden=\"true\"></span></span></div><div class=\"app-players-table-scroll club-roster-table-scroll\" role=\"region\" aria-label=\"Roster\" tabindex=\"0\" aria-busy=\"true\"><table class=\"app-players-table club-roster-table\" data-players-table-mode=\"overview\" data-roster-group=\"technical\" aria-label=\"Roster\"><colgroup><col class=\"app-players-flag-column\"><col class=\"app-players-name-column\"><col class=\"app-players-view-third-column\"><col><col><col></colgroup><thead><tr><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"0\" class=\"app-players-flag-col\" aria-label=\"Nationality\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"nationality\"><span class=\"app-players-sort-label\"><span class=\"sr-only\">Nationality</span><svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"1\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"name\"><span class=\"app-players-sort-label\">Player<svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"2\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"positions\"><span class=\"app-players-sort-label\">Positions<svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"3\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"age\"><span class=\"app-players-sort-label\">Age<svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"4\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"height\"><span class=\"app-players-sort-label\">Height<svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th><th scope=\"col\" aria-sort=\"none\" data-club-roster-label=\"5\"><button type=\"button\" class=\"app-players-sort-button\" data-club-roster-sort=\"foot\"><span class=\"app-players-sort-label\">Foot<svg class=\"app-players-sort-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></button></th></tr></thead><tbody><tr class=\"app-players-loading-row\"><td colspan=\"6\"><span class=\"sr-only\" role=\"status\">Loading roster</span></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr></tbody></table></div></section>";
+ const recordsShell=recordsUI.render({selected:{countryId:'IT',clubId:1,base:'/clubs/it/1'}})
+  .replace('<section class="club-records"', '<section hidden class="club-records club-first-paint-records"');
+ const rosterShell=clubModel.renderRoster('IT-1','en',clubModel.copies.en,null)
+  .replace('<section class="club-roster"', '<section hidden class="club-roster club-first-paint-roster"')
+  .replaceAll('/clubs/it/1/roster?', '?');
  return '<section id="app-divisions" class="app-view app-world-view" aria-labelledby="club-title">'+
   '<div id="club-page" aria-live="polite">'+
   '<header class="club-header club-first-paint-header" aria-hidden="true"><span class="app-world-club-crest-placeholder club-crest fa-crest-loading"></span><div>'+
@@ -205,11 +250,12 @@ function buildClubShell(firstPaintScript){
   '<p class="club-location"><span class="club-first-paint-flag" aria-hidden="true"></span><span data-club-first-paint-location><span class="club-fp-bar club-fp-header-location" aria-hidden="true"></span></span></p>'+
   '</div></header>'+
   '<nav class="app-competition-tabs club-tabs" aria-label="Club pages">'+
-  ['overview','roster','fixtures','stats','history'].map(view=>'<a class="app-competition-tab" data-club-first-paint-tab="'+view+'">'+view[0].toUpperCase()+view.slice(1)+'</a>').join('')+
+  ['overview','roster','fixtures','records','history'].map(view=>'<a class="app-competition-tab" data-club-first-paint-tab="'+view+'">'+view[0].toUpperCase()+view.slice(1)+'</a>').join('')+
   '</nav>'+
   '<div class="club-overview-layout club-first-paint-overview" aria-hidden="true"><div class="club-overview-main"><section class="app-panel club-identity club-first-paint-panel" aria-busy="true"><h2 data-club-first-paint-title="identity">Club identity</h2><dl class="club-facts"><div><dt data-club-first-paint-label="nameLabel">Name</dt><dd data-club-first-paint-value="nameLabel"><span class="club-fp-bar" style="--club-fp-width:62%" aria-hidden="true"></span></dd></div><div><dt data-club-first-paint-label="country">Country</dt><dd data-club-first-paint-value="country"><span class="club-fp-bar" style="--club-fp-width:52%" aria-hidden="true"></span></dd></div><div><dt data-club-first-paint-label="city">City</dt><dd data-club-first-paint-value="city"><span class="club-fp-bar" style="--club-fp-width:42%" aria-hidden="true"></span></dd></div><div><dt data-club-first-paint-label="abbr">Abbreviation</dt><dd><span class="club-fp-bar club-fp-abbr" aria-hidden="true"></span></dd></div><div><dt data-club-first-paint-label="colorsLabel">Colors</dt><dd><span class="club-colors club-fp-colors" aria-hidden="true"><span class="club-color-value"><span class="club-color club-fp-color-swatch" aria-hidden="true"></span><span class="club-fp-bar club-fp-hex" aria-hidden="true"></span></span><span class="club-color-value"><span class="club-color club-fp-color-swatch" aria-hidden="true"></span><span class="club-fp-bar club-fp-hex" aria-hidden="true"></span></span></span></dd></div><div><dt data-club-first-paint-label="nickname">Nickname</dt><dd><span class="club-fp-bar" style="--club-fp-width:65%"></span></dd></div><div><dt data-club-first-paint-label="stadium">Stadium</dt><dd><span class="club-fp-bar" style="--club-fp-width:84%"></span></dd></div><div class="club-fact-rivalries"><dt data-club-first-paint-label="rivalriesLabel">Rivalries</dt><dd><span class="club-fp-bar" style="--club-fp-width:83%"></span></dd></div><div class="club-fact-description"><dt data-club-first-paint-label="descriptionLabel">Description</dt><dd><span class="club-fp-bar" style="--club-fp-width:90%"></span></dd></div></dl></section></div><aside class="app-panel club-kits club-first-paint-panel"><h2 data-club-first-paint-title="kits">Kits</h2><p data-club-first-paint-label="kitsPending">Kits not yet available</p></aside><section class="app-panel club-competition club-first-paint-panel" aria-busy="true"><h2 data-club-first-paint-title="competitions">Competitions</h2><div class="club-competition-list club-fp-competition" aria-busy="true"><div class="club-competition-layout club-competition-entry"><div class="club-competition-identity"><span class="club-competition-logo club-fp-competition-logo" aria-hidden="true"></span><div class="club-competition-copy"><strong class="club-competition-name"><span class="club-fp-bar club-fp-competition-name" aria-hidden="true"></span></strong><span class="club-competition-tier"><span class="club-fp-bar club-fp-competition-tier" aria-hidden="true"></span></span></div></div><div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt data-club-first-paint-label="statusLabel">Status</dt><dd><span class="club-fp-bar club-fp-competition-position" aria-hidden="true"></span></dd></div></dl><div class="club-competition-next"><span class="club-competition-label" data-club-first-paint-label="nextMatchLabel">Next match</span><div class="club-competition-next-content"><span class="club-fp-bar club-fp-competition-fixture" aria-hidden="true"></span><span class="club-fp-bar club-fp-competition-round" aria-hidden="true"></span></div></div></div></div></div></section></div>'+
   rosterShell+
-  '<section class="club-history club-first-paint-panel club-first-paint-other" aria-hidden="true" aria-busy="true" hidden><div class="club-history-table-wrap"><table class="club-history-table" aria-label="History"><colgroup><col class="club-history-col-season"><col class="club-history-col-name"><col class="club-history-col-position"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"></colgroup><thead><tr><th scope="col" class="club-history-season-col" data-club-history-label="season" aria-label="Season"></th><th scope="col" class="club-history-name-col" data-club-history-label="competition" aria-label="Competition"></th><th scope="col" class="club-history-position-col" data-club-history-label="position" aria-label="Pos."></th><th scope="col" class="club-history-number-col" data-club-history-label="played">MP</th><th scope="col" class="club-history-number-col" data-club-history-label="won">W</th><th scope="col" class="club-history-number-col" data-club-history-label="drawn">D</th><th scope="col" class="club-history-number-col" data-club-history-label="lost">L</th><th scope="col" class="club-history-number-col" data-club-history-label="gf">GF</th><th scope="col" class="club-history-number-col" data-club-history-label="ga">GA</th><th scope="col" class="club-history-number-col" data-club-history-label="gd">GD</th><th scope="col" class="club-history-number-col" data-club-history-label="points">Pts</th></tr></thead><tbody><tr class="club-history-season-row club-history-row-loading" aria-hidden="true"><th scope="row" class="club-history-season-value"><span class="club-history-expand club-history-skeleton-label"><span class="club-history-chevron-space" aria-hidden="true"></span><span class="club-fp-bar" aria-hidden="true"></span></span></th><td class="club-history-total-label"><span class="club-fp-bar" aria-hidden="true"></span></td><td></td><td><span class="club-fp-bar" aria-hidden="true"></span></td><td><span class="club-fp-bar" aria-hidden="true"></span></td><td><span class="club-fp-bar" aria-hidden="true"></span></td><td><span class="club-fp-bar" aria-hidden="true"></span></td><td><span class="club-fp-bar" aria-hidden="true"></span></td><td><span class="club-fp-bar" aria-hidden="true"></span></td><td><span class="club-fp-bar" aria-hidden="true"></span></td><td></td></tr></tbody></table></div></section>'+
+  recordsShell+
+  '<section class="club-history club-first-paint-panel club-first-paint-other" aria-hidden="true" aria-busy="true" hidden><div class="club-history-table-wrap"><table class="club-history-table" aria-label="History"><colgroup><col class="club-history-col-season"><col class="club-history-col-name"><col class="club-history-col-position"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"><col class="club-history-col-number"></colgroup><thead><tr><th scope="col" class="club-history-season-col" data-club-history-label="season" aria-label="Season">Season</th><th scope="col" class="club-history-name-col" data-club-history-label="competition" aria-label="Competition">Competition</th><th scope="col" class="club-history-position-col" data-club-history-label="result" aria-label="Result">Result</th><th scope="col" class="club-history-number-col" data-club-history-label="played">MP</th><th scope="col" class="club-history-number-col" data-club-history-label="won">W</th><th scope="col" class="club-history-number-col" data-club-history-label="drawn">D</th><th scope="col" class="club-history-number-col" data-club-history-label="lost">L</th><th scope="col" class="club-history-number-col" data-club-history-label="gf">GF</th><th scope="col" class="club-history-number-col" data-club-history-label="ga">GA</th><th scope="col" class="club-history-number-col" data-club-history-label="gd">GD</th><th scope="col" class="club-history-number-col" data-club-history-label="points">Pts</th></tr></thead><tbody><tr class="club-history-season-row club-history-row-loading" aria-hidden="true"><th scope="row" class="club-history-season-value"><span class="club-history-expand club-history-skeleton-label"><span class="club-history-chevron-space" aria-hidden="true"></span><span class="club-fp-bar" aria-hidden="true"></span></span></th><td class="club-history-total-label"><span class="club-history-total-value"><span class="club-fp-bar" aria-hidden="true"></span></span></td><td></td><td class="club-history-skeleton-stat" data-club-history-skeleton="played"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="30" aria-hidden="true"></span></span></td><td class="club-history-skeleton-stat" data-club-history-skeleton="won"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="18" aria-hidden="true"></span></span></td><td class="club-history-skeleton-stat" data-club-history-skeleton="drawn"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="10" aria-hidden="true"></span></span></td><td class="club-history-skeleton-stat" data-club-history-skeleton="lost"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="12" aria-hidden="true"></span></span></td><td class="club-history-skeleton-stat" data-club-history-skeleton="gf"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="104" aria-hidden="true"></span></span></td><td class="club-history-skeleton-stat" data-club-history-skeleton="ga"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="104" aria-hidden="true"></span></span></td><td class="club-history-skeleton-stat" data-club-history-skeleton="gd"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="+52" aria-hidden="true"></span></span></td><td></td></tr></tbody></table></div></section>'+
   fixtureUI.render().replace('<section class="club-fixtures"', `<section hidden data-labels='${JSON.stringify(fixtureUI.copy).replaceAll("'", "&#39;")}' class="club-fixtures"`)+
   '<script data-fa-club-first-paint>'+firstPaintScript+'</script></div>'+
   '<noscript><p>JavaScript is required to display club pages.</p></noscript></section>';
@@ -261,12 +307,12 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations,c
    if(!localized||['en','de','es','fr','it'].some(lang=>!localized[lang]))throw Error('Missing club translations');
    return {...c,descriptions:localized,divisionId:catalog.getDivisionForClub(c.countryId+'-'+c.clubId)};
   })};
- const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')();';
+ const firstPaintScript='('+bootstrapClubFirstPaint.toString()+')('+[clubModel.rosterLabels,clubModel.rosterTabs,Object.fromEntries(['group','competition'].map(id=>[id,fixtureUI.control(id,'','',[],'club-roster')])),clubModel.rosterSortKeys('stats').slice(3),clubModel.rosterStatHelp,recordsUI.words,Object.fromEntries(recordsUI.seasonKeys.map((key,i)=>[key,recordsUI.careerKeys[i]]))].map(value=>JSON.stringify(value)).join(',')+');';
  const staticContent=buildClubShell(firstPaintScript);
  let html=template;
  for(const [token,value] of Object.entries({...replacements,'@@FA_WORLD_SECTION@@':staticContent}))html=html.replaceAll(token,value);
  html=html.replace('class="fa-shell-link is-active" id="app-nav-divisions"','class="fa-shell-link" id="app-nav-divisions"').replace('data-app-view="divisions" aria-current="page"','data-app-view="divisions"');
- html=html.replace('</head>','  <link rel="stylesheet" href="/assets/club-page.css">\n  <script src="/assets/club-fixtures.js" defer></script>\n  <script src="/assets/club-model.js" defer></script>\n  <script src="/assets/club-page.js" defer></script>\n</head>');
+ html=html.replace('</head>','  <link rel="stylesheet" href="/assets/club-page.css">\n  <script src="/assets/club-fixtures.js" defer></script>\n  <script src="/assets/competition-history.js" defer></script>\n  <script src="/assets/club-records.js" defer></script>\n  <script src="/assets/club-model.js" defer></script>\n  <script src="/assets/club-page.js" defer></script>\n</head>');
  html=html.replace('<title>Competitions — Football Architect</title>','<title>Club — Football Architect</title>');
  html=html.replace('<body class="app-body">','<body class="app-body">\n  <a class="skip-link" href="#main-content">Skip to content</a>');
  return [{path:'clubs/_shared/index.html',content:html},

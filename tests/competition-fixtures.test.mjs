@@ -426,6 +426,71 @@ test('FIXTURES-06: matchday controls hide only when no loaded schedule is availa
 });
 
 
+
+test('FIXTURES unresolved participants follow #732 rank/winner wording and use official mobile names',()=>{
+ const division=divisions.find(d=>d.id==='IT-2');
+ const r=setup(division),list=r.fields.get('app-fixtures-list');
+ r.view.prepare(schedule(division),{postseason:[]})();
+ r.route.set({matchday:'playoffs'});
+ const rows=()=>list.children.filter(x=>x.dataset.fixtureMatch);
+ const label=(row,side)=>row.children[side].children.find(n=>n.className?.split(' ').includes('app-fixture-name'));
+ const spans=(row,side)=>label(row,side).children.map(n=>n.textContent);
+ assert.equal(rows().length,5,'the two semifinal legs and final remain present');
+ assert.deepEqual(spans(rows()[0],0),['Rank 6','Rank 6'],'lower seed hosts the first leg');
+ assert.deepEqual(spans(rows()[0],2),['Rank 3','Rank 3']);
+ assert.deepEqual(spans(rows()[2],0),['Rank 3','Rank 3'],'the second leg reverses home/away');
+ assert.deepEqual(spans(rows()[2],2),['Rank 6','Rank 6']);
+ assert.deepEqual(spans(rows()[4],0),['Winner of semifinal 3 vs 6','Winner 3–6']);
+ assert.deepEqual(spans(rows()[4],2),['Winner of semifinal 4 vs 5','Winner 4–5']);
+ assert.ok(!contents(list).includes('TBD'),'unknown clubs and fixture timing never display TBD');
+ r.document.documentElement.lang='it';
+ r.route.set({matchday:'playoffs'});
+ assert.deepEqual(spans(rows()[4],0),['Vincente semifinale 3 vs 6','Vincente 3–6'],
+  'pending rows are rebuilt on language change without inferred results');
+ const first=division.clubs[0];
+ r.route.set({matchday:1});
+ const leagueRow=rows().find(row=>row.dataset.fixtureMatch.split(':').slice(1).some(id=>Number(id)===first.clubId));
+ assert.ok(leagueRow,'known clubs remain on the league fixtures');
+ const names=[...label(leagueRow,0).children,...label(leagueRow,2).children].map(n=>n.textContent);
+ assert.ok(names.includes(first.compactName),'the official compactName is available for mobile');
+ assert.ok(!label(leagueRow,0).children.some(n=>n.className==='app-fixture-name-abbr'),'fixture names never expose a third abbreviation variant');
+ const css=read('assets/app.css');
+ const compactMedia=css.split('\n').find(line=>line.startsWith('@media(max-width:620px){.app-fixture-match{'));
+ assert.ok(compactMedia?.includes('.app-fixture-name-compact{display:inline}'),
+  'official compactName is visible inside the mobile fixture media rule');
+ assert.doesNotMatch(css,/\.app-fixture-name-abbr/,'no abbreviation-only mobile breakpoint');
+ assert.match(css,/@media\(max-width:360px\)\{\.app-fixture-club/,'narrow phones retain the compact label');
+ assert.match(css,/#competition-panel-fixtures \.app-fixtures-toolbar\{[\s\S]*?z-index:10/,'selector toolbar stacks above linked score cards');
+ assert.match(css,/#competition-panel-fixtures \.app-fixtures-list\{position:relative;z-index:0\}/);
+ assert.match(css,/#competition-panel-fixtures \.app-fixtures-picker\{z-index:12\}/);
+ assert.ok(css.includes('.app-competition-header:has(#app-competition-season-menu:not([hidden])){z-index:20}'),
+  'open season menu raises its ancestor above Fixtures navigation');
+ assert.ok(css.includes('.app-fixture-club>.app-fixture-name{display:-webkit-box;flex:0 1 auto;'), 'long compactNames may wrap in their mobile track');
+ assert.ok(css.includes('grid-template-columns:minmax(0,1fr) 86px;gap:4px 6px;padding:7px 8px'), 'mobile fixture cards use compact rows');
+ assert.ok(css.includes('.app-fixture-club{font-size:12px;gap:6px;min-height:42px}'), 'both actual and skeleton club rows reserve the same 42px height');
+ assert.ok(css.includes('grid-template-columns:minmax(0,1fr) 78px;gap:4px 5px;padding-inline:7px'), 'small phones dedicate more width to compactName');
+ assert.match(css,/\.app-fixture-result\{grid-column:2;grid-row:1\/3;align-self:stretch;display:grid;/,
+  'mobile results stretch across both club rows');
+ assert.match(css,/grid-template-rows:minmax\(0,1fr\) auto minmax\(0,1fr\);align-items:center;/,
+  'score is positioned on the midpoint independent of metadata heights');
+ assert.match(css,/\.app-fixture-result>:is\(\.app-fixture-score,\.app-fixture-score-link\)\{align-self:center;justify-self:center\}/,
+  'linked and unlinked results share the score anchor');
+ assert.ok(read('assets/competition-fixtures.js').includes('fitViewport:Boolean(fixtureScrollBoundary&&typeof picker.getBoundingClientRect'), 'matchday popup follows the scroll viewport');
+ for(const width of [36,30,24])assert.ok(css.includes('app-fixtures-skeleton-crest{flex-basis:'+width+'px;width:'+width+'px;height:'+width+'px}'),
+  'skeleton and real mobile crest widths match at each breakpoint');
+});
+
+test('FIXTURES pending domestic playout follows the documented home-order reversal',()=>{
+ const division=divisions.find(d=>d.id==='IT-1'),r=setup(division);
+ r.view.prepare(schedule(division),{postseason:[]})();
+ r.route.set({matchday:'playout'});
+ const rows=r.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch);
+ const name=(row,side)=>row.children[side].children.find(n=>n.className?.split(' ').includes('app-fixture-name')).children[0].textContent;
+ assert.equal(rows.length,2);
+ assert.deepEqual([name(rows[0],0),name(rows[0],2)],['Rank 14','Rank 13']);
+ assert.deepEqual([name(rows[1],0),name(rows[1],2)],['Rank 13','Rank 14']);
+});
+
 test('FIXTURES-07: result groups show full time or supplied date above the score and the canonical home stadium below',()=>{
  const canonical=JSON.parse(read('data/clubs.json'));
  for(const d of divisions){
@@ -446,7 +511,7 @@ test('FIXTURES-07: result groups show full time or supplied date above the score
     if(played){assert.equal(contents(status),'Full time');assert.equal(status.tagName,'span');}
     else if(row===fields.get('app-fixtures-list').children[0]){
      assert.equal(status.tagName,'time');assert.equal(status.dateTime,'2026-10-20T12:30:00Z');
-    }else assert.equal(contents(status),'Date TBD');
+    }else assert.equal(contents(status),'To be confirmed');
    }
   };
   check(true);route.set({matchday:16});check(false);

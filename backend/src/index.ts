@@ -1,3 +1,5 @@
+import {readMatchDirectory} from './public-match-directory.ts';
+import {readPublicMatchContextV1} from './public-match-context.ts';
 import {httpJson,routeMethod} from './http-contract.ts';
 import {assertEnvironmentPool,resolveAccountConfiguration} from './environment-pool.ts';
 import {handleAdmin,type AdminEnv} from './http-admin.ts';
@@ -7,11 +9,12 @@ import {gmailEmailDeliveries,type GmailDeliveryEnv} from './gmail-email-delivery
 import {localInboxDeliveries,handleLocalInbox,type LocalInboxEnv} from './local-dev-inbox.ts';
 import { ApiError } from './errors.ts';
 import {requireDatabase} from './database.ts';
-import {readPublicSportingSeasonLineupV1 as readPublicSportingSeason,readPublicCalendarDayLineupV1 as readPublicCalendarDay,readPublicClubHistoryLineupV1 as readPublicClubHistory,readPublicClubFixturesLineupV1 as readPublicClubFixtures} from './public-sporting-read-lineup-v1.ts';
+import {readPublicRosterStats,readPublicSportingSeasonLineupV1 as readPublicSportingSeason,readPublicCalendarDayLineupV1 as readPublicCalendarDay,readPublicClubHistoryLineupV1 as readPublicClubHistory,readPublicClubFixturesLineupV1 as readPublicClubFixtures} from './public-sporting-read-lineup-v1.ts';
 import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
+import {readPublicPlayerStatsLineupV1,readPublicPlayerMatchesLineupV1} from './public-sporting-read-lineup-v1.ts';
 import {readPublicClubRoster} from './public-club-roster-read.ts';
-import {readPublicMatchLineupV1 as readPublicMatch,readPublicMatchStatisticsV1,readPublishedCompetitionMatchesLineupV1 as readPublishedCompetitionMatches,readPublishedClubFixturesBeforeCalendarLineupV1 as readPublishedClubFixturesBeforeCalendar} from './public-match-read-lineup-v1.ts';
+import {readPublicMatchLineupV1 as readPublicMatch,readPublicMatchStatisticsV1,readPublicMatchEventsV1,readPublishedCompetitionMatchesLineupV1 as readPublishedCompetitionMatches,readPublishedClubFixturesBeforeCalendarLineupV1 as readPublishedClubFixturesBeforeCalendar} from './public-match-read-lineup-v1.ts';
 import {parsePublicPlayerQuery} from './public-players-filters.mjs';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
@@ -51,6 +54,17 @@ export default {
         return json(503, { error: { code: 'world_unavailable' } });
       }
     }
+    if(url.pathname==='/api/matches'){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      const query=url.searchParams,season=query.get('season')??'',day=query.get('day')??'';
+      if(query.size!==2||!/^[1-9][0-9]{0,8}$/.test(season)||!/^(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(day))
+        return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readMatchDirectory(requireDatabase(env.DB),Number(season),Number(day)))}
+      catch(error){
+        if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:error.code}});
+        return json(503,{error:{code:'match_unavailable'}});
+      }
+    }
     const matchList=url.pathname.match(/^\/api\/matches\/seasons\/([1-9][0-9]*)\/competitions\/((?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12]))$/);
     if(matchList){
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
@@ -72,6 +86,18 @@ export default {
         return json(503,{error:{code:'match_unavailable'}});
       }
     }
+    // Independent receipt-checked public event timeline. Not a simulated result.
+    const matchEvents=url.pathname.match(/^\/api\/matches\/([1-9][0-9]*)\/events$/);
+    if(matchEvents){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search)return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicMatchEventsV1(requireDatabase(env.DB),matchEvents[1]))}
+      catch(error){
+        if(error instanceof ApiError&&(error.code==='not_found'||error.code==='stale_world'))
+         return json(error.status,{error:{code:error.code}});
+        return json(503,{error:{code:'match_unavailable'}});
+      }
+    }
     const matchDetail=url.pathname.match(/^\/api\/matches\/([1-9][0-9]*)$/);
     if(matchDetail){
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
@@ -81,6 +107,62 @@ export default {
         if(error instanceof ApiError&&(error.code==='not_found'||error.code==='stale_world'))
          return json(error.status,{error:{code:error.code}});
         return json(503,{error:{code:'match_unavailable'}});
+      }
+    }
+    // Separate, compact auxiliary Form/position read. Never blocks scoreboard
+    // or the independent frozen /stats response.
+    const matchContext=url.pathname.match(/^\/api\/matches\/([1-9][0-9]*)\/context$/);
+    if(matchContext){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(!Number.isSafeInteger(Number(matchContext[1]))||url.searchParams.size!==2||
+         [...url.searchParams.keys()].some(key=>!['season','competition'].includes(key))||
+         [...new Set(url.searchParams.keys())].length!==2)return json(422,{error:{code:'invalid_public_request'}});
+      const season=url.searchParams.get('season')??'',competition=url.searchParams.get('competition')??'';
+      if(!/^[1-9][0-9]{0,8}$/.test(season)||!Number.isSafeInteger(Number(season))||
+         !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(competition))
+        return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicMatchContextV1(requireDatabase(env.DB),matchContext[1],Number(season),competition))}
+      catch(error){
+        if(error instanceof ApiError&&['invalid_public_request','not_found','stale_world'].includes(error.code))
+         return json(error.status,{error:{code:error.code}});
+        return json(503,{error:{code:'match_context_unavailable'}});
+      }
+    }
+    const playerMatches=url.pathname.match(/^\/api\/players\/([1-9][0-9]*)\/matches$/);
+    if(playerMatches){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(!Number.isSafeInteger(Number(playerMatches[1])))
+        return json(422,{error:{code:'invalid_public_request'}});
+      const params=url.searchParams,keys=[...params.keys()];
+      if(keys.some(key=>!['season','competition','limit','cursor'].includes(key))||
+         new Set(keys).size!==keys.length)return json(422,{error:{code:'invalid_public_request'}});
+      const seasonParam=params.get('season')??'all';
+      const competition=params.get('competition')??'all';
+      const limitParam=params.get('limit')??'20';
+      const cursor=params.get('cursor');
+      if(!(seasonParam==='all'||/^[1-2]$/.test(seasonParam))||
+         !(competition==='all'||/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(competition))||
+         !/^(?:[1-9][0-9]?|100)$/.test(limitParam)||
+         cursor!==null&&(!cursor||cursor.length>512))
+        return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicPlayerMatchesLineupV1(requireDatabase(env.DB),Number(playerMatches[1]),{
+       season:seasonParam==='all'?'all':Number(seasonParam),competition,cursor,limit:Number(limitParam)}))}
+      catch(error){
+        if(error instanceof ApiError&&['invalid_public_request','player_not_found','stale_world'].includes(error.code))
+          return json(error.status,{error:{code:error.code}});
+        return json(503,{error:{code:'player_matches_unavailable'}});
+      }
+    }
+    const playerStats=url.pathname.match(/^\/api\/players\/([1-9][0-9]*)\/stats$/);
+    if(playerStats){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search||!Number.isSafeInteger(Number(playerStats[1])))
+        return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicPlayerStatsLineupV1(requireDatabase(env.DB),Number(playerStats[1])))}
+      catch(error){
+        if(error instanceof ApiError&&['player_not_found','stale_world'].includes(error.code))
+          return json(error.status,{error:{code:error.code}});
+        return json(503,{error:{code:'player_stats_unavailable'}});
       }
     }
     const playerDetail=url.pathname.match(/^\/api\/players\/([1-9][0-9]*)$/);
@@ -104,6 +186,14 @@ export default {
         if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
         return json(503,{error:{code:'players_unavailable'}});
       }
+    }
+    const rosterStats=url.pathname.match(/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/roster\/stats$/);
+    if(rosterStats){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search&&!/^\?season=(0|[1-9][0-9]{0,8})$/.test(url.search))return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicRosterStats(requireDatabase(env.DB),rosterStats[1],url.search?Number(url.searchParams.get('season')):null))}
+      catch(error){if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:error.code}});
+        return json(503,{error:{code:'roster_unavailable'}});}
     }
     const roster=url.pathname.match(/^\/api\/clubs\/([^/]+)\/roster$/);
     if(roster){

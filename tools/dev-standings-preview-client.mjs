@@ -196,7 +196,7 @@ function historyRecords(seasons,played=seasons){
   const value=Math.max(0,...[...clubs.values()].map(entry=>entry[key]));
   return {value,clubs:[...clubs.values()].filter(entry=>entry[key]===value).map(entry=>entry.club)};
  };
- const seasonalRecord=(field,extreme,tables=seasons)=>{
+ const seasonalRecord=(field,extreme,tables=played)=>{
   const entries=[...tables].sort((a,b)=>a.season-b.season).flatMap(({season,rows})=>
    rows.filter(row=>Number.isFinite(row[field])).map(row=>({club:row.club,season,value:row[field]})));
   if(!entries.length)return {value:null,entries:[]};
@@ -204,7 +204,7 @@ function historyRecords(seasons,played=seasons){
   return {value,entries:entries.filter(entry=>entry.value===value).map(({club,season})=>({club,season}))};
  };
  const margins=seasons.map(({season,rows})=>({season,rows:Number.isFinite(rows[0]?.pts)&&Number.isFinite(rows[1]?.pts)?[{club:rows[0].club,margin:rows[0].pts-rows[1].pts}]:[]}));
- return {titles:record("titles"),podiums:record("podiums"),streak:record("streak"),attack:seasonalRecord("gf",Math.max),defence:seasonalRecord("ga",Math.min),wins:seasonalRecord("won",Math.max),totalWins:record("totalWins"),totalGoals:record("totalGoals"),points:seasonalRecord("pts",Math.max),goalDifference:seasonalRecord("gd",Math.max),margin:seasonalRecord("margin",Math.max,margins),totalPoints:record("totalPoints")};
+ return {titles:record("titles"),podiums:record("podiums"),streak:record("streak"),attack:seasonalRecord("gf",Math.max),defence:seasonalRecord("ga",Math.min,seasons),wins:seasonalRecord("won",Math.max),totalWins:record("totalWins"),totalGoals:record("totalGoals"),points:seasonalRecord("pts",Math.max),goalDifference:seasonalRecord("gd",Math.max),margin:seasonalRecord("margin",Math.max,margins),totalPoints:record("totalPoints")};
 }
 function historyRecordValue(metric,value){
  if(metric==="goalDifference")return value>0?"+"+value:value<0?"−"+Math.abs(value):"0";
@@ -241,24 +241,36 @@ function openHistorySeason(season){
  if(shell)shell.scrollTop=0;
  if(document.scrollingElement)document.scrollingElement.scrollTop=0;
 }
-function historyExpandableHolders(card,holders,metric){
- const extra=[...holders.children].slice(2);
- if(!extra.length)return;
- holders.id="app-history-record-holders-"+metric;
- for(const entry of extra){entry.hidden=true;entry.dataset.historyTieExtra="";}
- const expand=historyNode("button","app-history-record-expand");
- expand.type="button";expand.dataset.historyRecordExpand=metric;
- expand.setAttribute("aria-controls",holders.id);expand.setAttribute("aria-expanded","false");
- const count=historyNode("span","app-history-record-more-count","+"+extra.length);
- const show=historyLabel("historyShowAll"),less=historyLabel("historyShowLess");
- less.hidden=true;expand.append(count,show,less);
- expand.addEventListener("click",()=>{
-  const opened=expand.getAttribute("aria-expanded")!=="true";
-  for(const entry of extra)entry.hidden=!opened;
-  count.hidden=opened;show.hidden=opened;less.hidden=!opened;
-  expand.setAttribute("aria-expanded",String(opened));
+function historyExpandableHolders(card,holders,metric,result){
+ const entries=[...holders.children];
+ if(entries.length<2)return;
+ for(const entry of entries.slice(1))entry.hidden=true;
+ const trigger=historyNode("button","app-history-player-detail","+"+(entries.length-1));
+ trigger.type="button";trigger.dataset.historyRecordExpand=metric;
+ trigger.setAttribute("aria-haspopup","dialog");
+ trigger.addEventListener("click",()=>{
+  const divisionId=window.faCompetitionDivision?.id||window.faCompetitionContext?.definition?.id;
+  window.faHistoryDialog.openClubs({
+   title:card.querySelector("h5")?.textContent||"",
+   value:card.querySelector(".app-competition-stat-value")?.textContent||"",
+   entries:result.entries||result.clubs.map(club=>({club})),
+   trigger,
+   identity:historyIdentity,
+   seasonLink:season=>{
+    const link=historyNode("a","app-history-dev-season-link app-world-standing-club-link");
+    link.href="/competitions/"+String(divisionId).toLowerCase()+"/standings?season="+encodeURIComponent(season);
+    link.append(historySeasonLabel(season));return link;
+   }
+  });
  });
- card.append(expand);
+ // Keep +N adjacent to the record-holder's club name, never beside the
+ // statistic value or in an extra card row. The existing crest/season slots stay fixed.
+ const first=entries[0],clubName=first.querySelector?.(".app-world-club-name");
+ if(clubName){
+  const line=historyNode("span","app-history-tied-club");
+  clubName.replaceWith(line);
+  line.append(clubName,trigger);
+ }else first.append(trigger);
 }
 async function renderHistoryPreview(){
  const version=++historyRenderVersion,route=window.faCompetitionRoute?.get?.(),progressDay=matchdays,progressSeason=debugSeason;
@@ -349,7 +361,7 @@ async function renderHistoryPreview(){
     entry.append(historyIdentity(club));holders.append(entry);
    }
    card.append(holders);
-   historyExpandableHolders(card,holders,metric);
+   historyExpandableHolders(card,holders,metric,result);
    grid.append(card);
   }
   for(const scope of ["season","all-time"])if(shown[scope]===0){
@@ -983,11 +995,17 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       for(let index=0;index<nextRows.length;index++){
         const row=nextRows[index],id=row.club.countryId+"-"+row.club.clubId;
         const tr=desktop.get(id);
-        window.faStandingsOutcomes?.decorate(tr,index+1);
-        tr.cells[0].textContent=String(index+1);
+        const rank=row.played==null?null:index+1;
+        window.faStandingsOutcomes?.decorate(tr,rank);
+        tr.cells[0].textContent=rank==null?'—':String(rank);
+        tr.cells[0].className=rank==null?'app-world-stat-unknown':'app-world-stat-value';
         const numbers=[row.played,row.won,row.drawn,row.lost,row.gf,row.ga,
           row.gd>0?"+"+row.gd:row.gd,row.pts];
-        numbers.forEach((number,i)=>{tr.cells[i+2].textContent=String(number)});
+        numbers.forEach((number,i)=>{
+          const cell=tr.cells[i+2];
+          cell.textContent=number==null?'—':String(number);
+          cell.className=number==null?'app-world-stat-unknown':'app-world-stat-value';
+        });
         const strip=tr.querySelector(".app-world-form-strip");
         const buttons=[...strip.querySelectorAll(".app-world-form-control")];
         while(buttons.length>row.recent.length){

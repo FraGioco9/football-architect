@@ -5,9 +5,13 @@
  if(typeof module!=='undefined'&&module.exports)module.exports=model;
 })(typeof window!=='undefined'?window:globalThis,(routes)=>{
  'use strict';
+ // Classic-script companion to public-image-urls.mjs; only immutable published domestic IDs.
+ const domesticLogoUrl=id=>typeof id==='string'&&/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(id)
+  ?'/assets/competitions/'+id+'/compact.svg':null;
  const compactPlayerName=full=>{const m=/^(\S+)\s+(.+)$/u.exec(String(full||'').trim());return m&&!/^\p{L}\.$/u.test(m[1])?Array.from(m[1])[0]+'. '+m[2]:String(full||'').trim()};
  const fixtureUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./club-fixtures.js'):globalThis.faClubFixtures;
- const views=['overview','roster','fixtures','stats','history'];
+ const recordsUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./club-records.js'):globalThis.faClubRecords;
+ const views=['overview','roster','fixtures','records','history'];
  const rosterFlags=Object.freeze({
   ESP:'es',ARG:'ar',FRA:'fr',ENG:'gb-eng',POR:'pt',BRA:'br',MAR:'ma',BEL:'be',NED:'nl',MEX:'mx',
   COL:'co',SUI:'ch',GER:'de',CRO:'hr',ITA:'it',USA:'us',JPN:'jp',SEN:'sn',NOR:'no',URU:'uy',
@@ -15,13 +19,13 @@
   TUR:'tr',KOR:'kr',PAR:'py',SWE:'se',RUS:'ru',UKR:'ua',POL:'pl',HUN:'hu',WAL:'gb-wls',COD:'cd',
   GRE:'gr',CMR:'cm',SCO:'gb-sct',SRB:'rs',SVK:'sk',PAN:'pa',MLI:'ml',RSA:'za',VEN:'ve',CHI:'cl'
  });
- const keys=['overview','roster','fixtures','stats','history','identity','profile','competition','primaryName','fullName','compactName','abbr','nickname','city','country','primaryColor','secondaryColor','stadium','division','provisional','outside','emptyRoster','emptyFixtures','emptyStats','emptyHistory','navigation','crest','error','skip'];
+ const keys=['overview','roster','fixtures','records','history','identity','profile','competition','primaryName','fullName','compactName','abbr','nickname','city','country','primaryColor','secondaryColor','stadium','division','provisional','outside','emptyRoster','emptyFixtures','emptyRecords','emptyHistory','navigation','crest','error','skip'];
  const rows={
-  en:['Overview','Roster','Fixtures','Stats','History','Club identity','Club profile','Competitions','Primary name','Full name','Compact name','Abbreviation','Nickname','City','Country','Primary color','Secondary color','Stadium','Division','Provisional allocation · no active season','Outside the current playing structure','No roster is available.','No fixtures are available.','No statistics are available.','No club history is available.','Club pages','Club crest','Club information is unavailable. Please reload the page.','Skip to content'],
-  de:['Übersicht','Kader','Spielplan','Statistiken','Historie','Vereinsidentität','Vereinsprofil','Wettbewerbe','Hauptname','Vollständiger Name','Kurzname','Kürzel','Spitzname','Stadt','Land','Primärfarbe','Sekundärfarbe','Stadion','Liga','Vorläufige Zuordnung · keine aktive Saison','Außerhalb der aktuellen Spielstruktur','Kein Kader verfügbar.','Kein Spielplan verfügbar.','Keine Statistiken verfügbar.','Keine Vereinshistorie verfügbar.','Vereinsseiten','Vereinswappen','Vereinsinformationen sind nicht verfügbar. Bitte lade die Seite erneut.','Zum Inhalt springen'],
-  es:['Resumen','Plantilla','Partidos','Estadísticas','Historial','Identidad del club','Perfil del club','Competiciones','Nombre principal','Nombre completo','Nombre corto','Abreviatura','Apodo','Ciudad','País','Color primario','Color secundario','Estadio','División','Asignación provisional · sin temporada activa','Fuera de la estructura de juego actual','No hay plantilla disponible.','No hay partidos disponibles.','No hay estadísticas disponibles.','No hay historial del club disponible.','Páginas del club','Escudo del club','La información del club no está disponible. Recarga la página.','Saltar al contenido'],
-  fr:['Présentation','Effectif','Matchs','Statistiques','Historique','Identité du club','Profil du club','Compétitions','Nom principal','Nom complet','Nom court','Abréviation','Surnom','Ville','Pays','Couleur principale','Couleur secondaire','Stade','Division','Affectation provisoire · aucune saison active','Hors de la structure de jeu actuelle','Aucun effectif disponible.','Aucun match disponible.','Aucune statistique disponible.','Aucun historique du club disponible.','Pages du club','Écusson du club','Les informations du club sont indisponibles. Rechargez la page.','Aller au contenu'],
-  it:['Panoramica','Rosa','Partite','Statistiche','Storia','Identità del club','Profilo del club','Competizioni','Nome principale','Nome completo','Nome breve','Abbreviazione','Soprannome','Città','Paese','Colore primario','Colore secondario','Stadio','Divisione','Assegnazione provvisoria · nessuna stagione attiva','Fuori dalla struttura di gioco corrente','Nessuna rosa disponibile.','Nessuna partita disponibile.','Nessuna statistica disponibile.','Nessuna storia del club disponibile.','Pagine del club','Stemma del club','Le informazioni del club non sono disponibili. Ricarica la pagina.','Vai al contenuto']
+  en:['Overview','Roster','Fixtures','Records','History','Club identity','Club profile','Competitions','Primary name','Full name','Compact name','Abbreviation','Nickname','City','Country','Primary color','Secondary color','Stadium','Division','Provisional allocation · no active season','Outside the current playing structure','No roster is available.','No fixtures are available.','No club records are available.','No club history is available.','Club pages','Club crest','Club information is unavailable. Please reload the page.','Skip to content'],
+  de:['Übersicht','Kader','Spielplan','Rekorde','Historie','Vereinsidentität','Vereinsprofil','Wettbewerbe','Hauptname','Vollständiger Name','Kurzname','Kürzel','Spitzname','Stadt','Land','Primärfarbe','Sekundärfarbe','Stadion','Liga','Vorläufige Zuordnung · keine aktive Saison','Außerhalb der aktuellen Spielstruktur','Kein Kader verfügbar.','Kein Spielplan verfügbar.','Keine Vereinsrekorde verfügbar.','Keine Vereinshistorie verfügbar.','Vereinsseiten','Vereinswappen','Vereinsinformationen sind nicht verfügbar. Bitte lade die Seite erneut.','Zum Inhalt springen'],
+  es:['Resumen','Plantilla','Partidos','Récords','Historial','Identidad del club','Perfil del club','Competiciones','Nombre principal','Nombre completo','Nombre corto','Abreviatura','Apodo','Ciudad','País','Color primario','Color secundario','Estadio','División','Asignación provisional · sin temporada activa','Fuera de la estructura de juego actual','No hay plantilla disponible.','No hay partidos disponibles.','No hay récords del club disponibles.','No hay historial del club disponible.','Páginas del club','Escudo del club','La información del club no está disponible. Recarga la página.','Saltar al contenido'],
+  fr:['Présentation','Effectif','Matchs','Records','Historique','Identité du club','Profil du club','Compétitions','Nom principal','Nom complet','Nom court','Abréviation','Surnom','Ville','Pays','Couleur principale','Couleur secondaire','Stade','Division','Affectation provisoire · aucune saison active','Hors de la structure de jeu actuelle','Aucun effectif disponible.','Aucun match disponible.','Aucun record du club disponible.','Aucun historique du club disponible.','Pages du club','Écusson du club','Les informations du club sont indisponibles. Rechargez la page.','Aller au contenu'],
+  it:['Panoramica','Rosa','Partite','Record','Storia','Identità del club','Profilo del club','Competizioni','Nome principale','Nome completo','Nome breve','Abbreviazione','Soprannome','Città','Paese','Colore primario','Colore secondario','Stadio','Divisione','Assegnazione provvisoria · nessuna stagione attiva','Fuori dalla struttura di gioco corrente','Nessuna rosa disponibile.','Nessuna partita disponibile.','Nessun record del club disponibile.','Nessuna storia del club disponibile.','Pagine del club','Stemma del club','Le informazioni del club non sono disponibili. Ricarica la pagina.','Vai al contenuto']
  };
  const copies=Object.fromEntries(Object.entries(rows).map(([lang,row])=>[lang,Object.fromEntries(keys.map((key,i)=>[key,row[i]]))]));
  const extraLabels={"en":["Name","Colors","Description","Rivalries","Kits","Kits not yet available","Translate","Show original","Tier","First division","Second division","No rivalries recorded"],"de":["Name","Farben","Beschreibung","Rivalitäten","Trikots","Noch keine Trikots verfügbar","Übersetzen","Original anzeigen","Spielklasse","Erste Liga","Zweite Liga","Keine Rivalitäten eingetragen"],"es":["Nombre","Colores","Descripción","Rivalidades","Equipaciones","Equipaciones aún no disponibles","Traducir","Mostrar original","Categoría","Primera división","Segunda división","Sin rivalidades registradas"],"fr":["Nom","Couleurs","Description","Rivalités","Maillots","Maillots pas encore disponibles","Traduire","Afficher l’original","Niveau","Première division","Deuxième division","Aucune rivalité répertoriée"],"it":["Nome","Colori","Descrizione","Rivalità","Divise","Divise non ancora disponibili","Traduci","Mostra originale","Livello","Prima divisione","Seconda divisione","Nessuna rivalità registrata"]};
@@ -106,6 +110,12 @@
  const rosterPositionRank=new Map(rosterPitchPositions.map((code,index)=>[code,rosterPitchPositions.length-index]));
  const rosterSortCommon=Object.freeze(['nationality','name','positions']);
  const rosterSortInfo=Object.freeze(['nationality','name','positions','age','height','foot']);
+ function rosterStatValue(stats,key){
+  // Unknown legacy awards cannot be inferred as zero; played-and-covered is zero.
+  if(key==='mvpAwards'&&stats?.appearances>0)return stats.mvpAwards??
+   (stats.mvpCoveredAppearances===stats.appearances?0:null);
+  return stats?.[key];
+ }
  function rosterSortValue(player,key){
   if(key==='positions')return rosterPositionRank.get(player.primary_position)??0;
   if(key==='name')return player.display_name;
@@ -113,7 +123,7 @@
   if(key==='age')return player.age;
   if(key==='height')return player.height_cm;
   if(key==='foot')return player.preferred_foot;
-  return player.attributes?.[key];
+  return statKeys.includes(key)?rosterStatValue(player.stats,key):player.attributes?.[key];
  }
  function sortedRosterPlayers(players,key,order){
   const direction=order==='desc'?-1:1;
@@ -134,22 +144,63 @@
   fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement|Jeu aérien'
  };
  const rosterWords={
-  en:{name:'Player',age:'Age',positions:'Positions',height:'Height',foot:'Foot',nationality:'Nationality',one:'player',many:'players',left:'Left',right:'Right',tabs:['Info'],groups:['Technical','Mental','Physical','Goalkeeper'],empty:'No players are currently assigned to this club.',unavailable:'The roster is temporarily unavailable.',missingApi:'Roster API is unavailable in this build. Restart the local development server from this branch.',loading:'Loading roster'},
-  de:{name:'Spieler',age:'Alter',positions:'Positionen',height:'Größe',foot:'Fuß',nationality:'Nationalität',one:'Spieler',many:'Spieler',left:'Links',right:'Rechts',tabs:['Info'],groups:['Technisch','Mental','Physisch','Torwart'],empty:'Diesem Verein sind derzeit keine Spieler zugeordnet.',unavailable:'Der Kader ist vorübergehend nicht verfügbar.',missingApi:'Die Kader-API fehlt in diesem Build. Starte den lokalen Entwicklungsserver mit diesem Branch neu.',loading:'Kader wird geladen'},
-  es:{name:'Jugador',age:'Edad',positions:'Posiciones',height:'Altura',foot:'Pie',nationality:'Nacionalidad',one:'jugador',many:'jugadores',left:'Izquierdo',right:'Derecho',tabs:['Info'],groups:['Técnicos','Mentales','Físicos','Portero'],empty:'Actualmente no hay jugadores asignados a este club.',unavailable:'La plantilla no está disponible temporalmente.',missingApi:'La API de la plantilla no está disponible en esta versión. Reinicia el servidor local desde esta rama.',loading:'Cargando plantilla'},
-  fr:{name:'Joueur',age:'Âge',positions:'Postes',height:'Taille',foot:'Pied',nationality:'Nationalité',one:'joueur',many:'joueurs',left:'Gauche',right:'Droit',tabs:['Info'],groups:['Techniques','Mentaux','Physiques','Gardien'],empty:'Aucun joueur n’est actuellement affecté à ce club.',unavailable:'L’effectif est temporairement indisponible.',missingApi:'L’API de l’effectif manque dans cette version. Redémarrez le serveur local depuis cette branche.',loading:'Chargement de l’effectif'},
-  it:{name:'Giocatore',age:'Età',positions:'Posizioni',height:'Altezza',foot:'Piede',nationality:'Nazionalità',one:'giocatore',many:'giocatori',left:'Sinistro',right:'Destro',tabs:['Info'],groups:['Tecnici','Mentali','Fisici','Portiere'],empty:'Nessun giocatore è attualmente assegnato a questo club.',unavailable:'La rosa è temporaneamente non disponibile.',missingApi:'L’API della rosa non è disponibile in questa versione. Riavvia il server locale dal branch corrente.',loading:'Caricamento rosa'}
+  en:{name:'Player',age:'Age',positions:'Positions',height:'Height',foot:'Foot',nationality:'Nationality',one:'player',many:'players',left:'Left',right:'Right',tabs:['Info','Stats'],groups:['Technical','Mental','Physical','Goalkeeper'],empty:'No players are currently assigned to this club.',unavailable:'The roster is temporarily unavailable.',missingApi:'Roster API is unavailable in this build. Restart the local development server from this branch.',loading:'Loading roster'},
+  de:{name:'Spieler',age:'Alter',positions:'Positionen',height:'Größe',foot:'Fuß',nationality:'Nationalität',one:'Spieler',many:'Spieler',left:'Links',right:'Rechts',tabs:['Info','Statistiken'],groups:['Technisch','Mental','Physisch','Torwart'],empty:'Diesem Verein sind derzeit keine Spieler zugeordnet.',unavailable:'Der Kader ist vorübergehend nicht verfügbar.',missingApi:'Die Kader-API fehlt in diesem Build. Starte den lokalen Entwicklungsserver mit diesem Branch neu.',loading:'Kader wird geladen'},
+  es:{name:'Jugador',age:'Edad',positions:'Posiciones',height:'Altura',foot:'Pie',nationality:'Nacionalidad',one:'jugador',many:'jugadores',left:'Izquierdo',right:'Derecho',tabs:['Info','Estadísticas'],groups:['Técnicos','Mentales','Físicos','Portero'],empty:'Actualmente no hay jugadores asignados a este club.',unavailable:'La plantilla no está disponible temporalmente.',missingApi:'La API de la plantilla no está disponible en esta versión. Reinicia el servidor local desde esta rama.',loading:'Cargando plantilla'},
+  fr:{name:'Joueur',age:'Âge',positions:'Postes',height:'Taille',foot:'Pied',nationality:'Nationalité',one:'joueur',many:'joueurs',left:'Gauche',right:'Droit',tabs:['Info','Statistiques'],groups:['Techniques','Mentaux','Physiques','Gardien'],empty:'Aucun joueur n’est actuellement affecté à ce club.',unavailable:'L’effectif est temporairement indisponible.',missingApi:'L’API de l’effectif manque dans cette version. Redémarrez le serveur local depuis cette branche.',loading:'Chargement de l’effectif'},
+  it:{name:'Giocatore',age:'Età',positions:'Posizioni',height:'Altezza',foot:'Piede',nationality:'Nazionalità',one:'giocatore',many:'giocatori',left:'Sinistro',right:'Destro',tabs:['Info','Statistiche'],groups:['Tecnici','Mentali','Fisici','Portiere'],empty:'Nessun giocatore è attualmente assegnato a questo club.',unavailable:'La rosa è temporaneamente non disponibile.',missingApi:'L’API della rosa non è disponibile in questa versione. Riavvia il server locale dal branch corrente.',loading:'Caricamento rosa'}
  };
+ const rosterTabs=Object.fromEntries(Object.entries(rosterWords).map(([lang,words])=>[lang,words.tabs]));
+ // Match the Player Detail Stats ordering first; append Roster-only metrics.
+ const statKeys=['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','mvpAwards','averageRating'];
+ const rosterLabels={
+  en:['Attributes','Apps (Subs)','Min','Gls','Ast','G+A/90','YC','RC','CS','MVP','Rat.','Domestic','International','Not recorded'],
+  it:['Attributi','Pres. (Sub.)','Min','Gol','Assist','G+A/90','Gialli','Rossi','CS','MVP','Val.','Nazionali','Internazionali','Dato non registrato'],
+  de:['Attribute','Sp. (Einw.)','Min','Tor.','Vor.','G+A/90','Gelb','Rot','CS','MVP','Bew.','National','International','Nicht erfasst'],
+  fr:['Attributs','MJ (Entr.)','Min','Bts','PdD','G+A/90','Jaunes','Rouges','CS','MVP','Not.','Nationales','Internationales','Non enregistré'],
+  es:['Atributos','PJ (Sup.)','Min','Gol','Asist.','G+A/90','Amar.','Rojas','CS','MVP','Val.','Nacionales','Internacionales','Sin registrar']
+ };
+ const rosterStatHelp={
+  en:{appearances:'Appearances (substitute appearances)',minutes:'Minutes played',goals:'Goals',assists:'Assists',goalsAssistsPer90:'Goals plus assists per 90 minutes played',yellowCards:'Yellow cards',redCards:'Red cards',cleanSheets:'Clean sheets',mvpAwards:'Player of the match awards',averageRating:'Average match rating'},
+  it:{appearances:'Presenze (da subentrato)',minutes:'Minuti giocati',goals:'Gol segnati',assists:'Assist',goalsAssistsPer90:'Gol più assist ogni 90 minuti giocati',yellowCards:'Cartellini gialli',redCards:'Cartellini rossi',cleanSheets:'Clean sheet',mvpAwards:'Premi migliore in campo',averageRating:'Valutazione media'},
+  de:{appearances:'Spiele (Einwechslungen)',minutes:'Gespielte Minuten',goals:'Tore',assists:'Vorlagen',goalsAssistsPer90:'Tore und Vorlagen pro 90 Minuten',yellowCards:'Gelbe Karten',redCards:'Rote Karten',cleanSheets:'Spiele ohne Gegentor',mvpAwards:'Auszeichnungen als Spieler des Spiels',averageRating:'Durchschnittliche Bewertung'},
+  fr:{appearances:'Matchs joués (entrées en jeu)',minutes:'Minutes jouées',goals:'Buts',assists:'Passes décisives',goalsAssistsPer90:'Buts et passes décisives par 90 minutes',yellowCards:'Cartons jaunes',redCards:'Cartons rouges',cleanSheets:'Matchs sans but encaissé',mvpAwards:'Distinctions de joueur du match',averageRating:'Note moyenne'},
+  es:{appearances:'Partidos jugados (entradas como suplente)',minutes:'Minutos jugados',goals:'Goles',assists:'Asistencias',goalsAssistsPer90:'Goles más asistencias cada 90 minutos',yellowCards:'Tarjetas amarillas',redCards:'Tarjetas rojas',cleanSheets:'Porterías a cero',mvpAwards:'Premios al mejor jugador del partido',averageRating:'Valoración media'}
+ };
+ function rosterCompetition(params){
+  const scope=params.get('competition');
+  return scope==='domestic'||scope==='international'?scope:'all';
+ }
+ function rosterView(params){
+  if(params.get('view')==='stats')return 'stats';
+  if(params.get('view')!=='attributes')return 'info';
+  const group=params.get('group');
+  return Object.hasOwn(rosterGroups,group)?group:'technical';
+ }
+ function rosterSortKeys(view){
+  if(view==='info')return rosterSortInfo;
+  return [...rosterSortCommon,...(view==='stats'?statKeys:rosterGroups[view])];
+ }
+ function rosterViewQuery(search,view){
+  const query=new URLSearchParams(search);
+  const attributes=Object.hasOwn(rosterGroups,view);
+  query.set('view',attributes?'attributes':view);
+  if(view!=='stats')query.delete('competition');
+  if(!attributes)query.delete('group');
+  else query.set('group',view);
+  const allowed=rosterSortKeys(view);
+  if(!allowed.includes(query.get('sort'))){query.delete('sort');query.delete('order');}
+  return query;
+ }
  function renderRoster(clubKey,lang,t,snapshot,search=''){
   const w=rosterWords[lang],params=new URLSearchParams(search);
-  const requested=params.get('view');
-  const group=Object.hasOwn(rosterGroups,requested)?requested:
-   requested==='attributes'&&Object.hasOwn(rosterGroups,params.get('group'))?params.get('group'):'technical';
-  const mode=Object.hasOwn(rosterGroups,requested)||requested==='attributes'?'attributes':'overview';
+  const view=rosterView(params);
+  const mode=view==='info'?'overview':view==='stats'?'stats':'attributes';
+  const group=mode==='attributes'?view:'technical',words=rosterLabels[lang];
   const base='/clubs/'+clubKey.split('-')[0].toLowerCase()+'/'+clubKey.split('-')[1]+'/roster';
-  const href=view=>{const query=new URLSearchParams(search);query.delete('view');query.delete('group');query.set('view',view);return base+'?'+query.toString();};
+  const href=target=>base+'?'+rosterViewQuery(search,target);
   const attributeKeys=rosterGroups[group];
-  const allowedSort=mode==='attributes'?[...rosterSortCommon,...attributeKeys]:rosterSortInfo;
+  const allowedSort=rosterSortKeys(view);
   const requestedSort=params.get('sort')||'';
   const sort=allowedSort.includes(requestedSort)?requestedSort:'';
   const order=sort?['desc','asc'].includes(params.get('order'))?params.get('order'):
@@ -162,13 +213,16 @@
   // localized text; unknown/loading states still reserve the table first paint.
   if(ready&&snapshot.count===0)
    return '<section class="club-roster" aria-busy="false" data-roster-mode="empty"><p class="club-roster-empty" role="status">'+escape(w.empty)+'</p></section>';
+  const competitions=snapshot?.competitions||[];
+  const scope=rosterCompetition(params);
+  const groupIds=competitions.filter(id=>id.startsWith('int-')===(scope==='international'));
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
-   :['',w.name,w.positions,w.age,w.height,w.foot];
+   :mode==='stats'?['',w.name,w.positions,...words.slice(1,1+statKeys.length)]:['',w.name,w.positions,w.age,w.height,w.foot];
   const columns='<colgroup><col class="app-players-flag-column"><col class="app-players-name-column">'+
-   '<col class="app-players-view-third-column">'+(mode==='attributes'?attributeKeys.map(()=>'<col>').join(''):'<col><col><col>')+'</colgroup>';
+   '<col class="app-players-view-third-column">'+'<col>'.repeat(labels.length-3)+'</colgroup>';
   const colCount=labels.length;
-  const columnSorts=mode==='attributes'?['nationality','name','positions',...attributeKeys]:rosterSortInfo;
+  const columnSorts=allowedSort;
   let body;
   if(pending){
    body=Array.from({length:5},(_,i)=>'<tr class="app-players-loading-row"'+(i?' aria-hidden="true"':'')+'><td colspan="'+colCount+'">'+
@@ -177,13 +231,31 @@
    const message=ready?w.empty:snapshot?.status===404?w.missingApi:w.unavailable;
    body='<tr class="app-players-empty-row"><td colspan="'+colCount+'"><strong role="status">'+escape(message)+'</strong></td></tr>';
   }else{
-   body=sortedRosterPlayers(snapshot.players,sort||'positions',sort?order:'desc').map(player=>{
+   // At most one domestic and one international membership per club/season.
+   // Use each separately aggregated projection: do not add ratings or per-90 rates.
+   const players=mode==='stats'&&scope!=='all'?snapshot.players.map(player=>({
+    ...player,stats:groupIds.length===1?player.competitionStats?.[groupIds[0]]??null:null
+   })):snapshot.players;
+   const statText=(stats,key)=>{
+    const value=rosterStatValue(stats,key);
+    if(value===undefined||value===null)return null;
+    if(key==='averageRating')return value.toFixed(1);
+    if(key==='goalsAssistsPer90')return value.toFixed(2);
+    if(key==='appearances')return value+' ('+(stats.subAppearances??'—')+')';
+    return String(value);
+   };
+   const statCell=(stats,key)=>{
+    const value=statText(stats,key);
+    return value===null?'<td><span title="'+escape(words[13])+'" aria-label="'+escape(words[12])+'">—</span></td>'
+     :'<td>'+escape(value)+'</td>';
+   };
+   body=sortedRosterPlayers(players,sort||'positions',sort?order:'desc').map(player=>{
     const id=Number(player.id),country=player.nationality;
     const code=Object.hasOwn(rosterFlags,country)?rosterFlags[country]:null;
     const flag=code?'<img class="app-players-nationality-flag" src="/assets/flags/'+escape(code)+'.svg" width="20" height="15" alt="'+escape(country)+'" title="'+escape(country)+'">':escape(country||'');
     const positions=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ');
     const value=v=>Number.isSafeInteger(v)?String(v):'—';
-    const cells=mode==='attributes'
+    const cells=mode==='stats'?'<td>'+escape(positions||'—')+'</td>'+statKeys.map(key=>statCell(player.stats,key)).join(''):mode==='attributes'
      ?'<td>'+escape(positions||'—')+'</td>'+attributeKeys.map(key=>'<td>'+value(player.attributes?.[key])+'</td>').join('')
      :'<td>'+escape(positions||'—')+'</td><td>'+value(player.age)+'</td><td>'+(Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—')+'</td><td>'+escape(player.preferred_foot==='left'?w.left:player.preferred_foot==='right'?w.right:'—')+'</td>';
     return '<tr><td>'+flag+'</td><td><a class="club-roster-player-link" href="/players/'+id+'" data-mobile-name="'+escape(compactPlayerName(player.display_name))+'" aria-label="'+escape(player.display_name)+'"><span class="fa-player-full-name">'+escape(player.display_name)+'</span><span class="fa-player-short-name">'+escape(compactPlayerName(player.display_name))+'</span></a></td>'+cells+'</tr>';
@@ -191,21 +263,30 @@
   }
   const count=ready?new Intl.NumberFormat(lang).format(snapshot.count)+' '+(snapshot.count===1?w.one:w.many)
    :'<span class="app-players-count-placeholder" aria-hidden="true"></span>';
-  const tabsDisabled=!ready;
-  const viewTabs=['info',...Object.keys(rosterGroups)].map((key,i)=>{
-   const active=key===(mode==='overview'?'info':group);
-   const label=i===0?w.tabs[0]:w.groups[i-1];
-   return '<a role="tab" class="app-competition-tab'+(active?' is-active':'')+'"'+(tabsDisabled?'':' href="'+escape(href(key))+'"')+' data-club-roster-view="'+key+'" aria-selected="'+active+'"'+(tabsDisabled?' aria-disabled="true"':'')+' tabindex="'+(tabsDisabled?'-1':active?'0':'-1')+'">'+escape(label)+'</a>';
+  const viewTabs=['info','stats','attributes'].map((key,i)=>{
+   const active=key===(mode==='overview'?'info':mode);
+   const label=[w.tabs[0],w.tabs[1],words[0]][i];
+   return '<a role="tab" class="app-competition-tab'+(active?' is-active':'')+'" href="'+escape(href(key==='attributes'?group:key))+'" data-club-roster-view="'+key+'" aria-selected="'+active+'" tabindex="'+(active?'0':'-1')+'">'+escape(label)+'</a>';
   }).join('');
+  let selector='';
+  if(mode==='attributes'){
+   const options=Object.keys(rosterGroups).map((key,i)=>[key,w.groups[i]]);
+   selector=fixtureUI.control('group',words[0],options.find(([key])=>key===group)[1],options,'club-roster');
+  }else if(mode==='stats'){
+   const labels=fixtureUI.copy[lang];
+   selector=fixtureUI.control('competition',labels.competition,scope==='all'?labels.all:words[scope==='international'?12:11],
+    [['all',labels.all],['domestic',words[11]],['international',words[12]]],'club-roster');
+  }
   return '<section class="club-roster" aria-busy="'+pending+'" data-roster-mode="'+mode+'">'+
-   '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav><span class="club-roster-count">'+count+'</span></div>'+
+   '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav>'+selector+'<span class="club-roster-count"><span aria-hidden="true" class="club-roster-count-width">99 '+w.many+'</span><span>'+count+'</span></span></div>'+
    '<div class="app-players-table-scroll club-roster-table-scroll" role="region" aria-label="'+escape(t.roster)+'" tabindex="0"'+(pending?' aria-busy="true"':'')+'>'+
    '<table class="app-players-table club-roster-table" data-players-table-mode="'+mode+'" data-roster-group="'+group+'" aria-label="'+escape(t.roster)+'">'+
    columns+'<thead><tr>'+labels.map((label,i)=>{
     const key=columnSorts[i],active=sort===key;
     return '<th scope="col" aria-sort="'+(active?order==='desc'?'descending':'ascending':'none')+'"'+
      (i===0?' class="app-players-flag-col" aria-label="'+escape(w.nationality)+'"':'')+'>'+
-     '<button type="button" class="app-players-sort-button" data-club-roster-sort="'+key+'">'+
+     '<button type="button" class="app-players-sort-button" data-club-roster-sort="'+key+'"'+
+     (mode==='stats'&&i>=3?' data-roster-stat-help="'+escape(rosterStatHelp[lang][key])+'"':'')+'>'+
      '<span class="app-players-sort-label">'+(i===0?'<span class="sr-only">'+escape(w.nationality)+'</span>':escape(label))+
      rosterSortChevron+'</span></button></th>';
    }).join('')+
@@ -225,8 +306,13 @@
    .replace(/href="#([^"]+)"/g,(_,id)=>'href="#club-'+placement+'-'+id+'"');
   const link=division?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'standings'}):null;
   const fact=(label,value)=>'<div><dt>'+escape(t[label])+'</dt><dd>'+value+'</dd></div>';
-  const crest=()=>'<span class="app-world-club-crest-placeholder club-crest fa-crest-loading" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'"'+(Object.hasOwn(manifest.clubCrests||{},c.countryId+'-'+c.clubId)?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'">'+(manifest.clubCrests?.[c.countryId+'-'+c.clubId]?'<img class="app-club-crest-image" src="/'+escape(manifest.clubCrests[c.countryId+'-'+c.clubId])+'" alt="" decoding="sync">':'')+'</span>';
-  const divisionLogo=division?'/assets/divisions/'+division.id.toLowerCase()+'-'+division.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg':null;
+  const crestId=c.countryId+'-'+c.clubId;
+  const crestMatch=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.exec(crestId);
+  const crestSource=crestMatch&&Object.hasOwn(manifest.clubCrests||{},crestId)&&
+   manifest.clubCrests[crestId]==='assets/clubs/'+crestMatch[1]+'/'+crestMatch[2]+'/crest.svg'
+   ?'/assets/clubs/'+crestMatch[1]+'/'+crestMatch[2]+'/crest.svg':null;
+  const crest=()=>'<span class="app-world-club-crest-placeholder club-crest fa-crest-loading" data-club-crest="'+escape(crestId)+'"'+(crestSource?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'">'+(crestSource?'<img class="app-club-crest-image" src="'+escape(crestSource)+'" alt="" decoding="sync">':'')+'</span>';
+  const divisionLogo=division?domesticLogoUrl(division.id):null;
   const summary=division&&snapshot?.source==='dev'&&snapshot.divisionId===division.id&&snapshot.clubId===c.clubId&&
    Number.isInteger(snapshot.season)&&snapshot.season>=1&&snapshot.season<=4&&
    (snapshot.position===null||Number.isInteger(snapshot.position)&&snapshot.position>=1&&snapshot.position<=16)&&
@@ -284,7 +370,7 @@
    const def=index.divisions.get(membership.competitionId),isDomestic=membership.category==='domestic';
    const title=isDomestic?(def?.name||membership.name):membership.name;
    const target=seasonLink(routes.buildRoute({kind:isDomestic?'competition':'cup',id:membership.competitionId.toLowerCase(),view:'standings'}),membership.season);
-   const badge=isDomestic&&def?'<img class="club-competition-logo" src="/assets/divisions/'+escape(def.id.toLowerCase()+'-'+def.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg')+'" width="64" height="64" alt="">':
+   const badge=isDomestic&&def?'<img class="club-competition-logo" src="'+escape(domesticLogoUrl(def.id))+'" width="64" height="64" alt="">':
     '<span class="club-competition-cup-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg></span>';
    const next=membership.nextMatch;
    const home=next&&index.clubs.get(next.homeId),away=next&&index.clubs.get(next.awayId);
@@ -317,7 +403,8 @@
   const temporal=new URLSearchParams();
   for(const key of ['season','matchday'])if(params.has(key)&&(key!=='season'||explicit))temporal.set(key,params.get(key));
   const tabs='<nav class="app-competition-tabs club-tabs" aria-label="'+escape(t.navigation)+'">'+views.map(view=>{
-   const suffix=['fixtures','stats'].includes(view)&&temporal.size?'?'+temporal:'';
+   const query=view==='fixtures'?temporal:view==='records'&&temporal.has('season')?new URLSearchParams([['season',temporal.get('season')]]):null;
+   const suffix=query?.size?'?'+query:'';
    return '<a class="app-competition-tab'+(view===selected.view?' is-active':'')+'" href="'+routes.buildRoute({kind:'club',country:selected.countryId.toLowerCase(),id:selected.clubId,view})+suffix+'"'+(view===selected.view?' aria-current="page"':'')+'>'+escape(t[view])+'</a>';
   }).join('')+'</nav>';
   const swatch=key=>{
@@ -351,13 +438,15 @@
     effectiveCompetitionCard+'</section></div>';
   }else if(selected.view==='roster'){
    content=renderRoster(clubKey,lang,t,rosterSnapshot,search);
+  }else if(selected.view==='records'){
+   content=recordsUI.render({selected,historySnapshot,language:lang,search,ordinal,index});
   }else if(selected.view==='history'){
    const words={
-    en:{season:'Season',competition:'Competition',position:'Pos.',played:'MP',won:'W',drawn:'D',lost:'L',gf:'GF',ga:'GA',gd:'GD',points:'Pts',total:'Total',show:'Show competitions for',empty:'No games played',without:'No competitions this season.',unavailable:'Club history is temporarily unavailable.'},
-    de:{season:'Saison',competition:'Wettbewerb',position:'Pl.',played:'Sp',won:'S',drawn:'U',lost:'N',gf:'T+',ga:'T−',gd:'TD',points:'Pkt',total:'Gesamt',show:'Wettbewerbe anzeigen für',empty:'Noch keine Spiele gespielt',without:'Keine Wettbewerbe in dieser Saison.',unavailable:'Die Vereinshistorie ist vorübergehend nicht verfügbar.'},
-    es:{season:'Temporada',competition:'Competición',position:'Pos.',played:'PJ',won:'G',drawn:'E',lost:'P',gf:'GF',ga:'GC',gd:'DG',points:'Pts',total:'Total',show:'Mostrar competiciones de',empty:'No se han jugado partidos',without:'Sin competiciones esta temporada.',unavailable:'El historial del club no está disponible temporalmente.'},
-    fr:{season:'Saison',competition:'Compétition',position:'Pl.',played:'MJ',won:'V',drawn:'N',lost:'D',gf:'BP',ga:'BC',gd:'DB',points:'Pts',total:'Total',show:'Afficher les compétitions de',empty:'Aucun match joué',without:'Aucune compétition cette saison.',unavailable:'L’historique du club est temporairement indisponible.'},
-    it:{season:'Stagione',competition:'Competizione',position:'Pos.',played:'PG',won:'V',drawn:'N',lost:'P',gf:'GF',ga:'GS',gd:'DR',points:'Pt',total:'Totale',show:'Mostra competizioni della',empty:'Nessuna partita giocata',without:'Nessuna competizione in questa stagione.',unavailable:'La storia del club è temporaneamente non disponibile.'}
+    en:{season:'Season',competition:'Competition',result:'Result',played:'MP',won:'W',drawn:'D',lost:'L',gf:'GF',ga:'GA',gd:'GD',points:'Pts',total:'Total',show:'Show competitions for',empty:'No games played',without:'No competitions this season.',unavailable:'Club history is temporarily unavailable.'},
+    de:{season:'Saison',competition:'Wettbewerb',result:'Ergebnis',played:'Sp',won:'S',drawn:'U',lost:'N',gf:'T+',ga:'T−',gd:'TD',points:'Pkt',total:'Gesamt',show:'Wettbewerbe anzeigen für',empty:'Noch keine Spiele gespielt',without:'Keine Wettbewerbe in dieser Saison.',unavailable:'Die Vereinshistorie ist vorübergehend nicht verfügbar.'},
+    es:{season:'Temporada',competition:'Competición',result:'Resultado',played:'PJ',won:'G',drawn:'E',lost:'P',gf:'GF',ga:'GC',gd:'DG',points:'Pts',total:'Total',show:'Mostrar competiciones de',empty:'No se han jugado partidos',without:'Sin competiciones esta temporada.',unavailable:'El historial del club no está disponible temporalmente.'},
+    fr:{season:'Saison',competition:'Compétition',result:'Résultat',played:'MJ',won:'V',drawn:'N',lost:'D',gf:'BP',ga:'BC',gd:'DB',points:'Pts',total:'Total',show:'Afficher les compétitions de',empty:'Aucun match joué',without:'Aucune compétition cette saison.',unavailable:'L’historique du club est temporairement indisponible.'},
+    it:{season:'Stagione',competition:'Competizione',result:'Risultato',played:'PG',won:'V',drawn:'N',lost:'P',gf:'GF',ga:'GS',gd:'DR',points:'Pt',total:'Totale',show:'Mostra competizioni della',empty:'Nessuna partita giocata',without:'Nessuna competizione in questa stagione.',unavailable:'La storia del club è temporaneamente non disponibile.'}
    }[lang];
    const historySourceVerified=historySnapshot?.source==='authoritative'||
     historySnapshot?.source==='dev'&&historySnapshot.provenance?.kind==='fictional'&&
@@ -365,13 +454,16 @@
    const verified=historySourceVerified&&historySnapshot.clubKey===clubKey&&
     ['complete','empty'].includes(historySnapshot.coverage)&&Array.isArray(historySnapshot.seasons);
    const pending=!verified&&historySnapshot?.source!=='unavailable';
-   const columns=[words.season,words.competition,words.position,words.played,words.won,words.drawn,words.lost,words.gf,words.ga,words.gd,words.points];
+   const columns=[words.season,words.competition,words.result,words.played,words.won,words.drawn,words.lost,words.gf,words.ga,words.gd,words.points];
    const heading='<thead><tr>'+columns.map((label,i)=>
     '<th scope="col" class="'+(i===0?'club-history-season-col':i===1?'club-history-name-col':i===2?'club-history-position-col':'club-history-number-col')+'"'+
-    (i<3?' aria-label="'+escape(label)+'"':'')+'>'+(i<3?'':escape(label))+'</th>').join('')+'</tr></thead>';
+    (i<3?' aria-label="'+escape(label)+'"':'')+'>'+escape(label)+'</th>').join('')+'</tr></thead>';
    const columnWidths='<colgroup><col class="club-history-col-season"><col class="club-history-col-name"><col class="club-history-col-position">'+
     Array.from({length:8},()=>'<col class="club-history-col-number">').join('')+'</colgroup>';
    const bar='<span class="club-fp-bar" aria-hidden="true"></span>';
+   const sampleTotals={played:'30',won:'18',drawn:'10',lost:'12',gf:'104',ga:'104',gd:'+52'};
+   const loadingStats=['played','won','drawn','lost','gf','ga','gd']
+    .map(key=>'<td class="club-history-skeleton-stat" data-club-history-skeleton="'+key+'"><span class="club-history-stat-value"><span class="club-fp-bar" data-skeleton-sample="'+sampleTotals[key]+'" aria-hidden="true"></span></span></td>').join('');
    const displayNumber=value=>value>0&&typeof value==='number'?'+'+value:String(value);
    let body='';
    if(verified&&!historySnapshot.seasons.some(entry=>entry.memberships.some(m=>m.stats?.played>0)))
@@ -383,13 +475,13 @@
     if(pending)rows='<tr class="club-history-season-row club-history-row-loading" aria-hidden="true">'+
      '<th scope="row" class="club-history-season-value"><span class="club-history-expand club-history-skeleton-label">'+
      '<span class="club-history-chevron-space" aria-hidden="true"></span>'+bar+'</span></th>'+
-     '<td class="club-history-total-label">'+bar+'</td><td></td>'+
-     Array.from({length:7},()=>'<td>'+bar+'</td>').join('')+'<td></td></tr>';
+     '<td class="club-history-total-label"><span class="club-history-total-value">'+bar+'</span></td><td></td>'+
+     loadingStats+'<td></td></tr>';
     else rows=[...historySnapshot.seasons].reverse().map(entry=>{
      const year=entry.season;
      const members=[...entry.memberships].sort((a,b)=>
       a.category===b.category?a.competitionId.localeCompare(b.competitionId,'en'):a.category==='domestic'?-1:1);
-     if(!members.length)return '<tr data-club-history-summary="'+year+'" class="club-history-season-row">'+
+     if(!members.length)return '<tr id="club-history-season-'+year+'" data-club-history-summary="'+year+'" class="club-history-season-row">'+
       '<th scope="row" class="club-history-season-value">'+escape(words.season)+' '+year+'</th>'+
       '<td class="club-history-empty-season">'+escape(words.empty)+'</td>'+
       '<td></td>'+Array.from({length:8},()=>'<td></td>').join('')+'</tr>';
@@ -399,12 +491,12 @@
      },{played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,goalDifference:0});
      const numeric=[totals.played,totals.won,totals.drawn,totals.lost,totals.goalsFor,
       totals.goalsAgainst,displayNumber(totals.goalDifference),''];
-     const summary='<tr class="club-history-season-row" data-club-history-summary="'+year+'">'+
+     const summary='<tr id="club-history-season-'+year+'" class="club-history-season-row" data-club-history-summary="'+year+'">'+
       '<th scope="row" class="club-history-season-value"><button type="button" class="club-history-expand"'+
       ' data-club-history-toggle="'+year+'" aria-expanded="false" aria-label="'+escape(words.show+' '+words.season+' '+year)+'">'+
       '<span class="club-history-chevron" aria-hidden="true"></span>'+escape(words.season)+' '+year+'</button></th>'+
-      '<td class="club-history-total-label">'+escape(words.total)+'</td><td></td>'+
-      numeric.map(value=>'<td>'+escape(value)+'</td>').join('')+'</tr>';
+      '<td class="club-history-total-label"><span class="club-history-total-value">'+escape(words.total)+'</span></td><td></td>'+
+      numeric.map(value=>'<td><span class="club-history-stat-value">'+escape(value)+'</span></td>').join('')+'</tr>';
      const details=members.map(m=>{
       const domestic=m.category==='domestic',def=index.divisions.get(m.competitionId);
       const title=domestic?(def?.name||m.name):m.name;
@@ -412,13 +504,20 @@
       const position=domestic?(m.position===null?'':ordinal(m.position,lang)):
        (internationalStatusLabels[lang][m.cupStatus]||
         (entry.ongoing&&m.stats.played>0?internationalStatusLabels[lang].groupStage:''));
+      // Official division logos come from the same validated competition identity
+      // already used in Club Overview. International cups currently have no
+      // published logo assets, so retain the existing neutral cup mark.
+      const logo=domestic&&def?domesticLogoUrl(def.id):null;
+      const badge='<span class="fa-competition-mark" aria-hidden="true">'+
+       (logo?'<img src="'+escape(logo)+'" width="24" height="24" alt="" loading="lazy" decoding="async">':
+        !domestic?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg>':'')+'</span>';
       const stats=m.stats;
       const values=[position,stats.played,stats.won,stats.drawn,stats.lost,stats.goalsFor,stats.goalsAgainst,
        displayNumber(stats.goalDifference),m.points];
       return '<tr class="club-history-competition-row" data-club-history-detail="'+year+'"'+
        ' data-history-competition-row="'+escape(m.competitionId)+'" hidden>'+
-       '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="'+escape(href)+'" title="'+escape(title)+'"><span class="club-history-competition-text">'+escape(title)+'</span></a></th>'+
-       values.map((value,i)=>i===0?'<td'+(value?' title="'+escape(value)+'"':'')+'>'+escape(value)+'</td>':'<td>'+escape(value)+'</td>').join('')+'</tr>';
+       '<td></td><th scope="row" class="club-history-competition-value"><span class="club-history-competition-identity">'+badge+'<a class="club-history-competition-link" href="'+escape(href)+'"><span class="club-history-competition-text">'+escape(title)+'</span></a></span></th>'+
+       values.map((value,i)=>i===0?'<td>'+escape(value)+'</td>':'<td><span class="club-history-stat-value">'+escape(value)+'</span></td>').join('')+'</tr>';
      }).join('');
      return summary+details;
     }).join('');
@@ -438,5 +537,5 @@
    '<span data-club-name="compact">'+escape(c.compactName)+'</span></h1><p class="club-location">'+flag('header')+escape(c.city)+', '+escape(country)+'</p></div></header>'+tabs+
    content;
  }
- return {views,copies,route,render};
+ return {views,copies,route,ordinal,render,renderRoster,rosterLabels,rosterTabs,rosterStatHelp,rosterCompetition,rosterView,rosterViewQuery,rosterSortKeys};
 });

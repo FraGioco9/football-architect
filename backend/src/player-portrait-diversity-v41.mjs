@@ -243,7 +243,7 @@ function group(texture){
  if(texture==='loose curly'||texture==='tight curly')return 'curly';
  return 'coily';
 }
-function pickStyle(length,texture,roll){
+export function pickStyle(length,texture,roll){
  const options=STYLES[length]?.[group(texture)];
  if(!options||options.length===0)throw new TypeError('invalid_hair_compatibility');
  return options[Math.min(options.length-1,Math.floor(roll*options.length))];
@@ -285,6 +285,14 @@ function variation(body,roll){
  const options=BUILD_VARIANTS[body];
  if(!options)throw new TypeError('invalid_diverse_v4_body');
  return weightPick(options,roll);
+}
+
+/** Read-only V4.1 body variation verifier for independently versioned snapshots. */
+export async function v41VariationForBody(playerId,body){
+ if(!Number.isSafeInteger(playerId)||playerId<1||!V4_BODY_ARCHETYPES.includes(body))
+  throw new TypeError('invalid_diverse_v4_body');
+ const face=await canonicalTraits(playerId);
+ return variation(body,face.bodyRoll);
 }
 
 /** Opt-in ONLY. Caller must provide frozen *initial* physical attributes. */

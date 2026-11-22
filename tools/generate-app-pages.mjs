@@ -182,7 +182,7 @@ const competitionManifest = {
   if(!country||!members||members.length!==d.capacity)throw Error("Invalid competition source "+d.id);
   return {id:d.id,name:d.name,countryId:d.countryId,countryName:country.name.en,
    flagAsset:country.flagAsset,tier:d.tier,capacity:d.capacity,
-   clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName,primaryName:primaryName(c),stadiumName:c.stadiumName}))};
+   clubs:members.map(c=>({countryId:c.countryId,clubId:c.clubId,abbr:c.abbr,fullName:c.fullName,primaryName:primaryName(c),compactName:c.compactName,stadiumName:c.stadiumName}))};
  })
 };
 if(!model.validManifest(competitionManifest))throw Error("Invalid shared competition manifest");
@@ -394,7 +394,42 @@ writeOutput("assets/match-public-context.mjs",renderMatchPublicContext(clubData,
  html=html.replace('<title>Players — Football Architect</title>','<title>Match — Football Architect</title>')
   .replace('  <script src="/assets/players-directory.js" defer></script>','  <script src="/assets/match-detail.js" defer></script>')
   .replace('  <script src="/assets/players-nationality-tooltip.js" defer></script>\n','')
-  .replace('</head>',`  <script>window.faClubCrests=${JSON.stringify(clubCrestAssets().catalog)};</script>\n  <script src="/assets/club-crests.js" defer></script>\n  <link rel="stylesheet" href="/assets/match-detail.css">\n</head>`)
+  .replace('</head>',`  <script>window.faClubCrests=${JSON.stringify(Object.keys(clubCrestAssets().catalog).sort())};</script>\n  <script src="/assets/club-crests.js" defer></script>\n  <link rel="stylesheet" href="/assets/match-detail.css">\n</head>`)
   .replace('const selected=onPlayers?',"const selected=path.startsWith('/matches/')?null:onPlayers?");
  writeOutput("matches/_shared/index.html",html);
+}
+
+// The directory and the numeric detail share only the generated application shell.
+{
+ const source=readFileSync(new URL('../players/index.html',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+ const template=readFileSync(new URL('../templates/matches-directory.html',import.meta.url),'utf8').trim();
+ const start=source.indexOf('<section id="app-divisions"');
+ const end=source.indexOf('\n      </main>',start);
+ if(start<0||end<0)throw Error('Missing directory shell');
+ const teamBar='<i class="md-team-bar"></i>';
+ const crestSlot='<span class="md-logo"></span>';
+ const skeleton=(`<div class="md-row md-skeleton" aria-hidden="true">
+  <span class="md-team">${teamBar}${crestSlot}</span><span class="md-score"><i></i></span>
+  <span class="md-team">${crestSlot}${teamBar}</span><small><i></i></small></div>`).repeat(8);
+ const content=template.replace('@@ROWS@@',skeleton).replace(/@@PICKER\((\w+),([^)]*)\)@@/g,(_,key,label)=>{
+  const id='md-'+key;
+  return `<div class="md-field"><span data-word="${key}" id="${id}-label">${label}</span>
+   <div class="language-control"><button id="${id}" class="language-trigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="${id}-label ${id}-value" aria-controls="${id}-menu" disabled><span id="${id}-value">${['season','day'].includes(key)?'':'All'}</span><svg class="language-chevron" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+   <div class="language-menu" id="${id}-menu" role="listbox" aria-labelledby="${id}-label" hidden></div></div></div>`;
+ });
+ const html=(source.slice(0,start)+content+source.slice(end))
+  .replace('<title>Players','<title>Matches')
+  .replace('  <script src="/assets/players-nationality-tooltip.js" defer></script>','  <link rel="stylesheet" href="/assets/matches-directory.css">')
+  .replace('<script src="/assets/players-directory.js" defer></script>','<script type="module" src="/assets/matches-directory.mjs"></script>');
+ writeOutput('matches/index.html',html);
+}
+
+// Keep Explore on the standalone 404 in sync with the canonical sidebar.
+{
+ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
+ const group=/<section class="fa-shell-nav-group" aria-labelledby="nav01-world-title">[\s\S]*?<\/section>/;
+ const source=read('dashboard/index.html').match(group);
+ if(!source||!group.test(read('404.html')))throw Error('Missing Explore navigation');
+ writeOutput('404.html',read('404.html').replace(group,()=>source[0])
+  .replace(/const lang=\{en:\['World'[^\n]+/,read('assets/sidebar-first-paint.js').match(/const lang=\{en:\['World'[^\n]+/)[0]));
 }

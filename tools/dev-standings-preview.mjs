@@ -14,6 +14,7 @@ import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces } from "node:os";
 import { isAllowlistedPublicPath, publicRequestFile } from "./publication-guard.mjs";
+import { approvedPortraitPaths } from "./portrait-release-gate.mjs";
 import { DEBUG_MODE_BOOTSTRAP, DEBUG_FIRST_PAINT, DEBUG_SEASONS, DEBUG_SEASON_BOOTSTRAP, CLUB_SUMMARY_INJECTION } from "./dev-preview-artifact.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
@@ -39,6 +40,7 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/core.mjs': 'match-engine/src/core.mjs',
   '/__fa_match_engine__/rapier-foot-contact-bridge.mjs': 'match-engine/src/rapier-foot-contact-bridge.mjs',
   '/__fa_match_engine__/private-physical-action-executor.mjs': 'match-engine/src/private-physical-action-executor.mjs',
+  '/__fa_match_engine__/intent-driven-solo-carry.mjs': 'match-engine/src/intent-driven-solo-carry.mjs',
   '/__fa_match_engine__/physical-receiving-cushion-m25.mjs': 'match-engine/src/physical-receiving-cushion-m25.mjs',
   '/__fa_match_engine__/player-ball-uniform-autonomous-action.mjs': 'match-engine/src/player-ball-uniform-autonomous-action.mjs',
   '/__fa_match_engine__/action-labs.mjs': 'match-engine/src/action-labs.mjs',
@@ -173,7 +175,7 @@ function rewriteLocalAppShellLinks(body,enabled){
     '";document.documentElement.dataset.faDevSiteOrigin="'+siteOrigin+'"</script>';
   return Buffer.from(body.toString("utf8").replace("</head>",config+"\n</head>")
     .replace(/(\bhref=")([^"#]+)(")/g,(all,prefix,href,quote)=>{
-      if(/^\/(?:account|dashboard|calendar|settings|admin|competitions|players|clubs)(?:[/?#]|$)/.test(href))
+      if(/^\/(?:account|dashboard|calendar|settings|admin|competitions|players|clubs|matches)(?:[/?#]|$)/.test(href))
         return prefix+appOrigin+href+quote;
       if(href==="/"||/^\/guide(?:[/?#]|$)/.test(href))
         return prefix+siteOrigin+(href==="/"? "":href)+quote;
@@ -294,15 +296,19 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         res.end(req.method === 'HEAD' ? undefined : bytes);
         return;
       }
-      // Club aliases share ROUTE-02 validation; temporal parameters belong only to Fixtures/Stats.
+      // Club aliases share ROUTE-02 validation; only Fixtures accepts matchday, while Records retains season.
       const clubPath=raw.replace(/\/index\.html$/,"");
       const clubRoute=resolveSubpage(clubPath);
       if(clubRoute?.kind==="club"){
         const params=new URL(req.url,"http://localhost").searchParams;
         const base=clubPath===clubRoute.base||clubPath===clubRoute.base+"/";
-        const view=base&&clubViews.includes(params.get("view"))?params.get("view"):clubRoute.view;
-        params.delete("view");
+        const legacyView=params.get("view");
+        const view=base&&(legacyView==="stats"||clubViews.includes(legacyView))
+          ?(legacyView==="stats"?"records":legacyView):clubRoute.view;
+        if(base||view!=="roster")params.delete("view");
         if(view==="overview"||view==="history"){params.delete("season");params.delete("matchday");}
+        if(view==="records"){params.delete("matchday");params.delete("competition");
+          if(!["season","verified"].includes(params.get("scope")))params.delete("scope");}
         const target=clubRoute.base+"/"+view+(params.size?"?"+params:"");
         if(req.url!==target){
           res.writeHead(308,{"Location":target,"Cache-Control":"no-store"});res.end();return;
@@ -339,7 +345,12 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       } else {
         const appHost = subdomains && req.headers.host === "app.localhost:2000";
         const file = publicRequestFile(appHost && (raw === "/" || raw === "/index.html") ? "/dashboard" : raw);
-        if (!isAllowlistedPublicPath(file)) return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});
+        // The public release helper defaults to no portraits: a local server is
+        // a DEV target, not an unreleased Production artifact. Verify the same
+        // SHA-pinned 26-image V4.2 DEV allowlist before serving WebP bytes.
+        const devPortrait=file.startsWith('assets/players/portraits/')&&
+          approvedPortraitPaths(root,{target:'dev-preview'}).has(file);
+        if (!devPortrait&&!isAllowlistedPublicPath(file,root)) return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
         if (!type) return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});

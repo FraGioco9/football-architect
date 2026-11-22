@@ -45,7 +45,7 @@ test('SEASON-CUP-DIALOG: actual History details retain country-qualified clubs a
   assert.ok(links.includes('/clubs/it/1/overview'));assert.ok(links.includes('/clubs/eng/1/overview'));
   assert.ok(links.includes('/competitions/'+id+'/standings?season=1'));
   assert.equal(JSON.stringify(payload),before);
-  const exit=walk(dialog).find(n=>n.className==='app-history-player-close');exit.emit('click');
+  const exit=walk(dialog).find(n=>n.className.split(' ').includes('app-history-player-close'));assert.ok(exit.className.includes('app-search-close'));assert.match(exit.innerHTML,/<svg\b/);exit.emit('click');
   assert.equal(dialog.open,false);assert.equal(r.document.activeElement,trigger);
  }
 });
@@ -68,10 +68,59 @@ test('SEASON-LEGACY-DIALOG: approved domestic player history links every divisio
   assert.ok(links.includes('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview'),definition.id+' canonical member link');
   assert.ok(links.includes('/competitions/'+definition.id.toLowerCase()+'/standings?season=1'),definition.id+' season link');
   assert.equal(JSON.stringify(payload),before,definition.id+' payload remains unchanged');
-  const close=walk(dialog).find(n=>n.className==='app-history-player-close');
+  const close=walk(dialog).find(n=>n.className.split(' ').includes('app-history-player-close'));
   assert.ok(close,definition.id+' close control');
+  assert.ok(close.className.includes('app-search-close'),definition.id+' standard close button');
+  assert.match(close.innerHTML,/<svg\b/,definition.id+' SVG close icon');
+  assert.ok(close.className.includes('app-search-close'),definition.id+' standard close button');
+  assert.match(close.innerHTML,/<svg\b/,definition.id+' SVG close icon');
   close.emit('click');
   assert.equal(dialog.open,false,definition.id+' dialog closed');
   assert.equal(r.document.activeElement,trigger,definition.id+' trigger regains focus');
  }
+});
+
+test('closed season records combine transfers, preserve frozen identity and clear incomplete history',()=>{
+ const r=fixture('int-1'),records=r.window.faHistoryPlayerRecords;
+ const row={playerId:8,name:'Current name',archivedName:'Archived name',clubKey:'IT-1',goals:4,assists:null};
+ records.applyRecordSeasons([{season:1,players:[row,{...row,clubKey:'ENG-1',goals:2}]},{season:2,players:[{...row,goals:5}]}]);
+ assert.equal(walk(r.card).find(n=>n.className==='app-competition-stat-value').textContent,'6');
+ assert.equal(walk(r.card).find(n=>n.tagName==='a').textContent,'Archived name');
+ records.applyRecordSeasons([{season:1,players:[row]},{season:2,players:null}]);
+ assert.equal(r.card.dataset.historyFilled,'true');
+ assert.equal(walk(r.card).find(n=>n.className==='app-competition-stat-value').textContent,'4');
+});
+
+test('goal contributions and MVP awards use recorded values and preserve unknown assists',()=>{
+ const r=fixture('int-1');
+ const row={playerId:8,clubKey:'IT-1',goals:3,assists:2,appearances:2,mvpAwards:1,mvpCoveredAppearances:2};
+ for(const [metric,expected] of [['seasonContributions','5'],['totalMvpAwards','1']]){
+  r.card.dataset.historyPlayerRecord=metric;
+  r.window.faHistoryPlayerRecords.clear();
+  r.window.faHistoryPlayerRecords.applyRecordSeasons([{season:1,players:[row]}]);
+  assert.equal(walk(r.card).find(n=>n.className==='app-competition-stat-value').textContent,expected);
+ }
+ r.card.dataset.historyPlayerRecord='totalContributions';
+ r.window.faHistoryPlayerRecords.applyRecordSeasons([{season:1,players:[{...row,assists:null}]}]);
+ assert.equal(r.card.dataset.historyFilled,'false');
+ r.card.dataset.historyPlayerRecord='totalMvpAwards';
+ for(const mixed of [
+  [{season:1,players:[row]},{season:2,players:[{...row,mvpAwards:null,mvpCoveredAppearances:0}]}],
+  [{season:1,players:[row]},{season:2,players:[{...row,mvpAwards:1,mvpCoveredAppearances:1}]}],
+  [{season:1,players:[row]},{season:2,players:null}]
+ ]){
+  r.window.faHistoryPlayerRecords.applyRecordSeasons(mixed);
+  assert.equal(r.card.dataset.historyFilled,'false',
+   'unverified seasons and positive partial awards must not become all-time records');
+ }
+});
+
+test('a single holder has a face and independent player, recorded club and season links on the card',()=>{
+ const r=fixture('int-1');
+ r.window.faHistoryPlayerRecords.applyRecordSeasons([{season:2,players:[{playerId:8,archivedName:'Historical Player',clubKey:'ENG-1',goals:3}]}]);
+ const nodes=walk(r.card),links=nodes.filter(n=>n.tagName==='a');
+ assert.deepEqual(links.map(a=>a.href),['/players/8','/clubs/eng/1/overview','/competitions/int-1/standings?season=2']);
+ assert.ok(links.every(a=>a.className.includes('app-world-standing-club-link')));
+ assert.equal(links[2].parentElement.className,'app-history-player-footer');
+ assert.equal(nodes.find(n=>n.tagName==='img').src,'/assets/players/portraits/8.webp');
 });

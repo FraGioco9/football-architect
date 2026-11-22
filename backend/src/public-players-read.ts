@@ -12,7 +12,7 @@ if(clubNames.size!==320)throw Error('Invalid canonical club catalogue');
 const FILTER_ATTRIBUTE_KEYS=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
 interface StoredPlayer extends InternalFootballer {age?:number}
 interface StoredRow {id:number;payload_json:string;club_key:string|null}
-interface StoredDetailRow extends StoredRow {club_key:string|null}
+interface StoredDetailRow extends StoredRow {club_key:string|null;portrait_approved:number}
 
 /** Count and page over the exact same server-side predicate, never a client-side 50-row filter. */
 export async function readPublicPlayers(db:Database,page:number,filters:PublicPlayerFilters={}){
@@ -95,14 +95,34 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
   ?sortExpression+' COLLATE NOCASE '+(filters.order==='desc'?'DESC':'ASC')+', id ASC'
   :'id DESC';
  const where=predicates.length?' WHERE '+predicates.join(' AND '):'';
- const countRow=await db.prepare('SELECT COUNT(*) AS n FROM generated_players'+where)
-  .bind(...values).first<{n:number}>();
- const count=countRow?.n??0;
+ const countSql='SELECT COUNT(*) AS n FROM generated_players'+where;
+ const pageSql='SELECT p.id,p.payload_json,a.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a.player_id=p.id'+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?';
+ let count:number,rows:StoredRow[];
+ if(page===1){
+  // The first page always needs both results, even when the directory is
+  // empty. D1 batch executes them in one transaction/round trip, without
+  // changing the exact count, selected public fields or 50-row contract.
+  const [countResult,pageResult]=await db.batch([
+   db.prepare(countSql).bind(...values),
+   db.prepare(pageSql).bind(...values,PUBLIC_PLAYER_PAGE_SIZE,0)
+  ]);
+  const value=(countResult?.results?.[0] as {n?:number}|undefined)?.n;
+  if(typeof value!=='number'||!Number.isSafeInteger(value)||value<0||!pageResult?.results)
+   throw new ApiError(503,'players_unavailable');
+  count=value;
+  rows=pageResult.results as unknown as StoredRow[];
+ }else{
+  // Preserve the current no-page-SELECT behavior for expired deep links.
+  // OFFSET pages must recount: generation alone cannot detect new players
+  // or affiliation writes, so reusing a client-supplied count is unsafe.
+  const countRow=await db.prepare(countSql).bind(...values).first<{n:number}>();
+  count=countRow?.n??0;
+  const totalPages=Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE));
+  rows=page<=totalPages
+   ?(await db.prepare(pageSql).bind(...values,PUBLIC_PLAYER_PAGE_SIZE,(page-1)*PUBLIC_PLAYER_PAGE_SIZE).all<StoredRow>()).results
+   :[];
+ }
  const totalPages=Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE));
- const rows=page<=totalPages
-  ?(await db.prepare('SELECT p.id,p.payload_json,a.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a.player_id=p.id'+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?')
-    .bind(...values,PUBLIC_PLAYER_PAGE_SIZE,(page-1)*PUBLIC_PLAYER_PAGE_SIZE).all<StoredRow>()).results
-  :[];
  const after=await readWorld(db);
  if(after.generation!==before.generation)throw new ApiError(409,'stale_world');
  return {
@@ -122,8 +142,16 @@ export async function readPublicPlayer(db:Database,id:number){
  if(!Number.isSafeInteger(id)||id<1)throw new ApiError(422,'invalid_public_request');
  const before=await readWorld(db);
  // Affiliation is a single authoritative LEFT JOIN; an absent row means Free Agent.
- const row=await db.prepare(`SELECT p.id,p.payload_json,a.club_key FROM generated_players p
-  LEFT JOIN player_club_affiliations a ON a.player_id=p.id WHERE p.id=?`)
+ const row=await db.prepare(`SELECT p.id,p.payload_json,a.club_key,
+  CASE WHEN portrait.status='approved'
+    AND portrait.schema_version='player-portraits-v5'
+    AND portrait.prompt_version='player-portrait-v4.2'
+    AND portrait.asset_key=('assets/players/portraits/' || p.id || '.webp')
+    THEN 1 ELSE 0 END AS portrait_approved
+  FROM generated_players p
+  LEFT JOIN player_club_affiliations a ON a.player_id=p.id
+  LEFT JOIN player_portrait_profiles portrait ON portrait.player_id=p.id
+  WHERE p.id=?`)
   .bind(id).first<StoredDetailRow>();
  const after=await readWorld(db);
  if(after.generation!==before.generation)throw new ApiError(409,'stale_world');
@@ -133,5 +161,6 @@ export async function readPublicPlayer(db:Database,id:number){
  const clubKey=row.club_key;
  if(clubKey!==null&&(!/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(clubKey)))
   throw new ApiError(503,'players_unavailable');
- return {player:{...projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age}),clubKey}};
+ return {player:{...projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age}),
+  clubKey,portraitApproved:row.portrait_approved===1}};
 }

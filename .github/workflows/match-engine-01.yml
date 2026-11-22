@@ -3,7 +3,6 @@ on:
   pull_request:
     paths:
       - 'match-engine/**'
-      - 'tools/dev-standings-preview.mjs'
       - '.github/workflows/match-engine-01.yml'
 jobs:
   match-engine:
@@ -11,6 +10,13 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact PR HEAD
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -24,10 +30,9 @@ jobs:
         run: node --test tests/app-subdomain-preview.test.mjs tests/app-canonical-routes.test.mjs
       - name: Browser viewport fit (Chrome, Advanced settings open and closed)
         run: node --test match-engine/tests/lab-viewport-browser.test.mjs
-      # Keep the real Chrome QA enabled even after Draft -> Ready for review.
-      # The older foundation PRs lack these five Action LAB assets.
+      # Required on every Match Engine PR: real Chrome action-journey evidence.
+      # Run after viewport to keep the shared localhost:2000 preview port isolated.
       - name: Five Action LABs clean-stack Chrome interaction
-        if: ${{ github.head_ref == 'refactor/621-clean-action-labs' || github.head_ref == 'feat/628-individual-kinematics-foundation' }}
         run: node --test match-engine/tests/action-labs-browser.test.mjs
       - name: Measured local CPU / memory sample
         run: npm --prefix match-engine run bench -- 6000

@@ -1,17 +1,21 @@
 // Dedicated Admin page browser acceptance: no retired Admin password form.
 // Real Worker/D1 authorization and rollback are covered by backend Vitest suites.
 import assert from 'node:assert/strict';
+import {createBrowserTiming} from '../tools/ci-browser-timing.mjs';
 import {once} from 'node:events';
 import {createRequire} from 'node:module';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 const require=createRequire(new URL('../backend/package.json',import.meta.url));
 const playwright=await import(process.env.FA_ADMIN_PLAYWRIGHT||require.resolve('playwright'));
+const timing=createBrowserTiming('admin-settings',process.env.FA_ADMIN_ENGINE||'chromium');
 const browser=await playwright[process.env.FA_ADMIN_ENGINE||'chromium'].launch({headless:true,...(process.env.FA_ADMIN_CHROME?{executablePath:process.env.FA_ADMIN_CHROME,args:['--no-sandbox']}: {})});
+timing.mark('browser-ready');
 const preview=createPreviewServer({subdomains:true,devPreview:false});
 let checks=0;
 try{
- preview.listen(2000,'127.0.0.1');await once(preview,'listening');
+ preview.listen(2000,'127.0.0.1');await once(preview,'listening');timing.mark('preview-ready');
  for(const language of ['en','de','es','fr','it'])for(const theme of ['dark','light'])for(const width of [320,390,768,1440]){
+  const contextStart=timing.now();
   const context=await browser.newContext({viewport:{width,height:900},locale:language});
   try{
    await context.addInitScript(({language,theme})=>{
@@ -19,11 +23,13 @@ try{
     localStorage.setItem('football-architect:theme',theme);
    },{language,theme});
    const page=await context.newPage(),errors=[];
+   timing.sample('context-page-ready',timing.now()-contextStart);
    page.on('pageerror',e=>errors.push(e.message));
    let adminCalls=0;
    await page.route('**/api/admin/**',async route=>{adminCalls++;return route.fulfill({status:401,contentType:'application/json',body:'{"error":{"code":"unauthorized"}}'});});
    await page.route('**/api/player/permissions',route=>route.fulfill({status:401,contentType:'application/json',body:'{"error":{"code":"unauthorized"}}'}));
    await page.route('**/api/world',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":{"code":"world_unavailable"}}'}));
+   const routeStart=timing.now();
    await page.goto('http://localhost:2000/settings');
    assert.deepEqual(await page.locator('.app-settings-grid h2').allTextContents(),await page.locator('#app-language-heading,#app-theme-heading').allTextContents());
    assert.equal(await page.locator('.app-settings-grid h2').count(),2);
@@ -37,6 +43,7 @@ try{
    assert.equal(await page.locator('#app-settings').count(),0);
    assert.equal(await page.locator('#app-nav-dashboard.is-active,#app-nav-settings.is-active').count(),0);
    await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
+   timing.sample('denied-route-sequence-ready',timing.now()-routeStart);
    assert.equal(await page.locator('#app-admin').isVisible(),false);
    assert.equal(await page.locator('#main-content').innerText(),'');
    assert.equal(await page.locator('[data-admin-signin-link] a').isVisible(),false);
@@ -49,7 +56,8 @@ try{
   }finally{await context.close();}
  }
 
- // Permission-gated discoverability and direct access, using synthetic HTTP
+ timing.mark('denied-matrix-complete');
+  // Permission-gated discoverability and direct access, using synthetic HTTP
  // responses only. No live administrative write is performed by this suite.
  for(const grant of ['denied','read','write','revoked-write','unavailable']){
   const context=await browser.newContext({viewport:{width:390,height:844}});
@@ -145,7 +153,8 @@ try{
   }finally{await context.close();}
  }
 
- // Admin directory and Players are permission checked but do not call the World Admin API.
+ timing.mark('permissions-matrix-complete');
+  // Admin directory and Players are permission checked but do not call the World Admin API.
  for(const permissionSet of [[],['admin.access','admin.world.read'],['admin.access','admin.world.read','admin.world.write']]){
   const context=await browser.newContext({viewport:{width:390,height:844}});
   try{
@@ -480,7 +489,8 @@ try{
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}
  }
- // Destination-day preview updates after the simulated command's authoritative
+ timing.mark('directory-players-complete');
+  // Destination-day preview updates after the simulated command's authoritative
  // response. This is an isolated HTTP fixture, never a remote world mutation.
  {
   const context=await browser.newContext();
@@ -561,7 +571,8 @@ try{
    checks++;
   }finally{await context.close();}
  }
- // #509 Contracts: simulated Admin browser batch assignment, no remote writes.
+ timing.mark('anonymous-profile-complete');
+  // #509 Contracts: simulated Admin browser batch assignment, no remote writes.
  {
   const context=await browser.newContext({viewport:{width:390,height:844}});
   let releaseInitialList;
@@ -716,7 +727,8 @@ try{
   }finally{releaseInitialList?.();await context.close()}
  }
 
- // PERF-API-01: rapid authenticated pagination must abort obsolete reads;
+ timing.mark('contracts-assignment-complete');
+  // PERF-API-01: rapid authenticated pagination must abort obsolete reads;
  // selected affiliations must still be fenced on world revision changes.
  {
   const ctx=await browser.newContext(),page=await ctx.newPage();
@@ -823,8 +835,8 @@ try{
    await roster.bringToFront();
    await roster.locator('.club-roster-player-link').filter({hasText:'Synthetic Player'}).waitFor();
    assert.equal(rosterGets,2,'One accepted contract write triggers exactly one fresh Roster GET');
-   await roster.locator('[data-club-roster-view="technical"]').click();
-   await roster.waitForURL(u=>u.searchParams.get('view')==='technical');
+   await roster.locator('[data-club-roster-view="attributes"]').click();
+   await roster.waitForURL(u=>u.searchParams.get('view')==='attributes'&&u.searchParams.get('group')==='technical');
    assert.equal(rosterGets,2,'Roster subview reuses the refreshed data');
    await admin.bringToFront();
    await admin.locator('[data-contracts-check="1"]').waitFor();
@@ -841,8 +853,10 @@ try{
   }finally{await ctx.close()}
  }
 
- console.log('Dedicated Admin page browser contracts PASS: '+checks+' cases');
+ timing.mark('cases-complete');
+  console.log('Dedicated Admin page browser contracts PASS: '+checks+' cases');
 }finally{
  preview.closeAllConnections();await new Promise(resolve=>preview.close(resolve));
  await browser.close();
+  timing.mark('cleanup-complete');timing.report();
 }

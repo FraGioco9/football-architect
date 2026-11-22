@@ -31,12 +31,12 @@
       "permanent": true
     },
     {
-      "source": "/:page(dashboard|calendar|settings|admin|competitions|players)/",
+      "source": "/:page(dashboard|calendar|settings|admin|competitions|players|matches)/",
       "destination": "/:page",
       "permanent": true
     },
     {
-      "source": "/:page(dashboard|calendar|settings|admin|competitions|players)/index.html",
+      "source": "/:page(dashboard|calendar|settings|admin|competitions|players|matches)/index.html",
       "destination": "/:page",
       "permanent": true
     },
@@ -125,7 +125,19 @@
           "value": "stats"
         }
       ],
-      "destination": "/clubs/:country/:club/stats",
+      "destination": "/clubs/:country/:club/records",
+      "permanent": true
+    },
+    {
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)",
+      "has": [
+        {
+          "type": "query",
+          "key": "view",
+          "value": "records"
+        }
+      ],
+      "destination": "/clubs/:country/:club/records",
       "permanent": true
     },
     {
@@ -190,7 +202,19 @@
           "value": "stats"
         }
       ],
-      "destination": "/clubs/:country/:club/stats",
+      "destination": "/clubs/:country/:club/records",
+      "permanent": true
+    },
+    {
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/",
+      "has": [
+        {
+          "type": "query",
+          "key": "view",
+          "value": "records"
+        }
+      ],
+      "destination": "/clubs/:country/:club/records",
       "permanent": true
     },
     {
@@ -255,7 +279,19 @@
           "value": "stats"
         }
       ],
-      "destination": "/clubs/:country/:club/stats",
+      "destination": "/clubs/:country/:club/records",
+      "permanent": true
+    },
+    {
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/index.html",
+      "has": [
+        {
+          "type": "query",
+          "key": "view",
+          "value": "records"
+        }
+      ],
+      "destination": "/clubs/:country/:club/records",
       "permanent": true
     },
     {
@@ -276,18 +312,33 @@
       "permanent": true
     },
     {
-      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/:view(overview|roster|fixtures|stats|history)/",
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/:view(overview|roster|fixtures|records|history)/",
       "destination": "/clubs/:country/:club/:view",
       "permanent": true
     },
     {
-      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/:view(overview|roster|fixtures|stats|history)/index.html",
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/:view(overview|roster|fixtures|records|history)/index.html",
       "destination": "/clubs/:country/:club/:view",
       "permanent": true
     },
     {
       "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards)/",
       "destination": "/competitions/:cup/:view",
+      "permanent": true
+    },
+    {
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats/index.html",
+      "destination": "/clubs/:country/:club/records",
+      "permanent": true
+    },
+    {
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats/",
+      "destination": "/clubs/:country/:club/records",
+      "permanent": true
+    },
+    {
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats",
+      "destination": "/clubs/:country/:club/records",
       "permanent": true
     }
   ],
@@ -309,7 +360,7 @@
       "destination": "/clubs/index.html"
     },
     {
-      "source": "/:page(dashboard|calendar|settings|admin|competitions|players)",
+      "source": "/:page(dashboard|calendar|settings|admin|competitions|players|matches)",
       "destination": "/:page/index.html"
     },
     {
@@ -333,7 +384,7 @@
       "destination": "/competitions/:cup/index.html"
     },
     {
-      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/:view(overview|roster|fixtures|stats|history)",
+      "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/:view(overview|roster|fixtures|records|history)",
       "destination": "/clubs/_shared/index.html"
     }
   ],
@@ -373,6 +424,45 @@
         {
           "key": "X-Robots-Tag",
           "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/assets/clubs/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, s-maxage=300, must-revalidate"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/assets/competitions/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, s-maxage=300, must-revalidate"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/assets/players/portraits/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=60, s-maxage=60, must-revalidate"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
         }
       ]
     }

@@ -38,8 +38,8 @@ test('Roster in-page audit distinguishes pushState navigation from document relo
  assert.equal(scenario.routePattern.test('/clubs/it/1/roster'),true);
  assert.equal(scenario.routePattern.test('/clubs/it/1/roster?view=info'),true);
  assert.equal(scenario.routePattern.test('/clubs/it/1/overview'),false);
- assert.equal(scenario.selector,'a[data-club-roster-view="technical"]');
- assert.equal(scenario.expectedView,'technical');
+ assert.equal(scenario.selector,'a[data-club-roster-view="attributes"]');
+ assert.equal(scenario.expectedView,'attributes');
 });
 
 test('saved route metadata hides filter values and opaque path identifiers',()=>{

@@ -1156,3 +1156,14 @@ test('Players aborts superseded list and Load more GETs without publishing obsol
  assert.equal(runner.snapshot().appendPending,false);
  assert.equal(rendered.length,2,'only latest results render');
 });
+
+
+test('#734 Players count/page use a single D1 batch on the first segment only',()=>{
+ const server=read('backend/src/public-players-read.ts');
+ assert.match(server,/if\(page===1\)\{/);
+ assert.match(server,/await db\.batch\(\[/);
+ assert.match(server,/db\.prepare\(countSql\)\.bind\(\.\.\.values\)/);
+ assert.match(server,/db\.prepare\(pageSql\)\.bind\(\.\.\.values,PUBLIC_PLAYER_PAGE_SIZE,0\)/);
+ assert.match(server,/count=countRow\?\.n\?\?0/,'subsequent offset pages keep live server-side counts');
+ assert.match(server,/if\(after\.generation!==before\.generation\)/,'world-reset fence unchanged');
+});

@@ -108,7 +108,7 @@ export function validateAuthoritativeSeason(input,context,manifest){
  const playerIdentity=new Set(),playerTotals=new Map();
  for(const p of stats.players){
   if(!object(p)||!count(p.playerId)||p.playerId===0||!ids.includes(p.clubId)||
-     !count(p.appearances)||p.appearances===0||!count(p.starts)||p.starts!==p.appearances||
+     !count(p.appearances)||p.appearances===0||!count(p.starts)||p.starts>p.appearances||
      // Frozen V2 appearances may be substituted before 90'; each counted
      // appearance contributes 1..120 playing minutes, never a mandatory 90.
      !count(p.minutes)||p.minutes<p.appearances||p.minutes>120*p.appearances||
@@ -116,8 +116,13 @@ export function validateAuthoritativeSeason(input,context,manifest){
      (typeof p.displayName!=='string'||!p.displayName.trim()))fail();
   if(p.nationality!==undefined&&p.nationality!==null&&
      (typeof p.nationality!=='string'||!/^[A-Z]{3}$/.test(p.nationality)))fail();
-  for(const metric of ['assists','redCards','cleanSheets'])if(p[metric]!==undefined&&p[metric]!==null&&(!count(p[metric])||metric==='cleanSheets'&&p[metric]>p.appearances))fail();
+  if(p.subAppearances!==undefined&&p.subAppearances!==null&&
+   (!count(p.subAppearances)||p.starts+p.subAppearances!==p.appearances))fail();
+  for(const metric of ['assists','yellowCards','redCards','cleanSheets'])if(p[metric]!==undefined&&p[metric]!==null&&(!count(p[metric])||metric==='cleanSheets'&&p[metric]>p.appearances))fail();
   if(p.ratedAppearances!==undefined&&(!count(p.ratedAppearances)||p.ratedAppearances>p.appearances))fail();
+   if(p.mvpCoveredAppearances!==undefined&&(!count(p.mvpCoveredAppearances)||p.mvpCoveredAppearances>p.appearances))fail();
+   if(p.mvpAwards!==undefined&&p.mvpAwards!==null&&(!count(p.mvpAwards)||
+     p.mvpAwards>(p.mvpCoveredAppearances??0)||(p.mvpAwards===0&&p.mvpCoveredAppearances!==p.appearances)))fail();
   if(p.averageRating!==undefined&&p.averageRating!==null&&
     (typeof p.averageRating!=='number'||!Number.isFinite(p.averageRating)||p.averageRating<4||p.averageRating>10||!p.ratedAppearances))fail();
   const identity=p.clubId+':'+p.playerId;
@@ -126,13 +131,13 @@ export function validateAuthoritativeSeason(input,context,manifest){
   // eleven DISTINCT starters may each appear in that same match.
   const team=allTotals.get(p.clubId);
   if(!team||p.appearances>team.played)fail();
-  const total=playerTotals.get(p.clubId)??{appearances:0,goals:0};
-  total.appearances+=p.appearances;total.goals+=p.goals;
+  const total=playerTotals.get(p.clubId)??{appearances:0,starts:0,goals:0};
+  total.appearances+=p.appearances;total.starts+=p.starts;total.goals+=p.goals;
   playerTotals.set(p.clubId,total);
  }
  for(const [clubId,p] of playerTotals){
   const t=allTotals.get(clubId);
-  if(!t||p.appearances>11*t.played||p.goals>t.goalsFor)fail();
+  if(!t||p.appearances>17*t.played||p.starts>11*t.played||p.goals>t.goalsFor)fail();
  }
  if(!Array.isArray(d.calendar)||d.calendar.length!==56)fail();
  d.calendar.forEach((day,i)=>{
@@ -186,15 +191,18 @@ export function adaptAuthoritativeSeason(source,context,manifest){
  const statistics={overview:{matchesPlayed:d.statistics.matchesPlayed,totalGoals:d.statistics.totalGoals,goalsPerMatch:d.statistics.goalsPerMatch},
   standings:d.standings.rows.map(r=>({club:catalog.get(r.clubId),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,gf:r.goalsFor,ga:r.goalsAgainst,gd:r.goalDifference,pts:r.points,recent:recentDetails(r.clubId)})),
   teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),
-  players:d.statistics.players.map(p=>({playerId:p.playerId,name:p.displayName??null,
-   clubKey:p.clubId,nationality:p.nationality??null,appearances:p.appearances,starts:p.starts,subAppearances:p.appearances-p.starts,
-   minutes:p.minutes,goals:p.goals,assists:p.assists??null,redCards:p.redCards??null,cleanSheets:p.cleanSheets??null,
+  players:d.statistics.players.map(p=>({playerId:p.playerId,name:p.displayName??null,...(d.history||d.playerRecordVersion===1?{archivedName:typeof p.archivedName==="string"?p.archivedName:null}:{}),
+   clubKey:p.clubId,nationality:p.nationality??null,appearances:p.appearances,starts:p.starts,subAppearances:p.subAppearances??null,
+   minutes:p.minutes,goals:p.goals,assists:p.assists??null,yellowCards:p.yellowCards??null,
+   redCards:p.redCards??null,cleanSheets:p.cleanSheets??null,
    ratedAppearances:p.ratedAppearances??0,averageRating:p.averageRating??null,
+    mvpAwards:p.mvpAwards??null,mvpCoveredAppearances:p.mvpCoveredAppearances??0,
    goalsAssistsPer90:typeof p.assists==='number'&&p.minutes>0?(p.goals+p.assists)*90/p.minutes:null}))};
  const currentChoice=viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?
   globalThis.faCompetitionRules.currentFixtureChoice(definition,globalThis.faWorldCalendarModel.projectCompetition(d.season,definition.id),{current:{season:source.world.seasonNumber,day:source.world.day}}):null;
  return freeze({season:d.season,rulesVersion:d.rulesVersion,participants,fixtures:definition.category==='international'?fixtures:fixtures.filter(f=>f.phaseId==='league'),postseason,results,statistics,status:source.status,
-  history:d.history?{season:d.history.season,archiveHash:d.history.archiveHash,closedAt:d.history.closedAt,championClubId:d.history.championClubId}:null,
+  playerCoverage:d.playerRecordVersion===1&&d.playerCoverage===true,
+  history:d.history?{season:d.history.season,archiveHash:d.history.archiveHash,closedAt:d.history.closedAt,playerCoverage:d.history.playerRecordVersion===1&&d.history.playerCoverage===true,championClubId:d.history.championClubId}:null,
   provenance:{kind:'authoritative',sourceRef:source.provenance.sourceRef,resultAuthority:source.provenance.resultAuthority},world:source.world,seasonState:viewedSeasonState(source),
   currentMatchday:viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?currentChoice:null});
 }

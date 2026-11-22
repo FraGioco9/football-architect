@@ -76,6 +76,13 @@ test('unknown paths fail closed and direct dependent contracts are selected',asy
  assert.ok(classifyImpact(['assets/competition-overview-teams.mjs']).tests.includes('tests/competition-overview-teams.test.mjs'));
 });
 
+test('stacked PRs skip FULL gate, but main-base verification remains strict on base edits',()=>{
+ const source=readFileSync('.github/workflows/ci-opt-03-full-gate.yml','utf8');
+ assert.match(source,/types: \[[^\]]*edited\]/);
+ assert.match(source,/if: \$\{\{ github\.event_name == 'workflow_dispatch' \|\| github\.event\.pull_request\.base\.ref == 'main' \}\}/);
+ assert.match(source,/pr\.base\.ref!=='main'/);
+});
+
 test('gate executes its tested observer inline, without evaluating candidate code',()=>{
  const source=readFileSync('.github/workflows/ci-opt-03-full-gate.yml','utf8');
  const observer=readFileSync('tools/ci-full-evidence.cjs','utf8').split('\n').filter(l=>!l.startsWith('module.exports=')).join('\n').trim();
@@ -109,3 +116,58 @@ test('account engine matrix is independent of Worker contracts and preserves bot
  for(const suite of ['player-safe-return','account-pages','account-feedback','account-usability','control-focus','profile-navigation','account-interaction','account-layout','competition-season-zero-club-links'])assert.ok(matrix.includes('tests/'+suite+'-browser.mjs'),suite);
  assert.match(matrix,/tests\/admin-settings-browser\.mjs/);assert.match(matrix,/FA_AUTH_BROWSER: \$\{\{ matrix.engine \}\}/);
 });
+// TEST-SUITE-02 (#738): the real five-action Chrome journey is not optional on
+// ordinary Match Engine PRs. This contract protects the workflow, not just the
+// existence of a test file that could silently remain skipped forever.
+function verifyMatchEngineActionLabGate(source){
+ const job=source.split(/\r?\n  match-engine:\r?\n/)[1]?.split(/\r?\n  [a-z][a-z0-9-]*:\r?\n/)[0];
+ assert.ok(job,'ME-01 must retain its match-engine job');
+ assert.match(source,/^on:\r?\n  pull_request:\r?\n    paths:\r?\n      - 'match-engine\/\*\*'$/m,
+  'Normal Match Engine file edits must trigger ME-01');
+ assert.match(source,/^      - '\.github\/workflows\/match-engine-01\.yml'$/m,
+  'Changes to the ME-01 workflow must trigger its own test');
+ assert.match(job,/ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}/,
+  'Checkout must use exact PR HEAD');
+ assert.match(job,/      - name: Verify exact PR HEAD\r?\n/);
+ for(const command of [
+  'npm --prefix match-engine test',
+  'node --test tests/app-subdomain-preview.test.mjs tests/app-canonical-routes.test.mjs',
+  'node --test match-engine/tests/lab-viewport-browser.test.mjs'
+ ])assert.ok(job.includes('run: '+command),'ME-01 lost retained check: '+command);
+ const marker='      - name: Five Action LABs clean-stack Chrome interaction';
+ assert.equal(job.split(marker).length,2,'Exactly one Action LAB Chrome step is required');
+ const stepStart=job.indexOf(marker),rest=job.slice(stepStart);
+ const nextStep=rest.search(/\r?\n      - (?:name|uses):/);
+ const actionStep=nextStep<0?rest:rest.slice(0,nextStep);
+ assert.doesNotMatch(actionStep,/^\s*if:/m,'Action LAB must not be branch-gated or skipped');
+ assert.doesNotMatch(actionStep,/^\s*continue-on-error:/m,'Action LAB failure must be fatal');
+ assert.match(actionStep,/^\s*run: node --test match-engine\/tests\/action-labs-browser\.test\.mjs\s*$/m,
+  'ME-01 must execute real Action LAB Chrome, not a placeholder');
+ const viewport=job.indexOf('      - name: Browser viewport fit (Chrome, Advanced settings open and closed)');
+ const benchmark=job.indexOf('      - name: Measured local CPU / memory sample');
+ assert.ok(viewport>=0&&viewport<stepStart&&benchmark>stepStart,
+  'Keep localhost:2000 browser steps sequential: viewport, actions, benchmark');
+}
+
+test('ME-01 requires the five Action LAB journeys on every matching PR HEAD',()=>{
+ verifyMatchEngineActionLabGate(readFileSync('.github/workflows/match-engine-01.yml','utf8'));
+});
+test('ME-01 workflow contract detects historical branch skips and silent coverage loss',()=>{
+ const source=readFileSync('.github/workflows/match-engine-01.yml','utf8');
+ const command='        run: node --test match-engine/tests/action-labs-browser.test.mjs';
+ const marker='      - name: Five Action LABs clean-stack Chrome interaction';
+ const altered=[
+  ['historic branch-name gate',source.replace(command,"        if: branch-only\n"+command)],
+  ['continue-on-error',source.replace(command,'        continue-on-error: true\n'+command)],
+  ['placeholder command',source.replace(command,'        run: echo skipped')],
+  ['missing Action LAB step',source.replace(marker+'\n'+command,'')],
+  ['no normal Match Engine path',source.replace("      - 'match-engine/**'","      - 'docs/**'")],
+  ['lost viewport prerequisite',source.replace('      - name: Browser viewport fit (Chrome, Advanced settings open and closed)','      - name: Deprecated viewport')],
+  ['lost exact PR HEAD',source.replace('ref: '+'$'+'{{ github.event.pull_request.head.sha }}','ref: main')]
+ ];
+ for(const [reason,broken] of altered){
+  assert.notEqual(broken,source,'Mutation fixture must change workflow: '+reason);
+  assert.throws(()=>verifyMatchEngineActionLabGate(broken),{name:'AssertionError'},reason);
+ }
+});
+

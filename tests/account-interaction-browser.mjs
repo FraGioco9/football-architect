@@ -1,19 +1,24 @@
 // Real account UI, isolated synthetic API responses: never sends email or uses remote D1.
 import assert from 'node:assert/strict';
+import {createBrowserTiming} from '../tools/ci-browser-timing.mjs';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
+import {runIndependentAccountMatrix} from '../tools/ci-opt-06-account-matrix.mjs';
 const playwright=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright');
 const engine=process.env.FA_AUTH_BROWSER||'chromium';
+const timing=createBrowserTiming('account-interaction',engine);
 const browser=await playwright[engine].launch({headless:true,...(process.env.FA_ACCOUNT_CHROME&&engine==='chromium'?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
+timing.mark('browser-ready');
 const server=createPreviewServer({subdomains:true,devPreview:false});let checks=0;
 const surfaces='input:not([type=hidden]),textarea,.language-trigger';
 try{
- server.listen(2000,'127.0.0.1');await once(server,'listening');
- for(const language of ['en','de','es','fr','it'])for(const theme of ['dark','light'])for(const mobile of [false,true]){
+ server.listen(2000,'127.0.0.1');await once(server,'listening');timing.mark('preview-ready');
+ await runIndependentAccountMatrix(['en','de','es','fr','it'],['dark','light'],[false,true],async({language,theme,variant:mobile})=>{
+  const contextStart=timing.now();
   const context=await browser.newContext({viewport:{width:mobile?390:1440,height:1000},isMobile:mobile,hasTouch:mobile});
   try{
    await context.addInitScript(({language,theme})=>{localStorage.setItem('football-architect:language',language);localStorage.setItem('football-architect:theme',theme);},{language,theme});
-   const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+   const page=await context.newPage();timing.sample('context-page-ready',timing.now()-contextStart);const errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.route('**/api/player/**',r=>{
     const path=new URL(r.request().url()).pathname;
     const body=path.endsWith('/session')?{authenticated:true,actor:{id:'synthetic-player',email:'synthetic@example.invalid'},csrfToken:'a'.repeat(64),permissions:[]}:path.endsWith('/sessions')?{sessions:[]}:{};
@@ -22,9 +27,11 @@ try{
    for(const route of ['register','recover','verify-email','account','login']){
     // Only account home gets a restored session; login remains visible.
     if(route==='login')await page.route('**/api/player/session',r=>r.fulfill({status:401,body:'{}',contentType:'application/json'}));
+    const routeStart=timing.now();
     await page.goto('http://app.localhost:2000/account/'+(route==='account'?'':route+'/'));
     await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
     if(route==='account')await page.locator('#protected[aria-busy=false]').waitFor();
+    timing.sample('route-ready',timing.now()-routeStart);
     assert.equal(new URL(page.url()).pathname.endsWith('/'),false,'Account URL is canonical');
     assert.equal(await page.locator('.fa-shell-topbar').count(),1);
     assert.equal(await page.locator('#app-nav-profile[aria-current=page]').count(),1);
@@ -76,6 +83,10 @@ try{
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);checks++;console.log(engine,language,theme,mobile?'mobile':'desktop',route,'PASS');
    }
   }finally{await context.close();}
- }
- console.log(engine+' account interaction matrix PASS: '+checks+' cases');
-}finally{server.closeAllConnections();await new Promise(r=>server.close(r));await browser.close();}
+ },{maxConcurrent:engine==='webkit'?1:2});
+ timing.mark('cases-complete');
+  console.log(engine+' account interaction matrix PASS: '+checks+' cases');
+}finally{
+ try{server.closeAllConnections();await new Promise(r=>server.close(r));await browser.close();}
+ finally{timing.mark('cleanup-complete');timing.report();}
+}

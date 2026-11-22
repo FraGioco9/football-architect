@@ -2,7 +2,9 @@
  * No HTTP/world-command entrypoint imports this module. No database batch executed here.
  */
 import {ATTRIBUTES} from './players-generator-core.mjs';
-import {simulateMatchV1,buildCandidateMatchReceiptV1,LINEUP_SIMULATOR_VERSION} from './temporary-lineup-v1.mjs';
+import {simulateMatchV1,attachTestRatingsV1,buildCandidateMatchReceiptV1,LINEUP_SIMULATOR_VERSION} from './temporary-lineup-v1.mjs';
+import {planRecordedMatchTimelineV1} from './match-recorded-events-v1.mjs';
+import {sealMatchMvpV1} from './match-mvp-v1.mjs';
 import {resolvePublishedKnockoutV1} from './match-knockout-binding-v1.mjs';
 
 const clubPattern=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/;
@@ -115,17 +117,25 @@ export async function planMatchSimulationReceiptV1(db,{match,world,seed,context,
  const knockout=league?null:await resolvePublishedKnockoutV1(db,{
   match,world,published,context,pendingTie
  });
- const outcome=await simulateMatchV1({
+ const score=await simulateMatchV1({
   homeRoster:snapshot.homeRoster,awayRoster:snapshot.awayRoster,
   matchKey:match.fixtureId,seed,homeClubId:match.homeClubId,
   awayClubId:match.awayClubId,context
  });
+ // Score/ET/shootout stay under the ONE canonical temporary-lineup-v1 authority.
+ // Official events are computed once from the frozen source roster BEFORE the
+ // receipt is atomically persisted, never on a public read or replay.
+ const timeline=await planRecordedMatchTimelineV1({result:score,
+  homeRoster:snapshot.homeRoster,awayRoster:snapshot.awayRoster});
+ const outcome=attachTestRatingsV1({...score,...timeline,
+  home:{...score.home,...timeline.home},away:{...score.away,...timeline.away}});
  // Identity is frozen AFTER simulation, so names never influence seeded scores.
  const identities=new Map([...snapshot.homeRoster,...snapshot.awayRoster].map(p=>[p.id,p]));
  outcome.playerIdentityVersion='player-identity-v1';
  outcome.playerIdentities=[...outcome.home.appearances,...outcome.away.appearances].map(p=>({
   playerId:p.playerId,name:identities.get(p.playerId)?.name??null,nationality:identities.get(p.playerId)?.nationality??null
  })).sort((a,b)=>a.playerId-b.playerId);
+ sealMatchMvpV1(outcome); // Versioned MVP proof, sealed with this new receipt.
  const candidate=await buildCandidateMatchReceiptV1({
   matchId:match.matchId,fixtureId:match.fixtureId,competitionId:match.competitionId,
   season:match.season,day:match.day,generation:world.generation,sourceHash:match.sourceHash,
@@ -133,7 +143,7 @@ export async function planMatchSimulationReceiptV1(db,{match,world,seed,context,
  },outcome);
  if(candidate.authority!=='candidate-only'||candidate.algorithmVersion!==LINEUP_SIMULATOR_VERSION)
   fail('candidate evidence');
- const receipt={schemaVersion:1,authority:'official',algorithmVersion:LINEUP_SIMULATOR_VERSION,
+ const receipt={schemaVersion:candidate.schemaVersion,authority:'official',algorithmVersion:LINEUP_SIMULATOR_VERSION,
   rosterSourceDigest:snapshot.sourceDigest,sourceCandidateDigest:candidate.receiptDigest,
   fixture:candidate.fixture,result:candidate.result};
  const receiptHash=await digest(receipt);

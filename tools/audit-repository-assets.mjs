@@ -43,7 +43,7 @@ export function inventoryAssetReferences(root=".",io={readdirSync,readFileSync})
     if(references.length)return {path,status:"literal-reference",evidence:references.slice(0,6)};
     if(path.startsWith("assets/flags/"))return {path,status:"dynamic-or-catalogue",evidence:["tools/generate-app-pages.mjs derives flagAsset from country ID","assets/flags/SOURCE.md records upstream and licensing provenance"]};
     if(path.startsWith("assets/clubs/"))return {path,status:"dynamic-or-catalogue",evidence:["tools/generate-club-pages.mjs produces clubCrests manifest from clubCrestAssets","assets/club-crests.js enhances dynamic crest hosts"]};
-    if(path.startsWith("assets/divisions/"))return {path,status:"dynamic-or-catalogue",evidence:["tools/generate-app-pages.mjs uses division logos in generated HTML"]};
+    if(path.startsWith("assets/competitions/"))return {path,status:"dynamic-or-catalogue",evidence:["tools/generate-app-pages.mjs uses division logos in generated HTML"]};
     return {path,status:"unresolved",evidence:["no literal path reference: not proof of nonuse"]};
   });
   return {
@@ -53,7 +53,7 @@ export function inventoryAssetReferences(root=".",io={readdirSync,readFileSync})
     totalFiles:paths.length,totalAssets:assets.length,sourceFilesScanned:sourceText.size,
     explicitlyReferenced:assets.filter(p=>mentions.get(p).length).length,
     unresolved:assets.filter(p=>!mentions.get(p).length).map(path=>({
-      path,reason:path.startsWith("assets/flags/")?"flag-code-resolved-dynamically":path.startsWith("assets/clubs/")?"crest-path-resolved-dynamically":path.startsWith("assets/divisions/")?"division-artwork-catalogue-or-generator":"requires-dynamic-and-publication-review"
+      path,reason:path.startsWith("assets/flags/")?"flag-code-resolved-dynamically":path.startsWith("assets/clubs/")?"crest-path-resolved-dynamically":path.startsWith("assets/competitions/")?"division-artwork-catalogue-or-generator":"requires-dynamic-and-publication-review"
     })),
     sampleReferences:assets.filter(p=>mentions.get(p).length).slice(0,30).map(path=>({path,referencedBy:mentions.get(path).slice(0,4)}))
   };

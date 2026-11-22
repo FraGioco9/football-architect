@@ -9,8 +9,8 @@
 const countries=Object.freeze(["it","eng","es","de","fr","pt","nl","br"]);
 const competitionViews=Object.freeze(["overview","standings","postseason","fixtures","stats","history","rules","awards","teams"]);
 const cupViews=Object.freeze(["standings","postseason","fixtures","stats","history","rules","awards"]);
-const clubViews=Object.freeze(["overview","roster","fixtures","stats","history"]);
-const pages=Object.freeze(["dashboard","calendar","settings","admin","admin/calendar","admin/players","admin/contracts","admin/players/preview","admin/players/preview/player","competitions","players","clubs"]);
+const clubViews=Object.freeze(["overview","roster","fixtures","records","history"]);
+const pages=Object.freeze(["dashboard","calendar","settings","admin","admin/calendar","admin/players","admin/contracts","admin/players/preview","admin/players/preview/player","competitions","players","clubs","matches"]);
 const country="(?:it|eng|es|de|fr|pt|nl|br)";
 const division=new RegExp("^/competitions/("+country+"-[12])(?:/([^/]+))?/?$");
 const cup=/^\/competitions\/(int-[12])(?:\/([^/]+))?\/?$/;
@@ -23,7 +23,7 @@ function parseRoute(pathname){
  let m=division.exec(pathname);
  if(m){const view=m[2]||"overview";if(!competitionViews.includes(view))return null;const base="/competitions/"+m[1],canonical=base+"/"+view;return {kind:"competition",base,view,canonical,redirect:pathname!==canonical};}
  m=club.exec(pathname);
- if(m){const view=m[3]||"overview";if(!clubViews.includes(view))return null;const base="/clubs/"+m[1]+"/"+m[2],canonical=base+"/"+view;return {kind:"club",base,view,canonical,redirect:pathname!==canonical};}
+ if(m){const view=m[3]==="stats"?"records":m[3]||"overview";if(!clubViews.includes(view))return null;const base="/clubs/"+m[1]+"/"+m[2],canonical=base+"/"+view;return {kind:"club",base,view,canonical,redirect:pathname!==canonical};}
  m=player.exec(pathname);
  if(m&&Number.isSafeInteger(Number(m[1]))){const id=Number(m[1]),canonical="/players/"+id;return {kind:"player",id,base:canonical,canonical,redirect:pathname!==canonical};}
  m=match.exec(pathname);

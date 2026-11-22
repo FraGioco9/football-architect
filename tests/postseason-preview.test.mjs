@@ -28,7 +28,11 @@ test('CONFIG-PARITY: canonical DEV scores, tables and brackets retain their pre-
  // Sporting logic and results remain unchanged; the owner-authorized ENG-2 name alters display labels
  // in the serialized DEV snapshot, so the identity-inclusive fixture hash has been rebaselined.
  const records=divisions.map(d=>{const {rulesVersion,rulesSnapshot,...sporting}=data.createPreviewStandings(d,30,1);return [sporting,data.createPreviewPostseason(d,33,1)]});
- assert.equal(createHash('sha256').update(JSON.stringify(records)).digest('hex'),'d2bf39303d92cfd3fc14e65b8652b20c0cdfe6de9165afeedae5a0f173830419');
+ // The canonical compactName is presentation-only. Strip this one new field
+ // from the serialized snapshot so the original sporting/score hash remains
+ // protected rather than silently rebaselining a changed simulation.
+ const sportingBytes=JSON.stringify(records,(key,value)=>key==='compactName'?undefined:value);
+ assert.equal(createHash('sha256').update(sportingBytes).digest('hex'),'d2bf39303d92cfd3fc14e65b8652b20c0cdfe6de9165afeedae5a0f173830419');
 });
 
 test('CONFIG-DEV: configured semifinal ranks drive participants without tier inference',()=>{

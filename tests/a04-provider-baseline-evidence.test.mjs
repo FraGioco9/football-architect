@@ -260,7 +260,7 @@ test('A04 browser baseline: public routes, provider states, delayed publications
    await cmd('Page.navigate',{url:base+path});
    await wait("window.__a04DocumentToken!=="+JSON.stringify(previous??null)+"&&location.origin==="+JSON.stringify(base)+"&&location.pathname==="+JSON.stringify(path.split('?')[0])+"&&window.faCompetitionContext?.selectedSeason==="+season+"&&document.readyState==='complete'&&window.faCompetitionContext?.definition.id==="+JSON.stringify(id)+"&&!!window.faFixtures&&!!window.faCompetitionStats&&!!window.faHistoryPlayerRecords");
   }
-  const snapshot=()=>run(`(()=>{const c=window.faCompetitionContext;return {id:c.definition.id,season:c.selectedSeason,data:c.seasonData,stats:[...document.querySelectorAll('#competition-panel-stats .app-competition-stat-value')].filter(n=>!n.closest('[data-competition-skeleton-root]')).map(n=>n.textContent),fixtures:[...document.querySelectorAll('[data-fixture-match]')].map(n=>[n.dataset.fixtureMatch,n.querySelector('.app-fixture-score')?.textContent]),qualified:document.getElementById('app-postseason-bracket')?.dataset.postseasonQualified||null,history:[...document.querySelectorAll('[data-history-filled="true"]')].map(n=>n.dataset.historyPlayerRecord)}})()`);
+  const snapshot=()=>run(`(()=>{const c=window.faCompetitionContext;return {id:c.definition.id,season:c.selectedSeason,data:c.seasonData,stats:[...document.querySelectorAll('#competition-panel-stats .app-competition-stat-value')].filter(n=>!n.closest('[data-competition-skeleton-root]')).map(n=>n.textContent),fixtures:[...document.querySelectorAll('[data-fixture-match]')].map(n=>[n.dataset.fixtureMatch,n.querySelector('.app-fixture-score')?.textContent]),qualified:document.getElementById('app-postseason-bracket')?.dataset.postseasonQualified||null,history:[...document.querySelectorAll('[data-history-player-record][data-history-filled="true"]')].map(n=>n.dataset.historyPlayerRecord)}})()`);
   await t.test('E1: all 18 Static contexts expose empty Stats/Fixtures/History without protected requests',async()=>{
    for(const entry of catalogue){
     await visit(origin,entry.id);
@@ -333,7 +333,9 @@ test('A04 browser baseline: public routes, provider states, delayed publications
   });
   // Catches a removed revision guard or a clock/navigation update that replaces historical records.
   await t.test('A06-12 X07/X09: historical navigation and clock advance reject obsolete provider publications',async()=>{
-   const records=()=>run("[...document.querySelectorAll('[data-history-filled=\"true\"]')].map(n=>[n.dataset.historyPlayerRecord,n.textContent])");
+   // Only canonical player-record entries belong to this lease-isolation probe.
+// Other Records UI summaries can be filled without being player records.
+   const records=()=>run("[...document.querySelectorAll('[data-history-player-record][data-history-filled=\"true\"]')].map(n=>[n.dataset.historyPlayerRecord,n.textContent])");
    const history={source:'canonical',competitionId:'IT-1',coverage:'complete',provenance:{approved:true},seasons:[{
     seasonId:1,status:'completed',dataStatus:'approved',playerStatsComplete:true,rulesVersion:definition.rules.version,rulesSnapshot:definition.rules,
     playerStats:[{playerId:'a06-player',playerName:'A06 Historical Player',countryId:'IT',clubId:1,goals:3,assists:1,appearances:2,cleanSheets:0}]}]};

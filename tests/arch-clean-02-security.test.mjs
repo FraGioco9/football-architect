@@ -7,8 +7,9 @@ import '../assets/world-clock-adapter.js';
 const hosting=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
 
 test('ARCH-CLEAN-02 security: approved hosting routes include exactly two Players-preview redirects',()=>{
-  assert.equal(hosting.redirects.length,37);
+  assert.equal(hosting.redirects.length,43);
   assert.deepEqual(hosting.redirects[0],{source:'/matches/:id([1-9][0-9]*)/',destination:'/matches/:id',permanent:true});
+  for(const suffix of ['', '/', '/index.html'])assert.ok(hosting.redirects.some(rule=>rule.source.endsWith('/stats'+suffix)&&rule.destination==='/clubs/:country/:club/records'&&rule.permanent));
   for(const suffix of ['/', '/index.html'])assert.deepEqual(hosting.redirects.find(route=>route.source==='/admin/players/preview'+suffix),{source:'/admin/players/preview'+suffix,destination:'/admin/players/preview',permanent:true});
   assert.equal(hosting.rewrites.length,11);
   assert.deepEqual(hosting.rewrites[0],{source:'/matches/:id([1-9][0-9]*)',destination:'/matches/_shared/index.html'});

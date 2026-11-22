@@ -1,4 +1,4 @@
-// Public History consumes only independently verified, closed-season sporting projections.
+// Public History consumes verified results from archived seasons and the current sporting day.
 // It never reads Admin routes or infers a champion from an active season.
 import {validateAuthoritativeSeason,adaptAuthoritativeSeason} from './authoritative-season.mjs';
 
@@ -8,11 +8,14 @@ const positive=(n,key)=>key==='historyBestGoalDifference'&&n>0?'+'+n:String(n);
 
 export function historyViewModel(context){
  const data=context?.seasonData,history=data?.history;
- if(data?.provenance?.kind!=='authoritative'||(data.seasonState?.phase??data.world?.phase)!=='closed'||data.season!==context.selectedSeason||history?.season!==context.selectedSeason||
-    !/^[a-f0-9]{64}$/.test(history?.archiveHash||'')||!Number.isSafeInteger(history.closedAt)||history.closedAt<=0)return null;
+ if(data?.provenance?.kind!=='authoritative'||data.season!==context.selectedSeason)return null;
+ const active=data.seasonState?.phase==='active'&&data.world?.seasonNumber===data.season;
+ if(!active&&((data.seasonState?.phase??data.world?.phase)!=='closed'||history?.season!==context.selectedSeason||
+    !/^[a-f0-9]{64}$/.test(history?.archiveHash||'')||!Number.isSafeInteger(history.closedAt)||history.closedAt<=0))return null;
  const table=data.statistics?.standings,clubs=new Map((data.participants||[]).map(c=>[clubKey(c),c]));
- const champion=clubs.get(history.championClubId);
- if(!champion||!Array.isArray(table)||!table.length)return null;
+ const champion=clubs.get(history?.championClubId);
+ if((!active&&!champion)||!Array.isArray(table)||!table.length)return null;
+ if(active&&!data.statistics.teams?.some(t=>t.mp>0))return null;
  // Domestic records are based on the final 30-match league standings. For
  // international cups, league standings alone omit the verified knockout games:
  // use sealed competition-wide team totals for goals and wins, retaining the
@@ -32,10 +35,12 @@ export function historyViewModel(context){
   return {value,clubs:rows.filter(r=>r[field]===value).map(r=>r.club)};
  };
  const records={historyBestAttack:record('gf'),historyBestDefence:record('ga',true),historyMostSeasonWins:record('won'),historyMostSeasonPoints:record('pts'),historyBestGoalDifference:record('gd')};
- if(context.definition.category==='domestic'&&table.length>1)records.historyLargestTitleMargin={value:table[0].pts-table[1].pts,clubs:[champion]};
+ if(active)delete records.historyBestDefence;
+ if(!active&&context.definition.category==='domestic'&&table.length>1)records.historyLargestTitleMargin={value:table[0].pts-table[1].pts,clubs:[champion]};
  let podium;
  let semifinalLosers=[];
- if(context.definition.category==='domestic')podium=[table[0]?.club,table[1]?.club,table[2]?.club];
+ if(active)podium=[];
+ else if(context.definition.category==='domestic')podium=[table[0]?.club,table[1]?.club,table[2]?.club];
  else{
   const final=data.fixtures?.find(f=>f.phaseId==='final'&&f.homeId&&f.awayId);
   const other=final&&(final.homeId===history.championClubId?final.awayId:final.awayId===history.championClubId?final.homeId:null);
@@ -49,7 +54,7 @@ export function historyViewModel(context){
    if(eliminated.every(Boolean))semifinalLosers=eliminated;
   }
  }
- return {season:history.season,champion,podium,semifinalLosers,records,teams:totals.map(r=>({club:r.club,won:r.won,gf:r.gf,pts:r.pts})),players:null,allTime:null};
+ return {season:data.season,active,champion,podium,semifinalLosers,records,teams:totals.map(r=>({club:r.club,won:r.won,gf:r.gf,pts:r.pts})),playerCoverage:(active?data.playerCoverage:history.playerCoverage)===true,players:data.statistics.players??null,allTime:null};
 }
 
 // Every sealed season belongs to the archive: a two-season limit silently
@@ -88,7 +93,7 @@ export function historyAggregate(seasons){
  const allTime={};
  for(const [name,field] of [['historyMostTitles','titles'],['historyMostPodiums','podiums'],['historyLongestTitleStreak','streak'],['historyMostTotalWins','won'],['historyMostTotalGoals','gf'],['historyMostTotalPoints','pts']]){
   const candidates=[...teams.values()].filter(t=>field!=='podiums'||ordered.some(s=>s.podium[2]));
-  if(!candidates.length)continue;
+  if(!candidates.length||(['titles','streak'].includes(field)&&!ordered.some(s=>s.podium.length)))continue;
   const value=Math.max(...candidates.map(t=>t[field]));
   allTime[name]={value,entries:candidates.filter(t=>t[field]===value).map(t=>({club:t.club}))};
  }
@@ -97,7 +102,7 @@ export function historyAggregate(seasons){
 
 // The static History shell stays in the DOM from first paint. Only verified
 // historical values and archive rows are inserted when public reads complete.
-export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>false,document=globalThis.document,refreshRecords=()=>{},fetchJson=async(path,{signal})=>{
+export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>false,document=globalThis.document,refreshRecords=()=>{},readCachedSeason=()=>null,fetchJson=async(path,{signal})=>{
  const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});
  if(!response.ok)throw Error('Public historical season unavailable');
  return response.json();
@@ -132,6 +137,7 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
  };
  let collection=new Map(),generation='',running='',ready='',abort=null,finish=()=>{},counter=0;
  function reset(){
+  window.faHistoryPlayerRecords?.clear();
   for(const {node,html} of cards)node.innerHTML=html;
   if(archive){
    archive.innerHTML=initialArchive;
@@ -151,6 +157,7 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
    if(panel.dataset)panel.dataset.faHistoryReadState='empty';
    refreshRecords();window.faAppRenderLanguage?.();return;
   }
+  window.faHistoryPlayerRecords?.applyRecordSeasons(items);
   const aggregated=historyAggregate(items);
   for(const {node} of cards){
    const heading=node.querySelector('h5'),key=heading?.dataset.appI18n;
@@ -158,20 +165,38 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
    if(!record)continue;
    node.replaceChildren(heading,make('strong',positive(record.value,key),'app-competition-stat-value'));
    const holders=make('div',undefined,'app-history-record-holders');
-   for(const entry of record.entries){
+   for(const entry of record.entries.slice(0,1)){
     const line=make('div',undefined,'app-history-dev-record-entry');
     line.append(identity(entry.club));
     if(entry.season)line.append(seasonLink(entry.season));
     holders.append(line);
    }
+   if(record.entries.length>1){
+    const trigger=make('button','+'+(record.entries.length-1),'app-history-player-detail');
+    trigger.type='button';
+    trigger.setAttribute('aria-label',heading.textContent+' (+'+(record.entries.length-1)+')');
+    trigger.setAttribute('aria-haspopup','dialog');
+    trigger.addEventListener('click',()=>window.faHistoryDialog.openClubs({
+     title:heading.textContent,
+     value:positive(record.value,key),
+     entries:record.entries,
+     trigger,identity,seasonLink
+    }));
+    const line=holders.firstElementChild;
+    const name=line.querySelector('.app-world-club-name');
+    const label=make('span',undefined,'app-history-tied-club');
+    name.replaceWith(label);label.append(name,trigger);
+   }
    node.append(holders);
   }
-  if(archive){
+  const sealed=items.filter(item=>!item.active);
+  if(!sealed.length)archive?.querySelector('[data-history-archive-empty]')?.removeAttribute('hidden');
+  if(archive&&sealed.length){
    const heading=make('div',undefined,'app-history-dev-archive-head');
    heading.setAttribute('aria-hidden','true');
    for(const [key,word] of [['historySeasonLabel','Season'],['historyChampionLabel','Champion'],['historyRunnerUp','Runner-up'],['historyThirdPlace','Third place']])heading.append(localized('span',key,word));
    const list=make('ol',undefined,'app-history-dev-archive');
-   for(const item of [...items].reverse()){
+   for(const item of [...sealed].reverse()){
     const row=make('li'),content=make('div',undefined,'app-history-dev-season-button');
     content.append(seasonLink(item.season));
     item.podium.forEach((club,i)=>{
@@ -218,22 +243,29 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
    window.faHistorySetReady?.(false);
    return;
   }
-  const group=world.generation+':'+ctx.definition.id;
-  if(generation!==group){stop();collection.clear();generation=group;ready='';}
+  // A completed archive view is never shared across public source revisions.
+  // Even closed-season records must be revalidated after a world change.
+  const group=JSON.stringify([clock.sourceRevision,ctx.definition.id,world.generation,
+   world.revision,world.seasonNumber,world.day,world.phase]);
+  if(generation!==group){stop();collection.clear();generation=group;ready='';reset();}
   const completed=closedHistorySeasonNumbers(world);
   // Distinct world revisions must cancel obsolete in-flight historical reads.
-  const key=group+':'+world.revision+':'+completed.join(',');
   // Current-season data may be null: the canonical clock alone authorizes
   // fetching closed-season projections. Reuse current data only if world-matched.
   const own=data?.provenance?.kind==='authoritative'&&
    data.world?.generation===world.generation&&data.world.revision===world.revision?historyViewModel(ctx):null;
-  if(own)collection.set(own.season,own);
+  if(own&&!own.active)collection.set(own.season,own);
+  const fetchLive=world.phase==='active'&&ctx.selectedSeason!==world.seasonNumber;
+  const key=group+':'+world.revision+':'+completed.join(',')+':'+(own?.active?'live':fetchLive?'fetch':'archive');
+  let live=own?.active?own:null;
+  const records=()=>[...completed.map(n=>collection.get(n)),...(live?[live]:[])];
   if(ready===key){refreshRecords();window.faHistorySetReady?.(true);return;}
   if(running===key)return;
   stop();
   const missing=completed.filter(n=>!collection.has(n));
+  if(fetchLive)missing.push(world.seasonNumber);
   if(!missing.length){
-   paint(completed.map(n=>collection.get(n)));ready=key;window.faHistorySetReady?.(true);
+   paint(records());ready=key;window.faHistorySetReady?.(true);
    return;
   }
   running=key;const seq=counter,control=new AbortController();abort=control;
@@ -242,18 +274,30 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
   (async()=>{
    try{
    for(const season of missing){
-    const input=await fetchJson('/api/competitions/'+ctx.definition.id+'/seasons/'+season,{signal:control.signal});
-    if(seq!==counter||isDev())return;
-    if(input?.world?.generation!==world.generation||input.world.seasonNumber!==world.seasonNumber||input.world.revision!==world.revision)throw Error('Stale public historical world');
     const target={...ctx,selectedSeason:season,definition:ctx.currentDefinition||ctx.definition};
-    const checked=validateAuthoritativeSeason(input,target,manifest);
-    const adapted=adaptAuthoritativeSeason(checked,target,manifest);
-    const info=historyViewModel({...target,seasonData:adapted});
-    if(!info)throw Error('Unverified completed-season history');
+    // The Standings loader has already validated and adapted this snapshot.
+    // Reuse it only under the *exact* canonical world; otherwise run the
+    // original fully validated public read, including archive/receipt checks.
+    const cached=readCachedSeason({competitionId:ctx.definition.id,season,snapshot:clock})?.data;
+    const verifiedCached=cached?.season===season&&cached.provenance?.kind==='authoritative'&&
+     ['generation','revision','seasonNumber','day','phase'].every(key=>cached.world?.[key]===world[key]);
+    let info=verifiedCached?historyViewModel({...target,seasonData:cached}):null;
+    if(!info){
+     const input=await fetchJson('/api/competitions/'+ctx.definition.id+'/seasons/'+season,{signal:control.signal});
+     if(seq!==counter||isDev())return;
+     if(['generation','revision','seasonNumber','day','phase'].some(key=>input?.world?.[key]!==world[key]))
+      throw Error('Stale public historical world');
+     const checked=validateAuthoritativeSeason(input,target,manifest);
+     const adapted=adaptAuthoritativeSeason(checked,target,manifest);
+     info=historyViewModel({...target,seasonData:adapted});
+    }
+    if(seq!==counter||isDev())return;
+    if(fetchLive&&season===world.seasonNumber){live=info;continue;}
+    if(!info||info.active)throw Error('Unverified completed-season history');
     collection.set(season,info);
    }
    if(seq!==counter||isDev())return;
-   paint(completed.map(n=>collection.get(n)));ready=key;
+   paint(records());ready=key;
   }catch(e){
    if(seq!==counter||control.signal.aborted)return;
    reset();if(shell)shell.hidden=true;if(error)error.hidden=false;

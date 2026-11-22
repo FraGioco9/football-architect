@@ -1,8 +1,11 @@
+import {readPublicClubRoster} from './public-club-roster-read.ts';
 /** #613: V2-only anonymous sporting projections from independently verified
  * immutable lineup receipts. Wired to HTTP in the Draft/HOLD branch; not deployed.
  * Never re-simulates a match or reads current affiliations on a public GET.
  */
 import {frozenMatchPlayerStatistics} from './match-player-statistics.mjs';
+import {aggregateFrozenPlayerSeasonStats} from './player-season-statistics.mjs';
+import {collectFrozenPlayerMatches,paginateVerifiedPlayerMatches} from './player-match-history.mjs';
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import type {WorldV1} from './types.ts';
@@ -69,7 +72,8 @@ export function lineupTeamStatisticsV1(
 ){
  const teams=new Map(clubs.map(clubId=>[clubId,{clubId,played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,cleanSheets:0}]));
  let matchesPlayed=0,totalGoals=0;
- const players=new Map<string,{playerId:number;clubId:string;displayName:string|null;nationality:string|null;appearances:number;starts:number;subAppearances:number;minutes:number;goals:number;assists:null;redCards:null;cleanSheets:number|null;ratedAppearances:number;ratingSum:number}>();
+ const players=new Map<string,{playerId:number;clubId:string;displayName:string|null;nationality:string|null;appearances:number;starts:number;subAppearances:number;minutes:number;goals:number;assists:number|null;yellowCards:number|null;redCards:number|null;cleanSheets:number|null;ratedAppearances:number;ratingSum:number;mvpAwards:number;mvpCoveredAppearances:number;
+  assistCoverage:boolean;yellowCoverage:boolean;redCoverage:boolean;subCoverage:boolean}>();
  for(const fixture of fixtures){
   const score=results.get(fixture.id);if(!score)continue;
   const frozen=frozenMatches.get(fixture.id);
@@ -82,19 +86,36 @@ export function lineupTeamStatisticsV1(
    if(!side||!Array.isArray(side.appearances))invalid();
    for(const appearance of side.appearances){
     if(!Number.isSafeInteger(appearance.playerId)||appearance.playerId<1||
-      appearance.started!==true||!Number.isSafeInteger(appearance.minutes)||
+      typeof appearance.started!=='boolean'||!Number.isSafeInteger(appearance.minutes)||
       appearance.minutes<1||appearance.minutes>120||
       !Number.isSafeInteger(appearance.goals)||appearance.goals<0)invalid();
     const key=club+':'+appearance.playerId;
     const previous=players.get(key)??{
-     playerId:appearance.playerId,clubId:club,displayName:null,nationality:null,appearances:0,starts:0,subAppearances:0,minutes:0,goals:0,assists:null,redCards:null,cleanSheets:null,ratedAppearances:0,ratingSum:0
+     playerId:appearance.playerId,clubId:club,displayName:null,nationality:null,appearances:0,starts:0,subAppearances:0,minutes:0,goals:0,assists:0,yellowCards:0,redCards:0,cleanSheets:null,ratedAppearances:0,ratingSum:0,mvpAwards:0,mvpCoveredAppearances:0,
+     assistCoverage:true,yellowCoverage:true,redCoverage:true,subCoverage:true
     };
-    previous.appearances++;previous.starts++;previous.minutes+=appearance.minutes;
+    previous.appearances++;if(appearance.started)previous.starts++;
+    previous.minutes+=appearance.minutes;
     const detail=details.get(appearance.playerId);if(!detail)invalid();
     previous.displayName=detail.name??previous.displayName;
     previous.nationality=detail.nationality??previous.nationality;
     if(detail.cleanSheets!==null)previous.cleanSheets=(previous.cleanSheets??0)+detail.cleanSheets;
     if(detail.rating!==null){previous.ratedAppearances++;previous.ratingSum+=detail.rating;}
+     if(recorded.mvp.status!=='unavailable'){
+      previous.mvpCoveredAppearances++;
+      if(recorded.mvp.status==='awarded'&&recorded.mvp.playerId===appearance.playerId){
+       if(recorded.mvp.clubId!==club)invalid();
+       previous.mvpAwards++;
+      }
+     }
+    previous.assistCoverage&&=detail.assists!==null;
+    previous.yellowCoverage&&=detail.yellowCards!==null;
+    previous.redCoverage&&=detail.redCards!==null;
+    previous.subCoverage&&=detail.subAppearances!==null;
+    previous.assists=(previous.assists??0)+(detail.assists??0);
+    previous.yellowCards=(previous.yellowCards??0)+(detail.yellowCards??0);
+    previous.redCards=(previous.redCards??0)+(detail.redCards??0);
+    previous.subAppearances=(previous.subAppearances??0)+(detail.subAppearances??0);
     previous.goals+=appearance.goals;players.set(key,previous);
    }
   }
@@ -111,7 +132,13 @@ export function lineupTeamStatisticsV1(
  }
  return {matchesPlayed,totalGoals,goalsPerMatch:matchesPlayed?totalGoals/matchesPlayed:0,
   teams:[...teams.values()].map(t=>({...t,goalDifference:t.goalsFor-t.goalsAgainst})),
-  players:[...players.values()].map(({ratingSum,...p})=>({...p,averageRating:p.ratedAppearances?Math.round(ratingSum/p.ratedAppearances*100)/100:null})).sort((a,b)=>a.clubId.localeCompare(b.clubId,'en')||a.playerId-b.playerId),
+  players:[...players.values()].map(({ratingSum,assistCoverage,yellowCoverage,redCoverage,subCoverage,...p})=>({
+   ...p,mvpAwards:p.mvpAwards>0||p.mvpCoveredAppearances===p.appearances?p.mvpAwards:null,
+    assists:assistCoverage?p.assists:null,
+   yellowCards:yellowCoverage?p.yellowCards:null,redCards:redCoverage?p.redCards:null,
+   subAppearances:subCoverage?p.subAppearances:null,
+   averageRating:p.ratedAppearances?Math.round(ratingSum/p.ratedAppearances*100)/100:null
+  })).sort((a,b)=>a.clubId.localeCompare(b.clubId,'en')||a.playerId-b.playerId),
   playerStatus:'available' as const};
 }
 /** Names are read-only identity enrichment; all sporting totals and club IDs
@@ -196,12 +223,26 @@ async function confirmedEntrantsBeforeCalendar(db:Database,world:WorldV1,competi
  if(!binding)return invalid();
  return {binding,participantsHash:snapshot.participantsHash};
 }
-async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number){
+export function clubRosterTotals(clubKey:string,fixtures:readonly Fixture[],
+ results:ReadonlyMap<string,LineupSportingScoreV1>,frozenMatches:ReadonlyMap<string,FrozenLineupMatchV1>){
+ const played=fixtures.filter(f=>results.has(f.id)&&(f.homeClubId===clubKey||f.awayClubId===clubKey));
+ const complete=played.every(f=>{
+  const result=frozenMatches.get(f.id)?.receipt.result as unknown as LineupMatchResultV1|undefined;
+  return result?.[f.homeClubId===clubKey?'home':'away']?.kind==='real_xi';
+ });
+ const clubs=[...new Set(played.flatMap(f=>[f.homeClubId,f.awayClubId]))];
+ const totals=complete?lineupTeamStatisticsV1(clubs,played,results,frozenMatches).players.filter(p=>p.clubId===clubKey):[];
+ return {complete,totals};
+}
+async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number,rosterStats=false,includeClubRecords=false,dayReceiptIds?:Map<string,number>){
  const clubKey=competitionId.startsWith('club:')?competitionId.slice('club:'.length):null;
  const fixturesClubKey=competitionId.startsWith('club-fixtures:')?competitionId.slice('club-fixtures:'.length):null;
- if((competitionId!=='world'&&!competitionPattern.test(competitionId)&&!(clubKey&&clubPattern.test(clubKey))&&!(fixturesClubKey&&clubPattern.test(fixturesClubKey)))||!Number.isSafeInteger(selectedSeason)||selectedSeason<1||competitionId==='world'&&(typeof calendarDay!=='number'||!Number.isInteger(calendarDay)||calendarDay<1||calendarDay>56))throw new ApiError(404,'not_found');
+ const playerKey=/^player(?:-matches)?:([1-9][0-9]*)$/.exec(competitionId);
+ const playerMatches=competitionId.startsWith('player-matches:');
+ const playerId=playerKey&&Number.isSafeInteger(Number(playerKey[1]))?Number(playerKey[1]):null;
+ if((competitionId!=='world'&&!competitionPattern.test(competitionId)&&!(clubKey&&clubPattern.test(clubKey))&&!(fixturesClubKey&&clubPattern.test(fixturesClubKey))&&!playerId)||!Number.isSafeInteger(selectedSeason)||selectedSeason<1||competitionId==='world'&&(typeof calendarDay!=='number'||!Number.isInteger(calendarDay)||calendarDay<1||calendarDay>56))throw new ApiError(404,'not_found');
  const world=await readWorld(db);
- const base={schemaVersion:1 as const,providerId:'authoritative-world' as const,...(competitionId==='world'?{scope:'calendar' as const,day:calendarDay}:clubKey?{clubKey}:fixturesClubKey?{clubKey:fixturesClubKey}:{competitionId}),selectedSeason,world};
+ const base={schemaVersion:1 as const,providerId:'authoritative-world' as const,...(competitionId==='world'?{scope:'calendar' as const,day:calendarDay}:clubKey?{clubKey}:fixturesClubKey?{clubKey:fixturesClubKey}:playerId?{playerId}:{competitionId}),selectedSeason,world};
  const empty=async(status:'empty'|'unavailable',reason:string)=>{
   await unchanged(db,world);
   return {...base,status,reason,provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null};
@@ -266,6 +307,32 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
   }else if(archive){
    if(viewedWorld.day!==56||archive.generation!==world.generation)invalid();
   }
+  // #712 shares the exact Stats replay/archive and publication fences.
+  // Do not query or re-simulate individual matches for a public listing.
+  if(playerId&&playerMatches){
+   const metadata=new Map<string,{kind:string;phaseId:string;neutral:boolean;leg:number|null;round:number;marker:string}>();
+   for(const fixture of evidence.schedule.fixtures)
+    metadata.set(fixture.id,{kind:'league',phaseId:'league',neutral:false,leg:null,round:fixture.round,marker:fixture.marker});
+   for(const tie of state.ties.values())for(const entry of tie.fixtures)
+    metadata.set(entry.fixture.id,{kind:'knockout',phaseId:tie.phaseId,neutral:entry.neutral,leg:entry.leg,
+     round:entry.fixture.round,marker:entry.fixture.marker});
+   const matches=collectFrozenPlayerMatches(playerId,selectedSeason,replay.frozenMatches.values(),metadata);
+   await unchanged(db,world);
+   return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
+    provenance:{kind:'authoritative' as const,resultAuthority:'temporary-lineup-v1' as const,
+     sourceRef:'player-matches:'+world.generation+':season:'+selectedSeason+':'+evidence.calendar.calendar_hash},
+    data:{season:selectedSeason,matches}};
+  }
+  // Player Stats reuses this same verified season/archive replay exactly once.
+  // No per-competition or per-match public calls or live-affiliation inference.
+  if(playerId){
+   const stats=aggregateFrozenPlayerSeasonStats(playerId,replay.frozenMatches.values());
+   await unchanged(db,world);
+   return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
+    provenance:{kind:'authoritative' as const,resultAuthority:'temporary-lineup-v1' as const,
+     sourceRef:'player-stats:'+world.generation+':season:'+selectedSeason+':'+evidence.calendar.calendar_hash},
+    data:{season:selectedSeason,...stats}};
+  }
   // Read one validated world and one season evidence set, not a club history
   // request plus a separate full projection for every competition.
   if(fixturesClubKey){
@@ -280,6 +347,14 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
      a.marker.localeCompare(b.marker,'en')||a.id.localeCompare(b.id,'en'));
    if(fixtures.some(f=>!competitionIds.has(f.competitionId)||
      (f.result!==null)!==(f.day<=viewedWorld.day)))invalid();
+   if(rosterStats){
+    const clubFixtures=all.filter(f=>f.homeClubId===fixturesClubKey||f.awayClubId===fixturesClubKey);
+    const {complete,totals}=clubRosterTotals(fixturesClubKey,clubFixtures,storedResults,replay.frozenMatches);
+    const breakdown=[...competitionIds].map(id=>({id,...clubRosterTotals(fixturesClubKey,
+     clubFixtures.filter(f=>f.competitionId===id),storedResults,replay.frozenMatches)}));
+    await unchanged(db,world);
+    return {...base,status:'available' as const,data:{complete,totals,breakdown}};
+   }
    // Carry persisted public IDs in the verified club response so the client
    // does not download two full public competition match collections.
    const linked=await withOfficialClubMatchIds(db,world.generation,selectedSeason,
@@ -321,9 +396,25 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
      position:row.played?row.rank:null,points:row.points,
      cupStatus:isInternational?deriveInternationalClubStatus(clubKey,row.rank,leagueFixtures.every(f=>storedResults.has(f.id)),competitionPlans,storedResults):null,
      nextMatch:future?{day:future.day,round:future.round,phaseId:phase,homeId:future.homeClubId,awayId:future.awayClubId}:null,
-     stats};
+     ...(includeClubRecords&&!isInternational?{leagueGoalsAgainst:row.goalsAgainst}:{}),stats};
    }));
-   const data={season:selectedSeason,memberships};
+   const clubFixtures=includeClubRecords?[...evidence.schedule.fixtures,...plans.flatMap(p=>p.fixtures.map(x=>x.fixture))]
+    .filter(f=>(f.homeClubId===clubKey||f.awayClubId===clubKey)&&storedResults.has(f.id))
+    .sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id,'en')):[];
+   const neutralFixtures=new Set(plans.flatMap(plan=>plan.fixtures.filter(item=>item.neutral).map(item=>item.fixture.id)));
+   const matches=clubFixtures.map(f=>{
+    const score=storedResults.get(f.id)!,home=f.homeClubId===clubKey;
+    const match=replay.frozenMatches.get(f.id);
+    if(!match)return invalid();
+    return {matchId:match.matchId,venue:neutralFixtures.has(f.id)?'neutral':home?'home':'away',opponent:home?f.awayClubId:f.homeClubId,scored:home?score.homeGoals:score.awayGoals,
+     conceded:home?score.awayGoals:score.homeGoals};
+   });
+   const roster=includeClubRecords?clubRosterTotals(clubKey,clubFixtures,storedResults,replay.frozenMatches):null;
+   const players=roster?.complete?(await competitionPlayerIdentities(db,roster.totals)).map(p=>({
+    id:p.playerId,name:p.displayName,appearances:p.appearances,goals:p.goals,assists:p.assists,clean:p.cleanSheets,
+    mvpAwards:p.mvpAwards,mvpCoveredAppearances:p.mvpCoveredAppearances
+   })):null;
+   const data={season:selectedSeason,memberships,...(includeClubRecords?{matches,players}:{})};
    await unchanged(db,world);
    return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
     provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:`club:${world.generation}:season:${selectedSeason}:${evidence.calendar.calendar_hash}`},data};
@@ -332,6 +423,10 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    const plans=[...state.ties.values()];
    const all=[...evidence.schedule.fixtures,...plans.flatMap(p=>p.fixtures.map(item=>item.fixture))].filter(f=>f.day===calendarDay);
    const canonical=(await import('../../assets/world-calendar-model.js')).default.createSeason(selectedSeason) as {days:{events:{marker:string}[]}[]};
+   if(dayReceiptIds)for(const f of all){
+    const receipt=replay.frozenMatches.get(f.id);
+    if(receipt)dayReceiptIds.set(f.id,receipt.matchId);
+   }
    const priorities=new Map(canonical.days[calendarDay!-1].events.map((e,i)=>[e.marker,i]));
    all.sort((a,b)=>(Number(priorities.get(a.marker))-Number(priorities.get(b.marker)))||a.competitionId.localeCompare(b.competitionId,'en')||a.id.localeCompare(b.id,'en'));
    const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},day:calendarDay,calendarHash:evidence.calendar.calendar_hash,rulesHash:evidence.snapshot.rulesHash,
@@ -348,14 +443,20 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
   const table=await rankLeagueTable(competitionId,binding.clubIds,leagueFixtures,storedResults,evidence.schedule.seed,{throughDay:viewedWorld.day});
   const standings={complete:leagueFixtures.every(f=>storedResults.has(f.id)),rows:table.map(({drawKey,...row})=>row)};
   const recordedStats=lineupTeamStatisticsV1(binding.clubIds,fixtures,storedResults,replay.frozenMatches);
-  const stats={...recordedStats,players:await competitionPlayerIdentities(db,recordedStats.players)};
+  const enriched=await competitionPlayerIdentities(db,recordedStats.players);
+  const stats={...recordedStats,players:enriched.map((p,i)=>({...p,archivedName:recordedStats.players[i]!.displayName}))};
+  const playerCoverage=fixtures.every(f=>{
+   if(!storedResults.has(f.id))return true;
+   const match=replay.frozenMatches.get(f.id)?.receipt.result as unknown as LineupMatchResultV1|undefined;
+   return match?.home.kind==='real_xi'&&match.away.kind==='real_xi';
+  });
   const final=fixtures.find(f=>f.marker===(competitionId==='int-1'?'SOVEREIGN-FINAL':'FEDERATION-FINAL'));
   const championClubId=competitionId.startsWith('int-')?(final?storedResults.get(final.id)?.winnerClubId:null):table[0]?.clubId;
   if(archive&&!championClubId)invalid();
   const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},rulesVersion:binding.rulesVersion,participants:[...binding.clubIds],
-   fixtures:projectFixtures(fixtures,plans,storedResults),standings,statistics:stats,
+   playerRecordVersion:1,playerCoverage,fixtures:projectFixtures(fixtures,plans,storedResults),standings,statistics:stats,
    calendar:Array.from({length:56},(_,i)=>({day:i+1,fixtureIds:fixtures.filter(f=>f.day===i+1).map(f=>f.id),played:fixtures.filter(f=>f.day===i+1&&storedResults.has(f.id)).length})),
-   history:viewedWorld.phase==='closed'&&archive?{season:selectedSeason,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,finalStandings:standings.rows,statistics:stats}:null};
+   history:viewedWorld.phase==='closed'&&archive?{season:selectedSeason,archiveHash:archive.archive_hash,closedAt:archive.created_at,championClubId,playerRecordVersion:1,playerCoverage,finalStandings:standings.rows,statistics:stats}:null};
   await unchanged(db,world);
   return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
    provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:`world:${world.generation}:season:${selectedSeason}:${evidence.calendar.calendar_hash}`},data};
@@ -366,12 +467,52 @@ export function readPublicSportingSeasonLineupV1(db:Database,competitionId:strin
  if(!competitionPattern.test(competitionId))throw new ApiError(404,'not_found');
  return readPublicProjection(db,competitionId,selectedSeason);
 }
-export function readPublicCalendarDayLineupV1(db:Database,selectedSeason:number,day:number){return readPublicProjection(db,'world',selectedSeason,day)}
+export function readPublicCalendarDayLineupV1(db:Database,selectedSeason:number,day:number,receiptIds?:Map<string,number>){return readPublicProjection(db,'world',selectedSeason,day,false,false,receiptIds)}
 
 /** One read-only, canonically validated club-season fixtures response. */
 export function readPublicClubFixturesLineupV1(db:Database,clubKey:string,selectedSeason:number){
  if(!clubPattern.test(clubKey))throw new ApiError(404,'not_found');
  return readPublicProjection(db,'club-fixtures:'+clubKey,selectedSeason);
+}
+export async function readPublicRosterStats(db:Database,clubKey:string,season:number|null){
+ const world=await readWorld(db);
+ const selectedSeason=season??world.seasonNumber;
+ const projection=selectedSeason>0?await readPublicProjection(db,'club-fixtures:'+clubKey,selectedSeason,undefined,true).catch(error=>{
+  if(error instanceof ApiError&&error.code==='sporting_data_unavailable')return null;
+  throw error;
+ }):null;
+ const data=projection?.data;
+ const complete=data&&'complete' in data?data.complete:
+  selectedSeason===0&&world.seasonNumber===0||(projection&&'reason' in projection&&projection.reason==='calendar-unpublished');
+ // The standard fixtures projection does not expose roster aggregates.
+ // Only the verified stats projection has these optional arrays; keep absent
+ // fields separate from recorded zero-valued match statistics.
+ const totals=new Map(data&&'totals' in data?(data.totals?.map(p=>[p.playerId,p])??[]):[]);
+ const breakdown=data&&'breakdown' in data?(data.breakdown?.map(c=>({
+  id:c.id,complete:c.complete,rows:new Map(c.totals.map(p=>[p.playerId,p]))
+ }))??[]):[];
+ // Preserve nullable event metrics from verified frozen receipts.
+ // Missing event coverage must never become a recorded zero.
+ function numbers(recorded:boolean,row:ReturnType<typeof clubRosterTotals>['totals'][number]|undefined){
+  if(!recorded)return null;
+  const appearances=row?.appearances??0,starts=row?.starts??0,minutes=row?.minutes??0,goals=row?.goals??0;
+  const assists=row?row.assists:0,subAppearances=row?row.subAppearances:0;
+  const cleanSheets=row?row.cleanSheets:0,redCards=row?row.redCards:0,yellowCards=row?row.yellowCards:0;
+  const ratedAppearances=row?.ratedAppearances??0,averageRating=row?.averageRating??null;
+   const mvpCoveredAppearances=row?.mvpCoveredAppearances??0,mvpAwards=row?row.mvpAwards:0;
+  const goalsAssistsPer90=assists!==null&&minutes>0
+   ?Math.round((goals+assists)*90/minutes*100)/100:null;
+  return {appearances,starts,subAppearances,minutes,goals,assists,cleanSheets,yellowCards,redCards,
+   ratedAppearances,averageRating,goalsAssistsPer90,mvpAwards,mvpCoveredAppearances};
+ }
+ const roster=await readPublicClubRoster(db,clubKey);
+ await unchanged(db,world);
+ return {...roster,season:selectedSeason,competitions:breakdown.map(c=>c.id),players:roster.players.map(player=>{
+  const row=totals.get(player.id);
+  const {id,display_name,nationality,primary_position,secondary_positions}=player;
+  return {id,display_name,nationality,primary_position,secondary_positions,stats:numbers(!!complete,row),
+   competitionStats:Object.fromEntries(breakdown.map(c=>[c.id,numbers(c.complete,c.rows.get(id))]))};
+ })};
 }
 /** Compact, validated club overview: exactly one public HTTP request per selected season. */
 export function readPublicClubOverviewLineupV1(db:Database,clubKey:string,selectedSeason:number){
@@ -395,7 +536,7 @@ export async function readPublicClubHistoryLineupV1(db:Database,clubKey:string){
  }
  const overviews=await Promise.all(
   Array.from({length:world.seasonNumber},(_,i)=>i+1)
-   .map(season=>readPublicClubOverviewLineupV1(db,clubKey,season))
+   .map(season=>readPublicProjection(db,'club:'+clubKey,season,undefined,false,true))
  );
  // Do not combine season snapshots across a reset, new generation, or advance.
  if(overviews.some(v=>v.world.generation!==world.generation||
@@ -408,4 +549,89 @@ export async function readPublicClubHistoryLineupV1(db:Database,clubKey:string){
   provenance:{kind:'authoritative' as const,resultAuthority:'temporary-lineup-v1' as const,
    sourceRef:'club-history:'+world.generation+':revision:'+world.revision},
   data:{overviews}};
+}
+
+/** #578 — One batched anonymous, read-only player Stats response.
+ * Each verified season replays once; current affiliation never reconstructs history.
+ */
+export async function readPublicPlayerStatsLineupV1(db:Database,playerId:number){
+ if(!Number.isSafeInteger(playerId)||playerId<1)throw new ApiError(422,'invalid_public_request');
+ const world=await readWorld(db);
+ const exists=await db.prepare('SELECT id FROM generated_players WHERE id=?').bind(playerId).first<{id:number}>();
+ if(!exists)throw new ApiError(404,'player_not_found');
+ if(![0,1,2].includes(world.seasonNumber)){
+  await unchanged(db,world);
+  return {schemaVersion:1 as const,providerId:'authoritative-world' as const,playerId,world,
+   status:'unavailable' as const,reason:'unsupported-world-season',seasons:[]};
+ }
+ const seasons=await Promise.all(Array.from({length:world.seasonNumber},(_,i)=>i+1)
+  .map(season=>readPublicProjection(db,'player:'+playerId,season)));
+ if(seasons.some(item=>item.world.generation!==world.generation||item.world.revision!==world.revision||
+   item.world.seasonNumber!==world.seasonNumber||item.world.day!==world.day||item.world.phase!==world.phase))
+  throw new ApiError(409,'stale_world');
+ await unchanged(db,world);
+ return {schemaVersion:1 as const,providerId:'authoritative-world' as const,playerId,world,
+  status:world.seasonNumber===0?'empty' as const:'available' as const,reason:world.seasonNumber===0?'season-zero':null,
+  seasons:seasons.reverse().map(item=>{
+   // Player projections carry authority metadata; roster-only projections do not.
+   // Fail closed rather than implying verified coverage for a mismatched scope.
+   if(!('reason' in item)||!('provenance' in item))throw new ApiError(503,'sporting_data_unavailable');
+   return {season:item.selectedSeason,status:item.status,reason:item.reason,provenance:item.provenance,data:item.data};
+  })};
+}
+
+
+/** #712: anonymous batched, verified chronological appearances, capped at 50.
+ * Page cursor binds both filters and the same canonical world generation/revision.
+ */
+export async function readPublicPlayerMatchesLineupV1(
+ db:Database,playerId:number,options:{season:'all'|number;competition:string;cursor:string|null;limit:number}
+){
+ if(!Number.isSafeInteger(playerId)||playerId<1||!options||
+  !(options.season==='all'||Number.isSafeInteger(options.season)&&options.season>=1&&options.season<=2)||
+  !(options.competition==='all'||competitionPattern.test(options.competition))||
+  !Number.isSafeInteger(options.limit)||options.limit<1||options.limit>100||
+  !(options.cursor===null||typeof options.cursor==='string'&&options.cursor.length<=512))
+  throw new ApiError(422,'invalid_public_request');
+ const world=await readWorld(db);
+ const exists=await db.prepare('SELECT id FROM generated_players WHERE id=?').bind(playerId).first<{id:number}>();
+ if(!exists)throw new ApiError(404,'player_not_found');
+ const base={schemaVersion:1 as const,providerId:'authoritative-world' as const,playerId,world};
+ if(![0,1,2].includes(world.seasonNumber)){
+  await unchanged(db,world);
+  return {...base,status:'unavailable' as const,reason:'unsupported-world-season',
+   filters:{seasons:[],competitions:[]},items:[],nextCursor:null,total:0};
+ }
+ if(world.seasonNumber===0){
+  await unchanged(db,world);
+  return {...base,status:'empty' as const,reason:'season-zero',
+   filters:{seasons:[],competitions:[]},items:[],nextCursor:null,total:0};
+ }
+ const seasons=await Promise.all(Array.from({length:world.seasonNumber},(_,i)=>i+1)
+  .map(season=>readPublicProjection(db,'player-matches:'+playerId,season)));
+ if(seasons.some(item=>item.world.generation!==world.generation||item.world.revision!==world.revision||
+   item.world.seasonNumber!==world.seasonNumber||item.world.day!==world.day||item.world.phase!==world.phase))
+  throw new ApiError(409,'stale_world');
+ if(seasons.some(item=>item.status==='unavailable')) {
+  await unchanged(db,world);
+  return {...base,status:'unavailable' as const,reason:'incomplete-evidence',
+   filters:{seasons:[],competitions:[]},items:[],nextCursor:null,total:0};
+ }
+ const matches=seasons.flatMap(item=>{
+  const data=item.data as {matches?:ReturnType<typeof collectFrozenPlayerMatches>}|null;
+  return data?.matches??[];
+ });
+ const optionsAvailable={seasons:[...new Set(matches.map(item=>item.season))].sort((a,b)=>b-a),
+  competitions:[...new Set(matches.map(item=>item.competitionId))].sort()};
+ let page;
+ try{page=paginateVerifiedPlayerMatches(matches,world,options)}
+ catch(error){
+  if(error instanceof RangeError)throw new ApiError(409,'stale_world');
+  throw new ApiError(422,'invalid_public_request');
+ }
+ await unchanged(db,world);
+ return {...base,status:page.total?'available' as const:'empty' as const,reason:page.total?null:'no-appearances',
+  provenance:{kind:'authoritative' as const,resultAuthority:'temporary-lineup-v1' as const,
+   sourceRef:'player-matches:'+world.generation+':revision:'+world.revision},
+  filters:optionsAvailable,...page};
 }

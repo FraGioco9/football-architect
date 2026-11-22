@@ -7,6 +7,7 @@
  */
 import {renderPortraitPromptFromSnapshot,renderV4PortraitPromptFromSnapshot} from './player-portrait-core.mjs';
 import {renderDiverseV4PortraitPromptFromSnapshot} from './player-portrait-diversity-v41.mjs';
+import {renderFamilyV42PortraitPromptFromSnapshot} from './player-portrait-family-v42.mjs';
 
 export const CHATGPT_PORTRAIT_EXECUTION_VERSION='chatgpt-portrait-execution-v1';
 
@@ -131,6 +132,27 @@ export async function buildChatGptDiverseV4PortraitExecutionFromSnapshot(snapsho
    'EXECUTION GUARDS: Generate a single fictional adult male, never an age-specific subject or an idealized model. One image invocation only; do not batch or automatically generate a second.',
    'Use a genuinely transparent RGBA PNG cutout, not an opaque checkerboard. Follow all binding traits, especially complexion, hair texture, hair length, hairstyle and ordinary facial proportions.',
    'The output is a local candidate until real PNG alpha, final WebP geometry, trait consistency and visual QA are evaluated. Complete QA before considering another generation. PASS or PASS_WITH_NOTE may be locally accepted; FAIL must not be published. Publishing and D1 updates require separate authorization.'
+  ].join('\n\n')
+ });
+}
+
+
+/** Opt-in V4.2 family-context handoff. Old versions remain frozen. */
+export const CHATGPT_FAMILY_V42_EXECUTION_VERSION='chatgpt-portrait-execution-v4';
+export async function buildChatGptFamilyV42PortraitExecutionFromSnapshot(snapshot){
+ const canonical=await renderFamilyV42PortraitPromptFromSnapshot(snapshot);
+ return Object.freeze({
+  playerId:snapshot.player_id,portraitPromptVersion:snapshot.prompt_version,
+  executionVersion:CHATGPT_FAMILY_V42_EXECUTION_VERSION,
+  renderer:'chatgpt-image-generation',onePlayerPerInvocation:true,
+  requireQaBeforeNextInvocation:true,toolOptions:CHATGPT_PORTRAIT_TOOL_OPTIONS,
+  desiredAspectRatio:'3:4',
+  prompt:[
+   'CHATGPT IMAGE GENERATION V4.2 — ONE new fictional footballer and ONE image invocation.',
+   'The canonical identity below is binding. Country and name-bank information are fictional casting cues, never real-world ethnicity rules. No extra appearance inference.',
+   '--- CANONICAL V4.2 PROMPT (VERBATIM) ---',canonical,
+   '--- END CANONICAL V4.2 PROMPT ---',
+   'Generate one new original text-to-image only, no existing photo, image edit, previous player, collage, name, ID, logo or caption. Require native transparent RGBA PNG and independent visual/technical QA. No automatic approval, publication, database write or regeneration.'
   ].join('\n\n')
  });
 }

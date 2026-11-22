@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const css=read('assets/app.css');
 
-test('Fixtures crest skeleton shares the centered 64px / 56px logo slots',()=>{
+test('Fixtures crest skeleton shares the centered 64px desktop / 36px mobile logo slots',()=>{
  const rules=[...css.matchAll(/#competition-panel-fixtures \.app-fixtures-skeleton-crest\{([^}]*)\}/g)].map(match=>match[1]);
  const rule=rules.find(value=>value.includes('flex:0 0 64px'));
  assert.ok(rule,'Fixtures skeleton crest slot must exist');
@@ -16,10 +16,10 @@ test('Fixtures crest skeleton shares the centered 64px / 56px logo slots',()=>{
   'real desktop crest uses the same geometry');
  assert.match(css,/#competition-panel-fixtures \.app-fixtures-skeleton-crest::before\{[\s\S]*?width:85%;height:auto;aspect-ratio:1;/,
   'skeleton circle uses the shared crest loading primitive');
- assert.match(css,/@media\(max-width:620px\)\{\.app-fixture-match[^}]*\}\.app-fixture-club[^}]*\}\.app-fixture-club \.app-world-club-crest-placeholder\{flex-basis:56px;width:56px;height:56px\}/,
-  'real mobile crest is 56px');
- assert.match(css,/#competition-panel-fixtures \.app-fixtures-skeleton-crest\{flex-basis:56px;width:56px;height:56px\}/,
-  'mobile skeleton matches the real 56px slot');
+ assert.match(css,/@media\(max-width:620px\)\{\.app-fixture-match[^}]*\}\.app-fixture-club[^}]*\}\.app-fixture-club \.app-world-club-crest-placeholder\{flex-basis:36px;width:36px;height:36px\}/,
+  'real mobile crest is 36px');
+ assert.match(css,/#competition-panel-fixtures \.app-fixtures-skeleton-crest\{flex-basis:36px;width:36px;height:36px\}/,
+  'mobile skeleton matches the real 36px slot');
  assert.doesNotMatch(css,/#competition-panel-fixtures \.app-fixtures-skeleton-crest\{display:block;/,
   'later rules must not undo centered grid layout');
 });

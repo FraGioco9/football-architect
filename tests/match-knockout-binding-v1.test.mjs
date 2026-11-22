@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {resolvePublishedKnockoutV1} from '../backend/src/match-knockout-binding-v1.mjs';
+import {buildCandidateMatchReceiptV1} from '../backend/src/temporary-lineup-v1.mjs';
 
 const generation='11111111-1111-4111-8111-111111111111';
 const world={generation,seasonNumber:1,day:53};
@@ -37,10 +38,22 @@ async function proof({leg=1,twoLegs=false,neutral=false}={}){
  const tie={generation,plan_hash:await canonicalHash(plan),plan_json:JSON.stringify(plan)};
  const frozenFixture={matchId:200,season:1,day:20,generation,competitionId:'int-1',
   fixtureId:one.id,homeClubId:one.homeClubId,awayClubId:one.awayClubId,sourceHash:'a'.repeat(64)};
+ // A valid legacy v1 source candidate must satisfy the SAME independent
+ // receipt verifier used by the real published second-leg binding. Never
+ // substitute a score-only mock for an immutable previous-leg match.
+ const priorResult={algorithmVersion:'temporary-lineup-v1',mode:'fallback_vs_fallback',
+  matchKey:one.id,homeClubId:one.homeClubId,awayClubId:one.awayClubId,
+  sourceSeedHash:'a'.repeat(64),context:{mode:'regulation'},neutral:false,
+  expectedGoals:{home:1.4,away:1.1},regulation:{home:2,away:1},
+  extraTime:null,penalties:null,homeGoals:2,awayGoals:1,
+  winnerClubId:one.homeClubId,resolution:'regulation',
+  home:{kind:'team_fallback',strength:61,starters:null,unattributedGoals:2,appearances:[]},
+  away:{kind:'team_fallback',strength:61,starters:null,unattributedGoals:1,appearances:[]},
+  events:[]};
+ const sourceCandidate=await buildCandidateMatchReceiptV1(frozenFixture,priorResult);
  const priorReceipt={schemaVersion:1,authority:'official',algorithmVersion:'temporary-lineup-v1',
-  rosterSourceDigest:'c'.repeat(64),sourceCandidateDigest:'d'.repeat(64),
-  fixture:frozenFixture,result:{matchKey:one.id,algorithmVersion:'temporary-lineup-v1',
-   context:{mode:'regulation'},resolution:'regulation',homeGoals:2,awayGoals:1}};
+  rosterSourceDigest:'c'.repeat(64),sourceCandidateDigest:sourceCandidate.receiptDigest,
+  fixture:sourceCandidate.fixture,result:sourceCandidate.result};
  const firstKey=['football-architect-match-slot-v1',generation,1,'int-1',phaseId,'tie:'+tieId+':leg:1'];
  const priorSlotId='m1_'+(await hashString(JSON.stringify(firstKey))).slice(0,32);
  const frozen={public_match_id:200,slot_match_id:priorSlotId,generation,season_number:1,day:20,

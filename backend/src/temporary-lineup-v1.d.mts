@@ -15,12 +15,19 @@ export interface LineupSideV1 {
   emergencyGoalkeeper:boolean;attributes:Record<string,number>;
   primaryPosition:string;secondaryPositions:string[]}>;
  unattributedGoals:number;
- appearances:Array<{playerId:number;started:true;minutes:90|120;goals:number;rating?:number}>;
+ bench?:Array<{playerId:number;primaryPosition:string;secondaryPositions:string[];attributes:Record<string,number>}>;
+ appearances:Array<{playerId:number;started:boolean;minutes:number;goals:number;rating?:number;
+  role?:string;assists?:number;redCards?:number;gkMinutes?:number;
+  intervals?:Array<{from:number;to:number;role:string}>}>;
 }
 export interface LineupMatchResultV1 {
  algorithmVersion:'temporary-lineup-v1';
  /** Absent on existing frozen pre-rating V2 receipts, never silently backfilled. */
  ratingVersion?:'test-rating-v1';
+ mvpVersion?:'match-mvp-v1';
+ mvp?:import('./match-mvp-v1.mjs').FrozenMatchMvpV1;
+ /** New match-only event evidence; absent from immutable legacy receipts. */
+ eventModelVersion?:'lineup-events-v1';
  playerIdentityVersion?:'player-identity-v1';
  playerIdentities?:Array<{playerId:number;name:string|null;nationality:string|null}>;
  mode:'xi_vs_xi'|'xi_vs_fallback'|'fallback_vs_xi'|'fallback_vs_fallback';
@@ -33,8 +40,16 @@ export interface LineupMatchResultV1 {
  homeGoals:number;awayGoals:number;winnerClubId:string|null;
  resolution:'regulation'|'extra-time'|'penalties';
  home:LineupSideV1;away:LineupSideV1;
- events:Array<{minute:number;playerId:number;side:'home'|'away';type:'goal';period:'regulation'|'extra-time'}>;
+ events:Array<{minute:number;playerId:number;side:'home'|'away';
+  type:'goal'|'pass'|'yellow'|'red'|'substitution'|'role_change';
+  period:'regulation'|'extra-time';ordinal?:number;
+  goalId?:string;assistingPlayerId?:number|null;creation?:string;
+  fromPlayerId?:number;toPlayerId?:number;purpose?:string;
+  outPlayerId?:number;inPlayerId?:number;outRole?:string;inRole?:string;
+  reason?:string;fromRole?:string;toRole?:string;
+  secondYellowSequence?:boolean;window?:string}>;
 }
+export function attachTestRatingsV1(result:LineupMatchResultV1):LineupMatchResultV1;
 export function simulateMatchV1(args:{
  homeRoster:LineupFootballerV1[];awayRoster:LineupFootballerV1[];
  matchKey:string;seed:string;homeClubId:string;awayClubId:string;
@@ -48,6 +63,6 @@ export function buildCandidateMatchReceiptV1(match:{
  matchId:number;season:number;day:number;generation:string;competitionId:string;
  fixtureId:string;homeClubId:string;awayClubId:string;sourceHash:string
 },outcome:LineupMatchResultV1):Promise<Readonly<{
- schemaVersion:1;authority:'candidate-only';algorithmVersion:'temporary-lineup-v1';
+ schemaVersion:1|2;authority:'candidate-only';algorithmVersion:'temporary-lineup-v1';
  fixture:Record<string,unknown>;result:LineupMatchResultV1;receiptDigest:string;
 }>>;

@@ -41,9 +41,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
  assert.equal(mime['.mjs'],'text/javascript','Club public ES modules must be served with a JavaScript MIME type');
  assert.ok(allowed.has('assets/club-public-read-cache.mjs'),'shared Club HTTP cache module must be published');
  let refuseCrests=false,holdDeferred=false,manifestMode='ok',mockEmptyRoster=false,mockReadyRoster=false,holdRosterResponse=false;const deferredResponses=[],blockedRosterResponses=[];
+ const rosterRequests={info:0,stats:0};
  const server=createServer((req,res)=>{
   try{
    const path=new URL(req.url,'http://localhost').pathname;
+   if(path==='/api/clubs/IT-1/roster')rosterRequests.info++;
+   if(path==='/api/clubs/IT-1/roster/stats'){
+    rosterRequests.stats++;
+    res.writeHead(200,{'Content-Type':'application/json'});
+    res.end(JSON.stringify({clubKey:'IT-1',season:1,competitions:['IT-1','int-1'],count:1,players:[{id:1001,display_name:'Fixture Player',nationality:'ITA',primary_position:'CM',stats:{appearances:2,starts:1,subAppearances:1,minutes:110,goals:1,assists:null,cleanSheets:null,yellowCards:1,redCards:null,ratedAppearances:0,averageRating:null,goalsAssistsPer90:null},competitionStats:{'IT-1':{appearances:1,starts:1,subAppearances:0,minutes:90,goals:1,assists:0,cleanSheets:null,yellowCards:1,redCards:0,ratedAppearances:1,averageRating:7.15,goalsAssistsPer90:1},'int-1':{appearances:1,starts:0,subAppearances:1,minutes:20,goals:0,assists:null,cleanSheets:null,yellowCards:null,redCards:null,ratedAppearances:0,averageRating:null,goalsAssistsPer90:null}}}]}));return;
+   }
    if(path==='/api/clubs/IT-1/roster'&&holdRosterResponse){blockedRosterResponses.push(res);return;}
    if(path==='/api/clubs/IT-1/roster'&&mockEmptyRoster){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:0,players:[]}));return;}
    if(path==='/api/clubs/IT-1/roster'&&mockReadyRoster){
@@ -52,7 +59,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
    }
    const file=publicRequestFile(path);
    if(!allowed.has(file)||(refuseCrests&&file.startsWith('assets/clubs/')))throw Error('Not public');
-   if(file==='clubs/_shared/manifest.json'&&manifestMode!=='ok'){if(manifestMode==='bad-json'){res.writeHead(200,{'Content-Type':'application/json'});res.end('{invalid');}else{res.writeHead(503);res.end('Unavailable')}return;}
+   if(file==='clubs/_shared/identity.json'&&manifestMode!=='ok'){if(manifestMode==='bad-json'){res.writeHead(200,{'Content-Type':'application/json'});res.end('{invalid');}else{res.writeHead(503);res.end('Unavailable')}return;}
    const send=()=>{res.writeHead(200,{'Content-Type':mime[extname(file)]});res.end(readFileSync(join(artifact,file)));};
    if(holdDeferred&&file.endsWith('.js')&&file!=='assets/theme.js')deferredResponses.push(send);else send();
   }catch{res.writeHead(404);res.end()}
@@ -106,8 +113,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       return out.result.value;
     };
     const waitUnprofiled=async expr=>{
-      // Preserve the same nominal 10-second readiness budget, checking every 50ms.
-      for(let i=0;i<200;i++){try{if(await run(expr))return;}catch{}await delay(50);}
+      // Preserve the same nominal 10-second readiness budget, checking every 20ms.
+      for(let i=0;i<500;i++){try{if(await run(expr))return;}catch{}await delay(20);}
       throw Error("Timed out: "+expr+"; "+await run("document.body.textContent.slice(0,500)"));
     };
     const wait=expr=>profile.measure('readiness-wait',()=>waitUnprofiled(expr));
@@ -337,6 +344,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)});`);
      await cmd('Page.navigate',{url:origin+'/clubs'});
      await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
+     if(width===390&&theme==='dark'&&lang==='en'){
+      const staticReads=await run("[...performance.getEntriesByType('resource')].map(entry=>new URL(entry.name).pathname).filter(path=>path==='/clubs/_shared/identity.json'||path==='/clubs/_shared/manifest.json')");
+      assert.deepEqual(staticReads,['/clubs/_shared/identity.json'],
+       'Explore must fetch the lightweight verified identity only, not the full Club manifest');
+     }
      const state=await run(`(()=>{const pane=document.querySelector('.fa-shell-content-scroll');const cards=document.querySelectorAll('.nav01-card');return {language:document.documentElement.lang,theme:document.documentElement.dataset.theme,count:cards.length,href:cards[0].getAttribute('href'),overflow:document.documentElement.scrollWidth>innerWidth+1||pane.scrollWidth>pane.clientWidth+1,labels:[...document.querySelectorAll('.nav01-filters select')].map(el=>el.getAttribute('aria-label'))}})()`);
      assert.equal(state.language,lang);assert.equal(state.theme,theme);assert.equal(state.count,320);
      assert.match(state.href,/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/overview$/);
@@ -424,7 +436,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     console.log('CLUBS_03B: HTTP error, JSON error, retry, localization and URL recovery passed');
     // QA-02: use an accented city/name from the actual public manifest, not invented fixtures.
-    const accentCase=await run("(async()=>{const manifest=await(await fetch('/clubs/_shared/manifest.json')).json();const normalize=s=>s.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();for(const club of manifest.clubs){for(const field of ['city','primaryName','fullName']){const value=club[field];if(value&&normalize(value)!==value.toLowerCase())return {term:value,plain:normalize(value),href:'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview'};}}return null})()");
+    const accentCase=await run("(async()=>{const manifest=await(await fetch('/clubs/_shared/identity.json')).json();const normalize=s=>s.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();for(const club of manifest.clubs){for(const field of ['city','primaryName','fullName']){const value=club[field];if(value&&normalize(value)!==value.toLowerCase())return {term:value,plain:normalize(value),href:'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview'};}}return null})()");
     assert.ok(accentCase,'The public manifest should contain a real accented club name or city');
     for(const term of [accentCase.term,accentCase.plain]){
       await cmd('Page.navigate',{url:origin+'/clubs?q='+encodeURIComponent(term)});
@@ -499,6 +511,29 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.activeElement===document.querySelector('.club-tabs [aria-current=\"page\"]')"),true,'Keyboard activation retains focus on the active tab');
     await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
     assert.equal(await run("document.querySelectorAll('.club-history').length"),1);
+    // Public Player View tabs also preserve manual horizontal scrolling across
+    // refresh, without borrowing the Club strip's session storage key.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
+    await cmd('Page.navigate',{url:origin+'/players/1?view=stats'});
+    await wait("document.readyState==='complete'&&document.querySelector('.app-player-detail-tabs')?.scrollWidth>document.querySelector('.app-player-detail-tabs')?.clientWidth");
+    const savedPlayerTabScroll=await run("(()=>{const nav=document.querySelector('.app-player-detail-tabs'),max=nav.scrollWidth-nav.clientWidth,offset=Math.min(64,max);nav.scrollLeft=offset;sessionStorage.setItem('football-architect:player-views-scroll:/players/1',String(offset));return offset})()");
+    assert.ok(savedPlayerTabScroll>1,'mobile Player View strip must overflow for reload QA');
+    await cmd('Page.reload');
+    await wait("document.readyState==='complete'&&document.querySelector('.app-player-detail-tabs')");
+    const restoredPlayerTabScroll=await run("document.querySelector('.app-player-detail-tabs').scrollLeft");
+    assert.ok(Math.abs(restoredPlayerTabScroll-savedPlayerTabScroll)<2,
+     'mobile Player View tab strip must retain horizontal scroll on reload: '+savedPlayerTabScroll+' / '+restoredPlayerTabScroll);
+    await visit('/clubs/it/1/history');
+    // A mobile reload must restore the manually scrolled View strip exactly,
+    // rather than shifting it back to the beginning or auto-centering History.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
+    const savedClubTabScroll=await run("(()=>{const nav=document.querySelector('.club-tabs'),max=nav.scrollWidth-nav.clientWidth;const offset=Math.min(70,max);nav.scrollLeft=offset;sessionStorage.setItem('football-architect:club-tabs-scroll:/clubs/it/1',String(offset));return offset})()");
+    assert.ok(savedClubTabScroll>1,'mobile View strip must overflow for reload QA');
+    await cmd('Page.reload');
+    await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
+    const restoredClubTabScroll=await run("document.querySelector('.club-tabs').scrollLeft");
+    assert.ok(Math.abs(restoredClubTabScroll-savedClubTabScroll)<2,
+     'mobile Club View tab strip must retain horizontal scroll on reload: '+savedClubTabScroll+' / '+restoredClubTabScroll);
     // #560: Club History's true mobile presentation is a four-column grid,
     // with expansion, localized headings and untruncated competition labels.
     // A synthetic verified row pair is used to isolate layout from the
@@ -513,6 +548,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const row=document.querySelector('.club-history .club-history-row-loading');
        return tabs&&row?row.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null;
       })()`);
+      const firstPaintBarGapBefore=await run(`(()=>{
+       const tabs=document.querySelector('.club-tabs');
+       const bar=document.querySelector('.club-history .club-history-row-loading .club-history-skeleton-label .club-fp-bar');
+       return tabs&&bar?bar.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null;
+      })()`);
       await run(`(()=>{
        const old=document.getElementById('history-mobile-560-probe');if(old)old.remove();
        const wrap=document.createElement('div');wrap.id='history-mobile-560-probe';
@@ -524,12 +564,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          ['MP','W','D','L','GF','GA','GD','Pts'].map(x=>'<th>'+x+'</th>').join('')+'</tr></thead>'+
         '<tbody><tr class="club-history-season-row" data-club-history-summary="777-${width}">'+
          '<th scope="row" class="club-history-season-value"><button type="button" class="club-history-expand" data-club-history-toggle="777-${width}" aria-expanded="false"><span class="club-history-chevron"></span>Season 777</button></th>'+
-         '<td class="club-history-total-label">Total</td><td></td>'+
-         ['30','18','7','5','54','29','+25',''].map(x=>'<td>'+x+'</td>').join('')+'</tr>'+
+         '<td class="club-history-total-label"><span class="club-history-total-value">Total</span></td><td></td>'+
+         ['30','18','10','12','104','52','+52',''].map(x=>'<td><span class="club-history-stat-value">'+x+'</span></td>').join('')+'</tr>'+
         '<tr class="club-history-competition-row" data-club-history-detail="777-${width}" hidden>'+
-         '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings?season=777"><span class="club-history-competition-text">Very Long International Competition Championship Name For Mobile</span></a></th>'+
-         '<td title="Quarter-finals, second leg">Quarter-finals, second leg</td>'+
-         ['30','18','7','5','54','29','+25','61'].map(x=>'<td>'+x+'</td>').join('')+'</tr></tbody></table>';
+         '<td></td><th scope="row" class="club-history-competition-value"><span class="club-history-competition-identity"><span class="fa-competition-mark" aria-hidden="true"></span><a class="club-history-competition-link" href="/competitions/it-1/standings?season=777"><span class="club-history-competition-text">Very Long International Competition Championship Name For Mobile</span></a></span></th>'+
+         '<td>Quarter-finals, second leg</td>'+
+         ['30','18','7','5','54','29','+25','61'].map(x=>'<td><span class="club-history-stat-value">'+x+'</span></td>').join('')+'</tr></tbody></table>';
        // Give each viewport an independent synthetic season key: the real
        // controller retains expanded seasons across viewport changes.
        // Put the synthetic table at the first content position, matching a
@@ -560,12 +600,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(initial.detailHidden,true,'History competitions are collapsed initially at '+width);
       if(width<=620){
        assert.equal(initial.tabBorder,'1px','History view tabs preserve their separator at '+width);
-       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap)<=1,
-        'mobile History starts immediately below the view separator at '+width+': '+JSON.stringify(initial));
-       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap)<=1,
-        'first season row starts flush with the separator at '+width+': '+JSON.stringify(initial));
-       if(firstPaintGapBefore!==null)assert.ok(Math.abs(firstPaintGapBefore)<=1,
-        'pre-insertion first-paint History skeleton row starts flush with the separator at '+width+': '+firstPaintGapBefore);
+       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap-5)<=1,
+        'mobile History retains the approved 5px view separator gap at '+width+': '+JSON.stringify(initial));
+       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap-5)<=1,
+        'first season row begins 5px after the separator at '+width+': '+JSON.stringify(initial));
+       if(firstPaintGapBefore!==null)assert.ok(Math.abs(firstPaintGapBefore-5)<=1,
+        'pre-insertion first-paint History skeleton row starts 5px after the separator at '+width+': '+firstPaintGapBefore);
+       if(firstPaintBarGapBefore!==null)assert.ok(firstPaintBarGapBefore>=8&&firstPaintBarGapBefore<=25,
+        'painted mobile History skeleton begins close to the View separator at '+width+': '+firstPaintBarGapBefore);
        assert.equal(initial.display,'grid','mobile season summary must use a 4-column grid at '+width);
        assert.ok(initial.table.width<=initial.wrap.width+1&&initial.shellOverflow<=2,
         'mobile History may not cause horizontal page overflow at '+width+': '+JSON.stringify(initial));
@@ -577,61 +619,169 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       }else{
        assert.equal(initial.display,'table-row','tablet/desktop preserve the native table at '+width);
       }
-      if(width<=620){
+      if(width<=620||width===1440){
        // Compare the exact seven first-paint skeleton centers to the seven
        // hydrated aggregate-number centers in their shared grid tracks.
        const alignment=await run(`(()=>{
         const row=document.querySelector('#history-mobile-560-probe .club-history-season-row');
         const cells=[...row.children].slice(3,10);
         const rect=n=>{const r=n.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,height:r.height};};
+        // Range gives the font's EM rectangle, not the painted glyph bbox.
+        // Canvas actualBoundingBox* lets us compare visually aligned centers.
+        const glyphInkY=(element,range)=>{
+         const style=getComputedStyle(element),ctx=document.createElement('canvas').getContext('2d');
+         ctx.font=[style.fontStyle,style.fontWeight,style.fontSize,style.fontFamily].join(' ');
+         const metrics=ctx.measureText(range.toString());
+         return range.getBoundingClientRect().bottom-metrics.fontBoundingBoxDescent-
+          (metrics.actualBoundingBoxAscent-metrics.actualBoundingBoxDescent)/2;
+        };
         const actual=cells.map(cell=>{
-         const range=document.createRange();range.selectNodeContents(cell);
+         const valueElement=cell.querySelector('.club-history-stat-value');
+         const range=document.createRange();range.selectNodeContents(valueElement);
          const value=rect(range),slot=rect(cell);
-         return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,height:slot.height};
+         return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,
+          inkDy:glyphInkY(valueElement,range)-slot.cy,height:slot.height};
         });
         const initial=cells.map(cell=>cell.innerHTML);
-        for(const cell of cells)cell.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+        const totalSlot=row.querySelector('.club-history-total-value');
+        const totalCell=totalSlot.closest('td');
+        const totalRange=document.createRange();totalRange.selectNodeContents(totalSlot);
+        const totalLoaded=totalRange.getBoundingClientRect(),totalLoadedCell=totalCell.getBoundingClientRect();
+        const totalPaintY=glyphInkY(totalSlot,totalRange);
+        const totalOriginal=totalSlot.innerHTML;
+        totalSlot.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+        for(const [index,cell] of cells.entries()){
+         cell.classList.add('club-history-skeleton-stat');
+         const slot=cell.querySelector('.club-history-stat-value');
+         // Compare real 2-digit GA to the shipped 3-digit GA placeholder.
+         const sample=['30','18','10','12','104','104','+52'][index];
+         slot.innerHTML='<span class="club-fp-bar" data-skeleton-sample="'+sample+'" aria-hidden="true"></span>';
+        }
         row.classList.add('club-history-row-loading');
         const skeleton=cells.map(cell=>{
          const bar=rect(cell.querySelector('.club-fp-bar')),slot=rect(cell);
-         return {dx:bar.cx-slot.cx,dy:bar.cy-slot.cy,height:slot.height};
+         return {dx:bar.cx-slot.cx,dy:bar.cy-slot.cy,y:bar.cy,height:slot.height};
         });
+        const totalBar=totalSlot.querySelector('.club-fp-bar').getBoundingClientRect();
+        const totalSkeletonCell=totalCell.getBoundingClientRect();
+        const totalAlignment={
+         dx:(totalBar.left-totalSkeletonCell.left)-(totalLoaded.left-totalLoadedCell.left),
+         dy:(totalBar.top+totalBar.height/2-totalSkeletonCell.top-totalSkeletonCell.height/2)-
+          (totalLoaded.top+totalLoaded.height/2-totalLoadedCell.top-totalLoadedCell.height/2),
+         inkDy:(totalBar.top+totalBar.height/2)-totalPaintY
+        };
         row.classList.remove('club-history-row-loading');
-        cells.forEach((cell,i)=>cell.innerHTML=initial[i]);
+        totalSlot.innerHTML=totalOriginal;
+        cells.forEach((cell,i)=>{cell.classList.remove('club-history-skeleton-stat');cell.innerHTML=initial[i];});
         const header=row.querySelector('th:first-child');
         const button=header.querySelector('button');
         const text=button.lastChild;const range=document.createRange();range.selectNodeContents(text);
         const nameLeft=range.getBoundingClientRect().left;
+        const nameCenterY=rect(range).cy;
+        const seasonPaintY=glyphInkY(button,range);
+        const chevron=button.querySelector('.club-history-chevron');
+        const chevronRight=button.getBoundingClientRect().left+chevron.offsetLeft+chevron.offsetWidth;
+        chevron.remove();
+        const nameWithoutChevron=range.getBoundingClientRect().left;
+        button.prepend(chevron);
+        const nameRestored=range.getBoundingClientRect().left;
         const original=header.innerHTML;
         header.innerHTML='<span class="club-history-expand club-history-skeleton-label">'+
          '<span class="club-history-chevron-space" aria-hidden="true"></span>'+
          '<span class="club-fp-bar" aria-hidden="true"></span></span>';
+        // Mirror the actual parser-time row state while probing its paint.
+        row.classList.add('club-history-row-loading');
         const skeletonNameLeft=header.querySelector('.club-fp-bar').getBoundingClientRect().left;
+        const skeletonNameCenterY=rect(header.querySelector('.club-fp-bar')).cy;
+        const skeletonInkStyle=getComputedStyle(header.querySelector('.club-fp-bar'),'::before');
+        const skeletonBarStyle=getComputedStyle(header.querySelector('.club-fp-bar'));
+        const skeletonPaint={decoration:skeletonInkStyle.textDecorationLine,
+         thickness:skeletonInkStyle.textDecorationThickness,
+         bg:skeletonBarStyle.backgroundColor,translation:skeletonBarStyle.translate,
+         overflow:skeletonBarStyle.overflow,radius:skeletonBarStyle.borderRadius,
+         justify:skeletonBarStyle.justifyContent,weight:skeletonInkStyle.fontWeight,
+         sample:skeletonInkStyle.content};
+        row.classList.remove('club-history-row-loading');
         header.innerHTML=original;
-        return {actual,skeleton,nameOffset:skeletonNameLeft-nameLeft};
+        return {actual,skeleton,totalAlignment,skeletonPaint,nameOffset:skeletonNameLeft-nameLeft,
+         nameCenterOffset:skeletonNameCenterY-nameCenterY,
+         seasonInkOffset:skeletonNameCenterY-seasonPaintY,seasonSkeletonY:skeletonNameCenterY,
+         chevronShift:nameWithoutChevron-nameLeft,chevronRestoreShift:nameRestored-nameLeft,
+         chevronGap:nameLeft-chevronRight};
        })()`);
        for(let i=0;i<7;i++){
         const data=alignment.actual[i],skeleton=alignment.skeleton[i];
-        assert.ok(Math.abs(data.dx-skeleton.dx)<=2,
+        assert.ok(Math.abs(data.dx-skeleton.dx)<=1,
          'stat '+i+' skeleton shares hydrated horizontal center at '+width+': '+JSON.stringify(alignment));
-        assert.ok(Math.abs(data.dy-skeleton.dy)<=3,
+        assert.ok(Math.abs(data.dy-skeleton.dy)<=(width>620?2.5:1),
          'stat '+i+' skeleton shares hydrated value-row center at '+width+': '+JSON.stringify(alignment));
+        assert.ok(Math.abs(data.inkDy-skeleton.dy)<=(width>620?3:1.25),
+         'stat '+i+' loading bar follows painted numeric ink in its own cell at '+width+': '+JSON.stringify(alignment));
+        if(width>620)assert.ok(skeleton.dy-data.dy>=0.4,
+         'History loading bar must be below the verified text-line center at '+width+': '+JSON.stringify(alignment));
         assert.ok(Math.abs(data.height-skeleton.height)<=1,
          'stat '+i+' keeps the same cell height during loading at '+width);
        }
        assert.ok(Math.abs(alignment.nameOffset)<=2,
         'season skeleton starts exactly where the loaded name starts at '+width+': '+JSON.stringify(alignment));
+       assert.ok(Math.abs(alignment.nameCenterOffset)<=(width>620?2.5:1),
+        'Club History season text and its skeleton share a vertical center at '+width+': '+JSON.stringify(alignment));
+       assert.ok(Math.abs(alignment.seasonInkOffset)<=(width>620?3:1.5),
+        'Club History Season bar follows the actual letter ink center at '+width+': '+JSON.stringify(alignment));
+       assert.ok(alignment.skeletonPaint.bg!=='rgba(0, 0, 0, 0)'&&
+        alignment.skeletonPaint.radius==='5px'&&
+        !alignment.skeletonPaint.decoration.includes('line-through')&&
+        !alignment.skeletonPaint.sample.includes('Season'),
+        'History Season uses the same real filled/rounded bar as Club Overview at '+width+': '+JSON.stringify(alignment));
+       if(width>620)assert.ok(Math.abs(alignment.totalAlignment.inkDy)<=3,
+        'Club History Total bar follows painted Total glyphs at '+width+': '+JSON.stringify(alignment));
+       if(width>620)assert.ok(Math.abs(alignment.totalAlignment.dx)<=1&&Math.abs(alignment.totalAlignment.dy)<=2.5,
+        'Club History Total skeleton matches the actual Total text origin and center at '+width+': '+JSON.stringify(alignment));
+       assert.ok(Math.abs(alignment.chevronShift)<=0.5&&Math.abs(alignment.chevronRestoreShift)<=0.5,
+        'Club History text cannot move when the chevron is removed/restored at '+width+': '+JSON.stringify(alignment));
+       assert.ok(Math.abs(alignment.chevronGap-10)<=1,
+        'Club History chevron sits outside the fixed Season text position at '+width+': '+JSON.stringify(alignment));
+       if(width===1440)assert.ok(alignment.skeleton.every(v=>Math.abs(v.y-alignment.seasonSkeletonY)<=2),
+        'desktop History: numeric skeletons share the Season skeleton row: '+JSON.stringify(alignment));
       }
       await run("document.querySelector('#history-mobile-560-probe [data-club-history-toggle]').click()");
       const expanded=await run(`(()=>{
        const wrap=document.getElementById('history-mobile-560-probe'),button=wrap.querySelector('button');
        const row=wrap.querySelector('.club-history-competition-row'),link=row.querySelector('a');
        const r=row.getBoundingClientRect(),lr=link.getBoundingClientRect();
+       const glyphCenter=node=>{const range=document.createRange();range.selectNodeContents(node);
+        const b=range.getBoundingClientRect();return b.top+b.height/2;};
+       const compCell=row.querySelector('.club-history-competition-value');
+       const compBox=compCell.getBoundingClientRect();
+       const competitionName=row.querySelector('.club-history-competition-text');
+       const competitionIdentity=row.querySelector('.club-history-competition-identity');
+       const competitionLogo=row.querySelector('.fa-competition-mark');
+       const competitionRange=document.createRange();competitionRange.selectNodeContents(competitionName);
+       const competitionStart=competitionIdentity.getBoundingClientRect().left-compBox.left;
+       const competitionTextInset=competitionRange.getBoundingClientRect().left-competitionIdentity.getBoundingClientRect().left;
+       const summary=wrap.querySelector('.club-history-season-row');
+       const total=summary.querySelector('.club-history-total-value');
+       const totalCell=total.closest('td'),totalBox=totalCell.getBoundingClientRect();
+       const totalRange=document.createRange();totalRange.selectNodeContents(total);
+       const totalStart=totalRange.getBoundingClientRect().left-totalBox.left;
+       const originalTotal=total.innerHTML;
+       total.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+       summary.classList.add('club-history-row-loading');
+       const totalSkeletonStart=total.querySelector('.club-fp-bar').getBoundingClientRect().left-totalBox.left;
+       summary.classList.remove('club-history-row-loading');
+       total.innerHTML=originalTotal;
+       const competitionTextCenter=glyphCenter(competitionName);
+       const numericTextCenter=glyphCenter(row.querySelector('td:nth-child(4) .club-history-stat-value'));
        const position=row.querySelector('td:nth-child(3)');
        const positionLabel=getComputedStyle(position,'::before');
        const positionLayout=getComputedStyle(position);
        const stat=row.querySelector('td:nth-child(4)');
        return {expanded:button.getAttribute('aria-expanded'),hidden:row.hidden,
+        competitionStart,competitionTextInset,totalStart,totalSkeletonStart,
+        competitionTextCenter,numericTextCenter,competitionCellCenter:compBox.top+compBox.height/2,
+        competitionTextPosition:getComputedStyle(competitionIdentity).position,
+        competitionLinkPosition:getComputedStyle(link).position,
+        logoAriaHidden:competitionLogo.getAttribute('aria-hidden'),
         positionLayout:positionLayout.display,positionColumns:positionLayout.gridTemplateColumns,
         positionAlign:positionLayout.alignItems,positionLabelSize:positionLabel.fontSize,
         positionValueSize:positionLayout.fontSize,
@@ -649,12 +799,26 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(expanded.explicitCellRole,'cell','expanded numeric cell preserves its semantic role at '+width);
       assert.equal(expanded.hidden,false,'History competition row appears at '+width);
       assert.equal(expanded.linkHref,'/competitions/it-1/standings?season=777');
+      if(width>620){
+       assert.equal(expanded.competitionTextPosition,'absolute','History Competition identity is anchored to its row');
+       assert.equal(expanded.competitionLinkPosition,'static','the linked name is not an absolutely positioned oversized click target');
+       assert.equal(expanded.logoAriaHidden,'true','History logo stays decorative');
+       assert.ok(Math.abs(expanded.competitionTextInset-31)<=1,'name follows the separate 24px icon and 7px gap');
+       assert.ok(Math.abs(expanded.competitionStart-expanded.totalStart)<=1 &&
+        Math.abs(expanded.competitionStart-expanded.totalSkeletonStart)<=1,
+        'Club History Competition, Total text and first-paint Total skeleton have identical x at '+width+': '+JSON.stringify(expanded));
+       assert.ok(Math.abs(expanded.competitionTextCenter-expanded.numericTextCenter)<=2,
+        'Club History Competition glyphs must center with actual numeric text at '+width+': '+JSON.stringify(expanded));
+      }else{
+       assert.ok(Math.abs(expanded.competitionTextCenter-expanded.competitionCellCenter)<=3,
+        'Club History mobile Competition wraps and centers within its own row at '+width+': '+JSON.stringify(expanded));
+      }
       if(width<=620){
        assert.ok(expanded.rowHeight>100,'expanded mobile row reveals all eight statistics at '+width);
        assert.equal(expanded.positionLayout,'grid','position and its label use explicit grid columns at '+width);
        assert.equal(expanded.positionAlign,'baseline','position and label share the text baseline at '+width);
        assert.equal(expanded.positionLabelSize,expanded.positionValueSize,'position label and value use the same font size at '+width);
-       assert.equal(expanded.statTracks,'12px 16px','numeric data and skeletons reserve identical label/value tracks at '+width);
+       assert.equal(expanded.statTracks,'12px 24px','numeric data and skeletons reserve identical label/value tracks at '+width);
        assert.equal(expanded.linkWhiteSpace,'normal','long mobile link may wrap at '+width);
        assert.equal(expanded.linkOverflow,'visible','long mobile link text is not clipped at '+width);
        assert.ok(expanded.overflow<=2,'expanded History must not overflow the page at '+width);
@@ -671,16 +835,21 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       probe.id='club-history-link-hitbox-probe';
       const width=Math.min(380,window.innerWidth-24);
       probe.style.cssText='position:fixed;top:96px;left:12px;z-index:2147483647;background:var(--surface);width:'+width+'px';
-      probe.innerHTML='<table class="club-history-table" style="width:100%;min-width:0"><colgroup><col style="width:44px"><col></colgroup><tbody><tr class="club-history-competition-row"><td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings"><span class="club-history-competition-text">League A</span></a></th></tr></tbody></table>';
+      probe.innerHTML='<table class="club-history-table" style="width:100%;min-width:0"><colgroup><col style="width:44px"><col></colgroup><tbody><tr class="club-history-competition-row"><td></td><th scope="row" class="club-history-competition-value"><span class="club-history-competition-identity"><span class="fa-competition-mark" aria-hidden="true"></span><a class="club-history-competition-link" href="/competitions/it-1/standings"><span class="club-history-competition-text">League gyp</span></a></span></th></tr></tbody></table>';
       document.body.append(probe);
       const link=probe.querySelector('a'),cell=probe.querySelector('th'),label=probe.querySelector('.club-history-competition-text');
+      const mark=probe.querySelector('.fa-competition-mark');
       window.__historyProbeClickCount=0;
       link.addEventListener('click',e=>{e.preventDefault();window.__historyProbeClickCount++});
       const a=link.getBoundingClientRect(),c=cell.getBoundingClientRect(),t=label.getBoundingClientRect();
+      const style=getComputedStyle(link);
       if(c.right-a.right<24)throw Error('History competition link unexpectedly occupies its empty cell');
       return {
         blank:{x:Math.floor((a.right+c.right)/2),y:Math.floor((a.top+a.bottom)/2)},
-        label:{x:Math.floor((t.left+t.right)/2),y:Math.floor((t.top+t.bottom)/2)}
+        logo:{x:Math.floor((mark.getBoundingClientRect().left+mark.getBoundingClientRect().right)/2),
+         y:Math.floor((mark.getBoundingClientRect().top+mark.getBoundingClientRect().bottom)/2)},
+        label:{x:Math.floor((t.left+t.right)/2),y:Math.floor((t.top+t.bottom)/2)},
+        lineHeight:parseFloat(style.lineHeight),fontSize:parseFloat(style.fontSize),overflow:style.overflow
       };
     })()`);
     const moveToHistory=async({x,y})=>cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x,y,button:'none'});
@@ -688,132 +857,433 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       await cmd('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',clickCount:1});
       await cmd('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',clickCount:1});
     };
+    assert.ok(historyHitBoxes.lineHeight>=historyHitBoxes.fontSize*1.45 && historyHitBoxes.overflow==='visible',
+      'Club History competition text leaves room for g/p descenders and its underline');
     await moveToHistory(historyHitBoxes.blank);
     assert.equal(await run("getComputedStyle(document.querySelector('#club-history-link-hitbox-probe .club-history-competition-text')).textDecorationLine"),'none',
       'the empty cell must not underline competition text');
     await clickHistory(historyHitBoxes.blank);
     assert.equal(await run('window.__historyProbeClickCount'),0,'the empty cell is not clickable');
+    await moveToHistory(historyHitBoxes.logo);
+    assert.equal(await run("getComputedStyle(document.querySelector('#club-history-link-hitbox-probe .club-history-competition-text')).textDecorationLine"),'none',
+      'hovering the passive competition mark cannot underline its linked name');
+    await clickHistory(historyHitBoxes.logo);
+    assert.equal(await run('window.__historyProbeClickCount'),0,'clicking the competition mark never opens the link');
     await moveToHistory(historyHitBoxes.label);
     assert.equal(await run("getComputedStyle(document.querySelector('#club-history-link-hitbox-probe .club-history-competition-text')).textDecorationLine"),'underline',
       'hovering the actual name underlines only that name');
     await clickHistory(historyHitBoxes.label);
     assert.equal(await run('window.__historyProbeClickCount'),1,'clicking the actual text activates the link');
     await run("document.getElementById('club-history-link-hitbox-probe').remove()");
-    for(const view of ['roster','fixtures','stats','history']){
+
+    // #578: real Chromium geometry regression for Player Stats. The previous
+    // bars were too wide: sharing the numeric cell kept their right edges
+    // aligned, but displaced their visible centers by 6-12px.
+    await run("new Promise((ok,fail)=>{const link=document.createElement('link');link.rel='stylesheet';link.href='/assets/player-detail.css';link.onload=()=>ok(true);link.onerror=()=>fail(Error('Missing Player Stats stylesheet'));document.head.append(link)})");
+    for(const width of [1440,390]){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<=620});
+      const placement=await run(`(()=>{
+       const old=document.getElementById('player-stats-alignment-probe');if(old)old.remove();
+       const probe=document.createElement('div');probe.id='player-stats-alignment-probe';
+       probe.style.cssText='position:fixed;top:96px;left:8px;z-index:2147483647;background:var(--surface);width:calc(100vw - 16px);max-width:1100px';
+       const keys=['apps','minutes','score','assists','yellow','red','rating'];
+       const text=['1 (0)','90','1','0','0','0','7.50'];
+       const labels=['Apps (Subs)','Min','Gls','Ast','YC','RC','Rat.'];
+       const metrics=()=>keys.map((key,i)=>'<td class="app-player-stats-number" data-metric="'+key+'" data-mobile-label="'+labels[i]+'"><span class="app-player-stats-value">'+text[i]+'</span></td>').join('');
+       probe.innerHTML='<table class="app-player-stats-table"><colgroup>'+
+        '<col class="app-player-stats-col-season"><col class="app-player-stats-col-competition"><col class="app-player-stats-col-club">'+
+        Array.from({length:7},()=>'<col class="app-player-stats-col-number">').join('')+'</colgroup><tbody>'+
+        '<tr class="app-player-stats-season-row"><th scope="row" class="app-player-stats-season">'+
+        '<span class="app-player-stats-static-label"><span class="app-player-stats-chevron-space" aria-hidden="true"></span><span class="app-player-stats-no-toggle">Season 1</span></span></th>'+
+        '<td class="app-player-stats-competition"><span class="app-player-stats-total-value">Total</span></td>'+
+        '<td class="app-player-stats-club"></td>'+metrics()+'</tr>'+
+        '<tr class="app-player-stats-competition-row"><td></td><th class="app-player-stats-competition">'+
+        '<span class="app-player-stats-competition-identity"><span class="fa-competition-mark" aria-hidden="true"></span>'+
+        '<a class="app-player-stats-link app-player-stats-competition-link" href="/competitions/it-1/standings">'+
+        '<span class="app-player-stats-competition-name">League gyp</span></a></span></th>'+
+        '<td class="app-player-stats-club"><span class="app-player-stats-club-identity">'+
+        '<span class="app-players-club-mark app-player-stats-club-crest" aria-hidden="true"></span>'+
+        '<a class="app-player-stats-link app-player-stats-club-link" href="/clubs/it/1/overview">'+
+        '<span class="app-player-stats-club-name">AC Meneghina</span></a></span></td>'+
+        metrics()+'</tr></tbody></table>';
+       document.body.append(probe);
+       const row=probe.querySelector('.app-player-stats-season-row');
+       const cells=[...row.querySelectorAll('td.app-player-stats-number')];
+       const seasonLabel=row.querySelector('.app-player-stats-no-toggle');
+       const seasonHeader=row.querySelector('.app-player-stats-season');
+       const rect=n=>{const r=n.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,right:r.right,height:r.height};};
+       const glyphInkY=(element,range)=>{
+        const style=getComputedStyle(element),ctx=document.createElement('canvas').getContext('2d');
+        ctx.font=[style.fontStyle,style.fontWeight,style.fontSize,style.fontFamily].join(' ');
+        const m=ctx.measureText(range.toString());
+        return range.getBoundingClientRect().bottom-m.fontBoundingBoxDescent-
+         (m.actualBoundingBoxAscent-m.actualBoundingBoxDescent)/2;
+       };
+       const seasonLabelRange=document.createRange();seasonLabelRange.selectNodeContents(seasonLabel);
+       const seasonTextOffset=rect(seasonLabelRange).y-rect(seasonHeader).y;
+       const seasonInkY=glyphInkY(seasonLabel,seasonLabelRange);
+       const seasonLoadedX=seasonLabelRange.getBoundingClientRect().left-seasonHeader.getBoundingClientRect().left;
+       const summaryTotal=row.querySelector('.app-player-stats-total-value');
+       const summaryTotalCell=summaryTotal.closest('td');
+       const summaryRange=document.createRange();summaryRange.selectNodeContents(summaryTotal);
+       const summaryText=summaryRange.getBoundingClientRect(),summaryCell=summaryTotalCell.getBoundingClientRect();
+       const totalInkY=glyphInkY(summaryTotal,summaryRange);
+       const totalLoadedAnchor={
+        x:summaryText.left-summaryCell.left,
+        y:(summaryText.top+summaryText.height/2)-(summaryCell.top+summaryCell.height/2)
+       };
+       const seasonTextLeft=seasonLabel.getBoundingClientRect().left;
+       const seasonChevron=seasonHeader.querySelector('.app-player-stats-chevron-space');
+       const seasonChevronRight=seasonChevron.getBoundingClientRect().right;
+       seasonChevron.remove();
+       const seasonTextWithoutChevron=seasonLabel.getBoundingClientRect().left;
+       seasonHeader.querySelector('.app-player-stats-static-label').prepend(seasonChevron);
+       const actual=cells.map(cell=>{
+        const value=cell.querySelector('.app-player-stats-value');
+        const range=document.createRange();range.selectNodeContents(value);
+        const a=rect(range),b=rect(cell);
+        return {dx:a.x-b.x,dy:a.y-b.y,inkDy:glyphInkY(value,range)-b.y,right:a.right,height:b.height};
+       });
+       const sampleTexts=['128 (24)','9870','32','21','17','2','7.50'];
+       for(const [index,cell] of cells.entries()){
+        const value=cell.querySelector('.app-player-stats-value');
+        // Compare real short values against the actual first-paint samples.
+        value.innerHTML='<span class="app-skeleton-bar" data-skeleton-sample="'+sampleTexts[index]+'" aria-hidden="true"></span>';
+       }
+       row.classList.add('app-player-stats-loading');
+       const skeleton=cells.map(cell=>{
+        const a=rect(cell.querySelector('.app-skeleton-bar')),b=rect(cell);
+        return {dx:a.x-b.x,dy:a.y-b.y,right:a.right,height:b.height};
+       });
+       row.classList.remove('app-player-stats-loading');
+       const loadingRow=document.createElement('tr');
+       loadingRow.className='app-player-stats-season-row app-player-stats-loading';
+       loadingRow.innerHTML='<th scope="row" class="app-player-stats-season"><span class="app-player-stats-skeleton-label">'+
+        '<span class="app-player-stats-chevron-space" aria-hidden="true"></span>'+
+        '<span class="app-skeleton-bar app-player-stats-skeleton-season" aria-hidden="true"></span></span></th>'+
+        '<td class="app-player-stats-competition"><span class="app-player-stats-total-value">'+
+        '<span class="app-skeleton-bar app-player-stats-skeleton-total"></span></span></td><td></td>'+
+        keys.map((key,i)=>'<td class="app-player-stats-number" data-metric="'+key+'" data-mobile-label="'+labels[i]+'">'+
+         '<span class="app-player-stats-value"><span class="app-skeleton-bar" data-skeleton-sample="'+
+         sampleTexts[i]+'" aria-hidden="true"></span></span></td>').join('');
+       row.parentNode.append(loadingRow);
+       const loadingHeader=loadingRow.querySelector('th');
+       const loadingSeasonBar=loadingHeader.querySelector('.app-player-stats-skeleton-season');
+       const loadingSeasonOffset=rect(loadingSeasonBar).y-rect(loadingHeader).y;
+       const seasonInkOffset=
+        (rect(loadingSeasonBar).y-rect(loadingHeader).y)-
+        (seasonInkY-rect(seasonHeader).y);
+       const loadingSeasonX=loadingSeasonBar.getBoundingClientRect().left-loadingHeader.getBoundingClientRect().left;
+       const pendingTotalBar=loadingRow.querySelector('.app-player-stats-skeleton-total');
+       const pendingTotalCell=pendingTotalBar.closest('td');
+       const pendingBar=pendingTotalBar.getBoundingClientRect(),pendingCell=pendingTotalCell.getBoundingClientRect();
+       const totalInkOffset=(pendingBar.top+pendingBar.height/2)-totalInkY-
+        ((pendingCell.top+pendingCell.height/2)-(summaryCell.top+summaryCell.height/2));
+       const totalPendingAnchor={
+        x:pendingBar.left-pendingCell.left,
+        y:(pendingBar.top+pendingBar.height/2)-(pendingCell.top+pendingCell.height/2)
+       };
+       const loadingSkeletonCenters=[...loadingRow.querySelectorAll('.app-player-stats-number .app-skeleton-bar')].map(node=>rect(node).y);
+       const loadingTotalCenter=rect(loadingRow.querySelector('.app-player-stats-skeleton-total')).y;
+       const loadingSeasonCenter=rect(loadingSeasonBar).y;
+       const samplePaintStyle=getComputedStyle(loadingSeasonBar,'::before');
+       const labelPaintStyle=getComputedStyle(loadingSeasonBar);
+       const samplePaint={decoration:samplePaintStyle.textDecorationLine,
+        thickness:samplePaintStyle.textDecorationThickness,
+        translation:labelPaintStyle.translate,bg:labelPaintStyle.backgroundColor,
+        radius:labelPaintStyle.borderRadius,overflow:labelPaintStyle.overflow,
+        justify:labelPaintStyle.justifyContent,
+        sample:samplePaintStyle.content};
+       // Same cell/row geometry, but the two distinct loaded labels.
+       // Recreate the Career variant to catch its formerly inset ghost stroke.
+       const seasonTextOriginal=seasonLabel.textContent;
+       seasonLabel.textContent='Career';
+       const careerRange=document.createRange();careerRange.selectNodeContents(seasonLabel);
+       const careerTextLeft=careerRange.getBoundingClientRect().left-seasonHeader.getBoundingClientRect().left;
+       const careerInkOffset=(rect(loadingSeasonBar).y-rect(loadingHeader).y)-
+        (glyphInkY(seasonLabel,careerRange)-rect(seasonHeader).y);
+       loadingSeasonBar.classList.replace('app-player-stats-skeleton-season','app-player-stats-skeleton-career');
+       const careerBarStyle=getComputedStyle(loadingSeasonBar);
+       const careerPaint={left:loadingSeasonBar.getBoundingClientRect().left-loadingHeader.getBoundingClientRect().left,
+        justify:careerBarStyle.justifyContent,overflow:careerBarStyle.overflow,
+        radius:careerBarStyle.borderRadius,
+        sample:getComputedStyle(loadingSeasonBar,'::before').content};
+       loadingSeasonBar.classList.replace('app-player-stats-skeleton-career','app-player-stats-skeleton-season');
+       seasonLabel.textContent=seasonTextOriginal;
+       const link=probe.querySelector('.app-player-stats-club-link'),name=link.querySelector('.app-player-stats-club-name');
+       const competitionLink=probe.querySelector('.app-player-stats-competition-link');
+       const competitionIdentity=probe.querySelector('.app-player-stats-competition-identity');
+       const competitionMark=probe.querySelector('.app-player-stats-competition-identity .fa-competition-mark');
+       const bounds=rect(name),compBounds=rect(competitionLink);
+       const compCell=rect(competitionLink.closest('th')),clubCell=rect(link.closest('td'));
+       const competitionStyle=getComputedStyle(competitionLink);
+       const compVisual={x:compBounds.x,y:compBounds.y,centerOffset:compBounds.y-compCell.y,
+        lineHeight:parseFloat(competitionStyle.lineHeight),fontSize:parseFloat(competitionStyle.fontSize),
+        overflow:competitionStyle.overflow};
+       const clubCenterOffset=bounds.y-clubCell.y;
+       const crest=probe.querySelector('.app-player-stats-club-crest');
+       const crestCenter=rect(crest).y;
+       const identity=crest.parentElement;
+       const clubTextLeft=name.getBoundingClientRect().left;
+       const crestRight=crest.getBoundingClientRect().right;
+       crest.remove();
+       const nameWithoutCrest=name.getBoundingClientRect().left;
+       identity.prepend(crest);
+       const nameRestoredAfterCrest=name.getBoundingClientRect().left;
+       const originalNameCenter=bounds.y;
+       const detailCells=[...link.closest('tr').querySelectorAll('.app-player-stats-number .app-player-stats-value')];
+       const glyphCenter=node=>{const range=document.createRange();range.selectNodeContents(node);
+        const box=range.getBoundingClientRect();return box.top+box.height/2;};
+       const compName=probe.querySelector('.app-player-stats-competition-name');
+       const compRange=document.createRange();compRange.selectNodeContents(compName);
+       const competitionStart=competitionIdentity.getBoundingClientRect().left-competitionLink.closest('th').getBoundingClientRect().left;
+       const competitionTextInset=compRange.getBoundingClientRect().left-competitionIdentity.getBoundingClientRect().left;
+       const compTextCenter=glyphCenter(compName);
+       const clubTextCenter=glyphCenter(name);
+       const detailNumberCenter=glyphCenter(detailCells[0]);
+       detailCells.forEach((node,i)=>node.textContent=String(12345+i));
+       const independentCrestCenter=rect(crest).y, independentNameCenter=rect(name).y;
+       return {actual,skeleton,link:{x:bounds.x,y:bounds.y},linkOverflow:getComputedStyle(link).overflow,
+        chevronTextShift:seasonTextWithoutChevron-seasonTextLeft,
+        chevronTextGap:seasonTextLeft-seasonChevronRight,
+        crestTextShift:nameWithoutCrest-clubTextLeft,
+        crestRestoreTextShift:nameRestoredAfterCrest-clubTextLeft,
+        crestTextGap:clubTextLeft-crestRight,
+        competition:compVisual,clubCenterOffset,compTextCenter,clubTextCenter,detailNumberCenter,
+        competitionPosition:getComputedStyle(competitionIdentity).position,
+        competitionLinkPosition:competitionStyle.position,competitionCellCenter:compCell.y,
+        competitionStart,competitionTextInset,competitionMarkCenter:rect(competitionMark),
+        seasonTextOffset,loadingSeasonOffset,seasonLoadedX,loadingSeasonX,
+        totalLoadedAnchor,totalPendingAnchor,seasonInkOffset,totalInkOffset,samplePaint,
+        careerPaint,careerTextLeft,careerInkOffset,
+        loadingSeasonCenter,loadingTotalCenter,loadingSkeletonCenters,
+        crestNameOffset:crestCenter-originalNameCenter,
+        independentCrestOffset:independentCrestCenter-crestCenter,
+        independentNameOffset:independentNameCenter-originalNameCenter,
+        tracks:getComputedStyle(cells[0]).gridTemplateRows};
+      })()`);
+      for(let i=0;i<7;i++){
+       const a=placement.actual[i],s=placement.skeleton[i];
+       assert.ok(width<=620?Math.abs(a.dx-s.dx)<=1:Math.abs(a.right-s.right)<=1,
+        'Player Stats bar '+i+' anchors to the actual text (right edge on desktop, center on mobile) even with different digit counts at '+width+'px: '+JSON.stringify(placement));
+       assert.ok(Math.abs(a.dy-s.dy)<=(width>620?2.5:1),
+        'Player Stats bar '+i+' occupies the same value baseline at '+width+'px: '+JSON.stringify(placement));
+       assert.ok(Math.abs(a.inkDy-s.dy)<=(width>620?3:1.25),
+        'Player Stats bar '+i+' follows painted numeric ink in its own cell at '+width+'px: '+JSON.stringify(placement));
+       if(width>620)assert.ok(s.dy-a.dy>=0.4,
+        'Stats loading bar must be below the verified text-line center at '+width+': '+JSON.stringify(placement));
+       assert.ok(Math.abs(a.height-s.height)<=1,
+        'Player Stats pending and verified cell heights remain stable at '+width+'px');
+      }
+      assert.ok(Math.abs(placement.seasonTextOffset-placement.loadingSeasonOffset)<=(width>620?2.5:1),
+       'Player Stats: loaded Season and skeleton share the same vertical track at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.seasonInkOffset)<=(width>620?3:1.5),
+       'Player Stats Season placeholder matches the visible letters at '+width+': '+JSON.stringify(placement));
+      assert.ok(placement.samplePaint.bg!=='rgba(0, 0, 0, 0)'&&
+        placement.samplePaint.radius==='4px'&&
+        !placement.samplePaint.decoration.includes('line-through')&&
+        !placement.samplePaint.sample.includes('Season'),
+        'Player Season uses the global rounded app skeleton rather than ghost text at '+width+': '+JSON.stringify(placement));
+       assert.ok(Math.abs(placement.careerPaint.left-placement.careerTextLeft)<=1&&
+        Math.abs(placement.careerInkOffset)<=(width>620?3:1.5)&&
+        placement.careerPaint.radius==='4px'&&
+        placement.careerPaint.sample===placement.samplePaint.sample,
+        'Career and Season skeletons start at the actual text position and share the same shape at '+width+': '+JSON.stringify(placement));
+       if(width>620)assert.ok(Math.abs(placement.totalInkOffset)<=3,
+       'Player Stats Total placeholder matches painted Total letters at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.seasonLoadedX-placement.loadingSeasonX)<=1,
+       'Player Stats Season/Career loading bar must start exactly where the text starts at '+width+': '+JSON.stringify(placement));
+      if(width>620)assert.ok(
+       Math.abs(placement.totalLoadedAnchor.x-placement.totalPendingAnchor.x)<=1&&
+       Math.abs(placement.totalLoadedAnchor.y-placement.totalPendingAnchor.y)<=2.5,
+       'Player Stats Total skeleton occupies the real Total text origin/center at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.chevronTextShift)<=0.5&&Math.abs(placement.chevronTextGap-10)<=1,
+       'Player Stats Season text remains fixed when chevron is removed at '+width+': '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.crestTextShift)<=0.5&&Math.abs(placement.crestRestoreTextShift)<=0.5&&
+       Math.abs(placement.crestTextGap-7)<=1,
+       'club text is fixed before attaching the 24px crest at '+width+': '+JSON.stringify(placement));
+      if(width===1440)assert.ok(placement.loadingSkeletonCenters.every(y=>Math.abs(y-placement.loadingSeasonCenter)<2) &&
+       Math.abs(placement.loadingTotalCenter-placement.loadingSeasonCenter)<2,
+       'desktop Player Stats: numeric and Total skeletons share the Season skeleton row: '+JSON.stringify(placement));
+      assert.ok(Math.abs(placement.crestNameOffset)<=3 &&
+       Math.abs(placement.independentCrestOffset)<=1 &&
+       Math.abs(placement.independentNameOffset)<=1,
+       'crest and club name stay independently centered when the other stats change: '+JSON.stringify(placement));
+      if(width<=620)assert.equal(placement.tracks,'12px 24px','mobile Player Stats reserve identical tracks');
+      assert.ok(Math.abs(placement.competition.centerOffset)<3.5 && Math.abs(placement.clubCenterOffset)<3.5,
+       'competition and club identities stay vertically centered at '+width+': '+JSON.stringify(placement));
+      if(width>620){
+       assert.equal(placement.competitionPosition,'absolute','Player Competition identity is anchored to the desktop row');
+       assert.equal(placement.competitionLinkPosition,'static','only the Player Stats name is clickable');
+       assert.ok(Math.abs(placement.competitionTextInset-31)<=1,'the Player Stats name follows the passive logo');
+       assert.ok(Math.abs(placement.competitionStart-placement.totalLoadedAnchor.x)<=1 &&
+        Math.abs(placement.competitionStart-placement.totalPendingAnchor.x)<=1,
+        'Player Competition text must start where Total text and its skeleton start at '+width+': '+JSON.stringify(placement));
+       assert.ok(Math.abs(placement.compTextCenter-placement.detailNumberCenter)<=2 &&
+        Math.abs(placement.compTextCenter-placement.clubTextCenter)<=2,
+        'Player Stats Competition glyphs align with actual club and statistic text at '+width+': '+JSON.stringify(placement));
+      }else{
+       assert.ok(Math.abs(placement.compTextCenter-placement.competitionCellCenter)<=3,
+        'Player Stats Competition remains centered in its mobile row at '+width+': '+JSON.stringify(placement));
+      }
+      assert.ok(placement.competition.lineHeight>=placement.competition.fontSize*1.45 &&
+       placement.competition.overflow==='visible',
+       'Player Stats competition text leaves room for g/p descenders and underline at '+width);
+      if(width===1440){
+       assert.equal(placement.linkOverflow,'visible','the real underline is not clipped');
+       await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:placement.competitionMarkCenter.x,y:placement.competitionMarkCenter.y,button:'none'});
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-competition-name')).textDecorationLine"),'none',
+        'hovering the passive Player Stats logo cannot underline the linked name');
+       await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:placement.competition.x,y:placement.competition.y,button:'none'});
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-competition-name')).textDecorationLine"),'underline',
+        'Player Stats competition name restores the visible text-only underline');
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-competition-link')).textDecorationLine"),'none',
+        'competition anchor must not paint a second underline');
+       await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:placement.link.x,y:placement.link.y,button:'none'});
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-name')).textDecorationLine"),'underline',
+        'moving the mouse over the club name visibly underlines its text');
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-link')).textDecorationLine"),'none',
+        'the club anchor itself must not paint a second underline');
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-name')).textDecorationThickness"),'0.75px',
+        'club name uses exactly one 0.75px underline');
+       await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:4,y:4,button:'none'});
+       assert.equal(await run("getComputedStyle(document.querySelector('#player-stats-alignment-probe .app-player-stats-club-name')).textDecorationLine"),'none',
+        'moving away removes the club-name underline');
+      }
+      await run("document.getElementById('player-stats-alignment-probe').remove()");
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    for(const view of ['roster','fixtures','records','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
-     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-empty')+"')"),true);
-     assert.equal(await run('location.search'),['history','roster'].includes(view)?'':'?season=2&matchday=7');
+     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-records')+"')"),true);
+     assert.equal(await run('location.search'),view==='history'?'':view==='records'?'?season=2':'?season=2&matchday=7');
+    }
+    await visit('/clubs/it/1/records');
+    for(const width of [1440,390]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===390});
+     const geometry=await run(`(()=>{
+      const host=document.querySelector('.club-records');
+      const probe=document.createElement('div');
+      host.after(probe);
+      const options={selected:{countryId:'IT',clubId:1,base:'/clubs/it/1'},ordinal:window.faClubModel.ordinal};
+      const measure=()=>[...probe.querySelectorAll('article')].map(card=>{
+       const rect=card.getBoundingClientRect();return [rect.width,rect.height];
+      });
+      probe.innerHTML=window.faClubRecords.render(options);
+      const loading=measure();
+      const membership={category:'domestic',position:1,stats:{played:4,won:2,goalsFor:6,cleanSheets:2,goalDifference:2}};
+      probe.innerHTML=window.faClubRecords.render({...options,historySnapshot:{source:'authoritative',clubKey:'IT-1',
+       coverage:'complete',world:{seasonNumber:1},seasons:[{season:1,ongoing:true,memberships:[membership]}]}});
+      const cards=[...probe.querySelectorAll('article')];
+      const rowCount=cards.filter(card=>card.getBoundingClientRect().top===cards[0].getBoundingClientRect().top).length;
+      const source=cards[0].querySelector('.club-records-sources');
+      const rightGap=source.getBoundingClientRect().right-source.firstElementChild.getBoundingClientRect().right;
+      const loaded=measure();probe.remove();
+      return {loading,loaded,rowCount,rightGap};
+     })()`);
+     assert.deepEqual(geometry.loaded,geometry.loading,'identical pending and loaded record card dimensions at '+width);
+     if(width===390)assert.equal(geometry.rowCount,1,'full-width record cards on phones');
+     else assert.ok(geometry.rowCount>=3,'multi-column record cards on desktop');
+     assert.ok(Math.abs(geometry.rightGap)<1,'season label aligns to the right edge at '+width);
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    for(const query of ['view=attributes&group=physical','view=stats&competition=international']){
+     const response=await fetch(devOrigin+'/clubs/it/1/roster?'+query,{redirect:'manual'});
+     assert.equal(response.status,200,'DEV must serve a roster subview directly on reload');
     }
     // A failed API response must not invent a selected subview or mutate /roster.
-    await visit('/clubs/it/1/roster?view=mental');
+    await visit('/clubs/it/1/roster?view=attributes&group=mental');
     await wait("document.querySelector('.club-roster[aria-busy=false] .app-players-empty-row')!==null");
-    assert.equal(await run('location.search'),'','failed roster read stays at /roster');
-    assert.equal(await run("document.querySelectorAll('.club-roster-tabs [aria-disabled=true]').length"),5);
+    assert.equal(await run('location.search'),'?view=attributes&group=mental','failure preserves deep links');
+    assert.equal(await run("document.querySelectorAll('.club-roster-tabs [aria-disabled=true]').length"),0);
     assert.equal(await run("document.querySelector('.club-load-error')"),null,'roster read failure is not a club identity failure');
     mockReadyRoster=true;
+    const initialReads={...rosterRequests};
     await visit('/clubs/it/1/roster?view=info');
     await wait("location.search==='?view=info'&&document.querySelector('.club-roster[aria-busy=false]')!==null");
     assert.equal(await run("document.querySelector('.club-roster-tabs [aria-selected=true]')?.textContent"),'Info');
     assert.equal(await run("document.querySelector('.club-roster-tabs [data-club-roster-view=info]')?.getAttribute('href')"),'/clubs/it/1/roster?view=info');
-    assert.equal(await run("document.querySelector('.club-roster-toolbar,.club-roster-groups')"),null,
-      'Roster has five peer views and no Attributes sub-navigation');
-    assert.deepEqual(await run("[...document.querySelectorAll('.club-roster-tabs [data-club-roster-view]')].map(el=>el.dataset.clubRosterView)"),
-      ['info','technical','mental','physical','goalkeeping']);
-    // Roster mobile: exactly 2.5 tabs before player count and edge-aware fade.
+    assert.deepEqual(await run("[...document.querySelectorAll('.club-roster-tabs a')].map(a=>a.dataset.clubRosterView)"),['info','stats','attributes']);
     for(const width of [320,390]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:true});
-     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='true'");
-     const measured=await run("(()=>{const nav=document.querySelector('.club-roster-tabs'),count=document.querySelector('.club-roster-count'),row=document.querySelector('.club-roster-view-row'),buttons=[...nav.querySelectorAll('a')],n=nav.getBoundingClientRect(),third=buttons[2].getBoundingClientRect(),style=getComputedStyle(nav),item=buttons[0].getBoundingClientRect();return {rowHeight:row.getBoundingClientRect().height,navWidth:n.width,tabWidth:item.width,gap:parseFloat(style.columnGap),thirdVisible:Math.min(n.right,third.right)-Math.max(n.left,third.left),countAfter:count.getBoundingClientRect().left>=n.right,overflows:nav.scrollWidth>nav.clientWidth,fade:style.maskImage,right:nav.dataset.canScrollRight,left:nav.dataset.canScrollLeft}})()");
-     // The main View strip restores scrollLeft from sessionStorage on navigation.
-     // Exercise the left edge explicitly rather than assuming a fresh position.
-     await run("document.querySelector('.club-tabs').scrollLeft=0;window.dispatchEvent(new Event('resize'))");
-     await wait("(()=>{const nav=document.querySelector('.club-tabs');if(!nav)return false;const max=Math.max(0,nav.scrollWidth-nav.clientWidth);return nav.scrollLeft<1&&nav.dataset.canScrollLeft==='false'&&nav.dataset.canScrollRight===String(max>1)})()");
-     const primary=await run("(()=>{const nav=document.querySelector('.club-tabs'),style=getComputedStyle(nav),scrollbar=getComputedStyle(nav,'::-webkit-scrollbar');return {width:style.scrollbarWidth,webkitDisplay:scrollbar.display,right:nav.dataset.canScrollRight,left:nav.dataset.canScrollLeft,overflow:nav.scrollWidth>nav.clientWidth}})()");
-     assert.equal(primary.width,'none','primary Club View scrollbar is hidden at '+width);
-     assert.equal(primary.webkitDisplay,'none','WebKit primary View scrollbar is hidden at '+width);
-     assert.equal(primary.right,String(primary.overflow),'right fade matches actual mobile View overflow at '+width);
-     assert.equal(primary.left,'false','no left fade at start at '+width);
-     assert.equal(measured.rowHeight,42,'42px row at '+width);
-     assert.ok(Math.abs(measured.navWidth-(2.5*measured.tabWidth+2*measured.gap))<2,'2.5 mobile tabs: '+JSON.stringify(measured));
-     assert.ok(Math.abs(measured.thirdVisible/measured.tabWidth-0.5)<0.06,'half third tab: '+JSON.stringify(measured));
-     assert.ok(measured.countAfter&&measured.overflows&&measured.fade!=='none'&&measured.right==='true'&&measured.left==='false','player count and right fade at '+width);
-     await run("document.querySelector('.club-roster-tabs').scrollLeft=9999");
-     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='false'&&document.querySelector('.club-roster-tabs')?.dataset.canScrollLeft==='true'");
-     await run("document.querySelector('.club-roster-tabs').scrollLeft=0");
-     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollLeft==='false'&&document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='true'");
+     assert.ok(await run("document.querySelector('.club-roster-tabs').scrollWidth<=document.querySelector('.club-roster-tabs').clientWidth+1"));
     }
+    await run("document.querySelector('[data-club-roster-view=stats]').click()");
+    await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(5)')?.textContent==='110'");
+    // Real Chromium: shared identity tracks remain fixed, ten metric columns
+    // are differentiated and the last Rating column matches Standings Pts.
+    const statsLayout=await run("(()=>{const table=document.querySelector('.club-roster-table[data-players-table-mode=stats]');const headers=[...table.querySelectorAll('thead th')];const style=getComputedStyle(table);const fixed=['--app-players-flag-width','--app-players-name-width','--app-players-positions-width'].map(k=>parseFloat(style.getPropertyValue(k)));return {keys:headers.map(h=>h.querySelector('[data-club-roster-sort]')?.dataset.clubRosterSort),widths:headers.map(h=>h.getBoundingClientRect().width),fixed,theme:document.documentElement.dataset.theme,headColor:getComputedStyle(headers.at(-1)).backgroundColor,cellColor:getComputedStyle(table.querySelector('tbody td:last-child')).backgroundColor};})()");
+    assert.deepEqual(statsLayout.keys.slice(3),['appearances','minutes','goals','assists','goalsAssistsPer90','yellowCards','redCards','cleanSheets','mvpAwards','averageRating']);
+    assert.ok(statsLayout.fixed.every((v,i)=>Number.isFinite(v)&&Math.abs(statsLayout.widths[i]-v)<2),'Flag, Player, Positions retain shared responsive widths');
+    assert.ok(statsLayout.widths[3]>statsLayout.widths[5]&&statsLayout.widths[7]>statsLayout.widths[8]&&statsLayout.widths[12]>statsLayout.widths[11],'numeric widths follow content');
+    assert.equal(statsLayout.headColor,statsLayout.theme==='light'?'rgb(183, 220, 199)':'rgb(48, 92, 76)');
+    assert.equal(statsLayout.cellColor,statsLayout.theme==='light'?'rgb(212, 235, 221)':'rgb(38, 71, 62)');
+    for(const width of [320,1440]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===320});
+     const gap=await run("document.querySelector('.club-roster-count').getBoundingClientRect().left-document.querySelector('[data-club-roster-control]').getBoundingClientRect().right");
+     assert.equal(gap,12,'dropdown spacing stays consistent');
+    }
+    for(const view of ['attributes','stats','info','stats']){
+     await run("document.querySelector('[data-club-roster-view="+view+"]').click()");
+     await wait("document.querySelector('.club-roster[aria-busy=false]')!==null");
+    }
+    assert.deepEqual(rosterRequests,{info:initialReads.info+1,stats:initialReads.stats+1});
+    assert.deepEqual(await run("[...document.querySelectorAll('[data-club-roster-control] [data-menu-value]')].map(el=>el.dataset.menuValue)"),['all','domestic','international']);
+    for(const [scope,minutes] of [['domestic','90'],['all','110'],['international','20']]){
+     await run("document.querySelector('[data-club-roster-control=competition] button').click();document.querySelector('[data-menu-value="+scope+"]').click()");
+     await wait("document.querySelector('.club-roster-table tbody tr td:nth-child(5)')?.textContent==='"+minutes+"'");
+    }
+    assert.deepEqual(rosterRequests,{info:initialReads.info+1,stats:initialReads.stats+1});
+    await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(5)')?.textContent==='20'");
+    await cmd('Page.reload',{ignoreCache:true});
+    await wait("location.search==='?view=stats&competition=international'&&document.querySelector('.club-roster-table tbody tr td:nth-child(5)')?.textContent==='20'");
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
-    await run("document.querySelector('[data-club-roster-view=technical]').click()");
-    await wait("location.search==='?view=technical'");
+    await run("document.querySelector('[data-club-roster-view=attributes]').click()");
+    await wait("location.search==='?view=attributes&group=technical'");
     assert.equal(await run("document.querySelector('.club-roster')?.dataset.rosterMode"),'attributes');
-    await run("document.querySelector('[data-club-roster-view=mental]').click()");
-    await wait("location.search==='?view=mental'");
+    await run("document.querySelector('[data-club-roster-control=group] button').click();document.querySelector('[data-menu-value=mental]').click()");
+    await wait("location.search==='?view=attributes&group=mental'");
     assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'mental');
     await run("history.back()");
-    await wait("location.search==='?view=technical'");
+    await wait("location.search==='?view=attributes&group=technical'");
     assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'technical');
     await run("document.querySelector('[data-club-roster-sort=passing]').click()");
-    await wait("location.search==='?view=technical&sort=passing&order=desc'");
+    await wait("location.search==='?view=attributes&group=technical&sort=passing&order=desc'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'descending');
     await run("document.querySelector('[data-club-roster-sort=passing]').click()");
-    await wait("location.search==='?view=technical&sort=passing&order=asc'");
+    await wait("location.search==='?view=attributes&group=technical&sort=passing&order=asc'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'ascending');
     await run("document.querySelector('[data-club-roster-sort=passing]').click()");
-    await wait("location.search==='?view=technical'");
+    await wait("location.search==='?view=attributes&group=technical'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'none');
     await run("document.querySelector('[data-club-roster-view=info]').click()");
     await wait("location.search==='?view=info'");
     await run("document.querySelector('[data-club-roster-sort=positions]').click()");
     await wait("location.search==='?view=info&sort=positions&order=desc'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=positions]').closest('th').getAttribute('aria-sort')"),'descending');
-    // Real browser: pending View controls are grey, have no href/focus target,
-    // cannot navigate, and become enabled when the API delivers valid players.
+    // The category picker remains usable while player data is pending.
     mockReadyRoster=false;
     holdRosterResponse=true;
     await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
-    await visit('/clubs/it/1/roster?view=technical');
-    await wait("document.querySelector('.club-roster[aria-busy=true] .club-roster-tabs [aria-disabled=true]')!==null");
-    const pendingTabs=await run("(()=>{const root=document.querySelector('.club-roster'),tabs=[...root.querySelectorAll('[data-club-roster-view]')],style=getComputedStyle(tabs[0]);return {count:tabs.length,disabled:tabs.filter(a=>a.getAttribute('aria-disabled')==='true').length,hrefs:tabs.filter(a=>a.hasAttribute('href')).length,focus:tabs.map(a=>a.tabIndex),opacity:style.opacity,cursor:style.cursor}})()");
-    assert.equal(pendingTabs.count,5);
-    assert.equal(pendingTabs.disabled,5);
-    assert.equal(pendingTabs.hrefs,0);
-    assert.deepEqual(pendingTabs.focus,[-1,-1,-1,-1,-1]);
-    assert.ok(Number(pendingTabs.opacity)<0.6&&pendingTabs.cursor==='default','loading subviews look disabled');
-    assert.equal(await run("document.querySelector('.club-load-error')"),null,'loading roster must not show the generic Club info error');
-    assert.equal(await run("document.documentElement.dataset.clubIdentityReady"),'true','club identity loads while the roster waits');
-    // Pending views are grey and non-interactive on desktop, including the active tab.
-    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
-    const desktopPending=await run("(()=>{const tabs=[...document.querySelectorAll('.club-roster-tabs [data-club-roster-view]')];return tabs.map(el=>{const css=getComputedStyle(el);return {opacity:css.opacity,background:css.backgroundColor,pointer:css.pointerEvents,disabled:el.getAttribute('aria-disabled'),href:el.getAttribute('href')}})})()");
-    assert.equal(desktopPending.length,5);
-    for(const [index,tab] of desktopPending.entries()){
-     assert.ok(Math.abs(Number(tab.opacity)-0.45)<0.02,'desktop disabled opacity: '+index);
-     assert.ok(tab.background==='rgba(0, 0, 0, 0)'||tab.background==='transparent','desktop disabled background: '+index+' '+tab.background);
-     assert.equal(tab.pointer,'none','desktop disabled pointer events '+index);
-     assert.equal(tab.disabled,'true','desktop aria-disabled '+index);
-     assert.equal(tab.href,null,'desktop must not expose nonfunctional URLs');
-    }
-    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
-    await run("document.querySelector('[data-club-roster-view=mental]').click()");
-    assert.equal(await run('location.search'),'','loading subviews cannot navigate; stay at /roster');
+    await visit('/clubs/it/1/roster?view=attributes&group=technical');
+    await wait("document.querySelector('.club-roster[aria-busy=true] [role=combobox]')!==null");
+    await run("document.querySelector('[data-club-roster-control=group] button').click();document.querySelector('[data-menu-value=mental]').click()");
+    await wait("location.search==='?view=attributes&group=mental'");
     for(let i=0;i<100&&!blockedRosterResponses.length;i++)await delay(20);
     assert.ok(blockedRosterResponses.length>=1,'club roster request held until assertions complete');
     holdRosterResponse=false;
     const loadedRoster={schemaVersion:1,clubKey:'IT-1',count:1,players:[{id:1001,display_name:'Test Player',nationality:'ITA',primary_position:'CM',secondary_positions:[],age:20,height_cm:180,preferred_foot:'right',attributes:{}}]};
     blockedRosterResponses.splice(0).forEach(res=>{res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(loadedRoster))});
-    await wait("location.search==='?view=info'&&document.querySelector('.club-roster[aria-busy=false] [data-club-roster-view=mental][href]')?.getAttribute('aria-disabled')===null");
-    assert.equal(await run("document.querySelector('.club-roster [aria-selected=true]')?.dataset.clubRosterView"),'info','successful response activates Info');
-    assert.equal(await run("document.querySelector('.club-roster-tabs [aria-disabled=true]')"),null);
-    await run("document.querySelector('[data-club-roster-view=mental]').click()");
-    await wait("location.search==='?view=mental'");
+    await wait("document.querySelector('.club-roster[aria-busy=false] [role=combobox]')?.value==='mental'");
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     // Verified API count=0: desktop and mobile render only a localized paragraph,
     // with no subviews, player count, sort buttons, or table.
     mockEmptyRoster=true;
     for(const [width,view] of [[1440,'info'],[390,'technical'],[320,'goalkeeping']]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
-     await visit('/clubs/it/1/roster?view='+view);
+     await visit('/clubs/it/1/roster'+(view==='info'?'?view=info':'?view=attributes&group='+view));
      await wait("document.querySelector('.club-roster[data-roster-mode=empty] .club-roster-empty')!==null");
-     assert.equal(await run('location.search'),'','empty verified squad stays /roster');
+     assert.equal(await run('location.search'),view==='info'?'?view=info':'?view=attributes&group='+view);
      const emptyState=await run("(()=>{const root=document.querySelector('.club-roster'),p=root?.querySelector('p');return {text:root?.textContent.trim(),lang:document.documentElement.lang,children:root?.children.length,paragraph:p?.className,status:p?.getAttribute('role'),extras:root?.querySelector('nav,table,button,.club-roster-count,.club-roster-table-scroll'),overflow:document.documentElement.scrollWidth>innerWidth+1}})()");
      const emptyWords={en:'No players are currently assigned to this club.',de:'Diesem Verein sind derzeit keine Spieler zugeordnet.',es:'Actualmente no hay jugadores asignados a este club.',fr:'Aucun joueur n’est actuellement affecté à ce club.',it:'Nessun giocatore è attualmente assegnato a questo club.'};
      assert.equal(emptyState.text,emptyWords[emptyState.lang]||emptyWords.en,'empty roster copy at '+width);
@@ -1110,13 +1580,13 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
       assert.equal(await currentUrl(),row.expected,'A03-04C club refresh '+lang);
      }
-     await visit('/clubs/it/1/stats?season=3&matchday=7');
+     await visit('/clubs/it/1/records?season=3');
      await run("document.querySelector('.club-tabs a[href*=\"/fixtures?\"]').click()");
-     assert.equal(await currentUrl(),'/clubs/it/1/fixtures?season=3&matchday=7');
-     await run('history.back()');await wait("location.pathname==='/clubs/it/1/stats'");
-     assert.equal(await currentUrl(),'/clubs/it/1/stats?season=3&matchday=7');
+     assert.equal(await currentUrl(),'/clubs/it/1/fixtures?season=3');
+     await run('history.back()');await wait("location.pathname==='/clubs/it/1/records'");
+     assert.equal(await currentUrl(),'/clubs/it/1/records?season=3');
      await run('history.forward()');await wait("location.pathname==='/clubs/it/1/fixtures'");
-     assert.equal(await currentUrl(),'/clubs/it/1/fixtures?season=3&matchday=7');
+     assert.equal(await currentUrl(),'/clubs/it/1/fixtures?season=3');
      await cmd('Page.navigate',{url:origin+'/competitions/it-1/fixtures?season=1&matchday=12'});await wait(competitionReady);
      await run("document.getElementById('competition-tab-stats').click()");
      assert.equal(await currentUrl(),'/competitions/it-1/stats?season=1');

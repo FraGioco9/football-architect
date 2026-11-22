@@ -161,20 +161,40 @@ test('accepts only real, internally coherent frozen V2 player totals',()=>{
   const validated=validateAuthoritativeSeason(actual,ctx(),manifest);
   assert.equal(validated.data.statistics.players[0].minutes,minutes);
   const adapted=adaptAuthoritativeSeason(validated,ctx(),manifest);
-  assert.deepEqual(adapted.statistics.players,[{playerId:58,name:'Recorded Player',nationality:null,clubKey:fixture.homeClubId,appearances:1,starts:1,subAppearances:0,minutes,goals:1,assists:null,redCards:null,cleanSheets:null,ratedAppearances:0,averageRating:null,goalsAssistsPer90:null}]);
+  assert.deepEqual(adapted.statistics.players,[{playerId:58,name:'Recorded Player',nationality:null,clubKey:fixture.homeClubId,appearances:1,starts:1,subAppearances:null,minutes,goals:1,assists:null,yellowCards:null,redCards:null,cleanSheets:null,ratedAppearances:0,averageRating:null,mvpAwards:null,mvpCoveredAppearances:0,goalsAssistsPer90:null}]);
   assert.ok(Object.isFrozen(adapted.statistics.players[0]));
   assert.equal(adapted.statistics.standings.length,16,'valid substitution retains standings');
   assert.equal(adapted.fixtures.find(f=>f.sourceFixtureId===fixture.id).homeGoals,1,
    'valid substitution retains official fixture scores');
  }
  for(const bad of [
-  {...player,displayName:58},{...player,displayName:''},{...player,goals:2},{...player,starts:0},{...player,minutes:0},
+  {...player,displayName:58},{...player,displayName:''},{...player,goals:2},{...player,starts:2},{...player,minutes:0},
   {...player,minutes:121},{...player,clubId:'FR-1'},
   {...player,appearances:2,starts:2,minutes:180}
  ]){
   const altered=structuredClone(raw);altered.data.statistics.players=[bad];
   assert.throws(()=>validateAuthoritativeSeason(altered,ctx(),manifest));
  }
+ // The real competition Stats view receives the recorded events and team
+ // counters from the validated authoritative season, not a client-side scorer.
+ const completeStats=structuredClone(raw);
+ Object.assign(completeStats.data.statistics.players[0],{
+  subAppearances:0,assists:1,yellowCards:2,redCards:1,cleanSheets:0,
+  ratedAppearances:1,averageRating:7.25
+ });
+ const recordedView=adaptAuthoritativeSeason(validateAuthoritativeSeason(completeStats,ctx(),manifest),ctx(),manifest);
+ assert.deepEqual(recordedView.statistics.overview,{matchesPlayed:8,totalGoals:1,goalsPerMatch:0.125});
+ assert.equal(recordedView.statistics.teams.find(t=>t.clubKey===fixture.homeClubId).gf,1);
+ assert.deepEqual(recordedView.statistics.players[0],{
+  playerId:58,name:'Recorded Player',nationality:null,clubKey:fixture.homeClubId,
+  appearances:1,starts:1,subAppearances:0,minutes:90,goals:1,assists:1,
+  yellowCards:2,redCards:1,cleanSheets:0,ratedAppearances:1,averageRating:7.25,mvpAwards:null,mvpCoveredAppearances:0,goalsAssistsPer90:2
+ });
+ const incoming=structuredClone(raw);
+ incoming.data.statistics.players=[{...player,starts:0,subAppearances:1,minutes:26}];
+ const incomingView=adaptAuthoritativeSeason(validateAuthoritativeSeason(incoming,ctx(),manifest),ctx(),manifest);
+ assert.equal(incomingView.statistics.players[0].starts,0);
+ assert.equal(incomingView.statistics.players[0].subAppearances,1);
  const unnamed=structuredClone(raw);delete unnamed.data.statistics.players[0].displayName;
  assert.equal(adaptAuthoritativeSeason(validateAuthoritativeSeason(unnamed,ctx(),manifest),ctx(),manifest).statistics.players[0].name,null);
  const duplicate=structuredClone(raw);duplicate.data.statistics.players=[player,player];

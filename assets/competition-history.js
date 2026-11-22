@@ -6,20 +6,28 @@
   panel.dataset.historyRecordScope=scope;
   for(const button of panel.querySelectorAll('[data-history-record-scope]'))button.setAttribute("aria-pressed",String(button.dataset.historyRecordScope===scope));
   for(const element of panel.querySelectorAll('[data-history-scope]'))element.hidden=element.dataset.historyScope!==scope;
-  // When no verified records exist for the selected scope, replace an entire
-  // empty grid with a single localized status. This also covers public History.
-  for(const group of panel.querySelectorAll('[data-history-team-records]')){
-   const grid=group.querySelector?.('.app-competition-stat-grid');if(!grid)continue;
-   const records=[...grid.querySelectorAll('.app-competition-stat-card[data-history-scope]')];
-   const hasRecords=records.some(card=>card.dataset.historyScope===scope&&
-    card.querySelector('.app-competition-stat-value'));
-   let empty=group.querySelector('[data-history-team-empty]');
-   if(!empty){
-    empty=document.createElement('p');empty.className='app-competition-status app-history-record-empty-state';
-    empty.dataset.appI18n='historyNoData';empty.dataset.historyTeamEmpty='';
-    group.append(empty);
+  // Hide empty record grids only once the selected scope is known; the
+  // loading skeleton is managed separately until the provider settles.
+  // Every populated team and player card owns a verified numeric value.
+  for(const [groupSelector,emptySelector,translation] of [
+   ['[data-history-team-records]','[data-history-team-empty]','historyNoData'],
+   ['[data-history-player-records]','[data-history-player-empty]','historyPlayerNoData']
+  ]){
+   for(const group of panel.querySelectorAll(groupSelector)){
+    const grid=group.querySelector?.('.app-competition-stat-grid');if(!grid)continue;
+    let empty=group.querySelector(emptySelector);
+    if(!empty){
+     empty=document.createElement('p');
+     empty.className='app-competition-status app-history-record-empty-state';
+     empty.dataset.appI18n=translation;
+     if(groupSelector==='[data-history-team-records]')empty.dataset.historyTeamEmpty='';
+     else empty.dataset.historyPlayerEmpty='';
+     group.append(empty);
+    }
+    const filled=[...group.querySelectorAll('[data-history-scope]')].some(card=>
+     card.dataset.historyScope===scope&&!!card.querySelector('.app-competition-stat-value'));
+    grid.hidden=!filled;empty.hidden=filled;
    }
-   grid.hidden=!hasRecords;empty.hidden=hasRecords;
   }
  };
  panel.addEventListener("click",event=>{
@@ -38,7 +46,7 @@
 (() => {
   "use strict";
   const panel=document.getElementById("competition-panel-history");
-  if(!panel)return;
+  if(!panel&&!document.getElementById("club-page"))return;
   const competitionId=window.faCompetitionContext?.definition.id||document.querySelector('meta[name="fa-competition"]')?.content;
   const fields={
     seasonGoals:["goals",true],seasonAssists:["assists",true],
@@ -68,6 +76,7 @@
   }
   const compare=(a,b)=>a.name.localeCompare(b.name,"en",{sensitivity:"base"})||
     key(a.id).localeCompare(key(b.id),"en");
+  let partial=false;
   let results=null,dialog=null,returnFocus=null,lockedScroll=null,oldOverflow="",previousPresentation=null,previousCards=null;
   function compute(payload){
     if(!payload||payload.source!=="canonical"||payload.competitionId!==competitionId||
@@ -143,18 +152,51 @@
     const clubs=context?.seasonData?.participants||(context?.definition.category==='domestic'?window.faCompetitionDivision?.clubs:[])||[];
     return clubs.find(club=>club.countryId+'-'+club.clubId===id)?.primaryName||null;
   }
-  function details(holder){
-    const label=locale(),ids=[...new Set(holder.clubs.map(item=>item.clubId))];
-    if(ids.length>1)return label.many;
-    const club=ids.length===1?clubName(ids[0]):null;
-    const seasons=[...new Set(holder.clubs.map(item=>item.season))];
-    return [club,seasons.length===1?label.season+" "+seasons[0]:seasons.length>1?label.seasons:null]
-      .filter(Boolean).join(" · ");
+  function clubLink(id,name=clubName(id)){
+    const [country,number]=id.split("-");
+    const link=element("a","app-world-standing-club-link",name||id);
+    link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:country.toLowerCase(),id:number,view:"overview"});
+    return link;
+  }
+  function seasonLink(season){
+    const link=element("a","app-world-standing-club-link app-history-season",locale().season+" "+season);
+    const id=competitionId.toLowerCase();
+    const route=window.faRoutesRegistry.parseRoute("/competitions/"+id+"/standings");
+    link.href=window.faRoutesRegistry.buildRoute({kind:route.kind,id,view:"standings"})+"?season="+season;
+    return link;
+  }
+  function portrait(id){
+    const slot=element("span","fa-dev-stats-player-portrait");
+    slot.setAttribute("aria-hidden","true");
+    slot.dataset.portraitState="missing";
+    if(!/^[1-9]\d*$/.test(id))return slot;
+    const image=element("img","");
+    image.alt="";image.loading="lazy";image.decoding="async";
+    slot.dataset.portraitState="loading";
+    image.onload=()=>{slot.dataset.portraitState="ready";};
+    image.onerror=()=>{slot.dataset.portraitState="missing";image.removeAttribute("src");};
+    image.src="/assets/players/portraits/"+id+".webp";
+    slot.append(image);return slot;
+  }
+  function responsivePlayerName(node){
+    const full=node.textContent.trim();
+    const parts=/^(\S+)\s+(.+)$/u.exec(full);
+    if(!parts||/^\p{L}\.$/u.test(parts[1]))return node;
+    const short=Array.from(parts[1])[0]+". "+parts[2];
+    node.setAttribute("aria-label",full);
+    node.replaceChildren(element("span","fa-player-full-name",full),element("span","fa-player-short-name",short));
+    return node;
+  }
+  function playerLabel(holder,tag,cls){
+    if(!/^[1-9]\d*$/.test(holder.id))return responsivePlayerName(element(tag,cls,holder.name));
+    const link=element("a",(cls+" app-world-standing-club-link").trim(),holder.name);
+    link.href=window.faRoutesRegistry.buildRoute({kind:"player",id:Number(holder.id)});
+    return responsivePlayerName(link);
   }
   function render(){
     const context=window.faCompetitionContext;
     const clubs=context?.seasonData?.participants||(context?.definition?.category==='domestic'?window.faCompetitionDivision?.clubs:[])||[];
-    const presentation=JSON.stringify([document.documentElement.lang,results,clubs.map(c=>[c.countryId,c.clubId,c.primaryName])]);
+    const presentation=JSON.stringify([document.documentElement.lang,partial,results,clubs.map(c=>[c.countryId,c.clubId,c.primaryName])]);
     const cards=[...panel.querySelectorAll("[data-history-player-record]")];
     if(presentation===previousPresentation&&previousCards?.length===cards.length&&
       previousCards.every((card,index)=>card===cards[index])){window.faAppRenderLanguage?.();return;}
@@ -175,32 +217,34 @@
       const holder=record.holders[0];
       const footer=element("div","app-history-player-footer");
       const line=element("div","app-history-player-name-row");
-      line.append(element("span","app-history-player-name",holder.name));
-      if(record.holders.length>1){
-        const plus=element("button","app-history-player-detail","+"+(record.holders.length-1));
+      line.append(playerLabel(holder,"span","app-history-player-name"));
+      const contexts=holder.clubs;
+      if(record.holders.length>1||contexts.length>1){
+        const plus=element("button","app-history-player-detail","+"+(record.holders.length>1?record.holders.length-1:contexts.length-1));
         plus.type="button";plus.dataset.historyDetail=metric;
         plus.setAttribute("aria-label",locale().details+": "+record.holders.length+" "+(record.holders.length===1?locale().holder:locale().holders));
         line.append(plus);
       }
-      footer.append(line);
-      const context=details(holder);
-      if(context){
-        if(new Set(holder.clubs.map(item=>item.clubId)).size>1&&record.holders.length===1){
-          const button=element("button","app-history-player-context app-history-player-context-button",context);
-          button.type="button";button.dataset.historyDetail=metric;
-          button.setAttribute("aria-label",locale().details);
-          footer.append(button);
-        }else footer.append(element("span","app-history-player-context",context));
+      const labels=element("div","app-history-player-labels");
+      labels.append(line);
+      const item=contexts[0];
+      if(item){
+        const metadata=element("div","app-history-player-context");
+        metadata.append(clubLink(item.clubId));
+        labels.append(metadata);
+      }
+      footer.append(portrait(holder.id),labels);
+      if(item){
+        const season=seasonLink(item.season);
+        season.classList.add("app-history-dev-season-link");
+        footer.append(season);
       }
       card.append(footer);
     }
-    // In the absence of approved player data, one message replaces seven
-    // identical empty cards. Preserve the cards for later canonical hydration.
+    // Keep the metric slots visible after an empty response.
     for(const group of panel.querySelectorAll('[data-history-player-records]')){
       const grid=group.querySelector('.app-competition-stat-grid');
       if(!grid)continue;
-      const filled=[...group.querySelectorAll('[data-history-player-record]')]
-        .some(card=>card.dataset.historyFilled==='true');
       let empty=group.querySelector('[data-history-player-empty]');
       if(!empty){
         empty=element('p','app-competition-status app-history-record-empty-state','No historical player data available yet.');
@@ -208,17 +252,106 @@
         empty.dataset.historyPlayerEmpty='';
         group.append(empty);
       }
+      empty.dataset.appI18n=partial?"historyPlayerPartial":"historyPlayerNoData";
+      const scope=panel.dataset.historyRecordScope==="all-time"?"all-time":"season";
+      const filled=[...group.querySelectorAll('[data-history-player-record]')].some(card=>
+       card.dataset.historyScope===scope&&card.dataset.historyFilled==="true");
       grid.hidden=!filled;empty.hidden=filled;
     }
     window.faAppRenderLanguage?.();
   }
-  function close(){
-    if(dialog?.open)dialog.close();
+  const animated=dialog=>typeof dialog.animate==="function"&&!window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const frames=[{opacity:0,transform:"translateY(6px)"},{opacity:1,transform:"translateY(0)"}];
+  const closing=new WeakSet();
+  function showDialog(node){
+    node.showModal();
+    if(animated(node))node.animate(frames,{duration:160,easing:"ease-out"});
   }
-  function open(metric,source){
-    const record=results?.[metric];if(!record)return;
+  function closeDialog(node){
+    if(!node.open||closing.has(node))return;
+    if(!animated(node)){node.close();return;}
+    closing.add(node);
+    node.animate(frames,{direction:"reverse",duration:130,easing:"ease-in",fill:"backwards"}).finished
+      .catch(()=>{}).then(()=>{closing.delete(node);if(node.open)node.close();});
+  }
+  function dialogHeader(title){
+    const header=element("div","app-history-player-dialog-header");
+    const heading=element("h3","",title);
+    const close=element("button","app-search-close app-history-player-close");
+    close.type="button";
+    close.setAttribute("aria-label",locale().close);
+    close.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+    header.append(heading,close);
+    return {header,heading,close};
+  }
+  // Shared modal for verified club ties in both DEV previews and normal History.
+  // Keep formatting, focus, modal animations and scroll handling identical.
+  function openClubDialog({title,value,entries,trigger,identity,seasonLink}){
+    if(!Array.isArray(entries)||!entries.length)return;
+    const grouped=new Map();
+    for(const {club,season} of entries){
+      if(!club)continue;
+      const key=String(club.countryId)+"-"+String(club.clubId);
+      if(!grouped.has(key))grouped.set(key,{club,seasons:new Set()});
+      if(Number.isSafeInteger(season))grouped.get(key).seasons.add(season);
+    }
+    if(!grouped.size)return;
+    const node=element("dialog","app-history-player-dialog app-history-club-dialog");
+    const {header,heading,close}=dialogHeader(title);
+    heading.id="app-history-club-dialog-title";
+    node.setAttribute("aria-labelledby",heading.id);
+    node.append(header);
+    const summary=element("div","app-history-player-dialog-value");
+    const count=element("span");
+    count.append(document.createTextNode(grouped.size+" "));
+    const unit=element("span");
+    unit.dataset.appI18n=grouped.size===1?"historyClubSingular":"rulesClubs";
+    count.append(unit);
+    summary.append(element("strong","",value),count);
+    node.append(summary);
+    const list=element("ol","app-history-player-holders app-history-club-holders");
+    for(const {club,seasons} of grouped.values()){
+      const li=element("li");
+      const visual=identity(club);
+      const row=element("div","app-history-dialog-club");
+      const info=element("div","app-history-dialog-club-info");
+      const name=visual.querySelector(".app-world-club-name");
+      const crest=visual.querySelector(".app-world-club-crest-placeholder");
+      if(name)info.append(name);
+      if(seasons.size){
+        const meta=element("div","app-history-dialog-club-seasons");
+        for(const [index,season] of [...seasons].sort((a,b)=>a-b).entries()){
+          if(index)meta.append(document.createTextNode(" · "));
+          meta.append(seasonLink(season));
+        }
+        info.append(meta);
+      }
+      if(crest)row.append(crest);
+      row.append(info);li.append(row);list.append(li);
+    }
+    node.append(list);
+    const scroll=document.querySelector(".fa-shell-content-scroll");
+    const previousOverflow=scroll?.style.overflow;
+    const dismiss=()=>closeDialog(node);
+    close.addEventListener("click",dismiss);
+    node.addEventListener("cancel",event=>{event.preventDefault();dismiss();});
+    node.addEventListener("click",event=>{if(event.target===node)dismiss();});
+    node.addEventListener("close",()=>{
+      if(scroll)scroll.style.overflow=previousOverflow;
+      node.remove();trigger?.focus?.({preventScroll:true});
+    },{once:true});
+    document.body.append(node);
+    window.faAppRenderLanguage?.();
+    if(scroll)scroll.style.overflow="hidden";
+    showDialog(node);close.focus({preventScroll:true});
+  }
+  window.faHistoryDialog={show:showDialog,close:closeDialog,header:dialogHeader,openClubs:openClubDialog};
+  function close(){if(dialog)closeDialog(dialog);}
+  function openPlayers(record,source,{showClub=true,seasonHref=null}={}){
+    if(!record?.holders?.length)return;
     if(!dialog){
       dialog=element("dialog","app-history-player-dialog");
+      dialog.addEventListener("cancel",event=>{event.preventDefault();close();});
       dialog.addEventListener("click",event=>{if(event.target===dialog)close();});
       dialog.addEventListener("close",()=>{
         if(lockedScroll){lockedScroll.style.overflow=oldOverflow;lockedScroll=null;}
@@ -226,23 +359,25 @@
       });
       document.body.append(dialog);
     }
-    const card=source.closest("[data-history-player-record]");
+    const card=source.closest("article")||source.closest("[data-history-player-record]");
     const title=card?.querySelector("h5")?.textContent||"";
     dialog.replaceChildren();
-    const header=element("div","app-history-player-dialog-header");
-    const heading=element("h3","",title);heading.id="app-history-player-dialog-title";
+    const {header,heading,close:exit}=dialogHeader(title);
+    heading.id="app-history-player-dialog-title";
     dialog.setAttribute("aria-labelledby",heading.id);
-    const exit=element("button","app-history-player-close","×");
-    exit.type="button";exit.setAttribute("aria-label",locale().close);exit.addEventListener("click",close);
-    header.append(heading,exit);dialog.append(header);
+    exit.addEventListener("click",close);
+    dialog.append(header);
     const summary=element("div","app-history-player-dialog-value");
     summary.append(element("strong","",record.value),
       element("span","",record.holders.length+" "+locale().holders));
     dialog.append(summary);
     const list=element("ol","app-history-player-holders");
+    const hasNodes=node=>typeof node.hasChildNodes==="function"?node.hasChildNodes():node.children.length>0;
     for(const holder of record.holders){
       const li=element("li","");
-      li.append(element("strong","",holder.name));
+      const identity=element("div","app-history-dialog-player");
+      const info=element("div","app-history-dialog-player-info");
+      info.append(playerLabel(holder,"strong",""));
       const groups=new Map();
       for(const item of holder.clubs){
         if(!groups.has(item.clubId))groups.set(item.clubId,new Set());
@@ -251,32 +386,32 @@
       const clubs=element("ul","app-history-player-clubs");
       for(const [clubId,seasons] of groups){
         const line=element("li","");
-        const name=clubName(clubId),[country,number]=clubId.split('-');
-        if(name&&country&&number){
-          const link=element("a","app-world-standing-club-link",name);
-          link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:country.toLowerCase(),id:number,view:"overview"});
-          line.append(link);
-        }else line.append(element("span","",name||locale().unknown));
-        for(const season of [...seasons].sort((a,b)=>a-b)){
-          line.append(document.createTextNode(" · "));
-          const link=element("a","app-world-standing-club-link",locale().season+" "+season);
-          const id=competitionId.toLowerCase(),identity=window.faRoutesRegistry.parseRoute("/competitions/"+id+"/standings");
-          link.href=window.faRoutesRegistry.buildRoute({kind:identity.kind,id,view:"standings"})+"?season="+encodeURIComponent(season);
-          line.append(link);
+        if(showClub)line.append(clubLink(clubId));
+        for(const season of [...seasons].filter(Number.isSafeInteger).sort((a,b)=>a-b)){
+          if(hasNodes(line))line.append(document.createTextNode(" · "));
+          if(showClub)line.append(seasonLink(season));
+          else if(typeof seasonHref==="function"){
+            const link=element("a","app-world-standing-club-link app-history-season app-records-season-link",locale().season+" "+season);
+            link.href=seasonHref(holder.id,season);line.append(link);
+          }else line.append(locale().season+" "+season);
         }
-        clubs.append(line);
+        if(hasNodes(line))clubs.append(line);
       }
-      li.append(clubs);list.append(li);
+      if(hasNodes(clubs))info.append(clubs);
+      identity.append(portrait(holder.id),info);
+      li.append(identity);list.append(li);
     }
     dialog.append(list);
     returnFocus=source;
     lockedScroll=document.querySelector(".fa-shell-content-scroll");
     if(lockedScroll){oldOverflow=lockedScroll.style.overflow;lockedScroll.style.overflow="hidden";}
-    dialog.showModal();exit.focus({preventScroll:true});
+    showDialog(dialog);exit.focus({preventScroll:true});
   }
+  window.faHistoryPlayerUI={portrait,openPlayers,responsivePlayerName};
+  if(!panel)return;
   panel.addEventListener("click",event=>{
     const trigger=event.target.closest("[data-history-detail]");
-    if(trigger&&panel.contains(trigger))open(trigger.dataset.historyDetail,trigger);
+    if(trigger&&panel.contains(trigger))openPlayers(results?.[trigger.dataset.historyDetail],trigger);
   });
   const previous=window.faSyncHistoryRecords;
   window.faSyncHistoryRecords=()=>{previous?.();render();};
@@ -284,7 +419,41 @@
     // The caller must supply approved, complete canonical player statistics.
     // The existing DEV fixture generator contains no player-level statistics.
     applyCanonicalHistory(payload){const checked=compute(payload);results=checked;render();},
-    clear(){results=null;render();}
+    applyRecordSeasons(seasons){
+      results={};
+      partial=seasons.some(s=>s.playerCoverage===false||!Array.isArray(s.players));
+      const mvpComplete=seasons.length>0&&seasons.every(s=>s.playerCoverage!==false&&
+       Array.isArray(s.players)&&s.players.every(row=>
+        safeInt(row.appearances)&&safeInt(row.mvpCoveredAppearances)&&
+        row.mvpCoveredAppearances===row.appearances&&safeInt(row.mvpAwards)&&
+        row.mvpAwards<=row.mvpCoveredAppearances));
+      for(const [field,suffix] of [["goals","Goals"],["appearances","Appearances"],["contributions","Contributions"],["assists","Assists"],["cleanSheets","CleanSheets"],["mvpAwards","MvpAwards"]]){
+        if(field==='mvpAwards'&&!mvpComplete)continue;
+        for(const cumulative of [false,true]){
+          const entries=new Map();
+
+          let verified=true;
+          for(const season of seasons){
+            for(const row of season.players||[]){
+              if(row[field]==null&&field==="cleanSheets")continue;
+              const amount=field==="contributions"&&safeInt(row.assists)&&safeInt(row.goals)?row.goals+row.assists:row[field];
+              if(!safeInt(amount)){verified=false;break;}
+              const key=cumulative?row.playerId:row.playerId+":"+season.season;
+              const item=entries.get(key)||{id:row.playerId,name:null,value:0,clubs:[]};
+              item.value+=amount;
+              item.name=row.archivedName||item.name||"#"+row.playerId;
+              item.clubs.push({clubId:row.clubKey,season:season.season});
+              entries.set(key,item);
+            }
+          }
+          if(!verified)continue;
+          const value=Array.from(entries.values()).reduce((max,row)=>Math.max(max,row.value),0);
+          if(value>0)results[(cumulative?"total":"season")+suffix]={verified:true,value,holders:[...entries.values()].filter(row=>row.value===value).sort(compare)};
+        }
+      }
+      render();
+    },
+    clear(){partial=false;results=null;render();}
   });
   render();
 })();

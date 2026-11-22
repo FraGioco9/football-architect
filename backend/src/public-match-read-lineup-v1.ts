@@ -11,17 +11,24 @@ import {matchIdForSlot} from './domain/calendar/match-slot-identity.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {replayLineupSeasonV1} from './lineup-season-replay.ts';
 import {frozenLineupMatchDetailV1} from './frozen-lineup-match-detail.ts';
+import {projectPublishedMatchEventsV1} from './match-public-events-v1.mjs';
+import type {LineupSeasonReplayV1} from './lineup-season-replay.ts';
 import {buildKnockoutSlotReservations,type BracketScope} from './domain/calendar/knockout-slot-reservations.ts';
 import {readPublicSportingSeasonLineupV1} from './public-sporting-read-lineup-v1.ts';
 import {canonicalHomeStadium,matchSlotStadium} from './match-venues.ts';
+import {approvedMatchPortraitKeys} from './match-approved-portraits.ts';
 
-interface MatchRow {
+export interface MatchRow {
  match_id:string;generation:string;season_number:number;competition_id:string;phase_id:string;
  slot_id:string;source_fixture_id:string;marker:string;scheduled_day:number;round_number:number;
  home_club_id:string;away_club_id:string;stadium_name:string|null;source_kind:'calendar'|'domestic'|'international';
  source_hash:string;published_at:number;
 }
 interface MatchNumber {id:number;slot_match_id:string;generation:string;season_number:number}
+type PublishedLeagueRow=Pick<MatchRow,
+ 'generation'|'season_number'|'competition_id'|'source_kind'|'source_hash'|'published_at'|
+ 'source_fixture_id'|'marker'|'scheduled_day'|'round_number'|'home_club_id'|
+ 'away_club_id'|'stadium_name'>&{public_id:number};
 interface Stage {generation:string;seed:string;fixtures_hash:string;participants_hash:string;rules_hash:string;created_at:number}
 interface Draw {competition_id:string;outcome_hash:string;created_at:number}
 interface Event {status:string;receipt_hash:string|null;completed_at:number|null}
@@ -74,7 +81,14 @@ export async function confirmedPublication(db:Database,row:PublicationSource):Pr
  return calendar;
 }
 
-async function readVerifiedPublicMatchV1(db:Database,matchId:string){
+const notPlayedTimeline=()=>({kind:'not_played',eventModelVersion:null,events:null});
+/** Only a verified frozen replay and matching receipt hash may yield events. */
+function verifiedTimeline(replay:LineupSeasonReplayV1,fixtureId:string,receiptHash:string){
+ const record=replay.frozenMatches.get(fixtureId);
+ if(!record||record.fixtureId!==fixtureId||record.receiptHash!==receiptHash)return corrupt();
+ return projectPublishedMatchEventsV1(record.receipt.result);
+}
+async function readVerifiedPublicMatchV1(db:Database,matchId:string,includeStatistics=true,includeEvents=false){
  if(typeof matchId!=='string'||!/^[1-9][0-9]*$/.test(matchId))return missing();
  const numberId=Number(matchId);
  if(!Number.isSafeInteger(numberId)||numberId<1)return missing();
@@ -85,7 +99,7 @@ async function readVerifiedPublicMatchV1(db:Database,matchId:string){
  const world=await readWorld(db);
  if(mapping.generation!==world.generation||world.seasonNumber===0||mapping.season_number>world.seasonNumber)return missing();
  const row=await db.prepare('SELECT * FROM season_match_slots WHERE match_id=?').bind(internalId).first<MatchRow>();
- if(!row)return readPublicReservedKnockoutLineupV1(db,internalId,world,String(mapping.id));
+ if(!row)return readPublicReservedKnockoutLineupV1(db,internalId,world,String(mapping.id),includeStatistics,includeEvents);
  if(row.generation!==world.generation||world.seasonNumber===0||
     row.season_number>world.seasonNumber)return missing();
  const season=await db.prepare('SELECT generation FROM seasons WHERE season_number=?')
@@ -98,6 +112,7 @@ async function readVerifiedPublicMatchV1(db:Database,matchId:string){
   return corrupt();
  const calendar=await confirmedPublication(db,row);
  let frozen:ReturnType<typeof frozenLineupMatchDetailV1>=null;
+ let timeline:ReturnType<typeof projectPublishedMatchEventsV1>|null=null;
  const visibleDay=row.season_number===world.seasonNumber?world.day:56;
  if(calendar&&row.scheduled_day<=visibleDay){
   const viewedWorld=row.season_number===world.seasonNumber?world:{
@@ -105,12 +120,13 @@ async function readVerifiedPublicMatchV1(db:Database,matchId:string){
   };
   const evidence=await loadSeasonSportingEvidence(db,viewedWorld);
   const replay=await replayLineupSeasonV1(db,viewedWorld,evidence,viewedWorld.day);
-  frozen=frozenLineupMatchDetailV1(replay,mapping.id);
+  frozen=frozenLineupMatchDetailV1(replay,mapping.id,row.source_fixture_id,includeStatistics);
   if(!frozen||frozen.fixtureId!==row.source_fixture_id||
     frozen.day!==row.scheduled_day||frozen.season!==row.season_number||
     frozen.competitionId!==row.competition_id||
     frozen.homeClubId!==row.home_club_id||frozen.awayClubId!==row.away_club_id)
    return corrupt();
+  if(includeEvents)timeline=verifiedTimeline(replay,row.source_fixture_id,frozen.provenance.receiptHash);
  }
  const after=await readWorld(db);
  if(after.generation!==world.generation||after.revision!==world.revision||
@@ -124,21 +140,31 @@ async function readVerifiedPublicMatchV1(db:Database,matchId:string){
   status:result?'completed':'scheduled',result,
   venue:(()=>{const name=matchSlotStadium(row.home_club_id,row.stadium_name);return name?{name}:null})(),kickoff:null,
   provenance:{kind:'authoritative',receiptHash:frozen?.provenance.receiptHash??null}};
- return {match,statistics:frozen?.statistics??null};
+ return {match,statistics:frozen?.statistics??null,
+  timeline:includeEvents?(timeline??notPlayedTimeline()):null};
 }
 
 
 /** Header/result transport never includes individual statistics. */
 export async function readPublicMatchLineupV1(db:Database,matchId:string){
- return (await readVerifiedPublicMatchV1(db,matchId)).match;
+ return (await readVerifiedPublicMatchV1(db,matchId,false)).match;
+}
+/** Separately verified timeline; never added to header or statistics response. */
+export async function readPublicMatchEventsV1(db:Database,matchId:string){
+ const {match,timeline}=await readVerifiedPublicMatchV1(db,matchId,false,true);
+ return {schemaVersion:1,providerId:'authoritative-world',matchId:match.matchId,
+  season:match.season,competitionId:match.competitionId,status:match.status,
+  homeClubId:match.homeParticipant?.clubId??null,awayClubId:match.awayParticipant?.clubId??null,
+  provenance:match.provenance,timeline:timeline??notPlayedTimeline()};
 }
 /** The same verified receipt authority, dedicated player-statistics transport. */
 export async function readPublicMatchStatisticsV1(db:Database,matchId:string){
  const {match,statistics}=await readVerifiedPublicMatchV1(db,matchId);
+ const withPortraits=statistics?await approvedMatchPortraitKeys(db,statistics):null;
  return {schemaVersion:1,providerId:'authoritative-world',matchId:match.matchId,
   season:match.season,competitionId:match.competitionId,status:match.status,
   homeClubId:match.homeParticipant?.clubId??null,awayClubId:match.awayParticipant?.clubId??null,
-  provenance:match.provenance,statistics};
+  provenance:match.provenance,statistics:withPortraits};
 }
 
 /**
@@ -146,21 +172,24 @@ export async function readPublicMatchStatisticsV1(db:Database,matchId:string){
  * between domestic and international draws. Does not publish standings or
  * future match results before a sporting receipt exists.
  */
-export async function readPublishedCompetitionMatchesLineupV1(db:Database,season:number,competitionId:string){
+export async function readPublishedCompetitionMatchesLineupV1(db:Database,season:number,competitionId:string,includeWorld=false){
  if(!Number.isSafeInteger(season)||season<1||
     !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(competitionId))return missing();
  const world=await readWorld(db);
  if(world.seasonNumber===0||season>world.seasonNumber)return missing();
  const rows=(await db.prepare(
-  `SELECT s.*,p.id AS public_id FROM season_match_slots s
+  `SELECT s.generation,s.season_number,s.competition_id,s.source_kind,s.source_hash,s.published_at,
+    s.source_fixture_id,s.marker,s.scheduled_day,s.round_number,
+    s.home_club_id,s.away_club_id,s.stadium_name,p.id AS public_id
+   FROM season_match_slots s
    JOIN public_match_numbers p ON p.slot_match_id=s.match_id AND p.generation=s.generation AND p.season_number=s.season_number
    WHERE s.season_number=? AND s.competition_id=? ORDER BY s.scheduled_day,s.round_number,s.match_id`
- ).bind(season,competitionId).all<MatchRow>()).results;
+ ).bind(season,competitionId).all<PublishedLeagueRow>()).results;
  if(rows.length===0)return missing();
  const expected=competitionId.startsWith('int-')?72:240;
  if(rows.length!==expected)return corrupt();
  const sample=rows[0];
- if(rows.some(r=>!Number.isSafeInteger((r as MatchRow&{public_id:number}).public_id)||r.generation!==world.generation||r.source_kind!==sample.source_kind||
+ if(rows.some(r=>!Number.isSafeInteger(r.public_id)||r.generation!==world.generation||r.source_kind!==sample.source_kind||
    r.source_hash!==sample.source_hash||r.published_at!==sample.published_at))return corrupt();
  const saved=await db.prepare('SELECT generation FROM seasons WHERE season_number=?')
   .bind(season).first<{generation:string}>();
@@ -189,7 +218,7 @@ export async function readPublishedCompetitionMatchesLineupV1(db:Database,season
    throw new ApiError(409,'stale_world');
  return {schemaVersion:1,providerId:'authoritative-world',season,competitionId,
   status:'published',fixtures:[
-   ...rows.map(r=>({matchId:String((r as MatchRow&{public_id:number}).public_id),sourceFixtureId:r.source_fixture_id,
+   ...rows.map(r=>({matchId:String(r.public_id),sourceFixtureId:r.source_fixture_id,
      marker:r.marker,day:r.scheduled_day,round:r.round_number,phaseId:'league',
      homeClubId:r.home_club_id,awayClubId:r.away_club_id,
      venue:(()=>{const name=matchSlotStadium(r.home_club_id,r.stadium_name);return name?{name}:null})()})),
@@ -198,7 +227,8 @@ export async function readPublishedCompetitionMatchesLineupV1(db:Database,season
      tieId:r.tie_id,leg:r.leg,homeClubId:null,awayClubId:null,venue:null,
      participantA:JSON.parse(r.participant_a_json),participantB:JSON.parse(r.participant_b_json)}))
   ].sort((a,b)=>a.day-b.day||a.matchId.localeCompare(b.matchId,'en')),
-  provenance:{kind:'authoritative',sourceKind:sample.source_kind,sourceHash:sample.source_hash}};
+  provenance:{kind:'authoritative',sourceKind:sample.source_kind,sourceHash:sample.source_hash},
+  ...(includeWorld?{world}:{})};
 }
 
 
@@ -256,7 +286,7 @@ export async function readPublishedClubFixturesBeforeCalendarLineupV1(db:Databas
    competitionId:p.competitionId,sourceKind:p.provenance.sourceKind,sourceHash:p.provenance.sourceHash}))):null};
 }
 
-interface ReservedKnockout extends PublicationSource {
+export interface ReservedKnockout extends PublicationSource {
  match_id:string;phase_id:string;tie_id:string;leg:number;slot_id:string;
  marker:string;scheduled_day:number;round_number:number|null;
  home_policy:string;rules_version:string;participant_a_json:string;participant_b_json:string;
@@ -266,7 +296,7 @@ interface ResolvedFixture {
  phaseId:string;tieId:string|null;leg:number|null;result:unknown;
 }
 /** Re-derive immutable slot proof from approved brackets, not from its database row. */
-async function validKnockoutSlot(row:ReservedKnockout,canonical?:Awaited<ReturnType<typeof buildKnockoutSlotReservations>>) {
+export async function validKnockoutSlot(row:ReservedKnockout,canonical?:Awaited<ReturnType<typeof buildKnockoutSlotReservations>>) {
  const scope=row.source_kind as BracketScope;
  const expected=(canonical??await buildKnockoutSlotReservations(row.generation,row.season_number,scope))
   .find(x=>x.matchId===row.match_id);
@@ -281,6 +311,7 @@ async function validKnockoutSlot(row:ReservedKnockout,canonical?:Awaited<ReturnT
 }
 async function readPublicReservedKnockoutLineupV1(
  db:Database,matchId:string,world:Awaited<ReturnType<typeof readWorld>>,publicMatchId:string,
+ includeStatistics=true,includeEvents=false
 ){
  const row=await db.prepare('SELECT * FROM season_knockout_match_slots WHERE match_id=?')
   .bind(matchId).first<ReservedKnockout>();
@@ -305,6 +336,7 @@ async function readPublicReservedKnockoutLineupV1(
   resolved=matching[0];
  }
  let frozen:ReturnType<typeof frozenLineupMatchDetailV1>=null;
+ let timeline:ReturnType<typeof projectPublishedMatchEventsV1>|null=null;
  if(resolved?.result){
   const viewedWorld=row.season_number===world.seasonNumber?world:{
    ...world,seasonNumber:row.season_number,day:56,phase:'closed' as const
@@ -312,13 +344,14 @@ async function readPublicReservedKnockoutLineupV1(
   if(resolved.day>viewedWorld.day)return corrupt();
   const evidence=await loadSeasonSportingEvidence(db,viewedWorld);
   const replay=await replayLineupSeasonV1(db,viewedWorld,evidence,viewedWorld.day);
-  frozen=frozenLineupMatchDetailV1(replay,Number(publicMatchId));
+  frozen=frozenLineupMatchDetailV1(replay,Number(publicMatchId),resolved.id,includeStatistics);
   if(!frozen||frozen.fixtureId!==resolved.id||
    frozen.day!==row.scheduled_day||frozen.season!==row.season_number||
    frozen.competitionId!==row.competition_id||
    frozen.homeClubId!==resolved.homeClubId||frozen.awayClubId!==resolved.awayClubId||
    frozen.result.homeGoals!==(resolved.result as {homeGoals:number}).homeGoals||
    frozen.result.awayGoals!==(resolved.result as {awayGoals:number}).awayGoals)return corrupt();
+  if(includeEvents)timeline=verifiedTimeline(replay,resolved.id,frozen.provenance.receiptHash);
  }else if(resolved&&resolved.day<=(row.season_number===world.seasonNumber?world.day:56)){
   return corrupt();
  }
@@ -339,5 +372,6 @@ async function readPublicReservedKnockoutLineupV1(
    ?(()=>{const name=canonicalHomeStadium(resolved.homeClubId);return name?{name}:null})()
    :null,kickoff:null,
   provenance:{kind:'authoritative',receiptHash:frozen?.provenance.receiptHash??null}};
- return {match,statistics:frozen?.statistics??null};
+ return {match,statistics:frozen?.statistics??null,
+  timeline:includeEvents?(timeline??notPlayedTimeline()):null};
 }

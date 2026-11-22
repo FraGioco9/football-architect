@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {existsSync,mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,readdirSync,unlinkSync} from "node:fs";
 import {join} from "node:path";
+import {createHash} from "node:crypto";
+import {approvedPortraitPaths,PORTRAIT_RELEASE_SCHEMA} from "../tools/portrait-release-gate.mjs";
 import {tmpdir} from "node:os";
 import {repositoryRoot,planPublicFiles,assertPublicArtifact,stagePublicArtifact,isAllowlistedPublicPath,publicRequestFile} from "../tools/publication-guard.mjs";
 
@@ -24,8 +26,33 @@ test("PLAYER-AUTH public artifact includes only the approved account pages and s
    {key:"Cache-Control",value:"private, no-store, max-age=0"},
    {key:"Referrer-Policy",value:"no-referrer"},
    {key:"X-Robots-Tag",value:"noindex, nofollow"}
+  ]},
+  {source:"/assets/clubs/:path*",headers:[
+   {key:"Cache-Control",value:"public, max-age=300, s-maxage=300, must-revalidate"},
+   {key:"X-Content-Type-Options",value:"nosniff"}
+  ]},
+  {source:"/assets/competitions/:path*",headers:[
+   {key:"Cache-Control",value:"public, max-age=300, s-maxage=300, must-revalidate"},
+   {key:"X-Content-Type-Options",value:"nosniff"}
+  ]},
+  {source:"/assets/players/portraits/:path*",headers:[
+   {key:"Cache-Control",value:"public, max-age=60, s-maxage=60, must-revalidate"},
+   {key:"X-Content-Type-Options",value:"nosniff"}
   ]}
  ]);
+});
+
+test("#733: replaceable ID-based images use bounded, revalidating Vercel cache policies",()=>{
+ const {headers}=JSON.parse(readFileSync(join(repositoryRoot,"vercel.json"),"utf8"));
+ const imageRules=headers.filter(rule=>rule.source.startsWith("/assets/"));
+ assert.equal(imageRules.length,3,"only approved static image families receive public cache headers");
+ for(const rule of imageRules){
+  const cache=rule.headers.find(h=>h.key==="Cache-Control")?.value;
+  const ttl=rule.source.includes("/players/portraits/")?60:300;
+  assert.equal(cache,`public, max-age=${ttl}, s-maxage=${ttl}, must-revalidate`);
+  assert.ok(!cache.includes("immutable"),"stable image IDs must revalidate after replacement");
+  assert.ok(rule.headers.some(h=>h.key==="X-Content-Type-Options"&&h.value==="nosniff"));
+ }
 });
 
 test("INT24-PUBLIC: shared rules and stats are self-contained public dependencies",()=>{
@@ -67,7 +94,7 @@ test("#605: shipped Club Fixtures includes the published match-reference module 
 
 test("PUBLIC-01: only explicit public assets are eligible; demo fixture is excluded",()=>{
  const files=planPublicFiles();
-  const divisionAssets=files.filter(p=>p.startsWith("assets/divisions/"));
+  const divisionAssets=files.filter(p=>p.startsWith("assets/competitions/"));
   assert.equal(divisionAssets.length,32);
   assert.ok(divisionAssets.every(p=>p.endsWith("/primary.svg")||p.endsWith("/compact.svg")));
   assert.ok(!files.includes("assets/division-logos.js"));
@@ -243,4 +270,74 @@ test('PERF-API-657: compact manifest is a required public asset at its canonical
  assert.ok(planPublicFiles().includes(path));
  assert.equal(isAllowlistedPublicPath('competitions/_shared/compact-broken.json'),false);
  assert.equal(isAllowlistedPublicPath('competitions/_shared/not-allowed.json'),false);
+});
+
+
+test('#733: DEV reuses exactly the 26 already approved V4.2 WebPs; Production stays fenced',()=>{
+ const path='assets/players/portraits/44.webp';
+ assert.ok(existsSync(join(repositoryRoot,path)),'accepted DEV WebP exists');
+ assert.equal(isAllowlistedPublicPath(path),false,'file existence alone is never approval');
+ assert.equal(planPublicFiles().some(p=>p.startsWith('assets/players/portraits/')),false);
+ assert.equal(planPublicFiles(repositoryRoot,{target:'production'}).includes(path),false);
+ assert.throws(()=>planPublicFiles(repositoryRoot,{target:'production',portraitReleaseSha256:'0'.repeat(64)}),
+  /manifest missing or unsafe/,'DEV approval never authorizes Production');
+ const expected=[...Array.from({length:20},(_,i)=>44+i),93,98,141,145,148,190]
+  .map(id=>'assets/players/portraits/'+id+'.webp').sort();
+ const dev=planPublicFiles(repositoryRoot,{target:'dev-preview'}).filter(p=>p.startsWith('assets/players/portraits/'));
+ assert.deepEqual(dev,expected);
+ const root=mkdtempSync(join(tmpdir(),'fa-733-dev-preview-'));
+ try {
+  const destination=join(root,'public');
+  const files=stagePublicArtifact(repositoryRoot,destination,{target:'dev-preview'});
+  assert.deepEqual(files.filter(p=>p.startsWith('assets/players/portraits/')),expected);
+  for(const file of expected)assert.ok(existsSync(join(destination,file)),file);
+  assert.deepEqual(assertPublicArtifact(destination,{sourceRoot:repositoryRoot,target:'dev-preview'}),files);
+ }finally{rmSync(root,{recursive:true,force:true})}
+});
+
+test('#733: prior DEV approval is byte-bound and not transferable to arbitrary files',()=>{
+ const root=mkdtempSync(join(tmpdir(),'fa-733-tamper-'));
+ try {
+  const path='assets/players/portraits/44.webp';
+  mkdirSync(join(root,'assets/players/portraits'),{recursive:true});
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview'}),/missing or unsafe/);
+  writeFileSync(join(root,path),Buffer.from('RIFF0000WEBPVP8Ltampered'));
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview'}),/hash mismatch/);
+  assert.deepEqual([...approvedPortraitPaths(root,{target:'production'})],[]);
+ }finally{rmSync(root,{recursive:true,force:true})}
+});
+
+test('#733: independently pinned V4.2 manifests are target-bound and hash-verified',()=>{
+ const root=mkdtempSync(join(tmpdir(),'fa-733-release-'));
+ const sha=data=>createHash('sha256').update(data).digest('hex');
+ const image=Buffer.from('RIFF0000WEBPVP8Lsynthetic');
+ const portrait='assets/players/portraits/44.webp';
+ const release='release-manifests/player-portraits-v42-dev-preview.json';
+ const row={playerId:44,appearanceFingerprint:'a'.repeat(16),
+  identitySnapshotSha256:'b'.repeat(64),approvalReceiptSha256:'c'.repeat(64),imageSha256:sha(image)};
+ const manifest={schema:PORTRAIT_RELEASE_SCHEMA,target:'dev-preview',
+  identitySchema:'player-portraits-v5',promptVersion:'player-portrait-v4.2',
+  approvalRegistrySha256:'d'.repeat(64),portraits:[row]};
+ try{
+  mkdirSync(join(root,'assets/players/portraits'),{recursive:true});
+  mkdirSync(join(root,'release-manifests'),{recursive:true});
+  writeFileSync(join(root,portrait),image);
+  const write=obj=>{const bytes=JSON.stringify(obj)+'\n';writeFileSync(join(root,release),bytes);return sha(bytes)};
+  const pinned=write(manifest);
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview'}),/hash mismatch/,
+   'the existing DEV approval cannot authorize a synthetic replacement file');
+  assert.deepEqual([...approvedPortraitPaths(root,{target:'dev-preview',expectedManifestSha256:pinned})],[portrait]);
+  assert.deepEqual([...approvedPortraitPaths(root,{target:'production'})],[]);
+  assert.throws(()=>approvedPortraitPaths(root,{target:'production',expectedManifestSha256:pinned}),/manifest missing or unsafe/);
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview',expectedManifestSha256:'0'.repeat(64)}),/digest mismatch/);
+  assert.throws(()=>approvedPortraitPaths(root,{target:'unreleased',expectedManifestSha256:pinned}),/cannot target unreleased/);
+  assert.throws(()=>approvedPortraitPaths(root,{target:'staging'}),/Unknown portrait release target/);
+  writeFileSync(join(root,portrait),Buffer.from('RIFF0000WEBPVP8Ltampered'));
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview',expectedManifestSha256:pinned}),/image integrity mismatch/);
+  writeFileSync(join(root,portrait),image);
+  const duplicate=write({...manifest,portraits:[row,row]});
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview',expectedManifestSha256:duplicate}),/duplicate/);
+  const badIdentity=write({...manifest,portraits:[{...row,identitySnapshotSha256:'invalid'}]});
+  assert.throws(()=>approvedPortraitPaths(root,{target:'dev-preview',expectedManifestSha256:badIdentity}),/release entry/);
+ }finally{rmSync(root,{recursive:true,force:true})}
 });

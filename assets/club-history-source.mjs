@@ -129,9 +129,23 @@ export async function readClubHistory({clubKey,world,fetchJson,signal}){
   const memberships=entry.memberships.map(membership=>{
    const stats=projectClubOverviewStats(raw,clubKey,membership,season,world);
    if(!stats)throw TypeError('Incomplete aggregate Club History evidence');
-   return Object.freeze({...membership,stats});
+   const leagueGoalsAgainst=raw.data.memberships.find(m=>m.competitionId===membership.competitionId)?.leagueGoalsAgainst;
+   return Object.freeze({...membership,stats,...(safe(leagueGoalsAgainst)?{leagueGoalsAgainst}:{})});
   });
-  return Object.freeze({season,ongoing:!closed,memberships:Object.freeze(memberships)});
+  const {matches,players}=raw.data;
+  const played=memberships.reduce((sum,m)=>sum+m.stats.played,0);
+  if(matches!==undefined&&(!Array.isArray(matches)||matches.length!==played||
+   !matches.every(m=>m&&/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(m.opponent)&&m.opponent!==clubKey&&safe(m.scored)&&safe(m.conceded))))
+   throw TypeError('Invalid verified record fixtures');
+  if(players!=null&&(!Array.isArray(players)||new Set(players.map(p=>p.id)).size!==players.length||
+   !players.every(p=>safe(p.id)&&p.id>0&&(p.name===null||typeof p.name==='string')&&safe(p.appearances)&&
+    safe(p.goals)&&(p.assists===null||safe(p.assists))&&(p.clean===null||safe(p.clean))&&
+     (p.mvpCoveredAppearances===undefined||safe(p.mvpCoveredAppearances)&&p.mvpCoveredAppearances<=p.appearances)&&
+     (p.mvpAwards===undefined||p.mvpAwards===null||safe(p.mvpAwards)&&
+      p.mvpAwards<=(p.mvpCoveredAppearances??p.appearances)))))
+   throw TypeError('Invalid verified player record totals');
+  return Object.freeze({season,ongoing:!closed,memberships:Object.freeze(memberships),
+   ...(matches?{matches,players}: {})});
  });
  if(signal?.aborted)throw Error('Club history read cancelled');
  const played=records.some(entry=>entry.memberships.some(m=>m.stats.played>0));

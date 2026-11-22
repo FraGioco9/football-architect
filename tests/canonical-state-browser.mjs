@@ -5,6 +5,7 @@ import calendarModel from '../assets/world-calendar-model.js';
 import {createServer} from 'node:http';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
+import {createBrowserTiming} from '../tools/ci-browser-timing.mjs';
 const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:4,seasonNumber:2,day:20,phase:'active'};
 const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
 export function published(competitionId,selectedSeason,currentWorld){
@@ -37,6 +38,7 @@ async function server(devPreview){
  host.listen(0,'127.0.0.1');await once(host,'listening');return host;
 }
 export async function verifyCanonicalStateBrowser(browser,engine){
+ const timing=createBrowserTiming('sh03-canonical-state',engine);
  const publicHost=await server(false),debugHost=await server(true);
  const origin='http://127.0.0.1:'+publicHost.address().port,debugOrigin='http://127.0.0.1:'+debugHost.address().port;
  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();
@@ -56,6 +58,11 @@ export async function verifyCanonicalStateBrowser(browser,engine){
    // Cancellation of the held request is expected when the user changes season.
    try{return await json(route,200,payload)}catch(error){if(!/closed|handled|cancel|invalid|intercept/i.test(error.message))throw error;return;}
   }
+  // The SH-03 synthetic world has no published numeric match index.
+  // Match the Worker's public missing-publication response, not protected-API 401.
+  // Keep genuine JS/page errors fatal (including in WebKit).
+  if(/^\/api\/matches\/seasons\/[1-9][0-9]*\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(path))
+   return json(route,404,{error:{code:'not_found'}});
   const day=path.match(/^\/api\/calendar\/seasons\/(\d+)\/days\/(\d+)$/);
   if(day&&populated&&day[1]==='2'&&day[2]==='13')return json(route,200,calendarPublished(2,13,apiWorld));
   if(day)return json(route,200,{schemaVersion:1,providerId:'authoritative-world',scope:'calendar',selectedSeason:Number(day[1]),day:Number(day[2]),world:apiWorld,status:'empty',reason:'calendar-unpublished',data:null,provenance:unavailable});
@@ -74,21 +81,41 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   finally{clearTimeout(timer)}
  };
  try{
-  for(const [i,path] of routes.entries()){
+  timing.mark('fixtures-ready');
+ for(const [i,path] of routes.entries()){
    const width=[320,390,768,1440][i%4],lang=['en','de','es','fr','it'][i%5],theme=i%2?'light':'dark';
    await page.setViewportSize({width,height:844});
    await page.evaluate(({lang,theme})=>window.name=JSON.stringify({lang,theme}),{lang,theme});
    for(const refresh of [false,true]){
-    if(refresh)await page.reload({waitUntil:'networkidle'});else await page.goto(origin+path,{waitUntil:'networkidle'});
-    await page.waitForFunction(()=>window.faWorldState?.get().world?.seasonNumber===2);
+    const navStart=timing.now();
+    if(refresh)await page.reload({waitUntil:'domcontentloaded'});else await page.goto(origin+path,{waitUntil:'domcontentloaded'});
+    timing.sample('public-document-domcontentloaded',timing.now()-navStart);
+    const readyStart=timing.now();
+    // Wait for the *actual public world and localized header*, not 500ms of
+    // unrelated quiet network activity on every route/refresh pair.
+    await page.waitForFunction(({lang,theme})=>
+     window.faWorldState?.get().world?.seasonNumber===2&&
+     document.querySelector('.fa-shell-date-full')?.textContent?.includes('20/56')&&
+     document.documentElement.lang===lang&&document.documentElement.dataset.theme===theme,
+     {lang,theme});
+    timing.sample('public-world-ready',timing.now()-readyStart);
     const state=await page.evaluate(()=>({source:window.faWorldState.get().source,current:window.faWorldState.get().current,lang:document.documentElement.lang,theme:document.documentElement.dataset.theme,overflow:document.documentElement.scrollWidth>innerWidth+2,calendar:document.getElementById('app-nav-calendar')?.getAttribute('href'),progress:document.querySelector('.fa-shell-date-full')?.textContent}));
     assert.equal(state.source,'authoritative',path);assert.deepEqual(state.current,{season:2,day:20});assert.ok(state.progress.includes('2')&&state.progress.includes('20/56'),path+' shared header progress');
     assert.equal(state.lang,lang);assert.equal(state.theme,theme);assert.equal(state.overflow,false,path+' overflow');
     assert.equal(new URL(state.calendar,origin).searchParams.has('season'),false,path+' global sidebar must follow the implicit current season');
     if(path.includes('?season=1'))assert.equal(new URL(page.url()).searchParams.get('season'),'1',path+' historical URL');
+    // The public-route matrix verifies bootstrap/locale, not navigation
+    // with pending match-index reads. The historical standings page starts
+    // a separate synthetic 404 lookup after world/header hydration.
+    // Settle it before reload/navigation, rather than triggering a
+    // WebKit-native access-control diagnostic on document teardown.
+    // The deliberate stale-season response race below is unchanged.
+    if(path==='/competitions/it-1/standings?season=1')
+     await page.waitForLoadState('networkidle');
     checks++;
    }
   }
+  timing.mark('public-route-matrix-complete');
   // Read-only Admin uses the same world contract without granting any write capability.
   admin=true;
    // Simulate the real login handler clearing stale tab permissions after sign-in.
@@ -101,6 +128,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.waitForFunction(()=>window.faWorldState?.get().world?.seasonNumber===0);
   await page.evaluate(()=>new Promise(resolve=>{document.documentElement.lang='it';requestAnimationFrame(resolve)}));
   assert.equal(await page.evaluate(()=>window.faWorldState.get().world.seasonNumber),0,'cached Admin render cannot undo a public reset');checks++;
+  timing.mark('admin-world-reset-complete');
   apiWorld=world;admin=false;
   await page.evaluate(()=>window.name=JSON.stringify({lang:'en',theme:'dark'}));
   // Empty public competition refresh must preserve loaded header/crest DOM and open menus.
@@ -117,6 +145,9 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',season:'2',matchday:3}));
   await page.waitForURL('**/fixtures?matchday=3');
   await page.goBack();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='standings'&&window.faCompetitionRoute?.get().season==='1');
+  // Back may issue a historical match-index request; finish it before
+  // Forward replaces the page. Native WebKit errors remain fatal.
+  await page.waitForLoadState('networkidle');
   await page.goForward();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='fixtures'&&window.faCompetitionRoute?.get().season==='2');checks++;
   let release;holdSeasonOne=new Promise(resolve=>release=resolve);const started=new Promise(resolve=>heldStarted=resolve);
   await page.goto(origin+'/competitions/it-1/standings?season=1',{waitUntil:'domcontentloaded'});await bounded(started,'held Season 1 API request');
@@ -124,6 +155,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===2);
   release();holdSeasonOne=null;await page.waitForLoadState('networkidle');
   assert.equal(await page.evaluate(()=>window.faCompetitionContext.selectedSeason),2);assert.equal(await page.evaluate(()=>window.faCompetitionContext.seasonData),null);checks++;
+  timing.mark('historical-season-race-complete');
   await page.goto(origin+'/calendar?season=1&calendarView=week',{waitUntil:'networkidle'});
   await page.locator('#calendar-season-picker').click();
   const menuWorldCalls=worldCalls;
@@ -154,11 +186,13 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   // Protected source ignores API data and retains its own empty Season 0 after reset/reload.
   const callsBefore=worldCalls;
   for(const path of routes){
-   await page.goto(debugOrigin+path,{waitUntil:'networkidle'});
-   await page.waitForFunction(()=>window.faWorldState?.get().source==='dev');
+   await page.goto(debugOrigin+path,{waitUntil:'domcontentloaded'});
+   await page.waitForFunction(()=>window.faWorldState?.get().source==='dev'&&
+    window.faWorldState.get().current?.season===0&&window.faWorldState.get().current?.day===0);
    assert.deepEqual(await page.evaluate(()=>window.faWorldState.get().current),{season:0,day:0},'protected '+path);checks++;
   }
   assert.equal(worldCalls,callsBefore,'Debug pages must not read public world');
+  timing.mark('debug-route-matrix-complete');
   await page.goto(debugOrigin+'/competitions/it-1/standings',{waitUntil:'networkidle'});
   await page.locator('.fa-dev-widget-button').click();
   await page.locator('[data-dev-control="season-number"]').fill('2');await page.locator('[data-dev-control="season-number"]').dispatchEvent('change');
@@ -253,6 +287,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.evaluate(()=>{window.sh03Row=document.querySelector('#app-standings-body tr');window.sh03DocumentToken={};window.dispatchEvent(new Event('fa:world-invalidated'))});
   await page.waitForFunction(()=>document.querySelector('.app-competition-status')?.hidden===true);
   assert.equal(await page.evaluate(()=>window.sh03Row===document.querySelector('#app-standings-body tr')),true,'populated refresh retains rows');
+  timing.mark('debug-published-geometry-complete');
   holdNumber='2';let releaseOld;holdSeasonOne=new Promise(resolve=>releaseOld=resolve);const oldStarted=new Promise(resolve=>heldStarted=resolve);
   // A same-revision world invalidation no longer refetches the season.
   // Advance world revision deliberately to exercise a genuinely stale in-flight read.
@@ -274,6 +309,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   assert.equal(new URL(page.url()).searchParams.has('season'),false,'OFF leaves current season implicit');
   releaseOld();holdSeasonOne=null;await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.world?.revision===6);
   assert.equal(await page.evaluate(()=>!!window.sh03DocumentToken),true,'switches preserve the document');checks++;
+  timing.mark('stale-world-invalidation-complete');
   await page.goto(debugOrigin+'/calendar?season=2&calendarView=week',{waitUntil:'networkidle'});
   await page.evaluate(()=>window.faWorldCalendar.setWeek(2));
   await page.locator('[data-calendar-day="13"]').click();
@@ -296,12 +332,14 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   assert.equal(worldCalls,beforeTab,'in-page competition tabs must not reload /api/world');
   checks++;
   assert.deepEqual(errors,[],engine+' SH-03 browser errors');
+  timing.mark('checks-complete');
   console.log('SH-03 '+engine+' PASS: '+checks+' individual page/state checks');
  }catch(error){
   const snapshot=await page.evaluate(()=>({url:location.href,world:window.faWorldState?.get?.(),route:window.faCompetitionRoute?.get?.(),context:{season:window.faCompetitionContext?.selectedSeason,world:window.faCompetitionContext?.seasonData?.world},status:document.querySelector('.app-competition-status')?.textContent,admin:document.querySelector('[data-admin-status]')?.textContent})).catch(()=>null);
   console.error('SH-03 failure state: '+JSON.stringify({engine,snapshot,errors}));
   await page.screenshot({path:'int24-browser-artifacts/sh03-'+engine+'-failure.png',fullPage:true}).catch(()=>{});throw error;
  }finally{
-  await context.close();for(const host of [publicHost,debugHost]){host.closeAllConnections();await new Promise(resolve=>host.close(resolve));}
+  try{await context.close();for(const host of [publicHost,debugHost]){host.closeAllConnections();await new Promise(resolve=>host.close(resolve));}}
+  finally{timing.mark('cleanup-complete');timing.report();}
  }
 }

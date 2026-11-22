@@ -1,3 +1,5 @@
+import {verifyMatchesDirectory} from './matches-directory-browser.mjs';
+import {verifyPlayerMatchesNetwork} from './player-matches-network-browser.mjs';
 import {verifyCompetitionPlayerStats} from './competition-player-stats-browser.mjs';
 // FE-02: measured viewport geometry in the real loopback app, Chromium/WebKit.
 import assert from "node:assert/strict";
@@ -70,6 +72,8 @@ async function visit(profile,path,verify){
  }finally{await context.close()}
 }
 try{
+ await verifyMatchesDirectory(browser);
+ await verifyPlayerMatchesNetwork(browser,{engine});
  if(engine==='webkit')checks.push({scope:'Competition player Stats',cases:await verifyCompetitionPlayerStats(browser,{engine})});
  for(const profile of profiles){
   await visit(profile,"/clubs",async page=>{
@@ -192,6 +196,108 @@ try{
     assert.notEqual(before.subtitleDisplay,'none',"desktop header retains the original 9411b691 layout at "+width);
    }
    assert.ok(before.rootOverflow<=2,"Player Detail must not produce page overflow "+JSON.stringify({width,before}));
+  });
+ }
+
+
+ // #720: real browser geometry for Matches crest/skeleton parity at phone and desktop widths.
+ // A verified fixture image is used because empty public worlds have no recorded match rows.
+ for(const width of [320,390,768,1440]){
+  await visit({width,height:844,language:"it",theme:"dark"},"/players/33?view=matches",async page=>{
+   await page.evaluate(()=>document.fonts.ready);
+   const measured=await page.evaluate(async()=>{
+    const table=document.querySelector('.app-player-matches-table');
+    if(!table||!table.tBodies[0])throw Error('Matches public table missing');
+    const columns=Array.from(table.querySelectorAll('colgroup col'));
+    const ratingIndex=columns.findIndex(col=>col.classList.contains('app-player-matches-col-rating'));
+    if(ratingIndex<0)throw Error('Matches rating column missing');
+    const preloaded=new Image();
+    preloaded.src='/assets/clubs/IT/1/crest.svg';
+    await preloaded.decode();
+    const addText=(parent,text,loading,width)=>{
+     const track=document.createElement('span');track.className='app-player-matches-value';
+     if(loading){
+      const bar=document.createElement('span');bar.className='club-fp-bar';
+      bar.style.width=width+'px';bar.style.height='10px';track.append(bar);
+     }else track.textContent=text;
+     parent.append(track);
+    };
+    const makeRow=(loading,fallback=false)=>{
+     const tr=document.createElement('tr');
+     tr.className='app-player-matches-row'+(loading?' app-player-matches-loading':'');
+     for(let i=1;i<=columns.length;i++){
+      const td=document.createElement(i===1?'th':'td');
+      td.className=i===1?'app-player-matches-match':i===4?'app-player-matches-identity':i===2?'app-player-matches-competition':'app-player-matches-number';
+      if(i===4){
+       const identity=document.createElement('span');identity.className='app-player-matches-club';
+       const mark=document.createElement('span');
+       mark.className=loading?'app-world-club-crest-placeholder fa-crest-loading app-player-matches-skeleton-crest':'app-players-club-mark app-player-matches-crest';
+       if(!loading&&!fallback){
+        const img=document.createElement('img');img.className='app-players-club-crest';
+        img.alt='';img.src=preloaded.src;mark.append(img);
+       }
+       identity.append(mark);
+       addText(identity,'Subalpina Torino',loading,105);
+       td.append(identity);
+      }else{
+       const value=i===1?'Season 1 · Day 3':i===6?'2–1':i===7?'90':i===ratingIndex+1?'7.4':'—';
+       addText(td,value,loading,i===ratingIndex+1?26:i===6?32:90);
+      }
+      tr.append(td);
+     }
+     return tr;
+    };
+    const skeleton=makeRow(true),loaded=makeRow(false),fallback=makeRow(false,true);
+    table.tBodies[0].replaceChildren(skeleton,loaded,fallback);
+    await loaded.children[3].querySelector('img').decode();
+    const rectangle=element=>{
+     const r=element.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,cx:r.x+r.width/2,cy:r.y+r.height/2};
+    };
+    const skeletonMark=skeleton.children[3].querySelector('.app-player-matches-skeleton-crest');
+    const realMark=loaded.children[3].querySelector('.app-player-matches-crest');
+    const image=realMark.querySelector('img'),fallbackMark=fallback.children[3].querySelector('.app-player-matches-crest');
+    const sr=rectangle(skeleton),lr=rectangle(loaded);
+    return {
+     skeleton:rectangle(skeletonMark),real:rectangle(realMark),image:rectangle(image),
+     skeletonRow:sr,loadedRow:lr,
+     skeletonText:rectangle(skeleton.children[3].querySelector('.app-player-matches-value')),
+     loadedText:rectangle(loaded.children[3].querySelector('.app-player-matches-value')),
+     actualImageLoaded:image.complete&&image.naturalWidth>0,
+     neutralUnderReal:getComputedStyle(realMark,'::before').display,
+     neutralFallback:getComputedStyle(fallbackMark,'::before').display,
+     minutesDisplay:getComputedStyle(loaded.children[6]).display,
+     ratingDisplay:getComputedStyle(loaded.children[ratingIndex]).display,
+     ratingText:loaded.children[ratingIndex].textContent,
+     mobilePadding:getComputedStyle(loaded).paddingLeft,
+     overflow:document.documentElement.scrollWidth-innerWidth,
+     activeView:document.documentElement.dataset.playerDetailView
+    };
+   });
+   const expectedSize=width<=620?20:24;
+   assert.equal(measured.activeView,'matches','Matches route remains selected at '+width);
+   assert.ok(measured.actualImageLoaded,'verified club SVG loaded at '+width);
+   assert.equal(measured.neutralUnderReal,'none','neutral shield hidden behind actual SVG at '+width);
+   assert.notEqual(measured.neutralFallback,'none','missing crest retains neutral shield at '+width);
+   for(const which of ['skeleton','real','image']){
+    assert.ok(Math.abs(measured[which].width-expectedSize)<=1,
+     which+' crest uses '+expectedSize+'px slot at '+width+': '+JSON.stringify(measured));
+   }
+   assert.ok(Math.abs(measured.skeleton.cx-measured.real.cx)<=1,
+    'skeleton and real crest share x center at '+width+': '+JSON.stringify(measured));
+   assert.ok(Math.abs((measured.skeleton.cy-measured.skeletonRow.y)-(measured.real.cy-measured.loadedRow.y))<=1.5,
+    'skeleton and real crest share vertical row offset at '+width+': '+JSON.stringify(measured));
+   assert.ok(Math.abs(measured.skeletonText.x-measured.loadedText.x)<=1,
+    'skeleton and hydrated name share text anchor at '+width+': '+JSON.stringify(measured));
+   assert.equal(measured.ratingText,'7.4','Rating retains one decimal at '+width);
+   assert.notEqual(measured.ratingDisplay,'none','rating is visible at '+width);
+   if(width<=620){
+    assert.equal(measured.minutesDisplay,'none','minutes hidden only on mobile');
+    assert.equal(measured.mobilePadding,'12px','mobile rows reserve 12px per side');
+   }else assert.notEqual(measured.minutesDisplay,'none','desktop minutes remain visible');
+   assert.ok(measured.overflow<=2,'Matches does not overflow viewport at '+width);
+   await page.locator('.app-player-matches-table').scrollIntoViewIfNeeded();
+   mkdirSync('int24-browser-artifacts',{recursive:true});
+   await page.screenshot({path:'int24-browser-artifacts/fe-02-'+engine+'-player-matches-'+width+'.png'}); 
   });
  }
 
@@ -336,6 +442,83 @@ try{
    };
    const actionLayout=await measureControls();
    checkControls(actionLayout,width+"px",width<=360?118:132,width<=360?28:30);
+   // Test actual browser hit targets, not just z-index source declarations.
+   // The 30-option popup must stay within the scrolling pane and cover links.
+   await page.waitForFunction(()=>!document.getElementById('app-fixtures-round')?.disabled&&
+    !!document.querySelector('#app-fixtures-list .app-fixture-match'));
+   await page.locator('#app-fixtures-round').click();
+   await page.waitForFunction(()=>!document.getElementById('app-fixtures-picker').hidden);
+   const dropdown=await page.evaluate(()=>{
+    const menu=document.getElementById('app-fixtures-picker'),pane=document.querySelector('.fa-shell-content-scroll');
+    const bounds=menu.getBoundingClientRect(),visible=pane.getBoundingClientRect();
+    const x=Math.min(bounds.right-12,bounds.left+20),y=Math.min(bounds.bottom-12,bounds.top+18);
+    const hit=document.elementFromPoint(x,y);
+    return {placement:menu.dataset.menuPlacement,top:bounds.top,bottom:bounds.bottom,
+     paneTop:visible.top,paneBottom:visible.bottom,hit:hit===menu||menu.contains(hit),
+     height:bounds.height,expanded:document.getElementById('app-fixtures-round').getAttribute('aria-expanded')};
+   });
+   assert.ok(['above','below'].includes(dropdown.placement)&&dropdown.height>=30&&
+    dropdown.top>=dropdown.paneTop-2&&dropdown.bottom<=dropdown.paneBottom+2&&
+    dropdown.hit&&dropdown.expanded==='true',
+    'Matchday dropdown must overlay fixture cards inside the viewport: '+JSON.stringify({width,dropdown}));
+   await page.locator('#app-fixtures-picker [data-fixture-round-choice="2"]').click();
+   await page.waitForFunction(()=>document.getElementById('app-fixtures-round-number')?.textContent?.trim()==='2');
+   assert.equal(await page.locator('#app-fixtures-picker').isHidden(),true,'Selecting matchday closes menu');
+   await page.locator('#app-fixtures-round').click();
+   await page.keyboard.press('Escape');
+   assert.equal(await page.locator('#app-fixtures-picker').isHidden(),true,'Escape closes menu');
+   if(width===390){
+    // Four responsive widths in one browser session, without extra navigation.
+    // Stress only DOM text geometry; never create sporting match data.
+    for(const phoneWidth of [320,360,375,390]){
+     await page.setViewportSize({width:phoneWidth,height:844});
+     const sample=await page.evaluate(()=>{
+      const row=document.querySelector('#app-fixtures-list .app-fixture-match');
+      const club=row.querySelector('.app-fixture-club'),label=club.querySelector('.app-fixture-name');
+      const compact=label.querySelector('.app-fixture-name-compact'),full=label.querySelector('.app-fixture-name-full');
+      const logo=club.querySelector('.app-world-club-crest-placeholder');
+      const old=compact.textContent;compact.textContent='Münchner Freiheit';
+      const name=label.getBoundingClientRect(),track=club.getBoundingClientRect(),crest=logo.getBoundingClientRect();
+      const lineHeight=parseFloat(getComputedStyle(label).lineHeight);
+      const compactVisible=getComputedStyle(compact).display!=='none'&&getComputedStyle(full).display==='none';
+      compact.textContent=old;
+      const height=row.getBoundingClientRect().height;
+      const skeleton=document.getElementById('app-fixtures-skeleton'),prior=skeleton.style.display;
+      skeleton.style.display='grid';
+      const skeletonRow=skeleton.querySelector('.app-fixture-match');
+      const skeletonHeight=skeletonRow.getBoundingClientRect().height;
+      const middle=(match)=>{
+       const home=match.querySelector('.app-fixture-home').getBoundingClientRect();
+       const away=match.querySelector('.app-fixture-club:not(.app-fixture-home)').getBoundingClientRect();
+       const score=match.querySelector('.app-fixture-score').getBoundingClientRect();
+       const target=(home.top+home.height/2+away.top+away.height/2)/2;
+       return {delta:score.top+score.height/2-target,
+        x:score.left+score.width/2-match.getBoundingClientRect().left,
+        resultDisplay:getComputedStyle(match.querySelector('.app-fixture-result')).display};
+      };
+      const loadedAlignment=middle(row),skeletonAlignment=middle(skeletonRow);
+      skeleton.style.display=prior;
+      return {compactVisible,left:name.left,right:name.right,bottom:name.bottom,
+       height:name.height,trackRight:track.right,trackBottom:track.bottom,
+       crestRight:crest.right,lineHeight,rowHeight:height,skeletonHeight,
+       loadedAlignment,skeletonAlignment};
+     });
+     assert.ok(sample.compactVisible&&sample.left>=sample.crestRight-1&&
+      sample.right<=sample.trackRight+1&&sample.bottom<=sample.trackBottom+1&&
+      sample.height<=2*sample.lineHeight+3,
+      'Canonical long compactName stays in two lines within its club track: '+JSON.stringify({phoneWidth,sample}));
+     assert.ok(sample.rowHeight<=124&&sample.skeletonHeight<=124,
+      'Compact mobile fixture cards reserve at most 124px in the ordinary two-row case: '+JSON.stringify({phoneWidth,sample}));
+     assert.ok(Math.abs(sample.rowHeight-sample.skeletonHeight)<=8,
+      'Loading skeleton must reserve the match row height: '+JSON.stringify({phoneWidth,sample}));
+     assert.ok(sample.loadedAlignment.resultDisplay==='grid'&&sample.skeletonAlignment.resultDisplay==='grid'&&
+      Math.abs(sample.loadedAlignment.delta)<=1.5&&Math.abs(sample.skeletonAlignment.delta)<=1.5&&
+      Math.abs(sample.loadedAlignment.x-sample.skeletonAlignment.x)<=1,
+      'Loaded score and skeleton score must share the home/away midpoint: '+
+       JSON.stringify({phoneWidth,sample}));
+    }
+    await page.setViewportSize({width,height:844});
+   }
    if(width===390){
     for(const desktop of [768,1440]){
      await page.setViewportSize({width:desktop,height:900});
@@ -373,6 +556,9 @@ try{
   await visit(profile,"/clubs/it/1/overview",async page=>{
    await page.waitForFunction(()=>document.documentElement.dataset.clubReady==="true");
    const league=page.locator(".club-competition-name a[data-club-division-link]");
+   // clubReady marks the identity shell, not the asynchronously hydrated
+   // competition summary. Wait for the actual link before testing its count.
+   await league.waitFor({state:"visible"});
    assert.equal(await league.count(),1);
    await league.click();await page.waitForURL("**/competitions/it-1/standings**");
   });

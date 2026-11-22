@@ -379,7 +379,7 @@ body.app-body{--app-page-pad-top:8px}
 .club-first-paint-header .club-fp-header-location{display:block;width:min(52%,210px);height:14px;min-height:14px}
 
 /* CLUB-HISTORY-07: first-paint/hydrated title and uniform 56px table rows. */
-.club-history{margin-top:14px;min-width:0}
+.club-history{margin-top:5px;min-width:0}
 .club-history.club-first-paint-panel{min-height:0}
 .club-history-table-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;overscroll-behavior-x:contain}
 .club-history-table{--club-history-row-height:56px;width:100%;min-width:1020px;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
@@ -388,34 +388,112 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-col-position{width:150px}
 .club-history-col-number{width:64px}
 .club-history-table tr{height:var(--club-history-row-height)}
-.club-history-table th,.club-history-table td{box-sizing:border-box;height:var(--club-history-row-height);vertical-align:middle;border-bottom:1px solid var(--line);padding:0 10px;line-height:1.35;font-size:.86rem;font-weight:500;white-space:nowrap;text-align:center;overflow:hidden;text-overflow:ellipsis}
+.club-history-table th,.club-history-table td{box-sizing:border-box;height:var(--club-history-row-height);vertical-align:middle;border-bottom:1px solid var(--line);padding:0 10px;line-height:1.5;font-size:.86rem;font-weight:500;white-space:nowrap;text-align:center;overflow:hidden;text-overflow:ellipsis}
 .club-history-table thead th{border-top:0;color:var(--muted);font-size:.75rem;font-weight:600}
 .club-history-table .club-history-season-col,.club-history-table .club-history-name-col{text-align:left}
 .club-history-table .club-history-season-value{text-align:left}
 .club-history-table .club-history-total-label{text-align:left;color:var(--muted)}
-.club-history-table .club-history-competition-value{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-inline-start:18px}
-.club-history-table .club-history-competition-value a.club-history-competition-link{display:inline-block;width:fit-content;max-width:100%;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;color:inherit;font:inherit;font-weight:500;text-align:left;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:baseline}
+.club-history-table .club-history-total-value{
+ display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;
+ align-items:center;justify-content:flex-start;line-height:1.5;text-align:left;
+}
+.club-history-table .club-history-competition-value{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-inline-start:10px}
+.club-history-table .club-history-competition-value a.club-history-competition-link{display:inline-block;width:fit-content;max-width:100%;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;color:inherit;font:inherit;font-weight:500;text-align:left;text-decoration:none;white-space:nowrap;overflow:visible;text-overflow:clip;vertical-align:middle;line-height:1.5}
 .club-history-table .club-history-competition-text{text-decoration:none}
+/* #724: fixed-size competition artwork sits outside the text-only link. */
+.club-history-table .club-history-competition-identity{
+ display:inline-flex;align-items:center;gap:7px;min-width:0;max-width:100%;min-height:24px;
+ vertical-align:middle;
+}
+.club-history-table .club-history-competition-identity .fa-competition-mark{
+ display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;
+ width:24px;height:24px;overflow:hidden;color:var(--muted);
+}
+.club-history-table .club-history-competition-identity .fa-competition-mark :is(img,svg){
+ display:block;width:100%;height:100%;object-fit:contain;
+}
+.club-history-table .club-history-competition-identity .club-history-competition-link{flex:0 1 auto;min-width:0}
+.club-history-table .club-history-competition-identity .club-history-competition-text{
+ min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 .club-history-table .club-history-competition-value a.club-history-competition-link:is(:hover,:focus-visible) .club-history-competition-text{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
 .club-history-table .club-history-competition-value a.club-history-competition-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;outline-style:solid}
+/* The link must not crop g/p descenders or its text-only underline. */
+.club-history-table .club-history-competition-value a.club-history-competition-link{line-height:1.5;vertical-align:middle}
+/* Anchor Competition to the existing 10px cell text origin used by the
+   header, Total and Total skeleton, as well as the 24px numeric row center.
+   No inline baseline or separate 8px detail inset shifts the data. */
+@media(min-width:621px){
+ .club-history-table .club-history-competition-row .club-history-competition-value{position:relative}
+ .club-history-table .club-history-competition-row .club-history-competition-value .club-history-competition-identity{
+  position:absolute;inset-inline-start:10px;top:50%;transform:translateY(-50%);
+  block-size:24px;min-height:24px;max-inline-size:calc(100% - 28px);
+ }
+}
 .club-history-table .club-history-competition-row td:nth-child(3){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .club-history-table .club-history-empty-season{text-align:left;color:var(--muted);font-weight:400}
+.club-history-table .club-history-season-row:has(.club-history-empty-season)>.club-history-season-value{padding-inline-start:28px}
 .club-history-table .club-history-season-row{background:var(--surface-raised)}
 .club-history-table .club-history-season-row:has([data-club-history-toggle]){cursor:pointer}
 .club-history-table .club-history-season-row:has([data-club-history-toggle]):hover{background:color-mix(in srgb,var(--muted) 9%,var(--surface-raised))}
-.club-history-expand{display:inline-flex;align-items:center;max-width:100%;gap:10px;border:0;padding:2px 0;background:transparent;color:var(--text);font:inherit;font-weight:700;cursor:pointer;text-align:left;white-space:nowrap}
+.club-history-expand{display:inline-flex;align-items:center;max-width:100%;gap:0;border:0;padding:2px 0;background:transparent;color:var(--text);font:inherit;font-weight:700;cursor:pointer;text-align:left;white-space:nowrap}
 .club-history-expand:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:3px}
-.club-history-chevron,.club-history-chevron-space{box-sizing:border-box;width:8px;height:8px;flex:none}
+/* Text-first: the Season label and first-paint skeleton use the same
+   inset/center. Chevrons are added afterward, outside normal text flow. */
+.club-history-table :is(.club-history-expand,.club-history-skeleton-label){
+ position:relative;display:inline-flex;box-sizing:border-box;min-height:28px;
+ padding-inline-start:18px;align-items:center;line-height:1.5;vertical-align:middle;
+}
+.club-history-chevron,.club-history-chevron-space{
+ position:absolute;inset-inline-start:0;top:calc(50% - 4px);
+ box-sizing:border-box;width:8px;height:8px;flex:none;
+}
 .club-history-chevron{border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform 120ms ease-out}
 .club-history-chevron-space{border:0;visibility:hidden}
 .club-history-expand[aria-expanded="true"] .club-history-chevron{transform:rotate(45deg)}
 .club-history-table .club-history-competition-row[hidden]{display:none}
 .club-history-table .club-history-competition-row{background:transparent}
 .club-history-table .club-history-competition-row th,.club-history-table .club-history-competition-row td{border-bottom-color:var(--line)}
+.club-history-table td:nth-child(n+4) .club-history-stat-value{
+ display:flex;box-sizing:border-box;width:100%;min-width:0;height:24px;min-height:24px;
+ align-items:center;justify-content:center;line-height:1.5;text-align:center;
+}
+.club-history-table .club-history-row-loading .club-history-stat-value>.club-fp-bar{
+ flex:0 0 auto;max-width:100%;
+}
 .club-history-table .club-fp-bar{display:block;width:24px;min-width:20px;height:12px;margin-inline:auto}
-.club-history-table .club-history-row-loading .club-history-skeleton-label{cursor:default;pointer-events:none}
-.club-history-table .club-history-row-loading .club-history-skeleton-label .club-fp-bar{width:62px;min-width:0;margin:0}
-.club-history-table .club-history-row-loading .club-history-total-label .club-fp-bar{width:42px;min-width:0;margin-inline-start:0}
+.club-history-table .club-history-row-loading .club-history-skeleton-label{cursor:default;pointer-events:none;font-weight:700}
+.club-history-table .club-history-row-loading .club-history-skeleton-label .club-fp-bar{width:66px;min-width:0;margin:0}
+.club-history-table .club-history-row-loading .club-history-total-label .club-fp-bar{width:40px;min-width:0;margin-inline-start:0}
+/* The visible Season / Total bars follow the loaded label's flex line box.
+   No icon or inline baseline can shift their left edge or vertical center. */
+.club-history-table .club-history-row-loading :is(.club-history-skeleton-label,.club-history-total-value)>.club-fp-bar{
+ align-self:center;flex:none;margin-inline-start:0;
+}
+/* The exact filled, rounded and animated skeleton used elsewhere on Club
+   pages. Season/Total are real fixed-width bars; numbers reserve glyph width
+   without letting invisible text determine the visible paint position. */
+.club-history-table .club-history-row-loading .club-fp-bar{
+ display:block;box-sizing:border-box;translate:none;
+}
+/* Previous negative desktop offsets made the skeleton bars visibly too high.
+   Paint the native 12px Club bar 1px below its line-box center. This changes
+   no row, glyph, chevron, x position, bar style or mobile layout. */
+@media(min-width:621px){
+ .club-history-table .club-history-row-loading .club-fp-bar{translate:0 1px}
+}
+/* First paint and runtime pending rows reserve the actual numeric glyph
+   widths, then center the bar on the same 16px track as verified data. */
+.club-history-table .club-history-row-loading .club-history-skeleton-stat .club-fp-bar[data-skeleton-sample]{
+ display:inline-flex;align-items:center;justify-content:center;
+ box-sizing:border-box;inline-size:max-content;width:max-content;min-width:0;max-width:100%;
+ height:12px;margin:0;
+}
+.club-history-table .club-history-row-loading .club-history-skeleton-stat .club-fp-bar[data-skeleton-sample]::before{
+ content:attr(data-skeleton-sample);color:transparent;font:inherit;
+ font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap;
+}
+/* Numeric bars are measured from actual sample glyphs, not ch guesses. */
 .club-history-status{margin:12px 0 0;color:var(--muted);font-size:.875rem;line-height:1.5}
 @media(prefers-reduced-motion:reduce){.club-history-chevron{transition:none}}
 @media(max-width:620px){
@@ -431,7 +509,7 @@ body.app-body{--app-page-pad-top:8px}
 @media(max-width:620px){
  /* Position the first History row directly below the Club view tabs border,
     on first paint and after hydration. Desktop spacing stays unchanged. */
- .club-history{margin-top:0;min-width:0}
+ .club-history{margin-top:5px;min-width:0}
  .club-history-table-wrap{width:100%;max-width:100%;overflow:visible}
  .club-history-table{
   --club-history-mobile-mp:"MP";--club-history-mobile-w:"W";
@@ -478,13 +556,15 @@ body.app-body{--app-page-pad-top:8px}
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   box-sizing:border-box;width:auto;height:auto;min-height:34px;padding:4px 2px;
   border:0;white-space:normal;overflow:visible;text-overflow:clip;
-  font-size:12px;line-height:1.25;text-align:center;
+  font-size:12px;line-height:1.5;text-align:center;
  }
+ /* Align the first visible Season row and its placeholder close to the separator. */
+ .club-history-table .club-history-season-row{padding-top:0}
  .club-history-table .club-history-season-row>th:first-child{
-  grid-column:1/-1;align-items:flex-start;min-height:44px;
+  grid-column:1/-1;align-items:flex-start;min-height:34px;
   text-align:left;font-size:14px;
  }
- .club-history-table .club-history-season-row .club-history-expand{min-height:44px;align-items:center}
+ .club-history-table .club-history-season-row .club-history-expand{min-height:34px;align-items:center}
  .club-history-table .club-history-season-row>td:nth-child(2),
  .club-history-table .club-history-season-row>td:nth-child(3),
  .club-history-table .club-history-season-row>td:nth-child(11){display:none}
@@ -497,7 +577,14 @@ body.app-body{--app-page-pad-top:8px}
  }
  .club-history-table .club-history-competition-value a.club-history-competition-link{
   display:inline;max-width:100%;white-space:normal;overflow:visible;
-  text-overflow:clip;overflow-wrap:anywhere;line-height:1.35;
+  text-overflow:clip;overflow-wrap:anywhere;line-height:1.5;
+ }
+ /* Keep the passive 24px mark alongside wrapped linked names on mobile. */
+ .club-history-table .club-history-competition-row .club-history-competition-identity{
+  display:inline-flex;align-items:center;gap:7px;max-width:100%;white-space:normal;
+ }
+ .club-history-table .club-history-competition-row .club-history-competition-text{
+  white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;
  }
  /* Pos./stage label and its value share a baseline. Long phases wrap only
     inside the value column; they must not push the label into another line. */
@@ -516,14 +603,17 @@ body.app-body{--app-page-pad-top:8px}
  /* Each statistic has two identical fixed tracks, whether the second track
     contains a text number or a first-paint skeleton bar. */
  .club-history-table tr>td:nth-child(n+4){
-  display:grid;grid-template-rows:12px 16px;align-content:center;justify-items:center;
+  display:grid;grid-template-rows:12px 24px;align-content:center;justify-items:center;
   min-width:0;min-height:43px;gap:3px;font-variant-numeric:tabular-nums;
  }
  .club-history-table tr>td:nth-child(n+4)::before{
-  display:block;font-size:10px;line-height:12px;font-weight:600;color:var(--muted);
+  display:block;grid-row:1;font-size:10px;line-height:12px;font-weight:600;color:var(--muted);
+ }
+ .club-history-table tr>td:nth-child(n+4) .club-history-stat-value{
+  grid-row:2;min-height:24px;width:100%;align-self:center;justify-content:center;
  }
  .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{
-  align-self:center;justify-self:center;margin-inline:auto;
+  align-self:center;justify-self:center;margin:0;
  }
  .club-history-table tr>td:nth-child(4)::before{content:var(--club-history-mobile-mp)}
  .club-history-table tr>td:nth-child(5)::before{content:var(--club-history-mobile-w)}
@@ -538,9 +628,10 @@ body.app-body{--app-page-pad-top:8px}
   min-height:28px;text-align:left;white-space:normal;color:var(--muted);
  }
  .club-history-table .club-history-season-row:has(.club-history-empty-season)>td:nth-child(n+3){display:none}
+ .club-history-table .club-history-season-row:has(.club-history-empty-season)>.club-history-season-value{padding-inline-start:20px}
  .club-history-table .club-history-row-loading .club-history-total-label{display:none}
- .club-history-table .club-history-row-loading .club-history-skeleton-label{min-height:44px}
- .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{margin-inline:auto}
+ .club-history-table .club-history-row-loading .club-history-skeleton-label{min-height:34px}
+ .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{margin:0}
  .club-history-table .club-history-competition-row[hidden]{display:none}
 }
 
@@ -628,12 +719,15 @@ html:not([data-fa-fixture-hover-suspended]) .club-fixture-row.is-match-link:hove
 .club-roster{width:100%;min-width:0}
 .club-roster[hidden],.club-first-paint-roster[hidden]{display:none}
 .club-roster-empty{margin:14px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
-.club-roster-view-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;height:42px;min-height:42px}
+.club-roster-view-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;height:42px;min-height:42px}
 .club-roster .club-roster-tabs{display:flex;align-items:center;flex:1 1 auto;width:auto;min-width:0;min-height:32px;gap:4px;overflow-x:auto;overflow-y:hidden;margin:0;padding:0;border:0;scrollbar-width:none;-webkit-mask-image:none;mask-image:none}
 .club-roster .club-roster-tabs .app-competition-tab{box-sizing:border-box;flex:0 0 92px;width:92px;min-width:92px;max-width:92px;height:32px;min-height:32px;padding:5px 5px;border-radius:6px;font-size:11px;line-height:1.2;cursor:pointer}
 /* Disabled from the first paint until roster data is ready. */
 .app-body .club-roster .club-roster-tabs .app-competition-tab[aria-disabled="true"]{opacity:.45;color:var(--muted);background:transparent;cursor:default;pointer-events:none}
-.club-roster-count{display:flex;align-items:center;justify-content:flex-end;flex:0 0 110px;min-width:110px;height:36px;white-space:nowrap;color:var(--muted);font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;text-align:right}
+.club-roster-count{display:grid;align-items:center;flex:0 0 auto;height:36px;white-space:nowrap;color:var(--muted);font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;text-align:right}
+.club-roster-count>span{grid-area:1/1}
+.club-roster-count-width{visibility:hidden}
+.club-roster-count .app-players-count-placeholder{width:auto}
 .club-roster-table-scroll{margin-top:0}
 .club-roster-table td:nth-child(2){text-align:left;font-weight:650}
 .club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"]{min-width:1462px}
@@ -651,5 +745,147 @@ html:not([data-fa-fixture-hover-suspended]) .club-fixture-row.is-match-link:hove
  .club-roster .club-roster-tabs[data-can-scroll-right="true"]{--app-tabs-fade-right:16px}
  .club-roster .club-roster-tabs[data-can-scroll-right="false"]{--app-tabs-fade-right:0px}
  .club-roster .club-roster-tabs .app-competition-tab{flex:0 0 calc(40% - 3.2px);width:calc(40% - 3.2px);min-width:calc(40% - 3.2px);max-width:calc(40% - 3.2px);height:32px;min-height:32px;padding-inline:4px}
- .club-roster-count{flex:0 0 92px;min-width:92px;font-size:11px}
+ .club-roster-count{font-size:11px}
+}
+
+ .club-roster-view-row .club-fixture-select{flex:0 1 auto;min-width:120px;max-width:min(240px,58%)}
+ .club-roster-view-row .language-trigger{min-height:32px;height:32px;font-size:12px}
+ .club-roster-view-row .language-trigger span{overflow:hidden;text-overflow:ellipsis}
+ .club-roster-view-row .language-menu{left:auto;right:0}
+/* Fixed table layout: preserve Flag | Player | Positions exactly as in /players.
+ * Nine numeric col widths are percentage weights summing to 100%. Chromium
+ * normalizes their over-subscription into the space remaining after the three
+ * fixed pixel columns. A mixed %-px calc on <col> resolves as auto during
+ * first paint, making every stat width equal, so do not use one here. */
+.club-roster-table[data-players-table-mode="stats"]{min-width:1300px}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(n+4){
+ width:var(--club-roster-stat-share);
+}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(4){--club-roster-stat-share:16%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(5){--club-roster-stat-share:11%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(6){--club-roster-stat-share:8%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(7){--club-roster-stat-share:8%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(8){--club-roster-stat-share:14%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(9){--club-roster-stat-share:8.5%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(10){--club-roster-stat-share:8.5%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(11){--club-roster-stat-share:8.5%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(12){--club-roster-stat-share:6.5%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(col,th):nth-child(13){--club-roster-stat-share:11%}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] :is(th,td):nth-child(n+4){text-align:center}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] th:nth-child(n+4) .app-players-sort-button{justify-content:center}
+.club-roster-table[data-players-table-mode="stats"] [data-roster-stat-help]{cursor:help}
+.club-roster-table[data-players-table-mode="stats"] :is(th,td):nth-child(3){text-align:left}
+.club-roster-table[data-players-table-mode="stats"] th:nth-child(3) .app-players-sort-button{justify-content:flex-start}
+/* Match Standings Pts styling, including its light and dark themes.
+ * Exclude the five pending/empty colspan rows from the green data cell. */
+.app-players-table.club-roster-table[data-players-table-mode="stats"] thead th:last-child{
+ background:#305c4c;color:#effff4;font-weight:800;box-shadow:inset 1px 0 #3b7060,inset -1px 0 #3b7060;
+}
+.app-players-table.club-roster-table[data-players-table-mode="stats"] tbody tr:not(.app-players-loading-row):not(.app-players-empty-row)>td:last-child{
+ background:#26473e;color:#e6ffed;font-weight:800;box-shadow:inset 1px 0 #3b7060,inset -1px 0 #3b7060;
+}
+html[data-theme="light"] .app-players-table.club-roster-table[data-players-table-mode="stats"] thead th:last-child{
+ background:#B7DCC7;color:#173F30;box-shadow:inset 1px 0 #A5CCB2,inset -1px 0 #A5CCB2;
+}
+html[data-theme="light"] .app-players-table.club-roster-table[data-players-table-mode="stats"] tbody tr:not(.app-players-loading-row):not(.app-players-empty-row)>td:last-child{
+ background:#D4EBDD;color:#174936;box-shadow:inset 1px 0 #A5CCB2,inset -1px 0 #A5CCB2;
+}
+@media(max-width:620px){
+ .club-roster-view-row{flex-wrap:wrap;height:auto;row-gap:0}
+ .club-roster .club-roster-tabs{flex:1 0 100%;mask-image:none;-webkit-mask-image:none}
+ .club-roster .club-roster-tabs .app-competition-tab{flex:1;width:auto;min-width:0;max-width:none}
+ .club-roster-view-row .club-fixture-select,.club-roster-count:only-of-type{margin-left:auto}
+ .club-roster-view-row .club-fixture-select+.club-roster-count{margin-left:0}
+}
+
+/* Club Records uses the same scope controls, grid and cards as Competition History. */
+.club-records{margin-top:5px;min-width:0;font-variant-numeric:tabular-nums}
+.club-records .app-history-record-group{margin-bottom:16px}
+.club-records .app-competition-stat-grid{
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr));
+ grid-auto-rows:9rem;gap:12px
+}
+.club-records-note{min-height:1.5em;margin:0;color:var(--muted);font-size:.82rem}
+.club-records .app-history-record-group .app-competition-stat-card{
+ height:100%;min-height:0;align-content:center;padding:16px 20px;
+ grid-template-columns:max-content minmax(0,1fr);grid-template-rows:auto auto;gap:20px 12px
+}
+.club-records .app-competition-stat-label{grid-column:1/-1}
+.club-records .app-competition-stat-value,.club-records-sources{align-self:baseline}
+.club-records-sources{display:flex;flex-wrap:wrap;justify-content:flex-end;text-align:end;gap:2px 8px;color:var(--muted);font-size:.78rem}
+.club-records-sources{max-height:5.4rem;overflow:auto;overflow-wrap:anywhere}
+.club-records-sources a{color:inherit}
+.club-record-ties summary{cursor:pointer}
+.club-record-ties[open]{width:100%}
+.club-first-paint-records[hidden]{display:none}
+.club-records .app-competition-stat-grid:has([data-club-player-card]){
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,21rem),1fr))
+}
+.club-records .app-history-record-group [data-club-player-card]{
+ grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);
+ align-content:start;padding:10px 12px;gap:8px
+}
+.club-records .app-history-player-footer{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:8px;align-items:center}
+.club-records .app-history-player-footer[hidden]{display:none}
+.club-records .app-history-player-footer .app-history-season{color:var(--muted);font-size:.78rem}
+/* All loading tracks preserve the hydrated text line box and its centerline. */
+.club-record-context-placeholder{display:none;position:relative;line-height:inherit;white-space:nowrap}
+.club-records[data-record-period="verified"] .club-record-context-placeholder{display:inline-block}
+.club-record-context-placeholder::before{content:"Division";visibility:hidden}
+.club-record-context-placeholder>.app-skeleton-bar{
+ position:absolute;inset-inline-start:0;top:50%;transform:translateY(-50%);
+ width:100%;height:.72em;margin:0
+}
+.club-record-portrait-placeholder{background:var(--fa-crest-skeleton-fill)}
+.club-record-name-placeholder{
+ display:inline-flex;align-items:center;width:min(13ch,100%);
+ height:1.35em;line-height:1.35
+}
+.club-record-name-placeholder>.app-skeleton-bar{width:100%;height:.76em;margin:0}
+.club-record-season-placeholder{
+ position:relative;display:inline-block;white-space:nowrap;line-height:inherit;vertical-align:baseline
+}
+.club-record-season-placeholder>span:first-child{visibility:hidden}
+.club-record-season-placeholder>.app-skeleton-bar{
+ position:absolute;inset-inline:0;top:50%;transform:translateY(-50%);
+ width:100%;height:.72em;margin:0
+}
+.club-records .app-history-player-footer>.club-record-season-placeholder{
+ justify-self:end;align-self:center
+}
+.club-records .app-competition-stat-value:has(>.app-skeleton-bar){display:block;position:relative}
+.club-records .app-competition-stat-value:has(>.app-skeleton-bar)::before{content:"00";visibility:hidden}
+.club-records .app-competition-stat-value>.app-skeleton-bar{
+ position:absolute;inset-inline-start:0;top:50%;transform:translateY(-50%);
+ width:2ch;margin:0
+}
+@media(max-width:620px){
+ .club-records .app-history-player-footer{grid-template-columns:40px minmax(0,1fr) auto}
+ .club-records .app-history-player-name{font-size:1rem}
+ .club-records .club-records-sources,.club-records .app-history-player-footer .app-history-season{font-size:.875rem}
+}
+.club-records .app-history-player-detail:hover{border-color:var(--focus);text-decoration:none}
+
+/* Deep-link targets retain the same row dimensions as unselected history. */
+.club-history-table .club-history-season-row:target{
+ background:color-mix(in srgb,var(--focus) 12%,var(--surface-raised))
+}
+.club-records .app-history-season:is(a){color:inherit}
+.club-records .club-records-sources a,.club-records .app-competition-stat-value a{
+ color:inherit;text-decoration:none
+}
+.club-records .club-records-sources a:is(:hover,:focus-visible),
+.club-records .app-competition-stat-value a:is(:hover,:focus-visible){
+ text-decoration:underline;text-underline-offset:3px
+}
+
+/* Identical text-only season underline for Team, Player and tie-dialog records. */
+:is(.club-records,.app-history-player-dialog) a.app-records-season-link{
+ display:inline;width:fit-content;max-width:100%;min-height:0;
+ color:inherit;text-decoration:none;text-underline-offset:3px;
+ text-decoration-thickness:1px;text-decoration-skip-ink:auto;
+}
+.club-records .app-history-player-footer>a.app-records-season-link{justify-self:end}
+:is(.club-records,.app-history-player-dialog) a.app-records-season-link:is(:hover,:focus-visible){
+ text-decoration-line:underline;text-decoration-thickness:1px;text-underline-offset:3px;
 }

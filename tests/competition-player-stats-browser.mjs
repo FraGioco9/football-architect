@@ -1,15 +1,22 @@
 // #643: isolated presentation fixtures, no remote DB or sporting writes.
 import assert from 'node:assert/strict';
 import {mkdirSync} from 'node:fs';
+import {createBrowserTiming} from '../tools/ci-browser-timing.mjs';
 
 export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={}){
+ const timing=createBrowserTiming('competition-player-stats',engine);
+ try{
  let checks=0;
  for(const id of ['it-1','int-1','int-2'])for(const width of [390,1440]){
+  const scenarioStart=timing.now();
+  const contextStart=timing.now();
   const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'});
   const page=await context.newPage(),errors=[],playerRequests=[];
+  timing.sample('context-page-ready',timing.now()-contextStart);
   page.on('pageerror',error=>errors.push(error.message));
   page.on('request',request=>{if(new URL(request.url()).pathname.startsWith('/api/players'))playerRequests.push(request.url())});
   try{
+   let phaseStart=timing.now();
    await page.addInitScript(width=>{
     localStorage.setItem('football-architect:language',width===390?'it':'en');
     localStorage.setItem('football-architect:theme',width===390?'light':'dark');
@@ -19,6 +26,8 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    await page.route('**/api/**',route=>route.fulfill({status:503,contentType:'application/json',body:'{}'}));
    await page.goto('http://app.localhost:2000/competitions/'+id+'/stats?season=1',{waitUntil:'domcontentloaded'});
    await page.waitForFunction(()=>window.faCompetitionContextApi&&window.faCompetitionContext?.selectedSeason===1&&window.faCompetitionStats);
+   timing.sample('public-bootstrap-ready',timing.now()-phaseStart);
+   phaseStart=timing.now();
    assert.equal(await page.evaluate(()=>{window.faDevPreviewMode=true;return window.faCompetitionContextApi.setDebugSeason(1)}),true);
    await page.evaluate(()=>{
     const c=window.faCompetitionContext,capacity=c.definition.capacity,countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
@@ -35,6 +44,8 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
     };
     window.__stats643Supply('real');
    });
+   timing.sample('isolated-fixture-ready',timing.now()-phaseStart);
+   phaseStart=timing.now();
    const cardSizes=async selector=>page.locator(selector).evaluateAll(nodes=>nodes.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
    await page.locator('#fa-dev-stats [data-stats-view="overview"]').click();
    const overviewFilled=await cardSizes('#fa-dev-stats .fa-dev-stats-card');
@@ -64,21 +75,23 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    await page.waitForFunction(()=>document.querySelector('#fa-dev-stats .fa-dev-stats-card:nth-child(3) strong')?.textContent==='2,00');
    await page.evaluate(lang=>{document.documentElement.lang=lang},width===390?'it':'en');
    await page.waitForFunction(expected=>document.querySelector('#fa-dev-stats .fa-dev-stats-card:nth-child(3) strong')?.textContent===expected,width===390?'2,00':'2.00');
+   timing.sample('overview-layout-and-locale',timing.now()-phaseStart);
+   phaseStart=timing.now();
    await page.locator('#fa-dev-stats [data-stats-view="teams"]').click();
    const teamsFilled=await cardSizes('#fa-dev-stats .fa-dev-stats-team-card');
    await page.locator('#fa-dev-stats [data-stats-view="players"]').click();
    const cards=page.locator('#fa-dev-stats .fa-dev-stats-leader-card');
    const goals=cards.filter({has:page.locator('[data-app-i18n="statsDevGoals"]')});
    assert.equal(await cards.count(),8);
-   assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevAverageRating','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevRedCards','statsDevMinutes']);
+   assert.deepEqual(await cards.locator('h4').evaluateAll(nodes=>nodes.map(n=>n.dataset.appI18n)),['statsDevAverageRating','statsDevMvpAwards','statsDevGoals','statsDevAssists','statsDevGoalsAssists90','statsDevCleanSheets','statsDevStartsSubstitutes','statsDevMinutes']);
    assert.equal(await goals.locator('li strong').first().textContent(),'2');
    assert.equal(await goals.locator('li strong').nth(1).textContent(),'1');
    assert.equal(await cards.filter({has:page.locator('[data-app-i18n="statsDevAssists"]')}).locator('.fa-dev-stats-empty').textContent(),width===390?'Nessun giocatore':'No players');
    assert.equal(await goals.locator('li .fa-dev-stats-team-name[href="/players/2"]').count(),1);
-   assert.equal(await goals.locator('span.fa-dev-stats-club-link').first().textContent(),'QA Club 1');
+   assert.equal(await goals.locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').first().textContent(),'QA Club 1');
    const before=await goals.boundingBox();
    const filledSizes=await cards.evaluateAll(nodes=>nodes.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})));
-   assert.ok(filledSizes.every(size=>size.height===filledSizes[0].height),'all eight populated cards reserve equal height');
+   assert.ok(filledSizes.every(size=>size.height===filledSizes[0].height),'all nine player cards reserve equal height');
 
    // Off-screen first-paint oracle: all pending player cards/rows must occupy
    // the same slots as the hydrated presentation at this viewport.
@@ -131,14 +144,19 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    assert.equal(new Set(teamClubPattern.map(Math.round)).size,5,'Teams club bars vary by rank too');
    for(let card=0;card<7;card++)for(let rank=0;rank<5;rank++)
     assert.ok(Math.abs(loadingGeometry.teamClubWidths[card*5+rank]-teamClubPattern[rank])<.1,'Teams skeleton repeats its club-width pattern at each rank');
-   assert.ok(loadingGeometry.valueWidths[0]>loadingGeometry.valueWidths[1]*1.5,'Rating includes coverage, unlike Goals');
-   assert.ok(loadingGeometry.valueWidths[4]>loadingGeometry.valueWidths[1]*1.3,'Clean sheets include appearances');
+   assert.ok(loadingGeometry.valueWidths[0]>loadingGeometry.valueWidths[2]*1.5,'Rating includes coverage, unlike Goals');
+   assert.ok(loadingGeometry.valueWidths[5]>loadingGeometry.valueWidths[2]*1.3,'Clean sheets include appearances');
    assert.equal(loadingGeometry.noTooltip,true,'no native hover tooltip on player names or clubs');
+   timing.sample('team-player-skeleton-and-leaders',timing.now()-phaseStart);
+   phaseStart=timing.now();
    const expand=goals.locator('.fa-dev-stats-expand');await expand.click();
    const dialog=page.locator('dialog[open]');
    assert.equal(await dialog.locator('li').count(),8);
    assert.equal(await dialog.locator('.fa-dev-stats-team-name[href="/players/1"]').textContent(),'#1');
+   assert.equal(await dialog.locator('a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').count(),8,'Show all links each player to their recorded club');
    await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
+   timing.sample('expand-dialog-and-keyboard-close',timing.now()-phaseStart);
+   phaseStart=timing.now();
    for(const mode of ['mixed','fallback','no-games','archive']){
     await page.evaluate(mode=>window.__stats643Supply(mode),mode);
     assert.equal(await cards.count(),8);
@@ -166,12 +184,15 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
      await portrait.locator('img').waitFor({state:'visible'});
      const crop=await portrait.evaluate(el=>({radius:getComputedStyle(el).borderRadius,overflow:getComputedStyle(el).overflow,width:el.clientWidth,height:el.clientHeight,imageWidth:el.querySelector('img').getBoundingClientRect().width,state:el.dataset.portraitState}));
      assert.equal(await portrait.evaluate(el=>el.tagName),'SPAN');
-     assert.equal(await goals.locator('li a').count(),1,'the only player-row link is the name');
+     assert.equal(await goals.locator('li a').count(),2,'player name and club name have independent links');
+     assert.equal(await goals.locator('li a.fa-dev-stats-club-link[href="/clubs/it/1/overview"]').count(),1);
      assert.equal(crop.radius,'50%');assert.equal(crop.overflow,'hidden');assert.equal(crop.width,crop.height);assert.equal(crop.state,'ready');assert.ok(crop.imageWidth>crop.width*2.7);
      mkdirSync('int24-browser-artifacts',{recursive:true});
      await page.screenshot({path:`int24-browser-artifacts/stats-643-face-${engine}-${id}-${width}.png`,fullPage:true});
     }
    }
+   timing.sample('fixture-modes-and-portrait-screenshot',timing.now()-phaseStart);
+   phaseStart=timing.now();
    await page.evaluate(()=>window.__stats643Supply('real'));
    const after=await goals.boundingBox();
    assert.deepEqual({width:after.width,height:after.height},{width:before.width,height:before.height},'stable repeated hydration dimensions independent of scroll position');
@@ -184,8 +205,16 @@ export async function verifyCompetitionPlayerStats(browser,{engine='chromium'}={
    // A season change must clear the previous player identities immediately.
    await page.evaluate(()=>{window.faCompetitionContextApi.setDebugSeason(2);window.faCompetitionContextApi.selectSeason(2)});
    assert.equal(await cards.locator('a[href^="/players/"]').count(),0);
+   timing.sample('restore-screenshot-and-season-invalidation',timing.now()-phaseStart);
    checks++;
-  }finally{await context.close()}
+  }finally{
+   const closeStart=timing.now();
+   try{await context.close()}finally{
+    timing.sample('context-close',timing.now()-closeStart);
+    timing.sample('scenario-total',timing.now()-scenarioStart);
+   }
+  }
  }
  return checks;
+ }finally{timing.mark('suite-complete');timing.report();}
 }

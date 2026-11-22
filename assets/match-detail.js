@@ -2,12 +2,13 @@
 (()=>{'use strict';
  const root=document.querySelector('[data-match-detail]');if(!root)return;
  const copies={
-  en:{match:'Match',tbd:'To be determined',round:'Round',home:'Home',away:'Away',position:'Position',form:'Form',lineup:'Lineup',player:'Player',rating:'Test rating',formW:'W',formD:'D',formL:'L',outcomeW:'Win',outcomeD:'Draw',outcomeL:'Loss',overview:'Overview',competition:'Competition',season:'Season',date:'Date',stadium:'Stadium',status:'Status',statusNames:{awaiting_participants:'Awaiting teams',scheduled:'Scheduled',in_progress:'In progress',completed:'Completed',postponed:'Postponed',cancelled:'Cancelled'},pitch:'Empty football pitch; match visualization is not yet available',notFound:'Match not found or not published.',error:'Match information is temporarily unavailable.'},
-  it:{match:'Partita',tbd:'Da determinare',round:'Giornata',home:'Casa',away:'Trasferta',position:'Posizione',form:'Forma',lineup:'Formazione',player:'Giocatore',rating:'Voto di prova',formW:'V',formD:'N',formL:'P',outcomeW:'Vittoria',outcomeD:'Pareggio',outcomeL:'Sconfitta',overview:'Panoramica',competition:'Competizione',season:'Stagione',date:'Data',stadium:'Stadio',status:'Stato',statusNames:{awaiting_participants:'In attesa delle squadre',scheduled:'Programmata',in_progress:'In corso',completed:'Conclusa',postponed:'Rinviata',cancelled:'Annullata'},pitch:'Campo vuoto; visualizzazione della partita non ancora disponibile',notFound:'Partita inesistente o non pubblicata.',error:'Informazioni sulla partita temporaneamente non disponibili.'},
-  de:{match:'Spiel',tbd:'Noch offen',round:'Spieltag',home:'Heim',away:'Gast',position:'Platz',form:'Form',lineup:'Aufstellung',player:'Spieler',rating:'Testnote',formW:'S',formD:'U',formL:'N',outcomeW:'Sieg',outcomeD:'Remis',outcomeL:'Niederlage',overview:'Übersicht',competition:'Wettbewerb',season:'Saison',date:'Datum',stadium:'Stadion',status:'Status',statusNames:{awaiting_participants:'Teilnehmer offen',scheduled:'Geplant',in_progress:'Läuft',completed:'Beendet',postponed:'Verschoben',cancelled:'Abgesagt'},pitch:'Leeres Spielfeld; Spielvisualisierung noch nicht verfügbar',notFound:'Spiel nicht gefunden oder nicht veröffentlicht.',error:'Spielinformationen derzeit nicht verfügbar.'},
-  es:{match:'Partido',tbd:'Por determinar',round:'Jornada',home:'Local',away:'Visitante',position:'Posición',form:'Forma',lineup:'Alineación',player:'Jugador',rating:'Nota de prueba',formW:'G',formD:'E',formL:'P',outcomeW:'Victoria',outcomeD:'Empate',outcomeL:'Derrota',overview:'Resumen',competition:'Competición',season:'Temporada',date:'Fecha',stadium:'Estadio',status:'Estado',statusNames:{awaiting_participants:'Equipos pendientes',scheduled:'Programado',in_progress:'En curso',completed:'Finalizado',postponed:'Aplazado',cancelled:'Cancelado'},pitch:'Campo vacío; visualización del partido todavía no disponible',notFound:'Partido no encontrado o no publicado.',error:'Información del partido temporalmente no disponible.'},
-  fr:{match:'Match',tbd:'À déterminer',round:'Journée',home:'Domicile',away:'Extérieur',position:'Position',form:'Forme',lineup:'Composition',player:'Joueur',rating:'Note de test',formW:'V',formD:'N',formL:'D',outcomeW:'Victoire',outcomeD:'Nul',outcomeL:'Défaite',overview:'Aperçu',competition:'Compétition',season:'Saison',date:'Date',stadium:'Stade',status:'Statut',statusNames:{awaiting_participants:'Équipes à déterminer',scheduled:'Programmé',in_progress:'En cours',completed:'Terminé',postponed:'Reporté',cancelled:'Annulé'},pitch:'Terrain vide; visualisation du match pas encore disponible',notFound:'Match introuvable ou non publié.',error:'Informations temporairement indisponibles.'}
+  en:{match:'Match',tbd:'To be determined',round:'Round',leagueRank:'League place',tieWinner:'Winner of tie',winnerCode:'WIN',afterExtraTime:'After extra time',penaltyShootout:'Penalties',home:'Home',away:'Away',position:'Position',form:'Form',listView:'List',pitchView:'Pitch',lineup:'Lineup',player:'Player',rating:'Test rating',formW:'W',formD:'D',formL:'L',outcomeW:'Win',outcomeD:'Draw',outcomeL:'Loss',overview:'Overview',competition:'Competition',season:'Season',date:'Date',stadium:'Stadium',status:'Status',mvp:'Player of the match',mvpNone:'No award',mvpUnknown:'Not recorded',statusNames:{awaiting_participants:'Awaiting teams',scheduled:'Scheduled',in_progress:'In progress',completed:'Completed',postponed:'Postponed',cancelled:'Cancelled'},pitch:'Empty football pitch; match visualization is not yet available',notFound:'Match not found or not published.',error:'Match information is temporarily unavailable.'},
+  it:{match:'Partita',tbd:'Da determinare',round:'Giornata',leagueRank:'Posizione in campionato',tieWinner:'Vincente incontro',winnerCode:'VIN',afterExtraTime:'Dopo i supplementari',penaltyShootout:'Rigori',home:'Casa',away:'Trasferta',position:'Posizione',form:'Forma',listView:'Elenco',pitchView:'Campo',lineup:'Formazione',player:'Giocatore',rating:'Voto di prova',formW:'V',formD:'N',formL:'P',outcomeW:'Vittoria',outcomeD:'Pareggio',outcomeL:'Sconfitta',overview:'Panoramica',competition:'Competizione',season:'Stagione',date:'Data',stadium:'Stadio',status:'Stato',mvp:'Migliore in campo',mvpNone:'Nessun premio',mvpUnknown:'Non registrato',statusNames:{awaiting_participants:'In attesa delle squadre',scheduled:'Programmata',in_progress:'In corso',completed:'Conclusa',postponed:'Rinviata',cancelled:'Annullata'},pitch:'Campo vuoto; visualizzazione della partita non ancora disponibile',notFound:'Partita inesistente o non pubblicata.',error:'Informazioni sulla partita temporaneamente non disponibili.'},
+  de:{match:'Spiel',tbd:'Noch offen',round:'Spieltag',leagueRank:'Ligaplatz',tieWinner:'Sieger des Duells',winnerCode:'SIE',afterExtraTime:'Nach Verlängerung',penaltyShootout:'Elfmeterschießen',home:'Heim',away:'Gast',position:'Platz',form:'Form',listView:'Liste',pitchView:'Feld',lineup:'Aufstellung',player:'Spieler',rating:'Testnote',formW:'S',formD:'U',formL:'N',outcomeW:'Sieg',outcomeD:'Remis',outcomeL:'Niederlage',overview:'Übersicht',competition:'Wettbewerb',season:'Saison',date:'Datum',stadium:'Stadion',status:'Status',mvp:'Spieler des Spiels',mvpNone:'Keine Auszeichnung',mvpUnknown:'Nicht erfasst',statusNames:{awaiting_participants:'Teilnehmer offen',scheduled:'Geplant',in_progress:'Läuft',completed:'Beendet',postponed:'Verschoben',cancelled:'Abgesagt'},pitch:'Leeres Spielfeld; Spielvisualisierung noch nicht verfügbar',notFound:'Spiel nicht gefunden oder nicht veröffentlicht.',error:'Spielinformationen derzeit nicht verfügbar.'},
+  es:{match:'Partido',tbd:'Por determinar',round:'Jornada',leagueRank:'Puesto en liga',tieWinner:'Ganador de eliminatoria',winnerCode:'GAN',afterExtraTime:'Tras la prórroga',penaltyShootout:'Penaltis',home:'Local',away:'Visitante',position:'Posición',form:'Forma',listView:'Lista',pitchView:'Campo',lineup:'Alineación',player:'Jugador',rating:'Nota de prueba',formW:'G',formD:'E',formL:'P',outcomeW:'Victoria',outcomeD:'Empate',outcomeL:'Derrota',overview:'Resumen',competition:'Competición',season:'Temporada',date:'Fecha',stadium:'Estadio',status:'Estado',mvp:'Jugador del partido',mvpNone:'Sin premio',mvpUnknown:'No registrado',statusNames:{awaiting_participants:'Equipos pendientes',scheduled:'Programado',in_progress:'En curso',completed:'Finalizado',postponed:'Aplazado',cancelled:'Cancelado'},pitch:'Campo vacío; visualización del partido todavía no disponible',notFound:'Partido no encontrado o no publicado.',error:'Información del partido temporalmente no disponible.'},
+  fr:{match:'Match',tbd:'À déterminer',round:'Journée',leagueRank:'Place en championnat',tieWinner:'Vainqueur du duel',winnerCode:'VAI',afterExtraTime:'Après prolongation',penaltyShootout:'Tirs au but',home:'Domicile',away:'Extérieur',position:'Position',form:'Forme',listView:'Liste',pitchView:'Terrain',lineup:'Composition',player:'Joueur',rating:'Note de test',formW:'V',formD:'N',formL:'D',outcomeW:'Victoire',outcomeD:'Nul',outcomeL:'Défaite',overview:'Aperçu',competition:'Compétition',season:'Saison',date:'Date',stadium:'Stade',status:'Statut',mvp:'Joueur du match',mvpNone:'Aucune distinction',mvpUnknown:'Non enregistré',statusNames:{awaiting_participants:'Équipes à déterminer',scheduled:'Programmé',in_progress:'En cours',completed:'Terminé',postponed:'Reporté',cancelled:'Annulé'},pitch:'Terrain vide; visualisation du match pas encore disponible',notFound:'Match introuvable ou non publié.',error:'Informations temporairement indisponibles.'}
  };
+ // Timeline labels are independent of score, club and match metadata.
  const numeric=x=>typeof x==='string'&&/^[1-9][0-9]*$/.test(x)&&Number.isSafeInteger(Number(x));
  const lang=()=>{const code=document.documentElement.lang?.slice(0,2).toLowerCase();return Object.hasOwn(copies,code)?code:'en'};
  const text=()=>copies[lang()];
@@ -16,6 +17,18 @@
  const matchId=(/^\/matches\/([1-9][0-9]*)$/.exec(location.pathname)||[])[1];
  const clubKey=value=>{const m=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.exec(value||'');return m?m[1]+'-'+Number(m[2]):null};
  const href=path=>typeof window.faAppHref==='function'?window.faAppHref(path):path;
+ // Bracket slots expose typed, immutable dependencies before clubs exist.
+ // A/B are seeds, never fabricated home/away club identities.
+ const unresolvedParticipant=(side,tr)=>{
+  const participant=side==='home'?data?.participantA:data?.participantB;
+  if(participant?.kind==='leagueRank'&&Number.isSafeInteger(participant.rank)&&
+     participant.rank>=1&&participant.rank<=16)
+   return {short:'#'+participant.rank,full:tr.leagueRank+' '+participant.rank};
+  if(participant?.kind==='tieWinner'&&typeof participant.tieId==='string'&&
+     /^[A-Za-z0-9_-]{1,64}$/.test(participant.tieId))
+   return {short:tr.winnerCode,full:tr.tieWinner+' '+participant.tieId};
+  return {short:tr.tbd,full:tr.tbd};
+ };
  const competitionHref=id=>/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(id||'')
   ?href('/competitions/'+id.toLowerCase()+'/fixtures'):null;
  // Current public match responses have venue:null and kickoff:null.
@@ -36,8 +49,23 @@
   const name=typeof venue==='string'?venue:venue&&typeof venue==='object'&&!Array.isArray(venue)?venue.name:null;
   return typeof name==='string'&&name.trim().length>0&&name.trim().length<=120?name.trim():'';
  };
+ const verifiedScorePair=pair=>Number.isSafeInteger(pair?.home)&&pair.home>=0&&
+  Number.isSafeInteger(pair?.away)&&pair.away>=0;
+ // Receipt-only outcome context; the scoreboard result is never altered.
+ const verifiedResolution=(match,tr)=>{
+  if(match?.status!=='completed'||!/^[a-f0-9]{64}$/.test(match?.provenance?.receiptHash||''))return '';
+  const result=match.result;
+  if(result?.resolution==='extra-time'&&verifiedScorePair(result.extraTime))
+   return tr.afterExtraTime;
+  if(result?.resolution==='penalties'&&verifiedScorePair(result.penalties)&&
+     result.penalties.home!==result.penalties.away)
+   return tr.penaltyShootout+' '+result.penalties.home+'–'+result.penalties.away;
+  return '';
+ };
  let matchStatistics=null;
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null,sideProjection=null;
+ let publishedMatchIndex=null;
+ let lastLineupStatistics=null,lastLineupData=null,lastLineupLanguage='';
 
  // Use the approved SVG directly: its primary and secondary fills are
  // identical in Dark and Light, without recolouring or injected outlines.
@@ -45,15 +73,12 @@
   const name=find('[data-match-'+side+'-name]');if(!name)return;
   const id=clubKey(data?.[side+'Participant']?.clubId);
   const club=id&&clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===id);
-  const participant=side==='home'?data?.participantA:data?.participantB;
-  let fallback=text().tbd;
-  if(!id&&participant?.kind==='leagueRank'&&Number.isSafeInteger(participant.rank)&&participant.rank>0)
-   fallback=text().round+' '+participant.rank;
-  const full=club?.primaryName||id||fallback;
+  const unresolved=unresolvedParticipant(side,text());
+  const full=club?.primaryName||id||unresolved.full;
   // Use the canonical club abbreviation (manifest field "abbr") on both
   // desktop and mobile; retain the primary name for accessible descriptions.
   const abbreviation=typeof club?.abbr==='string'&&/^[A-Z0-9]{2,5}$/.test(club.abbr)
-   ?club.abbr:club?.compactName||full;
+   ?club.abbr:club?.compactName||id||unresolved.short;
   name.textContent=abbreviation;
   name.setAttribute('aria-label',full);
   name.removeAttribute('title');
@@ -91,7 +116,7 @@
    board.dataset.scoreboardTheme=theme.kind;
   }
   const slot=find('[data-match-competition-logo]');if(!slot)return;
-  // Brand assets are already published at assets/divisions/<slug>/compact.svg.
+  // Brand assets are keyed by immutable public competition IDs.
   // Do not request an unapproved path or show an unrelated Football Architect logo.
   const intended=theme.logoAsset?'/'+theme.logoAsset:'';
   if(slot.dataset.matchLogoPath===intended)return;
@@ -119,14 +144,35 @@
    projection.data?.season===data.season&&Number.isSafeInteger(projection.data.seasonState?.day)&&
    Array.isArray(projection.data.fixtures)&&Array.isArray(projection.data.standings?.rows);
  }
+ // Only an immutable published match index can authorize a Form badge link.
+ function publishedFormLink(fixture){
+  if(!publishedMatchIndex||!data||!fixture)return null;
+  const source=fixture.sourceFixtureId||fixture.id;
+  if(typeof source!=='string'||!source.startsWith('season:'+data.season+':'+data.competitionId+':'))return null;
+  const identity=publishedMatchIndex.bySource?.[source];
+  if(!identity||identity.season!==data.season||identity.competitionId!==data.competitionId||
+     identity.phaseId!=='league'||identity.day!==fixture.day||identity.round!==fixture.round||
+     !numeric(String(identity.matchId)))return null;
+  return String(identity.matchId);
+ }
+ function positionLabel(rank){
+  if(!Number.isSafeInteger(rank)||rank<1||rank>320)return '–';
+  const code=lang();
+  if(code==='en'){
+   const v=rank%100,suffix=v>=11&&v<=13?'th':rank%10===1?'st':rank%10===2?'nd':rank%10===3?'rd':'th';
+   return rank+suffix;
+  }
+  if(code==='it')return rank+'º';
+  if(code==='es')return rank+'.º';
+  if(code==='fr')return rank+(rank===1?'er':'e');
+  return rank+'.';
+ }
  function sideFacts(side){
   const club=clubKey(data?.[side+'Participant']?.clubId);
   if(!club||!verifiedProjection(sideProjection))return {position:null,form:[]};
   const facts=sideProjection.data,priorDay=data.day;
   if(!Number.isSafeInteger(priorDay)||priorDay<1)return {position:null,form:[]};
   const rankRow=facts.standings.rows.find(row=>row.clubId===club);
-  // A published present-day table is a pre-match table ONLY if the sporting
-  // world has not yet reached this fixture. Historical ranks are left blank.
   const safeRank=data.stageId==='league'&&facts.seasonState.day<priorDay&&
    Number.isSafeInteger(rankRow?.rank)&&rankRow.rank>0&&
    Number.isSafeInteger(rankRow?.played)&&rankRow.played>0?rankRow.rank:null;
@@ -138,9 +184,94 @@
    .sort((a,b)=>a.day-b.day||String(a.id).localeCompare(String(b.id),'en'));
   const form=games.slice(-5).map(f=>{
    const home=f.homeClubId===club,a=f.result.homeGoals,b=f.result.awayGoals;
-   return a===b?'d':home?(a>b?'w':'l'):(b>a?'w':'l');
+   const outcome=a===b?'d':home?(a>b?'w':'l'):(b>a?'w':'l');
+   return {outcome,fixture:f,matchId:publishedFormLink(f),homePerspective:home};
   });
   return {position:safeRank,form};
+ }
+ // Reuse the standings' published form tooltip appearance. The fixture score
+ // and opponents are taken only from the authoritative competition snapshot.
+ let formTooltip=null,formTooltipAnchor=null;
+ function hideFormTooltip(){
+  if(formTooltip)formTooltip.hidden=true;
+  formTooltipAnchor?.removeAttribute('aria-describedby');
+  formTooltipAnchor=null;
+ }
+ function showFormTooltip(anchor,game,tr){
+  if(!anchor?.isConnected||!game?.fixture?.result)return;
+  if(!formTooltip){
+   formTooltip=document.createElement('div');
+   formTooltip.id='app-match-published-form-tooltip';
+   formTooltip.className='app-world-form-tooltip';
+   formTooltip.setAttribute('role','tooltip');
+   formTooltip.hidden=true;
+   document.body.append(formTooltip);
+   document.addEventListener('pointerdown',e=>{if(formTooltipAnchor&&!formTooltipAnchor.contains(e.target))hideFormTooltip();});
+   document.addEventListener('keydown',e=>{if(e.key==='Escape')hideFormTooltip();});
+   window.addEventListener('pagehide',hideFormTooltip);
+   window.addEventListener('scroll',hideFormTooltip,{passive:true});
+   document.querySelector('.fa-shell-content-scroll')?.addEventListener('scroll',hideFormTooltip,{passive:true});
+  }
+  const f=game.fixture;
+  const name=id=>{
+   const club=clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===id);
+   return club?.primaryName||id;
+  };
+  const element=(tag,cls,content)=>{
+   const node=document.createElement(tag);node.className=cls;node.textContent=content||'';return node;
+  };
+  const meta=element('div','app-world-form-tooltip-meta','');
+  const round=element('span','app-world-form-tooltip-round',tr.round+' '+(f.round??f.day));
+  meta.append(round);
+  const line=element('div','app-world-form-tooltip-scoreline','');
+  const home=element('span','app-world-form-tooltip-team',name(f.homeClubId));
+  const away=element('span','app-world-form-tooltip-team',name(f.awayClubId));
+  const score=element('strong','app-world-form-tooltip-score','');
+  score.append(element('span','',String(f.result.homeGoals)),
+   element('span','','–'),element('span','',String(f.result.awayGoals)));
+  line.append(home,score,away);
+  const context=element('div','app-world-form-tooltip-context',
+   game.homePerspective?tr.home:tr.away);
+  formTooltip.replaceChildren(meta,line,context);
+  formTooltip.hidden=false;
+  formTooltip.className='app-world-form-tooltip';
+  formTooltipAnchor?.removeAttribute('aria-describedby');
+  formTooltipAnchor=anchor;anchor.setAttribute('aria-describedby',formTooltip.id);
+  const rect=anchor.getBoundingClientRect(),w=formTooltip.offsetWidth||300,h=formTooltip.offsetHeight||114;
+  const bar=Math.max(0,document.querySelector('.fa-shell-topbar')?.getBoundingClientRect().bottom||0);
+  const minTop=Math.max(8,bar+8),maxBottom=innerHeight-8;
+  const above=rect.top-h-8,below=rect.bottom+8;
+  const top=above>=minTop?above:below+h<=maxBottom?below:Math.max(minTop,maxBottom-h);
+  formTooltip.style.left=Math.round(Math.max(8,Math.min(rect.left+rect.width/2-w/2,innerWidth-w-8)))+'px';
+  formTooltip.style.top=Math.round(Math.max(minTop,Math.min(top,maxBottom-h)))+'px';
+ }
+ // Only the receipt-verified /stats response can authorize a portrait.
+ // Never request 22 individual /api/players/:id records. The transport already
+ // includes V4.2 approvals from one parameterized backend read.
+ let portraitObserver=null;
+ function showApprovedPortrait(slot,id){
+  const expected='/assets/players/portraits/'+id+'.webp';
+  if(!slot.isConnected||slot.dataset.matchPortraitAsset!==expected||
+     slot.dataset.matchPortraitId!==String(id))return;
+  const img=document.createElement('img');
+  img.alt='';img.loading='lazy';img.decoding='async';
+  img.onload=()=>{if(slot.contains(img))slot.dataset.photoReady='true'};
+  img.onerror=()=>{delete slot.dataset.photoReady;img.remove()};
+  slot.append(img);img.src=expected;
+ }
+ function observePortrait(slot,id,portraitApproved){
+  if(!Number.isSafeInteger(id)||id<1||
+     portraitApproved!==true)return;
+  slot.dataset.matchPortraitId=String(id);
+  slot.dataset.matchPortraitAsset='/assets/players/portraits/'+id+'.webp';
+  if(typeof IntersectionObserver!=='function'){showApprovedPortrait(slot,id);return;}
+  if(!portraitObserver)portraitObserver=new IntersectionObserver(entries=>{
+   for(const entry of entries)if(entry.isIntersecting){
+    portraitObserver.unobserve(entry.target);
+    showApprovedPortrait(entry.target,Number(entry.target.dataset.matchPortraitId));
+   }
+  },{rootMargin:'120px'});
+  portraitObserver.observe(slot);
  }
  // Render a single official-only Overview panel over the field.
  // Unknown or unpublished context stays blank rather than being fabricated.
@@ -162,11 +293,40 @@
   const isNeutral=data?.neutral===true;
   const homeStadium=!isNeutral?publishedStadium(homeClub?.stadiumName):'';
   write('[data-match-overview="stadium"]',data?(publishedStadium(data.venue)||homeStadium):'');
-  write('[data-match-overview="status"]',data?(tr.statusNames[data.status]||''):'');
+  const resolution=data?verifiedResolution(data,tr):'';
+  write('[data-match-overview="status"]',data?(tr.statusNames[data.status]||'')+
+   (resolution?' · '+resolution:''):'');
+  const awardSlot=find('[data-match-overview="mvp"]');
+  if(awardSlot){
+   awardSlot.replaceChildren();
+   const receiptHash=data?.provenance?.receiptHash;
+   const proof=data?.status==='completed'&&receiptHash&&matchStatistics?.provenance?.receiptHash===receiptHash
+    ?matchStatistics.statistics?.mvp:null;
+   if(proof?.status==='none')awardSlot.textContent=tr.mvpNone;
+   else if(proof?.status==='unavailable'||(data?.status==='completed'&&!receiptHash))awardSlot.textContent=tr.mvpUnknown;
+   else if(proof?.status==='awarded'&&Number.isSafeInteger(proof.playerId)&&proof.playerId>0&&
+    ['home','away'].includes(proof.side)&&clubKey(proof.clubId)){
+    const participants=matchStatistics.statistics?.[proof.side]?.players;
+    const recorded=Array.isArray(participants)?participants.find(p=>p.playerId===proof.playerId):null;
+    const matchClub=proof.side==='home'?data.homeParticipant?.clubId:data.awayParticipant?.clubId;
+    if(recorded&&proof.clubId===matchClub){
+     const player=document.createElement('a');player.href=href('/players/'+proof.playerId);
+     player.textContent=recorded.name||tr.player+' #'+proof.playerId;
+     player.className='app-match-mvp-link';awardSlot.append(player);
+     const club=clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===proof.clubId);
+     const team=document.createElement('a');
+     team.href=href('/clubs/'+proof.clubId.split('-')[0].toLowerCase()+'/'+Number(proof.clubId.split('-')[1])+'/overview');
+     team.textContent=club?.primaryName||proof.clubId;team.className='app-match-mvp-link';
+     awardSlot.append(document.createTextNode(' · '),team);
+    }
+   }
+  }
+
   const panel=find('[data-match-overview-panel]');
   if(panel)panel.setAttribute('aria-label',tr.overview);
  }
  function renderSides(tr){
+  hideFormTooltip();
   root.querySelectorAll('[data-match-label]').forEach(node=>{
    const key=node.dataset.matchLabel;
    if(key&&tr[key])node.textContent=tr[key];
@@ -176,7 +336,7 @@
    const club=id&&clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===id);
    const title=find('[data-match-side-name="'+side+'"]');
    if(title){
-    title.textContent=club?.primaryName||id||tr[side];
+    title.textContent=club?.primaryName||id||unresolvedParticipant(side,tr).full;
     // Only a verified club identity can navigate to the canonical overview.
     // Match the scoreboard links; unresolved participants remain plain text.
     if(id){
@@ -197,7 +357,7 @@
    const panel=find('[data-match-side="'+side+'"]');
    if(panel)panel.setAttribute('aria-label',tr[side]+' · '+(club?.primaryName||id||''));
    const facts=sideFacts(side);
-   write('[data-match-position="'+side+'"]',facts.position??'–');
+   write('[data-match-position="'+side+'"]',facts.position===null?'–':positionLabel(facts.position));
    // Display only verified prior results (1–5); never render blank slots.
    const formFact=find('[data-match-form-fact="'+side+'"]');
    if(formFact){
@@ -208,12 +368,26 @@
    const form=find('[data-match-form="'+side+'"]');
    if(form){
     form.setAttribute('aria-label',tr[side]+' · '+tr.form);
-    form.replaceChildren(...facts.form.map(state=>{
-     const cell=document.createElement('span');
-     cell.className='app-match-form-cell';
-     cell.textContent=tr['form'+state.toUpperCase()];
-     cell.dataset.outcome=state;
-     cell.setAttribute('aria-label',tr['outcome'+state.toUpperCase()]);
+    form.classList.add('app-world-form-strip');
+    form.replaceChildren(...facts.form.map((game,i)=>{
+     const matchId=game.matchId;
+     const cell=document.createElement(matchId?'a':'button');
+     if(!matchId)cell.type='button';
+     cell.className='app-match-form-cell app-match-form-control app-world-form-dot app-world-form-control app-world-form-'+game.outcome+
+      (i===0?' app-world-form-last':'');
+     const glyph=document.createElement('span');
+     glyph.className='app-world-form-glyph';
+     glyph.textContent=tr['form'+game.outcome.toUpperCase()];
+     cell.append(glyph);
+     cell.dataset.outcome=game.outcome;
+     cell.setAttribute('aria-label',tr['outcome'+game.outcome.toUpperCase()]+' · '+tr.round+' '+(game.fixture.round??game.fixture.day));
+     if(matchId){
+      cell.href=href('/matches/'+matchId);
+     }else cell.dataset.noLink='true';
+     cell.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')showFormTooltip(cell,game,tr);});
+     cell.addEventListener('pointerleave',()=>hideFormTooltip());
+     cell.addEventListener('focus',()=>showFormTooltip(cell,game,tr));
+     cell.addEventListener('blur',()=>hideFormTooltip());
      return cell;
     }));
    }
@@ -222,32 +396,61 @@
  // Keep all eleven rows preallocated. Only verified frozen real XI
  // participants appear; missing/unplayed/fallback sides retain placeholders.
  function renderLineups(tr){
+  // Re-render the XI only when its proof, match or language changes.
+  // Form/Position and published-link hydration must not destroy the portraits.
+  if(lastLineupStatistics===matchStatistics&&lastLineupData===data&&lastLineupLanguage===lang())return;
+  lastLineupStatistics=matchStatistics;lastLineupData=data;lastLineupLanguage=lang();
+  portraitObserver?.disconnect();
   for(const side of ['home','away']){
    const list=find('[data-match-lineup="'+side+'"] .app-match-lineup-rows');
    if(!list)return;
    const source=data?.status==='completed'&&data?.provenance?.receiptHash
     ?matchStatistics?.statistics?.[side]:null;
-   const starters=source?.kind==='real_xi'&&Array.isArray(source.players)&&
-    source.players.length===11?source.players:null;
-   const valid=starters&&new Set(starters.map(p=>p.playerId)).size===11&&
-    starters.every(p=>Number.isSafeInteger(p.playerId)&&p.playerId>0&&
-     /^[A-Z]{2,3}$/.test(p.role)&&
+   // Frozen V2 statistics include substitute appearances as well as starters.
+   // Preserve the eleven-row XI without replacing starters with substitutes.
+   const appearances=source?.kind==='real_xi'&&Array.isArray(source.players)?source.players:null;
+   const starters=appearances?.filter(p=>p?.started===true);
+   const valid=appearances&&appearances.length>=11&&appearances.length<=17&&
+    appearances.every(p=>p&&typeof p.started==='boolean'&&
+     Number.isSafeInteger(p.playerId)&&p.playerId>0)&&
+    new Set(appearances.map(p=>p.playerId)).size===appearances.length&&
+    starters.length===11&&starters.every(p=>/^[A-Z]{2,3}$/.test(p.role)&&
      (p.rating===null||typeof p.rating==='number'));
+   const badge=find('[data-match-formation="'+side+'"]');
+   if(badge){
+    badge.textContent=valid&&source?.formation==='4-3-3'?'4-3-3':'';
+    if(badge.textContent)badge.setAttribute('aria-label',tr.lineup+' · '+badge.textContent);
+    else badge.removeAttribute('aria-label');
+   }
+   // Initial tactical slots, not numeric player IDs or final in-match roles,
+   // determine order. Legacy data without slots gets a stable role-order fallback.
+   const slots=starters?.map(p=>p.startingSlot);
+   const hasVerifiedSlots=valid&&slots.every(n=>Number.isSafeInteger(n)&&n>=1&&n<=11)&&
+    new Set(slots).size===11;
+   const roleRank={GK:0,RB:1,CB:2,LB:4,CM:5,DM:6,RW:8,ST:9,LW:10};
+   const ordered=valid?[...starters].sort((a,b)=>hasVerifiedSlots
+    ?a.startingSlot-b.startingSlot
+    :(roleRank[a.startingRole||a.role]??99)-(roleRank[b.startingRole||b.role]??99)):null;
    const rated=valid&&matchStatistics?.statistics?.ratingVersion==='test-rating-v1';
    for(const [i,row] of [...list.children].entries()){
-    if(!valid||i>=starters.length){
+    if(!valid||i>=ordered.length){
      row.setAttribute('aria-hidden','true');
      const bar=document.createElement('span');bar.className='app-match-lineup-reserved';
      row.replaceChildren(bar);continue;
     }
     row.removeAttribute('aria-hidden');
-    const starter=starters[i];
-    const role=document.createElement('span');role.className='app-match-lineup-role';role.textContent=starter.role;
+    const starter=ordered[i];
+    const role=document.createElement('span');role.className='app-match-lineup-role';
+    role.textContent=starter.startingRole||starter.role;
+    const avatar=document.createElement('span');avatar.className='app-match-lineup-avatar';
+    avatar.setAttribute('aria-hidden','true');
+    const nameBox=document.createElement('span');nameBox.className='app-match-lineup-name';
     const player=document.createElement('a');player.className='app-match-lineup-player';
     player.textContent=typeof starter.name==='string'&&starter.name.trim()?starter.name:tr.player+' #'+starter.playerId;
     if(starter.nationality)player.title=starter.nationality;
     player.href=href('/players/'+starter.playerId);
     player.target='_blank';player.rel='noopener noreferrer';
+    nameBox.append(player);
     const vote=document.createElement('span');vote.className='app-match-lineup-rating';
     const n=starter.rating;
     const officialVote=rated&&typeof n==='number'&&Number.isFinite(n)&&n>=4&&n<=10&&
@@ -255,7 +458,8 @@
     vote.textContent=officialVote?n.toFixed(1):'–';
     vote.setAttribute('aria-label',tr.rating+': '+vote.textContent);
     vote.title=tr.rating;
-    row.replaceChildren(role,player,vote);
+    row.replaceChildren(role,avatar,nameBox,vote);
+    observePortrait(avatar,starter.playerId,starter.portraitApproved);
    }
    if(valid)list.removeAttribute('aria-hidden');
    else list.setAttribute('aria-hidden','true');
@@ -330,6 +534,62 @@
    return validMatch(value?.match)&&validContext(value.context,value.match)?value:null;
   }catch{return null}
  }
+ // For unavailable new context (e.g. early draw, reserved knockout or old backend),
+ // keep both established optional reads independently. They never gate the score.
+ function loadLegacyContext(item){
+  // Both official form sources depend only on the verified match identity:
+  // start in parallel; neither waits for the other.
+  void fetch('/api/competitions/'+item.competitionId+'/seasons/'+item.season,
+   {credentials:'omit',cache:'no-store'})
+   .then(async response=>response.ok?response.json():null)
+   .then(snapshot=>{
+    if(data!==item||!verifiedProjection(snapshot))return;
+    sideProjection=snapshot;render();
+   }).catch(()=>{/* Official standings unavailable; keep the result intact. */});
+  void Promise.all([
+   fetch('/api/matches/seasons/'+item.season+'/competitions/'+item.competitionId,
+    {credentials:'omit',cache:'no-store'}),
+   import('/assets/published-match-links.mjs')
+  ]).then(async ([reply,module])=>{
+   if(!reply.ok)return;
+   const payload=await reply.json();
+   const index=module.indexPublishedMatchLinks(payload,item.season,item.competitionId);
+   if(data===item){publishedMatchIndex=index;render();}
+  }).catch(()=>{/* No fabricated match links when index is unavailable. */});
+ }
+ async function loadCompactContext(item){
+  try{
+   const query=new URLSearchParams({season:String(item.season),competition:item.competitionId});
+   const response=await fetch('/api/matches/'+matchId+'/context?'+query,
+    {credentials:'omit',cache:'no-store'});
+   if(!response.ok)throw Error('Compact match context unavailable');
+   const value=await response.json();
+   if(value?.schemaVersion!==1||value.providerId!=='authoritative-world'||
+      value.matchId!==matchId||value.season!==item.season||
+      value.competitionId!==item.competitionId||value.day!==item.day||
+      value.homeClubId!==clubKey(item.homeParticipant?.clubId)||
+      value.awayClubId!==clubKey(item.awayParticipant?.clubId)||
+      !verifiedProjection(value.projection))throw Error('Invalid compact match context');
+   const current=window.faWorldState?.get?.();
+   if(current?.source==='authoritative'&&current.worldStatus==='ready'&&current.world&&
+      ['generation','revision','seasonNumber','day','phase']
+       .some(key=>current.world[key]!==value.world?.[key]))
+    throw Error('Stale compact match context');
+   let links=null;
+   if(value.published){
+    const module=await import('/assets/published-match-links.mjs');
+    links=module.indexPublishedMatchLinks(value.published,item.season,item.competitionId);
+   }
+   if(data!==item)return;
+   sideProjection=value.projection;
+   publishedMatchIndex=links;
+   render();
+  }catch{
+   // 404/409/503 or a malformed compact response must not lose form and
+   // publication link functionality for the existing independent endpoints.
+   if(data===item)loadLegacyContext(item);
+  }
+ }
  async function load(){
   if(!numeric(matchId)){errorKind='missing';render();return}
   const preloaded=embeddedMatch();
@@ -360,13 +620,12 @@
   // the immutable verified match identity is allowed to request this season.
   if(!Number.isSafeInteger(item.day)||item.day<1||
    !clubKey(item.homeParticipant?.clubId)&&!clubKey(item.awayParticipant?.clubId))return;
-  try{
-   const response=await fetch('/api/competitions/'+item.competitionId+'/seasons/'+item.season,
-    {credentials:'omit',cache:'no-store'});
-   if(!response.ok)return;
-   const snapshot=await response.json();
-   if(verifiedProjection(snapshot)){sideProjection=snapshot;render();}
-  }catch{/* Unavailable context remains empty; match and scoreboard stay intact. */}
+  // The optional context starts only after the verified header paints.
+  // Knockout and partly resolved fixtures keep the legacy independent reads.
+  if(item.stageId==='league'&&clubKey(item.homeParticipant?.clubId)&&
+     clubKey(item.awayParticipant?.clubId))
+    void loadCompactContext(item);
+  else loadLegacyContext(item);
  }
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  render();void load();

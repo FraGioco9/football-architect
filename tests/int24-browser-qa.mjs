@@ -7,8 +7,10 @@ import {chromium} from "playwright";
 import {verifyFe04AccessibilityBrowser} from "./fe-04-accessibility-browser.mjs";
 import {verifyPlayersScrollBrowser} from './players-scroll-browser-532.mjs';
 import {verifyCompetitionCompactNetwork} from './competition-compact-network-browser.mjs';
+import {runIndependentCupMatrix} from '../tools/ci-opt-06-cup-matrix.mjs';
 import {mkdirSync} from "node:fs";
 import assert from "node:assert/strict";
+import {performance} from "node:perf_hooks";
 
 // Match the canonical app origin used by generated <base> URLs and DEV modules.
 const base="http://app.localhost:2000";
@@ -21,6 +23,16 @@ const views=["standings","postseason","fixtures","stats","history","rules","awar
 const languages={en:"Standings",de:"Tabelle",es:"Clasificación",fr:"Classement",it:"Classifica"};
 let checks=0;
 let screenshots=0;
+const started=performance.now();
+let previous=started;
+const checkpoint=(phase)=>{
+ const now=performance.now();
+ console.log('INT24_PHASE|'+JSON.stringify({
+  phase,segmentMs:Math.round(now-previous),elapsedMs:Math.round(now-started),
+  checks,screenshots
+ }));
+ previous=now;
+};
 const screenshot=async(page,name)=>{
  await page.evaluate(async()=>{await Promise.all(document.getAnimations().filter(animation=>animation.effect?.getComputedTiming().iterations!==Infinity).map(animation=>animation.finished.catch(()=>{})))});
  await page.screenshot({path:out+'/'+name,fullPage:true});screenshots++;
@@ -28,8 +40,11 @@ const screenshot=async(page,name)=>{
 try {
  // #657: capture network/refresh before the inherited #656 match-link checks.
  checks+=await verifyCompetitionCompactNetwork(browser,{engine:'chromium'});
+ checkpoint('compact-network');
  checks+=await verifyCompetitionPlayerStats(browser,{engine:'chromium'});
+ checkpoint('player-stats');
  checks+=await verifyPlayersScrollBrowser(browser);
+ checkpoint('players-scroll');
  // #605 / #656 — actual browser navigation for official Standings forms.
  // Fixture data is isolated to this page and intercepted locally: never
  // publish fake results or mutate shared DEV/Preview D1.
@@ -258,6 +273,7 @@ try {
  }
 
  await verifyCanonicalStateBrowser(browser,'chromium');
+ checkpoint('initial-navigation-canonical-state');
  // Task 8: every canonical competition route initializes one shared, empty context.
  const allRoutes=["it","eng","es","de","fr","pt","nl","br"].flatMap(country=>[1,2].map(tier=>country+"-"+tier)).concat(cups);
  const routePage=await browser.newPage({viewport:{width:390,height:900}});
@@ -470,6 +486,7 @@ try {
   }finally{release();await page.unroute('**/competitions/_shared/compact.json',blocked);await page.close()}
  }
 
+ checkpoint('standings-transitions');
  // PERF-API-657: verify a direct page and hard refresh request only the
  // compact shared catalogue, keeping the public first-paint shell stable.
  for(const path of ['/competitions/it-1/fixtures?season=1&matchday=12',
@@ -715,7 +732,12 @@ try {
    'First-paint connections match exactly the same-row round pairs at '+width+'px');
  }
  await firstPaint.close();
- for(const cup of cups)for(const width of widths){
+ // Each cup has its own isolated Playwright page/context and distinct artifacts.
+ // Keep widths and the seven direct routes serial *inside* each cup; allow
+ // at most two independent cups in flight to shorten this FULL critical path.
+ const matrixStarted=performance.now();
+ await runIndependentCupMatrix(cups,widths,async(cup,width)=>{
+  const cupWidthStarted=performance.now();
   const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
   const errors=[];
   page.on("pageerror",e=>errors.push(e.message));
@@ -955,7 +977,9 @@ try {
   checks++;
   assert.deepEqual(errors,[],"JS errors "+cup+" "+width);
   await page.close();
- }
+  console.log('INT24_MATRIX|'+JSON.stringify({cup,width,elapsedMs:Math.round(performance.now()-cupWidthStarted)}));
+ });
+ console.log('INT24_MATRIX|'+JSON.stringify({phase:'all-cup-widths',elapsedMs:Math.round(performance.now()-matrixStarted)}));
  // Season 0 is a DEV-only inactive state shared by cups, domestic divisions,
  // Calendar and Club; it never creates a simulated season 0.
  const page=await browser.newPage({viewport:{width:390,height:900}});
@@ -1155,6 +1179,7 @@ try {
   }
   await historyPage.close();checks++;
  }
+ checkpoint('competition-matrix-and-history');
  // PR 318: shared domestic qualification bands, localized legends and centered form letters.
  const formPage=await browser.newPage({viewport:{width:1440,height:900}});
  await formPage.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
@@ -1187,6 +1212,8 @@ try {
   assert.deepEqual(actual.colors,['#6B8FE3','#8D72C8']);checks++;
  }
  await formPage.close();
+ checkpoint('form-layout');
  checks+=await verifyFe04AccessibilityBrowser(browser);
+ checkpoint('accessibility');
  console.log("INT24 Chromium QA PASS: "+checks+" checks; "+screenshots+" screenshots");
 }finally{await browser.close()}

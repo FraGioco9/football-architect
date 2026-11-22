@@ -123,6 +123,20 @@ test('canonical site/app routing, hard refresh, assets and local API bridge rema
   for(const path of ['/assets/app.js','/assets/app.css','/assets/competition-tabs.js','/competitions/_shared/manifest.json']){
    assert.equal((await get(port,path,'app.localhost:2000')).status,200,path);
   }
+  // #733: localhost must serve the same already-approved DEV V4.2 WebPs.
+  // Publication without a target still rejects them; new/unapproved IDs stay 404.
+  for(const id of [44,63,190]){
+   const path='/assets/players/portraits/'+id+'.webp';
+   const image=await get(port,path,'app.localhost:2000');
+   assert.equal(image.status,200,path);
+   assert.equal(image.headers['content-type'],'image/webp');
+   assert.equal(image.body.slice(0,4),'RIFF',path);
+   assert.equal(image.body.slice(8,12),'WEBP',path);
+  }
+  const portraitHead=await get(port,'/assets/players/portraits/44.webp','app.localhost:2000','HEAD');
+  assert.equal(portraitHead.status,200);assert.equal(portraitHead.body,'');
+  for(const path of ['/assets/players/portraits/64.webp','/assets/players/portraits/01.webp'])
+   assert.equal((await get(port,path,'app.localhost:2000')).status,404,path);
   const head=await get(port,'/assets/app.css','app.localhost:2000','HEAD');
   assert.equal(head.status,200);assert.equal(head.body,'');
   const legacy=await get(port,'/competitions/it-1?season=1&view=standings','app.localhost:2000');

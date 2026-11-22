@@ -86,7 +86,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{tim
   assert.equal(publicManifest.divisions.length,16);
   assert.equal(publicManifest.competitions.length,18);
   const divFields=["id","name","countryId","countryName","flagAsset","tier","capacity","clubs"];
-  const clubFields=["countryId","clubId","abbr","fullName","primaryName","stadiumName"];
+  const clubFields=["countryId","clubId","abbr","fullName","primaryName","compactName","stadiumName"];
   const allClubIds=new Set();
   for(const division of publicManifest.divisions){
    fields(division,divFields);
@@ -94,6 +94,8 @@ test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{tim
    for(const club of division.clubs){
     fields(club,clubFields);
     assert.equal(typeof club.primaryName,"string");
+    assert.equal(typeof club.compactName,"string");
+    assert.ok(club.compactName.trim(),"public mobile name must be nonempty");
     assert.equal(typeof club.stadiumName,"string");
     const key=club.countryId+":"+club.clubId;
     assert.ok(!allClubIds.has(key),key);
