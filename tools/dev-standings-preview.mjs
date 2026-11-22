@@ -91,6 +91,7 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/player-movement.mjs': 'match-engine/src/player-movement.mjs',
   '/__fa_match_engine__/individual-kinematics.mjs': 'match-engine/src/individual-kinematics.mjs',
   '/__fa_match_engine__/solo-carry-phases.mjs': 'match-engine/src/solo-carry-phases.mjs',
+  '/__fa_match_engine__/solo-carry-attribute-calibration.mjs': 'match-engine/src/solo-carry-attribute-calibration.mjs',
   '/__fa_match_engine__/native-shoe-body-handoff.mjs': 'match-engine/src/native-shoe-body-handoff.mjs',
   '/__fa_match_engine__/secondary-press-support-m20.mjs': 'match-engine/src/secondary-press-support-m20.mjs',
   '/__fa_match_engine__/natural-movement-research-lab-m21.mjs': 'match-engine/src/natural-movement-research-lab-m21.mjs',

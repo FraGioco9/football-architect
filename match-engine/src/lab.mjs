@@ -457,10 +457,11 @@ function render() {
         ' native shoe/impulse')+
        (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
       (f.intentDrivenCarry?' · Solo Carry intent (no shoe-contact claims)':'')+
-      (f.soloCarryLockedPhase&&f.soloCarryPhase?
-       ' · phase '+f.soloCarryPhase.phase.toUpperCase()+' (locked)'+
+      (f.soloCarryLockedPhase?
+       ' · phase '+f.soloCarryLockedPhase.toUpperCase()+' (locked)'+
        ' · attributes '+f.soloCarryPlayerAttributes.speed+'/99'+
-       ' [speed/agility/dribbling/technique]'+
+       ' [speed/agility/dribbling/technique]':'')+
+      (f.soloCarryLockedPhase&&f.soloCarryPhase?
        ' · player '+f.soloCarryPhase.playerSpeedMps.toFixed(2)+' m/s'+
        ' · ball '+f.soloCarryPhase.ballSpeedMps.toFixed(2)+' m/s'+
        ' · gap '+f.soloCarryPhase.ballGapM.toFixed(2)+' m'+
