@@ -319,3 +319,42 @@ test("COMPETITION-LINK: DEV season metadata preserves canonical division path",(
  runInNewContext(registryCode+"\n"+code+"\nrewriteAppLinks()",{window:{location:{hostname:"localhost",protocol:"http:",href:"http://localhost/dashboard"}},URL,links:{},document:{documentElement:{dataset:{}},querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}});
  assert.equal(cup.href,"/competitions/int-1/standings");
 });
+
+test("PAGE-DASH-01 generates a standalone world overview without a separate world page",()=>{
+ const generator=readFileSync(new URL("../tools/generate-app-pages.mjs",import.meta.url),"utf8");
+ const source=readFileSync(new URL("../templates/dashboard-overview.html",import.meta.url),"utf8");
+ const client=readFileSync(new URL("../assets/dashboard-overview.mjs",import.meta.url),"utf8");
+ assert.match(generator,/templates\/dashboard-overview\.html/);
+ assert.match(generator,/page\.name==="dashboard"/);
+ assert.match(pages.dashboard,/id="app-dashboard" class="app-view fa-dashboard-overview"/);
+ assert.match(pages.dashboard,/\/assets\/dashboard-overview\.mjs/);
+ assert.match(pages.dashboard,/\/assets\/dashboard-overview\.css/);
+ for(const id of ["recent","next","events"])assert.match(source,new RegExp('data-dash-list="'+id+'"'));
+ assert.doesNotMatch(client,/fetch\(\s*["']\/api\/world/);
+ assert.match(client,/\/api\/matches\?season=/);
+ assert.match(pages.dashboard,/href="\/competitions#domestic"/);
+ assert.match(pages.dashboard,/href="\/guide"/);
+});
+test("PAGE-DASH-01 official day window and receipt-gated matches",async()=>{
+ const {chooseDashboardDays,validDashboardDirectory,pickDashboardMatches}=await import("../assets/dashboard-overview.mjs");
+ const days=Array.from({length:56},(_,i)=>({day:i+1,events:[13,15,16,20,25,55].includes(i+1)?[{}]:[]}));
+ assert.deepEqual(chooseDashboardDays(days,0),[13,15]);
+ assert.deepEqual(chooseDashboardDays(days,16),[13,15,16,20]);
+ assert.deepEqual(chooseDashboardDays(days,56),[25,55]);
+ assert.deepEqual(chooseDashboardDays(days,57),[]);
+ const world={generation:"v",revision:3,seasonNumber:2,day:16,phase:"active"};
+ const fixture=(matchId,status,result)=>({matchId:String(matchId),competitionId:"IT-1",homeClubId:"IT-1",awayClubId:"IT-2",status,result});
+ const completed=fixture(5,"completed",{homeGoals:2,awayGoals:1});
+ const next=fixture(6,"scheduled",null);
+ const data=(day,fixtures)=>({schemaVersion:1,providerId:"authoritative-world",world,selectedSeason:2,day,publication:"published",fixtures});
+ assert.equal(validDashboardDirectory(data(15,[completed]),world,2,15),true);
+ assert.equal(validDashboardDirectory(data(20,[next]),world,2,20),true);
+ assert.equal(validDashboardDirectory(data(15,[completed]),{...world,revision:4},2,15),false);
+ assert.equal(validDashboardDirectory(data(15,[completed,completed]),world,2,15),false);
+ assert.equal(validDashboardDirectory(data(15,[fixture(5,"completed",null)]),world,2,15),false);
+ assert.equal(validDashboardDirectory(data(20,[fixture(6,"scheduled",{homeGoals:2,awayGoals:0})]),world,2,20),false);
+ const picked=pickDashboardMatches([{day:15,publication:"published",fixtures:[completed]},{day:20,publication:"partial",fixtures:[next]},{day:13,publication:"unpublished",fixtures:[completed]}],16);
+ assert.deepEqual(picked.recent.map(f=>f.matchId),["5"]);
+ assert.deepEqual(picked.next.map(f=>f.matchId),["6"]);
+});
+

@@ -20,6 +20,7 @@ import {validateDivisionAssets,renderDivisionLogo} from "./validate-division-ass
 
 // Normalize the source template too: Windows clones may retain CRLF from an earlier checkout.
 const template = readFileSync(new URL("../templates/app-page.html", import.meta.url), "utf8").replace(/\r\n/g,"\n");
+const dashboardMarkup=readFileSync(new URL("../templates/dashboard-overview.html",import.meta.url),"utf8").replace(/\r\n/g,"\n").trimEnd();
 const calendarFallback = "          <div class=\"app-panel app-calendar-empty\">\n            <h2 data-app-i18n=\"calendarStatus\">Schedule not available</h2>\n            <p data-app-i18n=\"calendarStatusText\">Match scheduling has not been implemented in this app foundation. No fixtures or results are being simulated.</p>\n            <a class=\"app-link app-link-secondary\" href=\"/dashboard\" data-app-i18n=\"backDashboard\">Back to Dashboard</a>\n          </div>";
 const pages = {
   "dashboard": {
@@ -267,6 +268,13 @@ for(const page of outputPages){
   }
   if(/@@FA_(?:LINE_|WORLD_|CALENDAR_)/.test(html))throw Error("Unresolved template token in "+page.path);
   if(page.name==="competition-shared")html=html.replace('<script src="/assets/landing.js"','<link rel="stylesheet" href="/assets/competition-awards.css">\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/landing.js"');
+ }
+ if(page.name==="dashboard"){
+  const begin=html.indexOf('        <section id="app-dashboard"');
+  const end=html.indexOf('        <section id="app-calendar"',begin);
+  if(begin<0||end<=begin)throw Error("Dashboard shell boundary missing");
+  html=html.slice(0,begin)+dashboardMarkup+"\n"+html.slice(end);
+  html=html.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/dashboard-overview.css\">\n  <script src=\"/assets/dashboard-overview.mjs\" type=\"module\"></script>\n</head>");
  }
  if(page.name==="competitions")html=html.replace("</head>","  <script src=\"/assets/international-cups.js\" defer></script>\n</head>");
  if(page.name==="calendar")html=html.replace('<h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>','<h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>\n          '+"<div class=\"calendar-season-picker app-competition-season\"><span id=\"calendar-season-label\">Season</span><div class=\"language-control\" id=\"calendar-season-control\"><button type=\"button\" id=\"calendar-season-picker\" class=\"language-trigger\" role=\"combobox\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"calendar-season-menu\" aria-labelledby=\"calendar-season-label calendar-season-value\"><span id=\"calendar-season-value\"></span><svg class=\"language-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div id=\"calendar-season-menu\" class=\"language-menu\" role=\"listbox\" aria-labelledby=\"calendar-season-label\" hidden></div></div></div>"+"\n          "+"<script data-calendar-season-first-paint>(()=>{const n=document.documentElement.dataset.calendarSeason||'';const value=document.getElementById('calendar-season-value');if(value)value.textContent=n})();</script>") ;

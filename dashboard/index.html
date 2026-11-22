@@ -17,6 +17,8 @@
   <script src="/assets/landing.js" defer></script>
   <script src="/assets/app.js" defer></script>
   <script src="/assets/app-search.js" defer></script>
+  <link rel="stylesheet" href="/assets/dashboard-overview.css">
+  <script src="/assets/dashboard-overview.mjs" type="module"></script>
   <link rel="stylesheet" href="/assets/sidebar-evolution.css">
   <script src="/assets/sidebar-evolution.js" defer></script>
   <script src="/assets/profile-navigation.js" defer></script>
@@ -144,26 +146,59 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
       </header>
       <div class="fa-shell-content-scroll">
       <main class="app-main" id="main-content" tabindex="-1">
-        <section id="app-dashboard" class="app-view" aria-labelledby="dashboard-title">
+        <section id="app-dashboard" class="app-view fa-dashboard-overview" aria-labelledby="dashboard-title">
           <h1 class="app-page-title" id="dashboard-title" data-app-i18n="dashboard">Dashboard</h1>
-          <div class="app-panels">
-            <section class="app-panel" aria-labelledby="career-status-heading">
-              <h2 id="career-status-heading" data-app-i18n="careerStatus">Career status</h2>
-              <p data-app-i18n="careerStatusText">No active career. Club selection, match dates and the Continue action will be enabled when career management is implemented.</p>
-              <div class="app-panel-actions">
-                <a class="app-link app-link-primary" href="/guide" data-app-i18n="openGuide">Explore the game guide</a>
-                <a class="app-link app-link-secondary" href="/" data-app-i18n="backToSite">Back to website</a>
+          <div class="fa-dashboard-grid">
+            <section class="app-panel fa-dashboard-world" aria-labelledby="dashboard-world-heading">
+              <div class="fa-dashboard-heading"><h2 id="dashboard-world-heading" data-dash-text="world">World overview</h2><a href="/calendar" data-dash-text="calendar">Calendar</a></div>
+              <div class="fa-dashboard-clock">
+                <div><span data-dash-text="season">Season</span><strong data-dash-value="season"><span class="app-skeleton-bar" aria-hidden="true"></span></strong></div>
+                <div><span data-dash-text="day">Day</span><strong data-dash-value="day"><span class="app-skeleton-bar" aria-hidden="true"></span></strong></div>
+                <div><span data-dash-text="phase">Phase</span><strong data-dash-value="phase"><span class="app-skeleton-bar" aria-hidden="true"></span></strong></div>
               </div>
+              <p class="fa-dashboard-note" role="status" aria-live="polite" data-dash-note="world"></p>
             </section>
-            <section class="app-panel" aria-labelledby="world-heading">
-              <h2 id="world-heading" data-app-i18n="world">World foundations</h2>
-              <p data-app-i18n="worldText">The fictional world catalogues are available, but these identities are not yet an active playable league system.</p>
-              <div class="app-stats">
-                <div><strong>8</strong><span data-app-i18n="countries">Countries</span></div>
-                <div><strong>16</strong><span data-app-i18n="divisions">Divisions</span></div>
-                <div><strong>320</strong><span data-app-i18n="clubs">Documented clubs</span></div>
+            <section class="app-panel" aria-labelledby="dashboard-recent-heading">
+              <div class="fa-dashboard-heading"><h2 id="dashboard-recent-heading" data-dash-text="recent">Recent results</h2><a href="/matches" data-dash-text="matches">All matches</a></div>
+              <ul class="fa-dashboard-list" data-dash-list="recent" aria-busy="true">
+                <li class="fa-dashboard-placeholder"><span class="app-skeleton-bar"></span></li>
+                <li class="fa-dashboard-placeholder"><span class="app-skeleton-bar"></span></li>
+                <li class="fa-dashboard-placeholder"><span class="app-skeleton-bar"></span></li>
+              </ul>
+              <p class="fa-dashboard-note" data-dash-note="recent" aria-live="polite"></p>
+            </section>
+            <section class="app-panel" aria-labelledby="dashboard-next-heading">
+              <div class="fa-dashboard-heading"><h2 id="dashboard-next-heading" data-dash-text="next">Upcoming fixtures</h2><a href="/matches" data-dash-text="matches">All matches</a></div>
+              <ul class="fa-dashboard-list" data-dash-list="next" aria-busy="true">
+                <li class="fa-dashboard-placeholder"><span class="app-skeleton-bar"></span></li>
+                <li class="fa-dashboard-placeholder"><span class="app-skeleton-bar"></span></li>
+                <li class="fa-dashboard-placeholder"><span class="app-skeleton-bar"></span></li>
+              </ul>
+              <p class="fa-dashboard-note" data-dash-note="next" aria-live="polite"></p>
+              <button type="button" class="fa-dashboard-retry" data-dash-retry hidden data-dash-text="retry">Retry</button>
+            </section>
+            <section class="app-panel" aria-labelledby="dashboard-competitions-heading">
+              <div class="fa-dashboard-heading"><h2 id="dashboard-competitions-heading" data-dash-text="competitions">Competitions</h2><a href="/competitions" data-dash-text="explore">Explore</a></div>
+              <div class="fa-dashboard-competition-links">
+                <a href="/competitions#domestic"><strong>16</strong><span data-dash-text="domestic">Domestic divisions</span></a>
+                <a href="/competitions#international"><strong>2</strong><span data-dash-text="international">International cups</span></a>
               </div>
+              <p class="fa-dashboard-note" data-dash-text="catalogue">Competition catalogue, not a claim of active fixtures.</p>
             </section>
+            <section class="app-panel" aria-labelledby="dashboard-events-heading">
+              <div class="fa-dashboard-heading"><h2 id="dashboard-events-heading" data-dash-text="events">World events</h2><a href="/calendar" data-dash-text="calendar">Calendar</a></div>
+              <p class="fa-dashboard-note fa-dashboard-disclaimer" data-dash-text="planned">Planned events; not proof of played matches.</p>
+              <ul class="fa-dashboard-list" data-dash-list="events" aria-busy="true">
+                <li class="fa-dashboard-placeholder"><span class="app-skeleton-bar"></span></li>
+                <li class="fa-dashboard-placeholder"><span class="app-skeleton-bar"></span></li>
+                <li class="fa-dashboard-placeholder"><span class="app-skeleton-bar"></span></li>
+              </ul>
+              <p class="fa-dashboard-note" data-dash-note="events" aria-live="polite"></p>
+            </section>
+            <nav class="fa-dashboard-bottom" aria-label="More information" data-dash-more>
+              <a class="app-link app-link-secondary" href="/guide" data-app-i18n="openGuide">Explore the game guide</a>
+              <a class="app-link app-link-secondary" href="/" data-app-i18n="backToSite">Back to website</a>
+            </nav>
           </div>
         </section>
         <section id="app-calendar" class="app-view" aria-labelledby="calendar-title" hidden>

@@ -1,0 +1,35 @@
+/* PAGE-DASH-01: reserve final geometry before asynchronous world and match reads. */
+.fa-dashboard-overview .fa-dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--fa-space-4);margin-top:var(--app-page-section-gap)}
+.fa-dashboard-overview .fa-dashboard-world,.fa-dashboard-overview .fa-dashboard-bottom{grid-column:1/-1}
+.fa-dashboard-overview .fa-dashboard-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px}
+.fa-dashboard-overview .fa-dashboard-heading h2{margin:0}
+.fa-dashboard-overview .fa-dashboard-heading a{flex-shrink:0;font-size:12px;color:var(--text);font-weight:650;text-decoration:none}
+.fa-dashboard-overview a:hover{text-decoration:underline;text-underline-offset:3px}
+.fa-dashboard-overview a:focus-visible,.fa-dashboard-overview button:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.fa-dashboard-overview .fa-dashboard-clock{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.fa-dashboard-overview .fa-dashboard-clock>div{min-width:0;min-height:84px;padding:14px;border-radius:var(--fa-radius-control);background:color-mix(in srgb,var(--surface) 75%,var(--border))}
+.fa-dashboard-overview .fa-dashboard-clock>div>span{display:block;font-size:12px;color:var(--muted)}
+.fa-dashboard-overview .fa-dashboard-clock strong{display:block;min-height:30px;margin-top:7px;font-size:22px;line-height:1.35;font-variant-numeric:tabular-nums}
+.fa-dashboard-overview .fa-dashboard-clock .app-skeleton-bar{height:18px;width:5ch;margin:3px 0 0}
+.fa-dashboard-overview [data-dash-value="phase"] .app-skeleton-bar{width:10ch}
+.fa-dashboard-overview .fa-dashboard-note{min-height:20px;margin-top:12px;font-size:12px}
+.fa-dashboard-overview .fa-dashboard-disclaimer{margin:0 0 10px}
+.fa-dashboard-overview .fa-dashboard-list{list-style:none;margin:0;padding:0;min-height:174px}
+.fa-dashboard-overview .fa-dashboard-list li{min-height:53px;border-top:1px solid var(--line)}
+.fa-dashboard-overview .fa-dashboard-list li:first-child{border-top:0}
+.fa-dashboard-overview .fa-dashboard-list a{display:flex;gap:10px;justify-content:space-between;align-items:center;min-height:53px;padding:7px 0;color:var(--text);font-size:12px;text-decoration:none}
+.fa-dashboard-overview .fa-dashboard-list a:hover .fa-dashboard-names{text-decoration:underline;text-underline-offset:3px}
+.fa-dashboard-overview .fa-dashboard-list strong,.fa-dashboard-overview .fa-dashboard-list small{flex-shrink:0;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:12px}
+.fa-dashboard-overview .fa-dashboard-list small{color:var(--muted)}
+.fa-dashboard-overview .fa-dashboard-names{min-width:0;overflow-wrap:anywhere}
+.fa-dashboard-overview .fa-dashboard-placeholder{display:flex;align-items:center}
+.fa-dashboard-overview .fa-dashboard-placeholder .app-skeleton-bar{width:70%;height:12px;margin:0}
+.fa-dashboard-overview .fa-dashboard-placeholder:nth-child(2) .app-skeleton-bar{width:56%}
+.fa-dashboard-overview .fa-dashboard-placeholder:nth-child(3) .app-skeleton-bar{width:63%}
+.fa-dashboard-overview .fa-dashboard-competition-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fa-dashboard-overview .fa-dashboard-competition-links a{display:flex;align-items:center;gap:12px;min-height:76px;padding:16px;border:1px solid var(--border);border-radius:var(--fa-radius-control);color:var(--text);font-size:12px;text-decoration:none}
+.fa-dashboard-overview .fa-dashboard-competition-links strong{font-size:24px;font-variant-numeric:tabular-nums}
+.fa-dashboard-overview .fa-dashboard-retry{border:1px solid var(--border);border-radius:var(--fa-radius-control);background:transparent;color:var(--text);font:inherit;font-size:12px;padding:8px 14px;cursor:pointer}
+.fa-dashboard-overview .fa-dashboard-bottom{display:flex;gap:10px;flex-wrap:wrap}
+@media(max-width:800px){.fa-dashboard-overview .fa-dashboard-grid{grid-template-columns:1fr}.fa-dashboard-overview .fa-dashboard-world,.fa-dashboard-overview .fa-dashboard-bottom{grid-column:auto}}
+@media(max-width:480px){.fa-dashboard-overview .fa-dashboard-clock{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dashboard-overview .fa-dashboard-clock>div:last-child{grid-column:1/-1}.fa-dashboard-overview .fa-dashboard-competition-links{grid-template-columns:1fr}.fa-dashboard-overview .fa-dashboard-bottom{flex-direction:column}}
