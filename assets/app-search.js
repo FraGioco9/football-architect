@@ -21,11 +21,11 @@
   };
   // Exact, real in-app destinations. Expand only when the underlying pages exist.
   const entries = [
-    ["page","dashboard-title","subtitle","/dashboard"],
+    ["page","dashboard-title","world","/dashboard"],
     ["page","calendar-title","calendarStatusText","/calendar"],
     ["page","settings-title","languageHelp","/settings"],
-    ["section","dashboard-match-centre-heading","featured","/dashboard#dashboard-match-centre-heading"],
-    ["section","world-heading","subtitle","/dashboard#world-heading"],
+    ["section","dashboard-match-centre-heading","next","/dashboard#dashboard-match-centre-heading"],
+    ["section","world-heading","phase","/dashboard#world-heading"],
     ["section","app-language-heading","languageHelp","/settings#app-language-heading"],
     ["section","app-theme-heading","themeHelp","/settings#app-theme-heading"]
   ];

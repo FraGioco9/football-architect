@@ -115,7 +115,8 @@ function simulate(language="en",worldCatalogue=null){
   };
   const descriptions={
     subtitle:"Your football world, at a glance.",
-    featured:"Featured next fixture",
+    next:"Upcoming fixtures",
+    phase:"World phase",
     calendarStatusText:"Match scheduling is not available.",
     languageHelp:"Choose the interface language.",
     world:"World overview",
@@ -330,7 +331,7 @@ test("SEARCH-01 compact results show only label and kind, with descriptions stil
   assert.equal(first.children.length,2);
   assert.equal(first.children[0].className,"app-search-name");
   assert.equal(first.children[1].className,"app-search-kind");
-  app.input.value="Featured next fixture";
+  app.input.value="Upcoming fixtures";
   app.input.emit("input");
   assert.equal(app.links()[0].href,"/dashboard#dashboard-match-centre-heading");
 });
