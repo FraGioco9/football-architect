@@ -18,6 +18,8 @@ test('#581: World History has canonical public route, assets and generated first
  const html=read('history/index.html');
  assert.match(html,/<title>World History — Football Architect<\/title>/);
  assert.ok(html.includes(renderWorldHistoryPage()));
+ assert.doesNotMatch(html,/id="world-history-intro"|class="fa-world-history-intro"/,'History subtitle is absent from the first paint');
+ assert.doesNotMatch(read('assets/world-history.js'),/querySelector\('#world-history-intro'\)/,'runtime never addresses deleted subtitle');
  assert.match(html,/id="world-history-archive"[^>]*aria-busy="true"/);
  assert.match(html,/id="world-history-season"[^>]*disabled/);
  assert.match(html,/id="world-history-country"[^>]*disabled/);
@@ -170,7 +172,7 @@ test('#581 Debug: History switches sources, retains filters, and excludes DEV wi
  assert.match(publicRuntime,/window\.addEventListener\('fa:dev-world-history'/);
  assert.match(publicRuntime,/if\(debugActive\(\)\)/);
  assert.match(publicRuntime,/competitionIds\.slice\(0,16\)/);
- assert.match(publicRuntime,/debugIntro/);
+ assert.doesNotMatch(publicRuntime,/debugIntro|world-history-intro/,'subtitle is absent in public and Debug modes');
  assert.match(publicRuntime,/fetch\('\/api\/world\/history'/);
  assert.match(devClient,/historyPath\|\|/);
  assert.match(devClient,/fa:dev-progress-change/);

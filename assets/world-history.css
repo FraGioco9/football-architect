@@ -1,6 +1,5 @@
 /* #581: reuse World/Clubs surfaces, typography and dropdown controls. */
 .fa-world-history{max-width:none;min-width:0}
-.fa-world-history-intro{color:var(--muted);margin:12px 0 0;line-height:1.5}
 .fa-world-history-controls.nav01-filters{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:var(--app-page-section-gap);gap:12px;padding:18px;overflow:visible}
 .fa-world-history-control.nav01-filter{display:grid;align-content:start;gap:8px;align-self:stretch;min-width:0}
 .fa-world-history-label{font-size:13px;font-weight:650;color:var(--muted);line-height:1.4}
