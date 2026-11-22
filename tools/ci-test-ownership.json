@@ -318,6 +318,7 @@
     "tests/season-zero-admin-ui.test.mjs": "site-node",
     "tests/season-two-navigation-browser.mjs": "manual",
     "tests/seasonless-routing.test.mjs": "site-node",
+    "tests/shared-shell-734-browser.mjs": "support",
     "tests/sh-01-sporting-contract.test.mjs": "site-node",
     "tests/sh-02-competition-rendering.test.mjs": "site-node",
     "tests/sh-04-frontend-cleanup.test.mjs": "site-node",
