@@ -38,8 +38,9 @@ export function calibrateSoloCarryKinematics(base,attributes){
   accelerationMps2:base.accelerationMps2*
    (1+0.12*speed+0.26*agility),
   brakingMps2:base.brakingMps2*(1+0.20*agility),
-  ballTargetOffsetM:base.ballTargetOffsetM+
-   0.06*dribble+0.02*technique
+  // Keep genuine control targets outside the 0.08m forward-touch gate.
+  ballTargetOffsetM:Math.min(-0.12,base.ballTargetOffsetM+
+   0.06*dribble+0.02*technique)
  });
 }
 export function calibrateSoloCarryTouch(base,attributes){

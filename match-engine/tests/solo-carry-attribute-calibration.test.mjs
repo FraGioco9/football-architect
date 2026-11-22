@@ -38,6 +38,12 @@ test('#628 rating inputs match real 1..99 generator attributes, never fabricate 
   mid=calibrateSoloCarryKinematics(base,baseline),
   high=calibrateSoloCarryKinematics(base,elite);
  assert.deepEqual(mid,base,'50 must reproduce the previous accepted movement constants');
+ const control90=calibrateSoloCarryKinematics({
+  maxSpeedMps:3,accelerationMps2:6,brakingMps2:10,
+  ballTargetOffsetM:-0.14
+ },elite);
+ assert.ok(control90.ballTargetOffsetM<=-0.12,
+  'high Control attributes must remain outside the legitimate kick gate');
  assert.ok(low.maxSpeedMps<mid.maxSpeedMps&&mid.maxSpeedMps<high.maxSpeedMps);
  assert.ok(low.accelerationMps2<mid.accelerationMps2&&
   mid.accelerationMps2<high.accelerationMps2);
@@ -113,6 +119,10 @@ test('#628 four player attribute profiles drive real source 60Hz Carry benchmark
      assert.ok(Math.abs(late.ballForwardM-
       forward*(frame.ball.position.x-start))<1e-8);
      assert.ok(late.ballPathM>=Math.abs(late.ballForwardM)-1e-6);
+     assert.ok(touchCount>=1,
+      'Every rated Carry phase must produce an actual Rapier impulse');
+     assert.ok(at120.ballForwardM>1,
+      'Every rated Carry phase must move the original Rapier ball forward');
      if(phase!=='control'){
       assert.ok(firstTouch!==null&&firstTouch<=6);
       assert.ok(at120.ballForwardM>1.5,
