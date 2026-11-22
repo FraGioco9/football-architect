@@ -216,6 +216,41 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    process.stdout.write('ME_628_FIXED_PHASE_CHROME '+
     JSON.stringify({phase,side,...chosen})+'\n');
   }
+  // Rated Carry profiles are real selection controls, not decorative data.
+  // They reset the *same* Rapier player+ball LAB with the generated model's
+  // four relevant source attributes at a uniform 90 or 25.
+  const rated=await evalJs("(()=>{"+
+   "const el=id=>document.getElementById(id);"+
+   "el('preset-trigger').click();"+
+   "document.querySelector('#preset-options [data-value=\\\"action:carry-solo:sprint\\\"]').click();"+
+   "const visible=!el('me-inline-rating-control').hidden;"+
+   "el('me-inline-rating-trigger').click();"+
+   "document.querySelector('#me-inline-rating-options [data-value=\\\"90\\\"]').click();"+
+   "for(let i=0;i<120;i++)el('step').click();"+
+   "const ninety={rating:el('me-inline-rating').value,"+
+    "readout:el('me-inline-observation').textContent,"+
+    "tick:el('tick').textContent,visible:!el('me-inline-rating-control').hidden};"+
+   "el('me-inline-rating-trigger').click();"+
+   "document.querySelector('#me-inline-rating-options [data-value=\\\"25\\\"]').click();"+
+   "const twentyFive={rating:el('me-inline-rating').value,"+
+    "tick:el('tick').textContent,readout:el('me-inline-observation').textContent};"+
+   "el('preset-trigger').click();"+
+   "document.querySelector('#preset-options [data-value=\\\"action:keeper-1v1\\\"]').click();"+
+   "return {visible,ninety,twentyFive,otherHidden:el('me-inline-rating-control').hidden};"+
+   "})()");
+  assert.equal(rated.visible,true);
+  assert.equal(rated.ninety.rating,'90');
+  assert.equal(rated.ninety.visible,true);
+  assert.match(rated.ninety.tick,/^Tick 120 /);
+  assert.match(rated.ninety.readout,/attributes 90\/99/);
+  assert.match(rated.ninety.readout,/ball forward [0-9.]+ m/);
+  assert.match(rated.ninety.readout,/peak player [0-9.]+ m\/s/);
+  assert.match(rated.ninety.readout,/mean gap [0-9.]+ m/);
+  assert.equal(rated.twentyFive.rating,'25');
+  assert.equal(rated.twentyFive.tick,'Tick 0 · 0.00 s');
+  assert.match(rated.twentyFive.readout,/attributes 25\/99/);
+  assert.equal(rated.otherHidden,true);
+  process.stdout.write('ME_628_RATED_CARRY_CHROME '+JSON.stringify(rated)+'\\n');
   // Preserve native Rapier assertions for the other visible situations.
   for(const [scene,actors] of [
    ['keeper-1v1',2],['overload-2v1',4],['duel-3v3',7]

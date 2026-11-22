@@ -1,5 +1,7 @@
 // #628 solo Carry: evidence-only phase selection at fixed 60Hz.
 // No timed script, fake collision, possession, teleport or ball speed clamp.
+import {validateSoloCarryAttributes,uniformSoloCarryAttributes,
+ calibrateSoloCarryKinematics} from './solo-carry-attribute-calibration.mjs';
 export const SOLO_CARRY_PHASES=Object.freeze(['control','moderate','sprint']);
 const profiles=Object.freeze({
  control:Object.freeze({
@@ -24,9 +26,10 @@ export function soloCarryPhaseConfiguration(phase){
  return profiles[phase];
 }
 export function advanceSoloCarryPhase({previousPhase='control',tick,
- playerSpeedMps,ballSpeedMps,ballGapM,lockedPhase=null}={}){
+ playerSpeedMps,ballSpeedMps,ballGapM,lockedPhase=null,playerAttributes=null}={}){
  if(!SOLO_CARRY_PHASES.includes(previousPhase)||
     (lockedPhase!==null&&!SOLO_CARRY_PHASES.includes(lockedPhase))||
+    (lockedPhase===null&&playerAttributes!==null)||
     !Number.isSafeInteger(tick)||tick<1||
     ![playerSpeedMps,ballSpeedMps,ballGapM].every(n=>
      typeof n==='number'&&Number.isFinite(n)&&n>=0))
@@ -55,11 +58,19 @@ export function advanceSoloCarryPhase({previousPhase='control',tick,
    maxSpeedMps:6.0,accelerationMps2:11,brakingMps2:13,
    ballTargetOffsetM:-0.44
   }):null;
+ const attributeInputs=lockedPhase===null?null:
+  playerAttributes===null?uniformSoloCarryAttributes(50):
+   validateSoloCarryAttributes(playerAttributes);
+ const tuned=fixedProfile===null?profiles[phase]:
+  Object.freeze({...profiles[phase],...fixedProfile});
+ const calibrated=attributeInputs===null?tuned:
+  Object.freeze({...tuned,
+   ...calibrateSoloCarryKinematics(tuned,attributeInputs)});
  return Object.freeze({
   tick,phase,previousPhase,changed:phase!==previousPhase,
   ...(lockedPhase!==null?{lockedPhase}:{}),
-  playerSpeedMps,ballSpeedMps,ballGapM,...profiles[phase],
-  ...(fixedProfile??{}),
+  playerSpeedMps,ballSpeedMps,ballGapM,...calibrated,
+  ...(attributeInputs!==null?{carryPlayerAttributes:attributeInputs}:{}),
   originalCanonicalPlayer:true,originalRapierBall:true,
   nativeShoeEventCreated:false,ballImpulseCreated:false,
   officialPossession:false

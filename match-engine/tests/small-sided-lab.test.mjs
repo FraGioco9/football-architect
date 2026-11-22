@@ -158,6 +158,9 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.match(html,/id="pitch"/);
  assert.match(html,/id="elevation"/);
  assert.match(html,/id="me-inline-side-control"/);
+ assert.match(html,/id="me-inline-rating-control"/);
+ assert.match(html,/data-me-dropdown="inline-rating"/);
+ assert.match(js,/soloCarryPlayerAttributes/);
  assert.match(html,/id="me-inline-observation"/);
  assert.match(html,/id="play"/);
  assert.match(html,/id="pause"/);

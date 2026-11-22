@@ -73,6 +73,22 @@
                     </div>
                   </div>
                 </div>
+                <div class="me-speed-control me-inline-rating-control" id="me-inline-rating-control" hidden>
+                  <span class="me-field-label" id="me-inline-rating-label">Attributes</span>
+                  <div class="language-control me-dropdown" data-me-dropdown="inline-rating">
+                    <input type="hidden" id="me-inline-rating" value="50">
+                    <button type="button" class="language-trigger" id="me-inline-rating-trigger" role="combobox" aria-labelledby="me-inline-rating-label me-inline-rating-value" aria-haspopup="listbox" aria-controls="me-inline-rating-options" aria-expanded="false">
+                      <span id="me-inline-rating-value">50 / 99</span>
+                      <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <div class="language-menu" id="me-inline-rating-options" role="listbox" aria-labelledby="me-inline-rating-label" hidden>
+                      <div class="language-option" role="option" tabindex="-1" data-value="25" aria-selected="false">25 / 99</div>
+                      <div class="language-option" role="option" tabindex="-1" data-value="50" aria-selected="true">50 / 99</div>
+                      <div class="language-option" role="option" tabindex="-1" data-value="75" aria-selected="false">75 / 99</div>
+                      <div class="language-option" role="option" tabindex="-1" data-value="90" aria-selected="false">90 / 99</div>
+                    </div>
+                  </div>
+                </div>
                 <div id="me-inline-variant-control" class="me-variant-control" hidden>
                   <span class="me-field-label">Variation</span>
                   <div class="me-variant-buttons" role="group" aria-label="Starting variation (Reset replays identical seed)">

@@ -15,6 +15,8 @@ import {mountControlledActionLabs,createControlledActionLab,projectActiveLabDeci
 import {mountControlledMovementLabs,createControlledMovementLab} from '/__fa_match_engine__/movement-labs.mjs';
 import {SMALL_SIDED_VARIANT_COUNT} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
 import {SOLO_CARRY_PHASES} from '/__fa_match_engine__/solo-carry-phases.mjs';
+import {uniformSoloCarryAttributes}
+ from '/__fa_match_engine__/solo-carry-attribute-calibration.mjs';
 import {prepareFlightPlaybackPair,sampleFlightPlaybackPair,flightPlaybackWallTime} from '/__fa_match_engine__/flight-playback.mjs';
 
 const byId = id => document.getElementById(id);
@@ -125,6 +127,8 @@ const inlinePhysics=s=>Object.freeze({
 function syncScenarioSurface(){
  const inline=activeScene!==null;
  byId('me-inline-side-control').hidden=!inline;
+ byId('me-inline-rating-control').hidden=
+  activeScene?.id!=='carry-solo'||!activeScene.soloCarryLockedPhase;
  const variable=activeScene?.kind==='action';
  byId('me-inline-variant-control').hidden=!variable;
  byId('me-inline-variant-display').textContent=
@@ -220,7 +224,9 @@ function restart() {
        variantIndex:activeVariantIndex,
        bodyGuardEnabled:id!=='carry-solo',
        intentDrivenSoloCarry:id==='carry-solo',
-       soloCarryLockedPhase:activeScene.soloCarryLockedPhase??null}):
+       soloCarryLockedPhase:activeScene.soloCarryLockedPhase??null,
+       soloCarryPlayerAttributes:activeScene.soloCarryLockedPhase?
+        uniformSoloCarryAttributes(Number(byId('me-inline-rating').value)):null}):
       createControlledMovementLab(rapier,id,{side});
     if(activeLab)activeLab.dispose();
     if(engine){engine.dispose();engine=null;}
@@ -235,7 +241,8 @@ function restart() {
     syncScenarioSurface();
     say('Ready · '+(kind==='action'?next.spec.title:next.scene.spec.title)+
       (activeScene.soloCarryLockedPhase?' · fixed '+
-       activeScene.soloCarryLockedPhase.toUpperCase():'')+
+       activeScene.soloCarryLockedPhase.toUpperCase()+
+       ' · Carry attributes '+byId('me-inline-rating').value:'')+
       ' · '+side.toUpperCase()+(kind==='action'?
        ' · V'+String(activeVariantIndex+1).padStart(2,'0'):'')+
       ' · original Rapier · DEV only');
@@ -452,10 +459,19 @@ function render() {
       (f.intentDrivenCarry?' · Solo Carry intent (no shoe-contact claims)':'')+
       (f.soloCarryLockedPhase&&f.soloCarryPhase?
        ' · phase '+f.soloCarryPhase.phase.toUpperCase()+' (locked)'+
+       ' · attributes '+f.soloCarryPlayerAttributes.speed+'/99'+
+       ' [speed/agility/dribbling/technique]'+
        ' · player '+f.soloCarryPhase.playerSpeedMps.toFixed(2)+' m/s'+
        ' · ball '+f.soloCarryPhase.ballSpeedMps.toFixed(2)+' m/s'+
        ' · gap '+f.soloCarryPhase.ballGapM.toFixed(2)+' m'+
-       ' · genuine Rapier carry impulses '+f.intentCarryImpulseCount:'')+
+       ' · genuine Rapier carry impulses '+f.intentCarryImpulseCount+
+       (f.soloCarryMeasurements?
+        ' · ball forward '+f.soloCarryMeasurements.ballForwardM.toFixed(2)+' m'+
+        ' · peak player '+f.soloCarryMeasurements.peakPlayerSpeedMps.toFixed(2)+' m/s'+
+        ' · peak ball '+f.soloCarryMeasurements.peakBallSpeedMps.toFixed(2)+' m/s'+
+        ' · mean gap '+f.soloCarryMeasurements.meanGapM.toFixed(2)+' m'+
+        (f.soloCarryMeasurements.lateSpeedSampleTicks?
+         ' · observed late pace '+f.soloCarryMeasurements.lateMeanSpeedMps.toFixed(2)+' m/s':''):''):'')+
       (f.nativeDribbleAudit?' · real native carries '+
        f.nativeDribbleAudit.appliedCarryActions+
        (f.nativeDribbleAudit.soloCarry?
@@ -1936,6 +1952,10 @@ byId('preset').addEventListener('change', () => {
 byId('me-inline-side').addEventListener('change',()=>{
   if(!activeScene||!rapier)return;
   try{restart();}catch(e){playing=false;say(e.message,true);}
+});
+byId('me-inline-rating').addEventListener('change',()=>{
+ if(!activeScene?.soloCarryLockedPhase||!rapier)return;
+ try{restart();}catch(e){playing=false;say(e.message,true);}
 });
 function changeSmallSidedVariant(direction){
  if(activeScene?.kind!=='action'||!rapier)return;

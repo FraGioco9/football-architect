@@ -249,6 +249,12 @@ export function createControlledActionLab(RAPIER,id,{
  let firstPhysicalPassAction=null;
  let disposed=false,firstRealPass=null,count=0,history=Object.freeze([]);
  let intentCarryImpulseCount=0;
+ const soloReadout=soloCarryLockedPhase===null?null:{
+  ballStartX:initial.x,playerPrev:null,playerPrevV:null,
+  playerPathM:0,ballPathM:0,lastBall:null,speedSum:0,gapSum:0,
+  peakPlayerSpeedMps:0,peakBallSpeedMps:0,peakAccelerationMps2:0,
+  samples:0,lateSpeedSum:0,lateSpeedSampleTicks:0
+ };
  let shotTrace=null,blockedShotObservation=null,receivingContact=null;
  let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
@@ -284,6 +290,54 @@ export function createControlledActionLab(RAPIER,id,{
   if(intentDrivenSoloCarry&&action?.action==='carry'&&
      action.actualPhysicsImpulseApplied===true)
    intentCarryImpulseCount++;
+  if(soloReadout&&physics.tick>0){
+   const actor=playerFrame.players.find(p=>p.id===shotSide+'-10');
+   const position=physics.ball.position,velocity=physics.ball.velocity;
+   const speed=Math.hypot(actor.vx,actor.vy);
+   const gap=Math.hypot(position.x-actor.x,position.y-actor.y);
+   if(soloReadout.playerPrev)
+    soloReadout.playerPathM+=Math.hypot(actor.x-soloReadout.playerPrev.x,
+     actor.y-soloReadout.playerPrev.y);
+   if(soloReadout.lastBall)
+    soloReadout.ballPathM+=Math.hypot(position.x-soloReadout.lastBall.x,
+     position.y-soloReadout.lastBall.y);
+   if(soloReadout.playerPrevV)
+    soloReadout.peakAccelerationMps2=Math.max(
+     soloReadout.peakAccelerationMps2,60*Math.hypot(
+      actor.vx-soloReadout.playerPrevV.x,
+      actor.vy-soloReadout.playerPrevV.y));
+   soloReadout.playerPrev={x:actor.x,y:actor.y};
+   soloReadout.playerPrevV={x:actor.vx,y:actor.vy};
+   soloReadout.lastBall={x:position.x,y:position.y};
+   soloReadout.samples++;
+   soloReadout.speedSum+=speed;
+   soloReadout.gapSum+=gap;
+   soloReadout.peakPlayerSpeedMps=Math.max(soloReadout.peakPlayerSpeedMps,speed);
+   soloReadout.peakBallSpeedMps=Math.max(soloReadout.peakBallSpeedMps,
+    Math.hypot(velocity.x,velocity.y));
+   if(physics.tick>=121&&physics.tick<=180){
+    soloReadout.lateSpeedSampleTicks++;
+    soloReadout.lateSpeedSum+=speed;
+   }
+  }
+  const soloCarryMeasurements=soloReadout?Object.freeze({
+   samples:soloReadout.samples,
+   ballForwardM:(shotSide==='home'?1:-1)*
+    (physics.ball.position.x-soloReadout.ballStartX),
+   ballPathM:soloReadout.ballPathM,
+   playerPathM:soloReadout.playerPathM,
+   peakPlayerSpeedMps:soloReadout.peakPlayerSpeedMps,
+   peakBallSpeedMps:soloReadout.peakBallSpeedMps,
+   peakAccelerationMps2:soloReadout.peakAccelerationMps2,
+   meanPlayerSpeedMps:soloReadout.samples?
+    soloReadout.speedSum/soloReadout.samples:0,
+   meanGapM:soloReadout.samples?
+    soloReadout.gapSum/soloReadout.samples:0,
+   lateSpeedSampleTicks:soloReadout.lateSpeedSampleTicks,
+   lateMeanSpeedMps:soloReadout.lateSpeedSampleTicks?
+    soloReadout.lateSpeedSum/soloReadout.lateSpeedSampleTicks:0,
+   appliedCarryImpulses:intentCarryImpulseCount
+  }):null;
   // Only a genuine post-pass Rapier opponent shoe START is negative evidence.
   // Neither nearby player positions nor a guessed interception suffice.
   const opposingStart=spec.mode==='control'&&firstRealPass?
@@ -492,6 +546,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(intentDrivenSoloCarry?{
      intentDrivenCarry:true,
      intentCarryImpulseCount,
+     ...(soloCarryMeasurements?{soloCarryMeasurements}:{}),
      ...(soloCarryLockedPhase!==null?{soloCarryLockedPhase}:{}),
      intentCarryImpulseThisTick:action?.action==='carry'&&
       action?.decisionContext?.intentDrivenSoloCarry===true,

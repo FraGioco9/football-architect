@@ -107,6 +107,7 @@ export function createPrivatePhysicalActionExecutor({
     attackingSide:isolatedDribbleContext.attackingSide,
     phase:playerFrame.soloCarryPhase?.phase,
     fixedPhaseLab:playerFrame.soloCarryPhase?.lockedPhase!==undefined,
+    playerAttributes:playerFrame.soloCarryPhase?.carryPlayerAttributes??null,
     player:actor,
     ballPosition:ballBody.translation(),ballVelocity:ballBody.linvel(),
     ballRadiusM

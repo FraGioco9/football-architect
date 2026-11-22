@@ -3,6 +3,8 @@
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
 import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual-kinematics.mjs';
 import {advanceSoloCarryPhase,SOLO_CARRY_PHASES} from './solo-carry-phases.mjs';
+import {validateSoloCarryAttributes}
+ from './solo-carry-attribute-calibration.mjs';
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
@@ -1672,6 +1674,7 @@ export function createPlayerMovement(options={}){
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
      k!=='researchSmallSidedVariantIndex'&&
      k!=='researchSoloCarryLockedPhase'&&
+     k!=='researchSoloCarryPlayerAttributes'&&
       k!=='researchSmallSidedBodyFeedback'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
@@ -1821,12 +1824,15 @@ export function createPlayerMovement(options={}){
       Reflect.ownKeys(options).length!==
        (options.researchSmallSidedVariantIndex===undefined?2:3)+
         (options.researchSmallSidedBodyFeedback===true?1:0)+
-        (options.researchSoloCarryLockedPhase===undefined?0:1)))||
+        (options.researchSoloCarryLockedPhase===undefined?0:1)+
+        (options.researchSoloCarryPlayerAttributes===undefined?0:1)))||
     ((options.researchSmallSidedSituation===undefined)!==
      (options.researchSmallSidedSide===undefined))||
     (options.researchSoloCarryLockedPhase!==undefined&&(
      options.researchSmallSidedSituation!=='carry-solo'||
      !SOLO_CARRY_PHASES.includes(options.researchSoloCarryLockedPhase)))||
+    (options.researchSoloCarryPlayerAttributes!==undefined&&
+     options.researchSoloCarryLockedPhase===undefined)||
     (options.researchSmallSidedVariantIndex!==undefined&&
      options.researchSmallSidedSituation===undefined)||
     (options.researchSmallSidedBodyFeedback!==undefined&&
@@ -1863,6 +1869,8 @@ export function createPlayerMovement(options={}){
    basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
     options.researchBasicRestartAttackSide,options.researchBasicRestartBall,
     options.researchBasicRestartSource):null;
+ const researchCarryAttributes=options.researchSoloCarryPlayerAttributes===
+  undefined?null:validateSoloCarryAttributes(options.researchSoloCarryPlayerAttributes);
  const smallSided=options.researchSmallSidedSituation===undefined?null:
   smallSidedSetup(options.researchSmallSidedSituation,
    options.researchSmallSidedSide,INITIAL_PLAYERS,
@@ -2199,7 +2207,8 @@ export function createPlayerMovement(options={}){
     playerSpeedMps:Math.hypot(actor.vx,actor.vy),
     ballSpeedMps:Math.hypot(realBallVelocity.x,realBallVelocity.y),
     ballGapM:Math.hypot(ball.x-actor.x,ball.y-actor.y),
-    lockedPhase:options.researchSoloCarryLockedPhase??null
+    lockedPhase:options.researchSoloCarryLockedPhase??null,
+    playerAttributes:researchCarryAttributes
    });
   }
   if(options.researchGoalkeeperSaveSide!==undefined&&(
