@@ -522,8 +522,8 @@ test('#628 three fixed solo Carry LABs retain source physics and never alter aut
      'Moderate and Sprint move the real Rapier ball forward in two seconds');
     assert.ok(maxPlayerSpeedMps>2.5,
      'Fixed-phase runner must accelerate rather than stall over the ball');
-    assert.ok(peakBallSpeedMps<=4.5,
-     'Fixed-phase ball speed must stay within plausible design ceiling');
+    assert.ok(peakBallSpeedMps<=(lockedPhase==='sprint'?8.7:6.2),
+     'Real Rapier ball speed remains bounded by phase-specific design envelope');
    }
   }finally{lab.dispose();}
  }

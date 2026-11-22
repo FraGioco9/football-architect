@@ -153,6 +153,25 @@ test('#628 four player attribute profiles drive real source 60Hz Carry benchmark
    assert.ok(Math.abs(row[key]-mirrored[key])<0.001,
     'mirror '+row.phase+' '+row.rating+' '+key);
  }
+ // The owner's visual QA criterion is not just higher numbers: at the same
+ // player rating, Sprint must deliver a clearly different ball/run/touch
+ // pattern from Moderate on the identical original Rapier field.
+ for(const rating of SOLO_CARRY_LAB_LEVELS){
+  const m=matrix.find(x=>x.side==='home'&&x.phase==='moderate'&&x.rating===rating);
+  const s=matrix.find(x=>x.side==='home'&&x.phase==='sprint'&&x.rating===rating);
+  assert.ok(s.distance120>=m.distance120+1.35,
+   'Sprint must visibly outpace Moderate over the same 2s physical window');
+  assert.ok(s.peakBall120>=m.peakBall120+1.1,
+   'Sprint pushes must be genuinely longer and stronger than Moderate');
+  assert.ok(s.peakPlayer120>=m.peakPlayer120+0.7,
+   'Sprint runner must physically accelerate faster than Moderate');
+  assert.ok(s.meanGap120>=m.meanGap120+0.1,
+   'Sprint must have greater open-space ball/runner separation');
+ }
+ const moderate50=matrix.find(x=>x.side==='home'&&x.phase==='moderate'&&x.rating===50);
+ const sprint50=matrix.find(x=>x.side==='home'&&x.phase==='sprint'&&x.rating===50);
+ assert.ok(sprint50.touches120<moderate50.touches120,
+  'At 50/99 sprint needs fewer, longer spaced real touches over 2s');
  for(const phase of ['moderate','sprint']){
   const low=matrix.find(x=>x.side==='home'&&x.phase===phase&&x.rating===25);
   const high=matrix.find(x=>x.side==='home'&&x.phase===phase&&x.rating===90);

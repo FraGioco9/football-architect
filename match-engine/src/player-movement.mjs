@@ -2638,8 +2638,14 @@ export function createPlayerMovement(options={}){
      p.id===smallSided.side+'-10'&&
      Math.hypot(ball.x-p.x,ball.y-p.y)>1.5;
    const limits=smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
-     recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:
+     // The old generic 6m/s/9m/s² recovery overrides the fixed phase
+     // whenever a strong Sprint push opens a >1.5m gap, making Sprint
+     // look like Moderate. Fixed DEV LABs keep their own bounded phase
+     // limits even while chasing the real, freely rolling Rapier ball.
+     options.researchSoloCarryLockedPhase!==undefined?
       soloKinematicLimits(currentSoloCarryPhase):
+      recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:
+       soloKinematicLimits(currentSoloCarryPhase):
     smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
      recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:D01_KINEMATIC_LIMITS:
      PLAYER_KINEMATIC_LIMITS;

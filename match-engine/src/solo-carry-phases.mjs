@@ -53,10 +53,12 @@ export function advanceSoloCarryPhase({previousPhase='control',tick,
  const fixedProfile=lockedPhase===null?null:
   phase==='moderate'?Object.freeze({
    maxSpeedMps:4.7,accelerationMps2:9,brakingMps2:11,
-   ballTargetOffsetM:-0.36
+   ballTargetOffsetM:-0.30
   }):phase==='sprint'?Object.freeze({
-   maxSpeedMps:6.0,accelerationMps2:11,brakingMps2:13,
-   ballTargetOffsetM:-0.44
+   // Fast open-space carry: longer stride and further ball pursuit.
+   // This is not an automatic-phase or official match parameter.
+   maxSpeedMps:7.0,accelerationMps2:14,brakingMps2:14,
+   ballTargetOffsetM:-0.62
   }):null;
  const attributeInputs=lockedPhase===null?null:
   playerAttributes===null?uniformSoloCarryAttributes(50):

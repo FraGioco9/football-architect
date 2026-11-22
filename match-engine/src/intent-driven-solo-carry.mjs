@@ -31,13 +31,13 @@ export function chooseIntentSoloCarryTouch({
  // Purposeful push then follow: spacing is perceptible at 60Hz.
  // Control is still more responsive than a longer Sprint push.
  const baseSpacingTicks=fixedPhaseLab?
-  (phase==='sprint'?55:phase==='moderate'?44:48):
+  (phase==='sprint'?82:phase==='moderate'?32:48):
   phase==='sprint'?70:phase==='moderate'?58:48;
  // DEV fixed-phase trials distinguish ball pace. Automatic Carry is unchanged.
- const baseTargetSpeedMps=fixedPhaseLab&&phase==='sprint'?4.2:
+ const baseTargetSpeedMps=fixedPhaseLab&&phase==='sprint'?5.8:
   fixedPhaseLab&&phase==='moderate'?3.55:
   phase==='sprint'?3.35:phase==='moderate'?3.05:2.6;
- const baseMaxImpulseNs=fixedPhaseLab&&phase==='sprint'?1.8:
+ const baseMaxImpulseNs=fixedPhaseLab&&phase==='sprint'?2.55:
   fixedPhaseLab&&phase==='moderate'?1.5:1.10;
  const attributeInputs=fixedPhaseLab?
   validateSoloCarryAttributes(playerAttributes??uniformSoloCarryAttributes(50)):null;

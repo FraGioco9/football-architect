@@ -48,6 +48,16 @@ test('#628 fixed Moderate and Sprint start a real kick without affecting automat
    lastTouchTick:1,fixedPhaseLab:true}),null,
    'normal minimum interval still applies after first observed touch');
  }
+ // Pure same-position, same-rating intent evidence: sprint has less
+ // frequent, stronger pushes. Neither implies a native shoe START.
+ const moderate=chooseIntentSoloCarryTouch({...args,phase:'moderate',
+  lastTouchTick:-12,fixedPhaseLab:true});
+ const sprint=chooseIntentSoloCarryTouch({...args,phase:'sprint',
+  lastTouchTick:-12,fixedPhaseLab:true});
+ assert.ok(sprint.spacingTicks>=moderate.spacingTicks+45);
+ assert.ok(sprint.impulseNs.x>=moderate.impulseNs.x+0.65);
+ assert.ok(sprint.intendedTargetSpeedMps>=moderate.intendedTargetSpeedMps+2);
+ assert.equal(sprint.nativeShoeContactVerified,false);
  assert.throws(()=>chooseIntentSoloCarryTouch({...args,fixedPhaseLab:1}),TypeError);
 });
 
