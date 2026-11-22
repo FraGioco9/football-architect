@@ -2,7 +2,8 @@ import {createEngine, initializeRapier, PRESETS, canonicalSnapshot, FIXED_DT, to
 import {drawPitchMarkings,pickObservedPlayerAtCanvasPixel} from '/__fa_match_engine__/pitch-markings.mjs';
 import {createPlayerMovement,currentObservedPlayerAssignments} from '/__fa_match_engine__/player-movement.mjs';
 import {measureBounceHistory,FIFA_TURF_QUALITY_PRO_REFERENCE_M} from '/__fa_match_engine__/rebound-metrics.mjs';
-import {formatNumericValue, stepNumericValue} from '/__fa_match_engine__/numeric-controls.mjs';
+import {formatNumericValue,stepNumericValue,speedToKmh,speedFromKmh}
+ from '/__fa_match_engine__/numeric-controls.mjs';
 import {runPhysicsDiagnostics,BOUNCE_OBSERVATION_SECONDS,ROLL_OBSERVATION_SECONDS,SPIN_OBSERVATION_SECONDS} from '/__fa_match_engine__/physics-diagnostics.mjs';
 import {speedDependentDragCd as speedDependentDragCdForPlot} from '/__fa_match_engine__/aerodynamics.mjs';
 import {reviewAerodynamicCandidate} from '/__fa_match_engine__/aero-model-review.mjs';
@@ -88,7 +89,7 @@ function renderOnFieldDecisions(frame){
     smallSidedDecisionLabels[row.kind]+
     (row.carryPhase?' · '+row.carryPhase.charAt(0).toUpperCase()+
        row.carryPhase.slice(1):'')+
-    ' · '+row.speedMps.toFixed(1)+' m/s'+
+    ' · '+speedToKmh(row.speedMps).toFixed(1)+' km/h'+
     (row.blockedBy?' · blocked by '+humanPlayer(row.blockedBy):''):
     'Waiting for first movement tick';
   card.append(header,decision);
@@ -152,13 +153,23 @@ const say = (message, error = false) => {
   byId('status').classList.toggle('error', error);
 };
 const fmt = x => x.toFixed(2);
+const fmtKmh = mps => fmt(speedToKmh(mps));
+const velocityFields = new Set(['vx','vy','vz']);
+const displayNumericStep = (field,value,direction) => {
+ if(!velocityFields.has(field))return stepNumericValue(field,value,direction);
+ const current=Number(value);
+ if(String(value).trim()===''||!Number.isFinite(current)||current<-216||current>216)
+  return null;
+ const next=current+direction; // 1 km/h per arrow; SI physics remains full precision
+ return next < -216 || next > 216 ? null : formatNumericValue(next);
+};
 // Keep field captions inert: no <label for> activation/focus animation.
 // Only the input itself and its two arrow buttons receive pointer/keyboard input.
 function refreshNumericArrows(field) {
   const input=byId(field);
   for(const button of document.querySelectorAll('[data-me-spin="'+field+'"]')) {
     const direction=Number(button.dataset.direction);
-    button.disabled=stepNumericValue(field,input.value,direction)===null;
+    button.disabled=displayNumericStep(field,input.value,direction)===null;
   }
 }
 function normalizeNumericField(field) {
@@ -169,7 +180,7 @@ function normalizeNumericField(field) {
 }
 function applyNumericStep(field,direction) {
   const input=byId(field);
-  const next=stepNumericValue(field,input.value,direction);
+  const next=displayNumericStep(field,input.value,direction);
   if(next===null)return;
   input.value=next;
   input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -198,7 +209,8 @@ function setupNumericFields() {
 function loadPreset() {
   const defaults = PRESETS[byId('preset').value];
   for (const key of fields) {
-    byId(key).value = formatNumericValue(defaults[key]);
+    byId(key).value = formatNumericValue(velocityFields.has(key)?
+      speedToKmh(defaults[key]):defaults[key]);
     refreshNumericArrows(key);
   }
   byId('compare-result').textContent = '';
@@ -210,7 +222,8 @@ function currentInput() {
   for (const key of fields) {
     const element = byId(key);
     if (element.value.trim() === '') throw new RangeError('Empty value: ' + key);
-    data[key] = Number(element.value);
+    data[key] = velocityFields.has(key)?
+      speedFromKmh(Number(element.value)):Number(element.value);
   }
   return data;
 }
@@ -367,7 +380,7 @@ function renderPlayerReadout(){
   byId('player-inspection').textContent=current?
     (current.team==='home'?'Home #':'Away #')+current.number+
     ' · '+current.role+' · ('+fmt(current.x)+', '+fmt(current.y)+') m'+
-    ' · '+fmt(Math.hypot(current.vx,current.vy))+' m/s':'Select a player';
+    ' · '+fmtKmh(Math.hypot(current.vx,current.vy))+' km/h':'Select a player';
   const duty=current?currentObservedPlayerAssignments(playerSnapshot,current.id):null;
   byId('player-inspection-duty').textContent=duty?
     (duty.assignments.length?duty.assignments.join(' + '):duty.fallback):
@@ -430,9 +443,9 @@ function render() {
     'Tick '+s.tick+' · '+fmt(s.time)+' s':fmt(s.time)+' s';
   byId('height').textContent = fmt(toGroundClearance(p.z)) + ' m';
   byId('position').textContent = [p.x, p.y, toGroundClearance(p.z)].map(fmt).join(', ');
-  byId('velocity').textContent = [v.x, v.y, v.z].map(fmt).join(', ');
+  byId('velocity').textContent = [v.x, v.y, v.z].map(fmtKmh).join(', ');
   byId('ground').textContent = s.nearGround ? 'On ground' : 'Airborne';
-  byId('ground-speed').textContent = fmt(Math.hypot(v.x,v.y)) + ' m/s';
+  byId('ground-speed').textContent = fmtKmh(Math.hypot(v.x,v.y)) + ' km/h';
   // LAB-05: display measured first rebound only after observing its apex.
   // Do not conflate the measured simulation with FIFA turf certification.
   const bounceResult=byId('bounce-result');
@@ -462,17 +475,19 @@ function render() {
        ' · attributes '+f.soloCarryPlayerAttributes.speed+'/99'+
        ' [speed/agility/dribbling/technique]':'')+
       (f.soloCarryLockedPhase&&f.soloCarryPhase?
-       ' · player '+f.soloCarryPhase.playerSpeedMps.toFixed(2)+' m/s'+
-       ' · ball '+f.soloCarryPhase.ballSpeedMps.toFixed(2)+' m/s'+
+       ' · player '+fmtKmh(f.soloCarryPhase.playerSpeedMps)+' km/h'+
+       ' · ball '+fmtKmh(f.soloCarryPhase.ballSpeedMps)+' km/h'+
        ' · gap '+f.soloCarryPhase.ballGapM.toFixed(2)+' m'+
        ' · genuine Rapier carry impulses '+f.intentCarryImpulseCount+
        (f.soloCarryMeasurements?
         ' · ball forward '+f.soloCarryMeasurements.ballForwardM.toFixed(2)+' m'+
-        ' · peak player '+f.soloCarryMeasurements.peakPlayerSpeedMps.toFixed(2)+' m/s'+
-        ' · peak ball '+f.soloCarryMeasurements.peakBallSpeedMps.toFixed(2)+' m/s'+
+        ' · peak player '+fmtKmh(f.soloCarryMeasurements.peakPlayerSpeedMps)+' km/h'+
+        ' · peak ball '+fmtKmh(f.soloCarryMeasurements.peakBallSpeedMps)+' km/h'+
         ' · mean gap '+f.soloCarryMeasurements.meanGapM.toFixed(2)+' m'+
+        ' · gap >1.5m '+f.soloCarryMeasurements.observedOutOfReachTicks+' ticks'+
+        ' · recoveries '+f.soloCarryMeasurements.observedRealRecoveryEpisodes+
         (f.soloCarryMeasurements.lateSpeedSampleTicks?
-         ' · observed late pace '+f.soloCarryMeasurements.lateMeanSpeedMps.toFixed(2)+' m/s':''):''):'')+
+         ' · observed late pace '+fmtKmh(f.soloCarryMeasurements.lateMeanSpeedMps)+' km/h':''):''):'')+
       (f.nativeDribbleAudit?' · real native carries '+
        f.nativeDribbleAudit.appliedCarryActions+
        (f.nativeDribbleAudit.soloCarry?
@@ -498,7 +513,7 @@ function render() {
        f.matchTimeline.provisionalScore.away:''):
       '· directional movement '+(f.focusId??'')+
       ' · live Rapier ball · tick '+f.tick+
-      ' · speed '+f.readout.focusSpeedMps.toFixed(2)+' m/s'+
+      ' · speed '+fmtKmh(f.readout.focusSpeedMps)+' km/h'+
       ' · turn '+f.readout.totalTurnRad.toFixed(2)+' rad'+
       ' · brake peak '+f.readout.maxObservedBrakeMps2.toFixed(2)+' m/s²'+
       ' · path '+f.readout.pathM.toFixed(2)+' m'+
@@ -532,7 +547,7 @@ function drawRollComparison(runs) {
     c.fillText(String(t),x(t),h-9);
   }
   c.textAlign='right';
-  for(const v of [0,2,4,6])c.fillText(String(v),left-7,y(v)+4);
+  for(const v of [0,2,4,6])c.fillText(fmtKmh(v),left-7,y(v)+4);
   const colors=['#93dccc','#ffd47c','#82aaf0'];
   for(const [i,run] of runs.entries()){
     c.strokeStyle=colors[i];c.lineWidth=i===1?3:2;
@@ -545,11 +560,11 @@ function drawRollComparison(runs) {
     const legendX=left+i*155;
     c.fillStyle=colors[i];c.fillRect(legendX,13,15,3);
     c.font='11px system-ui';c.textAlign='left';
-    c.fillText(run.launchSpeedMps.toFixed(0)+' m/s'+(run.launchSpeedMps===4?' · base':''),legendX+20,19);
+    c.fillText(fmtKmh(run.launchSpeedMps)+' km/h'+(run.launchSpeedMps===4?' · base':''),legendX+20,19);
   }
 }
 
-// Compare measured contact-point sliding velocity for identical 4 m/s launches.
+// Compare measured contact-point sliding velocity for identical 14.4 km/h launches.
 function drawSpinComparison(trials) {
   const canvas=byId('metrics-spin-chart'),c=canvas.getContext('2d');
   const w=canvas.width,h=canvas.height,left=38,right=w-12,top=37,bottom=h-27;
@@ -561,7 +576,7 @@ function drawSpinComparison(trials) {
   c.fillStyle='#c5dee2';c.font='12px system-ui';c.textAlign='center';
   for(const t of [0,2,4,7])c.fillText(String(t),x(t),h-9);
   c.textAlign='right';
-  for(const v of [0,2,4])c.fillText(String(v),left-7,y(v)+4);
+  for(const v of [0,2,4])c.fillText(fmtKmh(v),left-7,y(v)+4);
   const colors=['#93dccc','#ffd47c','#82aaf0'];
   for(const [i,trial] of trials.entries()){
     c.strokeStyle=colors[i];c.lineWidth=trial.spinFraction===0?3:2;
@@ -589,7 +604,7 @@ function renderSpinMetrics(trials) {
       run.transitionTimeS===null?'Not observed':fmt(run.transitionTimeS),
       run.stoppedAtS===null?'Not reached':fmt(run.stoppedAtS),
       fmt(travel),
-      fmt(one.speedMps)+' m/s',
+      fmtKmh(one.speedMps)+' km/h',
       one.energyRetainedFraction===null?'—':fmt(one.energyRetainedFraction*100)+'%'
     ]);
   }
@@ -600,7 +615,7 @@ function renderSpinMetrics(trials) {
       fmt(item.timeS)+' s',
       ...trials.map(run=>{
         const p=run.checkpoints.find(v=>v.timeS===item.timeS);
-        return fmt(p.speedMps)+' / '+fmt(p.slipMps)+' / '+fmt(p.angularSpeedRadS)+' / '+fmt(p.totalKineticJ);
+        return fmtKmh(p.speedMps)+' / '+fmtKmh(p.slipMps)+' / '+fmt(p.angularSpeedRadS)+' / '+fmt(p.totalKineticJ);
       })
     ]);
   }
@@ -618,7 +633,7 @@ function drawNaturalGrassComparison(trials) {
   c.fillStyle='#c5dee2';c.font='12px system-ui';c.textAlign='center';
   for(const t of [0,4,8,12])c.fillText(String(t),x(t),h-9);
   c.textAlign='right';
-  for(const speed of [0,2,4])c.fillText(String(speed),left-7,y(speed)+4);
+  for(const speed of [0,2,4])c.fillText(fmtKmh(speed),left-7,y(speed)+4);
   const colors=['#93dccc','#ffd47c','#82aaf0'];
   for(const [i,trial] of trials.entries()){
     c.strokeStyle=colors[i];c.lineWidth=trial.isDefault?3:2;c.beginPath();
@@ -645,7 +660,7 @@ function renderNaturalGrassMetrics(grass) {
     tableRow(tbody,[
       fmt(trial.configuredDecelerationMps2)+(trial.isDefault?' · default':''),
       trial.observedDecelerationMps2===null?'Not observed':fmt(trial.observedDecelerationMps2),
-      fmt(trial.steadyWindowMaxSlipMps),
+      fmtKmh(trial.steadyWindowMaxSlipMps),
       trial.stoppedAtS===null?'Not observed':fmt(trial.stoppedAtS),
       fmt(distance),
       trial.isDefault?'Baseline':(difference>=0?'+':'')+fmt(difference)+' m'
@@ -658,7 +673,7 @@ function renderNaturalGrassMetrics(grass) {
       fmt(first.timeS)+' s',
       ...grass.trials.map(trial=>{
         const value=trial.checkpoints.find(p=>p.timeS===first.timeS);
-        return fmt(value.speedMps)+' / '+fmt(value.distanceM)+' / '+fmt(value.contactSlipMps);
+        return fmtKmh(value.speedMps)+' / '+fmt(value.distanceM)+' / '+fmtKmh(value.contactSlipMps);
       })
     ]);
   }
@@ -730,7 +745,7 @@ function drawAirDragComparison(comparison) {
   c.fillStyle='#c5dee2';c.font='12px system-ui';c.textAlign='center';
   for(const t of [0,1,2])c.fillText(String(t),x(t),h-9);
   c.textAlign='right';
-  for(const v of [0,2,4,6])c.fillText(String(v),left-7,y(v)+4);
+  for(const v of [0,2,4,6])c.fillText(fmtKmh(v),left-7,y(v)+4);
   for(const [index,flight,label,color] of [
     [0,comparison.baseline,'Cd=0 baseline','#93dccc'],
     [1,comparison.dragOnly,'Cd=0.24 experimental','#ffd47c']
@@ -784,7 +799,7 @@ function drawSpeedDragCurve(report) {
   c.strokeStyle='#587079';c.lineWidth=1;
   c.beginPath();c.moveTo(left,top);c.lineTo(left,bottom);c.lineTo(right,bottom);c.stroke();
   c.fillStyle='#c5dee2';c.font='11px system-ui';c.textAlign='center';
-  for(const v of [0,7,12,19,32,35])c.fillText(String(v),x(v),h-9);
+  for(const v of [0,7,12,19,32,35])c.fillText(fmtKmh(v),x(v),h-9);
   c.textAlign='right';
   for(const v of [0,0.2,0.4])c.fillText(v.toFixed(2),left-7,y(v)+4);
   c.strokeStyle='#93dccc';c.lineWidth=2;c.beginPath();
@@ -796,7 +811,7 @@ function drawSpeedDragCurve(report) {
   }
   c.font='11px system-ui';c.fillStyle='#93dccc';c.textAlign='left';
   c.fillText('Hypothesis / interpolated',left+4,17);
-  c.fillStyle='#ffd47c';c.fillText('Measured: 19 & 32 m/s',left+240,17);
+  c.fillStyle='#ffd47c';c.fillText('Measured: 68.4 & 115.2 km/h',left+240,17);
 }
 function drawSpeedDragRange(report) {
   const canvas=byId('metrics-speed-range-chart'),c=canvas.getContext('2d');
@@ -807,9 +822,9 @@ function drawSpeedDragRange(report) {
   c.strokeStyle='#587079';c.lineWidth=1;
   c.beginPath();c.moveTo(left,top);c.lineTo(left,bottom);c.lineTo(right,bottom);c.stroke();
   c.fillStyle='#c5dee2';c.font='11px system-ui';c.textAlign='center';
-  for(const v of [7,15,30])c.fillText(String(v),x(v),h-9);
+  for(const v of [7,15,30])c.fillText(fmtKmh(v),x(v),h-9);
   c.textAlign='right';
-  for(const v of [0,20,40,60])c.fillText(String(v),left-7,y(v)+4);
+  for(const v of [0,20,40,60])c.fillText(fmtKmh(v),left-7,y(v)+4);
   for(const [i,key,label,color] of [
     [0,'zero','Cd=0','#93dccc'],
     [1,'fixed','Cd=0.24','#ffd47c'],
@@ -834,7 +849,7 @@ function renderSpeedDragMetrics(report) {
     for(const [key,label] of [['zero','Cd=0'],['fixed','Cd=0.24'],['variable','Cd(v)']]){
       const run=trial[key];
       tableRow(rows,[
-        fmt(trial.launchVxMps),label,fmt(run.initialCd),fmt(run.cdAtOneSecond),
+        fmtKmh(trial.launchVxMps),label,fmt(run.initialCd),fmt(run.cdAtOneSecond),
         run.observedFirstContactTimeS===null?'Not observed':fmt(run.observedFirstContactTimeS),
         run.observedFirstContactDistanceM===null?'Not observed':fmt(run.observedFirstContactDistanceM),
         fmt(run.observedApex.heightM),fmt(run.mechanicalEnergyLostAtOneSecondJ)
@@ -845,13 +860,13 @@ function renderSpeedDragMetrics(report) {
         const found=trial[k].checkpoints.find(q=>q.timeS===p.timeS);
         return found?fmt(found.clearanceM)+' / '+fmt(found.distanceM):'Not observed';
       };
-      tableRow(points,[fmt(trial.launchVxMps),fmt(p.timeS)+' s',
+      tableRow(points,[fmtKmh(trial.launchVxMps),fmt(p.timeS)+' s',
         cell('zero'),cell('fixed'),cell('variable')]);
     }
   }
   byId('metrics-speed-note').textContent=
-    'Experimental continuous Cd(v) sensitivity; only 19/32 m/s Cd reference values '+
-    'and the approximate 12 m/s transition are supported by the cited study. '+
+    'Experimental continuous Cd(v) sensitivity; only 68.4/115.2 km/h Cd reference values '+
+    'and the approximate 43.2 km/h transition are supported by the cited study. '+
     'Low-speed knots and interpolation are hypotheses. Energy lost is measured '+ 
     'mechanical energy change by 1s (includes Rapier numerical effects), not isolated aerodynamic work. '+
     'No wind/Magnus, no active-world mutation, normal LAB-02 remains Cd=0, one universal grass model.';
@@ -973,7 +988,7 @@ function renderCombinedFlightMetrics(report) {
     for(const mode of report.modes){
       const r=trial[mode.key];
       tableRow(rows,[
-        fmt(trial.vxMps),trial.spinLabel+' ('+(trial.spinRps===0?'0':'±'+fmt(trial.spinRps))+')',
+        fmtKmh(trial.vxMps),trial.spinLabel+' ('+(trial.spinRps===0?'0':'±'+fmt(trial.spinRps))+')',
         mode.label,fmt(r.cdAtOne),fmt(r.clAtOne),fmt(r.lateralAtOneM),
         fmt(r.apexHeightM),
         r.firstFlightDistanceM===null?'Not observed':fmt(r.firstFlightDistanceM),
@@ -986,7 +1001,7 @@ function renderCombinedFlightMetrics(report) {
         const cp=trial[key].checkpoints.find(p=>p.timeS===timeS);
         return cp?.observed?fmt(cp.lateralM)+' / '+fmt(cp.heightM):'Not observed';
       };
-      tableRow(points,[fmt(trial.vxMps),trial.spinLabel,fmt(timeS)+' s',...keys.map(cell)]);
+      tableRow(points,[fmtKmh(trial.vxMps),trial.spinLabel,fmt(timeS)+' s',...keys.map(cell)]);
     }
   }
   byId('metrics-combined-note').textContent=
@@ -1063,7 +1078,7 @@ function renderCalibrationEvidence(report){
     side=byId('metrics-calibration-side-rows');
   drag.replaceChildren();side.replaceChildren();
   for(const point of report.dragAnchors)
-    tableRow(drag,[fmt(point.airspeedMps),fmt(point.measuredCd),
+    tableRow(drag,[fmtKmh(point.airspeedMps),fmt(point.measuredCd),
       fmt(point.prototypeCd),fmt(point.signedDifference)]);
   for(const point of report.sideAnchors)
     tableRow(side,[fmt(point.meanSpinParameter),fmt(point.measuredMeanCs),
@@ -1117,7 +1132,7 @@ function renderUniversalBallReadiness(report) {
     tableRow(gates,[gate.name,gate.state.toUpperCase(),gate.reason]);
   }
   byId('metrics-universal-range-note').textContent=
-    'One physical Trionda specimen, A-90 vs B-90 static orientations at 30 m/s '+
+    'One physical Trionda specimen, A-90 vs B-90 static orientations at 108 km/h '+
     'and 30°: modeled range difference '+fmt(report.orientationSpanM)+
     ' m ('+fmt(report.orientationSpanPercentOfMean)+'% of the mean). '+
     'Published results are simulations from wind-tunnel Cd(v), NOT observed landings.';
@@ -1238,7 +1253,7 @@ function drawLiteratureFlightTrajectories(report,vxMps){
   const scale=draw('metrics-literature-topdown','top');
   draw('metrics-literature-elevation','side');
   byId('metrics-literature-trajectory-note').textContent=
-    speed+' m/s (forward X launch), vz=10 m/s, 0/±6 rev/s Z; '+
+    fmtKmh(speed)+' km/h (forward X launch), vz=36 km/h, 0/±6 rev/s Z; '+
     'top-down 1:1 axes ('+scale.toFixed(1)+' px per metre, speed-specific zoom). '+
     'Teal = previous, amber = candidate, gray = no spin; solid +Z / dashed −Z; '+
     'dot = 1 s, cross = first ground contact. All paths stop at contact. '+
@@ -1442,7 +1457,7 @@ function renderAerodynamicDecisionReview(){
   rows.replaceChildren();
   for(const point of audit.rows){
     tableRow(rows,[
-      fmt(point.speedMps)+' m/s',
+      fmtKmh(point.speedMps)+' km/h',
       fmt(point.spinRps)+' rev/s',
       point.spinParameter.toFixed(3),
       point.previousCl.toFixed(3)+' / '+point.candidateCl.toFixed(3),
@@ -1451,7 +1466,7 @@ function renderAerodynamicDecisionReview(){
     ]);
   }
   byId('metrics-aero-review-verdict').textContent=
-    audit.decision+' · at 30 m/s and 6 rev/s, lift coefficient '+
+    audit.decision+' · at 108 km/h and 6 rev/s, lift coefficient '+
     audit.highSpeed.previousCl.toFixed(3)+' (previous) versus '+
     audit.highSpeed.candidateCl.toFixed(3)+' (candidate), '+
     audit.highSpeed.liftRatio.toFixed(2)+'× at the identical instantaneous speed. '+
@@ -1512,8 +1527,8 @@ function renderSpinAxisDiagnostics(report){
   ctx.fillStyle='#ffd47c';ctx.fillText('Topspin (+Y)',left+78,top+14);
   ctx.fillStyle='#93dccc';ctx.fillText('Backspin (−Y)',left+200,top+14);
   byId('metrics-spin-axis-note').textContent=
-    report.independentWorlds+' isolated 60 Hz Rapier flights; launch X 15 m/s, '+
-    'VZ 10 m/s, 6 rev/s or zero. All values are previous / candidate. '+
+    report.independentWorlds+' isolated 60 Hz Rapier flights; launch X 54 km/h, '+
+    'VZ 36 km/h, 6 rev/s or zero. All values are previous / candidate. '+
     report.assumption+' Gameplay approved: NO.';
 }
 
@@ -1578,13 +1593,13 @@ function renderContactImpactDiagnostics(report){
     const pre=item.pre,post=item.post;
     tableRow(rows,[
       item.label,
-      fmt(pre.verticalSpeedMps),
-      fmt(post.verticalSpeedMps),
+      fmtKmh(pre.verticalSpeedMps),
+      fmtKmh(post.verticalSpeedMps),
       fmt(item.effectiveStepRestitution),
       item.firstReboundHeightM===null?'Not observed':fmt(item.firstReboundHeightM),
-      fmt(pre.contactSlipMps.magnitude),
-      fmt(post.contactSlipMps.magnitude),
-      fmt(post.velocityMps.x),
+      fmtKmh(pre.contactSlipMps.magnitude),
+      fmtKmh(post.contactSlipMps.magnitude),
+      fmtKmh(post.velocityMps.x),
       fmt(item.deltaSpinRevS),
       fmt(item.energyRetainedFraction*100)+'%',
       fmt(item.observedEnergyGainJ)
@@ -1592,7 +1607,7 @@ function renderContactImpactDiagnostics(report){
   }
   byId('metrics-contact-impact-note').textContent=
     report.independentWorlds+' disposable 60 Hz Rapier impact worlds; '+
-    '4 m/s forward, 2 m underside drop, 6 rev/s signed spin or zero, '+
+    '14.4 km/h forward, 2 m underside drop, 6 rev/s signed spin or zero, '+
     'one fixed grass collider. '+report.limitation+
     ' Calibrated to real turf: NO. Gameplay approved: NO.';
 }
@@ -1650,7 +1665,7 @@ function renderLiteratureCandidate(report){
   const pair=(a,b)=>fmt(a)+' / '+fmt(b);
   for(const entry of report.cases){
     tableRow(rows,[
-      fmt(entry.vxMps)+' m/s',entry.spinLabel,
+      fmtKmh(entry.vxMps)+' km/h',entry.spinLabel,
       pair(entry.current.cdAtOne,entry.literature.cdAtOne),
       pair(entry.current.clAtOne,entry.literature.clAtOne),
       pair(entry.current.lateralAtOneM,entry.literature.lateralAtOneM),
@@ -1690,7 +1705,7 @@ function renderLiteratureCandidate(report){
     c.stroke();
   });
   c.font='10px system-ui';c.textAlign='left';
-  c.fillStyle='#93dccc';c.fillText('Current Cl (20 m/s)',left,15);
+  c.fillStyle='#93dccc';c.fillText('Current Cl (72 km/h)',left,15);
   c.fillStyle='#ffd47c';c.fillText('Candidate Cl',left+185,15);
 }
 
@@ -1718,7 +1733,7 @@ function renderPhysicsMetrics(report) {
     const distance=run.distanceToStopM??run.finalDistanceM;
     const difference=distance-baselineDistance;
     tableRow(rollBody,[
-      fmt(run.launchSpeedMps)+' m/s',
+      fmtKmh(run.launchSpeedMps)+' km/h',
       run.stoppedAtS===null?'Not reached':fmt(run.stoppedAtS),
       fmt(distance),
       fmt(run.finalPositionM.x)+', '+fmt(run.finalPositionM.y),
@@ -1730,8 +1745,8 @@ function renderPhysicsMetrics(report) {
   for(const checkpoint of report.rolling[0].checkpoints){
     const values=report.rolling.map(run=>{
       const point=run.checkpoints.find(p=>p.timeS===checkpoint.timeS);
-      return fmt(point.speedMps)+' / '+fmt(point.distanceM)+' / '+
-        (point.slipMps===null?'—':fmt(point.slipMps));
+      return fmtKmh(point.speedMps)+' / '+fmt(point.distanceM)+' / '+
+        (point.slipMps===null?'—':fmtKmh(point.slipMps));
     });
     tableRow(checkpointBody,[fmt(checkpoint.timeS)+' s',...values]);
   }

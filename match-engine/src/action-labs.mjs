@@ -261,7 +261,8 @@ export function createControlledActionLab(RAPIER,id,{
   ballStartX:engine.snapshot().ball.position.x,playerPrev:null,playerPrevV:null,
   playerPathM:0,ballPathM:0,lastBall:null,speedSum:0,gapSum:0,
   peakPlayerSpeedMps:0,peakBallSpeedMps:0,peakAccelerationMps2:0,
-  samples:0,lateSpeedSum:0,lateSpeedSampleTicks:0
+  samples:0,lateSpeedSum:0,lateSpeedSampleTicks:0,
+  peakGapM:0,outOfReachTicks:0,realRecoveryEpisodes:0,outOfReach:false
  };
  let shotTrace=null,blockedShotObservation=null,receivingContact=null;
  let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
@@ -320,6 +321,14 @@ export function createControlledActionLab(RAPIER,id,{
    soloReadout.samples++;
    soloReadout.speedSum+=speed;
    soloReadout.gapSum+=gap;
+   soloReadout.peakGapM=Math.max(soloReadout.peakGapM,gap);
+   // Explicit observational proxy only; no invented possession or take-on.
+   // The 1.5m loss threshold is the existing canonical lost-ball chase gate.
+   const outOfReach=gap>1.5;
+   if(outOfReach)soloReadout.outOfReachTicks++;
+   if(!outOfReach&&soloReadout.outOfReach)
+    soloReadout.realRecoveryEpisodes++;
+   soloReadout.outOfReach=outOfReach;
    soloReadout.peakPlayerSpeedMps=Math.max(soloReadout.peakPlayerSpeedMps,speed);
    soloReadout.peakBallSpeedMps=Math.max(soloReadout.peakBallSpeedMps,
     Math.hypot(velocity.x,velocity.y));
@@ -341,6 +350,10 @@ export function createControlledActionLab(RAPIER,id,{
     soloReadout.speedSum/soloReadout.samples:0,
    meanGapM:soloReadout.samples?
     soloReadout.gapSum/soloReadout.samples:0,
+   peakGapM:soloReadout.peakGapM,
+   observedOutOfReachTicks:soloReadout.outOfReachTicks,
+   observedRealRecoveryEpisodes:soloReadout.realRecoveryEpisodes,
+   outOfReachNow:soloReadout.outOfReach,
    lateSpeedSampleTicks:soloReadout.lateSpeedSampleTicks,
    lateMeanSpeedMps:soloReadout.lateSpeedSampleTicks?
     soloReadout.lateSpeedSum/soloReadout.lateSpeedSampleTicks:0,

@@ -8,7 +8,8 @@ import {fileURLToPath} from 'node:url';
 import {createPreviewServer} from '../../tools/dev-standings-preview.mjs';
 import {addDevelopmentToAppHtml,renderMatchEngineLab,labFirstPaintBootstrap,sidebarFromAppPage} from '../src/sidebar-shell.mjs';
 import {drawPitchMarkings,pitchProjection,PITCH_LENGTH_M,PITCH_WIDTH_M} from '../src/pitch-markings.mjs';
-import {NUMERIC_BOUNDS,formatNumericValue,stepNumericValue} from '../src/numeric-controls.mjs';
+import {NUMERIC_BOUNDS,formatNumericValue,stepNumericValue,speedToKmh,speedFromKmh}
+ from '../src/numeric-controls.mjs';
 import {isAllowlistedPublicPath,planPublicFiles} from '../../tools/publication-guard.mjs';
 
 const getServer = async options => {
@@ -267,6 +268,17 @@ test('Lab-first-paint script keeps canonical navigation logic except active DEV 
 });
 
 
+test('ME-01 presentation converts speed to km/h and back without altering SI physics',()=>{
+ assert.equal(speedToKmh(0),0);
+ assert.equal(speedToKmh(5.8),20.88);
+ assert.ok(Math.abs(speedFromKmh(20.88)-5.8)<1e-12);
+ assert.equal(speedToKmh(-60),-216);
+ assert.equal(speedFromKmh(216),60);
+ for(const invalid of [NaN,Infinity,undefined,'5'])
+  assert.throws(()=>speedToKmh(invalid),TypeError);
+ for(const invalid of [NaN,Infinity,undefined,'20'])
+  assert.throws(()=>speedFromKmh(invalid),TypeError);
+});
 test('ME-01 numeric steppers preserve fractional part and move exactly 1.00', () => {
   assert.equal(Object.keys(NUMERIC_BOUNDS).length,6);
   assert.equal(formatNumericValue(3),'3.00');
@@ -313,7 +325,8 @@ test('ME-01 numeric field chrome uses canonical chevrons and inert captions', ()
   assert.match(css,/\.me-number-arrow:hover:not\(:disabled\)/);
   assert.match(js,/event\.key==='ArrowUp'/);
   assert.match(js,/event\.preventDefault\(\); \/\/ Never use the browser's native step/);
-  assert.match(js,/formatNumericValue\(defaults\[key\]\)/);
+  assert.match(js,/velocityFields\.has\(key\)/);
+  assert.match(js,/speedToKmh\(defaults\[key\]\)/);
   assert.match(js,/setupNumericFields\(\)/);
   assert.match(js,/input\.addEventListener\('change',\(\)=>normalizeNumericField\(field\)\)/);
   assert.match(js,/input\.addEventListener\('blur',\(\)=>normalizeNumericField\(field\)\)/);
@@ -435,7 +448,7 @@ test('ME-01 compact pitch caps desktop dimensions and uses canonical site chevro
   assert.match(markup,/<body class="app-body me-lab-page">/);
   assert.equal((markup.match(/<fieldset class="me-parameter-group">/g)||[]).length,2);
   assert.match(markup,/<legend>Position · m<\/legend>/);
-  assert.match(markup,/<legend>Velocity · m\/s<\/legend>/);
+  assert.match(markup,/<legend>Velocity · km\/h<\/legend>/);
   assert.match(markup,/id="compare-result"[^>]*hidden/);
   const advancedStart=markup.indexOf('id="advanced-settings"');
    const advanced=markup.slice(advancedStart,markup.indexOf('</details>',advancedStart));
