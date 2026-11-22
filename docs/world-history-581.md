@@ -40,3 +40,6 @@ Scoped QA: `node --test tests/world-history-page.test.mjs tests/dev-preview-arti
 
 ## #581 — Headline cleanup
 The World History subtitle is removed from the shared renderer, checked-in generated HTML, runtime localization and stylesheet. The page now begins with the title and the filter bar, in both official and Debug modes. Keep explicit Debug provenance in the preview count/status and provider validation; do not add a secondary introductory paragraph.
+
+## #581 — Competition identity on archive rows
+The competition column renders each published domestic name and approved compact SVG, using the same canonical `matchPublicContext({competitionId})` and `competitionLogoUrl(id,'compact')` primitives as Matches; never display synthetic country/tier labels when canonical identity is available. Competition filters use those names too. All 16 domestic assets are fixed-size and `object-fit:contain` with a reserved 32px logo slot, avoiding cropped or shifting marks. Until international cup artwork is approved, INT-1 and INT-2 retain their official **Sovereign Cup**/**Federation Cup** names and the same neutral trophy placeholder used in Matches (not an invented branded logo). This change is presentation-only, shared by official archived results and the isolated Debug History preview, with no sporting logic/API changes.

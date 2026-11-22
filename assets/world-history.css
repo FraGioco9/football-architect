@@ -22,6 +22,11 @@
 .fa-world-history-row a{color:var(--text);text-decoration:none;font-weight:650;overflow-wrap:anywhere}
 .fa-world-history-row a:hover{text-decoration:underline;text-underline-offset:3px}
 .fa-world-history-row a:focus-visible,.fa-world-history-retry:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.fa-world-history-row .fa-world-history-competition{display:flex;align-items:center;gap:10px;min-width:0}
+.fa-world-history-competition-name{min-width:0}
+.fa-world-history-logo{display:inline-grid;place-items:center;width:32px;height:32px;flex:0 0 32px;color:var(--muted)}
+.fa-world-history-logo img{display:block;width:100%;height:100%;object-fit:contain}
+.fa-world-history-logo svg{display:block;width:27px;height:27px}
 .fa-world-history-row .fa-world-history-club{display:flex;align-items:center;gap:10px;min-width:0}
 .fa-world-history-row .fa-world-history-crest{display:block;width:29px;height:29px;flex:0 0 29px;object-fit:contain}
 .fa-world-history-skeleton{display:grid;gap:1px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line)}

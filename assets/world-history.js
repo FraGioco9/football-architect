@@ -14,11 +14,24 @@
  const locale=()=>copy[document.documentElement.lang]||copy.en;
  const seasons=root.querySelector('#world-history-season'),countries=root.querySelector('#world-history-country'),comps=root.querySelector('#world-history-competition');
  const archive=root.querySelector('#world-history-archive'),status=root.querySelector('#world-history-status'),count=root.querySelector('#world-history-count'),retry=root.querySelector('#world-history-retry');
- let payload=null,clubNames=new Map(),clubCrests=new Map(),loading=false,error=false,request=0;
+ let payload=null,clubNames=new Map(),clubCrests=new Map(),competitionNames=new Map(),competitionLogos=new Map(),loading=false,error=false,request=0;
  const debugActive=()=>window.faDevPreviewMode===true&&window.faDebugEnabled===true;
  const text=(node,value)=>{node.textContent=value;return node};
  const make=(tag,cls,content)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(content!==undefined)el.textContent=content;return el};
- const compLabel=(id,w)=>id==='int-1'?w.sovereign:id==='int-2'?w.federation:id.split('-')[0]+' · '+(id.endsWith('-1')?w.first:w.second);
+ // Official competition names are the same published identities used in Matches.
+ const compLabel=(id,w)=>competitionNames.get(id)||
+  (id==='int-1'?w.sovereign:id==='int-2'?w.federation:id.split('-')[0]+' · '+(id.endsWith('-1')?w.first:w.second));
+ // International cups have no approved artwork yet; use the established neutral mark.
+ const neutralCupMark='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg>';
+ function competitionMark(id){
+  const slot=make('span','fa-world-history-logo');slot.setAttribute('aria-hidden','true');
+  const fallback=()=>{slot.classList.add('app-competition-logo-placeholder');slot.innerHTML=neutralCupMark};
+  const url=competitionLogos.get(id);
+  if(!url){fallback();return slot}
+  const img=make('img');img.alt='';img.loading='lazy';img.decoding='async';
+  img.addEventListener('error',fallback,{once:true});
+  img.src=url;slot.append(img);return slot;
+ }
  const safeDebugPayload=p=>p&&p.schemaVersion===1&&p.providerId==='dev-world-history'&&
   p.provenance?.kind==='fictional'&&p.provenance?.sourceRef==='dev-fictional-preview'&&
   p.provenance?.approved===false&&p.coverage==='domestic-only'&&
@@ -134,8 +147,10 @@
    for(const champion of season.champions){
     total++;
     const row=make('li','fa-world-history-row');
-    const competition=make('a','',compLabel(champion.competitionId,w));
+    const competition=make('a','fa-world-history-competition');
     competition.href='/competitions/'+champion.competitionId.toLowerCase()+'/history';
+    competition.append(competitionMark(champion.competitionId),
+     make('span','fa-world-history-competition-name',compLabel(champion.competitionId,w)));
     const holder=make('span','fa-world-history-club');
     const crest=clubCrests.get(champion.championClubId);
     if(crest){
@@ -154,6 +169,25 @@
   if(!total)status.textContent=payload.seasons.length===0?
    (debugActive()?payload.world.seasonNumber===0?w.debugUnstarted:w.debugEmpty:
     payload.world.seasonNumber===0?w.unstarted:w.empty):w.filtered;
+ }
+ let competitionRequest=null;
+ function loadCompetitionMetadata(){
+  competitionRequest??=Promise.all([
+   import('./match-public-context.mjs'),import('./public-image-urls.mjs')
+  ]).then(([{matchPublicContext},{competitionLogoUrl}])=>{
+   const names=new Map(),logos=new Map();
+   for(const id of competitionIds){
+    const definition=matchPublicContext({competitionId:id})?.competitions?.[0];
+    if(definition?.id!==id||typeof definition.name!=='string'||!definition.name.trim())
+     throw Error('Invalid published competition identity');
+    names.set(id,definition.name);
+    const logo=competitionLogoUrl(id,'compact');
+    if(logo)logos.set(id,logo);
+   }
+   competitionNames=names;competitionLogos=logos;
+   labels();if(payload)render();
+  }).catch(()=>{competitionRequest=null}); // Fallback labels preserve navigation.
+  return competitionRequest;
  }
  let identityRequest=null;
  function useIdentity(identity){
@@ -233,5 +267,6 @@
  window.addEventListener('popstate',()=>{if(payload){fromUrl();render()}});
  new MutationObserver(()=>{labels();render()})
   .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+ void loadCompetitionMetadata();
  load();
 })();

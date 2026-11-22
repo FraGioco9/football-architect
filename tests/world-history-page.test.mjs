@@ -5,6 +5,8 @@ import {request} from 'node:http';
 import {once} from 'node:events';
 import {createPreviewStandings,createPreviewWorldHistory} from '../tools/dev-standings-preview-data.mjs';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
+import {matchPublicContext} from '../assets/match-public-context.mjs';
+import {competitionLogoUrl} from '../assets/public-image-urls.mjs';
 import {parseRoute,buildRoute} from '../assets/routes-registry.mjs';
 import {renderWorldHistoryPage} from '../tools/render-world-history.mjs';
 import {isAllowlistedPublicPath} from '../tools/publication-guard.mjs';
@@ -183,4 +185,38 @@ test('#581 Debug: History switches sources, retains filters, and excludes DEV wi
  for(const path of ['tools/dev-standings-preview-client.mjs','tools/dev-standings-preview-data.mjs'])
   assert.equal(isAllowlistedPublicPath(path),false,'DEV sporting generator is never a public asset');
  assert.doesNotThrow(()=>new Function(publicRuntime),'public History controller parses');
+});
+
+
+test('#581: World History shows each competition official name and approved compact logo',()=>{
+ const runtime=read('assets/world-history.js');
+ const css=read('assets/world-history.css');
+ const catalog=JSON.parse(read('competitions/_shared/manifest.json'));
+ const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
+ const ids=countries.flatMap(country=>[1,2].map(tier=>country+'-'+tier));
+ for(const id of ids){
+  const reference=matchPublicContext({competitionId:id})?.competitions?.[0];
+  assert.equal(reference?.id,id,'Matches must use this exact published identity');
+  const canonical=catalog.divisions.find(division=>division.id===id);
+  assert.ok(canonical,'same official division present in canonical catalogue');
+  assert.equal(reference.name,canonical.name,'History must display the real competition name');
+  const logo=competitionLogoUrl(id,'compact');
+  assert.equal(logo,'/assets/competitions/'+id+'/compact.svg');
+  assert.equal(isAllowlistedPublicPath(logo.slice(1)),true,'must be an approved public image');
+  assert.match(read(logo.slice(1)),/<svg\b/,'approved SVG exists');
+ }
+ for(const [id,name] of [['int-1','Sovereign Cup'],['int-2','Federation Cup']]){
+  assert.equal(matchPublicContext({competitionId:id})?.competitions?.[0]?.name,name);
+  assert.equal(competitionLogoUrl(id,'compact'),null,'no approved international SVG exists');
+ }
+ assert.match(runtime,/import\('\.\/match-public-context\.mjs'\)/,'use Matches published names, not a hardcoded label list');
+ assert.match(runtime,/import\('\.\/public-image-urls\.mjs'\)/,'only approved competition logo URLs');
+ assert.match(runtime,/definition\.name/);
+ assert.match(runtime,/competitionNames\.get\(id\)/);
+ assert.match(runtime,/competitionMark\(champion\.competitionId\)/);
+ assert.match(runtime,/fa-world-history-competition-name/);
+ assert.match(runtime,/neutralCupMark/,'international cups reuse the neutral, not a fictitious, emblem');
+ assert.match(css,/\.fa-world-history-logo img\{[^}]*object-fit:contain/,'SVG logos are never cropped');
+ assert.match(css,/\.fa-world-history-row \.fa-world-history-competition\{display:flex/);
+ assert.doesNotMatch(runtime,/club.*\.logo|Math\.random\(/,'club logos are not competition logos');
 });
