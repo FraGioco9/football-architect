@@ -383,7 +383,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.equal(metrics.speedRows.length,9,'3 launch speeds x 3 coefficient models');
     assert.ok(metrics.speedRows.every(r=>r.length===8));
     assert.deepEqual([...new Set(metrics.speedRows.map(r=>r[0]))],
-      ['7.00','15.00','30.00']);
+      ['25.20','54.00','108.00']);
     assert.deepEqual(metrics.speedRows.slice(0,3).map(r=>r[1]),
       ['Cd=0','Cd=0.24','Cd(v)']);
     assert.ok(Number(metrics.speedRows[2][5])<Number(metrics.speedRows[0][5]),
@@ -426,7 +426,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.equal(metrics.combinedRows.length,36,'3 speeds × 3 spins × 4 modes');
     assert.ok(metrics.combinedRows.every(row=>row.length===10));
     assert.deepEqual([...new Set(metrics.combinedRows.map(row=>row[0]))],
-      ['7.00','15.00','30.00']);
+      ['25.20','54.00','108.00']);
     assert.deepEqual(metrics.combinedRows.slice(0,4).map(row=>row[2]),
       ['No forces','Cd(v) only','Magnus only','Cd(v) + Magnus']);
     assert.ok(metrics.combinedRows.every(row=>row.slice(3).every(v=>Number.isFinite(Number(v)))),
@@ -439,24 +439,24 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
       'post-contact checkpoint must not be fabricated');
     const selected=(vx,spin,mode)=>metrics.combinedRows.find(row=>
       row[0]===vx&&row[1].startsWith(spin)&&row[2]===mode);
-    assert.ok(Number(selected('15.00','+Z','Cd(v) + Magnus')[5])>0.02);
-    assert.ok(Number(selected('15.00','−Z','Cd(v) + Magnus')[5])< -0.02);
-    assert.equal(selected('15.00','No spin','No forces')[5],
-      selected('15.00','No spin','Magnus only')[5]);
-    assert.equal(selected('15.00','No spin','Cd(v) only')[5],
-      selected('15.00','No spin','Cd(v) + Magnus')[5]);
+    assert.ok(Number(selected('54.00','+Z','Cd(v) + Magnus')[5])>0.02);
+    assert.ok(Number(selected('54.00','−Z','Cd(v) + Magnus')[5])< -0.02);
+    assert.equal(selected('54.00','No spin','No forces')[5],
+      selected('54.00','No spin','Magnus only')[5]);
+    assert.equal(selected('54.00','No spin','Cd(v) only')[5],
+      selected('54.00','No spin','Cd(v) + Magnus')[5]);
     assert.match(metrics.combinedNote,/hypotheses/);
     assert.match(metrics.combinedNote,/Normal LAB-02 stays Cd=0/);
     process.stdout.write('ME10_COMBINED_BROWSER '+JSON.stringify({
       rows:metrics.combinedRows.length,
       checkpoints:metrics.combinedPoints.length,
-      positiveAt15:selected('15.00','+Z','Cd(v) + Magnus')[5],
-      negativeAt15:selected('15.00','−Z','Cd(v) + Magnus')[5]
+      positiveAt15:selected('54.00','+Z','Cd(v) + Magnus')[5],
+      negativeAt15:selected('54.00','−Z','Cd(v) + Magnus')[5]
     })+'\\n');
     assert.equal(metrics.calibrationCdChart,560);
     assert.equal(metrics.calibrationCsChart,560);
     assert.deepEqual(metrics.calibrationDragRows.map(row=>row.slice(0,2)),
-      [['19.00','0.21'],['32.00','0.24']]);
+      [['68.40','0.21'],['115.20','0.24']]);
     assert.deepEqual(metrics.calibrationDragRows.map(row=>row.slice(2)),
       [['0.21','0.00'],['0.24','0.00']]);
     assert.deepEqual(metrics.calibrationSideRows.map(row=>row.slice(0,2)),
