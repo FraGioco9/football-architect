@@ -25,11 +25,48 @@
    Array.isArray(s.champions)&&s.champions.length===18&&
    s.champions.every(c=>competitionIds.includes(c.competitionId)&&clubPattern.test(c.championClubId)))&&
   new Set(p.seasons.map(s=>s.seasonNumber)).size===p.seasons.length;
- function choose(select,values,label){
-  const current=select.value;
+ // Shared combobox controller: Clubs/Competitions keyboard, focus and viewport behavior.
+ const filterControls=[['season',seasons],['country',countries],['competition',comps]].map(([id,select])=>({
+  id,select,control:root.querySelector('#world-history-'+id+'-control'),
+  trigger:root.querySelector('#world-history-'+id+'-trigger'),
+  menu:root.querySelector('#world-history-'+id+'-menu'),
+  value:root.querySelector('#world-history-'+id+'-value'),
+  binding:null
+ }));
+ const contentPane=document.querySelector('.fa-shell-content-scroll');
+ function syncFilter(item){
+  const selected=item.select.selectedOptions[0];
+  item.value.textContent=selected?.textContent||'';
+  item.trigger.value=item.select.value;
+  item.binding?.sync(item.select.value);
+ }
+ function syncFilters(){for(const item of filterControls)syncFilter(item)}
+ function choose(item,values,label){
+  const select=item.select,current=select.value;
   select.replaceChildren(new Option(label,''));
-  for(const [value,display] of values)select.add(new Option(display,value));
+  for(const [value,display] of values)select.add(new Option(display,String(value)));
   select.value=[...select.options].some(o=>o.value===current)?current:'';
+  const nodes=[...select.options].map((option,index)=>{
+   const node=make('div','language-option',option.textContent);
+   node.id='world-history-'+item.id+'-option-'+index;
+   node.dataset.menuValue=option.value;
+   node.setAttribute('role','option');
+   node.setAttribute('aria-selected',String(option.value===select.value));
+   return node;
+  });
+  item.menu.replaceChildren(...nodes);
+  if(item.binding)item.binding.update(nodes);
+  else item.binding=window.faBindCompetitionMenu(item.trigger,item.menu,nodes,value=>{
+   item.select.value=value;syncFilter(item);updateUrl();
+  },item.control,{fitViewport:true,boundary:contentPane});
+  syncFilter(item);
+ }
+ function setFilterDisabled(disabled){
+  for(const item of filterControls){
+   item.select.disabled=disabled;
+   item.trigger.disabled=disabled;
+   if(disabled)item.binding?.close();
+  }
  }
  function fromUrl(){
   const q=new URLSearchParams(location.search);
@@ -43,6 +80,7 @@
   if(comps.value)canonical.set('competition',comps.value);
   const desired=location.pathname+(canonical.size?'?'+canonical:'')+location.hash;
   if(location.pathname+location.search+location.hash!==desired)history.replaceState(null,'',desired);
+  syncFilters();
  }
  function updateUrl(){
   const query=new URLSearchParams();
@@ -55,14 +93,13 @@
  function labels(){
   const w=locale();text(root.querySelector('#world-history-title'),w.title);
   text(root.querySelector('#world-history-intro'),w.intro);
-  text(root.querySelector('label[for="world-history-season"]'),w.season);
-  text(root.querySelector('label[for="world-history-country"]'),w.country);
-  text(root.querySelector('label[for="world-history-competition"]'),w.competition);
+  for(const [id,label] of [['season',w.season],['country',w.country],['competition',w.competition]])
+   text(root.querySelector('#world-history-'+id+'-label'),label);
   text(retry,w.retry);
-  choose(seasons,(payload?.seasons||[]).map(s=>[String(s.seasonNumber),w.season+' '+s.seasonNumber]),w.allSeasons);
-  choose(countries,ids.map((code,i)=>[code,w.countries[i]]),w.allCountries);
-  choose(comps,competitionIds.map(id=>[id,compLabel(id,w)]),w.allCompetitions);
-  root.querySelector('.fa-world-history-controls').setAttribute('aria-label',w.allCompetitions);
+  choose(filterControls[0],(payload?.seasons||[]).map(s=>[String(s.seasonNumber),w.season+' '+s.seasonNumber]),w.allSeasons);
+  choose(filterControls[1],ids.map((code,i)=>[code,w.countries[i]]),w.allCountries);
+  choose(filterControls[2],competitionIds.map(id=>[id,compLabel(id,w)]),w.allCompetitions);
+  root.querySelector('.fa-world-history-controls').setAttribute('aria-label',w.title+' — '+w.competition);
  }
  function render(){
   const w=locale();
@@ -107,7 +144,7 @@
  async function load(){
   if(loading)return;loading=true;error=false;retry.hidden=true;
   archive.setAttribute('aria-busy','true');
-  for(const select of [seasons,countries,comps])select.disabled=true;
+  setFilterDisabled(true);
   status.hidden=false;status.textContent=locale().loading;
   try{
    const [reply,identity]=await Promise.all([
@@ -129,17 +166,15 @@
   finally{
    loading=false;
    labels();
-   for(const select of [seasons,countries,comps])select.disabled=error||!payload?.seasons.length;
+   setFilterDisabled(error||!payload?.seasons.length);
    retry.hidden=!error;
    if(!error)fromUrl();
    render();
   }
  }
- for(const select of [seasons,countries,comps])select.addEventListener('change',updateUrl);
  retry.addEventListener('click',load);
  window.addEventListener('popstate',()=>{if(payload){fromUrl();render()}});
- new MutationObserver(()=>{const prev=[seasons.value,countries.value,comps.value];labels();
-  [seasons,countries,comps].forEach((el,i)=>{el.value=prev[i]});render()})
+ new MutationObserver(()=>{labels();render()})
   .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  load();
 })();

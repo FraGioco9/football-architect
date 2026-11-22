@@ -1,12 +1,21 @@
 /* NAV-01: initialize static navigation before first paint; no career writes. */
 (()=>{'use strict';const nav=document.querySelector('.fa-shell-nav[data-nav01-static]');if(!nav)return;
-// #581: append History inside the World submenu without changing closed first-paint geometry.
+// #581: World History is a primary World link (same icon, height and active style
+// as Competitions). Existing checked-in pages receive it once; generated History
+// ships it in the initial navigation so there is no page-specific blank slot.
 const historyChildren=nav.querySelector('#nav01-children');
-if(historyChildren&&!historyChildren.querySelector('[data-nav01-history]')){
- const link=document.createElement('a');link.href='/history';link.className='fa-shell-link';
- link.dataset.nav01History='';
- link.innerHTML='<svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 4h14v16H5zM9 8h7M9 12h7M9 16h5"/></svg><span data-world-history-nav-label>History</span>';
- historyChildren.append(link);
+let historyLink=nav.querySelector('[data-nav01-history]');
+if(historyChildren){
+ if(!historyLink){
+  const wrapper=document.createElement('div');wrapper.innerHTML="<a class=\"fa-shell-link\" id=\"app-nav-world-history\" href=\"/history\" data-nav01-history><svg class=\"fa-icon\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"5\" rx=\"1\"/><path d=\"M5 8v12h14V8M10 13h4\"/></svg><span data-world-history-nav-label>History</span></a>";
+  historyLink=wrapper.firstElementChild;
+ }
+ if(historyLink){
+  historyLink.className='fa-shell-link';
+  historyLink.id='app-nav-world-history';
+  historyLink.innerHTML="<svg class=\"fa-icon\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"5\" rx=\"1\"/><path d=\"M5 8v12h14V8M10 13h4\"/></svg><span data-world-history-nav-label>History</span>";
+  historyChildren.insertAdjacentElement('afterend',historyLink);
+ }
 }
 const historyLabels={en:'History',de:'Geschichte',es:'Historia',fr:'Histoire',it:'Storia'};
 function syncHistoryNav(){
@@ -22,7 +31,6 @@ function syncHistoryNav(){
 }
 new MutationObserver(syncHistoryNav).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 syncHistoryNav();
-
 
 /* FE-02: viewport-only geometry of already-open app dropdowns. Never changes
  * role, selection, ARIA, focus, Escape or translation (FE-04 owns those). */

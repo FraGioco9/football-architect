@@ -36,3 +36,31 @@ test('#581: hosting and source never expose an active season as closed history',
  assert.match(controller,/window\.addEventListener\('popstate'/);
  assert.doesNotMatch(controller,/dev-standings-preview|Math\.random\(/);
 });
+
+
+test('#581: World History is a full-size World sidebar link and uses shared site dropdowns',()=>{
+ const html=read('history/index.html');
+ const nav=html.slice(html.indexOf('<nav class="fa-shell-nav"'),html.indexOf('</nav>'));
+ const submenu=nav.indexOf('id="nav01-children"'),submenuEnd=nav.indexOf('</div>',submenu);
+ const link=nav.indexOf('id="app-nav-world-history"'),explore=nav.indexOf('data-nav01="3"');
+ assert.ok(submenu>0&&link>submenuEnd&&link<explore,'History is a World sibling, not a hidden nested submenu item');
+ assert.match(nav,/id="app-nav-world-history" href="\/history" data-nav01-history><svg class="fa-icon" width="18" height="18"/);
+ assert.equal((nav.match(/id="app-nav-world-history"/g)||[]).length,1,'one History item in initial HTML');
+ assert.match(html,/href="\/assets\/clubs-directory\.css"/,'reuse Clubs filter styles');
+ assert.ok(html.indexOf('src="/assets/competition-tabs.js"')<html.indexOf('src="/assets/world-history.js"'));
+ for(const id of ['season','country','competition']){
+  assert.match(html,new RegExp('id="world-history-'+id+'-trigger"[^>]+role="combobox"[^>]+aria-haspopup="listbox"'));
+  assert.match(html,new RegExp('id="world-history-'+id+'-menu"[^>]+role="listbox"'));
+  assert.match(html,new RegExp('id="world-history-'+id+'"[^>]+hidden[^>]+aria-hidden="true"'));
+  assert.match(html,new RegExp('id="world-history-'+id+'-label"'));
+ }
+ const runtime=read('assets/world-history.js');
+ const sidebar=read('assets/sidebar-evolution.js');
+ assert.match(runtime,/window\.faBindCompetitionMenu\(/);
+ assert.match(runtime,/syncFilters\(\)/);
+ assert.match(runtime,/fitViewport:true/);
+ assert.match(sidebar,/historyChildren\.insertAdjacentElement\('afterend',historyLink\)/);
+ assert.match(sidebar,/width=\\"18\\" height=\\"18\\"/);
+ assert.doesNotThrow(()=>new Function(runtime),'History view script parses');
+ assert.doesNotThrow(()=>new Function(sidebar),'Sidebar script parses');
+});

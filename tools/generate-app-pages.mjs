@@ -284,12 +284,13 @@ for(const page of outputPages){
  let html=source.slice(0,start)+renderWorldHistoryPage()+source.slice(finish);
  html=html.replace('<title>Competitions — Football Architect</title>','<title>World History — Football Architect</title>')
   .replace('  <script src="/assets/international-cups.js" defer></script>\n','')
-  .replace('</head>','  <link rel="stylesheet" href="/assets/world-history.css">\n  <script src="/assets/world-history.js" defer></script>\n</head>');
+  .replace('</head>','  <link rel=\"stylesheet\" href=\"/assets/clubs-directory.css\">\n  <script src=\"/assets/competition-tabs.js\" defer></script>\n  <link rel=\"stylesheet\" href=\"/assets/world-history.css\">\n  <script src=\"/assets/world-history.js\" defer></script>\n</head>');
 
  const navStart=html.indexOf('<div class="nav01-children" id="nav01-children"');
  const navEnd=html.indexOf('</div>',navStart);
  if(navStart<0||navEnd<0)throw Error("World History sidebar missing");
- html=html.slice(0,navEnd)+"<a class=\"fa-shell-link\" href=\"/history\" data-nav01-history><svg class=\"fa-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M5 4h14v16H5zM9 8h7M9 12h7M9 16h5\"/></svg><span data-world-history-nav-label>History</span></a>"+html.slice(navEnd);
+ // A full-size primary World item, not an extra subitem hidden on mobile.
+ html=html.slice(0,navEnd+6)+"<a class=\"fa-shell-link\" id=\"app-nav-world-history\" href=\"/history\" data-nav01-history><svg class=\"fa-icon\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"5\" rx=\"1\"/><path d=\"M5 8v12h14V8M10 13h4\"/></svg><span data-world-history-nav-label>History</span></a>"+html.slice(navEnd+6);
  html=html.replace('const selected=onPlayers?', "const selected=path==='/history'?nav.querySelector('[data-nav01-history]'):onPlayers?");
  writeOutput("history/index.html",html);
 }

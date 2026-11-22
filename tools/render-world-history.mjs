@@ -1,24 +1,24 @@
-/** #581: semantic, dimensionally stable World History first paint. */
+/** #581: shared-site dropdown first paint for World History. */
 export function renderWorldHistoryPage(){
  return [
-  '        <section id="world-history" class="app-view fa-world-history" aria-labelledby="world-history-title">',
-  '          <h1 class="app-page-title" id="world-history-title">World History</h1>',
-  '          <p class="fa-world-history-intro" id="world-history-intro">Verified champions of completed seasons across all competitions.</p>',
-  '          <div class="fa-world-history-controls" role="group" aria-label="Archive filters">',
-  '            <div class="fa-world-history-control"><label for="world-history-season">Season</label><select id="world-history-season" aria-controls="world-history-archive" disabled><option value="">All seasons</option></select></div>',
-  '            <div class="fa-world-history-control"><label for="world-history-country">Champion country</label><select id="world-history-country" aria-controls="world-history-archive" disabled><option value="">All countries</option></select></div>',
-  '            <div class="fa-world-history-control"><label for="world-history-competition">Competition</label><select id="world-history-competition" aria-controls="world-history-archive" disabled><option value="">All competitions</option></select></div>',
-  '          </div>',
-  '          <p class="fa-world-history-count" id="world-history-count" aria-live="polite"></p>',
-  '          <p id="world-history-status" class="app-competition-status fa-world-history-status" role="status" aria-live="polite">Loading verified archive…</p>',
-  '          <div id="world-history-archive" class="fa-world-history-archive" aria-busy="true">',
-  '            <div class="fa-world-history-skeleton" aria-hidden="true">',
-  '              <div class="fa-world-history-skeleton-row"><span></span><span></span></div>',
-  '              <div class="fa-world-history-skeleton-row"><span></span><span></span></div>',
-  '              <div class="fa-world-history-skeleton-row"><span></span><span></span></div>',
-  '            </div>',
-  '          </div>',
-  '          <button class="app-link app-link-secondary fa-world-history-retry" id="world-history-retry" type="button" hidden>Retry</button>',
-  '        </section>'
- ].join('\n');
+ "        <section id=\"world-history\" class=\"app-view fa-world-history\" aria-labelledby=\"world-history-title\">",
+ "          <h1 class=\"app-page-title\" id=\"world-history-title\">World History</h1>",
+ "          <p class=\"fa-world-history-intro\" id=\"world-history-intro\">Verified champions of completed seasons across all competitions.</p>",
+ "          <div class=\"fa-world-history-controls nav01-filters\" role=\"group\" aria-label=\"Archive filters\">",
+ "            <div class=\"nav01-filter fa-world-history-control\" data-history-filter=\"season\"><span class=\"fa-world-history-label\" id=\"world-history-season-label\">Season</span><div class=\"language-control\" id=\"world-history-season-control\"><button type=\"button\" class=\"language-trigger\" id=\"world-history-season-trigger\" role=\"combobox\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"world-history-season-menu\" aria-labelledby=\"world-history-season-label world-history-season-value\" disabled><span class=\"nav01-filter-value\" id=\"world-history-season-value\">All seasons</span><svg class=\"language-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div class=\"language-menu\" role=\"listbox\" id=\"world-history-season-menu\" aria-labelledby=\"world-history-season-label\" hidden></div></div><select id=\"world-history-season\" hidden aria-hidden=\"true\" tabindex=\"-1\" disabled><option value=\"\">All seasons</option></select></div>",
+ "            <div class=\"nav01-filter fa-world-history-control\" data-history-filter=\"country\"><span class=\"fa-world-history-label\" id=\"world-history-country-label\">Champion country</span><div class=\"language-control\" id=\"world-history-country-control\"><button type=\"button\" class=\"language-trigger\" id=\"world-history-country-trigger\" role=\"combobox\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"world-history-country-menu\" aria-labelledby=\"world-history-country-label world-history-country-value\" disabled><span class=\"nav01-filter-value\" id=\"world-history-country-value\">All countries</span><svg class=\"language-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div class=\"language-menu\" role=\"listbox\" id=\"world-history-country-menu\" aria-labelledby=\"world-history-country-label\" hidden></div></div><select id=\"world-history-country\" hidden aria-hidden=\"true\" tabindex=\"-1\" disabled><option value=\"\">All countries</option></select></div>",
+ "            <div class=\"nav01-filter fa-world-history-control\" data-history-filter=\"competition\"><span class=\"fa-world-history-label\" id=\"world-history-competition-label\">Competition</span><div class=\"language-control\" id=\"world-history-competition-control\"><button type=\"button\" class=\"language-trigger\" id=\"world-history-competition-trigger\" role=\"combobox\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"world-history-competition-menu\" aria-labelledby=\"world-history-competition-label world-history-competition-value\" disabled><span class=\"nav01-filter-value\" id=\"world-history-competition-value\">All competitions</span><svg class=\"language-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div class=\"language-menu\" role=\"listbox\" id=\"world-history-competition-menu\" aria-labelledby=\"world-history-competition-label\" hidden></div></div><select id=\"world-history-competition\" hidden aria-hidden=\"true\" tabindex=\"-1\" disabled><option value=\"\">All competitions</option></select></div>",
+ "          </div>",
+ "          <p class=\"fa-world-history-count nav01-count\" id=\"world-history-count\" aria-live=\"polite\"></p>",
+ "          <p id=\"world-history-status\" class=\"app-competition-status fa-world-history-status\" role=\"status\" aria-live=\"polite\">Loading verified archive…</p>",
+ "          <div id=\"world-history-archive\" class=\"fa-world-history-archive\" aria-busy=\"true\">",
+ "            <div class=\"fa-world-history-skeleton\" aria-hidden=\"true\">",
+ "              <div class=\"fa-world-history-skeleton-row\"><span></span><span></span></div>",
+ "              <div class=\"fa-world-history-skeleton-row\"><span></span><span></span></div>",
+ "              <div class=\"fa-world-history-skeleton-row\"><span></span><span></span></div>",
+ "            </div>",
+ "          </div>",
+ "          <button class=\"app-link app-link-secondary fa-world-history-retry\" id=\"world-history-retry\" type=\"button\" hidden>Retry</button>",
+ "        </section>"
+].join('\n');
 }
