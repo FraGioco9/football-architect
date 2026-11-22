@@ -167,7 +167,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.deepEqual(playersQa.context,{
       ball:'Middle third · Centre',press:'Home #10 · Away #10'
     });
-    assert.match(playersQa.before,/^Home #10 · forward · \(-5\.00, 0\.00\) m · 0\.00 m\/s$/);
+    assert.match(playersQa.before,/^Home #10 · forward · \(-5\.00, 0\.00\) m · 0\.00 km\/h$/);
     assert.match(playersQa.after,/^Home #10 · forward · /);
     assert.notEqual(playersQa.after,playersQa.before,'actual autonomous 60Hz movement required');
     assert.equal(playersQa.time,'2.00 s');
@@ -733,7 +733,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
       'actual 0/half/full initial angular speeds (rad/s): '+omega);
     const first=metrics.spinPoints[0].slice(1).map(value=>Number(value.split(' / ')[1]));
     assert.ok(Math.abs(first[0]-4)<0.01&&Math.abs(first[1]-2)<0.01&&first[2]<0.01,
-      '0 / 50 / 100% spin must begin at 4 / 2 / 0 m/s bottom slip: '+first);
+      '0 / 50 / 100% spin must begin at 14.4 / 7.2 / 0 km/h bottom slip: '+first);
     const speeds=metrics.spinPoints[4].slice(1).map(value=>Number(value.split(' / ')[0]));
     assert.ok(speeds[0]<speeds[1]&&speeds[1]<speeds[2],
       '1s rolling speed should depend on starting spin: '+speeds);
@@ -839,9 +839,9 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
       qaVisual.flightVisual.candidateSideInk>8,
       'both flight charts must contain painted Rapier paths, not just legends: '+
         JSON.stringify(qaVisual.flightVisual));
-    assert.match(qaVisual.flightVisual.notes[0],/7 m\/s/);
-    assert.match(qaVisual.flightVisual.notes[1],/15 m\/s/);
-    assert.match(qaVisual.flightVisual.notes[2],/30 m\/s/);
+    assert.match(qaVisual.flightVisual.notes[0],/25\.20 km\/h/);
+    assert.match(qaVisual.flightVisual.notes[1],/54\.00 km\/h/);
+    assert.match(qaVisual.flightVisual.notes[2],/108\.00 km\/h/);
     assert.ok(qaVisual.flightVisual.notes.every(note=>note.includes('top-down 1:1 axes')&&
       note.includes('All paths stop at contact')&&note.includes('NOT measured')));
     process.stdout.write('ME18_TRAJECTORY_BROWSER '+JSON.stringify({
@@ -991,7 +991,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.deepEqual(motionQa.minus.phases,['airborne','airborne']);
     assert.ok(motionQa.plus.old>1.5&&motionQa.plus.old<1.8);
     assert.ok(motionQa.plus.candidate>3.5&&motionQa.plus.candidate<4.5,
-      '30m/s 6rev/s candidate high-speed bend must remain visible');
+      '108 km/h 6rev/s candidate high-speed bend must remain visible');
     assert.ok(motionQa.minus.old< -1.5&&motionQa.minus.old> -1.8);
     assert.ok(motionQa.minus.candidate< -3.5&&motionQa.minus.candidate> -4.5);
     assert.ok(Math.abs(motionQa.plus.old+motionQa.minus.old)<0.1);
