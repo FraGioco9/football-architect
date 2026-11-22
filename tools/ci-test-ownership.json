@@ -169,6 +169,8 @@
     "tests/calendar-rule-boundary.test.mjs": "site-node",
     "tests/calendar-season-link.test.mjs": "site-node",
     "tests/canonical-state-browser.mjs": "support",
+    "tests/sh03-network-evidence.mjs": "support",
+    "tests/sh03-network-evidence.test.mjs": "site-node",
     "tests/canonical-world-state.test.mjs": "site-node",
     "tests/chrome-profile.test.mjs": "site-node",
     "tests/ci-diagnostics.test.mjs": "site-node",

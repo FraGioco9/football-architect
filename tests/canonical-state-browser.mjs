@@ -6,6 +6,7 @@ import {createServer} from 'node:http';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 import {createBrowserTiming} from '../tools/ci-browser-timing.mjs';
+import {createSh03NetworkEvidence} from './sh03-network-evidence.mjs';
 const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:4,seasonNumber:2,day:20,phase:'active'};
 const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
 export function published(competitionId,selectedSeason,currentWorld){
@@ -42,10 +43,20 @@ export async function verifyCanonicalStateBrowser(browser,engine){
  const publicHost=await server(false),debugHost=await server(true);
  const origin='http://127.0.0.1:'+publicHost.address().port,debugOrigin='http://127.0.0.1:'+debugHost.address().port;
  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();
- const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ // Retain the strict pageerror assertion; record a bounded, private-safe
+ // transport timeline only when an intermittent SH-03 failure needs diagnosis.
+ const evidence=createSh03NetworkEvidence({publicOrigin:origin,debugOrigin});
+ const mark=name=>{evidence.setStage(name);timing.mark(name)};
+ const errors=[];page.on('pageerror',error=>{errors.push(error.message);evidence.pageError(error.message)});
+ page.on('request',request=>evidence.request('started',request));
+ page.on('response',response=>evidence.request('response',response.request(),{status:response.status()}));
+ page.on('requestfinished',request=>evidence.request('finished',request));
+ page.on('requestfailed',request=>evidence.request('failed',request,{failure:request.failure()}));
+ page.on('framenavigated',frame=>{if(frame===page.mainFrame())evidence.navigation(frame.url())});
  let offline=false,admin=false,worldCalls=0,holdSeasonOne=null,heldStarted=null,holdNumber='1',populated=false,apiWorld=world;
  await page.route('**/api/**',async route=>{
   const path=new URL(route.request().url()).pathname;
+  evidence.request('intercepted',route.request());
   if(path==='/api/world'){worldCalls++;return json(route,offline?503:200,offline?{}:{world:apiWorld})}
   if(path==='/api/admin/session'&&admin)return json(route,200,{actor:{id:'read-only-admin',email:'operator@example.invalid'},csrfToken:'a'.repeat(64)});
   if(path==='/api/player/permissions'&&admin)return json(route,200,{permissions:['admin.access','admin.world.read']});
@@ -54,15 +65,17 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   const match=path.match(/^\/api\/competitions\/([^/]+)\/seasons\/(\d+)$/);
   if(match){
    const payload=populated&&match[1]==='IT-1'&&match[2]==='2'?published('IT-1',2,apiWorld):{schemaVersion:1,providerId:'authoritative-world',competitionId:match[1],selectedSeason:Number(match[2]),world:apiWorld,status:'empty',reason:'calendar-unpublished',data:null,provenance:unavailable};
-   if(holdSeasonOne&&match[2]===holdNumber){heldStarted();await holdSeasonOne;}
+   if(holdSeasonOne&&match[2]===holdNumber){evidence.request('held',route.request());heldStarted();await holdSeasonOne;evidence.request('released',route.request());}
    // Cancellation of the held request is expected when the user changes season.
-   try{return await json(route,200,payload)}catch(error){if(!/closed|handled|cancel|invalid|intercept/i.test(error.message))throw error;return;}
+   try{const value=await json(route,200,payload);evidence.request('fulfilled',route.request(),{status:200});return value}catch(error){evidence.request('fulfill-failed',route.request(),{failure:error.message});if(!/closed|handled|cancel|invalid|intercept/i.test(error.message))throw error;return;}
   }
   // The SH-03 synthetic world has no published numeric match index.
   // Match the Worker's public missing-publication response, not protected-API 401.
   // Keep genuine JS/page errors fatal (including in WebKit).
-  if(/^\/api\/matches\/seasons\/[1-9][0-9]*\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(path))
+  if(/^\/api\/matches\/seasons\/[1-9][0-9]*\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(path)){
+   evidence.request('synthetic-404',route.request(),{status:404});
    return json(route,404,{error:{code:'not_found'}});
+  }
   const day=path.match(/^\/api\/calendar\/seasons\/(\d+)\/days\/(\d+)$/);
   if(day&&populated&&day[1]==='2'&&day[2]==='13')return json(route,200,calendarPublished(2,13,apiWorld));
   if(day)return json(route,200,{schemaVersion:1,providerId:'authoritative-world',scope:'calendar',selectedSeason:Number(day[1]),day:Number(day[2]),world:apiWorld,status:'empty',reason:'calendar-unpublished',data:null,provenance:unavailable});
@@ -81,7 +94,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   finally{clearTimeout(timer)}
  };
  try{
-  timing.mark('fixtures-ready');
+  mark('fixtures-ready');
  for(const [i,path] of routes.entries()){
    const width=[320,390,768,1440][i%4],lang=['en','de','es','fr','it'][i%5],theme=i%2?'light':'dark';
    await page.setViewportSize({width,height:844});
@@ -115,7 +128,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
     checks++;
    }
   }
-  timing.mark('public-route-matrix-complete');
+  mark('public-route-matrix-complete');
   // Read-only Admin uses the same world contract without granting any write capability.
   admin=true;
    // Simulate the real login handler clearing stale tab permissions after sign-in.
@@ -128,7 +141,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.waitForFunction(()=>window.faWorldState?.get().world?.seasonNumber===0);
   await page.evaluate(()=>new Promise(resolve=>{document.documentElement.lang='it';requestAnimationFrame(resolve)}));
   assert.equal(await page.evaluate(()=>window.faWorldState.get().world.seasonNumber),0,'cached Admin render cannot undo a public reset');checks++;
-  timing.mark('admin-world-reset-complete');
+  mark('admin-world-reset-complete');
   apiWorld=world;admin=false;
   await page.evaluate(()=>window.name=JSON.stringify({lang:'en',theme:'dark'}));
   // Empty public competition refresh must preserve loaded header/crest DOM and open menus.
@@ -155,7 +168,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===2);
   release();holdSeasonOne=null;await page.waitForLoadState('networkidle');
   assert.equal(await page.evaluate(()=>window.faCompetitionContext.selectedSeason),2);assert.equal(await page.evaluate(()=>window.faCompetitionContext.seasonData),null);checks++;
-  timing.mark('historical-season-race-complete');
+  mark('historical-season-race-complete');
   await page.goto(origin+'/calendar?season=1&calendarView=week',{waitUntil:'networkidle'});
   await page.locator('#calendar-season-picker').click();
   const menuWorldCalls=worldCalls;
@@ -192,7 +205,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
    assert.deepEqual(await page.evaluate(()=>window.faWorldState.get().current),{season:0,day:0},'protected '+path);checks++;
   }
   assert.equal(worldCalls,callsBefore,'Debug pages must not read public world');
-  timing.mark('debug-route-matrix-complete');
+  mark('debug-route-matrix-complete');
   await page.goto(debugOrigin+'/competitions/it-1/standings',{waitUntil:'networkidle'});
   await page.locator('.fa-dev-widget-button').click();
   await page.locator('[data-dev-control="season-number"]').fill('2');await page.locator('[data-dev-control="season-number"]').dispatchEvent('change');
@@ -287,7 +300,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.evaluate(()=>{window.sh03Row=document.querySelector('#app-standings-body tr');window.sh03DocumentToken={};window.dispatchEvent(new Event('fa:world-invalidated'))});
   await page.waitForFunction(()=>document.querySelector('.app-competition-status')?.hidden===true);
   assert.equal(await page.evaluate(()=>window.sh03Row===document.querySelector('#app-standings-body tr')),true,'populated refresh retains rows');
-  timing.mark('debug-published-geometry-complete');
+  mark('debug-published-geometry-complete');
   holdNumber='2';let releaseOld;holdSeasonOne=new Promise(resolve=>releaseOld=resolve);const oldStarted=new Promise(resolve=>heldStarted=resolve);
   // A same-revision world invalidation no longer refetches the season.
   // Advance world revision deliberately to exercise a genuinely stale in-flight read.
@@ -309,7 +322,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   assert.equal(new URL(page.url()).searchParams.has('season'),false,'OFF leaves current season implicit');
   releaseOld();holdSeasonOne=null;await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.world?.revision===6);
   assert.equal(await page.evaluate(()=>!!window.sh03DocumentToken),true,'switches preserve the document');checks++;
-  timing.mark('stale-world-invalidation-complete');
+  mark('stale-world-invalidation-complete');
   await page.goto(debugOrigin+'/calendar?season=2&calendarView=week',{waitUntil:'networkidle'});
   await page.evaluate(()=>window.faWorldCalendar.setWeek(2));
   await page.locator('[data-calendar-day="13"]').click();
@@ -332,14 +345,14 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   assert.equal(worldCalls,beforeTab,'in-page competition tabs must not reload /api/world');
   checks++;
   assert.deepEqual(errors,[],engine+' SH-03 browser errors');
-  timing.mark('checks-complete');
+  mark('checks-complete');
   console.log('SH-03 '+engine+' PASS: '+checks+' individual page/state checks');
  }catch(error){
   const snapshot=await page.evaluate(()=>({url:location.href,world:window.faWorldState?.get?.(),route:window.faCompetitionRoute?.get?.(),context:{season:window.faCompetitionContext?.selectedSeason,world:window.faCompetitionContext?.seasonData?.world},status:document.querySelector('.app-competition-status')?.textContent,admin:document.querySelector('[data-admin-status]')?.textContent})).catch(()=>null);
-  console.error('SH-03 failure state: '+JSON.stringify({engine,snapshot,errors}));
+  console.error('SH-03 failure state: '+JSON.stringify({engine,snapshot,errors,networkEvidence:evidence.snapshot()}));
   await page.screenshot({path:'int24-browser-artifacts/sh03-'+engine+'-failure.png',fullPage:true}).catch(()=>{});throw error;
  }finally{
   try{await context.close();for(const host of [publicHost,debugHost]){host.closeAllConnections();await new Promise(resolve=>host.close(resolve));}}
-  finally{timing.mark('cleanup-complete');timing.report();}
+  finally{mark('cleanup-complete');timing.report();}
  }
 }
