@@ -2,7 +2,7 @@
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
 import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual-kinematics.mjs';
-import {advanceSoloCarryPhase} from './solo-carry-phases.mjs';
+import {advanceSoloCarryPhase,SOLO_CARRY_PHASES} from './solo-carry-phases.mjs';
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
@@ -1671,6 +1671,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bNativeShotSide'&&
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
      k!=='researchSmallSidedVariantIndex'&&
+     k!=='researchSoloCarryLockedPhase'&&
       k!=='researchSmallSidedBodyFeedback'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
@@ -1819,9 +1820,13 @@ export function createPlayerMovement(options={}){
       options.researchBodyEncounter!==undefined||
       Reflect.ownKeys(options).length!==
        (options.researchSmallSidedVariantIndex===undefined?2:3)+
-        (options.researchSmallSidedBodyFeedback===true?1:0)))||
+        (options.researchSmallSidedBodyFeedback===true?1:0)+
+        (options.researchSoloCarryLockedPhase===undefined?0:1)))||
     ((options.researchSmallSidedSituation===undefined)!==
      (options.researchSmallSidedSide===undefined))||
+    (options.researchSoloCarryLockedPhase!==undefined&&(
+     options.researchSmallSidedSituation!=='carry-solo'||
+     !SOLO_CARRY_PHASES.includes(options.researchSoloCarryLockedPhase)))||
     (options.researchSmallSidedVariantIndex!==undefined&&
      options.researchSmallSidedSituation===undefined)||
     (options.researchSmallSidedBodyFeedback!==undefined&&
@@ -2189,10 +2194,12 @@ export function createPlayerMovement(options={}){
     throw new TypeError('Solo phase requires the current original Rapier ball velocity');
    const actor=players.find(p=>p.id===smallSided.side+'-10');
    currentSoloCarryPhase=advanceSoloCarryPhase({
-    previousPhase:currentSoloCarryPhase?.phase??'control',tick:tick+1,
+    previousPhase:currentSoloCarryPhase?.phase??
+     options.researchSoloCarryLockedPhase??'control',tick:tick+1,
     playerSpeedMps:Math.hypot(actor.vx,actor.vy),
     ballSpeedMps:Math.hypot(realBallVelocity.x,realBallVelocity.y),
-    ballGapM:Math.hypot(ball.x-actor.x,ball.y-actor.y)
+    ballGapM:Math.hypot(ball.x-actor.x,ball.y-actor.y),
+    lockedPhase:options.researchSoloCarryLockedPhase??null
    });
   }
   if(options.researchGoalkeeperSaveSide!==undefined&&(

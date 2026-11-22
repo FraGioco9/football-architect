@@ -14,6 +14,7 @@ import {runContactImpactDiagnostics} from '/__fa_match_engine__/contact-impact-q
 import {mountControlledActionLabs,createControlledActionLab,projectActiveLabDecisions} from '/__fa_match_engine__/action-labs.mjs';
 import {mountControlledMovementLabs,createControlledMovementLab} from '/__fa_match_engine__/movement-labs.mjs';
 import {SMALL_SIDED_VARIANT_COUNT} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
+import {SOLO_CARRY_PHASES} from '/__fa_match_engine__/solo-carry-phases.mjs';
 import {prepareFlightPlaybackPair,sampleFlightPlaybackPair,flightPlaybackWallTime} from '/__fa_match_engine__/flight-playback.mjs';
 
 const byId = id => document.getElementById(id);
@@ -218,7 +219,8 @@ function restart() {
       createControlledActionLab(rapier,id,{shotSide:side,
        variantIndex:activeVariantIndex,
        bodyGuardEnabled:id!=='carry-solo',
-       intentDrivenSoloCarry:id==='carry-solo'}):
+       intentDrivenSoloCarry:id==='carry-solo',
+       soloCarryLockedPhase:activeScene.soloCarryLockedPhase??null}):
       createControlledMovementLab(rapier,id,{side});
     if(activeLab)activeLab.dispose();
     if(engine){engine.dispose();engine=null;}
@@ -232,6 +234,8 @@ function restart() {
     byId('player-inspect-choice').value='';
     syncScenarioSurface();
     say('Ready · '+(kind==='action'?next.spec.title:next.scene.spec.title)+
+      (activeScene.soloCarryLockedPhase?' · fixed '+
+       activeScene.soloCarryLockedPhase.toUpperCase():'')+
       ' · '+side.toUpperCase()+(kind==='action'?
        ' · V'+String(activeVariantIndex+1).padStart(2,'0'):'')+
       ' · original Rapier · DEV only');
@@ -446,6 +450,12 @@ function render() {
         ' native shoe/impulse')+
        (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
       (f.intentDrivenCarry?' · Solo Carry intent (no shoe-contact claims)':'')+
+      (f.soloCarryLockedPhase&&f.soloCarryPhase?
+       ' · phase '+f.soloCarryPhase.phase.toUpperCase()+' (locked)'+
+       ' · player '+f.soloCarryPhase.playerSpeedMps.toFixed(2)+' m/s'+
+       ' · ball '+f.soloCarryPhase.ballSpeedMps.toFixed(2)+' m/s'+
+       ' · gap '+f.soloCarryPhase.ballGapM.toFixed(2)+' m'+
+       ' · genuine Rapier carry impulses '+f.intentCarryImpulseCount:'')+
       (f.nativeDribbleAudit?' · real native carries '+
        f.nativeDribbleAudit.appliedCarryActions+
        (f.nativeDribbleAudit.soloCarry?
@@ -1973,13 +1983,10 @@ function setupUnifiedScenarioMenu(){
   menu.append(node);
  };
  const groups=[
-  ['Ball handling',[
-   ['action:carry-solo','Carry · open space'],
-   // M2 turn/brake measure real movement toward the Rapier ball.
-   // They are NOT shoe contact or verified ball control.
-   ['movement:turn','Direction · turn toward ball (movement only)'],
-   ['movement:brake','Direction · brake near ball (movement only)'],
-   ['action:dribble-1v1','Dribbling · 1v1 vs defender']
+  ['Carry phases',[
+   ['action:carry-solo:control','Carry · Control'],
+   ['action:carry-solo:moderate','Carry · Moderate'],
+   ['action:carry-solo:sprint','Carry · Sprint']
   ]],
   ['Small-sided situations',[
    ['action:keeper-1v1','1v1 · goalkeeper'],
@@ -1987,16 +1994,15 @@ function setupUnifiedScenarioMenu(){
    ['action:duel-3v3','3v3 · team decisions']
   ]]
  ];
- const available={
-  action:new Set([...byId('action-labs-choice').options].map(x=>x.value)),
-  movement:new Set([...byId('movement-labs-choice').options].map(x=>x.value))
- };
+ const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
  for(const [title,choices] of groups){
   heading(title);
   for(const [value,label] of choices){
-   const [kind,id]=value.split(':');
-   if(!available[kind]?.has(id))
-    throw new Error('Missing real LAB scenario '+value);
+   const [kind,id,lockedPhase=null]=value.split(':');
+   if(kind!=='action'||!available.has(id)||
+      (lockedPhase!==null&&
+       (id!=='carry-solo'||!SOLO_CARRY_PHASES.includes(lockedPhase))))
+    throw new Error('Missing authentic LAB scenario '+value);
    const opt=document.createElement('div');
    opt.className='language-option';
    opt.setAttribute('role','option');
@@ -2009,9 +2015,9 @@ function setupUnifiedScenarioMenu(){
  }
  heading('Ball physics');
  for(const node of physics)menu.append(node);
- if(menu.querySelectorAll('[role="option"][data-value]').length!==11||
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==10||
     menu.querySelectorAll('.me-scenario-group-label').length!==3)
-  throw new Error('Lab should expose 7 player exercises and 4 ball physics presets');
+  throw new Error('Lab should expose three fixed Carry phases, three small-sided exercises and four ball presets');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')
@@ -2021,9 +2027,13 @@ function launchSelectedScenario(value){
  if(!rapier){
   restoreOriginalScenario();say('Physics is still loading',true);return;
  }
- const colon=value.indexOf(':'),kind=value.slice(0,colon),
-  id=value.slice(colon+1);
- if(!['action','movement'].includes(kind)||!id)
+ const parts=value.split(':');
+ const [kind,id,soloCarryLockedPhase=null]=parts;
+ if(parts.length<2||parts.length>3||
+    !['action','movement'].includes(kind)||!id||
+    (soloCarryLockedPhase!==null&&(
+     kind!=='action'||id!=='carry-solo'||
+     !SOLO_CARRY_PHASES.includes(soloCarryLockedPhase))))
   throw new RangeError('Invalid Scenario kind');
  const prefix=kind==='action'?'action-labs':'movement-labs';
  const choice=byId(prefix+'-choice');
@@ -2034,10 +2044,11 @@ function launchSelectedScenario(value){
  playing=false;
  // Selecting a new exercise starts at V01. Side change and Reset replay
  // the current variation; Next/Previous are the only variation controls.
- if(!activeScene||activeScene.kind!==kind||activeScene.id!==id){
+ if(!activeScene||activeScene.kind!==kind||activeScene.id!==id||
+    activeScene.soloCarryLockedPhase!==soloCarryLockedPhase){
    activeVariantIndex=0;
   }
- activeScene={kind,id};
+ activeScene={kind,id,soloCarryLockedPhase};
  try{restart();}catch(error){
   disposeInline();restoreOriginalScenario();
   say('LAB could not start: '+error.message,true);

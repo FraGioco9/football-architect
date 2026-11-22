@@ -104,7 +104,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   await send('Page.navigate',{
    url:'http://app.localhost:2000/dev/match-engine'
   });
-  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===11");
+  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===10");
   // Verify the visible small-sided scenario runs IN the main 105x68 field.
   const inline=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
@@ -153,36 +153,6 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    position:variation.first.position});
   process.stdout.write('ME_628_REPLAY_VARIATION_CHROME '+
    JSON.stringify(variation)+'\\n');
-  // Directional scenes reuse actual M2 movement toward a Rapier ball.
-  // Do not claim a shoe START or a completed dribble in their readouts.
-  for(const movement of ['turn','brake'])for(const side of ['home','away']){
-   const selected='movement:'+movement;
-   const sample=await evalJs(`(()=>{
-    document.getElementById('preset-trigger').click();
-    document.querySelector('#preset-options [data-value="${selected}"]').click();
-    document.getElementById('me-inline-side-trigger').click();
-    document.querySelector('#me-inline-side-options [data-value="${side}"]').click();
-    for(let tick=0;tick<65;tick++)document.getElementById('step').click();
-    return {
-     side:document.getElementById('me-inline-side').value,
-     tick:document.getElementById('tick').textContent,
-     observation:document.getElementById('me-inline-observation').textContent,
-     noVariation:document.getElementById('me-inline-variant-control').hidden,
-     noPopup:!document.getElementById('movement-labs-dialog').open,
-     menu:document.getElementById('preset-value').textContent
-    };
-   })()`);
-   assert.equal(sample.side,side);
-   assert.match(sample.tick,/^Tick 65 /);
-   assert.equal(sample.noVariation,true);
-   assert.equal(sample.noPopup,true);
-   assert.match(sample.observation,/directional movement/);
-   assert.match(sample.observation,/live Rapier ball/);
-   assert.match(sample.observation,/turn [0-9.]+ rad/);
-   assert.match(sample.observation,/brake peak [0-9.]+ m\/s²/);
-   assert.match(sample.observation,/no shoe-ball action or possession claimed/);
-   assert.match(sample.menu,/Direction/);
-  }
   // Visible LAB always includes real physical bodies, with no A/B toggle.
   const physicalBodies=await evalJs("(()=>{"+
    "const absent=()=>document.getElementById('me-inline-bodyguard')===null;"+
@@ -205,18 +175,57 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.equal(physicalBodies.popup,false);
   process.stdout.write('ME_628_NATIVE_BODIES_ALWAYS_ON_CHROME '+
    JSON.stringify(physicalBodies)+'\\n');
-  // Visible Carry, dribbling and small-sided situations on both sides,
-  // original main Step, original pitch and source-only Rapier evidence.
+  // Every visible Carry option has its own fixed phase, including both
+  // mirrored sides and Reset. Real Rapier ball impulses are counted, not
+  // imaginary native shoe starts or automatically awarded possession.
+  for(const phase of ['control','moderate','sprint'])for(const side of ['home','away']){
+   const key='action:carry-solo:'+phase;
+   const chosen=await evalJs("(()=>{"+
+    "document.getElementById('preset-trigger').click();"+
+    "document.querySelector('#preset-options [data-value=\""+key+"\"]').click();"+
+    "document.getElementById('me-inline-side-trigger').click();"+
+    "document.querySelector('#me-inline-side-options [data-value=\""+side+"\"]').click();"+
+    "for(let n=0;n<120;n++)document.getElementById('step').click();"+
+    "const el=id=>document.getElementById(id);"+
+    "const before={label:el('preset-value').textContent,tick:el('tick').textContent,"+
+     "side:el('me-inline-side').value,readout:el('me-inline-observation').textContent,"+
+     "rows:[...el('me-decisions-panel').querySelectorAll('.me-decision-row')].map(x=>x.textContent),"+
+     "variation:el('me-inline-variant-display').textContent,"+
+     "popup:el('action-labs-dialog').open};"+
+    "el('reset').click();"+
+    "el('step').click();"+
+    "return {before,after:{tick:el('tick').textContent,"+
+     "readout:el('me-inline-observation').textContent,"+
+     "rows:[...el('me-decisions-panel').querySelectorAll('.me-decision-row')].map(x=>x.textContent)}};})()");
+   assert.equal(chosen.before.label,'Carry · '+phase[0].toUpperCase()+phase.slice(1));
+   assert.equal(chosen.before.side,side);
+   assert.match(chosen.before.tick,/^Tick 120 /);
+   assert.equal(chosen.before.variation,'01 / 30');
+   assert.equal(chosen.before.popup,false);
+   assert.match(chosen.before.readout,/1 real physical player/);
+   assert.match(chosen.before.readout,/source events 0\b/);
+   assert.match(chosen.before.readout,new RegExp('phase '+phase.toUpperCase()+' \\(locked\\)'));
+   assert.match(chosen.before.readout,/genuine Rapier carry impulses \d+/);
+   assert.match(chosen.before.readout,/Solo Carry intent \(no shoe-contact claims\)/);
+   assert.match(chosen.before.readout,/no official result/);
+   assert.equal(chosen.before.rows.length,1);
+   assert.match(chosen.before.rows[0],new RegExp('Carry the ball · '+phase[0].toUpperCase()+phase.slice(1)));
+   assert.match(chosen.after.tick,/^Tick 1 /);
+   assert.match(chosen.after.readout,new RegExp('phase '+phase.toUpperCase()+' \\(locked\\)'));
+   assert.match(chosen.after.rows[0],new RegExp('Carry the ball · '+phase[0].toUpperCase()+phase.slice(1)));
+   process.stdout.write('ME_628_FIXED_PHASE_CHROME '+
+    JSON.stringify({phase,side,...chosen})+'\n');
+  }
+  // Preserve native Rapier assertions for the other visible situations.
   for(const [scene,actors] of [
-   ['carry-solo',1],['dribble-1v1',2],['keeper-1v1',2],['overload-2v1',4],
-   ['duel-3v3',7]
+   ['keeper-1v1',2],['overload-2v1',4],['duel-3v3',7]
   ])for(const side of ['home','away']){
    const x=await evalJs("(()=>{"+
     "document.getElementById('preset-trigger').click();"+
     "document.querySelector('#preset-options [data-value=\"action:"+scene+"\"]').click();"+
     "document.getElementById('me-inline-side-trigger').click();"+
     "document.querySelector('#me-inline-side-options [data-value=\""+side+"\"]').click();"+
-    "for(let n=0;n<"+(scene==='carry-solo'?60:10)+";n++)document.getElementById('step').click();"+
+    "for(let n=0;n<10;n++)document.getElementById('step').click();"+
     "return {side:document.getElementById('me-inline-side').value,"+
     "tick:document.getElementById('tick').textContent,"+
     "observation:document.getElementById('me-inline-observation').textContent,"+
@@ -225,19 +234,9 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.equal(x.side,side);
    assert.equal(x.bodyControlAbsent,true,'visible LAB must not expose a body toggle');
    assert.equal(x.popup,false);
-   assert.match(x.tick,scene==='carry-solo'?/^Tick 60/:/^Tick 10/);
+   assert.match(x.tick,/^Tick 10/);
    assert.match(x.observation,new RegExp(actors+' real physical '+(actors===1?'player':'players')));
-   if(scene==='carry-solo'){
-    // Intent-driven solo Carry applies an actual Rapier ball impulse, but
-    // is explicitly NOT evidence of a native shoe START. Never counterfeit one.
-    assert.match(x.observation,/source events 0\b/);
-    assert.match(x.observation,/CARRY gameplay intent \/ Rapier ball impulse/);
-    assert.match(x.observation,/Solo Carry intent \(no shoe-contact claims\)/);
-    assert.doesNotMatch(x.observation,/CARRY native shoe\/impulse|real native carries/);
-   }else{
-    // All other visible exercises retain source-grounded real Rapier events.
-    assert.match(x.observation,/source events [1-9]/);
-   }
+   assert.match(x.observation,/source events [1-9]/);
    assert.match(x.observation,/provisional 0–0/);
    assert.match(x.observation,/no official result/);
    process.stdout.write('ME_628_INLINE_CHROME '+JSON.stringify({scene,side,...x})+'\n');
@@ -266,7 +265,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   // manufacture a carry, completed pass, possession or defender action.
   const carryDecisions=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
-   "document.querySelector('#preset-options [data-value=\\\"action:carry-solo\\\"]').click();"+
+   "document.querySelector('#preset-options [data-value=\\\"action:carry-solo:moderate\\\"]').click();"+
    "document.getElementById('me-inline-side-trigger').click();"+
    "document.querySelector('#me-inline-side-options [data-value=\\\"home\\\"]').click();"+
    "for(let n=0;n<60;n++)document.getElementById('step').click();"+
@@ -649,8 +648,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");
   assert.equal(close,true);
-  // One Scenario: Carry, directional motion, 1v1 dribbling,
-  // three other small-sided exercises and four ball presets.
+  // Three fixed Carry LABs plus three other real small-sided exercises
+  // and four physics presets. The automatic phase fixture stays archived.
   // Research and negative-control fixtures are still available internally.
   const nav=await evalJs("(()=>{const menu=document.getElementById('preset-options');"+
    "const trigger=document.getElementById('preset-trigger');"+
@@ -663,8 +662,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "unique:document.querySelectorAll('[data-me-dropdown=preset]').length===1,"+
    "noSecondSelector:document.getElementById('lab-all-situations')===null,"+
    "current:trigger.textContent.trim()};})()");
-  assert.equal(nav.items,11);
-  assert.deepEqual(nav.groups,['Ball handling','Small-sided situations','Ball physics']);
+  assert.equal(nav.items,10);
+  assert.deepEqual(nav.groups,['Carry phases','Small-sided situations','Ball physics']);
   for(const key of ['hiddenLaunches','hiddenChoices','unique','noSecondSelector'])
    assert.equal(nav[key],true,key);
   const ballNav=await evalJs("(()=>{const t=document.getElementById('preset-trigger');"+
@@ -687,8 +686,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "document.getElementById('preset-opt-drop').click();})()");
   await wait("document.getElementById('preset-value').textContent==='LAB-01 · Ball Drop'");
   const visibleMovement=await evalJs("[...document.querySelectorAll('#preset-options [data-value^=\"movement:\"]')].map(x=>x.dataset.value).sort()");
-  assert.deepEqual(visibleMovement,['movement:brake','movement:turn'],
-   'only read-only directional scenes visible, research remains hidden');
+  assert.deepEqual(visibleMovement,[],
+   'movement-only research stays hidden from the fixed Carry LAB menu');
   process.stdout.write('ME_628_SINGLE_INLINE_SCENARIO_NAV '+
    JSON.stringify({nav,ball:ballNav,action:actionNav,visibleMovement})+'\n');
   // #628 M2: actual desktop movement dialog on the same DEV page.

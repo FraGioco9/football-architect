@@ -22,6 +22,7 @@ import {createRealOpponentBallContestAuditM31}
 import {createPlayerMovement,INITIAL_PLAYERS} from './player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup}
  from './small-sided-lab-scenarios.mjs';
+import {SOLO_CARRY_PHASES} from './solo-carry-phases.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {createIsolatedDribbleNativeAudit} from './isolated-dribble-native-audit.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
@@ -36,7 +37,7 @@ export function createControlledActionLab(RAPIER,id,{
  bodyGuardEnabled=false,soloShoeWidthScale=1,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
- intentDrivenSoloCarry=false
+ intentDrivenSoloCarry=false,soloCarryLockedPhase=null
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -46,6 +47,10 @@ export function createControlledActionLab(RAPIER,id,{
      soloRecoveryStepScale!==1||soloSprintCadenceScale!==1||
      soloSprintLateralTrackScale!==1)))
   throw new TypeError('Intent mode is only available in simple Solo Carry');
+ if(soloCarryLockedPhase!==null&&(
+    !SOLO_CARRY_PHASES.includes(soloCarryLockedPhase)||
+    id!=='carry-solo'||!intentDrivenSoloCarry))
+  throw new TypeError('Fixed Carry phase is available only in intentional solo DEV LAB');
  const spec=getActionLabScenario(id);
  if(typeof bodyGuardEnabled!=='boolean'||
     (bodyGuardEnabled&&spec.mode!=='situation'))
@@ -212,6 +217,8 @@ export function createControlledActionLab(RAPIER,id,{
  const mover=createPlayerMovement(smallSided?{
    researchSmallSidedSituation:id,researchSmallSidedSide:shotSide,
    ...(variantIndex>0?{researchSmallSidedVariantIndex:variantIndex}:{}),
+   ...(soloCarryLockedPhase!==null?{
+    researchSoloCarryLockedPhase:soloCarryLockedPhase}:{}),
    ...(bodyGuardEnabled?{researchSmallSidedBodyFeedback:true}:{})
   }:sourceRestart?{
    researchBasicRestartSource:id,
@@ -241,6 +248,7 @@ export function createControlledActionLab(RAPIER,id,{
  }:{});
  let firstPhysicalPassAction=null;
  let disposed=false,firstRealPass=null,count=0,history=Object.freeze([]);
+ let intentCarryImpulseCount=0;
  let shotTrace=null,blockedShotObservation=null,receivingContact=null;
  let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
@@ -273,6 +281,9 @@ export function createControlledActionLab(RAPIER,id,{
    throw new Error('Only genuine same-tick Rapier and canonical mover allowed');
   const raw=engine.uniformAutonomousActionSnapshot?.()??null;
   const action=raw?.tick===physics.tick?raw:null;
+  if(intentDrivenSoloCarry&&action?.action==='carry'&&
+     action.actualPhysicsImpulseApplied===true)
+   intentCarryImpulseCount++;
   // Only a genuine post-pass Rapier opponent shoe START is negative evidence.
   // Neither nearby player positions nor a guessed interception suffice.
   const opposingStart=spec.mode==='control'&&firstRealPass?
@@ -480,6 +491,8 @@ export function createControlledActionLab(RAPIER,id,{
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
     ...(intentDrivenSoloCarry?{
      intentDrivenCarry:true,
+     intentCarryImpulseCount,
+     ...(soloCarryLockedPhase!==null?{soloCarryLockedPhase}:{}),
      intentCarryImpulseThisTick:action?.action==='carry'&&
       action?.decisionContext?.intentDrivenSoloCarry===true,
      nativeShoeContactClaimed:false

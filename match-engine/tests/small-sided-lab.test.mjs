@@ -10,6 +10,7 @@ import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
  keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
+import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
 test('#628 small-sided catalog replaces only visible elementary exercise UI; archives remain for regression',()=>{
  const ids=SMALL_SIDED_LAB_SCENARIOS.map(s=>s.id);
@@ -24,10 +25,13 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
    'original research scene stays in hidden regression catalog');
  for(const id of ['carry-solo','keeper-1v1','overload-2v1','duel-3v3'])
   assert.match(ui,new RegExp("'"+id+"'"));
- assert.match(ui,/length!==11/);
+ assert.match(ui,/length!==10/);
  assert.doesNotMatch(ui,/visibleMovement/);
- assert.match(ui,/Ball handling/);
+ assert.match(ui,/Carry phases/);
  assert.match(ui,/Small-sided situations/);
+ for(const phase of SOLO_CARRY_PHASES)
+  assert.match(ui,new RegExp("'action:carry-solo:"+phase+"'"));
+ assert.doesNotMatch(ui,/\['action:carry-solo','Carry/);
  assert.match(html,/On-field decisions/);
  assert.match(html,/Original|Rapier/i);
  assert.match(html,/<option value="pass">/,'old scenes preserved as internal automated regression');
@@ -166,7 +170,7 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.doesNotMatch(js,/me-inline-bodyguard|activeBodyGuardEnabled/);
  assert.doesNotMatch(html,/id="me-inline-bodyguard"/);
  assert.match(js,/createControlledMovementLab\(rapier,id,\{side\}\)/);
- assert.match(js,/activeScene=\{kind,id\}/);
+ assert.match(js,/activeScene=\{kind,id,soloCarryLockedPhase\}/);
  assert.match(js,/if\s*\(activeLab\)drawInlinePlayers/);
  assert.match(js,/if\s*\(\(engine\|\|activeLab\) && playing\)/);
  assert.match(js,/byId\('me-inline-side'\)\.addEventListener\('change'/);
@@ -176,7 +180,7 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.match(browser,/ME_628_INLINE_CHROME/);
  assert.match(browser,/ME_628_INLINE_MAIN_TRANSPORT/);
  assert.match(browser,/assert\.deepEqual\(actionNav,\{open:false/);
- assert.match(browser,/assert\.equal\(hiddenMovement,0/);
+ assert.match(browser,/assert\.deepEqual\(visibleMovement,\[\],/);
 });
 
 
@@ -416,6 +420,86 @@ test('#628 every actual on-field small-sided player has exactly one current move
    assert.throws(()=>projectActiveLabDecisions(frame,['home-10','home-10']),TypeError);
    assert.throws(()=>projectActiveLabDecisions({...frame,
     smallSidedMovementDecisions:[]},lab.focus),TypeError);
+  }finally{lab.dispose();}
+ }
+});
+
+// The three visible QA variants reuse the same original Rapier ball/mover
+// and genuinely differ ONLY by a DEV-local fixed movement profile.
+test('#628 three fixed solo Carry LABs retain source physics and never alter automatic phase policy',
+ {timeout:90000},async()=>{
+ const auto=advanceSoloCarryPhase({
+  previousPhase:'control',tick:1,playerSpeedMps:2,
+  ballSpeedMps:1.5,ballGapM:0.5
+ });
+ assert.equal(auto.phase,'moderate');
+ assert.equal(Object.hasOwn(auto,'lockedPhase'),false);
+ for(const lockedPhase of SOLO_CARRY_PHASES){
+  const forced=advanceSoloCarryPhase({previousPhase:lockedPhase,tick:1,
+   playerSpeedMps:0,ballSpeedMps:0,ballGapM:0,lockedPhase});
+  assert.equal(forced.phase,lockedPhase);
+  assert.equal(forced.changed,false);
+  assert.equal(forced.lockedPhase,lockedPhase);
+  assert.throws(()=>advanceSoloCarryPhase({previousPhase:'control',tick:1,
+   playerSpeedMps:0,ballSpeedMps:0,ballGapM:0,
+   lockedPhase:'not-a-phase'}),TypeError);
+ }
+ assert.throws(()=>createPlayerMovement({
+  researchSmallSidedSituation:'carry-solo',researchSmallSidedSide:'home',
+  researchSoloCarryLockedPhase:'nope'
+ }),TypeError);
+ assert.throws(()=>createPlayerMovement({
+  researchSmallSidedSituation:'keeper-1v1',researchSmallSidedSide:'home',
+  researchSoloCarryLockedPhase:'control'
+ }),TypeError);
+ const R=await initializeRapier(rapier);
+ assert.throws(()=>createControlledActionLab(R,'keeper-1v1',{
+  intentDrivenSoloCarry:false,soloCarryLockedPhase:'moderate'
+ }),TypeError);
+ assert.throws(()=>createControlledActionLab(R,'carry-solo',{
+  soloCarryLockedPhase:'sprint'
+ }),TypeError);
+ for(const lockedPhase of SOLO_CARRY_PHASES)for(const shotSide of ['home','away']){
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide,variantIndex:3,intentDrivenSoloCarry:true,
+   soloCarryLockedPhase:lockedPhase
+  });
+  try{
+   let impulses=0,first=null,latest=null;
+   assert.equal(lab.snapshot().soloCarryPhase,null);
+   for(let tick=1;tick<=120;tick++){
+    const f=lab.step();
+    if(tick===1)first=f;
+    latest=f;
+    assert.equal(f.physicsTick,tick);
+    assert.equal(f.soloCarryPhase.phase,lockedPhase);
+    assert.equal(f.soloCarryPhase.lockedPhase,lockedPhase);
+    assert.equal(f.soloCarryPhase.changed,false);
+    assert.equal(f.soloCarryPhase.previousPhase,lockedPhase);
+    assert.equal(f.soloCarryLockedPhase,lockedPhase);
+    assert.equal(f.genuinePhysicalPlayerCount,1);
+    assert.equal(f.intentDrivenCarry,true);
+    assert.equal(f.nativeShoeContactClaimed,false);
+    assert.equal(f.eventCount,0);
+    assert.equal(f.officialMatchPossession,false);
+    assert.ok(Number.isFinite(f.soloCarryPhase.playerSpeedMps));
+    assert.ok(Number.isFinite(f.soloCarryPhase.ballSpeedMps));
+    assert.ok(Number.isFinite(f.soloCarryPhase.ballGapM));
+    assert.deepEqual(f.smallSidedParticipants,[shotSide+'-10']);
+    if(f.action?.action==='carry'){
+     assert.equal(f.action.appliedByRapier,true);
+     assert.equal(f.action.actualPhysicsImpulseApplied,true);
+     impulses++;
+    }
+    assert.equal(f.intentCarryImpulseCount,impulses);
+   }
+   assert.equal(first.soloCarryPhase.phase,lockedPhase);
+   assert.equal(latest.soloCarryPhase.phase,lockedPhase);
+   // No synthetic native START is ever credited to gameplay proximity.
+   assert.equal(latest.eventCount,0);
+   process.stdout.write('ME_628_LOCKED_SOLO_CARRY '+
+    JSON.stringify({lockedPhase,shotSide,ticks:120,impulses,
+     ballX:latest.ball.position.x})+'\n');
   }finally{lab.dispose();}
  }
 });
