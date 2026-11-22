@@ -382,7 +382,7 @@ test("PAGE-DASH-01 world command centre has honest, accessible first paint",()=>
  assert.doesNotMatch(source,/id="career-status-heading"/);
  assert.doesNotMatch(js,/fetch\(\s*["']\/api\/world/);
  const begin=js.indexOf("const glossary=")+"const glossary=".length;
- const end=js.indexOf(";\nif(typeof document",begin);
+ const end=js.indexOf(";\n",begin);
  assert.ok(begin>12&&end>begin);
  const words=JSON.parse(js.slice(begin,end));
  for(const lang of ["en","de","es","fr","it"]){
