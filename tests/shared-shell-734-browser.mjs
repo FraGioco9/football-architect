@@ -69,7 +69,9 @@ export async function verifySharedShellNetwork(browser,{engine='chromium'}={}){
     const params=new URLSearchParams(item.search);
     assert.deepEqual([...params.keys()].sort(),['day','season'],name+' scoped preview query');
     assert.equal(params.get('season'),String(world.seasonNumber),name+' current season');
-    assert.match(params.get('day')??'',/^(?:[1-9]|[1-4]\\d|5[0-6])$/,name+' sporting day');
+    const day=Number(params.get('day'));
+    assert.ok(Number.isSafeInteger(day)&&day>=1&&day<=56&&
+      params.get('day')===String(day),name+' canonical sporting day');
     assert.equal(item.method,'GET',name+' read-only preview');
    }
    assert.equal(new Set(previews.map(item=>item.search)).size,previews.length,name+' distinct days');
