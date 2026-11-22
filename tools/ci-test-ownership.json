@@ -236,6 +236,7 @@
     "tests/competition-player-stats-browser.mjs": "support",
     "tests/matches-directory-browser.mjs": "support",
     "tests/player-matches-network-browser.mjs": "support",
+    "tests/player-transport-734-browser.mjs": "support",
     "tests/control-focus-browser.mjs": "browser",
     "tests/dev-admin-api-proxy.test.mjs": "site-node",
     "tests/dev-env-01-browser.mjs": "manual",
