@@ -387,6 +387,8 @@
     "tests/match-mvp-v1.test.mjs": "site-node",
     "tests/player-mvp-aggregation.test.mjs": "site-node",
     "tests/ci-browser-timing.test.mjs": "site-node",
-    "tests/public-image-urls.test.mjs": "site-node"
+    "tests/public-image-urls.test.mjs": "site-node",
+    "backend/tests/public-world-history-projection.test.ts": "backend-contract",
+    "tests/world-history-page.test.mjs": "site-node"
   }
 }
