@@ -296,7 +296,11 @@ function pause() { playing = false; say('Paused'); }
 function drawInlinePlayers(ctx,X,Y){
  const frame=activeLab.snapshot();
  const all=frame.observedMovementPlayers??frame.players;
- const focus=activeScene.kind==='action'?new Set(activeLab.focus):null;
+ // Directional LABs reuse the canonical 22-player mover and real Rapier ball,
+ // but display only the observed mover (no invented opponents).
+ const focus=activeScene.kind==='action'?new Set(activeLab.focus):
+  (['turn','brake'].includes(activeScene.id)?
+   new Set([frame.focusId]):null);
  for(const p of all){
   if(focus&&!focus.has(p.id))continue;
   const x=X(p.x),y=Y(p.y);
@@ -465,9 +469,14 @@ function render() {
       (f.matchTimeline?' · provisional '+
        f.matchTimeline.provisionalScore.home+'–'+
        f.matchTimeline.provisionalScore.away:''):
-      '· movement '+(f.focusId??'')+' · real Rapier tick '+f.tick+
-      (f.readout?.activeNativeBodyPairs?
-       ' · body pairs '+f.readout.activeNativeBodyPairs.length:'');
+      '· directional movement '+(f.focusId??'')+
+      ' · live Rapier ball · tick '+f.tick+
+      ' · speed '+f.readout.focusSpeedMps.toFixed(2)+' m/s'+
+      ' · turn '+f.readout.totalTurnRad.toFixed(2)+' rad'+
+      ' · brake peak '+f.readout.maxObservedBrakeMps2.toFixed(2)+' m/s²'+
+      ' · path '+f.readout.pathM.toFixed(2)+' m'+
+      (f.readout.witnessed?' · movement witnessed':' · movement pending')+
+      ' · no shoe-ball action or possession claimed';
     byId('me-inline-observation').textContent=detail+
       ' · no official result';
   }
@@ -1963,30 +1972,46 @@ function setupUnifiedScenarioMenu(){
   node.textContent=title;
   menu.append(node);
  };
- heading('Player exercises');
- const selected=[
-  ['carry-solo','Carry · run with the ball'],
-  ['keeper-1v1','1v1 · goalkeeper'],
-  ['overload-2v1','2v1 · attack and defend'],
-  ['duel-3v3','3v3 · team decisions']
+ const groups=[
+  ['Ball handling',[
+   ['action:carry-solo','Carry · open space'],
+   // M2 turn/brake measure real movement toward the Rapier ball.
+   // They are NOT shoe contact or verified ball control.
+   ['movement:turn','Direction · turn toward ball (movement only)'],
+   ['movement:brake','Direction · brake near ball (movement only)'],
+   ['action:dribble-1v1','Dribbling · 1v1 vs defender']
+  ]],
+  ['Small-sided situations',[
+   ['action:keeper-1v1','1v1 · goalkeeper'],
+   ['action:overload-2v1','2v1 · attack and defend'],
+   ['action:duel-3v3','3v3 · team decisions']
+  ]]
  ];
- const defined=new Set([...byId('action-labs-choice').options].map(x=>x.value));
- for(const [id,title] of selected){
-  if(!defined.has(id))throw new Error('Missing genuine small-sided exercise '+id);
-  const opt=document.createElement('div');
-  opt.className='language-option';
-  opt.setAttribute('role','option');
-  opt.tabIndex=-1;
-  opt.dataset.value='action:'+id;
-  opt.setAttribute('aria-selected','false');
-  opt.textContent=title;
-  menu.append(opt);
+ const available={
+  action:new Set([...byId('action-labs-choice').options].map(x=>x.value)),
+  movement:new Set([...byId('movement-labs-choice').options].map(x=>x.value))
+ };
+ for(const [title,choices] of groups){
+  heading(title);
+  for(const [value,label] of choices){
+   const [kind,id]=value.split(':');
+   if(!available[kind]?.has(id))
+    throw new Error('Missing real LAB scenario '+value);
+   const opt=document.createElement('div');
+   opt.className='language-option';
+   opt.setAttribute('role','option');
+   opt.tabIndex=-1;
+   opt.dataset.value=value;
+   opt.setAttribute('aria-selected','false');
+   opt.textContent=label;
+   menu.append(opt);
+  }
  }
  heading('Ball physics');
  for(const node of physics)menu.append(node);
- if(menu.querySelectorAll('[role="option"][data-value]').length!==8||
-    menu.querySelectorAll('.me-scenario-group-label').length!==2)
-  throw new Error('Lab should expose 4 real player exercises and 4 ball physics presets');
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==11||
+    menu.querySelectorAll('.me-scenario-group-label').length!==3)
+  throw new Error('Lab should expose 7 player exercises and 4 ball physics presets');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')

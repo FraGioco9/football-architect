@@ -26,7 +26,8 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
   assert.match(ui,new RegExp("'"+id+"'"));
  assert.match(ui,/length!==8/);
  assert.doesNotMatch(ui,/visibleMovement/);
- assert.match(ui,/Player exercises/);
+ assert.match(ui,/Ball handling/);
+ assert.match(ui,/Small-sided situations/);
  assert.match(html,/On-field decisions/);
  assert.match(html,/Original|Rapier/i);
  assert.match(html,/<option value="pass">/,'old scenes preserved as internal automated regression');

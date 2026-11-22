@@ -104,7 +104,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   await send('Page.navigate',{
    url:'http://app.localhost:2000/dev/match-engine'
   });
-  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===8");
+  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===11");
   // Verify the visible small-sided scenario runs IN the main 105x68 field.
   const inline=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
@@ -153,6 +153,36 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    position:variation.first.position});
   process.stdout.write('ME_628_REPLAY_VARIATION_CHROME '+
    JSON.stringify(variation)+'\\n');
+  // Directional scenes reuse actual M2 movement toward a Rapier ball.
+  // Do not claim a shoe START or a completed dribble in their readouts.
+  for(const movement of ['turn','brake'])for(const side of ['home','away']){
+   const selected='movement:'+movement;
+   const sample=await evalJs(`(()=>{
+    document.getElementById('preset-trigger').click();
+    document.querySelector('#preset-options [data-value="${selected}"]').click();
+    document.getElementById('me-inline-side-trigger').click();
+    document.querySelector('#me-inline-side-options [data-value="${side}"]').click();
+    for(let tick=0;tick<65;tick++)document.getElementById('step').click();
+    return {
+     side:document.getElementById('me-inline-side').value,
+     tick:document.getElementById('tick').textContent,
+     observation:document.getElementById('me-inline-observation').textContent,
+     noVariation:document.getElementById('me-inline-variant-control').hidden,
+     noPopup:!document.getElementById('movement-labs-dialog').open,
+     menu:document.getElementById('preset-value').textContent
+    };
+   })()`);
+   assert.equal(sample.side,side);
+   assert.match(sample.tick,/^Tick 65 /);
+   assert.equal(sample.noVariation,true);
+   assert.equal(sample.noPopup,true);
+   assert.match(sample.observation,/directional movement/);
+   assert.match(sample.observation,/live Rapier ball/);
+   assert.match(sample.observation,/turn [0-9.]+ rad/);
+   assert.match(sample.observation,/brake peak [0-9.]+ m\/s²/);
+   assert.match(sample.observation,/no shoe-ball action or possession claimed/);
+   assert.match(sample.menu,/Direction/);
+  }
   // Visible LAB always includes real physical bodies, with no A/B toggle.
   const physicalBodies=await evalJs("(()=>{"+
    "const absent=()=>document.getElementById('me-inline-bodyguard')===null;"+
@@ -175,10 +205,10 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.equal(physicalBodies.popup,false);
   process.stdout.write('ME_628_NATIVE_BODIES_ALWAYS_ON_CHROME '+
    JSON.stringify(physicalBodies)+'\\n');
-  // All four curated situations both directions, using the VISIBLE selectors,
+  // Visible Carry, dribbling and small-sided situations on both sides,
   // original main Step, original pitch and source-only Rapier evidence.
   for(const [scene,actors] of [
-   ['carry-solo',1],['keeper-1v1',2],['overload-2v1',4],
+   ['carry-solo',1],['dribble-1v1',2],['keeper-1v1',2],['overload-2v1',4],
    ['duel-3v3',7]
   ])for(const side of ['home','away']){
    const x=await evalJs("(()=>{"+
@@ -619,7 +649,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");
   assert.equal(close,true);
-  // Simple Scenario: four physical field exercises and four physics presets.
+  // One Scenario: Carry, directional motion, 1v1 dribbling,
+  // three other small-sided exercises and four ball presets.
   // Research and negative-control fixtures are still available internally.
   const nav=await evalJs("(()=>{const menu=document.getElementById('preset-options');"+
    "const trigger=document.getElementById('preset-trigger');"+
@@ -632,8 +663,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "unique:document.querySelectorAll('[data-me-dropdown=preset]').length===1,"+
    "noSecondSelector:document.getElementById('lab-all-situations')===null,"+
    "current:trigger.textContent.trim()};})()");
-  assert.equal(nav.items,8);
-  assert.deepEqual(nav.groups,['Player exercises','Ball physics']);
+  assert.equal(nav.items,11);
+  assert.deepEqual(nav.groups,['Ball handling','Small-sided situations','Ball physics']);
   for(const key of ['hiddenLaunches','hiddenChoices','unique','noSecondSelector'])
    assert.equal(nav[key],true,key);
   const ballNav=await evalJs("(()=>{const t=document.getElementById('preset-trigger');"+
@@ -655,11 +686,11 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   await evalJs("(()=>{document.getElementById('preset-trigger').click();"+
    "document.getElementById('preset-opt-drop').click();})()");
   await wait("document.getElementById('preset-value').textContent==='LAB-01 · Ball Drop'");
-  const hiddenMovement=await evalJs(
-   "document.querySelectorAll('#preset-options [data-value^=\\\"movement:\\\"]').length");
-  assert.equal(hiddenMovement,0,'advanced movement research must stay out of simplified Scenario');
+  const visibleMovement=await evalJs("[...document.querySelectorAll('#preset-options [data-value^=\"movement:\"]')].map(x=>x.dataset.value).sort()");
+  assert.deepEqual(visibleMovement,['movement:brake','movement:turn'],
+   'only read-only directional scenes visible, research remains hidden');
   process.stdout.write('ME_628_SINGLE_INLINE_SCENARIO_NAV '+
-   JSON.stringify({nav,ball:ballNav,action:actionNav,hiddenMovement})+'\n');
+   JSON.stringify({nav,ball:ballNav,action:actionNav,visibleMovement})+'\n');
   // #628 M2: actual desktop movement dialog on the same DEV page.
   // It has no Rapier shoe colliders; do not confuse measured motion with
   // the seventeen real same-world ball/feet Action LABs above.
