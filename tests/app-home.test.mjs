@@ -362,3 +362,33 @@ test("PAGE-DASH-01 official day window and receipt-gated matches",async()=>{
  assert.deepEqual(picked.next.map(f=>f.matchId),["6"]);
 });
 
+test("PAGE-DASH-01 world command centre has honest, accessible first paint",()=>{
+ const page=pages.dashboard;
+ const source=readFileSync(new URL("../templates/dashboard-overview.html",import.meta.url),"utf8");
+ const styles=readFileSync(new URL("../assets/dashboard-overview.css",import.meta.url),"utf8");
+ const js=readFileSync(new URL("../assets/dashboard-overview.mjs",import.meta.url),"utf8");
+ for(const name of ["fa-dash-statusbar","fa-dash-focus","fa-dash-match-centre","fa-dash-featured","fa-dash-scoreboards","fa-dash-agenda","fa-dash-competitions"])
+  assert.match(page,new RegExp(name),name);
+ for(const id of ["world-heading","dashboard-events-heading","dashboard-match-centre-heading","dashboard-recent-heading","dashboard-next-heading","dashboard-competitions-heading"])
+  assert.match(page,new RegExp('id="'+id+'"'));
+ assert.equal((source.match(/data-dash-region="/g)||[]).length,8);
+ assert.equal((source.match(/href="\/competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/standings"/g)||[]).length,16);
+ assert.equal((source.match(/href="\/competitions\/int-[12]\/standings"/g)||[]).length,2);
+ assert.match(source,/data-dash-featured aria-busy="true"/);
+ assert.match(source,/data-dash-progress/);
+ assert.match(styles,/@media\(max-width:680px\)/);
+ assert.match(styles,/prefers-reduced-motion:reduce/);
+ assert.doesNotMatch(source,/id="career-status-heading"/);
+ assert.doesNotMatch(js,/fetch\(\s*["']\/api\/world/);
+ const begin=js.indexOf("const glossary=")+"const glossary=".length;
+ const end=js.indexOf(";\nif(typeof document",begin);
+ assert.ok(begin>12&&end>begin);
+ const words=JSON.parse(js.slice(begin,end));
+ for(const lang of ["en","de","es","fr","it"]){
+  for(const key of ["world","matchCentre","featured","calendarPosition","noRecent","noNext","unstarted","plannedStatus","division"])
+   assert.ok(words[lang]?.[key],lang+"."+key);
+ }
+ const guard=readFileSync(new URL("../tools/publication-guard.mjs",import.meta.url),"utf8");
+ for(const asset of ["dashboard-overview.mjs","dashboard-overview.css"])assert.match(guard,new RegExp(asset.replace(/\./g,"\\.")));
+});
+
