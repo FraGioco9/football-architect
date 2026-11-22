@@ -11,7 +11,7 @@ export function renderWorldHistoryPage(){
  "          <p id=\"world-history-status\" class=\"app-competition-status fa-world-history-status\" role=\"status\" aria-live=\"polite\" hidden></p>",
  "          <div id=\"world-history-archive\" class=\"fa-world-history-archive\" aria-busy=\"true\">",
  "            <div class=\"fa-world-history-skeleton fa-world-history-season\" aria-hidden=\"true\">",
- "              <div class=\"fa-world-history-skeleton-header\"><span class=\"fa-world-history-skeleton-bar fa-world-history-skeleton-title\"></span><span class=\"fa-world-history-skeleton-chevron\"></span></div>",
+ "              <div class=\"fa-world-history-skeleton-header\"><span class=\"fa-world-history-skeleton-bar fa-world-history-skeleton-title\"></span><svg class=\"fa-world-history-season-chevron\" viewBox=\"0 0 20 20\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></div>",
  "              <div class=\"fa-world-history-skeleton-list\">",
  ...Array.from({length:18},()=>"              <div class=\"fa-world-history-skeleton-row fa-world-history-row\"><span class=\"fa-world-history-skeleton-cell\"><span class=\"fa-world-history-skeleton-mark fa-world-history-skeleton-logo\"></span><span class=\"fa-world-history-skeleton-bar fa-world-history-skeleton-comp-name\"></span></span><span class=\"fa-world-history-skeleton-cell\"><span class=\"fa-world-history-skeleton-mark fa-world-history-skeleton-crest\"></span><span class=\"fa-world-history-skeleton-bar fa-world-history-skeleton-club-name\"></span></span></div>"),
  "              </div>",

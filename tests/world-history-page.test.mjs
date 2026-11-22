@@ -364,6 +364,27 @@ test('#753: remove champions total and compact filters-to-archive layout',()=>{
  assert.match(css,/\.fa-world-history \[hidden\]\{display:none!important\}/);
 });
 
+test('#753: History skeleton and populated seasons keep the same geometry',()=>{
+ const html=read('history/index.html');
+ const rendered=renderWorldHistoryPage();
+ const css=read('assets/world-history.css');
+ assert.ok(html.includes(rendered),'generated and first-paint History skeletons stay identical');
+ assert.doesNotMatch(html,/fa-world-history-skeleton-chevron/,'chevron is never a loading bar');
+ assert.doesNotMatch(css,/fa-world-history-skeleton-chevron/,'no dead chevron skeleton styling');
+ assert.match(rendered,/<svg class="fa-world-history-season-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5"/,
+  'show the same real 18px chevron geometry during loading');
+ assert.equal((rendered.match(/class="fa-world-history-skeleton-row fa-world-history-row"/g)||[]).length,18);
+ assert.match(css,/\.fa-world-history\{[^}]*--fa-world-history-row-height:64px;--fa-world-history-header-height:60px/);
+ assert.match(css,/\.fa-world-history-row\{[^}]*box-sizing:border-box;height:var\(--fa-world-history-row-height\)/,
+  'both the live li and the skeleton div use the same fixed-height row class');
+ assert.match(css,/\.fa-world-history-season h2\{[^}]*height:var\(--fa-world-history-header-height\)/);
+ assert.match(css,/\.fa-world-history-skeleton-header\{[^}]*height:var\(--fa-world-history-header-height\)/);
+ assert.match(css,/@media\(max-width:500px\)\{\.fa-world-history\{--fa-world-history-row-height:108px;--fa-world-history-header-height:54px\}/,
+  'mobile skeleton and live rows use the same taller stacked geometry');
+ assert.match(css,/\.fa-world-history-row a\{[^}]*-webkit-line-clamp:2/,
+  'long names cannot grow live rows beyond their reserved height');
+});
+
 test('#581: first paint and Debug transitions preserve accurately aligned skeletons',()=>{
  const html=read('history/index.html'),rendered=renderWorldHistoryPage();
  const css=read('assets/world-history.css'),runtime=read('assets/world-history.js');
