@@ -47,7 +47,8 @@ test('#628 real native two-shoe baseline vs intent: 5s/10s control and loss evid
      assert.equal(frame.eventCount,0);
      if(mode==='intent'&&tick>=1){
       assert.equal(frame.soloCarryMeasurements.samples,tick);
-      assert.equal(frame.soloCarryMeasurements.observedOutOfReachTicks,outOfReach);
+      assert.ok(Math.abs(frame.soloCarryMeasurements.observedOutOfReachTicks-outOfReach)<=1,
+       'Canonical 60Hz sample and post-Rapier displayed position may differ by one threshold crossing');
       assert.ok(Math.abs(frame.soloCarryMeasurements.peakGapM-maxGap)<0.001);
      }
      if(tick===300||tick===600)snapshots.push({

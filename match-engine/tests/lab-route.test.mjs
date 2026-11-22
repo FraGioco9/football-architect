@@ -103,7 +103,7 @@ test('ME-01 lab is accessible on local DEV app host with strict headers and asse
   assert.match(page.body,/36 independent Rapier worlds/);
   assert.match(page.body,/experimental hypotheses/);
   assert.match(page.body,/Cd is calculated from total 3D speed including vy and vz/);
-  assert.equal((page.body.match(/Launch vx \(m\/s\)/g)||[]).length,3);
+  assert.equal((page.body.match(/Launch vx \(km\/h\)/g)||[]).length,3);
   assert.match(page.body,/No default\/gameplay physics parameters are changed/);
   assert.match(page.body,/Cd=0\.24 is illustrative/);
   assert.match(page.body,/Baker \(1989\)/);
