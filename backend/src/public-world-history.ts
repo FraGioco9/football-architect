@@ -8,7 +8,6 @@ const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'] as const;
 const clubPattern=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/;
 const validObject=(value:unknown):value is Record<string,unknown>=>
  value!==null&&typeof value==='object'&&!Array.isArray(value);
-const invalid=():never=>{throw new ApiError(422,'archive_invalid')};
 
 /** Allowlist championship identities; never return the internal qualification/holder payload. */
 export function projectWorldHistoryChampions(summary:unknown,season:number){
@@ -53,8 +52,9 @@ export function projectWorldHistoryChampions(summary:unknown,season:number){
 /** Public GET requires an independent completed closure receipt for every historic season. */
 export async function readPublicWorldHistory(db:Database){
  const before=await readWorld(db);
- const last=before.phase==='closed'?before.seasonNumber:before.seasonNumber-1;
- if(!Number.isSafeInteger(last)||last<0)invalid();
+ // Season 0 has no archives by construction; it is not an invalid archive.
+ // A running/preparing season is deliberately excluded until its close receipt.
+ const last=before.phase==='closed'?before.seasonNumber:Math.max(0,before.seasonNumber-1);
  const seasons:{seasonNumber:number;champions:{competitionId:string;championClubId:string}[]}[]=[];
  for(let season=last;season>=1;season--){
   const record=await readClosedSeasonHistory(db,season);

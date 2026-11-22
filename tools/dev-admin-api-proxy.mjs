@@ -63,8 +63,9 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  const contractsListQuery=req.method==='GET'&&
   /^\/api\/admin\/contracts\?(?:page=[1-9][0-9]{0,3}|playerId=[1-9][0-9]{0,15})$/.test(raw);
  const contractsPath=contractsListQuery?'/api/admin/contracts':raw;
- const publicRead=playersRead||matchesRead||clubRoster||clubOverview||clubHistory||clubFixturesRead||/^\/api\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])\/seasons\/[1-9][0-9]{0,8}$/.test(raw)||/^\/api\/calendar\/seasons\/[1-9][0-9]{0,8}\/days\/(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(raw);
- const anonymousRead=publicRead||raw==='/api/world';
+ const publicRead=raw==='/api/world/history'||playersRead||matchesRead||clubRoster||clubOverview||clubHistory||clubFixturesRead||/^\/api\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])\/seasons\/[1-9][0-9]{0,8}$/.test(raw)||/^\/api\/calendar\/seasons\/[1-9][0-9]{0,8}\/days\/(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(raw);
+ // #581: exact anonymous World History archive GET (no query, suffix or cookie).
+ const anonymousRead=publicRead||raw==='/api/world'||raw==='/api/world/history';
  const localClient=loopback(req.socket.remoteAddress)&&hostPattern.test(req.headers.host||'');
  const lanPublic=lanEnabled&&anonymousRead&&req.method==='GET'&&privateIPv4(req.socket.remoteAddress)&&lanHostAllowed(req.headers.host,lanHosts);
  if(!(localClient||lanPublic)||(raw.includes('%')&&!playersRead)||raw.includes('\\')||(raw.includes('?')&&!directoryRead&&!playersRead&&!clubRoster&&!contractsListQuery)||raw.includes('#')||/\/\.{1,2}(?:\/|$)/.test(raw))return reply(res,403,'forbidden');
@@ -73,7 +74,7 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  const inbox=raw==='/api/local-dev/inbox';
  const player=raw.startsWith('/api/player/');
  if(player&&!/^app\.localhost(?::\d{1,5})?$/.test(req.headers.host||''))return reply(res,403,'forbidden');
- const method=publicRead||raw==='/api/world'||inbox?'GET':Object.hasOwn(adminRoutes,contractsPath)?adminRoutes[contractsPath]:Object.hasOwn(playerRoutes,raw)?playerRoutes[raw]:null;
+ const method=anonymousRead||inbox?'GET':Object.hasOwn(adminRoutes,contractsPath)?adminRoutes[contractsPath]:Object.hasOwn(playerRoutes,raw)?playerRoutes[raw]:null;
  if(!method)return reply(res,404,'not_found');
  if(method==='GET|POST'?!['GET','POST'].includes(req.method):req.method!==method)return reply(res,405,'method_not_allowed');
  const chunks=[];let length=0;

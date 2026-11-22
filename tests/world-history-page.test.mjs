@@ -64,3 +64,24 @@ test('#581: World History is a full-size World sidebar link and uses shared site
  assert.doesNotThrow(()=>new Function(runtime),'History view script parses');
  assert.doesNotThrow(()=>new Function(sidebar),'Sidebar script parses');
 });
+
+
+test('#581: shared app view router hides Dashboard for /history and keeps its own title',()=>{
+ const source=read('assets/app.js'),html=read('history/index.html');
+ assert.match(source,/if \(path === "\/history"\) return "history";/);
+ assert.match(source,/const worldHistory = document\.getElementById\("world-history"\)/);
+ assert.match(source,/dashboard\.hidden = current !== "dashboard"/);
+ assert.match(source,/worldHistory\.hidden = current !== "history"/);
+ assert.match(source,/historyTitles\[language\(\)\]/,'localized History title, never undefined');
+ assert.match(html,/id="app-dashboard" class="app-view"[^>]*hidden/,'Dashboard hidden at first paint');
+ assert.match(html,/id="world-history" class="app-view fa-world-history"/);
+ assert.doesNotMatch(html,/id="world-history" class="app-view fa-world-history"[^>]*hidden/);
+});
+test('#581: local anonymous bridge accepts exact History API and backend supports Season 0',()=>{
+ const proxy=read('tools/dev-admin-api-proxy.mjs');
+ assert.match(proxy,/raw==='\/api\/world\/history'/);
+ assert.match(proxy,/const method=anonymousRead\|\|inbox\?'GET'/);
+ const backend=read('backend/src/public-world-history.ts');
+ assert.match(backend,/Math\.max\(0,before\.seasonNumber-1\)/);
+ assert.doesNotMatch(backend,/last<0\)invalid\(\)/);
+});

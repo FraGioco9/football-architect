@@ -22,3 +22,6 @@ No schema change or remote D1 operation is required. Local identity display is l
 
 ## Design boundaries
 The History page does not display final tables, ranking stats, player records, player MVPs, podiums, relegation/promotion or all-time aggregates. Those remain on existing verified competition/club History pages or require separate evidence and owner review. A single public GET avoids querying each competition; no extra D1 schema is added. For shared generated markup the new page is derived by `tools/generate-app-pages.mjs` from the just-generated Competitions shell and a dedicated source renderer; checked-in `history/index.html` is an output artifact, not a hand-edited source.
+
+## #581 follow-up: fixing /history rendering and empty data
+The global `assets/app.js` view router must explicitly select `history`, keep `#app-dashboard` hidden and show only `#world-history`, with a localized document title. At Season 0 or preparing/active Season 1, `GET /api/world/history` returns the immutable-provenance `status:"empty"` projection without reading archive tables. The local/SHARED DEV proxy must accept only the **exact anonymous GET** `/api/world/history` and strip cookie/CSRF/operator metadata; never fall back to fictional DEV preview history. Without a configured backend, the page shows an unavailable/retry state, not fabricated champions.
