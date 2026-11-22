@@ -732,7 +732,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.ok(Math.abs(omega[0])<0.01&&Math.abs(omega[1]-18.18)<0.02&&Math.abs(omega[2]-36.36)<0.02,
       'actual 0/half/full initial angular speeds (rad/s): '+omega);
     const first=metrics.spinPoints[0].slice(1).map(value=>Number(value.split(' / ')[1]));
-    assert.ok(Math.abs(first[0]-4)<0.01&&Math.abs(first[1]-2)<0.01&&first[2]<0.01,
+    assert.ok(Math.abs(first[0]-14.4)<0.01&&Math.abs(first[1]-7.2)<0.01&&first[2]<0.01,
       '0 / 50 / 100% spin must begin at 14.4 / 7.2 / 0 km/h bottom slip: '+first);
     const speeds=metrics.spinPoints[4].slice(1).map(value=>Number(value.split(' / ')[0]));
     assert.ok(speeds[0]<speeds[1]&&speeds[1]<speeds[2],
