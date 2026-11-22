@@ -7,6 +7,7 @@ import {verifyCompetitionCompactNetwork} from './competition-compact-network-bro
 import {verifyCompetitionPublishedNetwork} from './competition-published-734-browser.mjs';
 import {verifyClubBfcacheNetwork} from './club-api-bfcache-browser.mjs';
 import {verifySharedShellNetwork} from './shared-shell-734-browser.mjs';
+import {verifyPlayerTransport734} from './player-transport-734-browser.mjs';
 import {createBrowserTiming} from '../tools/ci-browser-timing.mjs';
 
 export async function runArea(browser,area,engine='chromium'){
@@ -52,6 +53,7 @@ export async function runArea(browser,area,engine='chromium'){
  }
  timing.mark('pairwise-complete');
  if(area==='guide'){const start=timing.now();checks+=await verifySharedShellNetwork(browser,{engine});timing.sample('shared-shell-network',timing.now()-start)}
+ if(area==='guide'){const start=timing.now();checks+=await verifyPlayerTransport734(browser,{engine});timing.sample('player-transport-734',timing.now()-start)}
  if(area==='clubs'){const start=timing.now();checks+=await verifyClubBfcacheNetwork(browser,{engine});timing.sample('club-bfcache-network',timing.now()-start)}
  if(area==='competitions'){
   let start=timing.now();checks+=await verifyCompetitionCompactNetwork(browser,{engine});timing.sample('competition-compact-network',timing.now()-start);
