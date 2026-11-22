@@ -258,7 +258,7 @@ export function createControlledActionLab(RAPIER,id,{
  let disposed=false,firstRealPass=null,count=0,history=Object.freeze([]);
  let intentCarryImpulseCount=0;
  const soloReadout=soloCarryLockedPhase===null?null:{
-  ballStartX:initial.x,playerPrev:null,playerPrevV:null,
+  ballStartX:engine.snapshot().ball.position.x,playerPrev:null,playerPrevV:null,
   playerPathM:0,ballPathM:0,lastBall:null,speedSum:0,gapSum:0,
   peakPlayerSpeedMps:0,peakBallSpeedMps:0,peakAccelerationMps2:0,
   samples:0,lateSpeedSum:0,lateSpeedSampleTicks:0

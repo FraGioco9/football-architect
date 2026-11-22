@@ -132,6 +132,8 @@ test('#628 four player attribute profiles drive real source 60Hz Carry benchmark
    }
   }
  }
+ process.stdout.write('ME_628_CARRY_ATTRIBUTE_MATRIX '+
+  JSON.stringify(matrix.filter(x=>x.side==='home'))+'\n');
  for(const row of matrix.filter(x=>x.side==='home')){
   const mirrored=matrix.find(x=>x.phase===row.phase&&
    x.rating===row.rating&&x.side==='away');
@@ -149,6 +151,4 @@ test('#628 four player attribute profiles drive real source 60Hz Carry benchmark
   assert.ok(high.peakPlayer120>low.peakPlayer120,
    phase+' higher speed/agility must increase real peak player pace');
  }
- process.stdout.write('ME_628_CARRY_ATTRIBUTE_MATRIX '+
-  JSON.stringify(matrix.filter(x=>x.side==='home'))+'\n');
 });
