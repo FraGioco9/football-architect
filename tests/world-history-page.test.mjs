@@ -259,12 +259,12 @@ test('#581: seasons default newest open; each header independently toggles and s
  const entries=[1,3,2].map(seasonNumber=>({
   seasonNumber,champions:[{competitionId:'IT-1',championClubId:'IT-1'}]
  }));
- const archive=element('div'),status=element('p'),count=element('p');
+ const archive=element('div'),status=element('p');
  const expandedSeasons=new Map();
  const env={
-  locale:()=>({season:'Season',count:'champions',competition:'Competition',competitionsCount:'competitions'}),loading:false,error:false,payload:{
+  locale:()=>({season:'Season',competition:'Competition'}),loading:false,error:false,payload:{
    seasons:entries,world:{seasonNumber:4}
-  },debugActive:()=>false,status,archive,count,expandedSeasons,
+  },debugActive:()=>false,status,archive,expandedSeasons,
   seasons:{value:''},countries:{value:''},comps:{value:''},
   clubCrests:new Map(),clubNames:new Map(),
   document:{createElementNS:(namespace,tag)=>element(tag)},
@@ -351,6 +351,19 @@ test('#581: History season titles have no competitions count',()=>{
  assert.match(js,/toggle\.append\(make\('span','fa-world-history-season-name',w\.season\+' '\+season\.seasonNumber\)\)/);
 });
 
+test('#753: remove champions total and compact filters-to-archive layout',()=>{
+ const html=read('history/index.html');
+ const renderer=read('tools/render-world-history.mjs');
+ const js=read('assets/world-history.js');
+ const css=read('assets/world-history.css');
+ for(const source of [html,renderer,js,css])assert.doesNotMatch(source,/world-history-count\b|fa-world-history-count\b/);
+ assert.doesNotMatch(js,/,count:'[^']*'|w\.count\b|total\+\+/);
+ assert.match(css,/\.fa-world-history-archive\{[^}]*margin-top:12px/);
+ assert.match(css,/\.fa-world-history-status\{margin:12px 0 0/);
+ assert.doesNotMatch(css,/\.fa-world-history \.fa-world-history-status\[hidden\]/);
+ assert.match(css,/\.fa-world-history \[hidden\]\{display:none!important\}/);
+});
+
 test('#581: first paint and Debug transitions preserve accurately aligned skeletons',()=>{
  const html=read('history/index.html'),rendered=renderWorldHistoryPage();
  const css=read('assets/world-history.css'),runtime=read('assets/world-history.js');
@@ -366,7 +379,7 @@ test('#581: first paint and Debug transitions preserve accurately aligned skelet
  assert.match(css,/\.fa-world-history-skeleton-row\+\.fa-world-history-skeleton-row/,'same row dividers');
  assert.match(css,/\.fa-world-history-row\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/,'reuse two equal final columns');
  assert.match(css,/@media\(max-width:500px\)\{[\s\S]*?\.fa-world-history-row\{grid-template-columns:minmax\(0,1fr\)/,'skeleton and real rows use same mobile layout');
- assert.match(css,/\.fa-world-history \.fa-world-history-status\[hidden\]\{display:block!important;visibility:hidden\}/,'status line stays reserved after load');
+ assert.doesNotMatch(css,/\.fa-world-history \.fa-world-history-status\[hidden\]/,'hidden status does not reserve vertical space');
  assert.match(runtime,/const skeletonMarkup=archive\.innerHTML/);
  assert.match(runtime,/const showSkeleton=\(\)=>/);
  assert.match(runtime,/\.slice\(16\)\)row\.remove\(\)/,'protected Debug skeleton reflects 16 domestic competitions');
@@ -385,7 +398,7 @@ test('#581: no loading text on first paint or protected/public source changes',(
  assert.doesNotMatch(js,/debugLoading:|loading:'Loading/,'no unused localized loading messages');
  assert.match(js,/if\(loading\)\{status\.textContent='';status\.hidden=true;return;\}/);
  assert.match(js,/status\.textContent='';status\.hidden=true;/);
- assert.match(css,/\.fa-world-history \.fa-world-history-status\[hidden\]\{display:block!important;visibility:hidden\}/);
+ assert.match(css,/\.fa-world-history \[hidden\]\{display:none!important\}/);
  assert.match(js,/debugError:|error:'Verified history/,'real error messages remain available');
 });
 
