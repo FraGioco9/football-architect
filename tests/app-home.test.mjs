@@ -238,7 +238,11 @@ test("A11Y-NO-SKIP-01: skip link is absent without disturbing accessible landmar
   assert.doesNotMatch(markup,/class="app-skip"|data-app-i18n="skip"|Skip to main content/);
   assert.equal((markup.match(/id="main-content"/g)||[]).length,1);
   assert.match(markup,/<main class="app-main" id="main-content" tabindex="-1">/);
-  assert.match(markup,/id="career-status-heading"/);
+    if(markup===pages.dashboard){
+      assert.doesNotMatch(markup,/id="career-status-heading"/);
+      for(const id of ["dashboard-recent-heading","dashboard-next-heading","dashboard-events-heading"])
+        assert.match(markup,new RegExp('id="'+id+'"'));
+    }else assert.match(markup,/id="career-status-heading"/);
   assert.match(markup,/id="world-heading"/);
   assert.match(markup,/id="app-language-heading"/);
   assert.match(markup,/id="app-search-heading" class="sr-only"/);
