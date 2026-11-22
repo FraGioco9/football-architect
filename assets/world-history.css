@@ -17,6 +17,8 @@
 .fa-world-history-season h2{font-size:18px;font-weight:750;margin:0;padding:0;border-bottom:1px solid var(--line)}
 .fa-world-history-season.is-collapsed h2{border-bottom:0}
 .fa-world-history-season-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:17px 20px;border:0;background:transparent;color:var(--text);font:inherit;font-weight:inherit;text-align:left;cursor:pointer}
+.fa-world-history-season-heading{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;min-width:0}
+.fa-world-history-season-count{font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
 .fa-world-history-season-toggle:hover{background:var(--surface-raised)}
 .fa-world-history-season-toggle:focus-visible{outline:2px solid var(--focus);outline-offset:-3px;border-radius:3px}
 .fa-world-history-season-chevron{display:block;width:18px;height:18px;flex:0 0 18px;transition:transform 120ms ease}
@@ -30,9 +32,9 @@
 .fa-world-history-row a:focus-visible,.fa-world-history-retry:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .fa-world-history-row .fa-world-history-competition{display:flex;align-items:center;gap:10px;min-width:0}
 .fa-world-history-competition-name{min-width:0}
-.fa-world-history-logo{display:inline-grid;place-items:center;box-sizing:border-box;width:30px;height:30px;flex:0 0 30px;color:var(--muted)}
-.fa-world-history-logo img,.fa-world-history-logo svg{display:block;width:30px;height:30px;max-width:100%;max-height:100%;object-fit:contain}
-.fa-world-history-logo.app-competition-logo-placeholder{width:30px;height:30px;border:0;border-radius:0;background:transparent}
+.fa-world-history-logo{display:inline-grid;place-items:center;box-sizing:border-box;width:40px;height:40px;flex:0 0 40px;color:var(--muted)}
+.fa-world-history-logo img,.fa-world-history-logo svg{display:block;width:40px;height:40px;max-width:100%;max-height:100%;object-fit:contain}
+.fa-world-history-logo.app-competition-logo-placeholder{width:40px;height:40px;border:0;border-radius:0;background:transparent}
 .fa-world-history-row .fa-world-history-club{display:flex;align-items:center;gap:10px;min-width:0}
 .fa-world-history-row .fa-world-history-crest{display:block;width:29px;height:29px;flex:0 0 29px;object-fit:contain}
 .fa-world-history-skeleton{display:grid;gap:1px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line)}

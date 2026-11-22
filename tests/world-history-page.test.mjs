@@ -226,9 +226,9 @@ test('#581: World History shows each competition official name and approved comp
 test('#581: World History logos share one fixed size and only the competition name is linked',()=>{
  const runtime=read('assets/world-history.js');
  const css=read('assets/world-history.css');
- assert.match(css,/\.fa-world-history-logo\{[^}]*width:30px;height:30px;flex:0 0 30px/,'all images reserve the same 30px square');
- assert.match(css,/\.fa-world-history-logo img,\.fa-world-history-logo svg\{[^}]*width:30px;height:30px/,'SVG and fallback have the same dimensions');
- assert.match(css,/\.fa-world-history-logo\.app-competition-logo-placeholder\{[^}]*width:30px;height:30px;border:0/,'shared fallback styles do not resize the logo');
+ assert.match(css,/\.fa-world-history-logo\{[^}]*width:40px;height:40px;flex:0 0 40px/,'all images reserve the same 40px square');
+ assert.match(css,/\.fa-world-history-logo img,\.fa-world-history-logo svg\{[^}]*width:40px;height:40px/,'SVG and fallback have the same dimensions');
+ assert.match(css,/\.fa-world-history-logo\.app-competition-logo-placeholder\{[^}]*width:40px;height:40px;border:0/,'shared fallback styles do not resize the logo');
  assert.match(runtime,/const competition=make\('span','fa-world-history-competition'\)/);
  assert.match(runtime,/const competitionLink=make\('a','fa-world-history-competition-name',compLabel\(champion\.competitionId,w\)\)/);
  assert.match(runtime,/competition\.append\(competitionMark\(champion\.competitionId\),competitionLink\)/,'logo and text link are siblings');
@@ -260,7 +260,7 @@ test('#581: seasons default newest open; each header independently toggles and s
  const archive=element('div'),status=element('p'),count=element('p');
  const expandedSeasons=new Map();
  const env={
-  locale:()=>({season:'Season',count:'champions'}),loading:false,error:false,payload:{
+  locale:()=>({season:'Season',count:'champions',competition:'Competition',competitionsCount:'competitions'}),loading:false,error:false,payload:{
    seasons:entries,world:{seasonNumber:4}
   },debugActive:()=>false,status,archive,count,expandedSeasons,
   seasons:{value:''},countries:{value:''},comps:{value:''},
@@ -270,7 +270,7 @@ test('#581: seasons default newest open; each header independently toggles and s
  };
  const render=runInNewContext(source+'\nrender',env);
  render();
- assert.deepEqual(archive.children.map(el=>el.children[0].children[0].children[0].textContent),
+ assert.deepEqual(archive.children.map(el=>el.children[0].children[0].children[0].children[0].textContent),
   ['Season 3','Season 2','Season 1'],'sort by latest sporting season, not API order');
  const seasons=archive.children;
  const head=s=>s.children[0].children[0];
@@ -287,7 +287,15 @@ test('#581: seasons default newest open; each header independently toggles and s
  assert.equal(comp.children[0].tag,'span');
  assert.equal(comp.children[0].href,undefined);
  assert.equal(comp.children[1].tag,'a');
- assert.equal(comp.children[1].href,'/competitions/it-1/history');
+ assert.equal(comp.children[1].href,'/competitions/it-1/standings?view=standings&season=3',
+  'view precedes season in the working canonical Standings link');
+ assert.equal(list(seasons[1]).children[0].children[0].children[1].href,
+  '/competitions/it-1/standings?view=standings&season=2');
+ const club=list(seasons[0]).children[0].children[1].children.at(-1);
+ assert.equal(club.href,'/clubs/it/1/history#club-history-season-3',
+  'club History deep-link preserves the winning season');
+ assert.equal(head(seasons[0]).children[0].children[1].textContent,'1 competition');
+ assert.equal(head(seasons[1]).children[0].children[1].textContent,'1 competition');
  const older=seasons[1],button=head(older);
  button.listeners.get('click')();
  assert.equal(button.getAttribute('aria-expanded'),'true');
@@ -300,4 +308,18 @@ test('#581: seasons default newest open; each header independently toggles and s
   'explicit toggles remain stable across filter and language rerenders');
  assert.match(read('assets/world-history.css'),/\.fa-world-history-season-toggle:focus-visible/);
  assert.match(read('assets/world-history.css'),/\.fa-world-history-season-toggle\[aria-expanded="false"\]/);
+ const clubSource=read('assets/club-page.js');
+ assert.match(clubSource,/\['authoritative','dev'\]\.includes\(historySnapshot\.source\)/,
+  'Club History season anchors must work in official and local Debug views');
+});
+
+
+test('#581: seasonal competition count is translated, local and responsive',()=>{
+ const js=read('assets/world-history.js'),css=read('assets/world-history.css');
+ for(const label of ['competitions','Wettbewerbe','competiciones','compétitions','competizioni'])
+  assert.ok(js.includes("competitionsCount:'"+label+"'"),label);
+ assert.match(js,/season\.champions\.length===1\?w\.competition\.toLocaleLowerCase\(\):w\.competitionsCount/,'singular and plural labels for each filtered season');
+ assert.match(css,/\.fa-world-history-season-heading\{[^}]*flex-wrap:wrap/,'count wraps on narrow screens');
+ assert.match(css,/\.fa-world-history-season-count\{[^}]*white-space:nowrap/);
+ assert.match(css,/\.fa-world-history-logo img,\.fa-world-history-logo svg\{[^}]*object-fit:contain/);
 });
