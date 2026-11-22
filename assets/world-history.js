@@ -15,6 +15,8 @@
  const seasons=root.querySelector('#world-history-season'),countries=root.querySelector('#world-history-country'),comps=root.querySelector('#world-history-competition');
  const archive=root.querySelector('#world-history-archive'),status=root.querySelector('#world-history-status'),count=root.querySelector('#world-history-count'),retry=root.querySelector('#world-history-retry');
  let payload=null,clubNames=new Map(),clubCrests=new Map(),competitionNames=new Map(),competitionLogos=new Map(),loading=false,error=false,request=0;
+ // User toggles survive filter, locale and identity refreshes; defaults are view-local.
+ const expandedSeasons=new Map();
  const debugActive=()=>window.faDevPreviewMode===true&&window.faDebugEnabled===true;
  const text=(node,value)=>{node.textContent=value;return node};
  const make=(tag,cls,content)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(content!==undefined)el.textContent=content;return el};
@@ -137,20 +139,48 @@
    .map(s=>({...s,champions:s.champions.filter(c=>
     (!countries.value||c.championClubId.startsWith(countries.value+'-'))&&
     (!comps.value||c.competitionId===comps.value))}))
-   .filter(s=>s.champions.length);
+   .filter(s=>s.champions.length)
+   .sort((a,b)=>b.seasonNumber-a.seasonNumber);
   archive.replaceChildren();
   let total=0;
-  for(const season of wanted){
+  for(const [index,season] of wanted.entries()){
+   const expanded=expandedSeasons.get(season.seasonNumber)??(index===0);
    const section=make('section','fa-world-history-season');
-   const heading=make('h2','',w.season+' '+season.seasonNumber);section.append(heading);
+   section.classList.toggle('is-collapsed',!expanded);
+   const heading=make('h2');
+   const toggle=make('button','fa-world-history-season-toggle');
+   toggle.type='button';
    const list=make('ul','fa-world-history-list');
+   list.id='world-history-season-'+season.seasonNumber+'-champions';
+   list.hidden=!expanded;
+   toggle.setAttribute('aria-controls',list.id);
+   toggle.setAttribute('aria-expanded',String(expanded));
+   toggle.append(make('span','fa-world-history-season-name',w.season+' '+season.seasonNumber));
+   const chevron=document.createElementNS('http://www.w3.org/2000/svg','svg');
+   chevron.setAttribute('class','fa-world-history-season-chevron');
+   chevron.setAttribute('viewBox','0 0 20 20');
+   chevron.setAttribute('aria-hidden','true');
+   const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+   path.setAttribute('d','m5 7 5 5 5-5');
+   path.setAttribute('fill','none');path.setAttribute('stroke','currentColor');
+   path.setAttribute('stroke-width','1.75');path.setAttribute('stroke-linecap','round');
+   path.setAttribute('stroke-linejoin','round');
+   chevron.append(path);toggle.append(chevron);heading.append(toggle);section.append(heading);
+   toggle.addEventListener('click',()=>{
+    const open=toggle.getAttribute('aria-expanded')!=='true';
+    expandedSeasons.set(season.seasonNumber,open);
+    toggle.setAttribute('aria-expanded',String(open));
+    list.hidden=!open;
+    section.classList.toggle('is-collapsed',!open);
+   });
    for(const champion of season.champions){
     total++;
     const row=make('li','fa-world-history-row');
-    const competition=make('a','fa-world-history-competition');
-    competition.href='/competitions/'+champion.competitionId.toLowerCase()+'/history';
-    competition.append(competitionMark(champion.competitionId),
-     make('span','fa-world-history-competition-name',compLabel(champion.competitionId,w)));
+    // The logo is a separate, non-interactive sibling of the text-only link.
+    const competition=make('span','fa-world-history-competition');
+    const competitionLink=make('a','fa-world-history-competition-name',compLabel(champion.competitionId,w));
+    competitionLink.href='/competitions/'+champion.competitionId.toLowerCase()+'/history';
+    competition.append(competitionMark(champion.competitionId),competitionLink);
     const holder=make('span','fa-world-history-club');
     const crest=clubCrests.get(champion.championClubId);
     if(crest){
@@ -245,6 +275,7 @@
   setFilterDisabled(true);retry.hidden=true;labels();render();
  }
  window.addEventListener('fa:source-change',()=>{
+  expandedSeasons.clear();
   if(debugActive())pendingDebug();
   else {++request;loading=false;void load();}
  });

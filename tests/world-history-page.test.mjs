@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {request} from 'node:http';
 import {once} from 'node:events';
+import {runInNewContext} from 'node:vm';
 import {createPreviewStandings,createPreviewWorldHistory} from '../tools/dev-standings-preview-data.mjs';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 import {matchPublicContext} from '../assets/match-public-context.mjs';
@@ -216,7 +217,87 @@ test('#581: World History shows each competition official name and approved comp
  assert.match(runtime,/competitionMark\(champion\.competitionId\)/);
  assert.match(runtime,/fa-world-history-competition-name/);
  assert.match(runtime,/neutralCupMark/,'international cups reuse the neutral, not a fictitious, emblem');
- assert.match(css,/\.fa-world-history-logo img\{[^}]*object-fit:contain/,'SVG logos are never cropped');
+ assert.match(css,/\.fa-world-history-logo img,\.fa-world-history-logo svg\{[^}]*object-fit:contain/,'all SVG and cup marks preserve proportions');
  assert.match(css,/\.fa-world-history-row \.fa-world-history-competition\{display:flex/);
  assert.doesNotMatch(runtime,/club.*\.logo|Math\.random\(/,'club logos are not competition logos');
+});
+
+
+test('#581: World History logos share one fixed size and only the competition name is linked',()=>{
+ const runtime=read('assets/world-history.js');
+ const css=read('assets/world-history.css');
+ assert.match(css,/\.fa-world-history-logo\{[^}]*width:30px;height:30px;flex:0 0 30px/,'all images reserve the same 30px square');
+ assert.match(css,/\.fa-world-history-logo img,\.fa-world-history-logo svg\{[^}]*width:30px;height:30px/,'SVG and fallback have the same dimensions');
+ assert.match(css,/\.fa-world-history-logo\.app-competition-logo-placeholder\{[^}]*width:30px;height:30px;border:0/,'shared fallback styles do not resize the logo');
+ assert.match(runtime,/const competition=make\('span','fa-world-history-competition'\)/);
+ assert.match(runtime,/const competitionLink=make\('a','fa-world-history-competition-name',compLabel\(champion\.competitionId,w\)\)/);
+ assert.match(runtime,/competition\.append\(competitionMark\(champion\.competitionId\),competitionLink\)/,'logo and text link are siblings');
+ assert.doesNotMatch(runtime,/const competition=make\('a','fa-world-history-competition'\)/,'the whole competition cell is not clickable');
+});
+
+test('#581: seasons default newest open; each header independently toggles and survives rerender',()=>{
+ const runtime=read('assets/world-history.js');
+ const start=runtime.indexOf(' function render(){');
+ const end=runtime.indexOf('\n let competitionRequest=',start);
+ assert.ok(start>=0&&end>start,'extract History render function');
+ const source=runtime.slice(start,end);
+ function element(tag,className='',value=''){
+  const e={
+   tag,className,textContent:value,children:[],attributes:new Map(),listeners:new Map(),hidden:false,
+   states:new Map(),
+   append(...nodes){this.children.push(...nodes)},
+   replaceChildren(...nodes){this.children=[...nodes]},
+   setAttribute(k,v){this.attributes.set(k,String(v))},
+   getAttribute(k){return this.attributes.get(k)||null},
+   addEventListener(k,listener){this.listeners.set(k,listener)},
+  };
+  e.classList={toggle(k,on){e.states.set(k,on)}};
+  return e;
+ }
+ const entries=[1,3,2].map(seasonNumber=>({
+  seasonNumber,champions:[{competitionId:'IT-1',championClubId:'IT-1'}]
+ }));
+ const archive=element('div'),status=element('p'),count=element('p');
+ const expandedSeasons=new Map();
+ const env={
+  locale:()=>({season:'Season',count:'champions'}),loading:false,error:false,payload:{
+   seasons:entries,world:{seasonNumber:4}
+  },debugActive:()=>false,status,archive,count,expandedSeasons,
+  seasons:{value:''},countries:{value:''},comps:{value:''},
+  clubCrests:new Map(),clubNames:new Map(),
+  document:{createElementNS:(namespace,tag)=>element(tag)},
+  make:element,compLabel:id=>id,competitionMark:id=>element('span','fa-world-history-logo',id),
+ };
+ const render=runInNewContext(source+'\nrender',env);
+ render();
+ assert.deepEqual(archive.children.map(el=>el.children[0].children[0].children[0].textContent),
+  ['Season 3','Season 2','Season 1'],'sort by latest sporting season, not API order');
+ const seasons=archive.children;
+ const head=s=>s.children[0].children[0];
+ const list=s=>s.children[1];
+ assert.deepEqual(seasons.map(s=>head(s).getAttribute('aria-expanded')),['true','false','false']);
+ assert.deepEqual(seasons.map(s=>list(s).hidden),[false,true,true]);
+ for(const s of seasons){
+  assert.equal(head(s).getAttribute('aria-controls'),list(s).id);
+  assert.ok(head(s).children[1].attributes.get('aria-hidden')==='true');
+ }
+ // Competition logo and link occupy separate siblings within a noninteractive span.
+ const comp=list(seasons[0]).children[0].children[0];
+ assert.equal(comp.tag,'span');
+ assert.equal(comp.children[0].tag,'span');
+ assert.equal(comp.children[0].href,undefined);
+ assert.equal(comp.children[1].tag,'a');
+ assert.equal(comp.children[1].href,'/competitions/it-1/history');
+ const older=seasons[1],button=head(older);
+ button.listeners.get('click')();
+ assert.equal(button.getAttribute('aria-expanded'),'true');
+ assert.equal(list(older).hidden,false);
+ assert.equal(older.states.get('is-collapsed'),false);
+ head(seasons[0]).listeners.get('click')();
+ assert.equal(list(seasons[0]).hidden,true);
+ render();
+ assert.deepEqual(archive.children.map(s=>head(s).getAttribute('aria-expanded')),['false','true','false'],
+  'explicit toggles remain stable across filter and language rerenders');
+ assert.match(read('assets/world-history.css'),/\.fa-world-history-season-toggle:focus-visible/);
+ assert.match(read('assets/world-history.css'),/\.fa-world-history-season-toggle\[aria-expanded="false"\]/);
 });
