@@ -34,8 +34,13 @@ export function chooseNativeFixedCarryImpulse({
  // A sprinting footballer must accelerate before a long push. At each
  // native shoe START the ball may travel only ~0.48m/s faster than the
  // runner's measured instantaneous pace; prevents first-tick rocket kicks.
+ // Moderate has a longer controlled nudge than Control; a real Sprint
+ // stride can let the ball run farther. Neither changes hit frequency:
+ // no native shoe START means no selected action.
+ const aheadAllowance=phase==='sprint'?1.05:
+  phase==='moderate'?0.85:0.48;
  const controlledTarget=Math.min(config.targetSpeedMps,
-  Math.max(0.8,playerForward+0.48));
+  Math.max(0.8,playerForward+aheadAllowance));
  const requiredDelta=controlledTarget-ballForward;
  const impulseNs=requiredDelta<=0.12?null:Object.freeze({
   x:forward*Math.min(config.maxImpulseNs,0.43*requiredDelta),

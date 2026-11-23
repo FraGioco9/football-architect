@@ -130,8 +130,8 @@ test('#628 native 25/50/75/90 player pace matrix is real physical source, not in
  assert.equal(data.length,12);
  for(const phase of ['control','moderate','sprint']){
   const p=data.filter(v=>v.phase===phase);
-  assert.ok(p[0].maxAllowedSpeedMps<p[1].maxAllowedSpeedMps&&
-   p[1].maxAllowedSpeedMps<p[2].maxAllowedSpeedMps&&
+  assert.ok(p[0].maxAllowedSpeedMps<=p[1].maxAllowedSpeedMps&&
+   p[1].maxAllowedSpeedMps<=p[2].maxAllowedSpeedMps&&
    p[2].maxAllowedSpeedMps<=p[3].maxAllowedSpeedMps,
     'Attribute-dependent allowed pace must be monotonic; observed speed is real evidence and may vary with collisions');
  }

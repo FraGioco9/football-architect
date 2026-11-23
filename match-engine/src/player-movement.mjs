@@ -1674,6 +1674,7 @@ export function createPlayerMovement(options={}){
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
      k!=='researchSmallSidedVariantIndex'&&
      k!=='researchCarryRunwayStart'&&
+     k!=='researchNativeFixedCarry'&&
      k!=='researchSoloCarryLockedPhase'&&
      k!=='researchSoloCarryPlayerAttributes'&&
       k!=='researchSmallSidedBodyFeedback'&&
@@ -1827,7 +1828,8 @@ export function createPlayerMovement(options={}){
         (options.researchSmallSidedBodyFeedback===true?1:0)+
         (options.researchSoloCarryLockedPhase===undefined?0:1)+
         (options.researchSoloCarryPlayerAttributes===undefined?0:1)+
-        (options.researchCarryRunwayStart===true?1:0)))||
+        (options.researchCarryRunwayStart===true?1:0)+
+        (options.researchNativeFixedCarry===true?1:0)))||
     ((options.researchSmallSidedSituation===undefined)!==
      (options.researchSmallSidedSide===undefined))||
     (options.researchSoloCarryLockedPhase!==undefined&&(
@@ -1839,6 +1841,11 @@ export function createPlayerMovement(options={}){
      options.researchSmallSidedSituation===undefined)||
     (options.researchCarryRunwayStart!==undefined&&
      (options.researchCarryRunwayStart!==true||
+      options.researchSmallSidedSituation!=='carry-solo'))||
+    (options.researchNativeFixedCarry!==undefined&&
+     (options.researchNativeFixedCarry!==true||
+      options.researchSoloCarryLockedPhase===undefined||
+      options.researchCarryRunwayStart!==true||
       options.researchSmallSidedSituation!=='carry-solo'))||
     (options.researchSmallSidedBodyFeedback!==undefined&&
      (options.researchSmallSidedBodyFeedback!==true||
@@ -2453,6 +2460,17 @@ export function createPlayerMovement(options={}){
     y:clamp(target.y+next.y,-halfY,halfY)
    });
   };
+  // Isolated genuine-contact calibration: advance the original runner's
+  // TARGET close enough to a grounded stationary ball for an actual native
+  // shoe to collide. A Sprint profile initially trails the ball by 0.62m;
+  // its existing shoes cannot reach that gap, so the ball never starts.
+  // This changes only player steering intent, not shoe/ball position,
+  // contact event authority, Rapier dynamics or official gameplay.
+  const nativeFixedOffset=options.researchNativeFixedCarry===true?
+    currentSoloCarryPhase.phase==='sprint'?
+     (Math.hypot(realBallVelocity.x,realBallVelocity.y)<0.45?-0.18:-0.32):
+    currentSoloCarryPhase.phase==='moderate'?-0.20:
+     currentSoloCarryPhase.ballTargetOffsetM:null;
   const targets=players.map(p=>{
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can
@@ -2471,7 +2489,7 @@ export function createPlayerMovement(options={}){
       return smallSided.id==='keeper-1v1'?
        keeperDuelAttackerTarget(smallSided.side,smallSided.variantIndex,p,ball):
        Object.freeze({x:ball.x+attack*(smallSided.id==='carry-solo'?
-        currentSoloCarryPhase.ballTargetOffsetM:
+        nativeFixedOffset??currentSoloCarryPhase.ballTargetOffsetM:
         smallSided.id==='dribble-1v1'?-0.40:-0.08),y:ball.y});
      const wing=p.id.endsWith('-9')?-1:1;
      return Object.freeze({x:clamp(ball.x-attack*3,

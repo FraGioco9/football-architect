@@ -239,6 +239,7 @@ export function createControlledActionLab(RAPIER,id,{
    researchSmallSidedSituation:id,researchSmallSidedSide:shotSide,
    ...(variantIndex>0?{researchSmallSidedVariantIndex:variantIndex}:{}),
    ...(carryRunwayStart?{researchCarryRunwayStart:true}:{}),
+   ...(nativeFixedCarryResearch?{researchNativeFixedCarry:true}:{}),
    ...(soloCarryLockedPhase!==null?{
     researchSoloCarryLockedPhase:soloCarryLockedPhase,
     researchSoloCarryPlayerAttributes:selectedCarryAttributes}:{}),
