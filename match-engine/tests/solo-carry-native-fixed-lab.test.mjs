@@ -393,3 +393,64 @@ test('#628 accepted native Sprint source recontact guard: 4 ratings x 4 starts x
  process.stdout.write('ME_628_ACCEPTED_NATIVE_SPRINT_RELEASE_GUARD '+
   JSON.stringify(rows)+'\\n');
 });
+
+test('#628 Sprint source-native active-foot release 10s paired Rapier A/B',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),samples=[];
+ for(const [rating,variantIndex] of [[25,3],[25,29],[50,3],[75,0],[75,17],[90,0]])
+ for(const side of ['home','away'])
+ for(const releaseM of [0,0.06,0.1]){
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide:side,variantIndex,carryRunwayStart:true,
+   nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
+   soloSprintActiveFootReleaseM:releaseM,
+   soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
+  });
+  try{
+   let frame=null,starts=0,actions=0,lostTicks=0;
+   const ballStart=lab.snapshot().ball.position.x;
+   const checkpoints=[];
+   for(let tick=1;tick<=600;tick++){
+    frame=lab.step();
+    assert.equal(frame.soloNativeFeet.source,'rapier-physical-collider-events');
+    assert.equal(frame.soloNativeFeet.sprintActiveFootReleaseM,releaseM);
+    assert.equal(frame.officialMatchPossession,false);
+    const player=frame.observedMovementPlayers.find(p=>p.id===side+'-10');
+    if(Math.hypot(frame.ball.position.x-player.x,frame.ball.position.y-player.y)>1.5)
+     lostTicks++;
+    starts+=frame.soloNativeFeet.started.length;
+    if(frame.action){
+     actions++;
+     assert.equal(frame.action.nativeShoeContactVerified,true);
+     assert.equal(frame.action.actualPhysicsImpulseApplied,true);
+     assert.equal(frame.soloNativeFeet.exclusivePhysicalStart,true);
+    }
+    if(tick===120||tick===300||tick===600){
+     const a=frame.nativeDribbleAudit;
+     assert.equal(a.nativePhysicalShoeStarts,starts);
+     assert.equal(a.appliedCarryActions,actions);
+     checkpoints.push({
+      tick,starts,actions,lostTicks,
+      unconverted:a.nativeShoeStartsWithoutCarryImpulse,
+      sameTickHandoffs:a.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
+      otherShoeActive:a.nonActionStartReasons.otherFootAlreadyActive,
+      bothFeetActiveTicks:a.nativeBothFeetActiveTicks,
+      fullReleases:a.nativeActorFullReleaseEvents,
+      peakGapM:frame.soloCarryMeasurements.peakGapM,
+      forwardM:(side==='home'?1:-1)*(frame.ball.position.x-ballStart)
+     });
+    }
+   }
+   samples.push({rating,variantIndex,side,releaseM,checkpoints});
+  }finally{lab.dispose();}
+ }
+ assert.equal(samples.length,36);
+ // Diagnostic trial: genuine source and poor arms must remain visible,
+ // never falsely promoted by a green test alone.
+ for(const sample of samples){
+  assert.ok(sample.checkpoints[2].starts>=sample.checkpoints[2].actions);
+  assert.ok(Number.isFinite(sample.checkpoints[2].forwardM));
+ }
+ process.stdout.write('ME_628_REAL_ACTIVE_SHOE_RELEASE_AB '+
+  JSON.stringify(samples)+'\\n');
+});

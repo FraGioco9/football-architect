@@ -78,10 +78,16 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 // #628: two independently positioned native shoes, only for solo Carry.
 // A cyclic target NEVER creates Rapier START/END or applies a ball impulse.
 export function soloCarryTwoFootPositions(player,gait=null,{
- recoveryStepScale=1,sprintLateralTrackScale=1
+ recoveryStepScale=1,sprintLateralTrackScale=1,
+ nativeActiveFeet=empty,sprintActiveFootReleaseM=0
 }={}){
  if(![0.85,0.925,1,1.15].includes(recoveryStepScale)||
     ![0.9,1,1.1].includes(sprintLateralTrackScale)||
+    ![0,0.06,0.1].includes(sprintActiveFootReleaseM)||
+    !Array.isArray(nativeActiveFeet)||
+    nativeActiveFeet.some(foot=>!['left','right'].includes(foot))||
+    new Set(nativeActiveFeet).size!==nativeActiveFeet.length||
+    (sprintActiveFootReleaseM!==0&&gait?.carryPhase!=='sprint')||
     !player||![player.x,player.y,player.facingRad].every(Number.isFinite)||
     (gait!==null&&(!Number.isFinite(gait.phaseRad)||
      !Number.isFinite(gait.observedAheadM)||!Number.isFinite(gait.observedLateralM)||
@@ -134,6 +140,14 @@ export function soloCarryTwoFootPositions(player,gait=null,{
  const leftStep=gait?.forwardM??forwardStroke*stroke;
  const rightStep=-forwardStroke*stroke+
   gaitClamp((ahead-0.53)*0.40,0,0.055)*Math.max(0,-stroke);
+ // Experimental true-source release: an actually touching shoe moves
+ // laterally AWAY from the ball on the following physical tick. A forward
+ // stroke alone never initiates it; no START/END, ball force, or cooldown is
+ // invented. The bridge still enforces <=1.6m/s lateral + <=7m/s travel.
+ const releasingLeft=nativeActiveFeet.includes('left')?
+  sprintActiveFootReleaseM:0;
+ const releasingRight=nativeActiveFeet.includes('right')?
+  sprintActiveFootReleaseM:0;
  const leftForward=leftStep*twoFootPhysicalReach*
   (leftStep<0?rearwardRecovery:1);
  const rightForward=rightStep*twoFootPhysicalReach*
@@ -146,9 +160,9 @@ export function soloCarryTwoFootPositions(player,gait=null,{
  };
  return Object.freeze({
   left:make(leftForward,runningLateralCenterM+lateralTrackM+
-   (gait?.sideM??0)),
+   (gait?.sideM??0)+releasingLeft),
   right:make(rightForward,runningLateralCenterM-lateralTrackM+
-   sideAdjust*Math.max(0,-stroke)),
+   sideAdjust*Math.max(0,-stroke)-releasingRight),
   source:'original-canonical-stride-targets',
   realContactsOnly:true,physicsImposed:false
  });
@@ -160,7 +174,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  dribbleAttackerId=null,soloCarry=false,soloShoeWidthScale=1,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
- intentDrivenSoloCarry=false}={}){
+ soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false}={}){
  if(typeof intentDrivenSoloCarry!=='boolean'||
     (intentDrivenSoloCarry&&(!soloCarry||dribbleAttackerId===null)))
   throw new TypeError('Intent dribble may only isolate the original Solo Carry shoes');
@@ -212,6 +226,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     ![0.85,0.925,1,1.15].includes(soloRecoveryStepScale)||
     ((soloShoeLengthScale!==1||soloRecoveryStepScale!==1)&&!soloCarry))
   throw new TypeError('DEV longitudinal toe/recovery variants require genuine solo Carry');
+ if(![0,0.06,0.1].includes(soloSprintActiveFootReleaseM)||
+     (soloSprintActiveFootReleaseM!==0&&!soloCarry))
+  throw new TypeError('Real active-foot release requires Solo Carry shoes');
  if(![0.9,1,1.1].includes(soloSprintCadenceScale)||
     ![0.9,1,1.1].includes(soloSprintLateralTrackScale)||
     ((soloSprintCadenceScale!==1||soloSprintLateralTrackScale!==1)&&!soloCarry))
@@ -338,12 +355,23 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    return Object.freeze({...desired,
     x:desired.x+excess*si,y:desired.y-excess*c});
   };
-  const proposed=shoeFeet(next,nextTick,gait);
-  const rightDesired=soloCarry?
-   limitSoloFootLateralMotion(soloCarryTwoFootPositions(actor,gait,{
+  const experimentalFeet=soloCarry&&soloSprintActiveFootReleaseM!==0?
+   soloCarryTwoFootPositions(actor,gait,{
     recoveryStepScale:soloRecoveryStepScale,
-    sprintLateralTrackScale:soloSprintLateralTrackScale
-   }).right,
+    sprintLateralTrackScale:soloSprintLateralTrackScale,
+    nativeActiveFeet:[...activeSoloFeet],
+    sprintActiveFootReleaseM:soloSprintActiveFootReleaseM
+   }):null;
+  const proposed=experimentalFeet?
+   Object.freeze(shoeFeet(next,nextTick,gait).map((p,i)=>
+    initialPlayers[i].id===dribbleAttackerId?experimentalFeet.left:p)):
+   shoeFeet(next,nextTick,gait);
+  const rightDesired=soloCarry?
+   limitSoloFootLateralMotion((experimentalFeet??
+    soloCarryTwoFootPositions(actor,gait,{
+     recoveryStepScale:soloRecoveryStepScale,
+     sprintLateralTrackScale:soloSprintLateralTrackScale
+    })).right,
     actualRightFoot):null;
   // The whole shoe also moves when its owner turns or advances. Clamp the
   // actual Rapier kinematic collider trajectory, NOT the canonical player,
@@ -466,6 +494,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     recoveryStepScale:soloRecoveryStepScale,
     sprintCadenceScale:soloSprintCadenceScale,
     sprintLateralTrackScale:soloSprintLateralTrackScale,
+    sprintActiveFootReleaseM:soloSprintActiveFootReleaseM,
     nativeObservedGaitFrequencyHz:lastGaitFrequencyHz,
     geometrySource:'native-rapier-collider-width',
     exclusivePhysicalStart:footStarts.size===1&&nextSoloFeet.size===1

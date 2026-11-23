@@ -39,7 +39,7 @@ export function createControlledActionLab(RAPIER,id,{
  bodyGuardEnabled=false,soloShoeWidthScale=1,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
- intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
+ soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
  carryRunwayStart=false,nativeFixedCarryResearch=false,
  nativeFixedSprintLongStride=false,soloCarryPlayerAttributes=null
 }={}){
@@ -48,6 +48,14 @@ export function createControlledActionLab(RAPIER,id,{
  if(typeof carryRunwayStart!=='boolean'||
     (carryRunwayStart&&id!=='carry-solo'))
   throw new TypeError('Long-running pre-kickoff runway only for Solo Carry');
+ if(![0,0.06,0.1].includes(soloSprintActiveFootReleaseM)||
+    (soloSprintActiveFootReleaseM!==0&&(
+     !nativeFixedCarryResearch||soloCarryLockedPhase!=='sprint'||
+     id!=='carry-solo'||nativeFixedSprintLongStride||bodyGuardEnabled||
+     soloSprintCadenceScale!==1||soloSprintLateralTrackScale!==1||
+     soloShoeWidthScale!==1||soloShoeLengthScale!==1||
+     soloRecoveryStepScale!==1)))
+  throw new TypeError('Native active-foot release is Sprint research only');
  if(typeof nativeFixedSprintLongStride!=='boolean'||
     (nativeFixedSprintLongStride&&(
      !nativeFixedCarryResearch||soloCarryLockedPhase!=='sprint'||
@@ -207,6 +215,7 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticSoloRecoveryStepScale:soloRecoveryStepScale,
     diagnosticSoloSprintCadenceScale:nativeFixedSprintLongStride?0.9:soloSprintCadenceScale,
     diagnosticSoloSprintLateralTrackScale:soloSprintLateralTrackScale,
+    diagnosticSoloSprintActiveFootReleaseM:soloSprintActiveFootReleaseM,
     diagnosticIntentDrivenSoloCarryEnabled:intentDrivenSoloCarry,
    diagnosticNativeFixedCarryResearchEnabled:nativeFixedCarryResearch,
     diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride

@@ -121,6 +121,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSoloRecoveryStepScale = 1,
   diagnosticSoloSprintCadenceScale = 1,
   diagnosticSoloSprintLateralTrackScale = 1,
+  diagnosticSoloSprintActiveFootReleaseM = 0,
   diagnosticIntentDrivenSoloCarryEnabled = false,
   diagnosticNativeFixedCarryResearchEnabled = false,
   diagnosticNativeFixedSprintLongStrideEnabled = false,
@@ -161,6 +162,15 @@ export function createEngine(RAPIER, input = {}, {
    throw new TypeError('Pre-kickoff runway only for solo native/intent research');
   if(diagnosticSmallSidedSituation===null&&diagnosticSmallSidedVariantIndex!==0)
    throw new TypeError('Small-sided variant requires a paired physical exercise');
+  if(![0,0.06,0.1].includes(diagnosticSoloSprintActiveFootReleaseM)||
+     (diagnosticSoloSprintActiveFootReleaseM!==0&&(
+      !diagnosticNativeFixedCarryResearchEnabled||
+      diagnosticNativeFixedSprintLongStrideEnabled||
+      diagnosticSmallSidedSituation!=='carry-solo'||
+      diagnosticSoloSprintCadenceScale!==1||
+      diagnosticSoloSprintLateralTrackScale!==1||
+      diagnosticSmallSidedBodyGuardEnabled)))
+   throw new TypeError('Active-foot release only in isolated genuine Sprint experiment');
   if(typeof diagnosticNativeFixedSprintLongStrideEnabled!=='boolean'||
      (diagnosticNativeFixedSprintLongStrideEnabled&&(
       !diagnosticNativeFixedCarryResearchEnabled||
@@ -580,6 +590,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticSoloShoeWidthScale,
     diagnosticSoloShoeLengthScale,diagnosticSoloRecoveryStepScale,
     diagnosticSoloSprintCadenceScale,diagnosticSoloSprintLateralTrackScale,
+    diagnosticSoloSprintActiveFootReleaseM,
     diagnosticIntentDrivenSoloCarryEnabled,
     diagnosticNativeFixedCarryResearchEnabled,
     diagnosticSmallSidedBodyGuardEnabled,
@@ -647,6 +658,7 @@ export function createEngine(RAPIER, input = {}, {
         soloRecoveryStepScale:diagnosticSoloRecoveryStepScale,
         soloSprintCadenceScale:diagnosticSoloSprintCadenceScale,
         soloSprintLateralTrackScale:diagnosticSoloSprintLateralTrackScale,
+        soloSprintActiveFootReleaseM:diagnosticSoloSprintActiveFootReleaseM,
         intentDrivenSoloCarry:diagnosticIntentDrivenSoloCarryEnabled
        }:{})
       }:{}),
