@@ -968,13 +968,13 @@ try{
   let release=()=>{};
   try{
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
-   let authorized=true,hold=false,permissionReads=0;
+   let authorized=true,hold=false,permissionReads=0,authGate=null;
    const clubs=Array.from({length:320},(_,i)=>({clubKey:'FA-'+(i+1),name:'Club '+(i+1),
     accountId:null,accountEmail:null,updatedAt:null,version:0}));
    await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
    await page.route('**/api/player/permissions',async r=>{
     permissionReads++;
-    if(hold)await new Promise(resolve=>{release=resolve});
+    if(hold&&authGate)await authGate;
     return r.fulfill({status:authorized?200:401,contentType:'application/json',
      body:authorized?JSON.stringify({permissions:['admin.access','admin.world.read','admin.world.write']}):'{}'});
    });
@@ -994,7 +994,7 @@ try{
    assert.equal(await page.locator('#app-nav-admin[aria-current="page"]').count(),1);
    await page.goto('http://app.localhost:2000/dashboard');
    await page.locator('#app-nav-admin').waitFor({state:'visible'});
-   authorized=false;hold=true;
+   authorized=false;hold=true;authGate=new Promise(resolve=>{release=resolve});
    await page.reload({waitUntil:'domcontentloaded'});
    assert.equal(await page.locator('#app-nav-admin').isVisible(),true,'Pending fresh check must not flash away Admin');
    hold=false;release();
