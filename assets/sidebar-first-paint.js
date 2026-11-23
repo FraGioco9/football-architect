@@ -22,6 +22,26 @@ function paint(){
  nav.setAttribute('aria-label',labels[4]);nav.querySelector('#app-nav-divisions').setAttribute('aria-label',lang[locale][6]);
  button.setAttribute('aria-label',(button.getAttribute('aria-expanded')==='true'?collapseLabels:expandLabels)[locale]);
 }
+// Admin menu visibility is a same-tab UI hint, not privileged authorization.
+function prepaintAdmin(){
+ let expected=false;
+ try{
+  expected=sessionStorage.getItem('fa:admin:nav-visible:v1')==='1';
+  if(!expected){
+   const cached=JSON.parse(sessionStorage.getItem('fa:admin:permissions:v1')||'null');
+   const p=cached?.permissions;
+   expected=cached?.version===1&&Array.isArray(p)&&p.length<=64&&
+    p.every(v=>typeof v==='string'&&/^[a-z][a-z0-9.-]{0,79}$/.test(v))&&
+    p.includes('admin.access')&&p.includes('admin.world.read');
+  }
+ }catch{/* unknown state: no navigation hint */}
+ if(!expected||nav.querySelector('#app-nav-admin'))return;
+ const settings=nav.querySelector('#app-nav-settings');if(!settings)return;
+ const link=document.createElement('a');link.id='app-nav-admin';link.className='fa-shell-link';link.href='/admin';
+ link.innerHTML='<svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3 3 7v5c0 5 4 8 9 10 5-2 9-5 9-10V7Z M8 12l3 3 5-6"/></svg><span>Admin</span>';
+ settings.after(link);
+}
+prepaintAdmin();
 const path=location.pathname.replace(/^\/app(?=\/)/,'').replace(/\/+$/,'');
 const onCompetition=path==='/competitions'||path.startsWith('/competitions/');
 const onClubs=path==='/clubs'||path.startsWith('/clubs/');

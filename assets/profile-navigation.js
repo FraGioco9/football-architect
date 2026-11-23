@@ -48,7 +48,9 @@
   const onAdmin=/^\/admin(?:\/(?:calendar|contracts|licenses|players(?:\/preview(?:\/player)?)?))?$/.test(win.location.pathname.replace(/\/+$/,''));
   const permissionsCache=publicPermissionsCache(win);
   const accountPage=/^\/account(?:\/|$)/.test(win.location.pathname);
-  let entry=null,request=0;
+  const navHint='fa:admin:nav-visible:v1';
+  let entry=doc.getElementById('app-nav-admin'),request=0;
+  const remember=allowed=>{try{if(allowed)win.sessionStorage.setItem(navHint,'1');else win.sessionStorage.removeItem(navHint)}catch{/* hint only */}};
   function paint(){
    if(!entry)return;
    entry.href=typeof win.faAppHref==='function'?win.faAppHref('/admin'):new URL('/admin',settings.href).href;
@@ -56,6 +58,7 @@
    if(onAdmin)entry.setAttribute('aria-current','page');
   }
   function show(allowed){
+   remember(allowed);
    if(!allowed){entry?.remove();entry=null;return;}
    if(!entry){
     entry=doc.createElement('a');entry.id='app-nav-admin';entry.className='fa-shell-link';
@@ -67,7 +70,8 @@
    paint();
   }
   async function check(){
-   const ticket=++request;show(false);
+   const ticket=++request;
+   // Leave the first-paint link stable during a pending permission recheck.
    const cached=permissionsCache.read();
    if(cached!==null){show(canAccessAdmin(cached));return}
    const controller=new win.AbortController(),timer=win.setTimeout(()=>controller.abort(),8000);
@@ -79,22 +83,34 @@
     if(!response.ok&&typeof response.body?.cancel==='function')
      void response.body.cancel().catch(()=>{});
     if(ticket!==request)return;
-    if(response.ok&&Array.isArray(value?.permissions))permissionsCache.write(value.permissions);
-    else if(response.status===401){
-     permissionsCache.write([]);
-     try{win.sessionStorage.setItem('fa:player:anonymous:v1','1')}catch{/* storage disabled */}
+    if(response.ok&&Array.isArray(value?.permissions)){
+     permissionsCache.write(value.permissions);
+     show(canAccessAdmin(value.permissions));
+    }else if(response.status===401||response.status===403){
+     if(response.status===401){
+      permissionsCache.write([]);
+      try{win.sessionStorage.setItem('fa:player:anonymous:v1','1')}catch{/* storage disabled */}
+     }else permissionsCache.clear();
+     show(false);
     }
-    show(canAccessAdmin(value?.permissions));
-   }catch{if(ticket===request)show(false)}finally{win.clearTimeout(timer)}
+    // Transient API errors do not change sidebar geometry or grant access.
+   }catch{/* Offline/timeouts preserve the previous presentation hint. */}
+   finally{win.clearTimeout(timer)}
   }
   // The Admin controller has its own fresh permission checks, including refresh
   // and revocation. Reuse that state here instead of duplicating its request.
   if(onAdmin){
-   show(win.faAdminAccess===true);
+   // The protected page publishes a definitive result; don't mistake pending for denial.
+   if(typeof win.faAdminAccess==='boolean')show(win.faAdminAccess);
+   else{
+    const cached=permissionsCache.read();
+    if(cached!==null)show(canAccessAdmin(cached));else paint();
+   }
    win.addEventListener('fa:admin-access',event=>show(event.detail===true));
   }else if(accountPage){
-   // Profile and Login already check session: skip an extra anonymous 401.
-   show(canAccessAdmin(permissionsCache.read()));
+   // Account pages reuse the menu hint without a duplicate anonymous 401.
+   const cached=permissionsCache.read();
+   if(cached!==null)show(canAccessAdmin(cached));else paint();
   }else{
    void check();
    // BFCache restores keep the last tab snapshot; no redundant 401 requests.
