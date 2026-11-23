@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {renderPlayerDetailPage} from '../tools/render-player-detail.mjs';
-import {historyWords,projectPlayerClubHistory} from '../assets/player-history.mjs';
+import {historyWords,projectPlayerClubHistory,projectPlayerSignedContracts} from '../assets/player-history.mjs';
 import {isAllowlistedPublicPath,planPublicFiles,publicRequestFile} from '../tools/publication-guard.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const verify=(season,competitions)=>({season,status:'available',provenance:{kind:'authoritative',sourceRef:'player-stats:current:season:'+season},data:{total:{appearances:competitions.reduce((s,x)=>s+x.appearances,0)},competitions}});
@@ -13,7 +13,10 @@ test('#579 player History is public, generated, first-paint-safe; draft remains 
  assert.match(html,/data-detail-view="history"[^>]*aria-controls="player-detail-history-panel"/);
  assert.match(html,/get\("view"\)==="history"/);
  assert.match(html,/data-detail-panel="history" data-detail-history/);
- assert.equal((html.match(/class="app-player-history-row app-player-history-loading"/g)||[]).length,2);
+ assert.equal((html.match(/class="app-player-history-row app-player-history-loading"/g)||[]).length,4);
+ assert.doesNotMatch(html,/data-player-history-current-label|data-player-history-description/);
+ assert.match(html,/data-player-contract-rows/);
+ assert.match(html,/data-player-contract-heading="3">Signed on/);
  assert.doesNotMatch(html,/data-detail-view="history"[^>]*disabled/);
  const preview=renderPlayerDetailPage(read('admin/players/preview/index.html'),'preview');
  assert.equal(preview,read('admin/players/preview/player/index.html'));
@@ -48,7 +51,13 @@ test('#579 reuses current player Stats API; translations and URL handling',()=>{
  assert.match(js,/fetchStats:readPlayerStatistics/);
  assert.match(js,/history\.pushState/);
  assert.match(css,/html\[data-player-detail-view="history"\]/);
- for(const locale of ['en','de','es','fr','it'])assert.equal(historyWords[locale].head.length,4);
+ for(const locale of ['en','de','es','fr','it']){
+  assert.equal(historyWords[locale].head.length,4);
+  assert.equal(historyWords[locale].contractHead.length,4);
+ }
+ assert.match(js,/fetchContracts:async number/);
+ assert.match(js,/status:'not_supported'/);
+ assert.doesNotMatch(js,/fetch\('\/api\/players\/\'+number\+'\/contracts'/);
 });
 
 test('#579 History module ships in the public artifact and resolves at its imported URL',()=>{
@@ -56,4 +65,22 @@ test('#579 History module ships in the public artifact and resolves at its impor
  assert.equal(isAllowlistedPublicPath('assets/player-history.mjs'),true);
  assert.ok(planPublicFiles().includes('assets/player-history.mjs'));
  assert.match(read('assets/player-detail.js'),/import\('\/assets\/player-history\.mjs'\)/);
+});
+
+test('#579 signed contract events validate actual UTC signature, duration, club identity',()=>{
+ const payload={schemaVersion:1,playerId:12,status:'available',contracts:[
+  {id:2,clubKey:'IT-2',durationSeasons:3,signedAt:'2026-11-23T19:24:00.000Z'},
+  {id:1,clubKey:'IT-1',durationSeasons:1,signedAt:'2026-11-22T16:00:00.000Z'}
+ ]};
+ assert.deepEqual(projectPlayerSignedContracts(payload).contracts.map(x=>x.id),[2,1]);
+ assert.deepEqual(projectPlayerSignedContracts({...payload,status:'empty',contracts:[]}),
+  {status:'empty',contracts:[]});
+ assert.deepEqual(projectPlayerSignedContracts({...payload,status:'not_supported',contracts:[]}),
+  {status:'not_supported',contracts:[]});
+ assert.throws(()=>projectPlayerSignedContracts({...payload,contracts:[{...payload.contracts[0],signedAt:'Season 1'}]}));
+ assert.throws(()=>projectPlayerSignedContracts({...payload,contracts:[{...payload.contracts[0],signedAt:'2026-02-30T10:00:00.000Z'}]}));
+ assert.throws(()=>projectPlayerSignedContracts({...payload,contracts:[{...payload.contracts[0],durationSeasons:0}]}));
+ assert.throws(()=>projectPlayerSignedContracts({...payload,contracts:[{...payload.contracts[0],clubKey:'XX-1'}]}));
+ assert.throws(()=>projectPlayerSignedContracts({...payload,contracts:[payload.contracts[0],payload.contracts[0]]}));
+ assert.throws(()=>projectPlayerSignedContracts({...payload,status:'empty'}));
 });

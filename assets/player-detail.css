@@ -151,11 +151,12 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 
 /* #579 — verified player club-season History, with stable 56px table rows. */
 .app-player-detail-history{min-width:0;margin-top:5px}
-.app-player-history-current{display:flex;align-items:center;gap:9px;min-height:48px;padding:0 10px;border-bottom:1px solid var(--line);font-size:13px}
-.app-player-history-current>span:first-child{color:var(--muted)}
-.app-player-history-current-value{display:inline-flex;align-items:center;min-height:24px;font-weight:600}
-.app-player-history-title{font-size:16px;font-weight:700;margin:18px 10px 6px}
-.app-player-history-description{font-size:12px;line-height:1.5;color:var(--muted);margin:0 10px 12px;max-width:750px}
+.app-player-history-title{font-size:16px;font-weight:700;margin:10px 10px 6px}
+.app-player-history-title--secondary{margin-top:22px}
+.app-player-contracts-table{min-width:690px}
+.app-player-contracts-col-event{width:150px}.app-player-contracts-col-club{width:195px}.app-player-contracts-col-duration{width:115px}.app-player-contracts-col-date{width:230px}
+.app-player-contracts-event{font-weight:600}
+.app-player-contracts-date{white-space:nowrap}
 .app-player-history-scroll{width:100%;max-width:100%;overflow-x:auto;scrollbar-width:thin;overscroll-behavior-x:contain}
 .app-player-history-table{width:100%;min-width:600px;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .app-player-history-col-season{width:110px}.app-player-history-col-club{width:195px}.app-player-history-col-apps{width:75px}
@@ -176,7 +177,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-history-note[hidden]{display:none}
 .app-player-history-loading .app-skeleton-bar{display:inline-block;max-width:100%;vertical-align:middle}
 .app-player-history-loading .app-player-history-crest::before{content:'';width:21px;height:21px;border-radius:50%;background:var(--fa-crest-skeleton-fill)}
-@media(max-width:620px){.app-player-history-current{padding-inline:12px;flex-wrap:wrap}.app-player-history-title,.app-player-history-description,.app-player-history-note{margin-inline:12px}}
+@media(max-width:620px){.app-player-history-title,.app-player-history-note{margin-inline:12px}}
 @media(prefers-reduced-motion:reduce){.app-player-history-loading .app-skeleton-bar{animation:none}}
 
 /* #578 Player Stats: reuse Club History's table geometry and disclosure motion. */

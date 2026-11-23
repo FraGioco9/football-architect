@@ -347,7 +347,9 @@
     locale:language,clubName:key=>labels?.get(key),
     clubCrest:key=>verifiedClubCrest(key,crests),
     competitionName:key=>competitionLookup?.({competitionId:key})?.competitions?.[0]?.name,
-    fetchStats:readPlayerStatistics});
+    fetchStats:readPlayerStatistics,
+    // No signing ledger/API is approved yet. Explicit unsupported state: never invent empty evidence.
+    fetchContracts:async number=>({schemaVersion:1,playerId:number,status:'not_supported',contracts:[]})});
    if(view==='stats')await statsController.load();
    else statsController.render();
   }).catch(()=>{
@@ -410,7 +412,6 @@
    }catch{}
    if(!player||state!=='ready')return;
    historyController=module.createPlayerHistoryView({host:historyHost,id,locale:language,
-    currentClub:()=>player?.clubKey,
     clubName:key=>labels?.get(key),clubCrest:key=>verifiedClubCrest(key,crests),
     competitionName:key=>competitionLookup?.({competitionId:key})?.competitions?.[0]?.name,
     fetchStats:readPlayerStatistics});
