@@ -854,6 +854,75 @@ try{
   }finally{await ctx.close()}
  }
 
+ // CLUB-LICENSES-01: control geometry, overflow, listboxes and filtered selection.
+ // Synthetic API responses only; no remote Admin mutations or shared-world writes.
+ for(const width of [320,390,768,1440]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage(),errors=[];
+   page.on('pageerror',error=>errors.push(error.message));
+   const clubs=Array.from({length:320},(_,i)=>({
+    clubKey:'FA-'+(i+1),name:'Club '+(i+1),accountId:i===0?'fixture-account':null,
+    accountEmail:i===0?'holder@example.invalid':null,updatedAt:null,version:0
+   }));
+   await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.route('**/api/player/permissions',r=>r.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({permissions:['admin.access','admin.world.read','admin.world.write']})}));
+   await page.route('**/api/admin/club-licenses*',route=>{
+    const url=new URL(route.request().url());
+    assert.equal(route.request().method(),'GET','Layout QA must never assign or revoke licenses');
+    return route.fulfill({status:200,contentType:'application/json',
+     body:JSON.stringify(url.pathname.endsWith('/accounts')
+      ?{accounts:[{id:'fixture-target',email:'qa@example.invalid'}]}
+      :{clubs,history:[]})});
+   });
+   await page.goto('http://app.localhost:2000/admin/licenses');
+   await page.waitForFunction(()=>document.querySelector('[data-licenses-count]')?.textContent==='320 clubs');
+   assert.equal(await page.locator('.admin-licenses-dropdown').count(),3);
+   assert.equal(await page.locator('[data-licenses-rows] tr').count(),320);
+   const geometry=await page.evaluate(()=>{
+    const editor=document.querySelector('.admin-licenses-editor');
+    const grid=document.querySelector('.admin-licenses-fields');
+    const field=document.querySelector('[data-licenses-query]');
+    const select=document.querySelector('.admin-licenses-fields .language-trigger');
+    const table=document.querySelector('.admin-licenses-table-wrap');
+    const row=document.querySelector('[data-licenses-rows] tr');
+    const columns=getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length;
+    return {
+     pageOverflows:document.documentElement.scrollWidth>innerWidth,
+     editorWidth:editor.getBoundingClientRect().width,
+     availableWidth:document.querySelector('[data-admin-licenses]').getBoundingClientRect().width,
+     columns,fieldHeight:field.getBoundingClientRect().height,
+     dropdownHeight:select.getBoundingClientRect().height,
+     rowHeight:row.getBoundingClientRect().height,
+     tableScrollable:table.scrollWidth>table.clientWidth
+    };
+   });
+   assert.equal(geometry.pageOverflows,false,'No page-level horizontal overflow: '+JSON.stringify({width,geometry}));
+   assert.ok(Math.abs(geometry.editorWidth-geometry.availableWidth)<=2,'The panel fills its assigned column');
+   assert.equal(geometry.columns,width<=760?1:2,'Form stacks on mobile');
+   assert.ok(Math.abs(geometry.fieldHeight-geometry.dropdownHeight)<=2,'Text inputs and dropdowns share height');
+   assert.ok(geometry.rowHeight>=40&&geometry.rowHeight<=48,'Compact table row spacing');
+   if(width<=390)assert.equal(geometry.tableScrollable,true,'Tables scroll inside their own border on mobile');
+   const clubDropdown=page.locator('.admin-licenses-fields>label').first();
+   await clubDropdown.locator('.language-trigger').click();
+   await clubDropdown.locator('.admin-licenses-dropdown-search').fill('Club 320');
+   assert.equal(await clubDropdown.locator('.language-option').count(),1,'Club search narrows the menu');
+   await clubDropdown.locator('.language-option').click();
+   assert.equal(await page.locator('[data-licenses-club]').inputValue(),'FA-320');
+   await page.locator('[data-licenses-query]').fill('qa@example.invalid');
+   await page.locator('[data-licenses-find]').click();
+   const accountDropdown=page.locator('.admin-licenses-fields>label').nth(2);
+   await accountDropdown.locator('.language-trigger').click();
+   await accountDropdown.locator('.language-option').filter({hasText:'qa@example.invalid'}).click();
+   assert.equal(await page.locator('[data-licenses-assign]').isEnabled(),true);
+   await page.locator('.admin-licenses-filters .language-trigger').click();
+   await page.locator('.admin-licenses-filters .language-option').filter({hasText:'Licensed'}).click();
+   assert.equal(await page.locator('[data-licenses-count]').textContent(),'1 clubs');
+   assert.deepEqual(errors,[]);checks++;
+  }finally{await context.close()}
+ }
+
  timing.mark('cases-complete');
   console.log('Dedicated Admin page browser contracts PASS: '+checks+' cases');
 }finally{
