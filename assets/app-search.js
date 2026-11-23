@@ -21,11 +21,11 @@
   };
   // Exact, real in-app destinations. Expand only when the underlying pages exist.
   const entries = [
-    ["page","dashboard-title","careerStatusText","/dashboard"],
+    ["page","dashboard-title","world","/dashboard"],
     ["page","calendar-title","calendarStatusText","/calendar"],
     ["page","settings-title","languageHelp","/settings"],
-    ["section","career-status-heading","careerStatusText","/dashboard#career-status-heading"],
-    ["section","world-heading","worldText","/dashboard#world-heading"],
+    ["section","dashboard-match-centre-heading","next","/dashboard#dashboard-match-centre-heading"],
+    ["section","world-heading","phase","/dashboard#world-heading"],
     ["section","app-language-heading","languageHelp","/settings#app-language-heading"],
     ["section","app-theme-heading","themeHelp","/settings#app-theme-heading"]
   ];
@@ -52,7 +52,8 @@
     const strings = words();
     const matches = [...entries.map(([kind,id,descriptionKey,href]) => {
       const label = document.getElementById(id)?.textContent?.trim() || "";
-      const detail = document.querySelector('[data-app-i18n="' + descriptionKey + '"]')?.textContent?.trim() || "";
+      const detail = (document.querySelector('[data-app-i18n="' + descriptionKey + '"]') ||
+        document.querySelector('[data-dash-text="' + descriptionKey + '"]'))?.textContent?.trim() || "";
       const name = fold(label);
       const searchable = fold(label + " " + detail);
       const score = !query ? (kind === "page" ? 1 : 0)

@@ -17,6 +17,8 @@
   <script src="/assets/landing.js" defer></script>
   <script src="/assets/app.js" defer></script>
   <script src="/assets/app-search.js" defer></script>
+  <link rel="stylesheet" href="/assets/dashboard-overview.css">
+  <script src="/assets/dashboard-overview.mjs" type="module"></script>
   <link rel="stylesheet" href="/assets/sidebar-evolution.css">
   <script src="/assets/sidebar-evolution.js" defer></script>
   <script src="/assets/profile-navigation.js" defer></script>
@@ -144,26 +146,53 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
       </header>
       <div class="fa-shell-content-scroll">
       <main class="app-main" id="main-content" tabindex="-1">
-        <section id="app-dashboard" class="app-view" aria-labelledby="dashboard-title">
-          <h1 class="app-page-title" id="dashboard-title" data-app-i18n="dashboard">Dashboard</h1>
-          <div class="app-panels">
-            <section class="app-panel" aria-labelledby="career-status-heading">
-              <h2 id="career-status-heading" data-app-i18n="careerStatus">Career status</h2>
-              <p data-app-i18n="careerStatusText">No active career. Club selection, match dates and the Continue action will be enabled when career management is implemented.</p>
-              <div class="app-panel-actions">
-                <a class="app-link app-link-primary" href="/guide" data-app-i18n="openGuide">Explore the game guide</a>
-                <a class="app-link app-link-secondary" href="/" data-app-i18n="backToSite">Back to website</a>
+        <section id="app-dashboard" class="app-view fa-dashboard-overview" aria-labelledby="dashboard-title">
+          <div class="fa-dash-page-header">
+            <h1 class="app-page-title" id="dashboard-title" data-app-i18n="dashboard">Dashboard</h1>
+          </div>
+          <div class="fa-dash-statusbar" role="group" data-dash-aria="status">
+            <span id="world-heading" class="sr-only" data-dash-text="world">World overview</span>
+            <div class="fa-dash-status-cell"><span data-dash-text="season">Season</span><strong data-dash-value="season"><span class="fa-dash-shimmer fa-dash-shimmer-small" aria-hidden="true"></span></strong></div>
+            <div class="fa-dash-status-cell"><span data-dash-text="day">Sporting day</span><strong data-dash-value="day"><span class="fa-dash-shimmer fa-dash-shimmer-medium" aria-hidden="true"></span></strong></div>
+            <div class="fa-dash-status-cell fa-dash-status-phase"><span data-dash-text="phase">World phase</span><strong><i class="fa-dash-status-light" aria-hidden="true"></i><span data-dash-value="phase"><span class="fa-dash-shimmer fa-dash-shimmer-medium" aria-hidden="true"></span></span></strong></div>
+          </div>
+          <p class="fa-dash-world-context" data-dash-note="world" role="status" aria-live="polite"></p>
+          <div class="fa-dash-layout">
+            <section class="fa-dash-match-centre fa-dash-module" aria-labelledby="dashboard-match-centre-heading">
+              <div class="fa-dash-module-heading"><h2 id="dashboard-match-centre-heading" data-dash-text="matchCentre">Match centre</h2><a href="/matches" data-dash-text="matches">All matches</a></div>
+              <div class="fa-dash-scoreboards">
+                <section class="fa-dash-scoreboard" aria-labelledby="dashboard-recent-heading">
+                  <h3 id="dashboard-recent-heading" data-dash-text="recent">Recent results</h3>
+                  <ul class="fa-dashboard-list" data-dash-list="recent" aria-busy="true">
+                    <li class="fa-dashboard-placeholder" aria-hidden="true"><span class="fa-dash-club-pair fa-dash-pair-skeleton"><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span></span><span class="fa-dash-match-copy fa-dash-copy-skeleton"><span class="fa-dash-shimmer"></span><span class="fa-dash-shimmer fa-dash-shimmer-context"></span></span><span class="fa-dash-shimmer fa-dash-shimmer-score"></span></li>
+                    <li class="fa-dashboard-placeholder" aria-hidden="true"><span class="fa-dash-club-pair fa-dash-pair-skeleton"><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span></span><span class="fa-dash-match-copy fa-dash-copy-skeleton"><span class="fa-dash-shimmer"></span><span class="fa-dash-shimmer fa-dash-shimmer-context"></span></span><span class="fa-dash-shimmer fa-dash-shimmer-score"></span></li>
+                    <li class="fa-dashboard-placeholder" aria-hidden="true"><span class="fa-dash-club-pair fa-dash-pair-skeleton"><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span></span><span class="fa-dash-match-copy fa-dash-copy-skeleton"><span class="fa-dash-shimmer"></span><span class="fa-dash-shimmer fa-dash-shimmer-context"></span></span><span class="fa-dash-shimmer fa-dash-shimmer-score"></span></li>
+                    <li class="fa-dashboard-placeholder" aria-hidden="true"><span class="fa-dash-club-pair fa-dash-pair-skeleton"><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span></span><span class="fa-dash-match-copy fa-dash-copy-skeleton"><span class="fa-dash-shimmer"></span><span class="fa-dash-shimmer fa-dash-shimmer-context"></span></span><span class="fa-dash-shimmer fa-dash-shimmer-score"></span></li>
+                  </ul>
+                  <p class="fa-dashboard-note" data-dash-note="recent" aria-live="polite"></p>
+                </section>
+                <section class="fa-dash-scoreboard" aria-labelledby="dashboard-next-heading">
+                  <h3 id="dashboard-next-heading" data-dash-text="next">Upcoming fixtures</h3>
+                  <ul class="fa-dashboard-list" data-dash-list="next" aria-busy="true">
+                    <li class="fa-dashboard-placeholder" aria-hidden="true"><span class="fa-dash-club-pair fa-dash-pair-skeleton"><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span></span><span class="fa-dash-match-copy fa-dash-copy-skeleton"><span class="fa-dash-shimmer"></span><span class="fa-dash-shimmer fa-dash-shimmer-context"></span></span><span class="fa-dash-shimmer fa-dash-shimmer-score"></span></li>
+                    <li class="fa-dashboard-placeholder" aria-hidden="true"><span class="fa-dash-club-pair fa-dash-pair-skeleton"><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span></span><span class="fa-dash-match-copy fa-dash-copy-skeleton"><span class="fa-dash-shimmer"></span><span class="fa-dash-shimmer fa-dash-shimmer-context"></span></span><span class="fa-dash-shimmer fa-dash-shimmer-score"></span></li>
+                    <li class="fa-dashboard-placeholder" aria-hidden="true"><span class="fa-dash-club-pair fa-dash-pair-skeleton"><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span></span><span class="fa-dash-match-copy fa-dash-copy-skeleton"><span class="fa-dash-shimmer"></span><span class="fa-dash-shimmer fa-dash-shimmer-context"></span></span><span class="fa-dash-shimmer fa-dash-shimmer-score"></span></li>
+                    <li class="fa-dashboard-placeholder" aria-hidden="true"><span class="fa-dash-club-pair fa-dash-pair-skeleton"><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span><span class="fa-dash-club-crest fa-dash-crest-skeleton"></span></span><span class="fa-dash-match-copy fa-dash-copy-skeleton"><span class="fa-dash-shimmer"></span><span class="fa-dash-shimmer fa-dash-shimmer-context"></span></span><span class="fa-dash-shimmer fa-dash-shimmer-score"></span></li>
+                  </ul>
+                  <p class="fa-dashboard-note" data-dash-note="next" aria-live="polite"></p>
+                </section>
               </div>
+              <button type="button" class="fa-dashboard-retry" data-dash-retry hidden data-dash-text="retry">Retry</button>
             </section>
-            <section class="app-panel" aria-labelledby="world-heading">
-              <h2 id="world-heading" data-app-i18n="world">World foundations</h2>
-              <p data-app-i18n="worldText">The fictional world catalogues are available, but these identities are not yet an active playable league system.</p>
-              <div class="app-stats">
-                <div><strong>8</strong><span data-app-i18n="countries">Countries</span></div>
-                <div><strong>16</strong><span data-app-i18n="divisions">Divisions</span></div>
-                <div><strong>320</strong><span data-app-i18n="clubs">Documented clubs</span></div>
-              </div>
-            </section>
+            <aside class="fa-dash-agenda fa-dash-module" aria-labelledby="dashboard-events-heading">
+              <div class="fa-dash-module-heading"><h2 id="dashboard-events-heading" data-dash-text="events">World calendar</h2><a href="/calendar" data-dash-text="calendar">Calendar</a></div>
+              <ol class="fa-dashboard-list fa-dash-agenda-list" data-dash-list="events" aria-busy="true">
+                    <li class="fa-dashboard-placeholder fa-dash-agenda-placeholder" aria-hidden="true"><span class="fa-dash-agenda-date fa-dash-date-skeleton"><span class="fa-dash-shimmer"></span></span><span class="fa-dash-agenda-copy fa-dash-copy-skeleton"><span class="fa-dash-shimmer"></span><span class="fa-dash-shimmer fa-dash-shimmer-context"></span></span></li>
+                    <li class="fa-dashboard-placeholder fa-dash-agenda-placeholder" aria-hidden="true"><span class="fa-dash-agenda-date fa-dash-date-skeleton"><span class="fa-dash-shimmer"></span></span><span class="fa-dash-agenda-copy fa-dash-copy-skeleton"><span class="fa-dash-shimmer"></span><span class="fa-dash-shimmer fa-dash-shimmer-context"></span></span></li>
+                    <li class="fa-dashboard-placeholder fa-dash-agenda-placeholder" aria-hidden="true"><span class="fa-dash-agenda-date fa-dash-date-skeleton"><span class="fa-dash-shimmer"></span></span><span class="fa-dash-agenda-copy fa-dash-copy-skeleton"><span class="fa-dash-shimmer"></span><span class="fa-dash-shimmer fa-dash-shimmer-context"></span></span></li>
+              </ol>
+              <p class="fa-dashboard-note" data-dash-note="events" aria-live="polite"></p>
+            </aside>
           </div>
         </section>
         <section id="app-calendar" class="app-view" aria-labelledby="calendar-title" hidden>

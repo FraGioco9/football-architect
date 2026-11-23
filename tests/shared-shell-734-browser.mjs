@@ -25,7 +25,7 @@ export async function verifySharedShellNetwork(browser,{engine='chromium'}={}){
    const u=new URL(request.url());
    if([origin,siteOrigin].includes(u.origin)&&(u.pathname.startsWith('/api/')||
     u.pathname==='/data/divisions.json'))
-    requests.push({stage,method:request.method(),path:u.pathname,status:null});
+    requests.push({stage,method:request.method(),path:u.pathname,search:u.search,status:null});
   });
   await context.addInitScript(()=>{
    sessionStorage.setItem('football-architect:debug-enabled','off');
@@ -33,11 +33,14 @@ export async function verifySharedShellNetwork(browser,{engine='chromium'}={}){
    window.addEventListener('pageshow',event=>window.__faShellPageshow.push(event.persisted));
   });
   await page.route('**/api/**',route=>{
-   const path=new URL(route.request().url()).pathname;
-   const body=path==='/api/world'?worldPayload:
+   const url=new URL(route.request().url()),path=url.pathname;
+   const preview=path==='/api/matches';
+   const body=preview?{schemaVersion:1,providerId:'authoritative-world',world,
+    selectedSeason:world.seasonNumber,day:Number(url.searchParams.get('day')),
+    publication:'published',fixtures:[]}:path==='/api/world'?worldPayload:
     path==='/api/player/permissions'?(authorized?grants:denial):
     path==='/api/player/session'?denial:null;
-   return route.fulfill({status:path==='/api/world'||(authorized&&path==='/api/player/permissions')?200:401,
+   return route.fulfill({status:preview||path==='/api/world'||(authorized&&path==='/api/player/permissions')?200:401,
     contentType:'application/json',body:JSON.stringify(body??denial)});
   });
   const count=(when,path)=>requests.filter(r=>r.stage===when&&r.method==='GET'&&r.path===path).length;
@@ -59,10 +62,23 @@ export async function verifySharedShellNetwork(browser,{engine='chromium'}={}){
    await page.waitForTimeout(130);
    assert.equal(count(name,'/api/world'),1,name+' world read');
    assert.equal(count(name,'/api/player/permissions'),permissionExpected?1:0,name+' permission read');
-   assert.equal(apiCount(name),1+(permissionExpected?1:0),name+' total API reads');
+   const previews=requests.filter(r=>r.stage===name&&r.path==='/api/matches');
+   const expectedPreviews=path==='/dashboard'?4:0;
+   assert.equal(previews.length,expectedPreviews,name+' bounded published match previews');
+   for(const item of previews){
+    const params=new URLSearchParams(item.search);
+    assert.deepEqual([...params.keys()].sort(),['day','season'],name+' scoped preview query');
+    assert.equal(params.get('season'),String(world.seasonNumber),name+' current season');
+    const day=Number(params.get('day'));
+    assert.ok(Number.isSafeInteger(day)&&day>=1&&day<=56&&
+      params.get('day')===String(day),name+' canonical sporting day');
+    assert.equal(item.method,'GET',name+' read-only preview');
+   }
+   assert.equal(new Set(previews.map(item=>item.search)).size,previews.length,name+' distinct days');
+   assert.equal(apiCount(name),1+(permissionExpected?1:0)+expectedPreviews,name+' total API reads');
    observations.push({case:name,worldGets:count(name,'/api/world'),
-    permissionGets:count(name,'/api/player/permissions'),totalApiGets:apiCount(name),
-    distinctApiPaths:1+(permissionExpected?1:0)});
+    permissionGets:count(name,'/api/player/permissions'),matchPreviewGets:previews.length,
+    totalApiGets:apiCount(name),distinctApiPaths:1+(permissionExpected?1:0)+(expectedPreviews?1:0)});
   };
   try{
    if(!authorized){
