@@ -18,6 +18,8 @@
   const club=el('[data-licenses-club]'),query=el('[data-licenses-query]'),account=el('[data-licenses-account]');
   const rows=el('[data-licenses-rows]'),history=el('[data-licenses-history]'),message=el('[data-licenses-message]');
   let data=null,working=false,loadCounter=0,searchCounter=0;
+  const announceAccess=allowed=>{win.faAdminAccess=allowed;
+   win.dispatchEvent(new win.CustomEvent('fa:admin-access',{detail:allowed}));};
   const locale=()=>labels[doc.documentElement.lang]||labels.en;
   const l=k=>locale()[k]||labels.en[k]||k;
   const show=(value)=>{message.textContent=value||''};
@@ -211,11 +213,12 @@
     if(ticket!==loadCounter)return;
     if(!Array.isArray(result.clubs)||!Array.isArray(result.history)||result.clubs.length!==320)throw Error('invalid_data');
     data=result;content.hidden=false;gate.hidden=true;
-    populateClubs();render();
+    announceAccess(true);populateClubs();render();
    }catch(error){
     if(ticket!==loadCounter)return;
     content.hidden=true;gate.hidden=false;
     const code=String(error);
+    if(/unauthorized|permission_denied|http_401|http_403/.test(code))announceAccess(false);
     gate.textContent=/club_licenses_schema_unavailable/.test(code)?l('schema'):
      /unauthorized|permission_denied|http_401|http_403/.test(code)?l('denied'):
      /not_found|http_404/.test(code)?l('apiMissing'):

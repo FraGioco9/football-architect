@@ -108,3 +108,21 @@ test('public permissions navigation releases unused 401/503 response bodies with
    '401 is cached as anonymous; unavailable permissions remain uncached');
  }
 });
+
+test('Admin first-paint UI hint is separate from API authorization',()=>{
+ const boot=readFileSync(new URL('../assets/sidebar-first-paint.js',import.meta.url),'utf8');
+ const nav=readFileSync(new URL('../assets/profile-navigation.js',import.meta.url),'utf8');
+ const license=readFileSync(new URL('../assets/admin-licenses.js',import.meta.url),'utf8');
+ const players=readFileSync(new URL('../assets/admin-players.js',import.meta.url),'utf8');
+ const calendar=readFileSync(new URL('../assets/admin-settings.js',import.meta.url),'utf8');
+ assert.match(boot,/prepaintAdmin\(\)/);
+ assert.match(boot,/fa:admin:nav-visible:v1/);
+ assert.match(boot,/p\.includes\('admin\.access'\).*p\.includes\('admin\.world\.read'\)/s);
+ assert.match(nav,/doc\.getElementById\('app-nav-admin'\)/);
+ assert.doesNotMatch(nav,/const ticket=\+\+request;show\(false\)/);
+ assert.match(nav,/Transient API errors do not change sidebar geometry/);
+ assert.match(license,/announceAccess\(true\)/);
+ assert.match(license,/announceAccess\(false\)/);
+ assert.match(players,/paint\(false,false,false\)/);
+ assert.match(calendar,/signedIn','signedOut','forbidden/);
+});

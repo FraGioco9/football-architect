@@ -423,19 +423,19 @@
     else if(error.message.startsWith('authorization_')||error.message==='permission_denied')paint(false,false);
    }finally{if(active===operation){pending=false;update();}}
   }
-  function paint(base,writer){
+  function paint(base,writer,notify=true){
    if(!base||!writer){if(draft||saved)invalidateDraft();}
    allowed=base;canWrite=writer;
    host.hidden=!(base&&(!isPlayers||writer));
    if(isPlayers)root.hidden=!(base&&writer);
    host.dataset.adminAccess=host.hidden?'denied':'granted';
    if(!isPlayers)root.querySelectorAll('[data-admin-panel="players"],[data-admin-panel="contracts"],[data-admin-panel="licenses"]').forEach(item=>{item.hidden=!writer});
-   win.faAdminAccess=base;
-   win.dispatchEvent(new CustomEvent('fa:admin-access',{detail:base}));
+   if(notify){win.faAdminAccess=base;
+    win.dispatchEvent(new CustomEvent('fa:admin-access',{detail:base}));}
    update();
   }
   async function check(){
-   const current=++ticket;paint(false,false);
+   const current=++ticket;paint(false,false,false);
    const cached=permissionCache?.read();
    if(cached!==null&&cached!==undefined){
     const read=cached.includes('admin.access')&&cached.includes('admin.world.read');
