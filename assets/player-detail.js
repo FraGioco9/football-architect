@@ -347,9 +347,7 @@
     locale:language,clubName:key=>labels?.get(key),
     clubCrest:key=>verifiedClubCrest(key,crests),
     competitionName:key=>competitionLookup?.({competitionId:key})?.competitions?.[0]?.name,
-    fetchStats:readPlayerStatistics,
-    // No signing ledger/API is approved yet. Explicit unsupported state: never invent empty evidence.
-    fetchContracts:async number=>({schemaVersion:1,playerId:number,status:'not_supported',contracts:[]})});
+    fetchStats:readPlayerStatistics});
    if(view==='stats')await statsController.load();
    else statsController.render();
   }).catch(()=>{
@@ -400,25 +398,23 @@
   if(historyController){historyController.render();void historyController.load();return;}
   if(historyControllerPromise)return;
   historyControllerPromise=import('/assets/player-history.mjs').then(async module=>{
-   let labels=null,crests=null,competitionLookup=null;
-   try{
-    const context=await import('/assets/match-public-context.mjs');
-    competitionLookup=context.matchPublicContext;
-    const catalog=await context.publicClubIdentityCatalog();
-    if(Array.isArray(catalog?.clubs)){
-     labels=new Map(catalog.clubs.map(item=>[item.countryId+'-'+item.clubId,item.primaryName]));
-     crests=catalog.clubCrests;
-    }
-   }catch{}
    if(!player||state!=='ready')return;
-   historyController=module.createPlayerHistoryView({host:historyHost,id,locale:language,
-    clubName:key=>labels?.get(key),clubCrest:key=>verifiedClubCrest(key,crests),
-    competitionName:key=>competitionLookup?.({competitionId:key})?.competitions?.[0]?.name,
-    fetchStats:readPlayerStatistics});
+   historyController=module.createPlayerHistoryView({
+    host:historyHost,id,locale:language,
+    // Signing has not been implemented: do not infer events from current affiliation.
+    fetchContracts:async number=>({schemaVersion:1,playerId:number,status:'not_supported',contracts:[]})
+   });
    if(view==='history')await historyController.load();else historyController.render();
   }).catch(()=>{
-   const note=historyHost.querySelector('[data-player-history-note]');
-   if(note){note.hidden=false;note.textContent='History unavailable';}
+   // Clear the initial skeleton even if the module fails to load.
+   historyHost.querySelector('[data-player-contract-rows]')?.replaceChildren();
+   const note=historyHost.querySelector('[data-player-contract-note]');
+   if(note){
+    const copy={en:'Signed contract history unavailable',de:'Vertragshistorie nicht verfügbar',
+     es:'Historial de contratos no disponible',fr:'Historique des contrats indisponible',
+     it:'Storico dei contratti non disponibile'};
+    note.textContent=copy[language()]||copy.en;note.hidden=false;
+   }
    historyHost.setAttribute('aria-busy','false');
   }).finally(()=>{historyControllerPromise=null});
  }
