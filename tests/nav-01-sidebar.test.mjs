@@ -145,6 +145,7 @@ test('#581: World History shares the stable first-paint sidebar on every generat
   '404.html',
   ...['','login/','recover/','register/','verify-email/'].map(p=>'account/'+p+'index.html'),
   ...['','calendar/','contracts/','players/','players/preview/','players/preview/player/'].map(p=>'admin/'+p+'index.html'),
+  'admin/licenses/index.html',
   'calendar/index.html','clubs/index.html','clubs/_shared/index.html',
   'competitions/index.html','competitions/_shared/index.html',
   ...['br','de','eng','es','fr','it','nl','pt'].flatMap(country=>[1,2].map(tier=>'competitions/'+country+'-'+tier+'/index.html')),
@@ -174,7 +175,7 @@ test('#581: World History shares the stable first-paint sidebar on every generat
    assert.match(html,/id="app-dashboard" class="app-view"[^>]*hidden/,'Dashboard never appears beside History');
   }
  }
- assert.equal(pages.length,42,'all generated app shells, not just directory pages');
+ assert.equal(pages.length,43,'all generated app shells, including licenses');
  const runtime=readFileSync(new URL('../assets/sidebar-evolution.js',import.meta.url),'utf8');
  assert.match(runtime,/if\(historyChildren&&!historyLink\)/,'deferred runtime must not move an existing nav item');
  for(const label of ['History','Geschichte','Historia','Histoire','Storia'])

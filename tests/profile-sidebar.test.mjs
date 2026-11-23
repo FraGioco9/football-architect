@@ -74,7 +74,7 @@ test('anonymous Profile navigation avoids redundant 401 requests on Login',()=>{
  const nav=readFileSync(new URL('../assets/profile-navigation.js',import.meta.url),'utf8');
  const login=readFileSync(new URL('../assets/account-login.js',import.meta.url),'utf8');
  const profile=readFileSync(new URL('../assets/account-settings.js',import.meta.url),'utf8');
- assert.match(nav,/else if\(accountPage\)[\s\S]*?show\(canAccessAdmin\(permissionsCache\.read\(\)\)\)/);
+ assert.match(nav,/else if\(accountPage\)[\s\S]*?const cached=permissionsCache\.read\(\);[\s\S]*?if\(cached!==null\)show\(canAccessAdmin\(cached\)\);else paint\(\)/);
  assert.match(nav,/fa:player:anonymous:v1/);
  assert.match(nav,/fa:player:skip-login-session-probe:v1/);
  assert.match(login,/const skip=window\.sessionStorage\.getItem\(key\)==='1'/);
