@@ -1673,6 +1673,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bNativeShotSide'&&
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
      k!=='researchSmallSidedVariantIndex'&&
+     k!=='researchCarryRunwayStart'&&
      k!=='researchSoloCarryLockedPhase'&&
      k!=='researchSoloCarryPlayerAttributes'&&
       k!=='researchSmallSidedBodyFeedback'&&
@@ -1825,7 +1826,8 @@ export function createPlayerMovement(options={}){
        (options.researchSmallSidedVariantIndex===undefined?2:3)+
         (options.researchSmallSidedBodyFeedback===true?1:0)+
         (options.researchSoloCarryLockedPhase===undefined?0:1)+
-        (options.researchSoloCarryPlayerAttributes===undefined?0:1)))||
+        (options.researchSoloCarryPlayerAttributes===undefined?0:1)+
+        (options.researchCarryRunwayStart===true?1:0)))||
     ((options.researchSmallSidedSituation===undefined)!==
      (options.researchSmallSidedSide===undefined))||
     (options.researchSoloCarryLockedPhase!==undefined&&(
@@ -1835,6 +1837,9 @@ export function createPlayerMovement(options={}){
      options.researchSoloCarryLockedPhase===undefined)||
     (options.researchSmallSidedVariantIndex!==undefined&&
      options.researchSmallSidedSituation===undefined)||
+    (options.researchCarryRunwayStart!==undefined&&
+     (options.researchCarryRunwayStart!==true||
+      options.researchSmallSidedSituation!=='carry-solo'))||
     (options.researchSmallSidedBodyFeedback!==undefined&&
      (options.researchSmallSidedBodyFeedback!==true||
       options.researchSmallSidedSituation===undefined))||
@@ -1874,7 +1879,8 @@ export function createPlayerMovement(options={}){
  const smallSided=options.researchSmallSidedSituation===undefined?null:
   smallSidedSetup(options.researchSmallSidedSituation,
    options.researchSmallSidedSide,INITIAL_PLAYERS,
-   {variantIndex:options.researchSmallSidedVariantIndex??0});
+   {variantIndex:options.researchSmallSidedVariantIndex??0,
+    carryRunwayStart:options.researchCarryRunwayStart===true});
  const smallActive=smallSided?new Set(smallSided.activeIds):null;
  const initial=smallSided?smallSided.staged:
   options.researchB06bOpeningKickoffEnabled===true?

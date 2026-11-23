@@ -115,6 +115,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSmallSidedSituation = null,
   diagnosticSmallSidedSide = null,
   diagnosticSmallSidedVariantIndex = 0,
+  diagnosticCarryRunwayStart = false,
   diagnosticSoloShoeWidthScale = 1,
   diagnosticSoloShoeLengthScale = 1,
   diagnosticSoloRecoveryStepScale = 1,
@@ -152,6 +153,10 @@ export function createEngine(RAPIER, input = {}, {
     throw new TypeError('Shared contact events require both native bridges without football action authority');
   if((diagnosticSmallSidedSituation===null)!==(diagnosticSmallSidedSide===null))
    throw new TypeError('Small-sided situation and attacking side must be paired');
+  if(typeof diagnosticCarryRunwayStart!=='boolean'||
+     (diagnosticCarryRunwayStart&&
+      diagnosticSmallSidedSituation!=='carry-solo'))
+   throw new TypeError('Pre-kickoff runway only for solo native/intent research');
   if(diagnosticSmallSidedSituation===null&&diagnosticSmallSidedVariantIndex!==0)
    throw new TypeError('Small-sided variant requires a paired physical exercise');
   if(typeof diagnosticIntentDrivenSoloCarryEnabled!=='boolean'||
@@ -208,7 +213,8 @@ export function createEngine(RAPIER, input = {}, {
   if(diagnosticSmallSidedSituation!==null){
    smallSidedSetup(diagnosticSmallSidedSituation,
     diagnosticSmallSidedSide,INITIAL_PLAYERS,
-    {variantIndex:diagnosticSmallSidedVariantIndex});
+    {variantIndex:diagnosticSmallSidedVariantIndex,
+     carryRunwayStart:diagnosticCarryRunwayStart});
    if(!diagnosticPlayerFootContactsEnabled||
       !diagnosticAutonomousFixtureActionEnabled||
       diagnosticPlayerBodyCollidersEnabled||diagnosticSharedContactEventsEnabled||
@@ -421,7 +427,8 @@ export function createEngine(RAPIER, input = {}, {
  const smallSided=diagnosticSmallSidedSituation===null?null:
   smallSidedSetup(diagnosticSmallSidedSituation,
    diagnosticSmallSidedSide,INITIAL_PLAYERS,
-   {variantIndex:diagnosticSmallSidedVariantIndex});
+   {variantIndex:diagnosticSmallSidedVariantIndex,
+     carryRunwayStart:diagnosticCarryRunwayStart});
  const isolatedCarry=smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo';
  const stagedShoes=smallSided?smallSided.staged:
   diagnosticB06bOpeningKickoffEnabled?
@@ -547,7 +554,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticBasicRestartAttackSide,
     diagnosticB06bHalftimeTick,diagnosticB06bNativeShotSide,
     diagnosticSmallSidedSituation,diagnosticSmallSidedSide,
-    diagnosticSmallSidedVariantIndex,diagnosticSoloShoeWidthScale,
+    diagnosticSmallSidedVariantIndex,diagnosticCarryRunwayStart,
+    diagnosticSoloShoeWidthScale,
     diagnosticSoloShoeLengthScale,diagnosticSoloRecoveryStepScale,
     diagnosticSoloSprintCadenceScale,diagnosticSoloSprintLateralTrackScale,
     diagnosticIntentDrivenSoloCarryEnabled,

@@ -40,10 +40,14 @@ export function createControlledActionLab(RAPIER,id,{
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
+ carryRunwayStart=false,
  soloCarryPlayerAttributes=null
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
+ if(typeof carryRunwayStart!=='boolean'||
+    (carryRunwayStart&&id!=='carry-solo'))
+  throw new TypeError('Long-running pre-kickoff runway only for Solo Carry');
  if(typeof intentDrivenSoloCarry!=='boolean'||
     (intentDrivenSoloCarry&&(id!=='carry-solo'||bodyGuardEnabled||
      soloShoeWidthScale!==1||soloShoeLengthScale!==1||
@@ -79,7 +83,9 @@ export function createControlledActionLab(RAPIER,id,{
      (id!=='carry-solo'||!bodyGuardEnabled)))
   throw new TypeError('Sprint cadence and lateral-tracking research require guarded solo Carry');
  const smallSided=spec.mode==='situation'?
-  smallSidedSetup(id,shotSide,INITIAL_PLAYERS,{variantIndex}):null;
+  smallSidedSetup(id,shotSide,INITIAL_PLAYERS,{
+   variantIndex,carryRunwayStart
+  }):null;
  const refereeMode=spec.mode==='referee';
  const sourceRestart=['throw-in','corner','goal-kick'].includes(id);
  const basicFootwork=['trap','dribble'].includes(id);
@@ -183,6 +189,7 @@ export function createControlledActionLab(RAPIER,id,{
    diagnosticSmallSidedSituation:id,
    diagnosticSmallSidedSide:shotSide,
    diagnosticSmallSidedVariantIndex:variantIndex,
+   diagnosticCarryRunwayStart:carryRunwayStart,
    ...(id==='carry-solo'?{
     diagnosticSoloShoeWidthScale:soloShoeWidthScale,
     diagnosticSoloShoeLengthScale:soloShoeLengthScale,
@@ -224,6 +231,7 @@ export function createControlledActionLab(RAPIER,id,{
  const mover=createPlayerMovement(smallSided?{
    researchSmallSidedSituation:id,researchSmallSidedSide:shotSide,
    ...(variantIndex>0?{researchSmallSidedVariantIndex:variantIndex}:{}),
+   ...(carryRunwayStart?{researchCarryRunwayStart:true}:{}),
    ...(soloCarryLockedPhase!==null?{
     researchSoloCarryLockedPhase:soloCarryLockedPhase,
     researchSoloCarryPlayerAttributes:selectedCarryAttributes}:{}),

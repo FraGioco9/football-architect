@@ -13,7 +13,7 @@ test('#628 real native two-shoe baseline vs intent: 5s/10s control and loss evid
  for(const mode of ['native','intent']){
   for(const side of ['home','away']){
    const lab=createControlledActionLab(R,'carry-solo',{
-    shotSide:side,variantIndex:3,
+    shotSide:side,variantIndex:3,carryRunwayStart:true,
     intentDrivenSoloCarry:mode==='intent',
     ...(mode==='intent'?{soloCarryLockedPhase:'sprint',
      soloCarryPlayerAttributes:{speed:50,agility:50,
@@ -23,6 +23,8 @@ test('#628 real native two-shoe baseline vs intent: 5s/10s control and loss evid
     let contacts=0,realActions=0,colliderStarts=0,actualImpulses=0;
     let maxGap=0,outOfReach=0,frame=null;
     const start=lab.snapshot().ball.position.x;
+    assert.ok(Math.abs(start)<5,
+     'Both native Rapier shoes and live ball must start deep inside pitch');
     const snapshots=[];
     for(let tick=1;tick<=600;tick++){
      frame=lab.step();
@@ -56,7 +58,11 @@ test('#628 real native two-shoe baseline vs intent: 5s/10s control and loss evid
      if(tick===300||tick===600)snapshots.push({
       tick,ballForwardM:(side==='home'?1:-1)*
        (frame.ball.position.x-start),
-      playerBallGapM:gap,contacts,colliderStarts,
+      playerBallGapM:gap,
+      ballPositionX:frame.ball.position.x,
+      withinPitch:Math.abs(frame.ball.position.x)<=52.5,
+      refereeDeadBall:frame.refereeEvidence?.lastEvent??null,
+      contacts,colliderStarts,
       actions:realActions,rapierImpulses:actualImpulses,
       outOfReachTicks:outOfReach,maxGapM:maxGap
      });
@@ -84,6 +90,8 @@ test('#628 real native two-shoe baseline vs intent: 5s/10s control and loss evid
  const intent=results.find(r=>r.mode==='intent'&&r.side==='home');
  assert.ok(intent.snapshots[0].rapierImpulses>=1);
  const native=results.find(r=>r.mode==='native'&&r.side==='home');
+ assert.ok(native.snapshots[1].withinPitch,
+  'Ten-second genuine native Carry runway must remain inside physical pitch');
  assert.ok(native.snapshots[1].colliderStarts>=native.snapshots[0].colliderStarts,
   'Only actual Rapier native shoe events can populate the native probe');
  process.stdout.write('ME_628_LONG_CARRY_NATIVE_CONTACT_AUDIT '+

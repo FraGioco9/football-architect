@@ -111,8 +111,13 @@ export function getSmallSidedScenario(id){
  if(!d)throw new RangeError('Unknown private small-sided situation');
  return d;
 }
-export function smallSidedSetup(id,side,canonicalPlayers,{variantIndex=0}={}){
+export function smallSidedSetup(id,side,canonicalPlayers,{
+ variantIndex=0,carryRunwayStart=false
+}={}){
  const d=getSmallSidedScenario(id);
+ if(typeof carryRunwayStart!=='boolean'||
+    (carryRunwayStart&&id!=='carry-solo'))
+  throw new TypeError('Long runway is restricted to pre-kickoff Solo Carry research');
  if(!Number.isSafeInteger(variantIndex)||variantIndex<0||
     variantIndex>=SMALL_SIDED_VARIANT_COUNT)
   throw new RangeError('Small-sided variant index must be 0–29');
@@ -181,10 +186,22 @@ export function smallSidedSetup(id,side,canonicalPlayers,{variantIndex=0}={}){
   }
   if(!accepted)throw new RangeError('No collision-free seeded small-sided start');
  }
+ // An opt-in 10s experiment starts 30m further back. Move only the
+ // original active runner and the initial ball BEFORE tick zero; the ball,
+ // both native shoe colliders and all subsequent 60Hz motion remain Rapier.
+ // No post-kickoff teleport, goal-line interception or artificial wall.
+ if(carryRunwayStart){
+  const startX=staged.find(p=>p.id===side+'-10').x;
+  const offsetX=-dir*30;
+  staged=freeze(staged.map(p=>p.id!==side+'-10'?p:
+   freeze({...p,x:startX+offsetX,baseX:p.baseX+offsetX})));
+  ballX-=30;
+ }
  if(!physicallySeparated(staged,0.98))
   throw new RangeError('Original 22-player hard separation must hold at tick zero');
  return freeze({
   id,side,opponent,variantIndex,activeIds,staged,
+  ...(carryRunwayStart?{carryRunwayStart:true}:{}),
   ball:freeze({preset:'roll',
    seed:'me-small-'+id+(variantIndex===0?'':'-v'+variantIndex)+'-'+side,
    x:dir*ballX,y:ballY,z:0,vx:0,vy:0,vz:0}),
