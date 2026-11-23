@@ -608,6 +608,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
     ...(nativeFixedCarryResearch?{
       nativeFixedCarryResearch:true,
+      nativeFixedSprintLongStride,
       ...(soloCarryMeasurements?{soloCarryMeasurements}:{}),
       soloCarryLockedPhase,
       soloCarryPlayerAttributes:selectedCarryAttributes,

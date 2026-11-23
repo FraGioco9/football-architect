@@ -223,12 +223,79 @@ test('#628 paired native fixed Sprint long-stride research 2/5/10s',
   }finally{lab.dispose();}
  }
  assert.equal(matrix.length,8);
- // The candidate can fail (including missing contacts): only authentic
- // evidence is printed. Adoption requires separate review of every 10s arm.
+ // DEV-only acceptance: real contacts and impulses must both be fewer,
+ // stronger physical pushes must retain safe ball reach and forward progress.
+ for(const rating of [50,90])for(const side of ['home','away']){
+  const base=matrix.find(x=>x.rating===rating&&x.side===side&&!x.longStride);
+  const tuned=matrix.find(x=>x.rating===rating&&x.side===side&&x.longStride);
+  assert.ok(base&&tuned);
+  const a=base.checkpoints,b=tuned.checkpoints;
+  assert.ok(b[0].actions<=a[0].actions,'no opening Sprint touch burst');
+  assert.ok(b[2].actions<a[2].actions,'fewer real 10s Carry impulses');
+  assert.ok(b[2].physicalStarts<a[2].physicalStarts,
+   'fewer genuine native physical shoe STARTs');
+  assert.ok(b[2].meanAddedImpulseNs>a[2].meanAddedImpulseNs,
+   'stronger additional native impulse');
+  assert.equal(b[2].lostTicks,0,'no 1.5m lost-ball frames');
+  assert.ok(b[2].peakGapM<1.5);
+  assert.ok(b[2].ballForwardM>=a[2].ballForwardM);
+  assert.ok(b[2].peakPlayerKmh>a[2].peakPlayerKmh);
+  assert.equal(b[2].deadBall,null);
+ }
  for(const row of matrix){
   assert.ok(row.checkpoints[2].physicalStarts>=row.checkpoints[2].actions);
   assert.ok(row.checkpoints[2].ballForwardM>=0);
  }
  process.stdout.write('ME_628_NATIVE_LONG_STRIDE_AB_10S '+
   JSON.stringify(matrix)+'\\n');
+});
+
+test('#628 Sprint long-stride physical 10s extra ratings and variants',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const rating of [25,50,75,90])
+ for(const side of ['home','away'])
+ for(const variantIndex of [0,17,29]){
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide:side,variantIndex,carryRunwayStart:true,
+   nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
+   nativeFixedSprintLongStride:true,
+   soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
+  });
+  try{
+   let actions=0,starts=0,lostTicks=0,frame=null;
+   const startX=lab.snapshot().ball.position.x;
+   for(let tick=1;tick<=600;tick++){
+    frame=lab.step();
+    const player=frame.observedMovementPlayers.find(p=>p.id===side+'-10');
+    if(Math.hypot(frame.ball.position.x-player.x,frame.ball.position.y-player.y)>1.5)
+     lostTicks++;
+    starts+=frame.soloNativeFeet.started.length;
+    if(frame.action){
+     actions++;
+     assert.equal(frame.action.nativeShoeContactVerified,true);
+     assert.equal(frame.soloNativeFeet.exclusivePhysicalStart,true);
+     assert.equal(frame.action.nativeFixedPhaseCalibration.nativeFixedSprintLongStride,true);
+    }
+    assert.equal(frame.officialMatchPossession,false);
+   }
+   rows.push({
+    rating,side,variantIndex,actions,starts,lostTicks,
+    peakGapM:frame.soloCarryMeasurements.peakGapM,
+    peakPlayerKmh:frame.soloCarryMeasurements.peakPlayerSpeedMps*3.6,
+    peakBallKmh:frame.soloCarryMeasurements.peakBallSpeedMps*3.6,
+    forwardM:(side==='home'?1:-1)*(frame.ball.position.x-startX),
+    deadBall:frame.refereeEvidence?.lastEvent?.kind??null
+   });
+  }finally{lab.dispose();}
+ }
+ assert.equal(rows.length,24);
+ for(const row of rows){
+  assert.ok(row.starts>=row.actions,'physical contacts must back actions');
+  assert.ok(Number.isFinite(row.peakGapM));
+ }
+ // Preserve real negative evidence for owner visual QA instead of hiding
+ // poor seed outcomes behind fabricated touches or ball speed clamps.
+ process.stdout.write('ME_628_NATIVE_LONG_STRIDE_EXTRA_VARIANTS '+
+  JSON.stringify(rows)+'\\n');
 });
