@@ -27,3 +27,9 @@ Run focused Backend Worker/D1 tests for `club-licenses-runtime.test.ts`, Node Ad
 - **Local isolated D1 only:** From PowerShell in the repository's `backend` folder, run `npx wrangler d1 migrations apply fa-admin-world-local --local --config wrangler.toml`, then start `node tools/dev.mjs --local` from the repository root. Verify the local binding and the CLI confirmation before applying any migration.
 - Never add `--remote` or apply migrations to `football-architect-dev` or Production without separate owner approval. The default `node tools/dev.mjs` uses shared remote DEV D1, which needs its own separately authorized additive schema application.
 - The UI distinguishes an unavailable endpoint (404), missing schema (503), authentication failure, unavailable backend and unexpected API data instead of showing one generic message.
+
+## Cloudflare DEV D1 migration (2026-11-23)
+
+Verified `football-architect-dev` (`6a6c7803-56d3-4e7f-bd01-752d06a32341`) had `0033_portrait_v42_replacement.sql` applied and no license tables. With owner approval, applied the exact additive `0034_club_licenses.sql` schema via Cloudflare D1 REST batch and registered `0034_club_licenses.sql` in `d1_migrations`. The two tables, two indexes, two immutable-history triggers and migration entry were independently verified; `PRAGMA foreign_key_check` was clean. There were zero license rows or events; the player/portrait row counts stayed 150/150. **No hosted Worker deployment, Production migration, license assignment or PR merge occurred.**
+
+For ordinary shared DEV, use `node tools/dev.mjs` from the project root, without `--local`. A new locally executed Worker reads this already-migrated remote database. Avoid repeating migrations; `--local` points at a different database.
