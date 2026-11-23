@@ -14,6 +14,7 @@ test('#579 History is contracts-only in generated public page; preview disabled'
  assert.match(html,/data-detail-panel="history" data-detail-history/);
  assert.equal((html.match(/class="app-player-history-row app-player-history-loading"/g)||[]).length,2);
  assert.match(html,/data-player-contract-rows/);
+ assert.doesNotMatch(html,/data-player-contracts-title|>Signed contracts<\/h2>/);
  assert.match(html,/data-player-contract-heading="3">Signed on/);
  assert.doesNotMatch(html,/data-player-history-(?:rows|title|heading|description|current)/);
  assert.doesNotMatch(html,/data-detail-view="history"[^>]*disabled/);
@@ -64,10 +65,9 @@ test('#579 signed events reject fabricated date, invalid duration and invalid cl
 
 test('#579 contract-only History controller renders the unsupported state without Stats API',async()=>{
  const node=()=>({textContent:'',hidden:true,children:[],replaceChildren(...children){this.children=children;},setAttribute(){}});
- const title=node(),headings=Array.from({length:4},node),rows=node(),note=node(),attrs={};
+ const headings=Array.from({length:4},node),rows=node(),note=node(),attrs={};
  const host={
-  querySelector(selector){return {'[data-player-contracts-title]':title,
-   '[data-player-contract-rows]':rows,'[data-player-contract-note]':note}[selector]??null;},
+  querySelector(selector){return {'[data-player-contract-rows]':rows,'[data-player-contract-note]':note}[selector]??null;},
   querySelectorAll(selector){return selector==='[data-player-contract-heading]'?headings:[];},
   setAttribute(key,value){attrs[key]=value;}
  };
@@ -76,7 +76,6 @@ test('#579 contract-only History controller renders the unsupported state withou
  view.render();assert.equal(attrs['aria-busy'],'true');
  await view.load();
  assert.equal(attrs['aria-busy'],'false');
- assert.equal(title.textContent,'Contratti firmati');
  assert.match(note.textContent,/firma dei contratti non è ancora disponibile/);
  assert.equal(note.hidden,false);
  assert.deepEqual(rows.children,[]);

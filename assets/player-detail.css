@@ -151,7 +151,6 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 
 /* #579 — signed-contract events History, fixed 56px table rows. */
 .app-player-detail-history{min-width:0;margin-top:5px}
-.app-player-history-title{font-size:16px;font-weight:700;margin:10px 10px 6px}
 .app-player-contracts-table{min-width:690px}
 .app-player-contracts-col-event{width:150px}.app-player-contracts-col-club{width:195px}.app-player-contracts-col-duration{width:115px}.app-player-contracts-col-date{width:230px}
 .app-player-contracts-event{font-weight:600}
@@ -173,7 +172,7 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
 .app-player-history-note[hidden]{display:none}
 .app-player-history-loading .app-skeleton-bar{display:inline-block;max-width:100%;vertical-align:middle}
 .app-player-history-loading .app-player-history-crest::before{content:'';width:21px;height:21px;border-radius:50%;background:var(--fa-crest-skeleton-fill)}
-@media(max-width:620px){.app-player-history-title,.app-player-history-note{margin-inline:12px}}
+@media(max-width:620px){.app-player-history-note{margin-inline:12px}}
 @media(prefers-reduced-motion:reduce){.app-player-history-loading .app-skeleton-bar{animation:none}}
 
 /* #578 Player Stats: reuse Club History's table geometry and disclosure motion. */

@@ -1,7 +1,6 @@
 /** #579 — signed-contract History. Do not infer signings from club membership or match statistics. */
 export const historyWords={
  "en": {
-  "contractsTitle": "Signed contracts",
   "contractHead": [
    "Event",
    "Club",
@@ -16,7 +15,6 @@ export const historyWords={
   "contractPending": "Contract signing is not yet available. Signed contracts will appear here once recorded."
  },
  "de": {
-  "contractsTitle": "Unterzeichnete Verträge",
   "contractHead": [
    "Ereignis",
    "Verein",
@@ -31,7 +29,6 @@ export const historyWords={
   "contractPending": "Die Vertragsunterzeichnung ist noch nicht verfügbar. Unterzeichnete Verträge erscheinen hier, sobald sie erfasst wurden."
  },
  "es": {
-  "contractsTitle": "Contratos firmados",
   "contractHead": [
    "Evento",
    "Club",
@@ -46,7 +43,6 @@ export const historyWords={
   "contractPending": "La firma de contratos aún no está disponible. Los contratos firmados aparecerán aquí cuando se registren."
  },
  "fr": {
-  "contractsTitle": "Contrats signés",
   "contractHead": [
    "Événement",
    "Club",
@@ -61,7 +57,6 @@ export const historyWords={
   "contractPending": "La signature des contrats n’est pas encore disponible. Les contrats signés apparaîtront ici après leur enregistrement."
  },
  "it": {
-  "contractsTitle": "Contratti firmati",
   "contractHead": [
    "Evento",
    "Club",
@@ -104,8 +99,8 @@ export function createPlayerHistoryView({host,id,locale,clubName,clubCrest,fetch
  if(!host||!Number.isSafeInteger(id)||id<1||typeof fetchContracts!=='function'||typeof locale!=='function')
   throw TypeError('Invalid Player History view');
  const rows=host.querySelector('[data-player-contract-rows]'),note=host.querySelector('[data-player-contract-note]');
- const title=host.querySelector('[data-player-contracts-title]'),headings=[...host.querySelectorAll('[data-player-contract-heading]')];
- if(!rows||!note||!title||headings.length!==4)throw TypeError('Missing contract History structure');
+ const headings=[...host.querySelectorAll('[data-player-contract-heading]')];
+ if(!rows||!note||headings.length!==4)throw TypeError('Missing contract History structure');
  let state='loading',model=null,reading=null;
  const words=()=>historyWords[locale()]||historyWords.en;
  function clubLink(key){
@@ -117,7 +112,6 @@ export function createPlayerHistoryView({host,id,locale,clubName,clubCrest,fetch
  }
  function render(){
   const w=words();
-  title.textContent=w.contractsTitle;
   headings.forEach((node,i)=>{node.textContent=w.contractHead[i]});
   host.setAttribute('aria-busy',String(state==='loading'));
   if(state==='loading')return; // Retain parser-time skeleton until response state is known.
