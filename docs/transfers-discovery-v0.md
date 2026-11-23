@@ -12,7 +12,7 @@ Status: **implementation in Draft/HOLD** under [#587](https://github.com/FraGioc
 
 ## Not delivered / not authorized here
 
-- No Transfers page, navigation entry or new public endpoint in this slice.
+- The generated /transfers page is now implemented using the existing shell, site controls, live public player data, name/position search, paginated results, 5 locales, accessible loading and empty/error states. Players includes a visible link to Transfers. No new backend endpoint.
 - No transfers, agent bids, club concessions, mandate listings, negotiations, approvals, auction, sale, escrow, wallet, ARC/EUR exchange, fees, salaries, payroll, ledger, migration, data backfill, purchases, production enablement or deployment.
 - No V1 player–club affiliation semantics are changed. In particular, this module does not alter `player_club_affiliations`, current club authority, or world-reset persistence.
 - `#755` remains **DRAFT** and cannot be promoted to economic implementation by merging this independent read-model slice.
@@ -26,7 +26,7 @@ Status: **implementation in Draft/HOLD** under [#587](https://github.com/FraGioc
 
 ## QA before promoting this PR
 
-- `node --test tests/transfers-discovery.test.mjs`
+- `node --test tests/transfers-discovery.test.mjs tests/transfers-page.test.mjs`
 - Confirm public `/api/players` payload still has `clubKey`, `clubName`, `primary_position`, `display_name`; no private fields.
 - Ensure only the scoped new files differ from current `main`.
 - Exact-head required CI where applicable. Do not label hosted/mobile checks PASS without running them.

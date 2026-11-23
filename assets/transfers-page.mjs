@@ -1,4 +1,4 @@
-import {MARKET_PLAYER_PAGE_SIZE as PAGE_SIZE} from './transfers-discovery.mjs';
+import {TRANSFERS_PLAYER_PAGE_SIZE as PAGE_SIZE} from './transfers-discovery.mjs';
 import {transfersDiscoveryRequest,projectTransfersDiscovery} from './transfers-discovery.mjs';
 
 // #587: anonymous, read-only player discovery. No transfer actions or market claims.
@@ -16,7 +16,7 @@ if(root){
  const next=document.getElementById('transfers-next');
  const pageInfo=document.getElementById('transfers-page-info');
  const supportedPositions=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
- const namePattern=/^[\\p{L}\\p{M}0-9 .'’\\-]{1,80}$/u;
+ const namePattern=/^[\p{L}\p{M}0-9 .'’\-]{1,80}$/u;
  const copies={
   en:{title:'Transfers',subtitle:'Explore players in the world. Transfer deals are not available yet.',directory:'Players directory',name:'Player name',namePlaceholder:'Search by name',position:'Position',allPositions:'All positions',search:'Search',reset:'Reset',results:'Players',disclaimer:'Club affiliation is verified public data, not a transfer listing or proof of availability.',player:'Player',age:'Age',nationality:'Nationality',club:'Current club',loading:'Loading players…',empty:'No players match these filters.',none:'No players available.',error:'Unable to load players. Try again.',stale:'The world changed. Search again.',previous:'Previous',next:'Next',free:'Free Agent',count:'{n} players',page:'Page {page} of {total}',pager:'Results pages',region:'Transfer discovery results'},
   it:{title:'Transfers',subtitle:'Esplora i calciatori del mondo. Le trattative non sono ancora disponibili.',directory:'Elenco giocatori',name:'Nome calciatore',namePlaceholder:'Cerca per nome',position:'Posizione',allPositions:'Tutte le posizioni',search:'Cerca',reset:'Reimposta',results:'Giocatori',disclaimer:'Il club attuale è un dato pubblico verificato, non un annuncio di trasferimento né una conferma di disponibilità.',player:'Giocatore',age:'Età',nationality:'Nazionalità',club:'Club attuale',loading:'Caricamento giocatori…',empty:'Nessun giocatore corrisponde ai filtri.',none:'Nessun giocatore disponibile.',error:'Impossibile caricare i giocatori. Riprova.',stale:'Il mondo è cambiato. Ripeti la ricerca.',previous:'Precedente',next:'Successiva',free:'Svincolato',count:'{n} giocatori',page:'Pagina {page} di {total}',pager:'Pagine dei risultati',region:'Risultati ricerca Transfers'},

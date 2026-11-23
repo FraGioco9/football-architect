@@ -13,7 +13,7 @@ test('canonical navigation has no /app prefix and all app routes load with asset
     });req.on('error',reject);req.end();
   });
   try {
-    for(const path of ['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/matches','/history','/competitions/it-1/fixtures?season=2']) {
+    for(const path of ['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/matches','/history','/transfers','/competitions/it-1/fixtures?season=2']) {
       const page=await get(path);assert.equal(page.status,200,path);
       assert.doesNotMatch(page.body,/<a\b[^>]*href=["']\/app(?:\/|["'])/);
       const base=page.body.match(/<base href="([^"]+)"/)?.[1]||path;
