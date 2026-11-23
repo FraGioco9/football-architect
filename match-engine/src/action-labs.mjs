@@ -51,7 +51,7 @@ export function createControlledActionLab(RAPIER,id,{
  if(![0,0.08,0.12].includes(soloSprintSwingFootClearanceM)||
     (soloSprintSwingFootClearanceM!==0&&(
      !nativeFixedCarryResearch||soloCarryLockedPhase!=='sprint'||
-     id!=='carry-solo'||nativeFixedSprintLongStride||bodyGuardEnabled||
+     id!=='carry-solo'||bodyGuardEnabled||
      soloSprintCadenceScale!==1||soloSprintLateralTrackScale!==1||
      soloShoeWidthScale!==1||soloShoeLengthScale!==1||
      soloRecoveryStepScale!==1)))

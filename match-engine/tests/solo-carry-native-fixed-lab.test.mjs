@@ -379,3 +379,55 @@ test('#628 native two-foot Sprint trailing shoe clearance A/B on original Rapier
  process.stdout.write('ME_628_NATIVE_SWING_FOOT_CLEARANCE_AB '+
   JSON.stringify(rows)+'\\n');
 });
+
+test('#628 native long-stride real-source handoff recovery A/B on weak seed set',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const [rating,variantIndex] of [[25,29],[50,3],[75,17],[90,0]])
+ for(const side of ['home','away'])
+ for(const clearanceM of [0,0.08,0.12]){
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide:side,variantIndex,carryRunwayStart:true,
+   nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
+   nativeFixedSprintLongStride:true,
+   soloSprintSwingFootClearanceM:clearanceM,
+   soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
+  });
+  try{
+   let frame=null,actions=0,starts=0,lostTicks=0;
+   const start=lab.snapshot().ball.position.x;
+   for(let tick=1;tick<=600;tick++){
+    frame=lab.step();starts+=frame.soloNativeFeet.started.length;
+    const actor=frame.observedMovementPlayers.find(p=>p.id===side+'-10');
+    if(Math.hypot(frame.ball.position.x-actor.x,
+       frame.ball.position.y-actor.y)>1.5)lostTicks++;
+    assert.equal(frame.soloNativeFeet.sprintSwingFootClearanceM,clearanceM);
+    assert.equal(frame.officialMatchPossession,false);
+    if(frame.action){
+     actions++;
+     assert.equal(frame.action.nativeShoeContactVerified,true);
+     assert.equal(frame.soloNativeFeet.exclusivePhysicalStart,true);
+     assert.equal(frame.action.nativeFixedPhaseCalibration.nativeFixedSprintLongStride,true);
+    }
+   }
+   const audit=frame.nativeDribbleAudit;
+   assert.equal(audit.appliedCarryActions,actions);
+   assert.equal(audit.nativePhysicalShoeStarts,starts);
+   rows.push({rating,side,variantIndex,clearanceM,actions,starts,lostTicks,
+    nonAction:audit.nativeShoeStartsWithoutCarryImpulse,
+    overlapping:audit.nonActionStartReasons.otherFootAlreadyActive,
+    handoffs:audit.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
+    simultaneous:audit.nonActionStartReasons.simultaneousFootStarts,
+    forwardM:(side==='home'?1:-1)*(frame.ball.position.x-start),
+    maxGapM:frame.soloCarryMeasurements.peakGapM,
+    playerPeakKmh:frame.soloCarryMeasurements.peakPlayerSpeedMps*3.6});
+  }finally{lab.dispose();}
+ }
+ assert.equal(rows.length,24);
+ for(const row of rows){
+  assert.ok(row.starts>=row.actions);
+  assert.ok(Number.isFinite(row.forwardM));
+ }
+ process.stdout.write('ME_628_NATIVE_LONG_STRIDE_REACTIVE_RELEASE_AB '+
+  JSON.stringify(rows)+'\\n');
+});

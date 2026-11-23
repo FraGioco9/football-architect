@@ -166,9 +166,9 @@ export function createEngine(RAPIER, input = {}, {
   if(![0,0.08,0.12].includes(diagnosticSoloSprintSwingFootClearanceM)||
      (diagnosticSoloSprintSwingFootClearanceM!==0&&(
       !diagnosticNativeFixedCarryResearchEnabled||
-      diagnosticNativeFixedSprintLongStrideEnabled||
       diagnosticSmallSidedSituation!=='carry-solo'||
-      diagnosticSoloSprintCadenceScale!==1||
+      diagnosticSoloSprintCadenceScale!==
+       (diagnosticNativeFixedSprintLongStrideEnabled?0.9:1)||
       diagnosticSoloSprintLateralTrackScale!==1||
       diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Sprint physical clearance must be isolated to native research');
