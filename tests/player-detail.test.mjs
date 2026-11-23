@@ -22,8 +22,8 @@ test('#733 Player Detail derives published club crests from stable IDs',()=>{
   ['IT-1',null],['IT-1',[]]
  ])assert.equal(resolve(id,registry),null,'invalid or unpublished crest: '+id);
  assert.match(source,/const crest=verifiedClubCrest\(key,clubCatalog\.clubCrests\)/);
- assert.equal((source.match(/clubCrest:key=>verifiedClubCrest\(key,crests\)/g)||[]).length,3,
-  'Stats, Matches and History must use the same ID/registry guard');
+ assert.equal((source.match(/clubCrest:key=>verifiedClubCrest\(key,crests\)/g)||[]).length,2,
+  'Stats and Matches must use the same ID/registry guard; History no longer renders matches');
 });
 
 test('#502 persisted and protected preview detail routes are canonical and statically publishable',()=>{

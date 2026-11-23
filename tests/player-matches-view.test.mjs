@@ -67,7 +67,7 @@ test('#712 API and UI use verified read, only canonical match routes, five langu
  assert.match(controller,/if\(view==='matches'\)void ensurePlayerMatches\(\)/);
  assert.match(proxy,/const playerMatchesRead=/);
  assert.match(pub,/assets\/player-matches\.mjs/);
- assert.match(pub,/"player-stats.mjs","player-matches.mjs","match-detail.js"/);
+ assert.match(pub,/"player-stats.mjs","player-history.mjs","player-matches.mjs","match-detail.js"/);
 });
 
 test('#720 Matches controls and row navigation follow shared site patterns',()=>{
