@@ -565,3 +565,73 @@ test('#628 source-confirmed Sprint ball lead A/B without gait cadence changes',
  process.stdout.write('ME_628_NATIVE_SPRINT_PACE_LEAD_AB '+
   JSON.stringify(rows)+'\\n');
 });
+
+test('#628 32-seed genuine Sprint pace-lead replay with full shoe release',
+ {timeout:180000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const rating of [25,50,75,90])
+ for(const variantIndex of [0,3,17,29])
+ for(const side of ['home','away']){
+  const arms=[];
+  for(const leadExtraMps of [0,0.20]){
+   const lab=createControlledActionLab(R,'carry-solo',{
+    shotSide:side,variantIndex,carryRunwayStart:true,
+    nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
+    soloSprintActiveFootReleaseM:0.06,
+    nativeFixedSprintLeadExtraMps:leadExtraMps,
+    soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
+   });
+   try{
+    let f=null,actions=0,starts=0,outOfReach=0,addedImpulseNs=0;
+    const firstX=lab.snapshot().ball.position.x,actionTicks=[];
+    for(let tick=1;tick<=600;tick++){
+     f=lab.step();
+     const p=f.observedMovementPlayers.find(x=>x.id===side+'-10');
+     const physical=f.soloNativeFeet;
+     assert.equal(physical.source,'rapier-physical-collider-events');
+     assert.equal(physical.independentColliders,2);
+     starts+=physical.started.length;
+     if(Math.hypot(f.ball.position.x-p.x,f.ball.position.y-p.y)>1.5)
+      outOfReach++;
+     if(f.action){
+      assert.equal(f.action.nativeShoeContactVerified,true);
+      assert.equal(physical.exclusivePhysicalStart,true);
+      assert.equal(f.action.nativeFixedPhaseCalibration.nativeFixedSprintLeadExtraMps,
+       leadExtraMps);
+      assert.equal(f.action.actualPhysicsImpulseApplied,true);
+      addedImpulseNs+=Math.hypot(f.action.impulseNs.x,
+       f.action.impulseNs.y,f.action.impulseNs.z);
+      actions++;actionTicks.push(tick);
+     }
+     assert.equal(f.officialMatchPossession,false);
+    }
+    const audit=f.nativeDribbleAudit,m=f.soloCarryMeasurements;
+    assert.equal(audit.nativePhysicalShoeStarts,starts);
+    assert.equal(audit.appliedCarryActions,actions);
+    arms.push({
+     leadExtraMps,actions,starts,outOfReach,
+     unconverted:audit.nativeShoeStartsWithoutCarryImpulse,
+     handoffs:audit.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
+     bothActiveTicks:audit.nativeBothFeetActiveTicks,
+     fullReleases:audit.nativeActorFullReleaseEvents,
+     meanAddedImpulseNs:actions?addedImpulseNs/actions:null,
+     meanImpulseIntervalS:actions>1?
+      (actionTicks.at(-1)-actionTicks[0])/60/(actions-1):null,
+     peakPlayerKmh:m.peakPlayerSpeedMps*3.6,
+     latePlayerKmh:m.lateMeanSpeedMps*3.6,
+     peakBallKmh:m.peakBallSpeedMps*3.6,
+     peakGapM:m.peakGapM,
+     forwardM:(side==='home'?1:-1)*(f.ball.position.x-firstX)
+    });
+   }finally{lab.dispose();}
+  }
+  rows.push({rating,variantIndex,side,baseline:arms[0],candidate:arms[1]});
+ }
+ assert.equal(rows.length,32);
+ for(const row of rows){
+  const a=row.baseline,b=row.candidate;
+  assert.ok(a.actions<=a.starts&&b.actions<=b.starts);
+  assert.ok([a.forwardM,b.forwardM,a.peakPlayerKmh,b.peakPlayerKmh].every(Number.isFinite));
+ }
+ process.stdout.write('ME_628_SPRINT_PACE_LEAD_FULL32_AB '+JSON.stringify(rows)+'\\n');
+});
