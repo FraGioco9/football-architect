@@ -79,7 +79,7 @@
    function sync(){
     const selected=select.options[select.selectedIndex];
     value.textContent=selected?.textContent||'';
-    const label=select.closest('label')?.querySelector('[data-licenses-copy]')?.textContent||select.getAttribute('aria-label')||'';
+    const label=select.closest('.admin-licenses-field')?.querySelector('.admin-licenses-caption')?.textContent||select.getAttribute('aria-label')||'';
     trigger.setAttribute('aria-label',label);
     if(search)search.setAttribute('aria-label',label);
     trigger.disabled=select.disabled;
