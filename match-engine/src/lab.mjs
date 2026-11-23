@@ -246,6 +246,10 @@ function restart() {
        // Adopted only for locked Sprint in this DEV Action LAB.
        soloSprintActiveFootReleaseM:id==='carry-solo'&&
         activeScene.soloCarryLockedPhase==='sprint'?0.06:0,
+       // The canonical runner looks farther ahead only while the original
+       // Rapier ball is still ahead; touch impulses and shoe cadence stay.
+       soloSprintPursuitLeadM:id==='carry-solo'&&
+        activeScene.soloCarryLockedPhase==='sprint'?0.25:0,
        // Rejected long-stride remains research-only.
        soloCarryLockedPhase:activeScene.soloCarryLockedPhase??null,
        soloCarryPlayerAttributes:activeScene.soloCarryLockedPhase?
@@ -482,6 +486,8 @@ function render() {
       (f.nativeFixedCarryResearch?' · Native Carry · real two-shoe Rapier START required':'')+
       (f.soloSprintActiveFootReleaseM===0.06?
        ' · native active-foot release 6 cm (DEV Sprint only)':'')+
+      (f.soloSprintPursuitLeadM===0.25?
+       ' · adaptive ball-gap pursuit (DEV Sprint only)':'')+
       (f.intentDrivenCarry?' · Solo Carry intent (no shoe-contact claims)':'')+
       (f.soloCarryLockedPhase?
        ' · phase '+f.soloCarryLockedPhase.toUpperCase()+' (locked)'+

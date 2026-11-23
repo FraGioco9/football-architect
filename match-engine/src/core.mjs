@@ -125,7 +125,6 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticIntentDrivenSoloCarryEnabled = false,
   diagnosticNativeFixedCarryResearchEnabled = false,
   diagnosticNativeFixedSprintLongStrideEnabled = false,
-  diagnosticNativeFixedSprintLeadExtraMps = 0,
   diagnosticSmallSidedBodyGuardEnabled = false,
    diagnosticSmallSidedBodyFeedbackEnabled = false,
   diagnosticResearchControlReceiver = false,
@@ -172,15 +171,6 @@ export function createEngine(RAPIER, input = {}, {
       diagnosticSoloSprintLateralTrackScale!==1||
       diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Active-foot release only in isolated genuine Sprint experiment');
-  if(![0,0.20,0.35].includes(diagnosticNativeFixedSprintLeadExtraMps)||
-     (diagnosticNativeFixedSprintLeadExtraMps!==0&&(
-      !diagnosticNativeFixedCarryResearchEnabled||
-      diagnosticNativeFixedSprintLongStrideEnabled||
-      diagnosticSmallSidedSituation!=='carry-solo'||
-      diagnosticSoloSprintActiveFootReleaseM!==0.06||
-      diagnosticSoloSprintCadenceScale!==1||
-      diagnosticSmallSidedBodyGuardEnabled)))
-   throw new TypeError('Native speed-lead A/B requires genuine fixed Sprint research');
   if(typeof diagnosticNativeFixedSprintLongStrideEnabled!=='boolean'||
      (diagnosticNativeFixedSprintLongStrideEnabled&&(
       !diagnosticNativeFixedCarryResearchEnabled||
@@ -698,7 +688,6 @@ export function createEngine(RAPIER, input = {}, {
       intentDrivenSoloCarry:diagnosticIntentDrivenSoloCarryEnabled,
       nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
       nativeFixedSprintLongStride:diagnosticNativeFixedSprintLongStrideEnabled,
-      nativeFixedSprintLeadExtraMps:diagnosticNativeFixedSprintLeadExtraMps,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
        isolatedCarry||(smallSided?.variantIndex>0),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),

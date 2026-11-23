@@ -41,8 +41,7 @@ export function createControlledActionLab(RAPIER,id,{
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
  carryRunwayStart=false,nativeFixedCarryResearch=false,
- nativeFixedSprintLongStride=false,nativeFixedSprintLeadExtraMps=0,
- soloSprintPursuitLeadM=0,soloSprintAdaptivePursuit=false,
+ nativeFixedSprintLongStride=false,soloSprintPursuitLeadM=0,
  soloCarryPlayerAttributes=null
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
@@ -58,25 +57,14 @@ export function createControlledActionLab(RAPIER,id,{
      soloShoeWidthScale!==1||soloShoeLengthScale!==1||
      soloRecoveryStepScale!==1)))
   throw new TypeError('Native active-foot release is Sprint research only');
- if(typeof soloSprintAdaptivePursuit!=='boolean'||
-    (soloSprintAdaptivePursuit&&soloSprintPursuitLeadM===0))
-  throw new TypeError('Reactive pursuit requires isolated fixed Sprint lead');
- if(![0,0.25,0.5].includes(soloSprintPursuitLeadM)||
+ if(![0,0.25].includes(soloSprintPursuitLeadM)||
     (soloSprintPursuitLeadM!==0&&(
      id!=='carry-solo'||!nativeFixedCarryResearch||
      soloCarryLockedPhase!=='sprint'||
      soloSprintActiveFootReleaseM!==0.06||
-     nativeFixedSprintLeadExtraMps!==0||nativeFixedSprintLongStride||
-     bodyGuardEnabled||soloSprintCadenceScale!==1||
-     soloSprintLateralTrackScale!==1)))
-  throw new TypeError('Forward pursuit trial requires source-fixed native Sprint');
- if(![0,0.20,0.35].includes(nativeFixedSprintLeadExtraMps)||
-    (nativeFixedSprintLeadExtraMps!==0&&(
-     !nativeFixedCarryResearch||id!=='carry-solo'||
-     soloCarryLockedPhase!=='sprint'||nativeFixedSprintLongStride||
-     soloSprintActiveFootReleaseM!==0.06||bodyGuardEnabled||
+     nativeFixedSprintLongStride||bodyGuardEnabled||
      soloSprintCadenceScale!==1||soloSprintLateralTrackScale!==1)))
-  throw new TypeError('Speed-lead trial requires genuine 6cm native shoe release');
+  throw new TypeError('Adaptive pursuit only for source-authenticated native Sprint');
  if(typeof nativeFixedSprintLongStride!=='boolean'||
     (nativeFixedSprintLongStride&&(
      !nativeFixedCarryResearch||soloCarryLockedPhase!=='sprint'||
@@ -239,8 +227,7 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticSoloSprintActiveFootReleaseM:soloSprintActiveFootReleaseM,
     diagnosticIntentDrivenSoloCarryEnabled:intentDrivenSoloCarry,
    diagnosticNativeFixedCarryResearchEnabled:nativeFixedCarryResearch,
-    diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride,
-    diagnosticNativeFixedSprintLeadExtraMps:nativeFixedSprintLeadExtraMps
+    diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride
    }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
@@ -278,8 +265,7 @@ export function createControlledActionLab(RAPIER,id,{
    ...(carryRunwayStart?{researchCarryRunwayStart:true}:{}),
    ...(nativeFixedCarryResearch?{researchNativeFixedCarry:true}:{}),
    ...(soloSprintPursuitLeadM!==0?{
-    researchSoloSprintPursuitLeadM:soloSprintPursuitLeadM,
-    ...(soloSprintAdaptivePursuit?{researchSoloSprintAdaptivePursuit:true}:{})}:{}),
+    researchSoloSprintPursuitLeadM:soloSprintPursuitLeadM}:{}),
    ...(soloCarryLockedPhase!==null?{
     researchSoloCarryLockedPhase:soloCarryLockedPhase,
     researchSoloCarryPlayerAttributes:selectedCarryAttributes}:{}),
@@ -643,8 +629,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(nativeFixedCarryResearch?{
       nativeFixedCarryResearch:true,
       nativeFixedSprintLongStride,
-      nativeFixedSprintLeadExtraMps,soloSprintActiveFootReleaseM,
-      soloSprintPursuitLeadM,soloSprintAdaptivePursuit,
+      soloSprintActiveFootReleaseM,soloSprintPursuitLeadM,
       ...(soloCarryMeasurements?{soloCarryMeasurements}:{}),
       soloCarryLockedPhase,
       soloCarryPlayerAttributes:selectedCarryAttributes,

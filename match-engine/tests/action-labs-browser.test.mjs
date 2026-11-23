@@ -212,8 +212,12 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    if(phase==='sprint'){
     assert.match(chosen.before.readout,/native active-foot release 6 cm \(DEV Sprint only\)/);
     assert.match(chosen.after.readout,/native active-foot release 6 cm \(DEV Sprint only\)/);
-   }else
+    assert.match(chosen.before.readout,/adaptive ball-gap pursuit \(DEV Sprint only\)/);
+    assert.match(chosen.after.readout,/adaptive ball-gap pursuit \(DEV Sprint only\)/);
+   }else{
     assert.doesNotMatch(chosen.before.readout,/native active-foot release/);
+    assert.doesNotMatch(chosen.before.readout,/adaptive ball-gap pursuit/);
+   }
    assert.doesNotMatch(chosen.before.readout,/Solo Carry intent/);
    assert.match(chosen.before.readout,/no official result/);
    assert.equal(chosen.before.rows.length,1);
