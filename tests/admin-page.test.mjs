@@ -225,3 +225,19 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  assert.equal(buildRoute({kind:'page',id:'admin/contracts'}),'/admin/contracts');
  assert.equal(publicRequestFile('/admin/contracts'),'admin/contracts/index.html');
 });
+
+
+test('Club licenses reuse app-native dropdowns and compact responsive table spacing',()=>{
+ const source=readFileSync(new URL('../assets/admin-licenses.js',import.meta.url),'utf8');
+ const styles=readFileSync(new URL('../assets/admin-licenses.css',import.meta.url),'utf8');
+ assert.match(source,/className='language-control admin-licenses-dropdown'/);
+ assert.match(source,/className='language-trigger admin-licenses-dropdown-trigger'/);
+ assert.match(source,/setAttribute\('role','listbox'\)/);
+ assert.match(source,/select\.dispatchEvent\(new win\.Event\('change'/);
+ assert.match(source,/admin-licenses-row-action/);
+ assert.match(styles,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(styles,/@media\(max-width:760px\)/);
+ assert.match(styles,/min-height:30px;height:30px/);
+ assert.match(styles,/--fa-radius-panel/);
+ assert.match(styles,/data-menu-placement="above"/);
+});
