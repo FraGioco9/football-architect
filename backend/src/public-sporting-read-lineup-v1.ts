@@ -191,12 +191,12 @@ export function deriveInternationalClubStatus(
 /** Published entrants are independent of any fixture draw. A completed admin
  * receipt and the exact season snapshot both have to match server approval.
  * An unconfirmed scope must never inherit the other scope's public clubs. */
-async function confirmedEntrantsBeforeCalendar(db:Database,world:WorldV1,competitionId:string){
+type EntrantScope='domestic'|'international';
+async function confirmedScopeBeforeCalendar(db:Database,world:WorldV1,scope:EntrantScope){
  if(world.phase!=='active'||world.day<1||world.day>12)return null;
- const international=competitionId.startsWith('int-');
+ const international=scope==='international';
  const eventId=international?'international:entrants':'domestic:entrants';
  const kind=international?'confirm-international-entrants':'confirm-domestic-entrants';
- const scope=international?'international':'domestic';
  const event=await db.prepare(
   'SELECT event_id,kind,scope,scheduled_day,status,completed_at,receipt_hash FROM season_admin_events WHERE season_number=? AND event_id=?'
  ).bind(world.seasonNumber,eventId).first<{
@@ -219,9 +219,27 @@ async function confirmedEntrantsBeforeCalendar(db:Database,world:WorldV1,competi
  const receipt=await canonicalHash({schemaVersion:1,season:world.seasonNumber,generation:world.generation,
   eventId,kind,participantsHash:snapshot.participantsHash,rulesHash:snapshot.rulesHash});
  if(event.receipt_hash!==receipt)return invalid();
- const binding=snapshot.bindings.find(b=>b.competitionId===competitionId);
+ return {snapshot,participantsHash:snapshot.participantsHash};
+}
+async function confirmedEntrantsBeforeCalendar(db:Database,world:WorldV1,competitionId:string){
+ const scope=competitionId.startsWith('int-')?'international':'domestic';
+ const confirmed=await confirmedScopeBeforeCalendar(db,world,scope);
+ if(!confirmed)return null;
+ const binding=confirmed.snapshot.bindings.find(b=>b.competitionId===competitionId);
  if(!binding)return invalid();
- return {binding,participantsHash:snapshot.participantsHash};
+ return {binding,participantsHash:confirmed.participantsHash};
+}
+// The exact approved scopes, never static division membership or staged draws.
+function clubEntrantsFromScopes(
+ clubKey:string,season:number,
+ scopes:readonly ({snapshot:{bindings:readonly {competitionId:string;clubIds:readonly string[]}[]}}|null)[]
+){
+ const bindings=scopes.flatMap((entry,index)=>entry?.snapshot.bindings.filter(b=>
+  b.competitionId.startsWith('int-')===(index===1)&&b.clubIds.includes(clubKey))??[]);
+ if(bindings.length>2||bindings.filter(b=>!b.competitionId.startsWith('int-')).length>1)return invalid();
+ return bindings.map(b=>({competitionId:b.competitionId,
+  category:b.competitionId.startsWith('int-')?'international' as const:'domestic' as const,
+  season,position:null,points:0,cupStatus:null,nextMatch:null}));
 }
 export function clubRosterTotals(clubKey:string,fixtures:readonly Fixture[],
  results:ReadonlyMap<string,LineupSportingScoreV1>,frozenMatches:ReadonlyMap<string,FrozenLineupMatchV1>){
@@ -273,6 +291,20 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    // Staged fixtures, participant lists and draw outputs remain private until publication.
    const leaked=await countV2Days(db,selectedSeason);
    if(leaked||viewedWorld.day>12||viewedWorld.phase==='closed')invalid();
+   if(clubKey){
+    const scopes=await Promise.all([
+     confirmedScopeBeforeCalendar(db,viewedWorld,'domestic'),
+     confirmedScopeBeforeCalendar(db,viewedWorld,'international')
+    ]);
+    const confirmed=scopes.find(Boolean);
+    if(!confirmed)return await empty('empty','calendar-unpublished');
+    const data={season:selectedSeason,entrantsOnly:true as const,
+     memberships:clubEntrantsFromScopes(clubKey,selectedSeason,scopes)};
+    await unchanged(db,world);
+    return {...base,status:'partial' as const,reason:null,
+     provenance:{kind:'authoritative' as const,resultAuthority:'confirmed-entrants-v1' as const,
+      sourceRef:`club:${world.generation}:season:${selectedSeason}:entrants:${confirmed.participantsHash}`},data};
+   }
    if(!competitionPattern.test(competitionId))return await empty('empty','calendar-unpublished');
    const entrants=await confirmedEntrantsBeforeCalendar(db,viewedWorld,competitionId);
    if(!entrants)return await empty('empty','calendar-unpublished');
@@ -533,6 +565,29 @@ export async function readPublicClubHistoryLineupV1(db:Database,clubKey:string){
   return {schemaVersion:1 as const,providerId:'authoritative-world' as const,clubKey,world,
    status:'unavailable' as const,reason:'unsupported-world-season',
    provenance:{kind:'none' as const,resultAuthority:null,sourceRef:null},data:null};
+ }
+ if(world.seasonNumber===0){
+  const zero=await readSeasonZeroAuthority(db,world);
+  const scopes=[
+   zero.approved.domestic?{snapshot:zero.snapshot}:null,
+   zero.approved.international?{snapshot:zero.snapshot}:null
+  ];
+  const confirmed=scopes.some(Boolean);
+  const inaugural={schemaVersion:1 as const,providerId:'authoritative-world' as const,
+   clubKey,selectedSeason:1,world,status:confirmed?'partial' as const:'empty' as const,
+   reason:confirmed?null:'season-not-prepared',
+   provenance:confirmed?
+    {kind:'authoritative' as const,resultAuthority:'confirmed-entrants-v1' as const,
+     sourceRef:`club:${world.generation}:season:1:entrants:${zero.snapshotHash}`}:
+    {kind:'none' as const,resultAuthority:null,sourceRef:null},
+   data:confirmed?{season:1,entrantsOnly:true as const,
+    memberships:clubEntrantsFromScopes(clubKey,1,scopes)}:null};
+  await unchanged(db,world);
+  return {schemaVersion:1 as const,providerId:'authoritative-world' as const,clubKey,world,
+   status:'available' as const,reason:null,
+   provenance:{kind:'authoritative' as const,resultAuthority:'temporary-lineup-v1' as const,
+    sourceRef:'club-history:'+world.generation+':revision:'+world.revision},
+   data:{overviews:[],inaugural}};
  }
  const overviews=await Promise.all(
   Array.from({length:world.seasonNumber},(_,i)=>i+1)
