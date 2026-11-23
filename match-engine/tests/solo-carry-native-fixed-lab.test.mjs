@@ -394,63 +394,76 @@ test('#628 accepted native Sprint source recontact guard: 4 ratings x 4 starts x
   JSON.stringify(rows)+'\\n');
 });
 
-test('#628 Sprint source-native active-foot release 10s paired Rapier A/B',
+
+test('#628 native active-shoe release on full 32-seed paired 10s Rapier matrix',
  {timeout:120000},async()=>{
- const R=await initializeRapier(rapier),samples=[];
- for(const [rating,variantIndex] of [[25,3],[25,29],[50,3],[75,0],[75,17],[90,0]])
- for(const side of ['home','away'])
- for(const releaseM of [0,0.06,0.1]){
-  const lab=createControlledActionLab(R,'carry-solo',{
-   shotSide:side,variantIndex,carryRunwayStart:true,
-   nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
-   soloSprintActiveFootReleaseM:releaseM,
-   soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
-  });
-  try{
-   let frame=null,starts=0,actions=0,lostTicks=0;
-   const ballStart=lab.snapshot().ball.position.x;
-   const checkpoints=[];
-   for(let tick=1;tick<=600;tick++){
-    frame=lab.step();
-    assert.equal(frame.soloNativeFeet.source,'rapier-physical-collider-events');
-    assert.equal(frame.soloNativeFeet.sprintActiveFootReleaseM,releaseM);
-    assert.equal(frame.officialMatchPossession,false);
-    const player=frame.observedMovementPlayers.find(p=>p.id===side+'-10');
-    if(Math.hypot(frame.ball.position.x-player.x,frame.ball.position.y-player.y)>1.5)
-     lostTicks++;
-    starts+=frame.soloNativeFeet.started.length;
-    if(frame.action){
-     actions++;
-     assert.equal(frame.action.nativeShoeContactVerified,true);
-     assert.equal(frame.action.actualPhysicsImpulseApplied,true);
-     assert.equal(frame.soloNativeFeet.exclusivePhysicalStart,true);
+ const R=await initializeRapier(rapier),rows=[];
+ for(const rating of [25,50,75,90])
+ for(const variantIndex of [0,3,17,29])
+ for(const side of ['home','away']){
+  const arms=[];
+  for(const releaseM of [0,0.06]){
+   const lab=createControlledActionLab(R,'carry-solo',{
+    shotSide:side,variantIndex,carryRunwayStart:true,
+    nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
+    soloSprintActiveFootReleaseM:releaseM,
+    soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
+   });
+   try{
+    let frame=null,starts=0,actions=0,lostTicks=0;
+    const startX=lab.snapshot().ball.position.x,checkpoints=[];
+    for(let tick=1;tick<=600;tick++){
+     frame=lab.step();
+     const shoes=frame.soloNativeFeet;
+     assert.equal(shoes.source,'rapier-physical-collider-events');
+     assert.equal(shoes.independentColliders,2);
+     assert.equal(shoes.sprintActiveFootReleaseM,releaseM);
+     assert.equal(frame.officialMatchPossession,false);
+     starts+=shoes.started.length;
+     const p=frame.observedMovementPlayers.find(x=>x.id===side+'-10');
+     if(Math.hypot(frame.ball.position.x-p.x,
+       frame.ball.position.y-p.y)>1.5)lostTicks++;
+     if(frame.action){
+      actions++;
+      assert.equal(frame.action.action,'carry');
+      assert.equal(frame.action.nativeShoeContactVerified,true);
+      assert.equal(frame.action.actualPhysicsImpulseApplied,true);
+      assert.equal(shoes.exclusivePhysicalStart,true);
+     }
+     if([120,300,600].includes(tick)){
+      const a=frame.nativeDribbleAudit;
+      assert.equal(a.nativePhysicalShoeStarts,starts);
+      assert.equal(a.appliedCarryActions,actions);
+      checkpoints.push({
+       tick,starts,actions,lostTicks,
+       unconverted:a.nativeShoeStartsWithoutCarryImpulse,
+       handoffs:a.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
+       overlaps:a.nonActionStartReasons.otherFootAlreadyActive,
+       simultaneous:a.nonActionStartReasons.simultaneousFootStarts,
+       bothActiveTicks:a.nativeBothFeetActiveTicks,
+       fullReleases:a.nativeActorFullReleaseEvents,
+       realContactReleases:a.nativeActorStartsAfterFullRelease,
+       forwardM:(side==='home'?1:-1)*(frame.ball.position.x-startX),
+       peakGapM:frame.soloCarryMeasurements.peakGapM,
+       peakPlayerKmh:frame.soloCarryMeasurements.peakPlayerSpeedMps*3.6,
+       peakBallKmh:frame.soloCarryMeasurements.peakBallSpeedMps*3.6
+      });
+     }
     }
-    if(tick===120||tick===300||tick===600){
-     const a=frame.nativeDribbleAudit;
-     assert.equal(a.nativePhysicalShoeStarts,starts);
-     assert.equal(a.appliedCarryActions,actions);
-     checkpoints.push({
-      tick,starts,actions,lostTicks,
-      unconverted:a.nativeShoeStartsWithoutCarryImpulse,
-      sameTickHandoffs:a.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
-      otherShoeActive:a.nonActionStartReasons.otherFootAlreadyActive,
-      bothFeetActiveTicks:a.nativeBothFeetActiveTicks,
-      fullReleases:a.nativeActorFullReleaseEvents,
-      peakGapM:frame.soloCarryMeasurements.peakGapM,
-      forwardM:(side==='home'?1:-1)*(frame.ball.position.x-ballStart)
-     });
-    }
-   }
-   samples.push({rating,variantIndex,side,releaseM,checkpoints});
-  }finally{lab.dispose();}
+    arms.push({releaseM,checkpoints});
+   }finally{lab.dispose();}
+  }
+  assert.equal(arms.length,2);
+  // Keep all negative evidence; no auto-approval just because both arms ran.
+  for(const a of arms){
+   const v=a.checkpoints[2];
+   assert.ok(v.starts>=v.actions);
+   assert.ok(Number.isFinite(v.forwardM)&&Number.isFinite(v.peakGapM));
+  }
+  rows.push({rating,variantIndex,side,baseline:arms[0].checkpoints,
+   release6cm:arms[1].checkpoints});
  }
- assert.equal(samples.length,36);
- // Diagnostic trial: genuine source and poor arms must remain visible,
- // never falsely promoted by a green test alone.
- for(const sample of samples){
-  assert.ok(sample.checkpoints[2].starts>=sample.checkpoints[2].actions);
-  assert.ok(Number.isFinite(sample.checkpoints[2].forwardM));
- }
- process.stdout.write('ME_628_REAL_ACTIVE_SHOE_RELEASE_AB '+
-  JSON.stringify(samples)+'\\n');
+ assert.equal(rows.length,32);
+ process.stdout.write('ME_628_NATIVE_ACTIVE_RELEASE_FULL_32_AB '+
+  JSON.stringify(rows)+'\\n');
 });
