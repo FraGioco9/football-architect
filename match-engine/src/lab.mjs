@@ -236,7 +236,11 @@ function restart() {
       createControlledActionLab(rapier,id,{shotSide:side,
        variantIndex:activeVariantIndex,
        bodyGuardEnabled:id!=='carry-solo',
-       intentDrivenSoloCarry:id==='carry-solo',
+       // Visible fixed Carry now runs in a long open-space native research
+       // runway. Only actual same-world Rapier shoe STARTs authorize a push.
+       // Leave the original ordinary 22-player physics unmodified.
+       carryRunwayStart:id==='carry-solo',
+       nativeFixedCarryResearch:id==='carry-solo',
        soloCarryLockedPhase:activeScene.soloCarryLockedPhase??null,
        soloCarryPlayerAttributes:activeScene.soloCarryLockedPhase?
         uniformSoloCarryAttributes(Number(byId('me-inline-rating').value)):null}):
@@ -469,6 +473,7 @@ function render() {
        (f.intentDrivenCarry?' gameplay intent / Rapier ball impulse':
         ' native shoe/impulse')+
        (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
+      (f.nativeFixedCarryResearch?' · Native Carry · real two-shoe Rapier START required':'')+
       (f.intentDrivenCarry?' · Solo Carry intent (no shoe-contact claims)':'')+
       (f.soloCarryLockedPhase?
        ' · phase '+f.soloCarryLockedPhase.toUpperCase()+' (locked)'+
@@ -478,7 +483,7 @@ function render() {
        ' · player '+fmtKmh(f.soloCarryPhase.playerSpeedMps)+' km/h'+
        ' · ball '+fmtKmh(f.soloCarryPhase.ballSpeedMps)+' km/h'+
        ' · gap '+f.soloCarryPhase.ballGapM.toFixed(2)+' m'+
-       ' · genuine Rapier carry impulses '+f.intentCarryImpulseCount+
+       ' · '+(f.nativeFixedCarryResearch?'native shoe-confirmed Rapier impulses ':'genuine Rapier carry impulses ')+f.intentCarryImpulseCount+
        (f.soloCarryMeasurements?
         ' · ball forward '+f.soloCarryMeasurements.ballForwardM.toFixed(2)+' m'+
         ' · peak player '+fmtKmh(f.soloCarryMeasurements.peakPlayerSpeedMps)+' km/h'+

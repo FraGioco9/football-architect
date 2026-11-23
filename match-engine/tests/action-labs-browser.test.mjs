@@ -203,10 +203,11 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.equal(chosen.before.variation,'01 / 30');
    assert.equal(chosen.before.popup,false);
    assert.match(chosen.before.readout,/1 real physical player/);
-   assert.match(chosen.before.readout,/source events 0\b/);
+   assert.match(chosen.before.readout,/source events \d+\b/);
    assert.match(chosen.before.readout,new RegExp('phase '+phase.toUpperCase()+' \\(locked\\)'));
-   assert.match(chosen.before.readout,/genuine Rapier carry impulses \d+/);
-   assert.match(chosen.before.readout,/Solo Carry intent \(no shoe-contact claims\)/);
+   assert.match(chosen.before.readout,/native shoe-confirmed Rapier impulses \d+/);
+   assert.match(chosen.before.readout,/Native Carry · real two-shoe Rapier START required/);
+   assert.doesNotMatch(chosen.before.readout,/Solo Carry intent/);
    assert.match(chosen.before.readout,/no official result/);
    assert.equal(chosen.before.rows.length,1);
    assert.match(chosen.before.rows[0],new RegExp('Carry the ball · '+phase[0].toUpperCase()+phase.slice(1)));
