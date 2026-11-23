@@ -274,6 +274,8 @@ export function createControlledActionLab(RAPIER,id,{
  let disposed=false,firstRealPass=null,count=0,history=Object.freeze([]);
  let intentCarryImpulseCount=0;
  const soloReadout=soloCarryLockedPhase===null?null:{
+  // Read-only authenticated native action timeline; NOT solver collision forces.
+  nativeTouchTicks:[],nativeAddedImpulseSumNs:0,
   ballStartX:engine.snapshot().ball.position.x,playerPrev:null,playerPrevV:null,
   playerPathM:0,ballPathM:0,lastBall:null,speedSum:0,gapSum:0,
   peakPlayerSpeedMps:0,peakBallSpeedMps:0,peakAccelerationMps2:0,
@@ -314,8 +316,15 @@ export function createControlledActionLab(RAPIER,id,{
   const action=raw?.tick===physics.tick?raw:null;
   if((intentDrivenSoloCarry||nativeFixedCarryResearch)&&
      action?.action==='carry'&&
-     action.actualPhysicsImpulseApplied===true)
+     action.actualPhysicsImpulseApplied===true){
    intentCarryImpulseCount++;
+   if(nativeFixedCarryResearch&&action.nativeShoeContactVerified===true&&
+      foot.nativeSoloFeet?.exclusivePhysicalStart===true){
+    soloReadout.nativeTouchTicks.push(physics.tick);
+    soloReadout.nativeAddedImpulseSumNs+=Math.hypot(
+     action.impulseNs.x,action.impulseNs.y,action.impulseNs.z);
+   }
+  }
   if(soloReadout&&physics.tick>0){
    const actor=playerFrame.players.find(p=>p.id===shotSide+'-10');
    const position=physics.ball.position,velocity=physics.ball.velocity;
@@ -374,7 +383,17 @@ export function createControlledActionLab(RAPIER,id,{
    lateSpeedSampleTicks:soloReadout.lateSpeedSampleTicks,
    lateMeanSpeedMps:soloReadout.lateSpeedSampleTicks?
     soloReadout.lateSpeedSum/soloReadout.lateSpeedSampleTicks:0,
-   appliedCarryImpulses:intentCarryImpulseCount
+   appliedCarryImpulses:intentCarryImpulseCount,
+   // Isolate recent native impulse cadence from the cumulative source count.
+   // N·s reflects only the additional action, not all Rapier solver forces.
+   nativeConfirmedImpulseCount:soloReadout.nativeTouchTicks.length,
+   nativeRecent2sImpulseCount:soloReadout.nativeTouchTicks.filter(
+    t=>t>physics.tick-120).length,
+   nativeMeanImpulseGapS:soloReadout.nativeTouchTicks.length>1?
+    (soloReadout.nativeTouchTicks.at(-1)-soloReadout.nativeTouchTicks[0])/
+     (60*(soloReadout.nativeTouchTicks.length-1)):null,
+   nativeMeanAddedImpulseNs:soloReadout.nativeTouchTicks.length?
+    soloReadout.nativeAddedImpulseSumNs/soloReadout.nativeTouchTicks.length:null
   }):null;
   // Only a genuine post-pass Rapier opponent shoe START is negative evidence.
   // Neither nearby player positions nor a guessed interception suffice.

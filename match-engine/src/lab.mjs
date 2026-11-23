@@ -491,6 +491,14 @@ function render() {
         ' · mean gap '+f.soloCarryMeasurements.meanGapM.toFixed(2)+' m'+
         ' · gap >1.5m '+f.soloCarryMeasurements.observedOutOfReachTicks+' ticks'+
         ' · recoveries '+f.soloCarryMeasurements.observedRealRecoveryEpisodes+
+        (f.nativeFixedCarryResearch?
+         ' · native impulses last ≤2s '+f.soloCarryMeasurements.nativeRecent2sImpulseCount+
+         ' · mean native impulse gap '+
+          (f.soloCarryMeasurements.nativeMeanImpulseGapS===null?'—':
+           f.soloCarryMeasurements.nativeMeanImpulseGapS.toFixed(2)+' s')+
+         ' · mean added impulse '+
+          (f.soloCarryMeasurements.nativeMeanAddedImpulseNs===null?'—':
+           f.soloCarryMeasurements.nativeMeanAddedImpulseNs.toFixed(2)+' N·s'):'')+
         (f.soloCarryMeasurements.lateSpeedSampleTicks?
          ' · observed late pace '+fmtKmh(f.soloCarryMeasurements.lateMeanSpeedMps)+' km/h':''):''):'')+
       (f.nativeDribbleAudit?' · real native carries '+

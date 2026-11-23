@@ -46,7 +46,9 @@ test('#628 real 10s native locked phases remain contact-authenticated and separa
   });
   try{
    let actions=0,verifiedStarts=0,skippedEvents=0,realPeakGap=0,
-    outOfReachTicks=0,last=null;const start=lab.snapshot().ball.position.x;
+    outOfReachTicks=0,last=null,addedImpulseSumNs=0;
+   const nativeActionTicks=[];
+   const start=lab.snapshot().ball.position.x;
    const checkpoints=[];
    for(let tick=1;tick<=600;tick++){
     const f=lab.step();last=f;
@@ -75,13 +77,35 @@ test('#628 real 10s native locked phases remain contact-authenticated and separa
      assert.equal(f.action.actualPhysicsImpulseApplied,true);
      assert.ok(f.action.nativeFixedPhaseCalibration);
      actions++;
+     nativeActionTicks.push(tick);
+     addedImpulseSumNs+=Math.hypot(
+      f.action.impulseNs.x,f.action.impulseNs.y,f.action.impulseNs.z);
     }else if(f.soloNativeFeet.exclusivePhysicalStart)skippedEvents++;
-    if([120,300,600].includes(tick))checkpoints.push({
-     tick,gapM:gap,ballForwardM:(side==='home'?1:-1)*
+    if([120,300,600].includes(tick)){
+     const observed=f.soloCarryMeasurements;
+     const meanGapS=nativeActionTicks.length>1?
+      (nativeActionTicks.at(-1)-nativeActionTicks[0])/
+       (60*(nativeActionTicks.length-1)):null;
+     const meanAddedNs=nativeActionTicks.length?
+      addedImpulseSumNs/nativeActionTicks.length:null;
+     assert.equal(observed.nativeConfirmedImpulseCount,actions);
+     assert.equal(observed.appliedCarryImpulses,actions);
+     assert.equal(observed.nativeRecent2sImpulseCount,
+      nativeActionTicks.filter(t=>t>tick-120).length);
+     assert.equal(observed.nativeMeanImpulseGapS,meanGapS);
+     assert.ok(meanAddedNs===null?
+      observed.nativeMeanAddedImpulseNs===null:
+      Math.abs(observed.nativeMeanAddedImpulseNs-meanAddedNs)<1e-12);
+     checkpoints.push({
+      tick,gapM:gap,ballForwardM:(side==='home'?1:-1)*
        (f.ball.position.x-start),
-     ballX:f.ball.position.x,actions,verifiedStarts,
-     outOfReachTicks,realPeakGap
-    });
+      ballX:f.ball.position.x,actions,verifiedStarts,
+      outOfReachTicks,realPeakGap,
+      realNativeActionsLast2s:observed.nativeRecent2sImpulseCount,
+      nativeMeanImpulseGapS:meanGapS,
+      nativeMeanAddedImpulseNs:meanAddedNs
+     });
+    }
    }
    // A phase can genuinely MISS every shoe contact: record failure as
    // physical evidence, never invent one to satisfy the experiment.
