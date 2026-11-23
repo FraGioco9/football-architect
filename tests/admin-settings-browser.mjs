@@ -904,7 +904,27 @@ try{
    assert.ok(Math.abs(geometry.fieldHeight-geometry.dropdownHeight)<=2,'Text inputs and dropdowns share height');
    assert.ok(geometry.rowHeight>=40&&geometry.rowHeight<=48,'Compact table row spacing');
    if(width<=390)assert.equal(geometry.tableScrollable,true,'Tables scroll inside their own border on mobile');
-   const clubDropdown=page.locator('.admin-licenses-fields>label').first();
+   const clubDropdown=page.locator('.admin-licenses-field').first();
+   // Caption hover/click is inert: no dropdown activation or text-field focus.
+   const caption=clubDropdown.locator('.admin-licenses-caption'),captionRect=await caption.boundingBox();
+   assert.ok(captionRect,'Club caption geometry');
+   const trigger=clubDropdown.locator('.language-trigger');
+   const triggerAppearance=()=>trigger.evaluate(node=>{
+    const s=getComputedStyle(node);
+    return {background:s.backgroundColor,border:s.borderColor,expanded:node.getAttribute('aria-expanded')};
+   });
+   await page.mouse.move(0,0);await page.waitForTimeout(180);
+   const idle=await triggerAppearance();
+   await page.mouse.move(captionRect.x+captionRect.width/2,captionRect.y+captionRect.height/2);
+   await page.waitForTimeout(180);
+   assert.deepEqual(await triggerAppearance(),idle,'Caption hover must not highlight dropdown');
+   await page.mouse.click(captionRect.x+captionRect.width/2,captionRect.y+captionRect.height/2);
+   assert.deepEqual(await triggerAppearance(),idle,'Caption click must not open dropdown');
+   const searchCaption=await page.locator('#licenses-search-caption').boundingBox();
+   assert.ok(searchCaption,'Account-search caption geometry');
+   await page.mouse.click(searchCaption.x+searchCaption.width/2,searchCaption.y+searchCaption.height/2);
+   assert.equal(await page.locator('[data-licenses-query]').evaluate(node=>document.activeElement===node),false,
+    'Caption click must not focus text field');
    await clubDropdown.locator('.language-trigger').click();
    await clubDropdown.locator('.admin-licenses-dropdown-search').fill('Club 320');
    assert.equal(await clubDropdown.locator('.language-option').count(),1,'Club search narrows the menu');
@@ -912,13 +932,32 @@ try{
    assert.equal(await page.locator('[data-licenses-club]').inputValue(),'FA-320');
    await page.locator('[data-licenses-query]').fill('qa@example.invalid');
    await page.locator('[data-licenses-find]').click();
-   const accountDropdown=page.locator('.admin-licenses-fields>label').nth(2);
+   const accountDropdown=page.locator('.admin-licenses-field').nth(2);
    await accountDropdown.locator('.language-trigger').click();
    await accountDropdown.locator('.language-option').filter({hasText:'qa@example.invalid'}).click();
    assert.equal(await page.locator('[data-licenses-assign]').isEnabled(),true);
    await page.locator('.admin-licenses-filters .language-trigger').click();
    await page.locator('.admin-licenses-filters .language-option').filter({hasText:'Licensed'}).click();
    assert.equal(await page.locator('[data-licenses-count]').textContent(),'1 clubs');
+   // The Admin directory card is informational: only its link is interactive.
+   await page.goto('http://app.localhost:2000/admin');
+   await page.locator('.admin-directory-card').first().waitFor({state:'visible'});
+   const directoryGap=await page.locator('.admin-directory').evaluate(node=>parseFloat(getComputedStyle(node).gap));
+   const pageGap=await page.locator('#app-admin').evaluate(node=>parseFloat(getComputedStyle(node).rowGap));
+   assert.ok(Math.abs(directoryGap-pageGap)<=0.5,'Directory cards share the page section gap');
+   const card=page.locator('.admin-directory-card').first();
+   const titleRect=await card.locator('h2').boundingBox();
+   assert.ok(titleRect,'Card title geometry');
+   const cardStyle=()=>card.evaluate(node=>{
+    const s=getComputedStyle(node);return {background:s.backgroundColor,border:s.borderColor};
+   });
+   await page.mouse.move(0,0);await page.waitForTimeout(180);
+   const unhovered=await cardStyle();
+   await page.mouse.move(titleRect.x+titleRect.width/2,titleRect.y+titleRect.height/2);
+   await page.waitForTimeout(180);
+   assert.deepEqual(await cardStyle(),unhovered,'Card title hover must not activate panel');
+   await page.mouse.click(titleRect.x+titleRect.width/2,titleRect.y+titleRect.height/2);
+   assert.equal(new URL(page.url()).pathname,'/admin','Card title click must not navigate');
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}
  }

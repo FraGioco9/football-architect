@@ -241,3 +241,23 @@ test('Club licenses reuse app-native dropdowns and compact responsive table spac
  assert.match(styles,/--fa-radius-panel/);
  assert.match(styles,/data-menu-placement="above"/);
 });
+
+test('Admin captions are inert and section gaps use site spacing',async()=>{
+ const {renderAdminLicenses}=await import('../tools/render-admin-licenses.mjs');
+ const markup=renderAdminLicenses();
+ const adminCss=readFileSync(new URL('../assets/admin-settings.css',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../assets/admin-licenses.css',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../assets/admin-licenses.js',import.meta.url),'utf8');
+ assert.equal((markup.match(/class="admin-licenses-field"/g)||[]).length,3);
+ assert.doesNotMatch(markup,/<label\b/i,'Captions must not wrap controls as native labels');
+ for(const caption of ['licenses-club-caption','licenses-search-caption','licenses-account-caption'])
+  assert.ok(markup.includes('aria-labelledby="'+caption+'"'),caption);
+ assert.ok(markup.includes('class="admin-licenses-list"'));
+ assert.ok(markup.includes('class="admin-licenses-history-section"'));
+ assert.match(adminCss,/\.admin-directory\{[^}]*gap:var\(--app-page-section-gap\)/);
+ assert.doesNotMatch(adminCss,/\.admin-directory-card:hover\{border-color:/);
+ assert.match(css,/\[data-licenses-content\]\{[^}]*gap:var\(--app-page-section-gap\)/);
+ assert.match(css,/\.admin-licenses-caption\{[^}]*pointer-events:none/);
+ assert.match(css,/\.admin-licenses-message:empty\{display:none\}/);
+ assert.ok(js.includes("select.closest('.admin-licenses-field')"));
+});
