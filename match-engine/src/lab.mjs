@@ -483,7 +483,7 @@ function render() {
        ' · player '+fmtKmh(f.soloCarryPhase.playerSpeedMps)+' km/h'+
        ' · ball '+fmtKmh(f.soloCarryPhase.ballSpeedMps)+' km/h'+
        ' · gap '+f.soloCarryPhase.ballGapM.toFixed(2)+' m'+
-       ' · '+(f.nativeFixedCarryResearch?'native shoe-confirmed Rapier impulses ':'genuine Rapier carry impulses ')+f.intentCarryImpulseCount+
+       ' · '+(f.nativeFixedCarryResearch?'native shoe-confirmed Rapier impulses ':'genuine Rapier carry impulses ')+f.soloCarryMeasurements.appliedCarryImpulses+
        (f.soloCarryMeasurements?
         ' · ball forward '+f.soloCarryMeasurements.ballForwardM.toFixed(2)+' m'+
         ' · peak player '+fmtKmh(f.soloCarryMeasurements.peakPlayerSpeedMps)+' km/h'+
