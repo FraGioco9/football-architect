@@ -424,7 +424,7 @@ test('#581: no loading text on first paint or protected/public source changes',(
  assert.match(js,/debugError:|error:'Verified history/,'real error messages remain available');
 });
 
-test('#753: club skeleton uses the site's neutral circular crest loading primitive',()=>{
+test("#753: club skeleton uses the site's neutral circular crest loading primitive",()=>{
  const html=read('history/index.html');
  const renderer=renderWorldHistoryPage();
  const css=read('assets/world-history.css');
