@@ -1675,6 +1675,7 @@ export function createPlayerMovement(options={}){
      k!=='researchSmallSidedVariantIndex'&&
      k!=='researchCarryRunwayStart'&&
      k!=='researchNativeFixedCarry'&&
+     k!=='researchSoloSprintPursuitLeadM'&&
      k!=='researchSoloCarryLockedPhase'&&
      k!=='researchSoloCarryPlayerAttributes'&&
       k!=='researchSmallSidedBodyFeedback'&&
@@ -1829,7 +1830,8 @@ export function createPlayerMovement(options={}){
         (options.researchSoloCarryLockedPhase===undefined?0:1)+
         (options.researchSoloCarryPlayerAttributes===undefined?0:1)+
         (options.researchCarryRunwayStart===true?1:0)+
-        (options.researchNativeFixedCarry===true?1:0)))||
+        (options.researchNativeFixedCarry===true?1:0)+
+        (options.researchSoloSprintPursuitLeadM===undefined?0:1)))||
     ((options.researchSmallSidedSituation===undefined)!==
      (options.researchSmallSidedSide===undefined))||
     (options.researchSoloCarryLockedPhase!==undefined&&(
@@ -1837,6 +1839,11 @@ export function createPlayerMovement(options={}){
      !SOLO_CARRY_PHASES.includes(options.researchSoloCarryLockedPhase)))||
     (options.researchSoloCarryPlayerAttributes!==undefined&&
      options.researchSoloCarryLockedPhase===undefined)||
+    (options.researchSoloSprintPursuitLeadM!==undefined&&(
+     ![0.25,0.5].includes(options.researchSoloSprintPursuitLeadM)||
+     options.researchNativeFixedCarry!==true||
+     options.researchSoloCarryLockedPhase!=='sprint'||
+     options.researchCarryRunwayStart!==true))||
     (options.researchSmallSidedVariantIndex!==undefined&&
      options.researchSmallSidedSituation===undefined)||
     (options.researchCarryRunwayStart!==undefined&&
@@ -2468,7 +2475,8 @@ export function createPlayerMovement(options={}){
   // contact event authority, Rapier dynamics or official gameplay.
   const nativeFixedOffset=options.researchNativeFixedCarry===true?
     currentSoloCarryPhase.phase==='sprint'?
-     (Math.hypot(realBallVelocity.x,realBallVelocity.y)<0.45?-0.18:0.08):
+     (Math.hypot(realBallVelocity.x,realBallVelocity.y)<0.45?-0.18:
+       0.08+(options.researchSoloSprintPursuitLeadM??0)):
     currentSoloCarryPhase.phase==='moderate'?-0.06:
      currentSoloCarryPhase.ballTargetOffsetM:null;
   const targets=players.map(p=>{

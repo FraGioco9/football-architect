@@ -635,3 +635,61 @@ test('#628 32-seed genuine Sprint pace-lead replay with full shoe release',
  }
  process.stdout.write('ME_628_SPRINT_PACE_LEAD_FULL32_AB '+JSON.stringify(rows)+'\\n');
 });
+
+test('#628 original mover pursuit lookahead versus same-world Sprint shoe source',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const [rating,variantIndex] of [[25,3],[50,3],[75,0],[90,0]])
+ for(const side of ['home','away'])
+ for(const pursuitLeadM of [0,0.25,0.5]){
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide:side,variantIndex,carryRunwayStart:true,
+   nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
+   soloSprintActiveFootReleaseM:0.06,
+   soloSprintPursuitLeadM:pursuitLeadM,
+   soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
+  });
+  try{
+   let f=null,actions=0,starts=0,lost=0;
+   const first=lab.snapshot().ball.position.x,checkpoints=[];
+   for(let tick=1;tick<=600;tick++){
+    f=lab.step();
+    const p=f.observedMovementPlayers.find(x=>x.id===side+'-10');
+    if(Math.hypot(f.ball.position.x-p.x,f.ball.position.y-p.y)>1.5)lost++;
+    starts+=f.soloNativeFeet.started.length;
+    if(f.action){
+     actions++;
+     assert.equal(f.action.nativeShoeContactVerified,true);
+     assert.equal(f.soloNativeFeet.exclusivePhysicalStart,true);
+     assert.equal(f.action.actualPhysicsImpulseApplied,true);
+    }
+    assert.equal(f.officialMatchPossession,false);
+    if([120,300,600].includes(tick)){
+     const a=f.nativeDribbleAudit,m=f.soloCarryMeasurements;
+     assert.equal(a.nativePhysicalShoeStarts,starts);
+     assert.equal(a.appliedCarryActions,actions);
+     checkpoints.push({
+      tick,actions,starts,lost,
+      unconverted:a.nativeShoeStartsWithoutCarryImpulse,
+      handoffs:a.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
+      overlap:a.nativeBothFeetActiveTicks,
+      fullReleases:a.nativeActorFullReleaseEvents,
+      ballForwardM:(side==='home'?1:-1)*(f.ball.position.x-first),
+      peakGapM:m.peakGapM,peakPlayerKmh:m.peakPlayerSpeedMps*3.6,
+      lateKmh:m.lateMeanSpeedMps*3.6,peakBallKmh:m.peakBallSpeedMps*3.6,
+      meanGapM:m.meanGapM,nativeImpulseIntervalS:m.nativeMeanImpulseGapS
+     });
+    }
+   }
+   rows.push({rating,variantIndex,side,pursuitLeadM,checkpoints});
+  }finally{lab.dispose();}
+ }
+ assert.equal(rows.length,24);
+ for(const row of rows){
+  const v=row.checkpoints[2];
+  assert.ok(v.starts>=v.actions);
+  assert.ok(Number.isFinite(v.ballForwardM)&&Number.isFinite(v.peakGapM));
+ }
+ process.stdout.write('ME_628_NATIVE_SPRINT_PURSUIT_AB '+
+  JSON.stringify(rows)+'\\n');
+});

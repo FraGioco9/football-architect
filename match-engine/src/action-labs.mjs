@@ -42,7 +42,7 @@ export function createControlledActionLab(RAPIER,id,{
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
  carryRunwayStart=false,nativeFixedCarryResearch=false,
  nativeFixedSprintLongStride=false,nativeFixedSprintLeadExtraMps=0,
- soloCarryPlayerAttributes=null
+ soloSprintPursuitLeadM=0,soloCarryPlayerAttributes=null
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -57,6 +57,15 @@ export function createControlledActionLab(RAPIER,id,{
      soloShoeWidthScale!==1||soloShoeLengthScale!==1||
      soloRecoveryStepScale!==1)))
   throw new TypeError('Native active-foot release is Sprint research only');
+ if(![0,0.25,0.5].includes(soloSprintPursuitLeadM)||
+    (soloSprintPursuitLeadM!==0&&(
+     id!=='carry-solo'||!nativeFixedCarryResearch||
+     soloCarryLockedPhase!=='sprint'||
+     soloSprintActiveFootReleaseM!==0.06||
+     nativeFixedSprintLeadExtraMps!==0||nativeFixedSprintLongStride||
+     bodyGuardEnabled||soloSprintCadenceScale!==1||
+     soloSprintLateralTrackScale!==1)))
+  throw new TypeError('Forward pursuit trial requires source-fixed native Sprint');
  if(![0,0.20,0.35].includes(nativeFixedSprintLeadExtraMps)||
     (nativeFixedSprintLeadExtraMps!==0&&(
      !nativeFixedCarryResearch||id!=='carry-solo'||
@@ -264,6 +273,8 @@ export function createControlledActionLab(RAPIER,id,{
    ...(variantIndex>0?{researchSmallSidedVariantIndex:variantIndex}:{}),
    ...(carryRunwayStart?{researchCarryRunwayStart:true}:{}),
    ...(nativeFixedCarryResearch?{researchNativeFixedCarry:true}:{}),
+   ...(soloSprintPursuitLeadM!==0?{
+    researchSoloSprintPursuitLeadM:soloSprintPursuitLeadM}:{}),
    ...(soloCarryLockedPhase!==null?{
     researchSoloCarryLockedPhase:soloCarryLockedPhase,
     researchSoloCarryPlayerAttributes:selectedCarryAttributes}:{}),
@@ -628,6 +639,7 @@ export function createControlledActionLab(RAPIER,id,{
       nativeFixedCarryResearch:true,
       nativeFixedSprintLongStride,
       nativeFixedSprintLeadExtraMps,soloSprintActiveFootReleaseM,
+      soloSprintPursuitLeadM,
       ...(soloCarryMeasurements?{soloCarryMeasurements}:{}),
       soloCarryLockedPhase,
       soloCarryPlayerAttributes:selectedCarryAttributes,
