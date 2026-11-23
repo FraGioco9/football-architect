@@ -326,108 +326,70 @@ test('#628 Sprint long-stride physical 10s extra ratings and variants',
   JSON.stringify({rows,weakControls:controls})+'\\n');
 });
 
-test('#628 native two-foot Sprint trailing shoe clearance A/B on original Rapier world',
+test('#628 accepted native Sprint source recontact guard: 4 ratings x 4 starts x both sides',
  {timeout:120000},async()=>{
  const R=await initializeRapier(rapier),rows=[];
- for(const [rating,variantIndex] of [[25,29],[50,3],[75,17],[90,0]])
+ const critical=new Set([
+  '25:29:home','25:29:away','50:3:home','50:3:away',
+  '75:17:away','90:0:home','90:0:away'
+ ]);
+ for(const rating of [25,50,75,90])
  for(const side of ['home','away'])
- for(const clearanceM of [0,0.08,0.12]){
+ for(const variantIndex of [0,3,17,29]){
   const lab=createControlledActionLab(R,'carry-solo',{
    shotSide:side,variantIndex,carryRunwayStart:true,
    nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
-   soloSprintSwingFootClearanceM:clearanceM,
    soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
   });
   try{
-   let starts=0,actions=0,lostTicks=0,last=null;
-   const firstX=lab.snapshot().ball.position.x;
+   let frame=null,actions=0,starts=0,unreachable=0;
+   const startX=lab.snapshot().ball.position.x;
    for(let tick=1;tick<=600;tick++){
-    last=lab.step();
-    const actor=last.observedMovementPlayers.find(p=>p.id===side+'-10');
-    if(Math.hypot(last.ball.position.x-actor.x,
-       last.ball.position.y-actor.y)>1.5)lostTicks++;
-    starts+=last.soloNativeFeet.started.length;
-    assert.equal(last.soloNativeFeet.source,'rapier-physical-collider-events');
-    assert.equal(last.soloNativeFeet.sprintSwingFootClearanceM,clearanceM);
-    assert.equal(last.officialMatchPossession,false);
-    if(last.action){
-     assert.equal(last.action.nativeShoeContactVerified,true);
-     assert.equal(last.soloNativeFeet.exclusivePhysicalStart,true);
-     actions++;
-    }
-   }
-   const audit=last.nativeDribbleAudit;
-   assert.equal(audit.nativePhysicalShoeStarts,starts);
-   assert.equal(audit.appliedCarryActions,actions);
-   rows.push({rating,variantIndex,side,clearanceM,starts,actions,lostTicks,
-    nonActionStarts:audit.nativeShoeStartsWithoutCarryImpulse,
-    overlapStarts:audit.nonActionStartReasons.otherFootAlreadyActive,
-    handoffs:audit.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
-    simultaneous:audit.nonActionStartReasons.simultaneousFootStarts,
-    peakGapM:last.soloCarryMeasurements.peakGapM,
-    forwardM:(side==='home'?1:-1)*(last.ball.position.x-firstX),
-    playerKmh:last.soloCarryMeasurements.peakPlayerSpeedMps*3.6,
-    deadBall:last.refereeEvidence?.lastEvent?.kind??null});
-  }finally{lab.dispose();}
- }
- assert.equal(rows.length,24);
- for(const row of rows){
-  assert.ok(row.starts>=row.actions);
-  assert.ok(Number.isFinite(row.forwardM));
- }
- // Observational, never mark an option adopted merely because a test ran.
- process.stdout.write('ME_628_NATIVE_SWING_FOOT_CLEARANCE_AB '+
-  JSON.stringify(rows)+'\\n');
-});
-
-test('#628 native long-stride real-source handoff recovery A/B on weak seed set',
- {timeout:120000},async()=>{
- const R=await initializeRapier(rapier),rows=[];
- for(const [rating,variantIndex] of [[25,29],[50,3],[75,17],[90,0]])
- for(const side of ['home','away'])
- for(const clearanceM of [0,0.08,0.12]){
-  const lab=createControlledActionLab(R,'carry-solo',{
-   shotSide:side,variantIndex,carryRunwayStart:true,
-   nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
-   nativeFixedSprintLongStride:true,
-   soloSprintSwingFootClearanceM:clearanceM,
-   soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
-  });
-  try{
-   let frame=null,actions=0,starts=0,lostTicks=0;
-   const start=lab.snapshot().ball.position.x;
-   for(let tick=1;tick<=600;tick++){
-    frame=lab.step();starts+=frame.soloNativeFeet.started.length;
+    frame=lab.step();
+    assert.equal(frame.soloNativeFeet.source,'rapier-physical-collider-events');
+    assert.equal(frame.soloNativeFeet.independentColliders,2);
+    assert.equal(frame.officialMatchPossession,false);
+    starts+=frame.soloNativeFeet.started.length;
     const actor=frame.observedMovementPlayers.find(p=>p.id===side+'-10');
     if(Math.hypot(frame.ball.position.x-actor.x,
-       frame.ball.position.y-actor.y)>1.5)lostTicks++;
-    assert.equal(frame.soloNativeFeet.sprintSwingFootClearanceM,clearanceM);
-    assert.equal(frame.officialMatchPossession,false);
+       frame.ball.position.y-actor.y)>1.5)unreachable++;
     if(frame.action){
-     actions++;
+     assert.equal(frame.action.action,'carry');
      assert.equal(frame.action.nativeShoeContactVerified,true);
      assert.equal(frame.soloNativeFeet.exclusivePhysicalStart,true);
-     assert.equal(frame.action.nativeFixedPhaseCalibration.nativeFixedSprintLongStride,true);
+     assert.equal(frame.action.actualPhysicsImpulseApplied,true);
+     actions++;
     }
    }
-   const audit=frame.nativeDribbleAudit;
-   assert.equal(audit.appliedCarryActions,actions);
-   assert.equal(audit.nativePhysicalShoeStarts,starts);
-   rows.push({rating,side,variantIndex,clearanceM,actions,starts,lostTicks,
-    nonAction:audit.nativeShoeStartsWithoutCarryImpulse,
-    overlapping:audit.nonActionStartReasons.otherFootAlreadyActive,
-    handoffs:audit.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
-    simultaneous:audit.nonActionStartReasons.simultaneousFootStarts,
-    forwardM:(side==='home'?1:-1)*(frame.ball.position.x-start),
-    maxGapM:frame.soloCarryMeasurements.peakGapM,
-    playerPeakKmh:frame.soloCarryMeasurements.peakPlayerSpeedMps*3.6});
+   const a=frame.nativeDribbleAudit;
+   assert.equal(a.nativePhysicalShoeStarts,starts);
+   assert.equal(a.appliedCarryActions,actions);
+   assert.equal(frame.soloCarryMeasurements.nativeConfirmedImpulseCount,actions);
+   const row={
+    rating,side,variantIndex,actions,starts,unreachable,
+    unconverted:a.nativeShoeStartsWithoutCarryImpulse,
+    simultaneous:a.nonActionStartReasons.simultaneousFootStarts,
+    otherShoeActive:a.nonActionStartReasons.otherFootAlreadyActive,
+    oppositeSameTickHandoffs:
+     a.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
+    peakGapM:frame.soloCarryMeasurements.peakGapM,
+    ballForwardM:(side==='home'?1:-1)*(frame.ball.position.x-startX)
+   };
+   rows.push(row);
+   if(critical.has(rating+':'+variantIndex+':'+side)){
+    assert.ok(actions>=10,'native baseline must preserve independent Carry touches');
+    assert.ok(starts<=17,'no explosion of real two-shoe STARTs');
+    assert.ok(row.unconverted<=2,'no conversion collapse from shoe overlap');
+    assert.equal(row.oppositeSameTickHandoffs,0,
+     'do not regress accepted full-release handoffs');
+    assert.equal(row.simultaneous,0,'no overlapping simultaneous shoe START');
+    assert.equal(unreachable,0,'original ball stays physically reachable');
+    assert.ok(row.peakGapM<1.5);
+    assert.ok(row.ballForwardM>30);
+   }
   }finally{lab.dispose();}
  }
- assert.equal(rows.length,24);
- for(const row of rows){
-  assert.ok(row.starts>=row.actions);
-  assert.ok(Number.isFinite(row.forwardM));
- }
- process.stdout.write('ME_628_NATIVE_LONG_STRIDE_REACTIVE_RELEASE_AB '+
+ assert.equal(rows.length,32);
+ process.stdout.write('ME_628_ACCEPTED_NATIVE_SPRINT_RELEASE_GUARD '+
   JSON.stringify(rows)+'\\n');
 });
