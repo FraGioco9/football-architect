@@ -40,7 +40,7 @@ jobs:
           node tools/generate-app-pages.mjs --check
           node --test tests/club-crests.test.mjs tests/club-pages.test.mjs
           git diff --check
-      - name: Review scope and commit only generated artifacts; remove temporary workflow
+      - name: Commit generated artifacts and remove temporary workflow
         env:
           TARGET_BRANCH: assets/br-4-laranjeiras-crest-20261124
           EXPECTED_SHA: ${{ github.sha }}
@@ -48,27 +48,14 @@ jobs:
           set -euo pipefail
           git diff --name-only | tee /tmp/br4-changed.txt
           git diff --stat
-          if [ ! -s /tmp/br4-changed.txt ]; then
-            echo "::error::No canonical outputs changed; manual review needed"
-            exit 1
-          fi
+          test -s /tmp/br4-changed.txt
           if ! git diff --ignore-space-at-eol --quiet -- data/clubs-registry.csv; then
-            echo "::error::Canonical club identity CSV has semantic changes; abort"
+            echo "::error::Canonical identity CSV has semantic changes"
             git diff -- data/clubs-registry.csv | head -80
             exit 1
           fi
-          # A checkout may normalize CSV newline endings. Never commit the identity catalogue.
-          grep -v '^data/clubs-registry.csv
-          git rm .github/workflows/br4-crest-one-shot.yml
-          git diff --cached --check
-          git status --short
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "build(branding): generate published BR-4 crest assets"
-          git fetch origin "$TARGET_BRANCH"
-          test "$(git rev-parse FETCH_HEAD)" = "$EXPECTED_SHA"
-          git push origin HEAD:"refs/heads/$TARGET_BRANCH"
- /tmp/br4-changed.txt > /tmp/br4-generated.txt || true
+          # Ignore CRLF-only churn; never commit the source identity CSV.
+          grep -v '^data/clubs-registry.csv$' /tmp/br4-changed.txt > /tmp/br4-generated.txt || true
           test -s /tmp/br4-generated.txt
           while IFS= read -r path; do
             case "$path" in
