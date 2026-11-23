@@ -126,3 +126,9 @@ test('Admin first-paint UI hint is separate from API authorization',()=>{
  assert.match(players,/paint\(false,false,false\)/);
  assert.match(calendar,/signedIn','signedOut','forbidden/);
 });
+
+test('Preview player details publish only verified Admin authorization to the sidebar',()=>{
+ const source=readFileSync(new URL('../assets/player-detail.js',import.meta.url),'utf8');
+ assert.match(source,/if\(preview&&\(state==='ready'\|\|state==='denied'\)\)/);
+ assert.match(source,/window\.dispatchEvent\(new CustomEvent\('fa:admin-access'/);
+});
