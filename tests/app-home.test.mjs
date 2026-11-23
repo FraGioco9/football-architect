@@ -366,6 +366,13 @@ test("PAGE-DASH-01 prioritizes Match Centre, a compact world strip and calendar"
  for(const id of ["world-heading","dashboard-events-heading","dashboard-match-centre-heading","dashboard-recent-heading","dashboard-next-heading"])assert.match(source,new RegExp('id="'+id+'"'));
  for(const name of ["fa-dash-statusbar","fa-dash-match-centre","fa-dash-scoreboards","fa-dash-agenda"])assert.match(source,new RegExp(name));
  assert.ok(source.indexOf("fa-dash-match-centre")<source.indexOf("fa-dash-agenda"));
+ assert.ok(source.indexOf('data-dash-list="recent"')<source.indexOf('data-dash-list="next"'),"Recent results before upcoming fixtures");
+ assert.match(styles,/\.fa-dash-scoreboards\{display:grid;grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(source,/fa-dash-club-pair fa-dash-pair-skeleton/);
+ assert.match(source,/fa-dash-agenda-placeholder/);
+ assert.match(client,/const \{clubs,clubCrests\}=publicClubIdentityCatalog\(\)/);
+ assert.match(client,/pair\.append\(clubCrest\(f.homeClubId\),clubCrest\(f.awayClubId\)\)/);
+ assert.match(client,/clock\(null\);\s*if\(snapshot\?\.worldStatus==='unavailable'\)/);
  assert.equal((source.match(/class="fa-dashboard-placeholder"/g)||[]).length,11);
  assert.match(source,/data-dash-note="world" role="status"/);
  for(const old of ["fa-dash-focus","fa-dash-featured","fa-dash-competitions","fa-dash-progress","fa-dashboard-bottom","data-dash-region="])assert.ok(!source.includes(old),old);
@@ -375,7 +382,8 @@ test("PAGE-DASH-01 prioritizes Match Centre, a compact world strip and calendar"
  assert.match(styles,/@media\(max-width:1100px\)/);
  const start=client.indexOf("const glossary=")+"const glossary=".length,end=client.indexOf(";\n",start);
  const words=JSON.parse(client.slice(start,end));
- for(const lang of ["en","de","es","fr","it"])for(const key of ["world","matchCentre","recent","next","calendar","noRecent","noNext","unstarted","plannedStatus","division"])assert.ok(words[lang]?.[key],lang+"."+key);
+ for(const lang of ["en","de","es","fr","it"])for(const key of ["world","matchCentre","recent","next","calendar","events","noRecent","noNext","unstarted","plannedStatus","division"])assert.ok(words[lang]?.[key],lang+"."+key);
+ assert.deepEqual(["en","it","de","es","fr"].map(lang=>words[lang].events),["World calendar","Calendario mondiale","Weltkalender","Calendario mundial","Calendrier mondial"]);
  const guard=read("tools/publication-guard.mjs");
  for(const asset of ["dashboard-overview.mjs","dashboard-overview.css"])assert.match(guard,new RegExp(asset.replace(/\./g,"\\.")));
 });

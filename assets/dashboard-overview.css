@@ -18,19 +18,31 @@
 .fa-dashboard-overview .fa-dash-module-heading a{flex:none;font-size:12px;font-weight:700;color:var(--text);text-decoration:none}
 .fa-dashboard-overview a:focus-visible,.fa-dashboard-overview button:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .fa-dashboard-overview .fa-dash-module-heading a:hover{text-decoration:underline;text-underline-offset:3px}
-.fa-dashboard-overview .fa-dash-scoreboards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;padding-top:17px}
+.fa-dashboard-overview .fa-dash-scoreboards{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding-top:14px}
+.fa-dashboard-overview .fa-dash-scoreboard+.fa-dash-scoreboard{border-top:1px solid var(--dash-line);padding-top:15px}
 .fa-dashboard-overview .fa-dash-scoreboard{min-width:0}
 .fa-dashboard-overview .fa-dash-scoreboard h3{margin:0 0 9px;color:var(--text);font-size:13px;font-weight:770}
 .fa-dashboard-overview .fa-dashboard-list{list-style:none;margin:0;padding:0;min-height:240px}
 .fa-dashboard-overview .fa-dashboard-list li{min-height:57px;border-top:1px solid var(--dash-line)}
 .fa-dashboard-overview .fa-dashboard-list li:first-child{border-top:0}
-.fa-dashboard-overview .fa-dashboard-list a{display:flex;align-items:center;justify-content:space-between;gap:9px;min-height:57px;padding:10px 0;color:var(--text);text-decoration:none;font-size:12px}
+.fa-dashboard-overview .fa-dashboard-list a{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:57px;padding:10px 0;color:var(--text);text-decoration:none;font-size:12px}
+.fa-dashboard-overview .fa-dash-club-pair{display:flex;align-items:center;flex:none;gap:2px}
+.fa-dashboard-overview .app-world-club-crest-placeholder.fa-dash-club-crest{flex:0 0 24px;width:24px;height:24px}
+.fa-dashboard-overview .fa-dash-club-crest[data-club-crest-pending="true"]::before{display:block}
+.fa-dashboard-overview .fa-dash-club-crest[data-club-crest-loaded="true"]::before{display:none}
+.fa-dashboard-overview .fa-dash-crest-skeleton{flex:0 0 24px;width:24px;height:24px;border-radius:4px;background:color-mix(in srgb,var(--muted) 16%,var(--surface))}
 .fa-dashboard-overview .fa-dashboard-list a:hover .fa-dashboard-names{text-decoration:underline;text-underline-offset:3px}
-.fa-dashboard-overview .fa-dash-match-copy{display:grid;min-width:0;gap:5px}
-.fa-dashboard-overview .fa-dashboard-names{min-width:0;color:var(--text);font-size:12px;line-height:1.35;font-weight:650;overflow-wrap:anywhere}
-.fa-dashboard-overview .fa-dash-match-competition{color:var(--muted);font-size:10px;line-height:1.25}
+.fa-dashboard-overview .fa-dash-match-copy{display:grid;flex:1;min-width:0;gap:5px}
+.fa-dashboard-overview .fa-dashboard-names{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-size:12px;line-height:1.35;font-weight:650}
+.fa-dashboard-overview .fa-dash-match-competition{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:10px;line-height:1.25}
 .fa-dashboard-overview .fa-dashboard-list a>strong{flex:none;color:var(--text);font-size:12px;font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap}
-.fa-dashboard-overview .fa-dashboard-placeholder{display:flex;align-items:center}
+.fa-dashboard-overview .fa-dashboard-placeholder{display:flex;align-items:center;gap:10px}
+.fa-dashboard-overview .fa-dash-pair-skeleton{gap:2px}
+.fa-dashboard-overview .fa-dash-copy-skeleton{gap:6px}
+.fa-dashboard-overview .fa-dash-shimmer-context{width:53%;height:9px}
+.fa-dashboard-overview .fa-dash-shimmer-score{flex:none;width:30px}
+.fa-dashboard-overview .fa-dash-date-skeleton .fa-dash-shimmer{width:20px;height:20px}
+.fa-dashboard-overview .fa-dash-agenda-placeholder .fa-dash-copy-skeleton{width:100%}
 .fa-dashboard-overview .fa-dash-shimmer{display:block;width:72%;height:12px;border-radius:3px;background:color-mix(in srgb,var(--muted) 23%,var(--surface))}
 .fa-dashboard-overview .fa-dash-shimmer-small{width:3ch}
 .fa-dashboard-overview .fa-dash-shimmer-medium{width:11ch}
@@ -48,5 +60,7 @@
 .fa-dashboard-overview .fa-dash-agenda-copy>small{color:var(--muted);font-size:10px}
 .fa-dashboard-overview .fa-dashboard-retry{margin-top:12px;padding:8px 12px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:12px;cursor:pointer}
 @media(max-width:1100px){.fa-dashboard-overview .fa-dash-layout{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:680px){.fa-dashboard-overview .fa-dash-statusbar{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dashboard-overview .fa-dash-status-cell:nth-child(4){grid-column:1/-1;border-left:0;border-top:1px solid var(--dash-line)}.fa-dashboard-overview .fa-dash-scoreboards{grid-template-columns:minmax(0,1fr);gap:18px}.fa-dashboard-overview .fa-dash-scoreboard+.fa-dash-scoreboard{border-top:1px solid var(--dash-line);padding-top:17px}.fa-dashboard-overview .fa-dash-module{padding:16px}}
+@media(max-width:680px){.fa-dashboard-overview .fa-dash-statusbar{grid-template-columns:repeat(2,minmax(0,1fr))}.fa-dashboard-overview .fa-dash-status-cell:nth-child(4){grid-column:1/-1;border-left:0;border-top:1px solid var(--dash-line)}.fa-dashboard-overview .fa-dash-scoreboards{gap:16px}.fa-dashboard-overview .fa-dash-module{padding:16px}}
 @media(prefers-reduced-motion:reduce){.fa-dashboard-overview *{scroll-behavior:auto}}
+.fa-dashboard-overview .fa-dash-agenda-list .fa-dash-agenda-placeholder{justify-content:flex-start}
+@media(max-width:380px){.fa-dashboard-overview .fa-dashboard-list a{gap:7px}.fa-dashboard-overview .fa-dashboard-placeholder{gap:7px}.fa-dashboard-overview .app-world-club-crest-placeholder.fa-dash-club-crest,.fa-dashboard-overview .fa-dash-crest-skeleton{flex-basis:20px;width:20px;height:20px}}
