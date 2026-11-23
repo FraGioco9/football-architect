@@ -1,0 +1,42 @@
+/* #587 Transfers: site-native discovery page; no listing or settlement UI. */
+.fa-transfers{display:grid;gap:18px;min-width:0}
+.fa-transfers-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;min-width:0}
+.fa-transfers-header .app-page-title{margin:0;font-size:var(--app-page-title-size);line-height:1.2;letter-spacing:-.035em;color:var(--text)}
+.fa-transfers-subtitle{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.6}
+.fa-transfers-directory-link{align-self:center;white-space:nowrap}
+.fa-transfers-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;padding:18px 20px}
+.fa-transfers-field{display:grid;gap:7px;flex:0 1 210px;min-width:150px}
+.fa-transfers-name-field{flex:1 1 260px}
+.fa-transfers-field label{font-weight:700;color:var(--muted);font-size:12px}
+.fa-transfers-field input,.fa-transfers-field select{box-sizing:border-box;width:100%;min-width:0;height:40px;padding:0 12px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font:inherit;font-size:13px}
+.fa-transfers-field input::placeholder{color:var(--muted);opacity:1}
+.fa-transfers-field input:focus-visible,.fa-transfers-field select:focus-visible,.fa-transfers-table-region:focus-visible,.fa-transfers button:focus-visible,.fa-transfers a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.fa-transfers-actions{display:flex;gap:8px;flex-wrap:wrap}
+.fa-transfers-actions .app-link{height:40px;min-height:40px;cursor:pointer}
+.fa-transfers-results{padding:0;overflow:hidden}
+.fa-transfers-results-header{display:flex;align-items:center;justify-content:space-between;min-height:56px;padding:16px 20px 8px;gap:12px}
+.fa-transfers-results-header h2{margin:0;font-size:17px;font-weight:750}
+.fa-transfers-count,.fa-transfers-page-info{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.fa-transfers-disclaimer{margin:0!important;padding:0 20px 14px;font-size:12px!important;line-height:1.5!important;color:var(--muted)}
+.fa-transfers-table-region{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.fa-transfers-table{width:100%;min-width:620px;border-collapse:collapse;table-layout:fixed;color:var(--text);font-size:13px}
+.fa-transfers-table th,.fa-transfers-table td{padding:12px 16px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.fa-transfers-table th{background:var(--surface);font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--muted)}
+.fa-transfers-table th:first-child,.fa-transfers-table td:first-child{width:30%;padding-left:20px}
+.fa-transfers-table th:nth-child(2),.fa-transfers-table td:nth-child(2){width:12%}
+.fa-transfers-table th:nth-child(3),.fa-transfers-table td:nth-child(3){width:10%;text-align:center}
+.fa-transfers-table th:nth-child(4),.fa-transfers-table td:nth-child(4){width:16%}
+.fa-transfers-table tbody tr:last-child td{border-bottom:0}
+.fa-transfers-table tbody tr:not(.fa-transfers-loading-row):hover{background:color-mix(in srgb,var(--primary) 6%,transparent)}
+.fa-transfers-table a{color:inherit;text-decoration:none;font-weight:700}
+.fa-transfers-table a:hover,.fa-transfers-table a:focus-visible{text-decoration:underline;text-underline-offset:3px}
+.fa-transfers-muted{color:var(--muted);font-weight:500}
+.fa-transfers-status{min-height:28px;padding:8px 20px;margin:0!important;font-size:12px!important}
+.fa-transfers-pager{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;padding:12px 20px;border-top:1px solid var(--line)}
+.fa-transfers-pager .app-link{min-height:34px;padding:7px 12px;cursor:pointer}
+.fa-transfers-pager button:disabled{opacity:.45;cursor:default}
+.fa-transfers-skeleton{height:12px;display:block;border-radius:5px;background:var(--border);opacity:.7;animation:fa-transfers-pulse 1.2s ease-in-out infinite alternate}
+.fa-transfers-skeleton-name{width:70%;max-width:180px}.fa-transfers-skeleton-position{width:28px}.fa-transfers-skeleton-age{width:20px;margin:auto}.fa-transfers-skeleton-nationality{width:40px}.fa-transfers-skeleton-club{width:65%;max-width:150px}
+@keyframes fa-transfers-pulse{to{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.fa-transfers-skeleton{animation:none}}
+@media(max-width:700px){.fa-transfers{gap:14px}.fa-transfers-filters{padding:16px}.fa-transfers-actions{width:100%}.fa-transfers-actions>.app-link{flex:1}.fa-transfers-table{min-width:500px}.fa-transfers-table th,.fa-transfers-table td{padding:12px 10px}.fa-transfers-table th:first-child,.fa-transfers-table td:first-child{padding-left:14px}.fa-transfers-results-header{padding-left:14px;padding-right:14px}.fa-transfers-disclaimer{padding-left:14px;padding-right:14px}.fa-transfers-table th:nth-child(4),.fa-transfers-table td:nth-child(4){display:none}}
