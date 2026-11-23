@@ -1,0 +1,34 @@
+/* Club licensing: shared Admin panels, controls and responsive tables. */
+.app-admin-view .admin-licenses{width:100%;min-width:0;display:grid;gap:var(--app-page-section-gap)}
+.app-admin-view .admin-licenses [hidden]{display:none!important}
+.app-admin-view .admin-licenses-editor{display:grid;gap:14px}
+.app-admin-view .admin-licenses-editor p{margin:0;color:var(--muted)}
+.app-admin-view .admin-licenses-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.app-admin-view .admin-licenses-fields label{display:flex;flex-direction:column;gap:8px;font-weight:600;min-width:0}
+.app-admin-view .admin-licenses :is(input,select){width:100%;min-width:0;min-height:var(--fa-control-height-regular);padding:9px 11px;border:1px solid var(--line,#647478);border-radius:8px;background:var(--surface,#162329);color:inherit;font:inherit;box-sizing:border-box}
+.app-admin-view .admin-licenses :is(input,select,button):focus-visible{outline:2px solid var(--primary,currentColor);outline-offset:3px}
+.app-admin-view .admin-licenses :is(input,select):disabled{opacity:.6}
+.app-admin-view .admin-licenses-search{display:flex;gap:8px;align-items:center;min-width:0}
+.app-admin-view .admin-licenses-search input{flex:1}
+.app-admin-view .admin-licenses-actions{display:flex;flex-wrap:wrap;gap:10px}
+.app-admin-view .admin-licenses-actions button:disabled{opacity:.55;cursor:default}
+.app-admin-view .admin-licenses-message{min-height:1.4em;margin:0}
+.app-admin-view .admin-licenses-heading{display:flex;align-items:baseline;gap:16px;justify-content:space-between}
+.app-admin-view .admin-licenses-heading h2{margin:0}
+.app-admin-view .admin-licenses-heading span{font-size:13px;color:var(--muted)}
+.app-admin-view .admin-licenses-filters{display:flex;gap:10px}
+.app-admin-view .admin-licenses-filters input{flex:1}
+.app-admin-view .admin-licenses-filters select{flex:0 0 180px}
+.app-admin-view .admin-licenses-table-wrap{overflow:auto;max-width:100%;border:1px solid var(--line,#647478);border-radius:8px}
+.app-admin-view .admin-licenses-table{width:100%;min-width:680px;border-collapse:collapse;font-size:14px}
+.app-admin-view .admin-licenses-table th,.app-admin-view .admin-licenses-table td{padding:12px 14px;border-bottom:1px solid var(--line,#647478);text-align:left}
+.app-admin-view .admin-licenses-table th{color:var(--muted);font-weight:600;white-space:nowrap}
+.app-admin-view .admin-licenses-table tbody tr:last-child td{border-bottom:none}
+.app-admin-view .admin-licenses-table td:nth-child(2){overflow-wrap:anywhere}
+.app-admin-view .admin-licenses-table tr.is-selected{background:var(--surface,#162329)}
+.app-admin-view .admin-licenses-table button{white-space:nowrap}
+.app-admin-view .admin-licenses-skeleton{height:42px}
+.app-admin-view .admin-licenses-skeleton td{height:42px}
+.app-admin-view .admin-licenses-history{min-width:760px}
+@media(max-width:780px){.app-admin-view .admin-licenses-fields{grid-template-columns:1fr}}
+@media(max-width:520px){.app-admin-view .admin-licenses-filters{flex-wrap:wrap}.app-admin-view .admin-licenses-filters select{flex:1 1 100%}.app-admin-view .admin-licenses-search{flex-wrap:wrap}.app-admin-view .admin-licenses-search button{width:100%}.app-admin-view .admin-licenses-table{min-width:630px}}

@@ -45,7 +45,7 @@ test('Admin removes Details and retains inline protected reset with a next-day p
 
 
 test('Admin directory and child pages have isolated, protected markup',async()=>{
- for(const id of ['admin','admin/calendar','admin/players','admin/contracts']){
+ for(const id of ['admin','admin/calendar','admin/players','admin/contracts','admin/licenses']){
   const path='/'+id,file=id+'/index.html';
   assert.equal(parseRoute(path)?.canonical,path);
   assert.equal(buildRoute({kind:'page',id}),path);
@@ -60,15 +60,21 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  }
  const home=readFileSync(new URL('../admin/index.html',import.meta.url),'utf8');
  assert.match(home,/data-admin-directory/);
- assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,3,'Three separate Admin boxes');
- assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,3,'Each Admin box has a clear navigation button');
+ assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,4,'Four separate Admin boxes');
+ assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,4,'Each Admin box has a clear navigation button');
  assert.match(home,/href="\/admin\/calendar"/);
  assert.match(home,/href="\/admin\/players"/);
  assert.match(home,/href="\/admin\/contracts"/);
+ assert.match(home,/href="\/admin\/licenses"/);
  assert.doesNotMatch(home,/data-admin-world|data-admin-players-form|\/assets\/admin-settings\.js/);
+ const licenses=readFileSync(new URL('../admin/licenses/index.html',import.meta.url),'utf8');
+ const {renderAdminLicenses}=await import('../tools/render-admin-licenses.mjs');
+ assert.ok(licenses.includes(renderAdminLicenses()));
+ assert.match(licenses,/\/assets\/admin-licenses\.js/);
+ assert.match(licenses,/data-licenses-content hidden/);
  const calendar=readFileSync(new URL('../admin/calendar/index.html',import.meta.url),'utf8');
  assert.match(calendar,/data-admin-world/);
- for(const child of [calendar,readFileSync(new URL('../admin/players/index.html',import.meta.url),'utf8'),readFileSync(new URL('../admin/contracts/index.html',import.meta.url),'utf8')]){
+ for(const child of [calendar,readFileSync(new URL('../admin/players/index.html',import.meta.url),'utf8'),readFileSync(new URL('../admin/contracts/index.html',import.meta.url),'utf8'),readFileSync(new URL('../admin/licenses/index.html',import.meta.url),'utf8')]){
   assert.match(child,/class="admin-page-heading"/);
   assert.match(child,/class="app-link app-link-secondary admin-back"/);
   assert.match(child,/href="\/admin" data-admin-back/);
