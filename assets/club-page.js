@@ -286,7 +286,7 @@
    }
    syncHistoryRows();
    const historyAnchor=/^#club-history-season-([1-9][0-9]*)$/.exec(location.hash);
-   if(selected.view==='history'&&historyAnchor&&historySnapshot.source==='authoritative'){
+   if(selected.view==='history'&&historyAnchor&&['authoritative','dev'].includes(historySnapshot.source)){
     const season=historyAnchor[1];
     const target=host.querySelector('[data-club-history-summary="'+season+'"]');
     if(target){

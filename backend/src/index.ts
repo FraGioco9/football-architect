@@ -11,6 +11,7 @@ import { ApiError } from './errors.ts';
 import {requireDatabase} from './database.ts';
 import {readPublicRosterStats,readPublicSportingSeasonLineupV1 as readPublicSportingSeason,readPublicCalendarDayLineupV1 as readPublicCalendarDay,readPublicClubHistoryLineupV1 as readPublicClubHistory,readPublicClubFixturesLineupV1 as readPublicClubFixtures} from './public-sporting-read-lineup-v1.ts';
 import { projectWorld } from './public-projections.ts';
+import {readPublicWorldHistory} from './public-world-history.ts';
 import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
 import {readPublicPlayerStatsLineupV1,readPublicPlayerMatchesLineupV1} from './public-sporting-read-lineup-v1.ts';
 import {readPublicClubRoster} from './public-club-roster-read.ts';
@@ -44,6 +45,16 @@ export default {
     }
     if(url.pathname.startsWith('/api/')&&!url.pathname.startsWith('/api/player/')&&!url.pathname.startsWith('/api/admin/')){
       try{await assertEnvironmentPool(env)}catch{return json(503,{error:{code:'environment_unavailable'}})}
+    }
+    // #581: anonymous, archive-verified championship index, never Admin data.
+    if(url.pathname==='/api/world/history'){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search)return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicWorldHistory(requireDatabase(env.DB)))}
+      catch(error){
+        if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
+        return json(503,{error:{code:'history_unavailable'}});
+      }
     }
     if (url.pathname === '/api/world') {
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;

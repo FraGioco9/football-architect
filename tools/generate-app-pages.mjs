@@ -7,6 +7,7 @@ import {renderAdminContracts} from './render-admin-contracts.mjs';
 import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs";
 import {buildRoute} from "../assets/routes-registry.mjs";
 import {renderSidebar} from "./render-sidebar.mjs";
+import {renderWorldHistoryPage} from './render-world-history.mjs';
 import {mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {clubOutputs} from "./generate-club-pages.mjs";
 import {loadWorldCatalog} from "./load-world-catalog.mjs";
@@ -280,6 +281,27 @@ for(const page of outputPages){
  if(page.name==="calendar")html=html.replace('<h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>','<h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>\n          '+"<div class=\"calendar-season-picker app-competition-season\"><span id=\"calendar-season-label\">Season</span><div class=\"language-control\" id=\"calendar-season-control\"><button type=\"button\" id=\"calendar-season-picker\" class=\"language-trigger\" role=\"combobox\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"calendar-season-menu\" aria-labelledby=\"calendar-season-label calendar-season-value\"><span id=\"calendar-season-value\"></span><svg class=\"language-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div id=\"calendar-season-menu\" class=\"language-menu\" role=\"listbox\" aria-labelledby=\"calendar-season-label\" hidden></div></div></div>"+"\n          "+"<script data-calendar-season-first-paint>(()=>{const n=document.documentElement.dataset.calendarSeason||'';const value=document.getElementById('calendar-season-value');if(value)value.textContent=n})();</script>") ;
  if(page.name==="calendar")html=html.replace('  <script src="/assets/theme.js">','  <script data-calendar-bootstrap>'+calendarBootstrap+'</script>\n  <script src="/assets/theme.js">').replace('</head>','  <script src="/assets/world-calendar-model.js" defer></script>\n  <script src="/assets/world-clock-adapter.js" defer></script>\n  <script src="/assets/world-calendar.js" defer></script>\n  <script src="/assets/calendar-simplified.js" defer></script>\n  <style data-calendar-critical>html:has(#world-calendar) #world-calendar>.calendar-heading,html:has(#world-calendar) #world-calendar>.calendar-clock,html:has(#world-calendar) #world-calendar>.calendar-details,html:has(#world-calendar) #world-calendar>.calendar-selected,html:has(#world-calendar) #world-calendar>.calendar-note,html:has(#world-calendar) #world-calendar>.calendar-key{display:none!important}</style>\n</head>');
  writeOutput(page.path,html);
+}
+// #581: derive the independent archive page from the just-generated canonical
+// Competitions shell. Do not hand-edit its checked-in HTML or duplicate sidebar markup.
+{
+ const source=readFileSync(new URL("../competitions/index.html",import.meta.url),"utf8").replace(/\r\n/g,"\n");
+ const start=source.indexOf('<section id="app-divisions"');
+ const finish=source.indexOf('\n      </main>',start);
+ if(start<0||finish<=start)throw Error("World History shell source unavailable");
+ let html=source.slice(0,start)+renderWorldHistoryPage()+source.slice(finish);
+ html=html.replace('<title>Competitions — Football Architect</title>','<title>World History — Football Architect</title>')
+  .replace('  <script src="/assets/international-cups.js" defer></script>\n','')
+  .replace('</head>','  <link rel=\"stylesheet\" href=\"/assets/clubs-directory.css\">\n  <script src=\"/assets/competition-tabs.js\" defer></script>\n  <link rel=\"stylesheet\" href=\"/assets/world-history.css\">\n  <script src=\"/assets/world-history.js\" defer></script>\n</head>');
+
+ // The History page is already in the shared first-paint navigation.
+ // Do not momentarily advertise Competitions as the selected page.
+ html=html.replace('class="fa-shell-link is-active" id="app-nav-divisions"',
+   'class="fa-shell-link" id="app-nav-divisions"')
+  .replace('data-app-view="divisions" aria-current="page"','data-app-view="divisions"')
+  .replace('class="fa-shell-link" id="app-nav-world-history" href="/history" data-nav01-history>',
+   'class="fa-shell-link is-active" id="app-nav-world-history" href="/history" data-nav01-history aria-current="page">');
+ writeOutput("history/index.html",html);
 }
 // Admin directory and two dedicated subpages share the existing app shell.
 for(const [route,title,content,scripts] of [

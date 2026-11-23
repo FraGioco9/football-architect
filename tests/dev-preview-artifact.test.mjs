@@ -66,6 +66,13 @@ test("DEBUG-INFRA-02: protected contract is a separately verified, nonpublic art
   assert.equal(protectedHtml.split('src="/__fa_dev__/debug-settings.mjs"').length,2);
   assert.match(protectedHtml,/__fa_dev__\/debug-settings\.mjs/);
   assert.match(protectedHtml,/__fa_dev__\/stats-client\.mjs/);
+  const historyPublic=readFileSync(join(repositoryRoot,"history","index.html"),"utf8");
+  const historyDebug=readFileSync(join(protectedPath,"history","index.html"),"utf8");
+  assert.doesNotMatch(historyPublic,/__fa_dev__|faDevPreviewMode=true/);
+  assert.match(historyDebug,/faDevPreviewMode=true/);
+  assert.match(historyDebug,/faDevCurrentSeason/);
+  assert.match(historyDebug,/src="\/__fa_dev__\/debug-settings\.mjs"/);
+  assert.equal(historyDebug.split('src="/__fa_dev__/debug-settings.mjs"').length,2);
   const landing=readFileSync(join(protectedPath,"index.html"));
   assert.ok(landing.equals(readFileSync(join(repositoryRoot,"index.html"))));
   assert.throws(()=>assertPublicArtifact(protectedPath),/Not allowlisted/);

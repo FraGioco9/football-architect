@@ -1361,6 +1361,7 @@
   const calendar = document.getElementById("app-calendar");
   const settings = document.getElementById("app-settings");
   const divisions = document.getElementById("app-divisions");
+  const worldHistory = document.getElementById("world-history");
   const links = {
     dashboard: document.getElementById("app-nav-dashboard"),
     calendar: document.getElementById("app-nav-calendar"),
@@ -1472,6 +1473,7 @@
     if (path === "/players" || /^\/players\/[1-9][0-9]*$/.test(path)) return "players";
     if (path === "/clubs" || path.startsWith("/clubs/")) return "clubs";
     if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
+    if (path === "/history") return "history";
     if (path === "/calendar") return "calendar";
     if (path === "/settings") return "settings";
     if (path === "/admin" || path.startsWith("/admin/")) return "admin";
@@ -1508,13 +1510,17 @@
       if (countryName) node.textContent = countryName;
     }
     const detail = document.getElementById("division-detail-name");
-    if (activeView() !== "clubs" && activeView() !== "profile" && activeView() !== "admin" && !document.querySelector?.("[data-player-detail-mode]") && !document.querySelector?.(".matches-directory") && !document.querySelector?.("[data-match-detail]")) document.title = (activeView() === "divisions" ? (detail?.textContent?.trim() || strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
+    if (activeView() !== "clubs" && activeView() !== "profile" && activeView() !== "admin" && !document.querySelector?.("[data-player-detail-mode]") && !document.querySelector?.(".matches-directory") && !document.querySelector?.("[data-match-detail]")) {
+      const historyTitles={en:"World History",de:"Weltgeschichte",es:"Historia mundial",fr:"Histoire mondiale",it:"Storia mondiale"};
+      document.title=(activeView()==="history"?historyTitles[language()]:activeView() === "divisions" ? (detail?.textContent?.trim() || strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
+    }
     renderWorldProgress();
   }
   function renderView() {
     rewriteAppLinks();
     const current = activeView();
     if (dashboard) dashboard.hidden = current !== "dashboard";
+    if (worldHistory) worldHistory.hidden = current !== "history";
     if (calendar) calendar.hidden = current !== "calendar";
     if (settings) settings.hidden = current !== "settings";
     if (divisions) divisions.hidden = current !== "divisions" && current !== "clubs" && current !== "players" && current !== "matches";

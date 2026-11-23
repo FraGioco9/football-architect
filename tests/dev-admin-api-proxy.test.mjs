@@ -419,3 +419,38 @@ test('MATCH-SLOTS: local DEV proxies numeric match IDs and published fixtures, b
   await Promise.all([new Promise(resolve=>server.close(resolve)),new Promise(resolve=>upstream.close(resolve))]);
  }
 });
+
+
+test('#581 World History local bridge forwards only anonymous canonical GET without credentials',async()=>{
+ const seen=[];
+ const upstream=createServer((r,res)=>{
+  seen.push({path:r.url,method:r.method,cookie:r.headers.cookie,origin:r.headers.origin,csrf:r.headers['x-csrf-token']});
+  res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['private=unsafe']});
+  res.end(JSON.stringify({schemaVersion:1,providerId:'authoritative-world-history',status:'empty',seasons:[]}));
+ });
+ upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const target='http://127.0.0.1:'+upstream.address().port;
+ const bridge=createServer((r,res)=>proxyAdminApi(r,res,{target}));
+ bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ const send=(path,method='GET')=>new Promise((resolve,reject)=>{
+  const r=request({hostname:'127.0.0.1',port:bridge.address().port,path,method,
+   headers:{Host:'app.localhost:2000',Cookie:'operator=private','X-CSRF-Token':'private'}},res=>{
+    let body='';res.on('data',chunk=>body+=chunk);
+    res.on('end',()=>resolve({status:res.statusCode,body,cookie:res.headers['set-cookie']}));
+   });r.on('error',reject);r.end();
+ });
+ try{
+  const ok=await send('/api/world/history');
+  assert.equal(ok.status,200);assert.equal(JSON.parse(ok.body).status,'empty');
+  assert.equal(ok.cookie,undefined);
+  assert.deepEqual(seen,[{path:'/api/world/history',method:'GET',cookie:undefined,origin:undefined,csrf:undefined}]);
+  assert.equal((await send('/api/world/history','POST')).status,405);
+  assert.equal((await send('/api/world/history?season=1')).status,403);
+  assert.equal((await send('/api/world/history/extra')).status,404);
+  assert.equal((await send('/api/world/history%2F')).status,403);
+  assert.equal(seen.length,1,'unsafe and private requests never reach the Worker');
+ }finally{
+  bridge.closeAllConnections();upstream.closeAllConnections();
+  await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);
+ }
+});
