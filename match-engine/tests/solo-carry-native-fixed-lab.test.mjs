@@ -161,3 +161,74 @@ test('#628 native 25/50/75/90 player pace matrix is real physical source, not in
  }
  process.stdout.write('ME_628_NATIVE_RATING_MATRIX '+JSON.stringify(data)+'\\n');
 });
+
+test('#628 paired native fixed Sprint long-stride research 2/5/10s',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),matrix=[];
+ for(const rating of [50,90])
+ for(const side of ['home','away'])
+ for(const longStride of [false,true]){
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide:side,variantIndex:3,carryRunwayStart:true,
+   nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
+   nativeFixedSprintLongStride:longStride,
+   soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
+  });
+  try{
+   let actions=0,starts=0,impulseSumNs=0,lostTicks=0;
+   const actionTicks=[],checkpoints=[];
+   const firstBallX=lab.snapshot().ball.position.x;
+   for(let tick=1;tick<=600;tick++){
+    const f=lab.step(),actor=f.observedMovementPlayers.find(p=>p.id===side+'-10');
+    const gap=Math.hypot(f.ball.position.x-actor.x,f.ball.position.y-actor.y);
+    if(gap>1.5)lostTicks++;
+    starts+=f.soloNativeFeet.started.length;
+    assert.equal(f.officialMatchPossession,false);
+    assert.equal(f.soloCarryLockedPhase,'sprint');
+    assert.equal(f.nativeFixedCarryResearch,true);
+    if(f.action){
+     assert.equal(f.action.action,'carry');
+     assert.equal(f.action.nativeShoeContactVerified,true);
+     assert.equal(f.action.nativeFixedPhaseCalibration.nativeFixedSprintLongStride,longStride);
+     assert.equal(f.soloNativeFeet.exclusivePhysicalStart,true);
+     assert.equal(f.action.actualPhysicsImpulseApplied,true);
+     actions++;actionTicks.push(tick);
+     impulseSumNs+=Math.hypot(
+      f.action.impulseNs.x,f.action.impulseNs.y,f.action.impulseNs.z);
+    }
+    if([120,300,600].includes(tick)){
+     const observed=f.soloCarryMeasurements;
+     const meanImpulse=actions?impulseSumNs/actions:null;
+     assert.equal(observed.nativeConfirmedImpulseCount,actions);
+     assert.equal(observed.nativeRecent2sImpulseCount,
+      actionTicks.filter(t=>t>tick-120).length);
+     assert.ok(meanImpulse===null?
+      observed.nativeMeanAddedImpulseNs===null:
+      Math.abs(observed.nativeMeanAddedImpulseNs-meanImpulse)<1e-12);
+     checkpoints.push({
+      tick,actions,physicalStarts:starts,
+      recent2sActions:observed.nativeRecent2sImpulseCount,
+      meanAddedImpulseNs:meanImpulse,
+      ballForwardM:(side==='home'?1:-1)*
+       (f.ball.position.x-firstBallX),
+      playerBallGapM:gap,lostTicks,
+      peakGapM:observed.peakGapM,
+      peakPlayerKmh:observed.peakPlayerSpeedMps*3.6,
+      peakBallKmh:observed.peakBallSpeedMps*3.6,
+      deadBall:f.refereeEvidence?.lastEvent?.kind??null
+     });
+    }
+   }
+   matrix.push({rating,side,longStride,checkpoints});
+  }finally{lab.dispose();}
+ }
+ assert.equal(matrix.length,8);
+ // The candidate can fail (including missing contacts): only authentic
+ // evidence is printed. Adoption requires separate review of every 10s arm.
+ for(const row of matrix){
+  assert.ok(row.checkpoints[2].physicalStarts>=row.checkpoints[2].actions);
+  assert.ok(row.checkpoints[2].ballForwardM>=0);
+ }
+ process.stdout.write('ME_628_NATIVE_LONG_STRIDE_AB_10S '+
+  JSON.stringify(matrix)+'\\n');
+});

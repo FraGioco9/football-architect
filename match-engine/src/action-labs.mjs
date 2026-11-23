@@ -41,13 +41,18 @@ export function createControlledActionLab(RAPIER,id,{
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
  carryRunwayStart=false,nativeFixedCarryResearch=false,
- soloCarryPlayerAttributes=null
+ nativeFixedSprintLongStride=false,soloCarryPlayerAttributes=null
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
  if(typeof carryRunwayStart!=='boolean'||
     (carryRunwayStart&&id!=='carry-solo'))
   throw new TypeError('Long-running pre-kickoff runway only for Solo Carry');
+ if(typeof nativeFixedSprintLongStride!=='boolean'||
+    (nativeFixedSprintLongStride&&(
+     !nativeFixedCarryResearch||soloCarryLockedPhase!=='sprint'||
+     soloSprintCadenceScale!==1||soloSprintLateralTrackScale!==1)))
+  throw new TypeError('Long-stride trial only for isolated native fixed Sprint');
  if(typeof nativeFixedCarryResearch!=='boolean'||
     (nativeFixedCarryResearch&&(
      id!=='carry-solo'||intentDrivenSoloCarry||
@@ -200,10 +205,11 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticSoloShoeWidthScale:soloShoeWidthScale,
     diagnosticSoloShoeLengthScale:soloShoeLengthScale,
     diagnosticSoloRecoveryStepScale:soloRecoveryStepScale,
-    diagnosticSoloSprintCadenceScale:soloSprintCadenceScale,
+    diagnosticSoloSprintCadenceScale:nativeFixedSprintLongStride?0.9:soloSprintCadenceScale,
     diagnosticSoloSprintLateralTrackScale:soloSprintLateralTrackScale,
     diagnosticIntentDrivenSoloCarryEnabled:intentDrivenSoloCarry,
-   diagnosticNativeFixedCarryResearchEnabled:nativeFixedCarryResearch
+   diagnosticNativeFixedCarryResearchEnabled:nativeFixedCarryResearch,
+    diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride
    }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled

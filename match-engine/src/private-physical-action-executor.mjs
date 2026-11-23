@@ -23,8 +23,11 @@ export function createPrivatePhysicalActionExecutor({
  researchReceiverTapSide=null,activePlayerIds=null,
  smallSidedDecisionContext=null,isolatedDribbleContext=null,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
- nativeFixedCarryResearch=false
+ nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false
 }={}){
+ if(typeof nativeFixedSprintLongStride!=='boolean'||
+     (nativeFixedSprintLongStride&&!nativeFixedCarryResearch))
+  throw new TypeError('Long stride requires isolated real-shoe calibration');
  if(typeof nativeFixedCarryResearch!=='boolean'||
     (nativeFixedCarryResearch&&(
      intentDrivenSoloCarry||
@@ -244,7 +247,8 @@ export function createPrivatePhysicalActionExecutor({
     attackingSide:isolatedDribbleContext.attackingSide,
     ballVelocity:ballBody.linvel(),
     verifiedNativeExclusiveShoeStart:
-     contact.nativeSoloFeet?.exclusivePhysicalStart===true
+     contact.nativeSoloFeet?.exclusivePhysicalStart===true,
+    nativeFixedSprintLongStride
    }):null;
   const chosen=nativeTune?.impulseNs===null?null:originalChosen;
   if(chosen&&(!gates.passedInputGates||

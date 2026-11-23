@@ -123,6 +123,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSoloSprintLateralTrackScale = 1,
   diagnosticIntentDrivenSoloCarryEnabled = false,
   diagnosticNativeFixedCarryResearchEnabled = false,
+  diagnosticNativeFixedSprintLongStrideEnabled = false,
   diagnosticSmallSidedBodyGuardEnabled = false,
    diagnosticSmallSidedBodyFeedbackEnabled = false,
   diagnosticResearchControlReceiver = false,
@@ -160,6 +161,14 @@ export function createEngine(RAPIER, input = {}, {
    throw new TypeError('Pre-kickoff runway only for solo native/intent research');
   if(diagnosticSmallSidedSituation===null&&diagnosticSmallSidedVariantIndex!==0)
    throw new TypeError('Small-sided variant requires a paired physical exercise');
+  if(typeof diagnosticNativeFixedSprintLongStrideEnabled!=='boolean'||
+     (diagnosticNativeFixedSprintLongStrideEnabled&&(
+      !diagnosticNativeFixedCarryResearchEnabled||
+      diagnosticSmallSidedSituation!=='carry-solo'||
+      diagnosticSoloSprintCadenceScale!==0.9||
+      diagnosticSoloSprintLateralTrackScale!==1||
+      diagnosticSmallSidedBodyGuardEnabled)))
+   throw new TypeError('Long-stride trial requires isolated fixed native Carry');
   if(typeof diagnosticNativeFixedCarryResearchEnabled!=='boolean'||
      (diagnosticNativeFixedCarryResearchEnabled&&(
       diagnosticSmallSidedSituation!=='carry-solo'||
@@ -206,7 +215,10 @@ export function createEngine(RAPIER, input = {}, {
       (diagnosticSmallSidedSituation!=='carry-solo'||
        !diagnosticPlayerFootContactsEnabled||
        !diagnosticAutonomousFixtureActionEnabled||
-       !diagnosticSmallSidedBodyGuardEnabled)))
+       !(diagnosticSmallSidedBodyGuardEnabled||
+         (diagnosticNativeFixedSprintLongStrideEnabled&&
+          diagnosticSoloSprintCadenceScale===0.9&&
+          diagnosticSoloSprintLateralTrackScale===1)))))
    throw new TypeError('Sprint gait research requires original guarded solo Carry');
   if(typeof diagnosticSmallSidedBodyFeedbackEnabled!=='boolean'||
       (diagnosticSmallSidedBodyFeedbackEnabled&&
@@ -663,6 +675,7 @@ export function createEngine(RAPIER, input = {}, {
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       intentDrivenSoloCarry:diagnosticIntentDrivenSoloCarryEnabled,
       nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
+      nativeFixedSprintLongStride:diagnosticNativeFixedSprintLongStrideEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
        isolatedCarry||(smallSided?.variantIndex>0),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
