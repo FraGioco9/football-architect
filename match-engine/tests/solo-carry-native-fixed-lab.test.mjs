@@ -325,3 +325,57 @@ test('#628 Sprint long-stride physical 10s extra ratings and variants',
  process.stdout.write('ME_628_NATIVE_LONG_STRIDE_EXTRA_VARIANTS '+
   JSON.stringify({rows,weakControls:controls})+'\\n');
 });
+
+test('#628 native two-foot Sprint trailing shoe clearance A/B on original Rapier world',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const [rating,variantIndex] of [[25,29],[50,3],[75,17],[90,0]])
+ for(const side of ['home','away'])
+ for(const clearanceM of [0,0.08,0.12]){
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide:side,variantIndex,carryRunwayStart:true,
+   nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
+   soloSprintSwingFootClearanceM:clearanceM,
+   soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
+  });
+  try{
+   let starts=0,actions=0,lostTicks=0,last=null;
+   const firstX=lab.snapshot().ball.position.x;
+   for(let tick=1;tick<=600;tick++){
+    last=lab.step();
+    const actor=last.observedMovementPlayers.find(p=>p.id===side+'-10');
+    if(Math.hypot(last.ball.position.x-actor.x,
+       last.ball.position.y-actor.y)>1.5)lostTicks++;
+    starts+=last.soloNativeFeet.started.length;
+    assert.equal(last.soloNativeFeet.source,'rapier-physical-collider-events');
+    assert.equal(last.soloNativeFeet.sprintSwingFootClearanceM,clearanceM);
+    assert.equal(last.officialMatchPossession,false);
+    if(last.action){
+     assert.equal(last.action.nativeShoeContactVerified,true);
+     assert.equal(last.soloNativeFeet.exclusivePhysicalStart,true);
+     actions++;
+    }
+   }
+   const audit=last.nativeDribbleAudit;
+   assert.equal(audit.nativePhysicalShoeStarts,starts);
+   assert.equal(audit.appliedCarryActions,actions);
+   rows.push({rating,variantIndex,side,clearanceM,starts,actions,lostTicks,
+    nonActionStarts:audit.nativeShoeStartsWithoutCarryImpulse,
+    overlapStarts:audit.nonActionStartReasons.otherFootAlreadyActive,
+    handoffs:audit.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
+    simultaneous:audit.nonActionStartReasons.simultaneousFootStarts,
+    peakGapM:last.soloCarryMeasurements.peakGapM,
+    forwardM:(side==='home'?1:-1)*(last.ball.position.x-firstX),
+    playerKmh:last.soloCarryMeasurements.peakPlayerSpeedMps*3.6,
+    deadBall:last.refereeEvidence?.lastEvent?.kind??null});
+  }finally{lab.dispose();}
+ }
+ assert.equal(rows.length,24);
+ for(const row of rows){
+  assert.ok(row.starts>=row.actions);
+  assert.ok(Number.isFinite(row.forwardM));
+ }
+ // Observational, never mark an option adopted merely because a test ran.
+ process.stdout.write('ME_628_NATIVE_SWING_FOOT_CLEARANCE_AB '+
+  JSON.stringify(rows)+'\\n');
+});

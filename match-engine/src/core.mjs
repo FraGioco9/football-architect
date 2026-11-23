@@ -121,6 +121,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSoloRecoveryStepScale = 1,
   diagnosticSoloSprintCadenceScale = 1,
   diagnosticSoloSprintLateralTrackScale = 1,
+  diagnosticSoloSprintSwingFootClearanceM = 0,
   diagnosticIntentDrivenSoloCarryEnabled = false,
   diagnosticNativeFixedCarryResearchEnabled = false,
   diagnosticNativeFixedSprintLongStrideEnabled = false,
@@ -161,6 +162,16 @@ export function createEngine(RAPIER, input = {}, {
    throw new TypeError('Pre-kickoff runway only for solo native/intent research');
   if(diagnosticSmallSidedSituation===null&&diagnosticSmallSidedVariantIndex!==0)
    throw new TypeError('Small-sided variant requires a paired physical exercise');
+  // Genuine two-foot 60Hz clearance counterfactual is isolated research only.
+  if(![0,0.08,0.12].includes(diagnosticSoloSprintSwingFootClearanceM)||
+     (diagnosticSoloSprintSwingFootClearanceM!==0&&(
+      !diagnosticNativeFixedCarryResearchEnabled||
+      diagnosticNativeFixedSprintLongStrideEnabled||
+      diagnosticSmallSidedSituation!=='carry-solo'||
+      diagnosticSoloSprintCadenceScale!==1||
+      diagnosticSoloSprintLateralTrackScale!==1||
+      diagnosticSmallSidedBodyGuardEnabled)))
+   throw new TypeError('Sprint physical clearance must be isolated to native research');
   if(typeof diagnosticNativeFixedSprintLongStrideEnabled!=='boolean'||
      (diagnosticNativeFixedSprintLongStrideEnabled&&(
       !diagnosticNativeFixedCarryResearchEnabled||
@@ -580,6 +591,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticSoloShoeWidthScale,
     diagnosticSoloShoeLengthScale,diagnosticSoloRecoveryStepScale,
     diagnosticSoloSprintCadenceScale,diagnosticSoloSprintLateralTrackScale,
+    diagnosticSoloSprintSwingFootClearanceM,
     diagnosticIntentDrivenSoloCarryEnabled,
     diagnosticNativeFixedCarryResearchEnabled,
     diagnosticSmallSidedBodyGuardEnabled,
@@ -647,6 +659,7 @@ export function createEngine(RAPIER, input = {}, {
         soloRecoveryStepScale:diagnosticSoloRecoveryStepScale,
         soloSprintCadenceScale:diagnosticSoloSprintCadenceScale,
         soloSprintLateralTrackScale:diagnosticSoloSprintLateralTrackScale,
+        soloSprintSwingFootClearanceM:diagnosticSoloSprintSwingFootClearanceM,
         intentDrivenSoloCarry:diagnosticIntentDrivenSoloCarryEnabled
        }:{})
       }:{}),
