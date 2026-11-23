@@ -9,7 +9,8 @@ import {isPublicMatchId,referenceFromPublicMatch} from '../assets/match-referenc
 export const upstreamTimeoutMs=(path,method)=>
  path==='/api/admin/seasons/advance'&&method==='POST'?120000:15000;
 export const protectedResponseLimit=(path,publicRead=false)=>publicRead?524288:
- (path==='/api/admin/players'||path==='/api/admin/players/preview'||path==='/api/admin/players/draft')?2097152:65536;
+ (path==='/api/admin/players'||path==='/api/admin/players/preview'||path==='/api/admin/players/draft')?2097152:
+ path==='/api/admin/club-licenses'?262144:65536;
 const fail=res=>{res.writeHead(503,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"error":{"code":"environment_unavailable"}}');return true};
 const forbidden=res=>{res.writeHead(403,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"error":{"code":"forbidden"}}');return true};
 export function sendSharedHttps(url,{method='GET',headers={},body=Buffer.alloc(0),limit=65536,timeoutMs=15000}={}){

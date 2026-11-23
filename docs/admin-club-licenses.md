@@ -18,3 +18,12 @@ Do **not** deploy or migrate any shared/remote D1, grant any actual live license
 ## Suggested QA
 
 Run focused Backend Worker/D1 tests for `club-licenses-runtime.test.ts`, Node Admin page and route tests, canonical generator `node tools/generate-app-pages.mjs --check`, and verified UI in Chrome desktop/iPhone Safari on a truly local isolated Worker/D1. Review exact PR HEAD CI. All state-changing Admin flows require deliberate account/club selections.
+
+
+## Local API bridge and environment readiness
+
+- The loopback DEV proxy must forward protected `GET/POST /api/admin/club-licenses` and exact `GET /api/admin/club-licenses/accounts?q=...` without widening anonymous/LAN access. The list response may exceed 64 KiB with 320 licensees, so it has a protected-only 256 KiB cap.
+- Use this branch's local Worker, not an older hosted Preview Worker. A static preview alone cannot serve the protected API. `node tools/dev.mjs --shared ...` requires a separately approved Worker publish.
+- **Local isolated D1 only:** From PowerShell in the repository's `backend` folder, run `npx wrangler d1 migrations apply fa-admin-world-local --local --config wrangler.toml`, then start `node tools/dev.mjs --local` from the repository root. Verify the local binding and the CLI confirmation before applying any migration.
+- Never add `--remote` or apply migrations to `football-architect-dev` or Production without separate owner approval. The default `node tools/dev.mjs` uses shared remote DEV D1, which needs its own separately authorized additive schema application.
+- The UI distinguishes an unavailable endpoint (404), missing schema (503), authentication failure, unavailable backend and unexpected API data instead of showing one generic message.
