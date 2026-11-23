@@ -373,7 +373,8 @@ test("PAGE-DASH-01 prioritizes Match Centre, a compact world strip and calendar"
  assert.match(client,/const \{clubs,clubCrests\}=publicClubIdentityCatalog\(\)/);
  assert.match(client,/pair\.append\(clubCrest\(f.homeClubId\),clubCrest\(f.awayClubId\)\)/);
  assert.match(client,/clock\(null\);\s*if\(snapshot\?\.worldStatus==='unavailable'\)/);
- assert.equal((source.match(/class="fa-dashboard-placeholder"/g)||[]).length,11);
+ assert.equal((source.match(/class="fa-dashboard-placeholder" aria-hidden="true"/g)||[]).length,8,"4 recent + 4 upcoming match skeletons");
+ assert.equal((source.match(/class="fa-dashboard-placeholder fa-dash-agenda-placeholder" aria-hidden="true"/g)||[]).length,3,"3 calendar skeletons");
  assert.match(source,/data-dash-note="world" role="status"/);
  for(const old of ["fa-dash-focus","fa-dash-featured","fa-dash-competitions","fa-dash-progress","fa-dashboard-bottom","data-dash-region="])assert.ok(!source.includes(old),old);
  assert.doesNotMatch(client,/showFeatured|data-dash-featured|data-dash-progress|data-dash-highlight/);
