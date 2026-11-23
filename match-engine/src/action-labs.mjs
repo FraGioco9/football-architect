@@ -618,6 +618,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(nativeFixedCarryResearch?{
       nativeFixedCarryResearch:true,
       nativeFixedSprintLongStride,
+      soloSprintActiveFootReleaseM,
       ...(soloCarryMeasurements?{soloCarryMeasurements}:{}),
       soloCarryLockedPhase,
       soloCarryPlayerAttributes:selectedCarryAttributes,

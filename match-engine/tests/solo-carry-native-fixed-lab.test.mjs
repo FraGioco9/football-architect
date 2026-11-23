@@ -464,6 +464,36 @@ test('#628 native active-shoe release on full 32-seed paired 10s Rapier matrix',
    release6cm:arms[1].checkpoints});
  }
  assert.equal(rows.length,32);
+ // All paired simulations must preserve valid native Carry impulses,
+ // remove—not merely reclassify—false STARTs, and keep the real ball
+ // physically reachable. A green test alone must not hide poor arms.
+ let removedUnconverted=0,removedHandoffs=0;
+ for(const row of rows){
+  const old=row.baseline[2],tuned=row.release6cm[2];
+  const key=`${row.rating}/V${row.variantIndex+1}/${row.side}`;
+  assert.equal(tuned.lostTicks,0,key+' original ball out of reach');
+  assert.ok(tuned.peakGapM<1.5,key+' lost physical contact');
+  assert.ok(tuned.actions>=old.actions,key+' applied actions regressed');
+  assert.ok(tuned.starts<=old.starts+1,key+' more spurious native STARTs');
+  assert.ok(tuned.unconverted<=old.unconverted,key+' unconverted STARTs rose');
+  assert.ok(tuned.handoffs<=old.handoffs,key+' same-tick shoe handoff regressed');
+  assert.ok(tuned.bothActiveTicks<=old.bothActiveTicks,
+   key+' two-shoe overlap increased');
+  assert.ok(tuned.forwardM>=old.forwardM-0.15,
+   key+' original Rapier ball progress regressed');
+  assert.ok(tuned.fullReleases>=tuned.actions-2,
+   key+' applied actions lack true actor full-release episodes');
+  removedUnconverted+=old.unconverted-tuned.unconverted;
+  removedHandoffs+=old.handoffs-tuned.handoffs;
+  if(row.rating===75&&row.variantIndex===0){
+   assert.ok(tuned.actions>=old.actions+4,
+    key+' historical genuine Carry collapse not fixed');
+   assert.equal(tuned.unconverted,0,key+' old false contacts remain');
+   assert.equal(tuned.bothActiveTicks,0,key+' both shoes still overlap');
+  }
+ }
+ assert.ok(removedUnconverted>=20,'no material reduction in native non-action STARTs');
+ assert.ok(removedHandoffs>=10,'no material reduction in same-tick handoffs');
  process.stdout.write('ME_628_NATIVE_ACTIVE_RELEASE_FULL_32_AB '+
   JSON.stringify(rows)+'\\n');
 });

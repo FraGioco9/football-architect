@@ -209,6 +209,11 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.match(chosen.before.readout,/Native Carry · real two-shoe Rapier START required/);
    assert.doesNotMatch(chosen.before.readout,/Sprint long native stride/,
     'rejected A/B remains hidden from the visible LAB');
+   if(phase==='sprint'){
+    assert.match(chosen.before.readout,/native active-foot release 6 cm \(DEV Sprint only\)/);
+    assert.match(chosen.after.readout,/native active-foot release 6 cm \(DEV Sprint only\)/);
+   }else
+    assert.doesNotMatch(chosen.before.readout,/native active-foot release/);
    assert.doesNotMatch(chosen.before.readout,/Solo Carry intent/);
    assert.match(chosen.before.readout,/no official result/);
    assert.equal(chosen.before.rows.length,1);

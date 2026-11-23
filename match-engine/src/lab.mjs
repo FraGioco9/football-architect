@@ -241,7 +241,12 @@ function restart() {
        // Leave the original ordinary 22-player physics unmodified.
        carryRunwayStart:id==='carry-solo',
        nativeFixedCarryResearch:id==='carry-solo',
-       // Long-stride remains research-only until all variants are robust.
+       // Two real Rapier shoes: after a genuine collision, the active
+       // shoe clears laterally within the 60Hz physical motion caps.
+       // Adopted only for locked Sprint in this DEV Action LAB.
+       soloSprintActiveFootReleaseM:id==='carry-solo'&&
+        activeScene.soloCarryLockedPhase==='sprint'?0.06:0,
+       // Rejected long-stride remains research-only.
        soloCarryLockedPhase:activeScene.soloCarryLockedPhase??null,
        soloCarryPlayerAttributes:activeScene.soloCarryLockedPhase?
         uniformSoloCarryAttributes(Number(byId('me-inline-rating').value)):null}):
@@ -475,7 +480,8 @@ function render() {
         ' native shoe/impulse')+
        (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
       (f.nativeFixedCarryResearch?' · Native Carry · real two-shoe Rapier START required':'')+
-      
+      (f.soloSprintActiveFootReleaseM===0.06?
+       ' · native active-foot release 6 cm (DEV Sprint only)':'')+
       (f.intentDrivenCarry?' · Solo Carry intent (no shoe-contact claims)':'')+
       (f.soloCarryLockedPhase?
        ' · phase '+f.soloCarryLockedPhase.toUpperCase()+' (locked)'+
