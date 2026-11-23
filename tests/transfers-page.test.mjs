@@ -19,7 +19,12 @@ test('Transfers route, generator and public artifact are canonical',()=>{
  assert.match(html,/id="transfers-filters"/);
  assert.match(html,/id="transfers-rows"/);
  assert.match(html,/src="\/assets\/transfers-page\.mjs"/);
- assert.match(html,/href="\/players"/);
+ const players=read('players/index.html');
+ const content=read('templates/transfers-content.html');
+ assert.doesNotMatch(players, /fa-transfers-from-players|href="\/transfers"/);
+ assert.doesNotMatch(content, /href="\/players"|data-transfers-text="directory"/);
+ assert.doesNotMatch(html, /fa-transfers-directory-link|data-transfers-text="directory"/);
+ assert.doesNotMatch(html, /const onPlayers=path==='\/transfers'/);
  assert.doesNotMatch(html,/href="\/transfer-market"|\bBuy now\b|\bPlace bid\b/);
 });
 

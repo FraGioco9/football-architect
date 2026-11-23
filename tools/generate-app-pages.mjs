@@ -397,11 +397,6 @@ if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length
  html=html.replace("<title>Competitions — Football Architect</title>","<title>Players — Football Architect</title>");
  html=html.replace('  <script src="/assets/international-cups.js" defer></script>\n','');
  html=html.replace('</head>','  <script src="/assets/players-nationality-tooltip.js" defer></script>\n  <script src="/assets/players-directory.js" defer></script>\n</head>');
- // #587: a stable Players-directory entry point for the standalone Transfers discovery.
- html=html.replace(
-  '            <h1 id="players-title" class="app-page-title" data-app-i18n="statsDevPlayers">Players</h1>\n',
-  '            <h1 id="players-title" class="app-page-title" data-app-i18n="statsDevPlayers">Players</h1>\n'+
-  '            <a class="app-link app-link-secondary fa-transfers-from-players" href="/transfers">Transfers</a>\n');
  writeOutput("players/index.html",html);
 }
 // #587: generate Transfers from the verified Players shell and canonical template.
@@ -417,7 +412,7 @@ if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length
   .replace('  <script src="/assets/players-nationality-tooltip.js" defer></script>\n','')
   .replace('  <script src="/assets/players-directory.js" defer></script>',
    '  <link rel="stylesheet" href="/assets/transfers-page.css">\n  <script type="module" src="/assets/transfers-page.mjs"></script>')
-  .replace("const onPlayers=path==='/players'||","const onPlayers=path==='/transfers'||path==='/players'||");
+
  writeOutput("transfers/index.html",html);
 }
 // #502: generate both player-detail shells from their own canonical directory

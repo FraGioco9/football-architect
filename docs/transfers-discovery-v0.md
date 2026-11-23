@@ -12,7 +12,7 @@ Status: **implementation in Draft/HOLD** under [#587](https://github.com/FraGioc
 
 ## Not delivered / not authorized here
 
-- The generated /transfers page is now implemented using the existing shell, site controls, live public player data, name/position search, paginated results, 5 locales, accessible loading and empty/error states. Players includes a visible link to Transfers. No new backend endpoint.
+- The generated /transfers page is now implemented using the existing shell, site controls, live public player data, name/position search, paginated results, 5 locales, accessible loading and empty/error states. The Transfers screen is independent of the Players directory; only individual player and club detail links are retained. No new backend endpoint.
 - No transfers, agent bids, club concessions, mandate listings, negotiations, approvals, auction, sale, escrow, wallet, ARC/EUR exchange, fees, salaries, payroll, ledger, migration, data backfill, purchases, production enablement or deployment.
 - No V1 player–club affiliation semantics are changed. In particular, this module does not alter `player_club_affiliations`, current club authority, or world-reset persistence.
 - `#755` remains **DRAFT** and cannot be promoted to economic implementation by merging this independent read-model slice.

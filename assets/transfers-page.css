@@ -3,7 +3,6 @@
 .fa-transfers-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;min-width:0}
 .fa-transfers-header .app-page-title{margin:0;font-size:var(--app-page-title-size);line-height:1.2;letter-spacing:-.035em;color:var(--text)}
 .fa-transfers-subtitle{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.6}
-.fa-transfers-directory-link{align-self:center;white-space:nowrap}
 .fa-transfers-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;padding:18px 20px}
 .fa-transfers-field{display:grid;gap:7px;flex:0 1 210px;min-width:150px}
 .fa-transfers-name-field{flex:1 1 260px}
