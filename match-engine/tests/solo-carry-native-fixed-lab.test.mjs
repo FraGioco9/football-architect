@@ -284,6 +284,9 @@ test('#628 Sprint long-stride physical 10s extra ratings and variants',
     peakGapM:frame.soloCarryMeasurements.peakGapM,
     peakPlayerKmh:frame.soloCarryMeasurements.peakPlayerSpeedMps*3.6,
     peakBallKmh:frame.soloCarryMeasurements.peakBallSpeedMps*3.6,
+    nativeNonActionStarts:frame.nativeDribbleAudit.nativeShoeStartsWithoutCarryImpulse,
+    nativeNonActionReasons:frame.nativeDribbleAudit.nonActionStartReasons,
+    nativeHandoffReasons:frame.nativeDribbleAudit.unreleasedSingleFootEndStartKinds,
     forwardM:(side==='home'?1:-1)*(frame.ball.position.x-startX),
     deadBall:frame.refereeEvidence?.lastEvent?.kind??null
    });
@@ -294,8 +297,31 @@ test('#628 Sprint long-stride physical 10s extra ratings and variants',
   assert.ok(row.starts>=row.actions,'physical contacts must back actions');
   assert.ok(Number.isFinite(row.peakGapM));
  }
- // Preserve real negative evidence for owner visual QA instead of hiding
- // poor seed outcomes behind fabricated touches or ball speed clamps.
+ // Research-only: a few combinations have many physical STARTs but very
+ // few separate carry actions. Print negative evidence; never call this a
+ // realistic all-seed improvement or activate it in the visible selector.
+ const weak=rows.filter(row=>row.starts>=18&&row.actions<=7);
+ const controls=[];
+ for(const item of weak){
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide:item.side,variantIndex:item.variantIndex,
+   carryRunwayStart:true,nativeFixedCarryResearch:true,
+   soloCarryLockedPhase:'sprint',
+   soloCarryPlayerAttributes:uniformSoloCarryAttributes(item.rating)
+  });
+  try{
+   let frame;
+   for(let tick=1;tick<=600;tick++)frame=lab.step();
+   controls.push({
+    rating:item.rating,side:item.side,variantIndex:item.variantIndex,
+    baselineActions:frame.nativeDribbleAudit.appliedCarryActions,
+    baselineShoeStarts:frame.nativeDribbleAudit.nativePhysicalShoeStarts,
+    baselineNoActionStarts:frame.nativeDribbleAudit.nativeShoeStartsWithoutCarryImpulse,
+    candidateActions:item.actions,candidateShoeStarts:item.starts,
+    candidateNoActionStarts:item.nativeNonActionStarts
+   });
+  }finally{lab.dispose();}
+ }
  process.stdout.write('ME_628_NATIVE_LONG_STRIDE_EXTRA_VARIANTS '+
-  JSON.stringify(rows)+'\\n');
+  JSON.stringify({rows,weakControls:controls})+'\\n');
 });

@@ -241,9 +241,7 @@ function restart() {
        // Leave the original ordinary 22-player physics unmodified.
        carryRunwayStart:id==='carry-solo',
        nativeFixedCarryResearch:id==='carry-solo',
-       // Source-tested 10-second DEV Sprint candidate; not a match mechanic.
-       nativeFixedSprintLongStride:id==='carry-solo'&&
-        activeScene.soloCarryLockedPhase==='sprint',
+       // Long-stride remains research-only until all variants are robust.
        soloCarryLockedPhase:activeScene.soloCarryLockedPhase??null,
        soloCarryPlayerAttributes:activeScene.soloCarryLockedPhase?
         uniformSoloCarryAttributes(Number(byId('me-inline-rating').value)):null}):
@@ -477,7 +475,7 @@ function render() {
         ' native shoe/impulse')+
        (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
       (f.nativeFixedCarryResearch?' · Native Carry · real two-shoe Rapier START required':'')+
-      (f.nativeFixedSprintLongStride?' · Sprint long native stride (LAB only)':'')+
+      
       (f.intentDrivenCarry?' · Solo Carry intent (no shoe-contact claims)':'')+
       (f.soloCarryLockedPhase?
        ' · phase '+f.soloCarryLockedPhase.toUpperCase()+' (locked)'+
