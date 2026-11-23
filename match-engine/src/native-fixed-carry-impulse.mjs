@@ -15,8 +15,13 @@ const PHASES=Object.freeze({
 });
 export function chooseNativeFixedCarryImpulse({
  phase,playerAttributes,player,attackingSide,ballVelocity,
- verifiedNativeExclusiveShoeStart,nativeFixedSprintLongStride=false
+ verifiedNativeExclusiveShoeStart,nativeFixedSprintLongStride=false,
+ nativeFixedSprintLeadExtraMps=0
 }={}){
+ if(![0,0.20,0.35].includes(nativeFixedSprintLeadExtraMps)||
+    (nativeFixedSprintLeadExtraMps!==0&&
+     (phase!=='sprint'||nativeFixedSprintLongStride)))
+  throw new TypeError('Sprint lead boost requires isolated canonical native Sprint');
  if(typeof nativeFixedSprintLongStride!=='boolean'||
     (nativeFixedSprintLongStride&&phase!=='sprint'))
   throw new TypeError('Long stride requires fixed native Sprint');
@@ -43,7 +48,7 @@ export function chooseNativeFixedCarryImpulse({
  // Optional isolated genuine-shoe A/B: a longer stride allows +0.35m/s
  // extra lead only AFTER a real exclusive Rapier shoe START.
  const aheadAllowance=phase==='sprint'?
-  (nativeFixedSprintLongStride?1.40:1.05):
+  (nativeFixedSprintLongStride?1.40:1.05+nativeFixedSprintLeadExtraMps):
   phase==='moderate'?0.85:0.48;
  const controlledTarget=Math.min(config.targetSpeedMps,
   Math.max(0.8,playerForward+aheadAllowance));
@@ -55,7 +60,7 @@ export function chooseNativeFixedCarryImpulse({
  return Object.freeze({
   source:'authentic-native-two-shoe-calibrated-impulse',
   phase,attributes:attrs,
-  nativeFixedSprintLongStride,
+  nativeFixedSprintLongStride,nativeFixedSprintLeadExtraMps,
   nativeShoeContactVerified:true,
   playerForwardSpeedMps:playerForward,
   observedPreImpulseBallForwardMps:ballForward,

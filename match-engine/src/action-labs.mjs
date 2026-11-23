@@ -41,7 +41,8 @@ export function createControlledActionLab(RAPIER,id,{
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
  carryRunwayStart=false,nativeFixedCarryResearch=false,
- nativeFixedSprintLongStride=false,soloCarryPlayerAttributes=null
+ nativeFixedSprintLongStride=false,nativeFixedSprintLeadExtraMps=0,
+ soloCarryPlayerAttributes=null
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -56,6 +57,13 @@ export function createControlledActionLab(RAPIER,id,{
      soloShoeWidthScale!==1||soloShoeLengthScale!==1||
      soloRecoveryStepScale!==1)))
   throw new TypeError('Native active-foot release is Sprint research only');
+ if(![0,0.20,0.35].includes(nativeFixedSprintLeadExtraMps)||
+    (nativeFixedSprintLeadExtraMps!==0&&(
+     !nativeFixedCarryResearch||id!=='carry-solo'||
+     soloCarryLockedPhase!=='sprint'||nativeFixedSprintLongStride||
+     soloSprintActiveFootReleaseM!==0.06||bodyGuardEnabled||
+     soloSprintCadenceScale!==1||soloSprintLateralTrackScale!==1)))
+  throw new TypeError('Speed-lead trial requires genuine 6cm native shoe release');
  if(typeof nativeFixedSprintLongStride!=='boolean'||
     (nativeFixedSprintLongStride&&(
      !nativeFixedCarryResearch||soloCarryLockedPhase!=='sprint'||
@@ -218,7 +226,8 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticSoloSprintActiveFootReleaseM:soloSprintActiveFootReleaseM,
     diagnosticIntentDrivenSoloCarryEnabled:intentDrivenSoloCarry,
    diagnosticNativeFixedCarryResearchEnabled:nativeFixedCarryResearch,
-    diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride
+    diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride,
+    diagnosticNativeFixedSprintLeadExtraMps:nativeFixedSprintLeadExtraMps
    }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
@@ -618,7 +627,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(nativeFixedCarryResearch?{
       nativeFixedCarryResearch:true,
       nativeFixedSprintLongStride,
-      soloSprintActiveFootReleaseM,
+      nativeFixedSprintLeadExtraMps,soloSprintActiveFootReleaseM,
       ...(soloCarryMeasurements?{soloCarryMeasurements}:{}),
       soloCarryLockedPhase,
       soloCarryPlayerAttributes:selectedCarryAttributes,

@@ -497,3 +497,71 @@ test('#628 native active-shoe release on full 32-seed paired 10s Rapier matrix',
  process.stdout.write('ME_628_NATIVE_ACTIVE_RELEASE_FULL_32_AB '+
   JSON.stringify(rows)+'\\n');
 });
+
+test('#628 source-confirmed Sprint ball lead A/B without gait cadence changes',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ // Include old weak baseline, sound seed, low/high attribute and both directions.
+ for(const [rating,variantIndex] of [[25,3],[50,3],[75,0],[90,0]])
+ for(const side of ['home','away'])
+ for(const leadExtraMps of [0,0.20,0.35]){
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide:side,variantIndex,carryRunwayStart:true,
+   nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
+   soloSprintActiveFootReleaseM:0.06,
+   nativeFixedSprintLeadExtraMps:leadExtraMps,
+   soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
+  });
+  try{
+   let actions=0,starts=0,unreachable=0,frame=null,impulseNs=0;
+   const actionTicks=[],checkpoints=[],initialX=lab.snapshot().ball.position.x;
+   for(let tick=1;tick<=600;tick++){
+    frame=lab.step();
+    starts+=frame.soloNativeFeet.started.length;
+    const p=frame.observedMovementPlayers.find(x=>x.id===side+'-10');
+    if(Math.hypot(frame.ball.position.x-p.x,frame.ball.position.y-p.y)>1.5)
+     unreachable++;
+    if(frame.action){
+     assert.equal(frame.action.action,'carry');
+     assert.equal(frame.action.nativeShoeContactVerified,true);
+     assert.equal(frame.soloNativeFeet.exclusivePhysicalStart,true);
+     assert.equal(frame.action.nativeFixedPhaseCalibration.nativeFixedSprintLeadExtraMps,
+      leadExtraMps);
+     assert.equal(frame.action.nativeFixedPhaseCalibration.nativeFixedSprintLongStride,false);
+     actions++;actionTicks.push(tick);
+     impulseNs+=Math.hypot(frame.action.impulseNs.x,
+      frame.action.impulseNs.y,frame.action.impulseNs.z);
+    }
+    assert.equal(frame.officialMatchPossession,false);
+    if([120,300,600].includes(tick)){
+     const a=frame.nativeDribbleAudit,m=frame.soloCarryMeasurements;
+     assert.equal(a.nativePhysicalShoeStarts,starts);
+     assert.equal(a.appliedCarryActions,actions);
+     checkpoints.push({
+      tick,actions,starts,unreachable,
+      unconverted:a.nativeShoeStartsWithoutCarryImpulse,
+      handoffs:a.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
+      overlaps:a.nativeBothFeetActiveTicks,
+      fullReleases:a.nativeActorFullReleaseEvents,
+      forwardM:(side==='home'?1:-1)*(frame.ball.position.x-initialX),
+      peakGapM:m.peakGapM,
+      peakPlayerKmh:m.peakPlayerSpeedMps*3.6,
+      latePlayerKmh:m.lateMeanSpeedMps===null?null:m.lateMeanSpeedMps*3.6,
+      peakBallKmh:m.peakBallSpeedMps*3.6,
+      meanAddedImpulseNs:actions?impulseNs/actions:null,
+      impulseGapsS:actions>1?(actionTicks.at(-1)-actionTicks[0])/60/(actions-1):null
+     });
+    }
+   }
+   rows.push({rating,variantIndex,side,leadExtraMps,checkpoints});
+  }finally{lab.dispose();}
+ }
+ assert.equal(rows.length,24);
+ for(const row of rows){
+  assert.ok(row.checkpoints[2].starts>=row.checkpoints[2].actions);
+  assert.ok(Number.isFinite(row.checkpoints[2].forwardM));
+ }
+ // Source-only A/B. Promotion requires inspecting all seeds and pace/intervals.
+ process.stdout.write('ME_628_NATIVE_SPRINT_PACE_LEAD_AB '+
+  JSON.stringify(rows)+'\\n');
+});
