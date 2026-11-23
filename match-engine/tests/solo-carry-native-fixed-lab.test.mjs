@@ -693,3 +693,56 @@ test('#628 original mover pursuit lookahead versus same-world Sprint shoe source
  process.stdout.write('ME_628_NATIVE_SPRINT_PURSUIT_AB '+
   JSON.stringify(rows)+'\\n');
 });
+
+test('#628 adaptive ball-gap pursuit on real Sprint Rapier shoe source',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const [rating,variantIndex] of [[25,3],[50,3],[75,0],[90,0]])
+ for(const side of ['home','away'])
+ for(const [leadM,adaptive] of [[0,false],[0.25,false],[0.25,true]]){
+  const lab=createControlledActionLab(R,'carry-solo',{
+   shotSide:side,variantIndex,carryRunwayStart:true,
+   nativeFixedCarryResearch:true,soloCarryLockedPhase:'sprint',
+   soloSprintActiveFootReleaseM:0.06,
+   soloSprintPursuitLeadM:leadM,soloSprintAdaptivePursuit:adaptive,
+   soloCarryPlayerAttributes:uniformSoloCarryAttributes(rating)
+  });
+  try{
+   let actions=0,starts=0,lost=0,f=null;
+   const firstX=lab.snapshot().ball.position.x,checkpoints=[];
+   for(let tick=1;tick<=600;tick++){
+    f=lab.step();starts+=f.soloNativeFeet.started.length;
+    const p=f.observedMovementPlayers.find(x=>x.id===side+'-10');
+    if(Math.hypot(f.ball.position.x-p.x,f.ball.position.y-p.y)>1.5)lost++;
+    if(f.action){
+     actions++;
+     assert.equal(f.action.nativeShoeContactVerified,true);
+     assert.equal(f.soloNativeFeet.exclusivePhysicalStart,true);
+     assert.equal(f.action.actualPhysicsImpulseApplied,true);
+    }
+    assert.equal(f.officialMatchPossession,false);
+    if([120,300,600].includes(tick)){
+     const a=f.nativeDribbleAudit,m=f.soloCarryMeasurements;
+     assert.equal(a.nativePhysicalShoeStarts,starts);
+     assert.equal(a.appliedCarryActions,actions);
+     checkpoints.push({
+      tick,actions,starts,lost,
+      unconverted:a.nativeShoeStartsWithoutCarryImpulse,
+      handoffs:a.unreleasedSingleFootEndStartKinds.oppositeFootEndStartSameTick,
+      overlap:a.nativeBothFeetActiveTicks,
+      fullReleases:a.nativeActorFullReleaseEvents,
+      forwardM:(side==='home'?1:-1)*(f.ball.position.x-firstX),
+      peakPlayerKmh:m.peakPlayerSpeedMps*3.6,
+      lateKmh:m.lateMeanSpeedMps*3.6,
+      peakGapM:m.peakGapM,meanGapM:m.meanGapM,
+      impulseGapS:m.nativeMeanImpulseGapS
+     });
+    }
+   }
+   rows.push({rating,variantIndex,side,leadM,adaptive,checkpoints});
+  }finally{lab.dispose();}
+ }
+ assert.equal(rows.length,24);
+ process.stdout.write('ME_628_NATIVE_ADAPTIVE_PURSUIT_AB '+
+  JSON.stringify(rows)+'\\n');
+});

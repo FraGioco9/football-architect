@@ -42,7 +42,8 @@ export function createControlledActionLab(RAPIER,id,{
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
  carryRunwayStart=false,nativeFixedCarryResearch=false,
  nativeFixedSprintLongStride=false,nativeFixedSprintLeadExtraMps=0,
- soloSprintPursuitLeadM=0,soloCarryPlayerAttributes=null
+ soloSprintPursuitLeadM=0,soloSprintAdaptivePursuit=false,
+ soloCarryPlayerAttributes=null
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -57,6 +58,9 @@ export function createControlledActionLab(RAPIER,id,{
      soloShoeWidthScale!==1||soloShoeLengthScale!==1||
      soloRecoveryStepScale!==1)))
   throw new TypeError('Native active-foot release is Sprint research only');
+ if(typeof soloSprintAdaptivePursuit!=='boolean'||
+    (soloSprintAdaptivePursuit&&soloSprintPursuitLeadM===0))
+  throw new TypeError('Reactive pursuit requires isolated fixed Sprint lead');
  if(![0,0.25,0.5].includes(soloSprintPursuitLeadM)||
     (soloSprintPursuitLeadM!==0&&(
      id!=='carry-solo'||!nativeFixedCarryResearch||
@@ -274,7 +278,8 @@ export function createControlledActionLab(RAPIER,id,{
    ...(carryRunwayStart?{researchCarryRunwayStart:true}:{}),
    ...(nativeFixedCarryResearch?{researchNativeFixedCarry:true}:{}),
    ...(soloSprintPursuitLeadM!==0?{
-    researchSoloSprintPursuitLeadM:soloSprintPursuitLeadM}:{}),
+    researchSoloSprintPursuitLeadM:soloSprintPursuitLeadM,
+    ...(soloSprintAdaptivePursuit?{researchSoloSprintAdaptivePursuit:true}:{})}:{}),
    ...(soloCarryLockedPhase!==null?{
     researchSoloCarryLockedPhase:soloCarryLockedPhase,
     researchSoloCarryPlayerAttributes:selectedCarryAttributes}:{}),
@@ -639,7 +644,7 @@ export function createControlledActionLab(RAPIER,id,{
       nativeFixedCarryResearch:true,
       nativeFixedSprintLongStride,
       nativeFixedSprintLeadExtraMps,soloSprintActiveFootReleaseM,
-      soloSprintPursuitLeadM,
+      soloSprintPursuitLeadM,soloSprintAdaptivePursuit,
       ...(soloCarryMeasurements?{soloCarryMeasurements}:{}),
       soloCarryLockedPhase,
       soloCarryPlayerAttributes:selectedCarryAttributes,

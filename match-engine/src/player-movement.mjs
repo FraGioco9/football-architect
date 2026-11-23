@@ -1676,6 +1676,7 @@ export function createPlayerMovement(options={}){
      k!=='researchCarryRunwayStart'&&
      k!=='researchNativeFixedCarry'&&
      k!=='researchSoloSprintPursuitLeadM'&&
+     k!=='researchSoloSprintAdaptivePursuit'&&
      k!=='researchSoloCarryLockedPhase'&&
      k!=='researchSoloCarryPlayerAttributes'&&
       k!=='researchSmallSidedBodyFeedback'&&
@@ -1831,7 +1832,8 @@ export function createPlayerMovement(options={}){
         (options.researchSoloCarryPlayerAttributes===undefined?0:1)+
         (options.researchCarryRunwayStart===true?1:0)+
         (options.researchNativeFixedCarry===true?1:0)+
-        (options.researchSoloSprintPursuitLeadM===undefined?0:1)))||
+        (options.researchSoloSprintPursuitLeadM===undefined?0:1)+
+        (options.researchSoloSprintAdaptivePursuit===true?1:0)))||
     ((options.researchSmallSidedSituation===undefined)!==
      (options.researchSmallSidedSide===undefined))||
     (options.researchSoloCarryLockedPhase!==undefined&&(
@@ -1844,6 +1846,9 @@ export function createPlayerMovement(options={}){
      options.researchNativeFixedCarry!==true||
      options.researchSoloCarryLockedPhase!=='sprint'||
      options.researchCarryRunwayStart!==true))||
+    (options.researchSoloSprintAdaptivePursuit!==undefined&&(
+     options.researchSoloSprintAdaptivePursuit!==true||
+     options.researchSoloSprintPursuitLeadM===undefined))||
     (options.researchSmallSidedVariantIndex!==undefined&&
      options.researchSmallSidedSituation===undefined)||
     (options.researchCarryRunwayStart!==undefined&&
@@ -2473,10 +2478,20 @@ export function createPlayerMovement(options={}){
   // its existing shoes cannot reach that gap, so the ball never starts.
   // This changes only player steering intent, not shoe/ball position,
   // contact event authority, Rapier dynamics or official gameplay.
-  const nativeFixedOffset=options.researchNativeFixedCarry===true?
+  // Optional geometric pursuit lookahead follows the actual Rapier ball
+   // only while its measured gap ahead of the original runner is sufficient.
+   // As the player catches up, canonical target returns smoothly to baseline.
+   // This never creates a new shoe START, player position, impulse or ownership.
+   const pursuitRunner=smallSided?.id==='carry-solo'?
+    players.find(p=>p.id===smallSided.side+'-10'):null;
+   const realAheadM=pursuitRunner?(ball.x-pursuitRunner.x)*
+    (smallSided.side==='home'?1:-1):0;
+   const adaptivePursuitScale=options.researchSoloSprintAdaptivePursuit===true?
+    clamp((realAheadM-0.44)/0.16,0,1):1;
+   const nativeFixedOffset=options.researchNativeFixedCarry===true?
     currentSoloCarryPhase.phase==='sprint'?
      (Math.hypot(realBallVelocity.x,realBallVelocity.y)<0.45?-0.18:
-       0.08+(options.researchSoloSprintPursuitLeadM??0)):
+       0.08+(options.researchSoloSprintPursuitLeadM??0)*adaptivePursuitScale):
     currentSoloCarryPhase.phase==='moderate'?-0.06:
      currentSoloCarryPhase.ballTargetOffsetM:null;
   const targets=players.map(p=>{
