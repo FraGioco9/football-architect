@@ -962,6 +962,51 @@ try{
   }finally{await context.close()}
  }
 
+ // NAV-ADMIN: stable first paint on navigation, refresh and revocation.
+ {
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  let release=()=>{};
+  try{
+   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+   let authorized=true,hold=false,permissionReads=0;
+   const clubs=Array.from({length:320},(_,i)=>({clubKey:'FA-'+(i+1),name:'Club '+(i+1),
+    accountId:null,accountEmail:null,updatedAt:null,version:0}));
+   await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.route('**/api/player/permissions',async r=>{
+    permissionReads++;
+    if(hold)await new Promise(resolve=>{release=resolve});
+    return r.fulfill({status:authorized?200:401,contentType:'application/json',
+     body:authorized?JSON.stringify({permissions:['admin.access','admin.world.read','admin.world.write']}):'{}'});
+   });
+   await page.route('**/api/admin/club-licenses*',r=>{
+    assert.equal(r.request().method(),'GET','Sidebar QA must not mutate licenses');
+    return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({clubs,history:[]})});
+   });
+   await page.goto('http://app.localhost:2000/dashboard');
+   await page.locator('#app-nav-admin').waitFor({state:'visible'});
+   assert.equal(await page.evaluate(()=>sessionStorage.getItem('fa:admin:nav-visible:v1')),'1');
+   for(const path of ['/clubs','/players','/matches','/account/login']){
+    await page.goto('http://app.localhost:2000'+path,{waitUntil:'domcontentloaded'});
+    assert.equal(await page.locator('#app-nav-admin').isVisible(),true,path+' Admin visible before deferred checks');
+   }
+   await page.goto('http://app.localhost:2000/admin/licenses');
+   await page.waitForFunction(()=>document.querySelector('[data-licenses-count]')?.textContent==='320 clubs');
+   assert.equal(await page.locator('#app-nav-admin[aria-current="page"]').count(),1);
+   await page.goto('http://app.localhost:2000/dashboard');
+   await page.locator('#app-nav-admin').waitFor({state:'visible'});
+   authorized=false;hold=true;
+   await page.reload({waitUntil:'domcontentloaded'});
+   assert.equal(await page.locator('#app-nav-admin').isVisible(),true,'Pending fresh check must not flash away Admin');
+   hold=false;release();
+   await page.waitForFunction(()=>!document.getElementById('app-nav-admin'));
+   assert.equal(await page.evaluate(()=>sessionStorage.getItem('fa:admin:nav-visible:v1')),null);
+   await page.goto('http://app.localhost:2000/settings');
+   assert.equal(await page.locator('#app-nav-admin').count(),0,'Revoked menu stays absent');
+   assert.ok(permissionReads>=2);
+   assert.deepEqual(errors,[]);checks++;
+  }finally{release();await context.close()}
+ }
+
  timing.mark('cases-complete');
   console.log('Dedicated Admin page browser contracts PASS: '+checks+' cases');
 }finally{
