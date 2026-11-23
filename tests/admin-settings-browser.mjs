@@ -908,7 +908,7 @@ try{
    await clubDropdown.locator('.language-trigger').click();
    await clubDropdown.locator('.admin-licenses-dropdown-search').fill('Club 320');
    assert.equal(await clubDropdown.locator('.language-option').count(),1,'Club search narrows the menu');
-   await clubDropdown.locator('.language-option').click();
+   await clubDropdown.locator('.admin-licenses-dropdown-search').press('Enter');
    assert.equal(await page.locator('[data-licenses-club]').inputValue(),'FA-320');
    await page.locator('[data-licenses-query]').fill('qa@example.invalid');
    await page.locator('[data-licenses-find]').click();

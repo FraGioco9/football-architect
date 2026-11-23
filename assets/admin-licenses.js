@@ -116,7 +116,7 @@
      if(event.target!==trigger)return;
      event.preventDefault();open();return;
     }
-    if((event.key==='Enter'||event.key===' ')&&event.target===search)return;
+    if(event.key===' '&&event.target===search)return;
     if(event.key==='Enter'||event.key===' '){event.preventDefault();choose(nodes()[active]);return}
     event.preventDefault();
     const options=nodes();if(!options.length)return;
