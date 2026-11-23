@@ -226,6 +226,43 @@ export function createPreviewPostseason(division,matchday,season=1) {
   return result;
 }
 
+/** #581 — protected Debug-only World History. Shares domestic standings fixture
+ * results; does not create fictitious international cups or publish official data.
+ * A current season is historical only at the final 33rd domestic sporting slot.
+ */
+export function createPreviewWorldHistory(manifest,progress){
+ if(!competitionModel.validManifest(manifest)||!Array.isArray(manifest.divisions)||
+    !Number.isInteger(progress?.season)||progress.season<0||progress.season>4||
+    !Number.isInteger(progress?.matchdays)||progress.matchdays<0||progress.matchdays>DEBUG_MAX_MATCHDAY)
+  throw Error('Invalid DEV World History input');
+ const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
+ const divisions=countries.flatMap(country=>[1,2].map(tier=>{
+  const id=country+'-'+tier;
+  const division=manifest.divisions.find(d=>d.id===id);
+  if(!division)throw Error('Missing DEV World History division: '+id);
+  assertDivision(division);
+  return division;
+ }));
+ const last=progress.season===0?0:progress.season-1+
+  (progress.matchdays===DEBUG_MAX_MATCHDAY?1:0);
+ const seasons=[];
+ for(let season=last;season>=1;season--){
+  const champions=divisions.map(division=>{
+   const result=createPreviewStandings(division,rounds,season);
+   if(result.fixtures.length!==rounds*(division.capacity/2)||
+      result.rows.length!==division.capacity||result.rows.some(row=>row.played!==rounds))
+    throw Error('Incomplete DEV World History standings');
+   const championClubId=division.countryId+'-'+result.rows[0].club.clubId;
+   return {competitionId:division.id,championClubId};
+  });
+  seasons.push({seasonNumber:season,champions});
+ }
+ return {schemaVersion:1,providerId:'dev-world-history',status:seasons.length?'available':'empty',
+  world:{seasonNumber:progress.season,phase:progress.season===0?'unstarted':'active'},
+  provenance:{kind:'fictional',sourceRef:'dev-fictional-preview',approved:false},
+  coverage:'domestic-only',seasons};
+}
+
 // Read-only club projection: reuse league/post-season engines and expose no future scores.
 export function createPreviewClubSummary(division,clubId,progress){
  if(progress?.season===0)return null;

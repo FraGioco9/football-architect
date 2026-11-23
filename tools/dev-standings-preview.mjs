@@ -141,7 +141,7 @@ function rewriteLocalAppShellLinks(body,enabled){
     '";document.documentElement.dataset.faDevSiteOrigin="'+siteOrigin+'"</script>';
   return Buffer.from(body.toString("utf8").replace("</head>",config+"\n</head>")
     .replace(/(\bhref=")([^"#]+)(")/g,(all,prefix,href,quote)=>{
-      if(/^\/(?:account|dashboard|calendar|settings|admin|competitions|players|clubs|matches)(?:[/?#]|$)/.test(href))
+      if(/^\/(?:account|dashboard|calendar|settings|admin|competitions|players|clubs|matches|history)(?:[/?#]|$)/.test(href))
         return prefix+appOrigin+href+quote;
       if(href==="/"||/^\/guide(?:[/?#]|$)/.test(href))
         return prefix+siteOrigin+(href==="/"? "":href)+quote;
@@ -321,6 +321,12 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         type = TYPES[extname(file)];
         if (!type) return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});
         if(devPreview&&file==="clubs/_shared/index.html")body=Buffer.from(body.toString('utf8').replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
+        if(devPreview&&file==="history/index.html"){
+          // Protected Debug controls and fictional History projection only.
+          const scripts=DEBUG_MODE_BOOTSTRAP+DEBUG_SEASON_BOOTSTRAP+
+            '<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>';
+          body=Buffer.from(body.toString('utf8').replace('</head>',scripts+'\n</head>'),'utf8');
+        }
         if(devPreview&&file==="calendar/index.html"){
           // Inject only on the DEV server; never present these fictional days as official time.
           const bootstrap=DEBUG_MODE_BOOTSTRAP+'<script>if(window.faDebugEnabled===true)window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';
