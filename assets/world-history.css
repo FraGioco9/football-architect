@@ -43,7 +43,6 @@
 .fa-world-history-skeleton-cell{display:flex;align-items:center;gap:10px;min-width:0}
 .fa-world-history-skeleton-mark{display:block;flex:none;background:var(--line);border-radius:6px}
 .fa-world-history-skeleton-logo{width:40px;height:40px}
-.fa-world-history-skeleton-crest{width:29px;height:29px}
 .fa-world-history-skeleton-comp-name{width:clamp(75px,48%,230px)}
 .fa-world-history-skeleton-club-name{width:clamp(65px,46%,200px)}
 .fa-world-history-retry{margin-top:12px}

@@ -393,10 +393,11 @@ test('#581: first paint and Debug transitions preserve accurately aligned skelet
  const rows=[...rendered.matchAll(/class="fa-world-history-skeleton-row fa-world-history-row"/g)];
  assert.equal(rows.length,18,'authoritative archive has 18 competitions in one completed season');
  assert.equal((rendered.match(/fa-world-history-skeleton-logo/g)||[]).length,18);
- assert.equal((rendered.match(/fa-world-history-skeleton-crest/g)||[]).length,18);
+ assert.equal((rendered.match(/app-world-club-crest-placeholder fa-crest-loading fa-world-history-club-crest/g)||[]).length,18);
  assert.match(rendered,/fa-world-history-skeleton fa-world-history-season"[^>]*aria-hidden="true"/);
  assert.match(css,/\.fa-world-history-skeleton-logo\{width:40px;height:40px\}/,'competition logo skeleton exactly matches 40px real logo');
- assert.match(css,/\.fa-world-history-skeleton-crest\{width:29px;height:29px\}/,'club crest skeleton matches final 29px');
+ assert.doesNotMatch(css,/fa-world-history-skeleton-crest/,'History uses the shared club crest skeleton');
+ assert.match(css,/\.fa-world-history-row \.fa-world-history-club-crest\.app-world-club-crest-placeholder\{[^}]*width:29px;height:29px;flex:0 0 29px/,'shared crest skeleton and final image slot both reserve 29px');
  assert.match(css,/\.fa-world-history-skeleton-row\+\.fa-world-history-skeleton-row/,'same row dividers');
  assert.match(css,/\.fa-world-history-row\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/,'reuse two equal final columns');
  assert.match(css,/@media\(max-width:500px\)\{[\s\S]*?\.fa-world-history-row\{grid-template-columns:minmax\(0,1fr\)/,'skeleton and real rows use same mobile layout');
@@ -421,6 +422,26 @@ test('#581: no loading text on first paint or protected/public source changes',(
  assert.match(js,/status\.textContent='';status\.hidden=true;/);
  assert.match(css,/\.fa-world-history \[hidden\]\{display:none!important\}/);
  assert.match(js,/debugError:|error:'Verified history/,'real error messages remain available');
+});
+
+test('#753: club skeleton uses the site's neutral circular crest loading primitive',()=>{
+ const html=read('history/index.html');
+ const renderer=renderWorldHistoryPage();
+ const css=read('assets/world-history.css');
+ const shared=read('assets/app.css');
+ assert.ok(html.includes(renderer),'the generated 18-row skeleton and first paint stay synchronized');
+ assert.doesNotMatch(html,/fa-world-history-skeleton-crest/,'no custom rectangle skeleton remains in HTML');
+ assert.doesNotMatch(renderer,/fa-world-history-skeleton-crest/,'no custom rectangle skeleton remains in template');
+ assert.doesNotMatch(css,/fa-world-history-skeleton-crest/,'no obsolete custom crest styling remains');
+ assert.equal((renderer.match(/class="app-world-club-crest-placeholder fa-crest-loading fa-world-history-club-crest" aria-hidden="true"/g)||[]).length,18);
+ assert.match(shared,/\.app-world-club-crest-placeholder\.fa-crest-loading::before,/,
+  'reuse existing loading style from Standings, Clubs, Fixtures and Stats');
+ assert.match(shared,/border-radius:50%;\s*clip-path:none;background:var\(--fa-crest-skeleton-fill\)/,
+  'shared crest placeholder remains circular and neutral');
+ assert.match(css,/\.fa-world-history-row \.fa-world-history-club-crest\.app-world-club-crest-placeholder\{[^}]*width:29px;height:29px;flex:0 0 29px/,
+  'club loading geometry is the same 29px slot as hydrated crests');
+ assert.match(css,/\.fa-world-history-skeleton-logo\{width:40px;height:40px\}/,
+  'competition logo skeleton geometry remains unchanged');
 });
 
 test('#581: club crest shield reuses the shared site primitive at the final 29px geometry',()=>{
