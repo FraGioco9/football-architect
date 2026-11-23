@@ -22,8 +22,8 @@ test('#733 Player Detail derives published club crests from stable IDs',()=>{
   ['IT-1',null],['IT-1',[]]
  ])assert.equal(resolve(id,registry),null,'invalid or unpublished crest: '+id);
  assert.match(source,/const crest=verifiedClubCrest\(key,clubCatalog\.clubCrests\)/);
- assert.equal((source.match(/clubCrest:key=>verifiedClubCrest\(key,crests\)/g)||[]).length,2,
-  'Stats and Matches must use the same ID/registry guard');
+ assert.equal((source.match(/clubCrest:key=>verifiedClubCrest\(key,crests\)/g)||[]).length,3,
+  'Stats, Matches and History must use the same ID/registry guard');
 });
 
 test('#502 persisted and protected preview detail routes are canonical and statically publishable',()=>{
@@ -37,7 +37,7 @@ test('#502 persisted and protected preview detail routes are canonical and stati
  assert.equal(publicRequestFile('/players/42/'),'players/_shared/index.html');
  assert.equal(parseRoute('/admin/players/preview/player')?.kind,'page');
  assert.equal(publicRequestFile('/admin/players/preview/player'),'admin/players/preview/player/index.html');
- for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html','assets/player-detail.js','assets/player-detail.css'])
+ for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html','assets/player-detail.js','assets/player-detail.css','assets/player-history.mjs'])
   assert.equal(isAllowlistedPublicPath(file),true,file);
  const published=planPublicFiles();
  assert.ok(published.includes('players/_shared/index.html'));
@@ -88,7 +88,7 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.match(html,/data-detail-pitch-markers/);
   assert.match(html,/class="app-player-detail-silhouette"/);
   for(const view of ['overview','info','stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"'));
-  for(const view of (mode==='preview'?['stats','history','progression']:['history','progression']))assert.match(html,new RegExp('data-detail-view="'+view+'"[^>]* disabled aria-disabled="true"'));
+  for(const view of (mode==='preview'?['stats','history','progression']:['progression']))assert.match(html,new RegExp('data-detail-view="'+view+'"[^>]* disabled aria-disabled="true"'));
   if(mode==='public'){
    assert.match(html,/data-detail-view="stats"[^>]*aria-controls="player-detail-stats-panel"/);
    assert.match(html,/data-detail-view="matches"[^>]*aria-controls="player-detail-matches-panel"/);
@@ -103,7 +103,7 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.match(html,/data-detail-positions aria-labelledby="player-detail-positions-title"/);
   assert.match(html,/<h2 id="player-detail-positions-title" data-detail-section-title="positions">Positions<\/h2>/);
   assert.match(html,/data-detail-status role="status" aria-live="polite" hidden/);
-  assert.equal((html.match(/data-detail-panel="/g)||[]).length,mode==="public"?4:2);
+  assert.equal((html.match(/data-detail-panel="/g)||[]).length,mode==="public"?5:2);
   assert.match(html,/data-detail-view="info"[^>]*aria-controls="player-detail-info-panel"/);
   for(const group of ['technical','mental','physical','goalkeeping'])assert.match(html,new RegExp('data-detail-attribute-group="'+group+'"'));
   assert.doesNotMatch(html,/data-players-filter-open|data-admin-players-confirmation/);

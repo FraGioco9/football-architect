@@ -94,6 +94,8 @@ html[data-player-detail-view="info"] .app-player-detail-overview{display:none}
 html:not([data-player-detail-view="info"]) .app-player-detail-info-view{display:none}
 html[data-player-detail-view="stats"] .app-player-detail-overview{display:none}
 html[data-player-detail-view="matches"] .app-player-detail-overview{display:none}
+html[data-player-detail-view="history"] .app-player-detail-overview{display:none}
+html:not([data-player-detail-view="history"]) .app-player-detail-history{display:none}
 html:not([data-player-detail-view="matches"]) .app-player-detail-matches{display:none}
 html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:none}
 .app-player-detail-status{font-size:13px;color:var(--muted);line-height:20px;margin:10px 0 0}
@@ -145,6 +147,37 @@ html:not([data-player-detail-view="stats"]) .app-player-detail-stats{display:non
  .app-player-detail-affiliation{grid-column:1;grid-row:3}
  .app-player-detail-back{grid-column:1;grid-row:4;justify-self:center}
 }
+
+
+/* #579 — verified player club-season History, with stable 56px table rows. */
+.app-player-detail-history{min-width:0;margin-top:5px}
+.app-player-history-current{display:flex;align-items:center;gap:9px;min-height:48px;padding:0 10px;border-bottom:1px solid var(--line);font-size:13px}
+.app-player-history-current>span:first-child{color:var(--muted)}
+.app-player-history-current-value{display:inline-flex;align-items:center;min-height:24px;font-weight:600}
+.app-player-history-title{font-size:16px;font-weight:700;margin:18px 10px 6px}
+.app-player-history-description{font-size:12px;line-height:1.5;color:var(--muted);margin:0 10px 12px;max-width:750px}
+.app-player-history-scroll{width:100%;max-width:100%;overflow-x:auto;scrollbar-width:thin;overscroll-behavior-x:contain}
+.app-player-history-table{width:100%;min-width:600px;table-layout:fixed;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.app-player-history-col-season{width:110px}.app-player-history-col-club{width:195px}.app-player-history-col-apps{width:75px}
+.app-player-history-table tr{height:56px}
+.app-player-history-table th,.app-player-history-table td{height:56px;box-sizing:border-box;vertical-align:middle;border-bottom:1px solid var(--line);padding:8px 10px;font-size:13px;line-height:1.5;text-align:left}
+.app-player-history-table thead th{font-weight:600;font-size:12px;color:var(--muted)}
+.app-player-history-table td:last-child,.app-player-history-table thead th:last-child{text-align:right}
+.app-player-history-table tbody th{font-weight:650}
+.app-player-history-identity{display:flex;align-items:center;gap:8px;min-width:0}
+.app-player-history-crest{display:inline-grid;place-items:center;position:relative;flex:none;width:24px;height:24px;min-width:24px}
+.app-player-history-crest img{display:block;width:24px;height:24px;object-fit:contain}
+.app-player-history-link{color:var(--text);text-decoration:none}
+.app-player-history-link:is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:3px}
+.app-player-history-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-player-history-competitions{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.app-player-history-pending,.app-player-history-row-unavailable td{color:var(--muted)}
+.app-player-history-note{min-height:24px;font-size:13px;color:var(--muted);margin:12px 10px}
+.app-player-history-note[hidden]{display:none}
+.app-player-history-loading .app-skeleton-bar{display:inline-block;max-width:100%;vertical-align:middle}
+.app-player-history-loading .app-player-history-crest::before{content:'';width:21px;height:21px;border-radius:50%;background:var(--fa-crest-skeleton-fill)}
+@media(max-width:620px){.app-player-history-current{padding-inline:12px;flex-wrap:wrap}.app-player-history-title,.app-player-history-description,.app-player-history-note{margin-inline:12px}}
+@media(prefers-reduced-motion:reduce){.app-player-history-loading .app-skeleton-bar{animation:none}}
 
 /* #578 Player Stats: reuse Club History's table geometry and disclosure motion. */
 .app-player-detail-stats{margin-top:5px;min-width:0}
