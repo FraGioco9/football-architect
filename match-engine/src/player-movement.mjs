@@ -2468,8 +2468,8 @@ export function createPlayerMovement(options={}){
   // contact event authority, Rapier dynamics or official gameplay.
   const nativeFixedOffset=options.researchNativeFixedCarry===true?
     currentSoloCarryPhase.phase==='sprint'?
-     (Math.hypot(realBallVelocity.x,realBallVelocity.y)<0.45?-0.18:-0.06):
-    currentSoloCarryPhase.phase==='moderate'?-0.20:
+     (Math.hypot(realBallVelocity.x,realBallVelocity.y)<0.45?-0.18:0.08):
+    currentSoloCarryPhase.phase==='moderate'?-0.06:
      currentSoloCarryPhase.ballTargetOffsetM:null;
   const targets=players.map(p=>{
    if(smallSided){
