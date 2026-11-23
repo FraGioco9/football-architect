@@ -40,7 +40,7 @@ export function createControlledActionLab(RAPIER,id,{
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
- carryRunwayStart=false,
+ carryRunwayStart=false,nativeFixedCarryResearch=false,
  soloCarryPlayerAttributes=null
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
@@ -48,6 +48,11 @@ export function createControlledActionLab(RAPIER,id,{
  if(typeof carryRunwayStart!=='boolean'||
     (carryRunwayStart&&id!=='carry-solo'))
   throw new TypeError('Long-running pre-kickoff runway only for Solo Carry');
+ if(typeof nativeFixedCarryResearch!=='boolean'||
+    (nativeFixedCarryResearch&&(
+     id!=='carry-solo'||intentDrivenSoloCarry||
+     soloCarryLockedPhase===null||bodyGuardEnabled||!carryRunwayStart)))
+  throw new TypeError('Native fixed Carry requires an isolated 10s research runway');
  if(typeof intentDrivenSoloCarry!=='boolean'||
     (intentDrivenSoloCarry&&(id!=='carry-solo'||bodyGuardEnabled||
      soloShoeWidthScale!==1||soloShoeLengthScale!==1||
@@ -56,7 +61,8 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('Intent mode is only available in simple Solo Carry');
  if((soloCarryLockedPhase!==null&&(
     !SOLO_CARRY_PHASES.includes(soloCarryLockedPhase)||
-    id!=='carry-solo'||!intentDrivenSoloCarry))||
+    id!=='carry-solo'||
+    !(intentDrivenSoloCarry||nativeFixedCarryResearch)))||
     (soloCarryPlayerAttributes!==null&&soloCarryLockedPhase===null))
   throw new TypeError('Fixed Carry phase is available only in intentional solo DEV LAB');
  const selectedCarryAttributes=soloCarryLockedPhase===null?null:
@@ -196,7 +202,8 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticSoloRecoveryStepScale:soloRecoveryStepScale,
     diagnosticSoloSprintCadenceScale:soloSprintCadenceScale,
     diagnosticSoloSprintLateralTrackScale:soloSprintLateralTrackScale,
-    diagnosticIntentDrivenSoloCarryEnabled:intentDrivenSoloCarry
+    diagnosticIntentDrivenSoloCarryEnabled:intentDrivenSoloCarry,
+   diagnosticNativeFixedCarryResearchEnabled:nativeFixedCarryResearch
    }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
@@ -304,7 +311,8 @@ export function createControlledActionLab(RAPIER,id,{
    throw new Error('Only genuine same-tick Rapier and canonical mover allowed');
   const raw=engine.uniformAutonomousActionSnapshot?.()??null;
   const action=raw?.tick===physics.tick?raw:null;
-  if(intentDrivenSoloCarry&&action?.action==='carry'&&
+  if((intentDrivenSoloCarry||nativeFixedCarryResearch)&&
+     action?.action==='carry'&&
      action.actualPhysicsImpulseApplied===true)
    intentCarryImpulseCount++;
   if(soloReadout&&physics.tick>0){
@@ -572,6 +580,18 @@ export function createControlledActionLab(RAPIER,id,{
     ...(refereeMode||smallSided?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake,
      matchTimeline}:{}),
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
+    ...(nativeFixedCarryResearch?{
+      nativeFixedCarryResearch:true,
+      ...(soloCarryMeasurements?{soloCarryMeasurements}:{}),
+      soloCarryLockedPhase,
+      soloCarryPlayerAttributes:selectedCarryAttributes,
+      nativeRealShoeStartThisTick:
+       action?.action==='carry'&&
+       foot.nativeSoloFeet?.exclusivePhysicalStart===true,
+      nativeShoeContactClaimed:
+       action?.action==='carry'&&
+       action?.nativeShoeContactVerified===true
+    }:{}),
     ...(intentDrivenSoloCarry?{
      intentDrivenCarry:true,
      intentCarryImpulseCount,

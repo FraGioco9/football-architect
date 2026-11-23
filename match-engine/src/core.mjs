@@ -122,6 +122,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSoloSprintCadenceScale = 1,
   diagnosticSoloSprintLateralTrackScale = 1,
   diagnosticIntentDrivenSoloCarryEnabled = false,
+  diagnosticNativeFixedCarryResearchEnabled = false,
   diagnosticSmallSidedBodyGuardEnabled = false,
    diagnosticSmallSidedBodyFeedbackEnabled = false,
   diagnosticResearchControlReceiver = false,
@@ -159,6 +160,15 @@ export function createEngine(RAPIER, input = {}, {
    throw new TypeError('Pre-kickoff runway only for solo native/intent research');
   if(diagnosticSmallSidedSituation===null&&diagnosticSmallSidedVariantIndex!==0)
    throw new TypeError('Small-sided variant requires a paired physical exercise');
+  if(typeof diagnosticNativeFixedCarryResearchEnabled!=='boolean'||
+     (diagnosticNativeFixedCarryResearchEnabled&&(
+      diagnosticSmallSidedSituation!=='carry-solo'||
+      !diagnosticCarryRunwayStart||
+      diagnosticIntentDrivenSoloCarryEnabled||
+      !diagnosticPlayerFootContactsEnabled||
+      !diagnosticAutonomousFixtureActionEnabled||
+      diagnosticSmallSidedBodyGuardEnabled)))
+   throw new TypeError('Native fixed Carry only in interior isolated DEV research');
   if(typeof diagnosticIntentDrivenSoloCarryEnabled!=='boolean'||
      (diagnosticIntentDrivenSoloCarryEnabled&&(
       diagnosticSmallSidedSituation!=='carry-solo'||
@@ -559,6 +569,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticSoloShoeLengthScale,diagnosticSoloRecoveryStepScale,
     diagnosticSoloSprintCadenceScale,diagnosticSoloSprintLateralTrackScale,
     diagnosticIntentDrivenSoloCarryEnabled,
+    diagnosticNativeFixedCarryResearchEnabled,
     diagnosticSmallSidedBodyGuardEnabled,
      diagnosticSmallSidedBodyFeedbackEnabled,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
@@ -651,6 +662,7 @@ export function createEngine(RAPIER, input = {}, {
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       intentDrivenSoloCarry:diagnosticIntentDrivenSoloCarryEnabled,
+      nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
        isolatedCarry||(smallSided?.variantIndex>0),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),

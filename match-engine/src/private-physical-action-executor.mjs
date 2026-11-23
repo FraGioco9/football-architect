@@ -6,6 +6,8 @@ import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,
  from './player-ball-uniform-autonomous-action.mjs';
 import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
+import {chooseNativeFixedCarryImpulse}
+ from './native-fixed-carry-impulse.mjs';
 import {calculateRealReceivingCushion}
  from './physical-receiving-cushion-m25.mjs';
 import {choosePhysicalReceiverSecondTouch}
@@ -20,8 +22,15 @@ export function createPrivatePhysicalActionExecutor({
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
  smallSidedDecisionContext=null,isolatedDribbleContext=null,
- physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false
+ physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
+ nativeFixedCarryResearch=false
 }={}){
+ if(typeof nativeFixedCarryResearch!=='boolean'||
+    (nativeFixedCarryResearch&&(
+     intentDrivenSoloCarry||
+     isolatedDribbleContext?.situationId!=='carry-solo'||
+     physicalBodyGuardEnabled)))
+  throw new TypeError('Native fixed Carry is limited to genuine isolated shoe input');
  if(typeof intentDrivenSoloCarry!=='boolean'||
     (intentDrivenSoloCarry&&(
      isolatedDribbleContext?.situationId!=='carry-solo'||
@@ -223,7 +232,21 @@ export function createPrivatePhysicalActionExecutor({
    }):null;
   // M25 preempts same-tick action for cushioning. M27 may instead
   // defer an ORIGINAL second-touch clearance with zero additional impulse.
-  const chosen=researchCandidate||deferOriginal?null:originalChoice;
+  const originalChosen=researchCandidate||deferOriginal?null:originalChoice;
+  // The *existing* uniform policy and Rapier exclusive shoe START remain
+  // the only action authority. Native phase calibration can adjust that
+  // action's impulse or decline it, never generate an extra contact/action.
+  const nativeTune=nativeFixedCarryResearch&&originalChosen?.action==='carry'?
+   chooseNativeFixedCarryImpulse({
+    phase:playerFrame.soloCarryPhase?.lockedPhase,
+    playerAttributes:playerFrame.soloCarryPhase?.carryPlayerAttributes,
+    player:playerFrame.players.find(p=>p.id===originalChosen.playerId),
+    attackingSide:isolatedDribbleContext.attackingSide,
+    ballVelocity:ballBody.linvel(),
+    verifiedNativeExclusiveShoeStart:
+     contact.nativeSoloFeet?.exclusivePhysicalStart===true
+   }):null;
+  const chosen=nativeTune?.impulseNs===null?null:originalChosen;
   if(chosen&&(!gates.passedInputGates||
      gates.actorId!==chosen.playerId||
      !contact.started.includes(chosen.playerId)||
@@ -239,16 +262,41 @@ export function createPrivatePhysicalActionExecutor({
     !isolatedNativeShoeSourceValid?'solo-ambiguous-real-foot-contact':researchCandidate?
     'experimental-receiving-cushion-preempts-uniform-action':
     deferOriginal?'m27-native-decision-defers-original-clearance':
+    nativeTune?.impulseNs===null?
+     'native-shoe-contact-no-extra-ball-impulse-needed':
     (gates.firstFailedGate??'not-selected-after-input-gates')
   });
   let applied=null;
   if(chosen){
    // The only new physics write; same body and SAME post-collision tick
    // as the original #481, never a future/replayed intent.
-   ballBody.applyImpulse(chosen.impulseNs,true);
+   const impulse=nativeTune?.impulseNs??chosen.impulseNs;
+   ballBody.applyImpulse(impulse,true);
    applied=Object.freeze({
-    ...chosen,appliedByRapier:true,
-    actionSource:'internal-uniform-22-player-ai',
+    ...chosen,
+    impulseNs:impulse,
+    ...(nativeTune?{
+     nativeShoeContactVerified:true,
+     nativeFixedPhaseCalibration:nativeTune,
+     originalNativeActionImpulseNs:chosen.impulseNs,
+     carryTarget:Object.freeze({
+      ...chosen.carryTarget,
+      source:'original-real-shoe-phase-calibrated-impulse',
+      impulseMagnitudeNs:Math.hypot(impulse.x,impulse.y,impulse.z),
+      nativeShoeContactVerified:true
+     }),
+     decisionContext:Object.freeze({
+      ...chosen.decisionContext,
+      nativeRealShoeVerified:true,
+      nativeFixedPhaseResearch:playerFrame.soloCarryPhase.lockedPhase,
+      noSyntheticContact:true,
+      officialMatchAction:false
+     })
+    }:{}),
+    appliedByRapier:true,
+    actionSource:nativeTune?
+     'native-original-shoe-start-phase-calibration':
+     'internal-uniform-22-player-ai',
     actualPhysicsImpulseApplied:true
    });
    lastActionTick=nextTick;
