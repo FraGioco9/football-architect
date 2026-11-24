@@ -103,3 +103,41 @@ export function planApprovedReference({seed,versions,clubs,foreignWeights}){
  const p=approvedReferenceProfile();
  return planOpeningPopulation({seed,versions,clubs,foreignWeights,roster:p.roster,ageCounts:p.ageCounts,agePolicies:p.agePolicies,localPercent:p.localPercent});
 }
+
+// Registry country IDs are not generator/FIFA codes. Keep the translation explicit.
+export function clubCountryToNationality(countryId){
+ const map={BR:"BRA",DE:"GER",ENG:"ENG",ES:"ESP",FR:"FRA",IT:"ITA",NL:"NED",PT:"POR"};
+ requireThat(typeof countryId==="string"&&Object.hasOwn(map,countryId),"unsupported club country");
+ return map[countryId];
+}
+
+// Pure reuse preflight. Inventory must come from a trusted, complete, pinned server snapshot.
+// No transfers, writes, generated identities or retirement/aptitude data.
+export function planYouthReuse(manifest,inventory){
+ requireThat(manifest?.schema==="opening-population-plan-v1"&&Array.isArray(manifest.slots)&&manifest.versions,"invalid manifest");
+ requireThat(inventory&&inventory.worldGeneration===manifest.versions.worldGeneration&&inventory.worldRevision===manifest.versions.worldRevision&&token(inventory.snapshotId,128)&&inventory.complete===true&&Array.isArray(inventory.players),"stale or incomplete player inventory");
+ const roles=new Set(Object.keys(manifest.config.roster)),ids=new Set(),slotIds=new Set();
+ const wanted=new Set(["ITA","GER","ENG"]);
+ const target=s=>wanted.has(s.primaryNationality)&&int(s.age,16,19);
+ for(const s of manifest.slots){requireThat(s&&typeof s.slotKey==="string"&&!slotIds.has(s.slotKey)&&roles.has(s.primaryPosition)&&int(s.primarySuitabilityTarget,1,90),"invalid manifest slot");slotIds.add(s.slotKey)}
+ const players=inventory.players.map(p=>{
+  requireThat(p&&int(p.id,1,Number.MAX_SAFE_INTEGER)&&!ids.has(p.id)&&int(p.age,16,40)&&/^[A-Z]{3}$/.test(p.primaryNationality)&&roles.has(p.primaryPosition)&&Number.isFinite(p.primarySuitability)&&p.primarySuitability>=1&&p.primarySuitability<=99&&(p.clubKey===null||token(p.clubKey,24))&&["ai","human","unknown"].includes(p.representation)&&["active","retired","unknown"].includes(p.careerStatus)&&typeof p.hasSignedContract==="boolean"&&typeof p.hasSportingHistory==="boolean"&&typeof p.hasApprovedPortrait==="boolean"&&typeof p.readyForReuse==="boolean","invalid or duplicate inventory player");
+  ids.add(p.id);return {id:p.id,age:p.age,primaryNationality:p.primaryNationality,primaryPosition:p.primaryPosition,primarySuitability:p.primarySuitability,clubKey:p.clubKey,representation:p.representation,careerStatus:p.careerStatus,hasSignedContract:p.hasSignedContract,hasSportingHistory:p.hasSportingHistory,hasApprovedPortrait:p.hasApprovedPortrait,readyForReuse:p.readyForReuse};
+ }).sort((a,b)=>a.id-b.id);
+ const eligible=p=>wanted.has(p.primaryNationality)&&int(p.age,16,19)&&p.representation==="ai"&&p.careerStatus==="active"&&!p.hasSignedContract&&!p.hasSportingHistory&&p.readyForReuse;
+ const candidates=players.filter(eligible).sort((a,b)=>Number(b.clubKey!==null)-Number(a.clubKey!==null)||Number(b.hasApprovedPortrait)-Number(a.hasApprovedPortrait)||a.id-b.id);
+ const remaining=manifest.slots.filter(target).slice().sort((a,b)=>order(a.slotKey,b.slotKey)),bySlot=new Map(),matched=new Set();
+ // Same-club candidates first: never move an existing affiliation. Free candidates
+ // can then fill any compatible slot; exact age, primary nationality and role are preserved.
+ for(const p of candidates){
+  const choices=remaining.filter(s=>s.age===p.age&&s.primaryNationality===p.primaryNationality&&s.primaryPosition===p.primaryPosition&&(p.clubKey===null||s.clubKey===p.clubKey)&&!bySlot.has(s.slotKey));
+  choices.sort((a,b)=>Math.abs(a.primarySuitabilityTarget-p.primarySuitability)-Math.abs(b.primarySuitabilityTarget-p.primarySuitability)||order(a.slotKey,b.slotKey));
+  if(!choices.length)continue;
+  const s=choices[0];matched.add(p.id);bySlot.set(s.slotKey,{slotKey:s.slotKey,kind:"reuse",playerId:p.id,primarySuitability:p.primarySuitability,suitabilityDeviation:p.primarySuitability-s.primarySuitabilityTarget,hasApprovedPortrait:p.hasApprovedPortrait});
+ }
+ const assignments=manifest.slots.map(s=>bySlot.get(s.slotKey)??{slotKey:s.slotKey,kind:"generate"});
+ const unmatchedEligible=players.filter(p=>eligible(p)&&!matched.has(p.id)).map(p=>p.id);
+ const excluded=players.filter(p=>!eligible(p)).map(p=>p.id);
+ // No automatic disposal: any unallocated inventory needs owner reconciliation before activation.
+ return {schema:"opening-youth-reuse-v1",worldGeneration:inventory.worldGeneration,worldRevision:inventory.worldRevision,inventorySnapshotId:inventory.snapshotId,assignments,reusedCount:matched.size,newCount:assignments.length-matched.size,unmatchedEligible,excluded,requiresReconciliation:unmatchedEligible.length+excluded.length>0};
+}

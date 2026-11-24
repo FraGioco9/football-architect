@@ -1,7 +1,7 @@
 // #791 — offline pure planner tests; owned by Site FULL.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION} from '../tools/world-bootstrap-791/planner.mjs';
+import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,clubCountryToNationality} from '../tools/world-bootstrap-791/planner.mjs';
 
 function requireThat(ok,msg){if(!ok)throw new Error(msg)}
 
@@ -70,3 +70,28 @@ function testApprovedReference(){
  eq(approvedReferenceProfile().agePolicies[0].termWeights,[15,35,50]);
 }
 test('approved 6,400-slot demographic reference',testApprovedReference);
+
+function testYouthReuse(){
+ const manifest=planApprovedReference(referenceFixture());
+ const targets=manifest.slots.filter(s=>["ITA","ENG"].includes(s.primaryNationality)&&s.age<=19);
+ requireThat(targets.length>5,"missing test youth slots");
+ const a=targets[0],b=targets.find(s=>s.slotKey!==a.slotKey&&s.clubKey!==a.clubKey);
+ const candidate=(s,id,patch={})=>({id,age:s.age,primaryNationality:s.primaryNationality,primaryPosition:s.primaryPosition,primarySuitability:s.primarySuitabilityTarget,clubKey:null,representation:"ai",careerStatus:"active",hasSignedContract:false,hasSportingHistory:false,hasApprovedPortrait:true,readyForReuse:true,...patch});
+ const inv={worldGeneration:manifest.versions.worldGeneration,worldRevision:manifest.versions.worldRevision,snapshotId:"fixture-inventory",complete:true,players:[candidate(a,1,{clubKey:a.clubKey}),candidate(b,2),candidate(a,3,{hasSignedContract:true}),candidate(b,4,{representation:"human"}),candidate(a,5,{clubKey:"inactive-club"}),candidate(a,6,{hasSportingHistory:true}),candidate(a,7,{age:20}),candidate(a,8,{readyForReuse:false})]};
+ const result=planYouthReuse(manifest,inv);
+ eq(result.reusedCount,2);eq(result.newCount,6398);
+ eq(result.assignments.find(x=>x.slotKey===a.slotKey).playerId,1);
+ eq(result.assignments.filter(x=>x.kind==="reuse").map(x=>x.playerId).sort((a,b)=>a-b),[1,2]);
+ eq(result.unmatchedEligible,[5]);eq(result.excluded,[3,4,6,7,8]);eq(result.requiresReconciliation,true);
+ eq(result,planYouthReuse(manifest,{...inv,players:[...inv.players].reverse()}));
+ eq(result.assignments.length,manifest.slots.length);
+ eq(result.assignments.map(x=>x.slotKey),manifest.slots.map(x=>x.slotKey));
+ eq(planYouthReuse(manifest,{...inv,players:[]}).newCount,6400);
+ throws(()=>planYouthReuse(manifest,{...inv,complete:false}));
+ throws(()=>planYouthReuse(manifest,{...inv,worldRevision:inv.worldRevision+1}));
+ throws(()=>planYouthReuse(manifest,{...inv,players:[inv.players[0],inv.players[0]]}));
+ throws(()=>planYouthReuse(manifest,{...inv,players:[{...inv.players[0],readyForReuse:undefined}]}));
+ eq(["BR","DE","ENG","ES","FR","IT","NL","PT"].map(clubCountryToNationality),["BRA","GER","ENG","ESP","FRA","ITA","NED","POR"]);
+ throws(()=>clubCountryToNationality("ITa"));
+}
+test('reuse existing youth before new generation without changing slot quotas',testYouthReuse);
