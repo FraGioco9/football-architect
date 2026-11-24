@@ -61,3 +61,7 @@ Separate direct EUR listing prices from ARC pricing; do not infer a fixed exchan
 ## Remaining owner decisions
 
 Review price bands and relative schedule, entry wallet access, churn/mandate transfer, secondary fee payer and rate, primary club license prices (different product and utility), EUR/ARC settlement rules, reserve recycling, actual demand/turnover, license-holder redemption conflict and affordability. No explicit authorization of rates or transaction scope. Further work: fresh annual cohorts and linked club-level world, owner license mapping, account-level eligibility, realistic purchase selection/resale negotiation and demand stress, separate currency cash-flow with actual fees/tax/refunds only after review. No implementation beyond offline research.
+
+
+## Second research slice
+See `economy-licenses-770.md` for fresh annual generation, license pricing, own-origin affordability and independent EUR sensitivities. This is a separate license-focused overlay, not a fully linked world.
