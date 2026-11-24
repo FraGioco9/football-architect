@@ -1,17 +1,17 @@
-import {competitionRewards,REWARD_IDS,rewardTotals,placementReference,participationReference,CREDIT_MILESTONES} from '../assets/competition-rewards.mjs';
+import {competitionRewards,REWARD_IDS,rewardTotals,placementReference,participationReference,CREDIT_MILESTONES,formatRewardAmount} from '../assets/competition-rewards.mjs';
 const label=(key,en)=>'<span data-app-i18n="'+key+'">'+en+'</span>';
-const amount=(v,avg=false)=>'<span data-reward-amount="'+v+'"'+(avg?' data-reward-average':'')+'>'+(avg?'≈ ':'')+Math.round(v).toLocaleString('en-GB')+' ARC</span>';
+const amount=(v,avg=false)=>'<span data-reward-amount="'+v+'"'+(avg?' data-reward-average':'')+'>'+formatRewardAmount(v,'en-GB',{average:avg})+'</span>';
 export function renderRewardCard(id){const r=competitionRewards(id);return r?'<small class="fa-reward-card-pool">'+amount(r.pool)+'</small>':'';}
 const note=()=>'<p class="fa-reward-note" data-app-i18n="rewardDraftNote">Current draft schedule only. No historical allocation or payment is established.</p>';
 const row=(key,en,value)=>'<div class="fa-reward-row"><dt>'+label(key,en)+'</dt><dd>'+value+'</dd></div>';
-const states=()=>'<div class="fa-reward-evidence" aria-live="polite">'+['rewardEvidencePending','rewardEvidenceDebug','rewardEvidenceEntrants','rewardEvidencePartial','rewardEvidenceComplete','rewardEvidenceHistory','rewardEvidenceZero'].map((key,i)=>'<p data-reward-state="'+key+'" data-app-i18n="'+key+'"'+(i?' hidden':'')+'>'+['Sporting evidence unavailable or loading.','Debug results are not financial evidence.','Official entrants confirmed; no payment established.','Official sporting results are incomplete; no payment established.','Official sporting results complete; financial certification pending.','No season-specific reward version or financial history established.','Season not started; planned rewards only.'][i]+'</p>').join('')+'</div>';
+const states=()=>'<div class="fa-reward-evidence" aria-live="polite">'+['rewardEvidencePending','rewardEvidenceDebug','rewardEvidenceEntrants','rewardEvidencePartial','rewardEvidenceComplete','rewardEvidenceHistory','rewardEvidenceZero','rewardEvidenceLeagueComplete','rewardEvidenceConfigOnly'].map((key,i)=>'<p data-reward-state="'+key+'" data-app-i18n="'+key+'"'+(i?' hidden':'')+'>'+['Sporting evidence unavailable or loading.','Debug results are not financial evidence.','Official entrants confirmed; no payment established.','Official sporting results are incomplete; no payment established.','Official sporting results complete; financial certification pending.','No season-specific reward version or financial history established.','Season not started; planned rewards only.','Official league phase complete; competition outcome and financial certification are not established here.','Configured pools only; per-competition financial evidence unavailable.'][i]+'</p>').join('')+'</div>';
 const names={champion:['rewardChampion','Champion'],runnerUp:['rewardRunnerUp','Runner-up'],semifinalLoser:['rewardSemi','Semifinal loser'],quarterfinalLoser:['rewardQuarter','Quarterfinal loser'],playoffLoser:['rewardPlayoff','Playoff loser'],leagueEliminated:['rewardEliminated','League-phase eliminated']};
 const th=(k,n)=>'<th scope="col">'+label(k,n)+'</th>';
 const table=(heads,rows)=>'<div class="fa-reward-table-wrap"><table class="fa-reward-table"><thead><tr>'+heads.map(([k,n])=>th(k,n)).join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
 function placementTable(r){
  const schedule=placementReference(r);
  if(!schedule)return label('rewardPending','Pending rules');
- const heads=r.international?[['rewardOutcome','Outcome'],['rewardClubs','Clubs'],['rewardWeight','Weight'],['rewardPerClubAmount','ARC per club']]:[['rewardRank','Rank'],['rewardWeight','Weight'],['rewardPerClubAmount','ARC per club']];
+ const heads=r.international?[['rewardOutcome','Outcome'],['rewardClubs','Clubs'],['rewardWeight','Weight'],['rewardPerClubAmount','$ARC per club']]:[['rewardRank','Rank'],['rewardWeight','Weight'],['rewardPerClubAmount','$ARC per club']];
  const body=schedule.map(x=>'<tr><th scope="row">'+(r.international?label(...names[x.id]):x.rank)+'</th>'+(r.international?'<td>'+x.count+'</td>':'')+'<td>'+x.weight+(r.international?'%':'')+'</td><td>'+amount(x.amount)+'</td></tr>').join('');
  return table(heads,body);
 }

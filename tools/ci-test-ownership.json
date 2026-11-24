@@ -225,6 +225,7 @@
     "tests/competition-manifest-v2.test.mjs": "site-node",
     "tests/competition-model.test.mjs": "site-node",
     "tests/competition-navigation.test.mjs": "site-node",
+    "tests/competition-rewards.test.mjs": "site-node",
     "tests/competition-overview-teams.test.mjs": "site-node",
     "tests/competition-preboot-tabs.test.mjs": "site-node",
     "tests/competition-rules-model.test.mjs": "site-node",

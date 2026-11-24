@@ -71,3 +71,30 @@ export function pointsReference(rule,rows,tieOrder=null){
  if(!Array.isArray(rows)||rows.length!==rule.capacity)return {status:'pending-incomplete',allocations:null};
  return largestRemainder(rule.points,rows,tieOrder);
 }
+
+// Approved display symbol; no currency conversion or change to stored units.
+export const REWARD_CURRENCY = '$ARC';
+export function formatRewardAmount(value, locale='en', {average=false}={}){
+ if(!Number.isFinite(value)||value<0||(!average&&!Number.isSafeInteger(value)))return '—';
+ return (average?'≈ ':'')+(average?Math.round(value):value).toLocaleString(locale)+' '+REWARD_CURRENCY;
+}
+// Sporting evidence only. A complete league phase does not establish a cup outcome
+// or financial certification. Unknown historical rule versions are never repriced.
+export function rewardEvidenceState({id,context,worldSnapshot,debug=false}={}){
+ if(debug)return 'rewardEvidenceDebug';
+ const world=worldSnapshot?.source==='authoritative'?worldSnapshot.world:null;
+ const source=context?.seasonData,selected=context?.selectedSeason;
+ if(!Number.isSafeInteger(world?.seasonNumber)||world.seasonNumber<0)return 'rewardEvidencePending';
+ if(world.seasonNumber===0)return 'rewardEvidenceZero';
+ if(!Number.isSafeInteger(selected)||selected<1||selected>world.seasonNumber)return 'rewardEvidencePending';
+ if(selected<world.seasonNumber)return 'rewardEvidenceHistory';
+ if(typeof id!=='string'||context?.definition?.id?.toLowerCase()!==id.toLowerCase()||
+    source?.provenance?.kind!=='authoritative'||source.season!==selected||
+    source.world?.seasonNumber!==world.seasonNumber)return 'rewardEvidencePending';
+ const rule=competitionRewards(id);
+ if(!rule||!Array.isArray(source.participants)||source.participants.length!==rule.capacity)return 'rewardEvidencePending';
+ if(source.entrantsOnly===true)return 'rewardEvidenceEntrants';
+ const rows=source.statistics?.standings,rounds=rule.international?6:30;
+ if(!Array.isArray(rows)||rows.length!==rule.capacity||!rows.every(r=>r.played===rounds))return 'rewardEvidencePartial';
+ return rule.international?'rewardEvidenceLeagueComplete':'rewardEvidenceComplete';
+}

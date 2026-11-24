@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {competitionRewards,rewardTotals,REWARD_IDS,largestRemainder,placementReference,participationReference,pointsReference,CREDIT_MILESTONES} from '../assets/competition-rewards.mjs';
+import {competitionRewards,rewardTotals,REWARD_IDS,largestRemainder,placementReference,participationReference,pointsReference,CREDIT_MILESTONES,formatRewardAmount,rewardEvidenceState} from '../assets/competition-rewards.mjs';
 test('all canonical competitions, no fabricated competition',()=>{
  const read=name=>JSON.parse(readFileSync(new URL('../data/'+name,import.meta.url),'utf8'));
  const definitions=[...read('divisions.json'),...read('international-competitions.json')];
@@ -68,8 +68,8 @@ test('reward renderer exposes reference schedule, not individual earnings',async
   assert.doesNotMatch(html,/data-reward-(?:earned|paid|credited|payable)=/);
   assert.match(renderRewardCard(id),/fa-reward-card-pool/);
  }
- assert.match(renderCompetitionRewards('int-1'),/864,000 ARC/);
- assert.match(renderCompetitionRewards('int-2'),/272,000 ARC/);
+ assert.match(renderCompetitionRewards('int-1'),/864,000 \$ARC/);
+ assert.match(renderCompetitionRewards('int-2'),/272,000 \$ARC/);
  assert.match(renderAdminRewards([],String),/data-admin-rewards-content hidden/);
 });
 test('Rewards routes and public static assets are explicitly allowed',async()=>{
@@ -83,4 +83,26 @@ test('Rewards routes and public static assets are explicitly allowed',async()=>{
  assert.equal(parseRoute('/admin/rewards')?.canonical,'/admin/rewards');
  assert.equal(publicRequestFile('/admin/rewards'),'admin/rewards/index.html');
  for(const path of ['admin/rewards/index.html','assets/rewards-ui.mjs','assets/competition-rewards.mjs','assets/competition-rewards.css'])assert.equal(isAllowlistedPublicPath(path),true,path);
+});
+
+test('literal $ARC display and no rounding of exact allocations',()=>{
+ assert.equal(formatRewardAmount(864000,'en'),'864,000 $ARC');
+ assert.equal(formatRewardAmount(864000,'it'),'864.000 $ARC');
+ assert.equal(formatRewardAmount(0),'0 $ARC');
+ assert.equal(formatRewardAmount(1.5),'—');
+ assert.equal(formatRewardAmount(133333.333,'en',{average:true}),'≈ 133,333 $ARC');
+});
+test('sporting evidence is never confused with historical rewards or completed cup',()=>{
+ const snapshot={source:'authoritative',world:{seasonNumber:2}},id='int-1';
+ const context={selectedSeason:2,definition:{id},seasonData:{season:2,world:{seasonNumber:2},provenance:{kind:'authoritative'},participants:Array(24).fill('club'),statistics:{standings:Array.from({length:24},()=>({played:6}))}}};
+ const state=(overrides={})=>rewardEvidenceState({id,context,worldSnapshot:snapshot,...overrides});
+ assert.equal(state(),'rewardEvidenceLeagueComplete');
+ assert.equal(state({debug:true}),'rewardEvidenceDebug');
+ assert.equal(state({worldSnapshot:{source:'preview',world:{seasonNumber:2}}}),'rewardEvidencePending');
+ assert.equal(state({context:{...context,selectedSeason:1}}),'rewardEvidenceHistory');
+ assert.equal(state({context:{...context,selectedSeason:3}}),'rewardEvidencePending');
+ assert.equal(state({worldSnapshot:{source:'authoritative',world:{seasonNumber:0}}}),'rewardEvidenceZero');
+ assert.equal(state({context:{...context,seasonData:{...context.seasonData,entrantsOnly:true}}}),'rewardEvidenceEntrants');
+ assert.equal(state({context:{...context,seasonData:{...context.seasonData,season:1}}}),'rewardEvidencePending');
+ assert.equal(state({context:{...context,seasonData:{...context.seasonData,statistics:{standings:[]}}}}),'rewardEvidencePartial');
 });

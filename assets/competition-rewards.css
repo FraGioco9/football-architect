@@ -23,3 +23,8 @@
 .fa-reward-split{white-space:normal}
 .fa-reward-row dd{min-width:0;overflow-wrap:anywhere}
 .fa-reward-row dd [data-reward-amount]{display:inline-block}
+
+.fa-rewards[data-reward-history="true"] [data-reward-amount], [data-admin-rewards][data-reward-history="true"] [data-reward-amount]{color:var(--muted)}
+.fa-reward-components>.app-panel{min-width:0}
+.fa-reward-row dt{min-width:0}
+@media(max-width:380px){.fa-reward-row{align-items:flex-start;flex-direction:column;gap:5px}.fa-reward-row dd{text-align:left}}
