@@ -176,6 +176,8 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
   // All-or-nothing D1 batch: authorization + current world + uncommitted draft +
   // unchanged AUTOINCREMENT sequence + approved players + immutable portraits.
   // If a profile insert fails no permanent player is created either.
+ // Each conditional annual retirement draw is independent and stops at the first success.
+ // The resulting age is persisted once, not derived from the public preview seed.
   const result=await db.batch([
    sessionGuard(db,session,now),
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND season_number=?',[world.generation,world.seasonNumber]),
@@ -184,10 +186,17 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
    abortUnless(db,"SELECT 1 WHERE COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0)=?",[lastId]),
    db.prepare(`INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at)
     SELECT ?+CAST(j.key AS INTEGER)+1, ?,?,?,
-     json_set(json_remove(j.value,'$.id','$.preview_id'),
+     json_set(json_remove(j.value,'$.id','$.preview_id','$.retirement_seed','$.retirement_age'),
       '$.id',?+CAST(j.key AS INTEGER)+1,
-      '$.retirement_seed',lower(hex(randomblob(16)))),?
-
+      '$.retirement_age',CASE
+       WHEN abs(random()) % 100 < 2 THEN 33
+       WHEN abs(random()) % 100 < 5 THEN 34
+       WHEN abs(random()) % 100 < 12 THEN 35
+       WHEN abs(random()) % 100 < 25 THEN 36
+       WHEN abs(random()) % 100 < 45 THEN 37
+       WHEN abs(random()) % 100 < 70 THEN 38
+       WHEN abs(random()) % 100 < 90 THEN 39
+       ELSE 40 END),?
     FROM json_each((SELECT candidates_json FROM player_generation_drafts WHERE id=?)) AS j
     ORDER BY CAST(j.key AS INTEGER)`)
     .bind(lastId,id,world.generation,world.seasonNumber,lastId,now,id),
@@ -229,5 +238,10 @@ export async function listGeneratedPlayers(db:Database){
  const count=await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>();
  const after=await readWorld(db);
  if(after.generation!==world.generation)throw new ApiError(409,'stale_world');
- return {count:count?.n??0,worldGeneration:world.generation,players:rows.results.map(row=>JSON.parse(row.payload_json))};
+ return {count:count?.n??0,worldGeneration:world.generation,players:rows.results.map(row=>{
+  const player=JSON.parse(row.payload_json) as Data;
+  delete player.retirement_age;
+  delete player.retirement_seed; // legacy records during migration cutover
+  return player;
+ })};
 }
