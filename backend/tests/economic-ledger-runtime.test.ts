@@ -4,6 +4,8 @@ import {applyD1Migrations} from 'cloudflare:test';
 import type {Database} from '../src/database.ts';
 import {economicAssert,postEconomicOperation,provisionClubAccounts,provisionWallet,readEconomicBalance,reconcileEconomy,reserveEconomicFunds,releaseEconomicFunds,financeSessionGuard,reconcileAndFreezeEconomy,type LedgerIntent} from '../src/economic-ledger.ts';
 
+import {planRewardSettlement,rewardPostingIntents,reconcileRewardPlan} from '../src/reward-settlement-plan.mjs';
+
 const binding=env as any,db=binding.DB as Database;
 const now=1770000000,version='synthetic-775-v1';
 const access=()=>[economicAssert(db,'SELECT 1')]; // disposable trusted fixture only
@@ -116,6 +118,62 @@ it('separates existing primary mandate receipts from youth and secondary trades,
  await expect(post(intent('primary-unfunded','PRIMARY_MANDATE_PURCHASE','user:economy-fixture','reserve',before!+1))).rejects.toThrow();
  expect(await reconcileEconomy(db,access())).toMatchObject({ok:true,stockArc:'2400000'});
 });
+
+it('#776 consumes synthetic annual Rewards hold, resumes missing intents and reconciles through existing ledger',async()=>{
+ const generation=(await db.prepare('SELECT generation FROM world_state WHERE id=1').first<{generation:string}>())!.generation;
+ const countries=['BR','DE','ENG','ES','FR','IT','NL','PT'];
+ const competitions=[...countries.flatMap(c=>[1,2].map(t=>({competitionId:c+'-'+t,
+  entrants:Array.from({length:16},(_,i)=>c+'-'+(i+1+(t-1)*16))}))),
+  ...[1,2].map(t=>({competitionId:'int-'+t,entrants:countries.flatMap(c=>Array.from({length:3},(_,i)=>c+'-'+(i+1+(t-1)*3)))}))];
+ const plan=planRewardSettlement({generation,season:1,day:28,rewardVersion:'draft-5',evidenceHash:'a'.repeat(64),competitions});
+ const binding={manifestHash:'b'.repeat(64),configVersion:version,actorId:'fixture',holdId:'synthetic-776-annual'};
+ const topup=plan.annualBudgetArc-(await balance('reserve'))!;
+ if(topup>0)await post(intent('fixture-776-topup','ISSUE_RESERVE','issuance','reserve',topup));
+ const hold={id:binding.holdId,accountId:'reserve',purpose:'REWARD_BUDGET' as const,sourceId:'synthetic-776-season',configVersion:version,amountArc:plan.annualBudgetArc,actorId:'fixture'};
+ expect(await reserveEconomicFunds(db,hold,guards(),now)).toMatchObject({remaining_arc:plan.annualBudgetArc});
+ const intents=rewardPostingIntents(plan,binding),first=intents[0];
+ const initialClub=await balance(first.lines[0].accountId);
+ const receipt=await post(first);
+ expect((await post(first)).id).toBe(receipt.id);
+ await expect(post({...first,sourceId:'changed'})).rejects.toMatchObject({code:'economic_idempotency_conflict'});
+ await expect(postEconomicOperation(db,intents[1],{...guards(),effects:[economicAssert(db,'SELECT 1 WHERE 0')]},now)).rejects.toThrow();
+ const receipts=async()=> (await db.prepare("SELECT * FROM economic_transactions WHERE purpose='REWARD' AND hold_id=?").bind(hold.id).all()).results;
+ const report=async()=>reconcileRewardPlan(plan,binding,{receipts:await receipts(),reversedIds:[],holdRemainingArc:(await reserveEconomicFunds(db,hold,guards(),now)).remaining_arc as number,ledgerOk:(await reconcileEconomy(db,access())).ok});
+ const partial=await report();
+ expect(partial).toMatchObject({status:'pending',paidArc:first.lines[0].amountArc});
+ expect(partial.missingKeys).toHaveLength(303);
+ // A source guard must reject a fresh posting if the expected hold/source
+ // no longer matches. Test only on the synthetic fixture; this is not a
+ // production authority or a durable sporting-manifest guard.
+ const second=intents[1];
+ const sourceGuard=(sourceId:string)=>economicAssert(db,
+  'SELECT 1 FROM economic_holds WHERE id=? AND source_id=? AND config_version=?',
+  [hold.id,sourceId,version]);
+ const secondBalance=await balance(second.lines[0].accountId);
+ await expect(postEconomicOperation(db,second,{...guards(),preconditions:[sourceGuard('stale-source')]},now)).rejects.toThrow();
+ expect(await report()).toEqual(partial);
+ expect(await balance(second.lines[0].accountId)).toBe(secondBalance);
+ const secondReceipt=await postEconomicOperation(db,second,{...guards(),preconditions:[sourceGuard(hold.sourceId)]},now);
+ // Fresh preconditions are not replay authorization. Exact replay succeeds
+ // with a stale fresh-only guard, but denied live access still fails.
+ expect((await postEconomicOperation(db,second,{...guards(),preconditions:[sourceGuard('stale-source')]},now)).id).toBe(secondReceipt.id);
+ await expect(postEconomicOperation(db,second,{...guards(),access:[economicAssert(db,'SELECT 1 WHERE 0')]},now)).rejects.toThrow();
+ expect(await balance(second.lines[0].accountId)).toBe(secondBalance!+second.lines[0].amountArc);
+ expect((await report()).missingKeys).toHaveLength(302);
+ expect(await balance(first.lines[0].accountId)).toBe(initialClub!+first.lines[0].amountArc);
+ // Fixture-only cleanup of this test's hold and synthetic funding. Journal remains immutable.
+ const remaining=(await reserveEconomicFunds(db,hold,guards(),now)).remaining_arc as number;
+ await releaseEconomicFunds(db,'fixture-776-release',hold.id,remaining,'fixture',guards(),now);
+ // Reverse the two fixture credits explicitly before retiring any fixture top-up.
+ const posted=await receipts();
+ for(const [n,row] of posted.entries()){
+  const i=intents.find(x=>x.businessKey===row.business_key)!;
+  await post({...intent('fixture-776-reverse-'+n,'REVERSAL',i.lines[0].accountId,'reserve',i.lines[0].amountArc),reversalOf:String(row.id)});
+ }
+ if(topup>0)await post(intent('fixture-776-retire','RETIRE_RESERVE','reserve','issuance',topup));
+ expect(await reconcileEconomy(db,access())).toMatchObject({ok:true,stockArc:'2400000'});
+});
+
 it('checks dedicated live capability, blocks reset after initialization, reconciles and freezes',async()=>{
  const digest='a'.repeat(64),csrf='b'.repeat(64),id='economy-fixture';
  await db.prepare('INSERT INTO player_sessions VALUES(?,?,?,?,?,?,?)').bind(digest,id,1,csrf,now,now,now+1000).run();

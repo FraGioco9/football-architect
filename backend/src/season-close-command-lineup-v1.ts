@@ -8,6 +8,7 @@ import type {Database} from './database.ts';
 import {parsePrepareRequest,parseIdempotencyKey,type PrepareRequest} from './command-contract.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
+import {assertRewardCalendarCompletion} from './reward-calendar-gate.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {verifyLineupSeasonArchiveV1} from './lineup-season-archive-proof.ts';
 import {canCloseArchivedSeason,type TerminalMilestoneRow} from './domain/calendar/terminal-milestone-policy.ts';
@@ -23,6 +24,7 @@ export async function closeSeasonLineupV1(db:Database,session:AdminSession,input
  if(world.phase!=='active'||world.day!==56||world.revision===Number.MAX_SAFE_INTEGER)throw new ApiError(409,'close_prerequisites');
  // Independently replay the full immutable V2 chain, including the
  // final knockout plan, BEFORE trusting any row in season_archives.
+ const rewardGuards=await assertRewardCalendarCompletion(db,world,56);
  const proof=await verifyLineupSeasonArchiveV1(db,world);
  const archive=await db.prepare('SELECT generation,archive_hash,calendar_hash,results_hash,knockout_hash,results_count,days_count,ties_count FROM season_archives WHERE season_number=?').bind(world.seasonNumber).first<Archive>();
  const summary=await db.prepare('SELECT generation,archive_hash,summary_hash,summary_json FROM season_archive_summaries WHERE season_number=?').bind(world.seasonNumber).first<Summary>();
@@ -43,7 +45,7 @@ export async function closeSeasonLineupV1(db:Database,session:AdminSession,input
   await db.batch([
    sessionGuard(db,session,now),
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=? AND phase=\'active\' AND day=56',[world.generation,world.revision,world.seasonNumber]),
-   ...proof.guards,
+   ...rewardGuards,...proof.guards,
    abortUnless(db,'SELECT 1 FROM season_archives WHERE season_number=? AND generation=? AND archive_hash=? AND calendar_hash=? AND results_hash=? AND knockout_hash=? AND results_count=4082 AND days_count=56 AND ties_count=54',
     [world.seasonNumber,world.generation,archive.archive_hash,archive.calendar_hash,
      archive.results_hash,archive.knockout_hash]),
