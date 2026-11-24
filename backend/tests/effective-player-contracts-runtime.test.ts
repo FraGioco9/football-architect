@@ -2,6 +2,9 @@ import {test,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import type {Database} from '../src/database.ts';
+import {readPublicPlayer,readPublicPlayers} from '../src/public-players-read.ts';
+import {readPublicClubRoster} from '../src/public-club-roster-read.ts';
+import {PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS} from '../src/footballer-public-projection.ts';
 import {CURRENT_PLAYER_CONTRACTS_SQL,NEXT_MATCH_PLAYER_CONTRACTS_SQL} from '../src/effective-player-contracts.mjs';
 
 test('#777 signed-term roster projections use effective dates, never affiliation fallback',async()=>{
@@ -11,7 +14,7 @@ test('#777 signed-term roster projections use effective dates, never affiliation
  const world=(await db.prepare('SELECT generation FROM world_state WHERE id=1').first<{generation:string}>())!;
  const gen=world.generation,batch=crypto.randomUUID(),now=1800000000;
  await db.prepare("INSERT INTO player_generation_drafts(id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,status,created_at,expires_at,committed_at) VALUES(?,?,0,'fixture','{}','[]',6,'fixture','committed',?,?,?)").bind(batch,gen,now,now+3600,now).run();
- for(let i=1;i<=6;i++)await db.prepare('INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(?,?,?,0,?,?)').bind(i,batch,gen,JSON.stringify({id:i,career_status:i===4?'retired':'active'}),now).run();
+ for(let i=1;i<=6;i++)await db.prepare('INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(?,?,?,0,?,?)').bind(i,batch,gen,JSON.stringify({id:i,first_name:'First'+i,last_name:'Last'+i,nationality:'ITA',age:22,career_status:i===4?'retired':'active',height_cm:180,preferred_foot:'right',primary_position:'CM',secondary_positions:[],attributes:Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map(k=>[k,50]))}),now).run();
  // Legacy data deliberately disagrees: the resolver must never consider it.
  await db.prepare("INSERT INTO player_club_affiliations(player_id,club_key) VALUES(1,'IT-40'),(6,'IT-1')").run();
  async function sign(id:number,club:string,start:number,key:string){
@@ -29,6 +32,16 @@ test('#777 signed-term roster projections use effective dates, never affiliation
  const row=(player_id:number,club_key:string)=>({player_id,club_key});
  expect(await read(CURRENT_PLAYER_CONTRACTS_SQL)).toEqual([row(1,'IT-1'),row(3,'IT-1')]);
  expect(await read(NEXT_MATCH_PLAYER_CONTRACTS_SQL)).toEqual([]);
+ const directory=await readPublicPlayers(db,1);
+ expect(directory.players.find(p=>p.id===1)?.clubKey).toBe('IT-1');
+ expect(directory.players.find(p=>p.id===6)?.clubKey).toBeNull();
+ expect(directory.players.find(p=>p.id===4)?.clubKey).toBeNull();
+ const detail=await readPublicPlayer(db,1),roster=await readPublicClubRoster(db,'IT-1');
+ expect(detail.player.clubKey).toBe('IT-1');
+ expect(roster.players.map(p=>p.id)).toEqual([1,3]);
+ expect(detail.player.market_value_arc).toBe(roster.players[0].market_value_arc);
+ expect((await readPublicClubRoster(db,'IT-40')).count).toBe(0);
+ expect(JSON.stringify(directory)).not.toMatch(/annual_salary_arc|signed_mandate_id|signing_key|contract_id/);
  await db.prepare("UPDATE world_state SET season_number=1,day=0,phase='preparing',revision=1 WHERE id=1").run();
  expect(await read(NEXT_MATCH_PLAYER_CONTRACTS_SQL)).toEqual([row(1,'IT-1'),row(3,'IT-1')]);
  await db.prepare("UPDATE world_state SET day=2,phase='active',revision=2 WHERE id=1").run();

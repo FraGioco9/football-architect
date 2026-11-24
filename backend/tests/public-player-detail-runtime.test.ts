@@ -45,7 +45,8 @@ test('GET player profile projects the same permitted fields as the directory and
   assert.equal(json.includes(forbidden),false,forbidden);
  const statement=calls.find(x=>x.sql.includes('FROM generated_players'));
  assert.deepEqual(statement?.args,[42]);
- assert.match(statement!.sql,/LEFT JOIN player_club_affiliations/);
+ assert.match(statement!.sql,/LEFT JOIN \(\s*SELECT c\.player_id,c\.club_key,c\.id AS contract_id\s+FROM player_signed_contracts/);
+ assert.doesNotMatch(statement!.sql,/player_club_affiliations/);
  assert.match(statement!.sql,/LEFT JOIN player_portrait_profiles/);
  assert.match(statement!.sql,/portrait.status='approved'/);
  assert.match(statement!.sql,/portrait.prompt_version='player-portrait-v4.2'/);
@@ -64,7 +65,7 @@ test('missing player returns real 404; concurrent reset fences result',async()=>
  await assert.rejects(readPublicPlayer(fixture(true,true).db,42),{status:409,code:'stale_world'});
 });
 
-test('public player detail exposes only verified current affiliation key, never generator internals',async()=>{
+test('public player detail exposes only verified current contract club key, never generator internals',async()=>{
  const {db,calls}=fixture(true,false,'IT-1');
  const output=await readPublicPlayer(db,42);
  assert.equal(output.player.clubKey,'IT-1');

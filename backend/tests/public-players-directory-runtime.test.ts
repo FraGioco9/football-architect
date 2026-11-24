@@ -67,7 +67,8 @@ test('public directory exposes verified current club identity on the same pagina
  assert.ok(typeof assigned.players[0].clubName==='string'&&assigned.players[0].clubName.length>0);
  assert.doesNotMatch(JSON.stringify(assigned.players[0]),/salary|expiry|contract_id|development_aptitude/);
  const page=calls.find(c=>c.sql.includes('LIMIT ? OFFSET ?'))!;
- assert.match(page.sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id/);
+ assert.match(page.sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN \(\s*SELECT c\.player_id,c\.club_key,c\.id AS contract_id\s+FROM player_signed_contracts/);
+ assert.doesNotMatch(page.sql,/player_club_affiliations/);
  assert.deepEqual(page.params,[50,0]);
  await assert.rejects(readPublicPlayers(mockDb('BAD-99').db,1),/players_unavailable/);
 });
@@ -311,9 +312,10 @@ test('#763 indexed valuation: actual local D1 global ordering, range, parity and
   assert.deepEqual(empty.players,[]);
   await db.prepare("INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,'IT-1')").bind(id).run();
   const detail=await readPublicPlayer(db,id),roster=await readPublicClubRoster(db,'IT-1');
-  assert.equal(detail.player.market_value_arc,roster.players[0].market_value_arc);
+  assert.equal(detail.player.clubKey,null,'obsolete affiliation must not assign a club');
+  assert.equal(roster.count,0,'obsolete affiliation must not create a roster member');
   assert.equal(detail.player.market_value_arc,expected[0].value);
-  assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'affiliation does not invalidate value');
+  assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'obsolete affiliation does not invalidate value');
   await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.retirement_seed','private','$.retirement_age',37,'$.development_aptitude',42) WHERE id=?").bind(id).run();
   assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'hidden fields do not invalidate value');
   const fingerprint=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([MARKET_VALUE_CONFIG,FORECAST_EXPOSURES])));

@@ -5,6 +5,9 @@ Owner accepts discarding the 43 existing DEV V1 assignments. No fabricated backf
 ## First isolated slice
 `effective-player-contracts.mjs` provides a shared read-only SQL relation for current signed contracts and next playable match day. It reads only valid effective intervals, current world generation and active career status. It intentionally ignores legacy links, historical match receipts, and private wages. No table/view, mutation, new clock or migration required. Season 0 and preparing day 0 show opening day-1 terms for inspection; actual wage accrual remains #778. Closed season retains last day for public inspection; next match projection is empty. The next-match coordinate differs from the current day because match planning is for day+1. Test on local disposable D1 uses real 0040, contradictory legacy links, free agent, retirement, transfer boundary and next-season expiry. CI evidence required.
 
+## Public reader cutover — second slice
+Public Players list/detail, market-value-ranked listing and complete club roster now join the same current-contract relation. Public payload shape and privacy are preserved, and reads reject world revision changes. Old mock expectations adjusted; real D1 test covers signed roster and disagreement with legacy data, while the valuation test confirms legacy rows no longer assign a club. This branch is intentionally incomplete until official match and Admin V1 are also converted, and the legacy table is dropped. Do not merge this intermediate state.
+
 ## Known consumers and remaining cutover (same Draft PR)
 - Public directory/detail including indexed market-value ranking: backend/src/public-players-read.ts.
 - Unpaginated roster and roster stats: backend/src/public-club-roster-read.ts.
