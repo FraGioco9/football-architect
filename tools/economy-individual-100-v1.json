@@ -1,0 +1,78 @@
+{
+  "version": "economy-individual-100-v1",
+  "seasons": 100,
+  "agents": 256,
+  "squad": 25,
+  "initialReserveArc": 2408099,
+  "initialWalletArc": 0,
+  "salaryK": 214.05719342119738,
+  "marketValueMultiplier": 1.1,
+  "arcBps": 9900,
+  "eurBps": 9000,
+  "feeBps": 500,
+  "roles": [
+    "GK",
+    "DEF",
+    "MID",
+    "FWD"
+  ],
+  "roleTargets": [
+    3,
+    9,
+    8,
+    5
+  ],
+  "entrySkills": [
+    47,
+    54,
+    61,
+    68,
+    75
+  ],
+  "entryWeights": [
+    0.06,
+    0.24,
+    0.4,
+    0.24,
+    0.06
+  ],
+  "seeds": [
+    769,
+    1770,
+    2771
+  ],
+  "scenarios": [
+    {
+      "name": "reference",
+      "humanShare": 1,
+      "eurBudgetCents": 25000,
+      "eurPreference": 0.1,
+      "shopping": 0.8,
+      "secondary": 0.03
+    },
+    {
+      "name": "low-eur",
+      "humanShare": 1,
+      "eurBudgetCents": 5000,
+      "eurPreference": 0.05,
+      "shopping": 0.8,
+      "secondary": 0.03
+    },
+    {
+      "name": "higher-eur",
+      "humanShare": 1,
+      "eurBudgetCents": 50000,
+      "eurPreference": 0.25,
+      "shopping": 0.9,
+      "secondary": 0.03
+    },
+    {
+      "name": "mixed-agents",
+      "humanShare": 0.75,
+      "eurBudgetCents": 25000,
+      "eurPreference": 0.1,
+      "shopping": 0.8,
+      "secondary": 0.03
+    }
+  ]
+}

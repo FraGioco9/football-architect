@@ -104,3 +104,6 @@ Latest owner-selected DRAFT: youth ARC quote 99% of new displayed market value (
 
 
 Latest owner correction: EUR purchase share is flexible, not a fixed 10% parameter or quota. [Flexible mix research](economy-flexible-eur-mix-v1.md) derives equilibrium per nominal scale using 99% ARC, 90% EUR and +10% raw value. At 2.4M reference, equilibrium 10.74% (~35.66 of 332), conditional only; illustrative aggregate wallet carry and reserve buffer, no forced orders or runtime changes.
+
+
+[Individual 100-season stress](economy-individual-100-v1.md): 12 synthetic individual runs using canonical club memberships, 2.4M candidate Rewards and voluntary currency choice. **All fail reserve funding in season 2**; later seasons require tracked hypothetical injections, not authorized mint. Significant wage arrears and wallet accumulation. Aggregate equilibrium is not validated; no runtime parameter adoption or merge. Next focus on contract affordability, initial circulation and actual demand/valuation calibration.

@@ -377,3 +377,13 @@ test('flexible EUR purchase mix has no fixed quota and conserves illustrative ag
  assert.equal(c.neighbors[0].deltaArc,5312);assert.equal(c.neighbors[1].deltaArc,-2786);
  assert.ok(x.cases.every(c=>c.illustrativePath.path.every(s=>s.reserveArc+s.walletArc===c.illustrativePath.initialReserveArc&&s.walletArc>=0&&s.arcOrders+s.eurOrders===332)));
 });
+
+test('individual economy smoke detects the first reserve shortfall without treating diagnostics as authorized issuance',async()=>{
+ const {buildIndividualStress}=await import('../tools/run-economy-individual-100.mjs');
+ const config=JSON.parse(readFileSync(new URL('../tools/economy-individual-100-v1.json',import.meta.url),'utf8'));
+ const snapshot=JSON.parse(readFileSync(new URL('../docs/economy-individual-100-v1-summary.json',import.meta.url),'utf8'));
+ const x=buildIndividualStress({seasons:3,seeds:[config.seeds[0]],scenarios:[config.scenarios[0]]}).runs[0];
+ assert.equal(snapshot.length,12);assert.ok(snapshot.every(r=>r.firstShortfall.season===2&&r.diagnosticInjectionArc>0));
+ assert.deepEqual(x.firstShortfall,snapshot[0].firstShortfall);assert.equal(x.completedDiagnosticSeasons,3);
+ assert.ok(x.series.every(s=>s.activated===s.arcBuys+s.eurBuys&&s.wagePaid===s.humanPaid+s.aiPaid));
+});
