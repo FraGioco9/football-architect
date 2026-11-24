@@ -1,0 +1,6 @@
+export interface PayrollContract {id:number;playerId:number;clubKey:string;generation:string;startTick:number;endTick:number}
+export interface PayrollMandate {id:number;playerId:number;generation:string;accountId:string;startTick:number;endTick:number|null}
+export interface PayrollClaim {id:string;generation:string;contractId:number;playerId:number;clubKey:string;season:number;day:28|56;fromTick:number;toTick:number;annualSalaryArc:number;mandateId:number|null;accountId:string|null;dueArc:number;previousPaidArc:number}
+export function planContractClaims(contract:PayrollContract,mandates:readonly PayrollMandate[],season:number,day:28|56,effectiveAnnualSalary:number):PayrollClaim[];
+export function allocateClubPayroll(clubKey:string,claims:readonly PayrollClaim[],cashArc:number,season:number,day:28|56,generation:string):{clubKey:string;generation:string;season:number;day:28|56;cashArc:number;remainingCashArc:number;dueArc:number;paidArc:number;arrearsArc:number;allocations:(PayrollClaim&{paidArc:number;arrearsArc:number})[]};
+export function nextPaydayAffordability(input:{uncommittedCash:number;uncreditedGuaranteedParticipation:number;committedUncoveredWages:number;arrears:number;newDue:number}):{signable:boolean;requiredArc:number;additionalCashHoldArc:number};
