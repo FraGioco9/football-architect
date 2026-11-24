@@ -332,3 +332,14 @@ test('full club reinvestment alone does not close the agent ARC balance',async()
  assert.equal(x.current.additionalAgentReceiptsRequiredArc,166135);assert.equal(x.current.reserveIfOnlyClubAndYouthSpendArc,2953865);
  assert.ok(x.payrollShareSensitivities.every(y=>y.additionalAgentReceiptsRequiredArc>0));
 });
+
+test('stationary career model reconciles payroll and shows EUR buyer effect on ARC recycling',async()=>{
+ const {buildCareerRecycling}=await import('../tools/run-economy-career-recycling.mjs');
+ const x=buildCareerRecycling();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-career-recycling-v1-results.json',import.meta.url),'utf8')));
+ assert.equal(x.pool,6600000);assert.equal(x.payroll,4950000);assert.equal(x.arcOrders+x.eurOrders,x.retirements);
+ assert.ok(Math.abs(x.meanRaw*x.retirements-x.payroll)<1e-5);
+ assert.equal(x.pricing[0].agentResidual,406396);assert.ok(x.pricing.find(y=>y.bps===11000).unfundedArcDemand>0);
+ assert.equal(x.flows.at(-1).totalIllustrativeIssuance,0);assert.ok(x.flows[0].gap>0);
+ assert.equal(x.license.top.baseLicenseCents,29500);assert.equal(x.license.low.baseLicenseCents,10000);assert.equal(x.license.rows.length,320);
+ assert.ok(x.clubLiquidityStress.every(y=>y.day28Negative===0&&y.adverseYearEndNegative===0));
+});

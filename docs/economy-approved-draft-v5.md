@@ -87,3 +87,6 @@ Latest owner scenario preference: 10% EUR-paid youth activations (33 EUR / 299 A
 
 
 Latest owner objective: clubs reinvest all seasonal income on average, recurring commercial EUR revenue from approximately 10% youth purchases. This is a target, not enforced spending. [Reinvestment analysis](economy-club-reinvestment.md) quantifies remaining agent-side ARC gap even if all residual club spending credits reserve. No automatic fees or revised runtime rates.
+
+
+[Stationary career recycling candidate](economy-career-recycling-v1.md): 6.6M Rewards, 75% payroll (D1 71%, D2 86%), top/low reference EUR295/100, 332 annual activations (299 ARC/33 EUR), all-human, staff inside surplus. Full cohort lifetime value normalized to total payroll; at ARC100% of rounded value gap 406396 ARC even with full club reserve spending. Approx 108.94% ARC quote is an unapproved sensitivity, not a required charge. Proposed reserve 6.6M plus club genesis candidate 2.6632M; earlier license helper's 2.4M field is legacy reference only. All new values research-only; no runtime changes, fee, demand claim, or merge.

@@ -16,7 +16,7 @@ export function makeCalibration(clubs,selection,c,rewards,salary){
  const rankAwards={};
  for(const t of [1,2]){const r=rewards.competitionRewards("IT-"+t),pts=rewards.largestRemainder(r.points,rankIds.map((id,i)=>({id,weight:70-3*i})),rankIds).allocations;rankAwards[t]=r.awards.map((a,i)=>r.participationReference+pts[i].amount+a);if(sum(rankAwards[t])!==r.pool)fail("domestic pool mismatch");}
  const cupMean=[0,...[1,2].map(t=>{const r=rewards.competitionRewards("int-"+t);return r.pool/r.capacity;})];
- const wage=(tier,amount)=>c.squadSize*Math.max(salary.divisionFloors[tier],salary.salaryScale*salary.salaryMultiplier**((c.suitability-60)/10)*(1+c.versatility)*Math.sqrt(amount/salary.rewardBenchmark))*(1+c.aiShare*(c.aiWageMultiplier-1));
+ const wage=(tier,amount)=>c.payrollShares?amount*c.payrollShares[tier]:c.squadSize*Math.max(salary.divisionFloors[tier],salary.salaryScale*salary.salaryMultiplier**((c.suitability-60)/10)*(1+c.versatility)*Math.sqrt(amount/salary.rewardBenchmark))*(1+c.aiShare*(c.aiWageMultiplier-1));
  const cost=(tier,amount)=>c.costFactor*(wage(tier,amount)+c.staffArc[tier])+(c.replacementAnnualArc?.[tier]??0);
  const quote=(surplus)=>Math.max(c.minimumCents,Math.round(c.multiple*Math.max(0,surplus)*100/c.arcPerEur/c.roundingCents)*c.roundingCents);
  // Joint state: D1 without cup, D1 Sovereign, D1 Federation, D2, inactive.
