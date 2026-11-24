@@ -5,6 +5,8 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {openLocalDatabase} from '../tools/operator-local.mts';
 import {prepareSeason} from '../src/commands.ts';
+import {resetWorld} from '../src/reset-world-command.ts';
+import {captureRetainedOpeningEvidence,verifyRetainedOpeningEvidence} from '../src/opening-world-retained.ts';
 import {readWorld} from '../src/world-repository.ts';
 import * as snapshots from '../src/catalogue-snapshot.ts';
 import {syntheticApproval} from './fixtures/synthetic-approval.ts';
@@ -18,18 +20,39 @@ test('committed prepare and idempotency outcome survive local D1 close and reope
   await handle.db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)').bind('fixture-player',session.actor.id,now).run();
   await handle.db.prepare('INSERT INTO player_sessions(token_digest,account_id,credential_version,csrf_digest,created_at,last_seen_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(session.digest,'fixture-player',1,session.csrfDigest,now,now,now+1000).run();
   await handle.db.batch(['admin.access','admin.world.read','admin.world.write'].map(permission=>handle.db.prepare('INSERT INTO account_permissions(account_id,permission,granted_at) VALUES(?,?,?)').bind('fixture-player',permission,now)));
+  const youth=await previewPlayerGeneration(handle.db,session,{options:{count:1,seed:'retained-reset-fixture',age:18,primaryNationality:'ITA',primaryPosition:'ST'}},now);
+  await commitPlayerGeneration(handle.db,session,{draftId:youth.draftId,confirmation:'GENERATE PLAYERS'},now);
   const world=await readWorld(handle.db),command={expectedGeneration:world.generation,expectedRevision:0};
   const result=await prepareSeason(handle.db,session,command,'synthetic-persistence-01',await syntheticApproval(snapshots),now);
   await handle.close();handle=await openLocalDatabase(state);
   assert.deepEqual(await readWorld(handle.db),result.world);
   assert.deepEqual(await prepareSeason(handle.db,session,command,'synthetic-persistence-01',await syntheticApproval(snapshots),now),result);
   assert.equal((await handle.db.prepare('SELECT COUNT(*) AS n FROM admin_operations').first<{n:number}>())!.n,1);
+  const evidence=await captureRetainedOpeningEvidence(handle.db);
+  assert.equal(evidence.players.length,1);
+  assert.equal(evidence.players[0].originalGeneration,world.generation);
+  assert.deepEqual(await captureRetainedOpeningEvidence(handle.db),evidence);
+  await assert.rejects(verifyRetainedOpeningEvidence(handle.db,evidence,'not-reset'),/fresh reset world/);
+  const reset=await resetWorld(handle.db,session,{expectedGeneration:result.world.generation,expectedRevision:result.world.revision,confirmation:'RESET SEASON 0'},'retained-reset-fixture',now);
+  await handle.close();handle=await openLocalDatabase(state);
+  await assert.rejects(verifyRetainedOpeningEvidence(handle.db,{...evidence,idHighWater:evidence.idHighWater+1},reset.operationId),/digest/);
+  await assert.rejects(verifyRetainedOpeningEvidence(handle.db,evidence,'not-reset'),/audit mismatch/);
+  const preserved=await verifyRetainedOpeningEvidence(handle.db,evidence,reset.operationId);
+  assert.equal(preserved.preservedPlayers,1);
+  assert.equal(preserved.eligibleForAutomaticReuse,false);
+  assert.equal(preserved.worldGeneration,reset.world.generation);
+  const after=await readOpeningObservation(handle.db);
+  assert.deepEqual(after.rows,[{id:evidence.players[0].id,fingerprint:evidence.players[0].fingerprint}]);
+  assert.equal(after.rawRows[0].world_generation,evidence.players[0].originalGeneration);
+  // Existing strict automatic-reuse policy must remain closed until reviewed integration.
+  assert.equal((await readLocalOpeningInventory(handle.db)).players[0].readyForReuse,false);
  }finally{await handle.close();await rm(state,{recursive:true,force:true})}
 });
 
 import {openLocalOpeningRehearsal,buildLocalOpeningManifest} from '../tools/opening-world-local.mts';
 import {previewPlayerGeneration,commitPlayerGeneration} from '../src/players-generation-command.ts';
 import {readOpeningObservation} from '../src/opening-world-store.ts';
+import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
 
 test('opening world local plan and receipts survive close/reopen without rematching existing youth', {timeout:180000},async()=>{
  const state=await mkdtemp(join(tmpdir(),'fa-opening-persist-')),now=Math.floor(Date.now()/1000);
