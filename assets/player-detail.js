@@ -153,7 +153,7 @@
   if(Object.hasOwn(groups,context.returnGroup))hash.set('group',context.returnGroup);
   if(numeric(context.returnPage)&&Number(context.returnPage)<=1000)hash.set('page',context.returnPage);
   if(context.returnScroll&&/^(0|[1-9][0-9]{0,5})$/.test(context.returnScroll))hash.set('scroll',context.returnScroll);
-  if(context.returnSort&&['name','nationality','positions','age','height','foot',...attrKeys].includes(context.returnSort)){
+  if(context.returnSort&&['name','nationality','positions','age','height','foot','market_value_arc',...attrKeys].includes(context.returnSort)){
    hash.set('sort',context.returnSort);
    if(['asc','desc'].includes(context.returnOrder))hash.set('order',context.returnOrder);
   }
@@ -509,7 +509,7 @@
   if(!p||(p.preview_id!==undefined&&p.preview_id!=='trial-'+String(context.index).padStart(4,'0')))throw Error('expired');
   previewCommitted=draft.status==='committed';
   // Explicit public/detail projection. Never retain internal options or metadata.
-  const permitted=['first_name','last_name','display_name','nationality','secondary_nationality','age','height_cm','preferred_foot','primary_position','secondary_positions','career_status'];
+  const permitted=['first_name','last_name','display_name','nationality','secondary_nationality','age','height_cm','preferred_foot','primary_position','secondary_positions','career_status','market_value_arc'];
   const projected=Object.fromEntries(permitted.filter(k=>Object.hasOwn(p,k)).map(k=>[k,p[k]]));
   projected.attributes=Object.fromEntries(attrKeys.filter(k=>Number.isSafeInteger(p.attributes?.[k])).map(k=>[k,p.attributes[k]]));
   return projected;

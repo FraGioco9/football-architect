@@ -72,7 +72,7 @@ jobs:
               lanes='["core","responsive","webkit"'
               if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
                 test -n "$BASE"
-                changed="$(git diff --name-only "$BASE"...HEAD)"
+                changed="$(git diff --no-renames --name-only "$BASE"...HEAD)"
                 if grep -Fxq 'assets/app.css' <<< "$changed"; then
                   lanes="$lanes,\"css\""
                   echo 'css=true' >> "$GITHUB_OUTPUT"
@@ -200,7 +200,7 @@ jobs:
             if [ "${{ github.event_name }}" = "pull_request" ]; then
               BASE="${{ github.event.pull_request.base.sha }}"
               test "$BASE" != ""
-              if git diff --name-only "$BASE"...HEAD -- "assets/app.css" | grep -q .; then
+              if [ "$LANE" = css ] || git diff --no-renames --name-only "$BASE"...HEAD -- "assets/app.css" | grep -q .; then
                 PR_BASE_SHA="$BASE" node tools/ci-run.mjs 4-int24-browser-qa -- node tests/clean-ui-03-css-parity.mjs
               else
                 echo "app.css unchanged; its baseline-versus-HEAD parity audit is not applicable. FULL Chromium and WebKit remain required."
@@ -210,7 +210,7 @@ jobs:
             fi
           fi
           if [ "$LANE" = all ] || [ "$LANE" = visual ]; then
-            if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- assets/landing.css assets/app.css assets/account.css assets/clubs-directory.css assets/club-page.css assets/competition-awards.css assets/admin-settings.css | grep -q .; then
+            if [ "${{ github.event_name }}" = "pull_request" ] && { [ "$LANE" = visual ] || git diff --no-renames --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- assets/landing.css assets/app.css assets/account.css assets/clubs-directory.css assets/club-page.css assets/competition-awards.css assets/admin-settings.css | grep -q .; }; then
               PR_BASE_SHA="${{ github.event.pull_request.base.sha }}" node tools/ci-run.mjs 8-int24-browser-qa -- node tests/fe-01-visual-parity.mjs
             fi
           fi

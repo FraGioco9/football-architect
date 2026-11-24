@@ -58,7 +58,7 @@ test('#532 Admin preview retains protected draft flow and common player column o
  assert.match(preview,/<th scope="col">Player<\/th><th scope="col">Positions<\/th><th scope="col">Age<\/th>/);
  assert.equal((preview.match(/class="app-players-loading-row"/g)||[]).length,5);
  const js=read('assets/admin-players-preview.js');
- assert.match(js,/view==='overview'\?\['nationality','name','positions','age','height','foot'\]/);
+ assert.match(js,/view==='overview'\?\['nationality','name','positions','age','height','foot','market_value_arc'\]/);
  assert.match(js,/if\(view==='overview'\)\{\s*addCell\(row,positions\);\s*addCell\(row,Number\.isSafeInteger\(player\.age\)/);
  assert.match(js,/target\.searchParams\.set\('draftId',id\)/);
  assert.match(js,/authorizedPost\('\/api\/admin\/players\/draft',\{draftId:id\}\)/);

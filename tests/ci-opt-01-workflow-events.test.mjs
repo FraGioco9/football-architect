@@ -269,4 +269,9 @@ test('scope selects only relevant parity lanes and rejects an invalid base',()=>
  assert.match(select('targeted').output,/lanes=\["core"\]/);
  assert.match(select('full','push','').output,/lanes=\["core","responsive","webkit"\]/);
  assert.notEqual(select('full','pull_request','invalid').result.status,0);
+ const renameBase=git(root,'rev-parse','HEAD');
+ git(root,'mv','assets/app.css','assets/renamed.css');git(root,'commit','-qm','rename CSS');
+ assert.match(select('full','pull_request',renameBase).output,/lanes=\["core","responsive","webkit","css","visual"\]/);
+ assert.equal(browserCommands({lane:'css',css:false}).calls[0].command,'tests/clean-ui-03-css-parity.mjs');
+ assert.equal(browserCommands({lane:'visual',css:false}).calls[0].command,'tests/fe-01-visual-parity.mjs');
 }));
