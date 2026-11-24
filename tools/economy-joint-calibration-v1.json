@@ -1,0 +1,60 @@
+{
+  "version": "economy-joint-calibration-v1",
+  "rewardScales": [
+    0.5,
+    0.75,
+    1,
+    1.25,
+    1.5,
+    2
+  ],
+  "wageScales": [
+    1,
+    1.5,
+    2,
+    2.5,
+    3,
+    4,
+    5,
+    6
+  ],
+  "youngSkills": [
+    47,
+    54,
+    61,
+    68,
+    75
+  ],
+  "youngWeights": [
+    0.06,
+    0.24,
+    0.4,
+    0.24,
+    0.06
+  ],
+  "entryAges": [
+    16,
+    17,
+    18,
+    19
+  ],
+  "youngVersatility": 0.05,
+  "annualRetirements": 332,
+  "eurOrders": 83,
+  "arcPercent": 100,
+  "eurPercent": 90,
+  "referenceHumanShare": 0.5,
+  "referenceInitialReserveArc": 2400000,
+  "staffReserveFraction": 1,
+  "clubRecruitmentArc": {
+    "1": 1296,
+    "2": 972
+  },
+  "targetTopEur": 300,
+  "targetLowEur": 100,
+  "licenseToleranceEur": 15,
+  "annualActivationCostCents": 50,
+  "paymentVariableBps": 300,
+  "paymentFixedCents": 25,
+  "seasons": 32
+}

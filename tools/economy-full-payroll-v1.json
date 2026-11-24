@@ -1,0 +1,66 @@
+{
+  "version": "economy-full-payroll-v1",
+  "rewardScale": 2.75,
+  "payrollShares": {
+    "1": 1,
+    "2": 1
+  },
+  "forecastHorizon": 32,
+  "annualRetirements": 332,
+  "eurOrders": 33,
+  "entryAges": [
+    16,
+    17,
+    18,
+    19
+  ],
+  "skills": [
+    47,
+    54,
+    61,
+    68,
+    75
+  ],
+  "weights": [
+    0.06,
+    0.24,
+    0.4,
+    0.24,
+    0.06
+  ],
+  "versatility": 0.05,
+  "clubRecruitmentArc": {
+    "1": 0,
+    "2": 0
+  },
+  "arcPriceBps": [
+    10000
+  ],
+  "eurPriceBps": 9000,
+  "activationCostCents": 50,
+  "paymentVariableBps": 300,
+  "paymentFixedCents": 25,
+  "clubSpendFractions": [
+    0,
+    0.75,
+    1
+  ],
+  "seasons": 32,
+  "marketValuePremiumBps": 11000,
+  "licenseTopEur": 300,
+  "licenseLowEur": 100,
+  "licenseMinimumEur": 10,
+  "licenseRoundingEur": 5,
+  "referenceEurOrders": [
+    0,
+    17,
+    33,
+    50,
+    66
+  ],
+  "reserveBufferSeasons": [
+    1,
+    2
+  ],
+  "feeBps": 500
+}

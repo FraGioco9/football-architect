@@ -1,3 +1,4 @@
+import {assertArchivedCalibration} from '../tools/economy-archive-compare.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -12,6 +13,7 @@ test('all canonical competitions, no fabricated competition',()=>{
   assert.equal(reward.capacity,d.capacity);
   assert.equal(reward.pool,reward.participation+reward.points+reward.placement);
   assert.equal(reward.status,'draft-reference');
+  assert.equal(reward.version,'draft-5');
   assert.equal(reward.shares.reduce((a,b)=>a+b),100);
   assert.equal(competitionRewards(d.id.toLowerCase()).id,d.id);
   for(const key of ['earned','paid','credited','payable'])assert.equal(Object.hasOwn(reward,key),false);
@@ -20,8 +22,8 @@ test('all canonical competitions, no fabricated competition',()=>{
  assert.equal(competitionRewards(null),null);
 });
 test('approved totals and participation references',()=>{
- assert.deepEqual(rewardTotals(),{pool:60000000,participation:33840000,points:9360000,placement:16800000});
- for(const [id,pool,reference] of [['IT-1',4000000,150000],['IT-2',2000000,75000],['int-1',8000000,140000],['int-2',4000000,70000]]){
+ assert.deepEqual(rewardTotals(),{pool:2400000,participation:1353600,points:374400,placement:672000});
+ for(const [id,pool,reference] of [['IT-1',160000,6000],['IT-2',80000,3000],['int-1',320000,5600],['int-2',160000,2800]]){
   const row=competitionRewards(id);
   assert.equal(row.pool,pool);
   assert.equal(row.participationReference,reference);
@@ -51,13 +53,13 @@ test('reference tables and timing conserve each component',()=>{
   assert.equal(pointsReference(r,[]).status,'pending-incomplete');
   assert.equal(p.installment*2,p.floor);
   assert.equal(p.higherCount,0);
-  assert.equal(p.installment%2500,0);
-  assert.ok(schedule.every(x=>x.amount%2500===0));
+  assert.equal(p.installment%100,0);
+  assert.ok(schedule.every(x=>x.amount%100===0));
   if(!r.international)assert.ok(schedule.every((x,i)=>i===0||x.amount<schedule[i-1].amount));
  }
  assert.deepEqual(CREDIT_MILESTONES.participation,[28,56]);
- assert.equal(placementReference(competitionRewards('int-1'))[0].amount,900000);
- assert.equal(placementReference(competitionRewards('int-2'))[1].amount,250000);
+ assert.equal(placementReference(competitionRewards('int-1'))[0].amount,36000);
+ assert.equal(placementReference(competitionRewards('int-2'))[1].amount,10000);
 });
 
 test('public rewards exposes only pool and season club table; admin retains schedule',async()=>{
@@ -124,11 +126,11 @@ test('current and historical season reward estimates use season-specific clubs a
  const context={selectedSeason:1,definition:{id:'IT-1'},seasonData:{season:1,seasonState:{phase:'closed',day:56},provenance:{kind:'authoritative'},participants,statistics:{standings:participants.map((club,i)=>({club,played:30,pts:60-i}))}}};
  const model=seasonRewardReference('IT-1',context);
  assert.equal(model.rows.length,16);assert.equal(model.pending,false);
- assert.equal(model.rows.reduce((n,r)=>n+r.amount,0),4000000);
+ assert.equal(model.rows.reduce((n,r)=>n+r.amount,0),160000);
  assert.ok(model.rows.every(r=>Number.isSafeInteger(r.amount)));
  assert.equal(model.rows[0].id,'IT-1');
  context.seasonData.seasonState={phase:'active',day:28};
- assert.ok(seasonRewardReference('IT-1',context).rows.every(r=>r.amount===75000));
+ assert.ok(seasonRewardReference('IT-1',context).rows.every(r=>r.amount===3000));
  context.seasonData.seasonState.day=27;
  assert.ok(seasonRewardReference('IT-1',context).rows.every(r=>r.amount===0));
  context.seasonData.seasonState.day=56;context.seasonData.statistics.standings[0].played=29;
@@ -181,7 +183,7 @@ test('two configured payment dates conserve all pools without settlement claims'
   assert.equal(second.points,r.points);assert.equal(second.placement,r.placement);
   assert.equal(first.total+second.total,r.pool);
  }
- assert.deepEqual(plannedRewardInstallments(rewardTotals()).map(x=>x.total),[16920000,43080000]);
+ assert.deepEqual(plannedRewardInstallments(rewardTotals()).map(x=>x.total),[676800,1723200]);
 });
 
 test('season read lifecycle is shared with Rewards and independent of world readiness',()=>{
@@ -215,8 +217,228 @@ test('international participation reference is integer, deterministic and conser
  const participants=Array.from({length:24},(_,i)=>({countryId:'IT',clubId:i+1,primaryName:'Club '+(i+1)}));
  const context={selectedSeason:2,definition:{id:'int-1'},seasonData:{season:2,seasonState:{phase:'active',day:28},provenance:{kind:'authoritative'},participants}};
  const a=seasonRewardReference('int-1',context);
- assert.equal(a.rows.reduce((sum,r)=>sum+r.amount,0),1680000);
- assert.ok(a.rows.every(r=>r.amount===70000));
+ assert.equal(a.rows.reduce((sum,r)=>sum+r.amount,0),67200);
+ assert.ok(a.rows.every(r=>r.amount===2800));
  context.seasonData.participants=[...participants].reverse();
  assert.deepEqual(seasonRewardReference('int-1',context),a);
+});
+
+// Club license calibration is research only; the canonical reward schedule is shared.
+test('club license DRAFT reference covers all clubs and preserves genesis separation',async()=>{
+ const {buildCalibration}=await import('../tools/run-club-license-calibration.mjs');
+ const {makeCalibration}=await import('../tools/club-license-calibration.mjs');
+ const rewards=await import('../assets/competition-rewards.mjs');
+ const {MARKET_VALUE_CONFIG}=await import('../backend/src/player-market-value.mjs');
+ const read=path=>JSON.parse(readFileSync(new URL('../'+path,import.meta.url),'utf8'));
+ const c=read('tools/club-license-calibration-v1.json'),clubs=read('data/clubs.json'),selection=read('backend/catalogues/season-1.participants.json');
+ const result=buildCalibration();
+ assert.deepEqual(result,read('docs/club-license-calibration-v1-results.json'));
+ assert.equal(result.rows.length,320);assert.equal(new Set(result.rows.map(r=>r.clubKey)).size,320);
+ assert.ok(Math.abs(result.totals.expectedRewardsArc-rewardTotals().pool)<4);
+ assert.ok(result.rows.every(r=>r.genesisArc>0&&r.baseLicenseCents>=c.minimumCents&&r.initialDay28GapArc===0));
+ assert.deepEqual(makeCalibration([...clubs].reverse(),selection,c,rewards,MARKET_VALUE_CONFIG),result);
+ const key='IT-1',old=result.rows.find(r=>r.clubKey===key),changed=makeCalibration(clubs,selection,{...c,clubOverrides:{[key]:{genesisArc:9999}}},rewards,MARKET_VALUE_CONFIG).rows.find(r=>r.clubKey===key);
+ assert.equal(changed.genesisArc,9999);assert.equal(changed.baseLicenseCents,old.baseLicenseCents);
+ assert.throws(()=>makeCalibration(clubs,selection,{...c,clubOverrides:{'XX-1':{genesisArc:1}}},rewards,MARKET_VALUE_CONFIG));
+ assert.throws(()=>makeCalibration(clubs,selection,{...c,clubOverrides:{[key]:{genesisArc:0}}},rewards,MARKET_VALUE_CONFIG));
+ assert.ok(result.rows.filter(r=>r.initialTier===0).every(r=>r.baseLicenseCents===c.minimumCents&&r.expectedSurplusArc===0));
+});
+
+test('offline finance stress deterministic shortfall and conservation',async()=>{
+ const {runStress}=await import('../tools/club-finance-stress.mjs');
+ const {buildCalibration}=await import('../tools/run-club-license-calibration.mjs');
+ const rewards=await import('../assets/competition-rewards.mjs');
+ const {MARKET_VALUE_CONFIG}=await import('../backend/src/player-market-value.mjs');
+ const config=JSON.parse(readFileSync(new URL('../tools/club-finance-stress-v1.json',import.meta.url),'utf8'));
+ const ref=buildCalibration(),scenario=config.scenarios[0];
+ const short={...config,seasons:2};const a=runStress(ref,rewards,MARKET_VALUE_CONFIG,short,scenario,769);
+ assert.equal(a.completed,2);assert.deepEqual(a,runStress(ref,rewards,MARKET_VALUE_CONFIG,short,scenario,769));
+ for(const s of a.series)assert.equal(s.wagePaid,s.humanPaid+s.aiPaid);
+ assert.equal(a.closingClubArc+a.closingReserveArc+a.closingWalletArc,a.openingArc+a.totalIssuedArc+a.capitalIssuedArc);
+ const blocked=runStress(ref,rewards,MARKET_VALUE_CONFIG,{...short,initialReserveArc:0},{...scenario,annualCapArc:0},769);
+ assert.equal(blocked.completed,0);assert.equal(blocked.stopped.season,1);assert.equal(blocked.totalIssuedArc,0);
+ const historical=JSON.parse(readFileSync(new URL('../docs/club-finance-stress-v1-results.json',import.meta.url),'utf8'));
+ assert.deepEqual(historical.runs.find(r=>r.scenario===scenario.name&&r.seed===769).series.slice(0,2),a.series);
+});
+
+test('retirement-aware club license references and supply sensitivity',async()=>{
+ const {buildRenewal}=await import('../tools/run-club-license-renewal.mjs');
+ const result=buildRenewal();
+ assert.deepEqual(result,JSON.parse(readFileSync(new URL('../docs/club-license-renewal-v2-results.json',import.meta.url),'utf8')));
+ assert.equal(result.selected.rows.length,320);assert.equal(result.retirement.annualCandidates,768);
+ assert.equal(result.selected.topReference.baseLicenseCents,29500);assert.equal(result.selected.lowReference.baseLicenseCents,10000);
+ assert.ok(result.retirement.annualWorld>300&&result.retirement.annualWorld<350);
+ assert.ok(result.retirement.scenarios.find(s=>s.activations===206).endingShortfallAgainstSlots>0);
+ assert.ok(result.retirement.scenarios.find(s=>s.activations===497).endingShortfallAgainstSlots===0);
+ assert.ok(result.feeSensitivity[0].topBaseCents>result.selected.topReference.baseLicenseCents);
+});
+
+test('academy dual quote is independently rounded and preserves same denomination',async()=>{
+ const {quoteYouth,unitEconomics}=await import('../tools/academy-dual-pricing.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/academy-dual-pricing-v1.json',import.meta.url),'utf8'));
+ assert.deepEqual(quoteYouth(1000,100,85),{arc:1000,eurCents:850});assert.deepEqual(quoteYouth(101,100,85),{arc:101,eurCents:86});
+ assert.throws(()=>quoteYouth(-1,100,85));assert.throws(()=>quoteYouth(1000,101,85));
+ const unit=unitEconomics(c,quoteYouth),snapshot=JSON.parse(readFileSync(new URL('../docs/academy-dual-pricing-v1-results.json',import.meta.url),'utf8'));
+ assert.deepEqual(unit,snapshot.unitEconomics);assert.ok(unit.every(x=>x.mix.every(m=>m.arcOrders+m.eurOrders===m.activations)));
+});
+
+test('retirement-matched academy recycling counts each currency once',async()=>{
+ const {buildRenewalRecycling}=await import('../tools/run-academy-renewal-recycling.mjs');
+ const x=buildRenewalRecycling();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/academy-renewal-recycling-v2-results.json',import.meta.url),'utf8')));
+ assert.ok(x.mix.every(m=>m.arcOrders+m.eurOrders===x.annualRetirements));
+ const mix=x.mix.find(m=>m.eurOrders===83);assert.equal(mix.arcReceipts,387195);assert.equal(mix.requiredAverageArcPriceForAcademyOnly,9639);
+ assert.equal(mix.reserveScenarios[0].uncoveredRewardsArc,2012805);
+ assert.ok(mix.contributionBeforeFixedCostsCents[0].contributionCents>mix.contributionBeforeFixedCostsCents[3].contributionCents);
+});
+
+test('joint economy grid reconciles reserve and aggregate stocks',async()=>{
+ const {buildJointCalibration}=await import('../tools/run-economy-joint-calibration.mjs');
+ const x=buildJointCalibration();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v1-results.json',import.meta.url),'utf8')));
+ assert.equal(x.grid.length,48);assert.equal(x.baseline.topLicenseEur,295);assert.equal(x.baseline.lowLicenseEur,100);
+ assert.ok(x.baseline.unfundedYouthArcDemand>0);assert.ok(x.baseline.requiredAdditionalReserveReceiptsArc>0);
+ assert.ok(x.aggregateCashFlow[0].totalIssuedArc>0);assert.equal(x.aggregateCashFlow[1].totalIssuedArc,0);
+});
+
+test('optional staff remains within club surplus and is not a reserve receipt',async()=>{
+ const {buildJointCalibration}=await import('../tools/run-economy-joint-calibration-v2.mjs');
+ const x=buildJointCalibration(),prior=JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v1-results.json',import.meta.url),'utf8')).baseline;
+ assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v2-results.json',import.meta.url),'utf8')));
+ assert.ok(Math.abs(x.baseline.clubSurplusBeforeDiscretionaryArc-prior.clubSurplusBeforeDiscretionaryArc-prior.staffBudgetArc)<=1);
+ assert.ok(Math.abs(x.baseline.estimatedPayrollArc-prior.estimatedPayrollArc)<=1);
+ assert.ok(Math.abs(x.baseline.baseReserveReceiptsArc-prior.baseReserveReceiptsArc+prior.assumedStaffReserveArc)<=1);
+ assert.ok(x.grid.every(y=>y.staffBudgetArc===0&&y.assumedStaffReserveArc===0));
+});
+
+test('higher wage human-only candidate funds renewal in aggregate and reconciles conditional closure',async()=>{
+ const {buildJointCalibration}=await import('../tools/run-economy-joint-calibration-v3.mjs');
+ const x=buildJointCalibration();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v3-results.json',import.meta.url),'utf8')));
+ assert.equal(x.grid.grid.length,49);assert.equal(x.grid.baseline.aiSalaryReserveArc,0);assert.equal(x.grid.baseline.unfundedYouthArcDemand,0);
+ assert.equal(x.closure.at(-1).gap,0);assert.equal(x.closure.at(-1).totalIssuedArc,0);assert.ok(x.closure[0].gap>0);
+ assert.ok(x.humanShareSensitivity.find(y=>y.humanShare===0.5).unfundedYouthArcDemand>0);
+});
+
+test('10 percent EUR renewal reference preserves club internal transfer distinction',async()=>{
+ const {buildJointCalibration}=await import('../tools/run-economy-joint-calibration-v4.mjs');
+ const x=buildJointCalibration();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v4-results.json',import.meta.url),'utf8')));
+ const b=x.grid.baseline;assert.equal(b.fundedYouthArcReceipts,1340836);assert.equal(b.unfundedYouthArcDemand,0);
+ assert.equal(b.worldClubCashGrowthBeforeDiscretionaryArc,b.clubSurplusBeforeDiscretionaryArc+b.internalRecruitmentBudgetArc);
+ assert.equal(b.requiredAdditionalReserveReceiptsArc,1779164);assert.equal(x.closure.at(-1).gap,0);assert.ok(x.closure[0].gap>0);
+});
+
+test('full club reinvestment alone does not close the agent ARC balance',async()=>{
+ const {reinvestmentTarget}=await import('../tools/economy-club-reinvestment.mjs');
+ const b=JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v4-results.json',import.meta.url),'utf8')).grid.baseline;
+ const x=reinvestmentTarget(b,332,33);
+ assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-club-reinvestment-results.json',import.meta.url),'utf8')));
+ assert.equal(x.current.additionalAgentReceiptsRequiredArc,166135);assert.equal(x.current.reserveIfOnlyClubAndYouthSpendArc,2953865);
+ assert.ok(x.payrollShareSensitivities.every(y=>y.additionalAgentReceiptsRequiredArc>0));
+});
+
+test('stationary career model reconciles payroll and shows EUR buyer effect on ARC recycling',async()=>{
+ const {buildCareerRecycling}=await import('../tools/run-economy-career-recycling.mjs');
+ const x=buildCareerRecycling();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-career-recycling-v1-results.json',import.meta.url),'utf8')));
+ assert.equal(x.pool,6600000);assert.equal(x.payroll,4950000);assert.equal(x.arcOrders+x.eurOrders,x.retirements);
+ assert.ok(Math.abs(x.meanRaw*x.retirements-x.payroll)<1e-5);
+ assert.equal(x.pricing[0].agentResidual,406396);assert.ok(x.pricing.find(y=>y.bps===11000).unfundedArcDemand>0);
+ assert.equal(x.flows.at(-1).totalIllustrativeIssuance,0);assert.ok(x.flows[0].gap>0);
+ assert.equal(x.license.top.baseLicenseCents,29500);assert.equal(x.license.low.baseLicenseCents,10000);assert.equal(x.license.rows.length,320);
+ assert.ok(x.clubLiquidityStress.every(y=>y.day28Negative===0&&y.adverseYearEndNegative===0));
+});
+
+test('no staff or undefined services can replenish the reserve',async()=>{
+ const {buildNoStaff}=await import('../tools/run-economy-no-staff.mjs');
+ const x=buildNoStaff();assertArchivedCalibration(x,JSON.parse(readFileSync(new URL('../docs/economy-no-staff-v1-results.json',import.meta.url),'utf8')));
+ const old=x.cases[0],clean=x.cases[1],all=x.cases[3];assert.equal(old.scenarios[0].gap,2056396);assert.equal(clean.scenarios[0].gap,1660855);
+ assert.ok(x.cases.every(c=>c.scenarios.every(s=>s.actualClubReserveReceipts===0&&s.gap===s.clubGrowth+s.walletGrowth&&s.fundedArcCeiling<=c.payroll)));
+ assert.equal(all.maxGap,0);assert.equal(all.license.top.baseLicenseCents,1000);assert.equal(all.license.low.baseLicenseCents,1000);
+});
+
+test('full payroll candidate raises raw value once and prices licenses independently of zero surplus',async()=>{
+ const {buildFullPayrollResearch}=await import('../tools/run-economy-full-payroll.mjs');
+ const x=buildFullPayrollResearch();assertArchivedCalibration(x,JSON.parse(readFileSync(new URL('../docs/economy-full-payroll-v1-results.json',import.meta.url),'utf8')));
+ assert.equal(x.pool,x.payroll);assert.equal(x.clubCash,0);assert.ok(Math.abs(x.newRawMean/x.oldRawMean-1.1)<1e-8);
+ assert.equal(x.license.topBaseEur,300);assert.equal(x.license.lowBaseEur,100);assert.equal(x.license.rows.length,320);
+ assert.equal(x.reference.desiredArcReceipts,6685790);assert.equal(x.reference.unfundedArcDemand,85790);
+ assert.equal(x.reference.fundedArcCeiling,6600000);assert.ok(x.scenarios.find(s=>s.eurOrders===50).reserveGapArc>0);
+});
+
+test('owner-selected ARC99 and nominal scale options preserve full payroll and EUR license anchors',async()=>{
+ const {buildScaleResearch}=await import('../tools/run-economy-scale-options.mjs');
+ const x=buildScaleResearch();assertArchivedCalibration(x,JSON.parse(readFileSync(new URL('../docs/economy-scale-options-v1-results.json',import.meta.url),'utf8')));
+ assert.equal(x.youthArcPriceBps,9900);assert.equal(x.youthEurPriceBps,9000);assert.equal(x.cases.length,5);
+ assert.ok(x.cases.every(c=>c.poolArc===c.payrollArc&&c.licenseTopEur===300&&c.licenseLowEur===100));
+ assert.equal(x.cases[1].meanPlayerValueArc,8180.5);assert.equal(x.cases[1].unfundedArcDemand,21510);
+});
+
+test('flexible EUR purchase mix has no fixed quota and conserves illustrative aggregate ARC stocks',async()=>{
+ const {flexibleMix}=await import('../tools/economy-flexible-eur-mix.mjs');
+ const source=JSON.parse(readFileSync(new URL('../docs/economy-scale-options-v1-results.json',import.meta.url),'utf8'));
+ const x=flexibleMix(source);assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-flexible-eur-mix-v1-results.json',import.meta.url),'utf8')));
+ const c=x.cases.find(c=>c.poolArc===2400000);assert.ok(c.breakEvenEurShare>0.10&&c.breakEvenEurShare<0.11);
+ assert.equal(c.neighbors[0].deltaArc,5312);assert.equal(c.neighbors[1].deltaArc,-2786);
+ assert.ok(x.cases.every(c=>c.illustrativePath.path.every(s=>s.reserveArc+s.walletArc===c.illustrativePath.initialReserveArc&&s.walletArc>=0&&s.arcOrders+s.eurOrders===332)));
+});
+
+test('individual economy smoke detects the first reserve shortfall without treating diagnostics as authorized issuance',async()=>{
+ const {buildIndividualStress}=await import('../tools/run-economy-individual-100.mjs');
+ const config=JSON.parse(readFileSync(new URL('../tools/economy-individual-100-v1.json',import.meta.url),'utf8'));
+ const snapshot=JSON.parse(readFileSync(new URL('../docs/economy-individual-100-v1-summary.json',import.meta.url),'utf8'));
+ const x=buildIndividualStress({seasons:3,seeds:[config.seeds[0]],scenarios:[config.scenarios[0]]}).runs[0];
+ assert.equal(snapshot.length,12);assert.ok(snapshot.every(r=>r.firstShortfall.season===2&&r.diagnosticInjectionArc>0));
+ assert.deepEqual(x.firstShortfall,snapshot[0].firstShortfall);assert.equal(x.completedDiagnosticSeasons,3);
+ assert.ok(x.series.every(s=>s.activated===s.arcBuys+s.eurBuys&&s.wagePaid===s.humanPaid+s.aiPaid));
+});
+
+test('mixed launch reserve prefixes stop before unfunded awards and contract guard remains distinct',async()=>{
+ const {buildMixedStress}=await import('../tools/run-economy-mixed-launch.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/economy-mixed-launch-v1.json',import.meta.url),'utf8'));
+ const saved=JSON.parse(readFileSync(new URL('../docs/economy-mixed-launch-v1-summary.json',import.meta.url),'utf8'));
+ assert.equal(saved.length,18);assert.ok(saved.filter(r=>r.contractPolicy==='guarded').every(r=>r.finalArrearsArc===0));
+ const x=buildMixedStress({seasons:3,seeds:[c.seeds[0]],scenarios:[c.scenarios[0]]});
+ assert.equal(x.runs.length,2);for(const r of x.runs){assert.equal(r.initialAgeHistogram[33],0);assert.equal(Object.values(r.initialAgeHistogram).reduce((a,b)=>a+b,0),6400);assert.equal(r.reserves[0].completedSeasons,1);assert.equal(r.reserves[0].firstUnfundedSeason,2);assert.equal(r.reserves.at(-1).completedSeasons,3);}
+});
+
+test('opening affordability and mandate distribution are research-only and preserve no-issuance reserve prefixes',async()=>{
+ const {buildOpeningStress}=await import('../tools/run-economy-opening-affordability.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/economy-opening-affordability-v1.json',import.meta.url),'utf8'));
+ const saved=JSON.parse(readFileSync(new URL('../docs/economy-opening-affordability-v1-summary.json',import.meta.url),'utf8'));
+ assert.equal(saved.length,15);assert.ok(saved.every(r=>r.firstSeasonArrears===0&&r.peakArrearsArc===0&&r.finalArrearsArc===0));
+ const x=buildOpeningStress({seasons:3,seeds:[c.seeds[0]],calibrationSeeds:[c.calibrationSeeds[0]],scenarios:[c.scenarios[0]]});
+ assert.equal(x.runs.length,3);assert.ok(x.runs.every(r=>r.openingWagesAfter<=r.openingWagesBefore&&r.firstSeasonUnpaid28===0&&r.firstSeasonArrears===0&&r.reserveChecks.at(-1).completed===3));
+ assert.ok(x.runs[1].openingMandateIncomeSpread.max-x.runs[1].openingMandateIncomeSpread.min<x.runs[0].openingMandateIncomeSpread.max-x.runs[0].openingMandateIncomeSpread.min);
+});
+
+test('paid opening mandates start AI and zero wallets; no double sales or simulated free grants',async()=>{
+ const {buildPaidMandateStress}=await import('../tools/run-economy-paid-mandate-launch.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/economy-paid-mandate-launch-v1.json',import.meta.url),'utf8'));
+ const dual=JSON.parse(readFileSync(new URL('../docs/economy-paid-mandate-launch-v1-dual-summary.json',import.meta.url),'utf8'));
+ const alt=JSON.parse(readFileSync(new URL('../docs/economy-paid-mandate-launch-v1-alternatives-summary.json',import.meta.url),'utf8'));
+ assert.equal(dual.length,9);assert.equal(alt.length,6);assert.ok([...dual,...alt].every(r=>r.primaryArcBuys+r.primaryEurBuys+r.primaryRetiredUnsold+r.primaryUnsold===6400&&r.peakArrearsArc===0));
+ const x=buildPaidMandateStress({seasons:3,seeds:[c.seeds[0]],scenarios:[c.scenarios[0]],primaryPolicies:[c.primaryPolicies[0]]}).runs[0];
+ assert.equal(x.openingMandateIncomeSpread.mean,0);assert.equal(x.firstSeason.primaryArcBuys,0);assert.ok(x.firstSeason.primaryEurBuys>0&&x.firstSeason.aiPaid>0);assert.deepEqual(x.firstSeason,dual[0].firstSeason);assert.equal(x.primaryArcBuys+x.primaryEurBuys+x.primaryRetiredUnsold+x.primaryUnsold,6400);
+});
+
+test('agent circulation tracks individual paid mandate tenures and reconciles phase reserve flows',async()=>{
+ const {buildCirculationStress}=await import('../tools/run-economy-agent-circulation.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/economy-agent-circulation-v1.json',import.meta.url),'utf8'));
+ const ref=JSON.parse(readFileSync(new URL('../docs/economy-agent-circulation-v1-reference-summary.json',import.meta.url),'utf8'));
+ const alt=JSON.parse(readFileSync(new URL('../docs/economy-agent-circulation-v1-alternatives-summary.json',import.meta.url),'utf8'));
+ assert.equal(ref.length,3);assert.equal(alt.length,9);assert.ok(ref.every(r=>r.groups.find(g=>g.kind==='youth'&&g.currency==='ARC').recoveryRatio<1));assert.ok(alt.filter(r=>r.variant==='return-sensitive').every(r=>r.reserveChecks.at(-1).completed<100));
+ const x=buildCirculationStress({seasons:3,seeds:[c.seeds[0]],variants:[c.variants[0]]}).runs[0];assert.equal(x.openingMandateIncomeSpread.mean,0);assert.equal(x.agentTotals.salary+x.agentTotals.resale-x.agentTotals.arcSpend,x.finalWalletArc);assert.equal(x.phases[0].walletChange,x.finalWalletArc);assert.equal(x.peakArrearsArc,0);
+});
+
+test('competitive strategies distinguish sporting management, closed returns and reserve acceptance',async()=>{
+ const {buildCompetitiveStress}=await import('../tools/run-economy-competitive-strategies.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/economy-competitive-strategies-v1.json',import.meta.url),'utf8'));
+ const basic=JSON.parse(readFileSync(new URL('../docs/economy-competitive-strategies-v1-summary.json',import.meta.url),'utf8'));
+ const selective=JSON.parse(readFileSync(new URL('../docs/economy-competitive-strategies-v1-disciplined-summary.json',import.meta.url),'utf8'));
+ assert.equal(basic.length,6);assert.equal(selective.length,3);assert.ok(basic.filter(r=>r.variant==='mixed-strategies').every(r=>r.clubGroups[2].d1Share>r.clubGroups[0].d1Share&&r.finalPopulation===6400));assert.ok(selective.every(r=>r.agentGroups[2].medianClosedArcNet>0&&r.finalPopulation<6400&&r.reserveChecks.at(-1).completed<100));
+ const x=buildCompetitiveStress({seasons:3,strategyObservationStart:1,seeds:[c.seeds[0]],variants:[c.variants[1]]}).runs[0];assert.equal(x.agents.length,256);assert.equal(x.clubs.length,256);assert.equal(x.agents.reduce((a,v)=>a+v.wallet,0),x.finalWalletArc);assert.ok(x.clubs.every(v=>v.net===v.operatingNet+v.transferNet));assert.equal(x.peakArrearsArc,0);
+});
+
+test('archive comparator preserves exact accounting while tolerating only known float representation differences',()=>{
+ assert.doesNotThrow(()=>assertArchivedCalibration({license:{exponent:1.546607318762685},expectedSurplusArc:-0},{license:{exponent:1.5466073187626854},expectedSurplusArc:0}));
+ assert.throws(()=>assertArchivedCalibration({license:{exponent:1.5466},expectedSurplusArc:0},{license:{exponent:1.5467},expectedSurplusArc:0}));
+ assert.throws(()=>assertArchivedCalibration({amountArc:100},{amountArc:101}));
+ assert.throws(()=>assertArchivedCalibration({other:1.000000000000001},{other:1}));
 });
