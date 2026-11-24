@@ -670,9 +670,11 @@ try{
    const form=page.locator('[data-contract-draft]');
    await form.waitFor({state:'visible'});
    await form.locator('.language-trigger').first().waitFor();
-   const geometry=()=>page.evaluate(()=>['[data-contract-draft]','.admin-contract-draft-fields','.admin-contract-draft-terms','[data-contract-draft-message]','.admin-contracts-table thead'].map(sel=>{const b=document.querySelector(sel).getBoundingClientRect();return [b.x,b.y,b.width,b.height]}));
+   const geometry=()=>page.evaluate(()=>{const base=document.querySelector('#app-admin').getBoundingClientRect();return ['[data-contract-draft]','.admin-contract-draft-fields','.admin-contract-draft-terms','[data-contract-draft-message]','.admin-contracts-table thead'].map(sel=>{const b=document.querySelector(sel).getBoundingClientRect();return [b.x-base.x,b.y-base.y,b.width,b.height]})});
    const same=(a,b)=>a.forEach((rect,i)=>rect.forEach((v,j)=>assert.ok(Math.abs(v-b[i][j])<1,'geometry drift '+i+':'+j+' '+v+' vs '+b[i][j])));
    const first=await geometry();
+   assert.equal(await page.locator('.admin-contracts-skeleton').first().locator('td').nth(0).evaluate(e=>getComputedStyle(e,'::after').content),'none');
+   assert.ok(await page.locator('.admin-contracts-skeleton').first().locator('td').nth(1).evaluate(e=>parseFloat(getComputedStyle(e,'::after').width)>0));
    assert.equal(await form.getAttribute('data-draft-state'),'loading');
    assert.equal(await form.locator('.language-trigger').first().isDisabled(),true);
    releasePermissions();await page.locator('#app-admin[data-admin-access="granted"]').waitFor();
@@ -705,6 +707,11 @@ try{
    assert.equal(await form.locator('[data-contract-draft-sign]').isDisabled(),true);
    assert.match(await form.locator('[data-contract-draft-message]').innerText(),/Signing unavailable/);
    assert.equal(await form.locator('[data-contract-draft-salary]').innerText(),'—');
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   await page.setViewportSize({width:1280,height:900});
+   const desktop=await geometry();
+   await form.locator('[data-contract-draft-duration]').evaluate(el=>{el.value='1';el.dispatchEvent(new Event('change',{bubbles:true}))});
+   same(desktop,await geometry());
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    assert.equal(previews,1);assert.deepEqual(errors,[]);checks++;
   }finally{releasePermissions();releaseList();releasePreview();await context.close()}

@@ -253,7 +253,7 @@ html[data-theme="light"] .app-admin-view .admin-contracts-table thead th{backgro
 .app-admin-view .admin-contract-draft{box-sizing:border-box;margin-bottom:var(--app-page-section-gap)}
 .app-admin-view .admin-contract-draft+.admin-contracts-message+.admin-contracts-list-heading{margin-top:0}
 .app-admin-view .admin-contract-draft[hidden]+.admin-contracts-message+.admin-contracts-list-heading{margin-top:8px}
-.app-admin-view .admin-contract-draft-fields>.admin-licenses-field:first-child{grid-column:auto}
+.app-admin-view .admin-contract-draft .admin-contract-draft-fields>.admin-licenses-field:first-child{grid-column:auto}
 .app-admin-view .admin-contract-draft-fields output{box-sizing:border-box;display:flex;align-items:center;width:100%;min-width:0;height:var(--fa-control-height-regular);padding:8px 12px;border:1px solid var(--border);border-radius:var(--fa-radius-control);color:var(--text);font-size:14px;font-weight:400;font-variant-numeric:tabular-nums}
 .app-admin-view .admin-contract-draft-terms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 16px;min-width:0}
 .app-admin-view .admin-contract-draft-terms>.admin-licenses-field{display:grid;gap:6px;min-width:0;font-size:13px}
@@ -288,3 +288,7 @@ html[data-theme="light"] .app-admin-view .admin-contracts-table thead th{backgro
 .app-admin-view .admin-contracts-skeleton td:nth-child(5){--contract-cell-skeleton:1ch}
 .app-admin-view .admin-contracts-skeleton td:nth-child(8){--contract-cell-skeleton:10ch}
 @media(max-width:720px){.app-admin-view .admin-contracts-skeleton td:nth-child(2){--contract-cell-skeleton:10ch}.app-admin-view .admin-contracts-skeleton td:nth-child(3){--contract-cell-skeleton:11ch}}
+
+/* Before the shared dropdown mounts, keep the native disabled field and its value slot identical. */
+.app-admin-view .admin-contract-draft[data-draft-state="loading"] .admin-licenses-field:has(> :is([data-contract-draft-player],[data-contract-draft-club]):not([hidden])){position:relative}
+.app-admin-view .admin-contract-draft[data-draft-state="loading"] .admin-licenses-field:has(> :is([data-contract-draft-player],[data-contract-draft-club]):not([hidden]))::after{content:"";position:absolute;inset-inline-start:12px;bottom:calc((var(--fa-control-height-regular) - 10px)/2);height:10px;width:min(14ch,65%);border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface));pointer-events:none}
