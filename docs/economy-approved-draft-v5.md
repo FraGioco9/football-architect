@@ -107,3 +107,8 @@ Latest owner correction: EUR purchase share is flexible, not a fixed 10% paramet
 
 
 [Individual 100-season stress](economy-individual-100-v1.md): 12 synthetic individual runs using canonical club memberships, 2.4M candidate Rewards and voluntary currency choice. **All fail reserve funding in season 2**; later seasons require tracked hypothetical injections, not authorized mint. Significant wage arrears and wallet accumulation. Aggregate equilibrium is not validated; no runtime parameter adoption or merge. Next focus on contract affordability, initial circulation and actual demand/valuation calibration.
+
+
+## Latest owner decision — mixed-age launch only
+
+The launch population will use a mixed-age distribution only. Use the previously proposed mixed 16–32 age range as the next research reference, not an approved exact age histogram or a change to the canonical player generator. Exclude teenage-only and stationary mature launch alternatives from future launch comparison. Youth entrants remain 16–19; existing retirement hazards and subsequent ageing are unchanged. The mature stationary opening population in individual stress v1 is historical diagnostic evidence, not the launch scenario. Next research: mixed opening ages, variable reserve buffers, fixed contract affordability, voluntary currency choice and no new ARC issuance in acceptance runs; track the first unfunded season separately from hypothetical diagnostic continuations. No runtime, database, deployment or merge changes.
