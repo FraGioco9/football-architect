@@ -1,7 +1,7 @@
 // Explicit offline check; not yet registered in shared CI (PR #790 owns a concurrent edit).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest} from './planner.mjs';
+import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION} from './planner.mjs';
 
 function requireThat(ok,msg){if(!ok)throw new Error(msg)}
 
@@ -31,3 +31,42 @@ test('testReplay',testReplay);
 test('testQuotas',testQuotas);
 test('testInvalid',testInvalid);
 test('SHA-256 manifest digest',()=>{const f=fixture(),p=planOpeningPopulation(f);assert.match(manifestDigest(p),/^[0-9a-f]{64}$/);assert.equal(manifestDigest(p),manifestDigest(planOpeningPopulation(f)));assert.notEqual(manifestDigest(p),manifestDigest(planOpeningPopulation({...f,seed:'different'}))) });
+
+function referenceFixture(){
+ const f=fixture();
+ return {seed:f.seed,versions:{...f.versions,policy:REFERENCE_PROFILE_VERSION},clubs:f.clubs,foreignWeights:f.foreignWeights};
+}
+
+function testApprovedReference(){
+ const p=approvedReferenceProfile();
+ eq(p.ageCounts.map(x=>x.count),[98,212,278,327,327,327,327,327,327,327,327,327,327,326,326,326,326,320,304,267,201,110,33,3]);
+ eq(p.agePolicies.map(x=>[x.minAge,x.maxAge,x.d1Mean,x.d2Mean,x.sigma,...x.termWeights]),[
+ [16,19,61,61,7,15,35,50],[20,23,65,61,7,20,40,40],[24,28,67,63,7,25,45,30],
+ [29,32,68,64,7,50,35,15],[33,35,68,64,7,70,25,5],[36,39,68,64,7,90,10,0]]);
+ // Independent exact quota assertions (not calculated using planner apportionment).
+ const f=referenceFixture(),m=planApprovedReference(f),s=m.slots;
+ eq(s.length,6400);eq(new Set(s.map(x=>x.generatorSeed)).size,6400);
+ for(const a of p.ageCounts)eq(s.filter(x=>x.age===a.age).length,a.count);
+ eq(s.filter(x=>x.age>32).length,1238);
+ eq(s.filter(x=>x.division===1).length,3200);
+ eq(s.filter(x=>x.division===2).length,3200);
+ const termCounts=band=>[1,2,3].map(t=>band.filter(x=>x.intendedTermSeasons===t).length);
+ eq(termCounts(s.filter(x=>x.age>=33&&x.age<=35)),[624,223,44]);
+ eq(termCounts(s.filter(x=>x.age>=36)),[312,35,0]);
+ eq(termCounts(s),[2396,2293,1711]);
+ const home=new Map(f.clubs.map(c=>[c.key,c.nationality]));
+ eq(s.filter(x=>x.primaryNationality===home.get(x.clubKey)).length,4160);
+ for(const c of f.clubs){
+  const members=s.filter(x=>x.clubKey===c.key);
+  eq(members.length,c.active?25:0);
+  if(c.active)for(const [role,n] of Object.entries(p.roster))eq(members.filter(x=>x.primaryPosition===role).length,n);
+ }
+ eq(m,planApprovedReference({...f,clubs:[...f.clubs].reverse()}));
+ throws(()=>planApprovedReference({...f,foreignWeights:undefined}));
+ throws(()=>planApprovedReference({...f,versions:{...f.versions,policy:"wrong"}}));
+ throws(()=>planApprovedReference({...f,clubs:f.clubs.slice(1)}));
+ // Caller mutation cannot change the next profile.
+ p.agePolicies[0].termWeights[0]=999;
+ eq(approvedReferenceProfile().agePolicies[0].termWeights,[15,35,50]);
+}
+test('approved 6,400-slot demographic reference',testApprovedReference);
