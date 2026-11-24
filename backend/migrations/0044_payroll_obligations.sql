@@ -63,6 +63,7 @@ BEGIN
  SELECT CASE WHEN EXISTS(SELECT 1 FROM payroll_runs r WHERE r.id=NEW.id OR
  (r.generation=NEW.generation AND r.club_key=NEW.club_key AND
  (r.season*56+r.day>=NEW.season*56+NEW.day OR NOT EXISTS(SELECT 1 FROM payroll_run_completions x WHERE x.run_id=r.id))))
+ OR EXISTS(SELECT 1 FROM payroll_allocation_paid a JOIN payroll_runs r ON r.id=a.run_id WHERE r.generation=NEW.generation AND r.club_key=NEW.club_key AND a.reversed<>0)
  OR NOT EXISTS(SELECT 1 FROM world_state w WHERE w.id=1 AND w.generation=NEW.generation
  AND w.season_number=NEW.season AND w.day=NEW.day AND w.revision=NEW.world_revision AND w.phase='active')
  THEN RAISE(ABORT,'invalid payroll run') END;
@@ -122,6 +123,7 @@ BEGIN
  AND t.purpose=CASE WHEN c.mandate_id IS NULL THEN 'PAYROLL_AI' ELSE 'PAYROLL_HUMAN' END
  AND credit.amount_arc>0 AND debit.amount_arc=-credit.amount_arc
  AND p.reversed=0 AND p.paid_arc+credit.amount_arc<=a.planned_arc
+ AND EXISTS(SELECT 1 FROM world_state w WHERE w.id=1 AND w.generation=r.generation AND w.season_number=r.season AND w.day=r.day AND w.revision=r.world_revision AND w.phase='active')
  AND NOT EXISTS(SELECT 1 FROM economic_transactions v WHERE v.reversal_of=t.id)
  AND NOT EXISTS(SELECT 1 FROM payroll_run_completions x WHERE x.run_id=r.id))
  THEN RAISE(ABORT,'invalid payroll receipt') END;
@@ -130,7 +132,11 @@ CREATE TRIGGER payroll_completion_insert_guard BEFORE INSERT ON payroll_run_comp
 BEGIN
  SELECT CASE WHEN EXISTS(SELECT 1 FROM payroll_run_completions WHERE run_id=NEW.run_id)
  OR NOT EXISTS(SELECT 1 FROM payroll_run_seals WHERE run_id=NEW.run_id)
+ OR NOT EXISTS(SELECT 1 FROM payroll_runs r JOIN world_state w ON w.id=1 AND w.generation=r.generation AND w.season_number=r.season AND w.day=r.day AND w.revision=r.world_revision AND w.phase='active' WHERE r.id=NEW.run_id)
  OR EXISTS(SELECT 1 FROM payroll_allocation_paid p WHERE p.run_id=NEW.run_id AND (p.paid_arc<>p.planned_arc OR p.reversed<>0))
+ OR EXISTS(SELECT 1 FROM payroll_runs r JOIN economic_transactions t ON t.generation=r.generation AND t.season=r.season AND t.day=r.day
+ JOIN economic_entries e ON e.transaction_id=t.id AND e.account_id='club:'||r.club_key AND e.amount_arc<0
+ WHERE r.id=NEW.run_id AND t.purpose IN ('PAYROLL_AI','PAYROLL_HUMAN') AND NOT EXISTS(SELECT 1 FROM payroll_payment_receipts p WHERE p.transaction_id=t.id))
  THEN RAISE(ABORT,'incomplete payroll receipts') END;
 END;
 CREATE TRIGGER payroll_runs_no_update BEFORE UPDATE ON payroll_runs BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
