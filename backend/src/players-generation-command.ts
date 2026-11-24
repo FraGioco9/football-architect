@@ -11,6 +11,7 @@ import {COUNTRIES,ATTRIBUTES,generateTrialWithCatalog,summarize} from './players
 import {loadRuntimePlayerCatalog} from './players-catalog.mjs';
 import {buildFamilyV42PortraitSnapshotForPlayer} from './player-portrait-family-v42.mjs';
 import {resolveCatalogueNameOrigins} from './player-portrait-name-origins.mjs';
+import {calculatePlayerMarketValueArc,type MarketValueInput} from './player-market-value.mjs';
 import {marketValueIndexVersion,marketValueIndexUpdate,marketValueIndexWrite} from './player-market-value-index.ts';
 
 const nationalityCodes=new Set(COUNTRIES.map((c:{code:string})=>c.code));
@@ -95,7 +96,7 @@ export async function previewPlayerGeneration(db:Database,session:AdminSession,i
   ]);
  }catch{throw new ApiError(503,'players_preview_unavailable');}
  return {draftId:batchId,worldGeneration:world.generation,seasonNumber:world.seasonNumber,
-  expiresAt,summary:summarize(trial),candidates:candidates.map((p,i)=>({...p,preview_id:trial.candidates[i].preview_id}))};
+  expiresAt,summary:summarize(trial),candidates:candidates.map((p,i)=>({...p,market_value_arc:calculatePlayerMarketValueArc(p as MarketValueInput),preview_id:trial.candidates[i].preview_id}))};
 }
 
 /** Reload a server-owned preview for its original Admin actor. No public access or permanent IDs. */
@@ -112,7 +113,7 @@ export async function readPlayerGenerationDraft(db:Database,session:AdminSession
  const stored=JSON.parse(draft.candidates_json) as Data[];
  if(!Array.isArray(stored)||stored.length!==draft.count)throw new ApiError(503,'players_preview_unavailable');
  // Snapshot intentionally omits ephemeral ids. Reconstruct them for authorized reads.
- const candidates:Data[]=stored.map((player,index)=>({...player,preview_id:'trial-'+String(index+1).padStart(4,'0')}));
+ const candidates:Data[]=stored.map((player,index)=>({...player,market_value_arc:calculatePlayerMarketValueArc(player as unknown as MarketValueInput),preview_id:'trial-'+String(index+1).padStart(4,'0')}));
  const countries:Record<string,number>={};
  for(const item of candidates){const code=String(item.nationality??'');countries[code]=(countries[code]??0)+1;}
  return {draftId:draft.id,worldGeneration:draft.world_generation,seasonNumber:draft.season_number,

@@ -73,7 +73,7 @@ test('shared validation rejects altered rules, format, capacity, phases and part
 
 test('one view catalogue drives all generated detail documents and their first paint',()=>{
  const model=getModel();
- assert.deepEqual(model.views.map(v=>v.id),['standings','postseason','fixtures','stats','history','rules','awards']);
+ assert.deepEqual(model.views.map(v=>v.id),['standings','postseason','fixtures','stats','history','rules','awards','rewards']);
  for(const d of manifest().divisions){
   const html=read('competitions/'+d.id.toLowerCase()+'/index.html');
   assert.ok(html.indexOf('/assets/competition-model.js')<html.indexOf('/assets/competition-page.js'));

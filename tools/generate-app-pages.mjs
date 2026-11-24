@@ -1,3 +1,4 @@
+import {augmentRewardsShell,stripRewardsAssets} from './render-rewards-shell.mjs';
 import {loadSeasonOnePreview} from './load-season-one-preview.mjs';
 import {bootstrapCompetitionTabs} from './competition-tab-preboot.mjs';
 import {renderAdminSettings,renderAdminPlayers,renderAdminPlayersPreview} from './render-admin-settings.mjs';
@@ -243,6 +244,13 @@ const writeOutput=(path,content)=>{
   // Admin routes have a neutral first paint: never select Dashboard.
   // The sidebar bootstrap is injected only by renderSidebar; patch it afterwards.
   if(path.startsWith('admin/')&&path.endsWith('.html'))content=content.replace("path==='/admin'?'admin'","path.startsWith('/admin')?'admin'");
+ // Derived pages inherit the Competitions shell, but never its Rewards assets.
+ content=stripRewardsAssets(content);
+ content=augmentRewardsShell(path,content,competitionManifest.competitions,encode);
+ writeFinal(path,content);
+ if(path==='admin/contracts/index.html')writeFinal('admin/rewards/index.html',augmentRewardsShell('admin/rewards/index.html',content,competitionManifest.competitions,encode));
+};
+const writeFinal=(path,content)=>{
  const file=new URL("../"+path,import.meta.url);
  if(check){
   const current=readFileSync(file,"utf8");
@@ -260,6 +268,8 @@ const writeOutput=(path,content)=>{
   writeFileSync(file,content,"utf8");
  }
 };
+// Compatibility snapshot retains its own structure; add the shared Rewards extension.
+writeFinal('competitions/_shared/index.html',augmentRewardsShell('competitions/_shared/index.html',neutralShell,competitionManifest.competitions,encode));
 for(const page of outputPages){
  let html=page.directContent;
  if(!html){
@@ -311,7 +321,7 @@ for(const [route,title,content,scripts] of [
  ['admin/players','Admin Players',renderAdminPlayers(),['/assets/admin-permissions-cache.js','/assets/admin-players.js']],
  ['admin/contracts','Admin Contracts',renderAdminContracts(),['/assets/admin-permissions-cache.js','/assets/players-nationality-tooltip.js','/assets/admin-contracts.js']],
  ['admin/licenses','Admin Club Licenses',renderAdminLicenses(),['/assets/admin-permissions-cache.js','/assets/admin-licenses.js']],
- ['admin/players/preview','Admin — Players Preview',renderAdminPlayersPreview(),['/assets/players-nationality-tooltip.js','/assets/admin-permissions-cache.js','/assets/admin-players-preview.js']]
+ ['admin/players/preview','Admin — Players Preview',renderAdminPlayersPreview(),['/assets/players-nationality-tooltip.js','/assets/admin-permissions-cache.js','/assets/market-value-format.js','/assets/admin-players-preview.js']]
 ]){
  const section='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title"'+(route==='admin/contracts'?' data-admin-access="pending"':' hidden')+'>\n          '+(route==='admin/players/preview'?'':route==='admin'?'<h1 id="admin-title" class="app-page-title">Admin</h1>':'<div class="admin-page-heading"><h1 id="admin-title" class="app-page-title">'+(route.endsWith('calendar')?'Calendar':route.endsWith('contracts')?'Contracts':route.endsWith('licenses')?'Club Licenses':'Players')+'</h1>\n          <a class="app-link app-link-secondary admin-back" href="'+(route==='admin/players/preview'?'/admin/players':'/admin')+'" data-admin-back aria-label="'+(route==='admin/players/preview'?'Back to Player generation':'Back to Admin')+'"><svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Admin</span></a></div>')+'\n          '+content+'\n        </section>\n';
  let html=template.replace(/(id="main-content" tabindex="-1">\n)[\s\S]*?(      <\/main>)/,(_,first,last)=>first+section+last);
