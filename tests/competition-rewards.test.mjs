@@ -368,3 +368,12 @@ test('owner-selected ARC99 and nominal scale options preserve full payroll and E
  assert.ok(x.cases.every(c=>c.poolArc===c.payrollArc&&c.licenseTopEur===300&&c.licenseLowEur===100));
  assert.equal(x.cases[1].meanPlayerValueArc,8180.5);assert.equal(x.cases[1].unfundedArcDemand,21510);
 });
+
+test('flexible EUR purchase mix has no fixed quota and conserves illustrative aggregate ARC stocks',async()=>{
+ const {flexibleMix}=await import('../tools/economy-flexible-eur-mix.mjs');
+ const source=JSON.parse(readFileSync(new URL('../docs/economy-scale-options-v1-results.json',import.meta.url),'utf8'));
+ const x=flexibleMix(source);assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-flexible-eur-mix-v1-results.json',import.meta.url),'utf8')));
+ const c=x.cases.find(c=>c.poolArc===2400000);assert.ok(c.breakEvenEurShare>0.10&&c.breakEvenEurShare<0.11);
+ assert.equal(c.neighbors[0].deltaArc,5312);assert.equal(c.neighbors[1].deltaArc,-2786);
+ assert.ok(x.cases.every(c=>c.illustrativePath.path.every(s=>s.reserveArc+s.walletArc===c.illustrativePath.initialReserveArc&&s.walletArc>=0&&s.arcOrders+s.eurOrders===332)));
+});

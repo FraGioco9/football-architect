@@ -101,3 +101,6 @@ All seasonal Rewards targeted to gross fixed player salaries in aggregate; no st
 
 
 Latest owner-selected DRAFT: youth ARC quote 99% of new displayed market value (supersedes 98.7% suggestion and earlier 100% working quote), EUR90% unchanged. [Nominal scale comparison](economy-scale-options-v1.md) compares 1.2M/2.4M/3.6M/4.8M/6.6M full-payroll Rewards, preserving 100 ARC/EUR, EUR300/100 license anchors and +10% raw market valuation. No new reward scale selected yet. No runtime or payment changes.
+
+
+Latest owner correction: EUR purchase share is flexible, not a fixed 10% parameter or quota. [Flexible mix research](economy-flexible-eur-mix-v1.md) derives equilibrium per nominal scale using 99% ARC, 90% EUR and +10% raw value. At 2.4M reference, equilibrium 10.74% (~35.66 of 332), conditional only; illustrative aggregate wallet carry and reserve buffer, no forced orders or runtime changes.
