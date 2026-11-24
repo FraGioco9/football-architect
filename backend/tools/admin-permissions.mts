@@ -3,12 +3,12 @@ import {isAbsolute} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createInterface} from 'node:readline/promises';
 import {openLocalDatabase} from './operator-local.mts';
-import {accountPool,initializeAccountPool,inspectAdminPermissions,changeAdminPermissions} from './owner-permissions.mts';
+import {accountPool,initializeAccountPool,inspectAdminPermissions,changeAdminPermissions,changeEconomyRead} from './owner-permissions.mts';
 import {parseOperatorEmail} from '../src/email-identity.ts';
 
 export function parsePermissionArguments(argv:string[]){
  const [action,...flags]=argv;
- if(!['init','status','grant','revoke'].includes(action))throw Error('invalid_action');
+ if(!['init','status','grant','revoke','economy-grant','economy-revoke'].includes(action))throw Error('invalid_action');
  const values=new Map<string,string>();let apply=false,dryRun=false;
  for(let i=0;i<flags.length;i++){
   const flag=flags[i];
@@ -39,7 +39,7 @@ export async function runPermissionCommand(argv:string[],io:IO){
   }
   const status=await inspectAdminPermissions(handle.db,args.environment,args.email!);
   if(args.action==='status'||!args.apply){
-   io.output(JSON.stringify({localOnly:true,dryRun:args.action!=='status',pool:status.pool,accountId:status.accountId,verified:status.verified,status:status.status,permissions:status.permissions,legacyId:status.legacyId,legacyCandidateId:status.legacyCandidateId}));return;
+   io.output(JSON.stringify({localOnly:true,dryRun:args.action!=='status',pool:status.pool,accountId:status.accountId,verified:status.verified,status:status.status,permissions:status.permissions,economySchema:status.economySchema,economyRead:status.economyRead,economyReadGrant:status.economyReadGrant,legacyId:status.legacyId,legacyCandidateId:status.legacyCandidateId}));return;
   }
   let expectedAccountId=args.confirmation;
   if(!expectedAccountId){
@@ -48,7 +48,9 @@ export async function runPermissionCommand(argv:string[],io:IO){
    if(await io.confirm('LOCAL ONLY: type '+phrase+' to confirm: ')!==phrase)throw Error('confirmation_mismatch');
    expectedAccountId=status.accountId;
   }
-  const result=await changeAdminPermissions(handle.db,{action:args.action as 'grant'|'revoke',environment:args.environment,email:args.email!,expectedAccountId,legacyId:args.legacyId},now);
+  const result=args.action==='economy-grant'||args.action==='economy-revoke'
+   ?await changeEconomyRead(handle.db,{action:args.action==='economy-grant'?'grant':'revoke',environment:args.environment,email:args.email!,expectedAccountId},now)
+   :await changeAdminPermissions(handle.db,{action:args.action as 'grant'|'revoke',environment:args.environment,email:args.email!,expectedAccountId,legacyId:args.legacyId},now);
   io.output(JSON.stringify({localOnly:true,action:args.action,...result}));
  }finally{await handle.close()}
 }
