@@ -69,7 +69,7 @@ export async function settleClubPayrollBatch(db:Database,session:AdminSession,cl
   economicAssert(db,'SELECT 1 WHERE ('+mandatesSql.replace(' AS snapshot','')+')=?',[...ma,mandateSnapshot]),
   economicAssert(db,'SELECT 1 FROM economic_control WHERE id=1 AND posting_enabled=1 AND active_version=?',[policy])
  ];
- let run=rs.results[0] as Run|undefined;
+ let run=rs.results[0] as unknown as Run|undefined;
  if(!run){
   const currentClaims:PayrollClaim[]=[];
   for(const [id,playerId,gen,club,startTick,endTick,wage] of contracts){
@@ -122,11 +122,12 @@ export async function settleClubPayrollBatch(db:Database,session:AdminSession,cl
   const rows=p.results as unknown as ReceiptRow[];
   if(rows.length!==allocations.length||rows.some(x=>x.reversed!==0||!Number.isSafeInteger(x.paid_arc)||x.paid_arc<0||x.paid_arc>x.planned_arc||x.outstanding_arc<0))return fail('payroll_receipt_mismatch');
   const sum=(field:'planned_arc'|'paid_arc'|'outstanding_arc')=>rows.reduce((n,x)=>n+x[field],0);
-  const plannedArc=sum('planned_arc'),paidArc=sum('paid_arc'),arrearsArc=sum('outstanding_arc');
-  if(![plannedArc,paidArc,arrearsArc,paidArc+arrearsArc].every(Number.isSafeInteger))return fail('payroll_total_invalid');
+  const plannedArc=sum('planned_arc'),paidArc=sum('paid_arc'),outstandingArc=sum('outstanding_arc');
+  const arrearsArc=outstandingArc-(plannedArc-paidArc),dueArc=paidArc+outstandingArc;
+  if(arrearsArc<0||![plannedArc,paidArc,outstandingArc,arrearsArc,dueArc].every(Number.isSafeInteger))return fail('payroll_total_invalid');
   const receiptHash=await canonicalHash({runId,seal,plannedArc,paidArc,arrearsArc,receipts:t.results});
   if(completed!==undefined&&(completed!==receiptHash||plannedArc!==paidArc))return fail('payroll_completion_mismatch');
-  return {allocationSnapshot,seal,completed,rows,receiptHash,plannedArc,paidArc,arrearsArc};
+  return {allocationSnapshot,seal,completed,rows,receiptHash,plannedArc,paidArc,arrearsArc,dueArc,outstandingArc};
  };
  let state=await inspect();
  const stateGuards=()=>[
@@ -157,5 +158,5 @@ export async function settleClubPayrollBatch(db:Database,session:AdminSession,cl
   state=await inspect();
  }
  return {runId,clubKey,season,day,plannedArc:state.plannedArc,paidArc:state.paidArc,arrearsArc:state.arrearsArc,
-  dueArc:state.paidArc+state.arrearsArc,status:state.completed===undefined?'pending':'complete',receiptHash:state.completed??null};
+  dueArc:state.dueArc,outstandingArc:state.outstandingArc,status:state.completed===undefined?'pending':'complete',receiptHash:state.completed??null};
 }
