@@ -39,3 +39,50 @@
 .fa-reward-calculation dl{margin-top:8px}
 .fa-rewards .app-panel{min-width:0}
 @media(max-width:380px){.fa-reward-table th,.fa-reward-table td{padding:8px 4px;font-size:12px}.fa-reward-table th:first-child{white-space:normal}}
+
+/* Public Rewards: compact Rules sections and Standings table treatment.
+   Keep the directory and protected Admin layout independent. */
+#competition-panel-rewards>.fa-rewards{display:grid;gap:20px;margin:0;min-width:0;width:100%}
+#competition-panel-rewards .fa-rewards>.app-panel{padding:12px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent;min-width:0}
+#competition-panel-rewards .fa-rewards>.app-panel:first-child{border-top:0;padding-top:0}
+#competition-panel-rewards .app-panel h2,#competition-panel-rewards .fa-reward-schedule h3{margin:0 0 10px;font-size:16px;font-weight:750;line-height:1.4;letter-spacing:normal;color:var(--text)}
+#competition-panel-rewards .fa-reward-heading{align-items:baseline;gap:6px 12px;margin:0 0 12px}
+#competition-panel-rewards .fa-reward-heading h2{margin:0}
+#competition-panel-rewards .fa-reward-total{font-size:19px;font-weight:750;line-height:1.2;text-align:right;margin-inline-start:auto}
+#competition-panel-rewards .fa-reward-table-wrap{border:1px solid var(--line);border-radius:var(--fa-radius-control);overflow-x:auto}
+#competition-panel-rewards .fa-reward-table{width:100%;min-width:0;table-layout:fixed;border-collapse:separate;border-spacing:0;color:var(--text);font-size:12.5px;font-variant-numeric:tabular-nums}
+#competition-panel-rewards .fa-reward-table tr>*{box-sizing:border-box;padding:8px 10px;height:40px;border:0;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle;background:var(--surface)}
+#competition-panel-rewards .fa-reward-table tr>*:first-child{text-align:left;white-space:normal;overflow-wrap:anywhere}
+#competition-panel-rewards .fa-reward-table tbody th{font-weight:650}
+#competition-panel-rewards .fa-reward-table thead th{height:40px;background:#172d30;color:var(--muted);font-size:11.5px;font-weight:750;letter-spacing:.03em;white-space:normal;overflow-wrap:anywhere}
+html[data-theme="light"] #competition-panel-rewards .fa-reward-table thead th{background:#E8F1EB;color:#31594A}
+#competition-panel-rewards .fa-reward-table tbody tr:nth-child(even)>*{background:color-mix(in srgb,var(--surface) 97.5%,#64cba9 2.5%)}
+#competition-panel-rewards .fa-reward-table tbody tr:last-child>*{border-bottom:0}
+#competition-panel-rewards .fa-reward-table tr>*:last-child{width:37%;font-weight:750}
+#competition-panel-rewards .fa-reward-table thead tr>*:nth-last-child(3){width:45%}
+#competition-panel-rewards .fa-reward-schedule .fa-reward-table thead tr>*:first-child{width:22%}
+#competition-panel-rewards .fa-reward-table .fa-reward-payment-description{text-align:left;white-space:normal;overflow-wrap:anywhere}
+#competition-panel-rewards .app-panel .fa-reward-per-club{margin:10px 0 0;display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;color:var(--text);font-size:13px;line-height:1.5}
+#competition-panel-rewards .fa-reward-per-club strong{margin-inline-start:auto;text-align:right}
+#competition-panel-rewards .fa-reward-schedule{margin-top:20px}
+#competition-panel-rewards .app-panel :is(.fa-reward-footnote,.fa-reward-note),#competition-panel-rewards .fa-reward-evidence p{font-size:12px;line-height:1.5;color:var(--muted)}
+#competition-panel-rewards .app-panel :is(.fa-reward-footnote,.fa-reward-note){margin:8px 0 0}
+/* Reserve the tallest translated evidence line before and after hydration. */
+#competition-panel-rewards .fa-reward-evidence{display:grid;margin-top:4px;min-height:2.6em}
+#competition-panel-rewards .fa-reward-evidence [data-reward-state]{grid-area:1/1}
+#competition-panel-rewards .fa-reward-evidence [data-reward-state][hidden]{display:block;visibility:hidden}
+#competition-panel-rewards .fa-reward-calculation{margin:12px 0 0}
+#competition-panel-rewards .fa-reward-calculation summary{color:var(--text);font-weight:650;min-height:28px;line-height:28px}
+#competition-panel-rewards .fa-reward-calculation summary:hover{text-decoration:underline}
+#competition-panel-rewards .fa-reward-calculation summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+#competition-panel-rewards .fa-reward-calculation .fa-reward-row{align-items:baseline;font-size:13px;line-height:1.5}
+@media(max-width:520px){
+ #competition-panel-rewards>.fa-rewards{gap:16px}
+ #competition-panel-rewards .fa-reward-table tr>*{padding:7px 6px;font-size:12px}
+ #competition-panel-rewards .fa-reward-table thead th{font-size:11px}
+ #competition-panel-rewards .fa-reward-table tr>*:last-child{width:40%}
+ #competition-panel-rewards .fa-reward-table thead tr>*:nth-last-child(3){width:41%}
+ #competition-panel-rewards .fa-reward-schedule .fa-reward-table thead tr>*:first-child{width:22%}
+ #competition-panel-rewards .fa-reward-calculation .fa-reward-row{flex-direction:column;align-items:flex-start;gap:4px}
+ #competition-panel-rewards .fa-reward-calculation .fa-reward-row dd{text-align:left}
+}
