@@ -27,9 +27,9 @@ class SignedContractsMigrationTest(unittest.TestCase):
         end=(start//56+duration)*56
         self.db.execute("""INSERT INTO player_signed_contracts
          (player_id,world_generation,club_key,signed_at_ms,start_tick,duration_seasons,
-          scheduled_end_tick,annual_salary_arc,minimum_arc,reference_arc,maximum_arc,policy_version,signed_mandate_id,signing_key)
-          VALUES(?,?,'IT-1',1000,?,?,?, ?,40,100,200,'contract-draft-v1',?,?)""",
-          (player,generation,start,duration,end,wage,mandate,key))
+          scheduled_end_tick,annual_salary_arc,minimum_arc,reference_arc,maximum_arc,policy_version,signed_mandate_id,ai_demand_arc,signing_key)
+          VALUES(?,?,'IT-1',1000,?,?,?, ?,40,100,200,'contract-draft-v1',?,?,?)""",
+          (player,generation,start,duration,end,wage,mandate,125 if mandate is None else None,key))
     def mandate(self, player=1, start=0, key='acquire1'):
         return self.db.execute("""INSERT INTO player_agent_mandates
          (player_id,world_generation,account_id,start_tick,acquired_at_ms,acquisition_key)
@@ -62,6 +62,8 @@ class SignedContractsMigrationTest(unittest.TestCase):
         self.db.execute('UPDATE player_agent_mandates SET end_tick=56')
         with self.assertRaises(sqlite3.IntegrityError):
             self.mandate(start=55,key='overlap')
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT OR REPLACE INTO player_agent_mandates (id,player_id,world_generation,account_id,start_tick,acquired_at_ms,acquisition_key) VALUES(?,1,?,'agent',56,1000,'acquire1')",(m,GEN))
         new=self.mandate(start=56,key='acquire2')
         with self.assertRaises(sqlite3.IntegrityError):
             self.sign(start=55,mandate=new,key='early')

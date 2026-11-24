@@ -20,7 +20,8 @@ CREATE INDEX player_agent_mandates_account ON player_agent_mandates(account_id,p
 CREATE INDEX player_agent_mandates_history ON player_agent_mandates(player_id,start_tick);
 CREATE TRIGGER player_agent_mandates_insert_guard BEFORE INSERT ON player_agent_mandates
 BEGIN
- SELECT CASE WHEN NEW.world_generation<>(SELECT generation FROM world_state WHERE id=1)
+ SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM world_state WHERE id=1 AND generation=NEW.world_generation)
+  OR EXISTS(SELECT 1 FROM player_agent_mandates m WHERE m.id=NEW.id OR m.acquisition_key=NEW.acquisition_key)
   OR NEW.end_tick IS NOT NULL OR EXISTS(
    SELECT 1 FROM player_agent_mandates m WHERE m.player_id=NEW.player_id
     AND (m.end_tick IS NULL OR m.end_tick>NEW.start_tick))
@@ -48,18 +49,25 @@ CREATE TABLE player_signed_contracts (
  scheduled_end_tick INTEGER NOT NULL CHECK(typeof(scheduled_end_tick)='integer'
   AND scheduled_end_tick=((start_tick/56)+duration_seasons)*56 AND scheduled_end_tick>start_tick),
  annual_salary_arc INTEGER NOT NULL CHECK(typeof(annual_salary_arc)='integer' AND annual_salary_arc BETWEEN 1 AND 1000000000000),
- minimum_arc INTEGER NOT NULL CHECK(typeof(minimum_arc)='integer' AND minimum_arc IN (20,40)),
- reference_arc INTEGER NOT NULL CHECK(typeof(reference_arc)='integer' AND reference_arc BETWEEN minimum_arc AND 500000000000),
- maximum_arc INTEGER NOT NULL CHECK(typeof(maximum_arc)='integer' AND maximum_arc=2*reference_arc),
+ minimum_arc INTEGER NOT NULL CHECK(typeof(minimum_arc)='integer' AND minimum_arc BETWEEN 1 AND 1000000000000),
+ reference_arc INTEGER NOT NULL CHECK(typeof(reference_arc)='integer' AND reference_arc BETWEEN minimum_arc AND 1000000000000),
+ maximum_arc INTEGER NOT NULL CHECK(typeof(maximum_arc)='integer' AND maximum_arc BETWEEN reference_arc AND 1000000000000),
  policy_version TEXT NOT NULL CHECK(length(policy_version) BETWEEN 1 AND 100),
  signed_mandate_id INTEGER REFERENCES player_agent_mandates(id) ON DELETE RESTRICT,
+ ai_demand_arc INTEGER,
  signing_key TEXT NOT NULL UNIQUE CHECK(length(signing_key) BETWEEN 1 AND 240),
  closed_tick INTEGER CHECK(closed_tick IS NULL OR (typeof(closed_tick)='integer'
   AND closed_tick BETWEEN start_tick AND scheduled_end_tick)),
  close_reason TEXT CHECK(close_reason IN ('expiry','release','transfer','retirement')),
  CHECK(typeof(player_id)='integer' AND player_id>0),
  CHECK(annual_salary_arc BETWEEN minimum_arc AND maximum_arc),
- CHECK(signed_mandate_id IS NOT NULL OR annual_salary_arc=(5*reference_arc+3)/4),
+ CHECK((signed_mandate_id IS NULL AND ai_demand_arc IS NOT NULL
+  AND typeof(ai_demand_arc)='integer' AND ai_demand_arc=annual_salary_arc)
+  OR (signed_mandate_id IS NOT NULL AND ai_demand_arc IS NULL)),
+ -- Version 1 enforces approved DRAFT ratios; future reviewed versions can snapshot new bounds.
+ CHECK(policy_version<>'contract-draft-v1' OR (minimum_arc IN (20,40)
+  AND maximum_arc=2*reference_arc
+  AND (ai_demand_arc IS NULL OR ai_demand_arc=(5*reference_arc+3)/4))),
  CHECK((closed_tick IS NULL)=(close_reason IS NULL)),
  CHECK(close_reason IS NULL OR close_reason<>'expiry' OR closed_tick=scheduled_end_tick)
 );
@@ -71,7 +79,8 @@ CREATE INDEX player_signed_contracts_club ON player_signed_contracts(club_key,pl
 CREATE INDEX player_signed_contracts_history ON player_signed_contracts(player_id,signed_at_ms DESC,id DESC);
 CREATE TRIGGER player_signed_contracts_insert_guard BEFORE INSERT ON player_signed_contracts
 BEGIN
- SELECT CASE WHEN NEW.world_generation<>(SELECT generation FROM world_state WHERE id=1)
+ SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM world_state WHERE id=1 AND generation=NEW.world_generation)
+  OR EXISTS(SELECT 1 FROM player_signed_contracts c WHERE c.id=NEW.id OR c.signing_key=NEW.signing_key)
   OR NEW.closed_tick IS NOT NULL OR EXISTS(
    SELECT 1 FROM player_signed_contracts c WHERE c.player_id=NEW.player_id
     AND (c.closed_tick IS NULL OR c.closed_tick>NEW.start_tick))
@@ -91,6 +100,7 @@ BEGIN
   OR NEW.annual_salary_arc IS NOT OLD.annual_salary_arc OR NEW.minimum_arc IS NOT OLD.minimum_arc
   OR NEW.reference_arc IS NOT OLD.reference_arc OR NEW.maximum_arc IS NOT OLD.maximum_arc
   OR NEW.policy_version IS NOT OLD.policy_version OR NEW.signed_mandate_id IS NOT OLD.signed_mandate_id
+  OR NEW.ai_demand_arc IS NOT OLD.ai_demand_arc
   OR NEW.signing_key IS NOT OLD.signing_key OR OLD.closed_tick IS NOT NULL OR NEW.closed_tick IS NULL
   THEN RAISE(ABORT,'immutable contract history') END;
 END;
