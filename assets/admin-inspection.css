@@ -62,8 +62,7 @@
 @media(max-width:620px){.inspection-panel :is(.inspection-status,[data-inspection-list-status],[data-inspection-policy],[data-inspection-reconciliation],[data-inspection-copy="protected"]){min-block-size:4.2em;block-size:4.2em;max-block-size:4.2em}}
 
 /* World status and access feedback occupy the same fixed summary slot. */
-.inspection-panel .inspection-summary-label{flex:1;min-width:0;display:grid;align-items:center;block-size:2.8em;line-height:1.4}
-.inspection-panel .inspection-summary-label :is([data-inspection-world],.inspection-status){grid-area:1/1;min-width:0;min-block-size:0;block-size:auto;max-block-size:none;line-height:1.4;overflow:visible;overflow-wrap:anywhere;margin:0}
+.inspection-panel .inspection-summary-label{flex:1;min-width:0;display:flex;align-items:center;block-size:2.8em;line-height:1.4;overflow-wrap:anywhere;margin:0}
 @media(max-width:620px){.inspection-panel .inspection-summary-label{block-size:4.2em}}
 /* Reset has exactly four categories, so use a plain responsive table, not a scroll viewport. */
 .inspection-preview-table{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:13px}

@@ -10,13 +10,15 @@ translate();if(!root){
  // Directory visibility is painted atomically by the shared Admin controller.
  new MutationObserver(translate).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});return
 }
-const el=q=>root.querySelector(q),all=q=>Array.from(root.querySelectorAll(q)),content=el('[data-inspection-content]'),status=el('[data-inspection-status]'),mode=root.dataset.adminInspection;
+const el=q=>root.querySelector(q),all=q=>Array.from(root.querySelectorAll(q)),content=el('[data-inspection-content]'),status=el('[data-inspection-summary]'),mode=root.dataset.adminInspection;
 let token=0,allowed=false,busy=false,summary=null,reconciliation=null,preview=null,statusKey='checking';
 const pages={clubs:{data:null,history:[]},ledger:{data:null,history:[]}};
-const setStatus=k=>{statusKey=k;status.textContent=k?text(k):'';status.removeAttribute('data-inspection-copy');status.hidden=!k;el('[data-inspection-world]').hidden=!!k};
+let displayedWorld=null;
+const paintSummary=()=>{status.dataset.inspectionState=statusKey||'world';status.textContent=statusKey?text(statusKey):displayedWorld?text('season')+' '+displayedWorld.seasonNumber+' · '+text('day')+' '+displayedWorld.day:'—';status.removeAttribute('data-inspection-copy')};
+const setStatus=k=>{statusKey=k;paintSummary()};
 const number=v=>v===null||v===undefined?'—':new Intl.NumberFormat(doc.documentElement.lang||'en').format(BigInt(v));
 const money=v=>v===null||v===undefined?'—':number(v)+' ARC';
-const world=w=>{el('[data-inspection-world]').textContent=w?text('season')+' '+w.seasonNumber+' · '+text('day')+' '+w.day:'—'};
+const world=w=>{displayedWorld=w;paintSummary()};
 const setValue=(key,value)=>all('[data-inspection-value="'+key+'"]').forEach(n=>{n.textContent=value;n.title=value});
 const request=async(path,options={})=>{const res=await fetch(path,{credentials:'same-origin',cache:'no-store',...options});if(!res.ok){const e=Error('request');e.status=res.status;throw e}return res.json()};
 const showAccess=(base,pageAccess)=>{host.dataset.adminAccess=pageAccess?'granted':'denied';host.hidden=!pageAccess;window.faAdminAccess=base;window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:base}))};

@@ -1125,8 +1125,11 @@ try{
    const resetTable=page.locator('table.inspection-preview-table');
    const checkResetTable=async()=>{assert.equal(await resetTable.locator('tbody tr').count(),4);assert.ok(await resetTable.evaluate(n=>n.scrollWidth<=n.clientWidth+1&&n.scrollHeight<=n.clientHeight+1&&!n.closest('.app-players-table-scroll')),'All reset table rows fit without a scroll container')};
    await checkResetTable();
-   assert.equal(await page.locator('.inspection-summary-label [data-inspection-world]').isVisible(),true);
-   assert.equal(await page.locator('.inspection-summary-label [data-inspection-status]').isVisible(),false);
+   const summary=page.locator('[data-inspection-summary]');
+   assert.equal(await summary.count(),1,'Access and world status share a single live region');
+   assert.equal(await summary.isVisible(),true);
+   assert.equal(await summary.getAttribute('data-inspection-state'),'world',await summary.textContent());
+   assert.equal(await summary.textContent(),'Season 0 · Day 0');
    const resetEmpty=await resetGeometry();
    await scopes.first().check();await page.locator('[data-inspection-preview]').click();await inspectionReady('reset').waitFor({state:'visible'});
    assert.equal(previewCalls,1);assert.equal(await page.locator('[data-inspection-copy="confirm"]').isEnabled(),false);
@@ -1138,7 +1141,7 @@ try{
    await page.locator('[data-inspection-blockers-dialog]').waitFor({state:'hidden'});
    assert.deepEqual(await resetGeometry(),resetEmpty,'Preview blockers must not resize the Reset panel');
    previewFails=true;await page.locator('[data-inspection-preview]').click();await inspectionReady('reset').waitFor({state:'visible'});
-   assert.equal(previewCalls,2);assert.notEqual(await page.locator('[data-inspection-status]').textContent(),'');assert.equal(await page.locator('.inspection-summary-label [data-inspection-status]').isVisible(),true);assert.equal(await page.locator('[data-inspection-world]').isVisible(),false);
+   assert.equal(previewCalls,2);assert.equal(await summary.getAttribute('data-inspection-state'),'failed');assert.equal(await summary.textContent(),'Unable to load data.');assert.equal(await summary.isVisible(),true);
    assert.deepEqual(await resetGeometry(),resetEmpty,'Preview error must not resize the Reset panel');
    write=false;await page.locator('[data-inspection-refresh]').click();await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
    assert.equal(await page.locator('#app-admin').isVisible(),false);assert.deepEqual(errors,[]);checks++;
