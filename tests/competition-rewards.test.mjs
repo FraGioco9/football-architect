@@ -20,12 +20,12 @@ test('all canonical competitions, no fabricated competition',()=>{
  assert.equal(competitionRewards(null),null);
 });
 test('approved totals and participation references',()=>{
- assert.deepEqual(rewardTotals(),{pool:60000000,participation:33600000,points:9600000,placement:16800000});
- for(const [id,pool,reference] of [['IT-1',4000000,150000],['IT-2',2000000,75000],['int-1',8000000,3200000/24],['int-2',4000000,1600000/24]]){
+ assert.deepEqual(rewardTotals(),{pool:60000000,participation:33840000,points:9360000,placement:16800000});
+ for(const [id,pool,reference] of [['IT-1',4000000,150000],['IT-2',2000000,75000],['int-1',8000000,140000],['int-2',4000000,70000]]){
   const row=competitionRewards(id);
   assert.equal(row.pool,pool);
   assert.equal(row.participationReference,reference);
-  assert.equal(row.participationIsAverage,id.startsWith('int-'));
+  assert.equal(row.participationIsAverage,false);
  }
 });
 
@@ -49,11 +49,15 @@ test('reference tables and timing conserve each component',()=>{
   assert.equal(p.floor*p.lowerCount+p.higher*p.higherCount,r.participation);
   assert.equal(schedule.reduce((s,x)=>s+x.amount*(x.count??1),0),r.placement);
   assert.equal(pointsReference(r,[]).status,'pending-incomplete');
-  if(!r.international)assert.equal(p.installment*2,p.floor);
+  assert.equal(p.installment*2,p.floor);
+  assert.equal(p.higherCount,0);
+  assert.equal(p.installment%2500,0);
+  assert.ok(schedule.every(x=>x.amount%2500===0));
+  if(!r.international)assert.ok(schedule.every((x,i)=>i===0||x.amount<schedule[i-1].amount));
  }
  assert.deepEqual(CREDIT_MILESTONES.participation,[28,56]);
- assert.equal(placementReference(competitionRewards('int-1'))[0].amount,864000);
- assert.equal(placementReference(competitionRewards('int-2'))[1].amount,272000);
+ assert.equal(placementReference(competitionRewards('int-1'))[0].amount,900000);
+ assert.equal(placementReference(competitionRewards('int-2'))[1].amount,250000);
 });
 
 test('public rewards exposes only pool and season club table; admin retains schedule',async()=>{
@@ -154,7 +158,7 @@ test('two configured payment dates conserve all pools without settlement claims'
   assert.equal(second.points,r.points);assert.equal(second.placement,r.placement);
   assert.equal(first.total+second.total,r.pool);
  }
- assert.deepEqual(plannedRewardInstallments(rewardTotals()).map(x=>x.total),[16800000,43200000]);
+ assert.deepEqual(plannedRewardInstallments(rewardTotals()).map(x=>x.total),[16920000,43080000]);
 });
 
 test('season read lifecycle is shared with Rewards and independent of world readiness',()=>{
@@ -187,8 +191,8 @@ test('international participation reference is integer, deterministic and conser
  const participants=Array.from({length:24},(_,i)=>({countryId:'IT',clubId:i+1,primaryName:'Club '+(i+1)}));
  const context={selectedSeason:2,definition:{id:'int-1'},seasonData:{season:2,seasonState:{phase:'active',day:28},provenance:{kind:'authoritative'},participants}};
  const a=seasonRewardReference('int-1',context);
- assert.equal(a.rows.reduce((sum,r)=>sum+r.amount,0),1600000);
- assert.ok(a.rows.every(r=>Number.isSafeInteger(r.amount)));
+ assert.equal(a.rows.reduce((sum,r)=>sum+r.amount,0),1680000);
+ assert.ok(a.rows.every(r=>r.amount===70000));
  context.seasonData.participants=[...participants].reverse();
  assert.deepEqual(seasonRewardReference('int-1',context),a);
 });
