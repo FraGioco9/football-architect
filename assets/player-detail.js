@@ -528,7 +528,7 @@
   nationalitySkeleton.append(skeleton('app-player-detail-flag-skeleton'),skeleton('app-player-detail-nationality-skeleton'));
   nationalityNode.replaceChildren(nationalitySkeleton);
   ageNode.replaceChildren();
-  if(marketValue)marketValue.replaceChildren(skeleton());
+  if(marketValue)marketValue.replaceChildren(skeleton('app-player-detail-market-skeleton'));
   renderClubSkeleton();
   subtitle.textContent='\u00a0';
   for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-attr-value]'))node.replaceChildren(skeleton());

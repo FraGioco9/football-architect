@@ -828,3 +828,20 @@ test('#578 verified Player Stats score position is set before any table fetch',(
  assert.doesNotMatch(html,/data-detail-stats-heading="5">Gls<\/th>/);
  assert.match(html,/data-detail-stats-heading="5" aria-label="Goals or clean sheets"/);
 });
+
+test('#763 public header groups the club and market value into separate equal-width blocks',()=>{
+ const html=read('players/_shared/index.html'),preview=read('admin/players/preview/player/index.html');
+ const css=read('assets/player-detail.css'),js=read('assets/player-detail.js');
+ const header=html.slice(html.indexOf('<header class="app-player-detail-heading">'),html.indexOf('</header>',html.indexOf('<header class="app-player-detail-heading">')));
+ const identity=header.indexOf('data-detail-subtitle'),panels=header.indexOf('class="app-player-detail-header-panels"'),club=header.indexOf('class="app-player-detail-affiliation"'),value=header.indexOf('class="app-player-detail-market-value"');
+ assert.ok(identity>=0&&identity<panels&&panels<club&&club<value);
+ assert.equal((header.match(/data-detail-market-value/g)||[]).length,1);
+ assert.match(header,/data-detail-market-value><span class="app-skeleton-bar app-player-detail-market-skeleton" aria-hidden="true"><\/span>/);
+ assert.doesNotMatch(preview,/app-player-detail-header-panels|data-detail-market-value/);
+ assert.match(css,/\.app-player-detail-header-panels\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.app-player-detail-market-value::before\{[^}]*height:126px;background:var\(--line\)/);
+ assert.match(css,/\.app-player-detail-market-value::before\{height:64px\}/);
+ assert.match(css,/\.app-player-detail-header-panels\{grid-column:1;grid-row:3\}/);
+ assert.match(js,/marketValue\.replaceChildren\(skeleton\('app-player-detail-market-skeleton'\)\)/);
+ assert.equal(renderPlayerDetailPage(read('players/index.html'),'public'),html);
+});

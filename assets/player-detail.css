@@ -603,7 +603,35 @@ html:lang(fr) .app-player-matches-table{--app-player-matches-mobile-result:"Rés
  background:color-mix(in srgb,var(--focus) 12%,var(--surface-raised))
 }
 
-/* #763: reserve a single current-value line on every public player tab. */
-.app-player-detail-market-value{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:24px;margin:0;font-size:13px;line-height:20px;color:var(--muted)}
-.app-player-detail-market-value strong{font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;min-width:88px}
-.app-player-detail-market-value .app-skeleton-bar{display:inline-block;width:88px;height:14px;vertical-align:middle}
+/* #763: public club and market value share a centered, fixed-height header group.
+   Keep the protected preview's existing stand-alone club layout unchanged. */
+.app-player-detail-page[data-player-detail-mode="public"] .app-player-detail-wrap{container:player-detail-header / inline-size}
+.app-player-detail-page[data-player-detail-mode="public"] .app-player-detail-identity{flex:1 1 320px}
+.app-player-detail-header-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;flex:0 0 390px;min-width:0;max-width:100%;min-height:142px;margin-left:auto}
+.app-player-detail-header-panels>.app-player-detail-affiliation{width:100%;min-width:0;max-width:none;margin-left:0;padding:0 12px;min-height:142px}
+.app-player-detail-market-value{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:142px;padding:0 12px;text-align:center;box-sizing:border-box}
+.app-player-detail-market-value::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:1px;height:126px;background:var(--line)}
+.app-player-detail-market-label{font-size:13px;line-height:18px;color:var(--muted);overflow-wrap:anywhere}
+.app-player-detail-market-amount{display:flex;align-items:center;justify-content:center;min-width:0;width:100%;min-height:28px;font-size:clamp(16px,1.55vw,22px);font-weight:650;line-height:1.25;color:var(--text);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.app-player-detail-market-skeleton{display:block;width:108px;max-width:100%;height:20px;margin:0 auto}
+@container player-detail-header (max-width:800px){
+ .app-player-detail-page[data-player-detail-mode="public"] .app-player-detail-heading{display:grid;grid-template-columns:190px minmax(0,1fr);column-gap:18px;row-gap:10px}
+ .app-player-detail-header-panels{grid-column:1/-1;grid-row:2;width:100%;max-width:none;margin-left:0;min-height:106px}
+ .app-player-detail-header-panels>.app-player-detail-affiliation,.app-player-detail-market-value{min-height:106px}
+ .app-player-detail-header-panels>.app-player-detail-affiliation::before{display:none}
+ .app-player-detail-market-value::before{height:90px}
+}
+@media(max-width:620px){
+ .app-player-detail-page[data-player-detail-mode="public"] .app-player-detail-heading{grid-template-columns:120px minmax(0,1fr);column-gap:15px}
+ .app-player-detail-header-panels{grid-column:1/-1;grid-row:2;width:100%;max-width:none;min-height:80px;margin-left:0}
+ .app-player-detail-header-panels>.app-player-detail-affiliation{grid-column:1;grid-row:1;min-height:80px;padding:0 8px}
+ .app-player-detail-market-value{grid-column:2;grid-row:1;min-height:80px;padding:0 8px;gap:5px}
+ .app-player-detail-market-value::before{height:64px}
+ .app-player-detail-market-label{font-size:12px;line-height:16px}
+ .app-player-detail-market-amount{font-size:16px;min-height:22px}
+ .app-player-detail-market-skeleton{width:76px;height:16px}
+}
+@media(max-width:390px){
+ .app-player-detail-page[data-player-detail-mode="public"] .app-player-detail-heading{grid-template-columns:minmax(0,1fr)}
+ .app-player-detail-header-panels{grid-column:1;grid-row:3}
+}
