@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {competitionRewards,rewardTotals,REWARD_IDS} from '../assets/competition-rewards.mjs';
+import {competitionRewards,rewardTotals,REWARD_IDS,largestRemainder,placementReference,participationReference,pointsReference,CREDIT_MILESTONES} from '../assets/competition-rewards.mjs';
 test('all canonical competitions, no fabricated competition',()=>{
  const read=name=>JSON.parse(readFileSync(new URL('../data/'+name,import.meta.url),'utf8'));
  const definitions=[...read('divisions.json'),...read('international-competitions.json')];
@@ -27,4 +27,31 @@ test('approved totals and participation references',()=>{
   assert.equal(row.participationReference,reference);
   assert.equal(row.participationIsAverage,id.startsWith('int-'));
  }
+});
+
+test('Hamilton exact arithmetic, no default equal remainder ordering',()=>{
+ const rows=Array.from({length:24},(_,i)=>({id:'club-'+i,weight:1})),order=rows.map(x=>x.id);
+ for(const [pool,high,count] of [[3200000,133334,8],[1600000,66667,16]]){
+  assert.equal(largestRemainder(pool,rows).status,'pending-tiebreak');
+  const result=largestRemainder(pool,rows,order);
+  assert.equal(result.allocations.reduce((s,x)=>s+x.amount,0),pool);
+  assert.equal(result.allocations.filter(x=>x.amount===high).length,count);
+  assert.deepEqual(Object.fromEntries(result.allocations.map(x=>[x.id,x.amount])),Object.fromEntries(largestRemainder(pool,[...rows].reverse(),order).allocations.map(x=>[x.id,x.amount])));
+ }
+ assert.equal(largestRemainder(100,[{id:'a',weight:0}]).status,'pending-zero-denominator');
+ assert.throws(()=>largestRemainder(100,[{id:'a',weight:1},{id:'a',weight:2}]));
+ assert.throws(()=>largestRemainder(100,rows,['club-0']));
+ assert.deepEqual(largestRemainder(3,[{id:'a',weight:1},{id:'b',weight:2}]).allocations,[{id:'a',amount:1},{id:'b',amount:2}]);
+});
+test('reference tables and timing conserve each component',()=>{
+ for(const id of REWARD_IDS){
+  const r=competitionRewards(id),p=participationReference(r),schedule=placementReference(r);
+  assert.equal(p.floor*p.lowerCount+p.higher*p.higherCount,r.participation);
+  assert.equal(schedule.reduce((s,x)=>s+x.amount*(x.count??1),0),r.placement);
+  assert.equal(pointsReference(r,[]).status,'pending-incomplete');
+  if(!r.international)assert.equal(p.installment*2,p.floor);
+ }
+ assert.deepEqual(CREDIT_MILESTONES.participation,[0,28]);
+ assert.equal(placementReference(competitionRewards('int-1'))[0].amount,864000);
+ assert.equal(placementReference(competitionRewards('int-2'))[1].amount,272000);
 });
