@@ -34,16 +34,13 @@
 .inspection-metric strong{line-height:1.5;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(13px,2.5vw,18px);align-self:center}
 .inspection-panel [data-inspection-list-status]{min-height:1.5em;margin:0}
 .inspection-table:has([data-inspection-list]){height:253px;max-height:253px;overflow:auto;box-sizing:border-box}
-.inspection-table:has([data-inspection-rows]){height:211px;max-height:211px;overflow:auto;box-sizing:border-box}
 .inspection-table table{table-layout:fixed}
 .inspection-table th,.inspection-table td{overflow:hidden;text-overflow:ellipsis}
 .inspection-table:has([data-inspection-list="clubs"]) table{min-width:500px}
 .inspection-table:has([data-inspection-list="ledger"]) table{min-width:650px}
-.inspection-table:has([data-inspection-rows]) th:last-child{width:38%}
 .inspection-table thead{position:sticky;top:0;background:var(--surface);z-index:1}
 .inspection-panel[aria-busy=true] .inspection-metric strong{color:transparent;position:relative}
 .inspection-panel[aria-busy=true] .inspection-metric strong::after{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:56%;height:12px;border-radius:4px;background:var(--border)}
-.inspection-panel [data-inspection-blockers]{min-height:1.5em;max-height:9em;overflow:auto;margin:8px 0}
 @media(max-width:620px){.inspection-metric{height:112px;min-height:112px;max-height:112px;grid-template-rows:3.9em 1.5em}}
 
 /* Long ARC amounts remain readable within the fixed value slot. */
@@ -55,13 +52,29 @@
    and scroll long localized messages rather than expanding their panels. */
 .inspection-panel{gap:var(--app-page-section-gap,16px);align-content:start}
 .app-admin-view .inspection-panel .inspection-summary{gap:12px;margin:0;flex-wrap:nowrap;min-width:0}
-.inspection-summary [data-inspection-world]{min-width:0;flex:1;line-height:1.4;block-size:2.8em;overflow:auto;align-content:center;overflow-wrap:anywhere}
 .inspection-summary [data-inspection-refresh]{flex:none;margin:0}
 .inspection-panel [data-inspection-content]{display:grid;gap:12px;min-width:0}
 .inspection-panel [role=tabpanel],.inspection-result{display:grid;gap:12px;min-width:0}
 .inspection-panel :is(h2,p,.inspection-scopes,.inspection-metrics,.inspection-tabs,.inspection-pagination){margin:0}
 .inspection-result{margin:0;padding-top:12px}
 .inspection-panel :is(.inspection-status,[data-inspection-list-status],[data-inspection-policy],[data-inspection-reconciliation],[data-inspection-copy="protected"]){box-sizing:border-box;min-block-size:2.8em;block-size:2.8em;max-block-size:2.8em;line-height:1.4;overflow:auto;overflow-wrap:anywhere;margin:0}
-.inspection-panel [data-inspection-blockers]{box-sizing:border-box;min-block-size:5.6em;block-size:5.6em;max-block-size:5.6em;line-height:1.4;overflow:auto;overflow-wrap:anywhere;margin:0;padding-inline-start:20px}
 .inspection-panel :is([data-inspection-preview],[data-inspection-copy="confirm"]){justify-self:start;margin:0}
 @media(max-width:620px){.inspection-panel :is(.inspection-status,[data-inspection-list-status],[data-inspection-policy],[data-inspection-reconciliation],[data-inspection-copy="protected"]){min-block-size:4.2em;block-size:4.2em;max-block-size:4.2em}}
+
+/* World status and access feedback occupy the same fixed summary slot. */
+.inspection-panel .inspection-summary-label{flex:1;min-width:0;display:grid;align-items:center;block-size:2.8em;line-height:1.4}
+.inspection-panel .inspection-summary-label :is([data-inspection-world],.inspection-status){grid-area:1/1;min-width:0;min-block-size:0;block-size:auto;max-block-size:none;line-height:1.4;overflow:visible;overflow-wrap:anywhere;margin:0}
+@media(max-width:620px){.inspection-panel .inspection-summary-label{block-size:4.2em}}
+/* Reset has exactly four categories, so use a plain responsive table, not a scroll viewport. */
+.inspection-preview-table{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:13px}
+.inspection-preview-table :is(th,td){box-sizing:border-box;border-bottom:1px solid var(--border);padding:8px 10px;white-space:normal;overflow-wrap:anywhere;text-align:start;vertical-align:middle;line-height:1.4}
+.inspection-preview-table thead th{height:56px;color:var(--muted);font-weight:650}
+.inspection-preview-table tbody tr{height:44px}
+.inspection-preview-table tbody th{font-weight:400}
+.inspection-preview-table :is(th,td):last-child{width:50%;text-align:end;font-variant-numeric:tabular-nums}
+@media(max-width:620px){.inspection-preview-table thead th{height:88px}.inspection-preview-table tbody tr{height:52px}.inspection-preview-table :is(th,td){padding-inline:6px}}
+.inspection-panel [data-inspection-show-blockers]{justify-self:start;margin:0}
+.inspection-blockers-dialog{box-sizing:border-box;width:min(440px,calc(100% - 32px));max-width:100%;padding:20px;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);color:var(--text)}
+.inspection-blockers-dialog::backdrop{background:rgba(0,0,0,.45)}
+.inspection-blockers-dialog [data-inspection-blockers]{margin:12px 0;padding-inline-start:20px;line-height:1.5;overflow-wrap:anywhere}
+.inspection-blockers-dialog li+li{margin-top:8px}

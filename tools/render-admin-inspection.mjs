@@ -2,8 +2,9 @@
 const scripts='  <link rel="stylesheet" href="/assets/admin-inspection.css">\n  <script src="/assets/admin-inspection.js" defer></script>\n';
 const label=(key,copy)=>'<span data-inspection-copy="'+key+'">'+copy+'</span>';
 const field=(key,copy)=>'<div class="inspection-metric"><span data-inspection-copy="'+key+'">'+copy+'</span><strong data-inspection-value="'+key+'">—</strong></div>';
-const table=(keys)=>'<div class="app-players-table-scroll inspection-table" tabindex="0"><table><thead><tr>'+keys.map(([k,v])=>'<th scope="col" data-inspection-copy="'+k+'">'+v+'</th>').join('')+'</tr></thead><tbody data-inspection-rows>'+Array.from({length:4},()=>'<tr aria-hidden="true" class="inspection-skeleton">'+keys.map(()=>'<td><span></span></td>').join('')+'</tr>').join('')+'</tbody></table></div>';
-const header='<div class="admin-summary inspection-summary"><p data-inspection-world aria-live="polite">—</p><button type="button" class="app-link app-link-secondary" data-inspection-refresh data-inspection-copy="refresh">Refresh</button></div><p class="inspection-status" data-inspection-status role="status" aria-live="polite" data-inspection-copy="checking">Checking access…</p>';
+const resetCategories=[['sporting','Sporting world'],['players','Players'],['contracts','Contracts'],['economy','Economy']];
+const resetTable=()=>'<table class="inspection-preview-table"><thead><tr><th scope="col" data-inspection-copy="category">Category</th><th scope="col" data-inspection-copy="records">Records in scope</th></tr></thead><tbody data-inspection-rows>'+resetCategories.map(([id,copy])=>'<tr><th scope="row" data-inspection-copy="'+id+'">'+copy+'</th><td data-inspection-count="'+id+'">—</td></tr>').join('')+'</tbody></table>';
+const header='<div class="admin-summary inspection-summary"><div class="inspection-summary-label"><p data-inspection-world aria-live="polite" hidden>—</p><p class="inspection-status" data-inspection-status role="status" aria-live="polite" data-inspection-copy="checking">Checking access…</p></div><button type="button" class="app-link app-link-secondary" data-inspection-refresh data-inspection-copy="refresh">Refresh</button></div>';
 export function renderAdminReset(){
  return '<section class="app-panel inspection-panel" data-admin-inspection="reset" aria-busy="true">'+header+
  '<div data-inspection-content><fieldset class="inspection-scopes"><legend data-inspection-copy="categories">Reset categories</legend>'+
@@ -11,7 +12,7 @@ export function renderAdminReset(){
  '</fieldset><p data-inspection-copy="protected">Accounts, licenses and history protected.</p>'+
  '<button type="button" class="app-link app-link-primary" data-inspection-preview data-inspection-copy="preview" disabled>Preview reset</button>'+
  '<section class="inspection-result" aria-live="polite"><h2 data-inspection-copy="previewTitle">Reset preview</h2>'+
- table([['category','Category'],['records','Records in scope']])+'<ul data-inspection-blockers></ul><button type="button" class="app-link app-link-secondary" data-inspection-copy="confirm" disabled>Confirm reset</button></section></div></section>';
+ resetTable()+'<button type="button" class="app-link app-link-secondary" data-inspection-show-blockers data-inspection-copy="blockers" disabled>Reset blockers</button><dialog class="inspection-blockers-dialog" data-inspection-blockers-dialog aria-labelledby="inspection-blockers-title"><h2 id="inspection-blockers-title" data-inspection-copy="blockers">Reset blockers</h2><ul data-inspection-blockers></ul><form method="dialog"><button class="app-link app-link-secondary" data-inspection-copy="close">Close</button></form></dialog><button type="button" class="app-link app-link-secondary" data-inspection-copy="confirm" disabled>Confirm reset</button></section></div></section>';
 }
 const tabs=[['overview','Overview'],['clubs','Clubs'],['wallets','Wallets'],['rewards','Rewards'],['payroll','Payroll'],['ledger','Ledger']];
 export function renderAdminEconomy(){
