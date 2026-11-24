@@ -22,6 +22,7 @@ jobs:
       area: ${{ steps.scope.outputs.area }}
       tests: ${{ steps.scope.outputs.tests }}
       reuse: ${{ steps.reuse.outputs.run_id }}
+      lanes: ${{ steps.lanes.outputs.lanes }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,10 +60,48 @@ jobs:
             core.setOutput('run_id',run||'');
             if(run)await core.summary.addRaw('Reused completed FULL evidence on identical HEAD: '+process.env.GITHUB_SERVER_URL+'/'+context.repo.owner+'/'+context.repo.repo+'/actions/runs/'+run).write();
 
+      - name: Select browser lanes
+        id: lanes
+        env:
+          MODE: ${{ steps.scope.outputs.mode }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          case "$MODE" in
+            fast|targeted) lanes='["core"]' ;;
+            full)
+              lanes='["core","responsive","webkit"'
+              if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+                test -n "$BASE"
+                changed="$(git diff --name-only "$BASE"...HEAD)"
+                if grep -Fxq 'assets/app.css' <<< "$changed"; then
+                  lanes="$lanes,\"css\""
+                  echo 'css=true' >> "$GITHUB_OUTPUT"
+                fi
+                if grep -Eq '^assets/(landing|app|account|clubs-directory|club-page|competition-awards|admin-settings)\.css$' <<< "$changed"; then
+                  lanes="$lanes,\"visual\""
+                  echo 'visual=true' >> "$GITHUB_OUTPUT"
+                fi
+              fi
+              lanes="$lanes]"
+              ;;
+            *) echo "::error::Unknown browser scope $MODE"; exit 1 ;;
+          esac
+          echo "lanes=$lanes" >> "$GITHUB_OUTPUT"
+      - name: CSS parity required
+        if: steps.lanes.outputs.css == 'true'
+        run: echo 'Exact-base app.css parity required.'
+      - name: Visual parity required
+        if: steps.lanes.outputs.visual == 'true'
+        run: echo 'Exact-base FE-01 parity required.'
 
   chromium:
-    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
+    name: Browser lane (${{ matrix.lane }})
+    if: ${{ needs.scope.outputs.mode != 'fast' && !needs.scope.outputs.reuse }}
     needs: scope
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: ${{ fromJSON(needs.scope.outputs.lanes) }}
     runs-on: ubuntu-24.04
     # Official image supplies Chromium + WebKit system libraries for FULL QA.
     container:
@@ -70,9 +109,8 @@ jobs:
       options: --add-host=app.localhost:127.0.0.1
     env:
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && needs.scope.outputs.mode != 'full' && format('pr-{0}-{1}', github.event.pull_request.number, needs.scope.outputs.mode) || format('main-{0}', github.run_id) }}
-      cancel-in-progress: ${{ github.event_name == 'pull_request' && needs.scope.outputs.mode != 'full' }}
+      FA_BROWSER_LANE: ${{ matrix.lane }}
+    # Workflow-level synchronize cancellation applies to the whole matrix.
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -94,9 +132,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Defer full browser checks on draft or provider-only PR
-        if: ${{ (needs.scope.outputs.mode == 'fast') && !needs.scope.outputs.reuse }}
-        run: echo 'Full browser suite deferred to ready-for-review or main; fast-safe scope.'
       # The official pinned Playwright container already owns /ms-playwright.
       # A ~/.cache/ms-playwright cache never feeds this browser path.
       - name: Install isolated browser test dependency
@@ -118,6 +153,8 @@ jobs:
       - name: Run loopback preview and browser checks
         if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
         run: |
+          LANE="${FA_BROWSER_LANE:-all}"
+          case "$LANE" in all|core|responsive|webkit|css|visual) ;; *) exit 1 ;; esac
           node tools/dev-standings-preview.mjs > /tmp/int24-preview.log 2>&1 &
           for i in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:2000/competitions >/dev/null; then break; fi
@@ -128,69 +165,106 @@ jobs:
             FA_BROWSER_ENGINE=webkit FA_TARGET_AREA="${{ needs.scope.outputs.area }}" node tools/ci-run.mjs 2-int24-browser-qa -- node tests/ci-opt-01-browser-smoke.mjs
             exit 0
           fi
-          # Re-run the costly TARGETED browser scenario matrix only when its
-          # selector, browser fixtures or this Browser workflow change. Other
-          # workflows are validated by their owners and mandatory FULL QA below.
-          if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- tools/ci-opt-01-impact.mjs tools/ci-opt-01-scenarios.mjs tests/ci-opt-01-browser-smoke.mjs tests/ci-opt-01-browser-cases.mjs .github/workflows/int24-browser-qa.yml | grep -q .; then
-            node tools/ci-opt-01-scenarios.mjs --browser
-          fi
-          node tools/ci-run.mjs 3-int24-browser-qa -- node tests/int24-browser-qa.mjs
-          node tools/ci-run.mjs 7-int24-browser-qa -- node tests/page-load-02-club-browser.mjs
-          node tools/ci-run.mjs fe-05-visual -- node tests/fe-05-visual-browser.mjs
-          # Run FE-02 engines in parallel within one job, retaining each failure.
-          # They have independent Playwright browsers and engine-prefixed artifacts.
-          node tools/ci-run.mjs fe-02-chromium -- node tests/fe-02-responsive-browser.mjs &
-          fe02_chromium_pid=$!
-          FA_BROWSER_ENGINE=webkit node tools/ci-run.mjs fe-02-webkit -- node tests/fe-02-responsive-browser.mjs &
-          fe02_webkit_pid=$!
-          fe02_chromium_exit=0
-          fe02_webkit_exit=0
-          wait "$fe02_chromium_pid" || fe02_chromium_exit=$?
-          wait "$fe02_webkit_pid" || fe02_webkit_exit=$?
-          if [ "$fe02_chromium_exit" -ne 0 ] || [ "$fe02_webkit_exit" -ne 0 ]; then
-            echo "::error::FE-02 browser failures: chromium=$fe02_chromium_exit webkit=$fe02_webkit_exit" >&2
-            exit 1
-          fi
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE="${{ github.event.pull_request.base.sha }}"
-            test "$BASE" != ""
-            if git diff --name-only "$BASE"...HEAD -- "assets/app.css" | grep -q .; then
-              PR_BASE_SHA="$BASE" node tools/ci-run.mjs 4-int24-browser-qa -- node tests/clean-ui-03-css-parity.mjs
-            else
-              echo "app.css unchanged; its baseline-versus-HEAD parity audit is not applicable. FULL Chromium and WebKit remain required."
+          if [ "$LANE" = all ] || [ "$LANE" = core ]; then
+            # Re-run the costly TARGETED browser scenario matrix only when its
+            # selector, browser fixtures or this Browser workflow change. Other
+            # workflows are validated by their owners and mandatory FULL QA below.
+            if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- tools/ci-opt-01-impact.mjs tools/ci-opt-01-scenarios.mjs tests/ci-opt-01-browser-smoke.mjs tests/ci-opt-01-browser-cases.mjs .github/workflows/int24-browser-qa.yml | grep -q .; then
+              node tools/ci-opt-01-scenarios.mjs --browser
             fi
-          else
-            echo "CSS base/HEAD parity is PR-only; retaining push browser tests."
+            node tools/ci-run.mjs 3-int24-browser-qa -- node tests/int24-browser-qa.mjs
+            node tools/ci-run.mjs 7-int24-browser-qa -- node tests/page-load-02-club-browser.mjs
+            node tools/ci-run.mjs fe-05-visual -- node tests/fe-05-visual-browser.mjs
           fi
-          if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- assets/landing.css assets/app.css assets/account.css assets/clubs-directory.css assets/club-page.css assets/competition-awards.css assets/admin-settings.css | grep -q .; then
-            PR_BASE_SHA="${{ github.event.pull_request.base.sha }}" node tools/ci-run.mjs 8-int24-browser-qa -- node tests/fe-01-visual-parity.mjs
+          if [ "$LANE" = all ] || [ "$LANE" = responsive ]; then
+            # Run FE-02 engines in parallel within one job, retaining each failure.
+            # They have independent Playwright browsers and engine-prefixed artifacts.
+            node tools/ci-run.mjs fe-02-chromium -- node tests/fe-02-responsive-browser.mjs &
+            fe02_chromium_pid=$!
+            FA_BROWSER_ENGINE=webkit node tools/ci-run.mjs fe-02-webkit -- node tests/fe-02-responsive-browser.mjs &
+            fe02_webkit_pid=$!
+            fe02_chromium_exit=0
+            fe02_webkit_exit=0
+            wait "$fe02_chromium_pid" || fe02_chromium_exit=$?
+            wait "$fe02_webkit_pid" || fe02_webkit_exit=$?
+            if [ "$fe02_chromium_exit" -ne 0 ] || [ "$fe02_webkit_exit" -ne 0 ]; then
+              echo "::error::FE-02 browser failures: chromium=$fe02_chromium_exit webkit=$fe02_webkit_exit" >&2
+              exit 1
+            fi
           fi
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            node tools/ci-run.mjs 5-int24-browser-qa -- node tests/clean-ui-03-network-baseline.mjs
-          else
-            echo "Network footprint baseline is diagnostic-only; skipped on regular FULL runs."
+          if [ "$LANE" = all ] || [ "$LANE" = css ]; then
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              BASE="${{ github.event.pull_request.base.sha }}"
+              test "$BASE" != ""
+              if git diff --name-only "$BASE"...HEAD -- "assets/app.css" | grep -q .; then
+                PR_BASE_SHA="$BASE" node tools/ci-run.mjs 4-int24-browser-qa -- node tests/clean-ui-03-css-parity.mjs
+              else
+                echo "app.css unchanged; its baseline-versus-HEAD parity audit is not applicable. FULL Chromium and WebKit remain required."
+              fi
+            else
+              echo "CSS base/HEAD parity is PR-only; retaining push browser tests."
+            fi
           fi
-          node tools/ci-run.mjs 6-int24-browser-qa -- node tests/clean-ui-03-webkit-iphone.mjs
-          # Match Detail's real first-paint and independently verified match
-          # timeline are covered in Chromium + WebKit when their source changes.
-          # Other PRs skip this relatively heavy dual-engine test.
-          if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD --             assets/match-detail.js assets/match-detail.css matches/_shared/index.html             templates/match-detail-content.html tests/match-first-paint-browser.mjs | grep -q .; then
-            node tools/ci-run.mjs match-detail-dual-engine -- node tests/match-first-paint-browser.mjs
-          else
-            echo "Match Detail source unchanged (or not a PR); dual-engine dedicated QA not applicable."
+          if [ "$LANE" = all ] || [ "$LANE" = visual ]; then
+            if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- assets/landing.css assets/app.css assets/account.css assets/clubs-directory.css assets/club-page.css assets/competition-awards.css assets/admin-settings.css | grep -q .; then
+              PR_BASE_SHA="${{ github.event.pull_request.base.sha }}" node tools/ci-run.mjs 8-int24-browser-qa -- node tests/fe-01-visual-parity.mjs
+            fi
+          fi
+          if [ "$LANE" = all ] || [ "$LANE" = webkit ]; then
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              node tools/ci-run.mjs 5-int24-browser-qa -- node tests/clean-ui-03-network-baseline.mjs
+            else
+              echo "Network footprint baseline is diagnostic-only; skipped on regular FULL runs."
+            fi
+            node tools/ci-run.mjs 6-int24-browser-qa -- node tests/clean-ui-03-webkit-iphone.mjs
+          fi
+          if [ "$LANE" = all ] || [ "$LANE" = core ]; then
+            # Match Detail's real first-paint and independently verified match
+            # timeline are covered in Chromium + WebKit when their source changes.
+            # Other PRs skip this relatively heavy dual-engine test.
+            if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD --             assets/match-detail.js assets/match-detail.css matches/_shared/index.html             templates/match-detail-content.html tests/match-first-paint-browser.mjs | grep -q .; then
+              node tools/ci-run.mjs match-detail-dual-engine -- node tests/match-first-paint-browser.mjs
+            else
+              echo "Match Detail source unchanged (or not a PR); dual-engine dedicated QA not applicable."
+            fi
           fi
 
-      - name: FULL coverage completed
-        if: needs.scope.outputs.mode == 'full'
-        run: echo 'All Browser FULL source checks completed on exact HEAD.'
       - name: Upload screenshots and server log
         if: always() && needs.scope.outputs.mode != 'fast'
         uses: actions/upload-artifact@v4
         with:
-          name: int24-chromium-screenshots
+          name: int24-browser-${{ matrix.lane }}-screenshots
           path: |
             ${{ runner.temp }}/fa-ci-artifacts/
             int24-browser-artifacts/
             /tmp/int24-preview.log
           if-no-files-found: warn
           retention-days: 7
+
+  browser-result:
+    # Preserve the legacy check identity, without allocating a browser container.
+    name: chromium
+    needs: [scope, chromium]
+    if: ${{ always() && needs.scope.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify browser lane results
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          LANE_RESULT: ${{ needs.chromium.result }}
+          MODE: ${{ needs.scope.outputs.mode }}
+          REUSE: ${{ needs.scope.outputs.reuse }}
+        run: |
+          test "$SCOPE_RESULT" = success
+          case "$MODE" in fast|targeted|full) ;; *) exit 1 ;; esac
+          if [ "$MODE" = fast ] || [ -n "$REUSE" ]; then
+            test "$LANE_RESULT" = skipped
+          else
+            test "$LANE_RESULT" = success
+          fi
+      - name: Run loopback preview and browser checks
+        if: ${{ needs.scope.outputs.mode != 'fast' && !needs.scope.outputs.reuse }}
+        run: echo 'All selected isolated browser lanes executed successfully.'
+      - name: FULL coverage completed
+        if: needs.scope.outputs.mode == 'full'
+        run: echo 'All Browser FULL source checks completed on exact HEAD, or earlier exact-head evidence reused.'

@@ -19,6 +19,19 @@ function evaluateRun(run,jobs,sha,workflow,{prNumber,baseSha}={}){
  if(markers.every(s=>s?.conclusion==='success')&&source.some(s=>s?.conclusion==='skipped'))return {state:'REUSED',url:run.html_url};
  if(source.some(s=>s?.conclusion!=='success'))return {state:'MISSING',url:run.html_url};
  if(!required.every(([name],i)=>find(name)?.conclusion==='success'&&markers[i]?.conclusion==='success'))return {state:'MISSING',url:run.html_url};
+ // CI-OPT-07: the stable aggregate identity is not sufficient by itself.
+ // Legacy monolithic runs remain valid for exact-head PRs using that workflow.
+ if(workflow==='int24-browser-qa.yml'&&find('chromium')?.steps?.some(s=>s.name==='Verify browser lane results')){
+  const ok=(job,step)=>job?.conclusion==='success'&&job.steps?.some(s=>s.name===step&&s.conclusion==='success');
+  if(!ok(find('chromium'),'Verify browser lane results')||!ok(find('scope'),'Select browser lanes'))return {state:'MISSING',url:run.html_url};
+  const lanes=['core','responsive','webkit'];
+  for(const [marker,lane] of [['CSS parity required','css'],['Visual parity required','visual']]){
+   const state=find('scope')?.steps?.find(s=>s.name===marker)?.conclusion;
+   if(state==='success')lanes.push(lane);
+   else if(state!=='skipped')return {state:'MISSING',url:run.html_url};
+  }
+  if(lanes.some(lane=>!ok(find('Browser lane ('+lane+')'),'Run loopback preview and browser checks')))return {state:'MISSING',url:run.html_url};
+ }
  return {state:'PASS',url:run.html_url};
 }
 async function observe({github,owner,repo,sha,prNumber,baseSha}){
