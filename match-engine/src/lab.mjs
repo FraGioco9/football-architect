@@ -485,10 +485,11 @@ function render() {
         ' native shoe/impulse')+
        (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
       (f.passPairAudit?
-       ' · stationary target · ground pass only'+
+       ' · stationary target · distance-calibrated ground pass (DEV)'+
        (f.passPairAudit.attempted?
         ' · distance '+f.passPairAudit.targetDistanceM.toFixed(1)+' m'+
         ' · launch '+fmtKmh(f.passPairAudit.launchSpeedMps)+' km/h'+
+        ' · impulse '+f.passPairAudit.appliedImpulseNs.toFixed(2)+' Ns'+
         ' · closest target gap '+f.passPairAudit.closestTargetGapM.toFixed(2)+' m'+
         (f.passPairAudit.receiverTick===null?' · receiving contact not observed':
          ' · real receiving shoe START after '+f.passPairAudit.flightTimeS.toFixed(2)+' s'):

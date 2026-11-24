@@ -6,7 +6,7 @@ import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
 
-test('PASS-01 two teammates, 6/12/20m, original ground impulse and read-only receiving evidence',
+test('PASS-01 two teammates, 6/12/20m, distance-calibrated native ground impulse and receiving-contact gate',
  {timeout:120000},async()=>{
  const R=await initializeRapier(rapier),rows=[];
  assert.throws(()=>createControlledActionLab(R,'pass-pair',{bodyGuardEnabled:true}),TypeError);
@@ -36,6 +36,15 @@ test('PASS-01 two teammates, 6/12/20m, original ground impulse and read-only rec
      assert.deepEqual(frame.starts,[side+'-10']);
      assert.equal(frame.action.actualPhysicsImpulseApplied,true);
      assert.equal(frame.action.impulseNs.z,0);
+     const calibration=frame.action.isolatedGroundPassCalibration;
+     assert.ok(calibration.scale>=1&&calibration.scale<=1.85);
+     assert.equal(calibration.officialMatchAction,false);
+     assert.equal(frame.action.impulseNs.x,calibration.originalImpulseNs.x*calibration.scale);
+     assert.equal(frame.action.impulseNs.y,calibration.originalImpulseNs.y*calibration.scale);
+     assert.ok(Math.abs(Math.hypot(calibration.originalImpulseNs.x,calibration.originalImpulseNs.y)-2.4)<1e-8);
+     if(distance<7)assert.ok(calibration.scale<1.02);
+     else if(distance<13)assert.ok(calibration.scale>1.3&&calibration.scale<1.5);
+     else assert.ok(calibration.scale>1.6);
     }
     assert.equal(frame.passPairAudit.officialPassCompleted,false);
     assert.equal(frame.passPairAudit.officialReception,false);
@@ -45,13 +54,21 @@ test('PASS-01 two teammates, 6/12/20m, original ground impulse and read-only rec
    const audit=frame.passPairAudit;
    assert.ok(audit.launchSpeedMps>0);
    assert.ok(Number.isFinite(audit.closestTargetGapM));
+   rows.push({side,variantIndex,distanceM:distance,...audit});
    if(audit.receiverTick!==null){
     assert.ok(audit.receiverTick>audit.passTick);
     assert.equal(frame.decisionEvidence.firstPossibleReception.playerId,receiver.id);
     assert.equal(frame.decisionEvidence.firstPossibleReception.realRapierShoeStart,true);
    }
-   rows.push({side,variantIndex,distanceM:distance,...audit});
   }finally{lab.dispose();}
  }
  process.stdout.write('ME_628_GROUND_PASS_PAIR '+JSON.stringify(rows)+'\n');
+ // Report the complete matrix even if an experimental candidate misses.
+ // Contact is not controlled reception; no official outcome is inferred.
+ assert.equal(rows.length,18);
+ for(const row of rows){
+  assert.notEqual(row.receiverTick,null,
+   'Missing authentic receiver START: '+JSON.stringify(row));
+  assert.ok(row.flightTimeS>0&&row.flightTimeS<=10);
+ }
 });

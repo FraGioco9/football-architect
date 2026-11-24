@@ -556,7 +556,9 @@ export function createControlledActionLab(RAPIER,id,{
     passPairAudit=Object.freeze({...passPairAudit,attempted:true,
      passTick:physics.tick,targetDistanceM:target.distanceM,
      targetX:target.recipientX,targetY:target.recipientY,
-     launchSpeedMps:Math.hypot(physics.ball.velocity.x,physics.ball.velocity.y)});
+     launchSpeedMps:Math.hypot(physics.ball.velocity.x,physics.ball.velocity.y),
+     appliedImpulseNs:Math.hypot(nativeAction.impulseNs.x,nativeAction.impulseNs.y),
+     calibrationScale:nativeAction.isolatedGroundPassCalibration?.scale??1});
    }
    if(passPairAudit.attempted&&passPairAudit.receiverTick===null){
     const pos=physics.ball.position,vel=physics.ball.velocity;

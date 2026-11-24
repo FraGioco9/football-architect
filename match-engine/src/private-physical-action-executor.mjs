@@ -290,11 +290,27 @@ export function createPrivatePhysicalActionExecutor({
   if(chosen){
    // The only new physics write; same body and SAME post-collision tick
    // as the original #481, never a future/replayed intent.
-   const impulse=nativeTune?.impulseNs??chosen.impulseNs;
+   // PASS-01 DEV-only calibration. The measured 2.4 Ns baseline rolls
+   // about 8.3 m on this same native grass/ball world. Preserve the short
+   // pass and provisionally increase the energy budget with live distance;
+   // the original direction and the exclusive START gate never change.
+   // This empirical candidate is not a guaranteed arrival or a match rule.
+   const passCalibration=isolatedPassSide!==null?Object.freeze({
+    source:'isolated-ground-pass-distance-candidate-v1',
+    distanceM:chosen.passTarget.distanceM,
+    scale:Math.min(1.85,Math.sqrt(1+1.25*Math.max(0,chosen.passTarget.distanceM-6)/8.3)),
+    originalImpulseNs:chosen.impulseNs,
+    officialMatchAction:false
+   }):null;
+   const impulse=passCalibration?Object.freeze({
+    x:chosen.impulseNs.x*passCalibration.scale,
+    y:chosen.impulseNs.y*passCalibration.scale,z:0
+   }):nativeTune?.impulseNs??chosen.impulseNs;
    ballBody.applyImpulse(impulse,true);
    applied=Object.freeze({
     ...chosen,
     impulseNs:impulse,
+    ...(passCalibration?{isolatedGroundPassCalibration:passCalibration}:{}),
     ...(nativeTune?{
      nativeShoeContactVerified:true,
      nativeFixedPhaseCalibration:nativeTune,
