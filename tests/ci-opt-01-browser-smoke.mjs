@@ -57,11 +57,15 @@ export async function runArea(browser,area,engine='chromium',{afterInt24=false}=
  if(area==='guide'){const start=timing.now();checks+=await verifyPlayerTransport734(browser,{engine});timing.sample('player-transport-734',timing.now()-start)}
  if(area==='clubs'){const start=timing.now();checks+=await verifyClubBfcacheNetwork(browser,{engine});timing.sample('club-bfcache-network',timing.now()-start)}
  if(area==='competitions'){
-  const suites={'compact-network':verifyCompetitionCompactNetwork,'player-stats':verifyCompetitionPlayerStats,'published-network':verifyCompetitionPublishedNetwork};
   if(afterInt24)console.log('CI-OPT-07: Chromium compact-network and player-stats already covered by completed INT24 on this HEAD');
-  for(const name of supplemental){
-   const start=timing.now();checks+=await suites[name](browser,{engine});timing.sample('competition-'+name,timing.now()-start);
+  if(supplemental.includes('compact-network')){
+   const start=timing.now();checks+=await verifyCompetitionCompactNetwork(browser,{engine});timing.sample('competition-compact-network',timing.now()-start);
   }
+  if(supplemental.includes('player-stats')){
+   const start=timing.now();checks+=await verifyCompetitionPlayerStats(browser,{engine});timing.sample('competition-player-stats',timing.now()-start);
+  }
+  // Published-network is unique to this preflight and is never omitted.
+  const start=timing.now();checks+=await verifyCompetitionPublishedNetwork(browser,{engine});timing.sample('competition-published-network',timing.now()-start);
  }
  timing.mark('supplemental-complete');
  console.log('TARGETED '+engine+' PASS: '+area+' '+checks+' cases (pairwise widths/locales/themes; touch + keyboard)');
