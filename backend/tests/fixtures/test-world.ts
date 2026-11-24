@@ -1,6 +1,6 @@
 // Disposable test-D1 reset only. Keep immutable production triggers enabled.
 import type {Database} from '../../src/database.ts';
-const tables=['player_accounts','player_generation_drafts','generated_players','player_portrait_profiles','player_club_affiliations','account_permissions','player_sessions','admin_accounts','admin_sessions','auth_throttles','seasons','season_calendars','season_draws','season_day_outcomes','season_knockout_ties','season_domestic_stages','season_admin_events','season_archives','season_archive_summaries','season_two_approvals','season_zero_approvals','admin_operations','season_match_slots','season_knockout_match_slots','season_lineup_day_outcomes','match_lineup_result_receipts'] as const;
+const tables=['player_accounts','player_generation_drafts','generated_players','player_portrait_profiles','account_permissions','player_sessions','admin_accounts','admin_sessions','auth_throttles','seasons','season_calendars','season_draws','season_day_outcomes','season_knockout_ties','season_domestic_stages','season_admin_events','season_archives','season_archive_summaries','season_two_approvals','season_zero_approvals','admin_operations','season_match_slots','season_knockout_match_slots','season_lineup_day_outcomes','match_lineup_result_receipts'] as const;
 export async function clearTestWorld(db:Database){
  await db.batch([
   // Disposable test-D1 only. Never disable the production V2 immutability

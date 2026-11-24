@@ -48,7 +48,7 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
    db.prepare('DELETE FROM season_match_slots'),
    db.prepare('DELETE FROM season_domestic_stages'),
    // Match receipts and day envelopes must be removed before their canonical
-   // parent rows. Generated players and current club affinities are untouched.
+   // parent rows. Generated players are untouched; the signed-contract generation guard prevents unsafe legacy resets.
    db.prepare('DELETE FROM match_lineup_result_receipts WHERE generation=?').bind(world.generation),
    db.prepare('DELETE FROM season_lineup_day_outcomes WHERE generation=?').bind(world.generation),
    // Match receipts reference public_match_numbers via ON DELETE RESTRICT.

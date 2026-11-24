@@ -32,7 +32,7 @@ function fixture(count:number,clubKey='IT-1'){
     },
     async all(){
      queries.push({sql,args});
-     if(!sql.includes('FROM player_club_affiliations'))throw Error('unexpected roster query');
+     if(!sql.includes('FROM player_signed_contracts'))throw Error('unexpected roster query');
      if(advanceDuringRead)worldGeneration='3e5f71a2-229e-49dd-8fb5-021ba741f6d9';
      return {results:rows.filter(row=>row.club_key===args[0]).sort((a,b)=>a.id-b.id),
       meta:{changes:0}};
@@ -45,7 +45,7 @@ function fixture(count:number,clubKey='IT-1'){
  } as unknown as Database;
  return {db,queries,rows,mutateWorld:()=>{advanceDuringRead=true}};
 }
-test('V1 roster includes 0, 1 and >50 members with no pagination, sorted numeric IDs',async()=>{
+test('Contract roster includes 0, 1 and >50 members with no pagination, sorted numeric IDs',async()=>{
  for(const count of [0,1,73]){
   const {db,queries}=fixture(count);
   const result=await readPublicClubRoster(db,'IT-1');
@@ -54,16 +54,17 @@ test('V1 roster includes 0, 1 and >50 members with no pagination, sorted numeric
   assert.equal(result.count,count);
   assert.equal(result.players.length,count);
   assert.deepEqual(result.players.map(x=>x.id),Array.from({length:count},(_,i)=>i+1));
-  const rosterSql=queries.filter(q=>q.sql.includes('FROM player_club_affiliations'));
+  const rosterSql=queries.filter(q=>q.sql.includes('FROM player_signed_contracts'));
   assert.equal(rosterSql.length,1);
   assert.deepEqual(rosterSql[0].args,['IT-1']);
   assert.match(rosterSql[0].sql,/INNER JOIN generated_players|INNER JOIN\s+generated_players/);
   assert.match(rosterSql[0].sql,/ORDER BY p.id ASC/);
-  assert.doesNotMatch(rosterSql[0].sql,/\bLIMIT\b|\bOFFSET\b|world_generation|retired|entry_season/i);
+  assert.doesNotMatch(rosterSql[0].sql,/\bLIMIT\b|\bOFFSET\b|player_club_affiliations/i);
+  assert.match(rosterSql[0].sql,/w\.generation=c\.world_generation/);
   assert.ok(queries.every(q=>!/^\s*(INSERT|UPDATE|DELETE|REPLACE)/i.test(q.sql)));
  }
 });
-test('an inactive canonical club is valid and only current persisted links appear',async()=>{
+test('an inactive canonical club is valid and only effective signed terms appear',async()=>{
  const {db}=fixture(3,'IT-40');
  const full=await readPublicClubRoster(db,'IT-40');
  const empty=await readPublicClubRoster(db,'IT-1');

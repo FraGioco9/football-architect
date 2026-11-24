@@ -1,6 +1,8 @@
-import {readRewardSettlementManifest,projectFinalRewardEvidence,buildRewardManifest} from '../src/reward-settlement-evidence.ts';
+import {prepareRewardSettlement,readRewardSettlementManifest,projectFinalRewardEvidence,buildRewardManifest} from '../src/reward-settlement-evidence.ts';
 import {planRewardSettlement} from '../src/reward-settlement-plan.mjs';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
+import {annualRewardHoldId,executeRewardSettlementBatch} from '../src/reward-settlement-command.ts';
+import {economicAssert,provisionClubAccounts,postEconomicOperation,reserveEconomicFunds,reconcileEconomy} from '../src/economic-ledger.ts';
 import {readMatchDirectory} from '../src/public-match-directory.ts';
 /** #613 FULL 56-day V2 authority on isolated local Worker D1.
  * Deliberately a single immutable-fixture test. Never reset the user's world.
@@ -74,6 +76,8 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
   'lineup-season-publish-0001',now));
  expect(world.day).toBe(3);
  const rewardPin={rewardVersion:'draft-5',configVersion:'synthetic-776'};
+ const localAccess=()=>[economicAssert(db,'SELECT 1')]; // fixture-only activation/funding
+ let rewardPaid=0;
  await expect(readRewardSettlementManifest(db,rewardPin)).rejects.toMatchObject({code:'reward_payday_required'});
  expect(await count('season_lineup_day_outcomes')).toBe(3);
  expect(await count('match_lineup_result_receipts')).toBe(0);
@@ -162,7 +166,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    } as any;
    await expect(readRewardSettlementManifest(corruptConfirmationDb,rewardPin))
     .rejects.toMatchObject({code:'reward_evidence_invalid'});
-   const first=await readRewardSettlementManifest(db,rewardPin);
+   const first=await prepareRewardSettlement(db,rewardPin);
    expect(first.manifest.plan).toMatchObject({day:28,totalArc:676800,endingHoldArc:1723200});
    expect(first.manifest.plan.rows).toHaveLength(304);
    expect(first.manifest.manifestHash).toMatch(/^[a-f0-9]{64}$/);
@@ -171,6 +175,37 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    expect(await readWorld(db)).toEqual(beforeReward);
    expect(await count('economic_transactions')).toBe(0);
    await expect(readRewardSettlementManifest(db,{...rewardPin,rewardVersion:'draft-4'})).rejects.toMatchObject({code:'reward_evidence_invalid'});
+   // The real internal command writes only to this disposable local D1.
+   // No default production grants, activation, or funding are introduced.
+   await expect(executeRewardSettlementBatch(db,session,first,now)).rejects.toThrow();
+   await provisionClubAccounts(db,now,localAccess());
+   await db.prepare('INSERT INTO economic_policy_versions VALUES(?,?,?,?,?,?,?)')
+    .bind(rewardPin.configVersion,now,'fixture',2400000,2400000,'{}',JSON.stringify({rewardVersion:'draft-5'})).run();
+   await db.prepare('INSERT INTO economic_control VALUES(1,?,1)').bind(rewardPin.configVersion).run();
+   await postEconomicOperation(db,{businessKey:'fixture-776-genesis',requestKey:'fixture-776-genesis',purpose:'GENESIS_RESERVE',
+    actorKind:'system',actorId:'fixture',configVersion:rewardPin.configVersion,sourceId:'fixture-776-genesis',
+    lines:[{accountId:'issuance',amountArc:-2400000},{accountId:'reserve',amountArc:2400000}]},{access:localAccess()},now);
+   const holdId=annualRewardHoldId(world.generation,world.seasonNumber);
+   await reserveEconomicFunds(db,{id:holdId,sourceId:holdId,accountId:'reserve',purpose:'REWARD_BUDGET',
+    configVersion:rewardPin.configVersion,amountArc:2400000,actorId:'reward-settlement-v1'},{access:localAccess()},now);
+   await db.batch(['read','post'].map(capability=>db.prepare('INSERT INTO economic_finance_permissions VALUES(?,?,?,?)')
+    .bind(session.unified!.playerId,capability,'fixture',now)));
+   const paid=await executeRewardSettlementBatch(db,session,first,now);
+   expect(paid.status).toBe('pending');
+   expect(paid.missingKeys).toHaveLength(300);
+   expect(paid.paidArc).toBeGreaterThan(0);
+   const resumed=await executeRewardSettlementBatch(db,session,first,now);
+   expect(resumed.missingKeys).toHaveLength(296);
+   rewardPaid=resumed.paidArc!;
+   expect(resumed.holdRemainingArc).toBe(2400000-rewardPaid);
+   expect(await count('economic_transactions')).toBe(9);
+   expect(await reconcileEconomy(db,localAccess())).toMatchObject({ok:true,stockArc:'2400000'});
+   await db.prepare("DELETE FROM economic_finance_permissions WHERE account_id=? AND capability='post'").bind(session.unified!.playerId).run();
+   await expect(executeRewardSettlementBatch(db,session,first,now)).rejects.toThrow();
+   expect(await count('economic_transactions')).toBe(9);
+   await db.prepare("INSERT INTO economic_finance_permissions VALUES(?,'post','fixture',?)").bind(session.unified!.playerId,now).run();
+   // The existing sporting writer is not yet wired to Rewards. Deliberately
+   // leave Day28 incomplete to exercise the Day56 gate below.
   }
   if([12,13,30,43,55,56].includes(day)){
    const receiptCount=await count('match_lineup_result_receipts');
@@ -192,7 +227,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  // Exercise the actual Day56 server entrypoint, independently comparing its
  // evidence digest and allocations against the archive proof used below.
  const beforeFinalReward=await readWorld(db);
- const certifiedFinal=await readRewardSettlementManifest(db,rewardPin);
+ const certifiedFinal=await prepareRewardSettlement(db,rewardPin);
  const confirmationRows=(await db.prepare(
   "SELECT scope,receipt_hash FROM season_admin_events WHERE season_number=? AND event_id IN ('domestic:entrants','international:entrants') ORDER BY event_id"
  ).bind(world.seasonNumber).all()).results as {scope:string;receipt_hash:string}[];
@@ -215,7 +250,10 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(finalManifest.plan).toMatchObject({totalArc:1723200,startingHoldArc:1723200,endingHoldArc:0});
  expect(finalManifest.plan.rows).toHaveLength(912);
  expect(finalProjection.filter(c=>c.competitionId.startsWith('int-')).every(c=>c.outcomes?.length===24)).toBe(true);
- expect(await count('economic_transactions')).toBe(0);
+ expect(certifiedFinal.previousManifest?.plan.totalArc).toBe(676800);
+ await expect(executeRewardSettlementBatch(db,session,certifiedFinal,now)).rejects.toMatchObject({code:'reward_previous_incomplete'});
+ expect(await count('economic_transactions')).toBe(9);
+ expect(rewardPaid).toBeGreaterThan(0);
  const sourceSummary=JSON.parse(proof.summaryJson);
  expect(sourceSummary.sourceSeason).toBe(1);
  expect(sourceSummary.divisions).toHaveLength(16);

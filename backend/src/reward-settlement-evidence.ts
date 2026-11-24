@@ -1,7 +1,8 @@
 /** #776 server-only, read-only manifest preparation. No HTTP, D1 write, reserve
  * authorization or calendar/ledger side effect. A returned hash is not an
  * activation receipt; later commands must revalidate authority atomically. */
-import type {Database} from './database.ts';
+import type {Database,Statement} from './database.ts';
+import {abortUnless} from './atomic-guard.ts';
 import type {WorldV1} from './types.ts';
 import {ApiError} from './errors.ts';
 import {readWorld} from './world-repository.ts';
@@ -97,7 +98,7 @@ export async function buildRewardManifest(plan:RewardPlan,configVersion:string):
  * Day56 uses the existing independent archive proof BEFORE archive/close.
  * The final world re-read detects concurrent official advancement; it is NOT
  * a transactional guard and cannot authorize future writes. */
-export async function readRewardSettlementManifest(db:Database,pin:RewardVersionPin){
+export async function prepareRewardSettlement(db:Database,pin:RewardVersionPin){
  const world=await readWorld(db);
  if(world.phase!=='active'||(world.day!==28&&world.day!==56)||world.seasonNumber<1)
   throw new ApiError(409,'reward_payday_required');
@@ -107,19 +108,72 @@ export async function readRewardSettlementManifest(db:Database,pin:RewardVersion
  const evidence=proof?.evidence??await loadSeasonSportingEvidence(db,world);
  const entrantReceipts=await verifiedEntrantReceipts(db,world,evidence.snapshot);
  const history=proof?.history??await replayLineupSeasonV1(db,world,evidence,day);
- const evidenceHash=await canonicalHash({
-  schemaVersion:1,generation:world.generation,season:world.seasonNumber,day,
+ const digest=async(payday:28|56)=>canonicalHash({
+  schemaVersion:1,generation:world.generation,season:world.seasonNumber,day:payday,
   participantsHash:evidence.snapshot.participantsHash,rulesHash:evidence.snapshot.rulesHash,
   calendarHash:evidence.calendar.calendar_hash,entrantReceipts,
-  dayHashes:history.days.map(d=>d.hash),resultCount:history.resultCount,
-  archiveHash:proof?.archiveHash??null
+  dayHashes:history.days.slice(0,payday).map(d=>d.hash),
+  resultCount:history.days.slice(0,payday).reduce((n,d)=>n+d.payload.results.length,0),
+  archiveHash:payday===56?proof?.archiveHash??null:null
  });
+ const evidenceHash=await digest(day);
  const competitions=proof?await projectFinalRewardEvidence(proof):
   evidence.snapshot.bindings.map(b=>({competitionId:b.competitionId,entrants:b.clubIds}));
  let plan:RewardPlan;
  try{plan=planRewardSettlement({generation:world.generation,season:world.seasonNumber,day,
   rewardVersion:pin.rewardVersion,evidenceHash,competitions});}catch{return invalid()}
  const manifest=await buildRewardManifest(plan,pin.configVersion);
+ // Day56 must independently reconstruct the identical Day28 entitlement
+ // from the immutable prefix, rather than accepting a claimed prior total.
+ const previousManifest=day===56?await buildRewardManifest(planRewardSettlement({
+  generation:world.generation,season:world.seasonNumber,day:28,rewardVersion:pin.rewardVersion,
+  evidenceHash:await digest(28),competitions:evidence.snapshot.bindings.map(b=>({competitionId:b.competitionId,entrants:b.clubIds}))
+ }),pin.configVersion):null;
+ const tieProof=await Promise.all([...history.progression.ties.values()].map(async t=>({
+  competition:t.competitionId,phase:t.phaseId,id:t.tieId,hash:await canonicalHash(t),json:JSON.stringify(t)
+ })));
+ const guards:Statement[]=[
+  ...evidence.authorityGuards,
+  abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND season_number=? AND day=? AND phase='active' AND revision=?",
+   [world.generation,world.seasonNumber,day,world.revision]),
+  abortUnless(db,'SELECT 1 FROM seasons WHERE season_number=? AND generation=? AND participants_hash=? AND rules_hash=? AND snapshot_json=?',
+   [world.seasonNumber,world.generation,evidence.snapshot.participantsHash,evidence.snapshot.rulesHash,evidence.season.snapshot_json]),
+  abortUnless(db,'SELECT 1 FROM season_calendars WHERE season_number=? AND calendar_version=? AND calendar_hash=? AND calendar_json=?',
+   [world.seasonNumber,evidence.calendar.calendar_version,evidence.calendar.calendar_hash,evidence.calendar.calendar_json]),
+  abortUnless(db,'SELECT 1 WHERE (SELECT COUNT(*) FROM season_draws WHERE season_number=?)=2',[world.seasonNumber]),
+  ...evidence.draws.map(d=>abortUnless(db,'SELECT 1 FROM season_draws WHERE season_number=? AND competition_id=? AND stage_id=? AND algorithm_version=? AND seed=? AND outcome_hash=? AND outcome_json=?',
+   [world.seasonNumber,d.competition_id,d.stage_id,d.algorithm_version,d.seed,d.outcome_hash,d.outcome_json])),
+  ...entrantReceipts.map(e=>abortUnless(db,"SELECT 1 FROM season_admin_events WHERE season_number=? AND event_id=? AND kind=? AND scope=? AND status='completed' AND scheduled_day BETWEEN 1 AND 12 AND completed_at>0 AND receipt_hash=?",
+   [world.seasonNumber,e.scope+':entrants','confirm-'+e.scope+'-entrants',e.scope,e.receiptHash])),
+  // Day and match rows are append-only under the existing V2 schema. Exact
+  // prefix hashes and count prevent later inserts from changing this proof.
+  abortUnless(db,`SELECT 1 WHERE (SELECT COUNT(*) FROM season_lineup_day_outcomes WHERE season_number=?)=?
+   AND NOT EXISTS(SELECT 1 FROM json_each(?) j WHERE NOT EXISTS(
+    SELECT 1 FROM season_lineup_day_outcomes d WHERE d.season_number=? AND d.generation=?
+    AND d.calendar_hash=? AND d.simulation_version='temporary-lineup-v1' AND d.day=j.key+1 AND d.outcome_hash=j.value))`,
+   [world.seasonNumber,day,JSON.stringify(history.days.map(d=>d.hash)),world.seasonNumber,world.generation,evidence.calendar.calendar_hash]),
+  abortUnless(db,'SELECT 1 WHERE (SELECT COUNT(*) FROM match_lineup_result_receipts WHERE generation=? AND season_number=?)=?',
+   [world.generation,world.seasonNumber,history.resultCount]),
+  abortUnless(db,`SELECT 1 WHERE (SELECT COUNT(*) FROM season_knockout_ties WHERE season_number=?)=?
+   AND NOT EXISTS(SELECT 1 FROM json_each(?) j WHERE NOT EXISTS(
+    SELECT 1 FROM season_knockout_ties t WHERE t.season_number=? AND t.generation=?
+    AND t.competition_id=json_extract(j.value,'$.competition') AND t.phase_id=json_extract(j.value,'$.phase')
+    AND t.tie_id=json_extract(j.value,'$.id') AND t.plan_hash=json_extract(j.value,'$.hash')
+    AND t.plan_json=json_extract(j.value,'$.json')))`,
+   [world.seasonNumber,tieProof.length,JSON.stringify(tieProof),world.seasonNumber,world.generation])
+ ];
  if(!sameWorld(world,await readWorld(db)))return stale();
- return Object.freeze({worldRevision:world.revision,manifest});
+ const prepared=Object.freeze({worldRevision:world.revision,manifest,previousManifest,guards:Object.freeze(guards)});
+ preparedDatabases.set(prepared,db);
+ return prepared;
+}
+const preparedDatabases=new WeakMap<object,Database>();
+export type PreparedRewardSettlement=Awaited<ReturnType<typeof prepareRewardSettlement>>;
+/** Only the trusted verifier can produce a batch capability; never deserialize it. */
+export function assertPreparedRewardSettlement(db:Database,prepared:PreparedRewardSettlement){
+ if(!prepared||preparedDatabases.get(prepared)!==db)return invalid();
+}
+export async function readRewardSettlementManifest(db:Database,pin:RewardVersionPin){
+ const {worldRevision,manifest}=await prepareRewardSettlement(db,pin);
+ return Object.freeze({worldRevision,manifest});
 }

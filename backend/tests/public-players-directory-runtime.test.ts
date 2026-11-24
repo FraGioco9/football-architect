@@ -67,7 +67,8 @@ test('public directory exposes verified current club identity on the same pagina
  assert.ok(typeof assigned.players[0].clubName==='string'&&assigned.players[0].clubName.length>0);
  assert.doesNotMatch(JSON.stringify(assigned.players[0]),/salary|expiry|contract_id|development_aptitude/);
  const page=calls.find(c=>c.sql.includes('LIMIT ? OFFSET ?'))!;
- assert.match(page.sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id/);
+ assert.match(page.sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN \(\s*SELECT c\.player_id,c\.club_key,c\.id AS contract_id\s+FROM player_signed_contracts/);
+ assert.doesNotMatch(page.sql,/player_club_affiliations/);
  assert.deepEqual(page.params,[50,0]);
  await assert.rejects(readPublicPlayers(mockDb('BAD-99').db,1),/players_unavailable/);
 });
@@ -78,9 +79,11 @@ test('public directory count and pagination include persisted players independen
  const count=calls.find(x=>x.sql.includes('COUNT(*)'))!;
  const page=calls.find(x=>x.sql.includes('ORDER BY id DESC'))!;
  assert.doesNotMatch(count.sql,/world_generation|WHERE/);
- assert.doesNotMatch(page.sql,/world_generation|WHERE/);
+ // Only the derived contract relation is generation/active-status filtered, not the persisted player page.
+ assert.match(page.sql,/w\.generation=c\.world_generation/);
+ assert.match(page.sql,/json_extract\(g\.payload_json,'\$\.career_status'\)='active'/);
+ assert.match(page.sql,/\) a ON a\.player_id=p\.id ORDER BY id DESC LIMIT \? OFFSET \?/);
  assert.doesNotMatch(count.sql,/json_extract/);
- assert.doesNotMatch(page.sql,/json_extract/);
  assert.deepEqual(count.params,[]);
  assert.deepEqual(page.params,[50,0]);
 });
@@ -309,11 +312,11 @@ test('#763 indexed valuation: actual local D1 global ordering, range, parity and
   assert.ok(exact.players.every(p=>p.market_value_arc===bound));
   const empty=await readPublicPlayers(db,4,{sort:'market_value_arc'});
   assert.deepEqual(empty.players,[]);
-  await db.prepare("INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,'IT-1')").bind(id).run();
   const detail=await readPublicPlayer(db,id),roster=await readPublicClubRoster(db,'IT-1');
-  assert.equal(detail.player.market_value_arc,roster.players[0].market_value_arc);
+  assert.equal(detail.player.clubKey,null,'unsigned player has no club');
+  assert.equal(roster.count,0,'unsigned player is not a roster member');
   assert.equal(detail.player.market_value_arc,expected[0].value);
-  assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'affiliation does not invalidate value');
+  assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'contract-free reads do not invalidate value');
   await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.retirement_seed','private','$.retirement_age',37,'$.development_aptitude',42) WHERE id=?").bind(id).run();
   assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'hidden fields do not invalidate value');
   const fingerprint=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([MARKET_VALUE_CONFIG,FORECAST_EXPOSURES])));
