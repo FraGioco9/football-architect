@@ -30,7 +30,7 @@ test("FE-04 separates five-locale fixture accessible list name from displayed co
  assert.equal([...app.matchAll(/^\s{6}fixturesMatches:/gm)].length,5);
  assert.equal([...app.matchAll(/^\s{6}fixturesMatchUnit:/gm)].length,5);
  assert.match(fixtures,/word\('fixturesMatchUnit','matches'\)/);
- for(const id of ["it-1","int-1"]){const html=read("competitions/"+id+"/index.html");assert.match(html,/data-app-aria="fixturesMatches"/);assert.equal((html.match(/role="tab" /g)||[]).length,7)}
+ for(const id of ["it-1","int-1"]){const html=read("competitions/"+id+"/index.html");assert.match(html,/data-app-aria="fixturesMatches"/);assert.equal((html.match(/role="tab" /g)||[]).length,8)}
 });
 test("FE-04 localizes early errors, singular counters and Calendar marker names",()=>{
  const fail=read("assets/competition-page.js"),search=read("assets/app-search.js"),club=read("assets/clubs-directory.js"),cal=read("assets/calendar-simplified.js");

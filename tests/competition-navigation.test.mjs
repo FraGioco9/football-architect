@@ -8,7 +8,7 @@ import rules from '../assets/competition-rules.js';
 import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
 const definitions=loadCompetitionCatalogue();
 const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
-const views=['standings','postseason','fixtures','stats','history','rules','awards'];
+const views=['standings','postseason','fixtures','stats','history','rules','awards','rewards'];
 function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,restoredScroll=null,initialPublicSeason=null,prebootSnapshot=null){
  const contextSeasons=[],scrollKeys=[];const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
@@ -203,9 +203,9 @@ test('PUBLIC season picker reserves its label until world confirms the redirect;
 test('COMPETITION-URL: keyboard navigation retains one active tab and does not duplicate history entries',()=>{
  const s=setup();let prevented=false;
  s.tabs[0].events.keydown({key:'ArrowLeft',preventDefault(){prevented=true}});
- assert.equal(prevented,true);assert.equal(s.tabs[6].focused,true);assert.equal(s.window.faCompetitionRoute.get().view,'awards');
- const count=s.count();s.tabs[6].events.click();assert.equal(s.count(),count);
- s.tabs[6].events.keydown({key:'Home',preventDefault(){}});assert.equal(s.fields.get('competition-panel-standings').hidden,false);
+ assert.equal(prevented,true);assert.equal(s.tabs[7].focused,true);assert.equal(s.window.faCompetitionRoute.get().view,'rewards');
+ const count=s.count();s.tabs[7].events.click();assert.equal(s.count(),count);
+ s.tabs[7].events.keydown({key:'Home',preventDefault(){}});assert.equal(s.fields.get('competition-panel-standings').hidden,false);
 });
 
 test('COMPETITION-URL: first paint keeps season 1 fallback available',()=>{

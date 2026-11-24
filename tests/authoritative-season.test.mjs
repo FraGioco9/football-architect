@@ -384,8 +384,11 @@ test('PERF-API-657 confirmed empty seasons reuse the same world but failures do 
  const key=(season)=>({competitionId:'int-1',season,snapshot});
  assert.equal(cache.find(key(1)),null);
  assert.equal(cache.remember({...key(1),data:null}),true);
- assert.deepEqual(cache.find(key(1)),{data:null},
+ assert.deepEqual(cache.find(key(1)),{data:null,status:'empty'},
   'verified empty is distinct from a failed/missing request');
+ assert.equal(cache.remember({...key(1),data:null,status:'unavailable'}),true);
+ assert.deepEqual(cache.find(key(1)),{data:null,status:'unavailable'},'verified unsupported seasons preserve their status');
+ assert.equal(cache.remember({...key(1),data:null,status:'loading'}),false);
  assert.equal(cache.remember({...key(2),data:{season:2,world:currentWorld,provenance:{kind:'authoritative'}}}),true);
  assert.equal(cache.size(),2);
  assert.equal(cache.remember({...key(1),data:{season:1,world:currentWorld,provenance:{kind:'authoritative'}}}),true);

@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 const read=(path)=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 const countries=["br","de","eng","es","fr","it","nl","pt"];
 const ids=[...countries.flatMap(code=>[1,2].map(tier=>code+"-"+tier)),"int-1","int-2"];
-const views=["standings","postseason","fixtures","stats","history","rules","awards"];
+const views=["standings","postseason","fixtures","stats","history","rules","awards","rewards"];
 const main='<main class="app-main" id="main-content" tabindex="-1">';
 const section='<section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title">';
 

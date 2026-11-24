@@ -120,7 +120,7 @@ const standingsSubviewsMarkup="\n          <div class=\"app-standings-subviews\"
 // Keep domestic markup unchanged; cups exclude Last 5 along with the two half-season modes.
 const cupStandingsSubviewsMarkup=standingsSubviewsMarkup.replaceAll("['first','second']", "['first','second','last5']");
 const competitionTabs = function competitionTabs(d,standings,neutral) {
- const views=model.views.map(view=>view.id==="postseason"&&d.category==="international"
+ const views=model.views.filter(view=>view.id!=="rewards").map(view=>view.id==="postseason"&&d.category==="international"
   ?{...view,key:"competitionTabKnockouts",label:"Knockouts"}:view.id==="postseason"&&!neutral
   ?{...view,key:d.rules.phases.some(p=>p.labelKey==='playout')?"competitionTabPlayout":"competitionTabPlayoffs",label:d.rules.phases.some(p=>p.labelKey==='playout')?"Playout":"Playoffs"}:view);
  const nav=views.map(({id,key,label},i)=>

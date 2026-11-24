@@ -45,7 +45,7 @@ test('Admin removes Details and retains inline protected reset with a next-day p
 
 
 test('Admin directory and child pages have isolated, protected markup',async()=>{
- for(const id of ['admin','admin/calendar','admin/players','admin/contracts','admin/licenses']){
+ for(const id of ['admin','admin/calendar','admin/players','admin/contracts','admin/licenses','admin/rewards']){
   const path='/'+id,file=id+'/index.html';
   assert.equal(parseRoute(path)?.canonical,path);
   assert.equal(buildRoute({kind:'page',id}),path);
@@ -53,19 +53,24 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
   assert.ok(isAllowlistedPublicPath(file),file);
   assert.ok(planPublicFiles().includes(file));
   const initial=readFileSync(new URL('../'+file,import.meta.url),'utf8');
-  if(id==='admin/contracts'){
+  if(id==='admin/contracts'||id==='admin/rewards'){
    assert.match(initial,/<section\b[^>]*id="app-admin"[^>]*data-admin-access="pending"/);
    assert.doesNotMatch(initial,/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
   }else assert.match(initial,/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
  }
  const home=readFileSync(new URL('../admin/index.html',import.meta.url),'utf8');
  assert.match(home,/data-admin-directory/);
- assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,4,'Four separate Admin boxes');
- assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,4,'Each Admin box has a clear navigation button');
+ assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,5,'Five separate Admin boxes');
+ assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,5,'Each Admin box has a clear navigation button');
  assert.match(home,/href="\/admin\/calendar"/);
  assert.match(home,/href="\/admin\/players"/);
  assert.match(home,/href="\/admin\/contracts"/);
  assert.match(home,/href="\/admin\/licenses"/);
+ assert.match(home,/href="\/admin\/rewards"/);
+ const rewards=readFileSync(new URL('../admin/rewards/index.html',import.meta.url),'utf8');
+ assert.match(rewards,/data-admin-rewards-content hidden/);
+ assert.match(rewards,/\/assets\/rewards-ui\.mjs/);
+ assert.doesNotMatch(rewards,/data-licenses-content|data-admin-contracts/);
  assert.doesNotMatch(home,/data-admin-world|data-admin-players-form|\/assets\/admin-settings\.js/);
  const licenses=readFileSync(new URL('../admin/licenses/index.html',import.meta.url),'utf8');
  const {renderAdminLicenses}=await import('../tools/render-admin-licenses.mjs');

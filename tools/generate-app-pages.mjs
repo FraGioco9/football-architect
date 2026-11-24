@@ -1,3 +1,4 @@
+import {augmentRewardsShell,stripRewardsAssets} from './render-rewards-shell.mjs';
 import {loadSeasonOnePreview} from './load-season-one-preview.mjs';
 import {bootstrapCompetitionTabs} from './competition-tab-preboot.mjs';
 import {renderAdminSettings,renderAdminPlayers,renderAdminPlayersPreview} from './render-admin-settings.mjs';
@@ -243,6 +244,13 @@ const writeOutput=(path,content)=>{
   // Admin routes have a neutral first paint: never select Dashboard.
   // The sidebar bootstrap is injected only by renderSidebar; patch it afterwards.
   if(path.startsWith('admin/')&&path.endsWith('.html'))content=content.replace("path==='/admin'?'admin'","path.startsWith('/admin')?'admin'");
+ // Derived pages inherit the Competitions shell, but never its Rewards assets.
+ content=stripRewardsAssets(content);
+ content=augmentRewardsShell(path,content,competitionManifest.competitions,encode);
+ writeFinal(path,content);
+ if(path==='admin/contracts/index.html')writeFinal('admin/rewards/index.html',augmentRewardsShell('admin/rewards/index.html',content,competitionManifest.competitions,encode));
+};
+const writeFinal=(path,content)=>{
  const file=new URL("../"+path,import.meta.url);
  if(check){
   const current=readFileSync(file,"utf8");
@@ -260,6 +268,8 @@ const writeOutput=(path,content)=>{
   writeFileSync(file,content,"utf8");
  }
 };
+// Compatibility snapshot retains its own structure; add the shared Rewards extension.
+writeFinal('competitions/_shared/index.html',augmentRewardsShell('competitions/_shared/index.html',neutralShell,competitionManifest.competitions,encode));
 for(const page of outputPages){
  let html=page.directContent;
  if(!html){

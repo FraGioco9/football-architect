@@ -84,8 +84,8 @@ const TYPES = {
   ".png": "image/png",
   ".webp": "image/webp"
 };
-const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
-const CUP_DETAIL = /^\/competitions\/(int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/;
+const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|rewards|teams|index\.html)?)?$/;
+const CUP_DETAIL = /^\/competitions\/(int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|rewards|index\.html)?)?$/;
 const DEV_SEASONS = DEBUG_SEASONS; // Shared fictional DEV/Debug catalogue; never official history.
 const defaultDevSeason = "1";
 const INJECT = [
@@ -286,10 +286,10 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       if(rootDivision){
         const query=req.url.includes("?")?req.url.slice(req.url.indexOf("?")):"";
         const legacy=new URLSearchParams(query);
-        const allowed=new Set(["standings","postseason","fixtures","stats","history","rules","awards"]);
+        const allowed=new Set(["standings","postseason","fixtures","stats","history","rules","awards","rewards"]);
         const next=allowed.has(legacy.get("view"))?legacy.get("view"):"overview";
         legacy.delete("view");
-        if(next==="history"||next==="rules")legacy.delete("matchday");
+        if(next==="history"||next==="rules"||next==="rewards")legacy.delete("matchday");
         const suffix=legacy.toString();
         res.writeHead(308,{"Location":buildRoute({kind:"competition",id:rootDivision[1],view:next})+(suffix?"?"+suffix:""),"Cache-Control":"no-store"});res.end();return;
       }
