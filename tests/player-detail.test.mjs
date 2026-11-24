@@ -840,10 +840,39 @@ test('#763 public header groups the club and market value into separate equal-wi
  assert.doesNotMatch(preview,/app-player-detail-header-panels|data-detail-market-value/);
  assert.match(css,/\.app-player-detail-header-panels\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(css,/\.app-player-detail-market-value::before\{[^}]*height:126px;background:var\(--line\)/);
- assert.match(css,/\.app-player-detail-header-panels>\.app-player-detail-affiliation::before\{display:block;height:64px\}/);
+ assert.match(css,/\.app-player-detail-header-panels>\.app-player-detail-affiliation::before\{display:block;height:80px\}/);
  assert.match(css,/\.app-player-detail-market-value\{grid-column:1;grid-row:1/);
  assert.match(css,/\.app-player-detail-header-panels>\.app-player-detail-affiliation\{grid-column:2;grid-row:1/);
- assert.match(css,/\.app-player-detail-header-panels\{grid-column:1;grid-row:3\}/);
+ assert.match(css,/\.app-player-detail-header-panels\{grid-column:1;grid-row:3;min-height:116px\}/);
  assert.match(js,/marketValue\.replaceChildren\(skeleton\('app-player-detail-market-skeleton'\)\)/);
  assert.equal(renderPlayerDetailPage(read('players/index.html'),'public'),html);
+});
+
+test('#763 header reserves wider panels and identical club skeleton and loaded tracks',()=>{
+ const css=read('assets/player-detail.css'),js=read('assets/player-detail.js'),html=read('players/_shared/index.html');
+ const part=css.slice(css.indexOf('/* #763: give both public header panels'));
+ assert.match(part,/\.app-player-detail-header-panels\{[^}]*flex:0 0 clamp\(500px,50%,600px\)/);
+ assert.match(part,/@container player-detail-header \(max-width:1000px\)/);
+ const shared=/\.app-player-detail-header-panels :is\(\.app-player-detail-club-stack,\.app-player-detail-club-loading\)\{([^}]+)\}/g;
+ const rules=[...part.matchAll(shared)].map(m=>m[1]);
+ assert.equal(rules.length,3);
+ assert.match(rules[0],/grid-template-rows:72px minmax\(42px,auto\);[^}]*gap:8px/);
+ assert.match(rules[1],/grid-template-rows:48px minmax\(38px,auto\);gap:5px/);
+ assert.match(rules[2],/grid-template-rows:48px minmax\(57px,auto\)/);
+ assert.match(part,/\.app-player-detail-header-panels \.app-player-detail-club-name-skeleton\{width:180px;max-width:100%;height:16px;margin:0\}/);
+ assert.match(part,/\.app-player-detail-market-skeleton\{[^}]*width:12ch;max-width:100%;height:\.9em/);
+ assert.match(part,/\.app-player-detail-market-amount\{[^}]*min-height:56px/);
+ assert.match(part,/\.app-player-detail-market-amount\{font-size:16px;min-height:40px\}/);
+ assert.match(js,/marketValue\.replaceChildren\(skeleton\('app-player-detail-market-skeleton'\)\)/);
+ assert.match(html,/data-detail-market-value><span class="app-skeleton-bar app-player-detail-market-skeleton"/);
+ assert.match(html,/app-player-detail-club-loading" aria-hidden="true"><span class="app-skeleton-bar app-player-detail-club-logo-skeleton"><\/span><span class="app-skeleton-bar app-player-detail-club-name-skeleton"/);
+ for(const width of [1001,1100,1280,1440,1920]){
+  const group=Math.min(600,Math.max(500,width/2));
+  assert.ok(width-190-36-group>=250,'identity width '+width);
+  assert.ok(group/2-20>=230,'public panel width '+width);
+ }
+ for(const width of [320,375,390,430,620]){
+  const content=width-(width<=390?52:58)-32;
+  assert.ok(content/2-8>=110,'mobile panel width '+width);
+ }
 });
