@@ -72,7 +72,7 @@ test('approved public JSON publishes the 20 sporting skills, never sensitive gen
  const attributes=Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map((key,index)=>[key,index+1]));
  const record=projectPublicFootballerDirectoryRecord({...internal,attributes},{publicId:123,currentAge:19});
  assert.deepEqual(Object.keys(record),['id','first_name','last_name','display_name','nationality',
-  'secondary_nationality','age','career_status','height_cm','preferred_foot','primary_position','secondary_positions','attributes']);
+  'secondary_nationality','age','career_status','height_cm','preferred_foot','primary_position','secondary_positions','attributes','market_value_arc']);
  assert.equal(record.id,123);
  assert.equal(record.display_name,'Joao da Silva');
  assert.equal(record.secondary_nationality,'POR');

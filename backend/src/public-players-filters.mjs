@@ -2,7 +2,7 @@
 const COUNTRIES=new Set('ALG ARG AUS AUT BEL BRA CAN CHI CIV CMR COD COL CRO DEN ECU EGY ENG ESP FRA GER GRE HUN IRN ITA JPN KOR MAR MEX MLI NED NGA NOR PAN PAR POL POR RSA RUS SCO SEN SRB SUI SVK SWE TUR UKR URU USA VEN WAL'.split(' '));
 const POSITIONS=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
 const ATTRIBUTES=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
-const SORTS=new Set(['nationality','name','age','positions','height','foot',...ATTRIBUTES]);
+const SORTS=new Set(['nationality','name','age','positions','height','foot','market_value_arc',...ATTRIBUTES]);
 const nameValue=raw=>{
  let value;
  try{value=decodeURIComponent(raw.replaceAll('+',' '));}catch{throw new TypeError('invalid_public_request');}
@@ -25,6 +25,7 @@ const attributeValue=value=>{
  });
 };
 const integer=(value,min,max)=>/^(?:0|[1-9][0-9]{0,2})$/.test(value)&&Number(value)>=min&&Number(value)<=max;
+const arc=value=>/^(?:0|[1-9][0-9]{0,15})$/.test(value)&&Number.isSafeInteger(Number(value));
 const selected=(value,allowed)=>{
  const codes=value.split(',');
  return codes.length>0&&codes.length<=allowed.size&&new Set(codes).size===codes.length&&codes.every(code=>allowed.has(code));
@@ -43,6 +44,8 @@ const validators=Object.freeze({
  ageMax:value=>integer(value,0,120),
  heightMin:value=>integer(value,100,250),
  heightMax:value=>integer(value,100,250),
+ valueMin:arc,
+ valueMax:arc,
  foot:value=>value==='left'||value==='right'
 });
 /** Strict query parser: one of each key, no aliases/encoded values or duplicate selected codes. */
@@ -68,7 +71,9 @@ export function parsePublicPlayerQuery(raw=''){
  const ageMax=values.ageMax===undefined?undefined:Number(values.ageMax);
  const heightMin=values.heightMin===undefined?undefined:Number(values.heightMin);
  const heightMax=values.heightMax===undefined?undefined:Number(values.heightMax);
- if((ageMin!==undefined&&ageMax!==undefined&&ageMin>ageMax)||
+ const valueMin=values.valueMin===undefined?undefined:Number(values.valueMin);
+ const valueMax=values.valueMax===undefined?undefined:Number(values.valueMax);
+ if((valueMin!==undefined&&valueMax!==undefined&&valueMin>valueMax)|| (ageMin!==undefined&&ageMax!==undefined&&ageMin>ageMax)||
     (heightMin!==undefined&&heightMax!==undefined&&heightMin>heightMax))
   throw new TypeError('invalid_public_request');
  const filters={};
@@ -83,6 +88,8 @@ export function parsePublicPlayerQuery(raw=''){
  if(ageMax!==undefined)filters.ageMax=ageMax;
  if(heightMin!==undefined)filters.heightMin=heightMin;
  if(heightMax!==undefined)filters.heightMax=heightMax;
+ if(valueMin!==undefined)filters.valueMin=valueMin;
+ if(valueMax!==undefined)filters.valueMax=valueMax;
  if(values.foot!==undefined)filters.foot=values.foot;
  return {page:values.offset===undefined?1:Number(values.offset)/50+1,filters};
 }

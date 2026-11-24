@@ -7,6 +7,8 @@ import {projectPublicFootballerDirectoryRecord,type InternalFootballer} from './
 import type {PublicPlayerFilters} from './public-players-filters.mjs';
 
 export const PUBLIC_PLAYER_PAGE_SIZE=50;
+// Experimental bounded path; performance/scale gate before release. Never return a truncated ranking.
+export const MARKET_VALUE_SCAN_LIMIT=8000;
 const clubNames=new Map(clubs.map(c=>[c.countryId+'-'+c.clubId,c.primaryName] as const));
 if(clubNames.size!==320)throw Error('Invalid canonical club catalogue');
 const FILTER_ATTRIBUTE_KEYS=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
@@ -88,15 +90,42 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
   ...[...FILTER_ATTRIBUTE_KEYS].map(key=>[key,"json_extract(payload_json,'$.attributes."+key+"')"] as [string,string])
  ]);
  if(filters.order!==undefined&&!filters.sort)throw new ApiError(422,'invalid_public_request');
- if(filters.sort!==undefined&&!sortSql.has(filters.sort))throw new ApiError(422,'invalid_public_request');
+ const valueSort=filters.sort==='market_value_arc';
+ const valueRange=filters.valueMin!==undefined||filters.valueMax!==undefined;
+ if([filters.valueMin,filters.valueMax].some(v=>v!==undefined&&(!Number.isSafeInteger(v)||v<0))||
+    (filters.valueMin!==undefined&&filters.valueMax!==undefined&&filters.valueMin>filters.valueMax))throw new ApiError(422,'invalid_public_request');
+ if(filters.sort!==undefined&&!valueSort&&!sortSql.has(filters.sort))throw new ApiError(422,'invalid_public_request');
  if(filters.order!==undefined&&filters.order!=='asc'&&filters.order!=='desc')throw new ApiError(422,'invalid_public_request');
- const sortExpression=filters.sort?sortSql.get(filters.sort)!:null;
+ const sortExpression=filters.sort&&!valueSort?sortSql.get(filters.sort)!:null;
  const orderBy=sortExpression
   ?sortExpression+' COLLATE NOCASE '+(filters.order==='desc'?'DESC':'ASC')+', id ASC'
   :'id DESC';
  const where=predicates.length?' WHERE '+predicates.join(' AND '):'';
  const countSql='SELECT COUNT(*) AS n FROM generated_players'+where;
  const pageSql='SELECT p.id,p.payload_json,a.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a.player_id=p.id'+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?';
+ const project=(row:StoredRow)=>{
+   const payload=JSON.parse(row.payload_json) as StoredPlayer;
+   const clubKey=row.club_key??null;
+   if(clubKey!==null&&!clubNames.has(clubKey))throw new ApiError(503,'players_unavailable');
+   return {...projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age}),
+    clubKey,clubName:clubKey===null?null:clubNames.get(clubKey)!};
+ };
+ if(valueSort||valueRange){
+  // One SQL snapshot of candidates matching ordinary filters, with explicit overflow guard.
+  const candidates=(await db.prepare('SELECT p.id,p.payload_json,a.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a.player_id=p.id'+where+' ORDER BY '+orderBy+' LIMIT ?').bind(...values,MARKET_VALUE_SCAN_LIMIT+1).all<StoredRow>()).results;
+  if(candidates.length>MARKET_VALUE_SCAN_LIMIT)throw new ApiError(503,'players_unavailable');
+  const matching=candidates.map(project).filter(player=>!valueRange||(player.market_value_arc!==null&&
+   (filters.valueMin===undefined||player.market_value_arc>=filters.valueMin)&&
+   (filters.valueMax===undefined||player.market_value_arc<=filters.valueMax)));
+  if(valueSort)matching.sort((a,b)=>{
+   const x=a.market_value_arc,y=b.market_value_arc;
+   if(x===null||y===null)return x===y?a.id-b.id:x===null?1:-1;
+   return (filters.order==='asc'?x-y:y-x)||a.id-b.id;
+  });
+  const after=await readWorld(db);
+  if(after.generation!==before.generation)throw new ApiError(409,'stale_world');
+  return {count:matching.length,page,pageSize:PUBLIC_PLAYER_PAGE_SIZE,totalPages:Math.max(1,Math.ceil(matching.length/PUBLIC_PLAYER_PAGE_SIZE)),players:matching.slice((page-1)*PUBLIC_PLAYER_PAGE_SIZE,page*PUBLIC_PLAYER_PAGE_SIZE)};
+ }
  let count:number,rows:StoredRow[];
  if(page===1){
   // The first page always needs both results, even when the directory is
@@ -127,13 +156,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
  if(after.generation!==before.generation)throw new ApiError(409,'stale_world');
  return {
   count,page,pageSize:PUBLIC_PLAYER_PAGE_SIZE,totalPages,
-  players:rows.map(row=>{
-   const payload=JSON.parse(row.payload_json) as StoredPlayer;
-   const clubKey=row.club_key??null;
-   if(clubKey!==null&&!clubNames.has(clubKey))throw new ApiError(503,'players_unavailable');
-   return {...projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age}),
-    clubKey,clubName:clubKey===null?null:clubNames.get(clubKey)!};
-  })
+  players:rows.map(project)
  };
 }
 

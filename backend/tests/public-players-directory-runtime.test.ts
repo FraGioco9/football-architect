@@ -265,3 +265,16 @@ test('#734 Players malformed D1 batch results never publish a false empty direct
  db.batch=async()=>[{results:[],meta:{changes:0}},{results:[],meta:{changes:0}}];
  await assert.rejects(readPublicPlayers(db,1),/players_unavailable/);
 });
+
+test('market value query allows inclusive integer bounds and global sort',()=>{
+ assert.deepEqual(parsePublicPlayerQuery('?valueMin=0&valueMax=1200&sort=market_value_arc&offset=50'),{page:2,filters:{sort:'market_value_arc',order:'desc',valueMin:0,valueMax:1200}});
+ for(const raw of ['?valueMin=-1','?valueMin=1.2','?valueMin=01','?valueMax=9007199254740992','?valueMin=2&valueMax=1'])assert.throws(()=>parsePublicPlayerQuery(raw),/invalid_public_request/);
+});
+test('market value filter precedes pagination and includes actual zero only',async()=>{
+ const {db,calls}=mockDb();
+ const all=await readPublicPlayers(db,1,{sort:'market_value_arc'});
+ assert.equal(all.count,1);assert.ok(Number.isSafeInteger(all.players[0].market_value_arc));
+ assert.equal((await readPublicPlayers(db,1,{valueMin:0,valueMax:0})).count,0);
+ assert.equal((await readPublicPlayers(db,2,{sort:'market_value_arc'})).players.length,0);
+ assert.ok(calls.some(c=>c.sql.includes('LIMIT ?')&&!c.sql.includes('OFFSET')));
+});

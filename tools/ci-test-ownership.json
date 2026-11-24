@@ -288,6 +288,7 @@
     "tests/perf-api-01-requests.test.mjs": "site-node",
     "tests/player-detail.test.mjs": "site-node",
     "tests/player-market-value-rounding.test.mjs": "site-node",
+    "tests/player-market-value.test.mjs": "site-node",
     "tests/player-history-view.test.mjs": "site-node",
     "tests/player-safe-return-browser.mjs": "browser",
     "tests/player-tables-parity-532.test.mjs": "site-node",
