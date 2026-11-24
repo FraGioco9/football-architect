@@ -386,7 +386,7 @@ test('#763 Roster Overview preserves identity tracks and distributes surplus acr
  assert.match(css,/--app-players-flag-width:54px;--app-players-name-width:248px;--app-players-positions-width:200px/);
  assert.match(css,/--app-players-flag-width:32px;--app-players-name-width:128px;--app-players-positions-width:112px/);
  assert.match(css,/--app-players-flag-width:30px;--app-players-name-width:120px;--app-players-positions-width:104px/);
- const cases=[{identity:[54,248,200],fields:[78,96,90,172],widths:[938,1000,1148,1280,1600]},{identity:[32,128,112],fields:[62,76,74,152],widths:[636,720]},{identity:[30,120,104],fields:[60,72,70,148],widths:[604,680]}];
+ const cases=[{identity:[54,248,200],fields:[78,96,90,196],widths:[962,1000,1172,1280,1600]},{identity:[32,128,112],fields:[62,76,74,172],widths:[656,720]},{identity:[30,120,104],fields:[60,72,70,172],widths:[628,680]}];
  for(const {identity,fields,widths:tableWidths} of cases){
   const min=[...identity,...fields].reduce((a,b)=>a+b,0);
   for(const total of tableWidths){

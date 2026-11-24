@@ -36,5 +36,10 @@ test('all public valuation surfaces share the literal $ARC token and integer gro
  assert.equal(formatter.format(4700,'it'),'4.700 $ARC');
  assert.equal(formatter.format(0,'en'),'0 $ARC');
  assert.equal(formatter.format(null,'en'),'—');
- for(const locale of ['en','it','de','es','fr'])assert.ok(formatter.format(1234567,locale).endsWith(' $ARC'));
+ for(const locale of ['en','it','de','es','fr']){
+  const formatted=formatter.format(9999999,locale);
+  assert.equal(formatted,new Intl.NumberFormat(locale,{useGrouping:'always'}).format(9999999)+' $ARC');
+  assert.equal(formatted.replace(/[^0-9]/g,''),'9999999');
+  assert.equal(Array.from(formatted).length,14);
+ }
 });

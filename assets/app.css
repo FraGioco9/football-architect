@@ -2301,10 +2301,11 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 /* #763: Public Overview — Flag | Player | Positions | Age | Height | Foot |
  * Market value | Club. Explicit compact widths leave all extra space to Club;
  * unchanged fixed identity tracks keep exact first-paint geometry in Players and Club Roster.
- * Roster omits the redundant Club column and distributes surplus width among its four remaining tracks. */
-.app-players-table :is(th,td).app-market-value-col{width:130px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+ * Roster omits the redundant Club column and distributes surplus width among its four remaining tracks.
+ * All value columns reserve room for 9,999,999 $ARC plus the localized header and sort indicator. */
+.app-players-table :is(th,td).app-market-value-col{width:196px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .app-players-table th.app-market-value-col .app-players-sort-button{justify-content:flex-end}
-.app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]){--app-players-age-width:78px;--app-players-height-width:96px;--app-players-foot-width:90px;--app-players-market-width:172px;--app-players-club-min:210px;min-width:calc(var(--app-players-flag-width) + var(--app-players-name-width) + var(--app-players-positions-width) + var(--app-players-age-width) + var(--app-players-height-width) + var(--app-players-foot-width) + var(--app-players-market-width) + var(--app-players-club-min))}
+.app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]){--app-players-age-width:78px;--app-players-height-width:96px;--app-players-foot-width:90px;--app-players-market-width:196px;--app-players-club-min:210px;min-width:calc(var(--app-players-flag-width) + var(--app-players-name-width) + var(--app-players-positions-width) + var(--app-players-age-width) + var(--app-players-height-width) + var(--app-players-foot-width) + var(--app-players-market-width) + var(--app-players-club-min))}
 .app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]) th:nth-child(4){width:var(--app-players-age-width)}
 .app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]) th:nth-child(5){width:var(--app-players-height-width)}
 .app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]) th:nth-child(6){width:var(--app-players-foot-width)}
@@ -2316,10 +2317,10 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 .app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]) :is(th,td):nth-child(4),.app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]) :is(th,td):nth-child(5){text-align:center}
 .app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]) :is(th,td):nth-child(6),.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td).app-players-club-cell{text-align:left}
 @media(max-width:720px){
- .app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]){--app-players-age-width:62px;--app-players-height-width:76px;--app-players-foot-width:74px;--app-players-market-width:152px;--app-players-club-min:176px}
+ .app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]){--app-players-age-width:62px;--app-players-height-width:76px;--app-players-foot-width:74px;--app-players-market-width:172px;--app-players-club-min:176px}
 }
 @media(max-width:420px){
- .app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]){--app-players-age-width:60px;--app-players-height-width:72px;--app-players-foot-width:70px;--app-players-market-width:148px;--app-players-club-min:156px}
+ .app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]){--app-players-age-width:60px;--app-players-height-width:72px;--app-players-foot-width:70px;--app-players-market-width:172px;--app-players-club-min:156px}
 }
 
 .app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"]) col.app-players-view-third-column{width:var(--app-players-positions-width)}

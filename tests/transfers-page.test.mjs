@@ -51,3 +51,24 @@ test('Transfers market value is read-only, global and reserved before hydration'
  assert.match(source,/navigate\(\{\.\.\.state,sort:order\?'market_value_arc':'',order,offset:0\}\)/);
  assert.doesNotMatch(source,/\.players\.sort\(/);
 });
+
+test('#763 all market value table tracks reserve seven-digit amounts without shrinking identity columns',()=>{
+ const css=read('assets/app.css'),transfers=read('assets/transfers-page.css'),template=read('templates/transfers-content.html');
+ const block=css.slice(css.indexOf('/* #763: Public Overview'));
+ const widths=[...block.matchAll(/--app-players-market-width:(\d+)px/g)].map(m=>Number(m[1]));
+ assert.deepEqual(widths,[196,172,172]);
+ assert.match(transfers,/--fa-transfers-value-width:196px;min-width:824px/);
+ assert.match(transfers,/--fa-transfers-value-width:172px;min-width:800px/);
+ assert.match(transfers,/@media\(max-width:700px\)\{\.fa-transfers-table\{min-width:684px\}/);
+ assert.match(transfers,/\.fa-transfers-table th,\.fa-transfers-table td\{box-sizing:border-box\}/);
+ assert.match(transfers,/\.fa-transfers-table \.fa-transfers-value\{width:var\(--fa-transfers-value-width\);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums\}/);
+ assert.match(transfers,/\.fa-transfers-skeleton-value\{width:13ch;max-width:100%;margin-left:auto\}/);
+ assert.match(transfers,/\.fa-transfers-value \.app-players-sort-chevron\{left:auto;right:calc\(100% \+ 5px\)\}/);
+ assert.equal((template.match(/class="fa-transfers-value"><span class="fa-transfers-skeleton fa-transfers-skeleton-value"/g)||[]).length,7);
+ // Budget seven digits, separators, space, currency token, cell padding and
+ // a separate localized header/sort-arrow allowance. This is a conservative
+ // static budget, not a browser font measurement.
+ for(const [track,padding] of [[196,32],[172,32],[172,20],[172,12]]){
+  assert.ok(track-padding>=140);
+ }
+});

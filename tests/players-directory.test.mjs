@@ -1179,8 +1179,8 @@ test('#763 public overview width tracks preserve the first three columns and res
  assert.match(js,/addHeader\(globalThis\.faMarketValue\?\.label\(language\(\)\)\|\|'Market value','market_value_arc'\);[\s\S]*?club\.className='app-players-club-col'/);
  const block=css.slice(css.indexOf('/* #763: Public Overview'));
  const tracks=[...block.matchAll(/--app-players-age-width:(\d+)px;--app-players-height-width:(\d+)px;--app-players-foot-width:(\d+)px;--app-players-market-width:(\d+)px;--app-players-club-min:(\d+)px/g)].map(m=>m.slice(1).map(Number));
- assert.deepEqual(tracks,[[78,96,90,172,210],[62,76,74,152,176],[60,72,70,148,156]]);
- assert.deepEqual(tracks.map((t,i)=>t.reduce((a,b)=>a+b,[502,272,254][i])),[1148,812,760]);
+ assert.deepEqual(tracks,[[78,96,90,196,210],[62,76,74,172,176],[60,72,70,172,156]]);
+ assert.deepEqual(tracks.map((t,i)=>t.reduce((a,b)=>a+b,[502,272,254][i])),[1172,832,784]);
  assert.match(block,/th\.app-market-value-col \.app-players-sort-chevron\{left:auto;right:calc\(100% \+ 5px\)\}/);
  assert.match(block,/th\.app-players-club-col\{width:calc\(100% - var\(--app-players-flag-width\)/);
  assert.equal((html.match(/colspan="8"/g)||[]).length,5);
