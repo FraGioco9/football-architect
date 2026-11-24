@@ -1059,18 +1059,18 @@ try{
   try{
    const page=await context.newPage(),errors=[];
    page.on('pageerror',e=>errors.push(e.message));
-   let base=true,finance=false,write=false,funded=false,previewCalls=0,financeReads=0;
+   let base=true,finance=false,write=false,funded=false,previewCalls=0,financeReads=0,holdAccess=false,accessGate=null,releaseAccess=()=>{},accessEntered=false,previewFails=false;
    const world={schemaVersion:1,generation:'11111111-1111-4111-8111-111111111111',revision:0,seasonNumber:0,day:0,phase:'unstarted'};
    const ok=(route,data,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)});
    await page.route('**/api/player/permissions',route=>ok(route,{permissions:base?['admin.access','admin.world.read',...(write?['admin.world.write']:[])]:[]}));
    await page.route('**/api/world',route=>ok(route,{},503));
    await page.route('**/api/admin/**',route=>{
     const p=new URL(route.request().url()).pathname;
-    if(p==='/api/admin/inspection/access')return ok(route,{reset:write,economy:finance},base?200:403);
+    if(p==='/api/admin/inspection/access'){if(holdAccess){accessEntered=true;return accessGate.then(()=>ok(route,{reset:write,economy:finance},base?200:403))}return ok(route,{reset:write,economy:finance},base?200:403)}
     if(p==='/api/admin/world')return ok(route,{world});
     if(p==='/api/admin/reset/options')return ok(route,{scopes:['sporting','players','contracts','economy'],executable:false},write?200:403);
     if(p==='/api/admin/session')return ok(route,{actor:{id:'fixture'},csrfToken:'fixture-csrf'});
-    if(p==='/api/admin/reset/preview'){previewCalls++;assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');return ok(route,{world,scopes:['sporting'],counts:{seasons:1},blockers:['preview_only'],executable:false},write?200:403)}
+    if(p==='/api/admin/reset/preview'){previewCalls++;assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');return ok(route,{world,scopes:['sporting'],counts:{seasons:1},blockers:['preview_only','economic_generation_guard','contract_schema_incomplete','contract_generation_guard','sporting_history_protected','reset_prerequisites'],executable:false},write?(previewFails?503:200):403)}
     if(p.startsWith('/api/admin/economy/')){
      financeReads++;if(!finance)return ok(route,{},403);
      if(p.endsWith('/summary'))return ok(route,{world,status:funded?'active':'uninitialized',policyVersion:funded?'fixture':null,transactionCount:funded?1:0,accounts:['PLATFORM_RESERVE','CLUB_TREASURY','USER_WALLET','ISSUANCE_CONTROL'].map(kind=>({kind,count:funded?1:0,balanceArc:funded?'123456789012':null,heldArc:funded?'0':null,availableArc:funded?'123456789012':null}))});
@@ -1092,6 +1092,17 @@ try{
    assert.ok(await descriptions.evaluateAll(nodes=>nodes.every(n=>n.textContent.trim()&&n.scrollHeight<=n.clientHeight+1&&n.getBoundingClientRect().bottom<=n.parentElement.querySelector('a').getBoundingClientRect().top+1)),'Descriptions must fit above navigation buttons');
    const cardSizes=await page.locator('.admin-directory-card:visible').evaluateAll(nodes=>nodes.map(n=>Math.round(n.getBoundingClientRect().height)));
    assert.equal(new Set(cardSizes).size,1,'All Admin cards have equal height');
+   // Delay the capability response during a real refresh; no partial directory may paint.
+   const directoryGeometry=()=>page.locator('.admin-directory-card:visible').evaluateAll(nodes=>nodes.map(n=>{const r=n.getBoundingClientRect();return [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]}));
+   const beforeRefresh=await directoryGeometry();
+   holdAccess=true;accessGate=new Promise(resolve=>{releaseAccess=resolve});
+   try{
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('#app-admin[data-admin-access="pending"]').waitFor({state:'attached'});
+    assert.equal(await page.locator('.admin-directory-card:visible').count(),0,'No partial directory before all grants resolve');
+   }finally{holdAccess=false;releaseAccess()}
+   await page.locator('[data-admin-card="reset"]').waitFor({state:'visible'});
+   assert.deepEqual(await directoryGeometry(),beforeRefresh,'All directory cards keep their geometry after refresh');
    // WebKit can return from click before the destination DOM is installed.
    // Require the canonical route, granted access and completed loading, not just a transient DOM state.
    const inspectionReady=mode=>page.locator('#app-admin[data-admin-access="granted"] [data-admin-inspection="'+mode+'"][aria-busy="false"]');
@@ -1110,8 +1121,15 @@ try{
    assert.equal(await page.locator('[data-inspection-value="reserve"]').textContent(),'—');
    await page.goto('http://app.localhost:2000/admin/reset');await inspectionReady('reset').waitFor({state:'visible'});
    const scopes=page.locator('[data-inspection-scope]');assert.equal(await scopes.count(),4);assert.equal(await page.locator('[data-inspection-scope]:checked').count(),0);
+   const resetGeometry=()=>page.locator('[data-admin-inspection="reset"],.inspection-result,[data-inspection-blockers],[data-inspection-status],[data-inspection-copy="confirm"]').evaluateAll(nodes=>nodes.map(n=>{const r=n.getBoundingClientRect();return [Math.round(r.x),Math.round(r.y+window.scrollY),Math.round(r.width),Math.round(r.height)]}));
+   const resetEmpty=await resetGeometry();
    await scopes.first().check();await page.locator('[data-inspection-preview]').click();await inspectionReady('reset').waitFor({state:'visible'});
    assert.equal(previewCalls,1);assert.equal(await page.locator('[data-inspection-copy="confirm"]').isEnabled(),false);
+   assert.equal(await page.locator('[data-inspection-blockers] li').count(),6);
+   assert.deepEqual(await resetGeometry(),resetEmpty,'Preview blockers must not resize the Reset panel');
+   previewFails=true;await page.locator('[data-inspection-preview]').click();await inspectionReady('reset').waitFor({state:'visible'});
+   assert.equal(previewCalls,2);assert.notEqual(await page.locator('[data-inspection-status]').textContent(),'');
+   assert.deepEqual(await resetGeometry(),resetEmpty,'Preview error must not resize the Reset panel');
    write=false;await page.locator('[data-inspection-refresh]').click();await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
    assert.equal(await page.locator('#app-admin').isVisible(),false);assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}

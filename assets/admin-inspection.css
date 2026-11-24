@@ -50,3 +50,18 @@
 .inspection-metric strong{white-space:normal;overflow-wrap:anywhere;overflow:visible;line-height:1.2;max-height:none;word-break:normal}
 .inspection-metric{grid-template-rows:2.6em 2.4em;height:112px;min-height:112px;max-height:112px}
 @media(max-width:620px){.inspection-metric{grid-template-rows:3.9em 2.4em;height:128px;min-height:128px;max-height:128px}}
+
+/* Reserve message geometry in every data state. Use the standard Admin spacing
+   and scroll long localized messages rather than expanding their panels. */
+.inspection-panel{gap:var(--app-page-section-gap,16px);align-content:start}
+.app-admin-view .inspection-panel .inspection-summary{gap:12px;margin:0;flex-wrap:nowrap;min-width:0}
+.inspection-summary [data-inspection-world]{min-width:0;flex:1;line-height:1.4;block-size:2.8em;overflow:auto;align-content:center;overflow-wrap:anywhere}
+.inspection-summary [data-inspection-refresh]{flex:none;margin:0}
+.inspection-panel [data-inspection-content]{display:grid;gap:12px;min-width:0}
+.inspection-panel [role=tabpanel],.inspection-result{display:grid;gap:12px;min-width:0}
+.inspection-panel :is(h2,p,.inspection-scopes,.inspection-metrics,.inspection-tabs,.inspection-pagination){margin:0}
+.inspection-result{margin:0;padding-top:12px}
+.inspection-panel :is(.inspection-status,[data-inspection-list-status],[data-inspection-policy],[data-inspection-reconciliation],[data-inspection-copy="protected"]){box-sizing:border-box;min-block-size:2.8em;block-size:2.8em;max-block-size:2.8em;line-height:1.4;overflow:auto;overflow-wrap:anywhere;margin:0}
+.inspection-panel [data-inspection-blockers]{box-sizing:border-box;min-block-size:5.6em;block-size:5.6em;max-block-size:5.6em;line-height:1.4;overflow:auto;overflow-wrap:anywhere;margin:0;padding-inline-start:20px}
+.inspection-panel :is([data-inspection-preview],[data-inspection-copy="confirm"]){justify-self:start;margin:0}
+@media(max-width:620px){.inspection-panel :is(.inspection-status,[data-inspection-list-status],[data-inspection-policy],[data-inspection-reconciliation],[data-inspection-copy="protected"]){min-block-size:4.2em;block-size:4.2em;max-block-size:4.2em}}

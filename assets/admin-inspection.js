@@ -6,16 +6,7 @@ const doc=document,host=doc.querySelector('#app-admin'),root=host?.querySelector
 const text=k=>{const x=extraKeys.indexOf(k);if(x>=0)return (extra[doc.documentElement.lang]||extra.en)[x];const i=keys.indexOf(k);return i<0?k:(translations[doc.documentElement.lang]||translations.en)[i]};
 const translate=()=>{doc.querySelectorAll('[data-inspection-copy]').forEach(n=>{n.textContent=text(n.dataset.inspectionCopy)});host?.querySelector('[data-admin-back]')?.setAttribute('aria-label',text('back'));};
 translate();if(!root){
- const cards=Array.from(doc.querySelectorAll('[data-admin-panel="economy"],[data-admin-panel="reset"]'));
- let epoch=0;
- async function checkCards(){
-  const ticket=++epoch;cards.forEach(c=>c.hidden=true);
-  if(host?.dataset.adminAccess!=='granted')return;
-  try{const response=await fetch('/api/admin/inspection/access',{credentials:'same-origin',cache:'no-store'});if(!response.ok)return;const grants=await response.json();if(ticket===epoch&&host.dataset.adminAccess==='granted')cards.forEach(c=>c.hidden=grants[c.dataset.adminPanel]!==true)}catch{/* fail closed */}
- }
- window.addEventListener('fa:admin-access',()=>void checkCards());
- window.addEventListener('pageshow',e=>{if(e.persisted)void checkCards()});
- if(host?.dataset.adminAccess==='granted')void checkCards();
+ // Directory visibility is painted atomically by the shared Admin controller.
  new MutationObserver(translate).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});return
 }
 const el=q=>root.querySelector(q),all=q=>Array.from(root.querySelectorAll(q)),content=el('[data-inspection-content]'),status=el('[data-inspection-status]'),mode=root.dataset.adminInspection;
@@ -70,17 +61,17 @@ function renderPreview(){
  for(const key of preview?.blockers||[]){const li=doc.createElement('li');li.textContent=text(key);blockers.append(li)}
  if(preview)world(preview.world);
 }
-function clear(){for(const page of Object.values(pages)){page.data=null;page.history=[];page.cursor=null}if(mode==='economy'){for(const kind of ['clubs','ledger'])renderList(kind)}summary=null;reconciliation=null;preview=null;world(null);all('[data-inspection-value]').forEach(n=>{n.textContent='—';n.removeAttribute('title')});if(mode==='reset')renderPreview();else{el('[data-inspection-policy]').textContent='—';el('[data-inspection-reconciliation]').textContent='—'}}
+function clear(){for(const page of Object.values(pages)){page.data=null;page.history=[];page.cursor=null}if(mode==='economy'){for(const kind of ['clubs','ledger']){renderList(kind);el('[data-inspection-list-status="'+kind+'"]').textContent=''}}summary=null;reconciliation=null;preview=null;world(null);all('[data-inspection-value]').forEach(n=>{n.textContent='—';n.removeAttribute('title')});if(mode==='reset')renderPreview();else{el('[data-inspection-policy]').textContent='—';el('[data-inspection-reconciliation]').textContent='—'}}
 async function load(){
- const current=++token;busy=true;allowed=false;clear();sync();setStatus('checking');
+ const current=++token;let granted=false;busy=true;allowed=false;clear();sync();setStatus('checking');
  try{const permissions=await request('/api/player/permissions');if(current!==token)return;const p=permissions.permissions||[],base=p.includes('admin.access')&&p.includes('admin.world.read');if(!base){showAccess(false,false);content.hidden=true;setStatus('denied');return}
  const grants=await request('/api/admin/inspection/access');if(current!==token)return;
  if(grants[mode]!==true){showAccess(true,false);content.hidden=true;setStatus('denied');return}
- showAccess(true,true);content.hidden=false;
+ granted=true;showAccess(true,true);content.hidden=false;
  if(mode==='economy'){summary=await request('/api/admin/economy/summary');if(current!==token)return;reconciliation=await request('/api/admin/economy/reconciliation');if(current!==token)return;renderEconomy()}
  else {await request('/api/admin/reset/options');const w=await request('/api/admin/world');if(current!==token)return;world(w.world);renderPreview()}
  allowed=true;content.hidden=false;setStatus('');const active=el('[data-inspection-tab][aria-selected="true"]')?.dataset.inspectionTab;if(active&&['clubs','ledger'].includes(active)){busy=false;void loadList(active);}
- }catch(e){if(current===token){clear();content.hidden=true;if(e.status===401||e.status===403)showAccess(e.status!==401,false);else{host.dataset.adminAccess='unavailable';host.hidden=false}setStatus(e.status===401||e.status===403?'denied':'failed')}}
+ }catch(e){if(current===token){clear();const denied=e.status===401||e.status===403;content.hidden=denied||!granted;if(denied)showAccess(e.status!==401,false);else{host.dataset.adminAccess=granted?'granted':'unavailable';host.hidden=false}setStatus(denied?'denied':'failed')}}
  finally{if(current===token){busy=false;sync()}}
 }
 async function runPreview(){if(!allowed||busy)return;const current=++token;busy=true;preview=null;renderPreview();sync();setStatus('checking');

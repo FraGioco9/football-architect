@@ -423,35 +423,46 @@
     else if(error.message.startsWith('authorization_')||error.message==='permission_denied')paint(false,false);
    }finally{if(active===operation){pending=false;update();}}
   }
-  function paint(base,writer,notify=true){
+  function paint(base,writer,notify=true,grants={}){
    if(!base||!writer){if(draft||saved)invalidateDraft();}
    allowed=base;canWrite=writer;
-   host.hidden=!(base&&(!isPlayers||writer));
    if(isPlayers)root.hidden=!(base&&writer);
+   if(!isPlayers){
+    root.querySelectorAll('[data-admin-panel="players"],[data-admin-panel="contracts"],[data-admin-panel="licenses"]').forEach(item=>{item.hidden=!writer});
+    root.querySelectorAll('[data-admin-panel="reset"],[data-admin-panel="economy"]').forEach(item=>{item.hidden=!base||grants[item.dataset.adminPanel]!==true||(item.dataset.adminPanel==='reset'&&!writer)});
+   }
+   host.hidden=!(base&&(!isPlayers||writer));
    host.dataset.adminAccess=host.hidden?'denied':'granted';
-   if(!isPlayers)root.querySelectorAll('[data-admin-panel="players"],[data-admin-panel="contracts"],[data-admin-panel="licenses"]').forEach(item=>{item.hidden=!writer});
    if(notify){win.faAdminAccess=base;
     win.dispatchEvent(new CustomEvent('fa:admin-access',{detail:base}));}
    update();
   }
   async function check(){
    const current=++ticket;paint(false,false,false);
-   const cached=permissionCache?.read();
-   if(cached!==null&&cached!==undefined){
-    const read=cached.includes('admin.access')&&cached.includes('admin.world.read');
-    paint(read,read&&cached.includes('admin.world.write'));
-    return;
-   }
+   host.dataset.adminAccess='pending';
    const controller=new AbortController(),timeout=win.setTimeout(()=>controller.abort(),8000);
    try{
-    const response=await win.fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
-    if(!response.ok){if(response.status===401)permissionCache?.write([]);throw Error('permissions');}
-    const data=await response.json();
-    if(current!==ticket)return;
-    const perms=Array.isArray(data?.permissions)?data.permissions:[];
-    permissionCache?.write(perms);
-    const read=perms.includes('admin.access')&&perms.includes('admin.world.read');
-    paint(read,read&&perms.includes('admin.world.write'));
+    let perms=permissionCache?.read();
+    if(perms==null){
+     const response=await win.fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
+     if(!response.ok){if(response.status===401)permissionCache?.write([]);throw Error('permissions');}
+     const data=await response.json();
+     if(current!==ticket)return;
+     perms=Array.isArray(data?.permissions)?data.permissions:[];
+     permissionCache?.write(perms);
+    }
+    const read=perms.includes('admin.access')&&perms.includes('admin.world.read'),writer=read&&perms.includes('admin.world.write');
+    let grants={};
+    // Resolve both inspection cards before exposing any directory card.
+    // These are UI hints only; the Worker still authorizes every request.
+    if(read&&!isPlayers){
+     try{
+      const response=await win.fetch('/api/admin/inspection/access',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
+      if(response.status===401||response.status===403){if(current===ticket){permissionCache?.clear();paint(false,false)}return}
+      if(response.ok)grants=await response.json()||{};
+     }catch{/* unavailable inspection capabilities remain hidden */}
+    }
+    if(current===ticket)paint(read,writer,true,grants);
    }catch{if(current===ticket)paint(false,false)}finally{win.clearTimeout(timeout)}
   }
   if(form){
@@ -469,8 +480,12 @@
    next?.addEventListener('click',()=>{if(draft){draftPage++;renderPage()}});
   }
   new MutationObserver(update).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
-  // One permissions request per full document load/refresh, not on BFCache.
-  // Every privileged API request still enforces fresh server authorization.
+  // Directory BFCache restores must not expose stale capability-dependent cards.
+  // Players retain their existing navigation/cache behavior.
+  if(!isPlayers){
+   win.addEventListener('pagehide',()=>{++ticket;host.hidden=true;host.dataset.adminAccess='pending'});
+   win.addEventListener('pageshow',event=>{if(event.persisted){permissionCache?.clear();void check()}});
+  }
   update();void check();
  }
  return {makeOptions,commandFromRaw,mount};
