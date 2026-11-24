@@ -115,3 +115,6 @@ The launch population will use a mixed-age distribution only. Use the previously
 
 
 [Mixed-age launch reserve and contract stress](economy-mixed-launch-v1.md): 18 synthetic 100-season diagnostic paths, 90 no-issuance prefix checks, only mixed 16–32 reference. Guarded contract affordability produces zero final arrears in all nine paths, but initial arrears and reserve depletion remain. Reference 24M supports 100 seasons in three seeds; high EUR demand stops at 40–42. No reserve selection or runtime adoption, HOLD.
+
+
+[Opening affordability and realized exposure](economy-opening-affordability-v1.md): 15 mixed-age diagnostic paths, zero arrears throughout guarded paths; 169–182 clubs require lower opening contract offers. Balanced opening mandates are a synthetic sensitivity only. Aggregate realized exposure factor 1.00569, holdout reference minimum reserve 16.75–17.07M, high EUR 41.02–43.87M. Wallet accumulation persists; no runtime parameter/mandate allocation/issuance selected. HOLD.

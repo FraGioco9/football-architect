@@ -396,3 +396,13 @@ test('mixed launch reserve prefixes stop before unfunded awards and contract gua
  const x=buildMixedStress({seasons:3,seeds:[c.seeds[0]],scenarios:[c.scenarios[0]]});
  assert.equal(x.runs.length,2);for(const r of x.runs){assert.equal(r.initialAgeHistogram[33],0);assert.equal(Object.values(r.initialAgeHistogram).reduce((a,b)=>a+b,0),6400);assert.equal(r.reserves[0].completedSeasons,1);assert.equal(r.reserves[0].firstUnfundedSeason,2);assert.equal(r.reserves.at(-1).completedSeasons,3);}
 });
+
+test('opening affordability and mandate distribution are research-only and preserve no-issuance reserve prefixes',async()=>{
+ const {buildOpeningStress}=await import('../tools/run-economy-opening-affordability.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/economy-opening-affordability-v1.json',import.meta.url),'utf8'));
+ const saved=JSON.parse(readFileSync(new URL('../docs/economy-opening-affordability-v1-summary.json',import.meta.url),'utf8'));
+ assert.equal(saved.length,15);assert.ok(saved.every(r=>r.firstSeasonArrears===0&&r.peakArrearsArc===0&&r.finalArrearsArc===0));
+ const x=buildOpeningStress({seasons:3,seeds:[c.seeds[0]],calibrationSeeds:[c.calibrationSeeds[0]],scenarios:[c.scenarios[0]]});
+ assert.equal(x.runs.length,3);assert.ok(x.runs.every(r=>r.openingWagesAfter<=r.openingWagesBefore&&r.firstSeasonUnpaid28===0&&r.firstSeasonArrears===0&&r.reserveChecks.at(-1).completed===3));
+ assert.ok(x.runs[1].openingMandateIncomeSpread.max-x.runs[1].openingMandateIncomeSpread.min<x.runs[0].openingMandateIncomeSpread.max-x.runs[0].openingMandateIncomeSpread.min);
+});
