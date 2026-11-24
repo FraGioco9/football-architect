@@ -416,3 +416,12 @@ test('paid opening mandates start AI and zero wallets; no double sales or simula
  const x=buildPaidMandateStress({seasons:3,seeds:[c.seeds[0]],scenarios:[c.scenarios[0]],primaryPolicies:[c.primaryPolicies[0]]}).runs[0];
  assert.equal(x.openingMandateIncomeSpread.mean,0);assert.equal(x.firstSeason.primaryArcBuys,0);assert.ok(x.firstSeason.primaryEurBuys>0&&x.firstSeason.aiPaid>0);assert.deepEqual(x.firstSeason,dual[0].firstSeason);assert.equal(x.primaryArcBuys+x.primaryEurBuys+x.primaryRetiredUnsold+x.primaryUnsold,6400);
 });
+
+test('agent circulation tracks individual paid mandate tenures and reconciles phase reserve flows',async()=>{
+ const {buildCirculationStress}=await import('../tools/run-economy-agent-circulation.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/economy-agent-circulation-v1.json',import.meta.url),'utf8'));
+ const ref=JSON.parse(readFileSync(new URL('../docs/economy-agent-circulation-v1-reference-summary.json',import.meta.url),'utf8'));
+ const alt=JSON.parse(readFileSync(new URL('../docs/economy-agent-circulation-v1-alternatives-summary.json',import.meta.url),'utf8'));
+ assert.equal(ref.length,3);assert.equal(alt.length,9);assert.ok(ref.every(r=>r.groups.find(g=>g.kind==='youth'&&g.currency==='ARC').recoveryRatio<1));assert.ok(alt.filter(r=>r.variant==='return-sensitive').every(r=>r.reserveChecks.at(-1).completed<100));
+ const x=buildCirculationStress({seasons:3,seeds:[c.seeds[0]],variants:[c.variants[0]]}).runs[0];assert.equal(x.openingMandateIncomeSpread.mean,0);assert.equal(x.agentTotals.salary+x.agentTotals.resale-x.agentTotals.arcSpend,x.finalWalletArc);assert.equal(x.phases[0].walletChange,x.finalWalletArc);assert.equal(x.peakArrearsArc,0);
+});

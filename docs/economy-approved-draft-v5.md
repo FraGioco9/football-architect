@@ -130,3 +130,6 @@ Next research: start with zero human mandates and zero personal wallets, simulat
 
 
 [Paid mandate launch research](economy-paid-mandate-launch-v1.md): 15 synthetic 100-season paths, zero opening human mandates/wallets. Reference dual99/90 primary finite EUR gross 128–134k, minimum reserve 16.88–17.99M, 24M funds 100 seasons but high EUR demand stops 45–46. Initial AI recycling helps but no structural closure. EUR-only90 and dual90/80 compared under reference only. Existing mandate rate/currency and reserve remain unapproved. HOLD, no live changes.
+
+
+[Agent tenure economics and circulation](economy-agent-circulation-v1.md): 12 paid-launch 100-season diagnostic paths. Reference regime ARC recovery 96.0–96.25%; youth ARC closed-tenure nominal recovery 88.0–88.2%, ~26% recover cost. Active marketplace improves recovery to 97.1–97.3% but does not close gap; assumed return-sensitive demand 27% recovery and 24M funds 21–22 seasons. No approved parameter changes, actual demand evidence, structural closure, or runtime adoption. HOLD.
