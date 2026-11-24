@@ -23,3 +23,5 @@
 .inspection-panel :is(button,input,a,[tabindex]):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .inspection-panel button:disabled{opacity:.55;cursor:default}
 @media(max-width:620px){.inspection-scopes{grid-template-columns:1fr}.inspection-metrics{gap:8px}.inspection-metric{padding:9px}.inspection-tabs{flex-wrap:nowrap;overflow-x:auto}.inspection-tabs button{flex:none}}
+
+.inspection-pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0}.inspection-table th,.inspection-table td{white-space:nowrap}.inspection-panel[aria-busy=true] .inspection-metric strong{min-height:1.4em}.inspection-table tr{height:42px}

@@ -87,7 +87,7 @@ const fingerprint=async(row:unknown)=>{
 };
 export function parseEconomyPage(query:URLSearchParams,kind:'clubs'|'ledger'){
  const allowed=kind==='clubs'?['page','checkpoint']:['cursor','checkpoint'];
- if([...query.keys()].some(k=>!allowed.includes(k)||query.getAll(k).length!==1))throw new ApiError(422,'invalid_economy_query');
+ query.forEach((_value,k)=>{if(!allowed.includes(k)||query.getAll(k).length!==1)throw new ApiError(422,'invalid_economy_query')});
  const checkpoint=query.get('checkpoint');
  if(checkpoint!==null&&!/^[0-9a-f]{64}$/.test(checkpoint))throw new ApiError(422,'invalid_economy_query');
  const page=query.get('page')??'1',cursor=query.get('cursor');

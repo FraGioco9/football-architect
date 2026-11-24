@@ -75,7 +75,7 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
     !/[\x00-\x1f]/.test(decoded)&&encodeURIComponent(decoded)===encoded;
   }catch{return false}
  })();
- const economyQuery=req.method==='GET'&&/^\/api\/admin\/economy\/(?:clubs\?page=[1-7]&checkpoint=[0-9a-f]{64}|ledger\?cursor=[1-9][0-9]{0,14}(?:%3A|:)[0-9a-f-]{36}&checkpoint=[0-9a-f]{64})$/i.test(raw);
+ const economyQuery=req.method==='GET'&&/^\/api\/admin\/economy\/(?:clubs\?page=[1-7]&checkpoint=[0-9a-f]{64}|ledger\?(?:cursor=[1-9][0-9]{0,14}(?:%3A|:)[0-9a-f-]{36}&)?checkpoint=[0-9a-f]{64})$/i.test(raw);
  const adminPath=economyQuery?raw.split('?')[0]:licenseAccountQuery?'/api/admin/club-licenses/accounts':contractsPath;
  const publicRead=raw==='/api/world/history'||playersRead||matchesRead||clubRoster||clubOverview||clubHistory||clubFixturesRead||/^\/api\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])\/seasons\/[1-9][0-9]{0,8}$/.test(raw)||/^\/api\/calendar\/seasons\/[1-9][0-9]{0,8}\/days\/(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(raw);
  // #581: exact anonymous World History archive GET (no query, suffix or cookie).
