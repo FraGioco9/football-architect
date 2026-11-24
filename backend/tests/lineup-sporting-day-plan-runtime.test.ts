@@ -68,7 +68,7 @@ function database(fixtures:Fixture[],world:WorldV1,{missing=false}={}){
      throw Error('unexpected first: '+sql);
     },
     async all(){
-     if(sql.includes('FROM player_club_affiliations a JOIN generated_players p'))
+     if(sql.includes('FROM player_signed_contracts c'))
       return {results:[]};
      throw Error('unexpected all: '+sql);
     }};

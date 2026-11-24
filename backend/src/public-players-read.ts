@@ -3,6 +3,7 @@ import {ApiError} from './errors.ts';
 import clubs from '../../data/clubs.json' with {type:'json'};
 import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
+import {CURRENT_PLAYER_CONTRACTS_SQL} from './effective-player-contracts.mjs';
 import {projectPublicFootballerDirectoryRecord,type InternalFootballer} from './footballer-public-projection.ts';
 import type {PublicPlayerFilters} from './public-players-filters.mjs';
 import {marketValueIndexVersion,marketValueIndexReadiness} from './player-market-value-index.ts';
@@ -102,7 +103,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
   :'id DESC';
  const where=predicates.length?' WHERE '+predicates.join(' AND '):'';
  const countSql='SELECT COUNT(*) AS n FROM generated_players'+where;
- const pageSql='SELECT p.id,p.payload_json,a.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a.player_id=p.id'+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?';
+ const pageSql='SELECT p.id,p.payload_json,a.club_key FROM generated_players p LEFT JOIN '+CURRENT_PLAYER_CONTRACTS_SQL+' a ON a.player_id=p.id'+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?';
  const project=(row:StoredRow)=>{
    const payload=JSON.parse(row.payload_json) as StoredPlayer;
    const clubKey=row.club_key??null;
@@ -126,7 +127,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
   const pageRanked='WITH ranked AS (SELECT v.player_id,v.market_value_arc'+base+
    (predicates.length||sortExpression?join:'')+rankedWhere+' ORDER BY '+rankedOrder+' LIMIT ? OFFSET ?) '+
    'SELECT p.id,p.payload_json,a.club_key,ranked.market_value_arc AS cached_market_value_arc FROM ranked JOIN generated_players p ON p.id=ranked.player_id '+
-   'LEFT JOIN player_club_affiliations a ON a.player_id=p.id ORDER BY '+outerOrder;
+   'LEFT JOIN '+CURRENT_PLAYER_CONTRACTS_SQL+' a ON a.player_id=p.id ORDER BY '+outerOrder;
   // Readiness, count and ranked page share a single transaction snapshot.
   // Public GET never fills a cache or returns a partial/stale ranking.
   const [readyResult,countResult,pageResult]=await db.batch([
@@ -167,7 +168,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
  }else{
   // Preserve the current no-page-SELECT behavior for expired deep links.
   // OFFSET pages must recount: generation alone cannot detect new players
-  // or affiliation writes, so reusing a client-supplied count is unsafe.
+  // or contract writes, so reusing a client-supplied count is unsafe.
   const countRow=await db.prepare(countSql).bind(...values).first<{n:number}>();
   count=countRow?.n??0;
   const totalPages=Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE));
@@ -177,7 +178,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
  }
  const totalPages=Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE));
  const after=await readWorld(db);
- if(after.generation!==before.generation)throw new ApiError(409,'stale_world');
+ if(after.generation!==before.generation||after.revision!==before.revision)throw new ApiError(409,'stale_world');
  return {
   count,page,pageSize:PUBLIC_PLAYER_PAGE_SIZE,totalPages,
   players:rows.map(project)
@@ -188,7 +189,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
 export async function readPublicPlayer(db:Database,id:number){
  if(!Number.isSafeInteger(id)||id<1)throw new ApiError(422,'invalid_public_request');
  const before=await readWorld(db);
- // Affiliation is a single authoritative LEFT JOIN; an absent row means Free Agent.
+ // Effective signed term only. No legacy fallback; public payload retains nullable clubKey.
  const row=await db.prepare(`SELECT p.id,p.payload_json,a.club_key,
   CASE WHEN portrait.status='approved'
     AND portrait.schema_version='player-portraits-v5'
@@ -196,12 +197,12 @@ export async function readPublicPlayer(db:Database,id:number){
     AND portrait.asset_key=('assets/players/portraits/' || p.id || '.webp')
     THEN 1 ELSE 0 END AS portrait_approved
   FROM generated_players p
-  LEFT JOIN player_club_affiliations a ON a.player_id=p.id
+  LEFT JOIN ${CURRENT_PLAYER_CONTRACTS_SQL} a ON a.player_id=p.id
   LEFT JOIN player_portrait_profiles portrait ON portrait.player_id=p.id
   WHERE p.id=?`)
   .bind(id).first<StoredDetailRow>();
  const after=await readWorld(db);
- if(after.generation!==before.generation)throw new ApiError(409,'stale_world');
+ if(after.generation!==before.generation||after.revision!==before.revision)throw new ApiError(409,'stale_world');
  if(!row)throw new ApiError(404,'player_not_found');
  const payload=JSON.parse(row.payload_json) as StoredPlayer;
  // Keep the approved public player projection; add only current, nullable club identity.

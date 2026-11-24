@@ -6,7 +6,7 @@ import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
 
-test('PASS-01 two teammates, 6/12/20m, distance-calibrated native ground impulse and receiving-contact gate',
+test('PASS-01 two teammates, 6/12/20m, distance-calibrated native ground impulse and bounded first-touch reception',
  {timeout:120000},async()=>{
  const R=await initializeRapier(rapier),rows=[];
  assert.throws(()=>createControlledActionLab(R,'pass-pair',{bodyGuardEnabled:true}),TypeError);
@@ -39,14 +39,14 @@ test('PASS-01 two teammates, 6/12/20m, distance-calibrated native ground impulse
      assert.equal(frame.action.actualPhysicsImpulseApplied,true);
      assert.equal(frame.action.impulseNs.z,0);
      const calibration=frame.action.isolatedGroundPassCalibration;
-     assert.ok(calibration.scale>=1&&calibration.scale<=1.85);
+     assert.ok(calibration.scale>=1&&calibration.scale<=2.20);
      assert.equal(calibration.officialMatchAction,false);
      assert.equal(frame.action.impulseNs.x,calibration.originalImpulseNs.x*calibration.scale);
      assert.equal(frame.action.impulseNs.y,calibration.originalImpulseNs.y*calibration.scale);
      assert.ok(Math.abs(Math.hypot(calibration.originalImpulseNs.x,calibration.originalImpulseNs.y)-2.4)<1e-8);
      if(distance<7)assert.ok(calibration.scale<1.02);
-     else if(distance<13)assert.ok(calibration.scale>1.3&&calibration.scale<1.5);
-     else assert.ok(calibration.scale>1.6);
+     else if(distance<13)assert.ok(calibration.scale>1.50&&calibration.scale<1.60);
+     else assert.ok(calibration.scale>2.05&&calibration.scale<=2.20);
     }
     assert.equal(frame.passPairAudit.officialPassCompleted,false);
     assert.equal(frame.passPairAudit.officialReception,false);
@@ -58,8 +58,28 @@ test('PASS-01 two teammates, 6/12/20m, distance-calibrated native ground impulse
      assert.equal(contact.contactTick,tick);
      assert.equal(contact.priorSampleSpeedMps,Math.hypot(
       previous.ball.velocity.x,previous.ball.velocity.y));
-     assert.equal(contact.postSolverSpeedMps,Math.hypot(
+     assert.equal(contact.postContactSpeedMps,Math.hypot(
       frame.ball.velocity.x,frame.ball.velocity.y));
+     const cushion=contact.cushion;
+     if(cushion){
+      assert.equal(contact.mode,'active-cushion');
+      assert.equal(cushion.actorId,receiver.id);
+      assert.equal(cushion.tick,tick);
+      assert.equal(cushion.originalPassTick,audit.passTick);
+      assert.equal(cushion.nativeExclusiveShoeStart,true);
+      assert.equal(cushion.actualPhysicsImpulseApplied,true);
+      assert.equal(cushion.officialPossession,false);
+      assert.equal(cushion.noActiveOpponents,true);
+      assert.equal(cushion.measuredNearestOpponentM,null);
+      assert.equal(cushion.impulseNs.z,0);
+      assert.ok(Math.hypot(cushion.impulseNs.x,cushion.impulseNs.y)<=2.7);
+      assert.equal(contact.postSolverSpeedMps,Math.hypot(
+       cushion.realPreBallVelocity.x,cushion.realPreBallVelocity.y));
+      assert.ok(contact.postContactSpeedMps<contact.postSolverSpeedMps);
+     }else{
+      assert.equal(contact.mode,'passive-contact');
+      assert.equal(contact.postSolverSpeedMps,contact.postContactSpeedMps);
+     }
      assert.equal(contact.realRapierShoeStart,true);
      assert.equal(contact.officialReception,false);
      assert.ok(Object.isFrozen(contact));
@@ -100,5 +120,19 @@ test('PASS-01 two teammates, 6/12/20m, distance-calibrated native ground impulse
   assert.ok(row.receivingContact.priorSampleSpeedMps>0);
   assert.ok(Number.isFinite(row.receivingContact.postSolverSpeedMps));
   assert.equal(row.receiverFollowThrough.completed,true);
+  // Provisional physical control envelope, not official possession.
+  assert.ok(row.receiverFollowThrough.atOneSecond.gapM<=0.85,JSON.stringify(row));
+  assert.ok(row.receiverFollowThrough.atOneSecond.speedMps<=0.30,JSON.stringify(row));
+  assert.ok(row.peakGroundClearanceM<0.10,JSON.stringify(row));
+  if(row.distanceM<7){
+   assert.equal(row.receivingContact.mode,'passive-contact');
+   assert.ok(row.flightTimeS<1.85);
+  }else if(row.distanceM<13){
+   assert.ok(row.flightTimeS<2.88,JSON.stringify(row));
+  }else{
+   assert.ok(row.flightTimeS<4.50,JSON.stringify(row));
+  }
  }
+ assert.ok(rows.some(row=>row.receivingContact.mode==='active-cushion'),
+  'Harder passes must exercise the authentic M25 first-touch path');
 });

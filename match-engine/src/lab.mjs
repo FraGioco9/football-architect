@@ -494,7 +494,10 @@ function render() {
         (f.passPairAudit.receiverTick===null?' · receiving contact not observed':
          ' · real receiving shoe START after '+f.passPairAudit.flightTimeS.toFixed(2)+' s'+
          ' · approach '+fmtKmh(f.passPairAudit.receivingContact.priorSampleSpeedMps)+' km/h'+
-         ' · after contact '+fmtKmh(f.passPairAudit.receivingContact.postSolverSpeedMps)+' km/h'):
+         ' · after contact '+fmtKmh(f.passPairAudit.receivingContact.postContactSpeedMps)+' km/h'+
+         (f.passPairAudit.receivingContact.cushion?' · active first-touch cushion':' · passive first touch')+
+         (f.passPairAudit.receiverFollowThrough?.completed?
+          ' · 1s gap '+f.passPairAudit.receiverFollowThrough.atOneSecond.gapM.toFixed(2)+' m':'') ):
         ' · waiting for native passing shoe START'):'')+
       (f.nativeFixedCarryResearch?' · Native Carry · real two-shoe Rapier START required':'')+
       (f.soloSprintActiveFootReleaseM===0.06?

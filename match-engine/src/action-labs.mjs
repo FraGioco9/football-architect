@@ -566,9 +566,12 @@ export function createControlledActionLab(RAPIER,id,{
     const pos=physics.ball.position,vel=physics.ball.velocity;
     const gap=Math.hypot(pos.x-passPairAudit.targetX,pos.y-passPairAudit.targetY);
     const receive=decisionEvidence.firstPossibleReception;
-    // The preceding 60Hz sample is before the receiving collision tick;
-    // the current sample includes all original solver effects. Neither is
-    // an inferred exact sub-tick impact speed or isolated shoe force.
+    const cushion=receive?engine.researchReceivingCushionSnapshot():null;
+    if(cushion&&(cushion.tick!==physics.tick||cushion.actorId!==receive.playerId))
+     throw new Error('PASS-02 requires the same genuine receiving START');
+    // The preceding 60Hz sample is before the receiving collision tick.
+    // When a cushion occurs, distinguish original solver output from the
+    // additional real damping impulse; no exact sub-tick speed is inferred.
     if(receive&&(receive.tick!==physics.tick||
        previousPassBall?.tick!==physics.tick-1))
      throw new Error('PASS-01 receiving observation requires consecutive native samples');
@@ -582,13 +585,16 @@ export function createControlledActionLab(RAPIER,id,{
       receiverId:receive.playerId,
       priorSampleTick:previousPassBall.tick,contactTick:physics.tick,
       priorSampleSpeedMps:Math.hypot(previousPassBall.velocity.x,previousPassBall.velocity.y),
-      postSolverSpeedMps:Math.hypot(vel.x,vel.y),
+      postSolverSpeedMps:cushion?Math.hypot(cushion.realPreBallVelocity.x,cushion.realPreBallVelocity.y):
+       Math.hypot(vel.x,vel.y),
+      postContactSpeedMps:Math.hypot(vel.x,vel.y),
+      cushion,mode:cushion?'active-cushion':'passive-contact',
       targetGapM:gap,realRapierShoeStart:true,readOnly:true,
       officialReception:false
      }):null});
    }
-   // Observe one second of unassisted ball motion after contact. No
-   // receiving cushion, artificial trap, target movement or new impulse.
+   // Observe one second after the first contact (and optional one-time
+   // cushion). No later assisted trap, target movement or extra impulse.
    if(passPairAudit.receiverTick!==null){
     const elapsed=physics.tick-passPairAudit.receiverTick;
     if(elapsed>=0&&elapsed<=60){

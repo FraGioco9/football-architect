@@ -95,6 +95,7 @@ export function createPrivatePhysicalActionExecutor({
  let tick=0,lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
  let action=null,audit=null,closed=false;
  let actualPriorPass=null,interrupted=false,firstCushion=null;
+ let isolatedPassReceptionSeen=false;
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
@@ -296,9 +297,12 @@ export function createPrivatePhysicalActionExecutor({
    // the original direction and the exclusive START gate never change.
    // This empirical candidate is not a guaranteed arrival or a match rule.
    const passCalibration=isolatedPassSide!==null?Object.freeze({
-    source:'isolated-ground-pass-distance-candidate-v1',
+    source:'isolated-ground-pass-distance-candidate-v2',
     distanceM:chosen.passTarget.distanceM,
-    scale:Math.min(1.85,Math.sqrt(1+1.25*Math.max(0,chosen.passTarget.distanceM-6)/8.3)),
+    // Small extra pace beyond the delivery-only baseline, progressively
+    // increasing for medium/long passes. Preserve the 6m reference.
+    scale:Math.min(2.20,Math.sqrt(1+1.25*Math.max(0,chosen.passTarget.distanceM-6)/8.3)+
+     0.025*Math.max(0,chosen.passTarget.distanceM-6)),
     originalImpulseNs:chosen.impulseNs,
     officialMatchAction:false
    }):null;
@@ -336,6 +340,48 @@ export function createPrivatePhysicalActionExecutor({
     actualPhysicsImpulseApplied:true
    });
    lastActionTick=nextTick;
+  }
+  if(isolatedPassSide!==null){
+   const recipientId=isolatedPassSide+'-9';
+   if(applied?.action==='pass')
+    actualPriorPass=Object.freeze({tick:nextTick,playerId:applied.playerId});
+   if(actualPriorPass&&nextTick>actualPriorPass.tick&&!isolatedPassReceptionSeen){
+    if(contact.started.some(id=>id!==recipientId))interrupted=true;
+    if(!interrupted&&contact.started.length===1&&contact.active.length===1&&
+       contact.started[0]===recipientId&&contact.active[0]===recipientId){
+     // Only the FIRST authentic exclusive receiving START. Slow natural
+     // traps stay untouched; harder passes may use the existing M25
+     // bounded damping impulse on this same original Rapier body.
+     isolatedPassReceptionSeen=true;
+     const p=playerFrame.players.find(x=>x.id===recipientId);
+     const pos=ballBody.translation(),before=Object.freeze({...ballBody.linvel()});
+     if(!suppressOriginalAction&&!suppressPhysicalBodyContact&&
+        Math.hypot(before.x-p.vx,before.y-p.vy)>1.15){
+      // M25 needs a finite distance; 200 is its documented upper bound
+      // and a computational no-pressure sentinel, NOT a measured opponent.
+      // Exactly two teammates have physical colliders in this exercise.
+      const candidate=calculateRealReceivingCushion({
+       ballVelocity:before,playerVelocity:p,ballCentreZ:pos.z,ballRadiusM,
+       realBallPlayerGapM:Math.hypot(pos.x-p.x,pos.y-p.y),
+       nearestOpponentM:200
+      });
+      if(candidate){
+       ballBody.applyImpulse(candidate.impulseNs,true);
+       firstCushion=Object.freeze({...candidate,
+        version:'m25-isolated-ground-pass-first-touch-v1',
+        tick:nextTick,actorId:recipientId,team:isolatedPassSide,
+        originalPassTick:actualPriorPass.tick,originalPassActorId:actualPriorPass.playerId,
+        measuredNearestOpponentM:null,noActiveOpponents:true,
+        nativeExclusiveShoeStart:true,originalRapierBallBody:true,
+        actualPhysicsImpulseApplied:true,realPreBallVelocity:before,
+        realPostBallVelocity:Object.freeze({...ballBody.linvel()}),
+        officialMatchAction:false,officialPossession:false,
+        verifiedReception:false,verifiedBallControl:false
+       });
+      }
+     }
+    }
+   }
   }
   if(side!==null){
    if(researchCandidate!==null){

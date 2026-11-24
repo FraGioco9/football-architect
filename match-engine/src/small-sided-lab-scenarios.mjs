@@ -55,7 +55,7 @@ const definitions=freeze([
   description:'One original Rapier player carries the ball by genuine shoe START/END and physical impulses. No defender, goalkeeper or other active player.'}),
  freeze({id:ids[7],title:'Pass · ground',attackers:freeze([10,9]),
   defenders:freeze([]),includeGoalkeeper:false,
-  description:'Two teammates only. One distance-calibrated ground impulse after a genuine exclusive shoe START; later receiving contact is observed, never assumed.'})
+  description:'Two teammates only. One distance-calibrated ground impulse after a genuine exclusive shoe START; first receiving contact may use a bounded native cushion; control is measured, never assumed.'})
 ]);
 const byId=new Map(definitions.map(s=>[s.id,s]));
 // Keeper 1v1: deterministic source-only 60Hz tactical targets, never a

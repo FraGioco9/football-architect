@@ -568,7 +568,7 @@
   window.addEventListener('pagehide',()=>clearRosterReads());
   // Contracts writes do not advance sporting-world revisions. A cross-tab
   // storage nonce invalidates only a previously loaded roster, not world data.
-  const rosterSignalKey='fa:roster-affiliations:v1';
+  const rosterSignalKey='fa:roster-contracts:v1';
   const rosterSignal=()=>{try{return localStorage.getItem(rosterSignalKey)}catch{return null}};
   let lastRosterSignal=rosterSignal();
   const invalidateRoster=(statsOnly=false)=>{
@@ -585,7 +585,7 @@
   window.addEventListener('storage',event=>{
    if(event.key===rosterSignalKey)checkRosterSignal();
   });
-  window.addEventListener('fa:roster-affiliations-changed',checkRosterSignal);
+  window.addEventListener('fa:roster-contracts-changed',checkRosterSignal);
   document.addEventListener('visibilitychange',()=>{
    if(!document.hidden)checkRosterSignal();
   });

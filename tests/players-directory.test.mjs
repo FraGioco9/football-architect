@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {runInNewContext} from 'node:vm';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 import {isAllowlistedPublicPath,planPublicFiles} from '../tools/publication-guard.mjs';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
@@ -522,7 +522,7 @@ test('Players SQL count/page share identical secondary and multiple filters with
  // Player identities survive world reset: no filters means no WHERE clause.
  assert.match(sql,/const where=predicates\.length\?' WHERE '\+predicates\.join\(' AND '\):''/);
  assert.match(sql,/SELECT COUNT\(\*\) AS n FROM generated_players'\+where/);
- assert.match(sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id'\+where/);
+ assert.match(sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN '\+CURRENT_PLAYER_CONTRACTS_SQL\+' a ON a\.player_id=p\.id'\+where/);
  assert.doesNotMatch(sql,/WHERE world_generation=\?/);
  assert.match(sql,/:\'id DESC\'/,'default public sorting follows descending numeric IDs');
  assert.doesNotMatch(sql,/:\'created_at DESC,id ASC\'/);
@@ -1168,7 +1168,7 @@ test('#734 Players count/page use a single D1 batch on the first segment only',(
  assert.match(server,/db\.prepare\(countSql\)\.bind\(\.\.\.values\)/);
  assert.match(server,/db\.prepare\(pageSql\)\.bind\(\.\.\.values,PUBLIC_PLAYER_PAGE_SIZE,0\)/);
  assert.match(server,/count=countRow\?\.n\?\?0/,'subsequent offset pages keep live server-side counts');
- assert.match(server,/if\(after\.generation!==before\.generation\)/,'world-reset fence unchanged');
+ assert.match(server,/if\(after\.generation!==before\.generation\|\|after\.revision!==before\.revision\)/,'world-reset and sporting-revision fence');
 });
 
 test('#763 public overview width tracks preserve the first three columns and reserve the final five at first paint',()=>{
@@ -1204,4 +1204,29 @@ test('#763 filter captions and surrounding boxes are inert while actual controls
  assert.match(css,/\.app-players-filter-form :is\(\.app-players-scope-control,\.app-players-attribute-pick\)>input\[type="checkbox"\]\{cursor:pointer\}/);
  assert.match(form,/<summary class="app-players-filter-section-header">/);
  assert.match(form,/<button type="button" class="language-trigger app-players-filter-dropdown-trigger"/);
+});
+
+test('#777 legacy affiliation storage must not return to executable source',()=>{
+ // Walk the checked-out runtime, generated assets and operational tooling.
+ // Historical migrations, documentation and migration-specific tests intentionally
+ // retain their original references; they are not part of this scan.
+ const offenders=[];
+ let inspected=0;
+ const retired=/\b(?:player_club_affiliations(?:_[a-z0-9_]+)?|player_signed_affiliation_[a-z0-9_]+)\b/i;
+ function scan(dir){
+  for(const entry of readdirSync(new URL('../'+dir+'/',import.meta.url),{withFileTypes:true})){
+   const path=dir+'/'+entry.name;
+   if(entry.isDirectory()){
+    if(!['node_modules','.git','__pycache__'].includes(entry.name))scan(path);
+   }else if(entry.isFile()&&/\.(?:[cm]?js|[cm]?ts|py|sql|html|css|sh|ps1)$/i.test(entry.name)){
+    inspected++;
+    const code=read(path);
+    for(const [i,line] of code.split(/\r?\n/).entries())
+     if(retired.test(line))offenders.push(path+':'+(i+1));
+   }
+  }
+ }
+ for(const dir of ['backend/src','backend/tools','assets','tools','admin'])scan(dir);
+ assert.ok(inspected>100,'audit must cover actual source files');
+ assert.deepEqual(offenders,[],'0041 removes legacy storage; runtime/tooling must not depend on it');
 });
