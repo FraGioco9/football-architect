@@ -77,7 +77,17 @@ test('public rewards exposes only pool and season club table; admin retains sche
   assert.match(html,/fa-reward-milestone-row/);
   assert.match(html,/rewardPaymentAtDay">Payment at day<\/span> 28/);
   assert.match(html,/rewardPaymentAtDay">Payment at day<\/span> 56/);
-  assert.match(html,/<details class="fa-reward-disclosure"><summary>/);
+  const legend=html.slice(html.indexOf('data-season-reward-legend'),html.indexOf('data-season-reward-table'));
+  assert.equal((legend.match(/<table /g)||[]).length,1,'one distribution table');
+  assert.equal((legend.match(/data-reward-disclosure=/g)||[]).length,2);
+  for(const group of ['points','placement']){
+   const button=legend.match(new RegExp('data-reward-disclosure="'+group+'" aria-expanded="false" aria-controls="([^"]+)"'));
+   assert.ok(button);
+   const ids=button[1].split(' ');
+   assert.equal(ids.length,group==='points'?1:placementReference(competitionRewards(id)).length+2);
+   for(const detailId of ids)assert.ok(legend.includes('id="'+detailId+'" class="fa-reward-detail-row" data-reward-detail="'+group+'" hidden'));
+   assert.ok(legend.indexOf('data-reward-disclosure="'+group+'"')<legend.indexOf('id="'+ids[0]+'"'));
+  }
   assert.match(html,/class="language-chevron"/);
   assert.match(html,id.startsWith('int-')?/rewardCupPointsExplanation/:/rewardDomesticPointsExplanation/);
   assert.match(html,id.startsWith('int-')?/rewardAdvancementExplanation/:/rewardPlacementExplanation/);

@@ -8,13 +8,6 @@ const states=()=>'<div class="fa-reward-evidence" aria-live="polite">'+['rewardE
 const names={champion:['rewardChampion','Champion'],runnerUp:['rewardRunnerUp','Runner-up'],semifinalLoser:['rewardSemi','Semifinal loser'],quarterfinalLoser:['rewardQuarter','Quarterfinal loser'],playoffLoser:['rewardPlayoff','Playoff loser'],leagueEliminated:['rewardEliminated','League-phase eliminated']};
 const th=(k,n)=>'<th scope="col">'+label(k,n)+'</th>';
 const table=(heads,rows)=>'<div class="fa-reward-table-wrap"><table class="fa-reward-table"><thead><tr>'+heads.map(([k,n])=>th(k,n)).join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
-function placementTable(r){
- const schedule=placementReference(r);
- if(!schedule)return label('rewardPending','Pending rules');
- const heads=r.international?[['rewardOutcome','Outcome'],['rewardPerClubAmount','$ARC per club']]:[['rewardRank','Rank'],['rewardPerClubAmount','$ARC per club']];
- const body=schedule.map(x=>'<tr><th scope="row">'+(r.international?label(...names[x.id]):x.rank)+'</th><td>'+amount(x.amount)+'</td></tr>').join('');
- return table(heads,body);
-}
 function creditSchedule(r){
  const [first,second]=plannedRewardInstallments(r);
  const participation=label('rewardParticipation','Participation'),performance=label('rewardPerformance','Performance rewards'),share=CREDIT_MILESTONES.participationShare+'%';
@@ -26,10 +19,21 @@ function breakdown(r,key,name){
  const body=rows.map(([k,n,v],i)=>'<tr><th scope="row">'+label(k,n)+'</th><td>'+r.shares[i]+'%</td><td>'+amount(v)+'</td></tr>').join('');
  return table([['rewardDistribution','Reward distribution'],['rewardShare','Share'],['rewardAmount','Amount']],body);
 }
-function rewardDisclosure(r){
- const chevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
- const summary=r.international?label('rewardPointsAdvancement','Points & advancement'):label('rewardPointsPlacement','Points & placement');
- return '<details class="fa-reward-disclosure"><summary>'+summary+chevron+'</summary><div class="fa-reward-disclosure-body"><p>'+label(r.international?'rewardCupPointsExplanation':'rewardDomesticPointsExplanation',r.international?'The points pool is shared in proportion to points earned in the six league-phase matches.':'The points pool is shared in proportion to points earned in the 30 regular-season matches.')+'</p><p>'+label(r.international?'rewardAdvancementExplanation':'rewardPlacementExplanation',r.international?'Each club receives one advancement reward, based on its final outcome.':'Each final league position has a fixed reward, shown in the table.')+'</p>'+placementTable(r)+'</div></details>';
+const chevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function expandableReward(key,en,share,value,group,details){
+ const ids=details.map((_,i)=>'reward-'+group+'-detail-'+i);
+ const button='<button type="button" class="fa-reward-disclosure-toggle" data-reward-disclosure="'+group+'" aria-expanded="false" aria-controls="'+ids.join(' ')+'">'+label(key,en)+chevron+'</button>';
+ return '<tr><th scope="row">'+button+'</th><td>'+share+'</td><td>'+value+'</td></tr>'+details.map((cells,i)=>'<tr id="'+ids[i]+'" class="fa-reward-detail-row" data-reward-detail="'+group+'" hidden>'+cells+'</tr>').join('');
+}
+function pointsDetails(r){
+ return ['<td colspan="3" class="fa-reward-detail-note"><p>'+label(r.international?'rewardCupPointsExplanation':'rewardDomesticPointsExplanation',r.international?'The points pool is shared in proportion to points earned in the six league-phase matches.':'The points pool is shared in proportion to points earned in the 30 regular-season matches.')+'</p></td>'];
+}
+function placementDetails(r){
+ const explanation='<td colspan="3" class="fa-reward-detail-note"><p>'+label(r.international?'rewardAdvancementExplanation':'rewardPlacementExplanation',r.international?'Each club receives one advancement reward, based on its final outcome.':'Each final league position has a fixed reward, shown in the table.')+'</p></td>';
+ const schedule=placementReference(r);
+ if(!schedule)return [explanation,'<td colspan="3" class="fa-reward-detail-note">'+label('rewardPending','Pending rules')+'</td>'];
+ const heading='<td colspan="2" class="fa-reward-detail-label">'+(r.international?label('rewardOutcome','Outcome'):label('rewardRank','Rank'))+'</td><td class="fa-reward-detail-column">'+label('rewardPerClubAmount','$ARC per club')+'</td>';
+ return [explanation,heading,...schedule.map(x=>'<th scope="row" colspan="2" class="fa-reward-detail-label">'+(r.international?label(...names[x.id]):x.rank)+'</th><td>'+amount(x.amount)+'</td>')];
 }
 function publicMarkup(r){
  const placeholders=Array.from({length:r.capacity},()=>'<tr aria-hidden="true" data-reward-placeholder><th scope="row"><span class="app-world-club-identity"><span class="app-view-skeleton-crest-slot"></span><span class="app-world-club-name fa-reward-name-slot"><span class="app-skeleton-bar"></span></span></span></th><td class="fa-reward-value-cell"><span class="fa-reward-value"><span class="app-skeleton-bar"></span></span></td></tr>').join('');
@@ -39,12 +43,12 @@ function publicMarkup(r){
  const item=(key,en,share,value)=>'<tr><th scope="row">'+label(key,en)+'</th><td>'+share+'</td><td>'+value+'</td></tr>';
  const legend='<section class="app-panel fa-reward-legend" data-season-reward-legend>'+table([['rewardDistribution','Reward distribution'],['rewardShare','Share'],['rewardAmount','Amount']],[
   item('rewardParticipation','Participation',r.shares[0]+'%',amount(r.participation)),
-  item('rewardPoints','Points',r.shares[1]+'%',amount(r.points)),
-  item(r.international?'rewardAdvancement':'rewardPlacement',r.international?'Advancement':'Placement',r.shares[2]+'%',amount(r.placement)),
+  expandableReward('rewardPoints','Points',r.shares[1]+'%',amount(r.points),'points',pointsDetails(r)),
+  expandableReward(r.international?'rewardAdvancement':'rewardPlacement',r.international?'Advancement':'Placement',r.shares[2]+'%',amount(r.placement),'placement',placementDetails(r)),
   '<tr class="fa-reward-per-club-row"><th scope="row" colspan="2">'+label('rewardPerClub','Participation per club')+'</th><td>'+perClub+'</td></tr>',
   '<tr class="fa-reward-milestone-row"><th scope="row" colspan="2">'+label('rewardPaymentAtDay','Payment at day')+' '+first.day+'</th><td>'+amount(first.total)+'</td></tr>',
   '<tr><th scope="row" colspan="2">'+label('rewardPaymentAtDay','Payment at day')+' '+second.day+'</th><td>'+amount(second.total)+'</td></tr>'
- ].join(''))+rewardDisclosure(r)+'</section>';
+ ].join(''))+'</section>';
  return '<div class="fa-rewards" data-competition-rewards="'+r.id+'"><section class="app-panel"><div class="fa-reward-heading"><h2 data-app-i18n="rewardPool">Total prize pool</h2><strong class="fa-reward-total">'+amount(r.pool)+'</strong></div></section>'+legend+'<section class="app-panel" data-season-reward-table><div class="fa-reward-table-wrap fa-season-reward-table"><table class="fa-reward-table" aria-busy="true"><thead><tr><th scope="col" data-app-i18n="standingsClub">Club</th><th scope="col" data-season-reward-heading data-app-i18n="rewardSeasonEstimate" aria-describedby="reward-calculation-note">Estimated rewards</th></tr></thead><tbody data-season-reward-rows>'+placeholders+'</tbody></table><span class="fa-reward-sr-only" id="reward-calculation-note" data-app-i18n="rewardCalculatedNote">Calculated under current draft rules, not confirmed payments. Equal remainders use club ID for this reference only.</span><p class="fa-reward-reference-note" role="status" data-season-reward-status data-app-i18n="rewardUnavailable" hidden>Rewards unavailable</p></div></section></div>';
 }
 export function renderCompetitionRewards(id){

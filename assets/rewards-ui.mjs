@@ -17,6 +17,15 @@ const competition=document.querySelector('[data-competition-rewards]');
 if(competition){
  const tbody=competition.querySelector('[data-season-reward-rows]'),status=competition.querySelector('[data-season-reward-status]'),table=tbody.closest('table');
  const placeholder=tbody.innerHTML,legend=competition.querySelector('[data-season-reward-legend]'),tablePanel=competition.querySelector('[data-season-reward-table]'),heading=table.querySelector('[data-season-reward-heading]');
+ for(const button of legend.querySelectorAll('[data-reward-disclosure]')){
+  const group=button.dataset.rewardDisclosure;
+  const rows=[...legend.querySelectorAll('[data-reward-detail]')].filter(row=>row.dataset.rewardDetail===group);
+  button.addEventListener('click',()=>{
+   const open=button.getAttribute('aria-expanded')!=='true';
+   button.setAttribute('aria-expanded',String(open));
+   for(const row of rows)row.hidden=!open;
+  });
+ }
  const make=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node};
  let signature='';
  function update(){
