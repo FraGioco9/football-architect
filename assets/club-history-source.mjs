@@ -123,7 +123,7 @@ export async function readClubHistory({clubKey,world,fetchJson,signal}){
  const records=overviews.map((raw,index)=>{
   const season=index+1,current=season===world.seasonNumber,closed=!current||world.phase==='closed';
   const entry=projectClubMemberships(raw,clubKey,season,world);
-  if(entry.coverage==='unpublished'&&current&&!closed)
+  if(['unpublished','entrants-only'].includes(entry.coverage)&&current&&!closed)
    return Object.freeze({season,ongoing:true,memberships:Object.freeze([])});
   if(entry.coverage!=='complete')throw TypeError('Unverified club season');
   const memberships=entry.memberships.map(membership=>{

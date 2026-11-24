@@ -435,7 +435,7 @@ test('PLAYERS-FILTERS-01 uses expandable sections, multi-select scopes and plain
 test('Players first paint reads comma-separated multi values and scopes without changing table geometry',()=>{
  const html=read('players/index.html'),script=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
  assert.ok(script);
- const keys=['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot'];
+ const keys=['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','valueMin','valueMax','foot'];
  const fields=keys.map(key=>({dataset:{playersFilter:key},value:'',type:key.endsWith('Scope')?'checkbox':'text',checked:false}));
  const row={cells:[{},{},{},{},{},{}],deleteCell(i){this.cells.splice(i,1)},append(node){this.cells.push(node)}};
  const pill={hidden:true,textContent:''},trigger={label:'',setAttribute(name,value){if(name==='aria-label')this.label=value}},title={textContent:''};
@@ -451,12 +451,12 @@ test('Players first paint reads comma-separated multi values and scopes without 
   querySelector(selector){if(selector==='.app-players-table')return {tHead:{rows:[row]},tBodies:[{rows:[{cells:[{colSpan:6}]}]}],dataset:{}};throw Error(selector)},
   createElement(){return {scope:'',textContent:''}}
  };
- runInNewContext(script,{document:doc,location:{search:'?nationality=ITA%2CENG&nationalityScope=any&position=RW%2CST&positionScope=any&ageMin=18&ageMax=29&heightMin=170&heightMax=195&foot=left'},URLSearchParams});
+ runInNewContext(script,{document:doc,location:{search:'?nationality=ITA%2CENG&nationalityScope=any&position=RW%2CST&positionScope=any&ageMin=18&ageMax=29&heightMin=170&heightMax=195&foot=left&valueMin=0&valueMax=12000'},URLSearchParams});
  const actual=Object.fromEntries(fields.map(f=>[f.dataset.playersFilter,f.type==='checkbox'?(f.checked?'any':''):f.value]));
- assert.deepEqual(actual,{name:'',nationality:'ITA,ENG',nationalityScope:'any',position:'RW,ST',positionScope:'any',ageMin:'18',ageMax:'29',heightMin:'170',heightMax:'195',foot:'left'});
- assert.equal(pill.textContent,'7','scope flags are never counted as additional filters');
+ assert.deepEqual(actual,{name:'',nationality:'ITA,ENG',nationalityScope:'any',position:'RW,ST',positionScope:'any',ageMin:'18',ageMax:'29',heightMin:'170',heightMax:'195',valueMin:'0',valueMax:'12000',foot:'left'});
+ assert.equal(pill.textContent,'9','scope flags are never counted as additional filters');
  assert.equal(title.textContent,'Filters');
- assert.equal(trigger.label,'Filters: 7 active');
+ assert.equal(trigger.label,'Filters: 9 active');
  assert.equal(row.cells.length,6,'overview geometry remains stable');
 });
 test('Players native top-layer drawer and portaled dropdowns preserve outside clicks and scrollbars',()=>{

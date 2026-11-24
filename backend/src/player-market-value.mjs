@@ -10,6 +10,17 @@ export const MARKET_VALUE_CONFIG=Object.freeze({
  growth:Object.freeze([.7098,.6808,.651,.6267,.607,.5908,.5618,.5357,.515,.4878,.4666,.4284,.3716,.2786,.1782,.0922,.0403,.0171,.0059,.0023,.0008,.0006,0,0]),
  versatility:Object.freeze([.05,.025,.0125,.0075,.005])
 });
+// Fail fast if a future edited DRAFT configuration is malformed.
+const c=MARKET_VALUE_CONFIG;
+const unit=v=>Number.isFinite(v)&&v>=0&&v<=1;
+if(!c.version||!Number.isFinite(c.salaryScale)||c.salaryScale<=0||
+ !Number.isFinite(c.salaryMultiplier)||c.salaryMultiplier<=1||!unit(c.commission)||
+ !Number.isInteger(c.renewalSeasons)||c.renewalSeasons<1||!unit(c.paidFraction)||
+ !Number.isFinite(c.discountRate)||c.discountRate<0||
+ c.growth.length!==24||c.growth.some(v=>!Number.isFinite(v)||v<0)||
+ c.versatility.length!==5||c.versatility.some(v=>!unit(v))||
+ c.retirement[40]!==1||[33,34,35,36,37,38,39,40].some(age=>!unit(c.retirement[age])||c.retirement[age]<(c.retirement[age-1]??0)))
+ throw new Error('invalid_market_value_config');
 /** Only current public inputs are consulted. */
 export function rawPlayerMarketValueArc(input){
  if(!input||typeof input!=='object')return null;

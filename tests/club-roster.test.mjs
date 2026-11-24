@@ -340,3 +340,13 @@ test('CLUB-ROSTER-API: empty squads are cached, transient failures can retry and
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(controller.snapshot().source,'ready');
 });
+
+test('market value is a localized numeric Info column with stable missing-last sorting',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const players=[{id:1,market_value_arc:null},{id:2,market_value_arc:4700},{id:3,market_value_arc:0},{id:4,market_value_arc:4700}].map(p=>({...p,display_name:'Player '+p.id,nationality:'ITA',age:24,primary_position:'CM',height_cm:180,preferred_foot:'right'}));
+ const snapshot={source:'ready',clubKey:'IT-1',count:players.length,players};
+ const html=model.renderRoster('IT-1','it',model.copies.it,snapshot,'?sort=market_value_arc&order=asc');
+ assert.match(html,/Valore di mercato/);assert.match(html,/4\.700 ARC/);assert.match(html,/0 ARC/);
+ assert.deepEqual([...html.matchAll(/class="club-roster-player-link" href="\/players\/(\d+)"/g)].map(m=>Number(m[1])),[3,2,4,1]);
+ assert.doesNotMatch(model.renderRoster('IT-1','it',model.copies.it,snapshot,'?view=attributes&group=technical'),/data-club-roster-sort="market_value_arc"/);
+});

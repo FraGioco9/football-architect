@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'vitest';
-import {readPublicPlayers} from '../src/public-players-read.ts';
+import {readPublicPlayers,MARKET_VALUE_SCAN_LIMIT} from '../src/public-players-read.ts';
+import {calculatePlayerMarketValueArc} from '../src/player-market-value.mjs';
 import {parsePublicPlayerQuery,isAllowedPublicPlayersPath} from '../src/public-players-filters.mjs';
 import {PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS} from '../src/footballer-public-projection.ts';
 import type {Database} from '../src/database.ts';
@@ -277,4 +278,34 @@ test('market value filter precedes pagination and includes actual zero only',asy
  assert.equal((await readPublicPlayers(db,1,{valueMin:0,valueMax:0})).count,0);
  assert.equal((await readPublicPlayers(db,2,{sort:'market_value_arc'})).players.length,0);
  assert.ok(calls.some(c=>c.sql.includes('LIMIT ?')&&!c.sql.includes('OFFSET')));
+});
+
+test('global value sorting across pages, stable ties, zero, unknown and inclusive bounds',async()=>{
+ const rows=Array.from({length:103},(_,i)=>{
+  const age=i===101?40:24,career_status=i===102?'retired':'active';
+  const attributes=Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map(k=>[k,30+(i%9)*7]));
+  const payload={...stored,age,career_status,attributes};
+  return {id:i+1,payload_json:JSON.stringify(payload),club_key:null,expected:calculatePlayerMarketValueArc(payload)};
+ });
+ const calls:string[]=[];
+ const db={prepare(sql:string){
+  return {bind(){return this},async first(){return {schema_version:1,generation,revision:0,season_number:0,day:0,phase:'unstarted'};},
+   async all(){calls.push(sql);return {results:[...rows].reverse(),meta:{changes:0}}}}
+ }} as unknown as Database;
+ const expected=[...rows].sort((a,b)=>{
+  if(a.expected===null||b.expected===null)return a.expected===b.expected?a.id-b.id:a.expected===null?1:-1;
+  return b.expected-a.expected||a.id-b.id;
+ });
+ const pages=await Promise.all([1,2,3].map(page=>readPublicPlayers(db,page,{sort:'market_value_arc',order:'desc'})));
+ assert.deepEqual(pages.map(x=>x.players.length),[50,50,3]);
+ assert.deepEqual(pages.flatMap(x=>x.players.map(p=>p.id)),expected.map(x=>x.id));
+ assert.ok(pages.every(p=>p.count===103&&p.totalPages===3));
+ const zero=await readPublicPlayers(db,1,{valueMin:0,valueMax:0});
+ assert.deepEqual(zero.players.map(p=>p.id),[103]);
+ const ascending=await readPublicPlayers(db,1,{sort:'market_value_arc',order:'asc'});
+ assert.equal(ascending.players[0].id,103);
+ assert.ok(calls.every(sql=>sql.includes('LIMIT ?')&&!sql.includes('OFFSET')));
+ const tooMany={prepare(){return {bind(){return this},async first(){return {schema_version:1,generation,revision:0,season_number:0,day:0,phase:'unstarted'};},
+  async all(){return {results:Array(MARKET_VALUE_SCAN_LIMIT+1).fill(rows[0]),meta:{changes:0}}}}}} as unknown as Database;
+ await assert.rejects(readPublicPlayers(tooMany,1,{sort:'market_value_arc'}),/players_unavailable/);
 });

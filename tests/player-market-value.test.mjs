@@ -22,3 +22,10 @@ test('invalid and retired are distinct; current ability and survival are bounded
  for(const patch of [{age:40},{age:15},{age:NaN},{career_status:'unknown'},{primary_position:'XX'},{secondary_positions:['XX']},{attributes:{}}])assert.equal(value({...p,...patch}),null);
  assert.ok(value(player(16,99))>value(player(39,99)));
 });
+
+test('stronger listed secondary role is the reference, not the nominal primary role',()=>{
+ const p=player(24,10);
+ for(const key of ATTRIBUTES.filter(k=>k.startsWith('gk_')))p.attributes[key]=99;
+ assert.ok(value({...p,secondary_positions:['GK']})>value(p));
+ assert.equal(value({...p,secondary_positions:['GK']}),value({...p,primary_position:'GK'}));
+});
