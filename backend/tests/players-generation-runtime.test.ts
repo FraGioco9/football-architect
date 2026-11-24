@@ -48,6 +48,10 @@ it('shows a server-generated preview but creates zero permanent players until ex
  expect(preview.candidates[0].nationality).toBe('ITA');
  expect(preview.candidates[0].primary_position).toBe('ST');
  expect(preview.candidates[0].id).toBeUndefined();
+ expect(preview.candidates[0].market_value_arc).toBe(calculatePlayerMarketValueArc(preview.candidates[0]));
+ expect(preview.candidates[0].market_value_arc).toBeGreaterThan(0);
+ const storedDraft=await db.prepare('SELECT candidates_json FROM player_generation_drafts WHERE id=?').bind(preview.draftId).first<{candidates_json:string}>();
+ expect(JSON.parse(storedDraft!.candidates_json)[0]).not.toHaveProperty('market_value_arc');
  expect(preview.candidates[0].retirement_seed).toBeUndefined();
  expect(preview.candidates[0].retirement_age).toBeUndefined();
  expect(preview.candidates[0].preview_id).toMatch(/^trial-[0-9]{4}$/);
@@ -60,6 +64,7 @@ it('shows a server-generated preview but creates zero permanent players until ex
  expect(refreshed.candidates[0]).toMatchObject({display_name:preview.candidates[0].display_name,age:preview.candidates[0].age,attributes:preview.candidates[0].attributes,preview_id:preview.candidates[0].preview_id});
  expect(refreshed.status).toBe('preview');
  expect(refreshed.candidates[0].id).toBeUndefined();
+ expect(refreshed.candidates[0].market_value_arc).toBe(preview.candidates[0].market_value_arc);
  expect(refreshed.candidates[0].retirement_seed).toBeUndefined();
  expect(refreshed.candidates[0].retirement_age).toBeUndefined();
  expect(refreshed.summary.seed).toBe(preview.summary.seed);
@@ -99,7 +104,7 @@ it('shows a server-generated preview but creates zero permanent players until ex
   expect(row).not.toHaveProperty('retirement_seed');
   const keys=Object.keys(row);
   expect(keys[keys.indexOf('age')+1]).toBe('retirement_age');
-  expect(keys.filter(k=>k!=='retirement_age')).toEqual([...Object.keys(item).filter(k=>k!=='preview_id'),'id']);
+  expect(keys.filter(k=>k!=='retirement_age')).toEqual([...Object.keys(item).filter(k=>k!=='preview_id'&&k!=='market_value_arc'),'id']);
   expect(item).not.toHaveProperty('retirement_age');
   expect('preview_id' in row).toBe(false);
  }

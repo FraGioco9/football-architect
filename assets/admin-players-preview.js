@@ -69,7 +69,7 @@
  if(['overview','attributes'].includes(restored.get('view')))view=restored.get('view');
  if(['technical','mental','physical','goalkeeping'].includes(restored.get('group')))group=restored.get('group');
  if(/^[1-9][0-9]{0,3}$/.test(restored.get('page')||''))page=Number(restored.get('page'))-1;
- if(['name','nationality','positions','age','height','foot',...groups[group]].includes(restored.get('sort')))sort=restored.get('sort');
+ if(['name','nationality','positions','age','height','foot','market_value_arc',...groups[group]].includes(restored.get('sort')))sort=restored.get('sort');
  if(sort&&['asc','desc'].includes(restored.get('order')))order=restored.get('order');
  const restoreScroll=/^(0|[1-9][0-9]{0,5})$/.test(restored.get('scroll')||'')?Number(restored.get('scroll')):0;
 
@@ -81,7 +81,7 @@
   fr:{generate:'Générer',regenerate:'Régénérer',back:'Retour',heading:'Confirmer la génération',cancel:'Annuler',confirm:'Confirmer'}
  };
  const pageSize=50,rankPositions=['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST'];
- function columns(){return view==='overview'?['nationality','name','positions','age','height','foot']:['nationality','name','positions',...groups[group]];}
+ function columns(){return view==='overview'?['nationality','name','positions','age','height','foot','market_value_arc']:['nationality','name','positions',...groups[group]];}
  function colLabel(key){
   const t=locale();
   if(key==='nationality')return t.nationality;
@@ -90,6 +90,7 @@
   if(key==='positions')return t.columns[2];
   if(key==='height')return t.columns[3];
   if(key==='foot')return t.columns[4];
+  if(key==='market_value_arc')return window.faMarketValue?.label(language())||'Market value';
   return attributeName(key);
  }
  function renderHead(){
@@ -97,6 +98,7 @@
   for(const key of columns()){
    const th=document.createElement('th');th.scope='col';
    if(key==='nationality')th.className='app-players-flag-col';
+   if(key==='market_value_arc'){th.className='app-market-value-col';th.title=window.faMarketValue?.help(language())||'Estimated remaining agent commissions (DRAFT benchmark)';}
    th.setAttribute('aria-sort',sort===key?(order==='desc'?'descending':'ascending'):'none');
    const button=document.createElement('button');button.type='button';button.className='app-players-sort-button';button.dataset.previewSort=key;
    const wrap=document.createElement('span');wrap.className='app-players-sort-label';
@@ -119,6 +121,7 @@
   if(key==='positions')return rankPositions.length-rankPositions.indexOf(player.primary_position);
   if(key==='height')return player.height_cm??-1;
   if(key==='foot')return player.preferred_foot||'';
+  if(key==='market_value_arc')return Number.isSafeInteger(player.market_value_arc)&&player.market_value_arc>=0?player.market_value_arc:null;
   return player.attributes?.[key]??-1;
  }
  function sorted(){
@@ -127,6 +130,7 @@
   const sign=order==='desc'?-1:1;
   items.sort((a,b)=>{
    const x=value(a.player,sort),y=value(b.player,sort);
+   if(sort==='market_value_arc'&&(x===null||y===null))return x===y?a.index-b.index:x===null?1:-1;
    const v=typeof x==='number'&&typeof y==='number'?x-y:String(x).localeCompare(String(y),language());
    return sign*v||a.index-b.index;
   });
@@ -197,6 +201,7 @@
      addCell(row,Number.isSafeInteger(player.age)?player.age:Number.isSafeInteger(player.initial_age)?player.initial_age:'—');
      addCell(row,Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—');
      addCell(row,player.preferred_foot==='left'?t.left:player.preferred_foot==='right'?t.right:'—');
+     addCell(row,window.faMarketValue?.format(player.market_value_arc,language())||'—');row.lastElementChild.className='app-market-value-col';
     }else{
      addCell(row,positions);
      for(const key of groups[group])addCell(row,Number.isSafeInteger(player.attributes?.[key])?player.attributes[key]:'—');

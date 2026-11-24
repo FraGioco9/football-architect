@@ -650,3 +650,7 @@ html:lang(fr) .app-player-matches-table{--app-player-matches-mobile-result:"Rés
  .app-player-detail-header-panels>.app-player-detail-affiliation::before{height:96px}
  .app-player-detail-market-amount{font-size:15px}
 }
+
+/* Protected draft value is informational; keep its header fact separate from navigation. */
+[data-player-detail-mode="preview"] .app-player-detail-market-value{flex:0 0 196px;min-width:0;max-width:100%;min-height:100px}
+@media(max-width:720px){[data-player-detail-mode="preview"] .app-player-detail-market-value{grid-column:1/-1;grid-row:auto;flex-basis:auto;min-height:76px;width:100%}}
