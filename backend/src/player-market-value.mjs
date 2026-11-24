@@ -4,8 +4,8 @@ import {roundPlayerMarketValueArc} from './player-market-value-rounding.mjs';
 import {createStandardizedForecast} from './player-market-value-forecast.mjs';
 const positions=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
 export const MARKET_VALUE_CONFIG=Object.freeze({
- version:'remaining-commission-draft-v3-769',
- salaryScale:1500,salaryMultiplier:2,commission:.05,
+ version:'remaining-agent-salary-draft-v4-769',
+ salaryScale:1500,salaryMultiplier:2,agentPayoutFraction:1,
  rewardBenchmark:250000,divisionFloors:Object.freeze({1:1000,2:500}),priorExposure:250,
  forecastVersion:'769-synthetic-age-skill-v1',
  renewalSeasons:2,discountRate:0,
@@ -17,7 +17,7 @@ export const MARKET_VALUE_CONFIG=Object.freeze({
 const c=MARKET_VALUE_CONFIG;
 const unit=v=>Number.isFinite(v)&&v>=0&&v<=1;
 if(!c.version||!Number.isFinite(c.salaryScale)||c.salaryScale<=0||
- !Number.isFinite(c.salaryMultiplier)||c.salaryMultiplier<=1||!unit(c.commission)||
+ !Number.isFinite(c.salaryMultiplier)||c.salaryMultiplier<=1||!unit(c.agentPayoutFraction)||
  !Number.isInteger(c.renewalSeasons)||c.renewalSeasons<1||
  !Number.isFinite(c.rewardBenchmark)||c.rewardBenchmark<=0||!Number.isFinite(c.priorExposure)||c.priorExposure<=0||
  ![1,2].every(t=>Number.isSafeInteger(c.divisionFloors[t])&&c.divisionFloors[t]>0)||
@@ -45,7 +45,7 @@ export function rawPlayerMarketValueArc(input){
   const renewal=t%c.renewalSeasons===0;
   const expected=forecast(age+t,skill,bonus,renewal);
   if(renewal)wage=expected.wage;
-  value+=c.commission*wage*survival*expected.employment*expected.paid/(1+c.discountRate)**(t+1);
+  value+=c.agentPayoutFraction*wage*survival*expected.employment*expected.paid/(1+c.discountRate)**(t+1);
   skill=Math.min(99,skill+c.growth[age+t-16]);
   survival*=1-(c.retirement[age+t+1]??0);
  }
