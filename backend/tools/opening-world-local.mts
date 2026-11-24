@@ -11,6 +11,7 @@ import {loadRuntimePlayerCatalog} from '../src/players-catalog.mjs';
 import {readWorld} from '../src/world-repository.ts';
 import type {WorldV1} from '../src/types.ts';
 import type {AdminSession} from '../src/auth.ts';
+import {sessionGuard} from '../src/command-guards.ts';
 import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
 import {beginLocalOpeningRun,commitLocalOpeningBatch,readLocalOpeningJournal,readOpeningObservation} from '../src/opening-world-store.ts';
 import {clubCountryToNationality,planApprovedReference,manifestDigest,REFERENCE_PROFILE_VERSION,type OpeningClub} from '../../tools/world-bootstrap-791/planner.mjs';
@@ -87,6 +88,15 @@ export async function openLocalOpeningRehearsal(persistTo:string){
   },
   async start(session:AdminSession,now:number){
    const {plan}=await verifiedPlan();
+   // A lost start response must not cause inventory recertification against
+   // already-staged players or a second root insert. Only resume the exact
+   // frozen root, and require the same live mutation guard as a new start.
+   const existing=await db.prepare('SELECT run_key FROM opening_world_runs WHERE world_generation=? AND batch_index=-1').bind(plan.root.worldGeneration).first<{run_key:string}>();
+   if(existing){
+    assert(existing.run_key===plan.root.runKey,'opening journal root differs from private plan');
+    await db.batch([sessionGuard(db,session,now)]);
+    return (await progress()).progress;
+   }
    const fresh=await readLocalOpeningInventory(db);
    assert(same(fresh,plan.inventory),'opening inventory changed since prepare');
    await beginLocalOpeningRun(db,session,plan.root,now);

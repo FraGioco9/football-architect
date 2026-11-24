@@ -55,3 +55,7 @@ The local runner's reconcile() is a read-only operation: requires 256 verified r
 ## CI correction after contract cutover
 
 Removed the retired affiliation storage lookup entirely from the private inventory; signed terms and mandates are now its only rights authority. Existing signed history still blocks automatic reuse; uncontracted players have no club assignment. The FULL source audit remains unchanged. Three existing local D1 scenarios timed out at the default 5 seconds under concurrent FULL load; only their individual test deadlines are extended to 30 seconds, with all assertions and runtime behavior unchanged. No CI coverage/selector change or rerun dispatch.
+
+## Idempotent local start recovery
+
+The local runner can now reopen a prepared private plan before the root exists and repeat start after a lost response, including after committed batches. A root for the current generation must match the pinned run key and complete stored root; existing progress is reconciled against durable receipts and actual catalogue. Replay still requires the live admin mutation/session guard. Only the first start recertifies the initial inventory and inserts the root; replay performs no player or journal inserts. The existing disposable D1 restart fixture exercises pre-root reopen, repeated start, expired session rejection before and after a batch, and unchanged progress after restart. No extra workflow, migration, public route, activation, actual population or remote access. Exact-head CI required.

@@ -54,11 +54,21 @@ test('opening world local plan and receipts survive close/reopen without rematch
   run=await openLocalOpeningRehearsal(state);
   const plan=await run.prepare(seed);assert.equal(plan.reused,1);assert.equal(plan.newPlayers,6399);assert.equal(plan.batches,256);
   await assert.rejects(run.prepare(seed),/EEXIST/);
-  assert.equal((await run.start(session,now)).completedSlots,0);
+  // Crash/reopen after private plan creation, before the root transaction.
+  await run.close();run=undefined;
+  run=await openLocalOpeningRehearsal(state);
+  const started=await run.start(session,now);assert.equal(started.completedSlots,0);
+  assert.deepEqual(await run.start(session,now),started);
+  await assert.rejects(run.start(session,now+1001));
   await assert.rejects(run.reconcile(),/opening population incomplete/);
   const first=await run.step(session,now);assert.equal(first.completedSlots,25);
   await run.close();run=undefined;
   run=await openLocalOpeningRehearsal(state);
+  assert.deepEqual(await run.inspect(),first);
+  // Lost response/replayed start after a durable batch must not recreate the root,
+  // recertify a changed catalogue, allocate IDs, or bypass live authorization.
+  await assert.rejects(run.start(session,now+1001));
+  assert.deepEqual(await run.start(session,now),first);
   assert.deepEqual(await run.inspect(),first);
   const second=await run.step(session,now);assert.equal(second.completedSlots,50);
   assert.equal(second.committedBatches,2);assert.equal(second.readyForReconciliation,false);
