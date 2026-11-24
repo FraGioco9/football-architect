@@ -11,6 +11,14 @@ export const formatApps=(appearances,subs)=>Number.isSafeInteger(appearances)&&a
  ?appearances+' ('+(Number.isSafeInteger(subs)&&subs>=0?subs:'—')+')':'—';
 export const formatRating=(average,rated)=>typeof average==='number'&&Number.isFinite(average)&&
  Number.isSafeInteger(rated)&&rated>0?average.toFixed(1):'—';
+/** Only explicitly unprepared seasons are known to have no official games.
+ * Missing or unsupported sporting evidence must never become zero statistics. */
+function unpreparedSeasonTotal(season){
+ if(season.status!=='empty'||!['season-not-prepared','calendar-unpublished'].includes(season.reason)||season.data!==null)return null;
+ return {appearances:0,starts:0,subAppearances:0,minutes:0,goals:0,assists:0,
+  yellowCards:0,redCards:0,gkAppearances:0,cleanSheets:0,
+  ratedAppearances:0,averageRating:null,mvpAwards:0,mvpCoveredAppearances:0};
+}
 /** Compute career values only from verified season totals already delivered by the
  * authoritative Stats read. Never use present club, future matches, partial
  * aggregates with missing seasons, or a naive average of per-season ratings. */
@@ -24,11 +32,11 @@ export function aggregateVerifiedCareerStats(seasons){
  let ratedSum=0,ratingComplete=true,keepersComplete=true;
  const checked=new Set();
  for(const season of seasons){
-  if(!Number.isSafeInteger(season?.season)||season.season<1||checked.has(season.season)||
-   !['partial','available'].includes(season.status)||!season.data?.total||
-   !Array.isArray(season.data.competitions))return null;
+  if(!Number.isSafeInteger(season?.season)||season.season<1||checked.has(season.season))return null;
+  const row=unpreparedSeasonTotal(season)??(
+   ['partial','available'].includes(season.status)&&Array.isArray(season.data?.competitions)?season.data.total:null);
+  if(!row)return null;
   checked.add(season.season);
-  const row=season.data.total;
   if(keys.some(key=>!Number.isSafeInteger(row[key])||row[key]<0)||
    row.starts>row.appearances||row.ratedAppearances>row.appearances||
    row.gkAppearances>row.appearances)return null;
@@ -163,7 +171,7 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
  function numericCells(record,w){
   const labels=mobileLabels(),displayed=[
    formatApps(record.appearances,record.subAppearances),value(record.minutes),
-   isKeeper()?value(record.cleanSheets):value(record.goals),
+   isKeeper()?value(record.appearances===0?0:record.cleanSheets):value(record.goals),
    value(record.assists),value(record.yellowCards),value(record.redCards),
    value(record.mvpAwards),formatRating(record.averageRating,record.ratedAppearances)
   ];
@@ -216,6 +224,7 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
    const label=w.season+' '+season.season;
    const available=(season.status==='available'||season.status==='partial')&&
     season.data?.total&&Array.isArray(season.data.competitions);
+   const total=available?season.data.total:unpreparedSeasonTotal(season);
    const groups=available?season.data.competitions:[],expandable=groups.length>0;
    const summary=row();summary.className='app-player-stats-season-row';
    summary.dataset.playerStatsSeason=String(season.season);
@@ -237,13 +246,13 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
     const content=el('span','','app-player-stats-static-label');
     content.append(placeholder,value);heading.append(content);
    }
-   const hasTotal=available&&season.data.total.appearances>0;
+   const hasTotal=total&&total.appearances>0;
    const totalCell=el('td','',
-    hasTotal?'app-player-stats-competition app-player-stats-total-label':'app-player-stats-competition');
-   totalCell.append(el('span',available?(hasTotal?w.total:w.empty):
+    total?'app-player-stats-competition app-player-stats-total-label':'app-player-stats-competition');
+   totalCell.append(el('span',total?(hasTotal?w.total:w.empty):
     season.status==='unavailable'?w.unsupported:w.unprepared,'app-player-stats-total-value'));
    summary.append(heading,totalCell,el('td','','app-player-stats-club'));
-   if(available)summary.append(...numericCells(season.data.total,w));
+   if(total)summary.append(...numericCells(total,w));
    else for(let i=0;i<8;i++)summary.append(el('td','','app-player-stats-number'));
    resultRows.push(summary);
    for(const record of groups){
