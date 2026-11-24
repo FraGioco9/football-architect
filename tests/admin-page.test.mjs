@@ -204,7 +204,11 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  assert.match(source,/\/api\/player\/permissions/);
  assert.match(source,/admin\.world\.read/);
  assert.match(source,/\/api\/admin\/contracts/);
- assert.doesNotMatch(source,/method:\s*['"]POST|expectedClubKey|roster-affiliations|admin\.world\.write/);
+ assert.doesNotMatch(source,/expectedClubKey|roster-affiliations/);
+ assert.match(source,/admin\.world\.write/);
+ assert.match(source,/\/api\/admin\/contracts\/preview/);
+ assert.match(html,/data-contract-draft-sign disabled/);
+ assert.match(html,/data-contract-draft-player required disabled/);
  assert.match(source,/credentials:'same-origin'/);
  assert.ok(isAllowlistedPublicPath('assets/admin-contracts.js'));
  assert.equal(parseRoute('/admin/contracts')?.canonical,'/admin/contracts');

@@ -68,3 +68,17 @@ it('validates HTTP methods and query shape; refuses ambiguous pagination',async(
  expect((await call('POST','?page=1',command(1,'IT-1',null))).status).toBe(405);
  expect(parseContractListQuery('')).toEqual({page:1,playerId:null});
 });
+
+it('prepares real dates only for authorized initial free agents and never signs',async()=>{
+ const {loadApprovedSnapshot}=await import('../src/approved-season-one.ts');
+ const snapshot=await loadApprovedSnapshot();
+ const club=snapshot.bindings.find(b=>b.competitionId.endsWith('-1')&&!b.competitionId.startsWith('int-'))!.clubIds[0];
+ const request={playerId:2,clubKey:club,durationSeasons:2,expectedGeneration:generation,expectedRevision:revision};
+ const quote=await call('POST','/preview',request);
+ expect(quote.status).toBe(200);
+ expect(quote.data).toMatchObject({playerId:2,clubKey:club,durationSeasons:2,startTick:0,endTick:112,representation:'ai',minimumArc:40,annualSalaryArc:null,signable:false});
+ expect((await call('POST','/preview',request,'bad')).status).toBe(403);
+ expect((await call('POST','/preview',{...request,annualSalaryArc:1})).status).toBe(422);
+ expect((await call('POST','/preview',{...request,expectedRevision:revision+1})).status).toBe(409);
+ expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(0);
+});

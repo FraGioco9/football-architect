@@ -247,3 +247,16 @@ html[data-theme="light"] .app-admin-view .admin-contracts-table thead th{backgro
  .app-admin-view .admin-contracts-table :is(th,td):nth-child(7){width:72px}
  .app-admin-view .admin-contracts-table :is(th,td):nth-child(8){width:110px}
 }
+
+/* #777 Admin-only signing preparation: fixed fields, no change to roster tracks. */
+.app-admin-view .admin-contract-draft[hidden]{display:none!important}
+.app-admin-view .admin-contract-draft{display:grid;gap:12px;padding:16px;margin-bottom:16px;border:1px solid var(--line);border-radius:8px;min-width:0}
+.app-admin-view .admin-contract-draft h2{font-size:var(--fa-text-panel-heading);margin:0}
+.app-admin-view .admin-contract-draft-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.app-admin-view .admin-contract-draft-fields label{display:grid;gap:5px;min-width:0;color:var(--muted);font-size:13px}
+.app-admin-view .admin-contract-draft-fields :is(select,output){box-sizing:border-box;width:100%;min-width:0;height:36px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--text);font:inherit}
+.app-admin-view .admin-contract-draft-terms,.app-admin-view .admin-contract-draft-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.app-admin-view .admin-contract-draft-terms{font-size:13px;color:var(--muted)}
+.app-admin-view .admin-contract-draft-terms output{color:var(--text);font-variant-numeric:tabular-nums}
+.app-admin-view [data-contract-draft-message]{margin:0;font-size:13px;color:var(--muted);min-height:3em}
+@media(max-width:480px){.app-admin-view .admin-contract-draft-fields{grid-template-columns:minmax(0,1fr)}}
