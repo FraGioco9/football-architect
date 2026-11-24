@@ -442,3 +442,48 @@ test('archive comparator preserves exact accounting while tolerating only known 
  assert.throws(()=>assertArchivedCalibration({amountArc:100},{amountArc:101}));
  assert.throws(()=>assertArchivedCalibration({other:1.000000000000001},{other:1}));
 });
+
+
+ // #776: synthetic calculation-only fixtures. No certification or ledger writes.
+test('settlement reference conserves each of the 18 competitions and both paydays',()=>{
+ const world=[0,0];
+ for(const id of REWARD_IDS){
+  const rule=competitionRewards(id),days=plannedRewardInstallments(rule);
+  assert.deepEqual(days.map(d=>d.day),[28,56]);
+  const weights=Array.from({length:rule.capacity},(_,i)=>({id:'fixture-'+i,weight:i+1+(i===rule.capacity-1?1:0)}));
+  const order=weights.map(w=>w.id);
+  const allocated=pointsReference(rule,weights,order);
+  assert.equal(allocated.status,'calculated-reference');
+  assert.equal(allocated.allocations.reduce((s,r)=>s+r.amount,0),rule.points);
+  assert.ok(allocated.allocations.every(r=>Number.isSafeInteger(r.amount)&&r.amount>=0));
+  const placement=placementReference(rule).reduce((s,r)=>s+r.amount*(r.count??1),0);
+  const half=participationReference(rule).installment;
+  assert.equal(half*rule.capacity,days[0].total);
+  assert.equal(half*rule.capacity+rule.points+placement,days[1].total);
+  assert.equal(days[0].total+days[1].total,rule.pool);
+  world[0]+=days[0].total;world[1]+=days[1].total;
+ }
+ assert.deepEqual(world,[676800,1723200]);
+});
+test('settlement calculation refuses incomplete, zero and unresolved remainder inputs',()=>{
+ const rule=competitionRewards('IT-1');
+ const weights=Array.from({length:rule.capacity},(_,i)=>({id:'fixture-'+i,weight:0}));
+ assert.equal(pointsReference(rule,weights.slice(1)).status,'pending-incomplete');
+ assert.equal(pointsReference(rule,weights).status,'pending-zero-denominator');
+ assert.equal(largestRemainder(1,[{id:'a',weight:1},{id:'b',weight:1}]).status,'pending-tiebreak');
+ assert.throws(()=>pointsReference(rule,weights.map(w=>({...w,id:'duplicate'}))));
+ assert.throws(()=>pointsReference(rule,weights.map((w,i)=>({...w,weight:i===0?-1:0}))));
+});
+test('explicit hypothetical remainder order is deterministic independent of input order',()=>{
+ const weights=[{id:'a',weight:1},{id:'b',weight:1},{id:'c',weight:0}];
+ const order=['b','a','c'];
+ const map=rows=>Object.fromEntries(rows.map(r=>[r.id,r.amount]));
+ const a=largestRemainder(3,weights,order),b=largestRemainder(3,[...weights].reverse(),order);
+ assert.equal(a.status,'calculated-reference');
+ assert.deepEqual(map(a.allocations),{a:1,b:2,c:0});
+ for(const row of b.allocations)assert.equal(row.amount,map(a.allocations)[row.id]);
+});
+test('future odd installment is not silently rounded by current shared schedule',()=>{
+ const r=competitionRewards('IT-1');
+ assert.throws(()=>plannedRewardInstallments({...r,participation:r.participation+1}));
+});
