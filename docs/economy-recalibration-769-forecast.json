@@ -33,37 +33,41 @@
       "values": [
         {
           "skill": 50,
-          "full": 820,
-          "employment": 0.06816544661494851,
-          "discount3": 130,
+          "fullValue": 820,
+          "employmentAdjustedValue": 200,
+          "discount3Value": 130,
           "wage": 574.7744612730065,
+          "employment": 0.06816544661494851,
           "paid": 1,
           "actualWage": 1187.8053148008307
         },
         {
           "skill": 60,
-          "full": 1900,
-          "employment": 0.37039292154157644,
-          "discount3": 930,
+          "fullValue": 1900,
+          "employmentAdjustedValue": 1400,
+          "discount3Value": 930,
           "wage": 1075.0513968701284,
+          "employment": 0.37039292154157644,
           "paid": 1,
           "actualWage": 1400.392972093303
         },
         {
           "skill": 70,
-          "full": 5200,
-          "employment": 0.7806208389569549,
-          "discount3": 3400,
+          "fullValue": 5200,
+          "employmentAdjustedValue": 4800,
+          "discount3Value": 3400,
           "wage": 2853.0008379984356,
+          "employment": 0.7806208389569549,
           "paid": 1,
           "actualWage": 3210.1878679890096
         },
         {
           "skill": 80,
-          "full": 14000,
-          "employment": 0.8450100224672721,
-          "discount3": 9000,
+          "fullValue": 14000,
+          "employmentAdjustedValue": 13000,
+          "discount3Value": 9000,
           "wage": 8035.03456753317,
+          "employment": 0.8450100224672721,
           "paid": 1,
           "actualWage": 7795.687375623726
         }
@@ -74,37 +78,41 @@
       "values": [
         {
           "skill": 50,
-          "full": 450,
-          "employment": 0.11332751867198612,
-          "discount3": 71,
+          "fullValue": 450,
+          "employmentAdjustedValue": 90,
+          "discount3Value": 71,
           "wage": 616.0748977461293,
+          "employment": 0.11332751867198612,
           "paid": 1,
           "actualWage": 1492.9731949546008
         },
         {
           "skill": 60,
-          "full": 850,
-          "employment": 0.4267808662440663,
-          "discount3": 420,
+          "fullValue": 850,
+          "employmentAdjustedValue": 520,
+          "discount3Value": 420,
           "wage": 1087.67233895275,
+          "employment": 0.4267808662440663,
           "paid": 1,
           "actualWage": 1452.3493590687767
         },
         {
           "skill": 70,
-          "full": 2300,
-          "employment": 0.849980323725139,
-          "discount3": 1700,
+          "fullValue": 2300,
+          "employmentAdjustedValue": 2100,
+          "discount3Value": 1700,
           "wage": 2784.368643387653,
+          "employment": 0.849980323725139,
           "paid": 1,
           "actualWage": 3216.476006038998
         },
         {
           "skill": 80,
-          "full": 6300,
-          "employment": 0.9510668252231631,
-          "discount3": 4900,
+          "fullValue": 6300,
+          "employmentAdjustedValue": 6000,
+          "discount3Value": 4900,
           "wage": 7928.340138598645,
+          "employment": 0.9510668252231631,
           "paid": 1,
           "actualWage": 8363.827232767406
         }
@@ -115,37 +123,41 @@
       "values": [
         {
           "skill": 50,
-          "full": 170,
-          "employment": 0.2709083090423729,
-          "discount3": 44,
+          "fullValue": 170,
+          "employmentAdjustedValue": 48,
+          "discount3Value": 44,
           "wage": 703.7235108459565,
+          "employment": 0.2709083090423729,
           "paid": 1,
           "actualWage": 2262.4283905810153
         },
         {
           "skill": 60,
-          "full": 280,
-          "employment": 0.5092215826956492,
-          "discount3": 140,
+          "fullValue": 280,
+          "employmentAdjustedValue": 150,
+          "discount3Value": 140,
           "wage": 1149.1448249262398,
+          "employment": 0.5092215826956492,
           "paid": 1,
           "actualWage": 1643.9811776630208
         },
         {
           "skill": 70,
-          "full": 710,
-          "employment": 0.8827822512688681,
-          "discount3": 580,
+          "fullValue": 710,
+          "employmentAdjustedValue": 630,
+          "discount3Value": 580,
           "wage": 2885.847230586899,
+          "employment": 0.8827822512688681,
           "paid": 1,
           "actualWage": 3487.644162914899
         },
         {
           "skill": 80,
-          "full": 2000,
-          "employment": 0.9577201261636213,
-          "discount3": 1800,
+          "fullValue": 2000,
+          "employmentAdjustedValue": 1900,
+          "discount3Value": 1800,
           "wage": 8066.84337333899,
+          "employment": 0.9577201261636213,
           "paid": 1,
           "actualWage": 8937.253667317473
         }
@@ -156,37 +168,41 @@
       "values": [
         {
           "skill": 50,
-          "full": 36,
-          "employment": 0.2959557874628035,
-          "discount3": 11,
+          "fullValue": 36,
+          "employmentAdjustedValue": 11,
+          "discount3Value": 11,
           "wage": 708.7220729808619,
+          "employment": 0.2959557874628035,
           "paid": 1,
           "actualWage": 2225.5564019816948
         },
         {
           "skill": 60,
-          "full": 59,
-          "employment": 0.5562230596351516,
-          "discount3": 32,
+          "fullValue": 59,
+          "employmentAdjustedValue": 33,
+          "discount3Value": 32,
           "wage": 1165.3153923010905,
+          "employment": 0.5562230596351516,
           "paid": 1,
           "actualWage": 1640.1394984176272
         },
         {
           "skill": 70,
-          "full": 150,
-          "employment": 0.9027855639542155,
-          "discount3": 130,
+          "fullValue": 150,
+          "employmentAdjustedValue": 140,
+          "discount3Value": 130,
           "wage": 2965.7779395558186,
+          "employment": 0.9027855639542155,
           "paid": 1,
           "actualWage": 3607.154709087886
         },
         {
           "skill": 80,
-          "full": 420,
-          "employment": 0.959302482159224,
-          "discount3": 390,
+          "fullValue": 420,
+          "employmentAdjustedValue": 400,
+          "discount3Value": 390,
           "wage": 8281.456654584039,
+          "employment": 0.959302482159224,
           "paid": 1,
           "actualWage": 9227.918912390238
         }
