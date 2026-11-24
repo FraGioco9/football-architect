@@ -372,5 +372,30 @@ test('#763 Roster Overview matches Players columns except the redundant Club col
  }
  const css=read('assets/app.css');
  assert.match(css,/\.app-players-table:is\(\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\),\.club-roster-table\[data-players-table-mode="overview"\]\)\{--app-players-age-width:78px/);
- assert.match(css,/\.app-players-table\.club-roster-table\[data-players-table-mode="overview"\]\{--app-players-club-min:0px\}/);
+ assert.match(css,/\.app-players-table\.club-roster-table\[data-players-table-mode="overview"\]\{--app-players-club-min:0px;/);
+});
+
+test('#763 Roster Overview preserves identity tracks and distributes surplus across all four remaining columns',()=>{
+ const css=read('assets/app.css');
+ const scope='.app-players-table.club-roster-table[data-players-table-mode="overview"]';
+ const tail=css.slice(css.indexOf('/* #763: Roster shares the three fixed identity columns'));
+ assert.ok(tail.includes(scope+'{--app-players-club-min:0px;--app-roster-extra-width:calc(100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - var(--app-players-age-width) - var(--app-players-height-width) - var(--app-players-foot-width) - var(--app-players-market-width))}'));
+ const widths=['age','height','foot','market'],selectors=['th:nth-child(4)','th:nth-child(5)','th:nth-child(6)','th.app-market-value-col'];
+ for(let i=0;i<4;i++)assert.ok(tail.includes(scope+' '+selectors[i]+'{width:calc(var(--app-players-'+widths[i]+'-width) + var(--app-roster-extra-width) / 4)}'));
+ assert.doesNotMatch(tail,/th:nth-child\([123]\)|col\.app-players-(?:flag|name|view-third)-column/);
+ assert.match(css,/--app-players-flag-width:54px;--app-players-name-width:248px;--app-players-positions-width:200px/);
+ assert.match(css,/--app-players-flag-width:32px;--app-players-name-width:128px;--app-players-positions-width:112px/);
+ assert.match(css,/--app-players-flag-width:30px;--app-players-name-width:120px;--app-players-positions-width:104px/);
+ const cases=[{identity:[54,248,200],fields:[78,96,90,172],widths:[938,1000,1148,1280,1600]},{identity:[32,128,112],fields:[62,76,74,152],widths:[636,720]},{identity:[30,120,104],fields:[60,72,70,148],widths:[604,680]}];
+ for(const {identity,fields,widths:tableWidths} of cases){
+  const min=[...identity,...fields].reduce((a,b)=>a+b,0);
+  for(const total of tableWidths){
+   const extra=(Math.max(total,min)-min)/4;
+   const tracks=[...identity,...fields.map(w=>w+extra)];
+   assert.deepEqual(tracks.slice(0,3),identity);
+   assert.equal(tracks.reduce((a,b)=>a+b,0),Math.max(total,min));
+   assert.ok(tracks.slice(3).every((w,i)=>w>=fields[i]));
+   assert.equal(tracks[6]-fields[3],tracks[3]-fields[0]);
+  }
+ }
 });
