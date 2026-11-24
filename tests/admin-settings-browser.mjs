@@ -1089,18 +1089,25 @@ try{
    assert.equal(await page.locator('.admin-directory-card p').count(),0);
    const cardSizes=await page.locator('.admin-directory-card:visible').evaluateAll(nodes=>nodes.map(n=>Math.round(n.getBoundingClientRect().height)));
    assert.equal(new Set(cardSizes).size,1,'All Admin cards have equal height');
-   await page.locator('[data-admin-card="economy"]').click();await page.waitForFunction(()=>document.querySelector('[data-admin-inspection]').getAttribute('aria-busy')==='false');
+   // WebKit can return from click before the destination DOM is installed.
+   // Require the canonical route, granted access and completed loading, not just a transient DOM state.
+   const inspectionReady=mode=>page.locator('#app-admin[data-admin-access="granted"] [data-admin-inspection="'+mode+'"][aria-busy="false"]');
+   await Promise.all([page.waitForURL('**/admin/economy'),page.locator('[data-admin-card="economy"]').click()]);
+   await inspectionReady('economy').waitFor({state:'visible'});
+   const reserve=page.locator('[data-inspection-value="reserve"]');
+   assert.equal(await reserve.textContent(),'—');
    const geometry=()=>page.locator('#inspection-panel-overview .inspection-metric').evaluateAll(nodes=>nodes.map(n=>({w:Math.round(n.getBoundingClientRect().width),h:Math.round(n.getBoundingClientRect().height)})));
-   const empty=await geometry();
-   funded=true;await page.locator('[data-inspection-refresh]').click();await page.waitForFunction(()=>document.querySelector('[data-admin-inspection]').getAttribute('aria-busy')==='false');
+   const empty=await geometry();assert.equal(empty.length,4,'Overview must contain all four metrics');
+   funded=true;await page.locator('[data-inspection-refresh]').click();await inspectionReady('economy').waitFor({state:'visible'});
+   assert.equal((await reserve.textContent()).replace(/\D/g,''),'123456789012','Populated reserve must be rendered before geometry comparison');
    assert.deepEqual(await geometry(),empty,'Economy cards must not resize when populated');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    finance=false;await page.locator('[data-inspection-refresh]').click();await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
    assert.equal(await page.locator('#app-admin').isVisible(),false);
    assert.equal(await page.locator('[data-inspection-value="reserve"]').textContent(),'—');
-   await page.goto('http://app.localhost:2000/admin/reset');await page.waitForFunction(()=>document.querySelector('[data-admin-inspection]').getAttribute('aria-busy')==='false');
+   await page.goto('http://app.localhost:2000/admin/reset');await inspectionReady('reset').waitFor({state:'visible'});
    const scopes=page.locator('[data-inspection-scope]');assert.equal(await scopes.count(),4);assert.equal(await page.locator('[data-inspection-scope]:checked').count(),0);
-   await scopes.first().check();await page.locator('[data-inspection-preview]').click();await page.waitForFunction(()=>document.querySelector('[data-admin-inspection]').getAttribute('aria-busy')==='false');
+   await scopes.first().check();await page.locator('[data-inspection-preview]').click();await inspectionReady('reset').waitFor({state:'visible'});
    assert.equal(previewCalls,1);assert.equal(await page.locator('[data-inspection-copy="confirm"]').isEnabled(),false);
    write=false;await page.locator('[data-inspection-refresh]').click();await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
    assert.equal(await page.locator('#app-admin').isVisible(),false);assert.deepEqual(errors,[]);checks++;
