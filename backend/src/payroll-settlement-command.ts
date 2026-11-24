@@ -1,5 +1,6 @@
 /** #778: internal per-club payday settlement. No HTTP route, scheduler or funding.
  * Read signed history, pin allocations, then post only missing amounts via #775/#796. */
+import clubs from '../../data/clubs.json' with {type:'json'};
 import type {Database} from './database.ts';
 import type {AdminSession} from './auth.ts';
 import {ApiError} from './errors.ts';
@@ -159,4 +160,64 @@ export async function settleClubPayrollBatch(db:Database,session:AdminSession,cl
  }
  return {runId,clubKey,season,day,plannedArc:state.plannedArc,paidArc:state.paidArc,arrearsArc:state.arrearsArc,
   dueArc:state.dueArc,outstandingArc:state.outstandingArc,status:state.completed===undefined?'pending':'complete',receiptHash:state.completed??null};
+}
+
+/** World-level read-only reconciliation. A per-club receipt is not a full payday.
+ * No new calendar event or global settlement table. Missing runs remain pending. */
+export async function reconcilePayrollPayday(db:Database,session:AdminSession,now:number){
+ if(!session?.unified)throw new ApiError(403,'economic_authority_required');
+ const operator=session.unified,world=await readWorld(db);
+ if(world.phase!=='active'||(world.day!==28&&world.day!==56))return fail('payroll_payday_required');
+ const {generation,seasonNumber:season,day}=world;
+ const canonicalClubs=clubs.map(c=>c.countryId+'-'+c.clubId).sort();
+ if(new Set(canonicalClubs).size!==320||canonicalClubs.length!==320)return fail('payroll_club_catalogue_invalid');
+ const scope=[generation,season,day];
+ const results=await db.batch([
+  financeSessionGuard(db,operator.playerId,operator.sessionDigest,operator.csrfDigest,'read',now),
+  ...await prepareRewardPayrollGuards(db,world,day,true),
+  economicReconciliationGuard(db),
+  db.prepare('SELECT active_version FROM economic_control WHERE id=1 AND posting_enabled=1'),
+  db.prepare(`SELECT r.id,r.club_key,r.world_revision,r.policy_version,r.source_hash,
+   (SELECT digest FROM payroll_run_milestones m WHERE m.run_id=r.id AND m.kind='sealed') AS seal,
+   (SELECT digest FROM payroll_run_milestones m WHERE m.run_id=r.id AND m.kind='completed') AS completed
+   FROM payroll_runs r WHERE r.generation=? AND r.season=? AND r.day=? ORDER BY r.club_key`).bind(...scope),
+  db.prepare(`SELECT p.run_id,p.id,p.claim_id,p.planned_arc,p.paid_arc,p.reversed,c.outstanding_arc
+   FROM payroll_allocation_paid p JOIN payroll_claim_outstanding c ON c.id=p.claim_id JOIN payroll_runs r ON r.id=p.run_id
+   WHERE r.generation=? AND r.season=? AND r.day=? ORDER BY p.id`).bind(...scope),
+  db.prepare(`SELECT a.run_id,t.id,t.business_key,t.request_hash,p.allocation_id FROM payroll_payment_receipts p
+   JOIN economic_transactions t ON t.id=p.transaction_id JOIN payroll_allocations a ON a.id=p.allocation_id
+   JOIN payroll_runs r ON r.id=a.run_id WHERE r.generation=? AND r.season=? AND r.day=? ORDER BY t.business_key`).bind(...scope),
+  db.prepare(`SELECT COUNT(*) AS n FROM economic_transactions t WHERE t.generation=? AND t.season=? AND t.day=?
+   AND t.purpose IN ('PAYROLL_HUMAN','PAYROLL_AI') AND NOT EXISTS(SELECT 1 FROM payroll_payment_receipts p WHERE p.transaction_id=t.id)`).bind(...scope),
+  db.prepare(`SELECT COUNT(*) AS n FROM payroll_allocation_paid p JOIN payroll_runs r ON r.id=p.run_id
+   WHERE r.generation=? AND p.reversed<>0`).bind(generation)
+ ]);
+ const [policyResult,runsResult,allocResult,txResult,orphans,reversals]=results.slice(-6),policy=policyResult.results[0]?.active_version;
+ if(typeof policy!=='string'||orphans.results[0]?.n!==0||reversals.results[0]?.n!==0)return fail('payroll_reconciliation_mismatch');
+ const runs=runsResult.results,seen=new Set<string>(),completedClubs:string[]=[],receiptHashes:string[]=[];
+ let recordedDueArc=0,paidArc=0,arrearsArc=0,pendingArc=0;
+ for(const run of runs){
+  const id=String(run.id),club=String(run.club_key);
+  if(!canonicalClubs.includes(club)||seen.has(club)||run.world_revision!==world.revision||run.policy_version!==policy||typeof run.seal!=='string')return fail('payroll_run_stale');
+  seen.add(club);
+  const rows=allocResult.results.filter(x=>x.run_id===id) as unknown as ReceiptRow[];
+  const allocations=rows.map(x=>[x.id,x.claim_id,x.planned_arc]);
+  if(run.seal!==await canonicalHash({sourceHash:run.source_hash,allocations}))return fail('payroll_plan_mismatch');
+  if(rows.some(x=>x.reversed!==0||![x.planned_arc,x.paid_arc,x.outstanding_arc].every(Number.isSafeInteger)||x.paid_arc<0||x.paid_arc>x.planned_arc||x.outstanding_arc<0))return fail('payroll_receipt_mismatch');
+  const planned=rows.reduce((n,x)=>n+x.planned_arc,0),paid=rows.reduce((n,x)=>n+x.paid_arc,0),
+   outstanding=rows.reduce((n,x)=>n+x.outstanding_arc,0),pending=planned-paid,arrears=outstanding-pending;
+  if(arrears<0||![planned,paid,outstanding,pending,arrears].every(Number.isSafeInteger))return fail('payroll_total_invalid');
+  const receipts=txResult.results.filter(x=>x.run_id===id).map(({run_id,...receipt})=>receipt);
+  const hash=await canonicalHash({runId:id,seal:run.seal,plannedArc:planned,paidArc:paid,arrearsArc:arrears,receipts});
+  if(run.completed!==null){
+   if(run.completed!==hash||pending!==0)return fail('payroll_completion_mismatch');
+   completedClubs.push(club);receiptHashes.push(hash);
+  }
+  recordedDueArc+=paid+outstanding;paidArc+=paid;arrearsArc+=arrears;pendingArc+=pending;
+ }
+ if(![recordedDueArc,paidArc,arrearsArc,pendingArc].every(Number.isSafeInteger)||recordedDueArc!==paidArc+arrearsArc+pendingArc)return fail('payroll_total_invalid');
+ const missingClubs=canonicalClubs.filter(c=>!completedClubs.includes(c)),complete=missingClubs.length===0;
+ return {generation,season,day,status:complete?'complete':'pending',clubsComplete:completedClubs.length,missingClubs,
+  recordedDueArc,dueArc:complete?recordedDueArc:null,paidArc,arrearsArc,pendingArc,
+  receiptHash:complete?await canonicalHash({generation,season,day,receiptHashes}):null};
 }
