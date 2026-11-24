@@ -351,7 +351,7 @@ test('Admin Contracts bridge forwards only bounded authenticated list and mutati
   assert.equal((await send('/api/admin/contracts?page=9999')).status,200);
   assert.equal((await send('/api/admin/contracts?playerId=23')).status,200);
   assert.equal((await send('/api/admin/contracts')).status,200);
-  assert.equal((await send('/api/admin/contracts','POST',{playerId:23,clubKey:'IT-1'})).status,200);
+  assert.equal((await send('/api/admin/contracts','POST',{playerId:23,clubKey:'IT-1'})).status,405);
   for(const path of ['/api/admin/contracts?page=0','/api/admin/contracts?page=01','/api/admin/contracts?page=1&page=2','/api/admin/contracts?playerId=0','/api/admin/contracts?playerId=01','/api/admin/contracts?playerId=99999999999999999','/api/admin/contracts?unused=1','/api/admin/contracts?playerId=%31','/api/admin/contracts?playerId=23#x']){
    assert.equal((await send(path)).status,403,path);
   }
@@ -359,8 +359,7 @@ test('Admin Contracts bridge forwards only bounded authenticated list and mutati
   assert.equal((await send('/api/admin/contracts','DELETE')).status,405);
   assert.deepEqual(seen.map(x=>[x.path,x.method]),[
    ['/api/admin/contracts?page=1','GET'],['/api/admin/contracts?page=9999','GET'],
-   ['/api/admin/contracts?playerId=23','GET'],['/api/admin/contracts','GET'],
-   ['/api/admin/contracts','POST']]);
+   ['/api/admin/contracts?playerId=23','GET'],['/api/admin/contracts','GET']]);
   assert.ok(seen.every(x=>x.cookie==='fa_player_local='+'f'.repeat(64)));
   assert.equal(seen[4].csrf,'csrf-for-tests');
   assert.equal(seen[4].origin,'http://app.localhost:2000');
