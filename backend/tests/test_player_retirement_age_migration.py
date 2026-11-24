@@ -35,8 +35,11 @@ class RetirementAgeMigrationTest(unittest.TestCase):
                 expected = {k: v for k, v in original.items() if k != 'retirement_seed'}
                 expected['retirement_age'] = age
                 self.assertEqual(self.read(), expected)
+                self.assertEqual(list(self.read()), ['age', 'retirement_age', 'career_status', 'development_aptitude'])
+                changes = self.db.total_changes
                 self.db.executescript(SQL)  # no additional random draws, even with exhausted iterator
                 self.assertEqual(self.read(), expected)
+                self.assertEqual(self.db.total_changes, changes)
 
     def test_preserves_existing_age_and_removes_legacy_seed(self):
         self.insert({'age': 17, 'retirement_age': 38, 'retirement_seed': 'legacy'})
@@ -49,6 +52,23 @@ class RetirementAgeMigrationTest(unittest.TestCase):
         self.db.create_function('random', 0, lambda: 0)
         self.db.executescript(SQL)
         self.assertEqual(self.read(), {'age': 16, 'retirement_age': 33})
+
+    def test_reorders_without_redrawing_and_preserves_json_types(self):
+        original = {'first_name': 'Example', 'age': 18, 'career_status': 'active',
+                    'secondary_nationality': None, 'flag': True, 'attributes': {'speed': 50},
+                    'secondary_positions': ['RW'], 'id': 9, 'retirement_age': 37}
+        self.insert(original)
+        self.db.create_function('random', 0, lambda: self.fail('must not redraw'))
+        self.db.executescript(SQL)
+        result = self.read()
+        self.assertEqual(result, original)
+        self.assertEqual(list(result), ['first_name', 'age', 'retirement_age', 'career_status',
+                                       'secondary_nationality', 'flag', 'attributes', 'secondary_positions', 'id'])
+        self.assertIs(result['flag'], True)
+        self.assertIsNone(result['secondary_nationality'])
+        changes = self.db.total_changes
+        self.db.executescript(SQL)
+        self.assertEqual(self.db.total_changes, changes)
 
     def test_confirmed_generation_uses_same_conditional_thresholds(self):
         source = (ROOT / 'src' / 'players-generation-command.ts').read_text()

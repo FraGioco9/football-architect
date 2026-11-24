@@ -93,6 +93,9 @@ it('shows a server-generated preview but creates zero permanent players until ex
   expect(row.retirement_age).toBeGreaterThanOrEqual(33);
   expect(row.retirement_age).toBeLessThanOrEqual(40);
   expect(row).not.toHaveProperty('retirement_seed');
+  const keys=Object.keys(row);
+  expect(keys[keys.indexOf('age')+1]).toBe('retirement_age');
+  expect(keys.filter(k=>k!=='retirement_age')).toEqual([...Object.keys(item).filter(k=>k!=='preview_id'),'id']);
   expect(item).not.toHaveProperty('retirement_age');
   expect('preview_id' in row).toBe(false);
  }
