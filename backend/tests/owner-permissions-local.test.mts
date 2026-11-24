@@ -4,7 +4,7 @@ import {mkdtemp,rm,mkdir,readdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {openLocalDatabase} from '../tools/operator-local.mts';
-import {accountPool,initializeAccountPool,inspectAdminPermissions,changeAdminPermissions} from '../tools/owner-permissions.mts';
+import {accountPool,initializeAccountPool,inspectAdminPermissions,changeAdminPermissions,changeEconomyRead} from '../tools/owner-permissions.mts';
 import {readAccountPermissions} from '../src/account-permissions.ts';
 
 const now=1_800_000_000,email='new-owner@example.invalid';
@@ -140,3 +140,51 @@ test('unrelated SQLite files never cause a selected database or cache to be crea
   assert.equal(await (await import('node:fs/promises')).readFile(join(state,'v3','d1','unrelated','other.sqlite'),'utf8'),'unrelated file');
  }finally{await rm(state,{recursive:true,force:true})}
 });
+
+test('Economy read is explicit, local, read-only, idempotent and revoked with Admin',()=>fixture(async(db,state)=>{
+ await initializeAccountPool(db,'dev',now);await player(db);
+ const world=await db.prepare('SELECT * FROM world_state').first();
+ const args=['economy-grant','--email',email,'--persist-to',state];
+ await assert.rejects(changeEconomyRead(db,request(),now),/admin_read_required/);
+ await changeAdminPermissions(db,request(),now);
+ assert.equal((await inspectAdminPermissions(db,'dev',email)).economyRead,false);
+ await runPermissionCommand(args,{output:()=>{}});
+ assert.equal(await count(db,'economic_finance_permissions'),0);
+ await assert.rejects(runPermissionCommand([...args,'--apply','--confirm-account','wrong'],{output:()=>{}}),/account_selection_changed/);
+ await assert.rejects(runPermissionCommand([...args,'--apply'],{output:()=>{}}),/confirmation_required/);
+ await runPermissionCommand([...args,'--apply','--confirm-account','player'],{output:()=>{}});
+ assert.equal((await inspectAdminPermissions(db,'dev',email)).economyRead,true);
+ const row=await db.prepare('SELECT * FROM economic_finance_permissions').first();
+ assert.equal(row.capability,'read');assert.equal(row.granted_by,'local-owner-cli');
+ assert.equal((await changeEconomyRead(db,request(),now+1)).changed,false);
+ assert.deepEqual(await db.prepare('SELECT * FROM economic_finance_permissions').first(),row);
+ assert.equal(await count(db,'economic_accounts'),0);assert.equal(await count(db,'economic_transactions'),0);
+ await assert.rejects(changeEconomyRead(db,request({environment:'production'}),now),/account_pool_mismatch/);
+ await runPermissionCommand(['economy-revoke','--email',email,'--persist-to',state,'--apply','--confirm-account','player'],{output:()=>{}});
+ assert.equal(await count(db,'economic_finance_permissions'),0);
+ assert.equal((await readAccountPermissions(db,'player')).length,3);
+ await changeEconomyRead(db,request(),now);
+ await changeAdminPermissions(db,request({action:'revoke'}),now+1);
+ assert.equal(await count(db,'economic_finance_permissions'),0);
+ const legacyId=(await inspectAdminPermissions(db,'dev',email)).legacyCandidateId;
+ assert.ok(legacyId);
+ await changeAdminPermissions(db,request({legacyId}),now+2);
+ assert.equal((await inspectAdminPermissions(db,'dev',email)).economyRead,false);
+ assert.deepEqual(await db.prepare('SELECT * FROM world_state').first(),world);
+}));
+test('Economy grant fails closed on identity drift and revocation preserves unrelated capabilities',()=>fixture(async db=>{
+ await initializeAccountPool(db,'dev',now);await player(db);await changeAdminPermissions(db,request(),now);
+ const racing={prepare:db.prepare.bind(db),batch:async(statements:any[])=>{
+  await db.prepare("DELETE FROM account_permissions WHERE account_id='player' AND permission='admin.world.read'").run();
+  return db.batch(statements);
+ }};
+ await assert.rejects(changeEconomyRead(racing,request(),now));
+ assert.equal(await count(db,'economic_finance_permissions'),0);
+ await changeAdminPermissions(db,request(),now);
+ await changeEconomyRead(db,request(),now);
+ await db.prepare("INSERT INTO economic_finance_permissions VALUES('player','post','fixture',?)").bind(now).run();
+ await db.prepare("UPDATE admin_accounts SET enabled=0").run();
+ assert.equal((await inspectAdminPermissions(db,'dev',email)).economyRead,false);
+ await changeEconomyRead(db,request({action:'revoke'}),now);
+ assert.equal((await db.prepare('SELECT capability FROM economic_finance_permissions').first()).capability,'post');
+}));

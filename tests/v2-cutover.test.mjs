@@ -53,7 +53,11 @@ test('#613 no backend source imports any retired score-only module',()=>{
     assert.doesNotMatch(text,new RegExp("from\\s*['\\\"]\\./"+name.replaceAll('.','\\.')+"['\\\"]"),full.pathname);
    }
    // Published scoring must never mutate or consume the retired day table.
-   if(!full.pathname.endsWith('reset-world-command.ts'))
+   if(full.pathname.endsWith('admin-inspection.ts')){
+    // Inspection may count the legacy table solely to disclose reset inventory; no sporting consumption.
+    assert.equal((text.match(/season_day_outcomes/g)||[]).length,1);
+    assert.match(text,/const sportingTables=\[[^\n]*'season_day_outcomes'/);
+   }else if(!full.pathname.endsWith('reset-world-command.ts'))
     assert.doesNotMatch(text,/['"\x60][^'"\x60]*season_day_outcomes[^'"\x60]*['"\x60]/,full.pathname);
   }
  }
