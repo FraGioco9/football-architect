@@ -41,12 +41,12 @@
       "permanent": true
     },
     {
-      "source": "/admin/:section(calendar|players|contracts)/",
+      "source": "/admin/:section(calendar|players|contracts|licenses)/",
       "destination": "/admin/:section",
       "permanent": true
     },
     {
-      "source": "/admin/:section(calendar|players|contracts)/index.html",
+      "source": "/admin/:section(calendar|players|contracts|licenses)/index.html",
       "destination": "/admin/:section",
       "permanent": true
     },
@@ -374,7 +374,7 @@
       "destination": "/:page/index.html"
     },
     {
-      "source": "/admin/:section(calendar|players|contracts)",
+      "source": "/admin/:section(calendar|players|contracts|licenses)",
       "destination": "/admin/:section/index.html"
     },
     {

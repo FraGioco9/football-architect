@@ -286,8 +286,10 @@
    const page=doc.getElementById('app-admin');
    page.hidden=!allowed;
    page.dataset.adminAccess=allowed?'granted':state.busy?'pending':'denied';
-   window.faAdminAccess=allowed;
-   window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:allowed}));
+   if(['signedIn','signedOut','forbidden'].includes(state.message)){
+    window.faAdminAccess=allowed;
+    window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:allowed}));
+   }
    const canWrite=state.permissions.includes('admin.access')&&state.permissions.includes('admin.world.write');
    if(players){
     const translation=playerCopies[doc.documentElement.lang]||playerCopies.en;

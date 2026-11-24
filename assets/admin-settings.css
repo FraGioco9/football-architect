@@ -55,7 +55,7 @@
 .app-admin-view .admin-directory-card[hidden],.app-admin-view [data-admin-players][hidden],.app-admin-view [data-admin-contracts][hidden],.app-admin-view [data-contracts-editor][hidden]{display:none!important}
 
 /* Admin directory: separate cards with actual navigation buttons. */
-.app-admin-view .admin-directory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--fa-space-4);min-width:0}
+.app-admin-view .admin-directory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--app-page-section-gap);min-width:0}
 .app-admin-view .admin-directory-card{display:flex;flex-direction:column;align-items:flex-start;gap:14px;min-width:0;min-height:160px;box-sizing:border-box}
 .app-admin-view .admin-directory-card h2{font-size:var(--fa-text-panel-heading);margin:0}
 .app-admin-view .admin-directory-card p{flex:1;line-height:1.55}
@@ -127,7 +127,7 @@
   border-color:var(--fa-field-focus-border);
   box-shadow:inset 0 0 0 1px var(--fa-field-focus-border);
 }
-.app-admin-view .admin-directory-card:hover{border-color:var(--fa-field-hover-border);background:var(--fa-field-hover-bg)}
+/* Admin cards are informational: only their actual action links react to hover/click. */
 .app-admin-view .admin-directory-card:hover :is(h2,p),.app-admin-view .admin-directory-card:focus-within :is(h2,p){background:transparent;outline:none;box-shadow:none}
 /* Selection and hover in dropdown option boxes do not recolor captions. */
 .app-admin-view .admin-players-dropdown .language-option,
