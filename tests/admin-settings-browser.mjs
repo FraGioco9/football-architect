@@ -868,7 +868,7 @@ try{
    await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
    await page.route('**/api/player/permissions',r=>r.fulfill({status:200,contentType:'application/json',
     body:JSON.stringify({permissions:['admin.access','admin.world.read','admin.world.write']})}));
-   await page.route('**/api/admin/club-licenses*',route=>{
+   await page.route('**/api/admin/club-licenses**',route=>{
     const url=new URL(route.request().url());
     assert.equal(route.request().method(),'GET','Layout QA must never assign or revoke licenses');
     return route.fulfill({status:200,contentType:'application/json',
@@ -931,8 +931,14 @@ try{
    await clubDropdown.locator('.admin-licenses-dropdown-search').press('Enter');
    assert.equal(await page.locator('[data-licenses-club]').inputValue(),'FA-320');
    await page.locator('[data-licenses-query]').fill('qa@example.invalid');
+   const lookupResponse=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/club-licenses/accounts');
    await page.locator('[data-licenses-find]').click();
+   const lookup=await lookupResponse;
+   assert.equal(lookup.status(),200,'Verified account lookup must use the mock');
+   assert.deepEqual(await lookup.json(),{accounts:[{id:'fixture-target',email:'qa@example.invalid'}]});
    const accountDropdown=page.locator('.admin-licenses-field').nth(2);
+   await page.waitForFunction(()=>document.querySelector('[data-licenses-account]').options.length===2);
+   assert.equal(await accountDropdown.locator('.language-trigger').isEnabled(),true,'Successful lookup enables Account');
    await accountDropdown.locator('.language-trigger').click();
    await accountDropdown.locator('.language-option').filter({hasText:'qa@example.invalid'}).click();
    assert.equal(await page.locator('[data-licenses-assign]').isEnabled(),true);
@@ -978,7 +984,7 @@ try{
     return r.fulfill({status:authorized?200:401,contentType:'application/json',
      body:authorized?JSON.stringify({permissions:['admin.access','admin.world.read','admin.world.write']}):'{}'});
    });
-   await page.route('**/api/admin/club-licenses*',r=>{
+   await page.route('**/api/admin/club-licenses**',r=>{
     assert.equal(r.request().method(),'GET','Sidebar QA must not mutate licenses');
     return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({clubs,history:[]})});
    });
