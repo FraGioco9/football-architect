@@ -55,3 +55,32 @@ test('reference tables and timing conserve each component',()=>{
  assert.equal(placementReference(competitionRewards('int-1'))[0].amount,864000);
  assert.equal(placementReference(competitionRewards('int-2'))[1].amount,272000);
 });
+
+test('reward renderer exposes reference schedule, not individual earnings',async()=>{
+ const {renderCompetitionRewards,renderAdminRewards,renderRewardCard}=await import('../tools/render-competition-rewards.mjs');
+ for(const id of REWARD_IDS){
+  const html=renderCompetitionRewards(id);
+  assert.match(html,/rewardDraftNote/);
+  assert.match(html,/rewardCreditSchedule/);
+  assert.match(html,/rewardHamilton/);
+  assert.match(html,/rewardPointsFormula/);
+  assert.match(html,/data-reward-state="rewardEvidenceHistory"/);
+  assert.doesNotMatch(html,/data-reward-(?:earned|paid|credited|payable)=/);
+  assert.match(renderRewardCard(id),/fa-reward-card-pool/);
+ }
+ assert.match(renderCompetitionRewards('int-1'),/864,000 ARC/);
+ assert.match(renderCompetitionRewards('int-2'),/272,000 ARC/);
+ assert.match(renderAdminRewards([],String),/data-admin-rewards-content hidden/);
+});
+test('Rewards routes and public static assets are explicitly allowed',async()=>{
+ const {parseRoute}=await import('../assets/routes-registry.mjs');
+ const {publicRequestFile,isAllowlistedPublicPath}=await import('../tools/publication-guard.mjs');
+ for(const id of REWARD_IDS){
+  const route='/competitions/'+id.toLowerCase()+'/rewards';
+  assert.equal(parseRoute(route)?.view,'rewards');
+  assert.equal(publicRequestFile(route),'competitions/'+id.toLowerCase()+'/index.html');
+ }
+ assert.equal(parseRoute('/admin/rewards')?.canonical,'/admin/rewards');
+ assert.equal(publicRequestFile('/admin/rewards'),'admin/rewards/index.html');
+ for(const path of ['admin/rewards/index.html','assets/rewards-ui.mjs','assets/competition-rewards.mjs','assets/competition-rewards.css'])assert.equal(isAllowlistedPublicPath(path),true,path);
+});

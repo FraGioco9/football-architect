@@ -4,7 +4,7 @@ import {runInNewContext} from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {bootstrapCompetitionTabs} from '../tools/competition-tab-preboot.mjs';
 
-const views = ['standings', 'postseason', 'fixtures', 'stats', 'history', 'rules', 'awards'];
+const views = ['standings', 'postseason', 'fixtures', 'stats', 'history', 'rules', 'awards', 'rewards'];
 function simulate(start = '/competitions/it-1/fixtures?season=2&matchday=12') {
   const handlers = {document: {}, window: {}};
   const historyStack = [new URL(start, 'https://fa.test')];
@@ -79,7 +79,7 @@ test('COMPETITIONS #516: keyboard, saved matchday and handoff are coherent', () 
   assert.equal(s.location.pathname, '/competitions/int-1/stats');
   assert.equal(s.tabs[3].focused, true);
   assert.equal(s.key('stats', 'End'), true);
-  assert.equal(s.location.pathname, '/competitions/int-1/awards');
+  assert.equal(s.location.pathname, '/competitions/int-1/rewards');
   s.click('fixtures');
   assert.equal(s.location.search, '?calendarReturn=%2Fcalendar%3Fseason%3D1&season=1&matchday=quarterfinals');
   s.click('rules');
