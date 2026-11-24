@@ -1,0 +1,109 @@
+/* Reuse Admin panel, app links, controls and table tokens. */
+.inspection-panel{min-width:0;display:grid;gap:16px}
+.inspection-panel [hidden]{display:none!important}
+.inspection-panel h2{font-size:var(--fa-text-panel-heading);margin:16px 0 10px}
+.inspection-panel .inspection-summary{margin:0;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.inspection-panel .inspection-status{min-height:1.5em;margin:0;color:var(--muted)}
+.inspection-scopes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;border:1px solid var(--border);border-radius:var(--fa-radius-control);padding:12px;margin:0 0 12px}
+.inspection-scopes legend{padding:0 8px;font-weight:600}
+.inspection-scope{display:flex;align-items:center;gap:10px;min-height:42px;cursor:pointer}
+.inspection-scope input{width:18px;height:18px;accent-color:var(--focus)}
+.inspection-result{margin-top:16px;border-top:1px solid var(--border)}
+.inspection-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+.inspection-metric{min-width:0;min-height:86px;border:1px solid var(--border);border-radius:var(--fa-radius-control);padding:12px;display:grid;gap:8px;align-content:center}
+.inspection-metric span{color:var(--muted);font-size:var(--fa-text-control)}
+.inspection-metric strong{font-variant-numeric:tabular-nums;font-size:18px;overflow-wrap:anywhere}
+.inspection-tabs{display:flex;flex-wrap:wrap;gap:4px;margin:12px 0}
+.inspection-table{max-width:100%;overflow-x:auto}
+.inspection-table table{width:100%;border-collapse:collapse}
+.inspection-table th,.inspection-table td{padding:10px;border-bottom:1px solid var(--border);text-align:start}
+.inspection-table th:last-child,.inspection-table td:last-child{text-align:end;font-variant-numeric:tabular-nums}
+.inspection-skeleton span{display:inline-block;width:60%;height:12px;border-radius:4px;background:var(--border)}
+.inspection-panel :is(button,input,a,[tabindex]):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.inspection-panel button:disabled{opacity:.55;cursor:default}
+@media(max-width:620px){.inspection-scopes{grid-template-columns:1fr}.inspection-metrics{gap:8px}.inspection-metric{padding:9px}.inspection-tabs{flex-wrap:nowrap;overflow-x:auto}.inspection-tabs button{flex:none}}
+
+.inspection-pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0}.inspection-table th,.inspection-table td{white-space:nowrap}.inspection-panel[aria-busy=true] .inspection-metric strong{min-height:1.4em}.inspection-table tr{height:42px}
+
+/* Stable Admin cards and data geometry, including pending/empty states. */
+/* Keep directory cards equally tall without clipping localized descriptions. */
+.app-admin-view .admin-directory{grid-auto-rows:1fr}
+.inspection-metric{box-sizing:border-box;height:104px;min-height:104px;max-height:104px;grid-template-rows:2.6em 1.5em;align-content:center;gap:4px}
+.inspection-metric span{line-height:1.3;overflow-wrap:anywhere;align-self:center}
+.inspection-metric strong{line-height:1.5;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(13px,2.5vw,18px);align-self:center}
+.inspection-panel [data-inspection-list-status]{min-height:1.5em;margin:0}
+.inspection-table:has([data-inspection-list]){height:253px;max-height:253px;overflow:auto;box-sizing:border-box}
+.inspection-table table{table-layout:fixed}
+.inspection-table th,.inspection-table td{overflow:hidden;text-overflow:ellipsis}
+.inspection-table:has([data-inspection-list="clubs"]) table{min-width:500px}
+.inspection-table:has([data-inspection-list="ledger"]) table{min-width:650px}
+.inspection-table thead{position:sticky;top:0;background:var(--surface);z-index:1}
+.inspection-panel[aria-busy=true] .inspection-metric strong{color:transparent;position:relative}
+.inspection-panel[aria-busy=true] .inspection-metric strong::after{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:56%;height:12px;border-radius:4px;background:var(--border)}
+@media(max-width:620px){.inspection-metric{height:112px;min-height:112px;max-height:112px;grid-template-rows:3.9em 1.5em}}
+
+/* Long ARC amounts remain readable within the fixed value slot. */
+.inspection-metric strong{white-space:normal;overflow-wrap:anywhere;overflow:visible;line-height:1.2;max-height:none;word-break:normal}
+.inspection-metric{grid-template-rows:2.6em 2.4em;height:112px;min-height:112px;max-height:112px}
+@media(max-width:620px){.inspection-metric{grid-template-rows:3.9em 2.4em;height:128px;min-height:128px;max-height:128px}}
+
+/* Reserve message geometry in every data state. Use the standard Admin spacing
+   and scroll long localized messages rather than expanding their panels. */
+.inspection-panel{gap:var(--app-page-section-gap,16px);align-content:start}
+.app-admin-view .inspection-panel .inspection-summary{gap:12px;margin:0;flex-wrap:nowrap;min-width:0}
+.inspection-summary [data-inspection-refresh]{flex:0 0 auto;width:auto;min-width:0;max-width:50%;margin:0}
+.inspection-panel [data-inspection-content]{display:grid;gap:12px;min-width:0}
+.inspection-panel [role=tabpanel],.inspection-result{display:grid;gap:12px;min-width:0}
+.inspection-panel :is(h2,p,.inspection-scopes,.inspection-metrics,.inspection-tabs,.inspection-pagination){margin:0}
+.inspection-result{margin:0;padding-top:12px}
+.inspection-panel :is(.inspection-status,[data-inspection-list-status],[data-inspection-policy],[data-inspection-reconciliation],[data-inspection-copy="protected"]){box-sizing:border-box;min-block-size:2.8em;block-size:2.8em;max-block-size:2.8em;line-height:1.4;overflow:auto;overflow-wrap:anywhere;margin:0}
+.inspection-panel :is([data-inspection-preview],[data-inspection-copy="confirm"]){justify-self:start;margin:0}
+@media(max-width:620px){.inspection-panel :is(.inspection-status,[data-inspection-list-status],[data-inspection-policy],[data-inspection-reconciliation],[data-inspection-copy="protected"]){min-block-size:4.2em;block-size:4.2em;max-block-size:4.2em}}
+
+/* World status and access feedback occupy the same fixed summary slot. */
+.inspection-panel .inspection-summary-label{flex:1 1 0;min-width:1px;display:flex;align-items:center;block-size:2.8em;line-height:1.4;overflow-wrap:anywhere;margin:0}
+@media(max-width:620px){.inspection-panel .inspection-summary-label{block-size:4.2em}}
+/* Reset has exactly four categories, so use a plain responsive table, not a scroll viewport. */
+.inspection-preview-table{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:13px}
+.inspection-preview-table :is(th,td){box-sizing:border-box;border-bottom:1px solid var(--border);padding:8px 10px;white-space:normal;overflow-wrap:anywhere;text-align:start;vertical-align:middle;line-height:1.4}
+.inspection-preview-table thead th{height:56px;color:var(--muted);font-weight:650}
+.inspection-preview-table tbody tr{height:44px}
+.inspection-preview-table tbody th{font-weight:400}
+.inspection-preview-table :is(th,td):last-child{width:50%;text-align:end;font-variant-numeric:tabular-nums}
+@media(max-width:620px){.inspection-preview-table thead th{height:88px}.inspection-preview-table tbody tr{height:52px}.inspection-preview-table :is(th,td){padding-inline:6px}}
+.inspection-panel [data-inspection-show-blockers]{justify-self:start;margin:0}
+.inspection-blockers-dialog{box-sizing:border-box;width:min(440px,calc(100% - 32px));max-width:100%;padding:20px;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);color:var(--text)}
+.inspection-blockers-dialog::backdrop{background:rgba(0,0,0,.45)}
+.inspection-blockers-dialog [data-inspection-blockers]{margin:12px 0;padding-inline-start:20px;line-height:1.5;overflow-wrap:anywhere}
+.inspection-blockers-dialog li+li{margin-top:8px}
+
+/* Economy uses the same stat cards, tabs, table header, skeletons and pagination
+   as the public competition/players surfaces. Scope only layout constraints here. */
+[data-admin-inspection="economy"] .inspection-metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+[data-admin-inspection="economy"] .inspection-metric{border:1px solid var(--border);border-radius:var(--fa-radius-panel);padding:12px;grid-template-rows:2.6em 2.4em;align-content:center}
+[data-admin-inspection="economy"] .inspection-metric .app-competition-stat-label{font-size:13px;font-weight:700;line-height:1.3}
+[data-admin-inspection="economy"] .inspection-metric .app-competition-stat-value{font-size:clamp(13px,1.6vw,18px);align-self:center}
+[data-admin-inspection="economy"][aria-busy=true] .inspection-metric strong::after{height:10px;background:color-mix(in srgb,var(--muted) 22%,var(--surface));width:56%}
+[data-admin-inspection="economy"] .inspection-tabs{flex-wrap:nowrap;min-width:0;margin:0;padding-bottom:7px}
+[data-admin-inspection="economy"] .inspection-table{margin:0;height:224px;max-height:224px}
+.app-admin-view .inspection-table table.app-players-table[data-inspection-table]{border-collapse:separate;border-spacing:0;table-layout:fixed;min-width:560px}
+.app-admin-view .inspection-table:has([data-inspection-list="ledger"]) table.app-players-table[data-inspection-table]{min-width:720px}
+.app-admin-view .inspection-table table.app-players-table[data-inspection-table] :is(th,td){width:auto;padding:2px 12px;border:0;border-bottom:1px solid var(--line);height:36px;vertical-align:middle;text-align:right;overflow:hidden;text-overflow:ellipsis;font-weight:400}
+.app-admin-view .inspection-table table.app-players-table[data-inspection-table] :is(th,td):first-child{text-align:left;width:34%;font-weight:650}
+.app-admin-view .inspection-table:has([data-inspection-list="ledger"]) table.app-players-table[data-inspection-table] :is(th,td):first-child{width:23%}
+.app-admin-view .inspection-table:has([data-inspection-list="ledger"]) table.app-players-table[data-inspection-table] :is(th,td):nth-child(n+2):nth-child(-n+4){text-align:left}
+.app-admin-view .inspection-table table.app-players-table[data-inspection-table] thead th{height:42px;font-weight:700}
+.app-admin-view .inspection-table table.app-players-table[data-inspection-table] tbody tr{height:36px}
+.app-admin-view .inspection-table table.app-players-table[data-inspection-table] tbody tr:last-child td{border-bottom:0}
+.app-admin-view .inspection-table table.app-players-table[data-inspection-table] .inspection-skeleton .app-skeleton-bar{display:block;width:56%;height:10px;margin-inline:auto 0;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
+.app-admin-view .inspection-table table.app-players-table[data-inspection-table] .inspection-skeleton td:first-child .app-skeleton-bar,.app-admin-view .inspection-table:has([data-inspection-list="ledger"]) .inspection-skeleton td:nth-child(n+2):nth-child(-n+4) .app-skeleton-bar{margin-inline:0 auto}
+.app-admin-view .inspection-table table.app-players-table[data-inspection-table] .app-players-empty-row td{height:180px;text-align:center;font-weight:400}
+[data-admin-inspection="economy"] .inspection-pagination{gap:8px;min-height:var(--fa-control-height-regular)}
+[data-admin-inspection="economy"] .app-players-page-count{min-width:0}
+.inspection-economy-status{display:grid;gap:0;border:1px solid var(--border);border-radius:var(--fa-radius-panel);overflow:hidden;font-size:13px}
+[data-admin-inspection="economy"] .inspection-economy-status [data-inspection-policy],.inspection-status-row{box-sizing:border-box;display:flex;align-items:center;min-height:48px;height:48px;padding:6px 12px;margin:0;color:var(--muted);line-height:1.3;overflow:auto}
+.inspection-status-row{border-top:1px solid var(--line);justify-content:space-between;gap:8px}
+[data-admin-inspection="economy"] .inspection-status-row [data-inspection-reconciliation]{height:auto;min-height:0;max-height:none;text-align:right;color:var(--text);font-weight:650}
+[data-admin-inspection="economy"] [data-inspection-copy="configuredRewards"]{justify-self:start}
+@media(max-width:900px){[data-admin-inspection="economy"] .inspection-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){[data-admin-inspection="economy"] .inspection-metrics{gap:8px}[data-admin-inspection="economy"] .inspection-metric{padding:9px;grid-template-rows:3.9em 2.4em}.inspection-summary [data-inspection-refresh]{padding-inline:10px}.app-admin-view .inspection-table table.app-players-table[data-inspection-table] :is(th,td){padding-inline:8px}}

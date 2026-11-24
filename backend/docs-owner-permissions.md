@@ -67,3 +67,16 @@ Before opening an existing target, the helper derives the selected reserved loca
 
 
 Shared account/world topology is now confirmed; see [Dev/Preview runtime setup](docs-shared-nonproduction.md). This command remains local only; it does not configure the hosted shared backend.
+
+## Economy read access (#792)
+Normal Admin grants do not authorize finance. After applying the local schema (0039 or later), stop the local Worker and use the existing owner-only CLI:
+
+```powershell
+npm --prefix backend run admin:permissions -- status --email your-account@example.com
+npm --prefix backend run admin:permissions -- economy-grant --email your-account@example.com
+npm --prefix backend run admin:permissions -- economy-grant --email your-account@example.com --apply
+```
+
+The middle command is a dry-run. Review the account ID and pool; the interactive confirmation is `ECONOMY-GRANT dev your-account@example.com` (or use the reviewed `--confirm-account` ID for trusted automation). Restart the local Worker and refresh Economy. Status reports `economySchema`, `economyReadGrant` (stored capability) and `economyRead` (effective Admin read access). If the schema is absent, the command refuses to grant; review local migrations separately.
+
+Revoke with `economy-revoke --email ... --apply` and the same confirmation mechanism. Ordinary Admin revoke removes the Economy read grant; a later Admin grant does not restore it. No write capability, account provisioning, ledger operation, economic activation, or remote D1 adapter is provided. Grant provenance is recorded in the existing capability row; a separate immutable finance permission history is not introduced by this local-only tool. No remote grants are authorized.
