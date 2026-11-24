@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {competitionRewards,rewardTotals,REWARD_IDS,largestRemainder,placementReference,participationReference,pointsReference,CREDIT_MILESTONES,formatRewardAmount,rewardEvidenceState} from '../assets/competition-rewards.mjs';
+import {competitionRewards,rewardTotals,REWARD_IDS,largestRemainder,placementReference,participationReference,pointsReference,CREDIT_MILESTONES,plannedRewardInstallments,formatRewardAmount,rewardEvidenceState} from '../assets/competition-rewards.mjs';
 test('all canonical competitions, no fabricated competition',()=>{
  const read=name=>JSON.parse(readFileSync(new URL('../data/'+name,import.meta.url),'utf8'));
  const definitions=[...read('divisions.json'),...read('international-competitions.json')];
@@ -51,7 +51,7 @@ test('reference tables and timing conserve each component',()=>{
   assert.equal(pointsReference(r,[]).status,'pending-incomplete');
   if(!r.international)assert.equal(p.installment*2,p.floor);
  }
- assert.deepEqual(CREDIT_MILESTONES.participation,[0,28]);
+ assert.deepEqual(CREDIT_MILESTONES.participation,[28,56]);
  assert.equal(placementReference(competitionRewards('int-1'))[0].amount,864000);
  assert.equal(placementReference(competitionRewards('int-2'))[1].amount,272000);
 });
@@ -62,6 +62,11 @@ test('reward renderer exposes reference schedule, not individual earnings',async
   const html=renderCompetitionRewards(id);
   assert.match(html,/rewardDraftNote/);
   assert.match(html,/rewardCreditSchedule/);
+  assert.match(html,/rewardDay">Day<\/span> 28/);
+  assert.match(html,/rewardDay">Day<\/span> 56/);
+  assert.doesNotMatch(html,/rewardDay">Day<\/span> 0\b/);
+  assert.match(html,/<details class="fa-reward-calculation">/);
+  assert.equal((html.match(/<section class="app-panel">/g)||[]).length,2);
   assert.match(html,/rewardHamilton/);
   assert.match(html,/rewardPointsFormula/);
   assert.match(html,/data-reward-state="rewardEvidenceHistory"/);
@@ -105,4 +110,18 @@ test('sporting evidence is never confused with historical rewards or completed c
  assert.equal(state({context:{...context,seasonData:{...context.seasonData,entrantsOnly:true}}}),'rewardEvidenceEntrants');
  assert.equal(state({context:{...context,seasonData:{...context.seasonData,season:1}}}),'rewardEvidencePending');
  assert.equal(state({context:{...context,seasonData:{...context.seasonData,statistics:{standings:[]}}}}),'rewardEvidencePartial');
+});
+
+test('two configured payment dates conserve all pools without settlement claims',()=>{
+ assert.equal(CREDIT_MILESTONES.performanceDay,56);
+ for(const id of REWARD_IDS){
+  const r=competitionRewards(id),[first,second]=plannedRewardInstallments(r);
+  assert.equal(first.day,28);assert.equal(second.day,56);
+  assert.equal(first.total,r.participation/2);
+  assert.equal(first.points+first.placement,0);
+  assert.equal(second.participation,r.participation/2);
+  assert.equal(second.points,r.points);assert.equal(second.placement,r.placement);
+  assert.equal(first.total+second.total,r.pool);
+ }
+ assert.deepEqual(plannedRewardInstallments(rewardTotals()).map(x=>x.total),[16800000,43200000]);
 });

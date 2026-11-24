@@ -1,5 +1,4 @@
 .fa-rewards{display:grid;gap:var(--fa-space-4,16px);margin-top:var(--app-page-section-gap,28px);min-width:0}
-.fa-reward-components{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--fa-space-4,16px)}
 .fa-reward-total{display:block;font-size:clamp(20px,4vw,30px);font-variant-numeric:tabular-nums}
 .fa-reward-card-pool,.fa-rewards [data-reward-amount]{font-variant-numeric:tabular-nums;white-space:nowrap}
 .fa-reward-card-pool{flex-basis:100%}
@@ -12,19 +11,31 @@
 .fa-reward-table{width:100%;border-collapse:collapse;font-size:13px}
 .fa-reward-table th,.fa-reward-table td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 .fa-reward-table th:first-child{text-align:left}
-.fa-reward-table tbody tr:last-child{font-weight:700}
+[data-admin-rewards] .fa-reward-table tbody tr:last-child{font-weight:700}
 .fa-rewards[hidden]{display:none}
-@media(max-width:620px){.fa-reward-components{grid-template-columns:1fr}.fa-reward-row{font-size:13px}}
+@media(max-width:620px){.fa-reward-row{font-size:13px}}
 
 .fa-reward-season{display:flex;align-items:center;justify-content:flex-end;gap:10px}
 .fa-reward-season select{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px}
 .fa-reward-evidence{min-height:2.6em;margin-top:8px}
 .fa-rewards .fa-reward-evidence [hidden]{display:none}
-.fa-reward-split{white-space:normal}
 .fa-reward-row dd{min-width:0;overflow-wrap:anywhere}
 .fa-reward-row dd [data-reward-amount]{display:inline-block}
 
 .fa-rewards[data-reward-history="true"] [data-reward-amount], [data-admin-rewards][data-reward-history="true"] [data-reward-amount]{color:var(--muted)}
-.fa-reward-components>.app-panel{min-width:0}
 .fa-reward-row dt{min-width:0}
 @media(max-width:380px){.fa-reward-row{align-items:flex-start;flex-direction:column;gap:5px}.fa-reward-row dd{text-align:left}}
+
+.fa-reward-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.fa-reward-heading h2{margin:0}
+.fa-reward-per-club{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:12px 0 0;font-size:13px}
+.fa-reward-schedule{margin-top:20px}
+.fa-reward-schedule h3{font-size:14px;margin:0 0 6px}
+.fa-reward-table .fa-reward-payment-description{text-align:left;white-space:normal}
+.fa-reward-footnote,.fa-reward-note,.fa-reward-evidence{font-size:12px;color:var(--muted)}
+.fa-reward-evidence{min-height:2.6em;margin-top:4px}
+.fa-reward-calculation{margin-top:12px;font-size:13px}
+.fa-reward-calculation summary{cursor:pointer;width:fit-content}
+.fa-reward-calculation dl{margin-top:8px}
+.fa-rewards .app-panel{min-width:0}
+@media(max-width:380px){.fa-reward-table th,.fa-reward-table td{padding:8px 4px;font-size:12px}.fa-reward-table th:first-child{white-space:normal}}

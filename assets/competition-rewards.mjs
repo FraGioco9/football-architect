@@ -1,5 +1,5 @@
 // #766 — informational schedule, never a financial entitlement or settlement.
-export const REWARDS_VERSION = 'draft-2';
+export const REWARDS_VERSION = 'draft-3';
 export const REWARDS = Object.freeze({
   domestic1: Object.freeze({pool:4000000,capacity:16,shares:Object.freeze([60,15,25])}),
   domestic2: Object.freeze({pool:2000000,capacity:16,shares:Object.freeze([60,15,25])}),
@@ -55,7 +55,7 @@ export function largestRemainder(pool, rows, tieOrder=null) {
  return {status:'calculated-reference',allocations:entries.map(({id,amount})=>({id,amount}))};
 }
 export const INTERNATIONAL_OUTCOMES=Object.freeze([{"id":"champion","count":1,"weight":27},{"id":"runnerUp","count":1,"weight":17},{"id":"semifinalLoser","count":2,"weight":10},{"id":"quarterfinalLoser","count":4,"weight":6},{"id":"playoffLoser","count":4,"weight":3},{"id":"leagueEliminated","count":12,"weight":0}].map(row=>Object.freeze(row)));
-export const CREDIT_MILESTONES=Object.freeze({participation:Object.freeze([0,28]),participationShare:50,domesticPoints:'regular-season-certified',domesticPlacement:'regular-season-certified',internationalPoints:'league-phase-certified',internationalAdvancement:'competition-certified'});
+export const CREDIT_MILESTONES=Object.freeze({participation:Object.freeze([28,56]),participationShare:50,performanceDay:56,domesticPoints:'regular-season-certified',domesticPlacement:'regular-season-certified',internationalPoints:'league-phase-certified',internationalAdvancement:'competition-certified'});
 export function placementReference(rule){
  if(rule.international)return INTERNATIONAL_OUTCOMES.map(row=>({...row,amount:rule.placement*row.weight/100}));
  const rows=Array.from({length:rule.capacity},(_,i)=>({id:String(i+1),weight:rule.capacity-i}));
@@ -97,4 +97,11 @@ export function rewardEvidenceState({id,context,worldSnapshot,debug=false}={}){
  const rows=source.statistics?.standings,rounds=rule.international?6:30;
  if(!Array.isArray(rows)||rows.length!==rule.capacity||!rows.every(r=>r.played===rounds))return 'rewardEvidencePartial';
  return rule.international?'rewardEvidenceLeagueComplete':'rewardEvidenceComplete';
+}
+
+// Planned pool amounts only. Individual settlement and certification are separate.
+export function plannedRewardInstallments(rule){
+ const [first,second]=CREDIT_MILESTONES.participation,half=rule.participation*CREDIT_MILESTONES.participationShare/100;
+ if(!Number.isSafeInteger(half)||!Number.isSafeInteger(rule.points)||!Number.isSafeInteger(rule.placement))throw Error('Invalid configured reward installments');
+ return [{day:first,participation:half,points:0,placement:0,total:half},{day:second,participation:rule.participation-half,points:rule.points,placement:rule.placement,total:rule.participation-half+rule.points+rule.placement}];
 }
