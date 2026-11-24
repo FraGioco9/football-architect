@@ -108,7 +108,7 @@ export function createCertifiedOpeningPersistenceRun(manifest,inventory,world){
 
 // Read-only final audit. A receipt is not a signed club contract and this
 // report neither changes world state nor publishes the staged players.
-export function reconcileCompletedOpening(run,manifest,inventory,receipts,observation){
+function completeOpeningAudit(run,manifest,inventory,receipts,observation){
  const progress=inspectOpeningProgress(run,manifest,inventory,receipts,observation);
  insist(progress.readyForReconciliation,"opening population incomplete");
  insist(Array.isArray(observation.rawRows)&&observation.rawRows.length===run.slotCount,"missing complete player payload evidence");
@@ -143,5 +143,44 @@ export function reconcileCompletedOpening(run,manifest,inventory,receipts,observ
  insist(clubCounts.length===320&&clubCounts.filter(c=>c.active&&c.division===1).length===128&&clubCounts.filter(c=>c.active&&c.division===2).length===128&&clubCounts.every(c=>c.count===(c.active?25:0)),"opening roster count mismatch");
  insist(domestic===4160&&reused===run.baseline.length&&generated+reused===6400,"opening population totals mismatch");
  for(const expected of manifest.config.ageCounts)insist((ages[expected.age]??0)===expected.count,"opening age quota mismatch");
- return {schema:"opening-local-reconciliation-v1",runKey:run.runKey,manifestHash:run.manifestHash,allocationHash:manifestDigest(allocations),receiptHash:manifestDigest(receipts.slice().sort((a,b)=>a.index-b.index)),population:6400,reused,generated,activeClubs:256,inactiveClubs:64,clubCounts,ages,positions,nationalities,terms,domestic,otherPlayable,otherCountries,stagedOnly:true};
+ const report={schema:"opening-local-reconciliation-v1",runKey:run.runKey,manifestHash:run.manifestHash,allocationHash:manifestDigest(allocations),receiptHash:manifestDigest(receipts.slice().sort((a,b)=>a.index-b.index)),population:6400,reused,generated,activeClubs:256,inactiveClubs:64,clubCounts,ages,positions,nationalities,terms,domestic,otherPlayable,otherCountries,stagedOnly:true};
+ return {report,allocations};
+}
+export function reconcileCompletedOpening(run,manifest,inventory,receipts,observation){
+ return completeOpeningAudit(run,manifest,inventory,receipts,observation).report;
+}
+
+// Private, deterministic handoff to #801. No wage, signature, funds or consent
+// are invented here. Source must be the reconciled D1 catalogue and receipts.
+export function prepareOpeningContractHandoff(run,manifest,inventory,receipts,observation){
+ const {report,allocations}=completeOpeningAudit(run,manifest,inventory,receipts,observation);
+ const intents=allocations.map(a=>({playerId:a.playerId,clubKey:a.clubKey,durationSeasons:a.intendedTermSeasons,
+  slotKey:a.slotKey,kind:a.kind,fingerprint:a.fingerprint,signingKey:'initial:'+run.worldGeneration+':'+a.playerId,
+  idempotencyKey:'opening:'+manifestDigest({runKey:run.runKey,slotKey:a.slotKey,playerId:a.playerId})}));
+ const payload={schema:"opening-contract-handoff-v1",worldGeneration:run.worldGeneration,runKey:run.runKey,
+  allocationHash:report.allocationHash,receiptHash:report.receiptHash,intents};
+ return {...payload,digest:manifestDigest(payload)};
+}
+
+// Read-only audit of authoritative signed contract rows, never allocation
+// intents masquerading as club membership. Partial matching terms can resume;
+// missing funding/quote authority must still block every signing in #801.
+export function inspectOpeningContractHandoff(handoff,rows){
+ const {digest,...payload}=handoff;
+ insist(payload.schema==="opening-contract-handoff-v1"&&manifestDigest(payload)===digest&&Array.isArray(payload.intents)&&payload.intents.length===6400,"invalid opening contract handoff");
+ const expected=new Map(payload.intents.map(x=>[x.playerId,x]));
+ insist(expected.size===6400&&Array.isArray(rows),"invalid opening contract inventory");
+ const seen=new Set(),ids=new Set(),clubs=new Map();
+ for(const row of rows){
+  const intent=expected.get(row.player_id);
+  insist(intent&&!seen.has(row.player_id)&&positiveInt(row.id,1)&&!ids.has(row.id)&&row.world_generation===payload.worldGeneration&&row.club_key===intent.clubKey&&row.duration_seasons===intent.durationSeasons&&row.start_tick===0&&row.scheduled_end_tick===56*intent.durationSeasons&&row.closed_tick===null&&row.close_reason===null&&row.signed_mandate_id===null&&row.signing_key===intent.signingKey&&positiveInt(row.signed_at_ms,1),"unexpected signed opening contract");
+  // Contract schema enforces the approved DRAFT bounds; audit the persisted
+  // policy/version and fixed AI demand, not a replacement salary calculation.
+  insist(row.policy_version==="contract-draft-v1"&&positiveInt(row.minimum_arc,1)&&positiveInt(row.reference_arc,row.minimum_arc)&&positiveInt(row.maximum_arc,row.reference_arc)&&positiveInt(row.annual_salary_arc,row.minimum_arc)&&row.annual_salary_arc<=row.maximum_arc&&row.ai_demand_arc===row.annual_salary_arc&&row.maximum_arc===2*row.reference_arc&&row.ai_demand_arc===Math.ceil(5*row.reference_arc/4),"invalid signed opening wage snapshot");
+  seen.add(row.player_id);ids.add(row.id);clubs.set(row.club_key,(clubs.get(row.club_key)??0)+1);
+ }
+ const missing=payload.intents.filter(x=>!seen.has(x.playerId));
+ return {schema:"opening-contract-progress-v1",handoffDigest:digest,signed:seen.size,remaining:missing.length,
+  next:missing[0]??null,readyForContractReconciliation:missing.length===0,
+  signedDigest:manifestDigest(rows.slice().sort((a,b)=>a.player_id-b.player_id))};
 }

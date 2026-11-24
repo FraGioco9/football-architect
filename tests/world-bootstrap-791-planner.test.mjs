@@ -1,7 +1,7 @@
 // #791 — offline pure planner tests; owned by Site FULL.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,createCertifiedOpeningPersistenceRun,reconcileCompletedOpening} from '../tools/world-bootstrap-791/persistence.mjs';
+import {createOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,createCertifiedOpeningPersistenceRun,reconcileCompletedOpening,prepareOpeningContractHandoff,inspectOpeningContractHandoff} from '../tools/world-bootstrap-791/persistence.mjs';
 import {loadRuntimePlayerCatalog} from '../backend/src/players-catalog.mjs';
 import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,clubCountryToNationality,approvedForeignWeights,sampleOpeningRetirementAge,prepareOpeningCandidateChunk} from '../tools/world-bootstrap-791/planner.mjs';
 
@@ -195,6 +195,22 @@ function testPersistenceProtocol(){
  eq(report.population,6400);eq(report.reused,1);eq(report.generated,6399);eq(report.domestic,4160);eq(report.otherPlayable+report.otherCountries,2240);eq(report.stagedOnly,true);
  eq(report.clubCounts.filter(c=>c.active&&c.count===25).length,256);eq(report.clubCounts.filter(c=>!c.active&&c.count===0).length,manifest.clubs.length-256);
  eq(report,reconcileCompletedOpening(run,manifest,inventory,[...receipts].reverse(),{...complete,rawRows:[...rawRows].reverse()}));
+ const handoff=prepareOpeningContractHandoff(run,manifest,inventory,receipts,complete);
+ eq(handoff.intents.length,6400);eq(new Set(handoff.intents.map(x=>x.idempotencyKey)).size,6400);
+ eq(handoff.intents.filter(x=>x.kind==="reuse").map(x=>x.playerId),[44]);
+ eq(handoff,prepareOpeningContractHandoff(run,manifest,inventory,[...receipts].reverse(),complete));
+ const syntheticSigned=handoff.intents.map((a,i)=>({id:i+1,player_id:a.playerId,world_generation:handoff.worldGeneration,club_key:a.clubKey,signed_at_ms:1,start_tick:0,duration_seasons:a.durationSeasons,scheduled_end_tick:56*a.durationSeasons,annual_salary_arc:50,minimum_arc:40,reference_arc:40,maximum_arc:80,policy_version:"contract-draft-v1",signed_mandate_id:null,ai_demand_arc:50,signing_key:a.signingKey,closed_tick:null,close_reason:null}));
+ eq(inspectOpeningContractHandoff(handoff,[]).signed,0);
+ eq(inspectOpeningContractHandoff(handoff,syntheticSigned.slice(0,100)).remaining,6300);
+ const signed=inspectOpeningContractHandoff(handoff,syntheticSigned);
+ eq(signed.signed,6400);eq(signed.readyForContractReconciliation,true);
+ eq(signed,inspectOpeningContractHandoff(handoff,[...syntheticSigned].reverse()));
+ throws(()=>inspectOpeningContractHandoff(handoff,[{...syntheticSigned[0],club_key:"wrong"}]));
+ throws(()=>inspectOpeningContractHandoff(handoff,[{...syntheticSigned[0],duration_seasons:0}]));
+ throws(()=>inspectOpeningContractHandoff(handoff,[{...syntheticSigned[0],annual_salary_arc:40}]));
+ throws(()=>inspectOpeningContractHandoff(handoff,[syntheticSigned[0],syntheticSigned[0]]));
+ throws(()=>inspectOpeningContractHandoff({...handoff,digest:"0".repeat(64)},[]));
+ throws(()=>prepareOpeningContractHandoff(run,manifest,inventory,receipts.slice(0,-1),complete));
  const altered=rawRows.map((r,i)=>i===0?{...r,payload_json:JSON.stringify({...JSON.parse(r.payload_json),age:40})}:r);
  throws(()=>reconcileCompletedOpening(run,manifest,inventory,receipts,{...complete,rawRows:altered}));
  throws(()=>reconcileCompletedOpening(run,manifest,inventory,receipts,{...complete,rawRows:rawRows.slice(1)}));

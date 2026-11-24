@@ -15,7 +15,7 @@ import {sessionGuard} from '../src/command-guards.ts';
 import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
 import {beginLocalOpeningRun,commitLocalOpeningBatch,readLocalOpeningJournal,readOpeningObservation} from '../src/opening-world-store.ts';
 import {clubCountryToNationality,planApprovedReference,manifestDigest,REFERENCE_PROFILE_VERSION,type OpeningClub} from '../../tools/world-bootstrap-791/planner.mjs';
-import {createCertifiedOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,reconcileCompletedOpening,type OpeningInventory,type OpeningRoot} from '../../tools/world-bootstrap-791/persistence.mjs';
+import {createCertifiedOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,reconcileCompletedOpening,prepareOpeningContractHandoff,type OpeningInventory,type OpeningRoot} from '../../tools/world-bootstrap-791/persistence.mjs';
 
 const assert=(ok:unknown,msg:string)=>{if(!ok)throw Error(msg)};
 const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
@@ -106,6 +106,11 @@ export async function openLocalOpeningRehearsal(persistTo:string){
   async reconcile(){
    const current=await progress();
    return reconcileCompletedOpening(current.plan.root,current.manifest,current.plan.inventory,current.journal.receipts,current.observation);
+  },
+  // Private handoff only: actual signing is owned by #801 after #802 funding.
+  async contractHandoff(){
+   const current=await progress();
+   return prepareOpeningContractHandoff(current.plan.root,current.manifest,current.plan.inventory,current.journal.receipts,current.observation);
   },
   async step(session:AdminSession,now:number){
    const current=await progress(),next=current.progress.nextBatch;
