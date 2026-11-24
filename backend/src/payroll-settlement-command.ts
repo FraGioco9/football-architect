@@ -171,7 +171,7 @@ export async function reconcilePayrollPayday(db:Database,session:AdminSession,no
  const {generation,seasonNumber:season,day}=world;
  const canonicalClubs=clubs.map(c=>c.countryId+'-'+c.clubId).sort();
  if(new Set(canonicalClubs).size!==320||canonicalClubs.length!==320)return fail('payroll_club_catalogue_invalid');
- const scope=[generation,season,day];
+ const scope=[generation,season,day],lo=(season-1)*56+day-28,hi=lo+28;
  const results=await db.batch([
   financeSessionGuard(db,operator.playerId,operator.sessionDigest,operator.csrfDigest,'read',now),
   ...await prepareRewardPayrollGuards(db,world,day,true),
@@ -190,16 +190,29 @@ export async function reconcilePayrollPayday(db:Database,session:AdminSession,no
   db.prepare(`SELECT COUNT(*) AS n FROM economic_transactions t WHERE t.generation=? AND t.season=? AND t.day=?
    AND t.purpose IN ('PAYROLL_HUMAN','PAYROLL_AI') AND NOT EXISTS(SELECT 1 FROM payroll_payment_receipts p WHERE p.transaction_id=t.id)`).bind(...scope),
   db.prepare(`SELECT COUNT(*) AS n FROM payroll_allocation_paid p JOIN payroll_runs r ON r.id=p.run_id
-   WHERE r.generation=? AND p.reversed<>0`).bind(generation)
+   WHERE r.generation=? AND p.reversed<>0`).bind(generation),
+  db.prepare(`SELECT club_key,json_group_array(json_array(id,player_id,world_generation,club_key,start_tick,end_tick,annual_salary_arc)) AS snapshot
+   FROM (SELECT id,player_id,world_generation,club_key,start_tick,COALESCE(closed_tick,scheduled_end_tick) AS end_tick,annual_salary_arc
+   FROM player_signed_contracts WHERE world_generation=? AND start_tick<? AND COALESCE(closed_tick,scheduled_end_tick)>? ORDER BY club_key,id) GROUP BY club_key`).bind(generation,hi,lo),
+  db.prepare(`SELECT club_key,json_group_array(json_array(id,player_id,world_generation,account_id,start_tick,end_tick)) AS snapshot
+   FROM (SELECT DISTINCT c.club_key,m.id,m.player_id,m.world_generation,m.account_id,m.start_tick,m.end_tick FROM player_agent_mandates m
+   JOIN player_signed_contracts c ON c.world_generation=m.world_generation AND c.player_id=m.player_id
+   WHERE m.world_generation=? AND m.start_tick<? AND COALESCE(m.end_tick,?)>?
+   AND c.start_tick<? AND COALESCE(c.closed_tick,c.scheduled_end_tick)>? ORDER BY c.club_key,m.id) GROUP BY club_key`).bind(generation,hi,hi,lo,hi,lo)
  ]);
- const [policyResult,runsResult,allocResult,txResult,orphans,reversals]=results.slice(-6),policy=policyResult.results[0]?.active_version;
+ const [policyResult,runsResult,allocResult,txResult,orphans,reversals,contractResult,mandateResult]=results.slice(-8),policy=policyResult.results[0]?.active_version;
  if(typeof policy!=='string'||orphans.results[0]?.n!==0||reversals.results[0]?.n!==0)return fail('payroll_reconciliation_mismatch');
+ const contractsByClub=new Map(contractResult.results.map(x=>[String(x.club_key),asJson<ContractRow[]>(x.snapshot)]));
+ const mandatesByClub=new Map(mandateResult.results.map(x=>[String(x.club_key),asJson<MandateRow[]>(x.snapshot)]));
+ if([...contractsByClub.keys(),...mandatesByClub.keys()].some(c=>!canonicalClubs.includes(c)))return fail('payroll_club_catalogue_invalid');
  const runs=runsResult.results,seen=new Set<string>(),completedClubs:string[]=[],receiptHashes:string[]=[];
  let recordedDueArc=0,paidArc=0,arrearsArc=0,pendingArc=0;
  for(const run of runs){
   const id=String(run.id),club=String(run.club_key);
   if(!canonicalClubs.includes(club)||seen.has(club)||run.world_revision!==world.revision||run.policy_version!==policy||typeof run.seal!=='string')return fail('payroll_run_stale');
   seen.add(club);
+  const sourceHash=await canonicalHash({contracts:contractsByClub.get(club)??[],mandates:mandatesByClub.get(club)??[]});
+  if(sourceHash!==run.source_hash)return fail('payroll_source_mismatch');
   const rows=allocResult.results.filter(x=>x.run_id===id) as unknown as ReceiptRow[];
   const allocations=rows.map(x=>[x.id,x.claim_id,x.planned_arc]);
   if(run.seal!==await canonicalHash({sourceHash:run.source_hash,allocations}))return fail('payroll_plan_mismatch');
