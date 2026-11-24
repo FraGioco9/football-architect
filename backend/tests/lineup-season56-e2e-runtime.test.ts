@@ -4,6 +4,7 @@ import {canonicalHash} from '../src/catalogue-snapshot.ts';
 import {rewardCalendarCompletionGuards,prepareRewardPayrollGuards} from '../src/reward-calendar-gate.ts';
 import {annualRewardHoldId,executeRewardSettlementBatch,REWARD_BATCH_LIMIT} from '../src/reward-settlement-command.ts';
 import {economicAssert,provisionClubAccounts,provisionWallet,postEconomicOperation,reserveEconomicFunds,reconcileEconomy} from '../src/economic-ledger.ts';
+import {preparePayrollAffordability} from '../src/payroll-affordability.ts';
 import {settleClubPayrollBatch,reconcilePayrollPayday} from '../src/payroll-settlement-command.ts';
 import {seedSignedTestTerm} from './fixtures/signed-contracts.ts';
 import {readMatchDirectory} from '../src/public-match-directory.ts';
@@ -217,6 +218,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    // No default production grants, activation, or funding are introduced.
    await expect(db.batch(rewardCalendarCompletionGuards(db,world,28))).rejects.toThrow();
    await expect(prepareRewardPayrollGuards(db,world,28)).rejects.toMatchObject({code:'reward_calendar_pending'});
+   await expect(preparePayrollAffordability(db,world,first.manifest.plan.rows[0].clubKey,125)).rejects.toThrow();
    await expect(settleClubPayrollBatch(db,session,first.manifest.plan.rows[0].clubKey,now)).rejects.toMatchObject({code:'reward_calendar_pending'});
    expect(await count('payroll_runs')).toBe(0);
    await expect(executeLineupLifecycleV1(db,session,'advance',command(),'reward-blocked-advance-0001',now)).rejects.toMatchObject({status:409});
@@ -266,11 +268,23 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    payrollEmptyClub=String(zeroClub.owner_id);
    expect(await settleClubPayrollBatch(db,session,payrollEmptyClub,now)).toMatchObject({status:'complete',dueArc:0,paidArc:0});
    expect(await reconcilePayrollPayday(db,session,now)).toMatchObject({status:'pending',clubsComplete:2,dueArc:null});
+   const affordability=await preparePayrollAffordability(db,world,probeClub,125);
+   expect(affordability.inputs).toMatchObject({committedUncoveredWages:0,arrears:0,newDue:62});
+   expect(affordability.inputs.uncreditedGuaranteedParticipation).toBeGreaterThan(0);
+   expect(affordability.financeVersion).toBe(rewardPin.configVersion);
+   await db.batch([...affordability.guards]);
+   await expect(preparePayrollAffordability(db,world,payrollEmptyClub,125)).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
+   await expect(preparePayrollAffordability(db,world,probeClub,1000000000000)).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
    expect(await count('economic_transactions')).toBe(305);
    expect(await reconcileEconomy(db,localAccess())).toMatchObject({ok:true,stockArc:'2400000',netIssuedArc:'2400000'});
   }
   if(day===29){
    if(!day28Proof)throw Error('Missing Day28 fixture proof');
+   if(!payrollProbeClub)throw Error('Missing payroll probe club');
+   const next=await preparePayrollAffordability(db,world,payrollProbeClub,125);
+   expect(next.inputs.newDue).toBe(60);
+   expect(next.inputs.uncreditedGuaranteedParticipation).toBeGreaterThan(0);
+   await db.batch([...next.guards]);
    await expect(executeRewardSettlementBatch(db,session,day28Proof,now)).rejects.toThrow();
    expect(await count('economic_transactions')).toBe(305);
   }
