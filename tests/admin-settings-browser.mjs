@@ -647,7 +647,7 @@ try{
    const permissionGate=new Promise(resolve=>releasePermissions=resolve),listGate=new Promise(resolve=>releaseList=resolve),previewGate=new Promise(resolve=>releasePreview=resolve);
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    const generation='11111111-1111-4111-8111-111111111111';
-   let previews=0;
+   let previews=0,previewFailure='',listFailure=false;
    await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
    await page.route('**/api/player/permissions',async r=>{await permissionGate;return r.fulfill({json:{permissions:['admin.access','admin.world.read','admin.world.write']}})});
    await page.route('**/api/admin/session',r=>r.fulfill({json:{csrfToken:'test-csrf'}}));
@@ -658,10 +658,12 @@ try{
      assert.equal(request.headers()['x-csrf-token'],'test-csrf');
      assert.deepEqual(request.postDataJSON(),{playerId:2,clubKey:'IT-1',durationSeasons:2,expectedGeneration:generation,expectedRevision:0});
      await previewGate;
+     if(previewFailure)return r.fulfill({status:previewFailure==='contract_club_ineligible'?422:409,json:{error:{code:previewFailure}}});
      return r.fulfill({json:{playerId:2,clubKey:'IT-1',durationSeasons:2,startTick:0,endTick:112,representation:'ai',minimumArc:40,annualSalaryArc:null,signable:false}})
     }
     assert.equal(request.method(),'GET');
     await listGate;
+    if(listFailure)return r.fulfill({status:503,json:{error:{code:'admin_unavailable'}}});
     return r.fulfill({json:{count:2,page:1,pageSize:50,totalPages:1,worldGeneration:generation,worldRevision:0,
      players:[{id:1,name:'Signed Player',clubKey:'IT-1',canPrepareContract:false,contract:{id:7,annualSalaryArc:125,durationSeasons:1,startTick:0,endTick:56,signedAt:'2026-11-24T12:00:00.000Z'}},{id:2,name:'Free Player',clubKey:null,canPrepareContract:true,contract:null}],
      clubs:[{clubKey:'IT-1',name:'Test Italian Club'}]}});
@@ -708,12 +710,30 @@ try{
    assert.match(await form.locator('[data-contract-draft-message]').innerText(),/Signing unavailable/);
    assert.equal(await form.locator('[data-contract-draft-salary]').innerText(),'—');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   const message=form.locator('[data-contract-draft-message]');
+   previewFailure='contract_club_ineligible';
+   await form.locator('[data-contract-draft-preview]').click();
+   await message.filter({hasText:'Club is not eligible.'}).waitFor();
+   same(first,await geometry());
+   assert.equal(await form.locator('[data-contract-draft-start]').innerText(),'—');
+   assert.equal(await message.evaluate(el=>el.scrollHeight<=el.clientHeight+1),true);
+   previewFailure='';await form.locator('[data-contract-draft-preview]').click();
+   await message.filter({hasText:'Signing unavailable'}).waitFor();same(first,await geometry());
    await page.setViewportSize({width:1280,height:900});
    const desktop=await geometry();
    await form.locator('[data-contract-draft-duration]').evaluate(el=>{el.value='1';el.dispatchEvent(new Event('change',{bubbles:true}))});
    same(desktop,await geometry());
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-   assert.equal(previews,1);assert.deepEqual(errors,[]);checks++;
+   assert.equal(previews,3);
+   listFailure=true;await page.reload({waitUntil:'domcontentloaded'});
+   await page.locator('[data-contracts-state="error"]').waitFor();
+   await message.filter({hasText:'Contracts unavailable. Refresh the page.'}).waitFor();
+   same(desktop,await geometry());
+   assert.equal(await form.locator('[data-contract-draft-preview]').isDisabled(),true);
+   assert.equal(await page.locator('.admin-contracts-skeleton').count(),0);
+   assert.match(await page.locator('.admin-contracts-empty-message').innerText(),/Contracts unavailable/);
+   assert.equal(await message.evaluate(el=>el.scrollHeight<=el.clientHeight+1),true);
+   assert.deepEqual(errors,[]);checks++;
   }finally{releasePermissions();releaseList();releasePreview();await context.close()}
  }
  timing.mark('contracts-inspection-complete');

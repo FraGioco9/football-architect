@@ -212,7 +212,11 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  assert.match(html,/data-contract-draft data-draft-state="loading" aria-labelledby="contract-draft-heading">/);
  assert.match(html,/data-admin-contracts data-contracts-state="loading"/);
  assert.match(css,/admin-contracts-skeleton td:not\(:first-child\)::after/);
- assert.match(css,/data-contract-draft-message\]\{[^}]*height:3lh/);
+ assert.match(css,/data-contract-draft-message\]\{[^}]*height:2\.8em/);
+ assert.match(css,/data-contract-draft-message\]\{[^}]*height:4\.2em/);
+ assert.doesNotMatch(css,/data-contract-draft-message\]\{[^}]*overflow:auto/);
+ assert.match(source,/previewError\(quote\?\.error\?\.code,res\.status\)/);
+ assert.match(source,/unavailableRows\('loadFailed'\)/);
  assert.match(html,/class="app-panel admin-licenses admin-licenses-editor admin-contract-draft"/);
  assert.match(html,/class="app-link app-link-primary" data-contract-draft-sign/);
  assert.match(html,/class="app-link app-link-secondary" data-contract-draft-preview/);
