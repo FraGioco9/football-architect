@@ -5,6 +5,7 @@ import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import {seedUnifiedOperator} from './fixtures/unified-operator.ts';
 import {clearTestWorld} from './fixtures/test-world.ts';
+import {seedSignedTestTerm,closeSignedTestTerm} from './fixtures/signed-contracts.ts';
 import {prepareSeason} from '../src/commands.ts';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
 import {advanceAdministrativeClockLineupV1} from '../src/admin-calendar-clock-lineup-v1.ts';
@@ -89,11 +90,10 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
     attributes:Object.fromEntries(ATTRIBUTES.map((key:string)=>[key,65+n%10]))};
    await db.prepare('INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(?,?,?,?,?,?)')
     .bind(id,draftId,world.generation,0,JSON.stringify(payload),now).run();
-   await db.prepare('INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,?)')
-    .bind(id,club).run();
+   await seedSignedTestTerm(db,world.generation,id,club,3,now,'day13-fixture-'+id);
   }
  }
- expect(await count('player_club_affiliations')).toBe(43);
+ expect(await count('player_signed_contracts')).toBe(43);
  for(let day=4;day<=12;day++){
   await step(executeLineupLifecycleV1(db,session,'advance',cmd(),'day13-empty-'+day+'-000000',now));
   expect(world.day).toBe(day);
@@ -219,8 +219,8 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  const calendar=await readPublicCalendarDayLineupV1(db,1,13) as any;
  expect(calendar.data.fixtures.length).toBe(128);
  expect(calendar.data.fixtures.every((f:any)=>f.result)).toBe(true);
- // Current affiliation edits must never rewrite the finalized V2 evidence.
- await db.prepare('DELETE FROM player_club_affiliations WHERE player_id=1').run();
+ // A real term closure must never rewrite finalized V2 evidence.
+ await closeSignedTestTerm(db,1,13);
  expect(await readPublicMatchLineupV1(db,String(full.public_id))).toEqual(a);
  const afterward=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
  expect(afterward.data.statistics.players).toEqual(season.data.statistics.players);
@@ -266,7 +266,7 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  const badStatsMethod=await worker.fetch(new Request('https://example.invalid/api/players/1/stats',{method:'POST'}),{DB:db});
  expect(badStatsMethod.status).toBe(405);
  // #712 — same verified immutable receipts, one anonymous chronological read;
- // affiliation was already edited above without altering official match identity.
+ // the term was already closed above without altering official match identity.
  const directPlayerMatches=await readPublicPlayerMatchesLineupV1(db,1,{
   season:'all',competition:'all',cursor:null,limit:20
  });
@@ -354,27 +354,17 @@ it('#613 day13 real XI/fallback results, atomic failure/retry, immutable V2 repl
  await expect(db.prepare('DELETE FROM season_lineup_day_outcomes').run()).rejects.toThrow();
  const beforeReset=world, resetCommand={...cmd(),confirmation:'RESET SEASON 0'};
  const existingPlayers=await count('generated_players');
- const existingLinks=await count('player_club_affiliations');
- await db.prepare("CREATE TRIGGER fail_lineup_reset_late BEFORE INSERT ON admin_operations WHEN NEW.command='reset-world-v1' BEGIN SELECT RAISE(ABORT,'late reset rollback'); END").run();
- try{
-  await expect(resetWorld(db,session,resetCommand,'day13-reset-qa-000001',now))
-   .rejects.toMatchObject({status:503});
- }finally{await db.prepare('DROP TRIGGER fail_lineup_reset_late').run()}
+ const existingTerms=await count('player_signed_contracts');
+ // 0040 explicitly prevents a legacy generation reset once signed terms exist.
+ // Do not delete terms or weaken immutable guards to preserve old V1 reset behavior.
+ // Successful/late-failure reset without signed terms is covered by existing reset suites.
+ await expect(resetWorld(db,session,resetCommand,'day13-reset-qa-000001',now))
+  .rejects.toMatchObject({status:503});
  expect(await readWorld(db)).toEqual(beforeReset);
  expect(await count('match_lineup_result_receipts')).toBe(128);
  expect(await count('season_lineup_day_outcomes')).toBe(13);
  expect(await count('world_reset_permits')).toBe(0);
- const reset=await resetWorld(db,session,resetCommand,'day13-reset-qa-000001',now);
- expect(reset.world).toMatchObject({seasonNumber:0,day:0,phase:'unstarted'});
- expect(await count('match_lineup_result_receipts')).toBe(0);
- expect(await count('season_lineup_day_outcomes')).toBe(0);
- expect(await count('world_reset_permits')).toBe(0);
  expect(await count('generated_players')).toBe(existingPlayers);
- expect(await count('player_club_affiliations')).toBe(existingLinks);
- const seasonZeroStats=await readPublicPlayerStatsLineupV1(db,1);
- expect(seasonZeroStats).toMatchObject({playerId:1,status:'empty',seasons:[]});
- expect((await get('/api/players/1/stats'))).toMatchObject({playerId:1,status:'empty',seasons:[]});
- expect((await get('/api/players/1/matches'))).toMatchObject({playerId:1,status:'empty',items:[],nextCursor:null});
- await expect(resetWorld(db,session,resetCommand,'day13-reset-qa-000001',now))
-  .rejects.toMatchObject({status:409});
+ expect(await count('player_signed_contracts')).toBe(existingTerms);
+ expect(await readPublicMatchLineupV1(db,String(full.public_id))).toEqual(a);
 },180000);

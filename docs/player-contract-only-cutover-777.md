@@ -8,6 +8,9 @@ Owner accepts discarding the 43 existing DEV V1 assignments. No fabricated backf
 ## Public reader cutover — second slice
 Public Players list/detail, market-value-ranked listing and complete club roster now join the same current-contract relation. Public payload shape and privacy are preserved, and reads reject world revision changes. Old mock expectations adjusted; real D1 test covers signed roster and disagreement with legacy data, while the valuation test confirms legacy rows no longer assign a club. This branch is intentionally incomplete until official match and Admin V1 are also converted, and the legacy table is dropped. Do not merge this intermediate state.
 
+## Official match cutover — third slice
+Match snapshots and batch guards now use the same next-match relation, including exact contract identity (same-club replacement invalidates a stale snapshot). Existing immutable receipts are never rewritten. Updated local tests to use real synthetic signed terms, including transfer/return, same-club term replacement, new signing/count race, post-result closure and day13 fixture. Old reset of a world containing signed terms now explicitly fails under 0040 instead of removing history; #788 owns a compatible replacement. Full evidence still pending.
+
 ## Known consumers and remaining cutover (same Draft PR)
 - Public directory/detail including indexed market-value ranking: backend/src/public-players-read.ts.
 - Unpaginated roster and roster stats: backend/src/public-club-roster-read.ts.
