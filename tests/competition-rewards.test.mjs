@@ -487,3 +487,77 @@ test('future odd installment is not silently rounded by current shared schedule'
  const r=competitionRewards('IT-1');
  assert.throws(()=>plannedRewardInstallments({...r,participation:r.participation+1}));
 });
+
+
+import {planRewardSettlement,rewardPostingIntents,reconcileRewardPlan} from '../backend/src/reward-settlement-plan.mjs';
+import {participationInstallments} from '../assets/competition-rewards.mjs';
+const rewardFixture=day=>{
+ const clubs=JSON.parse(readFileSync(new URL('../data/clubs.json',import.meta.url),'utf8'));
+ const countries=['BR','DE','ENG','ES','FR','IT','NL','PT'];
+ const byCountry=c=>clubs.filter(x=>x.countryId===c).map(x=>c+'-'+x.clubId);
+ const competitions=REWARD_IDS.map(competitionId=>{
+  const cup=competitionId.startsWith('int-');
+  const entrants=cup?countries.flatMap(c=>byCountry(c).slice(competitionId==='int-1'?0:3,competitionId==='int-1'?3:6)):
+   byCountry(competitionId.split('-')[0]).slice(competitionId.endsWith('-1')?0:16,competitionId.endsWith('-1')?16:32);
+  const table=entrants.map((clubId,i)=>({clubId,rank:i+1,played:cup?6:30,points:cup?6:30}));
+  const outcomes=cup?entrants.map((clubId,i)=>({clubId,outcome:['champion','runnerUp',...Array(2).fill('semifinalLoser'),...Array(4).fill('quarterfinalLoser'),...Array(4).fill('playoffLoser'),...Array(12).fill('leagueEliminated')][i]})):undefined;
+  return {competitionId,entrants,table,outcomes};
+ });
+ return {generation:'11111111-1111-4111-8111-111111111111',season:1,day,rewardVersion:'draft-5',evidenceHash:'a'.repeat(64),competitions};
+};
+const rewardBinding={manifestHash:'b'.repeat(64),configVersion:'synthetic',actorId:'fixture',holdId:'fixture-budget'};
+const receiptFor=(i,n)=>({id:'tx-'+n,business_key:i.businessKey,request_key:i.requestKey,purpose:i.purpose,
+ actor_kind:i.actorKind,actor_id:i.actorId,config_version:i.configVersion,source_id:i.sourceId,generation:i.generation,
+ season:i.season,day:i.day,hold_id:i.holdId,reversal_of:null,lines_json:JSON.stringify(i.lines)});
+test('#776 full-world inert planner: both paydays, exact component conservation and stable permutations',()=>{
+ const first=planRewardSettlement(rewardFixture(28)),last=planRewardSettlement(rewardFixture(56));
+ assert.equal(first.rows.length,304);assert.equal(last.rows.length,912);
+ assert.deepEqual([first.totalArc,last.totalArc,first.annualBudgetArc],[676800,1723200,2400000]);
+ assert.deepEqual([first.startingHoldArc,first.endingHoldArc,last.startingHoldArc,last.endingHoldArc],[2400000,1723200,1723200,0]);
+ const input=rewardFixture(56);
+ input.competitions.reverse().forEach(c=>{c.entrants.reverse();c.table.reverse();c.outcomes?.reverse()});
+ assert.deepEqual(planRewardSettlement(input),last);
+ const intents=rewardPostingIntents(last,rewardBinding);
+ assert.equal(intents.length,888);assert.ok(intents.every(i=>i.lines.length===2&&i.lines[0].amountArc>0&&i.lines[0].amountArc+i.lines[1].amountArc===0));
+ assert.equal(new Set(intents.map(i=>i.businessKey)).size,intents.length);
+ assert.ok(intents.every(i=>i.requestKey.length<=160));
+ assert.deepEqual(rewardPostingIntents(last,{...rewardBinding,manifestHash:'c'.repeat(64)}).map(i=>i.businessKey),intents.map(i=>i.businessKey));
+});
+test('#776 rejects unsupported scope, incomplete or inconsistent evidence projections',()=>{
+ for(const mutate of [
+  x=>{x.day=0},x=>{x.rewardVersion='draft-4'},x=>{x.evidenceHash='bad'},x=>{x.competitions.pop()},
+  x=>{x.competitions[0].entrants[0]='fake'},x=>{x.competitions[0].entrants[1]=x.competitions[0].entrants[0]},
+  x=>{x.competitions[0].table[0].played=29},x=>{x.competitions[0].table[0].rank=2},
+  x=>{x.competitions[0].table.forEach(t=>t.points=0)},x=>{x.competitions[16].outcomes[0].outcome='runnerUp'},
+  x=>{const a=x.competitions[16].outcomes;[a[0].outcome,a[23].outcome]=[a[23].outcome,a[0].outcome]}
+ ]){const x=rewardFixture(56);mutate(x);assert.throws(()=>planRewardSettlement(x));}
+});
+test('#776 rank wins equal remainder, independent of club identity or input ordering',()=>{
+ const input=rewardFixture(56),cup=input.competitions.find(c=>c.competitionId==='int-1');
+ // With equal points this pool is divisible; change weights to create a tied cutoff.
+ cup.table.forEach((t,i)=>{t.points=i===0?7:6});
+ const plan=planRewardSettlement(input),pointRows=plan.rows.filter(r=>r.competitionId==='int-1'&&r.component==='points');
+ const expected=pointsReference(competitionRewards('int-1'),cup.table.map(t=>({id:t.clubId,weight:t.points})),cup.table.map(t=>t.clubId));
+ assert.deepEqual(Object.fromEntries(pointRows.map(r=>[r.clubKey,r.amountArc])),Object.fromEntries([...expected.allocations].sort((a,b)=>a.id<b.id?-1:1).map(r=>[r.id,r.amount])));
+ assert.equal(largestRemainder(1,[{id:'z',weight:1},{id:'a',weight:1}],['z','a']).allocations[0].amount,1);
+});
+test('#776 future odd award splits per club, never by rounding the aggregate',()=>{
+ const rule={...competitionRewards('IT-1'),participationReference:6001,participation:6001*16};
+ assert.deepEqual(participationInstallments(rule),[3000,3001]);
+ assert.equal(plannedRewardInstallments(rule)[0].participation,48000);
+ assert.equal(plannedRewardInstallments(rule)[1].participation,48016);
+});
+test('#776 receipt reconciliation: unknown, pending, resumed, complete, mismatch and reversal',()=>{
+ const plan=planRewardSettlement(rewardFixture(28)),intents=rewardPostingIntents(plan,rewardBinding);
+ const receipts=intents.map(receiptFor),base={receipts:[],reversedIds:[],holdRemainingArc:plan.startingHoldArc,ledgerOk:true};
+ assert.equal(reconcileRewardPlan(plan,rewardBinding).status,'unknown');
+ assert.equal(reconcileRewardPlan(plan,rewardBinding,base).missingKeys.length,304);
+ const partial={...base,receipts:receipts.slice(0,1),holdRemainingArc:plan.startingHoldArc-intents[0].lines[0].amountArc};
+ assert.deepEqual(reconcileRewardPlan(plan,rewardBinding,partial).missingKeys,intents.slice(1).map(i=>i.businessKey));
+ const complete={...base,receipts:[...receipts].reverse(),holdRemainingArc:plan.endingHoldArc};
+ assert.deepEqual(reconcileRewardPlan(plan,rewardBinding,complete),{status:'complete',missingKeys:[],paidArc:plan.totalArc});
+ for(const bad of [{...complete,holdRemainingArc:0},{...complete,ledgerOk:false},{...complete,reversedIds:[receipts[0].id]},
+  {...complete,receipts:[...receipts,receipts[0]]},{...complete,receipts:[{...receipts[0],source_id:'changed'},...receipts.slice(1)]},
+  {...complete,receipts:[{...receipts[0],lines_json:'[]'},...receipts.slice(1)]}])
+  assert.equal(reconcileRewardPlan(plan,rewardBinding,bad).status,'mismatch');
+});

@@ -66,9 +66,17 @@ export function placementReference(rule){
  if(rule.international)return INTERNATIONAL_OUTCOMES.map((row,i)=>({...row,amount:rule.awards[i]}));
  return rule.awards.map((amount,i)=>({rank:i+1,amount}));
 }
+// #776: split each club's fixed award; the second installment receives the exact remainder.
+export function participationInstallments(rule){
+ const amount=rule.participationReference;
+ if(!Number.isSafeInteger(amount)||amount<0||!Number.isSafeInteger(rule.capacity)||rule.capacity<=0||
+    !Number.isSafeInteger(rule.participation)||amount*rule.capacity!==rule.participation)throw Error('Invalid configured participation');
+ const first=Math.floor(amount*CREDIT_MILESTONES.participationShare/100);
+ return [first,amount-first];
+}
 export function participationReference(rule){
  const amount=rule.participationReference;
- return {floor:amount,lowerCount:rule.capacity,higher:amount,higherCount:0,installment:amount/2};
+ return {floor:amount,lowerCount:rule.capacity,higher:amount,higherCount:0,installment:participationInstallments(rule)[0]};
 }
 export function pointsReference(rule,rows,tieOrder=null){
  if(!Array.isArray(rows)||rows.length!==rule.capacity)return {status:'pending-incomplete',allocations:null};
@@ -104,7 +112,7 @@ export function rewardEvidenceState({id,context,worldSnapshot,debug=false}={}){
 
 // Planned pool amounts only. Individual settlement and certification are separate.
 export function plannedRewardInstallments(rule){
- const [first,second]=CREDIT_MILESTONES.participation,half=rule.participation*CREDIT_MILESTONES.participationShare/100;
+ const [first,second]=CREDIT_MILESTONES.participation,half=participationInstallments(rule)[0]*rule.capacity;
  if(!Number.isSafeInteger(half)||!Number.isSafeInteger(rule.points)||!Number.isSafeInteger(rule.placement))throw Error('Invalid configured reward installments');
  return [{day:first,participation:half,points:0,placement:0,total:half},{day:second,participation:rule.participation-half,points:rule.points,placement:rule.placement,total:rule.participation-half+rule.points+rule.placement}];
 }
@@ -121,7 +129,7 @@ export function seasonRewardReference(id,context,{debug=false}={}){
  // Read-only DRAFT reference: stable canonical key resolves equal remainders
  // for display only. The financial settlement ordering remains open (#755/#776).
  const order=[...clubs.keys()].sort();
- const participation=day<CREDIT_MILESTONES.participation[0]?0:day<CREDIT_MILESTONES.performanceDay?rule.participationReference/2:rule.participationReference;
+ const participation=day<CREDIT_MILESTONES.participation[0]?0:day<CREDIT_MILESTONES.performanceDay?participationInstallments(rule)[0]:rule.participationReference;
  const rows=[...clubs].map(([id,club])=>({id,club,amount:participation}));
  const pending=()=>({rows:rows.map(x=>({...x,amount:null})).sort((a,b)=>a.club.primaryName.localeCompare(b.club.primaryName,'en')),pending:true});
  if(day>=56){
