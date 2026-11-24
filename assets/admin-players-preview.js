@@ -240,10 +240,17 @@
    const info=await authorizedPost('/api/admin/players/draft',{draftId:id});
    if(info?.draftId!==id||!Array.isArray(info.candidates)||info.candidates.length!==info.summary?.count||!info.options||!['preview','committed'].includes(info.status))
     throw new Error('invalid_draft');
+   // Announce access only after the protected draft API has confirmed it.
+   window.faAdminAccess=true;window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:true}));
    draft=info;saved=info.status==='committed';
    if(saved)receipt.textContent=info.summary.count+' '+tr().saved+' · '+info.draftId;
    status='ready';feedback.textContent='';
-  }catch(e){status=e.message==='permission_denied'?'denied':'error';feedback.textContent=tr().error;}
+  }catch(e){
+   if(e.message==='permission_denied'||/^authorization_(401|403)$/.test(e.message)){
+    window.faAdminAccess=false;window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:false}));
+   }
+   status=e.message==='permission_denied'?'denied':'error';feedback.textContent=tr().error;
+  }
   render();
   if(draft&&restoreScroll)requestAnimationFrame(()=>{scroll.scrollLeft=restoreScroll;});
  }

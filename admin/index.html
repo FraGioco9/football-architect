@@ -92,6 +92,26 @@ function paint(){
  nav.setAttribute('aria-label',labels[4]);nav.querySelector('#app-nav-divisions').setAttribute('aria-label',lang[locale][6]);
  button.setAttribute('aria-label',(button.getAttribute('aria-expanded')==='true'?collapseLabels:expandLabels)[locale]);
 }
+// Admin menu visibility is a same-tab UI hint, not privileged authorization.
+function prepaintAdmin(){
+ let expected=false;
+ try{
+  expected=sessionStorage.getItem('fa:admin:nav-visible:v1')==='1';
+  if(!expected){
+   const cached=JSON.parse(sessionStorage.getItem('fa:admin:permissions:v1')||'null');
+   const p=cached?.permissions;
+   expected=cached?.version===1&&Array.isArray(p)&&p.length<=64&&
+    p.every(v=>typeof v==='string'&&/^[a-z][a-z0-9.-]{0,79}$/.test(v))&&
+    p.includes('admin.access')&&p.includes('admin.world.read');
+  }
+ }catch{/* unknown state: no navigation hint */}
+ if(!expected||nav.querySelector('#app-nav-admin'))return;
+ const settings=nav.querySelector('#app-nav-settings');if(!settings)return;
+ const link=document.createElement('a');link.id='app-nav-admin';link.className='fa-shell-link';link.href='/admin';
+ link.innerHTML='<svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3 3 7v5c0 5 4 8 9 10 5-2 9-5 9-10V7Z M8 12l3 3 5-6"/></svg><span>Admin</span>';
+ settings.after(link);
+}
+prepaintAdmin();
 const path=location.pathname.replace(/^\/app(?=\/)/,'').replace(/\/+$/,'');
 const onCompetition=path==='/competitions'||path.startsWith('/competitions/');
 const onClubs=path==='/clubs'||path.startsWith('/clubs/');
@@ -151,7 +171,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
       <main class="app-main" id="main-content" tabindex="-1">
 <section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>
           <h1 id="admin-title" class="app-page-title">Admin</h1>
-          <div class="admin-directory" data-admin-directory><section class="app-panel admin-directory-card" data-admin-panel="calendar" aria-labelledby="admin-card-calendar-title"><h2 id="admin-card-calendar-title" data-admin-directory-copy="calendar">Calendar</h2><p data-admin-directory-copy="calendarDescription">Manage the world calendar and sporting progression</p><a class="app-link app-link-primary" href="/admin/calendar" data-admin-card="calendar" data-admin-directory-copy="calendar">Calendar</a></section><section class="app-panel admin-directory-card" data-admin-panel="players" aria-labelledby="admin-card-players-title"><h2 id="admin-card-players-title" data-admin-directory-copy="players">Players</h2><p data-admin-directory-copy="playersDescription">Configure player generation</p><a class="app-link app-link-primary" href="/admin/players" data-admin-card="players" data-admin-directory-copy="players">Players</a></section><section class="app-panel admin-directory-card" data-admin-panel="contracts" aria-labelledby="admin-card-contracts-title"><h2 id="admin-card-contracts-title" data-admin-directory-copy="contracts">Contracts</h2><p data-admin-directory-copy="contractsDescription">Manage current player–club affiliations</p><a class="app-link app-link-primary" href="/admin/contracts" data-admin-card="contracts" data-admin-directory-copy="contracts">Contracts</a></section><section class="app-panel admin-directory-card" data-admin-panel="rewards" aria-labelledby="admin-card-rewards-title"><h2 id="admin-card-rewards-title" data-app-i18n="competitionTabRewards">Rewards</h2><p data-app-i18n="rewardAdminDescription">Review configured competition rewards</p><a class="app-link app-link-primary" href="/admin/rewards" data-admin-card="rewards" data-app-i18n="competitionTabRewards">Rewards</a></section></div>
+          <div class="admin-directory" data-admin-directory><section class="app-panel admin-directory-card" data-admin-panel="calendar" aria-labelledby="admin-card-calendar-title"><h2 id="admin-card-calendar-title" data-admin-directory-copy="calendar">Calendar</h2><p data-admin-directory-copy="calendarDescription">Manage the world calendar and sporting progression</p><a class="app-link app-link-primary" href="/admin/calendar" data-admin-card="calendar" data-admin-directory-copy="calendar">Calendar</a></section><section class="app-panel admin-directory-card" data-admin-panel="players" aria-labelledby="admin-card-players-title"><h2 id="admin-card-players-title" data-admin-directory-copy="players">Players</h2><p data-admin-directory-copy="playersDescription">Configure player generation</p><a class="app-link app-link-primary" href="/admin/players" data-admin-card="players" data-admin-directory-copy="players">Players</a></section><section class="app-panel admin-directory-card" data-admin-panel="contracts" aria-labelledby="admin-card-contracts-title"><h2 id="admin-card-contracts-title" data-admin-directory-copy="contracts">Contracts</h2><p data-admin-directory-copy="contractsDescription">Manage current player–club affiliations</p><a class="app-link app-link-primary" href="/admin/contracts" data-admin-card="contracts" data-admin-directory-copy="contracts">Contracts</a></section><section class="app-panel admin-directory-card" data-admin-panel="licenses" aria-labelledby="admin-card-licenses-title"><h2 id="admin-card-licenses-title" data-admin-directory-copy="licenses">Club Licenses</h2><p data-admin-directory-copy="licensesDescription">Assign or revoke club licenses for users</p><a class="app-link app-link-primary" href="/admin/licenses" data-admin-card="licenses" data-admin-directory-copy="licenses">Club Licenses</a></section></div>
         </section>
       </main>
       <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>

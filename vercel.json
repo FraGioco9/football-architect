@@ -41,12 +41,12 @@
       "permanent": true
     },
     {
-      "source": "/admin/:section(calendar|players|contracts|rewards)/",
+      "source": "/admin/:section(calendar|players|contracts|licenses|rewards)/",
       "destination": "/admin/:section",
       "permanent": true
     },
     {
-      "source": "/admin/:section(calendar|players|contracts|rewards)/index.html",
+      "source": "/admin/:section(calendar|players|contracts|licenses|rewards)/index.html",
       "destination": "/admin/:section",
       "permanent": true
     },
@@ -374,7 +374,7 @@
       "destination": "/:page/index.html"
     },
     {
-      "source": "/admin/:section(calendar|players|contracts|rewards)",
+      "source": "/admin/:section(calendar|players|contracts|licenses|rewards)",
       "destination": "/admin/:section/index.html"
     },
     {

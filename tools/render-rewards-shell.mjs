@@ -2,6 +2,7 @@
 // supports regeneration from a verified existing shell without a second template.
 import {renderRewardCard,renderCompetitionRewards,renderAdminRewards} from './render-competition-rewards.mjs';
 const assets='  <link rel="stylesheet" href="/assets/competition-rewards.css">\n  <script type="module" src="/assets/rewards-ui.mjs"></script>\n';
+export const stripRewardsAssets=html=>html.replace(assets,'');
 const adminCard='<section class="app-panel admin-directory-card" data-admin-panel="rewards" aria-labelledby="admin-card-rewards-title"><h2 id="admin-card-rewards-title" data-app-i18n="competitionTabRewards">Rewards</h2><p data-app-i18n="rewardAdminDescription">Review configured competition rewards</p><a class="app-link app-link-primary" href="/admin/rewards" data-admin-card="rewards" data-app-i18n="competitionTabRewards">Rewards</a></section>';
 function replaceOnce(html,anchor,replacement){
  if(!html.includes(anchor)||html.indexOf(anchor)!==html.lastIndexOf(anchor))throw Error('Rewards shell anchor missing or ambiguous: '+anchor.slice(0,120));
@@ -11,7 +12,7 @@ export function augmentRewardsShell(path,html,definitions,encode){
  html=html.replace(/\r\n/g,'\n');
  if(path==='admin/index.html'){
   if(html.includes('data-admin-panel="rewards"'))return html;
-  return replaceOnce(html,'Contracts</a></section></div>','Contracts</a></section>'+adminCard+'</div>');
+  return replaceOnce(html,'Club Licenses</a></section></div>','Club Licenses</a></section>'+adminCard+'</div>');
  }
  if(path==='admin/rewards/index.html'){
   if(html.includes('data-admin-rewards-content'))return html;

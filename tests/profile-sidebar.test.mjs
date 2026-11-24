@@ -74,7 +74,7 @@ test('anonymous Profile navigation avoids redundant 401 requests on Login',()=>{
  const nav=readFileSync(new URL('../assets/profile-navigation.js',import.meta.url),'utf8');
  const login=readFileSync(new URL('../assets/account-login.js',import.meta.url),'utf8');
  const profile=readFileSync(new URL('../assets/account-settings.js',import.meta.url),'utf8');
- assert.match(nav,/else if\(accountPage\)[\s\S]*?show\(canAccessAdmin\(permissionsCache\.read\(\)\)\)/);
+ assert.match(nav,/else if\(accountPage\)[\s\S]*?const cached=permissionsCache\.read\(\);[\s\S]*?if\(cached!==null\)show\(canAccessAdmin\(cached\)\);else paint\(\)/);
  assert.match(nav,/fa:player:anonymous:v1/);
  assert.match(nav,/fa:player:skip-login-session-probe:v1/);
  assert.match(login,/const skip=window\.sessionStorage\.getItem\(key\)==='1'/);
@@ -107,4 +107,28 @@ test('public permissions navigation releases unused 401/503 response bodies with
   assert.deepEqual(cached,status===401?[]:null,
    '401 is cached as anonymous; unavailable permissions remain uncached');
  }
+});
+
+test('Admin first-paint UI hint is separate from API authorization',()=>{
+ const boot=readFileSync(new URL('../assets/sidebar-first-paint.js',import.meta.url),'utf8');
+ const nav=readFileSync(new URL('../assets/profile-navigation.js',import.meta.url),'utf8');
+ const license=readFileSync(new URL('../assets/admin-licenses.js',import.meta.url),'utf8');
+ const players=readFileSync(new URL('../assets/admin-players.js',import.meta.url),'utf8');
+ const calendar=readFileSync(new URL('../assets/admin-settings.js',import.meta.url),'utf8');
+ assert.match(boot,/prepaintAdmin\(\)/);
+ assert.match(boot,/fa:admin:nav-visible:v1/);
+ assert.match(boot,/p\.includes\('admin\.access'\).*p\.includes\('admin\.world\.read'\)/s);
+ assert.match(nav,/doc\.getElementById\('app-nav-admin'\)/);
+ assert.doesNotMatch(nav,/const ticket=\+\+request;show\(false\)/);
+ assert.match(nav,/Transient API errors do not change sidebar geometry/);
+ assert.match(license,/announceAccess\(true\)/);
+ assert.match(license,/announceAccess\(false\)/);
+ assert.match(players,/paint\(false,false,false\)/);
+ assert.match(calendar,/signedIn','signedOut','forbidden/);
+});
+
+test('Preview player details publish only verified Admin authorization to the sidebar',()=>{
+ const source=readFileSync(new URL('../assets/player-detail.js',import.meta.url),'utf8');
+ assert.match(source,/if\(preview&&\(state==='ready'\|\|state==='denied'\)\)/);
+ assert.match(source,/window\.dispatchEvent\(new CustomEvent\('fa:admin-access'/);
 });

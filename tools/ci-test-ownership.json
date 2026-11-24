@@ -395,6 +395,7 @@
     "tests/ci-browser-timing.test.mjs": "site-node",
     "tests/public-image-urls.test.mjs": "site-node",
     "backend/tests/public-world-history-projection.test.ts": "backend-contract",
-    "tests/world-history-page.test.mjs": "site-node"
+    "tests/world-history-page.test.mjs": "site-node",
+    "backend/tests/club-licenses-runtime.test.ts": "backend-runtime"
   }
 }

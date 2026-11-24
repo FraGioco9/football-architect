@@ -45,7 +45,7 @@ test('Admin removes Details and retains inline protected reset with a next-day p
 
 
 test('Admin directory and child pages have isolated, protected markup',async()=>{
- for(const id of ['admin','admin/calendar','admin/players','admin/contracts']){
+ for(const id of ['admin','admin/calendar','admin/players','admin/contracts','admin/licenses','admin/rewards']){
   const path='/'+id,file=id+'/index.html';
   assert.equal(parseRoute(path)?.canonical,path);
   assert.equal(buildRoute({kind:'page',id}),path);
@@ -53,22 +53,33 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
   assert.ok(isAllowlistedPublicPath(file),file);
   assert.ok(planPublicFiles().includes(file));
   const initial=readFileSync(new URL('../'+file,import.meta.url),'utf8');
-  if(id==='admin/contracts'){
+  if(id==='admin/contracts'||id==='admin/rewards'){
    assert.match(initial,/<section\b[^>]*id="app-admin"[^>]*data-admin-access="pending"/);
    assert.doesNotMatch(initial,/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
   }else assert.match(initial,/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
  }
  const home=readFileSync(new URL('../admin/index.html',import.meta.url),'utf8');
  assert.match(home,/data-admin-directory/);
- assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,3,'Three separate Admin boxes');
- assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,3,'Each Admin box has a clear navigation button');
+ assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,5,'Five separate Admin boxes');
+ assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,5,'Each Admin box has a clear navigation button');
  assert.match(home,/href="\/admin\/calendar"/);
  assert.match(home,/href="\/admin\/players"/);
  assert.match(home,/href="\/admin\/contracts"/);
+ assert.match(home,/href="\/admin\/licenses"/);
+ assert.match(home,/href="\/admin\/rewards"/);
+ const rewards=readFileSync(new URL('../admin/rewards/index.html',import.meta.url),'utf8');
+ assert.match(rewards,/data-admin-rewards-content hidden/);
+ assert.match(rewards,/\/assets\/rewards-ui\.mjs/);
+ assert.doesNotMatch(rewards,/data-licenses-content|data-admin-contracts/);
  assert.doesNotMatch(home,/data-admin-world|data-admin-players-form|\/assets\/admin-settings\.js/);
+ const licenses=readFileSync(new URL('../admin/licenses/index.html',import.meta.url),'utf8');
+ const {renderAdminLicenses}=await import('../tools/render-admin-licenses.mjs');
+ assert.ok(licenses.includes(renderAdminLicenses()));
+ assert.match(licenses,/\/assets\/admin-licenses\.js/);
+ assert.match(licenses,/data-licenses-content hidden/);
  const calendar=readFileSync(new URL('../admin/calendar/index.html',import.meta.url),'utf8');
  assert.match(calendar,/data-admin-world/);
- for(const child of [calendar,readFileSync(new URL('../admin/players/index.html',import.meta.url),'utf8'),readFileSync(new URL('../admin/contracts/index.html',import.meta.url),'utf8')]){
+ for(const child of [calendar,readFileSync(new URL('../admin/players/index.html',import.meta.url),'utf8'),readFileSync(new URL('../admin/contracts/index.html',import.meta.url),'utf8'),readFileSync(new URL('../admin/licenses/index.html',import.meta.url),'utf8')]){
   assert.match(child,/class="admin-page-heading"/);
   assert.match(child,/class="app-link app-link-secondary admin-back"/);
   assert.match(child,/href="\/admin" data-admin-back/);
@@ -109,9 +120,10 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.ok(planPublicFiles().includes('assets/admin-permissions-cache.js'));
  const accountLogin=readFileSync(new URL('../assets/account-login.js',import.meta.url),'utf8');
  const accountProfile=readFileSync(new URL('../assets/account-settings.js',import.meta.url),'utf8');
- assert.match(accountLogin,/for\(const key of \['fa:admin:permissions:v1','fa:player:anonymous:v1','fa:player:skip-login-session-probe:v1'\]/);
+ assert.match(accountLogin,/for\(const key of \['fa:admin:permissions:v1','fa:admin:nav-visible:v1','fa:player:anonymous:v1','fa:player:skip-login-session-probe:v1'\]/);
  assert.match(accountLogin,/sessionStorage\.removeItem\(key\)/);
  assert.match(accountProfile,/sessionStorage\.removeItem\('fa:admin:permissions:v1'\)/);
+  assert.match(accountProfile,/sessionStorage\.removeItem\('fa:admin:nav-visible:v1'\)/);
  assert.doesNotMatch(playersScript,/data-players-seed-help|playersSeedHelp|Same seed and options|Stesso seed e stesse opzioni|Gleicher Seed und gleiche Einstellungen|Misma semilla y opciones|Même graine et mêmes options/);
 
  assert.doesNotMatch(players,/data-admin-world|\/assets\/admin-settings\.js/);
@@ -218,4 +230,40 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  assert.equal(parseRoute('/admin/contracts')?.canonical,'/admin/contracts');
  assert.equal(buildRoute({kind:'page',id:'admin/contracts'}),'/admin/contracts');
  assert.equal(publicRequestFile('/admin/contracts'),'admin/contracts/index.html');
+});
+
+
+test('Club licenses reuse app-native dropdowns and compact responsive table spacing',()=>{
+ const source=readFileSync(new URL('../assets/admin-licenses.js',import.meta.url),'utf8');
+ const styles=readFileSync(new URL('../assets/admin-licenses.css',import.meta.url),'utf8');
+ assert.match(source,/className='language-control admin-licenses-dropdown'/);
+ assert.match(source,/className='language-trigger admin-licenses-dropdown-trigger'/);
+ assert.match(source,/setAttribute\('role','listbox'\)/);
+ assert.match(source,/select\.dispatchEvent\(new win\.Event\('change'/);
+ assert.match(source,/admin-licenses-row-action/);
+ assert.match(styles,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(styles,/@media\(max-width:760px\)/);
+ assert.match(styles,/min-height:30px;height:30px/);
+ assert.match(styles,/--fa-radius-panel/);
+ assert.match(styles,/data-menu-placement="above"/);
+});
+
+test('Admin captions are inert and section gaps use site spacing',async()=>{
+ const {renderAdminLicenses}=await import('../tools/render-admin-licenses.mjs');
+ const markup=renderAdminLicenses();
+ const adminCss=readFileSync(new URL('../assets/admin-settings.css',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../assets/admin-licenses.css',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../assets/admin-licenses.js',import.meta.url),'utf8');
+ assert.equal((markup.match(/class="admin-licenses-field"/g)||[]).length,3);
+ assert.doesNotMatch(markup,/<label\b/i,'Captions must not wrap controls as native labels');
+ for(const caption of ['licenses-club-caption','licenses-search-caption','licenses-account-caption'])
+  assert.ok(markup.includes('aria-labelledby="'+caption+'"'),caption);
+ assert.ok(markup.includes('class="admin-licenses-list"'));
+ assert.ok(markup.includes('class="admin-licenses-history-section"'));
+ assert.match(adminCss,/\.admin-directory\{[^}]*gap:var\(--app-page-section-gap\)/);
+ assert.doesNotMatch(adminCss,/\.admin-directory-card:hover\{border-color:/);
+ assert.match(css,/\[data-licenses-content\]\{[^}]*gap:var\(--app-page-section-gap\)/);
+ assert.match(css,/\.admin-licenses-caption\{[^}]*pointer-events:none/);
+ assert.match(css,/\.admin-licenses-message:empty\{display:none\}/);
+ assert.ok(js.includes("select.closest('.admin-licenses-field')"));
 });

@@ -22,8 +22,8 @@ test('ARCH-CLEAN-02 security: approved hosting routes include exactly two Player
   assert.deepEqual(hosting.rewrites.find(rule=>rule.source==='/history'),
    {source:'/history',destination:'/history/index.html'});
   assert.deepEqual(hosting.rewrites[0],{source:'/matches/:id([1-9][0-9]*)',destination:'/matches/_shared/index.html'});
-  assert.equal(hosting.redirects.filter(route=>route.source.startsWith('/admin/:section(calendar|players|contracts|rewards)')).length,2);
-  assert.equal(hosting.rewrites.filter(route=>route.source==='/admin/:section(calendar|players|contracts|rewards)').length,1);
+  assert.equal(hosting.redirects.filter(route=>route.source.startsWith('/admin/:section(calendar|players|contracts|licenses|rewards)')).length,2);
+  assert.equal(hosting.rewrites.filter(route=>route.source==='/admin/:section(calendar|players|contracts|licenses|rewards)').length,1);
   assert.equal(hosting.rewrites.some(r=>r.destination.includes('/app/')),false);
 });
 
