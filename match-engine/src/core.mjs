@@ -236,7 +236,7 @@ export function createEngine(RAPIER, input = {}, {
     throw new TypeError('Small-sided feedback needs selected physical bodies');
    if(typeof diagnosticSmallSidedBodyGuardEnabled!=='boolean'||
      (diagnosticSmallSidedBodyGuardEnabled&&(
-      diagnosticSmallSidedSituation===null||
+      (diagnosticSmallSidedSituation===null||diagnosticSmallSidedSituation==='pass-pair')||
       !diagnosticPlayerFootContactsEnabled||
       !diagnosticAutonomousFixtureActionEnabled||
       diagnosticPlayerBodyCollidersEnabled||

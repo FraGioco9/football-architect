@@ -9,6 +9,7 @@ import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
 test('PASS-01 two teammates, 6/12/20m, original ground impulse and read-only receiving evidence',
  {timeout:120000},async()=>{
  const R=await initializeRapier(rapier),rows=[];
+ assert.throws(()=>createControlledActionLab(R,'pass-pair',{bodyGuardEnabled:true}),TypeError);
  for(const side of ['home','away'])for(const variantIndex of [0,1,2,9,10,11,27,28,29]){
   const lab=createControlledActionLab(R,'pass-pair',{shotSide:side,variantIndex});
   try{

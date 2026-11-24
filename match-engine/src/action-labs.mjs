@@ -92,7 +92,7 @@ export function createControlledActionLab(RAPIER,id,{
    validateSoloCarryAttributes(soloCarryPlayerAttributes);
  const spec=getActionLabScenario(id);
  if(typeof bodyGuardEnabled!=='boolean'||
-    (bodyGuardEnabled&&spec.mode!=='situation'))
+    (bodyGuardEnabled&&(spec.mode!=='situation'||id==='pass-pair')))
   throw new TypeError('Native body-contact exercise only in a small-sided situation');
  if(spec.mode!=='situation'&&variantIndex!==0)
   throw new TypeError('Variations require a selected small-sided exercise');
