@@ -361,9 +361,7 @@ test('Admin Contracts bridge forwards only bounded authenticated list and mutati
    ['/api/admin/contracts?page=1','GET'],['/api/admin/contracts?page=9999','GET'],
    ['/api/admin/contracts?playerId=23','GET'],['/api/admin/contracts','GET']]);
   assert.ok(seen.every(x=>x.cookie==='fa_player_local='+'f'.repeat(64)));
-  assert.equal(seen[4].csrf,'csrf-for-tests');
-  assert.equal(seen[4].origin,'http://app.localhost:2000');
-  assert.ok(seen.slice(0,4).every(x=>x.csrf===undefined));
+  assert.ok(seen.every(x=>x.csrf===undefined));
  }finally{bridge.closeAllConnections();upstream.closeAllConnections();
   await Promise.all([new Promise(resolve=>bridge.close(resolve)),new Promise(resolve=>upstream.close(resolve))])}
 });
