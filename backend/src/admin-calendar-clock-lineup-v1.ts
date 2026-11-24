@@ -6,7 +6,7 @@ import type {Database} from './database.ts';
 import {parsePrepareRequest,parseIdempotencyKey,type PrepareRequest} from './command-contract.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
-import {proposeAdministrativeMilestones,proposeEndSeasonMilestones,assertAdministrativeDayComplete} from './domain/calendar/admin-calendar-policy.ts';
+import {proposeAdministrativeMilestones,proposeEndSeasonMilestones,proposeRewardMilestones,assertAdministrativeDayComplete} from './domain/calendar/admin-calendar-policy.ts';
 import {planAdministrativeAdvanceLineupV1,type AdvanceEventRow} from './admin-calendar-advance-plan-lineup-v1.ts';
 
 export async function advanceAdministrativeClockLineupV1(db:Database,session:AdminSession,action:'start'|'advance',input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
@@ -22,7 +22,7 @@ export async function advanceAdministrativeClockLineupV1(db:Database,session:Adm
  if(![1,2].includes(world.seasonNumber)||world.revision===Number.MAX_SAFE_INTEGER||!(starting||advancing))throw new ApiError(409,'calendar_event_prerequisites');
  const rows=(await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status,completed_at,receipt_hash FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(world.seasonNumber).all<AdvanceEventRow>()).results;
  const events=rows.map(r=>({id:r.event_id,kind:r.kind,scope:r.scope,day:r.scheduled_day,order:r.event_order,status:r.status}));
- const template=[...proposeAdministrativeMilestones(),...proposeEndSeasonMilestones()];
+ const template=[...proposeAdministrativeMilestones(),...proposeEndSeasonMilestones(),...(events.some(e=>e.kind==='settle-rewards')?proposeRewardMilestones():[])];
  if(events.length!==template.length||events.some(e=>!template.some(t=>t.id===e.id&&t.kind===e.kind&&t.scope===e.scope)))throw new ApiError(409,'calendar_event_prerequisites');
  if(await db.prepare('SELECT season_number FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first()||
     await db.prepare('SELECT day FROM season_lineup_day_outcomes WHERE season_number=? LIMIT 1').bind(world.seasonNumber).first()||

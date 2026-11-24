@@ -5,22 +5,24 @@ import type {AdminSession} from './auth.ts';
 import {ApiError} from './errors.ts';
 import {economicAssert,financeSessionGuard,postFreshEconomicBatch,ECONOMIC_FRESH_BATCH_LIMIT,economicReconciliationGuard} from './economic-ledger.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
+import {annualRewardHoldId} from './reward-calendar-gate.ts';
+import {sessionGuard} from './command-guards.ts';
+import {readWorld} from './world-repository.ts';
+export {annualRewardHoldId} from './reward-calendar-gate.ts';
 import {assertPreparedRewardSettlement,type PreparedRewardSettlement} from './reward-settlement-evidence.ts';
 import {reconcileRewardPlan,rewardPostingIntents,type RewardBinding} from './reward-settlement-plan.mjs';
 
 const actorId='reward-settlement-v1';
 export const REWARD_BATCH_LIMIT=ECONOMIC_FRESH_BATCH_LIMIT;
 const blocked=(code:string):never=>{throw new ApiError(409,code)};
-export function annualRewardHoldId(generation:string,season:number){
- return ['reward-budget',generation,season,'draft-5'].join(':');
-}
+
 
 /** Prepared proof is an in-process capability from the official verifier.
  * The live finance operator is checked on every read and write; the immutable
  * business actor is independent of who retries. A prior approved annual hold
  * and matching active policy are prerequisites, not created by this command.
  * Report is a guarded point-in-time observation, NOT a calendar completion receipt. */
-export async function executeRewardSettlementBatch(db:Database,session:AdminSession,prepared:PreparedRewardSettlement,now:number){
+export async function executeRewardSettlementBatch(db:Database,session:AdminSession,prepared:PreparedRewardSettlement,now:number,completeCalendar=false){
  assertPreparedRewardSettlement(db,prepared);
  if(!session?.unified)throw new ApiError(403,'economic_authority_required');
  const operator=session.unified,{manifest,previousManifest}=prepared,{plan}=manifest;
@@ -85,14 +87,38 @@ export async function executeRewardSettlementBatch(db:Database,session:AdminSess
  };
  let state=await inspect();
  const intents=rewardPostingIntents(plan,binding),missing=new Set(state.report.missingKeys);
+ const eventId='rewards:'+day;
+ const milestone=await db.prepare("SELECT status,receipt_hash FROM season_admin_events WHERE season_number=? AND event_id=? AND kind='settle-rewards' AND scope=? AND scheduled_day=? AND event_order=7000")
+  .bind(season,eventId,'rewards-'+day,day).first<{status:string;receipt_hash:string|null}>();
+ if(!milestone) return blocked('reward_calendar_missing');
+ if(milestone.status==='completed'&&(state.report.status!=='complete'||milestone.receipt_hash!==state.receiptHash))
+  return blocked('reward_calendar_mismatch');
+ const scheduled=()=>economicAssert(db,"SELECT 1 FROM season_admin_events WHERE season_number=? AND event_id=? AND kind='settle-rewards' AND scope=? AND scheduled_day=? AND event_order=7000 AND status='scheduled' AND receipt_hash IS NULL",
+  [season,eventId,'rewards-'+day,day]);
  // A chunk commits atomically; on conflict/unknown response retry from receipts.
  const chunk=intents.filter(i=>missing.has(i.businessKey)).slice(0,REWARD_BATCH_LIMIT);
  if(chunk.length){
   await postFreshEconomicBatch(db,chunk,{
-   access:access(),preconditions:[...stateGuards(state.receiptCount,state.remaining),economicReconciliationGuard(db)],
+   access:access(),preconditions:[...stateGuards(state.receiptCount,state.remaining),scheduled(),economicReconciliationGuard(db)],
    effects:[releaseGuard(),economicReconciliationGuard(db)]
   },now);
   state=await inspect();
+ }
+ // Optional explicit finalization for the existing official calendar. A fresh
+ // exact guard is mandatory; the journal and event are rechecked in one batch.
+ if(completeCalendar&&state.report.status==='complete'&&milestone.status==='scheduled'){
+  const world=await readWorld(db);
+  if(world.revision!==prepared.worldRevision||world.revision===Number.MAX_SAFE_INTEGER)return blocked('reward_world_stale');
+  const operationId=crypto.randomUUID(),key='reward-calendar:'+season+':'+day;
+  const result={operationId,world:{...world,revision:world.revision+1},receiptHash:state.receiptHash};
+  const requestHash=await canonicalHash({generation,season,day,manifestHash:manifest.manifestHash,receiptHash:state.receiptHash});
+  await db.batch([...access(),sessionGuard(db,session,now),...stateGuards(state.receiptCount,state.remaining),scheduled(),economicReconciliationGuard(db),
+   db.prepare("UPDATE season_admin_events SET status='completed',completed_at=?,receipt_hash=? WHERE season_number=? AND event_id=? AND status='scheduled'")
+    .bind(now,state.receiptHash,season,eventId),
+   db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(generation,world.revision),
+   db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)')
+    .bind(operationId,generation,key,requestHash,session.actor.id,'complete-reward-calendar-v1',world.revision,world.revision+1,JSON.stringify(result),now)
+  ]);
  }
  return Object.freeze({manifestHash:manifest.manifestHash,day,...state.report,holdRemainingArc:state.remaining,
   receiptHash:state.receiptHash});

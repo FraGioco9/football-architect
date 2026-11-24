@@ -8,6 +8,7 @@ import type {Database} from './database.ts';
 import {parsePrepareRequest,parseIdempotencyKey,type PrepareRequest} from './command-contract.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
+import {assertRewardCalendarCompletion} from './reward-calendar-gate.ts';
 import {verifyLineupSeasonArchiveV1} from './lineup-season-archive-proof.ts';
 import {canArchiveAtTerminalMilestone} from './domain/calendar/terminal-milestone-policy.ts';
 
@@ -27,6 +28,7 @@ export async function archiveSeasonLineupV1(
  if(world.phase!=='active'||world.day!==56||![1,2].includes(world.seasonNumber)||
   world.revision===Number.MAX_SAFE_INTEGER)
   throw new ApiError(409,'archive_prerequisites');
+ const rewardGuards=await assertRewardCalendarCompletion(db,world,56);
  const proof=await verifyLineupSeasonArchiveV1(db,world);
  const pending=(await db.prepare(
   "SELECT count(*) AS n FROM season_admin_events WHERE season_number=? AND status='scheduled' AND scope<>'season'"
@@ -45,7 +47,7 @@ export async function archiveSeasonLineupV1(
    abortUnless(db,
     'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=? AND phase=? AND day=56',
     [world.generation,world.revision,world.seasonNumber,'active']),
-   ...proof.guards,
+   ...rewardGuards,...proof.guards,
    abortUnless(db,
     "SELECT 1 WHERE (SELECT COUNT(*) FROM season_admin_events WHERE season_number=? AND status='scheduled' AND scope<>'season')=0",
     [world.seasonNumber]),

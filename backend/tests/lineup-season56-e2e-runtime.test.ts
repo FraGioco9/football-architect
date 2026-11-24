@@ -1,6 +1,7 @@
 import {prepareRewardSettlement,readRewardSettlementManifest,projectFinalRewardEvidence,buildRewardManifest,type PreparedRewardSettlement} from '../src/reward-settlement-evidence.ts';
 import {planRewardSettlement,type RewardPlan} from '../src/reward-settlement-plan.mjs';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
+import {rewardCalendarCompletionGuards} from '../src/reward-calendar-gate.ts';
 import {annualRewardHoldId,executeRewardSettlementBatch,REWARD_BATCH_LIMIT} from '../src/reward-settlement-command.ts';
 import {economicAssert,provisionClubAccounts,postEconomicOperation,reserveEconomicFunds,reconcileEconomy} from '../src/economic-ledger.ts';
 import {readMatchDirectory} from '../src/public-match-directory.ts';
@@ -56,6 +57,20 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
 
  await advance(prepareSeason(db,session,command(),'lineup-season-prepare-0001',
   await loadApprovedSnapshot(),now));
+ const rewardPin={rewardVersion:'draft-5',configVersion:'synthetic-776'};
+ const localAccess=()=>[economicAssert(db,'SELECT 1')]; // fixture-only activation/funding
+ await provisionClubAccounts(db,now,localAccess());
+ await db.prepare('INSERT INTO economic_policy_versions VALUES(?,?,?,?,?,?,?)')
+  .bind(rewardPin.configVersion,now,'fixture',2400000,2400000,'{}',JSON.stringify({rewardVersion:'draft-5'})).run();
+ await db.prepare('INSERT INTO economic_control VALUES(1,?,1)').bind(rewardPin.configVersion).run();
+ await postEconomicOperation(db,{businessKey:'fixture-776-genesis',requestKey:'fixture-776-genesis',purpose:'GENESIS_RESERVE',
+  actorKind:'system',actorId:'fixture',configVersion:rewardPin.configVersion,sourceId:'fixture-776-genesis',
+  lines:[{accountId:'issuance',amountArc:-2400000},{accountId:'reserve',amountArc:2400000}]},{access:localAccess()},now);
+ const holdId=annualRewardHoldId(world.generation,world.seasonNumber);
+ await reserveEconomicFunds(db,{id:holdId,sourceId:holdId,accountId:'reserve',purpose:'REWARD_BUDGET',
+  configVersion:rewardPin.configVersion,amountArc:2400000,actorId:'reward-settlement-v1'},{access:localAccess()},now);
+ await db.batch(['read','post'].map(capability=>db.prepare('INSERT INTO economic_finance_permissions VALUES(?,?,?,?)')
+  .bind(session.unified!.playerId,capability,'fixture',now)));
  await advance(initializeAdministrativeEvents(db,session,command(),
   'lineup-season-events-0001',now));
  await advance(advanceAdministrativeClockLineupV1(db,session,'start',command(),
@@ -75,8 +90,6 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  await advance(publishInternationalCalendarLineupV1(db,session,command(),
   'lineup-season-publish-0001',now));
  expect(world.day).toBe(3);
- const rewardPin={rewardVersion:'draft-5',configVersion:'synthetic-776'};
- const localAccess=()=>[economicAssert(db,'SELECT 1')]; // fixture-only activation/funding
  let day28Proof:PreparedRewardSettlement|undefined;
  let day28ReceiptHash:string|null=null;
  const verifyTreasuries=async(plans:readonly RewardPlan[])=>{
@@ -195,23 +208,12 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    expect(await buildRewardManifest(first.manifest.plan,rewardPin.configVersion)).toEqual(first.manifest);
    expect((await buildRewardManifest(first.manifest.plan,'another-synthetic-version')).manifestHash).not.toBe(first.manifest.manifestHash);
    expect(await readWorld(db)).toEqual(beforeReward);
-   expect(await count('economic_transactions')).toBe(0);
+   expect(await count('economic_transactions')).toBe(1);
    await expect(readRewardSettlementManifest(db,{...rewardPin,rewardVersion:'draft-4'})).rejects.toMatchObject({code:'reward_evidence_invalid'});
    // The real internal command writes only to this disposable local D1.
    // No default production grants, activation, or funding are introduced.
-   await expect(executeRewardSettlementBatch(db,session,first,now)).rejects.toThrow();
-   await provisionClubAccounts(db,now,localAccess());
-   await db.prepare('INSERT INTO economic_policy_versions VALUES(?,?,?,?,?,?,?)')
-    .bind(rewardPin.configVersion,now,'fixture',2400000,2400000,'{}',JSON.stringify({rewardVersion:'draft-5'})).run();
-   await db.prepare('INSERT INTO economic_control VALUES(1,?,1)').bind(rewardPin.configVersion).run();
-   await postEconomicOperation(db,{businessKey:'fixture-776-genesis',requestKey:'fixture-776-genesis',purpose:'GENESIS_RESERVE',
-    actorKind:'system',actorId:'fixture',configVersion:rewardPin.configVersion,sourceId:'fixture-776-genesis',
-    lines:[{accountId:'issuance',amountArc:-2400000},{accountId:'reserve',amountArc:2400000}]},{access:localAccess()},now);
-   const holdId=annualRewardHoldId(world.generation,world.seasonNumber);
-   await reserveEconomicFunds(db,{id:holdId,sourceId:holdId,accountId:'reserve',purpose:'REWARD_BUDGET',
-    configVersion:rewardPin.configVersion,amountArc:2400000,actorId:'reward-settlement-v1'},{access:localAccess()},now);
-   await db.batch(['read','post'].map(capability=>db.prepare('INSERT INTO economic_finance_permissions VALUES(?,?,?,?)')
-    .bind(session.unified!.playerId,capability,'fixture',now)));
+   await expect(db.batch(rewardCalendarCompletionGuards(db,world,28))).rejects.toThrow();
+   await expect(executeLineupLifecycleV1(db,session,'advance',command(),'reward-blocked-advance-0001',now)).rejects.toMatchObject({status:409});
    // Fault in second INSERT rolls back the entire chunk.
    const faultKey=first.manifest.plan.rows.filter(r=>r.amountArc>0)[1].businessKey;
    if(!/^[a-zA-Z0-9:-]+$/.test(faultKey))throw Error('Invalid fixture key');
@@ -235,6 +237,10 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    const finished=await finishRewards(first);
    day28Proof=first;
    day28ReceiptHash=finished.receiptHash;
+   await executeRewardSettlementBatch(db,session,first,now,true);
+   world=await readWorld(db);
+   await db.batch(rewardCalendarCompletionGuards(db,world,28));
+   expect(await db.prepare("SELECT status,receipt_hash FROM season_admin_events WHERE season_number=1 AND event_id='rewards:28'").first()).toEqual({status:'completed',receipt_hash:day28ReceiptHash});
    expect(await count('economic_transactions')).toBe(305);
    await verifyTreasuries([first.manifest.plan]);
    expect(await reconcileEconomy(db,localAccess())).toMatchObject({ok:true,stockArc:'2400000',netIssuedArc:'2400000'});
@@ -289,6 +295,8 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(finalProjection.filter(c=>c.competitionId.startsWith('int-')).every(c=>c.outcomes?.length===24)).toBe(true);
  if(!day28Proof)throw Error('Missing Day28 fixture proof');
  expect(certifiedFinal.previousManifest).toEqual(day28Proof.manifest);
+ await expect(archiveSeasonLineupV1(db,session,command(),'reward-blocked-archive-0001',now)).rejects.toMatchObject({status:409});
+ await expect(db.batch(rewardCalendarCompletionGuards(db,world,56))).rejects.toThrow();
  const finalResult=await finishRewards(certifiedFinal);
  expect(finalResult.receiptHash).not.toBe(day28ReceiptHash);
  const finalCount=finalPlan.rows.filter(r=>r.amountArc>0).length;
@@ -300,6 +308,10 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(await reconcileEconomy(db,localAccess())).toMatchObject({ok:true,stockArc:'2400000',netIssuedArc:'2400000',
   invalidTransactions:0,invalidBalances:0,invalidHolds:0});
  expect(await readWorld(db)).toEqual(beforeFinalReward);
+ await executeRewardSettlementBatch(db,session,certifiedFinal,now,true);
+ world=await readWorld(db);
+ await db.batch(rewardCalendarCompletionGuards(db,world,56));
+ expect(await db.prepare("SELECT status,receipt_hash FROM season_admin_events WHERE season_number=1 AND event_id='rewards:56'").first()).toEqual({status:'completed',receipt_hash:finalResult.receiptHash});
  const sourceSummary=JSON.parse(proof.summaryJson);
  expect(sourceSummary.sourceSeason).toBe(1);
  expect(sourceSummary.divisions).toHaveLength(16);
