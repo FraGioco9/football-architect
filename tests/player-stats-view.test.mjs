@@ -210,7 +210,8 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
  const payload={playerId:42,status:'available',seasons:[{season:1,status:'partial',
   data:{total:player,competitions:[
    {...player,competitionId:'IT-1',clubId:'IT-1'},
-   {...player,competitionId:'int-1',clubId:'IT-2'}]}}]};
+   {...player,competitionId:'int-1',clubId:'IT-2'}]}},
+  {season:2,status:'empty',reason:'calendar-unpublished',data:null}]};
  let lang='en';
  try{
   const view=createPlayerStatsView({host,id:42,position:()=> 'ST',locale:()=>lang,
@@ -219,7 +220,11 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
    competitionName:key=>key==='IT-1'?'Lega Federale':key==='int-1'?'Sovereign Cup':null,
    fetchStats:async()=>payload});
   await view.load();
-  assert.equal(tbody.children.length,4,'Career, season and both collapsed competition rows exist without extra reads');
+  assert.equal(tbody.children.length,5,'Career, two seasons and both collapsed competition rows exist without extra reads');
+  const unprepared=tbody.children[4];
+  assert.equal(unprepared.children[1].children[0].textContent,'No games played');
+  assert.deepEqual(unprepared.children.slice(3).map(cell=>cell.children[0].textContent),['0 (0)','0','0','0','0','0','0','—']);
+  assert.equal(unprepared.querySelector('[data-stats-toggle]'),null);
   assert.equal(tbody.children[0].dataset.playerStatsCareer,'true');
   assert.equal(tbody.children[0].children[0].children[0].children[1].textContent,'Career');
   assert.equal(tbody.children[0].children[3].children[0].textContent,'1 (0)');
@@ -365,6 +370,16 @@ test('#578 Career sums official season totals and weights ratings by rated appea
  const withoutNestedSeason={...rows[0],data:{total:rows[0].data.total,competitions:[]}};
  assert.equal(aggregateVerifiedCareerStats([withoutNestedSeason]).appearances,20,
   'actual public API puts season at top level, not inside data');
+ for(const reason of ['calendar-unpublished','season-not-prepared']){
+  const empty={season:3,status:'empty',reason,data:null};
+  assert.deepEqual(aggregateVerifiedCareerStats([...rows,empty]),career);
+  const zero=aggregateVerifiedCareerStats([empty]);
+  assert.equal(zero.appearances,0);assert.equal(zero.subAppearances,0);
+  assert.equal(zero.goals,0);assert.equal(zero.mvpAwards,0);
+  assert.equal(zero.averageRating,null);
+ }
+ assert.equal(aggregateVerifiedCareerStats([{season:3,status:'empty',reason:'unknown',data:null}]),null);
+ assert.equal(aggregateVerifiedCareerStats([{season:3,status:'unavailable',reason:'calendar-unpublished',data:null}]),null);
  assert.equal(aggregateVerifiedCareerStats([]),null);
 });
 test('#578 goalkeeper Career CS respects eligibility and missing coverage',()=>{
