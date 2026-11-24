@@ -264,7 +264,9 @@ test('Lab-first-paint script keeps canonical navigation logic except active DEV 
   const adapted=labFirstPaintBootstrap(original);
   assert.ok(adapted.includes("const selected=path==='/dev/match-engine'"));
   assert.ok(adapted.includes("nav.querySelector('[data-me-dev-link]')"));
-  assert.equal(adapted.replace("const selected=path==='/dev/match-engine'?nav.querySelector('[data-me-dev-link]'):onPlayers?","const selected=onPlayers?"),original);
+  assert.ok(adapted.includes("path==='/history'?nav.querySelector('[data-nav01-history]')"),
+    'canonical History link from main must remain intact');
+  assert.equal(adapted.replace("const selected=path==='/dev/match-engine'?nav.querySelector('[data-me-dev-link]'):path==='/history'?","const selected=path==='/history'?"),original);
 });
 
 

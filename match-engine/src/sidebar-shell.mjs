@@ -18,8 +18,10 @@ const SIDEBAR_START = '<aside class="fa-shell-sidebar"';
 const SIDEBAR_END = '</aside>';
 const BOOTSTRAP_TAG = /<script data-nav01-bootstrap>[\s\S]*?<\/script>/;
 const LAB_BOOTSTRAP = '<script src="/__fa_match_engine__/sidebar-first-paint.js"></script>';
-const BOOTSTRAP_SELECTED = "const selected=onPlayers?";
-const LAB_SELECTED = "const selected=path==='/dev/match-engine'?nav.querySelector('[data-me-dev-link]'):onPlayers?";
+// Main prioritizes the History destination before Players. Insert the DEV
+// selection before that canonical branch, preserving the rest byte-for-byte.
+const BOOTSTRAP_SELECTED = "const selected=path==='/history'?";
+const LAB_SELECTED = "const selected=path==='/dev/match-engine'?nav.querySelector('[data-me-dev-link]'):path==='/history'?";
 
 function asideRange(markup) {
   const start = markup.indexOf(SIDEBAR_START);
