@@ -32,3 +32,16 @@ export function stepNumericValue(field, value, direction) {
   if (next<bounds[0]-1e-9 || next>bounds[1]+1e-9) return null;
   return formatNumericValue(next);
 }
+
+// DEV UI display only: SI physics, private impulses and public API remain m/s.
+export const SPEED_KMH_PER_MPS=3.6;
+export function speedToKmh(speedMps){
+ if(typeof speedMps!=='number'||!Number.isFinite(speedMps))
+  throw new TypeError('Finite physical speed in m/s required');
+ return speedMps*SPEED_KMH_PER_MPS;
+}
+export function speedFromKmh(speedKmh){
+ if(typeof speedKmh!=='number'||!Number.isFinite(speedKmh))
+  throw new TypeError('Finite display speed in km/h required');
+ return speedKmh/SPEED_KMH_PER_MPS;
+}

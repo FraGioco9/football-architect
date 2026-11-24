@@ -1,0 +1,513 @@
+// #628 B06b H1: real original Rapier 22-player half-time and resumed
+// second half, with bounded mini-period only for fast CI acceptance.
+// Mini-period success is NEVER evidence that 90 minutes ran.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as rapier from '@dimforge/rapier3d-deterministic-compat';
+import {initializeRapier,createEngine,BALL_RADIUS} from '../src/core.mjs';
+import {INITIAL_PLAYERS,createPlayerMovement,
+ PLAYER_MAX_SPEED_MPS,PLAYER_MIN_SEPARATION_M}
+ from '../src/player-movement.mjs';
+import {createBasicRegulationSessionB06b,B06B_SESSION_VERSION}
+ from '../src/basic-match-regulation-b06b.mjs';
+import {B06_HALF_TICKS,B06_FULL_TICKS}
+ from '../src/basic-match-clock-score-b06.mjs';
+import {initialB06bOpeningLineup}
+ from '../src/basic-opening-kickoff-lineup-b06b.mjs';
+
+test('B06b H1 isolated original-world halftime source rejects unrelated action modes, short/synthetic intervals and frames',async()=>{
+ const R=await initializeRapier(rapier);
+ for(const n of [0,1,30,-1,1.3,Infinity])
+  assert.throws(()=>createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:n
+  }),TypeError);
+ assert.throws(()=>createEngine(R,{preset:'roll'},{
+  diagnosticB06bHalftimeTick:120
+ }),/B06b/);
+ assert.throws(()=>createEngine(R,{preset:'roll'},{
+  diagnosticB06bHalftimeTick:120,
+  diagnosticPlayerFootContactsEnabled:true,
+  diagnosticAutonomousFixtureActionEnabled:true
+ }),/B06b/);
+ assert.throws(()=>createPlayerMovement({researchB06bHalftimeTick:119}),TypeError);
+ const ordinary=createEngine(R,{preset:'roll'});
+ try{
+  assert.equal(ordinary.b06bOriginalHalftimePlacement,undefined);
+  assert.equal(ordinary.b06bOriginalSecondHalfKickoff,undefined);
+ }finally{ordinary.dispose();}
+ const guarded=createEngine(R,{preset:'roll'},{
+  diagnosticPlayerFootContactsEnabled:true,
+  diagnosticB06bHalftimeTick:120
+ });
+ try{
+  assert.throws(()=>guarded.b06bOriginalHalftimePlacement({
+   tick:120,players:INITIAL_PLAYERS
+  }),/halftime/);
+  assert.throws(()=>guarded.b06bOriginalSecondHalfKickoff({
+   tick:121,players:INITIAL_PLAYERS
+  }),/kickoff/);
+ }finally{guarded.dispose();}
+});
+
+test('B06b H1 true HOME/AWAY 22-player 60Hz continuous two-half MINIATURE: halftime paused only for genuine same-ball AWAY #10 native kickoff',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const a=createBasicRegulationSessionB06b(R,{researchHalfTicks:120});
+ const b=createBasicRegulationSessionB06b(R,{researchHalfTicks:120});
+ try{
+  let fa=a.snapshot(),fb=b.snapshot(),pauseTicks=0;
+  assert.equal(fa.version,B06B_SESSION_VERSION);
+  assert.equal(fa.physicsTick,0);
+  assert.equal(fa.clockTicks,0);
+  assert.equal(fa.phase,'first-half');
+  assert.equal(fa.canonical22,true);
+  assert.equal(fa.halfTime,null);
+  assert.equal(fa.secondHalfKickoff,null);
+  assert.equal(fa.realFull90MinutesVerified,false);
+  assert.equal(fa.officialMatchResult,null);
+  let halftime=null,kickoff=null,full=null;
+  for(let t=1;t<=900;t++){
+   fa=a.step();fb=b.step();
+   assert.deepEqual(fa.physicsBall,fb.physicsBall,
+    'same original Rapier physical ball deterministic');
+   assert.equal(fa.physicsTick,t);
+   assert.equal(fa.canonical22,true);
+   assert.equal(fa.matchAuthority,false);
+   assert.equal(fa.officialMatchResult,null);
+   assert.equal(fa.originalEventLedger.officialMatchResult,null);
+   assert.deepEqual(fa.provisionalScore,fb.provisionalScore);
+   if(!halftime&&fa.halfTime){
+    halftime=fa.halfTime;
+    assert.equal(t,120);
+    assert.equal(halftime.phase,'half-time');
+    assert.equal(halftime.physicsTick,120);
+    assert.equal(halftime.restartTeam,'away');
+    assert.equal(halftime.actualOriginalRapierBallPlaced,true);
+    assert.equal(halftime.realShoesNotFabricated,true);
+    assert.equal(halftime.playerTeleports,false);
+    assert.equal(halftime.ball.position.x,0);
+    assert.equal(halftime.ball.position.y,0);
+    assert.ok(Math.abs(halftime.ball.position.z-BALL_RADIUS)<1e-8);
+    assert.equal(fa.clockTicks,120);
+   }
+   if(halftime&&!kickoff){
+    assert.equal(fa.clockTicks,120,
+     'the game clock freezes for genuine on-field player approach');
+    pauseTicks++;
+   }
+   if(!kickoff&&fa.secondHalfKickoff){
+    kickoff=fa.secondHalfKickoff;
+    assert.equal(kickoff.tick,t);
+    assert.ok(kickoff.tick>120);
+    assert.equal(kickoff.team,'away');
+    assert.equal(kickoff.actorId,'away-10');
+    assert.equal(kickoff.genuineExclusiveOriginalShoeStart,true);
+    assert.equal(kickoff.currentRapierContactManifold,true);
+    assert.equal(kickoff.originalBallImpulseApplied,true);
+    assert.equal(kickoff.sameRapierWorldAsFirstHalf,true);
+    assert.equal(kickoff.officialMatchAction,false);
+    assert.equal(fa.clockTicks,120);
+    assert.equal(fa.phase,'second-half');
+   }
+   if(fa.final){full=fa.final;break;}
+  }
+  assert.ok(halftime,'physical half-time ball placement expected');
+  assert.ok(kickoff,'second-half original AWAY shoe START required');
+  assert.ok(full,'must physically advance ALL 120 extra second-half game ticks');
+  assert.ok(pauseTicks>=1);
+  assert.equal(full.gameClockTicks,240);
+  assert.equal(full.physicsTick,239+pauseTicks);
+  assert.equal(fa.phase,'full-time');
+  assert.equal(fa.clockTicks,240);
+  assert.equal(fa.clock.label,'00:04');
+  assert.equal(fa.clock.completedMatchVerified,false);
+  assert.equal(fa.realFull90MinutesVerified,false,
+   'abbreviated genuine replay cannot be described as a 90-minute match');
+  assert.equal(full.twoPhysicalHalvesAndNativeKickoff,true);
+  assert.equal(full.complete90Minutes,false);
+  assert.equal(full.officialMatchResult,null);
+  assert.equal(fa.provisionalScore.home,0);
+  assert.equal(fa.provisionalScore.away,0);
+  assert.equal(full.winner,'draw');
+  assert.throws(()=>a.step(),/cannot step/);
+  process.stdout.write('ME_628_B06B_AUTHENTIC_MINI_REPLAY '+
+   JSON.stringify({halfStart:120,actualHalftimeTick:halftime.physicsTick,
+    nativeSecondHalfKickoffTick:kickoff.tick,realPhysicsTicks:full.physicsTick,
+    actualActiveGameTicks:full.gameClockTicks,
+    excludedRealHalftimePhysicsTicks:pauseTicks,
+    score:fa.provisionalScore,originalShoe:true,
+    full90MinuteMatchVerified:false,officialResult:null})+'\\n');
+ }finally{a.dispose();b.dispose();}
+});
+
+test('B06b H2a original opening requires true HOME shoe and 22 canonical players',async()=>{
+ const staged=initialB06bOpeningLineup(INITIAL_PLAYERS);
+ assert.deepEqual(staged.map(p=>p.id),INITIAL_PLAYERS.map(p=>p.id));
+ assert.equal(staged.find(p=>p.id==='home-10').x,-0.28);
+ assert.equal(INITIAL_PLAYERS.find(p=>p.id==='home-10').x,-5);
+ for(let i=0;i<staged.length;i++)for(let j=i+1;j<staged.length;j++)
+  assert.ok(Math.hypot(staged[i].x-staged[j].x,staged[i].y-staged[j].y)>=PLAYER_MIN_SEPARATION_M-1e-8);
+ const R=await initializeRapier(rapier);
+ assert.throws(()=>createEngine(R,{preset:'roll'},{diagnosticB06bOpeningKickoffEnabled:true}),/B06b opening/);
+ assert.throws(()=>createPlayerMovement({researchB06bOpeningKickoffEnabled:true}),TypeError);
+ const ordinary=createBasicRegulationSessionB06b(R,{researchHalfTicks:120});
+ const actual=createBasicRegulationSessionB06b(R,{researchHalfTicks:120,researchOpeningKickoff:true});
+ try{
+  assert.equal(ordinary.snapshot().firstHalfKickoff,null);
+  assert.equal(actual.snapshot().phase,'opening-kickoff');
+  const first=actual.step();
+  assert.equal(first.physicsTick,1);
+  assert.equal(first.clockTicks,1);
+  assert.equal(first.phase,'first-half');
+  assert.equal(first.firstHalfKickoff?.tick,1);
+  assert.equal(first.firstHalfKickoff.actorId,'home-10');
+  assert.equal(first.firstHalfKickoff.genuineExclusiveOriginalShoeStart,true);
+  assert.equal(first.firstHalfKickoff.currentRapierContactManifold,true);
+  assert.equal(first.firstHalfKickoff.originalBallImpulseApplied,true);
+  assert.equal(first.firstHalfKickoff.officialMatchResult,null);
+  assert.equal(first.canonical22,true);
+ }finally{ordinary.dispose();actual.dispose();}
+});
+
+test('B06b H2a two real physical kickoffs in a mini replay are NOT a complete 90m match',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const run=createBasicRegulationSessionB06b(R,{researchHalfTicks:120,researchOpeningKickoff:true});
+ try{
+  let last=null;
+  for(let i=0;i<900;i++){
+   const s=run.step();
+   if(s.final){last=s;break;}
+  }
+  assert.ok(last);
+  assert.equal(last.clockTicks,240);
+  assert.equal(last.firstHalfKickoff?.actorId,'home-10');
+  assert.equal(last.secondHalfKickoff?.actorId,'away-10');
+  assert.equal(last.halfTime?.physicsTick,120);
+  assert.equal(last.final.firstHalfNativeKickoffVerified,true);
+  assert.equal(last.final.complete90Minutes,false);
+  assert.equal(last.realFull90MinutesVerified,false);
+  assert.equal(last.fullFootballActionCoverageVerified,false);
+  assert.equal(last.officialMatchResult,null);
+ }finally{run.dispose();}
+});
+
+test('B06b H2b1 rejects invented goal restart modes and authority outside the isolated private source',async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['invalid','HOME',42])
+  assert.throws(()=>createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchGoalCrossingSide:side
+  }),TypeError);
+ assert.throws(()=>createBasicRegulationSessionB06b(R,{
+  researchGoalCrossingSide:'home'
+ }),/bounded/);
+ assert.throws(()=>createBasicRegulationSessionB06b(R,{
+  researchHalfTicks:1200,researchGoalCrossingSide:'away',
+  researchOpeningKickoff:true
+ }),/non-opening/);
+ assert.throws(()=>createEngine(R,{preset:'roll'},{
+  diagnosticB06bGoalRestartEnabled:true
+ }),/goal restart/);
+ assert.throws(()=>createPlayerMovement({
+  researchB06bGoalRestartEnabled:true
+ }),TypeError);
+ const ordinary=createEngine(R,{preset:'roll'});
+ try{
+  assert.equal(ordinary.b06bOriginalPlaceGoalRestart,undefined);
+  assert.equal(ordinary.b06bOriginalTakeGoalRestart,undefined);
+ }finally{ordinary.dispose();}
+});
+
+test('B06b H2b1 HOME and AWAY genuine whole-ball GOAL -> same original ball placement -> independent native opposing #10 kickoff',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['home','away']){
+  const one=createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchGoalCrossingSide:side
+  });
+  const two=createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchGoalCrossingSide:side
+  });
+  try{
+   let crossed=null,kicked=null,holdTicks=0;
+   for(let n=1;n<=800;n++){
+    const a=one.step(),b=two.step();
+    assert.equal(a.physicsTick,n);
+    assert.deepEqual(a.physicsBall,b.physicsBall,
+      'only the original same-world deterministic Rapier ball is integrated');
+    assert.deepEqual(a.provisionalScore,b.provisionalScore);
+    assert.equal(a.canonical22,true);
+    assert.equal(a.matchAuthority,false);
+    assert.equal(a.officialMatchResult,null);
+    assert.equal(a.realFull90MinutesVerified,false);
+    if(!crossed&&a.goalRestartPlacements.length){
+     crossed=a;
+     assert.equal(a.goalRestartPlacements.length,1);
+     const placement=a.goalRestartPlacements[0];
+     assert.equal(placement.sourceEventTick,n);
+     assert.equal(placement.tick,n);
+     assert.equal(placement.kind,'kickoff');
+     assert.equal(placement.assignedTeam,side==='home'?'away':'home');
+     assert.equal(placement.originalRapierBallRepositioned,true);
+     assert.equal(placement.realShoeContact,false);
+     assert.equal(placement.ball.position.x,0);
+     assert.equal(placement.ball.position.y,0);
+     assert.ok(Math.abs(placement.ball.position.z-BALL_RADIUS)<1e-8);
+     assert.equal(a.physicsBall.position.x,0);
+     assert.equal(a.physicsBall.position.y,0);
+     assert.equal(a.refereeSource.lastEvent.kind,'goal');
+     assert.equal(a.refereeSource.lastEvent.scoringTeam,side);
+     assert.equal(a.refereeSource.lastEvent.crossing.fullBallCrossed,true);
+     assert.equal(a.refereeSource.restartApplied,true);
+     assert.equal(a.originalEventLedger.matchEventCount,2);
+     assert.deepEqual(a.originalEventLedger.matchEvents.map(e=>e.type),
+      ['goal','restart-placement']);
+     assert.equal(a.originalEventLedger.outstandingDeadBall,false);
+     assert.equal(a.provisionalScore[side],1);
+     assert.equal(a.provisionalScore[side==='home'?'away':'home'],0);
+     assert.equal(a.phase,'goal-kickoff');
+    }
+    if(crossed&&!a.genuineGoalKickoffs.length){
+     holdTicks++;
+     assert.equal(a.clockTicks,crossed.clockTicks,
+      'goal restart cannot consume football match time before genuine taker');
+    }
+    if(a.genuineGoalKickoffs.length){
+     kicked=a;
+     const take=a.genuineGoalKickoffs[0];
+     assert.equal(take.tick,n);
+     assert.ok(n>crossed.physicsTick);
+     assert.equal(take.team,side==='home'?'away':'home');
+     assert.equal(take.actorId,take.team+'-10');
+     assert.equal(take.sourceEventTick,crossed.physicsTick);
+     assert.equal(take.genuineExclusiveOriginalShoeStart,true);
+     assert.equal(take.currentRapierContactManifold,true);
+     assert.equal(take.originalBallImpulseApplied,true);
+     assert.equal(take.sameOriginalRapierWorld,true);
+     assert.equal(take.officialMatchResult,null);
+     assert.equal(a.originalEventLedger.matchEventCount,3);
+     assert.deepEqual(a.originalEventLedger.matchEvents.map(e=>e.type),
+      ['goal','restart-placement','kickoff-physical-attempt']);
+     const proof=a.originalEventLedger.matchEvents[2];
+     assert.equal(proof.tick,n);
+     assert.equal(proof.sourceGoalTick,crossed.physicsTick);
+     assert.equal(proof.playedTicks,a.clockTicks);
+     assert.equal(proof.actorId,take.actorId);
+     assert.equal(proof.team,take.team);
+     assert.equal(proof.genuineOriginalRapierShoeStart,true);
+     assert.equal(proof.actualOriginalBallImpulse,true);
+     assert.equal(proof.officialMatchEvent,false);
+     assert.equal(a.originalEventLedger.lastPhysicalGoalKickoff,take);
+     assert.equal(a.pausedGoalPhysicsTicks,n-crossed.physicsTick);
+     assert.equal(a.clockTicks,crossed.clockTicks);
+     assert.equal(a.phase,'first-half');
+     break;
+    }
+   }
+   assert.ok(crossed,side+' original full-ball goal crossing was not observed');
+   assert.ok(kicked,side+' original opposition foot kickoff never happened');
+   assert.ok(holdTicks>=1,'goal dead ball must pause live time');
+   for(let n=0;n<5;n++){
+    const x=one.step();
+    assert.equal(x.clockTicks,kicked.clockTicks+n+1);
+    assert.equal(x.originalEventLedger.outstandingDeadBall,false);
+    assert.equal(x.provisionalScore[side],1);
+    assert.equal(x.genuineGoalKickoffs.length,1);
+   }
+   process.stdout.write('ME_628_B06B_H2B1_GOAL_NATIVE_RESTART '+
+    JSON.stringify({side,goalTick:crossed.physicsTick,
+     realKickoffTick:kicked.physicsTick,
+     pausedPhysicsTicks:kicked.pausedGoalPhysicsTicks,
+     provisionalScore:kicked.provisionalScore,
+     source:'real-original-rapier-22',actualShotActorVerified:false,
+     officialResult:null})+'\\n');
+  }finally{one.dispose();two.dispose();}
+ }
+});
+
+test('B06b H2b2a authentic HOME/AWAY goal, new native kickoff, true paused halftime and provisional MINI full-time report',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['home','away']){
+  const run=createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchGoalCrossingSide:side
+  });
+  try{
+   let final=null,half=null,secondKick=null,seenGoal=false,seenResume=false;
+   for(let i=1;i<=4000;i++){
+    const s=run.step();
+    assert.equal(s.physicsTick,i);
+    assert.equal(s.canonical22,true);
+    assert.equal(s.matchAuthority,false);
+    assert.equal(s.officialMatchResult,null);
+    if(s.goalRestartPlacements.length)seenGoal=true;
+    if(s.genuineGoalKickoffs.length)seenResume=true;
+    if(s.halfTime&&!half)half=s.halfTime;
+    if(s.secondHalfKickoff&&!secondKick)secondKick=s.secondHalfKickoff;
+    if(s.final){final=s;break;}
+   }
+   assert.ok(seenGoal&&seenResume,'original goal and native opposing kickoff required');
+   assert.ok(half,'actual first-half end must follow paused goal');
+   assert.ok(secondKick,'independent AWAY second-half kickoff required');
+   assert.ok(final,'true mini full time must occur, no projected stopwatch');
+   assert.equal(half.physicsTick,1200+final.pausedGoalPhysicsTicks);
+   assert.ok(secondKick.tick>half.physicsTick);
+   assert.equal(final.clockTicks,2400);
+   assert.equal(final.final.gameClockTicks,2400);
+   assert.equal(final.final.actualRapierPhysicsTicks,final.physicsTick);
+   assert.equal(final.final.physicallyAuthenticatedGoalKickoffs.length,1);
+   assert.deepEqual(final.provisionalScore,
+    side==='home'?{home:1,away:0}:{home:0,away:1});
+   assert.equal(final.final.winner,side);
+   assert.equal(final.final.provisionalMatchEvents.length,3);
+   assert.deepEqual(final.final.provisionalMatchEvents.map(e=>e.type),
+    ['goal','restart-placement','kickoff-physical-attempt']);
+   assert.equal(final.originalEventLedger.outstandingDeadBall,false);
+   assert.equal(final.realFull90MinutesVerified,false);
+   assert.equal(final.fullFootballActionCoverageVerified,false);
+   assert.equal(final.final.completeFootballGameplayVerified,false);
+   assert.equal(final.final.complete90Minutes,false);
+   assert.equal(final.final.officialMatchResult,null);
+   process.stdout.write('ME_628_B06B_H2B2A_MINI_FULLTIME '+JSON.stringify({
+    side,originalPhysicsTicks:final.physicsTick,
+    playedTicks:final.clockTicks,goalPause:final.pausedGoalPhysicsTicks,
+    genuineKickoffTick:final.genuineGoalKickoffs[0].tick,
+    halftimeTick:half.physicsTick,secondHalfKickoffTick:secondKick.tick,
+    provisionalScore:final.provisionalScore,
+    sourcePositiveShot:false,officialMatchResult:null})+'\\n');
+  }finally{run.dispose();}
+ }
+});
+
+test('B06b H2b2b1 fail-closed: only bounded original HOME/AWAY live-shoe SHOT research can opt in',async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['x','HOME',15,false]){
+  assert.throws(()=>createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchLiveShotSide:side
+  }),TypeError);
+ }
+ assert.throws(()=>createBasicRegulationSessionB06b(R,{
+  researchLiveShotSide:'home'
+ }),/exclusively bounded/);
+ assert.throws(()=>createBasicRegulationSessionB06b(R,{
+  researchHalfTicks:1200,researchLiveShotSide:'away',
+  researchOpeningKickoff:true
+ }),/exclusively bounded/);
+ assert.throws(()=>createBasicRegulationSessionB06b(R,{
+  researchHalfTicks:1200,researchLiveShotSide:'home',
+  researchGoalCrossingSide:'away'
+ }),/exclusively bounded/);
+ assert.throws(()=>createEngine(R,{preset:'roll'},{
+  diagnosticB06bNativeShotSide:'home'
+ }),/native shot/);
+ const shotBall={preset:'roll',x:30,y:0,z:0,vx:0,vy:0,vz:0};
+ assert.throws(()=>createPlayerMovement({
+  researchB06bNativeShotSide:'home',
+  researchB06bHalftimeTick:1200,
+  researchB06bGoalRestartEnabled:true,
+  researchShotAttacker:'away',researchShotBall:shotBall
+ }),TypeError);
+ const defaultEngine=createEngine(R,shotBall);
+ try{
+  assert.equal(defaultEngine.uniformAutonomousActionSnapshot,undefined);
+ }finally{defaultEngine.dispose();}
+ const ordinary=createBasicRegulationSessionB06b(R,{researchHalfTicks:1200});
+ try{
+  assert.equal(ordinary.snapshot().nativePlayerShotResearchEnabled,false);
+  assert.deepEqual(ordinary.snapshot().nativePhysicalShotAttempts,[]);
+ }finally{ordinary.dispose();}
+});
+
+test('B06b H2b2b1 original HOME/AWAY player-native SHOT occurs during B06b live game ticks, not as preloaded ball velocity',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['home','away']){
+  const a=createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchLiveShotSide:side
+  });
+  const b=createBasicRegulationSessionB06b(R,{
+   researchHalfTicks:1200,researchLiveShotSide:side
+  });
+  try{
+   let first=null,peak=0,frames=0,knownExit=null;
+   const initial=a.snapshot();
+   assert.equal(initial.nativePlayerShotResearchEnabled,true);
+   assert.equal(initial.goalFixtureStartsFromPreTickZeroBallVelocity,false);
+   assert.equal(initial.physicsTick,0);
+   assert.equal(initial.clockTicks,0);
+   assert.equal(initial.physicsBall.velocity.x,0);
+   assert.equal(initial.provisionalScore.home,0);
+   assert.equal(initial.provisionalScore.away,0);
+   for(let n=1;n<=125;n++){
+    const x=a.step(),y=b.step();
+    assert.deepEqual(x.physicsBall,y.physicsBall,
+      'two independent original Rapier Worlds must replay deterministically');
+    assert.deepEqual(x.provisionalScore,y.provisionalScore);
+    assert.equal(x.physicsTick,n);
+    assert.equal(x.canonical22,true);
+    assert.equal(x.matchAuthority,false);
+    assert.equal(x.officialMatchResult,null);
+    assert.equal(x.realFull90MinutesVerified,false);
+    peak=Math.max(peak,x.physicsBall.position.z);
+    frames=n;
+    if(x.nativePhysicalShotAttempts.length&&!first){
+     first=x;
+     const shot=x.nativePhysicalShotAttempts[0];
+     assert.equal(shot.tick,n);
+     assert.equal(shot.playerId,side+'-10');
+     assert.equal(shot.team,side);
+     assert.equal(shot.action,'shot');
+     assert.equal(shot.appliedByRapier,true);
+     assert.equal(shot.actualPhysicsImpulseApplied,true);
+     assert.equal(shot.physicalTrigger,'same-tick-real-rapier-shoe-start');
+     assert.equal(shot.shotTarget.physicsTick,n);
+     assert.equal(shot.shotTarget.attemptOnly,true);
+     assert.equal(shot.shotTarget.goalScored,null);
+     assert.equal(shot.officialMatchResult,null);
+     assert.equal(x.originalEventLedger.lastOriginalNativeShot,shot);
+     assert.equal(x.refereeSource.lastVerifiedTouch?.playerId,side+'-10');
+     assert.equal(x.refereeSource.lastVerifiedTouch?.tick,n);
+     assert.equal(x.originalEventLedger.matchEventCount,1);
+     const rec=x.originalEventLedger.matchEvents[0];
+     assert.equal(rec.type,'native-shot-physical-attempt');
+     assert.equal(rec.tick,n);
+     assert.equal(rec.playedTicks,x.clockTicks);
+     assert.equal(rec.actorId,side+'-10');
+     assert.equal(rec.team,side);
+     assert.equal(rec.originalPolicyActionSource,true);
+     assert.equal(rec.originalRapierShoeStart,true);
+     assert.equal(rec.originalRapierSolverManifold,true);
+     assert.equal(rec.actualOriginalBallImpulse,true);
+     assert.equal(rec.noScoringConclusionFromShot,true);
+     assert.equal(rec.officialMatchEvent,false);
+     assert.deepEqual(x.provisionalScore,{home:0,away:0},
+      'an actual SHOT does not automatically count as a GOAL');
+    }
+    if(x.phase==='dead-ball-pending-source-verified-restart'){
+     knownExit=x.refereeSource.lastEvent;
+     assert.ok(knownExit?.kind==='touchline'||knownExit?.kind==='goal-line');
+     break;
+    }
+   }
+   assert.ok(first,'original source-positive live player SHOT required');
+   assert.equal(first.physicsTick,1);
+   assert.ok(frames>=10,'must follow the physical ball after the native shoe');
+   assert.ok(peak>first.physicsBall.position.z+0.03,
+    'original physical SHOT produces measured 3D flight, not an event-only label');
+   const last=a.snapshot();
+   assert.equal(last.nativePlayerShotResearchEnabled,true);
+   assert.equal(last.goalFixtureStartsFromPreTickZeroBallVelocity,false);
+   assert.equal(last.fullFootballActionCoverageVerified,false);
+   assert.equal(last.officialMatchResult,null);
+   assert.equal(last.nativePhysicalShotAttempts[0].playerId,side+'-10');
+   if(knownExit)assert.equal(last.phase,'dead-ball-pending-source-verified-restart');
+   process.stdout.write('ME_628_B06B_H2B2B1_ORIGINAL_SHOT '+JSON.stringify({
+    side,nativeShotTick:first.physicsTick,
+    originalRapierFrames:frames,peakCentreZM:peak,
+    goalOnlyFromSubsequentCrossing:last.provisionalScore,
+    unresolvedBoundary:knownExit?.kind??null,
+    actualOriginalShoe:true,officialResult:null
+   })+'\\n');
+  }finally{a.dispose();b.dispose();}
+ }
+});

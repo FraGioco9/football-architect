@@ -1,0 +1,47 @@
+name: Match Engine M18 expanded genuine initial-ball survey
+on:
+  pull_request:
+    paths:
+      - 'match-engine/tools/audit-expanded-native-pairs-m18.mjs'
+      - 'match-engine/src/expanded-native-pair-survey-m18.mjs'
+      - '.github/workflows/match-engine-m18.yml'
+permissions:
+  contents: read
+jobs:
+  expanded-original-ball-only-survey:
+    if: ${{ github.head_ref == 'feat/628-individual-kinematics-foundation' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact source PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Prove immutable original PR head
+        env:
+          EXPECTED: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED"
+          printf 'M18_EXACT_HEAD %s\n' "$EXPECTED"
+      - name: Node 22 pinned original physics
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: match-engine/package-lock.json
+      - name: Install deterministic original Rapier
+        run: npm ci --prefix match-engine --no-audit --no-fund
+      - name: 600 original 240-tick Rapier ball-only paired cases
+        env:
+          M18_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+          M18_EVIDENCE_PATH: match-engine-m18-evidence.json
+        run: npm --prefix match-engine run audit:expanded-native-pairs
+      - name: Keep exact-head report even for negative native-pair outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: me-628-m18-expanded-original-ball-concurrency
+          path: match-engine/match-engine-m18-evidence.json
+          if-no-files-found: warn
+          retention-days: 30

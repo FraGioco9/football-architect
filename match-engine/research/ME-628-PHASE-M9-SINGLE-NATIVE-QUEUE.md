@@ -1,0 +1,21 @@
+#628 — Phase M9: single original-world native queue for shoe and body physics
+
+## Architectural contract
+
+- One original `Rapier.World` contains the accepted genuine ball, 22 native dynamic player body colliders and the canonical 22 kinematic shoe proxies **only in explicit opt-in DEV research mode** `diagnosticSharedContactEventsEnabled:true`. The mode requires both bridges active, with `diagnosticAutonomousFixtureActionEnabled:false` and `diagnosticAutonomousCarryEnabled:false`. Existing default, shoe-only and body-only modes do not change.
+- There is **one** new `Rapier.EventQueue` and **exactly one** `world.step(sharedContactQueue)` per 60Hz tick. The core drains native collision events and contact-force events once into immutable same-tick samples, then forwards the same authentic samples independently to the existing shoe observer and 22-body observer. Neither observer drains or frees that shared queue; its owner is the core and frees it exactly once. Unshared legacy observation paths are unchanged.
+- Collision categories are explicitly isolated **only in shared research mode**: real ball and shoe collider membership/filter `0x0001/0x0001`, player body membership/filter `0x0020/0x0020`. The ground remains unchanged and is compatible with the ball category. Shoes may physically affect the existing ball; player-body colliders interact with each other, **not** ball/shoes. Mere proximity, same physics tick or body contact can never be turned into a shoe-ball START.
+- `sharedNativeContactSnapshot()` supplies the original physics tick, one-world/one-queue flags, physical native collision/force event counts, genuine shoe-ball START IDs and genuine body START/pair states. All official-match action, tackle, score and possession fields remain false/null.
+
+## Tests and honesty boundary
+
+- M-15 retains the existing M8 opposing-forward bodies and original 60Hz canonical acceleration, hard 0.98m separation, speed bound, native body collision event and bounded solver XY feedback. The SINGLE research-only variation is an **original stationary ball x=-0.25m HOME / x=+0.25m AWAY, staged before tick zero**, so authentic oriented shoe-ball contact can also occur while the original 22 real player-body colliders collide later. Never move or teleport a live ball. One Rapier World / queue and one physical ball, no football action executor. A positive **M9 combined witness REQUIRES** a genuine shoe-ball native START, genuine body-body native START AND an accepted source-bound body response; proximity alone never satisfies it.
+- M-16 is exactly the same 22-player encounter with native body and shoe bridges **OFF**, and must never claim a body or shoe physical witness.
+- A separate same-world **authentic shoe-positive** control places one original stationary Rapier ball at HOME #10's oriented shoe location (another bounded initial physics setup, no injected event), alongside all 22 native body colliders. It compares the true original shoe START evidence and ball trajectory to the accepted shoe-only baseline, proving native shoe observations are not lost or altered by body observers. M-15 separately verifies both event categories actually occur within one controlled session and reports each real onset tick; they need not occur on the same tick.
+- Tests must reject missing/shared-only switches, combined action executor, any synthetic body/tackle/possession signal; verify deterministic 60Hz independent HOME/AWAY and reset/disposal, five accepted original Action LABs, browser interactions and DEV-only route controls. Full exact-head CI required.
+
+## Not yet finished
+
+This certifies **genuine shoe-ball and body-body event routing and an independently checked body feedback in ONE same-ball Rapier world and ONE queue**, including a staged session where both sources produce real events. It does **not** authorize natural football possession, completed pass, player-body tackling, or full 11v11 match physics. The setup remains explicitly staged, and combined gameplay action decisions under spontaneous opposition require further M work. Phase I/T/F and C2–C5/D1–D5 remain OPEN.
+
+PR #633 must remain Draft/HOLD. No main merge, deployment, database writes or new official football authority.

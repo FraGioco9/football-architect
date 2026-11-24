@@ -1,0 +1,40 @@
+name: Match Engine B06b real 90-minute duration (isolated long job)
+on:
+  pull_request:
+    paths:
+      - 'match-engine/tools/audit-full-regulation-b06b-h2.mjs'
+      - 'match-engine/src/basic-match-regulation-b06b.mjs'
+      - '.github/workflows/match-engine-b06b-long.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  authentic-90-minute-ticks:
+    if: ${{ github.head_ref == 'feat/628-individual-kinematics-foundation' || github.ref_name == 'feat/628-individual-kinematics-foundation' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify checked-out source is exact PR head
+        env:
+          EXPECTED: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: match-engine/package-lock.json
+      - run: npm ci --prefix match-engine --no-audit --no-fund
+      - name: Actually execute 324000 played Rapier ticks and native halftime
+        run: npm --prefix match-engine run audit:regulation-90
+      - name: Archive physical duration only (never official match result)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: me-628-b06b-real-90min-physics
+          path: match-engine/b06b-physical-90-report.json
+          if-no-files-found: warn
+          retention-days: 30

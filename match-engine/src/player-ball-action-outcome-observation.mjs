@@ -127,6 +127,94 @@ export function createProvisionalActionOutcomeObserver(fixtureId){
       (target.recipientX-target.originX)*action.impulseNs.x+
        (target.recipientY-target.originY)*action.impulseNs.y<=0
      ))throw new TypeError('Untrusted or fabricated physical pass target');
+   // CROSS is a distinct provisional physical attempt, not a completed
+   // pass, header, reception or a scored goal. Keep the original real
+   // shoe/impulse gates below and reject unauthenticated cross metadata.
+   const cross=action?.crossTarget;
+   if(action?.action==='cross'&&(
+      !cross||cross.source!=='same-tick-canonical-wing-and-live-goal-area-teammate'||
+      cross.physicalCrossAttemptOnly!==true||
+      cross.crossCompleted!==false||
+      cross.officialMatchAction!==false||
+      cross.officialGoal!==false||
+      cross.physicsTick!==physicsTick||
+      cross.originPlayerId!==action.playerId||
+      cross.recipientId!==action.recipientId||
+      cross.team!==action.team||
+      !['originX','originY','targetX','targetY','distanceM','laneClearanceM']
+        .every(k=>finite(cross[k]))||
+      cross.distanceM<8||cross.distanceM>40||
+      cross.laneClearanceM<1.4||
+      Math.abs(cross.distanceM-Math.hypot(
+       cross.targetX-cross.originX,
+       cross.targetY-cross.originY))>1e-6||
+      !action.impulseNs||
+      ![action.impulseNs.x,action.impulseNs.y,action.impulseNs.z]
+       .every(finite)||action.impulseNs.z<=0||
+      (cross.targetX-cross.originX)*action.impulseNs.x+
+       (cross.targetY-cross.originY)*action.impulseNs.y<=0
+    ))throw new TypeError('Untrusted or fabricated physical CROSS target');
+   // B03: only an ACTUAL opponent-proximity-based shoe impulse,
+   // never proof of a successful tackle, interception or possession.
+   const defensive=action?.defensiveTarget;
+   const defensiveAction=['tackle','interception'].includes(action?.action);
+   if(defensiveAction&&(
+      !defensive||
+      defensive.version!=='actions-b03-real-opponent-physical-defensive-attempt-v1'||
+      defensive.kind!==action.action||
+      defensive.actorId!==action.playerId||
+      defensive.team!==action.team||
+      defensive.opponentId===action.playerId||
+      typeof defensive.opponentId!=='string'||
+      !defensive.opponentId.startsWith(action.team==='home'?'away-':'home-')||
+      defensive.physicsTick!==physicsTick||
+      !['opponentBallGapM','observedBallSpeedMps','observedBallVx',
+       'observedBallVy','observedBallX','observedBallY','ownGoalX',
+       'targetX','targetY'].every(k=>finite(defensive[k]))||
+      defensive.opponentBallGapM<0||defensive.opponentBallGapM>3.3||
+      defensive.observedBallSpeedMps<0||
+      Math.abs(defensive.observedBallSpeedMps-
+       Math.hypot(defensive.observedBallVx,defensive.observedBallVy))>1e-6||
+      (defensive.kind==='tackle'&&defensive.observedBallSpeedMps>0.700001)||
+      (defensive.kind==='interception'&&(
+       defensive.observedBallSpeedMps<1.249999||
+       defensive.observedBallVx*(action.team==='home'?1:-1)>-1.249999))||
+      defensive.actualOpposingPlayerObserved!==true||
+      defensive.nativeRapierShoeStartRequired!==true||
+      defensive.physicalAttemptOnly!==true||
+      defensive.tackleWon!==false||
+      defensive.interceptionConfirmed!==false||
+      defensive.officialPossession!==false||
+      defensive.officialMatchAction!==false||
+      defensive.officialResult!==null||
+      !action.impulseNs||![action.impulseNs.x,action.impulseNs.y,
+       action.impulseNs.z].every(finite)||
+      action.impulseNs.x*(action.team==='home'?1:-1)<=0
+     ))throw new TypeError('Untrusted B03 defensive physical attempt');
+   if(!defensiveAction&&defensive!==null&&defensive!==undefined)
+    throw new TypeError('Only real physical defensive actions may carry B03 metadata');
+   const save=action?.saveTarget;
+   if(action?.action==='save'&&(
+      !save||save.source!=='actions-b02-authentic-keeper-foot-parry-v1'||
+      save.physicalSaveAttemptOnly!==true||
+      save.nativeExclusiveShoeRequired!==true||
+      save.saveConfirmed!==false||save.officialSave!==false||
+      save.officialGoal!==false||save.officialPossession!==false||
+      save.actorId!==action.playerId||save.team!==action.team||
+      save.physicsTick!==physicsTick||
+      !['incomingVelocityX','incomingVelocityY','originX','originY','ownGoalX']
+        .every(k=>finite(save[k]))||
+      save.incomingVelocityX*(action.team==='home'?1:-1)>=-0.5||
+      Math.abs(save.ownGoalX)>52.50001||
+      !action.playerId.endsWith('-1')||
+      !action.impulseNs||![action.impulseNs.x,action.impulseNs.y,
+       action.impulseNs.z].every(finite)||
+      action.impulseNs.x*(action.team==='home'?1:-1)<=0
+    ))throw new TypeError('Untrusted goalkeeper SAVE without original shoe parry source');
+   if(action?.action!=='save'&&save!==null&&save!==undefined)
+    throw new TypeError('Non-keeper action cannot advertise a save');
+   if(action?.action!=='cross'&&cross!==null&&cross!==undefined)
+    throw new TypeError('Only true CROSS actions can advertise cross metadata');
    if(action?.action!=='pass'&&target!==null&&target!==undefined)
     throw new TypeError('Non-pass action cannot advertise pass completion');
    if(action&&(

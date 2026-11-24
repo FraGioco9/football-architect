@@ -2,7 +2,8 @@ import {createEngine, initializeRapier, PRESETS, canonicalSnapshot, FIXED_DT, to
 import {drawPitchMarkings,pickObservedPlayerAtCanvasPixel} from '/__fa_match_engine__/pitch-markings.mjs';
 import {createPlayerMovement,currentObservedPlayerAssignments} from '/__fa_match_engine__/player-movement.mjs';
 import {measureBounceHistory,FIFA_TURF_QUALITY_PRO_REFERENCE_M} from '/__fa_match_engine__/rebound-metrics.mjs';
-import {formatNumericValue, stepNumericValue} from '/__fa_match_engine__/numeric-controls.mjs';
+import {formatNumericValue,stepNumericValue,speedToKmh,speedFromKmh}
+ from '/__fa_match_engine__/numeric-controls.mjs';
 import {runPhysicsDiagnostics,BOUNCE_OBSERVATION_SECONDS,ROLL_OBSERVATION_SECONDS,SPIN_OBSERVATION_SECONDS} from '/__fa_match_engine__/physics-diagnostics.mjs';
 import {speedDependentDragCd as speedDependentDragCdForPlot} from '/__fa_match_engine__/aerodynamics.mjs';
 import {reviewAerodynamicCandidate} from '/__fa_match_engine__/aero-model-review.mjs';
@@ -11,31 +12,164 @@ import {runSpinDecayDiagnostics} from '/__fa_match_engine__/spin-decay-qa.mjs';
 import {reviewSpinRetentionEvidence} from '/__fa_match_engine__/spin-retention-evidence.mjs';
 import {reviewLiftInputContributions} from '/__fa_match_engine__/lift-input-qa.mjs';
 import {runContactImpactDiagnostics} from '/__fa_match_engine__/contact-impact-qa.mjs';
-import {mountControlledActionLabs} from '/__fa_match_engine__/action-labs.mjs';
+import {mountControlledActionLabs,createControlledActionLab,projectActiveLabDecisions} from '/__fa_match_engine__/action-labs.mjs';
+import {mountControlledMovementLabs,createControlledMovementLab} from '/__fa_match_engine__/movement-labs.mjs';
+import {SMALL_SIDED_VARIANT_COUNT} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
+import {SOLO_CARRY_PHASES} from '/__fa_match_engine__/solo-carry-phases.mjs';
+import {uniformSoloCarryAttributes}
+ from '/__fa_match_engine__/solo-carry-attribute-calibration.mjs';
 import {prepareFlightPlaybackPair,sampleFlightPlaybackPair,flightPlaybackWallTime} from '/__fa_match_engine__/flight-playback.mjs';
 
 const byId = id => document.getElementById(id);
 const pitch = byId('pitch'), elevation = byId('elevation');
 const fields = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
-const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open'];
+const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open'];
 let rapier, engine, history = [], playing = false, lastFrame = 0, accumulator = 0;
 let physicsTickSnapshot = null;
 let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
 let playersShown=false;
 let inspectedPlayerId=null;
+// All visible scenes use the existing pitch/elevation/transport, never dialogs.
+let activeScene=null,activeLab=null,activeVariantIndex=0;
+let lastInlineFootballAction=null;
+let lastOnFieldAction=new Map(),lastMovementKinds=new Map();
+let onFieldDecisionEvents=[];
+const smallSidedDecisionLabels=Object.freeze({
+ 'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
+ 'support-run':'Support the attack','press-ball':'Close down the ball',
+ 'goalkeeping':'Protect the goal'
+});
+const humanPlayer=id=>id.replace('home-','HOME #').replace('away-','AWAY #');
+function appendDecisionEvent(event){
+ onFieldDecisionEvents.push(event);
+ if(onFieldDecisionEvents.length>40)onFieldDecisionEvents.shift();
+}
+function trackOnFieldDecisionChanges(frame){
+ const rows=projectActiveLabDecisions(frame,activeLab.focus);
+ for(const row of rows){
+  const observedPhase=row.carryPhase??null;
+  const decisionKey=row.kind+'|'+(observedPhase??'');
+  if(lastMovementKinds.get(row.id)!==decisionKey){
+   appendDecisionEvent({tick:frame.physicsTick,id:row.id,
+    label:smallSidedDecisionLabels[row.kind]+
+     (observedPhase?' · '+observedPhase.charAt(0).toUpperCase()+
+       observedPhase.slice(1):''),physical:false});
+   lastMovementKinds.set(row.id,decisionKey);
+  }
+  if(row.actualAction!==null){
+   // Show foot identity ONLY for an exclusive Rapier-confirmed solo action.
+   const realSoloFoot=frame.scenarioId==='carry-solo'&&
+    frame.soloNativeFeet?.exclusivePhysicalStart&&
+    row.actualAction==='carry'?
+     frame.soloNativeFeet.started[0]:null;
+   lastOnFieldAction.set(row.id,{tick:frame.physicsTick,
+    kind:row.actualAction,foot:realSoloFoot});
+   appendDecisionEvent({tick:frame.physicsTick,id:row.id,
+    label:frame.intentDrivenCarry?
+      'Intent '+row.actualAction+' · live proximity · Rapier ball impulse':
+      'Real '+row.actualAction+
+      (realSoloFoot?' · '+realSoloFoot+' foot':'')+
+      ' · Rapier shoe contact',physical:true});
+  }
+ }
+}
+function renderOnFieldDecisions(frame){
+ const list=byId('me-decisions-players'),events=byId('me-decisions-events');
+ const rows=projectActiveLabDecisions(frame,activeLab.focus);
+ byId('me-decisions-count').textContent=activeLab.focus.length+' on field';
+ const fragment=document.createDocumentFragment();
+ for(const id of activeLab.focus){
+  const row=rows.find(x=>x.id===id);
+  const card=document.createElement('div');
+  card.className='me-decision-row';
+  const header=document.createElement('strong');
+  header.textContent=humanPlayer(id);
+  const decision=document.createElement('span');
+  decision.textContent=row?
+    smallSidedDecisionLabels[row.kind]+
+    (row.carryPhase?' · '+row.carryPhase.charAt(0).toUpperCase()+
+       row.carryPhase.slice(1):'')+
+    ' · '+speedToKmh(row.speedMps).toFixed(1)+' km/h'+
+    (row.blockedBy?' · blocked by '+humanPlayer(row.blockedBy):''):
+    'Waiting for first movement tick';
+  card.append(header,decision);
+  if(row){
+   const target=document.createElement('small');
+   target.textContent='Target: '+row.target.x.toFixed(1)+', '+
+    row.target.y.toFixed(1)+' m';
+   card.append(target);
+  }
+  const last=lastOnFieldAction.get(id);
+  if(last){
+   const action=document.createElement('small');
+   action.textContent='Last verified action: '+last.kind+
+    (last.foot?' · '+last.foot+' foot':'')+' · tick '+last.tick;
+   card.append(action);
+  }
+  fragment.append(card);
+ }
+ list.replaceChildren(fragment);
+ byId('me-decisions-event-count').textContent=
+  onFieldDecisionEvents.length+' changes/actions';
+ const history=document.createDocumentFragment();
+ for(const event of onFieldDecisionEvents.toReversed()){
+  const item=document.createElement('li');
+  item.textContent='T'+event.tick+' · '+humanPlayer(event.id)+' · '+event.label;
+  if(event.physical)item.className='me-decision-native';
+  history.append(item);
+ }
+ events.replaceChildren(history);
+}
+const inlinePhysics=s=>Object.freeze({
+ tick:s.physicsTick??s.tick,
+ time:s.timeS??(s.physicsTick??s.tick)*FIXED_DT,
+ ball:s.ball,nearGround:toGroundClearance(s.ball.position.z)<=0.02
+});
+function syncScenarioSurface(){
+ const inline=activeScene!==null;
+ byId('me-inline-side-control').hidden=!inline;
+ byId('me-inline-rating-control').hidden=
+  activeScene?.id!=='carry-solo'||!activeScene.soloCarryLockedPhase;
+ const variable=activeScene?.kind==='action';
+ byId('me-inline-variant-control').hidden=!variable;
+ byId('me-inline-variant-display').textContent=
+  String(activeVariantIndex+1).padStart(2,'0')+' / '+SMALL_SIDED_VARIANT_COUNT;
+ byId('me-inline-observation').hidden=!inline;
+ const showOnField=activeScene?.kind==='action';
+ byId('me-decisions-panel').hidden=!showOnField;
+ byId('me-elevation-panel').hidden=showOnField;
+ byId('advanced-settings').hidden=inline;
+ if(inline)byId('advanced-settings').open=false;
+ byId('players-toggle').hidden=inline;
+ byId('player-controls').hidden=inline||!playersShown;
+}
+function disposeInline(){
+ if(activeLab){activeLab.dispose();activeLab=null;}
+ activeScene=null;
+}
 
 const say = (message, error = false) => {
   byId('status').textContent = message;
   byId('status').classList.toggle('error', error);
 };
 const fmt = x => x.toFixed(2);
+const fmtKmh = mps => fmt(speedToKmh(mps));
+const velocityFields = new Set(['vx','vy','vz']);
+const displayNumericStep = (field,value,direction) => {
+ if(!velocityFields.has(field))return stepNumericValue(field,value,direction);
+ const current=Number(value);
+ if(String(value).trim()===''||!Number.isFinite(current)||current<-216||current>216)
+  return null;
+ const next=current+direction; // 1 km/h per arrow; SI physics remains full precision
+ return next < -216 || next > 216 ? null : formatNumericValue(next);
+};
 // Keep field captions inert: no <label for> activation/focus animation.
 // Only the input itself and its two arrow buttons receive pointer/keyboard input.
 function refreshNumericArrows(field) {
   const input=byId(field);
   for(const button of document.querySelectorAll('[data-me-spin="'+field+'"]')) {
     const direction=Number(button.dataset.direction);
-    button.disabled=stepNumericValue(field,input.value,direction)===null;
+    button.disabled=displayNumericStep(field,input.value,direction)===null;
   }
 }
 function normalizeNumericField(field) {
@@ -46,7 +180,7 @@ function normalizeNumericField(field) {
 }
 function applyNumericStep(field,direction) {
   const input=byId(field);
-  const next=stepNumericValue(field,input.value,direction);
+  const next=displayNumericStep(field,input.value,direction);
   if(next===null)return;
   input.value=next;
   input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -75,7 +209,8 @@ function setupNumericFields() {
 function loadPreset() {
   const defaults = PRESETS[byId('preset').value];
   for (const key of fields) {
-    byId(key).value = formatNumericValue(defaults[key]);
+    byId(key).value = formatNumericValue(velocityFields.has(key)?
+      speedToKmh(defaults[key]):defaults[key]);
     refreshNumericArrows(key);
   }
   byId('compare-result').textContent = '';
@@ -87,11 +222,61 @@ function currentInput() {
   for (const key of fields) {
     const element = byId(key);
     if (element.value.trim() === '') throw new RangeError('Empty value: ' + key);
-    data[key] = Number(element.value);
+    data[key] = velocityFields.has(key)?
+      speedFromKmh(Number(element.value)):Number(element.value);
   }
   return data;
 }
 function restart() {
+  if(activeScene){
+    const {kind,id}=activeScene,side=byId('me-inline-side').value;
+    if(!['home','away'].includes(side))
+      throw new TypeError('Original small-sided situation requires HOME/AWAY');
+    const next=kind==='action'?
+      createControlledActionLab(rapier,id,{shotSide:side,
+       variantIndex:activeVariantIndex,
+       bodyGuardEnabled:id!=='carry-solo',
+       // Visible fixed Carry now runs in a long open-space native research
+       // runway. Only actual same-world Rapier shoe STARTs authorize a push.
+       // Leave the original ordinary 22-player physics unmodified.
+       carryRunwayStart:id==='carry-solo',
+       nativeFixedCarryResearch:id==='carry-solo',
+       // Two real Rapier shoes: after a genuine collision, the active
+       // shoe clears laterally within the 60Hz physical motion caps.
+       // Adopted only for locked Sprint in this DEV Action LAB.
+       soloSprintActiveFootReleaseM:id==='carry-solo'&&
+        activeScene.soloCarryLockedPhase==='sprint'?0.06:0,
+       // The canonical runner looks farther ahead only while the original
+       // Rapier ball is still ahead; touch impulses and shoe cadence stay.
+       soloSprintPursuitLeadM:id==='carry-solo'&&
+        activeScene.soloCarryLockedPhase==='sprint'?0.25:0,
+       // Rejected long-stride remains research-only.
+       soloCarryLockedPhase:activeScene.soloCarryLockedPhase??null,
+       soloCarryPlayerAttributes:activeScene.soloCarryLockedPhase?
+        uniformSoloCarryAttributes(Number(byId('me-inline-rating').value)):null}):
+      createControlledMovementLab(rapier,id,{side});
+    if(activeLab)activeLab.dispose();
+    if(engine){engine.dispose();engine=null;}
+    activeLab=next;
+    lastInlineFootballAction=null;
+    lastOnFieldAction=new Map();lastMovementKinds=new Map();
+    onFieldDecisionEvents=[];
+    physicsTickSnapshot=inlinePhysics(next.snapshot());
+    history=[physicsTickSnapshot];
+    accumulator=0;playing=false;inspectedPlayerId=null;
+    byId('player-inspect-choice').value='';
+    syncScenarioSurface();
+    say('Ready · '+(kind==='action'?next.spec.title:next.scene.spec.title)+
+      (activeScene.soloCarryLockedPhase?' · fixed '+
+       activeScene.soloCarryLockedPhase.toUpperCase()+
+       ' · Carry attributes '+byId('me-inline-rating').value:'')+
+      ' · '+side.toUpperCase()+(kind==='action'?
+       ' · V'+String(activeVariantIndex+1).padStart(2,'0'):'')+
+      ' · original Rapier · DEV only');
+    render();
+    return;
+  }
+  if(activeLab){activeLab.dispose();activeLab=null;}
   const next = createEngine(rapier, currentInput());
   if (engine) engine.dispose();
   engine = next;
@@ -103,18 +288,74 @@ function restart() {
   playing = false;
   byId('compare-result').textContent = '';
   byId('compare-result').hidden = true;
+  syncScenarioSurface();
   say('Ready · ' + ({drop:'Ball Drop',launch:'Ball Launch',roll:'Ball Roll (Grass)',bounce:'Ball Bounce (2 m)'}[engine.scenario.preset]));
   render();
 }
 function advance() {
+  if(activeLab){
+    const old=activeLab.snapshot();
+    if(activeScene.kind==='action'&&old.refereeEvidence?.lastEvent){
+      playing=false;return;
+    }
+    const observed=activeLab.step();
+    if(activeScene.kind==='action')trackOnFieldDecisionChanges(observed);
+    if(activeScene.kind==='action'&&observed.action?.appliedByRapier)
+      lastInlineFootballAction=Object.freeze({
+       team:observed.action.team,action:observed.action.action,
+       sourceTick:observed.physicsTick,
+       contextual:observed.action.decisionContext?.smallSidedChoice!==undefined
+      });
+    const snapshot=inlinePhysics(observed);
+    physicsTickSnapshot=snapshot;
+    history.push(snapshot);
+    if(history.length>1400)history.shift();
+    if(activeScene.kind==='action'&&observed.refereeEvidence?.lastEvent){
+      playing=false;
+      say('Observed physical '+observed.refereeEvidence.lastEvent.kind+
+        ' · dead ball · Reset for another exercise');
+    }
+    return;
+  }
   const snapshot = engine.step();
   physicsTickSnapshot = snapshot;
   playerSnapshot=playerWorld.step(snapshot.ball.position);
   history.push(snapshot);
   if (history.length > 1400) history.shift();
 }
-function play() { playing = true; say('Running'); }
+function play() {
+  if(activeScene?.kind==='action'&&activeLab?.snapshot().refereeEvidence?.lastEvent){
+    playing=false;say('Dead ball · Reset to retry the real Rapier exercise');
+    return;
+  }
+  playing = true; say('Running');
+}
 function pause() { playing = false; say('Paused'); }
+function drawInlinePlayers(ctx,X,Y){
+ const frame=activeLab.snapshot();
+ const all=frame.observedMovementPlayers??frame.players;
+ // Directional LABs reuse the canonical 22-player mover and real Rapier ball,
+ // but display only the observed mover (no invented opponents).
+ const focus=activeScene.kind==='action'?new Set(activeLab.focus):
+  (['turn','brake'].includes(activeScene.id)?
+   new Set([frame.focusId]):null);
+ for(const p of all){
+  if(focus&&!focus.has(p.id))continue;
+  const x=X(p.x),y=Y(p.y);
+  ctx.beginPath();ctx.arc(x,y,p.role==='goalkeeper'?8:7,0,Math.PI*2);
+  ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
+  ctx.fill();ctx.strokeStyle=p.role==='goalkeeper'?'#fbdfaa':'#183f36';
+  ctx.lineWidth=p.role==='goalkeeper'?2.2:1.5;ctx.stroke();
+  if(Number.isFinite(p.facingRad)){
+   ctx.beginPath();ctx.moveTo(x,y);
+   ctx.lineTo(x+Math.cos(p.facingRad)*11,y+Math.sin(p.facingRad)*11);
+   ctx.strokeStyle='#142e29';ctx.lineWidth=1.6;ctx.stroke();
+  }
+  ctx.fillStyle='#102d2e';ctx.textAlign='center';
+  ctx.textBaseline='middle';ctx.font='bold 9px system-ui';
+  ctx.fillText(p.id.split('-')[1],x,y);
+ }
+}
 function drawPlayers(ctx,X,Y){
   for(const p of playerSnapshot.players){
     const x=X(p.x),y=Y(p.y),pressing=Object.values(playerSnapshot.pressers).includes(p.id);
@@ -153,7 +394,7 @@ function renderPlayerReadout(){
   byId('player-inspection').textContent=current?
     (current.team==='home'?'Home #':'Away #')+current.number+
     ' · '+current.role+' · ('+fmt(current.x)+', '+fmt(current.y)+') m'+
-    ' · '+fmt(Math.hypot(current.vx,current.vy))+' m/s':'Select a player';
+    ' · '+fmtKmh(Math.hypot(current.vx,current.vy))+' km/h':'Select a player';
   const duty=current?currentObservedPlayerAssignments(playerSnapshot,current.id):null;
   byId('player-inspection-duty').textContent=duty?
     (duty.assignments.length?duty.assignments.join(' + '):duty.fallback):
@@ -163,7 +404,8 @@ function renderPlayerReadout(){
 function topDown() {
   const c = pitch.getContext('2d'), w = pitch.width, h = pitch.height;
   const {X, Y} = drawPitchMarkings(c, w, h);
-  if(playersShown)drawPlayers(c,X,Y);
+  if(activeLab)drawInlinePlayers(c,X,Y);
+  else if(playersShown)drawPlayers(c,X,Y);
   if (!physicsTickSnapshot) return;
   c.strokeStyle = '#ffda84'; c.lineWidth = 2.6; c.beginPath();
   history.forEach((s, i) => {
@@ -209,24 +451,103 @@ function sideView() {
 function render() {
   if (!physicsTickSnapshot) return;
   topDown(); sideView();
-  if(playersShown)renderPlayerReadout();
+  if(playersShown&&!activeLab)renderPlayerReadout();
   const s = physicsTickSnapshot, p = s.ball.position, v = s.ball.velocity;
-  byId('tick').textContent = fmt(s.time) + ' s';
+  byId('tick').textContent = activeLab?
+    'Tick '+s.tick+' · '+fmt(s.time)+' s':fmt(s.time)+' s';
   byId('height').textContent = fmt(toGroundClearance(p.z)) + ' m';
   byId('position').textContent = [p.x, p.y, toGroundClearance(p.z)].map(fmt).join(', ');
-  byId('velocity').textContent = [v.x, v.y, v.z].map(fmt).join(', ');
+  byId('velocity').textContent = [v.x, v.y, v.z].map(fmtKmh).join(', ');
   byId('ground').textContent = s.nearGround ? 'On ground' : 'Airborne';
-  byId('ground-speed').textContent = fmt(Math.hypot(v.x,v.y)) + ' m/s';
+  byId('ground-speed').textContent = fmtKmh(Math.hypot(v.x,v.y)) + ' km/h';
   // LAB-05: display measured first rebound only after observing its apex.
   // Do not conflate the measured simulation with FIFA turf certification.
   const bounceResult=byId('bounce-result');
-  const firstPeak=engine.scenario.preset==='bounce'
+  const firstPeak=!activeLab&&engine.scenario.preset==='bounce'
     ? measureBounceHistory(history).firstReboundHeightM : null;
   bounceResult.hidden=firstPeak===null;
   if(firstPeak!==null) {
     const {min,max}=FIFA_TURF_QUALITY_PRO_REFERENCE_M;
     bounceResult.textContent='1st rebound '+fmt(firstPeak)+' m'+
       (firstPeak>=min&&firstPeak<=max?' · reference range':' · outside reference');
+  }
+  if(activeLab){
+    const f=activeLab.snapshot();
+    if(activeScene.kind==='action')renderOnFieldDecisions(f);
+    const detail=activeScene.kind==='action'?
+      '· '+f.genuinePhysicalPlayerCount+' real physical '+(f.genuinePhysicalPlayerCount===1?'player':'players')+
+      ' · source events '+f.eventCount+
+      (lastInlineFootballAction?' · last '+
+       lastInlineFootballAction.team.toUpperCase()+' '+
+       lastInlineFootballAction.action.toUpperCase()+
+       (f.intentDrivenCarry?' gameplay intent / Rapier ball impulse':
+        ' native shoe/impulse')+
+       (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
+      (f.nativeFixedCarryResearch?' · Native Carry · real two-shoe Rapier START required':'')+
+      (f.soloSprintActiveFootReleaseM===0.06?
+       ' · native active-foot release 6 cm (DEV Sprint only)':'')+
+      (f.soloSprintPursuitLeadM===0.25?
+       ' · adaptive ball-gap pursuit (DEV Sprint only)':'')+
+      (f.intentDrivenCarry?' · Solo Carry intent (no shoe-contact claims)':'')+
+      (f.soloCarryLockedPhase?
+       ' · phase '+f.soloCarryLockedPhase.toUpperCase()+' (locked)'+
+       ' · attributes '+f.soloCarryPlayerAttributes.speed+'/99'+
+       ' [speed/agility/dribbling/technique]':'')+
+      (f.soloCarryLockedPhase&&f.soloCarryPhase?
+       ' · player '+fmtKmh(f.soloCarryPhase.playerSpeedMps)+' km/h'+
+       ' · ball '+fmtKmh(f.soloCarryPhase.ballSpeedMps)+' km/h'+
+       ' · gap '+f.soloCarryPhase.ballGapM.toFixed(2)+' m'+
+       ' · '+(f.nativeFixedCarryResearch?'native shoe-confirmed Rapier impulses ':'genuine Rapier carry impulses ')+f.soloCarryMeasurements.appliedCarryImpulses+
+       (f.soloCarryMeasurements?
+        ' · ball forward '+f.soloCarryMeasurements.ballForwardM.toFixed(2)+' m'+
+        ' · peak player '+fmtKmh(f.soloCarryMeasurements.peakPlayerSpeedMps)+' km/h'+
+        ' · peak ball '+fmtKmh(f.soloCarryMeasurements.peakBallSpeedMps)+' km/h'+
+        ' · mean gap '+f.soloCarryMeasurements.meanGapM.toFixed(2)+' m'+
+        ' · gap >1.5m '+f.soloCarryMeasurements.observedOutOfReachTicks+' ticks'+
+        ' · recoveries '+f.soloCarryMeasurements.observedRealRecoveryEpisodes+
+        (f.nativeFixedCarryResearch?
+         ' · native impulses last ≤2s '+f.soloCarryMeasurements.nativeRecent2sImpulseCount+
+         ' · mean native impulse gap '+
+          (f.soloCarryMeasurements.nativeMeanImpulseGapS===null?'—':
+           f.soloCarryMeasurements.nativeMeanImpulseGapS.toFixed(2)+' s')+
+         ' · mean added impulse '+
+          (f.soloCarryMeasurements.nativeMeanAddedImpulseNs===null?'—':
+           f.soloCarryMeasurements.nativeMeanAddedImpulseNs.toFixed(2)+' N·s'):'')+
+        (f.soloCarryMeasurements.lateSpeedSampleTicks?
+         ' · observed late pace '+fmtKmh(f.soloCarryMeasurements.lateMeanSpeedMps)+' km/h':''):''):'')+
+      (f.nativeDribbleAudit?' · real native carries '+
+       f.nativeDribbleAudit.appliedCarryActions+
+       (f.nativeDribbleAudit.soloCarry?
+        ' · shoe contacts '+f.nativeDribbleAudit.nativePhysicalShoeStarts+
+        ' · STARTs without Carry '+
+         f.nativeDribbleAudit.nativeShoeStartsWithoutCarryImpulse+
+        ' · overlap frames '+
+         f.nativeDribbleAudit.nativeBothFeetActiveTicks:'')+
+       ' · native releases '+f.nativeDribbleAudit.attackerShoeEnds+
+       ' · independent recontacts '+f.nativeDribbleAudit.independentRecontacts+
+       ' · ball path '+f.nativeDribbleAudit.ballPath2DM.toFixed(2)+' m'+
+       ' · peak lift '+(f.nativeDribbleAudit.peakGroundClearanceM*100).toFixed(1)+' cm'+
+       (f.nativeDribbleAudit.meanAppliedTouchIntervalTicks===null?'':
+        ' · touch gap '+(f.nativeDribbleAudit.meanAppliedTouchIntervalTicks/60).toFixed(2)+' s'): '')+
+      (f.smallSidedNativeBodyGuard?.lowerLegBallContacts.length?
+       ' · real body–ball '+f.smallSidedNativeBodyGuard.lowerLegBallContacts.length:'')+
+      (f.smallSidedNativeBodyGuard?.nativeOpposingTorsoPairs.length?
+       ' · opposing body pairs '+f.smallSidedNativeBodyGuard.nativeOpposingTorsoPairs.length:'')+
+      (f.refereeEvidence?.lastEvent?' · '+
+       f.refereeEvidence.lastEvent.kind.toUpperCase()+' verified crossing':'')+
+      (f.matchTimeline?' · provisional '+
+       f.matchTimeline.provisionalScore.home+'–'+
+       f.matchTimeline.provisionalScore.away:''):
+      '· directional movement '+(f.focusId??'')+
+      ' · live Rapier ball · tick '+f.tick+
+      ' · speed '+fmtKmh(f.readout.focusSpeedMps)+' km/h'+
+      ' · turn '+f.readout.totalTurnRad.toFixed(2)+' rad'+
+      ' · brake peak '+f.readout.maxObservedBrakeMps2.toFixed(2)+' m/s²'+
+      ' · path '+f.readout.pathM.toFixed(2)+' m'+
+      (f.readout.witnessed?' · movement witnessed':' · movement pending')+
+      ' · no shoe-ball action or possession claimed';
+    byId('me-inline-observation').textContent=detail+
+      ' · no official result';
   }
 }
 // ME-PHYS-03 diagnostic simulations are independent of the active lab engine.
@@ -253,7 +574,7 @@ function drawRollComparison(runs) {
     c.fillText(String(t),x(t),h-9);
   }
   c.textAlign='right';
-  for(const v of [0,2,4,6])c.fillText(String(v),left-7,y(v)+4);
+  for(const v of [0,2,4,6])c.fillText(fmtKmh(v),left-7,y(v)+4);
   const colors=['#93dccc','#ffd47c','#82aaf0'];
   for(const [i,run] of runs.entries()){
     c.strokeStyle=colors[i];c.lineWidth=i===1?3:2;
@@ -266,11 +587,11 @@ function drawRollComparison(runs) {
     const legendX=left+i*155;
     c.fillStyle=colors[i];c.fillRect(legendX,13,15,3);
     c.font='11px system-ui';c.textAlign='left';
-    c.fillText(run.launchSpeedMps.toFixed(0)+' m/s'+(run.launchSpeedMps===4?' · base':''),legendX+20,19);
+    c.fillText(fmtKmh(run.launchSpeedMps)+' km/h'+(run.launchSpeedMps===4?' · base':''),legendX+20,19);
   }
 }
 
-// Compare measured contact-point sliding velocity for identical 4 m/s launches.
+// Compare measured contact-point sliding velocity for identical 14.4 km/h launches.
 function drawSpinComparison(trials) {
   const canvas=byId('metrics-spin-chart'),c=canvas.getContext('2d');
   const w=canvas.width,h=canvas.height,left=38,right=w-12,top=37,bottom=h-27;
@@ -282,7 +603,7 @@ function drawSpinComparison(trials) {
   c.fillStyle='#c5dee2';c.font='12px system-ui';c.textAlign='center';
   for(const t of [0,2,4,7])c.fillText(String(t),x(t),h-9);
   c.textAlign='right';
-  for(const v of [0,2,4])c.fillText(String(v),left-7,y(v)+4);
+  for(const v of [0,2,4])c.fillText(fmtKmh(v),left-7,y(v)+4);
   const colors=['#93dccc','#ffd47c','#82aaf0'];
   for(const [i,trial] of trials.entries()){
     c.strokeStyle=colors[i];c.lineWidth=trial.spinFraction===0?3:2;
@@ -310,7 +631,7 @@ function renderSpinMetrics(trials) {
       run.transitionTimeS===null?'Not observed':fmt(run.transitionTimeS),
       run.stoppedAtS===null?'Not reached':fmt(run.stoppedAtS),
       fmt(travel),
-      fmt(one.speedMps)+' m/s',
+      fmtKmh(one.speedMps)+' km/h',
       one.energyRetainedFraction===null?'—':fmt(one.energyRetainedFraction*100)+'%'
     ]);
   }
@@ -321,7 +642,7 @@ function renderSpinMetrics(trials) {
       fmt(item.timeS)+' s',
       ...trials.map(run=>{
         const p=run.checkpoints.find(v=>v.timeS===item.timeS);
-        return fmt(p.speedMps)+' / '+fmt(p.slipMps)+' / '+fmt(p.angularSpeedRadS)+' / '+fmt(p.totalKineticJ);
+        return fmtKmh(p.speedMps)+' / '+fmtKmh(p.slipMps)+' / '+fmt(p.angularSpeedRadS)+' / '+fmt(p.totalKineticJ);
       })
     ]);
   }
@@ -339,7 +660,7 @@ function drawNaturalGrassComparison(trials) {
   c.fillStyle='#c5dee2';c.font='12px system-ui';c.textAlign='center';
   for(const t of [0,4,8,12])c.fillText(String(t),x(t),h-9);
   c.textAlign='right';
-  for(const speed of [0,2,4])c.fillText(String(speed),left-7,y(speed)+4);
+  for(const speed of [0,2,4])c.fillText(fmtKmh(speed),left-7,y(speed)+4);
   const colors=['#93dccc','#ffd47c','#82aaf0'];
   for(const [i,trial] of trials.entries()){
     c.strokeStyle=colors[i];c.lineWidth=trial.isDefault?3:2;c.beginPath();
@@ -366,7 +687,7 @@ function renderNaturalGrassMetrics(grass) {
     tableRow(tbody,[
       fmt(trial.configuredDecelerationMps2)+(trial.isDefault?' · default':''),
       trial.observedDecelerationMps2===null?'Not observed':fmt(trial.observedDecelerationMps2),
-      fmt(trial.steadyWindowMaxSlipMps),
+      fmtKmh(trial.steadyWindowMaxSlipMps),
       trial.stoppedAtS===null?'Not observed':fmt(trial.stoppedAtS),
       fmt(distance),
       trial.isDefault?'Baseline':(difference>=0?'+':'')+fmt(difference)+' m'
@@ -379,7 +700,7 @@ function renderNaturalGrassMetrics(grass) {
       fmt(first.timeS)+' s',
       ...grass.trials.map(trial=>{
         const value=trial.checkpoints.find(p=>p.timeS===first.timeS);
-        return fmt(value.speedMps)+' / '+fmt(value.distanceM)+' / '+fmt(value.contactSlipMps);
+        return fmtKmh(value.speedMps)+' / '+fmt(value.distanceM)+' / '+fmtKmh(value.contactSlipMps);
       })
     ]);
   }
@@ -451,7 +772,7 @@ function drawAirDragComparison(comparison) {
   c.fillStyle='#c5dee2';c.font='12px system-ui';c.textAlign='center';
   for(const t of [0,1,2])c.fillText(String(t),x(t),h-9);
   c.textAlign='right';
-  for(const v of [0,2,4,6])c.fillText(String(v),left-7,y(v)+4);
+  for(const v of [0,2,4,6])c.fillText(fmtKmh(v),left-7,y(v)+4);
   for(const [index,flight,label,color] of [
     [0,comparison.baseline,'Cd=0 baseline','#93dccc'],
     [1,comparison.dragOnly,'Cd=0.24 experimental','#ffd47c']
@@ -505,7 +826,7 @@ function drawSpeedDragCurve(report) {
   c.strokeStyle='#587079';c.lineWidth=1;
   c.beginPath();c.moveTo(left,top);c.lineTo(left,bottom);c.lineTo(right,bottom);c.stroke();
   c.fillStyle='#c5dee2';c.font='11px system-ui';c.textAlign='center';
-  for(const v of [0,7,12,19,32,35])c.fillText(String(v),x(v),h-9);
+  for(const v of [0,7,12,19,32,35])c.fillText(fmtKmh(v),x(v),h-9);
   c.textAlign='right';
   for(const v of [0,0.2,0.4])c.fillText(v.toFixed(2),left-7,y(v)+4);
   c.strokeStyle='#93dccc';c.lineWidth=2;c.beginPath();
@@ -517,7 +838,7 @@ function drawSpeedDragCurve(report) {
   }
   c.font='11px system-ui';c.fillStyle='#93dccc';c.textAlign='left';
   c.fillText('Hypothesis / interpolated',left+4,17);
-  c.fillStyle='#ffd47c';c.fillText('Measured: 19 & 32 m/s',left+240,17);
+  c.fillStyle='#ffd47c';c.fillText('Measured: 68.4 & 115.2 km/h',left+240,17);
 }
 function drawSpeedDragRange(report) {
   const canvas=byId('metrics-speed-range-chart'),c=canvas.getContext('2d');
@@ -528,9 +849,9 @@ function drawSpeedDragRange(report) {
   c.strokeStyle='#587079';c.lineWidth=1;
   c.beginPath();c.moveTo(left,top);c.lineTo(left,bottom);c.lineTo(right,bottom);c.stroke();
   c.fillStyle='#c5dee2';c.font='11px system-ui';c.textAlign='center';
-  for(const v of [7,15,30])c.fillText(String(v),x(v),h-9);
+  for(const v of [7,15,30])c.fillText(fmtKmh(v),x(v),h-9);
   c.textAlign='right';
-  for(const v of [0,20,40,60])c.fillText(String(v),left-7,y(v)+4);
+  for(const v of [0,20,40,60])c.fillText(fmtKmh(v),left-7,y(v)+4);
   for(const [i,key,label,color] of [
     [0,'zero','Cd=0','#93dccc'],
     [1,'fixed','Cd=0.24','#ffd47c'],
@@ -555,7 +876,7 @@ function renderSpeedDragMetrics(report) {
     for(const [key,label] of [['zero','Cd=0'],['fixed','Cd=0.24'],['variable','Cd(v)']]){
       const run=trial[key];
       tableRow(rows,[
-        fmt(trial.launchVxMps),label,fmt(run.initialCd),fmt(run.cdAtOneSecond),
+        fmtKmh(trial.launchVxMps),label,fmt(run.initialCd),fmt(run.cdAtOneSecond),
         run.observedFirstContactTimeS===null?'Not observed':fmt(run.observedFirstContactTimeS),
         run.observedFirstContactDistanceM===null?'Not observed':fmt(run.observedFirstContactDistanceM),
         fmt(run.observedApex.heightM),fmt(run.mechanicalEnergyLostAtOneSecondJ)
@@ -566,13 +887,13 @@ function renderSpeedDragMetrics(report) {
         const found=trial[k].checkpoints.find(q=>q.timeS===p.timeS);
         return found?fmt(found.clearanceM)+' / '+fmt(found.distanceM):'Not observed';
       };
-      tableRow(points,[fmt(trial.launchVxMps),fmt(p.timeS)+' s',
+      tableRow(points,[fmtKmh(trial.launchVxMps),fmt(p.timeS)+' s',
         cell('zero'),cell('fixed'),cell('variable')]);
     }
   }
   byId('metrics-speed-note').textContent=
-    'Experimental continuous Cd(v) sensitivity; only 19/32 m/s Cd reference values '+
-    'and the approximate 12 m/s transition are supported by the cited study. '+
+    'Experimental continuous Cd(v) sensitivity; only 68.4/115.2 km/h Cd reference values '+
+    'and the approximate 43.2 km/h transition are supported by the cited study. '+
     'Low-speed knots and interpolation are hypotheses. Energy lost is measured '+ 
     'mechanical energy change by 1s (includes Rapier numerical effects), not isolated aerodynamic work. '+
     'No wind/Magnus, no active-world mutation, normal LAB-02 remains Cd=0, one universal grass model.';
@@ -694,7 +1015,7 @@ function renderCombinedFlightMetrics(report) {
     for(const mode of report.modes){
       const r=trial[mode.key];
       tableRow(rows,[
-        fmt(trial.vxMps),trial.spinLabel+' ('+(trial.spinRps===0?'0':'±'+fmt(trial.spinRps))+')',
+        fmtKmh(trial.vxMps),trial.spinLabel+' ('+(trial.spinRps===0?'0':'±'+fmt(trial.spinRps))+')',
         mode.label,fmt(r.cdAtOne),fmt(r.clAtOne),fmt(r.lateralAtOneM),
         fmt(r.apexHeightM),
         r.firstFlightDistanceM===null?'Not observed':fmt(r.firstFlightDistanceM),
@@ -707,7 +1028,7 @@ function renderCombinedFlightMetrics(report) {
         const cp=trial[key].checkpoints.find(p=>p.timeS===timeS);
         return cp?.observed?fmt(cp.lateralM)+' / '+fmt(cp.heightM):'Not observed';
       };
-      tableRow(points,[fmt(trial.vxMps),trial.spinLabel,fmt(timeS)+' s',...keys.map(cell)]);
+      tableRow(points,[fmtKmh(trial.vxMps),trial.spinLabel,fmt(timeS)+' s',...keys.map(cell)]);
     }
   }
   byId('metrics-combined-note').textContent=
@@ -784,7 +1105,7 @@ function renderCalibrationEvidence(report){
     side=byId('metrics-calibration-side-rows');
   drag.replaceChildren();side.replaceChildren();
   for(const point of report.dragAnchors)
-    tableRow(drag,[fmt(point.airspeedMps),fmt(point.measuredCd),
+    tableRow(drag,[fmtKmh(point.airspeedMps),fmt(point.measuredCd),
       fmt(point.prototypeCd),fmt(point.signedDifference)]);
   for(const point of report.sideAnchors)
     tableRow(side,[fmt(point.meanSpinParameter),fmt(point.measuredMeanCs),
@@ -838,7 +1159,7 @@ function renderUniversalBallReadiness(report) {
     tableRow(gates,[gate.name,gate.state.toUpperCase(),gate.reason]);
   }
   byId('metrics-universal-range-note').textContent=
-    'One physical Trionda specimen, A-90 vs B-90 static orientations at 30 m/s '+
+    'One physical Trionda specimen, A-90 vs B-90 static orientations at 108 km/h '+
     'and 30°: modeled range difference '+fmt(report.orientationSpanM)+
     ' m ('+fmt(report.orientationSpanPercentOfMean)+'% of the mean). '+
     'Published results are simulations from wind-tunnel Cd(v), NOT observed landings.';
@@ -959,7 +1280,7 @@ function drawLiteratureFlightTrajectories(report,vxMps){
   const scale=draw('metrics-literature-topdown','top');
   draw('metrics-literature-elevation','side');
   byId('metrics-literature-trajectory-note').textContent=
-    speed+' m/s (forward X launch), vz=10 m/s, 0/±6 rev/s Z; '+
+    fmtKmh(speed)+' km/h (forward X launch), vz=36 km/h, 0/±6 rev/s Z; '+
     'top-down 1:1 axes ('+scale.toFixed(1)+' px per metre, speed-specific zoom). '+
     'Teal = previous, amber = candidate, gray = no spin; solid +Z / dashed −Z; '+
     'dot = 1 s, cross = first ground contact. All paths stop at contact. '+
@@ -1163,7 +1484,7 @@ function renderAerodynamicDecisionReview(){
   rows.replaceChildren();
   for(const point of audit.rows){
     tableRow(rows,[
-      fmt(point.speedMps)+' m/s',
+      fmtKmh(point.speedMps)+' km/h',
       fmt(point.spinRps)+' rev/s',
       point.spinParameter.toFixed(3),
       point.previousCl.toFixed(3)+' / '+point.candidateCl.toFixed(3),
@@ -1172,7 +1493,7 @@ function renderAerodynamicDecisionReview(){
     ]);
   }
   byId('metrics-aero-review-verdict').textContent=
-    audit.decision+' · at 30 m/s and 6 rev/s, lift coefficient '+
+    audit.decision+' · at 108 km/h and 6 rev/s, lift coefficient '+
     audit.highSpeed.previousCl.toFixed(3)+' (previous) versus '+
     audit.highSpeed.candidateCl.toFixed(3)+' (candidate), '+
     audit.highSpeed.liftRatio.toFixed(2)+'× at the identical instantaneous speed. '+
@@ -1233,8 +1554,8 @@ function renderSpinAxisDiagnostics(report){
   ctx.fillStyle='#ffd47c';ctx.fillText('Topspin (+Y)',left+78,top+14);
   ctx.fillStyle='#93dccc';ctx.fillText('Backspin (−Y)',left+200,top+14);
   byId('metrics-spin-axis-note').textContent=
-    report.independentWorlds+' isolated 60 Hz Rapier flights; launch X 15 m/s, '+
-    'VZ 10 m/s, 6 rev/s or zero. All values are previous / candidate. '+
+    report.independentWorlds+' isolated 60 Hz Rapier flights; launch X 54 km/h, '+
+    'VZ 36 km/h, 6 rev/s or zero. All values are previous / candidate. '+
     report.assumption+' Gameplay approved: NO.';
 }
 
@@ -1299,13 +1620,13 @@ function renderContactImpactDiagnostics(report){
     const pre=item.pre,post=item.post;
     tableRow(rows,[
       item.label,
-      fmt(pre.verticalSpeedMps),
-      fmt(post.verticalSpeedMps),
+      fmtKmh(pre.verticalSpeedMps),
+      fmtKmh(post.verticalSpeedMps),
       fmt(item.effectiveStepRestitution),
       item.firstReboundHeightM===null?'Not observed':fmt(item.firstReboundHeightM),
-      fmt(pre.contactSlipMps.magnitude),
-      fmt(post.contactSlipMps.magnitude),
-      fmt(post.velocityMps.x),
+      fmtKmh(pre.contactSlipMps.magnitude),
+      fmtKmh(post.contactSlipMps.magnitude),
+      fmtKmh(post.velocityMps.x),
       fmt(item.deltaSpinRevS),
       fmt(item.energyRetainedFraction*100)+'%',
       fmt(item.observedEnergyGainJ)
@@ -1313,7 +1634,7 @@ function renderContactImpactDiagnostics(report){
   }
   byId('metrics-contact-impact-note').textContent=
     report.independentWorlds+' disposable 60 Hz Rapier impact worlds; '+
-    '4 m/s forward, 2 m underside drop, 6 rev/s signed spin or zero, '+
+    '14.4 km/h forward, 2 m underside drop, 6 rev/s signed spin or zero, '+
     'one fixed grass collider. '+report.limitation+
     ' Calibrated to real turf: NO. Gameplay approved: NO.';
 }
@@ -1371,7 +1692,7 @@ function renderLiteratureCandidate(report){
   const pair=(a,b)=>fmt(a)+' / '+fmt(b);
   for(const entry of report.cases){
     tableRow(rows,[
-      fmt(entry.vxMps)+' m/s',entry.spinLabel,
+      fmtKmh(entry.vxMps)+' km/h',entry.spinLabel,
       pair(entry.current.cdAtOne,entry.literature.cdAtOne),
       pair(entry.current.clAtOne,entry.literature.clAtOne),
       pair(entry.current.lateralAtOneM,entry.literature.lateralAtOneM),
@@ -1411,7 +1732,7 @@ function renderLiteratureCandidate(report){
     c.stroke();
   });
   c.font='10px system-ui';c.textAlign='left';
-  c.fillStyle='#93dccc';c.fillText('Current Cl (20 m/s)',left,15);
+  c.fillStyle='#93dccc';c.fillText('Current Cl (72 km/h)',left,15);
   c.fillStyle='#ffd47c';c.fillText('Candidate Cl',left+185,15);
 }
 
@@ -1439,7 +1760,7 @@ function renderPhysicsMetrics(report) {
     const distance=run.distanceToStopM??run.finalDistanceM;
     const difference=distance-baselineDistance;
     tableRow(rollBody,[
-      fmt(run.launchSpeedMps)+' m/s',
+      fmtKmh(run.launchSpeedMps)+' km/h',
       run.stoppedAtS===null?'Not reached':fmt(run.stoppedAtS),
       fmt(distance),
       fmt(run.finalPositionM.x)+', '+fmt(run.finalPositionM.y),
@@ -1451,8 +1772,8 @@ function renderPhysicsMetrics(report) {
   for(const checkpoint of report.rolling[0].checkpoints){
     const values=report.rolling.map(run=>{
       const point=run.checkpoints.find(p=>p.timeS===checkpoint.timeS);
-      return fmt(point.speedMps)+' / '+fmt(point.distanceM)+' / '+
-        (point.slipMps===null?'—':fmt(point.slipMps));
+      return fmtKmh(point.speedMps)+' / '+fmt(point.distanceM)+' / '+
+        (point.slipMps===null?'—':fmtKmh(point.slipMps));
     });
     tableRow(checkpointBody,[fmt(checkpoint.timeS)+' s',...values]);
   }
@@ -1512,7 +1833,7 @@ function compareReplay() {
   } catch (error) { say(error.message, true); }
 }
 function frame(now) {
-  if (engine && playing) {
+  if ((engine||activeLab) && playing) {
     accumulator += Math.min(Math.max(0, now - lastFrame) / 1000, 0.08) * Number(byId('speed').value);
     let iterations = 0;
     while (accumulator >= FIXED_DT && iterations < 24) {
@@ -1535,7 +1856,11 @@ function setupDropdowns() {
     const value = trigger.querySelector('span');
     const options = [...menu.querySelectorAll('[role="option"][data-value]')];
     if (!input || !trigger || !menu || !value || !options.length) throw new Error('Malformed lab dropdown');
-    function selectedIndex() { return Math.max(0, options.findIndex(option => option.dataset.value === input.value)); }
+    function selectedIndex(){
+      const key=root.dataset.meDropdown==='preset'&&root.dataset.selectedScene?
+        root.dataset.selectedScene:input.value;
+      return Math.max(0,options.findIndex(option=>option.dataset.value===key));
+    }
     function update() {
       const selected = options[selectedIndex()];
       value.textContent = selected.textContent;
@@ -1562,12 +1887,24 @@ function setupDropdowns() {
       focusOption(index);
     }
     function choose(option) {
-      if (!options.includes(option)) return;
-      const changed = input.value !== option.dataset.value;
-      input.value = option.dataset.value;
-      update();
-      close(true);
-      if (changed) input.dispatchEvent(new Event('change', {bubbles: true}));
+      if(!options.includes(option))return;
+      const chosen=option.dataset.value;
+      if(root.dataset.meDropdown==='preset'&&
+         /^(action|movement):/.test(chosen)){
+        // Keep physical ball preset intact when a selected scenario opens
+        // the correct original Action/Movement runner.
+        root.dataset.selectedScene=chosen;
+        update();close(true);
+        launchSelectedScenario(chosen);
+        return;
+      }
+      const wasScene=root.dataset.meDropdown==='preset'&&
+        root.dataset.selectedScene!==undefined;
+      if(root.dataset.meDropdown==='preset')delete root.dataset.selectedScene;
+      const changed=input.value!==chosen||wasScene;
+      input.value=chosen;
+      update();close(true);
+      if(changed)input.dispatchEvent(new Event('change',{bubbles:true}));
     }
     trigger.addEventListener('click', () => {
       if (menu.hidden) open();
@@ -1608,6 +1945,10 @@ function setupDropdowns() {
     document.addEventListener('pointerdown', event => {
       if (!root.contains(event.target)) close();
     });
+    if(root.dataset.meDropdown==='preset')
+      root.addEventListener('lab:restore-ball-scenario',()=>{
+        delete root.dataset.selectedScene;update();
+      });
     update();
     dropdowns.push({close});
   }
@@ -1631,7 +1972,7 @@ byId('player-inspect-choice').addEventListener('change',()=>{
  topDown();
 });
 pitch.addEventListener('click',event=>{
- if(!playersShown||!physicsTickSnapshot)return;
+ if(activeLab||!playersShown||!physicsTickSnapshot)return;
  const rect=pitch.getBoundingClientRect();
  if(rect.width<=0||rect.height<=0||
    event.clientX<rect.left||event.clientX>rect.right||
@@ -1647,20 +1988,148 @@ pitch.addEventListener('click',event=>{
  renderPlayerReadout();
  topDown();
 });
-byId('preset').addEventListener('change', () => { loadPreset(); if (rapier) { try { restart(); } catch (e) { say(e.message, true); } } });
+byId('preset').addEventListener('change', () => {
+  disposeInline();loadPreset();
+  if (rapier) { try { restart(); } catch (e) { say(e.message, true); } }
+});
+byId('me-inline-side').addEventListener('change',()=>{
+  if(!activeScene||!rapier)return;
+  try{restart();}catch(e){playing=false;say(e.message,true);}
+});
+byId('me-inline-rating').addEventListener('change',()=>{
+ if(!activeScene?.soloCarryLockedPhase||!rapier)return;
+ try{restart();}catch(e){playing=false;say(e.message,true);}
+});
+function changeSmallSidedVariant(direction){
+ if(activeScene?.kind!=='action'||!rapier)return;
+ const before=activeVariantIndex;
+ activeVariantIndex=(before+direction+SMALL_SIDED_VARIANT_COUNT)%SMALL_SIDED_VARIANT_COUNT;
+ try{restart();}catch(error){
+  activeVariantIndex=before;
+  try{restart();}catch{}
+  playing=false;say('Variation failed: '+error.message,true);
+ }
+}
+byId('me-inline-variant-prev').addEventListener('click',()=>changeSmallSidedVariant(-1));
+byId('me-inline-variant-next').addEventListener('click',()=>changeSmallSidedVariant(1));
 byId('play').addEventListener('click', play);
 byId('pause').addEventListener('click', pause);
-byId('step').addEventListener('click', () => { playing = false; advance(); render(); say('Paused · advanced one tick'); });
+byId('step').addEventListener('click', () => {
+  playing=false;
+  const before=physicsTickSnapshot?.tick;
+  advance();render();
+  if(activeScene?.kind==='action'&&activeLab?.snapshot().refereeEvidence?.lastEvent)
+    say('Observed real full-ball crossing · dead ball · Reset to retry');
+  else say(physicsTickSnapshot?.tick===before?
+    'No additional physical tick · Reset to retry':
+    'Paused · advanced one tick');
+});
 byId('reset').addEventListener('click', () => { try { restart(); } catch (e) { say(e.message, true); } });
 byId('apply').addEventListener('click', () => { try { restart(); } catch (e) { say(e.message, true); } });
 byId('compare').addEventListener('click', compareReplay);
 byId('measure').addEventListener('click', measurePhysics);
+// The original Scenario dropdown now prioritizes progressive small-sided
+// exercises. Old isolated contact/movement fixtures remain executable through
+// their original internal catalogs for regression QA, not as basic UI clutter.
+function setupUnifiedScenarioMenu(){
+ const menu=byId('preset-options');
+ // Keep all legacy physical scene definitions for isolated regression QA,
+ // but surface only the basic exercises useful for visual development.
+ const physics=[...menu.querySelectorAll('[role="option"][data-value]')];
+ if(physics.length!==4)throw new Error('Original physics calibration presets missing');
+ menu.replaceChildren();
+ const heading=title=>{
+  const node=document.createElement('div');
+  node.className='me-scenario-group-label';
+  node.setAttribute('role','presentation');
+  node.textContent=title;
+  menu.append(node);
+ };
+ const groups=[
+  ['Carry phases',[
+   ['action:carry-solo:control','Carry · Control'],
+   ['action:carry-solo:moderate','Carry · Moderate'],
+   ['action:carry-solo:sprint','Carry · Sprint']
+  ]],
+  ['Small-sided situations',[
+   ['action:keeper-1v1','1v1 · goalkeeper'],
+   ['action:overload-2v1','2v1 · attack and defend'],
+   ['action:duel-3v3','3v3 · team decisions']
+  ]]
+ ];
+ const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
+ for(const [title,choices] of groups){
+  heading(title);
+  for(const [value,label] of choices){
+   const [kind,id,lockedPhase=null]=value.split(':');
+   if(kind!=='action'||!available.has(id)||
+      (lockedPhase!==null&&
+       (id!=='carry-solo'||!SOLO_CARRY_PHASES.includes(lockedPhase))))
+    throw new Error('Missing authentic LAB scenario '+value);
+   const opt=document.createElement('div');
+   opt.className='language-option';
+   opt.setAttribute('role','option');
+   opt.tabIndex=-1;
+   opt.dataset.value=value;
+   opt.setAttribute('aria-selected','false');
+   opt.textContent=label;
+   menu.append(opt);
+  }
+ }
+ heading('Ball physics');
+ for(const node of physics)menu.append(node);
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==10||
+    menu.querySelectorAll('.me-scenario-group-label').length!==3)
+  throw new Error('Lab should expose three fixed Carry phases, three small-sided exercises and four ball presets');
+}
+function restoreOriginalScenario(){
+ document.querySelector('[data-me-dropdown="preset"]')
+  .dispatchEvent(new Event('lab:restore-ball-scenario'));
+}
+function launchSelectedScenario(value){
+ if(!rapier){
+  restoreOriginalScenario();say('Physics is still loading',true);return;
+ }
+ const parts=value.split(':');
+ const [kind,id,soloCarryLockedPhase=null]=parts;
+ if(parts.length<2||parts.length>3||
+    !['action','movement'].includes(kind)||!id||
+    (soloCarryLockedPhase!==null&&(
+     kind!=='action'||id!=='carry-solo'||
+     !SOLO_CARRY_PHASES.includes(soloCarryLockedPhase))))
+  throw new RangeError('Invalid Scenario kind');
+ const prefix=kind==='action'?'action-labs':'movement-labs';
+ const choice=byId(prefix+'-choice');
+ if(![...choice.options].some(x=>x.value===id))
+  throw new RangeError('Unknown source LAB scenario');
+ // Existing pitch and elevation plus main Play/Pause/Step/Reset.
+ // Do NOT open the legacy modal for a visible situation.
+ playing=false;
+ // Selecting a new exercise starts at V01. Side change and Reset replay
+ // the current variation; Next/Previous are the only variation controls.
+ if(!activeScene||activeScene.kind!==kind||activeScene.id!==id||
+    activeScene.soloCarryLockedPhase!==soloCarryLockedPhase){
+   activeVariantIndex=0;
+  }
+ activeScene={kind,id,soloCarryLockedPhase};
+ try{restart();}catch(error){
+  disposeInline();restoreOriginalScenario();
+  say('LAB could not start: '+error.message,true);
+  try{restart();}catch{}
+ }
+}
+setupUnifiedScenarioMenu();
 setupDropdowns();
 setupNumericFields();
 mountControlledActionLabs({
  getRapier:()=>rapier,
- onOpen:()=>{playing=false;if(engine){engine.dispose();engine=null;}},
- onClose:()=>{if(rapier)try{restart();}catch(e){say(e.message,true);}}
+ onOpen:()=>{playing=false;disposeInline();if(engine){engine.dispose();engine=null;}},
+ onClose:()=>{restoreOriginalScenario();if(rapier)try{restart();}catch(e){say(e.message,true);}}
+});
+mountControlledMovementLabs({
+ getRapier:()=>rapier,
+ onOpen:()=>{playing=false;disposeInline();if(engine){engine.dispose();engine=null;}},
+ onClose:()=>{restoreOriginalScenario();if(rapier)try{restart();}catch(e){say(e.message,true);}}
 });
 loadPreset();
 topDown(); // Show the complete static pitch while the WASM physics module loads.
@@ -1670,7 +2139,12 @@ try {
   rapier = await initializeRapier(moduleNamespace);
   restart();
   for (const id of controls) byId(id).disabled = false;
-  if(location.hash==='#actions')byId('action-labs-open').click();
+  if(location.hash==='#actions'){
+    byId('preset-options').querySelector('[data-value="action:keeper-1v1"]')?.click();
+  }
+  if(location.hash==='#movement'){
+    byId('preset-options').querySelector('[data-value="movement:post-pass"]')?.click();
+  }
 } catch (error) {
   say('Physics library failed to initialize: ' + error.message + '. Run npm --prefix match-engine ci locally.', true);
 }
