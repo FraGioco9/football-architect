@@ -223,6 +223,7 @@ test('#578 toggling Stats keeps the same chevron node as Club History',async()=>
   assert.equal(tbody.children.length,5,'Career, two seasons and both collapsed competition rows exist without extra reads');
   const unprepared=tbody.children[4];
   assert.equal(unprepared.children[1].children[0].textContent,'No games played');
+  assert.equal(unprepared.children[1].className,tbody.children[1].children[1].className,'No games played uses the same style as Total');
   assert.deepEqual(unprepared.children.slice(3).map(cell=>cell.children[0].textContent),['0 (0)','0','0','0','0','0','0','—']);
   assert.equal(unprepared.querySelector('[data-stats-toggle]'),null);
   assert.equal(tbody.children[0].dataset.playerStatsCareer,'true');

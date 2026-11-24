@@ -248,7 +248,7 @@ export function createPlayerStatsView({host,id,locale,position,fetchStats,clubNa
    }
    const hasTotal=total&&total.appearances>0;
    const totalCell=el('td','',
-    hasTotal?'app-player-stats-competition app-player-stats-total-label':'app-player-stats-competition');
+    total?'app-player-stats-competition app-player-stats-total-label':'app-player-stats-competition');
    totalCell.append(el('span',total?(hasTotal?w.total:w.empty):
     season.status==='unavailable'?w.unsupported:w.unprepared,'app-player-stats-total-value'));
    summary.append(heading,totalCell,el('td','','app-player-stats-club'));
