@@ -183,7 +183,11 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
     [id,session.unified!.playerId,now,world.generation,world.seasonNumber]),
    abortUnless(db,"SELECT 1 WHERE COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0)=?",[lastId]),
    db.prepare(`INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at)
-    SELECT ?+CAST(j.key AS INTEGER)+1, ?,?,?,json_set(json_remove(j.value,'$.id','$.preview_id'),'$.id',?+CAST(j.key AS INTEGER)+1),?
+    SELECT ?+CAST(j.key AS INTEGER)+1, ?,?,?,
+     json_set(json_remove(j.value,'$.id','$.preview_id'),
+      '$.id',?+CAST(j.key AS INTEGER)+1,
+      '$.retirement_seed',lower(hex(randomblob(16)))),?
+
     FROM json_each((SELECT candidates_json FROM player_generation_drafts WHERE id=?)) AS j
     ORDER BY CAST(j.key AS INTEGER)`)
     .bind(lastId,id,world.generation,world.seasonNumber,lastId,now,id),
