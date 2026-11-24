@@ -711,6 +711,8 @@ try{
    assert.equal(await form.locator('[data-contract-draft-salary]').innerText(),'—');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    const message=form.locator('[data-contract-draft-message]');
+   assert.equal(await message.evaluate(el=>el.parentElement.classList.contains('admin-licenses-actions')),true);
+   assert.equal(await form.evaluate(el=>{const a=el.querySelector('[data-contract-draft-preview]').getBoundingClientRect(),b=el.querySelector('[data-contract-draft-sign]').getBoundingClientRect(),m=el.querySelector('[data-contract-draft-message]').getBoundingClientRect();return Math.abs(a.top-b.top)<1&&b.left>=a.right&&m.top>=Math.max(a.bottom,b.bottom)}),true);
    previewFailure='contract_club_ineligible';
    await form.locator('[data-contract-draft-preview]').click();
    await message.filter({hasText:'Club is not eligible.'}).waitFor();
@@ -721,6 +723,8 @@ try{
    await message.filter({hasText:'Signing unavailable'}).waitFor();same(first,await geometry());
    await page.setViewportSize({width:1280,height:900});
    const desktop=await geometry();
+   const actionGeometry=()=>page.evaluate(()=>{const form=document.querySelector('[data-contract-draft]');const rect=s=>form.querySelector(s).getBoundingClientRect();const preview=rect('[data-contract-draft-preview]'),sign=rect('[data-contract-draft-sign]'),msg=rect('[data-contract-draft-message]');return {sameRow:Math.abs((preview.top+preview.bottom)/2-(msg.top+msg.bottom)/2)<1&&Math.abs((sign.top+sign.bottom)/2-(msg.top+msg.bottom)/2)<1,beside:msg.left>=sign.right,buttonsSideBySide:sign.left>=preview.right}});
+   assert.deepEqual(await actionGeometry(),{sameRow:true,beside:true,buttonsSideBySide:true});
    await form.locator('[data-contract-draft-duration]').evaluate(el=>{el.value='1';el.dispatchEvent(new Event('change',{bubbles:true}))});
    same(desktop,await geometry());
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
