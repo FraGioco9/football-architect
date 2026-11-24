@@ -61,7 +61,11 @@ test('public rewards exposes only pool and season club table; admin retains sche
  for(const id of REWARD_IDS){
   const html=renderCompetitionRewards(id);
   assert.match(html,/rewardPool/);
-  assert.match(html,/rewardSeasonEstimateNote/);
+  assert.doesNotMatch(html,/rewardSeasonEstimateNote/);
+  assert.match(html,/rewardSeasonEstimate/);
+  assert.match(html,/aria-busy="true"/);
+  assert.match(html,/fa-reward-name-slot/);
+  assert.match(html,/fa-reward-value-cell/);
   assert.match(html,/data-season-reward-rows/);
   assert.equal((html.match(/data-reward-placeholder/g)||[]).length,competitionRewards(id).capacity);
   assert.doesNotMatch(html,/rewardCreditSchedule|rewardHamilton|rewardPointsFormula|data-reward-(?:earned|paid|credited|payable)=/);
@@ -134,4 +138,18 @@ test('two configured payment dates conserve all pools without settlement claims'
   assert.equal(first.total+second.total,r.pool);
  }
  assert.deepEqual(plannedRewardInstallments(rewardTotals()).map(x=>x.total),[16800000,43200000]);
+});
+
+test('season read lifecycle is shared with Rewards and independent of world readiness',()=>{
+ const page=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../assets/rewards-ui.mjs',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../assets/competition-rewards.css',import.meta.url),'utf8');
+ assert.match(page,/onState:state=>\{publishSeasonReadState\(state\)/);
+ assert.match(page,/publishSeasonReadState\(cached.data.status\)/);
+ assert.match(ui,/fa:competition-season-read-state/);
+ assert.match(ui,/read\?\.season===context\?\.selectedSeason/);
+ assert.doesNotMatch(ui,/worldStatus!==/);
+ assert.match(ui,/table.setAttribute\('aria-busy',String\(loading\)\)/);
+ assert.match(css,/\.fa-reward-name-slot>\.app-skeleton-bar\{[^}]*margin:0/);
+ assert.match(css,/\.fa-reward-value>\.app-skeleton-bar\{[^}]*margin:0/);
 });

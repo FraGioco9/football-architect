@@ -1215,6 +1215,14 @@
     if(!applicable)throw Error('Unavailable season rules');
     return freeze(JSON.parse(JSON.stringify({definition:applicable,currentDefinition:definition,selectedSeason,seasonData,revision})));
   }
+  // Publish the actual season read lifecycle, not the independent world clock.
+  function publishSeasonReadState(state){
+    const context=window.faCompetitionContext;
+    window.faCompetitionSeasonReadState=Object.freeze({
+      id:context?.definition?.id??null,season:context?.selectedSeason??null,state
+    });
+    window.dispatchEvent(new CustomEvent('fa:competition-season-read-state',{detail:window.faCompetitionSeasonReadState}));
+  }
   function publishCompetitionContext(context){
     // The initial 16-club list is canonical only for Season 1. When the viewed
     // season changes, do not leave old names visible beneath pending skeletons.
@@ -1462,7 +1470,7 @@
               snapshot:window.faWorldState?.get?.(),data
             });
             return accepted;
-          },onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');if(activeDebugSeason===null){publicStandingsState=state==='empty'?'empty':state==='partial'||state==='available'?'verified':'pending';if(state==='empty'||state==='unavailable')standingsRefresh?.();}/* No cross-view empty banner; retain panel-specific loading states. */},
+          },onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{publishSeasonReadState(state);if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');if(activeDebugSeason===null){publicStandingsState=state==='empty'?'empty':state==='partial'||state==='available'?'verified':'pending';if(state==='empty'||state==='unavailable')standingsRefresh?.();}/* No cross-view empty banner; retain panel-specific loading states. */},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.
@@ -1502,7 +1510,7 @@
         const select=()=>{
           if(activeDebugSeason!==null){
             loader.cancel();seasonReadCache.clear();
-            window.faStandingsLoading?.set('api',false);return;
+            window.faStandingsLoading?.set('api',false);publishSeasonReadState('debug');return;
           }
           const c=window.faCompetitionContext,snapshot=window.faWorldState?.get?.();
           const key=c?.definition.id+':'+c?.selectedSeason+':'+snapshot?.sourceRevision;
@@ -1517,6 +1525,7 @@
             loader.cancel();
             if(acceptSeasonData(cached.data,c.revision,true)){
               lastSuccessfulRead=worldReadKey(window.faCompetitionContext,snapshot);
+              publishSeasonReadState(cached.data.status);
               window.faStandingsLoading?.set('api',false);
               return;
             }
@@ -1542,8 +1551,8 @@
           if(!event.persisted)loader.dispose();
         });
         select();
-      }catch{window.faStandingsLoading?.set('api',false);clearSeasonData();}
+      }catch{window.faStandingsLoading?.set('api',false);clearSeasonData();publishSeasonReadState('unavailable');}
     }
   }
-  start().catch(fail).finally(()=>window.faStandingsLoading?.set('bootstrap',false));
+  start().catch(()=>{fail();publishSeasonReadState('unavailable');}).finally(()=>window.faStandingsLoading?.set('bootstrap',false));
 })();

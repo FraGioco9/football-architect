@@ -15,39 +15,50 @@ function evidence(root,key){
 }
 const competition=document.querySelector('[data-competition-rewards]');
 if(competition){
- const tbody=competition.querySelector('[data-season-reward-rows]'),status=competition.querySelector('[data-season-reward-status]');
+ const tbody=competition.querySelector('[data-season-reward-rows]'),status=competition.querySelector('[data-season-reward-status]'),table=tbody.closest('table');
  const placeholder=tbody.innerHTML;
  const make=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node};
  let signature='';
  function update(){
-  const context=window.faCompetitionContext;
-  const model=seasonRewardReference(competition.dataset.competitionRewards,context,{debug:window.faDebugEnabled===true});
+  const context=window.faCompetitionContext,read=window.faCompetitionSeasonReadState;
+  const debug=window.faDebugEnabled===true;
+  const model=seasonRewardReference(competition.dataset.competitionRewards,context,{debug});
   const locale=document.documentElement.lang||'en';
+  const sameRead=!!read&&!!context&&read?.id===context?.definition?.id&&read?.season===context?.selectedSeason;
+  // The world may already be ready while the selected season GET is pending.
+  // Only a settled read for this exact competition and season can end its skeleton.
+  const settled=debug||read?.state==='unavailable'&&read.id===null||sameRead&&['empty','unavailable','available','partial','debug'].includes(read.state);
   if(!model){
    signature='';
    if(!tbody.querySelector('[data-reward-placeholder]'))tbody.innerHTML=placeholder;
-   const waiting=!context?.seasonData&&window.faWorldState?.get?.()?.worldStatus!=='ready';
-   tbody.dataset.rewardUnavailable=String(!waiting);
-   status.hidden=waiting;
+   const loading=!settled;
+   tbody.dataset.rewardUnavailable=String(!loading);
+   table.setAttribute('aria-busy',String(loading));
+   status.hidden=loading;
    return;
   }
   delete tbody.dataset.rewardUnavailable;
-  status.hidden=!model.pending;
+  table.setAttribute('aria-busy','false');
+  status.hidden=true;
   const next=JSON.stringify([context.selectedSeason,locale,model]);
   if(next===signature)return;
   signature=next;
-  tbody.replaceChildren(...model.rows.map(row=>{
-   const tr=make('tr'),th=make('th');th.scope='row';
+  const rows=model.rows.map(row=>{
+   const tr=make('tr'),th=make('th');th.scope='row';tr.dataset.rewardClub=row.id;
    const identity=make('span',undefined,'app-world-club-identity'),crest=make('span',undefined,'app-world-club-crest-placeholder');
    crest.dataset.clubCrest=row.id;crest.setAttribute('aria-hidden','true');
+   if(Object.hasOwn(window.faClubCrests||{},row.id))crest.dataset.clubCrestPending='true';
    const name=make('a',row.club.primaryName,'app-world-club-name app-world-standing-club-link');
-   name.href='/clubs/'+row.club.countryId.toLowerCase()+'/'+row.club.clubId+'/overview';
+   name.href=window.faRoutesRegistry?.buildRoute({kind:'club',country:row.club.countryId.toLowerCase(),id:row.club.clubId,view:'overview'})||'/clubs/'+row.club.countryId.toLowerCase()+'/'+row.club.clubId+'/overview';
    identity.append(crest,name);th.append(identity);
-   tr.append(th,make('td',row.amount===null?'—':formatRewardAmount(row.amount,locale,{average:row.amount!==0})));
-   return tr;
-  }));
+   const td=make('td',undefined,'fa-reward-value-cell');
+   td.append(make('span',row.amount===null?'—':formatRewardAmount(row.amount,locale,{average:!Number.isSafeInteger(row.amount)}),'fa-reward-value'));
+   tr.append(th,td);return tr;
+  });
+  if(window.faCompetitionRenderDOM)window.faCompetitionRenderDOM.keyed(tbody,rows,row=>row.dataset.rewardClub);
+  else tbody.replaceChildren(...rows);
  }
- for(const event of ['fa:competition-context-change','fa:competition-route-change','fa:source-change','fa:world-state-change'])window.addEventListener(event,update);
+ for(const event of ['fa:competition-context-change','fa:competition-route-change','fa:source-change','fa:competition-season-read-state'])window.addEventListener(event,update);
  new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  update();
 }

@@ -40,11 +40,12 @@ export function augmentRewardsShell(path,html,definitions,encode){
  html=html.replaceAll('["standings","postseason","fixtures","stats","history","rules","awards"]','["standings","postseason","fixtures","stats","history","rules","awards","rewards"]')
   .replaceAll("'rules', 'awards'];","'rules', 'awards', 'rewards'];")
   .replaceAll('rules|awards|index','rules|awards|rewards|index')
-  .replaceAll('rules|awards|overview|teams','rules|awards|rewards|overview|teams');
+  .replaceAll('rules|awards|overview|teams','rules|awards|rewards|overview|teams')
+  .replaceAll('["standings","postseason","fixtures","stats","history","awards"].includes','["standings","postseason","fixtures","stats","history","awards","rewards"].includes');
  const tab='            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>';
  html=replaceOnce(html,tab,tab+'\n'+tab.replaceAll('awards','rewards').replaceAll('Awards','Rewards'));
  const end='})("awards");</script>\n          </section>';
  const content=neutral?'<section class="app-panel"><p data-app-i18n="rewardUnavailable">Rewards unavailable</p></section>':renderCompetitionRewards(id);
- html=replaceOnce(html,end,end+'\n          <section id="competition-panel-rewards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rewards" tabindex="0" hidden>'+content+'</section>');
+ html=replaceOnce(html,end,end+'\n          <section id="competition-panel-rewards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rewards" tabindex="0" hidden>'+content+'<script data-fa-rewards-first-paint-ready>if(document.documentElement.dataset.competitionView==="rewards"){document.getElementById("competition-panel-rewards").hidden=false;document.documentElement.removeAttribute("data-fa-competition-prepaint");}</script></section>');
  return replaceOnce(html,'</head>',assets+'</head>');
 }

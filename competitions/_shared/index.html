@@ -679,7 +679,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  if(document.documentElement.dataset.competitionView===view){panel.hidden=false;document.documentElement.removeAttribute('data-fa-competition-prepaint');}
 })("awards");</script>
           </section>
-          <section id="competition-panel-rewards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rewards" tabindex="0" hidden><section class="app-panel"><p data-app-i18n="rewardUnavailable">Rewards unavailable</p></section></section>
+          <section id="competition-panel-rewards" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-rewards" tabindex="0" hidden><section class="app-panel"><p data-app-i18n="rewardUnavailable">Rewards unavailable</p></section><script data-fa-rewards-first-paint-ready>if(document.documentElement.dataset.competitionView==="rewards"){document.getElementById("competition-panel-rewards").hidden=false;document.documentElement.removeAttribute("data-fa-competition-prepaint");}</script></section>
           <script src="/assets/competition-tabs.js" defer></script>
           <script src="/assets/competition-history.js" defer></script>
         </section>
