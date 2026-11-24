@@ -61,9 +61,9 @@ test('#763 all market value table tracks reserve seven-digit amounts without shr
  assert.match(transfers,/--fa-transfers-value-width:172px;min-width:800px/);
  assert.match(transfers,/@media\(max-width:700px\)\{\.fa-transfers-table\{min-width:684px\}/);
  assert.match(transfers,/\.fa-transfers-table th,\.fa-transfers-table td\{box-sizing:border-box\}/);
- assert.match(transfers,/\.fa-transfers-table \.fa-transfers-value\{width:var\(--fa-transfers-value-width\);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums\}/);
- assert.match(transfers,/\.fa-transfers-skeleton-value\{width:13ch;max-width:100%;margin-left:auto\}/);
- assert.match(transfers,/\.fa-transfers-value \.app-players-sort-chevron\{left:auto;right:calc\(100% \+ 5px\)\}/);
+ assert.match(transfers,/\.fa-transfers-table \.fa-transfers-value\{width:var\(--fa-transfers-value-width\);text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:middle\}/);
+ assert.match(transfers,/\.fa-transfers-skeleton-value\{width:13ch;max-width:100%;margin-inline:auto\}/);
+ assert.match(transfers,/\.fa-transfers-value \.app-players-sort-chevron\{left:calc\(100% \+ 5px\);right:auto\}/);
  assert.equal((template.match(/class="fa-transfers-value"><span class="fa-transfers-skeleton fa-transfers-skeleton-value"/g)||[]).length,7);
  // Budget seven digits, separators, space, currency token, cell padding and
  // a separate localized header/sort-arrow allowance. This is a conservative
@@ -71,4 +71,18 @@ test('#763 all market value table tracks reserve seven-digit amounts without shr
  for(const [track,padding] of [[196,32],[172,32],[172,20],[172,12]]){
   assert.ok(track-padding>=140);
  }
+});
+
+test('#763 market value headers, amounts, missing values and loading bars share centered column anchors',()=>{
+ const css=read('assets/app.css'),transfers=read('assets/transfers-page.css');
+ const shared='.app-players-table:is([data-players-public]:not([data-players-table-mode="attributes"]),.club-roster-table[data-players-table-mode="overview"])';
+ assert.ok(css.includes(shared+' :is(th,td).app-market-value-col{text-align:center;width:var(--app-players-market-width);vertical-align:middle}'));
+ assert.ok(css.includes(shared+' th.app-market-value-col .app-players-sort-button{justify-content:center}'));
+ assert.ok(css.includes(shared+' th.app-market-value-col .app-players-sort-chevron{left:calc(100% + 5px);right:auto}'));
+ assert.match(css,/\.app-players-sort-chevron\{position:absolute/);
+ assert.doesNotMatch(css,/app-market-value-col\{[^}]*text-align:right/);
+ assert.match(transfers,/\.fa-transfers-value\{width:var\(--fa-transfers-value-width\);text-align:center;[^}]*vertical-align:middle/);
+ assert.match(transfers,/\.fa-transfers-value \.app-players-sort-button\{justify-content:center\}/);
+ assert.match(transfers,/\.fa-transfers-skeleton-value\{width:13ch;max-width:100%;margin-inline:auto\}/);
+ assert.doesNotMatch(transfers,/\.fa-transfers-value\{[^}]*text-align:right/);
 });

@@ -47,11 +47,11 @@
 .fa-transfers-table th:first-child,.fa-transfers-table td:first-child{width:25%}
 .fa-transfers-table th:nth-child(4),.fa-transfers-table td:nth-child(4){width:12%}
 .fa-transfers-table th,.fa-transfers-table td{box-sizing:border-box}
-.fa-transfers-table .fa-transfers-value{width:var(--fa-transfers-value-width);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
-.fa-transfers-table .fa-transfers-value .app-players-sort-button{justify-content:flex-end}
-.fa-transfers-table .fa-transfers-value .app-players-sort-chevron{left:auto;right:calc(100% + 5px)}
+.fa-transfers-table .fa-transfers-value{width:var(--fa-transfers-value-width);text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;vertical-align:middle}
+.fa-transfers-table .fa-transfers-value .app-players-sort-button{justify-content:center}
+.fa-transfers-table .fa-transfers-value .app-players-sort-chevron{left:calc(100% + 5px);right:auto}
 .fa-transfers-table th[aria-sort="ascending"] .app-players-sort-chevron,.fa-transfers-table th[aria-sort="descending"] .app-players-sort-chevron{visibility:visible;opacity:1}
 .fa-transfers-table th[aria-sort="ascending"] .app-players-sort-chevron{transform:translateY(-50%) rotate(180deg)}
-.fa-transfers-skeleton-value{width:13ch;max-width:100%;margin-left:auto}
+.fa-transfers-skeleton-value{width:13ch;max-width:100%;margin-inline:auto}
 @media(max-width:720px){.fa-transfers-table{--fa-transfers-value-width:172px;min-width:800px}}
 @media(max-width:700px){.fa-transfers-table{min-width:684px}}
