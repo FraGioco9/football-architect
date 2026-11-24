@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {runInNewContext} from 'node:vm';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 import {isAllowlistedPublicPath,planPublicFiles} from '../tools/publication-guard.mjs';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
@@ -1204,4 +1204,29 @@ test('#763 filter captions and surrounding boxes are inert while actual controls
  assert.match(css,/\.app-players-filter-form :is\(\.app-players-scope-control,\.app-players-attribute-pick\)>input\[type="checkbox"\]\{cursor:pointer\}/);
  assert.match(form,/<summary class="app-players-filter-section-header">/);
  assert.match(form,/<button type="button" class="language-trigger app-players-filter-dropdown-trigger"/);
+});
+
+test('#777 legacy affiliation storage must not return to executable source',()=>{
+ // Walk the checked-out runtime, generated assets and operational tooling.
+ // Historical migrations, documentation and migration-specific tests intentionally
+ // retain their original references; they are not part of this scan.
+ const offenders=[];
+ let inspected=0;
+ const retired=/\b(?:player_club_affiliations(?:_[a-z0-9_]+)?|player_signed_affiliation_[a-z0-9_]+)\b/i;
+ function scan(dir){
+  for(const entry of readdirSync(new URL('../'+dir+'/',import.meta.url),{withFileTypes:true})){
+   const path=dir+'/'+entry.name;
+   if(entry.isDirectory()){
+    if(!['node_modules','.git','__pycache__'].includes(entry.name))scan(path);
+   }else if(entry.isFile()&&/\.(?:[cm]?js|[cm]?ts|py|sql|html|css|sh|ps1)$/i.test(entry.name)){
+    inspected++;
+    const code=read(path);
+    for(const [i,line] of code.split(/\r?\n/).entries())
+     if(retired.test(line))offenders.push(path+':'+(i+1));
+   }
+  }
+ }
+ for(const dir of ['backend/src','backend/tools','assets','tools','admin'])scan(dir);
+ assert.ok(inspected>100,'audit must cover actual source files');
+ assert.deepEqual(offenders,[],'0041 removes legacy storage; runtime/tooling must not depend on it');
 });
