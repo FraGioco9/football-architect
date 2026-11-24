@@ -66,7 +66,11 @@ test('public rewards exposes only pool and season club table; admin retains sche
   assert.match(html,/aria-busy="true"/);
   assert.match(html,/fa-reward-name-slot/);
   assert.match(html,/app-view-skeleton-crest-slot/);
-  assert.match(html,/rewardLegendTiming/);
+  assert.doesNotMatch(html,/rewardLegendTiming/);
+  assert.match(html,/rewardCalculatedNote/);
+  assert.match(html,/rewardPerClub/);
+  assert.match(html,/data-season-reward-heading/);
+  assert.match(html,/fa-reward-milestone-row/);
   assert.ok(html.indexOf('data-season-reward-legend')<html.indexOf('data-season-reward-table'));
   assert.match(html,/rewardParticipation/);
   assert.match(html,/rewardPoints/);
@@ -86,7 +90,8 @@ test('current and historical season reward estimates use season-specific clubs a
  const context={selectedSeason:1,definition:{id:'IT-1'},seasonData:{season:1,seasonState:{phase:'closed',day:56},provenance:{kind:'authoritative'},participants,statistics:{standings:participants.map((club,i)=>({club,played:30,pts:60-i}))}}};
  const model=seasonRewardReference('IT-1',context);
  assert.equal(model.rows.length,16);assert.equal(model.pending,false);
- assert.ok(Math.abs(model.rows.reduce((n,r)=>n+r.amount,0)-4000000)<0.00001);
+ assert.equal(model.rows.reduce((n,r)=>n+r.amount,0),4000000);
+ assert.ok(model.rows.every(r=>Number.isSafeInteger(r.amount)));
  assert.equal(model.rows[0].id,'IT-1');
  context.seasonData.seasonState={phase:'active',day:28};
  assert.ok(seasonRewardReference('IT-1',context).rows.every(r=>r.amount===75000));
@@ -169,4 +174,14 @@ test('Rewards orders legend and table by the selected season, including archives
  assert.equal(rewardSeasonFinished(current,world,{pending:false}),true);
  assert.equal(rewardSeasonFinished(context,{source:'dev',current:{season:3,day:1}},null,true),true);
  assert.equal(rewardSeasonFinished(context,{source:'dev',current:{season:2,day:1}},null,true),false);
+});
+
+test('international participation reference is integer, deterministic and conserves installment pool',()=>{
+ const participants=Array.from({length:24},(_,i)=>({countryId:'IT',clubId:i+1,primaryName:'Club '+(i+1)}));
+ const context={selectedSeason:2,definition:{id:'int-1'},seasonData:{season:2,seasonState:{phase:'active',day:28},provenance:{kind:'authoritative'},participants}};
+ const a=seasonRewardReference('int-1',context);
+ assert.equal(a.rows.reduce((sum,r)=>sum+r.amount,0),1600000);
+ assert.ok(a.rows.every(r=>Number.isSafeInteger(r.amount)));
+ context.seasonData.participants=[...participants].reverse();
+ assert.deepEqual(seasonRewardReference('int-1',context),a);
 });

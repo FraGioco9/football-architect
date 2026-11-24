@@ -16,7 +16,7 @@ function evidence(root,key){
 const competition=document.querySelector('[data-competition-rewards]');
 if(competition){
  const tbody=competition.querySelector('[data-season-reward-rows]'),status=competition.querySelector('[data-season-reward-status]'),table=tbody.closest('table');
- const placeholder=tbody.innerHTML,legend=competition.querySelector('[data-season-reward-legend]'),tablePanel=competition.querySelector('[data-season-reward-table]');
+ const placeholder=tbody.innerHTML,legend=competition.querySelector('[data-season-reward-legend]'),tablePanel=competition.querySelector('[data-season-reward-table]'),heading=table.querySelector('[data-season-reward-heading]');
  const make=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node};
  let signature='';
  function update(){
@@ -25,6 +25,13 @@ if(competition){
   const model=seasonRewardReference(competition.dataset.competitionRewards,context,{debug});
   const locale=document.documentElement.lang||'en';
   const finished=rewardSeasonFinished(context,window.faWorldState?.get?.(),model,debug);
+  const headingKey=finished?'competitionTabRewards':'rewardSeasonEstimate';
+  if(heading.dataset.appI18n!==headingKey){
+   heading.dataset.appI18n=headingKey;
+   heading.textContent=finished?'Rewards':'Estimated rewards';
+   window.faAppRenderLanguage?.();
+  }
+  heading.title=competition.querySelector('#reward-calculation-note').textContent;
   // Reorder actual DOM, not just CSS, to preserve reading and keyboard order.
   if(finished&&legend.nextElementSibling===tablePanel)competition.insertBefore(tablePanel,legend);
   if(!finished&&tablePanel.nextElementSibling===legend)competition.insertBefore(legend,tablePanel);
@@ -56,7 +63,7 @@ if(competition){
    name.href=window.faRoutesRegistry?.buildRoute({kind:'club',country:row.club.countryId.toLowerCase(),id:row.club.clubId,view:'overview'})||'/clubs/'+row.club.countryId.toLowerCase()+'/'+row.club.clubId+'/overview';
    identity.append(crest,name);th.append(identity);
    const td=make('td',undefined,'fa-reward-value-cell');
-   td.append(make('span',row.amount===null?'—':formatRewardAmount(row.amount,locale,{average:!Number.isSafeInteger(row.amount)}),'fa-reward-value'));
+   td.append(make('span',row.amount===null?'—':formatRewardAmount(row.amount,locale),'fa-reward-value'));
    tr.append(th,td);return tr;
   });
   if(window.faCompetitionRenderDOM)window.faCompetitionRenderDOM.keyed(tbody,rows,row=>row.dataset.rewardClub);

@@ -115,14 +115,22 @@ export function seasonRewardReference(id,context,{debug=false}={}){
  const key=club=>club?.countryId+'-'+club?.clubId;
  const clubs=new Map(data.participants.map(club=>[key(club),club]));
  if(clubs.size!==rule.capacity||[...clubs.values()].some(c=>typeof c.primaryName!=='string'||!c.primaryName.trim()))return null;
- const rows=[...clubs].map(([id,club])=>({id,club,amount:day<28?0:rule.participation/rule.capacity*(day<56?0.5:1)}));
+ // Read-only DRAFT reference: stable canonical key resolves equal remainders
+ // for display only. The financial settlement ordering remains open (#755/#776).
+ const order=[...clubs.keys()].sort();
+ const equalWeights=order.map(id=>({id,weight:1}));
+ const participationPool=day<CREDIT_MILESTONES.participation[0]?0:day<CREDIT_MILESTONES.performanceDay?rule.participation/2:rule.participation;
+ const participation=new Map(largestRemainder(participationPool,equalWeights,order).allocations.map(x=>[x.id,x.amount]));
+ const rows=[...clubs].map(([id,club])=>({id,club,amount:participation.get(id)}));
  const pending=()=>({rows:rows.map(x=>({...x,amount:null})).sort((a,b)=>a.club.primaryName.localeCompare(b.club.primaryName,'en')),pending:true});
  if(day>=56){
   const table=data.statistics?.standings,rounds=rule.international?6:30;
   const valid=Array.isArray(table)&&table.length===rule.capacity&&new Set(table.map(x=>key(x.club))).size===rule.capacity&&table.every(x=>clubs.has(key(x.club))&&x.played===rounds&&Number.isSafeInteger(x.pts)&&x.pts>=0);
   const total=valid?table.reduce((sum,x)=>sum+x.pts,0):0;
   if(!total)return pending();
-  const points=new Map(table.map(x=>[key(x.club),rule.points*x.pts/total]));
+  const pointsAllocation=pointsReference(rule,table.map(x=>({id:key(x.club),weight:x.pts})),order);
+  if(pointsAllocation.status!=='calculated-reference')return pending();
+  const points=new Map(pointsAllocation.allocations.map(x=>[x.id,x.amount]));
   const placement=new Map();
   if(!rule.international){
    const reference=placementReference(rule);

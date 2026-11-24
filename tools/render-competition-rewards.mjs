@@ -28,8 +28,19 @@ function breakdown(r,key,name){
 }
 function publicMarkup(r){
  const placeholders=Array.from({length:r.capacity},()=>'<tr aria-hidden="true" data-reward-placeholder><th scope="row"><span class="app-world-club-identity"><span class="app-view-skeleton-crest-slot"></span><span class="app-world-club-name fa-reward-name-slot"><span class="app-skeleton-bar"></span></span></span></th><td class="fa-reward-value-cell"><span class="fa-reward-value"><span class="app-skeleton-bar"></span></span></td></tr>').join('');
- const legend='<section class="app-panel fa-reward-legend" data-season-reward-legend><p class="fa-reward-legend-split">'+r.shares[0]+'% '+label('rewardParticipation','Participation')+' · '+r.shares[1]+'% '+label('rewardPoints','Points')+' · '+r.shares[2]+'% '+(r.international?label('rewardAdvancement','Advancement'):label('rewardPlacement','Placement'))+'</p><p data-app-i18n="rewardLegendTiming">Day 28: half of participation. Day 56: the rest and performance rewards. Estimates, not confirmed payments.</p></section>';
- return '<div class="fa-rewards" data-competition-rewards="'+r.id+'"><section class="app-panel"><div class="fa-reward-heading"><h2 data-app-i18n="rewardPool">Total prize pool</h2><strong class="fa-reward-total">'+amount(r.pool)+'</strong></div></section>'+legend+'<section class="app-panel" data-season-reward-table><div class="fa-reward-table-wrap fa-season-reward-table"><table class="fa-reward-table" aria-busy="true"><thead><tr><th scope="col" data-app-i18n="standingsClub">Club</th><th scope="col" data-app-i18n="rewardSeasonEstimate">Estimated rewards</th></tr></thead><tbody data-season-reward-rows>'+placeholders+'</tbody></table><p class="fa-reward-reference-note" role="status" data-season-reward-status data-app-i18n="rewardUnavailable" hidden>Rewards unavailable</p></div></section></div>';
+ const p=participationReference(r);
+ const perClub=p.higherCount?amount(p.floor)+' – '+amount(p.higher):amount(p.floor);
+ const [first,second]=plannedRewardInstallments(r);
+ const item=(key,en,share,value)=>'<tr><th scope="row">'+label(key,en)+'</th><td>'+share+'</td><td>'+value+'</td></tr>';
+ const legend='<section class="app-panel fa-reward-legend" data-season-reward-legend>'+table([['rewardDistribution','Reward distribution'],['rewardShare','Share'],['rewardAmount','Amount']],[
+  item('rewardParticipation','Participation',r.shares[0]+'%',amount(r.participation)),
+  item('rewardPoints','Points',r.shares[1]+'%',amount(r.points)),
+  item(r.international?'rewardAdvancement':'rewardPlacement',r.international?'Advancement':'Placement',r.shares[2]+'%',amount(r.placement)),
+  '<tr class="fa-reward-per-club-row"><th scope="row" colspan="2">'+label('rewardPerClub','Participation per club')+'</th><td>'+perClub+'</td></tr>',
+  '<tr class="fa-reward-milestone-row"><th scope="row" colspan="2">'+label('rewardDay','Day')+' '+first.day+'</th><td>'+amount(first.total)+'</td></tr>',
+  '<tr><th scope="row" colspan="2">'+label('rewardDay','Day')+' '+second.day+'</th><td>'+amount(second.total)+'</td></tr>'
+ ].join(''))+'</section>';
+ return '<div class="fa-rewards" data-competition-rewards="'+r.id+'"><section class="app-panel"><div class="fa-reward-heading"><h2 data-app-i18n="rewardPool">Total prize pool</h2><strong class="fa-reward-total">'+amount(r.pool)+'</strong></div></section>'+legend+'<section class="app-panel" data-season-reward-table><div class="fa-reward-table-wrap fa-season-reward-table"><table class="fa-reward-table" aria-busy="true"><thead><tr><th scope="col" data-app-i18n="standingsClub">Club</th><th scope="col" data-season-reward-heading data-app-i18n="rewardSeasonEstimate" aria-describedby="reward-calculation-note">Estimated rewards</th></tr></thead><tbody data-season-reward-rows>'+placeholders+'</tbody></table><span class="fa-reward-sr-only" id="reward-calculation-note" data-app-i18n="rewardCalculatedNote">Calculated under current draft rules, not confirmed payments. Equal remainders use club ID for this reference only.</span><p class="fa-reward-reference-note" role="status" data-season-reward-status data-app-i18n="rewardUnavailable" hidden>Rewards unavailable</p></div></section></div>';
 }
 export function renderCompetitionRewards(id){
  const r=competitionRewards(id);
