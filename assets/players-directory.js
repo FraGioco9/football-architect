@@ -409,10 +409,10 @@
    if(state.view==='overview'){
     addHeader(t.columns[2],'positions');
     addHeader(t.columns[1],'age');addHeader(t.columns[3],'height');addHeader(t.columns[4],'foot');
-    const club=document.createElement('th');club.scope='col';club.className='app-players-club-col';club.textContent=t.club;row.append(club);
     addHeader(globalThis.faMarketValue?.label(language())||'Market value','market_value_arc');
     row.lastElementChild.classList.add('app-market-value-col');
     row.lastElementChild.querySelector('button').title=globalThis.faMarketValue?.help(language())||'Estimated remaining agent commissions (DRAFT benchmark)';
+    const club=document.createElement('th');club.scope='col';club.className='app-players-club-col';club.textContent=t.club;row.append(club);
    }else{
     addHeader(t.columns[2],'positions');
     for(const key of groups[state.group])addHeader(attributeName(key),key);
@@ -485,8 +485,8 @@
      cell(tr,Number.isSafeInteger(player.age)?String(player.age):'—');
      cell(tr,Number.isSafeInteger(player.height_cm)?String(player.height_cm)+' cm':'—');
      cell(tr,player.preferred_foot==='left'?t.left:player.preferred_foot==='right'?t.right:'—');
-     clubCell(tr,player);
      cell(tr,globalThis.faMarketValue?.format(player.market_value_arc,language())||'—').classList.add('app-market-value-col');
+     clubCell(tr,player);
     }else {
      cell(tr,positionsShown.join(', ')||'—');
      for(const key of groups[state.group])cell(tr,Number.isSafeInteger(player.attributes?.[key])?String(player.attributes[key]):'—');

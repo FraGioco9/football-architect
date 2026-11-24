@@ -1726,18 +1726,14 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-table th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.42)}
 .app-players-table th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.21)}
 .app-players-table th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.20)}
-/* Public Overview seven-column order: flag, Player, Positions, Age, Height,
- * Foot, Club. The third col is the SAME fixed Positions width used by Attributes. */
+/* Public Overview: the first three fixed tracks are shared with Attributes.
+ * Remaining tracks are specified by #763 below. */
 .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){min-width:982px}
 .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) col.app-players-view-third-column{width:var(--app-players-positions-width)}
 .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(3){width:var(--app-players-positions-width);text-align:left}
-.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.16)}
-.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.19)}
-.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.17)}
-.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(7){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.48)}
 .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(3),
 .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(6),
-.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(7){text-align:left}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(8){text-align:left}
 .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(4),
 .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(5){text-align:center}
 .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(3) .app-players-sort-button,
@@ -2094,22 +2090,15 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
  .app-admin-view .admin-contracts-table td.admin-contracts-player-name[data-mobile-name]::before{content:attr(data-mobile-name);font-size:14px;line-height:18px}
  .app-players-table .app-player-club-name[data-mobile-club-name]{font-size:0}
  .app-players-table .app-player-club-name[data-mobile-club-name]::before{content:attr(data-mobile-club-name);font-size:14px;line-height:18px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 176px) * 0.31)}
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 176px) * 0.36)}
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 176px) * 0.33)}
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(7){width:176px}
 }
 @media(max-width:420px){
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(n+4):nth-child(-n+6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 156px) * 0.33)}
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 156px) * 0.34)}
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(7){width:156px}
 }
 
 /* #574: mobile Club header and rows follow the desktop left alignment.
  * Crest and short name stay on one line; hover underline remains anchored to
  * the 18px intrinsic text link and never changes the row geometry. */
 @media(max-width:720px){
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) tbody td:nth-child(7){text-align:left}
+ .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) tbody td.app-players-club-cell{text-align:left}
  .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-players-club-content{display:flex;align-items:center;justify-content:flex-start;gap:0;width:100%;max-width:100%;height:28px;margin:0;padding:0}
  .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-players-club-label-anchor{position:relative;display:inline-flex;align-items:center;justify-content:flex-start;gap:4px;flex:0 1 auto;min-width:0;max-width:100%}
  .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-players-club-mark{position:relative;right:auto;top:auto;transform:none}
@@ -2302,16 +2291,28 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
  :is(.app-history-player-name,.app-history-dialog-player-info) .fa-player-short-name{display:inline}
 }
 
-/* #763: preserve the existing identity tracks and reserve the ARC track. */
-.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){min-width:1112px}
-.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 130px) * 0.16)}
-.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 130px) * 0.19)}
-.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 130px) * 0.17)}
-.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(7){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 130px) * 0.48)}
+/* #763: Public Overview — Flag | Player | Positions | Age | Height | Foot |
+ * Market value | Club. Explicit compact widths leave all extra space to Club;
+ * unchanged fixed identity tracks keep exact first-paint geometry. */
 .app-players-table :is(th,td).app-market-value-col{width:130px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .app-players-table th.app-market-value-col .app-players-sort-button{justify-content:flex-end}
-@media(max-width:720px){.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){min-width:764px}.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 306px) * 0.31)}.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 306px) * 0.36)}.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 306px) * 0.33)}.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(7){width:176px}}
-@media(max-width:420px){.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){min-width:726px}.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 286px) * 0.33)}.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 286px) * 0.34)}.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 286px) * 0.33)}.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(7){width:156px}}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){--app-players-age-width:78px;--app-players-height-width:96px;--app-players-foot-width:90px;--app-players-market-width:172px;--app-players-club-min:210px;min-width:calc(var(--app-players-flag-width) + var(--app-players-name-width) + var(--app-players-positions-width) + var(--app-players-age-width) + var(--app-players-height-width) + var(--app-players-foot-width) + var(--app-players-market-width) + var(--app-players-club-min))}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(4){width:var(--app-players-age-width)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(5){width:var(--app-players-height-width)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(6){width:var(--app-players-foot-width)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th.app-market-value-col{width:var(--app-players-market-width)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th.app-players-club-col{width:calc(100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - var(--app-players-age-width) - var(--app-players-height-width) - var(--app-players-foot-width) - var(--app-players-market-width));text-align:left}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td).app-market-value-col{text-align:right;width:var(--app-players-market-width)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th.app-market-value-col .app-players-sort-button{justify-content:flex-end}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th.app-market-value-col .app-players-sort-chevron{left:auto;right:calc(100% + 5px)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(4),.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(5){text-align:center}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(6),.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td).app-players-club-cell{text-align:left}
+@media(max-width:720px){
+ .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){--app-players-age-width:62px;--app-players-height-width:76px;--app-players-foot-width:74px;--app-players-market-width:152px;--app-players-club-min:176px}
+}
+@media(max-width:420px){
+ .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){--app-players-age-width:60px;--app-players-height-width:72px;--app-players-foot-width:70px;--app-players-market-width:148px;--app-players-club-min:156px}
+}
 
 .app-players-table.club-roster-table[data-players-table-mode="overview"]{min-width:614px}
 .app-players-table.club-roster-table[data-players-table-mode="overview"] th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - 130px) * .28)}

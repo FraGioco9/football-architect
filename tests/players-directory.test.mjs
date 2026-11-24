@@ -124,8 +124,8 @@ test('Players first paint never selects or replaces the html root despite its st
   });
   const views=['overview','attributes'].map(playersView=>element({playersView}));
   const groups=['technical','mental','physical','goalkeeping'].map(playersGroup=>element({playersGroup}));
-  const row={cells:[{},{},{},{},{},{}],deleteCell(i){this.cells.splice(i,1)},append(node){this.cells.push(node)}};
-  const table={tHead:{rows:[row]},tBodies:[{rows:[{cells:[{colSpan:6}]}]}],dataset:{}};
+  const row={cells:[{},{},{},{},{},{},{},{}],deleteCell(i){this.cells.splice(i,1)},append(node){this.cells.push(node)}};
+  const table={tHead:{rows:[row]},tBodies:[{rows:[{cells:[{colSpan:8}]}]}],dataset:{}};
   const document={
    documentElement:root,
    querySelectorAll(selector){
@@ -152,7 +152,7 @@ test('Players first paint never selects or replaces the html root despite its st
    assert.equal(row.cells.length,expected);
    assert.equal(row.cells[2].textContent,'Positions','Positions must be third before the attributes');
    assert.equal(table.tBodies[0].rows[0].cells[0].colSpan,expected);
-  } else assert.equal(row.cells.length,6,'Overview remains unchanged');
+  } else assert.equal(row.cells.length,8,'Overview remains unchanged');
  }
 });
 
@@ -247,16 +247,17 @@ test('Players primary view controls are larger than the compact attribute subgro
  assert.match(css,/\.app-players-groups\{display:flex;align-items:center;gap:4px;[^}]*overflow-x:auto/,'mobile subgroup controls scroll in one row');
 });
 
-test('#532 public Overview renders Flag Player Positions Age Height Foot Club and a crest',()=>{
+test('#763 public Overview renders Flag Player Positions Age Height Foot Market value Club and a crest',()=>{
  const html=read('players/index.html'),gen=read('tools/generate-app-pages.mjs'),js=read('assets/players-directory.js'),css=read('assets/app.css');
  const head=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</thead>',html.indexOf('<table class="app-players-table"')));
  assert.deepEqual([...head.matchAll(/data-players-sort="([^"]+)"/g)].map(m=>m[1]),['nationality','name','positions','age','height','foot','market_value_arc']);
- assert.ok(head.indexOf('data-players-sort="foot"')<head.indexOf('app-players-club-col'));
+ assert.ok(head.indexOf('data-players-sort="foot"')<head.indexOf('data-players-sort="market_value_arc"'));
+ assert.ok(head.indexOf('data-players-sort="market_value_arc"')<head.indexOf('app-players-club-col'));
  assert.equal((html.match(/colspan="8"/g)||[]).length,5);
- assert.match(js,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:7/);
+ assert.match(js,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:8/);
  assert.match(js,/addHeader\(t\.columns\[2\],'positions'\);\s*addHeader\(t\.columns\[1\],'age'\);addHeader\(t\.columns\[3\],'height'\);addHeader\(t\.columns\[4\],'foot'\)/);
  assert.match(js,/if\(state\.view==='overview'\)\{\s*cell\(tr,positionsShown\.join\(', '\)\|\|'—'\)/);
- assert.match(js,/clubCell\(tr,player\);\s*\}else \{/);
+ assert.match(js,/cell\(tr,globalThis\.faMarketValue\?\.format\(player\.market_value_arc,language\(\)\)\|\|'—'\)\.classList\.add\('app-market-value-col'\);\s*clubCell\(tr,player\);\s*\}else \{/);
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) col\.app-players-view-third-column\{width:var\(--app-players-positions-width\)\}/);
  assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] col\.app-players-view-third-column\{width:var\(--app-players-positions-width\)\}/);
  assert.match(html,/while\(row\.cells\.length>2\)row\.deleteCell\(2\)/);
@@ -315,7 +316,7 @@ test('Players Attributes always show fixed-width Positions after the name withou
  assert.match(html,/addSort\(positions,'positions',\{en:'Positions',it:'Posizioni',de:'Positionen',es:'Posiciones',fr:'Postes'\}\[locale\]\|\|'Positions'\)/);
  assert.match(html,/row\.append\(positions\);\s*for\(const key of keys\)/,'Positions must precede stats on first paint');
  assert.match(html,/colSpan=keys\.length\+3/);
- assert.match(renderer,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:7/);
+ assert.match(renderer,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:8/);
  assert.match(renderer,/addHeader\(t\.columns\[2\],'positions'\);\s*for\(const key of groups\[state\.group\]\)addHeader\(attributeName\(key\),key\)/);
  assert.match(renderer,/const positionsShown=\[player\.primary_position,\.\.\.\(Array\.isArray\(player\.secondary_positions\)\?player\.secondary_positions:\[\]\)\]\.filter\(Boolean\)/);
  assert.match(renderer,/else \{\s*cell\(tr,positionsShown\.join\(', '\)\|\|'—'\);\s*for\(const key of groups\[state\.group\]\)/);
@@ -437,7 +438,7 @@ test('Players first paint reads comma-separated multi values and scopes without 
  assert.ok(script);
  const keys=['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','valueMin','valueMax','foot'];
  const fields=keys.map(key=>({dataset:{playersFilter:key},value:'',type:key.endsWith('Scope')?'checkbox':'text',checked:false}));
- const row={cells:[{},{},{},{},{},{}],deleteCell(i){this.cells.splice(i,1)},append(node){this.cells.push(node)}};
+ const row={cells:[{},{},{},{},{},{},{},{}],deleteCell(i){this.cells.splice(i,1)},append(node){this.cells.push(node)}};
  const pill={hidden:true,textContent:''},trigger={label:'',setAttribute(name,value){if(name==='aria-label')this.label=value}},title={textContent:''};
  const doc={
   documentElement:{lang:'en',dataset:{}},
@@ -448,7 +449,7 @@ test('Players first paint reads comma-separated multi values and scopes without 
    if(selector==='[data-players-filter-trigger-label]')return [title];
    return [];
   },
-  querySelector(selector){if(selector==='.app-players-table')return {tHead:{rows:[row]},tBodies:[{rows:[{cells:[{colSpan:6}]}]}],dataset:{}};throw Error(selector)},
+  querySelector(selector){if(selector==='.app-players-table')return {tHead:{rows:[row]},tBodies:[{rows:[{cells:[{colSpan:8}]}]}],dataset:{}};throw Error(selector)},
   createElement(){return {scope:'',textContent:''}}
  };
  runInNewContext(script,{document:doc,location:{search:'?nationality=ITA%2CENG&nationalityScope=any&position=RW%2CST&positionScope=any&ageMin=18&ageMax=29&heightMin=170&heightMax=195&foot=left&valueMin=0&valueMax=12000'},URLSearchParams});
@@ -457,7 +458,7 @@ test('Players first paint reads comma-separated multi values and scopes without 
  assert.equal(pill.textContent,'9','scope flags are never counted as additional filters');
  assert.equal(title.textContent,'Filters');
  assert.equal(trigger.label,'Filters: 9 active');
- assert.equal(row.cells.length,6,'overview geometry remains stable');
+ assert.equal(row.cells.length,8,'overview geometry remains stable');
 });
 test('Players native top-layer drawer and portaled dropdowns preserve outside clicks and scrollbars',()=>{
  const html=read('players/index.html'),code=read('assets/players-directory.js'),css=read('assets/app.css');
@@ -1168,4 +1169,19 @@ test('#734 Players count/page use a single D1 batch on the first segment only',(
  assert.match(server,/db\.prepare\(pageSql\)\.bind\(\.\.\.values,PUBLIC_PLAYER_PAGE_SIZE,0\)/);
  assert.match(server,/count=countRow\?\.n\?\?0/,'subsequent offset pages keep live server-side counts');
  assert.match(server,/if\(after\.generation!==before\.generation\)/,'world-reset fence unchanged');
+});
+
+test('#763 public overview width tracks preserve the first three columns and reserve the final five at first paint',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css'),js=read('assets/players-directory.js');
+ const head=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</thead>',html.indexOf('<table class="app-players-table"')));
+ const headers=[...head.matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/g)].map(m=>m[0].match(/data-players-sort="([^"]+)"/)?.[1]||'club');
+ assert.deepEqual(headers,['nationality','name','positions','age','height','foot','market_value_arc','club']);
+ assert.match(js,/addHeader\(globalThis\.faMarketValue\?\.label\(language\(\)\)\|\|'Market value','market_value_arc'\);[\s\S]*?club\.className='app-players-club-col'/);
+ const block=css.slice(css.indexOf('/* #763: Public Overview'));
+ const tracks=[...block.matchAll(/--app-players-age-width:(\d+)px;--app-players-height-width:(\d+)px;--app-players-foot-width:(\d+)px;--app-players-market-width:(\d+)px;--app-players-club-min:(\d+)px/g)].map(m=>m.slice(1).map(Number));
+ assert.deepEqual(tracks,[[78,96,90,172,210],[62,76,74,152,176],[60,72,70,148,156]]);
+ assert.deepEqual(tracks.map((t,i)=>t.reduce((a,b)=>a+b,[502,272,254][i])),[1148,812,760]);
+ assert.match(block,/th\.app-market-value-col \.app-players-sort-chevron\{left:auto;right:calc\(100% \+ 5px\)\}/);
+ assert.match(block,/th\.app-players-club-col\{width:calc\(100% - var\(--app-players-flag-width\)/);
+ assert.equal((html.match(/colspan="8"/g)||[]).length,5);
 });
