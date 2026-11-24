@@ -209,6 +209,10 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  assert.match(source,/\/api\/admin\/contracts\/preview/);
  assert.match(html,/data-contract-draft-sign disabled/);
  assert.match(html,/data-contract-draft-player aria-labelledby="contract-draft-player-caption" required disabled/);
+ assert.match(html,/data-contract-draft data-draft-state="loading" aria-labelledby="contract-draft-heading">/);
+ assert.match(html,/data-admin-contracts data-contracts-state="loading"/);
+ assert.match(css,/admin-contracts-skeleton td:not\(:first-child\)::after/);
+ assert.match(css,/data-contract-draft-message\]\{[^}]*height:3lh/);
  assert.match(html,/class="app-panel admin-licenses admin-licenses-editor admin-contract-draft"/);
  assert.match(html,/class="app-link app-link-primary" data-contract-draft-sign/);
  assert.match(html,/class="app-link app-link-secondary" data-contract-draft-preview/);

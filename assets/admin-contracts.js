@@ -24,6 +24,7 @@
   }
   function draftControls(){
    const ready=allowed&&writer&&!!record&&!readAbort;
+   form.dataset.draftState=host.dataset.adminAccess==='pending'||readAbort?'loading':draftBusy?'preview':'ready';
    for(const select of [playerSelect,clubSelect,durationSelect])select.disabled=!ready||draftBusy;
    previewButton.disabled=!ready||draftBusy||!playerSelect.value||!clubSelect.value;
    dropdowns.forEach(sync=>sync());
@@ -70,6 +71,7 @@
    el('[data-contracts-next]').disabled=!allowed||!record||page>=record.totalPages;
   }
   function loading(){
+   root.dataset.contractsState='loading';
    if(rows.childElementCount===5&&[...rows.children].every(row=>row.classList.contains('admin-contracts-skeleton'))){rows.setAttribute('aria-busy','true');return}
    const fragment=doc.createDocumentFragment();
    for(let i=0;i<5;i++){const tr=doc.createElement('tr');tr.className='admin-contracts-skeleton';tr.setAttribute('aria-hidden','true');
@@ -97,7 +99,7 @@
      c?sporting(c.startTick):'—',c?sporting(c.endTick-1):'—',date];
     for(const v of values){const td=doc.createElement('td');td.textContent=v;tr.append(td)}fragment.append(tr);
    }
-   rows.replaceChildren(fragment);rows.setAttribute('aria-busy','false');
+   rows.replaceChildren(fragment);rows.setAttribute('aria-busy','false');root.dataset.contractsState='ready';
    el('[data-contracts-total]').textContent=record.count+' '+l('players');
    el('[data-contracts-page]').textContent=l('page')+' '+record.page+' '+l('of')+' '+record.totalPages;
    report(record.players.length?'':l('empty'));refreshDraft();controls();
@@ -115,7 +117,7 @@
     if(!res.ok){if([401,403].includes(res.status)){permissionCache?.clear();paint(false);return}throw Error('http_'+res.status)}
     if(!Array.isArray(data?.players)||!Array.isArray(data?.clubs)||!Number.isSafeInteger(data.page)||!Number.isSafeInteger(data.totalPages)||!Number.isSafeInteger(data.count)||data.players.some(p=>!Object.hasOwn(p,'contract')||(p.contract===null)!==(p.clubKey===null)))throw Error('invalid_contract_data');
     record=data;page=data.page;render();
-   }catch(e){if(ticket!==epoch||controller.signal.aborted)return;clear();rows.setAttribute('aria-busy','false');report(l('failed'))}
+   }catch(e){if(ticket!==epoch||controller.signal.aborted)return;clear();rows.setAttribute('aria-busy','false');root.dataset.contractsState='error';report(l('failed'))}
    finally{if(readAbort===controller){readAbort=null;controls()}}
   }
   async function check(){

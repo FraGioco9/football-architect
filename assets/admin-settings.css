@@ -250,12 +250,41 @@ html[data-theme="light"] .app-admin-view .admin-contracts-table thead th{backgro
 
 /* #777: reuse Admin Licenses panel, fields, menus and action controls. */
 .app-admin-view .admin-contract-draft[hidden]{display:none!important}
-.app-admin-view .admin-contract-draft{margin-bottom:var(--app-page-section-gap)}
+.app-admin-view .admin-contract-draft{box-sizing:border-box;margin-bottom:var(--app-page-section-gap)}
+.app-admin-view .admin-contract-draft+.admin-contracts-message+.admin-contracts-list-heading{margin-top:0}
+.app-admin-view .admin-contract-draft[hidden]+.admin-contracts-message+.admin-contracts-list-heading{margin-top:8px}
 .app-admin-view .admin-contract-draft-fields>.admin-licenses-field:first-child{grid-column:auto}
 .app-admin-view .admin-contract-draft-fields output{box-sizing:border-box;display:flex;align-items:center;width:100%;min-width:0;height:var(--fa-control-height-regular);padding:8px 12px;border:1px solid var(--border);border-radius:var(--fa-radius-control);color:var(--text);font-size:14px;font-weight:400;font-variant-numeric:tabular-nums}
 .app-admin-view .admin-contract-draft-terms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 16px;min-width:0}
 .app-admin-view .admin-contract-draft-terms>.admin-licenses-field{display:grid;gap:6px;min-width:0;font-size:13px}
-.app-admin-view .admin-contract-draft-terms .admin-licenses-caption{color:var(--muted);font-weight:600;pointer-events:none}
-.app-admin-view .admin-contract-draft-terms output{color:var(--text);font-variant-numeric:tabular-nums}
-.app-admin-view [data-contract-draft-message]{min-height:3.1em;overflow-wrap:anywhere}
-@media(max-width:620px){.app-admin-view .admin-contract-draft-terms{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.app-admin-view .admin-contract-draft-terms .admin-licenses-caption{color:var(--muted);font-weight:600;pointer-events:none;line-height:1.4}
+.app-admin-view .admin-contract-draft-terms output{display:block;min-height:1.4em;line-height:1.4;color:var(--text);font-variant-numeric:tabular-nums}
+.app-admin-view .admin-contract-draft [data-contract-draft-message]{box-sizing:border-box;height:3lh;min-height:3lh;overflow:auto;overflow-wrap:anywhere;margin:0}
+@media(max-width:760px){.app-admin-view .admin-contract-draft-terms{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.app-admin-view .admin-contract-draft [data-contract-draft-message]{height:4lh;min-height:4lh}}
+/* Reserve final layout at first paint. Only unresolved values get skeletons. */
+.app-admin-view .admin-contract-draft[data-draft-state="loading"] :is([data-contract-draft-player],[data-contract-draft-club]){color:transparent}
+.app-admin-view .admin-contract-draft[data-draft-state="loading"] :is([data-contract-draft-player],[data-contract-draft-club]) + .language-control .admin-licenses-dropdown-value{position:relative;color:transparent;width:min(14ch,70%)}
+.app-admin-view .admin-contract-draft[data-draft-state="loading"] :is([data-contract-draft-player],[data-contract-draft-club]) + .language-control .admin-licenses-dropdown-value::after,
+.app-admin-view .admin-contract-draft[data-draft-state="loading"] :is([data-contract-draft-salary],.admin-contract-draft-terms output)::after,
+.app-admin-view .admin-contract-draft[data-draft-state="preview"] .admin-contract-draft-terms output::after,
+.app-admin-view [data-contracts-state="loading"] :is([data-contracts-total],[data-contracts-page])::after{content:"";position:absolute;inset-inline-start:0;top:50%;transform:translateY(-50%);height:10px;width:min(var(--contract-skeleton-width,7ch),100%);border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
+.app-admin-view .admin-contract-draft[data-draft-state="loading"] :is([data-contract-draft-player],[data-contract-draft-club]) + .language-control .admin-licenses-dropdown-value::after{--contract-skeleton-width:14ch}
+.app-admin-view .admin-contract-draft[data-draft-state="loading"] [data-contract-draft-salary]::after{inset-inline-start:12px;--contract-skeleton-width:4ch}
+.app-admin-view .admin-contract-draft:is([data-draft-state="loading"],[data-draft-state="preview"]) .admin-contract-draft-terms output,
+.app-admin-view .admin-contract-draft[data-draft-state="loading"] [data-contract-draft-salary]{position:relative;color:transparent}
+.app-admin-view [data-contract-draft-agent]{--contract-skeleton-width:3ch}
+.app-admin-view [data-contract-draft-minimum]{--contract-skeleton-width:5ch}
+.app-admin-view [data-contracts-state="loading"] :is([data-contracts-total],[data-contracts-page]){position:relative;color:transparent}
+.app-admin-view [data-contracts-state="loading"] [data-contracts-total]::after{inset-inline-start:auto;inset-inline-end:0;--contract-skeleton-width:9ch}
+.app-admin-view [data-contracts-state="loading"] [data-contracts-page]::after{inset-inline-start:50%;transform:translate(-50%,-50%);--contract-skeleton-width:10ch}
+/* Empty cells keep identical row geometry; flags deliberately have no skeleton. */
+.app-admin-view [data-contracts-state="loading"] .admin-contracts-skeleton td:not(:first-child)::after{content:"";display:block;height:10px;width:min(var(--contract-cell-skeleton,7ch),100%);margin-inline:auto;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
+.app-admin-view .admin-contracts-skeleton td:nth-child(2){--contract-cell-skeleton:14ch}
+.app-admin-view .admin-contracts-skeleton td:nth-child(3){--contract-cell-skeleton:12ch}
+.app-admin-view [data-contracts-state="loading"] .admin-contracts-skeleton td:is(:nth-child(2),:nth-child(3))::after{margin-inline-start:0}
+.app-admin-view .admin-contracts-skeleton td:nth-child(4){--contract-cell-skeleton:3ch}
+.app-admin-view [data-contracts-state="loading"] .admin-contracts-skeleton td:nth-child(4)::after{margin-inline-end:0}
+.app-admin-view .admin-contracts-skeleton td:nth-child(5){--contract-cell-skeleton:1ch}
+.app-admin-view .admin-contracts-skeleton td:nth-child(8){--contract-cell-skeleton:10ch}
+@media(max-width:720px){.app-admin-view .admin-contracts-skeleton td:nth-child(2){--contract-cell-skeleton:10ch}.app-admin-view .admin-contracts-skeleton td:nth-child(3){--contract-cell-skeleton:11ch}}
