@@ -310,12 +310,11 @@ test('#763 indexed valuation: actual local D1 global ordering, range, parity and
   assert.ok(exact.players.every(p=>p.market_value_arc===bound));
   const empty=await readPublicPlayers(db,4,{sort:'market_value_arc'});
   assert.deepEqual(empty.players,[]);
-  await db.prepare("INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,'IT-1')").bind(id).run();
   const detail=await readPublicPlayer(db,id),roster=await readPublicClubRoster(db,'IT-1');
-  assert.equal(detail.player.clubKey,null,'obsolete affiliation must not assign a club');
-  assert.equal(roster.count,0,'obsolete affiliation must not create a roster member');
+  assert.equal(detail.player.clubKey,null,'unsigned player has no club');
+  assert.equal(roster.count,0,'unsigned player is not a roster member');
   assert.equal(detail.player.market_value_arc,expected[0].value);
-  assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'obsolete affiliation does not invalidate value');
+  assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'contract-free reads do not invalidate value');
   await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.retirement_seed','private','$.retirement_age',37,'$.development_aptitude',42) WHERE id=?").bind(id).run();
   assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'hidden fields do not invalidate value');
   const fingerprint=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([MARKET_VALUE_CONFIG,FORECAST_EXPOSURES])));

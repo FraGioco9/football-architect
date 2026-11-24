@@ -1,3 +1,7 @@
+# Phase B latest implementation checkpoint
+
+Admin Contracts now inspects effective terms (salary, duration, sporting start/end and genuine UTC signing date) using existing read authorization; legacy POST and checkbox editor retired. No new signing command or artificial history. Existing /admin/contracts route retained. Updated static generated HTML, five locales, tests and proxy. 0041 forward migration prepared: remove three V1 guards and table (index drops with table); retains 0040 signed-term/mandate/history/reset guards. Local tests adapt obsolete fixtures and verify migration preservation. Cloudflare read-only inspection on 24 Nov confirms 0040 latest, 43 legacy links, 0 signed terms/mandates, no FK errors and only the V1 table/index/three triggers reference that table in sqlite_schema. No remote write. #799 shares Admin routes/tests/ownership and must reconcile before merge; any remaining reference and full CI errors must be resolved. Physical deployment/migration order requires coordinated Worker rollout to avoid old readers querying removed schema. No production, actual signing, reset, funding or generation authorized. Draft/HOLD; do not merge before exact-head verification and coordination.
+
 # #777 Phase B — contract-only cutover (Draft/HOLD)
 
 Owner accepts discarding the 43 existing DEV V1 assignments. No fabricated backfill, no dual persistent relationship. Main at 3f260c3 already has 0040 (DEV verified, zero signed terms).

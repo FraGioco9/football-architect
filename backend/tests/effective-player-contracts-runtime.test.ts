@@ -15,8 +15,8 @@ test('#777 signed-term roster projections use effective dates, never affiliation
  const gen=world.generation,batch=crypto.randomUUID(),now=1800000000;
  await db.prepare("INSERT INTO player_generation_drafts(id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,status,created_at,expires_at,committed_at) VALUES(?,?,0,'fixture','{}','[]',6,'fixture','committed',?,?,?)").bind(batch,gen,now,now+3600,now).run();
  for(let i=1;i<=6;i++)await db.prepare('INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(?,?,?,0,?,?)').bind(i,batch,gen,JSON.stringify({id:i,first_name:'First'+i,last_name:'Last'+i,nationality:'ITA',age:22,career_status:i===4?'retired':'active',height_cm:180,preferred_foot:'right',primary_position:'CM',secondary_positions:[],attributes:Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map(k=>[k,50]))}),now).run();
- // Legacy data deliberately disagrees: the resolver must never consider it.
- await db.prepare("INSERT INTO player_club_affiliations(player_id,club_key) VALUES(1,'IT-40'),(6,'IT-1')").run();
+ // Full migration chain has removed the legacy storage; unsigned players remain free.
+ expect(await db.prepare("SELECT name FROM sqlite_schema WHERE name='player_club_affiliations'").first()).toBeNull();
  async function sign(id:number,club:string,start:number,key:string){
   await db.prepare(`INSERT INTO player_signed_contracts(player_id,world_generation,club_key,signed_at_ms,start_tick,duration_seasons,scheduled_end_tick,annual_salary_arc,minimum_arc,reference_arc,maximum_arc,policy_version,ai_demand_arc,signing_key)
    VALUES(?,?,?,?,?,1,?,125,40,100,200,'contract-draft-v1',125,?)`).bind(id,gen,club,now*1000,start,(Math.floor(start/56)+1)*56,key).run();

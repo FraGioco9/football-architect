@@ -81,5 +81,26 @@ class SignedContractsMigrationTest(unittest.TestCase):
         with self.assertRaises(sqlite3.IntegrityError):
             self.sign(player=2,key='stale',generation='00000000-0000-4000-8000-000000000002')
 
+    def test_0041_discards_legacy_rows_only_and_preserves_contract_guards(self):
+        self.db.execute("INSERT INTO player_club_affiliations VALUES(1,'IT-1'),(2,'IT-2')")
+        self.sign()
+        self.mandate(player=2,key='mandate2')
+        before = {name: self.db.execute('SELECT * FROM '+name).fetchall()
+                  for name in ['generated_players','player_accounts','world_state',
+                               'player_signed_contracts','player_agent_mandates']}
+        self.db.executescript((Path(__file__).resolve().parents[1] / 'migrations' /
+                              '0041_remove_legacy_player_affiliations.sql').read_text())
+        self.assertEqual(self.db.execute("SELECT name FROM sqlite_schema WHERE name LIKE 'player_club_affiliations%' OR name LIKE 'player_signed_affiliation_%'").fetchall(), [])
+        for name, rows in before.items():
+            self.assertEqual(self.db.execute('SELECT * FROM '+name).fetchall(), rows)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute('DELETE FROM player_signed_contracts')
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute('DELETE FROM player_agent_mandates')
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("UPDATE world_state SET generation='00000000-0000-4000-8000-000000000002'")
+        self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(), [])
+
+
 if __name__ == '__main__':
     unittest.main()
