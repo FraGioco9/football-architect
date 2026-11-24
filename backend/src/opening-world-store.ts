@@ -132,8 +132,20 @@ export async function commitLocalOpeningBatch(db:Database,session:AdminSession,r
   entries.push({slotKey:e.slotKey,kind:e.kind,playerId:id,fingerprint:(await fingerprint(row)).fingerprint});
  }
  const receipt={runKey,index,requestHash,beforeHighWater:before,afterHighWater:seq,entries};
+ // Recheck reused rows inside the transaction, not merely their earlier hash.
+ const reusedRows=observed.rawRows.filter(row=>seen.has(row.id));
  const statements:Statement[]=[sessionGuard(db,session,now),worldGuard(db,root.worldGeneration),sequenceGuard(db,before,observed.rows.length),
   abortUnless(db,'SELECT 1 WHERE (SELECT COUNT(*) FROM opening_world_runs WHERE run_key=? AND batch_index>=0)=?',[runKey,index])];
+ if(reusedRows.length)statements.push(abortUnless(db,`SELECT 1 WHERE NOT EXISTS(
+  SELECT 1 FROM json_each(?) j WHERE NOT EXISTS(
+   SELECT 1 FROM generated_players p JOIN player_portrait_profiles q ON q.player_id=p.id JOIN player_market_values v ON v.player_id=p.id
+   WHERE p.id=json_extract(j.value,'$.id') AND p.batch_id IS json_extract(j.value,'$.batch_id')
+   AND p.world_generation IS json_extract(j.value,'$.world_generation') AND p.entry_season IS json_extract(j.value,'$.entry_season')
+   AND p.payload_json IS json_extract(j.value,'$.payload_json') AND q.schema_version IS json_extract(j.value,'$.schema_version')
+   AND q.prompt_version IS json_extract(j.value,'$.prompt_version') AND q.snapshot_json IS json_extract(j.value,'$.snapshot_json')
+   AND q.status IS json_extract(j.value,'$.status') AND q.asset_key IS json_extract(j.value,'$.asset_key')
+   AND v.input_revision IS json_extract(j.value,'$.input_revision') AND v.config_version IS json_extract(j.value,'$.config_version')
+   AND v.market_value_arc IS json_extract(j.value,'$.market_value_arc')))`,[JSON.stringify(reusedRows)]));
  if(draftId){
   // Private retirement is in the permanent payload only; ordinary draft JSON is sanitized.
   statements.push(db.prepare("INSERT INTO player_generation_drafts(id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,status,created_at,expires_at,committed_at) VALUES(?,?,0,?,?,?,?,?,'committed',?,?,?)")

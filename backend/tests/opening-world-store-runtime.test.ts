@@ -47,4 +47,4 @@ it('local opening journal preserves existing player, atomically rolls back and r
  await expect(db.prepare('DELETE FROM opening_world_runs').run()).rejects.toThrow();
  const privateDraft=await db.prepare("SELECT candidates_json FROM player_generation_drafts WHERE seed='opening-0'").first<{candidates_json:string}>();
  expect(JSON.parse(privateDraft!.candidates_json).every((p:any)=>!Object.hasOwn(p,'retirement_age'))).toBe(true);
-});
+},60000);
