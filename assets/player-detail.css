@@ -602,3 +602,8 @@ html:lang(fr) .app-player-matches-table{--app-player-matches-mobile-result:"Rés
 .app-player-stats-table .app-player-stats-season-row:target{
  background:color-mix(in srgb,var(--focus) 12%,var(--surface-raised))
 }
+
+/* #763: reserve a single current-value line on every public player tab. */
+.app-player-detail-market-value{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:24px;margin:0;font-size:13px;line-height:20px;color:var(--muted)}
+.app-player-detail-market-value strong{font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;min-width:88px}
+.app-player-detail-market-value .app-skeleton-bar{display:inline-block;width:88px;height:14px;vertical-align:middle}
