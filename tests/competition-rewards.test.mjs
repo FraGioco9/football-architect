@@ -289,3 +289,11 @@ test('retirement-matched academy recycling counts each currency once',async()=>{
  assert.equal(mix.reserveScenarios[0].uncoveredRewardsArc,2012805);
  assert.ok(mix.contributionBeforeFixedCostsCents[0].contributionCents>mix.contributionBeforeFixedCostsCents[3].contributionCents);
 });
+
+test('joint economy grid reconciles reserve and aggregate stocks',async()=>{
+ const {buildJointCalibration}=await import('../tools/run-economy-joint-calibration.mjs');
+ const x=buildJointCalibration();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v1-results.json',import.meta.url),'utf8')));
+ assert.equal(x.grid.length,48);assert.equal(x.baseline.topLicenseEur,295);assert.equal(x.baseline.lowLicenseEur,100);
+ assert.ok(x.baseline.unfundedYouthArcDemand>0);assert.ok(x.baseline.requiredAdditionalReserveReceiptsArc>0);
+ assert.ok(x.aggregateCashFlow[0].totalIssuedArc>0);assert.equal(x.aggregateCashFlow[1].totalIssuedArc,0);
+});
