@@ -159,4 +159,8 @@ it('signs an initial AI term atomically with certified synthetic forecast and ac
  expect(await reconcileEconomy(db,access)).toMatchObject({ok:true,stockArc:String(gross),netIssuedArc:String(gross)});
  expect((await call('GET','?playerId=2')).data.players[0].clubKey).toBe(club);
  expect((await call('POST','/sign',{...signedRequest,durationSeasons:1},undefined,key)).data.error.code).toBe('idempotency_conflict');
+ expect((await call('POST','/sign',signedRequest,undefined,'another-signing-key-001')).data.error.code).toBe('stale_world');
+ await db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission='admin.world.write'").bind(accountId).run();
+ expect((await call('POST','/sign',signedRequest,undefined,key)).status).toBe(403);
+ expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(1);
 },120000);

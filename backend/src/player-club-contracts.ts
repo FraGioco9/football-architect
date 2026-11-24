@@ -283,7 +283,11 @@ export async function signInitialAiContract(
  if(!Number.isSafeInteger(now)||now<=0||now>Math.floor(Number.MAX_SAFE_INTEGER/1000))throw invalid();
  const hash=await hashText(JSON.stringify({command:'sign-initial-ai-contract-v1',...cmd,club,id,duration,expectedQuoteHash:expectedQuoteHash??null}));
  const saved=await replay(db,session,cmd,key,hash,now);if(saved)return saved;
- const prepared=await prepareInitialAiContract(db,parsed,authority);
+ let prepared:Awaited<ReturnType<typeof prepareInitialAiContract>>;
+ try{prepared=await prepareInitialAiContract(db,parsed,authority)}catch(error){
+  const concurrent=await replay(db,session,cmd,key,hash,now);if(concurrent)return concurrent;
+  throw error;
+ }
  const {world,forecast,player,bounds,wage,newDue,committed,prior,treasury,balance,stageGuard,aiClubSql,openingOnlySql,quoteHash}=prepared;
  if(expectedQuoteHash!==undefined&&expectedQuoteHash!==quoteHash)throw new ApiError(409,'contract_quote_changed');
  const operationId=crypto.randomUUID(),result:Outcome={operationId,world:{...world,revision:world.revision+1}};
