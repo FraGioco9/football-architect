@@ -5,7 +5,7 @@ import type {Database,Statement} from './database.ts';
 import {hashText,type AdminSession} from './auth.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {clubTreasuryId} from './economic-ledger.ts';
-import {rawDestinationSalaryReferenceArc,type MarketValueInput} from './player-market-value.mjs';
+import {MARKET_VALUE_CONFIG,rawDestinationSalaryReferenceArc,type MarketValueInput} from './player-market-value.mjs';
 import type {WorldV1} from './types.ts';
 import {readWorld} from './world-repository.ts';
 import {loadApprovedSnapshot} from './approved-season-one.ts';
@@ -200,7 +200,7 @@ export async function signInitialAiContract(
   throw new ApiError(409,'contract_insufficient_cash_proof');
  const operationId=crypto.randomUUID(),result:Outcome={operationId,world:{...world,revision:world.revision+1}};
  const receipt={...result,contract:{playerId:id,clubKey:club,durationSeasons:duration,annualSalaryArc:wage,referenceArc:bounds.reference,
-  forecastVersion:forecast.sourceVersion,expectedAnnualRewardsArc:forecast.expectedAnnualRewardsArc,financeVersion:balance.active_version,
+  salaryFormulaVersion:MARKET_VALUE_CONFIG.version,forecastVersion:forecast.sourceVersion,expectedAnnualRewardsArc:forecast.expectedAnnualRewardsArc,financeVersion:balance.active_version,
   firstPaydayDueArc:newDue,existingDueArc:committed,availableArc:balance.available_arc}};
  try{
   await db.batch([

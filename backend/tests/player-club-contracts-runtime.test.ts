@@ -110,10 +110,19 @@ it('signs an initial AI term atomically with certified synthetic forecast and ac
  const post=(purpose:'GENESIS_RESERVE'|'CLUB_OPENING',sourceId:string,from:string,to:string,amount:number)=>postEconomicOperation(db,{businessKey:'sign-test-'+purpose,requestKey:'sign-test-'+purpose,purpose,actorKind:'system',actorId:'fixture',configVersion:version,sourceId,lines:[{accountId:from,amountArc:-amount},{accountId:to,amountArc:amount}]},{access},now);
  await post('GENESIS_RESERVE','platform','issuance','reserve',10000);
  await post('CLUB_OPENING',club,'reserve','club:'+club,2000);
+ await expect(signInitialAiContract(db,session,request,key,now,async()=>({...await authority(),expectedAnnualRewardsArc:0}))).rejects.toMatchObject({code:'salary_reference_unavailable'});
+ await expect(signInitialAiContract(db,session,request,key,now,async()=>({...await authority(),guards:[]}))).rejects.toMatchObject({code:'salary_reference_unavailable'});
+ await expect(signInitialAiContract(db,session,request,key,now,async()=>({...await authority(),expectedAnnualRewardsArc:10000000000}))).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
+ const noConsent={...request,playerId:3};
+ await db.prepare('INSERT INTO player_agent_mandates(player_id,world_generation,account_id,start_tick,acquired_at_ms,acquisition_key) VALUES(?,?,?,0,?,?)').bind(3,generation,accountId,now*1000,'synthetic-mandate-3').run();
+ await expect(signInitialAiContract(db,session,noConsent,'initial-signing-test-003',now,authority)).rejects.toMatchObject({code:'contract_player_ineligible'});
+
  await expect(signInitialAiContract(db,session,request,key,now,async()=>({...await authority(),guards:[abortUnless(db,'SELECT 1 WHERE 0',[])]}))).rejects.toMatchObject({code:'contract_signing_preconditions_changed'});
  expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(0);
  const result=await signInitialAiContract(db,session,request,key,now,authority);
  expect(result.world.revision).toBe(revision+1);
+ const audit=await db.prepare('SELECT outcome_json FROM admin_operations WHERE id=?').bind(result.operationId).first<{outcome_json:string}>();
+ expect(JSON.parse(audit!.outcome_json).contract).toMatchObject({salaryFormulaVersion:'remaining-agent-salary-draft-v5-769',forecastVersion:'synthetic-opening-test',expectedAnnualRewardsArc:10000,financeVersion:version,availableArc:2000});
  expect(await signInitialAiContract(db,session,request,key,now,authority)).toEqual(result);
  expect((await db.prepare('SELECT annual_salary_arc,reference_arc,duration_seasons,start_tick,scheduled_end_tick FROM player_signed_contracts WHERE player_id=2').first())).toMatchObject({annual_salary_arc:salaryBounds(1,rawDestinationSalaryReferenceArc(payload,10000)!).aiDemand,duration_seasons:2,start_tick:0,scheduled_end_tick:112});
  expect((await db.prepare('SELECT COUNT(*) n FROM economic_transactions').first<{n:number}>())?.n).toBe(2);
