@@ -1086,7 +1086,10 @@ try{
    assert.equal(await page.locator('#app-admin').isVisible(),false);
    finance=true;write=true;
    await page.goto('http://app.localhost:2000/admin');await page.locator('[data-admin-card="economy"]').waitFor({state:'visible'});await page.locator('[data-admin-card="reset"]').waitFor({state:'visible'});
-   assert.equal(await page.locator('.admin-directory-card p').count(),0);
+   const descriptions=page.locator('.admin-directory-card p');
+   assert.equal(await descriptions.count(),7,'Every Admin directory card retains its description');
+   assert.equal(await page.locator('.admin-directory-card:visible p:visible').count(),7);
+   assert.ok(await descriptions.evaluateAll(nodes=>nodes.every(n=>n.textContent.trim()&&n.scrollHeight<=n.clientHeight+1&&n.getBoundingClientRect().bottom<=n.parentElement.querySelector('a').getBoundingClientRect().top+1)),'Descriptions must fit above navigation buttons');
    const cardSizes=await page.locator('.admin-directory-card:visible').evaluateAll(nodes=>nodes.map(n=>Math.round(n.getBoundingClientRect().height)));
    assert.equal(new Set(cardSizes).size,1,'All Admin cards have equal height');
    // WebKit can return from click before the destination DOM is installed.

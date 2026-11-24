@@ -27,8 +27,8 @@
 .inspection-pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0}.inspection-table th,.inspection-table td{white-space:nowrap}.inspection-panel[aria-busy=true] .inspection-metric strong{min-height:1.4em}.inspection-table tr{height:42px}
 
 /* Stable Admin cards and data geometry, including pending/empty states. */
-.app-admin-view .admin-directory-card{height:112px;min-height:112px;box-sizing:border-box;justify-content:space-between;gap:8px}
-.app-admin-view .admin-directory-card h2{line-height:1.25}
+/* Keep directory cards equally tall without clipping localized descriptions. */
+.app-admin-view .admin-directory{grid-auto-rows:1fr}
 .inspection-metric{box-sizing:border-box;height:104px;min-height:104px;max-height:104px;grid-template-rows:2.6em 1.5em;align-content:center;gap:4px}
 .inspection-metric span{line-height:1.3;overflow-wrap:anywhere;align-self:center}
 .inspection-metric strong{line-height:1.5;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(13px,2.5vw,18px);align-self:center}

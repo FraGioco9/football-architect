@@ -25,7 +25,7 @@ export function augmentInspectionDirectory(html){
  const anchor='Rewards</a></section></div>';
  if(!html.includes(anchor))throw Error('Admin Rewards card anchor missing');
  const cards=[['economy','Economy','Inspect balances and settlement'],['reset','Reset','Preview world reset']].map(([key,title,desc])=>'<section class="app-panel admin-directory-card" data-admin-panel="'+key+'" aria-labelledby="admin-card-'+key+'-title"><h2 id="admin-card-'+key+'-title" data-inspection-copy="'+key+'">'+title+'</h2><p data-inspection-copy="'+key+'Description">'+desc+'</p><a class="app-link app-link-primary" href="/admin/'+key+'" data-admin-card="'+key+'" data-inspection-copy="'+key+'">'+title+'</a></section>').join('');
- return html.replace(anchor,'Rewards</a></section>'+cards+'</div>').replace(/(<section class="app-panel admin-directory-card"[^>]*><h2[^>]*>[^<]*<\/h2>)<p[^>]*>[^<]*<\/p>/g,'$1').replace(/(data-admin-panel="(?:economy|reset)")/g,'$1 hidden').replace('</head>',scripts+'</head>');
+ return html.replace(anchor,'Rewards</a></section>'+cards+'</div>').replace(/(data-admin-panel="(?:economy|reset)")/g,'$1 hidden').replace('</head>',scripts+'</head>');
 }
 export function renderInspectionShell(html,mode){
  if(!['reset','economy'].includes(mode))throw Error('Unknown Admin inspection route');

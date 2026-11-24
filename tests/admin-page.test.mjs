@@ -61,6 +61,7 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  const home=readFileSync(new URL('../admin/index.html',import.meta.url),'utf8');
  assert.match(home,/data-admin-directory/);
  assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,7,'Seven separate Admin boxes');
+ assert.equal((home.match(/<p data-(?:admin-directory-copy|inspection-copy|app-i18n)="[^"]+Description">[^<]+<\/p>/g)||[]).length,7,'Each directory card retains its localized description');
  assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,7,'Each Admin box has a clear navigation button');
  assert.match(home,/href="\/admin\/calendar"/);
  assert.match(home,/href="\/admin\/players"/);
