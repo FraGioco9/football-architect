@@ -44,6 +44,7 @@ child.on('close',(code,signal)=>{
   head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),attempt:process.env.GITHUB_RUN_ATTEMPT??null,
   log:stem+'.log',run:process.env.GITHUB_RUN_ID?`${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`:null};
  writeFileSync(stem+'.json',JSON.stringify(result,null,2));
+ console.log('CI_SUITE_TIMING '+JSON.stringify({schema:1,label,status:result.status,durationMs:result.durationMs,head:result.head}));
  if(process.env.GITHUB_STEP_SUMMARY)appendFileSync(process.env.GITHUB_STEP_SUMMARY,'\n### '+label+' — '+result.status+'\n\n```json\n'+JSON.stringify(result,null,2).replaceAll('```','` ` `')+'\n```\n\n[Logs and artifacts]('+result.run+'#artifacts)\n');
  process.exitCode=code??1;
 });

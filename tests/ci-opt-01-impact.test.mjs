@@ -200,3 +200,14 @@ test('Browser matrix job concurrency isolates siblings and preserves FULL run id
  assert.ok(group.includes("format('run-{0}', github.run_id)"),'FULL is isolated by run');
  assert.match(lane,/cancel-in-progress:.*needs\.scope\.outputs\.mode != 'full'/);
 });
+
+test('reviewed research documentation is FAST only for documentation-only Draft diffs',async()=>{
+ const {classifyAdminScope}=await import('../tools/ci-opt-06-admin-impact.mjs');
+ const docs=['match-engine/research/data-access-request.md','match-engine/research/trajectory-holdout-protocol.md'];
+ for(const paths of docs.map(p=>[p]).concat([docs,[...docs,'docs/ci/notes.md']])){
+  assert.deepEqual(classifyImpact(paths),{mode:'fast',area:null,tests:[]});assert.equal(classifyAdminScope(paths),'fast');
+ }
+ for(const path of ['match-engine/research/new.md','match-engine/research/measurements.json','match-engine/src/research-shot-initial-lineup.mjs','match-engine/package.json','match-engine/tests/core.test.mjs','assets/app.js','guide/index.html','.github/workflows/match-engine-01.yml','tools/ci-run.mjs']){
+  assert.equal(classifyImpact([docs[0],path]).mode,'full',path);assert.equal(classifyAdminScope([docs[0],path]),'full',path);
+ }
+});

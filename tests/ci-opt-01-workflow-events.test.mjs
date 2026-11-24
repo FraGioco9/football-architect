@@ -168,17 +168,18 @@ test('extra TARGETED browser preflight is not repeated for unrelated workflow ed
  writeFileSync(join(bin,'node'),
   '#!/bin/sh\n[ "$1" != tools/dev-standings-preview.mjs ] || exit 0\n'+
   'if [ "$1" = tools/ci-run.mjs ]; then shift 4; fi\n'+
-  'printf "%s\\n" "$*" >> "$FA_RECORD"\n',{mode:0o755});
+  'printf "%s\\n" "$*" >> "$FA_RECORD"\n'+
+  'if [ "$FA_FAIL_INT24" = 1 ] && [ "$1" = tests/int24-browser-qa.mjs ]; then exit 42; fi\n',{mode:0o755});
  writeFileSync(join(bin,'curl'),'#!/bin/sh\nexit 0\n',{mode:0o755});
  const script=render(stepScript(read('int24-browser-qa.yml'),'Run loopback preview and browser checks'),{
   'github.event_name':'pull_request','github.event.pull_request.base.sha':base,
   'needs.scope.outputs.mode':'full','needs.scope.outputs.area':''
  }).replaceAll('/tmp/int24-preview.log',join(root,'preview.log'));
- const execute=()=>{
+ const execute=(fail=false)=>{
   writeFileSync(record,'');
   const run=spawnSync('bash',['-e','-o','pipefail','-c',script],{cwd:root,encoding:'utf8',
-   env:{...process.env,PATH:bin+':'+process.env.PATH,FA_RECORD:record}});
-  assert.equal(run.status,0,run.stderr);
+   env:{...process.env,PATH:bin+':'+process.env.PATH,FA_RECORD:record,FA_FAIL_INT24:fail?'1':'0'}});
+  assert.equal(run.status,fail?42:0,run.stderr);
   return readFileSync(record,'utf8').split('\n').filter(Boolean);
  };
  mkdirSync(join(root,'.github','workflows'),{recursive:true});
@@ -187,7 +188,11 @@ test('extra TARGETED browser preflight is not repeated for unrelated workflow ed
  assert.equal(execute().some(x=>x.includes('ci-opt-01-scenarios.mjs')),false);
  writeFileSync(join(root,'.github','workflows','int24-browser-qa.yml'),'name: browser changes');
  git(root,'add','.');git(root,'commit','-qm','browser workflow');
- assert.equal(execute().filter(x=>x.includes('ci-opt-01-scenarios.mjs')).length,1);
+ const calls=execute();
+ assert.equal(calls.filter(x=>x.includes('ci-opt-01-scenarios.mjs')).length,1);
+ assert.ok(calls.indexOf('tests/int24-browser-qa.mjs')<calls.indexOf('tools/ci-opt-01-scenarios.mjs --browser --after-int24'));
+ assert.ok(calls.includes('tools/ci-opt-01-scenarios.mjs --browser --after-int24'));
+ assert.deepEqual(execute(true),['tests/int24-browser-qa.mjs']);
 }));
 test('PR with missing base fails closed instead of reporting successful FULL',()=>{
  assert.notEqual(browserCommands({base:'',css:true}).result.status,0);

@@ -2,7 +2,7 @@ import {verifyCompetitionPlayerStats} from './competition-player-stats-browser.m
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
-import {browserCases,areaRoutes,verifyArea} from './ci-opt-01-browser-cases.mjs';
+import {browserCases,areaRoutes,verifyArea,competitionSupplementalPlan} from './ci-opt-01-browser-cases.mjs';
 import {verifyCompetitionCompactNetwork} from './competition-compact-network-browser.mjs';
 import {verifyCompetitionPublishedNetwork} from './competition-published-734-browser.mjs';
 import {verifyClubBfcacheNetwork} from './club-api-bfcache-browser.mjs';
@@ -10,8 +10,9 @@ import {verifySharedShellNetwork} from './shared-shell-734-browser.mjs';
 import {verifyPlayerTransport734} from './player-transport-734-browser.mjs';
 import {createBrowserTiming} from '../tools/ci-browser-timing.mjs';
 
-export async function runArea(browser,area,engine='chromium'){
+export async function runArea(browser,area,engine='chromium',{afterInt24=false}={}){
  assert.ok(Object.hasOwn(areaRoutes,area),'Unknown area');
+ const supplemental=competitionSupplementalPlan(area,engine,{afterInt24});
  let checks=0;
  const timing=createBrowserTiming('browser-area-'+area,engine);
  try{
@@ -56,9 +57,11 @@ export async function runArea(browser,area,engine='chromium'){
  if(area==='guide'){const start=timing.now();checks+=await verifyPlayerTransport734(browser,{engine});timing.sample('player-transport-734',timing.now()-start)}
  if(area==='clubs'){const start=timing.now();checks+=await verifyClubBfcacheNetwork(browser,{engine});timing.sample('club-bfcache-network',timing.now()-start)}
  if(area==='competitions'){
-  let start=timing.now();checks+=await verifyCompetitionCompactNetwork(browser,{engine});timing.sample('competition-compact-network',timing.now()-start);
-  start=timing.now();checks+=await verifyCompetitionPlayerStats(browser,{engine});timing.sample('competition-player-stats',timing.now()-start);
-  start=timing.now();checks+=await verifyCompetitionPublishedNetwork(browser,{engine});timing.sample('competition-published-network',timing.now()-start);
+  const suites={'compact-network':verifyCompetitionCompactNetwork,'player-stats':verifyCompetitionPlayerStats,'published-network':verifyCompetitionPublishedNetwork};
+  if(afterInt24)console.log('CI-OPT-07: Chromium compact-network and player-stats already covered by completed INT24 on this HEAD');
+  for(const name of supplemental){
+   const start=timing.now();checks+=await suites[name](browser,{engine});timing.sample('competition-'+name,timing.now()-start);
+  }
  }
  timing.mark('supplemental-complete');
  console.log('TARGETED '+engine+' PASS: '+area+' '+checks+' cases (pairwise widths/locales/themes; touch + keyboard)');
@@ -70,5 +73,5 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  assert.ok(['chromium','webkit'].includes(engine),'Unknown engine');
  const playwright=await import('playwright');
  const browser=await playwright[engine].launch({headless:true});
- try{await runArea(browser,process.env.FA_TARGET_AREA,engine)}finally{await browser.close()}
+ try{await runArea(browser,process.env.FA_TARGET_AREA,engine,{afterInt24:process.argv.includes('--after-int24')})}finally{await browser.close()}
 }
