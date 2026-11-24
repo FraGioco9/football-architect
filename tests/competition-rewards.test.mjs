@@ -221,3 +221,24 @@ test('international participation reference is integer, deterministic and conser
  context.seasonData.participants=[...participants].reverse();
  assert.deepEqual(seasonRewardReference('int-1',context),a);
 });
+
+// Club license calibration is research only; the canonical reward schedule is shared.
+test('club license DRAFT reference covers all clubs and preserves genesis separation',async()=>{
+ const {buildCalibration}=await import('../tools/run-club-license-calibration.mjs');
+ const {makeCalibration}=await import('../tools/club-license-calibration.mjs');
+ const rewards=await import('../assets/competition-rewards.mjs');
+ const {MARKET_VALUE_CONFIG}=await import('../backend/src/player-market-value.mjs');
+ const read=path=>JSON.parse(readFileSync(new URL('../'+path,import.meta.url),'utf8'));
+ const c=read('tools/club-license-calibration-v1.json'),clubs=read('data/clubs.json'),selection=read('backend/catalogues/season-1.participants.json');
+ const result=buildCalibration();
+ assert.deepEqual(result,read('docs/club-license-calibration-v1-results.json'));
+ assert.equal(result.rows.length,320);assert.equal(new Set(result.rows.map(r=>r.clubKey)).size,320);
+ assert.ok(Math.abs(result.totals.expectedRewardsArc-rewardTotals().pool)<4);
+ assert.ok(result.rows.every(r=>r.genesisArc>0&&r.baseLicenseCents>=c.minimumCents&&r.initialDay28GapArc===0));
+ assert.deepEqual(makeCalibration([...clubs].reverse(),selection,c,rewards,MARKET_VALUE_CONFIG),result);
+ const key='IT-1',old=result.rows.find(r=>r.clubKey===key),changed=makeCalibration(clubs,selection,{...c,clubOverrides:{[key]:{genesisArc:9999}}},rewards,MARKET_VALUE_CONFIG).rows.find(r=>r.clubKey===key);
+ assert.equal(changed.genesisArc,9999);assert.equal(changed.baseLicenseCents,old.baseLicenseCents);
+ assert.throws(()=>makeCalibration(clubs,selection,{...c,clubOverrides:{'XX-1':{genesisArc:1}}},rewards,MARKET_VALUE_CONFIG));
+ assert.throws(()=>makeCalibration(clubs,selection,{...c,clubOverrides:{[key]:{genesisArc:0}}},rewards,MARKET_VALUE_CONFIG));
+ assert.ok(result.rows.filter(r=>r.initialTier===0).every(r=>r.baseLicenseCents===c.minimumCents&&r.expectedSurplusArc===0));
+});
