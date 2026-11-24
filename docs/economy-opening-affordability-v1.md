@@ -29,3 +29,6 @@ Holdout reference retired cohorts ~16.3k players per seed: average paid career 7
 Next: retain opening affordability design as candidate; do not mandate balanced/free agent rights or alter valuation from this small synthetic calibration. Long-run circulation requires testing voluntary agent willingness to buy relative to gross career returns and alternative initial funding/adaptive reserve policies, no forced spend or imaginary fee. Explicitly settle launch acquisition of existing mandates (no free grants assumed outside the synthetic stress) and reserve policy with owner. No runtime settings, live ledger, DB, checkout, deploy or merge.
 
 Reproduce `node tools/run-economy-opening-affordability.mjs --check`. 15 full paths executed in isolated JS with stock/population/arrears invariants; historical three-season equivalence checked. Short CI regression added; full Node/CI not yet verified.
+
+
+**Owner selection:** existing-player mandates must be purchased; all remain AI/unrepresented until acquisition. The random/balanced synthetic opening assignments above are historical counterfactuals, not the launch model. See latest owner decision in economy-approved-draft-v5.md. Pricing/currency pending calibration.
