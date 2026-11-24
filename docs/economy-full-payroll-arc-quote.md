@@ -14,3 +14,6 @@ Owner selected +10% raw market value; ARC100% of new displayed value remains a w
 | 100 | 22360.50 | 6685790 | 0 | 85790 |
 
 Aggregate sensitivities only; no forced spending, imaginary fees, or assumed full fulfillment.
+
+
+**Owner decision:** 99% ARC quote selected DRAFT. See [scale options](economy-scale-options-v1.md) for recalibrated nominal magnitudes.

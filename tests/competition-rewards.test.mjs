@@ -360,3 +360,11 @@ test('full payroll candidate raises raw value once and prices licenses independe
  assert.equal(x.reference.desiredArcReceipts,6685790);assert.equal(x.reference.unfundedArcDemand,85790);
  assert.equal(x.reference.fundedArcCeiling,6600000);assert.ok(x.scenarios.find(s=>s.eurOrders===50).reserveGapArc>0);
 });
+
+test('owner-selected ARC99 and nominal scale options preserve full payroll and EUR license anchors',async()=>{
+ const {buildScaleResearch}=await import('../tools/run-economy-scale-options.mjs');
+ const x=buildScaleResearch();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-scale-options-v1-results.json',import.meta.url),'utf8')));
+ assert.equal(x.youthArcPriceBps,9900);assert.equal(x.youthEurPriceBps,9000);assert.equal(x.cases.length,5);
+ assert.ok(x.cases.every(c=>c.poolArc===c.payrollArc&&c.licenseTopEur===300&&c.licenseLowEur===100));
+ assert.equal(x.cases[1].meanPlayerValueArc,8180.5);assert.equal(x.cases[1].unfundedArcDemand,21510);
+});
