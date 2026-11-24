@@ -1,12 +1,17 @@
 /** #777: protected inspection of current signed terms. No legacy assignment; protected signing preparation. */
 import clubs from '../../data/clubs.json' with {type:'json'};
 import {ApiError} from './errors.ts';
-import type {Database} from './database.ts';
+import type {Database,Statement} from './database.ts';
+import {hashText,type AdminSession} from './auth.ts';
+import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
+import {clubTreasuryId} from './economic-ledger.ts';
+import {rawDestinationSalaryReferenceArc,type MarketValueInput} from './player-market-value.mjs';
+import type {WorldV1} from './types.ts';
 import {readWorld} from './world-repository.ts';
 import {loadApprovedSnapshot} from './approved-season-one.ts';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
-import {CONTRACT_POLICY} from './player-contract-policy.ts';
-import {parsePrepareRequest} from './command-contract.ts';
+import {CONTRACT_POLICY,salaryBounds,earnedBetween,canAffordNextPayday} from './player-contract-policy.ts';
+import {parsePrepareRequest,parseIdempotencyKey} from './command-contract.ts';
 import {CURRENT_PLAYER_CONTRACTS_SQL} from './effective-player-contracts.mjs';
 
 const canonical=new Map(clubs.map(c=>[c.countryId+'-'+c.clubId,c.primaryName] as const));
@@ -133,4 +138,91 @@ export async function previewAdminContract(db:Database,input:unknown){
   endTick:(Math.floor(startTick/56)+Number(v.durationSeasons))*56,representation:mandate?'human':'ai',
   minimumArc:CONTRACT_POLICY.floors[division],annualSalaryArc:null,signable:false as const,
   blockers:['salary_reference_unavailable','payroll_affordability_unavailable'],worldGeneration:world.generation,worldRevision:world.revision};
+}
+
+
+/** Internal-only Phase C signing boundary. The adapter is server code, never JSON.
+ * It must certify a destination-specific forecast and supply atomic source guards.
+ * No hosted adapter is registered yet; synthetic tests exercise the transaction.
+ * Scope: initial AI-represented players at AI-managed clubs, Season 0 only.
+ * Cash-only proof is sufficient, never assumes an unpaid guaranteed reward.
+ * No human consent, active-season arrears, payroll settlement or opening release bypass. */
+export type OpeningSalaryAuthority=(db:Database,world:WorldV1,clubKey:string)=>Promise<{
+ expectedAnnualRewardsArc:number;sourceVersion:string;guards:readonly Statement[];
+}>;
+export async function signInitialAiContract(
+ db:Database,session:AdminSession,input:unknown,keyInput:string,now:number,authority:OpeningSalaryAuthority
+):Promise<Outcome>{
+ if(!input||typeof input!=='object'||Array.isArray(input))throw invalid();
+ const v=input as Record<string,unknown>;
+ if(Object.keys(v).sort().join(',')!=='clubKey,durationSeasons,expectedGeneration,expectedRevision,playerId'||
+ !validId(v.playerId)||typeof v.clubKey!=='string'||!canonical.has(v.clubKey)||
+ !Number.isSafeInteger(v.durationSeasons)||Number(v.durationSeasons)<1||Number(v.durationSeasons)>3)throw invalid();
+ const club=v.clubKey,id=v.playerId,duration=Number(v.durationSeasons);
+ const cmd=parsePrepareRequest({expectedGeneration:v.expectedGeneration,expectedRevision:v.expectedRevision});
+ const key=parseIdempotencyKey(keyInput);
+ if(!Number.isSafeInteger(now)||now<=0||now>Math.floor(Number.MAX_SAFE_INTEGER/1000))throw invalid();
+ const hash=await hashText(JSON.stringify({command:'sign-initial-ai-contract-v1',...cmd,club,id,duration}));
+ const saved=await replay(db,session,cmd,key,hash,now);if(saved)return saved;
+ const world=await readWorld(db);
+ if(world.generation!==cmd.expectedGeneration||world.revision!==cmd.expectedRevision)throw new ApiError(409,'stale_world');
+ if(world.seasonNumber!==0||world.phase!=='unstarted'||world.day!==0||world.revision>=Number.MAX_SAFE_INTEGER)throw new ApiError(409,'contract_opening_only');
+ const snapshot=await loadApprovedSnapshot();
+ const domestic=snapshot.bindings.find(x=>!x.competitionId.startsWith('int-')&&x.clubIds.includes(club));
+ if(!domestic)throw new ApiError(422,'contract_club_ineligible');
+ const division=domestic.competitionId.endsWith('-1')?1:2;
+ const aiClubSql="SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM club_license_state WHERE club_key=? AND account_id IS NOT NULL)";
+ const eligibleSql="SELECT payload_json FROM generated_players WHERE id=? AND world_generation=? AND entry_season=0 AND json_extract(payload_json,'$.career_status')='active' AND NOT EXISTS(SELECT 1 FROM player_signed_contracts WHERE player_id=?) AND NOT EXISTS(SELECT 1 FROM player_agent_mandates WHERE player_id=?)";
+ if(!await db.prepare(aiClubSql).bind(club).first())throw new ApiError(409,'contract_human_consent_required');
+ const player=await db.prepare(eligibleSql).bind(id,world.generation,id,id).first<{payload_json:string}>();
+ if(!player)throw new ApiError(409,'contract_player_ineligible');
+ const forecast=await authority(db,world,club);
+ if(!forecast||typeof forecast.sourceVersion!=='string'||!forecast.sourceVersion.trim()||forecast.sourceVersion.length>100||
+ !Array.isArray(forecast.guards)||!forecast.guards.length)throw new ApiError(503,'salary_reference_unavailable');
+ const payload=JSON.parse(player.payload_json) as MarketValueInput&{initial_age?:number};
+ const raw=rawDestinationSalaryReferenceArc({...payload,age:payload.age??payload.initial_age??0},forecast.expectedAnnualRewardsArc);
+ if(raw===null)throw new ApiError(503,'salary_reference_unavailable');
+ const bounds=salaryBounds(division,raw),wage=bounds.aiDemand,newDue=earnedBetween(wage,0,28);
+ const treasury=clubTreasuryId(club);
+ // A fresh opening club has no elapsed earning day or historical obligations.
+ // Reject anything other than current, unresolved opening terms; no assumption
+ // that an absent payroll ledger certifies an active-season club's arrears.
+ const priorSql="SELECT id,annual_salary_arc FROM player_signed_contracts WHERE club_key=? ORDER BY id";
+ const prior=(await db.prepare(priorSql).bind(club).all<{id:number;annual_salary_arc:number}>()).results;
+ const openingOnlySql="SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM player_signed_contracts WHERE club_key=? AND (world_generation<>? OR start_tick<>0 OR closed_tick IS NOT NULL))";
+ if(!await db.prepare(openingOnlySql).bind(club,world.generation).first())throw new ApiError(409,'payroll_affordability_unavailable');
+ const balanceSql="SELECT b.available_arc,b.reserved_arc,c.active_version FROM economic_available_balances b JOIN economic_control c ON c.id=1 AND c.posting_enabled=1 WHERE b.id=? AND b.kind='CLUB_TREASURY'";
+ const balance=await db.prepare(balanceSql).bind(treasury).first<{available_arc:number;reserved_arc:number;active_version:string}>();
+ // Holds are not yet attributable to payroll; refuse to double count them.
+ if(!balance||balance.reserved_arc!==0)throw new ApiError(503,'payroll_affordability_unavailable');
+ const committed=prior.reduce((sum,x)=>sum+earnedBetween(x.annual_salary_arc,0,28),0);
+ if(!canAffordNextPayday({uncommittedCash:balance.available_arc,uncreditedGuaranteedParticipation:0,committedUncoveredWages:committed,arrears:0,newDue}))
+  throw new ApiError(409,'contract_insufficient_cash_proof');
+ const operationId=crypto.randomUUID(),result:Outcome={operationId,world:{...world,revision:world.revision+1}};
+ const receipt={...result,contract:{playerId:id,clubKey:club,durationSeasons:duration,annualSalaryArc:wage,referenceArc:bounds.reference,
+  forecastVersion:forecast.sourceVersion,expectedAnnualRewardsArc:forecast.expectedAnnualRewardsArc,financeVersion:balance.active_version,
+  firstPaydayDueArc:newDue,existingDueArc:committed,availableArc:balance.available_arc}};
+ try{
+  await db.batch([
+   sessionGuard(db,session,now),
+   abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=0 AND day=0 AND phase='unstarted'",[world.generation,world.revision]),
+   ...forecast.guards,
+   abortUnless(db,aiClubSql,[club]),
+   abortUnless(db,"SELECT 1 FROM generated_players WHERE id=? AND world_generation=? AND entry_season=0 AND payload_json=? AND NOT EXISTS(SELECT 1 FROM player_signed_contracts WHERE player_id=?) AND NOT EXISTS(SELECT 1 FROM player_agent_mandates WHERE player_id=?)",[id,world.generation,player.payload_json,id,id]),
+   abortUnless(db,openingOnlySql,[club,world.generation]),
+   abortUnless(db,"SELECT 1 WHERE (SELECT COUNT(*) FROM player_signed_contracts WHERE club_key=?)=? AND (SELECT COALESCE(SUM(annual_salary_arc/2),0) FROM player_signed_contracts WHERE club_key=?)=?",[club,prior.length,club,committed]),
+   abortUnless(db,"SELECT 1 FROM economic_available_balances b JOIN economic_control c ON c.id=1 AND c.posting_enabled=1 WHERE b.id=? AND b.kind='CLUB_TREASURY' AND b.reserved_arc=0 AND b.available_arc>=? AND c.active_version=?",[treasury,committed+newDue,balance.active_version]),
+   db.prepare("INSERT INTO player_signed_contracts(player_id,world_generation,club_key,signed_at_ms,start_tick,duration_seasons,scheduled_end_tick,annual_salary_arc,minimum_arc,reference_arc,maximum_arc,policy_version,ai_demand_arc,signing_key) VALUES(?,?,?,?,0,?,?,?,?,?,?,?,?,?)")
+    .bind(id,world.generation,club,now*1000,duration,duration*56,wage,bounds.minimum,bounds.reference,bounds.maximum,CONTRACT_POLICY.version,wage,'initial:'+world.generation+':'+id),
+   db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(world.generation,world.revision),
+   db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)')
+    .bind(operationId,world.generation,key,hash,session.actor.id,'sign-initial-ai-contract-v1',world.revision,result.world.revision,JSON.stringify(receipt),now),
+  ]);
+  return result;
+ }catch{
+  const retry=await replay(db,session,cmd,key,hash,now);if(retry)return retry;
+  const fresh=await readWorld(db);
+  if(fresh.generation!==world.generation||fresh.revision!==world.revision)throw new ApiError(409,'stale_world');
+  throw new ApiError(409,'contract_signing_preconditions_changed');
+ }
 }
