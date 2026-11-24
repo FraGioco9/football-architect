@@ -1565,6 +1565,7 @@
     if(document.querySelector?.(".fa404-main"))return "404"; // No active Dashboard on an error.
     const path = (window.location.pathname || "").replace(/\/+$/, "");
     if (path === "/matches" || /^\/matches\/[1-9][0-9]*$/.test(path)) return "matches";
+    if (path === "/transfers") return "transfers";
     if (path === "/players" || /^\/players\/[1-9][0-9]*$/.test(path)) return "players";
     if (path === "/clubs" || path.startsWith("/clubs/")) return "clubs";
     if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
@@ -1607,7 +1608,7 @@
     const detail = document.getElementById("division-detail-name");
     if (activeView() !== "clubs" && activeView() !== "profile" && activeView() !== "admin" && !document.querySelector?.("[data-player-detail-mode]") && !document.querySelector?.(".matches-directory") && !document.querySelector?.("[data-match-detail]")) {
       const historyTitles={en:"World History",de:"Weltgeschichte",es:"Historia mundial",fr:"Histoire mondiale",it:"Storia mondiale"};
-      document.title=(activeView()==="history"?historyTitles[language()]:activeView() === "divisions" ? (detail?.textContent?.trim() || strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
+      document.title=(activeView()==="history"?historyTitles[language()]:activeView() === "divisions" ? (detail?.textContent?.trim() || strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : activeView() === "transfers" ? "Transfers" : strings[activeView()]) + " — Football Architect";
     }
     renderWorldProgress();
   }
