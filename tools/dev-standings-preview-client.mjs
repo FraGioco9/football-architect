@@ -506,7 +506,8 @@ if(validPath||indexPath||clubPath||sharedPath){
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
-  if(validPath)waitForRows().then(()=>setPreviewEnabled(debugEnabled()&&debugSeason>0)).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
+  // Unconfirmed Season 0 intentionally has one empty row, not 16 club rows.
+  if(validPath&&debugSeason>0)waitForRows().then(()=>setPreviewEnabled(debugEnabled()&&debugSeason>0)).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
   else reveal();
   let renderedSeason=renderKey();
   let seasonRefresh=Promise.resolve(true);
