@@ -188,3 +188,15 @@ test('CI-OPT-06: Match Engine checks only engine changes, never generic DEV prev
    'npm --prefix match-engine run bench'])
    assert.ok(me.includes(mandatory),mandatory);
 });
+
+test('Browser matrix job concurrency isolates siblings and preserves FULL run identity',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const source=readFileSync(new URL('../.github/workflows/int24-browser-qa.yml',import.meta.url),'utf8');
+ const lane=source.split('\n  chromium:')[1]?.split('\n  browser-result:')[0];
+ assert.ok(lane);
+ const group=lane.split('\n').find(line=>line.trimStart().startsWith('group:'));
+ assert.ok(group?.includes('${{ matrix.lane }}'),'sibling lanes must have distinct concurrency keys');
+ assert.ok(group.includes("needs.scope.outputs.mode != 'full'"));
+ assert.ok(group.includes("format('run-{0}', github.run_id)"),'FULL is isolated by run');
+ assert.match(lane,/cancel-in-progress:.*needs\.scope\.outputs\.mode != 'full'/);
+});
