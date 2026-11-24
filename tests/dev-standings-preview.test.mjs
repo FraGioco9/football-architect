@@ -520,6 +520,24 @@ test("DEV-M01: Debug mounts independently while preview waits for competition hy
   }
 });
 
+test("DEV Season 0 releases the first-paint guard without waiting for club rows",async()=>{
+ const initializer=client.slice(client.indexOf('if(validPath||indexPath||clubPath||sharedPath){'),client.indexOf('\nfunction strings()'));
+ const dataset={faDevStandingsPending:"true"},operations=[];
+ runWithModel(initializer,{
+  validPath:['/competitions/it-1/standings','it-1'],indexPath:false,clubPath:false,
+  debugSeason:0,matchdays:0,FLAG:'preview',sessionStorage:{removeItem(){}},
+  syncCompetitionLinks(){},renderKey:()=>'1:0:0',
+  window:{addEventListener(){},faDebugFirstPaintRelease(){operations.push('release')}},
+  document:{documentElement:{dataset}},registerDebugControls(){},createDebugWidget:()=>({}),
+  waitForRows(){operations.push('wait');return new Promise(()=>{})},
+  setPreviewEnabled(){operations.push('toggle');return Promise.resolve(true)},
+  setSeason(){},setMatchdays(){},resetPreview(){},syncHistoryPreview(){},console
+ });
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(operations,['release']);
+ assert.equal(dataset.faDevStandingsPending,undefined);
+});
+
 test("UX-02..08: DEV switch lifecycle and rollback contracts",()=>{
  assert.ok(!client.includes("location.reload()"));
  assert.ok(client.includes("transition=transition.catch(()=>false).then(async()=>"));
