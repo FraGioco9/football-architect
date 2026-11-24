@@ -5,7 +5,7 @@ import {seedUnifiedOperator} from './fixtures/unified-operator.ts';
 import {clearTestWorld} from './fixtures/test-world.ts';
 import {confirmSeasonZeroEntrants,readSeasonZeroAuthority} from '../src/season-zero-entrants.ts';
 import {readAdministrativeCalendar} from '../src/admin-calendar-read.ts';
-import {readPublicSportingSeasonLineupV1} from '../src/public-sporting-read-lineup-v1.ts';
+import {readPublicSportingSeasonLineupV1,readPublicClubHistoryLineupV1} from '../src/public-sporting-read-lineup-v1.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
@@ -33,6 +33,10 @@ beforeEach(async()=>{
 it('holds both scopes private until independent authenticated receipt and shows no staged sporting information',async()=>{
  expect((await readPublicSportingSeasonLineupV1(db,'IT-1',1)).status).toBe('empty');
  expect((await readPublicSportingSeasonLineupV1(db,'int-1',1)).status).toBe('empty');
+ const club=(await loadApprovedSnapshot()).bindings.find(b=>b.competitionId==='IT-1')!.clubIds[0]!;
+ expect(((await readPublicClubHistoryLineupV1(db,club)) as any).data.inaugural).toMatchObject({
+  status:'empty',reason:'season-not-prepared',data:null
+ });
  expect((await readAdministrativeCalendar(db)).mode).toBe('season-zero');
  expect((await readAdministrativeCalendar(db)).events).toHaveLength(2);
  const domestic=await approve('domestic','zero-approve-domestic-0001');
@@ -46,6 +50,11 @@ it('holds both scopes private until independent authenticated receipt and shows 
  expect(national.data.participants).toHaveLength(16);
  expect(Object.keys(national.data).sort()).toEqual(['entrantsOnly','participants','rulesVersion','season','seasonState']);
  expect(national.data.fixtures).toBeUndefined();
+ const confirmedClub=((await readPublicClubHistoryLineupV1(db,club)) as any).data.inaugural;
+ expect(confirmedClub).toMatchObject({status:'partial',data:{entrantsOnly:true,
+  memberships:[{competitionId:'IT-1',category:'domestic',position:null,points:0,nextMatch:null}]
+ }});
+ expect(confirmedClub.data.memberships).toHaveLength(1);
  expect((await readPublicSportingSeasonLineupV1(db,'int-1',1)).status).toBe('empty');
  const midway=await readAdministrativeCalendar(db);
  expect(midway.events.find(e=>e.scope==='domestic')?.status).toBe('completed');
@@ -86,6 +95,11 @@ it('hands off confirmed scopes into Season 1 official receipts without duplicate
  expect(calendar.events.find(e=>e.id==='international:entrants')?.status).toBe('scheduled');
  world=(await advanceAdministrativeClockLineupV1(db,session,'start',meta(),'zero-handoff-start-0001',now)).world;
  expect((await readPublicSportingSeasonLineupV1(db,'IT-1',1)).status).toBe('partial');
+ const club=(await loadApprovedSnapshot()).bindings.find(b=>b.competitionId==='IT-1')!.clubIds[0]!;
+ const handoffClub=((await readPublicClubHistoryLineupV1(db,club)) as any).data.overviews[0];
+ expect(handoffClub).toMatchObject({status:'partial',data:{entrantsOnly:true,
+  memberships:[{competitionId:'IT-1',category:'domestic',position:null,points:0,nextMatch:null}]
+ }});
  expect((await readPublicSportingSeasonLineupV1(db,'int-1',1)).status).toBe('empty');
  await expect(completeConfirmationEvent(db,session,{...meta(),eventId:'domestic:entrants'},'zero-handoff-repeat-0001',now)).rejects.toMatchObject({status:409});
  world=(await completeConfirmationEvent(db,session,{...meta(),eventId:'international:entrants'},'zero-handoff-international-0001',now)).world;

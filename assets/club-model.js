@@ -330,7 +330,8 @@
   // public source is loading or after authoritative season hydration.
   const clubKey=c.countryId+'-'+c.clubId;
   const publicMemberships=snapshot?.source==='authoritative'&&snapshot.clubKey===clubKey&&
-   (snapshot.season===activeSeason||snapshot.season===0)&&['complete','unstarted','unpublished'].includes(snapshot.coverage)&&Array.isArray(snapshot.memberships)?
+   (snapshot.season===activeSeason||snapshot.season===0||activeSeason===0&&snapshot.season===1)&&
+   ['complete','unstarted','unpublished','entrants-only'].includes(snapshot.coverage)&&Array.isArray(snapshot.memberships)?
     snapshot.memberships:null;
   const publicPending=snapshot?.source==='loading';
   const publicUnavailable=snapshot?.source==='unavailable';

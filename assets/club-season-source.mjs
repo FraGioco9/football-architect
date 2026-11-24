@@ -18,7 +18,9 @@ export function projectClubMemberships(payload,clubKey,season,world){
  const allowed=competitionIdsForClub(clubKey);
  // Every response, including an unpublished calendar, must refer to the exact
  // authoritative world revision and requested club/season.
- if(!validPublicWorld(world)||!Number.isInteger(season)||season<1||season>world.seasonNumber||
+ const inaugural=world?.seasonNumber===0&&season===1&&world.phase==='unstarted'&&world.day===0;
+ if(!validPublicWorld(world)||!Number.isInteger(season)||season<1||
+   (season>world.seasonNumber&&!inaugural)||
    !isObject(payload)||payload.schemaVersion!==1||payload.providerId!=='authoritative-world'||
    payload.clubKey!==clubKey||payload.selectedSeason!==season||!sameWorld(payload.world,world))
   throw TypeError('Invalid authoritative club overview');
@@ -31,10 +33,16 @@ export function projectClubMemberships(payload,clubKey,season,world){
    throw TypeError('Invalid unpublished club overview');
   return Object.freeze({source:'authoritative',clubKey,season,world,coverage:'unpublished',memberships:Object.freeze([])});
  }
+ const entrantsOnly=payload.data?.entrantsOnly===true;
+ const prefix='club:'+world.generation+':season:'+season+':';
+ const receipt=entrantsOnly?prefix+'entrants:':prefix;
  if(!['partial','available'].includes(payload.status)||payload.reason!==null||
    !isObject(payload.provenance)||payload.provenance.kind!=='authoritative'||
-   payload.provenance.resultAuthority!=='temporary-lineup-v1'||typeof payload.provenance.sourceRef!=='string'||
-   !payload.provenance.sourceRef.startsWith('club:'+world.generation+':season:'+season+':')||
+   payload.provenance.resultAuthority!==(entrantsOnly?'confirmed-entrants-v1':'temporary-lineup-v1')||
+   typeof payload.provenance.sourceRef!=='string'||!payload.provenance.sourceRef.startsWith(receipt)||
+   (entrantsOnly&&(!/^[a-f0-9]{64}$/.test(payload.provenance.sourceRef.slice(receipt.length))||
+    payload.status!=='partial'||Object.keys(payload.data).sort().join(',')!=='entrantsOnly,memberships,season'))||
+   (inaugural&&!entrantsOnly)||
    !isObject(payload.data)||payload.data.season!==season||!Array.isArray(payload.data.memberships))
   throw TypeError('Invalid authoritative club overview');
  const memberships=payload.data.memberships;
@@ -48,6 +56,8 @@ export function projectClubMemberships(payload,clubKey,season,world){
     !(m.cupStatus===null||m.category==='international'&&
       ['groupStage','playoffs','quarterfinals','semifinals','final','winner','runnerUp'].includes(m.cupStatus)))
    throw TypeError('Unverified membership');
+  if(entrantsOnly&&(m.position!==null||m.points!==0||m.cupStatus!==null||m.nextMatch!==null))
+   throw TypeError('Invalid confirmed entrant membership');
   seen.add(m.competitionId);
   if(m.category==='domestic')domesticCount++;
   const next=m.nextMatch;
@@ -65,8 +75,10 @@ export function projectClubMemberships(payload,clubKey,season,world){
    nextMatch:next===null?null:Object.freeze({...next})
   }));
  }
- if((out.length>0&&domesticCount!==1)||out.length>2)throw TypeError('Incomplete or duplicate domestic membership');
- return Object.freeze({source:'authoritative',clubKey,season,world,coverage:'complete',memberships:Object.freeze(out)});
+ if((!entrantsOnly&&out.length>0&&domesticCount!==1)||domesticCount>1||out.length>2)
+  throw TypeError('Incomplete or duplicate domestic membership');
+ return Object.freeze({source:'authoritative',clubKey,season,world,
+  coverage:entrantsOnly?'entrants-only':'complete',memberships:Object.freeze(out)});
 }
 
 // Validate all seasons in the batch before selecting the current one.
@@ -94,8 +106,12 @@ export function projectClubHistoryOverviews(payload,clubKey,world){
 export async function readClubMemberships({clubKey,world,fetchJson,signal}){
  competitionIdsForClub(clubKey);
  if(!validPublicWorld(world)||typeof fetchJson!=='function')throw TypeError('Invalid canonical club read');
- if(world.seasonNumber===0)
-  return Object.freeze({source:'authoritative',clubKey,season:0,world,coverage:'unstarted',memberships:Object.freeze([])});
+ if(world.seasonNumber===0){
+  const batch=await fetchJson('/api/clubs/'+clubKey+'/history',{signal});
+  if(signal?.aborted)throw Error('Club read cancelled');
+  projectClubHistoryOverviews(batch,clubKey,world);
+  return projectClubMemberships(batch.data.inaugural,clubKey,1,world);
+ }
  const season=world.seasonNumber;
  if(season>2)throw TypeError('Unsupported public season');
  const batch=await fetchJson('/api/clubs/'+clubKey+'/history',{signal});

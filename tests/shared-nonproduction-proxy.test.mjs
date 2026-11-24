@@ -181,3 +181,32 @@ test('shared DEV forwards authenticated Contracts GET queries and POST through v
  const blocked=await run(req({path:'/api/admin/contracts?page=1&unexpected=1'}),async()=>{throw Error('must not forward')});
  assert.equal(blocked.status,403);
 });
+
+
+test('shared proxy enforces protected club-license route and supports full 320-club response',async()=>{
+ const calls=[],large=JSON.stringify({clubs:Array.from({length:320},(_,i)=>({
+  clubKey:'IT-'+(i+1),accountEmail:'a'.repeat(215)})),history:[]});
+ assert.ok(Buffer.byteLength(large)>65536);
+ const send=async(url,options)=>{
+  calls.push({path:url.pathname+url.search,method:options.method||'GET',headers:options.headers,limit:options.limit});
+  return calls.length%2===1?context():
+   {status:200,headers:{},body:Buffer.from(calls.length===2?large:'{"accounts":[]}')};
+ };
+ const list=await run(req({path:'/api/admin/club-licenses',headers:{cookie:'fa_player_local='+token}}),send);
+ assert.equal(list.status,200);
+ assert.equal(JSON.parse(list.body).clubs.length,320);
+ assert.equal(calls[1].limit,262144);
+ assert.equal(calls[1].headers.cookie,'__Host-fa_player='+token);
+ const lookup=await run(req({path:'/api/admin/club-licenses/accounts?q=alice%40example.invalid',
+  headers:{cookie:'fa_player_local='+token}}),send);
+ assert.equal(lookup.status,200);
+ assert.equal(calls[3].path,'/api/admin/club-licenses/accounts?q=alice%40example.invalid');
+ assert.equal(calls[3].headers.cookie,'__Host-fa_player='+token);
+ for(const path of ['/api/admin/club-licenses/accounts?q=alice&role=admin',
+  '/api/admin/club-licenses/accounts?q=ab%2fcd']){
+  let n=0;
+  const blocked=await run(req({path,headers:{cookie:'fa_player_local='+token}}),
+   async()=>{n++;return context()});
+  assert.equal(blocked.status,403);assert.equal(n,0);
+ }
+});

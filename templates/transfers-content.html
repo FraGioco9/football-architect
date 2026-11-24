@@ -1,0 +1,61 @@
+<section id="app-transfers" class="app-view fa-transfers" aria-labelledby="transfers-title">
+  <header class="fa-transfers-header">
+    <div>
+      <h1 class="app-page-title" id="transfers-title" data-transfers-text="title">Transfers</h1>
+      <p class="fa-transfers-subtitle" data-transfers-text="subtitle">Explore players in the world. Transfer deals are not available yet.</p>
+    </div>
+  </header>
+  <form class="app-panel fa-transfers-filters" id="transfers-filters" role="search">
+    <div class="fa-transfers-field fa-transfers-name-field">
+      <label for="transfers-name" data-transfers-text="name">Player name</label>
+      <input id="transfers-name" type="search" name="name" maxlength="80" autocomplete="off" placeholder="Search by name" data-transfers-placeholder="namePlaceholder">
+    </div>
+    <div class="fa-transfers-field">
+      <label for="transfers-position" data-transfers-text="position">Position</label>
+      <select id="transfers-position" name="position">
+        <option value="" data-transfers-text="allPositions">All positions</option>
+        <option value="GK">GK</option><option value="RB">RB</option><option value="CB">CB</option><option value="LB">LB</option>
+        <option value="RWB">RWB</option><option value="LWB">LWB</option><option value="DM">DM</option><option value="CM">CM</option>
+        <option value="AM">AM</option><option value="RM">RM</option><option value="LM">LM</option>
+        <option value="RW">RW</option><option value="LW">LW</option><option value="ST">ST</option>
+      </select>
+    </div>
+    <div class="fa-transfers-actions">
+      <button type="submit" class="app-link app-link-primary" data-transfers-text="search">Search</button>
+      <button type="button" class="app-link app-link-secondary" id="transfers-reset" data-transfers-text="reset">Reset</button>
+    </div>
+  </form>
+  <section class="app-panel fa-transfers-results" aria-labelledby="transfers-results-title">
+    <div class="fa-transfers-results-header">
+      <h2 id="transfers-results-title" data-transfers-text="results">Players</h2>
+      <span id="transfers-count" class="fa-transfers-count" aria-live="polite" aria-atomic="true"></span>
+    </div>
+    <p class="fa-transfers-disclaimer" data-transfers-text="disclaimer">Club affiliation is verified public data, not a transfer listing or proof of availability.</p>
+    <div class="fa-transfers-table-region" role="region" aria-label="Transfer discovery results" data-transfers-region tabindex="0" aria-busy="true">
+      <table class="fa-transfers-table">
+        <thead><tr>
+          <th scope="col" data-transfers-text="player">Player</th>
+          <th scope="col" data-transfers-text="position">Position</th>
+          <th scope="col" data-transfers-text="age">Age</th>
+          <th scope="col" data-transfers-text="nationality">Nationality</th>
+          <th scope="col" data-transfers-text="club">Current club</th>
+        </tr></thead>
+        <tbody id="transfers-rows">
+                  <tr class="fa-transfers-loading-row" aria-hidden="true"><td><span class="fa-transfers-skeleton fa-transfers-skeleton-name"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-position"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-age"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-nationality"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-club"></span></td></tr>
+                  <tr class="fa-transfers-loading-row" aria-hidden="true"><td><span class="fa-transfers-skeleton fa-transfers-skeleton-name"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-position"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-age"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-nationality"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-club"></span></td></tr>
+                  <tr class="fa-transfers-loading-row" aria-hidden="true"><td><span class="fa-transfers-skeleton fa-transfers-skeleton-name"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-position"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-age"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-nationality"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-club"></span></td></tr>
+                  <tr class="fa-transfers-loading-row" aria-hidden="true"><td><span class="fa-transfers-skeleton fa-transfers-skeleton-name"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-position"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-age"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-nationality"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-club"></span></td></tr>
+                  <tr class="fa-transfers-loading-row" aria-hidden="true"><td><span class="fa-transfers-skeleton fa-transfers-skeleton-name"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-position"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-age"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-nationality"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-club"></span></td></tr>
+                  <tr class="fa-transfers-loading-row" aria-hidden="true"><td><span class="fa-transfers-skeleton fa-transfers-skeleton-name"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-position"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-age"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-nationality"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-club"></span></td></tr>
+                  <tr class="fa-transfers-loading-row" aria-hidden="true"><td><span class="fa-transfers-skeleton fa-transfers-skeleton-name"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-position"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-age"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-nationality"></span></td><td><span class="fa-transfers-skeleton fa-transfers-skeleton-club"></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="fa-transfers-status" id="transfers-status" role="status" aria-live="polite" data-transfers-text="loading">Loading players…</p>
+    <nav class="fa-transfers-pager" aria-label="Results pages" data-transfers-pager-label>
+      <button type="button" id="transfers-prev" class="app-link app-link-secondary" disabled data-transfers-text="previous">Previous</button>
+      <span id="transfers-page-info" class="fa-transfers-page-info" aria-live="polite"></span>
+      <button type="button" id="transfers-next" class="app-link app-link-secondary" disabled data-transfers-text="next">Next</button>
+    </nav>
+  </section>
+</section>

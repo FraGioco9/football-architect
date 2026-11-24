@@ -291,6 +291,8 @@
     "tests/player-safe-return-browser.mjs": "browser",
     "tests/player-tables-parity-532.test.mjs": "site-node",
     "tests/players-directory.test.mjs": "site-node",
+    "tests/transfers-discovery.test.mjs": "site-node",
+    "tests/transfers-page.test.mjs": "site-node",
     "tests/players-generator-runtime-parity.test.mjs": "site-node",
     "tests/match-detail.test.mjs": "site-node",
     "tests/match-player-statistics.test.mjs": "site-node",
@@ -392,6 +394,7 @@
     "tests/ci-browser-timing.test.mjs": "site-node",
     "tests/public-image-urls.test.mjs": "site-node",
     "backend/tests/public-world-history-projection.test.ts": "backend-contract",
-    "tests/world-history-page.test.mjs": "site-node"
+    "tests/world-history-page.test.mjs": "site-node",
+    "backend/tests/club-licenses-runtime.test.ts": "backend-runtime"
   }
 }

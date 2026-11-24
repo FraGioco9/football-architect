@@ -13,7 +13,7 @@ test('canonical navigation has no /app prefix and all app routes load with asset
     });req.on('error',reject);req.end();
   });
   try {
-    for(const path of ['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/matches','/history','/competitions/it-1/fixtures?season=2']) {
+    for(const path of ['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/admin/licenses','/competitions','/players','/matches','/history','/transfers','/competitions/it-1/fixtures?season=2']) {
       const page=await get(path);assert.equal(page.status,200,path);
       assert.doesNotMatch(page.body,/<a\b[^>]*href=["']\/app(?:\/|["'])/);
       const base=page.body.match(/<base href="([^"]+)"/)?.[1]||path;
@@ -39,11 +39,11 @@ test('canonical navigation has no /app prefix and all app routes load with asset
 test('publication aliases map canonical app URLs to the same allowlisted DEV files', async()=>{
   const {publicRequestFile,isAllowlistedPublicPath}=await import('../tools/publication-guard.mjs');
   const config=JSON.parse(read('vercel.json'));
-  const tokens=[[':page(dashboard|calendar|settings|admin|competitions|players|matches)','(?<page>dashboard|calendar|settings|admin|competitions|players|matches)'],
+  const tokens=[[':page(dashboard|calendar|settings|admin|competitions|players|matches|transfers)','(?<page>dashboard|calendar|settings|admin|competitions|players|matches|transfers)'],
     [':division((?:it|eng|es|de|fr|pt|nl|br)-[12])','(?<division>(?:it|eng|es|de|fr|pt|nl|br)-[12])'],
     [':file(index.html|manifest.json|compact.json)','(?<file>index.html|manifest.json|compact.json)'],
-    [':section(calendar|players|contracts)','(?<section>calendar|players|contracts)']];
-  const paths=['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/competitions/_shared/manifest.json','/competitions/_shared/compact.json',
+    [':section(calendar|players|contracts|licenses)','(?<section>calendar|players|contracts|licenses)']];
+  const paths=['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/admin/licenses','/competitions','/players','/transfers','/competitions/_shared/manifest.json','/competitions/_shared/compact.json',
     ...['it','eng','es','de','fr','pt','nl','br'].flatMap(country=>[1,2].map(tier=>'/competitions/'+country+'-'+tier))];
   for(const path of paths){
     let target;
@@ -63,7 +63,7 @@ test('canonical pages and public artifacts have no physical app directory or leg
   assert.equal(existsSync(new URL('../app/',import.meta.url)),false);
   const files=planPublicFiles();
   assert.ok(files.every(path=>!path.startsWith('app/')));
-  for(const path of ['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/competitions/it-1']) {
+  for(const path of ['/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/transfers','/competitions/it-1']) {
     assert.equal(publicRequestFile(path),path.slice(1)+'/index.html');
     assert.ok(isAllowlistedPublicPath(publicRequestFile(path)));
     assert.equal(isAllowlistedPublicPath(publicRequestFile('/app'+path)),false);

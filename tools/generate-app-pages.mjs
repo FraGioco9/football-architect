@@ -3,6 +3,7 @@ import {bootstrapCompetitionTabs} from './competition-tab-preboot.mjs';
 import {renderAdminSettings,renderAdminPlayers,renderAdminPlayersPreview} from './render-admin-settings.mjs';
 import {renderPlayerDetailPage} from './render-player-detail.mjs';
 import {renderAdminContracts} from './render-admin-contracts.mjs';
+import {renderAdminLicenses} from './render-admin-licenses.mjs';
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs";
 import {buildRoute} from "../assets/routes-registry.mjs";
@@ -305,13 +306,14 @@ for(const page of outputPages){
 }
 // Admin directory and two dedicated subpages share the existing app shell.
 for(const [route,title,content,scripts] of [
- ['admin','Admin','<div class="admin-directory" data-admin-directory><section class="app-panel admin-directory-card" data-admin-panel="calendar" aria-labelledby="admin-card-calendar-title"><h2 id="admin-card-calendar-title" data-admin-directory-copy="calendar">Calendar</h2><p data-admin-directory-copy="calendarDescription">Manage the world calendar and sporting progression</p><a class="app-link app-link-primary" href="/admin/calendar" data-admin-card="calendar" data-admin-directory-copy="calendar">Calendar</a></section><section class="app-panel admin-directory-card" data-admin-panel="players" aria-labelledby="admin-card-players-title"><h2 id="admin-card-players-title" data-admin-directory-copy="players">Players</h2><p data-admin-directory-copy="playersDescription">Configure player generation</p><a class="app-link app-link-primary" href="/admin/players" data-admin-card="players" data-admin-directory-copy="players">Players</a></section><section class="app-panel admin-directory-card" data-admin-panel="contracts" aria-labelledby="admin-card-contracts-title"><h2 id="admin-card-contracts-title" data-admin-directory-copy="contracts">Contracts</h2><p data-admin-directory-copy="contractsDescription">Manage current player–club affiliations</p><a class="app-link app-link-primary" href="/admin/contracts" data-admin-card="contracts" data-admin-directory-copy="contracts">Contracts</a></section></div>',['/assets/admin-permissions-cache.js','/assets/admin-players.js']],
+ ['admin','Admin','<div class="admin-directory" data-admin-directory><section class="app-panel admin-directory-card" data-admin-panel="calendar" aria-labelledby="admin-card-calendar-title"><h2 id="admin-card-calendar-title" data-admin-directory-copy="calendar">Calendar</h2><p data-admin-directory-copy="calendarDescription">Manage the world calendar and sporting progression</p><a class="app-link app-link-primary" href="/admin/calendar" data-admin-card="calendar" data-admin-directory-copy="calendar">Calendar</a></section><section class="app-panel admin-directory-card" data-admin-panel="players" aria-labelledby="admin-card-players-title"><h2 id="admin-card-players-title" data-admin-directory-copy="players">Players</h2><p data-admin-directory-copy="playersDescription">Configure player generation</p><a class="app-link app-link-primary" href="/admin/players" data-admin-card="players" data-admin-directory-copy="players">Players</a></section><section class="app-panel admin-directory-card" data-admin-panel="contracts" aria-labelledby="admin-card-contracts-title"><h2 id="admin-card-contracts-title" data-admin-directory-copy="contracts">Contracts</h2><p data-admin-directory-copy="contractsDescription">Manage current player–club affiliations</p><a class="app-link app-link-primary" href="/admin/contracts" data-admin-card="contracts" data-admin-directory-copy="contracts">Contracts</a></section><section class="app-panel admin-directory-card" data-admin-panel="licenses" aria-labelledby="admin-card-licenses-title"><h2 id="admin-card-licenses-title" data-admin-directory-copy="licenses">Club Licenses</h2><p data-admin-directory-copy="licensesDescription">Assign or revoke club licenses for users</p><a class="app-link app-link-primary" href="/admin/licenses" data-admin-card="licenses" data-admin-directory-copy="licenses">Club Licenses</a></section></div>',['/assets/admin-permissions-cache.js','/assets/admin-players.js']],
  ['admin/calendar','Admin Calendar',renderAdminSettings(),['/assets/world-calendar-model.js','/assets/admin-permissions-cache.js','/assets/admin-settings.js']],
  ['admin/players','Admin Players',renderAdminPlayers(),['/assets/admin-permissions-cache.js','/assets/admin-players.js']],
  ['admin/contracts','Admin Contracts',renderAdminContracts(),['/assets/admin-permissions-cache.js','/assets/players-nationality-tooltip.js','/assets/admin-contracts.js']],
+ ['admin/licenses','Admin Club Licenses',renderAdminLicenses(),['/assets/admin-permissions-cache.js','/assets/admin-licenses.js']],
  ['admin/players/preview','Admin — Players Preview',renderAdminPlayersPreview(),['/assets/players-nationality-tooltip.js','/assets/admin-permissions-cache.js','/assets/admin-players-preview.js']]
 ]){
- const section='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title"'+(route==='admin/contracts'?' data-admin-access="pending"':' hidden')+'>\n          '+(route==='admin/players/preview'?'':route==='admin'?'<h1 id="admin-title" class="app-page-title">Admin</h1>':'<div class="admin-page-heading"><h1 id="admin-title" class="app-page-title">'+(route.endsWith('calendar')?'Calendar':route.endsWith('contracts')?'Contracts':'Players')+'</h1>\n          <a class="app-link app-link-secondary admin-back" href="'+(route==='admin/players/preview'?'/admin/players':'/admin')+'" data-admin-back aria-label="'+(route==='admin/players/preview'?'Back to Player generation':'Back to Admin')+'"><svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Admin</span></a></div>')+'\n          '+content+'\n        </section>\n';
+ const section='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title"'+(route==='admin/contracts'?' data-admin-access="pending"':' hidden')+'>\n          '+(route==='admin/players/preview'?'':route==='admin'?'<h1 id="admin-title" class="app-page-title">Admin</h1>':'<div class="admin-page-heading"><h1 id="admin-title" class="app-page-title">'+(route.endsWith('calendar')?'Calendar':route.endsWith('contracts')?'Contracts':route.endsWith('licenses')?'Club Licenses':'Players')+'</h1>\n          <a class="app-link app-link-secondary admin-back" href="'+(route==='admin/players/preview'?'/admin/players':'/admin')+'" data-admin-back aria-label="'+(route==='admin/players/preview'?'Back to Player generation':'Back to Admin')+'"><svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Admin</span></a></div>')+'\n          '+content+'\n        </section>\n';
  let html=template.replace(/(id="main-content" tabindex="-1">\n)[\s\S]*?(      <\/main>)/,(_,first,last)=>first+section+last);
  for(const [token,value] of Object.entries(worldPageReplacements()))html=html.replaceAll(token,value);
  // At first paint, Admin must not highlight a different sidebar destination.
@@ -322,6 +324,7 @@ for(const [route,title,content,scripts] of [
    .replace('<h1 id="admin-title" class="app-page-title" data-app-i18n="statsDevPlayers">Players</h1>','<h1 id="admin-title" class="app-page-title">Player preview</h1>');
  html=html.replace('</head>',
   '  <meta name="robots" content="noindex,nofollow">\n'+(route==='admin/players/preview'?'  <meta name="referrer" content="no-referrer">\n':'')+'  <script src="/assets/routes-registry.js" defer></script>\n  <link rel="stylesheet" href="/assets/admin-settings.css">\n'+scripts.map(src=>'  <script src="'+src+'" defer></script>\n').join('')+'</head>');
+ if(route==='admin/licenses')html=html.replace('</head>','  <link rel="stylesheet" href="/assets/admin-licenses.css">\n</head>');
  writeOutput(route+'/index.html',html);
 }
 // Account and authentication routes use the same career shell.
@@ -398,6 +401,22 @@ if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length
  html=html.replace('  <script src="/assets/international-cups.js" defer></script>\n','');
  html=html.replace('</head>','  <script src="/assets/players-nationality-tooltip.js" defer></script>\n  <script src="/assets/players-directory.js" defer></script>\n</head>');
  writeOutput("players/index.html",html);
+}
+// #587: generate Transfers from the verified Players shell and canonical template.
+// No hand-edited checked-in HTML, no independent sidebar/shell implementation.
+{
+ const source=readFileSync(new URL("../players/index.html",import.meta.url),"utf8").replace(/\r\n/g,"\n");
+ const content=readFileSync(new URL("../templates/transfers-content.html",import.meta.url),"utf8").replace(/\r\n/g,"\n").trimEnd();
+ const begin=source.indexOf('<section id="app-divisions"');
+ const end=source.indexOf('\n      </main>',begin);
+ if(begin<0||end<=begin)throw Error("Transfers source shell missing");
+ let html=source.slice(0,begin)+content.split('\n').map(line=>'        '+line).join('\n')+source.slice(end);
+ html=html.replace('<title>Players — Football Architect</title>','<title>Transfers — Football Architect</title>')
+  .replace('  <script src="/assets/players-nationality-tooltip.js" defer></script>\n','')
+  .replace('  <script src="/assets/players-directory.js" defer></script>',
+   '  <link rel="stylesheet" href="/assets/transfers-page.css">\n  <script type="module" src="/assets/transfers-page.mjs"></script>')
+
+ writeOutput("transfers/index.html",html);
 }
 // #502: generate both player-detail shells from their own canonical directory
 // shells. Player data remains empty until an authorized API read; no hand-edited
