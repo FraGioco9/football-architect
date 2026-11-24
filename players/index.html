@@ -362,8 +362,8 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
            
            const locale=document.documentElement.lang.toLowerCase().slice(0,2);
            const marketLabel={en:'Market value',it:'Valore di mercato',de:'Marktwert',es:'Valor de mercado',fr:'Valeur marchande'}[locale]||'Market value';
-           const marketHeading=document.querySelector('[data-market-value-heading]');if(marketHeading)marketHeading.textContent=marketLabel;
-           const marketFilter=document.querySelector('[data-players-section-label="value"]');if(marketFilter)marketFilter.textContent=marketLabel+' (ARC)';
+           const marketHeading=document.querySelectorAll('[data-market-value-heading]')[0];if(marketHeading)marketHeading.textContent=marketLabel;
+           const marketFilter=document.querySelectorAll('[data-players-section-label="value"]')[0];if(marketFilter)marketFilter.textContent=marketLabel+' (ARC)';
            const firstPaintFilterLabels={en:['Filters','active'],it:['Filtri','attivi'],de:['Filter','aktiv'],es:['Filtros','activos'],fr:['Filtres','actifs']}[locale]||['Filters','active'];
            const labelNode=document.querySelectorAll('[data-players-filter-trigger-label]')[0];
            if(labelNode)labelNode.textContent=firstPaintFilterLabels[0];

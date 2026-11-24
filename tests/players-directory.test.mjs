@@ -250,9 +250,9 @@ test('Players primary view controls are larger than the compact attribute subgro
 test('#532 public Overview renders Flag Player Positions Age Height Foot Club and a crest',()=>{
  const html=read('players/index.html'),gen=read('tools/generate-app-pages.mjs'),js=read('assets/players-directory.js'),css=read('assets/app.css');
  const head=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</thead>',html.indexOf('<table class="app-players-table"')));
- assert.deepEqual([...head.matchAll(/data-players-sort="([^"]+)"/g)].map(m=>m[1]),['nationality','name','positions','age','height','foot']);
+ assert.deepEqual([...head.matchAll(/data-players-sort="([^"]+)"/g)].map(m=>m[1]),['nationality','name','positions','age','height','foot','market_value_arc']);
  assert.ok(head.indexOf('data-players-sort="foot"')<head.indexOf('app-players-club-col'));
- assert.equal((html.match(/colspan="7"/g)||[]).length,5);
+ assert.equal((html.match(/colspan="8"/g)||[]).length,5);
  assert.match(js,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:7/);
  assert.match(js,/addHeader\(t\.columns\[2\],'positions'\);\s*addHeader\(t\.columns\[1\],'age'\);addHeader\(t\.columns\[3\],'height'\);addHeader\(t\.columns\[4\],'foot'\)/);
  assert.match(js,/if\(state\.view==='overview'\)\{\s*cell\(tr,positionsShown\.join\(', '\)\|\|'—'\)/);
@@ -594,7 +594,7 @@ test('Players Apply ignores blank ranges, unchecks empty attributes, and never r
  assert.ok(from>0&&to>from,'Apply function exists');
  const source=js.slice(from,to);
  assert.doesNotMatch(source,/reportValidity|setCustomValidity|throw new Error/,'no browser validation messages');
- const keys=['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot','attributes'];
+ const keys=['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','valueMin','valueMax','foot','attributes'];
  const fields=keys.filter(k=>k!=='attributes').map(key=>({dataset:{playersFilter:key},value:'',type:key.endsWith('Scope')?'checkbox':'number',checked:false}));
  const get=key=>fields.find(f=>f.dataset.playersFilter===key);
  let loads=0,closes=0,urlSync=0;
@@ -603,9 +603,9 @@ test('Players Apply ignores blank ranges, unchecks empty attributes, and never r
  const signature=filters=>keys.map(k=>filters[k]||'').join('|');
  const state={page:1,filters:Object.fromEntries(keys.map(k=>[k,'']))};
  const apply=new Function('filterFields','attributeMap','state','filterKeys','filterSignature',
-  'validName','syncFilterControls','syncUrl','syncControls','closeFilterDialog','load',
+  'validName','arcValue','syncFilterControls','syncUrl','syncControls','closeFilterDialog','load',
   source+';return applyFilters;')(fields,attrs,state,keys,signature,
-  value=>value.length<=80,()=>{},()=>{urlSync++},()=>{},()=>{closes++},()=>{loads++});
+  value=>value.length<=80,value=>/^(?:0|[1-9][0-9]{0,15})$/.test(value)&&Number.isSafeInteger(Number(value))?value:'',()=>{},()=>{urlSync++},()=>{},()=>{closes++},()=>{loads++});
  apply();
  assert.equal(check.checked,false,'empty selected attribute unchecked');
  assert.equal(range.hidden,true,'empty attribute bounds collapse');
@@ -631,6 +631,8 @@ test('Players Apply ignores blank ranges, unchecks empty attributes, and never r
  assert.equal(state.filters.heightMin,'170');
  assert.equal(state.filters.heightMax,'');
  assert.equal(loads,3,'one-sided height works');
+ get('valueMin').value='0';get('valueMax').value='12000';apply();
+ assert.equal(state.filters.valueMin,'0');assert.equal(state.filters.valueMax,'12000');assert.equal(loads,4);
 });
 
 
@@ -638,7 +640,7 @@ test('Players reserve five completely empty, full-height rows while loading',()=
  const html=read('players/index.html'),css=read('assets/app.css'),js=read('assets/players-directory.js');
  const table=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</table>',html.indexOf('<table class="app-players-table"')));
  assert.equal((table.match(/class="app-players-loading-row"/g)||[]).length,5);
- assert.equal((table.match(/colspan="7"/g)||[]).length,5);
+ assert.equal((table.match(/colspan="8"/g)||[]).length,5);
  assert.doesNotMatch(table,/app-players-skeleton-bar|app-players-skeleton-line/);
  assert.match(table,/class="sr-only" data-players-status role="status"/);
  assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
