@@ -104,6 +104,12 @@ END;
 CREATE TRIGGER payroll_seal_insert_guard BEFORE INSERT ON payroll_run_seals
 BEGIN
  SELECT CASE WHEN EXISTS(SELECT 1 FROM payroll_run_seals WHERE run_id=NEW.run_id)
+ OR NOT EXISTS(SELECT 1 FROM payroll_runs r JOIN world_state w ON w.id=1 AND w.generation=r.generation AND w.season_number=r.season AND w.day=r.day AND w.revision=r.world_revision AND w.phase='active' WHERE r.id=NEW.run_id)
+ OR EXISTS(SELECT 1 FROM payroll_runs r JOIN player_signed_contracts c ON c.world_generation=r.generation AND c.club_key=r.club_key
+ WHERE r.id=NEW.run_id AND MAX(c.start_tick,(r.season-1)*56+r.day-28)<MIN(COALESCE(c.closed_tick,c.scheduled_end_tick),(r.season-1)*56+r.day)
+ AND COALESCE((SELECT SUM(p.due_arc) FROM payroll_claims p WHERE p.run_id=r.id AND p.contract_id=c.id),0)<>
+ (c.annual_salary_arc*(MIN(COALESCE(c.closed_tick,c.scheduled_end_tick),(r.season-1)*56+r.day)-MAX(c.start_tick,(r.season-1)*56)))/56
+ -(c.annual_salary_arc*(MAX(c.start_tick,(r.season-1)*56+r.day-28)-MAX(c.start_tick,(r.season-1)*56)))/56)
  OR EXISTS(SELECT 1 FROM payroll_runs r JOIN payroll_runs original ON original.generation=r.generation AND original.club_key=r.club_key
  JOIN payroll_claim_outstanding c ON c.run_id=original.id
  WHERE r.id=NEW.run_id AND original.season*56+original.day<=r.season*56+r.day
