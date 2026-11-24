@@ -49,3 +49,26 @@ The pure reference checks and tables were executed in isolated JavaScript before
 2. Build a 30+ season synthetic world simulation: 256 active clubs, 18 competitions, 768 generated candidates per season, explicit purchase probability/catalog, promotion/relegation, qualifying outcomes, contract renewals and retirement, squad sizes, agent coverage 0/25/50/75/100%, negotiation rejection, payroll timing, arrears, partial payment, staff/other costs and transfer activity. No automatic bailout or forced full employment. Compare fresh issuance vs reserve recycling and actual currency retirement; track club/agent/reserve balances, liquidity/defaults/concentration and reconcile conservation every period. Separate actual EUR revenue/cost assumptions; no conversion or guaranteed return.
 3. Review accounting alternatives for deterministic integer split, cumulative installments, earned mandate attribution, arrears and idempotency. Settlement code is separately authorized; no live accounting changes.
 4. Present owner review of the distributions, parameters and updated #765 fixtures; only then integrate approved research into #765. #770 consumes completed salary/value and currency-flow evidence; do not select monetization fees here.
+
+## Slice 2: executed cohort and 32-season synthetic world
+
+Executed the repository numerical generator core in an isolated V8 runtime with placeholder identity banks (same name-sampling PRNG draw counts; no sporting attribute changes). Three seeds × 1,000 entries; full cohort distributions and annual simulation results in `docs/economy-recalibration-769-results.json`. The full repository CLI with actual catalog and CI still require independent verification. Reproduce in a repository checkout with `node tools/economy-world-769.mjs`. This world uses resampling from the seeded cohort for 768 annual candidates, not freshly generated individual cohorts. No real transactions or price assumptions.
+
+World assumptions: 32 seasons, 256 clubs, 18 pools totaling 60M per season, synthetic strength ranking/points/advancement (not canonical sporting matches), 3+3 cup entrants per nation based on previous simulated ranks, two direct division swaps plus a stochastic playoff proxy. Exogenous purchase/activation, persistent unsold catalog, variable actual employment, 1–3 year terms, population growth and conditional retirement, negotiated wages/AI opening premium, free agency and bilateral transfer proxy. Staff/other virtual costs are paid into reserve; EUR receipts and costs are unknown. Initial club cash, recruitment target, acceptance and purchases are simulation inputs, not enforced game caps or actual checkout. Coverage targets are exogenous mandate probabilities, including hypothetical all-AI control after activation; no actual youth mandate sale rule is changed. Recycled reserve funds the next rewards pool; new issuance fills its shortfall. Burn is a separate sensitivity, not policy. Each period asserts exact reward, salary split and total stock conservation; unsettled wage obligations persist with their earned mandate attribution. Cumulative floor rounding is a research proposal only, not approved settlement; no production idempotency implementation. No automatic bailout. At day 28 first participation installments have both arrived before first payroll; remaining results credited by final payroll (aggregate timing proxy, not certification implementation).
+
+| Scenario | Last 10-season mean wages paid | Mean agent commissions | Closing club stock | Closing reserve | Closing unpaid salary |
+|---|---:|---:|---:|---:|---:|
+| 0% / candidate / 25 slots / recycle | 19697998 | 0 | 1162678360 | 26167876 | 0 |
+| 25% / candidate / 25 slots / recycle | 18976447 | 212118 | 1184581327 | 25012058 | 0 |
+| 50% / candidate / 25 slots / recycle | 18305550 | 443855 | 1202536956 | 24382370 | 0 |
+| 75% / candidate / 25 slots / recycle | 17963862 | 656908 | 1207491451 | 23767979 | 0 |
+| 100% / candidate / 25 slots / recycle | 17265102 | 861094 | 1234958669 | 22465310 | 0 |
+| 50% / candidate / 25 slots / issue | 18305550 | 443855 | 1202536956 | 704850885 | 0 |
+| 50% / candidate / 25 slots / recycle + burn | 18305550 | 443855 | 1202536956 | 12191185 | 0 |
+| 50% / candidate / 18 slots / recycle | 15926630 | 376732 | 1297766995 | 22149101 | 0 |
+| 50% / candidate / 32 slots / recycle | 19565047 | 460323 | 1136970727 | 25544898 | 0 |
+| 50% / candidate / 25 slots / recycle stress | 3691520 | 89602 | 772385683 | 34690050 | 0 |
+| 50% / lower-base / 25 slots / recycle | 15254622 | 369693 | 1291052670 | 21278795 | 0 |
+| 50% / steeper / 25 slots / recycle | 25830157 | 628577 | 1005864662 | 32335049 | 0 |
+
+Remaining: fit skill-conditioned future club capacities and empirical employment distributions, independent random seeds, fresh annual canonical cohorts and role-balanced squads, separate purchase/mandate economics in #770, further accounting tests (duplicate settlement identities, ownership boundaries), actual repository CLI and CI evidence, owner review. No public valuation integration.

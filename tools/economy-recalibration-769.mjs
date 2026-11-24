@@ -93,6 +93,12 @@ function cohortReport(){
  });
 }
 
+export const researchApi={cohortReport,profile,scenarios,normalSalary,expectedSalary,rawValue,roundValue,quantiles,settings,growth,retirement,capacities,selfTest};
+// Importing research functions must not execute the cohort CLI.
+import {pathToFileURL} from 'node:url';
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
 selfTest();
 if(process.argv.includes('--self-test')) console.log('769 reference checks PASS');
 else console.log(JSON.stringify({status:'DRAFT research only',config:settings,scenarios,capacity:capacities(),cohort:cohortReport()},null,2));
+
+}
