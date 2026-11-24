@@ -5,7 +5,7 @@ import type {WorldV1} from './types.ts';
 import {ApiError} from './errors.ts';
 import {economicAssert,clubTreasuryId,economicReconciliationGuard} from './economic-ledger.ts';
 import {earnedBetween,canAffordNextPayday,type Affordability} from './player-contract-policy.ts';
-import {annualRewardHoldId,prepareRewardPayrollGuards} from './reward-calendar-gate.ts';
+import {annualRewardHoldId} from './reward-calendar-gate.ts';
 import {rewardCalendarBudget} from './reward-settlement-plan.mjs';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
@@ -24,7 +24,7 @@ const snapshot=(value:unknown):Contract[]=>{
  * Opening relies on the caller's separate Genesis/source authorization. */
 export async function preparePayrollAffordability(db:Database,world:WorldV1,club:string,wage:number):Promise<PayrollAffordabilityProof>{
  const opening=world.phase==='unstarted'&&world.seasonNumber===0&&world.day===0;
- if(!opening&&(world.phase!=='active'||world.seasonNumber<1||world.day<1||world.day>=56))return fail();
+ if(!opening&&(world.phase!=='active'||world.seasonNumber<1||world.day<1||world.day===28||world.day>=56))return fail();
  const season=opening?1:world.seasonNumber,day:28|56=world.day<28?28:56,base=(season-1)*56,lo=base+day-28,hi=base+day;
  const newStart=base+world.day,treasury=clubTreasuryId(club),generation=world.generation;
  const worldSql="SELECT 1 FROM world_state WHERE id=1 AND generation=? AND season_number=? AND day=? AND phase=? AND revision=?";
@@ -50,8 +50,7 @@ export async function preparePayrollAffordability(db:Database,world:WorldV1,club
  const openingSql="SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM player_signed_contracts WHERE club_key=? AND (world_generation<>? OR start_tick<>0 OR closed_tick IS NOT NULL))";
  const baseGuards=[economicAssert(db,worldSql,worldArgs),economicAssert(db,historySql,ha),economicReconciliationGuard(db),
   ...(opening?[economicAssert(db,openingSql,[club,generation])]:[])];
- // At Day28 signing for Day29 is only possible after certified Rewards and payroll.
- if(!opening&&world.day===28)baseGuards.push(...await prepareRewardPayrollGuards(db,world,28,true));
+ // Do not mutate the world revision during either settlement day.
  const read=await db.batch([...baseGuards,db.prepare(contractsSql).bind(...ca),db.prepare(balanceSql).bind(treasury),
   db.prepare('SELECT ('+arrearsSql+') AS arrears').bind(generation,club)]);
  const [cs,bs,ar]=read.slice(-3),bytes=cs.results[0]?.snapshot,rows=snapshot(bytes),balance=bs.results[0],arrears=ar.results[0]?.arrears;

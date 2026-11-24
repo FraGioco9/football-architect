@@ -268,13 +268,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    payrollEmptyClub=String(zeroClub.owner_id);
    expect(await settleClubPayrollBatch(db,session,payrollEmptyClub,now)).toMatchObject({status:'complete',dueArc:0,paidArc:0});
    expect(await reconcilePayrollPayday(db,session,now)).toMatchObject({status:'pending',clubsComplete:2,dueArc:null});
-   const affordability=await preparePayrollAffordability(db,world,probeClub,125);
-   expect(affordability.inputs).toMatchObject({committedUncoveredWages:0,arrears:0,newDue:62});
-   expect(affordability.inputs.uncreditedGuaranteedParticipation).toBeGreaterThan(0);
-   expect(affordability.financeVersion).toBe(rewardPin.configVersion);
-   await db.batch([...affordability.guards]);
-   await expect(preparePayrollAffordability(db,world,payrollEmptyClub,125)).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
-   await expect(preparePayrollAffordability(db,world,probeClub,1000000000000)).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
+   await expect(preparePayrollAffordability(db,world,probeClub,125)).rejects.toMatchObject({code:'payroll_affordability_unavailable'});
    expect(await count('economic_transactions')).toBe(305);
    expect(await reconcileEconomy(db,localAccess())).toMatchObject({ok:true,stockArc:'2400000',netIssuedArc:'2400000'});
   }
@@ -282,9 +276,13 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    if(!day28Proof)throw Error('Missing Day28 fixture proof');
    if(!payrollProbeClub)throw Error('Missing payroll probe club');
    const next=await preparePayrollAffordability(db,world,payrollProbeClub,125);
-   expect(next.inputs.newDue).toBe(60);
+   expect(next.inputs).toMatchObject({newDue:60,committedUncoveredWages:0,arrears:0});
    expect(next.inputs.uncreditedGuaranteedParticipation).toBeGreaterThan(0);
+   expect(next.financeVersion).toBe(rewardPin.configVersion);
    await db.batch([...next.guards]);
+   if(!payrollEmptyClub)throw Error('Missing zero liquidity probe');
+   await expect(preparePayrollAffordability(db,world,payrollEmptyClub,125)).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
+   await expect(preparePayrollAffordability(db,world,payrollProbeClub,1000000000000)).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
    await expect(executeRewardSettlementBatch(db,session,day28Proof,now)).rejects.toThrow();
    expect(await count('economic_transactions')).toBe(305);
   }
