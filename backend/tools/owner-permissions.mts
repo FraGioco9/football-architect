@@ -38,10 +38,13 @@ export async function inspectAdminPermissions(db:Database,environment:string,ema
  if(!row)throw Error('account_not_found');
  const candidate=await db.prepare('SELECT id,enabled FROM admin_accounts WHERE email_normalized=?').bind(email).first<{id:string;enabled:number}>();
  const raw=await db.prepare('SELECT count(*) AS n FROM account_permissions WHERE account_id=?').bind(row.id).first<{n:number}>();
+ const economySchema=!!await db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='economic_finance_permissions'").first();
+ const economyReadGrant=economySchema&&!!await db.prepare("SELECT 1 FROM economic_finance_permissions WHERE account_id=? AND capability='read'").bind(row.id).first();
+ const permissions=await readAccountPermissions(db,row.id);
  return {pool,accountId:row.id,email:row.email,status:row.status,verified:row.verified!==null,
   legacyId:row.legacyId,legacyEmail:row.legacyEmail,legacyEnabled:row.enabled,
   legacyCandidateId:candidate?.id??null,rawGrants:raw?.n??0,
-  permissions:await readAccountPermissions(db,row.id)};
+  permissions,economySchema,economyReadGrant,economyRead:economyReadGrant&&permissions.includes('admin.access')&&permissions.includes('admin.world.read')};
 }
 export type PermissionChange={action:'grant'|'revoke';environment:string;email:string;expectedAccountId:string;legacyId?:string};
 export async function changeAdminPermissions(db:Database,input:PermissionChange,now:number){
@@ -52,7 +55,7 @@ export async function changeAdminPermissions(db:Database,input:PermissionChange,
  if(!input.expectedAccountId||target.accountId!==input.expectedAccountId)throw Error('account_selection_changed');
  const grant=input.action==='grant';
  if(grant&&(target.status!=='active'||!target.verified))throw Error('account_not_verified');
- if(!grant&&target.rawGrants===0&&!target.legacyId)return {changed:false,pool:target.pool};
+ if(!grant&&target.rawGrants===0&&!target.legacyId&&!target.economyReadGrant)return {changed:false,pool:target.pool};
  if(input.legacyId&&target.legacyId&&input.legacyId!==target.legacyId)throw Error('legacy_selection_conflict');
  let legacyId=target.legacyId??input.legacyId??null;
  if(grant&&!legacyId&&target.legacyCandidateId)throw Error('explicit_legacy_selection_required');
@@ -81,6 +84,8 @@ export async function changeAdminPermissions(db:Database,input:PermissionChange,
   for(const permission of ACCOUNT_PERMISSIONS)statements.push(db.prepare(`INSERT INTO account_permissions(account_id,permission,granted_at,granted_by) VALUES(?,?,?,'local-owner-cli') ON CONFLICT(account_id,permission) DO NOTHING`).bind(target.accountId,permission,now));
  }else{
   statements.push(db.prepare('DELETE FROM account_permissions WHERE account_id=?').bind(target.accountId));
+  // Removing Admin access must not leave a latent Economy read grant on re-grant.
+  if(target.economySchema)statements.push(db.prepare("DELETE FROM economic_finance_permissions WHERE account_id=? AND capability='read'").bind(target.accountId));
  }
  // No old Player session or recovery link may silently gain/recover new Admin access.
  statements.push(db.prepare('DELETE FROM player_sessions WHERE account_id=?').bind(target.accountId));
@@ -96,6 +101,36 @@ export async function changeAdminPermissions(db:Database,input:PermissionChange,
  AND (SELECT COUNT(*) FROM account_permissions WHERE account_id=p.id)=3`,[target.accountId,target.email,legacyId]):
  abortUnless(db,`SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM account_permissions WHERE account_id=?)
  AND NOT EXISTS(SELECT 1 FROM player_admin_operator_links WHERE player_account_id=?)`,[target.accountId,target.accountId]));
+ if(!grant&&target.economySchema)statements.push(abortUnless(db,"SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM economic_finance_permissions WHERE account_id=? AND capability='read')",[target.accountId]));
  await db.batch(statements);
  return {changed:true,pool:target.pool};
+}
+
+/** Explicit LOCAL read-only capability; never grant economic write capabilities or provision money. */
+export async function changeEconomyRead(db:Database,input:Omit<PermissionChange,'legacyId'>,now:number){
+ checkTime(now);
+ if(!input||!['grant','revoke'].includes(input.action))throw Error('invalid_action');
+ const target=await inspectAdminPermissions(db,input.environment,input.email);
+ if(!input.expectedAccountId||target.accountId!==input.expectedAccountId)throw Error('account_selection_changed');
+ if(!target.economySchema)throw Error('economy_schema_missing');
+ const grant=input.action==='grant';
+ if(grant&&(!target.permissions.includes('admin.access')||!target.permissions.includes('admin.world.read')))throw Error('admin_read_required');
+ const guards=[
+  abortUnless(db,'SELECT 1 FROM account_environment_pool WHERE id=1 AND pool=?',[target.pool]),
+  abortUnless(db,'SELECT 1 FROM player_accounts WHERE id=? AND email_normalized=?',[target.accountId,target.email])
+ ];
+ if(grant)guards.push(abortUnless(db,`SELECT 1 FROM player_accounts p
+ JOIN player_admin_operator_links l ON l.player_account_id=p.id
+ JOIN admin_accounts a ON a.id=l.legacy_admin_account_id
+ WHERE p.id=? AND p.email_normalized=? AND p.status='active' AND p.email_verified_at IS NOT NULL
+ AND a.enabled=1 AND a.email_normalized=p.email_normalized AND a.id=?
+ AND EXISTS(SELECT 1 FROM account_permissions WHERE account_id=p.id AND permission='admin.access')
+ AND EXISTS(SELECT 1 FROM account_permissions WHERE account_id=p.id AND permission='admin.world.read')`,[target.accountId,target.email,target.legacyId]));
+ // Revocation remains possible after identity/permission drift. Read guards on
+ // every request make the change effective without creating/revoking sessions.
+ const change=grant?db.prepare("INSERT INTO economic_finance_permissions(account_id,capability,granted_by,granted_at) VALUES(?,'read','local-owner-cli',?) ON CONFLICT(account_id,capability) DO NOTHING").bind(target.accountId,now)
+  :db.prepare("DELETE FROM economic_finance_permissions WHERE account_id=? AND capability='read'").bind(target.accountId);
+ const post=abortUnless(db,`SELECT 1 WHERE ${grant?'':'NOT '}EXISTS(SELECT 1 FROM economic_finance_permissions WHERE account_id=? AND capability='read')`,[target.accountId]);
+ await db.batch([...guards,change,post]);
+ return {changed:target.economyReadGrant!==grant,pool:target.pool,economyRead:grant};
 }

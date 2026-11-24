@@ -77,7 +77,8 @@ try{
     const path=new URL(route.request().url()).pathname;
     if(revoked)return route.fulfill({status:401,contentType:'application/json',body:'{}'});
     let data;
-    if(path==='/api/admin/session')data={actor:{id:'synthetic-admin',email:'admin@example.invalid'},csrfToken:'a'.repeat(64)};
+    if(path==='/api/admin/inspection/access')data={reset:permissions.includes('admin.world.write'),economy:false};
+    else if(path==='/api/admin/session')data={actor:{id:'synthetic-admin',email:'admin@example.invalid'},csrfToken:'a'.repeat(64)};
     else if(path==='/api/admin/world')data={world};
     else if(path==='/api/admin/seasons/events')data={world,mode:world.seasonNumber===0?'uninitialized':'legacy',events:[],calendarReady:false};
     else if(path==='/api/admin/seasons/prepare'){
@@ -163,6 +164,7 @@ try{
    await page.route('**/api/player/permissions',route=>{permissionReads++;return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({permissions:permissionSet})})});
    await page.route('**/api/admin/**',route=>{adminCalls++;return route.fulfill({status:503,body:'not allowed'})});
    // An isolated API fixture; the real Worker/D1 transactions are tested separately.
+   await page.route('**/api/admin/inspection/access',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({reset:permissionSet.includes('admin.world.write'),economy:false})}));
    await page.route('**/api/admin/session',route=>{sessionReads++;return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({actor:{id:'admin'},csrfToken:'fixture-csrf'})})});
    let currentOptions=null,draftCommitted=false;
    await page.route('**/api/admin/players/preview',route=>{
@@ -213,12 +215,14 @@ try{
    const writer=permissionSet.includes('admin.world.write');
    if(permissionSet.length===0)assert.equal(await page.locator('#main-content').innerText(),'');
    else{
-    assert.equal(await page.locator('.admin-directory-card').count(),5);
+    assert.equal(await page.locator('.admin-directory-card').count(),7);
     assert.equal(await page.locator('[data-admin-card="calendar"].app-link').isVisible(),true);
     assert.equal(await page.locator('[data-admin-card="players"].app-link').isVisible(),writer);
-    assert.equal(await page.locator('[data-admin-card="contracts"].app-link').isVisible(),writer);
+    assert.equal(await page.locator('[data-admin-card="contracts"].app-link').isVisible(),true);
      assert.equal(await page.locator('[data-admin-card="licenses"].app-link').isVisible(),writer);
     assert.equal(await page.locator('[data-admin-card="rewards"].app-link').isVisible(),true);
+    await page.locator('[data-admin-card="reset"]').waitFor({state:writer?'visible':'hidden'});
+    assert.equal(await page.locator('[data-admin-card="economy"]').isVisible(),false);
     assert.equal(await page.locator('[data-admin-panel="players"]').isVisible(),writer);
     assert.equal(await page.locator('#app-nav-dashboard.is-active,#app-nav-divisions.is-active').count(),0);
    }
@@ -959,6 +963,125 @@ try{
    assert.ok(permissionReads>=2);
    assert.deepEqual(errors,[]);checks++;
   }finally{release();await context.close()}
+ }
+
+
+ // #788/#792: synthetic permission and geometry checks in both browser engines.
+ for(const width of [320,1440]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage(),errors=[];
+   page.on('pageerror',e=>errors.push(e.message));
+   let base=true,finance=false,write=false,funded=false,previewCalls=0,financeReads=0,holdAccess=false,accessGate=null,releaseAccess=()=>{},accessEntered=false,previewFails=false;
+   const world={schemaVersion:1,generation:'11111111-1111-4111-8111-111111111111',revision:0,seasonNumber:0,day:0,phase:'unstarted'};
+   const ok=(route,data,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)});
+   await page.route('**/api/player/permissions',route=>ok(route,{permissions:base?['admin.access','admin.world.read',...(write?['admin.world.write']:[])]:[]}));
+   await page.route('**/api/world',route=>ok(route,{},503));
+   await page.route('**/api/admin/**',route=>{
+    const p=new URL(route.request().url()).pathname;
+    if(p==='/api/admin/inspection/access'){if(holdAccess){accessEntered=true;return accessGate.then(()=>ok(route,{reset:write,economy:finance},base?200:403))}return ok(route,{reset:write,economy:finance},base?200:403)}
+    if(p==='/api/admin/world')return ok(route,{world});
+    if(p==='/api/admin/reset/options')return ok(route,{scopes:['sporting','players','contracts','economy'],executable:false},write?200:403);
+    if(p==='/api/admin/session')return ok(route,{actor:{id:'fixture'},csrfToken:'fixture-csrf'});
+    if(p==='/api/admin/reset/preview'){previewCalls++;assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');return ok(route,{world,scopes:['sporting'],counts:{seasons:1},blockers:['preview_only','economic_generation_guard','contract_schema_incomplete','contract_generation_guard','sporting_history_protected','reset_prerequisites'],executable:false},write?(previewFails?503:200):403)}
+    if(p.startsWith('/api/admin/economy/')){
+     financeReads++;if(!finance)return ok(route,{},403);
+     if(p.endsWith('/summary'))return ok(route,{world,status:funded?'active':'uninitialized',policyVersion:funded?'fixture':null,transactionCount:funded?1:0,accounts:['PLATFORM_RESERVE','CLUB_TREASURY','USER_WALLET','ISSUANCE_CONTROL'].map(kind=>({kind,count:funded?1:0,balanceArc:funded?'123456789012':null,heldArc:funded?'0':null,availableArc:funded?'123456789012':null}))});
+     if(p.endsWith('/reconciliation'))return ok(route,{status:funded?'core_checked':'uninitialized',report:{ok:true}});
+     if(p.endsWith('/ledger'))return ok(route,{checkpoint:'a'.repeat(64),nextCursor:null,rows:funded?[{occurredAt:1770000000,purpose:'REWARD',debit:'PLATFORM_RESERVE',credit:'CLUB_TREASURY',amountArc:'100'}]:[]});
+     if(p.endsWith('/clubs'))return ok(route,{checkpoint:'a'.repeat(64),page:1,pages:7,rows:[]});
+    }
+    return ok(route,{},404);
+   });
+   await page.goto('http://app.localhost:2000/admin/economy');await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
+   assert.equal(await page.locator('#app-admin').isVisible(),false);assert.equal(financeReads,0);
+   await page.goto('http://app.localhost:2000/admin/reset');await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
+   assert.equal(await page.locator('#app-admin').isVisible(),false);
+   finance=true;write=true;
+   await page.goto('http://app.localhost:2000/admin');await page.locator('[data-admin-card="economy"]').waitFor({state:'visible'});await page.locator('[data-admin-card="reset"]').waitFor({state:'visible'});
+   const descriptions=page.locator('.admin-directory-card p');
+   assert.equal(await descriptions.count(),7,'Every Admin directory card retains its description');
+   assert.equal(await page.locator('.admin-directory-card:visible p:visible').count(),7);
+   assert.ok(await descriptions.evaluateAll(nodes=>nodes.every(n=>n.textContent.trim()&&n.scrollHeight<=n.clientHeight+1&&n.getBoundingClientRect().bottom<=n.parentElement.querySelector('a').getBoundingClientRect().top+1)),'Descriptions must fit above navigation buttons');
+   const cardSizes=await page.locator('.admin-directory-card:visible').evaluateAll(nodes=>nodes.map(n=>Math.round(n.getBoundingClientRect().height)));
+   assert.equal(new Set(cardSizes).size,1,'All Admin cards have equal height');
+   // Delay the capability response during a real refresh; no partial directory may paint.
+   const directoryGeometry=()=>page.locator('.admin-directory-card:visible').evaluateAll(nodes=>nodes.map(n=>{const r=n.getBoundingClientRect();return [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]}));
+   const beforeRefresh=await directoryGeometry();
+   holdAccess=true;accessGate=new Promise(resolve=>{releaseAccess=resolve});
+   try{
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('#app-admin[data-admin-access="pending"]').waitFor({state:'attached'});
+    assert.equal(await page.locator('.admin-directory-card:visible').count(),0,'No partial directory before all grants resolve');
+   }finally{holdAccess=false;releaseAccess()}
+   await page.locator('[data-admin-card="reset"]').waitFor({state:'visible'});
+   assert.deepEqual(await directoryGeometry(),beforeRefresh,'All directory cards keep their geometry after refresh');
+   // WebKit can return from click before the destination DOM is installed.
+   // Require the canonical route, granted access and completed loading, not just a transient DOM state.
+   const inspectionReady=mode=>page.locator('#app-admin[data-admin-access="granted"] [data-admin-inspection="'+mode+'"][aria-busy="false"]');
+   await Promise.all([page.waitForURL('**/admin/economy'),page.locator('[data-admin-card="economy"]').click()]);
+   await inspectionReady('economy').waitFor({state:'visible'});
+   const reserve=page.locator('[data-inspection-value="reserve"]');
+   assert.equal(await page.locator('#inspection-panel-overview .app-competition-stat-card').count(),4);
+   assert.equal(await page.locator('[data-inspection-tab="overview"].is-active').count(),1);
+   assert.equal(await page.locator('[data-admin-inspection="economy"] h2').count(),0,'Economy has no redundant headings');
+   assert.equal(await page.locator('[data-inspection-summary]').isVisible(),true);
+   assert.equal(await page.locator('[data-inspection-policy]').isVisible(),true);
+   await page.locator('[data-inspection-tab="wallets"]').click();
+   assert.equal(await page.locator('[data-inspection-tab="wallets"].is-active[aria-selected="true"]').count(),1);
+   await page.locator('[data-inspection-tab="overview"]').click();
+   assert.equal(await reserve.textContent(),'—');
+   const geometry=()=>page.locator('#inspection-panel-overview .inspection-metric').evaluateAll(nodes=>nodes.map(n=>({w:Math.round(n.getBoundingClientRect().width),h:Math.round(n.getBoundingClientRect().height)})));
+   const empty=await geometry();assert.equal(empty.length,4,'Overview must contain all four metrics');
+   funded=true;await page.locator('[data-inspection-refresh]').click();await inspectionReady('economy').waitFor({state:'visible'});
+   assert.equal((await reserve.textContent()).replace(/\D/g,''),'123456789012','Populated reserve must be rendered before geometry comparison');
+   assert.deepEqual(await geometry(),empty,'Economy cards must not resize when populated');
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   finance=false;await page.locator('[data-inspection-refresh]').click();await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
+   assert.equal(await page.locator('#app-admin').isVisible(),false);
+   assert.equal(await page.locator('[data-inspection-value="reserve"]').textContent(),'—');
+   await page.goto('http://app.localhost:2000/admin/reset');await inspectionReady('reset').waitFor({state:'visible'});
+   const scopes=page.locator('[data-inspection-scope]');assert.equal(await scopes.count(),4);assert.equal(await page.locator('[data-inspection-scope]:checked').count(),0);
+   // The shell, not window, scrolls when Playwright brings the preview controls
+   // into view. Compare content-space coordinates, preserving checks of both
+   // layout positions and dimensions rather than comparing viewport offsets.
+   const resetGeometry=()=>page.locator('[data-admin-inspection="reset"],.inspection-result,.inspection-preview-table,.inspection-summary-label,[data-inspection-show-blockers],[data-inspection-copy="confirm"]').evaluateAll(nodes=>{
+    const scroller=nodes[0].closest('.fa-shell-content-scroll');
+    if(!scroller)throw Error('Canonical shell scroll container missing');
+    const origin=scroller.getBoundingClientRect();
+    return nodes.map(n=>{const r=n.getBoundingClientRect();return [Math.round(r.x-origin.x+scroller.scrollLeft),Math.round(r.y-origin.y+scroller.scrollTop),Math.round(r.width),Math.round(r.height)]});
+   });
+   const resetTable=page.locator('table.inspection-preview-table');
+   const checkResetTable=async()=>{assert.equal(await resetTable.locator('tbody tr').count(),4);assert.ok(await resetTable.evaluate(n=>n.scrollWidth<=n.clientWidth+1&&n.scrollHeight<=n.clientHeight+1&&!n.closest('.app-players-table-scroll')),'All reset table rows fit without a scroll container')};
+   await checkResetTable();
+   const summary=page.locator('[data-inspection-summary]');
+   assert.equal(await summary.count(),1,'Access and world status share a single live region');
+   assert.equal(await summary.isVisible(),true);
+   assert.equal(await summary.getAttribute('data-inspection-state'),'world',await summary.textContent());
+   assert.equal(await summary.textContent(),'Season 0 · Day 0');
+   const resetEmpty=await resetGeometry();
+   // Exercise a real scroll independently of any preview response.
+   const shellScroll=page.locator('.fa-shell-content-scroll');
+   const scrollTop=await shellScroll.evaluate(n=>n.scrollTop);
+   await shellScroll.evaluate(n=>{n.scrollTop=n.scrollHeight});
+   assert.deepEqual(await resetGeometry(),resetEmpty,'Scrolling must not change content-space geometry');
+   await shellScroll.evaluate((n,top)=>{n.scrollTop=top},scrollTop);
+   await scopes.first().check();await page.locator('[data-inspection-preview]').click();await inspectionReady('reset').waitFor({state:'visible'});
+   assert.equal(previewCalls,1);assert.equal(await page.locator('[data-inspection-copy="confirm"]').isEnabled(),false);
+   await checkResetTable();
+   assert.deepEqual(await resetGeometry(),resetEmpty,'Preview results must not resize or reposition the Reset components');
+   await page.locator('[data-inspection-show-blockers]').click();
+   await page.locator('[data-inspection-blockers-dialog][open]').waitFor({state:'visible'});
+   assert.equal(await page.locator('[data-inspection-blockers] li:visible').count(),6);
+   await page.locator('[data-inspection-blockers-dialog] button[data-inspection-copy="close"]').click();
+   await page.locator('[data-inspection-blockers-dialog]').waitFor({state:'hidden'});
+   assert.deepEqual(await resetGeometry(),resetEmpty,'Preview blockers must not resize the Reset panel');
+   previewFails=true;await page.locator('[data-inspection-preview]').click();await inspectionReady('reset').waitFor({state:'visible'});
+   assert.equal(previewCalls,2);assert.equal(await summary.getAttribute('data-inspection-state'),'failed');assert.equal(await summary.textContent(),'Unable to load data.');assert.equal(await summary.isVisible(),true);
+   assert.deepEqual(await resetGeometry(),resetEmpty,'Preview error must not resize the Reset panel');
+   write=false;await page.locator('[data-inspection-refresh]').click();await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
+   assert.equal(await page.locator('#app-admin').isVisible(),false);assert.deepEqual(errors,[]);checks++;
+  }finally{await context.close()}
  }
 
  timing.mark('cases-complete');
