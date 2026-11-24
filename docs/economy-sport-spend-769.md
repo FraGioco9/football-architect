@@ -1,0 +1,18 @@
+# Reward scale and optional sporting expenditure — DRAFT/HOLD
+
+Owner decision: purchased club license is indefinite, no seasonal renewal/subscription, until valid cession or qualifying license-holder inactivity. Inactivity threshold, notification/cure, appeal, disposition/refund still open; sporting club inactivity is not itself a defined holder criterion. Treasury persists and is never personally withdrawable. No recurring primary renewal revenue. All other economic parameters remain research candidates; current main retains 5% human commission. No checkout, DB, merge or deployment.
+
+24 runs ×32 seasons, 3 seeds per case, canonical numerical 24,576 fresh youth entries (ages16–19) and 3,000 bootstrap with synthetic identity placeholders; isolated V8, not actual repository CLI/CI. Same integrated world as previous #771, 100% human payout candidate, 90% displayed market value youth price, direct EUR or ARC purchases, identical personal budget assumptions for both reward scales. 1/25: 2.4M total Rewards, K60, floors40/20, reward benchmark10000, staff proxy600 D2/1200 D1. 1/50: 1.2M, K30, floors20/10, benchmark5000, staff300/600. Separate frozen synthetic forecast grid per scale; not refitted to demand. V4 round fixed awards, day28/56, no day0. Optional spending experiments are **not gameplay functionality**: at 65% hypothetical adoption, a club with no arrears may voluntarily buy one hypothetical useful service after payroll, keeping current annual salary+staff buffer. Package prices scaled (1/25 1200/3000/6000; 1/50 600/1500/3000) or fixed across scales (1200/3000/6000). Selection random among affordable offers; no actual utility, performance gain, mandatory recurring fee, budget cap, or subsidy assumed. All spending credits reserve, not destroyed or real EUR profit. Low-demand stress combines fewer youth purchases, lower EUR budget and 25% adoption. No actual license purchases, inactivity revocation, own-origin special contract or user churn; no automatic renewal. Reward, salary, price, catalog, balance and conservation checks passed in isolated V8. Actual provider/tax/refund terms unverified.
+
+| Case | Top D1 median net ARC/season | Top D1 closing median treasury | D1 other median net | D2 median net | Optional ARC/year | Youth buys/year | Early cohort recovery incl resale |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1/25-no-extra | 8872 | 299780 | 5857 | 2467 | 0 | 599 | 54.5% |
+| 1/25-optional-scaled | 7245 | 232745 | 4093 | 746 | 568420 | 599 | 54.5% |
+| 1/25-optional-fixed | 7245 | 232745 | 4093 | 746 | 568420 | 599 | 54.5% |
+| 1/25-low-demand | 14609 | 406316 | 7279 | 3963 | 229640 | 91 | 93.8% |
+| 1/50-no-extra | 4159 | 134195 | 2736 | 1124 | 0 | 615 | 41.5% |
+| 1/50-optional-scaled | 3407 | 103640 | 1874 | 300 | 283310 | 615 | 41.5% |
+| 1/50-optional-fixed | 2538 | 68085 | 1302 | 50 | 480180 | 615 | 41.5% |
+| 1/50-low-demand | 7254 | 209510 | 3627 | 1962 | 115140 | 90 | 91.8% |
+
+Annual metrics means last ten sporting seasons across three seeds. Current top4 D1 ex-post, not fixed original club group; initial top band separately measured. Treasury cash movement incl sporting transfers, no personal profit. Closing stocks after32 seasons. EUR receipts are hypothetical direct checkout gross, no annual calendar inference. Optional spending tests demonstrate accounting capacity, not evidence that players will buy products; design actual sporting benefits and test demand independently, avoid forced extraction. Top club price EUR300 is a permanent-access reference, not a valuation multiple of annual cash. Compare scale and entry affordability; choose owner-approved settings separately. Reproduce `node tools/economy-sport-spend-769.mjs` on #771.
