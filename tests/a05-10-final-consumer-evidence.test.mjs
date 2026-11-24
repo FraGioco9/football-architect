@@ -33,7 +33,8 @@ test('A05-10 final: Stats consumes selected season provider context, not clock-d
 
 test('A05-10 final: History displays canonical records only after validated provider application',()=>{
  const history=source('assets/competition-history.js');
- assert.match(history,/applyCanonicalHistory\(payload\)\{const checked=compute\(payload\);results=checked;render\(\);\}/);
+ assert.match(history,/applyCanonicalHistory\(payload\)\{const checked=compute\(payload\);archivedClubNames\.clear\(\);results=checked;render\(\);\}/);
+ assert.match(history,/applyRecordSeasons\(seasons\)\{\s*indexHistoricalClubs\(seasons\)/);
  assert.match(history,/results=null/);
  assert.doesNotMatch(history,/faWorldClockSnapshot|faDevWorldClockSnapshot|fa:world-clock-snapshot|projectCompetition/);
 });
