@@ -45,7 +45,7 @@ test('Admin removes Details and retains inline protected reset with a next-day p
 
 
 test('Admin directory and child pages have isolated, protected markup',async()=>{
- for(const id of ['admin','admin/calendar','admin/players','admin/contracts','admin/licenses','admin/rewards']){
+ for(const id of ['admin','admin/calendar','admin/players','admin/contracts','admin/licenses','admin/rewards','admin/economy','admin/reset']){
   const path='/'+id,file=id+'/index.html';
   assert.equal(parseRoute(path)?.canonical,path);
   assert.equal(buildRoute({kind:'page',id}),path);
@@ -53,15 +53,16 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
   assert.ok(isAllowlistedPublicPath(file),file);
   assert.ok(planPublicFiles().includes(file));
   const initial=readFileSync(new URL('../'+file,import.meta.url),'utf8');
-  if(id==='admin/contracts'||id==='admin/rewards'){
+  if(id==='admin/contracts'||id==='admin/rewards'||id==='admin/economy'||id==='admin/reset'){
    assert.match(initial,/<section\b[^>]*id="app-admin"[^>]*data-admin-access="pending"/);
    assert.doesNotMatch(initial,/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
   }else assert.match(initial,/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
  }
  const home=readFileSync(new URL('../admin/index.html',import.meta.url),'utf8');
  assert.match(home,/data-admin-directory/);
- assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,5,'Five separate Admin boxes');
- assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,5,'Each Admin box has a clear navigation button');
+ assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,7,'Seven separate Admin boxes');
+ assert.equal((home.match(/<p data-(?:admin-directory-copy|inspection-copy|app-i18n)="[^"]+Description">[^<]+<\/p>/g)||[]).length,7,'Each directory card retains its localized description');
+ assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,7,'Each Admin box has a clear navigation button');
  assert.match(home,/href="\/admin\/calendar"/);
  assert.match(home,/href="\/admin\/players"/);
  assert.match(home,/href="\/admin\/contracts"/);
@@ -104,9 +105,10 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.doesNotMatch(players,/data-admin-players-label="intro"|Configure a local generator trial/,'Remove obsolete generator introduction');
  assert.doesNotMatch(players,/data-players-seed-help|admin-players-seed-help|Same seed and options/,'Remove seed explanation');
  const playersScript=readFileSync(new URL('../assets/admin-players.js',import.meta.url),'utf8');
- // Permissions requests run on full page load/refresh only, never BFCache restore.
+ // Players reuse the existing cache; the directory alone revalidates live grants after BFCache restore.
  assert.match(playersScript,/update\(\);void check\(\);/);
- assert.doesNotMatch(playersScript,/pageshow[^\n]*check\(/);
+ assert.match(playersScript,/if\(!isPlayers\)\{\s*win\.addEventListener\('pagehide',[^\n]*\n\s*win\.addEventListener\('pageshow',event=>\{if\(event\.persisted\)\{permissionCache\?\.clear\(\);void check\(\)/);
+ assert.equal((playersScript.match(/pageshow[^\n]*check\(/g)||[]).length,1,'Only the directory BFCache path rechecks grants');
  const calendarScript=readFileSync(new URL('../assets/admin-settings.js',import.meta.url),'utf8');
  assert.match(calendarScript,/render\(\);void controller\.refresh\(\);/);
  assert.doesNotMatch(calendarScript,/pageshow[^\n]*controller\.refresh\(/);
@@ -247,3 +249,7 @@ test('Admin captions are inert and section gaps use site spacing',async()=>{
  assert.match(css,/\.admin-licenses-message:empty\{display:none\}/);
  assert.ok(js.includes("select.closest('.admin-licenses-field')"));
 });
+
+test('Inspection routes reuse the canonical Admin shell and expose no execute controls',async()=>{const {renderAdminReset,renderAdminEconomy}=await import('../tools/render-admin-inspection.mjs');const reset=readFileSync(new URL('../admin/reset/index.html',import.meta.url),'utf8'),economy=readFileSync(new URL('../admin/economy/index.html',import.meta.url),'utf8');assert.ok(reset.includes(renderAdminReset()));assert.ok(economy.includes(renderAdminEconomy()));assert.match(reset,/<table class="inspection-preview-table">/);assert.equal((reset.match(/data-inspection-count="/g)||[]).length,4);assert.doesNotMatch(reset,/app-players-table-scroll inspection-table/);for(const page of [reset,economy]){assert.match(page,/<p class="inspection-summary-label" data-inspection-summary data-inspection-state="checking" role="status"/);assert.equal((page.match(/data-inspection-summary/g)||[]).length,1);}assert.equal((reset.match(/data-inspection-scope disabled/g)||[]).length,4);assert.equal((economy.match(/data-inspection-tab="/g)||[]).length,6);assert.match(reset,/data-inspection-copy="confirm" disabled/);assert.doesNotMatch(reset,/data-admin-reset-confirm/);});
+
+test('Economy shares site cards, active tabs, tables and pagination without redundant headings',()=>{const page=readFileSync(new URL('../admin/economy/index.html',import.meta.url),'utf8');assert.match(page,/app-competition-stat-card app-competition-stat-card--compact inspection-metric/);assert.match(page,/app-competition-tab is-active" role="tab" id="inspection-tab-overview"/);assert.equal((page.match(/class="app-players-table" data-inspection-table/g)||[]).length,2);assert.equal((page.match(/class="app-players-pagination inspection-pagination"/g)||[]).length,2);assert.doesNotMatch(page,/<h2 data-inspection-copy="reconciliation"/);assert.match(page,/inspection-status-row/);});
