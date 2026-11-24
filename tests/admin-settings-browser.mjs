@@ -665,9 +665,20 @@ try{
    const form=page.locator('[data-contract-draft]');
    assert.equal(await form.isVisible(),true);
    assert.equal(await form.locator('[data-contract-draft-player] option').count(),2);
-   await form.locator('[data-contract-draft-player]').selectOption('2');
-   await form.locator('[data-contract-draft-club]').selectOption('IT-1');
-   await form.locator('[data-contract-draft-duration]').selectOption('2');
+   const selectFromMenu=async(id,label,searchText)=>{
+    const trigger=form.locator('#admin-contract-draft-dropdown-'+id).locator('..').locator('.language-trigger');
+    await trigger.click();
+    const menu=form.locator('#admin-contract-draft-dropdown-'+id);
+    if(searchText)await menu.locator('input[type="search"]').fill(searchText);
+    await menu.getByRole('option',{name:label,exact:true}).click();
+    assert.equal(await trigger.getAttribute('aria-expanded'),'false');
+   };
+   assert.equal(await form.locator('.admin-licenses-dropdown .language-trigger').count(),3);
+   await selectFromMenu(0,'Free Player','free');
+   await selectFromMenu(1,'Test Italian Club','italian');
+   await selectFromMenu(2,'2');
+   assert.equal(await form.locator('[data-contract-draft-player]').inputValue(),'2');
+   assert.equal(await form.locator('[data-contract-draft-club]').inputValue(),'IT-1');
    await form.locator('[data-contract-draft-preview]').click();
    await form.locator('[data-contract-draft-start]').filter({hasText:'S1 · D1'}).waitFor();
    assert.match(await form.locator('[data-contract-draft-end]').innerText(),/S2 · D56/);

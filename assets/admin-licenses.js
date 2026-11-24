@@ -1,7 +1,7 @@
 /* Manual Admin club licenses. No consumer-side authority is inferred from the UI. */
 ((root,factory)=>{
  const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;
- if(root.document)api.mount(root);
+ if(root.document){root.faAdminDropdowns=api.createDropdowns;api.mount(root)}
 })(typeof window==='undefined'?globalThis:window,()=>{
  'use strict';
  const labels={
@@ -11,30 +11,16 @@
   es:{manage:'Gestionar licencias de clubes',intro:'Asigna un club a una cuenta verificada. Sin pagos ni reglas de caducidad.',club:'Club',searchAccount:'Buscar cuenta por correo',account:'Cuenta',find:'Buscar',assign:'Asignar licencia',replace:'Cambiar titular',revoke:'Revocar licencia',clubs:'Clubes',licensee:'Titular',updated:'Actualizado',history:'Cambios recientes',date:'Fecha',action:'Acción',previous:'Anterior',new:'Nuevo',all:'Todos los clubes',assigned:'Con licencia',free:'Disponibles',choose:'Elegir club',noAccount:'Buscar cuenta',unassigned:'Disponible',select:'Seleccionar',loading:'Cargando licencias…',denied:'Accede con una cuenta Admin autorizada.',failed:'No se pudieron cargar las licencias.',apiMissing:'API de licencias no disponible. Inicia el Worker local actualizado.',backendUnavailable:'Backend Admin no disponible. Inicia el servidor de desarrollo completo.',invalidResponse:'Respuesta inesperada. Comprueba la versión del Worker.',schema:'No está disponible la base de datos de licencias.',searchEmpty:'Introduce al menos dos caracteres.',searchFailed:'No se pudieron buscar cuentas.',noResults:'No hay cuentas verificadas.',saved:'Licencia actualizada.',conflict:'La licencia ha cambiado. Lista actualizada.',error:'Cambio fallido. No se guardaron datos.',confirmReplace:'¿Sustituir al titular actual?',confirmRevoke:'¿Revocar la licencia actual?',none:'—',count:'clubes'},
   fr:{manage:'Gérer les licences des clubs',intro:'Attribuer un club à un compte vérifié. Aucun paiement ni date d’expiration.',club:'Club',searchAccount:'Rechercher un compte par e-mail',account:'Compte',find:'Rechercher',assign:'Attribuer la licence',replace:'Changer le titulaire',revoke:'Révoquer',clubs:'Clubs',licensee:'Titulaire',updated:'Actualisé',history:'Modifications récentes',date:'Date',action:'Action',previous:'Avant',new:'Après',all:'Tous les clubs',assigned:'Sous licence',free:'Disponibles',choose:'Choisir un club',noAccount:'Rechercher un compte',unassigned:'Disponible',select:'Sélectionner',loading:'Chargement des licences…',denied:'Connectez-vous avec un compte Admin autorisé.',failed:'Impossible de charger les licences.',apiMissing:'API des licences indisponible. Démarrez le Worker local mis à jour.',backendUnavailable:'Backend Admin indisponible. Démarrez le serveur de développement complet.',invalidResponse:'Réponse API inattendue. Vérifiez la version du Worker.',schema:'Le schéma des licences est indisponible.',searchEmpty:'Saisissez au moins deux caractères.',searchFailed:'Recherche des comptes impossible.',noResults:'Aucun compte vérifié trouvé.',saved:'Licence actualisée.',conflict:'La licence a changé. Liste actualisée.',error:'Modification échouée. Aucune donnée enregistrée.',confirmReplace:'Remplacer le titulaire actuel ?',confirmRevoke:'Révoquer la licence actuelle ?',none:'—',count:'clubs'}
  };
- function mount(win){
-  const doc=win.document,host=doc.querySelector('#app-admin'),root=host?.querySelector('[data-admin-licenses]');
-  if(!root)return;
-  const el=q=>root.querySelector(q),gate=el('[data-licenses-gate]'),content=el('[data-licenses-content]');
-  const club=el('[data-licenses-club]'),query=el('[data-licenses-query]'),account=el('[data-licenses-account]');
-  const rows=el('[data-licenses-rows]'),history=el('[data-licenses-history]'),message=el('[data-licenses-message]');
-  let data=null,working=false,loadCounter=0,searchCounter=0;
-  const announceAccess=allowed=>{win.faAdminAccess=allowed;
-   win.dispatchEvent(new win.CustomEvent('fa:admin-access',{detail:allowed}));};
-  const locale=()=>labels[doc.documentElement.lang]||labels.en;
-  const l=k=>locale()[k]||labels.en[k]||k;
-  const show=(value)=>{message.textContent=value||''};
+ function createDropdowns(win,prefix='admin-licenses'){
+  const doc=win.document;
   const normalize=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const selected=()=>data?.clubs?.find(x=>x.clubKey===club.value)||null;
-  const formatDate=s=>Number.isSafeInteger(s)&&s>0
-   ?new Intl.DateTimeFormat(doc.documentElement.lang||'en',{dateStyle:'medium',timeStyle:'short'}).format(new Date(s*1000)):l('none');
-  // Keep native selects as the source of truth, with the site's keyboard-accessible listboxes.
   const dropdownClosers=[];
   function mountDropdown(select,searchable,index){
    const wrap=doc.createElement('div');wrap.className='language-control admin-licenses-dropdown';
    const trigger=doc.createElement('button');trigger.type='button';trigger.className='language-trigger admin-licenses-dropdown-trigger';
    trigger.setAttribute('role','combobox');trigger.setAttribute('aria-haspopup','listbox');
    trigger.setAttribute('aria-expanded','false');
-   const menuId='admin-licenses-dropdown-'+index;trigger.setAttribute('aria-controls',menuId);
+   const menuId=prefix+'-dropdown-'+index;trigger.setAttribute('aria-controls',menuId);
    const value=doc.createElement('span');value.className='admin-licenses-dropdown-value';
    const svg=doc.createElementNS('http://www.w3.org/2000/svg','svg');
    svg.setAttribute('class','language-chevron');svg.setAttribute('viewBox','0 0 20 20');
@@ -133,6 +119,26 @@
    select.addEventListener('change',sync);
    sync();return sync;
   }
+  return mountDropdown;
+ }
+ function mount(win){
+  const doc=win.document,host=doc.querySelector('#app-admin'),root=host?.querySelector('[data-admin-licenses]');
+  if(!root)return;
+  const el=q=>root.querySelector(q),gate=el('[data-licenses-gate]'),content=el('[data-licenses-content]');
+  const club=el('[data-licenses-club]'),query=el('[data-licenses-query]'),account=el('[data-licenses-account]');
+  const rows=el('[data-licenses-rows]'),history=el('[data-licenses-history]'),message=el('[data-licenses-message]');
+  let data=null,working=false,loadCounter=0,searchCounter=0;
+  const announceAccess=allowed=>{win.faAdminAccess=allowed;
+   win.dispatchEvent(new win.CustomEvent('fa:admin-access',{detail:allowed}));};
+  const locale=()=>labels[doc.documentElement.lang]||labels.en;
+  const l=k=>locale()[k]||labels.en[k]||k;
+  const show=(value)=>{message.textContent=value||''};
+  const normalize=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const selected=()=>data?.clubs?.find(x=>x.clubKey===club.value)||null;
+  const formatDate=s=>Number.isSafeInteger(s)&&s>0
+   ?new Intl.DateTimeFormat(doc.documentElement.lang||'en',{dateStyle:'medium',timeStyle:'short'}).format(new Date(s*1000)):l('none');
+  // Keep native selects as the source of truth, with the site's keyboard-accessible listboxes.
+  const mountDropdown=createDropdowns(win);
   const dropdowns=[
    mountDropdown(club,true,0),
    mountDropdown(account,true,1),
@@ -280,5 +286,5 @@
   obs.observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
   load();
  }
- return {mount};
+ return {mount,createDropdowns};
 });

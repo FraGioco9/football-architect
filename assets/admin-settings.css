@@ -248,15 +248,14 @@ html[data-theme="light"] .app-admin-view .admin-contracts-table thead th{backgro
  .app-admin-view .admin-contracts-table :is(th,td):nth-child(8){width:110px}
 }
 
-/* #777 Admin-only signing preparation: fixed fields, no change to roster tracks. */
+/* #777: reuse Admin Licenses panel, fields, menus and action controls. */
 .app-admin-view .admin-contract-draft[hidden]{display:none!important}
-.app-admin-view .admin-contract-draft{display:grid;gap:12px;padding:16px;margin-bottom:16px;border:1px solid var(--line);border-radius:8px;min-width:0}
-.app-admin-view .admin-contract-draft h2{font-size:var(--fa-text-panel-heading);margin:0}
-.app-admin-view .admin-contract-draft-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.app-admin-view .admin-contract-draft-fields label{display:grid;gap:5px;min-width:0;color:var(--muted);font-size:13px}
-.app-admin-view .admin-contract-draft-fields :is(select,output){box-sizing:border-box;width:100%;min-width:0;height:36px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--text);font:inherit}
-.app-admin-view .admin-contract-draft-terms,.app-admin-view .admin-contract-draft-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-.app-admin-view .admin-contract-draft-terms{font-size:13px;color:var(--muted)}
+.app-admin-view .admin-contract-draft{margin-bottom:var(--app-page-section-gap)}
+.app-admin-view .admin-contract-draft-fields>.admin-licenses-field:first-child{grid-column:auto}
+.app-admin-view .admin-contract-draft-fields output{box-sizing:border-box;display:flex;align-items:center;width:100%;min-width:0;height:var(--fa-control-height-regular);padding:8px 12px;border:1px solid var(--border);border-radius:var(--fa-radius-control);color:var(--text);font-size:14px;font-weight:400;font-variant-numeric:tabular-nums}
+.app-admin-view .admin-contract-draft-terms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 16px;min-width:0}
+.app-admin-view .admin-contract-draft-terms>.admin-licenses-field{display:grid;gap:6px;min-width:0;font-size:13px}
+.app-admin-view .admin-contract-draft-terms .admin-licenses-caption{color:var(--muted);font-weight:600;pointer-events:none}
 .app-admin-view .admin-contract-draft-terms output{color:var(--text);font-variant-numeric:tabular-nums}
-.app-admin-view [data-contract-draft-message]{margin:0;font-size:13px;color:var(--muted);min-height:3em}
-@media(max-width:480px){.app-admin-view .admin-contract-draft-fields{grid-template-columns:minmax(0,1fr)}}
+.app-admin-view [data-contract-draft-message]{min-height:3.1em;overflow-wrap:anywhere}
+@media(max-width:620px){.app-admin-view .admin-contract-draft-terms{grid-template-columns:repeat(2,minmax(0,1fr))}}

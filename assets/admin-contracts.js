@@ -14,6 +14,8 @@
   const t=()=>labels[doc.documentElement.lang]||labels.en,l=k=>t()[k]??draftLabels[doc.documentElement.lang]?.[k]??labels.en[k]??draftLabels.en[k];
   const report=value=>{status.textContent=value||''};
 
+  const mountDropdown=win.faAdminDropdowns?.(win,'admin-contract-draft');
+  const dropdowns=mountDropdown?[mountDropdown(playerSelect,true,0),mountDropdown(clubSelect,true,1),mountDropdown(durationSelect,false,2)]:[];
   function draftReset(){
    draftEpoch++;draftBusy=false;
    for(const k of ['salary','start','end','agent','minimum'])el('[data-contract-draft-'+k+']').textContent='—';
@@ -24,6 +26,7 @@
    const ready=allowed&&writer&&!!record&&!readAbort;
    for(const select of [playerSelect,clubSelect,durationSelect])select.disabled=!ready||draftBusy;
    previewButton.disabled=!ready||draftBusy||!playerSelect.value||!clubSelect.value;
+   dropdowns.forEach(sync=>sync());
   }
   function options(select,items){
    const selected=select.value,first=doc.createElement('option');first.value='';first.textContent='—';
