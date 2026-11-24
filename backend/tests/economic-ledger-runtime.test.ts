@@ -100,6 +100,22 @@ it('validates explicit multi-leg settlement and reversal without enabling club A
  expect(await balance('user:economy-fixture')).toBe(1000);
  expect(await balance('user:economy-seller')).toBe(0);
 });
+it('separates existing primary mandate receipts from youth and secondary trades, with atomic entitlement guard',async()=>{
+ const before=await balance('user:economy-fixture'),reserveBefore=await balance('reserve');
+ const purchase=intent('existing-mandate-purchase','PRIMARY_MANDATE_PURCHASE','user:economy-fixture','reserve',100,'synthetic-primary-event');
+ await expect(postEconomicOperation(db,purchase,{...guards(),preconditions:[economicAssert(db,'SELECT 1 WHERE 0')]},now)).rejects.toThrow();
+ expect(await balance('user:economy-fixture')).toBe(before);
+ await expect(postEconomicOperation(db,purchase,{...guards(),effects:[economicAssert(db,'SELECT 1 WHERE 0')]},now)).rejects.toThrow();
+ expect(await balance('reserve')).toBe(reserveBefore);
+ const receipt=await post(purchase);
+ expect((await post(purchase)).id).toBe(receipt.id);
+ expect(receipt.purpose).toBe('PRIMARY_MANDATE_PURCHASE');
+ expect(await balance('user:economy-fixture')).toBe(before!-100);
+ expect(await balance('reserve')).toBe(reserveBefore!+100);
+ await expect(post(intent('primary-bad-route','PRIMARY_MANDATE_PURCHASE','club:IT-1','reserve',1))).rejects.toThrow();
+ await expect(post(intent('primary-unfunded','PRIMARY_MANDATE_PURCHASE','user:economy-fixture','reserve',before!+1))).rejects.toThrow();
+ expect(await reconcileEconomy(db,access())).toMatchObject({ok:true,stockArc:'2400000'});
+});
 it('checks dedicated live capability, blocks reset after initialization, reconciles and freezes',async()=>{
  const digest='a'.repeat(64),csrf='b'.repeat(64),id='economy-fixture';
  await db.prepare('INSERT INTO player_sessions VALUES(?,?,?,?,?,?,?)').bind(digest,id,1,csrf,now,now,now+1000).run();

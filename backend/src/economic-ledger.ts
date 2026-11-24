@@ -7,7 +7,7 @@ import {ApiError} from './errors.ts';
 export const ARC_LIMIT=1_000_000_000_000;
 const clubKeys=new Set(clubs.map(c=>c.countryId+'-'+c.clubId));
 if(clubKeys.size!==320)throw Error('Invalid canonical club catalogue');
-const purposes=['GENESIS_RESERVE','ISSUE_RESERVE','RETIRE_RESERVE','CLUB_OPENING','REWARD','PAYROLL_HUMAN','PAYROLL_AI','YOUTH_PURCHASE','SPORTING_TRANSFER','CAPITAL_PURCHASE','ARC_ACQUISITION','MANDATE_TRADE','REVERSAL'] as const;
+const purposes=['GENESIS_RESERVE','ISSUE_RESERVE','RETIRE_RESERVE','CLUB_OPENING','REWARD','PAYROLL_HUMAN','PAYROLL_AI','YOUTH_PURCHASE','PRIMARY_MANDATE_PURCHASE','SPORTING_TRANSFER','CAPITAL_PURCHASE','ARC_ACQUISITION','MANDATE_TRADE','REVERSAL'] as const;
 type Purpose=typeof purposes[number];
 type Kind='CLUB_TREASURY'|'USER_WALLET'|'PLATFORM_RESERVE'|'ISSUANCE_CONTROL';
 type Line={accountId:string;amountArc:number};

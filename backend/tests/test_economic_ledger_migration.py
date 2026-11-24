@@ -62,3 +62,19 @@ class EconomicLedgerMigrationTest(unittest.TestCase):
             self.db.execute('INSERT OR REPLACE INTO economic_accounts VALUES(?,?,?,1)',('reserve','PLATFORM_RESERVE','platform'))
         self.assertEqual(self.db.execute('SELECT SUM(balance_arc) FROM economic_balances').fetchone()[0],0)
         self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+
+    def test_existing_primary_mandate_route(self):
+        self.post('GENESIS_RESERVE',[('issuance',-100),('reserve',100)])
+        self.db.execute("INSERT INTO player_accounts(id,email_normalized,password_verifier,email_verified_at,status,created_at,updated_at) VALUES('buyer','buyer@example.invalid','fixture',1,'active',1,1)")
+        self.db.execute("INSERT INTO economic_accounts VALUES('user:buyer','USER_WALLET','buyer',1)")
+        self.post('ARC_ACQUISITION',[('reserve',-30),('user:buyer',30)])
+        self.post('PRIMARY_MANDATE_PURCHASE',[('user:buyer',-10),('reserve',10)],'primary-fixture')
+        self.assertEqual(self.balance('user:buyer'),20)
+        self.assertEqual(self.balance('reserve'),80)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.post('PRIMARY_MANDATE_PURCHASE',[('user:buyer',-21),('reserve',21)])
+        self.post('CLUB_OPENING',[('reserve',-20),('club:IT-1',20)],'IT-1')
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.post('PRIMARY_MANDATE_PURCHASE',[('club:IT-1',-1),('reserve',1)])
+        self.assertEqual(self.db.execute('SELECT SUM(balance_arc) FROM economic_balances').fetchone()[0],0)
+        self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
