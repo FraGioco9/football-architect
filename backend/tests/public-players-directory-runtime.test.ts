@@ -373,8 +373,8 @@ test('#763 large-world local Worker/D1 valuation benchmark (synthetic, no remote
    for(let offset=populated;offset<population;offset+=1000){
     const size=Math.min(1000,population-offset),first=start+offset+1;
     await db.batch([
-     db.prepare("WITH RECURSIVE seq(i) AS (SELECT 0 UNION ALL SELECT i+1 FROM seq WHERE i+1<?) INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) SELECT ?+i,?,?,0,json_extract(?,'$['||((?+i)%120)||']'),? FROM seq").bind(size,first,batch,world.generation,profileJson,offset,now),
-     db.prepare("UPDATE player_market_values SET config_version=?,market_value_arc=json_extract(?,'$['||((player_id-?-1)%120)||']') WHERE player_id>=? AND player_id<?").bind(version,valueJson,start,first,first+size)
+     db.prepare("WITH RECURSIVE seq(i) AS (SELECT 0 UNION ALL SELECT i+1 FROM seq WHERE i+1<?) INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) SELECT ?+i,?,?,0,json_extract(?,'$['||CAST((?+i)%120 AS INTEGER)||']'),? FROM seq").bind(size,first,batch,world.generation,profileJson,offset,now),
+     db.prepare("UPDATE player_market_values SET config_version=?,market_value_arc=json_extract(?,'$['||CAST((player_id-?-1)%120 AS INTEGER)||']') WHERE player_id>=? AND player_id<?").bind(version,valueJson,start,first,first+size)
     ]);
    }
    populated=population;
