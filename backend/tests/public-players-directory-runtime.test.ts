@@ -5,7 +5,8 @@ import {applyD1Migrations} from 'cloudflare:test';
 import {marketValueIndexVersion,refreshMarketValueIndexBatch,marketValueIndexReadiness,marketValueIndexWrite,marketValueIndexUpdate} from '../src/player-market-value-index.ts';
 import {readPublicPlayer,readPublicPlayers} from '../src/public-players-read.ts';
 import {readPublicClubRoster} from '../src/public-club-roster-read.ts';
-import {calculatePlayerMarketValueArc} from '../src/player-market-value.mjs';
+import {calculatePlayerMarketValueArc,MARKET_VALUE_CONFIG} from '../src/player-market-value.mjs';
+import {FORECAST_EXPOSURES} from '../src/player-market-value-forecast-data.mjs';
 import {parsePublicPlayerQuery,isAllowedPublicPlayersPath} from '../src/public-players-filters.mjs';
 import {PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS} from '../src/footballer-public-projection.ts';
 import type {Database} from '../src/database.ts';
@@ -315,12 +316,26 @@ test('#763 indexed valuation: actual local D1 global ordering, range, parity and
   assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'affiliation does not invalidate value');
   await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.retirement_seed','private','$.development_aptitude',42) WHERE id=?").bind(id).run();
   assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'hidden fields do not invalidate value');
-  const prior=marketValueIndexUpdate(id,0,version,JSON.parse(rows[0].payload_json));
+  const fingerprint=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([MARKET_VALUE_CONFIG,FORECAST_EXPOSURES])));
+ assert.equal(version,'market-value-index-v1:'+Array.from(new Uint8Array(fingerprint),n=>n.toString(16).padStart(2,'0')).join(''));
+ const prior=marketValueIndexUpdate(id,0,version,JSON.parse(rows[0].payload_json));
   await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.age',33) WHERE id=?").bind(id).run();
   assert.equal((await marketValueIndexWrite(db,version,[prior]).run()).meta.changes,0,'stale revision cannot resurrect a value');
   await assert.rejects(readPublicPlayers(db,1,{valueMin:0}),/players_unavailable/);
   assert.equal((await refreshMarketValueIndexBatch(db)).updated,1);
   assert.equal((await refreshMarketValueIndexBatch(db)).ready,true);
+  // Each public sporting input must independently invalidate the cache.
+  for(const [path,value] of [['career_status','"retired"'],['primary_position','"RW"'],['secondary_positions','["LW"]'],['attributes.passing','99']]){
+   const old=(await db.prepare('SELECT input_revision FROM player_market_values WHERE player_id=?').bind(id).first<{input_revision:number}>())!;
+   await db.prepare('UPDATE generated_players SET payload_json=json_set(payload_json,?,json(?)) WHERE id=?').bind('$.'+path,value,id).run();
+   const pending=await db.prepare('SELECT input_revision,config_version,market_value_arc FROM player_market_values WHERE player_id=?').bind(id).first();
+   assert.deepEqual(pending,{input_revision:old.input_revision+1,config_version:null,market_value_arc:null});
+   await assert.rejects(readPublicPlayers(db,1,{sort:'market_value_arc'}),/players_unavailable/);
+   assert.equal((await refreshMarketValueIndexBatch(db)).updated,1);
+   assert.equal((await refreshMarketValueIndexBatch(db)).ready,true);
+   const fresh=await readPublicPlayer(db,id);
+   assert.equal(fresh.player.market_value_arc,0,'retired remains true zero');
+  }
   await db.prepare("UPDATE player_market_values SET config_version='old-config' WHERE player_id=?").bind(id).run();
   await assert.rejects(readPublicPlayers(db,1,{sort:'market_value_arc'}),/players_unavailable/);
   assert.equal((await refreshMarketValueIndexBatch(db)).updated,1);

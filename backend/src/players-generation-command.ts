@@ -180,7 +180,7 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
   // All-or-nothing D1 batch: authorization + current world + uncommitted draft +
   // unchanged AUTOINCREMENT sequence + approved players + immutable portraits.
   // If a profile insert fails no permanent player is created either.
-  const result=await db.batch([
+  await db.batch([
    sessionGuard(db,session,now),
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND season_number=?',[world.generation,world.seasonNumber]),
    abortUnless(db,"SELECT 1 FROM player_generation_drafts WHERE id=? AND account_id=? AND status='preview' AND expires_at>? AND world_generation=? AND season_number=?",
@@ -212,10 +212,13 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
      WHERE p.batch_id=? AND p.world_generation=? AND v.config_version=?)=?`,
     [id,world.generation,draft.count,id,world.generation,draft.count,id,world.generation,indexVersion,draft.count]),
    db.prepare("UPDATE player_generation_drafts SET status='committed',committed_at=? WHERE id=? AND account_id=? AND status='preview'")
-    .bind(now,id,session.unified!.playerId)
+    .bind(now,id,session.unified!.playerId),
+   abortUnless(db,"SELECT 1 FROM player_generation_drafts WHERE id=? AND account_id=? AND status='committed' AND committed_at=?",
+    [id,session.unified!.playerId,now])
   ]);
-  if(result[4].meta.changes!==draft.count||result[5].meta.changes!==draft.count||result[6].meta.changes!==draft.count||result[8].meta.changes!==1)
-   throw Error('Uncommitted player or portrait count');
+  // D1 meta.changes may include trigger effects. All durable row counts and
+  // the committed draft state are checked before the batch commits; never
+  // throw after successful commit merely because trigger counts differ.
   return {batchId:id,count:draft.count,alreadyCommitted:false,worldGeneration:world.generation};
  }catch{
   // A racing retry may already have committed. Never write a partial batch.
