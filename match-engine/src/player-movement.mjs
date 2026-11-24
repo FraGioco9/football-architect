@@ -2494,6 +2494,13 @@ export function createPlayerMovement(options={}){
     // touch the ball; all others retain their own base positions.
     if(!smallActive.has(p.id))
      return Object.freeze({x:p.baseX,y:p.baseY});
+    if(smallSided.id==='pass-pair'){
+     // Fixed receiving station and short approach to the INITIAL ball.
+     return p.id===smallSided.side+'-10'?
+      Object.freeze({x:smallSided.ball.x+(smallSided.side==='home'?0.10:-0.10),
+       y:smallSided.ball.y}):
+      Object.freeze({x:p.baseX,y:p.baseY});
+    }
     if(p.id===smallSided.opponent+'-1'){
      const baseline=goalkeeperPosition(p.team,ball);
      return smallSided.id==='keeper-1v1'?
@@ -2829,7 +2836,7 @@ export function createPlayerMovement(options={}){
      p.team!==smallSided.side?'press-ball':
      p.id===smallSided.side+'-10'?
       ((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?'carry-ball':'approach-ball'):
-      'support-run';
+      smallSided.id==='pass-pair'?'hold-pass-target':'support-run';
     return Object.freeze({
      tick:tick+1,id:p.id,team:p.team,kind,
      ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:{}),

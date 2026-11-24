@@ -689,7 +689,8 @@ export function createEngine(RAPIER, input = {}, {
       nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
       nativeFixedSprintLongStride:diagnosticNativeFixedSprintLongStrideEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
-       isolatedCarry||(smallSided?.variantIndex>0),
+       isolatedCarry||(smallSided?.variantIndex>0&&smallSided.id!=='pass-pair'),
+      ...(smallSided?.id==='pass-pair'?{isolatedPassSide:smallSided.side}:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
       ...(isolatedCarry?{
        isolatedDribbleContext:Object.freeze({
@@ -697,7 +698,7 @@ export function createEngine(RAPIER, input = {}, {
         variantIndex:smallSided.variantIndex
        })
       }:{}),
-      ...(smallSided?.variantIndex>0?{
+      ...(smallSided?.variantIndex>0&&smallSided.id!=='pass-pair'?{
        smallSidedDecisionContext:Object.freeze({
         situationId:smallSided.id,
         variantIndex:smallSided.variantIndex,

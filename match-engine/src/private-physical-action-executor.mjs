@@ -21,7 +21,7 @@ export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
- smallSidedDecisionContext=null,isolatedDribbleContext=null,
+ smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
  nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false
 }={}){
@@ -44,6 +44,15 @@ export function createPrivatePhysicalActionExecutor({
     activePlayerIds.length<1||activePlayerIds.length>7||
     new Set(activePlayerIds).size!==activePlayerIds.length))
   throw new TypeError('Small-sided active physical shoe set is invalid');
+ if(isolatedPassSide!==null&&(
+    !['home','away'].includes(isolatedPassSide)||
+    activePlayerIds?.length!==2||
+    !activePlayerIds.includes(isolatedPassSide+'-10')||
+    !activePlayerIds.includes(isolatedPassSide+'-9')||
+    allowPhysicalCarry||smallSidedDecisionContext!==null||
+    isolatedDribbleContext!==null||researchReceivingCushionSide!==null||
+    researchReceivingDecisionSide!==null||researchReceiverTapSide!==null))
+  throw new TypeError('Isolated pass requires exactly two original teammates');
  if(typeof physicalBodyGuardEnabled!=='boolean'||
     (physicalBodyGuardEnabled&&activePlayerIds===null))
   throw new TypeError('Native body contact requires genuine small-sided shoe source');
@@ -235,7 +244,13 @@ export function createPrivatePhysicalActionExecutor({
    }):null;
   // M25 preempts same-tick action for cushioning. M27 may instead
   // defer an ORIGINAL second-touch clearance with zero additional impulse.
-  const originalChosen=researchCandidate||deferOriginal?null:originalChoice;
+  // Filter existing action authority; never invent a contact or impulse.
+  const isolatedPassRejected=isolatedPassSide!==null&&(
+   lastActionTick>=0||originalChoice?.action!=='pass'||
+   originalChoice.playerId!==isolatedPassSide+'-10'||
+   originalChoice.passTarget?.recipientId!==isolatedPassSide+'-9'||
+   originalChoice.impulseNs.z!==0);
+  const originalChosen=researchCandidate||deferOriginal||isolatedPassRejected?null:originalChoice;
   // The *existing* uniform policy and Rapier exclusive shoe START remain
   // the only action authority. Native phase calibration can adjust that
   // action's impulse or decline it, never generate an extra contact/action.
@@ -266,6 +281,7 @@ export function createPrivatePhysicalActionExecutor({
     !isolatedNativeShoeSourceValid?'solo-ambiguous-real-foot-contact':researchCandidate?
     'experimental-receiving-cushion-preempts-uniform-action':
     deferOriginal?'m27-native-decision-defers-original-clearance':
+    isolatedPassRejected?'isolated-pass-one-original-ground-pass-only':
     nativeTune?.impulseNs===null?
      'native-shoe-contact-no-extra-ball-impulse-needed':
     (gates.firstFailedGate??'not-selected-after-input-gates')
