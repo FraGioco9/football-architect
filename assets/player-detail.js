@@ -541,6 +541,12 @@
    if(!data||typeof data!=='object'||typeof data.display_name!=='string')throw Error('error');
    player=data;selectedPosition=positionCodes()[0]||null;state='ready';
   }catch(error){if(ticket!==request)return;player=null;state=['denied','expired','not-found'].includes(error.message)?error.message:'error';}
+  // Protected preview details confirm Admin only after their live draft read.
+  if(preview&&(state==='ready'||state==='denied')){
+   const allowed=state==='ready';
+   window.faAdminAccess=allowed;
+   window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:allowed}));
+  }
   if(preview)root.hidden=false;render();resolvePortrait();
   if(!preview&&player?.clubKey)void resolveClubCatalog(ticket);
  }

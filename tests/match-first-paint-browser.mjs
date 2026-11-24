@@ -849,8 +849,12 @@ for(const [engine,driver] of Object.entries(engines)){
       assert.equal(await home.evaluate(el=>getComputedStyle(el).textDecorationLine),'none');
       await page.mouse.click(outsideX,outsideY);
       assert.equal(new URL(page.url()).pathname,'/matches/123');
-      // Each real link must create a new tab without navigating the match
-      // page. The competition tile is tested alongside both club labels.
+      // Each real link must create a new tab without navigating the match.
+      // Isolate popup navigation from unrelated destination hydration (WebKit).
+      await ctx.route(/\/(?:competitions\/it-1\/fixtures|clubs\/it\/[12]\/overview)(?:\?.*)?$/,route=>route.request().isNavigationRequest()
+       ? route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><title>Navigation target</title>'})
+       : route.fallback());
+      // The competition tile is tested alongside both club labels.
       for(const item of [
        {link:page.locator('[data-match-competition-link]'),path:'/competitions/it-1/fixtures'},
        {link:home,path:'/clubs/it/1/overview'},

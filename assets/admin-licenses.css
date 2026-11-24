@@ -1,0 +1,74 @@
+/* CLUB-LICENSES-01: the same panels, fields, dropdowns and compact tables as the app. */
+.app-admin-view .admin-licenses{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--fa-space-4,16px);width:100%;min-width:0}
+.app-admin-view .admin-licenses [hidden]{display:none!important}
+.app-admin-view .admin-licenses [data-licenses-content]{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--app-page-section-gap);min-width:0}
+.app-admin-view .admin-licenses-list,.app-admin-view .admin-licenses-history-section{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}
+.app-admin-view .admin-licenses-editor{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;overflow:visible}
+.app-admin-view .admin-licenses-editor h2{margin:0;font-size:var(--fa-text-panel-heading);line-height:1.3}
+.app-admin-view .admin-licenses-editor p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.app-admin-view .admin-licenses-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px;min-width:0}
+.app-admin-view .admin-licenses-fields>.admin-licenses-field{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0;font-size:13px;font-weight:600}
+.app-admin-view .admin-licenses-fields>.admin-licenses-field:first-child{grid-column:1/-1}
+.app-admin-view .admin-licenses-fields .admin-licenses-caption{line-height:1.4;pointer-events:none;cursor:default;color:var(--text)}
+.app-admin-view .admin-licenses-fields .admin-licenses-field:is(:hover,:focus-within)>.admin-licenses-caption{background:transparent;outline:0;box-shadow:none}
+.app-admin-view .admin-licenses :is(input,select){box-sizing:border-box;min-width:0;width:100%;height:var(--fa-control-height-regular);min-height:var(--fa-control-height-regular);margin:0;padding:8px 12px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font:inherit;font-size:14px}
+.app-admin-view .admin-licenses input::placeholder{color:var(--muted)}
+.app-admin-view .admin-licenses :is(input,button,[role="option"]):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-admin-view .admin-licenses :is(input,select):disabled{opacity:.55;cursor:default}
+.app-admin-view .admin-licenses-search{display:flex;align-items:stretch;gap:8px;min-width:0}
+.app-admin-view .admin-licenses-search>input{flex:1 1 auto;min-width:0}
+.app-admin-view .admin-licenses-search>.app-link{flex:none;min-height:var(--fa-control-height-regular)}
+.app-admin-view .admin-licenses-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.app-admin-view .admin-licenses-actions .app-link{min-height:var(--fa-control-height-regular)}
+.app-admin-view .admin-licenses :is(.admin-licenses-actions,.admin-licenses-search) button:disabled{opacity:.55;cursor:default}
+.app-admin-view .admin-licenses-message{min-height:1.4em;margin:0;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+.app-admin-view .admin-licenses-message:empty{display:none}
+.app-admin-view .admin-licenses-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-width:0}
+.app-admin-view .admin-licenses-heading h2{margin:0;font-size:var(--fa-text-panel-heading);line-height:1.3}
+.app-admin-view .admin-licenses-heading [data-licenses-count]{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.app-admin-view .admin-licenses-filters{display:flex;align-items:center;gap:10px;min-width:0}
+.app-admin-view .admin-licenses-filters>input{flex:1 1 auto;min-width:0}
+.app-admin-view .admin-licenses-filters>.admin-licenses-dropdown{flex:0 0 192px;min-width:0}
+.app-admin-view .admin-licenses-dropdown{position:relative;z-index:5;display:flex;align-items:stretch;width:100%;min-width:0}
+.app-admin-view .admin-licenses-dropdown:has(.language-trigger[aria-expanded="true"]){z-index:80}
+.app-admin-view .admin-licenses-dropdown .language-trigger{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-width:0;max-width:none;height:var(--fa-control-height-regular);min-height:var(--fa-control-height-regular);margin:0;padding:8px 12px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font:inherit;font-size:14px;text-align:left}
+.app-admin-view .admin-licenses-dropdown .language-trigger:disabled{opacity:.55;cursor:default}
+.app-admin-view .admin-licenses-dropdown .admin-licenses-dropdown-value{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.app-admin-view .admin-licenses-dropdown .language-chevron{flex:none}
+.app-admin-view .admin-licenses-dropdown .language-menu{box-sizing:border-box;position:absolute;z-index:90;top:calc(100% + 6px);inset-inline:0;width:100%;min-width:0;max-height:min(320px,calc(100svh - 110px));overflow:auto;padding:5px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);box-shadow:var(--fa-dropdown-shadow)}
+.app-admin-view .admin-licenses-dropdown[data-menu-placement="above"] .language-menu{top:auto;bottom:calc(100% + 6px)}
+.app-admin-view .admin-licenses-dropdown .language-option{min-height:36px;box-sizing:border-box;padding:8px 10px;font-size:13px;overflow-wrap:anywhere}
+.app-admin-view .admin-licenses-dropdown .admin-licenses-dropdown-search{display:block;position:sticky;top:-5px;z-index:2;box-sizing:border-box;width:100%;height:38px;min-height:38px;margin:0 0 5px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface)}
+.app-admin-view .admin-licenses-table-wrap{box-sizing:border-box;max-width:100%;min-width:0;overflow-x:auto;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);scrollbar-width:thin}
+.app-admin-view .admin-licenses-table-wrap:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.app-admin-view .admin-licenses-table{box-sizing:border-box;width:100%;min-width:680px;table-layout:fixed;border-collapse:separate;border-spacing:0;color:var(--text);font-size:14px;font-variant-numeric:tabular-nums}
+.app-admin-view .admin-licenses-table :is(th,td){box-sizing:border-box;padding:5px 12px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:left}
+.app-admin-view .admin-licenses-table thead th{height:42px;padding-block:5px;background:#172d30;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.02em;line-height:1.2;white-space:nowrap}
+html[data-theme="light"] .app-admin-view .admin-licenses-table thead th{background:#E8F1EB;color:#31594A}
+.app-admin-view .admin-licenses-table tbody tr{height:42px}
+.app-admin-view .admin-licenses-table tbody tr:last-child td{border-bottom:0}
+.app-admin-view .admin-licenses-table:not(.admin-licenses-history) :is(th,td):nth-child(1){width:34%}
+.app-admin-view .admin-licenses-table:not(.admin-licenses-history) :is(th,td):nth-child(2){width:34%;overflow-wrap:anywhere}
+.app-admin-view .admin-licenses-table:not(.admin-licenses-history) :is(th,td):nth-child(3){width:19%;white-space:nowrap}
+.app-admin-view .admin-licenses-table:not(.admin-licenses-history) :is(th,td):nth-child(4){width:13%;text-align:center}
+.app-admin-view .admin-licenses-table tbody tr.is-selected{background:var(--fa-field-hover-bg)}
+.app-admin-view .admin-licenses-table .admin-licenses-row-action{min-height:30px;height:30px;padding:5px 10px;white-space:nowrap}
+.app-admin-view .admin-licenses-skeleton,.app-admin-view .admin-licenses-skeleton td{height:42px}
+.app-admin-view .admin-licenses-history{min-width:760px}
+.app-admin-view .admin-licenses-history :is(th,td):nth-child(1){width:21%;white-space:nowrap}
+.app-admin-view .admin-licenses-history :is(th,td):nth-child(2){width:24%}
+.app-admin-view .admin-licenses-history :is(th,td):nth-child(3){width:13%}
+.app-admin-view .admin-licenses-history :is(th,td):nth-child(4),
+.app-admin-view .admin-licenses-history :is(th,td):nth-child(5){width:21%;overflow-wrap:anywhere}
+@media(max-width:760px){
+ .app-admin-view .admin-licenses-fields{grid-template-columns:minmax(0,1fr)}
+ .app-admin-view .admin-licenses-fields>.admin-licenses-field:first-child{grid-column:auto}
+}
+@media(max-width:520px){
+ .app-admin-view .admin-licenses-search{flex-wrap:wrap}
+ .app-admin-view .admin-licenses-search>.app-link{width:100%}
+ .app-admin-view .admin-licenses-filters{flex-wrap:wrap}
+ .app-admin-view .admin-licenses-filters>.admin-licenses-dropdown{flex:1 1 100%}
+ .app-admin-view .admin-licenses-actions>.app-link{flex:1 1 100%}
+ .app-admin-view .admin-licenses-table{min-width:630px}
+}
