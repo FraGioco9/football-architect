@@ -75,3 +75,6 @@ EUR youth price is now explicitly selected at 90% DRAFT; ARC100 is the working c
 
 
 Joint reward/wage/valuation/license feasibility: [48-case grid](economy-joint-calibration-v1.md) with explicit ARC affordability, reserve funding and 32-season annual stock-flow accounting. No closed baseline-channel solution meeting both license anchors and fixed reference purchase mix; full closure needs additional genuine reserve receipts and cannot coexist with perpetual net aggregate accumulation. No runtime parameters changed or new fees approved.
+
+
+Latest owner correction: staff budget is included within club operating surplus, not a separate standardized deduction or assumed reserve receipt. [Joint v2](economy-joint-calibration-v2.md) supersedes staff assumptions in earlier research. Existing EUR300/EUR100 price targets remain; changed analytical quotes are sensitivities only.

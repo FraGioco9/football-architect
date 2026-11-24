@@ -297,3 +297,13 @@ test('joint economy grid reconciles reserve and aggregate stocks',async()=>{
  assert.ok(x.baseline.unfundedYouthArcDemand>0);assert.ok(x.baseline.requiredAdditionalReserveReceiptsArc>0);
  assert.ok(x.aggregateCashFlow[0].totalIssuedArc>0);assert.equal(x.aggregateCashFlow[1].totalIssuedArc,0);
 });
+
+test('optional staff remains within club surplus and is not a reserve receipt',async()=>{
+ const {buildJointCalibration}=await import('../tools/run-economy-joint-calibration-v2.mjs');
+ const x=buildJointCalibration(),prior=JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v1-results.json',import.meta.url),'utf8')).baseline;
+ assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v2-results.json',import.meta.url),'utf8')));
+ assert.ok(Math.abs(x.baseline.clubSurplusBeforeDiscretionaryArc-prior.clubSurplusBeforeDiscretionaryArc-prior.staffBudgetArc)<=1);
+ assert.ok(Math.abs(x.baseline.estimatedPayrollArc-prior.estimatedPayrollArc)<=1);
+ assert.ok(Math.abs(x.baseline.baseReserveReceiptsArc-prior.baseReserveReceiptsArc+prior.assumedStaffReserveArc)<=1);
+ assert.ok(x.grid.every(y=>y.staffBudgetArc===0&&y.assumedStaffReserveArc===0));
+});

@@ -4,6 +4,8 @@ export function buildJoint(clubs,selection,base,renew,c,rewards,salary,create,ro
  const active=selection.bindings.filter(b=>!b.competitionId.startsWith("int-")).reduce((s,b)=>s+b.clubIds.length,0);
  if(active!==256||!near(sum(c.youngWeights),1)||c.annualRetirements<c.eurOrders)throw Error("invalid reference");
  const arcOrders=c.annualRetirements-c.eurOrders;
+ const staffPolicy=c.staffOptional?{1:0,2:0}:base.staffArc;
+ if(c.staffOptional&&c.staffReserveFraction!==0)throw Error('optional staff cannot be guaranteed reserve income');
  const candidates=c.rewardScales.flatMap(rs=>c.wageScales.map(ws=>{
   const scaled={...rewards,competitionRewards:id=>{const v=rewards.competitionRewards(id);return {...v,pool:v.pool*rs,points:v.points*rs,awards:v.awards.map(a=>a*rs),participationReference:v.participationReference*rs}},rewardTotals:()=>({pool:rewards.rewardTotals().pool*rs})};
   const s={...salary,salaryScale:salary.salaryScale*ws};
@@ -15,8 +17,8 @@ export function buildJoint(clubs,selection,base,renew,c,rewards,salary,create,ro
    const value=round(v),arc=Math.ceil(value*c.arcPercent/100),eur=Math.ceil(value*c.eurPercent/100),weight=c.youngWeights[i]/c.entryAges.length;tickets.push({value,arc,eur,weight});
   }
   const mean=k=>sum(tickets.map(t=>t[k]*t.weight));
-  const x=cal(clubs,selection,{...base,horizon:renew.horizon,lowRankWeights:renew.lowRankWeights,replacementAnnualArc:c.clubRecruitmentArc},scaled,s);
-  const pool=scaled.rewardTotals().pool,staff=rnd(sum(x.rows.filter(r=>r.initialTier).map(r=>base.staffArc[r.initialTier]))),recruit=rnd(sum(x.rows.filter(r=>r.initialTier).map(r=>c.clubRecruitmentArc[r.initialTier]))),payroll=rnd(sum(x.rows.map(r=>r.expectedCostArc)))-staff-recruit;
+  const x=cal(clubs,selection,{...base,staffArc:staffPolicy,horizon:renew.horizon,lowRankWeights:renew.lowRankWeights,replacementAnnualArc:c.clubRecruitmentArc},scaled,s);
+  const pool=scaled.rewardTotals().pool,staff=rnd(sum(x.rows.filter(r=>r.initialTier).map(r=>staffPolicy[r.initialTier]))),recruit=rnd(sum(x.rows.filter(r=>r.initialTier).map(r=>c.clubRecruitmentArc[r.initialTier]))),payroll=rnd(sum(x.rows.map(r=>r.expectedCostArc)))-staff-recruit;
   const ai=rnd(payroll*(1-c.referenceHumanShare)),human=payroll-ai,desiredYouth=rnd(mean("arc")*arcOrders),youth=Math.min(human,desiredYouth),staffReserve=rnd(staff*c.staffReserveFraction);
   const clubBudget=pool-payroll-staff-recruit,clubNet=pool-payroll-staff; // sporting transfer allowance is internal redistribution, not a world sink
   const baseReserve=ai+staffReserve+youth,required=Math.max(0,pool-baseReserve),walletNet=human-youth,nonreserveStaff=staff-staffReserve;
