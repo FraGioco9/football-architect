@@ -112,7 +112,16 @@ export function rewardEvidenceState({id,context,worldSnapshot,debug=false}={}){
 
 // Planned pool amounts only. Individual settlement and certification are separate.
 export function plannedRewardInstallments(rule){
- const [first,second]=CREDIT_MILESTONES.participation,half=participationInstallments(rule)[0]*rule.capacity;
+ const [first,second]=CREDIT_MILESTONES.participation;
+ // The Admin Rewards schedule also passes rewardTotals(), which has no per-club
+ // award or capacity. Sum the canonical competition installments, never round
+ // the aggregated pool (future odd per-club awards must retain their remainder).
+ let half;
+ if(rule.capacity===undefined&&rule.participationReference===undefined){
+  const totals=rewardTotals();
+  if(Object.keys(totals).some(k=>rule[k]!==totals[k]))throw Error('Invalid configured reward totals');
+  half=REWARD_IDS.reduce((sum,id)=>sum+plannedRewardInstallments(competitionRewards(id))[0].participation,0);
+ }else half=participationInstallments(rule)[0]*rule.capacity;
  if(!Number.isSafeInteger(half)||!Number.isSafeInteger(rule.points)||!Number.isSafeInteger(rule.placement))throw Error('Invalid configured reward installments');
  return [{day:first,participation:half,points:0,placement:0,total:half},{day:second,participation:rule.participation-half,points:rule.points,placement:rule.placement,total:rule.participation-half+rule.points+rule.placement}];
 }

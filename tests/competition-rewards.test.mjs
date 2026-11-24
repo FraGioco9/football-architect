@@ -569,3 +569,22 @@ test('#776 receipt reconciliation: unknown, pending, resumed, complete, mismatch
   {...complete,receipts:[{...receipts[0],lines_json:'[]'},...receipts.slice(1)]}])
   assert.equal(reconcileRewardPlan(plan,rewardBinding,bad).status,'mismatch');
 });
+
+
+test('#776 canonical aggregate schedule matches per-competition installments and Admin Rewards rendering',async()=>{
+ const totals=rewardTotals();
+ const schedule=plannedRewardInstallments(totals);
+ for(const [i,day] of [28,56].entries()){
+  const expected=REWARD_IDS.map(id=>plannedRewardInstallments(competitionRewards(id))[i]);
+  assert.equal(schedule[i].day,day);
+  for(const key of ['participation','points','placement','total'])
+   assert.equal(schedule[i][key],expected.reduce((s,row)=>s+row[key],0));
+ }
+ assert.deepEqual(schedule.map(x=>x.total),[676800,1723200]);
+ assert.throws(()=>plannedRewardInstallments({...totals,participation:totals.participation+1}));
+ assert.throws(()=>plannedRewardInstallments({...totals,capacity:304}));
+ const {renderAdminRewards}=await import('../tools/render-competition-rewards.mjs');
+ const html=renderAdminRewards([],String);
+ assert.match(html,/data-reward-amount="676800"/);
+ assert.match(html,/data-reward-amount="1723200"/);
+});
