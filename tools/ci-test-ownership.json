@@ -402,7 +402,7 @@
     "tests/world-history-page.test.mjs": "site-node",
     "backend/tests/club-licenses-runtime.test.ts": "backend-runtime",
     "backend/tests/economic-ledger-runtime.test.ts": "backend-runtime",
-    "backend/tests/test_economic_ledger_migration.py": "migration"
-    "backend/tests/test_player_signed_contracts_migration.py": "migration",
+    "backend/tests/test_economic_ledger_migration.py": "migration",
+    "backend/tests/test_player_signed_contracts_migration.py": "migration"
   }
 }
