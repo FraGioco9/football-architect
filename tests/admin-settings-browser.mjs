@@ -912,7 +912,15 @@ try{
    assert.equal(await page.locator('[data-inspection-value="reserve"]').textContent(),'—');
    await page.goto('http://app.localhost:2000/admin/reset');await inspectionReady('reset').waitFor({state:'visible'});
    const scopes=page.locator('[data-inspection-scope]');assert.equal(await scopes.count(),4);assert.equal(await page.locator('[data-inspection-scope]:checked').count(),0);
-   const resetGeometry=()=>page.locator('[data-admin-inspection="reset"],.inspection-result,.inspection-preview-table,.inspection-summary-label,[data-inspection-show-blockers],[data-inspection-copy="confirm"]').evaluateAll(nodes=>nodes.map(n=>{const r=n.getBoundingClientRect();return [Math.round(r.x),Math.round(r.y+window.scrollY),Math.round(r.width),Math.round(r.height)]}));
+   // The shell, not window, scrolls when Playwright brings the preview controls
+   // into view. Compare content-space coordinates, preserving checks of both
+   // layout positions and dimensions rather than comparing viewport offsets.
+   const resetGeometry=()=>page.locator('[data-admin-inspection="reset"],.inspection-result,.inspection-preview-table,.inspection-summary-label,[data-inspection-show-blockers],[data-inspection-copy="confirm"]').evaluateAll(nodes=>{
+    const scroller=nodes[0].closest('.fa-shell-content-scroll');
+    if(!scroller)throw Error('Canonical shell scroll container missing');
+    const origin=scroller.getBoundingClientRect();
+    return nodes.map(n=>{const r=n.getBoundingClientRect();return [Math.round(r.x-origin.x+scroller.scrollLeft),Math.round(r.y-origin.y+scroller.scrollTop),Math.round(r.width),Math.round(r.height)]});
+   });
    const resetTable=page.locator('table.inspection-preview-table');
    const checkResetTable=async()=>{assert.equal(await resetTable.locator('tbody tr').count(),4);assert.ok(await resetTable.evaluate(n=>n.scrollWidth<=n.clientWidth+1&&n.scrollHeight<=n.clientHeight+1&&!n.closest('.app-players-table-scroll')),'All reset table rows fit without a scroll container')};
    await checkResetTable();
@@ -922,9 +930,16 @@ try{
    assert.equal(await summary.getAttribute('data-inspection-state'),'world',await summary.textContent());
    assert.equal(await summary.textContent(),'Season 0 · Day 0');
    const resetEmpty=await resetGeometry();
+   // Exercise a real scroll independently of any preview response.
+   const shellScroll=page.locator('.fa-shell-content-scroll');
+   const scrollTop=await shellScroll.evaluate(n=>n.scrollTop);
+   await shellScroll.evaluate(n=>{n.scrollTop=n.scrollHeight});
+   assert.deepEqual(await resetGeometry(),resetEmpty,'Scrolling must not change content-space geometry');
+   await shellScroll.evaluate((n,top)=>{n.scrollTop=top},scrollTop);
    await scopes.first().check();await page.locator('[data-inspection-preview]').click();await inspectionReady('reset').waitFor({state:'visible'});
    assert.equal(previewCalls,1);assert.equal(await page.locator('[data-inspection-copy="confirm"]').isEnabled(),false);
    await checkResetTable();
+   assert.deepEqual(await resetGeometry(),resetEmpty,'Preview results must not resize or reposition the Reset components');
    await page.locator('[data-inspection-show-blockers]').click();
    await page.locator('[data-inspection-blockers-dialog][open]').waitFor({state:'visible'});
    assert.equal(await page.locator('[data-inspection-blockers] li:visible').count(),6);
