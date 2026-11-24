@@ -1,0 +1,65 @@
+[
+  {
+    "ticket": 3,
+    "cost": 5000,
+    "orders": 2566,
+    "seasons": 4,
+    "perOrder": 1.9490655737704914
+  },
+  {
+    "ticket": 3,
+    "cost": 15000,
+    "orders": 7696,
+    "seasons": 11,
+    "perOrder": 1.9490655737704914
+  },
+  {
+    "ticket": 3,
+    "cost": 30000,
+    "orders": 15392,
+    "seasons": 21,
+    "perOrder": 1.9490655737704914
+  },
+  {
+    "ticket": 5,
+    "cost": 5000,
+    "orders": 1450,
+    "seasons": 2,
+    "perOrder": 3.44844262295082
+  },
+  {
+    "ticket": 5,
+    "cost": 15000,
+    "orders": 4350,
+    "seasons": 6,
+    "perOrder": 3.44844262295082
+  },
+  {
+    "ticket": 5,
+    "cost": 30000,
+    "orders": 8700,
+    "seasons": 12,
+    "perOrder": 3.44844262295082
+  },
+  {
+    "ticket": 10,
+    "cost": 5000,
+    "orders": 695,
+    "seasons": 1,
+    "perOrder": 7.1968852459016395
+  },
+  {
+    "ticket": 10,
+    "cost": 15000,
+    "orders": 2085,
+    "seasons": 3,
+    "perOrder": 7.1968852459016395
+  },
+  {
+    "ticket": 10,
+    "cost": 30000,
+    "orders": 4169,
+    "seasons": 6,
+    "perOrder": 7.1968852459016395
+  }
+]

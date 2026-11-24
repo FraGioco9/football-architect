@@ -152,6 +152,10 @@ function euros(){
  }return results;
 }
 
+function recurringEuros(){
+ return [3,5,10].flatMap(ticket=>[5000,15000,30000].map(cost=>{const perOrder=ticket*.95/1.22-ticket*.029-.30;return {ticket,cost,orders:Math.ceil(cost/perOrder),seasons:Math.ceil(cost/perOrder/768),perOrder}}));
+}
+
 function checks(){
  for(const amount of [0,1,19,20,101,1000])for(const rate of [5,10]){const x=licenseFee(amount,rate);if(x.fee+x.seller!==amount)throw Error("fee split")}
  // Refund reference: reverse exact original transfer, no new fee or pricing. Insufficient funds => manual/escrow review.
@@ -163,4 +167,4 @@ function checks(){
 const annual=Array.from({length:32},(_,i)=>generateTrial({count:768,seed:'770-fresh-'+(i+1)}).candidates.map(p=>profile(p,api,calculatePositionSuitability)));
 const cases=[{"name":"low","wallet":5000,"prices":{"0":250,"1":1000,"2":600},"fee":5,"review":true,"basePayroll":26000,"staff":15000,"selfWage":1},{"name":"mid","wallet":5000,"prices":{"0":500,"1":2500,"2":1500},"fee":5,"review":true,"basePayroll":26000,"staff":15000,"selfWage":1},{"name":"high","wallet":5000,"prices":{"0":1000,"1":5000,"2":3000},"fee":5,"review":true,"basePayroll":26000,"staff":15000,"selfWage":1},{"name":"mid-wallet1500","wallet":1500,"prices":{"0":500,"1":2500,"2":1500},"fee":5,"review":true,"basePayroll":26000,"staff":15000,"selfWage":1},{"name":"mid-fee10","wallet":5000,"prices":{"0":500,"1":2500,"2":1500},"fee":10,"review":true,"basePayroll":26000,"staff":15000,"selfWage":1},{"name":"low-wallet1500","wallet":1500,"prices":{"0":250,"1":1000,"2":600},"fee":5,"review":true,"basePayroll":26000,"staff":15000,"selfWage":1},{"name":"low-cost-stress-review","wallet":5000,"prices":{"0":250,"1":1000,"2":600},"fee":5,"review":true,"basePayroll":65000,"staff":50000,"selfWage":5},{"name":"low-cost-stress-no-review","wallet":5000,"prices":{"0":250,"1":1000,"2":600},"fee":5,"review":false,"basePayroll":65000,"staff":50000,"selfWage":5}];
 const runs=cases.flatMap(opt=>[770,1770,2770].map(seed=>simulate(annual,api.MARKET_VALUE_CONFIG,{...opt,seed})));
-console.log(JSON.stringify({checks:checks(),summaries:runs.map(summarize),runs,eur:euros()},null,2));
+console.log(JSON.stringify({checks:checks(),summaries:runs.map(summarize),runs,eur:euros(),recurringEUR:recurringEuros()},null,2));

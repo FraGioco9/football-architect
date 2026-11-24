@@ -53,3 +53,21 @@ Prior to any sale, jurisdiction-specific legal, consumer protection, tax, paymen
 ## Proposed next owner review
 
 Youth 25% raw value candidate; compare lower absolute access bands with real demand tests. License price alternatives are sensitivities, not approved prices; select whether primary license uses ARC, EUR or both without automatic conversion. Prefer seller-paid 5% secondary fee candidate, and separate own-origin independent authorization and affordability safeguards. Explicitly choose user access/wallet model, primary license activity/expiry policy, pricing and refund terms. Linked full world with all ordinary careers, real demand and legally reviewed EUR assumptions remains open. No production implementation, schema, payments, merge or deployment.
+
+## Supply and recurring EUR sensitivity (important)
+
+Only 320 primary club licenses exist. Do not extrapolate 100 first-time license sales annually forever; the 100-order example is an acquisition/launch scenario, not steady-state revenue. No automatic renewal, expiry or repeated primary sale approved. Only secondary fees may recur if voluntary trades occur; no guaranteed turnover. Youth supply is 768 per sporting season; real-world calendar cadence is not established here. For a continuing year with zero primary license orders and no secondary fees, use the same illustrative refund/tax/processor inputs and the following required paid youth orders (before refunds) to cover operating costs. The seasons column assumes all 768 new candidates sell per season; persistent unsold stock may change capacity, but no actual conversion or time-to-sale assumption is approved. At less than full sell-through the required number of seasons is higher. No claim of annual feasibility.
+
+| EUR ticket | Annual operating cost | Required paid orders | Equivalent fresh seasons at 100% sell-through |
+|---:|---:|---:|---:|
+| 3 | 5000 | 2566 | 4 |
+| 3 | 15000 | 7696 | 11 |
+| 3 | 30000 | 15392 | 21 |
+| 5 | 5000 | 1450 | 2 |
+| 5 | 15000 | 4350 | 6 |
+| 5 | 30000 | 8700 | 12 |
+| 10 | 5000 | 695 | 1 |
+| 10 | 15000 | 2085 | 3 |
+| 10 | 30000 | 4169 | 6 |
+
+A license bought in EUR is not a claim on club currency, and ARC/EUR prices are distinct proposals. Real-money marketplace settlement, consumer protections and indirect cash-out remain gated; no cash-profit guarantee. License/academy research scripts retain independent scope; full linked world including ordinary paid contracts, license sales, actual demand and historical mandate changes is still open.
