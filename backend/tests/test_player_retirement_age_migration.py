@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SQL = (ROOT / 'migrations' / '0037_player_retirement_age.sql').read_text()
+SQL = (ROOT / 'migrations' / '0038_player_retirement_age.sql').read_text()
 HAZARDS = [(33, 2), (34, 5), (35, 12), (36, 25), (37, 45), (38, 70), (39, 90)]
 
 class RetirementAgeMigrationTest(unittest.TestCase):
