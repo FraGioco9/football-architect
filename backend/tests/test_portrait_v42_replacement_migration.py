@@ -5,8 +5,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 V3 = (ROOT / 'migrations' / '0026_player_portrait_profiles.sql').read_text()
-V41 = (ROOT / 'migrations' / '0031_portrait_v41_replacement.sql').read_text()
-V42 = (ROOT / 'migrations' / '0033_portrait_v42_replacement.sql').read_text()
+V41 = (ROOT / 'migrations' / '0032_portrait_v41_replacement.sql').read_text()
+V42 = (ROOT / 'migrations' / '0034_portrait_v42_replacement.sql').read_text()
 STAGE_DDL = V42.split('CREATE TABLE IF NOT EXISTS player_portrait_v42_cutover_guard')[0]
 
 
