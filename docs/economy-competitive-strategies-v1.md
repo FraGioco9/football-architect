@@ -34,3 +34,8 @@ Expert closed aggregate nominal recovery 132.9–136.2%, intermediate116.6–120
 Next: calibrate intermediate reservation thresholds / diverse player public information / negotiated contracts and resale, realistic agent budget constraints, and club recruitment that accounts for wage demands and squad scarcity. Test distinct agent-only and club-only strategy interventions; avoid treating all conservative users as experts or simply lowering every price. Maintain approved settings until a candidate supports a viable population, genuine management advantage and aggregate circulation. No forced spend, free rights, new mint or bailout. No runtime, DB, payment, deploy or merge.
 
 Reproduce `node tools/run-economy-competitive-strategies.mjs --check` and `node tools/run-economy-competitive-strategies.mjs --disciplined --check`. Nine full paths executed in isolated JS. Short regression added; repository Node/CI pending.
+
+
+## Latest owner direction — calibration frozen pending contracts
+
+See [frozen provisional development baseline](economy-calibration-freeze-v1.md). Suspend further numerical simulations/calibration until the contract/negotiation rules in #777 (coordinated with #775/#778/#763) are sufficiently defined. Keep research and all existing snapshots intact. Downstream design may use the frozen working inputs provisionally; no parameter adoption, launch validation or merge/remote authorization implied. The freeze reference takes precedence over earlier research next-step recommendations.

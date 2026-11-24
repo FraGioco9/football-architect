@@ -145,3 +145,8 @@ Next research: compare transparent heterogeneous agent strategies (random, publi
 
 
 [Competitive strategy experiment](economy-competitive-strategies-v1.md): nine synthetic 100-season paths. Public scouting improves club sporting results; financial agent selection without refusal fails. Selective agents earn positive mature closed ARC net while random agents lose, but population collapses to ~4000 and all clubs accrue surplus from reduced payroll, 24M funds29 seasons. No acceptable joint candidate. No parameter adoption, HOLD.
+
+
+## Latest owner direction — calibration frozen pending contracts
+
+See [frozen provisional development baseline](economy-calibration-freeze-v1.md). Suspend further numerical simulations/calibration until the contract/negotiation rules in #777 (coordinated with #775/#778/#763) are sufficiently defined. Keep research and all existing snapshots intact. Downstream design may use the frozen working inputs provisionally; no parameter adoption, launch validation or merge/remote authorization implied. The freeze reference takes precedence over earlier research next-step recommendations.
