@@ -78,3 +78,6 @@ Joint reward/wage/valuation/license feasibility: [48-case grid](economy-joint-ca
 
 
 Latest owner correction: staff budget is included within club operating surplus, not a separate standardized deduction or assumed reserve receipt. [Joint v2](economy-joint-calibration-v2.md) supersedes staff assumptions in earlier research. Existing EUR300/EUR100 price targets remain; changed analytical quotes are sensitivities only.
+
+
+Owner requests 100% human-agent main research case and higher salaries. [Joint v3 candidate](economy-joint-calibration-v3.md): 3.12M rewards, K150, EUR310/90 reference licenses, 32-season valuation. Aggregate youth affordability is met in the assumed mix; full ARC closure is conditional on voluntary spending of all remaining net club/agent inflows. All new numerical values are research only, pending owner approval; v2 snapshots retained.

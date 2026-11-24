@@ -307,3 +307,11 @@ test('optional staff remains within club surplus and is not a reserve receipt',a
  assert.ok(Math.abs(x.baseline.baseReserveReceiptsArc-prior.baseReserveReceiptsArc+prior.assumedStaffReserveArc)<=1);
  assert.ok(x.grid.every(y=>y.staffBudgetArc===0&&y.assumedStaffReserveArc===0));
 });
+
+test('higher wage human-only candidate funds renewal in aggregate and reconciles conditional closure',async()=>{
+ const {buildJointCalibration}=await import('../tools/run-economy-joint-calibration-v3.mjs');
+ const x=buildJointCalibration();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v3-results.json',import.meta.url),'utf8')));
+ assert.equal(x.grid.grid.length,49);assert.equal(x.grid.baseline.aiSalaryReserveArc,0);assert.equal(x.grid.baseline.unfundedYouthArcDemand,0);
+ assert.equal(x.closure.at(-1).gap,0);assert.equal(x.closure.at(-1).totalIssuedArc,0);assert.ok(x.closure[0].gap>0);
+ assert.ok(x.humanShareSensitivity.find(y=>y.humanShare===0.5).unfundedYouthArcDemand>0);
+});

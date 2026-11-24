@@ -1,0 +1,78 @@
+{
+  "version": "economy-joint-calibration-v3",
+  "rewardScales": [
+    1,
+    1.2,
+    1.25,
+    1.3,
+    1.35,
+    1.4,
+    1.5
+  ],
+  "wageScales": [
+    1,
+    2,
+    2.25,
+    2.5,
+    2.6,
+    2.75,
+    3
+  ],
+  "youngSkills": [
+    47,
+    54,
+    61,
+    68,
+    75
+  ],
+  "youngWeights": [
+    0.06,
+    0.24,
+    0.4,
+    0.24,
+    0.06
+  ],
+  "entryAges": [
+    16,
+    17,
+    18,
+    19
+  ],
+  "youngVersatility": 0.05,
+  "annualRetirements": 332,
+  "eurOrders": 83,
+  "arcPercent": 100,
+  "eurPercent": 90,
+  "referenceHumanShare": 1,
+  "referenceInitialReserveArc": 2400000,
+  "staffReserveFraction": 0,
+  "clubRecruitmentArc": {
+    "1": 1296,
+    "2": 972
+  },
+  "targetTopEur": 300,
+  "targetLowEur": 100,
+  "licenseToleranceEur": 15,
+  "annualActivationCostCents": 50,
+  "paymentVariableBps": 300,
+  "paymentFixedCents": 25,
+  "seasons": 32,
+  "staffOptional": true,
+  "referenceRewardScale": 1.3,
+  "referenceWageScale": 2.5,
+  "forecastHorizon": 32,
+  "humanShareScenarios": [
+    0,
+    0.25,
+    0.5,
+    0.75,
+    1
+  ],
+  "discretionarySpendFractions": [
+    0,
+    0.5,
+    0.75,
+    1
+  ],
+  "candidateReserveArc": 3120000
+}

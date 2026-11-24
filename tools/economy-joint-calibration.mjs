@@ -7,7 +7,7 @@ export function buildJoint(clubs,selection,base,renew,c,rewards,salary,create,ro
  const staffPolicy=c.staffOptional?{1:0,2:0}:base.staffArc;
  if(c.staffOptional&&c.staffReserveFraction!==0)throw Error('optional staff cannot be guaranteed reserve income');
  const candidates=c.rewardScales.flatMap(rs=>c.wageScales.map(ws=>{
-  const scaled={...rewards,competitionRewards:id=>{const v=rewards.competitionRewards(id);return {...v,pool:v.pool*rs,points:v.points*rs,awards:v.awards.map(a=>a*rs),participationReference:v.participationReference*rs}},rewardTotals:()=>({pool:rewards.rewardTotals().pool*rs})};
+  const scaled={...rewards,competitionRewards:id=>{const v=rewards.competitionRewards(id);return {...v,pool:rnd(v.pool*rs),points:rnd(v.points*rs),awards:v.awards.map(a=>rnd(a*rs)),participationReference:rnd(v.participationReference*rs)}},rewardTotals:()=>({pool:rnd(rewards.rewardTotals().pool*rs)})};
   const s={...salary,salaryScale:salary.salaryScale*ws};
   const forecast=create({...s,rewardBenchmark:s.rewardBenchmark/rs});
   const tickets=[];
@@ -26,7 +26,7 @@ export function buildJoint(clubs,selection,base,renew,c,rewards,salary,create,ro
   const eurGross=rnd(c.eurOrders*mean("eur")),eurAfterProcessing=rnd(c.eurOrders*sum(tickets.map(t=>(t.eur-Math.ceil(t.eur*c.paymentVariableBps/10000)-c.paymentFixedCents)*t.weight)));
   return {rewardScale:rs,wageScale:ws,rewardsArc:pool,salaryK:s.salaryScale,meanYouthValueArc:rnd(mean("value")),meanYouthArcQuote:rnd(mean("arc")),meanYouthEurCents:rnd(mean("eur")),topLicenseEur:x.topReference.baseLicenseCents/100,lowLicenseEur:x.lowReference.baseLicenseCents/100,genesisArc:x.totals.genesisArc,estimatedPayrollArc:payroll,aiSalaryReserveArc:ai,humanSalaryArc:human,staffBudgetArc:staff,assumedStaffReserveArc:staffReserve,internalRecruitmentBudgetArc:recruit,clubSurplusBeforeDiscretionaryArc:clubBudget,worldClubCashGrowthBeforeDiscretionaryArc:clubNet,desiredYouthArcReceipts:desiredYouth,fundedYouthArcReceipts:youth,unfundedYouthArcDemand:desiredYouth-youth,walletNetArc:walletNet,baseReserveReceiptsArc:baseReserve,requiredAdditionalReserveReceiptsArc:required,baseRecyclePct:rnd(10000*baseReserve/pool)/100,academyOnlyRequiredMeanArc:arcOrders?Math.ceil(pool/arcOrders):null,eurGrossCents:eurGross,eurContributionBeforeOverheadCents:eurAfterProcessing-c.annualRetirements*c.annualActivationCostCents,licenseWithinTolerance:Math.abs(x.topReference.baseLicenseCents/100-c.targetTopEur)<=c.licenseToleranceEur&&Math.abs(x.lowReference.baseLicenseCents/100-c.targetLowEur)<=c.licenseToleranceEur};
  }));
- const baseline=candidates.find(x=>x.rewardScale===1&&x.wageScale===1);
+ const baseline=candidates.find(x=>x.rewardScale===(c.referenceRewardScale??1)&&x.wageScale===(c.referenceWageScale??1));
  const feasible=candidates.filter(x=>x.licenseWithinTolerance&&x.clubSurplusBeforeDiscretionaryArc>=0&&x.unfundedYouthArcDemand===0).sort((a,b)=>b.baseRecyclePct-a.baseRecyclePct);
  // No assumed zero opening wallet purchases. Simulate aggregate balances and reward bridge;
  // the stated order mix is a conditional target, not a demand estimate. Spend only paid human income
