@@ -72,14 +72,32 @@ async function authorizedReplay(db:Database,i:ReturnType<typeof normalize>,hash:
   throw new ApiError(409,'economic_idempotency_conflict');
  return rows[0];
 }
+function sealedInsert(db:Database,i:ReturnType<typeof normalize>,hash:string,id:string,now:number){
+ return db.prepare('INSERT INTO economic_transactions(id,business_key,request_key,request_hash,purpose,actor_kind,actor_id,config_version,source_id,generation,season,day,occurred_at,reversal_of,hold_id,lines_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+  .bind(id,i.businessKey,i.requestKey,hash,i.purpose,i.actorKind,i.actorId,i.configVersion,i.sourceId,i.generation,i.season,i.day,now,i.reversalOf,i.holdId,JSON.stringify(i.lines));
+}
+/** Bounded fresh-only atomic batch. Caller must reconcile immutable receipts
+ * and retry from journal on any failure or unknown response. Same seal as single posting. */
+export const ECONOMIC_FRESH_BATCH_LIMIT=24;
+export async function postFreshEconomicBatch(db:Database,intents:readonly LedgerIntent[],guards:LedgerGuards,now:number){
+ requireAccess(guards);timestamp(now);
+ if(!Array.isArray(intents)||!intents.length||intents.length>ECONOMIC_FRESH_BATCH_LIMIT||!guards.preconditions?.length)throw invalid();
+ const normalized=intents.map(normalize);
+ if(new Set(normalized.map(i=>i.businessKey)).size!==normalized.length)throw invalid();
+ const generations=[...new Set(normalized.map(i=>i.generation).filter((g):g is string=>g!==null))];
+ const inserts=await Promise.all(normalized.map(async i=>sealedInsert(db,i,await digest(JSON.stringify(i)),crypto.randomUUID(),now)));
+ try{
+  await db.batch([...guards.access,...generations.map(g=>economicAssert(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=?',[g])),
+   ...guards.preconditions,...inserts,...(guards.effects??[])]);
+ }catch{throw new ApiError(409,'economic_batch_rejected');}
+}
 export async function postEconomicOperation(db:Database,intent:LedgerIntent,guards:LedgerGuards,now:number):Promise<LedgerReceipt>{
  requireAccess(guards);timestamp(now);
  const i=normalize(intent),hash=await digest(JSON.stringify(i));
  const existing=await authorizedReplay(db,i,hash,guards);
  if(existing)return existing;
  const id=crypto.randomUUID();
- const insert=db.prepare('INSERT INTO economic_transactions(id,business_key,request_key,request_hash,purpose,actor_kind,actor_id,config_version,source_id,generation,season,day,occurred_at,reversal_of,hold_id,lines_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-  .bind(id,i.businessKey,i.requestKey,hash,i.purpose,i.actorKind,i.actorId,i.configVersion,i.sourceId,i.generation,i.season,i.day,now,i.reversalOf,i.holdId,JSON.stringify(i.lines));
+ const insert=sealedInsert(db,i,hash,id,now);
  // A sporting source must still belong to the current generation at posting.
  const generationGuard=i.generation===null?[]:[economicAssert(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=?',[i.generation])];
  try{
@@ -190,6 +208,10 @@ const invalidJournal="SELECT COUNT(*) AS n FROM economic_transactions t WHERE (S
 const invalidBalances="SELECT COUNT(*) AS n FROM economic_available_balances WHERE balance_arc NOT BETWEEN CASE WHEN kind='ISSUANCE_CONTROL' THEN -1000000000000 ELSE 0 END AND CASE WHEN kind='ISSUANCE_CONTROL' THEN 0 ELSE 1000000000000 END OR reserved_arc<0 OR (kind<>'ISSUANCE_CONTROL' AND available_arc<0)";
 const invalidHolds="SELECT COUNT(*) AS n FROM economic_open_holds WHERE remaining_arc<0 OR remaining_arc>amount_arc";
 const totals="SELECT COUNT(*) AS account_count,COALESCE(SUM(CASE WHEN kind<>'ISSUANCE_CONTROL' THEN balance_arc ELSE 0 END),0) AS stock,COALESCE(-SUM(CASE WHEN kind='ISSUANCE_CONTROL' THEN balance_arc ELSE 0 END),0) AS issued FROM economic_balances";
+/** Enforce the existing canonical aggregate audit inside a domain write batch. */
+export function economicReconciliationGuard(db:Database){
+ return economicAssert(db,"SELECT 1 WHERE ("+invalidJournal+")=0 AND ("+invalidBalances+")=0 AND ("+invalidHolds+")=0 AND EXISTS(SELECT 1 FROM ("+totals+") WHERE stock=issued AND stock BETWEEN 0 AND "+ARC_LIMIT+")");
+}
 export async function reconcileEconomy(db:Database,access:readonly Statement[]){
  requireAccess({access});
  const result=await db.batch([...access,db.prepare(invalidJournal),db.prepare(invalidBalances),db.prepare(invalidHolds),db.prepare(totals)]);

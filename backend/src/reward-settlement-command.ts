@@ -3,12 +3,13 @@
 import type {Database} from './database.ts';
 import type {AdminSession} from './auth.ts';
 import {ApiError} from './errors.ts';
-import {economicAssert,financeSessionGuard,postEconomicOperation,reconcileEconomy} from './economic-ledger.ts';
+import {economicAssert,financeSessionGuard,postFreshEconomicBatch,ECONOMIC_FRESH_BATCH_LIMIT,economicReconciliationGuard} from './economic-ledger.ts';
+import {canonicalHash} from './catalogue-snapshot.ts';
 import {assertPreparedRewardSettlement,type PreparedRewardSettlement} from './reward-settlement-evidence.ts';
 import {reconcileRewardPlan,rewardPostingIntents,type RewardBinding} from './reward-settlement-plan.mjs';
 
 const actorId='reward-settlement-v1';
-const batchLimit=4;
+export const REWARD_BATCH_LIMIT=ECONOMIC_FRESH_BATCH_LIMIT;
 const blocked=(code:string):never=>{throw new ApiError(409,code)};
 export function annualRewardHoldId(generation:string,season:number){
  return ['reward-budget',generation,season,'draft-5'].join(':');
@@ -41,15 +42,22 @@ export async function executeRewardSettlementBatch(db:Database,session:AdminSess
  const accounts=()=>economicAssert(db,`SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM json_each(?) j WHERE NOT EXISTS(
   SELECT 1 FROM economic_accounts a WHERE a.id=j.value AND a.kind='CLUB_TREASURY'))`,[treasuries]);
  const reversals=()=>db.prepare('SELECT reversal_of FROM economic_transactions WHERE reversal_of IN (SELECT id FROM economic_transactions WHERE '+scope+')').bind(...scopeArgs);
- const noManual=()=>economicAssert(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM economic_hold_releases WHERE hold_id=? AND transaction_id IS NULL)',[holdId]);
+ // Verify every release against its actual reserve debit and immutable receipt.
+ const releaseGuard=()=>economicAssert(db,`SELECT 1 WHERE NOT EXISTS(
+  SELECT 1 FROM economic_transactions t WHERE t.hold_id=? AND NOT EXISTS(
+   SELECT 1 FROM economic_hold_releases h JOIN economic_entries e ON e.transaction_id=t.id AND e.account_id='reserve'
+   WHERE h.transaction_id=t.id AND h.id='post:'||t.id AND h.hold_id=t.hold_id
+   AND h.amount_arc=-e.amount_arc AND h.actor_id=t.actor_id AND h.created_at=t.occurred_at))
+  AND NOT EXISTS(SELECT 1 FROM economic_hold_releases h WHERE h.hold_id=? AND NOT EXISTS(
+   SELECT 1 FROM economic_transactions t WHERE t.id=h.transaction_id AND t.hold_id=h.hold_id AND t.purpose='REWARD'))`,[holdId,holdId]);
  const stateGuards=(receiptCount:number,remaining:number)=>[
-  ...prepared.guards,policy(),hold(),accounts(),noManual(),
+  ...prepared.guards,policy(),hold(),accounts(),releaseGuard(),
   economicAssert(db,'SELECT 1 WHERE (SELECT COUNT(*) FROM economic_transactions WHERE '+scope+')=?',[...scopeArgs,receiptCount]),
   economicAssert(db,'SELECT 1 FROM economic_open_holds WHERE id=? AND remaining_arc=?',[holdId,remaining]),
   economicAssert(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM economic_transactions WHERE reversal_of IN (SELECT id FROM economic_transactions WHERE '+scope+'))',scopeArgs)
  ];
  const inspect=async()=>{
-  const reads=await db.batch([...access(),...prepared.guards,policy(),hold(),accounts(),noManual(),
+  const reads=await db.batch([...access(),...prepared.guards,policy(),hold(),accounts(),releaseGuard(),economicReconciliationGuard(db),
    db.prepare('SELECT * FROM economic_transactions WHERE '+scope+' ORDER BY business_key').bind(...scopeArgs),
    reversals(),db.prepare('SELECT remaining_arc FROM economic_open_holds WHERE id=?').bind(holdId)]);
   const [tx,rev,h]=reads.slice(-3);
@@ -63,24 +71,29 @@ export async function executeRewardSettlementBatch(db:Database,session:AdminSess
    });
    if(prior.status!=='complete')return blocked('reward_previous_incomplete');
   }
-  // The immutable receipts and hold amount are guarded again in the same
-  // snapshot as the existing aggregate ledger audit, and for each fresh write.
-  const guards=stateGuards(receipts.length,remaining);
-  const ledger=await reconcileEconomy(db,[...access(),...guards]);
+  // One guarded snapshot of receipts, releases, sources and aggregate audit.
   const report=reconcileRewardPlan(plan,binding,{
-   receipts:receipts.filter(row=>row.day===day),reversedIds:[],holdRemainingArc:remaining,ledgerOk:ledger.ok
+   receipts:receipts.filter(row=>row.day===day),reversedIds:[],holdRemainingArc:remaining,ledgerOk:true
   });
   if(report.status!=='pending'&&report.status!=='complete')return blocked('reward_reconciliation_mismatch');
-  return {report,receiptCount:receipts.length,remaining};
+  const receiptHash=report.status==='complete'?await canonicalHash({
+   schemaVersion:1,generation,season,day,manifestHash:manifest.manifestHash,
+   priorManifestHash:previousManifest?.manifestHash??null,holdId,holdRemainingArc:remaining,paidArc:report.paidArc,
+   receipts:receipts.map(row=>({id:row.id,businessKey:row.business_key,requestHash:row.request_hash}))
+  }):null;
+  return {report,receiptCount:receipts.length,remaining,receiptHash};
  };
  let state=await inspect();
  const intents=rewardPostingIntents(plan,binding),missing=new Set(state.report.missingKeys);
- // No unbounded write loop. Each positive component is sealed atomically;
- // if any write fails, stop and reconstruct from immutable receipts on retry.
- for(const intent of intents.filter(i=>missing.has(i.businessKey)).slice(0,batchLimit)){
-  await postEconomicOperation(db,intent,{access:access(),preconditions:stateGuards(state.receiptCount,state.remaining)},now);
-  state={...state,receiptCount:state.receiptCount+1,remaining:state.remaining-intent.lines.find(l=>l.amountArc>0)!.amountArc};
+ // A chunk commits atomically; on conflict/unknown response retry from receipts.
+ const chunk=intents.filter(i=>missing.has(i.businessKey)).slice(0,REWARD_BATCH_LIMIT);
+ if(chunk.length){
+  await postFreshEconomicBatch(db,chunk,{
+   access:access(),preconditions:[...stateGuards(state.receiptCount,state.remaining),economicReconciliationGuard(db)],
+   effects:[releaseGuard(),economicReconciliationGuard(db)]
+  },now);
+  state=await inspect();
  }
- state=await inspect();
- return Object.freeze({manifestHash:manifest.manifestHash,day,...state.report,holdRemainingArc:state.remaining});
+ return Object.freeze({manifestHash:manifest.manifestHash,day,...state.report,holdRemainingArc:state.remaining,
+  receiptHash:state.receiptHash});
 }
