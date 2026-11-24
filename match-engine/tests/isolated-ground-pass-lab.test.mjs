@@ -75,7 +75,16 @@ test('PASS-01 two teammates, 6/12/20m, distance-calibrated native ground impulse
       assert.ok(Math.hypot(cushion.impulseNs.x,cushion.impulseNs.y)<=2.7);
       assert.equal(contact.postSolverSpeedMps,Math.hypot(
        cushion.realPreBallVelocity.x,cushion.realPreBallVelocity.y));
-      assert.ok(contact.postContactSpeedMps<contact.postSolverSpeedMps);
+      // A stationary receiver's relative velocity must use vx/vy,
+      // never its absolute field coordinates x/y. Check the actual
+      // opposing impulse vector as well as the native speed reduction.
+      const relativeX=cushion.realPreBallVelocity.x-observed.vx;
+      const relativeY=cushion.realPreBallVelocity.y-observed.vy;
+      assert.ok(Math.abs(cushion.actualRelativeSpeedMps-
+       Math.hypot(relativeX,relativeY))<1e-9);
+      assert.ok(cushion.impulseNs.x*relativeX+cushion.impulseNs.y*relativeY<0);
+      assert.ok(contact.postContactSpeedMps<contact.postSolverSpeedMps,
+       JSON.stringify({side,variantIndex,contact}));
      }else{
       assert.equal(contact.mode,'passive-contact');
       assert.equal(contact.postSolverSpeedMps,contact.postContactSpeedMps);

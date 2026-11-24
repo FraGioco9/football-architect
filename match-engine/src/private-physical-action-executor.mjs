@@ -361,7 +361,10 @@ export function createPrivatePhysicalActionExecutor({
       // and a computational no-pressure sentinel, NOT a measured opponent.
       // Exactly two teammates have physical colliders in this exercise.
       const candidate=calculateRealReceivingCushion({
-       ballVelocity:before,playerVelocity:p,ballCentreZ:pos.z,ballRadiusM,
+       // Canonical mover stores position as x/y and velocity as vx/vy.
+       // M25's velocity vector uses x/y components in m/s, not metres.
+       ballVelocity:before,playerVelocity:{x:p.vx,y:p.vy},
+       ballCentreZ:pos.z,ballRadiusM,
        realBallPlayerGapM:Math.hypot(pos.x-p.x,pos.y-p.y),
        nearestOpponentM:200
       });
