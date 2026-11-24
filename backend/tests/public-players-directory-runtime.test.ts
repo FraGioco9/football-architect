@@ -79,9 +79,11 @@ test('public directory count and pagination include persisted players independen
  const count=calls.find(x=>x.sql.includes('COUNT(*)'))!;
  const page=calls.find(x=>x.sql.includes('ORDER BY id DESC'))!;
  assert.doesNotMatch(count.sql,/world_generation|WHERE/);
- assert.doesNotMatch(page.sql,/world_generation|WHERE/);
+ // Only the derived contract relation is generation/active-status filtered, not the persisted player page.
+ assert.match(page.sql,/w\.generation=c\.world_generation/);
+ assert.match(page.sql,/json_extract\(g\.payload_json,'\$\.career_status'\)='active'/);
+ assert.match(page.sql,/\) a ON a\.player_id=p\.id ORDER BY id DESC LIMIT \? OFFSET \?/);
  assert.doesNotMatch(count.sql,/json_extract/);
- assert.doesNotMatch(page.sql,/json_extract/);
  assert.deepEqual(count.params,[]);
  assert.deepEqual(page.params,[50,0]);
 });
