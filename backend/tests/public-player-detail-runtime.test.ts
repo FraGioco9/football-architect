@@ -52,7 +52,9 @@ test('GET player profile projects the same permitted fields as the directory and
  assert.match(statement!.sql,/portrait.prompt_version='player-portrait-v4.2'/);
  assert.match(statement!.sql,/portrait.schema_version='player-portraits-v5'/);
  assert.match(statement!.sql,/portrait.asset_key=/);
- assert.doesNotMatch(statement!.sql,/world_generation/,'Player identity persists across world reset');
+ assert.match(statement!.sql,/w\.generation=c\.world_generation/,'Only the effective signed term is scoped to the current world');
+ assert.match(statement!.sql,/WHERE p\.id=\?$/,'Persisted player identity remains independent of world generation');
+ assert.doesNotMatch(statement!.sql,/p\.world_generation/);
 });
 test('player detail strictly validates positive integer IDs before any database read',async()=>{
  const {db,calls}=fixture();
