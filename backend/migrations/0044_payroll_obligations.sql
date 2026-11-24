@@ -30,18 +30,17 @@ CREATE TABLE payroll_allocations (
  planned_arc INTEGER NOT NULL CHECK(typeof(planned_arc)='integer' AND planned_arc BETWEEN 0 AND 1000000000000),
  UNIQUE(run_id,claim_id)
 );
-CREATE TABLE payroll_run_seals (
- run_id TEXT PRIMARY KEY NOT NULL REFERENCES payroll_runs(id),
- plan_hash TEXT NOT NULL CHECK(length(plan_hash)=64)
+CREATE TABLE payroll_run_milestones (
+ run_id TEXT NOT NULL REFERENCES payroll_runs(id),
+ kind TEXT NOT NULL CHECK(kind IN ('sealed','completed')),
+ digest TEXT NOT NULL CHECK(length(digest)=64),
+ PRIMARY KEY(run_id,kind)
 );
 CREATE TABLE payroll_payment_receipts (
  transaction_id TEXT PRIMARY KEY NOT NULL REFERENCES economic_transactions(id),
  allocation_id TEXT NOT NULL REFERENCES payroll_allocations(id)
 );
-CREATE TABLE payroll_run_completions (
- run_id TEXT PRIMARY KEY NOT NULL REFERENCES payroll_runs(id),
- receipt_hash TEXT NOT NULL CHECK(length(receipt_hash)=64)
-);
+
 CREATE INDEX payroll_claims_run ON payroll_claims(run_id);
 CREATE INDEX payroll_allocations_claim ON payroll_allocations(claim_id);
 CREATE INDEX payroll_receipts_allocation ON payroll_payment_receipts(allocation_id);
@@ -62,7 +61,7 @@ CREATE TRIGGER payroll_run_insert_guard BEFORE INSERT ON payroll_runs
 BEGIN
  SELECT CASE WHEN EXISTS(SELECT 1 FROM payroll_runs r WHERE r.id=NEW.id OR
  (r.generation=NEW.generation AND r.club_key=NEW.club_key AND
- (r.season*56+r.day>=NEW.season*56+NEW.day OR NOT EXISTS(SELECT 1 FROM payroll_run_completions x WHERE x.run_id=r.id))))
+ (r.season*56+r.day>=NEW.season*56+NEW.day OR NOT EXISTS(SELECT 1 FROM payroll_run_milestones x WHERE x.kind='completed' AND x.run_id=r.id))))
  OR EXISTS(SELECT 1 FROM payroll_allocation_paid a JOIN payroll_runs r ON r.id=a.run_id WHERE r.generation=NEW.generation AND r.club_key=NEW.club_key AND a.reversed<>0)
  OR NOT EXISTS(SELECT 1 FROM world_state w WHERE w.id=1 AND w.generation=NEW.generation
  AND w.season_number=NEW.season AND w.day=NEW.day AND w.revision=NEW.world_revision AND w.phase='active')
@@ -72,7 +71,7 @@ CREATE TRIGGER payroll_claim_insert_guard BEFORE INSERT ON payroll_claims
 BEGIN
  SELECT CASE WHEN EXISTS(SELECT 1 FROM payroll_claims c WHERE c.id=NEW.id OR
  (c.contract_id=NEW.contract_id AND c.from_tick<NEW.to_tick AND NEW.from_tick<c.to_tick))
- OR EXISTS(SELECT 1 FROM payroll_run_seals WHERE run_id=NEW.run_id)
+ OR EXISTS(SELECT 1 FROM payroll_run_milestones WHERE kind='sealed' AND run_id=NEW.run_id)
  OR NOT EXISTS(SELECT 1 FROM payroll_runs r JOIN player_signed_contracts c ON c.id=NEW.contract_id
  WHERE r.id=NEW.run_id AND c.world_generation=r.generation AND c.club_key=r.club_key
  AND NEW.from_tick>=MAX(c.start_tick,(r.season-1)*56+r.day-28)
@@ -93,7 +92,7 @@ END;
 CREATE TRIGGER payroll_allocation_insert_guard BEFORE INSERT ON payroll_allocations
 BEGIN
  SELECT CASE WHEN EXISTS(SELECT 1 FROM payroll_allocations a WHERE a.id=NEW.id OR (a.run_id=NEW.run_id AND a.claim_id=NEW.claim_id))
- OR EXISTS(SELECT 1 FROM payroll_run_seals WHERE run_id=NEW.run_id)
+ OR EXISTS(SELECT 1 FROM payroll_run_milestones WHERE kind='sealed' AND run_id=NEW.run_id)
  OR NOT EXISTS(SELECT 1 FROM payroll_runs r JOIN payroll_claim_outstanding c ON c.id=NEW.claim_id
  JOIN payroll_runs original ON original.id=c.run_id WHERE r.id=NEW.run_id
  AND r.generation=original.generation AND r.club_key=original.club_key
@@ -101,9 +100,9 @@ BEGIN
  AND c.outstanding_arc>0 AND NEW.planned_arc<=c.outstanding_arc)
  THEN RAISE(ABORT,'invalid payroll allocation') END;
 END;
-CREATE TRIGGER payroll_seal_insert_guard BEFORE INSERT ON payroll_run_seals
+CREATE TRIGGER payroll_seal_insert_guard BEFORE INSERT ON payroll_run_milestones WHEN NEW.kind='sealed'
 BEGIN
- SELECT CASE WHEN EXISTS(SELECT 1 FROM payroll_run_seals WHERE run_id=NEW.run_id)
+ SELECT CASE WHEN EXISTS(SELECT 1 FROM payroll_run_milestones WHERE kind='sealed' AND run_id=NEW.run_id)
  OR NOT EXISTS(SELECT 1 FROM payroll_runs r JOIN world_state w ON w.id=1 AND w.generation=r.generation AND w.season_number=r.season AND w.day=r.day AND w.revision=r.world_revision AND w.phase='active' WHERE r.id=NEW.run_id)
  OR EXISTS(SELECT 1 FROM payroll_runs r JOIN player_signed_contracts c ON c.world_generation=r.generation AND c.club_key=r.club_key
  WHERE r.id=NEW.run_id AND MAX(c.start_tick,(r.season-1)*56+r.day-28)<MIN(COALESCE(c.closed_tick,c.scheduled_end_tick),(r.season-1)*56+r.day)
@@ -121,7 +120,7 @@ BEGIN
  SELECT CASE WHEN EXISTS(SELECT 1 FROM payroll_payment_receipts WHERE transaction_id=NEW.transaction_id)
  OR NOT EXISTS(SELECT 1 FROM payroll_allocations a JOIN payroll_runs r ON r.id=a.run_id
  JOIN payroll_claims c ON c.id=a.claim_id JOIN payroll_allocation_paid p ON p.id=a.id
- JOIN payroll_run_seals s ON s.run_id=r.id JOIN economic_transactions t ON t.id=NEW.transaction_id
+ JOIN payroll_run_milestones s ON s.run_id=r.id AND s.kind='sealed' JOIN economic_transactions t ON t.id=NEW.transaction_id
  JOIN economic_entries debit ON debit.transaction_id=t.id AND debit.account_id='club:'||r.club_key
  JOIN economic_entries credit ON credit.transaction_id=t.id AND credit.account_id=c.recipient_id
  WHERE a.id=NEW.allocation_id AND t.source_id=a.id AND t.generation=r.generation AND t.season=r.season AND t.day=r.day
@@ -131,13 +130,13 @@ BEGIN
  AND p.reversed=0 AND p.paid_arc+credit.amount_arc<=a.planned_arc
  AND EXISTS(SELECT 1 FROM world_state w WHERE w.id=1 AND w.generation=r.generation AND w.season_number=r.season AND w.day=r.day AND w.revision=r.world_revision AND w.phase='active')
  AND NOT EXISTS(SELECT 1 FROM economic_transactions v WHERE v.reversal_of=t.id)
- AND NOT EXISTS(SELECT 1 FROM payroll_run_completions x WHERE x.run_id=r.id))
+ AND NOT EXISTS(SELECT 1 FROM payroll_run_milestones x WHERE x.kind='completed' AND x.run_id=r.id))
  THEN RAISE(ABORT,'invalid payroll receipt') END;
 END;
-CREATE TRIGGER payroll_completion_insert_guard BEFORE INSERT ON payroll_run_completions
+CREATE TRIGGER payroll_completion_insert_guard BEFORE INSERT ON payroll_run_milestones WHEN NEW.kind='completed'
 BEGIN
- SELECT CASE WHEN EXISTS(SELECT 1 FROM payroll_run_completions WHERE run_id=NEW.run_id)
- OR NOT EXISTS(SELECT 1 FROM payroll_run_seals WHERE run_id=NEW.run_id)
+ SELECT CASE WHEN EXISTS(SELECT 1 FROM payroll_run_milestones WHERE kind='completed' AND run_id=NEW.run_id)
+ OR NOT EXISTS(SELECT 1 FROM payroll_run_milestones WHERE kind='sealed' AND run_id=NEW.run_id)
  OR NOT EXISTS(SELECT 1 FROM payroll_runs r JOIN world_state w ON w.id=1 AND w.generation=r.generation AND w.season_number=r.season AND w.day=r.day AND w.revision=r.world_revision AND w.phase='active' WHERE r.id=NEW.run_id)
  OR EXISTS(SELECT 1 FROM payroll_allocation_paid p WHERE p.run_id=NEW.run_id AND (p.paid_arc<>p.planned_arc OR p.reversed<>0))
  OR EXISTS(SELECT 1 FROM payroll_runs r JOIN economic_transactions t ON t.generation=r.generation AND t.season=r.season AND t.day=r.day
@@ -151,9 +150,9 @@ CREATE TRIGGER payroll_claims_no_update BEFORE UPDATE ON payroll_claims BEGIN SE
 CREATE TRIGGER payroll_claims_no_delete BEFORE DELETE ON payroll_claims BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
 CREATE TRIGGER payroll_allocations_no_update BEFORE UPDATE ON payroll_allocations BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
 CREATE TRIGGER payroll_allocations_no_delete BEFORE DELETE ON payroll_allocations BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
-CREATE TRIGGER payroll_run_seals_no_update BEFORE UPDATE ON payroll_run_seals BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
-CREATE TRIGGER payroll_run_seals_no_delete BEFORE DELETE ON payroll_run_seals BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
+
+
 CREATE TRIGGER payroll_payment_receipts_no_update BEFORE UPDATE ON payroll_payment_receipts BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
 CREATE TRIGGER payroll_payment_receipts_no_delete BEFORE DELETE ON payroll_payment_receipts BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
-CREATE TRIGGER payroll_run_completions_no_update BEFORE UPDATE ON payroll_run_completions BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
-CREATE TRIGGER payroll_run_completions_no_delete BEFORE DELETE ON payroll_run_completions BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
+CREATE TRIGGER payroll_run_milestones_no_update BEFORE UPDATE ON payroll_run_milestones BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
+CREATE TRIGGER payroll_run_milestones_no_delete BEFORE DELETE ON payroll_run_milestones BEGIN SELECT RAISE(ABORT,'immutable payroll evidence'); END;
