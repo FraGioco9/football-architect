@@ -1185,3 +1185,23 @@ test('#763 public overview width tracks preserve the first three columns and res
  assert.match(block,/th\.app-players-club-col\{width:calc\(100% - var\(--app-players-flag-width\)/);
  assert.equal((html.match(/colspan="8"/g)||[]).length,5);
 });
+
+test('#763 filter captions and surrounding boxes are inert while actual controls retain accessible names',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css'),gen=read('tools/generate-app-pages.mjs');
+ const form=html.slice(html.indexOf('<form class="app-players-filter-form"'),html.indexOf('<footer class="app-players-filter-actions"'));
+ assert.doesNotMatch(form,/<label\b[^>]*class="app-players-(?:filter-control|scope-control|attribute-pick)"/);
+ const controls=[...form.matchAll(/<input\b[^>]*aria-labelledby="(players-filter-caption-[^"]+)"[^>]*>/g)];
+ assert.equal(controls.length,28);
+ assert.equal(new Set(controls.map(m=>m[1])).size,28);
+ for(const [,id] of controls){
+  assert.equal((form.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id);
+  assert.ok(form.includes('<span id="'+id+'" '),id);
+  assert.ok(gen.includes(id),id+' canonical generator');
+ }
+ assert.match(css,/\.app-players-scope-control\{[^}]*cursor:default/);
+ assert.match(css,/\.app-players-attribute-pick\{[^}]*cursor:default/);
+ assert.match(css,/\.app-players-filter-form :is\(\.app-players-filter-control,\.app-players-scope-control,\.app-players-attribute-pick\)>span\{cursor:default;user-select:none/);
+ assert.match(css,/\.app-players-filter-form :is\(\.app-players-scope-control,\.app-players-attribute-pick\)>input\[type="checkbox"\]\{cursor:pointer\}/);
+ assert.match(form,/<summary class="app-players-filter-section-header">/);
+ assert.match(form,/<button type="button" class="language-trigger app-players-filter-dropdown-trigger"/);
+});
