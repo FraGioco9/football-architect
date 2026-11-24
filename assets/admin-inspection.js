@@ -27,9 +27,9 @@ function renderList(kind){
  const page=pages[kind],body=el('[data-inspection-list="'+kind+'"]');if(!body)return;
  const prev=el('[data-inspection-prev="'+kind+'"]'),next=el('[data-inspection-next="'+kind+'"]'),caption=el('[data-inspection-page="'+kind+'"]');
  body.replaceChildren();const n=kind==='clubs'?4:5;
- function row(values){const tr=doc.createElement('tr');for(const value of values){const td=doc.createElement('td');td.textContent=value;tr.append(td)}body.append(tr)}
- if(!page.data){for(let i=0;i<5;i++){const tr=doc.createElement('tr');tr.className='inspection-skeleton';tr.setAttribute('aria-hidden','true');for(let j=0;j<n;j++){const td=doc.createElement('td');td.append(doc.createElement('span'));tr.append(td)}body.append(tr)}}
- else if(!page.data.rows.length){const tr=doc.createElement('tr'),td=doc.createElement('td');td.colSpan=n;td.textContent=text('emptyLedger');tr.append(td);body.append(tr)}
+ function row(values){const tr=doc.createElement('tr');for(const value of values){const td=doc.createElement('td');td.textContent=value;td.title=value;tr.append(td)}body.append(tr)}
+ if(!page.data){for(let i=0;i<5;i++){const tr=doc.createElement('tr');tr.className='inspection-skeleton';tr.setAttribute('aria-hidden','true');for(let j=0;j<n;j++){const td=doc.createElement('td');const bar=doc.createElement('span');bar.className='app-skeleton-bar';td.append(bar);tr.append(td)}body.append(tr)}}
+ else if(!page.data.rows.length){const tr=doc.createElement('tr'),td=doc.createElement('td');tr.className='app-players-empty-row';td.colSpan=n;td.textContent=text('emptyLedger');tr.append(td);body.append(tr)}
  else for(const x of page.data.rows){
   if(kind==='clubs')row([x.name,money(x.balanceArc),money(x.heldArc),money(x.availableArc)]);
   else row([new Intl.DateTimeFormat(doc.documentElement.lang||'en',{dateStyle:'short',timeStyle:'short'}).format(new Date(x.occurredAt*1000)),String(x.purpose),String(x.debit??'—'),String(x.credit??'—'),money(x.amountArc)]);
@@ -83,7 +83,7 @@ async function runPreview(){if(!allowed||busy)return;const current=++token;busy=
  finally{if(current===token){busy=false;sync()}}
 }
 for(const kind of ['clubs','ledger']){el('[data-inspection-prev="'+kind+'"]')?.addEventListener('click',()=>void loadList(kind,-1));el('[data-inspection-next="'+kind+'"]')?.addEventListener('click',()=>void loadList(kind,1))}
-const tabs=all('[data-inspection-tab]');function activate(tab){for(const b of tabs){const selected=b===tab;b.setAttribute('aria-selected',String(selected));b.tabIndex=selected?0:-1;doc.getElementById(b.getAttribute('aria-controls')).hidden=!selected}const kind=tab.dataset.inspectionTab;if(allowed&&!busy&&['clubs','ledger'].includes(kind)&&!pages[kind].data)void loadList(kind)}
+const tabs=all('[data-inspection-tab]');function activate(tab){for(const b of tabs){const selected=b===tab;b.setAttribute('aria-selected',String(selected));b.classList.toggle('is-active',selected);b.tabIndex=selected?0:-1;doc.getElementById(b.getAttribute('aria-controls')).hidden=!selected}const kind=tab.dataset.inspectionTab;if(allowed&&!busy&&['clubs','ledger'].includes(kind)&&!pages[kind].data)void loadList(kind)}
 tabs.forEach((b,i)=>{b.addEventListener('click',()=>activate(b));b.addEventListener('keydown',e=>{const target=e.key==='ArrowRight'?tabs[(i+1)%tabs.length]:e.key==='ArrowLeft'?tabs[(i+tabs.length-1)%tabs.length]:e.key==='Home'?tabs[0]:e.key==='End'?tabs[tabs.length-1]:null;if(target){e.preventDefault();activate(target);target.focus()}})});
 all('[data-inspection-scope]').forEach(n=>n.addEventListener('change',()=>{preview=null;renderPreview();sync()}));el('[data-inspection-preview]')?.addEventListener('click',()=>void runPreview());el('[data-inspection-refresh]').addEventListener('click',()=>void load());
 el('[data-inspection-show-blockers]')?.addEventListener('click',()=>{if(allowed&&preview?.blockers.length)el('[data-inspection-blockers-dialog]').showModal()});

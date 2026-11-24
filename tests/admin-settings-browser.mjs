@@ -892,6 +892,14 @@ try{
    await Promise.all([page.waitForURL('**/admin/economy'),page.locator('[data-admin-card="economy"]').click()]);
    await inspectionReady('economy').waitFor({state:'visible'});
    const reserve=page.locator('[data-inspection-value="reserve"]');
+   assert.equal(await page.locator('#inspection-panel-overview .app-competition-stat-card').count(),4);
+   assert.equal(await page.locator('[data-inspection-tab="overview"].is-active').count(),1);
+   assert.equal(await page.locator('[data-admin-inspection="economy"] h2').count(),0,'Economy has no redundant headings');
+   assert.equal(await page.locator('[data-inspection-summary]').isVisible(),true);
+   assert.equal(await page.locator('[data-inspection-policy]').isVisible(),true);
+   await page.locator('[data-inspection-tab="wallets"]').click();
+   assert.equal(await page.locator('[data-inspection-tab="wallets"].is-active[aria-selected="true"]').count(),1);
+   await page.locator('[data-inspection-tab="overview"]').click();
    assert.equal(await reserve.textContent(),'—');
    const geometry=()=>page.locator('#inspection-panel-overview .inspection-metric').evaluateAll(nodes=>nodes.map(n=>({w:Math.round(n.getBoundingClientRect().width),h:Math.round(n.getBoundingClientRect().height)})));
    const empty=await geometry();assert.equal(empty.length,4,'Overview must contain all four metrics');

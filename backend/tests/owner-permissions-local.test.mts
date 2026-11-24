@@ -166,7 +166,9 @@ test('Economy read is explicit, local, read-only, idempotent and revoked with Ad
  await changeEconomyRead(db,request(),now);
  await changeAdminPermissions(db,request({action:'revoke'}),now+1);
  assert.equal(await count(db,'economic_finance_permissions'),0);
- await changeAdminPermissions(db,request(),now+2);
+ const legacyId=(await inspectAdminPermissions(db,'dev',email)).legacyCandidateId;
+ assert.ok(legacyId);
+ await changeAdminPermissions(db,request({legacyId}),now+2);
  assert.equal((await inspectAdminPermissions(db,'dev',email)).economyRead,false);
  assert.deepEqual(await db.prepare('SELECT * FROM world_state').first(),world);
 }));
