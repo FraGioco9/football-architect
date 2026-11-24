@@ -85,12 +85,35 @@ if(competition){
 const admin=document.querySelector('[data-admin-rewards]');
 if(admin){
  const status=admin.querySelector('[data-admin-rewards-status]'),content=admin.querySelector('[data-admin-rewards-content]'),host=document.querySelector('#app-admin');
- const season=admin.querySelector('[data-admin-rewards-season]');
- let ticket=0,world=null;
+ const season=admin.querySelector('[data-admin-rewards-season]'),trigger=admin.querySelector('[data-admin-rewards-trigger]'),menu=admin.querySelector('#admin-reward-season-options'),value=admin.querySelector('[data-admin-rewards-value]'),wrap=trigger.closest('.language-control');
+ let ticket=0,world=null,active=-1;
+ const options=()=>[...menu.querySelectorAll('[role="option"]')];
+ function closeSeason(focus=false){menu.hidden=true;trigger.setAttribute('aria-expanded','false');trigger.removeAttribute('aria-activedescendant');delete wrap.dataset.menuPlacement;if(focus)trigger.focus();}
+ function activate(index){const items=options();if(!items.length)return;active=Math.max(0,Math.min(index,items.length-1));items.forEach((item,i)=>{if(i===active)item.dataset.active='true';else delete item.dataset.active;});trigger.setAttribute('aria-activedescendant',items[active].id);items[active].scrollIntoView({block:'nearest'});}
+ function syncSeason(){
+  value.textContent=season.selectedOptions[0]?.textContent||'—';trigger.disabled=season.disabled;
+  menu.replaceChildren(...[...season.options].map((option,i)=>{const item=document.createElement('div');item.className='language-option';item.id='admin-reward-season-option-'+i;item.dataset.seasonIndex=String(i);item.setAttribute('role','option');item.setAttribute('aria-selected',String(i===season.selectedIndex));item.textContent=option.textContent;return item;}));
+  if(trigger.disabled)closeSeason();
+ }
+ function openSeason(){if(trigger.disabled)return;menu.hidden=false;trigger.setAttribute('aria-expanded','true');const rect=trigger.getBoundingClientRect();if(innerHeight-rect.bottom<240&&rect.top>innerHeight-rect.bottom)wrap.dataset.menuPlacement='above';activate(season.selectedIndex);}
+ function chooseSeason(index){if(index<0||index>=season.options.length)return;season.selectedIndex=index;closeSeason(true);season.dispatchEvent(new Event('change',{bubbles:true}));}
+ trigger.addEventListener('click',()=>menu.hidden?openSeason():closeSeason());
+ menu.addEventListener('click',event=>{const item=event.target.closest('[data-season-index]');if(item)chooseSeason(Number(item.dataset.seasonIndex));});
+ trigger.addEventListener('keydown',event=>{
+  if(event.key==='Tab'){closeSeason();return;}
+  if(event.key==='Escape'&&!menu.hidden){event.preventDefault();closeSeason(true);return;}
+  if(!['ArrowDown','ArrowUp','Home','End','Enter',' '].includes(event.key))return;
+  event.preventDefault();
+  if(menu.hidden){openSeason();return;}
+  if(event.key==='Enter'||event.key===' '){chooseSeason(active);return;}
+  activate(event.key==='Home'?0:event.key==='End'?options().length-1:active+(event.key==='ArrowDown'?1:-1));
+ });
+ document.addEventListener('pointerdown',event=>{if(!wrap.contains(event.target))closeSeason();});
+
  function seasonState(){evidence(admin,world?.seasonNumber===0?'rewardEvidenceZero':Number(season.value)<world?.seasonNumber?'rewardEvidenceHistory':'rewardEvidenceConfigOnly');}
- season?.addEventListener('change',seasonState);
+ season.addEventListener('change',()=>{syncSeason();seasonState();});
  async function check(){
-  const id=++ticket;content.hidden=true;status.hidden=false;status.dataset.appI18n='rewardChecking';status.textContent='Checking access…';window.faAppRenderLanguage?.();
+  const id=++ticket;closeSeason();content.hidden=true;status.hidden=false;status.dataset.appI18n='rewardChecking';status.textContent='Checking access…';window.faAppRenderLanguage?.();
   try{
    const res=await fetch('/api/admin/world',{credentials:'same-origin',cache:'no-store'});
    if(id!==ticket)return;
@@ -98,7 +121,7 @@ if(admin){
    const data=await res.json();if(id!==ticket)return;
    if(!Number.isSafeInteger(data?.world?.seasonNumber)||data.world.seasonNumber<0)throw Error('invalid_world');
    world=data.world;
-   if(season){const previous=Number(season.value);season.replaceChildren(...Array.from({length:Math.max(1,world.seasonNumber)},(_,i)=>{const n=world.seasonNumber===0?0:i+1;return new Option(String(n),String(n));}));season.value=String(previous>=1&&previous<=world.seasonNumber?previous:world.seasonNumber);season.disabled=world.seasonNumber===0;seasonState();}
+   if(season){const previous=Number(season.value);season.replaceChildren(...Array.from({length:Math.max(1,world.seasonNumber)},(_,i)=>{const n=world.seasonNumber===0?0:i+1;return new Option(String(n),String(n));}));season.value=String(previous>=1&&previous<=world.seasonNumber?previous:world.seasonNumber);season.disabled=world.seasonNumber===0;syncSeason();seasonState();}
    host.dataset.adminAccess='granted';content.hidden=false;status.hidden=true;
    window.faAdminAccess=true;window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:true}));
   }catch(error){

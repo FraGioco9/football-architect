@@ -103,6 +103,13 @@ test('public rewards exposes only pool and season club table; admin retains sche
  }
  const admin=renderAdminRewards([],String);
  assert.match(admin,/data-admin-rewards-content hidden/);
+ assert.match(admin,/class="app-panel admin-rewards-summary"/);
+ assert.match(admin,/class="language-trigger" data-admin-rewards-trigger role="combobox"/);
+ assert.match(admin,/aria-controls="admin-reward-season-options"/);
+ assert.match(admin,/class="fa-reward-table admin-rewards-distribution"/);
+ assert.equal((admin.match(/role="region" tabindex="0"/g)||[]).length,2);
+ assert.match(admin,/<tfoot><tr>/);
+ assert.doesNotMatch(admin,/class="fa-rewards"/);
  assert.match(admin,/rewardDay">Day<\/span> 28/);
  assert.match(admin,/rewardDay">Day<\/span> 56/);
 });
