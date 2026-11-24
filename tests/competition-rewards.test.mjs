@@ -442,3 +442,149 @@ test('archive comparator preserves exact accounting while tolerating only known 
  assert.throws(()=>assertArchivedCalibration({amountArc:100},{amountArc:101}));
  assert.throws(()=>assertArchivedCalibration({other:1.000000000000001},{other:1}));
 });
+
+
+ // #776: synthetic calculation-only fixtures. No certification or ledger writes.
+test('settlement reference conserves each of the 18 competitions and both paydays',()=>{
+ const world=[0,0];
+ for(const id of REWARD_IDS){
+  const rule=competitionRewards(id),days=plannedRewardInstallments(rule);
+  assert.deepEqual(days.map(d=>d.day),[28,56]);
+  const weights=Array.from({length:rule.capacity},(_,i)=>({id:'fixture-'+i,weight:i+1+(i===rule.capacity-1?1:0)}));
+  const order=weights.map(w=>w.id);
+  const allocated=pointsReference(rule,weights,order);
+  assert.equal(allocated.status,'calculated-reference');
+  assert.equal(allocated.allocations.reduce((s,r)=>s+r.amount,0),rule.points);
+  assert.ok(allocated.allocations.every(r=>Number.isSafeInteger(r.amount)&&r.amount>=0));
+  const placement=placementReference(rule).reduce((s,r)=>s+r.amount*(r.count??1),0);
+  const half=participationReference(rule).installment;
+  assert.equal(half*rule.capacity,days[0].total);
+  assert.equal(half*rule.capacity+rule.points+placement,days[1].total);
+  assert.equal(days[0].total+days[1].total,rule.pool);
+  world[0]+=days[0].total;world[1]+=days[1].total;
+ }
+ assert.deepEqual(world,[676800,1723200]);
+});
+test('settlement calculation refuses incomplete, zero and unresolved remainder inputs',()=>{
+ const rule=competitionRewards('IT-1');
+ const weights=Array.from({length:rule.capacity},(_,i)=>({id:'fixture-'+i,weight:0}));
+ assert.equal(pointsReference(rule,weights.slice(1)).status,'pending-incomplete');
+ assert.equal(pointsReference(rule,weights).status,'pending-zero-denominator');
+ assert.equal(largestRemainder(1,[{id:'a',weight:1},{id:'b',weight:1}]).status,'pending-tiebreak');
+ assert.throws(()=>pointsReference(rule,weights.map(w=>({...w,id:'duplicate'}))));
+ assert.throws(()=>pointsReference(rule,weights.map((w,i)=>({...w,weight:i===0?-1:0}))));
+});
+test('explicit hypothetical remainder order is deterministic independent of input order',()=>{
+ const weights=[{id:'a',weight:1},{id:'b',weight:1},{id:'c',weight:0}];
+ const order=['b','a','c'];
+ const map=rows=>Object.fromEntries(rows.map(r=>[r.id,r.amount]));
+ const a=largestRemainder(3,weights,order),b=largestRemainder(3,[...weights].reverse(),order);
+ assert.equal(a.status,'calculated-reference');
+ assert.deepEqual(map(a.allocations),{a:1,b:2,c:0});
+ for(const row of b.allocations)assert.equal(row.amount,map(a.allocations)[row.id]);
+});
+test('future odd installment is not silently rounded by current shared schedule',()=>{
+ const r=competitionRewards('IT-1');
+ assert.throws(()=>plannedRewardInstallments({...r,participation:r.participation+1}));
+});
+
+
+import {planRewardSettlement,rewardPostingIntents,reconcileRewardPlan} from '../backend/src/reward-settlement-plan.mjs';
+import {participationInstallments} from '../assets/competition-rewards.mjs';
+const rewardFixture=day=>{
+ const clubs=JSON.parse(readFileSync(new URL('../data/clubs.json',import.meta.url),'utf8'));
+ const countries=['BR','DE','ENG','ES','FR','IT','NL','PT'];
+ const byCountry=c=>clubs.filter(x=>x.countryId===c).map(x=>c+'-'+x.clubId);
+ const competitions=REWARD_IDS.map(competitionId=>{
+  const cup=competitionId.startsWith('int-');
+  const entrants=cup?countries.flatMap(c=>byCountry(c).slice(competitionId==='int-1'?0:3,competitionId==='int-1'?3:6)):
+   byCountry(competitionId.split('-')[0]).slice(competitionId.endsWith('-1')?0:16,competitionId.endsWith('-1')?16:32);
+  const table=entrants.map((clubId,i)=>({clubId,rank:i+1,played:cup?6:30,points:cup?6:30}));
+  const outcomes=cup?entrants.map((clubId,i)=>({clubId,outcome:['champion','runnerUp',...Array(2).fill('semifinalLoser'),...Array(4).fill('quarterfinalLoser'),...Array(4).fill('playoffLoser'),...Array(12).fill('leagueEliminated')][i]})):undefined;
+  return {competitionId,entrants,table,outcomes};
+ });
+ return {generation:'11111111-1111-4111-8111-111111111111',season:1,day,rewardVersion:'draft-5',evidenceHash:'a'.repeat(64),competitions};
+};
+const rewardBinding={manifestHash:'b'.repeat(64),configVersion:'synthetic',actorId:'fixture',holdId:'fixture-budget'};
+const receiptFor=(i,n)=>({id:'tx-'+n,business_key:i.businessKey,request_key:i.requestKey,purpose:i.purpose,
+ actor_kind:i.actorKind,actor_id:i.actorId,config_version:i.configVersion,source_id:i.sourceId,generation:i.generation,
+ season:i.season,day:i.day,hold_id:i.holdId,reversal_of:null,lines_json:JSON.stringify(i.lines)});
+test('#776 full-world inert planner: both paydays, exact component conservation and stable permutations',()=>{
+ const first=planRewardSettlement(rewardFixture(28)),last=planRewardSettlement(rewardFixture(56));
+ assert.equal(first.rows.length,304);assert.equal(last.rows.length,912);
+ assert.deepEqual([first.totalArc,last.totalArc,first.annualBudgetArc],[676800,1723200,2400000]);
+ assert.deepEqual([first.startingHoldArc,first.endingHoldArc,last.startingHoldArc,last.endingHoldArc],[2400000,1723200,1723200,0]);
+ const input=rewardFixture(56);
+ input.competitions.reverse().forEach(c=>{c.entrants.reverse();c.table.reverse();c.outcomes?.reverse()});
+ assert.deepEqual(planRewardSettlement(input),last);
+ const intents=rewardPostingIntents(last,rewardBinding);
+ assert.equal(intents.length,888);assert.ok(intents.every(i=>i.lines.length===2&&i.lines[0].amountArc>0&&i.lines[0].amountArc+i.lines[1].amountArc===0));
+ assert.equal(new Set(intents.map(i=>i.businessKey)).size,intents.length);
+ assert.ok(intents.every(i=>i.requestKey.length<=160));
+ assert.deepEqual(rewardPostingIntents(last,{...rewardBinding,manifestHash:'c'.repeat(64)}).map(i=>i.businessKey),intents.map(i=>i.businessKey));
+});
+test('#776 rejects unsupported scope, incomplete or inconsistent evidence projections',()=>{
+ for(const mutate of [
+  x=>{x.day=0},x=>{x.rewardVersion='draft-4'},x=>{x.evidenceHash='bad'},x=>{x.competitions.pop()},
+  x=>{x.competitions[0].entrants[0]='fake'},x=>{x.competitions[0].entrants[1]=x.competitions[0].entrants[0]},
+  x=>{x.competitions[0].table[0].played=29},x=>{x.competitions[0].table[0].rank=2},
+  x=>{x.competitions[0].table.forEach(t=>t.points=0)},x=>{x.competitions[16].outcomes[0].outcome='runnerUp'},
+  x=>{const a=x.competitions[16].outcomes;[a[0].outcome,a[23].outcome]=[a[23].outcome,a[0].outcome]}
+ ]){const x=rewardFixture(56);mutate(x);assert.throws(()=>planRewardSettlement(x));}
+});
+test('#776 rank wins equal remainder, independent of club identity or input ordering',()=>{
+ const input=rewardFixture(56),cup=input.competitions.find(c=>c.competitionId==='int-1');
+ // With equal points this pool is divisible; change weights to create a tied cutoff.
+ cup.table.forEach((t,i)=>{t.points=i===0?7:6});
+ // Move a lexically later club into a higher tied rank without changing the top 12.
+ [cup.table[1].rank,cup.table[11].rank]=[cup.table[11].rank,cup.table[1].rank];
+ cup.table.sort((a,b)=>a.rank-b.rank);
+ const plan=planRewardSettlement(input),pointRows=plan.rows.filter(r=>r.competitionId==='int-1'&&r.component==='points');
+ const expected=pointsReference(competitionRewards('int-1'),cup.table.map(t=>({id:t.clubId,weight:t.points})),cup.table.map(t=>t.clubId));
+ assert.deepEqual(Object.fromEntries(pointRows.map(r=>[r.clubKey,r.amountArc])),Object.fromEntries([...expected.allocations].sort((a,b)=>a.id<b.id?-1:1).map(r=>[r.id,r.amount])));
+ const byClub=new Map(pointRows.map(r=>[r.clubKey,r.amountArc]));
+ assert.equal(byClub.get(cup.table[1].clubId),2384);
+ assert.equal(byClub.get(cup.table[10].clubId),2384);
+ assert.equal(byClub.get(cup.table[11].clubId),2383);
+ assert.equal(largestRemainder(1,[{id:'z',weight:1},{id:'a',weight:1}],['z','a']).allocations[0].amount,1);
+});
+test('#776 future odd award splits per club, never by rounding the aggregate',()=>{
+ const rule={...competitionRewards('IT-1'),participationReference:6001,participation:6001*16};
+ assert.deepEqual(participationInstallments(rule),[3000,3001]);
+ assert.deepEqual(participationInstallments({participationReference:Number.MAX_SAFE_INTEGER,participation:Number.MAX_SAFE_INTEGER,capacity:1}),[4503599627370495,4503599627370496]);
+ assert.equal(plannedRewardInstallments(rule)[0].participation,48000);
+ assert.equal(plannedRewardInstallments(rule)[1].participation,48016);
+});
+test('#776 receipt reconciliation: unknown, pending, resumed, complete, mismatch and reversal',()=>{
+ const plan=planRewardSettlement(rewardFixture(28)),intents=rewardPostingIntents(plan,rewardBinding);
+ const receipts=intents.map(receiptFor),base={receipts:[],reversedIds:[],holdRemainingArc:plan.startingHoldArc,ledgerOk:true};
+ assert.equal(reconcileRewardPlan(plan,rewardBinding).status,'unknown');
+ assert.equal(reconcileRewardPlan(plan,rewardBinding,base).missingKeys.length,304);
+ const partial={...base,receipts:receipts.slice(0,1),holdRemainingArc:plan.startingHoldArc-intents[0].lines[0].amountArc};
+ assert.deepEqual(reconcileRewardPlan(plan,rewardBinding,partial).missingKeys,intents.slice(1).map(i=>i.businessKey));
+ const complete={...base,receipts:[...receipts].reverse(),holdRemainingArc:plan.endingHoldArc};
+ assert.deepEqual(reconcileRewardPlan(plan,rewardBinding,complete),{status:'complete',missingKeys:[],paidArc:plan.totalArc});
+ for(const bad of [{...complete,holdRemainingArc:0},{...complete,ledgerOk:false},{...complete,reversedIds:[receipts[0].id]},
+  {...complete,receipts:[...receipts,receipts[0]]},{...complete,receipts:[{...receipts[0],source_id:'changed'},...receipts.slice(1)]},
+  {...complete,receipts:[{...receipts[0],lines_json:'[]'},...receipts.slice(1)]}])
+  assert.equal(reconcileRewardPlan(plan,rewardBinding,bad).status,'mismatch');
+});
+
+
+test('#776 canonical aggregate schedule matches per-competition installments and Admin Rewards rendering',async()=>{
+ const totals=rewardTotals();
+ const schedule=plannedRewardInstallments(totals);
+ for(const [i,day] of [28,56].entries()){
+  const expected=REWARD_IDS.map(id=>plannedRewardInstallments(competitionRewards(id))[i]);
+  assert.equal(schedule[i].day,day);
+  for(const key of ['participation','points','placement','total'])
+   assert.equal(schedule[i][key],expected.reduce((s,row)=>s+row[key],0));
+ }
+ assert.deepEqual(schedule.map(x=>x.total),[676800,1723200]);
+ assert.throws(()=>plannedRewardInstallments({...totals,participation:totals.participation+1}));
+ assert.throws(()=>plannedRewardInstallments({...totals,capacity:304}));
+ const {renderAdminRewards}=await import('../tools/render-competition-rewards.mjs');
+ const html=renderAdminRewards([],String);
+ assert.match(html,/data-reward-amount="676800"/);
+ assert.match(html,/data-reward-amount="1723200"/);
+});

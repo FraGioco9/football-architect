@@ -29,7 +29,7 @@ export async function planAdministrativeAdvanceLineupV1(db:Database,world:WorldV
  const events=rows.map(r=>({id:r.event_id,kind:r.kind,scope:r.scope,day:r.scheduled_day,order:r.event_order,status:r.status}));
  // Validates unique positions, IDs, scopes and all dependency placement, including completed rows.
  dueAdministrativeMilestones(events,Math.max(1,world.day));
- if(events.some(e=>e.scope!=='season'&&e.day>12||e.day<world.day&&e.status!=='completed'))blocked();
+ if(events.some(e=>e.scope!=='season'&&e.kind!=='settle-rewards'&&e.day>12||e.day<world.day&&e.status!=='completed'))blocked();
  // #675: verified Season 0 approvals are handed off as completed day-1 events
  // before the Season 1 administrative clock starts. This is the only
  // permitted future-dated completion; do not relax ordinary event ordering.
