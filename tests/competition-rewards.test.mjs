@@ -351,3 +351,12 @@ test('no staff or undefined services can replenish the reserve',async()=>{
  assert.ok(x.cases.every(c=>c.scenarios.every(s=>s.actualClubReserveReceipts===0&&s.gap===s.clubGrowth+s.walletGrowth&&s.fundedArcCeiling<=c.payroll)));
  assert.equal(all.maxGap,0);assert.equal(all.license.top.baseLicenseCents,1000);assert.equal(all.license.low.baseLicenseCents,1000);
 });
+
+test('full payroll candidate raises raw value once and prices licenses independently of zero surplus',async()=>{
+ const {buildFullPayrollResearch}=await import('../tools/run-economy-full-payroll.mjs');
+ const x=buildFullPayrollResearch();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-full-payroll-v1-results.json',import.meta.url),'utf8')));
+ assert.equal(x.pool,x.payroll);assert.equal(x.clubCash,0);assert.ok(Math.abs(x.newRawMean/x.oldRawMean-1.1)<1e-8);
+ assert.equal(x.license.topBaseEur,300);assert.equal(x.license.lowBaseEur,100);assert.equal(x.license.rows.length,320);
+ assert.equal(x.reference.desiredArcReceipts,6685790);assert.equal(x.reference.unfundedArcDemand,85790);
+ assert.equal(x.reference.fundedArcCeiling,6600000);assert.ok(x.scenarios.find(s=>s.eurOrders===50).reserveGapArc>0);
+});
