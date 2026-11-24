@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ATTRIBUTES} from '../backend/src/players-generator-core.mjs';
-import {rawPlayerMarketValueArc,calculatePlayerMarketValueArc as value} from '../backend/src/player-market-value.mjs';
+import {MARKET_VALUE_CONFIG,rawPlayerMarketValueArc,calculatePlayerMarketValueArc as value} from '../backend/src/player-market-value.mjs';
 const player=(age=24,skill=60)=>({age,career_status:'active',primary_position:'CM',secondary_positions:[],attributes:Object.fromEntries(ATTRIBUTES.map(key=>[key,skill]))});
-test('DRAFT benchmark matches reference golden values',()=>{
- for(const [age,raw,rounded] of [[16,4147.935618,4200],[24,1879.241387,1900],[32,589.798344,590],[39,122.622355,130]]){
+test('DRAFT benchmark matches the approved 5% commission and reference golden values',()=>{
+ assert.equal(MARKET_VALUE_CONFIG.commission,.05);
+ for(const [age,raw,rounded] of [[16,2073.967809036,2100],[24,939.620693442,940],[32,294.899172136,300],[39,61.311177309,62]]){
   assert.ok(Math.abs(rawPlayerMarketValueArc(player(age))-raw)<.000001);
   assert.equal(value(player(age)),rounded);
  }

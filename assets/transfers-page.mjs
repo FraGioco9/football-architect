@@ -105,9 +105,10 @@ if(root){
   try{
    const response=await fetch(url,{method:'GET',credentials:'omit',headers:{Accept:'application/json'},signal:controller.signal});
    if(!response.ok){if(response.status===409)throw Error('stale');throw Error('unavailable');}
-   const data=projectTransfersDiscovery(await response.json(),{offset:state.offset});
+   const payload=await response.json();
    if(ticket!==requestId)return;
-   if(data.count>0&&state.offset>0&&data.players.length===0){state={...state,offset:0};updateLocation('replaceState');void load();return;}
+   const data=projectTransfersDiscovery(payload,{offset:state.offset});
+   if(state.offset>0&&data.page>data.totalPages&&data.players.length===0){state={...state,offset:0};updateLocation('replaceState');void load();return;}
    lastPage=data;drawRows(data);region.setAttribute('aria-busy','false');
    notice=data.players.length?'ready':'empty';
    prev.disabled=state.offset===0;next.disabled=data.page>=data.totalPages||state.offset+PAGE_SIZE>499900;

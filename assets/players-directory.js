@@ -554,7 +554,7 @@
    try{
     const data=await fetchBatch(page);
     if(seq!==ticket)return;
-    if(data.count>0&&page>data.totalPages&&data.players.length===0){
+    if(page>data.totalPages&&data.players.length===0){
      state.page=1;syncUrl('replaceState');await load(1);return;
     }
     // Back from a player detail may create a new document (BFCache miss).

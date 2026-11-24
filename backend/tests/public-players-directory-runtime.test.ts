@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'vitest';
-import {readPublicPlayers,MARKET_VALUE_SCAN_LIMIT} from '../src/public-players-read.ts';
+import {readPublicPlayer,readPublicPlayers,MARKET_VALUE_SCAN_LIMIT} from '../src/public-players-read.ts';
+import {readPublicClubRoster} from '../src/public-club-roster-read.ts';
 import {calculatePlayerMarketValueArc} from '../src/player-market-value.mjs';
 import {parsePublicPlayerQuery,isAllowedPublicPlayersPath} from '../src/public-players-filters.mjs';
 import {PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS} from '../src/footballer-public-projection.ts';
@@ -302,10 +303,58 @@ test('global value sorting across pages, stable ties, zero, unknown and inclusiv
  assert.ok(pages.every(p=>p.count===103&&p.totalPages===3));
  const zero=await readPublicPlayers(db,1,{valueMin:0,valueMax:0});
  assert.deepEqual(zero.players.map(p=>p.id),[103]);
- const ascending=await readPublicPlayers(db,1,{sort:'market_value_arc',order:'asc'});
- assert.equal(ascending.players[0].id,103);
+ const ascending=await Promise.all([1,2,3].map(page=>readPublicPlayers(db,page,{sort:'market_value_arc',order:'asc'})));
+ const ascExpected=[...rows].sort((a,b)=>{
+  if(a.expected===null||b.expected===null)return a.expected===b.expected?a.id-b.id:a.expected===null?1:-1;
+  return a.expected-b.expected||a.id-b.id;
+ });
+ assert.deepEqual(ascending.flatMap(x=>x.players.map(p=>p.id)),ascExpected.map(x=>x.id));
+ assert.equal(ascending[0].players[0].id,103);
+ assert.equal(ascending[2].players.at(-1)?.id,102);
+ const bound=rows[10].expected!;
+ const exact=await readPublicPlayers(db,1,{valueMin:bound,valueMax:bound,sort:'market_value_arc'});
+ assert.equal(exact.count,rows.filter(r=>r.expected===bound).length);
+ assert.ok(exact.players.every(p=>p.market_value_arc===bound));
+ assert.equal((await readPublicPlayers(db,4,{sort:'market_value_arc'})).players.length,0);
  assert.ok(calls.every(sql=>sql.includes('LIMIT ?')&&!sql.includes('OFFSET')));
  const tooMany={prepare(){return {bind(){return this},async first(){return {schema_version:1,generation,revision:0,season_number:0,day:0,phase:'unstarted'};},
   async all(){return {results:Array(MARKET_VALUE_SCAN_LIMIT+1).fill(rows[0]),meta:{changes:0}}}}}} as unknown as Database;
  await assert.rejects(readPublicPlayers(tooMany,1,{sort:'market_value_arc'}),/players_unavailable/);
+});
+
+test('#763 same stored player has identical current valuation across directory, detail and complete roster',async()=>{
+ const payload={...stored,age:24,attributes:Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map(k=>[k,60]))};
+ const row={id:42,payload_json:JSON.stringify(payload),club_key:'IT-1',portrait_approved:0};
+ const calls:string[]=[];
+ const world={schema_version:1,generation,revision:0,season_number:0,day:0,phase:'unstarted'};
+ const db={prepare(sql:string){return {bind(){return this},async first(){calls.push(sql);return sql.includes('FROM world_state')?world:row;},
+  async all(){calls.push(sql);return {results:sql.includes('COUNT(*)')?[{n:1}]:[row],meta:{changes:0}};}}},
+  async batch(statements:Array<{all:()=>Promise<unknown>}>){return Promise.all(statements.map(s=>s.all()));}
+ } as unknown as Database;
+ const directory=await readPublicPlayers(db,1);
+ const detail=await readPublicPlayer(db,42);
+ const roster=await readPublicClubRoster(db,'IT-1');
+ const ranked=await readPublicPlayers(db,1,{sort:'market_value_arc'});
+ const expected=calculatePlayerMarketValueArc(payload);
+ assert.ok(typeof expected==='number'&&expected>0);
+ for(const p of [directory.players[0],detail.player,roster.players[0],ranked.players[0]]){
+  assert.equal(p.id,42);assert.equal(p.market_value_arc,expected);
+  assert.doesNotMatch(JSON.stringify(p),/development_aptitude|initial_age|retirement_age|seed/);
+ }
+ assert.equal(calls.filter(sql=>sql.includes('FROM generated_players')||sql.includes('FROM player_club_affiliations')).length,5,'no per-player follow-up query');
+});
+test('#763 valuation scan preserves SQL filter bindings and rejects revision changes',async()=>{
+ const calls:{sql:string;params:unknown[]}[]=[];
+ let reads=0;
+ const row={id:42,payload_json:JSON.stringify(stored),club_key:null};
+ const create=(stale:boolean)=>({prepare(sql:string){return {bind(...params:unknown[]){calls.push({sql,params});return this;},
+  async first(){return {schema_version:1,generation,revision:stale?reads++:0,season_number:0,day:0,phase:'unstarted'};},
+  async all(){return {results:[row],meta:{changes:0}};}};}} as unknown as Database);
+ const parsed=parsePublicPlayerQuery('?position=CM&valueMin=0&sort=market_value_arc&order=asc');
+ const result=await readPublicPlayers(create(false),parsed.page,parsed.filters);
+ assert.equal(result.count,1);
+ const query=calls.find(x=>x.sql.includes('LEFT JOIN player_club_affiliations'))!;
+ assert.match(query.sql,/json_extract\(payload_json,'\$\.primary_position'\) IN \(\?\)/);
+ assert.deepEqual(query.params,['CM',MARKET_VALUE_SCAN_LIMIT+1]);
+ await assert.rejects(readPublicPlayers(create(true),1,{sort:'market_value_arc'}),/stale_world/);
 });

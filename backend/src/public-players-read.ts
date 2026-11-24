@@ -123,7 +123,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
    return (filters.order==='asc'?x-y:y-x)||a.id-b.id;
   });
   const after=await readWorld(db);
-  if(after.generation!==before.generation)throw new ApiError(409,'stale_world');
+  if(after.generation!==before.generation||after.revision!==before.revision)throw new ApiError(409,'stale_world');
   return {count:matching.length,page,pageSize:PUBLIC_PLAYER_PAGE_SIZE,totalPages:Math.max(1,Math.ceil(matching.length/PUBLIC_PLAYER_PAGE_SIZE)),players:matching.slice((page-1)*PUBLIC_PLAYER_PAGE_SIZE,page*PUBLIC_PLAYER_PAGE_SIZE)};
  }
  let count:number,rows:StoredRow[];

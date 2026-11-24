@@ -3,8 +3,8 @@ import {ATTRIBUTES,calculatePositionSuitability} from './players-generator-core.
 import {roundPlayerMarketValueArc} from './player-market-value-rounding.mjs';
 const positions=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
 export const MARKET_VALUE_CONFIG=Object.freeze({
- version:'remaining-commission-draft-v1',
- salaryScale:1226.223546184737,salaryMultiplier:2.5,commission:.1,
+ version:'remaining-commission-draft-v2',
+ salaryScale:1226.223546184737,salaryMultiplier:2.5,commission:.05,
  renewalSeasons:2,paidFraction:1,discountRate:0,
  retirement:Object.freeze({33:.02,34:.05,35:.12,36:.25,37:.45,38:.7,39:.9,40:1}),
  growth:Object.freeze([.7098,.6808,.651,.6267,.607,.5908,.5618,.5357,.515,.4878,.4666,.4284,.3716,.2786,.1782,.0922,.0403,.0171,.0059,.0023,.0008,.0006,0,0]),
