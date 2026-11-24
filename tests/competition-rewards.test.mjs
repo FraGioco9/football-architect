@@ -425,3 +425,12 @@ test('agent circulation tracks individual paid mandate tenures and reconciles ph
  assert.equal(ref.length,3);assert.equal(alt.length,9);assert.ok(ref.every(r=>r.groups.find(g=>g.kind==='youth'&&g.currency==='ARC').recoveryRatio<1));assert.ok(alt.filter(r=>r.variant==='return-sensitive').every(r=>r.reserveChecks.at(-1).completed<100));
  const x=buildCirculationStress({seasons:3,seeds:[c.seeds[0]],variants:[c.variants[0]]}).runs[0];assert.equal(x.openingMandateIncomeSpread.mean,0);assert.equal(x.agentTotals.salary+x.agentTotals.resale-x.agentTotals.arcSpend,x.finalWalletArc);assert.equal(x.phases[0].walletChange,x.finalWalletArc);assert.equal(x.peakArrearsArc,0);
 });
+
+test('competitive strategies distinguish sporting management, closed returns and reserve acceptance',async()=>{
+ const {buildCompetitiveStress}=await import('../tools/run-economy-competitive-strategies.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/economy-competitive-strategies-v1.json',import.meta.url),'utf8'));
+ const basic=JSON.parse(readFileSync(new URL('../docs/economy-competitive-strategies-v1-summary.json',import.meta.url),'utf8'));
+ const selective=JSON.parse(readFileSync(new URL('../docs/economy-competitive-strategies-v1-disciplined-summary.json',import.meta.url),'utf8'));
+ assert.equal(basic.length,6);assert.equal(selective.length,3);assert.ok(basic.filter(r=>r.variant==='mixed-strategies').every(r=>r.clubGroups[2].d1Share>r.clubGroups[0].d1Share&&r.finalPopulation===6400));assert.ok(selective.every(r=>r.agentGroups[2].medianClosedArcNet>0&&r.finalPopulation<6400&&r.reserveChecks.at(-1).completed<100));
+ const x=buildCompetitiveStress({seasons:3,strategyObservationStart:1,seeds:[c.seeds[0]],variants:[c.variants[1]]}).runs[0];assert.equal(x.agents.length,256);assert.equal(x.clubs.length,256);assert.equal(x.agents.reduce((a,v)=>a+v.wallet,0),x.finalWalletArc);assert.ok(x.clubs.every(v=>v.net===v.operatingNet+v.transferNet));assert.equal(x.peakArrearsArc,0);
+});
