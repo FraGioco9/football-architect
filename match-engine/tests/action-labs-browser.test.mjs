@@ -194,7 +194,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.equal(sample.count,'2 on field');
    assert.equal(sample.rows.length,2);
    assert.ok(sample.rows.every(x=>x.includes(side.toUpperCase()+' #')));
-   assert.match(sample.readout,/stationary target · ground pass only/);
+   assert.match(sample.readout,/stationary target · distance-calibrated ground pass \(DEV\)/);
+   assert.match(sample.readout,/impulse [0-9.]+ Ns/);
    assert.match(sample.readout,/launch [0-9.]+ km\/h/);
    assert.equal(sample.popup,false);
    process.stdout.write('ME_628_GROUND_PASS_CHROME '+JSON.stringify(sample)+'\\n');
