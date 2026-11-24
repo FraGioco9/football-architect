@@ -20,10 +20,10 @@ const actor='contract-test-operator',email='contracts@example.invalid',token='9'
 const draftId='00000000-0000-4000-8000-000000000029';
 let csrf='',accountId='',generation='',revision=0;
 const service={DB:db,PLAYER_MODE:'local',PLAYER_ORIGIN:origin};
-async function call(method:'GET'|'POST'|'PUT',path:string,payload?:unknown,csrfOverride?:string){
+async function call(method:'GET'|'POST'|'PUT',path:string,payload?:unknown,csrfOverride?:string,key?:string){
  const response=await handleAdmin(new Request(origin+'/api/admin/contracts'+path,{
   method,headers:{Cookie:'fa_player_local='+token,Origin:origin,
-   ...(method==='POST'?{'Content-Type':'application/json','X-CSRF-Token':csrfOverride??csrf}:{})},
+   ...(method==='POST'?{'Content-Type':'application/json','X-CSRF-Token':csrfOverride??csrf,...(key?{'Idempotency-Key':key}:{})}:{})},
   body:method==='POST'?JSON.stringify(payload):undefined
  }),service);
  return {status:response.status,data:await response.json() as any,headers:response.headers};
@@ -91,7 +91,7 @@ it('prepares real dates only for authorized initial free agents and never signs'
  expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(0);
 });
 
-it('signs an initial AI term atomically with certified synthetic forecast and actual ledger cash; no HTTP activation',async()=>{
+it('signs an initial AI term atomically with certified synthetic forecast and actual ledger cash; gated HTTP activation',async()=>{
  const {loadApprovedSnapshot}=await import('../src/approved-season-one.ts');
  const club=(await loadApprovedSnapshot()).bindings.find(b=>b.competitionId.endsWith('-1')&&!b.competitionId.startsWith('int-'))!.clubIds[0];
  const request={playerId:2,clubKey:club,durationSeasons:2,expectedGeneration:generation,expectedRevision:revision};
@@ -105,7 +105,10 @@ it('signs an initial AI term atomically with certified synthetic forecast and ac
  const access=[economicAssert(db,'SELECT 1')];
  await provisionClubAccounts(db,now,access);
  const version='synthetic-signing-test';
- await db.prepare('INSERT INTO economic_policy_versions VALUES(?,?,?,?,?,?,?)').bind(version,now,'fixture',10000,10000,JSON.stringify({[club]:2000}),'{}').run();
+ const snapshot=await loadApprovedSnapshot();
+ const expectedRewardsByClub=Object.fromEntries(snapshot.bindings.filter(b=>!b.competitionId.startsWith('int-')).flatMap(b=>b.clubIds.map(k=>[k,10000])));
+ const rules=JSON.stringify({openingContracts:{schema:'opening-contract-forecast-v1',worldGeneration:generation,participantsHash:snapshot.participantsHash,rulesHash:snapshot.rulesHash,formulaVersion:'remaining-agent-salary-draft-v5-769',expectedRewardsByClub}});
+ await db.prepare('INSERT INTO economic_policy_versions VALUES(?,?,?,?,?,?,?)').bind(version,now,'fixture',10000,10000,JSON.stringify({[club]:2000}),rules).run();
  await db.prepare('INSERT INTO economic_control VALUES(1,?,1)').bind(version).run();
  const post=(purpose:'GENESIS_RESERVE'|'CLUB_OPENING',sourceId:string,from:string,to:string,amount:number)=>postEconomicOperation(db,{businessKey:'sign-test-'+purpose,requestKey:'sign-test-'+purpose,purpose,actorKind:'system',actorId:'fixture',configVersion:version,sourceId,lines:[{accountId:from,amountArc:-amount},{accountId:to,amountArc:amount}]},{access},now);
  await post('GENESIS_RESERVE','platform','issuance','reserve',10000);
@@ -119,13 +122,20 @@ it('signs an initial AI term atomically with certified synthetic forecast and ac
 
  await expect(signInitialAiContract(db,session,request,key,now,async()=>({...await authority(),guards:[abortUnless(db,'SELECT 1 WHERE 0',[])]}))).rejects.toMatchObject({code:'contract_signing_preconditions_changed'});
  expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(0);
- const result=await signInitialAiContract(db,session,request,key,now,authority);
+ const preview=await call('POST','/preview',request);
+ expect(preview.status).toBe(200);expect(preview.data).toMatchObject({signable:true,annualSalaryArc:salaryBounds(1,rawDestinationSalaryReferenceArc(payload,10000)!).aiDemand});
+ const signedRequest={...request,quoteHash:preview.data.quoteHash};
+ expect((await call('POST','/sign',{...signedRequest,quoteHash:'0'.repeat(64)},undefined,key)).data.error.code).toBe('contract_quote_changed');
+ expect((await call('POST','/sign',signedRequest,'bad',key)).status).toBe(403);
+ expect((await call('POST','/sign',{...signedRequest,annualSalaryArc:1},undefined,key)).status).toBe(422);
+ const signed=await call('POST','/sign',signedRequest,undefined,key);expect(signed.status).toBe(200);
+ const result=signed.data;
  expect(result.world.revision).toBe(revision+1);
  const audit=await db.prepare('SELECT outcome_json FROM admin_operations WHERE id=?').bind(result.operationId).first<{outcome_json:string}>();
- expect(JSON.parse(audit!.outcome_json).contract).toMatchObject({salaryFormulaVersion:'remaining-agent-salary-draft-v5-769',forecastVersion:'synthetic-opening-test',expectedAnnualRewardsArc:10000,financeVersion:version,availableArc:2000});
- expect(await signInitialAiContract(db,session,request,key,now,authority)).toEqual(result);
+ expect(JSON.parse(audit!.outcome_json).contract).toMatchObject({salaryFormulaVersion:'remaining-agent-salary-draft-v5-769',forecastVersion:expect.stringMatching(/^opening-forecast:[a-f0-9]{64}$/),expectedAnnualRewardsArc:10000,financeVersion:version,availableArc:2000});
+ expect((await call('POST','/sign',signedRequest,undefined,key)).data).toEqual(result);
  expect((await db.prepare('SELECT annual_salary_arc,reference_arc,duration_seasons,start_tick,scheduled_end_tick FROM player_signed_contracts WHERE player_id=2').first())).toMatchObject({annual_salary_arc:salaryBounds(1,rawDestinationSalaryReferenceArc(payload,10000)!).aiDemand,duration_seasons:2,start_tick:0,scheduled_end_tick:112});
  expect((await db.prepare('SELECT COUNT(*) n FROM economic_transactions').first<{n:number}>())?.n).toBe(2);
  expect((await call('GET','?playerId=2')).data.players[0].clubKey).toBe(club);
- await expect(signInitialAiContract(db,session,{...request,durationSeasons:1},key,now,authority)).rejects.toMatchObject({code:'idempotency_conflict'});
+ expect((await call('POST','/sign',{...signedRequest,durationSeasons:1},undefined,key)).data.error.code).toBe('idempotency_conflict');
 });
