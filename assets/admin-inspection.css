@@ -25,3 +25,23 @@
 @media(max-width:620px){.inspection-scopes{grid-template-columns:1fr}.inspection-metrics{gap:8px}.inspection-metric{padding:9px}.inspection-tabs{flex-wrap:nowrap;overflow-x:auto}.inspection-tabs button{flex:none}}
 
 .inspection-pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0}.inspection-table th,.inspection-table td{white-space:nowrap}.inspection-panel[aria-busy=true] .inspection-metric strong{min-height:1.4em}.inspection-table tr{height:42px}
+
+/* Stable Admin cards and data geometry, including pending/empty states. */
+.app-admin-view .admin-directory-card{height:112px;min-height:112px;box-sizing:border-box;justify-content:space-between;gap:8px}
+.app-admin-view .admin-directory-card h2{line-height:1.25}
+.inspection-metric{box-sizing:border-box;height:104px;min-height:104px;max-height:104px;grid-template-rows:2.6em 1.5em;align-content:center;gap:4px}
+.inspection-metric span{line-height:1.3;overflow-wrap:anywhere;align-self:center}
+.inspection-metric strong{line-height:1.5;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(13px,2.5vw,18px);align-self:center}
+.inspection-panel [data-inspection-list-status]{min-height:1.5em;margin:0}
+.inspection-table:has([data-inspection-list]){height:253px;max-height:253px;overflow:auto;box-sizing:border-box}
+.inspection-table:has([data-inspection-rows]){height:211px;max-height:211px;overflow:auto;box-sizing:border-box}
+.inspection-table table{table-layout:fixed}
+.inspection-table th,.inspection-table td{overflow:hidden;text-overflow:ellipsis}
+.inspection-table:has([data-inspection-list="clubs"]) table{min-width:500px}
+.inspection-table:has([data-inspection-list="ledger"]) table{min-width:650px}
+.inspection-table:has([data-inspection-rows]) th:last-child{width:38%}
+.inspection-table thead{position:sticky;top:0;background:var(--surface);z-index:1}
+.inspection-panel[aria-busy=true] .inspection-metric strong{color:transparent;position:relative}
+.inspection-panel[aria-busy=true] .inspection-metric strong::after{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:56%;height:12px;border-radius:4px;background:var(--border)}
+.inspection-panel [data-inspection-blockers]{min-height:1.5em;max-height:9em;overflow:auto;margin:8px 0}
+@media(max-width:620px){.inspection-metric{height:112px;min-height:112px;max-height:112px;grid-template-rows:3.9em 1.5em}}

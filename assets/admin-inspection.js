@@ -5,7 +5,19 @@ const extraKeys=["club","balance","date","purpose","debit","credit","amount","pr
 const doc=document,host=doc.querySelector('#app-admin'),root=host?.querySelector('[data-admin-inspection]');
 const text=k=>{const x=extraKeys.indexOf(k);if(x>=0)return (extra[doc.documentElement.lang]||extra.en)[x];const i=keys.indexOf(k);return i<0?k:(translations[doc.documentElement.lang]||translations.en)[i]};
 const translate=()=>{doc.querySelectorAll('[data-inspection-copy]').forEach(n=>{n.textContent=text(n.dataset.inspectionCopy)});host?.querySelector('[data-admin-back]')?.setAttribute('aria-label',text('back'));};
-translate();if(!root){new MutationObserver(translate).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});return}
+translate();if(!root){
+ const cards=Array.from(doc.querySelectorAll('[data-admin-panel="economy"],[data-admin-panel="reset"]'));
+ let epoch=0;
+ async function checkCards(){
+  const ticket=++epoch;cards.forEach(c=>c.hidden=true);
+  if(host?.dataset.adminAccess!=='granted')return;
+  try{const response=await fetch('/api/admin/inspection/access',{credentials:'same-origin',cache:'no-store'});if(!response.ok)return;const grants=await response.json();if(ticket===epoch&&host.dataset.adminAccess==='granted')cards.forEach(c=>c.hidden=grants[c.dataset.adminPanel]!==true)}catch{/* fail closed */}
+ }
+ window.addEventListener('fa:admin-access',()=>void checkCards());
+ window.addEventListener('pageshow',e=>{if(e.persisted)void checkCards()});
+ if(host?.dataset.adminAccess==='granted')void checkCards();
+ new MutationObserver(translate).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});return
+}
 const el=q=>root.querySelector(q),all=q=>Array.from(root.querySelectorAll(q)),content=el('[data-inspection-content]'),status=el('[data-inspection-status]'),mode=root.dataset.adminInspection;
 let token=0,allowed=false,busy=false,summary=null,reconciliation=null,preview=null,statusKey='checking';
 const pages={clubs:{data:null,history:[]},ledger:{data:null,history:[]}};
@@ -13,10 +25,10 @@ const setStatus=k=>{statusKey=k;status.textContent=k?text(k):'';status.removeAtt
 const number=v=>v===null||v===undefined?'—':new Intl.NumberFormat(doc.documentElement.lang||'en').format(BigInt(v));
 const money=v=>v===null||v===undefined?'—':number(v)+' ARC';
 const world=w=>{el('[data-inspection-world]').textContent=w?text('season')+' '+w.seasonNumber+' · '+text('day')+' '+w.day:'—'};
-const setValue=(key,value)=>all('[data-inspection-value="'+key+'"]').forEach(n=>n.textContent=value);
+const setValue=(key,value)=>all('[data-inspection-value="'+key+'"]').forEach(n=>{n.textContent=value;n.title=value});
 const request=async(path,options={})=>{const res=await fetch(path,{credentials:'same-origin',cache:'no-store',...options});if(!res.ok){const e=Error('request');e.status=res.status;throw e}return res.json()};
-const showAccess=ok=>{host.dataset.adminAccess=ok?'granted':'denied';window.faAdminAccess=ok;window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:ok}))};
-const sync=()=>{root.setAttribute('aria-busy',String(busy));all('[data-inspection-scope]').forEach(n=>n.disabled=!allowed||busy);const b=el('[data-inspection-preview]');if(b)b.disabled=!allowed||busy||!all('[data-inspection-scope]:checked').length;el('[data-inspection-refresh]').disabled=busy};
+const showAccess=(base,pageAccess)=>{host.dataset.adminAccess=pageAccess?'granted':'denied';host.hidden=!pageAccess;window.faAdminAccess=base;window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:base}))};
+const sync=()=>{root.setAttribute('aria-busy',String(busy));all('[data-inspection-prev],[data-inspection-next]').forEach(n=>{if(busy)n.disabled=true});all('[data-inspection-scope]').forEach(n=>n.disabled=!allowed||busy);const b=el('[data-inspection-preview]');if(b)b.disabled=!allowed||busy||!all('[data-inspection-scope]:checked').length;el('[data-inspection-refresh]').disabled=busy};
 function renderList(kind){
  const page=pages[kind],body=el('[data-inspection-list="'+kind+'"]');if(!body)return;
  const prev=el('[data-inspection-prev="'+kind+'"]'),next=el('[data-inspection-next="'+kind+'"]'),caption=el('[data-inspection-page="'+kind+'"]');
@@ -36,8 +48,8 @@ async function loadList(kind,direction=0){
  if(direction&&old){const q=new URLSearchParams();if(kind==='clubs')q.set('page',String(old.page+direction));else{const cursor=direction>0?old.nextCursor:state.history[state.history.length-1];if(cursor)q.set('cursor',cursor);if(direction>0)state.history.push(state.cursor??null);else state.history.pop();state.cursor=cursor}q.set('checkpoint',old.checkpoint);if(kind==='ledger'&&!q.has('cursor'))path+='?checkpoint='+old.checkpoint;else path+='?'+q.toString()}
  const msg=el('[data-inspection-list-status="'+kind+'"]');busy=true;sync();msg.textContent=text('checking');
  try{const data=await request(path);if(current!==token)return;state.data=data;renderList(kind);msg.textContent=''}
- catch(e){if(current===token){state.data=null;state.history=oldHistory;renderList(kind);msg.textContent=text(e.status===409?'stale':e.status===403||e.status===401?'denied':'failed');if(e.status===403||e.status===401){allowed=false;clear();content.hidden=true;setStatus('denied')}}}
- finally{if(current===token){busy=false;sync()}}
+ catch(e){if(current===token){state.data=null;state.history=oldHistory;renderList(kind);msg.textContent=text(e.status===409?'stale':e.status===403||e.status===401?'denied':'failed');if(e.status===403||e.status===401){allowed=false;clear();content.hidden=true;showAccess(e.status!==401,false);setStatus('denied')}}}
+ finally{if(current===token){busy=false;sync();renderList(kind);const active=el('[data-inspection-tab][aria-selected="true"]')?.dataset.inspectionTab;if(active!==kind&&['clubs','ledger'].includes(active)&&!pages[active].data)void loadList(active)}}
 }
 function renderEconomy(){
  if(!summary)return;
@@ -51,9 +63,9 @@ const tableGroups={sporting:['seasons','season_calendars','season_draws','season
 function renderPreview(){
  const rows=el('[data-inspection-rows]'),blockers=el('[data-inspection-blockers]');rows.replaceChildren();blockers.replaceChildren();
  for(const [scope,tables] of Object.entries(tableGroups)){
-  if(preview&&!preview.scopes.includes(scope))continue;
+  // Keep every category row in the same position; unselected scope has no count.
   const tr=doc.createElement('tr'),a=doc.createElement('td'),b=doc.createElement('td');a.textContent=text(scope);
-  const values=tables.map(t=>preview?.counts[t]);b.textContent=preview&&values.every(v=>typeof v==='number')?number(values.reduce((sum,v)=>sum+v,0)):'—';tr.append(a,b);rows.append(tr);
+  const values=tables.map(t=>preview?.counts[t]);b.textContent=preview?.scopes.includes(scope)&&values.every(v=>typeof v==='number')?number(values.reduce((sum,v)=>sum+v,0)):'—';tr.append(a,b);rows.append(tr);
  }
  for(const key of preview?.blockers||[]){const li=doc.createElement('li');li.textContent=text(key);blockers.append(li)}
  if(preview)world(preview.world);
@@ -61,17 +73,19 @@ function renderPreview(){
 function clear(){for(const page of Object.values(pages)){page.data=null;page.history=[];page.cursor=null}if(mode==='economy'){for(const kind of ['clubs','ledger'])renderList(kind)}summary=null;reconciliation=null;preview=null;world(null);all('[data-inspection-value]').forEach(n=>n.textContent='—');if(mode==='reset')renderPreview();else{el('[data-inspection-policy]').textContent='—';el('[data-inspection-reconciliation]').textContent='—'}}
 async function load(){
  const current=++token;busy=true;allowed=false;clear();sync();setStatus('checking');
- try{const permissions=await request('/api/player/permissions');if(current!==token)return;const p=permissions.permissions||[],base=p.includes('admin.access')&&p.includes('admin.world.read');showAccess(base);
- if(!base||(mode==='reset'&&!p.includes('admin.world.write'))){content.hidden=true;setStatus('denied');return}
+ try{const permissions=await request('/api/player/permissions');if(current!==token)return;const p=permissions.permissions||[],base=p.includes('admin.access')&&p.includes('admin.world.read');if(!base){showAccess(false,false);content.hidden=true;setStatus('denied');return}
+ const grants=await request('/api/admin/inspection/access');if(current!==token)return;
+ if(grants[mode]!==true){showAccess(true,false);content.hidden=true;setStatus('denied');return}
+ showAccess(true,true);content.hidden=false;
  if(mode==='economy'){summary=await request('/api/admin/economy/summary');if(current!==token)return;reconciliation=await request('/api/admin/economy/reconciliation');if(current!==token)return;renderEconomy()}
  else {await request('/api/admin/reset/options');const w=await request('/api/admin/world');if(current!==token)return;world(w.world);renderPreview()}
  allowed=true;content.hidden=false;setStatus('');const active=el('[data-inspection-tab][aria-selected="true"]')?.dataset.inspectionTab;if(active&&['clubs','ledger'].includes(active)){busy=false;void loadList(active);}
- }catch(e){if(current===token){clear();content.hidden=true;setStatus(e.status===401||e.status===403?'denied':'failed')}}
+ }catch(e){if(current===token){clear();content.hidden=true;if(e.status===401||e.status===403)showAccess(e.status!==401,false);else{host.dataset.adminAccess='unavailable';host.hidden=false}setStatus(e.status===401||e.status===403?'denied':'failed')}}
  finally{if(current===token){busy=false;sync()}}
 }
 async function runPreview(){if(!allowed||busy)return;const current=++token;busy=true;preview=null;renderPreview();sync();setStatus('checking');
  try{const session=await request('/api/admin/session');const scopes=all('[data-inspection-scope]:checked').map(n=>n.value);const data=await request('/api/admin/reset/preview',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':session.csrfToken},body:JSON.stringify({scopes})});if(current!==token)return;preview=data;renderPreview();setStatus('')}
- catch(e){if(current===token){setStatus(e.status===401||e.status===403?'denied':'failed');if(e.status===401||e.status===403){allowed=false;clear();content.hidden=true}}}
+ catch(e){if(current===token){setStatus(e.status===401||e.status===403?'denied':'failed');if(e.status===401||e.status===403){allowed=false;clear();content.hidden=true;showAccess(e.status!==401,false)}}}
  finally{if(current===token){busy=false;sync()}}
 }
 for(const kind of ['clubs','ledger']){el('[data-inspection-prev="'+kind+'"]')?.addEventListener('click',()=>void loadList(kind,-1));el('[data-inspection-next="'+kind+'"]')?.addEventListener('click',()=>void loadList(kind,1))}
@@ -79,5 +93,7 @@ const tabs=all('[data-inspection-tab]');function activate(tab){for(const b of ta
 tabs.forEach((b,i)=>{b.addEventListener('click',()=>activate(b));b.addEventListener('keydown',e=>{const target=e.key==='ArrowRight'?tabs[(i+1)%tabs.length]:e.key==='ArrowLeft'?tabs[(i+tabs.length-1)%tabs.length]:e.key==='Home'?tabs[0]:e.key==='End'?tabs[tabs.length-1]:null;if(target){e.preventDefault();activate(target);target.focus()}})});
 all('[data-inspection-scope]').forEach(n=>n.addEventListener('change',()=>{preview=null;renderPreview();sync()}));el('[data-inspection-preview]')?.addEventListener('click',()=>void runPreview());el('[data-inspection-refresh]').addEventListener('click',()=>void load());
 new MutationObserver(()=>{translate();setStatus(statusKey);if(mode==='economy'){renderEconomy();for(const kind of ['clubs','ledger'])renderList(kind)}else renderPreview()}).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
+window.addEventListener('pagehide',()=>{++token;allowed=false;clear();content.hidden=true;host.hidden=true});
+window.addEventListener('pageshow',e=>{if(e.persisted)void load()});
 void load();
 })();

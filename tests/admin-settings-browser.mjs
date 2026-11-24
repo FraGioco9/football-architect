@@ -213,7 +213,7 @@ try{
    const writer=permissionSet.includes('admin.world.write');
    if(permissionSet.length===0)assert.equal(await page.locator('#main-content').innerText(),'');
    else{
-    assert.equal(await page.locator('.admin-directory-card').count(),5);
+    assert.equal(await page.locator('.admin-directory-card').count(),7);
     assert.equal(await page.locator('[data-admin-card="calendar"].app-link').isVisible(),true);
     assert.equal(await page.locator('[data-admin-card="players"].app-link').isVisible(),writer);
     assert.equal(await page.locator('[data-admin-card="contracts"].app-link').isVisible(),writer);

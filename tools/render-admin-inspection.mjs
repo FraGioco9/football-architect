@@ -8,9 +8,9 @@ export function renderAdminReset(){
  return '<section class="app-panel inspection-panel" data-admin-inspection="reset" aria-busy="true">'+header+
  '<div data-inspection-content><fieldset class="inspection-scopes"><legend data-inspection-copy="categories">Reset categories</legend>'+
  [['sporting','Sporting world'],['players','Players'],['contracts','Contracts'],['economy','Economy']].map(([id,copy])=>'<label class="inspection-scope"><input type="checkbox" value="'+id+'" data-inspection-scope disabled>'+label(id,copy)+'</label>').join('')+
- '</fieldset><p data-inspection-copy="protected">Accounts, licenses, audit records and immutable history remain protected.</p>'+
+ '</fieldset><p data-inspection-copy="protected">Accounts, licenses and history protected.</p>'+
  '<button type="button" class="app-link app-link-primary" data-inspection-preview data-inspection-copy="preview" disabled>Preview reset</button>'+
- '<section class="inspection-result" aria-live="polite"><h2 data-inspection-copy="previewTitle">Reset preview</h2><p data-inspection-copy="previewOnly">Preview only. No data will be modified.</p>'+
+ '<section class="inspection-result" aria-live="polite"><h2 data-inspection-copy="previewTitle">Reset preview</h2>'+
  table([['category','Category'],['records','Records in scope']])+'<ul data-inspection-blockers></ul><button type="button" class="app-link app-link-secondary" data-inspection-copy="confirm" disabled>Confirm reset</button></section></div></section>';
 }
 const tabs=[['overview','Overview'],['clubs','Clubs'],['wallets','Wallets'],['rewards','Rewards'],['payroll','Payroll'],['ledger','Ledger']];
@@ -25,7 +25,7 @@ export function augmentInspectionDirectory(html){
  const anchor='Rewards</a></section></div>';
  if(!html.includes(anchor))throw Error('Admin Rewards card anchor missing');
  const cards=[['economy','Economy','Inspect balances and settlement'],['reset','Reset','Preview world reset']].map(([key,title,desc])=>'<section class="app-panel admin-directory-card" data-admin-panel="'+key+'" aria-labelledby="admin-card-'+key+'-title"><h2 id="admin-card-'+key+'-title" data-inspection-copy="'+key+'">'+title+'</h2><p data-inspection-copy="'+key+'Description">'+desc+'</p><a class="app-link app-link-primary" href="/admin/'+key+'" data-admin-card="'+key+'" data-inspection-copy="'+key+'">'+title+'</a></section>').join('');
- return html.replace(anchor,'Rewards</a></section>'+cards+'</div>').replace('</head>',scripts+'</head>');
+ return html.replace(anchor,'Rewards</a></section>'+cards+'</div>').replace(/(<section class="app-panel admin-directory-card"[^>]*><h2[^>]*>[^<]*<\/h2>)<p[^>]*>[^<]*<\/p>/g,'$1').replace(/(data-admin-panel="(?:economy|reset)")/g,'$1 hidden').replace('</head>',scripts+'</head>');
 }
 export function renderInspectionShell(html,mode){
  if(!['reset','economy'].includes(mode))throw Error('Unknown Admin inspection route');
