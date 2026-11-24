@@ -188,8 +188,9 @@ test('season read lifecycle is shared with Rewards and independent of world read
  const page=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
  const ui=readFileSync(new URL('../assets/rewards-ui.mjs',import.meta.url),'utf8');
  const css=readFileSync(new URL('../assets/competition-rewards.css',import.meta.url),'utf8');
- assert.match(page,/onState:state=>\{publishSeasonReadState\(state\)/);
- assert.match(page,/publishSeasonReadState\(cached.data.status\)/);
+ assert.match(page,/const applySeasonReadState=state=>\{publishSeasonReadState\(state\)/);
+ assert.match(page,/onState:applySeasonReadState/);
+ assert.match(page,/applySeasonReadState\(cached.status\)/);
  assert.match(ui,/fa:competition-season-read-state/);
  assert.match(ui,/read\?\.season===context\?\.selectedSeason/);
  assert.doesNotMatch(ui,/worldStatus!==/);

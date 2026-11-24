@@ -1461,16 +1461,17 @@
 
         // Each competition view owns its empty/loading shell; no global
         // "No published season data yet" banner is inserted above standings.
+        const applySeasonReadState=state=>{publishSeasonReadState(state);if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');if(activeDebugSeason===null){publicStandingsState=state==='empty'?'empty':state==='partial'||state==='available'?'verified':'pending';if(state==='empty'||state==='unavailable')standingsRefresh?.();}/* No cross-view empty banner; retain panel-specific loading states. */};
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>{
+          commit:(data,revision,status)=>{
             const selectedSeason=window.faCompetitionContext?.selectedSeason;
             const accepted=acceptSeasonData(data,revision,true);
             if(accepted)seasonReadCache.remember({
               competitionId:definition.id,season:selectedSeason,
-              snapshot:window.faWorldState?.get?.(),data
+              snapshot:window.faWorldState?.get?.(),data,status
             });
             return accepted;
-          },onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{publishSeasonReadState(state);if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');if(activeDebugSeason===null){publicStandingsState=state==='empty'?'empty':state==='partial'||state==='available'?'verified':'pending';if(state==='empty'||state==='unavailable')standingsRefresh?.();}/* No cross-view empty banner; retain panel-specific loading states. */},
+          },onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:applySeasonReadState,
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.
@@ -1525,8 +1526,7 @@
             loader.cancel();
             if(acceptSeasonData(cached.data,c.revision,true)){
               lastSuccessfulRead=worldReadKey(window.faCompetitionContext,snapshot);
-              publishSeasonReadState(cached.data.status);
-              window.faStandingsLoading?.set('api',false);
+              applySeasonReadState(cached.status);
               return;
             }
           }
