@@ -36,9 +36,9 @@ class PayrollEvidenceTest(unittest.TestCase):
     def allocation(self,key,claim,amount,run='r1'):
         self.db.execute("INSERT INTO payroll_allocations VALUES(?,?,?,?)",(key,run,claim,amount))
     def seal(self,run='r1'):
-        self.db.execute("INSERT INTO payroll_run_seals VALUES(?,?)",(run,'b'*64))
+        self.db.execute("INSERT INTO payroll_run_milestones VALUES(?,'sealed',?)",(run,'b'*64))
     def finish(self,run='r1'):
-        self.db.execute("INSERT INTO payroll_run_completions VALUES(?,?)",(run,'c'*64))
+        self.db.execute("INSERT INTO payroll_run_milestones VALUES(?,'completed',?)",(run,'c'*64))
     def post(self,tx,allocation,amount,recipient='reserve',purpose='PAYROLL_AI',season=1,day=28):
         self.db.execute("INSERT INTO economic_transactions VALUES(?,?,?,?,?,'v','system','payroll-settlement-v1',?,NULL)",(tx,allocation,GEN,season,day,purpose))
         self.db.executemany("INSERT INTO economic_entries VALUES(?,?,?)",[(tx,'club:IT-1',-amount),(tx,recipient,amount)])
@@ -63,7 +63,7 @@ class PayrollEvidenceTest(unittest.TestCase):
                 self.claim(*args)
         self.prepare()
         for statement in ["DELETE FROM payroll_claims","UPDATE payroll_allocations SET planned_arc=0",
-                          "INSERT OR REPLACE INTO payroll_run_seals VALUES('r1','"+'d'*64+"')"]:
+                          "INSERT OR REPLACE INTO payroll_run_milestones VALUES('r1','sealed','"+'d'*64+"')"]:
             with self.assertRaises(sqlite3.IntegrityError):
                 self.db.execute(statement)
         self.assertEqual(self.db.execute("PRAGMA foreign_key_check").fetchall(),[])
