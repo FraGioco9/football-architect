@@ -12,17 +12,15 @@ import {renderFamilyV42PortraitPromptFromSnapshot} from './player-portrait-famil
 const positions=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
 const countries=new Set(COUNTRIES.map(c=>c.code));
 const insist=(ok:unknown,message:string)=>{if(!ok)throw Error(message)};
-type Rights={id:number;mandate:number;contract:number;club_key:string|null};
+type Rights={id:number;mandate:number;contract:number};
 async function readRights(db:Database){
- // #800 removes the legacy affiliation table. Never infer an affiliation from
- // an ended contract or revive a legacy row. Any signed history blocks reuse.
- const legacy=!!(await db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='player_club_affiliations'").first());
+ // #800 contract-only cutover: any signed term or mandate history blocks reuse.
+ // Uncontracted players have no club assignment.
  const rows:Rights[]=[];
  for(let id=0;;){
   const page=(await db.prepare(`SELECT p.id,
    EXISTS(SELECT 1 FROM player_agent_mandates m WHERE m.player_id=p.id) AS mandate,
-   EXISTS(SELECT 1 FROM player_signed_contracts c WHERE c.player_id=p.id) AS contract,
-   ${legacy?'(SELECT a.club_key FROM player_club_affiliations a WHERE a.player_id=p.id)':'NULL'} AS club_key
+   EXISTS(SELECT 1 FROM player_signed_contracts c WHERE c.player_id=p.id) AS contract
    FROM generated_players p WHERE p.id>? ORDER BY p.id LIMIT 100`).bind(id).all<Rights>()).results;
   rows.push(...page);if(page.length<100)break;id=page[page.length-1].id;
  }
@@ -30,7 +28,7 @@ async function readRights(db:Database){
  // automatic fresh-world certification. Do not guess individual appearances.
  const history=!!(await db.prepare(`SELECT 1 WHERE EXISTS(SELECT 1 FROM seasons)
   OR EXISTS(SELECT 1 FROM season_archives) OR EXISTS(SELECT 1 FROM match_lineup_result_receipts)`).first());
- return {legacy,rows,history};
+ return {rows,history};
 }
 export async function readLocalOpeningInventory(db:Database){
  const observation=await readOpeningObservation(db),w=observation.world;
@@ -60,8 +58,8 @@ export async function readLocalOpeningInventory(db:Database){
    }
   }catch{/* require reconciliation; never overwrite the portrait */}
   const indexValid=row.config_version===version&&row.market_value_arc===publicRecord.market_value_arc;
-  const readyForReuse=currentGeneration&&!rights.history&&!hasSportingHistory&&!r.mandate&&!r.contract&&r.club_key===null&&p.career_status==='active'&&lifecycle&&portraitValid&&indexValid;
-  players.push({id:row.id,age:p.age as number,primaryNationality:p.nationality as string,primaryPosition:p.primary_position as string,primarySuitability,clubKey:r.club_key,representation:r.mandate?'human':r.contract?'unknown':'ai',careerStatus:p.career_status as string,hasSignedContract:!!r.contract,hasSportingHistory,hasApprovedPortrait:portraitValid&&row.status==='approved',readyForReuse,fingerprint:observation.rows[i].fingerprint});
+  const readyForReuse=currentGeneration&&!rights.history&&!hasSportingHistory&&!r.mandate&&!r.contract&&p.career_status==='active'&&lifecycle&&portraitValid&&indexValid;
+  players.push({id:row.id,age:p.age as number,primaryNationality:p.nationality as string,primaryPosition:p.primary_position as string,primarySuitability,clubKey:null,representation:r.mandate?'human':r.contract?'unknown':'ai',careerStatus:p.career_status as string,hasSignedContract:!!r.contract,hasSportingHistory,hasApprovedPortrait:portraitValid&&row.status==='approved',readyForReuse,fingerprint:observation.rows[i].fingerprint});
  }
  // Read both sources again to detect changes during the paginated read.
  // This is not a substitute for a future transactional cross-writer lock.

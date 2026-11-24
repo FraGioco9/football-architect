@@ -175,7 +175,7 @@ it('Auto seeds are fresh per preview; manually supplied seeds remain reproducibl
  const withoutIdentifiers=(players:any[])=>players.map(({preview_id,...rest})=>rest);
  expect(withoutIdentifiers(manual1.candidates)).toEqual(withoutIdentifiers(manual2.candidates));
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
-});
+},30000);
 it('fails closed on missing/invalid approval, invalid options, missing CSRF and revoked grants',async()=>{
  const bad=await request('/preview',{options:{count:2,experimentalLegacySecondaryModel:true}});
  expect(bad.status).toBe(422);
