@@ -1,0 +1,60 @@
+# Approved economy target — DRAFT v5 (24 November 2026)
+
+Owner approved the 2.4M seasonal Rewards/full human salary payout/90% youth price/5% secondary marketplace fee/top D1 EUR300/indefinite license configuration after #769/#770 research. Owner expressly deferred inactivity rules. Editable until launch; design approval only. Current main and #767 may still implement v3/v4 values; do not retroactively alter historical results or treat this document as an implementation, checkout, migration, deployment or merge authorization.
+
+## Current policy precedence — latest owner-approved #775 (24 November 2026)
+
+The latest [#775](https://github.com/FraGioco9/football-architect/issues/775) overrides every inconsistent historical design note, price table, research assumption and script in this PR. Common editable DRAFT target, not permission to activate money or mutate D1.
+
+### Club licensing and capital
+
+- Primary and future secondary club license acquisitions are **EUR-only**; secondary checkout and legal/provider gates remain. Indefinite license, no seasonal renewal or fee; ends on cession or qualifying license-holder inactivity (policy deferred). Youth remains ARC or EUR; mandate-market currency is a separate decision.
+- Approximate EUR300 is the **base license price** of a top D1 club, excluding optional purchased capital. Base EUR quote = max(configurable minimum, 3 × standardized multi-season expected annual operating surplus in ARC / 100). EUR10 is an initial minimum reference, not a final inactive-club price. Use representative domestic and international Rewards forecasts (promotion/relegation, qualification), less standardized sustainable sporting costs; not actual cash balance, manipulated expenditure or one season's outlier. 3× is a valuation multiple, not license term or promised return.
+- All 320 clubs, including inactive, have separately configurable positive one-time genesis treasury capital. Never regrant on sale, activation, promotion or reset. Exact allocations are not approved. Do not count existing treasury or purchased capital in the base valuation. At EUR purchase, the user may select additional capital as a separate item; after verified fulfillment credit exactly once directly to club treasury at 100 ARC/EUR, never to personal wallet. No routine later topups, cash redemption or withdrawal. Capital bounds/steps, rounding, secondary acquisition capital/refunds and final 320 forecasts/quotes remain open.
+- Prior flat price bands, ARC license purchases, mandatory capital bundles and renewal revenues are historical only, not current offers.
+
+### Accounting authority and lifecycle
+
+- #775 exclusively owns the shared D1 typed accounts, versioned policy, sealed double-entry journal, atomic guards, idempotency, reversal and reconciliation. No duplicate ledger here. Personal wallets start at zero; positive club capital is separate from the initial 2,400,000 ARC platform reserve and seasonal Rewards budget.
+- Reserve-first capped-purpose shortfall issuance; earmark funding, then certified rewards day28/56 before payroll. No automatic burn, bailout, arbitrary issuance, negative spendable balances or personal withdrawals. Issuance ceilings, genesis allocations and activation remain separately gated.
+- Paid fixed salary: 100% valid human recipient OR 100% reserve for AI/unrepresented. Oldest earned period first; same-period deterministic proportional partial payments, persistent arrears, block discretionary spending while arrears persist. Preserve earned recipient through mandate/license changes. #777/#778 own signing affordability, holds, independent same-user review and detailed settlement. Valuation is not a contract or payout.
+- #788 owns selective Admin Reset and dependency-safe restart; preserve immutable journal/audit, actual payment evidence and no automatic genesis or funding entitlement on sporting reset.
+- 2.4M Rewards, scale-25 public valuation, 90% academy price and 5% secondary marketplace fee remain unchanged. Payer/rounding, mandate currency, free entry, staff/facilities, own-origin consent, legal/provider and settlement remain open.
+
+### Research next acceptance gate
+
+Retain original snapshots and outputs as historical controls. Recalibrate all 320 club quotes and individual one-time capital allocations with #775 before genesis or checkout: use standardized multi-season forecasts, sustainable costs, promotion/relegation/qualification exposure; report per-club expected Rewards, costs, surplus and base EUR quote separately from genesis and chosen purchased capital. Compare minimum/rounding, affordability, aggregate stocks and reserve-first funding with zero personal genesis, separate initial reserve, permitted funding and worst-case arrears/representation. Earlier simulations used hypothetical wallet funding, zero club opening cash, no separate initial reserve and sequential partial settlement in some cases; do not infer current-policy solvency or final license prices. Exact capital schedule, quotes and checkout details remain open. No new ledger/contract/payment/reset implementation, remote migration, refresh, deploy or activation.
+
+## Selected settings
+
+| Parameter | Approved target or selected scenario reference |
+|---|---|
+| Purchase denomination | 100 ARC per EUR; no direct cash redemption |
+| Human salary | 100% of actually paid gross fixed salary to valid human agent |
+| AI/unrepresented salary | 100% to platform reserve |
+| Club salary cost | Gross salary only; no additional fee, no bonus |
+| Salary reference | K60, multiplier 2 per ten suitability, square-root reward response, benchmark 10000 |
+| Division minimum | D1 40 / D2 20 ARC; prospective uplift on promotion, no automatic relegation cut |
+| AI initial ask | +25% |
+| Valuation research assumptions | Proximity-weighted versatility up to 10%, two-season renewal, zero discount, scale-25 synthetic employment/collection exposures, existing retirement/growth and upward display rounding |
+| Youth purchase | 90% of displayed market value, payable directly in ARC or EUR; integer quote ceil(9 × value / 10) is implementation candidate, same number of EUR cents at stated denomination |
+| Secondary marketplace fee | 5%; payer, settlement/refund policy and rounding remain open |
+| Top D1 primary license | Approximately EUR300 base, EUR-only, excluding optional purchased capital; standardized surplus 3× / 100, configurable minimum (EUR10 reference); exact quotes and rounding open |
+| License duration | Indefinite, no seasonal renewal or fee; ends on valid cession or qualifying holder inactivity |
+| Inactivity | Expressly deferred; no automatic revocation, timer, forfeiture or forced sale approved |
+
+## Rewards target (v4 fixed amounts scaled by 1/25)
+
+| Competition | Entrants | Pool | Participation | Points | Placement/advancement | Participation per entrant |
+|---|---:|---:|---:|---:|---:|---:|
+| D1 (8) | 16 | 160000 | 96000 | 24000 | 40000 | 6000 |
+| D2 (8) | 16 | 80000 | 48000 | 12000 | 20000 | 3000 |
+| Sovereign | 24 | 320000 | 134400 | 57600 | 128000 | 5600 |
+| Federation | 24 | 160000 | 67200 | 28800 | 64000 | 2800 |
+| World | — | 2400000 | 1353600 | 374400 | 672000 | — |
+
+D1 rank awards: 4800, 4400, 4200, 3800, 3600, 3200, 3000, 2600, 2400, 2000, 1800, 1400, 1200, 800, 600, 200. D2 exactly half. Sovereign champion 36000, runner-up 20000, each semifinal loser 12000, each quarterfinal loser 8000, each playoff loser 4000; 12 league-phase eliminated zero. Federation half. Only points allocated proportionally in integer ARC (Hamilton); tie-break/zero-denominator/certification exceptions remain gated. Day28 half participation: world 676800. Day56 remaining half plus certified results: 1723200. No day0. Rewards before payroll on both dates. No prize rake. Historical versioning must preserve actual evidence.
+
+## Implementation boundaries
+
+Prior 60M / 5% salary split, unscaled full-payout PR #783 (withdrawn), 1.2M alternative and earlier youth-price suggestions are historical. #771 and #773 contain evidence, not production payment code. Coordinate one new valuation version with scale-25 forecast and fixtures, preserve public privacy, versioned derived index and authorized refresh procedure; coordinate future reward configuration with #766/#767. No remote index action or migration here. Separate #775 ledger, #776 settlement, #777 mandates/contracts, #778 payroll, #779 lifecycle, #780 finance reads, #586 academy, #587 sporting transfer, #757/#781 license/rights marketplace, #782 checkout. No salary cap, forced spending, personal-to-club topups, treasury withdrawals, guaranteed profit or cash-out. Optional sporting expenses, initial user access, license price bands, inactivity, conflict-of-interest controls, actual demand, reserve funding/recycling, transaction rounding/refunds, legal/tax/payment-provider reviews still open; no new recurring revenue from license renewals.

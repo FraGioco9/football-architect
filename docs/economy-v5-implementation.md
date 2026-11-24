@@ -1,6 +1,6 @@
 # Economy DRAFT v5 read-only implementation
 
-Owner-approved target and research: #755, #769 and #771. This implementation checkpoint is separate from the baseline research document to avoid duplicate source-of-truth files.
+Owner-approved target and research: #755, #769, #771, #773; latest #775 takes precedence on accounting, capital and licensing. See [current baseline](economy-approved-draft-v5.md). This implementation checkpoint is separate from the baseline research document to avoid duplicate source-of-truth files.
 
 ## Implementation checkpoint
 
@@ -8,3 +8,6 @@ Read-only v5 calculator uses the scale-25 synthetic grid from #771 at 544ade3971
 
 
 CI correction: Admin browser QA expected the old 60M pool; the approved 2.4M assertion now matches the new configuration. Prior successful runs did not cover this new head. No remote refresh or deploy authorization.
+
+
+Consolidation keeps runtime Rewards/valuation unchanged and contains no financial posting code. Historical studies are explicitly superseded where inconsistent with #775.
