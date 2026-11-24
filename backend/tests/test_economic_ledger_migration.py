@@ -12,6 +12,7 @@ class EconomicLedgerMigrationTest(unittest.TestCase):
         self.db = sqlite3.connect(':memory:')
         self.db.execute('PRAGMA foreign_keys=ON')
         self.db.executescript((ROOT / 'migrations' / '0013_player_auth.sql').read_text())
+        self.db.executescript((ROOT / 'migrations' / '0001_world.sql').read_text())
         self.db.executescript(SQL)
         self.assertEqual(self.db.execute('SELECT count(*) FROM economic_accounts').fetchone()[0], 0)
         self.db.executemany('INSERT INTO economic_accounts VALUES(?,?,?,1)', [
@@ -29,7 +30,7 @@ class EconomicLedgerMigrationTest(unittest.TestCase):
         self.n += 1
         key = str(self.n)
         txid = key.zfill(36)
-        self.db.execute('INSERT INTO economic_transactions VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        self.db.execute('INSERT INTO economic_transactions(id,business_key,request_key,request_hash,purpose,actor_kind,actor_id,config_version,source_id,generation,season,day,occurred_at,reversal_of,lines_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                         (txid,key,key,'a'*64,purpose,'system','fixture','v',source,None,None,None,1,reversal,
                          json.dumps([dict(accountId=a,amountArc=v) for a,v in lines])))
         return txid

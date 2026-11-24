@@ -2,7 +2,7 @@ import {beforeAll,expect,it} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import type {Database} from '../src/database.ts';
-import {economicAssert,postEconomicOperation,provisionClubAccounts,provisionWallet,readEconomicBalance,reconcileEconomy,type LedgerIntent} from '../src/economic-ledger.ts';
+import {economicAssert,postEconomicOperation,provisionClubAccounts,provisionWallet,readEconomicBalance,reconcileEconomy,reserveEconomicFunds,releaseEconomicFunds,financeSessionGuard,reconcileAndFreezeEconomy,type LedgerIntent} from '../src/economic-ledger.ts';
 
 const binding=env as any,db=binding.DB as Database;
 const now=1770000000,version='synthetic-775-v1';
@@ -65,4 +65,63 @@ it('seals balanced postings, enforces atomic guards, exact retries, route and st
  await expect(db.prepare('INSERT INTO economic_entries VALUES(?,?,?,?)').bind(first.id,2,'club:IT-1',10).run()).rejects.toThrow();
  await expect(db.prepare("UPDATE economic_policy_versions SET genesis_reserve_arc=1 WHERE version=?").bind(version).run()).rejects.toThrow();
  expect(await reconcileEconomy(db,access())).toMatchObject({ok:true,invalidTransactions:0,invalidBalances:0,stockArc:'2400000',netIssuedArc:'2400000'});
+});
+
+it('reserves and releases capital atomically; blocks unreserved debits and permits exact hold consumption',async()=>{
+ const h={id:'season-budget',accountId:'reserve',purpose:'REWARD_BUDGET' as const,sourceId:'synthetic-season',configVersion:version,amountArc:10000,actorId:'fixture'};
+ expect(await reserveEconomicFunds(db,h,guards(),now)).toMatchObject({remaining_arc:10000});
+ expect(await reserveEconomicFunds(db,h,guards(),now)).toMatchObject({remaining_arc:10000});
+ await expect(reserveEconomicFunds(db,{...h,amountArc:10001},guards(),now)).rejects.toMatchObject({code:'economic_idempotency_conflict'});
+ const available=(await readEconomicBalance(db,'reserve',access()))!.available_arc;
+ await expect(post(intent('reserved-debit','CAPITAL_PURCHASE','reserve','club:IT-1',available+1))).rejects.toThrow();
+ const spend={...intent('held-reward','REWARD','reserve','club:IT-2',4000),holdId:h.id};
+ await post(spend);await post(spend);
+ expect(await reserveEconomicFunds(db,h,guards(),now)).toMatchObject({remaining_arc:6000});
+ await expect(post({...intent('overhold','REWARD','reserve','club:IT-2',6001),holdId:h.id})).rejects.toThrow();
+ await expect(postEconomicOperation(db,{...intent('hold-late-fail','REWARD','reserve','club:IT-2',100),holdId:h.id},{...guards(),effects:[economicAssert(db,'SELECT 1 WHERE 0')]},now)).rejects.toThrow();
+ expect(await reserveEconomicFunds(db,h,guards(),now)).toMatchObject({remaining_arc:6000});
+ await releaseEconomicFunds(db,'release-budget',h.id,6000,'fixture',guards(),now);
+ await releaseEconomicFunds(db,'release-budget',h.id,6000,'fixture',guards(),now);
+ expect(await reserveEconomicFunds(db,h,guards(),now)).toMatchObject({remaining_arc:0});
+ expect((await readEconomicBalance(db,'reserve',access()))!.reserved_arc).toBe(0);
+});
+it('validates explicit multi-leg settlement and reversal without enabling club ARC sales',async()=>{
+ await db.prepare("INSERT INTO player_accounts(id,email_normalized,password_verifier,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)")
+ .bind('economy-seller','economy-seller@example.invalid','fixture',now,now,now).run();
+ await provisionWallet(db,'economy-seller',now,access());
+ await post(intent('buyer-funds','ARC_ACQUISITION','reserve','user:economy-fixture',1000));
+ const trade={...intent('mandate-trade','MANDATE_TRADE','user:economy-fixture','user:economy-seller',1000),
+ lines:[line('user:economy-fixture',-1000),line('user:economy-seller',950),line('reserve',50)]};
+ const tx=await post(trade);
+ expect(await balance('user:economy-seller')).toBe(950);
+ await expect(post({...trade,businessKey:'bad-multi',requestKey:'bad-multi',purpose:'CAPITAL_PURCHASE'})).rejects.toThrow();
+ await expect(post({...intent('partial-reverse','REVERSAL','user:economy-seller','user:economy-fixture',950),reversalOf:tx.id})).rejects.toThrow();
+ await post({...trade,businessKey:'trade-reversal',requestKey:'trade-reversal',purpose:'REVERSAL',reversalOf:tx.id,lines:trade.lines.map(l=>line(l.accountId,-l.amountArc))});
+ expect(await balance('user:economy-fixture')).toBe(1000);
+ expect(await balance('user:economy-seller')).toBe(0);
+});
+it('checks dedicated live capability, blocks reset after initialization, reconciles and freezes',async()=>{
+ const digest='a'.repeat(64),csrf='b'.repeat(64),id='economy-fixture';
+ await db.prepare('INSERT INTO player_sessions VALUES(?,?,?,?,?,?,?)').bind(digest,id,1,csrf,now,now,now+1000).run();
+ const guard=()=>[financeSessionGuard(db,id,digest,csrf,'read',now)];
+ await expect(readEconomicBalance(db,'reserve',guard())).rejects.toThrow();
+ await db.prepare("INSERT INTO account_permissions(account_id,permission,granted_at,granted_by) VALUES(?,'admin.access',?,'fixture')").bind(id,now).run();
+ await expect(readEconomicBalance(db,'reserve',guard())).rejects.toThrow();
+ await db.prepare("INSERT INTO economic_finance_permissions VALUES(?,'read','fixture',?)").bind(id,now).run();
+ expect(await readEconomicBalance(db,'reserve',guard())).not.toBeNull();
+ await db.prepare("DELETE FROM economic_finance_permissions WHERE account_id=? AND capability='read'").bind(id).run();
+ await expect(readEconomicBalance(db,'reserve',guard())).rejects.toThrow();
+ await expect(db.prepare('UPDATE world_state SET generation=? WHERE id=1').bind(crypto.randomUUID()).run()).rejects.toThrow();
+ expect(await reconcileAndFreezeEconomy(db,access())).toMatchObject({ok:true,stockArc:'2400000',netIssuedArc:'2400000'});
+ expect((await db.prepare('SELECT posting_enabled FROM economic_control WHERE id=1').first())?.posting_enabled).toBe(1);
+ // Disposable fault injection: drop only the fixture's hold release immutability
+ // trigger to simulate corrupt storage, not a production recovery procedure.
+ await db.prepare('DROP TRIGGER economic_release_no_delete').run();
+ await db.prepare("DELETE FROM economic_hold_releases WHERE id='release-budget'").run();
+ // Lost release leaves a still-covered reservation; force a detected deficit.
+ await db.prepare('DROP TRIGGER economic_hold_no_update').run();
+ await db.prepare("UPDATE economic_holds SET amount_arc=1000000000000 WHERE id='season-budget'").run();
+ expect(await reconcileAndFreezeEconomy(db,access())).toMatchObject({ok:false});
+ expect((await db.prepare('SELECT posting_enabled FROM economic_control WHERE id=1').first())?.posting_enabled).toBe(0);
+ await expect(post(intent('frozen-post','PAYROLL_AI','club:IT-1','reserve',1))).rejects.toMatchObject({code:'economic_posting_disabled'});
 });
