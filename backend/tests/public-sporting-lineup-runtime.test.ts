@@ -3,7 +3,7 @@ import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import {clearTestWorld} from './fixtures/test-world.ts';
 import {readPublicSportingSeasonLineupV1,readPublicClubHistoryLineupV1,
- clubRosterTotals,lineupTeamStatisticsV1} from '../src/public-sporting-read-lineup-v1.ts';
+ playerStatsCareerSeasons,clubRosterTotals,lineupTeamStatisticsV1} from '../src/public-sporting-read-lineup-v1.ts';
 
 const bindings=env as any,db=bindings.DB;
 beforeAll(async()=>applyD1Migrations(db,bindings.TEST_MIGRATIONS));
@@ -106,5 +106,16 @@ describe('#690 per-season yellow-card coverage',()=>{
    new Map([[one,score],[two,score]]),new Map([[one,verified],[two,legacy]]));
   expect(mixed.players).toMatchObject([{playerId:7,appearances:2,
    yellowCards:null,redCards:null,assists:null}]);
+ });
+});
+
+describe('Player Stats career season bounds',()=>{
+ it('excludes pre-entry, post-retirement and future seasons while retaining zero-appearance career seasons',()=>{
+  expect(playerStatsCareerSeasons(0,2)).toEqual([1,2]);
+  expect(playerStatsCareerSeasons(2,2)).toEqual([2]);
+  expect(playerStatsCareerSeasons(3,2)).toEqual([]);
+  expect(playerStatsCareerSeasons(0,0)).toEqual([]);
+  expect(playerStatsCareerSeasons(2,7,4)).toEqual([2,3,4]);
+  expect(playerStatsCareerSeasons(2,3,5)).toEqual([2,3]);
  });
 });
