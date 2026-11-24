@@ -188,3 +188,26 @@ test('CI-OPT-06: Match Engine checks only engine changes, never generic DEV prev
    'npm --prefix match-engine run bench'])
    assert.ok(me.includes(mandatory),mandatory);
 });
+
+test('Browser matrix job concurrency isolates siblings and preserves FULL run identity',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const source=readFileSync(new URL('../.github/workflows/int24-browser-qa.yml',import.meta.url),'utf8');
+ const lane=source.split('\n  chromium:')[1]?.split('\n  browser-result:')[0];
+ assert.ok(lane);
+ const group=lane.split('\n').find(line=>line.trimStart().startsWith('group:'));
+ assert.ok(group?.includes('${{ matrix.lane }}'),'sibling lanes must have distinct concurrency keys');
+ assert.ok(group.includes("needs.scope.outputs.mode != 'full'"));
+ assert.ok(group.includes("format('run-{0}', github.run_id)"),'FULL is isolated by run');
+ assert.match(lane,/cancel-in-progress:.*needs\.scope\.outputs\.mode != 'full'/);
+});
+
+test('reviewed research documentation is FAST only for documentation-only Draft diffs',async()=>{
+ const {classifyAdminScope}=await import('../tools/ci-opt-06-admin-impact.mjs');
+ const docs=['match-engine/research/data-access-request.md','match-engine/research/trajectory-holdout-protocol.md'];
+ for(const paths of docs.map(p=>[p]).concat([docs,[...docs,'docs/ci/notes.md']])){
+  assert.deepEqual(classifyImpact(paths),{mode:'fast',area:null,tests:[]});assert.equal(classifyAdminScope(paths),'fast');
+ }
+ for(const path of ['match-engine/research/new.md','match-engine/research/measurements.json','match-engine/src/research-shot-initial-lineup.mjs','match-engine/package.json','match-engine/tests/core.test.mjs','assets/app.js','guide/index.html','.github/workflows/match-engine-01.yml','tools/ci-run.mjs']){
+  assert.equal(classifyImpact([docs[0],path]).mode,'full',path);assert.equal(classifyAdminScope([docs[0],path]),'full',path);
+ }
+});

@@ -171,3 +171,36 @@ test('ME-01 workflow contract detects historical branch skips and silent coverag
  }
 });
 
+
+test('isolated Browser FULL evidence cannot pass with missing or skipped required lanes',()=>{
+ const workflow='int24-browser-qa.yml';
+ const proof=jobs(workflow);
+ proof[0].steps.push({name:'Verify browser lane results',conclusion:'success'});
+ const scope={name:'scope',conclusion:'success',steps:[
+  {name:'Select browser lanes',conclusion:'success'},
+  {name:'CSS parity required',conclusion:'success'},
+  {name:'Visual parity required',conclusion:'success'}
+ ]};
+ proof.push(scope);
+ for(const lane of ['core','responsive','webkit','css','visual'])proof.push({name:'Browser lane ('+lane+')',conclusion:'success',steps:[{name:'Run loopback preview and browser checks',conclusion:'success'}]});
+ assert.equal(evaluateRun(run(),proof,sha,workflow).state,'PASS');
+ for(const name of ['scope','Browser lane (core)','Browser lane (responsive)','Browser lane (webkit)','Browser lane (css)','Browser lane (visual)']){
+  assert.equal(evaluateRun(run(),proof.filter(j=>j.name!==name),sha,workflow).state,'MISSING',name);
+ }
+ const aggregate=proof.find(j=>j.name==='chromium');
+ const marker=aggregate.steps.pop();
+ assert.equal(evaluateRun(run(),proof,sha,workflow).state,'MISSING','isolated jobs must not downgrade to legacy proof');
+ aggregate.steps.push(marker);
+ const webkit=proof.find(j=>j.name==='Browser lane (webkit)');
+ for(const conclusion of ['failure','cancelled','skipped']){
+  webkit.conclusion=conclusion;
+  assert.equal(evaluateRun(run(),proof,sha,workflow).state,'MISSING',conclusion);
+ }
+ webkit.conclusion='success';
+ webkit.steps[0].conclusion='skipped';
+ assert.equal(evaluateRun(run(),proof,sha,workflow).state,'MISSING');
+ webkit.steps[0].conclusion='success';
+ scope.steps[1].conclusion='skipped';scope.steps[2].conclusion='skipped';
+ assert.equal(evaluateRun(run(),proof,sha,workflow).state,'MISSING','unexpected parity lanes contradict scope markers');
+ assert.equal(evaluateRun(run(),proof.filter(j=>!['Browser lane (css)','Browser lane (visual)'].includes(j.name)),sha,workflow).state,'PASS');
+});

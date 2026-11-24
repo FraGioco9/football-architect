@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {browserCases,areaRoutes} from './ci-opt-01-browser-cases.mjs';
+import {browserCases,areaRoutes,competitionSupplementalPlan} from './ci-opt-01-browser-cases.mjs';
 test('bounded browser matrix includes all locales in both themes and all four widths',()=>{
  const cases=browserCases();
  assert.deepEqual([...new Set(cases.map(x=>x.width))].sort((a,b)=>a-b),[320,390,768,1440]);
@@ -21,4 +21,12 @@ test('all pairs of width, locale and theme are actually exercised',()=>{
    assert.ok(cases.some(c=>c[a]===x&&c[b]===y),a+'='+x+', '+b+'='+y);
   }
  }
+});
+
+test('only completed INT24 Chromium competition preflight omits duplicate supplements',()=>{
+ const all=['compact-network','player-stats','published-network'];
+ for(const engine of ['chromium','webkit'])assert.deepEqual(competitionSupplementalPlan('competitions',engine),all);
+ assert.deepEqual(competitionSupplementalPlan('competitions','chromium',{afterInt24:true}),['published-network']);
+ assert.throws(()=>competitionSupplementalPlan('competitions','webkit',{afterInt24:true}),/Chromium competition preflight/);
+ assert.throws(()=>competitionSupplementalPlan('clubs','chromium',{afterInt24:true}),/Chromium competition preflight/);
 });

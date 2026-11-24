@@ -93,7 +93,7 @@ function normalizeFe02Calls(calls){
  if(pair.length!==2||pair.some(c=>c.command!=='tests/fe-02-responsive-browser.mjs'))return calls;
  return [...calls.slice(0,at),...pair.sort((a,b)=>a.engine.localeCompare(b.engine)),...calls.slice(at+2)];
 }
-function browserCommands({event='pull_request',mode='full',area='',css=false,base='a'.repeat(40),failFull=false,failFe02Engine=''}={}){
+function browserCommands({event='pull_request',mode='full',area='',css=false,base='a'.repeat(40),failFull=false,failFe02Engine='',lane='all'}={}){
  return temporary(root=>{
   const bin=join(root,'bin'),record=join(root,'calls');mkdirSync(bin);writeFileSync(record,'');
   const executable=(name,source)=>writeFileSync(join(bin,name),'#!/bin/sh\n'+source,{mode:0o755});
@@ -118,7 +118,7 @@ exit 0
   }).replaceAll('/tmp/int24-preview.log',join(root,'preview.log'));
   const result=spawnSync('bash',['-e','-o','pipefail','-c',script],{cwd:root,encoding:'utf8',env:{
    ...process.env,PATH:bin+':'+process.env.PATH,PR_BASE_SHA:'',FA_RECORD:record,
-   FA_EXPECTED_BASE:base,FA_CSS_CHANGED:css?'1':'0',FA_FAIL_FULL:failFull?'1':'0',FA_FAIL_FE02_ENGINE:failFe02Engine
+   FA_EXPECTED_BASE:base,FA_CSS_CHANGED:css?'1':'0',FA_FAIL_FULL:failFull?'1':'0',FA_FAIL_FE02_ENGINE:failFe02Engine,FA_BROWSER_LANE:lane
   }});
   const calls=readFileSync(record,'utf8').trim().split('\n').filter(Boolean).map(line=>{
    const [command,engine,area,base]=line.split('|');return {command,engine,area,base};
@@ -168,17 +168,18 @@ test('extra TARGETED browser preflight is not repeated for unrelated workflow ed
  writeFileSync(join(bin,'node'),
   '#!/bin/sh\n[ "$1" != tools/dev-standings-preview.mjs ] || exit 0\n'+
   'if [ "$1" = tools/ci-run.mjs ]; then shift 4; fi\n'+
-  'printf "%s\\n" "$*" >> "$FA_RECORD"\n',{mode:0o755});
+  'printf "%s\\n" "$*" >> "$FA_RECORD"\n'+
+  'if [ "$FA_FAIL_INT24" = 1 ] && [ "$1" = tests/int24-browser-qa.mjs ]; then exit 42; fi\n',{mode:0o755});
  writeFileSync(join(bin,'curl'),'#!/bin/sh\nexit 0\n',{mode:0o755});
  const script=render(stepScript(read('int24-browser-qa.yml'),'Run loopback preview and browser checks'),{
   'github.event_name':'pull_request','github.event.pull_request.base.sha':base,
   'needs.scope.outputs.mode':'full','needs.scope.outputs.area':''
  }).replaceAll('/tmp/int24-preview.log',join(root,'preview.log'));
- const execute=()=>{
+ const execute=(fail=false)=>{
   writeFileSync(record,'');
   const run=spawnSync('bash',['-e','-o','pipefail','-c',script],{cwd:root,encoding:'utf8',
-   env:{...process.env,PATH:bin+':'+process.env.PATH,FA_RECORD:record}});
-  assert.equal(run.status,0,run.stderr);
+   env:{...process.env,PATH:bin+':'+process.env.PATH,FA_RECORD:record,FA_FAIL_INT24:fail?'1':'0'}});
+  assert.equal(run.status,fail?42:0,run.stderr);
   return readFileSync(record,'utf8').split('\n').filter(Boolean);
  };
  mkdirSync(join(root,'.github','workflows'),{recursive:true});
@@ -187,7 +188,11 @@ test('extra TARGETED browser preflight is not repeated for unrelated workflow ed
  assert.equal(execute().some(x=>x.includes('ci-opt-01-scenarios.mjs')),false);
  writeFileSync(join(root,'.github','workflows','int24-browser-qa.yml'),'name: browser changes');
  git(root,'add','.');git(root,'commit','-qm','browser workflow');
- assert.equal(execute().filter(x=>x.includes('ci-opt-01-scenarios.mjs')).length,1);
+ const calls=execute();
+ assert.equal(calls.filter(x=>x.includes('ci-opt-01-scenarios.mjs')).length,1);
+ assert.ok(calls.indexOf('tests/int24-browser-qa.mjs')<calls.indexOf('tools/ci-opt-01-scenarios.mjs --browser --after-int24'));
+ assert.ok(calls.includes('tools/ci-opt-01-scenarios.mjs --browser --after-int24'));
+ assert.deepEqual(execute(true),['tests/int24-browser-qa.mjs']);
 }));
 test('PR with missing base fails closed instead of reporting successful FULL',()=>{
  assert.notEqual(browserCommands({base:'',css:true}).result.status,0);
@@ -236,4 +241,42 @@ for(const engine of ['chromium','webkit'])test('independent account '+engine+' d
  const pass=execute(false);assert.equal(pass.r.status,0,pass.r.stderr);assert.equal(pass.calls.length,9);assert.ok(pass.calls.every(c=>c.endsWith('|'+engine)));
  assert.equal(new Set(pass.calls).size,9);assert.ok(pass.calls.some(c=>c.startsWith('tests/competition-season-zero-club-links-browser.mjs')));
  const fail=execute(true);assert.equal(fail.r.status,42);assert.equal(fail.calls.length,4,'failure cannot be masked by later suites');
+}));
+
+test('isolated FULL lanes preserve the original suite inventory and fail independently',()=>{
+ const opts={css:true};
+ const expected=browserCommands(opts).calls;
+ const lanes=['core','responsive','css','visual','webkit'];
+ const combined=lanes.flatMap(lane=>{
+  const {result,calls}=browserCommands({...opts,lane});
+  assert.equal(result.status,0,lane+': '+result.stderr);return calls;
+ });
+ assert.deepEqual(combined,expected);
+ assert.equal(browserCommands({lane:'core',failFull:true}).result.status,42);
+ assert.equal(browserCommands({lane:'responsive',failFe02Engine:'webkit'}).result.status,1);
+ assert.notEqual(browserCommands({lane:'invalid'}).result.status,0);
+});
+test('scope selects only relevant parity lanes and rejects an invalid base',()=>temporary(root=>{
+ git(root,'init','-q');mkdirSync(join(root,'assets'));
+ writeFileSync(join(root,'assets/app.css'),'a');git(root,'add','.');git(root,'commit','-qm','base');
+ const base=git(root,'rev-parse','HEAD'),output=join(root,'output');
+ const script=stepScript(read('int24-browser-qa.yml'),'Select browser lanes');
+ function select(mode='full',event='pull_request',sha=base){
+  writeFileSync(output,'');
+  const result=spawnSync('bash',['-e','-o','pipefail','-c',script],{cwd:root,env:{...process.env,MODE:mode,BASE:sha,GITHUB_EVENT_NAME:event,GITHUB_OUTPUT:output},encoding:'utf8'});
+  return {result,output:readFileSync(output,'utf8')};
+ }
+ assert.match(select().output,/lanes=\["core","responsive","webkit"\]/);
+ writeFileSync(join(root,'assets/admin-settings.css'),'a');git(root,'add','.');git(root,'commit','-qm','component');
+ assert.match(select().output,/lanes=\["core","responsive","webkit","visual"\]/);
+ writeFileSync(join(root,'assets/app.css'),'b');git(root,'add','.');git(root,'commit','-qm','app');
+ assert.match(select().output,/lanes=\["core","responsive","webkit","css","visual"\]/);
+ assert.match(select('targeted').output,/lanes=\["core"\]/);
+ assert.match(select('full','push','').output,/lanes=\["core","responsive","webkit"\]/);
+ assert.notEqual(select('full','pull_request','invalid').result.status,0);
+ const renameBase=git(root,'rev-parse','HEAD');
+ git(root,'mv','assets/app.css','assets/renamed.css');git(root,'commit','-qm','rename CSS');
+ assert.match(select('full','pull_request',renameBase).output,/lanes=\["core","responsive","webkit","css","visual"\]/);
+ assert.equal(browserCommands({lane:'css',css:false}).calls[0].command,'tests/clean-ui-03-css-parity.mjs');
+ assert.equal(browserCommands({lane:'visual',css:false}).calls[0].command,'tests/fe-01-visual-parity.mjs');
 }));
