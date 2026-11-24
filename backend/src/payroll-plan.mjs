@@ -22,10 +22,11 @@ export function planContractClaims(contract,mandates,season,day,effectiveAnnualS
  }
  const origin=Math.max(first,contract.startTick),from=Math.max(start,origin),to=Math.min(end,contract.endTick);
  if(from>=to)return [];
- const cuts=[...new Set([from,to,...history.flatMap(m=>[m.startTick,m.endTick]).filter(t=>t!==null&&t>from&&t<to)])].sort((a,b)=>a-b);
+ const effective=history.filter(m=>m.endTick===null||m.endTick>m.startTick);
+ const cuts=[...new Set([from,to,...effective.flatMap(m=>[m.startTick,m.endTick]).filter(t=>t!==null&&t>from&&t<to)])].sort((a,b)=>a-b);
  const claims=[];
  for(let i=1;i<cuts.length;i++){
-  const a=cuts[i-1],b=cuts[i],m=history.find(x=>x.startTick<=a&&(x.endTick===null||x.endTick>a));
+  const a=cuts[i-1],b=cuts[i],m=effective.find(x=>x.startTick<=a&&(x.endTick===null||x.endTick>a));
   const due=earnedBetween(wage,a-origin,b-origin);
   if(due===0)continue;
   claims.push({id:`payroll:${contract.generation}:${contract.id}:${season}:${day}:${a}:${b}`,generation:contract.generation,contractId:contract.id,playerId:contract.playerId,clubKey:contract.clubKey,season,day,fromTick:a,toTick:b,annualSalaryArc:wage,mandateId:m?.id??null,accountId:m?.accountId??null,dueArc:due,previousPaidArc:0});
@@ -64,5 +65,6 @@ export function nextPaydayAffordability({uncommittedCash,uncreditedGuaranteedPar
  const input={uncommittedCash,uncreditedGuaranteedParticipation,committedUncoveredWages,arrears,newDue};
  for(const n of Object.values(input))integer(n);
  const required=total([committedUncoveredWages,newDue]);
- return {signable:canAffordNextPayday(input),requiredArc:required,additionalCashHoldArc:arrears===0?Math.min(uncommittedCash,required):0};
+ const signable=canAffordNextPayday(input);
+ return {signable,requiredArc:required,additionalCashHoldArc:signable?Math.min(uncommittedCash,required):0};
 }
