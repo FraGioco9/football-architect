@@ -12,5 +12,5 @@
  };
  const copy=lang=>words[lang]||words.en;
  return Object.freeze({label:lang=>copy(lang)[0],help:lang=>copy(lang)[1],
-  format:(value,lang='en')=>Number.isSafeInteger(value)&&value>=0?new Intl.NumberFormat(lang,{useGrouping:'always'}).format(value)+' ARC':'—'});
+  format:(value,lang='en')=>Number.isSafeInteger(value)&&value>=0?new Intl.NumberFormat(lang,{useGrouping:'always'}).format(value)+' $ARC':'—'});
 });

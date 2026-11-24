@@ -305,7 +305,7 @@
     const key=section.dataset.playersFilterSection;
     const index=['nationality','position','age','height','foot','attributes'].indexOf(key);
     const label=section.querySelector('[data-players-section-label]');
-    if(label)label.textContent=key==='value'?(globalThis.faMarketValue?.label(language())||'Market value')+' (ARC)':t.sections[index];
+    if(label)label.textContent=key==='value'?(globalThis.faMarketValue?.label(language())||'Market value')+' ($ARC)':t.sections[index];
     const count=section.querySelector('[data-players-section-count]');
     if(count){count.hidden=!counts[key];count.textContent=counts[key]?String(counts[key]):'';}
    }
