@@ -1,7 +1,7 @@
-// Explicit offline check; not yet registered in shared CI (PR #790 owns a concurrent edit).
+// #791 — offline pure planner tests; owned by Site FULL.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION} from './planner.mjs';
+import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION} from '../tools/world-bootstrap-791/planner.mjs';
 
 function requireThat(ok,msg){if(!ok)throw new Error(msg)}
 
