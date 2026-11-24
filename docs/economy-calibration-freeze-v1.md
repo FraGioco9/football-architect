@@ -28,3 +28,8 @@ Competitive gameplay: only well-managed clubs/agents should be able to earn gain
 #777 is the primary dependency: agree what fixed contracts players can sign (salary demand and allowed offers, duration/renewals, division minima and promotion behavior, public information, acceptance/refusal and negotiations, free-agent/AI/human mandate behavior, conflict-of-interest and affordability). Coordinate #778 payroll timing/attribution, #775 account authority and #763 valuation forecast; #587 transfers and #779 lifecycle where material. Earlier 1–3 season and salary-floor assumptions are provisional until reconciled with the actual contract design. No assumption of new final contract policy here.
 
 After contract rules are reviewed, replace wage/renewal/acceptance proxies, rerun reproducible 100-season mixed launch and competitive-strategy cases with matched assumptions, assess population, club/agent returns, reserve conservation and actual funded obligations, then revisit price coefficients, reward scale and reserve if needed. Preserve historic results unchanged; version any future revision. No merge, production parameter switch, migrations, remote DB, external payments or deploy authorized by this freeze. #787 remains DRAFT/HOLD for review; related work may use the provisional references without treating them as production-approved.
+
+
+## Archive reproducibility
+
+Preserve original snapshot JSON. Node 22/Linux and isolated JS may differ in signed zero for expectedSurplusArc and in the final binary digits of the illustrative license exponent. The three affected archival checks normalize only these fields (exponent to 12 decimal places); integer ARC, EUR cents, all other fields and economic invariants remain exact. No recalibration or runtime change.

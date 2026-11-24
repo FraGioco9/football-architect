@@ -1,3 +1,4 @@
+import {assertArchivedCalibration} from '../tools/economy-archive-compare.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -346,7 +347,7 @@ test('stationary career model reconciles payroll and shows EUR buyer effect on A
 
 test('no staff or undefined services can replenish the reserve',async()=>{
  const {buildNoStaff}=await import('../tools/run-economy-no-staff.mjs');
- const x=buildNoStaff();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-no-staff-v1-results.json',import.meta.url),'utf8')));
+ const x=buildNoStaff();assertArchivedCalibration(x,JSON.parse(readFileSync(new URL('../docs/economy-no-staff-v1-results.json',import.meta.url),'utf8')));
  const old=x.cases[0],clean=x.cases[1],all=x.cases[3];assert.equal(old.scenarios[0].gap,2056396);assert.equal(clean.scenarios[0].gap,1660855);
  assert.ok(x.cases.every(c=>c.scenarios.every(s=>s.actualClubReserveReceipts===0&&s.gap===s.clubGrowth+s.walletGrowth&&s.fundedArcCeiling<=c.payroll)));
  assert.equal(all.maxGap,0);assert.equal(all.license.top.baseLicenseCents,1000);assert.equal(all.license.low.baseLicenseCents,1000);
@@ -354,7 +355,7 @@ test('no staff or undefined services can replenish the reserve',async()=>{
 
 test('full payroll candidate raises raw value once and prices licenses independently of zero surplus',async()=>{
  const {buildFullPayrollResearch}=await import('../tools/run-economy-full-payroll.mjs');
- const x=buildFullPayrollResearch();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-full-payroll-v1-results.json',import.meta.url),'utf8')));
+ const x=buildFullPayrollResearch();assertArchivedCalibration(x,JSON.parse(readFileSync(new URL('../docs/economy-full-payroll-v1-results.json',import.meta.url),'utf8')));
  assert.equal(x.pool,x.payroll);assert.equal(x.clubCash,0);assert.ok(Math.abs(x.newRawMean/x.oldRawMean-1.1)<1e-8);
  assert.equal(x.license.topBaseEur,300);assert.equal(x.license.lowBaseEur,100);assert.equal(x.license.rows.length,320);
  assert.equal(x.reference.desiredArcReceipts,6685790);assert.equal(x.reference.unfundedArcDemand,85790);
@@ -363,7 +364,7 @@ test('full payroll candidate raises raw value once and prices licenses independe
 
 test('owner-selected ARC99 and nominal scale options preserve full payroll and EUR license anchors',async()=>{
  const {buildScaleResearch}=await import('../tools/run-economy-scale-options.mjs');
- const x=buildScaleResearch();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-scale-options-v1-results.json',import.meta.url),'utf8')));
+ const x=buildScaleResearch();assertArchivedCalibration(x,JSON.parse(readFileSync(new URL('../docs/economy-scale-options-v1-results.json',import.meta.url),'utf8')));
  assert.equal(x.youthArcPriceBps,9900);assert.equal(x.youthEurPriceBps,9000);assert.equal(x.cases.length,5);
  assert.ok(x.cases.every(c=>c.poolArc===c.payrollArc&&c.licenseTopEur===300&&c.licenseLowEur===100));
  assert.equal(x.cases[1].meanPlayerValueArc,8180.5);assert.equal(x.cases[1].unfundedArcDemand,21510);
@@ -433,4 +434,11 @@ test('competitive strategies distinguish sporting management, closed returns and
  const selective=JSON.parse(readFileSync(new URL('../docs/economy-competitive-strategies-v1-disciplined-summary.json',import.meta.url),'utf8'));
  assert.equal(basic.length,6);assert.equal(selective.length,3);assert.ok(basic.filter(r=>r.variant==='mixed-strategies').every(r=>r.clubGroups[2].d1Share>r.clubGroups[0].d1Share&&r.finalPopulation===6400));assert.ok(selective.every(r=>r.agentGroups[2].medianClosedArcNet>0&&r.finalPopulation<6400&&r.reserveChecks.at(-1).completed<100));
  const x=buildCompetitiveStress({seasons:3,strategyObservationStart:1,seeds:[c.seeds[0]],variants:[c.variants[1]]}).runs[0];assert.equal(x.agents.length,256);assert.equal(x.clubs.length,256);assert.equal(x.agents.reduce((a,v)=>a+v.wallet,0),x.finalWalletArc);assert.ok(x.clubs.every(v=>v.net===v.operatingNet+v.transferNet));assert.equal(x.peakArrearsArc,0);
+});
+
+test('archive comparator preserves exact accounting while tolerating only known float representation differences',()=>{
+ assert.doesNotThrow(()=>assertArchivedCalibration({license:{exponent:1.546607318762685},expectedSurplusArc:-0},{license:{exponent:1.5466073187626854},expectedSurplusArc:0}));
+ assert.throws(()=>assertArchivedCalibration({license:{exponent:1.5466},expectedSurplusArc:0},{license:{exponent:1.5467},expectedSurplusArc:0}));
+ assert.throws(()=>assertArchivedCalibration({amountArc:100},{amountArc:101}));
+ assert.throws(()=>assertArchivedCalibration({other:1.000000000000001},{other:1}));
 });

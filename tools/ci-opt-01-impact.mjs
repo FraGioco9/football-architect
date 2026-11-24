@@ -62,11 +62,17 @@ const reviewedTargetPaths=new Set([
  "tests/world-calendar-ui.test.mjs"
 ]);
 const safeDocs=/^(?:docs\/|README\.md$|\.github\/ISSUE_TEMPLATE\/)/;
+// Reviewed non-executable ME research documents only. Unknown research paths,
+ // engine source, test/fixture data and mixed source changes remain FULL.
+const reviewedResearchDocs=new Set([
+ 'match-engine/research/data-access-request.md',
+ 'match-engine/research/trajectory-holdout-protocol.md'
+]);
 const infra=/^(?:tests\/ci-opt-01-browser-smoke\.mjs$|(?:tools\/ci-opt-01-node-inventory\.mjs|tests\/ci-opt-01-node-inventory\.test\.mjs)$|\.github\/workflows\/|tools\/ci-(?:fast-scope|opt-01-impact)\.mjs$|tests\/ci-(?:fast-scope|opt-01-impact)\.test\.mjs$)/;
 export function classifyImpact(changed){
  if(!Array.isArray(changed)||!changed.length||changed.some(p=>typeof p!=="string"||!p||p.startsWith("/")||p.includes("..")))return {mode:"full",area:null,tests:[]};
  const relevant=changed.filter(p=>!safeDocs.test(p));
- if(!relevant.length)return {mode:"fast",area:null,tests:[]};
+ if(!relevant.length||relevant.every(p=>reviewedResearchDocs.has(p)))return {mode:"fast",area:null,tests:[]};
  if(relevant.some(p=>infra.test(p)))return {mode:"full",area:null,tests:[]}; // Never validate CI orchestration by skipping its execution.
  if(relevant.some(p=>/^assets\/.*(?:model|provider|registry|runtime|context)[^/]*\.(?:js|mjs)$/.test(p)))return {mode:"full",area:null,tests:[]};
  if(relevant.some(p=>p.endsWith(".css")))return {mode:"full",area:null,tests:[]}; // Preserve exact-base CSS screenshot parity.
