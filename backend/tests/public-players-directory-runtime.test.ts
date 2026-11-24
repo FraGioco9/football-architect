@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import {test} from 'vitest';
-import {readPublicPlayer,readPublicPlayers,MARKET_VALUE_SCAN_LIMIT} from '../src/public-players-read.ts';
+import {env} from 'cloudflare:workers';
+import {applyD1Migrations} from 'cloudflare:test';
+import {marketValueIndexVersion,refreshMarketValueIndexBatch,marketValueIndexReadiness,marketValueIndexWrite,marketValueIndexUpdate} from '../src/player-market-value-index.ts';
+import {readPublicPlayer,readPublicPlayers} from '../src/public-players-read.ts';
 import {readPublicClubRoster} from '../src/public-club-roster-read.ts';
 import {calculatePlayerMarketValueArc} from '../src/player-market-value.mjs';
 import {parsePublicPlayerQuery,isAllowedPublicPlayersPath} from '../src/public-players-filters.mjs';
@@ -272,89 +275,63 @@ test('market value query allows inclusive integer bounds and global sort',()=>{
  assert.deepEqual(parsePublicPlayerQuery('?valueMin=0&valueMax=1200&sort=market_value_arc&offset=50'),{page:2,filters:{sort:'market_value_arc',order:'desc',valueMin:0,valueMax:1200}});
  for(const raw of ['?valueMin=-1','?valueMin=1.2','?valueMin=01','?valueMax=9007199254740992','?valueMin=2&valueMax=1'])assert.throws(()=>parsePublicPlayerQuery(raw),/invalid_public_request/);
 });
-test('market value filter precedes pagination and includes actual zero only',async()=>{
- const {db,calls}=mockDb();
- const all=await readPublicPlayers(db,1,{sort:'market_value_arc'});
- assert.equal(all.count,1);assert.ok(Number.isSafeInteger(all.players[0].market_value_arc));
- assert.equal((await readPublicPlayers(db,1,{valueMin:0,valueMax:0})).count,0);
- assert.equal((await readPublicPlayers(db,2,{sort:'market_value_arc'})).players.length,0);
- assert.ok(calls.some(c=>c.sql.includes('LIMIT ?')&&!c.sql.includes('OFFSET')));
-});
-
-test('global value sorting across pages, stable ties, zero, unknown and inclusive bounds',async()=>{
- const rows=Array.from({length:103},(_,i)=>{
-  const age=i===101?40:24,career_status=i===102?'retired':'active';
-  const attributes=Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map(k=>[k,30+(i%9)*7]));
-  const payload={...stored,age,career_status,attributes};
-  return {id:i+1,payload_json:JSON.stringify(payload),club_key:null,expected:calculatePlayerMarketValueArc(payload)};
- });
- const calls:string[]=[];
- const db={prepare(sql:string){
-  return {bind(){return this},async first(){return {schema_version:1,generation,revision:0,season_number:0,day:0,phase:'unstarted'};},
-   async all(){calls.push(sql);return {results:[...rows].reverse(),meta:{changes:0}}}}
- }} as unknown as Database;
- const expected=[...rows].sort((a,b)=>{
-  if(a.expected===null||b.expected===null)return a.expected===b.expected?a.id-b.id:a.expected===null?1:-1;
-  return b.expected-a.expected||a.id-b.id;
- });
- const pages=await Promise.all([1,2,3].map(page=>readPublicPlayers(db,page,{sort:'market_value_arc',order:'desc'})));
- assert.deepEqual(pages.map(x=>x.players.length),[50,50,3]);
- assert.deepEqual(pages.flatMap(x=>x.players.map(p=>p.id)),expected.map(x=>x.id));
- assert.ok(pages.every(p=>p.count===103&&p.totalPages===3));
- const zero=await readPublicPlayers(db,1,{valueMin:0,valueMax:0});
- assert.deepEqual(zero.players.map(p=>p.id),[103]);
- const ascending=await Promise.all([1,2,3].map(page=>readPublicPlayers(db,page,{sort:'market_value_arc',order:'asc'})));
- const ascExpected=[...rows].sort((a,b)=>{
-  if(a.expected===null||b.expected===null)return a.expected===b.expected?a.id-b.id:a.expected===null?1:-1;
-  return a.expected-b.expected||a.id-b.id;
- });
- assert.deepEqual(ascending.flatMap(x=>x.players.map(p=>p.id)),ascExpected.map(x=>x.id));
- assert.equal(ascending[0].players[0].id,103);
- assert.equal(ascending[2].players.at(-1)?.id,102);
- const bound=rows[10].expected!;
- const exact=await readPublicPlayers(db,1,{valueMin:bound,valueMax:bound,sort:'market_value_arc'});
- assert.equal(exact.count,rows.filter(r=>r.expected===bound).length);
- assert.ok(exact.players.every(p=>p.market_value_arc===bound));
- assert.equal((await readPublicPlayers(db,4,{sort:'market_value_arc'})).players.length,0);
- assert.ok(calls.every(sql=>sql.includes('LIMIT ?')&&!sql.includes('OFFSET')));
- const tooMany={prepare(){return {bind(){return this},async first(){return {schema_version:1,generation,revision:0,season_number:0,day:0,phase:'unstarted'};},
-  async all(){return {results:Array(MARKET_VALUE_SCAN_LIMIT+1).fill(rows[0]),meta:{changes:0}}}}}} as unknown as Database;
- await assert.rejects(readPublicPlayers(tooMany,1,{sort:'market_value_arc'}),/players_unavailable/);
-});
-
-test('#763 same stored player has identical current valuation across directory, detail and complete roster',async()=>{
- const payload={...stored,age:24,attributes:Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map(k=>[k,60]))};
- const row={id:42,payload_json:JSON.stringify(payload),club_key:'IT-1',portrait_approved:0};
- const calls:string[]=[];
- const world={schema_version:1,generation,revision:0,season_number:0,day:0,phase:'unstarted'};
- const db={prepare(sql:string){return {bind(){return this},async first(){calls.push(sql);return sql.includes('FROM world_state')?world:row;},
-  async all(){calls.push(sql);return {results:sql.includes('COUNT(*)')?[{n:1}]:[row],meta:{changes:0}};}}},
-  async batch(statements:Array<{all:()=>Promise<unknown>}>){return Promise.all(statements.map(s=>s.all()));}
- } as unknown as Database;
- const directory=await readPublicPlayers(db,1);
- const detail=await readPublicPlayer(db,42);
- const roster=await readPublicClubRoster(db,'IT-1');
- const ranked=await readPublicPlayers(db,1,{sort:'market_value_arc'});
- const expected=calculatePlayerMarketValueArc(payload);
- assert.ok(typeof expected==='number'&&expected>0);
- for(const p of [directory.players[0],detail.player,roster.players[0],ranked.players[0]]){
-  assert.equal(p.id,42);assert.equal(p.market_value_arc,expected);
-  assert.doesNotMatch(JSON.stringify(p),/development_aptitude|initial_age|retirement_age|seed/);
+test('#763 indexed valuation: actual local D1 global ordering, range, parity and invalidation',async()=>{
+ const bindings=env as unknown as {DB:Database;TEST_MIGRATIONS:Parameters<typeof applyD1Migrations>[1]};
+ const db=bindings.DB;
+ await applyD1Migrations(db as Parameters<typeof applyD1Migrations>[0],bindings.TEST_MIGRATIONS);
+ const world=(await db.prepare('SELECT generation FROM world_state WHERE id=1').first<{generation:string}>())!;
+ const batch=crypto.randomUUID(),now=1800000000,version=await marketValueIndexVersion();
+ const input=Array.from({length:103},(_,i)=>({...stored,age:i===101?40:24,career_status:i===102?'retired':'active',
+  attributes:Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map(k=>[k,30+(i%9)*7]))}));
+ await db.prepare("INSERT INTO player_generation_drafts(id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,status,created_at,expires_at,committed_at) VALUES(?,?,0,'fixture','{}','[]',?,'fixture','committed',?,?,?)").bind(batch,world.generation,input.length,now,now+3600,now).run();
+ try{
+  await db.prepare('INSERT INTO generated_players(batch_id,world_generation,entry_season,payload_json,created_at) SELECT ?,?,0,j.value,? FROM json_each(?) j').bind(batch,world.generation,now,JSON.stringify(input)).run();
+  const rows=(await db.prepare('SELECT id,payload_json FROM generated_players WHERE batch_id=? ORDER BY id').bind(batch).all<{id:number;payload_json:string}>()).results;
+  const expected=rows.map(row=>({id:row.id,value:calculatePlayerMarketValueArc(JSON.parse(row.payload_json))}));
+  const id=rows[0].id;
+  await assert.rejects(readPublicPlayers(db,1,{sort:'market_value_arc'}),/players_unavailable/);
+  assert.equal((await refreshMarketValueIndexBatch(db)).updated,103);
+  assert.equal((await refreshMarketValueIndexBatch(db)).ready,true);
+  const sorted=(order:string)=>[...expected].sort((a,b)=>a.value===null||b.value===null?a.value===b.value?a.id-b.id:a.value===null?1:-1:(order==='asc'?a.value-b.value:b.value-a.value)||a.id-b.id);
+  for(const order of ['desc','asc'] as const){
+   const pages=await Promise.all([1,2,3].map(page=>readPublicPlayers(db,page,{sort:'market_value_arc',order})));
+   assert.deepEqual(pages.map(p=>p.players.length),[50,50,3]);
+   assert.deepEqual(pages.flatMap(p=>p.players.map(x=>x.id)),sorted(order).map(x=>x.id));
+   assert.ok(pages.every(p=>p.count===103&&p.totalPages===3));
+   assert.equal(pages[2].players.at(-1)?.market_value_arc,null);
+  }
+  const zero=await readPublicPlayers(db,1,{valueMin:0,valueMax:0});
+  assert.deepEqual(zero.players.map(p=>p.id),[rows[102].id]);
+  const bound=expected[10].value!;
+  const exact=await readPublicPlayers(db,1,{valueMin:bound,valueMax:bound,position:['CM'],sort:'market_value_arc'});
+  assert.equal(exact.count,expected.filter(p=>p.value===bound).length);
+  assert.ok(exact.players.every(p=>p.market_value_arc===bound));
+  const empty=await readPublicPlayers(db,4,{sort:'market_value_arc'});
+  assert.deepEqual(empty.players,[]);
+  await db.prepare("INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,'IT-1')").bind(id).run();
+  const detail=await readPublicPlayer(db,id),roster=await readPublicClubRoster(db,'IT-1');
+  assert.equal(detail.player.market_value_arc,roster.players[0].market_value_arc);
+  assert.equal(detail.player.market_value_arc,expected[0].value);
+  assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'affiliation does not invalidate value');
+  await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.retirement_seed','private','$.development_aptitude',42) WHERE id=?").bind(id).run();
+  assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'hidden fields do not invalidate value');
+  const prior=marketValueIndexUpdate(id,0,version,JSON.parse(rows[0].payload_json));
+  await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.age',33) WHERE id=?").bind(id).run();
+  assert.equal((await marketValueIndexWrite(db,version,[prior]).run()).meta.changes,0,'stale revision cannot resurrect a value');
+  await assert.rejects(readPublicPlayers(db,1,{valueMin:0}),/players_unavailable/);
+  assert.equal((await refreshMarketValueIndexBatch(db)).updated,1);
+  assert.equal((await refreshMarketValueIndexBatch(db)).ready,true);
+  await db.prepare("UPDATE player_market_values SET config_version='old-config' WHERE player_id=?").bind(id).run();
+  await assert.rejects(readPublicPlayers(db,1,{sort:'market_value_arc'}),/players_unavailable/);
+  assert.equal((await refreshMarketValueIndexBatch(db)).updated,1);
+  assert.equal((await refreshMarketValueIndexBatch(db)).ready,true);
+  for(const [order,index] of [['ASC','asc'],['DESC','desc']]){
+   const plan=(await db.prepare('EXPLAIN QUERY PLAN SELECT player_id FROM player_market_values WHERE config_version=? ORDER BY market_value_arc IS NULL ASC,market_value_arc '+order+',player_id ASC LIMIT 50').bind(version).all<{detail:string}>()).results;
+   assert.ok(plan.some(p=>p.detail.includes('player_market_values_'+index)),JSON.stringify(plan));
+   assert.ok(!plan.some(p=>p.detail.includes('TEMP B-TREE')),JSON.stringify(plan));
+  }
+ }finally{
+  await db.prepare('DELETE FROM generated_players WHERE batch_id=?').bind(batch).run();
+  await db.prepare('DELETE FROM player_generation_drafts WHERE id=?').bind(batch).run();
  }
- assert.equal(calls.filter(sql=>sql.includes('FROM generated_players')||sql.includes('FROM player_club_affiliations')).length,5,'no per-player follow-up query');
-});
-test('#763 valuation scan preserves SQL filter bindings and rejects revision changes',async()=>{
- const calls:{sql:string;params:unknown[]}[]=[];
- let reads=0;
- const row={id:42,payload_json:JSON.stringify(stored),club_key:null};
- const create=(stale:boolean)=>({prepare(sql:string){return {bind(...params:unknown[]){calls.push({sql,params});return this;},
-  async first(){return {schema_version:1,generation,revision:stale?reads++:0,season_number:0,day:0,phase:'unstarted'};},
-  async all(){return {results:[row],meta:{changes:0}};}};}} as unknown as Database);
- const parsed=parsePublicPlayerQuery('?position=CM&valueMin=0&sort=market_value_arc&order=asc');
- const result=await readPublicPlayers(create(false),parsed.page,parsed.filters);
- assert.equal(result.count,1);
- const query=calls.find(x=>x.sql.includes('LEFT JOIN player_club_affiliations'))!;
- assert.match(query.sql,/json_extract\(payload_json,'\$\.primary_position'\) IN \(\?\)/);
- assert.deepEqual(query.params,['CM',MARKET_VALUE_SCAN_LIMIT+1]);
- await assert.rejects(readPublicPlayers(create(true),1,{sort:'market_value_arc'}),/stale_world/);
 });

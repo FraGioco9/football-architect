@@ -11,6 +11,7 @@ import {COUNTRIES,ATTRIBUTES,generateTrialWithCatalog,summarize} from './players
 import {loadRuntimePlayerCatalog} from './players-catalog.mjs';
 import {buildFamilyV42PortraitSnapshotForPlayer} from './player-portrait-family-v42.mjs';
 import {resolveCatalogueNameOrigins} from './player-portrait-name-origins.mjs';
+import {marketValueIndexVersion,marketValueIndexUpdate,marketValueIndexWrite} from './player-market-value-index.ts';
 
 const nationalityCodes=new Set(COUNTRIES.map((c:{code:string})=>c.code));
 const roles=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
@@ -159,6 +160,7 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
  // explicit allocation lets us generate ID-dependent faces BEFORE the atomic batch.
  // A transaction-scoped sqlite_sequence guard aborts if another batch got the IDs.
  let lastId=0,snapshots:Awaited<ReturnType<typeof buildFamilyV42PortraitSnapshotForPlayer>>[]=[];
+ let indexVersion='',valueUpdates:ReturnType<typeof marketValueIndexUpdate>[]=[];
  try{
   const row=await db.prepare("SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0) AS last_id").first<{last_id:number}>();
   lastId=row?.last_id??0;
@@ -166,6 +168,8 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
   if(!Number.isSafeInteger(lastId)||lastId<0||!Array.isArray(candidates)||
      candidates.length!==draft.count||!Number.isSafeInteger(lastId+draft.count))
    throw Error('Corrupt player preview or ID high-water');
+  indexVersion=await marketValueIndexVersion();
+  valueUpdates=candidates.map((candidate,i)=>marketValueIndexUpdate(lastId+i+1,0,null,candidate));
   for(let i=0;i<candidates.length;i++)
    snapshots.push(await buildFamilyV42PortraitSnapshotForPlayer({
     ...candidates[i],id:lastId+i+1,
@@ -197,17 +201,20 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
      j.value,'pending',NULL,?
     FROM json_each(?) AS j ORDER BY CAST(j.key AS INTEGER)`)
     .bind(now,JSON.stringify(snapshots)),
-   // The two insert counts must match INSIDE the transaction. An unexpected
+   marketValueIndexWrite(db,indexVersion,valueUpdates),
+   // All insert counts must match INSIDE the transaction. An unexpected
    // short insert fails the batch before the approval becomes permanent.
    abortUnless(db,`SELECT 1 WHERE
     (SELECT COUNT(*) FROM generated_players WHERE batch_id=? AND world_generation=?)=?
     AND (SELECT COUNT(*) FROM player_portrait_profiles
-     WHERE player_id IN (SELECT id FROM generated_players WHERE batch_id=? AND world_generation=?))=?`,
-    [id,world.generation,draft.count,id,world.generation,draft.count]),
+     WHERE player_id IN (SELECT id FROM generated_players WHERE batch_id=? AND world_generation=?))=?
+    AND (SELECT COUNT(*) FROM player_market_values v JOIN generated_players p ON p.id=v.player_id
+     WHERE p.batch_id=? AND p.world_generation=? AND v.config_version=?)=?`,
+    [id,world.generation,draft.count,id,world.generation,draft.count,id,world.generation,indexVersion,draft.count]),
    db.prepare("UPDATE player_generation_drafts SET status='committed',committed_at=? WHERE id=? AND account_id=? AND status='preview'")
     .bind(now,id,session.unified!.playerId)
   ]);
-  if(result[4].meta.changes!==draft.count||result[5].meta.changes!==draft.count||result[7].meta.changes!==1)
+  if(result[4].meta.changes!==draft.count||result[5].meta.changes!==draft.count||result[6].meta.changes!==draft.count||result[8].meta.changes!==1)
    throw Error('Uncommitted player or portrait count');
   return {batchId:id,count:draft.count,alreadyCommitted:false,worldGeneration:world.generation};
  }catch{

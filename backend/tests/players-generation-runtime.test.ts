@@ -7,6 +7,8 @@ import {handleAdmin} from '../src/http-admin.ts';
 import worker from '../src/index.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {commitPlayerGeneration} from '../src/players-generation-command.ts';
+import {marketValueIndexVersion} from '../src/player-market-value-index.ts';
+import {calculatePlayerMarketValueArc} from '../src/player-market-value.mjs';
 import hostedPreview from '../src/preview.ts';
 import {pruneExpiredPlayerPreviews} from '../src/player-preview-retention.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
@@ -79,6 +81,8 @@ it('shows a server-generated preview but creates zero permanent players until ex
  const records=(await db.prepare('SELECT id,payload_json,world_generation,entry_season FROM generated_players ORDER BY id').all<any>()).results;
  expect(records).toHaveLength(2);
  const actual=records.map(row=>JSON.parse(row.payload_json));
+ const index=(await db.prepare('SELECT player_id,config_version,market_value_arc FROM player_market_values ORDER BY player_id').all<{player_id:number;config_version:string;market_value_arc:number|null}>()).results;
+ expect(index).toEqual(await Promise.all(records.map(async (row,i)=>({player_id:row.id,config_version:await marketValueIndexVersion(),market_value_arc:calculatePlayerMarketValueArc(actual[i])}))));
  expect(records.every(row=>Number.isSafeInteger(row.id)&&row.id>0)).toBe(true);
  expect(records[1].id).toBe(records[0].id+1);
  for(const [i,row] of actual.entries()){
