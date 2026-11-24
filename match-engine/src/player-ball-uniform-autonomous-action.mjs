@@ -3,12 +3,17 @@
 // Pure decision: never applies impulses, never accepts an authenticated
 // match command or produces official possession, shots/goals/results.
 import {INITIAL_PLAYERS,PLAYER_PITCH,PLAYER_VERSION} from './player-movement.mjs';
+import {chooseBasicDefensiveAttempt}
+ from './basic-defensive-physical-actions-b03.mjs';
+import {chooseSmallSidedContextAction}
+ from './small-sided-context-choice.mjs';
 
 
+import {chooseIsolatedDribbleTouch} from './isolated-dribble-touches.mjs';
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
-const ACTION_IMPULSE_NS=Object.freeze({pass:2.4,shot:3.0,clearance:2.7,carry:0.42});
+const ACTION_IMPULSE_NS=Object.freeze({pass:2.4,shot:3.0,cross:2.7,save:2.6,tackle:1.9,interception:2.1,clearance:2.7,carry:0.42});
 export const PROVISIONAL_PHYSICAL_CARRY_IMPULSE_NS=0.42;
 // C3.2a: a small GROUND touch is a real Rapier impulse, NOT a virtual
 // dribble or privileged possession. Only isolated autonomousCarry fixtures.
@@ -16,11 +21,30 @@ const MAX_GAP_M=0.85;
 const MAX_HEIGHT_M=0.12;
 const PASS_LANE_MIN_CLEARANCE_M=1.9;
 const SHOT_LANE_MIN_CLEARANCE_M=2.4;
+// Functional-only provisional CROSS: winger with an actually observed
+// goal-area teammate; do not treat a cross attempt as pass completion.
+export const CROSS_WING_MIN_ABS_Y_M=20;
+export const CROSS_WING_MAX_ABS_Y_M=32;
+export const CROSS_ATTACK_MIN_X_M=24;
+export const CROSS_ATTACK_MAX_X_M=45;
+export const CROSS_LANE_MIN_CLEARANCE_M=1.4;
+
 // C2.3b: realistic medium-range attempts, with near-post lanes selected
 // only from LIVE opponent positions; this is tactical geometry, not scoring.
 export const SHOT_MAX_RANGE_M=35;
 export const SHOT_HALF_GOAL_AIM_Y_M=3.1;
 const IMMEDIATE_PRESSURE_M=3.0;
+export const BASIC_KEEPER_SAVE_VERSION='actions-b02-authentic-keeper-foot-parry-v1';
+// No catch, gloves or airborne body simulated yet: one native shoe parry
+// of an ACTUAL incoming ball is an attempt, never an official save.
+export function eligibleLiveKeeperSave(player,ballPosition,ballVelocity){
+ if(player.role!=='goalkeeper')return false;
+ const attack=player.team==='home'?1:-1;
+ const ownGoalX=-attack*PLAYER_PITCH.lengthM/2;
+ return Math.abs(ownGoalX-ballPosition.x)<=12&&
+  Math.abs(ballPosition.y)<=4.5&&
+  ballVelocity.x*attack<=-0.5;
+}
 export const UNIFORM_ACTION_CONTEXT_VERSION='me-pb-55-contextual-lane-observation-v1';
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const ids=Object.freeze(INITIAL_PLAYERS.map(p=>p.id));
@@ -53,6 +77,31 @@ function chooseLiveShotLane(ball,goalX,team,players){
    return Object.freeze({target,clearance});
  }
  return null;
+}
+// Distinct high/wide CROSS uses a LIVE same-team penalty-area option.
+// Never stages a teammate, creates a contact, or awards a header/goal.
+function chooseLiveCrossRecipient(actor,ball,players){
+ const attack=actor.team==='home'?1:-1;
+ if(actor.role==='goalkeeper'||
+    attack*ball.x<CROSS_ATTACK_MIN_X_M||
+    attack*ball.x>CROSS_ATTACK_MAX_X_M||
+    Math.abs(ball.y)<CROSS_WING_MIN_ABS_Y_M||
+    Math.abs(ball.y)>CROSS_WING_MAX_ABS_Y_M)return null;
+ const choices=players.filter(p=>p.team===actor.team&&
+  p.id!==actor.id&&p.role!=='goalkeeper'&&
+  attack*p.x>=35&&attack*p.x<=49&&Math.abs(p.y)<=12)
+  .map(p=>{
+   const distanceM=Math.hypot(p.x-ball.x,p.y-ball.y);
+   return {player:p,distanceM,
+    laneClearanceM:lineClearance(ball,p,actor.team,players),
+    defenderGapM:nearOpponent(p,actor.team,players)};
+  }).filter(p=>p.distanceM>=8&&p.distanceM<=40&&
+   p.laneClearanceM>=CROSS_LANE_MIN_CLEARANCE_M&&
+   p.defenderGapM>=1.6)
+  .sort((a,b)=>b.laneClearanceM-a.laneClearanceM||
+   a.distanceM-b.distanceM||
+   ids.indexOf(a.player.id)-ids.indexOf(b.player.id));
+ return choices[0]??null;
 }
 function chooseRecipient(actor,ball,players){
  const attack=actor.team==='home'?1:-1;
@@ -140,7 +189,7 @@ export const PHYSICAL_REJECTION_REASONS_VERSION=
 export function inspectPhysicalActionRejection({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
- allowPhysicalCarry=false
+ allowPhysicalCarry=false,isolatedDribbleContext=null
 }={}){
  if(!Number.isSafeInteger(tick)||tick<1||
     !Array.isArray(contactStarted)||!Array.isArray(contactActive)||
@@ -165,8 +214,10 @@ export function inspectPhysicalActionRejection({
   contactStarted[0]===contactActive[0];
  const actor=exclusive?players.find(p=>p.id===contactStarted[0]):null;
  const gap=actor?Math.hypot(actor.x-ballPosition.x,actor.y-ballPosition.y):null;
+ const requiredCooldown=['dribble-1v1','carry-solo'].includes(isolatedDribbleContext?.situationId)?
+  4:UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
  const firstFailedGate=!exclusive?'no-exclusive-shoe-start':
-  tick-lastActionTick<UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS?'cooldown':
+  tick-lastActionTick<requiredCooldown?'cooldown':
   ballPosition.z<ballRadiusM-0.015||
    ballPosition.z>ballRadiusM+MAX_HEIGHT_M?'ball-height':
   Math.hypot(ballVelocity.x,ballVelocity.y)>14?'ball-speed':
@@ -184,7 +235,8 @@ export function inspectPhysicalActionRejection({
 export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
- allowPhysicalCarry=false
+ allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null,
+ isolatedDribbleContext=null
 }){
  if(!Number.isSafeInteger(tick)||tick<1||
     !Array.isArray(contactStarted)||new Set(contactStarted).size!==contactStarted.length||
@@ -200,26 +252,58 @@ export function selectUniformAutonomousContactAction({
     !['x','y','z'].every(k=>finite(ballPosition[k])&&finite(ballVelocity[k]))||
     !Number.isSafeInteger(lastActionTick)||lastActionTick>tick||
     !finite(ballRadiusM)||ballRadiusM<0.05||ballRadiusM>0.2||
-    typeof allowPhysicalCarry!=='boolean')
+    typeof allowPhysicalCarry!=='boolean'||
+    (activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
+      activePlayerIds.length<1||activePlayerIds.length>7||
+      new Set(activePlayerIds).size!==activePlayerIds.length||
+      activePlayerIds.some(id=>!ids.includes(id))))||
+    (isolatedDribbleContext!==null&&(
+      !['dribble-1v1','carry-solo'].includes(isolatedDribbleContext?.situationId)||
+      !['home','away'].includes(isolatedDribbleContext?.attackingSide)||
+      !Number.isSafeInteger(isolatedDribbleContext?.variantIndex)||
+      isolatedDribbleContext.variantIndex<0||isolatedDribbleContext.variantIndex>29||
+      activePlayerIds===null||activePlayerIds.length!==(isolatedDribbleContext.situationId==='carry-solo'?1:2)||
+      !activePlayerIds.includes(isolatedDribbleContext.attackingSide+'-10')||
+      (isolatedDribbleContext.situationId==='dribble-1v1'&&!activePlayerIds.includes((isolatedDribbleContext.attackingSide==='home'?'away':'home')+'-2'))||
+      allowPhysicalCarry!==true))||
+    (smallSidedDecisionContext!==null&&(
+      activePlayerIds===null||allowPhysicalCarry!==true||
+      typeof smallSidedDecisionContext!=='object'||
+      !['home','away'].includes(smallSidedDecisionContext.attackingSide)||
+      typeof smallSidedDecisionContext.situationId!=='string'||
+      !Number.isSafeInteger(smallSidedDecisionContext.variantIndex)||
+      smallSidedDecisionContext.variantIndex<1||
+      smallSidedDecisionContext.variantIndex>29)))
   throw new TypeError('Verified same-tick movement, ball and real Rapier shoe starts required');
  // A4.2b.3: an ambiguous START/ACTIVE contact cannot confer a right
  // to kick the ball. Require one genuine START and no other active shoe.
  // Multi-contact remains real physics evidence, never a possession award.
  if(contactStarted.length!==1||contactActive.length!==1||
     contactActive[0]!==contactStarted[0])return null;
- if(tick-lastActionTick<UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS||
+ const requiredCooldown=isolatedDribbleContext!==null?
+  4:UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
+ if(tick-lastActionTick<requiredCooldown||
     ballPosition.z<ballRadiusM-0.015||
     ballPosition.z>ballRadiusM+MAX_HEIGHT_M||
     Math.hypot(ballVelocity.x,ballVelocity.y)>14)
   return null;
- const actors=playerFrame.players;
+ // All 22 original identities remain validated; only truly collider-enabled
+ // participants enter small-sided tactical choices, never hidden 11v11 actors.
+ const allActors=playerFrame.players;
+ const actors=activePlayerIds===null?allActors:
+  allActors.filter(p=>activePlayerIds.includes(p.id));
  // Canonical frame is validated separately by createEngine before mutation.
- for(let i=0;i<actors.length;i++)
-  if(actors[i]?.id!==ids[i]||actors[i].team!==INITIAL_PLAYERS[i].team)
+ for(let i=0;i<allActors.length;i++)
+  if(allActors[i]?.id!==ids[i]||allActors[i].team!==INITIAL_PLAYERS[i].team)
    throw new TypeError('Trusted ordered 22-person movement required');
  for(const id of contactStarted){
+  if(activePlayerIds!==null&&!activePlayerIds.includes(id))
+   throw new TypeError('Inactive player has no authenticated Rapier shoe');
   const player=actors.find(p=>p.id===id);
   if(!player)continue;
+  // 1v1 defender may collide, but does not issue other automatic actions.
+  if(isolatedDribbleContext!==null&&id!==isolatedDribbleContext.attackingSide+'-10')
+   continue;
   const gap=Math.hypot(player.x-ballPosition.x,player.y-ballPosition.y);
   if(!finite(gap)||gap>MAX_GAP_M)continue;
   const attack=player.team==='home'?1:-1;
@@ -233,14 +317,86 @@ export function selectUniformAutonomousContactAction({
    chooseLiveShotLane(ballPosition,goalX,player.team,actors):null;
   const shotLaneM=chosenShotLane?.clearance??
    lineClearance(ballPosition,goalTarget,player.team,actors);
-  let action,recipient=null,recipientInfo=null,dx,dy,vertical=0,rule;
-  if(chosenShotLane){
+  const defensiveAttempt=chooseBasicDefensiveAttempt({
+   actor:player,players:actors,ball:ballPosition,velocity:ballVelocity
+  });
+  // LAB-VAR-02 only: AFTER verified genuine exclusive Rapier shoe START,
+  // examine live legitimate affordances. Normal 22-player policy, keeper
+  // and defensive priority, and archival V01 remain byte-identical.
+  const contextualAttacker=isolatedDribbleContext===null&&
+   smallSidedDecisionContext!==null&&
+   player.team===smallSidedDecisionContext.attackingSide&&
+   player.role!=='goalkeeper'&&!defensiveAttempt;
+  const contextualRecipient=contextualAttacker?
+   chooseRecipient(player,ballPosition,actors):null;
+  const carryPossible=contextualAttacker&&allowPhysicalCarry&&
+   Math.abs(ballPosition.y)<=20&&
+   attack*ballPosition.x>=-30&&attack*ballPosition.x<=45&&
+   Math.abs(toGoal)>5&&
+   Math.hypot(ballVelocity.x,ballVelocity.y)<=8;
+  const contextualChoice=contextualAttacker?
+   chooseSmallSidedContextAction({
+    situationId:smallSidedDecisionContext.situationId,
+    variantIndex:smallSidedDecisionContext.variantIndex,tick,
+    actorId:id,team:player.team,
+    attackingSide:smallSidedDecisionContext.attackingSide,
+    goalDistanceM:Math.abs(toGoal),nearestOpponentM,
+    shotLaneClearanceM:chosenShotLane?.clearance??null,
+    passLaneClearanceM:contextualRecipient?.laneClearanceM??null,
+    recipientOpponentGapM:contextualRecipient?.nearestOpponentM??null,
+    passForwardM:contextualRecipient?.forward??null,
+    canShoot:chosenShotLane!==null,
+    canPass:contextualRecipient!==null,
+    canCarry:carryPossible
+   }):null;
+  const dribbleTouch=isolatedDribbleContext===null?null:
+   chooseIsolatedDribbleTouch({
+    variantIndex:isolatedDribbleContext.variantIndex,tick,
+    attackingSide:isolatedDribbleContext.attackingSide,
+    ballPosition,ballVelocity,
+    solo:isolatedDribbleContext.situationId==='carry-solo',
+    defender:isolatedDribbleContext.situationId==='carry-solo'?null:actors.find(p=>p.team!==player.team)
+   });
+  let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
+  if(dribbleTouch!==null){
+   action='carry';dx=dribbleTouch.dx;dy=dribbleTouch.dy;
+   rule='isolated-dribble-real-shoe-variable-ground-touch';
+  }else if(eligibleLiveKeeperSave(player,ballPosition,ballVelocity)){
+   action='save';dx=attack*7;
+   dy=ballPosition.y>=0?9:-9;vertical=0.24;
+   rule='incoming-goalward-keeper-physical-parry-attempt';
+  }else if(defensiveAttempt){
+   action=defensiveAttempt.kind;
+   dx=defensiveAttempt.targetX-ballPosition.x;
+   dy=defensiveAttempt.targetY-ballPosition.y;
+   vertical=0.16;
+   rule=action==='tackle'?
+    'observed-near-opponent-ground-ball-poke-attempt':
+    'observed-inbound-ball-line-block-attempt';
+  }else if(contextualChoice?.selected==='pass'){
+   recipientInfo=contextualRecipient;
+   recipient=recipientInfo.player;
+   action='pass';dx=recipient.x-ballPosition.x;
+   dy=recipient.y-ballPosition.y;
+   rule='small-sided-live-context-safe-pass';
+  }else if(contextualChoice?.selected==='carry'){
+   action='carry';dx=attack*8;dy=-ballPosition.y*0.12;
+   rule='small-sided-live-context-short-physical-touch';
+  }else if(chosenShotLane){
    action='shot';dx=toGoal;
    dy=chosenShotLane.target.y-ballPosition.y;vertical=0.24;
    rule=chosenShotLane.target.y===0?
     'unblocked-goal-lane':'unblocked-near-post-lane';
   }else{
-   recipientInfo=chooseRecipient(player,ballPosition,actors);
+   crossInfo=chooseLiveCrossRecipient(player,ballPosition,actors);
+   recipientInfo=crossInfo?null:chooseRecipient(player,ballPosition,actors);
+   if(crossInfo){
+    recipient=crossInfo.player;
+    action='cross';dx=recipient.x-ballPosition.x;
+    dy=recipient.y-ballPosition.y;
+    vertical=0.42;
+    rule='wide-live-teammate-lofted-cross';
+   }else 
    if(recipientInfo){
     recipient=recipientInfo.player;
     action='pass';dx=recipient.x-ballPosition.x;
@@ -270,13 +426,26 @@ export function selectUniformAutonomousContactAction({
   }
   const length=Math.hypot(dx,dy);
   if(length<1e-5)continue;
-  const magnitude=ACTION_IMPULSE_NS[action],factor=magnitude/
+  const magnitude=dribbleTouch?.magnitudeNs??ACTION_IMPULSE_NS[action],factor=magnitude/
    Math.hypot(dx,dy,vertical*length);
   const impulseNs=Object.freeze({x:dx*factor,y:dy*factor,
    z:vertical*length*factor});
   // C1.1: the live teammate and ball geometry at THIS movement tick,
   // frozen before Rapier applies the impulse. A target is only intent,
   // never evidence of reception or a completed football pass.
+  const defensiveTarget=defensiveAttempt&&
+   ['tackle','interception'].includes(action)?
+   Object.freeze({...defensiveAttempt,physicsTick:tick}):null;
+  const saveTarget=action==='save'?Object.freeze({
+   source:BASIC_KEEPER_SAVE_VERSION,
+   actorId:id,team:player.team,physicsTick:tick,
+   incomingVelocityX:ballVelocity.x,incomingVelocityY:ballVelocity.y,
+   originX:ballPosition.x,originY:ballPosition.y,
+   ownGoalX:-attack*PLAYER_PITCH.lengthM/2,
+   nativeExclusiveShoeRequired:true,
+   physicalSaveAttemptOnly:true,saveConfirmed:false,officialSave:false,
+   officialGoal:false,officialPossession:false
+  }):null;
   const shotTarget=action==='shot'?Object.freeze({
    source:'same-tick-closed-goal-lane-from-live-22-players',
    shooterId:id,team:player.team,physicsTick:tick,
@@ -286,12 +455,24 @@ export function selectUniformAutonomousContactAction({
    attemptOnly:true,shotOnTarget:null,goalScored:null
   }):null;
   const carryTarget=action==='carry'?Object.freeze({
-   source:'same-tick-exclusive-rapier-shoe-short-ground-touch',
+   source:dribbleTouch?'isolated-dribble-real-rapier-shoe-touch':
+    'same-tick-exclusive-rapier-shoe-short-ground-touch',
    actorId:id,team:player.team,physicsTick:tick,
    originX:ballPosition.x,originY:ballPosition.y,
-   impulseMagnitudeNs:PROVISIONAL_PHYSICAL_CARRY_IMPULSE_NS,
+   impulseMagnitudeNs:magnitude,
    shortGroundTouchOnly:true,physicalRecontactObserved:false,
    dribbleConfirmed:null,officialMatchResult:null
+  }):null;
+  const crossTarget=action==='cross'?Object.freeze({
+   source:'same-tick-canonical-wing-and-live-goal-area-teammate',
+   originPlayerId:id,recipientId:recipient.id,
+   originX:ballPosition.x,originY:ballPosition.y,
+   targetX:recipient.x,targetY:recipient.y,
+   distanceM:Math.hypot(dx,dy),
+   laneClearanceM:crossInfo.laneClearanceM,
+   team:player.team,physicsTick:tick,
+   physicalCrossAttemptOnly:true,crossCompleted:false,
+   officialMatchAction:false,officialGoal:false
   }):null;
   const passTarget=action==='pass'?Object.freeze({
    source:'same-tick-canonical-22-player-positions',
@@ -307,14 +488,15 @@ export function selectUniformAutonomousContactAction({
    version:UNIFORM_AUTONOMOUS_ACTION_VERSION,tick,
    playerId:id,team:player.team,
    action,recipientId:recipient?.id??null,
-   passTarget,shotTarget,carryTarget,measuredGapM:gap,
+   passTarget,shotTarget,crossTarget,saveTarget,defensiveTarget,
+    carryTarget,measuredGapM:gap,
    // Same-tick PRE-impulse values from the only existing contact selector.
    // No new eligibility policy or source authentication for caller input.
    physicalPrerequisites:Object.freeze({
     physicsTick:tick,actorId:id,source:'real-selector-inputs-pre-impulse',
     exclusiveShoeStart:true,
     cooldownElapsedTicks:tick-lastActionTick,
-    cooldownMinimumTicks:UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,
+    cooldownMinimumTicks:requiredCooldown,
     shoeBallGapM:gap,ballHeightM:ballPosition.z,
     ballRadiusM,ballHorizontalSpeedMps:Math.hypot(ballVelocity.x,ballVelocity.y),
     originalPhysicalGuardsPassed:true,
@@ -329,10 +511,13 @@ export function selectUniformAutonomousContactAction({
     underImmediatePressure:nearestOpponentM<IMMEDIATE_PRESSURE_M,
     shotLaneClearanceM:shotLaneM,shotRange,
     passLaneClearanceM:recipientInfo?.laneClearanceM??null,
-    chosenRecipientOpponentGapM:recipientInfo?.nearestOpponentM??null,
+    chosenRecipientOpponentGapM:recipientInfo?.nearestOpponentM??
+     crossInfo?.defenderGapM??null,
     outcomeNotYetObserved:true,
     opponentTackleProven:false,interceptionProven:false,
-    passCompleted:false,goalScored:false
+    passCompleted:false,goalScored:false,
+    ...(contextualChoice?{smallSidedChoice:contextualChoice}:{}),
+    ...(dribbleTouch?{isolatedDribbleTouch:dribbleTouch}:{})
    }),
    temporaryPlayersOnly:true,uniformPlayerStats:true,
    officialMatchAction:false,officialMatchPossession:false,

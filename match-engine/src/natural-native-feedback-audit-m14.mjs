@@ -1,0 +1,428 @@
+// #628 M14 — reproducible NATURAL 22-player, one-Rapier-World
+// mixed shoe/body event + canonical feedback stress audit.
+// Never stage players, fabricate simultaneous body pairs, change collider
+// radii, award match actions or switch on fixture result authority.
+import {createEngine,FIXED_DT} from './core.mjs';
+import {createPlayerMovement,INITIAL_PLAYERS,PLAYER_VERSION,
+ PLAYER_MAX_SPEED_MPS,PLAYER_MIN_SEPARATION_M,PLAYER_PITCH,
+ PLAYER_RADIUS_M} from './player-movement.mjs';
+import {M11_BALL_STARTS} from './unstaged-body-contact-audit.mjs';
+import {validateFootContactFrame,initialFootPositions}
+ from './player-foot-contact.mjs';
+import {createNativeEncounterTelemetry}
+ from './native-contact-dynamics-m19.mjs';
+
+const frozen=o=>Object.freeze(o);
+const allBallStates=new Map(M11_BALL_STARTS.map(x=>[x.id,x]));
+const MAX_TICKS=240;
+const modes=frozen(['feedback','observe']);
+const sides=frozen(['home','away']);
+const physicalOptions=frozen({
+ diagnosticPlayerBodyCollidersEnabled:true,
+ diagnosticPlayerFootContactsEnabled:true,
+ diagnosticSharedContactEventsEnabled:true
+});
+
+function verify22(before,after,source,tick){
+ if(before.tick!==tick-1||after.tick!==tick||
+    after.version!==PLAYER_VERSION||after.players?.length!==22||
+    before.players?.length!==22||source?.physicalActors?.length!==22)
+  throw new Error('M14 requires exact ordered original 60Hz 22-player frames');
+ let minGapM=Infinity,maxSpeedMps=0;
+ for(let i=0;i<22;i++){
+  const p=after.players[i],prior=before.players[i],real=source.physicalActors[i];
+  if(!p||!prior||!real||p.id!==INITIAL_PLAYERS[i].id||
+     p.team!==INITIAL_PLAYERS[i].team||prior.id!==p.id||
+     real.id!==p.id||real.team!==p.team||
+     ![p.x,p.y,p.vx,p.vy,p.facingRad].every(Number.isFinite)||
+     Math.abs(p.x)>PLAYER_PITCH.lengthM/2-PLAYER_RADIUS_M+1e-7||
+     Math.abs(p.y)>PLAYER_PITCH.widthM/2-PLAYER_RADIUS_M+1e-7||
+     Math.hypot(p.x-prior.x,p.y-prior.y)>
+      PLAYER_MAX_SPEED_MPS*FIXED_DT+1e-7)
+   throw new Error('M14 cannot change original 22 IDs, pitch or 7m/s motion bound');
+  const speed=Math.hypot(p.vx,p.vy);
+  if(speed>PLAYER_MAX_SPEED_MPS+1e-7)
+   throw new Error('M14 canonical speed guard violated');
+  maxSpeedMps=Math.max(maxSpeedMps,speed);
+  for(let j=i+1;j<22;j++){
+   const q=after.players[j];
+   minGapM=Math.min(minGapM,Math.hypot(p.x-q.x,p.y-q.y));
+  }
+ }
+ if(minGapM<PLAYER_MIN_SEPARATION_M-1e-8)
+  throw new Error('M14 original full 22-player 0.98m separation violated');
+ return {minGapM,maxSpeedMps};
+}
+
+function validateLineMovement(after){
+ if(!after.shape||!after.pressers||
+    !Object.hasOwn(after,'supports')||
+    !Object.hasOwn(after,'originalOpposingPressConvergence'))
+  throw new Error('M14 original player pressure/lines/support source lost');
+ for(const team of sides){
+  const x=after.shape[team],presser=after.pressers[team];
+  // At distant ball territories the ORIGINAL autonomous presser can be
+  // null. That is a measured non-assignment, never invent one for QA.
+  const expectedSupporters=presser===null?10:9;
+  if(!x||x.supporters!==expectedSupporters||
+     ![x.widthM,x.depthM,x.defenderLineX,x.midfieldLineX,
+       x.forwardLineX].every(Number.isFinite)||
+     x.widthM<=0||x.depthM<=0||
+     (presser!==null&&(
+      typeof presser!=='string'||!after.players.some(p=>
+       p.id===presser&&p.team===team&&p.role!=='goalkeeper'))))
+   throw new Error('M14 original source-grounded lines/presser invalid for '+team+
+    ': '+JSON.stringify({supporters:x?.supporters,
+      presser,expectedSupporters}));
+ }
+}
+
+// Investigates the *original* source world in a fixed ball territory. A
+// genuine contact count of zero is a valid negative observation, not an
+// excuse to inject artificial collisions. All body feedback is M13-only.
+export function auditNaturalNativeFeedback(RAPIER,{
+ stateId='centre',side='home',ticks=225,mode='feedback',
+ initialBallVelocity=null,shoeBodyHandoff='legacy',
+ researchBallStart=null,researchEncounterTelemetry=false,
+ researchSecondaryPressSupport=false
+}={}){
+ if(!RAPIER||typeof RAPIER.World!=='function'||
+    !allBallStates.has(stateId)||!sides.includes(side)||
+    !modes.includes(mode)||!Number.isSafeInteger(ticks)||
+    ticks<1||ticks>MAX_TICKS||
+    !['legacy','bounded'].includes(shoeBodyHandoff)||
+    typeof researchEncounterTelemetry!=='boolean'||
+    (researchEncounterTelemetry&&shoeBodyHandoff!=='bounded')||
+    typeof researchSecondaryPressSupport!=='boolean'||
+    (researchSecondaryPressSupport&&shoeBodyHandoff!=='bounded'))
+  throw new TypeError('M14 requires bounded original Rapier source state/mode');
+ // M15 broadens only the pre-tick-zero ball trajectory. The original 22
+ // players, their autonomous policy, body radii and native queue are identical.
+ const moving=initialBallVelocity!==null;
+ if(moving&&(
+   typeof initialBallVelocity!=='object'||
+   Array.isArray(initialBallVelocity)||
+   Reflect.ownKeys(initialBallVelocity).length!==2||
+   !Object.hasOwn(initialBallVelocity,'vx')||
+   !Object.hasOwn(initialBallVelocity,'vy')||
+   ![initialBallVelocity.vx,initialBallVelocity.vy].every(Number.isFinite)||
+   Math.hypot(initialBallVelocity.vx,initialBallVelocity.vy)<0.25||
+   Math.hypot(initialBallVelocity.vx,initialBallVelocity.vy)>8))
+  throw new TypeError('M15 allows only bounded genuine pre-tick-zero ball velocity');
+ // M18's explicit opt-in changes ONLY the initial ball location. All 22
+ // players, real event source, physical handoff and historical M14/M17
+ // defaults are untouched. Mirror the X coordinate for the AWAY source.
+ if(researchBallStart!==null&&(
+   stateId!=='centre'||!moving||shoeBodyHandoff!=='bounded'||
+   typeof researchBallStart!=='object'||Array.isArray(researchBallStart)||
+   Reflect.ownKeys(researchBallStart).length!==2||
+   !Object.hasOwn(researchBallStart,'x')||
+   !Object.hasOwn(researchBallStart,'y')||
+   ![researchBallStart.x,researchBallStart.y].every(Number.isFinite)||
+   Math.abs(researchBallStart.x)>48||
+   Math.abs(researchBallStart.y)>30))
+  throw new TypeError('M18 requires bounded pre-tick-zero ball-only research coordinates');
+ const source=allBallStates.get(stateId);
+ const ballStart=researchBallStart??source;
+ const scene=frozen({preset:'roll',
+  seed:researchBallStart===null?'m14-original-'+stateId+'-'+side:
+   'm18-ball-'+ballStart.x+'-'+ballStart.y+'-'+side,
+  x:side==='home'?ballStart.x:-ballStart.x,y:ballStart.y,
+  z:0,
+  vx:moving?(side==='home'?initialBallVelocity.vx:-initialBallVelocity.vx):0,
+  vy:moving?initialBallVelocity.vy:0,vz:0});
+ const feedback=mode==='feedback';
+ const engine=createEngine(RAPIER,scene,{
+  ...physicalOptions,
+  ...(moving?{diagnosticInitialRollFraction:1}:{}),
+  ...(feedback?{diagnosticUnstagedBodyFeedbackEnabled:true}:{})
+ });
+ const mover=createPlayerMovement(feedback?{
+  researchOpposingPressConvergence:true,
+  researchUnstagedNativeBodyFeedback:true,
+  ...(shoeBodyHandoff==='bounded'?{researchShoeBodyHandoff:true}:{}),
+  ...(researchSecondaryPressSupport?{researchSecondaryPressSupport:true}:{})
+ }:{
+  researchOpposingPressConvergence:true,
+  ...(researchSecondaryPressSupport?{researchSecondaryPressSupport:true}:{})
+ });
+ let totalNativeBodyStarts=0,totalNativeBodyEnds=0;
+ let totalNativeShoeStarts=0,actualResponses=0,actualRejectedResponses=0;
+ let firstNativeBodyStart=null,firstAppliedFeedback=null;
+ let minCanonicalGapM=Infinity,maxCanonicalSpeedMps=0;
+ let maxSimultaneousBodyPairs=0,maxBodyStartsSingleTick=0;
+ let firstSimultaneousBodyPairs=null,simultaneousBodyPairTicks=0;
+ let pressureTicks=0,supportTicks=0,realConcurrentBodyAndShoeTicks=0;
+ let actualBallConvergenceTicks=0,fullShapeTicks=0;
+ const actualBodyPairs=new Set(),actualReasons=new Map();
+ const independentNativeActivePairs=new Set();
+ // Native shoes always observe the pre-response canonical frame; the later
+ // solver correction must NOT be retroactively teleported to the shoes.
+ let lastGenuineShoeFrame=initialFootPositions();
+ let latestShape=null,latestPressers=null,latestSupports=null;
+ let latestShoeBodyHandoff=null;
+ let latestSecondaryPress=null;
+ let latestSecondaryPressSwitches=null;
+ let latestSecondaryPressActiveTicks=null;
+ // M19 is a read-only observer; neither the mover nor native Rapier
+ // producer knows that this optional measuring device exists.
+ const encounterTelemetry=researchEncounterTelemetry?
+  createNativeEncounterTelemetry():null;
+ try{
+  const initial=mover.snapshot();
+  if(!initial.players.every((p,i)=>p.id===INITIAL_PLAYERS[i].id&&
+     p.team===INITIAL_PLAYERS[i].team))
+   throw new Error('M14 original initial 22-player lineup is mandatory');
+  for(let tick=1;tick<=ticks;tick++){
+   const prior=mover.snapshot(),ballBefore=engine.snapshot().ball.position;
+   const intended=mover.step(ballBefore);
+   // Prove input frame's measured XY velocity agrees with actual last
+   // canonical positions BEFORE the strict original Rapier bridge sees it.
+   const invalid=intended.players.flatMap((p,i)=>{
+    const old=prior.players[i],dx=p.x-old.x-p.vx*FIXED_DT,
+     dy=p.y-old.y-p.vy*FIXED_DT;
+    return Math.max(Math.abs(dx),Math.abs(dy))>1e-6?
+     [{id:p.id,dx,dy,x:p.x,y:p.y,vx:p.vx,vy:p.vy}]:[];
+   });
+   if(invalid.length)throw new Error('M14 source kinematics mismatch '+
+    JSON.stringify({stateId,side,mode,tick,invalid}));
+   // Fail closed before a new Rapier step if prior accepted body feedback
+   // would force a shoe to move/turn faster than the actual previous shoe.
+   // This is a physical research limitation, NOT a synthesized contact.
+   let nextFootFrame;
+   try{
+    nextFootFrame=validateFootContactFrame(
+     intended,tick,lastGenuineShoeFrame);
+   }catch(cause){
+    const violations=intended.players.flatMap((p,i)=>{
+     const old=lastGenuineShoeFrame[i];
+     const displacementM=Math.hypot(p.x-old.x,p.y-old.y);
+     const turnRad=Math.abs(Math.atan2(
+      Math.sin(p.facingRad-old.facingRad),
+      Math.cos(p.facingRad-old.facingRad)));
+     return displacementM>PLAYER_MAX_SPEED_MPS*FIXED_DT+1e-5||
+       turnRad>6*FIXED_DT+1e-5?[{
+        id:p.id,displacementM,turnRad,
+        previousShoe:frozen({x:old.x,y:old.y,facingRad:old.facingRad}),
+        proposed:frozen({x:p.x,y:p.y,facingRad:p.facingRad})
+       }]:[];
+    });
+    const error=new Error(
+     'M15 genuine shoe/body next-frame velocity/turn safety BLOCKED '+
+     JSON.stringify({stateId,side,mode,tick,violations}),
+     {cause}
+    );
+    error.code='M15_NATIVE_SHOE_MOTION_BLOCKED';
+    error.auditTick=tick;
+    error.auditViolations=frozen(violations);
+    throw error;
+   }
+   const world=engine.step(intended);
+   lastGenuineShoeFrame=nextFootFrame;
+   const native=engine.nativePlayerBodySnapshot();
+   const queue=engine.sharedNativeContactSnapshot();
+   if(world.tick!==tick||native.tick!==tick||queue.tick!==tick||
+      native.sameOriginalRapierBallWorld!==true||
+      native.controlledEncounter!==false||
+      native.unstagedFeedbackEnabled!==feedback||
+      native.collisionColliderRadiusM!==PLAYER_MIN_SEPARATION_M/2||
+      native.physicalActors.length!==22||
+      queue.oneNativeRapierWorld!==true||
+      queue.oneNativeEventQueue!==true||
+      queue.genuineBodyStarts!==native.currentTickStarts||
+      queue.officialMatchAction!==false||
+      queue.officialTackle!==false||
+      queue.officialPossession!==false||
+      queue.officialResult!==null||
+      native.physicallyAuthoritativeMatchWorld!==false||
+      native.officialInterception!==false||
+      native.officialTackle!==false||native.officialPossession!==false)
+    throw new Error('M14 only one original native Rapier body+shoe source');
+   const begins=native.events.filter(x=>x.tick===tick&&
+    x.type==='rapier-body-start'&&
+    x.source==='native-rapier-collision-event');
+   const ends=native.events.filter(x=>x.tick===tick&&
+    x.type==='rapier-body-end'&&
+    x.source==='native-rapier-collision-event');
+   if(begins.length!==native.currentTickStarts||
+      ends.length!==native.currentTickEnds||
+      native.actualNativeStarts!==totalNativeBodyStarts+begins.length||
+      native.actualNativeEnds!==totalNativeBodyEnds+ends.length)
+    throw new Error('M14 native START/END must match same tick source totals');
+   for(const e of begins){
+    const ids=e.pair.split('|');
+    if(ids.length!==2||ids[0]>=ids[1]||
+       !ids.every(id=>INITIAL_PLAYERS.some(p=>p.id===id)))
+     throw new Error('M14 cannot infer non-original collision pairs');
+    actualBodyPairs.add(e.pair);
+   }
+   // M15: independently rebuild the active-pair ledger strictly from the
+   // current native START/END transitions, not from native.activePairs or
+   // distance thresholds. This is NOT a second physical event producer.
+   const currentEvents=native.events.filter(e=>e.tick===tick&&
+    ['rapier-body-start','rapier-body-end'].includes(e.type));
+   if(currentEvents.length!==begins.length+ends.length)
+    throw new Error('M15 current native body event sequence truncated');
+   for(const e of currentEvents){
+    if(e.source!=='native-rapier-collision-event'||
+       typeof e.pair!=='string'||
+       !actualBodyPairs.has(e.pair)&&e.type==='rapier-body-end')
+     throw new Error('M15 pair event must come from original Rapier START');
+    if(e.type==='rapier-body-start'){
+     if(independentNativeActivePairs.has(e.pair))
+      throw new Error('M15 duplicate native START without END');
+     independentNativeActivePairs.add(e.pair);
+    }else if(!independentNativeActivePairs.delete(e.pair))
+     throw new Error('M15 native END without active START');
+   }
+   const activeNow=[...independentNativeActivePairs].sort();
+   if(JSON.stringify(activeNow)!==JSON.stringify(native.activePairs)||
+      independentNativeActivePairs.size!==
+       totalNativeBodyStarts+begins.length-totalNativeBodyEnds-ends.length)
+    throw new Error('M15 active native pairs must reconcile independently');
+   totalNativeBodyStarts+=begins.length;
+   totalNativeBodyEnds+=ends.length;
+   totalNativeShoeStarts+=queue.genuineFootStarts.length;
+   if(begins.length&&queue.genuineFootStarts.length)
+    realConcurrentBodyAndShoeTicks++;
+   maxSimultaneousBodyPairs=Math.max(maxSimultaneousBodyPairs,
+    activeNow.length);
+   if(activeNow.length>=2){
+    simultaneousBodyPairTicks++;
+    if(!firstSimultaneousBodyPairs)
+     firstSimultaneousBodyPairs=frozen({tick,pairs:frozen(activeNow)});
+   }
+   maxBodyStartsSingleTick=Math.max(maxBodyStartsSingleTick,begins.length);
+   if(!firstNativeBodyStart&&begins.length)
+    firstNativeBodyStart=frozen({
+     tick,pairs:frozen(begins.map(x=>x.pair).sort())
+    });
+   let observed=intended;
+   if(feedback){
+    const result=mover.reconcileUnstagedNativeBodyResponse(native);
+    observed=mover.snapshot();
+    const acknowledged=engine.acknowledgeNativePlayerResponse(observed);
+    if(acknowledged.tick!==tick||
+       acknowledged.appliedMoverResponses!==observed.actualNativeResponseCount||
+       acknowledged.physicalPositionsFedBackIntoMover!==(
+        observed.actualNativeResponseCount>0))
+     throw new Error('M14 authoritative feedback must be one current Rapier tick');
+    if(result.accepted){
+     actualResponses++;
+     if(!native.activePairs.length||
+        !actualBodyPairs.size||
+        result.reason!=='genuine-unstaged-rapier-body-response')
+      throw new Error('M14 response requires genuine native contact');
+     if(!firstAppliedFeedback)firstAppliedFeedback=frozen({
+      tick,playerIds:result.playerIds,
+      adjustedM:result.adjustedM,minGapM:result.minGapM
+     });
+    }else{
+     actualRejectedResponses++;
+     if(result.reason==='no-native-active-pair'&&
+        native.activePairs.length!==0)
+      throw new Error('M14 empty native source may not claim active pair');
+    }
+    if(actualResponses!==observed.actualNativeResponseCount)
+     throw new Error('M14 accepted feedback count must match canonical actual writes');
+    actualReasons.set(result.reason,(actualReasons.get(result.reason)??0)+1);
+   }else if(native.appliedMoverResponses!==0||
+      native.physicalPositionsFedBackIntoMover!==false||
+      Object.hasOwn(observed,'actualNativeResponseCount'))
+    throw new Error('M14 negative control must never apply native feedback');
+   const limits=verify22(prior,observed,native,tick);
+   minCanonicalGapM=Math.min(minCanonicalGapM,limits.minGapM);
+   maxCanonicalSpeedMps=Math.max(maxCanonicalSpeedMps,limits.maxSpeedMps);
+   validateLineMovement(observed);
+   fullShapeTicks++;
+   if(observed.pressers.home&&observed.pressers.away)pressureTicks++;
+   if(observed.supports.home||observed.supports.away)supportTicks++;
+   if(observed.originalOpposingPressConvergence?.active)
+    actualBallConvergenceTicks++;
+   latestShape=observed.shape;latestPressers=observed.pressers;
+   latestSupports=observed.supports;
+   latestShoeBodyHandoff=observed.shoeBodyHandoff??null;
+   if(researchSecondaryPressSupport){
+    latestSecondaryPress=observed.secondaryPressSupport;
+    latestSecondaryPressSwitches=observed.secondaryPressSwitches;
+    latestSecondaryPressActiveTicks=observed.secondaryPressActiveTicks;
+   }
+   encounterTelemetry?.record({tick,frame:observed,native,ball:ballBefore});
+  }
+  return frozen({
+   version:'m14-authentic-multi-territory-feedback-audit-v1',
+   stateId,side,mode,ticks,
+   ...(researchBallStart===null?{}:{
+    ballStartSource:'m18-original-ball-only-before-tick-zero',
+    ballStartLocal:frozen({x:ballStart.x,y:ballStart.y})
+   }),
+   shoeBodyHandoff:feedback?shoeBodyHandoff:'observe-only',
+   sourceBoundShoeHandoff:latestShoeBodyHandoff,
+   ...(researchSecondaryPressSupport?{
+    secondaryPressSupport:latestSecondaryPress,
+    secondaryPressSwitches:latestSecondaryPressSwitches,
+    secondaryPressActiveTicks:latestSecondaryPressActiveTicks
+   }:{}),
+   initialBall:frozen({x:scene.x,y:scene.y,vx:scene.vx,vy:scene.vy}),
+   initialRollingFraction:moving?1:0,
+   original22Unstaged:true,sameRapierWorld:true,singleNativeEventQueue:true,
+   nativeColliderRadiusM:PLAYER_MIN_SEPARATION_M/2,
+   nativeBodyStarts:totalNativeBodyStarts,
+   nativeBodyEnds:totalNativeBodyEnds,nativeShoeStarts:totalNativeShoeStarts,
+   firstNativeBodyStart,realBodyPairs:frozen([...actualBodyPairs].sort()),
+   maxSimultaneousBodyPairs,maxBodyStartsSingleTick,
+   simultaneousBodyPairTicks,firstSimultaneousBodyPairs,
+   sameTickNativeBodyAndShoeStarts:realConcurrentBodyAndShoeTicks,
+   acceptedNativeResponses:actualResponses,
+   rejectedNativeResponses:actualRejectedResponses,
+   firstAppliedFeedback,
+   rejectedReasons:frozen(Object.fromEntries([...actualReasons].sort())),
+   minimumCanonicalGapM:minCanonicalGapM,
+   peakCanonicalSpeedMps:maxCanonicalSpeedMps,
+   actualConvergenceTicks:actualBallConvergenceTicks,
+   originalPressTicks:pressureTicks,originalSupportTicks:supportTicks,
+   fullShapeTicks,latestPressers,latestSupports,latestShape,
+   ...(encounterTelemetry?{
+    observedContactDynamics:encounterTelemetry.snapshot()
+   }:{}),
+   matchAuthority:false,officialTackle:false,officialInterception:false,
+   officialPossession:false,officialResult:null
+  });
+ }finally{engine.dispose();}
+}
+
+export function auditNaturalNativeFeedbackMatrix(RAPIER,{
+ ticks=225,
+ stateIds=M11_BALL_STARTS.map(x=>x.id)
+}={}){
+ if(!Array.isArray(stateIds)||stateIds.length===0||
+    new Set(stateIds).size!==stateIds.length||
+    stateIds.some(id=>!allBallStates.has(id)))
+  throw new TypeError('Only distinct original unstaged ball states allowed');
+ const rows=[];
+ for(const side of sides)for(const id of stateIds)
+  for(const mode of modes)
+   rows.push(auditNaturalNativeFeedback(RAPIER,{
+    stateId:id,side,mode,ticks
+   }));
+ const positive=rows.filter(x=>x.mode==='feedback');
+ const controls=rows.filter(x=>x.mode==='observe');
+ return frozen({
+  version:'m14-real-22-player-multi-territory-matrix-v1',
+  originalStates:stateIds.length,eachTicks:ticks,rows:frozen(rows),
+  totalRuns:rows.length,
+  feedbackCasesWithNativeContact:positive.filter(x=>x.nativeBodyStarts>0).length,
+  positiveFeedbackCases:positive.filter(x=>x.acceptedNativeResponses>0).length,
+  totalAcceptedNativeResponses:positive.reduce((n,x)=>n+x.acceptedNativeResponses,0),
+  nativeBodyStarts:positive.reduce((n,x)=>n+x.nativeBodyStarts,0),
+  nativeShoeStarts:positive.reduce((n,x)=>n+x.nativeShoeStarts,0),
+  maximumSimultaneousNativeBodyPairs:Math.max(...positive.map(x=>x.maxSimultaneousBodyPairs)),
+  multipleSimultaneousNativeBodyPairsObserved:
+   positive.some(x=>x.maxSimultaneousBodyPairs>1),
+  sameTickNativeBodyAndShoeStarts:positive.reduce(
+   (n,x)=>n+x.sameTickNativeBodyAndShoeStarts,0),
+  controlsWithNativeBodyStarts:controls.filter(x=>x.nativeBodyStarts>0).length,
+  controlsAcceptedResponses:controls.reduce((n,x)=>n+x.acceptedNativeResponses,0),
+  all22AndFootballAuthorityInvariant:true
+ });
+}

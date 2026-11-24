@@ -56,9 +56,11 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
       socket.addEventListener('error',fail,{once:true});
     });
     let id=0;
-    const pending=new Map();
+    const pending=new Map(),browserErrors=[];
     socket.addEventListener('message',event=>{
       const data=JSON.parse(event.data);
+      if(data.method==='Runtime.exceptionThrown')browserErrors.push(data.params.exceptionDetails.exception?.description??data.params.exceptionDetails.text);
+      if(data.method==='Log.entryAdded'&&data.params.entry.level==='error')browserErrors.push(data.params.entry.text);
       const found=pending.get(data.id);
       if(!found)return;
       clearTimeout(found.timeout);
@@ -85,10 +87,11 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
         try{if(await evaluate(expr))return;}catch{}
         await delay(100);
       }
-      throw Error('Timed out waiting for: '+expr+' '+(await evaluate('document.body?.textContent?.slice(0,300)')));
+      throw Error('Timed out waiting for: '+expr+' browserErrors='+JSON.stringify(browserErrors.slice(-12))+' '+JSON.stringify(await evaluate("({status:document.querySelector('#status')?.textContent,resources:performance.getEntriesByType('resource').filter(r=>r.name.includes('__fa_match_engine__')).slice(-12).map(r=>r.name),body:document.body?.textContent?.slice(-450)})")));
     }
     await cmd('Page.enable');
     await cmd('Runtime.enable');
+    await cmd('Log.enable');
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await cmd('Page.navigate',{url:'http://app.localhost:2000/dev/match-engine'});
     await waitFor("document.readyState==='complete'&&document.querySelector('#advanced-settings')&&document.querySelector('#pitch')");
@@ -164,7 +167,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.deepEqual(playersQa.context,{
       ball:'Middle third · Centre',press:'Home #10 · Away #10'
     });
-    assert.match(playersQa.before,/^Home #10 · forward · \(-5\.00, 0\.00\) m · 0\.00 m\/s$/);
+    assert.match(playersQa.before,/^Home #10 · forward · \(-5\.00, 0\.00\) m · 0\.00 km\/h$/);
     assert.match(playersQa.after,/^Home #10 · forward · /);
     assert.notEqual(playersQa.after,playersQa.before,'actual autonomous 60Hz movement required');
     assert.equal(playersQa.time,'2.00 s');
@@ -214,6 +217,24 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
       inertLabel:true,inertSeed:true,unchangedTick:true
     },'custom stepper values, keyboard semantics, decimals and inert labels');
     process.stdout.write('ME01_NUMERIC_CONTROLS_PASS '+JSON.stringify(numeric)+'\n');
+    const displayVelocity=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id);"+
+      "const v=el('vx'),up=document.querySelector('[data-me-spin=\\\"vx\\\"][data-direction=\\\"1\\\"]');"+
+      "const initial=v.value;v.value='20.88';v.dispatchEvent(new Event('change',{bubbles:true}));"+
+      "up.click();const afterArrow=v.value;"+
+      "v.value='20.88';v.dispatchEvent(new Event('change',{bubbles:true}));"+
+      "el('apply').click();"+
+      "return {initial,afterArrow,field:v.value,readout:el('velocity').textContent,"+
+      "ground:el('ground-speed').textContent,caption:el('me-label-vx').textContent,"+
+      "units:document.querySelector('.me-parameter-group:nth-of-type(2) legend')?.textContent};"+
+      "})()");
+    assert.equal(displayVelocity.afterArrow,'21.88');
+    assert.equal(displayVelocity.field,'20.88');
+    assert.ok(displayVelocity.readout.startsWith('20.88,'),
+      '20.88 km/h UI must feed 5.8m/s into Rapier, and round-trip unchanged');
+    assert.ok(displayVelocity.ground.endsWith(' km/h'));
+    assert.equal(displayVelocity.units,'Velocity · km/h');
+    process.stdout.write('ME01_KMH_INPUT_BROWSER '+JSON.stringify(displayVelocity)+'\n');
     // LAB-04: inspect grass rolling deceleration in the real browser control flow.
     // Simulate fixed ticks using the existing Step button; no actual page clock is required.
     const rolling=await evaluate("(()=>{"+
@@ -362,7 +383,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.equal(metrics.speedRows.length,9,'3 launch speeds x 3 coefficient models');
     assert.ok(metrics.speedRows.every(r=>r.length===8));
     assert.deepEqual([...new Set(metrics.speedRows.map(r=>r[0]))],
-      ['7.00','15.00','30.00']);
+      ['25.20','54.00','108.00']);
     assert.deepEqual(metrics.speedRows.slice(0,3).map(r=>r[1]),
       ['Cd=0','Cd=0.24','Cd(v)']);
     assert.ok(Number(metrics.speedRows[2][5])<Number(metrics.speedRows[0][5]),
@@ -405,7 +426,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.equal(metrics.combinedRows.length,36,'3 speeds × 3 spins × 4 modes');
     assert.ok(metrics.combinedRows.every(row=>row.length===10));
     assert.deepEqual([...new Set(metrics.combinedRows.map(row=>row[0]))],
-      ['7.00','15.00','30.00']);
+      ['25.20','54.00','108.00']);
     assert.deepEqual(metrics.combinedRows.slice(0,4).map(row=>row[2]),
       ['No forces','Cd(v) only','Magnus only','Cd(v) + Magnus']);
     assert.ok(metrics.combinedRows.every(row=>row.slice(3).every(v=>Number.isFinite(Number(v)))),
@@ -418,24 +439,24 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
       'post-contact checkpoint must not be fabricated');
     const selected=(vx,spin,mode)=>metrics.combinedRows.find(row=>
       row[0]===vx&&row[1].startsWith(spin)&&row[2]===mode);
-    assert.ok(Number(selected('15.00','+Z','Cd(v) + Magnus')[5])>0.02);
-    assert.ok(Number(selected('15.00','−Z','Cd(v) + Magnus')[5])< -0.02);
-    assert.equal(selected('15.00','No spin','No forces')[5],
-      selected('15.00','No spin','Magnus only')[5]);
-    assert.equal(selected('15.00','No spin','Cd(v) only')[5],
-      selected('15.00','No spin','Cd(v) + Magnus')[5]);
+    assert.ok(Number(selected('54.00','+Z','Cd(v) + Magnus')[5])>0.02);
+    assert.ok(Number(selected('54.00','−Z','Cd(v) + Magnus')[5])< -0.02);
+    assert.equal(selected('54.00','No spin','No forces')[5],
+      selected('54.00','No spin','Magnus only')[5]);
+    assert.equal(selected('54.00','No spin','Cd(v) only')[5],
+      selected('54.00','No spin','Cd(v) + Magnus')[5]);
     assert.match(metrics.combinedNote,/hypotheses/);
     assert.match(metrics.combinedNote,/Normal LAB-02 stays Cd=0/);
     process.stdout.write('ME10_COMBINED_BROWSER '+JSON.stringify({
       rows:metrics.combinedRows.length,
       checkpoints:metrics.combinedPoints.length,
-      positiveAt15:selected('15.00','+Z','Cd(v) + Magnus')[5],
-      negativeAt15:selected('15.00','−Z','Cd(v) + Magnus')[5]
+      positiveAt15:selected('54.00','+Z','Cd(v) + Magnus')[5],
+      negativeAt15:selected('54.00','−Z','Cd(v) + Magnus')[5]
     })+'\\n');
     assert.equal(metrics.calibrationCdChart,560);
     assert.equal(metrics.calibrationCsChart,560);
     assert.deepEqual(metrics.calibrationDragRows.map(row=>row.slice(0,2)),
-      [['19.00','0.21'],['32.00','0.24']]);
+      [['68.40','0.21'],['115.20','0.24']]);
     assert.deepEqual(metrics.calibrationDragRows.map(row=>row.slice(2)),
       [['0.21','0.00'],['0.24','0.00']]);
     assert.deepEqual(metrics.calibrationSideRows.map(row=>row.slice(0,2)),
@@ -494,12 +515,12 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.equal(metrics.reviewRows.length,9,
       'nine instantaneous model comparisons, no extra Rapier worlds');
     assert.deepEqual([...new Set(metrics.reviewRows.map(r=>r[0]))],
-      ['7.00 m/s','15.00 m/s','30.00 m/s']);
+      ['25.20 km/h','54.00 km/h','108.00 km/h']);
     assert.deepEqual(metrics.reviewRows.slice(0,3).map(r=>r[1]),
       ['0.00 rev/s','3.00 rev/s','6.00 rev/s']);
     assert.ok(metrics.reviewRows.every(r=>r.length===6));
     const auditHigh=metrics.reviewRows[8];
-    assert.equal(auditHigh[0],'30.00 m/s');
+    assert.equal(auditHigh[0],'108.00 km/h');
     assert.equal(auditHigh[1],'6.00 rev/s');
     const highCl=auditHigh[3].split(' / ').map(Number);
     assert.ok(highCl[0]<0.1&&highCl[1]>0.23);
@@ -658,7 +679,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.equal(metrics.literatureRows.length,9);
     assert.ok(metrics.literatureRows.every(row=>row.length===6));
     assert.deepEqual([...new Set(metrics.literatureRows.map(row=>row[0]))],
-      ['7.00 m/s','15.00 m/s','30.00 m/s']);
+      ['25.20 km/h','54.00 km/h','108.00 km/h']);
     assert.deepEqual(metrics.literatureRows.slice(0,3).map(row=>row[1]),
       ['0 rev/s','+Z 6 rev/s','−Z 6 rev/s']);
     assert.ok(metrics.literatureRows.every(row=>row.slice(2).every(cell=>
@@ -669,7 +690,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.match(metrics.literatureNote,/Gameplay approved: NO/);
     process.stdout.write('ME17_LITERATURE_BROWSER '+JSON.stringify({
       rowCount:metrics.literatureRows.length,
-      plus15:metrics.literatureRows.find(row=>row[0]==='15.00 m/s'&&row[1]==='+Z 6 rev/s'),
+      plus15:metrics.literatureRows.find(row=>row[0]==='54.00 km/h'&&row[1]==='+Z 6 rev/s'),
       stage:'PROVISIONAL DIAGNOSTIC'
     })+'\\n');
     assert.deepEqual(metrics.flightRows.map(r=>r[0]),[
@@ -711,8 +732,8 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.ok(Math.abs(omega[0])<0.01&&Math.abs(omega[1]-18.18)<0.02&&Math.abs(omega[2]-36.36)<0.02,
       'actual 0/half/full initial angular speeds (rad/s): '+omega);
     const first=metrics.spinPoints[0].slice(1).map(value=>Number(value.split(' / ')[1]));
-    assert.ok(Math.abs(first[0]-4)<0.01&&Math.abs(first[1]-2)<0.01&&first[2]<0.01,
-      '0 / 50 / 100% spin must begin at 4 / 2 / 0 m/s bottom slip: '+first);
+    assert.ok(Math.abs(first[0]-14.4)<0.01&&Math.abs(first[1]-7.2)<0.01&&first[2]<0.01,
+      '0 / 50 / 100% spin must begin at 14.4 / 7.2 / 0 km/h bottom slip: '+first);
     const speeds=metrics.spinPoints[4].slice(1).map(value=>Number(value.split(' / ')[0]));
     assert.ok(speeds[0]<speeds[1]&&speeds[1]<speeds[2],
       '1s rolling speed should depend on starting spin: '+speeds);
@@ -722,7 +743,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.ok(metrics.bounceRows.length>=3,'multiple bounce measurements expected');
     assert.ok(metrics.bounceRows.every(r=>r.length===5));
     assert.ok(metrics.bounceRows[0][3]!=='Not resolved');
-    assert.deepEqual(metrics.rollRows.map(r=>r[0]),['2.00 m/s','4.00 m/s','6.00 m/s']);
+    assert.deepEqual(metrics.rollRows.map(r=>r[0]),['7.20 km/h','14.40 km/h','21.60 km/h']);
     assert.equal(metrics.rollRows[1][4],'Baseline');
     assert.ok(metrics.rollRows.every(r=>r.length===5),'position and stop distance must appear');
     assert.ok(metrics.checkpoints[0][1].split(' / ').length===3,'speed, distance and slip must be displayed');
@@ -818,9 +839,9 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
       qaVisual.flightVisual.candidateSideInk>8,
       'both flight charts must contain painted Rapier paths, not just legends: '+
         JSON.stringify(qaVisual.flightVisual));
-    assert.match(qaVisual.flightVisual.notes[0],/7 m\/s/);
-    assert.match(qaVisual.flightVisual.notes[1],/15 m\/s/);
-    assert.match(qaVisual.flightVisual.notes[2],/30 m\/s/);
+    assert.match(qaVisual.flightVisual.notes[0],/25\.20 km\/h/);
+    assert.match(qaVisual.flightVisual.notes[1],/54\.00 km\/h/);
+    assert.match(qaVisual.flightVisual.notes[2],/108\.00 km\/h/);
     assert.ok(qaVisual.flightVisual.notes.every(note=>note.includes('top-down 1:1 axes')&&
       note.includes('All paths stop at contact')&&note.includes('NOT measured')));
     process.stdout.write('ME18_TRAJECTORY_BROWSER '+JSON.stringify({
@@ -970,7 +991,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     assert.deepEqual(motionQa.minus.phases,['airborne','airborne']);
     assert.ok(motionQa.plus.old>1.5&&motionQa.plus.old<1.8);
     assert.ok(motionQa.plus.candidate>3.5&&motionQa.plus.candidate<4.5,
-      '30m/s 6rev/s candidate high-speed bend must remain visible');
+      '108 km/h 6rev/s candidate high-speed bend must remain visible');
     assert.ok(motionQa.minus.old< -1.5&&motionQa.minus.old> -1.8);
     assert.ok(motionQa.minus.candidate< -3.5&&motionQa.minus.candidate> -4.5);
     assert.ok(Math.abs(motionQa.plus.old+motionQa.minus.old)<0.1);

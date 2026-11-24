@@ -1,4 +1,5 @@
 // ME-ACTIONS-LAB #620: single source of truth for bounded DEV action scenes.
+import {SMALL_SIDED_LAB_SCENARIOS} from './small-sided-lab-scenarios.mjs';
 // A real shoe collision/impulse is required. These labels do NOT attest an
 // official pass completion, possession, tackle, dribble or scored goal.
 const scene=(seed,x,y=0,vx=0)=>Object.freeze({
@@ -9,13 +10,40 @@ const item=(id,title,mode,initial,description,focus,goal)=>Object.freeze({
  source:'one-canonical-rapier-ball-and-22-physical-feet',
  officialResult:false
 });
+export const DEFENSE_LAB_STARTS=Object.freeze({
+ tackle:Object.freeze({
+  home:scene('me-action-tackle-home',-30,0,0.28),
+  away:scene('me-action-tackle-away',30,0,-0.28)
+ }),
+ interception:Object.freeze({
+  home:scene('me-action-interception-home',-30,0,-2),
+  away:scene('me-action-interception-away',30,0,2)
+ })
+});
 export const SHOT_LAB_STARTS=Object.freeze({
  home:scene('me-action-shot-home',30,1,0),
  away:scene('me-action-shot-away',-30,-1,0)
 });
+// Base-action coverage: lofted wide deliveries, not completed crosses.
+export const SAVE_LAB_STARTS=Object.freeze({
+ home:Object.freeze({preset:'roll',seed:'me-action-keeper-save-home',
+  x:-47.7,y:1.2,z:0,vx:-3,vy:1,vz:0}),
+ away:Object.freeze({preset:'roll',seed:'me-action-keeper-save-away',
+  x:47.7,y:-1.2,z:0,vx:3,vy:-1,vz:0})
+});
+export const CROSS_LAB_STARTS=Object.freeze({
+ home:scene('me-action-cross-home',30,24),
+ away:scene('me-action-cross-away',-30,-24)
+});
 export const CARRY_LAB_STARTS=Object.freeze({
  home:scene('me-action-carry-home',-4.96,0,0.3),
  away:scene('me-action-carry-away',4.96,0,-0.3)
+});
+// M4: mirror the *before-tick-zero* CONTROL ball and intended recipient.
+// This never fabricates a Rapier START or bypasses the existing action policy.
+export const CONTROL_LAB_STARTS=Object.freeze({
+ home:scene('me-action-pass-receive',-4.96,0,0.3),
+ away:scene('me-action-pass-receive-away',4.96,0,-0.3)
 });
 // #620 CHALLENGE: mirrored real shoe contact and physically empty counterfactual.
 // The no-contact ball starts >15m from every original canonical shoe;
@@ -25,6 +53,40 @@ export const CHALLENGE_LAB_STARTS=Object.freeze({
  away:scene('me-action-opposition-shoe',4.96),
  noContact:scene('me-action-challenge-no-contact',0,30)
 });
+// B05: original same-world rolling-ball boundaries in both directions.
+// Each starts strictly INSIDE the 105×68m pitch before tick zero.
+const boundary=(seed,x,y,vx,vy)=>Object.freeze({
+ preset:'roll',seed,x,y,z:0,vx,vy,vz:0
+});
+export const B05_LAB_STARTS=Object.freeze({
+ goal:Object.freeze({
+  home:boundary('me-b05-real-goal-home',47.8,2.8,25,0),
+  away:boundary('me-b05-real-goal-away',-47.8,-2.8,-25,0)
+ }),
+ touchline:Object.freeze({
+  home:boundary('me-b05-touchline-top',0,29.8,0,25),
+  away:boundary('me-b05-touchline-bottom',0,-29.8,0,-25)
+ }),
+ goalLine:Object.freeze({
+  home:boundary('me-b05-goal-line-top',47.8,10,25,0),
+  away:boundary('me-b05-goal-line-bottom',-47.8,-10,-25,0)
+ })
+});
+// B05b: source-positive original native shoe LAST touch plus out-of-play.
+export const B05B_LAB_STARTS=Object.freeze({
+ throwIn:Object.freeze({
+  home:boundary('me-b05b-throw-home',0,29.8,0,0),
+  away:boundary('me-b05b-throw-away',0,-29.8,0,0)
+ }),
+ corner:Object.freeze({
+  home:boundary('me-b05b-corner-home',47.8,10,0,0),
+  away:boundary('me-b05b-corner-away',-47.8,-10,0,0)
+ }),
+ goalKick:Object.freeze({
+  home:boundary('me-b05b-goalkick-home',47.8,10,0,0),
+  away:boundary('me-b05b-goalkick-away',-47.8,-10,0,0)
+ })
+});
 export const ACTION_LAB_SCENARIOS=Object.freeze([
  item('pass','Pass','uniform',scene('me-action-pass-home',-4.96,0,0.3),
   'Real shoe START + teammate-directed impulse; reception is not assumed.',
@@ -32,20 +94,61 @@ export const ACTION_LAB_SCENARIOS=Object.freeze([
  item('shot','Shot','shot',SHOT_LAB_STARTS.home,
   'Only forward #10 starts next to the ball before tick zero; genuine Rapier shoe START, original shot lane and flight required. No goal awarded.',
   ['home-10','away-1','away-10'],'shot'),
+ item('cross','Cross','shot',CROSS_LAB_STARTS.home,
+  'A real wide #10 shoe START drives one lofted impulse toward the observed #9 in the box. Neither completion nor a goal is assumed.',
+  ['home-10','home-9','away-1'],'cross'),
+ item('save','Goalkeeper save','save',SAVE_LAB_STARTS.home,
+  'An incoming goalward real ball triggers a bounded keeper lateral dive approach and, only on genuine exclusive Rapier shoe START, a physical parry attempt. No completed save.',
+  ['home-1','away-10','away-1'],'save'),
+ item('tackle','Tackle','defense',DEFENSE_LAB_STARTS.tackle.home,
+  'Live defender #7 with a real nearby opponent attempts a physical poke on an almost stationary ball. Same native Rapier shoe START; no automatic ball recovery.',
+  ['home-7','away-10','home-10'],'tackle'),
+ item('interception','Interception','defense',
+  DEFENSE_LAB_STARTS.interception.home,
+  'Original defender #7 attempts to deflect an inbound moving ball under observed opponent pressure. An incoming trajectory is not proof of an opponent pass or a successful interception.',
+  ['home-7','away-10','home-10'],'interception'),
  item('challenge','Challenge','challenge',
   CHALLENGE_LAB_STARTS.away,
   'Witness an opponent shoe-ball START only. An actual tackle/interception or ball recovery is NOT yet verified.',
   ['home-7','home-10','away-7'],'opponent-contact'),
  item('control','Control','control',
-  scene('me-action-pass-receive',-4.96,0,0.3),
+  CONTROL_LAB_STARTS.home,
   'A true HOME #10 PASS starts the receiver approach; only a later authentic HOME #9 shoe START counts as receiving contact. Possession or completed reception are never assumed.',
   ['home-9','home-10','away-10'],'control'),
+ item('trap','Receive / trap','control',
+  scene('me-action-native-trap-home',-4.96,0,0.3),
+  'Real PASS to actual #9; an authentic separate native shoe START applies the original bounded first-touch cushioning impulse. No reception or possession awarded.',
+  ['home-10','home-9','away-10'],'trap'),
+ item('dribble','Dribble attempt','control',
+  scene('me-action-native-dribble-home',-4.96,0,0.3),
+  'Original #9 receives genuine PASS, cushions on actual shoe START, then independently pushes the Rapier ball and may recontact; a physical attempt, not successful dribble.',
+  ['home-10','home-9','away-7'],'dribble'),
+ item('goal','Goal crossing','referee',B05_LAB_STARTS.goal.home,
+  'One real Rapier ball crosses completely between the posts; observed provisional GOAL and a physical centre-circle KICKOFF using the SAME ball. No official match result.',
+  ['home-10','away-1','away-10'],'goal-crossing'),
+ item('touchline','Touchline exit','referee',B05_LAB_STARTS.touchline.home,
+  'Original ball crosses wholly over a touchline. THROW-IN spot is computed, but team remains unresolved if no native last shoe touch is witnessed.',
+  ['home-10','away-10','home-9'],'touchline-exit'),
+ item('goal-line-out','Goal-line exit','referee',
+  B05_LAB_STARTS.goalLine.home,
+  'Original ball crosses the goal line outside the posts. CORNER or GOAL KICK requires an authenticated last real shoe touch; never guess the team.',
+  ['home-10','away-1','away-10'],'goal-line-exit'),
+ item('throw-in','Native-touch throw-in','referee',B05B_LAB_STARTS.throwIn.home,
+  'A real exclusive shoe-ball last touch then full-ball touchline exit; the correct other team receives a physically placed same-world THROW-IN. No legal hand release is inferred.',
+  ['home-10','away-9','away-10'],'throw-in'),
+ item('corner','Native-touch corner','referee',B05B_LAB_STARTS.corner.home,
+  'True defending-team last shoe START before the fully crossed goal line outside the posts; correct attacking-team CORNER placement on the original Rapier ball.',
+  ['away-10','home-9','away-1'],'corner'),
+ item('goal-kick','Native-touch goal kick','referee',B05B_LAB_STARTS.goalKick.home,
+  'True attacking-team last shoe START before the fully crossed goal line outside the posts; correct defending-team GOAL KICK placement on the original Rapier ball.',
+  ['home-10','away-9','away-1'],'goal-kick'),
  item('carry','Carry','carry',CARRY_LAB_STARTS.home,
   'Two actual opponents cover the safe PASS recipients before tick zero. A genuine #10 shoe START may then produce the original short CARRY impulse; never a confirmed dribble.',
   ['home-10','home-9','home-11','away-9','away-11'],'carry')
 ]);
 export function getActionLabScenario(id){
- const value=ACTION_LAB_SCENARIOS.find(x=>x.id===id);
+ const value=ACTION_LAB_SCENARIOS.find(x=>x.id===id)??
+  SMALL_SIDED_LAB_SCENARIOS.find(x=>x.id===id);
  if(!value)throw new RangeError('Unknown controlled Match Engine action LAB');
  return value;
 }
@@ -57,7 +160,8 @@ export function classifyActionLabEvidence(spec,{
  tick,action=null,starts=[],priorPass=null,opponentEarlier=false,
  challengeSide='away'
 }={}){
- if(!spec||!ACTION_LAB_SCENARIOS.includes(spec)||
+ if(!spec||!(ACTION_LAB_SCENARIOS.includes(spec)||
+     SMALL_SIDED_LAB_SCENARIOS.includes(spec))||
     !Number.isSafeInteger(tick)||tick<0||
     !Array.isArray(starts)||new Set(starts).size!==starts.length||
     starts.some(id=>typeof id!=='string'||
@@ -68,7 +172,7 @@ export function classifyActionLabEvidence(spec,{
     action.actualPhysicsImpulseApplied!==true||
     action.officialMatchAction!==false||
     starts.length!==1||starts[0]!==action.playerId||
-    !['pass','shot','carry','clearance'].includes(action.action)))
+    !['pass','shot','cross','save','tackle','interception','carry','clearance'].includes(action.action)))
   throw new TypeError('Never award an action without a single same-tick real shoe START');
  if(typeof opponentEarlier!=='boolean')throw new TypeError('Boolean contact history required');
  if(!['home','away'].includes(challengeSide))
@@ -83,16 +187,22 @@ export function classifyActionLabEvidence(spec,{
   throw new TypeError('Invalid prior genuine physical pass');
  const pass=spec.goal==='pass'&&action?.action==='pass';
  const shot=spec.goal==='shot'&&action?.action==='shot';
+ const cross=spec.goal==='cross'&&action?.action==='cross';
+ const save=spec.goal==='save'&&action?.action==='save';
+ const tackle=spec.goal==='tackle'&&action?.action==='tackle';
+ const interception=spec.goal==='interception'&&
+  action?.action==='interception';
  const carry=spec.goal==='carry'&&action?.action==='carry';
  const receiver=spec.goal==='control'&&priorPass!==null&&
   !opponentEarlier&&starts.length===1&&
   starts[0]===priorPass.recipientId;
  const opposition=spec.goal==='opponent-contact'&&
   starts.length===1&&starts[0].startsWith(challengeSide+'-');
- const witness=Boolean(pass||shot||carry||receiver||opposition);
+ const situation=spec.mode==='situation'&&action!==null;
+ const witness=Boolean(pass||shot||cross||save||tackle||interception||carry||receiver||opposition||situation);
  return Object.freeze({
   tick,witnessed:witness,kind:spec.goal,
-  verifiedShoeImpulse:Boolean(pass||shot||carry),
+  verifiedShoeImpulse:Boolean(pass||shot||cross||save||tackle||interception||carry||situation),
   realContactObserved:starts.length>0,
   verifiedReceivingShoeContact:Boolean(receiver),
   observedOpponentShoeContact:Boolean(opposition),
