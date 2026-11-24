@@ -95,3 +95,13 @@ export function inspectOpeningProgress(run,manifest,inventory,receipts,observati
  if(done)insist(used.size===run.slotCount&&expected.size===run.slotCount,"final population mismatch");
  return {runKey:run.runKey,committedBatches:sorted.length,totalBatches,completedSlots:used.size,remainingSlots:run.slotCount-used.size,idHighWater:highWater,nextBatch:done?null:descriptor(run,manifest,reuse,sorted.length),readyForReconciliation:done};
 }
+
+// Accept only a self-consistent, canonical inventory envelope from the private
+// local adapter. The digest is integrity evidence, not authorization or a signature.
+export function createCertifiedOpeningPersistenceRun(manifest,inventory,world){
+ insist(inventory?.schema==="opening-inventory-v1"&&inventory.complete===true&&Array.isArray(inventory.players),"invalid certified opening inventory");
+ const {worldGeneration,worldRevision,idHighWater,players}=inventory;
+ insist(players.every((p,i)=>i===0||players[i-1].id<p.id),"inventory order or duplicate ID");
+ insist(manifestDigest({worldGeneration,worldRevision,idHighWater,players})===inventory.snapshotId,"certified inventory digest mismatch");
+ return createOpeningPersistenceRun(manifest,inventory,world);
+}

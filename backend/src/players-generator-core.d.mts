@@ -20,3 +20,5 @@ export function summarize(trial:TrialResult):{
 
 export interface OpeningCandidateSlot {age:number;primaryNationality:string;primaryPosition:string;primarySuitabilityTarget:number;generatorSeed:string}
 export function generateOpeningCandidateWithCatalog(slot:OpeningCandidateSlot,pools:unknown):TrialCandidate;
+
+export function calculatePositionSuitability(attributes:Readonly<Record<string,number>>,position:string):number;

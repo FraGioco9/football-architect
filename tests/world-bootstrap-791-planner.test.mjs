@@ -1,7 +1,7 @@
 // #791 — offline pure planner tests; owned by Site FULL.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents} from '../tools/world-bootstrap-791/persistence.mjs';
+import {createOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,createCertifiedOpeningPersistenceRun} from '../tools/world-bootstrap-791/persistence.mjs';
 import {loadRuntimePlayerCatalog} from '../backend/src/players-catalog.mjs';
 import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,clubCountryToNationality,approvedForeignWeights,sampleOpeningRetirementAge,prepareOpeningCandidateChunk} from '../tools/world-bootstrap-791/planner.mjs';
 
@@ -134,6 +134,11 @@ function testPersistenceProtocol(){
  const inventory={worldGeneration:manifest.versions.worldGeneration,worldRevision:0,snapshotId:"opening",complete:true,idHighWater:100,players:[prior]};
  const world={generation:inventory.worldGeneration,revision:0,seasonNumber:0,day:0,phase:"unstarted"};
  const run=createOpeningPersistenceRun(manifest,inventory,world),rows=[{id:44,fingerprint:prior.fingerprint}],receipts=[];
+ const envelope={worldGeneration:inventory.worldGeneration,worldRevision:inventory.worldRevision,idHighWater:inventory.idHighWater,players:inventory.players};
+ const certified={schema:"opening-inventory-v1",...envelope,snapshotId:manifestDigest(envelope),complete:true};
+ eq(createCertifiedOpeningPersistenceRun(manifest,certified,world),createOpeningPersistenceRun(manifest,certified,world));
+ throws(()=>createCertifiedOpeningPersistenceRun(manifest,{...certified,players:[{...prior,age:prior.age+1}]},world));
+ throws(()=>createCertifiedOpeningPersistenceRun(manifest,{...certified,complete:false},world));
  const observation={world,complete:true,idHighWater:100,rows};
  let progress=inspectOpeningProgress(run,manifest,inventory,receipts,observation);
  eq(progress.totalBatches,256);eq(progress.completedSlots,0);eq(progress.nextBatch.entries.length,25);

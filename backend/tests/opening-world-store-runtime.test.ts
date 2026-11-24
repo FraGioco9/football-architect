@@ -5,6 +5,7 @@ import {seedUnifiedAdminHttp} from './fixtures/unified-admin-http.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
 import {previewPlayerGeneration,commitPlayerGeneration} from '../src/players-generation-command.ts';
 import {openingDigest,readOpeningObservation,beginLocalOpeningRun,commitLocalOpeningBatch,readLocalOpeningJournal} from '../src/opening-world-store.ts';
+import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
 import type {Database} from '../src/database.ts';
 import type {AdminSession} from '../src/auth.ts';
 const bindings=env as any,db=bindings.DB as Database;
@@ -18,6 +19,14 @@ it('local opening journal preserves existing player, atomically rolls back and r
  await commitPlayerGeneration(db,session,{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'},now);
  const initial=await readOpeningObservation(db);
  expect(initial.rows).toHaveLength(1);
+ const certified=await readLocalOpeningInventory(db);
+ expect(certified.players).toHaveLength(1);
+ expect(certified.players[0]).toMatchObject({id:initial.rows[0].id,age:18,primaryNationality:'ITA',primaryPosition:'ST',clubKey:null,representation:'ai',hasSignedContract:false,hasSportingHistory:false,readyForReuse:true,fingerprint:initial.rows[0].fingerprint});
+ expect(certified.snapshotId).toMatch(/^[0-9a-f]{64}$/);
+ expect(await readLocalOpeningInventory(db)).toEqual(certified);
+ expect(certified.players[0]).not.toHaveProperty('retirement_age');
+ expect(certified.players[0]).not.toHaveProperty('attributes');
+ expect(certified.players[0]).not.toHaveProperty('development_aptitude');
  const intents:Parameters<typeof commitLocalOpeningBatch>[5]=[{slotKey:'fixture/001',kind:'reuse',playerId:initial.rows[0].id},
   ...Array.from({length:24},(_,i)=>{const slotKey='fixture/'+String(i+2).padStart(3,'0');return {slotKey,kind:'generate' as const,slot:{slotKey,age:39,primaryNationality:'ITA',primaryPosition:'ST',primarySuitabilityTarget:65,generatorSeed:'opening-test-'+i},privateRetirementAge:40}})];
  const intentHash=await openingDigest(intents);
@@ -26,6 +35,7 @@ it('local opening journal preserves existing player, atomically rolls back and r
  const root={...identity,runKey:await openingDigest(identity),baseline:initial.rows};
  await beginLocalOpeningRun(db,session,root,now);
  await expect(beginLocalOpeningRun(db,session,root,now)).rejects.toThrow();
+ await expect(readLocalOpeningInventory(db)).rejects.toThrow('opening inventory already frozen');
  const ordinary=await previewPlayerGeneration(db,session,{options:{count:1,seed:'locked-fixture'}},now);
  await expect(commitPlayerGeneration(db,session,{draftId:ordinary.draftId,confirmation:'GENERATE PLAYERS'},now)).rejects.toThrow();
  await expect(db.prepare("UPDATE world_state SET generation=? WHERE id=1").bind(crypto.randomUUID()).run()).rejects.toThrow();
