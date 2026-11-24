@@ -33,7 +33,8 @@ function suite(){
  const f={uncommittedCash:2000,uncreditedGuaranteedParticipation:3000,committedUncoveredWages:3500,arrears:0,newDue:500};
  same(nextPaydayAffordability(f),{signable:true,requiredArc:4000,additionalCashHoldArc:2000});
  same(nextPaydayAffordability({...f,arrears:1}).signable,false);
- same(nextPaydayAffordability({...f,newDue:1600}).signable,false);
+ same(nextPaydayAffordability({...f,newDue:1600}),{signable:false,requiredArc:5100,additionalCashHoldArc:0});
+ same(planContractClaims(c,[{...m,startTick:14,endTick:14}],1,28,101),planContractClaims(c,[],1,28,101));
  for(let i=1;i<=100;i++){
   const rows=Array.from({length:25},(_,j)=>mk(`p${j}`,1+(i*7919+j*1297)%999));
   const result=alloc(rows,i*67);
