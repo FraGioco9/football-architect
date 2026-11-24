@@ -1,6 +1,6 @@
 /** #775 — pure DRAFT genesis plan and receipt preview. No DB writes, clock or activation. */
 import clubs from '../../data/clubs.json' with {type:'json'};
-import {REWARDS_VERSION,rewardTotals} from '../../assets/competition-rewards.mjs';
+import {rewardCalendarBudget} from './reward-settlement-plan.mjs';
 const LIMIT=1000000000000;
 const actor="economic-genesis-v1";
 const validInt=(x,min)=>Number.isSafeInteger(x)&&x>=min&&x<=LIMIT;
@@ -67,6 +67,6 @@ function rewardHold(plan,generation,season){
 }
 const keys=Object.freeze(clubs.map(c=>c.countryId+'-'+c.clubId));
 export function planEconomicGenesis(input){
- return buildPlan(input,keys,{annual:rewardTotals().pool,version:REWARDS_VERSION});
+ return buildPlan(input,keys,rewardCalendarBudget());
 }
 export {inspectReceipts as inspectGenesisReceipts,rewardHold as planGenesisRewardHold};

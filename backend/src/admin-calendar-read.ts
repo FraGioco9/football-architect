@@ -3,7 +3,7 @@ import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
 import {readSeasonZeroAuthority} from './season-zero-entrants.ts';
-import {dueAdministrativeMilestones,proposeAdministrativeMilestones,proposeEndSeasonMilestones,type AdministrativeMilestone} from './domain/calendar/admin-calendar-policy.ts';
+import {dueAdministrativeMilestones,proposeAdministrativeMilestones,proposeEndSeasonMilestones,proposeRewardMilestones,type AdministrativeMilestone} from './domain/calendar/admin-calendar-policy.ts';
 type Row={event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status'];completed_at:number|null;receipt_hash:string|null};
 async function querySeasonAdministrativeEvents(db:Database,seasonNumber:number):Promise<Row[]>{
  return (await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status,completed_at,receipt_hash FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(seasonNumber).all<Row>()).results;
@@ -37,7 +37,7 @@ export async function readAdministrativeCalendar(db:Database){
  const identityMatches=(expected:readonly AdministrativeMilestone[])=>rows.length===expected.length&&rows.every(r=>expected.some(x=>x.id===r.event_id&&x.kind===r.kind&&x.scope===r.scope));
  // Existing five-event seasons stay readable; newly enrolled seasons must have
  // the complete eight-event identity set. Partial terminal enrolment fails closed.
- if(rows.length!==0&&!identityMatches(legacy)&&!identityMatches(expanded))throw new ApiError(422,'calendar_event_invalid');
+ if(rows.length!==0&&!identityMatches(legacy)&&!identityMatches(expanded)&&!identityMatches([...expanded,...proposeRewardMilestones()]))throw new ApiError(422,'calendar_event_invalid');
  const events=rows.map(r=>({
   id:r.event_id,kind:r.kind,scope:r.scope,day:r.scheduled_day,order:r.event_order,
   status:r.status,completedAt:r.completed_at,
