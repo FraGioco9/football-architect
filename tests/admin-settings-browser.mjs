@@ -647,7 +647,7 @@ try{
    await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
    await page.route('**/api/player/permissions',r=>r.fulfill({json:{permissions:['admin.access','admin.world.read','admin.world.write']}}));
    await page.route('**/api/admin/session',r=>r.fulfill({json:{csrfToken:'test-csrf'}}));
-   await page.route('**/api/admin/contracts*',async r=>{
+   await page.route(/\/api\/admin\/contracts(?:\/preview|\?[^#]*)?$/,async r=>{
     const request=r.request();
     if(new URL(request.url()).pathname.endsWith('/preview')){
      previews++;assert.equal(request.method(),'POST');
