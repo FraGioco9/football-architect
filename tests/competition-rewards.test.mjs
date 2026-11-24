@@ -387,3 +387,12 @@ test('individual economy smoke detects the first reserve shortfall without treat
  assert.deepEqual(x.firstShortfall,snapshot[0].firstShortfall);assert.equal(x.completedDiagnosticSeasons,3);
  assert.ok(x.series.every(s=>s.activated===s.arcBuys+s.eurBuys&&s.wagePaid===s.humanPaid+s.aiPaid));
 });
+
+test('mixed launch reserve prefixes stop before unfunded awards and contract guard remains distinct',async()=>{
+ const {buildMixedStress}=await import('../tools/run-economy-mixed-launch.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/economy-mixed-launch-v1.json',import.meta.url),'utf8'));
+ const saved=JSON.parse(readFileSync(new URL('../docs/economy-mixed-launch-v1-summary.json',import.meta.url),'utf8'));
+ assert.equal(saved.length,18);assert.ok(saved.filter(r=>r.contractPolicy==='guarded').every(r=>r.finalArrearsArc===0));
+ const x=buildMixedStress({seasons:3,seeds:[c.seeds[0]],scenarios:[c.scenarios[0]]});
+ assert.equal(x.runs.length,2);for(const r of x.runs){assert.equal(r.initialAgeHistogram[33],0);assert.equal(Object.values(r.initialAgeHistogram).reduce((a,b)=>a+b,0),6400);assert.equal(r.reserves[0].completedSeasons,1);assert.equal(r.reserves[0].firstUnfundedSeason,2);assert.equal(r.reserves.at(-1).completedSeasons,3);}
+});
