@@ -708,7 +708,7 @@ try{
     await option.click();
     await menu.waitFor({state:'hidden'});
     assert.equal(await trigger.getAttribute('aria-expanded'),'false');
-    assert.equal(await trigger.innerText(),label);
+    assert.equal(await trigger.locator('.admin-licenses-dropdown-value').textContent(),label);
    };
    assert.equal(await form.locator('.admin-licenses-dropdown .language-trigger').count(),3);
    await selectFromMenu(0,'Free Player','free');

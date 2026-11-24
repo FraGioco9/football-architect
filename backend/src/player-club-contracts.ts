@@ -4,8 +4,9 @@ import {ApiError} from './errors.ts';
 import type {Database,Statement} from './database.ts';
 import {hashText,type AdminSession} from './auth.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
-import {clubTreasuryId,reconcileEconomy,economicAssert} from './economic-ledger.ts';
-import {REWARDS_VERSION,rewardTotals} from '../../assets/competition-rewards.mjs';
+import {clubTreasuryId,reconcileEconomy,economicAssert,economicReconciliationGuard} from './economic-ledger.ts';
+import {annualRewardHoldId} from './reward-calendar-gate.ts';
+import {rewardCalendarBudget} from './reward-settlement-plan.mjs';
 import {MARKET_VALUE_CONFIG,rawDestinationSalaryReferenceArc,type MarketValueInput} from './player-market-value.mjs';
 import type {WorldV1} from './types.ts';
 import {readWorld} from './world-repository.ts';
@@ -166,10 +167,10 @@ export type OpeningSalaryAuthority=(db:Database,world:WorldV1,clubKey:string)=>P
  * Only the canonical, fully funded genesis-only journal is accepted; once
  * other postings exist a reviewed general-purpose adapter is required. */
 export async function prepareOpeningFundingGuard(db:Database,version:string,rulesJson:string,generation:string){
- const annual=rewardTotals().pool;
+ const {annual,version:rewardVersion}=rewardCalendarBudget();
  const rules=JSON.parse(rulesJson);
  const fail=()=>new ApiError(503,'contract_genesis_not_ready');
- if(rules.genesisProtocol!==1||rules.rewardVersion!==REWARDS_VERSION||rules.annualRewardsArc!==annual||
+ if(rules.genesisProtocol!==1||rules.rewardVersion!==rewardVersion||rules.annualRewardsArc!==annual||
  !Number.isSafeInteger(rules.freeReserveArc)||rules.freeReserveArc<0)throw fail();
  const policy=await db.prepare("SELECT genesis_reserve_arc,club_opening_json FROM economic_policy_versions WHERE version=?").bind(version).first<{genesis_reserve_arc:number;club_opening_json:string}>();
  if(!policy)throw fail();
@@ -177,7 +178,7 @@ export async function prepareOpeningFundingGuard(db:Database,version:string,rule
  if(!capital||Array.isArray(capital)||Object.keys(capital).length!==320||[...canonical.keys()].some(k=>!Object.hasOwn(capital,k)||!Number.isSafeInteger(capital[k])||capital[k]<=0))throw fail();
  const sum=Object.values(capital).reduce((a,b)=>a+b,0);
  if(!Number.isSafeInteger(sum)||sum+annual+rules.freeReserveArc!==policy.genesis_reserve_arc)throw fail();
- const holdId=['reward-budget',generation,1,REWARDS_VERSION].join(':');
+ const holdId=annualRewardHoldId(generation,1);
  const sql="SELECT 1 WHERE (SELECT COUNT(*) FROM economic_transactions)=321 "+
  "AND EXISTS(SELECT 1 FROM economic_transactions WHERE business_key='economic-genesis:reserve' AND request_key=business_key AND purpose='GENESIS_RESERVE' AND actor_kind='system' AND actor_id='economic-genesis-v1' AND config_version=? AND source_id='economic-genesis' AND generation IS NULL AND season IS NULL AND day IS NULL AND reversal_of IS NULL AND hold_id IS NULL AND json_array_length(lines_json)=2 AND EXISTS(SELECT 1 FROM economic_entries WHERE transaction_id=economic_transactions.id AND account_id='reserve' AND amount_arc=?)) "+
  "AND NOT EXISTS(SELECT 1 FROM json_each(?) j WHERE NOT EXISTS(SELECT 1 FROM economic_transactions t JOIN economic_entries e ON e.transaction_id=t.id WHERE t.business_key='economic-genesis:club:'||j.key AND t.request_key=t.business_key AND t.purpose='CLUB_OPENING' AND t.actor_kind='system' AND t.actor_id='economic-genesis-v1' AND t.config_version=? AND t.source_id=j.key AND t.generation IS NULL AND t.season IS NULL AND t.day IS NULL AND t.reversal_of IS NULL AND t.hold_id IS NULL AND json_array_length(t.lines_json)=2 AND e.account_id='club:'||j.key AND e.amount_arc=j.value)) "+
@@ -256,6 +257,7 @@ export async function prepareOpeningAffordability(db:Database,world:WorldV1,club
   throw new ApiError(409,'contract_insufficient_cash_proof');
 
  return {inputs,financeVersion:balance.active_version,guards:[
+  economicReconciliationGuard(db),
   abortUnless(db,openingOnlySql,[club,world.generation,treasury]),
   abortUnless(db,"SELECT 1 WHERE (SELECT COUNT(*) FROM player_signed_contracts WHERE club_key=?)=? AND (SELECT COALESCE(SUM(annual_salary_arc/2),0) FROM player_signed_contracts WHERE club_key=?)=?",[club,prior.length,club,committed]),
   abortUnless(db,"SELECT 1 FROM economic_available_balances b JOIN economic_control c ON c.id=1 AND c.posting_enabled=1 WHERE b.id=? AND b.kind='CLUB_TREASURY' AND b.reserved_arc=0 AND b.available_arc=? AND b.available_arc>=? AND c.active_version=?",[treasury,balance.available_arc,committed+newDue,balance.active_version])
