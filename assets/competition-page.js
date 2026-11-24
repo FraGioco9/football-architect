@@ -1292,7 +1292,7 @@
     const path = window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"");
     const segments=path.split("/").filter(Boolean);
     const viewSegment=segments[2];
-    const allowedViews=new Set(["overview","standings","postseason","fixtures","stats","history","rules","awards","teams"]);
+    const allowedViews=new Set(["overview","standings","postseason","fixtures","stats","history","rules","awards","rewards","teams"]);
     if(segments.length<2||segments.length>3||segments[0]!=="competitions"||segments[1]!==routeId.toLowerCase()||(viewSegment&&!allowedViews.has(viewSegment)))throw Error("Route identity mismatch");
     // Share the one validated manifest read with the local DEV presenters.
     // The promise is installed synchronously before any dependent script boots.

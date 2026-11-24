@@ -32,7 +32,8 @@
     {id:"stats",key:"competitionTabStats",label:"Stats"},
     {id:"history",key:"competitionTabHistory",label:"History"},
     {id:"rules",key:"competitionTabRules",label:"Rules"},
-    {id:"awards",key:"competitionTabAwards",label:"Awards"}
+    {id:"awards",key:"competitionTabAwards",label:"Awards"},
+    {id:"rewards",key:"competitionTabRewards",label:"Rewards"}
   ];
   const divisionCount=countries.length*tiers.length;
   const participantCount=divisionCount*profile.capacity;

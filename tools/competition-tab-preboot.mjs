@@ -1,8 +1,8 @@
 // Parser-time Competition tab navigation: no manifest, world or external JS required.
 // The full competition router takes over once its scripts are ready.
 export function bootstrapCompetitionTabs() {
-  const views = ['standings', 'postseason', 'fixtures', 'stats', 'history', 'rules', 'awards'];
-  const route = /^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12]|int-[12])(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html))?\/?$/;
+  const views = ['standings', 'postseason', 'fixtures', 'stats', 'history', 'rules', 'awards', 'rewards'];
+  const route = /^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12]|int-[12])(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|rewards|index\.html))?\/?$/;
   const initial = route.exec(location.pathname);
   if (!initial || window.faCompetitionPrebootTabs) return;
   const base = '/competitions/' + initial[1];

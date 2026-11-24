@@ -41,12 +41,12 @@
       "permanent": true
     },
     {
-      "source": "/admin/:section(calendar|players|contracts)/",
+      "source": "/admin/:section(calendar|players|contracts|rewards)/",
       "destination": "/admin/:section",
       "permanent": true
     },
     {
-      "source": "/admin/:section(calendar|players|contracts)/index.html",
+      "source": "/admin/:section(calendar|players|contracts|rewards)/index.html",
       "destination": "/admin/:section",
       "permanent": true
     },
@@ -76,7 +76,7 @@
       "permanent": true
     },
     {
-      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)/",
+      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|rewards|teams)/",
       "destination": "/competitions/:division/:view",
       "permanent": true
     },
@@ -322,7 +322,7 @@
       "permanent": true
     },
     {
-      "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards)/",
+      "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards|rewards)/",
       "destination": "/competitions/:cup/:view",
       "permanent": true
     },
@@ -374,7 +374,7 @@
       "destination": "/:page/index.html"
     },
     {
-      "source": "/admin/:section(calendar|players|contracts)",
+      "source": "/admin/:section(calendar|players|contracts|rewards)",
       "destination": "/admin/:section/index.html"
     },
     {
@@ -386,11 +386,11 @@
       "destination": "/competitions/:division/index.html"
     },
     {
-      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)",
+      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|rewards|teams)",
       "destination": "/competitions/:division/index.html"
     },
     {
-      "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards)",
+      "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards|rewards)",
       "destination": "/competitions/:cup/index.html"
     },
     {
