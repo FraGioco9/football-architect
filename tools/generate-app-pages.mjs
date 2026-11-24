@@ -399,6 +399,22 @@ if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length
  html=html.replace('</head>','  <script src="/assets/players-nationality-tooltip.js" defer></script>\n  <script src="/assets/players-directory.js" defer></script>\n</head>');
  writeOutput("players/index.html",html);
 }
+// #587: generate Transfers from the verified Players shell and canonical template.
+// No hand-edited checked-in HTML, no independent sidebar/shell implementation.
+{
+ const source=readFileSync(new URL("../players/index.html",import.meta.url),"utf8").replace(/\r\n/g,"\n");
+ const content=readFileSync(new URL("../templates/transfers-content.html",import.meta.url),"utf8").replace(/\r\n/g,"\n").trimEnd();
+ const begin=source.indexOf('<section id="app-divisions"');
+ const end=source.indexOf('\n      </main>',begin);
+ if(begin<0||end<=begin)throw Error("Transfers source shell missing");
+ let html=source.slice(0,begin)+content.split('\n').map(line=>'        '+line).join('\n')+source.slice(end);
+ html=html.replace('<title>Players — Football Architect</title>','<title>Transfers — Football Architect</title>')
+  .replace('  <script src="/assets/players-nationality-tooltip.js" defer></script>\n','')
+  .replace('  <script src="/assets/players-directory.js" defer></script>',
+   '  <link rel="stylesheet" href="/assets/transfers-page.css">\n  <script type="module" src="/assets/transfers-page.mjs"></script>')
+
+ writeOutput("transfers/index.html",html);
+}
 // #502: generate both player-detail shells from their own canonical directory
 // shells. Player data remains empty until an authorized API read; no hand-edited
 // static HTML. The shared renderer also serves as a generated-file QA reference.
