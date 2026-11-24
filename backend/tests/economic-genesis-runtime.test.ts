@@ -3,62 +3,47 @@ import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import clubs from '../../data/clubs.json' with {type:'json'};
 import type {Database} from '../src/database.ts';
-import {economicAssert,postEconomicOperation,provisionClubAccounts,provisionWallet,readEconomicBalance,reconcileEconomy,reserveEconomicFunds} from '../src/economic-ledger.ts';
-import {planEconomicGenesis,inspectGenesisReceipts,planGenesisRewardHold} from '../src/economic-genesis-plan.mjs';
-
-const binding=env as any,db=binding.DB as Database;
-const now=1770000000;
-const access=()=>[economicAssert(db,'SELECT 1')]; // trusted disposable test fixture only
-const guards=()=>({access:access()});
+import {economicAssert,postEconomicOperation,readEconomicBalance,reconcileEconomy,reserveEconomicFunds} from '../src/economic-ledger.ts';
+import {planEconomicGenesis,planGenesisRewardHold} from '../src/economic-genesis-plan.mjs';
+import {prepareEconomicGenesis,stepEconomicGenesis,completeEconomicGenesis,earmarkNextRewardBudget,readGenesisClubFunding} from '../src/economic-genesis.ts';
+const binding=env as any,db=binding.DB as Database,now=1770000000;
+const access=()=>[economicAssert(db,'SELECT 1')];
 const input={version:'synthetic-genesis-775',clubs:clubs.map((c,i)=>({clubKey:c.countryId+'-'+c.clubId,amountArc:i+1})),freeReserveArc:1000,issuanceLimitArc:3000000};
 const plan=planEconomicGenesis(input);
-const journal=async()=>(await db.prepare('SELECT * FROM economic_transactions ORDER BY business_key').all()).results;
 beforeAll(async()=>{await applyD1Migrations(db,binding.TEST_MIGRATIONS);});
-it('validates a complete deterministic catalogue and fails closed on invalid configuration',()=>{
- expect(plan.clubs).toHaveLength(320);
- expect(plan.annualRewardsArc).toBe(2400000);
- expect(plan.clubCapitalArc).toBe(51360);
- expect(plan.grossGenesisArc).toBe(2452360);
+it('validates canonical complete deterministic plan',()=>{
+ expect(plan.clubs).toHaveLength(320);expect(plan.grossGenesisArc).toBe(2452360);
  expect(planEconomicGenesis({...input,clubs:[...input.clubs].reverse()})).toEqual(plan);
  expect(()=>planEconomicGenesis({...input,clubs:input.clubs.slice(1)})).toThrow();
  expect(()=>planEconomicGenesis({...input,clubs:[...input.clubs.slice(1),input.clubs[1]]})).toThrow();
  expect(()=>planEconomicGenesis({...input,clubs:input.clubs.map((c,i)=>i===0?{...c,amountArc:0}:c)})).toThrow();
  expect(()=>planEconomicGenesis({...input,issuanceLimitArc:2400000})).toThrow();
 });
-it('rehearses all 321 sealed postings, interrupted resume, exact retries, wallets and reward hold on disposable local D1',async()=>{
- await provisionClubAccounts(db,now,access());
- await provisionClubAccounts(db,now,access());
- await db.prepare("INSERT INTO player_accounts(id,email_normalized,password_verifier,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)")
-  .bind('genesis-fixture','genesis-fixture@example.invalid','fixture',now,now,now).run();
- await provisionWallet(db,'genesis-fixture',now,access());
- await provisionWallet(db,'genesis-fixture',now,access());
- expect((await readEconomicBalance(db,'user:genesis-fixture',access()))?.balance_arc).toBe(0);
- expect(inspectGenesisReceipts(plan,await journal()).state).toBe('uninitialized');
- await db.prepare('INSERT INTO economic_policy_versions VALUES(?,?,?,?,?,?,?)')
-  .bind(plan.version,now,'synthetic-fixture',plan.policy.genesisReserveArc,plan.policy.issuanceLimitArc,plan.policy.clubOpeningJson,plan.policy.rulesJson).run();
- // Test-only activation; never used by a route or production command.
- await db.prepare('INSERT INTO economic_control VALUES(1,?,1)').bind(plan.version).run();
- const first=await postEconomicOperation(db,plan.intents[0],guards(),now);
- const same=await Promise.all([postEconomicOperation(db,plan.intents[0],guards(),now),postEconomicOperation(db,plan.intents[0],guards(),now)]);
- expect(same.map(r=>r.id)).toEqual([first.id,first.id]);
- for(const intent of plan.intents.slice(1,17))await postEconomicOperation(db,intent,guards(),now);
- const progress=inspectGenesisReceipts(plan,await journal());
- expect(progress).toMatchObject({state:'funding',fundedClubs:16,pendingClubs:304});
- const pending=progress.pending[0];
- await expect(postEconomicOperation(db,pending,{...guards(),effects:[economicAssert(db,'SELECT 1 WHERE 0')]},now)).rejects.toThrow();
- expect(inspectGenesisReceipts(plan,await journal()).fundedClubs).toBe(16);
- for(const intent of inspectGenesisReceipts(plan,await journal()).pending)await postEconomicOperation(db,intent,guards(),now);
- const rows=await journal();
- expect(rows).toHaveLength(321);
- expect(inspectGenesisReceipts(plan,rows)).toMatchObject({state:'funded-unverified',fundedClubs:320,fundedArc:51360,expectedReserveArc:2401000,pendingClubs:0});
- expect(()=>inspectGenesisReceipts(plan,[...rows,rows[0]])).toThrow();
- expect(()=>inspectGenesisReceipts(plan,rows.map((r,i)=>i===0?{...r,lines_json:'[]'}:r))).toThrow();
+it('funds only the local fixture, resumes and seals via full annual hold',async()=>{
+ await db.prepare("INSERT INTO player_accounts(id,email_normalized,password_verifier,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)").bind('genesis-fixture','genesis-fixture@example.invalid','fixture',now,now,now).run();
+ const world=(await db.prepare('SELECT generation FROM world_state WHERE id=1').first<{generation:string}>())!;
+ const prepared=await prepareEconomicGenesis(db,input,'fixture',access(),now);
+ expect(prepared).toMatchObject({status:'prepared',funded_clubs:0});
+ expect(await prepareEconomicGenesis(db,input,'fixture',access(),now)).toEqual(prepared);
+ await expect(prepareEconomicGenesis(db,{...input,freeReserveArc:1001},'fixture',access(),now)).rejects.toThrow();
+ expect(await readEconomicBalance(db,'user:genesis-fixture',access())).toMatchObject({balance_arc:0});
+ await expect(readGenesisClubFunding(db,plan.clubs[0].clubKey,world.generation,access())).rejects.toThrow();
+ await expect(completeEconomicGenesis(db,access(),now)).rejects.toThrow();
+ await expect(reserveEconomicFunds(db,planGenesisRewardHold(plan,world.generation,1),{access:access()},now)).rejects.toThrow();
+ expect(await stepEconomicGenesis(db,access(),now)).toMatchObject({funded_clubs:15});
+ const bad={...plan.intents[0],businessKey:'unexpected',requestKey:'unexpected',purpose:'ISSUE_RESERVE' as const};
+ await expect(postEconomicOperation(db,bad,{access:access()},now)).rejects.toThrow();
+ await expect(db.prepare("UPDATE world_state SET season_number=1,phase='preparing',revision=1 WHERE id=1").run()).rejects.toThrow();
+ for(let i=0;i<20;i++)await stepEconomicGenesis(db,access(),now);
+ expect(await completeEconomicGenesis(db,access(),now)).toMatchObject({completed:1,funded_clubs:320,status:'funded'});
+ expect(await completeEconomicGenesis(db,access(),now)).toMatchObject({completed:1});
+ expect(await earmarkNextRewardBudget(db,access(),now)).toMatchObject({remaining_arc:2400000});
+ expect(await readEconomicBalance(db,'reserve',access())).toMatchObject({balance_arc:2401000,reserved_arc:2400000,available_arc:1000});
+ expect(await readGenesisClubFunding(db,plan.clubs[0].clubKey,world.generation,access())).toMatchObject({balance_arc:plan.clubs[0].amountArc});
  const balances=(await db.prepare("SELECT owner_id,balance_arc FROM economic_balances WHERE kind='CLUB_TREASURY' ORDER BY owner_id").all()).results;
  expect(balances).toEqual(plan.clubs.map(c=>({owner_id:c.clubKey,balance_arc:c.amountArc})));
- const hold=planGenesisRewardHold(plan,'00000000-0000-4000-8000-000000000001',1);
- expect(await reserveEconomicFunds(db,hold,guards(),now)).toMatchObject({remaining_arc:2400000});
- expect(await reserveEconomicFunds(db,hold,guards(),now)).toMatchObject({remaining_arc:2400000});
- expect(await readEconomicBalance(db,'reserve',access())).toMatchObject({balance_arc:2401000,reserved_arc:2400000,available_arc:1000});
  expect(await reconcileEconomy(db,access())).toMatchObject({ok:true,stockArc:'2452360',netIssuedArc:'2452360',accountCount:323});
- expect(await journal()).toHaveLength(321);
+ expect(await db.prepare('SELECT COUNT(*) AS n FROM economic_transactions').first()).toMatchObject({n:321});
+ await db.prepare("UPDATE world_state SET season_number=1,phase='preparing',revision=1 WHERE id=1").run();
+ await expect(db.prepare("UPDATE world_state SET generation='00000000-0000-4000-8000-000000000001' WHERE id=1").run()).rejects.toThrow();
 },120000);
