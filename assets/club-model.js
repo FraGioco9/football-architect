@@ -9,6 +9,7 @@
  const domesticLogoUrl=id=>typeof id==='string'&&/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]$/.test(id)
   ?'/assets/competitions/'+id+'/compact.svg':null;
  const compactPlayerName=full=>{const m=/^(\S+)\s+(.+)$/u.exec(String(full||'').trim());return m&&!/^\p{L}\.$/u.test(m[1])?Array.from(m[1])[0]+'. '+m[2]:String(full||'').trim()};
+ const marketUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./market-value-format.js'):globalThis.faMarketValue;
  const fixtureUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./club-fixtures.js'):globalThis.faClubFixtures;
  const recordsUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./club-records.js'):globalThis.faClubRecords;
  const views=['overview','roster','fixtures','records','history'];
@@ -109,7 +110,7 @@
  const rosterPitchPositions=Object.freeze(['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST']);
  const rosterPositionRank=new Map(rosterPitchPositions.map((code,index)=>[code,rosterPitchPositions.length-index]));
  const rosterSortCommon=Object.freeze(['nationality','name','positions']);
- const rosterSortInfo=Object.freeze(['nationality','name','positions','age','height','foot']);
+ const rosterSortInfo=Object.freeze(['nationality','name','positions','age','height','foot','market_value_arc']);
  function rosterStatValue(stats,key){
   // Unknown legacy awards cannot be inferred as zero; played-and-covered is zero.
   if(key==='mvpAwards'&&stats?.appearances>0)return stats.mvpAwards??
@@ -122,6 +123,7 @@
   if(key==='nationality')return player.nationality;
   if(key==='age')return player.age;
   if(key==='height')return player.height_cm;
+  if(key==='market_value_arc')return Number.isSafeInteger(player.market_value_arc)&&player.market_value_arc>=0?player.market_value_arc:null;
   if(key==='foot')return player.preferred_foot;
   return statKeys.includes(key)?rosterStatValue(player.stats,key):player.attributes?.[key];
  }
@@ -218,7 +220,7 @@
   const groupIds=competitions.filter(id=>id.startsWith('int-')===(scope==='international'));
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
-   :mode==='stats'?['',w.name,w.positions,...words.slice(1,1+statKeys.length)]:['',w.name,w.positions,w.age,w.height,w.foot];
+   :mode==='stats'?['',w.name,w.positions,...words.slice(1,1+statKeys.length)]:['',w.name,w.positions,w.age,w.height,w.foot,marketUI?.label(lang)||'Market value'];
   const columns='<colgroup><col class="app-players-flag-column"><col class="app-players-name-column">'+
    '<col class="app-players-view-third-column">'+'<col>'.repeat(labels.length-3)+'</colgroup>';
   const colCount=labels.length;
@@ -257,7 +259,7 @@
     const value=v=>Number.isSafeInteger(v)?String(v):'—';
     const cells=mode==='stats'?'<td>'+escape(positions||'—')+'</td>'+statKeys.map(key=>statCell(player.stats,key)).join(''):mode==='attributes'
      ?'<td>'+escape(positions||'—')+'</td>'+attributeKeys.map(key=>'<td>'+value(player.attributes?.[key])+'</td>').join('')
-     :'<td>'+escape(positions||'—')+'</td><td>'+value(player.age)+'</td><td>'+(Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—')+'</td><td>'+escape(player.preferred_foot==='left'?w.left:player.preferred_foot==='right'?w.right:'—')+'</td>';
+     :'<td>'+escape(positions||'—')+'</td><td>'+value(player.age)+'</td><td>'+(Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—')+'</td><td>'+escape(player.preferred_foot==='left'?w.left:player.preferred_foot==='right'?w.right:'—')+'</td><td class="app-market-value-col">'+escape(marketUI?.format(player.market_value_arc,lang)||'—')+'</td>';
     return '<tr><td>'+flag+'</td><td><a class="club-roster-player-link" href="/players/'+id+'" data-mobile-name="'+escape(compactPlayerName(player.display_name))+'" aria-label="'+escape(player.display_name)+'"><span class="fa-player-full-name">'+escape(player.display_name)+'</span><span class="fa-player-short-name">'+escape(compactPlayerName(player.display_name))+'</span></a></td>'+cells+'</tr>';
    }).join('');
   }
@@ -283,10 +285,11 @@
    '<table class="app-players-table club-roster-table" data-players-table-mode="'+mode+'" data-roster-group="'+group+'" aria-label="'+escape(t.roster)+'">'+
    columns+'<thead><tr>'+labels.map((label,i)=>{
     const key=columnSorts[i],active=sort===key;
-    return '<th scope="col" aria-sort="'+(active?order==='desc'?'descending':'ascending':'none')+'"'+
+    return '<th scope="col" aria-sort="'+(active?order==='desc'?'descending':'ascending':'none')+'"'+(key==='market_value_arc'?' class="app-market-value-col"':'')+
      (i===0?' class="app-players-flag-col" aria-label="'+escape(w.nationality)+'"':'')+'>'+
      '<button type="button" class="app-players-sort-button" data-club-roster-sort="'+key+'"'+
-     (mode==='stats'&&i>=3?' data-roster-stat-help="'+escape(rosterStatHelp[lang][key])+'"':'')+'>'+
+     (mode==='stats'&&i>=3?' data-roster-stat-help="'+escape(rosterStatHelp[lang][key])+'"':'')+
+     (key==='market_value_arc'?' title="'+escape(marketUI?.help(lang)||'Estimated remaining agent commissions (DRAFT benchmark)')+'"':'')+'>'+
      '<span class="app-players-sort-label">'+(i===0?'<span class="sr-only">'+escape(w.nationality)+'</span>':escape(label))+
      rosterSortChevron+'</span></button></th>';
    }).join('')+

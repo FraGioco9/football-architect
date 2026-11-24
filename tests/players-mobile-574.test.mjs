@@ -75,7 +75,7 @@ test('#574 mobile names abbreviate without losing original text or accessibility
  ])assert.equal(ui.abbreviate(full),short);
  assert.match(read('assets/app.js'),/mobileTablePath==='\/players'/);
  assert.match(read('assets/app.js'),/import\('\/assets\/players-mobile\.js'\)/);
- assert.match(read('tools/publication-guard.mjs'),/"players-directory.js","players-mobile.js"/);
+ assert.match(read('tools/publication-guard.mjs'),/"players-directory.js","market-value-format.js","players-mobile.js"/);
  assert.match(css,/\.app-players-table \.fa-player-full-name,\s*\.app-admin-view \.admin-contracts-table \.fa-player-full-name\{display:none\}/,'mobile hides full names via real spans');
  assert.match(css,/\.app-admin-view \.admin-contracts-table td\.admin-contracts-player-name\[data-mobile-name\]::before/);
 });
@@ -112,8 +112,8 @@ test('#574 official club compactName is used only for the mobile Club cell',()=>
  assert.match(directory,/c\.compactName/);
  assert.match(directory,/label\.dataset\.mobileClubName=compact/);
  assert.match(css,/\.app-players-table \.app-player-club-name\[data-mobile-club-name\]::before/);
- assert.match(css,/th:nth-child\(7\)\{width:176px\}/);
- assert.match(css,/th:nth-child\(7\)\{width:156px\}/);
+ assert.match(css,/--app-players-club-min:176px/);
+ assert.match(css,/--app-players-club-min:156px/);
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const club=manifest.clubs.find(c=>c.countryId==='ENG'&&c.clubId===4);
  assert.equal(club.primaryName,'Bournbrook United');
@@ -139,7 +139,7 @@ test('#574 preview subview fade responds to scroll and resizing after first pain
 test('#574 Club header and row names are left-aligned on phones with compact tracks',()=>{
  const mobile=css.split('/* #574: mobile Club header and rows follow the desktop left alignment.')[1];
  assert.ok(mobile,'mobile Club styling exists');
- assert.match(mobile,/tbody td:nth-child\(7\)\{text-align:left\}/);
+ assert.match(mobile,/tbody td\.app-players-club-cell\{text-align:left\}/);
  assert.match(mobile,/th\.app-players-club-col\{text-align:left\}/);
  assert.match(mobile,/\.app-players-club-content\{display:flex;align-items:center;justify-content:flex-start;gap:0/);
  assert.match(mobile,/\.app-players-club-label-anchor\{position:relative;display:inline-flex;align-items:center;justify-content:flex-start;gap:4px/);
@@ -150,8 +150,8 @@ test('#574 Club header and row names are left-aligned on phones with compact tra
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px/,'Club underline matches Player as a text decoration');
  const dir=read('assets/players-directory.js');
  assert.match(dir,/labelAnchor\.append\(crest,link\);content\.append\(labelAnchor\)/);
- assert.match(css,/th:nth-child\(7\)\{width:176px\}/);
- assert.match(css,/th:nth-child\(7\)\{width:156px\}/);
+ assert.match(css,/--app-players-club-min:176px/);
+ assert.match(css,/--app-players-club-min:156px/);
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{min-width:634px\}/);
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{min-width:596px\}/);
 });
@@ -215,7 +215,7 @@ test('#574 Club header remains left-aligned at first paint and after hydration',
  assert.match(page,/<th scope="col" class="app-players-club-col">Club<\/th>/);
  assert.match(directory,/club\.className='app-players-club-col'/);
  assert.match(css,/th\.app-players-club-col\{text-align:left\}/);
- assert.match(css,/tbody td:nth-child\(7\)\{text-align:left\}/);
+ assert.match(css,/tbody td\.app-players-club-cell\{text-align:left\}/);
 });
 
 test('#574 table right fade is visible at first paint and removed at non-scrollable edge',()=>{
