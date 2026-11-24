@@ -1,0 +1,64 @@
+{
+  "status": "research-only",
+  "retirements": 332,
+  "arcOrders": 299,
+  "eurOrders": 33,
+  "referenceYouthReceiptToPayrollRatio": 0.88975567545759,
+  "current": {
+    "rewardsArc": 3120000,
+    "payrollArc": 1506971,
+    "clubSpendTargetArc": 1613029,
+    "youthArcReceipts": 1340836,
+    "agentResidualArc": 166135,
+    "reserveIfOnlyClubAndYouthSpendArc": 2953865,
+    "additionalAgentReceiptsRequiredArc": 166135,
+    "requiredMeanYouthArcTicketForFullPayroll": 5041,
+    "grossEurCents": 133187
+  },
+  "payrollShareSensitivities": [
+    {
+      "payrollShare": 0.7,
+      "payrollArc": 2184000,
+      "clubSpendTargetArc": 936000,
+      "youthArcReceiptsSensitivity": 1943226,
+      "agentResidualArc": 240774,
+      "requiredAverageArcTicketForFullPayroll": 7305,
+      "impliedCurrentRatioMeanArc": 6499,
+      "reserveIfOnlyClubAndYouthSpendArc": 2879226,
+      "additionalAgentReceiptsRequiredArc": 240774
+    },
+    {
+      "payrollShare": 0.75,
+      "payrollArc": 2340000,
+      "clubSpendTargetArc": 780000,
+      "youthArcReceiptsSensitivity": 2082028,
+      "agentResidualArc": 257972,
+      "requiredAverageArcTicketForFullPayroll": 7827,
+      "impliedCurrentRatioMeanArc": 6963,
+      "reserveIfOnlyClubAndYouthSpendArc": 2862028,
+      "additionalAgentReceiptsRequiredArc": 257972
+    },
+    {
+      "payrollShare": 0.8,
+      "payrollArc": 2496000,
+      "clubSpendTargetArc": 624000,
+      "youthArcReceiptsSensitivity": 2220830,
+      "agentResidualArc": 275170,
+      "requiredAverageArcTicketForFullPayroll": 8348,
+      "impliedCurrentRatioMeanArc": 7428,
+      "reserveIfOnlyClubAndYouthSpendArc": 2844830,
+      "additionalAgentReceiptsRequiredArc": 275170
+    },
+    {
+      "payrollShare": 1,
+      "payrollArc": 3120000,
+      "clubSpendTargetArc": 0,
+      "youthArcReceiptsSensitivity": 2776038,
+      "agentResidualArc": 343962,
+      "requiredAverageArcTicketForFullPayroll": 10435,
+      "impliedCurrentRatioMeanArc": 9284,
+      "reserveIfOnlyClubAndYouthSpendArc": 2776038,
+      "additionalAgentReceiptsRequiredArc": 343962
+    }
+  ]
+}

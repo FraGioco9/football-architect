@@ -323,3 +323,12 @@ test('10 percent EUR renewal reference preserves club internal transfer distinct
  assert.equal(b.worldClubCashGrowthBeforeDiscretionaryArc,b.clubSurplusBeforeDiscretionaryArc+b.internalRecruitmentBudgetArc);
  assert.equal(b.requiredAdditionalReserveReceiptsArc,1779164);assert.equal(x.closure.at(-1).gap,0);assert.ok(x.closure[0].gap>0);
 });
+
+test('full club reinvestment alone does not close the agent ARC balance',async()=>{
+ const {reinvestmentTarget}=await import('../tools/economy-club-reinvestment.mjs');
+ const b=JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v4-results.json',import.meta.url),'utf8')).grid.baseline;
+ const x=reinvestmentTarget(b,332,33);
+ assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-club-reinvestment-results.json',import.meta.url),'utf8')));
+ assert.equal(x.current.additionalAgentReceiptsRequiredArc,166135);assert.equal(x.current.reserveIfOnlyClubAndYouthSpendArc,2953865);
+ assert.ok(x.payrollShareSensitivities.every(y=>y.additionalAgentReceiptsRequiredArc>0));
+});

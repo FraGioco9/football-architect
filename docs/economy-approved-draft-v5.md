@@ -84,3 +84,6 @@ Owner requests 100% human-agent main research case and higher salaries. [Joint v
 
 
 Latest owner scenario preference: 10% EUR-paid youth activations (33 EUR / 299 ARC in the 332 retirement reference). [Joint v4](economy-joint-calibration-v4.md) replaces the 25% EUR assumption for primary research. Residual club cash is not defined platform expenditure; internal transfers are not reserve receipts. New numerical settings remain proposals, not runtime changes.
+
+
+Latest owner objective: clubs reinvest all seasonal income on average, recurring commercial EUR revenue from approximately 10% youth purchases. This is a target, not enforced spending. [Reinvestment analysis](economy-club-reinvestment.md) quantifies remaining agent-side ARC gap even if all residual club spending credits reserve. No automatic fees or revised runtime rates.
