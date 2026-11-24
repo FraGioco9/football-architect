@@ -259,3 +259,15 @@ test('offline finance stress deterministic shortfall and conservation',async()=>
  const historical=JSON.parse(readFileSync(new URL('../docs/club-finance-stress-v1-results.json',import.meta.url),'utf8'));
  assert.deepEqual(historical.runs.find(r=>r.scenario===scenario.name&&r.seed===769).series.slice(0,2),a.series);
 });
+
+test('retirement-aware club license references and supply sensitivity',async()=>{
+ const {buildRenewal}=await import('../tools/run-club-license-renewal.mjs');
+ const result=buildRenewal();
+ assert.deepEqual(result,JSON.parse(readFileSync(new URL('../docs/club-license-renewal-v2-results.json',import.meta.url),'utf8')));
+ assert.equal(result.selected.rows.length,320);assert.equal(result.retirement.annualCandidates,768);
+ assert.equal(result.selected.topReference.baseLicenseCents,29500);assert.equal(result.selected.lowReference.baseLicenseCents,10000);
+ assert.ok(result.retirement.annualWorld>300&&result.retirement.annualWorld<350);
+ assert.ok(result.retirement.scenarios.find(s=>s.activations===206).endingShortfallAgainstSlots>0);
+ assert.ok(result.retirement.scenarios.find(s=>s.activations===497).endingShortfallAgainstSlots===0);
+ assert.ok(result.feeSensitivity[0].topBaseCents>result.selected.topReference.baseLicenseCents);
+});

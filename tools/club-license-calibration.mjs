@@ -4,6 +4,7 @@ export function makeCalibration(clubs,selection,c,rewards,salary){
  const fail=msg=>{throw Error(msg)};
  const positive=(n)=>Number.isFinite(n)&&n>0;
  if(![c.horizon,c.longHorizon,c.minimumCents,c.roundingCents,c.squadSize,c.genesisStepArc].every(x=>Number.isSafeInteger(x)&&x>0)||c.longHorizon<c.horizon||!positive(c.multiple)||!positive(c.arcPerEur)||!positive(c.costFactor)||!Number.isFinite(c.suitability)||c.suitability<1||c.suitability>99||![c.aiShare,c.versatility].every(x=>Number.isFinite(x)&&x>=0&&x<=1)||!positive(c.aiWageMultiplier)||![0,1,2].every(t=>Number.isSafeInteger(c.genesisMinimumArc[t])&&c.genesisMinimumArc[t]>0)||![1,2].every(t=>Number.isSafeInteger(c.staffArc[t])&&c.staffArc[t]>=0)||!c.genesisCoefficientCandidates.every(x=>Number.isFinite(x)&&x>=0))fail("invalid config");
+ if(c.replacementAnnualArc&&![1,2].every(t=>Number.isFinite(c.replacementAnnualArc[t])&&c.replacementAnnualArc[t]>=0))fail("invalid replacement budget");
  const ids=clubs.map(x=>`${x.countryId}-${x.clubId}`).sort(), set=new Set(ids);
  if(ids.length!==320||set.size!==320||Object.keys(c.clubOverrides).some(id=>!set.has(id)))fail("invalid catalogue or override");
  const tiers=new Map(), cups=new Map();
@@ -16,7 +17,7 @@ export function makeCalibration(clubs,selection,c,rewards,salary){
  for(const t of [1,2]){const r=rewards.competitionRewards("IT-"+t),pts=rewards.largestRemainder(r.points,rankIds.map((id,i)=>({id,weight:70-3*i})),rankIds).allocations;rankAwards[t]=r.awards.map((a,i)=>r.participationReference+pts[i].amount+a);if(sum(rankAwards[t])!==r.pool)fail("domestic pool mismatch");}
  const cupMean=[0,...[1,2].map(t=>{const r=rewards.competitionRewards("int-"+t);return r.pool/r.capacity;})];
  const wage=(tier,amount)=>c.squadSize*Math.max(salary.divisionFloors[tier],salary.salaryScale*salary.salaryMultiplier**((c.suitability-60)/10)*(1+c.versatility)*Math.sqrt(amount/salary.rewardBenchmark))*(1+c.aiShare*(c.aiWageMultiplier-1));
- const cost=(tier,amount)=>c.costFactor*(wage(tier,amount)+c.staffArc[tier]);
+ const cost=(tier,amount)=>c.costFactor*(wage(tier,amount)+c.staffArc[tier])+(c.replacementAnnualArc?.[tier]??0);
  const quote=(surplus)=>Math.max(c.minimumCents,Math.round(c.multiple*Math.max(0,surplus)*100/c.arcPerEur/c.roundingCents)*c.roundingCents);
  // Joint state: D1 without cup, D1 Sovereign, D1 Federation, D2, inactive.
  function forecast(tier,cup,weights1,weights2,horizon){
@@ -48,6 +49,7 @@ export function makeCalibration(clubs,selection,c,rewards,salary){
  // Neutral population must conserve 18 pools; individual hypothetical overrides are not a league model.
  if(!Object.values(c.clubOverrides).some(o=>o.d1RankWeights||o.d2RankWeights)&&Math.abs(total("expectedDomesticArc")+total("expectedInternationalArc")-rewards.rewardTotals().pool)>4)fail("world award forecast mismatch");
  const groups=[0,1,2].flatMap(t=>t===1?[0,1,2].map(cup=>[t,cup]):[[t,0]]).map(([tier,cup])=>{const list=rows.filter(x=>x.initialTier===tier&&x.initialCup===cup);return {tier,cup,count:list.length,meanBaseCents:round(sum(list.map(x=>x.baseLicenseCents))/list.length),meanGenesisArc:round(sum(list.map(x=>x.genesisArc))/list.length),meanSurplusArc:round(sum(list.map(x=>x.expectedSurplusArc))/list.length)};});
+ const low=c.lowRankWeights?forecast(2,0,c.lowRankWeights,c.lowRankWeights,c.horizon):null;
  const top=forecast(1,1,c.topRankWeights,c.topRankWeights,c.horizon);
- return {version:c.version,status:"research-only-unapproved-quotes",horizon:c.horizon,longHorizon:c.longHorizon,groups,totals:{expectedRewardsArc:round(total("expectedDomesticArc")+total("expectedInternationalArc")),genesisArc:total("genesisArc"),initialReserveReferenceArc:2400000,combinedGenesisReferenceArc:total("genesisArc")+2400000,baseLicenseCents:total("baseLicenseCents"),firstDay28UncoveredClubs:rows.filter(x=>x.initialDay28GapArc>0).length},topReference:{expectedRewardsArc:round(top.domestic+top.international),expectedCostArc:round(top.cost),expectedSurplusArc:round(top.surplus),baseLicenseCents:quote(top.surplus),note:"Hypothetical persistent strength, not assigned to any canonical club."},rows};
+ return {version:c.version,status:"research-only-unapproved-quotes",horizon:c.horizon,longHorizon:c.longHorizon,groups,totals:{expectedRewardsArc:round(total("expectedDomesticArc")+total("expectedInternationalArc")),genesisArc:total("genesisArc"),initialReserveReferenceArc:2400000,combinedGenesisReferenceArc:total("genesisArc")+2400000,baseLicenseCents:total("baseLicenseCents"),firstDay28UncoveredClubs:rows.filter(x=>x.initialDay28GapArc>0).length},topReference:{expectedRewardsArc:round(top.domestic+top.international),expectedCostArc:round(top.cost),expectedSurplusArc:round(top.surplus),baseLicenseCents:quote(top.surplus),note:"Hypothetical persistent strength, not assigned to any canonical club."},...(low?{lowReference:{expectedRewardsArc:round(low.domestic+low.international),expectedCostArc:round(low.cost),expectedSurplusArc:round(low.surplus),baseLicenseCents:quote(low.surplus)}}:{}),rows};
 }

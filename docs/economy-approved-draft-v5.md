@@ -61,3 +61,6 @@ Prior 60M / 5% salary split, unscaled full-payout PR #783 (withdrawn), 1.2M alte
 
 
 First analytical club-license calibration slice: [club-license-calibration-v1.md](club-license-calibration-v1.md). Neutral canonical membership-based quotes and positive per-club genesis candidates are research only; no final allocation, strength ranking, genesis coefficient or checkout approved. Full linked financial stress remains open.
+
+
+Latest owner calibration direction: top D1 approximately EUR300 and low-table D2 approximately EUR100, including retirement/recruitment and generation-cost analysis. See [renewal v2](club-license-renewal-v2.md) for candidate EUR295/EUR100 references, explicit separate personal/club/platform costs, and 32-season age-cohort supply sensitivity. These are provisional quotes and allocations; no mandatory generation fee approved. Historical v1 stress with automatic fallback is not evidence of viable actual player supply.

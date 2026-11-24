@@ -1,0 +1,60 @@
+{
+  "version": "club-license-renewal-draft-v2",
+  "horizon": 20,
+  "youngEntryAges": [
+    16,
+    17,
+    18,
+    19
+  ],
+  "academyCandidatesPerActiveClub": 3,
+  "clubRecruitmentPerReplacementArc": {
+    "1": 1000,
+    "2": 750
+  },
+  "feeSensitivityD1Arc": [
+    0,
+    500,
+    750,
+    1000,
+    1500
+  ],
+  "d2RecruitmentRatio": 0.75,
+  "lowRankWeights": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2
+  ],
+  "annualActivationScenarios": [
+    0,
+    206,
+    332,
+    497,
+    768
+  ],
+  "platformGenerationCostCentsScenarios": [
+    0,
+    10,
+    50,
+    100
+  ],
+  "potentialClubGenerationFeeArcScenarios": [
+    0,
+    100,
+    250
+  ],
+  "seasons": 32
+}
