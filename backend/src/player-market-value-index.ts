@@ -1,13 +1,14 @@
 /** #763: explicit write-side maintenance of a derived, versioned read model. */
 import type {Database} from './database.ts';
 import {MARKET_VALUE_CONFIG} from './player-market-value.mjs';
+import {FORECAST_EXPOSURES} from './player-market-value-forecast-data.mjs';
 import {projectPublicFootballerDirectoryRecord,type InternalFootballer} from './footballer-public-projection.ts';
 
-// Hash every coefficient automatically; bump the algorithm token if canonical
-// suitability or the forecast algorithm itself changes.
+// Hash coefficients AND aggregate forecast data automatically; bump the
+// algorithm token if suitability or forecast algorithm semantics change.
 let versionPromise:Promise<string>|undefined;
 export function marketValueIndexVersion(){
- return versionPromise??=crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(MARKET_VALUE_CONFIG)))
+ return versionPromise??=crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([MARKET_VALUE_CONFIG,FORECAST_EXPOSURES])))
   .then(bytes=>'market-value-index-v1:'+Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,'0')).join(''));
 }
 export const MARKET_VALUE_INDEX_BATCH_SIZE=200;

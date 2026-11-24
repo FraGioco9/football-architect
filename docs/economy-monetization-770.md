@@ -65,3 +65,7 @@ Review price bands and relative schedule, entry wallet access, churn/mandate tra
 
 ## Second research slice
 See `economy-licenses-770.md` for fresh annual generation, license pricing, own-origin affordability and independent EUR sensitivities. This is a separate license-focused overlay, not a fully linked world.
+
+
+## New owner pricing anchors — 24 Nov 2026
+100 ARC/EUR purchase denomination; around EUR300 for a **top D1 club**, not flat D1; youth 90–100% of displayed market value, selectable ARC or direct EUR payment. Earlier 25% youth and inexpensive flat license proposals are historical sensitivities. #771 @ fa97abf8fbce91a8f69063e64db62c894dee41dc has 30 ×32 season scaled-reward/payout sensitivities and differentiated illustrative license schedule. Suggested 1/25 pool and 95% youth price, full agent payout are research candidates only; current approved 5% remains until explicit decision. At 1/25 full payout, youth P10/median/P90 prices 209/1140/3420 ARC (EUR2.09/11.40/34.20); no implied redemption. Full linked demand/tenure, top-club-specific treasury distribution, cash receipts, legal and checkout controls remain HOLD. Retain prior research as historical; no production changes.

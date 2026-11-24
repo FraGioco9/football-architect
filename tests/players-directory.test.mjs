@@ -408,13 +408,13 @@ test('Players collection uses a validated offset query, without changing the pub
 
 test('PLAYERS-FILTERS-01 uses expandable sections, multi-select scopes and plain range boxes without changing the directory table',()=>{
  const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs'),css=read('assets/app.css'),code=read('assets/players-directory.js');
- for(const section of ['nationality','position','age','height','foot','attributes']){
+ for(const section of ['nationality','position','age','height','foot','attributes','value']){
   assert.ok(html.includes('data-players-filter-section="'+section+'"'),section);
   assert.ok(generator.includes('data-players-filter-section=\\\"'+section+'\\\"'),section+' canonical generator');
  }
- for(const key of ['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot'])
+ for(const key of ['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','valueMin','valueMax','foot'])
   assert.ok(html.includes('data-players-filter="'+key+'"'),key);
- assert.equal((html.match(/class="app-players-filter-section"/g)||[]).length,6);
+ assert.equal((html.match(/class="app-players-filter-section"/g)||[]).length,7);
  assert.doesNotMatch(html,/class="app-players-stepper"/,'Height and Age have only input boxes');
  assert.doesNotMatch(html,/data-players-step=/);
  assert.equal((html.match(/data-players-filter="(?:heightMin|heightMax)"/g)||[]).length,2);
@@ -755,7 +755,7 @@ test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL paginat
  assert.match(js,/const query=new URLSearchParams\(\{offset:String\(\(page-1\)\*50\)\}\)/);
  assert.match(js,/const validOffset=rawOffset!==null/);
  assert.doesNotMatch(js,/legacyPage|validLegacy/,'page URLs are not interpreted');
- assert.match(js,/data\.count>0&&page>data\.totalPages&&data\.players\.length===0/,'expired numeric pages recover to page one');
+ assert.match(js,/page>data\.totalPages&&data\.players\.length===0/,'expired numeric pages recover to page one');
  assert.match(js,/async function appendNext\(\)/);
  assert.match(js,/body\.append\(playerRows\(data\.players\)\)/);
  assert.match(js,/history\.replaceState\(\{\.\.\.base,faPlayersReturn:/,'store only position metadata for browser Back');
@@ -1013,7 +1013,7 @@ test('Players refinement: accessible Name section, sort chevrons, animated divid
  assert.ok(generator.includes('app-players-name-section'),'generator retains the same Name section');
  assert.match(css,/\.app-players-sort-button\{[^}]*gap:0;line-height:1.2/);
  assert.match(css,/\.app-players-sort-chevron\{[^}]*width:16px;height:16px/);
- assert.equal((html.match(/class="app-players-sort-chevron" viewBox="0 0 20 20" width="16" height="16"/g)||[]).length,6);
+ assert.equal((html.match(/class="app-players-sort-chevron" viewBox="0 0 20 20" width="16" height="16"/g)||[]).length,7);
  assert.match(js,/chev\.setAttribute\('width','16'\);chev\.setAttribute\('height','16'\)/);
  assert.match(js,/const naturalHeight=Math\.max\(44,menu\.scrollHeight/);
  assert.match(js,/const expandAnimations=new WeakMap\(\)/);
@@ -1031,8 +1031,8 @@ test('Players table header geometry and independent sort-label anchoring',()=>{
  assert.match(css,/\.app-players-sort-label\{position:relative;display:inline-block;max-width:100%/);
  assert.match(css,/\.app-players-sort-chevron\{position:absolute;display:block;left:calc\(100% \+ 7px\);top:50%/);
  assert.match(css,/\.app-players-flag-col \.app-players-sort-chevron\{left:0\}/);
- assert.equal((html.match(/class="app-players-sort-label"/g)||[]).length,6);
- assert.equal((html.match(/class="app-players-sort-chevron"/g)||[]).length,6);
+ assert.equal((html.match(/class="app-players-sort-label"/g)||[]).length,7);
+ assert.equal((html.match(/class="app-players-sort-chevron"/g)||[]).length,7);
  assert.match(js,/wrapper\.append\(text\);button\.append\(wrapper\)/);
  assert.match(js,/chev\.append\(path\);wrapper\.append\(chev\)/);
  assert.match(html,/wrapper\.textContent=label;button\.append\(wrapper\)/);

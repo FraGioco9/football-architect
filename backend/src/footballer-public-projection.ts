@@ -112,7 +112,7 @@ export function projectPublicFootballerProfile(
   return Object.freeze(out);
 }
 
-/** Approved public directory JSON, explicitly excluding initial_age, development_aptitude, retirement_seed
+/** Approved public directory JSON, explicitly excluding initial_age, development_aptitude, retirement_age, legacy retirement_seed
  * and all administrative generator metadata. Never spread raw player payloads.
  */
 export const PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS = Object.freeze([

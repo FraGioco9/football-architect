@@ -24,7 +24,7 @@ the separately approved migration.
   shows the existing silhouette, even if an old WebP still exists.
 - This PR does not generate or approve any photos, does not update DEV D1,
   and does not trigger a preview deployment. The merge **alone** does not
-  activate V4.2 identities in an existing database. Until migration 0033
+  activate V4.2 identities in an existing database. Until migration 0034
   is applied, V4.2-only generation commits cannot write against the old
   portrait constraints; they fail closed instead of persisting partial data.
 
@@ -54,7 +54,7 @@ the separately approved migration.
 5. After **separate** approval of remote D1 staging and migration, apply
    the private staging statements and confirm 150/150 exact permanent
    IDs, unique V4.2 fingerprints and no roster drift.
-6. Apply migration `backend/migrations/0033_portrait_v42_replacement.sql`
+6. Apply migration `backend/migrations/0034_portrait_v42_replacement.sql`
    only in the approved environment. The populated-world preflight fails
    if any player is missing a new candidate, or if an old profile is missing.
    It constructs the complete new profiles table before dropping old rows

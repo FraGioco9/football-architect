@@ -5,7 +5,8 @@ import {applyD1Migrations} from 'cloudflare:test';
 import {marketValueIndexVersion,refreshMarketValueIndexBatch,marketValueIndexReadiness,marketValueIndexWrite,marketValueIndexUpdate} from '../src/player-market-value-index.ts';
 import {readPublicPlayer,readPublicPlayers} from '../src/public-players-read.ts';
 import {readPublicClubRoster} from '../src/public-club-roster-read.ts';
-import {calculatePlayerMarketValueArc} from '../src/player-market-value.mjs';
+import {calculatePlayerMarketValueArc,MARKET_VALUE_CONFIG} from '../src/player-market-value.mjs';
+import {FORECAST_EXPOSURES} from '../src/player-market-value-forecast-data.mjs';
 import {parsePublicPlayerQuery,isAllowedPublicPlayersPath} from '../src/public-players-filters.mjs';
 import {PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS} from '../src/footballer-public-projection.ts';
 import type {Database} from '../src/database.ts';
@@ -313,14 +314,28 @@ test('#763 indexed valuation: actual local D1 global ordering, range, parity and
   assert.equal(detail.player.market_value_arc,roster.players[0].market_value_arc);
   assert.equal(detail.player.market_value_arc,expected[0].value);
   assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'affiliation does not invalidate value');
-  await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.retirement_seed','private','$.development_aptitude',42) WHERE id=?").bind(id).run();
+  await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.retirement_seed','private','$.retirement_age',37,'$.development_aptitude',42) WHERE id=?").bind(id).run();
   assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1,'hidden fields do not invalidate value');
-  const prior=marketValueIndexUpdate(id,0,version,JSON.parse(rows[0].payload_json));
+  const fingerprint=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([MARKET_VALUE_CONFIG,FORECAST_EXPOSURES])));
+ assert.equal(version,'market-value-index-v1:'+Array.from(new Uint8Array(fingerprint),n=>n.toString(16).padStart(2,'0')).join(''));
+ const prior=marketValueIndexUpdate(id,0,version,JSON.parse(rows[0].payload_json));
   await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.age',33) WHERE id=?").bind(id).run();
   assert.equal((await marketValueIndexWrite(db,version,[prior]).run()).meta.changes,0,'stale revision cannot resurrect a value');
   await assert.rejects(readPublicPlayers(db,1,{valueMin:0}),/players_unavailable/);
   assert.equal((await refreshMarketValueIndexBatch(db)).updated,1);
   assert.equal((await refreshMarketValueIndexBatch(db)).ready,true);
+  // Each public sporting input must independently invalidate the cache.
+  for(const [path,value] of [['career_status','"retired"'],['primary_position','"RW"'],['secondary_positions','["LW"]'],['attributes.passing','99']]){
+   const old=(await db.prepare('SELECT input_revision FROM player_market_values WHERE player_id=?').bind(id).first<{input_revision:number}>())!;
+   await db.prepare('UPDATE generated_players SET payload_json=json_set(payload_json,?,json(?)) WHERE id=?').bind('$.'+path,value,id).run();
+   const pending=await db.prepare('SELECT input_revision,config_version,market_value_arc FROM player_market_values WHERE player_id=?').bind(id).first();
+   assert.deepEqual(pending,{input_revision:old.input_revision+1,config_version:null,market_value_arc:null});
+   await assert.rejects(readPublicPlayers(db,1,{sort:'market_value_arc'}),/players_unavailable/);
+   assert.equal((await refreshMarketValueIndexBatch(db)).updated,1);
+   assert.equal((await refreshMarketValueIndexBatch(db)).ready,true);
+   const fresh=await readPublicPlayer(db,id);
+   assert.equal(fresh.player.market_value_arc,0,'retired remains true zero');
+  }
   await db.prepare("UPDATE player_market_values SET config_version='old-config' WHERE player_id=?").bind(id).run();
   await assert.rejects(readPublicPlayers(db,1,{sort:'market_value_arc'}),/players_unavailable/);
   assert.equal((await refreshMarketValueIndexBatch(db)).updated,1);
@@ -335,3 +350,67 @@ test('#763 indexed valuation: actual local D1 global ordering, range, parity and
   await db.prepare('DELETE FROM player_generation_drafts WHERE id=?').bind(batch).run();
  }
 });
+
+test('#763 large-world local Worker/D1 valuation benchmark (synthetic, no remote access)',async()=>{
+ const bindings=env as unknown as {DB:Database;TEST_MIGRATIONS:Parameters<typeof applyD1Migrations>[1]};
+ const db=bindings.DB;
+ await applyD1Migrations(db as Parameters<typeof applyD1Migrations>[0],bindings.TEST_MIGRATIONS);
+ const world=(await db.prepare('SELECT generation FROM world_state WHERE id=1').first<{generation:string}>())!;
+ const batch=crypto.randomUUID(),now=1800000000,version=await marketValueIndexVersion();
+ const start=(await db.prepare("SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0) AS n").first<{n:number}>())!.n;
+ // Repeating canonical synthetic profiles keeps fixture construction cheap;
+ // query timing includes actual local D1 and the real Worker read/projection.
+ const profiles=Array.from({length:120},(_,i)=>({...stored,age:i===119?40:16+i%24,
+  career_status:i%23===0?'retired':'active',primary_position:['CM','ST','CB','RW'][i%4],
+  secondary_positions:i%4===0?['DM']:[],attributes:Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map((k,j)=>[k,35+(i*7+j*3)%51]))}));
+ const profileJson=JSON.stringify(profiles),expected=profiles.map(p=>calculatePlayerMarketValueArc(p)),valueJson=JSON.stringify(expected);
+ // The draft is fixture provenance only; no production generation endpoint is exercised.
+ await db.prepare("INSERT INTO player_generation_drafts(id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,status,created_at,expires_at,committed_at) VALUES(?,?,0,'fixture','{}','[]',103,'fixture','committed',?,?,?)").bind(batch,world.generation,now,now+3600,now).run();
+ let populated=0;
+ const timings:unknown[]=[];
+ try{
+  for(const population of [6400,8001,10000,30000]){
+   for(let offset=populated;offset<population;offset+=1000){
+    const size=Math.min(1000,population-offset),first=start+offset+1;
+    await db.batch([
+     db.prepare("WITH RECURSIVE seq(i) AS (SELECT 0 UNION ALL SELECT i+1 FROM seq WHERE i+1<?) INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) SELECT ?+i,?,?,0,json_extract(?,'$['||CAST((?+i)%120 AS INTEGER)||']'),? FROM seq").bind(size,first,batch,world.generation,profileJson,offset,now),
+     db.prepare("UPDATE player_market_values SET config_version=?,market_value_arc=json_extract(?,'$['||CAST((player_id-?-1)%120 AS INTEGER)||']') WHERE player_id>=? AND player_id<?").bind(version,valueJson,start,first,first+size)
+    ]);
+   }
+   populated=population;
+   assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1);
+   const scenarios=['?sort=market_value_arc&order=desc','?sort=market_value_arc&order=asc','?sort=market_value_arc&order=asc&valueMin=100&valueMax=5000','?position=CM&sort=market_value_arc&order=asc&valueMin=100&valueMax=5000','?valueMin=100&valueMax=5000&sort=age&order=asc'];
+   for(const query of scenarios){
+    const filters=parsePublicPlayerQuery(query).filters;
+    const samples:number[]=[];let responseBytes=0;
+    const expectedRows=Array.from({length:population},(_,i)=>({id:start+i+1,p:profiles[i%120],value:expected[i%120]})).filter(x=>
+     (!filters.position||filters.position.includes(x.p.primary_position as never))&&
+     (filters.valueMin===undefined||(x.value!==null&&x.value>=filters.valueMin))&&
+     (filters.valueMax===undefined||(x.value!==null&&x.value<=filters.valueMax)));
+    expectedRows.sort((a,b)=>{
+     if(filters.sort==='age')return a.p.age-b.p.age||a.id-b.id;
+     if(a.value===null||b.value===null)return a.value===b.value?a.id-b.id:a.value===null?1:-1;
+     return (filters.order==='asc'?a.value-b.value:b.value-a.value)||a.id-b.id;
+    });
+    const sample=async(page:number)=>{
+     const t=performance.now(),result=await readPublicPlayers(db,page,filters);
+     responseBytes=new TextEncoder().encode(JSON.stringify(result)).length;
+     const elapsed=performance.now()-t;
+     assert.equal(result.count,expectedRows.length);
+     assert.deepEqual(result.players.map(p=>p.id),expectedRows.slice((page-1)*50,page*50).map(p=>p.id));
+     return elapsed;
+    };
+    const first=await sample(1);
+    for(const page of [1,2,1,2,1,2,1,2,1])samples.push(await sample(page));
+    samples.sort((a,b)=>a-b);
+    const concurrentStart=performance.now();
+    await Promise.all([1,2,3,4].map(sample));
+    timings.push({population,query,firstMs:first,warmP50Ms:samples[4],warmP95Ms:samples[8],fourConcurrentMs:performance.now()-concurrentStart,responseBytes});
+   }
+  }
+  console.log('MARKET_VALUE_LOCAL_D1_BENCHMARK '+JSON.stringify(timings));
+ }finally{
+  await db.prepare('DELETE FROM generated_players WHERE batch_id=?').bind(batch).run();
+  await db.prepare('DELETE FROM player_generation_drafts WHERE id=?').bind(batch).run();
+ }
+},120000);

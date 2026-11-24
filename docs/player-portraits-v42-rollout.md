@@ -33,7 +33,7 @@
 - Public player detail **does not load old static WebPs by ID**: the API
   returns a portrait asset only for a V4.2-approved row with exactly the
   canonical asset path. All pending V4.2 rows produce a silhouette.
-- Migration `backend/migrations/0033_portrait_v42_replacement.sql`
+- Migration `backend/migrations/0034_portrait_v42_replacement.sql`
   enforces new snapshots with correct embedded ID, version and unique
   fingerprints. A non-empty world requires **complete 1:1 staging** before
   dropping old identities. Every replacement row starts

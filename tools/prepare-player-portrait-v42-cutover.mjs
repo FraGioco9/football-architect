@@ -1,7 +1,7 @@
 /**
  * V4.2-only IDENTITY staging. Builds offline SQL from 100% canonical frozen
  * snapshots. Never needs images, old profiles or remote D1 access.
- * Emitted SQL is NOT executed. Migration 0033 performs the guarded swap
+ * Emitted SQL is NOT executed. migration 0034 performs the guarded swap
  * to PENDING V4.2 rows with NULL asset references.
  */
 import {createHash} from 'node:crypto';
@@ -46,7 +46,7 @@ export async function buildV42CutoverStagingSql(prepared,{expectedCount,expected
  const digest=SHA(JSON.stringify(manifest));
  if(digest!==expectedManifest||prepared.fingerprint_manifest_sha256!==digest)
   throw new TypeError('v42_manifest_digest_mismatch');
- const migration=await readFile(new URL('../backend/migrations/0033_portrait_v42_replacement.sql',import.meta.url),'utf8');
+ const migration=await readFile(new URL('../backend/migrations/0034_portrait_v42_replacement.sql',import.meta.url),'utf8');
  const begin=migration.indexOf('CREATE TABLE IF NOT EXISTS player_portrait_v42_cutover_candidates');
  const end=migration.indexOf('CREATE TABLE IF NOT EXISTS player_portrait_v42_cutover_guard');
  if(begin<0||end<=begin)throw new Error('missing_v42_staging_schema');
