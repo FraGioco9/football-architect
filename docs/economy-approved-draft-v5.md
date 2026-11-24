@@ -81,3 +81,6 @@ Latest owner correction: staff budget is included within club operating surplus,
 
 
 Owner requests 100% human-agent main research case and higher salaries. [Joint v3 candidate](economy-joint-calibration-v3.md): 3.12M rewards, K150, EUR310/90 reference licenses, 32-season valuation. Aggregate youth affordability is met in the assumed mix; full ARC closure is conditional on voluntary spending of all remaining net club/agent inflows. All new numerical values are research only, pending owner approval; v2 snapshots retained.
+
+
+Latest owner scenario preference: 10% EUR-paid youth activations (33 EUR / 299 ARC in the 332 retirement reference). [Joint v4](economy-joint-calibration-v4.md) replaces the 25% EUR assumption for primary research. Residual club cash is not defined platform expenditure; internal transfers are not reserve receipts. New numerical settings remain proposals, not runtime changes.

@@ -315,3 +315,11 @@ test('higher wage human-only candidate funds renewal in aggregate and reconciles
  assert.equal(x.closure.at(-1).gap,0);assert.equal(x.closure.at(-1).totalIssuedArc,0);assert.ok(x.closure[0].gap>0);
  assert.ok(x.humanShareSensitivity.find(y=>y.humanShare===0.5).unfundedYouthArcDemand>0);
 });
+
+test('10 percent EUR renewal reference preserves club internal transfer distinction',async()=>{
+ const {buildJointCalibration}=await import('../tools/run-economy-joint-calibration-v4.mjs');
+ const x=buildJointCalibration();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-joint-calibration-v4-results.json',import.meta.url),'utf8')));
+ const b=x.grid.baseline;assert.equal(b.fundedYouthArcReceipts,1340836);assert.equal(b.unfundedYouthArcDemand,0);
+ assert.equal(b.worldClubCashGrowthBeforeDiscretionaryArc,b.clubSurplusBeforeDiscretionaryArc+b.internalRecruitmentBudgetArc);
+ assert.equal(b.requiredAdditionalReserveReceiptsArc,1779164);assert.equal(x.closure.at(-1).gap,0);assert.ok(x.closure[0].gap>0);
+});
