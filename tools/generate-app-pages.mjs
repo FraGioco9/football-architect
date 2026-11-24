@@ -3,6 +3,7 @@ import {loadSeasonOnePreview} from './load-season-one-preview.mjs';
 import {bootstrapCompetitionTabs} from './competition-tab-preboot.mjs';
 import {renderAdminSettings,renderAdminPlayers,renderAdminPlayersPreview} from './render-admin-settings.mjs';
 import {renderPlayerDetailPage} from './render-player-detail.mjs';
+import {augmentInspectionDirectory,renderInspectionShell} from './render-admin-inspection.mjs';
 import {renderAdminContracts} from './render-admin-contracts.mjs';
 import {renderAdminLicenses} from './render-admin-licenses.mjs';
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
@@ -247,7 +248,9 @@ const writeOutput=(path,content)=>{
  // Derived pages inherit the Competitions shell, but never its Rewards assets.
  content=stripRewardsAssets(content);
  content=augmentRewardsShell(path,content,competitionManifest.competitions,encode);
+ if(path==='admin/index.html')content=augmentInspectionDirectory(content);
  writeFinal(path,content);
+ if(path==='admin/contracts/index.html')for(const mode of ['economy','reset'])writeFinal('admin/'+mode+'/index.html',renderInspectionShell(content,mode));
  if(path==='admin/contracts/index.html')writeFinal('admin/rewards/index.html',augmentRewardsShell('admin/rewards/index.html',content,competitionManifest.competitions,encode));
 };
 const writeFinal=(path,content)=>{

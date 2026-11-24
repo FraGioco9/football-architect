@@ -1,0 +1,39 @@
+// #788/#792: derive the standard Admin child shell, never create a second app shell.
+const scripts='  <link rel="stylesheet" href="/assets/admin-inspection.css">\n  <script src="/assets/admin-inspection.js" defer></script>\n';
+const label=(key,copy)=>'<span data-inspection-copy="'+key+'">'+copy+'</span>';
+const field=(key,copy)=>'<div class="inspection-metric"><span data-inspection-copy="'+key+'">'+copy+'</span><strong data-inspection-value="'+key+'">—</strong></div>';
+const table=(keys)=>'<div class="app-players-table-scroll inspection-table" tabindex="0"><table><thead><tr>'+keys.map(([k,v])=>'<th scope="col" data-inspection-copy="'+k+'">'+v+'</th>').join('')+'</tr></thead><tbody data-inspection-rows>'+Array.from({length:4},()=>'<tr aria-hidden="true" class="inspection-skeleton">'+keys.map(()=>'<td><span></span></td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+const header='<div class="admin-summary inspection-summary"><p data-inspection-world aria-live="polite">—</p><button type="button" class="app-link app-link-secondary" data-inspection-refresh data-inspection-copy="refresh">Refresh</button></div><p class="inspection-status" data-inspection-status role="status" aria-live="polite" data-inspection-copy="checking">Checking access…</p>';
+export function renderAdminReset(){
+ return '<section class="app-panel inspection-panel" data-admin-inspection="reset" aria-busy="true">'+header+
+ '<div data-inspection-content hidden><fieldset class="inspection-scopes"><legend data-inspection-copy="categories">Reset categories</legend>'+
+ [['sporting','Sporting world'],['players','Players'],['contracts','Contracts'],['economy','Economy']].map(([id,copy])=>'<label class="inspection-scope"><input type="checkbox" value="'+id+'" data-inspection-scope disabled>'+label(id,copy)+'</label>').join('')+
+ '</fieldset><p data-inspection-copy="protected">Accounts, licenses, audit records and immutable history remain protected.</p>'+
+ '<button type="button" class="app-link app-link-primary" data-inspection-preview data-inspection-copy="preview" disabled>Preview reset</button>'+
+ '<section class="inspection-result" aria-live="polite"><h2 data-inspection-copy="previewTitle">Reset preview</h2><p data-inspection-copy="previewOnly">Preview only. No data will be modified.</p>'+
+ table([['category','Category'],['records','Records']])+'<ul data-inspection-blockers></ul><button type="button" class="app-link app-link-secondary" data-inspection-copy="confirm" disabled>Confirm reset</button></section></div></section>';
+}
+const tabs=[['overview','Overview'],['clubs','Clubs'],['wallets','Wallets'],['rewards','Rewards'],['payroll','Payroll'],['ledger','Ledger']];
+export function renderAdminEconomy(){
+ const panels={overview:'<div class="inspection-metrics">'+field('reserve','Platform reserve')+field('treasuries','Club treasuries')+field('walletTotal','User wallets')+field('netIssued','Net ARC issued')+'</div><h2 data-inspection-copy="reconciliation">Reconciliation</h2><p data-inspection-reconciliation role="status">—</p>',clubs:'<div class="inspection-metrics">'+field('clubCount','Provisioned clubs')+field('treasuries','Club treasuries')+field('held','Held')+field('available','Available')+'</div>',wallets:'<div class="inspection-metrics">'+field('walletCount','Wallets')+field('walletTotal','User wallets')+'</div>',rewards:'<p data-inspection-copy="pending">Authoritative data not available yet.</p><a href="/admin/rewards" data-inspection-copy="configuredRewards">Configured rewards</a>',payroll:'<p data-inspection-copy="pending">Authoritative data not available yet.</p>',ledger:'<div class="inspection-metrics">'+field('transactions','Transactions')+'</div><p data-inspection-copy="pending">Authoritative data not available yet.</p>'};
+ return '<section class="app-panel inspection-panel" data-admin-inspection="economy" aria-busy="true">'+header+
+ '<div data-inspection-content hidden><p data-inspection-policy>—</p><div class="app-competition-tabs inspection-tabs" role="tablist">'+tabs.map(([key,copy],i)=>'<button type="button" class="app-competition-tab" role="tab" id="inspection-tab-'+key+'" aria-controls="inspection-panel-'+key+'" aria-selected="'+(i===0)+'" tabindex="'+(i===0?0:-1)+'" data-inspection-tab="'+key+'" data-inspection-copy="'+key+'">'+copy+'</button>').join('')+'</div>'+
+ tabs.map(([key],i)=>'<section role="tabpanel" id="inspection-panel-'+key+'" aria-labelledby="inspection-tab-'+key+'" tabindex="0"'+(i?' hidden':'')+'>'+panels[key]+'</section>').join('')+'</div></section>';
+}
+export function augmentInspectionDirectory(html){
+ if(html.includes('data-admin-panel="economy"'))return html;
+ const anchor='Rewards</a></section></div>';
+ if(!html.includes(anchor))throw Error('Admin Rewards card anchor missing');
+ const cards=[['economy','Economy','Inspect balances and settlement'],['reset','Reset','Preview world reset']].map(([key,title,desc])=>'<section class="app-panel admin-directory-card" data-admin-panel="'+key+'" aria-labelledby="admin-card-'+key+'-title"><h2 id="admin-card-'+key+'-title" data-inspection-copy="'+key+'">'+title+'</h2><p data-inspection-copy="'+key+'Description">'+desc+'</p><a class="app-link app-link-primary" href="/admin/'+key+'" data-admin-card="'+key+'" data-inspection-copy="'+key+'">'+title+'</a></section>').join('');
+ return html.replace(anchor,'Rewards</a></section>'+cards+'</div>').replace('</head>',scripts+'</head>');
+}
+export function renderInspectionShell(html,mode){
+ if(!['reset','economy'].includes(mode))throw Error('Unknown Admin inspection route');
+ const title=mode==='reset'?'Reset':'Economy';
+ const begin=html.indexOf('<section class="admin-contracts" data-admin-contracts'),end=html.indexOf('\n        </section>\n      </main>',begin);
+ if(begin<0||end<=begin)throw Error('Missing canonical Admin shell');
+ html=html.slice(0,begin)+(mode==='reset'?renderAdminReset():renderAdminEconomy())+html.slice(end);
+ html=html.replace('<title>Admin Contracts — Football Architect</title>','<title>Admin '+title+' — Football Architect</title>').replace('<h1 id="admin-title" class="app-page-title">Contracts</h1>','<h1 id="admin-title" class="app-page-title" data-inspection-copy="'+mode+'">'+title+'</h1>');
+ for(const src of ['players-nationality-tooltip.js','admin-contracts.js'])html=html.replace('  <script src="/assets/'+src+'" defer></script>\n','');
+ return html.replace('</head>',scripts+'</head>');
+}

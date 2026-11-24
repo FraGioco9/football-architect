@@ -45,7 +45,7 @@ test('Admin removes Details and retains inline protected reset with a next-day p
 
 
 test('Admin directory and child pages have isolated, protected markup',async()=>{
- for(const id of ['admin','admin/calendar','admin/players','admin/contracts','admin/licenses','admin/rewards']){
+ for(const id of ['admin','admin/calendar','admin/players','admin/contracts','admin/licenses','admin/rewards','admin/economy','admin/reset']){
   const path='/'+id,file=id+'/index.html';
   assert.equal(parseRoute(path)?.canonical,path);
   assert.equal(buildRoute({kind:'page',id}),path);
@@ -53,15 +53,15 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
   assert.ok(isAllowlistedPublicPath(file),file);
   assert.ok(planPublicFiles().includes(file));
   const initial=readFileSync(new URL('../'+file,import.meta.url),'utf8');
-  if(id==='admin/contracts'||id==='admin/rewards'){
+  if(id==='admin/contracts'||id==='admin/rewards'||id==='admin/economy'||id==='admin/reset'){
    assert.match(initial,/<section\b[^>]*id="app-admin"[^>]*data-admin-access="pending"/);
    assert.doesNotMatch(initial,/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
   }else assert.match(initial,/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
  }
  const home=readFileSync(new URL('../admin/index.html',import.meta.url),'utf8');
  assert.match(home,/data-admin-directory/);
- assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,5,'Five separate Admin boxes');
- assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,5,'Each Admin box has a clear navigation button');
+ assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,7,'Seven separate Admin boxes');
+ assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,7,'Each Admin box has a clear navigation button');
  assert.match(home,/href="\/admin\/calendar"/);
  assert.match(home,/href="\/admin\/players"/);
  assert.match(home,/href="\/admin\/contracts"/);
@@ -267,3 +267,5 @@ test('Admin captions are inert and section gaps use site spacing',async()=>{
  assert.match(css,/\.admin-licenses-message:empty\{display:none\}/);
  assert.ok(js.includes("select.closest('.admin-licenses-field')"));
 });
+
+test('Inspection routes reuse the canonical Admin shell and expose no execute controls',async()=>{const {renderAdminReset,renderAdminEconomy}=await import('../tools/render-admin-inspection.mjs');const reset=readFileSync(new URL('../admin/reset/index.html',import.meta.url),'utf8'),economy=readFileSync(new URL('../admin/economy/index.html',import.meta.url),'utf8');assert.ok(reset.includes(renderAdminReset()));assert.ok(economy.includes(renderAdminEconomy()));assert.equal((reset.match(/data-inspection-scope disabled/g)||[]).length,4);assert.equal((economy.match(/data-inspection-tab="/g)||[]).length,6);assert.match(reset,/data-inspection-copy="confirm" disabled/);assert.doesNotMatch(reset,/data-admin-reset-confirm/);});
