@@ -13,6 +13,10 @@ it('validates exact reset scope and never executes a reset',async()=>{
  const before=await db.prepare('SELECT * FROM world_state').first();
  const preview=await previewAdminReset(db,access(),['sporting','players','contracts','economy']);
  expect(preview.executable).toBe(false);
+ // #777: this inventory is contract-only even before 0041 is applied.
+ // The same test runs on the full migration set after synchronization with #800.
+ expect(preview.counts).not.toHaveProperty('player_club_affiliations');
+ expect(preview.counts).toMatchObject({generated_players:0,player_signed_contracts:0,player_agent_mandates:0});
  expect(preview.blockers).toContain('preview_only');
  expect(preview.blockers).toContain('economic_history_protected');
  expect(await db.prepare('SELECT * FROM world_state').first()).toEqual(before);

@@ -8,7 +8,7 @@ import {reconcileEconomy} from './economic-ledger.ts';
 export const resetScopes=['sporting','players','contracts','economy'] as const;
 export type ResetScope=typeof resetScopes[number];
 const sportingTables=['seasons','season_calendars','season_draws','season_day_outcomes','season_knockout_ties','season_admin_events','season_domestic_stages','season_archives','season_archive_summaries','season_match_slots','season_knockout_match_slots','season_lineup_day_outcomes','season_zero_approvals','season_two_approvals','match_lineup_result_receipts','public_match_numbers'] as const;
-const playerTables=['generated_players','player_club_affiliations','player_portrait_profiles','player_market_values','player_generation_drafts'] as const;
+const playerTables=['generated_players','player_portrait_profiles','player_market_values','player_generation_drafts'] as const;
 const economyTables=['economic_accounts','economic_control','economic_transactions','economic_entries','economic_holds','economic_hold_releases'] as const;
 const contractTables=['player_signed_contracts','player_agent_mandates'] as const;
 export function parseResetScopes(value:unknown):ResetScope[]{
