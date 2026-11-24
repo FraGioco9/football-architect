@@ -156,9 +156,12 @@
  function loadingRows(){
   const frag=document.createDocumentFragment();
   for(let i=0;i<5;i++){const row=document.createElement('tr');row.className='app-players-loading-row';row.setAttribute('aria-hidden',String(i!==0));
-   const td=document.createElement('td');td.colSpan=columns().length;
-   if(!i){const sr=document.createElement('span');sr.className='sr-only';sr.setAttribute('role','status');sr.textContent=tr().loading;td.append(sr);}
-   row.append(td);frag.append(row);}
+   const cells=view==='overview'?["20px","12ch","6ch","2ch","6ch","5ch","12ch"]:[null];
+   cells.forEach((width,index)=>{const td=document.createElement('td');if(!width)td.colSpan=columns().length;
+    if(!i&&!index){const sr=document.createElement('span');sr.className='sr-only';sr.setAttribute('role','status');sr.textContent=tr().loading;td.append(sr);}
+    if(width){const bar=document.createElement('span');bar.className='app-skeleton-bar app-preview-cell-skeleton';bar.style.setProperty('--preview-skeleton-width',width);bar.setAttribute('aria-hidden','true');td.append(bar);}
+    if(width&&index===6)td.className='app-market-value-col';row.append(td);
+   });frag.append(row);}
   body.replaceChildren(frag);
  }
  function render(){

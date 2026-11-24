@@ -2349,3 +2349,7 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 .app-players-preview-page .app-players-table[data-players-table-mode="overview"] td.app-market-value-col{width:auto}
 @media(max-width:720px){.app-players-preview-page .app-players-table[data-players-table-mode="overview"]{--preview-age:62px;--preview-height:76px;--preview-foot:74px;--preview-value:172px}}
 @media(max-width:420px){.app-players-preview-page .app-players-table[data-players-table-mode="overview"]{--preview-age:60px;--preview-height:72px;--preview-foot:70px}}
+
+.app-players-preview-page .app-preview-cell-skeleton{display:inline-block;width:var(--preview-skeleton-width);max-width:100%;height:14px;vertical-align:middle;margin:0}
+.app-players-preview-page .app-players-loading-row td:nth-child(2),.app-players-preview-page .app-players-loading-row td:nth-child(3),.app-players-preview-page .app-players-loading-row td:nth-child(6){text-align:left}
+.app-players-preview-page .app-players-table[data-players-table-mode="overview"] :is(th,td):nth-child(4){text-align:center}
