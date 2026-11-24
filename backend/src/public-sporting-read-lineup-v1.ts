@@ -609,24 +609,30 @@ export async function readPublicClubHistoryLineupV1(db:Database,clubKey:string){
 /** #578 — One batched anonymous, read-only player Stats response.
  * Each verified season replays once; current affiliation never reconstructs history.
  */
+/** Sporting seasons only; lastActiveSeason must come from a recorded retirement, never an estimate. */
+export function playerStatsCareerSeasons(entrySeason:number,currentSeason:number,lastActiveSeason:number|null=null){
+ const first=Math.max(1,entrySeason),last=Math.min(currentSeason,lastActiveSeason??currentSeason);
+ return Array.from({length:Math.max(0,last-first+1)},(_,i)=>first+i);
+}
 export async function readPublicPlayerStatsLineupV1(db:Database,playerId:number){
  if(!Number.isSafeInteger(playerId)||playerId<1)throw new ApiError(422,'invalid_public_request');
  const world=await readWorld(db);
- const exists=await db.prepare('SELECT id FROM generated_players WHERE id=?').bind(playerId).first<{id:number}>();
+ const exists=await db.prepare('SELECT entry_season FROM generated_players WHERE id=?').bind(playerId).first<{entry_season:number}>();
  if(!exists)throw new ApiError(404,'player_not_found');
  if(![0,1,2].includes(world.seasonNumber)){
   await unchanged(db,world);
   return {schemaVersion:1 as const,providerId:'authoritative-world' as const,playerId,world,
    status:'unavailable' as const,reason:'unsupported-world-season',seasons:[]};
  }
- const seasons=await Promise.all(Array.from({length:world.seasonNumber},(_,i)=>i+1)
+ const eligibleSeasons=playerStatsCareerSeasons(exists.entry_season,world.seasonNumber);
+ const seasons=await Promise.all(eligibleSeasons
   .map(season=>readPublicProjection(db,'player:'+playerId,season)));
  if(seasons.some(item=>item.world.generation!==world.generation||item.world.revision!==world.revision||
    item.world.seasonNumber!==world.seasonNumber||item.world.day!==world.day||item.world.phase!==world.phase))
   throw new ApiError(409,'stale_world');
  await unchanged(db,world);
  return {schemaVersion:1 as const,providerId:'authoritative-world' as const,playerId,world,
-  status:world.seasonNumber===0?'empty' as const:'available' as const,reason:world.seasonNumber===0?'season-zero':null,
+  status:seasons.length===0?'empty' as const:'available' as const,reason:world.seasonNumber===0?'season-zero':seasons.length===0?'outside-career':null,
   seasons:seasons.reverse().map(item=>{
    // Player projections carry authority metadata; roster-only projections do not.
    // Fail closed rather than implying verified coverage for a mismatched scope.
