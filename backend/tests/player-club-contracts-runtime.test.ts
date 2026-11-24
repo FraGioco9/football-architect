@@ -5,7 +5,7 @@ import {clearTestWorld} from './fixtures/test-world.ts';
 import {seedUnifiedAdminHttp} from './fixtures/unified-admin-http.ts';
 import {handleAdmin} from '../src/http-admin.ts';
 import {readWorld} from '../src/world-repository.ts';
-import {parseContractListQuery,signInitialAiContract} from '../src/player-club-contracts.ts';
+import {parseContractListQuery,signInitialAiContract,prepareOpeningAffordability} from '../src/player-club-contracts.ts';
 import {ATTRIBUTES} from '../src/players-generator-core.mjs';
 import clubs from '../../data/clubs.json' with {type:'json'};
 import {REWARDS_VERSION,rewardTotals} from '../../assets/competition-rewards.mjs';
@@ -138,6 +138,10 @@ it('signs an initial AI term atomically with certified synthetic forecast and ac
 
  await expect(signInitialAiContract(db,session,request,key,Math.floor(Date.now()/1000),async()=>({...await authority(),guards:[abortUnless(db,'SELECT 1 WHERE 0',[])]}))).rejects.toMatchObject({code:'contract_signing_preconditions_changed'});
  expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(0);
+ const initialWage=salaryBounds(1,rawDestinationSalaryReferenceArc(payload,10000)!).aiDemand;
+ const proof=await prepareOpeningAffordability(db,await readWorld(db),club,initialWage);
+ expect(proof.inputs).toEqual({uncommittedCash:2000,uncreditedGuaranteedParticipation:0,committedUncoveredWages:0,arrears:0,newDue:Math.floor(initialWage/2)});
+ expect(proof.financeVersion).toBe(version);await db.batch([...proof.guards]);
  const preview=await call('POST','/preview',request);
  expect(preview.status).toBe(200);expect(preview.data).toMatchObject({signable:true,annualSalaryArc:salaryBounds(1,rawDestinationSalaryReferenceArc(payload,10000)!).aiDemand});
  const signedRequest={...request,quoteHash:preview.data.quoteHash};
@@ -158,6 +162,9 @@ it('signs an initial AI term atomically with certified synthetic forecast and ac
  expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(1);
  expect(await reconcileEconomy(db,access)).toMatchObject({ok:true,stockArc:String(gross),netIssuedArc:String(gross)});
  expect((await call('GET','?playerId=2')).data.players[0].clubKey).toBe(club);
+ const afterProof=await prepareOpeningAffordability(db,await readWorld(db),club,initialWage);
+ expect(afterProof.inputs.committedUncoveredWages).toBe(Math.floor(initialWage/2));
+ await expect(db.batch([...proof.guards])).rejects.toThrow();
  expect((await call('POST','/sign',{...signedRequest,durationSeasons:1},undefined,key)).data.error.code).toBe('idempotency_conflict');
  expect((await call('POST','/sign',signedRequest,undefined,'another-signing-key-001')).data.error.code).toBe('stale_world');
  await db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission='admin.world.write'").bind(accountId).run();
