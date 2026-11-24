@@ -1,5 +1,6 @@
 import {readRewardSettlementManifest,projectFinalRewardEvidence,buildRewardManifest} from '../src/reward-settlement-evidence.ts';
 import {planRewardSettlement} from '../src/reward-settlement-plan.mjs';
+import {canonicalHash} from '../src/catalogue-snapshot.ts';
 import {readMatchDirectory} from '../src/public-match-directory.ts';
 /** #613 FULL 56-day V2 authority on isolated local Worker D1.
  * Deliberately a single immutable-fixture test. Never reset the user's world.
@@ -146,6 +147,21 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
   expect(world.day).toBe(day);
   if(day===28){
    const beforeReward=await readWorld(db);
+   // Fault injection at the read boundary only: do not change official rows.
+   const corruptConfirmationDb={
+    prepare:(sql:string)=>{
+     const statement=db.prepare(sql);
+     if(!sql.includes("event_id IN ('domestic:entrants','international:entrants')"))return statement;
+     return {bind:(...args:unknown[])=>({all:async()=>{
+      const result=await statement.bind(...args).all();
+      return {...result,results:result.results.map((row:any)=>row.event_id==='domestic:entrants'
+       ?{...row,receipt_hash:'0'.repeat(64)}:row)};
+     }})};
+    },
+    batch:(statements:any[])=>db.batch(statements)
+   } as any;
+   await expect(readRewardSettlementManifest(corruptConfirmationDb,rewardPin))
+    .rejects.toMatchObject({code:'reward_evidence_invalid'});
    const first=await readRewardSettlementManifest(db,rewardPin);
    expect(first.manifest.plan).toMatchObject({day:28,totalArc:676800,endingHoldArc:1723200});
    expect(first.manifest.plan.rows).toHaveLength(304);
@@ -173,13 +189,30 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(proof.history.progression.results.size).toBe(4082);
  expect(proof.history.progression.ties.size).toBe(54);
  expect(proof.summaryHash).toMatch(/^[a-f0-9]{64}$/);
- // Reuse this already independently verified full-season proof, avoiding a second
- // expensive 4082-receipt replay in this existing FULL fixture.
+ // Exercise the actual Day56 server entrypoint, independently comparing its
+ // evidence digest and allocations against the archive proof used below.
+ const beforeFinalReward=await readWorld(db);
+ const certifiedFinal=await readRewardSettlementManifest(db,rewardPin);
+ const confirmationRows=(await db.prepare(
+  "SELECT scope,receipt_hash FROM season_admin_events WHERE season_number=? AND event_id IN ('domestic:entrants','international:entrants') ORDER BY event_id"
+ ).bind(world.seasonNumber).all()).results as {scope:string;receipt_hash:string}[];
+ const expectedEvidenceHash=await canonicalHash({
+  schemaVersion:1,generation:world.generation,season:world.seasonNumber,day:56,
+  participantsHash:proof.evidence.snapshot.participantsHash,rulesHash:proof.evidence.snapshot.rulesHash,
+  calendarHash:proof.evidence.calendar.calendar_hash,
+  entrantReceipts:confirmationRows.map(row=>({scope:row.scope,receiptHash:row.receipt_hash})),
+  dayHashes:proof.history.days.map(day=>day.hash),resultCount:proof.history.resultCount,
+  archiveHash:proof.archiveHash
+ });
+ expect(certifiedFinal.worldRevision).toBe(world.revision);
+ expect(certifiedFinal.manifest.plan.evidenceHash).toBe(expectedEvidenceHash);
+ expect(await readWorld(db)).toEqual(beforeFinalReward);
  const finalProjection=await projectFinalRewardEvidence(proof);
  const finalPlan=planRewardSettlement({generation:world.generation,season:world.seasonNumber,day:56,
-  rewardVersion:rewardPin.rewardVersion,evidenceHash:proof.archiveHash,competitions:finalProjection});
+  rewardVersion:rewardPin.rewardVersion,evidenceHash:expectedEvidenceHash,competitions:finalProjection});
  const finalManifest=await buildRewardManifest(finalPlan,rewardPin.configVersion);
- expect(finalManifest.plan).toMatchObject({totalArc:1723200,endingHoldArc:0});
+ expect(certifiedFinal.manifest).toEqual(finalManifest);
+ expect(finalManifest.plan).toMatchObject({totalArc:1723200,startingHoldArc:1723200,endingHoldArc:0});
  expect(finalManifest.plan.rows).toHaveLength(912);
  expect(finalProjection.filter(c=>c.competitionId.startsWith('int-')).every(c=>c.outcomes?.length===24)).toBe(true);
  expect(await count('economic_transactions')).toBe(0);
@@ -228,6 +261,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  world=closed.world;
  expect(world.phase).toBe('closed');
  expect(world.day).toBe(56);
+ await expect(readRewardSettlementManifest(db,rewardPin)).rejects.toMatchObject({code:'reward_payday_required'});
  expect(await closeSeasonLineupV1(db,session,closeCommand,
   'lineup-season-close-0001',now)).toEqual(closed);
  const history=await readClosedSeasonHistory(db,1);

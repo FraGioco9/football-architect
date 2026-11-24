@@ -142,9 +142,23 @@ it('#776 consumes synthetic annual Rewards hold, resumes missing intents and rec
  const partial=await report();
  expect(partial).toMatchObject({status:'pending',paidArc:first.lines[0].amountArc});
  expect(partial.missingKeys).toHaveLength(303);
- // Exercise a second real guarded posting; the full 304/888-row planner/reconciler
- // is covered by pure tests. No world-wide transaction claim.
- await post(intents[1]);
+ // A source guard must reject a fresh posting if the expected hold/source
+ // no longer matches. Test only on the synthetic fixture; this is not a
+ // production authority or a durable sporting-manifest guard.
+ const second=intents[1];
+ const sourceGuard=(sourceId:string)=>economicAssert(db,
+  'SELECT 1 FROM economic_holds WHERE id=? AND source_id=? AND config_version=?',
+  [hold.id,sourceId,version]);
+ const secondBalance=await balance(second.lines[0].accountId);
+ await expect(postEconomicOperation(db,second,{...guards(),preconditions:[sourceGuard('stale-source')]},now)).rejects.toThrow();
+ expect(await report()).toEqual(partial);
+ expect(await balance(second.lines[0].accountId)).toBe(secondBalance);
+ const secondReceipt=await postEconomicOperation(db,second,{...guards(),preconditions:[sourceGuard(hold.sourceId)]},now);
+ // Fresh preconditions are not replay authorization. Exact replay succeeds
+ // with a stale fresh-only guard, but denied live access still fails.
+ expect((await postEconomicOperation(db,second,{...guards(),preconditions:[sourceGuard('stale-source')]},now)).id).toBe(secondReceipt.id);
+ await expect(postEconomicOperation(db,second,{...guards(),access:[economicAssert(db,'SELECT 1 WHERE 0')]},now)).rejects.toThrow();
+ expect(await balance(second.lines[0].accountId)).toBe(secondBalance!+second.lines[0].amountArc);
  expect((await report()).missingKeys).toHaveLength(302);
  expect(await balance(first.lines[0].accountId)).toBe(initialClub!+first.lines[0].amountArc);
  // Fixture-only cleanup of this test's hold and synthetic funding. Journal remains immutable.
