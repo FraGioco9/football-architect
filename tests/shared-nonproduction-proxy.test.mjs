@@ -161,7 +161,7 @@ test('shared preview forwards safe Players offset query without credentials or c
  assert.equal(invalid.status,403);assert.equal(attempts,0);
 });
 
-test('shared DEV forwards authenticated Contracts GET queries and POST through verified pool only',async()=>{
+test('shared DEV forwards authenticated Contracts GET through verified pool and blocks retired POST',async()=>{
  const seen=[];
  const send=async(url,options)=>{
   seen.push({url:url.href,options});
@@ -172,12 +172,10 @@ test('shared DEV forwards authenticated Contracts GET queries and POST through v
  const post=await run(req({path:'/api/admin/contracts',method:'POST',headers:{
   origin:'http://app.localhost:2000',cookie:'fa_player_local='+token,'x-csrf-token':'csrf-test','content-type':'application/json'
  },body:'{"playerId":1,"clubKey":null}'}),send);
- assert.equal(get.status,200);assert.equal(post.status,200);
- assert.equal(seen.length,4);
+ assert.equal(get.status,200);assert.equal(post.status,405);
+ assert.equal(seen.length,2,'legacy POST must not reach upstream or pool lookup');
  assert.equal(seen[1].url,origin+'/api/admin/contracts?page=1');
  assert.deepEqual(seen[1].options.headers,{'x-fa-expected-pool':'dev-preview',origin,cookie:'__Host-fa_player='+token});
- assert.equal(seen[3].url,origin+'/api/admin/contracts');
- assert.equal(seen[3].options.headers['x-csrf-token'],'csrf-test');
  const blocked=await run(req({path:'/api/admin/contracts?page=1&unexpected=1'}),async()=>{throw Error('must not forward')});
  assert.equal(blocked.status,403);
 });

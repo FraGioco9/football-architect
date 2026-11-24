@@ -65,18 +65,23 @@ test('#532 Admin preview retains protected draft flow and common player column o
  assert.match(read('assets/app.css'),/\.app-players-table:not\(\[data-players-public\]\):not\(\[data-players-table-mode="attributes"\]\) th:nth-child\(3\)\{width:var\(--app-players-positions-width\)\}/);
 });
 
-test('#532 Admin Contracts preserves checkbox selection and aligns player data/first paint',async()=>{
+test('#777 Admin Contracts aligns signed-term columns and read-only first paint',async()=>{
  const {renderAdminContracts}=await import('../tools/render-admin-contracts.mjs');
  const html=read('admin/contracts/index.html'),section=renderAdminContracts();
  assert.ok(html.includes(section),'Admin Contracts generator must exactly match the checked-in page');
- assert.deepEqual([...section.matchAll(/data-contracts-copy="(player|positions|age|height|foot|club)"/g)].map(x=>x[1]),
-  ['player','positions','age','height','foot','club']);
- assert.match(section,/data-contracts-all aria-label="Select all players on this page"/);
- assert.equal((section.match(/class="admin-contracts-skeleton"/g)||[]).length,5);
+ assert.deepEqual([...section.matchAll(/<th scope="col" data-contracts-copy="([^"]+)"/g)].map(x=>x[1]),
+  ['nationality','player','club','salary','duration','start','end','signed']);
+ assert.doesNotMatch(section,/data-contracts-(all|check|save|trigger|select)|type="checkbox"/);
+ const rows=section.match(/<tr class="admin-contracts-skeleton" aria-hidden="true">[^]*?<\/tr>/g)||[];
+ assert.equal(rows.length,5);
+ for(const row of rows)assert.equal((row.match(/<td\b/g)||[]).length,8);
  const js=read('assets/admin-contracts.js'),css=read('assets/admin-settings.css');
- assert.match(js,/const values=\[positions,Number\.isSafeInteger\(p\.age\)/);
- assert.match(js,/input\.dataset\.contractsCheck=String\(p\.id\)/);
- assert.match(css,/\.app-admin-view \.admin-contracts-table :is\(th,td\):nth-child\(3\)\{width:248px;text-align:left\}/);
- assert.match(css,/\.app-admin-view \.admin-contracts-table :is\(th,td\):nth-child\(4\)\{width:200px;text-align:left/);
+ assert.match(js,/const c=p\.contract/);
+ assert.match(js,/c\.annualSalaryArc/);
+ assert.match(js,/c\.durationSeasons/);
+ assert.match(js,/c\.startTick/);
+ assert.match(js,/c\.endTick-1/);
+ assert.match(js,/c\.signedAt/);
+ assert.doesNotMatch(js,/method:\s*['"]POST|expectedClubKey/);
  assert.match(css,/\.app-admin-view \.admin-contracts-table tbody tr\{height:36px\}/);
 });

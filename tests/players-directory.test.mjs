@@ -522,7 +522,7 @@ test('Players SQL count/page share identical secondary and multiple filters with
  // Player identities survive world reset: no filters means no WHERE clause.
  assert.match(sql,/const where=predicates\.length\?' WHERE '\+predicates\.join\(' AND '\):''/);
  assert.match(sql,/SELECT COUNT\(\*\) AS n FROM generated_players'\+where/);
- assert.match(sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id'\+where/);
+ assert.match(sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN '\+CURRENT_PLAYER_CONTRACTS_SQL\+' a ON a\.player_id=p\.id'\+where/);
  assert.doesNotMatch(sql,/WHERE world_generation=\?/);
  assert.match(sql,/:\'id DESC\'/,'default public sorting follows descending numeric IDs');
  assert.doesNotMatch(sql,/:\'created_at DESC,id ASC\'/);
@@ -1168,7 +1168,7 @@ test('#734 Players count/page use a single D1 batch on the first segment only',(
  assert.match(server,/db\.prepare\(countSql\)\.bind\(\.\.\.values\)/);
  assert.match(server,/db\.prepare\(pageSql\)\.bind\(\.\.\.values,PUBLIC_PLAYER_PAGE_SIZE,0\)/);
  assert.match(server,/count=countRow\?\.n\?\?0/,'subsequent offset pages keep live server-side counts');
- assert.match(server,/if\(after\.generation!==before\.generation\)/,'world-reset fence unchanged');
+ assert.match(server,/if\(after\.generation!==before\.generation\|\|after\.revision!==before\.revision\)/,'world-reset and sporting-revision fence');
 });
 
 test('#763 public overview width tracks preserve the first three columns and reserve the final five at first paint',()=>{
