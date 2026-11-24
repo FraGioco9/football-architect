@@ -242,3 +242,20 @@ test('club license DRAFT reference covers all clubs and preserves genesis separa
  assert.throws(()=>makeCalibration(clubs,selection,{...c,clubOverrides:{[key]:{genesisArc:0}}},rewards,MARKET_VALUE_CONFIG));
  assert.ok(result.rows.filter(r=>r.initialTier===0).every(r=>r.baseLicenseCents===c.minimumCents&&r.expectedSurplusArc===0));
 });
+
+test('offline finance stress deterministic shortfall and conservation',async()=>{
+ const {runStress}=await import('../tools/club-finance-stress.mjs');
+ const {buildCalibration}=await import('../tools/run-club-license-calibration.mjs');
+ const rewards=await import('../assets/competition-rewards.mjs');
+ const {MARKET_VALUE_CONFIG}=await import('../backend/src/player-market-value.mjs');
+ const config=JSON.parse(readFileSync(new URL('../tools/club-finance-stress-v1.json',import.meta.url),'utf8'));
+ const ref=buildCalibration(),scenario=config.scenarios[0];
+ const short={...config,seasons:2};const a=runStress(ref,rewards,MARKET_VALUE_CONFIG,short,scenario,769);
+ assert.equal(a.completed,2);assert.deepEqual(a,runStress(ref,rewards,MARKET_VALUE_CONFIG,short,scenario,769));
+ for(const s of a.series)assert.equal(s.wagePaid,s.humanPaid+s.aiPaid);
+ assert.equal(a.closingClubArc+a.closingReserveArc+a.closingWalletArc,a.openingArc+a.totalIssuedArc+a.capitalIssuedArc);
+ const blocked=runStress(ref,rewards,MARKET_VALUE_CONFIG,{...short,initialReserveArc:0},{...scenario,annualCapArc:0},769);
+ assert.equal(blocked.completed,0);assert.equal(blocked.stopped.season,1);assert.equal(blocked.totalIssuedArc,0);
+ const historical=JSON.parse(readFileSync(new URL('../docs/club-finance-stress-v1-results.json',import.meta.url),'utf8'));
+ assert.deepEqual(historical.runs.find(r=>r.scenario===scenario.name&&r.seed===769).series.slice(0,2),a.series);
+});

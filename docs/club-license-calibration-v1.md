@@ -27,3 +27,6 @@ Per-club output: [results](club-license-calibration-v1-results.json). Reproduce:
 ## Remaining before owner price approval / activation
 
 Use genuine pre-launch sporting strength inputs or owner-approved explicit group policy before individual differentiated offers; calibrate top reference closer to anchor if necessary. Validate rank proxy and holder exceptions, standardized payroll roster mix and optional costs. The 32-season expectation is **not** a linked financial world stress test: run full reserve-first capped issuance, zero personal wallet, genesis distribution, payroll arrears and demand scenarios separately before final approval; no issuance cap has been ratified. Review capital bounds and steps, genesis coefficient, rounding, secondary market, inactive clubs and refund/legal/provider gates. #775 owns ledger, #781 marketplace, #782 real-money checkout, #788 reset. No runtime changes or remote operations.
+
+
+Follow-up stress and horizon comparison: [club-finance-stress-v1.md](club-finance-stress-v1.md). All prices and caps remain provisional.
