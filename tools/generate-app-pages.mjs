@@ -410,6 +410,7 @@ if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length
  let html=source.slice(0,begin)+content.split('\n').map(line=>'        '+line).join('\n')+source.slice(end);
  html=html.replace('<title>Players — Football Architect</title>','<title>Transfers — Football Architect</title>')
   .replace('  <script src="/assets/players-nationality-tooltip.js" defer></script>\n','')
+  .replace('  <script src="/assets/market-value-format.js" defer></script>\n','')
   .replace('  <script src="/assets/players-directory.js" defer></script>',
    '  <link rel="stylesheet" href="/assets/transfers-page.css">\n  <script type="module" src="/assets/transfers-page.mjs"></script>')
 

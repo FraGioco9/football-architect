@@ -40,3 +40,14 @@ test('Transfers discovery only reads the public API and handles navigation safel
  assert.doesNotMatch(source,/method:'POST'|\/api\/market|transferFee|auction|wallet|buyNow/);
  for(const locale of ['en','de','es','fr','it']) assert.match(source,new RegExp('\\b'+locale+':\\{'));
 });
+
+test('Transfers market value is read-only, global and reserved before hydration',()=>{
+ const html=read('transfers/index.html'),source=read('assets/transfers-page.mjs'),template=read('templates/transfers-content.html');
+ for(const id of ['transfers-value-min','transfers-value-max','transfers-value-sort'])assert.ok(html.includes('id="'+id+'"'));
+ assert.match(source,/import '\.\/market-value-format\.js'/);
+ assert.equal((template.match(/fa-transfers-skeleton-value/g)||[]).length,(template.match(/class="fa-transfers-loading-row"/g)||[]).length);
+ assert.match(template,/Market value \(Min, \$ARC\)/);
+ assert.match(source,/valuation\.format\(player\.market_value_arc,currentLocale\(\)\)/);
+ assert.match(source,/navigate\(\{\.\.\.state,sort:order\?'market_value_arc':'',order,offset:0\}\)/);
+ assert.doesNotMatch(source,/\.players\.sort\(/);
+});

@@ -29,3 +29,12 @@ test('stronger listed secondary role is the reference, not the nominal primary r
  assert.ok(value({...p,secondary_positions:['GK']})>value(p));
  assert.equal(value({...p,secondary_positions:['GK']}),value({...p,primary_position:'GK'}));
 });
+
+test('all public valuation surfaces share the literal $ARC token and integer grouping',async()=>{
+ const {default:formatter}=await import('../assets/market-value-format.js');
+ assert.equal(formatter.format(4700,'en'),'4,700 $ARC');
+ assert.equal(formatter.format(4700,'it'),'4.700 $ARC');
+ assert.equal(formatter.format(0,'en'),'0 $ARC');
+ assert.equal(formatter.format(null,'en'),'—');
+ for(const locale of ['en','it','de','es','fr'])assert.ok(formatter.format(1234567,locale).endsWith(' $ARC'));
+});

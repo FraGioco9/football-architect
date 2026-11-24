@@ -1,3 +1,4 @@
+import './market-value-format.js';
 import {TRANSFERS_PLAYER_PAGE_SIZE as PAGE_SIZE} from './transfers-discovery.mjs';
 import {transfersDiscoveryRequest,projectTransfersDiscovery} from './transfers-discovery.mjs';
 
@@ -8,6 +9,12 @@ if(root){
  const nameInput=document.getElementById('transfers-name');
  const positionInput=document.getElementById('transfers-position');
  const reset=document.getElementById('transfers-reset');
+ const minInput=document.getElementById('transfers-value-min'),maxInput=document.getElementById('transfers-value-max');
+ const sortButton=document.getElementById('transfers-value-sort'),sortHead=sortButton.closest('th');
+ const valuation=globalThis.faMarketValue;
+ const arc=value=>/^(?:0|[1-9][0-9]{0,15})$/.test(value||'')&&Number.isSafeInteger(Number(value))?value:'';
+ const range=(lo,hi)=>lo&&hi&&Number(lo)>Number(hi)?['','']:[lo,hi];
+ const boundLabels={en:['Min','Max'],it:['Min','Max'],de:['Min.','Max.'],es:['Mín.','Máx.'],fr:['Min.','Max.']};
  const rows=document.getElementById('transfers-rows');
  const status=document.getElementById('transfers-status');
  const count=document.getElementById('transfers-count');
@@ -27,14 +34,20 @@ if(root){
  const currentLocale=()=>Object.hasOwn(copies,document.documentElement.lang)?document.documentElement.lang:'en';
  const l=()=>copies[currentLocale()];
  const initialSkeleton=rows.innerHTML;
- let state={name:'',position:'',offset:0},requestId=0,controller=null,lastPage=null,notice='loading';
+ let state={name:'',position:'',valueMin:'',valueMax:'',sort:'',order:'',offset:0},requestId=0,controller=null,lastPage=null,notice='loading';
  const renderText=()=>{
   const c=l();
   for(const node of root.querySelectorAll('[data-transfers-text]'))node.textContent=c[node.dataset.transfersText]||'';
   for(const node of root.querySelectorAll('[data-transfers-placeholder]'))node.placeholder=c[node.dataset.transfersPlaceholder]||'';
   region.setAttribute('aria-label',c.region);root.querySelector('[data-transfers-pager-label]').setAttribute('aria-label',c.pager);
+  const label=valuation.label(currentLocale()),bounds=boundLabels[currentLocale()]||boundLabels.en;
+  root.querySelector('[data-transfers-value-min-label]').textContent=label+' ('+bounds[0]+', $ARC)';
+  root.querySelector('[data-transfers-value-max-label]').textContent=label+' ('+bounds[1]+', $ARC)';
+  sortButton.querySelector('[data-transfers-value-label]').textContent=label;
+  sortButton.title=valuation.help(currentLocale());
+  sortHead.setAttribute('aria-sort',state.sort?(state.order==='desc'?'descending':'ascending'):'none');
   document.title=c.title+' — Football Architect';
-  status.textContent=notice==='loading'?c.loading:notice==='error'?c.error:notice==='stale'?c.stale:notice==='empty'?lastPage?.count===0?c.none:c.empty:'';
+  status.textContent=notice==='loading'?c.loading:notice==='error'?c.error:notice==='stale'?c.stale:notice==='empty'?(state.name||state.position||state.valueMin||state.valueMax?c.empty:c.none):'';
   if(lastPage){count.textContent=c.count.replace('{n}',new Intl.NumberFormat(currentLocale()).format(lastPage.count));pageInfo.textContent=c.page.replace('{page}',lastPage.page).replace('{total}',lastPage.totalPages);}
  };
  const readLocation=()=>{
@@ -45,17 +58,23 @@ if(root){
   const position=supportedPositions.has(candidatePosition)?candidatePosition:'';
   const raw=params.get('offset')||'0';
   const offset=/^(?:0|[1-9][0-9]{0,5})$/.test(raw)&&Number(raw)<=499900&&Number(raw)%PAGE_SIZE===0?Number(raw):0;
-  return {name,position,offset};
+  const [valueMin,valueMax]=range(arc(params.get('valueMin')),arc(params.get('valueMax')));
+  const sort=params.get('sort')==='market_value_arc'?'market_value_arc':'';
+  const order=sort?(params.get('order')==='asc'?'asc':'desc'):'';
+  return {name,position,valueMin,valueMax,sort,order,offset};
  };
  const updateLocation=(method)=>{
   const p=new URLSearchParams();
   if(state.name)p.set('name',state.name);
   if(state.position)p.set('position',state.position);
+  if(state.valueMin!=='')p.set('valueMin',state.valueMin);
+  if(state.valueMax!=='')p.set('valueMax',state.valueMax);
+  if(state.sort){p.set('sort',state.sort);p.set('order',state.order);}
   if(state.offset)p.set('offset',String(state.offset));
   const nextUrl=location.pathname+(p.size?'?'+p:'');
   if(location.pathname+location.search!==nextUrl)history[method](null,'',nextUrl);
  };
- const syncForm=()=>{nameInput.value=state.name;positionInput.value=state.position;};
+ const syncForm=()=>{nameInput.value=state.name;positionInput.value=state.position;minInput.value=state.valueMin;maxInput.value=state.valueMax;};
  const setLoading=()=>{
   notice='loading';lastPage=null;rows.innerHTML=initialSkeleton;region.setAttribute('aria-busy','true');
   count.textContent='';pageInfo.textContent='';prev.disabled=true;next.disabled=true;renderText();
@@ -73,6 +92,7 @@ if(root){
    if(player.clubHref){
     const club=makeCell('');const link=document.createElement('a');link.href=player.clubHref;link.textContent=player.clubName;club.append(link);tr.append(club);
    }else tr.append(makeCell(l().free,'fa-transfers-muted'));
+   tr.append(makeCell(valuation.format(player.market_value_arc,currentLocale()),'fa-transfers-value'));
    frag.append(tr);
   }
   rows.replaceChildren(frag);
@@ -105,10 +125,15 @@ if(root){
   event.preventDefault();const candidate=nameInput.value.trim().normalize('NFC');
   if(candidate&& !namePattern.test(candidate)){nameInput.setCustomValidity('Invalid player name');nameInput.reportValidity();return;}
   nameInput.setCustomValidity('');
-  navigate({name:candidate,position:positionInput.value,offset:0});
+  const [valueMin,valueMax]=range(arc(minInput.value),arc(maxInput.value));
+  navigate({...state,name:candidate,position:positionInput.value,valueMin,valueMax,offset:0});
  });
  nameInput.addEventListener('input',()=>nameInput.setCustomValidity(''));
- reset.addEventListener('click',()=>navigate({name:'',position:'',offset:0}));
+ reset.addEventListener('click',()=>navigate({name:'',position:'',valueMin:'',valueMax:'',sort:'',order:'',offset:0}));
+ sortButton.addEventListener('click',()=>{
+  const order=!state.sort?'desc':state.order==='desc'?'asc':'';
+  navigate({...state,sort:order?'market_value_arc':'',order,offset:0});
+ });
  prev.addEventListener('click',()=>{if(!prev.disabled)navigate({...state,offset:state.offset-PAGE_SIZE});});
  next.addEventListener('click',()=>{if(!next.disabled)navigate({...state,offset:state.offset+PAGE_SIZE});});
  window.addEventListener('popstate',()=>{state=readLocation();syncForm();void load();});
