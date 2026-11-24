@@ -1,0 +1,1474 @@
+{
+  "version": "economy-flexible-eur-mix-v1",
+  "status": "research-only",
+  "retirements": 332,
+  "seasons": 32,
+  "rawBreakEvenEurShare": 0.08172635445362719,
+  "cases": [
+    {
+      "poolArc": 1200000,
+      "meanYouthArcPrice": 3985.7400000000002,
+      "meanYouthEurCents": 3623.4,
+      "breakEvenEurOrders": 30.926673591353165,
+      "breakEvenEurShare": 0.09315263129925652,
+      "neighbors": [
+        {
+          "eurOrders": 30,
+          "arcOrders": 302,
+          "desiredArc": 1203693,
+          "deltaArc": 3693,
+          "grossEurCents": 108702
+        },
+        {
+          "eurOrders": 31,
+          "arcOrders": 301,
+          "desiredArc": 1199708,
+          "deltaArc": -292,
+          "grossEurCents": 112325
+        }
+      ],
+      "illustrativePath": {
+        "seasons": 32,
+        "bufferArc": 3986,
+        "initialReserveArc": 1203986,
+        "totalEurOrders": 990,
+        "totalArcReceipts": 38398626,
+        "meanEurShare": 0.09318524096385543,
+        "grossEurCents": 3587166,
+        "closingWalletArc": 1374,
+        "closingReserveArc": 1202612,
+        "peakWalletArc": 3899,
+        "path": [
+          {
+            "season": 1,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 292,
+            "reserveArc": 1203694
+          },
+          {
+            "season": 2,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 584,
+            "reserveArc": 1203402
+          },
+          {
+            "season": 3,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 876,
+            "reserveArc": 1203110
+          },
+          {
+            "season": 4,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 1168,
+            "reserveArc": 1202818
+          },
+          {
+            "season": 5,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 1460,
+            "reserveArc": 1202526
+          },
+          {
+            "season": 6,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 1752,
+            "reserveArc": 1202234
+          },
+          {
+            "season": 7,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 2044,
+            "reserveArc": 1201942
+          },
+          {
+            "season": 8,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 2336,
+            "reserveArc": 1201650
+          },
+          {
+            "season": 9,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 2628,
+            "reserveArc": 1201358
+          },
+          {
+            "season": 10,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 2920,
+            "reserveArc": 1201066
+          },
+          {
+            "season": 11,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 3212,
+            "reserveArc": 1200774
+          },
+          {
+            "season": 12,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 3504,
+            "reserveArc": 1200482
+          },
+          {
+            "season": 13,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 3796,
+            "reserveArc": 1200190
+          },
+          {
+            "season": 14,
+            "eurOrders": 30,
+            "arcOrders": 302,
+            "receivedArc": 1203693,
+            "walletArc": 103,
+            "reserveArc": 1203883
+          },
+          {
+            "season": 15,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 395,
+            "reserveArc": 1203591
+          },
+          {
+            "season": 16,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 687,
+            "reserveArc": 1203299
+          },
+          {
+            "season": 17,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 979,
+            "reserveArc": 1203007
+          },
+          {
+            "season": 18,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 1271,
+            "reserveArc": 1202715
+          },
+          {
+            "season": 19,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 1563,
+            "reserveArc": 1202423
+          },
+          {
+            "season": 20,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 1855,
+            "reserveArc": 1202131
+          },
+          {
+            "season": 21,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 2147,
+            "reserveArc": 1201839
+          },
+          {
+            "season": 22,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 2439,
+            "reserveArc": 1201547
+          },
+          {
+            "season": 23,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 2731,
+            "reserveArc": 1201255
+          },
+          {
+            "season": 24,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 3023,
+            "reserveArc": 1200963
+          },
+          {
+            "season": 25,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 3315,
+            "reserveArc": 1200671
+          },
+          {
+            "season": 26,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 3607,
+            "reserveArc": 1200379
+          },
+          {
+            "season": 27,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 3899,
+            "reserveArc": 1200087
+          },
+          {
+            "season": 28,
+            "eurOrders": 30,
+            "arcOrders": 302,
+            "receivedArc": 1203693,
+            "walletArc": 206,
+            "reserveArc": 1203780
+          },
+          {
+            "season": 29,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 498,
+            "reserveArc": 1203488
+          },
+          {
+            "season": 30,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 790,
+            "reserveArc": 1203196
+          },
+          {
+            "season": 31,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 1082,
+            "reserveArc": 1202904
+          },
+          {
+            "season": 32,
+            "eurOrders": 31,
+            "arcOrders": 301,
+            "receivedArc": 1199708,
+            "walletArc": 1374,
+            "reserveArc": 1202612
+          }
+        ]
+      }
+    },
+    {
+      "poolArc": 2400000,
+      "meanYouthArcPrice": 8098.694999999998,
+      "meanYouthEurCents": 7362.45,
+      "breakEvenEurOrders": 35.655959386049176,
+      "breakEvenEurShare": 0.1073974680302686,
+      "neighbors": [
+        {
+          "eurOrders": 35,
+          "arcOrders": 297,
+          "desiredArc": 2405312,
+          "deltaArc": 5312,
+          "grossEurCents": 257686
+        },
+        {
+          "eurOrders": 36,
+          "arcOrders": 296,
+          "desiredArc": 2397214,
+          "deltaArc": -2786,
+          "grossEurCents": 265048
+        }
+      ],
+      "illustrativePath": {
+        "seasons": 32,
+        "bufferArc": 8099,
+        "initialReserveArc": 2408099,
+        "totalEurOrders": 1141,
+        "totalArcReceipts": 76799926,
+        "meanEurShare": 0.10739834337349398,
+        "grossEurCents": 8400555,
+        "closingWalletArc": 74,
+        "closingReserveArc": 2408025,
+        "peakWalletArc": 7912,
+        "path": [
+          {
+            "season": 1,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 2786,
+            "reserveArc": 2405313
+          },
+          {
+            "season": 2,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 5572,
+            "reserveArc": 2402527
+          },
+          {
+            "season": 3,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 2405312,
+            "walletArc": 260,
+            "reserveArc": 2407839
+          },
+          {
+            "season": 4,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 3046,
+            "reserveArc": 2405053
+          },
+          {
+            "season": 5,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 5832,
+            "reserveArc": 2402267
+          },
+          {
+            "season": 6,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 2405312,
+            "walletArc": 520,
+            "reserveArc": 2407579
+          },
+          {
+            "season": 7,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 3306,
+            "reserveArc": 2404793
+          },
+          {
+            "season": 8,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 6092,
+            "reserveArc": 2402007
+          },
+          {
+            "season": 9,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 2405312,
+            "walletArc": 780,
+            "reserveArc": 2407319
+          },
+          {
+            "season": 10,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 3566,
+            "reserveArc": 2404533
+          },
+          {
+            "season": 11,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 6352,
+            "reserveArc": 2401747
+          },
+          {
+            "season": 12,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 2405312,
+            "walletArc": 1040,
+            "reserveArc": 2407059
+          },
+          {
+            "season": 13,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 3826,
+            "reserveArc": 2404273
+          },
+          {
+            "season": 14,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 6612,
+            "reserveArc": 2401487
+          },
+          {
+            "season": 15,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 2405312,
+            "walletArc": 1300,
+            "reserveArc": 2406799
+          },
+          {
+            "season": 16,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 4086,
+            "reserveArc": 2404013
+          },
+          {
+            "season": 17,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 6872,
+            "reserveArc": 2401227
+          },
+          {
+            "season": 18,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 2405312,
+            "walletArc": 1560,
+            "reserveArc": 2406539
+          },
+          {
+            "season": 19,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 4346,
+            "reserveArc": 2403753
+          },
+          {
+            "season": 20,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 7132,
+            "reserveArc": 2400967
+          },
+          {
+            "season": 21,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 2405312,
+            "walletArc": 1820,
+            "reserveArc": 2406279
+          },
+          {
+            "season": 22,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 4606,
+            "reserveArc": 2403493
+          },
+          {
+            "season": 23,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 7392,
+            "reserveArc": 2400707
+          },
+          {
+            "season": 24,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 2405312,
+            "walletArc": 2080,
+            "reserveArc": 2406019
+          },
+          {
+            "season": 25,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 4866,
+            "reserveArc": 2403233
+          },
+          {
+            "season": 26,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 7652,
+            "reserveArc": 2400447
+          },
+          {
+            "season": 27,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 2405312,
+            "walletArc": 2340,
+            "reserveArc": 2405759
+          },
+          {
+            "season": 28,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 5126,
+            "reserveArc": 2402973
+          },
+          {
+            "season": 29,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 7912,
+            "reserveArc": 2400187
+          },
+          {
+            "season": 30,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 2405312,
+            "walletArc": 2600,
+            "reserveArc": 2405499
+          },
+          {
+            "season": 31,
+            "eurOrders": 36,
+            "arcOrders": 296,
+            "receivedArc": 2397214,
+            "walletArc": 5386,
+            "reserveArc": 2402713
+          },
+          {
+            "season": 32,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 2405312,
+            "walletArc": 74,
+            "reserveArc": 2408025
+          }
+        ]
+      }
+    },
+    {
+      "poolArc": 3600000,
+      "meanYouthArcPrice": 12221.055,
+      "meanYouthEurCents": 11110.050000000001,
+      "breakEvenEurOrders": 37.42641367705164,
+      "breakEvenEurShare": 0.11273016167786638,
+      "neighbors": [
+        {
+          "eurOrders": 37,
+          "arcOrders": 295,
+          "desiredArc": 3605211,
+          "deltaArc": 5211,
+          "grossEurCents": 411072
+        },
+        {
+          "eurOrders": 38,
+          "arcOrders": 294,
+          "desiredArc": 3592990,
+          "deltaArc": -7010,
+          "grossEurCents": 422182
+        }
+      ],
+      "illustrativePath": {
+        "seasons": 32,
+        "bufferArc": 12222,
+        "initialReserveArc": 3612222,
+        "totalEurOrders": 1198,
+        "totalArcReceipts": 115195658,
+        "meanEurShare": 0.11276355421686747,
+        "grossEurCents": 13309840,
+        "closingWalletArc": 4342,
+        "closingReserveArc": 3607880,
+        "peakWalletArc": 11166,
+        "path": [
+          {
+            "season": 1,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 7010,
+            "reserveArc": 3605212
+          },
+          {
+            "season": 2,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 1799,
+            "reserveArc": 3610423
+          },
+          {
+            "season": 3,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 8809,
+            "reserveArc": 3603413
+          },
+          {
+            "season": 4,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 3598,
+            "reserveArc": 3608624
+          },
+          {
+            "season": 5,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 10608,
+            "reserveArc": 3601614
+          },
+          {
+            "season": 6,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 5397,
+            "reserveArc": 3606825
+          },
+          {
+            "season": 7,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 186,
+            "reserveArc": 3612036
+          },
+          {
+            "season": 8,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 7196,
+            "reserveArc": 3605026
+          },
+          {
+            "season": 9,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 1985,
+            "reserveArc": 3610237
+          },
+          {
+            "season": 10,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 8995,
+            "reserveArc": 3603227
+          },
+          {
+            "season": 11,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 3784,
+            "reserveArc": 3608438
+          },
+          {
+            "season": 12,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 10794,
+            "reserveArc": 3601428
+          },
+          {
+            "season": 13,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 5583,
+            "reserveArc": 3606639
+          },
+          {
+            "season": 14,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 372,
+            "reserveArc": 3611850
+          },
+          {
+            "season": 15,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 7382,
+            "reserveArc": 3604840
+          },
+          {
+            "season": 16,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 2171,
+            "reserveArc": 3610051
+          },
+          {
+            "season": 17,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 9181,
+            "reserveArc": 3603041
+          },
+          {
+            "season": 18,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 3970,
+            "reserveArc": 3608252
+          },
+          {
+            "season": 19,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 10980,
+            "reserveArc": 3601242
+          },
+          {
+            "season": 20,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 5769,
+            "reserveArc": 3606453
+          },
+          {
+            "season": 21,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 558,
+            "reserveArc": 3611664
+          },
+          {
+            "season": 22,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 7568,
+            "reserveArc": 3604654
+          },
+          {
+            "season": 23,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 2357,
+            "reserveArc": 3609865
+          },
+          {
+            "season": 24,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 9367,
+            "reserveArc": 3602855
+          },
+          {
+            "season": 25,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 4156,
+            "reserveArc": 3608066
+          },
+          {
+            "season": 26,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 11166,
+            "reserveArc": 3601056
+          },
+          {
+            "season": 27,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 5955,
+            "reserveArc": 3606267
+          },
+          {
+            "season": 28,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 744,
+            "reserveArc": 3611478
+          },
+          {
+            "season": 29,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 7754,
+            "reserveArc": 3604468
+          },
+          {
+            "season": 30,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 2543,
+            "reserveArc": 3609679
+          },
+          {
+            "season": 31,
+            "eurOrders": 38,
+            "arcOrders": 294,
+            "receivedArc": 3592990,
+            "walletArc": 9553,
+            "reserveArc": 3602669
+          },
+          {
+            "season": 32,
+            "eurOrders": 37,
+            "arcOrders": 295,
+            "receivedArc": 3605211,
+            "walletArc": 4342,
+            "reserveArc": 3607880
+          }
+        ]
+      }
+    },
+    {
+      "poolArc": 4800000,
+      "meanYouthArcPrice": 16133.534999999998,
+      "meanYouthEurCents": 14666.849999999999,
+      "breakEvenEurOrders": 34.483057804752605,
+      "breakEvenEurShare": 0.10386463194202591,
+      "neighbors": [
+        {
+          "eurOrders": 34,
+          "arcOrders": 298,
+          "desiredArc": 4807793,
+          "deltaArc": 7793,
+          "grossEurCents": 498673
+        },
+        {
+          "eurOrders": 35,
+          "arcOrders": 297,
+          "desiredArc": 4791660,
+          "deltaArc": -8340,
+          "grossEurCents": 513340
+        }
+      ],
+      "illustrativePath": {
+        "seasons": 32,
+        "bufferArc": 16134,
+        "initialReserveArc": 4816134,
+        "totalEurOrders": 1104,
+        "totalArcReceipts": 153591248,
+        "meanEurShare": 0.10391566265060241,
+        "grossEurCents": 16192202,
+        "closingWalletArc": 8752,
+        "closingReserveArc": 4807382,
+        "peakWalletArc": 15998,
+        "path": [
+          {
+            "season": 1,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 8340,
+            "reserveArc": 4807794
+          },
+          {
+            "season": 2,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 547,
+            "reserveArc": 4815587
+          },
+          {
+            "season": 3,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 8887,
+            "reserveArc": 4807247
+          },
+          {
+            "season": 4,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 1094,
+            "reserveArc": 4815040
+          },
+          {
+            "season": 5,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 9434,
+            "reserveArc": 4806700
+          },
+          {
+            "season": 6,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 1641,
+            "reserveArc": 4814493
+          },
+          {
+            "season": 7,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 9981,
+            "reserveArc": 4806153
+          },
+          {
+            "season": 8,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 2188,
+            "reserveArc": 4813946
+          },
+          {
+            "season": 9,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 10528,
+            "reserveArc": 4805606
+          },
+          {
+            "season": 10,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 2735,
+            "reserveArc": 4813399
+          },
+          {
+            "season": 11,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 11075,
+            "reserveArc": 4805059
+          },
+          {
+            "season": 12,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 3282,
+            "reserveArc": 4812852
+          },
+          {
+            "season": 13,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 11622,
+            "reserveArc": 4804512
+          },
+          {
+            "season": 14,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 3829,
+            "reserveArc": 4812305
+          },
+          {
+            "season": 15,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 12169,
+            "reserveArc": 4803965
+          },
+          {
+            "season": 16,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 4376,
+            "reserveArc": 4811758
+          },
+          {
+            "season": 17,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 12716,
+            "reserveArc": 4803418
+          },
+          {
+            "season": 18,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 4923,
+            "reserveArc": 4811211
+          },
+          {
+            "season": 19,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 13263,
+            "reserveArc": 4802871
+          },
+          {
+            "season": 20,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 5470,
+            "reserveArc": 4810664
+          },
+          {
+            "season": 21,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 13810,
+            "reserveArc": 4802324
+          },
+          {
+            "season": 22,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 6017,
+            "reserveArc": 4810117
+          },
+          {
+            "season": 23,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 14357,
+            "reserveArc": 4801777
+          },
+          {
+            "season": 24,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 6564,
+            "reserveArc": 4809570
+          },
+          {
+            "season": 25,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 14904,
+            "reserveArc": 4801230
+          },
+          {
+            "season": 26,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 7111,
+            "reserveArc": 4809023
+          },
+          {
+            "season": 27,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 15451,
+            "reserveArc": 4800683
+          },
+          {
+            "season": 28,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 7658,
+            "reserveArc": 4808476
+          },
+          {
+            "season": 29,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 15998,
+            "reserveArc": 4800136
+          },
+          {
+            "season": 30,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 8205,
+            "reserveArc": 4807929
+          },
+          {
+            "season": 31,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 4807793,
+            "walletArc": 412,
+            "reserveArc": 4815722
+          },
+          {
+            "season": 32,
+            "eurOrders": 35,
+            "arcOrders": 297,
+            "receivedArc": 4791660,
+            "walletArc": 8752,
+            "reserveArc": 4807382
+          }
+        ]
+      }
+    },
+    {
+      "poolArc": 6600000,
+      "meanYouthArcPrice": 22136.895,
+      "meanYouthEurCents": 20124.449999999997,
+      "breakEvenEurOrders": 33.85520598078455,
+      "breakEvenEurShare": 0.1019735119903149,
+      "neighbors": [
+        {
+          "eurOrders": 33,
+          "arcOrders": 299,
+          "desiredArc": 6618932,
+          "deltaArc": 18932,
+          "grossEurCents": 664107
+        },
+        {
+          "eurOrders": 34,
+          "arcOrders": 298,
+          "desiredArc": 6596795,
+          "deltaArc": -3205,
+          "grossEurCents": 684231
+        }
+      ],
+      "illustrativePath": {
+        "seasons": 32,
+        "bufferArc": 22137,
+        "initialReserveArc": 6622137,
+        "totalEurOrders": 1084,
+        "totalArcReceipts": 211185988,
+        "meanEurShare": 0.10203313253012049,
+        "grossEurCents": 21814904,
+        "closingWalletArc": 14012,
+        "closingReserveArc": 6608125,
+        "peakWalletArc": 20124,
+        "path": [
+          {
+            "season": 1,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 3205,
+            "reserveArc": 6618932
+          },
+          {
+            "season": 2,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 6410,
+            "reserveArc": 6615727
+          },
+          {
+            "season": 3,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 9615,
+            "reserveArc": 6612522
+          },
+          {
+            "season": 4,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 12820,
+            "reserveArc": 6609317
+          },
+          {
+            "season": 5,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 16025,
+            "reserveArc": 6606112
+          },
+          {
+            "season": 6,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 19230,
+            "reserveArc": 6602907
+          },
+          {
+            "season": 7,
+            "eurOrders": 33,
+            "arcOrders": 299,
+            "receivedArc": 6618932,
+            "walletArc": 298,
+            "reserveArc": 6621839
+          },
+          {
+            "season": 8,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 3503,
+            "reserveArc": 6618634
+          },
+          {
+            "season": 9,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 6708,
+            "reserveArc": 6615429
+          },
+          {
+            "season": 10,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 9913,
+            "reserveArc": 6612224
+          },
+          {
+            "season": 11,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 13118,
+            "reserveArc": 6609019
+          },
+          {
+            "season": 12,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 16323,
+            "reserveArc": 6605814
+          },
+          {
+            "season": 13,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 19528,
+            "reserveArc": 6602609
+          },
+          {
+            "season": 14,
+            "eurOrders": 33,
+            "arcOrders": 299,
+            "receivedArc": 6618932,
+            "walletArc": 596,
+            "reserveArc": 6621541
+          },
+          {
+            "season": 15,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 3801,
+            "reserveArc": 6618336
+          },
+          {
+            "season": 16,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 7006,
+            "reserveArc": 6615131
+          },
+          {
+            "season": 17,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 10211,
+            "reserveArc": 6611926
+          },
+          {
+            "season": 18,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 13416,
+            "reserveArc": 6608721
+          },
+          {
+            "season": 19,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 16621,
+            "reserveArc": 6605516
+          },
+          {
+            "season": 20,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 19826,
+            "reserveArc": 6602311
+          },
+          {
+            "season": 21,
+            "eurOrders": 33,
+            "arcOrders": 299,
+            "receivedArc": 6618932,
+            "walletArc": 894,
+            "reserveArc": 6621243
+          },
+          {
+            "season": 22,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 4099,
+            "reserveArc": 6618038
+          },
+          {
+            "season": 23,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 7304,
+            "reserveArc": 6614833
+          },
+          {
+            "season": 24,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 10509,
+            "reserveArc": 6611628
+          },
+          {
+            "season": 25,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 13714,
+            "reserveArc": 6608423
+          },
+          {
+            "season": 26,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 16919,
+            "reserveArc": 6605218
+          },
+          {
+            "season": 27,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 20124,
+            "reserveArc": 6602013
+          },
+          {
+            "season": 28,
+            "eurOrders": 33,
+            "arcOrders": 299,
+            "receivedArc": 6618932,
+            "walletArc": 1192,
+            "reserveArc": 6620945
+          },
+          {
+            "season": 29,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 4397,
+            "reserveArc": 6617740
+          },
+          {
+            "season": 30,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 7602,
+            "reserveArc": 6614535
+          },
+          {
+            "season": 31,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 10807,
+            "reserveArc": 6611330
+          },
+          {
+            "season": 32,
+            "eurOrders": 34,
+            "arcOrders": 298,
+            "receivedArc": 6596795,
+            "walletArc": 14012,
+            "reserveArc": 6608125
+          }
+        ]
+      }
+    }
+  ]
+}

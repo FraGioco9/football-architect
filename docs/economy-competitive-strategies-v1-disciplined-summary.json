@@ -1,0 +1,593 @@
+[
+  {
+    "scenario": "reference",
+    "seed": 769,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2399959,
+    "openingWagesAfter": 1929223,
+    "openingClubsAdjusted": 179,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 10333,
+      "totalPaidArc": 78646399,
+      "totalQuotedValueArc": 84974400,
+      "totalPriceEquivalent": 83048571,
+      "meanPaidArc": 7611.187360882609,
+      "meanQuotedValueArc": 8223.594309493854,
+      "paidOverQuoted": 0.9255305009508746,
+      "observedExposureRatio": 1.0507896892852668
+    },
+    "finalWalletQuantiles": {
+      "p10": 9320,
+      "median": 30599,
+      "p90": 98915,
+      "gini": 0.43890344172987017
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 124,
+      "17": 203,
+      "18": 307,
+      "19": 399,
+      "20": 387,
+      "21": 387,
+      "22": 419,
+      "23": 399,
+      "24": 419,
+      "25": 407,
+      "26": 429,
+      "27": 466,
+      "28": 411,
+      "29": 378,
+      "30": 422,
+      "31": 443,
+      "32": 400,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 568030
+    },
+    "diagnosticInjectionArc": 86020424,
+    "finalPopulation": 3927,
+    "finalEmployed": 3704,
+    "finalWalletArc": 10834183,
+    "finalClubArc": 77454762,
+    "finalReserveArc": 1365879,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 207.2,
+    "avgActivationsLast10": 205.9,
+    "avgArcBuysLast10": 186.1,
+    "avgEurBuysLast10": 19.8,
+    "avgEurGrossCentsLast10": 144144,
+    "avgWagePaidLast10": 1559347.6,
+    "avgArcReceiptsLast10": 1488049.2,
+    "avgFeeArcLast10": 13126.1,
+    "avgInjectionLast10": 882956.7,
+    "avgHumanCoverageLast10": 1,
+    "variant": "disciplined-strategies",
+    "agentGroups": [
+      {
+        "strategy": "random",
+        "count": 86,
+        "medianWallet": 71415,
+        "medianClosedNet": -96422,
+        "medianNominalNet": -315705,
+        "medianClosedArcNet": -71818,
+        "medianClosedEurNominalNet": -26604,
+        "p10Closed": -158372,
+        "p90Closed": -31491,
+        "positiveClosed": 0.05813953488372093,
+        "medianEurSpend": 396369,
+        "closedRecovery": 0.9363133721610253,
+        "topQuartile": 3,
+        "medianOpenCount": 42
+      },
+      {
+        "strategy": "intermediate",
+        "count": 85,
+        "medianWallet": 29745,
+        "medianClosedNet": 12364,
+        "medianNominalNet": 12624,
+        "medianClosedArcNet": 10857,
+        "medianClosedEurNominalNet": 2812,
+        "p10Closed": 3133,
+        "p90Closed": 23948,
+        "positiveClosed": 0.9647058823529412,
+        "medianEurSpend": 18360,
+        "closedRecovery": 1.1660179813899816,
+        "topQuartile": 30,
+        "medianOpenCount": 2
+      },
+      {
+        "strategy": "expert",
+        "count": 85,
+        "medianWallet": 21706,
+        "medianClosedNet": 14392,
+        "medianNominalNet": 14063,
+        "medianClosedArcNet": 11795,
+        "medianClosedEurNominalNet": 2043,
+        "p10Closed": 2122,
+        "p90Closed": 27458,
+        "positiveClosed": 0.9764705882352941,
+        "medianEurSpend": 6750,
+        "closedRecovery": 1.3617696555430927,
+        "topQuartile": 31,
+        "medianOpenCount": 1
+      }
+    ],
+    "clubGroups": [
+      {
+        "strategy": "random",
+        "count": 86,
+        "medianOperatingNet": 218249,
+        "medianCashChange": 218350,
+        "p10Operating": 177201,
+        "p90Operating": 257653,
+        "positiveOperating": 1,
+        "d1Share": 0.39375,
+        "cupShare": 0.12136627906976744,
+        "topQuartile": 0
+      },
+      {
+        "strategy": "intermediate",
+        "count": 84,
+        "medianOperatingNet": 266428,
+        "medianCashChange": 266257,
+        "p10Operating": 215809,
+        "p90Operating": 316344,
+        "positiveOperating": 1,
+        "d1Share": 0.5193452380952381,
+        "cupShare": 0.19672619047619047,
+        "topQuartile": 17
+      },
+      {
+        "strategy": "expert",
+        "count": 86,
+        "medianOperatingNet": 309729,
+        "medianCashChange": 308654,
+        "p10Operating": 246310,
+        "p90Operating": 357258,
+        "positiveOperating": 1,
+        "d1Share": 0.5873546511627907,
+        "cupShare": 0.24462209302325583,
+        "topQuartile": 47
+      }
+    ],
+    "minimumReserveArc": 88420424,
+    "annualRegimeGap": 926456.4625,
+    "reserveChecks": [
+      {
+        "initial": 2400000,
+        "completed": 1
+      },
+      {
+        "initial": 4800000,
+        "completed": 7
+      },
+      {
+        "initial": 7200000,
+        "completed": 12
+      },
+      {
+        "initial": 12000000,
+        "completed": 18
+      },
+      {
+        "initial": 24000000,
+        "completed": 29
+      }
+    ]
+  },
+  {
+    "scenario": "reference",
+    "seed": 1770,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2400017,
+    "openingWagesAfter": 1926988,
+    "openingClubsAdjusted": 169,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 10341,
+      "totalPaidArc": 77822919,
+      "totalQuotedValueArc": 84800200,
+      "totalPriceEquivalent": 82946448,
+      "meanPaidArc": 7525.666666666667,
+      "meanQuotedValueArc": 8200.386809786287,
+      "paidOverQuoted": 0.9177209369789222,
+      "observedExposureRatio": 1.0333542850792772
+    },
+    "finalWalletQuantiles": {
+      "p10": 13152,
+      "median": 32765,
+      "p90": 86250,
+      "gini": 0.39505945884018456
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 98,
+      "17": 203,
+      "18": 310,
+      "19": 407,
+      "20": 406,
+      "21": 417,
+      "22": 440,
+      "23": 425,
+      "24": 416,
+      "25": 423,
+      "26": 410,
+      "27": 422,
+      "28": 397,
+      "29": 387,
+      "30": 433,
+      "31": 412,
+      "32": 394,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 583282
+    },
+    "diagnosticInjectionArc": 85096632,
+    "finalPopulation": 4018,
+    "finalEmployed": 3808,
+    "finalWalletArc": 10703996,
+    "finalClubArc": 76546519,
+    "finalReserveArc": 1480517,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 206.4,
+    "avgActivationsLast10": 209.1,
+    "avgArcBuysLast10": 184.8,
+    "avgEurBuysLast10": 24.3,
+    "avgEurGrossCentsLast10": 173025,
+    "avgWagePaidLast10": 1547004.8,
+    "avgArcReceiptsLast10": 1484495.1,
+    "avgFeeArcLast10": 13367,
+    "avgInjectionLast10": 892616.4,
+    "avgHumanCoverageLast10": 1,
+    "variant": "disciplined-strategies",
+    "agentGroups": [
+      {
+        "strategy": "random",
+        "count": 86,
+        "medianWallet": 65178,
+        "medianClosedNet": -86588,
+        "medianNominalNet": -310647,
+        "medianClosedArcNet": -73993,
+        "medianClosedEurNominalNet": -18829,
+        "p10Closed": -150440,
+        "p90Closed": -42577,
+        "positiveClosed": 0.011627906976744186,
+        "medianEurSpend": 384210,
+        "closedRecovery": 0.9369197254011443,
+        "topQuartile": 0,
+        "medianOpenCount": 43
+      },
+      {
+        "strategy": "intermediate",
+        "count": 85,
+        "medianWallet": 37697,
+        "medianClosedNet": 15153,
+        "medianNominalNet": 14076,
+        "medianClosedArcNet": 11259,
+        "medianClosedEurNominalNet": 2233,
+        "p10Closed": 5106,
+        "p90Closed": 32756,
+        "positiveClosed": 0.9764705882352941,
+        "medianEurSpend": 19620,
+        "closedRecovery": 1.2090178882105125,
+        "topQuartile": 37,
+        "medianOpenCount": 2
+      },
+      {
+        "strategy": "expert",
+        "count": 85,
+        "medianWallet": 22394,
+        "medianClosedNet": 14332,
+        "medianNominalNet": 12779,
+        "medianClosedArcNet": 10864,
+        "medianClosedEurNominalNet": 2198,
+        "p10Closed": 4783,
+        "p90Closed": 26672,
+        "positiveClosed": 0.9882352941176471,
+        "medianEurSpend": 8010,
+        "closedRecovery": 1.3292496959262476,
+        "topQuartile": 27,
+        "medianOpenCount": 2
+      }
+    ],
+    "clubGroups": [
+      {
+        "strategy": "random",
+        "count": 84,
+        "medianOperatingNet": 205887,
+        "medianCashChange": 206164,
+        "p10Operating": 171093,
+        "p90Operating": 241012,
+        "positiveOperating": 1,
+        "d1Share": 0.3787202380952381,
+        "cupShare": 0.11145833333333334,
+        "topQuartile": 1
+      },
+      {
+        "strategy": "intermediate",
+        "count": 86,
+        "medianOperatingNet": 268331,
+        "medianCashChange": 267889,
+        "p10Operating": 214540,
+        "p90Operating": 302710,
+        "positiveOperating": 1,
+        "d1Share": 0.5199127906976744,
+        "cupShare": 0.19622093023255813,
+        "topQuartile": 11
+      },
+      {
+        "strategy": "expert",
+        "count": 86,
+        "medianOperatingNet": 306738,
+        "medianCashChange": 306943,
+        "p10Operating": 264009,
+        "p90Operating": 362796,
+        "positiveOperating": 1,
+        "d1Share": 0.598546511627907,
+        "cupShare": 0.25305232558139534,
+        "topQuartile": 52
+      }
+    ],
+    "minimumReserveArc": 87496632,
+    "annualRegimeGap": 917363.9375,
+    "reserveChecks": [
+      {
+        "initial": 2400000,
+        "completed": 1
+      },
+      {
+        "initial": 4800000,
+        "completed": 6
+      },
+      {
+        "initial": 7200000,
+        "completed": 12
+      },
+      {
+        "initial": 12000000,
+        "completed": 18
+      },
+      {
+        "initial": 24000000,
+        "completed": 29
+      }
+    ]
+  },
+  {
+    "scenario": "reference",
+    "seed": 2771,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2400005,
+    "openingWagesAfter": 1921832,
+    "openingClubsAdjusted": 176,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 10270,
+      "totalPaidArc": 77608355,
+      "totalQuotedValueArc": 84522200,
+      "totalPriceEquivalent": 82615131,
+      "meanPaidArc": 7556.801850048685,
+      "meanQuotedValueArc": 8230.009737098344,
+      "paidOverQuoted": 0.9182008395427473,
+      "observedExposureRatio": 0.995127167532143
+    },
+    "finalWalletQuantiles": {
+      "p10": 13508,
+      "median": 31097,
+      "p90": 68511,
+      "gini": 0.3495699911885618
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 109,
+      "17": 204,
+      "18": 329,
+      "19": 428,
+      "20": 386,
+      "21": 422,
+      "22": 419,
+      "23": 403,
+      "24": 374,
+      "25": 449,
+      "26": 399,
+      "27": 429,
+      "28": 405,
+      "29": 417,
+      "30": 404,
+      "31": 400,
+      "32": 423,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 563925
+    },
+    "diagnosticInjectionArc": 85757344,
+    "finalPopulation": 3997,
+    "finalEmployed": 3793,
+    "finalWalletArc": 9272181,
+    "finalClubArc": 78603513,
+    "finalReserveArc": 1516050,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 206,
+    "avgActivationsLast10": 206.2,
+    "avgArcBuysLast10": 185,
+    "avgEurBuysLast10": 21.2,
+    "avgEurGrossCentsLast10": 175050,
+    "avgWagePaidLast10": 1512311.9,
+    "avgArcReceiptsLast10": 1512353.7,
+    "avgFeeArcLast10": 14269,
+    "avgInjectionLast10": 869092.7,
+    "avgHumanCoverageLast10": 1,
+    "variant": "disciplined-strategies",
+    "agentGroups": [
+      {
+        "strategy": "random",
+        "count": 86,
+        "medianWallet": 45572,
+        "medianClosedNet": -102996,
+        "medianNominalNet": -335296,
+        "medianClosedArcNet": -78104,
+        "medianClosedEurNominalNet": -20406,
+        "p10Closed": -160712,
+        "p90Closed": -38918,
+        "positiveClosed": 0.011627906976744186,
+        "medianEurSpend": 392040,
+        "closedRecovery": 0.9334342504612393,
+        "topQuartile": 1,
+        "medianOpenCount": 42
+      },
+      {
+        "strategy": "intermediate",
+        "count": 85,
+        "medianWallet": 33197,
+        "medianClosedNet": 13958,
+        "medianNominalNet": 12855,
+        "medianClosedArcNet": 11790,
+        "medianClosedEurNominalNet": 2441,
+        "p10Closed": 3513,
+        "p90Closed": 25940,
+        "positiveClosed": 0.9294117647058824,
+        "medianEurSpend": 19566,
+        "closedRecovery": 1.1862368643745271,
+        "topQuartile": 30,
+        "medianOpenCount": 2
+      },
+      {
+        "strategy": "expert",
+        "count": 85,
+        "medianWallet": 22379,
+        "medianClosedNet": 12813,
+        "medianNominalNet": 12969,
+        "medianClosedArcNet": 10280,
+        "medianClosedEurNominalNet": 2718,
+        "p10Closed": 5782,
+        "p90Closed": 28575,
+        "positiveClosed": 0.9882352941176471,
+        "medianEurSpend": 6516,
+        "closedRecovery": 1.352946187157154,
+        "topQuartile": 33,
+        "medianOpenCount": 2
+      }
+    ],
+    "clubGroups": [
+      {
+        "strategy": "random",
+        "count": 86,
+        "medianOperatingNet": 218673,
+        "medianCashChange": 218753,
+        "p10Operating": 182136,
+        "p90Operating": 253771,
+        "positiveOperating": 1,
+        "d1Share": 0.3886627906976744,
+        "cupShare": 0.11482558139534883,
+        "topQuartile": 0
+      },
+      {
+        "strategy": "intermediate",
+        "count": 86,
+        "medianOperatingNet": 275151,
+        "medianCashChange": 275375,
+        "p10Operating": 221073,
+        "p90Operating": 318693,
+        "positiveOperating": 1,
+        "d1Share": 0.528343023255814,
+        "cupShare": 0.2005813953488372,
+        "topQuartile": 15
+      },
+      {
+        "strategy": "expert",
+        "count": 84,
+        "medianOperatingNet": 310234,
+        "medianCashChange": 309099,
+        "p10Operating": 256366,
+        "p90Operating": 365481,
+        "positiveOperating": 1,
+        "d1Share": 0.5849702380952381,
+        "cupShare": 0.24851190476190477,
+        "topQuartile": 49
+      }
+    ],
+    "minimumReserveArc": 88157344,
+    "annualRegimeGap": 922244.075,
+    "reserveChecks": [
+      {
+        "initial": 2400000,
+        "completed": 1
+      },
+      {
+        "initial": 4800000,
+        "completed": 7
+      },
+      {
+        "initial": 7200000,
+        "completed": 12
+      },
+      {
+        "initial": 12000000,
+        "completed": 18
+      },
+      {
+        "initial": 24000000,
+        "completed": 29
+      }
+    ]
+  }
+]

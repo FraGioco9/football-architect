@@ -1,0 +1,1586 @@
+[
+  {
+    "scenario": "reference",
+    "seed": 769,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2399959,
+    "openingWagesAfter": 1929223,
+    "openingClubsAdjusted": 179,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 16366,
+      "totalPaidArc": 118273101,
+      "totalQuotedValueArc": 134193200,
+      "totalPriceEquivalent": 131058729,
+      "meanPaidArc": 7226.756751802517,
+      "meanQuotedValueArc": 8199.511181718197,
+      "paidOverQuoted": 0.8813643388785721,
+      "observedExposureRatio": 1.0195067330635474
+    },
+    "finalWalletQuantiles": {
+      "p10": 13656,
+      "median": 44260,
+      "p90": 85575,
+      "gini": 0.3253595494228685
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 124,
+      "17": 203,
+      "18": 307,
+      "19": 399,
+      "20": 387,
+      "21": 387,
+      "22": 419,
+      "23": 399,
+      "24": 419,
+      "25": 407,
+      "26": 429,
+      "27": 466,
+      "28": 411,
+      "29": 378,
+      "30": 422,
+      "31": 443,
+      "32": 400,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 603477
+    },
+    "diagnosticInjectionArc": 15132710,
+    "finalPopulation": 6400,
+    "finalEmployed": 6060,
+    "finalWalletArc": 12387818,
+    "finalClubArc": 3058457,
+    "finalReserveArc": 3320835,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 320.8,
+    "avgActivationsLast10": 320.8,
+    "avgArcBuysLast10": 281.7,
+    "avgEurBuysLast10": 39.1,
+    "avgEurGrossCentsLast10": 314478,
+    "avgWagePaidLast10": 2399582,
+    "avgArcReceiptsLast10": 2255427.9,
+    "avgFeeArcLast10": 37074.3,
+    "avgInjectionLast10": 0,
+    "avgHumanCoverageLast10": 1,
+    "policy": "dual-99-90",
+    "minimumReserveArc": 17532710,
+    "reserves": [
+      {
+        "initial": 2400000,
+        "completed": 1,
+        "closingReserveArc": 1796523
+      },
+      {
+        "initial": 4800000,
+        "completed": 8,
+        "closingReserveArc": 2323623
+      },
+      {
+        "initial": 7200000,
+        "completed": 17,
+        "closingReserveArc": 2313363
+      },
+      {
+        "initial": 12000000,
+        "completed": 22,
+        "closingReserveArc": 2204365
+      },
+      {
+        "initial": 24000000,
+        "completed": 100,
+        "closingReserveArc": 9788125
+      }
+    ],
+    "primaryArcBuys": 1888,
+    "primaryEurBuys": 3115,
+    "primaryArcReceipts": 3862313,
+    "primaryEurCents": 12914577,
+    "primaryRetiredUnsold": 1397,
+    "primaryUnsold": 0,
+    "primaryEurFirst10": 11822382,
+    "youthEurCents": 52257150,
+    "aiSalaryArc": 13441248,
+    "firstSeason": {
+      "season": 1,
+      "requiredReserveArc": 2400000,
+      "netReserveChangeArc": -603477,
+      "primaryArcBuys": 0,
+      "primaryEurBuys": 409,
+      "primaryArcReceipts": 0,
+      "primaryEurCents": 2059992,
+      "primaryUnsold": 5985,
+      "primaryRetiredUnsold": 6,
+      "aiPaid": 1796523,
+      "humanPaid": 132700,
+      "arcReceipts": 0,
+      "eurCents": 42300,
+      "arcBuys": 0,
+      "eurBuys": 6,
+      "feeArc": 0,
+      "walletArc": 132700,
+      "clubArc": 1705177,
+      "population": 6400,
+      "employed": 6394,
+      "arrears56": 0,
+      "unpaid28": 0,
+      "unpaid56": 0,
+      "humanCoverage": 0.06396621832968408,
+      "retired": 6,
+      "activated": 6
+    },
+    "coverageAt": [
+      {
+        "season": 1,
+        "humanCoverage": 0.06396621832968408
+      },
+      {
+        "season": 5,
+        "humanCoverage": 0.352276801721047
+      },
+      {
+        "season": 10,
+        "humanCoverage": 0.822538177988415
+      },
+      {
+        "season": 20,
+        "humanCoverage": 1
+      },
+      {
+        "season": 50,
+        "humanCoverage": 1
+      },
+      {
+        "season": 100,
+        "humanCoverage": 1
+      }
+    ]
+  },
+  {
+    "scenario": "reference",
+    "seed": 1770,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2400017,
+    "openingWagesAfter": 1926988,
+    "openingClubsAdjusted": 169,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 16326,
+      "totalPaidArc": 118394561,
+      "totalQuotedValueArc": 134454500,
+      "totalPriceEquivalent": 131287734,
+      "meanPaidArc": 7251.902548082812,
+      "meanQuotedValueArc": 8235.60578218792,
+      "paidOverQuoted": 0.8805548419725632,
+      "observedExposureRatio": 1.01461579847369
+    },
+    "finalWalletQuantiles": {
+      "p10": 13904,
+      "median": 45231,
+      "p90": 82871,
+      "gini": 0.30821558057537657
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 98,
+      "17": 203,
+      "18": 310,
+      "19": 407,
+      "20": 406,
+      "21": 417,
+      "22": 440,
+      "23": 425,
+      "24": 416,
+      "25": 423,
+      "26": 410,
+      "27": 422,
+      "28": 397,
+      "29": 387,
+      "30": 433,
+      "31": 412,
+      "32": 394,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 595930
+    },
+    "diagnosticInjectionArc": 14483450,
+    "finalPopulation": 6400,
+    "finalEmployed": 6052,
+    "finalWalletArc": 12073189,
+    "finalClubArc": 3060758,
+    "finalReserveArc": 2983903,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 318.2,
+    "avgActivationsLast10": 318.2,
+    "avgArcBuysLast10": 279.4,
+    "avgEurBuysLast10": 38.8,
+    "avgEurGrossCentsLast10": 324846,
+    "avgWagePaidLast10": 2399819.4,
+    "avgArcReceiptsLast10": 2229390.9,
+    "avgFeeArcLast10": 35699.1,
+    "avgInjectionLast10": 0,
+    "avgHumanCoverageLast10": 1,
+    "policy": "dual-99-90",
+    "minimumReserveArc": 16883450,
+    "reserves": [
+      {
+        "initial": 2400000,
+        "completed": 1,
+        "closingReserveArc": 1804070
+      },
+      {
+        "initial": 4800000,
+        "completed": 8,
+        "closingReserveArc": 2239863
+      },
+      {
+        "initial": 7200000,
+        "completed": 18,
+        "closingReserveArc": 2143720
+      },
+      {
+        "initial": 12000000,
+        "completed": 23,
+        "closingReserveArc": 1370309
+      },
+      {
+        "initial": 24000000,
+        "completed": 100,
+        "closingReserveArc": 10100453
+      }
+    ],
+    "primaryArcBuys": 1979,
+    "primaryEurBuys": 3070,
+    "primaryArcReceipts": 4051509,
+    "primaryEurCents": 12806820,
+    "primaryRetiredUnsold": 1351,
+    "primaryUnsold": 0,
+    "primaryEurFirst10": 11732877,
+    "youthEurCents": 52205220,
+    "aiSalaryArc": 13592843,
+    "firstSeason": {
+      "season": 1,
+      "requiredReserveArc": 2400000,
+      "netReserveChangeArc": -595930,
+      "primaryArcBuys": 0,
+      "primaryEurBuys": 414,
+      "primaryArcReceipts": 0,
+      "primaryEurCents": 2040003,
+      "primaryUnsold": 5981,
+      "primaryRetiredUnsold": 5,
+      "aiPaid": 1804070,
+      "humanPaid": 122918,
+      "arcReceipts": 0,
+      "eurCents": 38160,
+      "arcBuys": 0,
+      "eurBuys": 6,
+      "feeArc": 0,
+      "walletArc": 122918,
+      "clubArc": 1707412,
+      "population": 6400,
+      "employed": 6394,
+      "arrears56": 0,
+      "unpaid28": 0,
+      "unpaid56": 0,
+      "humanCoverage": 0.06459180481701596,
+      "retired": 6,
+      "activated": 6
+    },
+    "coverageAt": [
+      {
+        "season": 1,
+        "humanCoverage": 0.06459180481701596
+      },
+      {
+        "season": 5,
+        "humanCoverage": 0.345273984749069
+      },
+      {
+        "season": 10,
+        "humanCoverage": 0.8190115377992079
+      },
+      {
+        "season": 20,
+        "humanCoverage": 1
+      },
+      {
+        "season": 50,
+        "humanCoverage": 1
+      },
+      {
+        "season": 100,
+        "humanCoverage": 1
+      }
+    ]
+  },
+  {
+    "scenario": "reference",
+    "seed": 2771,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2400005,
+    "openingWagesAfter": 1921832,
+    "openingClubsAdjusted": 176,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 16305,
+      "totalPaidArc": 118031941,
+      "totalQuotedValueArc": 133499600,
+      "totalPriceEquivalent": 130309524,
+      "meanPaidArc": 7239.002821220484,
+      "meanQuotedValueArc": 8187.647960748237,
+      "paidOverQuoted": 0.8841370386128498,
+      "observedExposureRatio": 1.0097636288264515
+    },
+    "finalWalletQuantiles": {
+      "p10": 15128,
+      "median": 48131,
+      "p90": 86079,
+      "gini": 0.2979671965107471
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 109,
+      "17": 204,
+      "18": 329,
+      "19": 428,
+      "20": 386,
+      "21": 422,
+      "22": 419,
+      "23": 403,
+      "24": 374,
+      "25": 449,
+      "26": 399,
+      "27": 429,
+      "28": 405,
+      "29": 417,
+      "30": 404,
+      "31": 400,
+      "32": 423,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 600517
+    },
+    "diagnosticInjectionArc": 15589513,
+    "finalPopulation": 6400,
+    "finalEmployed": 6024,
+    "finalWalletArc": 12636473,
+    "finalClubArc": 3064287,
+    "finalReserveArc": 3523153,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 318.5,
+    "avgActivationsLast10": 318.5,
+    "avgArcBuysLast10": 279.5,
+    "avgEurBuysLast10": 39,
+    "avgEurGrossCentsLast10": 306981,
+    "avgWagePaidLast10": 2398853.3,
+    "avgArcReceiptsLast10": 2259288.9,
+    "avgFeeArcLast10": 37657.8,
+    "avgInjectionLast10": 0,
+    "avgHumanCoverageLast10": 1,
+    "policy": "dual-99-90",
+    "minimumReserveArc": 17989513,
+    "reserves": [
+      {
+        "initial": 2400000,
+        "completed": 1,
+        "closingReserveArc": 1799483
+      },
+      {
+        "initial": 4800000,
+        "completed": 7,
+        "closingReserveArc": 2370827
+      },
+      {
+        "initial": 7200000,
+        "completed": 18,
+        "closingReserveArc": 2087400
+      },
+      {
+        "initial": 12000000,
+        "completed": 23,
+        "closingReserveArc": 1523197
+      },
+      {
+        "initial": 24000000,
+        "completed": 100,
+        "closingReserveArc": 9533640
+      }
+    ],
+    "primaryArcBuys": 1892,
+    "primaryEurBuys": 3142,
+    "primaryArcReceipts": 3846479,
+    "primaryEurCents": 13385313,
+    "primaryRetiredUnsold": 1366,
+    "primaryUnsold": 0,
+    "primaryEurFirst10": 12342699,
+    "youthEurCents": 52207200,
+    "aiSalaryArc": 13302093,
+    "firstSeason": {
+      "season": 1,
+      "requiredReserveArc": 2400000,
+      "netReserveChangeArc": -600517,
+      "primaryArcBuys": 0,
+      "primaryEurBuys": 410,
+      "primaryArcReceipts": 0,
+      "primaryEurCents": 1940067,
+      "primaryUnsold": 5979,
+      "primaryRetiredUnsold": 11,
+      "aiPaid": 1799483,
+      "humanPaid": 122349,
+      "arcReceipts": 0,
+      "eurCents": 58050,
+      "arcBuys": 0,
+      "eurBuys": 11,
+      "feeArc": 0,
+      "walletArc": 122349,
+      "clubArc": 1712568,
+      "population": 6400,
+      "employed": 6389,
+      "arrears56": 0,
+      "unpaid28": 0,
+      "unpaid56": 0,
+      "humanCoverage": 0.06417279699483487,
+      "retired": 11,
+      "activated": 11
+    },
+    "coverageAt": [
+      {
+        "season": 1,
+        "humanCoverage": 0.06417279699483487
+      },
+      {
+        "season": 5,
+        "humanCoverage": 0.3572570616450524
+      },
+      {
+        "season": 10,
+        "humanCoverage": 0.8294261721483555
+      },
+      {
+        "season": 20,
+        "humanCoverage": 1
+      },
+      {
+        "season": 50,
+        "humanCoverage": 1
+      },
+      {
+        "season": 100,
+        "humanCoverage": 1
+      }
+    ]
+  },
+  {
+    "scenario": "low-eur",
+    "seed": 769,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2399959,
+    "openingWagesAfter": 1929223,
+    "openingClubsAdjusted": 179,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 16102,
+      "totalPaidArc": 118368060,
+      "totalQuotedValueArc": 121586100,
+      "totalPriceEquivalent": 119746548,
+      "meanPaidArc": 7351.1402310272015,
+      "meanQuotedValueArc": 7550.993665383182,
+      "paidOverQuoted": 0.97353282982183,
+      "observedExposureRatio": 1.0848744802729133
+    },
+    "finalWalletQuantiles": {
+      "p10": 862,
+      "median": 6935,
+      "p90": 22744,
+      "gini": 0.5047237004337598
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 124,
+      "17": 203,
+      "18": 307,
+      "19": 399,
+      "20": 387,
+      "21": 387,
+      "22": 419,
+      "23": 399,
+      "24": 419,
+      "25": 407,
+      "26": 429,
+      "27": 466,
+      "28": 411,
+      "29": 378,
+      "30": 422,
+      "31": 443,
+      "32": 400,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 552888
+    },
+    "diagnosticInjectionArc": 12493170,
+    "finalPopulation": 6400,
+    "finalEmployed": 5989,
+    "finalWalletArc": 2604898,
+    "finalClubArc": 7954108,
+    "finalReserveArc": 5568564,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 377.3,
+    "avgActivationsLast10": 377.3,
+    "avgArcBuysLast10": 338.7,
+    "avgEurBuysLast10": 38.6,
+    "avgEurGrossCentsLast10": 145836,
+    "avgWagePaidLast10": 2402968,
+    "avgArcReceiptsLast10": 2577801.6,
+    "avgFeeArcLast10": 31304.6,
+    "avgInjectionLast10": 0,
+    "avgHumanCoverageLast10": 1,
+    "policy": "dual-99-90",
+    "minimumReserveArc": 14893170,
+    "reserves": [
+      {
+        "initial": 2400000,
+        "completed": 1,
+        "closingReserveArc": 1847112
+      },
+      {
+        "initial": 4800000,
+        "completed": 10,
+        "closingReserveArc": 2229404
+      },
+      {
+        "initial": 7200000,
+        "completed": 15,
+        "closingReserveArc": 2317288
+      },
+      {
+        "initial": 12000000,
+        "completed": 25,
+        "closingReserveArc": 1888285
+      },
+      {
+        "initial": 24000000,
+        "completed": 100,
+        "closingReserveArc": 14675394
+      }
+    ],
+    "primaryArcBuys": 1279,
+    "primaryEurBuys": 4006,
+    "primaryArcReceipts": 2150738,
+    "primaryEurCents": 11056950,
+    "primaryRetiredUnsold": 1115,
+    "primaryUnsold": 0,
+    "primaryEurFirst10": 7864992,
+    "youthEurCents": 15380280,
+    "aiSalaryArc": 16977262,
+    "firstSeason": {
+      "season": 1,
+      "requiredReserveArc": 2400000,
+      "netReserveChangeArc": -552888,
+      "primaryArcBuys": 0,
+      "primaryEurBuys": 321,
+      "primaryArcReceipts": 0,
+      "primaryEurCents": 898344,
+      "primaryUnsold": 6074,
+      "primaryRetiredUnsold": 5,
+      "aiPaid": 1847112,
+      "humanPaid": 82111,
+      "arcReceipts": 0,
+      "eurCents": 20610,
+      "arcBuys": 0,
+      "eurBuys": 7,
+      "feeArc": 0,
+      "walletArc": 82111,
+      "clubArc": 1705177,
+      "population": 6400,
+      "employed": 6393,
+      "arrears56": 0,
+      "unpaid28": 0,
+      "unpaid56": 0,
+      "humanCoverage": 0.04989832629438448,
+      "retired": 7,
+      "activated": 7
+    },
+    "coverageAt": [
+      {
+        "season": 1,
+        "humanCoverage": 0.04989832629438448
+      },
+      {
+        "season": 5,
+        "humanCoverage": 0.2984670874661858
+      },
+      {
+        "season": 10,
+        "humanCoverage": 0.6780497839950628
+      },
+      {
+        "season": 20,
+        "humanCoverage": 1
+      },
+      {
+        "season": 50,
+        "humanCoverage": 1
+      },
+      {
+        "season": 100,
+        "humanCoverage": 1
+      }
+    ]
+  },
+  {
+    "scenario": "low-eur",
+    "seed": 1770,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2400017,
+    "openingWagesAfter": 1926988,
+    "openingClubsAdjusted": 169,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 16184,
+      "totalPaidArc": 118917640,
+      "totalQuotedValueArc": 121894600,
+      "totalPriceEquivalent": 120022983,
+      "meanPaidArc": 7347.85219970341,
+      "meanQuotedValueArc": 7531.796836381612,
+      "paidOverQuoted": 0.9755775891630967,
+      "observedExposureRatio": 1.0771602740887807
+    },
+    "finalWalletQuantiles": {
+      "p10": 1303,
+      "median": 5192,
+      "p90": 22389,
+      "gini": 0.5300554822570646
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 98,
+      "17": 203,
+      "18": 310,
+      "19": 407,
+      "20": 406,
+      "21": 417,
+      "22": 440,
+      "23": 425,
+      "24": 416,
+      "25": 423,
+      "26": 410,
+      "27": 422,
+      "28": 397,
+      "29": 387,
+      "30": 433,
+      "31": 412,
+      "32": 394,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 556513
+    },
+    "diagnosticInjectionArc": 13752178,
+    "finalPopulation": 6400,
+    "finalEmployed": 5915,
+    "finalWalletArc": 2371155,
+    "finalClubArc": 9461911,
+    "finalReserveArc": 5553512,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 371,
+    "avgActivationsLast10": 371,
+    "avgArcBuysLast10": 334.1,
+    "avgEurBuysLast10": 36.9,
+    "avgEurGrossCentsLast10": 140238,
+    "avgWagePaidLast10": 2402617.6,
+    "avgArcReceiptsLast10": 2581712.1,
+    "avgFeeArcLast10": 29439.7,
+    "avgInjectionLast10": 0,
+    "avgHumanCoverageLast10": 1,
+    "policy": "dual-99-90",
+    "minimumReserveArc": 16152178,
+    "reserves": [
+      {
+        "initial": 2400000,
+        "completed": 1,
+        "closingReserveArc": 1843487
+      },
+      {
+        "initial": 4800000,
+        "completed": 9,
+        "closingReserveArc": 2362095
+      },
+      {
+        "initial": 7200000,
+        "completed": 14,
+        "closingReserveArc": 2356098
+      },
+      {
+        "initial": 12000000,
+        "completed": 24,
+        "closingReserveArc": 2327814
+      },
+      {
+        "initial": 24000000,
+        "completed": 100,
+        "closingReserveArc": 13401334
+      }
+    ],
+    "primaryArcBuys": 1275,
+    "primaryEurBuys": 4067,
+    "primaryArcReceipts": 2122356,
+    "primaryEurCents": 11237913,
+    "primaryRetiredUnsold": 1058,
+    "primaryUnsold": 0,
+    "primaryEurFirst10": 8002485,
+    "youthEurCents": 15338430,
+    "aiSalaryArc": 16852943,
+    "firstSeason": {
+      "season": 1,
+      "requiredReserveArc": 2400000,
+      "netReserveChangeArc": -556513,
+      "primaryArcBuys": 0,
+      "primaryEurBuys": 338,
+      "primaryArcReceipts": 0,
+      "primaryEurCents": 920556,
+      "primaryUnsold": 6051,
+      "primaryRetiredUnsold": 11,
+      "aiPaid": 1843487,
+      "humanPaid": 83501,
+      "arcReceipts": 0,
+      "eurCents": 31500,
+      "arcBuys": 0,
+      "eurBuys": 11,
+      "feeArc": 0,
+      "walletArc": 83501,
+      "clubArc": 1707412,
+      "population": 6400,
+      "employed": 6389,
+      "arrears56": 0,
+      "unpaid28": 0,
+      "unpaid56": 0,
+      "humanCoverage": 0.052903427766473624,
+      "retired": 11,
+      "activated": 11
+    },
+    "coverageAt": [
+      {
+        "season": 1,
+        "humanCoverage": 0.052903427766473624
+      },
+      {
+        "season": 5,
+        "humanCoverage": 0.2998747539810342
+      },
+      {
+        "season": 10,
+        "humanCoverage": 0.6729838709677419
+      },
+      {
+        "season": 20,
+        "humanCoverage": 1
+      },
+      {
+        "season": 50,
+        "humanCoverage": 1
+      },
+      {
+        "season": 100,
+        "humanCoverage": 1
+      }
+    ]
+  },
+  {
+    "scenario": "low-eur",
+    "seed": 2771,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2400005,
+    "openingWagesAfter": 1921832,
+    "openingClubsAdjusted": 176,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 16171,
+      "totalPaidArc": 118934555,
+      "totalQuotedValueArc": 121663800,
+      "totalPriceEquivalent": 119803203,
+      "meanPaidArc": 7354.805206851772,
+      "meanQuotedValueArc": 7523.579246799827,
+      "paidOverQuoted": 0.9775673207642701,
+      "observedExposureRatio": 1.0865493458834565
+    },
+    "finalWalletQuantiles": {
+      "p10": 806,
+      "median": 6056,
+      "p90": 24099,
+      "gini": 0.5257024871952766
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 109,
+      "17": 204,
+      "18": 329,
+      "19": 428,
+      "20": 386,
+      "21": 422,
+      "22": 419,
+      "23": 403,
+      "24": 374,
+      "25": 449,
+      "26": 399,
+      "27": 429,
+      "28": 405,
+      "29": 417,
+      "30": 404,
+      "31": 400,
+      "32": 423,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 557562
+    },
+    "diagnosticInjectionArc": 13282056,
+    "finalPopulation": 6400,
+    "finalEmployed": 5951,
+    "finalWalletArc": 2512647,
+    "finalClubArc": 9317049,
+    "finalReserveArc": 5086760,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 376.3,
+    "avgActivationsLast10": 376.3,
+    "avgArcBuysLast10": 341.2,
+    "avgEurBuysLast10": 35.1,
+    "avgEurGrossCentsLast10": 132516,
+    "avgWagePaidLast10": 2401936.5,
+    "avgArcReceiptsLast10": 2608303.5,
+    "avgFeeArcLast10": 29734,
+    "avgInjectionLast10": 0,
+    "avgHumanCoverageLast10": 1,
+    "policy": "dual-99-90",
+    "minimumReserveArc": 15682056,
+    "reserves": [
+      {
+        "initial": 2400000,
+        "completed": 1,
+        "closingReserveArc": 1842438
+      },
+      {
+        "initial": 4800000,
+        "completed": 9,
+        "closingReserveArc": 2385965
+      },
+      {
+        "initial": 7200000,
+        "completed": 15,
+        "closingReserveArc": 2019627
+      },
+      {
+        "initial": 12000000,
+        "completed": 25,
+        "closingReserveArc": 1248025
+      },
+      {
+        "initial": 24000000,
+        "completed": 100,
+        "closingReserveArc": 13404704
+      }
+    ],
+    "primaryArcBuys": 1307,
+    "primaryEurBuys": 4074,
+    "primaryArcReceipts": 2166016,
+    "primaryEurCents": 11204496,
+    "primaryRetiredUnsold": 1019,
+    "primaryUnsold": 0,
+    "primaryEurFirst10": 7910802,
+    "youthEurCents": 15326550,
+    "aiSalaryArc": 17185402,
+    "firstSeason": {
+      "season": 1,
+      "requiredReserveArc": 2400000,
+      "netReserveChangeArc": -557562,
+      "primaryArcBuys": 0,
+      "primaryEurBuys": 345,
+      "primaryArcReceipts": 0,
+      "primaryEurCents": 919467,
+      "primaryUnsold": 6047,
+      "primaryRetiredUnsold": 8,
+      "aiPaid": 1842438,
+      "humanPaid": 79394,
+      "arcReceipts": 0,
+      "eurCents": 26100,
+      "arcBuys": 0,
+      "eurBuys": 9,
+      "feeArc": 0,
+      "walletArc": 79394,
+      "clubArc": 1712568,
+      "population": 6400,
+      "employed": 6391,
+      "arrears56": 0,
+      "unpaid28": 0,
+      "unpaid56": 0,
+      "humanCoverage": 0.053825692379909244,
+      "retired": 9,
+      "activated": 9
+    },
+    "coverageAt": [
+      {
+        "season": 1,
+        "humanCoverage": 0.053825692379909244
+      },
+      {
+        "season": 5,
+        "humanCoverage": 0.30905233380480907
+      },
+      {
+        "season": 10,
+        "humanCoverage": 0.6716448032290615
+      },
+      {
+        "season": 20,
+        "humanCoverage": 1
+      },
+      {
+        "season": 50,
+        "humanCoverage": 1
+      },
+      {
+        "season": 100,
+        "humanCoverage": 1
+      }
+    ]
+  },
+  {
+    "scenario": "higher-eur",
+    "seed": 769,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2399959,
+    "openingWagesAfter": 1929223,
+    "openingClubsAdjusted": 179,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 16427,
+      "totalPaidArc": 118614857,
+      "totalQuotedValueArc": 135040900,
+      "totalPriceEquivalent": 130536000,
+      "meanPaidArc": 7220.725451999757,
+      "meanQuotedValueArc": 8220.667194253363,
+      "paidOverQuoted": 0.8783624590772129,
+      "observedExposureRatio": 1.0102674841263413
+    },
+    "finalWalletQuantiles": {
+      "p10": 90398,
+      "median": 148943,
+      "p90": 210581,
+      "gini": 0.1866211015076439
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 124,
+      "17": 203,
+      "18": 307,
+      "19": 399,
+      "20": 387,
+      "21": 387,
+      "22": 419,
+      "23": 399,
+      "24": 419,
+      "25": 407,
+      "26": 429,
+      "27": 466,
+      "28": 411,
+      "29": 378,
+      "30": 422,
+      "31": 443,
+      "32": 400,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 614152
+    },
+    "diagnosticInjectionArc": 39634684,
+    "finalPopulation": 6400,
+    "finalEmployed": 6048,
+    "finalWalletArc": 38407179,
+    "finalClubArc": 3068435,
+    "finalReserveArc": 1793470,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 311.7,
+    "avgActivationsLast10": 311.7,
+    "avgArcBuysLast10": 231.9,
+    "avgEurBuysLast10": 79.8,
+    "avgEurGrossCentsLast10": 591813,
+    "avgWagePaidLast10": 2399741.5,
+    "avgArcReceiptsLast10": 1867338,
+    "avgFeeArcLast10": 36581.1,
+    "avgInjectionLast10": 427845.5,
+    "avgHumanCoverageLast10": 1,
+    "policy": "dual-99-90",
+    "minimumReserveArc": 42034684,
+    "reserves": [
+      {
+        "initial": 2400000,
+        "completed": 1,
+        "closingReserveArc": 1785848
+      },
+      {
+        "initial": 4800000,
+        "completed": 5,
+        "closingReserveArc": 2378741
+      },
+      {
+        "initial": 7200000,
+        "completed": 14,
+        "closingReserveArc": 2063821
+      },
+      {
+        "initial": 12000000,
+        "completed": 21,
+        "closingReserveArc": 1390952
+      },
+      {
+        "initial": 24000000,
+        "completed": 46,
+        "closingReserveArc": 2290608
+      }
+    ],
+    "primaryArcBuys": 1808,
+    "primaryEurBuys": 3455,
+    "primaryArcReceipts": 3915875,
+    "primaryEurCents": 14260563,
+    "primaryRetiredUnsold": 1137,
+    "primaryUnsold": 0,
+    "primaryEurFirst10": 13458006,
+    "youthEurCents": 75704850,
+    "aiSalaryArc": 12042593,
+    "firstSeason": {
+      "season": 1,
+      "requiredReserveArc": 2400000,
+      "netReserveChangeArc": -614152,
+      "primaryArcBuys": 0,
+      "primaryEurBuys": 459,
+      "primaryArcReceipts": 0,
+      "primaryEurCents": 2224593,
+      "primaryUnsold": 5934,
+      "primaryRetiredUnsold": 7,
+      "aiPaid": 1785848,
+      "humanPaid": 143375,
+      "arcReceipts": 0,
+      "eurCents": 46800,
+      "arcBuys": 0,
+      "eurBuys": 7,
+      "feeArc": 0,
+      "walletArc": 143375,
+      "clubArc": 1705177,
+      "population": 6400,
+      "employed": 6393,
+      "arrears56": 0,
+      "unpaid28": 0,
+      "unpaid56": 0,
+      "humanCoverage": 0.07179727827311122,
+      "retired": 7,
+      "activated": 7
+    },
+    "coverageAt": [
+      {
+        "season": 1,
+        "humanCoverage": 0.07179727827311122
+      },
+      {
+        "season": 5,
+        "humanCoverage": 0.3928317955997161
+      },
+      {
+        "season": 10,
+        "humanCoverage": 0.8863004172461753
+      },
+      {
+        "season": 20,
+        "humanCoverage": 1
+      },
+      {
+        "season": 50,
+        "humanCoverage": 1
+      },
+      {
+        "season": 100,
+        "humanCoverage": 1
+      }
+    ]
+  },
+  {
+    "scenario": "higher-eur",
+    "seed": 1770,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2400017,
+    "openingWagesAfter": 1926988,
+    "openingClubsAdjusted": 169,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 16310,
+      "totalPaidArc": 117902790,
+      "totalQuotedValueArc": 133917700,
+      "totalPriceEquivalent": 129441861,
+      "meanPaidArc": 7228.865113427345,
+      "meanQuotedValueArc": 8210.772532188841,
+      "paidOverQuoted": 0.8804122980009363,
+      "observedExposureRatio": 1.0153224126061806
+    },
+    "finalWalletQuantiles": {
+      "p10": 76792,
+      "median": 145975,
+      "p90": 213363,
+      "gini": 0.20604004790122302
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 98,
+      "17": 203,
+      "18": 310,
+      "19": 407,
+      "20": 406,
+      "21": 417,
+      "22": 440,
+      "23": 425,
+      "24": 416,
+      "25": 423,
+      "26": 410,
+      "27": 422,
+      "28": 397,
+      "29": 387,
+      "30": 433,
+      "31": 412,
+      "32": 394,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 613932
+    },
+    "diagnosticInjectionArc": 38604284,
+    "finalPopulation": 6400,
+    "finalEmployed": 6008,
+    "finalWalletArc": 37638444,
+    "finalClubArc": 3083669,
+    "finalReserveArc": 1516571,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 322.7,
+    "avgActivationsLast10": 322.7,
+    "avgArcBuysLast10": 243,
+    "avgEurBuysLast10": 79.7,
+    "avgEurGrossCentsLast10": 598410,
+    "avgWagePaidLast10": 2399158.1,
+    "avgArcReceiptsLast10": 1947805.2,
+    "avgFeeArcLast10": 35753.3,
+    "avgInjectionLast10": 298091.6,
+    "avgHumanCoverageLast10": 1,
+    "policy": "dual-99-90",
+    "minimumReserveArc": 41004284,
+    "reserves": [
+      {
+        "initial": 2400000,
+        "completed": 1,
+        "closingReserveArc": 1786068
+      },
+      {
+        "initial": 4800000,
+        "completed": 5,
+        "closingReserveArc": 2396540
+      },
+      {
+        "initial": 7200000,
+        "completed": 15,
+        "closingReserveArc": 1931991
+      },
+      {
+        "initial": 12000000,
+        "completed": 21,
+        "closingReserveArc": 1740846
+      },
+      {
+        "initial": 24000000,
+        "completed": 46,
+        "closingReserveArc": 2128384
+      }
+    ],
+    "primaryArcBuys": 1812,
+    "primaryEurBuys": 3424,
+    "primaryArcReceipts": 4135096,
+    "primaryEurCents": 14210640,
+    "primaryRetiredUnsold": 1164,
+    "primaryUnsold": 0,
+    "primaryEurFirst10": 13443615,
+    "youthEurCents": 75341970,
+    "aiSalaryArc": 12231886,
+    "firstSeason": {
+      "season": 1,
+      "requiredReserveArc": 2400000,
+      "netReserveChangeArc": -613932,
+      "primaryArcBuys": 0,
+      "primaryEurBuys": 468,
+      "primaryArcReceipts": 0,
+      "primaryEurCents": 2393820,
+      "primaryUnsold": 5926,
+      "primaryRetiredUnsold": 6,
+      "aiPaid": 1786068,
+      "humanPaid": 140920,
+      "arcReceipts": 0,
+      "eurCents": 49590,
+      "arcBuys": 0,
+      "eurBuys": 6,
+      "feeArc": 0,
+      "walletArc": 140920,
+      "clubArc": 1707412,
+      "population": 6400,
+      "employed": 6394,
+      "arrears56": 0,
+      "unpaid28": 0,
+      "unpaid56": 0,
+      "humanCoverage": 0.07319361901782921,
+      "retired": 6,
+      "activated": 6
+    },
+    "coverageAt": [
+      {
+        "season": 1,
+        "humanCoverage": 0.07319361901782921
+      },
+      {
+        "season": 5,
+        "humanCoverage": 0.3869015839117281
+      },
+      {
+        "season": 10,
+        "humanCoverage": 0.8901098901098901
+      },
+      {
+        "season": 20,
+        "humanCoverage": 1
+      },
+      {
+        "season": 50,
+        "humanCoverage": 1
+      },
+      {
+        "season": 100,
+        "humanCoverage": 1
+      }
+    ]
+  },
+  {
+    "scenario": "higher-eur",
+    "seed": 2771,
+    "launchOption": "paid-primary",
+    "exposureFactor": 1,
+    "openingWagesBefore": 2400005,
+    "openingWagesAfter": 1921832,
+    "openingClubsAdjusted": 176,
+    "openingMandateIncomeSpread": {
+      "min": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "careerSummary": {
+      "count": 16390,
+      "totalPaidArc": 118446335,
+      "totalQuotedValueArc": 134325700,
+      "totalPriceEquivalent": 129863286,
+      "meanPaidArc": 7226.744051250763,
+      "meanQuotedValueArc": 8195.588773642465,
+      "paidOverQuoted": 0.8817846100932286,
+      "observedExposureRatio": 1.0076097750895587
+    },
+    "finalWalletQuantiles": {
+      "p10": 78018,
+      "median": 144089,
+      "p90": 216464,
+      "gini": 0.20106588616693688
+    },
+    "firstSeasonArrears": 0,
+    "firstSeasonUnpaid28": 0,
+    "firstSeasonUnpaid56": 0,
+    "initialAgeHistogram": {
+      "16": 109,
+      "17": 204,
+      "18": 329,
+      "19": 428,
+      "20": 386,
+      "21": 422,
+      "22": 419,
+      "23": 403,
+      "24": 374,
+      "25": 449,
+      "26": 399,
+      "27": 429,
+      "28": 405,
+      "29": 417,
+      "30": 404,
+      "31": 400,
+      "32": 423,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0
+    },
+    "contractPolicy": "guarded",
+    "completedDiagnosticSeasons": 100,
+    "firstShortfall": {
+      "season": 2,
+      "shortfallArc": 617557
+    },
+    "diagnosticInjectionArc": 38919511,
+    "finalPopulation": 6400,
+    "finalEmployed": 6061,
+    "finalWalletArc": 37808947,
+    "finalClubArc": 3057296,
+    "finalReserveArc": 1687668,
+    "finalArrearsArc": 0,
+    "peakUnpaid56": 0,
+    "peakArrearsArc": 0,
+    "avgRetirementsLast10": 313.8,
+    "avgActivationsLast10": 313.8,
+    "avgArcBuysLast10": 234.7,
+    "avgEurBuysLast10": 79.1,
+    "avgEurGrossCentsLast10": 576792,
+    "avgWagePaidLast10": 2399313.7,
+    "avgArcReceiptsLast10": 1892731.5,
+    "avgFeeArcLast10": 39020.6,
+    "avgInjectionLast10": 407194.4,
+    "avgHumanCoverageLast10": 1,
+    "policy": "dual-99-90",
+    "minimumReserveArc": 41319511,
+    "reserves": [
+      {
+        "initial": 2400000,
+        "completed": 1,
+        "closingReserveArc": 1782443
+      },
+      {
+        "initial": 4800000,
+        "completed": 6,
+        "closingReserveArc": 2297226
+      },
+      {
+        "initial": 7200000,
+        "completed": 14,
+        "closingReserveArc": 2245368
+      },
+      {
+        "initial": 12000000,
+        "completed": 21,
+        "closingReserveArc": 1852026
+      },
+      {
+        "initial": 24000000,
+        "completed": 45,
+        "closingReserveArc": 2299186
+      }
+    ],
+    "primaryArcBuys": 1788,
+    "primaryEurBuys": 3491,
+    "primaryArcReceipts": 4029362,
+    "primaryEurCents": 14392296,
+    "primaryRetiredUnsold": 1121,
+    "primaryUnsold": 0,
+    "primaryEurFirst10": 13689333,
+    "youthEurCents": 75032550,
+    "aiSalaryArc": 12092897,
+    "firstSeason": {
+      "season": 1,
+      "requiredReserveArc": 2400000,
+      "netReserveChangeArc": -617557,
+      "primaryArcBuys": 0,
+      "primaryEurBuys": 448,
+      "primaryArcReceipts": 0,
+      "primaryEurCents": 2209059,
+      "primaryUnsold": 5945,
+      "primaryRetiredUnsold": 7,
+      "aiPaid": 1782406,
+      "humanPaid": 139426,
+      "arcReceipts": 0,
+      "eurCents": 56610,
+      "arcBuys": 0,
+      "eurBuys": 7,
+      "feeArc": 37,
+      "walletArc": 139389,
+      "clubArc": 1712568,
+      "population": 6400,
+      "employed": 6393,
+      "arrears56": 0,
+      "unpaid28": 0,
+      "unpaid56": 0,
+      "humanCoverage": 0.07007664633192555,
+      "retired": 7,
+      "activated": 7
+    },
+    "coverageAt": [
+      {
+        "season": 1,
+        "humanCoverage": 0.07007664633192555
+      },
+      {
+        "season": 5,
+        "humanCoverage": 0.3904778823947415
+      },
+      {
+        "season": 10,
+        "humanCoverage": 0.8860041265474553
+      },
+      {
+        "season": 20,
+        "humanCoverage": 1
+      },
+      {
+        "season": 50,
+        "humanCoverage": 1
+      },
+      {
+        "season": 100,
+        "humanCoverage": 1
+      }
+    ]
+  }
+]

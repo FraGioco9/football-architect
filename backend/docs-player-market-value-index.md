@@ -33,3 +33,7 @@ All three populations: migration coverage, complete ASC/DESC IDs vs independent 
 
 ## Large-world runtime verification
 The existing local Worker Vitest suite now includes a synthetic 6,400/8,001/10,000/30,000-player test. It exercises canonical ranked reads, inclusive ranges, combined position and age ordering, multiple pages and four concurrent readers against actual local D1. Every returned ID and count is compared with an independently ordered fixture. Its `MARKET_VALUE_LOCAL_D1_BENCHMARK` log reports first request, nine warm samples (p95=max), concurrent batch wall time and serialized bytes. Repeated profiles and precomputed canonical values are fixture setup only; no hosted latency, true cold isolate, CPU, heap, backfill throughput or billed row-read claim. Timings are diagnostic rather than flaky hard thresholds. Await exact-head CI output before interpreting them.
+
+## DRAFT v5 configuration transition
+
+The v5 full-paid-salary / scale-25 forecast changes the config and exposure fingerprint. Existing v3 derived rows must be refreshed explicitly before global rank/range reads serve v5; fail closed until coverage is complete. No schema change, no remote refresh authorized. Review authorized DEV/Production rollout and rollback, including version-specific index refresh, before deployment.

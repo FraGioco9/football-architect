@@ -882,7 +882,7 @@ try{
    assert.equal(await page.locator('.admin-rewards-pool [data-reward-amount]').textContent(),'—');
    await trigger.click();await menu.getByRole('option',{name:'3',exact:true}).click();
    assert.equal(await page.locator('[data-admin-rewards-season]').inputValue(),'3');
-   assert.match(await page.locator('.admin-rewards-pool [data-reward-amount]').textContent(),/60,000,000/);
+   assert.match(await page.locator('.admin-rewards-pool [data-reward-amount]').textContent(),/2,400,000/);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
    assert.ok(await page.locator('.admin-rewards-distribution tbody tr').first().evaluate(el=>{const h=el.getBoundingClientRect().height;return h>=40&&h<=48}));
    if(width===390)assert.equal(await page.locator('.admin-rewards-distribution').evaluate(el=>el.parentElement.scrollWidth>el.parentElement.clientWidth),true);
