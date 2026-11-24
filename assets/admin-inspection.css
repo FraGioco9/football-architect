@@ -45,3 +45,8 @@
 .inspection-panel[aria-busy=true] .inspection-metric strong::after{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:56%;height:12px;border-radius:4px;background:var(--border)}
 .inspection-panel [data-inspection-blockers]{min-height:1.5em;max-height:9em;overflow:auto;margin:8px 0}
 @media(max-width:620px){.inspection-metric{height:112px;min-height:112px;max-height:112px;grid-template-rows:3.9em 1.5em}}
+
+/* Long ARC amounts remain readable within the fixed value slot. */
+.inspection-metric strong{white-space:normal;overflow-wrap:anywhere;overflow:visible;line-height:1.2;max-height:none;word-break:normal}
+.inspection-metric{grid-template-rows:2.6em 2.4em;height:112px;min-height:112px;max-height:112px}
+@media(max-width:620px){.inspection-metric{grid-template-rows:3.9em 2.4em;height:128px;min-height:128px;max-height:128px}}
