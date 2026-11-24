@@ -71,6 +71,13 @@ test('public rewards exposes only pool and season club table; admin retains sche
   assert.match(html,/rewardPerClub/);
   assert.match(html,/data-season-reward-heading/);
   assert.match(html,/fa-reward-milestone-row/);
+  assert.match(html,/rewardPaymentAtDay">Payment at day<\/span> 28/);
+  assert.match(html,/rewardPaymentAtDay">Payment at day<\/span> 56/);
+  assert.match(html,/<details class="fa-reward-disclosure"><summary>/);
+  assert.match(html,/class="language-chevron"/);
+  assert.match(html,id.startsWith('int-')?/rewardCupPointsExplanation/:/rewardDomesticPointsExplanation/);
+  assert.match(html,id.startsWith('int-')?/rewardAdvancementExplanation/:/rewardPlacementExplanation/);
+  assert.match(html,id.startsWith('int-')?/rewardOutcome/:/rewardRank/);
   assert.ok(html.indexOf('data-season-reward-legend')<html.indexOf('data-season-reward-table'));
   assert.match(html,/rewardParticipation/);
   assert.match(html,/rewardPoints/);

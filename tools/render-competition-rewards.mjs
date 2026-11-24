@@ -26,6 +26,11 @@ function breakdown(r,key,name){
  const body=rows.map(([k,n,v],i)=>'<tr><th scope="row">'+label(k,n)+'</th><td>'+r.shares[i]+'%</td><td>'+amount(v)+'</td></tr>').join('');
  return table([['rewardDistribution','Reward distribution'],['rewardShare','Share'],['rewardAmount','Amount']],body);
 }
+function rewardDisclosure(r){
+ const chevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+ const summary=r.international?label('rewardPointsAdvancement','Points & advancement'):label('rewardPointsPlacement','Points & placement');
+ return '<details class="fa-reward-disclosure"><summary>'+summary+chevron+'</summary><div class="fa-reward-disclosure-body"><p>'+label(r.international?'rewardCupPointsExplanation':'rewardDomesticPointsExplanation',r.international?'The points pool is shared in proportion to points earned in the six league-phase matches.':'The points pool is shared in proportion to points earned in the 30 regular-season matches.')+'</p><p>'+label(r.international?'rewardAdvancementExplanation':'rewardPlacementExplanation',r.international?'Each club receives one advancement reward, based on its final outcome.':'The placement pool is distributed by final league position, with weights from 16 for first to 1 for last.')+'</p>'+placementTable(r)+'</div></details>';
+}
 function publicMarkup(r){
  const placeholders=Array.from({length:r.capacity},()=>'<tr aria-hidden="true" data-reward-placeholder><th scope="row"><span class="app-world-club-identity"><span class="app-view-skeleton-crest-slot"></span><span class="app-world-club-name fa-reward-name-slot"><span class="app-skeleton-bar"></span></span></span></th><td class="fa-reward-value-cell"><span class="fa-reward-value"><span class="app-skeleton-bar"></span></span></td></tr>').join('');
  const p=participationReference(r);
@@ -37,9 +42,9 @@ function publicMarkup(r){
   item('rewardPoints','Points',r.shares[1]+'%',amount(r.points)),
   item(r.international?'rewardAdvancement':'rewardPlacement',r.international?'Advancement':'Placement',r.shares[2]+'%',amount(r.placement)),
   '<tr class="fa-reward-per-club-row"><th scope="row" colspan="2">'+label('rewardPerClub','Participation per club')+'</th><td>'+perClub+'</td></tr>',
-  '<tr class="fa-reward-milestone-row"><th scope="row" colspan="2">'+label('rewardDay','Day')+' '+first.day+'</th><td>'+amount(first.total)+'</td></tr>',
-  '<tr><th scope="row" colspan="2">'+label('rewardDay','Day')+' '+second.day+'</th><td>'+amount(second.total)+'</td></tr>'
- ].join(''))+'</section>';
+  '<tr class="fa-reward-milestone-row"><th scope="row" colspan="2">'+label('rewardPaymentAtDay','Payment at day')+' '+first.day+'</th><td>'+amount(first.total)+'</td></tr>',
+  '<tr><th scope="row" colspan="2">'+label('rewardPaymentAtDay','Payment at day')+' '+second.day+'</th><td>'+amount(second.total)+'</td></tr>'
+ ].join(''))+rewardDisclosure(r)+'</section>';
  return '<div class="fa-rewards" data-competition-rewards="'+r.id+'"><section class="app-panel"><div class="fa-reward-heading"><h2 data-app-i18n="rewardPool">Total prize pool</h2><strong class="fa-reward-total">'+amount(r.pool)+'</strong></div></section>'+legend+'<section class="app-panel" data-season-reward-table><div class="fa-reward-table-wrap fa-season-reward-table"><table class="fa-reward-table" aria-busy="true"><thead><tr><th scope="col" data-app-i18n="standingsClub">Club</th><th scope="col" data-season-reward-heading data-app-i18n="rewardSeasonEstimate" aria-describedby="reward-calculation-note">Estimated rewards</th></tr></thead><tbody data-season-reward-rows>'+placeholders+'</tbody></table><span class="fa-reward-sr-only" id="reward-calculation-note" data-app-i18n="rewardCalculatedNote">Calculated under current draft rules, not confirmed payments. Equal remainders use club ID for this reference only.</span><p class="fa-reward-reference-note" role="status" data-season-reward-status data-app-i18n="rewardUnavailable" hidden>Rewards unavailable</p></div></section></div>';
 }
 export function renderCompetitionRewards(id){
