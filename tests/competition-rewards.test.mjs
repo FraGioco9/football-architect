@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {competitionRewards,rewardTotals,REWARD_IDS,largestRemainder,placementReference,participationReference,pointsReference,CREDIT_MILESTONES,plannedRewardInstallments,formatRewardAmount,rewardEvidenceState,seasonRewardReference} from '../assets/competition-rewards.mjs';
+import {competitionRewards,rewardTotals,REWARD_IDS,largestRemainder,placementReference,participationReference,pointsReference,CREDIT_MILESTONES,plannedRewardInstallments,formatRewardAmount,rewardEvidenceState,seasonRewardReference,rewardSeasonFinished} from '../assets/competition-rewards.mjs';
 test('all canonical competitions, no fabricated competition',()=>{
  const read=name=>JSON.parse(readFileSync(new URL('../data/'+name,import.meta.url),'utf8'));
  const definitions=[...read('divisions.json'),...read('international-competitions.json')];
@@ -65,6 +65,11 @@ test('public rewards exposes only pool and season club table; admin retains sche
   assert.match(html,/rewardSeasonEstimate/);
   assert.match(html,/aria-busy="true"/);
   assert.match(html,/fa-reward-name-slot/);
+  assert.match(html,/app-view-skeleton-crest-slot/);
+  assert.match(html,/rewardLegendTiming/);
+  assert.ok(html.indexOf('data-season-reward-legend')<html.indexOf('data-season-reward-table'));
+  assert.match(html,/rewardParticipation/);
+  assert.match(html,/rewardPoints/);
   assert.match(html,/fa-reward-value-cell/);
   assert.match(html,/data-season-reward-rows/);
   assert.equal((html.match(/data-reward-placeholder/g)||[]).length,competitionRewards(id).capacity);
@@ -152,4 +157,16 @@ test('season read lifecycle is shared with Rewards and independent of world read
  assert.match(ui,/table.setAttribute\('aria-busy',String\(loading\)\)/);
  assert.match(css,/\.fa-reward-name-slot>\.app-skeleton-bar\{[^}]*margin:0/);
  assert.match(css,/\.fa-reward-value>\.app-skeleton-bar\{[^}]*margin:0/);
+});
+
+test('Rewards orders legend and table by the selected season, including archives and DEV',()=>{
+ const context={selectedSeason:2,seasonData:null},world={source:'authoritative',world:{seasonNumber:3,phase:'active'}};
+ assert.equal(rewardSeasonFinished(context,world),true);
+ assert.equal(rewardSeasonFinished({...context,selectedSeason:3},world),false);
+ assert.equal(rewardSeasonFinished({...context,selectedSeason:3}, {...world,world:{seasonNumber:3,phase:'closed'}}),true);
+ const current={selectedSeason:3,seasonData:{season:3,provenance:{kind:'authoritative'},seasonState:{phase:'active',day:56}}};
+ assert.equal(rewardSeasonFinished(current,world,{pending:true}),false);
+ assert.equal(rewardSeasonFinished(current,world,{pending:false}),true);
+ assert.equal(rewardSeasonFinished(context,{source:'dev',current:{season:3,day:1}},null,true),true);
+ assert.equal(rewardSeasonFinished(context,{source:'dev',current:{season:2,day:1}},null,true),false);
 });

@@ -60,7 +60,6 @@ html[data-theme="light"] #competition-panel-rewards .fa-reward-table thead th{ba
 #competition-panel-rewards .app-world-club-identity{gap:8px}
 #competition-panel-rewards .app-world-club-name{font-size:12.5px;line-height:1.35;display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #competition-panel-rewards .app-world-club-identity>a:hover{text-decoration:underline;text-underline-offset:3px}
-#competition-panel-rewards .fa-reward-crest-slot{display:block;flex:0 0 48px;width:48px;height:48px}
 #competition-panel-rewards .fa-reward-name-slot{flex:1;min-width:0}
 #competition-panel-rewards .fa-reward-name-slot>.app-skeleton-bar{display:block;width:min(13ch,100%);height:.78em;margin:0}
 #competition-panel-rewards .fa-reward-value{display:flex;align-items:center;justify-content:flex-end;min-height:1.35em;white-space:nowrap}
@@ -74,6 +73,10 @@ html[data-theme="light"] #competition-panel-rewards .fa-reward-table thead th{ba
  #competition-panel-rewards .fa-reward-table tbody tr>*{height:54px}
  #competition-panel-rewards .app-world-club-identity{gap:6px}
  #competition-panel-rewards .app-world-club-name{font-size:12px}
- #competition-panel-rewards .fa-reward-crest-slot{flex-basis:40px;width:40px;height:40px}
  #competition-panel-rewards .fa-reward-reference-note{min-height:54px}
 }
+
+/* Shared anonymous circular crest skeleton uses the exact same slot as Stats. */
+#competition-panel-rewards .fa-reward-legend{display:grid;gap:4px}
+#competition-panel-rewards .fa-reward-legend p{margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+#competition-panel-rewards .fa-reward-legend .fa-reward-legend-split{color:var(--text);font-weight:650;font-variant-numeric:tabular-nums}

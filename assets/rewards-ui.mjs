@@ -1,4 +1,4 @@
-import {formatRewardAmount,seasonRewardReference} from './competition-rewards.mjs';
+import {formatRewardAmount,seasonRewardReference,rewardSeasonFinished} from './competition-rewards.mjs';
 function format(){
  const locale=document.documentElement.lang||'en';
  for(const node of document.querySelectorAll('[data-reward-amount]')){
@@ -16,7 +16,7 @@ function evidence(root,key){
 const competition=document.querySelector('[data-competition-rewards]');
 if(competition){
  const tbody=competition.querySelector('[data-season-reward-rows]'),status=competition.querySelector('[data-season-reward-status]'),table=tbody.closest('table');
- const placeholder=tbody.innerHTML;
+ const placeholder=tbody.innerHTML,legend=competition.querySelector('[data-season-reward-legend]'),tablePanel=competition.querySelector('[data-season-reward-table]');
  const make=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node};
  let signature='';
  function update(){
@@ -24,6 +24,10 @@ if(competition){
   const debug=window.faDebugEnabled===true;
   const model=seasonRewardReference(competition.dataset.competitionRewards,context,{debug});
   const locale=document.documentElement.lang||'en';
+  const finished=rewardSeasonFinished(context,window.faWorldState?.get?.(),model,debug);
+  // Reorder actual DOM, not just CSS, to preserve reading and keyboard order.
+  if(finished&&legend.nextElementSibling===tablePanel)competition.insertBefore(tablePanel,legend);
+  if(!finished&&tablePanel.nextElementSibling===legend)competition.insertBefore(legend,tablePanel);
   const sameRead=!!read&&!!context&&read?.id===context?.definition?.id&&read?.season===context?.selectedSeason;
   // The world may already be ready while the selected season GET is pending.
   // Only a settled read for this exact competition and season can end its skeleton.
@@ -58,7 +62,7 @@ if(competition){
   if(window.faCompetitionRenderDOM)window.faCompetitionRenderDOM.keyed(tbody,rows,row=>row.dataset.rewardClub);
   else tbody.replaceChildren(...rows);
  }
- for(const event of ['fa:competition-context-change','fa:competition-route-change','fa:source-change','fa:competition-season-read-state'])window.addEventListener(event,update);
+ for(const event of ['fa:competition-context-change','fa:competition-route-change','fa:source-change','fa:competition-season-read-state','fa:world-state-change'])window.addEventListener(event,update);
  new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  update();
 }

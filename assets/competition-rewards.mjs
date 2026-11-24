@@ -151,3 +151,16 @@ export function seasonRewardReference(id,context,{debug=false}={}){
  rows.sort((a,b)=>b.amount-a.amount||a.club.primaryName.localeCompare(b.club.primaryName,'en',{sensitivity:'base'})||a.id.localeCompare(b.id));
  return {rows,pending:false};
 }
+// The selected season, not the global current season, controls presentation.
+// Closed archives can be identified before their results load via the verified world clock.
+export function rewardSeasonFinished(context,snapshot,model=null,debug=false){
+ const season=context?.selectedSeason,data=context?.seasonData;
+ if(!Number.isSafeInteger(season)||season<1)return false;
+ if(debug)return snapshot?.source==='dev'&&Number.isSafeInteger(snapshot.current?.season)&&season<snapshot.current.season;
+ if(data?.season===season&&data.provenance?.kind==='authoritative'){
+  if(data.seasonState?.phase==='closed')return true;
+  if(data.seasonState?.day>=CREDIT_MILESTONES.performanceDay&&model&&!model.pending)return true;
+ }
+ const world=snapshot?.source==='authoritative'?snapshot.world:null;
+ return Number.isSafeInteger(world?.seasonNumber)&&(season<world.seasonNumber||season===world.seasonNumber&&world.phase==='closed');
+}
