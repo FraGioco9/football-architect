@@ -6,3 +6,4 @@ export type RewardBinding={manifestHash:string;configVersion:string;actorId:stri
 export function planRewardSettlement(input:RewardInput):RewardPlan;
 export function rewardPostingIntents(plan:RewardPlan,binding:RewardBinding):LedgerIntent[];
 export function reconcileRewardPlan(plan:RewardPlan,binding:RewardBinding,evidence?:{receipts:readonly unknown[];reversedIds:readonly string[];holdRemainingArc:number;ledgerOk:boolean}):{status:'unknown'|'mismatch'|'pending'|'complete';missingKeys:string[];paidArc:number|null};
+export function rewardCalendarBudget():Readonly<{version:string;annual:number;day28:number;day56:number}>;

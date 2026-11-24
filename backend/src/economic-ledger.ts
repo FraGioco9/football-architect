@@ -209,8 +209,9 @@ const invalidBalances="SELECT COUNT(*) AS n FROM economic_available_balances WHE
 const invalidHolds="SELECT COUNT(*) AS n FROM economic_open_holds WHERE remaining_arc<0 OR remaining_arc>amount_arc";
 const totals="SELECT COUNT(*) AS account_count,COALESCE(SUM(CASE WHEN kind<>'ISSUANCE_CONTROL' THEN balance_arc ELSE 0 END),0) AS stock,COALESCE(-SUM(CASE WHEN kind='ISSUANCE_CONTROL' THEN balance_arc ELSE 0 END),0) AS issued FROM economic_balances";
 /** Enforce the existing canonical aggregate audit inside a domain write batch. */
-export function economicReconciliationGuard(db:Database){
- return economicAssert(db,"SELECT 1 WHERE ("+invalidJournal+")=0 AND ("+invalidBalances+")=0 AND ("+invalidHolds+")=0 AND EXISTS(SELECT 1 FROM ("+totals+") WHERE stock=issued AND stock BETWEEN 0 AND "+ARC_LIMIT+")");
+export function economicReconciliationGuard(db:Database,when?:{condition:string;values:unknown[]}){
+ const valid="("+invalidJournal+")=0 AND ("+invalidBalances+")=0 AND ("+invalidHolds+")=0 AND EXISTS(SELECT 1 FROM ("+totals+") WHERE stock=issued AND stock BETWEEN 0 AND "+ARC_LIMIT+")";
+ return economicAssert(db,"SELECT 1 WHERE "+(when?"NOT ("+when.condition+") OR ":"")+"("+valid+")",when?.values??[]);
 }
 export async function reconcileEconomy(db:Database,access:readonly Statement[]){
  requireAccess({access});

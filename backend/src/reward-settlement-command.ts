@@ -21,7 +21,8 @@ const blocked=(code:string):never=>{throw new ApiError(409,code)};
  * The live finance operator is checked on every read and write; the immutable
  * business actor is independent of who retries. A prior approved annual hold
  * and matching active policy are prerequisites, not created by this command.
- * Report is a guarded point-in-time observation, NOT a calendar completion receipt. */
+ * Report is a point-in-time observation unless completeCalendar explicitly
+ * persists it on the official calendar. No production caller is wired yet. */
 export async function executeRewardSettlementBatch(db:Database,session:AdminSession,prepared:PreparedRewardSettlement,now:number,completeCalendar=false){
  assertPreparedRewardSettlement(db,prepared);
  if(!session?.unified)throw new ApiError(403,'economic_authority_required');

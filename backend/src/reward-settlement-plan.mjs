@@ -121,3 +121,10 @@ export function reconcileRewardPlan(plan,binding,{receipts,reversedIds,holdRemai
  const missingKeys=intents.filter(i=>!seen.has(i.businessKey)).map(i=>i.businessKey);
  return {status:missingKeys.length?'pending':'complete',missingKeys,paidArc};
 }
+
+/** One canonical monetary schedule for calendar and posting consumers. */
+export function rewardCalendarBudget(){
+ const annual=rewardTotals().pool;
+ const day28=REWARD_IDS.reduce((sum,id)=>sum+plannedRewardInstallments(competitionRewards(id)).find(x=>x.day===28).total,0);
+ return Object.freeze({version:REWARDS_VERSION,annual,day28,day56:annual-day28});
+}
