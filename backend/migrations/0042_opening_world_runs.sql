@@ -30,6 +30,8 @@ BEGIN
   OR EXISTS(SELECT 1 FROM json_each(NEW.payload_json,'$.batchIntentHashes') WHERE type<>'text' OR length(value)<>64 OR value GLOB '*[^0-9a-f]*')
   OR json_type(NEW.payload_json,'$.baseline') IS NOT 'array'
   OR json_array_length(NEW.payload_json,'$.baseline')<>(SELECT COUNT(*) FROM generated_players)
+  OR EXISTS(SELECT 1 FROM player_signed_contracts) OR EXISTS(SELECT 1 FROM player_agent_mandates)
+  OR EXISTS(SELECT 1 FROM seasons) OR EXISTS(SELECT 1 FROM season_archives) OR EXISTS(SELECT 1 FROM match_lineup_result_receipts)
  ) THEN RAISE(ABORT,'invalid opening root') END;
  SELECT CASE WHEN NEW.batch_index>=0 AND (
   NOT EXISTS(SELECT 1 FROM opening_world_runs WHERE run_key=NEW.run_key AND world_generation=NEW.world_generation AND batch_index=-1)
@@ -78,5 +80,13 @@ CREATE TRIGGER opening_world_block_player_update BEFORE UPDATE ON generated_play
 WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
 BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
 CREATE TRIGGER opening_world_block_player_delete BEFORE DELETE ON generated_players
+WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
+BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
+
+-- A certified fresh opening catalogue cannot acquire rights during staging.
+CREATE TRIGGER opening_world_block_mandate_insert BEFORE INSERT ON player_agent_mandates
+WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
+BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
+CREATE TRIGGER opening_world_block_contract_insert BEFORE INSERT ON player_signed_contracts
 WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
 BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;

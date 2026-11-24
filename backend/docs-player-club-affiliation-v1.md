@@ -1,5 +1,7 @@
 # Player–club affiliation V1 — implementation slice 1 (#509)
 
+> **Historical record — superseded by #777 / Draft PR #800.** V1 is no longer the target architecture. The owner authorized discarding the 43 legacy DEV assignments without backfill. Signed contracts are the sole sporting authority; the Admin assignment API is retired and forward migration 0041 is prepared. See [contract-only cutover](../docs/player-contract-only-cutover-777.md). Preserve this file as historical evidence; no merge, remote migration or activation implied.
+
 **State:** V1 storage, guarded Admin read/write API and Admin Contracts page in Draft/HOLD. No public affiliation endpoints, remote D1 migration, deployment or backfill.
 
 The forward-only `0022_player_club_affiliations.sql` migration creates exactly
