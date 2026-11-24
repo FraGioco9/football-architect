@@ -5,6 +5,7 @@ import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
 import {projectPublicFootballerDirectoryRecord,type InternalFootballer} from './footballer-public-projection.ts';
 import type {PublicPlayerFilters} from './public-players-filters.mjs';
+import {marketValueIndexVersion,marketValueIndexReadiness} from './player-market-value-index.ts';
 
 export const PUBLIC_PLAYER_PAGE_SIZE=50;
 const clubNames=new Map(clubs.map(c=>[c.countryId+'-'+c.clubId,c.primaryName] as const));
@@ -12,6 +13,7 @@ if(clubNames.size!==320)throw Error('Invalid canonical club catalogue');
 const FILTER_ATTRIBUTE_KEYS=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
 interface StoredPlayer extends InternalFootballer {age?:number}
 interface StoredRow {id:number;payload_json:string;club_key:string|null}
+interface RankedRow extends StoredRow {cached_market_value_arc:number|null}
 interface StoredDetailRow extends StoredRow {club_key:string|null;portrait_approved:number}
 
 /** Count and page over the exact same server-side predicate, never a client-side 50-row filter. */
@@ -88,15 +90,66 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
   ...[...FILTER_ATTRIBUTE_KEYS].map(key=>[key,"json_extract(payload_json,'$.attributes."+key+"')"] as [string,string])
  ]);
  if(filters.order!==undefined&&!filters.sort)throw new ApiError(422,'invalid_public_request');
- if(filters.sort!==undefined&&!sortSql.has(filters.sort))throw new ApiError(422,'invalid_public_request');
+ const valueSort=filters.sort==='market_value_arc';
+ const valueRange=filters.valueMin!==undefined||filters.valueMax!==undefined;
+ if([filters.valueMin,filters.valueMax].some(v=>v!==undefined&&(!Number.isSafeInteger(v)||v<0))||
+    (filters.valueMin!==undefined&&filters.valueMax!==undefined&&filters.valueMin>filters.valueMax))throw new ApiError(422,'invalid_public_request');
+ if(filters.sort!==undefined&&!valueSort&&!sortSql.has(filters.sort))throw new ApiError(422,'invalid_public_request');
  if(filters.order!==undefined&&filters.order!=='asc'&&filters.order!=='desc')throw new ApiError(422,'invalid_public_request');
- const sortExpression=filters.sort?sortSql.get(filters.sort)!:null;
+ const sortExpression=filters.sort&&!valueSort?sortSql.get(filters.sort)!:null;
  const orderBy=sortExpression
   ?sortExpression+' COLLATE NOCASE '+(filters.order==='desc'?'DESC':'ASC')+', id ASC'
   :'id DESC';
  const where=predicates.length?' WHERE '+predicates.join(' AND '):'';
  const countSql='SELECT COUNT(*) AS n FROM generated_players'+where;
  const pageSql='SELECT p.id,p.payload_json,a.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a.player_id=p.id'+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?';
+ const project=(row:StoredRow)=>{
+   const payload=JSON.parse(row.payload_json) as StoredPlayer;
+   const clubKey=row.club_key??null;
+   if(clubKey!==null&&!clubNames.has(clubKey))throw new ApiError(503,'players_unavailable');
+   return {...projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age}),
+    clubKey,clubName:clubKey===null?null:clubNames.get(clubKey)!};
+ };
+ if(valueSort||valueRange){
+  const version=await marketValueIndexVersion();
+  const rankedPredicates=['v.config_version=?',...predicates],rankedValues=[version,...values];
+  if(filters.valueMin!==undefined){rankedPredicates.push('v.market_value_arc>=?');rankedValues.push(filters.valueMin);}
+  if(filters.valueMax!==undefined){rankedPredicates.push('v.market_value_arc<=?');rankedValues.push(filters.valueMax);}
+  const rankedWhere=' WHERE '+rankedPredicates.join(' AND ');
+  const base=' FROM player_market_values v';
+  const join=' JOIN generated_players p ON p.id=v.player_id';
+  const countRanked='SELECT COUNT(*) AS n'+base+(predicates.length?join:'')+rankedWhere;
+  const rankedOrder=valueSort
+   ?'v.market_value_arc IS NULL ASC,v.market_value_arc '+(filters.order==='asc'?'ASC':'DESC')+',v.player_id ASC'
+   :sortExpression?sortExpression+' COLLATE NOCASE '+(filters.order==='desc'?'DESC':'ASC')+',p.id ASC':'v.player_id DESC';
+  const outerOrder=rankedOrder.replaceAll('v.','ranked.');
+  const pageRanked='WITH ranked AS (SELECT v.player_id,v.market_value_arc'+base+
+   (predicates.length||sortExpression?join:'')+rankedWhere+' ORDER BY '+rankedOrder+' LIMIT ? OFFSET ?) '+
+   'SELECT p.id,p.payload_json,a.club_key,ranked.market_value_arc AS cached_market_value_arc FROM ranked JOIN generated_players p ON p.id=ranked.player_id '+
+   'LEFT JOIN player_club_affiliations a ON a.player_id=p.id ORDER BY '+outerOrder;
+  // Readiness, count and ranked page share a single transaction snapshot.
+  // Public GET never fills a cache or returns a partial/stale ranking.
+  const [readyResult,countResult,pageResult]=await db.batch([
+   marketValueIndexReadiness(db,version),
+   db.prepare(countRanked).bind(...rankedValues),
+   db.prepare(pageRanked).bind(...rankedValues,PUBLIC_PLAYER_PAGE_SIZE,(page-1)*PUBLIC_PLAYER_PAGE_SIZE)
+  ]);
+  const ready=(readyResult?.results?.[0] as {ready?:number}|undefined)?.ready;
+  const count=(countResult?.results?.[0] as {n?:number}|undefined)?.n;
+  if(ready!==1||typeof count!=='number'||!Number.isSafeInteger(count)||count<0||!pageResult?.results)
+   throw new ApiError(503,'players_unavailable');
+  const ranked=pageResult.results as unknown as RankedRow[];
+  if(ranked.length!==Math.max(0,Math.min(PUBLIC_PLAYER_PAGE_SIZE,count-(page-1)*PUBLIC_PLAYER_PAGE_SIZE)))
+   throw new ApiError(503,'players_unavailable');
+  const players=ranked.map(row=>{
+   const player=project(row);
+   if(player.market_value_arc!==row.cached_market_value_arc)throw new ApiError(503,'players_unavailable');
+   return player;
+  });
+  const after=await readWorld(db);
+  if(after.generation!==before.generation||after.revision!==before.revision)throw new ApiError(409,'stale_world');
+  return {count,page,pageSize:PUBLIC_PLAYER_PAGE_SIZE,totalPages:Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE)),players};
+ }
  let count:number,rows:StoredRow[];
  if(page===1){
   // The first page always needs both results, even when the directory is
@@ -127,13 +180,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
  if(after.generation!==before.generation)throw new ApiError(409,'stale_world');
  return {
   count,page,pageSize:PUBLIC_PLAYER_PAGE_SIZE,totalPages,
-  players:rows.map(row=>{
-   const payload=JSON.parse(row.payload_json) as StoredPlayer;
-   const clubKey=row.club_key??null;
-   if(clubKey!==null&&!clubNames.has(clubKey))throw new ApiError(503,'players_unavailable');
-   return {...projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age}),
-    clubKey,clubName:clubKey===null?null:clubNames.get(clubKey)!};
-  })
+  players:rows.map(project)
  };
 }
 

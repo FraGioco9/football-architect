@@ -41,7 +41,7 @@ test('only canonical player and roster links are projected', () => {
   assert.throws(() => transfersPlayerLinks(3, 'IT-3/../../admin'), TypeError);
 });
 
-test('transfers projection labels current affiliations without claiming listing or valuation', () => {
+test('transfers projection includes only derived public valuation and does not claim a listing', () => {
   const page = projectTransfersDiscovery(response([
     player({salary: 5000, transferFee: 100000, agentMandateOwner: 'private'}),
     player({id: 189, display_name: 'Anna Bianchi', clubKey: null, clubName: null})
@@ -84,4 +84,11 @@ test('model contains no writable market lifecycle or payment API', async () => {
     'TRANSFERS_DISCOVERY_PHASE','TRANSFERS_PLAYER_PAGE_SIZE','projectTransfersDiscovery',
     'transfersDiscoveryRequest','transfersPlayerLinks'
   ]);
+});
+
+test('Transfers forwards global market-value ordering and inclusive filters to the public API',()=>{
+ assert.equal(transfersDiscoveryRequest({offset:50,name:'Marco Rossi',position:'CM',valueMin:'0',valueMax:'12000',sort:'market_value_arc',order:'desc'}),'/api/players?offset=50&name=Marco+Rossi&position=CM&valueMin=0&valueMax=12000&sort=market_value_arc&order=desc');
+ for(const bad of [{valueMin:'-1'},{valueMax:'1.5'},{valueMin:'200',valueMax:'100'},{valueMax:'9007199254740992'},{sort:'age',order:'desc'},{sort:'market_value_arc',order:'up'},{order:'asc'}])assert.throws(()=>transfersDiscoveryRequest(bad),TypeError);
+ const page=projectTransfersDiscovery(response([player({market_value_arc:0}),player({id:189,market_value_arc:4700}),player({id:190,market_value_arc:null}),player({id:191,market_value_arc:-2})]));
+ assert.deepEqual(page.players.map(p=>p.market_value_arc),[0,4700,null,null]);
 });

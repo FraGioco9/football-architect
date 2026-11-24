@@ -9,11 +9,11 @@ class SeasonZeroApprovalMigrationTest(unittest.TestCase):
     def setUp(self):
         self.db = sqlite3.connect(':memory:')
         for migration in sorted(ROOT.glob('*.sql')):
-            if migration.name >= '0032':
+            if migration.name >= '0033':
                 break
             self.db.executescript(migration.read_text())
         self.before = self.db.execute("SELECT generation,revision,phase FROM world_state").fetchone()
-        self.db.executescript((ROOT/'0032_season_zero_entrant_approvals.sql').read_text())
+        self.db.executescript((ROOT/'0033_season_zero_entrant_approvals.sql').read_text())
 
     def tearDown(self):
         self.db.close()

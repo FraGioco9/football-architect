@@ -11,6 +11,7 @@ import {COUNTRIES,ATTRIBUTES,generateTrialWithCatalog,summarize} from './players
 import {loadRuntimePlayerCatalog} from './players-catalog.mjs';
 import {buildFamilyV42PortraitSnapshotForPlayer} from './player-portrait-family-v42.mjs';
 import {resolveCatalogueNameOrigins} from './player-portrait-name-origins.mjs';
+import {marketValueIndexVersion,marketValueIndexUpdate,marketValueIndexWrite} from './player-market-value-index.ts';
 
 const nationalityCodes=new Set(COUNTRIES.map((c:{code:string})=>c.code));
 const roles=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
@@ -159,6 +160,7 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
  // explicit allocation lets us generate ID-dependent faces BEFORE the atomic batch.
  // A transaction-scoped sqlite_sequence guard aborts if another batch got the IDs.
  let lastId=0,snapshots:Awaited<ReturnType<typeof buildFamilyV42PortraitSnapshotForPlayer>>[]=[];
+ let indexVersion='',valueUpdates:ReturnType<typeof marketValueIndexUpdate>[]=[];
  try{
   const row=await db.prepare("SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0) AS last_id").first<{last_id:number}>();
   lastId=row?.last_id??0;
@@ -166,6 +168,8 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
   if(!Number.isSafeInteger(lastId)||lastId<0||!Array.isArray(candidates)||
      candidates.length!==draft.count||!Number.isSafeInteger(lastId+draft.count))
    throw Error('Corrupt player preview or ID high-water');
+  indexVersion=await marketValueIndexVersion();
+  valueUpdates=candidates.map((candidate,i)=>marketValueIndexUpdate(lastId+i+1,0,null,candidate));
   for(let i=0;i<candidates.length;i++)
    snapshots.push(await buildFamilyV42PortraitSnapshotForPlayer({
     ...candidates[i],id:lastId+i+1,
@@ -176,14 +180,30 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
   // All-or-nothing D1 batch: authorization + current world + uncommitted draft +
   // unchanged AUTOINCREMENT sequence + approved players + immutable portraits.
   // If a profile insert fails no permanent player is created either.
-  const result=await db.batch([
+  await db.batch([
    sessionGuard(db,session,now),
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND season_number=?',[world.generation,world.seasonNumber]),
    abortUnless(db,"SELECT 1 FROM player_generation_drafts WHERE id=? AND account_id=? AND status='preview' AND expires_at>? AND world_generation=? AND season_number=?",
     [id,session.unified!.playerId,now,world.generation,world.seasonNumber]),
    abortUnless(db,"SELECT 1 WHERE COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0)=?",[lastId]),
    db.prepare(`INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at)
-    SELECT ?+CAST(j.key AS INTEGER)+1, ?,?,?,json_set(json_remove(j.value,'$.id','$.preview_id'),'$.id',?+CAST(j.key AS INTEGER)+1),?
+    SELECT ?+CAST(j.key AS INTEGER)+1, ?,?,?,
+     (SELECT json_group_object(field,json(raw_value)) FROM (
+       SELECT e.key AS field,j.value -> e.fullkey AS raw_value,e.id*2 AS sort_order
+       FROM json_each(j.value) AS e WHERE e.key NOT IN ('id','preview_id','retirement_seed','retirement_age')
+       UNION ALL
+       SELECT 'retirement_age',CAST(CASE
+       WHEN abs(random()) % 100 < 2 THEN 33
+       WHEN abs(random()) % 100 < 5 THEN 34
+       WHEN abs(random()) % 100 < 12 THEN 35
+       WHEN abs(random()) % 100 < 25 THEN 36
+       WHEN abs(random()) % 100 < 45 THEN 37
+       WHEN abs(random()) % 100 < 70 THEN 38
+       WHEN abs(random()) % 100 < 90 THEN 39
+       ELSE 40 END AS TEXT),e.id*2+1
+       FROM json_each(j.value) AS e WHERE e.key='age'
+       UNION ALL SELECT 'id',CAST(?+CAST(j.key AS INTEGER)+1 AS TEXT),9223372036854775807
+       ORDER BY sort_order)),?
     FROM json_each((SELECT candidates_json FROM player_generation_drafts WHERE id=?)) AS j
     ORDER BY CAST(j.key AS INTEGER)`)
     .bind(lastId,id,world.generation,world.seasonNumber,lastId,now,id),
@@ -193,18 +213,24 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
      j.value,'pending',NULL,?
     FROM json_each(?) AS j ORDER BY CAST(j.key AS INTEGER)`)
     .bind(now,JSON.stringify(snapshots)),
-   // The two insert counts must match INSIDE the transaction. An unexpected
+   marketValueIndexWrite(db,indexVersion,valueUpdates),
+   // All insert counts must match INSIDE the transaction. An unexpected
    // short insert fails the batch before the approval becomes permanent.
    abortUnless(db,`SELECT 1 WHERE
     (SELECT COUNT(*) FROM generated_players WHERE batch_id=? AND world_generation=?)=?
     AND (SELECT COUNT(*) FROM player_portrait_profiles
-     WHERE player_id IN (SELECT id FROM generated_players WHERE batch_id=? AND world_generation=?))=?`,
-    [id,world.generation,draft.count,id,world.generation,draft.count]),
+     WHERE player_id IN (SELECT id FROM generated_players WHERE batch_id=? AND world_generation=?))=?
+    AND (SELECT COUNT(*) FROM player_market_values v JOIN generated_players p ON p.id=v.player_id
+     WHERE p.batch_id=? AND p.world_generation=? AND v.config_version=?)=?`,
+    [id,world.generation,draft.count,id,world.generation,draft.count,id,world.generation,indexVersion,draft.count]),
    db.prepare("UPDATE player_generation_drafts SET status='committed',committed_at=? WHERE id=? AND account_id=? AND status='preview'")
-    .bind(now,id,session.unified!.playerId)
+    .bind(now,id,session.unified!.playerId),
+   abortUnless(db,"SELECT 1 FROM player_generation_drafts WHERE id=? AND account_id=? AND status='committed' AND committed_at=?",
+    [id,session.unified!.playerId,now])
   ]);
-  if(result[4].meta.changes!==draft.count||result[5].meta.changes!==draft.count||result[7].meta.changes!==1)
-   throw Error('Uncommitted player or portrait count');
+  // D1 meta.changes may include trigger effects. All durable row counts and
+  // the committed draft state are checked before the batch commits; never
+  // throw after successful commit merely because trigger counts differ.
   return {batchId:id,count:draft.count,alreadyCommitted:false,worldGeneration:world.generation};
  }catch{
   // A racing retry may already have committed. Never write a partial batch.
@@ -225,5 +251,10 @@ export async function listGeneratedPlayers(db:Database){
  const count=await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>();
  const after=await readWorld(db);
  if(after.generation!==world.generation)throw new ApiError(409,'stale_world');
- return {count:count?.n??0,worldGeneration:world.generation,players:rows.results.map(row=>JSON.parse(row.payload_json))};
+ return {count:count?.n??0,worldGeneration:world.generation,players:rows.results.map(row=>{
+  const player=JSON.parse(row.payload_json) as Data;
+  delete player.retirement_age;
+  delete player.retirement_seed; // legacy records during migration cutover
+  return player;
+ })};
 }
