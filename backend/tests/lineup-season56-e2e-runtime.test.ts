@@ -1,3 +1,5 @@
+import {readRewardSettlementManifest,projectFinalRewardEvidence,buildRewardManifest} from '../src/reward-settlement-evidence.ts';
+import {planRewardSettlement} from '../src/reward-settlement-plan.mjs';
 import {readMatchDirectory} from '../src/public-match-directory.ts';
 /** #613 FULL 56-day V2 authority on isolated local Worker D1.
  * Deliberately a single immutable-fixture test. Never reset the user's world.
@@ -70,6 +72,8 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  await advance(publishInternationalCalendarLineupV1(db,session,command(),
   'lineup-season-publish-0001',now));
  expect(world.day).toBe(3);
+ const rewardPin={rewardVersion:'draft-5',configVersion:'synthetic-776'};
+ await expect(readRewardSettlementManifest(db,rewardPin)).rejects.toMatchObject({code:'reward_payday_required'});
  expect(await count('season_lineup_day_outcomes')).toBe(3);
  expect(await count('match_lineup_result_receipts')).toBe(0);
 
@@ -140,6 +144,18 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
   }
   world=result.world;
   expect(world.day).toBe(day);
+  if(day===28){
+   const beforeReward=await readWorld(db);
+   const first=await readRewardSettlementManifest(db,rewardPin);
+   expect(first.manifest.plan).toMatchObject({day:28,totalArc:676800,endingHoldArc:1723200});
+   expect(first.manifest.plan.rows).toHaveLength(304);
+   expect(first.manifest.manifestHash).toMatch(/^[a-f0-9]{64}$/);
+   expect(await buildRewardManifest(first.manifest.plan,rewardPin.configVersion)).toEqual(first.manifest);
+   expect((await buildRewardManifest(first.manifest.plan,'another-synthetic-version')).manifestHash).not.toBe(first.manifest.manifestHash);
+   expect(await readWorld(db)).toEqual(beforeReward);
+   expect(await count('economic_transactions')).toBe(0);
+   await expect(readRewardSettlementManifest(db,{...rewardPin,rewardVersion:'draft-4'})).rejects.toMatchObject({code:'reward_evidence_invalid'});
+  }
   if([12,13,30,43,55,56].includes(day)){
    const receiptCount=await count('match_lineup_result_receipts');
    expect(receiptCount).toBeGreaterThanOrEqual(day===13?128:0);
@@ -157,6 +173,16 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(proof.history.progression.results.size).toBe(4082);
  expect(proof.history.progression.ties.size).toBe(54);
  expect(proof.summaryHash).toMatch(/^[a-f0-9]{64}$/);
+ // Reuse this already independently verified full-season proof, avoiding a second
+ // expensive 4082-receipt replay in this existing FULL fixture.
+ const finalProjection=await projectFinalRewardEvidence(proof);
+ const finalPlan=planRewardSettlement({generation:world.generation,season:world.seasonNumber,day:56,
+  rewardVersion:rewardPin.rewardVersion,evidenceHash:proof.archiveHash,competitions:finalProjection});
+ const finalManifest=await buildRewardManifest(finalPlan,rewardPin.configVersion);
+ expect(finalManifest.plan).toMatchObject({totalArc:1723200,endingHoldArc:0});
+ expect(finalManifest.plan.rows).toHaveLength(912);
+ expect(finalProjection.filter(c=>c.competitionId.startsWith('int-')).every(c=>c.outcomes?.length===24)).toBe(true);
+ expect(await count('economic_transactions')).toBe(0);
  const sourceSummary=JSON.parse(proof.summaryJson);
  expect(sourceSummary.sourceSeason).toBe(1);
  expect(sourceSummary.divisions).toHaveLength(16);
