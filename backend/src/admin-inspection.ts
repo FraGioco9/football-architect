@@ -2,6 +2,7 @@
 import {ApiError} from './errors.ts';
 import type {Database,Statement} from './database.ts';
 import {parseWorldV1} from './types.ts';
+import clubs from '../../data/clubs.json' with {type:'json'};
 import {reconcileEconomy} from './economic-ledger.ts';
 
 export const resetScopes=['sporting','players','contracts','economy'] as const;
@@ -76,4 +77,49 @@ export async function readAdminEconomyReconciliation(db:Database,access:readonly
  const report=await reconcileEconomy(db,access);
  const [control]=await db.batch([...access,db.prepare('SELECT active_version FROM economic_control WHERE id=1')]).then(r=>r.slice(access.length));
  return {status:control.results.length?'core_checked':'uninitialized',report,domainStatus:'not_implemented'};
+}
+
+const clubCatalogue=clubs.map(c=>({clubKey:c.countryId+'-'+c.clubId,name:c.primaryName})).sort((a,b)=>a.clubKey.localeCompare(b.clubKey,'en',{numeric:true}));
+const snapshotSql="SELECT (SELECT generation FROM world_state WHERE id=1) AS generation,(SELECT revision FROM world_state WHERE id=1) AS revision,(SELECT COUNT(*) FROM economic_accounts) AS accounts,(SELECT COUNT(*) FROM economic_transactions) AS transactions,(SELECT COUNT(*) FROM economic_holds) AS holds,(SELECT COUNT(*) FROM economic_hold_releases) AS releases,(SELECT active_version FROM economic_control WHERE id=1) AS policy,(SELECT posting_enabled FROM economic_control WHERE id=1) AS posting";
+const fingerprint=async(row:unknown)=>{
+ const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(row)));
+ return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
+};
+export function parseEconomyPage(query:URLSearchParams,kind:'clubs'|'ledger'){
+ const allowed=kind==='clubs'?['page','checkpoint']:['cursor','checkpoint'];
+ if([...query.keys()].some(k=>!allowed.includes(k)||query.getAll(k).length!==1))throw new ApiError(422,'invalid_economy_query');
+ const checkpoint=query.get('checkpoint');
+ if(checkpoint!==null&&!/^[0-9a-f]{64}$/.test(checkpoint))throw new ApiError(422,'invalid_economy_query');
+ const page=query.get('page')??'1',cursor=query.get('cursor');
+ if(!/^[1-7]$/.test(page)||cursor!==null&&!/^[1-9][0-9]{0,14}:[0-9a-f-]{36}$/i.test(cursor))throw new ApiError(422,'invalid_economy_query');
+ if((page!=='1'||cursor!==null)&&checkpoint===null)throw new ApiError(422,'invalid_economy_query');
+ return {page:Number(page),cursor,checkpoint};
+}
+export async function readAdminEconomyClubs(db:Database,access:readonly Statement[],query:ReturnType<typeof parseEconomyPage>){
+ assertAccess(access);
+ const list=clubCatalogue.slice((query.page-1)*50,query.page*50);
+ const result=await db.batch([...access,db.prepare(snapshotSql),db.prepare("SELECT owner_id,balance_arc,reserved_arc,available_arc FROM economic_available_balances WHERE kind='CLUB_TREASURY' AND owner_id IN ("+list.map(()=>'?').join(',')+")").bind(...list.map(c=>c.clubKey))]);
+ const [snapshot,data]=result.slice(access.length),checkpoint=await fingerprint(snapshot.results[0]);
+ if(query.checkpoint!==null&&query.checkpoint!==checkpoint)throw new ApiError(409,'stale_economy_snapshot');
+ return {checkpoint,page:query.page,pages:Math.ceil(clubCatalogue.length/50),rows:list.map(c=>{
+  const a=data.results.find(r=>r.owner_id===c.clubKey);
+  return {...c,status:a?'ready':'uninitialized',balanceArc:a?amount(a.balance_arc):null,heldArc:a?amount(a.reserved_arc):null,availableArc:a?amount(a.available_arc):null};
+ })};
+}
+/** Redacted journal page: only account kinds, never wallet owner IDs, request keys or actor IDs. */
+export async function readAdminEconomyLedger(db:Database,access:readonly Statement[],query:ReturnType<typeof parseEconomyPage>){
+ assertAccess(access);
+ const split=query.cursor?.split(':');
+ const rows=db.prepare(`WITH page AS (SELECT id,purpose,generation,season,day,occurred_at,reversal_of FROM economic_transactions
+ WHERE (? IS NULL OR occurred_at<? OR (occurred_at=? AND id<?)) ORDER BY occurred_at DESC,id DESC LIMIT 51)
+ SELECT p.id,p.purpose,p.generation,p.season,p.day,p.occurred_at,p.reversal_of,
+ (SELECT group_concat(DISTINCT a.kind) FROM economic_entries e JOIN economic_accounts a ON a.id=e.account_id WHERE e.transaction_id=p.id AND e.amount_arc<0) AS debit,
+ (SELECT group_concat(DISTINCT a.kind) FROM economic_entries e JOIN economic_accounts a ON a.id=e.account_id WHERE e.transaction_id=p.id AND e.amount_arc>0) AS credit,
+ (SELECT SUM(e.amount_arc) FROM economic_entries e WHERE e.transaction_id=p.id AND e.amount_arc>0) AS amount
+ FROM page p ORDER BY p.occurred_at DESC,p.id DESC`).bind(split?Number(split[0]):null,split?Number(split[0]):null,split?Number(split[0]):null,split?.[1]??null);
+ const result=await db.batch([...access,db.prepare(snapshotSql),rows]);
+ const [snapshot,data]=result.slice(access.length),checkpoint=await fingerprint(snapshot.results[0]);
+ if(query.checkpoint!==null&&query.checkpoint!==checkpoint)throw new ApiError(409,'stale_economy_snapshot');
+ const page=data.results.slice(0,50),last=page[page.length-1];
+ return {checkpoint,nextCursor:data.results.length>50?String(last.occurred_at)+':'+String(last.id):null,rows:page.map(r=>({id:r.id,purpose:r.purpose,season:r.season,day:r.day,occurredAt:r.occurred_at,reversalOf:r.reversal_of,debit:r.debit,credit:r.credit,amountArc:amount(r.amount)}))};
 }

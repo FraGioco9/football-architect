@@ -3,7 +3,7 @@ import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import type {Database} from '../src/database.ts';
 import {economicAssert,provisionClubAccounts} from '../src/economic-ledger.ts';
-import {parseResetScopes,previewAdminReset,readAdminEconomySummary,readAdminEconomyReconciliation} from '../src/admin-inspection.ts';
+import {parseResetScopes,previewAdminReset,readAdminEconomySummary,readAdminEconomyReconciliation,parseEconomyPage,readAdminEconomyClubs,readAdminEconomyLedger} from '../src/admin-inspection.ts';
 const binding=env as any,db=binding.DB as Database;
 const access=()=>[economicAssert(db,'SELECT 1')]; // trusted isolated fixture only
 beforeAll(async()=>{await applyD1Migrations(db,binding.TEST_MIGRATIONS)});
@@ -38,4 +38,15 @@ it('reports the real 0039 generation blocker even when posting is frozen',async(
  expect((await readAdminEconomySummary(db,access())).status).toBe('frozen');
  await readAdminEconomyReconciliation(db,access());
  expect(await db.prepare('SELECT * FROM economic_control').first()).toEqual(before);
+});
+
+it('paginates the canonical club catalogue and redacted ledger, rejects unsafe or stale pagination',async()=>{
+ const first=await readAdminEconomyClubs(db,access(),parseEconomyPage(new URLSearchParams(),'clubs'));
+ expect(first.rows).toHaveLength(50);expect(first.pages).toBe(7);
+ const last=await readAdminEconomyClubs(db,access(),parseEconomyPage(new URLSearchParams({page:'7',checkpoint:first.checkpoint}),'clubs'));
+ expect(last.rows).toHaveLength(20);
+ expect(()=>parseEconomyPage(new URLSearchParams({page:'2'}),'clubs')).toThrow();
+ await expect(readAdminEconomyClubs(db,access(),parseEconomyPage(new URLSearchParams({page:'2',checkpoint:'0'.repeat(64)}),'clubs'))).rejects.toMatchObject({status:409});
+ const ledger=await readAdminEconomyLedger(db,access(),parseEconomyPage(new URLSearchParams(),'ledger'));
+ expect(ledger.rows).toEqual([]);expect(ledger.nextCursor).toBeNull();
 });

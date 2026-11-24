@@ -23,7 +23,7 @@ import {publishInternationalCalendarLineupV1 as publishInternationalCalendar} fr
 import {closeSeasonLineupV1 as closeSeason} from './season-close-command-lineup-v1.ts';
 import {archiveSeasonLineupV1 as archiveSeason} from './season-archive-command-lineup-v1.ts';
 import {resetWorld} from './reset-world-command.ts';
-import {resetScopes,parseResetScopes,previewAdminReset,readAdminEconomySummary,readAdminEconomyReconciliation} from './admin-inspection.ts';
+import {resetScopes,parseResetScopes,previewAdminReset,readAdminEconomySummary,readAdminEconomyReconciliation,parseEconomyPage,readAdminEconomyClubs,readAdminEconomyLedger} from './admin-inspection.ts';
 import {economicAssert,financeSessionGuard} from './economic-ledger.ts';
 import {sessionGuard} from './command-guards.ts';
 import {readSeasonArchives,readClosedSeasonHistory} from './season-archive-read.ts';
@@ -35,7 +35,7 @@ import {prepareSeasonTwo} from './season-two-prepare-command.ts';
 import {approveSeasonTwoSnapshot} from './season-two-approval-command.ts';
 export interface AdminEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string}
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>httpJson('account',status,body,extra);
-const known=new Map([["/api/admin/reset/options","GET"],["/api/admin/reset/preview","POST"],["/api/admin/economy/summary","GET"],["/api/admin/economy/reconciliation","GET"],['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/players','GET'],['/api/admin/players/preview','POST'],['/api/admin/players/draft','POST'],['/api/admin/players/commit','POST'],['/api/admin/contracts','GET|POST'],['/api/admin/club-licenses','GET|POST'],['/api/admin/club-licenses/accounts','GET'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/season-zero/confirm','POST'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
+const known=new Map([["/api/admin/economy/clubs","GET"],["/api/admin/economy/ledger","GET"],["/api/admin/reset/options","GET"],["/api/admin/reset/preview","POST"],["/api/admin/economy/summary","GET"],["/api/admin/economy/reconciliation","GET"],['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/players','GET'],['/api/admin/players/preview','POST'],['/api/admin/players/draft','POST'],['/api/admin/players/commit','POST'],['/api/admin/contracts','GET|POST'],['/api/admin/club-licenses','GET|POST'],['/api/admin/club-licenses/accounts','GET'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/season-zero/confirm','POST'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
 export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response>{
  const path=new URL(request.url).pathname,method=known.get(path);
  if(!method)return json(404,{error:{code:'not_found'}});
@@ -73,8 +73,8 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
    const scopes=parseResetScopes(await readJsonBody(request));
    return json(200,await previewAdminReset(db,[sessionGuard(db,session,now)],scopes));
   }
-  if(path==='/api/admin/economy/summary'||path==='/api/admin/economy/reconciliation'){
-   if(new URL(request.url).search)throw new ApiError(422,'invalid_economy_query');
+  if(path.startsWith('/api/admin/economy/')){
+   if(!['/api/admin/economy/clubs','/api/admin/economy/ledger'].includes(path)&&new URL(request.url).search)throw new ApiError(422,'invalid_economy_query');
    const grant=await db.prepare("SELECT 1 AS allowed FROM economic_finance_permissions WHERE account_id=? AND capability='read'").bind(player.actor.id).first();
    if(!grant)throw new ApiError(403,'permission_denied');
    // Recheck the unified actor, live finance capability and admin read/link in the same D1 batch.
@@ -83,6 +83,8 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
      JOIN admin_accounts a ON a.id=l.legacy_admin_account_id JOIN player_accounts p ON p.id=l.player_account_id
      WHERE l.player_account_id=? AND l.legacy_admin_account_id=? AND a.enabled=1 AND a.email_normalized=p.email_normalized
      AND EXISTS(SELECT 1 FROM account_permissions q WHERE q.account_id=p.id AND q.permission='admin.world.read')`,[player.actor.id,legacyId])];
+   if(path.endsWith('/clubs'))return json(200,await readAdminEconomyClubs(db,access,parseEconomyPage(new URL(request.url).searchParams,'clubs')));
+   if(path.endsWith('/ledger'))return json(200,await readAdminEconomyLedger(db,access,parseEconomyPage(new URL(request.url).searchParams,'ledger')));
    return json(200,path.endsWith('/summary')?await readAdminEconomySummary(db,access):await readAdminEconomyReconciliation(db,access));
   }
   if(path==='/api/admin/players')return json(200,await listGeneratedPlayers(db));
