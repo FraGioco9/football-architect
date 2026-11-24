@@ -406,3 +406,13 @@ test('opening affordability and mandate distribution are research-only and prese
  assert.equal(x.runs.length,3);assert.ok(x.runs.every(r=>r.openingWagesAfter<=r.openingWagesBefore&&r.firstSeasonUnpaid28===0&&r.firstSeasonArrears===0&&r.reserveChecks.at(-1).completed===3));
  assert.ok(x.runs[1].openingMandateIncomeSpread.max-x.runs[1].openingMandateIncomeSpread.min<x.runs[0].openingMandateIncomeSpread.max-x.runs[0].openingMandateIncomeSpread.min);
 });
+
+test('paid opening mandates start AI and zero wallets; no double sales or simulated free grants',async()=>{
+ const {buildPaidMandateStress}=await import('../tools/run-economy-paid-mandate-launch.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/economy-paid-mandate-launch-v1.json',import.meta.url),'utf8'));
+ const dual=JSON.parse(readFileSync(new URL('../docs/economy-paid-mandate-launch-v1-dual-summary.json',import.meta.url),'utf8'));
+ const alt=JSON.parse(readFileSync(new URL('../docs/economy-paid-mandate-launch-v1-alternatives-summary.json',import.meta.url),'utf8'));
+ assert.equal(dual.length,9);assert.equal(alt.length,6);assert.ok([...dual,...alt].every(r=>r.primaryArcBuys+r.primaryEurBuys+r.primaryRetiredUnsold+r.primaryUnsold===6400&&r.peakArrearsArc===0));
+ const x=buildPaidMandateStress({seasons:3,seeds:[c.seeds[0]],scenarios:[c.scenarios[0]],primaryPolicies:[c.primaryPolicies[0]]}).runs[0];
+ assert.equal(x.openingMandateIncomeSpread.mean,0);assert.equal(x.firstSeason.primaryArcBuys,0);assert.ok(x.firstSeason.primaryEurBuys>0&&x.firstSeason.aiPaid>0);assert.deepEqual(x.firstSeason,dual[0].firstSeason);assert.equal(x.primaryArcBuys+x.primaryEurBuys+x.primaryRetiredUnsold+x.primaryUnsold,6400);
+});

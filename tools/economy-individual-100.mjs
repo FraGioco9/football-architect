@@ -9,7 +9,7 @@ export function simulateIndividuals(reference,rewards,salary,round,c,opt,seed){
  let id=0;const create=(role,stationary=false)=>{const a=stationary?drawWeighted(ages,ageWeights):{entry:16+Math.floor(rng()*4)};const age=a.age??a.entry;const base=drawWeighted(c.entrySkills,c.entryWeights);return {id:++id,age,role,skill:Math.min(99,base+sum(salary.growth.slice(a.entry-16,age-16))),bonus:.05,agent:-1,wage:0,term:0}};
  const initialRoleTargets=c.roleTargets;for(const club of active){for(let g=0;g<4;g++)for(let i=0;i<initialRoleTargets[g];i++){const p=create(g,true);p.agent=rng()<opt.humanShare?Math.floor(rng()*c.agents):-1;club.roster.push(p);}const weights=club.roster.map(skillWeight),den=sum(weights);for(let i=0;i<club.roster.length;i++){const p=club.roster[i];p.wage=Math.max(salary.divisionFloors[club.tier],Math.round(club.forecast*weights[i]/den));p.term=1+Math.floor(rng()*3);}}
  // Initial mandate balance is a sensitivity, not an entitlement or actual assignment.
- const launch=opt.launchOption,track=Boolean(launch),ledger=track?new Map():null;
+ const launch=opt.launchOption,track=Boolean(launch),ledger=track?new Map():null,primary=opt.primaryPolicy;const primarySold=new Set();if(primary)assert(opt.humanShare===0&&c.initialWalletArc===0,'paid launch starts AI, zero wallets');
  let openingWagesBefore=0,openingWagesAfter=0,openingClubsAdjusted=0,openingMandateIncomeSpread=null;
  if(track){
   // Project fixed commitments at every half-season using current participation and future D2 floor.
@@ -44,8 +44,18 @@ export function simulateIndividuals(reference,rewards,salary,round,c,opt,seed){
   }return true;
  };
  for(let season=1;season<=c.seasons;season++){
-  const m={season,retired:0,activated:0,arcBuys:0,eurBuys:0,arcReceipts:0,eurCents:0,feeArc:0,tradeVolume:0,transfers:0,transferVolume:0,wageDue:0,wagePaid:0,humanPaid:0,aiPaid:0,unpaid28:0,unpaid56:0,arrears56:0,diagnosticInjection:0,unaffordable:0,...(track?{benchmarkWageArc:0,paidNewCareerArc:0,walletP10:0,walletMedian:0,walletP90:0,walletGini:0}:{}),...(c.initialAgeMax?{rejectedSignings:0,rejectedTransfers:0}: {})};
+  const m={season,retired:0,activated:0,arcBuys:0,eurBuys:0,arcReceipts:0,eurCents:0,feeArc:0,tradeVolume:0,transfers:0,transferVolume:0,wageDue:0,wagePaid:0,humanPaid:0,aiPaid:0,unpaid28:0,unpaid56:0,arrears56:0,diagnosticInjection:0,unaffordable:0,...(primary?{primaryArcBuys:0,primaryEurBuys:0,primaryArcReceipts:0,primaryEurCents:0,primaryUnsold:0,primaryRetiredUnsold:0}:{}),...(track?{benchmarkWageArc:0,paidNewCareerArc:0,walletP10:0,walletMedian:0,walletP90:0,walletGini:0}:{}),...(c.initialAgeMax?{rejectedSignings:0,rejectedTransfers:0}: {})};
   const short=Math.max(0,pool-reserve);if(short&&!firstShortfall)firstShortfall={season,shortfallArc:short};reserve+=short;diagnosticInjection+=short;m.diagnosticInjection=short;reserve-=pool;let escrow=pool;
+  const sharedEurBudget=primary?Array(c.agents).fill(opt.eurBudgetCents):null;
+  if(primary){
+   const listed=[...active.flatMap(x=>x.roster),...free].filter(p=>p.id<=target&&p.agent<0).map(p=>{const v=quote(p).value;return {p,arc:Math.ceil(v*primary.arcBps/10000),eur:Math.ceil(v*primary.eurBps/10000)};});
+   for(let attempt=0;attempt<c.primaryAttempts&&listed.length;attempt++)for(const buyer of shuffle(wallet.map((_,i)=>i))){if(!listed.length||rng()>opt.shopping)continue;
+    const candidates=Array.from({length:Math.min(8,listed.length)},()=>Math.floor(rng()*listed.length)).filter(i=>(primary.allowArc&&wallet[buyer]>=listed[i].arc)||sharedEurBudget[buyer]>=listed[i].eur);
+    if(!candidates.length)continue;const i=pick(candidates),v=listed[i],canArc=primary.allowArc&&wallet[buyer]>=v.arc,canEur=sharedEurBudget[buyer]>=v.eur,useEur=canEur&&(!canArc||rng()<opt.eurPreference);
+    assert(v.p.agent<0&&!primarySold.has(v.p.id),'duplicate primary mandate');if(useEur){sharedEurBudget[buyer]-=v.eur;m.primaryEurCents+=v.eur;m.primaryEurBuys++;}else{assert(canArc,'funded primary');wallet[buyer]-=v.arc;reserve+=v.arc;m.primaryArcReceipts+=v.arc;m.primaryArcBuys++;}
+    v.p.agent=buyer;primarySold.add(v.p.id);listed[i]=listed.at(-1);listed.pop();
+   }
+  }
   // Preserve fixed contracts. Only expiring contracts and new hires negotiate using last season's reward forecast.
   for(const club of active){
    const old=club.roster;club.roster=[];for(const p of old){if(p.term>0)club.roster.push(p);else free.push(p);}
@@ -76,19 +86,19 @@ export function simulateIndividuals(reference,rewards,salary,round,c,opt,seed){
   assert((series.at(-1)?.arrears56??0)+m.wageDue-m.wagePaid===m.arrears56,"arrears");
   // Secondary mandate fee only if a funded transaction actually happens; no sporting transfer fee.
   for(const p of [...active.flatMap(x=>x.roster),...free]){if(p.agent<0||rng()>opt.secondary)continue;const buyer=Math.floor(rng()*c.agents);if(buyer===p.agent)continue;const price=Math.max(1,Math.round(quote(p).value*(.6+.4*rng())));if(wallet[buyer]<price)continue;const fee=Math.floor(price*c.feeBps/10000);wallet[buyer]-=price;wallet[p.agent]+=price-fee;reserve+=fee;p.agent=buyer;m.feeArc+=fee;m.tradeVolume+=price;}
-  const agePlayers=list=>list.filter(p=>{p.age++;if(rng()<(salary.retirement[p.age]??0)){m.retired++;if(track&&ledger.has(p.id))ledger.get(p.id).retired=season;return false;}p.skill=Math.min(99,p.skill+salary.growth[p.age-17]);p.term=Math.max(0,p.term-1);return true});
+  const agePlayers=list=>list.filter(p=>{p.age++;if(rng()<(salary.retirement[p.age]??0)){m.retired++;if(primary&&p.id<=target&&p.agent<0)m.primaryRetiredUnsold++;if(track&&ledger.has(p.id))ledger.get(p.id).retired=season;return false;}p.skill=Math.min(99,p.skill+salary.growth[p.age-17]);p.term=Math.max(0,p.term-1);return true});
   for(const club of active){club.roster=agePlayers(club.roster);const a=awards.get(club.id);club.forecast=(club.forecast+a.part+a.result)/2;club.cup=nextCup.get(club.id)??0;}
   free=agePlayers(free);for(const club of promote)club.tier=1;for(const club of relegate)club.tier=2;
   // Generate lightweight offers; only purchases activate, no free replacement. No hard currency quota.
   for(let i=0;i<active.length*3;i++){const p=create(drawWeighted([0,1,2,3],c.roleTargets.map(x=>x/c.squad)));catalog.push({p,...quote(p)});}
-  const eurBudget=Array(c.agents).fill(opt.eurBudgetCents),deficit=Math.max(0,target-count());
+  const eurBudget=sharedEurBudget??Array(c.agents).fill(opt.eurBudgetCents),deficit=Math.max(0,target-count());
   for(let pass=0;pass<3&&m.activated<deficit;pass++)for(const buyer of shuffle(wallet.map((_,i)=>i))){if(m.activated>=deficit||!catalog.length||rng()>opt.shopping)continue;
    const candidates=Array.from({length:Math.min(8,catalog.length)},()=>Math.floor(rng()*catalog.length)).filter(i=>wallet[buyer]>=catalog[i].arc||eurBudget[buyer]>=catalog[i].eur);
    if(!candidates.length){m.unaffordable++;continue;}const i=pick(candidates),v=catalog[i],canArc=wallet[buyer]>=v.arc,canEur=eurBudget[buyer]>=v.eur,useEur=canEur&&(!canArc||rng()<opt.eurPreference);
    if(useEur){eurBudget[buyer]-=v.eur;m.eurCents+=v.eur;m.eurBuys++;}else{wallet[buyer]-=v.arc;reserve+=v.arc;m.arcReceipts+=v.arc;m.arcBuys++;}
    if(track)ledger.set(v.p.id,{season,retired:null,paid:0,value:v.value,arcEquivalent:useEur?v.eur:v.arc,currency:useEur?'EUR':'ARC'});v.p.agent=buyer;free.push(v.p);catalog[i]=catalog.at(-1);catalog.pop();m.activated++;
   }
-  m.population=count();m.employed=sum(active.map(x=>x.roster.length));m.walletArc=sum(wallet);m.clubArc=sum(clubs.map(x=>x.cash));m.reserveArc=reserve;m.catalog=catalog.length;m.humanCoverage=sum(active.flatMap(x=>x.roster.map(p=>Number(p.agent>=0))))/Math.max(1,m.employed);m.walletsAbleToBuyMean=wallet.filter(w=>w>=8099).length;
+  if(primary){m.primaryUnsold=[...active.flatMap(x=>x.roster),...free].filter(p=>p.id<=target&&p.agent<0).length;assert((series.at(-1)?.primaryUnsold??target)-m.primaryArcBuys-m.primaryEurBuys-m.primaryRetiredUnsold===m.primaryUnsold,'initial mandate stock');assert(eurBudget.every(v=>v>=0),'shared EUR budget');}m.population=count();m.employed=sum(active.map(x=>x.roster.length));m.walletArc=sum(wallet);m.clubArc=sum(clubs.map(x=>x.cash));m.reserveArc=reserve;m.catalog=catalog.length;m.humanCoverage=sum(active.flatMap(x=>x.roster.map(p=>Number(p.agent>=0))))/Math.max(1,m.employed);m.walletsAbleToBuyMean=wallet.filter(w=>w>=8099).length;
   if(track){const w=[...wallet].sort((a,b)=>a-b);m.walletP10=w[Math.floor((w.length-1)*.1)];m.walletMedian=w[Math.floor((w.length-1)*.5)];m.walletP90=w[Math.floor((w.length-1)*.9)];m.walletGini=m.walletArc?sum(w.map((v,i)=>(2*(i+1)-w.length-1)*v))/(w.length*m.walletArc):0;}assert(m.population===(series.at(-1)?.population??target)-m.retired+m.activated,"population conservation");assert(m.activated===m.arcBuys+m.eurBuys&&m.wagePaid===m.humanPaid+m.aiPaid,"flow split");assert(m.walletArc+m.clubArc+reserve===opening+diagnosticInjection&&wallet.every(x=>x>=0)&&clubs.every(x=>x.cash>=0),"stock");
   series.push(m);
  }
