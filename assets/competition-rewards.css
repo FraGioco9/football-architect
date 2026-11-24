@@ -122,8 +122,8 @@ html[data-theme="light"] #competition-panel-rewards .fa-reward-table thead th{ba
 .app-admin-view .admin-rewards-dropdown .language-menu{box-sizing:border-box;min-width:0;width:100%;inset-inline:0}
 .app-admin-view .admin-rewards-dropdown[data-menu-placement="above"] .language-menu{top:auto;bottom:calc(100% + 6px)}
 .app-admin-view .admin-rewards-dropdown .language-option{min-height:36px;box-sizing:border-box;padding:8px 10px;font-size:13px}
-.app-admin-view .admin-rewards-list{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}
-.app-admin-view .admin-rewards .fa-reward-note,.app-admin-view .admin-rewards .fa-reward-evidence p,.app-admin-view .admin-rewards .fa-reward-footnote{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
+.app-admin-view .admin-rewards-list{display:grid;grid-template-columns:minmax(0,1fr);min-width:0}
+.app-admin-view .admin-rewards .fa-reward-evidence p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
 .app-admin-view .admin-rewards .fa-reward-evidence{min-height:0;margin:0}
 .app-admin-view .admin-rewards-table-wrap{box-sizing:border-box;width:100%;max-width:100%;min-width:0;overflow-x:auto;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);scrollbar-width:thin}
 .app-admin-view .admin-rewards-table-wrap:focus-visible{outline:2px solid var(--focus);outline-offset:3px}

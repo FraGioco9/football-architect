@@ -109,6 +109,12 @@ test('public rewards exposes only pool and season club table; admin retains sche
  assert.match(admin,/class="fa-reward-table admin-rewards-distribution"/);
  assert.equal((admin.match(/role="region" tabindex="0"/g)||[]).length,2);
  assert.match(admin,/<tfoot><tr>/);
+ assert.match(admin,/<h2 class="sr-only" id="admin-rewards-payments-heading"/);
+ assert.match(admin,/<h2 class="sr-only" id="admin-rewards-distribution-heading"/);
+ assert.match(admin,/<th scope="col"><span data-app-i18n="rewardCreditSchedule">Planned payments<\/span><\/th>/);
+ assert.equal((admin.match(/data-reward-state=/g)||[]).length,3);
+ assert.doesNotMatch(admin,/rewardDraftNote|rewardCertifiedBeforePayment|fa-reward-footnote|fa-reward-note/);
+ assert.match(admin,/rewardEvidenceConfigOnly" hidden>Planned amounts, not confirmed payments\./);
  assert.doesNotMatch(admin,/class="fa-rewards"/);
  assert.match(admin,/rewardDay">Day<\/span> 28/);
  assert.match(admin,/rewardDay">Day<\/span> 56/);
