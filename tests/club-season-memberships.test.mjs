@@ -184,13 +184,50 @@ test('QA-16: unpublished season is not a broken club or an inactive club',async(
  assert.throws(()=>projectClubMemberships({...unpublished,reason:'unverified'},'IT-17',2,world),/Invalid unpublished/);
  assert.throws(()=>projectClubMemberships({...unpublished,world:{...world,revision:21}},'IT-17',2,world),/Invalid authoritative/);
 });
-test('QA-16: Season 0 requires no API request or invented membership',async()=>{
- const unstarted={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',
-  revision:0,seasonNumber:0,day:0,phase:'unstarted'};
- const result=await readClubMemberships({clubKey:'IT-17',world:unstarted,
-  fetchJson:()=>{throw Error('Unexpected request')}});
- assert.equal(result.coverage,'unstarted');
- assert.deepEqual(result.memberships,[]);
+test('QA-16: Season 0 club memberships come only from separately confirmed scopes',async()=>{
+ const zero={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',
+  revision:1,seasonNumber:0,day:0,phase:'unstarted'};
+ const base={schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-17',selectedSeason:1,world:zero};
+ const unconfirmed={...base,status:'empty',reason:'season-not-prepared',
+  provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null};
+ const domestic={...base,status:'partial',reason:null,
+  provenance:{kind:'authoritative',resultAuthority:'confirmed-entrants-v1',
+   sourceRef:'club:'+zero.generation+':season:1:entrants:'+'a'.repeat(64)},
+  data:{season:1,entrantsOnly:true,memberships:[{
+   competitionId:'IT-2',category:'domestic',season:1,position:null,points:0,
+   cupStatus:null,nextMatch:null
+  }]}};
+ const calls=[];
+ const readJson=async url=>{calls.push(url);return {
+  schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-17',world:zero,
+  status:'available',reason:null,provenance:{kind:'authoritative',
+   resultAuthority:'temporary-lineup-v1',sourceRef:'club-history:'+zero.generation+':revision:'+zero.revision},
+  data:{overviews:[],inaugural:domestic}
+ };};
+ const loaded=await readClubMemberships({clubKey:'IT-17',world:zero,fetchJson:readJson});
+ assert.deepEqual(calls,['/api/clubs/IT-17/history']);
+ assert.equal(loaded.coverage,'entrants-only');
+ assert.deepEqual(loaded.memberships.map(m=>m.competitionId),['IT-2']);
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const html=model.render(manifest,model.route('/clubs/it/17/overview'),'en','',loaded,0);
+ assert.match(html,/data-club-competition-id="IT-2"/);
+ assert.match(html,/data-club-position>—<\/dd>/);
+ assert.doesNotMatch(html,/data-club-competition-id="int-[12]"/);
+ assert.equal(projectClubMemberships(unconfirmed,'IT-17',1,zero).coverage,'unpublished');
+ assert.throws(()=>projectClubMemberships({...domestic,
+  data:{...domestic.data,memberships:[{...domestic.data.memberships[0],position:2}]}},
+  'IT-17',1,zero),/Invalid confirmed entrant/);
+ assert.throws(()=>projectClubMemberships({...domestic,
+  provenance:{...domestic.provenance,sourceRef:'club:'+zero.generation+':season:1:entrants:forged'}},
+  'IT-17',1,zero),/Invalid authoritative/);
+ const internationalOnly={...domestic,data:{...domestic.data,memberships:[{
+  competitionId:'int-1',category:'international',season:1,position:null,points:0,cupStatus:null,nextMatch:null
+ }]}};
+ assert.deepEqual(projectClubMemberships(internationalOnly,'IT-17',1,zero).memberships.map(m=>m.competitionId),['int-1']);
+ const active={...zero,seasonNumber:1,day:1,phase:'active'};
+ const activeEntrants={...domestic,world:active};
+ assert.equal(projectClubMemberships(activeEntrants,'IT-17',1,active).coverage,'entrants-only');
 });
 test('QA-16: first paint panels, flags and short anonymous skeletons are preserved',()=>{
  const html=read('clubs/_shared/index.html'),generator=read('tools/generate-club-pages.mjs'),css=read('assets/club-page.css');
