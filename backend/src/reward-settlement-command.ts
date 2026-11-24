@@ -5,7 +5,7 @@ import type {AdminSession} from './auth.ts';
 import {ApiError} from './errors.ts';
 import {economicAssert,financeSessionGuard,postFreshEconomicBatch,ECONOMIC_FRESH_BATCH_LIMIT,economicReconciliationGuard} from './economic-ledger.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
-import {annualRewardHoldId} from './reward-calendar-gate.ts';
+import {annualRewardHoldId,rewardCompletionDigest} from './reward-calendar-gate.ts';
 import {sessionGuard} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
 export {annualRewardHoldId} from './reward-calendar-gate.ts';
@@ -79,10 +79,10 @@ export async function executeRewardSettlementBatch(db:Database,session:AdminSess
    receipts:receipts.filter(row=>row.day===day),reversedIds:[],holdRemainingArc:remaining,ledgerOk:true
   });
   if(report.status!=='pending'&&report.status!=='complete')return blocked('reward_reconciliation_mismatch');
-  const receiptHash=report.status==='complete'?await canonicalHash({
-   schemaVersion:1,generation,season,day,manifestHash:manifest.manifestHash,
+  const receiptHash=report.status==='complete'?await rewardCompletionDigest({
+   generation,season,day,manifestHash:manifest.manifestHash,
    priorManifestHash:previousManifest?.manifestHash??null,holdId,holdRemainingArc:remaining,paidArc:report.paidArc,
-   receipts:receipts.map(row=>({id:row.id,businessKey:row.business_key,requestHash:row.request_hash}))
+   receipts:receipts.map(row=>({id:row.id,business_key:row.business_key,request_hash:row.request_hash}))
   }):null;
   return {report,receiptCount:receipts.length,remaining,receiptHash};
  };

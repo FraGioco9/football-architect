@@ -1,7 +1,7 @@
 import {prepareRewardSettlement,readRewardSettlementManifest,projectFinalRewardEvidence,buildRewardManifest,type PreparedRewardSettlement} from '../src/reward-settlement-evidence.ts';
 import {planRewardSettlement,type RewardPlan} from '../src/reward-settlement-plan.mjs';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
-import {rewardCalendarCompletionGuards} from '../src/reward-calendar-gate.ts';
+import {rewardCalendarCompletionGuards,prepareRewardPayrollGuards} from '../src/reward-calendar-gate.ts';
 import {annualRewardHoldId,executeRewardSettlementBatch,REWARD_BATCH_LIMIT} from '../src/reward-settlement-command.ts';
 import {economicAssert,provisionClubAccounts,postEconomicOperation,reserveEconomicFunds,reconcileEconomy} from '../src/economic-ledger.ts';
 import {readMatchDirectory} from '../src/public-match-directory.ts';
@@ -213,6 +213,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    // The real internal command writes only to this disposable local D1.
    // No default production grants, activation, or funding are introduced.
    await expect(db.batch(rewardCalendarCompletionGuards(db,world,28))).rejects.toThrow();
+   await expect(prepareRewardPayrollGuards(db,world,28)).rejects.toMatchObject({code:'reward_calendar_pending'});
    await expect(executeLineupLifecycleV1(db,session,'advance',command(),'reward-blocked-advance-0001',now)).rejects.toMatchObject({status:409});
    // Fault in second INSERT rolls back the entire chunk.
    const faultKey=first.manifest.plan.rows.filter(r=>r.amountArc>0)[1].businessKey;
@@ -239,7 +240,15 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    day28ReceiptHash=finished.receiptHash;
    await executeRewardSettlementBatch(db,session,first,now,true);
    world=await readWorld(db);
-   await db.batch(rewardCalendarCompletionGuards(db,world,28));
+   await db.batch(await prepareRewardPayrollGuards(db,world,28));
+   // #778 consumer contract: use the actual ledger with the reconstructed
+   // completion proof in the same transaction. Deliberately abort the fixture
+   // posting after its guards, so the full reward-only balances remain intact.
+   const guardedPayroll=await prepareRewardPayrollGuards(db,world,28);
+   const beforeProbe=await count('economic_transactions');
+   const probeClub=first.manifest.plan.rows[0].clubKey;
+   await expect(postEconomicOperation(db,{businessKey:'fixture-payroll-probe',requestKey:'fixture-payroll-probe',purpose:'PAYROLL_AI',actorKind:'system',actorId:'fixture',configVersion:rewardPin.configVersion,sourceId:'fixture-payroll-probe',generation:world.generation,season:world.seasonNumber,day:28,lines:[{accountId:'club:'+probeClub,amountArc:-1},{accountId:'reserve',amountArc:1}]},{access:localAccess(),preconditions:guardedPayroll,effects:[economicAssert(db,'SELECT 1 WHERE 0')]},now)).rejects.toThrow();
+   expect(await count('economic_transactions')).toBe(beforeProbe);
    expect(await db.prepare("SELECT status,receipt_hash FROM season_admin_events WHERE season_number=1 AND event_id='rewards:28'").first()).toEqual({status:'completed',receipt_hash:day28ReceiptHash});
    expect(await count('economic_transactions')).toBe(305);
    await verifyTreasuries([first.manifest.plan]);
@@ -310,7 +319,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(await readWorld(db)).toEqual(beforeFinalReward);
  await executeRewardSettlementBatch(db,session,certifiedFinal,now,true);
  world=await readWorld(db);
- await db.batch(rewardCalendarCompletionGuards(db,world,56));
+ await db.batch(await prepareRewardPayrollGuards(db,world,56));
  expect(await db.prepare("SELECT status,receipt_hash FROM season_admin_events WHERE season_number=1 AND event_id='rewards:56'").first()).toEqual({status:'completed',receipt_hash:finalResult.receiptHash});
  const sourceSummary=JSON.parse(proof.summaryJson);
  expect(sourceSummary.sourceSeason).toBe(1);
