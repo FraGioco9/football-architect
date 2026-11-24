@@ -536,14 +536,22 @@ test('#776 rank wins equal remainder, independent of club identity or input orde
  const input=rewardFixture(56),cup=input.competitions.find(c=>c.competitionId==='int-1');
  // With equal points this pool is divisible; change weights to create a tied cutoff.
  cup.table.forEach((t,i)=>{t.points=i===0?7:6});
+ // Move a lexically later club into a higher tied rank without changing the top 12.
+ [cup.table[1].rank,cup.table[11].rank]=[cup.table[11].rank,cup.table[1].rank];
+ cup.table.sort((a,b)=>a.rank-b.rank);
  const plan=planRewardSettlement(input),pointRows=plan.rows.filter(r=>r.competitionId==='int-1'&&r.component==='points');
  const expected=pointsReference(competitionRewards('int-1'),cup.table.map(t=>({id:t.clubId,weight:t.points})),cup.table.map(t=>t.clubId));
  assert.deepEqual(Object.fromEntries(pointRows.map(r=>[r.clubKey,r.amountArc])),Object.fromEntries([...expected.allocations].sort((a,b)=>a.id<b.id?-1:1).map(r=>[r.id,r.amount])));
+ const byClub=new Map(pointRows.map(r=>[r.clubKey,r.amountArc]));
+ assert.equal(byClub.get(cup.table[1].clubId),2384);
+ assert.equal(byClub.get(cup.table[10].clubId),2384);
+ assert.equal(byClub.get(cup.table[11].clubId),2383);
  assert.equal(largestRemainder(1,[{id:'z',weight:1},{id:'a',weight:1}],['z','a']).allocations[0].amount,1);
 });
 test('#776 future odd award splits per club, never by rounding the aggregate',()=>{
  const rule={...competitionRewards('IT-1'),participationReference:6001,participation:6001*16};
  assert.deepEqual(participationInstallments(rule),[3000,3001]);
+ assert.deepEqual(participationInstallments({participationReference:Number.MAX_SAFE_INTEGER,participation:Number.MAX_SAFE_INTEGER,capacity:1}),[4503599627370495,4503599627370496]);
  assert.equal(plannedRewardInstallments(rule)[0].participation,48000);
  assert.equal(plannedRewardInstallments(rule)[1].participation,48016);
 });

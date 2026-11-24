@@ -71,7 +71,7 @@ export function participationInstallments(rule){
  const amount=rule.participationReference;
  if(!Number.isSafeInteger(amount)||amount<0||!Number.isSafeInteger(rule.capacity)||rule.capacity<=0||
     !Number.isSafeInteger(rule.participation)||amount*rule.capacity!==rule.participation)throw Error('Invalid configured participation');
- const first=Math.floor(amount*CREDIT_MILESTONES.participationShare/100);
+ const first=Number(BigInt(amount)*BigInt(CREDIT_MILESTONES.participationShare)/100n);
  return [first,amount-first];
 }
 export function participationReference(rule){
