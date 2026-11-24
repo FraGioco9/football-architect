@@ -50,6 +50,13 @@ class PayrollEvidenceTest(unittest.TestCase):
         self.allocation('a1','ai',10)
         self.allocation('a2','human',15)
         self.seal()
+    def test_omitted_contract_cannot_seal(self):
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.seal()
+        self.claim('ai',0,14,25)
+        self.allocation('a1','ai',0)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.seal()
     def test_historical_claim_and_no_replacement(self):
         for args in [('wrong',0,14,26),('wrong',0,28,50),('wrong',14,28,25)]:
             with self.assertRaises(sqlite3.IntegrityError):
