@@ -834,13 +834,15 @@ test('#763 public header groups the club and market value into separate equal-wi
  const css=read('assets/player-detail.css'),js=read('assets/player-detail.js');
  const header=html.slice(html.indexOf('<header class="app-player-detail-heading">'),html.indexOf('</header>',html.indexOf('<header class="app-player-detail-heading">')));
  const identity=header.indexOf('data-detail-subtitle'),panels=header.indexOf('class="app-player-detail-header-panels"'),club=header.indexOf('class="app-player-detail-affiliation"'),value=header.indexOf('class="app-player-detail-market-value"');
- assert.ok(identity>=0&&identity<panels&&panels<club&&club<value);
+ assert.ok(identity>=0&&identity<panels&&panels<value&&value<club);
  assert.equal((header.match(/data-detail-market-value/g)||[]).length,1);
  assert.match(header,/data-detail-market-value><span class="app-skeleton-bar app-player-detail-market-skeleton" aria-hidden="true"><\/span>/);
  assert.doesNotMatch(preview,/app-player-detail-header-panels|data-detail-market-value/);
  assert.match(css,/\.app-player-detail-header-panels\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(css,/\.app-player-detail-market-value::before\{[^}]*height:126px;background:var\(--line\)/);
- assert.match(css,/\.app-player-detail-market-value::before\{height:64px\}/);
+ assert.match(css,/\.app-player-detail-header-panels>\.app-player-detail-affiliation::before\{display:block;height:64px\}/);
+ assert.match(css,/\.app-player-detail-market-value\{grid-column:1;grid-row:1/);
+ assert.match(css,/\.app-player-detail-header-panels>\.app-player-detail-affiliation\{grid-column:2;grid-row:1/);
  assert.match(css,/\.app-player-detail-header-panels\{grid-column:1;grid-row:3\}/);
  assert.match(js,/marketValue\.replaceChildren\(skeleton\('app-player-detail-market-skeleton'\)\)/);
  assert.equal(renderPlayerDetailPage(read('players/index.html'),'public'),html);

@@ -27,8 +27,9 @@ function detailPanel(preview){
   +'<div class="app-player-detail-header-meta"><span data-detail-header-nationality><span class="app-player-detail-country-skeleton" aria-hidden="true"><span class="app-skeleton-bar app-player-detail-flag-skeleton"></span><span class="app-skeleton-bar app-player-detail-nationality-skeleton"></span></span></span><span class="app-player-detail-header-separator" aria-hidden="true" hidden>·</span><span data-detail-header-age hidden></span></div>'
   +'<p class="app-player-detail-subtitle" data-detail-subtitle>&nbsp;</p></div>'
   +(preview?'':'<div class="app-player-detail-header-panels">')
+  +(preview?'':'<div class="app-player-detail-market-value"><span class="app-player-detail-market-label" data-detail-market-label>Market value</span><strong class="app-player-detail-market-amount" data-detail-market-value><span class="app-skeleton-bar app-player-detail-market-skeleton" aria-hidden="true"></span></strong></div>')
   +'<div class="app-player-detail-affiliation"><div class="app-player-detail-affiliation-content" data-detail-club><span class="app-player-detail-club-loading" aria-hidden="true"><span class="app-skeleton-bar app-player-detail-club-logo-skeleton"></span><span class="app-skeleton-bar app-player-detail-club-name-skeleton"></span></span></div></div>'
-  +(preview?'':'<div class="app-player-detail-market-value"><span class="app-player-detail-market-label" data-detail-market-label>Market value</span><strong class="app-player-detail-market-amount" data-detail-market-value><span class="app-skeleton-bar app-player-detail-market-skeleton" aria-hidden="true"></span></strong></div></div>')
+  +(preview?'':'</div>')
   +(preview?'<a class="app-player-detail-back" data-detail-back href="/admin/players">Back to preview</a>':'')+'</header>\n'
   +'<nav class="app-competition-tabs club-tabs app-player-detail-tabs" role="tablist" aria-label="Player views">'+viewTabs+'</nav>\n'
   +'<div class="app-player-detail-overview" id="player-detail-overview-panel" data-detail-panel="overview" role="tabpanel" aria-labelledby="player-detail-overview-tab">'
