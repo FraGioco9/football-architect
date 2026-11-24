@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {generateTrial,summarize} from '../tools/players-generation-trial.mjs';
+import {generateTrial,summarize,generateOpeningCandidate} from '../tools/players-generation-trial.mjs';
 import {loadPlayerNamePools} from '../tools/players-name-pools.mjs';
-import {generateTrialWithCatalog,summarize as summarizeWorker} from '../backend/src/players-generator-core.mjs';
+import {generateTrialWithCatalog,generateOpeningCandidateWithCatalog,summarize as summarizeWorker} from '../backend/src/players-generator-core.mjs';
 import {loadRuntimePlayerCatalog} from '../backend/src/players-catalog.mjs';
 
 test('Worker player engine source is regenerated from the canonical Node generator',()=>{
@@ -31,4 +31,16 @@ test('Worker and CLI player previews match exactly across countries, options, ro
   assert.deepEqual(actual,expected,'All generated candidates must match canonical Node output');
   assert.deepEqual(summarizeWorker(actual),summarize(expected));
  }
+});
+
+test('internal opening candidates preserve youth replay and generate older ages in canonical and Worker code',()=>{
+ const pools=loadRuntimePlayerCatalog();
+ for(const age of [16,19,20,32,39]){
+  const slot={age,primaryNationality:'ITA',primaryPosition:'ST',primarySuitabilityTarget:65,generatorSeed:'opening-'+age};
+  const local=generateOpeningCandidate(slot),worker=generateOpeningCandidateWithCatalog(slot,pools);
+  assert.deepEqual(worker,local);assert.equal(worker.initial_age,age);
+  if(age<=19)assert.deepEqual(worker,generateTrial({count:1,age,primaryNationality:'ITA',primaryPosition:'ST',primarySuitability:65,seed:slot.generatorSeed}).candidates[0]);
+ }
+ assert.throws(()=>generateTrialWithCatalog({count:1,age:20},pools));
+ assert.throws(()=>generateOpeningCandidateWithCatalog({age:40},pools));
 });

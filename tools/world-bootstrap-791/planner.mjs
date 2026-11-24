@@ -1,5 +1,6 @@
 // #791 — isolated offline proposal only. No DB, API or runtime integration.
 import {createHash} from 'node:crypto';
+import {COUNTRIES,generateOpeningCandidateWithCatalog} from '../../backend/src/players-generator-core.mjs';
 
 function requireThat(ok,msg){if(!ok)throw new Error(msg)}
 
@@ -78,7 +79,7 @@ export function readChunk(manifest,offset,limit){requireThat(manifest?.schema===
 export function manifestDigest(manifest){return createHash('sha256').update(JSON.stringify(manifest),'utf8').digest('hex')}
 
 // Owner-approved editable DRAFT reference, not a runtime default or an academy policy.
-export const REFERENCE_PROFILE_VERSION="opening-demography-draft-v1";
+export const REFERENCE_PROFILE_VERSION="opening-demography-draft-v2";
 
 export function approvedReferenceProfile(){
  const entryWeights=[30,35,20,15];
@@ -96,12 +97,20 @@ export function approvedReferenceProfile(){
  return {profileVersion:REFERENCE_PROFILE_VERSION,activeClubs:256,playersPerClub:25,entryWeights,retirementHazards,roster,agePolicies,localPercent:65,...equilibrium};
 }
 
-// Explicit opt-in to the reviewed reference. Foreign weights remain mandatory.
+// Approved 50/50 foreign pool probability: 7*6 = 42*1 after excluding home.
+export function approvedForeignWeights(){
+ const playable=new Set(["BRA","GER","ENG","ESP","FRA","ITA","NED","POR"]);
+ requireThat(COUNTRIES.length===50&&new Set(COUNTRIES.map(c=>c.code)).size===50&&[...playable].every(code=>COUNTRIES.some(c=>c.code===code)),"canonical nationality catalogue changed");
+ return COUNTRIES.map(c=>({code:c.code,weight:playable.has(c.code)?6:1})).sort((a,b)=>order(a.code,b.code));
+}
+// Explicit opt-in to the reviewed reference. Generic planner remains configurable.
 export function planApprovedReference({seed,versions,clubs,foreignWeights}){
  requireThat(Array.isArray(clubs)&&clubs.filter(c=>c?.active===true&&c.division===1).length===128&&clubs.filter(c=>c?.active===true&&c.division===2).length===128,"reference needs 128 active clubs per division");
  requireThat(versions?.policy===REFERENCE_PROFILE_VERSION,"reference policy version mismatch");
- const p=approvedReferenceProfile();
- return planOpeningPopulation({seed,versions,clubs,foreignWeights,roster:p.roster,ageCounts:p.ageCounts,agePolicies:p.agePolicies,localPercent:p.localPercent});
+ const p=approvedReferenceProfile(),weights=approvedForeignWeights();
+ requireThat(clubs.every(c=>c&&["BRA","GER","ENG","ESP","FRA","ITA","NED","POR"].includes(c.nationality)),"unsupported reference club nationality");
+ if(foreignWeights!==undefined)requireThat(Array.isArray(foreignWeights)&&JSON.stringify(foreignWeights.slice().sort((a,b)=>order(a.code,b.code)).map(x=>({code:x.code,weight:x.weight})))===JSON.stringify(weights),"reference foreign weights mismatch");
+ return planOpeningPopulation({seed,versions,clubs,foreignWeights:weights,roster:p.roster,ageCounts:p.ageCounts,agePolicies:p.agePolicies,localPercent:p.localPercent});
 }
 
 // Registry country IDs are not generator/FIFA codes. Keep the translation explicit.
@@ -140,4 +149,29 @@ export function planYouthReuse(manifest,inventory){
  const excluded=players.filter(p=>!eligible(p)).map(p=>p.id);
  // No automatic disposal: any unallocated inventory needs owner reconciliation before activation.
  return {schema:"opening-youth-reuse-v1",worldGeneration:inventory.worldGeneration,worldRevision:inventory.worldRevision,inventorySnapshotId:inventory.snapshotId,assignments,reusedCount:matched.size,newCount:assignments.length-matched.size,unmatchedEligible,excluded,requiresReconciliation:unmatchedEligible.length+excluded.length>0};
+}
+
+// Internal offline preview only: no permanent IDs for new players and no DB calls.
+// The seed stream for private retirement is independent of identity/attributes.
+export function sampleOpeningRetirementAge(slot){
+ requireThat(slot&&int(slot.age,16,39)&&token(slot.generatorSeed,64),"invalid retirement slot");
+ const hazards=approvedReferenceProfile().retirementHazards;
+ const random=rng(JSON.stringify(["opening-retirement-v1",slot.generatorSeed]));
+ for(let age=slot.age+1;age<=40;age++)if(random()<hazards[age-17])return age;
+ throw Error("mandatory retirement missing");
+}
+
+export function prepareOpeningCandidateChunk(manifest,inventory,offset,limit,catalog){
+ requireThat(manifest?.versions?.policy===REFERENCE_PROFILE_VERSION,"reference policy mismatch");
+ const reuse=planYouthReuse(manifest,inventory);
+ const slots=readChunk(manifest,offset,limit),assignments=reuse.assignments.slice(offset,offset+slots.length);
+ const entries=slots.map((slot,i)=>{
+  const assignment=assignments[i];
+  requireThat(assignment.slotKey===slot.slotKey,"reuse alignment mismatch");
+  if(assignment.kind==="reuse")return {slotKey:slot.slotKey,clubKey:slot.clubKey,kind:"reuse",playerId:assignment.playerId};
+  const candidate=generateOpeningCandidateWithCatalog(slot,catalog);
+  requireThat(candidate.initial_age===slot.age&&candidate.nationality===slot.primaryNationality&&candidate.primary_position===slot.primaryPosition,"generator slot mismatch");
+  return {slotKey:slot.slotKey,clubKey:slot.clubKey,kind:"generate",candidate,privateRetirementAge:sampleOpeningRetirementAge(slot)};
+ });
+ return {schema:"opening-internal-candidate-chunk-v1",offset,entries,inventorySnapshotId:reuse.inventorySnapshotId,requiresReconciliation:reuse.requiresReconciliation};
 }

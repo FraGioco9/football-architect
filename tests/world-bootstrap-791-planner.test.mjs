@@ -1,7 +1,8 @@
 // #791 — offline pure planner tests; owned by Site FULL.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,clubCountryToNationality} from '../tools/world-bootstrap-791/planner.mjs';
+import {loadRuntimePlayerCatalog} from '../backend/src/players-catalog.mjs';
+import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,clubCountryToNationality,approvedForeignWeights,sampleOpeningRetirementAge,prepareOpeningCandidateChunk} from '../tools/world-bootstrap-791/planner.mjs';
 
 function requireThat(ok,msg){if(!ok)throw new Error(msg)}
 
@@ -34,7 +35,7 @@ test('SHA-256 manifest digest',()=>{const f=fixture(),p=planOpeningPopulation(f)
 
 function referenceFixture(){
  const f=fixture();
- return {seed:f.seed,versions:{...f.versions,policy:REFERENCE_PROFILE_VERSION},clubs:f.clubs,foreignWeights:f.foreignWeights};
+ return {seed:f.seed,versions:{...f.versions,policy:REFERENCE_PROFILE_VERSION},clubs:f.clubs};
 }
 
 function testApprovedReference(){
@@ -62,7 +63,7 @@ function testApprovedReference(){
   if(c.active)for(const [role,n] of Object.entries(p.roster))eq(members.filter(x=>x.primaryPosition===role).length,n);
  }
  eq(m,planApprovedReference({...f,clubs:[...f.clubs].reverse()}));
- throws(()=>planApprovedReference({...f,foreignWeights:undefined}));
+ throws(()=>planApprovedReference({...f,foreignWeights:[{code:'ITA',weight:1}]}));
  throws(()=>planApprovedReference({...f,versions:{...f.versions,policy:"wrong"}}));
  throws(()=>planApprovedReference({...f,clubs:f.clubs.slice(1)}));
  // Caller mutation cannot change the next profile.
@@ -95,3 +96,31 @@ function testYouthReuse(){
  throws(()=>clubCountryToNationality("ITa"));
 }
 test('reuse existing youth before new generation without changing slot quotas',testYouthReuse);
+
+function testForeignPolicy(){
+ const w=approvedForeignWeights(),playable=["BRA","GER","ENG","ESP","FRA","ITA","NED","POR"];
+ eq(w.length,50);
+ for(const home of playable){eq(w.filter(x=>x.code!==home&&playable.includes(x.code)).reduce((a,x)=>a+x.weight,0),42);eq(w.filter(x=>!playable.includes(x.code)).reduce((a,x)=>a+x.weight,0),42)}
+ const f=referenceFixture(),m=planApprovedReference(f),home=new Map(f.clubs.map(c=>[c.key,c.nationality]));
+ const foreign=m.slots.filter(s=>s.primaryNationality!==home.get(s.clubKey));
+ eq(foreign.length,2240);requireThat(Math.abs(foreign.filter(s=>playable.includes(s.primaryNationality)).length-1120)<100,"foreign sample outside expected tolerance");
+}
+test('approved foreign weighting and exact domestic share',testForeignPolicy);
+
+function testOpeningChunk(){
+ const manifest=planApprovedReference(referenceFixture());
+ const slot=manifest.slots.find(s=>["ITA","ENG","GER"].includes(s.primaryNationality)&&s.age<=19);
+ const idx=manifest.slots.indexOf(slot);
+ const p={id:44,age:slot.age,primaryNationality:slot.primaryNationality,primaryPosition:slot.primaryPosition,primarySuitability:slot.primarySuitabilityTarget,clubKey:slot.clubKey,representation:"ai",careerStatus:"active",hasSignedContract:false,hasSportingHistory:false,hasApprovedPortrait:true,readyForReuse:true};
+ const inventory={worldGeneration:manifest.versions.worldGeneration,worldRevision:manifest.versions.worldRevision,snapshotId:"fixture",complete:true,players:[p]};
+ // A reused slot must never invoke the generator (even with no catalogue supplied).
+ const reused=prepareOpeningCandidateChunk(manifest,inventory,idx,1,null);
+ eq(reused.entries,[{slotKey:slot.slotKey,clubKey:slot.clubKey,kind:"reuse",playerId:44}]);
+ const old=manifest.slots.findIndex(s=>s.age===39);
+ const catalog=loadRuntimePlayerCatalog();
+ const chunk=prepareOpeningCandidateChunk(manifest,inventory,old,1,catalog);
+ eq(chunk.entries[0].candidate.initial_age,39);eq(chunk.entries[0].privateRetirementAge,40);
+ eq(chunk,prepareOpeningCandidateChunk(manifest,inventory,old,1,catalog));
+ for(const s of manifest.slots){const age=sampleOpeningRetirementAge(s);requireThat(age>s.age&&age<=40&&age>=33,"invalid conditional retirement")}
+}
+test('internal candidate chunk preserves reused ID and conditionally retires new adults',testOpeningChunk);
