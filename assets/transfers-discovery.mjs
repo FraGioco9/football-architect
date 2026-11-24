@@ -17,16 +17,22 @@ function validOffset(offset) {
 }
 
 /** Build a validated request that the existing public query contract accepts. */
-export function transfersDiscoveryRequest({offset = 0, name = '', position = ''} = {}) {
+export function transfersDiscoveryRequest({offset = 0, name = '', position = '', valueMin = '', valueMax = '', sort = '', order = ''} = {}) {
   if (!validOffset(offset)) throw new TypeError('invalid_transfers_offset');
   if (typeof name !== 'string' || (name !== '' &&
       (name !== name.normalize('NFC') || name !== name.trim() || !PLAYER_NAME.test(name))))
     throw new TypeError('invalid_transfers_name');
   if (typeof position !== 'string' || (position !== '' && !POSITION_CODES.has(position)))
     throw new TypeError('invalid_transfers_position');
+  const validBound=value=>value===''||typeof value==='string'&&/^(?:0|[1-9][0-9]{0,15})$/.test(value)&&Number.isSafeInteger(Number(value));
+  if(!validBound(valueMin)||!validBound(valueMax)||(valueMin!==''&&valueMax!==''&&Number(valueMin)>Number(valueMax)))throw new TypeError('invalid_transfers_value_range');
+  if(sort!==''&&sort!=='market_value_arc'||sort==='market_value_arc'&&!['asc','desc'].includes(order)||sort===''&&order!=='')throw new TypeError('invalid_transfers_sort');
   const query = new URLSearchParams({offset: String(offset)});
   if (name) query.set('name', name);
   if (position) query.set('position', position);
+  if(valueMin!=='')query.set('valueMin',valueMin);
+  if(valueMax!=='')query.set('valueMax',valueMax);
+  if(sort){query.set('sort',sort);query.set('order',order);}
   return '/api/players?' + query.toString();
 }
 
@@ -44,7 +50,8 @@ export function transfersPlayerLinks(id, clubKey = null) {
 /**
  * Project only already-public fields. A missing affiliation means "Free Agent"
  * in the current V1 relation, NOT proof that an agent mandate or transfer is
- * on sale. Do not include salaries, values, balances or marketplace actions.
+ * on sale. Only the derived public market_value_arc estimate is allowed; no
+ * salaries, transfer prices, balances or marketplace actions.
  */
 export function projectTransfersDiscovery(response, {offset = 0} = {}) {
   if (!validOffset(offset) || !response || !Array.isArray(response.players) ||
@@ -72,6 +79,7 @@ export function projectTransfersDiscovery(response, {offset = 0} = {}) {
       position: player.primary_position,
       nationality: typeof player.nationality === 'string' ? player.nationality : null,
       age: Number.isSafeInteger(player.age) && player.age >= 0 && player.age <= 120 ? player.age : null,
+      market_value_arc: Number.isSafeInteger(player.market_value_arc)&&player.market_value_arc>=0?player.market_value_arc:null,
       clubKey: player.clubKey,
       clubName: player.clubName,
       affiliation: player.clubKey === null ? 'free-agent' : 'affiliated',

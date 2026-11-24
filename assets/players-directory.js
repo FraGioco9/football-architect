@@ -14,7 +14,7 @@
  });
 
 
- const filterKeys=['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot','attributes'];
+ const filterKeys=['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','valueMin','valueMax','foot','attributes'];
  const totalFilterCount=filters=>filterKeys.filter(key=>filters?.[key]&&key!=='attributes'&&!key.endsWith('Scope')).length+(filters?.attributes||'').split(',').filter(Boolean).length;
  const validName=value=>typeof value==='string'&&value.length<=80&&value.trim()===value&&value===value.normalize('NFC')&&/^[\p{L}\p{M}0-9 .'’\-]{1,80}$/u.test(value);
  const safeAttributeCodes=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
@@ -41,7 +41,8 @@
  const integerValue=(value,min,max)=>/^(?:0|[1-9][0-9]{0,2})$/.test(value||'')&&Number(value)>=min&&Number(value)<=max?value:'';
  const positions=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
  const sortableCommon=new Set(['nationality','name','positions']);
- const sortableOverview=new Set(['nationality','name','age','positions','height','foot']);
+ const sortableOverview=new Set(['nationality','name','age','positions','height','foot','market_value_arc']);
+ const arcValue=value=>/^(?:0|[1-9][0-9]{0,15})$/.test(value||'')&&Number.isSafeInteger(Number(value))?value:'';
  const allowedSort=(view,group,sort)=>view==='attributes'
   ?sortableCommon.has(sort)||groups[group].includes(sort)
   :sortableOverview.has(sort);
@@ -102,9 +103,10 @@
    position,positionScope:position&&p.get('positionScope')==='any'?'any':'',
    ageMin:integerValue(p.get('ageMin'),0,120),ageMax:integerValue(p.get('ageMax'),0,120),
    heightMin:integerValue(p.get('heightMin'),100,250),heightMax:integerValue(p.get('heightMax'),100,250),
+   valueMin:arcValue(p.get('valueMin')),valueMax:arcValue(p.get('valueMax')),
    foot:['left','right'].includes(p.get('foot'))?p.get('foot'):''
   };
-  for(const [lo,hi] of [['ageMin','ageMax'],['heightMin','heightMax']]){
+  for(const [lo,hi] of [['ageMin','ageMax'],['heightMin','heightMax'],['valueMin','valueMax']]){
    if(filters[lo]&&filters[hi]&&Number(filters[lo])>Number(filters[hi])){filters[lo]='';filters[hi]='';}
   }
   return {
@@ -205,7 +207,7 @@
    savedReturn.loadedThrough>=state.page&&savedReturn.loadedThrough<=state.page+4&&
    Number.isSafeInteger(savedReturn.playerId)&&savedReturn.playerId>0&&
    Number.isFinite(savedReturn.scrollTop)&&savedReturn.scrollTop>=0?savedReturn:null;
-  const cols=()=>state.view==='attributes'?3+groups[state.group].length:7;
+  const cols=()=>state.view==='attributes'?3+groups[state.group].length:8;
   const cell=(tr,value)=>{const td=document.createElement('td');td.textContent=value;tr.append(td);return td};
   function renderCount(count){
    if(!countNode)return;
@@ -295,6 +297,7 @@
     position:draft.position?draft.position.split(',').length:0,
     age:Number(!!draft.ageMin)+Number(!!draft.ageMax),
     height:Number(!!draft.heightMin)+Number(!!draft.heightMax),
+    value:Number(!!draft.valueMin)+Number(!!draft.valueMax),
     foot:Number(!!draft.foot),
     attributes:drawerOpen()?[...attributeMap.values()].filter(item=>item.check.checked).length:specs.split(',').filter(Boolean).length
    };
@@ -302,7 +305,7 @@
     const key=section.dataset.playersFilterSection;
     const index=['nationality','position','age','height','foot','attributes'].indexOf(key);
     const label=section.querySelector('[data-players-section-label]');
-    if(label)label.textContent=t.sections[index];
+    if(label)label.textContent=key==='value'?(globalThis.faMarketValue?.label(language())||'Market value')+' ($ARC)':t.sections[index];
     const count=section.querySelector('[data-players-section-count]');
     if(count){count.hidden=!counts[key];count.textContent=counts[key]?String(counts[key]):'';}
    }
@@ -321,8 +324,8 @@
    filterTrigger?.setAttribute('aria-label',t.button+(selectedCount?': '+selectedCount+' '+t.active:''));
    let countries;
    try{countries=new Intl.DisplayNames([language()||'en'],{type:'region'});}catch{countries=null;}
-   const labelKeys=['name','nationality','position','ageMin','ageMax','heightMin','heightMax','foot'];
-   const labels=[t.name,t.sections[0],t.sections[1],t.min,t.max,t.min,t.max,t.names[4]];
+   const labelKeys=['name','nationality','position','ageMin','ageMax','heightMin','heightMax','foot','valueMin','valueMax'];
+   const labels=[t.name,t.sections[0],t.sections[1],t.min,t.max,t.min,t.max,t.names[4],t.min,t.max];
    for(const field of filterFields){
     const key=field.dataset.playersFilter,selected=state.filters?.[key]||'';
     if(field.type==='checkbox')field.checked=selected==='any';
@@ -406,6 +409,9 @@
    if(state.view==='overview'){
     addHeader(t.columns[2],'positions');
     addHeader(t.columns[1],'age');addHeader(t.columns[3],'height');addHeader(t.columns[4],'foot');
+    addHeader(globalThis.faMarketValue?.label(language())||'Market value','market_value_arc');
+    row.lastElementChild.classList.add('app-market-value-col');
+    row.lastElementChild.querySelector('button').title=globalThis.faMarketValue?.help(language())||'Estimated remaining agent commissions (DRAFT benchmark)';
     const club=document.createElement('th');club.scope='col';club.className='app-players-club-col';club.textContent=t.club;row.append(club);
    }else{
     addHeader(t.columns[2],'positions');
@@ -479,6 +485,7 @@
      cell(tr,Number.isSafeInteger(player.age)?String(player.age):'—');
      cell(tr,Number.isSafeInteger(player.height_cm)?String(player.height_cm)+' cm':'—');
      cell(tr,player.preferred_foot==='left'?t.left:player.preferred_foot==='right'?t.right:'—');
+     cell(tr,globalThis.faMarketValue?.format(player.market_value_arc,language())||'—').classList.add('app-market-value-col');
      clubCell(tr,player);
     }else {
      cell(tr,positionsShown.join(', ')||'—');
@@ -547,7 +554,7 @@
    try{
     const data=await fetchBatch(page);
     if(seq!==ticket)return;
-    if(data.count>0&&page>data.totalPages&&data.players.length===0){
+    if(page>data.totalPages&&data.players.length===0){
      state.page=1;syncUrl('replaceState');await load(1);return;
     }
     // Back from a player detail may create a new document (BFCache miss).
@@ -833,6 +840,8 @@
      fields[minKey]='';fields[maxKey]='';
     }
    }
+   fields.valueMin=arcValue(String(fields.valueMin||'').trim());fields.valueMax=arcValue(String(fields.valueMax||'').trim());
+   if(fields.valueMin&&fields.valueMax&&Number(fields.valueMin)>Number(fields.valueMax)){fields.valueMin='';fields.valueMax='';}
    const attrs=[];
    for(const [key,{check,range,min,max}] of attributeMap){
     if(!check.checked)continue;

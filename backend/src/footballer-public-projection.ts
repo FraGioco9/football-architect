@@ -1,3 +1,4 @@
+import {calculatePlayerMarketValueArc} from './player-market-value.mjs';
 /**
  * Server-only footballer wire projections.
  *
@@ -111,7 +112,7 @@ export function projectPublicFootballerProfile(
   return Object.freeze(out);
 }
 
-/** Approved public directory JSON, explicitly excluding initial_age, development_aptitude, retirement_seed
+/** Approved public directory JSON, explicitly excluding initial_age, development_aptitude, retirement_age, legacy retirement_seed
  * and all administrative generator metadata. Never spread raw player payloads.
  */
 export const PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS = Object.freeze([
@@ -135,6 +136,7 @@ export interface PublicFootballerDirectoryRecord {
  readonly primary_position:string;
  readonly secondary_positions:readonly string[];
  readonly attributes:Readonly<Record<PublicFootballerAttribute,number>>;
+ readonly market_value_arc:number|null;
 }
 export function projectPublicFootballerDirectoryRecord(
  player:InternalFootballer,context:FootballerPublicContext
@@ -163,7 +165,8 @@ export function projectPublicFootballerDirectoryRecord(
   preferred_foot:base.preferred_foot,
   primary_position:base.primary_position,
   secondary_positions:base.secondary_positions,
-  attributes:Object.freeze(attributes)
+  attributes:Object.freeze(attributes),
+  market_value_arc:calculatePlayerMarketValueArc({age:base.age,career_status:base.career_status,primary_position:base.primary_position,secondary_positions:base.secondary_positions,attributes})
  };
  return Object.freeze(out);
 }

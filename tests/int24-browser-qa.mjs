@@ -1004,7 +1004,10 @@ try {
  // Season 0 scenarios explicitly opt into Debug before the first protected paint.
  await page.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
  const zeroErrors=[];page.on("pageerror",error=>zeroErrors.push(error.message));
- page.on("console",message=>{if(message.type()==="error")console.log("DEV browser console: "+message.text())});
+ page.on("console",message=>{if(message.type()==="error"){
+  console.log("DEV browser console: "+message.text());
+  if(message.text().includes("DEV initial hydration failed"))zeroErrors.push(message.text());
+ }});
  page.on("response",response=>{if(response.status()>=400)console.log("DEV HTTP "+response.status()+" "+response.url())});
  for(const route of ["/competitions/int-1/standings","/competitions/int-2/fixtures","/competitions/int-1/stats","/competitions/it-1/standings","/competitions/it-1/stats","/calendar","/clubs/it/1/overview"]){
   console.log("Season 0 QA route: "+route);
@@ -1145,6 +1148,12 @@ try {
   });
   await historyPage.goto(base+'/competitions/'+id.toLowerCase()+'/rules',{waitUntil:"domcontentloaded"});
   await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='2');
+  // The rules can render before the domestic DEV standings publisher finishes.
+  // Establish the baseline before injecting a historical snapshot so a pending
+  // initial publisher cannot repopulate the context after clearSeasonData().
+  if(id==='IT-1')await historyPage.waitForFunction(()=>
+   document.documentElement.dataset.faDevStandingsPending===undefined &&
+   window.faCompetitionContext?.seasonData?.season===1);
   const historical=await historyPage.evaluate(()=>{
    const context=window.faCompetitionContext,definition=context.definition;
    const snapshot=JSON.parse(JSON.stringify(definition.rules));snapshot.phases[0].points.win=3;

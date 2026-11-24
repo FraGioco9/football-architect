@@ -20,6 +20,8 @@ const internal={
   career_status:'active',
   attributes:{shooting:90,passing:66,secret_flag:'internal'},
   development_aptitude:99,
+  retirement_age:37,
+  retirement_seed:'legacy-private-seed',
   trial_primary_suitability_target:88,
   trial_primary_suitability_actual:87.5,
   trial_role_profile:'specialist',
@@ -36,7 +38,7 @@ test('roster view is an exact allowlist and ignores arbitrary internal fields',(
  });
  assert.equal(Object.isFrozen(output),true);
  for(const phrase of ['known_as','Joaozinho','internal-do-not-send','trial-0001',
- 'development_aptitude','shooting','secret','identity_sources','trial_primary','future_internal_field'])
+ 'development_aptitude','retirement_age','retirement_seed','shooting','secret','identity_sources','trial_primary','future_internal_field'])
   assert.equal(JSON.stringify(output).includes(phrase),false,phrase+' leaked');
 });
 test('profile view adds only public physical and position fields, never abilities',()=>{
@@ -49,7 +51,7 @@ test('profile view adds only public physical and position fields, never abilitie
  assert.equal(Object.isFrozen(output),true);
  assert.equal(Object.isFrozen(output.secondary_positions),true);
  assert.notEqual(output.secondary_positions,internal.secondary_positions);
- assert.doesNotMatch(JSON.stringify(output),/known_as|aptitude|attributes|seed|suitability|preview|credentials/i);
+ assert.doesNotMatch(JSON.stringify(output),/known_as|aptitude|retirement|attributes|seed|suitability|preview|credentials/i);
 });
 test('trial preview ids, initial age and trial metadata are never silently published',()=>{
  const output=projectPublicFootballerCard(internal);
@@ -72,14 +74,14 @@ test('approved public JSON publishes the 20 sporting skills, never sensitive gen
  const attributes=Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map((key,index)=>[key,index+1]));
  const record=projectPublicFootballerDirectoryRecord({...internal,attributes},{publicId:123,currentAge:19});
  assert.deepEqual(Object.keys(record),['id','first_name','last_name','display_name','nationality',
-  'secondary_nationality','age','career_status','height_cm','preferred_foot','primary_position','secondary_positions','attributes']);
+  'secondary_nationality','age','career_status','height_cm','preferred_foot','primary_position','secondary_positions','attributes','market_value_arc']);
  assert.equal(record.id,123);
  assert.equal(record.display_name,'Joao da Silva');
  assert.equal(record.secondary_nationality,'POR');
  assert.deepEqual(record.attributes,attributes);
  assert.equal(Object.isFrozen(record),true);
  assert.equal(Object.isFrozen(record.attributes),true);
- for(const forbidden of ['initial_age','development_aptitude','preview_id','known_as','seed','credentials','trial_primary_suitability_target','future_internal_field'])
+ for(const forbidden of ['initial_age','development_aptitude','retirement_age','retirement_seed','preview_id','known_as','seed','credentials','trial_primary_suitability_target','future_internal_field'])
   assert.equal(JSON.stringify(record).includes(forbidden),false,forbidden+' leaked');
 });
 test('public directory fails closed on invalid skills and authoritative identity',()=>{

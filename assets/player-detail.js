@@ -42,6 +42,7 @@
   if(portraitImage.complete&&portraitImage.naturalWidth>0)portraitImage.onload();
  }
  const nameNode=panel.querySelector('[data-detail-name]'),roleNode=panel.querySelector('[data-detail-role]'),subtitle=panel.querySelector('[data-detail-subtitle]');
+ const marketLabel=panel.querySelector('[data-detail-market-label]'),marketValue=panel.querySelector('[data-detail-market-value]');
  const nationalityNode=panel.querySelector('[data-detail-header-nationality]'),ageNode=panel.querySelector('[data-detail-header-age]'),clubNode=panel.querySelector('[data-detail-club]');
  const back=preview?panel.querySelector('[data-detail-back]'):null,statusNode=panel.querySelector('[data-detail-status]');
  const views=[...panel.querySelectorAll('[data-detail-view]')];
@@ -419,6 +420,8 @@
   }).finally(()=>{historyControllerPromise=null});
  }
  function render(){
+  if(marketLabel){marketLabel.textContent=globalThis.faMarketValue?.label(language())||'Market value';marketLabel.title=globalThis.faMarketValue?.help(language())||'Estimated remaining agent commissions (DRAFT benchmark)';}
+  if(marketValue&&state!=='loading')setContent(marketValue,globalThis.faMarketValue?.format(player?.market_value_arc,language())||'—');
   const copy=tr(),e=ex(),labels=(attrLabels[language()]||attrLabels.en).split('|');
   // Browser title depends on public entity identity, not the selected tab.
   const candidate=player&&(safeName(player.display_name)||safeName([player.first_name,player.last_name].filter(Boolean).join(' ')));
@@ -525,6 +528,7 @@
   nationalitySkeleton.append(skeleton('app-player-detail-flag-skeleton'),skeleton('app-player-detail-nationality-skeleton'));
   nationalityNode.replaceChildren(nationalitySkeleton);
   ageNode.replaceChildren();
+  if(marketValue)marketValue.replaceChildren(skeleton('app-player-detail-market-skeleton'));
   renderClubSkeleton();
   subtitle.textContent='\u00a0';
   for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-attr-value]'))node.replaceChildren(skeleton());
