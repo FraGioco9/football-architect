@@ -7,14 +7,23 @@ import '../assets/world-clock-adapter.js';
 const hosting=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
 
 test('ARCH-CLEAN-02 security: approved hosting routes include exactly two Players-preview redirects',()=>{
-  assert.equal(hosting.redirects.length,43);
+  assert.equal(hosting.redirects.length,45);
+  assert.equal(hosting.redirects.filter(rule=>!rule.source.startsWith('/history')).length,43,
+   'retain the original 43 approved redirects');
+  assert.deepEqual(hosting.redirects.filter(rule=>rule.source.startsWith('/history')),[{
+   source:'/history/',destination:'/history',permanent:true
+  },{source:'/history/index.html',destination:'/history',permanent:true}]);
   assert.deepEqual(hosting.redirects[0],{source:'/matches/:id([1-9][0-9]*)/',destination:'/matches/:id',permanent:true});
   for(const suffix of ['', '/', '/index.html'])assert.ok(hosting.redirects.some(rule=>rule.source.endsWith('/stats'+suffix)&&rule.destination==='/clubs/:country/:club/records'&&rule.permanent));
   for(const suffix of ['/', '/index.html'])assert.deepEqual(hosting.redirects.find(route=>route.source==='/admin/players/preview'+suffix),{source:'/admin/players/preview'+suffix,destination:'/admin/players/preview',permanent:true});
-  assert.equal(hosting.rewrites.length,11);
+  assert.equal(hosting.rewrites.length,12);
+  assert.equal(hosting.rewrites.filter(rule=>rule.source!=='/history').length,11,
+   'retain the original 11 approved rewrites');
+  assert.deepEqual(hosting.rewrites.find(rule=>rule.source==='/history'),
+   {source:'/history',destination:'/history/index.html'});
   assert.deepEqual(hosting.rewrites[0],{source:'/matches/:id([1-9][0-9]*)',destination:'/matches/_shared/index.html'});
-  assert.equal(hosting.redirects.filter(route=>route.source.startsWith('/admin/:section(calendar|players|contracts)')).length,2);
-  assert.equal(hosting.rewrites.filter(route=>route.source==='/admin/:section(calendar|players|contracts)').length,1);
+  assert.equal(hosting.redirects.filter(route=>route.source.startsWith('/admin/:section(calendar|players|contracts|licenses|rewards)')).length,2);
+  assert.equal(hosting.rewrites.filter(route=>route.source==='/admin/:section(calendar|players|contracts|licenses|rewards)').length,1);
   assert.equal(hosting.rewrites.some(r=>r.destination.includes('/app/')),false);
 });
 

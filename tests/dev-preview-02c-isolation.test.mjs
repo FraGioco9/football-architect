@@ -21,7 +21,12 @@ test("DEV-PREVIEW-02C: public isolation, deterministic manifest and tamper rejec
   assert.ok(debugFiles.includes("__fa_dev__/debug-settings.mjs"));
   for(const path of publicFiles) {
    const a=readFileSync(join(pub,path)),b=readFileSync(join(debug,path));
-   if(!/^(?:dashboard|calendar|settings|admin|competitions|clubs|players)\//.test(path)||!path.endsWith("/index.html"))assert.deepEqual(a,b,path);
+   if(path==="history/index.html"){
+    assert.notDeepEqual(a,b,"History gains a protected-only Debug entrypoint");
+    assert.doesNotMatch(a.toString('utf8'),/\/__fa_dev__\//,'Public History must remain Debug-free');
+    assert.match(b.toString('utf8'),/src="\/__fa_dev__\/debug-settings\.mjs"/,'Protected History gains Debug Settings');
+    assert.doesNotMatch(b.toString('utf8'),/src="\/__fa_dev__\/stats-client\.mjs"/,'History must not load unrelated Stats Debug');
+   }else if(!/^(?:dashboard|calendar|settings|admin|competitions|clubs|players)\//.test(path)||!path.endsWith("/index.html"))assert.deepEqual(a,b,path);
   }
   const manifest=JSON.parse(readFileSync(join(debug,"__fa_dev__/artifact-manifest.json"),"utf8"));
   assert.equal(manifest.contract,"protected_debug");

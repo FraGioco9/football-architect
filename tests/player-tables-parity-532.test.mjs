@@ -29,8 +29,8 @@ test('#532 Club Roster Info follows public Positions-before-Age while preserving
  for(const language of ['en','de','es','fr','it']){
   const html=model.render(manifest,club,language,'?view=info',null,1,null,snap);
   const table=html.slice(html.indexOf('<table class="app-players-table club-roster-table"'));
-  assert.deepEqual([...table.matchAll(/data-club-roster-sort="([^"]+)"/g)].slice(0,6).map(x=>x[1]),
-   ['nationality','name','positions','age','height','foot'],language+' header order');
+  assert.deepEqual([...table.matchAll(/data-club-roster-sort="([^"]+)"/g)].slice(0,7).map(x=>x[1]),
+   ['nationality','name','positions','age','height','foot','market_value_arc'],language+' header order');
   assert.match(table,/<colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><col class="app-players-view-third-column">/);
   assert.match(table,/<a class="club-roster-player-link" href="\/players\/17" data-mobile-name="M. Example" aria-label="Marco Example"><span class="fa-player-full-name">Marco Example<\/span><span class="fa-player-short-name">M. Example<\/span><\/a><\/td><td>CM, DM<\/td><td>23<\/td>/,language+' data order');
   const attrsHtml=model.render(manifest,club,language,'?view=attributes&group=technical',null,1,null,snap);
@@ -40,10 +40,10 @@ test('#532 Club Roster Info follows public Positions-before-Age while preserving
  const shell=read('clubs/_shared/index.html'),gen=read('tools/generate-club-pages.mjs');
  for(const src of [shell,gen]){
   assert.match(src,/else if\(index===2\)col\.className='app-players-view-third-column'/);
-  assert.match(src,/\['nationality','name','positions','age','height','foot'\]/);
+  assert.match(src,/\['nationality','name','positions','age','height','foot','market_value_arc'\]/);
  }
- assert.deepEqual([...shell.matchAll(/data-club-roster-sort="([^"]+)"/g)].slice(0,6).map(x=>x[1]),
-  ['nationality','name','positions','age','height','foot']);
+ assert.deepEqual([...shell.matchAll(/data-club-roster-sort="([^"]+)"/g)].slice(0,7).map(x=>x[1]),
+  ['nationality','name','positions','age','height','foot','market_value_arc']);
  assert.equal((shell.match(/class="app-players-loading-row"/g)||[]).length,5);
  const css=read('assets/app.css');
  assert.match(css,/\.app-players-table:not\(\[data-players-public\]\):not\(\[data-players-table-mode="attributes"\]\) col\.app-players-view-third-column\{width:var\(--app-players-positions-width\)\}/);
@@ -58,7 +58,7 @@ test('#532 Admin preview retains protected draft flow and common player column o
  assert.match(preview,/<th scope="col">Player<\/th><th scope="col">Positions<\/th><th scope="col">Age<\/th>/);
  assert.equal((preview.match(/class="app-players-loading-row"/g)||[]).length,5);
  const js=read('assets/admin-players-preview.js');
- assert.match(js,/view==='overview'\?\['nationality','name','positions','age','height','foot'\]/);
+ assert.match(js,/view==='overview'\?\['nationality','name','positions','age','height','foot','market_value_arc'\]/);
  assert.match(js,/if\(view==='overview'\)\{\s*addCell\(row,positions\);\s*addCell\(row,Number\.isSafeInteger\(player\.age\)/);
  assert.match(js,/target\.searchParams\.set\('draftId',id\)/);
  assert.match(js,/authorizedPost\('\/api\/admin\/players\/draft',\{draftId:id\}\)/);

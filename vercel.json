@@ -31,22 +31,22 @@
       "permanent": true
     },
     {
-      "source": "/:page(dashboard|calendar|settings|admin|competitions|players|matches)/",
+      "source": "/:page(dashboard|calendar|settings|admin|competitions|players|matches|transfers)/",
       "destination": "/:page",
       "permanent": true
     },
     {
-      "source": "/:page(dashboard|calendar|settings|admin|competitions|players|matches)/index.html",
+      "source": "/:page(dashboard|calendar|settings|admin|competitions|players|matches|transfers)/index.html",
       "destination": "/:page",
       "permanent": true
     },
     {
-      "source": "/admin/:section(calendar|players|contracts)/",
+      "source": "/admin/:section(calendar|players|contracts|licenses|rewards)/",
       "destination": "/admin/:section",
       "permanent": true
     },
     {
-      "source": "/admin/:section(calendar|players|contracts)/index.html",
+      "source": "/admin/:section(calendar|players|contracts|licenses|rewards)/index.html",
       "destination": "/admin/:section",
       "permanent": true
     },
@@ -76,7 +76,7 @@
       "permanent": true
     },
     {
-      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)/",
+      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|rewards|teams)/",
       "destination": "/competitions/:division/:view",
       "permanent": true
     },
@@ -322,7 +322,7 @@
       "permanent": true
     },
     {
-      "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards)/",
+      "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards|rewards)/",
       "destination": "/competitions/:cup/:view",
       "permanent": true
     },
@@ -339,6 +339,16 @@
     {
       "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/stats",
       "destination": "/clubs/:country/:club/records",
+      "permanent": true
+    },
+    {
+      "source": "/history/",
+      "destination": "/history",
+      "permanent": true
+    },
+    {
+      "source": "/history/index.html",
+      "destination": "/history",
       "permanent": true
     }
   ],
@@ -360,11 +370,11 @@
       "destination": "/clubs/index.html"
     },
     {
-      "source": "/:page(dashboard|calendar|settings|admin|competitions|players|matches)",
+      "source": "/:page(dashboard|calendar|settings|admin|competitions|players|matches|transfers)",
       "destination": "/:page/index.html"
     },
     {
-      "source": "/admin/:section(calendar|players|contracts)",
+      "source": "/admin/:section(calendar|players|contracts|licenses|rewards)",
       "destination": "/admin/:section/index.html"
     },
     {
@@ -376,16 +386,20 @@
       "destination": "/competitions/:division/index.html"
     },
     {
-      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)",
+      "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/:view(overview|standings|postseason|fixtures|stats|history|rules|awards|rewards|teams)",
       "destination": "/competitions/:division/index.html"
     },
     {
-      "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards)",
+      "source": "/competitions/:cup(int-1|int-2)/:view(standings|postseason|fixtures|stats|history|rules|awards|rewards)",
       "destination": "/competitions/:cup/index.html"
     },
     {
       "source": "/clubs/:country(it|eng|es|de|fr|pt|nl|br)/:club([1-9]|[1-3][0-9]|40)/:view(overview|roster|fixtures|records|history)",
       "destination": "/clubs/_shared/index.html"
+    },
+    {
+      "source": "/history",
+      "destination": "/history/index.html"
     }
   ],
   "headers": [

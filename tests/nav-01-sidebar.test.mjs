@@ -133,8 +133,54 @@ test('Explore Players comes before Clubs and opens the public directory (not Adm
   assert.match(html,/<th scope="col" class="app-players-flag-col"><button[^>]*data-players-sort="nationality"[^>]*><span class="app-players-sort-label"><span class="sr-only" data-app-i18n="playersNationality">Nationality<\/span>/);
   const columns=[...html.matchAll(/data-app-i18n="playersColumn[^"]+">([^<]+)<\/span>/g)].map(m=>m[1]);
  assert.deepEqual(columns,['Player','Positions','Age','Height','Foot']);
- assert.ok(html.includes('<td colspan="7">'));
+ assert.ok(html.includes('<td colspan="8">'));
  assert.doesNotMatch(html,/\/admin\/players/);
  assert.equal(publicRequestFile('/players'),'players/index.html');
  assert.equal(isAllowlistedPublicPath('players/index.html'),true);
+});
+
+
+test('#581: World History shares the stable first-paint sidebar on every generated app page',()=>{
+ const pages=[
+  '404.html',
+  ...['','login/','recover/','register/','verify-email/'].map(p=>'account/'+p+'index.html'),
+  ...['','calendar/','contracts/','players/','players/preview/','players/preview/player/'].map(p=>'admin/'+p+'index.html'),
+  'admin/licenses/index.html',
+  'calendar/index.html','clubs/index.html','clubs/_shared/index.html',
+  'competitions/index.html','competitions/_shared/index.html',
+  ...['br','de','eng','es','fr','it','nl','pt'].flatMap(country=>[1,2].map(tier=>'competitions/'+country+'-'+tier+'/index.html')),
+  'competitions/int-1/index.html','competitions/int-2/index.html',
+  'dashboard/index.html','history/index.html',
+  'matches/index.html','matches/_shared/index.html','players/index.html','players/_shared/index.html',
+  'settings/index.html','transfers/index.html'
+ ];
+ const bootstrap=readFileSync(new URL('../assets/sidebar-first-paint.js',import.meta.url),'utf8').trim();
+ for(const path of pages){
+  const html=readFileSync(new URL('../'+path,import.meta.url),'utf8');
+  const nav=html.slice(html.indexOf('<nav class="fa-shell-nav"'),html.indexOf('</nav>'));
+  assert.ok(nav.includes('data-nav01-static'),path+' must have a static sidebar');
+  const submenu=nav.indexOf('id="nav01-children"'),end=nav.indexOf('</div>',submenu);
+  const history=nav.indexOf('id="app-nav-world-history"'),explore=nav.indexOf('data-nav01="3"');
+  assert.ok(submenu>0&&end>submenu&&history>end&&history<explore,path+' History must be a primary World item');
+  assert.equal((nav.match(/id="app-nav-world-history"/g)||[]).length,1,path+' must have exactly one History link');
+  assert.match(nav,/href="\/history" data-nav01-history(?: aria-current="page")?><svg class="fa-icon" width="18" height="18"/,path+' History icon');
+  assert.match(nav,/data-nav01="9">History/,path+' History translation key');
+  assert.ok(nav.indexOf('href="/players"')<nav.indexOf('href="/clubs"'),path+' Explore order');
+  const inline=html.match(/<script data-nav01-bootstrap>([\s\S]*?)<\/script>/)?.[1];
+  assert.equal(inline,bootstrap,path+' first paint matches centralized sidebar controller');
+  assert.ok(html.indexOf('<script data-nav01-bootstrap>')<html.indexOf('<main'),path+' bootstrap runs before content');
+  if(path==='history/index.html'){
+   assert.match(nav,/id="app-nav-world-history"[^>]*aria-current="page"/);
+   assert.equal((nav.match(/aria-current="page"/g)||[]).length,1,'History must be the unique active item');
+   assert.match(html,/id="app-dashboard" class="app-view"[^>]*hidden/,'Dashboard never appears beside History');
+  }
+ }
+ assert.equal(pages.length,44,'all generated app shells, including licenses and transfers');
+ const runtime=readFileSync(new URL('../assets/sidebar-evolution.js',import.meta.url),'utf8');
+ assert.match(runtime,/if\(historyChildren&&!historyLink\)/,'deferred runtime must not move an existing nav item');
+ for(const label of ['History','Geschichte','Historia','Histoire','Storia'])
+  assert.ok(bootstrap.includes("'"+label+"'"),'first paint includes translation '+label);
+ const css=readFileSync(new URL('../assets/sidebar-evolution.css',import.meta.url),'utf8');
+ assert.match(css,/@media\(max-width:720px\)\{\.nav01-expand,\.nav01-children\{display:none!important\}\}/,
+  'mobile hides only the expandable submenu, not the primary History link');
 });

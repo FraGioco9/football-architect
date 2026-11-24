@@ -113,6 +113,7 @@
     "backend/tests/test_player_club_affiliation_migration.py": "migration",
     "backend/tests/test_player_numeric_ids_migration.py": "migration",
     "backend/tests/test_player_profile_migration.py": "migration",
+    "backend/tests/test_player_retirement_age_migration.py": "migration",
     "backend/tests/test_player_transfer_export_migration.py": "migration",
     "backend/tests/test_public_match_numbers_migration.py": "migration",
     "backend/tests/test_season_artifacts_migration.py": "migration",
@@ -225,6 +226,7 @@
     "tests/competition-manifest-v2.test.mjs": "site-node",
     "tests/competition-model.test.mjs": "site-node",
     "tests/competition-navigation.test.mjs": "site-node",
+    "tests/competition-rewards.test.mjs": "site-node",
     "tests/competition-overview-teams.test.mjs": "site-node",
     "tests/competition-preboot-tabs.test.mjs": "site-node",
     "tests/competition-rules-model.test.mjs": "site-node",
@@ -287,9 +289,14 @@
     "tests/perf-api-01-compare.test.mjs": "site-node",
     "tests/perf-api-01-requests.test.mjs": "site-node",
     "tests/player-detail.test.mjs": "site-node",
+    "tests/player-market-value-rounding.test.mjs": "site-node",
+    "tests/player-market-value.test.mjs": "site-node",
+    "tests/player-history-view.test.mjs": "site-node",
     "tests/player-safe-return-browser.mjs": "browser",
     "tests/player-tables-parity-532.test.mjs": "site-node",
     "tests/players-directory.test.mjs": "site-node",
+    "tests/transfers-discovery.test.mjs": "site-node",
+    "tests/transfers-page.test.mjs": "site-node",
     "tests/players-generator-runtime-parity.test.mjs": "site-node",
     "tests/match-detail.test.mjs": "site-node",
     "tests/match-player-statistics.test.mjs": "site-node",
@@ -389,6 +396,11 @@
     "tests/match-mvp-v1.test.mjs": "site-node",
     "tests/player-mvp-aggregation.test.mjs": "site-node",
     "tests/ci-browser-timing.test.mjs": "site-node",
-    "tests/public-image-urls.test.mjs": "site-node"
+    "tests/public-image-urls.test.mjs": "site-node",
+    "backend/tests/public-world-history-projection.test.ts": "backend-contract",
+    "tests/world-history-page.test.mjs": "site-node",
+    "backend/tests/club-licenses-runtime.test.ts": "backend-runtime",
+    "backend/tests/economic-ledger-runtime.test.ts": "backend-runtime",
+    "backend/tests/test_economic_ledger_migration.py": "migration"
   }
 }

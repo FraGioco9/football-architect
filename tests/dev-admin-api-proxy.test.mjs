@@ -419,3 +419,101 @@ test('MATCH-SLOTS: local DEV proxies numeric match IDs and published fixtures, b
   await Promise.all([new Promise(resolve=>server.close(resolve)),new Promise(resolve=>upstream.close(resolve))]);
  }
 });
+
+
+test('#581 World History local bridge forwards only anonymous canonical GET without credentials',async()=>{
+ const seen=[];
+ const upstream=createServer((r,res)=>{
+  seen.push({path:r.url,method:r.method,cookie:r.headers.cookie,origin:r.headers.origin,csrf:r.headers['x-csrf-token']});
+  res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['private=unsafe']});
+  res.end(JSON.stringify({schemaVersion:1,providerId:'authoritative-world-history',status:'empty',seasons:[]}));
+ });
+ upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const target='http://127.0.0.1:'+upstream.address().port;
+ const bridge=createServer((r,res)=>proxyAdminApi(r,res,{target}));
+ bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ const send=(path,method='GET')=>new Promise((resolve,reject)=>{
+  const r=request({hostname:'127.0.0.1',port:bridge.address().port,path,method,
+   headers:{Host:'app.localhost:2000',Cookie:'operator=private','X-CSRF-Token':'private'}},res=>{
+    let body='';res.on('data',chunk=>body+=chunk);
+    res.on('end',()=>resolve({status:res.statusCode,body,cookie:res.headers['set-cookie']}));
+   });r.on('error',reject);r.end();
+ });
+ try{
+  const ok=await send('/api/world/history');
+  assert.equal(ok.status,200);assert.equal(JSON.parse(ok.body).status,'empty');
+  assert.equal(ok.cookie,undefined);
+  assert.deepEqual(seen,[{path:'/api/world/history',method:'GET',cookie:undefined,origin:undefined,csrf:undefined}]);
+  assert.equal((await send('/api/world/history','POST')).status,405);
+  assert.equal((await send('/api/world/history?season=1')).status,403);
+  assert.equal((await send('/api/world/history/extra')).status,404);
+  assert.equal((await send('/api/world/history%2F')).status,403);
+  assert.equal(seen.length,1,'unsafe and private requests never reach the Worker');
+ }finally{
+  bridge.closeAllConnections();upstream.closeAllConnections();
+  await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);
+ }
+});
+
+
+test('club licenses proxy forwards only protected canonical reads, account lookups and writes',async()=>{
+ const seen=[];
+ const upstream=createServer(async(r,res)=>{
+  const parts=[];for await(const chunk of r)parts.push(chunk);
+  const body=Buffer.concat(parts).toString('utf8');
+  seen.push({url:r.url,method:r.method,origin:r.headers.origin,cookie:r.headers.cookie,
+   csrf:r.headers['x-csrf-token'],body});
+  const payload=r.url==='/api/admin/club-licenses'
+   ?{clubs:Array.from({length:320},(_,i)=>({clubKey:'IT-'+(i+1),accountEmail:'x'.repeat(220)})),history:[]}
+   :r.url?.includes('/accounts?q=')?{accounts:[{id:'fixture-account',email:'alice@example.invalid'}]}:{ok:true};
+  res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(payload));
+ });
+ upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const bridge=createServer((r,res)=>proxyAdminApi(r,res,{target:'http://127.0.0.1:'+upstream.address().port}));
+ bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ const send=(path,method='GET')=>new Promise((resolve,reject)=>{
+  const headers={Host:'app.localhost:2000',Cookie:'fa_player_local=fixture'};
+  if(method==='POST'){headers.Origin='http://app.localhost:2000';headers['Content-Type']='application/json';headers['X-CSRF-Token']='fixture-csrf'}
+  const requestBody=method==='POST'?JSON.stringify({clubKey:'IT-1',accountId:'fixture-account',expectedAccountId:null,expectedVersion:0}):undefined;
+  const r=request({hostname:'127.0.0.1',port:bridge.address().port,path,method,headers},res=>{
+   const parts=[];res.on('data',x=>parts.push(x));res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(parts).toString('utf8')}));
+  });r.on('error',reject);r.end(requestBody);
+ });
+ try{
+  const list=await send('/api/admin/club-licenses');
+  assert.equal(list.status,200);
+  assert.equal(JSON.parse(list.body).clubs.length,320,'320-club payload must fit the protected size cap');
+  assert.ok(Buffer.byteLength(list.body)>65536,'assert the test actually covers the raised response size cap');
+  for(const q of ['alice%40example.invalid','Fran%C3%A7ois','a%26b','sam%2Bclub']){
+   const result=await send('/api/admin/club-licenses/accounts?q='+q);
+   assert.equal(result.status,200,q);assert.equal(JSON.parse(result.body).accounts.length,1);
+  }
+  const write=await send('/api/admin/club-licenses','POST');
+  assert.equal(write.status,200);
+  assert.equal(seen.length,6);
+  assert.ok(seen.every(x=>x.cookie==='fa_player_local=fixture'),'all routes remain protected');
+  assert.equal(seen.at(-1).origin,'http://app.localhost:2000');
+  assert.equal(seen.at(-1).csrf,'fixture-csrf');
+  assert.deepEqual(JSON.parse(seen.at(-1).body),{clubKey:'IT-1',accountId:'fixture-account',expectedAccountId:null,expectedVersion:0});
+  for(const bad of [
+   '/api/admin/club-licenses?extra=1',
+   '/api/admin/club-licenses/accounts?q=a',
+   '/api/admin/club-licenses/accounts?q=ab&q=cd',
+   '/api/admin/club-licenses/accounts?q=ab%00cd',
+   '/api/admin/club-licenses/accounts?q=ab%2fcd',
+   '/api/admin/club-licenses/accounts?q=%61bc',
+   '/api/admin/club-licenses/accounts?q=ab%zz',
+   '/api/admin/club-licenses/accounts?q=ab/../../world'
+  ])assert.equal((await send(bad)).status,403,bad);
+  assert.equal((await send('/api/admin/club-licenses','PUT')).status,405);
+  assert.equal((await send('/api/admin/club-licenses/accounts','POST')).status,405);
+  const denied=response();
+  await proxyAdminApi(req('/api/admin/club-licenses','192.168.1.50','app.localhost:2000'),denied,
+   {target:'http://127.0.0.1:'+upstream.address().port,lanEnabled:true,lanHosts:['192.168.1.50']});
+  assert.equal(denied.status,403,'never expose licenses to LAN');
+  assert.equal(seen.length,6,'invalid or unauthenticated paths do not reach the Worker');
+ }finally{
+  bridge.closeAllConnections();upstream.closeAllConnections();
+  await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);
+ }
+});

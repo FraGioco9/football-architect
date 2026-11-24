@@ -147,14 +147,31 @@
     if(text!==undefined)node.textContent=String(text);
     return node;
   }
+  // History spans multiple seasons: the viewed season's participants are not
+  // necessarily the clubs credited with historical player records.
+  const archivedClubNames=new Map();
+  function indexHistoricalClubs(seasons){
+    archivedClubNames.clear();
+    for(const season of seasons){
+      for(const row of season.teams||[]){
+        const club=row?.club;
+        if(!club||typeof club.primaryName!=="string"||!club.primaryName.trim()||
+          typeof club.countryId!=="string"||!Number.isSafeInteger(club.clubId))continue;
+        archivedClubNames.set(club.countryId+"-"+club.clubId,club.primaryName);
+      }
+    }
+  }
   function clubName(id){
+    const archived=archivedClubNames.get(id);
+    if(archived)return archived;
     const context=window.faCompetitionContext;
-    const clubs=context?.seasonData?.participants||(context?.definition.category==='domestic'?window.faCompetitionDivision?.clubs:[])||[];
+    const clubs=context?.seasonData?.participants||
+      (context?.definition?.category==='domestic'?window.faCompetitionDivision?.clubs:[])||[];
     return clubs.find(club=>club.countryId+'-'+club.clubId===id)?.primaryName||null;
   }
   function clubLink(id,name=clubName(id)){
     const [country,number]=id.split("-");
-    const link=element("a","app-world-standing-club-link",name||id);
+    const link=element("a","app-world-standing-club-link",name||locale().unknown);
     link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:country.toLowerCase(),id:number,view:"overview"});
     return link;
   }
@@ -196,7 +213,7 @@
   function render(){
     const context=window.faCompetitionContext;
     const clubs=context?.seasonData?.participants||(context?.definition?.category==='domestic'?window.faCompetitionDivision?.clubs:[])||[];
-    const presentation=JSON.stringify([document.documentElement.lang,partial,results,clubs.map(c=>[c.countryId,c.clubId,c.primaryName])]);
+    const presentation=JSON.stringify([document.documentElement.lang,partial,results,clubs.map(c=>[c.countryId,c.clubId,c.primaryName]),[...archivedClubNames]]);
     const cards=[...panel.querySelectorAll("[data-history-player-record]")];
     if(presentation===previousPresentation&&previousCards?.length===cards.length&&
       previousCards.every((card,index)=>card===cards[index])){window.faAppRenderLanguage?.();return;}
@@ -418,8 +435,9 @@
   window.faHistoryPlayerRecords=Object.freeze({
     // The caller must supply approved, complete canonical player statistics.
     // The existing DEV fixture generator contains no player-level statistics.
-    applyCanonicalHistory(payload){const checked=compute(payload);results=checked;render();},
+    applyCanonicalHistory(payload){const checked=compute(payload);archivedClubNames.clear();results=checked;render();},
     applyRecordSeasons(seasons){
+      indexHistoricalClubs(seasons);
       results={};
       partial=seasons.some(s=>s.playerCoverage===false||!Array.isArray(s.players));
       const mvpComplete=seasons.length>0&&seasons.every(s=>s.playerCoverage!==false&&
@@ -453,7 +471,7 @@
       }
       render();
     },
-    clear(){partial=false;results=null;render();}
+    clear(){archivedClubNames.clear();partial=false;results=null;render();}
   });
   render();
 })();

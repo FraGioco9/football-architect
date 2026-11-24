@@ -23,7 +23,7 @@ test('#733 Player Detail derives published club crests from stable IDs',()=>{
  ])assert.equal(resolve(id,registry),null,'invalid or unpublished crest: '+id);
  assert.match(source,/const crest=verifiedClubCrest\(key,clubCatalog\.clubCrests\)/);
  assert.equal((source.match(/clubCrest:key=>verifiedClubCrest\(key,crests\)/g)||[]).length,2,
-  'Stats and Matches must use the same ID/registry guard');
+  'Stats and Matches must use the same ID/registry guard; History no longer renders matches');
 });
 
 test('#502 persisted and protected preview detail routes are canonical and statically publishable',()=>{
@@ -37,7 +37,7 @@ test('#502 persisted and protected preview detail routes are canonical and stati
  assert.equal(publicRequestFile('/players/42/'),'players/_shared/index.html');
  assert.equal(parseRoute('/admin/players/preview/player')?.kind,'page');
  assert.equal(publicRequestFile('/admin/players/preview/player'),'admin/players/preview/player/index.html');
- for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html','assets/player-detail.js','assets/player-detail.css'])
+ for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html','assets/player-detail.js','assets/player-detail.css','assets/player-history.mjs'])
   assert.equal(isAllowlistedPublicPath(file),true,file);
  const published=planPublicFiles();
  assert.ok(published.includes('players/_shared/index.html'));
@@ -88,7 +88,7 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.match(html,/data-detail-pitch-markers/);
   assert.match(html,/class="app-player-detail-silhouette"/);
   for(const view of ['overview','info','stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"'));
-  for(const view of (mode==='preview'?['stats','history','progression']:['history','progression']))assert.match(html,new RegExp('data-detail-view="'+view+'"[^>]* disabled aria-disabled="true"'));
+  for(const view of (mode==='preview'?['stats','history','progression']:['progression']))assert.match(html,new RegExp('data-detail-view="'+view+'"[^>]* disabled aria-disabled="true"'));
   if(mode==='public'){
    assert.match(html,/data-detail-view="stats"[^>]*aria-controls="player-detail-stats-panel"/);
    assert.match(html,/data-detail-view="matches"[^>]*aria-controls="player-detail-matches-panel"/);
@@ -103,7 +103,7 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.match(html,/data-detail-positions aria-labelledby="player-detail-positions-title"/);
   assert.match(html,/<h2 id="player-detail-positions-title" data-detail-section-title="positions">Positions<\/h2>/);
   assert.match(html,/data-detail-status role="status" aria-live="polite" hidden/);
-  assert.equal((html.match(/data-detail-panel="/g)||[]).length,mode==="public"?4:2);
+  assert.equal((html.match(/data-detail-panel="/g)||[]).length,mode==="public"?5:2);
   assert.match(html,/data-detail-view="info"[^>]*aria-controls="player-detail-info-panel"/);
   for(const group of ['technical','mental','physical','goalkeeping'])assert.match(html,new RegExp('data-detail-attribute-group="'+group+'"'));
   assert.doesNotMatch(html,/data-players-filter-open|data-admin-players-confirmation/);
@@ -827,4 +827,58 @@ test('#578 verified Player Stats score position is set before any table fetch',(
  assert.ok(js.indexOf('syncStatsScoreLabel();')<js.indexOf("if(view==='stats')void ensurePlayerStats()"));
  assert.doesNotMatch(html,/data-detail-stats-heading="5">Gls<\/th>/);
  assert.match(html,/data-detail-stats-heading="5" aria-label="Goals or clean sheets"/);
+});
+
+test('#763 public header groups the club and market value into separate equal-width blocks',()=>{
+ const html=read('players/_shared/index.html'),preview=read('admin/players/preview/player/index.html');
+ const css=read('assets/player-detail.css'),js=read('assets/player-detail.js');
+ const header=html.slice(html.indexOf('<header class="app-player-detail-heading">'),html.indexOf('</header>',html.indexOf('<header class="app-player-detail-heading">')));
+ const identity=header.indexOf('data-detail-subtitle'),panels=header.indexOf('class="app-player-detail-header-panels"'),club=header.indexOf('class="app-player-detail-affiliation"'),value=header.indexOf('class="app-player-detail-market-value"');
+ assert.ok(identity>=0&&identity<panels&&panels<value&&value<club);
+ assert.equal((header.match(/data-detail-market-value/g)||[]).length,1);
+ assert.match(header,/data-detail-market-value><span class="app-skeleton-bar app-player-detail-market-skeleton" aria-hidden="true"><\/span>/);
+ const previewHeader=preview.slice(preview.indexOf('<header class="app-player-detail-heading">'),preview.indexOf('</header>',preview.indexOf('<header class="app-player-detail-heading">')));
+ const previewPanels=previewHeader.indexOf('class="app-player-detail-header-panels"'),previewValue=previewHeader.indexOf('class="app-player-detail-market-value"'),previewClub=previewHeader.indexOf('class="app-player-detail-affiliation"'),previewBack=previewHeader.indexOf('data-detail-back');
+ assert.ok(previewPanels>=0&&previewPanels<previewValue&&previewValue<previewClub&&previewClub<previewBack);
+ assert.equal((previewHeader.match(/data-detail-market-value/g)||[]).length,1);
+ assert.match(previewHeader,/data-detail-market-value><span class="app-skeleton-bar app-player-detail-market-skeleton" aria-hidden="true"><\/span>/);
+ assert.match(preview,/data-player-detail-mode="preview" hidden/);
+ assert.equal(renderPlayerDetailPage(read('admin/players/preview/index.html'),'preview'),preview);
+ assert.match(css,/\.app-player-detail-header-panels\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.app-player-detail-market-value::before\{[^}]*height:126px;background:var\(--line\)/);
+ assert.match(css,/\.app-player-detail-header-panels>\.app-player-detail-affiliation::before\{display:block;height:80px\}/);
+ assert.match(css,/\.app-player-detail-market-value\{grid-column:1;grid-row:1/);
+ assert.match(css,/\.app-player-detail-header-panels>\.app-player-detail-affiliation\{grid-column:2;grid-row:1/);
+ assert.match(css,/\.app-player-detail-header-panels\{grid-column:1;grid-row:3;min-height:116px\}/);
+ assert.match(js,/marketValue\.replaceChildren\(skeleton\('app-player-detail-market-skeleton'\)\)/);
+ assert.equal(renderPlayerDetailPage(read('players/index.html'),'public'),html);
+});
+
+test('#763 header reserves wider panels and identical club skeleton and loaded tracks',()=>{
+ const css=read('assets/player-detail.css'),js=read('assets/player-detail.js'),html=read('players/_shared/index.html');
+ const part=css.slice(css.indexOf('/* #763: give both public header panels'));
+ assert.match(part,/\.app-player-detail-header-panels\{[^}]*flex:0 0 clamp\(500px,50%,600px\)/);
+ assert.match(part,/@container player-detail-header \(max-width:1000px\)/);
+ const shared=/\.app-player-detail-header-panels :is\(\.app-player-detail-club-stack,\.app-player-detail-club-loading\)\{([^}]+)\}/g;
+ const rules=[...part.matchAll(shared)].map(m=>m[1]);
+ assert.equal(rules.length,3);
+ assert.match(rules[0],/grid-template-rows:72px minmax\(42px,auto\);[^}]*gap:8px/);
+ assert.match(rules[1],/grid-template-rows:48px minmax\(38px,auto\);gap:5px/);
+ assert.match(rules[2],/grid-template-rows:48px minmax\(57px,auto\)/);
+ assert.match(part,/\.app-player-detail-header-panels \.app-player-detail-club-name-skeleton\{width:180px;max-width:100%;height:16px;margin:0\}/);
+ assert.match(part,/\.app-player-detail-market-skeleton\{[^}]*width:12ch;max-width:100%;height:\.9em/);
+ assert.match(part,/\.app-player-detail-market-amount\{[^}]*min-height:56px/);
+ assert.match(part,/\.app-player-detail-market-amount\{font-size:16px;min-height:40px\}/);
+ assert.match(js,/marketValue\.replaceChildren\(skeleton\('app-player-detail-market-skeleton'\)\)/);
+ assert.match(html,/data-detail-market-value><span class="app-skeleton-bar app-player-detail-market-skeleton"/);
+ assert.match(html,/app-player-detail-club-loading" aria-hidden="true"><span class="app-skeleton-bar app-player-detail-club-logo-skeleton"><\/span><span class="app-skeleton-bar app-player-detail-club-name-skeleton"/);
+ for(const width of [1001,1100,1280,1440,1920]){
+  const group=Math.min(600,Math.max(500,width/2));
+  assert.ok(width-190-36-group>=250,'identity width '+width);
+  assert.ok(group/2-20>=230,'public panel width '+width);
+ }
+ for(const width of [320,375,390,430,620]){
+  const content=width-(width<=390?52:58)-32;
+  assert.ok(content/2-8>=110,'mobile panel width '+width);
+ }
 });

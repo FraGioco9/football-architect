@@ -120,8 +120,8 @@ const TYPES = {
   ".png": "image/png",
   ".webp": "image/webp"
 };
-const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
-const CUP_DETAIL = /^\/competitions\/(int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/;
+const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|rewards|teams|index\.html)?)?$/;
+const CUP_DETAIL = /^\/competitions\/(int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|rewards|index\.html)?)?$/;
 const DEV_SEASONS = DEBUG_SEASONS; // Shared fictional DEV/Debug catalogue; never official history.
 const defaultDevSeason = "1";
 const INJECT = [
@@ -177,7 +177,7 @@ function rewriteLocalAppShellLinks(body,enabled){
     '";document.documentElement.dataset.faDevSiteOrigin="'+siteOrigin+'"</script>';
   return Buffer.from(body.toString("utf8").replace("</head>",config+"\n</head>")
     .replace(/(\bhref=")([^"#]+)(")/g,(all,prefix,href,quote)=>{
-      if(/^\/(?:account|dashboard|calendar|settings|admin|competitions|players|clubs|matches)(?:[/?#]|$)/.test(href))
+      if(/^\/(?:account|dashboard|calendar|settings|admin|competitions|players|clubs|matches|history)(?:[/?#]|$)/.test(href))
         return prefix+appOrigin+href+quote;
       if(href==="/"||/^\/guide(?:[/?#]|$)/.test(href))
         return prefix+siteOrigin+(href==="/"? "":href)+quote;
@@ -322,10 +322,10 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       if(rootDivision){
         const query=req.url.includes("?")?req.url.slice(req.url.indexOf("?")):"";
         const legacy=new URLSearchParams(query);
-        const allowed=new Set(["standings","postseason","fixtures","stats","history","rules","awards"]);
+        const allowed=new Set(["standings","postseason","fixtures","stats","history","rules","awards","rewards"]);
         const next=allowed.has(legacy.get("view"))?legacy.get("view"):"overview";
         legacy.delete("view");
-        if(next==="history"||next==="rules")legacy.delete("matchday");
+        if(next==="history"||next==="rules"||next==="rewards")legacy.delete("matchday");
         const suffix=legacy.toString();
         res.writeHead(308,{"Location":buildRoute({kind:"competition",id:rootDivision[1],view:next})+(suffix?"?"+suffix:""),"Cache-Control":"no-store"});res.end();return;
       }
@@ -357,6 +357,12 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         type = TYPES[extname(file)];
         if (!type) return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});
         if(devPreview&&file==="clubs/_shared/index.html")body=Buffer.from(body.toString('utf8').replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
+        if(devPreview&&file==="history/index.html"){
+          // Protected Debug controls and fictional History projection only.
+          const scripts=DEBUG_MODE_BOOTSTRAP+DEBUG_SEASON_BOOTSTRAP+
+            '<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>';
+          body=Buffer.from(body.toString('utf8').replace('</head>',scripts+'\n</head>'),'utf8');
+        }
         if(devPreview&&file==="calendar/index.html"){
           // Inject only on the DEV server; never present these fictional days as official time.
           const bootstrap=DEBUG_MODE_BOOTSTRAP+'<script>if(window.faDebugEnabled===true)window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';

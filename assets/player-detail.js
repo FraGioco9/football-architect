@@ -42,12 +42,15 @@
   if(portraitImage.complete&&portraitImage.naturalWidth>0)portraitImage.onload();
  }
  const nameNode=panel.querySelector('[data-detail-name]'),roleNode=panel.querySelector('[data-detail-role]'),subtitle=panel.querySelector('[data-detail-subtitle]');
+ const marketLabel=panel.querySelector('[data-detail-market-label]'),marketValue=panel.querySelector('[data-detail-market-value]');
  const nationalityNode=panel.querySelector('[data-detail-header-nationality]'),ageNode=panel.querySelector('[data-detail-header-age]'),clubNode=panel.querySelector('[data-detail-club]');
  const back=preview?panel.querySelector('[data-detail-back]'):null,statusNode=panel.querySelector('[data-detail-status]');
  const views=[...panel.querySelectorAll('[data-detail-view]')];
  const viewBar=panel.querySelector('.app-player-detail-tabs');
  const statsHost=preview?null:panel.querySelector('[data-detail-stats]');
  const matchesHost=preview?null:panel.querySelector('[data-detail-matches]');
+ const historyHost=preview?null:panel.querySelector('[data-detail-history]');
+ let historyController=null,historyControllerPromise=null;
  let matchesController=null,matchesControllerPromise=null;
  let statsController=null,statsControllerPromise=null;
  // Safari does not consistently restore nested horizontal scroll on refresh.
@@ -117,7 +120,7 @@
  const numeric=value=>typeof value==='string'&&/^[1-9][0-9]*$/.test(value)&&Number.isSafeInteger(Number(value));
  const draftPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  const params=new URLSearchParams(location.search);
- let view=params.get('view')==='info'?'info':(!preview&&params.get('view')==='stats'?'stats':!preview&&params.get('view')==='matches'?'matches':'overview');
+ let view=params.get('view')==='info'?'info':(!preview&&params.get('view')==='stats'?'stats':!preview&&params.get('view')==='matches'?'matches':!preview&&params.get('view')==='history'?'history':'overview');
  const context={draftId:params.get('draftId'),index:params.get('index'),returnView:params.get('returnView'),returnGroup:params.get('returnGroup'),returnPage:params.get('returnPage'),returnScroll:params.get('returnScroll'),returnSort:params.get('returnSort'),returnOrder:params.get('returnOrder')};
  const idMatch=!preview&&/^\/players\/([1-9][0-9]*)$/.exec(location.pathname);
  const id=idMatch&&numeric(idMatch[1])?Number(idMatch[1]):null;
@@ -150,7 +153,7 @@
   if(Object.hasOwn(groups,context.returnGroup))hash.set('group',context.returnGroup);
   if(numeric(context.returnPage)&&Number(context.returnPage)<=1000)hash.set('page',context.returnPage);
   if(context.returnScroll&&/^(0|[1-9][0-9]{0,5})$/.test(context.returnScroll))hash.set('scroll',context.returnScroll);
-  if(context.returnSort&&['name','nationality','positions','age','height','foot',...attrKeys].includes(context.returnSort)){
+  if(context.returnSort&&['name','nationality','positions','age','height','foot','market_value_arc',...attrKeys].includes(context.returnSort)){
    hash.set('sort',context.returnSort);
    if(['asc','desc'].includes(context.returnOrder))hash.set('order',context.returnOrder);
   }
@@ -318,6 +321,13 @@
   for(const cell of statsHost.querySelectorAll('.app-player-stats-loading [data-metric="score"]'))
    cell.dataset.mobileLabel=label;
  }
+ let playerStatsRead=null;
+ function readPlayerStatistics(number){
+  if(!playerStatsRead)playerStatsRead=fetch('/api/players/'+number+'/stats',{credentials:'omit',cache:'no-store'})
+   .then(response=>{if(!response.ok)throw Error('player_stats_unavailable');return response.json();})
+   .catch(error=>{playerStatsRead=null;throw error;});
+  return playerStatsRead;
+ }
  function ensurePlayerStats(){
   if(preview||!statsHost||!id||!player||state!=='ready')return;
   if(statsController){statsController.render();void statsController.load();return;}
@@ -338,11 +348,7 @@
     locale:language,clubName:key=>labels?.get(key),
     clubCrest:key=>verifiedClubCrest(key,crests),
     competitionName:key=>competitionLookup?.({competitionId:key})?.competitions?.[0]?.name,
-    fetchStats:async number=>{
-     const response=await fetch('/api/players/'+number+'/stats',{credentials:'omit',cache:'no-store'});
-     if(!response.ok)throw Error('player_stats_unavailable');
-     return response.json();
-    }});
+    fetchStats:readPlayerStatistics});
    if(view==='stats')await statsController.load();
    else statsController.render();
   }).catch(()=>{
@@ -388,7 +394,34 @@
    matchesHost.setAttribute('aria-busy','false');
   }).finally(()=>{matchesControllerPromise=null});
  }
+ function ensurePlayerHistory(){
+  if(preview||!historyHost||!id||!player||state!=='ready')return;
+  if(historyController){historyController.render();void historyController.load();return;}
+  if(historyControllerPromise)return;
+  historyControllerPromise=import('/assets/player-history.mjs').then(async module=>{
+   if(!player||state!=='ready')return;
+   historyController=module.createPlayerHistoryView({
+    host:historyHost,id,locale:language,
+    // Signing has not been implemented: do not infer events from current affiliation.
+    fetchContracts:async number=>({schemaVersion:1,playerId:number,status:'not_supported',contracts:[]})
+   });
+   if(view==='history')await historyController.load();else historyController.render();
+  }).catch(()=>{
+   // Clear the initial skeleton even if the module fails to load.
+   historyHost.querySelector('[data-player-contract-rows]')?.replaceChildren();
+   const note=historyHost.querySelector('[data-player-contract-note]');
+   if(note){
+    const copy={en:'Signed contract history unavailable',de:'Vertragshistorie nicht verfügbar',
+     es:'Historial de contratos no disponible',fr:'Historique des contrats indisponible',
+     it:'Storico dei contratti non disponibile'};
+    note.textContent=copy[language()]||copy.en;note.hidden=false;
+   }
+   historyHost.setAttribute('aria-busy','false');
+  }).finally(()=>{historyControllerPromise=null});
+ }
  function render(){
+  if(marketLabel){marketLabel.textContent=globalThis.faMarketValue?.label(language())||'Market value';marketLabel.title=globalThis.faMarketValue?.help(language())||'Estimated remaining agent commissions (DRAFT benchmark)';}
+  if(marketValue&&state!=='loading')setContent(marketValue,globalThis.faMarketValue?.format(player?.market_value_arc,language())||'—');
   const copy=tr(),e=ex(),labels=(attrLabels[language()]||attrLabels.en).split('|');
   // Browser title depends on public entity identity, not the selected tab.
   const candidate=player&&(safeName(player.display_name)||safeName([player.first_name,player.last_name].filter(Boolean).join(' ')));
@@ -410,6 +443,7 @@
   syncStatsScoreLabel();
   if(view==='stats')void ensurePlayerStats();else statsController?.render();
   if(view==='matches')void ensurePlayerMatches();else matchesController?.render();
+  if(view==='history')void ensurePlayerHistory();else historyController?.render();
   for(const [key,label] of [['positions',e.positions],['info',e.info],['attributes',e.attributes]]){
    panel.querySelector('[data-detail-section-title="'+key+'"]').textContent=label;
   }
@@ -475,7 +509,7 @@
   if(!p||(p.preview_id!==undefined&&p.preview_id!=='trial-'+String(context.index).padStart(4,'0')))throw Error('expired');
   previewCommitted=draft.status==='committed';
   // Explicit public/detail projection. Never retain internal options or metadata.
-  const permitted=['first_name','last_name','display_name','nationality','secondary_nationality','age','height_cm','preferred_foot','primary_position','secondary_positions','career_status'];
+  const permitted=['first_name','last_name','display_name','nationality','secondary_nationality','age','height_cm','preferred_foot','primary_position','secondary_positions','career_status','market_value_arc'];
   const projected=Object.fromEntries(permitted.filter(k=>Object.hasOwn(p,k)).map(k=>[k,p[k]]));
   projected.attributes=Object.fromEntries(attrKeys.filter(k=>Number.isSafeInteger(p.attributes?.[k])).map(k=>[k,p.attributes[k]]));
   return projected;
@@ -494,6 +528,7 @@
   nationalitySkeleton.append(skeleton('app-player-detail-flag-skeleton'),skeleton('app-player-detail-nationality-skeleton'));
   nationalityNode.replaceChildren(nationalitySkeleton);
   ageNode.replaceChildren();
+  if(marketValue)marketValue.replaceChildren(skeleton('app-player-detail-market-skeleton'));
   renderClubSkeleton();
   subtitle.textContent='\u00a0';
   for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-attr-value]'))node.replaceChildren(skeleton());
@@ -510,6 +545,12 @@
    if(!data||typeof data!=='object'||typeof data.display_name!=='string')throw Error('error');
    player=data;selectedPosition=positionCodes()[0]||null;state='ready';
   }catch(error){if(ticket!==request)return;player=null;state=['denied','expired','not-found'].includes(error.message)?error.message:'error';}
+  // Protected preview details confirm Admin only after their live draft read.
+  if(preview&&(state==='ready'||state==='denied')){
+   const allowed=state==='ready';
+   window.faAdminAccess=allowed;
+   window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:allowed}));
+  }
   if(preview)root.hidden=false;render();resolvePortrait();
   if(!preview&&player?.clubKey)void resolveClubCatalog(ticket);
  }
@@ -518,7 +559,7 @@
   else url.searchParams.set('view',target);
  }
  function setView(next){
-  if(!['overview','info',...(preview?[]:['stats','matches'])].includes(next)||next===view)return;
+  if(!['overview','info',...(preview?[]:['stats','matches','history'])].includes(next)||next===view)return;
   view=next;
   const url=new URL(location.href);
   syncViewParam(url,next);
@@ -543,7 +584,7 @@
   if(url.pathname+url.search+url.hash!==current)
    history.replaceState(history.state,'',url.pathname+url.search+url.hash);
  }
- window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':(!preview&&new URLSearchParams(location.search).get('view')==='stats'?'stats':!preview&&new URLSearchParams(location.search).get('view')==='matches'?'matches':'overview');normalizeViewUrl();render();});
+ window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':(!preview&&new URLSearchParams(location.search).get('view')==='stats'?'stats':!preview&&new URLSearchParams(location.search).get('view')==='matches'?'matches':!preview&&new URLSearchParams(location.search).get('view')==='history'?'history':'overview');normalizeViewUrl();render();});
  window.addEventListener('pageshow',e=>{if(preview&&e.persisted)void load();});
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  normalizeViewUrl();render();void load();

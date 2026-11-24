@@ -77,6 +77,7 @@ test("ROUTE-02 / A03-04B: DEV redirects, supported views and security",async()=>
    ["/competitions/it-1?season=2&view=fixtures&matchday=7",308,"/competitions/it-1/fixtures?season=2&matchday=7"],
    ["/competitions/it-1?season=4&view=history&matchday=9",308,"/competitions/it-1/history?season=4"],
    ["/competitions/it-1?season=3&view=rules",308,"/competitions/it-1/rules?season=3"],
+   ["/competitions/it-1?season=2&view=rewards&matchday=7",308,"/competitions/it-1/rewards?season=2"],
    ["/competitions/it-1/fixtures/?season=2",308,"/competitions/it-1/fixtures?season=2"],
    ["/clubs/it/1?view=stats",308,"/clubs/it/1/records"],
    ["/clubs/it/1/records?season=2&matchday=7",308,"/clubs/it/1/records?season=2"],

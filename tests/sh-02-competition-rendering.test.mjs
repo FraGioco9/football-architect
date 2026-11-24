@@ -68,11 +68,11 @@ test('SH-02: keyed domestic/table identity reorders without rebuilding; changed 
  dom.keyed(host,[incoming,aa],row=>row.getAttribute('data-world-club'));
  assert.equal(host.children[0],incoming);assert.equal(host.children[1],a);
 });
-test('SH-02: all eighteen permanent shells still expose the seven view buttons and panels',()=>{
+test('SH-02: all eighteen permanent shells still expose the eight view buttons and panels',()=>{
  const categories=['br','de','eng','es','fr','it','nl','pt'].flatMap(country=>[country+'-1',country+'-2']).concat(['int-1','int-2']);
  for(const id of categories){
   const html=read('competitions/'+id+'/index.html');
-  for(const tab of ['standings','postseason','fixtures','stats','history','rules','awards']){
+  for(const tab of ['standings','postseason','fixtures','stats','history','rules','awards','rewards']){
    assert.ok(html.includes('id="competition-tab-'+tab+'"'),id+'/'+tab);
    assert.ok(html.includes('id="competition-panel-'+tab+'"'),id+'/'+tab);
   }

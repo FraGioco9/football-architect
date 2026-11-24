@@ -1,6 +1,6 @@
 // DEV-only browser enhancement injected in memory by the loopback server.
 // This file must never be copied into a public artifact or loaded by public HTML.
-import { competitionModel, DEBUG_MAX_MATCHDAY, createPreviewStandings, createPreviewPostseason, previewSeasonProgress, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday } from "./dev-standings-preview-data.mjs";
+import { competitionModel, DEBUG_MAX_MATCHDAY, createPreviewStandings, createPreviewPostseason, previewSeasonProgress, createPreviewHistory, readPreviewProgress, previewSeasonMatchdays, previewCurrentMatchday, createPreviewWorldHistory } from "./dev-standings-preview-data.mjs";
 import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 import { DEBUG_CONTROL_LIMITS } from "./dev-debug-config.mjs";
 import { createDevWorldClock, nationalProgress, DAY_KEY } from "./dev-world-clock.mjs";
@@ -151,7 +151,8 @@ const LANG = {
 const validPath = location.pathname.match(DETAIL);
 const clubPath=/^\/clubs\/(?:it|eng|es|de|fr|pt|nl|br)\/(?:[1-9]|[1-3][0-9]|40)\/(?:overview|roster|fixtures|stats|history)$/.test(location.pathname);
 // Index and cup routes use global Debug controls without domestic simulation.
-const indexPath=/^\/competitions(?:\/(?:index\.html)?)?$/.test(location.pathname)||/^\/competitions\/(?:int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/.test(location.pathname);
+const historyPath=/^\/history(?:\/(?:index\.html)?)?$/.test(location.pathname);
+const indexPath=historyPath||/^\/competitions(?:\/(?:index\.html)?)?$/.test(location.pathname)||/^\/competitions\/(?:int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/.test(location.pathname);
 let activePreview=null;
 let previewState="OFF";
 let widgetRoot;
@@ -442,6 +443,36 @@ function setPreviewEnabled(enabled) {
  return transition;
 }
 
+// World History consumes this protected, fictional projection separately from its
+// official archive fetch. Never modify the public API or fabricate INT cup winners.
+if(historyPath){
+ let historyToken=0,historyManifestPromise=null;
+ const publishHistory=detail=>window.dispatchEvent(new CustomEvent('fa:dev-world-history',{detail}));
+ async function refreshWorldHistory(){
+  const token=++historyToken;
+  if(!debugEnabled()){publishHistory(null);return}
+  const progress={season:debugSeason,matchdays};
+  try{
+   if(!historyManifestPromise)historyManifestPromise=fetch('/competitions/_shared/manifest.json',
+    {credentials:'same-origin',cache:'no-store'}).then(response=>{
+     if(!response.ok)throw Error('DEV History manifest unavailable');
+     return response.json();
+    }).catch(error=>{historyManifestPromise=null;throw error});
+   const manifest=await historyManifestPromise;
+   if(token!==historyToken||!debugEnabled())return;
+   publishHistory(createPreviewWorldHistory(manifest,progress));
+  }catch{
+   if(token===historyToken&&debugEnabled())publishHistory({source:'dev',error:true});
+  }
+ }
+ for(const event of ['fa:source-change','fa:dev-progress-change','fa:dev-world-day-change','fa:dev-world-history-retry','pageshow'])
+  window.addEventListener(event,refreshWorldHistory);
+ window.addEventListener('storage',event=>{
+  if(event.key?.startsWith('football-architect:'))void refreshWorldHistory();
+ });
+ void refreshWorldHistory();
+}
+
 const sharedPath=/^\/(?:dashboard|settings|calendar|clubs|players)(?:\/index\.html|\/)?$/.test(location.pathname);
 if(validPath||indexPath||clubPath||sharedPath){
  if(debugSeason===0){try{sessionStorage.removeItem(FLAG)}catch{}}
@@ -475,7 +506,8 @@ if(validPath||indexPath||clubPath||sharedPath){
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
-  if(validPath)waitForRows().then(()=>setPreviewEnabled(debugEnabled()&&debugSeason>0)).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
+  // Unconfirmed Season 0 intentionally has one empty row, not 16 club rows.
+  if(validPath&&debugSeason>0)waitForRows().then(()=>setPreviewEnabled(debugEnabled()&&debugSeason>0)).catch(error=>console.error("DEV initial hydration failed:",error)).finally(reveal);
   else reveal();
   let renderedSeason=renderKey();
   let seasonRefresh=Promise.resolve(true);

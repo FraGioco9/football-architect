@@ -209,6 +209,40 @@ test('Seasonal wins and all-time wins and goals keep distinct winners and tied i
  assert.deepEqual(result.totalWins,{value:40,clubs:[club(2),club(3)]});
  assert.deepEqual(result.totalGoals,{value:160,clubs:[club(2),club(3)]});
 });
+test('History player records resolve archived club names across seasons and countries',()=>{
+ const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
+ const start=source.indexOf('  const archivedClubNames=new Map();');
+ const end=source.indexOf('  function seasonLink(',start);
+ assert.ok(start>=0&&end>start,'Historical club lookup exists');
+ const window={
+  faCompetitionContext:{
+   definition:{category:'international'},
+   seasonData:{participants:[{countryId:'IT',clubId:1,primaryName:'Current entrant'}]}
+  },
+  faRoutesRegistry:{buildRoute:({country,id})=>'/clubs/'+country+'/'+id+'/overview'}
+ };
+ const helpers=runInNewContext('(()=>{'+source.slice(start,end)+
+  ';return {indexHistoricalClubs,clubName,clubLink};})()',{
+  window,locale:()=>({unknown:'Club unavailable'}),
+  element:(tag,className,textContent)=>({tag,className,textContent,href:null})
+ });
+ const archived={countryId:'DE',clubId:1,primaryName:'FC Münchner Freiheit'};
+ helpers.indexHistoricalClubs([
+  {season:1,teams:[{club:archived}]},
+  {season:2,teams:[{club:{countryId:'FR',clubId:3,primaryName:'Historic French club'}}]}
+ ]);
+ assert.equal(helpers.clubName('DE-1'),'FC Münchner Freiheit');
+ assert.equal(helpers.clubLink('DE-1').textContent,'FC Münchner Freiheit');
+ assert.equal(helpers.clubLink('DE-1').href,'/clubs/de/1/overview');
+ assert.equal(helpers.clubName('FR-3'),'Historic French club');
+ assert.equal(helpers.clubName('IT-1'),'Current entrant','Current-season entrants remain a fallback');
+ assert.equal(helpers.clubLink('ENG-33').textContent,'Club unavailable','Never expose a raw club ID');
+ helpers.indexHistoricalClubs([]);
+ assert.equal(helpers.clubName('DE-1'),null,'Old archive names are cleared when the history source changes');
+ assert.match(source,/\[\.\.\.archivedClubNames\]/,'Archive identity updates invalidate render caching');
+ assert.match(source,/applyRecordSeasons\(seasons\)\{\s*indexHistoricalClubs\(seasons\)/);
+ assert.match(source,/clear\(\)\{archivedClubNames\.clear\(\)/);
+});
 test('Public History shows a single empty message only for scopes without verified records',()=>{
  const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');
  const start=source.indexOf('// History record scope'),end=source.indexOf('/* HISTORY-UI-11',start);
@@ -499,7 +533,7 @@ test('Restoring debug waits for History before completing the first-paint releas
  const start=client.indexOf('let transition=Promise.resolve();'),end=client.indexOf('\nconst sharedPath=',start);
  let finishHistory,settled=false;
  const historyReady=new Promise(resolve=>{finishHistory=resolve});
- const context={previewState:'OFF',activePreview:null,validPath:['/competitions/it-1','it-1'],
+ const context={previewState:'OFF',activePreview:null,historyPath:false,validPath:['/competitions/it-1','it-1'],
   boot:async()=>()=>{},widgetRoot:{syncVisibility(){}},syncHistoryPreview:()=>historyReady,
   FLAG:'preview',sessionStorage:{setItem(){}},window:{dispatchEvent(){}},CustomEvent:class{},console};
  const toggle=runInNewContext(client.slice(start,end)+';setPreviewEnabled',context);

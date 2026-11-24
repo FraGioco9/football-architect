@@ -19,7 +19,7 @@ mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.CHROME_BIN?{executablePath:process.env.CHROME_BIN}:{})});
 const widths=[1440,768,390,320];
 const cups=["int-1","int-2"];
-const views=["standings","postseason","fixtures","stats","history","rules","awards"];
+const views=["standings","postseason","fixtures","stats","history","rules","awards","rewards"];
 const languages={en:"Standings",de:"Tabelle",es:"Clasificación",fr:"Classement",it:"Classifica"};
 let checks=0;
 let screenshots=0;
@@ -299,7 +299,7 @@ try {
     tabs:document.querySelectorAll(".app-competition-tabs [role=tab]").length,
     stats:document.querySelectorAll("#fa-dev-stats .fa-dev-stats-card").length
    }));
-   assert.deepEqual(actual,{id:slug,season:1,tabs:7,stats:3},"shared route "+slug);
+   assert.deepEqual(actual,{id:slug,season:1,tabs:8,stats:3},"shared route "+slug);
    // SH-02: activate Standings once before snapshotting its hydrated
    // crest host. The first transition from Stats may still mount data;
    // later navigation must preserve the stable DOM identity.
@@ -412,7 +412,7 @@ try {
    assert.ok(pending.title,'static competition identity '+route);
    assert.equal(pending.header,true,'visible title header '+route);
    assert.equal(pending.bodyVisible,true,'visible body before manifest '+route);
-   assert.equal(pending.tabs,7,'seven native tabs '+route);
+   assert.equal(pending.tabs,8,'eight native tabs '+route);
    assert.deepEqual(pending.selected,['competition-tab-'+view],'correct active view '+route);
    assert.equal(pending.panel,true,'selected panel shown before manifest '+route);
    assert.equal(pending.season,true,'season control from first paint '+route);
@@ -506,7 +506,7 @@ try {
     const valid=await page.evaluate(async()=>window.faCompetitionModel.validManifest(
       await window.faCompetitionManifestPromise));
     assert.equal(valid,true,'verified full rules after compact hydrate '+mode+' '+path);
-    assert.equal(await page.locator('.app-competition-tabs [role=tab]').count(),7);
+    assert.equal(await page.locator('.app-competition-tabs [role=tab]').count(),8);
     assert.equal(await page.locator('[data-competition-load-error]').count(),0);
    }
    assert.equal(requests.compact,2,'one compact fetch per document including hard refresh '+path);
@@ -550,7 +550,7 @@ try {
    },view);
    assert.ok(initial.title,'known competition title before manifest '+path);
    assert.equal(initial.header,true,'static header '+path);
-   assert.equal(initial.tabs,7,'seven native tabs '+path);
+   assert.equal(initial.tabs,8,'eight native tabs '+path);
    assert.deepEqual(initial.active,['competition-tab-'+view],'correct parser-time selection '+path);
    assert.equal(initial.panel,true,'visible selected panel '+path);
    assert.equal(initial.season,true,'permanent season selector '+path);
@@ -645,7 +645,7 @@ try {
   try{
    await page.goto(base+path,{waitUntil:'domcontentloaded'});
    await page.locator('[data-competition-load-error] [role=alert]').waitFor();
-   assert.equal(await page.locator('.app-competition-tabs [role=tab]').count(),7,'failed manifest retains seven tabs '+path);
+   assert.equal(await page.locator('.app-competition-tabs [role=tab]').count(),8,'failed manifest retains eight tabs '+path);
    assert.equal(await page.locator('#competition-tab-'+view).getAttribute('aria-selected'),'true','failed manifest retains active tab '+path);
    assert.equal(await page.locator('#competition-panel-'+view).count(),1,'failed manifest retains selected panel '+path);
    if(view==='rules')assert.ok(await page.locator('#competition-panel-rules [data-rule-definition]').count()>0,'canonical Rules survive manifest failure');
@@ -673,7 +673,7 @@ try {
     rows:document.querySelectorAll('#app-standings-body tr[data-world-club]').length,
     falseEmpty:!document.getElementById('app-fixtures-empty')?.hidden
    }));
-   assert.deepEqual(state,{shell:true,title:true,tabs:7,rows:0,falseEmpty:false},'confirmed failure leaves anonymous standings until catalog recovers: '+kind);
+   assert.deepEqual(state,{shell:true,title:true,tabs:8,rows:0,falseEmpty:false},'confirmed failure leaves anonymous standings until catalog recovers: '+kind);
    await page.unroute('**/competitions/_shared/compact.json',broken);
    await page.reload({waitUntil:"domcontentloaded"});
    await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1');
@@ -733,7 +733,7 @@ try {
  }
  await firstPaint.close();
  // Each cup has its own isolated Playwright page/context and distinct artifacts.
- // Keep widths and the seven direct routes serial *inside* each cup; allow
+ // Keep widths and the eight direct routes serial *inside* each cup; allow
  // at most two independent cups in flight to shorten this FULL critical path.
  const matrixStarted=performance.now();
  await runIndependentCupMatrix(cups,widths,async(cup,width)=>{
@@ -789,7 +789,7 @@ try {
    }
    assert.equal(await page.locator(".app-competition-header").count(),1);
    assert.equal(await page.locator("#division-detail-name").innerText(),cup==="int-1"?"Sovereign Cup":"Federation Cup");
-   assert.equal(await page.locator(".app-competition-tabs [role=tab]").count(),7);
+   assert.equal(await page.locator(".app-competition-tabs [role=tab]").count(),8);
    assert.equal(await page.locator("#app-competition-season").isVisible(),true);
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
    assert.equal(overflow,false,"horizontal overflow "+cup+" "+width+" "+view);
@@ -969,9 +969,27 @@ try {
   await page.waitForURL("**/postseason?season=1");
   assert.equal(await tabs.nth(1).evaluate(el=>document.activeElement===el),true);
   await page.keyboard.press("End");
-  await page.waitForURL("**/awards?season=1");
+  await page.waitForURL("**/rewards?season=1");
   await page.reload({waitUntil:"domcontentloaded"});
-  await page.locator("#competition-panel-awards").waitFor({state:"visible"});
+  await page.locator("#competition-panel-rewards").waitFor({state:"visible"});
+  const pointsToggle=page.locator('[data-reward-disclosure="points"]'),placementToggle=page.locator('[data-reward-disclosure="placement"]');
+  const pointsDetails=page.locator('[data-reward-detail="points"]'),placementDetails=page.locator('[data-reward-detail="placement"]');
+  assert.equal(await pointsToggle.getAttribute('aria-expanded'),'false');
+  assert.equal(await placementToggle.getAttribute('aria-expanded'),'false');
+  await pointsToggle.focus();await page.keyboard.press('Enter');
+  assert.equal(await pointsToggle.getAttribute('aria-expanded'),'true');
+  assert.equal(await pointsDetails.isVisible(),true);
+  assert.equal(await placementDetails.first().isVisible(),false);
+  await placementToggle.click();
+  assert.equal(await placementDetails.first().isVisible(),true);
+  assert.equal(await pointsDetails.isVisible(),true);
+  await pointsToggle.click();
+  assert.equal(await pointsDetails.isVisible(),false);
+  assert.equal(await placementDetails.first().isVisible(),true);
+  await placementToggle.focus();await page.keyboard.press('Space');
+  assert.equal(await placementToggle.getAttribute('aria-expanded'),'false');
+  assert.equal(await placementDetails.first().isVisible(),false);
+  checks+=8;
   await page.goBack({waitUntil:"domcontentloaded"});
   await page.locator("#competition-panel-postseason").waitFor({state:"visible"});
   checks++;
@@ -986,7 +1004,10 @@ try {
  // Season 0 scenarios explicitly opt into Debug before the first protected paint.
  await page.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
  const zeroErrors=[];page.on("pageerror",error=>zeroErrors.push(error.message));
- page.on("console",message=>{if(message.type()==="error")console.log("DEV browser console: "+message.text())});
+ page.on("console",message=>{if(message.type()==="error"){
+  console.log("DEV browser console: "+message.text());
+  if(message.text().includes("DEV initial hydration failed"))zeroErrors.push(message.text());
+ }});
  page.on("response",response=>{if(response.status()>=400)console.log("DEV HTTP "+response.status()+" "+response.url())});
  for(const route of ["/competitions/int-1/standings","/competitions/int-2/fixtures","/competitions/int-1/stats","/competitions/it-1/standings","/competitions/it-1/stats","/calendar","/clubs/it/1/overview"]){
   console.log("Season 0 QA route: "+route);
@@ -1127,6 +1148,12 @@ try {
   });
   await historyPage.goto(base+'/competitions/'+id.toLowerCase()+'/rules',{waitUntil:"domcontentloaded"});
   await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='2');
+  // The rules can render before the domestic DEV standings publisher finishes.
+  // Establish the baseline before injecting a historical snapshot so a pending
+  // initial publisher cannot repopulate the context after clearSeasonData().
+  if(id==='IT-1')await historyPage.waitForFunction(()=>
+   document.documentElement.dataset.faDevStandingsPending===undefined &&
+   window.faCompetitionContext?.seasonData?.season===1);
   const historical=await historyPage.evaluate(()=>{
    const context=window.faCompetitionContext,definition=context.definition;
    const snapshot=JSON.parse(JSON.stringify(definition.rules));snapshot.phases[0].points.win=3;

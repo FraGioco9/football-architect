@@ -1,0 +1,49 @@
+{
+  "version": "club-license-forecast-draft-v1",
+  "horizon": 5,
+  "longHorizon": 32,
+  "multiple": 3,
+  "arcPerEur": 100,
+  "minimumCents": 1000,
+  "roundingCents": 500,
+  "squadSize": 25,
+  "suitability": 65,
+  "versatility": 0.05,
+  "aiShare": 0.5,
+  "aiWageMultiplier": 1.125,
+  "staffArc": {
+    "1": 1200,
+    "2": 600
+  },
+  "costFactor": 1,
+  "genesisMinimumArc": {
+    "0": 500,
+    "1": 1000,
+    "2": 1000
+  },
+  "genesisStepArc": 100,
+  "genesisCoefficientCandidates": [
+    0,
+    0.25,
+    1
+  ],
+  "topRankWeights": [
+    3,
+    3,
+    3,
+    2,
+    2,
+    2,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "clubOverrides": {}
+}

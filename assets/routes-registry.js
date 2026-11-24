@@ -7,10 +7,10 @@
  'use strict';
 // ARCH-CLEAN-02 A03: pure route identities and canonical subpage helpers.
 const countries=Object.freeze(["it","eng","es","de","fr","pt","nl","br"]);
-const competitionViews=Object.freeze(["overview","standings","postseason","fixtures","stats","history","rules","awards","teams"]);
-const cupViews=Object.freeze(["standings","postseason","fixtures","stats","history","rules","awards"]);
+const competitionViews=Object.freeze(["overview","standings","postseason","fixtures","stats","history","rules","awards","rewards","teams"]);
+const cupViews=Object.freeze(["standings","postseason","fixtures","stats","history","rules","awards","rewards"]);
 const clubViews=Object.freeze(["overview","roster","fixtures","records","history"]);
-const pages=Object.freeze(["dashboard","calendar","settings","admin","admin/calendar","admin/players","admin/contracts","admin/players/preview","admin/players/preview/player","competitions","players","clubs","matches"]);
+const pages=Object.freeze(["dashboard","calendar","settings","admin","admin/calendar","admin/players","admin/contracts","admin/licenses","admin/rewards","admin/players/preview","admin/players/preview/player","competitions","players","clubs","matches","history","transfers"]);
 const country="(?:it|eng|es|de|fr|pt|nl|br)";
 const division=new RegExp("^/competitions/("+country+"-[12])(?:/([^/]+))?/?$");
 const cup=/^\/competitions\/(int-[12])(?:\/([^/]+))?\/?$/;

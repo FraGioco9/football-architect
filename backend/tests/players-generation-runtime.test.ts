@@ -1,3 +1,5 @@
+import {marketValueIndexVersion} from '../src/player-market-value-index.ts';
+import {calculatePlayerMarketValueArc} from '../src/player-market-value.mjs';
 import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
@@ -46,6 +48,12 @@ it('shows a server-generated preview but creates zero permanent players until ex
  expect(preview.candidates[0].nationality).toBe('ITA');
  expect(preview.candidates[0].primary_position).toBe('ST');
  expect(preview.candidates[0].id).toBeUndefined();
+ expect(preview.candidates[0].market_value_arc).toBe(calculatePlayerMarketValueArc(preview.candidates[0]));
+ expect(preview.candidates[0].market_value_arc).toBeGreaterThan(0);
+ const storedDraft=await db.prepare('SELECT candidates_json FROM player_generation_drafts WHERE id=?').bind(preview.draftId).first<{candidates_json:string}>();
+ expect(JSON.parse(storedDraft!.candidates_json)[0]).not.toHaveProperty('market_value_arc');
+ expect(preview.candidates[0].retirement_seed).toBeUndefined();
+ expect(preview.candidates[0].retirement_age).toBeUndefined();
  expect(preview.candidates[0].preview_id).toMatch(/^trial-[0-9]{4}$/);
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
  expect((await db.prepare('SELECT status,count FROM player_generation_drafts WHERE id=?').bind(preview.draftId).first())).toMatchObject({status:'preview',count:2});
@@ -56,6 +64,9 @@ it('shows a server-generated preview but creates zero permanent players until ex
  expect(refreshed.candidates[0]).toMatchObject({display_name:preview.candidates[0].display_name,age:preview.candidates[0].age,attributes:preview.candidates[0].attributes,preview_id:preview.candidates[0].preview_id});
  expect(refreshed.status).toBe('preview');
  expect(refreshed.candidates[0].id).toBeUndefined();
+ expect(refreshed.candidates[0].market_value_arc).toBe(preview.candidates[0].market_value_arc);
+ expect(refreshed.candidates[0].retirement_seed).toBeUndefined();
+ expect(refreshed.candidates[0].retirement_age).toBeUndefined();
  expect(refreshed.summary.seed).toBe(preview.summary.seed);
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
  expect((await request('/draft',{draftId:preview.draftId,unexpected:1})).status).toBe(422);
@@ -69,6 +80,8 @@ it('shows a server-generated preview but creates zero permanent players until ex
  const committedSnapshot=await committedRead.json() as any;
  expect(committedSnapshot.status).toBe('committed');
  expect(committedSnapshot.candidates).toEqual(refreshed.candidates);
+ expect(committedSnapshot.candidates[0].retirement_seed).toBeUndefined();
+ expect(committedSnapshot.candidates[0].retirement_age).toBeUndefined();
  expect(committedSnapshot.options.seed).toBe(preview.summary.seed);
  expect((await request('/commit',confirm)).status).toBe(200);
  const replay=await (await request('/commit',confirm)).json() as any;
@@ -76,6 +89,8 @@ it('shows a server-generated preview but creates zero permanent players until ex
  const records=(await db.prepare('SELECT id,payload_json,world_generation,entry_season FROM generated_players ORDER BY id').all<any>()).results;
  expect(records).toHaveLength(2);
  const actual=records.map(row=>JSON.parse(row.payload_json));
+ const index=(await db.prepare('SELECT player_id,config_version,market_value_arc FROM player_market_values ORDER BY player_id').all<{player_id:number;config_version:string;market_value_arc:number|null}>()).results;
+ expect(index).toEqual(await Promise.all(records.map(async (row,i)=>({player_id:row.id,config_version:await marketValueIndexVersion(),market_value_arc:calculatePlayerMarketValueArc(actual[i])}))));
  expect(records.every(row=>Number.isSafeInteger(row.id)&&row.id>0)).toBe(true);
  expect(records[1].id).toBe(records[0].id+1);
  for(const [i,row] of actual.entries()){
@@ -83,11 +98,25 @@ it('shows a server-generated preview but creates zero permanent players until ex
   expect(row).toMatchObject({id:records[i].id,first_name:item.first_name,last_name:item.last_name,
    age:item.initial_age,career_status:'active',primary_position:'ST',nationality:'ITA'});
   expect(typeof row.id).toBe('number');
+  expect(Number.isInteger(row.retirement_age)).toBe(true);
+  expect(row.retirement_age).toBeGreaterThanOrEqual(33);
+  expect(row.retirement_age).toBeLessThanOrEqual(40);
+  expect(row).not.toHaveProperty('retirement_seed');
+  const keys=Object.keys(row);
+  expect(keys[keys.indexOf('age')+1]).toBe('retirement_age');
+  expect(keys.filter(k=>k!=='retirement_age')).toEqual([...Object.keys(item).filter(k=>k!=='preview_id'&&k!=='market_value_arc'),'id']);
+  expect(item).not.toHaveProperty('retirement_age');
   expect('preview_id' in row).toBe(false);
  }
+
  expect(records.every(row=>row.world_generation===oldWorld.generation&&row.entry_season===oldWorld.seasonNumber)).toBe(true);
  const read=await (await request('')).json() as any;
  expect(read.count).toBe(2);
+ for(const p of read.players){
+  expect(p).not.toHaveProperty('retirement_age');
+  expect(p).not.toHaveProperty('retirement_seed');
+ }
+ expect((await db.prepare('SELECT payload_json FROM generated_players ORDER BY id').all<any>()).results.map((r:any)=>JSON.parse(r.payload_json))).toEqual(actual);
  expect(read.players.map((p:any)=>p.id).sort()).toEqual(actual.map((p:any)=>p.id).sort());
  expect(await readWorld(db)).toEqual(oldWorld);
 });
@@ -204,7 +233,7 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
   expect(player.secondary_nationality===null||typeof player.secondary_nationality==='string').toBe(true);
   expect(Object.keys(player.attributes)).toHaveLength(20);
   for(const value of Object.values(player.attributes) as number[])expect(Number.isInteger(value)&&value>=1&&value<=99).toBe(true);
-  for(const privateField of ['initial_age','development_aptitude','batch_id','seed','preview_id','identity_sources']){
+  for(const privateField of ['initial_age','development_aptitude','retirement_seed','retirement_age','batch_id','seed','preview_id','identity_sources']){
    expect(player).not.toHaveProperty(privateField);
   }
  }
@@ -385,3 +414,4 @@ it('sorting all generated Players is stable across pages, not limited to the 50 
   expect(response.data).toMatchObject({error:{code:'invalid_public_request'}});
  }
 });
+

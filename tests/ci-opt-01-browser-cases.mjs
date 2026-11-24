@@ -1,6 +1,12 @@
 // Pairwise coverage, not a Cartesian matrix or physical Safari certification.
 import assert from 'node:assert/strict';
 export const areaRoutes=Object.freeze({calendar:'/calendar',clubs:'/clubs/it/1/overview',competitions:'/competitions/it-1/standings',guide:'/guide',admin:'/admin'});
+// Only Chromium FULL preflight may reuse the two identical, already completed
+// INT24 supplemental checks. Ordinary TARGETED and all WebKit runs retain them.
+export function competitionSupplementalPlan(area,engine,{afterInt24=false}={}){
+ assert.ok(!afterInt24||(area==='competitions'&&engine==='chromium'),'INT24 reuse requires Chromium competition preflight');
+ return afterInt24?['published-network']:['compact-network','player-stats','published-network'];
+}
 export function browserCases(){
  return ['en','de','es','fr','it'].flatMap((language,i)=>[320,390,768,1440].map((width,j)=>{
   const theme=['dark','light'][(i+j)%2];

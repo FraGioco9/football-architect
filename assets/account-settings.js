@@ -116,6 +116,7 @@ const post=async(path,body)=>{const r=await fetch(path,{method:'POST',credential
 function redirectToLogin(){
  try{
   window.sessionStorage.removeItem('fa:admin:permissions:v1');
+   window.sessionStorage.removeItem('fa:admin:nav-visible:v1');
   window.sessionStorage.setItem('fa:player:anonymous:v1','1');
   window.sessionStorage.setItem('fa:player:skip-login-session-probe:v1','1');
  }catch{/* storage disabled */}

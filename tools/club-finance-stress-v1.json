@@ -1,0 +1,137 @@
+{
+  "version": "club-finance-stress-draft-v1",
+  "seasons": 32,
+  "seeds": [
+    769,
+    1770,
+    2771
+  ],
+  "agents": 256,
+  "slots": 25,
+  "annualReplacements": 2,
+  "initialReserveArc": 2400000,
+  "initialPersonalArc": 0,
+  "academyCandidates": 768,
+  "academyPriceArc": [
+    200,
+    1100,
+    3200
+  ],
+  "academyPriceWeights": [
+    0.25,
+    0.5,
+    0.25
+  ],
+  "initialWageSkills": [
+    55,
+    60,
+    65,
+    70,
+    75
+  ],
+  "staffArc": {
+    "1": 1200,
+    "2": 600
+  },
+  "scenarios": [
+    {
+      "name": "ordinary",
+      "humanShare": 0.5,
+      "annualCapArc": 2400000,
+      "attempts": 3,
+      "eurBudgetCents": 1500,
+      "genesisFactor": 1,
+      "costFactor": 1,
+      "licenseSalesPerSeason": 0,
+      "capitalEurCents": 0
+    },
+    {
+      "name": "all-ai",
+      "humanShare": 0,
+      "annualCapArc": 2400000,
+      "attempts": 0,
+      "eurBudgetCents": 0,
+      "genesisFactor": 1,
+      "costFactor": 1,
+      "licenseSalesPerSeason": 0,
+      "capitalEurCents": 0
+    },
+    {
+      "name": "all-human-opening",
+      "humanShare": 1,
+      "annualCapArc": 2400000,
+      "attempts": 3,
+      "eurBudgetCents": 1500,
+      "genesisFactor": 1,
+      "costFactor": 1,
+      "licenseSalesPerSeason": 0,
+      "capitalEurCents": 0
+    },
+    {
+      "name": "low-demand",
+      "humanShare": 0.5,
+      "annualCapArc": 2400000,
+      "attempts": 1,
+      "eurBudgetCents": 0,
+      "genesisFactor": 1,
+      "costFactor": 1,
+      "licenseSalesPerSeason": 0,
+      "capitalEurCents": 0
+    },
+    {
+      "name": "high-cost",
+      "humanShare": 0.5,
+      "annualCapArc": 2400000,
+      "attempts": 3,
+      "eurBudgetCents": 1500,
+      "genesisFactor": 1,
+      "costFactor": 2,
+      "licenseSalesPerSeason": 0,
+      "capitalEurCents": 0
+    },
+    {
+      "name": "cap-1800k",
+      "humanShare": 0.5,
+      "annualCapArc": 1800000,
+      "attempts": 3,
+      "eurBudgetCents": 1500,
+      "genesisFactor": 1,
+      "costFactor": 1,
+      "licenseSalesPerSeason": 0,
+      "capitalEurCents": 0
+    },
+    {
+      "name": "cap-1200k",
+      "humanShare": 0.5,
+      "annualCapArc": 1200000,
+      "attempts": 3,
+      "eurBudgetCents": 1500,
+      "genesisFactor": 1,
+      "costFactor": 1,
+      "licenseSalesPerSeason": 0,
+      "capitalEurCents": 0
+    },
+    {
+      "name": "license-capital",
+      "humanShare": 0.5,
+      "annualCapArc": 2400000,
+      "attempts": 3,
+      "eurBudgetCents": 1500,
+      "genesisFactor": 1,
+      "costFactor": 1,
+      "licenseSalesPerSeason": 20,
+      "capitalEurCents": 2000
+    },
+    {
+      "name": "half-genesis-high-cost",
+      "humanShare": 0.5,
+      "annualCapArc": 2400000,
+      "attempts": 3,
+      "eurBudgetCents": 1500,
+      "genesisFactor": 0.5,
+      "costFactor": 2,
+      "licenseSalesPerSeason": 0,
+      "capitalEurCents": 0
+    }
+  ]
+}

@@ -227,20 +227,21 @@ export function createCompetitionSeasonReadCache({limit=8}={}){
    world.generation,world.revision,world.seasonNumber,world.day,world.phase]);
  };
  return Object.freeze({
-  remember({competitionId,season,snapshot,data}){
+  remember({competitionId,season,snapshot,data,status=data===null?'empty':data?.status??'partial'}){
    const key=cacheKey(competitionId,season,snapshot);
    if(!key||data!==null&&(data?.provenance?.kind!=='authoritative'||
       data.season!==season||!globalThis.faWorldClockAdapter.sameWorld(data.world,snapshot.world)))
     return false;
+   if(!(data===null?['empty','unavailable']:['partial','available']).includes(status))return false;
    const copy=data===null?null:freeze(structuredClone(data));
-   entries.delete(key);entries.set(key,copy);
+   entries.delete(key);entries.set(key,Object.freeze({data:copy,status}));
    while(entries.size>limit)entries.delete(entries.keys().next().value);
    return true;
   },
   find({competitionId,season,snapshot}){
    const key=cacheKey(competitionId,season,snapshot);
    // The wrapper distinguishes a verified empty season from a cache miss.
-   return key&&entries.has(key)?{data:entries.get(key)}:null;
+   return key&&entries.has(key)?entries.get(key):null;
   },
   clear(){entries.clear()},
   size(){return entries.size}
@@ -260,6 +261,6 @@ export function createAuthoritativeLoader({getContext,clear,commit,isDev,fetchJs
   onBeforeWorld:onWorld,
   read:options=>fetchJson(`/api/competitions/${context.definition.id}/seasons/${context.selectedSeason}`,options),
   validate:payload=>validateAuthoritativeSeason(payload,context,manifest),
-  commit:source=>commit(adaptAuthoritativeSeason(source,context,manifest),context.revision)
+  commit:source=>commit(adaptAuthoritativeSeason(source,context,manifest),context.revision,source.status)
  });
 }

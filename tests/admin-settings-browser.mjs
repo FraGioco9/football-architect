@@ -213,10 +213,12 @@ try{
    const writer=permissionSet.includes('admin.world.write');
    if(permissionSet.length===0)assert.equal(await page.locator('#main-content').innerText(),'');
    else{
-    assert.equal(await page.locator('.admin-directory-card').count(),3);
+    assert.equal(await page.locator('.admin-directory-card').count(),5);
     assert.equal(await page.locator('[data-admin-card="calendar"].app-link').isVisible(),true);
     assert.equal(await page.locator('[data-admin-card="players"].app-link').isVisible(),writer);
     assert.equal(await page.locator('[data-admin-card="contracts"].app-link').isVisible(),writer);
+     assert.equal(await page.locator('[data-admin-card="licenses"].app-link').isVisible(),writer);
+    assert.equal(await page.locator('[data-admin-card="rewards"].app-link').isVisible(),true);
     assert.equal(await page.locator('[data-admin-panel="players"]').isVisible(),writer);
     assert.equal(await page.locator('#app-nav-dashboard.is-active,#app-nav-divisions.is-active').count(),0);
    }
@@ -614,7 +616,7 @@ try{
    });
    await page.goto('http://app.localhost:2000/admin');
    await page.locator('[data-admin-card="contracts"]').waitFor({state:'visible'});
-   assert.equal(await page.locator('.admin-directory-card').count(),3);
+   assert.equal(await page.locator('.admin-directory-card').count(),5);
    await page.locator('[data-admin-card="contracts"]').click();
    await page.waitForURL('**/admin/contracts');
    await page.locator('.admin-contracts-skeleton').first().waitFor({state:'visible'});
@@ -851,6 +853,199 @@ try{
    assert.equal(await admin.evaluate(()=>!!localStorage.getItem('fa:roster-affiliations:v1')),true);
    checks++;
   }finally{await ctx.close()}
+ }
+
+ // Rewards: same Admin controls and table geometry, read-only fixture access.
+ for(const width of [390,1440]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage(),errors=[];
+   page.on('pageerror',error=>errors.push(error.message));
+   await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.route('**/api/player/permissions',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({permissions:['admin.access','admin.world.read']})}));
+   await page.route('**/api/admin/world',r=>{
+    assert.equal(r.request().method(),'GET');
+    return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({world:{seasonNumber:3}})});
+   });
+   await page.goto('http://app.localhost:2000/admin/rewards');
+   await page.locator('[data-admin-rewards-content]').waitFor({state:'visible'});
+   const trigger=page.locator('[data-admin-rewards-trigger]'),menu=page.locator('#admin-reward-season-options');
+   assert.equal(await page.locator('[data-admin-rewards-value]').textContent(),'3');
+   assert.equal(await page.locator('.admin-rewards-distribution tbody tr').count(),18);
+   assert.equal(await page.locator('.admin-rewards-distribution tfoot tr').count(),1);
+   await page.locator('#admin-reward-season-label').click({force:true});
+   assert.equal(await trigger.getAttribute('aria-expanded'),'false');
+   await trigger.focus();await trigger.press('Enter');await menu.waitFor({state:'visible'});
+   await trigger.press('Home');await trigger.press('Enter');
+   assert.equal(await page.locator('[data-admin-rewards-season]').inputValue(),'1');
+   assert.equal(await page.locator('[data-reward-state="rewardEvidenceHistory"]').isVisible(),true);
+   assert.equal(await page.locator('.admin-rewards-pool [data-reward-amount]').textContent(),'—');
+   await trigger.click();await menu.getByRole('option',{name:'3',exact:true}).click();
+   assert.equal(await page.locator('[data-admin-rewards-season]').inputValue(),'3');
+   assert.match(await page.locator('.admin-rewards-pool [data-reward-amount]').textContent(),/2,400,000/);
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+   assert.ok(await page.locator('.admin-rewards-distribution tbody tr').first().evaluate(el=>{const h=el.getBoundingClientRect().height;return h>=40&&h<=48}));
+   if(width===390)assert.equal(await page.locator('.admin-rewards-distribution').evaluate(el=>el.parentElement.scrollWidth>el.parentElement.clientWidth),true);
+   assert.deepEqual(errors,[]);checks++;
+  }finally{await context.close()}
+ }
+ // CLUB-LICENSES-01: control geometry, overflow, listboxes and filtered selection.
+ // Synthetic API responses only; no remote Admin mutations or shared-world writes.
+ for(const width of [320,390,768,1440]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage(),errors=[];
+   page.on('pageerror',error=>errors.push(error.message));
+   const clubs=Array.from({length:320},(_,i)=>({
+    clubKey:'FA-'+(i+1),name:'Club '+(i+1),accountId:i===0?'fixture-account':null,
+    accountEmail:i===0?'holder@example.invalid':null,updatedAt:null,version:0
+   }));
+   await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.route('**/api/player/permissions',r=>r.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({permissions:['admin.access','admin.world.read','admin.world.write']})}));
+   await page.route('**/api/admin/club-licenses**',route=>{
+    const url=new URL(route.request().url());
+    assert.equal(route.request().method(),'GET','Layout QA must never assign or revoke licenses');
+    return route.fulfill({status:200,contentType:'application/json',
+     body:JSON.stringify(url.pathname.endsWith('/accounts')
+      ?{accounts:[{id:'fixture-target',email:'qa@example.invalid'}]}
+      :{clubs,history:[]})});
+   });
+   await page.goto('http://app.localhost:2000/admin/licenses');
+   await page.waitForFunction(()=>document.querySelector('[data-licenses-count]')?.textContent==='320 clubs');
+   assert.equal(await page.locator('.admin-licenses-dropdown').count(),3);
+   assert.equal(await page.locator('[data-licenses-rows] tr').count(),320);
+   const geometry=await page.evaluate(()=>{
+    const editor=document.querySelector('.admin-licenses-editor');
+    const grid=document.querySelector('.admin-licenses-fields');
+    const field=document.querySelector('[data-licenses-query]');
+    const select=document.querySelector('.admin-licenses-fields .language-trigger');
+    const table=document.querySelector('.admin-licenses-table-wrap');
+    const row=document.querySelector('[data-licenses-rows] tr');
+    const columns=getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length;
+    return {
+     pageOverflows:document.documentElement.scrollWidth>innerWidth,
+     editorWidth:editor.getBoundingClientRect().width,
+     availableWidth:document.querySelector('[data-admin-licenses]').getBoundingClientRect().width,
+     columns,fieldHeight:field.getBoundingClientRect().height,
+     dropdownHeight:select.getBoundingClientRect().height,
+     rowHeight:row.getBoundingClientRect().height,
+     tableScrollable:table.scrollWidth>table.clientWidth
+    };
+   });
+   assert.equal(geometry.pageOverflows,false,'No page-level horizontal overflow: '+JSON.stringify({width,geometry}));
+   assert.ok(Math.abs(geometry.editorWidth-geometry.availableWidth)<=2,'The panel fills its assigned column');
+   assert.equal(geometry.columns,width<=760?1:2,'Form stacks on mobile');
+   assert.ok(Math.abs(geometry.fieldHeight-geometry.dropdownHeight)<=2,'Text inputs and dropdowns share height');
+   assert.ok(geometry.rowHeight>=40&&geometry.rowHeight<=48,'Compact table row spacing');
+   if(width<=390)assert.equal(geometry.tableScrollable,true,'Tables scroll inside their own border on mobile');
+   const clubDropdown=page.locator('.admin-licenses-field').first();
+   // Caption hover/click is inert: no dropdown activation or text-field focus.
+   const caption=clubDropdown.locator('.admin-licenses-caption'),captionRect=await caption.boundingBox();
+   assert.ok(captionRect,'Club caption geometry');
+   const trigger=clubDropdown.locator('.language-trigger');
+   const triggerAppearance=()=>trigger.evaluate(node=>{
+    const s=getComputedStyle(node);
+    return {background:s.backgroundColor,border:s.borderColor,expanded:node.getAttribute('aria-expanded')};
+   });
+   await page.mouse.move(0,0);await page.waitForTimeout(180);
+   const idle=await triggerAppearance();
+   await page.mouse.move(captionRect.x+captionRect.width/2,captionRect.y+captionRect.height/2);
+   await page.waitForTimeout(180);
+   assert.deepEqual(await triggerAppearance(),idle,'Caption hover must not highlight dropdown');
+   await page.mouse.click(captionRect.x+captionRect.width/2,captionRect.y+captionRect.height/2);
+   assert.deepEqual(await triggerAppearance(),idle,'Caption click must not open dropdown');
+   const searchCaption=await page.locator('#licenses-search-caption').boundingBox();
+   assert.ok(searchCaption,'Account-search caption geometry');
+   await page.mouse.click(searchCaption.x+searchCaption.width/2,searchCaption.y+searchCaption.height/2);
+   assert.equal(await page.locator('[data-licenses-query]').evaluate(node=>document.activeElement===node),false,
+    'Caption click must not focus text field');
+   await clubDropdown.locator('.language-trigger').click();
+   await clubDropdown.locator('.admin-licenses-dropdown-search').fill('Club 320');
+   assert.equal(await clubDropdown.locator('.language-option').count(),1,'Club search narrows the menu');
+   await clubDropdown.locator('.admin-licenses-dropdown-search').press('Enter');
+   assert.equal(await page.locator('[data-licenses-club]').inputValue(),'FA-320');
+   await page.locator('[data-licenses-query]').fill('qa@example.invalid');
+   const lookupResponse=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/club-licenses/accounts');
+   await page.locator('[data-licenses-find]').click();
+   const lookup=await lookupResponse;
+   assert.equal(lookup.status(),200,'Verified account lookup must use the mock');
+   assert.deepEqual(await lookup.json(),{accounts:[{id:'fixture-target',email:'qa@example.invalid'}]});
+   const accountDropdown=page.locator('.admin-licenses-field').nth(2);
+   await page.waitForFunction(()=>document.querySelector('[data-licenses-account]').options.length===2);
+   assert.equal(await accountDropdown.locator('.language-trigger').isEnabled(),true,'Successful lookup enables Account');
+   await accountDropdown.locator('.language-trigger').click();
+   await accountDropdown.locator('.language-option').filter({hasText:'qa@example.invalid'}).click();
+   assert.equal(await page.locator('[data-licenses-assign]').isEnabled(),true);
+   await page.locator('.admin-licenses-filters .language-trigger').click();
+   await page.locator('.admin-licenses-filters .language-option').filter({hasText:'Licensed'}).click();
+   assert.equal(await page.locator('[data-licenses-count]').textContent(),'1 clubs');
+   // The Admin directory card is informational: only its link is interactive.
+   await page.goto('http://app.localhost:2000/admin');
+   await page.locator('.admin-directory-card').first().waitFor({state:'visible'});
+   const directoryGap=await page.locator('.admin-directory').evaluate(node=>parseFloat(getComputedStyle(node).gap));
+   const pageGap=await page.locator('#app-admin').evaluate(node=>parseFloat(getComputedStyle(node).rowGap));
+   assert.ok(Math.abs(directoryGap-pageGap)<=0.5,'Directory cards share the page section gap');
+   const card=page.locator('.admin-directory-card').first();
+   const titleRect=await card.locator('h2').boundingBox();
+   assert.ok(titleRect,'Card title geometry');
+   const cardStyle=()=>card.evaluate(node=>{
+    const s=getComputedStyle(node);return {background:s.backgroundColor,border:s.borderColor};
+   });
+   await page.mouse.move(0,0);await page.waitForTimeout(180);
+   const unhovered=await cardStyle();
+   await page.mouse.move(titleRect.x+titleRect.width/2,titleRect.y+titleRect.height/2);
+   await page.waitForTimeout(180);
+   assert.deepEqual(await cardStyle(),unhovered,'Card title hover must not activate panel');
+   await page.mouse.click(titleRect.x+titleRect.width/2,titleRect.y+titleRect.height/2);
+   assert.equal(new URL(page.url()).pathname,'/admin','Card title click must not navigate');
+   assert.deepEqual(errors,[]);checks++;
+  }finally{await context.close()}
+ }
+
+ // NAV-ADMIN: stable first paint on navigation, refresh and revocation.
+ {
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  let release=()=>{};
+  try{
+   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+   let authorized=true,hold=false,permissionReads=0,authGate=null;
+   const clubs=Array.from({length:320},(_,i)=>({clubKey:'FA-'+(i+1),name:'Club '+(i+1),
+    accountId:null,accountEmail:null,updatedAt:null,version:0}));
+   await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.route('**/api/player/permissions',async r=>{
+    permissionReads++;
+    if(hold&&authGate)await authGate;
+    return r.fulfill({status:authorized?200:401,contentType:'application/json',
+     body:authorized?JSON.stringify({permissions:['admin.access','admin.world.read','admin.world.write']}):'{}'});
+   });
+   await page.route('**/api/admin/club-licenses**',r=>{
+    assert.equal(r.request().method(),'GET','Sidebar QA must not mutate licenses');
+    return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({clubs,history:[]})});
+   });
+   await page.goto('http://app.localhost:2000/dashboard');
+   await page.locator('#app-nav-admin').waitFor({state:'visible'});
+   assert.equal(await page.evaluate(()=>sessionStorage.getItem('fa:admin:nav-visible:v1')),'1');
+   for(const path of ['/clubs','/players','/matches','/account/login']){
+    await page.goto('http://app.localhost:2000'+path,{waitUntil:'domcontentloaded'});
+    assert.equal(await page.locator('#app-nav-admin').isVisible(),true,path+' Admin visible before deferred checks');
+   }
+   await page.goto('http://app.localhost:2000/admin/licenses');
+   await page.waitForFunction(()=>document.querySelector('[data-licenses-count]')?.textContent==='320 clubs');
+   assert.equal(await page.locator('#app-nav-admin[aria-current="page"]').count(),1);
+   await page.goto('http://app.localhost:2000/dashboard');
+   await page.locator('#app-nav-admin').waitFor({state:'visible'});
+   authorized=false;hold=true;authGate=new Promise(resolve=>{release=resolve});
+   await page.reload({waitUntil:'domcontentloaded'});
+   assert.equal(await page.locator('#app-nav-admin').isVisible(),true,'Pending fresh check must not flash away Admin');
+   hold=false;release();
+   await page.waitForFunction(()=>!document.getElementById('app-nav-admin'));
+   assert.equal(await page.evaluate(()=>sessionStorage.getItem('fa:admin:nav-visible:v1')),null);
+   await page.goto('http://app.localhost:2000/settings');
+   assert.equal(await page.locator('#app-nav-admin').count(),0,'Revoked menu stays absent');
+   assert.ok(permissionReads>=2);
+   assert.deepEqual(errors,[]);checks++;
+  }finally{release();await context.close()}
  }
 
  timing.mark('cases-complete');

@@ -1,0 +1,893 @@
+{
+  "version": "economy-scale-options-v1",
+  "status": "research-only",
+  "youthArcPriceBps": 9900,
+  "youthEurPriceBps": 9000,
+  "cases": [
+    {
+      "rewardScale": 0.5,
+      "poolArc": 1200000,
+      "payrollArc": 1200000,
+      "salaryCoefficient": 107.02859671059869,
+      "meanPlayerValueArc": 4026,
+      "meanYouthArcPrice": 3985.7400000000002,
+      "meanYouthEurCents": 3623.4,
+      "grossEurCents": 119572,
+      "illustrativeContributionCents": 98547,
+      "arcDemand": 1191736,
+      "unfundedArcDemand": 0,
+      "reserveGapArc": 8264,
+      "initialReserveArc": 1200000,
+      "initialClubCapitalArc": 640800,
+      "licenseTopEur": 300,
+      "licenseLowEur": 100,
+      "licenseLowRewardReferenceArc": 3569.94,
+      "licenseExponent": 1.546584437130316,
+      "licenseGroups": [
+        {
+          "tier": 0,
+          "cup": 0,
+          "count": 64,
+          "meanBaseEur": 10,
+          "meanGenesisArc": 500
+        },
+        {
+          "tier": 1,
+          "cup": 0,
+          "count": 80,
+          "meanBaseEur": 160,
+          "meanGenesisArc": 2500
+        },
+        {
+          "tier": 1,
+          "cup": 1,
+          "count": 24,
+          "meanBaseEur": 170,
+          "meanGenesisArc": 5900
+        },
+        {
+          "tier": 1,
+          "cup": 2,
+          "count": 24,
+          "meanBaseEur": 165,
+          "meanGenesisArc": 4200
+        },
+        {
+          "tier": 2,
+          "cup": 0,
+          "count": 128,
+          "meanBaseEur": 140,
+          "meanGenesisArc": 1300
+        }
+      ],
+      "schedules": [
+        {
+          "id": "IT-1",
+          "poolArc": 80000,
+          "participationArc": 3000,
+          "placementAwardsArc": [
+            2400,
+            2200,
+            2100,
+            1900,
+            1800,
+            1600,
+            1500,
+            1300,
+            1200,
+            1000,
+            900,
+            700,
+            600,
+            400,
+            300,
+            100
+          ],
+          "pointsPoolArc": 12000
+        },
+        {
+          "id": "IT-2",
+          "poolArc": 40000,
+          "participationArc": 1500,
+          "placementAwardsArc": [
+            1200,
+            1100,
+            1050,
+            950,
+            900,
+            800,
+            750,
+            650,
+            600,
+            500,
+            450,
+            350,
+            300,
+            200,
+            150,
+            50
+          ],
+          "pointsPoolArc": 6000
+        },
+        {
+          "id": "int-1",
+          "poolArc": 160000,
+          "participationArc": 2800,
+          "placementAwardsArc": [
+            18000,
+            10000,
+            6000,
+            4000,
+            2000,
+            0
+          ],
+          "pointsPoolArc": 28800
+        },
+        {
+          "id": "int-2",
+          "poolArc": 80000,
+          "participationArc": 1400,
+          "placementAwardsArc": [
+            9000,
+            5000,
+            3000,
+            2000,
+            1000,
+            0
+          ],
+          "pointsPoolArc": 14400
+        }
+      ],
+      "clubLiquidityStress": [
+        {
+          "tier": 1,
+          "cup": 1,
+          "count": 24,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 5767,
+          "annualPayrollArc": 11667,
+          "adverseRewardsArc": 5900
+        },
+        {
+          "tier": 1,
+          "cup": 0,
+          "count": 80,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 1900,
+          "annualPayrollArc": 5000,
+          "adverseRewardsArc": 3100
+        },
+        {
+          "tier": 2,
+          "cup": 0,
+          "count": 128,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 950,
+          "annualPayrollArc": 2500,
+          "adverseRewardsArc": 1550
+        },
+        {
+          "tier": 1,
+          "cup": 2,
+          "count": 24,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 3833,
+          "annualPayrollArc": 8333,
+          "adverseRewardsArc": 4500
+        }
+      ]
+    },
+    {
+      "rewardScale": 1,
+      "poolArc": 2400000,
+      "payrollArc": 2400000,
+      "salaryCoefficient": 214.05719342119738,
+      "meanPlayerValueArc": 8180.5,
+      "meanYouthArcPrice": 8098.694999999998,
+      "meanYouthEurCents": 7362.45,
+      "grossEurCents": 242961,
+      "illustrativeContributionCents": 218236,
+      "arcDemand": 2421510,
+      "unfundedArcDemand": 21510,
+      "reserveGapArc": 0,
+      "initialReserveArc": 2400000,
+      "initialClubCapitalArc": 1234400,
+      "licenseTopEur": 300,
+      "licenseLowEur": 100,
+      "licenseLowRewardReferenceArc": 7139.91,
+      "licenseExponent": 1.546590587904311,
+      "licenseGroups": [
+        {
+          "tier": 0,
+          "cup": 0,
+          "count": 64,
+          "meanBaseEur": 10,
+          "meanGenesisArc": 500
+        },
+        {
+          "tier": 1,
+          "cup": 0,
+          "count": 80,
+          "meanBaseEur": 160,
+          "meanGenesisArc": 5000
+        },
+        {
+          "tier": 1,
+          "cup": 1,
+          "count": 24,
+          "meanBaseEur": 170,
+          "meanGenesisArc": 11700
+        },
+        {
+          "tier": 1,
+          "cup": 2,
+          "count": 24,
+          "meanBaseEur": 165,
+          "meanGenesisArc": 8400
+        },
+        {
+          "tier": 2,
+          "cup": 0,
+          "count": 128,
+          "meanBaseEur": 140,
+          "meanGenesisArc": 2500
+        }
+      ],
+      "schedules": [
+        {
+          "id": "IT-1",
+          "poolArc": 160000,
+          "participationArc": 6000,
+          "placementAwardsArc": [
+            4800,
+            4400,
+            4200,
+            3800,
+            3600,
+            3200,
+            3000,
+            2600,
+            2400,
+            2000,
+            1800,
+            1400,
+            1200,
+            800,
+            600,
+            200
+          ],
+          "pointsPoolArc": 24000
+        },
+        {
+          "id": "IT-2",
+          "poolArc": 80000,
+          "participationArc": 3000,
+          "placementAwardsArc": [
+            2400,
+            2200,
+            2100,
+            1900,
+            1800,
+            1600,
+            1500,
+            1300,
+            1200,
+            1000,
+            900,
+            700,
+            600,
+            400,
+            300,
+            100
+          ],
+          "pointsPoolArc": 12000
+        },
+        {
+          "id": "int-1",
+          "poolArc": 320000,
+          "participationArc": 5600,
+          "placementAwardsArc": [
+            36000,
+            20000,
+            12000,
+            8000,
+            4000,
+            0
+          ],
+          "pointsPoolArc": 57600
+        },
+        {
+          "id": "int-2",
+          "poolArc": 160000,
+          "participationArc": 2800,
+          "placementAwardsArc": [
+            18000,
+            10000,
+            6000,
+            4000,
+            2000,
+            0
+          ],
+          "pointsPoolArc": 28800
+        }
+      ],
+      "clubLiquidityStress": [
+        {
+          "tier": 1,
+          "cup": 1,
+          "count": 24,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 11533,
+          "annualPayrollArc": 23333,
+          "adverseRewardsArc": 11800
+        },
+        {
+          "tier": 1,
+          "cup": 0,
+          "count": 80,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 3800,
+          "annualPayrollArc": 10000,
+          "adverseRewardsArc": 6200
+        },
+        {
+          "tier": 2,
+          "cup": 0,
+          "count": 128,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 1900,
+          "annualPayrollArc": 5000,
+          "adverseRewardsArc": 3100
+        },
+        {
+          "tier": 1,
+          "cup": 2,
+          "count": 24,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 7667,
+          "annualPayrollArc": 16667,
+          "adverseRewardsArc": 9000
+        }
+      ]
+    },
+    {
+      "rewardScale": 1.5,
+      "poolArc": 3600000,
+      "payrollArc": 3600000,
+      "salaryCoefficient": 321.08579013179605,
+      "meanPlayerValueArc": 12344.5,
+      "meanYouthArcPrice": 12221.055,
+      "meanYouthEurCents": 11110.050000000001,
+      "grossEurCents": 366632,
+      "illustrativeContributionCents": 338201,
+      "arcDemand": 3654095,
+      "unfundedArcDemand": 54095,
+      "reserveGapArc": 0,
+      "initialReserveArc": 3600000,
+      "initialClubCapitalArc": 1838400,
+      "licenseTopEur": 300,
+      "licenseLowEur": 100,
+      "licenseLowRewardReferenceArc": 10709.85,
+      "licenseExponent": 1.5465915350465687,
+      "licenseGroups": [
+        {
+          "tier": 0,
+          "cup": 0,
+          "count": 64,
+          "meanBaseEur": 10,
+          "meanGenesisArc": 500
+        },
+        {
+          "tier": 1,
+          "cup": 0,
+          "count": 80,
+          "meanBaseEur": 160,
+          "meanGenesisArc": 7500
+        },
+        {
+          "tier": 1,
+          "cup": 1,
+          "count": 24,
+          "meanBaseEur": 170,
+          "meanGenesisArc": 17500
+        },
+        {
+          "tier": 1,
+          "cup": 2,
+          "count": 24,
+          "meanBaseEur": 165,
+          "meanGenesisArc": 12500
+        },
+        {
+          "tier": 2,
+          "cup": 0,
+          "count": 128,
+          "meanBaseEur": 140,
+          "meanGenesisArc": 3800
+        }
+      ],
+      "schedules": [
+        {
+          "id": "IT-1",
+          "poolArc": 240000,
+          "participationArc": 9000,
+          "placementAwardsArc": [
+            7200,
+            6600,
+            6300,
+            5700,
+            5400,
+            4800,
+            4500,
+            3900,
+            3600,
+            3000,
+            2700,
+            2100,
+            1800,
+            1200,
+            900,
+            300
+          ],
+          "pointsPoolArc": 36000
+        },
+        {
+          "id": "IT-2",
+          "poolArc": 120000,
+          "participationArc": 4500,
+          "placementAwardsArc": [
+            3600,
+            3300,
+            3150,
+            2850,
+            2700,
+            2400,
+            2250,
+            1950,
+            1800,
+            1500,
+            1350,
+            1050,
+            900,
+            600,
+            450,
+            150
+          ],
+          "pointsPoolArc": 18000
+        },
+        {
+          "id": "int-1",
+          "poolArc": 480000,
+          "participationArc": 8400,
+          "placementAwardsArc": [
+            54000,
+            30000,
+            18000,
+            12000,
+            6000,
+            0
+          ],
+          "pointsPoolArc": 86400
+        },
+        {
+          "id": "int-2",
+          "poolArc": 240000,
+          "participationArc": 4200,
+          "placementAwardsArc": [
+            27000,
+            15000,
+            9000,
+            6000,
+            3000,
+            0
+          ],
+          "pointsPoolArc": 43200
+        }
+      ],
+      "clubLiquidityStress": [
+        {
+          "tier": 1,
+          "cup": 1,
+          "count": 24,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 17300,
+          "annualPayrollArc": 35000,
+          "adverseRewardsArc": 17700
+        },
+        {
+          "tier": 1,
+          "cup": 0,
+          "count": 80,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 5700,
+          "annualPayrollArc": 15000,
+          "adverseRewardsArc": 9300
+        },
+        {
+          "tier": 2,
+          "cup": 0,
+          "count": 128,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 2850,
+          "annualPayrollArc": 7500,
+          "adverseRewardsArc": 4650
+        },
+        {
+          "tier": 1,
+          "cup": 2,
+          "count": 24,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 11500,
+          "annualPayrollArc": 25000,
+          "adverseRewardsArc": 13500
+        }
+      ]
+    },
+    {
+      "rewardScale": 2,
+      "poolArc": 4800000,
+      "payrollArc": 4800000,
+      "salaryCoefficient": 428.11438684239477,
+      "meanPlayerValueArc": 16296.5,
+      "meanYouthArcPrice": 16133.534999999998,
+      "meanYouthEurCents": 14666.849999999999,
+      "grossEurCents": 484006,
+      "illustrativeContributionCents": 452057,
+      "arcDemand": 4823927,
+      "unfundedArcDemand": 23927,
+      "reserveGapArc": 0,
+      "initialReserveArc": 4800000,
+      "initialClubCapitalArc": 2434400,
+      "licenseTopEur": 300,
+      "licenseLowEur": 100,
+      "licenseLowRewardReferenceArc": 14279.83,
+      "licenseExponent": 1.5465966087297063,
+      "licenseGroups": [
+        {
+          "tier": 0,
+          "cup": 0,
+          "count": 64,
+          "meanBaseEur": 10,
+          "meanGenesisArc": 500
+        },
+        {
+          "tier": 1,
+          "cup": 0,
+          "count": 80,
+          "meanBaseEur": 160,
+          "meanGenesisArc": 10000
+        },
+        {
+          "tier": 1,
+          "cup": 1,
+          "count": 24,
+          "meanBaseEur": 170,
+          "meanGenesisArc": 23400
+        },
+        {
+          "tier": 1,
+          "cup": 2,
+          "count": 24,
+          "meanBaseEur": 165,
+          "meanGenesisArc": 16700
+        },
+        {
+          "tier": 2,
+          "cup": 0,
+          "count": 128,
+          "meanBaseEur": 140,
+          "meanGenesisArc": 5000
+        }
+      ],
+      "schedules": [
+        {
+          "id": "IT-1",
+          "poolArc": 320000,
+          "participationArc": 12000,
+          "placementAwardsArc": [
+            9600,
+            8800,
+            8400,
+            7600,
+            7200,
+            6400,
+            6000,
+            5200,
+            4800,
+            4000,
+            3600,
+            2800,
+            2400,
+            1600,
+            1200,
+            400
+          ],
+          "pointsPoolArc": 48000
+        },
+        {
+          "id": "IT-2",
+          "poolArc": 160000,
+          "participationArc": 6000,
+          "placementAwardsArc": [
+            4800,
+            4400,
+            4200,
+            3800,
+            3600,
+            3200,
+            3000,
+            2600,
+            2400,
+            2000,
+            1800,
+            1400,
+            1200,
+            800,
+            600,
+            200
+          ],
+          "pointsPoolArc": 24000
+        },
+        {
+          "id": "int-1",
+          "poolArc": 640000,
+          "participationArc": 11200,
+          "placementAwardsArc": [
+            72000,
+            40000,
+            24000,
+            16000,
+            8000,
+            0
+          ],
+          "pointsPoolArc": 115200
+        },
+        {
+          "id": "int-2",
+          "poolArc": 320000,
+          "participationArc": 5600,
+          "placementAwardsArc": [
+            36000,
+            20000,
+            12000,
+            8000,
+            4000,
+            0
+          ],
+          "pointsPoolArc": 57600
+        }
+      ],
+      "clubLiquidityStress": [
+        {
+          "tier": 1,
+          "cup": 1,
+          "count": 24,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 23067,
+          "annualPayrollArc": 46667,
+          "adverseRewardsArc": 23600
+        },
+        {
+          "tier": 1,
+          "cup": 0,
+          "count": 80,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 7600,
+          "annualPayrollArc": 20000,
+          "adverseRewardsArc": 12400
+        },
+        {
+          "tier": 2,
+          "cup": 0,
+          "count": 128,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 3800,
+          "annualPayrollArc": 10000,
+          "adverseRewardsArc": 6200
+        },
+        {
+          "tier": 1,
+          "cup": 2,
+          "count": 24,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 15333,
+          "annualPayrollArc": 33333,
+          "adverseRewardsArc": 18000
+        }
+      ]
+    },
+    {
+      "rewardScale": 2.75,
+      "poolArc": 6600000,
+      "payrollArc": 6600000,
+      "salaryCoefficient": 588.6572819082928,
+      "meanPlayerValueArc": 22360.5,
+      "meanYouthArcPrice": 22136.895,
+      "meanYouthEurCents": 20124.449999999997,
+      "grossEurCents": 664107,
+      "illustrativeContributionCents": 626758,
+      "arcDemand": 6618932,
+      "unfundedArcDemand": 18932,
+      "reserveGapArc": 0,
+      "initialReserveArc": 6600000,
+      "initialClubCapitalArc": 3341600,
+      "licenseTopEur": 300,
+      "licenseLowEur": 100,
+      "licenseLowRewardReferenceArc": 19634.81,
+      "licenseExponent": 1.5466073187626854,
+      "licenseGroups": [
+        {
+          "tier": 0,
+          "cup": 0,
+          "count": 64,
+          "meanBaseEur": 10,
+          "meanGenesisArc": 500
+        },
+        {
+          "tier": 1,
+          "cup": 0,
+          "count": 80,
+          "meanBaseEur": 160,
+          "meanGenesisArc": 13800
+        },
+        {
+          "tier": 1,
+          "cup": 1,
+          "count": 24,
+          "meanBaseEur": 170,
+          "meanGenesisArc": 32100
+        },
+        {
+          "tier": 1,
+          "cup": 2,
+          "count": 24,
+          "meanBaseEur": 165,
+          "meanGenesisArc": 23000
+        },
+        {
+          "tier": 2,
+          "cup": 0,
+          "count": 128,
+          "meanBaseEur": 140,
+          "meanGenesisArc": 6900
+        }
+      ],
+      "schedules": [
+        {
+          "id": "IT-1",
+          "poolArc": 440000,
+          "participationArc": 16500,
+          "placementAwardsArc": [
+            13200,
+            12100,
+            11550,
+            10450,
+            9900,
+            8800,
+            8250,
+            7150,
+            6600,
+            5500,
+            4950,
+            3850,
+            3300,
+            2200,
+            1650,
+            550
+          ],
+          "pointsPoolArc": 66000
+        },
+        {
+          "id": "IT-2",
+          "poolArc": 220000,
+          "participationArc": 8250,
+          "placementAwardsArc": [
+            6600,
+            6050,
+            5775,
+            5225,
+            4950,
+            4400,
+            4125,
+            3575,
+            3300,
+            2750,
+            2475,
+            1925,
+            1650,
+            1100,
+            825,
+            275
+          ],
+          "pointsPoolArc": 33000
+        },
+        {
+          "id": "int-1",
+          "poolArc": 880000,
+          "participationArc": 15400,
+          "placementAwardsArc": [
+            99000,
+            55000,
+            33000,
+            22000,
+            11000,
+            0
+          ],
+          "pointsPoolArc": 158400
+        },
+        {
+          "id": "int-2",
+          "poolArc": 440000,
+          "participationArc": 7700,
+          "placementAwardsArc": [
+            49500,
+            27500,
+            16500,
+            11000,
+            5500,
+            0
+          ],
+          "pointsPoolArc": 79200
+        }
+      ],
+      "clubLiquidityStress": [
+        {
+          "tier": 1,
+          "cup": 1,
+          "count": 24,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 31717,
+          "annualPayrollArc": 64167,
+          "adverseRewardsArc": 32450
+        },
+        {
+          "tier": 1,
+          "cup": 0,
+          "count": 80,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 10450,
+          "annualPayrollArc": 27500,
+          "adverseRewardsArc": 17050
+        },
+        {
+          "tier": 2,
+          "cup": 0,
+          "count": 128,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 5225,
+          "annualPayrollArc": 13750,
+          "adverseRewardsArc": 8525
+        },
+        {
+          "tier": 1,
+          "cup": 2,
+          "count": 24,
+          "day28Negative": 0,
+          "adverseYearEndNegative": 0,
+          "annualAdverseOperatingGapArc": 21083,
+          "annualPayrollArc": 45833,
+          "adverseRewardsArc": 24750
+        }
+      ]
+    }
+  ]
+}

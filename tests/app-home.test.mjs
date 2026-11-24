@@ -238,7 +238,11 @@ test("A11Y-NO-SKIP-01: skip link is absent without disturbing accessible landmar
   assert.doesNotMatch(markup,/class="app-skip"|data-app-i18n="skip"|Skip to main content/);
   assert.equal((markup.match(/id="main-content"/g)||[]).length,1);
   assert.match(markup,/<main class="app-main" id="main-content" tabindex="-1">/);
-  assert.match(markup,/id="career-status-heading"/);
+    if(markup===pages.dashboard){
+      assert.doesNotMatch(markup,/id="career-status-heading"/);
+      for(const id of ["dashboard-recent-heading","dashboard-next-heading","dashboard-events-heading"])
+        assert.match(markup,new RegExp('id="'+id+'"'));
+    }else assert.match(markup,/id="career-status-heading"/);
   assert.match(markup,/id="world-heading"/);
   assert.match(markup,/id="app-language-heading"/);
   assert.match(markup,/id="app-search-heading" class="sr-only"/);
@@ -318,4 +322,69 @@ test("COMPETITION-LINK: DEV season metadata preserves canonical division path",(
  card.getAttribute=key=>cup[key];card.setAttribute=(key,value)=>{cup[key]=value;};
  runInNewContext(registryCode+"\n"+code+"\nrewriteAppLinks()",{window:{location:{hostname:"localhost",protocol:"http:",href:"http://localhost/dashboard"}},URL,links:{},document:{documentElement:{dataset:{}},querySelectorAll:selector=>selector==="a.app-division-card"?[card]:[]}});
  assert.equal(cup.href,"/competitions/int-1/standings");
+});
+
+test("PAGE-DASH-01 serves a compact verified world overview",()=>{
+ const generator=read("tools/generate-app-pages.mjs"),source=read("templates/dashboard-overview.html"),client=read("assets/dashboard-overview.mjs");
+ assert.match(generator,/templates\/dashboard-overview\.html/);
+ assert.match(generator,/page\.name==="dashboard"/);
+ assert.match(pages.dashboard,/id="app-dashboard" class="app-view fa-dashboard-overview"/);
+ for(const key of ["recent","next","events"])assert.match(source,new RegExp('data-dash-list="'+key+'"'));
+ for(const key of ["season","day","phase"])assert.match(source,new RegExp('data-dash-value="'+key+'"'));
+ assert.match(source,/href="\/matches"/);
+ assert.match(source,/href="\/calendar"/);
+ assert.doesNotMatch(source,/href="\/competitions\//);
+ assert.doesNotMatch(source,/href="\/guide"/);
+ assert.doesNotMatch(client,/fetch\(\s*["']\/api\/world/);
+ assert.match(client,/\/api\/matches\?season=/);
+});
+test("PAGE-DASH-01 official day window and receipt-gated matches",async()=>{
+ const {chooseDashboardDays,validDashboardDirectory,pickDashboardMatches}=await import("../assets/dashboard-overview.mjs");
+ const days=Array.from({length:56},(_,i)=>({day:i+1,events:[13,15,16,20,25,55].includes(i+1)?[{}]:[]}));
+ assert.deepEqual(chooseDashboardDays(days,0),[13,15]);
+ assert.deepEqual(chooseDashboardDays(days,16),[13,15,16,20]);
+ assert.deepEqual(chooseDashboardDays(days,56),[25,55]);
+ assert.deepEqual(chooseDashboardDays(days,57),[]);
+ const world={generation:"v",revision:3,seasonNumber:2,day:16,phase:"active"};
+ const fixture=(matchId,status,result)=>({matchId:String(matchId),competitionId:"IT-1",homeClubId:"IT-1",awayClubId:"IT-2",status,result});
+ const completed=fixture(5,"completed",{homeGoals:2,awayGoals:1});
+ const next=fixture(6,"scheduled",null);
+ const data=(day,fixtures)=>({schemaVersion:1,providerId:"authoritative-world",world,selectedSeason:2,day,publication:"published",fixtures});
+ assert.equal(validDashboardDirectory(data(15,[completed]),world,2,15),true);
+ assert.equal(validDashboardDirectory(data(20,[next]),world,2,20),true);
+ assert.equal(validDashboardDirectory(data(15,[completed]),{...world,revision:4},2,15),false);
+ assert.equal(validDashboardDirectory(data(15,[completed,completed]),world,2,15),false);
+ assert.equal(validDashboardDirectory(data(15,[fixture(5,"completed",null)]),world,2,15),false);
+ assert.equal(validDashboardDirectory(data(20,[fixture(6,"scheduled",{homeGoals:2,awayGoals:0})]),world,2,20),false);
+ const picked=pickDashboardMatches([{day:15,publication:"published",fixtures:[completed]},{day:20,publication:"partial",fixtures:[next]},{day:13,publication:"unpublished",fixtures:[completed]}],16);
+ assert.deepEqual(picked.recent.map(f=>f.matchId),["5"]);
+ assert.deepEqual(picked.next.map(f=>f.matchId),["6"]);
+});
+
+test("PAGE-DASH-01 prioritizes Match Centre, a compact world strip and calendar",()=>{
+ const source=read("templates/dashboard-overview.html"),client=read("assets/dashboard-overview.mjs"),styles=read("assets/dashboard-overview.css");
+ for(const id of ["world-heading","dashboard-events-heading","dashboard-match-centre-heading","dashboard-recent-heading","dashboard-next-heading"])assert.match(source,new RegExp('id="'+id+'"'));
+ for(const name of ["fa-dash-statusbar","fa-dash-match-centre","fa-dash-scoreboards","fa-dash-agenda"])assert.match(source,new RegExp(name));
+ assert.ok(source.indexOf("fa-dash-match-centre")<source.indexOf("fa-dash-agenda"));
+ assert.ok(source.indexOf('data-dash-list="recent"')<source.indexOf('data-dash-list="next"'),"Recent results before upcoming fixtures");
+ assert.match(styles,/\.fa-dash-scoreboards\{display:grid;grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(source,/fa-dash-club-pair fa-dash-pair-skeleton/);
+ assert.match(source,/fa-dash-agenda-placeholder/);
+ assert.match(client,/const \{clubs,clubCrests\}=publicClubIdentityCatalog\(\)/);
+ assert.match(client,/pair\.append\(clubCrest\(f.homeClubId\),clubCrest\(f.awayClubId\)\)/);
+ assert.match(client,/clock\(null\);\s*if\(snapshot\?\.worldStatus==='unavailable'\)/);
+ assert.equal((source.match(/class="fa-dashboard-placeholder" aria-hidden="true"/g)||[]).length,8,"4 recent + 4 upcoming match skeletons");
+ assert.equal((source.match(/class="fa-dashboard-placeholder fa-dash-agenda-placeholder" aria-hidden="true"/g)||[]).length,3,"3 calendar skeletons");
+ assert.match(source,/data-dash-note="world" role="status"/);
+ for(const old of ["fa-dash-focus","fa-dash-featured","fa-dash-competitions","fa-dash-progress","fa-dashboard-bottom","data-dash-region="])assert.ok(!source.includes(old),old);
+ assert.doesNotMatch(client,/showFeatured|data-dash-featured|data-dash-progress|data-dash-highlight/);
+ assert.match(client,/competitionName\(f.competitionId\)/);
+ assert.match(styles,/@media\(max-width:680px\)/);
+ assert.match(styles,/@media\(max-width:1100px\)/);
+ const start=client.indexOf("const glossary=")+"const glossary=".length,end=client.indexOf(";\n",start);
+ const words=JSON.parse(client.slice(start,end));
+ for(const lang of ["en","de","es","fr","it"])for(const key of ["world","matchCentre","recent","next","calendar","events","noRecent","noNext","unstarted","plannedStatus","division"])assert.ok(words[lang]?.[key],lang+"."+key);
+ assert.deepEqual(["en","it","de","es","fr"].map(lang=>words[lang].events),["World calendar","Calendario mondiale","Weltkalender","Calendario mundial","Calendrier mondial"]);
+ const guard=read("tools/publication-guard.mjs");
+ for(const asset of ["dashboard-overview.mjs","dashboard-overview.css"])assert.match(guard,new RegExp(asset.replace(/\./g,"\\.")));
 });

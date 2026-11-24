@@ -62,7 +62,8 @@ test("SEARCH-01 search destinations are limited to real internal routes and head
     assert.ok(known.has(file),url);
     const target=html[file] ?? read(file);
     assert.ok(target.includes('id="'+id+'"'),id);
-    assert.ok(target.includes('data-app-i18n="'+description+'"'),description);
+    assert.ok(target.includes('data-app-i18n="'+description+'"') ||
+      target.includes('data-dash-text="'+description+'"'),description);
     if(fragment) assert.ok(target.includes('id="'+fragment+'"'),fragment);
     assert.ok(kind==="page" || kind==="section");
   }
@@ -104,19 +105,21 @@ function simulate(language="en",worldCatalogue=null){
   };
   const ids=["app-search-trigger","app-search-dialog","app-search-input","app-search-results",
     "app-search-status","app-search-empty","app-search-close","app-search-heading","app-search-scope",
-    "dashboard-title","calendar-title","settings-title","divisions-title","career-status-heading","world-heading",
+    "dashboard-title","calendar-title","settings-title","divisions-title","dashboard-match-centre-heading","world-heading",
     "app-language-heading","app-theme-heading"];
   const nodes=Object.fromEntries(ids.map(id=>[id,el(id)]));
   const labels={
     "dashboard-title":"Dashboard","calendar-title":"Calendar","settings-title":"Settings","divisions-title":"Competitions",
-    "career-status-heading":"Career status","world-heading":"World foundations",
+    "dashboard-match-centre-heading":"Match centre","world-heading":"World overview",
     "app-language-heading":"Language","app-theme-heading":"Appearance"
   };
   const descriptions={
-    careerStatusText:"No active career. Club selection is not available.",
+    subtitle:"Your football world, at a glance.",
+    next:"Upcoming fixtures",
+    phase:"World phase",
     calendarStatusText:"Match scheduling is not available.",
     languageHelp:"Choose the interface language.",
-    worldText:"8 countries, 16 divisions and 320 documented clubs.",
+    world:"World overview",
     themeHelp:"Choose the site theme."
   };
   Object.entries(labels).forEach(([key,value])=>nodes[key].textContent=value);
@@ -124,7 +127,7 @@ function simulate(language="en",worldCatalogue=null){
     documentElement:{lang:language},currentScript:worldCatalogue?{src:"http://127.0.0.1:2000/assets/app-search.js"}:null,activeElement:null,
     getElementById(id){return nodes[id]??null},
     querySelector(selector){
-      const m=selector.match(/^\[data-app-i18n="([^"]+)"\]$/);
+      const m=selector.match(/^\[data-(?:app-i18n|dash-text)="([^"]+)"\]$/);
       return m&&descriptions[m[1]]?{textContent:descriptions[m[1]]}:null;
     },
     createElement(tag){return el("",tag.toUpperCase())}
@@ -328,9 +331,9 @@ test("SEARCH-01 compact results show only label and kind, with descriptions stil
   assert.equal(first.children.length,2);
   assert.equal(first.children[0].className,"app-search-name");
   assert.equal(first.children[1].className,"app-search-kind");
-  app.input.value="320 documented clubs";
+  app.input.value="Upcoming fixtures";
   app.input.emit("input");
-  assert.equal(app.links()[0].href,"/dashboard#world-heading");
+  assert.equal(app.links()[0].href,"/dashboard#dashboard-match-centre-heading");
 });
 
 test("SEARCH-01 translates the visible desktop search trigger",()=>{
@@ -404,7 +407,7 @@ test("SEARCH-01 full-row suggestion hover beats transparent base background and 
 
 test("SEARCH-01 uses direct canonical Dashboard suggestions and anchors",()=>{
   assert.doesNotMatch(script,/"\/app\/(?:#|")/);
-  for(const href of ["/dashboard","/dashboard#career-status-heading","/dashboard#world-heading"]){
+  for(const href of ["/dashboard","/dashboard#dashboard-match-centre-heading","/dashboard#world-heading"]){
     assert.ok(script.includes('"'+href+'"'),"Missing canonical Dashboard destination: "+href);
   }
 });

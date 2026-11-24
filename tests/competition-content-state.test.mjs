@@ -205,8 +205,8 @@ test('QA-05 History shell stays painted when global bootstrap drops before its o
 test('QA-05 History providers publish completion only after content and DEV cleanup preserves the nested skeleton',()=>{
  const publicSource=read('assets/competition-page.js');
  const dev=read('tools/dev-standings-preview-client.mjs');
- assert.match(publicSource,/onState:state=>\{if\(state==='unavailable'&&![^;]*\)history\?\.settleUnavailable\(\);else history\?\.render\(\);window\.faStandingsLoading\?\.set\('api'/);
- assert.doesNotMatch(publicSource,/onState:state=>\{[^}]*faHistorySetReady/,'public season loader cannot release or reset History independent loading');
+ assert.match(publicSource,/const applySeasonReadState=state=>\{publishSeasonReadState\(state\);if\(state==='unavailable'&&![^;]*\)history\?\.settleUnavailable\(\);else history\?\.render\(\);window\.faStandingsLoading\?\.set\('api'/);
+ assert.doesNotMatch(publicSource,/const applySeasonReadState=state=>\{[^}]*faHistorySetReady/,'public season loader cannot release or reset History independent loading');
  assert.doesNotMatch(publicSource,/faHistorySetReady\?\.\(state!=='loading'\)/,'History readiness belongs to its own historical data request');
  assert.match(dev,/panel\.append\(root\);window\.faSyncHistoryRecords\?\.\(\);window\.faAppRenderLanguage\?\.\(\);\s*window\.faHistorySetReady\?\.\(true\)/);
  assert.match(dev,/window\.faHistorySetReady\?\.\(false\);\s*const finishHistory/);

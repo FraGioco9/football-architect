@@ -13,6 +13,8 @@ export interface PublicPlayerFilters {
  ageMax?:number;
  heightMin?:number;
  heightMax?:number;
+ valueMin?:number;
+ valueMax?:number;
  foot?:'left'|'right';
 }
 export interface PublicPlayerQuery {page:number;filters:PublicPlayerFilters}
