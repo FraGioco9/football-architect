@@ -1,7 +1,7 @@
 // #791 — offline pure planner tests; owned by Site FULL.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,createCertifiedOpeningPersistenceRun} from '../tools/world-bootstrap-791/persistence.mjs';
+import {createOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,createCertifiedOpeningPersistenceRun,reconcileCompletedOpening} from '../tools/world-bootstrap-791/persistence.mjs';
 import {loadRuntimePlayerCatalog} from '../backend/src/players-catalog.mjs';
 import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,clubCountryToNationality,approvedForeignWeights,sampleOpeningRetirementAge,prepareOpeningCandidateChunk} from '../tools/world-bootstrap-791/planner.mjs';
 
@@ -128,7 +128,9 @@ test('internal candidate chunk preserves reused ID and conditionally retires new
 
 function testPersistenceProtocol(){
  const base=referenceFixture();
- const manifest=planApprovedReference({...base,versions:{...base.versions,worldRevision:0}});
+ const inactive=Array.from({length:64},(_,i)=>({key:"inactive-"+i,nationality:base.clubs[i%base.clubs.length].nationality,division:null,active:false}));
+ const clubs=base.clubs.some(c=>!c.active)?base.clubs:[...base.clubs,...inactive];
+ const manifest=planApprovedReference({...base,clubs,versions:{...base.versions,worldRevision:0}});
  const s=manifest.slots.find(s=>["ITA","ENG","GER"].includes(s.primaryNationality)&&s.age<=19);
  const prior={id:44,age:s.age,primaryNationality:s.primaryNationality,primaryPosition:s.primaryPosition,primarySuitability:s.primarySuitabilityTarget,clubKey:s.clubKey,representation:"ai",careerStatus:"active",hasSignedContract:false,hasSportingHistory:false,hasApprovedPortrait:true,readyForReuse:true,fingerprint:"a".repeat(64)};
  const inventory={worldGeneration:manifest.versions.worldGeneration,worldRevision:0,snapshotId:"opening",complete:true,idHighWater:100,players:[prior]};
@@ -182,6 +184,22 @@ function testPersistenceProtocol(){
   }
  }
  eq(progress.readyForReconciliation,true);eq(progress.remainingSlots,0);eq(rows.length,6400);eq(observation.idHighWater,6499);
+ // Full 6,400-row synthetic evidence. No D1 or actual player generation.
+ const bySlot=new Map(manifest.slots.map(s=>[s.slotKey,s]));
+ const rawRows=receipts.flatMap(r=>r.entries.map(e=>{
+  const s=bySlot.get(e.slotKey);
+  return {id:e.playerId,world_generation:world.generation,entry_season:0,schema_version:"player-portraits-v5",prompt_version:"player-portrait-v4.2",config_version:"fixture",payload_json:JSON.stringify({id:e.playerId,age:s.age,initial_age:s.age,nationality:s.primaryNationality,primary_position:s.primaryPosition,career_status:"active",retirement_age:sampleOpeningRetirementAge(s)})};
+ }));
+ const complete={...observation,rawRows};
+ const report=reconcileCompletedOpening(run,manifest,inventory,receipts,complete);
+ eq(report.population,6400);eq(report.reused,1);eq(report.generated,6399);eq(report.domestic,4160);eq(report.otherPlayable+report.otherCountries,2240);eq(report.stagedOnly,true);
+ eq(report.clubCounts.filter(c=>c.active&&c.count===25).length,256);eq(report.clubCounts.filter(c=>!c.active&&c.count===0).length,manifest.clubs.length-256);
+ eq(report,reconcileCompletedOpening(run,manifest,inventory,[...receipts].reverse(),{...complete,rawRows:[...rawRows].reverse()}));
+ const altered=rawRows.map((r,i)=>i===0?{...r,payload_json:JSON.stringify({...JSON.parse(r.payload_json),age:40})}:r);
+ throws(()=>reconcileCompletedOpening(run,manifest,inventory,receipts,{...complete,rawRows:altered}));
+ throws(()=>reconcileCompletedOpening(run,manifest,inventory,receipts,{...complete,rawRows:rawRows.slice(1)}));
+ throws(()=>reconcileCompletedOpening(run,manifest,inventory,receipts.slice(0,-1),complete));
+
  eq(progress,inspectOpeningProgress(run,manifest,inventory,[...receipts].reverse(),observation));
  throws(()=>inspectOpeningProgress(run,manifest,inventory,receipts.slice(1),observation));
  throws(()=>inspectOpeningProgress(run,manifest,inventory,[...receipts,receipts[0]],observation));

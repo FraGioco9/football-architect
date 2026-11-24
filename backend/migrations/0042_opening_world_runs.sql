@@ -90,3 +90,28 @@ BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
 CREATE TRIGGER opening_world_block_contract_insert BEFORE INSERT ON player_signed_contracts
 WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
 BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
+
+-- Freeze existing and receipted portrait/index evidence while staging. The
+-- only value update permitted is the initial CAS for a new internal batch,
+-- before its receipt exists; ordinary maintenance cannot modify frozen rows.
+CREATE TRIGGER opening_world_block_portrait_update BEFORE UPDATE ON player_portrait_profiles
+WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
+BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
+CREATE TRIGGER opening_world_block_portrait_delete BEFORE DELETE ON player_portrait_profiles
+WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
+BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
+CREATE TRIGGER opening_world_block_index_delete BEFORE DELETE ON player_market_values
+WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
+BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
+CREATE TRIGGER opening_world_block_index_update BEFORE UPDATE ON player_market_values
+WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
+ AND NOT (OLD.config_version IS NULL AND OLD.market_value_arc IS NULL AND OLD.input_revision=0
+  AND NEW.player_id IS OLD.player_id AND NEW.input_revision=0 AND NEW.config_version IS NOT NULL
+  AND EXISTS(SELECT 1 FROM generated_players p JOIN player_generation_drafts d ON d.id=p.batch_id
+   JOIN opening_world_runs r ON r.run_key=json_extract(d.options_json,'$.runKey') AND r.batch_index=-1
+   JOIN world_state w ON w.generation=r.world_generation AND w.id=1
+   WHERE p.id=OLD.player_id AND p.world_generation=r.world_generation AND d.status='committed'
+    AND d.world_generation=r.world_generation AND json_extract(d.options_json,'$.mode')='opening-world-internal'
+    AND json_extract(d.options_json,'$.index')=(SELECT COUNT(*) FROM opening_world_runs b WHERE b.run_key=r.run_key AND b.batch_index>=0)
+    AND NOT EXISTS(SELECT 1 FROM opening_world_runs b WHERE b.draft_id=d.id)))
+BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;

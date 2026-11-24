@@ -14,7 +14,7 @@ import type {AdminSession} from '../src/auth.ts';
 import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
 import {beginLocalOpeningRun,commitLocalOpeningBatch,readLocalOpeningJournal,readOpeningObservation} from '../src/opening-world-store.ts';
 import {clubCountryToNationality,planApprovedReference,manifestDigest,REFERENCE_PROFILE_VERSION,type OpeningClub} from '../../tools/world-bootstrap-791/planner.mjs';
-import {createCertifiedOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,type OpeningInventory,type OpeningRoot} from '../../tools/world-bootstrap-791/persistence.mjs';
+import {createCertifiedOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,reconcileCompletedOpening,type OpeningInventory,type OpeningRoot} from '../../tools/world-bootstrap-791/persistence.mjs';
 
 const assert=(ok:unknown,msg:string)=>{if(!ok)throw Error(msg)};
 const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
@@ -75,7 +75,7 @@ export async function openLocalOpeningRehearsal(persistTo:string){
   const journal=await readLocalOpeningJournal(db,plan.root.runKey);
   assert(same(journal.root,plan.root),'opening journal root differs from private plan');
   const observation=await readOpeningObservation(db);
-  return {plan,manifest,progress:inspectOpeningProgress(plan.root,manifest,plan.inventory,journal.receipts,observation)};
+  return {plan,manifest,journal,observation,progress:inspectOpeningProgress(plan.root,manifest,plan.inventory,journal.receipts,observation)};
  }
  return {
   close:handle.close,
@@ -93,6 +93,10 @@ export async function openLocalOpeningRehearsal(persistTo:string){
    return (await progress()).progress;
   },
   async inspect(){return (await progress()).progress},
+  async reconcile(){
+   const current=await progress();
+   return reconcileCompletedOpening(current.plan.root,current.manifest,current.plan.inventory,current.journal.receipts,current.observation);
+  },
   async step(session:AdminSession,now:number){
    const current=await progress(),next=current.progress.nextBatch;
    if(!next)return current.progress;

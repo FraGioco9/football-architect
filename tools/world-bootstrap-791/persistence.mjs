@@ -105,3 +105,43 @@ export function createCertifiedOpeningPersistenceRun(manifest,inventory,world){
  insist(manifestDigest({worldGeneration,worldRevision,idHighWater,players})===inventory.snapshotId,"certified inventory digest mismatch");
  return createOpeningPersistenceRun(manifest,inventory,world);
 }
+
+// Read-only final audit. A receipt is not a signed club contract and this
+// report neither changes world state nor publishes the staged players.
+export function reconcileCompletedOpening(run,manifest,inventory,receipts,observation){
+ const progress=inspectOpeningProgress(run,manifest,inventory,receipts,observation);
+ insist(progress.readyForReconciliation,"opening population incomplete");
+ insist(Array.isArray(observation.rawRows)&&observation.rawRows.length===run.slotCount,"missing complete player payload evidence");
+ const actual=new Map(observation.rawRows.map(r=>[r.id,r]));
+ insist(actual.size===run.slotCount,"duplicate payload evidence");
+ const assignments=new Map(receipts.flatMap(r=>r.entries).map(e=>[e.slotKey,e]));
+ insist(assignments.size===run.slotCount,"duplicate slot assignments");
+ const clubs=new Map(manifest.clubs.map(c=>[c.key,{clubKey:c.key,active:c.active,division:c.division,count:0}]));
+ const home=new Map(manifest.clubs.map(c=>[c.key,c.nationality]));
+ const ages={},positions={},nationalities={},terms={};
+ let reused=0,generated=0,domestic=0,otherPlayable=0,otherCountries=0;
+ const playable=new Set(manifest.clubs.map(c=>c.nationality));
+ const increment=(map,key)=>{map[key]=(map[key]??0)+1};
+ const allocations=[];
+ for(const slot of manifest.slots){
+  const entry=assignments.get(slot.slotKey),row=entry&&actual.get(entry.playerId),club=clubs.get(slot.clubKey);
+  insist(row&&club?.active&&club.division===slot.division,"opening allocation missing or inactive");
+  const p=JSON.parse(row.payload_json);
+  insist(p.id===entry.playerId&&p.age===slot.age&&p.initial_age===slot.age&&p.nationality===slot.primaryNationality&&p.primary_position===slot.primaryPosition&&p.career_status==="active","opening payload differs from planned slot");
+  insist(row.world_generation===run.worldGeneration&&row.entry_season===0&&row.schema_version==="player-portraits-v5"&&row.prompt_version==="player-portrait-v4.2"&&typeof row.config_version==="string"&&row.config_version.length>0,"opening profile/index evidence missing");
+  if(entry.kind==="reuse")reused++;
+  else{generated++;insist(p.retirement_age===sampleOpeningRetirementAge(slot),"opening retirement differs from pinned slot")}
+  club.count++;
+  increment(ages,p.age);increment(positions,p.primary_position);increment(nationalities,p.nationality);increment(terms,slot.intendedTermSeasons);
+  if(p.nationality===home.get(slot.clubKey))domestic++;
+  else if(playable.has(p.nationality))otherPlayable++;
+  else otherCountries++;
+  // Include assignment intents in the private digest, not in the public report.
+  allocations.push({slotKey:slot.slotKey,clubKey:slot.clubKey,playerId:entry.playerId,kind:entry.kind,intendedTermSeasons:slot.intendedTermSeasons,fingerprint:entry.fingerprint});
+ }
+ const clubCounts=[...clubs.values()];
+ insist(clubCounts.length===320&&clubCounts.filter(c=>c.active&&c.division===1).length===128&&clubCounts.filter(c=>c.active&&c.division===2).length===128&&clubCounts.every(c=>c.count===(c.active?25:0)),"opening roster count mismatch");
+ insist(domestic===4160&&reused===run.baseline.length&&generated+reused===6400,"opening population totals mismatch");
+ for(const expected of manifest.config.ageCounts)insist((ages[expected.age]??0)===expected.count,"opening age quota mismatch");
+ return {schema:"opening-local-reconciliation-v1",runKey:run.runKey,manifestHash:run.manifestHash,allocationHash:manifestDigest(allocations),receiptHash:manifestDigest(receipts.slice().sort((a,b)=>a.index-b.index)),population:6400,reused,generated,activeClubs:256,inactiveClubs:64,clubCounts,ages,positions,nationalities,terms,domestic,otherPlayable,otherCountries,stagedOnly:true};
+}

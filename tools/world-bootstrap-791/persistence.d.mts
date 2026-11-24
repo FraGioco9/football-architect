@@ -12,3 +12,6 @@ export type OpeningProgress={runKey:string;committedBatches:number;totalBatches:
 export function createCertifiedOpeningPersistenceRun(manifest:OpeningManifest,inventory:OpeningInventory,world:WorldV1):OpeningRoot;
 export function inspectOpeningProgress(root:OpeningRoot,manifest:OpeningManifest,inventory:OpeningInventory,receipts:OpeningReceipts,observation:OpeningObservation):OpeningProgress;
 export function prepareOpeningBatchIntents(root:OpeningRoot,manifest:OpeningManifest,inventory:OpeningInventory,index:number):OpeningIntents;
+
+export type OpeningReconciliation={schema:'opening-local-reconciliation-v1';runKey:string;manifestHash:string;allocationHash:string;receiptHash:string;population:number;reused:number;generated:number;activeClubs:number;inactiveClubs:number;clubCounts:{clubKey:string;active:boolean;division:1|2|null;count:number}[];ages:Record<string,number>;positions:Record<string,number>;nationalities:Record<string,number>;terms:Record<string,number>;domestic:number;otherPlayable:number;otherCountries:number;stagedOnly:true};
+export function reconcileCompletedOpening(root:OpeningRoot,manifest:OpeningManifest,inventory:OpeningInventory,receipts:OpeningReceipts,observation:OpeningObservation):OpeningReconciliation;

@@ -58,6 +58,13 @@ it('local opening journal preserves existing player, atomically rolls back and r
  const after=await readOpeningObservation(db);
  expect(after.rows).toHaveLength(25);
  expect(after.rows[0]).toEqual(initial.rows[0]);
+ for(const id of [initial.rows[0].id,after.rows[1].id]){
+  await expect(db.prepare("UPDATE player_portrait_profiles SET status='rejected' WHERE player_id=?").bind(id).run()).rejects.toThrow();
+  await expect(db.prepare('DELETE FROM player_portrait_profiles WHERE player_id=?').bind(id).run()).rejects.toThrow();
+  await expect(db.prepare("UPDATE player_market_values SET config_version=NULL,market_value_arc=NULL WHERE player_id=?").bind(id).run()).rejects.toThrow();
+  await expect(db.prepare('DELETE FROM player_market_values WHERE player_id=?').bind(id).run()).rejects.toThrow();
+ }
+ expect((await readOpeningObservation(db)).rows).toEqual(after.rows);
  expect(after.idHighWater).toBe(initial.idHighWater+24);
  const adults=after.rawRows.slice(1).map(r=>JSON.parse(r.payload_json));
  expect(adults.every(p=>p.age===39&&p.retirement_age===40)).toBe(true);
