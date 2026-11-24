@@ -7,3 +7,5 @@ export interface OpeningManifest{schema:'opening-population-plan-v1';seed:string
 export function clubCountryToNationality(countryId:string):string;
 export function planApprovedReference(input:{seed:string;versions:OpeningVersions;clubs:OpeningClub[]}):OpeningManifest;
 export function manifestDigest(value:unknown):string;
+
+export function fitOpeningYouthSlots(manifest:OpeningManifest,inventory:unknown):OpeningManifest;

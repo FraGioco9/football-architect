@@ -151,6 +151,45 @@ export function planYouthReuse(manifest,inventory){
  return {schema:"opening-youth-reuse-v1",worldGeneration:inventory.worldGeneration,worldRevision:inventory.worldRevision,inventorySnapshotId:inventory.snapshotId,assignments,reusedCount:matched.size,newCount:assignments.length-matched.size,unmatchedEligible,excluded,requiresReconciliation:unmatchedEligible.length+excluded.length>0};
 }
 
+// Repair only free youth slots after the initial exact matching. Preserve the
+// per-club roster roles, youth-band size, exact global age/nationality quotas,
+// every slot's domestic/foreign status, suitability and term-band quotas.
+// No regeneration, age change to players, or modification of existing identities.
+export function fitOpeningYouthSlots(manifest,inventory){
+ const initial=planYouthReuse(manifest,inventory);
+ if(!initial.requiresReconciliation||initial.excluded.length||inventory.players.some(p=>p.clubKey!==null))return manifest;
+ const slots=manifest.slots.map(s=>({...s})),byKey=new Map(slots.map(s=>[s.slotKey,s])),home=new Map(manifest.clubs.map(c=>[c.key,c.nationality]));
+ const youth=slots.filter(s=>int(s.age,16,19));
+ const reserved=new Set(initial.assignments.filter(a=>a.kind==="reuse").map(a=>a.slotKey));
+ const wanted=new Set(initial.unmatchedEligible);
+ const candidates=inventory.players.filter(p=>wanted.has(p.id)).sort((a,b)=>Number(b.hasApprovedPortrait)-Number(a.hasApprovedPortrait)||a.id-b.id);
+ for(const player of candidates){
+  const free=youth.filter(s=>!reserved.has(s.slotKey));
+  const ageDonor=free.find(s=>s.age===player.age);
+  if(!ageDonor)continue;
+  const nationalityDonors=free.filter(s=>s.primaryNationality===player.primaryNationality&&s.primaryNationality!==home.get(s.clubKey));
+  const choices=[];
+  for(const s of free){
+   if(s.primaryPosition!==player.primaryPosition)continue;
+   const donor=s.primaryNationality===player.primaryNationality?null:
+    (s.primaryNationality===home.get(s.clubKey)||player.primaryNationality===home.get(s.clubKey)?undefined:
+     nationalityDonors.find(d=>d.slotKey!==s.slotKey&&s.primaryNationality!==home.get(d.clubKey)));
+   if(donor===undefined)continue;
+   choices.push({s,donor,swaps:Number(!!donor)+Number(s.age!==player.age)});
+  }
+  choices.sort((a,b)=>a.swaps-b.swaps||Math.abs(a.s.primarySuitabilityTarget-player.primarySuitability)-Math.abs(b.s.primarySuitabilityTarget-player.primarySuitability)||order(a.s.slotKey,b.s.slotKey));
+  const choice=choices[0];if(!choice)continue;
+  const {s,donor}=choice;
+  if(donor)[s.primaryNationality,donor.primaryNationality]=[donor.primaryNationality,s.primaryNationality];
+  if(s.age!==player.age)[s.age,ageDonor.age]=[ageDonor.age,s.age];
+  reserved.add(s.slotKey);
+ }
+ const fitted={...manifest,slots:manifest.slots.map(s=>byKey.get(s.slotKey))};
+ // No partial success is considered ready. The persistence protocol rechecks
+ // the entire inventory and rejects unmatched/excluded IDs before any writes.
+ return fitted;
+}
+
 // Internal offline preview only: no permanent IDs for new players and no DB calls.
 // The seed stream for private retirement is independent of identity/attributes.
 export function sampleOpeningRetirementAge(slot){

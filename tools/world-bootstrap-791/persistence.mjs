@@ -38,7 +38,7 @@ export function prepareOpeningBatchIntents(run,manifest,inventory,index){
 
 // Initial inventory must be complete and certified by a future trusted adapter.
 // Fingerprint covers player payload, portrait association and index evidence.
-export function createOpeningPersistenceRun(manifest,inventory,world){
+function deriveOpeningPersistence(manifest,inventory,world){
  verifyWorld(world,manifest?.versions?.worldGeneration,manifest?.versions?.worldRevision);
  insist(manifest.slots.length===6400,"reference population size mismatch");
  const reuse=planYouthReuse(manifest,inventory);
@@ -47,12 +47,15 @@ export function createOpeningPersistenceRun(manifest,inventory,world){
  const manifestHash=manifestDigest(manifest),inventoryHash=manifestDigest({snapshotId:inventory.snapshotId,idHighWater:inventory.idHighWater,players:inventory.players.slice().sort((a,b)=>a.id-b.id)}),assignmentHash=manifestDigest(reuse.assignments);
  const batchIntentHashes=Array.from({length:256},(_,i)=>manifestDigest(intentsFor(manifest,reuse,i)));
  const identity={schema:"opening-persistence-v2",worldGeneration:world.generation,worldRevision:world.revision,manifestHash,inventoryHash,assignmentHash,batchSize:BATCH_SIZE,slotCount:manifest.slots.length,initialHighWater:inventory.idHighWater,batchIntentHashes};
- return {...identity,runKey:manifestDigest(identity),baseline};
+ return {root:{...identity,runKey:manifestDigest(identity),baseline},reuse};
+}
+export function createOpeningPersistenceRun(manifest,inventory,world){
+ return deriveOpeningPersistence(manifest,inventory,world).root;
 }
 function verifyRun(run,manifest,inventory){
- const rebuilt=createOpeningPersistenceRun(manifest,inventory,{generation:run.worldGeneration,revision:run.worldRevision,seasonNumber:0,day:0,phase:"unstarted"});
- insist(equalJson(run,rebuilt),"run input or fingerprint changed");
- return planYouthReuse(manifest,inventory);
+ const rebuilt=deriveOpeningPersistence(manifest,inventory,{generation:run.worldGeneration,revision:run.worldRevision,seasonNumber:0,day:0,phase:"unstarted"});
+ insist(equalJson(run,rebuilt.root),"run input or fingerprint changed");
+ return rebuilt.reuse;
 }
 function descriptor(run,manifest,reuse,index){
  const offset=index*run.batchSize,slots=readChunk(manifest,offset,run.batchSize);

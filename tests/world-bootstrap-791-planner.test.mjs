@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,createCertifiedOpeningPersistenceRun,reconcileCompletedOpening,prepareOpeningContractHandoff,inspectOpeningContractHandoff} from '../tools/world-bootstrap-791/persistence.mjs';
 import {loadRuntimePlayerCatalog} from '../backend/src/players-catalog.mjs';
-import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,clubCountryToNationality,approvedForeignWeights,sampleOpeningRetirementAge,prepareOpeningCandidateChunk} from '../tools/world-bootstrap-791/planner.mjs';
+import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,fitOpeningYouthSlots,clubCountryToNationality,approvedForeignWeights,sampleOpeningRetirementAge,prepareOpeningCandidateChunk} from '../tools/world-bootstrap-791/planner.mjs';
 
 function requireThat(ok,msg){if(!ok)throw new Error(msg)}
 
@@ -97,6 +97,31 @@ function testYouthReuse(){
  throws(()=>clubCountryToNationality("ITa"));
 }
 test('reuse existing youth before new generation without changing slot quotas',testYouthReuse);
+
+test('fit retained free youth while preserving demographic and roster quotas',()=>{
+ const m=planApprovedReference(referenceFixture()),youth=m.slots.filter(s=>s.age<=19);
+ // Find a group with more compatible nationality/role slots than exact-age
+ // slots, so the unmodified plan must leave at least one retained player out.
+ const base=youth.find(s=>['ITA','ENG','GER'].includes(s.primaryNationality)&&
+  youth.filter(x=>x.primaryNationality===s.primaryNationality&&x.primaryPosition===s.primaryPosition).length>
+  youth.filter(x=>x.age===s.age&&x.primaryNationality===s.primaryNationality&&x.primaryPosition===s.primaryPosition).length&&
+  youth.filter(x=>x.age===s.age).length>youth.filter(x=>x.age===s.age&&x.primaryNationality===s.primaryNationality&&x.primaryPosition===s.primaryPosition).length);
+ requireThat(!!base,"missing repair test group");
+ const count=youth.filter(x=>x.age===base.age&&x.primaryNationality===base.primaryNationality&&x.primaryPosition===base.primaryPosition).length+1;
+ const players=Array.from({length:count},(_,i)=>({id:i+1,age:base.age,primaryNationality:base.primaryNationality,primaryPosition:base.primaryPosition,primarySuitability:base.primarySuitabilityTarget,clubKey:null,representation:"ai",careerStatus:"active",hasSignedContract:false,hasSportingHistory:false,hasApprovedPortrait:true,readyForReuse:true}));
+ const inventory={worldGeneration:m.versions.worldGeneration,worldRevision:m.versions.worldRevision,snapshotId:"repair",complete:true,players};
+ eq(planYouthReuse(m,inventory).requiresReconciliation,true);
+ const fitted=fitOpeningYouthSlots(m,inventory);
+ eq(planYouthReuse(fitted,inventory).reusedCount,count);
+ eq(fitted,fitOpeningYouthSlots(m,{...inventory,players:[...players].reverse()}));
+ eq(fitted,fitOpeningYouthSlots(fitted,inventory));
+ const sorted=(slots,key)=>slots.map(s=>s[key]).sort();
+ for(const key of ["age","primaryNationality"])eq(sorted(fitted.slots,key),sorted(m.slots,key));
+ const homes=new Map(m.clubs.map(c=>[c.key,c.nationality]));
+ eq(fitted.slots.map(s=>s.primaryNationality===homes.get(s.clubKey)),m.slots.map(s=>s.primaryNationality===homes.get(s.clubKey)));
+ eq(fitted.slots.map(s=>[s.slotKey,s.clubKey,s.primaryPosition,s.intendedTermSeasons,s.primarySuitabilityTarget,s.age<=19]),m.slots.map(s=>[s.slotKey,s.clubKey,s.primaryPosition,s.intendedTermSeasons,s.primarySuitabilityTarget,s.age<=19]));
+ eq(fitOpeningYouthSlots(m,{...inventory,players:[{...players[0],readyForReuse:false},...players.slice(1)]}),m);
+});
 
 function testForeignPolicy(){
  const w=approvedForeignWeights(),playable=["BRA","GER","ENG","ESP","FRA","ITA","NED","POR"];
