@@ -137,7 +137,8 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
  assert.match(script,/if\(preview\)root\.hidden=true/);
  assert.match(index,/const playerDetail=url\.pathname\.match/);
  assert.match(publicApi,/SELECT p\.id,p\.payload_json,a\.club_key,/);
- assert.match(publicApi,/LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id/);
+ assert.match(publicApi,/LEFT JOIN \$\{CURRENT_PLAYER_CONTRACTS_SQL\} a ON a\.player_id=p\.id/);
+ assert.doesNotMatch(publicApi,/player_club_affiliations/);
  assert.match(publicApi,/LEFT JOIN player_portrait_profiles portrait ON portrait\.player_id=p\.id/);
  assert.match(publicApi,/portrait\.status='approved'/);
  assert.match(publicApi,/portrait\.prompt_version='player-portrait-v4\.2'/);
@@ -444,9 +445,10 @@ test('#535 position selection uses a subtle animated ring and reduced-motion sup
  assert.match(css,/\.app-player-detail-pitch-marker\.is-selected \.app-player-detail-marker-ring/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
-test('#509 detail keeps public clubKey read-only and never guesses absent affiliation',()=>{
+test('#509 detail keeps public clubKey read-only and never guesses an absent signed term',()=>{
  const backend=read('backend/src/public-players-read.ts'),js=read('assets/player-detail.js');
- assert.match(backend,/LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id/);
+ assert.match(backend,/LEFT JOIN \$\{CURRENT_PLAYER_CONTRACTS_SQL\} a ON a\.player_id=p\.id/);
+ assert.doesNotMatch(backend,/player_club_affiliations/);
  assert.match(backend,/WHERE p\.id=\?/);
  assert.match(backend,/clubKey=row\.club_key/);
  assert.match(backend,/return \{player:\{\.\.\.projectPublicFootballerDirectoryRecord/);

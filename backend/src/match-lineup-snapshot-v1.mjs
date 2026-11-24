@@ -2,6 +2,7 @@
  * No HTTP/world-command entrypoint imports this module. No database batch executed here.
  */
 import {ATTRIBUTES} from './players-generator-core.mjs';
+import {NEXT_MATCH_PLAYER_CONTRACTS_SQL} from './effective-player-contracts.mjs';
 import {simulateMatchV1,attachTestRatingsV1,buildCandidateMatchReceiptV1,LINEUP_SIMULATOR_VERSION} from './temporary-lineup-v1.mjs';
 import {planRecordedMatchTimelineV1} from './match-recorded-events-v1.mjs';
 import {sealMatchMvpV1} from './match-mvp-v1.mjs';
@@ -12,7 +13,7 @@ const hex64=/^[0-9a-f]{64}$/;
 const roles=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
 const fail=(reason)=>{throw new TypeError('Invalid lineup snapshot: '+reason)};
 const validId=value=>Number.isSafeInteger(value)&&value>0;
-const rosterSql='SELECT p.id,p.payload_json,a.club_key FROM player_club_affiliations a JOIN generated_players p ON p.id=a.player_id WHERE a.club_key IN (?,?) ORDER BY a.club_key ASC,p.id ASC';
+const rosterSql=`SELECT p.id,p.payload_json,a.club_key,a.contract_id FROM ${NEXT_MATCH_PLAYER_CONTRACTS_SQL} a JOIN generated_players p ON p.id=a.player_id WHERE a.club_key IN (?,?) ORDER BY a.club_key ASC,p.id ASC`;
 const worldSql='SELECT generation,revision,season_number AS seasonNumber,day,phase FROM world_state WHERE id=1';
 const sentinel='00000000-0000-4000-8000-000000000000';
 
@@ -31,7 +32,7 @@ function checkedWorld(world){
  if(!world||typeof world!=='object'||typeof world.generation!=='string'||world.generation.length!==36||
   !Number.isSafeInteger(world.revision)||world.revision<0||!validId(world.seasonNumber)||
   !Number.isInteger(world.day)||world.day<0||world.day>56||
-  !['active','preparing'].includes(world.phase))fail('world');
+  !['active','preparing'].includes(world.phase)||world.day===56)fail('world');
 }
 function projectPlayer(row){
  if(!validId(row?.id)||typeof row.payload_json!=='string'||!clubPattern.test(row.club_key))
@@ -54,7 +55,7 @@ function projectPlayer(row){
   secondary_positions:[...raw.secondary_positions],
   attributes:Object.fromEntries(ATTRIBUTES.map(k=>[k,raw.attributes[k]]))};
 }
-/** Read one complete two-club affiliation snapshot. The caller MUST commit all
+/** Read one complete two-club next-match signed roster snapshot. The caller MUST commit all
  * returned guards inside the authorized day transaction or discard this snapshot.
  */
 export async function readFrozenMatchRostersV1(db,{homeClubId,awayClubId,world}){
@@ -64,14 +65,14 @@ export async function readFrozenMatchRostersV1(db,{homeClubId,awayClubId,world})
  const before=await db.prepare(worldSql).first();
  if(!sameWorld(before,world))fail('stale world');
  const result=await db.prepare(rosterSql).bind(homeClubId,awayClubId).all();
- if(!Array.isArray(result?.results))fail('affiliation rows');
+ if(!Array.isArray(result?.results))fail('contract roster rows');
  const rows=result.results,seen=new Set(),homeRoster=[],awayRoster=[],source=[];
  for(const row of rows){
-  if(seen.has(row.id)||![homeClubId,awayClubId].includes(row.club_key))fail('duplicate/cross-club player');
+  if(!validId(row.contract_id)||seen.has(row.id)||![homeClubId,awayClubId].includes(row.club_key))fail('duplicate/cross-club player');
   seen.add(row.id);
   const player=projectPlayer(row);
   (row.club_key===homeClubId?homeRoster:awayRoster).push(player);
-  source.push([row.id,row.club_key,row.payload_json]);
+  source.push([row.id,row.club_key,row.payload_json,row.contract_id]);
  }
  const after=await db.prepare(worldSql).first();
  if(!sameWorld(after,world))fail('world changed during snapshot');
@@ -80,11 +81,11 @@ export async function readFrozenMatchRostersV1(db,{homeClubId,awayClubId,world})
  const guards=[
   guard(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=? AND day=? AND phase=?',
    [world.generation,world.revision,world.seasonNumber,world.day,world.phase]),
-  guard(db,'SELECT 1 WHERE (SELECT COUNT(*) FROM player_club_affiliations WHERE club_key IN (?,?))=?',
+  guard(db,`SELECT 1 WHERE (SELECT COUNT(*) FROM ${NEXT_MATCH_PLAYER_CONTRACTS_SQL} WHERE club_key IN (?,?))=?`,
    [homeClubId,awayClubId,rows.length]),
-  ...source.map(([id,club,payload])=>guard(db,
-   'SELECT 1 FROM player_club_affiliations a JOIN generated_players p ON p.id=a.player_id WHERE p.id=? AND a.club_key=? AND p.payload_json=?',
-   [id,club,payload]))
+  ...source.map(([id,club,payload,contractId])=>guard(db,
+   `SELECT 1 FROM ${NEXT_MATCH_PLAYER_CONTRACTS_SQL} a JOIN generated_players p ON p.id=a.player_id WHERE p.id=? AND a.club_key=? AND p.payload_json=? AND a.contract_id=?`,
+   [id,club,payload,contractId]))
  ];
  return {homeRoster,awayRoster,guards,playerCount:rows.length,
   sourceDigest:await digest([homeClubId,awayClubId,source])};

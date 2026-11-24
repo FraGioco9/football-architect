@@ -7,7 +7,7 @@ const world={generation:'11111111-1111-4111-8111-111111111111',revision:9,season
 const match={matchId:19,season:1,day:13,fixtureId:'season:1:IT-1:N01:IT-1:IT-2',
  competitionId:'IT-1',homeClubId:'IT-1',awayClubId:'IT-2',sourceHash:'a'.repeat(64)};
 const positions=['GK','RB','CB','CB','LB','CM','DM','CM','RW','ST','LW'];
-const row=(id,club,role='CM',strength=61,status='active')=>({id,club_key:club,
+const row=(id,club,role='CM',strength=61,status='active')=>({id,club_key:club,contract_id:id,
  payload_json:JSON.stringify({career_status:status,first_name:'Frozen',last_name:'Player'+id,nationality:'ITA',primary_position:role,
   secondary_positions:[],attributes:Object.fromEntries(ATTRIBUTES.map(a=>[a,strength])),
   development_aptitude:99})});
@@ -35,7 +35,7 @@ function makeDatabase(rows,options={}){
       throw new Error('Unexpected SELECT '+sql);
      },
      async all(){
-      if(!sql.includes('FROM player_club_affiliations a'))throw new Error('Unexpected all '+sql);
+      if(!sql.includes('FROM player_signed_contracts c'))throw new Error('Unexpected all '+sql);
       return {results:options.reverse?[...rows].reverse():rows};
      }};
     calls.push(statement);return statement;
@@ -43,7 +43,7 @@ function makeDatabase(rows,options={}){
   }
  };
 }
-test('full unpaginated affiliation rows, deterministic digest, no hidden attribute leakage',async()=>{
+test('full unpaginated signed-contract rows, deterministic digest, no hidden attribute leakage',async()=>{
  const rows=[...home(),row(101,'IT-2','GK')],a=makeDatabase(rows),b=makeDatabase(rows,{reverse:true});
  const x=await readFrozenMatchRostersV1(a.db,{homeClubId:'IT-1',awayClubId:'IT-2',world});
  const y=await readFrozenMatchRostersV1(b.db,{homeClubId:'IT-1',awayClubId:'IT-2',world});

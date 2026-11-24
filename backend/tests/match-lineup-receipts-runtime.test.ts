@@ -5,6 +5,7 @@ import {beforeAll,describe,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import type {Database} from '../src/database.ts';
+import {seedSignedTestTerm,closeSignedTestTerm} from './fixtures/signed-contracts.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {matchIdForSlot} from '../src/domain/calendar/match-slot-identity.ts';
 import {ATTRIBUTES} from '../src/players-generator-core.mjs';
@@ -43,8 +44,7 @@ beforeAll(async()=>{
    development_aptitude:91});
   await db.prepare('INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(?,?,?,?,?,?)')
    .bind(id,draft,generation,1,payload,now+20).run();
-  if(id<=11)await db.prepare('INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,?)')
-   .bind(id,'IT-1').run();
+  if(id<=11)await seedSignedTestTerm(db,generation,id,'IT-1',0,now,'receipt-fixture-'+id);
  }
 });
 
@@ -61,15 +61,21 @@ describe('#613 local Worker D1 guarded match receipts (not wired to official clo
   expect(staged.kind).toBe('lineup_candidate');
   if(staged.kind!=='lineup_candidate')throw Error('missing XI');
   // A contract change does not increment world revision: guard must still abort the batch.
-  await db.prepare("UPDATE player_club_affiliations SET club_key='IT-3' WHERE player_id=1").run();
+  await closeSignedTestTerm(db,1,12);
+  await seedSignedTestTerm(db,generation,1,'IT-3',12,now,'receipt-fixture-transfer');
   await expect(db.batch([...staged.guards,...staged.writes])).rejects.toThrow();
   expect((await db.prepare('SELECT COUNT(*) AS n FROM match_lineup_result_receipts').first<{n:number}>())?.n).toBe(0);
-  await db.prepare("UPDATE player_club_affiliations SET club_key='IT-1' WHERE player_id=1").run();
-  // Also reject a new affiliation that changes the count, even with all original players intact.
-  await db.prepare("INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,?)").bind(12,'IT-2').run();
+  await closeSignedTestTerm(db,1,12);
+  await seedSignedTestTerm(db,generation,1,'IT-1',12,now,'receipt-fixture-return');
+  // Even identical club and player payload must fail if the signed term changed.
   await expect(db.batch([...staged.guards,...staged.writes])).rejects.toThrow();
+  const beforeAddition=await planMatchSimulationReceiptV1(db,args);
+  if(beforeAddition.kind!=='lineup_candidate')throw Error('missing XI');
+  // Also reject a new signed term that changes the count, even with all original players intact.
+  await seedSignedTestTerm(db,generation,12,'IT-2',12,now,'receipt-fixture-add');
+  await expect(db.batch([...beforeAddition.guards,...beforeAddition.writes])).rejects.toThrow();
   expect((await db.prepare('SELECT COUNT(*) AS n FROM match_lineup_result_receipts').first<{n:number}>())?.n).toBe(0);
-  await db.prepare('DELETE FROM player_club_affiliations WHERE player_id=?').bind(12).run();
+  await closeSignedTestTerm(db,12,12);
   const fresh=await planMatchSimulationReceiptV1(db,args);
   expect(fresh.kind).toBe('lineup_candidate');
   if(fresh.kind!=='lineup_candidate')throw Error('missing XI');
@@ -90,7 +96,8 @@ describe('#613 local Worker D1 guarded match receipts (not wired to official clo
   await expect(db.prepare('DELETE FROM match_lineup_result_receipts WHERE public_match_id=?')
    .bind(matchId).run()).rejects.toThrow();
   // Current roster changes do not alter a frozen receipt, even if an individual retires.
-  await db.prepare("UPDATE player_club_affiliations SET club_key='IT-3' WHERE player_id=1").run();
+  await closeSignedTestTerm(db,1,13);
+  await seedSignedTestTerm(db,generation,1,'IT-3',13,now,'receipt-fixture-after');
   const preserved=await db.prepare('SELECT receipt_hash,receipt_json FROM match_lineup_result_receipts WHERE public_match_id=?')
    .bind(matchId).first<{receipt_hash:string;receipt_json:string}>();
   expect(preserved).toEqual(row);

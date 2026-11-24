@@ -1,11 +1,9 @@
-/** #509 V1: current player-to-club affiliation; no contract term, salary or transfer history. */
+/** #777: protected inspection of current signed terms. No assignment or signing command. */
 import clubs from '../../data/clubs.json' with {type:'json'};
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
-import type {AdminSession} from './auth.ts';
 import {readWorld} from './world-repository.ts';
-import {sessionGuard} from './command-guards.ts';
-import {abortUnless} from './atomic-guard.ts';
+import {CURRENT_PLAYER_CONTRACTS_SQL} from './effective-player-contracts.mjs';
 
 const canonical=new Map(clubs.map(c=>[c.countryId+'-'+c.clubId,c.primaryName] as const));
 if(canonical.size!==320)throw Error('Invalid canonical club catalogue');
@@ -13,9 +11,9 @@ const catalogue=Object.freeze([...canonical].map(([clubKey,name])=>({clubKey,nam
  .sort((a,b)=>a.clubKey.localeCompare(b.clubKey)));
 const invalid=()=>new ApiError(422,'invalid_player_contract');
 const validId=(v:unknown):v is number=>Number.isSafeInteger(v)&&Number(v)>0;
-const validKey=(v:unknown):v is string=>typeof v==='string'&&canonical.has(v);
 interface Row {
  id:number;first_name:string|null;last_name:string|null;club_key:string|null;
+ contract_id:number|null;annual_salary_arc:number|null;duration_seasons:number|null;start_tick:number|null;end_tick:number|null;signed_at_ms:number|null;
  nationality:string|null;age:number|null;height_cm:number|null;
  preferred_foot:string|null;primary_position:string|null;secondary_positions:string|null;
 }
@@ -34,14 +32,15 @@ const presentation=(r:Row)=>{
   ...(Number.isSafeInteger(r.height_cm)?{height_cm:r.height_cm}:{}),
   ...(r.preferred_foot==='left'||r.preferred_foot==='right'?{preferred_foot:r.preferred_foot}:{}),
   ...(typeof r.primary_position==='string'?{primary_position:r.primary_position}:{}),
-  secondary_positions:secondary};
+  secondary_positions:secondary,
+  contract:r.contract_id===null?null:{id:r.contract_id,annualSalaryArc:r.annual_salary_arc,durationSeasons:r.duration_seasons,startTick:r.start_tick,endTick:r.end_tick,signedAt:new Date(r.signed_at_ms!).toISOString()}};
 
 };
 /** Report a missing forward-only local/DEV schema without leaking SQL or D1 details. */
-async function withAffiliationSchema<T>(work:()=>Promise<T>):Promise<T>{
+async function withContractSchema<T>(work:()=>Promise<T>):Promise<T>{
  try{return await work()}
  catch(error){
-  if(/\bno such table:\s*(?:main\.)?player_club_affiliations\b/i.test(String(error instanceof Error?error.message:error)))
+  if(/\bno such table:\s*(?:main\.)?player_signed_contracts\b/i.test(String(error instanceof Error?error.message:error)))
    throw new ApiError(503,'contracts_schema_unavailable');
   throw error;
  }
@@ -55,8 +54,11 @@ const listSql=`SELECT p.id,
  json_extract(p.payload_json,'$.preferred_foot') AS preferred_foot,
  json_extract(p.payload_json,'$.primary_position') AS primary_position,
  json_extract(p.payload_json,'$.secondary_positions') AS secondary_positions,
- a.club_key FROM generated_players p
- LEFT JOIN player_club_affiliations a ON a.player_id=p.id`;
+ a.club_key,a.contract_id,c.annual_salary_arc,c.duration_seasons,c.start_tick,
+ MIN(c.scheduled_end_tick,COALESCE(c.closed_tick,c.scheduled_end_tick)) AS end_tick,c.signed_at_ms
+ FROM generated_players p
+ LEFT JOIN ${CURRENT_PLAYER_CONTRACTS_SQL} a ON a.player_id=p.id
+ LEFT JOIN player_signed_contracts c ON c.id=a.contract_id`;
 
 export function parseContractListQuery(search:string):{page:number;playerId:number|null}{
  const params=new URLSearchParams(search);
@@ -83,12 +85,12 @@ export async function readPlayerContracts(db:Database,query:{page:number;playerI
  const pageSize=50;
  let count=0,rows:Row[];
  if(query.playerId!==null){
-  const item=await withAffiliationSchema(()=>db.prepare(listSql+' WHERE p.id=?').bind(query.playerId!).first<Row>());
+  const item=await withContractSchema(()=>db.prepare(listSql+' WHERE p.id=?').bind(query.playerId!).first<Row>());
   if(!item)throw new ApiError(404,'player_not_found');
   count=1;rows=[item];
  }else{
   count=(await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n??0;
-  rows=(await withAffiliationSchema(()=>db.prepare(listSql+' ORDER BY p.id ASC LIMIT ? OFFSET ?')
+  rows=(await withContractSchema(()=>db.prepare(listSql+' ORDER BY p.id ASC LIMIT ? OFFSET ?')
    .bind(pageSize,(query.page-1)*pageSize).all<Row>())).results;
  }
  const after=await readWorld(db);
@@ -98,137 +100,4 @@ export async function readPlayerContracts(db:Database,query:{page:number;playerI
   totalPages:query.playerId===null?Math.max(1,Math.ceil(count/pageSize)):1,
   worldGeneration:before.generation,worldRevision:before.revision,
   players:rows.map(presentation),clubs:catalogue};
-}
-export interface ContractChange {
- playerId:number;clubKey:string|null;expectedClubKey:string|null;
- expectedGeneration:string;expectedRevision:number;
-}
-function parseChange(input:unknown):ContractChange{
- if(!input||typeof input!=='object'||Array.isArray(input))throw invalid();
- const o=input as Record<string,unknown>;
- if(Object.keys(o).sort().join(',')!=='clubKey,expectedClubKey,expectedGeneration,expectedRevision,playerId'||
-  !validId(o.playerId)||
-  !(o.clubKey===null||validKey(o.clubKey))||
-  !(o.expectedClubKey===null||validKey(o.expectedClubKey))||
-  typeof o.expectedGeneration!=='string'||
-  !/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(o.expectedGeneration)||
-  !Number.isSafeInteger(o.expectedRevision)||Number(o.expectedRevision)<0)throw invalid();
- return o as unknown as ContractChange;
-}
-async function currentLink(db:Database,playerId:number){
- return withAffiliationSchema(()=>db.prepare(`SELECT p.id,a.club_key FROM generated_players p
- LEFT JOIN player_club_affiliations a ON a.player_id=p.id WHERE p.id=?`)
- .bind(playerId).first<{id:number;club_key:string|null}>());
-}
-export async function changePlayerContract(db:Database,session:AdminSession,input:unknown,now:number){
- const change=parseChange(input),world=await readWorld(db);
- if(world.generation!==change.expectedGeneration||world.revision!==change.expectedRevision)
-  throw new ApiError(409,'stale_world');
- const stored=await currentLink(db,change.playerId);
- if(!stored)throw new ApiError(404,'player_not_found');
- if((stored.club_key??null)!==change.expectedClubKey)
-  throw new ApiError(409,'stale_player_contract');
- // A single batched transaction rechecks the live Admin grants and world token,
- // then atomically compares existing affiliation before assignment/unassignment.
- const expectedSql=change.expectedClubKey===null
-  ?'SELECT 1 FROM generated_players p WHERE p.id=? AND NOT EXISTS (SELECT 1 FROM player_club_affiliations a WHERE a.player_id=p.id)'
-  :'SELECT 1 FROM generated_players p WHERE p.id=? AND EXISTS (SELECT 1 FROM player_club_affiliations a WHERE a.player_id=p.id AND a.club_key=?)';
- const expectedArgs=change.expectedClubKey===null?[change.playerId]:[change.playerId,change.expectedClubKey];
- const mutation=change.clubKey===null
-  ?db.prepare('DELETE FROM player_club_affiliations WHERE player_id=?').bind(change.playerId)
-  :db.prepare(`INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,?)
-   ON CONFLICT(player_id) DO UPDATE SET club_key=excluded.club_key`).bind(change.playerId,change.clubKey);
- try{
-  await db.batch([
-   sessionGuard(db,session,now),
-   abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=?',
-    [change.expectedGeneration,change.expectedRevision]),
-   abortUnless(db,expectedSql,expectedArgs),
-   mutation
-  ]);
- }catch{
-  const fresh=await readWorld(db);
-  if(fresh.generation!==change.expectedGeneration||fresh.revision!==change.expectedRevision)
-   throw new ApiError(409,'stale_world');
-  const current=await currentLink(db,change.playerId);
-  if(!current)throw new ApiError(404,'player_not_found');
-  if((current.club_key??null)!==change.expectedClubKey)
-   throw new ApiError(409,'stale_player_contract');
-  throw new ApiError(503,'player_contract_unavailable');
- }
- return {playerId:change.playerId,clubKey:change.clubKey,
-  worldGeneration:world.generation,worldRevision:world.revision};
-}
-
-/** #509: atomic batch assignment (up to one current directory page), not a transfer market. */
-interface BatchContract {playerId:number;expectedClubKey:string|null}
-function parseBatchChange(input:unknown):{
- players:BatchContract[];clubKey:string|null;expectedGeneration:string;expectedRevision:number
-}{
- if(!input||typeof input!=='object'||Array.isArray(input))throw invalid();
- const raw=input as Record<string,unknown>;
- if(Object.keys(raw).sort().join(',')!=='clubKey,expectedGeneration,expectedRevision,players'||
-  !(raw.clubKey===null||validKey(raw.clubKey))||
-  typeof raw.expectedGeneration!=='string'||
-  !/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(raw.expectedGeneration)||
-  !Number.isSafeInteger(raw.expectedRevision)||Number(raw.expectedRevision)<0||
-  !Array.isArray(raw.players)||raw.players.length===0||raw.players.length>50)throw invalid();
- const unique=new Set<number>();
- for(const value of raw.players){
-  if(!value||typeof value!=='object'||Array.isArray(value))throw invalid();
-  const entry=value as Record<string,unknown>;
-  if(Object.keys(entry).sort().join(',')!=='expectedClubKey,playerId'||
-   !validId(entry.playerId)||
-   !(entry.expectedClubKey===null||validKey(entry.expectedClubKey))||
-   unique.has(entry.playerId))throw invalid();
-  unique.add(entry.playerId);
- }
- return input as ReturnType<typeof parseBatchChange>;
-}
-export async function changePlayerContractsBatch(db:Database,session:AdminSession,input:unknown,now:number){
- const change=parseBatchChange(input),world=await readWorld(db);
- if(world.generation!==change.expectedGeneration||world.revision!==change.expectedRevision)
-  throw new ApiError(409,'stale_world');
- const ids=change.players.map(p=>p.playerId);
- const placeholders=ids.map(()=>'?').join(',');
- const existing=await withAffiliationSchema(()=>db.prepare(
-  `SELECT p.id,a.club_key FROM generated_players p
-  LEFT JOIN player_club_affiliations a ON a.player_id=p.id
-  WHERE p.id IN (${placeholders})`).bind(...ids)
-  .all<{id:number;club_key:string|null}>());
- if(existing.results.length!==ids.length)throw new ApiError(404,'player_not_found');
- const known=new Map(existing.results.map(row=>[row.id,row.club_key]));
- if(change.players.some(p=>known.get(p.playerId)!==p.expectedClubKey))
-  throw new ApiError(409,'stale_player_contract');
- const guards=change.players.map(p=>p.expectedClubKey===null
-  ?abortUnless(db,
-   'SELECT 1 FROM generated_players g WHERE g.id=? AND NOT EXISTS (SELECT 1 FROM player_club_affiliations a WHERE a.player_id=g.id)',
-   [p.playerId])
-  :abortUnless(db,
-   'SELECT 1 FROM generated_players g JOIN player_club_affiliations a ON a.player_id=g.id WHERE g.id=? AND a.club_key=?',
-   [p.playerId,p.expectedClubKey]));
- const mutations=change.players.map(p=>change.clubKey===null
-  ?db.prepare('DELETE FROM player_club_affiliations WHERE player_id=?').bind(p.playerId)
-  :db.prepare(`INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,?)
-   ON CONFLICT(player_id) DO UPDATE SET club_key=excluded.club_key`).bind(p.playerId,change.clubKey));
- try{
-  await db.batch([sessionGuard(db,session,now),
-   abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=?',
-    [change.expectedGeneration,change.expectedRevision]),...guards,...mutations]);
- }catch{
-  const fresh=await readWorld(db);
-  if(fresh.generation!==change.expectedGeneration||fresh.revision!==change.expectedRevision)
-   throw new ApiError(409,'stale_world');
-  const current=await withAffiliationSchema(()=>db.prepare(
-   `SELECT p.id,a.club_key FROM generated_players p LEFT JOIN player_club_affiliations a
-    ON a.player_id=p.id WHERE p.id IN (${placeholders})`).bind(...ids)
-   .all<{id:number;club_key:string|null}>());
-  if(current.results.length!==ids.length)throw new ApiError(404,'player_not_found');
-  const freshLinks=new Map(current.results.map(r=>[r.id,r.club_key]));
-  if(change.players.some(p=>freshLinks.get(p.playerId)!==p.expectedClubKey))
-   throw new ApiError(409,'stale_player_contract');
-  throw new ApiError(503,'player_contract_unavailable');
- }
- return {updated:ids.length,clubKey:change.clubKey,
-  playerIds:ids,worldGeneration:world.generation,worldRevision:world.revision};
 }

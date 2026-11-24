@@ -26,34 +26,36 @@ test('#574 four mobile tables have independent bounded touch scrolling and fixed
  assert.match(read('clubs/_shared/index.html'),/class="app-players-table-scroll club-roster-table-scroll"/);
 });
 
-test('#574 Contracts matches the mobile player tracks and reserves enough fixed space for each column',()=>{
+test('#777 Contracts has fixed responsive tracks without legacy selection controls',()=>{
+ const block=admin.slice(admin.indexOf('/* #777 contract inspection:'));
+ assert.ok(block.includes('min-width:'));
  for(const [breakpoint,width,columns] of [
-  [720,630,[34,32,128,112,54,66,60,144]],
-  [420,588,[32,30,120,104,52,64,58,128]]
+  [720,740,[32,128,132,122,64,76,76,110]],
+  [420,706,[30,120,124,116,62,72,72,110]]
  ]){
-  assert.equal(columns.reduce((sum,n)=>sum+n,0),width,'all eight columns sum to fixed table minimum at '+breakpoint);
-  const section=admin.split('@media(max-width:'+breakpoint+'px){').at(-1);
-  assert.ok(section,'media section exists at '+breakpoint);
-  assert.match(section,new RegExp('\\.app-admin-view \\.admin-contracts-table\\{min-width:'+width+'px\\}'));
+  assert.equal(columns.reduce((sum,n)=>sum+n,0),width);
+  const section=block.split('@media(max-width:'+breakpoint+'px){').at(-1);
+  assert.match(section,new RegExp('\\.admin-contracts-table\\{min-width:'+width+'px\\}'));
   for(let index=1;index<=8;index++){
-   assert.match(section,new RegExp('\\.app-admin-view \\.admin-contracts-table :is\\(th,td\\):nth-child\\('+index+'\\)\\{width:'+columns[index-1]+'px'));
+   assert.match(section,new RegExp('\\.admin-contracts-table :is\\(th,td\\):nth-child\\('+index+'\\)\\{width:'+columns[index-1]+'px'));
   }
-  assert.equal(columns[1],breakpoint===720?32:30,'flag width matches shared tables');
-  assert.equal(columns[2],breakpoint===720?128:120,'player width matches shared tables');
-  assert.equal(columns[3],breakpoint===720?112:104,'positions width matches shared tables');
+  assert.equal(columns[0],breakpoint===720?32:30);
+  assert.equal(columns[1],breakpoint===720?128:120);
  }
- assert.match(admin,/\.app-admin-view \.admin-contracts-table tbody td:nth-child\(3\),\s*\.app-admin-view \.admin-contracts-table tbody td:nth-child\(8\)\{white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/);
- assert.match(admin,/\.app-admin-view \.admin-contracts-checkbox-cell input\{width:17px;height:17px/);
+ assert.doesNotMatch(admin,/admin-contracts-checkbox-cell/);
+ assert.match(block,/\.admin-contracts-table tbody td\{white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/);
 });
 
-test('#574 first paint and checkbox flow are unchanged at narrow widths',()=>{
+test('#777 first paint reserves contract columns and has no assignment UI at narrow widths',()=>{
  for(const path of ['players/index.html','clubs/_shared/index.html','admin/players/preview/index.html']){
   assert.equal((read(path).match(/class="app-players-loading-row"/g)||[]).length,5,path);
  }
  const contracts=read('admin/contracts/index.html');
- assert.equal((contracts.match(/class="admin-contracts-skeleton"/g)||[]).length,5);
- assert.match(contracts,/data-contracts-all aria-label="Select all players on this page"/);
- assert.match(read('assets/admin-contracts.js'),/input\.dataset\.contractsCheck=String\(p\.id\)/);
+ const rows=contracts.match(/<tr class="admin-contracts-skeleton" aria-hidden="true">[^]*?<\/tr>/g)||[];
+ assert.equal(rows.length,5);
+ for(const row of rows)assert.equal((row.match(/<td\b/g)||[]).length,8);
+ assert.doesNotMatch(contracts,/data-contracts-(all|check|save|trigger|select)/);
+ assert.doesNotMatch(read('assets/admin-contracts.js'),/method:\s*['"]POST|expectedClubKey/);
  assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px/);
  assert.match(admin,/\.app-admin-view \.admin-contracts-skeleton td\{height:36px\}/);
 });
