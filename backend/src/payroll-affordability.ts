@@ -37,10 +37,10 @@ export async function preparePayrollAffordability(db:Database,world:WorldV1,club
  const arrearsSql=`SELECT COALESCE(SUM(c.outstanding_arc),0) FROM payroll_claim_outstanding c JOIN payroll_runs r ON r.id=c.run_id WHERE r.generation=? AND r.club_key=?`;
  // Every earlier payday for this generation must be completed, even when no
  // wages were due. Missing history cannot be treated as zero arrears.
- const historySql=`SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM seasons s CROSS JOIN (SELECT 28 AS payday UNION ALL SELECT 56) d
- WHERE s.generation=? AND s.season_number*56+d.payday<? AND NOT EXISTS(
+ const historySql=`SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM seasons s JOIN season_admin_events d ON d.season_number=s.season_number AND d.kind='settle-rewards'
+ WHERE s.generation=? AND s.season_number*56+d.scheduled_day<? AND NOT EXISTS(
  SELECT 1 FROM payroll_runs r JOIN payroll_run_milestones m ON m.run_id=r.id AND m.kind='completed'
- WHERE r.generation=s.generation AND r.season=s.season_number AND r.day=d.payday AND r.club_key=?))
+ WHERE r.generation=s.generation AND r.season=s.season_number AND r.day=d.scheduled_day AND r.club_key=?))
  AND NOT EXISTS(SELECT 1 FROM payroll_runs r WHERE r.generation=? AND r.club_key=? AND NOT EXISTS(
  SELECT 1 FROM payroll_run_milestones m WHERE m.run_id=r.id AND m.kind='completed'))
  AND NOT EXISTS(SELECT 1 FROM payroll_allocation_paid a JOIN payroll_runs r ON r.id=a.run_id WHERE r.generation=? AND r.club_key=? AND a.reversed<>0)

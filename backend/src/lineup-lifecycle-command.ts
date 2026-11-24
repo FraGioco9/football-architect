@@ -16,7 +16,7 @@ import {proposeLifecycleTransition,type LifecycleProposal} from './domain/lifecy
 import {replayLineupSeasonV1,type LineupSeasonReplayV1} from './lineup-season-replay.ts';
 import {planLineupSportingDayV1,type StagedLineupDayV1} from './lineup-sporting-day-plan.ts';
 import {tieKey} from './knockout-progression.ts';
-import {assertRewardCalendarCompletion} from './reward-calendar-gate.ts';
+import {preparePayrollCalendarGuards} from './payroll-settlement-command.ts';
 
 type Evidence=Awaited<ReturnType<typeof loadSeasonSportingEvidence>>;
 interface DayRow {
@@ -163,7 +163,7 @@ export async function executeLineupLifecycleV1(
   const evidence=await loadSeasonSportingEvidence(db,world);
   const history=await replayLineupSeasonV1(db,world,evidence,world.day);
   const prefixGuards=await storedPrefixGuards(db,world,evidence,history);
-  if(world.day===28)prefixGuards.push(...await assertRewardCalendarCompletion(db,world,28));
+  if(world.day===28)prefixGuards.push(...await preparePayrollCalendarGuards(db,world,28));
   const proposal=proposeLifecycleTransition(world,action,{
    calendarComplete:true,drawsComplete:true,dueActivitiesComplete:true,
    resultsComplete:false,archiveComplete:false,nextSeasonSnapshotApproved:false

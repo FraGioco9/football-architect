@@ -5,7 +5,7 @@ import {rewardCalendarCompletionGuards,prepareRewardPayrollGuards} from '../src/
 import {annualRewardHoldId,executeRewardSettlementBatch,REWARD_BATCH_LIMIT} from '../src/reward-settlement-command.ts';
 import {economicAssert,provisionClubAccounts,provisionWallet,postEconomicOperation,reserveEconomicFunds,reconcileEconomy} from '../src/economic-ledger.ts';
 import {preparePayrollAffordability} from '../src/payroll-affordability.ts';
-import {settleClubPayrollBatch,reconcilePayrollPayday} from '../src/payroll-settlement-command.ts';
+import {settleClubPayrollBatch,settleNextPayrollBatch,reconcilePayrollPayday} from '../src/payroll-settlement-command.ts';
 import {seedSignedTestTerm} from './fixtures/signed-contracts.ts';
 import {readMatchDirectory} from '../src/public-match-directory.ts';
 /** #613 FULL 56-day V2 authority on isolated local Worker D1.
@@ -95,14 +95,28 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(world.day).toBe(3);
  let day28Proof:PreparedRewardSettlement|undefined;
  let day28ReceiptHash:string|null=null;
- let payrollProbeClub:string|null=null,payrollEmptyClub:string|null=null;
+ let payrollProbeClub:string|null=null,payrollEmptyClub:string|null=null,payrollRecoveryClub:string|null=null;
+ let firstPaid=0,firstArrears=0;
+ const finishPayroll=async()=>{
+  // Resume from persisted club completions; no in-memory cursor or amount.
+  for(let i=0;i<320;i++){
+   const next=await settleNextPayrollBatch(db,session,now);
+   if(next===null)break;
+   expect(next.status).toBe('complete');
+  }
+  const all=await reconcilePayrollPayday(db,session,now);
+  expect(all).toMatchObject({status:'complete',clubsComplete:320,missingClubs:[],pendingArc:0});
+  expect(all.receiptHash).toMatch(/^[a-f0-9]{64}$/);
+  expect(await settleNextPayrollBatch(db,session,now)).toBeNull();
+  return all;
+ };
  const verifyTreasuries=async(plans:readonly RewardPlan[])=>{
   const expected=new Map<string,number>();
   for(const p of plans)for(const row of p.rows)expected.set('club:'+row.clubKey,(expected.get('club:'+row.clubKey)??0)+row.amountArc);
   const rows=(await db.prepare("SELECT id,balance_arc FROM economic_balances WHERE kind='CLUB_TREASURY' ORDER BY id").all()).results as {id:string;balance_arc:number}[];
   expect(rows).toHaveLength(320);
-  for(const row of rows)expect(row.balance_arc,row.id).toBe(expected.get(row.id)??0);
-  expect(rows.reduce((sum,row)=>sum+row.balance_arc,0)).toBe(plans.reduce((sum,p)=>sum+p.totalArc,0));
+  for(const row of rows)expect(row.balance_arc,row.id).toBe((expected.get(row.id)??0)-(row.id==='club:'+payrollRecoveryClub?firstPaid:0));
+  expect(rows.reduce((sum,row)=>sum+row.balance_arc,0)).toBe(plans.reduce((sum,p)=>sum+p.totalArc,0)-firstPaid);
  };
  const finishRewards=async(prepared:PreparedRewardSettlement)=>{
   const positive=prepared.manifest.plan.rows.filter(r=>r.amountArc>0).length;
@@ -260,16 +274,37 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    expect(await count('economic_transactions')).toBe(305);
    await verifyTreasuries([first.manifest.plan]);
    payrollProbeClub=probeClub;
+   // A closed historical term with one missed amount. No future sporting
+   // affiliation or salary; later participation must repay its Day28 debt.
+   const recovery=await db.prepare("SELECT owner_id,available_arc FROM economic_available_balances WHERE kind='CLUB_TREASURY' AND available_arc>0 AND owner_id<>? ORDER BY owner_id LIMIT 1").bind(probeClub).first();
+   if(!recovery)throw Error('Missing arrears recovery club');
+   payrollRecoveryClub=String(recovery.owner_id);
+   firstPaid=Number(recovery.available_arc);
+   const annual=5*(Math.floor(2*firstPaid/5)+1),reference=annual*4/5;
+   firstArrears=Math.floor(annual/2)-firstPaid;
+   if(firstArrears<=0)throw Error('Invalid arrears fixture');
+   const recoveryBatch=crypto.randomUUID(),agent=session.unified!.playerId;
+   await db.prepare("INSERT INTO player_generation_drafts(id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,status,created_at,expires_at,committed_at) VALUES(?,?,1,?,'{}','[]',1,'payroll-recovery-fixture','committed',?,?,?)").bind(recoveryBatch,world.generation,agent,now,now+3600,now).run();
+   await db.prepare("INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(1,?,?,1,?,?)").bind(recoveryBatch,world.generation,JSON.stringify({id:1,first_name:'Fixture',last_name:'Recovery',nationality:'ITA',age:22,career_status:'active'}),now).run();
+   await db.prepare("INSERT INTO player_signed_contracts(player_id,world_generation,club_key,signed_at_ms,start_tick,duration_seasons,scheduled_end_tick,annual_salary_arc,minimum_arc,reference_arc,maximum_arc,policy_version,ai_demand_arc,signing_key) VALUES(1,?,?,?,0,1,56,?,40,?,?,'contract-draft-v1',?,'payroll-recovery-fixture')").bind(world.generation,payrollRecoveryClub,now*1000,annual,reference,2*reference,annual).run();
+   await db.prepare("UPDATE player_signed_contracts SET closed_tick=28,close_reason='release' WHERE player_id=1").run();
    const emptyPayroll=await settleClubPayrollBatch(db,session,probeClub,now);
    expect(emptyPayroll).toMatchObject({status:'complete',dueArc:0,paidArc:0,arrearsArc:0});
    expect(await settleClubPayrollBatch(db,session,probeClub,now)).toEqual(emptyPayroll);
-   const zeroClub=await db.prepare("SELECT owner_id FROM economic_available_balances WHERE kind='CLUB_TREASURY' AND available_arc=0 ORDER BY owner_id LIMIT 1").first();
+   const zeroClub=await db.prepare("SELECT owner_id FROM economic_available_balances WHERE kind='CLUB_TREASURY' AND available_arc=0 AND owner_id<>? ORDER BY owner_id LIMIT 1").bind(payrollRecoveryClub).first();
    if(!zeroClub)throw Error('Missing zero-liquidity fixture club');
    payrollEmptyClub=String(zeroClub.owner_id);
    expect(await settleClubPayrollBatch(db,session,payrollEmptyClub,now)).toMatchObject({status:'complete',dueArc:0,paidArc:0});
    expect(await reconcilePayrollPayday(db,session,now)).toMatchObject({status:'pending',clubsComplete:2,dueArc:null});
    await expect(preparePayrollAffordability(db,world,probeClub,125)).rejects.toMatchObject({code:'payroll_affordability_unavailable'});
-   expect(await count('economic_transactions')).toBe(305);
+   await expect(executeLineupLifecycleV1(db,session,'advance',command(),'payroll-blocked-advance-0001',now)).rejects.toMatchObject({code:'payroll_calendar_pending'});
+   const partial=await settleClubPayrollBatch(db,session,payrollRecoveryClub,now);
+   expect(partial).toMatchObject({status:'complete',dueArc:firstPaid+firstArrears,paidArc:firstPaid,arrearsArc:firstArrears});
+   expect(await reconcilePayrollPayday(db,session,now)).toMatchObject({status:'pending',clubsComplete:3});
+   // Simulated interruption: resume from durable completed milestones.
+   const full=await finishPayroll();
+   expect(full).toMatchObject({dueArc:firstPaid+firstArrears,paidArc:firstPaid,arrearsArc:firstArrears});
+   expect(await count('economic_transactions')).toBe(306);
    expect(await reconcileEconomy(db,localAccess())).toMatchObject({ok:true,stockArc:'2400000',netIssuedArc:'2400000'});
   }
   if(day===29){
@@ -284,7 +319,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    await expect(preparePayrollAffordability(db,world,payrollEmptyClub,125)).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
    await expect(preparePayrollAffordability(db,world,payrollProbeClub,1000000000000)).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
    await expect(executeRewardSettlementBatch(db,session,day28Proof,now)).rejects.toThrow();
-   expect(await count('economic_transactions')).toBe(305);
+   expect(await count('economic_transactions')).toBe(306);
   }
   if([12,13,30,43,55,56].includes(day)){
    const receiptCount=await count('match_lineup_result_receipts');
@@ -336,11 +371,11 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  const finalResult=await finishRewards(certifiedFinal);
  expect(finalResult.receiptHash).not.toBe(day28ReceiptHash);
  const finalCount=finalPlan.rows.filter(r=>r.amountArc>0).length;
- expect(await count('economic_transactions')).toBe(305+finalCount);
+ expect(await count('economic_transactions')).toBe(306+finalCount);
  expect(await count('economic_hold_releases')).toBe(304+finalCount);
  await verifyTreasuries([day28Proof.manifest.plan,finalPlan]);
  const reserve=await db.prepare("SELECT balance_arc,reserved_arc,available_arc FROM economic_available_balances WHERE id='reserve'").first();
- expect(reserve).toMatchObject({balance_arc:0,reserved_arc:0,available_arc:0});
+ expect(reserve).toMatchObject({balance_arc:firstPaid,reserved_arc:0,available_arc:firstPaid});
  expect(await reconcileEconomy(db,localAccess())).toMatchObject({ok:true,stockArc:'2400000',netIssuedArc:'2400000',
   invalidTransactions:0,invalidBalances:0,invalidHolds:0});
  expect(await readWorld(db)).toEqual(beforeFinalReward);
@@ -354,30 +389,38 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  const fixtureBatch=crypto.randomUUID(),agent=session.unified!.playerId;
  await provisionWallet(db,agent,now,localAccess());
  await db.prepare("INSERT INTO player_generation_drafts(id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,status,created_at,expires_at,committed_at) VALUES(?,?,1,?,'{}','[]',2,'payroll-fixture','committed',?,?,?)").bind(fixtureBatch,world.generation,agent,now,now+3600,now).run();
- await db.prepare("INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(1,?,?,1,?,?)").bind(fixtureBatch,world.generation,JSON.stringify({id:1,first_name:'Fixture',last_name:'Payroll',nationality:'ITA',age:22,career_status:'active'}),now).run();
- await seedSignedTestTerm(db,world.generation,1,payrollProbeClub,28,now,'payroll-local-fixture');
- await db.prepare("INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(2,?,?,1,?,?)").bind(fixtureBatch,world.generation,JSON.stringify({id:2,first_name:'Fixture',last_name:'Arrears',nationality:'ITA',age:22,career_status:'active'}),now).run();
- await seedSignedTestTerm(db,world.generation,2,payrollEmptyClub,28,now,'payroll-local-arrears');
- await db.prepare("INSERT INTO player_agent_mandates(player_id,world_generation,account_id,start_tick,acquired_at_ms,acquisition_key) VALUES(1,?,?,42,?,'payroll-local-mandate')").bind(world.generation,agent,now*1000).run();
- await db.prepare("UPDATE player_signed_contracts SET closed_tick=56,close_reason='expiry' WHERE player_id IN (1,2)").run();
+ await db.prepare("INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(2,?,?,1,?,?)").bind(fixtureBatch,world.generation,JSON.stringify({id:2,first_name:'Fixture',last_name:'Payroll',nationality:'ITA',age:22,career_status:'active'}),now).run();
+ await seedSignedTestTerm(db,world.generation,2,payrollProbeClub,28,now,'payroll-local-fixture');
+ await db.prepare("INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(3,?,?,1,?,?)").bind(fixtureBatch,world.generation,JSON.stringify({id:3,first_name:'Fixture',last_name:'Arrears',nationality:'ITA',age:22,career_status:'active'}),now).run();
+ await seedSignedTestTerm(db,world.generation,3,payrollEmptyClub,28,now,'payroll-local-arrears');
+ await db.prepare("INSERT INTO player_agent_mandates(player_id,world_generation,account_id,start_tick,acquired_at_ms,acquisition_key) VALUES(2,?,?,42,?,'payroll-local-mandate')").bind(world.generation,agent,now*1000).run();
+ await db.prepare("UPDATE player_signed_contracts SET closed_tick=56,close_reason='expiry' WHERE player_id IN (2,3)").run();
  const balanceBeforePayroll=await db.prepare("SELECT balance_arc FROM economic_balances WHERE id=?").bind('club:'+payrollProbeClub).first();
  const beforePayroll=await count('economic_transactions');
  await db.prepare("CREATE TRIGGER fail_payroll_fixture BEFORE INSERT ON payroll_payment_receipts BEGIN SELECT RAISE(ABORT,'fixture payroll rollback'); END").run();
  try{await expect(settleClubPayrollBatch(db,session,payrollProbeClub,now)).rejects.toThrow()}
  finally{await db.prepare('DROP TRIGGER fail_payroll_fixture').run()}
  expect(await count('economic_transactions')).toBe(beforePayroll);
- expect(await count('payroll_payment_receipts')).toBe(0);
+ expect(await count('payroll_payment_receipts')).toBe(1);
  const payroll=await settleClubPayrollBatch(db,session,payrollProbeClub,now);
  expect(payroll).toMatchObject({status:'complete',dueArc:62,paidArc:62,arrearsArc:0,outstandingArc:0});
  expect(await settleClubPayrollBatch(db,session,payrollProbeClub,now)).toEqual(payroll);
  expect(await count('economic_transactions')).toBe(beforePayroll+2);
- expect(await count('payroll_payment_receipts')).toBe(2);
+ expect(await count('payroll_payment_receipts')).toBe(3);
  const unpaid=await settleClubPayrollBatch(db,session,payrollEmptyClub,now);
  expect(unpaid).toMatchObject({status:'complete',dueArc:62,paidArc:0,arrearsArc:62,outstandingArc:62});
  expect(await count('economic_transactions')).toBe(beforePayroll+2);
  expect(await reconcilePayrollPayday(db,session,now)).toMatchObject({status:'pending',clubsComplete:2,dueArc:null,recordedDueArc:124,paidArc:62,arrearsArc:62,pendingArc:0});
+ await expect(archiveSeasonLineupV1(db,session,command(),'payroll-blocked-archive-0001',now)).rejects.toMatchObject({code:'payroll_calendar_pending'});
+ if(!payrollRecoveryClub)throw Error('Missing recovery club');
+ const recovered=await settleClubPayrollBatch(db,session,payrollRecoveryClub,now);
+ expect(recovered).toMatchObject({status:'complete',dueArc:firstArrears,paidArc:firstArrears,arrearsArc:0});
+ expect(await db.prepare('SELECT outstanding_arc FROM payroll_claim_outstanding WHERE contract_id=(SELECT id FROM player_signed_contracts WHERE player_id=1)').first()).toEqual({outstanding_arc:0});
+ const fullPayroll=await finishPayroll();
+ expect(fullPayroll).toMatchObject({dueArc:124+firstArrears,paidArc:62+firstArrears,arrearsArc:62});
+ expect(await count('payroll_runs')).toBe(640);
  expect(await db.prepare("SELECT balance_arc FROM economic_balances WHERE id=?").bind('club:'+payrollProbeClub).first()).toEqual({balance_arc:Number(balanceBeforePayroll!.balance_arc)-62});
- expect(await db.prepare("SELECT balance_arc FROM economic_balances WHERE id='reserve'").first()).toEqual({balance_arc:31});
+ expect(await db.prepare("SELECT balance_arc FROM economic_balances WHERE id='reserve'").first()).toEqual({balance_arc:31+firstPaid+firstArrears});
  expect(await db.prepare("SELECT balance_arc FROM economic_balances WHERE id=?").bind('user:'+agent).first()).toEqual({balance_arc:31});
  expect(await reconcileEconomy(db,localAccess())).toMatchObject({ok:true,stockArc:'2400000',netIssuedArc:'2400000'});
  const sourceSummary=JSON.parse(proof.summaryJson);
