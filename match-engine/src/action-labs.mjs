@@ -313,8 +313,10 @@ export function createControlledActionLab(RAPIER,id,{
   attempted:false,passTick:null,receiverTick:null,targetDistanceM:null,
   launchSpeedMps:null,peakBallSpeedMps:0,closestTargetGapM:null,
   peakGroundClearanceM:0,flightTimeS:null,
+  receivingContact:null,receiverFollowThrough:null,
   officialPassCompleted:false,officialReception:false
  }):null;
+ let previousPassBall=null;
  let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
  const decisionObserver=createPhysicalFootballDecisionObserver();
@@ -564,13 +566,49 @@ export function createControlledActionLab(RAPIER,id,{
     const pos=physics.ball.position,vel=physics.ball.velocity;
     const gap=Math.hypot(pos.x-passPairAudit.targetX,pos.y-passPairAudit.targetY);
     const receive=decisionEvidence.firstPossibleReception;
+    // The preceding 60Hz sample is before the receiving collision tick;
+    // the current sample includes all original solver effects. Neither is
+    // an inferred exact sub-tick impact speed or isolated shoe force.
+    if(receive&&(receive.tick!==physics.tick||
+       previousPassBall?.tick!==physics.tick-1))
+     throw new Error('PASS-01 receiving observation requires consecutive native samples');
     passPairAudit=Object.freeze({...passPairAudit,
      peakBallSpeedMps:Math.max(passPairAudit.peakBallSpeedMps,Math.hypot(vel.x,vel.y)),
      closestTargetGapM:Math.min(passPairAudit.closestTargetGapM??Infinity,gap),
      peakGroundClearanceM:Math.max(passPairAudit.peakGroundClearanceM,Math.max(0,pos.z-0.11)),
      receiverTick:receive?.tick??null,
-     flightTimeS:receive?(receive.tick-passPairAudit.passTick)*FIXED_DT:null});
+     flightTimeS:receive?(receive.tick-passPairAudit.passTick)*FIXED_DT:null,
+     receivingContact:receive?Object.freeze({
+      receiverId:receive.playerId,
+      priorSampleTick:previousPassBall.tick,contactTick:physics.tick,
+      priorSampleSpeedMps:Math.hypot(previousPassBall.velocity.x,previousPassBall.velocity.y),
+      postSolverSpeedMps:Math.hypot(vel.x,vel.y),
+      targetGapM:gap,realRapierShoeStart:true,readOnly:true,
+      officialReception:false
+     }):null});
    }
+   // Observe one second of unassisted ball motion after contact. No
+   // receiving cushion, artificial trap, target movement or new impulse.
+   if(passPairAudit.receiverTick!==null){
+    const elapsed=physics.tick-passPairAudit.receiverTick;
+    if(elapsed>=0&&elapsed<=60){
+     const pos=physics.ball.position,vel=physics.ball.velocity;
+     const sample=Object.freeze({tick:physics.tick,
+      gapM:Math.hypot(pos.x-passPairAudit.targetX,pos.y-passPairAudit.targetY),
+      speedMps:Math.hypot(vel.x,vel.y)});
+     const prior=passPairAudit.receiverFollowThrough;
+     passPairAudit=Object.freeze({...passPairAudit,
+      receiverFollowThrough:Object.freeze({
+       samples:(prior?.samples??0)+1,
+       maxGapM:Math.max(prior?.maxGapM??0,sample.gapM),
+       atHalfSecond:elapsed===30?sample:prior?.atHalfSecond??null,
+       atOneSecond:elapsed===60?sample:prior?.atOneSecond??null,
+       completed:elapsed===60,readOnly:true,officialReception:false
+      })});
+    }
+   }
+   previousPassBall=Object.freeze({tick:physics.tick,
+    velocity:Object.freeze({...physics.ball.velocity})});
   }
   const physicalFirstTouch=engine.researchReceivingCushionSnapshot?.()??null;
   const physicalReceiverChoice=engine.researchReceiverChoiceSnapshot?.()??null;

@@ -19,8 +19,10 @@ test('PASS-01 two teammates, 6/12/20m, distance-calibrated native ground impulse
    assert.deepEqual(lab.focus,[side+'-9',side+'-10']);
    const distance=Math.hypot(receiver.x-setup.ball.x,receiver.y-setup.ball.y);
    assert.ok(Math.abs(distance-[6,12,20][variantIndex%3])<1e-8);
-   let count=0,frame;
-   for(let tick=1;tick<=600;tick++){
+   let count=0,frame=lab.snapshot();
+   for(let tick=1;tick<=660;tick++){
+    if(tick>600&&frame.passPairAudit.receiverTick===null)break;
+    const previous=frame;
     frame=lab.step();
     assert.equal(frame.physicsTick,tick);
     assert.ok(frame.starts.every(id=>lab.focus.includes(id)));
@@ -48,7 +50,32 @@ test('PASS-01 two teammates, 6/12/20m, distance-calibrated native ground impulse
     }
     assert.equal(frame.passPairAudit.officialPassCompleted,false);
     assert.equal(frame.passPairAudit.officialReception,false);
-    if(frame.passPairAudit.receiverTick!==null)break;
+    const audit=frame.passPairAudit;
+    if(audit.receiverTick===tick){
+     const contact=audit.receivingContact;
+     assert.equal(contact.receiverId,receiver.id);
+     assert.equal(contact.priorSampleTick,tick-1);
+     assert.equal(contact.contactTick,tick);
+     assert.equal(contact.priorSampleSpeedMps,Math.hypot(
+      previous.ball.velocity.x,previous.ball.velocity.y));
+     assert.equal(contact.postSolverSpeedMps,Math.hypot(
+      frame.ball.velocity.x,frame.ball.velocity.y));
+     assert.equal(contact.realRapierShoeStart,true);
+     assert.equal(contact.officialReception,false);
+     assert.ok(Object.isFrozen(contact));
+    }
+    if(audit.receiverFollowThrough?.completed){
+     assert.equal(tick,audit.receiverTick+60);
+     assert.equal(audit.receiverFollowThrough.samples,61);
+     assert.equal(audit.receiverFollowThrough.atHalfSecond.tick,audit.receiverTick+30);
+     assert.equal(audit.receiverFollowThrough.atOneSecond.tick,tick);
+     assert.equal(audit.receiverFollowThrough.atOneSecond.speedMps,
+      Math.hypot(frame.ball.velocity.x,frame.ball.velocity.y));
+     assert.equal(audit.receiverFollowThrough.atOneSecond.gapM,
+      Math.hypot(frame.ball.position.x-receiver.x,frame.ball.position.y-receiver.y));
+     assert.equal(audit.receiverFollowThrough.officialReception,false);
+     break;
+    }
    }
    assert.equal(count,1,'one native pass '+side+' '+variantIndex);
    const audit=frame.passPairAudit;
@@ -70,5 +97,8 @@ test('PASS-01 two teammates, 6/12/20m, distance-calibrated native ground impulse
   assert.notEqual(row.receiverTick,null,
    'Missing authentic receiver START: '+JSON.stringify(row));
   assert.ok(row.flightTimeS>0&&row.flightTimeS<=10);
+  assert.ok(row.receivingContact.priorSampleSpeedMps>0);
+  assert.ok(Number.isFinite(row.receivingContact.postSolverSpeedMps));
+  assert.equal(row.receiverFollowThrough.completed,true);
  }
 });
