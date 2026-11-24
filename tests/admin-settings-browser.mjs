@@ -647,25 +647,34 @@ try{
    const permissionGate=new Promise(resolve=>releasePermissions=resolve),listGate=new Promise(resolve=>releaseList=resolve),previewGate=new Promise(resolve=>releasePreview=resolve);
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    const generation='11111111-1111-4111-8111-111111111111';
-   let previews=0,previewFailure='',listFailure=false;
+   let previews=0,previewFailure='',listFailure=false,signable=false,signed=false,signCalls=0,signKey='';
+   const quoteHash='a'.repeat(64);
    await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
    await page.route('**/api/player/permissions',async r=>{await permissionGate;return r.fulfill({json:{permissions:['admin.access','admin.world.read','admin.world.write']}})});
    await page.route('**/api/admin/session',r=>r.fulfill({json:{csrfToken:'test-csrf'}}));
-   await page.route(/\/api\/admin\/contracts(?:\/preview|\?[^#]*)?$/,async r=>{
+   await page.route(/\/api\/admin\/contracts(?:\/(?:preview|sign)|\?[^#]*)?$/,async r=>{
     const request=r.request();
+    if(new URL(request.url()).pathname.endsWith('/sign')){
+     signCalls++;assert.equal(request.method(),'POST');assert.equal(request.headers()['x-csrf-token'],'test-csrf');
+     const key=request.headers()['idempotency-key'];assert.match(key,/^[a-f0-9-]{36}$/);
+     if(signKey)assert.equal(key,signKey);else signKey=key;
+     assert.deepEqual(request.postDataJSON(),{playerId:2,clubKey:'IT-1',durationSeasons:2,expectedGeneration:generation,expectedRevision:0,quoteHash});
+     if(signCalls===1){await r.abort();return}
+     signed=true;return r.fulfill({json:{operationId:'22222222-2222-4222-8222-222222222222',world:{generation,revision:1}}});
+    }
     if(new URL(request.url()).pathname.endsWith('/preview')){
      previews++;assert.equal(request.method(),'POST');
      assert.equal(request.headers()['x-csrf-token'],'test-csrf');
      assert.deepEqual(request.postDataJSON(),{playerId:2,clubKey:'IT-1',durationSeasons:2,expectedGeneration:generation,expectedRevision:0});
      await previewGate;
      if(previewFailure)return r.fulfill({status:previewFailure==='contract_club_ineligible'?422:409,json:{error:{code:previewFailure}}});
-     return r.fulfill({json:{playerId:2,clubKey:'IT-1',durationSeasons:2,startTick:0,endTick:112,representation:'ai',minimumArc:40,annualSalaryArc:null,signable:false}})
+     return r.fulfill({json:{playerId:2,clubKey:'IT-1',durationSeasons:2,startTick:0,endTick:112,representation:'ai',minimumArc:40,annualSalaryArc:signable?125:null,signable,...(signable?{quoteHash}:{})}})
     }
     assert.equal(request.method(),'GET');
     await listGate;
     if(listFailure)return r.fulfill({status:503,json:{error:{code:'admin_unavailable'}}});
-    return r.fulfill({json:{count:2,page:1,pageSize:50,totalPages:1,worldGeneration:generation,worldRevision:0,
-     players:[{id:1,name:'Signed Player',clubKey:'IT-1',canPrepareContract:false,contract:{id:7,annualSalaryArc:125,durationSeasons:1,startTick:0,endTick:56,signedAt:'2026-11-24T12:00:00.000Z'}},{id:2,name:'Free Player',clubKey:null,canPrepareContract:true,contract:null}],
+    return r.fulfill({json:{count:2,page:1,pageSize:50,totalPages:1,worldGeneration:generation,worldRevision:signed?1:0,
+     players:[{id:1,name:'Signed Player',clubKey:'IT-1',canPrepareContract:false,contract:{id:7,annualSalaryArc:125,durationSeasons:1,startTick:0,endTick:56,signedAt:'2026-11-24T12:00:00.000Z'}},{id:2,name:'Free Player',clubKey:signed?'IT-1':null,canPrepareContract:!signed,contract:signed?{id:8,annualSalaryArc:125,durationSeasons:2,startTick:0,endTick:112,signedAt:'2026-11-24T12:00:00.000Z'}:null}],
      clubs:[{clubKey:'IT-1',name:'Test Italian Club'}]}});
    });
    await page.goto('http://app.localhost:2000/admin/contracts',{waitUntil:'domcontentloaded'});
@@ -729,6 +738,19 @@ try{
    same(desktop,await geometry());
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    assert.equal(previews,3);
+   await form.locator('[data-contract-draft-duration]').evaluate(el=>{el.value='2';el.dispatchEvent(new Event('change',{bubbles:true}))});
+   signable=true;await form.locator('[data-contract-draft-preview]').click();
+   await message.filter({hasText:'Quote ready.'}).waitFor();
+   assert.equal(await form.locator('[data-contract-draft-salary]').innerText(),'125');
+   const signButton=form.locator('[data-contract-draft-sign]');
+   assert.equal(await signButton.isEnabled(),true);
+   same(desktop,await geometry());
+   await signButton.click();await message.filter({hasText:'Signing failed. Retry.'}).waitFor();
+   assert.equal(await signButton.isEnabled(),true);
+   await signButton.click();await message.filter({hasText:'Contract signed.'}).waitFor();
+   assert.equal(signCalls,2);assert.equal(previews,4);
+   assert.match(await page.locator('[data-contracts-player="2"]').innerText(),/Test Italian Club/);
+   assert.equal(await signButton.isDisabled(),true);same(desktop,await geometry());
    listFailure=true;await page.reload({waitUntil:'domcontentloaded'});
    await page.locator('[data-contracts-state="error"]').waitFor();
    await message.filter({hasText:'Contracts unavailable. Refresh the page.'}).waitFor();

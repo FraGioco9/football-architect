@@ -207,6 +207,9 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  assert.doesNotMatch(source,/expectedClubKey|roster-affiliations/);
  assert.match(source,/admin\.world\.write/);
  assert.match(source,/\/api\/admin\/contracts\/preview/);
+ assert.match(source,/\/api\/admin\/contracts\/sign/);
+ assert.match(source,/Idempotency-Key/);
+ assert.match(source,/quoteHash:quote.quoteHash/);
  assert.match(html,/data-contract-draft-sign disabled/);
  assert.match(html,/data-contract-draft-player aria-labelledby="contract-draft-player-caption" required disabled/);
  assert.match(html,/data-contract-draft data-draft-state="loading" aria-labelledby="contract-draft-heading">/);

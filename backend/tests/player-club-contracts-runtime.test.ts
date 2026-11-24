@@ -82,6 +82,8 @@ it('prepares real dates only for authorized initial free agents and never signs'
  const request={playerId:2,clubKey:club,durationSeasons:2,expectedGeneration:generation,expectedRevision:revision};
  const quote=await call('POST','/preview',request);
  expect(quote.status).toBe(200);
+ expect(quote.data.blockers).toContain('salary_reference_unavailable');
+ expect((await call('POST','/sign',{...request,quoteHash:'0'.repeat(64)},undefined,'missing-policy-sign-test')).data.error.code).toBe('salary_reference_unavailable');
  expect(quote.data).toMatchObject({playerId:2,clubKey:club,durationSeasons:2,startTick:0,endTick:112,representation:'ai',minimumArc:40,annualSalaryArc:null,signable:false});
  expect((await call('POST','/preview',request,'bad')).status).toBe(403);
  expect((await call('POST','/preview',{...request,annualSalaryArc:1})).status).toBe(422);

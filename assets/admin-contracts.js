@@ -51,7 +51,7 @@
   }
   function draftControls(){
    const ready=allowed&&writer&&!!record&&!readAbort&&!draftLocked;
-   form.dataset.draftState=host.dataset.adminAccess==='pending'||readAbort?'loading':draftBusy?'preview':'ready';
+   form.dataset.draftState=host.dataset.adminAccess==='pending'||readAbort?'loading':signing?'signing':draftBusy?'preview':'ready';
    for(const select of [playerSelect,clubSelect,durationSelect])select.disabled=!ready||draftBusy;
    previewButton.disabled=!ready||draftBusy||!playerSelect.value||!clubSelect.value;
    signButton.disabled=!ready||draftBusy||!acceptedQuote;
