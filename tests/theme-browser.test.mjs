@@ -632,7 +632,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await wait("document.querySelector('.app-competition-tabs').dataset.canScrollLeft==='true'");
       tabGeometry=await tabState();assert.equal(tabGeometry.right,'true','both edges indicate more views in the middle');
       await snap("TABS-MOBILE "+width+" "+theme+" middle",width,height);
-      await run("window.faCompetitionRoute.set({view:'awards'})");
+      await run("window.faCompetitionRoute.set({view:'rewards'})");
       tabGeometry=await tabState();assert.equal(tabGeometry.left,'true');assert.equal(tabGeometry.right,'false');assert.equal(tabGeometry.selected,true,'last view is fully visible and has no right fade');
       await snap("TABS-MOBILE "+width+" "+theme+" end",width,height);
       await run("window.faCompetitionRoute.set({view:'standings'})");

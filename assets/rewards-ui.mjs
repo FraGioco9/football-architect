@@ -1,0 +1,136 @@
+import {formatRewardAmount,seasonRewardReference,rewardSeasonFinished} from './competition-rewards.mjs';
+function format(){
+ const locale=document.documentElement.lang||'en';
+ for(const node of document.querySelectorAll('[data-reward-amount]')){
+  const root=node.closest('[data-competition-rewards],[data-admin-rewards]');
+  const historic=root?.dataset.rewardHistory==='true';
+  node.textContent=historic?'—':formatRewardAmount(Number(node.dataset.rewardAmount),locale,{average:node.hasAttribute('data-reward-average')});
+ }
+}
+format();new MutationObserver(format).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+function evidence(root,key){
+ root.dataset.rewardHistory=String(key==='rewardEvidenceHistory');
+ for(const node of root.querySelectorAll('[data-reward-state]'))node.hidden=node.dataset.rewardState!==key;
+ format();
+}
+const competition=document.querySelector('[data-competition-rewards]');
+if(competition){
+ const tbody=competition.querySelector('[data-season-reward-rows]'),status=competition.querySelector('[data-season-reward-status]'),table=tbody.closest('table');
+ const placeholder=tbody.innerHTML,legend=competition.querySelector('[data-season-reward-legend]'),tablePanel=competition.querySelector('[data-season-reward-table]'),heading=table.querySelector('[data-season-reward-heading]');
+ for(const button of legend.querySelectorAll('[data-reward-disclosure]')){
+  const group=button.dataset.rewardDisclosure;
+  const rows=[...legend.querySelectorAll('[data-reward-detail]')].filter(row=>row.dataset.rewardDetail===group);
+  button.addEventListener('click',()=>{
+   const open=button.getAttribute('aria-expanded')!=='true';
+   button.setAttribute('aria-expanded',String(open));
+   for(const row of rows)row.hidden=!open;
+  });
+ }
+ const make=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node};
+ let signature='';
+ function update(){
+  const context=window.faCompetitionContext,read=window.faCompetitionSeasonReadState;
+  const debug=window.faDebugEnabled===true;
+  const model=seasonRewardReference(competition.dataset.competitionRewards,context,{debug});
+  const locale=document.documentElement.lang||'en';
+  const finished=rewardSeasonFinished(context,window.faWorldState?.get?.(),model,debug);
+  const headingKey=finished?'competitionTabRewards':'rewardSeasonEstimate';
+  if(heading.dataset.appI18n!==headingKey){
+   heading.dataset.appI18n=headingKey;
+   heading.textContent=finished?'Rewards':'Estimated rewards';
+   window.faAppRenderLanguage?.();
+  }
+  heading.title=competition.querySelector('#reward-calculation-note').textContent;
+  // Reorder actual DOM, not just CSS, to preserve reading and keyboard order.
+  if(finished&&legend.nextElementSibling===tablePanel)competition.insertBefore(tablePanel,legend);
+  if(!finished&&tablePanel.nextElementSibling===legend)competition.insertBefore(legend,tablePanel);
+  const sameRead=!!read&&!!context&&read?.id===context?.definition?.id&&read?.season===context?.selectedSeason;
+  // The world may already be ready while the selected season GET is pending.
+  // Only a settled read for this exact competition and season can end its skeleton.
+  const settled=debug||read?.state==='unavailable'&&read.id===null||sameRead&&['empty','unavailable','available','partial','debug'].includes(read.state);
+  if(!model){
+   signature='';
+   if(!tbody.querySelector('[data-reward-placeholder]'))tbody.innerHTML=placeholder;
+   const loading=!settled;
+   tbody.dataset.rewardUnavailable=String(!loading);
+   table.setAttribute('aria-busy',String(loading));
+   status.hidden=loading;
+   return;
+  }
+  delete tbody.dataset.rewardUnavailable;
+  table.setAttribute('aria-busy','false');
+  status.hidden=true;
+  const next=JSON.stringify([context.selectedSeason,locale,model]);
+  if(next===signature)return;
+  signature=next;
+  const rows=model.rows.map(row=>{
+   const tr=make('tr'),th=make('th');th.scope='row';tr.dataset.rewardClub=row.id;
+   const identity=make('span',undefined,'app-world-club-identity'),crest=make('span',undefined,'app-world-club-crest-placeholder');
+   crest.dataset.clubCrest=row.id;crest.setAttribute('aria-hidden','true');
+   if(Object.hasOwn(window.faClubCrests||{},row.id))crest.dataset.clubCrestPending='true';
+   const name=make('a',row.club.primaryName,'app-world-club-name app-world-standing-club-link');
+   name.href=window.faRoutesRegistry?.buildRoute({kind:'club',country:row.club.countryId.toLowerCase(),id:row.club.clubId,view:'overview'})||'/clubs/'+row.club.countryId.toLowerCase()+'/'+row.club.clubId+'/overview';
+   identity.append(crest,name);th.append(identity);
+   const td=make('td',undefined,'fa-reward-value-cell');
+   td.append(make('span',row.amount===null?'—':formatRewardAmount(row.amount,locale),'fa-reward-value'));
+   tr.append(th,td);return tr;
+  });
+  if(window.faCompetitionRenderDOM)window.faCompetitionRenderDOM.keyed(tbody,rows,row=>row.dataset.rewardClub);
+  else tbody.replaceChildren(...rows);
+ }
+ for(const event of ['fa:competition-context-change','fa:competition-route-change','fa:source-change','fa:competition-season-read-state','fa:world-state-change'])window.addEventListener(event,update);
+ new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+ update();
+}
+const admin=document.querySelector('[data-admin-rewards]');
+if(admin){
+ const status=admin.querySelector('[data-admin-rewards-status]'),content=admin.querySelector('[data-admin-rewards-content]'),host=document.querySelector('#app-admin');
+ const season=admin.querySelector('[data-admin-rewards-season]'),trigger=admin.querySelector('[data-admin-rewards-trigger]'),menu=admin.querySelector('#admin-reward-season-options'),value=admin.querySelector('[data-admin-rewards-value]'),wrap=trigger.closest('.language-control');
+ let ticket=0,world=null,active=-1;
+ const options=()=>[...menu.querySelectorAll('[role="option"]')];
+ function closeSeason(focus=false){menu.hidden=true;trigger.setAttribute('aria-expanded','false');trigger.removeAttribute('aria-activedescendant');delete wrap.dataset.menuPlacement;if(focus)trigger.focus();}
+ function activate(index){const items=options();if(!items.length)return;active=Math.max(0,Math.min(index,items.length-1));items.forEach((item,i)=>{if(i===active)item.dataset.active='true';else delete item.dataset.active;});trigger.setAttribute('aria-activedescendant',items[active].id);items[active].scrollIntoView({block:'nearest'});}
+ function syncSeason(){
+  value.textContent=season.selectedOptions[0]?.textContent||'—';trigger.disabled=season.disabled;
+  menu.replaceChildren(...[...season.options].map((option,i)=>{const item=document.createElement('div');item.className='language-option';item.id='admin-reward-season-option-'+i;item.dataset.seasonIndex=String(i);item.setAttribute('role','option');item.setAttribute('aria-selected',String(i===season.selectedIndex));item.textContent=option.textContent;return item;}));
+  if(trigger.disabled)closeSeason();
+ }
+ function openSeason(){if(trigger.disabled)return;menu.hidden=false;trigger.setAttribute('aria-expanded','true');const rect=trigger.getBoundingClientRect();if(innerHeight-rect.bottom<240&&rect.top>innerHeight-rect.bottom)wrap.dataset.menuPlacement='above';activate(season.selectedIndex);}
+ function chooseSeason(index){if(index<0||index>=season.options.length)return;season.selectedIndex=index;closeSeason(true);season.dispatchEvent(new Event('change',{bubbles:true}));}
+ trigger.addEventListener('click',()=>menu.hidden?openSeason():closeSeason());
+ menu.addEventListener('click',event=>{const item=event.target.closest('[data-season-index]');if(item)chooseSeason(Number(item.dataset.seasonIndex));});
+ trigger.addEventListener('keydown',event=>{
+  if(event.key==='Tab'){closeSeason();return;}
+  if(event.key==='Escape'&&!menu.hidden){event.preventDefault();closeSeason(true);return;}
+  if(!['ArrowDown','ArrowUp','Home','End','Enter',' '].includes(event.key))return;
+  event.preventDefault();
+  if(menu.hidden){openSeason();return;}
+  if(event.key==='Enter'||event.key===' '){chooseSeason(active);return;}
+  activate(event.key==='Home'?0:event.key==='End'?options().length-1:active+(event.key==='ArrowDown'?1:-1));
+ });
+ document.addEventListener('pointerdown',event=>{if(!wrap.contains(event.target))closeSeason();});
+
+ function seasonState(){evidence(admin,world?.seasonNumber===0?'rewardEvidenceZero':Number(season.value)<world?.seasonNumber?'rewardEvidenceHistory':'rewardEvidenceConfigOnly');}
+ season.addEventListener('change',()=>{syncSeason();seasonState();});
+ async function check(){
+  const id=++ticket;closeSeason();content.hidden=true;status.hidden=false;status.dataset.appI18n='rewardChecking';status.textContent='Checking access…';window.faAppRenderLanguage?.();
+  try{
+   const res=await fetch('/api/admin/world',{credentials:'same-origin',cache:'no-store'});
+   if(id!==ticket)return;
+   if(!res.ok)throw Error(String(res.status));
+   const data=await res.json();if(id!==ticket)return;
+   if(!Number.isSafeInteger(data?.world?.seasonNumber)||data.world.seasonNumber<0)throw Error('invalid_world');
+   world=data.world;
+   if(season){const previous=Number(season.value);season.replaceChildren(...Array.from({length:Math.max(1,world.seasonNumber)},(_,i)=>{const n=world.seasonNumber===0?0:i+1;return new Option(String(n),String(n));}));season.value=String(previous>=1&&previous<=world.seasonNumber?previous:world.seasonNumber);season.disabled=world.seasonNumber===0;syncSeason();seasonState();}
+   host.dataset.adminAccess='granted';content.hidden=false;status.hidden=true;
+   window.faAdminAccess=true;window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:true}));
+  }catch(error){
+   if(id!==ticket)return;
+   host.dataset.adminAccess='denied';content.hidden=true;status.hidden=false;
+   status.dataset.appI18n=['401','403'].includes(error.message)?'rewardForbidden':'rewardUnavailable';
+   status.textContent=['401','403'].includes(error.message)?'Access denied':'Rewards unavailable';window.faAppRenderLanguage?.();
+   window.faAdminAccess=false;window.dispatchEvent(new CustomEvent('fa:admin-access',{detail:false}));
+  }
+ }
+ void check();window.addEventListener('pageshow',e=>{if(e.persisted)void check()});
+}

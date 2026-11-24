@@ -837,7 +837,13 @@ test('#763 public header groups the club and market value into separate equal-wi
  assert.ok(identity>=0&&identity<panels&&panels<value&&value<club);
  assert.equal((header.match(/data-detail-market-value/g)||[]).length,1);
  assert.match(header,/data-detail-market-value><span class="app-skeleton-bar app-player-detail-market-skeleton" aria-hidden="true"><\/span>/);
- assert.doesNotMatch(preview,/app-player-detail-header-panels|data-detail-market-value/);
+ const previewHeader=preview.slice(preview.indexOf('<header class="app-player-detail-heading">'),preview.indexOf('</header>',preview.indexOf('<header class="app-player-detail-heading">')));
+ const previewPanels=previewHeader.indexOf('class="app-player-detail-header-panels"'),previewValue=previewHeader.indexOf('class="app-player-detail-market-value"'),previewClub=previewHeader.indexOf('class="app-player-detail-affiliation"'),previewBack=previewHeader.indexOf('data-detail-back');
+ assert.ok(previewPanels>=0&&previewPanels<previewValue&&previewValue<previewClub&&previewClub<previewBack);
+ assert.equal((previewHeader.match(/data-detail-market-value/g)||[]).length,1);
+ assert.match(previewHeader,/data-detail-market-value><span class="app-skeleton-bar app-player-detail-market-skeleton" aria-hidden="true"><\/span>/);
+ assert.match(preview,/data-player-detail-mode="preview" hidden/);
+ assert.equal(renderPlayerDetailPage(read('admin/players/preview/index.html'),'preview'),preview);
  assert.match(css,/\.app-player-detail-header-panels\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(css,/\.app-player-detail-market-value::before\{[^}]*height:126px;background:var\(--line\)/);
  assert.match(css,/\.app-player-detail-header-panels>\.app-player-detail-affiliation::before\{display:block;height:80px\}/);

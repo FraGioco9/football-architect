@@ -213,11 +213,12 @@ try{
    const writer=permissionSet.includes('admin.world.write');
    if(permissionSet.length===0)assert.equal(await page.locator('#main-content').innerText(),'');
    else{
-    assert.equal(await page.locator('.admin-directory-card').count(),4);
+    assert.equal(await page.locator('.admin-directory-card').count(),5);
     assert.equal(await page.locator('[data-admin-card="calendar"].app-link').isVisible(),true);
     assert.equal(await page.locator('[data-admin-card="players"].app-link').isVisible(),writer);
     assert.equal(await page.locator('[data-admin-card="contracts"].app-link').isVisible(),writer);
      assert.equal(await page.locator('[data-admin-card="licenses"].app-link').isVisible(),writer);
+    assert.equal(await page.locator('[data-admin-card="rewards"].app-link').isVisible(),true);
     assert.equal(await page.locator('[data-admin-panel="players"]').isVisible(),writer);
     assert.equal(await page.locator('#app-nav-dashboard.is-active,#app-nav-divisions.is-active').count(),0);
    }
@@ -615,7 +616,7 @@ try{
    });
    await page.goto('http://app.localhost:2000/admin');
    await page.locator('[data-admin-card="contracts"]').waitFor({state:'visible'});
-   assert.equal(await page.locator('.admin-directory-card').count(),4);
+   assert.equal(await page.locator('.admin-directory-card').count(),5);
    await page.locator('[data-admin-card="contracts"]').click();
    await page.waitForURL('**/admin/contracts');
    await page.locator('.admin-contracts-skeleton').first().waitFor({state:'visible'});
@@ -854,6 +855,40 @@ try{
   }finally{await ctx.close()}
  }
 
+ // Rewards: same Admin controls and table geometry, read-only fixture access.
+ for(const width of [390,1440]){
+  const context=await browser.newContext({viewport:{width,height:900}});
+  try{
+   const page=await context.newPage(),errors=[];
+   page.on('pageerror',error=>errors.push(error.message));
+   await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.route('**/api/player/permissions',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({permissions:['admin.access','admin.world.read']})}));
+   await page.route('**/api/admin/world',r=>{
+    assert.equal(r.request().method(),'GET');
+    return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({world:{seasonNumber:3}})});
+   });
+   await page.goto('http://app.localhost:2000/admin/rewards');
+   await page.locator('[data-admin-rewards-content]').waitFor({state:'visible'});
+   const trigger=page.locator('[data-admin-rewards-trigger]'),menu=page.locator('#admin-reward-season-options');
+   assert.equal(await page.locator('[data-admin-rewards-value]').textContent(),'3');
+   assert.equal(await page.locator('.admin-rewards-distribution tbody tr').count(),18);
+   assert.equal(await page.locator('.admin-rewards-distribution tfoot tr').count(),1);
+   await page.locator('#admin-reward-season-label').click({force:true});
+   assert.equal(await trigger.getAttribute('aria-expanded'),'false');
+   await trigger.focus();await trigger.press('Enter');await menu.waitFor({state:'visible'});
+   await trigger.press('Home');await trigger.press('Enter');
+   assert.equal(await page.locator('[data-admin-rewards-season]').inputValue(),'1');
+   assert.equal(await page.locator('[data-reward-state="rewardEvidenceHistory"]').isVisible(),true);
+   assert.equal(await page.locator('.admin-rewards-pool [data-reward-amount]').textContent(),'—');
+   await trigger.click();await menu.getByRole('option',{name:'3',exact:true}).click();
+   assert.equal(await page.locator('[data-admin-rewards-season]').inputValue(),'3');
+   assert.match(await page.locator('.admin-rewards-pool [data-reward-amount]').textContent(),/60,000,000/);
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+   assert.ok(await page.locator('.admin-rewards-distribution tbody tr').first().evaluate(el=>{const h=el.getBoundingClientRect().height;return h>=40&&h<=48}));
+   if(width===390)assert.equal(await page.locator('.admin-rewards-distribution').evaluate(el=>el.parentElement.scrollWidth>el.parentElement.clientWidth),true);
+   assert.deepEqual(errors,[]);checks++;
+  }finally{await context.close()}
+ }
  // CLUB-LICENSES-01: control geometry, overflow, listboxes and filtered selection.
  // Synthetic API responses only; no remote Admin mutations or shared-world writes.
  for(const width of [320,390,768,1440]){
