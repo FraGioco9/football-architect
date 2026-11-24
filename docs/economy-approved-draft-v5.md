@@ -67,3 +67,8 @@ Latest owner calibration direction: top D1 approximately EUR300 and low-table D2
 
 
 Owner requested distinct ARC/EUR youth percentages to incentivize direct EUR while preserving ARC recycling. [Dual pricing sensitivity](academy-dual-pricing-v1.md): 100% ARC / 85% EUR recommended for owner review; 90/90 remains approved baseline until explicit numerical selection. No live pricing or checkout change.
+
+
+## Latest owner direction — retirement-matched academy, EUR90, full ARC recycling target
+
+EUR youth price is now explicitly selected at 90% DRAFT; ARC100 is the working calibration reference, pending final owner selection. Aim for actual activated youth equal to retirements, avoid material generation cost on unsold candidates (lightweight offers, defer expensive assets; archive/reoffer details deferred), recycle as much ARC as distributed in Rewards and earn recurring EUR contribution. [Retirement-matched recycling research](academy-renewal-recycling-v2.md) distinguishes academy-only and whole-reserve targets; numerical feasibility not established. No automatic currency burn, compulsory charge, automatic player activation or change to actual rewards/valuation approved. Earlier 85% proposal and all-offer costly-generation assumptions are historical.

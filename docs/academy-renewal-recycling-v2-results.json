@@ -1,0 +1,304 @@
+{
+  "version": "academy-renewal-recycling-draft-v2",
+  "status": "research-only",
+  "annualRetirements": 332,
+  "referenceMeanArc": 1555,
+  "referenceMeanEurCents": 1399.5,
+  "mix": [
+    {
+      "arcOrders": 332,
+      "eurOrders": 0,
+      "totalActivations": 332,
+      "arcReceipts": 516260,
+      "rewardsRecoveredPct": 21.51,
+      "requiredAverageArcPriceForAcademyOnly": 7229,
+      "grossEurCents": 0,
+      "contributionBeforeFixedCostsCents": [
+        {
+          "soldGenerationCostCents": 0,
+          "contributionCents": 0
+        },
+        {
+          "soldGenerationCostCents": 50,
+          "contributionCents": -16600
+        },
+        {
+          "soldGenerationCostCents": 100,
+          "contributionCents": -33200
+        },
+        {
+          "soldGenerationCostCents": 200,
+          "contributionCents": -66400
+        }
+      ],
+      "reserveScenarios": [
+        {
+          "otherReserveReceiptsArc": 0,
+          "totalReserveReceiptsArc": 516260,
+          "uncoveredRewardsArc": 1883740,
+          "requiredMeanYouthArcPrice": 7229
+        },
+        {
+          "otherReserveReceiptsArc": 500000,
+          "totalReserveReceiptsArc": 1016260,
+          "uncoveredRewardsArc": 1383740,
+          "requiredMeanYouthArcPrice": 5723
+        },
+        {
+          "otherReserveReceiptsArc": 1000000,
+          "totalReserveReceiptsArc": 1516260,
+          "uncoveredRewardsArc": 883740,
+          "requiredMeanYouthArcPrice": 4217
+        },
+        {
+          "otherReserveReceiptsArc": 1500000,
+          "totalReserveReceiptsArc": 2016260,
+          "uncoveredRewardsArc": 383740,
+          "requiredMeanYouthArcPrice": 2711
+        },
+        {
+          "otherReserveReceiptsArc": 2000000,
+          "totalReserveReceiptsArc": 2516260,
+          "uncoveredRewardsArc": 0,
+          "requiredMeanYouthArcPrice": 1205
+        }
+      ]
+    },
+    {
+      "arcOrders": 266,
+      "eurOrders": 66,
+      "totalActivations": 332,
+      "arcReceipts": 413630,
+      "rewardsRecoveredPct": 17.23,
+      "requiredAverageArcPriceForAcademyOnly": 9023,
+      "grossEurCents": 92367,
+      "contributionBeforeFixedCostsCents": [
+        {
+          "soldGenerationCostCents": 0,
+          "contributionCents": 87928.5
+        },
+        {
+          "soldGenerationCostCents": 50,
+          "contributionCents": 71328.5
+        },
+        {
+          "soldGenerationCostCents": 100,
+          "contributionCents": 54728.5
+        },
+        {
+          "soldGenerationCostCents": 200,
+          "contributionCents": 21528.5
+        }
+      ],
+      "reserveScenarios": [
+        {
+          "otherReserveReceiptsArc": 0,
+          "totalReserveReceiptsArc": 413630,
+          "uncoveredRewardsArc": 1986370,
+          "requiredMeanYouthArcPrice": 9023
+        },
+        {
+          "otherReserveReceiptsArc": 500000,
+          "totalReserveReceiptsArc": 913630,
+          "uncoveredRewardsArc": 1486370,
+          "requiredMeanYouthArcPrice": 7143
+        },
+        {
+          "otherReserveReceiptsArc": 1000000,
+          "totalReserveReceiptsArc": 1413630,
+          "uncoveredRewardsArc": 986370,
+          "requiredMeanYouthArcPrice": 5264
+        },
+        {
+          "otherReserveReceiptsArc": 1500000,
+          "totalReserveReceiptsArc": 1913630,
+          "uncoveredRewardsArc": 486370,
+          "requiredMeanYouthArcPrice": 3384
+        },
+        {
+          "otherReserveReceiptsArc": 2000000,
+          "totalReserveReceiptsArc": 2413630,
+          "uncoveredRewardsArc": 0,
+          "requiredMeanYouthArcPrice": 1504
+        }
+      ]
+    },
+    {
+      "arcOrders": 249,
+      "eurOrders": 83,
+      "totalActivations": 332,
+      "arcReceipts": 387195,
+      "rewardsRecoveredPct": 16.13,
+      "requiredAverageArcPriceForAcademyOnly": 9639,
+      "grossEurCents": 116158.5,
+      "contributionBeforeFixedCostsCents": [
+        {
+          "soldGenerationCostCents": 0,
+          "contributionCents": 110576.75
+        },
+        {
+          "soldGenerationCostCents": 50,
+          "contributionCents": 93976.75
+        },
+        {
+          "soldGenerationCostCents": 100,
+          "contributionCents": 77376.75
+        },
+        {
+          "soldGenerationCostCents": 200,
+          "contributionCents": 44176.75
+        }
+      ],
+      "reserveScenarios": [
+        {
+          "otherReserveReceiptsArc": 0,
+          "totalReserveReceiptsArc": 387195,
+          "uncoveredRewardsArc": 2012805,
+          "requiredMeanYouthArcPrice": 9639
+        },
+        {
+          "otherReserveReceiptsArc": 500000,
+          "totalReserveReceiptsArc": 887195,
+          "uncoveredRewardsArc": 1512805,
+          "requiredMeanYouthArcPrice": 7631
+        },
+        {
+          "otherReserveReceiptsArc": 1000000,
+          "totalReserveReceiptsArc": 1387195,
+          "uncoveredRewardsArc": 1012805,
+          "requiredMeanYouthArcPrice": 5623
+        },
+        {
+          "otherReserveReceiptsArc": 1500000,
+          "totalReserveReceiptsArc": 1887195,
+          "uncoveredRewardsArc": 512805,
+          "requiredMeanYouthArcPrice": 3615
+        },
+        {
+          "otherReserveReceiptsArc": 2000000,
+          "totalReserveReceiptsArc": 2387195,
+          "uncoveredRewardsArc": 12805,
+          "requiredMeanYouthArcPrice": 1607
+        }
+      ]
+    },
+    {
+      "arcOrders": 216,
+      "eurOrders": 116,
+      "totalActivations": 332,
+      "arcReceipts": 335880,
+      "rewardsRecoveredPct": 14,
+      "requiredAverageArcPriceForAcademyOnly": 11112,
+      "grossEurCents": 162342,
+      "contributionBeforeFixedCostsCents": [
+        {
+          "soldGenerationCostCents": 0,
+          "contributionCents": 154541
+        },
+        {
+          "soldGenerationCostCents": 50,
+          "contributionCents": 137941
+        },
+        {
+          "soldGenerationCostCents": 100,
+          "contributionCents": 121341
+        },
+        {
+          "soldGenerationCostCents": 200,
+          "contributionCents": 88141
+        }
+      ],
+      "reserveScenarios": [
+        {
+          "otherReserveReceiptsArc": 0,
+          "totalReserveReceiptsArc": 335880,
+          "uncoveredRewardsArc": 2064120,
+          "requiredMeanYouthArcPrice": 11112
+        },
+        {
+          "otherReserveReceiptsArc": 500000,
+          "totalReserveReceiptsArc": 835880,
+          "uncoveredRewardsArc": 1564120,
+          "requiredMeanYouthArcPrice": 8797
+        },
+        {
+          "otherReserveReceiptsArc": 1000000,
+          "totalReserveReceiptsArc": 1335880,
+          "uncoveredRewardsArc": 1064120,
+          "requiredMeanYouthArcPrice": 6482
+        },
+        {
+          "otherReserveReceiptsArc": 1500000,
+          "totalReserveReceiptsArc": 1835880,
+          "uncoveredRewardsArc": 564120,
+          "requiredMeanYouthArcPrice": 4167
+        },
+        {
+          "otherReserveReceiptsArc": 2000000,
+          "totalReserveReceiptsArc": 2335880,
+          "uncoveredRewardsArc": 64120,
+          "requiredMeanYouthArcPrice": 1852
+        }
+      ]
+    },
+    {
+      "arcOrders": 166,
+      "eurOrders": 166,
+      "totalActivations": 332,
+      "arcReceipts": 258130,
+      "rewardsRecoveredPct": 10.76,
+      "requiredAverageArcPriceForAcademyOnly": 14458,
+      "grossEurCents": 232317,
+      "contributionBeforeFixedCostsCents": [
+        {
+          "soldGenerationCostCents": 0,
+          "contributionCents": 221153.5
+        },
+        {
+          "soldGenerationCostCents": 50,
+          "contributionCents": 204553.5
+        },
+        {
+          "soldGenerationCostCents": 100,
+          "contributionCents": 187953.5
+        },
+        {
+          "soldGenerationCostCents": 200,
+          "contributionCents": 154753.5
+        }
+      ],
+      "reserveScenarios": [
+        {
+          "otherReserveReceiptsArc": 0,
+          "totalReserveReceiptsArc": 258130,
+          "uncoveredRewardsArc": 2141870,
+          "requiredMeanYouthArcPrice": 14458
+        },
+        {
+          "otherReserveReceiptsArc": 500000,
+          "totalReserveReceiptsArc": 758130,
+          "uncoveredRewardsArc": 1641870,
+          "requiredMeanYouthArcPrice": 11446
+        },
+        {
+          "otherReserveReceiptsArc": 1000000,
+          "totalReserveReceiptsArc": 1258130,
+          "uncoveredRewardsArc": 1141870,
+          "requiredMeanYouthArcPrice": 8434
+        },
+        {
+          "otherReserveReceiptsArc": 1500000,
+          "totalReserveReceiptsArc": 1758130,
+          "uncoveredRewardsArc": 641870,
+          "requiredMeanYouthArcPrice": 5422
+        },
+        {
+          "otherReserveReceiptsArc": 2000000,
+          "totalReserveReceiptsArc": 2258130,
+          "uncoveredRewardsArc": 141870,
+          "requiredMeanYouthArcPrice": 2410
+        }
+      ]
+    }
+  ]
+}

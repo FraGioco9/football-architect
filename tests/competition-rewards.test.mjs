@@ -280,3 +280,12 @@ test('academy dual quote is independently rounded and preserves same denominatio
  const unit=unitEconomics(c,quoteYouth),snapshot=JSON.parse(readFileSync(new URL('../docs/academy-dual-pricing-v1-results.json',import.meta.url),'utf8'));
  assert.deepEqual(unit,snapshot.unitEconomics);assert.ok(unit.every(x=>x.mix.every(m=>m.arcOrders+m.eurOrders===m.activations)));
 });
+
+test('retirement-matched academy recycling counts each currency once',async()=>{
+ const {buildRenewalRecycling}=await import('../tools/run-academy-renewal-recycling.mjs');
+ const x=buildRenewalRecycling();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/academy-renewal-recycling-v2-results.json',import.meta.url),'utf8')));
+ assert.ok(x.mix.every(m=>m.arcOrders+m.eurOrders===x.annualRetirements));
+ const mix=x.mix.find(m=>m.eurOrders===83);assert.equal(mix.arcReceipts,387195);assert.equal(mix.requiredAverageArcPriceForAcademyOnly,9639);
+ assert.equal(mix.reserveScenarios[0].uncoveredRewardsArc,2012805);
+ assert.ok(mix.contributionBeforeFixedCostsCents[0].contributionCents>mix.contributionBeforeFixedCostsCents[3].contributionCents);
+});

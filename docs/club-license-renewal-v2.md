@@ -35,3 +35,6 @@ Uses approved conditional retirement hazards from MARKET_VALUE_CONFIG, ages 16â€
 Hypothetical persistent top D1 **EUR295**; hypothetical low-table D2 **EUR100**. New neutral genesis candidate total 591200 ARC, reserve separate 2.4M. Genesis coefficient still unapproved; optional additional capital not included. See full 320-club output, cost and generation sensitivity in [results](club-license-renewal-v2-results.json). Reproduce `node tools/run-club-license-renewal.mjs --check`. Isolated JS checks preserve v1 output and anchor fixtures; repository CI pending.
 
 Remaining: test linked age-specific player market and actual negotiation/transfer cash flow, club/agent affordability and productive sporting demand, observed unit generation costs, free entry, exact per-club strength and capital schedule, reserve and arrears under revised acquisition/retirement demand. Prior financial stress used fixed replacements and automatic AI fallback, so no longer supports a full supply/solvency claim. #775 owns ledger; #586/#777/#779 own actual lifecycle, #782 checkout. No implementation of payment/fee/ledger or remote actions.
+
+
+Latest owner cost direction: defer expensive generation until activation; all-offer cost sensitivity above is historical. See [retirement-matched recycling](academy-renewal-recycling-v2.md).
