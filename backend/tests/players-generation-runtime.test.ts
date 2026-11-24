@@ -398,7 +398,7 @@ it('retirement backfill preserves existing private seeds and fills only missing 
  const records=(await db.prepare('SELECT id,payload_json FROM generated_players ORDER BY id').all<any>()).results;
  const first=JSON.parse(records[0].payload_json),second=JSON.parse(records[1].payload_json);
  await db.prepare("UPDATE generated_players SET payload_json=json_remove(payload_json,'$.retirement_seed') WHERE id=?").bind(records[0].id).run();
- // Same idempotent predicate as migration 0035, applied to a legacy-like row.
+ // Same idempotent predicate as migration 0036, applied to a legacy-like row.
  const backfill="UPDATE generated_players SET payload_json=json_set(payload_json,'$.retirement_seed',lower(hex(randomblob(16)))) WHERE json_type(payload_json,'$.retirement_seed') IS NULL";
  await db.prepare(backfill).run();
  const after=(await db.prepare('SELECT payload_json FROM generated_players ORDER BY id').all<any>()).results.map((r:any)=>JSON.parse(r.payload_json));

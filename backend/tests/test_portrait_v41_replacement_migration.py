@@ -6,7 +6,7 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
 V3=(ROOT/'migrations'/'0026_player_portrait_profiles.sql').read_text()
-V41=(ROOT/'migrations'/'0031_portrait_v41_replacement.sql').read_text()
+V41=(ROOT/'migrations'/'0032_portrait_v41_replacement.sql').read_text()
 
 class PortraitV41ReplacementMigration(unittest.TestCase):
  def make_db(self):
