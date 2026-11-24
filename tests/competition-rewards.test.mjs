@@ -12,6 +12,7 @@ test('all canonical competitions, no fabricated competition',()=>{
   assert.equal(reward.capacity,d.capacity);
   assert.equal(reward.pool,reward.participation+reward.points+reward.placement);
   assert.equal(reward.status,'draft-reference');
+  assert.equal(reward.version,'draft-5');
   assert.equal(reward.shares.reduce((a,b)=>a+b),100);
   assert.equal(competitionRewards(d.id.toLowerCase()).id,d.id);
   for(const key of ['earned','paid','credited','payable'])assert.equal(Object.hasOwn(reward,key),false);
@@ -20,8 +21,8 @@ test('all canonical competitions, no fabricated competition',()=>{
  assert.equal(competitionRewards(null),null);
 });
 test('approved totals and participation references',()=>{
- assert.deepEqual(rewardTotals(),{pool:60000000,participation:33840000,points:9360000,placement:16800000});
- for(const [id,pool,reference] of [['IT-1',4000000,150000],['IT-2',2000000,75000],['int-1',8000000,140000],['int-2',4000000,70000]]){
+ assert.deepEqual(rewardTotals(),{pool:2400000,participation:1353600,points:374400,placement:672000});
+ for(const [id,pool,reference] of [['IT-1',160000,6000],['IT-2',80000,3000],['int-1',320000,5600],['int-2',160000,2800]]){
   const row=competitionRewards(id);
   assert.equal(row.pool,pool);
   assert.equal(row.participationReference,reference);
@@ -51,13 +52,13 @@ test('reference tables and timing conserve each component',()=>{
   assert.equal(pointsReference(r,[]).status,'pending-incomplete');
   assert.equal(p.installment*2,p.floor);
   assert.equal(p.higherCount,0);
-  assert.equal(p.installment%2500,0);
-  assert.ok(schedule.every(x=>x.amount%2500===0));
+  assert.equal(p.installment%100,0);
+  assert.ok(schedule.every(x=>x.amount%100===0));
   if(!r.international)assert.ok(schedule.every((x,i)=>i===0||x.amount<schedule[i-1].amount));
  }
  assert.deepEqual(CREDIT_MILESTONES.participation,[28,56]);
- assert.equal(placementReference(competitionRewards('int-1'))[0].amount,900000);
- assert.equal(placementReference(competitionRewards('int-2'))[1].amount,250000);
+ assert.equal(placementReference(competitionRewards('int-1'))[0].amount,36000);
+ assert.equal(placementReference(competitionRewards('int-2'))[1].amount,10000);
 });
 
 test('public rewards exposes only pool and season club table; admin retains schedule',async()=>{
@@ -124,11 +125,11 @@ test('current and historical season reward estimates use season-specific clubs a
  const context={selectedSeason:1,definition:{id:'IT-1'},seasonData:{season:1,seasonState:{phase:'closed',day:56},provenance:{kind:'authoritative'},participants,statistics:{standings:participants.map((club,i)=>({club,played:30,pts:60-i}))}}};
  const model=seasonRewardReference('IT-1',context);
  assert.equal(model.rows.length,16);assert.equal(model.pending,false);
- assert.equal(model.rows.reduce((n,r)=>n+r.amount,0),4000000);
+ assert.equal(model.rows.reduce((n,r)=>n+r.amount,0),160000);
  assert.ok(model.rows.every(r=>Number.isSafeInteger(r.amount)));
  assert.equal(model.rows[0].id,'IT-1');
  context.seasonData.seasonState={phase:'active',day:28};
- assert.ok(seasonRewardReference('IT-1',context).rows.every(r=>r.amount===75000));
+ assert.ok(seasonRewardReference('IT-1',context).rows.every(r=>r.amount===3000));
  context.seasonData.seasonState.day=27;
  assert.ok(seasonRewardReference('IT-1',context).rows.every(r=>r.amount===0));
  context.seasonData.seasonState.day=56;context.seasonData.statistics.standings[0].played=29;
@@ -181,7 +182,7 @@ test('two configured payment dates conserve all pools without settlement claims'
   assert.equal(second.points,r.points);assert.equal(second.placement,r.placement);
   assert.equal(first.total+second.total,r.pool);
  }
- assert.deepEqual(plannedRewardInstallments(rewardTotals()).map(x=>x.total),[16920000,43080000]);
+ assert.deepEqual(plannedRewardInstallments(rewardTotals()).map(x=>x.total),[676800,1723200]);
 });
 
 test('season read lifecycle is shared with Rewards and independent of world readiness',()=>{
@@ -215,8 +216,8 @@ test('international participation reference is integer, deterministic and conser
  const participants=Array.from({length:24},(_,i)=>({countryId:'IT',clubId:i+1,primaryName:'Club '+(i+1)}));
  const context={selectedSeason:2,definition:{id:'int-1'},seasonData:{season:2,seasonState:{phase:'active',day:28},provenance:{kind:'authoritative'},participants}};
  const a=seasonRewardReference('int-1',context);
- assert.equal(a.rows.reduce((sum,r)=>sum+r.amount,0),1680000);
- assert.ok(a.rows.every(r=>r.amount===70000));
+ assert.equal(a.rows.reduce((sum,r)=>sum+r.amount,0),67200);
+ assert.ok(a.rows.every(r=>r.amount===2800));
  context.seasonData.participants=[...participants].reverse();
  assert.deepEqual(seasonRewardReference('int-1',context),a);
 });

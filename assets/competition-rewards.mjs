@@ -1,13 +1,13 @@
 // #766 — informational schedule, never a financial entitlement or settlement.
-export const REWARDS_VERSION = 'draft-4';
+export const REWARDS_VERSION = 'draft-5';
 // Fixed awards are the source of truth; shares are derived.
-const domesticPlacement=Object.freeze([120000,110000,105000,95000,90000,80000,75000,65000,60000,50000,45000,35000,30000,20000,15000,5000]);
-const cupAdvancement=Object.freeze([900000,500000,300000,200000,100000,0]);
+const domesticPlacement=Object.freeze([4800,4400,4200,3800,3600,3200,3000,2600,2400,2000,1800,1400,1200,800,600,200]);
+const cupAdvancement=Object.freeze([36000,20000,12000,8000,4000,0]);
 export const REWARDS = Object.freeze({
-  domestic1: Object.freeze({pool:4000000,capacity:16,participationPerClub:150000,awards:domesticPlacement}),
-  domestic2: Object.freeze({pool:2000000,capacity:16,participationPerClub:75000,awards:Object.freeze(domesticPlacement.map(n=>n/2))}),
-  sovereign: Object.freeze({pool:8000000,capacity:24,participationPerClub:140000,awards:cupAdvancement}),
-  federation: Object.freeze({pool:4000000,capacity:24,participationPerClub:70000,awards:Object.freeze(cupAdvancement.map(n=>n/2))})
+  domestic1: Object.freeze({pool:160000,capacity:16,participationPerClub:6000,awards:domesticPlacement}),
+  domestic2: Object.freeze({pool:80000,capacity:16,participationPerClub:3000,awards:Object.freeze(domesticPlacement.map(n=>n/2))}),
+  sovereign: Object.freeze({pool:320000,capacity:24,participationPerClub:5600,awards:cupAdvancement}),
+  federation: Object.freeze({pool:160000,capacity:24,participationPerClub:2800,awards:Object.freeze(cupAdvancement.map(n=>n/2))})
 });
 export const REWARD_IDS = Object.freeze([
   ...['BR','DE','ENG','ES','FR','IT','NL','PT'].flatMap(c=>[c+'-1',c+'-2']),

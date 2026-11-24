@@ -4,9 +4,12 @@ import {ATTRIBUTES} from '../backend/src/players-generator-core.mjs';
 import {MARKET_VALUE_CONFIG,rawPlayerMarketValueArc,calculatePlayerMarketValueArc as value} from '../backend/src/player-market-value.mjs';
 const player=(age=24,skill=60)=>({age,career_status:'active',primary_position:'CM',secondary_positions:[],attributes:Object.fromEntries(ATTRIBUTES.map(key=>[key,skill]))});
 test('DRAFT #769 benchmark reproduces research age and skill fixtures',()=>{
- assert.equal(MARKET_VALUE_CONFIG.commission,.05);
- assert.equal(MARKET_VALUE_CONFIG.version,'remaining-commission-draft-v3-769');
- for(const [age,skill,raw,rounded] of [[16,50,199.108581573,200],[16,60,1366.017035201,1400],[16,70,4797.285053619,4800],[16,80,12735.949006693,13000],[24,50,89.556512082,90],[24,60,517.052215523,520],[24,70,2030.938810031,2100],[24,80,5999.416966092,6000],[32,50,47.886383014,48],[32,60,148.733079193,150],[32,70,627.303155762,630],[32,80,1880.20566526,1900],[39,50,10.48751996,11],[39,60,32.408764647,33],[39,70,133.873075486,140],[39,80,397.221096232,400]]){
+ assert.equal(MARKET_VALUE_CONFIG.agentPayoutFraction,1);
+ assert.equal(MARKET_VALUE_CONFIG.salaryScale,60);
+ assert.equal(MARKET_VALUE_CONFIG.rewardBenchmark,10000);
+ assert.deepEqual(MARKET_VALUE_CONFIG.divisionFloors,{1:40,2:20});
+ assert.equal(MARKET_VALUE_CONFIG.version,'remaining-agent-salary-draft-v5-769');
+ for(const [age,skill,raw,rounded] of [[16,50,159.329115122,160],[16,60,1091.534745799,1100],[16,70,3831.523755708,3900],[16,80,10110.472433112,11000],[24,50,71.869795179,72],[24,60,412.712498491,420],[24,70,1627.773770483,1700],[24,80,4773.905230856,4800],[32,50,38.654145957,39],[32,60,118.366321112,120],[32,70,502.384455769,510],[32,80,1501.566971357,1600],[39,50,8.455123898,9],[39,60,25.732988384,26],[39,70,107.130660978,110],[39,80,316.666431323,320]]){
   assert.ok(Math.abs(rawPlayerMarketValueArc(player(age,skill))-raw)<.000001);
   assert.equal(value(player(age,skill)),rounded);
  }
