@@ -199,7 +199,7 @@ function testPersistenceProtocol(){
  eq(handoff.intents.length,6400);eq(new Set(handoff.intents.map(x=>x.idempotencyKey)).size,6400);
  eq(handoff.intents.filter(x=>x.kind==="reuse").map(x=>x.playerId),[44]);
  eq(handoff,prepareOpeningContractHandoff(run,manifest,inventory,[...receipts].reverse(),complete));
- const syntheticSigned=handoff.intents.map((a,i)=>({id:i+1,player_id:a.playerId,world_generation:handoff.worldGeneration,club_key:a.clubKey,signed_at_ms:1,start_tick:0,duration_seasons:a.durationSeasons,scheduled_end_tick:56*a.durationSeasons,annual_salary_arc:50,minimum_arc:40,reference_arc:40,maximum_arc:80,policy_version:"contract-draft-v1",signed_mandate_id:null,ai_demand_arc:50,signing_key:a.signingKey,closed_tick:null,close_reason:null}));
+ const syntheticSigned=handoff.intents.map((a,i)=>({id:i+1,player_id:a.playerId,world_generation:handoff.worldGeneration,club_key:a.clubKey,signed_at_ms:1,start_tick:0,duration_seasons:a.durationSeasons,scheduled_end_tick:56*a.durationSeasons,annual_salary_arc:50,minimum_arc:a.division===1?40:20,reference_arc:40,maximum_arc:80,policy_version:"contract-draft-v1",signed_mandate_id:null,ai_demand_arc:50,signing_key:a.signingKey,closed_tick:null,close_reason:null}));
  eq(inspectOpeningContractHandoff(handoff,[]).signed,0);
  eq(inspectOpeningContractHandoff(handoff,syntheticSigned.slice(0,100)).remaining,6300);
  const signed=inspectOpeningContractHandoff(handoff,syntheticSigned);
@@ -208,6 +208,7 @@ function testPersistenceProtocol(){
  throws(()=>inspectOpeningContractHandoff(handoff,[{...syntheticSigned[0],club_key:"wrong"}]));
  throws(()=>inspectOpeningContractHandoff(handoff,[{...syntheticSigned[0],duration_seasons:0}]));
  throws(()=>inspectOpeningContractHandoff(handoff,[{...syntheticSigned[0],annual_salary_arc:40}]));
+ throws(()=>inspectOpeningContractHandoff(handoff,[{...syntheticSigned[0],minimum_arc:1}]));
  throws(()=>inspectOpeningContractHandoff(handoff,[syntheticSigned[0],syntheticSigned[0]]));
  throws(()=>inspectOpeningContractHandoff({...handoff,digest:"0".repeat(64)},[]));
  throws(()=>prepareOpeningContractHandoff(run,manifest,inventory,receipts.slice(0,-1),complete));

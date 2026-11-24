@@ -12,7 +12,7 @@ import {readWorld} from '../src/world-repository.ts';
 import type {WorldV1} from '../src/types.ts';
 import type {AdminSession} from '../src/auth.ts';
 import {sessionGuard} from '../src/command-guards.ts';
-import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
+import {readLocalOpeningInventory,type RetainedOpeningInput} from '../src/opening-world-inventory.ts';
 import {beginLocalOpeningRun,commitLocalOpeningBatch,readLocalOpeningJournal,readOpeningObservation} from '../src/opening-world-store.ts';
 import {clubCountryToNationality,planApprovedReference,manifestDigest,REFERENCE_PROFILE_VERSION,type OpeningClub} from '../../tools/world-bootstrap-791/planner.mjs';
 import {createCertifiedOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,reconcileCompletedOpening,prepareOpeningContractHandoff,type OpeningInventory,type OpeningRoot} from '../../tools/world-bootstrap-791/persistence.mjs';
@@ -22,7 +22,7 @@ const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
 const sha=(bytes:Uint8Array)=>createHash('sha256').update(bytes).digest('hex');
 const FILE='opening-world-plan.private.json';
 const MAX_BYTES=8*1024*1024;
-type Plan={schema:'opening-local-rehearsal-v1';seed:string;inventory:OpeningInventory;root:OpeningRoot};
+type Plan={schema:'opening-local-rehearsal-v1';seed:string;inventory:OpeningInventory;root:OpeningRoot;retained?:RetainedOpeningInput};
 function checkWorld(world:WorldV1){
  assert(world.seasonNumber===0&&world.day===0&&world.revision===0&&world.phase==='unstarted','opening rehearsal requires fresh Season 0');
 }
@@ -38,7 +38,7 @@ export async function buildLocalOpeningManifest(world:WorldV1,seed:string){
  }
  const clubs:OpeningClub[]=canonical.clubIds.map(key=>({key,nationality:clubCountryToNationality(key.split('-')[0]),division:membership.get(key)??null,active:membership.has(key)}));
  assert(clubs.length===320&&membership.size===256&&clubs.filter(c=>!c.active).length===64,'opening club catalogue mismatch');
- const sources=await Promise.all(['../src/players-generator-core.mjs','../../tools/world-bootstrap-791/planner.mjs','../../tools/world-bootstrap-791/persistence.mjs'].map(path=>readFile(new URL(path,import.meta.url))));
+ const sources=await Promise.all(['../src/players-generator-core.mjs','../src/opening-world-inventory.ts','../src/opening-world-retained.ts','../../tools/world-bootstrap-791/planner.mjs','../../tools/world-bootstrap-791/persistence.mjs'].map(path=>readFile(new URL(path,import.meta.url))));
  const catalog=loadRuntimePlayerCatalog();
  const versions={worldGeneration:world.generation,worldRevision:world.revision,
   clubSnapshot:manifestDigest({participantsHash:snapshot.participantsHash,rulesHash:snapshot.rulesHash,clubs}),
@@ -80,10 +80,10 @@ export async function openLocalOpeningRehearsal(persistTo:string){
  }
  return {
   close:handle.close,
-  async prepare(seed:string){
-   const world=await readWorld(db),manifest=await buildLocalOpeningManifest(world,seed),inventory=await readLocalOpeningInventory(db);
+  async prepare(seed:string,retained?:RetainedOpeningInput){
+   const world=await readWorld(db),manifest=await buildLocalOpeningManifest(world,seed),inventory=await readLocalOpeningInventory(db,retained);
    const root=createCertifiedOpeningPersistenceRun(manifest,inventory,world);
-   await savePrivatePlan(path,{schema:'opening-local-rehearsal-v1',seed,inventory,root});
+   await savePrivatePlan(path,{schema:'opening-local-rehearsal-v1',seed,inventory,root,...(retained?{retained}:{})});
    return {runKey:root.runKey,slots:root.slotCount,reused:root.baseline.length,newPlayers:root.slotCount-root.baseline.length,batches:root.batchIntentHashes.length};
   },
   async start(session:AdminSession,now:number){
@@ -97,7 +97,7 @@ export async function openLocalOpeningRehearsal(persistTo:string){
     await db.batch([sessionGuard(db,session,now)]);
     return (await progress()).progress;
    }
-   const fresh=await readLocalOpeningInventory(db);
+   const fresh=await readLocalOpeningInventory(db,plan.retained);
    assert(same(fresh,plan.inventory),'opening inventory changed since prepare');
    await beginLocalOpeningRun(db,session,plan.root,now);
    return (await progress()).progress;

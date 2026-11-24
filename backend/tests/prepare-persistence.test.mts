@@ -46,6 +46,13 @@ test('committed prepare and idempotency outcome survive local D1 close and reope
   assert.equal(after.rawRows[0].world_generation,evidence.players[0].originalGeneration);
   // Existing strict automatic-reuse policy must remain closed until reviewed integration.
   assert.equal((await readLocalOpeningInventory(handle.db)).players[0].readyForReuse,false);
+  const reviewed=await readLocalOpeningInventory(handle.db,{evidence,resetOperationId:reset.operationId});
+  assert.equal(reviewed.players[0].readyForReuse,true);
+  assert.equal(reviewed.players[0].hasSportingHistory,false);
+  assert.equal(reviewed.players[0].retainedProvenance?.originalGeneration,world.generation);
+  assert.equal(reviewed.players[0].retainedProvenance?.sourceDigest,evidence.digest);
+  assert.equal(reviewed.players[0].fingerprint,evidence.players[0].fingerprint);
+  await assert.rejects(readLocalOpeningInventory(handle.db,{evidence,resetOperationId:'wrong'}),/audit mismatch/);
  }finally{await handle.close();await rm(state,{recursive:true,force:true})}
 });
 

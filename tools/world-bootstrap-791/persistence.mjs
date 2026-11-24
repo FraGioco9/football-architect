@@ -119,6 +119,7 @@ function completeOpeningAudit(run,manifest,inventory,receipts,observation){
  const clubs=new Map(manifest.clubs.map(c=>[c.key,{clubKey:c.key,active:c.active,division:c.division,count:0}]));
  const home=new Map(manifest.clubs.map(c=>[c.key,c.nationality]));
  const ages={},positions={},nationalities={},terms={};
+ const baselinePlayers=new Map(inventory.players.map(x=>[x.id,x]));
  let reused=0,generated=0,domestic=0,otherPlayable=0,otherCountries=0;
  const playable=new Set(manifest.clubs.map(c=>c.nationality));
  const increment=(map,key)=>{map[key]=(map[key]??0)+1};
@@ -128,7 +129,10 @@ function completeOpeningAudit(run,manifest,inventory,receipts,observation){
   insist(row&&club?.active&&club.division===slot.division,"opening allocation missing or inactive");
   const p=JSON.parse(row.payload_json);
   insist(p.id===entry.playerId&&p.age===slot.age&&p.initial_age===slot.age&&p.nationality===slot.primaryNationality&&p.primary_position===slot.primaryPosition&&p.career_status==="active","opening payload differs from planned slot");
-  insist(row.world_generation===run.worldGeneration&&row.entry_season===0&&row.schema_version==="player-portraits-v5"&&row.prompt_version==="player-portrait-v4.2"&&typeof row.config_version==="string"&&row.config_version.length>0,"opening profile/index evidence missing");
+  const provenance=entry.kind==="reuse"?baselinePlayers.get(entry.playerId)?.retainedProvenance:null;
+  const correctOrigin=provenance?row.world_generation===provenance.originalGeneration&&row.entry_season===provenance.originalEntrySeason:
+   row.world_generation===run.worldGeneration&&row.entry_season===0;
+  insist(correctOrigin&&row.schema_version==="player-portraits-v5"&&row.prompt_version==="player-portrait-v4.2"&&typeof row.config_version==="string"&&row.config_version.length>0,"opening profile/index evidence missing");
   if(entry.kind==="reuse")reused++;
   else{generated++;insist(p.retirement_age===sampleOpeningRetirementAge(slot),"opening retirement differs from pinned slot")}
   club.count++;
@@ -154,7 +158,7 @@ export function reconcileCompletedOpening(run,manifest,inventory,receipts,observ
 // are invented here. Source must be the reconciled D1 catalogue and receipts.
 export function prepareOpeningContractHandoff(run,manifest,inventory,receipts,observation){
  const {report,allocations}=completeOpeningAudit(run,manifest,inventory,receipts,observation);
- const intents=allocations.map(a=>({playerId:a.playerId,clubKey:a.clubKey,durationSeasons:a.intendedTermSeasons,
+ const intents=allocations.map(a=>({playerId:a.playerId,clubKey:a.clubKey,division:manifest.clubs.find(c=>c.key===a.clubKey).division,durationSeasons:a.intendedTermSeasons,
   slotKey:a.slotKey,kind:a.kind,fingerprint:a.fingerprint,signingKey:'initial:'+run.worldGeneration+':'+a.playerId,
   idempotencyKey:'opening:'+manifestDigest({runKey:run.runKey,slotKey:a.slotKey,playerId:a.playerId})}));
  const payload={schema:"opening-contract-handoff-v1",worldGeneration:run.worldGeneration,runKey:run.runKey,
@@ -170,14 +174,14 @@ export function inspectOpeningContractHandoff(handoff,rows){
  insist(payload.schema==="opening-contract-handoff-v1"&&manifestDigest(payload)===digest&&Array.isArray(payload.intents)&&payload.intents.length===6400,"invalid opening contract handoff");
  const expected=new Map(payload.intents.map(x=>[x.playerId,x]));
  insist(expected.size===6400&&Array.isArray(rows),"invalid opening contract inventory");
- const seen=new Set(),ids=new Set(),clubs=new Map();
+ const seen=new Set(),ids=new Set();
  for(const row of rows){
   const intent=expected.get(row.player_id);
   insist(intent&&!seen.has(row.player_id)&&positiveInt(row.id,1)&&!ids.has(row.id)&&row.world_generation===payload.worldGeneration&&row.club_key===intent.clubKey&&row.duration_seasons===intent.durationSeasons&&row.start_tick===0&&row.scheduled_end_tick===56*intent.durationSeasons&&row.closed_tick===null&&row.close_reason===null&&row.signed_mandate_id===null&&row.signing_key===intent.signingKey&&positiveInt(row.signed_at_ms,1),"unexpected signed opening contract");
   // Contract schema enforces the approved DRAFT bounds; audit the persisted
   // policy/version and fixed AI demand, not a replacement salary calculation.
-  insist(row.policy_version==="contract-draft-v1"&&positiveInt(row.minimum_arc,1)&&positiveInt(row.reference_arc,row.minimum_arc)&&positiveInt(row.maximum_arc,row.reference_arc)&&positiveInt(row.annual_salary_arc,row.minimum_arc)&&row.annual_salary_arc<=row.maximum_arc&&row.ai_demand_arc===row.annual_salary_arc&&row.maximum_arc===2*row.reference_arc&&row.ai_demand_arc===Math.ceil(5*row.reference_arc/4),"invalid signed opening wage snapshot");
-  seen.add(row.player_id);ids.add(row.id);clubs.set(row.club_key,(clubs.get(row.club_key)??0)+1);
+  insist(row.policy_version==="contract-draft-v1"&&row.minimum_arc===(intent.division===1?40:20)&&positiveInt(row.reference_arc,row.minimum_arc)&&positiveInt(row.maximum_arc,row.reference_arc)&&positiveInt(row.annual_salary_arc,row.minimum_arc)&&row.annual_salary_arc<=row.maximum_arc&&row.ai_demand_arc===row.annual_salary_arc&&row.maximum_arc===2*row.reference_arc&&row.ai_demand_arc===Math.ceil(5*row.reference_arc/4),"invalid signed opening wage snapshot");
+  seen.add(row.player_id);ids.add(row.id);
  }
  const missing=payload.intents.filter(x=>!seen.has(x.playerId));
  return {schema:"opening-contract-progress-v1",handoffDigest:digest,signed:seen.size,remaining:missing.length,
