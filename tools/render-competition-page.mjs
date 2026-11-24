@@ -1,4 +1,3 @@
-import {renderCompetitionRewards} from './render-competition-rewards.mjs';
 import {renderViewSkeleton,renderViewTemplates,viewSkeletonScript} from './competition-view-skeletons.mjs';
 import {renderFixturesSkeleton} from './fixtures-static-shell.mjs';
 // One detail renderer for all competition routes and the neutral shell.
@@ -121,7 +120,7 @@ const standingsSubviewsMarkup="\n          <div class=\"app-standings-subviews\"
 // Keep domestic markup unchanged; cups exclude Last 5 along with the two half-season modes.
 const cupStandingsSubviewsMarkup=standingsSubviewsMarkup.replaceAll("['first','second']", "['first','second','last5']");
 const competitionTabs = function competitionTabs(d,standings,neutral) {
- const views=model.views.map(view=>view.id==="postseason"&&d.category==="international"
+ const views=model.views.filter(view=>view.id!=="rewards").map(view=>view.id==="postseason"&&d.category==="international"
   ?{...view,key:"competitionTabKnockouts",label:"Knockouts"}:view.id==="postseason"&&!neutral
   ?{...view,key:d.rules.phases.some(p=>p.labelKey==='playout')?"competitionTabPlayout":"competitionTabPlayoffs",label:d.rules.phases.some(p=>p.labelKey==='playout')?"Playout":"Playoffs"}:view);
  const nav=views.map(({id,key,label},i)=>
@@ -140,7 +139,6 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent(d)}\n          </section>`;
   if(id==="rules")return (neutral&&d.category!=="international"?"":"\n")+renderRules(d,neutral,attrs,key,label);
   if(id==="stats")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${statsView.renderEmpty()}${viewSkeletonScript(id)}\n          </section>`;
-  if(id==="rewards")return `          <section ${attrs}>${renderCompetitionRewards(d.id)}</section>`;
   if(id==="awards")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${viewSkeletonScript(id)}\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
  });
