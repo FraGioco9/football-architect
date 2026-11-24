@@ -105,7 +105,7 @@ it('signs an initial AI term atomically with certified synthetic forecast and ac
  await db.prepare('UPDATE generated_players SET payload_json=? WHERE id=2').bind(JSON.stringify(payload)).run();
  const authority=async()=>({expectedAnnualRewardsArc:10000,sourceVersion:'synthetic-opening-test',guards:[abortUnless(db,'SELECT 1',[])]});
  const key='initial-signing-test-001';
- await expect(signInitialAiContract(db,session,request,key,now,authority)).rejects.toMatchObject({code:'payroll_affordability_unavailable'});
+ await expect(signInitialAiContract(db,session,request,key,Math.floor(Date.now()/1000),authority)).rejects.toMatchObject({code:'payroll_affordability_unavailable'});
  const access=[economicAssert(db,'SELECT 1')];
  await provisionClubAccounts(db,now,access);
  const version='synthetic-signing-test';
@@ -129,14 +129,14 @@ it('signs an initial AI term atomically with certified synthetic forecast and ac
  const holdId=['reward-budget',generation,1,REWARDS_VERSION].join(':');
  await reserveEconomicFunds(db,{id:holdId,sourceId:holdId,accountId:'reserve',purpose:'REWARD_BUDGET',actorId:'reward-settlement-v1',configVersion:version,amountArc:annual},{access},now);
  expect(await reconcileEconomy(db,access)).toMatchObject({ok:true,stockArc:String(gross),netIssuedArc:String(gross)});
- await expect(signInitialAiContract(db,session,request,key,now,async()=>({...await authority(),expectedAnnualRewardsArc:0}))).rejects.toMatchObject({code:'salary_reference_unavailable'});
- await expect(signInitialAiContract(db,session,request,key,now,async()=>({...await authority(),guards:[]}))).rejects.toMatchObject({code:'salary_reference_unavailable'});
- await expect(signInitialAiContract(db,session,request,key,now,async()=>({...await authority(),expectedAnnualRewardsArc:10000000000}))).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
+ await expect(signInitialAiContract(db,session,request,key,Math.floor(Date.now()/1000),async()=>({...await authority(),expectedAnnualRewardsArc:0}))).rejects.toMatchObject({code:'salary_reference_unavailable'});
+ await expect(signInitialAiContract(db,session,request,key,Math.floor(Date.now()/1000),async()=>({...await authority(),guards:[]}))).rejects.toMatchObject({code:'salary_reference_unavailable'});
+ await expect(signInitialAiContract(db,session,request,key,Math.floor(Date.now()/1000),async()=>({...await authority(),expectedAnnualRewardsArc:10000000000}))).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
  const noConsent={...request,playerId:3};
  await db.prepare('INSERT INTO player_agent_mandates(player_id,world_generation,account_id,start_tick,acquired_at_ms,acquisition_key) VALUES(?,?,?,0,?,?)').bind(3,generation,accountId,now*1000,'synthetic-mandate-3').run();
- await expect(signInitialAiContract(db,session,noConsent,'initial-signing-test-003',now,authority)).rejects.toMatchObject({code:'contract_player_ineligible'});
+ await expect(signInitialAiContract(db,session,noConsent,'initial-signing-test-003',Math.floor(Date.now()/1000),authority)).rejects.toMatchObject({code:'contract_player_ineligible'});
 
- await expect(signInitialAiContract(db,session,request,key,now,async()=>({...await authority(),guards:[abortUnless(db,'SELECT 1 WHERE 0',[])]}))).rejects.toMatchObject({code:'contract_signing_preconditions_changed'});
+ await expect(signInitialAiContract(db,session,request,key,Math.floor(Date.now()/1000),async()=>({...await authority(),guards:[abortUnless(db,'SELECT 1 WHERE 0',[])]}))).rejects.toMatchObject({code:'contract_signing_preconditions_changed'});
  expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(0);
  const preview=await call('POST','/preview',request);
  expect(preview.status).toBe(200);expect(preview.data).toMatchObject({signable:true,annualSalaryArc:salaryBounds(1,rawDestinationSalaryReferenceArc(payload,10000)!).aiDemand});

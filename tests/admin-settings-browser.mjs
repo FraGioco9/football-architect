@@ -699,8 +699,12 @@ try{
     await trigger.click();
     const menu=form.locator('#admin-contract-draft-dropdown-'+id);
     if(searchText)await menu.locator('input[type="search"]').fill(searchText);
-    await menu.getByRole('option',{name:label,exact:true}).click();
+    const option=menu.getByRole('option',{name:label,exact:true});
+    await option.waitFor({state:'visible'});
+    await option.click();
+    await menu.waitFor({state:'hidden'});
     assert.equal(await trigger.getAttribute('aria-expanded'),'false');
+    assert.equal(await trigger.innerText(),label);
    };
    assert.equal(await form.locator('.admin-licenses-dropdown .language-trigger').count(),3);
    await selectFromMenu(0,'Free Player','free');

@@ -40,16 +40,17 @@
    const list=doc.createElement('div');menu.append(list);
    select.after(wrap);select.hidden=true;select.tabIndex=-1;select.setAttribute('aria-hidden','true');
    wrap.append(trigger,menu);
-   let active=-1;
+   let active=-1,drawnSignature='';
    const nodes=()=>[...list.querySelectorAll('[data-licenses-option-index]')];
    function close(returnFocus=false){
     menu.hidden=true;trigger.setAttribute('aria-expanded','false');
     delete wrap.dataset.menuPlacement;
-    if(returnFocus)trigger.focus();
+    if(returnFocus)trigger.focus({preventScroll:true});
    }
    dropdownClosers.push(close);
+   function signature(){return JSON.stringify([select.selectedIndex,search?.value??'',Array.from(select.options,o=>[o.value,o.textContent])])}
    function draw(){
-    list.replaceChildren();
+    drawnSignature=signature();list.replaceChildren();
     const filter=search?normalize(search.value):'';
     for(let i=0;i<select.options.length;i++){
      const option=select.options[i];
@@ -72,7 +73,7 @@
     if(search)search.setAttribute('aria-label',label);
     trigger.disabled=select.disabled;
     if(trigger.disabled)close();
-    else if(!menu.hidden)draw();
+    else if(!menu.hidden&&drawnSignature!==signature())draw();
    }
    function open(){
     if(select.disabled)return;
@@ -84,7 +85,7 @@
     const below=win.innerHeight-box.bottom,above=box.top;
     if(below<240&&above>below)wrap.dataset.menuPlacement='above';
     else delete wrap.dataset.menuPlacement;
-    if(search)search.focus();
+    if(search)search.focus({preventScroll:true});
    }
    function choose(node){
     if(!node)return;
@@ -94,6 +95,11 @@
     sync();
    }
    trigger.addEventListener('click',()=>menu.hidden?open():close());
+   // Preserve search focus on a mouse press. Blurring the search can move the
+   // scroll pane/viewport and the option before the subsequent click.
+   list.addEventListener('pointerdown',event=>{
+    if(event.pointerType==='mouse'&&event.button===0&&event.target.closest('[data-licenses-option-index]'))event.preventDefault();
+   });
    list.addEventListener('click',event=>choose(event.target.closest('[data-licenses-option-index]')));
    if(search)search.addEventListener('input',draw);
    wrap.addEventListener('keydown',event=>{
