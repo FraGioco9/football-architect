@@ -103,7 +103,7 @@ function bootstrapClubFirstPaint(rosterLabels,rosterTabs,menuMarkup,statKeys,sta
   roster.querySelector('.club-roster-tabs').setAttribute('aria-label',w.title);
   const table=roster.querySelector('table');
   table.dataset.playersTableMode=mode;table.dataset.rosterGroup=group;table.setAttribute('aria-label',w.title);
-  const fields=mode==='attributes'?[w.cols[0],w.cols[1],w.cols[2],...keys[group].map(key=>names[locale].split('|')[allAttrs.indexOf(key)])]:mode==='stats'?[...w.cols.slice(0,3),...wordsForRoster.slice(1,1+statKeys.length)]: [...w.cols,({en:'Market value',it:'Valore di mercato',de:'Marktwert',es:'Valor de mercado',fr:'Valeur marchande'})[locale],locale==='de'?'Verein':'Club'];
+  const fields=mode==='attributes'?[w.cols[0],w.cols[1],w.cols[2],...keys[group].map(key=>names[locale].split('|')[allAttrs.indexOf(key)])]:mode==='stats'?[...w.cols.slice(0,3),...wordsForRoster.slice(1,1+statKeys.length)]: [...w.cols,({en:'Market value',it:'Valore di mercato',de:'Marktwert',es:'Valor de mercado',fr:'Valeur marchande'})[locale]];
   const columnSorts=mode==='attributes'?['nationality','name','positions',...keys[group]]:mode==='stats'?['nationality','name','positions',...statKeys]:['nationality','name','positions','age','height','foot','market_value_arc'];
   const sort=columnSorts.includes(params.get('sort'))?params.get('sort'):'';
   const order=sort&&['asc','desc'].includes(params.get('order'))?params.get('order'):
@@ -121,7 +121,6 @@ function bootstrapClubFirstPaint(rosterLabels,rosterTabs,menuMarkup,statKeys,sta
   head.replaceChildren(...fields.map((text,index)=>{
    const key=columnSorts[index],active=sort===key;
    const th=document.createElement('th');th.scope='col';
-   if(mode==='overview'&&index===fields.length-1){th.className='app-players-club-col';th.textContent=text;return th;}
    th.setAttribute('aria-sort',active?(order==='desc'?'descending':'ascending'):'none');
    if(key==='market_value_arc')th.className='app-market-value-col';
    if(index===0){th.className='app-players-flag-col';th.setAttribute('aria-label',w.nationality);}

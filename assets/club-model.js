@@ -194,9 +194,8 @@
   if(!allowed.includes(query.get('sort'))){query.delete('sort');query.delete('order');}
   return query;
  }
- function renderRoster(clubKey,lang,t,snapshot,search='',clubIdentity=null){
+ function renderRoster(clubKey,lang,t,snapshot,search=''){
   const w=rosterWords[lang],params=new URLSearchParams(search);
-  const clubLabel=lang==='de'?'Verein':'Club';
   const view=rosterView(params);
   const mode=view==='info'?'overview':view==='stats'?'stats':'attributes';
   const group=mode==='attributes'?view:'technical',words=rosterLabels[lang];
@@ -221,7 +220,7 @@
   const groupIds=competitions.filter(id=>id.startsWith('int-')===(scope==='international'));
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
-   :mode==='stats'?['',w.name,w.positions,...words.slice(1,1+statKeys.length)]:['',w.name,w.positions,w.age,w.height,w.foot,marketUI?.label(lang)||'Market value',clubLabel];
+   :mode==='stats'?['',w.name,w.positions,...words.slice(1,1+statKeys.length)]:['',w.name,w.positions,w.age,w.height,w.foot,marketUI?.label(lang)||'Market value'];
   const columns='<colgroup><col class="app-players-flag-column"><col class="app-players-name-column">'+
    '<col class="app-players-view-third-column">'+'<col>'.repeat(labels.length-3)+'</colgroup>';
   const colCount=labels.length;
@@ -252,13 +251,6 @@
     return value===null?'<td><span title="'+escape(words[13])+'" aria-label="'+escape(words[12])+'">—</span></td>'
      :'<td>'+escape(value)+'</td>';
    };
-   // Membership is established by the complete roster read; identity is supplied
-   // by the same verified public catalogue used for the club header.
-   const clubName=typeof clubIdentity?.name==='string'&&clubIdentity.name.trim()?clubIdentity.name:null;
-   const clubHref=base.replace(/\/roster$/,'/overview');
-   const crestPath='assets/clubs/'+clubKey.replace('-','/')+'/crest.svg';
-   const crest=clubIdentity?.crest==='/'+crestPath?'<img class="app-players-club-crest" src="'+escape(clubIdentity.crest)+'" alt="" width="24" height="24">':'';
-   const clubCell=clubName?'<td class="app-players-club-cell"><span class="app-players-club-content"><span class="app-players-club-label-anchor"><span class="app-players-club-mark" aria-hidden="true">'+crest+'</span><a class="app-player-club-link" href="'+escape(clubHref)+'" title="'+escape(clubName)+'" aria-label="'+escape(clubName)+'"><span class="app-player-club-name">'+escape(clubName)+'</span></a></span></span></td>':'<td class="app-players-club-cell">—</td>';
    body=sortedRosterPlayers(players,sort||'positions',sort?order:'desc').map(player=>{
     const id=Number(player.id),country=player.nationality;
     const code=Object.hasOwn(rosterFlags,country)?rosterFlags[country]:null;
@@ -267,7 +259,7 @@
     const value=v=>Number.isSafeInteger(v)?String(v):'—';
     const cells=mode==='stats'?'<td>'+escape(positions||'—')+'</td>'+statKeys.map(key=>statCell(player.stats,key)).join(''):mode==='attributes'
      ?'<td>'+escape(positions||'—')+'</td>'+attributeKeys.map(key=>'<td>'+value(player.attributes?.[key])+'</td>').join('')
-     :'<td>'+escape(positions||'—')+'</td><td>'+value(player.age)+'</td><td>'+(Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—')+'</td><td>'+escape(player.preferred_foot==='left'?w.left:player.preferred_foot==='right'?w.right:'—')+'</td><td class="app-market-value-col">'+escape(marketUI?.format(player.market_value_arc,lang)||'—')+'</td>'+clubCell;
+     :'<td>'+escape(positions||'—')+'</td><td>'+value(player.age)+'</td><td>'+(Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—')+'</td><td>'+escape(player.preferred_foot==='left'?w.left:player.preferred_foot==='right'?w.right:'—')+'</td><td class="app-market-value-col">'+escape(marketUI?.format(player.market_value_arc,lang)||'—')+'</td>';
     return '<tr><td>'+flag+'</td><td><a class="club-roster-player-link" href="/players/'+id+'" data-mobile-name="'+escape(compactPlayerName(player.display_name))+'" aria-label="'+escape(player.display_name)+'"><span class="fa-player-full-name">'+escape(player.display_name)+'</span><span class="fa-player-short-name">'+escape(compactPlayerName(player.display_name))+'</span></a></td>'+cells+'</tr>';
    }).join('');
   }
@@ -293,7 +285,6 @@
    '<table class="app-players-table club-roster-table" data-players-table-mode="'+mode+'" data-roster-group="'+group+'" aria-label="'+escape(t.roster)+'">'+
    columns+'<thead><tr>'+labels.map((label,i)=>{
     const key=columnSorts[i],active=sort===key;
-    if(mode==='overview'&&i===labels.length-1)return '<th scope="col" class="app-players-club-col">'+escape(label)+'</th>';
     return '<th scope="col" aria-sort="'+(active?order==='desc'?'descending':'ascending':'none')+'"'+(key==='market_value_arc'?' class="app-market-value-col"':'')+
      (i===0?' class="app-players-flag-col" aria-label="'+escape(w.nationality)+'"':'')+'>'+
      '<button type="button" class="app-players-sort-button" data-club-roster-sort="'+key+'"'+
@@ -450,7 +441,7 @@
     '<section class="app-panel club-competition" aria-labelledby="club-competition-title"><h2 id="club-competition-title">'+escape(t.competition)+'</h2>'+
     effectiveCompetitionCard+'</section></div>';
   }else if(selected.view==='roster'){
-   content=renderRoster(clubKey,lang,t,rosterSnapshot,search,{name:c.primaryName,crest:crestSource});
+   content=renderRoster(clubKey,lang,t,rosterSnapshot,search);
   }else if(selected.view==='records'){
    content=recordsUI.render({selected,historySnapshot,language:lang,search,ordinal,index});
   }else if(selected.view==='history'){

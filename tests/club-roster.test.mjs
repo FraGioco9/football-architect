@@ -351,29 +351,26 @@ test('market value is a localized numeric Info column with stable missing-last s
  assert.doesNotMatch(model.renderRoster('IT-1','it',model.copies.it,snapshot,'?view=attributes&group=technical'),/data-club-roster-sort="market_value_arc"/);
 });
 
-test('#763 Roster Overview matches Players columns and uses verified club identity',async()=>{
+test('#763 Roster Overview matches Players columns except the redundant Club column',async()=>{
  const {default:model}=await import('../assets/club-model.js');
- const manifest=JSON.parse(read('clubs/_shared/manifest.json')),club=manifest.clubs.find(c=>c.countryId==='IT'&&c.clubId===1);
  const player={id:188,display_name:'Player One',nationality:'ITA',age:24,primary_position:'CM',height_cm:180,preferred_foot:'right',market_value_arc:4700};
  const snapshot={source:'ready',clubKey:'IT-1',count:1,players:[player]};
- const identity={name:club.primaryName,crest:manifest.clubCrests['IT-1']?'/'+manifest.clubCrests['IT-1']:null};
  const headerKeys=html=>[...html.matchAll(/<th scope="col"[^>]*>[\s\S]*?<\/th>/g)].map(m=>m[0].match(/data-(?:players|club-roster)-sort="([^"]+)"/)?.[1]||'club');
  const players=read('players/index.html').match(/<table class="app-players-table" data-players-public>[\s\S]*?<\/table>/)[0];
- const expected=['nationality','name','positions','age','height','foot','market_value_arc','club'];
- assert.deepEqual(headerKeys(players),expected);
+ const expected=['nationality','name','positions','age','height','foot','market_value_arc'];
+ assert.deepEqual(headerKeys(players),[...expected,'club']);
  const generated=read('clubs/_shared/index.html').match(/<section hidden class="club-roster club-first-paint-roster"[\s\S]*?<\/section>/)[0];
  assert.deepEqual(headerKeys(generated),expected);
- assert.equal((generated.match(/colspan="8"/g)||[]).length,5);
+ assert.equal((generated.match(/colspan="7"/g)||[]).length,5);
  for(const lang of ['en','it','de','es','fr']){
-  const loaded=model.renderRoster('IT-1',lang,model.copies[lang],snapshot,'',identity);
+  const loaded=model.renderRoster('IT-1',lang,model.copies[lang],snapshot,'');
   assert.deepEqual(headerKeys(loaded),expected);
-  assert.equal((loaded.match(/<td(?:\s|>)/g)||[]).length,8);
-  assert.ok(loaded.includes('class="app-players-club-cell"'));
-  assert.ok(loaded.includes('href="/clubs/it/1/overview"'));
-  assert.ok(loaded.includes('class="app-player-club-name"'));
-  assert.match(loaded,/\$ARC<\/td><td class="app-players-club-cell">/);
-  assert.doesNotMatch(loaded,/data-club-roster-sort="(?:undefined|club)"/);
-  for(const view of ['stats','attributes'])assert.doesNotMatch(model.renderRoster('IT-1',lang,model.copies[lang],snapshot,'?view='+view,identity),/app-market-value-col|app-players-club-col|app-players-club-cell/);
+  assert.equal((loaded.match(/<td(?:\s|>)/g)||[]).length,7);
+  assert.match(loaded,/\$ARC<\/td><\/tr>/);
+  assert.doesNotMatch(loaded,/app-players-club-col|app-players-club-cell|data-club-roster-sort="(?:undefined|club)"/);
+  for(const view of ['stats','attributes'])assert.doesNotMatch(model.renderRoster('IT-1',lang,model.copies[lang],snapshot,'?view='+view),/app-market-value-col|app-players-club-col|app-players-club-cell/);
  }
- assert.match(read('assets/app.css'),/\.app-players-table:is\(\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\),\.club-roster-table\[data-players-table-mode="overview"\]\)\{--app-players-age-width:78px/);
+ const css=read('assets/app.css');
+ assert.match(css,/\.app-players-table:is\(\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\),\.club-roster-table\[data-players-table-mode="overview"\]\)\{--app-players-age-width:78px/);
+ assert.match(css,/\.app-players-table\.club-roster-table\[data-players-table-mode="overview"\]\{--app-players-club-min:0px\}/);
 });
