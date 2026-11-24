@@ -2342,3 +2342,17 @@ html:not([data-fa-fixture-hover-suspended]) .fa-bracket-card[data-fa-match-legs=
 .app-players-table.club-roster-table[data-players-table-mode="overview"] th:nth-child(6){width:calc(var(--app-players-foot-width) + var(--app-roster-extra-width) / 4)}
 .app-players-table.club-roster-table[data-players-table-mode="overview"] th.app-market-value-col{width:calc(var(--app-players-market-width) + var(--app-roster-extra-width) / 4)}
 .app-players-table.club-roster-table[data-players-table-mode="overview"] td.app-market-value-col{width:auto}
+
+/* #763: the protected preview has the same identity tracks and seven-digit value reserve. */
+.app-players-preview-page .app-players-table[data-players-table-mode="overview"]{--preview-age:78px;--preview-height:96px;--preview-foot:90px;--preview-value:196px;--preview-extra:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width) - var(--preview-age) - var(--preview-height) - var(--preview-foot) - var(--preview-value))/4);min-width:calc(var(--app-players-flag-width) + var(--app-players-name-width) + var(--app-players-positions-width) + var(--preview-age) + var(--preview-height) + var(--preview-foot) + var(--preview-value))}
+.app-players-preview-page .app-players-table[data-players-table-mode="overview"] th:nth-child(4){width:calc(var(--preview-age) + var(--preview-extra))}
+.app-players-preview-page .app-players-table[data-players-table-mode="overview"] th:nth-child(5){width:calc(var(--preview-height) + var(--preview-extra))}
+.app-players-preview-page .app-players-table[data-players-table-mode="overview"] th:nth-child(6){width:calc(var(--preview-foot) + var(--preview-extra))}
+.app-players-preview-page .app-players-table[data-players-table-mode="overview"] th.app-market-value-col{width:calc(var(--preview-value) + var(--preview-extra))}
+.app-players-preview-page .app-players-table[data-players-table-mode="overview"] td.app-market-value-col{width:auto}
+@media(max-width:720px){.app-players-preview-page .app-players-table[data-players-table-mode="overview"]{--preview-age:62px;--preview-height:76px;--preview-foot:74px;--preview-value:172px}}
+@media(max-width:420px){.app-players-preview-page .app-players-table[data-players-table-mode="overview"]{--preview-age:60px;--preview-height:72px;--preview-foot:70px}}
+
+.app-players-preview-page .app-preview-cell-skeleton{display:inline-block;width:var(--preview-skeleton-width);max-width:100%;height:14px;vertical-align:middle;margin:0}
+.app-players-preview-page .app-players-loading-row td:nth-child(2),.app-players-preview-page .app-players-loading-row td:nth-child(3),.app-players-preview-page .app-players-loading-row td:nth-child(6){text-align:left}
+.app-players-preview-page .app-players-table[data-players-table-mode="overview"] :is(th,td):nth-child(4){text-align:center}
