@@ -80,5 +80,7 @@ it('prepares real dates only for authorized initial free agents and never signs'
  expect((await call('POST','/preview',request,'bad')).status).toBe(403);
  expect((await call('POST','/preview',{...request,annualSalaryArc:1})).status).toBe(422);
  expect((await call('POST','/preview',{...request,expectedRevision:revision+1})).status).toBe(409);
+ await db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission='admin.world.write'").bind(accountId).run();
+ expect((await call('POST','/preview',request)).status).toBe(403);
  expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(0);
 });

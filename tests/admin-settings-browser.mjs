@@ -636,6 +636,49 @@ try{
    assert.deepEqual(errors,[]);checks++;
   }finally{releaseInitial();releasePage();await context.close()}
  }
+
+ // #777 writer-only contract preparation; preview does not create a signed term.
+ {
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  try{
+   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+   const generation='11111111-1111-4111-8111-111111111111';
+   let previews=0;
+   await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.route('**/api/player/permissions',r=>r.fulfill({json:{permissions:['admin.access','admin.world.read','admin.world.write']}}));
+   await page.route('**/api/admin/session',r=>r.fulfill({json:{csrfToken:'test-csrf'}}));
+   await page.route('**/api/admin/contracts*',async r=>{
+    const request=r.request();
+    if(new URL(request.url()).pathname.endsWith('/preview')){
+     previews++;assert.equal(request.method(),'POST');
+     assert.equal(request.headers()['x-csrf-token'],'test-csrf');
+     assert.deepEqual(request.postDataJSON(),{playerId:2,clubKey:'IT-1',durationSeasons:2,expectedGeneration:generation,expectedRevision:0});
+     return r.fulfill({json:{playerId:2,clubKey:'IT-1',durationSeasons:2,startTick:0,endTick:112,representation:'ai',minimumArc:40,annualSalaryArc:null,signable:false}})
+    }
+    assert.equal(request.method(),'GET');
+    return r.fulfill({json:{count:2,page:1,pageSize:50,totalPages:1,worldGeneration:generation,worldRevision:0,
+     players:[{id:1,name:'Signed Player',clubKey:'IT-1',canPrepareContract:false,contract:{id:7,annualSalaryArc:125,durationSeasons:1,startTick:0,endTick:56,signedAt:'2026-11-24T12:00:00.000Z'}},{id:2,name:'Free Player',clubKey:null,canPrepareContract:true,contract:null}],
+     clubs:[{clubKey:'IT-1',name:'Test Italian Club'}]}});
+   });
+   await page.goto('http://app.localhost:2000/admin/contracts',{waitUntil:'domcontentloaded'});
+   await page.locator('[data-contracts-player="2"]').waitFor();
+   const form=page.locator('[data-contract-draft]');
+   assert.equal(await form.isVisible(),true);
+   assert.equal(await form.locator('[data-contract-draft-player] option').count(),2);
+   await form.locator('[data-contract-draft-player]').selectOption('2');
+   await form.locator('[data-contract-draft-club]').selectOption('IT-1');
+   await form.locator('[data-contract-draft-duration]').selectOption('2');
+   await form.locator('[data-contract-draft-preview]').click();
+   await form.locator('[data-contract-draft-start]').filter({hasText:'S1 · D1'}).waitFor();
+   assert.match(await form.locator('[data-contract-draft-end]').innerText(),/S2 · D56/);
+   assert.equal(await form.locator('[data-contract-draft-agent]').innerText(),'AI');
+   assert.equal(await form.locator('[data-contract-draft-sign]').isDisabled(),true);
+   assert.match(await form.locator('[data-contract-draft-message]').innerText(),/Signing unavailable/);
+   assert.equal(await form.locator('[data-contract-draft-salary]').innerText(),'—');
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   assert.equal(previews,1);assert.deepEqual(errors,[]);checks++;
+  }finally{await context.close()}
+ }
  timing.mark('contracts-inspection-complete');
 
  // Rewards: same Admin controls and table geometry, read-only fixture access.
