@@ -1,6 +1,7 @@
 // #791 — offline pure planner tests; owned by Site FULL.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createOpeningPersistenceRun,inspectOpeningProgress} from '../tools/world-bootstrap-791/persistence.mjs';
 import {loadRuntimePlayerCatalog} from '../backend/src/players-catalog.mjs';
 import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,clubCountryToNationality,approvedForeignWeights,sampleOpeningRetirementAge,prepareOpeningCandidateChunk} from '../tools/world-bootstrap-791/planner.mjs';
 
@@ -124,3 +125,52 @@ function testOpeningChunk(){
  for(const s of manifest.slots){const age=sampleOpeningRetirementAge(s);requireThat(age>s.age&&age<=40&&age>=33,"invalid conditional retirement")}
 }
 test('internal candidate chunk preserves reused ID and conditionally retires new adults',testOpeningChunk);
+
+function testPersistenceProtocol(){
+ const base=referenceFixture();
+ const manifest=planApprovedReference({...base,versions:{...base.versions,worldRevision:0}});
+ const s=manifest.slots.find(s=>["ITA","ENG","GER"].includes(s.primaryNationality)&&s.age<=19);
+ const prior={id:44,age:s.age,primaryNationality:s.primaryNationality,primaryPosition:s.primaryPosition,primarySuitability:s.primarySuitabilityTarget,clubKey:s.clubKey,representation:"ai",careerStatus:"active",hasSignedContract:false,hasSportingHistory:false,hasApprovedPortrait:true,readyForReuse:true,fingerprint:"a".repeat(64)};
+ const inventory={worldGeneration:manifest.versions.worldGeneration,worldRevision:0,snapshotId:"opening",complete:true,idHighWater:100,players:[prior]};
+ const world={generation:inventory.worldGeneration,revision:0,seasonNumber:0,day:0,phase:"unstarted"};
+ const run=createOpeningPersistenceRun(manifest,inventory,world),rows=[{id:44,fingerprint:prior.fingerprint}],receipts=[];
+ const observation={world,complete:true,idHighWater:100,rows};
+ let progress=inspectOpeningProgress(run,manifest,inventory,receipts,observation);
+ eq(progress.totalBatches,256);eq(progress.completedSlots,0);eq(progress.nextBatch.entries.length,25);
+ throws(()=>createOpeningPersistenceRun(manifest,{...inventory,players:[{...prior,hasSignedContract:true}]},world));
+ throws(()=>inspectOpeningProgress(run,manifest,inventory,receipts,{...observation,world:{...world,phase:"active"}}));
+ throws(()=>inspectOpeningProgress(run,manifest,inventory,receipts,{...observation,rows:[]}));
+ throws(()=>inspectOpeningProgress(run,manifest,{...inventory,snapshotId:"changed"},receipts,observation));
+ const reuse=planYouthReuse(manifest,inventory);
+ for(let index=0;index<256;index++){
+  const entriesForBatch=manifest.slots.slice(index*25,index*25+25).map((s,i)=>{
+   const a=reuse.assignments[index*25+i];return a.kind==="reuse"?{slotKey:s.slotKey,kind:"reuse",playerId:a.playerId}:{slotKey:s.slotKey,kind:"generate"};
+  });
+  const b={runKey:run.runKey,index,offset:index*25,requestHash:manifestDigest({runKey:run.runKey,index,entries:entriesForBatch}),entries:entriesForBatch};
+  if([0,1,128].includes(index))eq(progress.nextBatch,b);
+  const beforeHighWater=observation.idHighWater;
+  const entries=b.entries.map(e=>{
+   if(e.kind==="reuse")return {...e,fingerprint:prior.fingerprint};
+   const id=++observation.idHighWater,fingerprint=id.toString(16).padStart(64,"0");
+   rows.push({id,fingerprint});return {...e,playerId:id,fingerprint};
+  });
+  const receipt={runKey:b.runKey,index:b.index,requestHash:b.requestHash,beforeHighWater,afterHighWater:observation.idHighWater,entries};
+  receipts.push(receipt);
+  if(receipts.length===1){
+   throws(()=>inspectOpeningProgress(run,manifest,inventory,[],observation));
+   throws(()=>inspectOpeningProgress(run,manifest,inventory,[{...receipt,index:1}],observation));
+   throws(()=>inspectOpeningProgress(run,manifest,inventory,[{...receipt,requestHash:"0".repeat(64)}],observation));
+   throws(()=>inspectOpeningProgress(run,manifest,inventory,[{...receipt,entries:receipt.entries.slice(1)}],observation));
+   throws(()=>inspectOpeningProgress(run,manifest,inventory,receipts,{...observation,rows:rows.map(r=>r.id===44?{...r,fingerprint:"b".repeat(64)}:r)}));
+  }
+  if([1,128,256].includes(receipts.length)){
+   progress=inspectOpeningProgress(run,manifest,inventory,receipts,observation);
+   eq(progress.completedSlots,receipts.length*25);
+  }
+ }
+ eq(progress.readyForReconciliation,true);eq(progress.remainingSlots,0);eq(rows.length,6400);eq(observation.idHighWater,6499);
+ eq(progress,inspectOpeningProgress(run,manifest,inventory,[...receipts].reverse(),observation));
+ throws(()=>inspectOpeningProgress(run,manifest,inventory,receipts.slice(1),observation));
+ throws(()=>inspectOpeningProgress(run,manifest,inventory,[...receipts,receipts[0]],observation));
+}
+test('opening persistence resumes from verified receipts and detects partial or changed catalogue',testPersistenceProtocol);
