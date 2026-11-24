@@ -147,10 +147,23 @@ test('Committed drafts remain inspectable while automatic seeds stay unpinned',(
  const preview=read('assets/admin-players-preview.js');
  const detail=read('assets/player-detail.js');
  const backend=read('backend/src/players-generation-command.ts');
- assert.match(backend,/const candidates(?::Data\[\])?=stored\.map\(\(player,index\)=>\(\{\.\.\.player,preview_id:'trial-'/);
+ assert.match(backend,/const candidates(?::Data\[\])?=stored\.map\(\(player,index\)=>\(\{\.\.\.player,market_value_arc:calculatePlayerMarketValueArc\(player as unknown as MarketValueInput\),preview_id:'trial-'/);
  assert.match(backend,/status:draft\.status/);
  assert.match(preview,/saved=info\.status==='committed'/);
  assert.doesNotMatch(preview,/options\.seed='fa-next-'/);
  assert.match(detail,/previewCommitted=draft\.status==='committed'/);
  assert.match(detail,/p\.preview_id!==undefined/);
+});
+
+
+test('Admin preview valuation is server-derived, localized, sortable and never persisted by the preview',()=>{
+ const list=read('assets/admin-players-preview.js'),detail=read('assets/player-detail.js'),backend=read('backend/src/players-generation-command.ts');
+ for(const path of ['admin/players/preview/index.html','admin/players/preview/player/index.html'])assert.match(read(path),/src="\/assets\/market-value-format.js" defer/);
+ assert.match(read('admin/players/preview/index.html'),/app-market-value-col">Market value/);
+ assert.match(read('admin/players/preview/player/index.html'),/data-detail-market-value/);
+ assert.match(list,/faMarketValue\?\.format\(player.market_value_arc,language\(\)\)/);
+ assert.match(list,/sort==='market_value_arc'&&\(x===null\|\|y===null\)/);
+ assert.match(detail,/returnSort.*market_value_arc/);
+ assert.match(backend,/market_value_arc:calculatePlayerMarketValueArc/);
+ assert.doesNotMatch(list,/calculatePlayerMarketValueArc/);
 });
