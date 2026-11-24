@@ -1,0 +1,873 @@
+{
+  "version": "academy-dual-pricing-draft-v1",
+  "status": "research-only",
+  "unitEconomics": [
+    {
+      "arcPercent": 90,
+      "eurPercent": 90,
+      "relativeEurDiscountPct": 0,
+      "quotes": [
+        {
+          "arc": 198,
+          "eurCents": 198
+        },
+        {
+          "arc": 1098,
+          "eurCents": 1098
+        },
+        {
+          "arc": 3204,
+          "eurCents": 3204
+        }
+      ],
+      "meanArc": 1399.5,
+      "meanEurCents": 1399.5,
+      "meanAfterIllustrativePaymentCostCents": 1332.25,
+      "breakEven": [
+        {
+          "generationCostCents": 10,
+          "annualCostCents": 7680,
+          "eurOrdersNeeded": 6,
+          "shareAtMinimumActivationsPct": 1.81
+        },
+        {
+          "generationCostCents": 50,
+          "annualCostCents": 38400,
+          "eurOrdersNeeded": 29,
+          "shareAtMinimumActivationsPct": 8.73
+        },
+        {
+          "generationCostCents": 100,
+          "annualCostCents": 76800,
+          "eurOrdersNeeded": 58,
+          "shareAtMinimumActivationsPct": 17.47
+        },
+        {
+          "generationCostCents": 200,
+          "annualCostCents": 153600,
+          "eurOrdersNeeded": 116,
+          "shareAtMinimumActivationsPct": 34.94
+        }
+      ],
+      "mix": [
+        {
+          "activations": 332,
+          "eurOrders": 66,
+          "arcOrders": 266,
+          "arcToReserve": 372267,
+          "grossEurCents": 92367,
+          "afterIllustrativePaymentCostCents": 87928.5
+        },
+        {
+          "activations": 332,
+          "eurOrders": 116,
+          "arcOrders": 216,
+          "arcToReserve": 302292,
+          "grossEurCents": 162342,
+          "afterIllustrativePaymentCostCents": 154541
+        },
+        {
+          "activations": 332,
+          "eurOrders": 166,
+          "arcOrders": 166,
+          "arcToReserve": 232317,
+          "grossEurCents": 232317,
+          "afterIllustrativePaymentCostCents": 221153.5
+        },
+        {
+          "activations": 450,
+          "eurOrders": 90,
+          "arcOrders": 360,
+          "arcToReserve": 503820,
+          "grossEurCents": 125955,
+          "afterIllustrativePaymentCostCents": 119902.5
+        },
+        {
+          "activations": 450,
+          "eurOrders": 158,
+          "arcOrders": 292,
+          "arcToReserve": 408654,
+          "grossEurCents": 221121,
+          "afterIllustrativePaymentCostCents": 210495.5
+        },
+        {
+          "activations": 450,
+          "eurOrders": 225,
+          "arcOrders": 225,
+          "arcToReserve": 314887.5,
+          "grossEurCents": 314887.5,
+          "afterIllustrativePaymentCostCents": 299756.25
+        },
+        {
+          "activations": 600,
+          "eurOrders": 120,
+          "arcOrders": 480,
+          "arcToReserve": 671760,
+          "grossEurCents": 167940,
+          "afterIllustrativePaymentCostCents": 159870
+        },
+        {
+          "activations": 600,
+          "eurOrders": 210,
+          "arcOrders": 390,
+          "arcToReserve": 545805,
+          "grossEurCents": 293895,
+          "afterIllustrativePaymentCostCents": 279772.5
+        },
+        {
+          "activations": 600,
+          "eurOrders": 300,
+          "arcOrders": 300,
+          "arcToReserve": 419850,
+          "grossEurCents": 419850,
+          "afterIllustrativePaymentCostCents": 399675
+        }
+      ]
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 90,
+      "relativeEurDiscountPct": 10,
+      "quotes": [
+        {
+          "arc": 220,
+          "eurCents": 198
+        },
+        {
+          "arc": 1220,
+          "eurCents": 1098
+        },
+        {
+          "arc": 3560,
+          "eurCents": 3204
+        }
+      ],
+      "meanArc": 1555,
+      "meanEurCents": 1399.5,
+      "meanAfterIllustrativePaymentCostCents": 1332.25,
+      "breakEven": [
+        {
+          "generationCostCents": 10,
+          "annualCostCents": 7680,
+          "eurOrdersNeeded": 6,
+          "shareAtMinimumActivationsPct": 1.81
+        },
+        {
+          "generationCostCents": 50,
+          "annualCostCents": 38400,
+          "eurOrdersNeeded": 29,
+          "shareAtMinimumActivationsPct": 8.73
+        },
+        {
+          "generationCostCents": 100,
+          "annualCostCents": 76800,
+          "eurOrdersNeeded": 58,
+          "shareAtMinimumActivationsPct": 17.47
+        },
+        {
+          "generationCostCents": 200,
+          "annualCostCents": 153600,
+          "eurOrdersNeeded": 116,
+          "shareAtMinimumActivationsPct": 34.94
+        }
+      ],
+      "mix": [
+        {
+          "activations": 332,
+          "eurOrders": 66,
+          "arcOrders": 266,
+          "arcToReserve": 413630,
+          "grossEurCents": 92367,
+          "afterIllustrativePaymentCostCents": 87928.5
+        },
+        {
+          "activations": 332,
+          "eurOrders": 116,
+          "arcOrders": 216,
+          "arcToReserve": 335880,
+          "grossEurCents": 162342,
+          "afterIllustrativePaymentCostCents": 154541
+        },
+        {
+          "activations": 332,
+          "eurOrders": 166,
+          "arcOrders": 166,
+          "arcToReserve": 258130,
+          "grossEurCents": 232317,
+          "afterIllustrativePaymentCostCents": 221153.5
+        },
+        {
+          "activations": 450,
+          "eurOrders": 90,
+          "arcOrders": 360,
+          "arcToReserve": 559800,
+          "grossEurCents": 125955,
+          "afterIllustrativePaymentCostCents": 119902.5
+        },
+        {
+          "activations": 450,
+          "eurOrders": 158,
+          "arcOrders": 292,
+          "arcToReserve": 454060,
+          "grossEurCents": 221121,
+          "afterIllustrativePaymentCostCents": 210495.5
+        },
+        {
+          "activations": 450,
+          "eurOrders": 225,
+          "arcOrders": 225,
+          "arcToReserve": 349875,
+          "grossEurCents": 314887.5,
+          "afterIllustrativePaymentCostCents": 299756.25
+        },
+        {
+          "activations": 600,
+          "eurOrders": 120,
+          "arcOrders": 480,
+          "arcToReserve": 746400,
+          "grossEurCents": 167940,
+          "afterIllustrativePaymentCostCents": 159870
+        },
+        {
+          "activations": 600,
+          "eurOrders": 210,
+          "arcOrders": 390,
+          "arcToReserve": 606450,
+          "grossEurCents": 293895,
+          "afterIllustrativePaymentCostCents": 279772.5
+        },
+        {
+          "activations": 600,
+          "eurOrders": 300,
+          "arcOrders": 300,
+          "arcToReserve": 466500,
+          "grossEurCents": 419850,
+          "afterIllustrativePaymentCostCents": 399675
+        }
+      ]
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 85,
+      "relativeEurDiscountPct": 15,
+      "quotes": [
+        {
+          "arc": 220,
+          "eurCents": 187
+        },
+        {
+          "arc": 1220,
+          "eurCents": 1037
+        },
+        {
+          "arc": 3560,
+          "eurCents": 3026
+        }
+      ],
+      "meanArc": 1555,
+      "meanEurCents": 1321.75,
+      "meanAfterIllustrativePaymentCostCents": 1256.5,
+      "breakEven": [
+        {
+          "generationCostCents": 10,
+          "annualCostCents": 7680,
+          "eurOrdersNeeded": 7,
+          "shareAtMinimumActivationsPct": 2.11
+        },
+        {
+          "generationCostCents": 50,
+          "annualCostCents": 38400,
+          "eurOrdersNeeded": 31,
+          "shareAtMinimumActivationsPct": 9.34
+        },
+        {
+          "generationCostCents": 100,
+          "annualCostCents": 76800,
+          "eurOrdersNeeded": 62,
+          "shareAtMinimumActivationsPct": 18.67
+        },
+        {
+          "generationCostCents": 200,
+          "annualCostCents": 153600,
+          "eurOrdersNeeded": 123,
+          "shareAtMinimumActivationsPct": 37.05
+        }
+      ],
+      "mix": [
+        {
+          "activations": 332,
+          "eurOrders": 66,
+          "arcOrders": 266,
+          "arcToReserve": 413630,
+          "grossEurCents": 87235.5,
+          "afterIllustrativePaymentCostCents": 82929
+        },
+        {
+          "activations": 332,
+          "eurOrders": 116,
+          "arcOrders": 216,
+          "arcToReserve": 335880,
+          "grossEurCents": 153323,
+          "afterIllustrativePaymentCostCents": 145754
+        },
+        {
+          "activations": 332,
+          "eurOrders": 166,
+          "arcOrders": 166,
+          "arcToReserve": 258130,
+          "grossEurCents": 219410.5,
+          "afterIllustrativePaymentCostCents": 208579
+        },
+        {
+          "activations": 450,
+          "eurOrders": 90,
+          "arcOrders": 360,
+          "arcToReserve": 559800,
+          "grossEurCents": 118957.5,
+          "afterIllustrativePaymentCostCents": 113085
+        },
+        {
+          "activations": 450,
+          "eurOrders": 158,
+          "arcOrders": 292,
+          "arcToReserve": 454060,
+          "grossEurCents": 208836.5,
+          "afterIllustrativePaymentCostCents": 198527
+        },
+        {
+          "activations": 450,
+          "eurOrders": 225,
+          "arcOrders": 225,
+          "arcToReserve": 349875,
+          "grossEurCents": 297393.75,
+          "afterIllustrativePaymentCostCents": 282712.5
+        },
+        {
+          "activations": 600,
+          "eurOrders": 120,
+          "arcOrders": 480,
+          "arcToReserve": 746400,
+          "grossEurCents": 158610,
+          "afterIllustrativePaymentCostCents": 150780
+        },
+        {
+          "activations": 600,
+          "eurOrders": 210,
+          "arcOrders": 390,
+          "arcToReserve": 606450,
+          "grossEurCents": 277567.5,
+          "afterIllustrativePaymentCostCents": 263865
+        },
+        {
+          "activations": 600,
+          "eurOrders": 300,
+          "arcOrders": 300,
+          "arcToReserve": 466500,
+          "grossEurCents": 396525,
+          "afterIllustrativePaymentCostCents": 376950
+        }
+      ]
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 80,
+      "relativeEurDiscountPct": 20,
+      "quotes": [
+        {
+          "arc": 220,
+          "eurCents": 176
+        },
+        {
+          "arc": 1220,
+          "eurCents": 976
+        },
+        {
+          "arc": 3560,
+          "eurCents": 2848
+        }
+      ],
+      "meanArc": 1555,
+      "meanEurCents": 1244,
+      "meanAfterIllustrativePaymentCostCents": 1181,
+      "breakEven": [
+        {
+          "generationCostCents": 10,
+          "annualCostCents": 7680,
+          "eurOrdersNeeded": 7,
+          "shareAtMinimumActivationsPct": 2.11
+        },
+        {
+          "generationCostCents": 50,
+          "annualCostCents": 38400,
+          "eurOrdersNeeded": 33,
+          "shareAtMinimumActivationsPct": 9.94
+        },
+        {
+          "generationCostCents": 100,
+          "annualCostCents": 76800,
+          "eurOrdersNeeded": 66,
+          "shareAtMinimumActivationsPct": 19.88
+        },
+        {
+          "generationCostCents": 200,
+          "annualCostCents": 153600,
+          "eurOrdersNeeded": 131,
+          "shareAtMinimumActivationsPct": 39.46
+        }
+      ],
+      "mix": [
+        {
+          "activations": 332,
+          "eurOrders": 66,
+          "arcOrders": 266,
+          "arcToReserve": 413630,
+          "grossEurCents": 82104,
+          "afterIllustrativePaymentCostCents": 77946
+        },
+        {
+          "activations": 332,
+          "eurOrders": 116,
+          "arcOrders": 216,
+          "arcToReserve": 335880,
+          "grossEurCents": 144304,
+          "afterIllustrativePaymentCostCents": 136996
+        },
+        {
+          "activations": 332,
+          "eurOrders": 166,
+          "arcOrders": 166,
+          "arcToReserve": 258130,
+          "grossEurCents": 206504,
+          "afterIllustrativePaymentCostCents": 196046
+        },
+        {
+          "activations": 450,
+          "eurOrders": 90,
+          "arcOrders": 360,
+          "arcToReserve": 559800,
+          "grossEurCents": 111960,
+          "afterIllustrativePaymentCostCents": 106290
+        },
+        {
+          "activations": 450,
+          "eurOrders": 158,
+          "arcOrders": 292,
+          "arcToReserve": 454060,
+          "grossEurCents": 196552,
+          "afterIllustrativePaymentCostCents": 186598
+        },
+        {
+          "activations": 450,
+          "eurOrders": 225,
+          "arcOrders": 225,
+          "arcToReserve": 349875,
+          "grossEurCents": 279900,
+          "afterIllustrativePaymentCostCents": 265725
+        },
+        {
+          "activations": 600,
+          "eurOrders": 120,
+          "arcOrders": 480,
+          "arcToReserve": 746400,
+          "grossEurCents": 149280,
+          "afterIllustrativePaymentCostCents": 141720
+        },
+        {
+          "activations": 600,
+          "eurOrders": 210,
+          "arcOrders": 390,
+          "arcToReserve": 606450,
+          "grossEurCents": 261240,
+          "afterIllustrativePaymentCostCents": 248010
+        },
+        {
+          "activations": 600,
+          "eurOrders": 300,
+          "arcOrders": 300,
+          "arcToReserve": 466500,
+          "grossEurCents": 373200,
+          "afterIllustrativePaymentCostCents": 354300
+        }
+      ]
+    },
+    {
+      "arcPercent": 90,
+      "eurPercent": 80,
+      "relativeEurDiscountPct": 11.11,
+      "quotes": [
+        {
+          "arc": 198,
+          "eurCents": 176
+        },
+        {
+          "arc": 1098,
+          "eurCents": 976
+        },
+        {
+          "arc": 3204,
+          "eurCents": 2848
+        }
+      ],
+      "meanArc": 1399.5,
+      "meanEurCents": 1244,
+      "meanAfterIllustrativePaymentCostCents": 1181,
+      "breakEven": [
+        {
+          "generationCostCents": 10,
+          "annualCostCents": 7680,
+          "eurOrdersNeeded": 7,
+          "shareAtMinimumActivationsPct": 2.11
+        },
+        {
+          "generationCostCents": 50,
+          "annualCostCents": 38400,
+          "eurOrdersNeeded": 33,
+          "shareAtMinimumActivationsPct": 9.94
+        },
+        {
+          "generationCostCents": 100,
+          "annualCostCents": 76800,
+          "eurOrdersNeeded": 66,
+          "shareAtMinimumActivationsPct": 19.88
+        },
+        {
+          "generationCostCents": 200,
+          "annualCostCents": 153600,
+          "eurOrdersNeeded": 131,
+          "shareAtMinimumActivationsPct": 39.46
+        }
+      ],
+      "mix": [
+        {
+          "activations": 332,
+          "eurOrders": 66,
+          "arcOrders": 266,
+          "arcToReserve": 372267,
+          "grossEurCents": 82104,
+          "afterIllustrativePaymentCostCents": 77946
+        },
+        {
+          "activations": 332,
+          "eurOrders": 116,
+          "arcOrders": 216,
+          "arcToReserve": 302292,
+          "grossEurCents": 144304,
+          "afterIllustrativePaymentCostCents": 136996
+        },
+        {
+          "activations": 332,
+          "eurOrders": 166,
+          "arcOrders": 166,
+          "arcToReserve": 232317,
+          "grossEurCents": 206504,
+          "afterIllustrativePaymentCostCents": 196046
+        },
+        {
+          "activations": 450,
+          "eurOrders": 90,
+          "arcOrders": 360,
+          "arcToReserve": 503820,
+          "grossEurCents": 111960,
+          "afterIllustrativePaymentCostCents": 106290
+        },
+        {
+          "activations": 450,
+          "eurOrders": 158,
+          "arcOrders": 292,
+          "arcToReserve": 408654,
+          "grossEurCents": 196552,
+          "afterIllustrativePaymentCostCents": 186598
+        },
+        {
+          "activations": 450,
+          "eurOrders": 225,
+          "arcOrders": 225,
+          "arcToReserve": 314887.5,
+          "grossEurCents": 279900,
+          "afterIllustrativePaymentCostCents": 265725
+        },
+        {
+          "activations": 600,
+          "eurOrders": 120,
+          "arcOrders": 480,
+          "arcToReserve": 671760,
+          "grossEurCents": 149280,
+          "afterIllustrativePaymentCostCents": 141720
+        },
+        {
+          "activations": 600,
+          "eurOrders": 210,
+          "arcOrders": 390,
+          "arcToReserve": 545805,
+          "grossEurCents": 261240,
+          "afterIllustrativePaymentCostCents": 248010
+        },
+        {
+          "activations": 600,
+          "eurOrders": 300,
+          "arcOrders": 300,
+          "arcToReserve": 419850,
+          "grossEurCents": 373200,
+          "afterIllustrativePaymentCostCents": 354300
+        }
+      ]
+    }
+  ],
+  "conditionalDemandSensitivity": [
+    {
+      "arcPercent": 90,
+      "eurPercent": 90,
+      "eurPreferenceWhenBothAffordable": 0,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 441,
+      "eurOrders": 49,
+      "totalOrders": 490,
+      "arcToReserve": 520895,
+      "grossEurCents": 49945,
+      "rewardIssuanceArc": 1561228,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 90,
+      "eurPercent": 90,
+      "eurPreferenceWhenBothAffordable": 0.25,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 396,
+      "eurOrders": 136,
+      "totalOrders": 531,
+      "arcToReserve": 546619,
+      "grossEurCents": 112636,
+      "rewardIssuanceArc": 1565179,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 90,
+      "eurPercent": 90,
+      "eurPreferenceWhenBothAffordable": 0.5,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 339,
+      "eurOrders": 215,
+      "totalOrders": 555,
+      "arcToReserve": 555620,
+      "grossEurCents": 167233,
+      "rewardIssuanceArc": 1566986,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 90,
+      "eurPreferenceWhenBothAffordable": 0,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 410,
+      "eurOrders": 53,
+      "totalOrders": 463,
+      "arcToReserve": 495753,
+      "grossEurCents": 54701,
+      "rewardIssuanceArc": 1559950,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 90,
+      "eurPreferenceWhenBothAffordable": 0.25,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 364,
+      "eurOrders": 132,
+      "totalOrders": 496,
+      "arcToReserve": 523532,
+      "grossEurCents": 110252,
+      "rewardIssuanceArc": 1565574,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 90,
+      "eurPreferenceWhenBothAffordable": 0.5,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 317,
+      "eurOrders": 211,
+      "totalOrders": 528,
+      "arcToReserve": 546607,
+      "grossEurCents": 163568,
+      "rewardIssuanceArc": 1563664,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 85,
+      "eurPreferenceWhenBothAffordable": 0,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 410,
+      "eurOrders": 53,
+      "totalOrders": 463,
+      "arcToReserve": 495753,
+      "grossEurCents": 51662,
+      "rewardIssuanceArc": 1559950,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 85,
+      "eurPreferenceWhenBothAffordable": 0.25,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 364,
+      "eurOrders": 132,
+      "totalOrders": 496,
+      "arcToReserve": 523532,
+      "grossEurCents": 104127,
+      "rewardIssuanceArc": 1565574,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 85,
+      "eurPreferenceWhenBothAffordable": 0.5,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 317,
+      "eurOrders": 211,
+      "totalOrders": 528,
+      "arcToReserve": 546607,
+      "grossEurCents": 154481,
+      "rewardIssuanceArc": 1563664,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 80,
+      "eurPreferenceWhenBothAffordable": 0,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 410,
+      "eurOrders": 53,
+      "totalOrders": 463,
+      "arcToReserve": 495753,
+      "grossEurCents": 48623,
+      "rewardIssuanceArc": 1559950,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 80,
+      "eurPreferenceWhenBothAffordable": 0.25,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 364,
+      "eurOrders": 132,
+      "totalOrders": 496,
+      "arcToReserve": 523532,
+      "grossEurCents": 98002,
+      "rewardIssuanceArc": 1565574,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 80,
+      "eurPreferenceWhenBothAffordable": 0.5,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 317,
+      "eurOrders": 211,
+      "totalOrders": 528,
+      "arcToReserve": 546607,
+      "grossEurCents": 145394,
+      "rewardIssuanceArc": 1563664,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 90,
+      "eurPercent": 80,
+      "eurPreferenceWhenBothAffordable": 0,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 441,
+      "eurOrders": 49,
+      "totalOrders": 490,
+      "arcToReserve": 520895,
+      "grossEurCents": 44395,
+      "rewardIssuanceArc": 1561228,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 90,
+      "eurPercent": 80,
+      "eurPreferenceWhenBothAffordable": 0.25,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 396,
+      "eurOrders": 136,
+      "totalOrders": 531,
+      "arcToReserve": 546619,
+      "grossEurCents": 100121,
+      "rewardIssuanceArc": 1565179,
+      "peakUnpaid56": 0
+    },
+    {
+      "arcPercent": 90,
+      "eurPercent": 80,
+      "eurPreferenceWhenBothAffordable": 0.5,
+      "completed": [
+        32,
+        32,
+        32
+      ],
+      "arcOrders": 339,
+      "eurOrders": 215,
+      "totalOrders": 555,
+      "arcToReserve": 555620,
+      "grossEurCents": 148652,
+      "rewardIssuanceArc": 1566986,
+      "peakUnpaid56": 0
+    }
+  ]
+}

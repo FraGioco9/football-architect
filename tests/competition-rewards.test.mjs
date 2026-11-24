@@ -271,3 +271,12 @@ test('retirement-aware club license references and supply sensitivity',async()=>
  assert.ok(result.retirement.scenarios.find(s=>s.activations===497).endingShortfallAgainstSlots===0);
  assert.ok(result.feeSensitivity[0].topBaseCents>result.selected.topReference.baseLicenseCents);
 });
+
+test('academy dual quote is independently rounded and preserves same denomination',async()=>{
+ const {quoteYouth,unitEconomics}=await import('../tools/academy-dual-pricing.mjs');
+ const c=JSON.parse(readFileSync(new URL('../tools/academy-dual-pricing-v1.json',import.meta.url),'utf8'));
+ assert.deepEqual(quoteYouth(1000,100,85),{arc:1000,eurCents:850});assert.deepEqual(quoteYouth(101,100,85),{arc:101,eurCents:86});
+ assert.throws(()=>quoteYouth(-1,100,85));assert.throws(()=>quoteYouth(1000,101,85));
+ const unit=unitEconomics(c,quoteYouth),snapshot=JSON.parse(readFileSync(new URL('../docs/academy-dual-pricing-v1-results.json',import.meta.url),'utf8'));
+ assert.deepEqual(unit,snapshot.unitEconomics);assert.ok(unit.every(x=>x.mix.every(m=>m.arcOrders+m.eurOrders===m.activations)));
+});

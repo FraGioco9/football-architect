@@ -1,0 +1,65 @@
+{
+  "version": "academy-dual-pricing-draft-v1",
+  "referenceDisplayedValuesArc": [
+    220,
+    1220,
+    3560
+  ],
+  "weights": [
+    0.25,
+    0.5,
+    0.25
+  ],
+  "annualCandidates": 768,
+  "minimumActivations": 332,
+  "annualActivationScenarios": [
+    332,
+    450,
+    600
+  ],
+  "eurShareScenarios": [
+    0.2,
+    0.35,
+    0.5
+  ],
+  "pairs": [
+    {
+      "arcPercent": 90,
+      "eurPercent": 90
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 90
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 85
+    },
+    {
+      "arcPercent": 100,
+      "eurPercent": 80
+    },
+    {
+      "arcPercent": 90,
+      "eurPercent": 80
+    }
+  ],
+  "generationUnitCostsCents": [
+    10,
+    50,
+    100,
+    200
+  ],
+  "paymentVariableBps": 300,
+  "paymentFixedCents": 25,
+  "stressPreferences": [
+    0,
+    0.25,
+    0.5
+  ],
+  "stressSeeds": [
+    769,
+    1770,
+    2771
+  ]
+}

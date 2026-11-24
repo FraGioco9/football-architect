@@ -64,3 +64,6 @@ First analytical club-license calibration slice: [club-license-calibration-v1.md
 
 
 Latest owner calibration direction: top D1 approximately EUR300 and low-table D2 approximately EUR100, including retirement/recruitment and generation-cost analysis. See [renewal v2](club-license-renewal-v2.md) for candidate EUR295/EUR100 references, explicit separate personal/club/platform costs, and 32-season age-cohort supply sensitivity. These are provisional quotes and allocations; no mandatory generation fee approved. Historical v1 stress with automatic fallback is not evidence of viable actual player supply.
+
+
+Owner requested distinct ARC/EUR youth percentages to incentivize direct EUR while preserving ARC recycling. [Dual pricing sensitivity](academy-dual-pricing-v1.md): 100% ARC / 85% EUR recommended for owner review; 90/90 remains approved baseline until explicit numerical selection. No live pricing or checkout change.
