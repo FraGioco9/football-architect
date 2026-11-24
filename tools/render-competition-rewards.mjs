@@ -26,14 +26,13 @@ function breakdown(r,key,name){
  const body=rows.map(([k,n,v],i)=>'<tr><th scope="row">'+label(k,n)+'</th><td>'+r.shares[i]+'%</td><td>'+amount(v)+'</td></tr>').join('');
  return table([['rewardDistribution','Reward distribution'],['rewardShare','Share'],['rewardAmount','Amount']],body);
 }
+function publicMarkup(r){
+ const placeholders=Array.from({length:r.capacity},()=>'<tr aria-hidden="true" data-reward-placeholder><th scope="row"><span class="fa-reward-club-placeholder"><span class="app-world-club-crest-placeholder"></span><span class="app-skeleton-bar"></span></span></th><td><span class="app-skeleton-bar"></span></td></tr>').join('');
+ return '<div class="fa-rewards" data-competition-rewards="'+r.id+'"><section class="app-panel"><div class="fa-reward-heading"><h2 data-app-i18n="rewardPool">Total prize pool</h2><strong class="fa-reward-total">'+amount(r.pool)+'</strong></div><p class="fa-reward-reference-note" data-app-i18n="rewardSeasonEstimateNote">Estimates under current rules; not confirmed payments.</p></section><section class="app-panel"><div class="fa-reward-table-wrap"><table class="fa-reward-table"><thead><tr><th scope="col" data-app-i18n="standingsClub">Club</th><th scope="col" data-app-i18n="rewardSeasonEstimate">Estimated rewards</th></tr></thead><tbody data-season-reward-rows>'+placeholders+'</tbody></table></div><p class="fa-reward-reference-note" data-season-reward-status data-app-i18n="rewardUnavailable" hidden>Rewards unavailable</p></section></div>';
+}
 export function renderCompetitionRewards(id){
  const r=competitionRewards(id);
- if(!r)return '<section class="app-panel"><p data-app-i18n="rewardUnavailable">Rewards unavailable</p></section>';
- const key=r.international?'rewardAdvancement':'rewardPlacement',name=r.international?'Advancement':'Placement',p=participationReference(r);
- const perClub=r.international?amount(r.participationReference,true):amount(p.floor);
- const exactSplit=r.international?row('rewardParticipationSplit','Participation allocation (club counts)',amount(p.floor)+' × '+p.lowerCount+' / '+amount(p.higher)+' × '+p.higherCount):row('rewardInstallment','Each participation installment',amount(p.installment));
- return '<div class="fa-rewards" data-competition-rewards="'+r.id+'"><section class="app-panel"><div class="fa-reward-heading"><h2 data-app-i18n="rewardPool">Total prize pool</h2><strong class="fa-reward-total">'+amount(r.pool)+'</strong></div>'+breakdown(r,key,name)+'<p class="fa-reward-per-club">'+label(r.international?'rewardAverageParticipation':'rewardPerClub',r.international?'Average participation per club':'Participation per club')+' <strong>'+perClub+'</strong></p>'+creditSchedule(r)+note()+states()+'<details class="fa-reward-calculation"><summary data-app-i18n="rewardCalculation">Calculation rules</summary><dl class="fa-reward-list">'+exactSplit+row('rewardPoints','Points',label('rewardPointsFormula','Points pool × club points / total points'))+row('rewardRounding','Rounding',label('rewardHamilton','Largest remainder; equal-remainder order pending'))+'</dl></details></section>'+
- '<section class="app-panel"><h2>'+label(key,name)+'</h2>'+placementTable(r)+'</section></div>';
+ return r?publicMarkup(r):'<section class="app-panel"><p data-app-i18n="rewardUnavailable">Rewards unavailable</p></section>';
 }
 export function renderAdminRewards(definitions,encode){
  const names=new Map(definitions.map(d=>[d.id,d.name])),t=rewardTotals();

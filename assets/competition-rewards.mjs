@@ -105,3 +105,49 @@ export function plannedRewardInstallments(rule){
  if(!Number.isSafeInteger(half)||!Number.isSafeInteger(rule.points)||!Number.isSafeInteger(rule.placement))throw Error('Invalid configured reward installments');
  return [{day:first,participation:half,points:0,placement:0,total:half},{day:second,participation:rule.participation-half,points:rule.points,placement:rule.placement,total:rule.participation-half+rule.points+rule.placement}];
 }
+
+// Season-specific sporting estimates, including archives. Current DRAFT rules, never payment evidence.
+export function seasonRewardReference(id,context,{debug=false}={}){
+ const rule=competitionRewards(id),data=context?.seasonData;
+ if(!rule||!data||data.season!==context.selectedSeason||context.definition?.id?.toLowerCase()!==rule.id.toLowerCase()||debug||data.provenance?.kind!=='authoritative')return null;
+ const state=data.seasonState,day=state?.phase==='closed'?56:state?.day;
+ if(!Number.isSafeInteger(day)||day<0||!Array.isArray(data.participants)||data.participants.length!==rule.capacity)return null;
+ const key=club=>club?.countryId+'-'+club?.clubId;
+ const clubs=new Map(data.participants.map(club=>[key(club),club]));
+ if(clubs.size!==rule.capacity||[...clubs.values()].some(c=>typeof c.primaryName!=='string'||!c.primaryName.trim()))return null;
+ const rows=[...clubs].map(([id,club])=>({id,club,amount:day<28?0:rule.participation/rule.capacity*(day<56?0.5:1)}));
+ const pending=()=>({rows:rows.map(x=>({...x,amount:null})).sort((a,b)=>a.club.primaryName.localeCompare(b.club.primaryName,'en')),pending:true});
+ if(day>=56){
+  const table=data.statistics?.standings,rounds=rule.international?6:30;
+  const valid=Array.isArray(table)&&table.length===rule.capacity&&new Set(table.map(x=>key(x.club))).size===rule.capacity&&table.every(x=>clubs.has(key(x.club))&&x.played===rounds&&Number.isSafeInteger(x.pts)&&x.pts>=0);
+  const total=valid?table.reduce((sum,x)=>sum+x.pts,0):0;
+  if(!total)return pending();
+  const points=new Map(table.map(x=>[key(x.club),rule.points*x.pts/total]));
+  const placement=new Map();
+  if(!rule.international){
+   const reference=placementReference(rule);
+   if(!reference)return pending();
+   table.forEach((x,i)=>placement.set(key(x.club),reference[i].amount));
+  }else{
+   const weights={playoffs:3,quarterfinals:6,semifinals:10,final:17};
+   table.slice(12).forEach(x=>placement.set(key(x.club),0));
+   const phases=context.definition.rules?.phases?.filter(x=>x.type==='knockout'),results=data.results;
+   if(!Array.isArray(phases)||phases.length!==4||!Array.isArray(results))return pending();
+   for(const phase of phases){
+    if(!Object.hasOwn(weights,phase.id)||!Array.isArray(phase.ties))return pending();
+    for(const tie of phase.ties){
+     const matches=results.filter(x=>(x.id||x.tieId)===tie.id),result=matches[0],leg=result?.legs?.[0],winner=result?.winnerId;
+     if(matches.length!==1||!leg||!Array.isArray(result.legs)||result.legs.length!==tie.legs||result.legs.some(x=>!x)||!clubs.has(leg.homeId)||!clubs.has(leg.awayId)||leg.homeId===leg.awayId||![leg.homeId,leg.awayId].includes(winner))return pending();
+     const loser=leg.homeId===winner?leg.awayId:leg.homeId;
+     if(placement.has(loser)||placement.has(winner))return pending();
+     placement.set(loser,rule.placement*weights[phase.id]/100);
+     if(phase.id==='final')placement.set(winner,rule.placement*27/100);
+    }
+   }
+   if(placement.size!==rule.capacity||[...placement.values()].reduce((a,b)=>a+b,0)!==rule.placement)return pending();
+  }
+  for(const row of rows)row.amount+=points.get(row.id)+placement.get(row.id);
+ }
+ rows.sort((a,b)=>b.amount-a.amount||a.club.primaryName.localeCompare(b.club.primaryName,'en',{sensitivity:'base'})||a.id.localeCompare(b.id));
+ return {rows,pending:false};
+}

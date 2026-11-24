@@ -1,4 +1,4 @@
-import {formatRewardAmount,rewardEvidenceState} from './competition-rewards.mjs';
+import {formatRewardAmount,seasonRewardReference} from './competition-rewards.mjs';
 function format(){
  const locale=document.documentElement.lang||'en';
  for(const node of document.querySelectorAll('[data-reward-amount]')){
@@ -15,11 +15,40 @@ function evidence(root,key){
 }
 const competition=document.querySelector('[data-competition-rewards]');
 if(competition){
- const update=()=>evidence(competition,rewardEvidenceState({
-  id:competition.dataset.competitionRewards,context:window.faCompetitionContext,
-  worldSnapshot:window.faWorldState?.get?.(),debug:window.faDebugEnabled===true
- }));
+ const tbody=competition.querySelector('[data-season-reward-rows]'),status=competition.querySelector('[data-season-reward-status]');
+ const placeholder=tbody.innerHTML;
+ const make=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node};
+ let signature='';
+ function update(){
+  const context=window.faCompetitionContext;
+  const model=seasonRewardReference(competition.dataset.competitionRewards,context,{debug:window.faDebugEnabled===true});
+  const locale=document.documentElement.lang||'en';
+  if(!model){
+   signature='';
+   if(!tbody.querySelector('[data-reward-placeholder]'))tbody.innerHTML=placeholder;
+   const waiting=!context?.seasonData&&window.faWorldState?.get?.()?.worldStatus!=='ready';
+   tbody.dataset.rewardUnavailable=String(!waiting);
+   status.hidden=waiting;
+   return;
+  }
+  delete tbody.dataset.rewardUnavailable;
+  status.hidden=!model.pending;
+  const next=JSON.stringify([context.selectedSeason,locale,model]);
+  if(next===signature)return;
+  signature=next;
+  tbody.replaceChildren(...model.rows.map(row=>{
+   const tr=make('tr'),th=make('th');th.scope='row';
+   const identity=make('span',undefined,'app-world-club-identity'),crest=make('span',undefined,'app-world-club-crest-placeholder');
+   crest.dataset.clubCrest=row.id;crest.setAttribute('aria-hidden','true');
+   const name=make('a',row.club.primaryName,'app-world-club-name app-world-standing-club-link');
+   name.href='/clubs/'+row.club.countryId.toLowerCase()+'/'+row.club.clubId+'/overview';
+   identity.append(crest,name);th.append(identity);
+   tr.append(th,make('td',row.amount===null?'—':formatRewardAmount(row.amount,locale,{average:row.amount!==0})));
+   return tr;
+  }));
+ }
  for(const event of ['fa:competition-context-change','fa:competition-route-change','fa:source-change','fa:world-state-change'])window.addEventListener(event,update);
+ new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  update();
 }
 const admin=document.querySelector('[data-admin-rewards]');

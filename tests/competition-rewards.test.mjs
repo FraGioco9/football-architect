@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {competitionRewards,rewardTotals,REWARD_IDS,largestRemainder,placementReference,participationReference,pointsReference,CREDIT_MILESTONES,plannedRewardInstallments,formatRewardAmount,rewardEvidenceState} from '../assets/competition-rewards.mjs';
+import {competitionRewards,rewardTotals,REWARD_IDS,largestRemainder,placementReference,participationReference,pointsReference,CREDIT_MILESTONES,plannedRewardInstallments,formatRewardAmount,rewardEvidenceState,seasonRewardReference} from '../assets/competition-rewards.mjs';
 test('all canonical competitions, no fabricated competition',()=>{
  const read=name=>JSON.parse(readFileSync(new URL('../data/'+name,import.meta.url),'utf8'));
  const definitions=[...read('divisions.json'),...read('international-competitions.json')];
@@ -56,26 +56,36 @@ test('reference tables and timing conserve each component',()=>{
  assert.equal(placementReference(competitionRewards('int-2'))[1].amount,272000);
 });
 
-test('reward renderer exposes reference schedule, not individual earnings',async()=>{
+test('public rewards exposes only pool and season club table; admin retains schedule',async()=>{
  const {renderCompetitionRewards,renderAdminRewards,renderRewardCard}=await import('../tools/render-competition-rewards.mjs');
  for(const id of REWARD_IDS){
   const html=renderCompetitionRewards(id);
-  assert.match(html,/rewardDraftNote/);
-  assert.match(html,/rewardCreditSchedule/);
-  assert.match(html,/rewardDay">Day<\/span> 28/);
-  assert.match(html,/rewardDay">Day<\/span> 56/);
-  assert.doesNotMatch(html,/rewardDay">Day<\/span> 0\b/);
-  assert.match(html,/<details class="fa-reward-calculation">/);
-  assert.equal((html.match(/<section class="app-panel">/g)||[]).length,2);
-  assert.match(html,/rewardHamilton/);
-  assert.match(html,/rewardPointsFormula/);
-  assert.match(html,/data-reward-state="rewardEvidenceHistory"/);
-  assert.doesNotMatch(html,/data-reward-(?:earned|paid|credited|payable)=/);
+  assert.match(html,/rewardPool/);
+  assert.match(html,/rewardSeasonEstimateNote/);
+  assert.match(html,/data-season-reward-rows/);
+  assert.equal((html.match(/data-reward-placeholder/g)||[]).length,competitionRewards(id).capacity);
+  assert.doesNotMatch(html,/rewardCreditSchedule|rewardHamilton|rewardPointsFormula|data-reward-(?:earned|paid|credited|payable)=/);
   assert.match(renderRewardCard(id),/fa-reward-card-pool/);
  }
- assert.match(renderCompetitionRewards('int-1'),/864,000 \$ARC/);
- assert.match(renderCompetitionRewards('int-2'),/272,000 \$ARC/);
- assert.match(renderAdminRewards([],String),/data-admin-rewards-content hidden/);
+ const admin=renderAdminRewards([],String);
+ assert.match(admin,/data-admin-rewards-content hidden/);
+ assert.match(admin,/rewardDay">Day<\/span> 28/);
+ assert.match(admin,/rewardDay">Day<\/span> 56/);
+});
+test('current and historical season reward estimates use season-specific clubs and results',()=>{
+ const participants=Array.from({length:16},(_,i)=>({countryId:'IT',clubId:i+1,primaryName:'Club '+(i+1)}));
+ const context={selectedSeason:1,definition:{id:'IT-1'},seasonData:{season:1,seasonState:{phase:'closed',day:56},provenance:{kind:'authoritative'},participants,statistics:{standings:participants.map((club,i)=>({club,played:30,pts:60-i}))}}};
+ const model=seasonRewardReference('IT-1',context);
+ assert.equal(model.rows.length,16);assert.equal(model.pending,false);
+ assert.ok(Math.abs(model.rows.reduce((n,r)=>n+r.amount,0)-4000000)<0.00001);
+ assert.equal(model.rows[0].id,'IT-1');
+ context.seasonData.seasonState={phase:'active',day:28};
+ assert.ok(seasonRewardReference('IT-1',context).rows.every(r=>r.amount===75000));
+ context.seasonData.seasonState.day=27;
+ assert.ok(seasonRewardReference('IT-1',context).rows.every(r=>r.amount===0));
+ context.seasonData.seasonState.day=56;context.seasonData.statistics.standings[0].played=29;
+ assert.ok(seasonRewardReference('IT-1',context).rows.every(r=>r.amount===null));
+ context.selectedSeason=2;assert.equal(seasonRewardReference('IT-1',context),null);
 });
 test('Rewards routes and public static assets are explicitly allowed',async()=>{
  const {parseRoute}=await import('../assets/routes-registry.mjs');

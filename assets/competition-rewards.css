@@ -86,3 +86,18 @@ html[data-theme="light"] #competition-panel-rewards .fa-reward-table thead th{ba
  #competition-panel-rewards .fa-reward-calculation .fa-reward-row{flex-direction:column;align-items:flex-start;gap:4px}
  #competition-panel-rewards .fa-reward-calculation .fa-reward-row dd{text-align:left}
 }
+/* Seasonal club rewards: reserve the same club and amount cells at first paint. */
+#competition-panel-rewards .fa-reward-reference-note{margin:6px 0 0;font-size:12px;color:var(--muted)}
+#competition-panel-rewards .fa-rewards>.app-panel+ .app-panel{border-top:0;padding-top:0}
+#competition-panel-rewards .fa-reward-table tr>*:last-child{width:40%;font-variant-numeric:tabular-nums}
+#competition-panel-rewards .fa-reward-table tbody tr>*{height:64px}
+#competition-panel-rewards .fa-reward-club-placeholder{display:flex;align-items:center;gap:8px}
+#competition-panel-rewards .fa-reward-club-placeholder>.app-skeleton-bar{display:block;width:min(13ch,65%);height:.78em}
+#competition-panel-rewards td>.app-skeleton-bar{display:inline-block;width:min(12ch,100%);height:.78em}
+#competition-panel-rewards [data-reward-unavailable="true"] [data-reward-placeholder]>*{visibility:hidden}
+#competition-panel-rewards .fa-reward-reference-note[hidden]{display:none}
+@media(max-width:620px){
+ #competition-panel-rewards .fa-reward-table tbody tr>*{height:54px}
+ #competition-panel-rewards .app-world-club-identity{gap:6px}
+ #competition-panel-rewards .app-world-club-name{font-size:12px}
+}
