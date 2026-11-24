@@ -1,0 +1,2 @@
+export const CURRENT_PLAYER_CONTRACTS_SQL:string;
+export const NEXT_MATCH_PLAYER_CONTRACTS_SQL:string;

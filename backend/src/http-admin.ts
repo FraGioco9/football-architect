@@ -29,13 +29,13 @@ import {sessionGuard} from './command-guards.ts';
 import {readSeasonArchives,readClosedSeasonHistory} from './season-archive-read.ts';
 import {readSeasonTwoCandidate} from './season-two-candidate-read.ts';
 import {previewPlayerGeneration,readPlayerGenerationDraft,commitPlayerGeneration,listGeneratedPlayers} from './players-generation-command.ts';
-import {parseContractListQuery,readPlayerContracts,changePlayerContract,changePlayerContractsBatch} from './player-club-contracts.ts';
+import {parseContractListQuery,readPlayerContracts} from './player-club-contracts.ts';
 import {readClubLicenses,findLicenseAccounts,changeClubLicense} from './club-licenses.ts';
 import {prepareSeasonTwo} from './season-two-prepare-command.ts';
 import {approveSeasonTwoSnapshot} from './season-two-approval-command.ts';
 export interface AdminEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string}
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>httpJson('account',status,body,extra);
-const known=new Map([["/api/admin/inspection/access","GET"],["/api/admin/economy/clubs","GET"],["/api/admin/economy/ledger","GET"],["/api/admin/reset/options","GET"],["/api/admin/reset/preview","POST"],["/api/admin/economy/summary","GET"],["/api/admin/economy/reconciliation","GET"],['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/players','GET'],['/api/admin/players/preview','POST'],['/api/admin/players/draft','POST'],['/api/admin/players/commit','POST'],['/api/admin/contracts','GET|POST'],['/api/admin/club-licenses','GET|POST'],['/api/admin/club-licenses/accounts','GET'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/season-zero/confirm','POST'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
+const known=new Map([["/api/admin/inspection/access","GET"],["/api/admin/economy/clubs","GET"],["/api/admin/economy/ledger","GET"],["/api/admin/reset/options","GET"],["/api/admin/reset/preview","POST"],["/api/admin/economy/summary","GET"],["/api/admin/economy/reconciliation","GET"],['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/players','GET'],['/api/admin/players/preview','POST'],['/api/admin/players/draft','POST'],['/api/admin/players/commit','POST'],['/api/admin/contracts','GET'],['/api/admin/club-licenses','GET|POST'],['/api/admin/club-licenses/accounts','GET'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/season-zero/confirm','POST'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
 export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response>{
  const path=new URL(request.url).pathname,method=known.get(path);
  if(!method)return json(404,{error:{code:'not_found'}});
@@ -127,13 +127,6 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   // ordinary Admin calendar idempotency key is not accepted as authorization.
   if(path==='/api/admin/players/preview')return json(200,await previewPlayerGeneration(db,session,await readJsonBody(request),now));
   if(path==='/api/admin/players/commit')return json(200,await commitPlayerGeneration(db,session,await readJsonBody(request),now));
-  if(path==='/api/admin/contracts'&&request.method==='POST'){
-   if(new URL(request.url).search)throw new ApiError(422,'invalid_player_contract');
-   const body=await readJsonBody(request);
-   return json(200,body&&typeof body==='object'&&!Array.isArray(body)&&'players' in body
-    ?await changePlayerContractsBatch(db,session,body,now)
-    :await changePlayerContract(db,session,body,now));
-  }
   if(path==='/api/admin/club-licenses'&&request.method==='POST'){
    if(new URL(request.url).search)throw new ApiError(422,'invalid_club_license');
    return json(200,await changeClubLicense(db,session,await readJsonBody(request),now));

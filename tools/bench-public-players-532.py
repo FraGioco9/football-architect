@@ -31,22 +31,33 @@ def measure(count, repeats):
                "entry_season INTEGER, payload_json TEXT, created_at INTEGER)")
     db.execute("CREATE INDEX generated_players_world ON generated_players(world_generation,entry_season,batch_id)")
     db.execute("CREATE INDEX generated_players_batch ON generated_players(batch_id)")
-    db.execute("CREATE TABLE player_club_affiliations("
-               "player_id INTEGER NOT NULL PRIMARY KEY,club_key TEXT NOT NULL) WITHOUT ROWID")
-    db.execute("CREATE INDEX player_club_affiliations_club_player ON player_club_affiliations(club_key,player_id)")
+    db.execute("CREATE TABLE world_state(id INTEGER PRIMARY KEY,generation TEXT,season_number INTEGER,day INTEGER,phase TEXT)")
+    db.execute("INSERT INTO world_state VALUES(1,'generation',1,1,'active')")
+    db.execute("CREATE TABLE player_signed_contracts(id INTEGER PRIMARY KEY,player_id INTEGER,club_key TEXT,world_generation TEXT,start_tick INTEGER,scheduled_end_tick INTEGER,closed_tick INTEGER)")
+    db.execute("CREATE UNIQUE INDEX player_signed_contracts_current ON player_signed_contracts(player_id) WHERE closed_tick IS NULL")
+    db.execute("CREATE INDEX player_signed_contracts_club ON player_signed_contracts(club_key,player_id) WHERE closed_tick IS NULL")
     countries = ("ITA", "ENG", "FRA", "GER", "ESP")
     rows = []
     for i in range(1, count + 1):
         payload = json.dumps({
             "display_name": "Player " + str(i), "nationality": countries[i % len(countries)],
-            "age": 18 + i % 19, "primary_position": "CM",
+            "age": 18 + i % 19, "primary_position": "CM", "career_status": "active",
             "attributes": {"passing": i % 100, "shooting": (i * 3) % 100, "vision": (i * 7) % 100},
         }, separators=(",", ":"))
         rows.append((i, "batch", "generation", 0, payload, 1730000000))
     db.executemany("INSERT INTO generated_players VALUES (?,?,?,?,?,?)", rows)
+    db.execute("INSERT INTO player_signed_contracts SELECT id,id,'IT-'||((id%32)+1),'generation',0,56,NULL FROM generated_players WHERE id%5<>0")
     db.commit()
-    join = ("SELECT p.id,p.payload_json,a.club_key FROM generated_players p "
-            "LEFT JOIN player_club_affiliations a ON a.player_id=p.id")
+    # Keep the relation in step with effective-player-contracts.mjs.
+    join = ("SELECT p.id,p.payload_json,a.club_key FROM generated_players p LEFT JOIN ("
+            "SELECT c.player_id,c.club_key,c.id AS contract_id FROM player_signed_contracts c "
+            "JOIN world_state w ON w.id=1 AND w.generation=c.world_generation "
+            "JOIN generated_players g ON g.id=c.player_id "
+            "WHERE json_extract(g.payload_json,'$.career_status')='active' "
+            "AND c.start_tick<=((w.season_number-1)*56+MAX(w.day,1)-1) "
+            "AND c.scheduled_end_tick>((w.season_number-1)*56+MAX(w.day,1)-1) "
+            "AND (c.closed_tick IS NULL OR c.closed_tick>((w.season_number-1)*56+MAX(w.day,1)-1))"
+            ") a ON a.player_id=p.id")
     cases = {
         "count_all": ("SELECT COUNT(*) FROM generated_players", ()),
         "count_nationality": (
