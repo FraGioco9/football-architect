@@ -1,0 +1,91 @@
+{
+  "version": "economy-no-staff-v1",
+  "rewardScale": 2.75,
+  "payrollShares": {
+    "1": 0.71,
+    "2": 0.86
+  },
+  "forecastHorizon": 32,
+  "annualRetirements": 332,
+  "eurOrders": 33,
+  "entryAges": [
+    16,
+    17,
+    18,
+    19
+  ],
+  "skills": [
+    47,
+    54,
+    61,
+    68,
+    75
+  ],
+  "weights": [
+    0.06,
+    0.24,
+    0.4,
+    0.24,
+    0.06
+  ],
+  "versatility": 0.05,
+  "clubRecruitmentArc": {
+    "1": 0,
+    "2": 0
+  },
+  "arcPriceBps": [
+    10000,
+    10500,
+    10890,
+    10900,
+    11000
+  ],
+  "eurPriceBps": 9000,
+  "activationCostCents": 50,
+  "paymentVariableBps": 300,
+  "paymentFixedCents": 25,
+  "clubSpendFractions": [
+    0,
+    0.75,
+    1
+  ],
+  "seasons": 32,
+  "scenarios": [
+    {
+      "name": "previous-75pct-with-recruitment-allowance",
+      "rewardScale": 2.75,
+      "payrollShares": {
+        "1": 0.71,
+        "2": 0.86
+      },
+      "clubRecruitmentArc": {
+        "1": 1296,
+        "2": 972
+      }
+    },
+    {
+      "name": "75pct-no-unapproved-costs",
+      "rewardScale": 2.25,
+      "payrollShares": {
+        "1": 0.68,
+        "2": 0.9425
+      }
+    },
+    {
+      "name": "90pct-payroll",
+      "rewardScale": 2.75,
+      "payrollShares": {
+        "1": 0.9,
+        "2": 0.9
+      }
+    },
+    {
+      "name": "100pct-payroll",
+      "rewardScale": 2.75,
+      "payrollShares": {
+        "1": 1,
+        "2": 1
+      }
+    }
+  ]
+}

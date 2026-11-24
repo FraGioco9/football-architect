@@ -343,3 +343,11 @@ test('stationary career model reconciles payroll and shows EUR buyer effect on A
  assert.equal(x.license.top.baseLicenseCents,29500);assert.equal(x.license.low.baseLicenseCents,10000);assert.equal(x.license.rows.length,320);
  assert.ok(x.clubLiquidityStress.every(y=>y.day28Negative===0&&y.adverseYearEndNegative===0));
 });
+
+test('no staff or undefined services can replenish the reserve',async()=>{
+ const {buildNoStaff}=await import('../tools/run-economy-no-staff.mjs');
+ const x=buildNoStaff();assert.deepEqual(x,JSON.parse(readFileSync(new URL('../docs/economy-no-staff-v1-results.json',import.meta.url),'utf8')));
+ const old=x.cases[0],clean=x.cases[1],all=x.cases[3];assert.equal(old.scenarios[0].gap,2056396);assert.equal(clean.scenarios[0].gap,1660855);
+ assert.ok(x.cases.every(c=>c.scenarios.every(s=>s.actualClubReserveReceipts===0&&s.gap===s.clubGrowth+s.walletGrowth&&s.fundedArcCeiling<=c.payroll)));
+ assert.equal(all.maxGap,0);assert.equal(all.license.top.baseLicenseCents,1000);assert.equal(all.license.low.baseLicenseCents,1000);
+});

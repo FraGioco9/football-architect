@@ -90,3 +90,6 @@ Latest owner objective: clubs reinvest all seasonal income on average, recurring
 
 
 [Stationary career recycling candidate](economy-career-recycling-v1.md): 6.6M Rewards, 75% payroll (D1 71%, D2 86%), top/low reference EUR295/100, 332 annual activations (299 ARC/33 EUR), all-human, staff inside surplus. Full cohort lifetime value normalized to total payroll; at ARC100% of rounded value gap 406396 ARC even with full club reserve spending. Approx 108.94% ARC quote is an unapproved sensitivity, not a required charge. Proposed reserve 6.6M plus club genesis candidate 2.6632M; earlier license helper's 2.4M field is legacy reference only. All new values research-only; no runtime changes, fee, demand claim, or merge.
+
+
+Latest owner correction: staff costs do not exist; no undefined club service spending in current reserve closure. [No-staff calibration](economy-no-staff-v1.md) supersedes hypothetical club-spend closure. Clean 75% payroll candidate 5.4M Rewards, 4.05M wages, EUR290/95 references, ARC100% receipts 3,739,145, gap 1,660,855. Even full payroll recovery leaves 1.35M club cash. 100% payroll eliminates club surplus and collapses current 3x surplus-based license quote to minimum. No assumed marketplace turnover or new fees; alternative model requires owner choice. No approved runtime changes.
