@@ -4,16 +4,19 @@ import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import worker from '../src/index.ts';
 import {hashPassword} from '../src/passwords.ts';
+import {linkExistingAdminOperator} from '../src/admin-operator-migration.ts';
 
 const binding=env as any,db=binding.DB as Database,origin='http://localhost:2000';
 const local={...binding,PLAYER_MODE:'local',PLAYER_ORIGIN:origin};
 const password='auth-boundaries-test-password-2026';
 const email='boundary-player@example.invalid';
 const adminReads=[
+ '/api/admin/inspection/access','/api/admin/reset/options','/api/admin/economy/summary','/api/admin/economy/reconciliation','/api/admin/economy/clubs','/api/admin/economy/ledger',
  '/api/admin/players','/api/admin/session','/api/admin/world','/api/admin/seasons/events','/api/admin/seasons/archives',
  '/api/admin/seasons/history','/api/admin/seasons/next-candidate'
 ];
 const adminWrites=[
+ '/api/admin/reset/preview',
  '/api/admin/players/preview','/api/admin/players/commit','/api/admin/seasons/next-approve','/api/admin/seasons/next-prepare','/api/admin/seasons/prepare',
  '/api/admin/seasons/calendar','/api/admin/seasons/start','/api/admin/seasons/advance',
  '/api/admin/seasons/events/reschedule','/api/admin/seasons/events/initialize','/api/admin/seasons/events/confirm',
@@ -82,4 +85,32 @@ describe('BE-05 per-route negative access matrix (Worker with disposable D1)',()
   expect((await send('/api/admin/seasons/prepare','POST',undefined,{Origin:''})).status).toBe(403);
   expect((await send('/api/admin/world','GET',undefined,{Cookie:'fa_player_local=a; fa_player_local=b'})).status).toBe(401);
  });
+});
+
+it('enforces Admin read/write and explicit finance read on every inspection route',async()=>{
+ const now=Math.floor(Date.now()/1000);
+ await db.prepare('INSERT INTO admin_accounts(id,email_normalized,password_verifier,created_at) VALUES(?,?,?,?)').bind('inspection-operator',email,'historical-only',now).run();
+ await linkExistingAdminOperator(db,{playerAccountId:'boundary-player',legacyAdminId:'inspection-operator',approvedBy:'fixture'},now);
+ const signed=await worker.fetch(new Request(origin+'/api/player/login',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({email,password})}),local);
+ expect(signed.status).toBe(200);
+ const cookie=signed.headers.get('set-cookie')!.split(';')[0],session=await send('/api/admin/session','GET',cookie);
+ const csrf=(await session.json() as {csrfToken:string}).csrfToken;
+ const preview=()=>worker.fetch(new Request(origin+'/api/admin/reset/preview',{method:'POST',headers:{Origin:origin,Cookie:cookie,'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({scopes:['sporting']})}),local);
+ const caps=async()=>await (await send('/api/admin/inspection/access','GET',cookie)).json();
+ const financePaths=adminReads.filter(p=>p.startsWith('/api/admin/economy/'));
+ expect(await caps()).toEqual({reset:true,economy:false});
+ for(const path of financePaths)expect((await send(path,'GET',cookie)).status).toBe(403);
+ expect((await send('/api/admin/reset/options','GET',cookie)).status).toBe(200);
+ expect((await send('/api/admin/reset/preview','POST',cookie)).status).toBe(403);
+ const previewResponse=await preview();expect(previewResponse.status).toBe(200);expect(await previewResponse.json()).toMatchObject({executable:false});
+ await db.prepare("INSERT INTO economic_finance_permissions VALUES(?,'read',?,?)").bind('boundary-player','fixture',now).run();
+ expect(await caps()).toEqual({reset:true,economy:true});
+ for(const path of financePaths){const res=await send(path,'GET',cookie);expect([path,res.status]).toEqual([path,200]);expect(res.headers.get('cache-control')).toContain('no-store');expect((await send(path,'POST',cookie)).status).toBe(405)}
+ await db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission='admin.world.write'").bind('boundary-player').run();
+ expect(await caps()).toEqual({reset:false,economy:true});
+ expect((await send('/api/admin/reset/options','GET',cookie)).status).toBe(403);expect((await preview()).status).toBe(403);
+ await db.prepare("DELETE FROM economic_finance_permissions WHERE account_id=?").bind('boundary-player').run();
+ for(const path of financePaths)expect((await send(path,'GET',cookie)).status).toBe(403);
+ expect(await db.prepare('SELECT COUNT(*) AS n FROM economic_transactions').first()).toMatchObject({n:0});
+ expect((await send('/api/admin/reset/execute','POST',cookie)).status).toBe(404);
 });

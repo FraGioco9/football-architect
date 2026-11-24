@@ -3,13 +3,13 @@
  * A protected D1 command must enforce expected world revision and persist receipts.
  */
 import {ApiError} from '../../errors.ts';
-export type MilestoneKind='confirm-domestic-entrants'|'confirm-international-entrants'|'generate-domestic-calendar'|'draw-international'|'generate-international-calendar'|'archive-season'|'close-season'|'prepare-next-season';
+export type MilestoneKind='confirm-domestic-entrants'|'confirm-international-entrants'|'generate-domestic-calendar'|'draw-international'|'generate-international-calendar'|'archive-season'|'close-season'|'prepare-next-season'|'settle-rewards';
 export type MilestoneStatus='scheduled'|'completed';
 export interface AdministrativeMilestone {
  readonly id:string;readonly kind:MilestoneKind;readonly scope:string;
  readonly day:number;readonly order:number;readonly status:MilestoneStatus;
 }
-const kinds:readonly MilestoneKind[]=['confirm-domestic-entrants','confirm-international-entrants','generate-domestic-calendar','draw-international','generate-international-calendar','archive-season','close-season','prepare-next-season'];
+const kinds:readonly MilestoneKind[]=['confirm-domestic-entrants','confirm-international-entrants','generate-domestic-calendar','draw-international','generate-international-calendar','archive-season','close-season','prepare-next-season','settle-rewards'];
 const requirements:Record<MilestoneKind,readonly MilestoneKind[]>={
  'confirm-domestic-entrants':[],
  'confirm-international-entrants':[],
@@ -19,6 +19,7 @@ const requirements:Record<MilestoneKind,readonly MilestoneKind[]>={
  'archive-season':[],
  'close-season':['archive-season'],
  'prepare-next-season':['close-season'],
+ 'settle-rewards':[],
 };
 const invalid=():never=>{throw new ApiError(422,'invalid_calendar_event')};
 const blocked=():never=>{throw new ApiError(409,'calendar_event_prerequisites')};
@@ -49,6 +50,11 @@ function validate(events:readonly AdministrativeMilestone[]):void {
   }
   if(events.some(e=>e.kind==='archive-season'||e.kind==='close-season'||e.kind==='prepare-next-season')&&events.filter(e=>finalKinds.includes(e.kind as typeof finalKinds[number])).length!==3)blocked();
  }
+ const rewards=events.filter(e=>e.kind==='settle-rewards');
+ if(rewards.length){
+  if(rewards.length!==2||![28,56].every(day=>rewards.some(e=>e.id==='rewards:'+day&&e.scope==='rewards-'+day&&e.day===day&&e.order===7000)))blocked();
+  if(!finalEvents.every(Boolean))blocked();
+ }
  const domestic=events.find(e=>e.id==='domestic:calendar'),internationalDraw=events.find(e=>e.id==='international:draw');
  if(domestic&&internationalDraw&&key(domestic)>=key(internationalDraw))blocked();
  for(const e of events)for(const kind of requirements[e.kind]){
@@ -65,6 +71,7 @@ export function rescheduleAdministrativeMilestone(
   !Number.isSafeInteger(order)||order<0||order>9999)invalid();
  const original=events.find(e=>e.id===id);
  if(!original)return invalid();
+ if(original.kind==='settle-rewards')blocked();
  if(original.scope==='season'){
   // All terminal actions are post-sport day-56 ordered milestones, not new days.
   if(original.status==='completed'||currentDay>56||day!==56||currentDay===56&&day<currentDay||order===original.order)blocked();
@@ -114,4 +121,11 @@ export function proposeEndSeasonMilestones():readonly AdministrativeMilestone[]{
  ];
  validate([...proposeAdministrativeMilestones(),...events]);
  return Object.freeze(events.map(e=>Object.freeze(e)));
+}
+
+/** Fixed post-sport milestones, enrolled only for a pre-funded season. */
+export function proposeRewardMilestones():readonly AdministrativeMilestone[]{
+ return Object.freeze(([28,56] as const).map(day=>Object.freeze({
+  id:'rewards:'+day,kind:'settle-rewards' as const,scope:'rewards-'+day,day,order:7000,status:'scheduled' as const
+ })));
 }
