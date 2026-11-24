@@ -206,7 +206,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('createCrestHost(tr.dataset.worldClub)'));
  assert.ok(renderer.includes('crest.setAttribute("aria-hidden","true")'));
  assert.ok(renderer.includes("sourceUrl = document.currentScript?.src"));
- assert.ok(renderer.includes("start().catch(fail)"));
+ assert.ok(renderer.includes("start().catch(()=>{fail();publishSeasonReadState('unavailable');})"));
  assert.ok(code.includes("tabs.length!==views.length"));
  for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('"'+key+'"'));
  assert.ok(css.includes(".app-world-standing-scroll{max-width:100%;overflow-x:auto"));
@@ -238,7 +238,7 @@ test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass va
  assert.ok(runtime.includes('routeId.toLowerCase()'));
  assert.ok(runtime.includes("model.validManifest(manifest)"));
  assert.ok(read("assets/competition-model.js").includes("clubs.size!==participantCount"));
- assert.ok(runtime.includes("start().catch(fail)"));
+ assert.ok(runtime.includes("start().catch(()=>{fail();publishSeasonReadState('unavailable');})"));
 });
 
 

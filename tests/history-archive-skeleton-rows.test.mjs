@@ -159,7 +159,7 @@ test('History first paint hides the static empty copy until its own historical p
  const publicPage=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
  assert.match(css,/html:not\(\[data-fa-history-loading="false"\]\) #competition-panel-history>\.app-competition-view-skeleton\{display:block\}/);
  assert.match(css,/html:not\(\[data-fa-history-loading="false"\]\) #competition-panel-history>\.app-history-empty\{[^}]*visibility:hidden/);
- assert.match(publicPage,/onState:state=>\{if\(state==='unavailable'&&![^;]*\)history\?\.settleUnavailable\(\);else history\?\.render\(\);window\.faStandingsLoading\?\.set\('api'/);
+ assert.match(publicPage,/const applySeasonReadState=state=>\{publishSeasonReadState\(state\);if\(state==='unavailable'&&![^;]*\)history\?\.settleUnavailable\(\);else history\?\.render\(\);window\.faStandingsLoading\?\.set\('api'/);
  assert.doesNotMatch(publicPage,/faHistorySetReady\?\.\(state!=='loading'\)/);
 });
 
@@ -168,7 +168,7 @@ test('A cached verified historical archive restores History readiness after a ne
  const source=readFileSync(new URL('../assets/authoritative-history.mjs',import.meta.url),'utf8');
  const page=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
  assert.match(source,/if\(ready===key\)\{refreshRecords\(\);window\.faHistorySetReady\?\.\(true\);return;\}/);
- assert.match(page,/onState:state=>\{if\(state==='unavailable'&&![^;]*\)history\?\.settleUnavailable\(\);else history\?\.render\(\);window\.faStandingsLoading\?\.set\('api'/);
+ assert.match(page,/const applySeasonReadState=state=>\{publishSeasonReadState\(state\);if\(state==='unavailable'&&![^;]*\)history\?\.settleUnavailable\(\);else history\?\.render\(\);window\.faStandingsLoading\?\.set\('api'/);
 });
 
 
