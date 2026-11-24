@@ -25,6 +25,9 @@ BEGIN
   json_extract(NEW.payload_json,'$.runKey') IS NOT NEW.run_key OR json_extract(NEW.payload_json,'$.worldGeneration') IS NOT NEW.world_generation
   OR json_extract(NEW.payload_json,'$.worldRevision') IS NOT 0 OR json_extract(NEW.payload_json,'$.slotCount') IS NOT 6400
   OR json_extract(NEW.payload_json,'$.batchSize') IS NOT 25 OR json_extract(NEW.payload_json,'$.initialHighWater') IS NOT NEW.before_high_water
+  OR json_extract(NEW.payload_json,'$.schema') IS NOT 'opening-persistence-v2'
+  OR json_type(NEW.payload_json,'$.batchIntentHashes') IS NOT 'array' OR json_array_length(NEW.payload_json,'$.batchIntentHashes')<>256
+  OR EXISTS(SELECT 1 FROM json_each(NEW.payload_json,'$.batchIntentHashes') WHERE type<>'text' OR length(value)<>64 OR value GLOB '*[^0-9a-f]*')
   OR json_type(NEW.payload_json,'$.baseline') IS NOT 'array'
   OR json_array_length(NEW.payload_json,'$.baseline')<>(SELECT COUNT(*) FROM generated_players)
  ) THEN RAISE(ABORT,'invalid opening root') END;
@@ -52,3 +55,28 @@ BEGIN
 END;
 CREATE TRIGGER opening_world_run_no_update BEFORE UPDATE ON opening_world_runs BEGIN SELECT RAISE(ABORT,'immutable opening journal'); END;
 CREATE TRIGGER opening_world_run_no_delete BEFORE DELETE ON opening_world_runs BEGIN SELECT RAISE(ABORT,'immutable opening journal'); END;
+
+-- Local staging lock. No release/activation path in this checkpoint.
+-- Existing normal workflows are unchanged when no current-generation root exists.
+CREATE TRIGGER opening_world_block_clock BEFORE UPDATE ON world_state
+WHEN EXISTS(SELECT 1 FROM opening_world_runs WHERE world_generation=OLD.generation AND batch_index=-1)
+ AND (NEW.generation IS NOT OLD.generation OR NEW.revision IS NOT OLD.revision OR NEW.season_number IS NOT OLD.season_number OR NEW.day IS NOT OLD.day OR NEW.phase IS NOT OLD.phase)
+BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
+CREATE TRIGGER opening_world_block_other_generation BEFORE INSERT ON generated_players
+WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
+ AND NOT EXISTS(
+  SELECT 1 FROM player_generation_drafts d JOIN opening_world_runs r ON r.run_key=json_extract(d.options_json,'$.runKey') AND r.batch_index=-1
+   JOIN world_state w ON w.generation=r.world_generation AND w.id=1
+  WHERE d.id=NEW.batch_id AND d.status='committed' AND d.world_generation=r.world_generation AND NEW.world_generation=r.world_generation
+   AND d.season_number=0 AND NEW.entry_season=0 AND json_extract(d.options_json,'$.mode')='opening-world-internal'
+   AND json_extract(d.options_json,'$.index')=(SELECT COUNT(*) FROM opening_world_runs b WHERE b.run_key=r.run_key AND b.batch_index>=0)
+   AND json_extract(d.options_json,'$.index') BETWEEN 0 AND 255
+   AND NOT EXISTS(SELECT 1 FROM opening_world_runs b WHERE b.draft_id=d.id)
+ )
+BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
+CREATE TRIGGER opening_world_block_player_update BEFORE UPDATE ON generated_players
+WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
+BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
+CREATE TRIGGER opening_world_block_player_delete BEFORE DELETE ON generated_players
+WHEN EXISTS(SELECT 1 FROM opening_world_runs r JOIN world_state w ON w.generation=r.world_generation WHERE r.batch_index=-1 AND w.id=1)
+BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;

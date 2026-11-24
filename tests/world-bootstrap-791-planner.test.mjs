@@ -1,7 +1,7 @@
 // #791 — offline pure planner tests; owned by Site FULL.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createOpeningPersistenceRun,inspectOpeningProgress} from '../tools/world-bootstrap-791/persistence.mjs';
+import {createOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents} from '../tools/world-bootstrap-791/persistence.mjs';
 import {loadRuntimePlayerCatalog} from '../backend/src/players-catalog.mjs';
 import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,clubCountryToNationality,approvedForeignWeights,sampleOpeningRetirementAge,prepareOpeningCandidateChunk} from '../tools/world-bootstrap-791/planner.mjs';
 
@@ -137,6 +137,14 @@ function testPersistenceProtocol(){
  const observation={world,complete:true,idHighWater:100,rows};
  let progress=inspectOpeningProgress(run,manifest,inventory,receipts,observation);
  eq(progress.totalBatches,256);eq(progress.completedSlots,0);eq(progress.nextBatch.entries.length,25);
+ eq(run.batchIntentHashes.length,256);
+ const intents=prepareOpeningBatchIntents(run,manifest,inventory,0);
+ eq(manifestDigest(intents),run.batchIntentHashes[0]);
+ const generated=intents.find(e=>e.kind==="generate");
+ requireThat(!!generated,"missing generation intent");
+ const changed=intents.map(e=>e===generated?{...e,slot:{...e.slot,age:e.slot.age===39?38:39}}:e);
+ requireThat(manifestDigest(changed)!==run.batchIntentHashes[0],"age change must alter hash");
+ throws(()=>prepareOpeningBatchIntents({...run,batchIntentHashes:run.batchIntentHashes.map((x,i)=>i===0?"0".repeat(64):x)},manifest,inventory,0));
  throws(()=>createOpeningPersistenceRun(manifest,{...inventory,players:[{...prior,hasSignedContract:true}]},world));
  throws(()=>inspectOpeningProgress(run,manifest,inventory,receipts,{...observation,world:{...world,phase:"active"}}));
  throws(()=>inspectOpeningProgress(run,manifest,inventory,receipts,{...observation,rows:[]}));

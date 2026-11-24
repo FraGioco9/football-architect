@@ -18,14 +18,25 @@ it('local opening journal preserves existing player, atomically rolls back and r
  await commitPlayerGeneration(db,session,{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'},now);
  const initial=await readOpeningObservation(db);
  expect(initial.rows).toHaveLength(1);
- const identity={schema:'opening-persistence-v1',worldGeneration:initial.world.generation,worldRevision:0,manifestHash:'a'.repeat(64),inventoryHash:'b'.repeat(64),assignmentHash:'c'.repeat(64),batchSize:25,slotCount:6400,initialHighWater:initial.idHighWater};
+ const intents:Parameters<typeof commitLocalOpeningBatch>[5]=[{slotKey:'fixture/001',kind:'reuse',playerId:initial.rows[0].id},
+  ...Array.from({length:24},(_,i)=>{const slotKey='fixture/'+String(i+2).padStart(3,'0');return {slotKey,kind:'generate' as const,slot:{slotKey,age:39,primaryNationality:'ITA',primaryPosition:'ST',primarySuitabilityTarget:65,generatorSeed:'opening-test-'+i},privateRetirementAge:40}})];
+ const intentHash=await openingDigest(intents);
+ // Only one synthetic batch is committed in this fixture. Remaining commitments are deliberately unusable.
+ const identity={schema:'opening-persistence-v2',worldGeneration:initial.world.generation,worldRevision:0,manifestHash:'a'.repeat(64),inventoryHash:'b'.repeat(64),assignmentHash:'c'.repeat(64),batchSize:25,slotCount:6400,initialHighWater:initial.idHighWater,batchIntentHashes:[intentHash,...Array(255).fill('0'.repeat(64))]};
  const root={...identity,runKey:await openingDigest(identity),baseline:initial.rows};
  await beginLocalOpeningRun(db,session,root,now);
  await expect(beginLocalOpeningRun(db,session,root,now)).rejects.toThrow();
- const intents:Parameters<typeof commitLocalOpeningBatch>[5]=[{slotKey:'fixture/001',kind:'reuse',playerId:initial.rows[0].id},
-  ...Array.from({length:24},(_,i)=>{const slotKey='fixture/'+String(i+2).padStart(3,'0');return {slotKey,kind:'generate' as const,slot:{slotKey,age:39,primaryNationality:'ITA',primaryPosition:'ST',primarySuitabilityTarget:65,generatorSeed:'opening-test-'+i},privateRetirementAge:40}})];
+ const ordinary=await previewPlayerGeneration(db,session,{options:{count:1,seed:'locked-fixture'}},now);
+ await expect(commitPlayerGeneration(db,session,{draftId:ordinary.draftId,confirmation:'GENERATE PLAYERS'},now)).rejects.toThrow();
+ await expect(db.prepare("UPDATE world_state SET generation=? WHERE id=1").bind(crypto.randomUUID()).run()).rejects.toThrow();
+ await expect(db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.age',19) WHERE id=?").bind(initial.rows[0].id).run()).rejects.toThrow();
+ await expect(db.prepare('DELETE FROM generated_players WHERE id=?').bind(initial.rows[0].id).run()).rejects.toThrow();
+ expect((await readOpeningObservation(db)).rows).toEqual(initial.rows);
  const descriptor=intents.map(e=>e.kind==='reuse'?{slotKey:e.slotKey,kind:e.kind,playerId:e.playerId}:{slotKey:e.slotKey,kind:e.kind});
  const hash=await openingDigest({runKey:root.runKey,index:0,entries:descriptor});
+ const altered=intents.map((e,i)=>i===1&&e.kind==='generate'?{...e,slot:{...e.slot,age:38}}:e);
+ await expect(commitLocalOpeningBatch(db,session,root.runKey,0,hash,altered,now)).rejects.toThrow('opening batch parameters differ');
+ expect((await readOpeningObservation(db)).rows).toEqual(initial.rows);
  await db.prepare("CREATE TRIGGER opening_fixture_rollback BEFORE INSERT ON opening_world_runs WHEN NEW.batch_index>=0 BEGIN SELECT RAISE(ABORT,'forced receipt failure'); END").run();
  await expect(commitLocalOpeningBatch(db,session,root.runKey,0,hash,intents,now)).rejects.toThrow();
  expect((await readOpeningObservation(db)).rows).toEqual(initial.rows);
@@ -42,6 +53,7 @@ it('local opening journal preserves existing player, atomically rolls back and r
  expect(adults.every(p=>p.age===39&&p.retirement_age===40)).toBe(true);
  const replay=await commitLocalOpeningBatch(db,session,root.runKey,0,hash,intents,now);
  expect(replay).toEqual({receipt:result.receipt,alreadyCommitted:true});
+ await expect(commitLocalOpeningBatch(db,session,root.runKey,0,hash,altered,now)).rejects.toThrow('opening batch parameters differ');
  expect((await readOpeningObservation(db)).rows).toEqual(after.rows);
  expect((await readLocalOpeningJournal(db,root.runKey)).receipts).toEqual([result.receipt]);
  await expect(db.prepare('DELETE FROM opening_world_runs').run()).rejects.toThrow();

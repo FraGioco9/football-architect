@@ -1,5 +1,5 @@
 // #791 offline persistence protocol; no database access.
-import {manifestDigest,planYouthReuse,readChunk} from './planner.mjs';
+import {manifestDigest,planYouthReuse,readChunk,sampleOpeningRetirementAge} from './planner.mjs';
 const positiveInt=(x,min=0)=>Number.isSafeInteger(x)&&x>=min;
 const isHash=x=>typeof x==="string"&&/^[0-9a-f]{64}$/.test(x);
 const insist=(ok,msg)=>{if(!ok)throw Error(msg)};
@@ -18,6 +18,24 @@ function verifyWorld(world,generation,revision){
  insist(world&&world.generation===generation&&world.revision===revision&&revision===0&&world.seasonNumber===0&&world.day===0&&world.phase==="unstarted","opening world changed or started");
 }
 
+// Only this canonical private projection is submitted to the local D1 adapter.
+function intentsFor(manifest,reuse,index){
+ insist(positiveInt(index)&&index<256,"invalid batch index");
+ const offset=index*BATCH_SIZE;
+ return readChunk(manifest,offset,BATCH_SIZE).map((s,i)=>{
+  const a=reuse.assignments[offset+i];
+  insist(a.slotKey===s.slotKey,"slot alignment");
+  if(a.kind==="reuse")return {slotKey:s.slotKey,kind:"reuse",playerId:a.playerId};
+  return {slotKey:s.slotKey,kind:"generate",slot:{slotKey:s.slotKey,age:s.age,primaryNationality:s.primaryNationality,primaryPosition:s.primaryPosition,primarySuitabilityTarget:s.primarySuitabilityTarget,generatorSeed:s.generatorSeed},privateRetirementAge:sampleOpeningRetirementAge(s)};
+ });
+}
+export function prepareOpeningBatchIntents(run,manifest,inventory,index){
+ const reuse=verifyRun(run,manifest,inventory);
+ const intents=intentsFor(manifest,reuse,index);
+ insist(manifestDigest(intents)===run.batchIntentHashes[index],"batch intent mismatch");
+ return intents;
+}
+
 // Initial inventory must be complete and certified by a future trusted adapter.
 // Fingerprint covers player payload, portrait association and index evidence.
 export function createOpeningPersistenceRun(manifest,inventory,world){
@@ -27,7 +45,8 @@ export function createOpeningPersistenceRun(manifest,inventory,world){
  insist(!reuse.requiresReconciliation,"unallocated existing player requires reconciliation");
  const baseline=verifiedRows(inventory.players,inventory.idHighWater);
  const manifestHash=manifestDigest(manifest),inventoryHash=manifestDigest({snapshotId:inventory.snapshotId,idHighWater:inventory.idHighWater,players:inventory.players.slice().sort((a,b)=>a.id-b.id)}),assignmentHash=manifestDigest(reuse.assignments);
- const identity={schema:"opening-persistence-v1",worldGeneration:world.generation,worldRevision:world.revision,manifestHash,inventoryHash,assignmentHash,batchSize:BATCH_SIZE,slotCount:manifest.slots.length,initialHighWater:inventory.idHighWater};
+ const batchIntentHashes=Array.from({length:256},(_,i)=>manifestDigest(intentsFor(manifest,reuse,i)));
+ const identity={schema:"opening-persistence-v2",worldGeneration:world.generation,worldRevision:world.revision,manifestHash,inventoryHash,assignmentHash,batchSize:BATCH_SIZE,slotCount:manifest.slots.length,initialHighWater:inventory.idHighWater,batchIntentHashes};
  return {...identity,runKey:manifestDigest(identity),baseline};
 }
 function verifyRun(run,manifest,inventory){

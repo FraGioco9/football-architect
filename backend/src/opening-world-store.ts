@@ -15,7 +15,7 @@ import {resolveCatalogueNameOrigins} from './player-portrait-name-origins.mjs';
 import {marketValueIndexVersion,marketValueIndexUpdate,marketValueIndexWrite} from './player-market-value-index.ts';
 
 type Fingerprint={id:number;fingerprint:string};
-type Root={schema:string;worldGeneration:string;worldRevision:number;manifestHash:string;inventoryHash:string;assignmentHash:string;batchSize:number;slotCount:number;initialHighWater:number;runKey:string;baseline:Fingerprint[]};
+type Root={schema:string;worldGeneration:string;worldRevision:number;manifestHash:string;inventoryHash:string;assignmentHash:string;batchSize:number;slotCount:number;initialHighWater:number;batchIntentHashes:string[];runKey:string;baseline:Fingerprint[]};
 type Slot={slotKey:string;age:number;primaryNationality:string;primaryPosition:string;primarySuitabilityTarget:number;generatorSeed:string};
 type Intent={slotKey:string;kind:'reuse';playerId:number}|{slotKey:string;kind:'generate';slot:Slot;privateRetirementAge:number};
 type Entry={slotKey:string;kind:'reuse'|'generate';playerId:number;fingerprint:string};
@@ -61,7 +61,7 @@ function sameRows(a:Fingerprint[],b:Fingerprint[]){
 }
 export async function beginLocalOpeningRun(db:Database,session:AdminSession,root:Root,now:number){
  const {runKey,baseline,...identity}=root;
- insist(identity.schema==='opening-persistence-v1'&&identity.worldRevision===0&&identity.batchSize===25&&identity.slotCount===6400&&[identity.manifestHash,identity.inventoryHash,identity.assignmentHash,runKey].every(isHash)&&await openingDigest(identity)===runKey,'invalid opening run identity');
+ insist(identity.schema==='opening-persistence-v2'&&Array.isArray(identity.batchIntentHashes)&&identity.batchIntentHashes.length===256&&identity.batchIntentHashes.every(isHash)&&identity.worldRevision===0&&identity.batchSize===25&&identity.slotCount===6400&&[identity.manifestHash,identity.inventoryHash,identity.assignmentHash,runKey].every(isHash)&&await openingDigest(identity)===runKey,'invalid opening run identity');
  const observed=await readOpeningObservation(db);
  insist(observed.world.generation===root.worldGeneration&&observed.idHighWater===root.initialHighWater&&sameRows(observed.rows,baseline),'initial inventory mismatch');
  await db.batch([sessionGuard(db,session,now),worldGuard(db,root.worldGeneration),sequenceGuard(db,root.initialHighWater,baseline.length),receiptInsert(db,root,-1,runKey,root.initialHighWater,root.initialHighWater,root,null,now)]);
@@ -101,6 +101,7 @@ export async function commitLocalOpeningBatch(db:Database,session:AdminSession,r
  const descriptor=intents.map(e=>e.kind==='reuse'?{slotKey:e.slotKey,kind:e.kind,playerId:e.playerId}:{slotKey:e.slotKey,kind:e.kind});
  insist(await openingDigest({runKey,index,entries:descriptor})===requestHash,'opening request hash mismatch');
  const {root,receipts}=await readLocalOpeningJournal(db,runKey),observed=await readOpeningObservation(db);
+ insist(await openingDigest(intents)===root.batchIntentHashes[index],'opening batch parameters differ from pinned manifest');
  const {used,slots}=reconcile(root,receipts,observed);
  // Live authorization also required on retries.
  if(index<receipts.length){
