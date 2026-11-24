@@ -107,7 +107,7 @@ test("COMPETITIONS-06 shared manifest exactly reflects the canonical provisional
     assert.equal(seen.has(club.countryId+"-"+club.clubId),club.clubId<=32,"asset-only club must not appear in standings");
 });
 
-test("COMPETITIONS-06 shares one full shell, 11 standings columns and seven tabs",()=>{
+test("COMPETITIONS-06 shares one full shell, 11 standings columns and eight tabs",()=>{
  for(const html of [index,shared]){
   assert.match(html,/<\/header>\s*<div class="fa-shell-content-scroll">\s*<main class="app-main"/);
   assert.match(html,/<\/main>\s*<footer class="app-footer">[^]*?<\/footer>\s*<\/div>\s*<\/div>/);
@@ -128,10 +128,10 @@ test("COMPETITIONS-06 shares one full shell, 11 standings columns and seven tabs
  assert.equal((shared.match(/<table class="app-world-standing-table">([\s\S]*?)<\/table>/)?.[1].match(/<th scope="col"/g)||[]).length,11);
  for(const key of cols)assert.ok(shared.includes('data-app-i18n="'+key+'"'),key);
  assert.equal((shared.match(/<tr data-world-club="/g)||[]).length,0);
- assert.equal((shared.match(/role="tab"/g)||[]).length,7);
- assert.equal((shared.match(/role="tabpanel"/g)||[]).length,7);
+ assert.equal((shared.match(/role="tab"/g)||[]).length,8);
+ assert.equal((shared.match(/role="tabpanel"/g)||[]).length,8);
  assert.equal((shared.match(/role="tab"[^>]*aria-selected="true"/g)||[]).length,1);
- assert.equal((shared.match(/role="tab"[^>]*aria-selected="false"/g)||[]).length,6);
+ assert.equal((shared.match(/role="tab"[^>]*aria-selected="false"/g)||[]).length,7);
  for(const slug of views){
   assert.ok(shared.includes('id="competition-tab-'+slug+'"'));
   assert.ok(shared.includes('aria-controls="competition-panel-'+slug+'"'));
@@ -206,7 +206,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('createCrestHost(tr.dataset.worldClub)'));
  assert.ok(renderer.includes('crest.setAttribute("aria-hidden","true")'));
  assert.ok(renderer.includes("sourceUrl = document.currentScript?.src"));
- assert.ok(renderer.includes("start().catch(fail)"));
+ assert.ok(renderer.includes("start().catch(()=>{fail();publishSeasonReadState('unavailable');})"));
  assert.ok(code.includes("tabs.length!==views.length"));
  for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(code.includes('"'+key+'"'));
  assert.ok(css.includes(".app-world-standing-scroll{max-width:100%;overflow-x:auto"));
@@ -219,7 +219,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(read("assets/flags/SOURCE.md").includes("MIT license"));
 });
 
-test("COMPETITIONS-06 keyboard and click controls preserve seven-tab routing",()=>{
+test("COMPETITIONS-06 keyboard and click controls preserve eight-tab routing",()=>{
  const code=read("assets/competition-tabs.js");
  assert.ok(code.includes('const views=model.views.map(view=>view.id)'));
  assert.ok(code.includes('tabs.forEach((tab,index)=>'));
@@ -238,7 +238,7 @@ test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass va
  assert.ok(runtime.includes('routeId.toLowerCase()'));
  assert.ok(runtime.includes("model.validManifest(manifest)"));
  assert.ok(read("assets/competition-model.js").includes("clubs.size!==participantCount"));
- assert.ok(runtime.includes("start().catch(fail)"));
+ assert.ok(runtime.includes("start().catch(()=>{fail();publishSeasonReadState('unavailable');})"));
 });
 
 
@@ -260,7 +260,7 @@ test("COMPETITIONS-08 removes all provisional standings filters and highlights p
  }
  assert.ok(page.includes('data-app-i18n="standingsPoints">Pts</th>'));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
- assert.equal((page.match(/role="tab"/g)||[]).length,7);
+ assert.equal((page.match(/role="tab"/g)||[]).length,8);
  assert.equal((page.match(/<table class="app-world-standing-table">([\s\S]*?)<\/table>/)?.[1].match(/<th scope="col"/g)||[]).length,11);
 });
 
@@ -341,7 +341,7 @@ test("COMPETITIONS-ROUTE-02 uses the same inline flag markup on detail routes",(
  assert.ok(generator.includes("inlineCountryFlag(c)"));
 });
 
-test("COMPETITION-TABS-UNIFORM-01: all seven tabs have identical widths in five languages",()=>{
+test("COMPETITION-TABS-UNIFORM-01: all eight tabs have identical widths in five languages",()=>{
  const css=read("assets/app.css"),app=read("assets/app.js"),theme=read("assets/landing.css");
  assert.ok(theme.includes("--fa-tab-width-regular:112px;"));
  assert.ok(css.includes(".app-competition-tab{flex:0 0 var(--fa-tab-width-regular);box-sizing:border-box;width:var(--fa-tab-width-regular);min-width:var(--fa-tab-width-regular);max-width:var(--fa-tab-width-regular);"));
@@ -349,7 +349,7 @@ test("COMPETITION-TABS-UNIFORM-01: all seven tabs have identical widths in five 
  assert.ok(css.includes(".app-competition-tabs{display:flex;gap:4px;overflow-x:auto"));
  assert.ok(css.includes("@media(max-width:620px){.app-competition-tabs{--app-competition-tab-mobile-width:max(92px,calc((100% - 8px)/2.5))}"));
  assert.ok(css.includes(".app-competition-tab{flex:0 0 var(--app-competition-tab-mobile-width);width:var(--app-competition-tab-mobile-width);min-width:var(--app-competition-tab-mobile-width);max-width:var(--app-competition-tab-mobile-width);min-height:34px;padding:7px 4px;font-size:clamp(10px,2.55vw,11px)"));
- for(const key of ["Standings","Fixtures","Stats","History","Rules","Awards"])
+ for(const key of ["Standings","Fixtures","Stats","History","Rules","Awards","Rewards"])
   assert.equal((app.match(new RegExp("competitionTab"+key+":","g"))||[]).length,5,key);
 });
 

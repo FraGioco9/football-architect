@@ -2,9 +2,9 @@
 export const visualProfiles=Object.freeze([
   {id:'landing',path:'/',site:true,width:320,height:844,language:'en',theme:'dark',frame:'.site-header',ready:'.site-header'},
   {id:'dashboard',path:'/dashboard',width:1440,height:900,language:'it',theme:'light',frame:'.fa-shell-topbar',ready:'.fa-shell-topbar'},
-  {id:'standings',path:'/competitions/it-1/standings?season=1',width:320,height:844,language:'en',theme:'dark',frame:'.app-competition-tabs',ready:'#competition-tab-standings',tabs:7},
-  {id:'domestic-fixtures',path:'/competitions/it-1/fixtures?season=1',width:390,height:844,language:'fr',theme:'light',frame:'.app-competition-tabs',ready:'#competition-tab-fixtures',tabs:7},
-  {id:'international-postseason',path:'/competitions/int-1/postseason?season=1',width:768,height:900,language:'es',theme:'dark',frame:'#app-postseason-bracket',ready:'#app-postseason-bracket',tabs:7},
+  {id:'standings',path:'/competitions/it-1/standings?season=1',width:320,height:844,language:'en',theme:'dark',frame:'.app-competition-tabs',ready:'#competition-tab-standings',tabs:8},
+  {id:'domestic-fixtures',path:'/competitions/it-1/fixtures?season=1',width:390,height:844,language:'fr',theme:'light',frame:'.app-competition-tabs',ready:'#competition-tab-fixtures',tabs:8},
+  {id:'international-postseason',path:'/competitions/int-1/postseason?season=1',width:768,height:900,language:'es',theme:'dark',frame:'#app-postseason-bracket',ready:'#app-postseason-bracket',tabs:8},
   {id:'club-overview',path:'/clubs/it/1/overview',width:390,height:844,language:'de',theme:'dark',frame:'.club-tabs',ready:'.club-tabs',tabs:5},
   {id:'club-roster',path:'/clubs/it/1/roster',width:768,height:900,language:'it',theme:'light',frame:'.club-tabs',ready:'.club-tabs',tabs:5},
   {id:'clubs-directory',path:'/clubs',width:768,height:900,language:'es',theme:'light',frame:'.nav01-filters',ready:'.nav01-filters'},

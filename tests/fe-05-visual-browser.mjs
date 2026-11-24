@@ -79,7 +79,7 @@ try{
    const response=await page.goto(originFor(config)+config.path,{waitUntil:'load',timeout:30000});
    assert.equal(response?.status(),200,JSON.stringify(identity));
    before=await capture(page,config);
-   if(config.tabs===7)assert.equal(await page.locator('.app-competition-tabs [role="tab"]').count(),7,config.id+' duplicate tabs');
+   if(config.tabs===8)assert.equal(await page.locator('.app-competition-tabs [role="tab"]').count(),8,config.id+' duplicate tabs');
    if(config.tabs===5)assert.equal(await page.locator('.club-tabs a').count(),5,config.id+' duplicate club views');
    if(config.path.includes('/competitions/')){
     assert.equal(await page.locator('#app-competition-season').count(),1,config.id+' duplicate season selector');
@@ -116,7 +116,7 @@ try{
   await firstPage.locator('#competition-tab-standings').waitFor({state:'attached',timeout:12000});
   const pre=await firstPage.evaluate(()=>({tabs:document.querySelectorAll('.app-competition-tabs [role="tab"]').length,
    season:document.querySelectorAll('#app-competition-season').length,headers:document.querySelectorAll('.app-competition-header').length}));
-  assert.deepEqual(pre,{tabs:7,season:1,headers:1},'First-paint structure must precede controller hydration');
+  assert.deepEqual(pre,{tabs:8,season:1,headers:1},'First-paint structure must precede controller hydration');
   unblock();await firstPage.waitForLoadState('load',{timeout:30000});await settled(firstPage,cold);
   assert.equal(await firstPage.locator('.app-competition-tabs [role="tab"]').count(),pre.tabs);
   assert.equal(await firstPage.locator('.app-competition-header').count(),pre.headers);
@@ -149,7 +149,7 @@ try{
    assert.equal(pre.body,'visible','History is not hidden behind whole-body prepaint');
    assert.equal(pre.view,'history');
    assert.equal(pre.panelHidden,false,'real History panel unhidden at parser time');
-   assert.equal(pre.tabs,7,'History tabs exist before hydration');
+   assert.equal(pre.tabs,8,'History tabs exist before hydration');
    assert.equal(pre.temporary,0,'History never uses a short-lived duplicate shell');
    assert.ok(pre.header>0&&pre.skeletonWidth>0&&pre.skeletonHeight>0,
     'Header and History skeleton occupy visible space before controller hydration');
