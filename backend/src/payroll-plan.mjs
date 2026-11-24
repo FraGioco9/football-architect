@@ -1,4 +1,5 @@
 /** #778 isolated payroll planning. Trusted persistence adapters must certify all inputs. No writes. */
+import {competitionRewards,participationInstallments} from '../../assets/competition-rewards.mjs';
 import { earnedBetween, canAffordNextPayday, CONTRACT_POLICY } from './player-contract-policy.ts';
 const DAYS=CONTRACT_POLICY.earningDays, LIMIT=1_000_000_000_000;
 function integer(n,min=0,max=LIMIT){if(!Number.isSafeInteger(n)||n<min||n>max)throw new RangeError('invalid_payroll_integer');return n;}
@@ -67,4 +68,20 @@ export function nextPaydayAffordability({uncommittedCash,uncreditedGuaranteedPar
  const required=total([committedUncoveredWages,newDue]);
  const signable=canAffordNextPayday(input);
  return {signable,requiredArc:required,additionalCashHoldArc:signable?Math.min(uncommittedCash,required):0};
+}
+
+/** Only use with authoritative, confirmed entrants and an independently guarded funded hold.
+ * The official Rewards module owns the amounts and split, not payroll. */
+export function guaranteedParticipationForClub(bindings,clubKey,day){
+ if(day!==28&&day!==56)throw new RangeError('invalid_payday');
+ const seen=new Set();
+ let amount=0;
+ for(const b of bindings){
+  if(seen.has(b.competitionId))throw new Error('duplicate_reward_competition');
+  seen.add(b.competitionId);
+  const rule=competitionRewards(b.competitionId);
+  if(!rule||b.clubIds.length!==rule.capacity||new Set(b.clubIds).size!==b.clubIds.length)throw new Error('invalid_reward_entrants');
+  if(b.clubIds.includes(clubKey))amount+=participationInstallments(rule)[day===28?0:1];
+ }
+ return integer(amount);
 }

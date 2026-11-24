@@ -4,3 +4,5 @@ export interface PayrollClaim {id:string;generation:string;contractId:number;pla
 export function planContractClaims(contract:PayrollContract,mandates:readonly PayrollMandate[],season:number,day:28|56,effectiveAnnualSalary:number):PayrollClaim[];
 export function allocateClubPayroll(clubKey:string,claims:readonly PayrollClaim[],cashArc:number,season:number,day:28|56,generation:string):{clubKey:string;generation:string;season:number;day:28|56;cashArc:number;remainingCashArc:number;dueArc:number;paidArc:number;arrearsArc:number;allocations:(PayrollClaim&{paidArc:number;arrearsArc:number})[]};
 export function nextPaydayAffordability(input:{uncommittedCash:number;uncreditedGuaranteedParticipation:number;committedUncoveredWages:number;arrears:number;newDue:number}):{signable:boolean;requiredArc:number;additionalCashHoldArc:number};
+
+export function guaranteedParticipationForClub(bindings:readonly {competitionId:string;clubIds:readonly string[]}[],clubKey:string,day:28|56):number;

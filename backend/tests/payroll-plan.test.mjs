@@ -1,5 +1,5 @@
 import test from 'node:test';
-import {planContractClaims,allocateClubPayroll,nextPaydayAffordability} from '../src/payroll-plan.mjs';
+import {planContractClaims,allocateClubPayroll,nextPaydayAffordability,guaranteedParticipationForClub} from '../src/payroll-plan.mjs';
 function assert(ok,msg){if(!ok)throw new Error(msg);}
 function same(a,b){assert(JSON.stringify(a)===JSON.stringify(b),`expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);}
 function rejects(fn){let failed=false;try{fn()}catch{failed=true}assert(failed,'expected rejection');}
@@ -44,3 +44,13 @@ function suite(){
  }
 }
 test('payroll accrual, routing, priority, exact allocation and affordability',suite);
+
+test('affordability counts canonical participation only, with both installments and inactive club',()=>{
+ const domestic={competitionId:'IT-1',clubIds:Array.from({length:16},(_,i)=>'IT-'+(i+1))};
+ const cup={competitionId:'int-1',clubIds:['IT-1',...Array.from({length:23},(_,i)=>'DE-'+(i+1))]};
+ same(guaranteedParticipationForClub([domestic,cup],'IT-1',28),5800);
+ same(guaranteedParticipationForClub([domestic,cup],'IT-1',56),5800);
+ same(guaranteedParticipationForClub([domestic,cup],'IT-40',28),0);
+ rejects(()=>guaranteedParticipationForClub([domestic,domestic],'IT-1',28));
+ rejects(()=>guaranteedParticipationForClub([{...domestic,clubIds:['IT-1']}],'IT-1',28));
+});
