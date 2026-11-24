@@ -10,7 +10,8 @@ import type {Database} from './database.ts';
 import {parseIdempotencyKey,parsePrepareRequest,type PrepareRequest} from './command-contract.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
-import {proposeAdministrativeMilestones,proposeEndSeasonMilestones} from './domain/calendar/admin-calendar-policy.ts';
+import {rewardCalendarEnrollment} from './reward-calendar-gate.ts';
+import {proposeAdministrativeMilestones,proposeEndSeasonMilestones,proposeRewardMilestones} from './domain/calendar/admin-calendar-policy.ts';
 
 export async function initializeAdministrativeEvents(db:Database,session:AdminSession,input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
  const command=parsePrepareRequest(input),key=parseIdempotencyKey(keyInput);
@@ -26,7 +27,8 @@ export async function initializeAdministrativeEvents(db:Database,session:AdminSe
  if(await db.prepare('SELECT season_number FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first()||
     await db.prepare('SELECT season_number FROM season_draws WHERE season_number=?').bind(world.seasonNumber).first())throw new ApiError(409,'calendar_event_prerequisites');
  const zero=world.seasonNumber===1?await readSeasonZeroAuthority(db,world):null;
- const events=[...proposeAdministrativeMilestones(),...proposeEndSeasonMilestones()],operationId=crypto.randomUUID();
+ const enrollment=await rewardCalendarEnrollment(db,world);
+ const events=[...proposeAdministrativeMilestones(),...proposeEndSeasonMilestones(),...(enrollment.enrolled?proposeRewardMilestones():[])],operationId=crypto.randomUUID();
  const inserts=await Promise.all(events.map(async e=>{
   const prior=zero?.approved[e.scope as 'domestic'|'international'];
   if(!prior||!e.kind.startsWith('confirm-'))return {event:e,status:'scheduled',completedAt:null,receipt:null};
@@ -38,7 +40,7 @@ export async function initializeAdministrativeEvents(db:Database,session:AdminSe
  try{
   await db.batch([
    sessionGuard(db,session,now),
-   ...authority.guards,...(zero?.guards??[]),
+   ...authority.guards,...(zero?.guards??[]),...enrollment.guards,
    abortUnless(db,`SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=${world.seasonNumber} AND phase='preparing' AND day=0`,[world.generation,world.revision]),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_admin_events WHERE season_number=?)=0',[world.seasonNumber]),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_calendars WHERE season_number=?)=0',[world.seasonNumber]),
