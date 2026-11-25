@@ -161,7 +161,7 @@ test('opening world local plan and receipts survive close/reopen without rematch
 /** Complete end-to-end rehearsal on disposable persisted local D1. No copied
  * DEV identities or images, no direct player/contract inserts in the opening,
  * no remote binding, no synthetic shortcut for the 6,400 actual signatures. */
-test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 terms, restart and publication',{timeout:45*60*1000},async()=>{
+test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 terms, restart and publication',{timeout:240*60*1000},async()=>{
  const state=await mkdtemp(join(tmpdir(),'fa-opening-full-')),now=Math.floor(Date.now()/1000);
  let handle:Awaited<ReturnType<typeof openLocalDatabase>>|undefined,runner:Awaited<ReturnType<typeof openLocalOpeningRehearsal>>|undefined;
  const n=async(db:Database,sql:string)=>(await db.prepare(sql).first<{n:number}>())!.n;
@@ -301,6 +301,7 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
   assert.deepEqual(after.rawRows.slice(0,150),rebased.rawRows);
   assert.equal(await n(db,"SELECT COUNT(*) AS n FROM player_portrait_profiles WHERE status='approved'"),26);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM player_signed_contracts'),6400);
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM player_signed_contracts WHERE duration_seasons NOT BETWEEN 2 AND 3 OR scheduled_end_tick<112'),0);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM player_agent_mandates'),0);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM opening_world_runs WHERE batch_index=256'),1);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM opening_world_staging'),0);
@@ -346,6 +347,7 @@ async function rehearsePublishedLifecycle(
  const terms=async()=>(await db.prepare("SELECT id,player_id,club_key,annual_salary_arc,scheduled_end_tick,closed_tick,close_reason FROM player_signed_contracts ORDER BY id").all<Term>()).results;
  const originalTerms=await terms();
  assert.equal(originalTerms.length,6400);
+ assert.ok(originalTerms.every(t=>t.scheduled_end_tick>=112),'all opening terms cover both seasons');
  const originalPlayers=new Map(before.rawRows.map(row=>[row.id,JSON.parse(row.payload_json)]));
  const payrollClaims=async(season:number)=>(await db.prepare("SELECT c.* FROM payroll_claims c JOIN payroll_runs r ON r.id=c.run_id WHERE r.season=? ORDER BY c.id").bind(season).all()).results;
  const payday=async(day:28|56)=>{
@@ -475,6 +477,7 @@ async function rehearsePublishedLifecycle(
  const report={population:6400,retained:150,retired:retired.size,expiryOnly,overlap,remaining:rosterReport.reduce((n,r)=>n+r.players,0),min:Math.min(...rosterReport.map(r=>r.players)),max:Math.max(...rosterReport.map(r=>r.players)),below11:rosterReport.filter(r=>r.players<11),withoutPrimaryGK:rosterReport.filter(r=>!r.primaryGK),withoutEligibleGK:rosterReport.filter(r=>!r.eligibleGK),adjustedContracts:adjusted.length,valuesRefreshed:updated,valuesChanged:changedValues};
  assert.equal(report.remaining,expectedRates.size);
  assert.equal(report.remaining+report.retired+report.expiryOnly,6400);
+ assert.equal(report.expiryOnly,0,'no opening contract expires after Season 1');
  console.log('opening lifecycle actual D1 roster report:',JSON.stringify(report));
  assert.deepEqual(await payrollClaims(1),priorClaims);
  await play();

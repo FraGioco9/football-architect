@@ -79,19 +79,21 @@ export function readChunk(manifest,offset,limit){requireThat(manifest?.schema===
 export function manifestDigest(manifest){return createHash('sha256').update(JSON.stringify(manifest),'utf8').digest('hex')}
 
 // Owner-approved editable DRAFT reference, not a runtime default or an academy policy.
-export const REFERENCE_PROFILE_VERSION="opening-demography-draft-v2";
+// Owner-approved two-season rehearsal: opening terms last at least two seasons.
+// Keep generic contract policy and all other demographic inputs unchanged.
+export const REFERENCE_PROFILE_VERSION="opening-demography-draft-v3";
 
 export function approvedReferenceProfile(){
  const entryWeights=[30,35,20,15];
  const retirementHazards=Array.from({length:24},(_,i)=>({33:.02,34:.05,35:.12,36:.25,37:.45,38:.70,39:.90,40:1}[i+17]??0));
  const roster={GK:3,RB:2,CB:4,LB:2,RWB:1,LWB:1,DM:2,CM:3,AM:1,RM:1,LM:1,RW:1,LW:1,ST:2};
  const agePolicies=[
-  {minAge:16,maxAge:19,d1Mean:61,d2Mean:61,sigma:7,termWeights:[15,35,50]},
-  {minAge:20,maxAge:23,d1Mean:65,d2Mean:61,sigma:7,termWeights:[20,40,40]},
-  {minAge:24,maxAge:28,d1Mean:67,d2Mean:63,sigma:7,termWeights:[25,45,30]},
-  {minAge:29,maxAge:32,d1Mean:68,d2Mean:64,sigma:7,termWeights:[50,35,15]},
-  {minAge:33,maxAge:35,d1Mean:68,d2Mean:64,sigma:7,termWeights:[70,25,5]},
-  {minAge:36,maxAge:39,d1Mean:68,d2Mean:64,sigma:7,termWeights:[90,10,0]}
+  {minAge:16,maxAge:19,d1Mean:61,d2Mean:61,sigma:7,termWeights:[0,50,50]},
+  {minAge:20,maxAge:23,d1Mean:65,d2Mean:61,sigma:7,termWeights:[0,60,40]},
+  {minAge:24,maxAge:28,d1Mean:67,d2Mean:63,sigma:7,termWeights:[0,70,30]},
+  {minAge:29,maxAge:32,d1Mean:68,d2Mean:64,sigma:7,termWeights:[0,85,15]},
+  {minAge:33,maxAge:35,d1Mean:68,d2Mean:64,sigma:7,termWeights:[0,95,5]},
+  {minAge:36,maxAge:39,d1Mean:68,d2Mean:64,sigma:7,termWeights:[0,100,0]}
  ];
  const equilibrium=stationaryAgeQuotas(6400,entryWeights,retirementHazards);
  return {profileVersion:REFERENCE_PROFILE_VERSION,activeClubs:256,playersPerClub:25,entryWeights,retirementHazards,roster,agePolicies,localPercent:65,...equilibrium};
