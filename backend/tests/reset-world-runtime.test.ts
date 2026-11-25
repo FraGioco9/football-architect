@@ -6,6 +6,10 @@ import {applyD1Migrations} from 'cloudflare:test';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
 import {resetWorld} from '../src/reset-world-command.ts';
 import {prepareSportingReset,executeSportingReset} from '../src/sporting-reset-preview.ts';
+import {verifyRetainedOpeningEvidence,rebaseLocalRetainedPlayers} from '../src/opening-world-retained.ts';
+import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
+import {changeClubLicense} from '../src/club-licenses.ts';
+import {economicAssert,provisionClubAccounts} from '../src/economic-ledger.ts';
 import {previewPlayerGeneration,commitPlayerGeneration,listGeneratedPlayers} from '../src/players-generation-command.ts';
 import {readPublicPlayers} from '../src/public-players-read.ts';
 import {prepareSeason} from '../src/commands.ts';
@@ -176,19 +180,60 @@ it('restarts public match numbering at 1 after a guarded reset, without weakenin
  await expect(db.prepare('DELETE FROM public_match_numbers').run()).rejects.toThrow();
 });
 
-it('binds a sporting reset to fresh retained evidence, rejecting stale previews without mutation',async()=>{
- const batch=await previewPlayerGeneration(db,session,{options:{count:2,seed:'guarded-reset-retained',primaryNationality:'ITA',primaryPosition:'ST'}},now);
- await commitPlayerGeneration(db,session,{draftId:batch.draftId,confirmation:'GENERATE PLAYERS'},now);
- const before=await db.prepare('SELECT * FROM generated_players ORDER BY id').all();
+it('preserves 150 players, license custody and empty treasury accounts through the guarded reset and canonical #797 recovery',async()=>{
+ for(let i=0;i<6;i++){
+  const batch=await previewPlayerGeneration(db,session,{options:{count:25,seed:'guarded-reset-retained-'+i,primaryNationality:'ITA',primaryPosition:'ST'}},now);
+  await commitPlayerGeneration(db,session,{draftId:batch.draftId,confirmation:'GENERATE PLAYERS'},now);
+ }
+ await provisionClubAccounts(db,now,[economicAssert(db,'SELECT 1')]);
+ const dump=async(table:string,order:string)=>(await db.prepare('SELECT * FROM '+table+' ORDER BY '+order).all()).results;
+ const before=await dump('generated_players','id'),portraits=await dump('player_portrait_profiles','player_id'),values=await dump('player_market_values','player_id');
+ const accounts=await dump('economic_accounts','id'),drafts=await dump('player_generation_drafts','id');
+ expect(before).toHaveLength(150);expect(portraits).toHaveLength(150);expect(values).toHaveLength(150);
+ const initial=await prepareSportingReset(db,session,now);
+ const request=(p:typeof initial)=>({...cmd(),confirmation:'RESET SEASON 0',expiresAt:p.expiresAt,previewToken:p.previewToken});
+ await expect(executeSportingReset(db,session,{...request(initial),previewToken:'0'.repeat(64)},'reset-preview-invalid-0001',now)).rejects.toMatchObject({status:409});
+ await expect(executeSportingReset(db,session,request(initial),'reset-preview-expired-0001',now+301)).rejects.toMatchObject({status:409});
+ // A market value change does not advance the world revision; the preview must still expire.
+ const first=values[0] as {player_id:number;market_value_arc:number};
+ await db.prepare('UPDATE player_market_values SET market_value_arc=? WHERE player_id=?').bind(first.market_value_arc+1,first.player_id).run();
+ await expect(executeSportingReset(db,session,request(initial),'reset-preview-value-00001',now)).rejects.toMatchObject({status:409});
+ await db.prepare('UPDATE player_market_values SET market_value_arc=? WHERE player_id=?').bind(first.market_value_arc,first.player_id).run();
+ const preLicense=await prepareSportingReset(db,session,now);
+ await changeClubLicense(db,session,{clubKey:'IT-1',accountId:session.unified!.playerId,expectedAccountId:null,expectedVersion:0},now);
+ await expect(executeSportingReset(db,session,request(preLicense),'reset-preview-license-0001',now)).rejects.toMatchObject({status:409});
+ const licenses=await dump('club_license_state','club_key'),licenseEvents=await dump('club_license_events','id');
  const preview=await prepareSportingReset(db,session,now);
- expect(preview.executable).toBe(true);
- expect(preview.retainedEvidence.players).toHaveLength(2);
- const request={...cmd(),confirmation:'RESET SEASON 0',expiresAt:preview.expiresAt,previewToken:preview.previewToken};
- await expect(executeSportingReset(db,session,{...request,previewToken:'0'.repeat(64)},'reset-preview-invalid-0001',now)).rejects.toMatchObject({status:409});
- await expect(executeSportingReset(db,session,request,'reset-preview-expired-0001',now+301)).rejects.toMatchObject({status:409});
+ expect(preview.retainedEvidence.players).toHaveLength(150);expect(preview.licensedClubs).toEqual(['IT-1']);
  expect(await readWorld(db)).toEqual(world);
- const result=await executeSportingReset(db,session,request,'reset-preview-valid-00001',now);
+ const result=await executeSportingReset(db,session,request(preview),'reset-preview-valid-00001',now);
  expect(result.world).toMatchObject({seasonNumber:0,day:0,revision:0,phase:'unstarted'});
- expect(await readWorld(db)).toEqual(result.world);
- expect((await db.prepare('SELECT * FROM generated_players ORDER BY id').all()).results).toEqual(before.results);
+ expect(await dump('generated_players','id')).toEqual(before);
+ expect(await dump('player_portrait_profiles','player_id')).toEqual(portraits);
+ expect(await dump('player_market_values','player_id')).toEqual(values);
+ expect(await dump('player_generation_drafts','id')).toEqual(drafts);
+ expect(await dump('economic_accounts','id')).toEqual(accounts);
+ expect(await dump('club_license_state','club_key')).toEqual(licenses);
+ expect(await dump('club_license_events','id')).toEqual(licenseEvents);
+ expect(await dump('economic_transactions','id')).toEqual([]);
+ const evidence=preview.retainedEvidence;
+ expect(await verifyRetainedOpeningEvidence(db,evidence,result.operationId)).toMatchObject({preservedPlayers:150,metadataRebased:false});
+ expect(await rebaseLocalRetainedPlayers(db,session,evidence,result.operationId,now)).toMatchObject({preservedPlayers:150,metadataRebased:true,alreadyRebased:false});
+ expect(await rebaseLocalRetainedPlayers(db,session,evidence,result.operationId,now)).toMatchObject({alreadyRebased:true});
+ expect(await readLocalOpeningInventory(db,{evidence,resetOperationId:result.operationId})).toMatchObject({complete:true,worldGeneration:result.world.generation});
+ expect(await dump('generated_players','id')).toEqual(before.map(p=>({...p,world_generation:result.world.generation,entry_season:0})));
+ expect(await dump('player_portrait_profiles','player_id')).toEqual(portraits);
+ expect(await dump('player_market_values','player_id')).toEqual(values);
+ expect((await db.prepare('PRAGMA foreign_key_check').all()).results).toEqual([]);
+},120000);
+
+it('blocks a reset when permanent economic activation appears after preview',async()=>{
+ const preview=await prepareSportingReset(db,session,now);
+ await db.prepare('INSERT INTO economic_policy_versions VALUES(?,?,?,?,?,?,?)').bind('reset-blocker',now,'fixture',2400000,3000000,'{}','{}').run();
+ await db.prepare('INSERT INTO economic_control VALUES(1,?,0)').bind('reset-blocker').run();
+ const before=await db.prepare('SELECT * FROM economic_control').first();
+ await expect(executeSportingReset(db,session,{...cmd(),confirmation:'RESET SEASON 0',expiresAt:preview.expiresAt,previewToken:preview.previewToken},'reset-preview-economic-0001',now)).rejects.toMatchObject({status:409});
+ await expect(prepareSportingReset(db,session,now)).rejects.toMatchObject({status:409});
+ expect(await readWorld(db)).toEqual(world);
+ expect(await db.prepare('SELECT * FROM economic_control').first()).toEqual(before);
 });

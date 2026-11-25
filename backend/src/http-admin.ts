@@ -22,7 +22,6 @@ import {executeInternationalDraw} from './admin-international-draw.ts';
 import {publishInternationalCalendarLineupV1 as publishInternationalCalendar} from './admin-calendar-publish-lineup-v1.ts';
 import {closeSeasonLineupV1 as closeSeason} from './season-close-command-lineup-v1.ts';
 import {archiveSeasonLineupV1 as archiveSeason} from './season-archive-command-lineup-v1.ts';
-import {resetWorld} from './reset-world-command.ts';
 import {prepareSportingReset,executeSportingReset} from './sporting-reset-preview.ts';
 import {resetScopes,parseResetScopes,previewAdminReset,readAdminEconomySummary,readAdminEconomyReconciliation,parseEconomyPage,readAdminEconomyClubs,readAdminEconomyLedger} from './admin-inspection.ts';
 import {economicAssert,financeSessionGuard} from './economic-ledger.ts';
@@ -152,12 +151,8 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/seasons/next-prepare')return json(200,await prepareSeasonTwo(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/next-approve')return json(200,await approveSeasonTwoSnapshot(db,session,rawCommand,key,now));
   if(path==='/api/admin/world/reset'){
-    if(rawCommand&&typeof rawCommand==='object'&&('previewToken' in rawCommand||'expiresAt' in rawCommand)){
-     if(new URL(request.url).search||!['local','preview'].includes(env.PLAYER_MODE??''))throw new ApiError(403,'permission_denied');
-     return json(200,await executeSportingReset(db,session,rawCommand,key,now));
-    }
-    // Existing Calendar compatibility path remains until verified UI parity.
-    return json(200,await resetWorld(db,session,rawCommand as Parameters<typeof resetWorld>[2],key,now));
+    if(new URL(request.url).search||!['local','preview'].includes(env.PLAYER_MODE??''))throw new ApiError(403,'permission_denied');
+    return json(200,await executeSportingReset(db,session,rawCommand,key,now));
    }
   // Retire direct score-only calendar generation/start routes: the authenticated
   // milestone flow is the one canonical route into V2 day finalization.

@@ -121,7 +121,7 @@ try{
    }
    if(grant==='write'){
     assert.equal(await page.locator('[data-admin-operations] button:visible').count(),0);
-    assert.equal(await page.locator('[data-admin-reset-confirm]').isVisible(),false);
+    assert.equal(await page.locator('[data-admin-reset-link]').isVisible(),false);
     assert.equal(await page.locator('[data-admin-details]').count(),0);
     await page.locator('[data-admin-prepare]').click();
     try{
@@ -133,10 +133,11 @@ try{
     assert.equal(await page.locator('[data-admin-command="initialize"]').isEnabled(),true);
     assert.equal(await page.locator('[data-admin-operations] button:visible').count(),1,'Show only the action available now');
     assert.equal(await page.locator('[data-admin-prepare]').isVisible(),false);
-    assert.equal(await page.locator('[data-admin-reset-confirm]').isVisible(),true,'Reset is an inline section');
+    assert.equal(await page.locator('[data-admin-reset-link]').isVisible(),true,'Calendar links to the dedicated reset page');
     assert.equal(await page.locator('[data-admin-reset-section]>summary').count(),0);
     assert.equal(await page.locator('[data-admin-working]').isVisible(),false);
-    assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false,'Reset still requires its typed confirmation');
+    assert.equal(await page.locator('[data-admin-reset-link]').getAttribute('href'),'/admin/reset');
+    assert.equal(await page.locator('[data-admin-reset-confirm],[data-admin-reset]').count(),0);
    }
    if(allowed&&grant!=='revoked-write'){
     assert.equal(permissionReads,1,'Settings, Admin directory and Calendar reuse one per-tab permissions check');

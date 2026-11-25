@@ -91,7 +91,7 @@ async function confirmSportingReset(){
  if(!allowed||busy||preview?.executable!==true||!preview.retainedEvidence)return;
  const p=preview;
  if(!evidenceExported){exportEvidence(p.retainedEvidence,'retained-before-reset-'+p.world.generation+'.json');evidenceExported=true;setStatus('saveEvidence');sync();return}
- if(window.prompt(text('resetPrompt')+'\\n'+text('players')+': '+p.retainedEvidence.players.length+' · '+p.assignedLicenses+' licenses')!==p.confirmation)return;
+ if(window.prompt(text('resetPrompt')+'\n'+text('players')+': '+p.retainedEvidence.players.length+' · '+p.assignedLicenses+' licenses')!==p.confirmation)return;
  const current=++token;busy=true;sync();setStatus('checking');
  try{
   const session=await request('/api/admin/session');if(current!==token)return;
@@ -99,7 +99,7 @@ async function confirmSportingReset(){
   if(current!==token)return;
   const w=result.world;if(!result.operationId||w?.seasonNumber!==0||w.day!==0||w.revision!==0||w.phase!=='unstarted'||w.generation===p.world.generation)throw Error('invalid reset receipt');
   exportEvidence({sourceDigest:p.retainedEvidence.digest,...result},'sporting-reset-receipt-'+result.operationId+'.json');
-  preview=null;evidenceExported=false;renderPreview();world(w);setStatus('resetDone');
+  preview=null;evidenceExported=false;renderPreview();world(w);setStatus('resetDone');window.dispatchEvent(new Event('fa:world-invalidated'));
  }catch(e){if(current===token){preview=null;evidenceExported=false;renderPreview();setStatus(e.status===409?'stale':e.status===401||e.status===403?'denied':'failed');if(e.status===401||e.status===403){allowed=false;clear();content.hidden=true;showAccess(e.status!==401,false)}}}
  finally{if(current===token){busy=false;sync()}}
 }
