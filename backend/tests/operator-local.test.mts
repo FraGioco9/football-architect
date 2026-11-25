@@ -145,3 +145,21 @@ test('synthetic cutover rehearsal grants only explicitly matched identities and 
   assert.deepEqual(await handle.db.prepare('SELECT generation,revision FROM world_state').first(),worldBefore);
  }finally{await handle.close();await rm(dir,{recursive:true,force:true})}
 });
+
+test('#791 DEV operator requires explicit exact scope, action confirmation and no caller cursor',async()=>{
+ const {parseDevOperatorRequest,readDevOperatorSchema}=await import('../src/dev-operator.ts');
+ const generation='00000000-0000-4000-8000-000000000001';
+ const request={action:'settle',expectedGeneration:generation,expectedSeason:1,expectedDay:28,confirmation:'DEV settle '+generation+' 1:28',data:{}};
+ assert.equal(parseDevOperatorRequest(request).action,'settle');
+ for(const altered of [{...request,confirmation:''},{...request,expectedDay:56},{...request,data:{cursor:'1'}},{...request,action:'reset'},{...request,expectedSeason:'1'}])assert.throws(()=>parseDevOperatorRequest(altered));
+ const dir=await mkdtemp(join(tmpdir(),'fa-dev-operator-schema-'));
+ let h:Awaited<ReturnType<typeof openLocalDatabase>>|undefined;
+ try{
+  h=await openLocalDatabase(dir);
+  const before=await h.db.prepare('SELECT * FROM world_state').first();
+  const schema=await readDevOperatorSchema(h.db);
+  assert.equal(schema.ready,schema.missingMigrations.length===0&&schema.missingObjects.length===0);
+  assert.deepEqual(await h.db.prepare('SELECT * FROM world_state').first(),before);
+  assert.equal((await h.db.prepare('SELECT COUNT(*) AS n FROM generated_players').first())!.n,0);
+ }finally{await h?.close();await rm(dir,{recursive:true,force:true})}
+});
