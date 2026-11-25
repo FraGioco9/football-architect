@@ -1,5 +1,5 @@
 /** #763: explicit write-side maintenance of a derived, versioned read model. */
-import type {Database} from './database.ts';
+import type {Database,Statement} from './database.ts';
 import {MARKET_VALUE_CONFIG} from './player-market-value.mjs';
 import {FORECAST_EXPOSURES} from './player-market-value-forecast-data.mjs';
 import {projectPublicFootballerDirectoryRecord,type InternalFootballer} from './footballer-public-projection.ts';
@@ -41,8 +41,9 @@ export function marketValueIndexReadiness(db:Database,version:string){
 }
 /** Explicit operator/authorized write path only. Never called from public GET.
  * Safe to retry; each bounded batch derives from the current persisted inputs. */
-export async function refreshMarketValueIndexBatch(db:Database,limit=MARKET_VALUE_INDEX_BATCH_SIZE){
+export async function refreshMarketValueIndexBatch(db:Database,limit=MARKET_VALUE_INDEX_BATCH_SIZE,access:Statement[]=[]){
  if(!Number.isSafeInteger(limit)||limit<1||limit>MARKET_VALUE_INDEX_BATCH_SIZE)throw Error('invalid_market_value_batch_size');
+ if(access.length)await db.batch(access);
  const version=await marketValueIndexVersion();
  const pending=(await db.prepare(`SELECT v.player_id,v.input_revision,v.config_version,p.payload_json
   FROM player_market_values v JOIN generated_players p ON p.id=v.player_id
@@ -53,6 +54,7 @@ export async function refreshMarketValueIndexBatch(db:Database,limit=MARKET_VALU
   return {selected:0,updated:0,ready:ready?.ready===1};
  }
  const updates=pending.map(row=>marketValueIndexUpdate(row.player_id,row.input_revision,row.config_version,JSON.parse(row.payload_json) as Source));
- const result=await marketValueIndexWrite(db,version,updates).run();
+ const write=marketValueIndexWrite(db,version,updates);
+ const result=access.length?(await db.batch([...access,write])).at(-1)!:await write.run();
  return {selected:pending.length,updated:result.meta.changes,ready:false};
 }
