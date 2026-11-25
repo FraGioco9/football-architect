@@ -31,7 +31,7 @@ it('local opening journal preserves existing player, atomically rolls back and r
   ...Array.from({length:24},(_,i)=>{const slotKey='fixture/'+String(i+2).padStart(3,'0');return {slotKey,kind:'generate' as const,slot:{slotKey,age:39,primaryNationality:'ITA',primaryPosition:'ST',primarySuitabilityTarget:65,generatorSeed:'opening-test-'+i},privateRetirementAge:40}})];
  const intentHash=await openingDigest(intents);
  // Only one synthetic batch is committed in this fixture. Remaining commitments are deliberately unusable.
- const identity={schema:'opening-persistence-v2',worldGeneration:initial.world.generation,worldRevision:0,manifestHash:'a'.repeat(64),inventoryHash:'b'.repeat(64),assignmentHash:'c'.repeat(64),batchSize:25,slotCount:6400,initialHighWater:initial.idHighWater,batchIntentHashes:[intentHash,...Array(255).fill('0'.repeat(64))]};
+ const identity={schema:'opening-persistence-v2',worldGeneration:initial.world.generation,worldRevision:0,manifestHash:'a'.repeat(64),inventoryHash:'b'.repeat(64),assignmentHash:'c'.repeat(64),batchSize:25,slotCount:6400,initialHighWater:initial.idHighWater,batchIntentHashes:[intentHash,...Array(255).fill('0'.repeat(64))],contractClubs:['fixture',...Array.from({length:255},(_,i)=>'fixture-'+i)],contractTerms:Array(6400).fill(1)};
  const root={...identity,runKey:await openingDigest(identity),baseline:initial.rows};
  await beginLocalOpeningRun(db,session,root,now);
  await expect(beginLocalOpeningRun(db,session,root,now)).rejects.toThrow();

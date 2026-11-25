@@ -96,6 +96,8 @@ test('opening world local plan and receipts survive close/reopen without rematch
   assert.deepEqual(await run.start(session,now),started);
   await assert.rejects(run.start(session,now+1001));
   await assert.rejects(run.reconcile(),/opening population incomplete/);
+  await assert.rejects(run.signNextClub(session,now),/opening population incomplete/);
+  await assert.rejects(run.publish(session,now),/opening population incomplete/);
   const first=await run.step(session,now);assert.equal(first.completedSlots,25);
   await run.close();run=undefined;
   run=await openLocalOpeningRehearsal(state);

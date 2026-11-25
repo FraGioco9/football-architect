@@ -46,7 +46,7 @@ function deriveOpeningPersistence(manifest,inventory,world){
  const baseline=verifiedRows(inventory.players,inventory.idHighWater);
  const manifestHash=manifestDigest(manifest),inventoryHash=manifestDigest({snapshotId:inventory.snapshotId,idHighWater:inventory.idHighWater,players:inventory.players.slice().sort((a,b)=>a.id-b.id)}),assignmentHash=manifestDigest(reuse.assignments);
  const batchIntentHashes=Array.from({length:256},(_,i)=>manifestDigest(intentsFor(manifest,reuse,i)));
- const identity={schema:"opening-persistence-v2",worldGeneration:world.generation,worldRevision:world.revision,manifestHash,inventoryHash,assignmentHash,batchSize:BATCH_SIZE,slotCount:manifest.slots.length,initialHighWater:inventory.idHighWater,batchIntentHashes};
+ const identity={schema:"opening-persistence-v2",worldGeneration:world.generation,worldRevision:world.revision,manifestHash,inventoryHash,assignmentHash,batchSize:BATCH_SIZE,slotCount:manifest.slots.length,initialHighWater:inventory.idHighWater,batchIntentHashes,contractClubs:manifest.slots.filter((_,i)=>i%25===0).map(s=>s.clubKey),contractTerms:manifest.slots.map(s=>s.intendedTermSeasons)};
  return {root:{...identity,runKey:manifestDigest(identity),baseline},reuse};
 }
 export function createOpeningPersistenceRun(manifest,inventory,world){
