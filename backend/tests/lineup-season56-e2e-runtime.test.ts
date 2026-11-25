@@ -1,3 +1,4 @@
+import {readAdminEconomySummary,readAdminEconomyReconciliation,readAdminEconomyClubs,parseEconomyPage} from '../src/admin-inspection.ts';
 import {prepareRewardSettlement,readRewardSettlementManifest,projectFinalRewardEvidence,buildRewardManifest,type PreparedRewardSettlement} from '../src/reward-settlement-evidence.ts';
 import {planRewardSettlement,type RewardPlan} from '../src/reward-settlement-plan.mjs';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
@@ -41,6 +42,7 @@ import {readPublicSportingSeasonLineupV1} from '../src/public-sporting-read-line
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
 import type {AdminSession} from '../src/auth.ts';
+import type {Database} from '../src/database.ts';
 
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
 type World=Awaited<ReturnType<typeof readWorld>>;
@@ -72,7 +74,39 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  const stockArc=String(319*125+1+budget.annual+freeReserve);
  const rewardPin={rewardVersion:budget.version,configVersion:'synthetic-776'};
  const localAccess=()=>[economicAssert(db,'SELECT 1')]; // fixture-only authorization
+ const inspectEconomy=async()=>{
+  const before=await readWorld(db),transactions=await count('economic_transactions'),claims=await count('payroll_claims'),receipts=await count('payroll_payment_receipts');
+  const control=await db.prepare('SELECT * FROM economic_control WHERE id=1').first();
+  const summary=await readAdminEconomySummary(db,localAccess()),audit=await readAdminEconomyReconciliation(db,localAccess());
+  expect(summary.world).toEqual(before);
+  expect(audit.report).toEqual(await reconcileEconomy(db,localAccess()));
+  expect(await readWorld(db)).toEqual(before);
+  expect(await count('economic_transactions')).toBe(transactions);
+  expect(await count('payroll_claims')).toBe(claims);
+  expect(await count('payroll_payment_receipts')).toBe(receipts);
+  expect(await db.prepare('SELECT * FROM economic_control WHERE id=1').first()).toEqual(control);
+  return {summary,audit};
+ };
+ const verifyEconomyPayday=async(season:number,day:28|56,reward:RewardPlan,paidArc:number)=>{
+  const {summary,audit}=await inspectEconomy();
+  expect(summary.genesis).toMatchObject({status:'funded',fundedClubs:320,plannedArc:stockArc,issuedArc:stockArc,clubCapitalArc:String(319*125+1),plannedFreeReserveArc:String(freeReserve)});
+  expect(summary.rewards.rows.find(x=>x.season===season&&x.day===day)).toMatchObject({forecastArc:String(reward.totalArc),creditedArc:String(reward.totalArc),status:'recorded'});
+  const wages=summary.payroll.rows.find(x=>x.season===season&&x.day===day)!;
+  expect(wages).toMatchObject({paidArc:String(paidArc),sealedClubs:320,completedClubs:320,status:'recorded',pendingArc:'0'});
+  const canonical=(await db.prepare("SELECT COALESCE(SUM(c.due_arc),0) AS earned,COALESCE(SUM(c.outstanding_arc),0) AS outstanding FROM payroll_claim_outstanding c JOIN payroll_runs r ON r.id=c.run_id WHERE r.generation=? AND r.season=? AND r.day=?").bind(world.generation,season,day).first())!;
+  expect(wages.earnedArc).toBe(String(canonical.earned));
+  expect(wages.outstandingArc).toBe(String(canonical.outstanding));
+  expect(wages.arrearsArc).toBe(String(canonical.outstanding));
+  expect(audit.domainStatus).toBe('domain_verified');
+  expect(audit.report.ok).toBe(true);
+  return summary;
+ };
+ const emptyEconomy=await inspectEconomy();
+ expect(emptyEconomy.summary.status).toBe('uninitialized');
+ expect(emptyEconomy.summary.rewards.rows.every(r=>r.creditedArc===null)).toBe(true);
+ expect(emptyEconomy.summary.payroll.rows.every(r=>r.earnedArc===null&&r.paidArc===null)).toBe(true);
  await prepareEconomicGenesis(db,{version:rewardPin.configVersion,clubs:clubKeys.map(clubKey=>({clubKey,amountArc:capital[clubKey]})),freeReserveArc:freeReserve,issuanceLimitArc:6000000},'fixture',localAccess(),now);
+ expect((await inspectEconomy()).summary.genesis).toMatchObject({status:'prepared',fundedClubs:0,plannedArc:stockArc,issuedArc:'0',clubCapitalArc:'0'});
  const openingClub=clubKeys.find(k=>active.has(k))!;
  await expect(preparePayrollAffordability(db,world,openingClub,125)).rejects.toThrow();
  for(let i=0;i<21;i++)await stepEconomicGenesis(db,localAccess(),now);
@@ -126,17 +160,18 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  // Insert only synthetic closed historical terms AFTER sporting receipts are
  // frozen. Every club has a wage in each period; no live signing or roster edit.
  const seedPayrollPeriod=async(day:28|56,recovery?:{clubKey:string;annual:number},probe?:string)=>{
+  const season=world.seasonNumber,tick=(season-1)*56,playerBase=(season-1)*100000+day*1000;
   const rows=clubKeys.map(clubKey=>({clubKey,annual:recovery?.clubKey===clubKey?recovery.annual:125}));
   if(probe)for(let i=0;i<24;i++)rows.push({clubKey:probe,annual:125});
-  const agent=session.unified!.playerId,firstProbe=probe?day*1000+clubKeys.indexOf(probe)+1:null;
+  const agent=session.unified!.playerId,firstProbe=probe?playerBase+clubKeys.indexOf(probe)+1:null;
   for(let offset=0;offset<rows.length;offset+=20){
    const batch=crypto.randomUUID(),chunk=rows.slice(offset,offset+20);
-   const statements=[db.prepare("INSERT INTO player_generation_drafts(id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,status,created_at,expires_at,committed_at) VALUES(?,?,1,?,'{}','[]',?,'payroll-fixture','committed',?,?,?)").bind(batch,world.generation,agent,chunk.length,now,now+3600,now)];
+   const statements=[db.prepare("INSERT INTO player_generation_drafts(id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,status,created_at,expires_at,committed_at) VALUES(?,?,?,?,'{}','[]',?,'payroll-fixture','committed',?,?,?)").bind(batch,world.generation,season,agent,chunk.length,now,now+3600,now)];
    for(let i=0;i<chunk.length;i++){
-    const {clubKey,annual}=chunk[i],id=day*1000+offset+i+1,reference=annual*4/5;
-    statements.push(db.prepare("INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(?,?,?,1,?,?)").bind(id,batch,world.generation,JSON.stringify({id,first_name:'Fixture',last_name:'Payroll',nationality:'ITA',age:22,retirement_age:40,career_status:'active'}),now),
-     db.prepare("INSERT INTO player_signed_contracts(player_id,world_generation,club_key,signed_at_ms,start_tick,duration_seasons,scheduled_end_tick,annual_salary_arc,minimum_arc,reference_arc,maximum_arc,policy_version,ai_demand_arc,signing_key) VALUES(?,?,?,?,?,1,56,?,40,?,?,'contract-draft-v1',?,?)").bind(id,world.generation,clubKey,now*1000,day-28,annual,reference,2*reference,annual,'payroll-fixture:'+id),
-     db.prepare('UPDATE player_signed_contracts SET closed_tick=?,close_reason=? WHERE player_id=?').bind(day,day===56?'expiry':'release',id));
+    const {clubKey,annual}=chunk[i],id=playerBase+offset+i+1,reference=annual*4/5;
+    statements.push(db.prepare("INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(?,?,?,?,?,?)").bind(id,batch,world.generation,season,JSON.stringify({id,first_name:'Fixture',last_name:'Payroll',nationality:'ITA',age:22,retirement_age:40,career_status:'active'}),now),
+     db.prepare("INSERT INTO player_signed_contracts(player_id,world_generation,club_key,signed_at_ms,start_tick,duration_seasons,scheduled_end_tick,annual_salary_arc,minimum_arc,reference_arc,maximum_arc,policy_version,ai_demand_arc,signing_key) VALUES(?,?,?,?,?,1,?,?,40,?,?,'contract-draft-v1',?,?)").bind(id,world.generation,clubKey,now*1000,tick+day-28,tick+56,annual,reference,2*reference,annual,'payroll-fixture:'+id),
+     db.prepare('UPDATE player_signed_contracts SET closed_tick=?,close_reason=? WHERE player_id=?').bind(tick+day,day===56?'expiry':'release',id));
    }
    await db.batch(statements);
   }
@@ -358,6 +393,9 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    for(const club of clubKeys)firstPayrollPaid.set(club,club===payrollRecoveryClub?firstPaid:club===poorClub?1:62);
    firstPayrollTotal=318*62+firstPaid+1;
    expect(full).toMatchObject({dueArc:firstPayrollTotal+firstArrears+61,paidArc:firstPayrollTotal,arrearsArc:firstArrears+61});
+   const monitored=await verifyEconomyPayday(1,28,first.manifest.plan,firstPayrollTotal);
+   expect(monitored.payroll.rows[0]).toMatchObject({earnedArc:String(firstPayrollTotal+firstArrears+61),arrearsArc:String(firstArrears+61)});
+   expect(monitored.rewards.rows[2].creditedArc).toBeNull();
    expect(await count('payroll_payment_receipts')).toBe(320);
    expect(await count('economic_transactions')).toBe(day28Transactions);
    await verifyTreasuries([first.manifest.plan]);
@@ -450,6 +488,9 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(pending).toMatchObject({status:'pending',dueArc:probeDue,plannedArc:probeDue,arrearsArc:0});
  expect(pending.paidArc).toBeGreaterThan(0);
  expect(pending.paidArc).toBeLessThan(probeDue);
+ const interrupted=await inspectEconomy();
+ expect(interrupted.summary.payroll.rows[1]).toMatchObject({paidArc:String(pending.paidArc),pendingArc:String(probeDue-pending.paidArc),arrearsArc:'0',status:'settlement_pending'});
+ expect(interrupted.audit.domainStatus).toBe('settlement_pending');
  expect(await count('economic_transactions')).toBe(beforePayroll+24);
  expect(await count('payroll_payment_receipts')).toBe(320+24);
  await expect(archiveSeasonLineupV1(db,session,command(),'payroll-blocked-pending-0001',now)).rejects.toMatchObject({code:'payroll_calendar_pending'});
@@ -474,6 +515,9 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(await db.prepare("SELECT SUM(c.outstanding_arc) AS outstanding_arc FROM payroll_claim_outstanding c JOIN payroll_runs r ON r.id=c.run_id WHERE r.club_key=? AND r.day=28").bind(payrollRecoveryClub).first()).toEqual({outstanding_arc:0});
  const fullPayroll=await finishPayroll(),secondPaid=318*62+probeDue+firstArrears;
  expect(fullPayroll).toMatchObject({dueArc:secondPaid+123,paidArc:secondPaid,arrearsArc:123});
+ const secondMonitored=await verifyEconomyPayday(1,56,finalPlan,secondPaid);
+ expect(secondMonitored.payroll.rows[0]).toMatchObject({arrearsArc:'61',paidArc:String(firstPayrollTotal)});
+ expect(secondMonitored.payroll.rows[1]).toMatchObject({arrearsArc:'62',paidArc:String(secondPaid)});
  expect(await count('payroll_runs')).toBe(640);
  expect(await count('payroll_payment_receipts')).toBe(320+318+26+1);
  expect(await db.prepare("SELECT COUNT(DISTINCT r.club_key) AS n FROM payroll_payment_receipts p JOIN payroll_allocations a ON a.id=p.allocation_id JOIN payroll_runs r ON r.id=a.run_id WHERE r.day=28").first()).toEqual({n:320});
@@ -554,15 +598,15 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  },'lineup-season2-approval-0001',now);
  world=approved.world;
  await earmarkNextRewardBudget(db,localAccess(),now);
- const lifecycleCommand=command();
- const beforeLifecycle=await db.prepare("SELECT id,payload_json FROM generated_players ORDER BY id").all<{id:number;payload_json:string}>();
- const priorClaims=await db.prepare("SELECT * FROM payroll_claims ORDER BY id").all();
+ const lifecycleDb=db as Database, lifecycleCommand=command();
+ const beforeLifecycle=(await lifecycleDb.prepare("SELECT id,payload_json FROM generated_players ORDER BY id").all<{id:number;payload_json:string}>()).results;
+ const priorClaims=(await lifecycleDb.prepare("SELECT * FROM payroll_claims ORDER BY id").all()).results;
  const prepared=await prepareSeasonTwo(db,session,lifecycleCommand,
   'lineup-season2-prepare-0001',now);
  expect(await prepareSeasonTwo(db,session,lifecycleCommand,'lineup-season2-prepare-0001',now)).toEqual(prepared);
- const afterLifecycle=await db.prepare("SELECT id,payload_json FROM generated_players ORDER BY id").all<{id:number;payload_json:string}>();
- expect(afterLifecycle.results).toEqual(beforeLifecycle.results.map(row=>({id:row.id,payload_json:JSON.stringify({...JSON.parse(row.payload_json),age:23})})));
- expect((await db.prepare("SELECT * FROM payroll_claims ORDER BY id").all()).results).toEqual(priorClaims.results);
+ const afterLifecycle=(await lifecycleDb.prepare("SELECT id,payload_json FROM generated_players ORDER BY id").all<{id:number;payload_json:string}>()).results;
+ expect(afterLifecycle.map(row=>({id:row.id,payload:JSON.parse(row.payload_json)}))).toEqual(beforeLifecycle.map(row=>({id:row.id,payload:{...JSON.parse(row.payload_json),age:23}})));
+ expect((await lifecycleDb.prepare("SELECT * FROM payroll_claims ORDER BY id").all()).results).toEqual(priorClaims);
  world=prepared.world;
  expect(world).toMatchObject({seasonNumber:2,day:0,phase:'preparing'});
  const finals=await readMatchDirectory(db,1,54);
@@ -609,4 +653,37 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(oldSeason.data.statistics.matchesPlayed).toBe(242);
  expect((await db.prepare('SELECT COUNT(*) AS n FROM match_lineup_result_receipts WHERE season_number=1')
   .first() as {n:number}).n).toBe(4082);
-},600000);
+ // Continue the same isolated world through the next two canonical paydays.
+ for(let day=14;day<=56;day++){
+  await advance(executeLineupLifecycleV1(db,session,'advance',command(),'lineup-season2-sport-day-'+day+'-0001',now));
+  expect(world.day).toBe(day);
+  if(day!==28&&day!==56)continue;
+  const preparedReward=await prepareRewardSettlement(db,rewardPin);
+  await finishRewards(preparedReward);
+  await executeRewardSettlementBatch(db,session,preparedReward,now,true);
+  world=await readWorld(db);
+  await seedPayrollPeriod(day);
+  const paid=await finishPayroll();
+  await verifyEconomyPayday(2,day,preparedReward.manifest.plan,paid.paidArc);
+ }
+ const finalEconomy=(await inspectEconomy()).summary;
+ expect(finalEconomy.rewards.rows.map(r=>r.creditedArc)).toEqual([String(budget.day28),String(budget.day56),String(budget.day28),String(budget.day56)]);
+ expect(finalEconomy.payroll.rows.every(r=>r.completedClubs===320&&r.pendingArc==='0')).toBe(true);
+ const canonicalClubs=(await db.prepare("SELECT owner_id,balance_arc,reserved_arc,available_arc FROM economic_available_balances WHERE kind='CLUB_TREASURY'").all()).results;
+ const monitoredClubs:Awaited<ReturnType<typeof readAdminEconomyClubs>>['rows']=[];
+ let checkpoint:string|null=null;
+ for(let page=1;page<=7;page++){
+  const query=new URLSearchParams({page:String(page)});if(checkpoint)query.set('checkpoint',checkpoint);
+  const result=await readAdminEconomyClubs(db,localAccess(),parseEconomyPage(query,'clubs'));
+  checkpoint=result.checkpoint;monitoredClubs.push(...result.rows);
+ }
+ expect(monitoredClubs).toHaveLength(320);
+ for(const row of canonicalClubs)expect(monitoredClubs.find(c=>c.clubKey===row.owner_id)).toMatchObject({balanceArc:String(row.balance_arc),heldArc:String(row.reserved_arc),availableArc:String(row.available_arc)});
+ expect(finalEconomy.accounts.find(a=>a.kind==='CLUB_TREASURY')?.balanceArc).toBe(String(canonicalClubs.reduce((n:number,r:any)=>n+r.balance_arc,0)));
+ await advance(archiveSeasonLineupV1(db,session,command(),'lineup-season2-archive-0001',now));
+ await advance(closeSeasonLineupV1(db,session,command(),'lineup-season2-close-0001',now));
+ const closedEconomy=await inspectEconomy();
+ expect(closedEconomy.audit.domainStatus).toBe('outside_payday');
+ expect(closedEconomy.summary.rewards.rows).toEqual(finalEconomy.rewards.rows);
+ expect(closedEconomy.summary.payroll.rows).toEqual(finalEconomy.payroll.rows);
+},1200000);

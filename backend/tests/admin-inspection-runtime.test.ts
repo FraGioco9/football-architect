@@ -25,6 +25,11 @@ it('validates exact reset scope and never executes a reset',async()=>{
 it('distinguishes missing accounts from provisioned zero and never activates finance',async()=>{
  const empty=await readAdminEconomySummary(db,access());
  expect(empty.status).toBe('uninitialized');
+ expect(empty.genesis).toMatchObject({status:'uninitialized',fundedClubs:null,issuedArc:null});
+ expect(empty.rewards.rows).toHaveLength(4);
+ expect(empty.rewards.rows.every(x=>x.creditedArc===null&&x.status==='uninitialized')).toBe(true);
+ expect(empty.rewards.rows.reduce((sum,x)=>sum+Number(x.forecastArc),0)).toBe(4800000);
+ expect(empty.payroll.rows.every(x=>x.earnedArc===null&&x.paidArc===null&&x.arrearsArc===null)).toBe(true);
  expect(empty.accounts.find(a=>a.kind==='CLUB_TREASURY')?.balanceArc).toBeNull();
  await provisionClubAccounts(db,1770000000,access());
  const provisioned=await readAdminEconomySummary(db,access());
@@ -39,7 +44,10 @@ it('reports the real 0039 generation blocker even when posting is frozen',async(
  await db.prepare('INSERT INTO economic_control VALUES(1,?,0)').bind('synthetic-inspection').run();
  const before=await db.prepare('SELECT * FROM economic_control').first();
  expect((await previewAdminReset(db,access(),['sporting'])).blockers).toContain('economic_generation_guard');
- expect((await readAdminEconomySummary(db,access())).status).toBe('frozen');
+ const summary=await readAdminEconomySummary(db,access());
+ expect(summary.status).toBe('frozen');
+ expect(summary.genesis.status).toBe('unavailable');
+ expect(summary.rewards.rows.every(x=>x.creditedArc===null)).toBe(true);
  await readAdminEconomyReconciliation(db,access());
  expect(await db.prepare('SELECT * FROM economic_control').first()).toEqual(before);
 });

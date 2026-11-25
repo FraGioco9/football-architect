@@ -76,6 +76,26 @@ import {readPublicPlayers} from '../src/public-players-read.ts';
 import {readPublicClubRoster} from '../src/public-club-roster-read.ts';
 import {loadApprovedSnapshot,serverCanonicalCatalogue} from '../src/approved-season-one.ts';
 import type {Database} from '../src/database.ts';
+import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
+import {advanceAdministrativeClockLineupV1} from '../src/admin-calendar-clock-lineup-v1.ts';
+import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
+import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
+import {executeInternationalDraw} from '../src/admin-international-draw.ts';
+import {publishInternationalCalendarLineupV1} from '../src/admin-calendar-publish-lineup-v1.ts';
+import {executeLineupLifecycleV1} from '../src/lineup-lifecycle-command.ts';
+import {archiveSeasonLineupV1} from '../src/season-archive-command-lineup-v1.ts';
+import {closeSeasonLineupV1} from '../src/season-close-command-lineup-v1.ts';
+import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
+import {approveSeasonTwoSnapshot} from '../src/season-two-approval-command.ts';
+import {prepareSeasonTwo} from '../src/season-two-prepare-command.ts';
+import {earmarkNextRewardBudget} from '../src/economic-genesis.ts';
+import {rewardCalendarBudget} from '../src/reward-settlement-plan.mjs';
+import {prepareRewardSettlement} from '../src/reward-settlement-evidence.ts';
+import {executeRewardSettlementBatch} from '../src/reward-settlement-command.ts';
+import {settleNextPayrollBatch,reconcilePayrollPayday} from '../src/payroll-settlement-command.ts';
+import {readAdminEconomyReconciliation,readAdminEconomySummary} from '../src/admin-inspection.ts';
+import {marketValueIndexReadiness,marketValueIndexVersion,marketValueIndexUpdate,refreshMarketValueIndexBatch} from '../src/player-market-value-index.ts';
+import type {AdminSession} from '../src/auth.ts';
 
 test('opening world local plan and receipts survive close/reopen without rematching existing youth', {timeout:180000},async()=>{
  const state=await mkdtemp(join(tmpdir(),'fa-opening-persist-')),now=Math.floor(Date.now()/1000);
@@ -195,7 +215,8 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
   // Actual #802: restart during the first funding installment, then complete
   // remaining idempotent ledger postings and canonical annual Rewards hold.
   handle=await open();db=handle.db;
-  await prepareOpeningFundingFixture(db,now);
+  // Synthetic reserve for the second annual hold; not a gameplay policy change.
+  await prepareOpeningFundingFixture(db,now,rewardCalendarBudget().annual);
   const access=()=>[economicAssert(db,'SELECT 1')];
   const partial=await stepEconomicGenesis(db,access(),now);
   assert.equal(partial?.funded_clubs,15);
@@ -287,7 +308,178 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
   const started=await prepareSeason(db,session,{expectedGeneration:published.world.generation,expectedRevision:published.world.revision},'opening-full-prepare-after-publication',catalogue,now);
   assert.equal(started.world.seasonNumber,1);assert.equal(started.world.phase,'preparing');
   console.log('opening full fixture: PASS 150 retained / 6250 new / 320 funded / 6400 signed / 256 full rosters / publication and restart');
+  // #779: continue the SAME published local D1 (no second population, no
+  // direct signing, no artificial expiry/retirement, no eligibility changes).
+  await rehearsePublishedLifecycle(db,session,now,after,catalogue);
+
  }finally{
   try{if(runner)await runner.close();if(handle)await handle.close()}finally{await rm(state,{recursive:true,force:true})}
  }
 });
+
+
+/** #779: actual full-opening local fixture, not an estimate from slot intents.
+ * All monetary operations use the same isolated D1 and canonical services.
+ * The original 150 rows are synthetic stand-ins for DEV, not DEV identities.
+ */
+async function rehearsePublishedLifecycle(
+ db:Database,session:AdminSession,now:number,
+ before:Awaited<ReturnType<typeof readOpeningObservation>>,
+ catalogue:Awaited<ReturnType<typeof loadApprovedSnapshot>>
+){
+ type World=Awaited<ReturnType<typeof readWorld>>;
+ let world=await readWorld(db);
+ const access=()=>[economicAssert(db,'SELECT 1')];
+ const command=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
+ const step=async(p:Promise<{world:World}>)=>{world=(await p).world;};
+ const key=(s:string)=>'opening-lifecycle-'+world.seasonNumber+'-'+s;
+ const budget=rewardCalendarBudget(),pin={rewardVersion:budget.version,configVersion:'synthetic-opening-world'};
+ const count=async(sql:string)=>(await db.prepare(sql).first<{n:number}>())!.n;
+ type Term={id:number;player_id:number;club_key:string;annual_salary_arc:number;scheduled_end_tick:number;closed_tick:number|null;close_reason:string|null};
+ const terms=async()=>(await db.prepare("SELECT id,player_id,club_key,annual_salary_arc,scheduled_end_tick,closed_tick,close_reason FROM player_signed_contracts ORDER BY id").all<Term>()).results;
+ const originalTerms=await terms();
+ assert.equal(originalTerms.length,6400);
+ const originalPlayers=new Map(before.rawRows.map(row=>[row.id,JSON.parse(row.payload_json)]));
+ const payrollClaims=async(season:number)=>(await db.prepare("SELECT c.* FROM payroll_claims c JOIN payroll_runs r ON r.id=c.run_id WHERE r.season=? ORDER BY c.id").bind(season).all()).results;
+ const payday=async(day:28|56)=>{
+  assert.equal(world.day,day);
+  const prepared=await prepareRewardSettlement(db,pin);
+  let complete=false;
+  for(let i=0;i<100;i++){
+   const result=await executeRewardSettlementBatch(db,session,prepared,now);
+   if(result.status==='complete'){complete=true;break;}
+   assert.equal(result.status,'pending');
+  }
+  assert.equal(complete,true,'bounded local Rewards loop');
+  await executeRewardSettlementBatch(db,session,prepared,now,true);
+  world=await readWorld(db);
+  let finished=false;
+  for(let i=0;i<1000;i++){
+   const result=await settleNextPayrollBatch(db,session,now);
+   if(result===null){finished=true;break;}
+   assert.ok(result.status==='pending'||result.status==='complete');
+  }
+  assert.equal(finished,true,'bounded local payroll loop');
+  const report=await reconcilePayrollPayday(db,session,now);
+  assert.equal(report.status,'complete');assert.equal(report.clubsComplete,320);assert.equal(report.pendingArc,0);
+  assert.equal(report.dueArc,report.paidArc+report.arrearsArc);
+  const audit=await readAdminEconomyReconciliation(db,access()),summary=await readAdminEconomySummary(db,access());
+  assert.equal(audit.report.ok,true);assert.equal(audit.domainStatus,'domain_verified');
+  const row=summary.payroll.rows.find(r=>r.season===world.seasonNumber&&r.day===day)!;
+  assert.equal(row.completedClubs,320);assert.equal(row.pendingArc,'0');
+  assert.equal(row.paidArc,String(report.paidArc));
+  console.log('opening lifecycle payroll:',JSON.stringify({season:world.seasonNumber,day,clubs:report.clubsComplete,dueArc:report.dueArc,paidArc:report.paidArc,arrearsArc:report.arrearsArc}));
+ };
+ const play=async()=>{
+  await step(initializeAdministrativeEvents(db,session,command(),key('events'),now));
+  await step(advanceAdministrativeClockLineupV1(db,session,'start',command(),key('start'),now));
+  for(const eventId of ['domestic:entrants','international:entrants']){
+   // Season Zero confirmations, when present, were already carried forward.
+   const event=await db.prepare("SELECT status FROM season_admin_events WHERE season_number=? AND event_id=?").bind(world.seasonNumber,eventId).first<{status:string}>();
+   if(event?.status!=='completed')await step(completeConfirmationEvent(db,session,{...command(),eventId},key('confirm-'+eventId),now));
+  }
+  await step(advanceAdministrativeClockLineupV1(db,session,'advance',command(),key('day2'),now));
+  await step(stageDomesticCalendar(db,session,command(),key('domestic'),now));
+  await step(advanceAdministrativeClockLineupV1(db,session,'advance',command(),key('day3'),now));
+  await step(executeInternationalDraw(db,session,command(),key('draw'),now));
+  await step(publishInternationalCalendarLineupV1(db,session,command(),key('publish'),now));
+  for(let day=4;day<=56;day++){
+   await step(executeLineupLifecycleV1(db,session,'advance',command(),key('sport-'+day),now));
+   assert.equal(world.day,day);
+   if(day===28||day===56)await payday(day);
+  }
+  await step(archiveSeasonLineupV1(db,session,command(),key('archive'),now));
+  await step(closeSeasonLineupV1(db,session,command(),key('close'),now));
+  assert.equal(world.phase,'closed');
+ };
+ await play();
+ const priorClaims=await payrollClaims(1);
+ assert.equal(priorClaims.length,12800,'two claims per opening term (AI represented)');
+ const priorReceipts=await count("SELECT COUNT(*) AS n FROM match_lineup_result_receipts WHERE season_number=1");
+ assert.equal(priorReceipts,4082);
+ const originalArchives=(await db.prepare("SELECT * FROM season_archives WHERE season_number=1").all()).results;
+ const reviewed=await readSeasonTwoCandidate(db);
+ await step(approveSeasonTwoSnapshot(db,session,{...command(),snapshotHash:reviewed.snapshot.snapshotHash},key('approve-next'),now));
+ await earmarkNextRewardBudget(db,access(),now);
+ const priorWorld=command(),prepareKey=key('prepare-next');
+ const prepared=await prepareSeasonTwo(db,session,priorWorld,prepareKey,now);
+ assert.deepEqual(await prepareSeasonTwo(db,session,priorWorld,prepareKey,now),prepared);
+ world=prepared.world;
+ assert.equal(world.seasonNumber,2);assert.equal(world.phase,'preparing');assert.equal(world.day,0);
+ assert.equal(await count("SELECT COUNT(*) AS n FROM player_market_values WHERE config_version IS NULL"),6400);
+ let updated=0;
+ for(let i=0;i<40;i++){
+  const result=await refreshMarketValueIndexBatch(db);
+  updated+=result.updated;
+  if(result.ready)break;
+ }
+ assert.equal(updated,6400);
+ const version=await marketValueIndexVersion();
+ assert.equal((await marketValueIndexReadiness(db,version).first<{ready:number}>())?.ready,1);
+ const after=await readOpeningObservation(db);
+ assert.equal(after.idHighWater,before.idHighWater);assert.equal(after.rawRows.length,6400);
+ const retired=new Set<number>();
+ let changedValues=0;
+ for(let i=0;i<before.rawRows.length;i++){
+  const old=before.rawRows[i],row=after.rawRows[i],p=originalPlayers.get(old.id)!;
+  const retires=p.age+1>=p.retirement_age;
+  if(retires)retired.add(old.id);
+  assert.equal(row.id,old.id);
+  assert.deepEqual(JSON.parse(row.payload_json),{...p,age:p.age+1,career_status:retires?'retired':'active'});
+  assert.deepEqual({batch:row.batch_id,generation:row.world_generation,entry:row.entry_season,portrait:row.snapshot_json,status:row.status,asset:row.asset_key,schema:row.schema_version,prompt:row.prompt_version},
+   {batch:old.batch_id,generation:old.world_generation,entry:old.entry_season,portrait:old.snapshot_json,status:old.status,asset:old.asset_key,schema:old.schema_version,prompt:old.prompt_version});
+  assert.equal(row.input_revision,old.input_revision+1);
+  assert.equal(row.config_version,version);
+  assert.equal(row.market_value_arc,marketValueIndexUpdate(row.id,row.input_revision,null,JSON.parse(row.payload_json)).value);
+  if(retires)assert.equal(row.market_value_arc,0);
+  if(row.market_value_arc!==old.market_value_arc)changedValues++;
+ }
+ assert.ok(retired.size>0);assert.ok(changedValues>0);
+ const actualTerms=await terms();
+ const nextClubs=new Set(reviewed.snapshot.bindings.filter(b=>!b.competitionId.startsWith('int-')).flatMap(b=>b.clubIds));
+ const oldD2=new Set(catalogue.bindings.filter(b=>!b.competitionId.startsWith('int-')&&b.competitionId.endsWith('-2')).flatMap(b=>b.clubIds));
+ const nextD1=new Set(reviewed.snapshot.bindings.filter(b=>!b.competitionId.startsWith('int-')&&b.competitionId.endsWith('-1')).flatMap(b=>b.clubIds));
+ const promoted=new Set([...nextD1].filter(c=>oldD2.has(c)));
+ const eligible=new Map<string,number[]>(),expectedRates=new Map<number,number>();
+ let expiryOnly=0,overlap=0;
+ for(let i=0;i<originalTerms.length;i++){
+  const old=originalTerms[i],retiring=retired.has(old.player_id),expires=old.scheduled_end_tick===56;
+  if(retiring&&expires)overlap++;
+  if(expires&&!retiring)expiryOnly++;
+  assert.deepEqual(actualTerms[i],{...old,closed_tick:retiring||expires?56:null,close_reason:retiring?'retirement':expires?'expiry':null});
+  if(!retiring&&!expires){
+   const ids=eligible.get(old.club_key)??[];ids.push(old.player_id);eligible.set(old.club_key,ids);
+   expectedRates.set(old.id,promoted.has(old.club_key)?Math.max(40,old.annual_salary_arc):old.annual_salary_arc);
+  }
+ }
+ const adjusted=(await db.prepare("SELECT contract_id,annual_salary_arc FROM player_contract_promotion_salary ORDER BY contract_id").all<{contract_id:number;annual_salary_arc:number}>()).results;
+ assert.deepEqual(adjusted,originalTerms.filter(t=>expectedRates.has(t.id)&&expectedRates.get(t.id)!>t.annual_salary_arc).map(t=>({contract_id:t.id,annual_salary_arc:40})));
+ const rosterReport:{clubKey:string;players:number;primaryGK:number;eligibleGK:number}[]=[];
+ for(const clubKey of serverCanonicalCatalogue().clubIds){
+  const roster=await readPublicClubRoster(db,clubKey);
+  assert.deepEqual(roster.players.map(p=>p.id).sort((a,b)=>a-b),(eligible.get(clubKey)??[]).slice().sort((a,b)=>a-b));
+  if(nextClubs.has(clubKey))rosterReport.push({clubKey,players:roster.count,primaryGK:roster.players.filter(p=>p.primary_position==='GK').length,eligibleGK:roster.players.filter(p=>p.primary_position==='GK'||p.secondary_positions.includes('GK')).length});
+ }
+ assert.equal(rosterReport.length,256);
+ const report={population:6400,retained:150,retired:retired.size,expiryOnly,overlap,remaining:rosterReport.reduce((n,r)=>n+r.players,0),min:Math.min(...rosterReport.map(r=>r.players)),max:Math.max(...rosterReport.map(r=>r.players)),below11:rosterReport.filter(r=>r.players<11),withoutPrimaryGK:rosterReport.filter(r=>!r.primaryGK),withoutEligibleGK:rosterReport.filter(r=>!r.eligibleGK),adjustedContracts:adjusted.length,valuesRefreshed:updated,valuesChanged:changedValues};
+ assert.equal(report.remaining,expectedRates.size);
+ assert.equal(report.remaining+report.retired+report.expiryOnly,6400);
+ console.log('opening lifecycle actual D1 roster report:',JSON.stringify(report));
+ assert.deepEqual(await payrollClaims(1),priorClaims);
+ await play();
+ const nextClaims=(await db.prepare("SELECT c.contract_id,c.annual_salary_arc,c.due_arc,r.day FROM payroll_claims c JOIN payroll_runs r ON r.id=c.run_id WHERE r.season=2 ORDER BY c.contract_id,r.day").all<{contract_id:number;annual_salary_arc:number;due_arc:number;day:number}>()).results;
+ assert.equal(nextClaims.length,expectedRates.size*2);
+ for(const claim of nextClaims){
+  const rate=expectedRates.get(claim.contract_id);
+  assert.ok(rate!==undefined);
+  assert.equal(claim.annual_salary_arc,rate);
+  assert.equal(claim.due_arc,claim.day===28?Math.floor(rate/2):rate-Math.floor(rate/2));
+ }
+ assert.deepEqual(await payrollClaims(1),priorClaims);
+ assert.deepEqual((await db.prepare("SELECT * FROM season_archives WHERE season_number=1").all()).results,originalArchives);
+ assert.equal(await count("SELECT COUNT(*) AS n FROM payroll_runs"),1280);
+ assert.equal(await count("SELECT COUNT(*) AS n FROM match_lineup_result_receipts"),8164);
+ assert.equal((await reconcileEconomy(db,access())).ok,true);
+ assert.equal((await db.prepare('PRAGMA foreign_key_check').all()).results.length,0);
+ console.log('opening lifecycle full fixture: PASS actual opening, two seasons, four paydays, all identities/attributes/history/values and effective rosters');
+}
