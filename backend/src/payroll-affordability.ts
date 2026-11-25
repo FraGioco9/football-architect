@@ -20,10 +20,7 @@ const snapshot=(value:unknown):Contract[]=>{
  return JSON.parse(value) as Contract[];
 };
 
-/** Trusted signing adapter supplies server-validated annual wage and the current world.
- * Returned predicates MUST run atomically with signing; not a request-supplied proof.
- * Genesis readiness uses the canonical #802 guard; the caller still owns signing authority. */
-export async function preparePayrollAffordability(db:Database,world:WorldV1,club:string,wage:number):Promise<PayrollAffordabilityProof>{
+function affordabilityScope(world:WorldV1,club:string){
  const opening=world.phase==='unstarted'&&world.seasonNumber===0&&world.day===0;
  if(!opening&&(world.phase!=='active'||world.seasonNumber<1||world.day<1||world.day===28||world.day>=56))return fail();
  const season=opening?1:world.seasonNumber,day:28|56=world.day<28?28:56,base=(season-1)*56,lo=base+day-28,hi=base+day;
@@ -49,11 +46,21 @@ export async function preparePayrollAffordability(db:Database,world:WorldV1,club
  WHERE e.account_id=? AND e.amount_arc<0 AND t.purpose IN ('PAYROLL_HUMAN','PAYROLL_AI') AND NOT EXISTS(SELECT 1 FROM payroll_payment_receipts p WHERE p.transaction_id=t.id))`;
  const ha=[generation,season*56+day,club,generation,club,generation,club,treasury];
  const openingSql="SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM player_signed_contracts WHERE club_key=? AND (world_generation<>? OR start_tick<>0 OR closed_tick IS NOT NULL))";
- const baseGuards=[requireEconomicGenesisGuard(db,generation),economicAssert(db,worldSql,worldArgs),economicAssert(db,historySql,ha),economicReconciliationGuard(db),
-  ...(opening?[economicAssert(db,openingSql,[club,generation])]:[])];
- // Do not mutate the world revision during either settlement day.
- const read=await db.batch([...baseGuards,db.prepare(contractsSql).bind(...ca),db.prepare(balanceSql).bind(treasury),
-  db.prepare('SELECT ('+arrearsSql+') AS arrears').bind(generation,club)]);
+ return {opening,season,day,base,lo,hi,newStart,treasury,generation,worldSql,worldArgs,contractsSql,ca,balanceSql,arrearsSql,historySql,ha,openingSql,club};
+}
+function sharedAffordabilityGuards(db:Database,scope:ReturnType<typeof affordabilityScope>){
+ return [requireEconomicGenesisGuard(db,scope.generation),economicAssert(db,scope.worldSql,scope.worldArgs),economicReconciliationGuard(db)];
+}
+function clubAffordabilityGuards(db:Database,scope:ReturnType<typeof affordabilityScope>,club:string){
+ return [economicAssert(db,scope.historySql,scope.ha),...(scope.opening?[economicAssert(db,scope.openingSql,[club,scope.generation])]:[])];
+}
+function affordabilityReads(db:Database,scope:ReturnType<typeof affordabilityScope>){
+ return [db.prepare(scope.contractsSql).bind(...scope.ca),db.prepare(scope.balanceSql).bind(scope.treasury),
+  db.prepare('SELECT ('+scope.arrearsSql+') AS arrears').bind(scope.generation,scope.club)];
+}
+
+function calculateAffordability(scope:ReturnType<typeof affordabilityScope>,wage:number,read:Awaited<ReturnType<Database['batch']>>){
+ const {base,lo,hi,newStart}=scope;
  const [cs,bs,ar]=read.slice(-3),bytes=cs.results[0]?.snapshot,rows=snapshot(bytes),balance=bs.results[0],arrears=ar.results[0]?.arrears;
  if(!balance||typeof balance.available_arc!=='number'||typeof balance.active_version!=='string'||typeof arrears!=='number'||arrears<0)return fail();
  // Until #801 and #802 pin a common hold ownership convention, fail closed on
@@ -64,6 +71,39 @@ export async function preparePayrollAffordability(db:Database,world:WorldV1,club
   return sum+(from<to?earnedBetween(rate,from-origin,to-origin):0);
  },0);
  const newDue=earnedBetween(wage,0,hi-newStart);
+ return {bytes,balance:{available_arc:balance.available_arc,active_version:balance.active_version},arrears,committed,newDue};
+}
+
+/** Publication is a cash-only Season 0 proof. Share the global guards once
+ * per bounded read batch, but retain every club-specific guard and source
+ * query, the same salary math and the same affordability predicate. The
+ * publisher still pins the finance journal and world at the final seal. */
+export async function verifyOpeningPayrollAffordability(db:Database,world:WorldV1,clubs:readonly string[]){
+ if(world.phase!=='unstarted'||world.seasonNumber!==0||world.day!==0||clubs.length!==256||new Set(clubs).size!==256)return fail();
+ const chunkSize=8;
+ for(let i=0;i<clubs.length;i+=chunkSize){
+  const scopes=clubs.slice(i,i+chunkSize).map(club=>affordabilityScope(world,club));
+  const shared=sharedAffordabilityGuards(db,scopes[0]);
+  const reads=scopes.map(scope=>[...clubAffordabilityGuards(db,scope,scope.club),...affordabilityReads(db,scope)]);
+  const results=await db.batch([...shared,...reads.flat()]);
+  let offset=shared.length;
+  for(let j=0;j<scopes.length;j++){
+   const {balance,arrears,committed,newDue}=calculateAffordability(scopes[j],0,results.slice(offset,offset+reads[j].length));
+   offset+=reads[j].length;
+   if(!canAffordNextPayday({uncommittedCash:balance.available_arc,uncreditedGuaranteedParticipation:0,committedUncoveredWages:committed,arrears,newDue}))return fail('contract_insufficient_cash_proof');
+  }
+ }
+}
+
+/** Trusted signing adapter supplies server-validated annual wage and the current world.
+ * Returned predicates MUST run atomically with signing; not a request-supplied proof.
+ * Genesis readiness uses the canonical #802 guard; the caller still owns signing authority. */
+export async function preparePayrollAffordability(db:Database,world:WorldV1,club:string,wage:number):Promise<PayrollAffordabilityProof>{
+ const scope=affordabilityScope(world,club);
+ const {opening,season,day,treasury,generation,contractsSql,ca,balanceSql,arrearsSql}=scope;
+ const baseGuards=[...sharedAffordabilityGuards(db,scope),...clubAffordabilityGuards(db,scope,club)];
+ const read=await db.batch([...baseGuards,...affordabilityReads(db,scope)]);
+ const {bytes,balance,arrears,committed,newDue}=calculateAffordability(scope,wage,read);
  const guards:Statement[]=[...baseGuards,
   economicAssert(db,'SELECT 1 WHERE ('+contractsSql.replace(' AS snapshot','')+')=?',[...ca,bytes]),
   economicAssert(db,'SELECT 1 WHERE ('+arrearsSql+')=?',[generation,club,arrears]),

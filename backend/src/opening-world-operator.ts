@@ -7,7 +7,7 @@ import type {WorldV1} from './types.ts';
 import type {AdminSession} from './auth.ts';
 import {sessionGuard,abortUnless} from './command-guards.ts';
 import {requireEconomicGenesisGuard} from './economic-genesis.ts';
-import {preparePayrollAffordability} from './payroll-affordability.ts';
+import {verifyOpeningPayrollAffordability} from './payroll-affordability.ts';
 import {economicReconciliationGuard} from './economic-ledger.ts';
 import {signStagedOpeningContract,readOpeningSalaryAuthority} from './player-club-contracts.ts';
 import {readLocalOpeningInventory,type RetainedOpeningInput} from './opening-world-inventory.ts';
@@ -164,7 +164,7 @@ export function createOpeningRehearsal(db:Database,store:{read:()=>Promise<Openi
    const financeSql="SELECT active_version,posting_enabled,(SELECT COUNT(*) FROM economic_transactions) AS transactions,(SELECT COUNT(*) FROM economic_entries) AS entries,(SELECT COUNT(*) FROM economic_holds) AS holds,(SELECT COUNT(*) FROM economic_hold_releases) AS releases FROM economic_control WHERE id=1";
    const finance=await db.prepare(financeSql).first<{active_version:string;posting_enabled:number;transactions:number;entries:number;holds:number;releases:number}>();
    assert(finance?.posting_enabled===1,'opening finance unavailable');
-   for(const club of plan.root.contractClubs)await preparePayrollAffordability(db,world,club,0);
+   await verifyOpeningPayrollAffordability(db,world,plan.root.contractClubs);
    const f=finance!;
    const financeGuard=abortUnless(db,"SELECT 1 FROM ("+financeSql+") WHERE active_version=? AND posting_enabled=1 AND transactions=? AND entries=? AND holds=? AND releases=?",[f.active_version,f.transactions,f.entries,f.holds,f.releases]);
    const receipt={schema:'opening-publication-v1',runKey:handoff.runKey,allocationHash:handoff.allocationHash,receiptHash:handoff.receiptHash,signedDigest:status.signedDigest,population:6400,contracts:6400,operationId,world:{...world,revision:world.revision+1}};

@@ -78,6 +78,7 @@ import {readPublicClubRoster} from '../src/public-club-roster-read.ts';
 import {loadApprovedSnapshot,serverCanonicalCatalogue} from '../src/approved-season-one.ts';
 import type {Database,Statement} from '../src/database.ts';
 import {executeDevOperator} from '../src/dev-operator.ts';
+import {prepareSportingReset,executeSportingReset} from '../src/sporting-reset-preview.ts';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
 import {advanceAdministrativeClockLineupV1} from '../src/admin-calendar-clock-lineup-v1.ts';
 import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
@@ -168,7 +169,7 @@ async function invokeDevAdapter(db:Database,session:AdminSession,now:number,sour
  const w=await readWorld(db),started=performance.now();
  const metrics={calls:0,statements:0,maxBatch:0,maxSqlBytes:0,maxBindCount:0,maxValueBytes:0,maxCallMs:0};
  const raw=new WeakMap<Statement,Statement>();
- const timed=async<T>(count:number,work:()=>Promise<T>)=>{
+ const timed=async<T,>(count:number,work:()=>Promise<T>)=>{
   const start=performance.now();metrics.calls++;metrics.statements+=count;metrics.maxBatch=Math.max(metrics.maxBatch,count);
   try{return await work()}finally{metrics.maxCallMs=Math.max(metrics.maxCallMs,performance.now()-start)}
  };
@@ -193,11 +194,14 @@ async function invokeDevAdapter(db:Database,session:AdminSession,now:number,sour
  const body=JSON.stringify({action,expectedGeneration:w.generation,expectedSeason:w.seasonNumber,expectedDay:w.day,confirmation,data});
  assert.ok(Buffer.byteLength(body)<8*1024*1024);
  const request=new Request('http://app.localhost:2000/api/admin/dev-operator',{method:'POST',headers:{'Content-Type':'application/json'},body});
- const result=await executeDevOperator(request,measured,session,now,source) as any;
+ let result:any;
+ try{result=await executeDevOperator(request,measured,session,now,source)}finally{
+  console.log('DEV adapter isolated metrics:',JSON.stringify({action,season:w.seasonNumber,day:w.day,...metrics,elapsedMs:Math.round(performance.now()-started)}));
+ }
  assert.ok(metrics.maxBindCount<=100,'D1 bind parameter limit');
  assert.ok(metrics.maxSqlBytes<=100000,'D1 SQL text limit');
  assert.ok(metrics.maxValueBytes<=2000000,'D1 per-value limit');
- console.log('DEV adapter isolated metrics:',JSON.stringify({action,season:w.seasonNumber,day:w.day,...metrics,elapsedMs:Math.round(performance.now()-started)}));
+ assert.ok(metrics.maxCallMs<30000,'D1 local per-call duration budget');
  return result;
 }
 
@@ -243,13 +247,17 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
   assert.equal(evidence.history.counts?.seasons,1);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM player_signed_contracts'),0);
   await changeClubLicense(db,session,{clubKey:'IT-1',accountId:null,expectedAccountId:playerId,expectedVersion:1},now);
-  const reset=await resetWorld(db,session,{expectedGeneration:historical.world.generation,expectedRevision:historical.world.revision,confirmation:'RESET SEASON 0'},'opening-full-reset-fixture',now);
+  const resetPreview=await prepareSportingReset(db,session,now);
+  assert.deepEqual(resetPreview.retainedEvidence,evidence);
+  const reset=await executeSportingReset(db,session,{expectedGeneration:historical.world.generation,expectedRevision:historical.world.revision,confirmation:'RESET SEASON 0',expiresAt:resetPreview.expiresAt,previewToken:resetPreview.previewToken},'opening-full-reset-fixture',now);
   const retained={evidence,resetOperationId:reset.operationId};
   await handle.close();handle=await open();db=handle.db;
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM seasons'),0);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM match_lineup_result_receipts'),0);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM season_archives'),0);
-  const retainedData={evidenceJson:JSON.stringify(evidence),resetReceiptJson:JSON.stringify({sourceDigest:evidence.digest,...reset})};
+  const retainedData={evidenceJson:JSON.stringify(evidence),resetReceiptJson:JSON.stringify(reset)};
+  await assert.rejects(invokeDevAdapter(db,session,now,source,'rebase',{...retainedData,resetReceiptJson:JSON.stringify({...reset,world:{...reset.world,revision:1}})}));
+  assert.deepEqual((await readOpeningObservation(db)).rawRows,old.rawRows);
   assert.equal((await invokeDevAdapter(db,session,now,source,'rebase',retainedData)).report.metadataRebased,true);
   assert.equal((await invokeDevAdapter(db,session,now,source,'rebase',retainedData)).report.alreadyRebased,true);
   const rebased=await readOpeningObservation(db);

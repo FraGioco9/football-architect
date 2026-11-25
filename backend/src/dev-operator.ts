@@ -79,9 +79,9 @@ export async function readDevOperatorSchema(db:Database){
  const missingMigrations=requiredMigrations.filter(n=>!names.includes(n)),missingObjects=requiredObjects.filter(n=>!objects.includes(n));
  return {appliedMigrations:names,missingMigrations,missingObjects,ready:missingMigrations.length===0&&missingObjects.length===0};
 }
-function retained(data:Record<string,unknown>):RetainedOpeningInput{
+function retained(data:Record<string,unknown>,world:WorldV1):RetainedOpeningInput{
  const evidence=jsonValue(data.evidenceJson),receipt=jsonValue(data.resetReceiptJson);
- if(!isObject(evidence)||!Array.isArray(evidence.players)||evidence.players.length!==150||!isObject(receipt)||receipt.sourceDigest!==evidence.digest)throw blocked();
+ if(!isObject(evidence)||!Array.isArray(evidence.players)||evidence.players.length!==150||!isObject(receipt)||!isObject(receipt.world)||!same(receipt.world,world)||(receipt.sourceDigest!==undefined&&receipt.sourceDigest!==evidence.digest))throw blocked();
  return {evidence:evidence as RetainedOpeningInput['evidence'],resetOperationId:string(receipt.operationId,36)};
 }
 function readPlan(data:Record<string,unknown>):OpeningPrivatePlan{
@@ -193,13 +193,13 @@ export async function executeDevOperator(request:Request,db:Database,session:Adm
  let saved:OpeningPrivatePlan|undefined;
  const runner=createOpeningRehearsal(db,{read:async()=>readPlan(data),save:async p=>{saved=p}},(w,s)=>buildOpeningManifest(w,s,source));
  if(action==='rebase'){
-  const input=retained(data);
+  const input=retained(data,world);
   const report=await runner.rebaseRetained(session,input,now);
   if(report.preservedPlayers!==150)throw blocked();
   return {done:true,report};
  }
  if(action==='prepare'){
-  const summary=await runner.prepare(seedValue(data.seed),retained(data));
+  const summary=await runner.prepare(seedValue(data.seed),retained(data,world));
   if(summary.reused!==150||summary.newPlayers!==6250||!saved)throw blocked();
   await db.batch([...read,guard]);
   return {done:true,summary,planJson:JSON.stringify(saved)};
