@@ -25,6 +25,7 @@
    if(code==='contract_sporting_day_unavailable')return 'dayUnavailable';
    if(code==='contract_quote_changed'||code==='contract_signing_preconditions_changed')return 'quoteChanged';
    if(code==='contract_insufficient_cash_proof')return 'insufficientFunds';
+   if(code==='payroll_affordability_unavailable'||code==='payroll_commitment_hold_unavailable')return 'signBlocked';
    if(code==='contract_opening_staged')return 'openingStaged';
    if(code==='contract_genesis_not_ready')return 'genesisNotReady';
    if(code==='contract_opening_only')return 'openingOnly';

@@ -8,7 +8,7 @@ import type {Database} from './database.ts';
 import {parsePrepareRequest,parseIdempotencyKey,type PrepareRequest} from './command-contract.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
-import {assertRewardCalendarCompletion} from './reward-calendar-gate.ts';
+import {preparePayrollCalendarGuards} from './payroll-settlement-command.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {verifyLineupSeasonArchiveV1} from './lineup-season-archive-proof.ts';
 import {canCloseArchivedSeason,type TerminalMilestoneRow} from './domain/calendar/terminal-milestone-policy.ts';
@@ -24,7 +24,7 @@ export async function closeSeasonLineupV1(db:Database,session:AdminSession,input
  if(world.phase!=='active'||world.day!==56||world.revision===Number.MAX_SAFE_INTEGER)throw new ApiError(409,'close_prerequisites');
  // Independently replay the full immutable V2 chain, including the
  // final knockout plan, BEFORE trusting any row in season_archives.
- const rewardGuards=await assertRewardCalendarCompletion(db,world,56);
+ const rewardGuards=await preparePayrollCalendarGuards(db,world,56,true);
  const proof=await verifyLineupSeasonArchiveV1(db,world);
  const archive=await db.prepare('SELECT generation,archive_hash,calendar_hash,results_hash,knockout_hash,results_count,days_count,ties_count FROM season_archives WHERE season_number=?').bind(world.seasonNumber).first<Archive>();
  const summary=await db.prepare('SELECT generation,archive_hash,summary_hash,summary_json FROM season_archive_summaries WHERE season_number=?').bind(world.seasonNumber).first<Summary>();

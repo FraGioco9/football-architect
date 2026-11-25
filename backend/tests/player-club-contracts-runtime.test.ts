@@ -5,11 +5,12 @@ import {clearTestWorld} from './fixtures/test-world.ts';
 import {seedUnifiedAdminHttp} from './fixtures/unified-admin-http.ts';
 import {handleAdmin} from '../src/http-admin.ts';
 import {readWorld} from '../src/world-repository.ts';
-import {parseContractListQuery,signInitialAiContract,prepareOpeningAffordability} from '../src/player-club-contracts.ts';
+import {parseContractListQuery,signInitialAiContract} from '../src/player-club-contracts.ts';
+import {preparePayrollAffordability} from '../src/payroll-affordability.ts';
 import {ATTRIBUTES} from '../src/players-generator-core.mjs';
 import clubs from '../../data/clubs.json' with {type:'json'};
 import {rewardCalendarBudget} from '../src/reward-settlement-plan.mjs';
-import {economicAssert,reconcileEconomy} from '../src/economic-ledger.ts';
+import {economicAssert,reconcileEconomy,reserveEconomicFunds,releaseEconomicFunds} from '../src/economic-ledger.ts';
 import {prepareEconomicGenesis,stepEconomicGenesis,completeEconomicGenesis,readGenesisClubFunding,type OpeningContractForecast} from '../src/economic-genesis.ts';
 import {abortUnless} from '../src/command-guards.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
@@ -111,9 +112,10 @@ it('signs an initial AI term atomically with certified synthetic forecast and ac
  const version='synthetic-signing-test';
  const snapshot=await loadApprovedSnapshot();
  const expectedRewardsByClub=Object.fromEntries(snapshot.bindings.filter(b=>!b.competitionId.startsWith('int-')).flatMap(b=>b.clubIds.map(k=>[k,10000])));
- const annual=rewardCalendarBudget().annual,freeReserveArc=1000,gross=320*2000+annual+freeReserveArc;
+ const poorClub=snapshot.bindings.find(b=>b.competitionId.endsWith('-1')&&!b.competitionId.startsWith('int-'))!.clubIds[1];
+ const annual=rewardCalendarBudget().annual,freeReserveArc=1000,gross=319*2000+1+annual+freeReserveArc;
  const openingContracts:OpeningContractForecast={schema:'opening-contract-forecast-v1',worldGeneration:generation,participantsHash:snapshot.participantsHash,rulesHash:snapshot.rulesHash,formulaVersion:'remaining-agent-salary-draft-v5-769',expectedRewardsByClub};
- const preparation={version,clubs:clubs.map(c=>({clubKey:c.countryId+'-'+c.clubId,amountArc:2000})),freeReserveArc,issuanceLimitArc:gross,openingContracts};
+ const preparation={version,clubs:clubs.map(c=>({clubKey:c.countryId+'-'+c.clubId,amountArc:c.countryId+'-'+c.clubId===poorClub?1:2000})),freeReserveArc,issuanceLimitArc:gross,openingContracts};
  expect(await prepareEconomicGenesis(db,preparation,'fixture',access,now)).toMatchObject({status:'prepared',funded_clubs:0});
  expect(await stepEconomicGenesis(db,access,now)).toMatchObject({funded_clubs:15});
  const partial=await call('POST','/preview',request);
@@ -135,12 +137,26 @@ it('signs an initial AI term atomically with certified synthetic forecast and ac
  await expect(signInitialAiContract(db,session,request,key,Math.floor(Date.now()/1000),async()=>({...await authority(),guards:[abortUnless(db,'SELECT 1 WHERE 0',[])]}))).rejects.toMatchObject({code:'contract_signing_preconditions_changed'});
  expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(0);
  const initialWage=salaryBounds(1,rawDestinationSalaryReferenceArc(payload,10000)!).aiDemand;
- const proof=await prepareOpeningAffordability(db,await readWorld(db),club,initialWage);
+ const proof=await preparePayrollAffordability(db,await readWorld(db),club,initialWage);
  expect(proof.inputs).toEqual({uncommittedCash:2000,uncreditedGuaranteedParticipation:0,committedUncoveredWages:0,arrears:0,newDue:Math.floor(initialWage/2)});
  expect(proof.financeVersion).toBe(version);await db.batch([...proof.guards]);
+ const poorRequest={...request,clubKey:poorClub};
+ expect((await call('POST','/preview',poorRequest)).data).toMatchObject({signable:false,blockers:['contract_insufficient_cash_proof']});
+ expect((await call('POST','/sign',{...poorRequest,quoteHash:'0'.repeat(64)},undefined,'poor-club-sign-test')).data.error.code).toBe('contract_insufficient_cash_proof');
  const preview=await call('POST','/preview',request);
  expect(preview.status).toBe(200);expect(preview.data).toMatchObject({signable:true,annualSalaryArc:salaryBounds(1,rawDestinationSalaryReferenceArc(payload,10000)!).aiDemand});
  const signedRequest={...request,quoteHash:preview.data.quoteHash};
+ // Existing ledger hold, synthetic only: a valid quote must not authorize
+ // signing once unidentified reserved funds appear, even with ample cash.
+ const holdId='fixture-unidentified-commitment';
+ await reserveEconomicFunds(db,{id:holdId,accountId:'club:'+club,purpose:'COMMITMENT',sourceId:holdId,configVersion:version,amountArc:1,actorId:'fixture'},{access},now);
+ expect((await call('POST','/preview',request)).data).toMatchObject({signable:false,blockers:['payroll_commitment_hold_unavailable']});
+ expect((await call('POST','/sign',signedRequest,undefined,key)).data.error.code).toBe('payroll_commitment_hold_unavailable');
+ await expect(db.batch([...proof.guards])).rejects.toThrow();
+ expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(0);
+ await releaseEconomicFunds(db,'fixture-release-commitment',holdId,1,'fixture',{access},now);
+ expect((await call('POST','/preview',request)).data.quoteHash).toBe(preview.data.quoteHash);
+ const holdsBefore=(await db.prepare('SELECT * FROM economic_holds ORDER BY id').all()).results;
  expect((await call('POST','/sign',{...signedRequest,quoteHash:'0'.repeat(64)},undefined,key)).data.error.code).toBe('contract_quote_changed');
  expect((await call('POST','/sign',signedRequest,'bad',key)).status).toBe(403);
  expect((await call('POST','/sign',{...signedRequest,annualSalaryArc:1},undefined,key)).status).toBe(422);
@@ -158,8 +174,13 @@ it('signs an initial AI term atomically with certified synthetic forecast and ac
  expect((await db.prepare('SELECT COUNT(*) n FROM player_signed_contracts').first<{n:number}>())?.n).toBe(1);
  expect(await reconcileEconomy(db,access)).toMatchObject({ok:true,stockArc:String(gross),netIssuedArc:String(gross)});
  expect((await call('GET','?playerId=2')).data.players[0].clubKey).toBe(club);
- const afterProof=await prepareOpeningAffordability(db,await readWorld(db),club,initialWage);
+ const afterProof=await preparePayrollAffordability(db,await readWorld(db),club,initialWage);
  expect(afterProof.inputs.committedUncoveredWages).toBe(Math.floor(initialWage/2));
+ // 4,000 ARC annual could fit the first payday alone, but not after the
+ // existing signed obligation. Canonical payroll must count it exactly once.
+ await expect(preparePayrollAffordability(db,await readWorld(db),club,4000)).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
+ expect((await db.prepare('SELECT * FROM economic_holds ORDER BY id').all()).results).toEqual(holdsBefore);
+ expect((await db.prepare('SELECT COUNT(*) n FROM payroll_runs').first<{n:number}>())?.n).toBe(0);
  await expect(db.batch([...proof.guards])).rejects.toThrow();
  expect((await call('POST','/sign',{...signedRequest,durationSeasons:1},undefined,key)).data.error.code).toBe('idempotency_conflict');
  expect((await call('POST','/sign',signedRequest,undefined,'another-signing-key-001')).data.error.code).toBe('stale_world');
