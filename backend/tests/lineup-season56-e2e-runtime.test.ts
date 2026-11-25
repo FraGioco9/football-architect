@@ -181,11 +181,13 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
 
  let lastBatchError='';
  const boundStatements=new WeakMap<object,{sql:string;args:unknown[]}>();
- const guardStart='INSERT INTO world_state(id,generation) SELECT 2,? WHERE NOT EXISTS(';
+ const rawStatements=new WeakMap<object,ReturnType<typeof db.prepare>>();
+ const worldGuardStart='INSERT INTO world_state(id,generation) SELECT 2,? WHERE NOT EXISTS(';
+ const economicGuardStart='INSERT INTO economic_assertions(must_be_true) SELECT 0 WHERE NOT EXISTS(';
  const tracedDb={
   prepare:(sql:string)=>{
    const stmt=db.prepare(sql);
-   return {
+   const wrapper={
     bind:(...args:unknown[])=>{
      const bound=stmt.bind(...args);
      boundStatements.set(bound,{sql,args});
@@ -195,16 +197,24 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
     all:(...args:any[])=>stmt.all(...args),
     run:(...args:any[])=>stmt.run(...args)
    };
+   // Both bound and parameterless statements must be native D1 objects at
+   // the batch boundary. Keep diagnostic metadata without serializing wrappers.
+   rawStatements.set(wrapper,stmt);
+   boundStatements.set(wrapper,{sql,args:[]});
+   return wrapper;
   },
   batch:async(statements:any[])=>{
-   try{return await db.batch(statements)}
+   try{return await db.batch(statements.map(stmt=>rawStatements.get(stmt)??stmt))}
    catch(error){
     const failedGuards:{index:number;query:string;params:string[]}[]=[];
     for(let i=0;i<statements.length;i++){
      const item=boundStatements.get(statements[i]);
-     if(!item||!item.sql.startsWith(guardStart))continue;
-     const query=item.sql.slice(guardStart.length,-1);
-     const args=item.args.slice(1);
+     if(!item)continue;
+     const worldGuard=item.sql.startsWith(worldGuardStart);
+     const economicGuard=item.sql.startsWith(economicGuardStart);
+     if(!worldGuard&&!economicGuard)continue;
+     const query=item.sql.slice((worldGuard?worldGuardStart:economicGuardStart).length,-1);
+     const args=worldGuard?item.args.slice(1):item.args;
      try{
       const found=await db.prepare(query).bind(...args).first();
       if(!found)failedGuards.push({index:i,query:query.slice(0,450),
@@ -217,6 +227,10 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    }
   }
  } as any;
+ // Regression for the tracing adapter itself: parameterless and bound native
+ // statements share one actual D1 batch, preserving query results and order.
+ const traceProbe=await tracedDb.batch([tracedDb.prepare('SELECT 1 AS n'),tracedDb.prepare('SELECT ? AS n').bind(2)]);
+ expect(traceProbe.map((row:any)=>row.results)).toEqual([[{n:1}],[{n:2}]]);
  for(let day=4;day<=56;day++){
   let result:{world:World};
   try{
