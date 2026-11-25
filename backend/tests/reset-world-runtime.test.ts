@@ -220,7 +220,10 @@ it('preserves 150 players, license custody and empty treasury accounts through t
  expect(await verifyRetainedOpeningEvidence(db,evidence,result.operationId)).toMatchObject({preservedPlayers:150,metadataRebased:false});
  expect(await rebaseLocalRetainedPlayers(db,session,evidence,result.operationId,now)).toMatchObject({preservedPlayers:150,metadataRebased:true,alreadyRebased:false});
  expect(await rebaseLocalRetainedPlayers(db,session,evidence,result.operationId,now)).toMatchObject({alreadyRebased:true});
- expect(await readLocalOpeningInventory(db,{evidence,resetOperationId:result.operationId})).toMatchObject({complete:true,worldGeneration:result.world.generation});
+ const inventory=await readLocalOpeningInventory(db,{evidence,resetOperationId:result.operationId});
+ expect(inventory).toMatchObject({complete:true,worldGeneration:result.world.generation});
+ expect(inventory.players).toHaveLength(150);
+ expect(inventory.players.every(p=>p.readyForReuse)).toBe(true);
  expect(await dump('generated_players','id')).toEqual(before.map(p=>({...p,world_generation:result.world.generation,entry_season:0})));
  expect(await dump('player_portrait_profiles','player_id')).toEqual(portraits);
  expect(await dump('player_market_values','player_id')).toEqual(values);
