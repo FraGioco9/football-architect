@@ -65,7 +65,17 @@ import {openLocalOpeningRehearsal,buildLocalOpeningManifest} from '../tools/open
 import {previewPlayerGeneration,commitPlayerGeneration} from '../src/players-generation-command.ts';
 import {readOpeningObservation} from '../src/opening-world-store.ts';
 import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
-import {fundOpeningFixture} from './fixtures/opening-funding.ts';
+import {fundOpeningFixture,prepareOpeningFundingFixture} from './fixtures/opening-funding.ts';
+import {seedUnifiedOperator} from './fixtures/unified-operator.ts';
+import {changeClubLicense} from '../src/club-licenses.ts';
+import {stepEconomicGenesis,completeEconomicGenesis,readEconomicGenesis} from '../src/economic-genesis.ts';
+import {economicAssert,reconcileEconomy} from '../src/economic-ledger.ts';
+import {signStagedOpeningContract} from '../src/player-club-contracts.ts';
+import {preparePayrollAffordability} from '../src/payroll-affordability.ts';
+import {readPublicPlayers} from '../src/public-players-read.ts';
+import {readPublicClubRoster} from '../src/public-club-roster-read.ts';
+import {loadApprovedSnapshot,serverCanonicalCatalogue} from '../src/approved-season-one.ts';
+import type {Database} from '../src/database.ts';
 
 test('opening world local plan and receipts survive close/reopen without rematching existing youth', {timeout:180000},async()=>{
  const state=await mkdtemp(join(tmpdir(),'fa-opening-persist-')),now=Math.floor(Date.now()/1000);
@@ -126,4 +136,150 @@ test('opening world local plan and receipts survive close/reopen without rematch
   run=await openLocalOpeningRehearsal(state);
   await assert.rejects(run.inspect(),/opening plan or canonical source changed|unallocated existing player/);
  }finally{try{if(run)await run.close();if(setup)await setup.close()}finally{await rm(state,{recursive:true,force:true})}}
+});
+
+/** Complete end-to-end rehearsal on disposable persisted local D1. No copied
+ * DEV identities or images, no direct player/contract inserts in the opening,
+ * no remote binding, no synthetic shortcut for the 6,400 actual signatures. */
+test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 terms, restart and publication',{timeout:45*60*1000},async()=>{
+ const state=await mkdtemp(join(tmpdir(),'fa-opening-full-')),now=Math.floor(Date.now()/1000);
+ let handle:Awaited<ReturnType<typeof openLocalDatabase>>|undefined,runner:Awaited<ReturnType<typeof openLocalOpeningRehearsal>>|undefined;
+ const n=async(db:Database,sql:string)=>(await db.prepare(sql).first<{n:number}>())!.n;
+ const open=()=>openLocalDatabase(state,{requireExisting:true,migrate:false});
+ try{
+  handle=await openLocalDatabase(state);
+  let db=handle.db;
+  const {session,playerId}=await seedUnifiedOperator(db,'opening-full-fixture','opening-full@example.invalid',now,'f'.repeat(64));
+  const legacy=await readWorld(db);
+  const historical=await prepareSeason(db,session,{expectedGeneration:legacy.generation,expectedRevision:legacy.revision},'opening-full-old-season',await syntheticApproval(snapshots),now);
+  // Actual old-world generation, exactly the previously observed national and
+  // age marginal totals. Roles are spread over the canonical roster capacities.
+  const groups=[['ITA',[13,20,12,5]],['GER',[13,20,11,6]],['ENG',[13,19,12,6]]] as const;
+  const positions=['GK','CB','CM','ST'] as const;
+  for(const [nationality,counts] of groups)for(let i=0;i<counts.length;i++){
+   const preview=await previewPlayerGeneration(db,session,{options:{count:counts[i],seed:'opening-existing-'+nationality+'-'+i,age:16+i,primaryNationality:nationality,primaryPosition:positions[i]}},now);
+   await commitPlayerGeneration(db,session,{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'},now);
+  }
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM generated_players'),150);
+  // Synthetic approved portrait metadata only, not a real asset. Retain exact
+  // approved/pending rows; no image upload or file copying.
+  await db.prepare("UPDATE player_portrait_profiles SET status='approved',asset_key='synthetic/retained/'||player_id||'.webp' WHERE player_id<=26").run();
+  assert.equal(await n(db,"SELECT COUNT(*) AS n FROM player_portrait_profiles WHERE status='approved'"),26);
+  await changeClubLicense(db,session,{clubKey:'IT-1',accountId:playerId,expectedAccountId:null,expectedVersion:0},now);
+  const old=await readOpeningObservation(db),evidence=await captureRetainedOpeningEvidence(db);
+  assert.equal(old.rows.length,150);
+  assert.equal(evidence.players.length,150);
+  assert.equal(evidence.history.counts?.seasons,1);
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM player_signed_contracts'),0);
+  await changeClubLicense(db,session,{clubKey:'IT-1',accountId:null,expectedAccountId:playerId,expectedVersion:1},now);
+  const reset=await resetWorld(db,session,{expectedGeneration:historical.world.generation,expectedRevision:historical.world.revision,confirmation:'RESET SEASON 0'},'opening-full-reset-fixture',now);
+  const retained={evidence,resetOperationId:reset.operationId};
+  await handle.close();handle=await open();db=handle.db;
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM seasons'),0);
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM match_lineup_result_receipts'),0);
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM season_archives'),0);
+  assert.equal((await rebaseLocalRetainedPlayers(db,session,evidence,reset.operationId,now)).metadataRebased,true);
+  assert.equal((await rebaseLocalRetainedPlayers(db,session,evidence,reset.operationId,now)).alreadyRebased,true);
+  const rebased=await readOpeningObservation(db);
+  assert.equal(rebased.idHighWater,old.idHighWater);
+  assert.deepEqual(rebased.rawRows,old.rawRows.map(row=>({...row,world_generation:reset.world.generation,entry_season:0})));
+  await handle.close();handle=undefined;
+  runner=await openLocalOpeningRehearsal(state);
+  const plan=await runner.prepare('opening-full-rehearsal',retained);
+  assert.deepEqual({slots:plan.slots,reused:plan.reused,newPlayers:plan.newPlayers,batches:plan.batches},{slots:6400,reused:150,newPlayers:6250,batches:256});
+  await assert.rejects(runner.start(session,now));
+  await runner.close();runner=undefined;
+
+  // Actual #802: restart during the first funding installment, then complete
+  // remaining idempotent ledger postings and canonical annual Rewards hold.
+  handle=await open();db=handle.db;
+  await prepareOpeningFundingFixture(db,now);
+  const access=()=>[economicAssert(db,'SELECT 1')];
+  const partial=await stepEconomicGenesis(db,access(),now);
+  assert.equal(partial?.funded_clubs,15);
+  await assert.rejects(completeEconomicGenesis(db,access(),now));
+  await handle.close();handle=await open();db=handle.db;
+  assert.equal((await readEconomicGenesis(db,access()))?.funded_clubs,15);
+  for(let i=0;i<20;i++)await stepEconomicGenesis(db,access(),now);
+  const funded=await completeEconomicGenesis(db,access(),now);
+  assert.equal(funded?.completed,1);assert.equal(funded?.funded_clubs,320);
+  assert.equal(await n(db,"SELECT COUNT(*) AS n FROM economic_balances WHERE kind='CLUB_TREASURY' AND balance_arc=100000"),320);
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM economic_transactions'),321);
+  assert.equal((await reconcileEconomy(db,access())).ok,true);
+  await assert.rejects(prepareSeason(db,session,{expectedGeneration:reset.world.generation,expectedRevision:0},'opening-full-premature-prepare',await syntheticApproval(snapshots),now));
+  await handle.close();handle=undefined;
+  runner=await openLocalOpeningRehearsal(state);
+  assert.equal((await runner.start(session,now)).completedSlots,0);
+  assert.equal((await runner.step(session,now)).completedSlots,25);
+  await runner.close();runner=await openLocalOpeningRehearsal(state);
+  assert.equal((await runner.start(session,now)).completedSlots,25);
+  for(let batch=1;batch<256;batch++){
+   const progress=await runner.step(session,now);
+   assert.equal(progress.committedBatches,batch+1);
+   if((batch+1)%32===0)console.log('opening full fixture: generation batches',batch+1,'/256');
+  }
+  const report=await runner.reconcile();
+  assert.equal(report.population,6400);assert.equal(report.reused,150);assert.equal(report.generated,6250);
+  assert.equal(report.clubCounts.filter(c=>c.active&&c.count===25).length,256);
+  assert.equal(report.clubCounts.filter(c=>!c.active&&c.count===0).length,64);
+  assert.equal(report.domestic,4160);assert.equal(report.otherPlayable,1120);assert.equal(report.otherCountries,1120);
+  await assert.rejects(runner.publish(session,now),/opening contracts incomplete/);
+  const handoff=await runner.contractHandoff();
+  assert.equal(handoff.intents.length,6400);
+  await runner.close();runner=undefined;
+
+  // Simulate power loss halfway through the first club: call the exact shared
+  // #801 primitive for a single certified slot and reopen the local database.
+  handle=await open();db=handle.db;
+  await assert.rejects(readPublicPlayers(db,1),{code:'opening_world_unavailable'});
+  await assert.rejects(readPublicClubRoster(db,handoff.intents[0].clubKey),{code:'opening_world_unavailable'});
+  const first=handoff.intents[0],input={expectedGeneration:reset.world.generation,expectedRevision:0,clubKey:first.clubKey,playerId:first.playerId,durationSeasons:first.durationSeasons};
+  const signed=await signStagedOpeningContract(db,session,input,first.idempotencyKey,now,handoff.runKey);
+  assert.equal(signed.world.revision,1);
+  await handle.close();handle=await open();db=handle.db;
+  assert.deepEqual(await signStagedOpeningContract(db,session,input,first.idempotencyKey,now,handoff.runKey),signed);
+  const funding=await preparePayrollAffordability(db,signed.world,first.clubKey,0);
+  assert.ok(funding.inputs.committedUncoveredWages>0);
+  assert.equal(funding.inputs.uncreditedGuaranteedParticipation,0);
+  await assert.rejects(preparePayrollAffordability(db,signed.world,first.clubKey,1000000),{code:'contract_insufficient_cash_proof'});
+  await handle.close();handle=undefined;
+  runner=await openLocalOpeningRehearsal(state);
+  for(let club=0;club<256;club++){
+   const progress=await runner.signNextClub(session,now);
+   assert.equal(progress.signed,(club+1)*25);
+   if((club+1)%32===0)console.log('opening full fixture: signed clubs',club+1,'/256');
+   if(club===127){await runner.close();runner=await openLocalOpeningRehearsal(state)}
+  }
+  const ready=await runner.signNextClub(session,now);
+  assert.equal(ready.signed,6400);assert.equal(ready.remaining,0);assert.equal(ready.readyForContractReconciliation,true);
+  const published=await runner.publish(session,now);
+  assert.equal(published.population,6400);assert.equal(published.contracts,6400);assert.equal(published.world.revision,6401);
+  await runner.close();runner=await openLocalOpeningRehearsal(state);
+  assert.deepEqual(await runner.publish(session,now),published);
+  assert.equal((await runner.inspect()).completedSlots,6400);
+  await runner.close();runner=undefined;
+
+  handle=await open();db=handle.db;
+  const after=await readOpeningObservation(db);
+  assert.equal(after.rows.length,6400);assert.equal(after.idHighWater,old.idHighWater+6250);
+  assert.deepEqual(after.rawRows.slice(0,150),rebased.rawRows);
+  assert.equal(await n(db,"SELECT COUNT(*) AS n FROM player_portrait_profiles WHERE status='approved'"),26);
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM player_signed_contracts'),6400);
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM player_agent_mandates'),0);
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM opening_world_runs WHERE batch_index=256'),1);
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM opening_world_staging'),0);
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM economic_transactions'),321);
+  assert.equal(await n(db,'SELECT COUNT(*) AS n FROM payroll_runs'),0);
+  assert.equal((await reconcileEconomy(db,access())).ok,true);
+  assert.equal((await readPublicPlayers(db,1)).count,6400);
+  const catalogue=await loadApprovedSnapshot();
+  const active=new Set(catalogue.bindings.filter(b=>!b.competitionId.startsWith('int-')).flatMap(b=>[...b.clubIds]));
+  for(const club of serverCanonicalCatalogue().clubIds)assert.equal((await readPublicClubRoster(db,club)).count,active.has(club)?25:0);
+  assert.equal((await db.prepare('PRAGMA foreign_key_check').all()).results.length,0);
+  const started=await prepareSeason(db,session,{expectedGeneration:published.world.generation,expectedRevision:published.world.revision},'opening-full-prepare-after-publication',catalogue,now);
+  assert.equal(started.world.seasonNumber,1);assert.equal(started.world.phase,'preparing');
+  console.log('opening full fixture: PASS 150 retained / 6250 new / 320 funded / 6400 signed / 256 full rosters / publication and restart');
+ }finally{
+  try{if(runner)await runner.close();if(handle)await handle.close()}finally{await rm(state,{recursive:true,force:true})}
+ }
 });

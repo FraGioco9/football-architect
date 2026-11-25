@@ -13,6 +13,7 @@ import type {WorldV1} from '../src/types.ts';
 import type {AdminSession} from '../src/auth.ts';
 import {sessionGuard,abortUnless} from '../src/command-guards.ts';
 import {requireEconomicGenesisGuard} from '../src/economic-genesis.ts';
+import {preparePayrollAffordability} from '../src/payroll-affordability.ts';
 import {economicReconciliationGuard} from '../src/economic-ledger.ts';
 import {signStagedOpeningContract,readOpeningSalaryAuthority} from '../src/player-club-contracts.ts';
 import {readLocalOpeningInventory,type RetainedOpeningInput} from '../src/opening-world-inventory.ts';
@@ -162,10 +163,20 @@ export async function openLocalOpeningRehearsal(persistTo:string){
    const status=inspectOpeningContractHandoff(handoff,current.signed);
    assert(status.readyForContractReconciliation,'opening contracts incomplete');
    const world=current.world,operationId=crypto.randomUUID();
+   // Recheck completed wage commitments against actual cash, not forecast
+   // Rewards. The financial journal and holds are append-only. Pin their
+   // cardinalities and active policy so no intervening posting/reservation can
+   // invalidate any per-club proof before the atomic publication.
+   const financeSql="SELECT active_version,posting_enabled,(SELECT COUNT(*) FROM economic_transactions) AS transactions,(SELECT COUNT(*) FROM economic_entries) AS entries,(SELECT COUNT(*) FROM economic_holds) AS holds,(SELECT COUNT(*) FROM economic_hold_releases) AS releases FROM economic_control WHERE id=1";
+   const finance=await db.prepare(financeSql).first<{active_version:string;posting_enabled:number;transactions:number;entries:number;holds:number;releases:number}>();
+   assert(finance?.posting_enabled===1,'opening finance unavailable');
+   for(const club of plan.root.contractClubs)await preparePayrollAffordability(db,world,club,0);
+   const f=finance!;
+   const financeGuard=abortUnless(db,"SELECT 1 FROM ("+financeSql+") WHERE active_version=? AND posting_enabled=1 AND transactions=? AND entries=? AND holds=? AND releases=?",[f.active_version,f.transactions,f.entries,f.holds,f.releases]);
    const receipt={schema:'opening-publication-v1',runKey:handoff.runKey,allocationHash:handoff.allocationHash,receiptHash:handoff.receiptHash,signedDigest:status.signedDigest,population:6400,contracts:6400,operationId,world:{...world,revision:world.revision+1}};
    const hash=manifestDigest(receipt),seq=current.observation.idHighWater;
    try{
-    await db.batch([sessionGuard(db,session,now),requireEconomicGenesisGuard(db,world.generation),economicReconciliationGuard(db),
+    await db.batch([sessionGuard(db,session,now),requireEconomicGenesisGuard(db,world.generation),economicReconciliationGuard(db),financeGuard,
      abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND phase='unstarted' AND season_number=0 AND day=0",[world.generation,world.revision]),
      db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(operationId,world.generation,'opening-publish:'+handoff.runKey,hash,session.actor.id,'publish-opening-world-v1',world.revision,receipt.world.revision,JSON.stringify({...receipt,openingRunKey:handoff.runKey}),now),
      db.prepare('INSERT INTO opening_world_runs(run_key,world_generation,batch_index,request_hash,before_high_water,after_high_water,payload_json,draft_id,created_at) VALUES(?,?,256,?,?,?,?,NULL,?)').bind(handoff.runKey,world.generation,hash,seq,seq,JSON.stringify(receipt),now),
