@@ -104,7 +104,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   await send('Page.navigate',{
    url:'http://app.localhost:2000/dev/match-engine'
   });
-  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===10");
+  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===11");
   // Actual canvas pixels: the ball stays centred at the same XY at
   // both 3m and 0m; only the cast shadow darkens an off-centre region.
   const marker=await evalJs("(()=>{"+
@@ -193,6 +193,33 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.equal(physicalBodies.popup,false);
   process.stdout.write('ME_628_NATIVE_BODIES_ALWAYS_ON_CHROME '+
    JSON.stringify(physicalBodies)+'\\n');
+  // Isolated Pass stays inline, shows exactly two original teammates and
+  // observes the grounded impulse and receiving contact separately.
+  for(const side of ['home','away']){
+   const sample=await evalJs("(()=>{"+
+    "document.getElementById('preset-trigger').click();"+
+    "document.querySelector('#preset-options [data-value=\\\"action:pass-pair\\\"]').click();"+
+    "document.getElementById('me-inline-side-trigger').click();"+
+    "document.querySelector('#me-inline-side-options [data-value=\\\""+side+"\\\"]').click();"+
+    "for(let n=0;n<120;n++)document.getElementById('step').click();"+
+    "const el=id=>document.getElementById(id);"+
+    "return {label:el('preset-value').textContent,side:el('me-inline-side').value,"+
+    "readout:el('me-inline-observation').textContent,count:el('me-decisions-count').textContent,"+
+    "rows:[...el('me-decisions-panel').querySelectorAll('.me-decision-row')].map(x=>x.textContent),"+
+    "popup:el('action-labs-dialog').open};})()");
+   assert.equal(sample.label,'Pass · Ground');
+   assert.equal(sample.side,side);
+   assert.equal(sample.count,'2 on field');
+   assert.equal(sample.rows.length,2);
+   assert.ok(sample.rows.every(x=>x.includes(side.toUpperCase()+' #')));
+   assert.match(sample.readout,/stationary target · distance-calibrated ground pass \(DEV\)/);
+   assert.match(sample.readout,/impulse [0-9.]+ Ns/);
+   assert.match(sample.readout,/launch [0-9.]+ km\/h/);
+   assert.match(sample.readout,/real receiving shoe START after [0-9.]+ s/);
+   assert.match(sample.readout,/after contact [0-9.]+ km\/h/);
+   assert.equal(sample.popup,false);
+   process.stdout.write('ME_628_GROUND_PASS_CHROME '+JSON.stringify(sample)+'\\n');
+  }
   // Every visible Carry option has its own fixed phase, including both
   // mirrored sides and Reset. Real Rapier ball impulses are counted, not
   // imaginary native shoe starts or automatically awarded possession.
@@ -727,8 +754,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "unique:document.querySelectorAll('[data-me-dropdown=preset]').length===1,"+
    "noSecondSelector:document.getElementById('lab-all-situations')===null,"+
    "current:trigger.textContent.trim()};})()");
-  assert.equal(nav.items,10);
-  assert.deepEqual(nav.groups,['Carry phases','Small-sided situations','Ball physics']);
+  assert.equal(nav.items,11);
+  assert.deepEqual(nav.groups,['Carry phases','Passing','Small-sided situations','Ball physics']);
   for(const key of ['hiddenLaunches','hiddenChoices','unique','noSecondSelector'])
    assert.equal(nav[key],true,key);
   const ballNav=await evalJs("(()=>{const t=document.getElementById('preset-trigger');"+
