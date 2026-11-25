@@ -134,7 +134,8 @@ WHEN EXISTS(SELECT 1 FROM opening_world_staging)
 BEGIN SELECT RAISE(ABORT,'opening world staging lock'); END;
 -- Publication requires a complete exact population and signed slot relation.
 -- The local publication command additionally executes #802's readiness and
--- reconciliation statements atomically; the view is supplied by 0045.
+-- reconciliation statements atomically. SQL here references only 0039 tables,
+-- so clean application of 0042 before 0043–0045 does not create a broken trigger.
 CREATE TRIGGER opening_world_publish_guard BEFORE INSERT ON opening_world_runs
 WHEN NEW.batch_index=256
 BEGIN
@@ -152,7 +153,7 @@ BEGIN
      SELECT 1 FROM player_signed_contracts c WHERE c.player_id=s.player_id AND c.world_generation=s.world_generation AND c.club_key=s.club_key
        AND c.duration_seasons=s.duration_seasons AND c.start_tick=0 AND c.closed_tick IS NULL AND c.signed_mandate_id IS NULL))
    AND NOT EXISTS(SELECT 1 FROM club_license_state l JOIN json_each(root.payload_json,'$.contractClubs') c ON c.value=l.club_key WHERE l.account_id IS NOT NULL)
-   AND EXISTS(SELECT 1 FROM economic_genesis_status g WHERE g.generation=w.generation AND g.completed=1 AND g.funded_clubs=320 AND g.posting_enabled=1))
+   AND EXISTS(SELECT 1 FROM economic_control c JOIN economic_policy_versions p ON p.version=c.active_version WHERE c.id=1 AND c.posting_enabled=1 AND json_extract(p.rules_json,'$.genesisGeneration')=w.generation))
  THEN RAISE(ABORT,'opening publication incomplete') END;
 END;
 
