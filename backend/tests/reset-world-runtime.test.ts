@@ -186,7 +186,7 @@ it('preserves 150 players, license custody and empty treasury accounts through t
   await commitPlayerGeneration(db,session,{draftId:batch.draftId,confirmation:'GENERATE PLAYERS'},now);
  }
  await provisionClubAccounts(db,now,[economicAssert(db,'SELECT 1')]);
- const dump=async(table:string,order:string)=>(await db.prepare('SELECT * FROM '+table+' ORDER BY '+order).all()).results;
+ const dump=async(table:string,order:string):Promise<Record<string,unknown>[]> =>(await db.prepare('SELECT * FROM '+table+' ORDER BY '+order).all()).results;
  const before=await dump('generated_players','id'),portraits=await dump('player_portrait_profiles','player_id'),values=await dump('player_market_values','player_id');
  const accounts=await dump('economic_accounts','id'),drafts=await dump('player_generation_drafts','id');
  expect(before).toHaveLength(150);expect(portraits).toHaveLength(150);expect(values).toHaveLength(150);
