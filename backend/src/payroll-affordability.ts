@@ -6,6 +6,7 @@ import {ApiError} from './errors.ts';
 import {economicAssert,clubTreasuryId,economicReconciliationGuard} from './economic-ledger.ts';
 import {earnedBetween,canAffordNextPayday,type Affordability} from './player-contract-policy.ts';
 import {annualRewardHoldId} from './reward-calendar-gate.ts';
+import {requireEconomicGenesisGuard} from './economic-genesis.ts';
 import {rewardCalendarBudget} from './reward-settlement-plan.mjs';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
@@ -21,7 +22,7 @@ const snapshot=(value:unknown):Contract[]=>{
 
 /** Trusted signing adapter supplies server-validated annual wage and the current world.
  * Returned predicates MUST run atomically with signing; not a request-supplied proof.
- * Opening relies on the caller's separate Genesis/source authorization. */
+ * Genesis readiness uses the canonical #802 guard; the caller still owns signing authority. */
 export async function preparePayrollAffordability(db:Database,world:WorldV1,club:string,wage:number):Promise<PayrollAffordabilityProof>{
  const opening=world.phase==='unstarted'&&world.seasonNumber===0&&world.day===0;
  if(!opening&&(world.phase!=='active'||world.seasonNumber<1||world.day<1||world.day===28||world.day>=56))return fail();
@@ -48,7 +49,7 @@ export async function preparePayrollAffordability(db:Database,world:WorldV1,club
  WHERE e.account_id=? AND e.amount_arc<0 AND t.purpose IN ('PAYROLL_HUMAN','PAYROLL_AI') AND NOT EXISTS(SELECT 1 FROM payroll_payment_receipts p WHERE p.transaction_id=t.id))`;
  const ha=[generation,season*56+day,club,generation,club,generation,club,treasury];
  const openingSql="SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM player_signed_contracts WHERE club_key=? AND (world_generation<>? OR start_tick<>0 OR closed_tick IS NOT NULL))";
- const baseGuards=[economicAssert(db,worldSql,worldArgs),economicAssert(db,historySql,ha),economicReconciliationGuard(db),
+ const baseGuards=[requireEconomicGenesisGuard(db,generation),economicAssert(db,worldSql,worldArgs),economicAssert(db,historySql,ha),economicReconciliationGuard(db),
   ...(opening?[economicAssert(db,openingSql,[club,generation])]:[])];
  // Do not mutate the world revision during either settlement day.
  const read=await db.batch([...baseGuards,db.prepare(contractsSql).bind(...ca),db.prepare(balanceSql).bind(treasury),

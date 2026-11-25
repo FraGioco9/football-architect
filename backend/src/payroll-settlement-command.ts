@@ -8,6 +8,7 @@ import {ApiError} from './errors.ts';
 import {readWorld} from './world-repository.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {annualRewardHoldId,prepareRewardPayrollGuards} from './reward-calendar-gate.ts';
+import {requireEconomicGenesisGuard} from './economic-genesis.ts';
 import {clubTreasuryId,userWalletId,economicAssert,financeSessionGuard,economicReconciliationGuard,
  postFreshEconomicBatch,ECONOMIC_FRESH_BATCH_LIMIT,type LedgerIntent} from './economic-ledger.ts';
 import {planContractClaims,allocateClubPayroll,type PayrollClaim,type PayrollContract,type PayrollMandate} from './payroll-plan.mjs';
@@ -32,7 +33,7 @@ export async function settleClubPayrollBatch(db:Database,session:AdminSession,cl
  if(world.phase!=='active'||(world.day!==28&&world.day!==56)||world.seasonNumber<1)return fail('payroll_payday_required');
  const {generation,seasonNumber:season,day}=world;
  const access=()=>['read','post'].map(cap=>financeSessionGuard(db,operator.playerId,operator.sessionDigest,operator.csrfDigest,cap as 'read'|'post',now));
- const rewardGuards=await prepareRewardPayrollGuards(db,world,day,true);
+ const rewardGuards=[requireEconomicGenesisGuard(db,generation),...await prepareRewardPayrollGuards(db,world,day,true)];
  const runId=['payroll',generation,season,day,clubKey].join(':');
  const lo=(season-1)*56+day-28,hi=lo+28;
  const contractsSql=`SELECT COALESCE(json_group_array(json_array(id,player_id,world_generation,club_key,start_tick,end_tick,annual_salary_arc)),'[]') AS snapshot
@@ -110,7 +111,7 @@ export async function settleClubPayrollBatch(db:Database,session:AdminSession,cl
    db.prepare("INSERT INTO payroll_run_milestones VALUES(?,'sealed',?)").bind(runId,planHash)]);
   run={id:runId,generation,season,day,club_key:clubKey,world_revision:world.revision,policy_version:policy,source_hash:sourceHash};
  }
- if(run.generation!==generation||run.season!==season||run.day!==day||run.club_key!==clubKey||run.world_revision!==expectedRevision||run.policy_version!==policy||run.source_hash!==sourceHash)return fail('payroll_run_stale');
+ if(run.generation!==generation||run.season!==season||run.day!==day||run.club_key!==clubKey||run.world_revision!==world.revision||run.policy_version!==policy||run.source_hash!==sourceHash)return fail('payroll_run_stale');
  const inspect=async()=>{
   const result=await db.batch([...guards(),...sourceGuards(),
    db.prepare(allocationSql).bind(runId),
@@ -180,6 +181,7 @@ export async function settleNextPayrollBatch(db:Database,session:AdminSession,no
  const operator=session.unified,world=await readWorld(db);
  if(world.phase!=='active'||(world.day!==28&&world.day!==56)||world.seasonNumber<1)return fail('payroll_payday_required');
  const read=await db.batch([
+  requireEconomicGenesisGuard(db,world.generation),
   ...['read','post'].map(cap=>financeSessionGuard(db,operator.playerId,operator.sessionDigest,operator.csrfDigest,cap as 'read'|'post',now)),
   db.prepare("SELECT r.club_key FROM payroll_runs r JOIN payroll_run_milestones m ON m.run_id=r.id AND m.kind='completed' WHERE r.generation=? AND r.season=? AND r.day=? AND r.world_revision=?").bind(world.generation,world.seasonNumber,world.day,world.revision)
  ]);
@@ -213,7 +215,7 @@ async function reconcilePayrollEvidence(db:Database,world:WorldV1,access:Stateme
  const {generation,seasonNumber:season,day}=world;
  if(new Set(canonicalClubs).size!==320||canonicalClubs.length!==320)return fail('payroll_club_catalogue_invalid');
  const scope=[generation,season,day],lo=(season-1)*56+day-28,hi=lo+28;
- const rewardGuards=await prepareRewardPayrollGuards(db,world,day,true);
+ const rewardGuards=[requireEconomicGenesisGuard(db,generation),...await prepareRewardPayrollGuards(db,world,day,true)];
  const contractsSql=`SELECT club_key,json_group_array(json_array(id,player_id,world_generation,club_key,start_tick,end_tick,annual_salary_arc)) AS snapshot
    FROM (SELECT id,player_id,world_generation,club_key,start_tick,COALESCE(closed_tick,scheduled_end_tick) AS end_tick,annual_salary_arc
    FROM player_signed_contracts WHERE world_generation=? AND start_tick<? AND COALESCE(closed_tick,scheduled_end_tick)>? ORDER BY club_key,id) GROUP BY club_key`;
@@ -253,7 +255,7 @@ async function reconcilePayrollEvidence(db:Database,world:WorldV1,access:Stateme
  let recordedDueArc=0,paidArc=0,arrearsArc=0,pendingArc=0;
  for(const run of runs){
   const id=String(run.id),club=String(run.club_key);
-  if(!canonicalClubs.includes(club)||seen.has(club)||run.world_revision!==world.revision||run.policy_version!==policy||typeof run.seal!=='string')return fail('payroll_run_stale');
+  if(!canonicalClubs.includes(club)||seen.has(club)||run.world_revision!==expectedRevision||run.policy_version!==policy||typeof run.seal!=='string')return fail('payroll_run_stale');
   seen.add(club);
   const sourceHash=await canonicalHash({contracts:contractsByClub.get(club)??[],mandates:mandatesByClub.get(club)??[]});
   if(sourceHash!==run.source_hash)return fail('payroll_source_mismatch');
