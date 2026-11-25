@@ -65,6 +65,7 @@ import {openLocalOpeningRehearsal,buildLocalOpeningManifest} from '../tools/open
 import {previewPlayerGeneration,commitPlayerGeneration} from '../src/players-generation-command.ts';
 import {readOpeningObservation} from '../src/opening-world-store.ts';
 import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
+import {fundOpeningFixture} from './fixtures/opening-funding.ts';
 
 test('opening world local plan and receipts survive close/reopen without rematching existing youth', {timeout:180000},async()=>{
  const state=await mkdtemp(join(tmpdir(),'fa-opening-persist-')),now=Math.floor(Date.now()/1000);
@@ -85,6 +86,7 @@ test('opening world local plan and receipts survive close/reopen without rematch
   await commitPlayerGeneration(db,session,{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'},now);
   const before=await readOpeningObservation(db);
   assert.equal(before.rows.length,1);
+  await fundOpeningFixture(db,now);
   await setup.close();setup=undefined;
   run=await openLocalOpeningRehearsal(state);
   const plan=await run.prepare(seed);assert.equal(plan.reused,1);assert.equal(plan.newPlayers,6399);assert.equal(plan.batches,256);

@@ -6,6 +6,10 @@ import {digestOpaqueToken} from '../src/session-tokens.ts';
 import {previewPlayerGeneration,commitPlayerGeneration} from '../src/players-generation-command.ts';
 import {openingDigest,readOpeningObservation,beginLocalOpeningRun,commitLocalOpeningBatch,readLocalOpeningJournal} from '../src/opening-world-store.ts';
 import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
+import {fundOpeningFixture} from './fixtures/opening-funding.ts';
+import {readPublicPlayers} from '../src/public-players-read.ts';
+import {readPublicClubRoster} from '../src/public-club-roster-read.ts';
+import {signStagedOpeningContract} from '../src/player-club-contracts.ts';
 import type {Database} from '../src/database.ts';
 import type {AdminSession} from '../src/auth.ts';
 const bindings=env as any,db=bindings.DB as Database;
@@ -33,7 +37,12 @@ it('local opening journal preserves existing player, atomically rolls back and r
  // Only one synthetic batch is committed in this fixture. Remaining commitments are deliberately unusable.
  const identity={schema:'opening-persistence-v2',worldGeneration:initial.world.generation,worldRevision:0,manifestHash:'a'.repeat(64),inventoryHash:'b'.repeat(64),assignmentHash:'c'.repeat(64),batchSize:25,slotCount:6400,initialHighWater:initial.idHighWater,batchIntentHashes:[intentHash,...Array(255).fill('0'.repeat(64))],contractClubs:['fixture',...Array.from({length:255},(_,i)=>'fixture-'+i)],contractTerms:Array(6400).fill(1)};
  const root={...identity,runKey:await openingDigest(identity),baseline:initial.rows};
+ await expect(beginLocalOpeningRun(db,session,root,now)).rejects.toThrow();
+ await fundOpeningFixture(db,now);
  await beginLocalOpeningRun(db,session,root,now);
+ await expect(readPublicPlayers(db,1)).rejects.toMatchObject({code:'opening_world_unavailable'});
+ await expect(readPublicClubRoster(db,'IT-1')).rejects.toMatchObject({code:'opening_world_unavailable'});
+ await expect(signStagedOpeningContract(db,session,{expectedGeneration:initial.world.generation,expectedRevision:0,clubKey:'IT-1',playerId:initial.rows[0].id,durationSeasons:1},'fixture-opening-signing',now,root.runKey)).rejects.toMatchObject({code:'contract_opening_staged'});
  await expect(beginLocalOpeningRun(db,session,root,now)).rejects.toThrow();
  await expect(readLocalOpeningInventory(db)).rejects.toThrow('opening inventory already frozen');
  const ordinary=await previewPlayerGeneration(db,session,{options:{count:1,seed:'locked-fixture'}},now);
@@ -76,4 +85,4 @@ it('local opening journal preserves existing player, atomically rolls back and r
  await expect(db.prepare('DELETE FROM opening_world_runs').run()).rejects.toThrow();
  const privateDraft=await db.prepare("SELECT candidates_json FROM player_generation_drafts WHERE seed='opening-0'").first<{candidates_json:string}>();
  expect(JSON.parse(privateDraft!.candidates_json).every((p:any)=>!Object.hasOwn(p,'retirement_age'))).toBe(true);
-},60000);
+},180000);

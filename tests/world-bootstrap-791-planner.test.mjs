@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,createCertifiedOpeningPersistenceRun,reconcileCompletedOpening,prepareOpeningContractHandoff,inspectOpeningContractHandoff} from '../tools/world-bootstrap-791/persistence.mjs';
 import {loadRuntimePlayerCatalog} from '../backend/src/players-catalog.mjs';
-import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,fitOpeningYouthSlots,clubCountryToNationality,approvedForeignWeights,sampleOpeningRetirementAge,prepareOpeningCandidateChunk} from '../tools/world-bootstrap-791/planner.mjs';
+import {stationaryAgeQuotas,planOpeningPopulation,readChunk,manifestDigest,approvedReferenceProfile,planApprovedReference,REFERENCE_PROFILE_VERSION,planYouthReuse,fitOpeningYouthSlots,reserveRetainedFirst,clubCountryToNationality,approvedForeignWeights,sampleOpeningRetirementAge,prepareOpeningCandidateChunk} from '../tools/world-bootstrap-791/planner.mjs';
 
 function requireThat(ok,msg){if(!ok)throw new Error(msg)}
 
@@ -247,3 +247,24 @@ function testPersistenceProtocol(){
  throws(()=>inspectOpeningProgress(run,manifest,inventory,[...receipts,receipts[0]],observation));
 }
 test('opening persistence resumes from verified receipts and detects partial or changed catalogue',testPersistenceProtocol);
+
+test('retained-first fills the exact DEV-sized cohort before assigning new slots',()=>{
+ const base=referenceFixture();
+ const nations=['BRA','GER','ENG','ESP','FRA','ITA','NED','POR'];
+ const clubs=Array.from({length:320},(_,i)=>({key:'club-'+String(i).padStart(3,'0'),nationality:nations[i%8],division:i<128?1:i<256?2:null,active:i<256}));
+ const manifest=planApprovedReference({...base,clubs});
+ const ages=[...Array(39).fill(16),...Array(59).fill(17),...Array(35).fill(18),...Array(17).fill(19)];
+ const roles=Object.keys(manifest.config.roster);
+ const players=ages.map((age,i)=>({id:i+1,age,primaryNationality:['ITA','GER','ENG'][i%3],primaryPosition:roles[i%roles.length],primarySuitability:61,clubKey:null,representation:'ai',careerStatus:'active',hasSignedContract:false,hasSportingHistory:false,hasApprovedPortrait:i<26,readyForReuse:true,fingerprint:'a'.repeat(64)}));
+ const inv={worldGeneration:manifest.versions.worldGeneration,worldRevision:0,snapshotId:'synthetic-150',complete:true,idHighWater:193,players};
+ const fitted=reserveRetainedFirst(manifest,inv),reuse=planYouthReuse(fitted,inv);
+ eq(reuse.reusedCount,150);eq(reuse.newCount,6250);eq(reuse.requiresReconciliation,false);
+ eq(fitted,reserveRetainedFirst(manifest,{...inv,players:players.slice().reverse()}));
+ const home=new Map(clubs.map(c=>[c.key,c.nationality])),playable=new Set(nations);
+ eq(fitted.slots.filter(s=>s.primaryNationality===home.get(s.clubKey)).length,4160);
+ eq(fitted.slots.filter(s=>s.primaryNationality!==home.get(s.clubKey)&&playable.has(s.primaryNationality)).length,1120);
+ eq(fitted.slots.filter(s=>!playable.has(s.primaryNationality)).length,1120);
+ for(const {age,count} of manifest.config.ageCounts)eq(fitted.slots.filter(s=>s.age===age).length,count);
+ for(const c of clubs)eq(fitted.slots.filter(s=>s.clubKey===c.key).length,c.active?25:0);
+ throws(()=>reserveRetainedFirst(manifest,{...inv,players:[{...players[0],readyForReuse:false},...players.slice(1)]}));
+});

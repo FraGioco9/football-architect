@@ -14,9 +14,9 @@ import type {AdminSession} from '../src/auth.ts';
 import {sessionGuard,abortUnless} from '../src/command-guards.ts';
 import {requireEconomicGenesisGuard} from '../src/economic-genesis.ts';
 import {economicReconciliationGuard} from '../src/economic-ledger.ts';
-import {signStagedOpeningContract} from '../src/player-club-contracts.ts';
+import {signStagedOpeningContract,readOpeningSalaryAuthority} from '../src/player-club-contracts.ts';
 import {readLocalOpeningInventory,type RetainedOpeningInput} from '../src/opening-world-inventory.ts';
-import {rebaseLocalRetainedPlayers} from '../src/opening-world-retained.ts';
+import {rebaseLocalRetainedPlayers,captureRetainedOpeningEvidence} from '../src/opening-world-retained.ts';
 import {beginLocalOpeningRun,commitLocalOpeningBatch,readLocalOpeningJournal,readOpeningObservation} from '../src/opening-world-store.ts';
 import {clubCountryToNationality,planApprovedReference,reserveRetainedFirst,manifestDigest,REFERENCE_PROFILE_VERSION,type OpeningClub} from '../../tools/world-bootstrap-791/planner.mjs';
 import {createCertifiedOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,reconcileCompletedOpening,prepareOpeningContractHandoff,inspectOpeningContractHandoff,type OpeningSignedRow,type OpeningInventory,type OpeningRoot} from '../../tools/world-bootstrap-791/persistence.mjs';
@@ -93,6 +93,7 @@ export async function openLocalOpeningRehearsal(persistTo:string){
  }
  return {
   close:handle.close,
+  async captureRetained(){return captureRetainedOpeningEvidence(db)},
   async rebaseRetained(session:AdminSession,retained:RetainedOpeningInput,now:number){
    return rebaseLocalRetainedPlayers(db,session,retained.evidence,retained.resetOperationId,now);
   },
@@ -117,6 +118,8 @@ export async function openLocalOpeningRehearsal(persistTo:string){
    assert(!await db.prepare('SELECT 1 FROM club_license_state WHERE account_id IS NOT NULL AND club_key IN (SELECT value FROM json_each(?)) LIMIT 1').bind(JSON.stringify(plan.root.contractClubs)).first(),'opening requires AI-managed active clubs');
    const fresh=await readLocalOpeningInventory(db,plan.retained);
    assert(same(fresh,plan.inventory),'opening inventory changed since prepare');
+   const forecast=await readOpeningSalaryAuthority(db,await readWorld(db),plan.root.contractClubs[0]);
+   await db.batch([sessionGuard(db,session,now),requireEconomicGenesisGuard(db,plan.root.worldGeneration),...forecast.guards]);
    await beginLocalOpeningRun(db,session,plan.root,now);
    return (await progress()).progress;
   },

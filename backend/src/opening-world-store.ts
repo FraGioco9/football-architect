@@ -7,6 +7,8 @@ import type {AdminSession} from './auth.ts';
 import {sessionGuard} from './command-guards.ts';
 import {abortUnless} from './atomic-guard.ts';
 import {readWorld} from './world-repository.ts';
+import {requireEconomicGenesisGuard} from './economic-genesis.ts';
+import {economicReconciliationGuard} from './economic-ledger.ts';
 import {playerRecord} from './players-generation-command.ts';
 import {generateOpeningCandidateWithCatalog} from './players-generator-core.mjs';
 import {loadRuntimePlayerCatalog} from './players-catalog.mjs';
@@ -64,7 +66,7 @@ export async function beginLocalOpeningRun(db:Database,session:AdminSession,root
  insist(identity.schema==='opening-persistence-v2'&&Array.isArray(identity.batchIntentHashes)&&identity.batchIntentHashes.length===256&&identity.batchIntentHashes.every(isHash)&&identity.contractClubs.length===256&&new Set(identity.contractClubs).size===256&&identity.contractTerms.length===6400&&identity.contractTerms.every(t=>Number.isInteger(t)&&t>=1&&t<=3)&&identity.worldRevision===0&&identity.batchSize===25&&identity.slotCount===6400&&[identity.manifestHash,identity.inventoryHash,identity.assignmentHash,runKey].every(isHash)&&await openingDigest(identity)===runKey,'invalid opening run identity');
  const observed=await readOpeningObservation(db);
  insist(observed.world.generation===root.worldGeneration&&observed.idHighWater===root.initialHighWater&&sameRows(observed.rows,baseline),'initial inventory mismatch');
- await db.batch([sessionGuard(db,session,now),worldGuard(db,root.worldGeneration),sequenceGuard(db,root.initialHighWater,baseline.length),receiptInsert(db,root,-1,runKey,root.initialHighWater,root.initialHighWater,root,null,now)]);
+ await db.batch([sessionGuard(db,session,now),worldGuard(db,root.worldGeneration),sequenceGuard(db,root.initialHighWater,baseline.length),requireEconomicGenesisGuard(db,root.worldGeneration),economicReconciliationGuard(db),receiptInsert(db,root,-1,runKey,root.initialHighWater,root.initialHighWater,root,null,now)]);
 }
 
 export async function readLocalOpeningJournal(db:Database,runKey:string){
@@ -135,7 +137,7 @@ export async function commitLocalOpeningBatch(db:Database,session:AdminSession,r
  const receipt={runKey,index,requestHash,beforeHighWater:before,afterHighWater:seq,entries};
  // Recheck reused rows inside the transaction, not merely their earlier hash.
  const reusedRows=observed.rawRows.filter(row=>seen.has(row.id));
- const statements:Statement[]=[sessionGuard(db,session,now),worldGuard(db,root.worldGeneration),sequenceGuard(db,before,observed.rows.length),
+ const statements:Statement[]=[sessionGuard(db,session,now),worldGuard(db,root.worldGeneration),requireEconomicGenesisGuard(db,root.worldGeneration),economicReconciliationGuard(db),sequenceGuard(db,before,observed.rows.length),
   abortUnless(db,'SELECT 1 WHERE (SELECT COUNT(*) FROM opening_world_runs WHERE run_key=? AND batch_index>=0)=?',[runKey,index])];
  if(reusedRows.length)statements.push(abortUnless(db,`SELECT 1 WHERE NOT EXISTS(
   SELECT 1 FROM json_each(?) j WHERE NOT EXISTS(

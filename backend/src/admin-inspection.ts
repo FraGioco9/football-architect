@@ -40,6 +40,7 @@ export async function previewAdminReset(db:Database,access:readonly Statement[],
  const blockers:string[]=['preview_only'];
  if(scopes.includes('sporting')){
   if(counts.economic_control||counts.economic_transactions)blockers.push('economic_generation_guard');
+  if(await db.prepare("SELECT 1 FROM sqlite_schema WHERE type='view' AND name='opening_world_staging'").first()&&await db.prepare('SELECT 1 FROM opening_world_staging LIMIT 1').first())blockers.push('opening_world_staged');
   if(present.length!==0&&present.length!==2)blockers.push('contract_schema_incomplete');
   if(counts.player_signed_contracts||counts.player_agent_mandates)blockers.push('contract_generation_guard');
   if(counts.season_archives||counts.season_archive_summaries)blockers.push('sporting_history_protected');
