@@ -1,0 +1,9 @@
+# #779 — First two-season rehearsal (Draft/HOLD)
+ 
+The lost local c4fd297 checkpoint was not present on GitHub; this reconstructs the narrow owner-approved scope on merged #796/#802/#803/#801/#797. No attributes, academy, recruitment, automatic renewal or real operations.
+
+- Existing protected Season 1 → 2 preparation is the sole transition. The migration's exact world CAS trigger ages active players once, preserves every other JSON field, closes expiring signed terms and retiring players' terms/mandates at tick 56, and preserves original history. Replays and rollback use the existing transaction.
+- Original signed wages remain immutable. An approved Season 2 D2→D1 promotion raises a surviving pre-transition term below 40 ARC to 40 only for Season 2 and its remaining term. The derived view uses the immutable season snapshots; payroll, affordability, inspection and both database payroll guards use the effective prospective rate. No retroactive changes to earned claims, recipients or arrears.
+- Retirement is based only on the assigned private age; no redraw. Market-value index invalidation uses the existing #763 trigger. Refresh the derived index with the canonical maintenance operation after rollover (before testing indexed player directory); no new value formula or automatic job.
+- Expiry or retirement removes the player from the next-match signed roster; the existing simulator fallback remains unchanged. On the actual isolated opening-world rehearsal, count active contracted players per Season 2 active club, clubs below eleven, and clubs without a natural goalkeeper. Do not replenish automatically.
+- Local clone was unavailable (DNS). SQLite fixture and D1 end-to-end assertions authored; exact-head CI and the full 6,400-player Season 2 roster/payroll rehearsal are outstanding. Do not apply remotely, merge, deploy or activate until separately authorized.

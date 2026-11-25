@@ -11,6 +11,7 @@ import {annualRewardHoldId,prepareRewardPayrollGuards} from './reward-calendar-g
 import {requireEconomicGenesisGuard} from './economic-genesis.ts';
 import {clubTreasuryId,userWalletId,economicAssert,financeSessionGuard,economicReconciliationGuard,
  postFreshEconomicBatch,ECONOMIC_FRESH_BATCH_LIMIT,type LedgerIntent} from './economic-ledger.ts';
+import {payrollAnnualSalarySql} from './player-contract-policy.ts';
 import {planContractClaims,allocateClubPayroll,type PayrollClaim,type PayrollContract,type PayrollMandate} from './payroll-plan.mjs';
 
 const actorId='payroll-settlement-v1';
@@ -37,7 +38,7 @@ export async function settleClubPayrollBatch(db:Database,session:AdminSession,cl
  const runId=['payroll',generation,season,day,clubKey].join(':');
  const lo=(season-1)*56+day-28,hi=lo+28;
  const contractsSql=`SELECT COALESCE(json_group_array(json_array(id,player_id,world_generation,club_key,start_tick,end_tick,annual_salary_arc)),'[]') AS snapshot
- FROM (SELECT id,player_id,world_generation,club_key,start_tick,COALESCE(closed_tick,scheduled_end_tick) AS end_tick,annual_salary_arc
+ FROM (SELECT id,player_id,world_generation,club_key,start_tick,COALESCE(closed_tick,scheduled_end_tick) AS end_tick,${payrollAnnualSalarySql(season)} AS annual_salary_arc
  FROM player_signed_contracts WHERE world_generation=? AND club_key=? AND start_tick<? AND COALESCE(closed_tick,scheduled_end_tick)>? ORDER BY id)`;
  const mandatesSql=`SELECT COALESCE(json_group_array(json_array(id,player_id,world_generation,account_id,start_tick,end_tick)),'[]') AS snapshot
  FROM (SELECT m.id,m.player_id,m.world_generation,m.account_id,m.start_tick,m.end_tick FROM player_agent_mandates m
@@ -217,7 +218,7 @@ async function reconcilePayrollEvidence(db:Database,world:WorldV1,access:Stateme
  const scope=[generation,season,day],lo=(season-1)*56+day-28,hi=lo+28;
  const rewardGuards=[requireEconomicGenesisGuard(db,generation),...await prepareRewardPayrollGuards(db,world,day,true)];
  const contractsSql=`SELECT club_key,json_group_array(json_array(id,player_id,world_generation,club_key,start_tick,end_tick,annual_salary_arc)) AS snapshot
-   FROM (SELECT id,player_id,world_generation,club_key,start_tick,COALESCE(closed_tick,scheduled_end_tick) AS end_tick,annual_salary_arc
+   FROM (SELECT id,player_id,world_generation,club_key,start_tick,COALESCE(closed_tick,scheduled_end_tick) AS end_tick,${payrollAnnualSalarySql(season)} AS annual_salary_arc
    FROM player_signed_contracts WHERE world_generation=? AND start_tick<? AND COALESCE(closed_tick,scheduled_end_tick)>? ORDER BY club_key,id) GROUP BY club_key`;
  const mandatesSql=`SELECT club_key,json_group_array(json_array(id,player_id,world_generation,account_id,start_tick,end_tick)) AS snapshot
    FROM (SELECT DISTINCT c.club_key,m.id,m.player_id,m.world_generation,m.account_id,m.start_tick,m.end_tick FROM player_agent_mandates m

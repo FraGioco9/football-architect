@@ -65,7 +65,9 @@ const listSql=`SELECT p.id,
  json_extract(p.payload_json,'$.primary_position') AS primary_position,
  json_extract(p.payload_json,'$.secondary_positions') AS secondary_positions,
  CASE WHEN json_extract(p.payload_json,'$.career_status')='active' AND NOT EXISTS(SELECT 1 FROM player_signed_contracts pending WHERE pending.player_id=p.id AND pending.closed_tick IS NULL) THEN 1 ELSE 0 END AS can_prepare,
- a.club_key,a.contract_id,c.annual_salary_arc,c.duration_seasons,c.start_tick,
+ a.club_key,a.contract_id,CASE WHEN (SELECT season_number FROM world_state WHERE id=1)>=2
+  THEN COALESCE((SELECT annual_salary_arc FROM player_contract_promotion_salary WHERE contract_id=c.id),c.annual_salary_arc)
+  ELSE c.annual_salary_arc END AS annual_salary_arc,c.duration_seasons,c.start_tick,
  MIN(c.scheduled_end_tick,COALESCE(c.closed_tick,c.scheduled_end_tick)) AS end_tick,c.signed_at_ms
  FROM generated_players p
  LEFT JOIN ${CURRENT_PLAYER_CONTRACTS_SQL} a ON a.player_id=p.id
