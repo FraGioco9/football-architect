@@ -468,7 +468,7 @@ test('ME-01 compact pitch caps desktop dimensions and uses canonical site chevro
 });
 
 
-test('#628 LAB presentation projects observed height without changing the ground footprint',()=>{
+test('#628 LAB height cue moves only the cast shadow, preserving approved marker sizes and authentic XY',()=>{
  const pos=Object.freeze({x:12,y:8,z:3.11});
  const ground=labBallMarkerGeometry(1050,680,pos,0);
  const low=labBallMarkerGeometry(1050,680,pos,0.05);
@@ -479,36 +479,36 @@ test('#628 LAB presentation projects observed height without changing the ground
  assert.equal(LAB_MARKER_RADII_PX.player,10);
  assert.equal(LAB_MARKER_RADII_PX.goalkeeper,11);
  assert.ok(LAB_MARKER_RADII_PX.ball<LAB_MARKER_RADII_PX.player/2);
- assert.equal(ground.y,ground.groundY);
+ for(const b of [low,raised,high,veryHigh]){
+  assert.equal(b.x,ground.x);assert.equal(b.y,ground.y);
+  assert.equal(b.radius,ground.radius);
+ }
+ assert.equal(ground.airborne,false);
  assert.equal(low.airborne,false);
- assert.equal(low.y,ground.y);
  assert.equal(raised.airborne,true);
- assert.equal(raised.x,ground.x);
- assert.equal(high.groundX,ground.groundX);
- assert.equal(high.groundY,ground.groundY);
- assert.ok(high.y<raised.y&&raised.y<ground.y);
- assert.equal(high.liftPx,24);
- assert.equal(veryHigh.liftPx,60);
+ assert.ok(high.shadowX>raised.shadowX&&high.shadowY>raised.shadowY);
+ assert.equal(high.shadowX,ground.x+12);
+ assert.equal(high.shadowY,ground.y+18);
+ assert.equal(veryHigh.shadowX,ground.x+30);
+ assert.equal(veryHigh.shadowY,ground.y+45);
  assert.equal(veryHigh.clearanceM,30);
- assert.ok(labBallMarkerGeometry(1050,680,{x:0,y:-34},30).y>=6.5);
+ assert.ok(high.shadowAlpha<raised.shadowAlpha);
  assert.throws(()=>labBallMarkerGeometry(1050,680,pos,-1),TypeError);
- const calls={arcs:[],shadows:[],labels:[],lines:[],save:0,restore:0};
+ const calls={arcs:[],shadows:[],save:0,restore:0};
+ // Intentionally no text or line APIs: drawing must use only the markers.
  const ctx={
   save(){calls.save++;},restore(){calls.restore++;},
   beginPath(){},arc(...args){calls.arcs.push(args);},
-  ellipse(...args){calls.shadows.push(args);},fill(){},stroke(){},
-  moveTo(...args){calls.lines.push(args);},lineTo(...args){calls.lines.push(args);},
-  measureText(){return {width:36};},strokeText(){},fillText(...args){calls.labels.push(args);}
+  ellipse(...args){calls.shadows.push(args);},fill(){},stroke(){}
  };
  drawLabBallMarker(ctx,1050,680,pos,0);
  assert.equal(calls.shadows.length,0);
- assert.equal(calls.labels.length,0);
  drawLabBallMarker(ctx,1050,680,pos,3);
  assert.deepEqual(calls.arcs.map(a=>a.slice(0,3)),[
-  [ground.x,ground.y,4.5],[high.x,high.y,4.5]]);
- assert.deepEqual(calls.shadows[0].slice(0,2),[ground.groundX,ground.groundY]);
- assert.deepEqual(calls.lines,[[ground.groundX,ground.groundY],[high.x,high.y]]);
- assert.equal(calls.labels[0][0],'3.00 m');
+  [ground.x,ground.y,4.5],[ground.x,ground.y,4.5]]);
+ assert.equal(calls.shadows.length,2);
+ assert.deepEqual(calls.shadows.map(a=>a.slice(0,2)),[
+  [high.shadowX,high.shadowY],[high.shadowX,high.shadowY]]);
  assert.equal(calls.save,2);assert.equal(calls.restore,2);
  assert.deepEqual(pos,{x:12,y:8,z:3.11});
 });

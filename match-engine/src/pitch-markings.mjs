@@ -9,45 +9,34 @@ export const LAB_MARKER_RADII_PX=Object.freeze({
  player:10,goalkeeper:11,pressing:11.5,ball:4.5
 });
 
-// Height is the authentic underside clearance in metres. The upward
-// screen offset is a visual cue, not a change to the pitch XY projection.
-// Keep the ground footprint fixed, and cap the cue at high elevations or
-// near the upper edge; the numeric label always conveys the real height.
+// The white ball stays at the exact observed XY and approved size.
+// A diagonal cast shadow separates smoothly with real underside clearance;
+// this is illustrative lighting, not a second ball or a landing prediction.
 export function labBallMarkerGeometry(width,height,position,clearanceM){
  if(!position||![position.x,position.y,clearanceM].every(Number.isFinite)||clearanceM<0)
   throw new TypeError('Finite observed ball XY and clearance required');
  const {X,Y}=pitchProjection(width,height);
- const groundX=X(position.x),groundY=Y(position.y);
+ const x=X(position.x),y=Y(position.y);
+ const heightCue=Math.min(7.5,clearanceM);
  const airborne=clearanceM>=0.10;
- const radius=LAB_MARKER_RADII_PX.ball;
- const liftPx=airborne?Math.min(60,clearanceM*8,Math.max(0,groundY-radius-2)):0;
- return Object.freeze({groundX,groundY,x:groundX,y:groundY-liftPx,radius,
-  airborne,clearanceM,liftPx});
+ return Object.freeze({x,y,radius:LAB_MARKER_RADII_PX.ball,
+  airborne,clearanceM,shadowX:x+heightCue*4,shadowY:y+heightCue*6,
+  shadowAlpha:0.38-0.12*heightCue/7.5});
 }
 
 export function drawLabBallMarker(ctx,width,height,position,clearanceM){
  const b=labBallMarkerGeometry(width,height,position,clearanceM);
  ctx.save();
  if(b.airborne){
-  // The ground shadow and tether are anchored to true XY. No predicted
-  // landing point or simulated shadow direction is implied.
-  ctx.fillStyle='rgba(0,0,0,0.42)';
-  ctx.beginPath();ctx.ellipse(b.groundX,b.groundY,6,3.5,0,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.78)';ctx.lineWidth=1.25;
-  ctx.beginPath();ctx.moveTo(b.groundX,b.groundY);ctx.lineTo(b.x,b.y);ctx.stroke();
+  // Small soft-edged cast shadow; no tether, height label or XY offset
+  // of the white marker. The existing height readout remains exact.
+  ctx.fillStyle='rgba(0,0,0,'+(b.shadowAlpha*0.45)+')';
+  ctx.beginPath();ctx.ellipse(b.shadowX,b.shadowY,6,4,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,'+b.shadowAlpha+')';
+  ctx.beginPath();ctx.ellipse(b.shadowX,b.shadowY,4,2.6,0,0,Math.PI*2);ctx.fill();
  }
  ctx.fillStyle='#ffffff';ctx.strokeStyle='#202f2b';ctx.lineWidth=1.5;
  ctx.beginPath();ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);ctx.fill();ctx.stroke();
- if(b.airborne){
-  const label=b.clearanceM.toFixed(2)+' m';
-  ctx.font='bold 12px system-ui';ctx.textBaseline='middle';
-  const labelWidth=ctx.measureText(label).width;
-  const labelX=b.x+12+labelWidth<=width-4?b.x+12:Math.max(4,b.x-12-labelWidth);
-  ctx.textAlign='left';
-  const labelY=Math.max(9,Math.min(height-9,b.y));
-  ctx.lineWidth=3;ctx.strokeStyle='#102d2e';ctx.strokeText(label,labelX,labelY);
-  ctx.fillStyle='#ffffff';ctx.fillText(label,labelX,labelY);
- }
  ctx.restore();
  return b;
 }

@@ -105,23 +105,24 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    url:'http://app.localhost:2000/dev/match-engine'
   });
   await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===10");
-  // Height is visible on the actual main canvas, not just the readout.
-  // Ball Drop begins at 3m, Roll at 0m; neither changes pitch XY.
+  // Actual canvas pixels: the ball stays centred at the same XY at
+  // both 3m and 0m; only the cast shadow darkens an off-centre region.
   const marker=await evalJs("(()=>{"+
    "const c=document.getElementById('pitch'),ctx=c.getContext('2d');"+
    "const x=c.width/2,y=c.height/2;"+
    "const pixel=(px,py)=>Array.from(ctx.getImageData(px,py,1,1).data);"+
    "const choose=value=>{document.getElementById('preset-trigger').click();"+
    "document.querySelector('#preset-options [data-value='+value+']').click();};"+
-   "const high={height:document.getElementById('height').textContent,ball:pixel(x,y-24),ground:pixel(x+3,y)};"+
+   "const high={height:document.getElementById('height').textContent,ball:pixel(x,y),shadow:pixel(x+12,y+18)};"+
    "choose('roll');"+
-   "const low={height:document.getElementById('height').textContent,ball:pixel(x+3,y)};"+
+   "const low={height:document.getElementById('height').textContent,ball:pixel(x,y),shadow:pixel(x+12,y+18)};"+
    "choose('drop');return {high,low};})()");
   assert.equal(marker.high.height,'3.00 m');
   assert.equal(marker.low.height,'0.00 m');
   assert.deepEqual(marker.high.ball,[255,255,255,255]);
-  assert.ok(marker.high.ground.slice(0,3).some(v=>v<200));
   assert.deepEqual(marker.low.ball,[255,255,255,255]);
+  // Compare identical turf pixels, avoiding antialiased ball edges.
+  assert.ok(marker.high.shadow[1]+10<marker.low.shadow[1],JSON.stringify(marker));
   // Verify the visible small-sided scenario runs IN the main 105x68 field.
   const inline=await evalJs("(()=>{"+
    "document.getElementById('preset-trigger').click();"+
