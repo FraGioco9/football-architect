@@ -107,3 +107,12 @@
 [data-admin-inspection="economy"] [data-inspection-copy="configuredRewards"]{justify-self:start}
 @media(max-width:900px){[data-admin-inspection="economy"] .inspection-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){[data-admin-inspection="economy"] .inspection-metrics{gap:8px}[data-admin-inspection="economy"] .inspection-metric{padding:9px;grid-template-rows:3.9em 2.4em}.inspection-summary [data-inspection-refresh]{padding-inline:10px}.app-admin-view .inspection-table table.app-players-table[data-inspection-table] :is(th,td){padding-inline:8px}}
+
+/* Four bounded payday rows; retain the existing scroll container and fixed layout. */
+[data-admin-inspection="economy"] .inspection-rehearsal{height:224px;max-height:224px;overflow:auto}
+.app-admin-view .inspection-rehearsal-rewards table.app-players-table[data-inspection-table]{min-width:720px}
+.app-admin-view .inspection-rehearsal-payroll table.app-players-table[data-inspection-table]{min-width:1320px}
+.app-admin-view .inspection-rehearsal table.app-players-table[data-inspection-table] :is(th,td):first-child{width:7%}
+.app-admin-view .inspection-rehearsal table.app-players-table[data-inspection-table] :is(th,td):nth-child(2){width:6%}
+.inspection-rehearsal td[data-inspection-value]{font-variant-numeric:tabular-nums}
+.inspection-status-row [data-inspection-value]{text-align:right;color:var(--text);font-weight:650}

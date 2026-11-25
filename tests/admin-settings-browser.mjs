@@ -1024,6 +1024,11 @@ try{
    const reserve=page.locator('[data-inspection-value="reserve"]');
    assert.equal(await page.locator('#inspection-panel-overview .app-competition-stat-card').count(),4);
    assert.equal(await page.locator('[data-inspection-tab="overview"].is-active').count(),1);
+   await page.locator('[data-inspection-tab="rewards"]').click();
+   assert.equal(await page.locator('.inspection-rehearsal-rewards tbody tr').count(),4);
+   await page.locator('[data-inspection-tab="payroll"]').click();
+   assert.equal(await page.locator('.inspection-rehearsal-payroll tbody tr').count(),4);
+   await page.locator('[data-inspection-tab="overview"]').click();
    assert.equal(await page.locator('[data-admin-inspection="economy"] h2').count(),0,'Economy has no redundant headings');
    assert.equal(await page.locator('[data-inspection-summary]').isVisible(),true);
    assert.equal(await page.locator('[data-inspection-policy]').isVisible(),true);

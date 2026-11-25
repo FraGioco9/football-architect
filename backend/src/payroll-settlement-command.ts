@@ -172,6 +172,12 @@ export async function reconcilePayrollPayday(db:Database,session:AdminSession,no
  if(!session?.unified)throw new ApiError(403,'economic_authority_required');
  const operator=session.unified,world=await readWorld(db);
  const access=[financeSessionGuard(db,operator.playerId,operator.sessionDigest,operator.csrfDigest,'read',now)];
+ return readPayrollPaydayEvidence(db,world,access);
+}
+
+/** Protected read adapter for Admin Economy. Reuses the same evidence verifier. */
+export async function readPayrollPaydayEvidence(db:Database,world:WorldV1,access:Statement[]){
+ if(!access.length)throw new ApiError(403,'economic_authority_required');
  return (await reconcilePayrollEvidence(db,world,access,world.revision)).report;
 }
 
