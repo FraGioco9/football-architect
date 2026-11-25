@@ -180,10 +180,14 @@ export async function readAdminEconomyReconciliation(db:Database,access:readonly
  // domain verifiers require the live payday/revision and cannot be replayed
  // against a later world without changing their safety contract.
  const mismatch=[...summary.rewards.rows,...summary.payroll.rows].some(r=>r.status==='mismatch');
- if(mismatch)return {...base,domainStatus:'mismatch'};
+ if(mismatch||summary.status!=='uninitialized'&&!report.ok)return {...base,domainStatus:'mismatch'};
  if(summary.genesis.status!=='funded'||summary.status!=='active')return {...base,domainStatus:'unavailable'};
  if(world.phase!=='active'||(world.day!==28&&world.day!==56)||world.seasonNumber<1||world.seasonNumber>2)
   return {...base,domainStatus:'outside_payday'};
+ if(world.day===56){
+  const archived=await db.batch([...access,db.prepare("SELECT 1 FROM admin_operations WHERE generation=? AND command='archive-season-v2' AND resulting_revision=?").bind(world.generation,world.revision)]);
+  if(archived.at(-1)!.results.length)return {...base,domainStatus:'outside_payday'};
+ }
  const reward=summary.rewards.rows.find(r=>r.season===world.seasonNumber&&r.day===world.day);
  if(reward?.status!=='recorded')return {...base,domainStatus:'settlement_pending'};
  try{

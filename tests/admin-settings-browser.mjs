@@ -986,8 +986,12 @@ try{
     if(p==='/api/admin/reset/preview'){previewCalls++;assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');return ok(route,{world,scopes:['sporting'],counts:{seasons:1},blockers:['preview_only','economic_generation_guard','contract_schema_incomplete','contract_generation_guard','sporting_history_protected','reset_prerequisites'],executable:false},write?(previewFails?503:200):403)}
     if(p.startsWith('/api/admin/economy/')){
      financeReads++;if(!finance)return ok(route,{},403);
-     if(p.endsWith('/summary'))return ok(route,{world,status:funded?'active':'uninitialized',policyVersion:funded?'fixture':null,transactionCount:funded?1:0,accounts:['PLATFORM_RESERVE','CLUB_TREASURY','USER_WALLET','ISSUANCE_CONTROL'].map(kind=>({kind,count:funded?1:0,balanceArc:funded?'123456789012':null,heldArc:funded?'0':null,availableArc:funded?'123456789012':null}))});
-     if(p.endsWith('/reconciliation'))return ok(route,{status:funded?'core_checked':'uninitialized',report:{ok:true}});
+     if(p.endsWith('/summary'))return ok(route,{world,status:funded?'active':'uninitialized',policyVersion:funded?'fixture':null,transactionCount:funded?1:0,
+      genesis:{status:funded?'funded':'uninitialized',fundedClubs:funded?320:null,plannedArc:funded?'6000000':null,issuedArc:funded?'6000000':null,clubCapitalArc:funded?'1200000':null,plannedFreeReserveArc:funded?'2400000':null},
+      rewards:{rows:[1,2].flatMap(season=>[28,56].map(day=>({season,day,forecastArc:day===28?'676800':'1723200',creditedArc:funded?(day===28?'676800':'1723200'):null,status:funded?'recorded':'uninitialized'})))},
+      payroll:{rows:[1,2].flatMap(season=>[28,56].map(day=>({season,day,earnedArc:funded?'1000':null,paidArc:funded?'800':null,outstandingArc:funded?'200':null,arrearsArc:funded?'200':null,pendingArc:funded?'0':null,sealedClubs:funded?320:null,completedClubs:funded?320:null,status:funded?'recorded':'uninitialized'})))},
+      accounts:['PLATFORM_RESERVE','CLUB_TREASURY','USER_WALLET','ISSUANCE_CONTROL'].map(kind=>({kind,count:funded?1:0,balanceArc:funded?'123456789012':null,heldArc:funded?'0':null,availableArc:funded?'123456789012':null}))});
+     if(p.endsWith('/reconciliation'))return ok(route,{status:funded?'core_checked':'uninitialized',report:{ok:true},domainStatus:funded?'domain_verified':'unavailable'});
      if(p.endsWith('/ledger'))return ok(route,{checkpoint:'a'.repeat(64),nextCursor:null,rows:funded?[{occurredAt:1770000000,purpose:'REWARD',debit:'PLATFORM_RESERVE',credit:'CLUB_TREASURY',amountArc:'100'}]:[]});
      if(p.endsWith('/clubs'))return ok(route,{checkpoint:'a'.repeat(64),page:1,pages:7,rows:[]});
     }
@@ -1026,8 +1030,11 @@ try{
    assert.equal(await page.locator('[data-inspection-tab="overview"].is-active').count(),1);
    await page.locator('[data-inspection-tab="rewards"]').click();
    assert.equal(await page.locator('.inspection-rehearsal-rewards tbody tr').count(),4);
+   assert.equal(await page.locator('[data-inspection-value="rewards-1-28-creditedArc"]').textContent(),'—');
+   assert.notEqual(await page.locator('[data-inspection-value="rewards-1-28-forecastArc"]').textContent(),'—');
    await page.locator('[data-inspection-tab="payroll"]').click();
    assert.equal(await page.locator('.inspection-rehearsal-payroll tbody tr').count(),4);
+   assert.equal(await page.locator('[data-inspection-value="payroll-2-56-earnedArc"]').textContent(),'—');
    await page.locator('[data-inspection-tab="overview"]').click();
    assert.equal(await page.locator('[data-admin-inspection="economy"] h2').count(),0,'Economy has no redundant headings');
    assert.equal(await page.locator('[data-inspection-summary]').isVisible(),true);
@@ -1041,6 +1048,14 @@ try{
    funded=true;await page.locator('[data-inspection-refresh]').click();await inspectionReady('economy').waitFor({state:'visible'});
    assert.equal((await reserve.textContent()).replace(/\D/g,''),'123456789012','Populated reserve must be rendered before geometry comparison');
    assert.deepEqual(await geometry(),empty,'Economy cards must not resize when populated');
+   assert.match(await page.locator('[data-inspection-value="fundedClubs"]').textContent(),/320 \/ 320/);
+   await page.locator('[data-inspection-tab="rewards"]').click();
+   assert.equal(await page.locator('[data-inspection-value="rewards-2-56-forecastArc"]').textContent(),await page.locator('[data-inspection-value="rewards-2-56-creditedArc"]').textContent());
+   await page.locator('[data-inspection-tab="payroll"]').click();
+   assert.match(await page.locator('[data-inspection-value="payroll-2-56-arrearsArc"]').textContent(),/200 ARC/);
+   assert.match(await page.locator('[data-inspection-value="payroll-2-56-pendingArc"]').textContent(),/0 ARC/);
+   assert.ok(await page.locator('.inspection-rehearsal-payroll').evaluate(n=>n.scrollWidth>=n.clientWidth&&n.getBoundingClientRect().right<=document.documentElement.clientWidth+1),'Payroll scroll remains inside viewport');
+   await page.locator('[data-inspection-tab="overview"]').click();
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    finance=false;await page.locator('[data-inspection-refresh]').click();await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
    assert.equal(await page.locator('#app-admin').isVisible(),false);
