@@ -255,7 +255,7 @@ test('#734 Players first page batches COUNT and rows while preserving before/aft
  assert.equal(result.count,1);assert.equal(result.players.length,1);
  assert.equal(result.players[0].clubKey,'IT-1');
  assert.deepEqual(calls.map(x=>x.sql.includes('FROM world_state')?'world':
-  x.sql.includes('COUNT(*)')?'count':'page'),['world','count','page','world']);
+  x.sql.includes('FROM sqlite_schema')?'publication-schema':x.sql.includes('COUNT(*)')?'count':'page'),['world','publication-schema','count','page','publication-schema','world']);
 });
 
 test('#734 Players paginated reads still recount and skip expired pages',async()=>{
