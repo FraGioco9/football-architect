@@ -123,7 +123,11 @@ export async function openLocalOpeningRehearsal(persistTo:string){
    await beginLocalOpeningRun(db,session,plan.root,now);
    return (await progress()).progress;
   },
-  async inspect(){return (await progress()).progress},
+  async inspect(){
+   const plan=await readPrivatePlan(path),seal=await db.prepare('SELECT payload_json FROM opening_world_runs WHERE run_key=? AND batch_index=256').bind(plan.root.runKey).first<{payload_json:string}>();
+   if(seal)return {runKey:plan.root.runKey,committedBatches:256,totalBatches:256,completedSlots:6400,remainingSlots:0,idHighWater:plan.root.initialHighWater+6400-plan.root.baseline.length,nextBatch:null,readyForReconciliation:true,published:true,publication:JSON.parse(seal.payload_json)};
+   return (await progress()).progress;
+  },
   async reconcile(){
    const current=await progress();
    return reconcileCompletedOpening(current.plan.root,current.manifest,current.plan.inventory,current.journal.receipts,current.observation);
