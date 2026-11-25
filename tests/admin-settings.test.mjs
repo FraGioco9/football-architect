@@ -40,7 +40,7 @@ test('late world read cannot restore authority after a revoked session',async()=
  assert.deepEqual(c.state().permissions,[]);
  assert.equal(c.state().message,'signedOut');
  assert.equal(c.state().busy,false);
- await c.prepare();await c.reset('RESET SEASON 0');await c.command('advance');
+ await c.prepare();await c.command('advance');
  assert.equal(writes,0);
 });
 test('newer request wins and lower world revisions cannot overwrite observed state',async()=>{
@@ -111,23 +111,12 @@ test('permission lookup failure clears a previously authorized Admin snapshot',a
  assert.equal(c.state().message,'unavailable');
  await c.prepare();assert.equal(writes,0);
 });
-test('reset UI requires typed confirmation, is single-flight and rotates world generation',async()=>{
- const active={...world,phase:'preparing',seasonNumber:1,revision:2},next={...world,generation:'650e8400-e29b-41d4-a716-446655440000'};
- const pending=deferred();let resets=0;
- const c=createAdminController(async(path,options)=>{
-  if(path.endsWith('session'))return session;
-  if(path.endsWith('world'))return {world:active};
-  if(path.endsWith('/reset')){resets++;assert.deepEqual(options.body,{expectedGeneration:active.generation,expectedRevision:2,confirmation:'RESET SEASON 0'});assert.equal(options.headers['X-CSRF-Token'],session.csrfToken);return pending.promise}
-  throw Error(path);
- },()=>{});
- await c.refresh();await c.reset('WRONG');assert.equal(resets,0);
- const first=c.reset('RESET SEASON 0');await c.reset('RESET SEASON 0');assert.equal(resets,1);
- pending.resolve({world:next,operationId:'reset-123'});await first;
- assert.deepEqual(c.state().world,next);assert.equal(c.state().message,'resetDone');
- await c.reset('RESET SEASON 0');assert.equal(resets,1);
-});
-test('reset controls are rendered with explicit irreversible summary and confirmation',()=>{
- const html=renderAdminSettings();assert.match(html,/data-admin-reset-section/);assert.match(html,/data-admin-reset-confirm/);assert.match(html,/data-admin-reset/);assert.match(html,/Delete all seasons/);
+test('Calendar exposes only the dedicated reset page, not a destructive command',()=>{
+ const html=renderAdminSettings();
+ assert.match(html,/href="\/admin\/reset" data-admin-reset-link/);
+ assert.doesNotMatch(html,/data-admin-reset-confirm|<button[^>]*data-admin-reset(?:\s|>)/);
+ const c=createAdminController(async()=>{throw Error('unexpected request')},()=>{});
+ assert.equal(c.reset,undefined);
 });
 
 test('operator status reports backend prerequisite and clears authority on revoked refresh',async()=>{

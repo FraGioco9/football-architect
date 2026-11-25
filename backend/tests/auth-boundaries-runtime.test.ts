@@ -103,6 +103,10 @@ it('enforces Admin read/write and explicit finance read on every inspection rout
  expect((await send('/api/admin/reset/options','GET',cookie)).status).toBe(200);
  expect((await send('/api/admin/reset/preview','POST',cookie)).status).toBe(403);
  const previewResponse=await preview();expect(previewResponse.status).toBe(200);expect(await previewResponse.json()).toMatchObject({executable:false});
+ const world=await db.prepare('SELECT * FROM world_state WHERE id=1').first<{generation:string;revision:number}>();
+ const bypass=await worker.fetch(new Request(origin+'/api/admin/world/reset',{method:'POST',headers:{Origin:origin,Cookie:cookie,'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':'legacy-reset-bypass-0001'},body:JSON.stringify({expectedGeneration:world!.generation,expectedRevision:world!.revision,confirmation:'RESET SEASON 0'})}),local);
+ expect(bypass.status).toBe(422);expect(await bypass.json()).toMatchObject({error:{code:'reset_confirmation_required'}});
+ expect(await db.prepare('SELECT * FROM world_state WHERE id=1').first()).toEqual(world);
  await db.prepare("INSERT INTO economic_finance_permissions VALUES(?,'read',?,?)").bind('boundary-player','fixture',now).run();
  expect(await caps()).toEqual({reset:true,economy:true});
  for(const path of financePaths){const res=await send(path,'GET',cookie);expect([path,res.status]).toEqual([path,200]);expect(res.headers.get('cache-control')).toContain('no-store');expect((await send(path,'POST',cookie)).status).toBe(405)}

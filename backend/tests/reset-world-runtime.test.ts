@@ -5,6 +5,7 @@ import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
 import {resetWorld} from '../src/reset-world-command.ts';
+import {prepareSportingReset,executeSportingReset} from '../src/sporting-reset-preview.ts';
 import {previewPlayerGeneration,commitPlayerGeneration,listGeneratedPlayers} from '../src/players-generation-command.ts';
 import {readPublicPlayers} from '../src/public-players-read.ts';
 import {prepareSeason} from '../src/commands.ts';
@@ -173,4 +174,15 @@ it('restarts public match numbering at 1 after a guarded reset, without weakenin
  expect(rows.every(row=>row.generation===next.world.generation)).toBe(true);
  expect(rows.every(row=>!oldSlots.includes(row.slot_match_id))).toBe(true);
  await expect(db.prepare('DELETE FROM public_match_numbers').run()).rejects.toThrow();
+});
+
+it('blocks a reset when permanent economic activation appears after preview',async()=>{
+ const preview=await prepareSportingReset(db,session,now);
+ await db.prepare('INSERT INTO economic_policy_versions VALUES(?,?,?,?,?,?,?)').bind('reset-blocker',now,'fixture',2400000,3000000,'{}','{}').run();
+ await db.prepare('INSERT INTO economic_control VALUES(1,?,0)').bind('reset-blocker').run();
+ const before=await db.prepare('SELECT * FROM economic_control').first();
+ await expect(executeSportingReset(db,session,{...cmd(),confirmation:'RESET SEASON 0',expiresAt:preview.expiresAt,previewToken:preview.previewToken},'reset-preview-economic-0001',now)).rejects.toMatchObject({status:409});
+ await expect(prepareSportingReset(db,session,now)).rejects.toMatchObject({status:409});
+ expect(await readWorld(db)).toEqual(world);
+ expect(await db.prepare('SELECT * FROM economic_control').first()).toEqual(before);
 });
