@@ -38,16 +38,17 @@ async function inspect(db:Database,session:AdminSession,now:number){
  if(JSON.stringify(evidence.world)!==JSON.stringify(base.world)||JSON.stringify(observed.world)!==JSON.stringify(base.world)
   ||observed.idHighWater!==evidence.idHighWater||observed.rows.length!==evidence.players.length
   ||observed.rows.some((r,i)=>r.id!==evidence.players[i].id||r.fingerprint!==evidence.players[i].fingerprint))throw blocked();
- const licenseCount=(await db.prepare('SELECT COUNT(*) AS n FROM club_license_state WHERE account_id IS NOT NULL').first<{n:number}>())!.n;
- const snapshot=await openingDigest({world:base.world,counts:base.counts,abandonedPreviewDrafts:base.abandonedPreviewDrafts,evidence:evidence.digest,licenseCount});
- return {base,evidence,observed,licenseCount,snapshot};
+ const licenseRows=(await db.prepare('SELECT club_key,account_id,version FROM club_license_state ORDER BY club_key').all<{club_key:string;account_id:string|null;version:number}>()).results;
+ const licensedClubs=licenseRows.filter(r=>r.account_id!==null).map(r=>r.club_key);
+ const snapshot=await openingDigest({world:base.world,counts:base.counts,abandonedPreviewDrafts:base.abandonedPreviewDrafts,evidence:evidence.digest,licenseRows});
+ return {base,evidence,observed,licenseRows,licensedClubs,snapshot};
 }
 export async function prepareSportingReset(db:Database,session:AdminSession,now:number){
  const state=await inspect(db,session,now);
  const expiresAt=now+300;
  const previewToken=await sign(session,{scope:'sporting',snapshot:state.snapshot,expiresAt});
  return {...state.base,blockers:[],executable:true as const,confirmation:'RESET SEASON 0',expiresAt,previewToken,
-  retainedEvidence:state.evidence,assignedLicenses:state.licenseCount};
+  retainedEvidence:state.evidence,assignedLicenses:state.licensedClubs.length,licensedClubs:state.licensedClubs};
 }
 export async function executeSportingReset(db:Database,session:AdminSession,input:unknown,key:string,now:number){
  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).sort().join(',')!=='confirmation,expectedGeneration,expectedRevision,expiresAt,previewToken')throw new ApiError(422,'reset_confirmation_required');
@@ -56,7 +57,10 @@ export async function executeSportingReset(db:Database,session:AdminSession,inpu
  const state=await inspect(db,session,now);
  if(v.expectedGeneration!==state.base.world.generation||v.expectedRevision!==state.base.world.revision||v.previewToken!==await sign(session,{scope:'sporting',snapshot:state.snapshot,expiresAt:v.expiresAt}))throw new ApiError(409,'stale_reset_preview');
  const guards:Statement[]=[readGuard(db,session),abortUnless(db,noPermanentActivity,[]),...retainedCatalogueGuards(db,state.observed),
-  abortUnless(db,'SELECT 1 WHERE (SELECT COUNT(*) FROM club_license_state WHERE account_id IS NOT NULL)=?',[state.licenseCount]),
+  abortUnless(db,`SELECT 1 WHERE (SELECT COUNT(*) FROM club_license_state)=?
+  AND NOT EXISTS(SELECT 1 FROM json_each(?) j WHERE NOT EXISTS(
+  SELECT 1 FROM club_license_state l WHERE l.club_key IS json_extract(j.value,'$.club_key')
+  AND l.account_id IS json_extract(j.value,'$.account_id') AND l.version IS json_extract(j.value,'$.version')))`,[state.licenseRows.length,JSON.stringify(state.licenseRows)]),
   abortUnless(db,"SELECT 1 WHERE (SELECT COUNT(*) FROM player_generation_drafts WHERE status='preview')=?",[state.base.abandonedPreviewDrafts])];
  // Protect the exact inventory observed in the approved preview. All table
  // identifiers originate from the canonical allowlisted inspection function.

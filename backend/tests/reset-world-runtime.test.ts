@@ -177,8 +177,12 @@ it('restarts public match numbering at 1 after a guarded reset, without weakenin
 });
 
 it('binds a sporting reset to fresh retained evidence, rejecting stale previews without mutation',async()=>{
+ const batch=await previewPlayerGeneration(db,session,{options:{count:2,seed:'guarded-reset-retained',primaryNationality:'ITA',primaryPosition:'ST'}},now);
+ await commitPlayerGeneration(db,session,{draftId:batch.draftId,confirmation:'GENERATE PLAYERS'},now);
+ const before=await db.prepare('SELECT * FROM generated_players ORDER BY id').all();
  const preview=await prepareSportingReset(db,session,now);
  expect(preview.executable).toBe(true);
+ expect(preview.retainedEvidence.players).toHaveLength(2);
  const request={...cmd(),confirmation:'RESET SEASON 0',expiresAt:preview.expiresAt,previewToken:preview.previewToken};
  await expect(executeSportingReset(db,session,{...request,previewToken:'0'.repeat(64)},'reset-preview-invalid-0001',now)).rejects.toMatchObject({status:409});
  await expect(executeSportingReset(db,session,request,'reset-preview-expired-0001',now+301)).rejects.toMatchObject({status:409});
@@ -186,4 +190,5 @@ it('binds a sporting reset to fresh retained evidence, rejecting stale previews 
  const result=await executeSportingReset(db,session,request,'reset-preview-valid-00001',now);
  expect(result.world).toMatchObject({seasonNumber:0,day:0,revision:0,phase:'unstarted'});
  expect(await readWorld(db)).toEqual(result.world);
+ expect((await db.prepare('SELECT * FROM generated_players ORDER BY id').all()).results).toEqual(before.results);
 });
