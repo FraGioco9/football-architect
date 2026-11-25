@@ -20,7 +20,7 @@ import {readLocalOpeningInventory,type RetainedOpeningInput} from '../src/openin
 import {rebaseLocalRetainedPlayers,captureRetainedOpeningEvidence} from '../src/opening-world-retained.ts';
 import {beginLocalOpeningRun,commitLocalOpeningBatch,readLocalOpeningJournal,readOpeningObservation} from '../src/opening-world-store.ts';
 import {clubCountryToNationality,planApprovedReference,reserveRetainedFirst,manifestDigest,REFERENCE_PROFILE_VERSION,type OpeningClub} from '../../tools/world-bootstrap-791/planner.mjs';
-import {createCertifiedOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,reconcileCompletedOpening,prepareOpeningContractHandoff,inspectOpeningContractHandoff,type OpeningSignedRow,type OpeningInventory,type OpeningRoot} from '../../tools/world-bootstrap-791/persistence.mjs';
+import {createCertifiedOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,reconcileCompletedOpening,prepareOpeningContractHandoff,inspectOpeningContractHandoff,type OpeningContractHandoff,type OpeningSignedRow,type OpeningInventory,type OpeningRoot} from '../../tools/world-bootstrap-791/persistence.mjs';
 
 const assert=(ok:unknown,msg:string)=>{if(!ok)throw Error(msg)};
 const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
@@ -78,19 +78,28 @@ export async function openLocalOpeningRehearsal(persistTo:string){
   assert(same(plan.root,rebuilt),'opening plan or canonical source changed');
   return {plan,manifest,world};
  }
- async function progress(){
-  const {plan,manifest}=await verifiedPlan();
-  const journal=await readLocalOpeningJournal(db,plan.root.runKey);
-  assert(same(journal.root,plan.root),'opening journal root differs from private plan');
-  const actual=await readOpeningObservation(db);
-  const signed:OpeningSignedRow[]=[];
+ // This cache contains only the immutable, certified allocation handoff.
+ // Never cache a signing cursor: each call re-reads actual durable terms.
+ // The staging triggers freeze player/portrait/index/receipt evidence;
+ // reopening the local handle discards this cache and reaudits everything.
+ let signingHandoff:OpeningContractHandoff|undefined;
+ async function signedState(){
+  const world=await readWorld(db),signed:OpeningSignedRow[]=[];
   for(let id=0;;){
    const rows=(await db.prepare('SELECT * FROM player_signed_contracts WHERE id>? ORDER BY id LIMIT 100').bind(id).all<OpeningSignedRow>()).results;
    signed.push(...rows);if(rows.length<100)break;id=rows[rows.length-1].id;
   }
-  assert(same(actual.world,await readWorld(db))&&actual.world.generation===plan.root.worldGeneration&&actual.world.revision===signed.length&&(signed.length===0||journal.receipts.length===256),'opening signing progress changed');
+  assert(same(world,await readWorld(db))&&world.seasonNumber===0&&world.day===0&&world.phase==='unstarted'&&world.revision===signed.length,'opening signing progress changed');
+  return {world,signed};
+ }
+ async function progress(){
+  const {plan,manifest}=await verifiedPlan();
+  const journal=await readLocalOpeningJournal(db,plan.root.runKey);
+  assert(same(journal.root,plan.root),'opening journal root differs from private plan');
+  const actual=await readOpeningObservation(db),{world,signed}=await signedState();
+  assert(same(actual.world,world)&&world.generation===plan.root.worldGeneration&&(signed.length===0||journal.receipts.length===256),'opening signing progress changed');
   const observation={...actual,world:{...actual.world,revision:0}};
-  return {plan,manifest,journal,observation,signed,world:actual.world,progress:inspectOpeningProgress(plan.root,manifest,plan.inventory,journal.receipts,observation)};
+  return {plan,manifest,journal,observation,signed,world,progress:inspectOpeningProgress(plan.root,manifest,plan.inventory,journal.receipts,observation)};
  }
  return {
   close:handle.close,
@@ -142,7 +151,13 @@ export async function openLocalOpeningRehearsal(persistTo:string){
    * decide what remains after a crash, including a lost response. */
   async signNextClub(session:AdminSession,now:number){
    await db.batch([sessionGuard(db,session,now)]);
-   const current=await progress(),handoff=prepareOpeningContractHandoff(current.plan.root,current.manifest,current.plan.inventory,current.journal.receipts,current.observation);
+   if(!signingHandoff){
+    const current=await progress();
+    signingHandoff=prepareOpeningContractHandoff(current.plan.root,current.manifest,current.plan.inventory,current.journal.receipts,current.observation);
+   }
+   const handoff=signingHandoff,current=await signedState();
+   const staging=await db.prepare('SELECT run_key FROM opening_world_staging WHERE world_generation=?').bind(current.world.generation).first<{run_key:string}>();
+   assert(staging?.run_key===handoff.runKey&&current.world.generation===handoff.worldGeneration,'opening signing stage changed');
    const status=inspectOpeningContractHandoff(handoff,current.signed);
    if(!status.next)return status;
    const club=status.next.clubKey,already=new Set(current.signed.map(r=>r.player_id));
@@ -151,7 +166,7 @@ export async function openLocalOpeningRehearsal(persistTo:string){
     const result=await signStagedOpeningContract(db,session,{expectedGeneration:handoff.worldGeneration,expectedRevision:revision,playerId:intent.playerId,clubKey:club,durationSeasons:intent.durationSeasons},intent.idempotencyKey,now,handoff.runKey);
     revision=result.world.revision;
    }
-   const after=await progress();
+   const after=await signedState();
    return inspectOpeningContractHandoff(handoff,after.signed);
   },
   async publish(session:AdminSession,now:number){

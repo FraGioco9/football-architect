@@ -161,13 +161,15 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
    await commitPlayerGeneration(db,session,{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'},now);
   }
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM generated_players'),150);
+  // Exercise a historical ID gap like DEV's high-water 193. Fixture only.
+  await db.prepare("UPDATE sqlite_sequence SET seq=193 WHERE name='generated_players'").run();
   // Synthetic approved portrait metadata only, not a real asset. Retain exact
   // approved/pending rows; no image upload or file copying.
   await db.prepare("UPDATE player_portrait_profiles SET status='approved',asset_key='synthetic/retained/'||player_id||'.webp' WHERE player_id<=26").run();
   assert.equal(await n(db,"SELECT COUNT(*) AS n FROM player_portrait_profiles WHERE status='approved'"),26);
   await changeClubLicense(db,session,{clubKey:'IT-1',accountId:playerId,expectedAccountId:null,expectedVersion:0},now);
   const old=await readOpeningObservation(db),evidence=await captureRetainedOpeningEvidence(db);
-  assert.equal(old.rows.length,150);
+  assert.equal(old.rows.length,150);assert.equal(old.idHighWater,193);
   assert.equal(evidence.players.length,150);
   assert.equal(evidence.history.counts?.seasons,1);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM player_signed_contracts'),0);
