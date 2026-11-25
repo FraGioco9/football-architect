@@ -9,3 +9,5 @@ export function planApprovedReference(input:{seed:string;versions:OpeningVersion
 export function manifestDigest(value:unknown):string;
 
 export function fitOpeningYouthSlots(manifest:OpeningManifest,inventory:unknown):OpeningManifest;
+
+export function reserveRetainedFirst(manifest:OpeningManifest,inventory:unknown):OpeningManifest;

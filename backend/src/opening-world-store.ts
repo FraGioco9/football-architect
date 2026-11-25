@@ -28,7 +28,7 @@ export async function openingDigest(value:unknown){
  return Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,'0')).join('');
 }
 function tuple(r:SnapshotRow){return [r.id,r.batch_id,r.world_generation,r.entry_season,r.payload_json,r.schema_version,r.prompt_version,r.snapshot_json,r.status,r.asset_key,r.input_revision,r.config_version,r.market_value_arc]}
-async function fingerprint(r:SnapshotRow):Promise<Fingerprint>{return {id:r.id,fingerprint:await openingDigest(tuple(r))}}
+export async function fingerprint(r:SnapshotRow):Promise<Fingerprint>{return {id:r.id,fingerprint:await openingDigest(tuple(r))}}
 const selectRows=`SELECT p.id,p.batch_id,p.world_generation,p.entry_season,p.payload_json,
  q.schema_version,q.prompt_version,q.snapshot_json,q.status,q.asset_key,v.input_revision,v.config_version,v.market_value_arc
  FROM generated_players p LEFT JOIN player_portrait_profiles q ON q.player_id=p.id LEFT JOIN player_market_values v ON v.player_id=p.id`;

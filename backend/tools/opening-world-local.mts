@@ -13,8 +13,9 @@ import type {WorldV1} from '../src/types.ts';
 import type {AdminSession} from '../src/auth.ts';
 import {sessionGuard} from '../src/command-guards.ts';
 import {readLocalOpeningInventory,type RetainedOpeningInput} from '../src/opening-world-inventory.ts';
+import {rebaseLocalRetainedPlayers} from '../src/opening-world-retained.ts';
 import {beginLocalOpeningRun,commitLocalOpeningBatch,readLocalOpeningJournal,readOpeningObservation} from '../src/opening-world-store.ts';
-import {clubCountryToNationality,planApprovedReference,fitOpeningYouthSlots,manifestDigest,REFERENCE_PROFILE_VERSION,type OpeningClub} from '../../tools/world-bootstrap-791/planner.mjs';
+import {clubCountryToNationality,planApprovedReference,reserveRetainedFirst,manifestDigest,REFERENCE_PROFILE_VERSION,type OpeningClub} from '../../tools/world-bootstrap-791/planner.mjs';
 import {createCertifiedOpeningPersistenceRun,inspectOpeningProgress,prepareOpeningBatchIntents,reconcileCompletedOpening,prepareOpeningContractHandoff,type OpeningInventory,type OpeningRoot} from '../../tools/world-bootstrap-791/persistence.mjs';
 
 const assert=(ok:unknown,msg:string)=>{if(!ok)throw Error(msg)};
@@ -66,7 +67,7 @@ export async function openLocalOpeningRehearsal(persistTo:string){
  const db=handle.db,path=join(resolve(persistTo),FILE);
  async function verifiedPlan(){
   const plan=await readPrivatePlan(path),world=await readWorld(db);
-  const manifest=fitOpeningYouthSlots(await buildLocalOpeningManifest(world,plan.seed),plan.inventory);
+  const manifest=reserveRetainedFirst(await buildLocalOpeningManifest(world,plan.seed),plan.inventory);
   const rebuilt=createCertifiedOpeningPersistenceRun(manifest,plan.inventory,world);
   assert(same(plan.root,rebuilt),'opening plan or canonical source changed');
   return {plan,manifest,world};
@@ -80,8 +81,11 @@ export async function openLocalOpeningRehearsal(persistTo:string){
  }
  return {
   close:handle.close,
+  async rebaseRetained(session:AdminSession,retained:RetainedOpeningInput,now:number){
+   return rebaseLocalRetainedPlayers(db,session,retained.evidence,retained.resetOperationId,now);
+  },
   async prepare(seed:string,retained?:RetainedOpeningInput){
-   const world=await readWorld(db),inventory=await readLocalOpeningInventory(db,retained),manifest=fitOpeningYouthSlots(await buildLocalOpeningManifest(world,seed),inventory);
+   const world=await readWorld(db),inventory=await readLocalOpeningInventory(db,retained),manifest=reserveRetainedFirst(await buildLocalOpeningManifest(world,seed),inventory);
    const root=createCertifiedOpeningPersistenceRun(manifest,inventory,world);
    await savePrivatePlan(path,{schema:'opening-local-rehearsal-v1',seed,inventory,root,...(retained?{retained}:{})});
    return {runKey:root.runKey,slots:root.slotCount,reused:root.baseline.length,newPlayers:root.slotCount-root.baseline.length,batches:root.batchIntentHashes.length};

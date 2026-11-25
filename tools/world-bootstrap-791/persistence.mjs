@@ -122,7 +122,6 @@ function completeOpeningAudit(run,manifest,inventory,receipts,observation){
  const clubs=new Map(manifest.clubs.map(c=>[c.key,{clubKey:c.key,active:c.active,division:c.division,count:0}]));
  const home=new Map(manifest.clubs.map(c=>[c.key,c.nationality]));
  const ages={},positions={},nationalities={},terms={};
- const baselinePlayers=new Map(inventory.players.map(x=>[x.id,x]));
  let reused=0,generated=0,domestic=0,otherPlayable=0,otherCountries=0;
  const playable=new Set(manifest.clubs.map(c=>c.nationality));
  const increment=(map,key)=>{map[key]=(map[key]??0)+1};
@@ -132,9 +131,7 @@ function completeOpeningAudit(run,manifest,inventory,receipts,observation){
   insist(row&&club?.active&&club.division===slot.division,"opening allocation missing or inactive");
   const p=JSON.parse(row.payload_json);
   insist(p.id===entry.playerId&&p.age===slot.age&&p.initial_age===slot.age&&p.nationality===slot.primaryNationality&&p.primary_position===slot.primaryPosition&&p.career_status==="active","opening payload differs from planned slot");
-  const provenance=entry.kind==="reuse"?baselinePlayers.get(entry.playerId)?.retainedProvenance:null;
-  const correctOrigin=provenance?row.world_generation===provenance.originalGeneration&&row.entry_season===provenance.originalEntrySeason:
-   row.world_generation===run.worldGeneration&&row.entry_season===0;
+  const correctOrigin=row.world_generation===run.worldGeneration&&row.entry_season===0;
   insist(correctOrigin&&row.schema_version==="player-portraits-v5"&&row.prompt_version==="player-portrait-v4.2"&&typeof row.config_version==="string"&&row.config_version.length>0,"opening profile/index evidence missing");
   if(entry.kind==="reuse")reused++;
   else{generated++;insist(p.retirement_age===sampleOpeningRetirementAge(slot),"opening retirement differs from pinned slot")}

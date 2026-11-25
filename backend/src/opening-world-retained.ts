@@ -3,8 +3,10 @@
  * Capture before any approved sporting reset, retaining the private evidence
  * outside the database. The caller must exclude concurrent writers.
  */
+import type {AdminSession} from './auth.ts';
+import {sessionGuard,abortUnless} from './command-guards.ts';
 import type {Database} from './database.ts';
-import {openingDigest,readOpeningObservation} from './opening-world-store.ts';
+import {openingDigest,readOpeningObservation,fingerprint} from './opening-world-store.ts';
 import type {WorldV1} from './types.ts';
 
 const insist=(ok:unknown,message:string)=>{if(!ok)throw Error(message)};
@@ -55,10 +57,44 @@ export async function verifyRetainedOpeningEvidence(db:Database,evidence:Retaine
  insist(outcome.operationId===resetOperationId&&same(outcome.world,w),'retained reset outcome mismatch');
  const history=await readHistory(db);
  insist(history.counts?.seasons===0&&history.counts.archives===0&&history.counts.receipts===0&&history.references.length===0,'retained sporting history not cleared');
- insist(observed.idHighWater===payload.idHighWater&&same(records(observed),payload.players),'retained player records changed');
+ insist(observed.idHighWater===payload.idHighWater&&observed.rawRows.length===payload.players.length,'retained player records changed');
+ let original=0,rebased=0;
+ for(const [i,row] of observed.rawRows.entries()){
+  const old=payload.players[i];
+  insist(row.id===old.id,'retained player ID changed');
+  if(row.world_generation===w.generation&&row.entry_season===0)rebased++;
+  else if(row.world_generation===old.originalGeneration&&row.entry_season===old.originalEntrySeason)original++;
+  else throw Error('unexpected retained metadata');
+  insist((await fingerprint({...row,world_generation:old.originalGeneration,entry_season:old.originalEntrySeason})).fingerprint===old.fingerprint,'retained permanent data changed');
+ }
+ insist(original===0||rebased===0,'partial retained reconciliation');
  const after=await readOpeningObservation(db),historyAfter=await readHistory(db);
  insist(same(after.world,w)&&after.idHighWater===observed.idHighWater&&same(records(after),records(observed))&&same(history,historyAfter),'retained reconciliation changed');
  return {schema:'opening-retained-preservation-v1' as const,sourceDigest:digest,resetOperationId,
   worldGeneration:w.generation,preservedPlayers:payload.players.length,
-  previouslyReferencedPlayers:payload.history.references.length,eligibleForAutomaticReuse:false as const};
+  previouslyReferencedPlayers:payload.history.references.length,metadataRebased:original===0,eligibleForAutomaticReuse:false as const};
+}
+
+/** B2/G: explicit trusted local operation after audited reset, before staging.
+ * The only updates are the two sporting metadata columns. Exact permanent
+ * row snapshots, authorization and catalogue size are guarded in one batch. */
+export async function rebaseLocalRetainedPlayers(db:Database,session:AdminSession,evidence:RetainedEvidence,resetOperationId:string,now:number){
+ const before=await readOpeningObservation(db);
+ const proof=await verifyRetainedOpeningEvidence(db,evidence,resetOperationId);
+ insist(same(before.rows,(await readOpeningObservation(db)).rows)&&before.world.generation===proof.worldGeneration,'retained catalogue changed');
+ const guards=[sessionGuard(db,session,now),abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=0 AND season_number=0 AND day=0 AND phase='unstarted'",[proof.worldGeneration]),
+  abortUnless(db,"SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM opening_world_runs WHERE world_generation=? AND batch_index=-1) AND NOT EXISTS(SELECT 1 FROM seasons) AND NOT EXISTS(SELECT 1 FROM season_archives) AND NOT EXISTS(SELECT 1 FROM match_lineup_result_receipts) AND NOT EXISTS(SELECT 1 FROM player_signed_contracts) AND NOT EXISTS(SELECT 1 FROM player_agent_mandates) AND (SELECT COUNT(*) FROM generated_players)=? AND COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0)=?",[proof.worldGeneration,before.rows.length,before.idHighWater])];
+ for(let i=0;i<before.rawRows.length;i+=25)guards.push(abortUnless(db,`SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM json_each(?) j WHERE NOT EXISTS(
+ SELECT 1 FROM generated_players p JOIN player_portrait_profiles q ON q.player_id=p.id JOIN player_market_values v ON v.player_id=p.id
+ WHERE p.id=json_extract(j.value,'$.id') AND p.batch_id IS json_extract(j.value,'$.batch_id')
+ AND p.world_generation IS json_extract(j.value,'$.world_generation') AND p.entry_season IS json_extract(j.value,'$.entry_season')
+ AND p.payload_json IS json_extract(j.value,'$.payload_json') AND q.schema_version IS json_extract(j.value,'$.schema_version')
+ AND q.prompt_version IS json_extract(j.value,'$.prompt_version') AND q.snapshot_json IS json_extract(j.value,'$.snapshot_json')
+ AND q.status IS json_extract(j.value,'$.status') AND q.asset_key IS json_extract(j.value,'$.asset_key')
+ AND v.input_revision IS json_extract(j.value,'$.input_revision') AND v.config_version IS json_extract(j.value,'$.config_version')
+ AND v.market_value_arc IS json_extract(j.value,'$.market_value_arc')))`,[JSON.stringify(before.rawRows.slice(i,i+25))]));
+ await db.batch([...guards,...(proof.metadataRebased?[]:[db.prepare('UPDATE generated_players SET world_generation=?,entry_season=0').bind(proof.worldGeneration)])]);
+ const after=await verifyRetainedOpeningEvidence(db,evidence,resetOperationId);
+ insist(after.metadataRebased,'retained rebase incomplete');
+ return {...after,alreadyRebased:proof.metadataRebased};
 }

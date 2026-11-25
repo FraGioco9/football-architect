@@ -33,7 +33,7 @@ async function readRights(db:Database){
 }
 export type RetainedOpeningInput={evidence:RetainedEvidence;resetOperationId:string};
 export async function readLocalOpeningInventory(db:Database,retained?:RetainedOpeningInput){
- if(retained)await verifyRetainedOpeningEvidence(db,retained.evidence,retained.resetOperationId);
+ if(retained)insist((await verifyRetainedOpeningEvidence(db,retained.evidence,retained.resetOperationId)).metadataRebased,'retained metadata must be rebased');
  const observation=await readOpeningObservation(db),w=observation.world;
  insist(w.seasonNumber===0&&w.revision===0&&w.day===0&&w.phase==='unstarted','opening inventory requires Season 0');
  insist(!(await db.prepare('SELECT 1 FROM opening_world_runs WHERE world_generation=? AND batch_index=-1').bind(w.generation).first()),'opening inventory already frozen');
@@ -48,10 +48,7 @@ export async function readLocalOpeningInventory(db:Database,retained?:RetainedOp
   insist(p.id===row.id&&Number.isSafeInteger(p.age)&&p.age>=16&&p.age<=40&&countries.has(p.nationality)&&positions.has(p.primary_position)&&['active','retired'].includes(p.career_status),'invalid existing player identity');
   insist(ATTRIBUTES.every(key=>Number.isInteger(p.attributes?.[key])&&p.attributes[key]>=1&&p.attributes[key]<=99),'invalid existing attributes');
   const primarySuitability=calculatePositionSuitability(publicRecord.attributes,p.primary_position);
-  const original=retained?.evidence.players[i];
-  const retainedMatch=!!(original&&original.id===row.id&&original.fingerprint===observation.rows[i].fingerprint&&original.originalGeneration===row.world_generation&&original.originalEntrySeason===row.entry_season);
-  // Only explicitly audited disposable sporting history may be cleared.
-  const hasSportingHistory=p.age!==p.initial_age||(!retainedMatch&&row.entry_season!==0);
+  const hasSportingHistory=p.age!==p.initial_age||row.entry_season!==0;
   // A reset can erase prior official receipts. An older-generation identity
   // cannot prove absence of history here; retain it for explicit reconciliation.
   const currentGeneration=row.world_generation===w.generation;
@@ -64,16 +61,15 @@ export async function readLocalOpeningInventory(db:Database,retained?:RetainedOp
    }
   }catch{/* require reconciliation; never overwrite the portrait */}
   const indexValid=row.config_version===version&&row.market_value_arc===publicRecord.market_value_arc;
-  const readyForReuse=(retainedMatch||currentGeneration)&&!rights.history&&!hasSportingHistory&&!r.mandate&&!r.contract&&p.career_status==='active'&&lifecycle&&portraitValid&&indexValid;
-  players.push({id:row.id,age:p.age as number,primaryNationality:p.nationality as string,primaryPosition:p.primary_position as string,primarySuitability,clubKey:null,representation:r.mandate?'human':r.contract?'unknown':'ai',careerStatus:p.career_status as string,hasSignedContract:!!r.contract,hasSportingHistory,hasApprovedPortrait:portraitValid&&row.status==='approved',readyForReuse,fingerprint:observation.rows[i].fingerprint,
-   ...(retainedMatch&&retained?{retainedProvenance:{originalGeneration:row.world_generation,originalEntrySeason:row.entry_season,sourceDigest:retained.evidence.digest,resetOperationId:retained.resetOperationId,previousReceiptCount:retained.evidence.history.references.find(x=>x.id===row.id)?.receiptCount??0}}:{})});
+  const readyForReuse=currentGeneration&&!rights.history&&!hasSportingHistory&&!r.mandate&&!r.contract&&p.career_status==='active'&&lifecycle&&portraitValid&&indexValid;
+  players.push({id:row.id,age:p.age as number,primaryNationality:p.nationality as string,primaryPosition:p.primary_position as string,primarySuitability,clubKey:null,representation:r.mandate?'human':r.contract?'unknown':'ai',careerStatus:p.career_status as string,hasSignedContract:!!r.contract,hasSportingHistory,hasApprovedPortrait:portraitValid&&row.status==='approved',readyForReuse,fingerprint:observation.rows[i].fingerprint});
  }
  // Read both sources again to detect changes during the paginated read.
  // This is not a substitute for a future transactional cross-writer lock.
  const after=await readOpeningObservation(db),rightsAfter=await readRights(db);
  insist(JSON.stringify(after.world)===JSON.stringify(w)&&after.idHighWater===observation.idHighWater&&JSON.stringify(after.rows)===JSON.stringify(observation.rows)&&JSON.stringify(rightsAfter)===JSON.stringify(rights),'opening inventory changed');
  insist(!(await db.prepare('SELECT 1 FROM opening_world_runs WHERE world_generation=? AND batch_index=-1').bind(w.generation).first()),'opening inventory already frozen');
- if(retained)await verifyRetainedOpeningEvidence(db,retained.evidence,retained.resetOperationId);
+ if(retained)insist((await verifyRetainedOpeningEvidence(db,retained.evidence,retained.resetOperationId)).metadataRebased,'retained metadata must be rebased');
  const payload={worldGeneration:w.generation,worldRevision:w.revision,idHighWater:observation.idHighWater,players};
  return {schema:'opening-inventory-v1',...payload,snapshotId:await openingDigest(payload),complete:true};
 }

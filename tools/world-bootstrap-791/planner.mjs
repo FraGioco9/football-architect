@@ -134,6 +134,16 @@ export function planYouthReuse(manifest,inventory){
   ids.add(p.id);return {id:p.id,age:p.age,primaryNationality:p.primaryNationality,primaryPosition:p.primaryPosition,primarySuitability:p.primarySuitability,clubKey:p.clubKey,representation:p.representation,careerStatus:p.careerStatus,hasSignedContract:p.hasSignedContract,hasSportingHistory:p.hasSportingHistory,hasApprovedPortrait:p.hasApprovedPortrait,readyForReuse:p.readyForReuse};
  }).sort((a,b)=>a.id-b.id);
  const eligible=p=>wanted.has(p.primaryNationality)&&int(p.age,16,19)&&p.representation==="ai"&&p.careerStatus==="active"&&!p.hasSignedContract&&!p.hasSportingHistory&&p.readyForReuse;
+ if(manifest.retainedAssignments!==undefined){
+  const byPlayer=new Map(players.map(p=>[p.id,p])),bySlot=new Map(manifest.slots.map(s=>[s.slotKey,s])),used=new Set(),assign=new Map();
+  for(const a of manifest.retainedAssignments){
+   const p=byPlayer.get(a.playerId),s=bySlot.get(a.slotKey);
+   requireThat(p&&s&&eligible(p)&&!used.has(p.id)&&!assign.has(s.slotKey)&&p.age===s.age&&p.primaryNationality===s.primaryNationality&&p.primaryPosition===s.primaryPosition&&(p.clubKey===null||p.clubKey===s.clubKey),"invalid retained reservation");
+   used.add(p.id);assign.set(s.slotKey,{slotKey:s.slotKey,kind:"reuse",playerId:p.id,primarySuitability:p.primarySuitability,suitabilityDeviation:p.primarySuitability-s.primarySuitabilityTarget,hasApprovedPortrait:p.hasApprovedPortrait});
+  }
+  const excluded=players.filter(p=>!eligible(p)).map(p=>p.id),unmatchedEligible=players.filter(p=>eligible(p)&&!used.has(p.id)).map(p=>p.id);
+  return {schema:"opening-youth-reuse-v1",worldGeneration:inventory.worldGeneration,worldRevision:inventory.worldRevision,inventorySnapshotId:inventory.snapshotId,assignments:manifest.slots.map(s=>assign.get(s.slotKey)??{slotKey:s.slotKey,kind:"generate"}),reusedCount:used.size,newCount:manifest.slots.length-used.size,unmatchedEligible,excluded,requiresReconciliation:unmatchedEligible.length+excluded.length>0};
+ }
  const candidates=players.filter(eligible).sort((a,b)=>Number(b.clubKey!==null)-Number(a.clubKey!==null)||Number(b.hasApprovedPortrait)-Number(a.hasApprovedPortrait)||a.id-b.id);
  const remaining=manifest.slots.filter(target).slice().sort((a,b)=>order(a.slotKey,b.slotKey)),bySlot=new Map(),matched=new Set();
  // Same-club candidates first: never move an existing affiliation. Free candidates
@@ -188,6 +198,44 @@ export function fitOpeningYouthSlots(manifest,inventory){
  // No partial success is considered ready. The persistence protocol rechecks
  // the entire inventory and rejects unmatched/excluded IDs before any writes.
  return fitted;
+}
+
+/** E1: reserve retained players before allocating any remaining age/nationality slots. */
+export function reserveRetainedFirst(base,inventory){
+ const {clubs,config,seed}=base,slots=base.slots.map(s=>({...s,age:null,primaryNationality:null,intendedTermSeasons:null}));
+ requireThat(slots.length===6400&&inventory.complete===true&&inventory.worldGeneration===base.versions.worldGeneration&&inventory.worldRevision===base.versions.worldRevision,"stale retained inventory");
+ const home=new Map(clubs.map(c=>[c.key,c.nationality])),left=new Map(config.ageCounts.map(x=>[x.age,x.count])),used=new Map(),ids=new Set(),reserved=[];
+ const players=inventory.players.slice(),demand=new Map();
+ for(const p of players){const k=p.primaryNationality+":"+p.primaryPosition;demand.set(k,(demand.get(k)??0)+1)}
+ players.sort((a,b)=>demand.get(b.primaryNationality+":"+b.primaryPosition)-demand.get(a.primaryNationality+":"+a.primaryPosition)||Number(b.hasApprovedPortrait)-Number(a.hasApprovedPortrait)||a.id-b.id);
+ for(const p of players){
+  requireThat(!ids.has(p.id)&&p.readyForReuse&&p.clubKey===null&&p.representation==="ai"&&p.careerStatus==="active"&&!p.hasSignedContract&&!p.hasSportingHistory&&["ITA","GER","ENG"].includes(p.primaryNationality)&&int(p.age,16,19),"ineligible retained player");
+  const s=slots.filter(s=>s.age===null&&s.primaryPosition===p.primaryPosition&&home.get(s.clubKey)===p.primaryNationality).sort((a,b)=>(used.get(a.clubKey)??0)-(used.get(b.clubKey)??0)||Math.abs(a.primarySuitabilityTarget-p.primarySuitability)-Math.abs(b.primarySuitabilityTarget-p.primarySuitability)||order(a.slotKey,b.slotKey))[0];
+  requireThat(s&&(left.get(p.age)??0)>0,"retained quota exhausted");
+  ids.add(p.id);s.age=p.age;s.primaryNationality=p.primaryNationality;left.set(p.age,left.get(p.age)-1);used.set(s.clubKey,(used.get(s.clubKey)??0)+1);reserved.push({slotKey:s.slotKey,playerId:p.id});
+ }
+ const remaining=slots.filter(s=>s.age===null),stream=(...p)=>rng(JSON.stringify([seed,"retained-first",...p]));
+ const ages=shuffle([...left].flatMap(([age,n])=>Array(n).fill(age)),stream("ages"));
+ requireThat(remaining.length===ages.length,"age quota mismatch");
+ shuffle(remaining,stream("age-slots")).forEach((s,i)=>s.age=ages[i]);
+ const playable=new Set(clubs.map(c=>c.nationality)),local=4160-reserved.length;
+ requireThat(local>=0,"domestic quota exhausted");
+ shuffle(remaining,stream("nationality")).forEach((s,i)=>{
+  const nation=home.get(s.clubKey);
+  if(i<local){s.primaryNationality=nation;return}
+  const choices=config.foreignWeights.filter(x=>x.code!==nation&&playable.has(x.code)===(i<local+1120));
+  let draw=stream("foreign",s.slotKey)()*choices.reduce((a,b)=>a+b.weight,0);
+  for(const c of choices){draw-=c.weight;if(draw<0){s.primaryNationality=c.code;break}}
+  requireThat(!!s.primaryNationality,"foreign selection failed");
+ });
+ for(const p of config.agePolicies){
+  const members=shuffle(slots.filter(s=>s.age>=p.minAge&&s.age<=p.maxAge),stream("terms",p.minAge)),quota=apportion(members.length,p.termWeights);let i=0;
+  for(let t=1;t<=3;t++)for(let j=0;j<quota[t-1];j++)members[i++].intendedTermSeasons=t;
+  for(const s of members){const random=stream("suitability",s.slotKey),u=1-random(),v=random(),mean=s.division===1?p.d1Mean:p.d2Mean;s.primarySuitabilityTarget=Math.max(1,Math.min(90,Math.round(mean+p.sigma*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v))))}
+ }
+ const result={...base,slots,retainedAssignments:reserved.sort((a,b)=>order(a.slotKey,b.slotKey))};
+ requireThat(!planYouthReuse(result,inventory).requiresReconciliation,"retained reservation incomplete");
+ return result;
 }
 
 // Internal offline preview only: no permanent IDs for new players and no DB calls.
