@@ -42,6 +42,7 @@ import {readPublicSportingSeasonLineupV1} from '../src/public-sporting-read-line
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
 import type {AdminSession} from '../src/auth.ts';
+import type {Database} from '../src/database.ts';
 
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
 type World=Awaited<ReturnType<typeof readWorld>>;
@@ -168,7 +169,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
    const statements=[db.prepare("INSERT INTO player_generation_drafts(id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,status,created_at,expires_at,committed_at) VALUES(?,?,?,?,'{}','[]',?,'payroll-fixture','committed',?,?,?)").bind(batch,world.generation,season,agent,chunk.length,now,now+3600,now)];
    for(let i=0;i<chunk.length;i++){
     const {clubKey,annual}=chunk[i],id=playerBase+offset+i+1,reference=annual*4/5;
-    statements.push(db.prepare("INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(?,?,?,?,?,?)").bind(id,batch,world.generation,season,JSON.stringify({id,first_name:'Fixture',last_name:'Payroll',nationality:'ITA',age:22,career_status:'active'}),now),
+    statements.push(db.prepare("INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at) VALUES(?,?,?,?,?,?)").bind(id,batch,world.generation,season,JSON.stringify({id,first_name:'Fixture',last_name:'Payroll',nationality:'ITA',age:22,retirement_age:40,career_status:'active'}),now),
      db.prepare("INSERT INTO player_signed_contracts(player_id,world_generation,club_key,signed_at_ms,start_tick,duration_seasons,scheduled_end_tick,annual_salary_arc,minimum_arc,reference_arc,maximum_arc,policy_version,ai_demand_arc,signing_key) VALUES(?,?,?,?,?,1,?,?,40,?,?,'contract-draft-v1',?,?)").bind(id,world.generation,clubKey,now*1000,tick+day-28,tick+56,annual,reference,2*reference,annual,'payroll-fixture:'+id),
      db.prepare('UPDATE player_signed_contracts SET closed_tick=?,close_reason=? WHERE player_id=?').bind(tick+day,day===56?'expiry':'release',id));
    }
@@ -597,8 +598,15 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  },'lineup-season2-approval-0001',now);
  world=approved.world;
  await earmarkNextRewardBudget(db,localAccess(),now);
- const prepared=await prepareSeasonTwo(db,session,command(),
+ const lifecycleDb=db as Database, lifecycleCommand=command();
+ const beforeLifecycle=(await lifecycleDb.prepare("SELECT id,payload_json FROM generated_players ORDER BY id").all<{id:number;payload_json:string}>()).results;
+ const priorClaims=(await lifecycleDb.prepare("SELECT * FROM payroll_claims ORDER BY id").all()).results;
+ const prepared=await prepareSeasonTwo(db,session,lifecycleCommand,
   'lineup-season2-prepare-0001',now);
+ expect(await prepareSeasonTwo(db,session,lifecycleCommand,'lineup-season2-prepare-0001',now)).toEqual(prepared);
+ const afterLifecycle=(await lifecycleDb.prepare("SELECT id,payload_json FROM generated_players ORDER BY id").all<{id:number;payload_json:string}>()).results;
+ expect(afterLifecycle.map(row=>({id:row.id,payload:JSON.parse(row.payload_json)}))).toEqual(beforeLifecycle.map(row=>({id:row.id,payload:{...JSON.parse(row.payload_json),age:23}})));
+ expect((await lifecycleDb.prepare("SELECT * FROM payroll_claims ORDER BY id").all()).results).toEqual(priorClaims);
  world=prepared.world;
  expect(world).toMatchObject({seasonNumber:2,day:0,phase:'preparing'});
  const finals=await readMatchDirectory(db,1,54);

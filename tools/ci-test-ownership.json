@@ -147,6 +147,7 @@
     "backend/tests/test_payroll_obligations_migration.py": "migration",
     "backend/tests/test_player_auth_migration.py": "migration",
     "backend/tests/test_player_club_affiliation_migration.py": "migration",
+    "backend/tests/test_player_lifecycle_season_two_migration.py": "migration",
     "backend/tests/test_player_numeric_ids_migration.py": "migration",
     "backend/tests/test_player_portrait_profiles_migration.py": "migration",
     "backend/tests/test_player_profile_migration.py": "migration",

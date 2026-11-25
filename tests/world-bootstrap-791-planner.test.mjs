@@ -43,8 +43,8 @@ function testApprovedReference(){
  const p=approvedReferenceProfile();
  eq(p.ageCounts.map(x=>x.count),[98,212,278,327,327,327,327,327,327,327,327,327,327,326,326,326,326,320,304,267,201,110,33,3]);
  eq(p.agePolicies.map(x=>[x.minAge,x.maxAge,x.d1Mean,x.d2Mean,x.sigma,...x.termWeights]),[
- [16,19,61,61,7,15,35,50],[20,23,65,61,7,20,40,40],[24,28,67,63,7,25,45,30],
- [29,32,68,64,7,50,35,15],[33,35,68,64,7,70,25,5],[36,39,68,64,7,90,10,0]]);
+ [16,19,61,61,7,0,50,50],[20,23,65,61,7,0,60,40],[24,28,67,63,7,0,70,30],
+ [29,32,68,64,7,0,85,15],[33,35,68,64,7,0,95,5],[36,39,68,64,7,0,100,0]]);
  // Independent exact quota assertions (not calculated using planner apportionment).
  const f=referenceFixture(),m=planApprovedReference(f),s=m.slots;
  eq(s.length,6400);eq(new Set(s.map(x=>x.generatorSeed)).size,6400);
@@ -53,9 +53,9 @@ function testApprovedReference(){
  eq(s.filter(x=>x.division===1).length,3200);
  eq(s.filter(x=>x.division===2).length,3200);
  const termCounts=band=>[1,2,3].map(t=>band.filter(x=>x.intendedTermSeasons===t).length);
- eq(termCounts(s.filter(x=>x.age>=33&&x.age<=35)),[624,223,44]);
- eq(termCounts(s.filter(x=>x.age>=36)),[312,35,0]);
- eq(termCounts(s),[2396,2293,1711]);
+ eq(termCounts(s.filter(x=>x.age>=33&&x.age<=35)),[0,846,45]);
+ eq(termCounts(s.filter(x=>x.age>=36)),[0,347,0]);
+ eq(termCounts(s),[0,4689,1711]);
  const home=new Map(f.clubs.map(c=>[c.key,c.nationality]));
  eq(s.filter(x=>x.primaryNationality===home.get(x.clubKey)).length,4160);
  for(const c of f.clubs){
@@ -69,7 +69,7 @@ function testApprovedReference(){
  throws(()=>planApprovedReference({...f,clubs:f.clubs.slice(1)}));
  // Caller mutation cannot change the next profile.
  p.agePolicies[0].termWeights[0]=999;
- eq(approvedReferenceProfile().agePolicies[0].termWeights,[15,35,50]);
+ eq(approvedReferenceProfile().agePolicies[0].termWeights,[0,50,50]);
 }
 test('approved 6,400-slot demographic reference',testApprovedReference);
 
@@ -221,7 +221,7 @@ function testPersistenceProtocol(){
  eq(report.clubCounts.filter(c=>c.active&&c.count===25).length,256);eq(report.clubCounts.filter(c=>!c.active&&c.count===0).length,manifest.clubs.length-256);
  eq(report,reconcileCompletedOpening(run,manifest,inventory,[...receipts].reverse(),{...complete,rawRows:[...rawRows].reverse()}));
  const handoff=prepareOpeningContractHandoff(run,manifest,inventory,receipts,complete);
- eq(handoff.intents.length,6400);eq(new Set(handoff.intents.map(x=>x.idempotencyKey)).size,6400);
+ eq(handoff.intents.length,6400);requireThat(handoff.intents.every(i=>i.durationSeasons===2||i.durationSeasons===3),"opening contracts must cover both test seasons");eq(new Set(handoff.intents.map(x=>x.idempotencyKey)).size,6400);
  eq(handoff.intents.filter(x=>x.kind==="reuse").map(x=>x.playerId),[44]);
  eq(handoff,prepareOpeningContractHandoff(run,manifest,inventory,[...receipts].reverse(),complete));
  const syntheticSigned=handoff.intents.map((a,i)=>({id:i+1,player_id:a.playerId,world_generation:handoff.worldGeneration,club_key:a.clubKey,signed_at_ms:1,start_tick:0,duration_seasons:a.durationSeasons,scheduled_end_tick:56*a.durationSeasons,annual_salary_arc:50,minimum_arc:a.division===1?40:20,reference_arc:40,maximum_arc:80,policy_version:"contract-draft-v1",signed_mandate_id:null,ai_demand_arc:50,signing_key:a.signingKey,closed_tick:null,close_reason:null}));

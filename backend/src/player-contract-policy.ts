@@ -69,3 +69,13 @@ export function offerExpiresAt(createdAt:number):number {
  requireInt(createdAt,1,Number.MAX_SAFE_INTEGER-CONTRACT_POLICY.offerLifetimeMs);
  return createdAt+CONTRACT_POLICY.offerLifetimeMs;
 }
+
+/** #779: trusted payroll SQL for the original signed rate or its prospective
+ * Season 2 promotion floor. The view is derived from immutable approved snapshots.
+ * No caller-controlled SQL; contract history and previous payroll receipts stay intact. */
+export function payrollAnnualSalarySql(season:number):string {
+ if(!Number.isSafeInteger(season)||season<1)throw new RangeError('invalid_payroll_season');
+ return season>=2
+  ? 'COALESCE((SELECT annual_salary_arc FROM player_contract_promotion_salary WHERE contract_id=player_signed_contracts.id),annual_salary_arc)'
+  : 'annual_salary_arc';
+}

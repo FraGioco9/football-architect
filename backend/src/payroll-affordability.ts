@@ -4,7 +4,7 @@ import type {Database,Statement} from './database.ts';
 import type {WorldV1} from './types.ts';
 import {ApiError} from './errors.ts';
 import {economicAssert,clubTreasuryId,economicReconciliationGuard} from './economic-ledger.ts';
-import {earnedBetween,canAffordNextPayday,type Affordability} from './player-contract-policy.ts';
+import {earnedBetween,canAffordNextPayday,payrollAnnualSalarySql,type Affordability} from './player-contract-policy.ts';
 import {annualRewardHoldId} from './reward-calendar-gate.ts';
 import {requireEconomicGenesisGuard} from './economic-genesis.ts';
 import {rewardCalendarBudget} from './reward-settlement-plan.mjs';
@@ -31,7 +31,7 @@ export async function preparePayrollAffordability(db:Database,world:WorldV1,club
  const worldSql="SELECT 1 FROM world_state WHERE id=1 AND generation=? AND season_number=? AND day=? AND phase=? AND revision=?";
  const worldArgs=[generation,world.seasonNumber,world.day,world.phase,world.revision];
  const contractsSql=`SELECT COALESCE(json_group_array(json_array(id,start_tick,end_tick,annual_salary_arc)),'[]') AS snapshot
- FROM (SELECT id,start_tick,COALESCE(closed_tick,scheduled_end_tick) AS end_tick,annual_salary_arc
+ FROM (SELECT id,start_tick,COALESCE(closed_tick,scheduled_end_tick) AS end_tick,${payrollAnnualSalarySql(season)} AS annual_salary_arc
  FROM player_signed_contracts WHERE world_generation=? AND club_key=? AND start_tick<? AND COALESCE(closed_tick,scheduled_end_tick)>? ORDER BY id)`;
  const ca=[generation,club,hi,lo];
  const balanceSql="SELECT b.available_arc,b.reserved_arc,c.active_version FROM economic_available_balances b JOIN economic_control c ON c.id=1 AND c.posting_enabled=1 WHERE b.id=? AND b.kind='CLUB_TREASURY'";
