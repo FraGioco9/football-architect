@@ -66,7 +66,8 @@ import {previewPlayerGeneration,commitPlayerGeneration} from '../src/players-gen
 import {readOpeningObservation} from '../src/opening-world-store.ts';
 import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
 import {fundOpeningFixture,prepareOpeningFundingFixture} from './fixtures/opening-funding.ts';
-import {seedUnifiedOperator} from './fixtures/unified-operator.ts';
+import {seedUnifiedOperator,rotateUnifiedOperatorFixtureSession} from './fixtures/unified-operator.ts';
+import {sessionGuard as lifecycleSessionGuard} from '../src/command-guards.ts';
 import {changeClubLicense} from '../src/club-licenses.ts';
 import {stepEconomicGenesis,completeEconomicGenesis,readEconomicGenesis} from '../src/economic-genesis.ts';
 import {economicAssert,reconcileEconomy,financeSessionGuard} from '../src/economic-ledger.ts';
@@ -337,6 +338,26 @@ async function rehearsePublishedLifecycle(
 ){
  type World=Awaited<ReturnType<typeof readWorld>>;
  let world=await readWorld(db);
+ // Use a real clock at every command/batch boundary. The fixture's one-hour
+ // credentials are not the product session lifetime; rotate, never extend
+ // them in place or supply an old authorization clock to sporting commands.
+ let expiresAt=now+3600;
+ const finance=(s:AdminSession,at:number)=>['read','post'].map(cap=>financeSessionGuard(db,s.unified!.playerId,s.unified!.sessionDigest,s.unified!.csrfDigest,cap as 'read'|'post',at));
+ const fresh=async(force=false)=>{
+  now=Math.floor(Date.now()/1000);
+  if(!force&&expiresAt-now>300)return;
+  const previous=session;
+  // The original token must fail at the exact expiry boundary.
+  await assert.rejects(db.batch([lifecycleSessionGuard(db,previous,expiresAt)]));
+  await assert.rejects(db.batch(finance(previous,expiresAt)));
+  const next=await rotateUnifiedOperatorFixtureSession(db,previous,now);
+  session=next.session;expiresAt=next.expiresAt;
+  await assert.rejects(db.batch([lifecycleSessionGuard(db,previous,now)]));
+  await assert.rejects(db.batch(finance(previous,now)));
+  await db.batch([lifecycleSessionGuard(db,session,now),...finance(session,now)]);
+  console.log('opening lifecycle fixture session rotated');
+ };
+ await fresh(true);
  const access=()=>[economicAssert(db,'SELECT 1')];
  const command=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
  const step=async(p:Promise<{world:World}>)=>{world=(await p).world;};
@@ -351,28 +372,33 @@ async function rehearsePublishedLifecycle(
  const originalPlayers=new Map(before.rawRows.map(row=>[row.id,JSON.parse(row.payload_json)]));
  const payrollClaims=async(season:number)=>(await db.prepare("SELECT c.* FROM payroll_claims c JOIN payroll_runs r ON r.id=c.run_id WHERE r.season=? ORDER BY c.id").bind(season).all()).results;
  const payday=async(day:28|56)=>{
+  await fresh();
   assert.equal(world.day,day);
   console.log('opening lifecycle payday start:',JSON.stringify({season:world.seasonNumber,day}));
   await db.batch(['read','post'].map(capability=>financeSessionGuard(db,session.unified!.playerId,session.unified!.sessionDigest,session.unified!.csrfDigest,capability as 'read'|'post',now)));
   const prepared=await prepareRewardSettlement(db,pin);
   let complete=false;
   for(let i=0;i<100;i++){
+   await fresh();
    const result=await executeRewardSettlementBatch(db,session,prepared,now);
    if(result.status==='complete'){complete=true;break;}
    assert.equal(result.status,'pending');
   }
   assert.equal(complete,true,'bounded local Rewards loop');
+  await fresh();
   await executeRewardSettlementBatch(db,session,prepared,now,true);
   world=await readWorld(db);
   console.log('opening lifecycle Rewards complete:',JSON.stringify({season:world.seasonNumber,day}));
   let finished=false;
   for(let i=0;i<1000;i++){
+   await fresh();
    const result=await settleNextPayrollBatch(db,session,now);
    if(result===null){finished=true;break;}
    assert.ok(result.status==='pending'||result.status==='complete');
    if((i+1)%64===0)console.log('opening lifecycle payroll batches:',JSON.stringify({season:world.seasonNumber,day,batches:i+1}));
   }
   assert.equal(finished,true,'bounded local payroll loop');
+  await fresh();
   const report=await reconcilePayrollPayday(db,session,now);
   assert.equal(report.status,'complete');assert.equal(report.clubsComplete,320);assert.equal(report.pendingArc,0);
   assert.equal(report.dueArc,report.paidArc+report.arrearsArc);
@@ -384,6 +410,7 @@ async function rehearsePublishedLifecycle(
   console.log('opening lifecycle payroll:',JSON.stringify({season:world.seasonNumber,day,clubs:report.clubsComplete,dueArc:report.dueArc,paidArc:report.paidArc,arrearsArc:report.arrearsArc}));
  };
  const play=async()=>{
+  await fresh();
   await step(initializeAdministrativeEvents(db,session,command(),key('events'),now));
   await step(advanceAdministrativeClockLineupV1(db,session,'start',command(),key('start'),now));
   for(const eventId of ['domestic:entrants','international:entrants']){
@@ -397,11 +424,14 @@ async function rehearsePublishedLifecycle(
   await step(executeInternationalDraw(db,session,command(),key('draw'),now));
   await step(publishInternationalCalendarLineupV1(db,session,command(),key('publish'),now));
   for(let day=4;day<=56;day++){
+   await fresh();
    await step(executeLineupLifecycleV1(db,session,'advance',command(),key('sport-'+day),now));
    assert.equal(world.day,day);
    if(day===28||day===56)await payday(day);
   }
+  await fresh();
   await step(archiveSeasonLineupV1(db,session,command(),key('archive'),now));
+  await fresh();
   await step(closeSeasonLineupV1(db,session,command(),key('close'),now));
   assert.equal(world.phase,'closed');
  };
@@ -412,8 +442,10 @@ async function rehearsePublishedLifecycle(
  assert.equal(priorReceipts,4082);
  const originalArchives=(await db.prepare("SELECT * FROM season_archives WHERE season_number=1").all()).results;
  const reviewed=await readSeasonTwoCandidate(db);
+ await fresh();
  await step(approveSeasonTwoSnapshot(db,session,{...command(),snapshotHash:reviewed.snapshot.snapshotHash},key('approve-next'),now));
  await earmarkNextRewardBudget(db,access(),now);
+ await fresh();
  const priorWorld=command(),prepareKey=key('prepare-next');
  const prepared=await prepareSeasonTwo(db,session,priorWorld,prepareKey,now);
  assert.deepEqual(await prepareSeasonTwo(db,session,priorWorld,prepareKey,now),prepared);

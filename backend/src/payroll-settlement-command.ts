@@ -52,7 +52,9 @@ export async function settleClubPayrollBatch(db:Database,session:AdminSession,cl
  AND NOT EXISTS(SELECT 1 FROM payroll_runs r JOIN payroll_run_milestones m ON m.run_id=r.id AND m.kind='completed'
  WHERE r.generation=? AND r.club_key=? AND r.season=e.season_number AND r.day=e.scheduled_day))`,
  [generation,season*56+day,generation,clubKey]);
- const guards=()=>[...access(),...rewardGuards,priorGuard(),economicReconciliationGuard(db)];
+ // Required Rewards proof already contains the unconditional canonical Ledger
+ // reconciliation guard. Do not repeat the identical audit in the same batch.
+ const guards=()=>[...access(),...rewardGuards,priorGuard()];
  const snap=await db.batch([...guards(),db.prepare(contractsSql).bind(...ca),db.prepare(mandatesSql).bind(...ma),
   db.prepare('SELECT * FROM payroll_runs WHERE id=?').bind(runId),
   db.prepare('SELECT active_version FROM economic_control WHERE id=1 AND posting_enabled=1'),
@@ -137,7 +139,7 @@ export async function settleClubPayrollBatch(db:Database,session:AdminSession,cl
  };
  let state=await inspect();
  const stateGuards=()=>[
-  ...rewardGuards,...sourceGuards(),priorGuard(),economicReconciliationGuard(db),
+  ...rewardGuards,...sourceGuards(),priorGuard(), // includes the live Ledger audit
   economicAssert(db,"SELECT 1 FROM payroll_run_milestones WHERE run_id=? AND kind='sealed' AND digest=?",[runId,state.seal]),
   economicAssert(db,"SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM payroll_run_milestones WHERE run_id=? AND kind='completed')",[runId]),
   economicAssert(db,'SELECT 1 WHERE ('+allocationSql.replace(' AS snapshot','')+')=?',[runId,state.allocationSnapshot])

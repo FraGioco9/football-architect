@@ -204,14 +204,21 @@ export async function releaseEconomicFunds(db:Database,id:string,holdId:string,a
 /** Aggregate audit in one snapshot: no unbounded result set crosses the D1 boundary.
  * SQL still scans indexed history; benchmark at production volume before activation.
  */
-const invalidJournal="SELECT COUNT(*) AS n FROM economic_transactions t WHERE (SELECT COUNT(*) FROM economic_entries e WHERE e.transaction_id=t.id)<>json_array_length(t.lines_json) OR (SELECT COALESCE(SUM(amount_arc),0) FROM economic_entries e WHERE e.transaction_id=t.id)<>0 OR EXISTS(SELECT 1 FROM json_each(t.lines_json) j WHERE NOT EXISTS(SELECT 1 FROM economic_entries e WHERE e.transaction_id=t.id AND e.line_no=j.key AND e.account_id=json_extract(j.value,'$.accountId') AND e.amount_arc=json_extract(j.value,'$.amountArc')))";
+const invalidJournal="SELECT COUNT(*) AS n FROM economic_transactions t WHERE (SELECT COUNT(*)<>json_array_length(t.lines_json) OR COALESCE(SUM(amount_arc),0)<>0 FROM economic_entries e WHERE e.transaction_id=t.id) OR EXISTS(SELECT 1 FROM json_each(t.lines_json) j WHERE NOT EXISTS(SELECT 1 FROM economic_entries e WHERE e.transaction_id=t.id AND e.line_no=j.key AND e.account_id=json_extract(j.value,'$.accountId') AND e.amount_arc=json_extract(j.value,'$.amountArc')))";
 const invalidBalances="SELECT COUNT(*) AS n FROM economic_available_balances WHERE balance_arc NOT BETWEEN CASE WHEN kind='ISSUANCE_CONTROL' THEN -1000000000000 ELSE 0 END AND CASE WHEN kind='ISSUANCE_CONTROL' THEN 0 ELSE 1000000000000 END OR reserved_arc<0 OR (kind<>'ISSUANCE_CONTROL' AND available_arc<0)";
 const invalidHolds="SELECT COUNT(*) AS n FROM economic_open_holds WHERE remaining_arc<0 OR remaining_arc>amount_arc";
 const totals="SELECT COUNT(*) AS account_count,COALESCE(SUM(CASE WHEN kind<>'ISSUANCE_CONTROL' THEN balance_arc ELSE 0 END),0) AS stock,COALESCE(-SUM(CASE WHEN kind='ISSUANCE_CONTROL' THEN balance_arc ELSE 0 END),0) AS issued FROM economic_balances";
 /** Enforce the existing canonical aggregate audit inside a domain write batch. */
 export function economicReconciliationGuard(db:Database,when?:{condition:string;values:unknown[]}){
- const valid="("+invalidJournal+")=0 AND ("+invalidBalances+")=0 AND ("+invalidHolds+")=0 AND EXISTS(SELECT 1 FROM ("+totals+") WHERE stock=issued AND stock BETWEEN 0 AND "+ARC_LIMIT+")";
- return economicAssert(db,"SELECT 1 WHERE "+(when?"NOT ("+when.condition+") OR ":"")+"("+valid+")",when?.values??[]);
+ // Materialize only within this SQL statement, never across transactions.
+ // Preserve the canonical projections and every predicate; avoid recalculating
+ // a growing account balance and hold release sum for each predicate and total.
+ const snapshot=`WITH audit_balances AS MATERIALIZED (SELECT * FROM economic_balances),
+ audit_holds AS MATERIALIZED (SELECT * FROM economic_open_holds),
+ audit_reserves AS MATERIALIZED (SELECT b.*,COALESCE((SELECT SUM(h.remaining_arc) FROM audit_holds h WHERE h.account_id=b.id),0) AS reserved_arc FROM audit_balances b),
+ audit_available AS (SELECT r.*,r.balance_arc-r.reserved_arc AS available_arc FROM audit_reserves r) `;
+ const valid="("+invalidJournal+")=0 AND ("+invalidBalances.replace('economic_available_balances','audit_available')+")=0 AND ("+invalidHolds.replace('economic_open_holds','audit_holds')+")=0 AND EXISTS(SELECT 1 FROM ("+totals.replace('economic_balances','audit_balances')+") WHERE stock=issued AND stock BETWEEN 0 AND "+ARC_LIMIT+")";
+ return economicAssert(db,snapshot+"SELECT 1 WHERE "+(when?"NOT ("+when.condition+") OR ":"")+"("+valid+")",when?.values??[]);
 }
 export async function reconcileEconomy(db:Database,access:readonly Statement[]){
  requireAccess({access});
