@@ -5,6 +5,7 @@ import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
 import {resetWorld} from '../src/reset-world-command.ts';
+import {prepareSportingReset,executeSportingReset} from '../src/sporting-reset-preview.ts';
 import {previewPlayerGeneration,commitPlayerGeneration,listGeneratedPlayers} from '../src/players-generation-command.ts';
 import {readPublicPlayers} from '../src/public-players-read.ts';
 import {prepareSeason} from '../src/commands.ts';
@@ -173,4 +174,16 @@ it('restarts public match numbering at 1 after a guarded reset, without weakenin
  expect(rows.every(row=>row.generation===next.world.generation)).toBe(true);
  expect(rows.every(row=>!oldSlots.includes(row.slot_match_id))).toBe(true);
  await expect(db.prepare('DELETE FROM public_match_numbers').run()).rejects.toThrow();
+});
+
+it('binds a sporting reset to fresh retained evidence, rejecting stale previews without mutation',async()=>{
+ const preview=await prepareSportingReset(db,session,now);
+ expect(preview.executable).toBe(true);
+ const request={...cmd(),confirmation:'RESET SEASON 0',expiresAt:preview.expiresAt,previewToken:preview.previewToken};
+ await expect(executeSportingReset(db,session,{...request,previewToken:'0'.repeat(64)},'reset-preview-invalid-0001',now)).rejects.toMatchObject({status:409});
+ await expect(executeSportingReset(db,session,request,'reset-preview-expired-0001',now+301)).rejects.toMatchObject({status:409});
+ expect(await readWorld(db)).toEqual(world);
+ const result=await executeSportingReset(db,session,request,'reset-preview-valid-00001',now);
+ expect(result.world).toMatchObject({seasonNumber:0,day:0,revision:0,phase:'unstarted'});
+ expect(await readWorld(db)).toEqual(result.world);
 });

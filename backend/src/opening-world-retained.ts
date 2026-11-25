@@ -75,15 +75,9 @@ export async function verifyRetainedOpeningEvidence(db:Database,evidence:Retaine
   previouslyReferencedPlayers:payload.history.references.length,metadataRebased:original===0,eligibleForAutomaticReuse:false as const};
 }
 
-/** B2/G: explicit trusted local operation after audited reset, before staging.
- * The only updates are the two sporting metadata columns. Exact permanent
- * row snapshots, authorization and catalogue size are guarded in one batch. */
-export async function rebaseLocalRetainedPlayers(db:Database,session:AdminSession,evidence:RetainedEvidence,resetOperationId:string,now:number){
- const before=await readOpeningObservation(db);
- const proof=await verifyRetainedOpeningEvidence(db,evidence,resetOperationId);
- insist(same(before.rows,(await readOpeningObservation(db)).rows)&&before.world.generation===proof.worldGeneration,'retained catalogue changed');
- const guards=[sessionGuard(db,session,now),abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=0 AND season_number=0 AND day=0 AND phase='unstarted'",[proof.worldGeneration]),
-  abortUnless(db,"SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM opening_world_runs WHERE world_generation=? AND batch_index=-1) AND NOT EXISTS(SELECT 1 FROM seasons) AND NOT EXISTS(SELECT 1 FROM season_archives) AND NOT EXISTS(SELECT 1 FROM match_lineup_result_receipts) AND NOT EXISTS(SELECT 1 FROM player_signed_contracts) AND NOT EXISTS(SELECT 1 FROM player_agent_mandates) AND (SELECT COUNT(*) FROM generated_players)=? AND COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0)=?",[proof.worldGeneration,before.rows.length,before.idHighWater])];
+/** Pin the canonical retained catalogue, including portrait and valuation rows, in the caller's atomic batch. */
+export function retainedCatalogueGuards(db:Database,before:Awaited<ReturnType<typeof readOpeningObservation>>){
+ const guards=[abortUnless(db,"SELECT 1 WHERE (SELECT COUNT(*) FROM generated_players)=? AND COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0)=?",[before.rows.length,before.idHighWater])];
  for(let i=0;i<before.rawRows.length;i+=25)guards.push(abortUnless(db,`SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM json_each(?) j WHERE NOT EXISTS(
  SELECT 1 FROM generated_players p JOIN player_portrait_profiles q ON q.player_id=p.id JOIN player_market_values v ON v.player_id=p.id
  WHERE p.id=json_extract(j.value,'$.id') AND p.batch_id IS json_extract(j.value,'$.batch_id')
@@ -93,6 +87,19 @@ export async function rebaseLocalRetainedPlayers(db:Database,session:AdminSessio
  AND q.status IS json_extract(j.value,'$.status') AND q.asset_key IS json_extract(j.value,'$.asset_key')
  AND v.input_revision IS json_extract(j.value,'$.input_revision') AND v.config_version IS json_extract(j.value,'$.config_version')
  AND v.market_value_arc IS json_extract(j.value,'$.market_value_arc')))`,[JSON.stringify(before.rawRows.slice(i,i+25))]));
+ return guards;
+}
+
+/** B2/G: explicit trusted local operation after audited reset, before staging.
+ * The only updates are the two sporting metadata columns. Exact permanent
+ * row snapshots, authorization and catalogue size are guarded in one batch. */
+export async function rebaseLocalRetainedPlayers(db:Database,session:AdminSession,evidence:RetainedEvidence,resetOperationId:string,now:number){
+ const before=await readOpeningObservation(db);
+ const proof=await verifyRetainedOpeningEvidence(db,evidence,resetOperationId);
+ insist(same(before.rows,(await readOpeningObservation(db)).rows)&&before.world.generation===proof.worldGeneration,'retained catalogue changed');
+ const guards=[sessionGuard(db,session,now),abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=0 AND season_number=0 AND day=0 AND phase='unstarted'",[proof.worldGeneration]),
+  abortUnless(db,"SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM opening_world_runs WHERE world_generation=? AND batch_index=-1) AND NOT EXISTS(SELECT 1 FROM seasons) AND NOT EXISTS(SELECT 1 FROM season_archives) AND NOT EXISTS(SELECT 1 FROM match_lineup_result_receipts) AND NOT EXISTS(SELECT 1 FROM player_signed_contracts) AND NOT EXISTS(SELECT 1 FROM player_agent_mandates) AND (SELECT COUNT(*) FROM generated_players)=? AND COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0)=?",[proof.worldGeneration,before.rows.length,before.idHighWater])];
+ guards.push(...retainedCatalogueGuards(db,before));
  await db.batch([...guards,...(proof.metadataRebased?[]:[db.prepare('UPDATE generated_players SET world_generation=?,entry_season=0').bind(proof.worldGeneration)])]);
  const after=await verifyRetainedOpeningEvidence(db,evidence,resetOperationId);
  insist(after.metadataRebased,'retained rebase incomplete');
