@@ -206,7 +206,30 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  assert.match(source,/\/api\/player\/permissions/);
  assert.match(source,/admin\.world\.read/);
  assert.match(source,/\/api\/admin\/contracts/);
- assert.doesNotMatch(source,/method:\s*['"]POST|expectedClubKey|roster-affiliations|admin\.world\.write/);
+ assert.doesNotMatch(source,/expectedClubKey|roster-affiliations/);
+ assert.match(source,/admin\.world\.write/);
+ assert.match(source,/\/api\/admin\/contracts\/preview/);
+ assert.match(source,/\/api\/admin\/contracts\/sign/);
+ assert.match(source,/Idempotency-Key/);
+ assert.match(source,/quoteHash:quote.quoteHash/);
+ assert.match(html,/data-contract-draft-sign disabled/);
+ assert.match(html,/data-contract-draft-player aria-labelledby="contract-draft-player-caption" required disabled/);
+ assert.match(html,/data-contract-draft data-draft-state="loading" aria-labelledby="contract-draft-heading">/);
+ assert.match(html,/data-admin-contracts data-contracts-state="loading"/);
+ assert.match(css,/admin-contracts-skeleton td:not\(:first-child\)::after/);
+ assert.match(css,/data-contract-draft-message\]\{[^}]*height:2\.8em/);
+ assert.match(html,/data-contract-draft-sign[^>]*>[^<]*<\/button><p data-contract-draft-message[^>]*><\/p><\/div>/);
+ assert.match(css,/admin-contract-draft \.admin-licenses-actions\{display:grid;grid-template-columns:max-content max-content minmax\(0,1fr\)/);
+ assert.match(css,/data-contract-draft-message\]\{[^}]*height:4\.2em/);
+ assert.doesNotMatch(css,/data-contract-draft-message\]\{[^}]*overflow:auto/);
+ assert.match(source,/previewError\(quote\?\.error\?\.code,res\.status\)/);
+ assert.match(source,/unavailableRows\('loadFailed'\)/);
+ assert.match(html,/class="app-panel admin-licenses admin-licenses-editor admin-contract-draft"/);
+ assert.match(html,/class="app-link app-link-primary" data-contract-draft-sign/);
+ assert.match(html,/class="app-link app-link-secondary" data-contract-draft-preview/);
+ assert.match(html,/href="\/assets\/admin-licenses.css"/);
+ assert.ok(html.indexOf('src="/assets/admin-licenses.js"')<html.indexOf('src="/assets/admin-contracts.js"'));
+ assert.match(source,/faAdminDropdowns/);
  assert.match(source,/credentials:'same-origin'/);
  assert.ok(isAllowlistedPublicPath('assets/admin-contracts.js'));
  assert.equal(parseRoute('/admin/contracts')?.canonical,'/admin/contracts');
@@ -252,4 +275,4 @@ test('Admin captions are inert and section gaps use site spacing',async()=>{
 
 test('Inspection routes reuse the canonical Admin shell and expose no execute controls',async()=>{const {renderAdminReset,renderAdminEconomy}=await import('../tools/render-admin-inspection.mjs');const reset=readFileSync(new URL('../admin/reset/index.html',import.meta.url),'utf8'),economy=readFileSync(new URL('../admin/economy/index.html',import.meta.url),'utf8');assert.ok(reset.includes(renderAdminReset()));assert.ok(economy.includes(renderAdminEconomy()));assert.match(reset,/<table class="inspection-preview-table">/);assert.equal((reset.match(/data-inspection-count="/g)||[]).length,4);assert.doesNotMatch(reset,/app-players-table-scroll inspection-table/);for(const page of [reset,economy]){assert.match(page,/<p class="inspection-summary-label" data-inspection-summary data-inspection-state="checking" role="status"/);assert.equal((page.match(/data-inspection-summary/g)||[]).length,1);}assert.equal((reset.match(/data-inspection-scope disabled/g)||[]).length,4);assert.equal((economy.match(/data-inspection-tab="/g)||[]).length,6);assert.match(reset,/data-inspection-copy="confirm" disabled/);assert.doesNotMatch(reset,/data-admin-reset-confirm/);});
 
-test('Economy shares site cards, active tabs, tables and pagination without redundant headings',()=>{const page=readFileSync(new URL('../admin/economy/index.html',import.meta.url),'utf8');assert.match(page,/app-competition-stat-card app-competition-stat-card--compact inspection-metric/);assert.match(page,/app-competition-tab is-active" role="tab" id="inspection-tab-overview"/);assert.equal((page.match(/class="app-players-table" data-inspection-table/g)||[]).length,2);assert.equal((page.match(/class="app-players-pagination inspection-pagination"/g)||[]).length,2);assert.doesNotMatch(page,/<h2 data-inspection-copy="reconciliation"/);assert.match(page,/inspection-status-row/);});
+test('Economy shares site cards, active tabs, tables and pagination without redundant headings',()=>{const page=readFileSync(new URL('../admin/economy/index.html',import.meta.url),'utf8');assert.match(page,/app-competition-stat-card app-competition-stat-card--compact inspection-metric/);assert.match(page,/app-competition-tab is-active" role="tab" id="inspection-tab-overview"/);assert.equal((page.match(/class="app-players-table" data-inspection-table/g)||[]).length,4);assert.equal((page.match(/class="app-players-pagination inspection-pagination"/g)||[]).length,2);assert.doesNotMatch(page,/<h2 data-inspection-copy="reconciliation"/);assert.match(page,/inspection-status-row/);});

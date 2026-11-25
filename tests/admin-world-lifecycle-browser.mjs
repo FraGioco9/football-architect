@@ -101,7 +101,7 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   }finally{admin.off('request',recordNav)}
   const read=()=>admin.evaluate(()=>fetch('/api/world',{cache:'no-store'}).then(r=>r.json()).then(x=>x.world));
   const click=async(action,path)=>{
-   const selector=action==='approve'?'[data-admin-next-season-approve]':action==='reset'?'[data-admin-reset]':action==='prepare'?'[data-admin-prepare]':`[data-admin-command="${action}"]`;
+   const selector=action==='approve'?'[data-admin-next-season-approve]':action==='prepare'?'[data-admin-prepare]':`[data-admin-command="${action}"]`;
    await admin.waitForFunction(selector=>{const button=document.querySelector(selector);return button&&!button.disabled},selector);
    const response=admin.waitForResponse(r=>new URL(r.url()).pathname===path&&r.request().method()==='POST');
    await admin.locator(selector).focus();await admin.locator(selector).press('Enter');
@@ -203,11 +203,23 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   const navigation=publicPage.goto(publicOrigin+'/competitions/it-1/fixtures?season=1',{waitUntil:'domcontentloaded'});
   await seen;await navigation;
   const previous=await read();
-  await admin.locator('[data-admin-reset-confirm]').fill('WRONG');
-  assert.equal(await admin.locator('[data-admin-reset]').isDisabled(),true);
-  await admin.locator('[data-admin-reset-confirm]').fill('RESET SEASON 0');
+  await admin.locator('[data-admin-reset-link]').click();
+  await admin.waitForURL(url=>url.pathname==='/admin/reset');
+  await admin.locator('[data-inspection-scope][value="sporting"]').check();
+  await admin.locator('[data-inspection-preview]').click();
+  const save=admin.locator('[data-inspection-copy="downloadEvidence"]');
+  await save.waitFor({state:'visible'});
+  await save.click();
+  const confirm=admin.locator('[data-inspection-copy="confirm"]');
+  admin.once('dialog',dialog=>dialog.accept('WRONG'));
+  await confirm.click();
+  assert.deepEqual(await read(),previous);
   const reread=publicPage.waitForResponse(r=>new URL(r.url()).pathname==='/api/world'&&r.status()===200);
-  world=await click('reset','/api/admin/world/reset');release();
+  const resetResponse=admin.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/world/reset'&&r.request().method()==='POST');
+  admin.once('dialog',dialog=>dialog.accept('RESET SEASON 0'));
+  await confirm.click();
+  const resetResult=await resetResponse;assert.equal(resetResult.status(),200,await resetResult.text());
+  world=(await resetResult.json()).world;release();
   assert.notEqual(world.generation,previous.generation);assert.equal(world.seasonNumber,0);
   await reread;
   await publicPage.waitForFunction(()=>window.faCompetitionContext&&document.documentElement.dataset.faStandingsLoading==='false');
@@ -217,6 +229,7 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   const deleted=await publicPage.evaluate(()=>fetch('/api/competitions/IT-1/seasons/1').then(r=>r.json()));
   assert.equal(deleted.status,'empty');assert.equal(deleted.data,null);assert.equal(deleted.world.generation,world.generation);
   assert.equal(await admin.evaluate(()=>fetch('/api/admin/session').then(r=>r.status)),200,'Reset preserves operator access');
+  await admin.goto(origin+'/admin/calendar');
   const prepared=admin.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/seasons/prepare'&&r.request().method()==='POST');
   await admin.waitForFunction(()=>!document.querySelector('[data-admin-prepare]').disabled);
   await admin.locator('[data-admin-prepare]').click();assert.equal((await prepared).status(),200);

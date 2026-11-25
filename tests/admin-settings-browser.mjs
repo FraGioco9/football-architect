@@ -121,7 +121,7 @@ try{
    }
    if(grant==='write'){
     assert.equal(await page.locator('[data-admin-operations] button:visible').count(),0);
-    assert.equal(await page.locator('[data-admin-reset-confirm]').isVisible(),false);
+    assert.equal(await page.locator('[data-admin-reset-link]').isVisible(),false);
     assert.equal(await page.locator('[data-admin-details]').count(),0);
     await page.locator('[data-admin-prepare]').click();
     try{
@@ -133,10 +133,11 @@ try{
     assert.equal(await page.locator('[data-admin-command="initialize"]').isEnabled(),true);
     assert.equal(await page.locator('[data-admin-operations] button:visible').count(),1,'Show only the action available now');
     assert.equal(await page.locator('[data-admin-prepare]').isVisible(),false);
-    assert.equal(await page.locator('[data-admin-reset-confirm]').isVisible(),true,'Reset is an inline section');
+    assert.equal(await page.locator('[data-admin-reset-link]').isVisible(),true,'Calendar links to the dedicated reset page');
     assert.equal(await page.locator('[data-admin-reset-section]>summary').count(),0);
     assert.equal(await page.locator('[data-admin-working]').isVisible(),false);
-    assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false,'Reset still requires its typed confirmation');
+    assert.equal(await page.locator('[data-admin-reset-link]').getAttribute('href'),'/admin/reset');
+    assert.equal(await page.locator('[data-admin-reset-confirm],[data-admin-reset]').count(),0);
    }
    if(allowed&&grant!=='revoked-write'){
     assert.equal(permissionReads,1,'Settings, Admin directory and Calendar reuse one per-tab permissions check');
@@ -603,6 +604,8 @@ try{
    });
    await page.goto('http://app.localhost:2000/admin/contracts',{waitUntil:'domcontentloaded'});
    await page.locator('.admin-contracts-skeleton').first().waitFor({state:'visible'});
+   await page.locator('#app-admin[data-admin-access="granted"]').waitFor();
+   assert.equal(await page.locator('[data-contract-draft]').isVisible(),false);
    const geometry=()=>page.evaluate(()=>{const head=document.querySelector('.admin-contracts-table thead');
     return {y:head.getBoundingClientRect().y,widths:[...head.querySelectorAll('th')].map(th=>th.getBoundingClientRect().width)}});
    const before=await geometry();
@@ -639,6 +642,134 @@ try{
    assert.equal(writes,0);assert.ok(permissionReads<=2);
    assert.deepEqual(errors,[]);checks++;
   }finally{releaseInitial();releasePage();await context.close()}
+ }
+
+ // #777 writer-only contract preparation; preview does not create a signed term.
+ {
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  let releasePermissions=()=>{},releaseList=()=>{},releasePreview=()=>{};
+  try{
+   const permissionGate=new Promise(resolve=>releasePermissions=resolve),listGate=new Promise(resolve=>releaseList=resolve),previewGate=new Promise(resolve=>releasePreview=resolve);
+   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+   const generation='11111111-1111-4111-8111-111111111111';
+   let previews=0,previewFailure='',listFailure=false,signable=false,signed=false,signCalls=0,signKey='';
+   const quoteHash='a'.repeat(64);
+   await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.route('**/api/player/permissions',async r=>{await permissionGate;return r.fulfill({json:{permissions:['admin.access','admin.world.read','admin.world.write']}})});
+   await page.route('**/api/admin/session',r=>r.fulfill({json:{csrfToken:'test-csrf'}}));
+   await page.route(/\/api\/admin\/contracts(?:\/(?:preview|sign)|\?[^#]*)?$/,async r=>{
+    const request=r.request();
+    if(new URL(request.url()).pathname.endsWith('/sign')){
+     signCalls++;assert.equal(request.method(),'POST');assert.equal(request.headers()['x-csrf-token'],'test-csrf');
+     const key=request.headers()['idempotency-key'];assert.match(key,/^[a-f0-9-]{36}$/);
+     if(signKey)assert.equal(key,signKey);else signKey=key;
+     assert.deepEqual(request.postDataJSON(),{playerId:2,clubKey:'IT-1',durationSeasons:2,expectedGeneration:generation,expectedRevision:0,quoteHash});
+     if(signCalls===1){await r.abort();return}
+     signed=true;return r.fulfill({json:{operationId:'22222222-2222-4222-8222-222222222222',world:{generation,revision:1}}});
+    }
+    if(new URL(request.url()).pathname.endsWith('/preview')){
+     previews++;assert.equal(request.method(),'POST');
+     assert.equal(request.headers()['x-csrf-token'],'test-csrf');
+     assert.deepEqual(request.postDataJSON(),{playerId:2,clubKey:'IT-1',durationSeasons:2,expectedGeneration:generation,expectedRevision:0});
+     await previewGate;
+     if(previewFailure)return r.fulfill({status:previewFailure==='contract_club_ineligible'?422:409,json:{error:{code:previewFailure}}});
+     return r.fulfill({json:{playerId:2,clubKey:'IT-1',durationSeasons:2,startTick:0,endTick:112,representation:'ai',minimumArc:40,annualSalaryArc:signable?125:null,signable,...(signable?{quoteHash}:{})}})
+    }
+    assert.equal(request.method(),'GET');
+    await listGate;
+    if(listFailure)return r.fulfill({status:503,json:{error:{code:'admin_unavailable'}}});
+    return r.fulfill({json:{count:2,page:1,pageSize:50,totalPages:1,worldGeneration:generation,worldRevision:signed?1:0,
+     players:[{id:1,name:'Signed Player',clubKey:'IT-1',canPrepareContract:false,contract:{id:7,annualSalaryArc:125,durationSeasons:1,startTick:0,endTick:56,signedAt:'2026-11-24T12:00:00.000Z'}},{id:2,name:'Free Player',clubKey:signed?'IT-1':null,canPrepareContract:!signed,contract:signed?{id:8,annualSalaryArc:125,durationSeasons:2,startTick:0,endTick:112,signedAt:'2026-11-24T12:00:00.000Z'}:null}],
+     clubs:[{clubKey:'IT-1',name:'Test Italian Club'}]}});
+   });
+   await page.goto('http://app.localhost:2000/admin/contracts',{waitUntil:'domcontentloaded'});
+   const form=page.locator('[data-contract-draft]');
+   await form.waitFor({state:'visible'});
+   await form.locator('.language-trigger').first().waitFor();
+   const geometry=()=>page.evaluate(()=>{const base=document.querySelector('#app-admin').getBoundingClientRect();return ['[data-contract-draft]','.admin-contract-draft-fields','.admin-contract-draft-terms','[data-contract-draft-message]','.admin-contracts-table thead'].map(sel=>{const b=document.querySelector(sel).getBoundingClientRect();return [b.x-base.x,b.y-base.y,b.width,b.height]})});
+   const same=(a,b)=>a.forEach((rect,i)=>rect.forEach((v,j)=>assert.ok(Math.abs(v-b[i][j])<1,'geometry drift '+i+':'+j+' '+v+' vs '+b[i][j])));
+   const first=await geometry();
+   assert.equal(await page.locator('.admin-contracts-skeleton').first().locator('td').nth(0).evaluate(e=>getComputedStyle(e,'::after').content),'none');
+   assert.ok(await page.locator('.admin-contracts-skeleton').first().locator('td').nth(1).evaluate(e=>parseFloat(getComputedStyle(e,'::after').width)>0));
+   assert.equal(await form.getAttribute('data-draft-state'),'loading');
+   assert.equal(await form.locator('.language-trigger').first().isDisabled(),true);
+   releasePermissions();await page.locator('#app-admin[data-admin-access="granted"]').waitFor();
+   same(first,await geometry());
+   releaseList();await page.locator('[data-contracts-player="2"]').waitFor();
+   same(first,await geometry());
+   assert.equal(await form.isVisible(),true);
+   assert.equal(await form.locator('[data-contract-draft-player] option').count(),2);
+   const selectFromMenu=async(id,label,searchText)=>{
+    const trigger=form.locator('#admin-contract-draft-dropdown-'+id).locator('..').locator('.language-trigger');
+    await trigger.click();
+    const menu=form.locator('#admin-contract-draft-dropdown-'+id);
+    if(searchText)await menu.locator('input[type="search"]').fill(searchText);
+    const option=menu.getByRole('option',{name:label,exact:true});
+    await option.waitFor({state:'visible'});
+    await option.click();
+    await menu.waitFor({state:'hidden'});
+    assert.equal(await trigger.getAttribute('aria-expanded'),'false');
+    assert.equal(await trigger.locator('.admin-licenses-dropdown-value').textContent(),label);
+   };
+   assert.equal(await form.locator('.admin-licenses-dropdown .language-trigger').count(),3);
+   await selectFromMenu(0,'Free Player','free');
+   await selectFromMenu(1,'Test Italian Club','italian');
+   await selectFromMenu(2,'2');
+   assert.equal(await form.locator('[data-contract-draft-player]').inputValue(),'2');
+   assert.equal(await form.locator('[data-contract-draft-club]').inputValue(),'IT-1');
+   await form.locator('[data-contract-draft-preview]').click();
+   await page.locator('[data-contract-draft][data-draft-state="preview"]').waitFor();
+   same(first,await geometry());releasePreview();
+   await form.locator('[data-contract-draft-start]').filter({hasText:'S1 · D1'}).waitFor();
+   same(first,await geometry());
+   assert.match(await form.locator('[data-contract-draft-end]').innerText(),/S2 · D56/);
+   assert.equal(await form.locator('[data-contract-draft-agent]').innerText(),'AI');
+   assert.equal(await form.locator('[data-contract-draft-sign]').isDisabled(),true);
+   assert.match(await form.locator('[data-contract-draft-message]').innerText(),/Signing unavailable/);
+   assert.equal(await form.locator('[data-contract-draft-salary]').innerText(),'—');
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   const message=form.locator('[data-contract-draft-message]');
+   assert.equal(await message.evaluate(el=>el.parentElement.classList.contains('admin-licenses-actions')),true);
+   assert.equal(await form.evaluate(el=>{const a=el.querySelector('[data-contract-draft-preview]').getBoundingClientRect(),b=el.querySelector('[data-contract-draft-sign]').getBoundingClientRect(),m=el.querySelector('[data-contract-draft-message]').getBoundingClientRect();return Math.abs(a.top-b.top)<1&&b.left>=a.right&&m.top>=Math.max(a.bottom,b.bottom)}),true);
+   previewFailure='contract_club_ineligible';
+   await form.locator('[data-contract-draft-preview]').click();
+   await message.filter({hasText:'Club is not eligible.'}).waitFor();
+   same(first,await geometry());
+   assert.equal(await form.locator('[data-contract-draft-start]').innerText(),'—');
+   assert.equal(await message.evaluate(el=>el.scrollHeight<=el.clientHeight+1),true);
+   previewFailure='';await form.locator('[data-contract-draft-preview]').click();
+   await message.filter({hasText:'Signing unavailable'}).waitFor();same(first,await geometry());
+   await page.setViewportSize({width:1280,height:900});
+   const desktop=await geometry();
+   const actionGeometry=()=>page.evaluate(()=>{const form=document.querySelector('[data-contract-draft]');const rect=s=>form.querySelector(s).getBoundingClientRect();const preview=rect('[data-contract-draft-preview]'),sign=rect('[data-contract-draft-sign]'),msg=rect('[data-contract-draft-message]');return {sameRow:Math.abs((preview.top+preview.bottom)/2-(msg.top+msg.bottom)/2)<1&&Math.abs((sign.top+sign.bottom)/2-(msg.top+msg.bottom)/2)<1,beside:msg.left>=sign.right,buttonsSideBySide:sign.left>=preview.right}});
+   assert.deepEqual(await actionGeometry(),{sameRow:true,beside:true,buttonsSideBySide:true});
+   await form.locator('[data-contract-draft-duration]').evaluate(el=>{el.value='1';el.dispatchEvent(new Event('change',{bubbles:true}))});
+   same(desktop,await geometry());
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   assert.equal(previews,3);
+   await form.locator('[data-contract-draft-duration]').evaluate(el=>{el.value='2';el.dispatchEvent(new Event('change',{bubbles:true}))});
+   signable=true;await form.locator('[data-contract-draft-preview]').click();
+   await message.filter({hasText:'Quote ready.'}).waitFor();
+   assert.equal(await form.locator('[data-contract-draft-salary]').innerText(),'125');
+   const signButton=form.locator('[data-contract-draft-sign]');
+   assert.equal(await signButton.isEnabled(),true);
+   same(desktop,await geometry());
+   await signButton.click();await message.filter({hasText:'Signing failed. Retry.'}).waitFor();
+   assert.equal(await signButton.isEnabled(),true);
+   await signButton.click();await message.filter({hasText:'Contract signed.'}).waitFor();
+   assert.equal(signCalls,2);assert.equal(previews,4);
+   assert.match(await page.locator('[data-contracts-player="2"]').innerText(),/Test Italian Club/);
+   assert.equal(await signButton.isDisabled(),true);same(desktop,await geometry());
+   listFailure=true;await page.reload({waitUntil:'domcontentloaded'});
+   await page.locator('[data-contracts-state="error"]').waitFor();
+   await message.filter({hasText:'Contracts unavailable. Refresh the page.'}).waitFor();
+   same(desktop,await geometry());
+   assert.equal(await form.locator('[data-contract-draft-preview]').isDisabled(),true);
+   assert.equal(await page.locator('.admin-contracts-skeleton').count(),0);
+   assert.match(await page.locator('.admin-contracts-empty-message').innerText(),/Contracts unavailable/);
+   assert.equal(await message.evaluate(el=>el.scrollHeight<=el.clientHeight+1),true);
+   assert.deepEqual(errors,[]);checks++;
+  }finally{releasePermissions();releaseList();releasePreview();await context.close()}
  }
  timing.mark('contracts-inspection-complete');
 
@@ -856,8 +987,12 @@ try{
     if(p==='/api/admin/reset/preview'){previewCalls++;assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');return ok(route,{world,scopes:['sporting'],counts:{seasons:1},blockers:['preview_only','economic_generation_guard','contract_schema_incomplete','contract_generation_guard','sporting_history_protected','reset_prerequisites'],executable:false},write?(previewFails?503:200):403)}
     if(p.startsWith('/api/admin/economy/')){
      financeReads++;if(!finance)return ok(route,{},403);
-     if(p.endsWith('/summary'))return ok(route,{world,status:funded?'active':'uninitialized',policyVersion:funded?'fixture':null,transactionCount:funded?1:0,accounts:['PLATFORM_RESERVE','CLUB_TREASURY','USER_WALLET','ISSUANCE_CONTROL'].map(kind=>({kind,count:funded?1:0,balanceArc:funded?'123456789012':null,heldArc:funded?'0':null,availableArc:funded?'123456789012':null}))});
-     if(p.endsWith('/reconciliation'))return ok(route,{status:funded?'core_checked':'uninitialized',report:{ok:true}});
+     if(p.endsWith('/summary'))return ok(route,{world,status:funded?'active':'uninitialized',policyVersion:funded?'fixture':null,transactionCount:funded?1:0,
+      genesis:{status:funded?'funded':'uninitialized',fundedClubs:funded?320:null,plannedArc:funded?'6000000':null,issuedArc:funded?'6000000':null,clubCapitalArc:funded?'1200000':null,plannedFreeReserveArc:funded?'2400000':null},
+      rewards:{rows:[1,2].flatMap(season=>[28,56].map(day=>({season,day,forecastArc:day===28?'676800':'1723200',creditedArc:funded?(day===28?'676800':'1723200'):null,status:funded?'recorded':'uninitialized'})))},
+      payroll:{rows:[1,2].flatMap(season=>[28,56].map(day=>({season,day,earnedArc:funded?'1000':null,paidArc:funded?'800':null,outstandingArc:funded?'200':null,arrearsArc:funded?'200':null,pendingArc:funded?'0':null,sealedClubs:funded?320:null,completedClubs:funded?320:null,status:funded?'recorded':'uninitialized'})))},
+      accounts:['PLATFORM_RESERVE','CLUB_TREASURY','USER_WALLET','ISSUANCE_CONTROL'].map(kind=>({kind,count:funded?1:0,balanceArc:funded?'123456789012':null,heldArc:funded?'0':null,availableArc:funded?'123456789012':null}))});
+     if(p.endsWith('/reconciliation'))return ok(route,{status:funded?'core_checked':'uninitialized',report:{ok:true},domainStatus:funded?'domain_verified':'unavailable'});
      if(p.endsWith('/ledger'))return ok(route,{checkpoint:'a'.repeat(64),nextCursor:null,rows:funded?[{occurredAt:1770000000,purpose:'REWARD',debit:'PLATFORM_RESERVE',credit:'CLUB_TREASURY',amountArc:'100'}]:[]});
      if(p.endsWith('/clubs'))return ok(route,{checkpoint:'a'.repeat(64),page:1,pages:7,rows:[]});
     }
@@ -894,6 +1029,14 @@ try{
    const reserve=page.locator('[data-inspection-value="reserve"]');
    assert.equal(await page.locator('#inspection-panel-overview .app-competition-stat-card').count(),4);
    assert.equal(await page.locator('[data-inspection-tab="overview"].is-active').count(),1);
+   await page.locator('[data-inspection-tab="rewards"]').click();
+   assert.equal(await page.locator('.inspection-rehearsal-rewards tbody tr').count(),4);
+   assert.equal(await page.locator('[data-inspection-value="rewards-1-28-creditedArc"]').textContent(),'—');
+   assert.notEqual(await page.locator('[data-inspection-value="rewards-1-28-forecastArc"]').textContent(),'—');
+   await page.locator('[data-inspection-tab="payroll"]').click();
+   assert.equal(await page.locator('.inspection-rehearsal-payroll tbody tr').count(),4);
+   assert.equal(await page.locator('[data-inspection-value="payroll-2-56-earnedArc"]').textContent(),'—');
+   await page.locator('[data-inspection-tab="overview"]').click();
    assert.equal(await page.locator('[data-admin-inspection="economy"] h2').count(),0,'Economy has no redundant headings');
    assert.equal(await page.locator('[data-inspection-summary]').isVisible(),true);
    assert.equal(await page.locator('[data-inspection-policy]').isVisible(),true);
@@ -906,6 +1049,14 @@ try{
    funded=true;await page.locator('[data-inspection-refresh]').click();await inspectionReady('economy').waitFor({state:'visible'});
    assert.equal((await reserve.textContent()).replace(/\D/g,''),'123456789012','Populated reserve must be rendered before geometry comparison');
    assert.deepEqual(await geometry(),empty,'Economy cards must not resize when populated');
+   assert.match(await page.locator('[data-inspection-value="fundedClubs"]').textContent(),/320 \/ 320/);
+   await page.locator('[data-inspection-tab="rewards"]').click();
+   assert.equal(await page.locator('[data-inspection-value="rewards-2-56-forecastArc"]').textContent(),await page.locator('[data-inspection-value="rewards-2-56-creditedArc"]').textContent());
+   await page.locator('[data-inspection-tab="payroll"]').click();
+   assert.match(await page.locator('[data-inspection-value="payroll-2-56-arrearsArc"]').textContent(),/200 ARC/);
+   assert.match(await page.locator('[data-inspection-value="payroll-2-56-pendingArc"]').textContent(),/0 ARC/);
+   assert.ok(await page.locator('.inspection-rehearsal-payroll').evaluate(n=>n.scrollWidth>=n.clientWidth&&n.getBoundingClientRect().right<=document.documentElement.clientWidth+1),'Payroll scroll remains inside viewport');
+   await page.locator('[data-inspection-tab="overview"]').click();
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    finance=false;await page.locator('[data-inspection-refresh]').click();await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
    assert.equal(await page.locator('#app-admin').isVisible(),false);

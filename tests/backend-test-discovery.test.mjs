@@ -7,8 +7,9 @@ import {pathToFileURL} from 'node:url';
 import {discoverContracts} from '../backend/tools/run-contracts.mjs';
 test('backend contract command discovers every pure test including new season policies',()=>{
  const actual=discoverContracts().map(file=>basename(file));
- const expected=readdirSync(new URL('../backend/tests/',import.meta.url)).filter(file=>(file.endsWith('.test.ts')||file==='admin-end-season-policy.test.mts')&&/from ['"]node:test['"]/.test(readFileSync(new URL('../backend/tests/'+file,import.meta.url),'utf8'))).sort();
+ const expected=readdirSync(new URL('../backend/tests/',import.meta.url)).filter(file=>(file.endsWith('.test.ts')||file==='admin-end-season-policy.test.mts'||file==='payroll-plan.test.mjs')&&/from ['"]node:test['"]/.test(readFileSync(new URL('../backend/tests/'+file,import.meta.url),'utf8'))).sort();
  assert.deepEqual(actual,expected);
+ assert.ok(actual.includes('payroll-plan.test.mjs'));
  for(const name of ['cloudflare-email-delivery','international-holder-allocation-proposal','league-partial','season-calendar-multi-season','season-qualification-pots','season-two-snapshot'])assert.ok(actual.includes(name+'.test.ts'),name);
 });
 test('contract discovery fails closed on empty or unclassified suites and excludes runtime/operator files',()=>{

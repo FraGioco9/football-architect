@@ -8,7 +8,7 @@ import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
-import {calculateRealReceivingCushion}
+import {calculateRealReceivingCushion,M25_CUSHION_MAX_IMPULSE_NS}
  from './physical-receiving-cushion-m25.mjs';
 import {choosePhysicalReceiverSecondTouch}
  from './physical-receiver-choice-m27.mjs';
@@ -291,18 +291,15 @@ export function createPrivatePhysicalActionExecutor({
   if(chosen){
    // The only new physics write; same body and SAME post-collision tick
    // as the original #481, never a future/replayed intent.
-   // PASS-01 DEV-only calibration. The measured 2.4 Ns baseline rolls
-   // about 8.3 m on this same native grass/ball world. Preserve the short
-   // pass and provisionally increase the energy budget with live distance;
-   // the original direction and the exclusive START gate never change.
-   // This empirical candidate is not a guaranteed arrival or a match rule.
+   // PASS-01 DEV-only pace candidate after owner visual QA. The prior
+   // arrival times 1.77/2.37/3.45s at 6/12/20m were too conservative.
+   // Use a simple continuous distance-based boost, bounded even outside
+   // the three staged distances. Direction, native START, ground/ball
+   // properties and simulation clock are unchanged. This is provisional.
    const passCalibration=isolatedPassSide!==null?Object.freeze({
-    source:'isolated-ground-pass-distance-candidate-v2',
+    source:'isolated-ground-pass-distance-candidate-v3',
     distanceM:chosen.passTarget.distanceM,
-    // Small extra pace beyond the delivery-only baseline, progressively
-    // increasing for medium/long passes. Preserve the 6m reference.
-    scale:Math.min(2.20,Math.sqrt(1+1.25*Math.max(0,chosen.passTarget.distanceM-6)/8.3)+
-     0.025*Math.max(0,chosen.passTarget.distanceM-6)),
+    scale:Math.max(1.25,Math.min(3.30,1.25+0.10*chosen.passTarget.distanceM)),
     originalImpulseNs:chosen.impulseNs,
     officialMatchAction:false
    }):null;
@@ -369,9 +366,23 @@ export function createPrivatePhysicalActionExecutor({
        nearestOpponentM:200
       });
       if(candidate){
-       ballBody.applyImpulse(candidate.impulseNs,true);
-       firstCushion=Object.freeze({...candidate,
-        version:'m25-isolated-ground-pass-first-touch-v1',
+       // Faster passes need a firmer first touch. Reuse the M25 native
+       // relative-motion direction, increasing the original candidate
+       // magnitude only as needed for a 0.50m/s residual target. The
+       // existing 2.7Ns M25 cap remains absolute; no velocity setter,
+       // repeated impulse or reversal. Actual receipt is measured.
+       const baseMagnitude=Math.hypot(candidate.impulseNs.x,candidate.impulseNs.y);
+       const residualTargetMps=0.50;
+       const magnitude=Math.min(M25_CUSHION_MAX_IMPULSE_NS,
+        Math.max(baseMagnitude,ballBody.mass()*(candidate.actualRelativeSpeedMps-residualTargetMps)));
+       const impulse=Object.freeze({
+        x:candidate.impulseNs.x*magnitude/baseMagnitude,
+        y:candidate.impulseNs.y*magnitude/baseMagnitude,z:0
+       });
+       ballBody.applyImpulse(impulse,true);
+       firstCushion=Object.freeze({...candidate,impulseNs:impulse,
+        originalM25ImpulseNs:candidate.impulseNs,residualTargetMps,
+        version:'m25-isolated-ground-pass-first-touch-v2',
         tick:nextTick,actorId:recipientId,team:isolatedPassSide,
         originalPassTick:actualPriorPass.tick,originalPassActorId:actualPriorPass.playerId,
         measuredNearestOpponentM:null,noActiveOpponents:true,

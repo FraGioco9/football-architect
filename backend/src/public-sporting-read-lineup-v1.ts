@@ -10,6 +10,7 @@ import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import type {WorldV1} from './types.ts';
 import {readWorld} from './world-repository.ts';
+import {assertOpeningPublished} from './opening-world-publication.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {readSeasonZeroAuthority} from './season-zero-entrants.ts';
@@ -617,10 +618,11 @@ export function playerStatsCareerSeasons(entrySeason:number,currentSeason:number
 export async function readPublicPlayerStatsLineupV1(db:Database,playerId:number){
  if(!Number.isSafeInteger(playerId)||playerId<1)throw new ApiError(422,'invalid_public_request');
  const world=await readWorld(db);
+ await assertOpeningPublished(db);
  const exists=await db.prepare('SELECT entry_season FROM generated_players WHERE id=?').bind(playerId).first<{entry_season:number}>();
  if(!exists)throw new ApiError(404,'player_not_found');
  if(![0,1,2].includes(world.seasonNumber)){
-  await unchanged(db,world);
+  await assertOpeningPublished(db);await unchanged(db,world);
   return {schemaVersion:1 as const,providerId:'authoritative-world' as const,playerId,world,
    status:'unavailable' as const,reason:'unsupported-world-season',seasons:[]};
  }
@@ -630,7 +632,7 @@ export async function readPublicPlayerStatsLineupV1(db:Database,playerId:number)
  if(seasons.some(item=>item.world.generation!==world.generation||item.world.revision!==world.revision||
    item.world.seasonNumber!==world.seasonNumber||item.world.day!==world.day||item.world.phase!==world.phase))
   throw new ApiError(409,'stale_world');
- await unchanged(db,world);
+ await assertOpeningPublished(db);await unchanged(db,world);
  return {schemaVersion:1 as const,providerId:'authoritative-world' as const,playerId,world,
   status:seasons.length===0?'empty' as const:'available' as const,reason:world.seasonNumber===0?'season-zero':seasons.length===0?'outside-career':null,
   seasons:seasons.reverse().map(item=>{
@@ -655,16 +657,17 @@ export async function readPublicPlayerMatchesLineupV1(
   !(options.cursor===null||typeof options.cursor==='string'&&options.cursor.length<=512))
   throw new ApiError(422,'invalid_public_request');
  const world=await readWorld(db);
+ await assertOpeningPublished(db);
  const exists=await db.prepare('SELECT id FROM generated_players WHERE id=?').bind(playerId).first<{id:number}>();
  if(!exists)throw new ApiError(404,'player_not_found');
  const base={schemaVersion:1 as const,providerId:'authoritative-world' as const,playerId,world};
  if(![0,1,2].includes(world.seasonNumber)){
-  await unchanged(db,world);
+  await assertOpeningPublished(db);await unchanged(db,world);
   return {...base,status:'unavailable' as const,reason:'unsupported-world-season',
    filters:{seasons:[],competitions:[]},items:[],nextCursor:null,total:0};
  }
  if(world.seasonNumber===0){
-  await unchanged(db,world);
+  await assertOpeningPublished(db);await unchanged(db,world);
   return {...base,status:'empty' as const,reason:'season-zero',
    filters:{seasons:[],competitions:[]},items:[],nextCursor:null,total:0};
  }
@@ -674,7 +677,7 @@ export async function readPublicPlayerMatchesLineupV1(
    item.world.seasonNumber!==world.seasonNumber||item.world.day!==world.day||item.world.phase!==world.phase))
   throw new ApiError(409,'stale_world');
  if(seasons.some(item=>item.status==='unavailable')) {
-  await unchanged(db,world);
+  await assertOpeningPublished(db);await unchanged(db,world);
   return {...base,status:'unavailable' as const,reason:'incomplete-evidence',
    filters:{seasons:[],competitions:[]},items:[],nextCursor:null,total:0};
  }
@@ -690,7 +693,7 @@ export async function readPublicPlayerMatchesLineupV1(
   if(error instanceof RangeError)throw new ApiError(409,'stale_world');
   throw new ApiError(422,'invalid_public_request');
  }
- await unchanged(db,world);
+ await assertOpeningPublished(db);await unchanged(db,world);
  return {...base,status:page.total?'available' as const:'empty' as const,reason:page.total?null:'no-appearances',
   provenance:{kind:'authoritative' as const,resultAuthority:'temporary-lineup-v1' as const,
    sourceRef:'player-matches:'+world.generation+':revision:'+world.revision},

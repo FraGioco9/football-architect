@@ -1,4 +1,6 @@
 import {describe,expect,it} from 'vitest';
+import {rawDestinationSalaryReferenceArc,rawPlayerMarketValueArc} from '../src/player-market-value.mjs';
+import {ATTRIBUTES} from '../src/players-generator-core.mjs';
 import {salaryBounds,validAnnualSalary,contractEnd,accruedSalary,earnedBetween,promotionSalary,
  canAffordNextPayday,clubMayRecruit,canCounterOffer,offerExpiresAt} from '../src/player-contract-policy.ts';
 describe('#777 contract policy (inert)',()=>{
@@ -42,4 +44,17 @@ describe('#777 contract policy (inert)',()=>{
   expect(canCounterOffer('human')).toBe(true);
   expect(offerExpiresAt(1000)).toBe(604801000);
  });
+});
+
+it('computes destination annual salary without substituting career value or rounding the raw reference',()=>{
+ const player={age:18,career_status:'active',primary_position:'CM',secondary_positions:[],attributes:Object.fromEntries(ATTRIBUTES.map(key=>[key,60]))};
+ const raw=rawDestinationSalaryReferenceArc(player,10000)!;
+ expect(raw).toBeGreaterThan(0);
+ expect(rawDestinationSalaryReferenceArc(player,40000)).toBeCloseTo(raw*2,10);
+ expect(rawDestinationSalaryReferenceArc(player,2500)).toBeCloseTo(raw/2,10);
+ expect(rawPlayerMarketValueArc(player)).not.toBe(raw);
+ expect(rawDestinationSalaryReferenceArc({...player,career_status:'retired'},10000)).toBeNull();
+ expect(rawDestinationSalaryReferenceArc(player,0)).toBeNull();
+ expect(rawDestinationSalaryReferenceArc(player,NaN)).toBeNull();
+ expect(salaryBounds(1,raw).aiDemand).toBe(Math.ceil(Math.max(40,Math.ceil(raw))*1.25));
 });

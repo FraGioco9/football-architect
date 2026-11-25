@@ -2,7 +2,7 @@ import {beforeAll,expect,it} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import type {Database} from '../src/database.ts';
-import {economicAssert,postEconomicOperation,provisionClubAccounts,provisionWallet,readEconomicBalance,reconcileEconomy,reserveEconomicFunds,releaseEconomicFunds,financeSessionGuard,reconcileAndFreezeEconomy,type LedgerIntent} from '../src/economic-ledger.ts';
+import {economicAssert,postEconomicOperation,provisionClubAccounts,provisionWallet,readEconomicBalance,reconcileEconomy,economicReconciliationGuard,reserveEconomicFunds,releaseEconomicFunds,financeSessionGuard,reconcileAndFreezeEconomy,type LedgerIntent} from '../src/economic-ledger.ts';
 
 import {planRewardSettlement,rewardPostingIntents,reconcileRewardPlan} from '../src/reward-settlement-plan.mjs';
 
@@ -186,6 +186,7 @@ it('checks dedicated live capability, blocks reset after initialization, reconci
  await db.prepare("DELETE FROM economic_finance_permissions WHERE account_id=? AND capability='read'").bind(id).run();
  await expect(readEconomicBalance(db,'reserve',guard())).rejects.toThrow();
  await expect(db.prepare('UPDATE world_state SET generation=? WHERE id=1').bind(crypto.randomUUID()).run()).rejects.toThrow();
+ await db.batch([...access(),economicReconciliationGuard(db)]);
  expect(await reconcileAndFreezeEconomy(db,access())).toMatchObject({ok:true,stockArc:'2400000',netIssuedArc:'2400000'});
  expect((await db.prepare('SELECT posting_enabled FROM economic_control WHERE id=1').first())?.posting_enabled).toBe(1);
  // Disposable fault injection: drop only the fixture's hold release immutability
@@ -195,6 +196,9 @@ it('checks dedicated live capability, blocks reset after initialization, reconci
  // Lost release leaves a still-covered reservation; force a detected deficit.
  await db.prepare('DROP TRIGGER economic_hold_no_update').run();
  await db.prepare("UPDATE economic_holds SET amount_arc=1000000000000 WHERE id='season-budget'").run();
+ await expect(db.batch([...access(),economicReconciliationGuard(db)])).rejects.toThrow();
+ await expect(db.batch([...access(),economicReconciliationGuard(db,{condition:'1',values:[]})])).rejects.toThrow();
+ await db.batch([...access(),economicReconciliationGuard(db,{condition:'0',values:[]})]);
  expect(await reconcileAndFreezeEconomy(db,access())).toMatchObject({ok:false});
  expect((await db.prepare('SELECT posting_enabled FROM economic_control WHERE id=1').first())?.posting_enabled).toBe(0);
  await expect(post(intent('frozen-post','PAYROLL_AI','club:IT-1','reserve',1))).rejects.toMatchObject({code:'economic_posting_disabled'});

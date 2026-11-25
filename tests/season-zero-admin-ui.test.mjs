@@ -61,28 +61,7 @@ test('canonical Admin template and published Calendar include both first-season 
  }
 });
 
-test('confirmed Season 0 entrants expose protected reset, but unconfirmed world cannot reset',async()=>{
- let w=world,done=[];
- const request=async(path,options)=>{
-  if(path==='/api/admin/session')return session;
-  if(path==='/api/player/permissions')return {permissions:['admin.access','admin.world.read','admin.world.write']};
-  if(path==='/api/admin/world')return {world:w};
-  if(path==='/api/admin/seasons/events')return eventsFor(w,done);
-  if(path==='/api/admin/world/reset'){
-   assert.equal(options.body.expectedRevision,1);
-   assert.equal(options.body.confirmation,'RESET SEASON 0');
-   w={...world,generation:'650e8400-e29b-41d4-a716-446655440000'};
-   done=[];
-   return {world:w,operationId:'op'};
-  }
-  throw Error(path);
- };
- const c=createAdminController(request,()=>{});
- await c.refresh();
- await c.reset('RESET SEASON 0');assert.equal(c.state().world.generation,world.generation);
- w={...world,revision:1};done=['domestic'];
- await c.refresh();
- await c.reset('RESET SEASON 0');
- assert.notEqual(c.state().world.generation,world.generation);
- assert.equal(c.state().world.revision,0);
+test('Calendar cannot directly reset confirmed or unconfirmed Season 0',()=>{
+ const c=createAdminController(async()=>{throw Error('unexpected request')},()=>{});
+ assert.equal(c.reset,undefined);
 });

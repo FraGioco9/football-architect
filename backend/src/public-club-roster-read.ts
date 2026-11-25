@@ -3,6 +3,7 @@ import clubs from '../../data/clubs.json' with {type:'json'};
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
+import {assertOpeningPublished} from './opening-world-publication.ts';
 import {CURRENT_PLAYER_CONTRACTS_SQL} from './effective-player-contracts.mjs';
 import {projectPublicFootballerDirectoryRecord,type InternalFootballer} from './footballer-public-projection.ts';
 
@@ -14,11 +15,11 @@ interface StoredPlayer extends InternalFootballer {age?:number}
 /** No LIMIT or OFFSET; contract source enforces effective generation/date. The returned count is always players.length. */
 export async function readPublicClubRoster(db:Database,clubKey:string){
  if(!clubKeys.has(clubKey))throw new ApiError(404,'club_not_found');
- const before=await readWorld(db);
+ const before=await readWorld(db);await assertOpeningPublished(db);
  const rows=(await db.prepare(`SELECT p.id,p.payload_json FROM ${CURRENT_PLAYER_CONTRACTS_SQL} a
   INNER JOIN generated_players p ON p.id=a.player_id
   WHERE a.club_key=? ORDER BY p.id ASC`).bind(clubKey).all<RosterRow>()).results;
- const after=await readWorld(db);
+ await assertOpeningPublished(db);const after=await readWorld(db);
  if(before.generation!==after.generation||before.revision!==after.revision)
   throw new ApiError(409,'stale_world');
  const players=rows.map(row=>{

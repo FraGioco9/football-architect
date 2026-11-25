@@ -3,6 +3,7 @@ import {ApiError} from './errors.ts';
 import clubs from '../../data/clubs.json' with {type:'json'};
 import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
+import {assertOpeningPublished} from './opening-world-publication.ts';
 import {CURRENT_PLAYER_CONTRACTS_SQL} from './effective-player-contracts.mjs';
 import {projectPublicFootballerDirectoryRecord,type InternalFootballer} from './footballer-public-projection.ts';
 import type {PublicPlayerFilters} from './public-players-filters.mjs';
@@ -20,7 +21,7 @@ interface StoredDetailRow extends StoredRow {club_key:string|null;portrait_appro
 /** Count and page over the exact same server-side predicate, never a client-side 50-row filter. */
 export async function readPublicPlayers(db:Database,page:number,filters:PublicPlayerFilters={}){
  if(!Number.isSafeInteger(page)||page<1||page>9999)throw new ApiError(422,'invalid_public_request');
- const before=await readWorld(db);
+ const before=await readWorld(db);await assertOpeningPublished(db);
  // Persisted player identities survive sporting world resets; the generation
  // is a concurrency guard, not a filter on player ownership or visibility.
  const predicates:string[]=[],values:(string|number)[]=[];
@@ -147,7 +148,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
    if(player.market_value_arc!==row.cached_market_value_arc)throw new ApiError(503,'players_unavailable');
    return player;
   });
-  const after=await readWorld(db);
+  await assertOpeningPublished(db);const after=await readWorld(db);
   if(after.generation!==before.generation||after.revision!==before.revision)throw new ApiError(409,'stale_world');
   return {count,page,pageSize:PUBLIC_PLAYER_PAGE_SIZE,totalPages:Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE)),players};
  }
@@ -177,7 +178,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
    :[];
  }
  const totalPages=Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE));
- const after=await readWorld(db);
+ await assertOpeningPublished(db);const after=await readWorld(db);
  if(after.generation!==before.generation||after.revision!==before.revision)throw new ApiError(409,'stale_world');
  return {
   count,page,pageSize:PUBLIC_PLAYER_PAGE_SIZE,totalPages,
@@ -188,7 +189,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
 /** Public single-player read, sharing the directory projection and lifetime rules. */
 export async function readPublicPlayer(db:Database,id:number){
  if(!Number.isSafeInteger(id)||id<1)throw new ApiError(422,'invalid_public_request');
- const before=await readWorld(db);
+ const before=await readWorld(db);await assertOpeningPublished(db);
  // Effective signed term only. No legacy fallback; public payload retains nullable clubKey.
  const row=await db.prepare(`SELECT p.id,p.payload_json,a.club_key,
   CASE WHEN portrait.status='approved'
@@ -201,7 +202,7 @@ export async function readPublicPlayer(db:Database,id:number){
   LEFT JOIN player_portrait_profiles portrait ON portrait.player_id=p.id
   WHERE p.id=?`)
   .bind(id).first<StoredDetailRow>();
- const after=await readWorld(db);
+ await assertOpeningPublished(db);const after=await readWorld(db);
  if(after.generation!==before.generation||after.revision!==before.revision)throw new ApiError(409,'stale_world');
  if(!row)throw new ApiError(404,'player_not_found');
  const payload=JSON.parse(row.payload_json) as StoredPlayer;

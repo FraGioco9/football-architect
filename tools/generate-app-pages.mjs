@@ -250,8 +250,11 @@ const writeOutput=(path,content)=>{
  content=augmentRewardsShell(path,content,competitionManifest.competitions,encode);
  if(path==='admin/index.html')content=augmentInspectionDirectory(content);
  writeFinal(path,content);
- if(path==='admin/contracts/index.html')for(const mode of ['economy','reset'])writeFinal('admin/'+mode+'/index.html',renderInspectionShell(content,mode));
- if(path==='admin/contracts/index.html')writeFinal('admin/rewards/index.html',augmentRewardsShell('admin/rewards/index.html',content,competitionManifest.competitions,encode));
+ if(path==='admin/contracts/index.html'){
+  const sharedShell=content.replace('  <script src="/assets/admin-licenses.js" defer></script>\n','').replace('  <link rel="stylesheet" href="/assets/admin-licenses.css">\n','');
+  for(const mode of ['economy','reset'])writeFinal('admin/'+mode+'/index.html',renderInspectionShell(sharedShell,mode));
+  writeFinal('admin/rewards/index.html',augmentRewardsShell('admin/rewards/index.html',sharedShell,competitionManifest.competitions,encode));
+ }
 };
 const writeFinal=(path,content)=>{
  const file=new URL("../"+path,import.meta.url);
@@ -322,7 +325,7 @@ for(const [route,title,content,scripts] of [
  ['admin','Admin','<div class="admin-directory" data-admin-directory><section class="app-panel admin-directory-card" data-admin-panel="calendar" aria-labelledby="admin-card-calendar-title"><h2 id="admin-card-calendar-title" data-admin-directory-copy="calendar">Calendar</h2><p data-admin-directory-copy="calendarDescription">Manage the world calendar and sporting progression</p><a class="app-link app-link-primary" href="/admin/calendar" data-admin-card="calendar" data-admin-directory-copy="calendar">Calendar</a></section><section class="app-panel admin-directory-card" data-admin-panel="players" aria-labelledby="admin-card-players-title"><h2 id="admin-card-players-title" data-admin-directory-copy="players">Players</h2><p data-admin-directory-copy="playersDescription">Configure player generation</p><a class="app-link app-link-primary" href="/admin/players" data-admin-card="players" data-admin-directory-copy="players">Players</a></section><section class="app-panel admin-directory-card" data-admin-panel="contracts" aria-labelledby="admin-card-contracts-title"><h2 id="admin-card-contracts-title" data-admin-directory-copy="contracts">Contracts</h2><p data-admin-directory-copy="contractsDescription">Inspect signed player contracts</p><a class="app-link app-link-primary" href="/admin/contracts" data-admin-card="contracts" data-admin-directory-copy="contracts">Contracts</a></section><section class="app-panel admin-directory-card" data-admin-panel="licenses" aria-labelledby="admin-card-licenses-title"><h2 id="admin-card-licenses-title" data-admin-directory-copy="licenses">Club Licenses</h2><p data-admin-directory-copy="licensesDescription">Assign or revoke club licenses for users</p><a class="app-link app-link-primary" href="/admin/licenses" data-admin-card="licenses" data-admin-directory-copy="licenses">Club Licenses</a></section></div>',['/assets/admin-permissions-cache.js','/assets/admin-players.js']],
  ['admin/calendar','Admin Calendar',renderAdminSettings(),['/assets/world-calendar-model.js','/assets/admin-permissions-cache.js','/assets/admin-settings.js']],
  ['admin/players','Admin Players',renderAdminPlayers(),['/assets/admin-permissions-cache.js','/assets/admin-players.js']],
- ['admin/contracts','Admin Contracts',renderAdminContracts(),['/assets/admin-permissions-cache.js','/assets/players-nationality-tooltip.js','/assets/admin-contracts.js']],
+ ['admin/contracts','Admin Contracts',renderAdminContracts(),['/assets/admin-permissions-cache.js','/assets/players-nationality-tooltip.js','/assets/admin-licenses.js','/assets/admin-contracts.js']],
  ['admin/licenses','Admin Club Licenses',renderAdminLicenses(),['/assets/admin-permissions-cache.js','/assets/admin-licenses.js']],
  ['admin/players/preview','Admin — Players Preview',renderAdminPlayersPreview(),['/assets/players-nationality-tooltip.js','/assets/admin-permissions-cache.js','/assets/market-value-format.js','/assets/admin-players-preview.js']]
 ]){
@@ -337,7 +340,7 @@ for(const [route,title,content,scripts] of [
    .replace('<h1 id="admin-title" class="app-page-title" data-app-i18n="statsDevPlayers">Players</h1>','<h1 id="admin-title" class="app-page-title">Player preview</h1>');
  html=html.replace('</head>',
   '  <meta name="robots" content="noindex,nofollow">\n'+(route==='admin/players/preview'?'  <meta name="referrer" content="no-referrer">\n':'')+'  <script src="/assets/routes-registry.js" defer></script>\n  <link rel="stylesheet" href="/assets/admin-settings.css">\n'+scripts.map(src=>'  <script src="'+src+'" defer></script>\n').join('')+'</head>');
- if(route==='admin/licenses')html=html.replace('</head>','  <link rel="stylesheet" href="/assets/admin-licenses.css">\n</head>');
+ if(route==='admin/licenses'||route==='admin/contracts')html=html.replace('</head>','  <link rel="stylesheet" href="/assets/admin-licenses.css">\n</head>');
  writeOutput(route+'/index.html',html);
 }
 // Account and authentication routes use the same career shell.

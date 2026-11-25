@@ -465,7 +465,7 @@ export function selectDualNameOrigins(hasSecondary,firstManual,lastManual,draw){
  if(draw<.90)return {first:'primary',last:'secondary'};
  return {first:'secondary',last:'secondary'};
 }
-function generateCandidate(rng,index,options,trialSeed){
+function generateCandidate(rng,index,options,trialSeed,openingAge=null){
  const eligible=options.allowedPositions||POSITIONS;
  if(!Array.isArray(eligible)||!eligible.length||eligible.some(p=>!POSITIONS.includes(p)))throw Error('Invalid allowed primary positions');
  const position=options.primaryPosition??weighted(eligible,eligible.map(p=>positionWeights[p]),rng);
@@ -480,8 +480,14 @@ function generateCandidate(rng,index,options,trialSeed){
  const primaryLast=options.lastName??sampleSurname(nationalNamePools,country,rng,bank.demoLast);
  if(!primaryFirst||!primaryLast||typeof primaryFirst!=='string'||typeof primaryLast!=='string')
   throw Error('First and last names required');
- const [ageLo,ageHi]=validRange(options.age,16,19);
- const age=discrete(rng,ageLo,ageHi,[30,35,20,15].slice(ageLo-16,ageHi-15));
+ let age;
+ if(openingAge!==null&&openingAge>19){
+  // Keep the original RNG draw count; age does not change attribute generation.
+  rng();age=openingAge;
+ }else{
+  const [ageLo,ageHi]=validRange(options.age,16,19);
+  age=discrete(rng,ageLo,ageHi,[30,35,20,15].slice(ageLo-16,ageHi-15));
+ }
  const foot=options.preferredFoot??(rng()*100<footLeftPct[position]?'left':'right');
  if(!['left','right'].includes(foot))throw Error('Invalid preferred foot');
  const secondaries=secondaryPositions(position,foot,rng,options);
@@ -593,6 +599,16 @@ export function generateTrial(options={}){
  return {trial_only:true,persisted:false,ranking_snapshot:FIFA_SNAPSHOT,seed,count,
   identity_sources:{given_names:'PLAYERS-03 weighted catalog',
    surnames:nationalNamePools.surnameSource},candidates};
+}
+// Internal opening-world entry point; never an option on ordinary Admin Players.
+export function generateOpeningCandidate(slot){
+ const {age,primaryNationality,primaryPosition,primarySuitabilityTarget,generatorSeed}=slot??{};
+ if(!Number.isInteger(age)||age<16||age>39||!byCountry.has(primaryNationality)||!POSITIONS.includes(primaryPosition)||
+  !Number.isInteger(primarySuitabilityTarget)||primarySuitabilityTarget<1||primarySuitabilityTarget>PRIMARY_SUITABILITY_MAX||
+  typeof generatorSeed!=='string'||generatorSeed.length<1||generatorSeed.length>64||!/^[A-Za-z0-9_.:-]+$/.test(generatorSeed))
+  throw Error('Invalid opening-world slot');
+ const options={age,primaryNationality,primaryPosition,primarySuitability:primarySuitabilityTarget};
+ return generateCandidate(seededRandom(generatorSeed),0,options,generatorSeed,age);
 }
 export function summarize(trial){
  const groups={countries:{},positions:{},ages:{},secondaryCounts:{},secondNationalities:0};

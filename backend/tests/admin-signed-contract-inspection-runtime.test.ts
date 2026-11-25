@@ -49,9 +49,9 @@ it('returns protected, paginated signed-term inspection and canonical club label
  expect(res.status).toBe(200);
  expect(res.data).toMatchObject({count:3,page:1,pageSize:50,totalPages:1,worldGeneration:generation,worldRevision:revision});
  expect(res.data.players).toEqual([
-  {id:1,name:'First1 Last1',clubKey:'IT-1',secondary_positions:[],contract:{id:expect.any(Number),annualSalaryArc:125,durationSeasons:1,startTick:0,endTick:56,signedAt:new Date(now*1000).toISOString()}},
-  {id:2,name:'First2 Last2',clubKey:null,secondary_positions:[],contract:null},
-  {id:3,name:'First3 Last3',clubKey:null,secondary_positions:[],contract:null}
+  {id:1,canPrepareContract:false,name:'First1 Last1',clubKey:'IT-1',secondary_positions:[],contract:{id:expect.any(Number),annualSalaryArc:125,durationSeasons:1,startTick:0,endTick:56,signedAt:new Date(now*1000).toISOString()}},
+  {id:2,canPrepareContract:true,name:'First2 Last2',clubKey:null,secondary_positions:[],contract:null},
+  {id:3,canPrepareContract:true,name:'First3 Last3',clubKey:null,secondary_positions:[],contract:null}
  ]);
  expect(res.data.clubs).toHaveLength(320);
  expect(JSON.stringify(res.data)).not.toMatch(/development_aptitude|initial_age|batch_id|seed|csrfToken|signing_key|signed_mandate_id/);

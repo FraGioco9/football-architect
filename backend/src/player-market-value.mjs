@@ -27,19 +27,36 @@ if(!c.version||!Number.isFinite(c.salaryScale)||c.salaryScale<=0||
  c.retirement[40]!==1||[33,34,35,36,37,38,39,40].some(age=>!unit(c.retirement[age])||c.retirement[age]<(c.retirement[age-1]??0)))
  throw new Error('invalid_market_value_config');
 const forecast=createStandardizedForecast(c);
-/** Only current public inputs are consulted; synthetic aggregate forecast is fixed by config version. */
-export function rawPlayerMarketValueArc(input){
+function salaryProfile(input){
  if(!input||typeof input!=='object')return null;
  const {age,career_status,primary_position,secondary_positions,attributes}=input;
- if(career_status==='retired')return 0;
  if(career_status!=='active'||!Number.isInteger(age)||age<16||age>39||
     !positions.has(primary_position)||!Array.isArray(secondary_positions)||
     secondary_positions.some(role=>!positions.has(role))||!attributes||
     ATTRIBUTES.some(key=>!Number.isInteger(attributes[key])||attributes[key]<1||attributes[key]>99))return null;
- const c=MARKET_VALUE_CONFIG;
  const scores=[...new Set([primary_position,...secondary_positions])].map(role=>calculatePositionSuitability(attributes,role)).sort((a,b)=>b-a);
- let skill=scores[0],bonus=0;
- for(let i=1;i<Math.min(scores.length,6);i++)bonus+=c.versatility[i-1]*Math.max(0,1-(skill-scores[i])/10);
+ const skill=scores[0];let bonus=0;
+ for(let i=1;i<Math.min(scores.length,6);i++)bonus+=MARKET_VALUE_CONFIG.versatility[i-1]*Math.max(0,1-(skill-scores[i])/10);
+ return {age,skill,bonus};
+}
+/** #777: unrounded annual salary reference, NOT the discounted career market value.
+ * Expected annual club Rewards must be supplied by a trusted versioned server forecast.
+ * This pure function does not certify that forecast and never posts or signs. */
+export function rawDestinationSalaryReferenceArc(input,expectedAnnualRewardsArc){
+ const profile=salaryProfile(input);
+ if(!profile||!Number.isFinite(expectedAnnualRewardsArc)||expectedAnnualRewardsArc<=0)return null;
+ const c=MARKET_VALUE_CONFIG;
+ const value=c.salaryScale*c.salaryMultiplier**((profile.skill-60)/10)*(1+profile.bonus)*Math.sqrt(expectedAnnualRewardsArc/c.rewardBenchmark);
+ return Number.isFinite(value)&&value>0?value:null;
+}
+
+/** Only current public inputs are consulted; synthetic aggregate forecast is fixed by config version. */
+export function rawPlayerMarketValueArc(input){
+ if(!input||typeof input!=='object')return null;
+ if(input.career_status==='retired')return 0;
+ const profile=salaryProfile(input);if(!profile)return null;
+ const {age,bonus}=profile;let {skill}=profile;
+ const c=MARKET_VALUE_CONFIG;
  let value=0,survival=1,wage=0;
  for(let t=0;t<=39-age;t++){
   const renewal=t%c.renewalSeasons===0;
