@@ -122,3 +122,49 @@ test('ACTIONS-B01 real HOME/AWAY canonical Rapier shoe START, lofted CROSS impul
   }finally{a.dispose();b.dispose();}
  }
 });
+
+
+test('CROSS-01 isolated native lofted cross measures first low arrival for both sides',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ assert.throws(()=>createControlledActionLab(R,'cross-pair',{bodyGuardEnabled:true}),TypeError);
+ for(const side of ['home','away'])for(const variantIndex of [0,1,9,21,29]){
+  const lab=createControlledActionLab(R,'cross-pair',{shotSide:side,variantIndex});
+  try{
+   let frame=lab.snapshot(),count=0;
+   assert.equal(frame.genuinePhysicalPlayerCount,2);
+   assert.deepEqual(lab.focus,[side+'-9',side+'-10']);
+   for(let t=1;t<=240;t++){
+    frame=lab.step();
+    assert.equal(frame.officialMatchPossession,false);
+    assert.equal(frame.officialMatchResult,null);
+    assert.ok(frame.starts.every(id=>lab.focus.includes(id)));
+    if(frame.action){
+     count++;
+     assert.equal(frame.action.action,'cross');
+     assert.equal(frame.action.playerId,side+'-10');
+     assert.equal(frame.action.crossTarget.recipientId,side+'-9');
+     assert.deepEqual(frame.starts,[side+'-10']);
+     assert.equal(frame.action.actualPhysicsImpulseApplied,true);
+     const c=frame.action.isolatedCrossCalibration;
+     assert.ok(c.scale>=1&&c.scale<=3.8);
+     for(const axis of ['x','y','z'])
+      assert.equal(frame.action.impulseNs[axis],c.originalImpulseNs[axis]*c.scale);
+     assert.ok(frame.action.impulseNs.z>0);
+    }
+   }
+   assert.equal(count,1);
+   rows.push({side,variantIndex,...frame.crossPairAudit});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_CROSS_PAIR '+JSON.stringify(rows)+'\n');
+ assert.equal(rows.length,10);
+ for(const row of rows){
+  assert.equal(row.airborne,true,JSON.stringify(row));
+  assert.ok(row.peakClearanceM>=1&&row.peakClearanceM<=5,JSON.stringify(row));
+  assert.ok(row.arrival&&row.arrival.timeS>0.5&&row.arrival.timeS<=3,JSON.stringify(row));
+  assert.ok(row.arrival.targetGapM<=3,JSON.stringify(row));
+  assert.equal(row.officialReception,false);
+  assert.equal(row.officialCrossCompleted,false);
+ }
+});

@@ -92,7 +92,7 @@ export function createControlledActionLab(RAPIER,id,{
    validateSoloCarryAttributes(soloCarryPlayerAttributes);
  const spec=getActionLabScenario(id);
  if(typeof bodyGuardEnabled!=='boolean'||
-    (bodyGuardEnabled&&(spec.mode!=='situation'||id==='pass-pair')))
+    (bodyGuardEnabled&&(spec.mode!=='situation'||['pass-pair','cross-pair'].includes(id))))
   throw new TypeError('Native body-contact exercise only in a small-sided situation');
  if(spec.mode!=='situation'&&variantIndex!==0)
   throw new TypeError('Variations require a selected small-sided exercise');
@@ -317,6 +317,9 @@ export function createControlledActionLab(RAPIER,id,{
   officialPassCompleted:false,officialReception:false
  }):null;
  let previousPassBall=null;
+ let crossPairAudit=id==='cross-pair'?Object.freeze({attempted:false,tick:null,
+  airborne:false,peakClearanceM:0,arrival:null,officialCrossCompleted:false,
+  officialReception:false}):null;
  let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
  const decisionObserver=createPhysicalFootballDecisionObserver();
@@ -616,6 +619,30 @@ export function createControlledActionLab(RAPIER,id,{
    previousPassBall=Object.freeze({tick:physics.tick,
     velocity:Object.freeze({...physics.ball.velocity})});
   }
+  if(crossPairAudit){
+   const pos=physics.ball.position,vel=physics.ball.velocity;
+   if(nativeAction?.action==='cross'&&!crossPairAudit.attempted){
+    const target=nativeAction.crossTarget;
+    crossPairAudit=Object.freeze({...crossPairAudit,attempted:true,tick:physics.tick,
+     targetX:target.targetX,targetY:target.targetY,targetDistanceM:target.distanceM,
+     recipientId:target.recipientId,launchSpeedMps:Math.hypot(vel.x,vel.y,vel.z)});
+   }
+   if(crossPairAudit.attempted&&!crossPairAudit.arrival){
+    const clearance=Math.max(0,pos.z-0.11);
+    const airborne=crossPairAudit.airborne||clearance>0.20;
+    // Observed low sample after flight/descent, not confirmed collision.
+    const arrival=airborne&&clearance<=0.10&&
+     (vel.z<=0||crossPairAudit.descending===true)?Object.freeze({
+      tick:physics.tick,timeS:(physics.tick-crossPairAudit.tick)*FIXED_DT,
+      position:Object.freeze({...pos}),
+      targetGapM:Math.hypot(pos.x-crossPairAudit.targetX,pos.y-crossPairAudit.targetY),
+      clearanceM:clearance,readOnly:true
+     }):null;
+    crossPairAudit=Object.freeze({...crossPairAudit,airborne,
+     descending:crossPairAudit.descending===true||vel.z<0,
+     peakClearanceM:Math.max(crossPairAudit.peakClearanceM,clearance),arrival});
+   }
+  }
   const physicalFirstTouch=engine.researchReceivingCushionSnapshot?.()??null;
   const physicalReceiverChoice=engine.researchReceiverChoiceSnapshot?.()??null;
   const physicalReceiverTap=engine.researchReceiverTapSnapshot?.()??null;
@@ -691,6 +718,7 @@ export function createControlledActionLab(RAPIER,id,{
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
    ...(passPairAudit?{passPairAudit}:{}),
+   ...(crossPairAudit?{crossPairAudit}:{}),
    ...(firstTouchCushion?{physicalFirstTouch,pressureEvidence}:{}),
    ...(adaptiveDecision?{physicalReceiverChoice,postDeferContinuity,
     physicalControlEvidence}:{}),

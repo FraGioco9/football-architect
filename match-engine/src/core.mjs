@@ -236,7 +236,7 @@ export function createEngine(RAPIER, input = {}, {
     throw new TypeError('Small-sided feedback needs selected physical bodies');
    if(typeof diagnosticSmallSidedBodyGuardEnabled!=='boolean'||
      (diagnosticSmallSidedBodyGuardEnabled&&(
-      (diagnosticSmallSidedSituation===null||diagnosticSmallSidedSituation==='pass-pair')||
+      (diagnosticSmallSidedSituation===null||['pass-pair','cross-pair'].includes(diagnosticSmallSidedSituation))||
       !diagnosticPlayerFootContactsEnabled||
       !diagnosticAutonomousFixtureActionEnabled||
       diagnosticPlayerBodyCollidersEnabled||
@@ -689,8 +689,9 @@ export function createEngine(RAPIER, input = {}, {
       nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
       nativeFixedSprintLongStride:diagnosticNativeFixedSprintLongStrideEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
-       isolatedCarry||(smallSided?.variantIndex>0&&smallSided.id!=='pass-pair'),
+       isolatedCarry||(smallSided?.variantIndex>0&&!['pass-pair','cross-pair'].includes(smallSided.id)),
       ...(smallSided?.id==='pass-pair'?{isolatedPassSide:smallSided.side}:{}),
+       ...(smallSided?.id==='cross-pair'?{isolatedCrossSide:smallSided.side}:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
       ...(isolatedCarry?{
        isolatedDribbleContext:Object.freeze({
@@ -698,7 +699,7 @@ export function createEngine(RAPIER, input = {}, {
         variantIndex:smallSided.variantIndex
        })
       }:{}),
-      ...(smallSided?.variantIndex>0&&smallSided.id!=='pass-pair'?{
+      ...(smallSided?.variantIndex>0&&!['pass-pair','cross-pair'].includes(smallSided.id)?{
        smallSidedDecisionContext:Object.freeze({
         situationId:smallSided.id,
         variantIndex:smallSided.variantIndex,

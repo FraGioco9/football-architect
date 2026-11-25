@@ -21,7 +21,7 @@ export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
- smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,
+ smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
  nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false
 }={}){
@@ -53,6 +53,15 @@ export function createPrivatePhysicalActionExecutor({
     isolatedDribbleContext!==null||researchReceivingCushionSide!==null||
     researchReceivingDecisionSide!==null||researchReceiverTapSide!==null))
   throw new TypeError('Isolated pass requires exactly two original teammates');
+ if(isolatedCrossSide!==null&&(
+    !['home','away'].includes(isolatedCrossSide)||activePlayerIds?.length!==2||
+    !activePlayerIds.includes(isolatedCrossSide+'-10')||
+    !activePlayerIds.includes(isolatedCrossSide+'-9')||
+    isolatedPassSide!==null||allowPhysicalCarry||smallSidedDecisionContext!==null||
+    isolatedDribbleContext!==null||researchReceivingCushionSide!==null||
+    researchReceivingDecisionSide!==null||researchReceiverTapSide!==null||
+    physicalBodyGuardEnabled))
+  throw new TypeError('Isolated cross requires exactly two original teammates');
  if(typeof physicalBodyGuardEnabled!=='boolean'||
     (physicalBodyGuardEnabled&&activePlayerIds===null))
   throw new TypeError('Native body contact requires genuine small-sided shoe source');
@@ -251,7 +260,12 @@ export function createPrivatePhysicalActionExecutor({
    originalChoice.playerId!==isolatedPassSide+'-10'||
    originalChoice.passTarget?.recipientId!==isolatedPassSide+'-9'||
    originalChoice.impulseNs.z!==0);
-  const originalChosen=researchCandidate||deferOriginal||isolatedPassRejected?null:originalChoice;
+  const isolatedCrossRejected=isolatedCrossSide!==null&&(
+   lastActionTick>=0||originalChoice?.action!=='cross'||
+   originalChoice.playerId!==isolatedCrossSide+'-10'||
+   originalChoice.crossTarget?.recipientId!==isolatedCrossSide+'-9'||
+   originalChoice.impulseNs.z<=0);
+  const originalChosen=researchCandidate||deferOriginal||isolatedPassRejected||isolatedCrossRejected?null:originalChoice;
   // The *existing* uniform policy and Rapier exclusive shoe START remain
   // the only action authority. Native phase calibration can adjust that
   // action's impulse or decline it, never generate an extra contact/action.
@@ -283,6 +297,7 @@ export function createPrivatePhysicalActionExecutor({
     'experimental-receiving-cushion-preempts-uniform-action':
     deferOriginal?'m27-native-decision-defers-original-clearance':
     isolatedPassRejected?'isolated-pass-one-original-ground-pass-only':
+    isolatedCrossRejected?'isolated-cross-one-original-lofted-cross-only':
     nativeTune?.impulseNs===null?
      'native-shoe-contact-no-extra-ball-impulse-needed':
     (gates.firstFailedGate??'not-selected-after-input-gates')
@@ -303,7 +318,21 @@ export function createPrivatePhysicalActionExecutor({
     originalImpulseNs:chosen.impulseNs,
     officialMatchAction:false
    }):null;
-   const impulse=passCalibration?Object.freeze({
+   // CROSS-01: preserve M33 direction and loft; ideal range estimates
+   // only the initial impulse. Never steer or teleport the live ball.
+   const crossCalibration=isolatedCrossSide!==null?(()=>{
+    const i=chosen.impulseNs,horizontal=Math.hypot(i.x,i.y);
+    const desiredHorizontal=Math.sqrt(9.81*chosen.crossTarget.distanceM/(2*i.z/horizontal));
+    return Object.freeze({source:'isolated-cross-range-candidate-v1',
+     distanceM:chosen.crossTarget.distanceM,originalImpulseNs:i,
+     scale:Math.max(1,Math.min(3.8,ballBody.mass()*desiredHorizontal/horizontal)),
+     officialMatchAction:false});
+   })():null;
+   const impulse=crossCalibration?Object.freeze({
+    x:chosen.impulseNs.x*crossCalibration.scale,
+    y:chosen.impulseNs.y*crossCalibration.scale,
+    z:chosen.impulseNs.z*crossCalibration.scale
+   }):passCalibration?Object.freeze({
     x:chosen.impulseNs.x*passCalibration.scale,
     y:chosen.impulseNs.y*passCalibration.scale,z:0
    }):nativeTune?.impulseNs??chosen.impulseNs;
@@ -312,6 +341,7 @@ export function createPrivatePhysicalActionExecutor({
     ...chosen,
     impulseNs:impulse,
     ...(passCalibration?{isolatedGroundPassCalibration:passCalibration}:{}),
+    ...(crossCalibration?{isolatedCrossCalibration:crossCalibration}:{}),
     ...(nativeTune?{
      nativeShoeContactVerified:true,
      nativeFixedPhaseCalibration:nativeTune,

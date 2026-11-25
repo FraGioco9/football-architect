@@ -72,7 +72,7 @@ test('#628 native lower-leg ball and opponent torso response are genuine Rapier 
 test('#628 body guard remains selected-only, exact-tick and deterministic in all 5 native LAB situations',
  {timeout:120000},async()=>{
  const R=await initializeRapier(rapier);
- for(const spec of SMALL_SIDED_LAB_SCENARIOS.filter(s=>s.id!=='pass-pair'))
+ for(const spec of SMALL_SIDED_LAB_SCENARIOS.filter(s=>!['pass-pair','cross-pair'].includes(s.id)))
  for(const side of ['home','away']){
   const baseline=createControlledActionLab(R,spec.id,{shotSide:side});
   try{assert.equal(baseline.snapshot().smallSidedNativeBodyGuard,null);}
