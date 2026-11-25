@@ -27,7 +27,7 @@ test('#574 four mobile tables have independent bounded touch scrolling and fixed
 });
 
 test('#777 Contracts has fixed responsive tracks without legacy selection controls',()=>{
- const block=admin.slice(admin.indexOf('/* #777 contract inspection:'));
+ const block=admin.slice(admin.indexOf('/* #777 contract inspection:'),admin.indexOf('/* #777: reuse Admin Licenses'));
  assert.ok(block.includes('min-width:'));
  for(const [breakpoint,width,columns] of [
   [720,740,[32,128,132,122,64,76,76,110]],
@@ -55,7 +55,10 @@ test('#777 first paint reserves contract columns and has no assignment UI at nar
  assert.equal(rows.length,5);
  for(const row of rows)assert.equal((row.match(/<td\b/g)||[]).length,8);
  assert.doesNotMatch(contracts,/data-contracts-(all|check|save|trigger|select)/);
- assert.doesNotMatch(read('assets/admin-contracts.js'),/method:\s*['"]POST|expectedClubKey/);
+ assert.doesNotMatch(read('assets/admin-contracts.js'),/expectedClubKey|roster-affiliations/);
+ const signingPosts=[...read('assets/admin-contracts.js').matchAll(/fetch\('([^']+)'\s*,\{method:'POST'/g)].map(m=>m[1]);
+ assert.deepEqual(signingPosts,['/api/admin/contracts/preview','/api/admin/contracts/sign']);
+ assert.equal((read('assets/admin-contracts.js').match(/method:\s*['"]POST/g)||[]).length,signingPosts.length,'no other mutation endpoint');
  assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px/);
  assert.match(admin,/\.app-admin-view \.admin-contracts-skeleton td\{height:36px\}/);
 });

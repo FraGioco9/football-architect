@@ -82,6 +82,9 @@ test('#777 Admin Contracts aligns signed-term columns and read-only first paint'
  assert.match(js,/c\.startTick/);
  assert.match(js,/c\.endTick-1/);
  assert.match(js,/c\.signedAt/);
- assert.doesNotMatch(js,/method:\s*['"]POST|expectedClubKey/);
+ assert.doesNotMatch(js,/expectedClubKey|roster-affiliations/);
+ const signingPosts=[...js.matchAll(/fetch\('([^']+)'\s*,\{method:'POST'/g)].map(m=>m[1]);
+ assert.deepEqual(signingPosts,['/api/admin/contracts/preview','/api/admin/contracts/sign']);
+ assert.equal((js.match(/method:\s*['"]POST/g)||[]).length,signingPosts.length,'no other mutation endpoint');
  assert.match(css,/\.app-admin-view \.admin-contracts-table tbody tr\{height:36px\}/);
 });
