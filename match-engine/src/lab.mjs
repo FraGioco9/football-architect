@@ -1,5 +1,5 @@
 import {createEngine, initializeRapier, PRESETS, canonicalSnapshot, FIXED_DT, toGroundClearance} from '/__fa_match_engine__/core.mjs';
-import {drawPitchMarkings,pickObservedPlayerAtCanvasPixel} from '/__fa_match_engine__/pitch-markings.mjs';
+import {drawPitchMarkings,pickObservedPlayerAtCanvasPixel,drawLabBallMarker,LAB_MARKER_RADII_PX} from '/__fa_match_engine__/pitch-markings.mjs';
 import {createPlayerMovement,currentObservedPlayerAssignments} from '/__fa_match_engine__/player-movement.mjs';
 import {measureBounceHistory,FIFA_TURF_QUALITY_PRO_REFERENCE_M} from '/__fa_match_engine__/rebound-metrics.mjs';
 import {formatNumericValue,stepNumericValue,speedToKmh,speedFromKmh}
@@ -342,17 +342,17 @@ function drawInlinePlayers(ctx,X,Y){
  for(const p of all){
   if(focus&&!focus.has(p.id))continue;
   const x=X(p.x),y=Y(p.y);
-  ctx.beginPath();ctx.arc(x,y,p.role==='goalkeeper'?8:7,0,Math.PI*2);
+  ctx.beginPath();ctx.arc(x,y,p.role==='goalkeeper'?LAB_MARKER_RADII_PX.goalkeeper:LAB_MARKER_RADII_PX.player,0,Math.PI*2);
   ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
   ctx.fill();ctx.strokeStyle=p.role==='goalkeeper'?'#fbdfaa':'#183f36';
   ctx.lineWidth=p.role==='goalkeeper'?2.2:1.5;ctx.stroke();
   if(Number.isFinite(p.facingRad)){
    ctx.beginPath();ctx.moveTo(x,y);
-   ctx.lineTo(x+Math.cos(p.facingRad)*11,y+Math.sin(p.facingRad)*11);
+   ctx.lineTo(x+Math.cos(p.facingRad)*14,y+Math.sin(p.facingRad)*14);
    ctx.strokeStyle='#142e29';ctx.lineWidth=1.6;ctx.stroke();
   }
   ctx.fillStyle='#102d2e';ctx.textAlign='center';
-  ctx.textBaseline='middle';ctx.font='bold 9px system-ui';
+  ctx.textBaseline='middle';ctx.font='bold 11px system-ui';
   ctx.fillText(p.id.split('-')[1],x,y);
  }
 }
@@ -362,19 +362,19 @@ function drawPlayers(ctx,X,Y){
     const supporting=Object.values(playerSnapshot.supports).some(run=>run?.playerId===p.id);
     const balancing=Object.values(playerSnapshot.balances).some(b=>b?.playerId===p.id);
     const keeper=p.role==='goalkeeper';
-    ctx.beginPath();ctx.arc(x,y,pressing?8.7:keeper?8:7,0,Math.PI*2);
+    ctx.beginPath();ctx.arc(x,y,pressing?LAB_MARKER_RADII_PX.pressing:keeper?LAB_MARKER_RADII_PX.goalkeeper:LAB_MARKER_RADII_PX.player,0,Math.PI*2);
     ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
     ctx.fill();ctx.strokeStyle=pressing?'#ffdf71':supporting?'#c0f17a':balancing?'#ddbcff':keeper?'#fbdfaa':'#183f36';
     ctx.lineWidth=pressing?2.6:supporting?2.6:balancing?2.6:keeper?2.2:1.4;ctx.stroke();
-    const pointerX=x+Math.cos(p.facingRad)*12,pointerY=y+Math.sin(p.facingRad)*12;
+    const pointerX=x+Math.cos(p.facingRad)*15,pointerY=y+Math.sin(p.facingRad)*15;
     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(pointerX,pointerY);
     ctx.strokeStyle=pressing?'#ffdf71':'#142e29';
     ctx.lineWidth=pressing?2.5:1.8;ctx.stroke();
-    ctx.fillStyle='#102d2e';ctx.font='bold 9px system-ui';
+    ctx.fillStyle='#102d2e';ctx.font='bold 11px system-ui';
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(String(p.number),x,y+0.5);
     if(p.id===inspectedPlayerId){
-      ctx.beginPath();ctx.arc(x,y,13.5,0,Math.PI*2);
+      ctx.beginPath();ctx.arc(x,y,16,0,Math.PI*2);
       ctx.strokeStyle='#ffffff';ctx.lineWidth=2.7;ctx.stroke();
     }
   }
@@ -415,8 +415,7 @@ function topDown() {
   });
   c.stroke();
   const p = physicsTickSnapshot.ball.position;
-  c.fillStyle = '#ffffff'; c.strokeStyle = '#202f2b'; c.lineWidth = 2.5;
-  c.beginPath(); c.arc(X(p.x), Y(p.y), 7.5, 0, Math.PI * 2); c.fill(); c.stroke();
+  drawLabBallMarker(c,w,h,p,toGroundClearance(p.z));
 }
 function sideView() {
   const c = elevation.getContext('2d'), w = elevation.width, h = elevation.height;

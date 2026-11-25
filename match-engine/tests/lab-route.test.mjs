@@ -7,7 +7,8 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {createPreviewServer} from '../../tools/dev-standings-preview.mjs';
 import {addDevelopmentToAppHtml,renderMatchEngineLab,labFirstPaintBootstrap,sidebarFromAppPage} from '../src/sidebar-shell.mjs';
-import {drawPitchMarkings,pitchProjection,PITCH_LENGTH_M,PITCH_WIDTH_M} from '../src/pitch-markings.mjs';
+import {drawPitchMarkings,pitchProjection,PITCH_LENGTH_M,PITCH_WIDTH_M,
+ LAB_MARKER_RADII_PX,labBallMarkerGeometry,drawLabBallMarker} from '../src/pitch-markings.mjs';
 import {NUMERIC_BOUNDS,formatNumericValue,stepNumericValue,speedToKmh,speedFromKmh}
  from '../src/numeric-controls.mjs';
 import {isAllowlistedPublicPath,planPublicFiles} from '../../tools/publication-guard.mjs';
@@ -464,4 +465,50 @@ test('ME-01 compact pitch caps desktop dimensions and uses canonical site chevro
   assert.match(chevron,/viewBox="0 0 20 20"/);
   assert.match(chevron,/d="m5 7 5 5 5-5"/);
   assert.doesNotMatch(chevron,/>⌄</);
+});
+
+
+test('#628 LAB presentation projects observed height without changing the ground footprint',()=>{
+ const pos=Object.freeze({x:12,y:8,z:3.11});
+ const ground=labBallMarkerGeometry(1050,680,pos,0);
+ const low=labBallMarkerGeometry(1050,680,pos,0.05);
+ const raised=labBallMarkerGeometry(1050,680,pos,1);
+ const high=labBallMarkerGeometry(1050,680,pos,3);
+ const veryHigh=labBallMarkerGeometry(1050,680,pos,30);
+ assert.equal(ground.radius,4.5);
+ assert.equal(LAB_MARKER_RADII_PX.player,10);
+ assert.equal(LAB_MARKER_RADII_PX.goalkeeper,11);
+ assert.ok(LAB_MARKER_RADII_PX.ball<LAB_MARKER_RADII_PX.player/2);
+ assert.equal(ground.y,ground.groundY);
+ assert.equal(low.airborne,false);
+ assert.equal(low.y,ground.y);
+ assert.equal(raised.airborne,true);
+ assert.equal(raised.x,ground.x);
+ assert.equal(high.groundX,ground.groundX);
+ assert.equal(high.groundY,ground.groundY);
+ assert.ok(high.y<raised.y&&raised.y<ground.y);
+ assert.equal(high.liftPx,24);
+ assert.equal(veryHigh.liftPx,60);
+ assert.equal(veryHigh.clearanceM,30);
+ assert.ok(labBallMarkerGeometry(1050,680,{x:0,y:-34},30).y>=6.5);
+ assert.throws(()=>labBallMarkerGeometry(1050,680,pos,-1),TypeError);
+ const calls={arcs:[],shadows:[],labels:[],lines:[],save:0,restore:0};
+ const ctx={
+  save(){calls.save++;},restore(){calls.restore++;},
+  beginPath(){},arc(...args){calls.arcs.push(args);},
+  ellipse(...args){calls.shadows.push(args);},fill(){},stroke(){},
+  moveTo(...args){calls.lines.push(args);},lineTo(...args){calls.lines.push(args);},
+  measureText(){return {width:36};},strokeText(){},fillText(...args){calls.labels.push(args);}
+ };
+ drawLabBallMarker(ctx,1050,680,pos,0);
+ assert.equal(calls.shadows.length,0);
+ assert.equal(calls.labels.length,0);
+ drawLabBallMarker(ctx,1050,680,pos,3);
+ assert.deepEqual(calls.arcs.map(a=>a.slice(0,3)),[
+  [ground.x,ground.y,4.5],[high.x,high.y,4.5]]);
+ assert.deepEqual(calls.shadows[0].slice(0,2),[ground.groundX,ground.groundY]);
+ assert.deepEqual(calls.lines,[[ground.groundX,ground.groundY],[high.x,high.y]]);
+ assert.equal(calls.labels[0][0],'3.00 m');
+ assert.equal(calls.save,2);assert.equal(calls.restore,2);
+ assert.deepEqual(pos,{x:12,y:8,z:3.11});
 });
