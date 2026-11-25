@@ -166,108 +166,66 @@ test('#791 DEV operator requires explicit exact scope, action confirmation and n
  }finally{await h?.close();await rm(dir,{recursive:true,force:true})}
 });
 
-test('#791 shared DEV Worker gates real authenticated HTTP requests on isolated D1',async()=>{
- const {default:sharedWorker}=await import('../src/shared-dev-worker.ts');
- const {default:ordinaryWorker}=await import('../src/index.ts');
- const {seedUnifiedOperator}=await import('./fixtures/unified-operator.ts');
- const dir=await mkdtemp(join(tmpdir(),'fa-dev-operator-http-'));
- let h:Awaited<ReturnType<typeof openLocalDatabase>>|undefined;
- try{
-  h=await openLocalDatabase(dir);
-  const db=h.db,now=Math.floor(Date.now()/1000),token='f'.repeat(64);
-  const operator=await seedUnifiedOperator(db,'dev-http-fixture','dev-http@example.invalid',now,token);
-  const origin='http://app.localhost:2000',url=origin+'/api/admin/dev-operator';
-  const env={DB:db,PLAYER_MODE:'local',PLAYER_ORIGIN:origin,DEV_OPERATOR_ENABLED:'true',DEV_OPERATOR_SOURCE:'a'.repeat(40)};
-  const headers={Cookie:operator.cookie,Origin:origin};
-  assert.equal((await ordinaryWorker.fetch(new Request(url,{headers}),env)).status,404);
-  assert.equal((await sharedWorker.fetch(new Request(url,{headers}),{...env,DEV_OPERATOR_ENABLED:'false'})).status,404);
-  assert.equal((await sharedWorker.fetch(new Request(url,{headers}),env)).status,503);
-  await db.prepare("INSERT INTO account_environment_pool(id,pool,initialized_at) VALUES(1,'dev-preview',?)").bind(now).run();
-  assert.equal((await sharedWorker.fetch(new Request(url),env)).status,401);
-  assert.notEqual((await sharedWorker.fetch(new Request(url,{headers}),env)).status,200);
-  await db.prepare('INSERT INTO economic_finance_permissions VALUES(?,?,?,?)').bind(operator.playerId,'read','fixture',now).run();
-  const response=await sharedWorker.fetch(new Request(url,{headers}),env);
-  assert.equal(response.status,200,await response.clone().text());
-  const status=await response.json() as any;
-  assert.equal(status.schema.ready,true);assert.equal(status.pool,'dev-preview');assert.equal(status.source,env.DEV_OPERATOR_SOURCE);
-  assert.equal(status.counts.generated_players,0);
-  const body=JSON.stringify({action:'settle',expectedGeneration:status.world.generation,expectedSeason:0,expectedDay:0,confirmation:'DEV settle '+status.world.generation+' 0:0',data:{}});
-  assert.equal((await sharedWorker.fetch(new Request(url,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body}),env)).status,403);
-  const rejected=await sharedWorker.fetch(new Request(url,{method:'POST',headers:{...headers,'Content-Type':'application/json','X-CSRF-Token':operator.csrf},body}),env);
-  assert.equal(rejected.status,409);
-  // Registry drift alone must prevent all writes; never auto-apply a migration.
-  await db.prepare("DELETE FROM d1_migrations WHERE name='0046_player_lifecycle_season_two.sql'").run();
-  const missing=await sharedWorker.fetch(new Request(url,{method:'POST',headers:{...headers,'Content-Type':'application/json','X-CSRF-Token':operator.csrf},body}),env);
-  assert.equal(missing.status,409);
-  assert.equal((await missing.json() as any).error.code,'dev_operator_schema_not_ready');
-  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM economic_transactions').first())!.n,0);
-  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first())!.n,0);
- }finally{await h?.close();await rm(dir,{recursive:true,force:true})}
-});
-
 test('#791 actual PowerShell client pins four paydays, confirmation and resume bound without a network binding',t=>{
  const {spawnSync}=requireChildProcessForPowerShellTest;
  const scriptPath=new URL('../../tools/dev-operator.ps1',import.meta.url);
  const command=String.raw`
 $ErrorActionPreference='Stop'
-$script:Head=(git rev-parse HEAD).Trim()
-$script:Source=$script:Head
-$script:Gen='00000000-0000-4000-8000-000000000001'
-$script:Season=1
-$script:Day=28
-$script:Posts=0
-$script:Ready=$true
-$script:Confirm=$true
-$script:Fail=$false
-$script:DoneAfter=2
-$script:FirstBody=''
-function Read-Host([string]$Prompt){
- if(-not $script:Confirm){return 'wrong confirmation'}
+$global:FA791TestState=@{HeadSha=(git rev-parse HEAD).Trim();SourceSha='';Gen='00000000-0000-4000-8000-000000000001';Season=1;Day=28;Posts=0;Ready=$true;Confirm=$true;Fail=$false;DoneAfter=2;FirstBody='';Gets=0}
+$global:FA791TestState.SourceSha=$global:FA791TestState.HeadSha
+function global:Read-Host([string]$Prompt){
+ if(-not $global:FA791TestState.Confirm){return 'wrong confirmation'}
  return $Prompt.Substring('Type exactly: '.Length)
 }
-function Invoke-RestMethod {
+function global:Invoke-RestMethod {
  param([string]$Uri,[string]$Method='Get',[string]$ContentType,[hashtable]$Headers,[string]$Body,$WebSession,$MaximumRedirection,$TimeoutSec)
  if($Uri -ceq 'http://app.localhost:2000/api/admin/session'){return @{csrfToken='synthetic-csrf'}}
  if($Uri -cne 'http://app.localhost:2000/api/admin/dev-operator'){throw 'unexpected target'}
  if($Headers['Origin'] -cne 'http://app.localhost:2000' -or $Headers['X-CSRF-Token'] -cne 'synthetic-csrf' -or $MaximumRedirection -ne 0){throw 'unexpected headers'}
  if($Method -ne 'Post'){
-  return @{pool='dev-preview';database='football-architect-dev';source=$script:Source;schema=@{ready=$script:Ready};foreignKeyViolations=0;world=@{generation=$script:Gen;seasonNumber=$script:Season;day=$script:Day}}
+  $global:FA791TestState.Gets++
+  return @{pool='dev-preview';database='football-architect-dev';source=$global:FA791TestState.SourceSha;schema=@{ready=$global:FA791TestState.Ready};foreignKeyViolations=0;world=@{generation=$global:FA791TestState.Gen;seasonNumber=$global:FA791TestState.Season;day=$global:FA791TestState.Day}}
  }
- $script:Posts++
+ $global:FA791TestState.Posts++
  $request=$Body|ConvertFrom-Json
- $expected="DEV settle $($script:Gen) $($script:Season):$($script:Day)"
- if($request.action -cne 'settle' -or $request.expectedGeneration -cne $script:Gen -or $request.expectedSeason -ne $script:Season -or $request.expectedDay -ne $script:Day -or $request.confirmation -cne $expected){throw 'wrong scope'}
- if($script:Posts -eq 1){$script:FirstBody=$Body}
- elseif($Body -cne $script:FirstBody){throw 'retry changed approved request'}
- if($script:Fail){throw 'simulated lost response'}
- return @{done=($script:Posts -ge $script:DoneAfter);stage='payroll'}
+ $expected="DEV settle $($global:FA791TestState.Gen) $($global:FA791TestState.Season):$($global:FA791TestState.Day)"
+ if($request.action -cne 'settle' -or $request.expectedGeneration -cne $global:FA791TestState.Gen -or $request.expectedSeason -ne $global:FA791TestState.Season -or $request.expectedDay -ne $global:FA791TestState.Day -or $request.confirmation -cne $expected){throw 'wrong scope'}
+ if($global:FA791TestState.Posts -eq 1){$global:FA791TestState.FirstBody=$Body}
+ elseif($Body -cne $global:FA791TestState.FirstBody){throw 'retry changed approved request'}
+ if($global:FA791TestState.Fail){throw 'simulated lost response'}
+ return @{done=($global:FA791TestState.Posts -ge $global:FA791TestState.DoneAfter);stage='payroll'}
 }
 function Check([bool]$Condition,[string]$Message){if(-not $Condition){throw $Message}}
 $session=New-Object Microsoft.PowerShell.Commands.WebRequestSession
 $path=$env:FA_TEST_OPERATOR_SCRIPT
-& $path -Action status -Session $session -ApprovedCommit $script:Head | Out-Null
-Check ($script:Posts -eq 0) 'status wrote'
+& $path -Action status -Session $session -ApprovedCommit $global:FA791TestState.HeadSha | Out-Null
+Check ($global:FA791TestState.Posts -eq 0 -and $global:FA791TestState.Gets -eq 1) 'status did not use only read transport'
 foreach($season in @(1,2)){foreach($day in @(28,56)){
- $script:Season=$season;$script:Day=$day;$script:Posts=0
- & $path -Action settle -Session $session -ApprovedCommit $script:Head -MaxRequests 2 | Out-Null
- Check ($script:Posts -eq 2) 'four payday loop did not finish'
+ $global:FA791TestState.Season=$season;$global:FA791TestState.Day=$day;$global:FA791TestState.Posts=0
+ & $path -Action settle -Session $session -ApprovedCommit $global:FA791TestState.HeadSha -MaxRequests 2 | Out-Null
+ Check ($global:FA791TestState.Posts -eq 2) 'four payday loop did not finish'
 }}
 foreach($block in @('schema','source','confirmation','transport')){
- $script:Ready=$true;$script:Source=$script:Head;$script:Confirm=$true;$script:Fail=$false;$script:Posts=0
+ $global:FA791TestState.Ready=$true;$global:FA791TestState.SourceSha=$global:FA791TestState.HeadSha;$global:FA791TestState.Confirm=$true;$global:FA791TestState.Fail=$false;$global:FA791TestState.Posts=0
  switch($block){
-  schema{$script:Ready=$false}
-  source{$script:Source='a'*40}
-  confirmation{$script:Confirm=$false}
-  transport{$script:Fail=$true}
+  schema{$global:FA791TestState.Ready=$false}
+  source{$global:FA791TestState.SourceSha=if($global:FA791TestState.HeadSha -ceq ('a'*40)){'b'*40}else{'a'*40}}
+  confirmation{$global:FA791TestState.Confirm=$false}
+  transport{$global:FA791TestState.Fail=$true}
  }
  $rejected=$false
- try{& $path -Action settle -Session $session -ApprovedCommit $script:Head -MaxRequests 2 | Out-Null}catch{$rejected=$true}
+ try{& $path -Action settle -Session $session -ApprovedCommit $global:FA791TestState.HeadSha -MaxRequests 2 | Out-Null}catch{
+  $expectedError=switch($block){schema{'Preflight blocked'} source{'Unverified DEV operator target'} confirmation{'Not authorized'} transport{'simulated lost response'}}
+  Check ($_.Exception.Message.Contains($expectedError)) "wrong failure for $block"
+  $rejected=$true
+ }
  Check $rejected "failure not propagated: $block"
- Check ($script:Posts -eq $(if($block -eq 'transport'){1}else{0})) "unexpected mutation/retry: $block"
+ Check ($global:FA791TestState.Posts -eq $(if($block -eq 'transport'){1}else{0})) "unexpected mutation/retry: $block"
 }
-$script:Ready=$true;$script:Source=$script:Head;$script:Confirm=$true;$script:Fail=$false;$script:Posts=0;$script:DoneAfter=9
-& $path -Action settle -Session $session -ApprovedCommit $script:Head -MaxRequests 2 | Out-Null
-Check ($script:Posts -eq 2) 'request limit ignored'
+$global:FA791TestState.Ready=$true;$global:FA791TestState.SourceSha=$global:FA791TestState.HeadSha;$global:FA791TestState.Confirm=$true;$global:FA791TestState.Fail=$false;$global:FA791TestState.Posts=0;$global:FA791TestState.DoneAfter=9
+& $path -Action settle -Session $session -ApprovedCommit $global:FA791TestState.HeadSha -MaxRequests 2 | Out-Null
+Check ($global:FA791TestState.Posts -eq 2) 'request limit ignored'
+Remove-Variable -Name FA791TestState -Scope Global
 Write-Output 'PowerShell client contract PASS'
 `;
  const result=spawnSync('pwsh',['-NoLogo','-NoProfile','-NonInteractive','-Command',command],{

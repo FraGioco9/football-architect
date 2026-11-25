@@ -228,6 +228,11 @@ jobs:
         run: |
           npm install -g npm@11.6.2 --no-audit --no-fund
           npm --prefix backend ci --prefer-offline --no-audit --no-fund
+      - name: Verify DEV operator runtime and PowerShell regressions before full rehearsal
+        if: ${{ !needs.scope.outputs.reuse }}
+        run: |
+          npm --prefix backend test -- tests/worker-runtime.test.ts -t '#791 shared DEV Worker'
+          node --experimental-strip-types --test --test-name-pattern='actual PowerShell client' backend/tests/operator-local.test.mts
       - name: Verify operator bootstrap, recovery and local persistence across restart
         if: ${{ !needs.scope.outputs.reuse }}
         run: node tools/ci-run.mjs 18-admin-world-checks -- npm --prefix backend run test:operator
