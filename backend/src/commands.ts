@@ -4,6 +4,7 @@ import type {Database} from './database.ts';
 import {parseIdempotencyKey,parsePrepareRequest,type PrepareRequest} from './command-contract.ts';
 import {requireApprovedSnapshot,canonicalHash,type ApprovedSnapshot} from './catalogue-snapshot.ts';
 import {readWorld} from './world-repository.ts';
+import {openingSeasonPreparationGuard} from './opening-world-publication.ts';
 import {readSeasonZeroAuthority} from './season-zero-entrants.ts';
 
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
@@ -24,7 +25,7 @@ export async function prepareSeason(db:Database,session:AdminSession,input:Prepa
   const worldGuard=abortUnless(db,`SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND phase='unstarted' AND season_number=0 AND day=0`,[command.expectedGeneration,command.expectedRevision]);
   try{
    await db.batch([
-    sessionGuard(db,session,now),worldGuard,...zero.guards,
+    sessionGuard(db,session,now),worldGuard,...zero.guards,...await openingSeasonPreparationGuard(db,world.generation),
     db.prepare('INSERT INTO seasons(season_number,generation,participants_hash,rules_hash,snapshot_json,created_at) VALUES(1,?,?,?,?,?)')
      .bind(command.expectedGeneration,trusted.participantsHash,trusted.rulesHash,JSON.stringify(trusted),now),
     db.prepare("UPDATE world_state SET revision=revision+1,season_number=1,day=0,phase='preparing' WHERE id=1 AND generation=? AND revision=?")

@@ -20,6 +20,7 @@ function fixture(found=true,changed=false,clubKey:string|null=null,portraitAppro
     if(sql.includes('FROM world_state'))return {schema_version:1,generation:changed&&++worldReads>1?'650e8400-e29b-41d4-a716-446655440000':generation,revision:0,season_number:0,day:0,phase:'unstarted'};
     if(sql.includes('FROM generated_players p'))return found?{id:42,payload_json:JSON.stringify(payload),club_key:clubKey,
      portrait_approved:portraitApproved?1:0}:null;
+    if(sql.includes('FROM sqlite_schema')&&args[0]==='opening_world_staging')return null;
     throw Error('Unexpected SQL: '+sql);
    },
    async all(){return {results:[],meta:{changes:0}}},

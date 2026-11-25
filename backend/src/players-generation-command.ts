@@ -57,7 +57,7 @@ function normalizeOptions(value:unknown){
  if(Array.isArray(options.secondaryNationality)&&options.secondaryNationality.includes(options.primaryNationality))throw invalid();
  return options;
 }
-function playerRecord(candidate:any){
+export function playerRecord(candidate:any){
  // Preview has no permanent player ID: D1 allocates it only at approval.
  return {
   first_name:candidate.first_name,last_name:candidate.last_name,display_name:candidate.display_name,

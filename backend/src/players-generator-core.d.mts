@@ -17,3 +17,8 @@ export function summarize(trial:TrialResult):{
  count:number;seed:string;snapshot:string;distinct_countries:number;secondary_nationalities:number;
  countries:Record<string,number>;positions:Record<string,number>;ages:Record<string,number>;secondary_counts:Record<string,number>
 };
+
+export interface OpeningCandidateSlot {age:number;primaryNationality:string;primaryPosition:string;primarySuitabilityTarget:number;generatorSeed:string}
+export function generateOpeningCandidateWithCatalog(slot:OpeningCandidateSlot,pools:unknown):TrialCandidate;
+
+export function calculatePositionSuitability(attributes:Readonly<Record<string,number>>,position:string):number;

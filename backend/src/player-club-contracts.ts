@@ -181,14 +181,19 @@ export const readOpeningSalaryAuthority:OpeningSalaryAuthority=async(db,world,cl
  if(active.length!==256||Object.keys(estimates).length!==active.length||active.some(k=>!Object.hasOwn(estimates,k)||typeof estimates[k]!=='number'||!Number.isFinite(estimates[k])||Number(estimates[k])<=0||Number(estimates[k])>1_000_000_000_000)||!Object.hasOwn(estimates,club))throw fail();
  return {expectedAnnualRewardsArc:Number(estimates[club]),sourceVersion:'opening-forecast:'+await hashText(row.rules_json),guards:[abortUnless(db,"SELECT 1 FROM economic_control c JOIN economic_policy_versions p ON p.version=c.active_version WHERE c.id=1 AND c.posting_enabled=1 AND p.version=? AND p.rules_json=?",[row.version,row.rules_json])]};
 };
-async function openingStageGuard(db:Database,generation:string){
+async function openingStageGuard(db:Database,generation:string,club:string,id:number,duration:number,runKey?:string){
  // #797's root is intentionally not a release receipt. If present, ordinary
  // signing is blocked even before its immutable insert/update triggers run.
  const exists=await db.prepare("SELECT 1 FROM sqlite_schema WHERE type='table' AND name='opening_world_runs'").first();
- if(!exists)return abortUnless(db,"SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM sqlite_schema WHERE type='table' AND name='opening_world_runs')",[]);
- const condition="SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM opening_world_runs WHERE world_generation=? AND batch_index=-1)";
- if(!await db.prepare(condition).bind(generation).first())throw new ApiError(409,'contract_opening_staged');
- return abortUnless(db,condition,[generation]);
+ if(!exists){
+  if(runKey!==undefined)throw new ApiError(409,'contract_opening_staged');
+  return abortUnless(db,"SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM sqlite_schema WHERE type='table' AND name='opening_world_runs')",[]);
+ }
+ const condition=runKey===undefined?"SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM opening_world_staging WHERE world_generation=?)":
+  "SELECT 1 FROM opening_world_staging root JOIN opening_world_contract_slots s ON s.run_key=root.run_key JOIN world_state w ON w.id=1 AND w.generation=root.world_generation WHERE root.world_generation=? AND root.run_key=? AND s.club_key=? AND s.player_id=? AND s.duration_seasons=? AND (SELECT COUNT(*) FROM opening_world_runs b WHERE b.run_key=root.run_key AND b.batch_index BETWEEN 0 AND 255)=256 AND w.revision=(SELECT COUNT(*) FROM player_signed_contracts WHERE world_generation=w.generation)";
+ const args=runKey===undefined?[generation]:[generation,runKey,club,id,duration];
+ if(!await db.prepare(condition).bind(...args).first())throw new ApiError(409,'contract_opening_staged');
+ return abortUnless(db,condition,args);
 }
 function parseInitialContract(input:unknown){
  if(!input||typeof input!=='object'||Array.isArray(input))throw invalid();
@@ -201,13 +206,13 @@ function parseInitialContract(input:unknown){
 
  return {club,id,duration,cmd};
 }
-async function prepareInitialAiContract(db:Database,parsed:ReturnType<typeof parseInitialContract>,authority:OpeningSalaryAuthority){
+async function prepareInitialAiContract(db:Database,parsed:ReturnType<typeof parseInitialContract>,authority:OpeningSalaryAuthority,openingRunKey?:string){
  const {club,id,duration,cmd}=parsed;
  const world=await readWorld(db);
  if(world.generation!==cmd.expectedGeneration||world.revision!==cmd.expectedRevision)throw new ApiError(409,'stale_world');
  if(world.seasonNumber!==0||world.phase!=='unstarted'||world.day!==0||world.revision>=Number.MAX_SAFE_INTEGER)throw new ApiError(409,'contract_opening_only');
  const snapshot=await loadApprovedSnapshot();
- const stageGuard=await openingStageGuard(db,world.generation);
+ const stageGuard=await openingStageGuard(db,world.generation,club,id,duration,openingRunKey);
  const domestic=snapshot.bindings.find(x=>!x.competitionId.startsWith('int-')&&x.clubIds.includes(club));
  if(!domestic)throw new ApiError(422,'contract_club_ineligible');
  const division=domestic.competitionId.endsWith('-1')?1:2;
@@ -241,15 +246,16 @@ async function prepareInitialAiContract(db:Database,parsed:ReturnType<typeof par
  return {world,club,id,duration,forecast,player,bounds,wage,funding,stageGuard,aiClubSql,quoteHash};
 }
 export async function signInitialAiContract(
- db:Database,session:AdminSession,input:unknown,keyInput:string|null,now:number,authority:OpeningSalaryAuthority,expectedQuoteHash?:string
+ db:Database,session:AdminSession,input:unknown,keyInput:string|null,now:number,authority:OpeningSalaryAuthority,expectedQuoteHash?:string,openingRunKey?:string
 ):Promise<Outcome>{
  const parsed=parseInitialContract(input),{club,id,duration,cmd}=parsed;
  const key=parseIdempotencyKey(keyInput);
  if(!Number.isSafeInteger(now)||now<=0||now>Math.floor(Number.MAX_SAFE_INTEGER/1000))throw invalid();
- const hash=await hashText(JSON.stringify({command:'sign-initial-ai-contract-v1',...cmd,club,id,duration,expectedQuoteHash:expectedQuoteHash??null}));
+ const command=openingRunKey===undefined?'sign-initial-ai-contract-v1':'sign-opening-slot-v1';
+ const hash=await hashText(JSON.stringify({command,...cmd,club,id,duration,expectedQuoteHash:expectedQuoteHash??null,...(openingRunKey===undefined?{}:{openingRunKey})}));
  const saved=await replay(db,session,cmd,key,hash,now);if(saved)return saved;
  let prepared:Awaited<ReturnType<typeof prepareInitialAiContract>>;
- try{prepared=await prepareInitialAiContract(db,parsed,authority)}catch(error){
+ try{prepared=await prepareInitialAiContract(db,parsed,authority,openingRunKey)}catch(error){
   const concurrent=await replay(db,session,cmd,key,hash,now);if(concurrent)return concurrent;
   throw error;
  }
@@ -257,9 +263,11 @@ export async function signInitialAiContract(
  const {inputs,financeVersion}=funding;
  if(expectedQuoteHash!==undefined&&expectedQuoteHash!==quoteHash)throw new ApiError(409,'contract_quote_changed');
  const operationId=crypto.randomUUID(),result:Outcome={operationId,world:{...world,revision:world.revision+1}};
- const receipt={...result,contract:{playerId:id,clubKey:club,durationSeasons:duration,annualSalaryArc:wage,referenceArc:bounds.reference,
+ const receipt={...result,...(openingRunKey===undefined?{}:{openingRunKey}),contract:{playerId:id,clubKey:club,durationSeasons:duration,annualSalaryArc:wage,referenceArc:bounds.reference,
   salaryFormulaVersion:MARKET_VALUE_CONFIG.version,forecastVersion:forecast.sourceVersion,expectedAnnualRewardsArc:forecast.expectedAnnualRewardsArc,financeVersion,
   firstPaydayDueArc:inputs.newDue,existingDueArc:inputs.committedUncoveredWages,availableArc:inputs.uncommittedCash,quoteHash}};
+ const audit=db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)')
+  .bind(operationId,world.generation,key,hash,session.actor.id,command,world.revision,result.world.revision,JSON.stringify(receipt),now);
  try{
   await db.batch([
    sessionGuard(db,session,now),
@@ -268,11 +276,11 @@ export async function signInitialAiContract(
    abortUnless(db,aiClubSql,[club]),
    abortUnless(db,"SELECT 1 FROM generated_players WHERE id=? AND world_generation=? AND entry_season=0 AND payload_json=? AND NOT EXISTS(SELECT 1 FROM player_signed_contracts WHERE player_id=?) AND NOT EXISTS(SELECT 1 FROM player_agent_mandates WHERE player_id=?)",[id,world.generation,player.payload_json,id,id]),
    ...funding.guards,
+   ...(openingRunKey===undefined?[]:[audit]),
    db.prepare("INSERT INTO player_signed_contracts(player_id,world_generation,club_key,signed_at_ms,start_tick,duration_seasons,scheduled_end_tick,annual_salary_arc,minimum_arc,reference_arc,maximum_arc,policy_version,ai_demand_arc,signing_key) VALUES(?,?,?,?,0,?,?,?,?,?,?,?,?,?)")
     .bind(id,world.generation,club,now*1000,duration,duration*56,wage,bounds.minimum,bounds.reference,bounds.maximum,CONTRACT_POLICY.version,wage,'initial:'+world.generation+':'+id),
    db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(world.generation,world.revision),
-   db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)')
-    .bind(operationId,world.generation,key,hash,session.actor.id,'sign-initial-ai-contract-v1',world.revision,result.world.revision,JSON.stringify(receipt),now),
+   ...(openingRunKey===undefined?[audit]:[]),
   ]);
   return result;
  }catch{
@@ -281,6 +289,14 @@ export async function signInitialAiContract(
   if(fresh.generation!==world.generation||fresh.revision!==world.revision)throw new ApiError(409,'stale_world');
   throw new ApiError(409,'contract_signing_preconditions_changed');
  }
+}
+
+/** Internal local opening runner only. Exact slot and completed generation
+ * predicates run in the same signature batch; never callable from Admin JSON.
+ * Uses the same salary authority, affordability, audit and replay primitive. */
+export async function signStagedOpeningContract(db:Database,session:AdminSession,input:unknown,key:string,now:number,runKey:string){
+ if(!/^[a-f0-9]{64}$/.test(runKey))throw invalid();
+ return signInitialAiContract(db,session,input,key,now,readOpeningSalaryAuthority,undefined,runKey);
 }
 
 /** Admin HTTP boundary: client confirms an exact server-prepared quote, never supplies wage/authority. */

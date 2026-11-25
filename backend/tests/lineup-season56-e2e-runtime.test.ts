@@ -84,7 +84,16 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  await expect(preparePayrollAffordability(db,world,poorClub,125)).rejects.toMatchObject({code:'contract_insufficient_cash_proof'});
  const initialTransactions=321;
  expect(await count('economic_transactions')).toBe(initialTransactions);
- await advance(prepareSeason(db,session,command(),'lineup-season-prepare-0001',snapshot,now));
+ // The independent 56-day payroll fixture deliberately has no opening
+ // population. Verify the new production gate, then seed only this disposable
+ // fixture's initial sporting state to exercise downstream calendar/settlement.
+ // Never create a fictitious Opening World publication receipt.
+ await expect(prepareSeason(db,session,command(),'lineup-season-prepare-0001',snapshot,now)).rejects.toThrow();
+ await db.batch([
+  db.prepare('INSERT INTO seasons(season_number,generation,participants_hash,rules_hash,snapshot_json,created_at) VALUES(1,?,?,?,?,?)').bind(world.generation,snapshot.participantsHash,snapshot.rulesHash,JSON.stringify(snapshot),now),
+  db.prepare("UPDATE world_state SET revision=revision+1,season_number=1,day=0,phase='preparing' WHERE id=1 AND generation=? AND revision=?").bind(world.generation,world.revision)
+ ]);
+ world=await readWorld(db);
  const holdId=annualRewardHoldId(world.generation,world.seasonNumber);
  await db.batch(['read','post'].map(capability=>db.prepare('INSERT INTO economic_finance_permissions VALUES(?,?,?,?)')
   .bind(session.unified!.playerId,capability,'fixture',now)));

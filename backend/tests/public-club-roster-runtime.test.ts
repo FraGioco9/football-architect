@@ -28,6 +28,7 @@ function fixture(count:number,clubKey='IT-1'){
      queries.push({sql,args});
      if(sql.includes('FROM world_state'))
       return {schema_version:1,generation:worldGeneration,revision:0,season_number:0,day:0,phase:'unstarted'};
+     if(sql.includes('FROM sqlite_schema')&&args[0]==='opening_world_staging')return null;
      throw Error('unexpected first');
     },
     async all(){
