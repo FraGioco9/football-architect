@@ -4,9 +4,8 @@ import {ApiError} from './errors.ts';
 import type {Database,Statement} from './database.ts';
 import {hashText,type AdminSession} from './auth.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
-import {clubTreasuryId,reconcileEconomy,economicAssert,economicReconciliationGuard} from './economic-ledger.ts';
-import {annualRewardHoldId} from './reward-calendar-gate.ts';
-import {rewardCalendarBudget} from './reward-settlement-plan.mjs';
+import {clubTreasuryId,economicReconciliationGuard} from './economic-ledger.ts';
+import {requireEconomicGenesisGuard} from './economic-genesis.ts';
 import {MARKET_VALUE_CONFIG,rawDestinationSalaryReferenceArc,type MarketValueInput} from './player-market-value.mjs';
 import type {WorldV1} from './types.ts';
 import {readWorld} from './world-repository.ts';
@@ -143,7 +142,7 @@ export async function previewAdminContract(db:Database,input:unknown){
   const prepared=await prepareInitialAiContract(db,parseInitialContract(input),readOpeningSalaryAuthority);
   // Execute the read-only assertion statements together; there are no domain
   // effects here. The signing command repeats the complete preflight and CAS.
-  await db.batch([prepared.stageGuard,...prepared.forecast.guards,...prepared.funding.guards,abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=?",[world.generation,world.revision])]);
+  await db.batch([prepared.stageGuard,prepared.genesisGuard,...prepared.forecast.guards,...prepared.funding.guards,abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=?",[world.generation,world.revision])]);
   return {...base,annualSalaryArc:prepared.wage,referenceArc:prepared.bounds.reference,maximumArc:prepared.bounds.maximum,quoteHash:prepared.quoteHash,signable:true,blockers:[]};
  }catch(error){
   if(error instanceof ApiError&&error.code==='stale_world')throw error;
@@ -162,36 +161,6 @@ export async function previewAdminContract(db:Database,input:unknown){
 export type OpeningSalaryAuthority=(db:Database,world:WorldV1,clubKey:string)=>Promise<{
  expectedAnnualRewardsArc:number;sourceVersion:string;guards:readonly Statement[];
 }>;
-/** Temporary strict opening-only consumer gate for #775/#802. The durable
- * certification/release adapter remains owned by #802. No funding writes here.
- * Only the canonical, fully funded genesis-only journal is accepted; once
- * other postings exist a reviewed general-purpose adapter is required. */
-export async function prepareOpeningFundingGuard(db:Database,version:string,rulesJson:string,generation:string){
- const {annual,version:rewardVersion}=rewardCalendarBudget();
- const rules=JSON.parse(rulesJson);
- const fail=()=>new ApiError(503,'contract_genesis_not_ready');
- if(rules.genesisProtocol!==1||rules.rewardVersion!==rewardVersion||rules.annualRewardsArc!==annual||
- !Number.isSafeInteger(rules.freeReserveArc)||rules.freeReserveArc<0)throw fail();
- const policy=await db.prepare("SELECT genesis_reserve_arc,club_opening_json FROM economic_policy_versions WHERE version=?").bind(version).first<{genesis_reserve_arc:number;club_opening_json:string}>();
- if(!policy)throw fail();
- const capital=JSON.parse(policy.club_opening_json) as Record<string,number>;
- if(!capital||Array.isArray(capital)||Object.keys(capital).length!==320||[...canonical.keys()].some(k=>!Object.hasOwn(capital,k)||!Number.isSafeInteger(capital[k])||capital[k]<=0))throw fail();
- const sum=Object.values(capital).reduce((a,b)=>a+b,0);
- if(!Number.isSafeInteger(sum)||sum+annual+rules.freeReserveArc!==policy.genesis_reserve_arc)throw fail();
- const holdId=annualRewardHoldId(generation,1);
- const sql="SELECT 1 WHERE (SELECT COUNT(*) FROM economic_transactions)=321 "+
- "AND EXISTS(SELECT 1 FROM economic_transactions WHERE business_key='economic-genesis:reserve' AND request_key=business_key AND purpose='GENESIS_RESERVE' AND actor_kind='system' AND actor_id='economic-genesis-v1' AND config_version=? AND source_id='economic-genesis' AND generation IS NULL AND season IS NULL AND day IS NULL AND reversal_of IS NULL AND hold_id IS NULL AND json_array_length(lines_json)=2 AND EXISTS(SELECT 1 FROM economic_entries WHERE transaction_id=economic_transactions.id AND account_id='reserve' AND amount_arc=?)) "+
- "AND NOT EXISTS(SELECT 1 FROM json_each(?) j WHERE NOT EXISTS(SELECT 1 FROM economic_transactions t JOIN economic_entries e ON e.transaction_id=t.id WHERE t.business_key='economic-genesis:club:'||j.key AND t.request_key=t.business_key AND t.purpose='CLUB_OPENING' AND t.actor_kind='system' AND t.actor_id='economic-genesis-v1' AND t.config_version=? AND t.source_id=j.key AND t.generation IS NULL AND t.season IS NULL AND t.day IS NULL AND t.reversal_of IS NULL AND t.hold_id IS NULL AND json_array_length(t.lines_json)=2 AND e.account_id='club:'||j.key AND e.amount_arc=j.value)) "+
- "AND NOT EXISTS(SELECT 1 FROM json_each(?) j WHERE NOT EXISTS(SELECT 1 FROM economic_available_balances b WHERE b.id='club:'||j.key AND b.kind='CLUB_TREASURY' AND b.balance_arc=j.value AND b.reserved_arc=0)) "+
- "AND EXISTS(SELECT 1 FROM economic_available_balances WHERE id='reserve' AND balance_arc=? AND reserved_arc=? AND available_arc=?) "+
- "AND EXISTS(SELECT 1 FROM economic_open_holds WHERE id=? AND account_id='reserve' AND purpose='REWARD_BUDGET' AND source_id=? AND actor_id='reward-settlement-v1' AND config_version=? AND amount_arc=? AND remaining_arc=?)";
- const params=[version,policy.genesis_reserve_arc,policy.club_opening_json,version,policy.club_opening_json,annual+rules.freeReserveArc,annual,rules.freeReserveArc,holdId,holdId,version,annual,annual];
- if(!await db.prepare(sql).bind(...params).first())throw fail();
- const reconciliation=await reconcileEconomy(db,[economicAssert(db,'SELECT 1')]);
- if(!reconciliation.ok||reconciliation.stockArc!==String(policy.genesis_reserve_arc))throw fail();
- return economicAssert(db,sql,params);
-}
-
 /** Trusted immutable policy input, not a default forecast. All 256 active club
  * estimates must belong to the exact approved opening snapshot and generation.
  * No policy row is created here; absent approval/configuration means unavailable. */
@@ -210,8 +179,7 @@ export const readOpeningSalaryAuthority:OpeningSalaryAuthority=async(db,world,cl
  const estimates=entries as Record<string,unknown>;
  const active=snapshot.bindings.filter(x=>!x.competitionId.startsWith('int-')).flatMap(x=>[...x.clubIds]);
  if(active.length!==256||Object.keys(estimates).length!==active.length||active.some(k=>!Object.hasOwn(estimates,k)||typeof estimates[k]!=='number'||!Number.isFinite(estimates[k])||Number(estimates[k])<=0||Number(estimates[k])>1_000_000_000_000)||!Object.hasOwn(estimates,club))throw fail();
- const fundingGuard=await prepareOpeningFundingGuard(db,row.version,row.rules_json,world.generation);
- return {expectedAnnualRewardsArc:Number(estimates[club]),sourceVersion:'opening-forecast:'+await hashText(row.rules_json),guards:[fundingGuard,abortUnless(db,"SELECT 1 FROM economic_control c JOIN economic_policy_versions p ON p.version=c.active_version WHERE c.id=1 AND c.posting_enabled=1 AND p.version=? AND p.rules_json=?",[row.version,row.rules_json])]};
+ return {expectedAnnualRewardsArc:Number(estimates[club]),sourceVersion:'opening-forecast:'+await hashText(row.rules_json),guards:[abortUnless(db,"SELECT 1 FROM economic_control c JOIN economic_policy_versions p ON p.version=c.active_version WHERE c.id=1 AND c.posting_enabled=1 AND p.version=? AND p.rules_json=?",[row.version,row.rules_json])]};
 };
 async function openingStageGuard(db:Database,generation:string){
  // #797's root is intentionally not a release receipt. If present, ordinary
@@ -236,6 +204,8 @@ function parseInitialContract(input:unknown){
 /** #803 consumer contract: one certified snapshot and atomic source guards.
  * This conservative implementation is only valid before the first earning day.
  * #803 may replace the read adapter, never the shared arithmetic or signing CAS. */
+/** Transitional Season 0 only. Replace with #803's preparePayrollAffordability
+ * after its merge; no copy of the unmerged payroll implementation. */
 export type ContractAffordabilityProof={inputs:Affordability;financeVersion:string;guards:readonly Statement[]};
 export async function prepareOpeningAffordability(db:Database,world:WorldV1,club:string,wage:number):Promise<ContractAffordabilityProof>{
  if(world.seasonNumber!==0||world.day!==0||world.phase!=='unstarted')throw new ApiError(503,'payroll_affordability_unavailable');
@@ -286,13 +256,17 @@ async function prepareInitialAiContract(db:Database,parsed:ReturnType<typeof par
  const raw=rawDestinationSalaryReferenceArc({...payload,age:payload.age??payload.initial_age??0},forecast.expectedAnnualRewardsArc);
  if(raw===null)throw new ApiError(503,'salary_reference_unavailable');
  const bounds=salaryBounds(division,raw),wage=bounds.aiDemand;
+ // #802 owns durable capital certification. Check even for internal forecast callers,
+ // then carry the exact same guard into preview and atomic signing.
+ const genesisGuard=requireEconomicGenesisGuard(db,world.generation);
+ try{await db.batch([genesisGuard])}catch{throw new ApiError(503,'contract_genesis_not_ready')}
  const funding=await prepareOpeningAffordability(db,world,club,wage);
  const {inputs,financeVersion}=funding;
  const {newDue,committedUncoveredWages:committed,uncommittedCash:availableArc}=inputs;
  const quoteHash=await hashText(JSON.stringify({kind:'opening-contract-quote-v1',generation:world.generation,revision:world.revision,club,id,duration,
   playerPayloadHash:await hashText(player.payload_json),salaryFormulaVersion:MARKET_VALUE_CONFIG.version,forecastVersion:forecast.sourceVersion,
   expectedAnnualRewardsArc:forecast.expectedAnnualRewardsArc,financeVersion,bounds,newDue,committed,availableArc}));
- return {world,club,id,duration,forecast,player,bounds,wage,funding,stageGuard,aiClubSql,quoteHash};
+ return {world,club,id,duration,forecast,player,bounds,wage,funding,stageGuard,genesisGuard,aiClubSql,quoteHash};
 }
 export async function signInitialAiContract(
  db:Database,session:AdminSession,input:unknown,keyInput:string|null,now:number,authority:OpeningSalaryAuthority,expectedQuoteHash?:string
@@ -307,7 +281,7 @@ export async function signInitialAiContract(
   const concurrent=await replay(db,session,cmd,key,hash,now);if(concurrent)return concurrent;
   throw error;
  }
- const {world,forecast,player,bounds,wage,funding,stageGuard,aiClubSql,quoteHash}=prepared;
+ const {world,forecast,player,bounds,wage,funding,stageGuard,genesisGuard,aiClubSql,quoteHash}=prepared;
  const {inputs,financeVersion}=funding;
  if(expectedQuoteHash!==undefined&&expectedQuoteHash!==quoteHash)throw new ApiError(409,'contract_quote_changed');
  const operationId=crypto.randomUUID(),result:Outcome={operationId,world:{...world,revision:world.revision+1}};
@@ -318,7 +292,7 @@ export async function signInitialAiContract(
   await db.batch([
    sessionGuard(db,session,now),
    abortUnless(db,"SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=0 AND day=0 AND phase='unstarted'",[world.generation,world.revision]),
-   ...forecast.guards,stageGuard,
+   ...forecast.guards,stageGuard,genesisGuard,
    abortUnless(db,aiClubSql,[club]),
    abortUnless(db,"SELECT 1 FROM generated_players WHERE id=? AND world_generation=? AND entry_season=0 AND payload_json=? AND NOT EXISTS(SELECT 1 FROM player_signed_contracts WHERE player_id=?) AND NOT EXISTS(SELECT 1 FROM player_agent_mandates WHERE player_id=?)",[id,world.generation,player.payload_json,id,id]),
    ...funding.guards,
