@@ -22,7 +22,7 @@ import {executeInternationalDraw} from './admin-international-draw.ts';
 import {publishInternationalCalendarLineupV1 as publishInternationalCalendar} from './admin-calendar-publish-lineup-v1.ts';
 import {closeSeasonLineupV1 as closeSeason} from './season-close-command-lineup-v1.ts';
 import {archiveSeasonLineupV1 as archiveSeason} from './season-archive-command-lineup-v1.ts';
-import {resetWorld} from './reset-world-command.ts';
+import {prepareSportingReset,executeSportingReset} from './sporting-reset-preview.ts';
 import {resetScopes,parseResetScopes,previewAdminReset,readAdminEconomySummary,readAdminEconomyReconciliation,parseEconomyPage,readAdminEconomyClubs,readAdminEconomyLedger} from './admin-inspection.ts';
 import {economicAssert,financeSessionGuard} from './economic-ledger.ts';
 import {sessionGuard} from './command-guards.ts';
@@ -76,14 +76,22 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
    const write=await db.prepare("SELECT 1 AS allowed FROM account_permissions WHERE account_id=? AND permission='admin.world.write'").bind(player.actor.id).first();
    if(!write)throw new ApiError(403,'permission_denied');
    if(new URL(request.url).search)throw new ApiError(422,'invalid_reset_scope');
-   return json(200,{scopes:resetScopes,mode:'preview_only',executable:false});
+   const executable=['local','preview'].includes(env.PLAYER_MODE??'');
+    return json(200,{scopes:resetScopes,mode:executable?'sporting_only':'preview_only',executable});
   }
   if(path==='/api/admin/reset/preview'){
    if(new URL(request.url).search)throw new ApiError(422,'invalid_reset_scope');
    const read=await db.prepare("SELECT 1 AS allowed FROM account_permissions WHERE account_id=? AND permission='admin.world.read'").bind(player.actor.id).first();
    if(!read)throw new ApiError(403,'permission_denied');
    const scopes=parseResetScopes(await readJsonBody(request));
-   return json(200,await previewAdminReset(db,[sessionGuard(db,session,now),economicAssert(db,"SELECT 1 FROM account_permissions WHERE account_id=? AND permission='admin.world.read'",[player.actor.id])],scopes));
+   const access=[sessionGuard(db,session,now),economicAssert(db,"SELECT 1 FROM account_permissions WHERE account_id=? AND permission='admin.world.read'",[player.actor.id])];
+    const preview=await previewAdminReset(db,access,scopes);
+    if(!['local','preview'].includes(env.PLAYER_MODE??'')||scopes.length!==1||scopes[0]!=='sporting'||preview.world.seasonNumber===0||preview.blockers.some(b=>!['preview_only','sporting_history_protected'].includes(b)))return json(200,preview);
+    try{return json(200,await prepareSportingReset(db,session,now))}
+    catch(error){
+     if(error instanceof ApiError&&(error.status===401||error.status===403))throw error;
+     return json(200,{...preview,blockers:[...preview.blockers,'sporting_reset_unavailable']});
+    }
   }
   if(path.startsWith('/api/admin/economy/')){
    if(!['/api/admin/economy/clubs','/api/admin/economy/ledger'].includes(path)&&new URL(request.url).search)throw new ApiError(422,'invalid_economy_query');
@@ -142,7 +150,10 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   const rawCommand=await readJsonBody(request),key=parseIdempotencyKey(request.headers.get('Idempotency-Key'));
   if(path==='/api/admin/seasons/next-prepare')return json(200,await prepareSeasonTwo(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/next-approve')return json(200,await approveSeasonTwoSnapshot(db,session,rawCommand,key,now));
-  if(path==='/api/admin/world/reset')return json(200,await resetWorld(db,session,rawCommand as Parameters<typeof resetWorld>[2],key,now));
+  if(path==='/api/admin/world/reset'){
+    if(new URL(request.url).search||!['local','preview'].includes(env.PLAYER_MODE??''))throw new ApiError(403,'permission_denied');
+    return json(200,await executeSportingReset(db,session,rawCommand,key,now));
+   }
   // Retire direct score-only calendar generation/start routes: the authenticated
   // milestone flow is the one canonical route into V2 day finalization.
   if(path==='/api/admin/seasons/calendar'||path==='/api/admin/seasons/start')

@@ -210,20 +210,6 @@
     }catch(error){if(ticket===epoch)failure(error)}
     finally{if(ticket===epoch){value.busy=false;emit()}}
    },
-   async reset(confirmation){
-    if(value.busy||!value.actor||!value.world||
-       value.world.phase==='unstarted'&&!value.events?.rows?.some(e=>e.status==='completed')||
-       confirmation!=='RESET SEASON 0')return;
-    const ticket=++epoch,old=value.world;
-    value.busy=true;value.operation='reset';value.errorCode=null;emit();
-    try{
-     const data=await request('/api/admin/world/reset',{body:{expectedGeneration:old.generation,expectedRevision:old.revision,confirmation},headers:{'X-CSRF-Token':csrf,'Idempotency-Key':globalThis.crypto.randomUUID()}});
-     if(ticket!==epoch)return;
-     if(!validWorld(data?.world)||data.world.phase!=='unstarted'||data.world.seasonNumber!==0||data.world.day!==0||data.world.revision!==0||data.world.generation===old.generation)throw Error('invalid response');
-     value.world=data.world;value.events=null;value.message='resetDone';value.operation='completed';retryKey='';retryFor='';
-    }catch(error){if(ticket===epoch)failure(error)}
-    finally{if(ticket===epoch){value.busy=false;emit()}}
-   },
    async prepare(){
     if(value.busy||!value.actor||!value.world||value.world.phase!=='unstarted')return;
     const ticket=++epoch;const target=value.world.generation+':'+value.world.revision;
@@ -323,13 +309,7 @@
    if(proposal?.holderProposal)for(const move of proposal.holderProposal.moves){if(!move.removedClubId)continue;const li=doc.createElement('li');li.textContent=text.nextProposal+' · '+move.cup+': '+move.championClubId+' / '+move.removedClubId+(move.sourceCup?' ('+move.sourceCup+')':'');holders.append(li)}
    find('[data-admin-next-event]').textContent=['administrative','sporting'].includes(state.events?.mode)?
     (nextEvent?nextLabel+' · '+text.day+' '+nextEvent.day:''):'';
-   const resetInput=find('[data-admin-reset-confirm]'),resetButton=find('[data-admin-reset]');
-   const hasSeasonZeroApproval=state.world?.phase==='unstarted'&&state.events?.mode==='season-zero'&&state.events.rows.some(e=>e.status==='completed');
-   const canReset=canWrite&&!!state.actor&&(state.world?.phase!=='unstarted'||hasSeasonZeroApproval)&&!state.busy;
-   find('[data-admin-reset-section]').hidden=!state.actor||!canWrite||!(state.world?.phase!=='unstarted'||hasSeasonZeroApproval);
-   resetInput.disabled=!canReset;
-   if(state.message==='resetDone')resetInput.value='';
-   resetButton.disabled=!canReset||resetInput.value!=='RESET SEASON 0';
+   find('[data-admin-reset-section]').hidden=!state.actor||!canWrite||!state.world||state.world.seasonNumber===0;
    const w=state.world;if(state.operation==='completed'&&!state.busy&&validWorld(w)){const key=w.generation+':'+w.revision;if(host.dataset.publicInvalidation!==key){host.dataset.publicInvalidation=key;window.dispatchEvent(new Event('fa:world-invalidated'))}}find('[data-admin-world]').textContent=w?`${text.season} ${w.seasonNumber} · ${text.day} ${w.day} · ${text[w.phase]}`:'';
    const preview=nextDaySimulation(w,state.events,window.faWorldCalendarModel);
    const previewNode=find('[data-admin-next-day]');
@@ -345,8 +325,6 @@
   find('[data-admin-refresh]').addEventListener('click',()=>{permissionCache?.clear();void controller.refresh()});
   find('[data-admin-prepare]').addEventListener('click',()=>controller.prepare());
   host.querySelectorAll('[data-admin-command]').forEach(button=>button.addEventListener('click',()=>controller.command(button.dataset.adminCommand)));
-  find('[data-admin-reset-confirm]').addEventListener('input',()=>render());
-  find('[data-admin-reset]').addEventListener('click',async()=>{const input=find('[data-admin-reset-confirm]');const confirmation=input.value;if(confirmation!=='RESET SEASON 0')return;await controller.reset(confirmation);input.value='';render()});
   players?.querySelectorAll('[data-admin-player-param]').forEach(node=>node.addEventListener('input',()=>render()));
   playerFind('[data-admin-players-suitability]')?.addEventListener('change',()=>render());
   playerFind('[data-admin-players-copy]')?.addEventListener('click',async()=>{

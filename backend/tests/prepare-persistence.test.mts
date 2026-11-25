@@ -69,7 +69,7 @@ import {fundOpeningFixture,prepareOpeningFundingFixture} from './fixtures/openin
 import {seedUnifiedOperator} from './fixtures/unified-operator.ts';
 import {changeClubLicense} from '../src/club-licenses.ts';
 import {stepEconomicGenesis,completeEconomicGenesis,readEconomicGenesis} from '../src/economic-genesis.ts';
-import {economicAssert,reconcileEconomy} from '../src/economic-ledger.ts';
+import {economicAssert,reconcileEconomy,financeSessionGuard} from '../src/economic-ledger.ts';
 import {signStagedOpeningContract,signInitialAiContract,readOpeningSalaryAuthority} from '../src/player-club-contracts.ts';
 import {preparePayrollAffordability} from '../src/payroll-affordability.ts';
 import {readPublicPlayers} from '../src/public-players-read.ts';
@@ -215,6 +215,13 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
   // Actual #802: restart during the first funding installment, then complete
   // remaining idempotent ledger postings and canonical annual Rewards hold.
   handle=await open();db=handle.db;
+  // The reset is complete and retained identities have been rebased. Finance
+  // authority is deliberately separate from the world operator's permissions.
+  // Exercise the actual denial and grant before expensive opening generation.
+  const finance=()=>['read','post'].map(capability=>financeSessionGuard(db,playerId,session.unified!.sessionDigest,session.unified!.csrfDigest,capability as 'read'|'post',now));
+  await assert.rejects(db.batch(finance()),/CHECK constraint failed/);
+  await db.batch(['read','post'].map(capability=>db.prepare('INSERT INTO economic_finance_permissions VALUES(?,?,?,?)').bind(playerId,capability,'fixture',now)));
+  await db.batch(finance());
   // Synthetic reserve for the second annual hold; not a gameplay policy change.
   await prepareOpeningFundingFixture(db,now,rewardCalendarBudget().annual);
   const access=()=>[economicAssert(db,'SELECT 1')];
@@ -343,6 +350,8 @@ async function rehearsePublishedLifecycle(
  const payrollClaims=async(season:number)=>(await db.prepare("SELECT c.* FROM payroll_claims c JOIN payroll_runs r ON r.id=c.run_id WHERE r.season=? ORDER BY c.id").bind(season).all()).results;
  const payday=async(day:28|56)=>{
   assert.equal(world.day,day);
+  console.log('opening lifecycle payday start:',JSON.stringify({season:world.seasonNumber,day}));
+  await db.batch(['read','post'].map(capability=>financeSessionGuard(db,session.unified!.playerId,session.unified!.sessionDigest,session.unified!.csrfDigest,capability as 'read'|'post',now)));
   const prepared=await prepareRewardSettlement(db,pin);
   let complete=false;
   for(let i=0;i<100;i++){
@@ -353,11 +362,13 @@ async function rehearsePublishedLifecycle(
   assert.equal(complete,true,'bounded local Rewards loop');
   await executeRewardSettlementBatch(db,session,prepared,now,true);
   world=await readWorld(db);
+  console.log('opening lifecycle Rewards complete:',JSON.stringify({season:world.seasonNumber,day}));
   let finished=false;
   for(let i=0;i<1000;i++){
    const result=await settleNextPayrollBatch(db,session,now);
    if(result===null){finished=true;break;}
    assert.ok(result.status==='pending'||result.status==='complete');
+   if((i+1)%64===0)console.log('opening lifecycle payroll batches:',JSON.stringify({season:world.seasonNumber,day,batches:i+1}));
   }
   assert.equal(finished,true,'bounded local payroll loop');
   const report=await reconcilePayrollPayday(db,session,now);

@@ -1,12 +1,12 @@
 /** Atomic Season 0 sporting reset; persisted players and their committed generator batches survive. */
 import {ApiError} from './errors.ts';
 import {hashText,type AdminSession} from './auth.ts';
-import type {Database} from './database.ts';
+import type {Database,Statement} from './database.ts';
 import {parsePrepareRequest,parseIdempotencyKey,type PrepareRequest} from './command-contract.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
 export interface ResetRequest extends PrepareRequest {confirmation:string}
-export async function resetWorld(db:Database,session:AdminSession,input:ResetRequest,keyInput:string,now:number):Promise<Outcome>{
+export async function resetWorld(db:Database,session:AdminSession,input:ResetRequest,keyInput:string,now:number,previewGuards:readonly Statement[]=[]):Promise<Outcome>{
  if(!input||typeof input!=='object'||Array.isArray(input)||input.confirmation!=='RESET SEASON 0'||Object.keys(input).sort().join(',')!=='confirmation,expectedGeneration,expectedRevision')
   throw new ApiError(422,'reset_confirmation_required');
  const cmd=parsePrepareRequest({expectedGeneration:input.expectedGeneration,expectedRevision:input.expectedRevision}),key=parseIdempotencyKey(keyInput);
@@ -26,6 +26,7 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
  try{
   await db.batch([
    sessionGuard(db,session,now),
+   ...previewGuards,
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=? AND phase=? AND day=?',[world.generation,world.revision,world.seasonNumber,world.phase,world.day]),
    abortUnless(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM seasons WHERE generation<>?)',[world.generation]),
    abortUnless(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM world_reset_permits)',[]),
