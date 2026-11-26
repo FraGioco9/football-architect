@@ -6,6 +6,7 @@ const preview = 'tools/dev-standings-preview.mjs';
 const manifest = 'match-engine/package.json';
 const sourceNames = new Set([
   'action-labs', 'core', 'lab', 'lab-shot-calibration', 'movement-labs',
+  'isolated-dribble-native-audit','isolated-dribble-touches','basic-match-referee-b05','goalkeeper-save-foundation-b02','individual-kinematics','player-ball-uniform-autonomous-action','small-sided-native-body-guard',
   'physical-receiving-cushion-m25', 'pitch-markings', 'player-movement',
   'private-physical-action-executor', 'rapier-foot-contact-bridge', 'small-sided-lab-scenarios'
 ]);
@@ -91,17 +92,37 @@ function isolatedConsumers(ref) {
   return scripts.stdout.trim().split('\n').filter(Boolean).every(path => audited.has(path.slice(ref.length + 1)));
 }
 
-async function economicSource({ github, owner, repo, pr }) {
+const {inputs}=require('./ci-economic-inputs.cjs');
+async function economicSource({ github, owner, repo, pr,workflow='admin-world-checks.yml' }) {
   const base = pr.base.sha, head = pr.head.sha;
   if (pr.base.ref !== 'main' || pr.head.repo?.full_name !== owner + '/' + repo ||
       git('rev-parse', 'HEAD').trim() !== head || git('merge-base', base, head).trim() !== base ||
-      !isolatedDiff(base, head) || !isolatedConsumers(head)) return null;
-
+      git('rev-parse',base).trim()!==base) return null;
+  let selected=[];
+  async function scope(from){
+    const owned=require('./ci-owned-selection.cjs').ownedTests(from,head);
+    if(owned){
+      selected=owned.filter(t=>workflow==='admin-world-checks.yml'?t.owner!=='site-node':t.owner==='site-node').map(t=>t.path);
+      return 'owned-tests';
+    }
+    if(workflow==='admin-world-checks.yml'){
+      if(isolatedDiff(from,head)&&isolatedConsumers(head))return 'match-engine';
+      return git('diff','--name-only',from,head,'--',...inputs,'.github','tools/ci-*','.npmrc','backend/.npmrc','.node-version','.nvmrc','package*.json').trim()?null:'economic-only';
+    }
+    const paths=git('diff','--no-renames','--name-only','-z',from,head).split('\0').filter(Boolean);
+    if(!paths.length||paths.some(p=>p.startsWith('.github/')||p.startsWith('match-engine/')||(p.startsWith('docs/')&&!p.endsWith('.md'))))return null;
+    if(git('diff','--no-renames','--diff-filter=DTUXB','--name-only',from,head).trim())return null;
+    const {classifyImpact}=await import('./ci-opt-01-impact.mjs');
+    const plan=classifyImpact(paths);
+    return plan.mode==='full'?null:plan.mode;
+  }
+  if(!await scope(base))return null;
   // Look only along main. The merged source must have exactly the certified
   // tree (including workflow definitions), also for squash merges.
   for (const line of git('log', '-32', '--first-parent', '--format=%H %s', base).trim().split('\n')) {
     const merge = line.slice(0, 40);
-    if (merge !== base && !isolatedDiff(merge, head)) break;
+    const mode=await scope(merge);
+    if(!mode)break;
     const number = /\(#(\d+)\)$/.exec(line)?.[1];
     if (!number) continue;
     const { data: source } = await github.rest.pulls.get({ owner, repo, pull_number: Number(number) });
@@ -109,7 +130,7 @@ async function economicSource({ github, owner, repo, pr }) {
         source.head.repo?.full_name !== owner + '/' + repo) continue;
     const { data: commit } = await github.rest.git.getCommit({ owner, repo, commit_sha: source.head.sha });
     if (commit.tree.sha !== git('rev-parse', merge + '^{tree}').trim()) continue;
-    const workflow = 'admin-world-checks.yml';
+
     const runs = await github.paginate(github.rest.actions.listWorkflowRuns,
       { owner, repo, workflow_id: workflow, head_sha: source.head.sha, event: 'pull_request', per_page: 100 });
     for (const run of runs.sort((a, b) => b.id - a.id)) {
@@ -122,7 +143,8 @@ async function economicSource({ github, owner, repo, pr }) {
       const executed = ['Verify DEV operator runtime and PowerShell regressions before full rehearsal',
         'Verify operator bootstrap, recovery and local persistence across restart'].every(name =>
         operator?.steps?.some(step => step.name === name && step.conclusion === 'success'));
-      if (verdict.state === 'PASS' && executed) return { head, base, source: source.head.sha, tree: commit.tree.sha, run: run.html_url, attempt: run.run_attempt };
+      const rehearsal=operator?.steps?.some(s=>s.name==='Execute isolated economic rehearsal'&&s.conclusion==='success');
+      if (verdict.state === 'PASS' && (workflow!=='admin-world-checks.yml'||(executed&&rehearsal))) return { mode, selected, merge, head, base, source: source.head.sha, tree: commit.tree.sha, run: run.html_url, attempt: run.run_attempt };
       if (['FAIL', 'CANCELLED', 'PENDING'].includes(verdict.state)) break;
     }
   }

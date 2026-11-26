@@ -258,7 +258,7 @@ test('economic inheritance walks merged main trees and rejects changed consumers
   const receipt=run({head_sha:sourceSha,pull_requests:[{number:7,head:{sha:sourceSha},base:{ref:'main',sha:parent}}]});
   const proof=jobs('admin-world-checks.yml');
   const operator=proof.find(j=>j.name.startsWith('Final local operator'));
-  operator.steps.push(...['Verify DEV operator runtime and PowerShell regressions before full rehearsal',
+  operator.steps.push(...['Execute isolated economic rehearsal','Verify DEV operator runtime and PowerShell regressions before full rehearsal',
     'Verify operator bootstrap, recovery and local persistence across restart'].map(name=>({name,conclusion:'success'})));
   const source={number:7,merged:true,merge_commit_sha:base,base:{ref:'main'},head:{sha:sourceSha,repo:identity}};
   const commitData={tree:{sha:tree}};
@@ -290,4 +290,35 @@ test('ME-01 evidence rejects a skipped candidate check, cancellation and stale b
  steps[4].conclusion='skipped';assert.equal(await check(base),'MISSING');
  exact.conclusion='cancelled';assert.equal(await check(base),'FAIL');
  assert.equal(await check(sha),'MISSING');
+});
+
+test('economic receipt verifies the remaining operator executions and cannot become a new FULL source',()=>{
+ const wf='admin-world-checks.yml',proof=jobs(wf);
+ const operator=proof.find(j=>j.name.startsWith('Final local operator'));
+ const rehearsal={name:'Execute isolated economic rehearsal',conclusion:'success'};
+ const remaining={name:'Verify operator bootstrap, recovery and local persistence across restart',conclusion:'success'};
+ operator.steps.push(rehearsal,remaining,{name:'Verify DEV operator runtime and PowerShell regressions before full rehearsal',conclusion:'success'});
+ assert.equal(evaluateRun(run(),proof,sha,wf).state,'PASS');
+ rehearsal.conclusion='skipped';assert.equal(evaluateRun(run(),proof,sha,wf).state,'MISSING');
+ proof.push({name:'scope',conclusion:'success',steps:[{name:'Verified isolated economic inputs',conclusion:'success'}]});
+ assert.equal(evaluateRun(run(),proof,sha,wf).state,'ECONOMY_INHERITED');
+ remaining.conclusion='skipped';assert.equal(evaluateRun(run(),proof,sha,wf).state,'MISSING');
+});
+
+test('selected public evidence requires executed site checks and verifies browser scope',async()=>{
+ const {selectedPublicEvidence}=await import('../tools/ci-full-evidence.cjs');
+ const base='b'.repeat(40),receipt=run({pull_requests:[{number:1,head:{sha},base:{sha:base}}]});
+ const step=(name,conclusion='success')=>({name,conclusion});
+ const job=(name,...steps)=>({name,conclusion:'success',steps});
+ const scope=job('scope',step('Certified impacted suites'));
+ const aggregate=job('chromium',step('Verify browser lane results'),step('FULL coverage completed','skipped'),step('Run loopback preview and browser checks'));
+ const lane=job('Browser lane (core)',step('Run loopback preview and browser checks'));
+ const check=(jobs,b=base)=>selectedPublicEvidence('int24-browser-qa.yml',receipt,jobs,sha,1,b);
+ assert.equal(check([scope,aggregate,lane]),true);assert.equal(check([scope,aggregate]),false);
+ assert.equal(check([scope,aggregate,lane],sha),false);
+ lane.steps[0].conclusion='skipped';assert.equal(check([scope,aggregate,lane]),false);
+ aggregate.steps[2].conclusion='skipped';assert.equal(check([scope,aggregate]),true);
+ const site=[job('head-exact',step('Certified impacted suites')),job('landing',step('Site essential contracts (FAST and TARGETED)'),step('FULL coverage completed','skipped'))];
+ assert.equal(selectedPublicEvidence('landing-checks.yml',receipt,site,sha,1,base),true);
+ site[1].steps[0].conclusion='skipped';assert.equal(selectedPublicEvidence('landing-checks.yml',receipt,site,sha,1,base),false);
 });

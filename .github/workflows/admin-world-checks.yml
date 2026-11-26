@@ -18,6 +18,8 @@ jobs:
     outputs:
       mode: ${{ steps.scope.outputs.mode }}
       reuse: ${{ steps.reuse.outputs.run_id }}
+      economic: ${{ steps.economic.outputs.mode }}
+      files: ${{ steps.economic.outputs.files }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,7 +29,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Find certified economic source for an isolated LAB diff
+      - name: Find certified economic source for unchanged test inputs
         id: economic
         if: ${{ github.event.pull_request.base.ref == 'main' }}
         uses: actions/github-script@v7
@@ -37,15 +39,23 @@ jobs:
               const {economicSource} = require('./tools/ci-match-engine.cjs');
               const proof = await economicSource({github, ...context.repo, pr: context.payload.pull_request});
               if (proof) {
-                await core.summary.addHeading('TARGETED Match Engine').addRaw('Economic tests were not run on this candidate. Inherited execution evidence:').addCodeBlock(JSON.stringify(proof), 'json').write();
-                core.setOutput('source', proof.run);
+                await core.summary.addHeading('Certified economic inputs').addRaw('Economic tests were not run on this candidate. Inherited execution evidence:').addCodeBlock(JSON.stringify(proof), 'json').write();
+                core.setOutput('source',proof.run);
+                core.setOutput('mode',proof.mode);
+                core.setOutput('files',proof.selected.join(' '));
               }
             } catch (error) {
               core.warning('No proven economic source: ' + error.message);
             }
       - name: Verified unchanged economic scope against executed FULL source
-        if: ${{ steps.economic.outputs.source != '' }}
+        if: ${{ steps.economic.outputs.mode == 'match-engine' }}
         run: echo "Economic evidence inherited"
+      - name: Verified isolated economic inputs
+        if: ${{ steps.economic.outputs.mode == 'economic-only' }}
+        run: echo "Two-season rehearsal inherited from the execution in the scope summary."
+      - name: Verified standalone test selection
+        if: ${{ steps.economic.outputs.mode == 'owned-tests' }}
+        run: echo "Verified cumulative standalone test diff."
       - name: Classify Admin impact on exact HEAD
         id: scope
         env:
@@ -53,8 +63,12 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
           node tools/ci-discovery.mjs
-          if [ -n "${{ steps.economic.outputs.source }}" ]; then
+          if [ "${{ steps.economic.outputs.mode }}" = match-engine ]; then
             echo 'mode=match-engine' >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.economic.outputs.mode }}" = owned-tests ]; then
+            echo mode=fast >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.economic.outputs.mode }}" = economic-only ]; then
+            echo mode=full >> "$GITHUB_OUTPUT"
           elif [ "${{ github.event.pull_request.draft }}" = "true" ] && [ "${{ contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}" != "true" ]; then
             node tools/ci-opt-06-admin-impact.mjs >> "$GITHUB_OUTPUT"
           else
@@ -115,10 +129,15 @@ jobs:
         if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
         run: node tools/ci-run.mjs 3-admin-world-checks -- python3 -m unittest discover -s backend/tests -p 'test_*migration.py' -v
       - name: Install pinned Worker toolchain without remote credentials
-        if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
+        if: ${{ (needs.scope.outputs.mode != 'fast' || needs.scope.outputs.files != '') && !needs.scope.outputs.reuse }}
         run: |
           npm install -g npm@11.6.2 --no-audit --no-fund
           npm --prefix backend ci --prefer-offline --no-audit --no-fund
+      - name: Run selected backend tests
+        if: ${{ needs.scope.outputs.economic == 'owned-tests' }}
+        env:
+          SELECTED_BACKEND_TESTS: ${{ needs.scope.outputs.files }}
+        run: node tools/ci-owned-selection.cjs
       - name: Typecheck backend with pinned TypeScript
         if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
         run: node tools/ci-run.mjs 4-admin-world-checks -- npm --prefix backend run typecheck
@@ -257,7 +276,13 @@ jobs:
           node --experimental-strip-types --test --test-name-pattern='actual PowerShell client' backend/tests/operator-local.test.mts
       - name: Verify operator bootstrap, recovery and local persistence across restart
         if: ${{ !needs.scope.outputs.reuse }}
+        env:
+          FA_SEPARATE_ECONOMIC_CASE: '1'
         run: node tools/ci-run.mjs 18-admin-world-checks -- npm --prefix backend run test:operator
+      - name: Execute isolated economic rehearsal
+        if: ${{ !needs.scope.outputs.reuse && !needs.scope.outputs.economic }}
+        run: |
+          sudo unshare --net -- sh -ec 'ip link set lo up; exec sudo -u "$1" -- env PATH="$2" CI=true WRANGLER_SEND_METRICS=false node tools/ci-economic-inputs.cjs' sh "$(id -un)" "$PATH"
       - name: Cache pinned lifecycle Chromium binaries
         if: ${{ !needs.scope.outputs.reuse }}
         uses: actions/cache@v4

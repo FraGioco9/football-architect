@@ -208,7 +208,7 @@ async function invokeDevAdapter(db:Database,session:AdminSession,now:number,sour
 /** Complete end-to-end rehearsal on disposable persisted local D1. No copied
  * DEV identities or images, no direct player/contract inserts in the opening,
  * no remote binding, no synthetic shortcut for the 6,400 actual signatures. */
-test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 terms, restart and publication',{timeout:240*60*1000},async()=>{
+test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 terms, restart and publication',{timeout:240*60*1000,skip:process.env.FA_SEPARATE_ECONOMIC_CASE==='1' && 'covered by dedicated economic step'},async()=>{
  const state=await mkdtemp(join(tmpdir(),'fa-opening-full-')),now=Math.floor(Date.now()/1000);
  let handle:Awaited<ReturnType<typeof openLocalDatabase>>|undefined,runner:Awaited<ReturnType<typeof openLocalOpeningRehearsal>>|undefined;
  const n=async(db:Database,sql:string)=>(await db.prepare(sql).first<{n:number}>())!.n;
