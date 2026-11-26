@@ -204,3 +204,90 @@ test('isolated Browser FULL evidence cannot pass with missing or skipped require
  assert.equal(evaluateRun(run(),proof,sha,workflow).state,'MISSING','unexpected parity lanes contradict scope markers');
  assert.equal(evaluateRun(run(),proof.filter(j=>!['Browser lane (css)','Browser lane (visual)'].includes(j.name)),sha,workflow).state,'PASS');
 });
+
+test('Match Engine exceptions permit only appended test files and static LAB routes',async()=>{
+ const {staticRoutes,newTestCommands}=await import('../tools/ci-match-engine.cjs');
+ const manifest=(command,dependencies={})=>JSON.stringify({scripts:{test:command},dependencies});
+ const original='node --test tests/core.test.mjs';
+ assert.ok(newTestCommands(manifest(original),manifest(original+' tests/pass.test.mjs')));
+ for(const next of [manifest('node --test tests/pass.test.mjs'),manifest(original+' && true'),
+  manifest(original+' tests/pass.test.mjs',{rapier:'latest'})])assert.equal(newTestCommands(manifest(original),next),false);
+ const old="const MATCH_ENGINE_LAB = Object.freeze({\n  '/existing': 'existing'\n});\nserve();";
+ const route="  '/__fa_match_engine__/lab-shot-calibration.mjs': 'match-engine/src/lab-shot-calibration.mjs',\n";
+ const next=old.replace("  '/existing'",route+"  '/existing'");
+ const exists=p=>p==='match-engine/src/lab-shot-calibration.mjs';
+ assert.ok(staticRoutes(old,next,exists));
+ for(const invalid of [next.replace('serve();','proxy();'),next.replace(route,route+route),
+  next.replace('match-engine/src','backend/src'),next.replace("'/existing': 'existing'","'/existing': 'other'")])
+  assert.equal(staticRoutes(old,invalid,exists),false);
+ assert.equal(staticRoutes(old,next,()=>false),false);
+});
+
+test('inherited Admin evidence requires exact PR, base, head and executed proof on the candidate',async()=>{
+ const {inheritedAdmin}=await import('../tools/ci-full-evidence.cjs');
+ const base='b'.repeat(40),current=run({pull_requests:[{number:1,head:{sha},base:{sha:base}}]});
+ const proof=[{name:'scope',conclusion:'success',steps:[{name:'Verified unchanged economic scope against executed FULL source',conclusion:'success'}]},
+  {name:'Admin foundation contracts (Node 22)',conclusion:'success',steps:[{name:'FULL coverage completed',conclusion:'skipped'}]}];
+ assert.ok(inheritedAdmin(current,proof,sha,1,base));
+ assert.equal(inheritedAdmin(current,proof,sha,2,base),false);
+ assert.equal(inheritedAdmin(current,proof,sha,1,sha),false);
+ assert.equal(inheritedAdmin(current,proof,base,1,base),false);
+ for(const conclusion of ['failure','skipped','cancelled']){
+  proof[0].steps[0].conclusion=conclusion;
+  assert.equal(inheritedAdmin(current,proof,sha,1,base),false);
+ }
+});
+
+test('economic inheritance walks merged main trees and rejects changed consumers or incomplete source jobs',async()=>{
+ const {mkdtempSync,mkdirSync,writeFileSync,rmSync}=await import('node:fs');
+ const {tmpdir}=await import('node:os');
+ const {join,dirname}=await import('node:path');
+ const {execFileSync}=await import('node:child_process');
+ const {economicSource,isolatedConsumers,isolatedDiff}=await import('../tools/ci-match-engine.cjs');
+ const previous=process.cwd(),temp=mkdtempSync(join(tmpdir(),'fa-economic-ci-'));
+ const git=(...args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
+ const put=(p,data)=>{mkdirSync(dirname(p),{recursive:true});writeFileSync(p,data);};
+ const commit=title=>{git('add','.');git('commit','-qm',title);return git('rev-parse','HEAD');};
+ try{
+  process.chdir(temp);git('init','-q');git('config','user.name','CI');git('config','user.email','ci@example.invalid');
+  put('match-engine/src/sidebar-shell.mjs','export const value=1;');const parent=commit('initial');
+  put('backend/src/economy.ts','export const balance=1;');const base=commit('certified policy (#7)');
+  const tree=git('rev-parse',base+'^{tree}');put('match-engine/src/core.mjs','export const gravity=10;');const head=commit('lab');
+  const sourceSha='e'.repeat(40),identity={full_name:'owner/repo'};
+  const pr={base:{ref:'main',sha:base},head:{sha:head,repo:identity}};
+  const receipt=run({head_sha:sourceSha,pull_requests:[{number:7,head:{sha:sourceSha},base:{ref:'main',sha:parent}}]});
+  const proof=jobs('admin-world-checks.yml');
+  const operator=proof.find(j=>j.name.startsWith('Final local operator'));
+  operator.steps.push(...['Verify DEV operator runtime and PowerShell regressions before full rehearsal',
+    'Verify operator bootstrap, recovery and local persistence across restart'].map(name=>({name,conclusion:'success'})));
+  const source={number:7,merged:true,merge_commit_sha:base,base:{ref:'main'},head:{sha:sourceSha,repo:identity}};
+  const commitData={tree:{sha:tree}};
+  const github={rest:{pulls:{get:async()=>({data:source})},git:{getCommit:async()=>({data:commitData})},
+   actions:{listWorkflowRuns:'runs',listJobsForWorkflowRun:'jobs'}},paginate:async method=>method==='runs'?[receipt]:proof};
+  const check=()=>economicSource({github,owner:'owner',repo:'repo',pr});
+  assert.equal((await check()).source,sourceSha);
+  operator.steps.at(-1).conclusion='skipped';assert.equal(await check(),null);operator.steps.at(-1).conclusion='success';
+  commitData.tree.sha=parent;assert.equal(await check(),null);commitData.tree.sha=tree;
+  pr.head.sha=base;assert.equal(await check(),null);pr.head.sha=head;
+  put('backend/src/adapter.ts',"export {gravity} from '../../match-engine/src/core.mjs';");
+  const shared=commit('shared consumer');assert.equal(isolatedDiff(head,shared),false);assert.equal(isolatedConsumers(shared),false);
+  git('mv','match-engine/src/core.mjs','match-engine/src/lab.mjs');
+  assert.equal(isolatedDiff(shared,commit('rename')),false);
+ }finally{process.chdir(previous);rmSync(temp,{recursive:true,force:true});}
+});
+
+test('ME-01 evidence rejects a skipped candidate check, cancellation and stale base',async()=>{
+ const {engineEvidence}=await import('../tools/ci-full-evidence.cjs');
+ const base='b'.repeat(40);
+ const exact=run({pull_requests:[{number:1,head:{sha},base:{sha:base}}]});
+ const steps=['Verify exact PR HEAD','Install pinned physics candidate','Focused core and route security tests',
+  'Existing routing/preview regressions','Browser viewport fit (Chrome, Advanced settings open and closed)',
+  'Five Action LABs clean-stack Chrome interaction','Measured local CPU / memory sample'].map(name=>({name,conclusion:'success'}));
+ const github={rest:{actions:{listWorkflowRuns:'runs',listJobsForWorkflowRun:'jobs'}},
+  paginate:async method=>method==='runs'?[exact]:[{name:'match-engine',conclusion:'success',steps}]};
+ const check=async baseSha=>(await engineEvidence({github,owner:'owner',repo:'repo',sha,prNumber:1,baseSha})).state;
+ assert.equal(await check(base),'PASS');
+ steps[4].conclusion='skipped';assert.equal(await check(base),'MISSING');
+ exact.conclusion='cancelled';assert.equal(await check(base),'FAIL');
+ assert.equal(await check(sha),'MISSING');
+});

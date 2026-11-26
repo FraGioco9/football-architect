@@ -8,7 +8,8 @@
 | --- | --- | --- |
 | FAST | Draft PR only touching `docs/`, `README.md` or other allowlisted docs | Essential contracts, **not FULL browser** |
 | TARGETED | One reviewed Calendar/Clubs/Competitions/Guide/Admin area | Bounded tests relevant to that area |
-| FULL | Ready-for-review, main, unknown/shared/CI/CSS/routing/DB/security changes | Site, Browser, Admin and exact-head FULL evidence gate |
+| TARGETED Match Engine | Main-aligned isolated LAB diff with verified economic source | ME-01, Site and Browser on the exact PR head/base. Admin records the executed FULL source, tree and attempt. Economic rehearsal is inherited. |
+| FULL | Other ready-for-review, main, unknown/shared/CI/CSS/routing/DB/security changes | Site, Browser, Admin and exact-head FULL evidence gate |
 
 **Important:** `backend/docs-*.md` is **not** covered by the `docs/` FAST classifier prefix and can trigger FULL. Never change selector or publication rules to avoid it. An older green HEAD, PENDING, skipped or cancelled run is not proof of current FULL acceptance. Ready-for-review may start another automatic cycle; do not manually dispatch duplicate suites.
 
