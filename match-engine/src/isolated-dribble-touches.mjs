@@ -323,7 +323,42 @@ export function observeEffectiveDuelIntervention(actor,rival,b,v){
 
 // A contact can nominate a recovery candidate; only an authenticated
 // carry changes the carrier used for tactical decisions, never official possession.
-export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding']);
+// D-11: enter the carrier's lateral running lane, not his back.
+// This is only a movement proposal. Actual torso contact is reported
+// separately by the original Rapier solver, without a ball impulse.
+export function planDuelShoulderApproach({attacker,defender,attackingSide,ballPosition:b,ballVelocity:v}){
+ if(!isOpposingDuelPair(attackingSide,attacker,defender)||
+    ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,v?.x,v?.y].every(Number.isFinite))return null;
+ if(Math.hypot(attacker.x-b.x,attacker.y-b.y)>1.35)return null;
+ const dir=attackingSide==='home'?1:-1;
+ const speed=Math.hypot(attacker.vx??0,attacker.vy??0);
+ const ux=speed>0.55?attacker.vx/speed:dir,uy=speed>0.55?attacker.vy/speed:0;
+ const rx=defender.x-attacker.x,ry=defender.y-attacker.y;
+ const along=rx*ux+ry*uy,across=-rx*uy+ry*ux;
+ const side=Math.abs(across)>0.10?Math.sign(across):b.y>0?-1:1;
+ const gap=Math.hypot(rx,ry);
+ const sideOn=Math.abs(along)<=0.65&&Math.abs(across)>=0.68&&gap<=1.30;
+ // Close on a shoulder-width lateral waypoint and then run alongside.
+ // A finite predicted point follows the carrier instead of aiming through him.
+ const offset=sideOn?0.99:1.12,lead=sideOn?0.14:0.10;
+ const target=duelBound(attacker.x+ux*lead-uy*side*offset,
+  attacker.y+uy*lead+ux*side*offset);
+ const route=routeDuelAroundOpponent(defender,attacker,target);
+ return Object.freeze({actorId:defender.id,opponentId:attacker.id,target:route.target,
+  sideOn,detour:route.detour,alongM:along,acrossM:across,decisionOnly:true});
+}
+// A challenge is observed only from an actual native opposing torso
+// solver pair and a playable-ball, side-on approach. No invented impact.
+export function observeNativeShoulderChallenge({tick,plan,players,ball,torsoPairs}){
+ if(!plan||!Array.isArray(torsoPairs)||!torsoPairs.includes([plan.actorId,plan.opponentId].sort().join('|')))return null;
+ const actor=players.find(p=>p.id===plan.actorId),rival=players.find(p=>p.id===plan.opponentId);
+ if(!actor||!rival||!plan.sideOn||Math.hypot(rival.x-ball.x,rival.y-ball.y)>1.35||
+    Math.hypot(actor.x-ball.x,actor.y-ball.y)>1.9)return null;
+ return Object.freeze({tick,actorId:actor.id,opponentId:rival.id,
+  source:'native-rapier-solver-manifold',physicalContact:true,ballImpulseCreated:false,
+  officialPossession:false,challengeWon:false});
+}
+export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding','shoulder']);
 export const SLIDING_GET_UP_TACKLER_TICKS=30;
 export const SLIDING_GET_UP_RIVAL_TICKS=36;
 export function isDuelGettingUp(state,id,tick){
@@ -333,9 +368,9 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
  if(!['home','away'].includes(side)||!DUEL_TACKLE_PROFILES.includes(profile))throw new TypeError('Original duel side and tackle profile required');
  const first=side+'-10',second=opposite(side)+'-2',ids=[first,second];
  let carrierId=first,candidateId=null,candidateTick=null,sourceTick=null,lastIntervention=null,recoveries=0,regains=0,changes=0;
- let getUpUntil=Object.freeze({});
- let latest=Object.freeze({tick:0,profile,phase:'attack',carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,recoveries,regains,changes,recovered:false,regained:false,officialPossession:false});
- function observe({tick,starts,active,bodyStarts,bodyActive,action,ball,players=[]}){
+ let getUpUntil=Object.freeze({}),lastShoulder=null,shoulderContacts=0,priorShoulderPair=null;
+ let latest=Object.freeze({tick:0,profile,phase:'attack',carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered:false,regained:false,officialPossession:false});
+ function observe({tick,starts,active,bodyStarts,bodyActive,action,ball,players=[],shoulderPlan=null,torsoPairs=[]}){
   if(tick!==latest.tick+1)throw new TypeError('Same original physics tick required');
   let recovered=false,regained=false;
   const touching=ids.filter(id=>active.includes(id)||bodyActive.includes(id));
@@ -351,10 +386,10 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
    const actor=players.find(p=>p.id===action.playerId),rival=players.find(p=>ids.includes(p.id)&&p.id!==action.playerId);
    const effective=observeEffectiveDuelIntervention(actor,rival,ball.position,ball.velocity);
    lastIntervention=Object.freeze({tick,actorId:action.playerId,intervention:action.defensiveTarget?.intervention??action.action,effective});
-   // Dedicated sliding LAB models a contested slide with both actors down.
+   // Both the dedicated and mixed LABs use the same contested-slide recovery.
    // Trigger exclusively from the actual native strike, not slide intent.
    // This is a temporary movement/action lock, not an inferred foul or injury.
-   if(profile==='sliding'&&lastIntervention.intervention==='sliding-tackle'){
+   if((profile==='sliding'||profile==='mixed')&&lastIntervention.intervention==='sliding-tackle'){
     const other=ids.find(id=>id!==action.playerId);
     getUpUntil=Object.freeze({[action.playerId]:tick+SLIDING_GET_UP_TACKLER_TICKS,[other]:tick+SLIDING_GET_UP_RIVAL_TICKS});
    }
@@ -373,8 +408,12 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
     candidateId=null;candidateTick=null;
    }
   }
+  const shoulder=profile==='shoulder'&&inField?observeNativeShoulderChallenge({tick,plan:shoulderPlan,players,ball:ball.position,torsoPairs}):null;
+  const shoulderPair=shoulder?[shoulder.actorId,shoulder.opponentId].sort().join('|'):null;
+  if(shoulder&&shoulderPair!==priorShoulderPair){lastShoulder=shoulder;shoulderContacts++;}
+  priorShoulderPair=shoulderPair;
   const phase=candidateId!==null?'recover':carrierId===first?'attack':'counter';
-  latest=Object.freeze({tick,profile,phase,carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,recoveries,regains,changes,recovered,regained,officialPossession:false});
+  latest=Object.freeze({tick,profile,phase,carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered,regained,officialPossession:false});
   return latest;
  }
  return Object.freeze({observe,snapshot:()=>latest});
@@ -394,7 +433,7 @@ export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVeloci
   ballPosition:b,ballVelocity:v,variantIndex,tick});
  if(slide?.phase==='slide'){const touch=defensive(true);return touch?{defensive:touch,carry:null}:null;}
  if((current||collecting)&&canCarry)return {defensive:null,carry:carry()};
- const touch=transition?.profile==='sliding'?null:defensive();
+ const touch=['sliding','shoulder'].includes(transition?.profile)?null:defensive();
  if(touch)return {defensive:touch,carry:null};
  if(opponentGap>1.15&&canCarry)return {defensive:null,carry:carry()};
  return null;

@@ -265,7 +265,7 @@ export function createEngine(RAPIER, input = {}, {
   if(typeof diagnosticDirectedDribble!=='boolean'||(diagnosticDirectedDribble&&
      (diagnosticSmallSidedSituation!=='dribble-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Directed dribble requires original guarded 1v1');
-  if(!['mixed','standing','sliding'].includes(diagnosticDuelTackleProfile)||(diagnosticDuelTackleProfile!=='mixed'&&!diagnosticDirectedDribble))
+  if(!['mixed','standing','sliding','shoulder'].includes(diagnosticDuelTackleProfile)||(diagnosticDuelTackleProfile!=='mixed'&&!diagnosticDirectedDribble))
    throw new TypeError('Tackle profile requires original guarded directed duel');
   if(typeof diagnosticKeeperSingleShot!=='boolean'||(diagnosticKeeperSingleShot&&
      (diagnosticSmallSidedSituation!=='keeper-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
@@ -967,7 +967,8 @@ export function createEngine(RAPIER, input = {}, {
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
      duelTransition.observe({tick,starts:shoe.started,active:shoe.active,bodyStarts:physical.lowerLegBallStarts,
       bodyActive:physical.lowerLegBallContacts,action:actionExecutor?.actionSnapshot()??null,
-      ball:{position:body.translation(),velocity:body.linvel()},players:playerFrame.players});
+      ball:{position:body.translation(),velocity:body.linvel()},players:playerFrame.players,
+      shoulderPlan:playerFrame.duelShoulder??null,torsoPairs:physical.nativeOpposingTorsoPairs});
     }
     if(diagnosticKeeperSingleShot&&keeperSingleShotTick===null){
      const shot=actionExecutor?.actionSnapshot();

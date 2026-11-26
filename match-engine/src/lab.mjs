@@ -116,6 +116,7 @@ function recordPerformedActions(frame){
     events.push({id,kind:'ball-contact',label:'Ball contact'});
   }
   if(frame.defensiveSlide?.started&&frame.defensiveSlide.tick===tick)events.push({id:frame.defensiveSlide.actorId,kind:'sliding-tackle',label:'Sliding tackle attempt'});
+  if(frame.duelTransition?.lastShoulder?.tick===tick)events.push({id:frame.duelTransition.lastShoulder.actorId,kind:'shoulder-challenge',label:'Shoulder challenge'});
   if(frame.shieldAudit?.retained)events.push({id:frame.shieldAudit.actorId,kind:'retained-touch',label:'Retained touch'});
   if(action?.tick===tick&&action?.decisionContext?.isolatedDribbleTouch?.shieldingIntent){
    const carry=events.find(e=>e.kind==='carry'&&e.id===action.playerId);if(carry)carry.label='Carry · Shielding';
@@ -150,7 +151,7 @@ const smallSidedDecisionLabels=Object.freeze({
  'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
  'hold-pass-target':'Hold receiving position',
  'support-run':'Support the attack','press-ball':'Close down the ball',
- 'goalkeeping':'Protect the goal','getting-up':'—'
+ 'goalkeeping':'Protect the goal','getting-up':'—','shoulder-challenge':'Shoulder challenge'
 });
 const humanPlayer=id=>id.replace('home-','HOME #').replace('away-','AWAY #');
 function appendDecisionEvent(event){
@@ -754,7 +755,7 @@ function render() {
       cross?(cross.arrival?'Arrival observed':
         cross.attempted?'Cross observed':'Waiting for cross'):
       f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry?
-        (Object.values(f.duelTransition?.getUpUntil??{}).some(until=>until>=f.physicsTick)?'Loose ball':f.defensiveSlide?.phase==='slide'?'Sliding tackle':f.defensiveSlide?.phase==='recovery'?'Defender recovery':f.duelTransition?.phase==='counter'?'Counter carry':f.duelTransition?.phase==='recover'?'Loose ball recovery':f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
+        (Object.values(f.duelTransition?.getUpUntil??{}).some(until=>until>=f.physicsTick)?'Loose ball':f.duelTransition?.lastShoulder?.tick===f.physicsTick?'Shoulder challenge':f.defensiveSlide?.phase==='slide'?'Sliding tackle':f.defensiveSlide?.phase==='recovery'?'Defender recovery':f.duelTransition?.phase==='counter'?'Counter carry':f.duelTransition?.phase==='recover'?'Loose ball recovery':f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
        f.soloCarryPhase?.phase?'Carry · '+f.soloCarryPhase.phase:
       lastInlineFootballAction?'Last action: '+lastInlineFootballAction.action:
       activeScene.kind==='action'?'Waiting for action':'Movement';
@@ -2332,7 +2333,8 @@ function setupUnifiedScenarioMenu(){
   ]],['Dribbling & defending',[
    ['action:dribble-1v1','1v1 · dribbling'],
    ['action:dribble-1v1:standing','Standing tackle'],
-   ['action:dribble-1v1:sliding','Sliding tackle']
+   ['action:dribble-1v1:sliding','Sliding tackle'],
+   ['action:dribble-1v1:shoulder','Shoulder challenge']
   ]]])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
@@ -2346,7 +2348,7 @@ function setupUnifiedScenarioMenu(){
       (lockedPhase!==null&&
        !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedPhase))||
          (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedPhase))||
-         (!archiveMode&&id==='dribble-1v1'&&['standing','sliding'].includes(lockedPhase)))))
+         (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder'].includes(lockedPhase)))))
     throw new Error('Missing authentic LAB scenario '+value);
    const opt=document.createElement('div');
    opt.className='language-option';
@@ -2366,7 +2368,7 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:21)||
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:22)||
     menu.querySelectorAll('.me-scenario-group-label').length!==5)
   throw new Error('Unexpected active or archived LAB catalog');
 }
@@ -2390,7 +2392,7 @@ function launchSelectedScenario(value){
     (lockedProfile!==null&&(kind!=='action'||
       !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedProfile))||
         (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedProfile))||
-        (!archiveMode&&id==='dribble-1v1'&&['standing','sliding'].includes(lockedProfile))))))
+        (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder'].includes(lockedProfile))))))
   throw new RangeError('Invalid Scenario kind');
  const prefix=kind==='action'?'action-labs':'movement-labs';
  const choice=byId(prefix+'-choice');

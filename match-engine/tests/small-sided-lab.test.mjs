@@ -25,7 +25,7 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
    'original research scene stays in hidden regression catalog');
  for(const id of ['keeper-1v1','overload-2v1','duel-3v3'])
   assert.match(ui,new RegExp("'action:"+id+"'"));
- assert.match(ui,/length!==\(archiveMode\?24:21\)/);
+ assert.match(ui,/length!==\(archiveMode\?24:22\)/);
  assert.doesNotMatch(ui,/visibleMovement/);
  assert.match(ui,/Carry phases/);
  assert.match(ui,/Small-sided situations/);
@@ -1162,6 +1162,6 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
 
  test('#628 recovery state stays internal and both tackle profiles remain selectable',()=>{
   const ui=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
-  assert.match(ui,/action:dribble-1v1:standing/);assert.match(ui,/action:dribble-1v1:sliding/);
+  assert.match(ui,/action:dribble-1v1:standing/);assert.match(ui,/action:dribble-1v1:sliding/);assert.match(ui,/action:dribble-1v1:shoulder/);
   assert.doesNotMatch(ui,/Getting up/i);
  });

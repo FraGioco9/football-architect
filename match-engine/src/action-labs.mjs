@@ -101,7 +101,7 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('Shot profile requires isolated shooter');
  if(typeof directedDribble!=='boolean'||(directedDribble&&(id!=='dribble-1v1'||!bodyGuardEnabled)))
   throw new TypeError('Directed dribble requires native 1v1');
- if(!['mixed','standing','sliding'].includes(duelTackleProfile)||(duelTackleProfile!=='mixed'&&!directedDribble))
+ if(!['mixed','standing','sliding','shoulder'].includes(duelTackleProfile)||(duelTackleProfile!=='mixed'&&!directedDribble))
   throw new TypeError('Tackle profile requires original guarded directed duel');
  if(typeof keeperSingleShot!=='boolean'||(keeperSingleShot&&(id!=='keeper-1v1'||!bodyGuardEnabled)))
   throw new TypeError('Single-shot exercise requires native keeper duel');
@@ -883,7 +883,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
     ...(shieldAudit?{shieldAudit}:{}),
     ...(defensivePositioning?{defensivePositioning}:{}),
-    ...(directedDribble?{duelTackleProfile,duelTransition:transition,defensiveSlide:playerFrame.duelSlide??null}:{}),
+    ...(directedDribble?{duelTackleProfile,duelTransition:transition,defensiveSlide:playerFrame.duelSlide??null,shoulderApproach:playerFrame.duelShoulder??null}:{}),
     ...(nativeFixedCarryResearch?{
       nativeFixedCarryResearch:true,
       nativeFixedSprintLongStride,
@@ -1442,7 +1442,7 @@ export function projectActiveLabDecisions(frame,focus){
   if(!ids.includes(decision.id)||byId.has(decision.id)||
      decision.tick!==frame.physicsTick||decision.originalCanonicalMover!==true||
      decision.readOnly!==true||decision.actionConfirmed!==false||
-     !['goalkeeping','press-ball','carry-ball','approach-ball','support-run','hold-pass-target','getting-up'].includes(decision.kind)||
+     !['goalkeeping','press-ball','carry-ball','approach-ball','support-run','hold-pass-target','getting-up','shoulder-challenge'].includes(decision.kind)||
      ![decision.target?.x,decision.target?.y,decision.speedMps].every(Number.isFinite))
    throw new TypeError('Invalid current authoritative mover intent');
   byId.set(decision.id,decision);

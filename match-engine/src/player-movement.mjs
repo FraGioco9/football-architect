@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelRecoveryApproach,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,planDuelRecoveryApproach,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
 import {advanceSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
@@ -1947,7 +1947,7 @@ export function createPlayerMovement(options={}){
  // field participant, not an inferred action, result or second decision engine.
  let lastSmallSidedMovementDecisions=Object.freeze([]);
  let currentSoloCarryPhase=null;
- let duelSlide=null;
+ let duelSlide=null,duelShoulder=null;
  const players=initial.map(p=>({...p}));
  let b06bGoalKickoffTarget=null;
  function queueB06bOriginalGoalKickoff(event){
@@ -2066,6 +2066,7 @@ export function createPlayerMovement(options={}){
    // choice. The target remains original; velocity is the final observed value.
    ...(smallSided?.id==='carry-solo'?{soloCarryPhase:currentSoloCarryPhase}:{}),
    ...(duelSlide?{duelSlide}:{}),
+   ...(duelShoulder?{duelShoulder}:{}),
    ...(smallSided?{smallSidedMovementDecisions:Object.freeze(
     lastSmallSidedMovementDecisions.map(d=>{
      const p=players.find(x=>x.id===d.id);
@@ -2522,6 +2523,8 @@ export function createPlayerMovement(options={}){
     currentSoloCarryPhase.phase==='moderate'?-0.06:
      currentSoloCarryPhase.ballTargetOffsetM:null;
   const duelActors=directedDribble?resolveDuelActors(players,smallSided.side,duelTransition):null;
+  duelShoulder=duelTransition?.profile==='shoulder'&&duelActors&&!duelActors.candidateId?
+   planDuelShoulderApproach({...duelActors,ballPosition:ball,ballVelocity:realBallVelocity}):null;
   const postContact=duelActors&&(duelActors.candidateId!==null||
    duelTransition?.lastIntervention&&tick-duelTransition.lastIntervention.tick<=45||
    duelTransition?.sourceTick!=null&&tick-duelTransition.sourceTick<=30);
@@ -2553,10 +2556,11 @@ export function createPlayerMovement(options={}){
      phase:'attack',variantIndex:smallSided.variantIndex}),approachAt:tick+30,until:tick+100};
     directedStallTicks=0;directedBlockedTicks=0;
    }
+   if(directedContactRelease)duelShoulder=null;
    directedLastBall={...ball};
    duelSlide=advanceSlidingTackle({tick:tick+1,previous:duelSlide,
     source:{attackingSide,attacker,defender,ball:ballPosition,velocity:realBallVelocity},
-    allowLaunch:duelTransition?.profile!=='standing'&&!gettingUp&&!duelActors.candidateId&&!directedContactRelease,
+    allowLaunch:!['standing','shoulder'].includes(duelTransition?.profile)&&!gettingUp&&!duelActors.candidateId&&!directedContactRelease,
     cancel:directedContactRelease!==null||duelSlide!==null&&duelSlide.actorId!==defender.id,
     contact:duelTransition?.lastIntervention??null});
   }
@@ -2598,6 +2602,7 @@ export function createPlayerMovement(options={}){
     }
     const attack=smallSided.side==='home'?1:-1;
     if(duelActors){
+     if(duelShoulder?.actorId===p.id)return duelShoulder.target;
      if(duelAlignment)return duelAlignment[p.id].target;
      const {attacker,defender,attackingSide}=duelActors;
      return p.id===attacker.id?(duelActors.candidateId===p.id?planDuelRecoveryApproach(p,ball,realBallVelocity):
@@ -2783,12 +2788,13 @@ export function createPlayerMovement(options={}){
      (duelActors?p.id===duelActors.attacker.id:p.id===smallSided.side+'-10')&&
      Math.hypot(ball.x-p.x,ball.y-p.y)>1.5;
    const sliding=directedDribble&&!directedContactRelease&&duelSlide?.actorId===p.id&&duelSlide.phase==='slide';
+   const shoulderPursuit=duelShoulder?.actorId===p.id&&Math.hypot(ball.x-p.x,ball.y-p.y)>1.25;
    const recoveringEffective=directedDribble&&!directedContactRelease&&duelActors.candidateId===p.id&&
     duelTransition?.lastIntervention?.actorId===p.id&&duelTransition.lastIntervention.effective&&
     tick-duelTransition.lastIntervention.tick<=90&&
     (duelSlide?.actorId!==p.id||duelSlide.canPursueDuringRecovery);
    const gettingUp=directedDribble&&isDuelGettingUp(duelTransition,p.id,tick+1);
-   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:sliding?D08_SLIDE_KINEMATIC_LIMITS:recoveringEffective?D09_RECOVERY_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
+   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:sliding?D08_SLIDE_KINEMATIC_LIMITS:recoveringEffective?D09_RECOVERY_KINEMATIC_LIMITS:shoulderPursuit?D01_CHASE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
      // The old generic 6m/s/9m/s² recovery overrides the fixed phase
      // whenever a strong Sprint push opens a >1.5m gap, making Sprint
      // look like Moderate. Fixed DEV LABs keep their own bounded phase
@@ -2942,7 +2948,7 @@ export function createPlayerMovement(options={}){
   if(smallSided)lastSmallSidedMovementDecisions=Object.freeze(players
    .filter(p=>smallActive.has(p.id)).map(p=>{
     const target=targets[players.indexOf(p)];
-    const kind=duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
+    const kind=duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':duelShoulder?.actorId===p.id?'shoulder-challenge':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
      p.team!==smallSided.side?'press-ball':
      p.id===smallSided.side+'-10'?
       ((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?'carry-ball':'approach-ball'):
