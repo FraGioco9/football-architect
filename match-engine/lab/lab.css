@@ -325,3 +325,36 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-active-metrics dt{font-size:11px;color:var(--muted);line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .me-active-metrics dd{margin:2px 0 0;color:var(--text);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @container (max-width:420px){.me-modern-lab .me-active-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Performed-action log is a fixed companion to the pitch, not a second
+   diagnostics menu. Its contents never determine the pitch or panel size. */
+.me-field-and-actions{display:contents}
+.me-action-column{display:none}
+.me-modern-lab .me-main-panel{
+ width:min(100%,calc(var(--me-pitch-max) + 268px + 2 * var(--me-panel-pad) + 2px));
+}
+.me-modern-lab .me-field-and-actions{
+ display:grid;grid-template-columns:minmax(0,1fr) 256px;gap:12px;align-items:stretch;
+}
+.me-modern-lab .me-field-and-actions .me-pitch-frame canvas{width:100%;height:auto}
+.me-modern-lab .me-action-column{display:block;position:relative;min-width:0;min-height:0}
+.me-performed-panel{
+ position:absolute;inset:0;box-sizing:border-box;min-width:0;min-height:0;
+ display:flex;flex-direction:column;gap:8px;padding:10px;overflow:hidden;
+}
+.me-performed-header{display:grid;grid-template-columns:minmax(0,1fr) 126px;align-items:center;gap:6px;flex:none}
+.me-performed-header h2{margin:0;font-size:14px;line-height:20px}
+.me-performed-header .me-inspect-select{width:100%;max-width:none;min-width:0;height:32px;padding:4px 6px;font-size:11px}
+.me-performed-list-wrap{flex:1;min-height:0;overflow:auto;scrollbar-gutter:stable;overscroll-behavior:contain}
+.me-performed-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;line-height:16px;font-variant-numeric:tabular-nums}
+.me-performed-table th{position:sticky;top:0;background:var(--surface);font-weight:650;color:var(--muted);text-align:left;z-index:1}
+.me-performed-table th,.me-performed-table td{padding:5px 3px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.me-performed-table th:nth-child(1){width:25%}
+.me-performed-table th:nth-child(2){width:32%}
+.me-performed-table td:first-child{white-space:nowrap}
+.me-performed-table tr[hidden],.me-performed-empty[hidden]{display:none!important}
+.me-performed-empty{margin:14px 2px;text-align:center;color:var(--muted);font-size:11px}
+@container(max-width:650px){
+ .me-modern-lab .me-field-and-actions{grid-template-columns:minmax(0,1fr)}
+ .me-modern-lab .me-action-column{height:220px}
+}

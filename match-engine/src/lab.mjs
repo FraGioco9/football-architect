@@ -47,6 +47,69 @@ let activeScene=null,activeLab=null,activeVariantIndex=0;
 let lastInlineFootballAction=null;
 let lastOnFieldAction=new Map(),lastMovementKinds=new Map();
 let onFieldDecisionEvents=[];
+let performedActionKeys=new Set();
+const performedActionLabels=Object.freeze({
+ carry:'Carry',pass:'Pass',cross:'Cross',shot:'Shot',shoot:'Shot',
+ clearance:'Clearance',clear:'Clearance',tackle:'Tackle',intercept:'Interception',
+ save:'Save',receive:'Reception',control:'Control'
+});
+function resetPerformedActions(){
+ if(archiveMode)return;
+ const filter=byId('me-performed-player'),previous=filter.value;
+ filter.replaceChildren(new Option('All players',''));
+ const ids=activeScene?.kind==='action'?activeLab.focus:[];
+ for(const id of ids)filter.add(new Option(humanPlayer(id),id));
+ filter.value=ids.includes(previous)?previous:'';
+ filter.disabled=false;
+ performedActionKeys=new Set();
+ byId('me-performed-rows').replaceChildren();
+ updatePerformedFilter();
+}
+function updatePerformedFilter(){
+ const selected=byId('me-performed-player').value;
+ let visible=0;
+ for(const row of byId('me-performed-rows').rows){
+  row.hidden=selected!==''&&row.dataset.player!==selected;
+  if(!row.hidden)visible++;
+ }
+ const empty=byId('me-performed-empty');
+ empty.hidden=visible!==0;empty.textContent='No actions yet';
+}
+function recordPerformedActions(frame){
+ if(archiveMode)return;
+ const tick=frame.physicsTick,ids=activeLab.focus,events=[];
+ const action=frame.action;
+ if(action?.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&
+    action.tick===tick&&ids.includes(action.playerId))
+  events.push({id:action.playerId,kind:action.action,
+   label:performedActionLabels[action.action]??action.action});
+ // First receiving contacts are actual native observations, not inferred
+ // completed passes or successful possession. They have their own actor.
+ const pass=frame.passPairAudit?.receivingContact;
+ if(pass?.realRapierShoeStart===true&&pass.contactTick===tick)
+  events.push({id:pass.receiverId,kind:'receiving-contact',
+   label:pass.cushion?'First touch':'Receiving contact'});
+ const cross=frame.crossPairAudit?.firstReceivingShoeStart;
+ if(cross?.realRapierShoeStart===true&&cross.tick===tick)
+  events.push({id:cross.recipientId,kind:'receiving-contact',
+   label:frame.crossPairAudit.receivingCushion?'First touch':'Receiving contact'});
+ const tbody=byId('me-performed-rows'),selected=byId('me-performed-player').value;
+ for(const event of events){
+  if(!ids.includes(event.id)||typeof event.kind!=='string')continue;
+  const key=tick+'|'+event.id+'|'+event.kind;
+  if(performedActionKeys.has(key))continue;
+  performedActionKeys.add(key);
+  const row=document.createElement('tr');
+  row.dataset.tick=String(tick);row.dataset.player=event.id;row.dataset.action=event.kind;
+  row.hidden=selected!==''&&selected!==event.id;
+  for(const value of [(tick*FIXED_DT).toFixed(2)+' s',humanPlayer(event.id),event.label]){
+   const cell=document.createElement('td');cell.textContent=value;row.append(cell);
+  }
+  tbody.prepend(row);
+  if(!row.hidden)byId('me-performed-empty').hidden=true;
+ }
+}
+byId('me-performed-player').addEventListener('change',updatePerformedFilter);
 const smallSidedDecisionLabels=Object.freeze({
  'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
  'hold-pass-target':'Hold receiving position',
@@ -286,6 +349,7 @@ function restart() {
     accumulator=0;playing=false;inspectedPlayerId=null;
     byId('player-inspect-choice').value='';
     syncScenarioSurface();
+    resetPerformedActions();
     say('Ready · '+(kind==='action'?next.spec.title:next.scene.spec.title)+
       (activeScene.soloCarryLockedPhase?' · fixed '+
        activeScene.soloCarryLockedPhase.toUpperCase()+
@@ -319,7 +383,10 @@ function advance() {
       playing=false;return;
     }
     const observed=activeLab.step();
-    if(activeScene.kind==='action')trackOnFieldDecisionChanges(observed);
+    if(activeScene.kind==='action'){
+      if(archiveMode)trackOnFieldDecisionChanges(observed);
+      else recordPerformedActions(observed);
+    }
     if(activeScene.kind==='action'&&observed.action?.appliedByRapier)
       lastInlineFootballAction=Object.freeze({
        team:observed.action.team,action:observed.action.action,

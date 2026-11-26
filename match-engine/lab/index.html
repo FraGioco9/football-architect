@@ -120,8 +120,27 @@
                   </div>
                 </div>
               </div>
-              <div class="me-canvas-frame me-pitch-frame">
-                <canvas id="pitch" width="1050" height="680" aria-label="Complete 105 by 68 meter football field, showing the selected scenario with authentic Rapier ball and player movement"></canvas>
+              <div class="me-field-and-actions">
+                <div class="me-canvas-frame me-pitch-frame">
+                  <canvas id="pitch" width="1050" height="680" aria-label="Complete 105 by 68 meter football field, showing the selected scenario with authentic Rapier ball and player movement"></canvas>
+                </div>
+                <aside class="me-action-column" aria-labelledby="me-performed-title">
+                  <section id="me-performed-panel" class="app-panel me-performed-panel">
+                    <div class="me-performed-header">
+                      <h2 id="me-performed-title">Actions</h2>
+                      <select id="me-performed-player" class="me-inspect-select" aria-label="Filter actions by player" disabled>
+                        <option value="">All players</option>
+                      </select>
+                    </div>
+                    <div class="me-performed-list-wrap" tabindex="0" aria-label="Performed actions">
+                      <table class="me-performed-table">
+                        <thead><tr><th scope="col">Time</th><th scope="col">Player</th><th scope="col">Action</th></tr></thead>
+                        <tbody id="me-performed-rows"></tbody>
+                      </table>
+                      <p id="me-performed-empty" class="me-performed-empty" role="status">Loading…</p>
+                    </div>
+                  </section>
+                </aside>
               </div>
               <div class="me-at-a-glance" aria-live="off">
                 <span>Time <strong id="tick">—</strong></span>

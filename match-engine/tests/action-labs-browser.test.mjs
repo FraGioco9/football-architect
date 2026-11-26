@@ -116,7 +116,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.ok(pausedModule,'LAB module must be paused before the first-paint sample');
   const sizes=[[1280,720],[1440,900],[768,1024],[390,844],[320,700]];
   const measure=async()=>evalJs("(async()=>{await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));"+
-   "const ids=['.me-main-panel','.me-toolbar','#preset-trigger','#me-inline-side-trigger','#me-inline-variant-control','#speed-trigger','.me-toolbar>.me-button-group','#pitch','.me-at-a-glance','#me-inline-summary','#me-observation-details'];"+
+   "const ids=['.me-main-panel','.me-toolbar','#preset-trigger','#me-inline-side-trigger','#me-inline-variant-control','#speed-trigger','.me-toolbar>.me-button-group','#pitch','#me-performed-panel','#me-performed-player','.me-performed-list-wrap','.me-at-a-glance','#me-inline-summary','#me-observation-details'];"+
    "const rects=Object.fromEntries(ids.map(s=>{const r=document.querySelector(s).getBoundingClientRect();return [s,[r.x,r.y,r.width,r.height]]}));"+
    "return {rects,selected:document.getElementById('preset-value').textContent,loading:document.querySelector('.me-main-panel').hasAttribute('data-loading'),scroll:document.documentElement.scrollWidth,width:innerWidth};})()");
   const before=[];
@@ -154,6 +154,26 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.deepEqual(flat.labels,['Player speed','Ball gap','Touches','Distance','Peak speed','Mean touch gap']);
   assert.equal(flat.values.length,6);assert.ok(flat.values.some(x=>x.endsWith(' km/h')));
   await evalJs("document.getElementById('me-observation-details').open=false");
+  const actionLog=await evalJs("(()=>{const el=id=>document.getElementById(id),filter=el('me-performed-player'),rows=()=>[...el('me-performed-rows').rows].map(r=>({player:r.dataset.player,action:r.dataset.action,tick:+r.dataset.tick,hidden:r.hidden}));"+
+   "const carry=rows();el('preset-trigger').click();document.querySelector('#preset-options [data-value=\\\"action:pass-pair\\\"]').click();"+
+   "const start=rows(),options=[...filter.options].map(o=>o.value);for(let i=0;i<240;i++)el('step').click();"+
+   "const all=rows();filter.value=options[1];filter.dispatchEvent(new Event('change'));const first=rows();"+
+   "filter.value=options[2];filter.dispatchEvent(new Event('change'));const second=rows();"+
+   "filter.value='';filter.dispatchEvent(new Event('change'));const restored=rows();"+
+   "const beforeReset=el('me-performed-panel').getBoundingClientRect().height;el('reset').click();return {carry,start,options,all,first,second,restored,reset:rows(),empty:!el('me-performed-empty').hidden,beforeReset,afterReset:el('me-performed-panel').getBoundingClientRect().height};})()");
+  assert.ok(actionLog.carry.some(x=>x.action==='carry'));
+  assert.ok(actionLog.carry.every(x=>x.player==='away-10'&&x.action==='carry'));
+  assert.deepEqual(actionLog.start,[]);assert.equal(actionLog.options.length,3);
+  assert.ok(actionLog.all.some(x=>x.action==='pass'));
+  assert.ok(actionLog.all.some(x=>x.action==='receiving-contact'));
+  assert.ok(actionLog.all.every(x=>actionLog.options.includes(x.player)&&x.tick>0));
+  assert.equal(new Set(actionLog.all.map(x=>x.tick+'|'+x.player+'|'+x.action)).size,actionLog.all.length);
+  assert.ok(actionLog.all.every((x,i)=>i===0||actionLog.all[i-1].tick>=x.tick));
+  assert.ok(actionLog.first.every(x=>x.hidden===(x.player!==actionLog.options[1])));
+  assert.ok(actionLog.second.every(x=>x.hidden===(x.player!==actionLog.options[2])));
+  assert.deepEqual(actionLog.restored,actionLog.all);
+  assert.deepEqual(actionLog.reset,[]);assert.equal(actionLog.empty,true);
+  assert.ok(Math.abs(actionLog.beforeReset-actionLog.afterReset)<=1);
   for(const [width,height] of [[1440,900],[390,844]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
    const bounds=await evalJs("(()=>{const r=document.getElementById('pitch').getBoundingClientRect();return {left:r.left,right:r.right,width:innerWidth,scroll:document.documentElement.scrollWidth};})()");
