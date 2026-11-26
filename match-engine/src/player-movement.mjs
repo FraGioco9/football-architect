@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,planDuelRecoveryApproach,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,planDuelRecoveryApproach,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
 import {advanceSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
@@ -2517,6 +2517,10 @@ export function createPlayerMovement(options={}){
     currentSoloCarryPhase.phase==='moderate'?-0.06:
      currentSoloCarryPhase.ballTargetOffsetM:null;
   const duelActors=directedDribble?resolveDuelActors(players,smallSided.side,duelTransition):null;
+  const postContact=duelActors&&(duelActors.candidateId!==null||
+   duelTransition?.lastIntervention&&tick-duelTransition.lastIntervention.tick<=45||
+   duelTransition?.sourceTick!=null&&tick-duelTransition.sourceTick<=30);
+  const duelAlignment=postContact?planDuelPostContactAlignment({...duelActors,ballPosition:ball,ballVelocity:realBallVelocity}):null;
   if(directedDribble){
    const {attacker,defender,attackingSide}=duelActors;
    const gap=Math.hypot(attacker.x-defender.x,attacker.y-defender.y);
@@ -2528,7 +2532,7 @@ export function createPlayerMovement(options={}){
    if(!directedBallAnchor||Math.hypot(ball.x-directedBallAnchor.x,ball.y-directedBallAnchor.y)>0.30||!closeBall){
     directedBallAnchor={...ball};directedAnchorTick=tick;
    }
-   if(directedContactRelease&&tick>=directedContactRelease.until){
+   if(directedContactRelease&&(tick>=directedContactRelease.until||duelTransition?.lastIntervention?.tick===tick&&tick>0)){
     directedContactRelease=null;directedBallAnchor={...ball};directedAnchorTick=tick;
    }
    if(!directedContactRelease&&closeBall&&gap<1.6&&stagnant&&(slow||blocked))directedStallTicks++;
@@ -2585,6 +2589,7 @@ export function createPlayerMovement(options={}){
     }
     const attack=smallSided.side==='home'?1:-1;
     if(duelActors){
+     if(duelAlignment)return duelAlignment[p.id].target;
      const {attacker,defender,attackingSide}=duelActors;
      return p.id===attacker.id?(duelActors.candidateId===p.id?planDuelRecoveryApproach(p,ball,realBallVelocity):
       directedDribbleApproachTarget(p,ball,realBallVelocity,attackingSide,defender)):
@@ -2801,7 +2806,10 @@ export function createPlayerMovement(options={}){
    if(blocker){p.vx=0;p.vy=0;}
    else{p.x=candidate.x;p.y=candidate.y;p.vx=candidate.vx;p.vy=candidate.vy;}
    const keeperDuel=smallSided?.id==='keeper-1v1'&&p.id===smallSided.opponent+'-1';
-   const faceDuelBall=directedDribble&&smallActive.has(p.id)&&Math.hypot(ball.x-p.x,ball.y-p.y)<1.65;
+   const duelBallGap=Math.hypot(ball.x-p.x,ball.y-p.y);
+   const detouring=duelAlignment?.[p.id]?.detour===true&&!directedContactRelease&&duelSlide?.actorId!==p.id;
+   const faceDuelBall=directedDribble&&smallActive.has(p.id)&&duelBallGap<1.65&&
+    (!detouring||duelBallGap<0.70||Math.hypot(p.vx,p.vy)<0.15);
    const wantedFacing=keeperDuel?
     advanceGoalkeeperBallOrientation(p,ball,PLAYER_KINEMATIC_LIMITS):
     faceDuelBall?advancePlayerOrientation(p.facingRad,ball.x-p.x,ball.y-p.y,PLAYER_KINEMATIC_LIMITS):
@@ -2927,6 +2935,7 @@ export function createPlayerMovement(options={}){
       ['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?'hold-pass-target':'support-run';
     return Object.freeze({
      tick:tick+1,id:p.id,team:p.team,kind,
+     ...(duelAlignment?{postContactAlignment:true,alignmentDetour:duelAlignment[p.id].detour&&!directedContactRelease&&duelSlide?.actorId!==p.id}:{}),
      ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:{}),
      target:Object.freeze({x:target.x,y:target.y}),
      speedMps:Math.hypot(p.vx,p.vy),

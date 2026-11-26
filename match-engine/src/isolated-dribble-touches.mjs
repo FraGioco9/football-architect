@@ -232,6 +232,53 @@ export function planDuelRecoveryApproach(player,b,v){
   y:clamp(y-(d>0.05?dy/d:0)*0.20,-33.49,33.49)});
 }
 
+// D-09b: avoid steering through a real opponent after the ball changes side.
+// Only a waypoint is returned; the canonical mover owns collision rejection.
+const duelBound=(x,y)=>Object.freeze({x:clamp(x,-51.99,51.99),y:clamp(y,-33.49,33.49)});
+function segmentGap(start,end,other){
+ const dx=end.x-start.x,dy=end.y-start.y,den=dx*dx+dy*dy;
+ const t=den>1e-10?clamp(((other.x-start.x)*dx+(other.y-start.y)*dy)/den,0,1):0;
+ return Math.hypot(start.x+dx*t-other.x,start.y+dy*t-other.y);
+}
+export function routeDuelAroundOpponent(player,opponent,target){
+ const gap=Math.hypot(player.x-opponent.x,player.y-opponent.y);
+ const travel=Math.hypot(target.x-player.x,target.y-player.y);
+ const originalClearance=segmentGap(player,target,opponent);
+ if(gap<0.05||travel<0.10||originalClearance>=Math.min(gap,1.05)-0.02)
+  return Object.freeze({target,detour:false,clearanceM:originalClearance});
+ const ux=(player.x-opponent.x)/gap,uy=(player.y-opponent.y)/gap;
+ const choices=[1,-1].map(sign=>{
+  const waypoint=duelBound(opponent.x+1.12*ux-0.80*sign*uy,opponent.y+1.12*uy+0.80*sign*ux);
+  const clearance=segmentGap(player,waypoint,opponent);
+  return {waypoint,clearance,score:Math.hypot(waypoint.x-target.x,waypoint.y-target.y)
+   +0.25*Math.hypot(waypoint.x-player.x,waypoint.y-player.y)};
+ }).filter(x=>x.clearance>=Math.min(gap,1.05)-0.02&&Math.hypot(x.waypoint.x-player.x,x.waypoint.y-player.y)>0.10);
+ choices.sort((a,b)=>a.score-b.score);
+ const best=choices[0];
+ return best?Object.freeze({target:best.waypoint,detour:true,clearanceM:best.clearance}):
+  Object.freeze({target,detour:false,clearanceM:originalClearance});
+}
+
+// Separate approach lanes after a contact. If the recovering actor can
+// reach the ball at least as soon as his rival, the rival takes a distinct
+// pressing/containment stance instead of aiming at the same foot space.
+// A rival with a better route remains free to contest the actual ball.
+export function planDuelPostContactAlignment({attacker,defender,attackingSide,candidateId,ballPosition:b,ballVelocity:v}){
+ const first=candidateId===attacker.id?planDuelRecoveryApproach(attacker,b,v):
+  directedDribbleApproachTarget(attacker,b,v,attackingSide,defender);
+ const defense=planDribbleDefender({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v});
+ let second=defense.target;
+ const ag=Math.hypot(attacker.x-b.x,attacker.y-b.y),dg=Math.hypot(defender.x-b.x,defender.y-b.y);
+ if(dg>=ag-0.20&&Math.hypot(first.x-second.x,first.y-second.y)<1.12){
+  const dx=defender.x-first.x,dy=defender.y-first.y,d=Math.hypot(dx,dy);
+  const ux=d>0.05?dx/d:attackingSide==='home'?1:-1,uy=d>0.05?dy/d:0;
+  second=duelBound(first.x+ux*1.12,first.y+uy*1.12);
+ }
+ const a=routeDuelAroundOpponent(attacker,defender,first);
+ const d=routeDuelAroundOpponent(defender,attacker,second);
+ return Object.freeze({[attacker.id]:a,[defender.id]:d});
+}
+
 // D-05: grounded defensive intent, authorized only by the existing
 // exclusive native shoe START gate. No automatic turnover.
 export function chooseDribbleDefensiveTouch({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}={}){
@@ -262,8 +309,8 @@ export function chooseDribbleDefensiveTouch({attackingSide,attacker,defender,bal
 export function createDribbleTransitionObserver(side){
  if(!['home','away'].includes(side))throw new TypeError('Original duel side required');
  const first=side+'-10',second=opposite(side)+'-2',ids=[first,second];
- let carrierId=first,candidateId=null,candidateTick=null,sourceTick=null,recoveries=0,regains=0,changes=0;
- let latest=Object.freeze({tick:0,phase:'attack',carrierId,candidateId,sourceTick,recoveries,regains,changes,recovered:false,regained:false,officialPossession:false});
+ let carrierId=first,candidateId=null,candidateTick=null,sourceTick=null,lastIntervention=null,recoveries=0,regains=0,changes=0;
+ let latest=Object.freeze({tick:0,phase:'attack',carrierId,candidateId,sourceTick,lastIntervention,recoveries,regains,changes,recovered:false,regained:false,officialPossession:false});
  function observe({tick,starts,active,bodyStarts,bodyActive,action,ball}){
   if(tick!==latest.tick+1)throw new TypeError('Same original physics tick required');
   let recovered=false,regained=false;
@@ -276,6 +323,8 @@ export function createDribbleTransitionObserver(side){
   if(!inField||candidateId!==null&&tick-candidateTick>120){
    candidateId=null;candidateTick=null;
   }
+  if(inField&&real&&['tackle','interception'].includes(action.action))
+   lastIntervention=Object.freeze({tick,actorId:action.playerId});
   if(inField&&real&&action.action==='carry'){
    if(action.playerId!==carrierId){
     carrierId=action.playerId;changes++;sourceTick=tick;
@@ -288,7 +337,7 @@ export function createDribbleTransitionObserver(side){
    else{candidateId=null;candidateTick=null;}
   }
   const phase=candidateId!==null?'recover':carrierId===first?'attack':'counter';
-  latest=Object.freeze({tick,phase,carrierId,candidateId,sourceTick,recoveries,regains,changes,recovered,regained,officialPossession:false});
+  latest=Object.freeze({tick,phase,carrierId,candidateId,sourceTick,lastIntervention,recoveries,regains,changes,recovered,regained,officialPossession:false});
   return latest;
  }
  return Object.freeze({observe,snapshot:()=>latest});

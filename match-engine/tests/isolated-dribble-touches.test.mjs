@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -800,7 +800,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
    let stagnant=0,maxStagnant=0,blocked=0,blockedRun=0,maxBlockedRun=0,ballPath=0,prior=scene.snapshot().ball.position;
    let anchor=prior,anchorTick=0,maxCloseBallStall=0,slideStarts=0,slideContacts=0,recoveryTicks=0,peakSlideSpeed=0;
-   let pending=null,defensiveTouches=0,available=0,recoveredCarry=0,rivalCarry=0,expired=0,censored=0;
+   let pending=null,defensiveTouches=0,available=0,recoveredCarry=0,rivalCarry=0,expired=0,censored=0,alignmentTicks=0,detourTicks=0;
    const finish=(reason)=>{if(!pending)return;if(pending.available)available++;if(reason==='carry')recoveredCarry++;else if(reason==='rival')rivalCarry++;else if(reason==='expired')expired++;else censored++;pending=null;};
    try{
     for(let k=0;k<600;k++){
@@ -822,6 +822,8 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
      }
      assert.ok(Math.hypot(d.vx,d.vy)<=7+1e-5);
      const action=f.action;
+     if(f.smallSidedMovementDecisions?.some(p=>p.postContactAlignment))alignmentTicks++;
+     if(f.smallSidedMovementDecisions?.some(p=>p.alignmentDetour))detourTicks++;
      if(pending&&f.physicsTick>pending.tick){
       const tackler=pending.id===a.id?a:d, rival=tackler===a?d:a;
       const dg=Math.hypot(tackler.x-b.x,tackler.y-b.y),ag=Math.hypot(rival.x-b.x,rival.y-b.y);
@@ -847,7 +849,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
     }
     finish('end');
     const f=scene.snapshot();
-    results.push({side,variant:variantIndex+1,maxStagnant,blocked,maxBlockedRun,maxCloseBallStall,ballPath,slideStarts,slideContacts,recoveryTicks,peakSlideSpeed,defensiveTouches,available,recoveredCarry,rivalCarry,expired,censored,attackerTouches:f.nativeDribbleAudit.appliedCarryActions,
+    results.push({side,variant:variantIndex+1,maxStagnant,blocked,maxBlockedRun,maxCloseBallStall,ballPath,slideStarts,slideContacts,recoveryTicks,peakSlideSpeed,defensiveTouches,available,recoveredCarry,rivalCarry,expired,censored,alignmentTicks,detourTicks,attackerTouches:f.nativeDribbleAudit.appliedCarryActions,
      defenderAttempts:f.nativeDribbleAudit.defensiveTackleAttempts+f.nativeDribbleAudit.defensiveInterceptionAttempts,
      recoveryTouches:f.nativeDribbleAudit.defensiveRecoveryTouches,actionsByPlayer:f.nativeDribbleAudit.actionsByPlayer,roleChanges:f.duelTransition.changes});
    }finally{scene.dispose();}
@@ -857,6 +859,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
   process.stdout.write('ME_628_D09_RELEASE '+JSON.stringify(totals)+'\n');
   assert.ok(totals.defensiveTouches>0&&totals.available>0,'must observe actual post-contact recovery opportunities');
   assert.ok(totals.recoveredCarry>0,'must observe real post-contact carry by the tackler');
+  assert.ok(results.some(x=>x.alignmentTicks>0),'observe live post-contact alignment');
   for(const side of ['home','away']){
    const cases=results.filter(x=>x.side===side),original=side+'-10',other=(side==='home'?'away':'home')+'-2';
    assert.ok(cases.some(x=>x.slideStarts>0),'each side must attempt a real sliding movement');
@@ -903,5 +906,22 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    assert.ok(edge.target.y<33.1);
    const approach=planDuelRecoveryApproach(defender,b,{x:0,y:2.8});
    assert.ok(approach.y>0&&Number.isFinite(approach.x));
+  }
+ });
+
+ test('D-09b post-contact targets avoid crossing the opponent and separate mirrored approaches',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const player={id:side+'-10',team:side,x:dir*29,y:0};
+   const rival={id:other+'-2',team:other,x:dir*30,y:0};
+   const route=routeDuelAroundOpponent(player,rival,{x:dir*31,y:0});
+   assert.equal(route.detour,true);assert.ok(route.clearanceM>=0.98);
+   assert.ok(Math.abs(route.target.y)>0.5);
+   const clear=routeDuelAroundOpponent(player,rival,{x:dir*28,y:0});
+   assert.equal(clear.detour,false);
+   const targets=planDuelPostContactAlignment({attacker:rival,defender:player,attackingSide:other,candidateId:rival.id,
+    ballPosition:{x:dir*29.6,y:0.7},ballVelocity:{x:0,y:2}});
+   for(const id of [player.id,rival.id])assert.ok(Number.isFinite(targets[id].target.x)&&Number.isFinite(targets[id].target.y));
+   assert.ok(Math.hypot(targets[player.id].target.x-targets[rival.id].target.x,targets[player.id].target.y-targets[rival.id].target.y)>0.5);
   }
  });
