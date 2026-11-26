@@ -7,7 +7,7 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
- keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement}
+ keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
@@ -233,6 +233,42 @@ test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{
    }
   }finally{lab.dispose();}
  }
+});
+test('UME-05A one native open-play adapter runs different physical participant sets',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const [id,n] of [['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],['duel-2v2',5],['duel-3v3',7]]){
+  assert.equal(supportsNativeOpenPlay(id),true);
+  for(const side of ['home','away'])for(const variantIndex of [0,9]){
+   const lab=createControlledActionLab(R,id,{shotSide:side,variantIndex,bodyGuardEnabled:true,collectiveApproaches:true});
+   try{
+    const active=lab.focus;
+    assert.equal(active.length,n);
+    assert.equal(lab.snapshot().collectiveControl.tick,0);
+    let contacts=0;
+    for(let k=1;k<=120;k++){
+     const f=lab.step();
+     assert.equal(f.physicsTick,k);assert.equal(f.collectiveControl.tick,k);
+     assert.equal(f.genuinePhysicalPlayerCount,n);
+     assert.equal(projectActiveLabDecisions(f,active).length,n);
+     assert.equal(f.collectiveControl.officialPossession,false);
+     assert.equal(f.officialMatchResult,null);
+     assert.ok(f.starts.every(id=>active.includes(id)));contacts+=f.starts.length;
+     if(f.action){
+      assert.ok(active.includes(f.action.playerId));
+      assert.equal(f.action.appliedByRapier,true);assert.equal(f.action.actualPhysicsImpulseApplied,true);
+     }
+     if(f.refereeEvidence?.lastEvent)break;
+    }
+    assert.ok(contacts>0,'native contact must occur in each selected replay');
+   }finally{lab.dispose();}
+  }
+ }
+ for(const id of ['carry-solo','pass-pair','cross-pair','shot-solo','dribble-1v1']){
+  assert.equal(supportsNativeOpenPlay(id),false);
+  assert.throws(()=>createControlledActionLab(R,id,{bodyGuardEnabled:true,collectiveApproaches:true}),/Native open play/);
+ }
+ assert.throws(()=>createControlledActionLab(R,'keeper-1v1',{bodyGuardEnabled:true,collectiveApproaches:true,keeperSingleShot:true}),/Native open play/);
+ assert.throws(()=>createControlledActionLab(R,'defender-1v1',{bodyGuardEnabled:true,collectiveApproaches:true,duelTackleProfile:'block'}),/Native open play/);
 });
 test('COL-06 all 60 guarded 2v1 variants preserve native actions and observed control',{timeout:120000},async()=>{
  const R=await initializeRapier(rapier);

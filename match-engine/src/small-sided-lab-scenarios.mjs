@@ -35,19 +35,19 @@ const definitions=freeze([
  freeze({id:ids[0],title:'Dribbling · 1v1 (no goalkeeper)',
   attackers:freeze([10]),defenders:freeze([2]),includeGoalkeeper:false,
   description:'Real attacker vs defender and the original Rapier ball; only attacker genuine shoe STARTs can trigger variable carry touches. No shot/pass/automatic tackle, possession or dribble success.'}),
- freeze({id:ids[1],title:'1v1 · Attacker vs goalkeeper',
+ freeze({id:ids[1],nativeOpenPlay:true,title:'1v1 · Attacker vs goalkeeper',
   attackers:freeze([10]),defenders:freeze([]),
   description:'One forward faces a real opponent goalkeeper. Original Rapier shoe contact and keeper movement; observe shot, physical parry attempt or actual full-ball exit. No automatic goal or save.'}),
- freeze({id:ids[2],title:'1v1 + goalkeeper',
+ freeze({id:ids[2],nativeOpenPlay:true,title:'1v1 + goalkeeper',
   attackers:freeze([10]),defenders:freeze([2]),
   description:'One forward, one real defender and the goalkeeper. Watch genuine pressure, shot selection, shoe contact and ball travel; no inferred tackle or possession.'}),
- freeze({id:ids[3],title:'2v1 + goalkeeper',
+ freeze({id:ids[3],nativeOpenPlay:true,title:'2v1 + goalkeeper',
   attackers:freeze([10,9]),defenders:freeze([2]),
   description:'Two forwards against one defender and a goalkeeper. Observe live pass options, overlapping runs and native player-ball actions; no completed pass or goal without physical evidence.'}),
- freeze({id:ids[4],title:'2v2 + goalkeeper',
+ freeze({id:ids[4],nativeOpenPlay:true,title:'2v2 + goalkeeper',
   attackers:freeze([10,9]),defenders:freeze([2,3]),
   description:'Two forwards against two defenders and a goalkeeper. Original 60 Hz movement, individual shoe collisions, pressure and shot/pass selection, not an 11v11 simulation.'}),
- freeze({id:ids[5],title:'3v3 + goalkeeper',
+ freeze({id:ids[5],nativeOpenPlay:true,title:'3v3 + goalkeeper',
   attackers:freeze([10,9,11]),defenders:freeze([2,3,4]),
   description:'Three forwards face three defenders and a goalkeeper. Keep the same Rapier world and canonical physics; inspect live support, blocked lanes and genuinely resulting actions.'}),
  freeze({id:ids[6],title:'Carry · solo',attackers:freeze([10]),
@@ -279,6 +279,9 @@ export function getSmallSidedScenario(id){
  if(!d)throw new RangeError('Unknown private small-sided situation');
  return d;
 }
+// Only the fixture adapter declares whether an isolated exercise can run
+// unrestricted native football. This metadata never enters the action scores.
+export function supportsNativeOpenPlay(id){return byId.get(id)?.nativeOpenPlay===true;}
 export function smallSidedSetup(id,side,canonicalPlayers,{
  variantIndex=0,carryRunwayStart=false,tapInStart=false,firstTimeShot=false,shoulderStart=false,interceptionStart=false,blockStart=false
 }={}){

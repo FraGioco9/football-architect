@@ -12,7 +12,7 @@ import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {smallSidedSetup,keeperDuelAttackerTarget,keeperDuelReboundTarget,
- keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeFootballMovement} from './small-sided-lab-scenarios.mjs';
+ keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeFootballMovement,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -1864,7 +1864,7 @@ export function createPlayerMovement(options={}){
      options.researchNativeFixedCarry!==true||
      options.researchSoloCarryLockedPhase!=='sprint'||
      options.researchCarryRunwayStart!==true))||
-    (options.researchCollectiveApproaches!==undefined&&(options.researchCollectiveApproaches!==true||options.researchSmallSidedSituation!=='overload-2v1'||options.researchSmallSidedBodyFeedback!==true))||
+    (options.researchCollectiveApproaches!==undefined&&(options.researchCollectiveApproaches!==true||!supportsNativeOpenPlay(options.researchSmallSidedSituation)||options.researchSmallSidedBodyFeedback!==true||options.researchBlockStart!==undefined||options.researchShoulderStart!==undefined||options.researchInterceptionStart!==undefined))||
     (options.researchBlockStart!==undefined&&(options.researchBlockStart!==true||options.researchSmallSidedSituation!=='defender-1v1'||options.researchSmallSidedBodyFeedback!==true))||
     (options.researchInterceptionStart!==undefined&&(options.researchInterceptionStart!==true||options.researchShoulderStart!==undefined||options.researchSmallSidedSituation!=='pass-pair'))||
     (options.researchShoulderStart!==undefined&&(options.researchShoulderStart!==true||options.researchSmallSidedSituation!=='dribble-1v1'||options.researchSmallSidedBodyFeedback!==true))||
@@ -2695,6 +2695,7 @@ export function createPlayerMovement(options={}){
     }
     if(p.id===smallSided.opponent+'-1'){
      const baseline=goalkeeperPosition(p.team,ball);
+     if(collectiveApproaches)return baseline;
      const attacker=players.find(a=>a.id===smallSided.side+'-10');
      if(keeperCloseDown){
       const challenge=keeperDuelCloseDownTarget(smallSided.side,p,attacker,

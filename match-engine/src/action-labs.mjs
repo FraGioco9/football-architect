@@ -25,7 +25,7 @@ import {createBasicReceiveDribbleObserverB04}
 import {createRealOpponentBallContestAuditM31}
  from './real-opponent-ball-contest-m31.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS} from './player-movement.mjs';
-import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup}
+import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,supportsNativeOpenPlay}
  from './small-sided-lab-scenarios.mjs';
 import {SOLO_CARRY_PHASES} from './solo-carry-phases.mjs';
 import {uniformSoloCarryAttributes,validateSoloCarryAttributes}
@@ -51,8 +51,8 @@ export function createControlledActionLab(RAPIER,id,{
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
- if(typeof collectiveApproaches!=='boolean'||(collectiveApproaches&&(id!=='overload-2v1'||!bodyGuardEnabled)))
-  throw new TypeError('Collective approaches require guarded 2v1 LAB');
+ if(typeof collectiveApproaches!=='boolean'||(collectiveApproaches&&(!supportsNativeOpenPlay(id)||!bodyGuardEnabled||keeperSingleShot||directedDribble||duelTackleProfile!=='mixed')))
+  throw new TypeError('Native open play requires guarded participants without isolated overrides');
  if(typeof carryRunwayStart!=='boolean'||
     (carryRunwayStart&&id!=='carry-solo'))
   throw new TypeError('Long-running pre-kickoff runway only for Solo Carry');

@@ -9,7 +9,7 @@ import {createPrivateRapier22BodyBridge} from './rapier-22-body-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
-import {smallSidedSetup} from './small-sided-lab-scenarios.mjs';
+import {smallSidedSetup,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
 import {createNativeBallControlObserver,createDribbleTransitionObserver} from './isolated-dribble-touches.mjs';
 import {createSmallSidedNativeBodyGuard,createNativeKeeperDive}
  from './small-sided-native-body-guard.mjs';
@@ -263,7 +263,7 @@ export function createEngine(RAPIER, input = {}, {
       diagnosticPlayerBodyCollidersEnabled||
       diagnosticSharedContactEventsEnabled)))
    throw new TypeError('LAB body collision requires a small-sided exercise with actual shoe source');
-  if(typeof diagnosticCollectiveActions!=='boolean'||(diagnosticCollectiveActions&&(diagnosticSmallSidedSituation!=='overload-2v1'||!diagnosticSmallSidedBodyGuardEnabled||!diagnosticSmallSidedBodyFeedbackEnabled)))throw new TypeError('Collective actions require guarded 2v1');
+  if(typeof diagnosticCollectiveActions!=='boolean'||(diagnosticCollectiveActions&&(!supportsNativeOpenPlay(diagnosticSmallSidedSituation)||!diagnosticSmallSidedBodyGuardEnabled||!diagnosticSmallSidedBodyFeedbackEnabled||diagnosticKeeperSingleShot||diagnosticDirectedDribble||diagnosticDuelTackleProfile!=='mixed')))throw new TypeError('Native open play requires guarded participants without isolated overrides');
   if(typeof diagnosticDirectedDribble!=='boolean'||(diagnosticDirectedDribble&&
      (diagnosticSmallSidedSituation!=='dribble-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Directed dribble requires original guarded 1v1');
@@ -739,7 +739,7 @@ export function createEngine(RAPIER, input = {}, {
   const keeperDive=smallBodyGuard&&(smallSided?.id==='keeper-1v1'||smallSided?.blockStart)?
    createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1'),body,
     {closeChallengeEnabled:diagnosticKeeperSingleShot}):null;
-  const collectiveObserver=diagnosticCollectiveActions?createNativeBallControlObserver(smallSided.activeIds,smallSided.activeIds.filter(id=>!id.endsWith('-1'))):null;
+  const collectiveObserver=diagnosticCollectiveActions?createNativeBallControlObserver(smallSided.activeIds,stagedShoes.filter(p=>smallSided.activeIds.includes(p.id)&&p.role!=='goalkeeper').map(p=>p.id)):null;
   const duelTransition=diagnosticDirectedDribble?createDribbleTransitionObserver(smallSided.side,diagnosticDuelTackleProfile):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
