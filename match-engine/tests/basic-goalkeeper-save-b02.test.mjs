@@ -150,7 +150,8 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
   assert.equal(goal.officialGoal,false);
  });
  test('SHOT-06 real keeper duel baseline across 30 mirrored variants', {timeout:240000},async()=>{
-  const R=await initializeRapier(rapier),counts={shots:0,contacts:0,parries:0,goals:0,otherExit:0,unresolved:0,noShot:0};
+  const R=await initializeRapier(rapier),counts={shots:0,contacts:0,parries:0,goals:0,otherExit:0,unresolved:0,noShot:0,diveAttempts:0,limitedDives:0,gloveContacts:0,catches:0,deflections:0,rebounds:0,secondShots:0};
+  const bySide={home:{dives:0,contacts:0},away:{dives:0,contacts:0}};
   for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
    const scene=createControlledActionLab(R,'keeper-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true});
    try{
@@ -159,6 +160,12 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
     let previousFacing=f.observedMovementPlayers.find(p=>p.id===f.keeperShotAudit.keeperId).facingRad;
     for(let n=0;n<600;n++){
      f=scene.step();const audit=f.keeperShotAudit;
+     if(f.keeperDive?.started){counts.diveAttempts++;bySide[side].dives++;if(f.keeperDive.plan?.limited)counts.limitedDives++;}
+     if(f.keeperDive?.contactStarted){counts.gloveContacts++;bySide[side].contacts++;}
+     if(f.keeperDive?.catchState?.confirmedTick===f.physicsTick)counts.catches++;
+     if(audit.deflection?.tick===f.physicsTick)counts.deflections++;
+     if(audit.reboundTick===f.physicsTick)counts.rebounds++;
+     if(audit.secondShotTick===f.physicsTick)counts.secondShots++;
      const keeper=f.observedMovementPlayers.find(p=>p.id===audit.keeperId);
      const change=Math.atan2(Math.sin(keeper.facingRad-previousFacing),Math.cos(keeper.facingRad-previousFacing));
      assert.ok(Math.abs(change)<=PLAYER_TURN_RAD_PER_S*FIXED_DT+1e-8,'one capped keeper turn per tick');
@@ -185,7 +192,12 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
    }finally{scene.dispose();}
   }
   assert.ok(counts.shots>0,'existing live context must generate genuine shots');
-  process.stdout.write('ME_628_SHOT_06_BASELINE '+JSON.stringify(counts)+'\n');
+  process.stdout.write('ME_628_SHOT_06_BASELINE '+JSON.stringify({...counts,bySide})+'\n');
+  // GK-07 is a functional integration gate, NOT a calibrated save rate.
+  for(const side of ['home','away']){
+   assert.ok(bySide[side].dives>0,side+' integrated shooter must provoke a real dive');
+   assert.ok(bySide[side].contacts>0,side+' integrated dive must physically contact the original ball at least once');
+  }
  });
 
  test('GK-01 keeper watches the ball instead of spinning with lateral or backward velocity',()=>{
@@ -358,5 +370,18 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
    const shot=sample(9,launch,{starts:[shooterId],action:real(9)});
    assert.equal(shot.secondShots,1);assert.equal(shot.secondShotTick,9);
    assert.equal(shot.officialGoal,false);assert.equal(shot.officialSave,false);
+  }
+ });
+
+ test('GK-07 corner shots trigger bounded full-body extension or a genuine limited attempt',()=>{
+  for(const team of ['home','away']){
+   const dir=team==='home'?1:-1,keeper={id:team+'-1',team,x:-dir*48,y:0};
+   const make=(y,dist,speed)=>({position:{x:keeper.x+dir*dist,y,z:0.11},velocity:{x:-dir*speed,y:0,z:0}});
+   const corner=planNativeKeeperDive(keeper,make(2.4,6,9));assert.ok(corner);
+   assert.ok(Math.hypot(corner.target.y-corner.start.y,corner.target.z-corner.start.z)>1.85);
+   const fast=planNativeKeeperDive(keeper,make(3.1,4,24));assert.ok(fast?.limited);
+   const travel=Math.hypot(fast.target.y-fast.start.y,fast.target.z-fast.start.z);
+   assert.ok(travel<=2.65+1e-8);assert.ok(travel/(fast.reachTicks*FIXED_DT)<=8.5+1e-8);
+   assert.equal(planNativeKeeperDive(keeper,make(9,6,9)),null);
   }
  });

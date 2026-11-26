@@ -174,7 +174,9 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
 // Uses the existing world/ball and the actual post-shot trajectory. A
 // reaching glove is the first dive primitive, not a full articulated body.
 export const KEEPER_DIVE_VERSION='me-628-native-keeper-dive-v1';
-const DIVE_REACH_M=1.85,DIVE_GLOVE_RADIUS_M=0.21;
+// Full reaching pose includes lateral body extension, not just arm length.
+// These are provisional geometric/kinematic limits, not attribute tuning.
+const DIVE_REACH_M=2.65,DIVE_GLOVE_RADIUS_M=0.21,DIVE_SPEED_MPS=8.5;
 export function planNativeKeeperDive(keeper,ball){
  const dir=keeper.team==='home'?1:-1,p=ball.position,v=ball.velocity;
  if(![keeper.x,keeper.y,p.x,p.y,p.z,v.x,v.y,v.z].every(finite)||
@@ -184,12 +186,18 @@ export function planNativeKeeperDive(keeper,ball){
     p.z+v.z*goalEta-4.905*goalEta**2>2.55)return null;
  const start={x:keeper.x+dir*0.35,y:keeper.y,z:0.85};
  const eta=(start.x-p.x)/v.x;
- if(eta<0.10||eta>0.65)return null;
- const target={x:start.x,y:p.y+v.y*eta,z:Math.max(0.21,p.z+v.z*eta-4.905*eta**2)};
- const gap=Math.hypot(target.y-start.y,target.z-start.z);
- if(gap<0.22||gap>DIVE_REACH_M||target.z>2.1||gap/eta>11)return null;
- return freeze({start:freeze(start),target:freeze(target),eta,
-  reachTicks:Math.max(6,Math.min(39,Math.round(eta/PLAYER_DT)))});
+ if(eta<0.10||eta>0.85)return null;
+ const intended={x:start.x,y:p.y+v.y*eta,z:Math.max(0.21,p.z+v.z*eta-4.905*eta**2)};
+ const dy=intended.y-start.y,dz=intended.z-start.z,gap=Math.hypot(dy,dz);
+ // A keeper may stretch for a shot beyond his maximum reach and miss.
+ // Reject implausible projected points, not all attempts at the corners.
+ if(gap<0.08||intended.z>2.55||gap>DIVE_REACH_M+1.25)return null;
+ const reachTicks=Math.max(6,Math.min(51,Math.round(eta/PLAYER_DT)));
+ const travel=Math.min(gap,DIVE_REACH_M,DIVE_SPEED_MPS*reachTicks*PLAYER_DT);
+ const scale=travel/gap;
+ const target={x:start.x,y:start.y+dy*scale,z:Math.min(2.45,start.z+dz*scale)};
+ return freeze({start:freeze(start),target:freeze(target),intended:freeze(intended),
+  eta,reachTicks,limited:travel<gap-1e-8});
 }
 // GK-05: a provisional grip only after a native solver contact. No
 // setTranslation/setLinvel on the ball. The constraint joins at the ball's
@@ -292,7 +300,8 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
    }
   }
   body.setNextKinematicTranslation(target);
-  prepared={tick,phase,started,priorVelocity:freeze({...ball.velocity})};
+  prepared={tick,phase,started,priorVelocity:freeze({...ball.velocity}),
+   plan:plan?freeze({eta:plan.eta,limited:plan.limited,intended:plan.intended,target:plan.target}):null};
  }
  function observe(tick,postVelocity){
   if(prepared?.tick!==tick||!['x','y','z'].every(k=>finite(postVelocity?.[k])))
@@ -310,7 +319,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   const catchState=grip?.observe(tick)??null;
   if(catchState?.released){active=false;plan=null;}
   latest=freeze({version:KEEPER_DIVE_VERSION,tick,keeperId:keeper.id,
-   phase:prepared.phase,started:prepared.started,
+   phase:prepared.phase,started:prepared.started,plan:prepared.plan,
    glove:active?freeze({x:pos.x,y:pos.y,z:pos.z}):null,
    contact:hit,contactStarted:hit&&!priorHit,
    contactMotion:hit?freeze({before:prepared.priorVelocity,after:freeze({...postVelocity})}):null,
