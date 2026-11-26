@@ -7,7 +7,12 @@ import {createPlayerMovement,INITIAL_PLAYERS,PLAYER_MAX_SPEED_MPS,
  PLAYER_MIN_SEPARATION_M} from '../src/player-movement.mjs';
 import {CONTROL_LAB_STARTS} from '../src/action-lab-scenarios.mjs';
 import {initializeRapier} from '../src/core.mjs';
-import {createControlledActionLab} from '../src/action-labs.mjs';
+import {createControlledActionLab as createCurrentActionLab} from '../src/action-labs.mjs';
+ // Historical M/B evidence comparator only. Current gameplay uses the default.
+ const createControlledActionLab=(R,id,options={})=>createCurrentActionLab(R,id,{
+  ...options,historicalEvidenceBaseline:!['pass-pair','cross-pair','carry-solo','dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].includes(id)
+ });
+
 import {chooseOriginalOpponentBallReachM32,
  M32_CHALLENGE_START_BALL_RANGE_M}
  from '../src/original-challenger-ball-reach-m32.mjs';

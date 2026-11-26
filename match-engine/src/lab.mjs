@@ -494,11 +494,15 @@ function render() {
          ' · real receiving shoe START after '+f.passPairAudit.flightTimeS.toFixed(2)+' s'+
          ' · approach '+fmtKmh(f.passPairAudit.receivingContact.priorSampleSpeedMps)+' km/h'+
          ' · after contact '+fmtKmh(f.passPairAudit.receivingContact.postContactSpeedMps)+' km/h'+
-         (f.passPairAudit.receivingContact.cushion?' · active first-touch cushion':' · passive first touch')+
-         (f.passPairAudit.receiverFollowThrough?.completed?
-          ' · 1s gap '+f.passPairAudit.receiverFollowThrough.atOneSecond.gapM.toFixed(2)+' m':'') ):
+         (f.passPairAudit.receivingContact.cushion?' · oriented first touch':' · passive first touch')+
+         (f.passPairAudit.receiverFollowThrough?.atOneSecond?
+          ' · oriented travel '+fmt(f.passPairAudit.receiverFollowThrough.atOneSecond.directedTravelM??0)+' m'+
+           ' · 1s gap '+f.passPairAudit.receiverFollowThrough.atOneSecond.gapM.toFixed(2)+' m':'') ):
         ' · waiting for native passing shoe START'):'')+
-      (f.crossPairAudit?
+      (!f.passPairAudit&&!f.crossPairAudit&&f.latestOrientedReception?
+        ' · oriented first touch '+f.latestOrientedReception.actorId+' · '+fmtKmh(Math.hypot(
+         f.latestOrientedReception.realPostBallVelocity.x,f.latestOrientedReception.realPostBallVelocity.y))+' km/h':'')+
+       (f.crossPairAudit?
        ' · stationary target · lofted cross (DEV)'+
        (f.crossPairAudit.attempted?
         ' · distance '+fmt(f.crossPairAudit.targetDistanceM)+' m'+

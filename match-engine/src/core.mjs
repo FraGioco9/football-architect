@@ -98,6 +98,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchBodyEncounter = false,
   diagnosticUnstagedBodyFeedbackEnabled = false,
   diagnosticAutonomousFixtureActionEnabled = false,
+  diagnosticLatestLabDynamics = false,
   diagnosticAutonomousCarryEnabled = false,
   diagnosticResearchShotAttacker = null,
   diagnosticResearchShotBlockedLane = false,
@@ -139,6 +140,8 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchCarrySide = null
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
+  if(typeof diagnosticLatestLabDynamics!=='boolean'||(diagnosticLatestLabDynamics&&!diagnosticAutonomousFixtureActionEnabled))
+    throw new TypeError('Current LAB dynamics require original native action authority');
   if(typeof diagnosticPlayerFootContactsEnabled!=='boolean')
     throw new TypeError('Boolean opt-in required for private shoe physics');
   // M9: the only permitted dual-source mode is explicitly research-only,
@@ -578,7 +581,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticPlayerFootContactsEnabled,diagnosticPlayerBodyCollidersEnabled,
     diagnosticSharedContactEventsEnabled,
     diagnosticResearchBodyEncounter,diagnosticUnstagedBodyFeedbackEnabled,
-    diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
+    diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,diagnosticLatestLabDynamics,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchShotWideCross,diagnosticResearchGoalkeeperSaveSide,
     diagnosticResearchDefensiveSide,diagnosticResearchDefensiveKind,
@@ -683,7 +686,7 @@ export function createEngine(RAPIER, input = {}, {
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
-      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
+      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       intentDrivenSoloCarry:diagnosticIntentDrivenSoloCarryEnabled,
       nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
@@ -1305,6 +1308,7 @@ export function createEngine(RAPIER, input = {}, {
       uniformAutonomousActionSnapshot:()=>actionExecutor.actionSnapshot(),
       physicalRejectionAuditSnapshot:()=>actionExecutor.rejectionSnapshot(),
       researchReceivingCushionSnapshot:()=>actionExecutor.cushionSnapshot(),
+      latestLabReceptionSnapshot:()=>actionExecutor.latestReceptionSnapshot(),
       researchReceiverChoiceSnapshot:()=>actionExecutor.receiverChoiceSnapshot(),
        researchReceiverTapSnapshot:()=>actionExecutor.receiverTapSnapshot()
     }:{}),

@@ -217,6 +217,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.match(sample.readout,/launch [0-9.]+ km\/h/);
    assert.match(sample.readout,/real receiving shoe START after [0-9.]+ s/);
    assert.match(sample.readout,/after contact [0-9.]+ km\/h/);
+   assert.match(sample.readout,/oriented first touch/);
    assert.equal(sample.popup,false);
    process.stdout.write('ME_628_GROUND_PASS_CHROME '+JSON.stringify(sample)+'\\n');
   }

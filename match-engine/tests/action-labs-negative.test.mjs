@@ -5,7 +5,12 @@ import assert from 'node:assert/strict';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier,createEngine} from '../src/core.mjs';
 import {createPlayerMovement} from '../src/player-movement.mjs';
-import {createControlledActionLab} from '../src/action-labs.mjs';
+import {createControlledActionLab as createCurrentActionLab} from '../src/action-labs.mjs';
+ // Historical M/B evidence comparator only. Current gameplay uses the default.
+ const createControlledActionLab=(R,id,options={})=>createCurrentActionLab(R,id,{
+  ...options,historicalEvidenceBaseline:!['pass-pair','cross-pair','carry-solo','dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].includes(id)
+ });
+
 import {classifyActionLabEvidence,getActionLabScenario}
  from '../src/action-lab-scenarios.mjs';
 import {selectUniformAutonomousContactAction,

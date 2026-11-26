@@ -46,12 +46,15 @@ const unitXY=(x,y)=>{
  const n=Math.hypot(x,y);
  return n>1e-6?{x:x/n,y:y/n}:null;
 };
-export function calculateLowCrossReceivingCushion({
+export const CURRENT_LAB_DYNAMICS_VERSION='lab-current-oriented-delivery-v1';
+export function calculateOrientedReceivingCushion({
  ballVelocity,playerVelocity,ballCentreZ,ballRadiusM,realBallPlayerGapM,ballMassKg,
- ballPosition,receiverPosition,shoePosition,attackingSide
+ ballPosition,receiverPosition,shoePosition,attackingSide,
+ deliveryKind='cross',opponents=[]
 }={}){
  if(!ballVelocity||!playerVelocity||!ballPosition||!receiverPosition||!shoePosition||
-    !['home','away'].includes(attackingSide)||
+    !['home','away'].includes(attackingSide)||!['pass','cross'].includes(deliveryKind)||
+    !Array.isArray(opponents)||opponents.some(p=>!p||![p.x,p.y].every(finite))||
     ![ballVelocity.x,ballVelocity.y,ballVelocity.z,playerVelocity.x,playerVelocity.y,
       ballCentreZ,ballRadiusM,realBallPlayerGapM,ballMassKg,
       ballPosition.x,ballPosition.y,receiverPosition.x,receiverPosition.y,
@@ -60,12 +63,18 @@ export function calculateLowCrossReceivingCushion({
   throw new TypeError('Cross control requires measured ball, receiver, shoe and mass');
  const relative={x:ballVelocity.x-playerVelocity.x,y:ballVelocity.y-playerVelocity.y,z:ballVelocity.z};
  const speed=Math.hypot(relative.x,relative.y,relative.z);
- if(speed<=2||speed>18||realBallPlayerGapM>0.85||
+ const horizontal=Math.hypot(relative.x,relative.y);
+ if(speed<=(deliveryKind==='cross'?2:0.4)||speed>18||realBallPlayerGapM>0.85||
     ballCentreZ<ballRadiusM-0.015||ballCentreZ>ballRadiusM+0.4)return null;
  const outward=unitXY(ballPosition.x-receiverPosition.x,ballPosition.y-receiverPosition.y);
  const shoeOut=unitXY(ballPosition.x-shoePosition.x,ballPosition.y-shoePosition.y);
  if(!outward||!shoeOut)return null;
  const attack=attackingSide==='home'?1:-1;
+ const targetSpeed=deliveryKind==='cross'?M25_CROSS_CONTROL_SPEED_MPS:
+  Math.min(M25_CROSS_CONTROL_SPEED_MPS,horizontal*0.8);
+ if(targetSpeed<0.20)return null;
+ const nearestOpponent=opponents.length?Math.min(...opponents.map(p=>
+  Math.hypot(p.x-receiverPosition.x,p.y-receiverPosition.y))):null;
  // Small fixed set of mirrored directional candidates. No random
  // direction, aim towards goal only if it does not go through the foot
  // or player's centre. With no safe forward route, allow a side touch.
@@ -76,23 +85,37 @@ export function calculateLowCrossReceivingCushion({
   const bodyProjection=d.x*outward.x+d.y*outward.y;
   const shoeProjection=d.x*shoeOut.x+d.y*shoeOut.y;
   if(bodyProjection<0.15||shoeProjection<0.15)continue;
-  const score=attack*d.x+0.75*bodyProjection+0.45*shoeProjection;
+  const tx=ballPosition.x+d.x*1.5,ty=ballPosition.y+d.y*1.5;
+  if(Math.abs(tx)>52.5-ballRadiusM||Math.abs(ty)>34-ballRadiusM)continue;
+  const laneGap=opponents.length?Math.min(...opponents.map(p=>{
+   const along=Math.max(0,Math.min(1.5,(p.x-ballPosition.x)*d.x+(p.y-ballPosition.y)*d.y));
+   return Math.hypot(p.x-ballPosition.x-along*d.x,p.y-ballPosition.y-along*d.y);
+  })):Infinity;
+  if(laneGap<0.45)continue;
+  const score=attack*d.x+0.75*bodyProjection+0.45*shoeProjection+
+   (nearestOpponent!==null&&nearestOpponent<3?Math.min(laneGap,3)*0.7:0);
   if(!best||score>best.score)best={direction:d,bodyProjection,shoeProjection,score};
  }
  if(!best)return null;
- const targetVelocity=Object.freeze({x:playerVelocity.x+best.direction.x*M25_CROSS_CONTROL_SPEED_MPS,
-  y:playerVelocity.y+best.direction.y*M25_CROSS_CONTROL_SPEED_MPS,z:0});
+ const targetVelocity=Object.freeze({x:playerVelocity.x+best.direction.x*targetSpeed,
+  y:playerVelocity.y+best.direction.y*targetSpeed,z:0});
  const desired={x:ballMassKg*(targetVelocity.x-ballVelocity.x),
   y:ballMassKg*(targetVelocity.y-ballVelocity.y),z:ballMassKg*(targetVelocity.z-ballVelocity.z)};
  const magnitude=Math.hypot(desired.x,desired.y,desired.z);
  const scale=Math.min(1,M25_CROSS_CUSHION_MAX_IMPULSE_NS/magnitude);
  const impulseNs=Object.freeze({x:desired.x*scale,y:desired.y*scale,z:desired.z*scale});
  return Object.freeze({impulseNs,actualRelativeSpeedMps:speed,
-  targetVelocity,controlDirection:Object.freeze(best.direction),targetSpeedMps:M25_CROSS_CONTROL_SPEED_MPS,
+  targetVelocity,controlDirection:Object.freeze(best.direction),targetSpeedMps:targetSpeed,deliveryKind,
+  actualBallHorizontalSpeedMps:Math.hypot(ballVelocity.x,ballVelocity.y),
+  measuredNearestOpponentM:nearestOpponent,noActiveOpponents:opponents.length===0,
+  underImmediatePressure:nearestOpponent!==null&&nearestOpponent<3,
   bodyProjection:best.bodyProjection,shoeProjection:best.shoeProjection,
   measuredGapM:realBallPlayerGapM,maximumImpulseNs:M25_CROSS_CUSHION_MAX_IMPULSE_NS,
   controlKind:'goalward-outward-first-touch',researchOnly:true,officialPossession:false});
 }
+
+// Compatibility name for original cross evidence, not a second model.
+export const calculateLowCrossReceivingCushion=calculateOrientedReceivingCushion;
 
 // Align residual spin towards rolling in the chosen outgoing direction
 // instead of killing all rotation. A bounded impulse on the same contact,

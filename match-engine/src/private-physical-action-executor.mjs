@@ -8,7 +8,7 @@ import {FOOT_CONTACT_VERSION,footProxyTransform} from './player-foot-contact.mjs
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
-import {calculateRealReceivingCushion,M25_CUSHION_MAX_IMPULSE_NS,calculateLowCrossReceivingCushion,calculateLowCrossSpinCushion}
+import {calculateRealReceivingCushion,calculateOrientedReceivingCushion,calculateLowCrossSpinCushion,CURRENT_LAB_DYNAMICS_VERSION}
  from './physical-receiving-cushion-m25.mjs';
 import {choosePhysicalReceiverSecondTouch}
  from './physical-receiver-choice-m27.mjs';
@@ -23,7 +23,7 @@ export function createPrivatePhysicalActionExecutor({
  researchReceiverTapSide=null,activePlayerIds=null,
  smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
- nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false
+ nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false
 }={}){
  if(typeof nativeFixedSprintLongStride!=='boolean'||
      (nativeFixedSprintLongStride&&!nativeFixedCarryResearch))
@@ -104,8 +104,9 @@ export function createPrivatePhysicalActionExecutor({
  let tick=0,lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
  let action=null,audit=null,closed=false;
  let actualPriorPass=null,interrupted=false,firstCushion=null;
- let isolatedPassReceptionSeen=false;
- let priorCross=null,crossAirborne=false,crossDescending=false,crossInterrupted=false,crossReceptionSeen=false;
+ if(typeof latestLabDynamics!=='boolean')throw new TypeError('Boolean current LAB dynamics required');
+ const sharedDynamics=latestLabDynamics||isolatedPassSide!==null||isolatedCrossSide!==null;
+ let pendingDelivery=null,latestCushion=null;
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
@@ -190,10 +191,38 @@ export function createPrivatePhysicalActionExecutor({
    !isolatedNativeShoeSourceValid?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,
     smallSidedDecisionContext,isolatedDribbleContext});
+  let orientedCandidate=null,orientedDelivery=null;
+  if(sharedDynamics&&pendingDelivery&&nextTick>pendingDelivery.tick){
+   const d=pendingDelivery,pos=ballBody.translation(),v=ballBody.linvel();
+   const eligible=d.kind==='pass'||(d.airborne&&d.descending);
+   if(contact.started.length){
+    // First subsequent native contact consumes the delivery, even an
+    // interruption or ambiguous contact. No later assisted trap.
+    pendingDelivery=null;
+    if(eligible&&!suppressOriginalAction&&!suppressPhysicalBodyContact&&
+       contact.started.length===1&&contact.active.length===1&&
+       contact.started[0]===d.recipientId&&contact.active[0]===d.recipientId){
+     const p=playerFrame.players.find(x=>x.id===d.recipientId);
+     const opponents=playerFrame.players.filter(x=>x.team!==p.team&&
+      (activePlayerIds===null||activePlayerIds.includes(x.id)));
+     orientedCandidate=calculateOrientedReceivingCushion({
+      ballVelocity:v,playerVelocity:{x:p.vx,y:p.vy},ballCentreZ:pos.z,
+      ballRadiusM,ballMassKg:ballBody.mass(),
+      realBallPlayerGapM:Math.hypot(pos.x-p.x,pos.y-p.y),
+      ballPosition:pos,receiverPosition:p,shoePosition:footProxyTransform(p),
+      attackingSide:p.team,deliveryKind:d.kind,opponents
+     });
+     if(orientedCandidate)orientedDelivery=d;
+    }
+   }else{
+    d.airborne=d.airborne||pos.z-ballRadiusM>0.20;
+    d.descending=d.descending||(d.airborne&&v.z<0);
+   }
+  }
   let researchCandidate=null;
   const side=researchReceivingCushionSide;
   const receiverId=side===null?null:side+'-9';
-  if(side!==null){
+  if(side!==null&&!sharedDynamics){
    const opposite=side==='home'?'away':'home';
    // An earlier real shoe touch by ANY other player interrupts the original
    // physical pass before this receiver may try a first-touch cushion.
@@ -225,7 +254,7 @@ export function createPrivatePhysicalActionExecutor({
   // M27 is triggered ONLY on an existing genuine second shoe START with
   // an existing original clearance selected by the unchanged policy.
   // It changes whether to APPLY that impulse; never manufactures one.
-  if(researchReceivingDecisionSide===side&&
+  if(!orientedCandidate&&researchReceivingDecisionSide===side&&
      firstCushion&&!firstReceiverChoice&&
      nextTick>firstCushion.tick&&
      originalChoice?.action==='clearance'&&
@@ -266,7 +295,7 @@ export function createPrivatePhysicalActionExecutor({
    originalChoice.playerId!==isolatedCrossSide+'-10'||
    originalChoice.crossTarget?.recipientId!==isolatedCrossSide+'-9'||
    originalChoice.impulseNs.z<=0);
-  const originalChosen=researchCandidate||deferOriginal||isolatedPassRejected||isolatedCrossRejected?null:originalChoice;
+  const originalChosen=orientedCandidate||researchCandidate||deferOriginal||isolatedPassRejected||isolatedCrossRejected?null:originalChoice;
   // The *existing* uniform policy and Rapier exclusive shoe START remain
   // the only action authority. Native phase calibration can adjust that
   // action's impulse or decline it, never generate an extra contact/action.
@@ -294,7 +323,8 @@ export function createPrivatePhysicalActionExecutor({
     'small-sided-native-body-ball-contact-no-extra-shoe-impulse':
     suppressOriginalAction?
     'b06b-referee-physical-dead-ball-original-action-suppressed':
-    !isolatedNativeShoeSourceValid?'solo-ambiguous-real-foot-contact':researchCandidate?
+    !isolatedNativeShoeSourceValid?'solo-ambiguous-real-foot-contact':orientedCandidate?
+    'current-lab-oriented-first-touch-preempts-uniform-action':researchCandidate?
     'experimental-receiving-cushion-preempts-uniform-action':
     deferOriginal?'m27-native-decision-defers-original-clearance':
     isolatedPassRejected?'isolated-pass-one-original-ground-pass-only':
@@ -312,7 +342,7 @@ export function createPrivatePhysicalActionExecutor({
    // Use a simple continuous distance-based boost, bounded even outside
    // the three staged distances. Direction, native START, ground/ball
    // properties and simulation clock are unchanged. This is provisional.
-   const passCalibration=isolatedPassSide!==null?Object.freeze({
+   const passCalibration=sharedDynamics&&chosen.action==='pass'&&chosen.passTarget?Object.freeze({
     source:'isolated-ground-pass-distance-candidate-v3',
     distanceM:chosen.passTarget.distanceM,
     scale:Math.max(1.25,Math.min(3.30,1.25+0.10*chosen.passTarget.distanceM)),
@@ -321,7 +351,7 @@ export function createPrivatePhysicalActionExecutor({
    }):null;
    // CROSS-01: preserve M33 direction and loft; ideal range estimates
    // only the initial impulse. Never steer or teleport the live ball.
-   const crossCalibration=isolatedCrossSide!==null?(()=>{
+   const crossCalibration=sharedDynamics&&chosen.action==='cross'&&chosen.crossTarget?(()=>{
     const i=chosen.impulseNs,horizontal=Math.hypot(i.x,i.y);
     const desiredHorizontal=Math.sqrt(9.81*chosen.crossTarget.distanceM/(2*i.z/horizontal));
     return Object.freeze({source:'isolated-cross-range-candidate-v1',
@@ -369,116 +399,37 @@ export function createPrivatePhysicalActionExecutor({
    });
    lastActionTick=nextTick;
   }
-  if(isolatedPassSide!==null){
-   const recipientId=isolatedPassSide+'-9';
-   if(applied?.action==='pass')
-    actualPriorPass=Object.freeze({tick:nextTick,playerId:applied.playerId});
-   if(actualPriorPass&&nextTick>actualPriorPass.tick&&!isolatedPassReceptionSeen){
-    if(contact.started.some(id=>id!==recipientId))interrupted=true;
-    if(!interrupted&&contact.started.length===1&&contact.active.length===1&&
-       contact.started[0]===recipientId&&contact.active[0]===recipientId){
-     // Only the FIRST authentic exclusive receiving START. Slow natural
-     // traps stay untouched; harder passes may use the existing M25
-     // bounded damping impulse on this same original Rapier body.
-     isolatedPassReceptionSeen=true;
-     const p=playerFrame.players.find(x=>x.id===recipientId);
-     const pos=ballBody.translation(),before=Object.freeze({...ballBody.linvel()});
-     if(!suppressOriginalAction&&!suppressPhysicalBodyContact&&
-        Math.hypot(before.x-p.vx,before.y-p.vy)>1.15){
-      // M25 needs a finite distance; 200 is its documented upper bound
-      // and a computational no-pressure sentinel, NOT a measured opponent.
-      // Exactly two teammates have physical colliders in this exercise.
-      const candidate=calculateRealReceivingCushion({
-       // Canonical mover stores position as x/y and velocity as vx/vy.
-       // M25's velocity vector uses x/y components in m/s, not metres.
-       ballVelocity:before,playerVelocity:{x:p.vx,y:p.vy},
-       ballCentreZ:pos.z,ballRadiusM,
-       realBallPlayerGapM:Math.hypot(pos.x-p.x,pos.y-p.y),
-       nearestOpponentM:200
-      });
-      if(candidate){
-       // Faster passes need a firmer first touch. Reuse the M25 native
-       // relative-motion direction, increasing the original candidate
-       // magnitude only as needed for a 0.50m/s residual target. The
-       // existing 2.7Ns M25 cap remains absolute; no velocity setter,
-       // repeated impulse or reversal. Actual receipt is measured.
-       const baseMagnitude=Math.hypot(candidate.impulseNs.x,candidate.impulseNs.y);
-       const residualTargetMps=0.50;
-       const magnitude=Math.min(M25_CUSHION_MAX_IMPULSE_NS,
-        Math.max(baseMagnitude,ballBody.mass()*(candidate.actualRelativeSpeedMps-residualTargetMps)));
-       const impulse=Object.freeze({
-        x:candidate.impulseNs.x*magnitude/baseMagnitude,
-        y:candidate.impulseNs.y*magnitude/baseMagnitude,z:0
-       });
-       ballBody.applyImpulse(impulse,true);
-       firstCushion=Object.freeze({...candidate,impulseNs:impulse,
-        originalM25ImpulseNs:candidate.impulseNs,residualTargetMps,
-        version:'m25-isolated-ground-pass-first-touch-v2',
-        tick:nextTick,actorId:recipientId,team:isolatedPassSide,
-        originalPassTick:actualPriorPass.tick,originalPassActorId:actualPriorPass.playerId,
-        measuredNearestOpponentM:null,noActiveOpponents:true,
-        nativeExclusiveShoeStart:true,originalRapierBallBody:true,
-        actualPhysicsImpulseApplied:true,realPreBallVelocity:before,
-        realPostBallVelocity:Object.freeze({...ballBody.linvel()}),
-        officialMatchAction:false,officialPossession:false,
-        verifiedReception:false,verifiedBallControl:false
-       });
-      }
-     }
-    }
-   }
+  if(orientedCandidate){
+   const d=orientedDelivery,before=Object.freeze({...ballBody.linvel()});
+   const preSpin=Object.freeze({...ballBody.angvel()});
+   ballBody.applyImpulse(orientedCandidate.impulseNs,true);
+   const spinCushion=calculateLowCrossSpinCushion({
+    angularVelocity:preSpin,principalInertia:ballBody.principalInertia(),
+    ballRadiusM,linearImpulseNs:Math.hypot(...Object.values(orientedCandidate.impulseNs)),
+    outgoingVelocity:ballBody.linvel()
+   });
+   if(spinCushion)ballBody.applyTorqueImpulse(spinCushion.torqueImpulseNms,true);
+   latestCushion=Object.freeze({...orientedCandidate,
+    version:CURRENT_LAB_DYNAMICS_VERSION,tick:nextTick,actorId:d.recipientId,team:d.team,
+    ...(d.kind==='pass'?{originalPassTick:d.tick,originalPassActorId:d.actorId}:
+     {originalCrossTick:d.tick,originalCrossActorId:d.actorId}),
+    spinCushion,realPreAngularVelocity:preSpin,realPostAngularVelocity:Object.freeze({...ballBody.angvel()}),
+    nativeExclusiveShoeStart:true,originalRapierBallBody:true,
+    actualPhysicsImpulseApplied:true,realPreBallVelocity:before,
+    realPostBallVelocity:Object.freeze({...ballBody.linvel()}),
+    officialMatchAction:false,officialPossession:false,
+    verifiedReception:false,verifiedBallControl:false});
+   if(!firstCushion&&(isolatedPassSide!==null||isolatedCrossSide!==null||
+      (side===d.team&&d.kind==='pass'&&d.actorId===side+'-10'&&d.recipientId===side+'-9')))
+    firstCushion=latestCushion;
   }
-  if(isolatedCrossSide!==null){
-   const recipientId=isolatedCrossSide+'-9';
-   if(applied?.action==='cross')priorCross=Object.freeze({tick:nextTick,playerId:applied.playerId});
-   if(priorCross&&nextTick>priorCross.tick&&!crossReceptionSeen){
-    const pos=ballBody.translation(),before=Object.freeze({...ballBody.linvel()});
-    if(contact.started.some(id=>id!==recipientId))crossInterrupted=true;
-    const eligible=crossAirborne&&crossDescending&&!crossInterrupted;
-    if(contact.started.includes(recipientId)){
-     // First contact consumes the opportunity, even if ambiguous.
-     crossReceptionSeen=true;
-     if(eligible&&!suppressOriginalAction&&!suppressPhysicalBodyContact&&
-        contact.started.length===1&&contact.active.length===1&&
-        contact.started[0]===recipientId&&contact.active[0]===recipientId){
-      const p=playerFrame.players.find(x=>x.id===recipientId);
-      const candidate=calculateLowCrossReceivingCushion({
-       ballVelocity:before,playerVelocity:{x:p.vx,y:p.vy},
-       ballCentreZ:pos.z,ballRadiusM,ballMassKg:ballBody.mass(),
-       realBallPlayerGapM:Math.hypot(pos.x-p.x,pos.y-p.y),
-       ballPosition:pos,receiverPosition:p,shoePosition:footProxyTransform(p),
-       attackingSide:isolatedCrossSide
-      });
-      if(candidate){
-       // One oriented touch followed by natural ground physics. Spin is
-       // aligned with the actual post-impulse rolling direction.
-       const preSpin=Object.freeze({...ballBody.angvel()});
-       ballBody.applyImpulse(candidate.impulseNs,true);
-       const spinCushion=calculateLowCrossSpinCushion({
-        angularVelocity:preSpin,principalInertia:ballBody.principalInertia(),
-        ballRadiusM,linearImpulseNs:Math.hypot(...Object.values(candidate.impulseNs)),
-        outgoingVelocity:ballBody.linvel()
-       });
-       if(spinCushion)ballBody.applyTorqueImpulse(spinCushion.torqueImpulseNms,true);
-       const postSpin=Object.freeze({...ballBody.angvel()});
-       firstCushion=Object.freeze({...candidate,
-        spinCushion,realPreAngularVelocity:preSpin,realPostAngularVelocity:postSpin,
-        version:'m25-isolated-low-cross-first-touch-v3',tick:nextTick,
-        actorId:recipientId,team:isolatedCrossSide,originalCrossTick:priorCross.tick,
-        originalCrossActorId:priorCross.playerId,
-        nativeExclusiveShoeStart:true,originalRapierBallBody:true,
-        actualPhysicsImpulseApplied:true,realPreBallVelocity:before,
-        realPostBallVelocity:Object.freeze({...ballBody.linvel()}),
-        officialMatchAction:false,officialPossession:false,
-        verifiedReception:false,verifiedBallControl:false});
-      }
-     }
-    }
-    crossAirborne=crossAirborne||pos.z-ballRadiusM>0.20;
-    crossDescending=crossDescending||(crossAirborne&&before.z<0);
-   }
+  if(sharedDynamics&&applied&&['pass','cross'].includes(applied.action)){
+   const target=applied.action==='pass'?applied.passTarget:applied.crossTarget;
+   if(target?.recipientId)pendingDelivery={kind:applied.action,tick:nextTick,
+    actorId:applied.playerId,recipientId:target.recipientId,team:applied.team,
+    airborne:false,descending:false};
   }
-  if(side!==null){
+  if(side!==null&&!sharedDynamics){
    if(researchCandidate!==null){
     const before=Object.freeze({...ballBody.linvel()});
     // Exactly one bounded REAL counter-impulse on existing Rapier ball.
@@ -532,6 +483,7 @@ export function createPrivatePhysicalActionExecutor({
   actionSnapshot:()=>{ensureOpen();return action;},
   rejectionSnapshot:()=>{ensureOpen();return audit;},
   cushionSnapshot:()=>{ensureOpen();return firstCushion;},
+  latestReceptionSnapshot:()=>{ensureOpen();return latestCushion;},
   receiverChoiceSnapshot:()=>{ensureOpen();return firstReceiverChoice;},
   receiverTapSnapshot:()=>{ensureOpen();return firstReceiverTap;},
   dispose:()=>{closed=true;}

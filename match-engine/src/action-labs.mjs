@@ -2,6 +2,7 @@
 // No legacy universal match session, opponent-lane tactical simulator or fake
 // action event. Exactly one core engine and one existing 22-player mover.
 import {createEngine,FIXED_DT} from './core.mjs';
+import {CURRENT_LAB_DYNAMICS_VERSION} from './physical-receiving-cushion-m25.mjs';
 import {createPhysicalFootballDecisionObserver}
  from './physical-football-decision-evidence-m23.mjs';
 import {createRealPostContactBallContinuity}
@@ -42,7 +43,7 @@ export function createControlledActionLab(RAPIER,id,{
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
  carryRunwayStart=false,nativeFixedCarryResearch=false,
  nativeFixedSprintLongStride=false,soloSprintPursuitLeadM=0,
- soloCarryPlayerAttributes=null
+ soloCarryPlayerAttributes=null,historicalEvidenceBaseline=false
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -115,6 +116,9 @@ export function createControlledActionLab(RAPIER,id,{
    variantIndex,carryRunwayStart
   }):null;
  const refereeMode=spec.mode==='referee';
+ if(typeof historicalEvidenceBaseline!=='boolean'||(historicalEvidenceBaseline&&smallSided))
+  throw new TypeError('Historical evidence only for original archived action fixtures');
+ const currentDynamics=!refereeMode&&!historicalEvidenceBaseline;
  const sourceRestart=['throw-in','corner','goal-kick'].includes(id);
  const basicFootwork=['trap','dribble'].includes(id);
  const effectiveControlScene=id==='trap'?'receive-cushion':
@@ -213,6 +217,7 @@ export function createControlledActionLab(RAPIER,id,{
  const engine=createEngine(RAPIER,initial,{
   diagnosticPlayerFootContactsEnabled:true,
   diagnosticAutonomousFixtureActionEnabled:!refereeMode,
+  diagnosticLatestLabDynamics:currentDynamics,
   ...(smallSided?{
    diagnosticSmallSidedSituation:id,
    diagnosticSmallSidedSide:shotSide,
@@ -596,7 +601,7 @@ export function createControlledActionLab(RAPIER,id,{
        Math.hypot(vel.x,vel.y),
       postContactSpeedMps:Math.hypot(vel.x,vel.y),
       cushion,mode:cushion?'active-cushion':'passive-contact',
-      targetGapM:gap,realRapierShoeStart:true,readOnly:true,
+      targetGapM:gap,position:Object.freeze({...pos}),realRapierShoeStart:true,readOnly:true,
       officialReception:false
      }):null});
    }
@@ -604,9 +609,13 @@ export function createControlledActionLab(RAPIER,id,{
    // cushion). No later assisted trap, target movement or extra impulse.
    if(passPairAudit.receiverTick!==null){
     const elapsed=physics.tick-passPairAudit.receiverTick;
-    if(elapsed>=0&&elapsed<=60){
+    if(elapsed>=0&&elapsed<=120){
      const pos=physics.ball.position,vel=physics.ball.velocity;
+     const contact=passPairAudit.receivingContact,dir=contact.cushion?.controlDirection;
+     const dx=pos.x-contact.position.x,dy=pos.y-contact.position.y;
      const sample=Object.freeze({tick:physics.tick,
+      directedTravelM:dir?dx*dir.x+dy*dir.y:null,
+      crossTrackM:dir?Math.abs(dx*dir.y-dy*dir.x):null,
       gapM:Math.hypot(pos.x-passPairAudit.targetX,pos.y-passPairAudit.targetY),
       speedMps:Math.hypot(vel.x,vel.y)});
      const prior=passPairAudit.receiverFollowThrough;
@@ -614,9 +623,14 @@ export function createControlledActionLab(RAPIER,id,{
       receiverFollowThrough:Object.freeze({
        samples:(prior?.samples??0)+1,
        maxGapM:Math.max(prior?.maxGapM??0,sample.gapM),
+       maxHorizontalSpeedMps:Math.max(prior?.maxHorizontalSpeedMps??0,sample.speedMps),
+       minDirectedTravelM:Math.min(prior?.minDirectedTravelM??0,sample.directedTravelM??0),
+       maxCrossTrackM:Math.max(prior?.maxCrossTrackM??0,sample.crossTrackM??0),
+       atQuarterSecond:elapsed===15?sample:prior?.atQuarterSecond??null,
        atHalfSecond:elapsed===30?sample:prior?.atHalfSecond??null,
        atOneSecond:elapsed===60?sample:prior?.atOneSecond??null,
-       completed:elapsed===60,readOnly:true,officialReception:false
+       atTwoSeconds:elapsed===120?sample:null,
+       completed:elapsed===120,readOnly:true,officialReception:false
       })});
     }
    }
@@ -652,7 +666,7 @@ export function createControlledActionLab(RAPIER,id,{
      eligible&&ground.nativeGroundPair?Object.freeze({...sample(),
       source:'native-ground-solver-pair',ground}):null);
     const cushion=engine.researchReceivingCushionSnapshot();
-     if(cushion&&cushion.version!=='m25-isolated-low-cross-first-touch-v3')
+     if(cushion&&cushion.version!==CURRENT_LAB_DYNAMICS_VERSION)
       throw new Error('CROSS-02 requires isolated low-cross first touch');
      const firstReceivingShoeStart=prior.firstReceivingShoeStart??(
      eligible&&starts.length===1&&starts[0]===prior.recipientId&&
@@ -785,6 +799,8 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
+    labDynamicsVersion:currentDynamics?CURRENT_LAB_DYNAMICS_VERSION:null,
+    latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,
    ...(passPairAudit?{passPairAudit}:{}),
    ...(crossPairAudit?{crossPairAudit}:{}),
    ...(firstTouchCushion?{physicalFirstTouch,pressureEvidence}:{}),
@@ -1230,6 +1246,8 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   challengeSceneLabel.hidden=select.value!=='challenge';
   by('action-labs-title').textContent=select.selectedOptions[0].textContent.trim();
   session=createControlledActionLab(getRapier(),select.value,{
+   // Hidden original research comparator, not a selectable gameplay LAB.
+   historicalEvidenceBaseline:!SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value),
    shotSide:(['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(select.value)||
     SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value))?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',
