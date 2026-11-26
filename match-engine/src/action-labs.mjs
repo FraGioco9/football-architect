@@ -384,6 +384,7 @@ export function createControlledActionLab(RAPIER,id,{
   createIsolatedDribbleNativeAudit({side:shotSide,variantIndex,solo:id==='carry-solo',directed:directedDribble}):null;
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
+ const collectiveCounts=collectiveApproaches?{carry:0,pass:0,shot:0,tackle:0,interception:0,save:0,other:0}:null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -392,6 +393,9 @@ export function createControlledActionLab(RAPIER,id,{
   const raw=engine.uniformAutonomousActionSnapshot?.()??null;
   const action=raw?.tick===physics.tick?raw:null;
   const collectiveControl=collectiveApproaches?engine.collectiveControlSnapshot():null;
+  if(collectiveCounts&&action?.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&action.tick===physics.tick){
+   const kind=Object.hasOwn(collectiveCounts,action.action)?action.action:'other';collectiveCounts[kind]++;
+  }
   if(blockAudit){
    const ball=physics.ball,defender=(shotSide==='home'?'away':'home')+'-2';
    const body=engine.smallSidedBodyGuardSnapshot();
@@ -892,7 +896,7 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
-   ...(collectiveControl?{collectiveControl}:{}),
+   ...(collectiveControl?{collectiveControl,collectiveCounts:Object.freeze({...collectiveCounts})}:{}),
     labDynamicsVersion:currentDynamics?CURRENT_LAB_DYNAMICS_VERSION:null,
     latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,
    ...(passPairAudit?{passPairAudit}:{}),

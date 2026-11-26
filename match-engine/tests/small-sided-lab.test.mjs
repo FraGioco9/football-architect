@@ -112,6 +112,52 @@ test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{
   }finally{lab.dispose();}
  }
 });
+test('COL-06 all 60 guarded 2v1 variants preserve native actions and observed control',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const results=[];
+ for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const lab=createControlledActionLab(R,'overload-2v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,collectiveApproaches:true});
+  try{
+   const active=lab.focus,counts={carry:0,pass:0,shot:0,tackle:0,interception:0,save:0,other:0};
+   let previous=lab.snapshot().collectiveControl,observedControl=0,starts=0,pathM=0,prior=lab.snapshot().ball.position;
+   for(let k=1;k<=360;k++){
+    const f=lab.step(),control=f.collectiveControl;
+    assert.equal(f.physicsTick,k);assert.equal(control.tick,k);
+    assert.equal(f.genuinePhysicalPlayerCount,4);assert.equal(f.officialMatchPossession,false);assert.equal(f.officialMatchResult,null);
+    assert.ok(f.starts.every(id=>active.includes(id)));starts+=f.starts.length;
+    assert.equal(projectActiveLabDecisions(f,active).length,4);
+    assert.equal(control.officialPossession,false);
+    if(f.action){
+     assert.ok(active.includes(f.action.playerId));assert.equal(f.action.appliedByRapier,true);assert.equal(f.action.actualPhysicsImpulseApplied,true);
+     assert.equal(f.action.officialMatchAction,false);
+     assert.deepEqual(f.starts,[f.action.playerId]);
+     const kind=Object.hasOwn(counts,f.action.action)?f.action.action:'other';counts[kind]++;
+    }
+    assert.deepEqual(f.collectiveCounts,counts);
+    if(control.kind==='controlled'){
+     observedControl++;assert.ok(active.includes(control.playerId));
+     if(previous.sourceTick!==control.sourceTick||previous.playerId!==control.playerId){
+      assert.equal(f.action?.action,'carry');assert.equal(f.action.playerId,control.playerId);assert.equal(control.sourceTick,k);
+     }
+    }else assert.equal(control.playerId,null);
+    previous=control;
+    pathM+=Math.hypot(f.ball.position.x-prior.x,f.ball.position.y-prior.y);prior=f.ball.position;
+    if(f.refereeEvidence?.lastEvent)break;
+   }
+   assert.ok(starts>0,'variant must reach a real shoe contact');
+   results.push({side,variant:variantIndex+1,counts,observedControl,starts,pathM});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_COL06 '+JSON.stringify(results)+'\n');
+ assert.equal(results.length,60);
+ for(const side of ['home','away']){
+  const cases=results.filter(x=>x.side===side);
+  assert.ok(cases.some(x=>x.observedControl>0),'observed control must occur on each mirrored side');
+  assert.ok(cases.some(x=>x.counts.pass>0),'native pass must occur on each mirrored side');
+  assert.ok(cases.some(x=>x.counts.shot>0),'native shot must occur on each mirrored side');
+  assert.ok(cases.some(x=>x.counts.carry>0),'native carry must occur on each mirrored side');
+ }
+});
 test('#628 small-sided catalog replaces only visible elementary exercise UI; archives remain for regression',()=>{
  const ids=SMALL_SIDED_LAB_SCENARIOS.map(s=>s.id);
  assert.deepEqual(ids,['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1',
@@ -125,7 +171,7 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
    'original research scene stays in hidden regression catalog');
  for(const id of ['keeper-1v1','overload-2v1','duel-3v3'])
   assert.match(ui,new RegExp("'action:"+id+"'"));
- assert.match(ui,/length!==\(archiveMode\?24:24\)/);
+ assert.match(ui,/length!==\(archiveMode\?24:25\)/);
  assert.doesNotMatch(ui,/visibleMovement/);
  assert.match(ui,/Carry phases/);
  assert.match(ui,/Small-sided situations/);

@@ -356,6 +356,7 @@ function restart() {
       createControlledActionLab(rapier,id,{shotSide:side,
        variantIndex:activeVariantIndex,shotProfile:activeScene.shotProfile??'power',firstTimeShot:activeScene.firstTimeShot===true,
        bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair'&&id!=='shot-solo',
+       collectiveApproaches:!archiveMode&&id==='overload-2v1',
        keeperSingleShot:!archiveMode&&id==='keeper-1v1',
        directedDribble:!archiveMode&&id==='dribble-1v1',
        duelTackleProfile:activeScene.duelTackleProfile??'mixed',
@@ -756,6 +757,7 @@ function render() {
         pass.attempted?'Pass observed':'Waiting for pass'):
       cross?(cross.arrival?'Arrival observed':
         cross.attempted?'Cross observed':'Waiting for cross'):
+      f.collectiveControl?(f.refereeEvidence?.lastEvent?(f.refereeEvidence.lastEvent.kind==='goal'?'Goal observed':'Ball out'):f.collectiveControl.kind==='controlled'?'Ball controlled':f.collectiveControl.delivery?'Pass in flight':'Loose ball'):
       mixedControl?(mixedControl.kind==='controlled'?'Ball controlled':'Loose ball'):
       f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry?
         (Object.values(f.duelTransition?.getUpUntil??{}).some(until=>until>=f.physicsTick)?'Loose ball':f.duelTransition?.lastShoulder?.tick===f.physicsTick?'Shoulder challenge':f.defensiveSlide?.phase==='slide'?'Sliding tackle':f.defensiveSlide?.phase==='recovery'?'Defender recovery':f.duelTransition?.phase==='counter'?'Counter carry':f.duelTransition?.phase==='recover'?'Loose ball recovery':f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
@@ -773,7 +775,11 @@ function renderActiveMetrics(f){
  const shot=f.shotSoloAudit,pass=f.passPairAudit,cross=f.crossPairAudit;
  let entries;
  const keeper=f.keeperShotAudit;
- if(f.blockAudit){
+ if(f.collectiveControl){
+  const control=f.collectiveControl,c=f.collectiveCounts;
+  entries=[['Ball control',control.kind==='controlled'?(control.playerId.startsWith('home-')?'HOME #':'AWAY #')+control.playerId.split('-').at(-1):'Loose ball'],
+   ['Carry touches',count(c.carry)],['Passes',count(c.pass)],['Shots',count(c.shot)],['Defensive touches',count(c.tackle+c.interception)],['Keeper saves attempted',count(c.save)]];
+ }else if(f.blockAudit){
   const a=f.blockAudit;
   entries=[['Shot',a.shotTick===null?'—':'Observed'],['Launch speed',speed(a.shotSpeedMps)],['Defender contact',a.contactTick===null?'—':n((a.contactTick-a.shotTick)*FIXED_DT,' s')],['Incoming speed',speed(a.incomingSpeedMps)],['Outgoing speed',speed(a.outgoingSpeedMps)],['Result',a.blocked?'Blocked':a.contactTick!==null?'Contact observed':'—']];
  }else if(f.interceptionAudit){
@@ -2353,6 +2359,8 @@ function setupUnifiedScenarioMenu(){
    ['action:dribble-1v1:shoulder','Shoulder challenge'],
    ['action:pass-pair:interception','Interception'],
    ['action:defender-1v1:block','Block']
+  ]],['Collective situations',[
+   ['action:overload-2v1','2v1 · autonomous play']
   ]]])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
@@ -2388,8 +2396,8 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:24)||
-    menu.querySelectorAll('.me-scenario-group-label').length!==5)
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:25)||
+    menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:6))
   throw new Error('Unexpected active or archived LAB catalog');
 }
 function restoreOriginalScenario(){
