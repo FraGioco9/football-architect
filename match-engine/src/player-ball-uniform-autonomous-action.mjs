@@ -264,8 +264,9 @@ export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
  allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null,
- isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null
+ isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null,blockContext=null
 }){
+ if(blockContext!==null&&(!['home','away'].includes(blockContext.side)||typeof blockContext.shotTaken!=='boolean'||activePlayerIds?.length!==3||!activePlayerIds.includes(blockContext.side+'-10')||!activePlayerIds.includes((blockContext.side==='home'?'away':'home')+'-2')||!activePlayerIds.includes((blockContext.side==='home'?'away':'home')+'-1')||interceptionContext!==null||isolatedDribbleContext!==null||smallSidedDecisionContext!==null||keeperSingleShotSide!==null))throw new TypeError('Bounded three-player shot block context required');
  if(interceptionContext!==null&&(!['home','away'].includes(interceptionContext.side)||!['ready','flight','intercepted','collected','received'].includes(interceptionContext.phase)||activePlayerIds?.length!==3||!activePlayerIds.includes(interceptionContext.side+'-10')||!activePlayerIds.includes(interceptionContext.side+'-9')||!activePlayerIds.includes((interceptionContext.side==='home'?'away':'home')+'-2')||isolatedDribbleContext!==null||smallSidedDecisionContext!==null))throw new TypeError('Bounded three-player pass interception context required');
  if(duelTransition!==null&&(isolatedDribbleContext?.directed!==true||duelTransition.tick!==tick-1||!['attack','recover','counter'].includes(duelTransition.phase)))
   throw new TypeError('Prior real directed duel transition required');
@@ -335,6 +336,7 @@ export function selectUniformAutonomousContactAction({
    throw new TypeError('Inactive player has no authenticated Rapier shoe');
   const player=actors.find(p=>p.id===id);
   if(!player)continue;
+  if(blockContext&&!(blockContext.shotTaken?player.role==='goalkeeper'&&player.team!==blockContext.side&&eligibleLiveKeeperSave(player,ballPosition,ballVelocity):id===blockContext.side+'-10'))continue;
   const sharedDuel=isolatedDribbleContext?.directed===true&&isolatedDribbleContext.situationId==='dribble-1v1';
   if(isolatedDribbleContext!==null&&id!==isolatedDribbleContext.attackingSide+'-10'&&!sharedDuel)
    continue;
@@ -420,7 +422,10 @@ export function selectUniformAutonomousContactAction({
     defender:isolatedDribbleContext.situationId==='carry-solo'?null:actors.find(p=>p.team!==player.team)
    });
   let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
-  if(ic?.phase==='ready'){
+  if(blockContext&&!blockContext.shotTaken){
+   action='shot';dx=toGoal;dy=(ballPosition.y>=0?2.65:-2.65)-ballPosition.y;vertical=0;
+   rule='isolated-block-lab-single-ground-shot';
+  }else if(ic?.phase==='ready'){
    recipient=actors.find(p=>p.id===ic.side+'-9');
    action='pass';dx=recipient.x-ballPosition.x;dy=recipient.y-ballPosition.y;
    rule='isolated-interception-lab-original-ground-pass';
@@ -527,8 +532,8 @@ export function selectUniformAutonomousContactAction({
    source:'same-tick-closed-goal-lane-from-live-22-players',
    shooterId:id,team:player.team,physicsTick:tick,
    originX:ballPosition.x,originY:ballPosition.y,
-   targetX:chosenShotLane.target.x,targetY:chosenShotLane.target.y,
-   laneClearanceM:chosenShotLane.clearance,
+   targetX:blockContext?goalX:chosenShotLane.target.x,targetY:blockContext?ballPosition.y+dy:chosenShotLane.target.y,
+   laneClearanceM:blockContext?lineClearance(ballPosition,{x:goalX,y:ballPosition.y+dy},player.team,actors):chosenShotLane.clearance,
    ...(activeKeeperAttacker?{keeperDuelMinimumLaneClearanceM:duelIntent.minimum}:{}),
    attemptOnly:true,shotOnTarget:null,goalScored:null
   }):null;

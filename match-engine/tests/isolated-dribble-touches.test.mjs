@@ -1178,3 +1178,40 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    assert.equal(passes,30);assert.ok(plans>0&&contacts>0&&slowed>0&&collections>0,'must observe actual interception and carry after a real pass on both sides');
   }
  });
+
+ test('D-13 Block LAB observes one actual shot, real defender deflection or unblocked flight',{timeout:180000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   const other=side==='home'?'away':'home',defender=other+'-2';
+   let shots=0,plans=0,contacts=0,blocks=0,unblocked=0;
+   for(let variantIndex=0;variantIndex<30;variantIndex++){
+    const scene=createControlledActionLab(R,'defender-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,duelTackleProfile:'block'});
+    let shotTick=null;
+    try{
+     assert.deepEqual(new Set(scene.focus),new Set([side+'-10',defender,other+'-1']));
+     for(let i=0;i<300;i++){
+      const f=scene.step(),a=f.action,w=f.blockAudit;
+      assert.ok(w);
+      if(f.blockApproach)plans++;
+      if(a?.action==='shot'){
+       assert.equal(shotTick,null);shots++;shotTick=f.physicsTick;
+       assert.equal(a.playerId,side+'-10');assert.deepEqual(f.starts,[a.playerId]);
+       assert.equal(a.actualPhysicsImpulseApplied,true);
+       assert.equal(a.labShotCalibration.profile,'low');
+      }
+      if(w.contactTick===f.physicsTick){
+       contacts++;assert.ok(shotTick!==null&&f.physicsTick>shotTick);
+       assert.ok(f.starts.includes(defender)||f.smallSidedNativeBodyGuard.lowerLegBallStarts.includes(defender));
+       if(w.blocked){blocks++;assert.ok(w.velocityChangeMps>=0.6);}
+      }
+      assert.notEqual(a?.playerId,defender,'block must be a physical deflection, not a synthetic kick');
+      if(f.refereeEvidence?.lastEvent||f.keeperDive?.catchState?.confirmedTick!=null||shotTick!==null&&f.physicsTick-shotTick>=240)break;
+     }
+     assert.ok(shotTick!==null,'single native shot required');
+     if(!scene.snapshot().blockAudit.blocked)unblocked++;
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D13_BLOCK '+JSON.stringify({side,shots,plans,contacts,blocks,unblocked})+'\n');
+   assert.equal(shots,30);assert.ok(plans>0&&contacts>0&&blocks>0&&unblocked>0,'observe both real blocks and unblocked shots on both sides');
+  }
+ });

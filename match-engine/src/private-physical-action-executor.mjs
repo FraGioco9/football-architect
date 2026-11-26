@@ -23,7 +23,7 @@ export function createPrivatePhysicalActionExecutor({
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
  smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,interceptionPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='power',firstTimeShot=false,
- physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,keeperSingleShotSide=null,
+ physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,keeperSingleShotSide=null,blockShotSide=null,
  nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false
 }={}){
  if(typeof nativeFixedSprintLongStride!=='boolean'||
@@ -77,6 +77,7 @@ export function createPrivatePhysicalActionExecutor({
     researchReceivingDecisionSide!==null||researchReceiverTapSide!==null||
     physicalBodyGuardEnabled))
   throw new TypeError('Isolated cross requires exactly two original teammates');
+ if(blockShotSide!==null&&(!['home','away'].includes(blockShotSide)||!physicalBodyGuardEnabled||activePlayerIds?.length!==3||!activePlayerIds.includes(blockShotSide+'-10')||!activePlayerIds.includes((blockShotSide==='home'?'away':'home')+'-2')||!activePlayerIds.includes((blockShotSide==='home'?'away':'home')+'-1')||keeperSingleShotSide!==null||isolatedPassSide!==null||interceptionPassSide!==null||isolatedDribbleContext!==null||smallSidedDecisionContext!==null||isolatedShotSide!==null||isolatedCrossSide!==null))throw new TypeError('Block exercise requires original guarded shooter, defender and keeper');
  if(keeperSingleShotSide!==null&&(!['home','away'].includes(keeperSingleShotSide)||
     !physicalBodyGuardEnabled||activePlayerIds?.length!==2||!activePlayerIds.includes(keeperSingleShotSide+'-10')||
     !activePlayerIds.includes((keeperSingleShotSide==='home'?'away':'home')+'-1')))
@@ -125,7 +126,7 @@ export function createPrivatePhysicalActionExecutor({
  let actualPriorPass=null,interrupted=false,firstCushion=null;
  if(typeof latestLabDynamics!=='boolean')throw new TypeError('Boolean current LAB dynamics required');
  const sharedDynamics=latestLabDynamics||interceptionPassSide!==null||isolatedPassSide!==null||isolatedCrossSide!==null||isolatedShotSide!==null;
- let pendingDelivery=null,latestCushion=null,interceptionPhase='ready';
+ let pendingDelivery=null,latestCushion=null,interceptionPhase='ready',blockShotTaken=false;
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
@@ -212,7 +213,8 @@ export function createPrivatePhysicalActionExecutor({
    !isolatedNativeShoeSourceValid?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,
     smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,
-    interceptionContext:interceptionPassSide===null?null:{side:interceptionPassSide,phase:interceptionPhase}});
+    interceptionContext:interceptionPassSide===null?null:{side:interceptionPassSide,phase:interceptionPhase},
+    blockContext:blockShotSide===null?null:{side:blockShotSide,shotTaken:blockShotTaken}});
   let orientedCandidate=null,orientedDelivery=null;
   if(sharedDynamics&&pendingDelivery&&nextTick>pendingDelivery.tick){
    const d=pendingDelivery,pos=ballBody.translation(),v=ballBody.linvel();
@@ -387,11 +389,12 @@ export function createPrivatePhysicalActionExecutor({
    const shotCalibration=sharedDynamics&&chosen.action==='shot'&&chosen.shotTarget?
      calculateCurrentLabShotCalibration({target:chosen.shotTarget,position:ballBody.translation(),
       velocity:ballBody.linvel(),massKg:ballBody.mass(),ballRadiusM,originalImpulseNs:chosen.impulseNs,
-       profile:isolatedShotProfile,
+       profile:blockShotSide===chosen.team?'low':isolatedShotProfile,
        ...(keeperSingleShotSide===chosen.team&&chosen.shotTarget.keeperDuelMinimumLaneClearanceM!==undefined?
         {minimumPowerLaneClearanceM:chosen.shotTarget.keeperDuelMinimumLaneClearanceM}:{}),
        opponents:playerFrame.players.filter(p=>p.team!==chosen.team&&
-         (activePlayerIds===null||activePlayerIds.includes(p.id)))}):null;
+         (activePlayerIds===null||activePlayerIds.includes(p.id))&&
+         (blockShotSide!==chosen.team||p.role==='goalkeeper'))}):null;
     if(isolatedShotProfile==='tap-in'&&!shotCalibration)throw new Error('Tap-in contact outside calibrated low finishing envelope');
      const impulse=shotCalibration?shotCalibration.impulseNs:crossCalibration?Object.freeze({
     x:chosen.impulseNs.x*crossCalibration.scale,
@@ -526,6 +529,7 @@ export function createPrivatePhysicalActionExecutor({
     verifiedControl:false,officialPossession:false,matchAuthority:false
    });
   }
+  if(blockShotSide!==null&&applied?.action==='shot')blockShotTaken=true;
   if(interceptionPassSide!==null){
    if(applied?.action==='pass'&&interceptionPhase==='ready')interceptionPhase='flight';
    else if(applied?.action==='interception'&&interceptionPhase==='flight')interceptionPhase='intercepted';

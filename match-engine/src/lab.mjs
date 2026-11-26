@@ -151,7 +151,7 @@ const smallSidedDecisionLabels=Object.freeze({
  'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
  'hold-pass-target':'Hold receiving position',
  'support-run':'Support the attack','press-ball':'Close down the ball',
- 'goalkeeping':'Protect the goal','getting-up':'—','shoulder-challenge':'Shoulder challenge','intercept-ball':'Intercept ball'
+ 'goalkeeping':'Protect the goal','getting-up':'—','shoulder-challenge':'Shoulder challenge','intercept-ball':'Intercept ball','block-shot':'Block shot'
 });
 const humanPlayer=id=>id.replace('home-','HOME #').replace('away-','AWAY #');
 function appendDecisionEvent(event){
@@ -418,6 +418,7 @@ function restart() {
 }
 function keeperSingleShotFinished(frame){
  const audit=frame?.keeperShotAudit;
+ if(!archiveMode&&frame?.blockAudit?.shotTick!=null)return frame.physicsTick-frame.blockAudit.shotTick>=240;
  if(archiveMode||activeScene?.id!=='keeper-1v1'||!audit)return false;
  if(frame.keeperDive?.catchState?.active&&frame.keeperDive.catchState.confirmedTick!==null)return true;
  return audit.shotTick!==null&&(
@@ -737,7 +738,7 @@ function render() {
     // Concise, observational summary only. Preserve the full diagnostics above.
     const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
     const keeper=f.keeperShotAudit;
-    const summary=f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
+    const summary=f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
        f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':
        f.keeperDive?.catchState?.active?'Securing ball':
@@ -770,7 +771,10 @@ function renderActiveMetrics(f){
  const shot=f.shotSoloAudit,pass=f.passPairAudit,cross=f.crossPairAudit;
  let entries;
  const keeper=f.keeperShotAudit;
- if(f.interceptionAudit){
+ if(f.blockAudit){
+  const a=f.blockAudit;
+  entries=[['Shot',a.shotTick===null?'—':'Observed'],['Launch speed',speed(a.shotSpeedMps)],['Defender contact',a.contactTick===null?'—':n((a.contactTick-a.shotTick)*FIXED_DT,' s')],['Incoming speed',speed(a.incomingSpeedMps)],['Outgoing speed',speed(a.outgoingSpeedMps)],['Result',a.blocked?'Blocked':a.contactTick!==null?'Contact observed':'—']];
+ }else if(f.interceptionAudit){
   const a=f.interceptionAudit;
   entries=[['Pass distance',n(a.passDistanceM,' m')],['Pass',a.passTick===null?'—':'Observed'],['Interception',a.interceptionTick===null?'—':n((a.interceptionTick-a.passTick)*FIXED_DT,' s')],['Recovery',a.carryTick===null?'—':n((a.carryTick-a.interceptionTick)*FIXED_DT,' s')],['Receiver contact',a.recipientTick===null?'—':'Observed']];
  }else if(keeper){
@@ -2338,7 +2342,8 @@ function setupUnifiedScenarioMenu(){
    ['action:dribble-1v1:standing','Standing tackle'],
    ['action:dribble-1v1:sliding','Sliding tackle'],
    ['action:dribble-1v1:shoulder','Shoulder challenge'],
-   ['action:pass-pair:interception','Interception']
+   ['action:pass-pair:interception','Interception'],
+   ['action:defender-1v1:block','Block']
   ]]])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
@@ -2352,6 +2357,7 @@ function setupUnifiedScenarioMenu(){
       (lockedPhase!==null&&
        !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedPhase))||
          (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedPhase))||
+         (!archiveMode&&id==='defender-1v1'&&lockedPhase==='block')||
          (!archiveMode&&id==='pass-pair'&&lockedPhase==='interception')||
          (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder'].includes(lockedPhase)))))
     throw new Error('Missing authentic LAB scenario '+value);
@@ -2373,7 +2379,7 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:23)||
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:24)||
     menu.querySelectorAll('.me-scenario-group-label').length!==5)
   throw new Error('Unexpected active or archived LAB catalog');
 }
@@ -2390,13 +2396,14 @@ function launchSelectedScenario(value){
  const firstTimeShot=shotMode==='first-time';
  const soloCarryLockedPhase=id==='carry-solo'?lockedProfile:null;
  const shotProfile=id==='shot-solo'?(lockedProfile??'power'):null;
- const duelTackleProfile=id==='pass-pair'&&lockedProfile==='interception'?'interception':id==='dribble-1v1'?(lockedProfile??'mixed'):'mixed';
+ const duelTackleProfile=id==='defender-1v1'&&lockedProfile==='block'?'block':id==='pass-pair'&&lockedProfile==='interception'?'interception':id==='dribble-1v1'?(lockedProfile??'mixed'):'mixed';
  if(parts.length<2||parts.length>4||
     (shotMode!==null&&(id!=='shot-solo'||kind!=='action'||!LAB_SHOT_PROFILES.includes(lockedProfile)||!firstTimeShot))||
     !['action','movement'].includes(kind)||!id||
     (lockedProfile!==null&&(kind!=='action'||
       !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedProfile))||
         (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedProfile))||
+        (!archiveMode&&id==='defender-1v1'&&lockedProfile==='block')||
         (!archiveMode&&id==='pass-pair'&&lockedProfile==='interception')||
         (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder'].includes(lockedProfile))))))
   throw new RangeError('Invalid Scenario kind');

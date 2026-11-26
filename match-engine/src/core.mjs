@@ -265,7 +265,7 @@ export function createEngine(RAPIER, input = {}, {
   if(typeof diagnosticDirectedDribble!=='boolean'||(diagnosticDirectedDribble&&
      (diagnosticSmallSidedSituation!=='dribble-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Directed dribble requires original guarded 1v1');
-  if(!['mixed','standing','sliding','shoulder','interception'].includes(diagnosticDuelTackleProfile)||(diagnosticDuelTackleProfile==='interception'?(diagnosticSmallSidedSituation!=='pass-pair'||diagnosticDirectedDribble):diagnosticDuelTackleProfile!=='mixed'&&!diagnosticDirectedDribble))
+  if(!['mixed','standing','sliding','shoulder','interception','block'].includes(diagnosticDuelTackleProfile)||(diagnosticDuelTackleProfile==='block'?(diagnosticSmallSidedSituation!=='defender-1v1'||!diagnosticSmallSidedBodyGuardEnabled||diagnosticDirectedDribble):diagnosticDuelTackleProfile==='interception'?(diagnosticSmallSidedSituation!=='pass-pair'||diagnosticDirectedDribble):diagnosticDuelTackleProfile!=='mixed'&&!diagnosticDirectedDribble))
    throw new TypeError('Tackle profile requires original guarded directed duel');
   if(typeof diagnosticKeeperSingleShot!=='boolean'||(diagnosticKeeperSingleShot&&
      (diagnosticSmallSidedSituation!=='keeper-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
@@ -274,7 +274,7 @@ export function createEngine(RAPIER, input = {}, {
    smallSidedSetup(diagnosticSmallSidedSituation,
     diagnosticSmallSidedSide,INITIAL_PLAYERS,
     {variantIndex:diagnosticSmallSidedVariantIndex,
-     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in',firstTimeShot:diagnosticFirstTimeShot,shoulderStart:diagnosticDuelTackleProfile==='shoulder',interceptionStart:diagnosticDuelTackleProfile==='interception'});
+     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in',firstTimeShot:diagnosticFirstTimeShot,shoulderStart:diagnosticDuelTackleProfile==='shoulder',interceptionStart:diagnosticDuelTackleProfile==='interception',blockStart:diagnosticDuelTackleProfile==='block'});
    if(!diagnosticPlayerFootContactsEnabled||
       !diagnosticAutonomousFixtureActionEnabled||
       diagnosticPlayerBodyCollidersEnabled||diagnosticSharedContactEventsEnabled||
@@ -501,7 +501,7 @@ export function createEngine(RAPIER, input = {}, {
   smallSidedSetup(diagnosticSmallSidedSituation,
    diagnosticSmallSidedSide,INITIAL_PLAYERS,
    {variantIndex:diagnosticSmallSidedVariantIndex,
-     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in',firstTimeShot:diagnosticFirstTimeShot,shoulderStart:diagnosticDuelTackleProfile==='shoulder',interceptionStart:diagnosticDuelTackleProfile==='interception'});
+     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in',firstTimeShot:diagnosticFirstTimeShot,shoulderStart:diagnosticDuelTackleProfile==='shoulder',interceptionStart:diagnosticDuelTackleProfile==='interception',blockStart:diagnosticDuelTackleProfile==='block'});
  const isolatedCarry=smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo';
  const stagedShoes=smallSided?smallSided.staged:
   diagnosticB06bOpeningKickoffEnabled?
@@ -734,7 +734,7 @@ export function createEngine(RAPIER, input = {}, {
        dribbleGroundBallCentreZ:BALL_RADIUS
       }:{})
      }):null;
-  const keeperDive=smallBodyGuard&&smallSided?.id==='keeper-1v1'?
+  const keeperDive=smallBodyGuard&&(smallSided?.id==='keeper-1v1'||smallSided?.blockStart)?
    createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1'),body,
     {closeChallengeEnabled:diagnosticKeeperSingleShot}):null;
   const duelTransition=diagnosticDirectedDribble?createDribbleTransitionObserver(smallSided.side,diagnosticDuelTackleProfile):null;
@@ -744,6 +744,7 @@ export function createEngine(RAPIER, input = {}, {
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       keeperSingleShotSide:diagnosticKeeperSingleShot?smallSided.side:null,
+      blockShotSide:smallSided?.blockStart?smallSided.side:null,
       intentDrivenSoloCarry:diagnosticIntentDrivenSoloCarryEnabled,
       nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
       nativeFixedSprintLongStride:diagnosticNativeFixedSprintLongStrideEnabled,
@@ -759,7 +760,7 @@ export function createEngine(RAPIER, input = {}, {
         variantIndex:smallSided.variantIndex,...(diagnosticDirectedDribble?{directed:true}:{})
        })
       }:{}),
-      ...(smallSided?.variantIndex>0&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?{
+      ...(smallSided?.variantIndex>0&&!smallSided.blockStart&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?{
        smallSidedDecisionContext:Object.freeze({
         situationId:smallSided.id,
         variantIndex:smallSided.variantIndex,
