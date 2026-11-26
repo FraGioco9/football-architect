@@ -66,3 +66,34 @@ export function chooseBasicGoalkeeperDiveTarget({
   savedShot:false,officialSave:false,officialPossession:false
  });
 }
+
+// SHOT-06 baseline: read-only witness of the latest real shot against the
+// original opponent goalkeeper. Contact/parry is NOT proof of a saved shot.
+// No movement, impulse, attribute or scoring authority belongs here.
+export function createKeeperShotObserver(side){
+ if(!['home','away'].includes(side))throw new TypeError('Attacking side required');
+ const keeperId=(side==='home'?'away':'home')+'-1',shooterId=side+'-10';
+ let state=Object.freeze({keeperId,shooterId,shots:0,shotTick:null,
+  launchSpeedMps:null,keeperContactTick:null,parryTick:null,
+  crossing:null,officialSave:false,officialGoal:false});
+ return Object.freeze({observe({tick,ball,starts,action,event}){
+  const real=action?.tick===tick&&action.appliedByRapier===true&&
+   action.actualPhysicsImpulseApplied===true&&starts.length===1&&starts[0]===action.playerId;
+  if(real&&action.playerId===shooterId&&action.action==='shot'){
+   state=Object.freeze({...state,shots:state.shots+1,shotTick:tick,
+    launchSpeedMps:Math.hypot(ball.velocity.x,ball.velocity.y,ball.velocity.z),
+    keeperContactTick:null,parryTick:null,crossing:null});
+  }
+  if(state.shotTick!==null&&tick>state.shotTick&&!state.crossing){
+   const contact=starts.includes(keeperId);
+   const parry=real&&action.playerId===keeperId&&action.action==='save';
+   const crossing=event?.tick===tick&&event.crossing?.fullBallCrossed===true?
+    Object.freeze({tick,kind:event.kind,scoringTeam:event.scoringTeam??null,
+     fullBallCrossed:true}):null;
+   if(contact||parry||crossing)state=Object.freeze({...state,
+    keeperContactTick:state.keeperContactTick??(contact?tick:null),
+    parryTick:state.parryTick??(parry?tick:null),crossing});
+  }
+  return state;
+ }});
+}

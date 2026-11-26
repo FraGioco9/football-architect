@@ -691,7 +691,12 @@ function render() {
     }else renderActiveMetrics(f);
     // Concise, observational summary only. Preserve the full diagnostics above.
     const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
-    const summary=shot?
+    const keeper=f.keeperShotAudit;
+    const summary=keeper?
+      (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
+       keeper.parryTick!==null?'Parry observed':keeper.keeperContactTick!==null?'Keeper contact':
+       keeper.shots?'Shot observed':'Waiting for shot'):
+      shot?
       (shot.crossing?(shot.crossing.goal?'Goal observed':'Miss observed'):
         shot.attempted?'Shot observed':'Waiting for shot'):
       pass?(pass.receiverTick!=null?'Receiving contact observed':
@@ -711,7 +716,14 @@ function renderActiveMetrics(f){
  const count=value=>Number.isFinite(value)?String(value):'—';
  const shot=f.shotSoloAudit,pass=f.passPairAudit,cross=f.crossPairAudit;
  let entries;
- if(shot){
+ const keeper=f.keeperShotAudit;
+ if(keeper){
+  entries=[['Shots',count(keeper.shots)],['Launch speed',speed(keeper.launchSpeedMps)],
+   ['Keeper contact',n(keeper.keeperContactTick===null?null:keeper.keeperContactTick*FIXED_DT,' s')],
+   ['Parry',n(keeper.parryTick===null?null:keeper.parryTick*FIXED_DT,' s')],
+   ['Flight time',n(keeper.crossing?(keeper.crossing.tick-keeper.shotTick)*FIXED_DT:null,' s')],
+   ['Result',keeper.crossing?(keeper.crossing.kind==='goal'?'Goal':'Ball out'):'—']];
+ }else if(shot){
   entries=[['Distance',n(shot.distanceM,' m')],['Launch speed',speed(shot.attempted?shot.launchSpeedMps:null)],
    ['Peak height',n(shot.attempted?shot.peakClearanceM:null,' m')],
    ['Spin',n(shot.attempted?shot.launchSpinRadS:null,' rad/s')],
@@ -2258,7 +2270,9 @@ function setupUnifiedScenarioMenu(){
    ['action:keeper-1v1','1v1 · goalkeeper'],
    ['action:overload-2v1','2v1 · attack and defend'],
    ['action:duel-3v3','3v3 · team decisions']
-  ]]]:[])
+  ]]]:[['Goalkeeping',[
+   ['action:keeper-1v1','1v1 · goalkeeper']
+  ]]])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
  for(const [title,choices] of groups){
@@ -2290,8 +2304,8 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:17)||
-    menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:3))
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:18)||
+    menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:4))
   throw new Error('Unexpected active or archived LAB catalog');
 }
 function restoreOriginalScenario(){

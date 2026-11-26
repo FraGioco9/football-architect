@@ -3,6 +3,7 @@
 // action event. Exactly one core engine and one existing 22-player mover.
 import {createEngine,FIXED_DT} from './core.mjs';
 import {LAB_SHOT_PROFILES} from './lab-shot-calibration.mjs';
+import {createKeeperShotObserver} from './goalkeeper-save-foundation-b02.mjs';
 import {CURRENT_LAB_DYNAMICS_VERSION} from './physical-receiving-cushion-m25.mjs';
 import {createPhysicalFootballDecisionObserver}
  from './physical-football-decision-evidence-m23.mjs';
@@ -354,6 +355,7 @@ export function createControlledActionLab(RAPIER,id,{
  if(smallSided&&JSON.stringify(engine.originalSmallSidedPhysicalShoeIds())!==
    JSON.stringify(smallSided.activeIds))
   throw new Error('Small-sided participants differ from physical Rapier shoe colliders');
+ const keeperShotObserver=id==='keeper-1v1'?createKeeperShotObserver(shotSide):null;
  const refereeObserver=(refereeMode||smallSided)?
   createBasicMatchRefereeB05():null;
  const matchTimelineObserver=(refereeMode||smallSided)?
@@ -850,6 +852,8 @@ export function createControlledActionLab(RAPIER,id,{
    ...(passPairAudit?{passPairAudit}:{}),
    ...(crossPairAudit?{crossPairAudit}:{}),
     ...(shotSoloAudit?{shotSoloAudit}:{}),
+   ...(keeperShotObserver?{keeperShotAudit:keeperShotObserver.observe({tick:physics.tick,
+    ball:physics.ball,starts,action:nativeAction,event:refereeEvidence?.lastEvent})}:{}),
    ...(firstTouchCushion?{physicalFirstTouch,pressureEvidence}:{}),
    ...(adaptiveDecision?{physicalReceiverChoice,postDeferContinuity,
     physicalControlEvidence}:{}),

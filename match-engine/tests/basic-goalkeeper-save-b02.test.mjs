@@ -6,7 +6,7 @@ import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_MIN_SEPARATION_M}
  from '../src/player-movement.mjs';
 import {SAVE_LAB_STARTS,ACTION_LAB_SCENARIOS}
  from '../src/action-lab-scenarios.mjs';
-import {initialResearchGoalkeeperSaveLineup,chooseBasicGoalkeeperDiveTarget}
+import {initialResearchGoalkeeperSaveLineup,chooseBasicGoalkeeperDiveTarget,createKeeperShotObserver}
  from '../src/goalkeeper-save-foundation-b02.mjs';
 import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction}
  from '../src/player-ball-uniform-autonomous-action.mjs';
@@ -132,3 +132,49 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
   }finally{a.dispose();b.dispose();}
  }
 });
+
+ test('SHOT-06 witness does not award saves for contact or parry, and records actual full-ball crossing only',()=>{
+  const witness=createKeeperShotObserver('home'),ball={velocity:{x:20,y:0,z:0}};
+  const real=(tick,playerId,action)=>({tick,playerId,action,appliedByRapier:true,actualPhysicsImpulseApplied:true});
+  const step=(tick,starts=[],action=null,event=null)=>witness.observe({tick,ball,starts,action,event});
+  assert.equal(step(1,[],real(1,'home-10','shot')).shots,0);
+  assert.equal(step(2,['home-10'],real(2,'home-10','shot')).shots,1);
+  assert.equal(step(3,['away-1']).keeperContactTick,3);
+  assert.equal(step(4,['away-1'],real(4,'away-1','save')).parryTick,4);
+  assert.equal(step(5,[],null,{tick:5,kind:'goal',crossing:{fullBallCrossed:false}}).crossing,null);
+  const goal=step(6,[],null,{tick:6,kind:'goal',scoringTeam:'home',crossing:{fullBallCrossed:true}});
+  assert.equal(goal.crossing.kind,'goal');assert.equal(goal.officialSave,false);
+  assert.equal(goal.officialGoal,false);
+ });
+ test('SHOT-06 real keeper duel baseline across 30 mirrored variants', {timeout:240000},async()=>{
+  const R=await initializeRapier(rapier),counts={shots:0,contacts:0,parries:0,goals:0,otherExit:0,unresolved:0,noShot:0};
+  for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+   const scene=createControlledActionLab(R,'keeper-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true});
+   try{
+    let f=scene.snapshot();assert.equal(f.keeperShotAudit.shots,0);
+    const shots=new Set(),contacts=new Set(),parries=new Set();
+    for(let n=0;n<600;n++){
+     f=scene.step();const audit=f.keeperShotAudit;
+     if(f.action?.action==='shot'&&f.action.team===side&&f.action.actualPhysicsImpulseApplied)shots.add(f.physicsTick);
+     if(f.starts.includes(audit.keeperId))contacts.add(f.physicsTick);
+     if(f.action?.playerId===audit.keeperId&&f.action.action==='save'&&f.action.actualPhysicsImpulseApplied)parries.add(f.physicsTick);
+     assert.equal(audit.officialSave,false);assert.equal(audit.officialGoal,false);
+     assert.equal(f.officialMatchResult,null);
+     if(f.refereeEvidence?.lastEvent)break;
+    }
+    const audit=f.keeperShotAudit;assert.equal(audit.shots,shots.size);
+    if(audit.shots===0)counts.noShot++;
+    else{
+     counts.shots+=audit.shots;assert.ok(shots.has(audit.shotTick));
+     if(audit.keeperContactTick!==null){assert.ok(contacts.has(audit.keeperContactTick));counts.contacts++;}
+     if(audit.parryTick!==null){assert.ok(parries.has(audit.parryTick));counts.parries++;}
+     if(audit.crossing){assert.equal(f.refereeEvidence.lastEvent.crossing.fullBallCrossed,true);
+      assert.equal(audit.crossing.tick,f.refereeEvidence.lastEvent.tick);
+      counts[audit.crossing.kind==='goal'?'goals':'otherExit']++;
+     }else counts.unresolved++;
+    }
+   }finally{scene.dispose();}
+  }
+  assert.ok(counts.shots>0,'existing live context must generate genuine shots');
+  process.stdout.write('ME_628_SHOT_06_BASELINE '+JSON.stringify(counts)+'\n');
+ });
