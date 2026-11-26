@@ -55,6 +55,10 @@ const FIELDS = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
 const BOUNDS = Object.freeze({x: 48, y: 30, z: 30, vx: 60, vy: 60, vz: 60});
 
 export function normalizeScenario(input = {}) {
+  return normalizeScenarioWithinBounds(input,BOUNDS);
+}
+// Private bound override, reachable only after canonical Tap-in setup verification.
+function normalizeScenarioWithinBounds(input,bounds) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TypeError('Invalid scenario');
   if (Object.keys(input).some(key => !['preset', 'seed', ...FIELDS].includes(key)))
     throw new TypeError('Unknown scenario field');
@@ -66,7 +70,7 @@ export function normalizeScenario(input = {}) {
   const data = {preset, seed};
   for (const key of FIELDS) {
     const value = input[key] ?? PRESETS[preset][key];
-    if (typeof value !== 'number' || !Number.isFinite(value) || Math.abs(value) > BOUNDS[key])
+    if (typeof value !== 'number' || !Number.isFinite(value) || Math.abs(value) > bounds[key])
       throw new RangeError('Invalid value for ' + key);
     data[key] = Object.is(value, -0) ? 0 : value;
   }
@@ -332,7 +336,19 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchDefensiveSide!==null||
     diagnosticResearchGoalkeeperSaveSide!==null))
    throw new TypeError('B06b isolated source-only native 60Hz halftime required');
-  const scenario = normalizeScenario(input);
+  let scenario;
+  if(diagnosticIsolatedShotProfile==='tap-in'){
+    // Manual presets retain their +/-48m limit. Only the already validated
+    // isolated native shooter may start closer to the goal line, and only
+    // at the exact deterministic stationary-ball start for its side/seed.
+    const expected=smallSidedSetup('shot-solo',diagnosticSmallSidedSide,INITIAL_PLAYERS,{
+      variantIndex:diagnosticSmallSidedVariantIndex,tapInStart:true
+    }).ball;
+    const candidate=normalizeScenarioWithinBounds(input,{...BOUNDS,x:52.5-BALL_RADIUS});
+    if(['preset','seed',...FIELDS].some(key=>candidate[key]!==expected[key]))
+      throw new RangeError('Tap-in requires the canonical stationary close-range start');
+    scenario=candidate;
+  }else scenario=normalizeScenario(input);
   if(typeof diagnosticResearchBodyEncounter!=='boolean'||
      (diagnosticResearchBodyEncounter&&
       (!diagnosticPlayerBodyCollidersEnabled||

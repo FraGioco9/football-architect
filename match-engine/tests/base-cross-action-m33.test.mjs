@@ -10,7 +10,7 @@ import {initialResearchShotLineup}
  from '../src/research-shot-initial-lineup.mjs';
 import {CROSS_LAB_STARTS,ACTION_LAB_SCENARIOS}
  from '../src/action-lab-scenarios.mjs';
-import {initializeRapier} from '../src/core.mjs';
+import {initializeRapier,createEngine,normalizeScenario} from '../src/core.mjs';
 import {LAB_SHOT_PROFILES,calculateCurrentLabShotCalibration} from '../src/lab-shot-calibration.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {calculateLowCrossReceivingCushion,M25_CROSS_CUSHION_MAX_IMPULSE_NS,
@@ -401,6 +401,9 @@ test('SHOT-03 tap-in uses all 30 mirrored close starts, authentic one-touch and 
     assert.equal(frame.shotSoloAudit.attempted,false);
     assert.equal(frame.genuinePhysicalPlayerCount,1);
     assert.equal(frame.ball.velocity.x,0);
+    const expected=side==='home'?home.ball:away.ball;
+    assert.ok(Math.abs(frame.ball.position.x-expected.x)<1e-5);
+    assert.ok(Math.abs(frame.ball.position.y-expected.y)<1e-5);
     for(let tick=0;tick<240;tick++){
      frame=lab.step();
      if(frame.action){count++;assert.equal(frame.action.labShotCalibration.profile,'tap-in');assert.deepEqual(frame.starts,[side+'-10']);}
@@ -417,5 +420,25 @@ test('SHOT-03 tap-in uses all 30 mirrored close starts, authentic one-touch and 
   assert.ok(row.crossing?.goal&&row.crossing.fullBallCrossed,JSON.stringify(row));
   assert.equal(row.crossing.officialGoal,false);
   assert.ok(row.launchSpeedMps>=1.38&&row.launchSpeedMps<=6.95&&row.peakClearanceM<=0.12,JSON.stringify(row));
+ }
+});
+
+test('SHOT-03 canonical close-range starts do not relax manual or unrelated LAB input bounds',async()=>{
+ const R=await initializeRapier(rapier);
+ const {smallSidedSetup}=await import('../src/small-sided-lab-scenarios.mjs');
+ for(const side of ['home','away']){
+  const start=smallSidedSetup('shot-solo',side,INITIAL_PLAYERS,{tapInStart:true}).ball;
+  assert.ok(Math.abs(start.x)>48);
+  assert.throws(()=>normalizeScenario(start),/Invalid value for x/);
+  assert.throws(()=>createEngine(R,start),/Invalid value for x/);
+  const options={diagnosticPlayerFootContactsEnabled:true,
+   diagnosticAutonomousFixtureActionEnabled:true,diagnosticLatestLabDynamics:true,
+   diagnosticSmallSidedSituation:'shot-solo',diagnosticSmallSidedSide:side,
+   diagnosticIsolatedShotProfile:'tap-in'};
+  for(const patch of [{x:start.x+(side==='home'?0.1:-0.1)},{y:start.y+0.1},{vx:1},{seed:'not-canonical'}]){
+   assert.throws(()=>createEngine(R,{...start,...patch},options),/canonical stationary close-range start/);
+  }
+  assert.throws(()=>createEngine(R,{...start,x:side==='home'?53:-53},options),/Invalid value for x/);
+  assert.throws(()=>createEngine(R,start,{...options,diagnosticIsolatedShotProfile:'power'}),/Invalid value for x/);
  }
 });
