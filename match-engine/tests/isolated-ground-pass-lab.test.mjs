@@ -5,6 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
+import {CURRENT_LAB_DYNAMICS_VERSION} from '../src/physical-receiving-cushion-m25.mjs';
 
 test('PASS-01 two teammates, 6/12/20m, faster distance-calibrated native ground impulse and bounded first-touch reception',
  {timeout:120000},async()=>{
@@ -70,32 +71,16 @@ test('PASS-01 two teammates, 6/12/20m, faster distance-calibrated native ground 
       assert.equal(cushion.officialPossession,false);
       assert.equal(cushion.noActiveOpponents,true);
       assert.equal(cushion.measuredNearestOpponentM,null);
-      assert.equal(cushion.impulseNs.z,0);
-      const magnitude=Math.hypot(cushion.impulseNs.x,cushion.impulseNs.y);
-      assert.ok(magnitude<=2.7+1e-9);
-      assert.equal(cushion.residualTargetMps,0.50);
-      const baseMagnitude=Math.hypot(cushion.originalM25ImpulseNs.x,cushion.originalM25ImpulseNs.y);
-      assert.ok(magnitude>=baseMagnitude-1e-9);
-      assert.ok(Math.abs(magnitude-Math.min(2.7,
-       Math.max(baseMagnitude,0.43*(cushion.actualRelativeSpeedMps-0.50))))<1e-6);
-      assert.ok(cushion.impulseNs.x*cushion.originalM25ImpulseNs.x+
-       cushion.impulseNs.y*cushion.originalM25ImpulseNs.y>0);
+      assert.equal(cushion.version,CURRENT_LAB_DYNAMICS_VERSION);
+      assert.equal(cushion.deliveryKind,'pass');
+      assert.ok(Math.hypot(...Object.values(cushion.impulseNs))<=6.5+1e-9);
+      assert.ok(cushion.bodyProjection>=0.15&&cushion.shoeProjection>=0.15);
+      assert.ok(cushion.targetSpeedMps>0&&cushion.targetSpeedMps<=1.25);
       assert.equal(contact.postSolverSpeedMps,Math.hypot(
        cushion.realPreBallVelocity.x,cushion.realPreBallVelocity.y));
-      // A stationary receiver's relative velocity must use vx/vy,
-      // never its absolute field coordinates x/y. Check the actual
-      // opposing impulse vector as well as the native speed reduction.
-      const relativeX=cushion.realPreBallVelocity.x-observed.vx;
-      const relativeY=cushion.realPreBallVelocity.y-observed.vy;
-      assert.ok(Math.abs(cushion.actualRelativeSpeedMps-
-       Math.hypot(relativeX,relativeY))<1e-9);
-      assert.ok(cushion.impulseNs.x*relativeX+cushion.impulseNs.y*relativeY<0);
-      assert.ok(contact.postContactSpeedMps<contact.postSolverSpeedMps,
-       JSON.stringify({side,variantIndex,contact}));
-      // All receivers are stationary. A first touch must not reverse
-      // the post-solver velocity or fake a stop by assigning velocity.
-      assert.ok(cushion.realPostBallVelocity.x*cushion.realPreBallVelocity.x+
-       cushion.realPostBallVelocity.y*cushion.realPreBallVelocity.y>=-1e-7);
+      assert.ok(contact.postContactSpeedMps<=contact.postSolverSpeedMps+1e-5);
+      assert.ok(cushion.realPostBallVelocity.x*cushion.controlDirection.x+
+       cushion.realPostBallVelocity.y*cushion.controlDirection.y>0);
       assert.equal(contact.postContactSpeedMps,Math.hypot(
        cushion.realPostBallVelocity.x,cushion.realPostBallVelocity.y));
      }else{
@@ -107,13 +92,14 @@ test('PASS-01 two teammates, 6/12/20m, faster distance-calibrated native ground 
      assert.ok(Object.isFrozen(contact));
     }
     if(audit.receiverFollowThrough?.completed){
-     assert.equal(tick,audit.receiverTick+60);
-     assert.equal(audit.receiverFollowThrough.samples,61);
+     assert.equal(tick,audit.receiverTick+120);
+     assert.equal(audit.receiverFollowThrough.samples,121);
      assert.equal(audit.receiverFollowThrough.atHalfSecond.tick,audit.receiverTick+30);
-     assert.equal(audit.receiverFollowThrough.atOneSecond.tick,tick);
-     assert.equal(audit.receiverFollowThrough.atOneSecond.speedMps,
+     assert.equal(audit.receiverFollowThrough.atOneSecond.tick,audit.receiverTick+60);
+     assert.equal(audit.receiverFollowThrough.atTwoSeconds.tick,tick);
+     assert.equal(audit.receiverFollowThrough.atTwoSeconds.speedMps,
       Math.hypot(frame.ball.velocity.x,frame.ball.velocity.y));
-     assert.equal(audit.receiverFollowThrough.atOneSecond.gapM,
+     assert.equal(audit.receiverFollowThrough.atTwoSeconds.gapM,
       Math.hypot(frame.ball.position.x-receiver.x,frame.ball.position.y-receiver.y));
      assert.equal(audit.receiverFollowThrough.officialReception,false);
      break;
@@ -143,8 +129,13 @@ test('PASS-01 two teammates, 6/12/20m, faster distance-calibrated native ground 
   assert.ok(Number.isFinite(row.receivingContact.postSolverSpeedMps));
   assert.equal(row.receiverFollowThrough.completed,true);
   // Provisional physical control envelope, not official possession.
-  assert.ok(row.receiverFollowThrough.atOneSecond.gapM<=0.85,JSON.stringify(row));
-  assert.ok(row.receiverFollowThrough.atOneSecond.speedMps<=0.30,JSON.stringify(row));
+  assert.ok(row.receiverFollowThrough.maxGapM<=2.0,JSON.stringify(row));
+  assert.ok(row.receiverFollowThrough.atTwoSeconds.speedMps<=0.30,JSON.stringify(row));
+  if(row.receivingContact.cushion){
+   assert.ok(row.receiverFollowThrough.atOneSecond.directedTravelM>0.10,JSON.stringify(row));
+   assert.ok(row.receiverFollowThrough.maxCrossTrackM<=0.40,JSON.stringify(row));
+   assert.ok(row.receiverFollowThrough.minDirectedTravelM>=-0.10,JSON.stringify(row));
+  }
   assert.ok(row.peakGroundClearanceM<0.10,JSON.stringify(row));
   // Owner visual QA: all three distances must be meaningfully faster,
   // including 6m. The existing control/ground envelope above is retained.

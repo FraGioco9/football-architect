@@ -236,7 +236,7 @@ function restart() {
     const next=kind==='action'?
       createControlledActionLab(rapier,id,{shotSide:side,
        variantIndex:activeVariantIndex,
-       bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair',
+       bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair',
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
        // Leave the original ordinary 22-player physics unmodified.
@@ -494,10 +494,30 @@ function render() {
          ' · real receiving shoe START after '+f.passPairAudit.flightTimeS.toFixed(2)+' s'+
          ' · approach '+fmtKmh(f.passPairAudit.receivingContact.priorSampleSpeedMps)+' km/h'+
          ' · after contact '+fmtKmh(f.passPairAudit.receivingContact.postContactSpeedMps)+' km/h'+
-         (f.passPairAudit.receivingContact.cushion?' · active first-touch cushion':' · passive first touch')+
-         (f.passPairAudit.receiverFollowThrough?.completed?
-          ' · 1s gap '+f.passPairAudit.receiverFollowThrough.atOneSecond.gapM.toFixed(2)+' m':'') ):
+         (f.passPairAudit.receivingContact.cushion?' · oriented first touch':' · passive first touch')+
+         (f.passPairAudit.receiverFollowThrough?.atOneSecond?
+          ' · oriented travel '+fmt(f.passPairAudit.receiverFollowThrough.atOneSecond.directedTravelM??0)+' m'+
+           ' · 1s gap '+f.passPairAudit.receiverFollowThrough.atOneSecond.gapM.toFixed(2)+' m':'') ):
         ' · waiting for native passing shoe START'):'')+
+      (!f.passPairAudit&&!f.crossPairAudit&&f.latestOrientedReception?
+        ' · oriented first touch '+f.latestOrientedReception.actorId+' · '+fmtKmh(Math.hypot(
+         f.latestOrientedReception.realPostBallVelocity.x,f.latestOrientedReception.realPostBallVelocity.y))+' km/h':'')+
+       (f.crossPairAudit?
+       ' · stationary target · lofted cross (DEV)'+
+       (f.crossPairAudit.attempted?
+        ' · distance '+fmt(f.crossPairAudit.targetDistanceM)+' m'+
+        ' · launch '+fmtKmh(f.crossPairAudit.launchSpeedMps)+' km/h'+
+        ' · peak height '+fmt(f.crossPairAudit.peakClearanceM)+' m'+
+        (f.crossPairAudit.arrival?
+         ' · arrival '+fmt(f.crossPairAudit.arrival.timeS)+' s'+
+         ' · target gap '+fmt(f.crossPairAudit.arrival.targetGapM)+' m'+
+          (f.crossPairAudit.receivingCushion?
+           ' · active low-cross cushion · after contact '+fmtKmh(Math.hypot(
+            ...Object.values(f.crossPairAudit.receivingCushion.realPostBallVelocity)))+' km/h':'')+
+          (f.crossPairAudit.receiverFollowThrough?.atOneSecond?
+           ' · oriented touch '+fmt(f.crossPairAudit.receiverFollowThrough.atOneSecond.directedTravelM)+' m'+
+           ' · 1s gap '+fmt(f.crossPairAudit.receiverFollowThrough.atOneSecond.gapM)+' m':''):
+         ' · flight observation'):' · waiting for native crossing shoe START'):'')+
       (f.nativeFixedCarryResearch?' · Native Carry · real two-shoe Rapier START required':'')+
       (f.soloSprintActiveFootReleaseM===0.06?
        ' · native active-foot release 6 cm (DEV Sprint only)':'')+
@@ -2067,7 +2087,8 @@ function setupUnifiedScenarioMenu(){
    ['action:carry-solo:sprint','Carry · Sprint']
   ]],
   ['Passing',[
-   ['action:pass-pair','Pass · Ground']
+   ['action:pass-pair','Pass · Ground'],
+    ['action:cross-pair','Cross · Lofted']
   ]],
   ['Small-sided situations',[
    ['action:keeper-1v1','1v1 · goalkeeper'],
@@ -2096,9 +2117,9 @@ function setupUnifiedScenarioMenu(){
  }
  heading('Ball physics');
  for(const node of physics)menu.append(node);
- if(menu.querySelectorAll('[role="option"][data-value]').length!==11||
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==12||
     menu.querySelectorAll('.me-scenario-group-label').length!==4)
-  throw new Error('Lab should expose three fixed Carry phases, ground Pass, three small-sided exercises and four ball presets');
+  throw new Error('Lab should expose three fixed Carry phases, ground Pass, lofted Cross, three small-sided exercises and four ball presets');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')

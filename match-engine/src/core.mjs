@@ -98,6 +98,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchBodyEncounter = false,
   diagnosticUnstagedBodyFeedbackEnabled = false,
   diagnosticAutonomousFixtureActionEnabled = false,
+  diagnosticLatestLabDynamics = false,
   diagnosticAutonomousCarryEnabled = false,
   diagnosticResearchShotAttacker = null,
   diagnosticResearchShotBlockedLane = false,
@@ -139,6 +140,8 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchCarrySide = null
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
+  if(typeof diagnosticLatestLabDynamics!=='boolean'||(diagnosticLatestLabDynamics&&!diagnosticAutonomousFixtureActionEnabled))
+    throw new TypeError('Current LAB dynamics require original native action authority');
   if(typeof diagnosticPlayerFootContactsEnabled!=='boolean')
     throw new TypeError('Boolean opt-in required for private shoe physics');
   // M9: the only permitted dual-source mode is explicitly research-only,
@@ -236,7 +239,7 @@ export function createEngine(RAPIER, input = {}, {
     throw new TypeError('Small-sided feedback needs selected physical bodies');
    if(typeof diagnosticSmallSidedBodyGuardEnabled!=='boolean'||
      (diagnosticSmallSidedBodyGuardEnabled&&(
-      (diagnosticSmallSidedSituation===null||diagnosticSmallSidedSituation==='pass-pair')||
+      (diagnosticSmallSidedSituation===null||['pass-pair','cross-pair'].includes(diagnosticSmallSidedSituation))||
       !diagnosticPlayerFootContactsEnabled||
       !diagnosticAutonomousFixtureActionEnabled||
       diagnosticPlayerBodyCollidersEnabled||
@@ -578,7 +581,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticPlayerFootContactsEnabled,diagnosticPlayerBodyCollidersEnabled,
     diagnosticSharedContactEventsEnabled,
     diagnosticResearchBodyEncounter,diagnosticUnstagedBodyFeedbackEnabled,
-    diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
+    diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,diagnosticLatestLabDynamics,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchShotWideCross,diagnosticResearchGoalkeeperSaveSide,
     diagnosticResearchDefensiveSide,diagnosticResearchDefensiveKind,
@@ -609,7 +612,7 @@ export function createEngine(RAPIER, input = {}, {
   // The floor top is exactly z=0 and a grounded ball center starts at its radius.
   const ground = RAPIER.ColliderDesc.cuboid(52.5, 34, 0.2)
     .setTranslation(0, 0, -0.2).setFriction(0.65).setRestitution(isolatedCarry?0:GROUND_RESTITUTION);
-  world.createCollider(ground);
+  const groundCollider=world.createCollider(ground);
   const desc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(scenario.x, scenario.y, toCenterHeight(scenario.z))
     .setLinvel(scenario.vx, scenario.vy, scenario.vz)
@@ -683,14 +686,15 @@ export function createEngine(RAPIER, input = {}, {
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
-      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
+      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       intentDrivenSoloCarry:diagnosticIntentDrivenSoloCarryEnabled,
       nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
       nativeFixedSprintLongStride:diagnosticNativeFixedSprintLongStrideEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
-       isolatedCarry||(smallSided?.variantIndex>0&&smallSided.id!=='pass-pair'),
+       isolatedCarry||(smallSided?.variantIndex>0&&!['pass-pair','cross-pair'].includes(smallSided.id)),
       ...(smallSided?.id==='pass-pair'?{isolatedPassSide:smallSided.side}:{}),
+       ...(smallSided?.id==='cross-pair'?{isolatedCrossSide:smallSided.side}:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
       ...(isolatedCarry?{
        isolatedDribbleContext:Object.freeze({
@@ -698,7 +702,7 @@ export function createEngine(RAPIER, input = {}, {
         variantIndex:smallSided.variantIndex
        })
       }:{}),
-      ...(smallSided?.variantIndex>0&&smallSided.id!=='pass-pair'?{
+      ...(smallSided?.variantIndex>0&&!['pass-pair','cross-pair'].includes(smallSided.id)?{
        smallSidedDecisionContext:Object.freeze({
         situationId:smallSided.id,
         variantIndex:smallSided.variantIndex,
@@ -748,6 +752,19 @@ export function createEngine(RAPIER, input = {}, {
     // rotation back into horizontal motion even after the translation stops.
     const spin = body.angvel();
     body.setAngvel({x: spin.x * ratio, y: spin.y * ratio, z: spin.z}, false);
+  }
+  // CROSS-01 read-only observation of the original post-step Rapier
+  // ground/ball pair. No collider, event queue, solver or force change.
+  function crossGroundContactSnapshot(){
+   if(disposed||smallSided?.id!=='cross-pair')
+    throw new TypeError('Original isolated cross ground contact required');
+   let geometricContacts=0,solverContacts=0;
+   world.contactPair(ballCollider,groundCollider,m=>{
+    geometricContacts+=m.numContacts();
+    solverContacts+=m.numSolverContacts();
+   });
+   return Object.freeze({tick,geometricContacts,solverContacts,
+    nativeGroundPair:solverContacts>0,readOnly:true});
   }
   function snapshot() {
     if (disposed) throw new Error('Engine has been disposed');
@@ -1276,6 +1293,7 @@ export function createEngine(RAPIER, input = {}, {
         bodyBridge.acknowledgeCanonicalResponse(frame)
       }:{})
     }:{}),
+    ...(smallSided?.id==='cross-pair'?{crossGroundContactSnapshot}:{}),
     ...(smallSided?{
       originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds,
       ...(smallBodyGuard?{
@@ -1290,6 +1308,7 @@ export function createEngine(RAPIER, input = {}, {
       uniformAutonomousActionSnapshot:()=>actionExecutor.actionSnapshot(),
       physicalRejectionAuditSnapshot:()=>actionExecutor.rejectionSnapshot(),
       researchReceivingCushionSnapshot:()=>actionExecutor.cushionSnapshot(),
+      latestLabReceptionSnapshot:()=>actionExecutor.latestReceptionSnapshot(),
       researchReceiverChoiceSnapshot:()=>actionExecutor.receiverChoiceSnapshot(),
        researchReceiverTapSnapshot:()=>actionExecutor.receiverTapSnapshot()
     }:{}),

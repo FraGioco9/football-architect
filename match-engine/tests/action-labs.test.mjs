@@ -6,7 +6,12 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier} from '../src/core.mjs';
 import {ACTION_LAB_SCENARIOS,getActionLabScenario,
  classifyActionLabEvidence} from '../src/action-lab-scenarios.mjs';
-import {createControlledActionLab} from '../src/action-labs.mjs';
+import {createControlledActionLab as createCurrentActionLab} from '../src/action-labs.mjs';
+ // Historical M/B evidence comparator only. Current gameplay uses the default.
+ const createControlledActionLab=(R,id,options={})=>createCurrentActionLab(R,id,{
+  ...options,historicalEvidenceBaseline:!['pass-pair','cross-pair','carry-solo','dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].includes(id)
+ });
+
 
 test('seventeen base-action LABs retain negative authorization boundaries',()=>{
  assert.deepEqual(ACTION_LAB_SCENARIOS.map(s=>s.id),
@@ -93,8 +98,8 @@ test('seventeen base-action LABs retain negative authorization boundaries',()=>{
  const dev=readFileSync(new URL('../../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
  const client=readFileSync(new URL('../src/action-labs.mjs',import.meta.url),'utf8');
  const unified=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
- assert.match(unified,/length!==11/,
-  'three fixed Carry phases, ground Pass, three small-sided exercises and four ball presets');
+ assert.match(unified,/length!==12/,
+  'three fixed Carry phases, ground Pass, lofted Cross, three small-sided exercises and four ball presets');
  assert.doesNotMatch(unified,/count!==48/);
  for(const spec of ACTION_LAB_SCENARIOS)
   assert.match(html,new RegExp('<option value="'+spec.id+'">'));

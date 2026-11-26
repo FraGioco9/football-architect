@@ -2,6 +2,7 @@
 // No legacy universal match session, opponent-lane tactical simulator or fake
 // action event. Exactly one core engine and one existing 22-player mover.
 import {createEngine,FIXED_DT} from './core.mjs';
+import {CURRENT_LAB_DYNAMICS_VERSION} from './physical-receiving-cushion-m25.mjs';
 import {createPhysicalFootballDecisionObserver}
  from './physical-football-decision-evidence-m23.mjs';
 import {createRealPostContactBallContinuity}
@@ -42,7 +43,7 @@ export function createControlledActionLab(RAPIER,id,{
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
  carryRunwayStart=false,nativeFixedCarryResearch=false,
  nativeFixedSprintLongStride=false,soloSprintPursuitLeadM=0,
- soloCarryPlayerAttributes=null
+ soloCarryPlayerAttributes=null,historicalEvidenceBaseline=false
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -92,7 +93,7 @@ export function createControlledActionLab(RAPIER,id,{
    validateSoloCarryAttributes(soloCarryPlayerAttributes);
  const spec=getActionLabScenario(id);
  if(typeof bodyGuardEnabled!=='boolean'||
-    (bodyGuardEnabled&&(spec.mode!=='situation'||id==='pass-pair')))
+    (bodyGuardEnabled&&(spec.mode!=='situation'||['pass-pair','cross-pair'].includes(id))))
   throw new TypeError('Native body-contact exercise only in a small-sided situation');
  if(spec.mode!=='situation'&&variantIndex!==0)
   throw new TypeError('Variations require a selected small-sided exercise');
@@ -115,6 +116,9 @@ export function createControlledActionLab(RAPIER,id,{
    variantIndex,carryRunwayStart
   }):null;
  const refereeMode=spec.mode==='referee';
+ if(typeof historicalEvidenceBaseline!=='boolean'||(historicalEvidenceBaseline&&smallSided))
+  throw new TypeError('Historical evidence only for original archived action fixtures');
+ const currentDynamics=!refereeMode&&!historicalEvidenceBaseline;
  const sourceRestart=['throw-in','corner','goal-kick'].includes(id);
  const basicFootwork=['trap','dribble'].includes(id);
  const effectiveControlScene=id==='trap'?'receive-cushion':
@@ -213,6 +217,7 @@ export function createControlledActionLab(RAPIER,id,{
  const engine=createEngine(RAPIER,initial,{
   diagnosticPlayerFootContactsEnabled:true,
   diagnosticAutonomousFixtureActionEnabled:!refereeMode,
+  diagnosticLatestLabDynamics:currentDynamics,
   ...(smallSided?{
    diagnosticSmallSidedSituation:id,
    diagnosticSmallSidedSide:shotSide,
@@ -317,6 +322,13 @@ export function createControlledActionLab(RAPIER,id,{
   officialPassCompleted:false,officialReception:false
  }):null;
  let previousPassBall=null;
+ let crossPairAudit=id==='cross-pair'?Object.freeze({attempted:false,tick:null,
+  airborne:false,peakClearanceM:0,arrival:null,firstLowSample:null,
+  firstDescendingHalfMetre:null,firstGroundContact:null,
+  firstReceivingShoeStart:null,receivingCushion:null,receiverFollowThrough:null,
+  officialCrossCompleted:false,
+  officialReception:false}):null;
+ let previousCrossBall=null;
  let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
  const decisionObserver=createPhysicalFootballDecisionObserver();
@@ -589,7 +601,7 @@ export function createControlledActionLab(RAPIER,id,{
        Math.hypot(vel.x,vel.y),
       postContactSpeedMps:Math.hypot(vel.x,vel.y),
       cushion,mode:cushion?'active-cushion':'passive-contact',
-      targetGapM:gap,realRapierShoeStart:true,readOnly:true,
+      targetGapM:gap,position:Object.freeze({...pos}),realRapierShoeStart:true,readOnly:true,
       officialReception:false
      }):null});
    }
@@ -597,9 +609,13 @@ export function createControlledActionLab(RAPIER,id,{
    // cushion). No later assisted trap, target movement or extra impulse.
    if(passPairAudit.receiverTick!==null){
     const elapsed=physics.tick-passPairAudit.receiverTick;
-    if(elapsed>=0&&elapsed<=60){
+    if(elapsed>=0&&elapsed<=120){
      const pos=physics.ball.position,vel=physics.ball.velocity;
+     const contact=passPairAudit.receivingContact,dir=contact.cushion?.controlDirection;
+     const dx=pos.x-contact.position.x,dy=pos.y-contact.position.y;
      const sample=Object.freeze({tick:physics.tick,
+      directedTravelM:dir?dx*dir.x+dy*dir.y:null,
+      crossTrackM:dir?Math.abs(dx*dir.y-dy*dir.x):null,
       gapM:Math.hypot(pos.x-passPairAudit.targetX,pos.y-passPairAudit.targetY),
       speedMps:Math.hypot(vel.x,vel.y)});
      const prior=passPairAudit.receiverFollowThrough;
@@ -607,14 +623,107 @@ export function createControlledActionLab(RAPIER,id,{
       receiverFollowThrough:Object.freeze({
        samples:(prior?.samples??0)+1,
        maxGapM:Math.max(prior?.maxGapM??0,sample.gapM),
+       maxHorizontalSpeedMps:Math.max(prior?.maxHorizontalSpeedMps??0,sample.speedMps),
+       minDirectedTravelM:Math.min(prior?.minDirectedTravelM??0,sample.directedTravelM??0),
+       maxCrossTrackM:Math.max(prior?.maxCrossTrackM??0,sample.crossTrackM??0),
+       atQuarterSecond:elapsed===15?sample:prior?.atQuarterSecond??null,
        atHalfSecond:elapsed===30?sample:prior?.atHalfSecond??null,
        atOneSecond:elapsed===60?sample:prior?.atOneSecond??null,
-       completed:elapsed===60,readOnly:true,officialReception:false
+       atTwoSeconds:elapsed===120?sample:null,
+       completed:elapsed===120,readOnly:true,officialReception:false
       })});
     }
    }
    previousPassBall=Object.freeze({tick:physics.tick,
     velocity:Object.freeze({...physics.ball.velocity})});
+  }
+  if(crossPairAudit){
+   const pos=physics.ball.position,vel=physics.ball.velocity;
+   if(nativeAction?.action==='cross'&&!crossPairAudit.attempted){
+    const target=nativeAction.crossTarget;
+    crossPairAudit=Object.freeze({...crossPairAudit,attempted:true,tick:physics.tick,
+     originX:target.originX,originY:target.originY,
+     targetX:target.targetX,targetY:target.targetY,targetDistanceM:target.distanceM,
+     recipientId:target.recipientId,launchSpeedMps:Math.hypot(vel.x,vel.y,vel.z)});
+   }
+   if(crossPairAudit.attempted){
+    const prior=crossPairAudit;
+    const clearance=Math.max(0,pos.z-0.11);
+    const airborne=prior.airborne||clearance>0.20;
+    const descending=prior.descending===true||vel.z<0;
+    const sample=()=>Object.freeze({
+     tick:physics.tick,timeS:(physics.tick-prior.tick)*FIXED_DT,
+     position:Object.freeze({...pos}),
+     velocity:Object.freeze({...vel}),
+     targetGapM:Math.hypot(pos.x-prior.targetX,pos.y-prior.targetY),
+     clearanceM:clearance,readOnly:true
+    });
+    const eligible=prior.airborne&&physics.tick>prior.tick;
+    const ground=eligible?engine.crossGroundContactSnapshot():null;
+    if(ground&&ground.tick!==physics.tick)
+     throw new Error('CROSS-01 ground contact must be same-tick native evidence');
+    const firstGroundContact=prior.firstGroundContact??(
+     eligible&&ground.nativeGroundPair?Object.freeze({...sample(),
+      source:'native-ground-solver-pair',ground}):null);
+    const cushion=engine.researchReceivingCushionSnapshot();
+     if(cushion&&cushion.version!==CURRENT_LAB_DYNAMICS_VERSION)
+      throw new Error('CROSS-02 requires isolated low-cross first touch');
+     const firstReceivingShoeStart=prior.firstReceivingShoeStart??(
+     eligible&&starts.length===1&&starts[0]===prior.recipientId&&
+      foot.active.length===1&&foot.active[0]===prior.recipientId?
+      Object.freeze({...sample(),source:'native-receiving-shoe-start',
+       recipientId:prior.recipientId,realRapierShoeStart:true}):null);
+    const firstDescendingHalfMetre=prior.firstDescendingHalfMetre??(
+     eligible&&previousCrossBall&&previousCrossBall.velocity.z<0&&
+      previousCrossBall.position.z-0.11>0.50&&clearance<=0.50?
+      Object.freeze({...sample(),source:'observed-descending-half-metre'}):null);
+    // Preserve v1's low sample independently, even when a native contact
+    // already occurred. It can belong to a later rebound, not delivery.
+    const firstLowSample=prior.firstLowSample??(
+     airborne&&clearance<=0.10&&descending?Object.freeze({...sample(),
+      source:'observed-low-sample'}):null);
+    // Only real same-world contact can establish the first physical
+    // arrival. A later low sample is not allowed to overwrite it.
+    const arrival=prior.arrival??firstReceivingShoeStart??firstGroundContact;
+     if(cushion&&(!firstReceivingShoeStart||cushion.tick!==firstReceivingShoeStart.tick||
+        cushion.actorId!==prior.recipientId||cushion.originalCrossTick!==prior.tick))
+      throw new Error('CROSS-02 cushion requires original first receiving START');
+     let follow=prior.receiverFollowThrough;
+     if(firstReceivingShoeStart&&!follow?.completed){
+      const elapsed=physics.tick-firstReceivingShoeStart.tick;
+      const receiver=playerFrame.players.find(p=>p.id===prior.recipientId);
+      const dx=pos.x-firstReceivingShoeStart.position.x,dy=pos.y-firstReceivingShoeStart.position.y;
+      const dir=cushion?.controlDirection;
+      const current=Object.freeze({tick:physics.tick,elapsedTicks:elapsed,
+       position:Object.freeze({...pos}),velocity:Object.freeze({...vel}),
+       directedTravelM:dir?dx*dir.x+dy*dir.y:null,
+       crossTrackM:dir?Math.abs(dx*dir.y-dy*dir.x):null,
+       gapM:Math.hypot(pos.x-receiver.x,pos.y-receiver.y),
+       speedMps:Math.hypot(vel.x,vel.y,vel.z),
+       horizontalSpeedMps:Math.hypot(vel.x,vel.y),verticalSpeedMps:vel.z,
+       angularSpeedRadS:Math.hypot(...Object.values(engine.angularVelocity())),
+       clearanceM:clearance});
+      follow=Object.freeze({samples:(follow?.samples??0)+1,
+       maxGapM:Math.max(follow?.maxGapM??0,current.gapM),
+       maxClearanceM:Math.max(follow?.maxClearanceM??0,clearance),
+       maxHorizontalSpeedMps:Math.max(follow?.maxHorizontalSpeedMps??0,current.horizontalSpeedMps),
+       maxSpeedMps:Math.max(follow?.maxSpeedMps??0,current.speedMps),
+       ticksAboveOneMps:(follow?.ticksAboveOneMps??0)+(current.horizontalSpeedMps>1?1:0),
+       minDirectedTravelM:Math.min(follow?.minDirectedTravelM??0,current.directedTravelM??0),
+       maxCrossTrackM:Math.max(follow?.maxCrossTrackM??0,current.crossTrackM??0),
+       atQuarterSecond:elapsed===15?current:follow?.atQuarterSecond??null,
+       atHalfSecond:elapsed===30?current:follow?.atHalfSecond??null,
+       atOneSecond:elapsed===60?current:follow?.atOneSecond??null,
+       atTwoSeconds:elapsed===120?current:null,completed:elapsed===120,readOnly:true});
+     }
+    crossPairAudit=Object.freeze({...prior,airborne,descending,
+     peakClearanceM:prior.arrival?prior.peakClearanceM:
+      Math.max(prior.peakClearanceM,clearance),
+     arrival,firstLowSample,firstDescendingHalfMetre,
+     firstGroundContact,firstReceivingShoeStart,receivingCushion:cushion,
+      receiverFollowThrough:follow});
+   }
+   previousCrossBall=physics.ball;
   }
   const physicalFirstTouch=engine.researchReceivingCushionSnapshot?.()??null;
   const physicalReceiverChoice=engine.researchReceiverChoiceSnapshot?.()??null;
@@ -690,7 +799,10 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
+    labDynamicsVersion:currentDynamics?CURRENT_LAB_DYNAMICS_VERSION:null,
+    latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,
    ...(passPairAudit?{passPairAudit}:{}),
+   ...(crossPairAudit?{crossPairAudit}:{}),
    ...(firstTouchCushion?{physicalFirstTouch,pressureEvidence}:{}),
    ...(adaptiveDecision?{physicalReceiverChoice,postDeferContinuity,
     physicalControlEvidence}:{}),
@@ -1134,6 +1246,8 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   challengeSceneLabel.hidden=select.value!=='challenge';
   by('action-labs-title').textContent=select.selectedOptions[0].textContent.trim();
   session=createControlledActionLab(getRapier(),select.value,{
+   // Hidden original research comparator, not a selectable gameplay LAB.
+   historicalEvidenceBaseline:!SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value),
    shotSide:(['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','throw-in','corner','goal-kick'].includes(select.value)||
     SMALL_SIDED_LAB_SCENARIOS.some(x=>x.id===select.value))?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',

@@ -12,6 +12,10 @@ import {CROSS_LAB_STARTS,ACTION_LAB_SCENARIOS}
  from '../src/action-lab-scenarios.mjs';
 import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
+import {calculateLowCrossReceivingCushion,M25_CROSS_CUSHION_MAX_IMPULSE_NS,
+ calculateLowCrossSpinCushion,M25_CROSS_MAX_ANGULAR_IMPULSE_NMS,
+ calculateOrientedReceivingCushion,CURRENT_LAB_DYNAMICS_VERSION}
+ from '../src/physical-receiving-cushion-m25.mjs';
 
 const frame=(players,tick=1)=>Object.freeze({
  version:PLAYER_VERSION,tick,
@@ -78,8 +82,8 @@ test('ACTIONS-B01 real HOME/AWAY canonical Rapier shoe START, lofted CROSS impul
  {timeout:120000},async()=>{
  const R=await initializeRapier(rapier);
  for(const side of ['home','away']){
-  const a=createControlledActionLab(R,'cross',{shotSide:side});
-  const b=createControlledActionLab(R,'cross',{shotSide:side});
+  const a=createControlledActionLab(R,'cross',{shotSide:side,historicalEvidenceBaseline:true});
+  const b=createControlledActionLab(R,'cross',{shotSide:side,historicalEvidenceBaseline:true});
   try{
    const zero=a.snapshot();
    assert.equal(zero.physicsTick,0);
@@ -120,5 +124,174 @@ test('ACTIONS-B01 real HOME/AWAY canonical Rapier shoe START, lofted CROSS impul
      trueRapierImpulse:first.impulseNs,observed3DFlight:flight,
      officialPossession:false,crossCompleted:false})+'\\n');
   }finally{a.dispose();b.dispose();}
+ }
+});
+
+
+test('CROSS-01 isolated native lofted cross measures first low arrival for both sides',
+ {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ assert.throws(()=>createControlledActionLab(R,'cross-pair',{bodyGuardEnabled:true}),TypeError);
+ for(const side of ['home','away'])for(const variantIndex of [0,1,9,21,29]){
+  const lab=createControlledActionLab(R,'cross-pair',{shotSide:side,variantIndex});
+  try{
+   let frame=lab.snapshot(),count=0,firstTouch=null;
+   assert.equal(frame.genuinePhysicalPlayerCount,2);
+   assert.deepEqual(lab.focus,[side+'-9',side+'-10']);
+   for(let t=1;t<=240;t++){
+    frame=lab.step();
+    assert.equal(frame.officialMatchPossession,false);
+    assert.equal(frame.officialMatchResult,null);
+    assert.ok(frame.starts.every(id=>lab.focus.includes(id)));
+    const cushion=frame.crossPairAudit.receivingCushion;
+    if(cushion&&!firstTouch){
+     firstTouch=cushion;
+     assert.equal(cushion.tick,frame.physicsTick);
+     assert.deepEqual(frame.starts,[side+'-9']);
+     assert.equal(frame.action,null,'no second football action');
+     assert.equal(cushion.actualPhysicsImpulseApplied,true);
+     assert.deepEqual(frame.ball.velocity,cushion.realPostBallVelocity);
+    }else if(cushion)assert.equal(cushion,firstTouch,'only one first-touch impulse');
+    if(frame.action){
+     count++;
+     assert.equal(frame.action.action,'cross');
+     assert.equal(frame.action.playerId,side+'-10');
+     assert.equal(frame.action.crossTarget.recipientId,side+'-9');
+     assert.deepEqual(frame.starts,[side+'-10']);
+     assert.equal(frame.action.actualPhysicsImpulseApplied,true);
+     const c=frame.action.isolatedCrossCalibration;
+     assert.ok(c.scale>=1&&c.scale<=3.8);
+     for(const axis of ['x','y','z'])
+      assert.equal(frame.action.impulseNs[axis],c.originalImpulseNs[axis]*c.scale);
+     assert.ok(frame.action.impulseNs.z>0);
+    }
+   }
+   assert.equal(count,1);
+   rows.push({side,variantIndex,...frame.crossPairAudit});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_CROSS_PAIR '+JSON.stringify(rows)+'\n');
+ assert.equal(rows.length,10);
+ for(const row of rows){
+  assert.equal(row.airborne,true,JSON.stringify(row));
+  assert.ok(row.peakClearanceM>=1&&row.peakClearanceM<=5,JSON.stringify(row));
+  assert.ok(row.arrival&&row.arrival.timeS>0.5&&row.arrival.timeS<=3,JSON.stringify(row));
+  assert.ok(['native-ground-solver-pair','native-receiving-shoe-start'].includes(row.arrival.source),JSON.stringify(row));
+  assert.ok(row.arrival.targetGapM<=3,JSON.stringify(row));
+  assert.ok(row.firstLowSample,JSON.stringify(row));
+  if(row.firstGroundContact)assert.ok(row.firstGroundContact.ground.solverContacts>0);
+  if(row.firstReceivingShoeStart)assert.equal(row.firstReceivingShoeStart.realRapierShoeStart,true);
+  assert.equal(row.officialReception,false);
+  assert.equal(row.officialCrossCompleted,false);
+  assert.equal(row.arrival.source,'native-receiving-shoe-start');
+  // Preserve approved launch and first contact (original ten cases).
+  assert.ok(row.arrival.timeS>=1.30&&row.arrival.timeS<=1.55,JSON.stringify(row));
+  assert.ok(row.peakClearanceM>=2.10&&row.peakClearanceM<=2.90,JSON.stringify(row));
+  assert.ok(row.arrival.targetGapM<=0.18,JSON.stringify(row));
+  const c=row.receivingCushion;
+  assert.ok(c&&c.tick===row.arrival.tick,JSON.stringify(row));
+  assert.equal(c.nativeExclusiveShoeStart,true);
+  assert.equal(c.version,CURRENT_LAB_DYNAMICS_VERSION);
+  assert.equal(c.verifiedBallControl,false);
+  const pre=c.realPreBallVelocity,post=c.realPostBallVelocity;
+  const magnitude=Math.hypot(...Object.values(c.impulseNs));
+  assert.ok(magnitude<=M25_CROSS_CUSHION_MAX_IMPULSE_NS+1e-9);
+  assert.ok(Math.hypot(...Object.values(pre))>10);
+  assert.ok(Math.hypot(post.x,post.y)>=1.0&&Math.hypot(post.x,post.y)<=1.5,JSON.stringify(row));
+  assert.ok(Math.abs(post.z)<=0.10,JSON.stringify(row));
+  assert.ok(post.x*c.controlDirection.x+post.y*c.controlDirection.y>=1.0);
+  assert.ok(c.bodyProjection>=0.15&&c.shoeProjection>=0.15);
+  assert.ok(Math.hypot(...Object.values(post))<Math.hypot(...Object.values(pre)));
+  const preSpin=c.realPreAngularVelocity,postSpin=c.realPostAngularVelocity;
+  if(c.spinCushion){
+   const torque=c.spinCushion.torqueImpulseNms,target=c.spinCushion.targetAngularVelocity;
+   const slip=w=>Math.hypot(w.x-target.x,w.y-target.y,w.z-target.z);
+   assert.ok(Math.hypot(...Object.values(torque))<=M25_CROSS_MAX_ANGULAR_IMPULSE_NMS+1e-9);
+   assert.ok(slip(postSpin)<=slip(preSpin)+1e-5);
+  }
+  const follow=row.receiverFollowThrough;
+  assert.ok(follow?.completed&&follow.samples===121,JSON.stringify(row));
+  assert.ok(follow.maxGapM<=1.6,JSON.stringify(row));
+  assert.ok(follow.maxHorizontalSpeedMps<=1.65,JSON.stringify(row));
+  assert.ok(follow.atQuarterSecond.horizontalSpeedMps>=0.35,JSON.stringify(row));
+  assert.ok(follow.atHalfSecond.horizontalSpeedMps>=0.20&&follow.atHalfSecond.horizontalSpeedMps<=1.3,JSON.stringify(row));
+  assert.ok(follow.atOneSecond.directedTravelM>=0.25&&follow.atOneSecond.directedTravelM<=1.25,JSON.stringify(row));
+  assert.ok(follow.minDirectedTravelM>=-0.10&&follow.maxCrossTrackM<=0.40,JSON.stringify(row));
+  assert.ok(follow.atTwoSeconds.speedMps<=0.30,JSON.stringify(row));
+  assert.ok(follow.atTwoSeconds.clearanceM<=0.05,JSON.stringify(row));
+ }
+});
+
+test('CROSS-02c controls towards goalward space away from receiver and shoe, mirrored, bounded',()=>{
+ const args={ballVelocity:{x:10,y:-10,z:1.9},playerVelocity:{x:0,y:0},
+  ballCentreZ:0.235,ballRadiusM:0.11,realBallPlayerGapM:0.15,ballMassKg:0.43,
+  ballPosition:{x:0.06,y:0.12},receiverPosition:{x:0,y:0},shoePosition:{x:-0.11,y:0.19},attackingSide:'home'};
+ const c=calculateLowCrossReceivingCushion(args);
+ assert.ok(c);
+ assert.ok(c.controlDirection.x>0&&c.bodyProjection>=0.15&&c.shoeProjection>=0.15);
+ assert.ok(Math.hypot(...Object.values(c.impulseNs))<=6.5);
+ const post=Object.keys(args.ballVelocity).map(k=>args.ballVelocity[k]+c.impulseNs[k]/args.ballMassKg);
+ assert.ok(Math.abs(Math.hypot(...post)-1.25)<1e-10);
+ assert.ok(Math.abs(post[2])<1e-10);
+ const mirror=calculateLowCrossReceivingCushion({...args,attackingSide:'away',
+  ballVelocity:{...args.ballVelocity,x:-10},ballPosition:{x:-0.06,y:0.12},shoePosition:{x:0.11,y:0.19}});
+ assert.equal(mirror.controlDirection.x,-c.controlDirection.x);
+ assert.equal(mirror.controlDirection.y,c.controlDirection.y);
+ assert.equal(c.officialPossession,false);
+ for(const patch of [{ballCentreZ:1.5},{realBallPlayerGapM:1},{ballVelocity:{x:19,y:0,z:0}},{ballVelocity:{x:0.1,y:0,z:0}}])
+  assert.equal(calculateLowCrossReceivingCushion({...args,...patch}),null);
+ assert.throws(()=>calculateLowCrossReceivingCushion({...args,ballMassKg:0}),TypeError);
+});
+
+test('CROSS-02c bounded spin alignment towards outgoing natural roll',()=>{
+ const args={angularVelocity:{x:10,y:20,z:-3},principalInertia:{x:0.00347,y:0.00347,z:0.00347},
+  ballRadiusM:0.11,linearImpulseNs:5.5,outgoingVelocity:{x:1.25,y:0}};
+ const c=calculateLowCrossSpinCushion(args);
+ assert.ok(c);
+ assert.ok(Math.hypot(...Object.values(c.torqueImpulseNms))<=0.15);
+ const post=Object.keys(args.angularVelocity).map(k=>args.angularVelocity[k]+c.torqueImpulseNms[k]/args.principalInertia.x);
+ assert.ok(Math.hypot(post[0],post[1]-1.25/0.11,post[2])<1e-10);
+ assert.equal(calculateLowCrossSpinCushion({...args,angularVelocity:{x:0,y:1.25/0.11,z:0}}),null);
+ assert.equal(calculateLowCrossSpinCushion({...args,linearImpulseNs:0}),null);
+ const limited=calculateLowCrossSpinCushion({...args,angularVelocity:{x:300,y:0,z:0}});
+ assert.ok(Math.abs(Math.hypot(...Object.values(limited.torqueImpulseNms))-0.15)<1e-10);
+ assert.throws(()=>calculateLowCrossSpinCushion({...args,principalInertia:{x:1,y:2,z:3}}),TypeError);
+});
+
+test('current LAB oriented control shares the same policy for grounded and lofted deliveries, with pressure',()=>{
+ const args={ballVelocity:{x:8,y:0,z:0},playerVelocity:{x:0,y:0},
+  ballCentreZ:0.11,ballRadiusM:0.11,realBallPlayerGapM:0.35,ballMassKg:0.43,
+  ballPosition:{x:0.35,y:0},receiverPosition:{x:0,y:0},shoePosition:{x:0.22,y:0},attackingSide:'home'};
+ const pass=calculateOrientedReceivingCushion({...args,deliveryKind:'pass'});
+ const cross=calculateOrientedReceivingCushion({...args,deliveryKind:'cross'});
+ assert.ok(pass&&cross);
+ assert.deepEqual(pass.impulseNs,cross.impulseNs);
+ assert.deepEqual(pass.controlDirection,cross.controlDirection);
+ const pressured=calculateOrientedReceivingCushion({...args,deliveryKind:'pass',opponents:[{x:1.3,y:0}]});
+ assert.ok(pressured&&Math.abs(pressured.controlDirection.y)>0);
+ assert.equal(pressured.underImmediatePressure,true);
+ assert.equal(pressured.noActiveOpponents,false);
+ const slow=calculateOrientedReceivingCushion({...args,deliveryKind:'pass',ballVelocity:{x:0.6,y:0,z:0}});
+ assert.ok(slow&&slow.targetSpeedMps<0.6);
+});
+test('every current gameplay Action LAB defaults to the same dynamics version',async()=>{
+ const R=await initializeRapier(rapier);
+ for(const spec of [...ACTION_LAB_SCENARIOS,...(await import('../src/small-sided-lab-scenarios.mjs')).SMALL_SIDED_LAB_SCENARIOS]){
+  const lab=createControlledActionLab(R,spec.id);
+  try{
+   assert.equal(lab.snapshot().labDynamicsVersion,spec.mode==='referee'?null:CURRENT_LAB_DYNAMICS_VERSION,spec.id);
+   for(let i=0;i<100;i++){
+    const frame=lab.step();
+    if(frame.action?.action==='pass')assert.ok(frame.action.isolatedGroundPassCalibration,spec.id);
+    if(frame.action?.action==='cross')assert.ok(frame.action.isolatedCrossCalibration,spec.id);
+    const c=frame.latestOrientedReception;
+    if(c?.tick===frame.physicsTick){
+     assert.equal(c.version,CURRENT_LAB_DYNAMICS_VERSION);
+     assert.deepEqual(frame.starts,[c.actorId]);
+     assert.equal(frame.action,null);
+     assert.equal(c.officialPossession,false);
+    }
+   }
+  }finally{lab.dispose();}
  }
 });
