@@ -10,7 +10,7 @@ import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {smallSidedSetup} from './small-sided-lab-scenarios.mjs';
-import {createDribbleTransitionObserver} from './isolated-dribble-touches.mjs';
+import {createCollectiveBallControlObserver,createDribbleTransitionObserver} from './isolated-dribble-touches.mjs';
 import {createSmallSidedNativeBodyGuard,createNativeKeeperDive}
  from './small-sided-native-body-guard.mjs';
 import {initialResearchBodyEncounterLineup}
@@ -135,6 +135,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticNativeFixedCarryResearchEnabled = false,
   diagnosticNativeFixedSprintLongStrideEnabled = false,
   diagnosticSmallSidedBodyGuardEnabled = false,
+  diagnosticCollectiveActions = false,
   diagnosticKeeperSingleShot = false,
   diagnosticDirectedDribble = false,
   diagnosticDuelTackleProfile = 'mixed',
@@ -262,6 +263,7 @@ export function createEngine(RAPIER, input = {}, {
       diagnosticPlayerBodyCollidersEnabled||
       diagnosticSharedContactEventsEnabled)))
    throw new TypeError('LAB body collision requires a small-sided exercise with actual shoe source');
+  if(typeof diagnosticCollectiveActions!=='boolean'||(diagnosticCollectiveActions&&(diagnosticSmallSidedSituation!=='overload-2v1'||!diagnosticSmallSidedBodyGuardEnabled||!diagnosticSmallSidedBodyFeedbackEnabled)))throw new TypeError('Collective actions require guarded 2v1');
   if(typeof diagnosticDirectedDribble!=='boolean'||(diagnosticDirectedDribble&&
      (diagnosticSmallSidedSituation!=='dribble-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Directed dribble requires original guarded 1v1');
@@ -634,7 +636,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticSoloSprintActiveFootReleaseM,
     diagnosticIntentDrivenSoloCarryEnabled,
     diagnosticNativeFixedCarryResearchEnabled,
-    diagnosticSmallSidedBodyGuardEnabled,diagnosticKeeperSingleShot,diagnosticDirectedDribble,
+    diagnosticSmallSidedBodyGuardEnabled,diagnosticCollectiveActions,diagnosticKeeperSingleShot,diagnosticDirectedDribble,
      diagnosticSmallSidedBodyFeedbackEnabled,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
@@ -737,6 +739,7 @@ export function createEngine(RAPIER, input = {}, {
   const keeperDive=smallBodyGuard&&(smallSided?.id==='keeper-1v1'||smallSided?.blockStart)?
    createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1'),body,
     {closeChallengeEnabled:diagnosticKeeperSingleShot}):null;
+  const collectiveObserver=diagnosticCollectiveActions?createCollectiveBallControlObserver(smallSided.activeIds,smallSided.activeIds.filter(id=>!id.endsWith('-1'))):null;
   const duelTransition=diagnosticDirectedDribble?createDribbleTransitionObserver(smallSided.side,diagnosticDuelTackleProfile):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
@@ -749,7 +752,7 @@ export function createEngine(RAPIER, input = {}, {
       nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
       nativeFixedSprintLongStride:diagnosticNativeFixedSprintLongStrideEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
-       isolatedCarry||(smallSided?.variantIndex>0&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)),
+       isolatedCarry||diagnosticCollectiveActions||(smallSided?.variantIndex>0&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)),
       ...(smallSided?.id==='pass-pair'?(smallSided.interceptionStart?{interceptionPassSide:smallSided.side}:{isolatedPassSide:smallSided.side}):{}),
        ...(smallSided?.id==='cross-pair'?{isolatedCrossSide:smallSided.side}:{}),
       ...(smallSided?.id==='shot-solo'?{isolatedShotSide:smallSided.side,isolatedShotProfile:diagnosticIsolatedShotProfile,firstTimeShot:diagnosticFirstTimeShot}:{}),
@@ -760,7 +763,7 @@ export function createEngine(RAPIER, input = {}, {
         variantIndex:smallSided.variantIndex,...(diagnosticDirectedDribble?{directed:true}:{})
        })
       }:{}),
-      ...(smallSided?.variantIndex>0&&!smallSided.blockStart&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?{
+      ...(diagnosticCollectiveActions?{smallSidedDecisionContext:Object.freeze({situationId:smallSided.id,variantIndex:smallSided.variantIndex,attackingSide:smallSided.side,collective:true})}:smallSided?.variantIndex>0&&!smallSided.blockStart&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?{
        smallSidedDecisionContext:Object.freeze({
         situationId:smallSided.id,
         variantIndex:smallSided.variantIndex,
@@ -955,6 +958,7 @@ export function createEngine(RAPIER, input = {}, {
     // START. The ordinary physics and contact-only modes never kick.
     if(actionExecutor)actionExecutor.apply(tick,playerFrame,{
       duelTransition:duelTransition?.snapshot()??null,
+      collectiveControl:collectiveObserver?.snapshot()??null,
       ...(diagnosticFirstTimeShot?{priorNativeBallVelocity:preStepBall.velocity}:{}),
       suppressOriginalAction:(diagnosticB06bNativeShotSide!==null&&(
        b06bGoalPending!==null||
@@ -964,6 +968,10 @@ export function createEngine(RAPIER, input = {}, {
       suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
        .lowerLegBallContacts.length>0||keeperDive?.snapshot().contact===true||keeperDive?.snapshot().catchState?.active===true
     });
+    if(collectiveObserver){
+     const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
+     collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,bodyStarts:physical.lowerLegBallStarts,bodyActive:physical.lowerLegBallContacts,action:actionExecutor?.actionSnapshot()??null});
+    }
     if(duelTransition){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
      duelTransition.observe({tick,starts:shoe.started,active:shoe.active,bodyStarts:physical.lowerLegBallStarts,
@@ -1382,6 +1390,7 @@ export function createEngine(RAPIER, input = {}, {
     ...(smallSided?.id==='cross-pair'?{crossGroundContactSnapshot}:{}),
     ...(keeperDive?{keeperDiveSnapshot:()=>keeperDive.snapshot()}:{}),
     ...(duelTransition?{duelTransitionSnapshot:()=>duelTransition.snapshot()}:{}),
+    ...(collectiveObserver?{collectiveControlSnapshot:()=>collectiveObserver.snapshot()}:{}),
     ...(smallSided?{
       originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds,
       ...(smallBodyGuard?{

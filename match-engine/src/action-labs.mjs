@@ -1,4 +1,4 @@
-import {createCollectiveBallControlObserver,createDribbleShieldObserver,planDribbleDefender,resolveDuelActors} from './isolated-dribble-touches.mjs';
+import {createDribbleShieldObserver,planDribbleDefender,resolveDuelActors} from './isolated-dribble-touches.mjs';
 // #620 — controlled actions on the CLEAN canonical same-world Rapier core.
 // No legacy universal match session, opponent-lane tactical simulator or fake
 // action event. Exactly one core engine and one existing 22-player mover.
@@ -252,6 +252,7 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride
    }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
+   diagnosticCollectiveActions:collectiveApproaches,
    diagnosticKeeperSingleShot:keeperSingleShot,diagnosticDirectedDribble:directedDribble,diagnosticDuelTackleProfile:duelTackleProfile,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
   }:{}),
@@ -373,7 +374,6 @@ export function createControlledActionLab(RAPIER,id,{
    JSON.stringify(smallSided.activeIds))
   throw new Error('Small-sided participants differ from physical Rapier shoe colliders');
  const keeperShotObserver=id==='keeper-1v1'?createKeeperShotObserver(shotSide):null;
- const collectiveObserver=collectiveApproaches?createCollectiveBallControlObserver(smallSided.activeIds,smallSided.activeIds.filter(id=>!id.endsWith('-1'))):null;
  const shieldObserver=directedDribble?createDribbleShieldObserver(shotSide):null;
  const refereeObserver=(refereeMode||smallSided)?
   createBasicMatchRefereeB05():null;
@@ -391,9 +391,7 @@ export function createControlledActionLab(RAPIER,id,{
    throw new Error('Only genuine same-tick Rapier and canonical mover allowed');
   const raw=engine.uniformAutonomousActionSnapshot?.()??null;
   const action=raw?.tick===physics.tick?raw:null;
-  const collectiveControl=collectiveObserver?(physics.tick===0?collectiveObserver.snapshot():collectiveObserver.observe({
-   tick:physics.tick,players:playerFrame.players,ball:physics.ball,starts,active:foot.active,
-   bodyStarts:engine.smallSidedBodyGuardSnapshot().lowerLegBallStarts,bodyActive:engine.smallSidedBodyGuardSnapshot().lowerLegBallContacts,action})):null;
+  const collectiveControl=collectiveApproaches?engine.collectiveControlSnapshot():null;
   if(blockAudit){
    const ball=physics.ball,defender=(shotSide==='home'?'away':'home')+'-2';
    const body=engine.smallSidedBodyGuardSnapshot();

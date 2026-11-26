@@ -71,3 +71,17 @@ test('#628 seed decision fails closed for untrusted scene, side, index or missin
   {...base,variantIndex:2,nearestOpponentM:NaN}
  ])assert.throws(()=>chooseSmallSidedContextAction(input));
 });
+
+ test('COL-03 collective choice is independent of initial shirt and side, including V01',()=>{
+  for(let variantIndex=0;variantIndex<30;variantIndex++){
+   const input={...base,variantIndex,collective:true};
+   const choice=chooseSmallSidedContextAction(input);
+   assert.deepEqual(choice,chooseSmallSidedContextAction({...input,actorId:'home-9'}));
+   assert.deepEqual(choice,chooseSmallSidedContextAction({...input,team:'away',attackingSide:'away',actorId:'away-2'}));
+   assert.equal(choice.sample,null);
+   for(const kind of ['shot','pass','carry']){
+    const only=chooseSmallSidedContextAction({...input,canShoot:kind==='shot',canPass:kind==='pass',canCarry:kind==='carry'});
+    assert.equal(only.selected,kind);
+   }
+  }
+ });

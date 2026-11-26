@@ -20,10 +20,11 @@ export function chooseSmallSidedContextAction({
  situationId,variantIndex,tick,actorId,team,attackingSide,
  goalDistanceM,nearestOpponentM,shotLaneClearanceM=null,
  passLaneClearanceM=null,recipientOpponentGapM=null,passForwardM=null,
- canShoot=false,canPass=false,canCarry=false
+ canShoot=false,canPass=false,canCarry=false,collective=false
 }={}){
  getSmallSidedScenario(situationId); // only five declared exercises
- if(!Number.isSafeInteger(variantIndex)||variantIndex<1||
+ if(typeof collective!=='boolean'||(collective&&situationId!=='overload-2v1')||
+    !Number.isSafeInteger(variantIndex)||variantIndex<(collective?0:1)||
     variantIndex>=SMALL_SIDED_VARIANT_COUNT||
     !Number.isSafeInteger(tick)||tick<1||
     !['home','away'].includes(team)||team!==attackingSide||
@@ -60,10 +61,12 @@ export function chooseSmallSidedContextAction({
  // Team independent: identical mirrored HOME/AWAY geometry and physical
  // tick produce the same choice for corresponding shirt numbers.
  const number=actorId.slice(actorId.indexOf('-')+1);
- const sample=deterministicFraction(
+ const sample=collective?null:deterministicFraction(
   situationId+'|'+variantIndex+'|'+number+'|'+tick);
  const target=sample*total;
- const selected=target<weights.shot?'shot':
+ // Collective mode uses the best eligible contextual score, never the
+ // shirt number or a forced action distribution. Stable tie order only.
+ const selected=collective?['shot','pass','carry'].reduce((best,kind)=>weights[kind]>weights[best]?kind:best):target<weights.shot?'shot':
   target<weights.shot+weights.pass?'pass':'carry';
  return freeze({
   version:SMALL_SIDED_CONTEXT_CHOICE_VERSION,

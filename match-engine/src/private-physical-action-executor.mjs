@@ -91,7 +91,8 @@ export function createPrivatePhysicalActionExecutor({
     !['home','away'].includes(smallSidedDecisionContext.attackingSide)||
     typeof smallSidedDecisionContext.situationId!=='string'||
     !Number.isSafeInteger(smallSidedDecisionContext.variantIndex)||
-    smallSidedDecisionContext.variantIndex<1||
+    smallSidedDecisionContext.variantIndex<(smallSidedDecisionContext.collective===true?0:1)||
+      (smallSidedDecisionContext.collective!==undefined&&(smallSidedDecisionContext.collective!==true||smallSidedDecisionContext.situationId!=='overload-2v1'||activePlayerIds.length!==4))||
     smallSidedDecisionContext.variantIndex>29))
   throw new TypeError('Seeded contextual LAB choice needs an active real physical shoe set');
  if(isolatedDribbleContext!==null&&(
@@ -130,7 +131,7 @@ export function createPrivatePhysicalActionExecutor({
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
-  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null,duelTransition=null
+  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null,duelTransition=null,collectiveControl=null
  }={}){
   ensureOpen();
   if(firstTimeShot&&(!priorNativeBallVelocity||!['x','y','z'].every(k=>Number.isFinite(priorNativeBallVelocity[k]))))
@@ -212,7 +213,7 @@ export function createPrivatePhysicalActionExecutor({
   const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact||
    !isolatedNativeShoeSourceValid?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,
-    smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,
+    smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,collectiveControl,
     interceptionContext:interceptionPassSide===null?null:{side:interceptionPassSide,phase:interceptionPhase},
     blockContext:blockShotSide===null?null:{side:blockShotSide,shotTaken:blockShotTaken}});
   let orientedCandidate=null,orientedDelivery=null;

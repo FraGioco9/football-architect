@@ -264,8 +264,10 @@ export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
  allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null,
- isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null,blockContext=null
+ isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null,blockContext=null,collectiveControl=null
 }){
+ if(collectiveControl!==null&&(smallSidedDecisionContext?.collective!==true||collectiveControl.tick!==tick-1||collectiveControl.officialPossession!==false||!['controlled','loose'].includes(collectiveControl.kind)|| (collectiveControl.kind==='controlled'&&!activePlayerIds?.includes(collectiveControl.playerId))))throw new TypeError('Prior native collective control required');
+ if(smallSidedDecisionContext?.collective===true&&collectiveControl===null)throw new TypeError('Collective action needs live control observation');
  if(blockContext!==null&&(!['home','away'].includes(blockContext.side)||typeof blockContext.shotTaken!=='boolean'||activePlayerIds?.length!==3||!activePlayerIds.includes(blockContext.side+'-10')||!activePlayerIds.includes((blockContext.side==='home'?'away':'home')+'-2')||!activePlayerIds.includes((blockContext.side==='home'?'away':'home')+'-1')||interceptionContext!==null||isolatedDribbleContext!==null||smallSidedDecisionContext!==null||keeperSingleShotSide!==null))throw new TypeError('Bounded three-player shot block context required');
  if(interceptionContext!==null&&(!['home','away'].includes(interceptionContext.side)||!['ready','flight','intercepted','collected','received'].includes(interceptionContext.phase)||activePlayerIds?.length!==3||!activePlayerIds.includes(interceptionContext.side+'-10')||!activePlayerIds.includes(interceptionContext.side+'-9')||!activePlayerIds.includes((interceptionContext.side==='home'?'away':'home')+'-2')||isolatedDribbleContext!==null||smallSidedDecisionContext!==null))throw new TypeError('Bounded three-player pass interception context required');
  if(duelTransition!==null&&(isolatedDribbleContext?.directed!==true||duelTransition.tick!==tick-1||!['attack','recover','counter'].includes(duelTransition.phase)))
@@ -307,7 +309,8 @@ export function selectUniformAutonomousContactAction({
       !['home','away'].includes(smallSidedDecisionContext.attackingSide)||
       typeof smallSidedDecisionContext.situationId!=='string'||
       !Number.isSafeInteger(smallSidedDecisionContext.variantIndex)||
-      smallSidedDecisionContext.variantIndex<1||
+      smallSidedDecisionContext.variantIndex<(smallSidedDecisionContext.collective===true?0:1)||
+      (smallSidedDecisionContext.collective!==undefined&&(smallSidedDecisionContext.collective!==true||smallSidedDecisionContext.situationId!=='overload-2v1'||activePlayerIds.length!==4))||
       smallSidedDecisionContext.variantIndex>29)))
   throw new TypeError('Verified same-tick movement, ball and real Rapier shoe starts required');
  // A4.2b.3: an ambiguous START/ACTIVE contact cannot confer a right
@@ -356,21 +359,23 @@ export function selectUniformAutonomousContactAction({
    shotRange?chooseLiveShotLane(ballPosition,goalX,player.team,actors):null;
   const shotLaneM=chosenShotLane?.clearance??
    lineClearance(ballPosition,goalTarget,player.team,actors);
-  const defensiveAttempt=chooseBasicDefensiveAttempt({
-   actor:player,players:actors,ball:ballPosition,velocity:ballVelocity
-  });
+  const collective=smallSidedDecisionContext?.collective===true;
+  const owner=collectiveControl?.kind==='controlled'?actors.find(p=>p.id===collectiveControl.playerId):null;
+  const opponentControl=!!owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15;
+  const rawDefense=chooseBasicDefensiveAttempt({actor:player,players:actors,ball:ballPosition,velocity:ballVelocity});
+  const defensiveAttempt=collective&&!opponentControl?(rawDefense?.kind==='interception'&&!owner?rawDefense:null):rawDefense;
   // LAB-VAR-02 only: AFTER verified genuine exclusive Rapier shoe START,
   // examine live legitimate affordances. Normal 22-player policy, keeper
   // and defensive priority, and archival V01 remain byte-identical.
   const contextualAttacker=!activeKeeperAttacker&&isolatedDribbleContext===null&&
    smallSidedDecisionContext!==null&&
-   player.team===smallSidedDecisionContext.attackingSide&&
+   (collective?!opponentControl:player.team===smallSidedDecisionContext.attackingSide)&&
    player.role!=='goalkeeper'&&!defensiveAttempt;
   const contextualRecipient=contextualAttacker?
    chooseRecipient(player,ballPosition,actors):null;
   const carryPossible=contextualAttacker&&allowPhysicalCarry&&
    Math.abs(ballPosition.y)<=20&&
-   attack*ballPosition.x>=-30&&attack*ballPosition.x<=45&&
+   (collective||attack*ballPosition.x>=-30)&&attack*ballPosition.x<=45&&
    Math.abs(toGoal)>5&&
    Math.hypot(ballVelocity.x,ballVelocity.y)<=8;
   const contextualChoice=contextualAttacker?
@@ -378,7 +383,8 @@ export function selectUniformAutonomousContactAction({
     situationId:smallSidedDecisionContext.situationId,
     variantIndex:smallSidedDecisionContext.variantIndex,tick,
     actorId:id,team:player.team,
-    attackingSide:smallSidedDecisionContext.attackingSide,
+    attackingSide:collective?player.team:smallSidedDecisionContext.attackingSide,
+    ...(collective?{collective:true}:{}),
     goalDistanceM:Math.abs(toGoal),nearestOpponentM,
     shotLaneClearanceM:chosenShotLane?.clearance??null,
     passLaneClearanceM:contextualRecipient?.laneClearanceM??null,
@@ -454,6 +460,11 @@ export function selectUniformAutonomousContactAction({
    rule=action==='tackle'?
     'observed-near-opponent-ground-ball-poke-attempt':
     'observed-inbound-ball-line-block-attempt';
+  }else if(collective&&opponentControl&&player.role!=='goalkeeper'){
+   // An opponent's controlled ball cannot become a pass/shot just because
+   // the challenger reached the shoe gate. A feasible defensive action
+   // has already been handled above.
+   continue;
   }else if(contextualChoice?.selected==='pass'){
    recipientInfo=contextualRecipient;
    recipient=recipientInfo.player;
