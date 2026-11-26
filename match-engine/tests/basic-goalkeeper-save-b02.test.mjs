@@ -8,7 +8,7 @@ import {SAVE_LAB_STARTS,ACTION_LAB_SCENARIOS}
  from '../src/action-lab-scenarios.mjs';
 import {initialResearchGoalkeeperSaveLineup,chooseBasicGoalkeeperDiveTarget,createKeeperShotObserver,observeKeeperDeflection}
  from '../src/goalkeeper-save-foundation-b02.mjs';
-import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction}
+import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction,chooseKeeperDuelAttackIntent}
  from '../src/player-ball-uniform-autonomous-action.mjs';
 import {initializeRapier,FIXED_DT} from '../src/core.mjs';
 import {advanceGoalkeeperBallOrientation} from '../src/individual-kinematics.mjs';
@@ -453,10 +453,10 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
    assert.equal(keeperDuelCloseDownTarget(side,keeper,attacker,{...ball,x:dir*30},velocity),null);
   }
  });
- test('GK-07 visible variation 03 resolves a carried-ball threat on both sides', {timeout:120000},async()=>{
+ test('GK-07 visible variations 03, 06 and 27 resolve an attacking threat on both sides', {timeout:120000},async()=>{
   const R=await initializeRapier(rapier);
-  for(const side of ['home','away']){
-   const scene=createControlledActionLab(R,'keeper-1v1',{shotSide:side,variantIndex:2,bodyGuardEnabled:true,keeperSingleShot:true});
+  for(const side of ['home','away'])for(const variantIndex of [2,5,26]){
+   const scene=createControlledActionLab(R,'keeper-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,keeperSingleShot:true});
    let shots=0,attempts=0,contacts=0,catches=0,nearest=Infinity,bodyContacts=0,footContacts=0,exit=null;
    try{
     for(let n=0;n<900;n++){
@@ -472,9 +472,22 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
      exit=f.refereeEvidence?.lastEvent?.kind??null;
      if(exit||catches||shots>0)break;
     }
-    process.stdout.write('ME_628_GK_VARIANT_03 '+JSON.stringify({side,shots,attempts,contacts,catches,nearest,bodyContacts,footContacts,exit})+'\n');
-    assert.ok(shots>0||contacts>0||bodyContacts>0||footContacts>0,
-     'V03 must not remain an endless unchallenged carry');
+    process.stdout.write('ME_628_GK_REPORTED_VARIANTS '+JSON.stringify({side,variant:variantIndex+1,shots,attempts,contacts,catches,nearest,bodyContacts,footContacts,exit})+'\n');
+    assert.ok(shots===1||contacts>0||bodyContacts>0||footContacts>0,
+     'Reported variant must reach a real shot or keeper intervention');
+    assert.ok(!(exit==='goal'&&shots===0&&contacts===0&&bodyContacts===0&&footContacts===0),'No unchallenged carry into goal');
    }finally{scene.dispose();}
+  }
+ });
+
+ test('GK-07 directed 1v1 prioritises a real shooting lane and bounds carry corrections',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,keeper={id:(side==='home'?'away':'home')+'-1',team:side==='home'?'away':'home',x:dir*48,y:0};
+   const shot=chooseKeeperDuelAttackIntent({x:dir*30,y:1},{x:0,y:0},side,keeper);
+   assert.equal(shot.action,'shot');assert.ok(shot.lane.clearance>=shot.minimum);
+   const carry=chooseKeeperDuelAttackIntent({x:dir*25,y:5},{x:-dir*1,y:2},side,keeper);
+   assert.equal(carry.action,'carry');assert.ok(dir*carry.dx>0);assert.ok(carry.dy<0);assert.ok(carry.magnitude<=0.42);
+   const near=chooseKeeperDuelAttackIntent({x:dir*48,y:0},{x:0,y:0},side,{...keeper,x:dir*49});
+   assert.equal(near.action,'shot');
   }
  });

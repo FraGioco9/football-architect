@@ -733,6 +733,7 @@ export function createEngine(RAPIER, input = {}, {
     createPrivatePhysicalActionExecutor({
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
+      keeperSingleShotSide:diagnosticKeeperSingleShot?smallSided.side:null,
       intentDrivenSoloCarry:diagnosticIntentDrivenSoloCarryEnabled,
       nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
       nativeFixedSprintLongStride:diagnosticNativeFixedSprintLongStrideEnabled,
