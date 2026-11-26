@@ -2,7 +2,7 @@
 // This does NOT authorize a native Rapier shoe START or any score/possession.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {chooseSmallSidedContextAction,SMALL_SIDED_CONTEXT_CHOICE_VERSION}
+import {chooseSmallSidedContextAction,chooseNativeFootballAction,SMALL_SIDED_CONTEXT_CHOICE_VERSION}
  from '../src/small-sided-context-choice.mjs';
 const base=Object.freeze({
  situationId:'overload-2v1',tick:12,actorId:'home-10',
@@ -85,3 +85,13 @@ test('#628 seed decision fails closed for untrusted scene, side, index or missin
    }
   }
  });
+
+test('UME-02 native scoring matches the validated collective baseline without LAB metadata',()=>{
+ for(const flags of [[true,true,true],[false,true,true],[true,false,false],[false,false,true],[false,false,false]]){
+  const geometry={...base,canShoot:flags[0],canPass:flags[1],canCarry:flags[2]};
+  const {situationId,tick,actorId,team,attackingSide,...affordances}=geometry;
+  const shared=chooseNativeFootballAction(affordances);
+  assert.deepEqual(shared,chooseSmallSidedContextAction({...geometry,variantIndex:0,collective:true}));
+  assert.deepEqual(shared,chooseSmallSidedContextAction({...geometry,variantIndex:29,collective:true}));
+ }
+});

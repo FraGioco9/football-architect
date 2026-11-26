@@ -538,3 +538,16 @@ test('C3.3m real Rapier-origin pass distance is valid on both 3m and 25m edges, 
   assert.equal(a.action,'carry');assert.equal(a.playerId,defender);assert.equal(a.decisionContext.rule,'interception-recovery-native-carry');assert.equal(a.officialMatchPossession,false);
  }
  });
+
+test('UME-02 same native contact selector for pair, overload and full participant set',()=>{
+ const field=mover(Object.fromEntries(INITIAL_PLAYERS.map(p=>[p.id,{x:p.team==='home'?-45:45,y:25}]).concat([['home-10',{x:-5,y:0}],['away-2',{x:-1,y:0}]])));
+ const source={tick:1,contactStarted:['home-10'],contactActive:['home-10'],playerFrame:field,ballPosition:ball,ballVelocity:quiet,ballRadiusM:0.11,allowPhysicalCarry:true,nativeActionPolicy:true,collectiveControl:{tick:0,kind:'loose',playerId:null,sourceTick:null,officialPossession:false}};
+ const sets=[['home-10','away-2'],['home-10','away-2','home-9'],INITIAL_PLAYERS.map(p=>p.id)];
+ for(const activePlayerIds of sets){
+  const action=selectUniformAutonomousContactAction({...source,activePlayerIds});
+  assert.equal(action?.action,'carry');assert.equal(action.decisionContext.smallSidedChoice.selected,'carry');
+  assert.equal(selectUniformAutonomousContactAction({...source,activePlayerIds,contactStarted:[],contactActive:[]}),null);
+  assert.equal(selectUniformAutonomousContactAction({...source,activePlayerIds,contactActive:['home-10','away-2']}),null);
+ }
+ assert.throws(()=>selectUniformAutonomousContactAction({...source,activePlayerIds:sets[0],collectiveControl:null}),/control observation/);
+});

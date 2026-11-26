@@ -5,7 +5,7 @@
 import {INITIAL_PLAYERS,PLAYER_PITCH,PLAYER_VERSION} from './player-movement.mjs';
 import {chooseBasicDefensiveAttempt}
  from './basic-defensive-physical-actions-b03.mjs';
-import {chooseSmallSidedContextAction}
+import {chooseSmallSidedContextAction,chooseNativeFootballAction}
  from './small-sided-context-choice.mjs';
 
 
@@ -264,10 +264,11 @@ export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
  allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null,
- isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null,blockContext=null,collectiveControl=null
+ isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null,blockContext=null,collectiveControl=null,nativeActionPolicy=false
 }){
- if(collectiveControl!==null&&(smallSidedDecisionContext?.collective!==true||collectiveControl.tick!==tick-1||collectiveControl.officialPossession!==false||!['controlled','loose'].includes(collectiveControl.kind)|| (collectiveControl.kind==='controlled'&&!activePlayerIds?.includes(collectiveControl.playerId))))throw new TypeError('Prior native collective control required');
- if(smallSidedDecisionContext?.collective===true&&collectiveControl===null)throw new TypeError('Collective action needs live control observation');
+ if(typeof nativeActionPolicy!=='boolean'||(nativeActionPolicy&&(!allowPhysicalCarry||!Array.isArray(activePlayerIds)||smallSidedDecisionContext!==null||isolatedDribbleContext!==null||keeperSingleShotSide!==null||blockContext!==null||interceptionContext!==null)))throw new TypeError('Native action policy requires explicit physical participants and no isolated action override');
+ if(collectiveControl!==null&&(!nativeActionPolicy||collectiveControl.tick!==tick-1||collectiveControl.officialPossession!==false||!['controlled','loose'].includes(collectiveControl.kind)|| (collectiveControl.kind==='controlled'&&!activePlayerIds?.includes(collectiveControl.playerId))))throw new TypeError('Prior native collective control required');
+ if(nativeActionPolicy&&collectiveControl===null)throw new TypeError('Collective action needs live control observation');
  if(blockContext!==null&&(!['home','away'].includes(blockContext.side)||typeof blockContext.shotTaken!=='boolean'||activePlayerIds?.length!==3||!activePlayerIds.includes(blockContext.side+'-10')||!activePlayerIds.includes((blockContext.side==='home'?'away':'home')+'-2')||!activePlayerIds.includes((blockContext.side==='home'?'away':'home')+'-1')||interceptionContext!==null||isolatedDribbleContext!==null||smallSidedDecisionContext!==null||keeperSingleShotSide!==null))throw new TypeError('Bounded three-player shot block context required');
  if(interceptionContext!==null&&(!['home','away'].includes(interceptionContext.side)||!['ready','flight','intercepted','collected','received'].includes(interceptionContext.phase)||activePlayerIds?.length!==3||!activePlayerIds.includes(interceptionContext.side+'-10')||!activePlayerIds.includes(interceptionContext.side+'-9')||!activePlayerIds.includes((interceptionContext.side==='home'?'away':'home')+'-2')||isolatedDribbleContext!==null||smallSidedDecisionContext!==null))throw new TypeError('Bounded three-player pass interception context required');
  if(duelTransition!==null&&(isolatedDribbleContext?.directed!==true||duelTransition.tick!==tick-1||!['attack','recover','counter'].includes(duelTransition.phase)))
@@ -291,7 +292,7 @@ export function selectUniformAutonomousContactAction({
      activePlayerIds?.length!==2||!activePlayerIds.includes(keeperSingleShotSide+'-10')||
      !activePlayerIds.includes((keeperSingleShotSide==='home'?'away':'home')+'-1')))||
     (activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
-      activePlayerIds.length<1||activePlayerIds.length>7||
+      activePlayerIds.length<1||activePlayerIds.length>(nativeActionPolicy?22:7)||
       new Set(activePlayerIds).size!==activePlayerIds.length||
       activePlayerIds.some(id=>!ids.includes(id))))||
     (isolatedDribbleContext!==null&&(
@@ -309,8 +310,7 @@ export function selectUniformAutonomousContactAction({
       !['home','away'].includes(smallSidedDecisionContext.attackingSide)||
       typeof smallSidedDecisionContext.situationId!=='string'||
       !Number.isSafeInteger(smallSidedDecisionContext.variantIndex)||
-      smallSidedDecisionContext.variantIndex<(smallSidedDecisionContext.collective===true?0:1)||
-      (smallSidedDecisionContext.collective!==undefined&&(smallSidedDecisionContext.collective!==true||smallSidedDecisionContext.situationId!=='overload-2v1'||activePlayerIds.length!==4))||
+      smallSidedDecisionContext.variantIndex<1||smallSidedDecisionContext.collective!==undefined||
       smallSidedDecisionContext.variantIndex>29)))
   throw new TypeError('Verified same-tick movement, ball and real Rapier shoe starts required');
  // A4.2b.3: an ambiguous START/ACTIVE contact cannot confer a right
@@ -359,7 +359,7 @@ export function selectUniformAutonomousContactAction({
    shotRange?chooseLiveShotLane(ballPosition,goalX,player.team,actors):null;
   const shotLaneM=chosenShotLane?.clearance??
    lineClearance(ballPosition,goalTarget,player.team,actors);
-  const collective=smallSidedDecisionContext?.collective===true;
+  const collective=nativeActionPolicy;
   const owner=collectiveControl?.kind==='controlled'?actors.find(p=>p.id===collectiveControl.playerId):null;
   const opponentControl=!!owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15;
   const collectiveTouch=collective?chooseCollectiveDefensiveTouch({player,players:actors,ballPosition,ballVelocity,control:collectiveControl,tick}):null;
@@ -368,8 +368,7 @@ export function selectUniformAutonomousContactAction({
   // examine live legitimate affordances. Normal 22-player policy, keeper
   // and defensive priority, and archival V01 remain byte-identical.
   const contextualAttacker=!activeKeeperAttacker&&isolatedDribbleContext===null&&
-   smallSidedDecisionContext!==null&&
-   (collective?!opponentControl:player.team===smallSidedDecisionContext.attackingSide)&&
+   (collective?!opponentControl:smallSidedDecisionContext!==null&&player.team===smallSidedDecisionContext.attackingSide)&&
    player.role!=='goalkeeper'&&!defensiveAttempt&&!collectiveTouch;
   const contextualRecipient=contextualAttacker?
    chooseRecipient(player,ballPosition,actors):null;
@@ -379,12 +378,8 @@ export function selectUniformAutonomousContactAction({
    Math.abs(toGoal)>5&&
    Math.hypot(ballVelocity.x,ballVelocity.y)<=8;
   const contextualChoice=contextualAttacker?
-   chooseSmallSidedContextAction({
-    situationId:smallSidedDecisionContext.situationId,
-    variantIndex:smallSidedDecisionContext.variantIndex,tick,
-    actorId:id,team:player.team,
-    attackingSide:collective?player.team:smallSidedDecisionContext.attackingSide,
-    ...(collective?{collective:true}:{}),
+   (collective?chooseNativeFootballAction:chooseSmallSidedContextAction)({
+    ...(!collective?{situationId:smallSidedDecisionContext.situationId,variantIndex:smallSidedDecisionContext.variantIndex,tick,actorId:id,team:player.team,attackingSide:smallSidedDecisionContext.attackingSide}:{}),
     goalDistanceM:Math.abs(toGoal),nearestOpponentM,
     shotLaneClearanceM:chosenShotLane?.clearance??null,
     passLaneClearanceM:contextualRecipient?.laneClearanceM??null,

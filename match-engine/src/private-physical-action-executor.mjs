@@ -24,8 +24,9 @@ export function createPrivatePhysicalActionExecutor({
  researchReceiverTapSide=null,activePlayerIds=null,
  smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,interceptionPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='power',firstTimeShot=false,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,keeperSingleShotSide=null,blockShotSide=null,
- nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false
+ nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false,nativeActionPolicy=false
 }={}){
+ if(typeof nativeActionPolicy!=='boolean'||(nativeActionPolicy&&(!allowPhysicalCarry||!physicalBodyGuardEnabled||!Array.isArray(activePlayerIds)||smallSidedDecisionContext!==null||isolatedDribbleContext!==null||isolatedPassSide!==null||isolatedCrossSide!==null||isolatedShotSide!==null||keeperSingleShotSide!==null||blockShotSide!==null||interceptionPassSide!==null||researchReceivingCushionSide!==null||researchReceivingDecisionSide!==null||researchReceiverTapSide!==null)))throw new TypeError('Native action policy requires guarded physical participants without isolated overrides');
  if(typeof nativeFixedSprintLongStride!=='boolean'||
      (nativeFixedSprintLongStride&&!nativeFixedCarryResearch))
   throw new TypeError('Long stride requires isolated real-shoe calibration');
@@ -91,8 +92,7 @@ export function createPrivatePhysicalActionExecutor({
     !['home','away'].includes(smallSidedDecisionContext.attackingSide)||
     typeof smallSidedDecisionContext.situationId!=='string'||
     !Number.isSafeInteger(smallSidedDecisionContext.variantIndex)||
-    smallSidedDecisionContext.variantIndex<(smallSidedDecisionContext.collective===true?0:1)||
-      (smallSidedDecisionContext.collective!==undefined&&(smallSidedDecisionContext.collective!==true||smallSidedDecisionContext.situationId!=='overload-2v1'||activePlayerIds.length!==4))||
+    smallSidedDecisionContext.variantIndex<1||smallSidedDecisionContext.collective!==undefined||
     smallSidedDecisionContext.variantIndex>29))
   throw new TypeError('Seeded contextual LAB choice needs an active real physical shoe set');
  if(isolatedDribbleContext!==null&&(
@@ -213,7 +213,7 @@ export function createPrivatePhysicalActionExecutor({
   const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact||
    !isolatedNativeShoeSourceValid?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,
-    smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,collectiveControl,
+    smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,collectiveControl,nativeActionPolicy,
     interceptionContext:interceptionPassSide===null?null:{side:interceptionPassSide,phase:interceptionPhase},
     blockContext:blockShotSide===null?null:{side:blockShotSide,shotTaken:blockShotTaken}});
   let orientedCandidate=null,orientedDelivery=null;

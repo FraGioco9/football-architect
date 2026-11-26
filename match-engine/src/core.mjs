@@ -763,7 +763,8 @@ export function createEngine(RAPIER, input = {}, {
         variantIndex:smallSided.variantIndex,...(diagnosticDirectedDribble?{directed:true}:{})
        })
       }:{}),
-      ...(diagnosticCollectiveActions?{smallSidedDecisionContext:Object.freeze({situationId:smallSided.id,variantIndex:smallSided.variantIndex,attackingSide:smallSided.side,collective:true})}:smallSided?.variantIndex>0&&!smallSided.blockStart&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?{
+      nativeActionPolicy:diagnosticCollectiveActions,
+      ...(!diagnosticCollectiveActions&&smallSided?.variantIndex>0&&!smallSided.blockStart&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?{
        smallSidedDecisionContext:Object.freeze({
         situationId:smallSided.id,
         variantIndex:smallSided.variantIndex,
