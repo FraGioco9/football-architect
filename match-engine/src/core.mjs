@@ -100,7 +100,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticUnstagedBodyFeedbackEnabled = false,
   diagnosticAutonomousFixtureActionEnabled = false,
   diagnosticLatestLabDynamics = false,
-  diagnosticIsolatedShotProfile = 'standard',
+  diagnosticIsolatedShotProfile = 'power',
   diagnosticAutonomousCarryEnabled = false,
   diagnosticResearchShotAttacker = null,
   diagnosticResearchShotBlockedLane = false,
@@ -143,7 +143,7 @@ export function createEngine(RAPIER, input = {}, {
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
   if(!LAB_SHOT_PROFILES.includes(diagnosticIsolatedShotProfile)||
-     (diagnosticIsolatedShotProfile!=='standard'&&(!diagnosticLatestLabDynamics||diagnosticSmallSidedSituation!=='shot-solo')))
+     (diagnosticIsolatedShotProfile!=='power'&&(!diagnosticLatestLabDynamics||diagnosticSmallSidedSituation!=='shot-solo')))
     throw new TypeError('Shot profile is available only in current isolated shot LAB');
   if(typeof diagnosticLatestLabDynamics!=='boolean'||(diagnosticLatestLabDynamics&&!diagnosticAutonomousFixtureActionEnabled))
     throw new TypeError('Current LAB dynamics require original native action authority');
@@ -254,7 +254,7 @@ export function createEngine(RAPIER, input = {}, {
    smallSidedSetup(diagnosticSmallSidedSituation,
     diagnosticSmallSidedSide,INITIAL_PLAYERS,
     {variantIndex:diagnosticSmallSidedVariantIndex,
-     carryRunwayStart:diagnosticCarryRunwayStart});
+     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in'});
    if(!diagnosticPlayerFootContactsEnabled||
       !diagnosticAutonomousFixtureActionEnabled||
       diagnosticPlayerBodyCollidersEnabled||diagnosticSharedContactEventsEnabled||
@@ -468,7 +468,7 @@ export function createEngine(RAPIER, input = {}, {
   smallSidedSetup(diagnosticSmallSidedSituation,
    diagnosticSmallSidedSide,INITIAL_PLAYERS,
    {variantIndex:diagnosticSmallSidedVariantIndex,
-     carryRunwayStart:diagnosticCarryRunwayStart});
+     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in'});
  const isolatedCarry=smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo';
  const stagedShoes=smallSided?smallSided.staged:
   diagnosticB06bOpeningKickoffEnabled?

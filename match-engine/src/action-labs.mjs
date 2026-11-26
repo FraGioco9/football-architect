@@ -44,7 +44,7 @@ export function createControlledActionLab(RAPIER,id,{
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
  carryRunwayStart=false,nativeFixedCarryResearch=false,
  nativeFixedSprintLongStride=false,soloSprintPursuitLeadM=0,
- soloCarryPlayerAttributes=null,historicalEvidenceBaseline=false,shotProfile='standard'
+ soloCarryPlayerAttributes=null,historicalEvidenceBaseline=false,shotProfile='power'
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -93,7 +93,7 @@ export function createControlledActionLab(RAPIER,id,{
   soloCarryPlayerAttributes===null?uniformSoloCarryAttributes(50):
    validateSoloCarryAttributes(soloCarryPlayerAttributes);
  const spec=getActionLabScenario(id);
- if(!LAB_SHOT_PROFILES.includes(shotProfile)||(shotProfile!=='standard'&&id!=='shot-solo'))
+ if(!LAB_SHOT_PROFILES.includes(shotProfile)||(shotProfile!=='power'&&id!=='shot-solo'))
   throw new TypeError('Shot profile requires isolated shooter');
  if(typeof bodyGuardEnabled!=='boolean'||
     (bodyGuardEnabled&&(spec.mode!=='situation'||['pass-pair','cross-pair','shot-solo'].includes(id))))
@@ -116,7 +116,7 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('Sprint cadence and lateral-tracking research require guarded solo Carry');
  const smallSided=spec.mode==='situation'?
   smallSidedSetup(id,shotSide,INITIAL_PLAYERS,{
-   variantIndex,carryRunwayStart
+   variantIndex,carryRunwayStart,tapInStart:shotProfile==='tap-in'
   }):null;
  const refereeMode=spec.mode==='referee';
  if(typeof historicalEvidenceBaseline!=='boolean'||(historicalEvidenceBaseline&&smallSided))
@@ -270,6 +270,7 @@ export function createControlledActionLab(RAPIER,id,{
  });
  const mover=createPlayerMovement(smallSided?{
    researchSmallSidedSituation:id,researchSmallSidedSide:shotSide,
+   ...(shotProfile==='tap-in'?{researchTapInStart:true}:{}),
    ...(variantIndex>0?{researchSmallSidedVariantIndex:variantIndex}:{}),
    ...(carryRunwayStart?{researchCarryRunwayStart:true}:{}),
    ...(nativeFixedCarryResearch?{researchNativeFixedCarry:true}:{}),

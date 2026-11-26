@@ -22,7 +22,7 @@ export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
- smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='standard',
+ smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='power',
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
  nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false
 }={}){
@@ -54,7 +54,7 @@ export function createPrivatePhysicalActionExecutor({
     isolatedDribbleContext!==null||researchReceivingCushionSide!==null||
     researchReceivingDecisionSide!==null||researchReceiverTapSide!==null))
   throw new TypeError('Isolated pass requires exactly two original teammates');
- if(!LAB_SHOT_PROFILES.includes(isolatedShotProfile)||(isolatedShotProfile!=='standard'&&isolatedShotSide===null))
+ if(!LAB_SHOT_PROFILES.includes(isolatedShotProfile)||(isolatedShotProfile!=='power'&&isolatedShotSide===null))
   throw new TypeError('Locked shot profile requires isolated native shooter');
  if(isolatedShotSide!==null&&(
     !['home','away'].includes(isolatedShotSide)||activePlayerIds?.length!==1||
@@ -376,7 +376,8 @@ export function createPrivatePhysicalActionExecutor({
      calculateCurrentLabShotCalibration({target:chosen.shotTarget,position:ballBody.translation(),
       velocity:ballBody.linvel(),massKg:ballBody.mass(),ballRadiusM,originalImpulseNs:chosen.impulseNs,
        profile:isolatedShotProfile}):null;
-    const impulse=shotCalibration?shotCalibration.impulseNs:crossCalibration?Object.freeze({
+    if(isolatedShotProfile==='tap-in'&&!shotCalibration)throw new Error('Tap-in contact outside calibrated low finishing envelope');
+     const impulse=shotCalibration?shotCalibration.impulseNs:crossCalibration?Object.freeze({
     x:chosen.impulseNs.x*crossCalibration.scale,
     y:chosen.impulseNs.y*crossCalibration.scale,
     z:chosen.impulseNs.z*crossCalibration.scale

@@ -327,11 +327,11 @@ test('SHOT-01 authentic empty-goal strike, actual full-ball crossing HOME/AWAY',
  }
  process.stdout.write('ME_628_SHOT_SOLO '+JSON.stringify(rows)+'\n');
  for(const row of rows){
-  assert.ok(row.launchSpeedMps>=18&&row.launchSpeedMps<=31,JSON.stringify(row));
+  assert.ok(row.launchSpeedMps>=28&&row.launchSpeedMps<=31,JSON.stringify(row));
   assert.ok(row.peakClearanceM>=0.2&&row.peakClearanceM<=2.8,JSON.stringify(row));
   assert.ok(row.crossing?.fullBallCrossed&&row.crossing.goal,JSON.stringify(row));
   assert.equal(row.crossing.scoringTeam,row.side);
-  assert.ok(row.crossing.timeS>=0.35&&row.crossing.timeS<=1.8,JSON.stringify(row));
+  assert.ok(row.crossing.timeS>=0.30&&row.crossing.timeS<=1.8,JSON.stringify(row));
   assert.ok(row.crossing.lateralErrorM<=0.35,JSON.stringify(row));
   assert.ok(row.crossing.heightErrorM<=0.35,JSON.stringify(row));
   assert.equal(row.crossing.officialGoal,false);
@@ -352,7 +352,7 @@ test('SHOT-02 distinct native shot profiles on mirrored empty-goal starts',{time
      assert.deepEqual(frame.starts,[side+'-10']);
      assert.equal(frame.action.labShotCalibration.profile,profile);
      assert.ok(Math.hypot(...Object.values(frame.action.impulseNs))<=13+1e-8);
-     assert.equal(Boolean(frame.action.labShotSpin),['low','curled'].includes(profile));
+     assert.equal(Boolean(frame.action.labShotSpin),['low','curled','tap-in'].includes(profile));
     }
     if(frame.shotSoloAudit.crossing)break;
    }
@@ -367,14 +367,55 @@ test('SHOT-02 distinct native shot profiles on mirrored empty-goal starts',{time
   assert.equal(row.crossing.officialGoal,false);
   assert.ok(row.crossing.lateralErrorM<=0.50,JSON.stringify(row));
   assert.ok(row.crossing.heightErrorM<=0.45,JSON.stringify(row));
-  const standard=rows.find(x=>x.profile==='standard'&&x.side===row.side&&x.variantIndex===row.variantIndex);
+  const power=rows.find(x=>x.profile==='power'&&x.side===row.side&&x.variantIndex===row.variantIndex);
   if(row.profile==='low')assert.ok(row.peakClearanceM<=0.12,JSON.stringify(row));
-  if(row.profile==='power')assert.ok(row.launchSpeedMps>standard.launchSpeedMps,JSON.stringify(row));
-  if(row.profile==='placed')assert.ok(Math.abs(row.crossing.position.y)>=2.15&&row.launchSpeedMps<standard.launchSpeedMps,JSON.stringify(row));
-  if(row.profile==='chip')assert.ok(row.peakClearanceM>standard.peakClearanceM+0.5&&row.crossing.timeS>standard.crossing.timeS,JSON.stringify(row));
+  if(row.profile==='power')assert.ok(row.launchSpeedMps>=28&&row.launchSpeedMps<=31,JSON.stringify(row));
+  if(row.profile==='tap-in'){
+   assert.ok(row.distanceM>=0.95&&row.distanceM<=6.05,JSON.stringify(row));
+   assert.ok(row.launchSpeedMps>=1.38&&row.launchSpeedMps<=6.95,JSON.stringify(row));
+   assert.ok(row.peakClearanceM<=0.12,JSON.stringify(row));
+  }
+  if(row.profile==='placed')assert.ok(Math.abs(row.crossing.position.y)>=2.15&&row.launchSpeedMps<power.launchSpeedMps,JSON.stringify(row));
+  if(row.profile==='chip')assert.ok(row.peakClearanceM>power.peakClearanceM+0.5&&row.crossing.timeS>power.crossing.timeS,JSON.stringify(row));
   if(row.profile==='curled')assert.ok(row.launchSpinRadS>=30&&row.maxLateralBendM>=0.20,JSON.stringify(row));
   if(row.profile!=='curled')assert.ok(row.maxLateralBendM<=0.12,JSON.stringify(row));
  }
- assert.throws(()=>createControlledActionLab(R,'pass-pair',{shotProfile:'power'}),TypeError);
+ assert.throws(()=>createControlledActionLab(R,'pass-pair',{shotProfile:'tap-in'}),TypeError);
  assert.throws(()=>createControlledActionLab(R,'shot-solo',{shotProfile:'unknown'}),TypeError);
+});
+
+test('SHOT-03 tap-in uses all 30 mirrored close starts, authentic one-touch and no automatic goal',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const {smallSidedSetup}=await import('../src/small-sided-lab-scenarios.mjs');
+ const seen=new Set(),rows=[];
+ for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const home=smallSidedSetup('shot-solo','home',INITIAL_PLAYERS,{variantIndex,tapInStart:true});
+  const away=smallSidedSetup('shot-solo','away',INITIAL_PLAYERS,{variantIndex,tapInStart:true});
+  assert.equal(home.ball.x,-away.ball.x);assert.equal(home.ball.y,away.ball.y);
+  assert.ok(Math.hypot(52.5-home.ball.x,home.ball.y)<=6.05);
+  seen.add(home.ball.x+'|'+home.ball.y);
+  for(const side of ['home','away']){
+   const lab=createControlledActionLab(R,'shot-solo',{shotSide:side,shotProfile:'tap-in',variantIndex});
+   try{
+    let frame=lab.snapshot(),count=0;
+    assert.equal(frame.shotSoloAudit.attempted,false);
+    assert.equal(frame.genuinePhysicalPlayerCount,1);
+    assert.equal(frame.ball.velocity.x,0);
+    for(let tick=0;tick<240;tick++){
+     frame=lab.step();
+     if(frame.action){count++;assert.equal(frame.action.labShotCalibration.profile,'tap-in');assert.deepEqual(frame.starts,[side+'-10']);}
+     if(frame.shotSoloAudit.crossing)break;
+    }
+    rows.push({side,variantIndex,count,...frame.shotSoloAudit});
+   }finally{lab.dispose();}
+  }
+ }
+ process.stdout.write('ME_628_TAP_IN '+JSON.stringify(rows)+'\n');
+ assert.equal(seen.size,30);
+ for(const row of rows){
+  assert.equal(row.count,1,JSON.stringify(row));
+  assert.ok(row.crossing?.goal&&row.crossing.fullBallCrossed,JSON.stringify(row));
+  assert.equal(row.crossing.officialGoal,false);
+  assert.ok(row.launchSpeedMps>=1.38&&row.launchSpeedMps<=6.95&&row.peakClearanceM<=0.12,JSON.stringify(row));
+ }
 });

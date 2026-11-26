@@ -252,7 +252,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
     "count:document.getElementById('me-decisions-count').textContent,"+
     "readout:document.getElementById('me-inline-observation').textContent,"+
     "popup:document.getElementById('action-labs-dialog').open};})()");
-   assert.equal(shot.label,'Shot · Standard');
+   assert.equal(shot.label,'Shot · Power');
    assert.equal(shot.count,'1 on field');
    assert.equal(shot.popup,false);
    assert.match(shot.readout,/SHOT native shoe\/impulse/);
@@ -260,7 +260,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    process.stdout.write('ME_628_EMPTY_GOAL_CHROME '+JSON.stringify(shot)+'\n');
   }
   // Exercise every new profile on the real inline page, not the archive.
-  for(const [profile,label] of [['low','Low'],['power','Power'],['placed','Placed'],['chip','Chip'],['curled','Curled']]){
+  for(const [profile,label] of [['low','Low'],['placed','Placed'],['chip','Chip'],['curled','Curled'],['tap-in','Tap-in']]){
    const value='action:shot-solo:'+profile;
    const readout=await evalJs("(()=>{"+
     "document.getElementById('preset-trigger').click();"+
@@ -271,6 +271,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.equal(readout.count,'1 on field');
    assert.match(readout.readout,new RegExp(label+' · empty goal'));
    assert.match(readout.readout,/SHOT native shoe\/impulse/);
+   assert.match(readout.readout,/goal · flight [0-9.]+ s/);
    process.stdout.write('ME_628_SHOT_PROFILE_CHROME '+JSON.stringify({profile,...readout})+'\n');
   }
   // Every visible Carry option has its own fixed phase, including both

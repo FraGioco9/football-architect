@@ -121,9 +121,11 @@ export function getSmallSidedScenario(id){
  return d;
 }
 export function smallSidedSetup(id,side,canonicalPlayers,{
- variantIndex=0,carryRunwayStart=false
+ variantIndex=0,carryRunwayStart=false,tapInStart=false
 }={}){
  const d=getSmallSidedScenario(id);
+ if(typeof tapInStart!=='boolean'||(tapInStart&&id!=='shot-solo'))
+  throw new TypeError('Tap-in start requires isolated shooter');
  if(typeof carryRunwayStart!=='boolean'||
     (carryRunwayStart&&id!=='carry-solo'))
   throw new TypeError('Long runway is restricted to pre-kickoff Solo Carry research');
@@ -201,12 +203,13 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
  if(id==='shot-solo'){
   const random=seededGeometry(id,variantIndex);
   for(let attempt=0;attempt<96;attempt++){
-   const bx=variantIndex===0?30:24+random()*17;
-   const by=variantIndex===0?0:-14+random()*28;
+   const fixed=variantIndex===0&&attempt===0;
+   const bx=tapInStart?52.5-(fixed?3:1+random()*4.5):variantIndex===0?30:24+random()*17;
+   const by=tapInStart?(fixed?1.8:-2.25+random()*4.5):variantIndex===0?0:-14+random()*28;
    const staged=stage(new Map([[side+'-10',[bx-0.30,by]]]));
    if(!physicallySeparated(staged,1.15))continue;
    return freeze({id,side,opponent,variantIndex,activeIds,staged,
-    ball:freeze({preset:'roll',seed:'me-small-shot-solo-v'+variantIndex+'-'+side,
+    ball:freeze({preset:'roll',seed:'me-small-shot-solo-'+(tapInStart?'tap-in-':'')+'v'+variantIndex+'-'+side,
      x:dir*bx,y:by,z:0,vx:0,vy:0,vz:0}),
     genuinePhysicalPlayers:1,officialMatchResult:null});
   }

@@ -1672,7 +1672,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bGoalRestartEnabled'&&
      k!=='researchB06bNativeShotSide'&&
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
-     k!=='researchSmallSidedVariantIndex'&&
+     k!=='researchSmallSidedVariantIndex'&&k!=='researchTapInStart'&&
      k!=='researchCarryRunwayStart'&&
      k!=='researchNativeFixedCarry'&&
      k!=='researchSoloSprintPursuitLeadM'&&
@@ -1826,6 +1826,7 @@ export function createPlayerMovement(options={}){
       options.researchBodyEncounter!==undefined||
       Reflect.ownKeys(options).length!==
        (options.researchSmallSidedVariantIndex===undefined?2:3)+
+        (options.researchTapInStart===true?1:0)+
         (options.researchSmallSidedBodyFeedback===true?1:0)+
         (options.researchSoloCarryLockedPhase===undefined?0:1)+
         (options.researchSoloCarryPlayerAttributes===undefined?0:1)+
@@ -1844,6 +1845,7 @@ export function createPlayerMovement(options={}){
      options.researchNativeFixedCarry!==true||
      options.researchSoloCarryLockedPhase!=='sprint'||
      options.researchCarryRunwayStart!==true))||
+    (options.researchTapInStart!==undefined&&(options.researchTapInStart!==true||options.researchSmallSidedSituation!=='shot-solo'))||
     (options.researchSmallSidedVariantIndex!==undefined&&
      options.researchSmallSidedSituation===undefined)||
     (options.researchCarryRunwayStart!==undefined&&
@@ -1894,7 +1896,7 @@ export function createPlayerMovement(options={}){
   smallSidedSetup(options.researchSmallSidedSituation,
    options.researchSmallSidedSide,INITIAL_PLAYERS,
    {variantIndex:options.researchSmallSidedVariantIndex??0,
-    carryRunwayStart:options.researchCarryRunwayStart===true});
+    carryRunwayStart:options.researchCarryRunwayStart===true,tapInStart:options.researchTapInStart===true});
  const smallActive=smallSided?new Set(smallSided.activeIds):null;
  const initial=smallSided?smallSided.staged:
   options.researchB06bOpeningKickoffEnabled===true?

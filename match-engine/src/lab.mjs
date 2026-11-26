@@ -236,7 +236,7 @@ function restart() {
       throw new TypeError('Original small-sided situation requires HOME/AWAY');
     const next=kind==='action'?
       createControlledActionLab(rapier,id,{shotSide:side,
-       variantIndex:activeVariantIndex,shotProfile:activeScene.shotProfile??'standard',
+       variantIndex:activeVariantIndex,shotProfile:activeScene.shotProfile??'power',
        bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair'&&id!=='shot-solo',
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
@@ -519,6 +519,15 @@ function render() {
            ' · oriented touch '+fmt(f.crossPairAudit.receiverFollowThrough.atOneSecond.directedTravelM)+' m'+
            ' · 1s gap '+fmt(f.crossPairAudit.receiverFollowThrough.atOneSecond.gapM)+' m':''):
          ' · flight observation'):' · waiting for native crossing shoe START'):'')+
+      (f.shotSoloAudit?.attempted?
+        ' · '+LAB_SHOT_LABELS[f.shotSoloAudit.profile]+' · empty goal · distance '+fmt(f.shotSoloAudit.distanceM)+' m'+
+        ' · launch '+fmtKmh(f.shotSoloAudit.launchSpeedMps)+' km/h'+
+        ' · peak height '+fmt(f.shotSoloAudit.peakClearanceM)+' m'+
+        ' · spin '+fmt(f.shotSoloAudit.launchSpinRadS)+' rad/s'+
+        (f.shotSoloAudit.profile==='curled'?' · bend '+fmt(f.shotSoloAudit.maxLateralBendM)+' m':'')+
+        (f.shotSoloAudit.crossing?' · '+(f.shotSoloAudit.crossing.goal?'goal':'miss')+
+         ' · flight '+fmt(f.shotSoloAudit.crossing.timeS)+' s'+
+         ' · lateral error '+fmt(f.shotSoloAudit.crossing.lateralErrorM)+' m':''):'')+
       (f.nativeFixedCarryResearch?' · Native Carry · real two-shoe Rapier START required':'')+
       (f.soloSprintActiveFootReleaseM===0.06?
        ' · native active-foot release 6 cm (DEV Sprint only)':'')+
@@ -541,15 +550,6 @@ function render() {
         ' · mean gap '+f.soloCarryMeasurements.meanGapM.toFixed(2)+' m'+
         ' · gap >1.5m '+f.soloCarryMeasurements.observedOutOfReachTicks+' ticks'+
         ' · recoveries '+f.soloCarryMeasurements.observedRealRecoveryEpisodes+
-        (f.shotSoloAudit?.attempted?
-        ' · '+LAB_SHOT_LABELS[f.shotSoloAudit.profile]+' · empty goal · distance '+fmt(f.shotSoloAudit.distanceM)+' m'+
-        ' · launch '+fmtKmh(f.shotSoloAudit.launchSpeedMps)+' km/h'+
-        ' · peak height '+fmt(f.shotSoloAudit.peakClearanceM)+' m'+
-        ' · spin '+fmt(f.shotSoloAudit.launchSpinRadS)+' rad/s'+
-        (f.shotSoloAudit.profile==='curled'?' · bend '+fmt(f.shotSoloAudit.maxLateralBendM)+' m':'')+
-        (f.shotSoloAudit.crossing?' · '+(f.shotSoloAudit.crossing.goal?'goal':'miss')+
-         ' · flight '+fmt(f.shotSoloAudit.crossing.timeS)+' s'+
-         ' · lateral error '+fmt(f.shotSoloAudit.crossing.lateralErrorM)+' m':''):'')+
        (f.nativeFixedCarryResearch?
          ' · native impulses last ≤2s '+f.soloCarryMeasurements.nativeRecent2sImpulseCount+
          ' · mean native impulse gap '+
@@ -2101,7 +2101,7 @@ function setupUnifiedScenarioMenu(){
     ['action:cross-pair','Cross · Lofted']
   ]],
   ['Shooting',[
-   ...LAB_SHOT_PROFILES.map(profile=>[profile==='standard'?'action:shot-solo':'action:shot-solo:'+profile,'Shot · '+LAB_SHOT_LABELS[profile]])
+   ...LAB_SHOT_PROFILES.map(profile=>[profile==='power'?'action:shot-solo':'action:shot-solo:'+profile,'Shot · '+LAB_SHOT_LABELS[profile]])
   ]],
   ['Small-sided situations',[
    ['action:keeper-1v1','1v1 · goalkeeper'],
@@ -2146,7 +2146,7 @@ function launchSelectedScenario(value){
  const parts=value.split(':');
  const [kind,id,lockedProfile=null]=parts;
  const soloCarryLockedPhase=id==='carry-solo'?lockedProfile:null;
- const shotProfile=id==='shot-solo'?(lockedProfile??'standard'):null;
+ const shotProfile=id==='shot-solo'?(lockedProfile??'power'):null;
  if(parts.length<2||parts.length>3||
     !['action','movement'].includes(kind)||!id||
     (lockedProfile!==null&&(kind!=='action'||
