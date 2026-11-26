@@ -102,7 +102,7 @@ test('M5 negative: same authentic HOME PASS without opponent-first cannot earn c
  {timeout:45000},async()=>{
  const R=await initializeRapier(wasm);
  const plain=createControlledMovementLab(R,'post-pass',{side:'home'});
- const positive=createControlledActionLab(R,'control',{controlScene:'opponent-first'});
+ const positive=createControlledActionLab(R,'control',{controlScene:'opponent-first',historicalEvidenceBaseline:true});
  try{
   for(let tick=1;tick<=105;tick++){
    const f=plain.step();
