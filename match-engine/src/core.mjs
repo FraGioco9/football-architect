@@ -701,7 +701,6 @@ export function createEngine(RAPIER, input = {}, {
       ...(isolatedCarry?{
        isolatedGroundDribbleBallCentreZ:BALL_RADIUS,
        dribbleAttackerId:smallSided.side+'-10',
-       ...(diagnosticDirectedDribble?{duelSlideDefenderId:smallSided.opponent+'-2'}:{}),
        soloCarry:smallSided.id==='carry-solo',
        ...(smallSided.id==='carry-solo'?{
         soloShoeWidthScale:diagnosticSoloShoeWidthScale,

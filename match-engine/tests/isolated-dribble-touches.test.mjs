@@ -797,7 +797,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
   for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
    let stagnant=0,maxStagnant=0,blocked=0,blockedRun=0,maxBlockedRun=0,ballPath=0,prior=scene.snapshot().ball.position;
-   let anchor=prior,anchorTick=0,maxCloseBallStall=0,slideStarts=0,slideContacts=0,recoveryTicks=0;
+   let anchor=prior,anchorTick=0,maxCloseBallStall=0,slideStarts=0,slideContacts=0,recoveryTicks=0,peakSlideSpeed=0;
    try{
     for(let k=0;k<600;k++){
      const f=scene.step(),b=f.ball.position,v=f.ball.velocity;
@@ -812,6 +812,8 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
       assert.equal(f.action.appliedByRapier,true);assert.equal(f.action.actualPhysicsImpulseApplied,true);
      }
      const a=f.observedMovementPlayers.find(p=>p.id===side+'-10'),d=f.observedMovementPlayers.find(p=>p.id===(side==='home'?'away':'home')+'-2');
+     if(f.defensiveSlide?.phase==='slide')peakSlideSpeed=Math.max(peakSlideSpeed,Math.hypot(d.vx,d.vy));
+     assert.ok(Math.hypot(d.vx,d.vy)<=7+1e-5);
      const near=Math.hypot(a.x-d.x,a.y-d.y)<1.6&&Math.max(Math.hypot(a.x-b.x,a.y-b.y),Math.hypot(d.x-b.x,d.y-b.y))<1.8;
      const slow=Math.max(Math.hypot(a.vx,a.vy),Math.hypot(d.vx,d.vy))<0.30&&Math.hypot(v.x,v.y)<0.40;
      if(near&&slow)stagnant++;else stagnant=0;
@@ -825,7 +827,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
      if(f.refereeEvidence?.lastEvent)break;
     }
     const f=scene.snapshot();
-    results.push({side,variant:variantIndex+1,maxStagnant,blocked,maxBlockedRun,maxCloseBallStall,ballPath,slideStarts,slideContacts,recoveryTicks,attackerTouches:f.nativeDribbleAudit.appliedCarryActions,
+    results.push({side,variant:variantIndex+1,maxStagnant,blocked,maxBlockedRun,maxCloseBallStall,ballPath,slideStarts,slideContacts,recoveryTicks,peakSlideSpeed,attackerTouches:f.nativeDribbleAudit.appliedCarryActions,
      defenderAttempts:f.nativeDribbleAudit.defensiveTackleAttempts+f.nativeDribbleAudit.defensiveInterceptionAttempts,
      recoveryTouches:f.nativeDribbleAudit.defensiveRecoveryTouches});
    }finally{scene.dispose();}

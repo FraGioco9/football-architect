@@ -1,5 +1,5 @@
 import {directedDribbleApproachTarget,planDribbleDefender,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
-import {advanceSlidingTackle} from './sliding-tackle.mjs';
+import {advanceSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
@@ -143,6 +143,12 @@ const D01_KINEMATIC_LIMITS=Object.freeze({
 // close-contact shoe touch speed and ball impulse remain unchanged.
 const D01_CHASE_KINEMATIC_LIMITS=Object.freeze({
  ...D01_KINEMATIC_LIMITS,maxSpeed:6.0,acceleration:9,braking:12
+});
+// The whole defender moves faster during a slide. Existing physical
+// player and shoe dimensions, hard separation and 7 m/s cap are unchanged.
+const D08_SLIDE_KINEMATIC_LIMITS=Object.freeze({
+ ...D01_KINEMATIC_LIMITS,maxSpeed:SLIDE_MAX_SPEED_MPS,
+ acceleration:SLIDE_ACCEL_MPS2,braking:SLIDE_BRAKE_MPS2
 });
 const soloKinematicLimits=phase=>Object.freeze({
  ...D01_KINEMATIC_LIMITS,maxSpeed:phase.maxSpeedMps,
@@ -2526,7 +2532,8 @@ export function createPlayerMovement(options={}){
    }
    if(!directedContactRelease&&closeBall&&gap<1.6&&stagnant&&(slow||blocked))directedStallTicks++;
    else directedStallTicks=0;
-   if(!directedContactRelease&&closeBall&&gap<1.6&&blocked)directedBlockedTicks++;
+   const mutualBlock=attacker.blockedBy===defender.id&&defender.blockedBy===attacker.id;
+   if(!directedContactRelease&&gap<1.6&&(mutualBlock||closeBall&&blocked))directedBlockedTicks++;
    else directedBlockedTicks=0;
    if(!directedContactRelease&&(directedStallTicks>=24||directedBlockedTicks>=18||
       closeBall&&gap<1.6&&tick-directedAnchorTick>=60)){
@@ -2762,7 +2769,8 @@ export function createPlayerMovement(options={}){
    const recoveringDribbleBall=(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo')&&
      p.id===smallSided.side+'-10'&&
      Math.hypot(ball.x-p.x,ball.y-p.y)>1.5;
-   const limits=smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
+   const sliding=directedDribble&&!directedContactRelease&&duelSlide?.actorId===p.id&&duelSlide.phase==='slide';
+   const limits=sliding?D08_SLIDE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
      // The old generic 6m/s/9m/s² recovery overrides the fixed phase
      // whenever a strong Sprint push opens a >1.5m gap, making Sprint
      // look like Moderate. Fixed DEV LABs keep their own bounded phase

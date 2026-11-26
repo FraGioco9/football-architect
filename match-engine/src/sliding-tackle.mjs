@@ -5,7 +5,9 @@ import {observeDribbleShield} from './isolated-dribble-touches.mjs';
 
 export const SLIDE_TICKS=18;
 export const SLIDE_RECOVERY_TICKS=32;
-export const SLIDE_MAX_EXTENSION_M=0.30;
+export const SLIDE_MAX_SPEED_MPS=6.5;
+export const SLIDE_ACCEL_MPS2=24;
+export const SLIDE_BRAKE_MPS2=12;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const target=(x,y)=>Object.freeze({x:clamp(x,-51.99,51.99),y:clamp(y,-33.49,33.49)});
 
@@ -30,12 +32,14 @@ export function planSlidingTackle({attackingSide,attacker,defender,ball:b,veloci
     Math.cos(defender.facingRad)*ux+Math.sin(defender.facingRad)*uy<0.70)return null;
  const bx=b.x+v.x*0.12,by=b.y+v.y*0.12;
  if(Math.hypot(bx-defender.x,by-defender.y)>1.25)return null;
- return Object.freeze({actorId:defender.id,ux,uy,target:target(bx-0.48*ux,by-0.48*uy),
+ // Fixed short lunge along the approach direction, not an extended collider.
+ const travel=clamp(Math.hypot(bx-defender.x,by-defender.y)+0.35,0.95,1.45);
+ return Object.freeze({actorId:defender.id,ux,uy,target:target(defender.x+ux*travel,defender.y+uy*travel),
   officialPossession:false});
 }
 
-// Tick-driven finite extension/retraction and recovery. Cancellation by
-// the liveness release retracts the shoe; it never synthesizes a contact.
+// Finite rapid movement followed by recovery. Cancellation by the
+// liveness release ends the lunge; it never synthesizes a contact.
 export function advanceSlidingTackle({tick,previous=null,source,allowLaunch=true,cancel=false}){
  if(!Number.isSafeInteger(tick)||tick<1||
     previous!==null&&previous.tick!==tick-1)throw new TypeError('Consecutive slide ticks required');
@@ -44,21 +48,7 @@ export function advanceSlidingTackle({tick,previous=null,source,allowLaunch=true
  if(recover!==null&&tick-recover>=SLIDE_RECOVERY_TICKS){plan=null;start=null;recover=null;}
  if(!plan&&allowLaunch&&!cancel){plan=planSlidingTackle(source);if(plan)start=tick;}
  if(!plan)return null;
- const age=tick-start;
  const phase=recover===null?'slide':'recovery';
- const extensionM=phase==='slide'?SLIDE_MAX_EXTENSION_M*Math.min(1,(age+1)/5,(SLIDE_TICKS-age)/6):0;
  return Object.freeze({tick,actorId:plan.actorId,plan,startTick:start,recoveryTick:recover,
-  phase,started:start===tick,extensionM,officialPossession:false,physicalContactProven:false});
-}
-
-// A real kinematic shoe pose offset, not a new collider or teleport.
-// The existing bridge additionally clamps the actual pose per tick.
-export function slidingShoePose(foot,state){
- if(!state||state.phase!=='slide'||state.extensionM<=0)return foot;
- if(!Number.isFinite(state.extensionM)||state.extensionM>SLIDE_MAX_EXTENSION_M||
-    !Number.isFinite(state.plan?.ux)||!Number.isFinite(state.plan?.uy)||
-    Math.abs(Math.hypot(state.plan.ux,state.plan.uy)-1)>1e-6)
-  throw new TypeError('Bounded slide pose required');
- return Object.freeze({...foot,x:foot.x+state.plan.ux*state.extensionM,
-  y:foot.y+state.plan.uy*state.extensionM});
+  phase,started:start===tick,officialPossession:false,physicalContactProven:false});
 }
