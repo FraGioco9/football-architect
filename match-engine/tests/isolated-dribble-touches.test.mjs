@@ -952,6 +952,27 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
   }
  });
 
+ test('D-16 mixed contact eligibility follows ball control rather than fixture role or stale candidate',()=>{
+  for(const side of ['home','away'])for(const swapped of [false,true]){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const owner={id:side+(swapped?'-2':'-10'),team:side,x:dir*29.6,y:0};
+   const challenger={id:other+(swapped?'-10':'-2'),team:other,x:dir*30.6,y:0};
+   const b={x:dir*30,y:0,z:0.11},v={x:dir,y:0,z:0};
+   const state={profile:'mixed',carrierId:challenger.id,candidateId:challenger.id,ballControl:{kind:'controlled',playerId:owner.id,sourceTick:1}};
+   const source={player:owner,opponent:challenger,ballPosition:b,ballVelocity:v,transition:state,variantIndex:0,tick:2};
+   assert.ok(chooseSharedDuelTouch(source)?.carry);
+   assert.equal(chooseSharedDuelTouch({...source,ballVelocity:{x:dir*6,y:0,z:0}}),null,'failed carry cannot become tackle');
+   assert.equal(chooseSharedDuelTouch({...source,slide:{phase:'slide'}}),null,'controller cannot execute defensive slide');
+   const defense=chooseSharedDuelTouch({...source,player:challenger,opponent:owner});
+   assert.equal(defense?.defensive?.kind,'tackle');assert.equal(defense.carry,null);
+   assert.equal(chooseSharedDuelTouch({...source,player:challenger,opponent:owner,slide:{phase:'recovery'}}),null);
+   const loose={...state,ballControl:{kind:'loose',playerId:null,sourceTick:null}};
+   assert.ok(chooseSharedDuelTouch({...source,transition:loose})?.carry);
+   const stationary=chooseSharedDuelTouch({...source,player:challenger,opponent:owner,transition:loose,ballVelocity:{x:0,y:0,z:0}});
+   assert.ok(stationary?.carry);assert.equal(stationary.defensive,null);
+  }
+ });
+
  test('D-09 release chooses free side and recovery approach from either team',()=>{
   for(const side of ['home','away']){
    const dir=side==='home'?1:-1,other=side==='home'?'away':'home';

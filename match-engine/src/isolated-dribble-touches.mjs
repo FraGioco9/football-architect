@@ -559,21 +559,26 @@ export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVeloci
  const defensive=(sliding=false)=>chooseDribbleDefensiveTouch({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v,sliding});
  const carry=()=>chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:opponent,
   ballPosition:b,ballVelocity:v,variantIndex,tick});
+ // D-16: the current control witness determines which contact actions
+ // are eligible. A blocked carry never falls through to a defensive kick.
+ if(live&&current)return canCarry&&slide?.phase!=='slide'?{defensive:null,carry:carry()}:null;
  if(slide?.phase==='slide'){const touch=defensive(true);return touch?{defensive:touch,carry:null}:null;}
- if(live?.kind==='loose'){
-  const touch=defensive();
-  if(touch?.kind==='interception'&&!collectingRelease&&!shoulderCollection&&!slideCollection)return {defensive:touch,carry:null};
-  return canCarry?{defensive:null,carry:carry()}:null;
- }
- // Re-evaluate the real post-solver contact; a planned shoulder never
- // authorizes a kick and never overrides a legitimate collecting carrier.
- if(transition?.profile==='mixed'&&!current&&!collectingRelease&&!shoulderCollection&&!slideCollection){
+ if(live){
+  // Recheck separation at the actual contact, because movement happened
+  // after the prior control snapshot. No ownership transfer is inferred.
+  if(live.kind==='loose'||opponentGap>1.15){
+   const touch=defensive();
+   if(touch?.kind==='interception'&&!collectingRelease&&!shoulderCollection&&!slideCollection)return {defensive:touch,carry:null};
+   return canCarry?{defensive:null,carry:carry()}:null;
+  }
+  // An opponent controls a reachable ball: choose a feasible defensive
+  // action, never offensive carry through a stale recovery candidate.
   const touch=defensive();
   const shoulder=defensiveDecision?.kind==='shoulder-challenge'?planDuelShoulderApproach({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v}):null;
   const chosen=selectDefensiveIntervention({actorId:player.id,shoulder,standing:touch,ballGapM:Math.hypot(player.x-b.x,player.y-b.y)});
-  if(chosen.kind==='shoulder-challenge')return null;
-  if(touch&&['standing-tackle','interception'].includes(chosen.kind))return {defensive:touch,carry:null};
+  return touch&&['standing-tackle','interception'].includes(chosen.kind)?{defensive:touch,carry:null}:null;
  }
+ // Legacy isolated fixture behavior remains unchanged.
  if(transition?.profile==='interception'&&!current){
   const previous=transition.lastIntervention;
   if(!(collecting&&previous?.actorId===player.id&&previous.intervention==='interception'&&tick-previous.tick<=90)){
