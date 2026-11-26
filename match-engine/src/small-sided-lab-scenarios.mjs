@@ -30,7 +30,7 @@ function physicallySeparated(players,minimumM){
  return true;
 }
 
-const ids=freeze(['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3','carry-solo']);
+const ids=freeze(['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3','carry-solo','pass-pair']);
 const definitions=freeze([
  freeze({id:ids[0],title:'Dribbling · 1v1 (no goalkeeper)',
   attackers:freeze([10]),defenders:freeze([2]),includeGoalkeeper:false,
@@ -52,7 +52,10 @@ const definitions=freeze([
   description:'Three forwards face three defenders and a goalkeeper. Keep the same Rapier world and canonical physics; inspect live support, blocked lanes and genuinely resulting actions.'}),
  freeze({id:ids[6],title:'Carry · solo',attackers:freeze([10]),
   defenders:freeze([]),includeGoalkeeper:false,
-  description:'One original Rapier player carries the ball by genuine shoe START/END and physical impulses. No defender, goalkeeper or other active player.'})
+  description:'One original Rapier player carries the ball by genuine shoe START/END and physical impulses. No defender, goalkeeper or other active player.'}),
+ freeze({id:ids[7],title:'Pass · ground',attackers:freeze([10,9]),
+  defenders:freeze([]),includeGoalkeeper:false,
+  description:'Two teammates only. One distance-calibrated ground impulse after a genuine exclusive shoe START; first receiving contact may use a bounded native cushion; control is measured, never assumed.'})
 ]);
 const byId=new Map(definitions.map(s=>[s.id,s]));
 // Keeper 1v1: deterministic source-only 60Hz tactical targets, never a
@@ -100,7 +103,7 @@ export function keeperDuelGoalkeeperTarget(side,index,attacker,ball,baseline){
 export const SMALL_SIDED_LAB_SCENARIOS=freeze(definitions.map(s=>
  freeze({...s,mode:'situation',goal:'situation',
   initial:freeze({preset:'roll',seed:'me-small-'+s.id+'-home',
-   x:30,y:0,z:0,vx:0,vy:0,vz:0}),
+   x:s.id==='pass-pair'?-12:30,y:s.id==='pass-pair'?8:0,z:0,vx:0,vy:0,vz:0}),
   focus:freeze([...s.attackers.map(n=>'home-'+n),
    ...s.defenders.map(n=>'away-'+n),...(s.includeGoalkeeper===false?[]:['away-1'])]),
   source:'original-rapier-selected-shoe-colliders-only',
@@ -145,6 +148,29 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
    return freeze({...p,x:dir*x,y,baseX:dir*x,baseY:y,
     vx:0,vy:0,blockedBy:null});
   }));
+ }
+ // PASS-01: before-tick-zero geometry only. No opponent or keeper.
+ if(id==='pass-pair'){
+  const random=seededGeometry(id,variantIndex);
+  const distanceM=[6,12,20][variantIndex%3];
+  for(let attempt=0;attempt<96;attempt++){
+   const bx=variantIndex===0?-12:-16+random()*5;
+   const by=variantIndex===0?8:5+random()*7;
+   const angle=variantIndex===0?0:(random()-0.5)*0.52;
+   const rx=bx+distanceM*Math.cos(angle),ry=by+distanceM*Math.sin(angle);
+   const positions=new Map([[side+'-10',[bx-0.30,by]],[side+'-9',[rx,ry]]]);
+   const staged=freeze(stage(positions).map(p=>p.id===side+'-9'?
+    freeze({...p,facingRad:Math.atan2(by-ry,dir*(bx-rx))}):p));
+   if(!physicallySeparated(staged,1.15)){
+    if(variantIndex===0)break;
+    continue;
+   }
+   return freeze({id,side,opponent,variantIndex,activeIds,staged,
+    ball:freeze({preset:'roll',seed:'me-small-pass-pair-v'+variantIndex+'-'+side,
+     x:dir*bx,y:by,z:0,vx:0,vy:0,vz:0}),
+    genuinePhysicalPlayers:2,officialMatchResult:null});
+  }
+  throw new RangeError('No collision-free isolated pass setup');
  }
  const original=new Map([
   [side+'-10',[(id==='dribble-1v1'||id==='carry-solo')?29.45:id==='keeper-1v1'?29.50:29.72,0]],

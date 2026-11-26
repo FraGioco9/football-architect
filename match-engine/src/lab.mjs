@@ -36,6 +36,7 @@ let lastOnFieldAction=new Map(),lastMovementKinds=new Map();
 let onFieldDecisionEvents=[];
 const smallSidedDecisionLabels=Object.freeze({
  'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
+ 'hold-pass-target':'Hold receiving position',
  'support-run':'Support the attack','press-ball':'Close down the ball',
  'goalkeeping':'Protect the goal'
 });
@@ -235,7 +236,7 @@ function restart() {
     const next=kind==='action'?
       createControlledActionLab(rapier,id,{shotSide:side,
        variantIndex:activeVariantIndex,
-       bodyGuardEnabled:id!=='carry-solo',
+       bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair',
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
        // Leave the original ordinary 22-player physics unmodified.
@@ -483,6 +484,21 @@ function render() {
        (f.intentDrivenCarry?' gameplay intent / Rapier ball impulse':
         ' native shoe/impulse')+
        (lastInlineFootballAction.contextual?' · contextual choice':''):'')+
+      (f.passPairAudit?
+       ' · stationary target · distance-calibrated ground pass (DEV)'+
+       (f.passPairAudit.attempted?
+        ' · distance '+f.passPairAudit.targetDistanceM.toFixed(1)+' m'+
+        ' · launch '+fmtKmh(f.passPairAudit.launchSpeedMps)+' km/h'+
+        ' · impulse '+f.passPairAudit.appliedImpulseNs.toFixed(2)+' Ns'+
+        ' · closest target gap '+f.passPairAudit.closestTargetGapM.toFixed(2)+' m'+
+        (f.passPairAudit.receiverTick===null?' · receiving contact not observed':
+         ' · real receiving shoe START after '+f.passPairAudit.flightTimeS.toFixed(2)+' s'+
+         ' · approach '+fmtKmh(f.passPairAudit.receivingContact.priorSampleSpeedMps)+' km/h'+
+         ' · after contact '+fmtKmh(f.passPairAudit.receivingContact.postContactSpeedMps)+' km/h'+
+         (f.passPairAudit.receivingContact.cushion?' · active first-touch cushion':' · passive first touch')+
+         (f.passPairAudit.receiverFollowThrough?.completed?
+          ' · 1s gap '+f.passPairAudit.receiverFollowThrough.atOneSecond.gapM.toFixed(2)+' m':'') ):
+        ' · waiting for native passing shoe START'):'')+
       (f.nativeFixedCarryResearch?' · Native Carry · real two-shoe Rapier START required':'')+
       (f.soloSprintActiveFootReleaseM===0.06?
        ' · native active-foot release 6 cm (DEV Sprint only)':'')+
@@ -2051,6 +2067,9 @@ function setupUnifiedScenarioMenu(){
    ['action:carry-solo:moderate','Carry · Moderate'],
    ['action:carry-solo:sprint','Carry · Sprint']
   ]],
+  ['Passing',[
+   ['action:pass-pair','Pass · Ground']
+  ]],
   ['Small-sided situations',[
    ['action:keeper-1v1','1v1 · goalkeeper'],
    ['action:overload-2v1','2v1 · attack and defend'],
@@ -2078,9 +2097,9 @@ function setupUnifiedScenarioMenu(){
  }
  heading('Ball physics');
  for(const node of physics)menu.append(node);
- if(menu.querySelectorAll('[role="option"][data-value]').length!==10||
-    menu.querySelectorAll('.me-scenario-group-label').length!==3)
-  throw new Error('Lab should expose three fixed Carry phases, three small-sided exercises and four ball presets');
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==11||
+    menu.querySelectorAll('.me-scenario-group-label').length!==4)
+  throw new Error('Lab should expose three fixed Carry phases, ground Pass, three small-sided exercises and four ball presets');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')

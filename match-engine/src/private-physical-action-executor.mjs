@@ -8,7 +8,7 @@ import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
-import {calculateRealReceivingCushion}
+import {calculateRealReceivingCushion,M25_CUSHION_MAX_IMPULSE_NS}
  from './physical-receiving-cushion-m25.mjs';
 import {choosePhysicalReceiverSecondTouch}
  from './physical-receiver-choice-m27.mjs';
@@ -21,7 +21,7 @@ export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
- smallSidedDecisionContext=null,isolatedDribbleContext=null,
+ smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
  nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false
 }={}){
@@ -44,6 +44,15 @@ export function createPrivatePhysicalActionExecutor({
     activePlayerIds.length<1||activePlayerIds.length>7||
     new Set(activePlayerIds).size!==activePlayerIds.length))
   throw new TypeError('Small-sided active physical shoe set is invalid');
+ if(isolatedPassSide!==null&&(
+    !['home','away'].includes(isolatedPassSide)||
+    activePlayerIds?.length!==2||
+    !activePlayerIds.includes(isolatedPassSide+'-10')||
+    !activePlayerIds.includes(isolatedPassSide+'-9')||
+    allowPhysicalCarry||smallSidedDecisionContext!==null||
+    isolatedDribbleContext!==null||researchReceivingCushionSide!==null||
+    researchReceivingDecisionSide!==null||researchReceiverTapSide!==null))
+  throw new TypeError('Isolated pass requires exactly two original teammates');
  if(typeof physicalBodyGuardEnabled!=='boolean'||
     (physicalBodyGuardEnabled&&activePlayerIds===null))
   throw new TypeError('Native body contact requires genuine small-sided shoe source');
@@ -86,6 +95,7 @@ export function createPrivatePhysicalActionExecutor({
  let tick=0,lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
  let action=null,audit=null,closed=false;
  let actualPriorPass=null,interrupted=false,firstCushion=null;
+ let isolatedPassReceptionSeen=false;
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
@@ -235,7 +245,13 @@ export function createPrivatePhysicalActionExecutor({
    }):null;
   // M25 preempts same-tick action for cushioning. M27 may instead
   // defer an ORIGINAL second-touch clearance with zero additional impulse.
-  const originalChosen=researchCandidate||deferOriginal?null:originalChoice;
+  // Filter existing action authority; never invent a contact or impulse.
+  const isolatedPassRejected=isolatedPassSide!==null&&(
+   lastActionTick>=0||originalChoice?.action!=='pass'||
+   originalChoice.playerId!==isolatedPassSide+'-10'||
+   originalChoice.passTarget?.recipientId!==isolatedPassSide+'-9'||
+   originalChoice.impulseNs.z!==0);
+  const originalChosen=researchCandidate||deferOriginal||isolatedPassRejected?null:originalChoice;
   // The *existing* uniform policy and Rapier exclusive shoe START remain
   // the only action authority. Native phase calibration can adjust that
   // action's impulse or decline it, never generate an extra contact/action.
@@ -266,6 +282,7 @@ export function createPrivatePhysicalActionExecutor({
     !isolatedNativeShoeSourceValid?'solo-ambiguous-real-foot-contact':researchCandidate?
     'experimental-receiving-cushion-preempts-uniform-action':
     deferOriginal?'m27-native-decision-defers-original-clearance':
+    isolatedPassRejected?'isolated-pass-one-original-ground-pass-only':
     nativeTune?.impulseNs===null?
      'native-shoe-contact-no-extra-ball-impulse-needed':
     (gates.firstFailedGate??'not-selected-after-input-gates')
@@ -274,11 +291,27 @@ export function createPrivatePhysicalActionExecutor({
   if(chosen){
    // The only new physics write; same body and SAME post-collision tick
    // as the original #481, never a future/replayed intent.
-   const impulse=nativeTune?.impulseNs??chosen.impulseNs;
+   // PASS-01 DEV-only pace candidate after owner visual QA. The prior
+   // arrival times 1.77/2.37/3.45s at 6/12/20m were too conservative.
+   // Use a simple continuous distance-based boost, bounded even outside
+   // the three staged distances. Direction, native START, ground/ball
+   // properties and simulation clock are unchanged. This is provisional.
+   const passCalibration=isolatedPassSide!==null?Object.freeze({
+    source:'isolated-ground-pass-distance-candidate-v3',
+    distanceM:chosen.passTarget.distanceM,
+    scale:Math.max(1.25,Math.min(3.30,1.25+0.10*chosen.passTarget.distanceM)),
+    originalImpulseNs:chosen.impulseNs,
+    officialMatchAction:false
+   }):null;
+   const impulse=passCalibration?Object.freeze({
+    x:chosen.impulseNs.x*passCalibration.scale,
+    y:chosen.impulseNs.y*passCalibration.scale,z:0
+   }):nativeTune?.impulseNs??chosen.impulseNs;
    ballBody.applyImpulse(impulse,true);
    applied=Object.freeze({
     ...chosen,
     impulseNs:impulse,
+    ...(passCalibration?{isolatedGroundPassCalibration:passCalibration}:{}),
     ...(nativeTune?{
      nativeShoeContactVerified:true,
      nativeFixedPhaseCalibration:nativeTune,
@@ -304,6 +337,65 @@ export function createPrivatePhysicalActionExecutor({
     actualPhysicsImpulseApplied:true
    });
    lastActionTick=nextTick;
+  }
+  if(isolatedPassSide!==null){
+   const recipientId=isolatedPassSide+'-9';
+   if(applied?.action==='pass')
+    actualPriorPass=Object.freeze({tick:nextTick,playerId:applied.playerId});
+   if(actualPriorPass&&nextTick>actualPriorPass.tick&&!isolatedPassReceptionSeen){
+    if(contact.started.some(id=>id!==recipientId))interrupted=true;
+    if(!interrupted&&contact.started.length===1&&contact.active.length===1&&
+       contact.started[0]===recipientId&&contact.active[0]===recipientId){
+     // Only the FIRST authentic exclusive receiving START. Slow natural
+     // traps stay untouched; harder passes may use the existing M25
+     // bounded damping impulse on this same original Rapier body.
+     isolatedPassReceptionSeen=true;
+     const p=playerFrame.players.find(x=>x.id===recipientId);
+     const pos=ballBody.translation(),before=Object.freeze({...ballBody.linvel()});
+     if(!suppressOriginalAction&&!suppressPhysicalBodyContact&&
+        Math.hypot(before.x-p.vx,before.y-p.vy)>1.15){
+      // M25 needs a finite distance; 200 is its documented upper bound
+      // and a computational no-pressure sentinel, NOT a measured opponent.
+      // Exactly two teammates have physical colliders in this exercise.
+      const candidate=calculateRealReceivingCushion({
+       // Canonical mover stores position as x/y and velocity as vx/vy.
+       // M25's velocity vector uses x/y components in m/s, not metres.
+       ballVelocity:before,playerVelocity:{x:p.vx,y:p.vy},
+       ballCentreZ:pos.z,ballRadiusM,
+       realBallPlayerGapM:Math.hypot(pos.x-p.x,pos.y-p.y),
+       nearestOpponentM:200
+      });
+      if(candidate){
+       // Faster passes need a firmer first touch. Reuse the M25 native
+       // relative-motion direction, increasing the original candidate
+       // magnitude only as needed for a 0.50m/s residual target. The
+       // existing 2.7Ns M25 cap remains absolute; no velocity setter,
+       // repeated impulse or reversal. Actual receipt is measured.
+       const baseMagnitude=Math.hypot(candidate.impulseNs.x,candidate.impulseNs.y);
+       const residualTargetMps=0.50;
+       const magnitude=Math.min(M25_CUSHION_MAX_IMPULSE_NS,
+        Math.max(baseMagnitude,ballBody.mass()*(candidate.actualRelativeSpeedMps-residualTargetMps)));
+       const impulse=Object.freeze({
+        x:candidate.impulseNs.x*magnitude/baseMagnitude,
+        y:candidate.impulseNs.y*magnitude/baseMagnitude,z:0
+       });
+       ballBody.applyImpulse(impulse,true);
+       firstCushion=Object.freeze({...candidate,impulseNs:impulse,
+        originalM25ImpulseNs:candidate.impulseNs,residualTargetMps,
+        version:'m25-isolated-ground-pass-first-touch-v2',
+        tick:nextTick,actorId:recipientId,team:isolatedPassSide,
+        originalPassTick:actualPriorPass.tick,originalPassActorId:actualPriorPass.playerId,
+        measuredNearestOpponentM:null,noActiveOpponents:true,
+        nativeExclusiveShoeStart:true,originalRapierBallBody:true,
+        actualPhysicsImpulseApplied:true,realPreBallVelocity:before,
+        realPostBallVelocity:Object.freeze({...ballBody.linvel()}),
+        officialMatchAction:false,officialPossession:false,
+        verifiedReception:false,verifiedBallControl:false
+       });
+      }
+     }
+    }
+   }
   }
   if(side!==null){
    if(researchCandidate!==null){

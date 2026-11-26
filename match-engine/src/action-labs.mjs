@@ -92,7 +92,7 @@ export function createControlledActionLab(RAPIER,id,{
    validateSoloCarryAttributes(soloCarryPlayerAttributes);
  const spec=getActionLabScenario(id);
  if(typeof bodyGuardEnabled!=='boolean'||
-    (bodyGuardEnabled&&spec.mode!=='situation'))
+    (bodyGuardEnabled&&(spec.mode!=='situation'||id==='pass-pair')))
   throw new TypeError('Native body-contact exercise only in a small-sided situation');
  if(spec.mode!=='situation'&&variantIndex!==0)
   throw new TypeError('Variations require a selected small-sided exercise');
@@ -309,6 +309,14 @@ export function createControlledActionLab(RAPIER,id,{
   peakGapM:0,outOfReachTicks:0,realRecoveryEpisodes:0,outOfReach:false
  };
  let shotTrace=null,blockedShotObservation=null,receivingContact=null;
+ let passPairAudit=id==='pass-pair'?Object.freeze({
+  attempted:false,passTick:null,receiverTick:null,targetDistanceM:null,
+  launchSpeedMps:null,peakBallSpeedMps:0,closestTargetGapM:null,
+  peakGroundClearanceM:0,flightTimeS:null,
+  receivingContact:null,receiverFollowThrough:null,
+  officialPassCompleted:false,officialReception:false
+ }):null;
+ let previousPassBall=null;
  let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
  const decisionObserver=createPhysicalFootballDecisionObserver();
@@ -542,6 +550,72 @@ export function createControlledActionLab(RAPIER,id,{
   const decisionEvidence=decisionObserver.observe({
    physics,playerFrame,foot,action:nativeAction
   });
+  // Read-only original Rapier evidence. A later exclusive receiving
+  // shoe START is observed; it does not establish completed reception.
+  if(passPairAudit){
+   if(nativeAction?.action==='pass'&&!passPairAudit.attempted){
+    const target=nativeAction.passTarget;
+    passPairAudit=Object.freeze({...passPairAudit,attempted:true,
+     passTick:physics.tick,targetDistanceM:target.distanceM,
+     targetX:target.recipientX,targetY:target.recipientY,
+     launchSpeedMps:Math.hypot(physics.ball.velocity.x,physics.ball.velocity.y),
+     appliedImpulseNs:Math.hypot(nativeAction.impulseNs.x,nativeAction.impulseNs.y),
+     calibrationScale:nativeAction.isolatedGroundPassCalibration?.scale??1});
+   }
+   if(passPairAudit.attempted&&passPairAudit.receiverTick===null){
+    const pos=physics.ball.position,vel=physics.ball.velocity;
+    const gap=Math.hypot(pos.x-passPairAudit.targetX,pos.y-passPairAudit.targetY);
+    const receive=decisionEvidence.firstPossibleReception;
+    const cushion=receive?engine.researchReceivingCushionSnapshot():null;
+    if(cushion&&(cushion.tick!==physics.tick||cushion.actorId!==receive.playerId))
+     throw new Error('PASS-02 requires the same genuine receiving START');
+    // The preceding 60Hz sample is before the receiving collision tick.
+    // When a cushion occurs, distinguish original solver output from the
+    // additional real damping impulse; no exact sub-tick speed is inferred.
+    if(receive&&(receive.tick!==physics.tick||
+       previousPassBall?.tick!==physics.tick-1))
+     throw new Error('PASS-01 receiving observation requires consecutive native samples');
+    passPairAudit=Object.freeze({...passPairAudit,
+     peakBallSpeedMps:Math.max(passPairAudit.peakBallSpeedMps,Math.hypot(vel.x,vel.y)),
+     closestTargetGapM:Math.min(passPairAudit.closestTargetGapM??Infinity,gap),
+     peakGroundClearanceM:Math.max(passPairAudit.peakGroundClearanceM,Math.max(0,pos.z-0.11)),
+     receiverTick:receive?.tick??null,
+     flightTimeS:receive?(receive.tick-passPairAudit.passTick)*FIXED_DT:null,
+     receivingContact:receive?Object.freeze({
+      receiverId:receive.playerId,
+      priorSampleTick:previousPassBall.tick,contactTick:physics.tick,
+      priorSampleSpeedMps:Math.hypot(previousPassBall.velocity.x,previousPassBall.velocity.y),
+      postSolverSpeedMps:cushion?Math.hypot(cushion.realPreBallVelocity.x,cushion.realPreBallVelocity.y):
+       Math.hypot(vel.x,vel.y),
+      postContactSpeedMps:Math.hypot(vel.x,vel.y),
+      cushion,mode:cushion?'active-cushion':'passive-contact',
+      targetGapM:gap,realRapierShoeStart:true,readOnly:true,
+      officialReception:false
+     }):null});
+   }
+   // Observe one second after the first contact (and optional one-time
+   // cushion). No later assisted trap, target movement or extra impulse.
+   if(passPairAudit.receiverTick!==null){
+    const elapsed=physics.tick-passPairAudit.receiverTick;
+    if(elapsed>=0&&elapsed<=60){
+     const pos=physics.ball.position,vel=physics.ball.velocity;
+     const sample=Object.freeze({tick:physics.tick,
+      gapM:Math.hypot(pos.x-passPairAudit.targetX,pos.y-passPairAudit.targetY),
+      speedMps:Math.hypot(vel.x,vel.y)});
+     const prior=passPairAudit.receiverFollowThrough;
+     passPairAudit=Object.freeze({...passPairAudit,
+      receiverFollowThrough:Object.freeze({
+       samples:(prior?.samples??0)+1,
+       maxGapM:Math.max(prior?.maxGapM??0,sample.gapM),
+       atHalfSecond:elapsed===30?sample:prior?.atHalfSecond??null,
+       atOneSecond:elapsed===60?sample:prior?.atOneSecond??null,
+       completed:elapsed===60,readOnly:true,officialReception:false
+      })});
+    }
+   }
+   previousPassBall=Object.freeze({tick:physics.tick,
+    velocity:Object.freeze({...physics.ball.velocity})});
+  }
   const physicalFirstTouch=engine.researchReceivingCushionSnapshot?.()??null;
   const physicalReceiverChoice=engine.researchReceiverChoiceSnapshot?.()??null;
   const physicalReceiverTap=engine.researchReceiverTapSnapshot?.()??null;
@@ -616,6 +690,7 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
+   ...(passPairAudit?{passPairAudit}:{}),
    ...(firstTouchCushion?{physicalFirstTouch,pressureEvidence}:{}),
    ...(adaptiveDecision?{physicalReceiverChoice,postDeferContinuity,
     physicalControlEvidence}:{}),
@@ -1177,7 +1252,7 @@ export function projectActiveLabDecisions(frame,focus){
   if(!ids.includes(decision.id)||byId.has(decision.id)||
      decision.tick!==frame.physicsTick||decision.originalCanonicalMover!==true||
      decision.readOnly!==true||decision.actionConfirmed!==false||
-     !['goalkeeping','press-ball','carry-ball','approach-ball','support-run'].includes(decision.kind)||
+     !['goalkeeping','press-ball','carry-ball','approach-ball','support-run','hold-pass-target'].includes(decision.kind)||
      ![decision.target?.x,decision.target?.y,decision.speedMps].every(Number.isFinite))
    throw new TypeError('Invalid current authoritative mover intent');
   byId.set(decision.id,decision);
