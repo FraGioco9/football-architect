@@ -1,4 +1,4 @@
-import {createDribbleShieldObserver} from './isolated-dribble-touches.mjs';
+import {createDribbleShieldObserver,planDribbleDefender} from './isolated-dribble-touches.mjs';
 // #620 — controlled actions on the CLEAN canonical same-world Rapier core.
 // No legacy universal match session, opponent-lane tactical simulator or fake
 // action event. Exactly one core engine and one existing 22-player mover.
@@ -841,6 +841,10 @@ export function createControlledActionLab(RAPIER,id,{
   })??null;
   const shieldAudit=shieldObserver?.observe({tick:physics.tick,players:playerFrame.players,ball:physics.ball,
    starts,bodyStarts:engine.smallSidedBodyGuardSnapshot()?.lowerLegBallStarts??[],action})??null;
+  const defensivePositioning=directedDribble?planDribbleDefender({attackingSide:shotSide,
+   attacker:playerFrame.players.find(p=>p.id===shotSide+'-10'),
+   defender:playerFrame.players.find(p=>p.id===(shotSide==='home'?'away':'home')+'-2'),
+   ballPosition:physics.ball.position,ballVelocity:physics.ball.velocity}):null;
   const contactContinuity=continuityObserver.observe({
    physics,playerFrame,foot,decisionEvidence
   });
@@ -876,6 +880,7 @@ export function createControlledActionLab(RAPIER,id,{
      matchTimeline}:{}),
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
     ...(shieldAudit?{shieldAudit}:{}),
+    ...(defensivePositioning?{defensivePositioning}:{}),
     ...(nativeFixedCarryResearch?{
       nativeFixedCarryResearch:true,
       nativeFixedSprintLongStride,

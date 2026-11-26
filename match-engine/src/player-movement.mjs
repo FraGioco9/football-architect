@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender} from './isolated-dribble-touches.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
@@ -2546,6 +2546,9 @@ export function createPlayerMovement(options={}){
       y:clamp(ball.y+wing*5,-PLAYER_KINEMATIC_LIMITS.maxY,
        PLAYER_KINEMATIC_LIMITS.maxY)});
     }
+    if(directedDribble&&p.id===smallSided.opponent+'-2')
+     return planDribbleDefender({attackingSide:smallSided.side,attacker:players.find(q=>q.id===smallSided.side+'-10'),
+      defender:p,ballPosition:ball,ballVelocity:realBallVelocity}).target;
     const lane=p.id.endsWith('-3')?-3:p.id.endsWith('-4')?4:0;
     return Object.freeze({x:clamp(ball.x+attack*1.2,
      -PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),

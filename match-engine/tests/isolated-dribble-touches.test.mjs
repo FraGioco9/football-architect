@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -645,5 +645,46 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    sample(3);sample(4,[],[defender.id]);
    assert.equal(sample(5,[attacker.id],[],{tick:5,playerId:attacker.id,action:'carry',appliedByRapier:true,actualPhysicsImpulseApplied:true}).retained,false);
    assert.equal(sample(6).officialPossession,false);
+  }
+ });
+
+ test('D-04 defender contains from goal side, presses loose ball and recovers when bypassed',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const ballPosition={x:dir*30,y:2},ballVelocity={x:dir*1,y:0.4};
+   const attacker={id:side+'-10',x:dir*29.6,y:2};
+   const defender={id:other+'-2',x:dir*32,y:2.2};
+   const source={attackingSide:side,attacker,defender,ballPosition,ballVelocity};
+   const contain=planDribbleDefender(source);
+   assert.equal(contain.mode,'contain');assert.ok(dir*(contain.target.x-ballPosition.x)>0);
+   const press=planDribbleDefender({...source,attacker:{...attacker,x:dir*27}});
+   assert.equal(press.mode,'press');assert.ok(dir*press.target.x<dir*contain.target.x);
+   const recover=planDribbleDefender({...source,defender:{...defender,x:dir*28}});
+   assert.equal(recover.mode,'recover');assert.ok(dir*recover.target.x>dir*ballPosition.x);
+   assert.equal(recover.officialPossession,false);
+  }
+ });
+ test('D-04 live guarded defender pursues physical ball while canonical separation stays valid',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let moved=0;const modes=new Set();let pressure=0;
+   for(const variantIndex of [0,2,5,11,19,26]){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
+    const id=(side==='home'?'away':'home')+'-2';
+    try{
+     let prior=scene.snapshot().observedMovementPlayers.find(p=>p.id===id);
+     for(let n=0;n<420;n++){
+      const f=scene.step(),p=f.observedMovementPlayers.find(p=>p.id===id),audit=f.defensivePositioning;
+      assert.ok(audit&&['contain','press','recover'].includes(audit.mode));
+      assert.equal(audit.officialPossession,false);
+      assert.ok(f.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
+      modes.add(audit.mode);if(audit.defenderGapM<2)pressure++;
+      moved+=Math.hypot(p.x-prior.x,p.y-prior.y);prior=p;
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D04_DEFENDING '+JSON.stringify({side,moved,modes:[...modes],pressure})+'\n');
+   assert.ok(moved>0&&pressure>0,'defender must approach the live ball');
   }
  });

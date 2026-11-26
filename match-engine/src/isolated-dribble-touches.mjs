@@ -135,3 +135,29 @@ export function createDribbleShieldObserver(side){
   return latest;
  }});
 }
+
+// D-04: defensive movement in the active 1v1 only. Read the current
+// carrier/ball separation and rolling trajectory, contain a controlled
+// ball from the goal side, close a loose ball, recover when bypassed.
+// These are movement intents, not tackles or possession decisions.
+export function planDribbleDefender({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}={}){
+ if(!['home','away'].includes(attackingSide)||attacker?.id!==attackingSide+'-10'||
+    defender?.id!==(attackingSide==='home'?'away':'home')+'-2'||
+    ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,v?.x,v?.y].every(Number.isFinite))
+  throw new TypeError('Original 1v1 actors and live ball required');
+ const dir=attackingSide==='home'?1:-1;
+ const gap=Math.hypot(defender.x-b.x,defender.y-b.y);
+ const carrierGap=Math.hypot(attacker.x-b.x,attacker.y-b.y);
+ const goalSide=dir*(defender.x-b.x);
+ const lead=clamp(gap/12,0,0.35);
+ const bx=clamp(b.x+v.x*lead,-51.99,51.99),by=clamp(b.y+v.y*lead,-33.49,33.49);
+ const mode=carrierGap>1.15?'press':goalSide< -0.55?'recover':gap>3.2?'press':'contain';
+ // In a controlled duel, block the goal-facing route instead of chasing
+ // an arbitrary side. A loose ball may be attacked directly.
+ const goalDx=dir*52.5-bx,goalDy=-by,goalDistance=Math.max(0.01,Math.hypot(goalDx,goalDy));
+ const standOff=mode==='recover'?1.35:mode==='contain'?1.15:carrierGap>1.15?0.22:0.85;
+ const target=Object.freeze({x:clamp(bx+standOff*goalDx/goalDistance,-51.99,51.99),
+  y:clamp(by+standOff*goalDy/goalDistance,-33.49,33.49)});
+ return Object.freeze({mode,target,carrierGapM:carrierGap,defenderGapM:gap,goalSideM:goalSide,
+  decisionOnly:true,officialPossession:false});
+}
