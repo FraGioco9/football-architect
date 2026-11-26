@@ -20,3 +20,18 @@ export function selectDefensiveIntervention({actorId,context='duel',unavailable=
  if(interception?.reachable||standing?.kind==='interception')return result('interception','detached-inbound-ball',interception??standing);
  return result('none','hold-defensive-position');
 }
+
+// UME-04: a shot trajectory is an opportunity to block, never an observed
+// block. Use the actual defending player, not a selected fixture shirt.
+export function planNativeShotBlock({player,ball,velocity}={}){
+ if(!player||player.role==='goalkeeper'||!['home','away'].includes(player.team)||
+    ![player.x,player.y,ball?.x,ball?.y,velocity?.x,velocity?.y].every(Number.isFinite))return null;
+ const dir=player.team==='home'?-1:1;
+ if(dir*velocity.x<=2)return null;
+ const eta=(player.x-ball.x)/velocity.x;
+ if(eta<0||eta>0.65)return null;
+ const y=Math.max(-33.49,Math.min(33.49,ball.y+velocity.y*eta));
+ const reachable=0.48+Math.min(6.5*eta,Math.abs(player.vy??0)*eta+4.5*eta*eta);
+ if(Math.abs(y-player.y)>reachable)return null;
+ return Object.freeze({actorId:player.id,target:Object.freeze({x:player.x,y}),etaS:eta,decisionOnly:true,officialPossession:false});
+}

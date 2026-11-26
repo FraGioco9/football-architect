@@ -10,7 +10,7 @@ import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
  keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
-import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch} from '../src/isolated-dribble-touches.mjs';
+import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention} from '../src/isolated-dribble-touches.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
 test('COL-01 both teams pursue the real ball without a shirt-number runner or inferred possession',()=>{
@@ -118,6 +118,27 @@ test('COL-05 defending team presses and covers without formation-role restrictio
   const pass={kind:'loose',delivery:{kind:'pass',team:side,playerId:passer.id,tick:4}};
   const interception=chooseCollectiveDefensiveTouch({player:defender,players:[passer,defender,cover],ballPosition:ball,ballVelocity:incoming,control:pass,tick:5});
   assert.equal(interception?.kind,'interception');assert.equal(interception.officialPossession,false);
+ }
+});
+test('UME-04 native defense uses shared eligibility and real delivery trajectories',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const a={id:side+'-9',team:side,x:dir*30,y:0};
+  const d={id:other+'-10',team:other,role:'forward',x:dir*31,y:0.3};
+  const ballPosition={x:dir*30.4,y:0,z:0.11},ballVelocity={x:dir*0.2,y:0,z:0};
+  const source={attacker:a,defender:d,ballPosition,ballVelocity};
+  const standing=planNativeDefensiveIntervention(source);
+  assert.equal(standing.decision.kind,'standing-tackle');
+  assert.equal(standing.decision.physicalContactProven,false);
+  assert.equal(planNativeDefensiveIntervention({...source,unavailable:true}).decision.kind,'none');
+  assert.equal(planNativeDefensiveIntervention({...source,recovering:true}).decision.kind,'recover');
+  assert.equal(planNativeDefensiveIntervention({...source,activeSlide:true}).decision.kind,'sliding-tackle');
+  const shot={...source,attacker:{...a,x:dir*26},ballVelocity:{x:dir*10,y:0,z:0},context:'shot'};
+  const block=planNativeDefensiveIntervention(shot);
+  assert.equal(block.decision.kind,'block');assert.equal(block.decision.officialPossession,false);
+  assert.equal(planNativeDefensiveIntervention({...shot,defender:{...d,y:8}}).decision.kind,'none');
+  assert.equal(planNativeDefensiveIntervention({...shot,ballVelocity:{x:-dir*10,y:0,z:0}}).decision.kind,'none');
+  assert.equal(planNativeDefensiveIntervention({...source,defender:{...d,role:'goalkeeper'}}),null);
  }
 });
 test('UME-03 movement uses the same participant geometry for pair, groups and full field',()=>{

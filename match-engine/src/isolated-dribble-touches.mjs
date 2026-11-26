@@ -1,5 +1,5 @@
 // #628 research: proposal only; actual ball impulse needs authentic Rapier START.
-import {selectDefensiveIntervention} from './defensive-intervention-selection.mjs';
+import {selectDefensiveIntervention,planNativeShotBlock} from './defensive-intervention-selection.mjs';
 export const ISOLATED_DRIBBLE_TOUCH_VERSION='me-628-dribble-grounded-pressure-paced-v3';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const opposite=side=>side==='home'?'away':'home';
@@ -41,7 +41,7 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
   if(witness&&(started.some(id=>id!==witness.playerId)||touching.some(id=>id!==witness.playerId)||real&&action.action!=='carry'))witness=null;
   if(delivery&&(tick-delivery.tick>180||started.some(id=>id!==delivery.playerId)||touching.some(id=>id!==delivery.playerId)))delivery=null;
   if(real){
-   delivery=action.action==='pass'?Object.freeze({tick,playerId:action.playerId,team:players.find(p=>p.id===action.playerId)?.team,kind:'pass'}):null;
+   delivery=['pass','shot'].includes(action.action)?Object.freeze({tick,playerId:action.playerId,team:players.find(p=>p.id===action.playerId)?.team,kind:action.action}):null;
    if(action.action==='carry'&&outfieldIds.includes(action.playerId))witness={playerId:action.playerId,tick};
   }
   if(physicalChallengeReleased===true){witness=null;delivery=null;}
@@ -509,6 +509,24 @@ export function chooseDuelInterceptionTouch({attackingSide,attacker,defender,bal
   dx,dy,magnitudeNs,carrierGapM:rivalGap,defenderGapM:gap,release,desiredVelocity,
   nativeExclusiveShoeRequired:true,physicalAttemptOnly:true,interceptionConfirmed:false,officialPossession:false});
 }
+// UME-04: prepare and rank defensive candidates from live opposing geometry.
+// The caller supplies the existing slide plan and any genuine recovery lock.
+// No LAB identity or player formation role determines the decision.
+export function planNativeDefensiveIntervention({attacker,defender,ballPosition,ballVelocity,
+ unavailable=false,recovering=false,activeSlide=false,sliding=null,available=true,
+ context='duel',allowShoulder=true,allowStanding=true,allowInterception=true}={}){
+ if(!defender||defender.role==='goalkeeper')return null;
+ const source={attackingSide:attacker?.team,attacker,defender,ballPosition,ballVelocity};
+ const eligible=available&&!unavailable&&!recovering;
+ const shoulder=eligible&&context==='duel'&&allowShoulder?planDuelShoulderApproach(source):null;
+ const standing=eligible&&context==='duel'&&allowStanding?chooseDribbleDefensiveTouch(source):null;
+ const interception=eligible&&context!=='shot'&&allowInterception?planDuelInterception(source):null;
+ const block=eligible&&context==='shot'?planNativeShotBlock({player:defender,ball:ballPosition,velocity:ballVelocity}):null;
+ const decision=selectDefensiveIntervention({actorId:defender.id,context,unavailable,recovering,activeSlide,
+  shoulder,standing,sliding:eligible?sliding:null,interception:context==='pass'?(interception?.reachable?interception:null):interception,block,
+  ballGapM:Math.hypot(defender.x-ballPosition.x,defender.y-ballPosition.y)});
+ return Object.freeze({decision,shoulder,standing,interception,block});
+}
 // COL-05: the same standing/interception geometry for any outfield
 // participant, independent of formation role. An interception of a
 // loose pass needs a witnessed opposing release, not guessed ownership.
@@ -516,14 +534,17 @@ export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ball
  if(!player||player.role==='goalkeeper'||!Array.isArray(players)||!control)return null;
  const owner=control.kind==='controlled'?players.find(p=>p.id===control.playerId):null;
  if(owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15){
-  return chooseDribbleDefensiveTouch({attackingSide:owner.team,attacker:owner,defender:player,ballPosition,ballVelocity});
+  const plan=planNativeDefensiveIntervention({attacker:owner,defender:player,ballPosition,ballVelocity,allowShoulder:false,allowInterception:false});
+  return plan?.decision?.kind==='standing-tackle'||plan?.decision?.kind==='interception'?plan.standing:null;
  }
  const delivery=control.delivery;
  if(control.kind!=='loose'||delivery?.kind!=='pass'||delivery.team===player.team||
     !Number.isSafeInteger(delivery.tick)||tick-delivery.tick<1||tick-delivery.tick>180)return null;
  const passer=players.find(p=>p.id===delivery.playerId&&p.team===delivery.team);
  if(!passer)return null;
- return chooseDuelInterceptionTouch({attackingSide:passer.team,attacker:passer,defender:player,ballPosition,ballVelocity});
+ const touch=chooseDuelInterceptionTouch({attackingSide:passer.team,attacker:passer,defender:player,ballPosition,ballVelocity});
+ const decision=selectDefensiveIntervention({actorId:player.id,context:'pass',interception:touch});
+ return decision.kind==='interception'?touch:null;
 }
 export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding','shoulder','interception']);
 export const SLIDING_GET_UP_TACKLER_TICKS=30;
