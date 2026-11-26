@@ -182,6 +182,54 @@ export function planDribbleDefender({attackingSide,attacker,defender,ballPositio
   decisionOnly:true,officialPossession:false});
 }
 
+// D-09a: choose a short open ball route beside the tackler, rather
+// than kicking straight through the old carrier or into the tackler's body.
+// Score only current geometry. The actual impulse is still native and
+// bounded, and either player can reach the real ball afterwards.
+export function planDefensiveBallRelease(attacker,defender,b,attackingSide){
+ const dir=attackingSide==='home'?1:-1;
+ const da=Math.hypot(defender.x-attacker.x,defender.y-attacker.y);
+ if(da<0.15)return null;
+ const ax=(defender.x-attacker.x)/da,ay=(defender.y-attacker.y)/da;
+ const tx=-dir*ay,ty=dir*ax;
+ const candidates=[];
+ for(const sign of [1,-1])for(const along of [0,0.28,0.50,-0.20]){
+  const norm=Math.hypot(along,1),ux=(ax*along+tx*sign)/norm,uy=(ay*along+ty*sign)/norm;
+  const end={x:b.x+ux*1.05,y:b.y+uy*1.05};
+  if(Math.abs(end.x)>51.95||Math.abs(end.y)>33.35)continue;
+  const gap=(p,x,y)=>Math.hypot(p.x-x,p.y-y);
+  const d=gap(defender,end.x,end.y),a=gap(attacker,end.x,end.y);
+  const startD=gap(defender,b.x,b.y),startA=gap(attacker,b.x,b.y);
+  let clearance=Infinity;
+  // Reject a route that first travels deeper into either player.
+  for(const t of [0.25,0.50,0.75,1]){
+   const x=b.x+ux*1.05*t,y=b.y+uy*1.05*t;
+   clearance=Math.min(clearance,gap(defender,x,y)-Math.min(startD,0.58),
+    gap(attacker,x,y)-Math.min(startA,0.58));
+  }
+  const advance=(a-startA);
+  const score=2.5*(a-d)+1.8*clearance+0.5*advance-0.9*Math.abs(d-0.95);
+  candidates.push({ux,uy,end,d,a,clearance,score});
+ }
+ if(!candidates.length)return null;
+ candidates.sort((a,b)=>b.score-a.score);
+ const best=candidates[0];
+ return Object.freeze({target:Object.freeze(best.end),ux:best.ux,uy:best.uy,
+  projectedTacklerGapM:best.d,projectedOpponentGapM:best.a,
+  pathClearanceGainM:best.clearance,decisionOnly:true});
+}
+
+// Pursue the released ball from the player's actual approach side.
+// Do not aim a recovery runner behind the opponent's body just because
+// that is the normal attacking direction.
+export function planDuelRecoveryApproach(player,b,v){
+ const gap=Math.hypot(b.x-player.x,b.y-player.y),lead=clamp(gap/7,0.08,0.28);
+ const x=b.x+v.x*lead,y=b.y+v.y*lead;
+ const dx=x-player.x,dy=y-player.y,d=Math.hypot(dx,dy);
+ return Object.freeze({x:clamp(x-(d>0.05?dx/d:0)*0.20,-51.99,51.99),
+  y:clamp(y-(d>0.05?dy/d:0)*0.20,-33.49,33.49)});
+}
+
 // D-05: grounded defensive intent, authorized only by the existing
 // exclusive native shoe START gate. No automatic turnover.
 export function chooseDribbleDefensiveTouch({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}={}){
@@ -194,13 +242,16 @@ export function chooseDribbleDefensiveTouch({attackingSide,attacker,defender,bal
  const incoming=dir*v.x>0.7&&(defender.x-b.x)*v.x+(defender.y-b.y)*v.y>=-0.10;
  const kind=carrierGap>1.15&&incoming?'interception':carrierGap<=1.15?'tackle':null;
  if(!kind)return null;
- const desiredX=-dir*(kind==='interception'?2.3:1.8);
- const desiredY=clamp((b.y-attacker.y)*1.2,-1.2,1.2);
+ const release=planDefensiveBallRelease(attacker,defender,b,attackingSide);
+ if(!release)return null;
+ const desiredSpeed=kind==='interception'?2.4:2.8;
+ const desiredX=release.ux*desiredSpeed,desiredY=release.uy*desiredSpeed;
  const dx=desiredX-v.x,dy=desiredY-v.y;
  const magnitudeNs=Math.min(1.25,0.43*Math.hypot(dx,dy));
  if(magnitudeNs<0.025)return null;
  return Object.freeze({version:'me-628-duel-defensive-touch-v1',kind,dx,dy,magnitudeNs,
   actorId:defender.id,opponentId:attacker.id,carrierGapM:carrierGap,defenderGapM:gap,
+  release,desiredVelocity:Object.freeze({x:desiredX,y:desiredY}),
   nativeExclusiveShoeRequired:true,physicalAttemptOnly:true,tackleWon:false,interceptionConfirmed:false,officialPossession:false});
 }
 
@@ -220,7 +271,7 @@ export function createDribbleTransitionObserver(side){
   const real=action?.tick===tick&&ids.includes(action.playerId)&&
     starts.length===1&&starts[0]===action.playerId&&active.length===1&&active[0]===action.playerId&&
     action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&touching.length===1;
-  if(!inField||touching.length>1||candidateId!==null&&tick-candidateTick>120){
+  if(!inField||candidateId!==null&&tick-candidateTick>120){
    candidateId=null;candidateTick=null;
   }
   if(inField&&real&&action.action==='carry'){

@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,planDuelRecoveryApproach,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
 import {advanceSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
@@ -2586,7 +2586,8 @@ export function createPlayerMovement(options={}){
     const attack=smallSided.side==='home'?1:-1;
     if(duelActors){
      const {attacker,defender,attackingSide}=duelActors;
-     return p.id===attacker.id?directedDribbleApproachTarget(p,ball,realBallVelocity,attackingSide,defender):
+     return p.id===attacker.id?(duelActors.candidateId===p.id?planDuelRecoveryApproach(p,ball,realBallVelocity):
+      directedDribbleApproachTarget(p,ball,realBallVelocity,attackingSide,defender)):
       planDribbleDefender({attackingSide,attacker,defender,ballPosition:ball,ballVelocity:realBallVelocity}).target;
     }
     if(p.team===smallSided.side){
