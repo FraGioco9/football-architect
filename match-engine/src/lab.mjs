@@ -111,8 +111,8 @@ function recordPerformedActions(frame){
   const shoe=frame.starts?.includes(defender),leg=frame.smallSidedNativeBodyGuard?.lowerLegBallStarts?.includes(defender);
   const defensiveAction=events.find(e=>e.id===defender&&['tackle','interception','carry'].includes(e.kind));
   if(defensiveAction)defensiveAction.label=defensiveAction.kind==='carry'?(frame.duelTransition?.recovered?'Recovery touch':'Counter carry'):defensiveAction.kind==='tackle'?(action.defensiveTarget?.intervention==='sliding-tackle'?'Sliding tackle contact':'Standing tackle attempt'):'Interception attempt';
-  if(frame.defensiveSlide?.started&&frame.defensiveSlide.tick===tick)events.push({id:defender,kind:'sliding-tackle',label:'Sliding tackle attempt'});
   else if(shoe||leg)events.push({id:defender,kind:'defensive-contact',label:'Defensive contact'});
+  if(frame.defensiveSlide?.started&&frame.defensiveSlide.tick===tick)events.push({id:defender,kind:'sliding-tackle',label:'Sliding tackle attempt'});
   if(frame.duelTransition?.regained){const touch=events.find(e=>e.id===frame.nativeDribbleAudit.side+'-10'&&e.kind==='carry');if(touch)touch.label='Regained touch';}
   if(frame.shieldAudit?.retained)events.push({id:frame.nativeDribbleAudit.side+'-10',kind:'retained-touch',label:'Retained touch'});
   if(action?.tick===tick&&action?.decisionContext?.isolatedDribbleTouch?.shieldingIntent){
