@@ -2534,7 +2534,7 @@ export function createPlayerMovement(options={}){
        0.08+(options.researchSoloSprintPursuitLeadM??0)*sprintPursuitScale):
     currentSoloCarryPhase.phase==='moderate'?-0.06:
      currentSoloCarryPhase.ballTargetOffsetM:null;
-  const duelActors=directedDribble?resolveDuelActors(players,smallSided.side,duelTransition):null;
+  const duelActors=directedDribble?resolveDuelActors(players,smallSided.side,duelTransition,ball):null;
   defensiveDecision=null;
   duelShoulder=duelTransition?.profile==='shoulder'&&duelActors&&!duelActors.candidateId?
    planDuelShoulderApproach({...duelActors,ballPosition:ball,ballVelocity:realBallVelocity}):null;
@@ -2595,12 +2595,13 @@ export function createPlayerMovement(options={}){
    if(duelTransition?.profile==='mixed'){
     const source={attackingSide,attacker,defender,ballPosition:ballPosition,ballVelocity:realBallVelocity};
     const unavailable=gettingUp||!!directedContactRelease||duelSlide?.phase==='recovery'||!!planShoulderBalanceRecovery(defender,duelTransition,tick+1);
-    const available=!unavailable&&!duelActors.candidateId;
+    const loose=duelTransition.ballControl?.kind==='loose';
+    const available=!unavailable&&!loose&&!duelActors.candidateId;
     const shoulder=available?planDuelShoulderApproach(source):null;
     const standing=available?chooseDribbleDefensiveTouch(source):null;
     const sliding=available?planSlidingTackle({attackingSide,attacker,defender,ball:ballPosition,velocity:realBallVelocity}):null;
     const interception=available?planDuelInterception(source):null;
-    defensiveDecision=selectDefensiveIntervention({actorId:defender.id,unavailable,recovering:!!duelActors.candidateId,activeSlide:duelSlide?.phase==='slide',shoulder,standing,sliding,interception,ballGapM:Math.hypot(defender.x-ball.x,defender.y-ball.y)});
+    defensiveDecision=selectDefensiveIntervention({actorId:defender.id,unavailable,recovering:loose||!!duelActors.candidateId,activeSlide:duelSlide?.phase==='slide',shoulder,standing,sliding,interception,ballGapM:Math.hypot(defender.x-ball.x,defender.y-ball.y)});
     duelShoulder=defensiveDecision.kind==='shoulder-challenge'&&!duelSlide?shoulder:null;
     duelInterception=defensiveDecision.kind==='interception'&&interception?.reachable?interception:null;
    }
@@ -2670,6 +2671,10 @@ export function createPlayerMovement(options={}){
      if(duelShoulder?.actorId===p.id)return duelShoulder.target;
      if(duelInterception?.actorId===p.id)return duelInterception.target;
      if(duelAlignment)return duelAlignment[p.id].target;
+     if(duelTransition?.profile==='mixed'&&duelTransition.ballControl?.kind==='loose'){
+      const rival=players.find(q=>smallActive.has(q.id)&&q.id!==p.id);
+      return routeDuelAroundOpponent(p,rival,planDuelRecoveryApproach(p,ball,realBallVelocity)).target;
+     }
      const {attacker,defender,attackingSide}=duelActors;
      return p.id===attacker.id?(duelActors.candidateId===p.id?planDuelRecoveryApproach(p,ball,realBallVelocity):
       directedDribbleApproachTarget(p,ball,realBallVelocity,attackingSide,defender)):
@@ -3016,7 +3021,7 @@ export function createPlayerMovement(options={}){
   if(smallSided)lastSmallSidedMovementDecisions=Object.freeze(players
    .filter(p=>smallActive.has(p.id)).map(p=>{
     const target=targets[players.indexOf(p)];
-    const kind=smallSided.blockStart&&p.id===smallSided.opponent+'-2'?(blockState?.phase==='blocked'?'press-ball':'block-shot'):smallSided.interceptionStart&&p.id===smallSided.opponent+'-2'?(interceptionState?.phase==='flight'?'intercept-ball':['intercepted','collected'].includes(interceptionState?.phase)?'carry-ball':'press-ball'):duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':duelShoulder?.actorId===p.id&&duelShoulder.sideOn?'shoulder-challenge':duelInterception?.actorId===p.id?'intercept-ball':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
+    const kind=smallSided.blockStart&&p.id===smallSided.opponent+'-2'?(blockState?.phase==='blocked'?'press-ball':'block-shot'):smallSided.interceptionStart&&p.id===smallSided.opponent+'-2'?(interceptionState?.phase==='flight'?'intercept-ball':['intercepted','collected'].includes(interceptionState?.phase)?'carry-ball':'press-ball'):duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':duelShoulder?.actorId===p.id&&duelShoulder.sideOn?'shoulder-challenge':duelInterception?.actorId===p.id?'intercept-ball':duelTransition?.profile==='mixed'&&duelTransition.ballControl?.kind==='loose'?'press-ball':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
      p.team!==smallSided.side?'press-ball':
      p.id===smallSided.side+'-10'?
       ((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?'carry-ball':'approach-ball'):

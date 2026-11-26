@@ -8,12 +8,27 @@ export function isOpposingDuelPair(side,actor,opponent){
   typeof opponent?.id==='string'&&actor.id.startsWith(side+'-')&&opponent.id.startsWith(opposite(side)+'-')&&
   (actor.team===undefined||actor.team===side)&&(opponent.team===undefined||opponent.team===opposite(side));
 }
+// Provisional control requires a genuine carry witness and live ball geometry.
+export function observeDuelBallControl({players,ball,carryWitness,tick}={}){
+ const player=players?.find(p=>p.id===carryWitness?.playerId);
+ const b=ball?.position,v=ball?.velocity;
+ const near=player&&b&&v&&[player.x,player.y,b.x,b.y,b.z,v.x,v.y].every(Number.isFinite)&&
+  Math.abs(b.x)<52.39&&Math.abs(b.y)<33.89&&Math.hypot(player.x-b.x,player.y-b.y)<=1.15&&
+  b.z>=0.095&&b.z<=0.23&&Math.hypot(v.x,v.y)<=5;
+ const controlled=!!near&&Number.isSafeInteger(carryWitness.tick)&&carryWitness.tick<=tick;
+ return Object.freeze({kind:controlled?'controlled':'loose',playerId:controlled?player.id:null,
+  sourceTick:controlled?carryWitness.tick:null,officialPossession:false});
+}
 // Initial IDs select fixture participants, not action capabilities.
-export function resolveDuelActors(players,initialSide,state=null){
+export function resolveDuelActors(players,initialSide,state=null,ball=null){
  const ids=[initialSide+'-10',opposite(initialSide)+'-2'];
- const carrierId=ids.includes(state?.carrierId)?state.carrierId:ids[0];
+ const live=state?.profile==='mixed'&&state.ballControl&&ball;
+ const carrierId=live?state.ballControl.playerId:ids.includes(state?.carrierId)?state.carrierId:ids[0];
  const candidateId=ids.includes(state?.candidateId)&&state.candidateId!==carrierId?state.candidateId:null;
- const primaryId=candidateId??carrierId;
+ // Nearest-ball approach is a movement plan, not assigned possession.
+ const nearest=live&&carrierId===null?players.filter(p=>ids.includes(p.id)).sort((p,q)=>
+  Math.hypot(p.x-ball.x,p.y-ball.y)-Math.hypot(q.x-ball.x,q.y-ball.y))[0]?.id:null;
+ const primaryId=live?(carrierId??candidateId??nearest):(candidateId??carrierId);
  const attacker=players.find(p=>p.id===primaryId),defender=players.find(p=>ids.includes(p.id)&&p.id!==primaryId);
  if(!attacker||!defender)throw new TypeError('Original two physical duel actors required');
  return {attacker,defender,attackingSide:attacker.team,carrierId,candidateId};
@@ -461,8 +476,8 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
  if(!['home','away'].includes(side)||!DUEL_TACKLE_PROFILES.includes(profile))throw new TypeError('Original duel side and tackle profile required');
  const first=side+'-10',second=opposite(side)+'-2',ids=[first,second];
  let carrierId=first,candidateId=null,candidateTick=null,sourceTick=null,lastIntervention=null,recoveries=0,regains=0,changes=0;
- let getUpUntil=Object.freeze({}),lastShoulder=null,shoulderContacts=0,priorShoulderPair=null;
- let latest=Object.freeze({tick:0,profile,phase:'attack',carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered:false,regained:false,officialPossession:false});
+ let getUpUntil=Object.freeze({}),lastShoulder=null,shoulderContacts=0,priorShoulderPair=null,carryWitness=null;
+ let latest=Object.freeze({tick:0,profile,phase:'attack',carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered:false,regained:false,ballControl:observeDuelBallControl(),officialPossession:false});
  function observe({tick,starts,active,bodyStarts,bodyActive,action,ball,players=[],shoulderPlan=null,torsoPairs=[],bodies=[]}){
   if(tick!==latest.tick+1)throw new TypeError('Same original physics tick required');
   let recovered=false,regained=false;
@@ -488,7 +503,11 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
    }
    if(action.playerId!==carrierId){candidateId=action.playerId;candidateTick=tick;}
   }
+  // Rival native contact or defensive strike releases control, not transfers it.
+  if(carryWitness&&(!inField||started.some(id=>id!==carryWitness.playerId)||
+     real&&['tackle','interception'].includes(action.action)))carryWitness=null;
   if(inField&&real&&action.action==='carry'){
+   carryWitness={playerId:action.playerId,tick};
    if(action.playerId!==carrierId){
     carrierId=action.playerId;changes++;sourceTick=tick;
     recovered=carrierId===second;regained=carrierId===first;
@@ -515,7 +534,11 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
   if(lastShoulder?.successful&&candidateId===lastShoulder.actorId&&tick-lastShoulder.tick>SHOULDER_COLLECTION_TICKS){candidateId=null;candidateTick=null;}
   priorShoulderPair=shoulderPair;
   const phase=candidateId!==null?'recover':carrierId===first?'attack':'counter';
-  latest=Object.freeze({tick,profile,phase,carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered,regained,officialPossession:false});
+  if(lastShoulder?.tick===tick&&lastShoulder.successful)carryWitness=null;
+  const ballControl=observeDuelBallControl({players,ball,carryWitness,tick});
+  if(ballControl.kind==='loose')carryWitness=null;
+  // Historical phase/carrier/counters remain diagnostic compatibility only.
+  latest=Object.freeze({tick,profile,phase,carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered,regained,ballControl,officialPossession:false});
   return latest;
  }
  return Object.freeze({observe,snapshot:()=>latest});
@@ -526,7 +549,8 @@ export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVeloci
  if(slide?.phase==='recovery'||isDuelGettingUp(transition,player.id,tick)||planShoulderBalanceRecovery(player,transition,tick))return null;
  const opponentGap=Math.hypot(opponent.x-b.x,opponent.y-b.y);
  const shielded=observeDribbleShield(opponent,player,b);
- const current=transition?.carrierId===player.id;
+ const live=transition?.profile==='mixed'&&transition.ballControl;
+ const current=(live?live.playerId:transition?.carrierId)===player.id;
  const collecting=transition?.candidateId===player.id;
  const collectingRelease=collecting&&transition?.lastIntervention?.actorId===player.id&&transition.lastIntervention.effective&&tick-transition.lastIntervention.tick<=90;
  const shoulderCollection=isShoulderCollecting(transition,player.id,tick);
@@ -536,6 +560,11 @@ export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVeloci
  const carry=()=>chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:opponent,
   ballPosition:b,ballVelocity:v,variantIndex,tick});
  if(slide?.phase==='slide'){const touch=defensive(true);return touch?{defensive:touch,carry:null}:null;}
+ if(live?.kind==='loose'){
+  const touch=defensive();
+  if(touch?.kind==='interception'&&!collectingRelease&&!shoulderCollection&&!slideCollection)return {defensive:touch,carry:null};
+  return canCarry?{defensive:null,carry:carry()}:null;
+ }
  // Re-evaluate the real post-solver contact; a planned shoulder never
  // authorizes a kick and never overrides a legitimate collecting carrier.
  if(transition?.profile==='mixed'&&!current&&!collectingRelease&&!shoulderCollection&&!slideCollection){
