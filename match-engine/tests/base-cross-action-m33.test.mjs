@@ -163,7 +163,11 @@ test('CROSS-01 isolated native lofted cross measures first low arrival for both 
   assert.equal(row.airborne,true,JSON.stringify(row));
   assert.ok(row.peakClearanceM>=1&&row.peakClearanceM<=5,JSON.stringify(row));
   assert.ok(row.arrival&&row.arrival.timeS>0.5&&row.arrival.timeS<=3,JSON.stringify(row));
+  assert.ok(['native-ground-solver-pair','native-receiving-shoe-start'].includes(row.arrival.source),JSON.stringify(row));
   assert.ok(row.arrival.targetGapM<=3,JSON.stringify(row));
+  assert.ok(row.firstLowSample,JSON.stringify(row));
+  if(row.firstGroundContact)assert.ok(row.firstGroundContact.ground.solverContacts>0);
+  if(row.firstReceivingShoeStart)assert.equal(row.firstReceivingShoeStart.realRapierShoeStart,true);
   assert.equal(row.officialReception,false);
   assert.equal(row.officialCrossCompleted,false);
  }

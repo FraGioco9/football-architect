@@ -771,7 +771,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "unique:document.querySelectorAll('[data-me-dropdown=preset]').length===1,"+
    "noSecondSelector:document.getElementById('lab-all-situations')===null,"+
    "current:trigger.textContent.trim()};})()");
-  assert.equal(nav.items,11);
+  assert.equal(nav.items,12);
   assert.deepEqual(nav.groups,['Carry phases','Passing','Small-sided situations','Ball physics']);
   for(const key of ['hiddenLaunches','hiddenChoices','unique','noSecondSelector'])
    assert.equal(nav[key],true,key);

@@ -609,7 +609,7 @@ export function createEngine(RAPIER, input = {}, {
   // The floor top is exactly z=0 and a grounded ball center starts at its radius.
   const ground = RAPIER.ColliderDesc.cuboid(52.5, 34, 0.2)
     .setTranslation(0, 0, -0.2).setFriction(0.65).setRestitution(isolatedCarry?0:GROUND_RESTITUTION);
-  world.createCollider(ground);
+  const groundCollider=world.createCollider(ground);
   const desc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(scenario.x, scenario.y, toCenterHeight(scenario.z))
     .setLinvel(scenario.vx, scenario.vy, scenario.vz)
@@ -749,6 +749,19 @@ export function createEngine(RAPIER, input = {}, {
     // rotation back into horizontal motion even after the translation stops.
     const spin = body.angvel();
     body.setAngvel({x: spin.x * ratio, y: spin.y * ratio, z: spin.z}, false);
+  }
+  // CROSS-01 read-only observation of the original post-step Rapier
+  // ground/ball pair. No collider, event queue, solver or force change.
+  function crossGroundContactSnapshot(){
+   if(disposed||smallSided?.id!=='cross-pair')
+    throw new TypeError('Original isolated cross ground contact required');
+   let geometricContacts=0,solverContacts=0;
+   world.contactPair(ballCollider,groundCollider,m=>{
+    geometricContacts+=m.numContacts();
+    solverContacts+=m.numSolverContacts();
+   });
+   return Object.freeze({tick,geometricContacts,solverContacts,
+    nativeGroundPair:solverContacts>0,readOnly:true});
   }
   function snapshot() {
     if (disposed) throw new Error('Engine has been disposed');
@@ -1277,6 +1290,7 @@ export function createEngine(RAPIER, input = {}, {
         bodyBridge.acknowledgeCanonicalResponse(frame)
       }:{})
     }:{}),
+    ...(smallSided?.id==='cross-pair'?{crossGroundContactSnapshot}:{}),
     ...(smallSided?{
       originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds,
       ...(smallBodyGuard?{

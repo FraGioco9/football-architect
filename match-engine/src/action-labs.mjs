@@ -318,8 +318,11 @@ export function createControlledActionLab(RAPIER,id,{
  }):null;
  let previousPassBall=null;
  let crossPairAudit=id==='cross-pair'?Object.freeze({attempted:false,tick:null,
-  airborne:false,peakClearanceM:0,arrival:null,officialCrossCompleted:false,
+  airborne:false,peakClearanceM:0,arrival:null,firstLowSample:null,
+  firstDescendingHalfMetre:null,firstGroundContact:null,
+  firstReceivingShoeStart:null,officialCrossCompleted:false,
   officialReception:false}):null;
+ let previousCrossBall=null;
  let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
  const decisionObserver=createPhysicalFootballDecisionObserver();
@@ -624,24 +627,53 @@ export function createControlledActionLab(RAPIER,id,{
    if(nativeAction?.action==='cross'&&!crossPairAudit.attempted){
     const target=nativeAction.crossTarget;
     crossPairAudit=Object.freeze({...crossPairAudit,attempted:true,tick:physics.tick,
+     originX:target.originX,originY:target.originY,
      targetX:target.targetX,targetY:target.targetY,targetDistanceM:target.distanceM,
      recipientId:target.recipientId,launchSpeedMps:Math.hypot(vel.x,vel.y,vel.z)});
    }
-   if(crossPairAudit.attempted&&!crossPairAudit.arrival){
+   if(crossPairAudit.attempted){
+    const prior=crossPairAudit;
     const clearance=Math.max(0,pos.z-0.11);
-    const airborne=crossPairAudit.airborne||clearance>0.20;
-    // Observed low sample after flight/descent, not confirmed collision.
-    const arrival=airborne&&clearance<=0.10&&
-     (vel.z<=0||crossPairAudit.descending===true)?Object.freeze({
-      tick:physics.tick,timeS:(physics.tick-crossPairAudit.tick)*FIXED_DT,
-      position:Object.freeze({...pos}),
-      targetGapM:Math.hypot(pos.x-crossPairAudit.targetX,pos.y-crossPairAudit.targetY),
-      clearanceM:clearance,readOnly:true
-     }):null;
-    crossPairAudit=Object.freeze({...crossPairAudit,airborne,
-     descending:crossPairAudit.descending===true||vel.z<0,
-     peakClearanceM:Math.max(crossPairAudit.peakClearanceM,clearance),arrival});
+    const airborne=prior.airborne||clearance>0.20;
+    const descending=prior.descending===true||vel.z<0;
+    const sample=()=>Object.freeze({
+     tick:physics.tick,timeS:(physics.tick-prior.tick)*FIXED_DT,
+     position:Object.freeze({...pos}),
+     velocity:Object.freeze({...vel}),
+     targetGapM:Math.hypot(pos.x-prior.targetX,pos.y-prior.targetY),
+     clearanceM:clearance,readOnly:true
+    });
+    const eligible=prior.airborne&&physics.tick>prior.tick;
+    const ground=eligible?engine.crossGroundContactSnapshot():null;
+    if(ground&&ground.tick!==physics.tick)
+     throw new Error('CROSS-01 ground contact must be same-tick native evidence');
+    const firstGroundContact=prior.firstGroundContact??(
+     eligible&&ground.nativeGroundPair?Object.freeze({...sample(),
+      source:'native-ground-solver-pair',ground}):null);
+    const firstReceivingShoeStart=prior.firstReceivingShoeStart??(
+     eligible&&starts.length===1&&starts[0]===prior.recipientId&&
+      foot.active.length===1&&foot.active[0]===prior.recipientId?
+      Object.freeze({...sample(),source:'native-receiving-shoe-start',
+       recipientId:prior.recipientId,realRapierShoeStart:true}):null);
+    const firstDescendingHalfMetre=prior.firstDescendingHalfMetre??(
+     eligible&&previousCrossBall&&previousCrossBall.velocity.z<0&&
+      previousCrossBall.position.z-0.11>0.50&&clearance<=0.50?
+      Object.freeze({...sample(),source:'observed-descending-half-metre'}):null);
+    // Preserve v1's low sample independently, even when a native contact
+    // already occurred. It can belong to a later rebound, not delivery.
+    const firstLowSample=prior.firstLowSample??(
+     airborne&&clearance<=0.10&&descending?Object.freeze({...sample(),
+      source:'observed-low-sample'}):null);
+    // Only real same-world contact can establish the first physical
+    // arrival. A later low sample is not allowed to overwrite it.
+    const arrival=prior.arrival??firstReceivingShoeStart??firstGroundContact;
+    crossPairAudit=Object.freeze({...prior,airborne,descending,
+     peakClearanceM:prior.arrival?prior.peakClearanceM:
+      Math.max(prior.peakClearanceM,clearance),
+     arrival,firstLowSample,firstDescendingHalfMetre,
+     firstGroundContact,firstReceivingShoeStart});
    }
+   previousCrossBall=physics.ball;
   }
   const physicalFirstTouch=engine.researchReceivingCushionSnapshot?.()??null;
   const physicalReceiverChoice=engine.researchReceiverChoiceSnapshot?.()??null;
