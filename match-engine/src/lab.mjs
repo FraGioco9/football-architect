@@ -521,7 +521,8 @@ function render() {
          ' · flight observation'):' · waiting for native crossing shoe START'):'')+
       (f.shotSoloAudit?.attempted?
         ' · '+LAB_SHOT_LABELS[f.shotSoloAudit.profile]+' · empty goal · distance '+fmt(f.shotSoloAudit.distanceM)+' m'+
-        ' · launch '+fmtKmh(f.shotSoloAudit.launchSpeedMps)+' km/h'+
+        ' · aim '+fmt(f.shotSoloAudit.aimY)+' m / '+fmt(f.shotSoloAudit.aimCentreZM)+' m'+
+         ' · launch '+fmtKmh(f.shotSoloAudit.launchSpeedMps)+' km/h'+
         ' · peak height '+fmt(f.shotSoloAudit.peakClearanceM)+' m'+
         ' · spin '+fmt(f.shotSoloAudit.launchSpinRadS)+' rad/s'+
         (f.shotSoloAudit.profile==='curled'?' · bend '+fmt(f.shotSoloAudit.maxLateralBendM)+' m':'')+

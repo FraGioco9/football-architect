@@ -375,7 +375,8 @@ export function createPrivatePhysicalActionExecutor({
    const shotCalibration=sharedDynamics&&chosen.action==='shot'&&chosen.shotTarget?
      calculateCurrentLabShotCalibration({target:chosen.shotTarget,position:ballBody.translation(),
       velocity:ballBody.linvel(),massKg:ballBody.mass(),ballRadiusM,originalImpulseNs:chosen.impulseNs,
-       profile:isolatedShotProfile}):null;
+       profile:isolatedShotProfile,opponents:playerFrame.players.filter(p=>p.team!==chosen.team&&
+         (activePlayerIds===null||activePlayerIds.includes(p.id)))}):null;
     if(isolatedShotProfile==='tap-in'&&!shotCalibration)throw new Error('Tap-in contact outside calibrated low finishing envelope');
      const impulse=shotCalibration?shotCalibration.impulseNs:crossCalibration?Object.freeze({
     x:chosen.impulseNs.x*crossCalibration.scale,

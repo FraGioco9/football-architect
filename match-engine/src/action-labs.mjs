@@ -787,6 +787,7 @@ export function createControlledActionLab(RAPIER,id,{
     const c=nativeAction.labShotCalibration;
     shotSoloAudit=Object.freeze({...shotSoloAudit,attempted:true,launchTick:physics.tick,
      shooterId:nativeAction.playerId,distanceM:c.distanceM,aimY:c.targetY,
+      targetSelection:c.targetSelection,
       launchPosition:Object.freeze({...physics.ball.position}),launchVelocity:Object.freeze({...physics.ball.velocity}),
       launchSpinRadS:Math.hypot(...Object.values(engine.angularVelocity())),
      aimCentreZM:c.targetCentreZM,launchSpeedMps:Math.hypot(...Object.values(physics.ball.velocity))});

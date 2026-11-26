@@ -11,7 +11,7 @@ import {initialResearchShotLineup}
 import {CROSS_LAB_STARTS,ACTION_LAB_SCENARIOS}
  from '../src/action-lab-scenarios.mjs';
 import {initializeRapier,createEngine,normalizeScenario} from '../src/core.mjs';
-import {LAB_SHOT_PROFILES,calculateCurrentLabShotCalibration} from '../src/lab-shot-calibration.mjs';
+import {LAB_SHOT_PROFILES,calculateCurrentLabShotCalibration,selectLabShotTarget} from '../src/lab-shot-calibration.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {calculateLowCrossReceivingCushion,M25_CROSS_CUSHION_MAX_IMPULSE_NS,
  calculateLowCrossSpinCushion,M25_CROSS_MAX_ANGULAR_IMPULSE_NMS,
@@ -426,6 +426,9 @@ test('SHOT-03 tap-in uses all 30 mirrored close starts, authentic one-touch and 
   assert.ok(row.crossing?.goal&&row.crossing.fullBallCrossed,JSON.stringify(row));
   assert.ok(Math.abs(Math.abs(row.crossing.position.x)-52.61)<1e-8,JSON.stringify(row));
   assert.ok(row.crossing.lateralErrorM<=0.05,JSON.stringify(row));
+  assert.ok(Math.abs(row.aimY-row.launchPosition.y)<=1e-5,JSON.stringify(row));
+  assert.ok(Math.abs(row.distanceM-(52.5-Math.abs(row.launchPosition.x)))<=1e-5,JSON.stringify(row));
+  assert.equal(row.targetSelection.policy,'nearest-safe-goal-mouth');
   assert.equal(row.crossing.officialGoal,false);
   assert.ok(row.launchSpeedMps>=4.16&&row.launchSpeedMps<=9.73&&row.peakClearanceM<=0.12,JSON.stringify(row));
   const dx=52.5-Math.abs(row.launchPosition.x),dy=row.aimY-row.launchPosition.y;
@@ -452,5 +455,35 @@ test('SHOT-03 canonical close-range starts do not relax manual or unrelated LAB 
   }
   assert.throws(()=>createEngine(R,{...start,x:side==='home'?53:-53},options),/Invalid value for x/);
   assert.throws(()=>createEngine(R,start,{...options,diagnosticIsolatedShotProfile:'power'}),/Invalid value for x/);
+ }
+});
+
+test('SHOT-04 safe goal-mouth ranking: nearest tap-in, varied corners, live defenders and vertical candidates',()=>{
+ for(const side of [1,-1]){
+  const target={targetX:side*52.5,targetY:0},ballRadiusM=0.11;
+  for(const y of [-2.1,0,1.8,3.3]){
+   const position={x:side*49,y,z:0.11};
+   const a=selectLabShotTarget({target,position,ballRadiusM,profile:'tap-in'});
+   assert.ok(Math.abs(a.targetY-Math.max(-2.85,Math.min(2.85,y)))<1e-8);
+   assert.equal(a.targetCentreZM,ballRadiusM);
+   assert.ok(a.postMarginM>=0.70-1e-8);
+  }
+  for(const profile of ['power','low','placed','chip','curled']){
+   const aim=y=>selectLabShotTarget({target,position:{x:side*30,y,z:0.11},ballRadiusM,profile});
+   const left=aim(-7),right=aim(7);
+   assert.ok(left.targetY*right.targetY<0,profile);
+   assert.ok(Math.abs(left.targetY)>=2&&Math.abs(right.targetY)>=2,profile);
+   assert.ok(left.candidateCount>=5);
+   assert.ok(left.postMarginM>=0.60&&left.barMarginM>=0.25);
+  }
+  const position={x:side*30,y:0,z:0.11};
+  const positiveBlock={x:side*52,y:2.65,role:'goalkeeper'};
+  const negativeBlock={x:side*52,y:-2.65,role:'goalkeeper'};
+  const aim=opponents=>selectLabShotTarget({target,position,ballRadiusM,profile:'power',opponents});
+  assert.ok(aim([positiveBlock]).targetY<0);
+  assert.ok(aim([negativeBlock]).targetY>0);
+  assert.ok(aim([positiveBlock]).laneClearanceM>=2.4);
+  // No scoring probability or result is manufactured by ranking.
+  assert.equal(aim([positiveBlock]).officialGoal,false);
  }
 });
