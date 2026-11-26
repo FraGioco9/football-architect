@@ -104,6 +104,24 @@ export function keeperDuelReboundTarget(side,index,attacker,ball,velocity){
  return freeze({x:bounded(bx+0.65*ux,-51.99,51.99),
   y:bounded(by+0.65*uy,-33.49,33.49)});
 }
+// Active single-shot LAB: close a controllable live ball in the penalty
+// area instead of stopping just outside the existing glove's reach.
+// Return a movement target only; no contact or successful tackle claim.
+export function keeperDuelCloseDownTarget(side,keeper,attacker,ball,velocity){
+ if(!['home','away'].includes(side)||keeper?.id!==(side==='home'?'away':'home')+'-1'||
+    attacker?.id!==side+'-10'||![keeper.x,keeper.y,attacker.x,attacker.y,
+     ball?.x,ball?.y,ball?.z,velocity?.x,velocity?.y,velocity?.z].every(Number.isFinite))
+  throw new TypeError('Live keeper close-down needs original players and ball');
+ const dir=side==='home'?1:-1, gap=Math.hypot(ball.x-keeper.x,ball.y-keeper.y);
+ if(dir*ball.x<36||dir*ball.x>=52.39||Math.abs(ball.y)>20.16||
+    ball.z>0.5||Math.hypot(velocity.x,velocity.y,velocity.z)>6||
+    Math.hypot(ball.x-attacker.x,ball.y-attacker.y)>2.2||gap>7)return null;
+ const lead=bounded(gap/16,0,0.25);
+ const bx=ball.x+velocity.x*lead,by=ball.y+velocity.y*lead;
+ // Stay on the goal side until close enough for the physical challenge.
+ return freeze({x:bounded(bx+dir*0.65,-51.99,51.99),
+  y:bounded(by,-20.16,20.16)});
+}
 export function keeperDuelGoalkeeperTarget(side,index,attacker,ball,baseline){
  requireKeeperVariant(side,index);
  if(!attacker||attacker.id!==side+'-10'||!ball||!baseline||

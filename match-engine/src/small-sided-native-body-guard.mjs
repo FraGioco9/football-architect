@@ -257,14 +257,14 @@ export function planNativeKeeperChallenge(keeper,attacker,ball){
  if(!attacker||attacker.team===keeper.team||
     ![keeper.x,keeper.y,attacker.x,attacker.y,p.x,p.y,p.z,v.x,v.y,v.z].every(finite)||
     -dir*p.x<36||-dir*p.x>=52.39||Math.abs(p.y)>20.16||p.z<0.09||p.z>0.5||
-    Math.hypot(v.x,v.y,v.z)>5.5||Math.hypot(attacker.x-p.x,attacker.y-p.y)>1.25||
-    Math.hypot(keeper.x-p.x,keeper.y-p.y)>1.55||dir*(p.x-keeper.x)<-0.2)return null;
+    Math.hypot(v.x,v.y,v.z)>6||Math.hypot(attacker.x-p.x,attacker.y-p.y)>2.2||
+    Math.hypot(keeper.x-p.x,keeper.y-p.y)>1.75||dir*(p.x-keeper.x)<-0.2)return null;
  const start={x:keeper.x+dir*0.35,y:keeper.y,z:0.85};
  const eta=0.20,reachTicks=Math.round(eta/PLAYER_DT);
  const intended={x:p.x+v.x*eta,y:p.y+v.y*eta,z:Math.max(0.21,p.z)};
  if(-dir*intended.x<36||-dir*intended.x>=52.39||Math.abs(intended.y)>20.16)return null;
  const gap=Math.hypot(intended.x-start.x,intended.y-start.y,intended.z-start.z);
- if(gap>1.45||gap<0.08)return null;
+ if(gap>1.65||gap<0.08)return null;
  return freeze({kind:'challenge',start:freeze(start),target:freeze(intended),intended:freeze(intended),eta,reachTicks,limited:false});
 }
 export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null,{closeChallengeEnabled=false}={}){

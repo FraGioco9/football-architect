@@ -12,7 +12,7 @@ import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction}
  from '../src/player-ball-uniform-autonomous-action.mjs';
 import {initializeRapier,FIXED_DT} from '../src/core.mjs';
 import {advanceGoalkeeperBallOrientation} from '../src/individual-kinematics.mjs';
-import {keeperDuelReboundTarget} from '../src/small-sided-lab-scenarios.mjs';
+import {keeperDuelReboundTarget,keeperDuelCloseDownTarget} from '../src/small-sided-lab-scenarios.mjs';
 import {planNativeKeeperDive,planNativeKeeperChallenge,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip} from '../src/small-sided-native-body-guard.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
@@ -438,5 +438,43 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
     }finally{scene.dispose();}
    }
    assert.ok(observedShots>0,side+' active duel must preserve authentic shots');
+  }
+ });
+
+ test('GK-07 close-down reaches within the glove envelope instead of stalling at stand-off distance',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,keeper={id:(side==='home'?'away':'home')+'-1',x:dir*47,y:0};
+   const attacker={id:side+'-10',x:dir*42.5,y:0.4};
+   const ball={x:dir*43,y:0.4,z:0.11},velocity={x:dir*0.5,y:0,z:0};
+   const target=keeperDuelCloseDownTarget(side,keeper,attacker,ball,velocity);
+   assert.ok(target);
+   assert.ok(Math.hypot(target.x-ball.x,target.y-ball.y)<1.0);
+   assert.equal(keeperDuelCloseDownTarget(side,keeper,attacker,ball,{x:dir*12,y:0,z:0}),null);
+   assert.equal(keeperDuelCloseDownTarget(side,keeper,attacker,{...ball,x:dir*30},velocity),null);
+  }
+ });
+ test('GK-07 visible variation 03 resolves a carried-ball threat on both sides', {timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   const scene=createControlledActionLab(R,'keeper-1v1',{shotSide:side,variantIndex:2,bodyGuardEnabled:true,keeperSingleShot:true});
+   let shots=0,attempts=0,contacts=0,catches=0,nearest=Infinity,bodyContacts=0,footContacts=0,exit=null;
+   try{
+    for(let n=0;n<900;n++){
+     const f=scene.step(),audit=f.keeperShotAudit,keeper=f.observedMovementPlayers.find(p=>p.id===audit.keeperId);
+     nearest=Math.min(nearest,Math.hypot(keeper.x-f.ball.position.x,keeper.y-f.ball.position.y));
+     shots=audit.shots;
+     if(f.keeperDive?.started&&f.keeperDive.plan?.kind==='challenge')attempts++;
+     if(f.keeperDive?.contactStarted&&f.keeperDive.plan?.kind==='challenge')contacts++;
+     if(f.keeperDive?.catchState?.confirmedTick===f.physicsTick)catches++;
+     if(f.smallSidedNativeBodyGuard?.lowerLegBallStarts?.includes(audit.keeperId))bodyContacts++;
+     if(f.starts.includes(audit.keeperId))footContacts++;
+     assert.ok(shots<=1);
+     exit=f.refereeEvidence?.lastEvent?.kind??null;
+     if(exit||catches||shots>0)break;
+    }
+    process.stdout.write('ME_628_GK_VARIANT_03 '+JSON.stringify({side,shots,attempts,contacts,catches,nearest,bodyContacts,footContacts,exit})+'\n');
+    assert.ok(shots>0||contacts>0||bodyContacts>0||footContacts>0,
+     'V03 must not remain an endless unchallenged carry');
+   }finally{scene.dispose();}
   }
  });

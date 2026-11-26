@@ -9,7 +9,7 @@ import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {smallSidedSetup,keeperDuelAttackerTarget,keeperDuelReboundTarget,
- keeperDuelGoalkeeperTarget} from './small-sided-lab-scenarios.mjs';
+ keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -2212,7 +2212,7 @@ export function createPlayerMovement(options={}){
   });
  }
  function step(ballPosition={x:0,y:0},priorRealPass=null,
-  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null){
+  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false){
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
@@ -2220,6 +2220,9 @@ export function createPlayerMovement(options={}){
      smallBodyFeedbackTick!==tick)
    throw new TypeError('LAB native feedback requires the prior tick acknowledgment');
   const ball=ballXY(ballPosition);
+  if(typeof keeperCloseDown!=='boolean'||(keeperCloseDown&&(smallSided?.id!=='keeper-1v1'||
+     !realBallVelocity||!['x','y','z'].every(k=>finite(realBallVelocity[k]))||!finite(ballPosition.z))))
+   throw new TypeError('Close-down requires original keeper duel and current physical ball');
   if(priorKeeperRebound!==null&&(!smallSided||smallSided.id!=='keeper-1v1'||
      priorKeeperRebound.tick!==tick||priorKeeperRebound.reboundTick==null||
      priorKeeperRebound.reboundTick>tick||!realBallVelocity||
@@ -2513,9 +2516,15 @@ export function createPlayerMovement(options={}){
     }
     if(p.id===smallSided.opponent+'-1'){
      const baseline=goalkeeperPosition(p.team,ball);
+     const attacker=players.find(a=>a.id===smallSided.side+'-10');
+     if(keeperCloseDown){
+      const challenge=keeperDuelCloseDownTarget(smallSided.side,p,attacker,
+       ballPosition,realBallVelocity);
+      if(challenge)return challenge;
+     }
      return smallSided.id==='keeper-1v1'?
       keeperDuelGoalkeeperTarget(smallSided.side,smallSided.variantIndex,
-       players.find(a=>a.id===smallSided.side+'-10'),ball,baseline):baseline;
+       attacker,ball,baseline):baseline;
     }
     const attack=smallSided.side==='home'?1:-1;
     if(p.team===smallSided.side){

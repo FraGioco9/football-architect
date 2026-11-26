@@ -933,7 +933,8 @@ export function createControlledActionLab(RAPIER,id,{
    (goalkeeperSave||id==='carry-solo'||id==='keeper-1v1')?prior.ball.velocity:null,
    id==='keeper-1v1'&&!keeperSingleShot&&bodyGuardEnabled&&latest.keeperShotAudit?.reboundTick!=null&&
     !latest.keeperShotAudit.crossing&&!latest.keeperDive?.catchState?.active?
-     {tick:prior.tick,reboundTick:latest.keeperShotAudit.reboundTick}:null);
+     {tick:prior.tick,reboundTick:latest.keeperShotAudit.reboundTick}:null,
+   keeperSingleShot&&latest.keeperShotAudit?.shots===0&&!latest.keeperDive?.catchState?.active);
   const initialAfter=engine.step(frame);
    if(smallSided&&bodyGuardEnabled){
     // Only post-step original native manifolds feed the canonical mover.
