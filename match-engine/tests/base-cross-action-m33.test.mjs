@@ -12,6 +12,8 @@ import {CROSS_LAB_STARTS,ACTION_LAB_SCENARIOS}
  from '../src/action-lab-scenarios.mjs';
 import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
+import {calculateLowCrossReceivingCushion,M25_CROSS_CUSHION_MAX_IMPULSE_NS}
+ from '../src/physical-receiving-cushion-m25.mjs';
 
 const frame=(players,tick=1)=>Object.freeze({
  version:PLAYER_VERSION,tick,
@@ -131,7 +133,7 @@ test('CROSS-01 isolated native lofted cross measures first low arrival for both 
  for(const side of ['home','away'])for(const variantIndex of [0,1,9,21,29]){
   const lab=createControlledActionLab(R,'cross-pair',{shotSide:side,variantIndex});
   try{
-   let frame=lab.snapshot(),count=0;
+   let frame=lab.snapshot(),count=0,firstTouch=null;
    assert.equal(frame.genuinePhysicalPlayerCount,2);
    assert.deepEqual(lab.focus,[side+'-9',side+'-10']);
    for(let t=1;t<=240;t++){
@@ -139,6 +141,15 @@ test('CROSS-01 isolated native lofted cross measures first low arrival for both 
     assert.equal(frame.officialMatchPossession,false);
     assert.equal(frame.officialMatchResult,null);
     assert.ok(frame.starts.every(id=>lab.focus.includes(id)));
+    const cushion=frame.crossPairAudit.receivingCushion;
+    if(cushion&&!firstTouch){
+     firstTouch=cushion;
+     assert.equal(cushion.tick,frame.physicsTick);
+     assert.deepEqual(frame.starts,[side+'-9']);
+     assert.equal(frame.action,null,'no second football action');
+     assert.equal(cushion.actualPhysicsImpulseApplied,true);
+     assert.deepEqual(frame.ball.velocity,cushion.realPostBallVelocity);
+    }else if(cushion)assert.equal(cushion,firstTouch,'only one first-touch impulse');
     if(frame.action){
      count++;
      assert.equal(frame.action.action,'cross');
@@ -170,5 +181,40 @@ test('CROSS-01 isolated native lofted cross measures first low arrival for both 
   if(row.firstReceivingShoeStart)assert.equal(row.firstReceivingShoeStart.realRapierShoeStart,true);
   assert.equal(row.officialReception,false);
   assert.equal(row.officialCrossCompleted,false);
+  assert.equal(row.arrival.source,'native-receiving-shoe-start');
+  // Preserve approved launch and first contact (original ten cases).
+  assert.ok(row.arrival.timeS>=1.30&&row.arrival.timeS<=1.55,JSON.stringify(row));
+  assert.ok(row.peakClearanceM>=2.10&&row.peakClearanceM<=2.90,JSON.stringify(row));
+  assert.ok(row.arrival.targetGapM<=0.18,JSON.stringify(row));
+  const c=row.receivingCushion;
+  assert.ok(c&&c.tick===row.arrival.tick,JSON.stringify(row));
+  assert.equal(c.nativeExclusiveShoeStart,true);
+  assert.equal(c.verifiedBallControl,false);
+  const pre=c.realPreBallVelocity,post=c.realPostBallVelocity;
+  const magnitude=Math.hypot(...Object.values(c.impulseNs));
+  assert.ok(magnitude<=M25_CROSS_CUSHION_MAX_IMPULSE_NS+1e-9);
+  assert.ok(Math.hypot(...Object.values(pre))>10);
+  assert.ok(Math.hypot(...Object.values(post))<=0.35,JSON.stringify(row));
+  assert.ok(pre.x*post.x+pre.y*post.y+pre.z*post.z>=-1e-6);
+  const follow=row.receiverFollowThrough;
+  assert.ok(follow?.completed&&follow.samples===61,JSON.stringify(row));
+  assert.ok(follow.maxGapM<=0.85,JSON.stringify(row));
+  assert.ok(follow.atOneSecond.speedMps<=0.30,JSON.stringify(row));
+  assert.ok(follow.atOneSecond.clearanceM<=0.05,JSON.stringify(row));
  }
+});
+
+test('CROSS-02 low-cross cushion is finite, bounded and dissipative in 3D, never contact authority',()=>{
+ const args={ballVelocity:{x:10,y:-10,z:1.9},playerVelocity:{x:0,y:0},
+  ballCentreZ:0.235,ballRadiusM:0.11,realBallPlayerGapM:0.15,ballMassKg:0.43};
+ const c=calculateLowCrossReceivingCushion(args);
+ assert.ok(c);
+ assert.ok(Math.hypot(...Object.values(c.impulseNs))<=6.5);
+ const post=Object.keys(args.ballVelocity).map(k=>args.ballVelocity[k]+c.impulseNs[k]/args.ballMassKg);
+ assert.ok(Math.abs(Math.hypot(...post)-0.25)<1e-10);
+ assert.ok(c.impulseNs.z<0);
+ assert.equal(c.officialPossession,false);
+ for(const patch of [{ballCentreZ:1.5},{realBallPlayerGapM:1},{ballVelocity:{x:19,y:0,z:0}},{ballVelocity:{x:0.1,y:0,z:0}}])
+  assert.equal(calculateLowCrossReceivingCushion({...args,...patch}),null);
+ assert.throws(()=>calculateLowCrossReceivingCushion({...args,ballMassKg:0}),TypeError);
 });

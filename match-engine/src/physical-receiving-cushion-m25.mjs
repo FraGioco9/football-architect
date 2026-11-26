@@ -35,3 +35,31 @@ export function calculateRealReceivingCushion({
   researchOnly:true,officialPossession:false
  });
 }
+
+ // CROSS-02: M25 relative-motion counter-impulse, including vertical
+ // rebound. Separate provisional cap for measured 12–14.4m/s low crosses.
+ export const M25_CROSS_CUSHION_MAX_IMPULSE_NS=6.5;
+ export function calculateLowCrossReceivingCushion({
+  ballVelocity,playerVelocity,ballCentreZ,ballRadiusM,realBallPlayerGapM,ballMassKg
+ }={}){
+  if(!ballVelocity||!playerVelocity||
+     ![ballVelocity.x,ballVelocity.y,ballVelocity.z,playerVelocity.x,playerVelocity.y,
+       ballCentreZ,ballRadiusM,realBallPlayerGapM,ballMassKg].every(finite)||
+     ballRadiusM<0.05||ballRadiusM>0.2||ballMassKg<=0||realBallPlayerGapM<0)
+   throw new TypeError('Cross cushion requires measured original motion and mass');
+  const relative={x:ballVelocity.x-playerVelocity.x,y:ballVelocity.y-playerVelocity.y,z:ballVelocity.z};
+  const speed=Math.hypot(relative.x,relative.y,relative.z);
+  if(speed<=0.35||speed>18||realBallPlayerGapM>0.85||
+     ballCentreZ<ballRadiusM-0.015||ballCentreZ>ballRadiusM+0.4)return null;
+  const residualTargetMps=0.25;
+  const magnitude=Math.min(M25_CROSS_CUSHION_MAX_IMPULSE_NS,
+   ballMassKg*(speed-residualTargetMps));
+  return Object.freeze({
+   impulseNs:Object.freeze({x:-relative.x/speed*magnitude,
+    y:-relative.y/speed*magnitude,z:-relative.z/speed*magnitude}),
+   actualRelativeSpeedMps:speed,residualTargetMps,
+   measuredGapM:realBallPlayerGapM,
+   maximumImpulseNs:M25_CROSS_CUSHION_MAX_IMPULSE_NS,
+   researchOnly:true,officialPossession:false
+  });
+ }

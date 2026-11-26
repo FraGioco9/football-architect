@@ -236,6 +236,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.match(cross.readout,/last (HOME|AWAY) CROSS native shoe\/impulse/);
    assert.match(cross.readout,/peak height [0-9.]+ m/);
    assert.match(cross.readout,/arrival [0-9.]+ s/);
+   assert.match(cross.readout,/active low-cross cushion · after contact [0-9.]+ km\/h/);
+   assert.match(cross.readout,/1s gap [0-9.]+ m/);
   }
   // Every visible Carry option has its own fixed phase, including both
   // mirrored sides and Reset. Real Rapier ball impulses are counted, not

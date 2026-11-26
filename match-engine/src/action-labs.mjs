@@ -320,7 +320,8 @@ export function createControlledActionLab(RAPIER,id,{
  let crossPairAudit=id==='cross-pair'?Object.freeze({attempted:false,tick:null,
   airborne:false,peakClearanceM:0,arrival:null,firstLowSample:null,
   firstDescendingHalfMetre:null,firstGroundContact:null,
-  firstReceivingShoeStart:null,officialCrossCompleted:false,
+  firstReceivingShoeStart:null,receivingCushion:null,receiverFollowThrough:null,
+  officialCrossCompleted:false,
   officialReception:false}):null;
  let previousCrossBall=null;
  let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
@@ -650,7 +651,10 @@ export function createControlledActionLab(RAPIER,id,{
     const firstGroundContact=prior.firstGroundContact??(
      eligible&&ground.nativeGroundPair?Object.freeze({...sample(),
       source:'native-ground-solver-pair',ground}):null);
-    const firstReceivingShoeStart=prior.firstReceivingShoeStart??(
+    const cushion=engine.researchReceivingCushionSnapshot();
+     if(cushion&&cushion.version!=='m25-isolated-low-cross-first-touch-v1')
+      throw new Error('CROSS-02 requires isolated low-cross first touch');
+     const firstReceivingShoeStart=prior.firstReceivingShoeStart??(
      eligible&&starts.length===1&&starts[0]===prior.recipientId&&
       foot.active.length===1&&foot.active[0]===prior.recipientId?
       Object.freeze({...sample(),source:'native-receiving-shoe-start',
@@ -667,11 +671,28 @@ export function createControlledActionLab(RAPIER,id,{
     // Only real same-world contact can establish the first physical
     // arrival. A later low sample is not allowed to overwrite it.
     const arrival=prior.arrival??firstReceivingShoeStart??firstGroundContact;
+     if(cushion&&(!firstReceivingShoeStart||cushion.tick!==firstReceivingShoeStart.tick||
+        cushion.actorId!==prior.recipientId||cushion.originalCrossTick!==prior.tick))
+      throw new Error('CROSS-02 cushion requires original first receiving START');
+     let follow=prior.receiverFollowThrough;
+     if(firstReceivingShoeStart&&!follow?.completed){
+      const elapsed=physics.tick-firstReceivingShoeStart.tick;
+      const receiver=playerFrame.players.find(p=>p.id===prior.recipientId);
+      const current=Object.freeze({tick:physics.tick,elapsedTicks:elapsed,
+       gapM:Math.hypot(pos.x-receiver.x,pos.y-receiver.y),
+       speedMps:Math.hypot(vel.x,vel.y,vel.z),clearanceM:clearance});
+      follow=Object.freeze({samples:(follow?.samples??0)+1,
+       maxGapM:Math.max(follow?.maxGapM??0,current.gapM),
+       maxClearanceM:Math.max(follow?.maxClearanceM??0,clearance),
+       atHalfSecond:elapsed===30?current:follow?.atHalfSecond??null,
+       atOneSecond:elapsed===60?current:null,completed:elapsed===60,readOnly:true});
+     }
     crossPairAudit=Object.freeze({...prior,airborne,descending,
      peakClearanceM:prior.arrival?prior.peakClearanceM:
       Math.max(prior.peakClearanceM,clearance),
      arrival,firstLowSample,firstDescendingHalfMetre,
-     firstGroundContact,firstReceivingShoeStart});
+     firstGroundContact,firstReceivingShoeStart,receivingCushion:cushion,
+      receiverFollowThrough:follow});
    }
    previousCrossBall=physics.ball;
   }

@@ -8,7 +8,7 @@ import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
-import {calculateRealReceivingCushion,M25_CUSHION_MAX_IMPULSE_NS}
+import {calculateRealReceivingCushion,M25_CUSHION_MAX_IMPULSE_NS,calculateLowCrossReceivingCushion}
  from './physical-receiving-cushion-m25.mjs';
 import {choosePhysicalReceiverSecondTouch}
  from './physical-receiver-choice-m27.mjs';
@@ -105,6 +105,7 @@ export function createPrivatePhysicalActionExecutor({
  let action=null,audit=null,closed=false;
  let actualPriorPass=null,interrupted=false,firstCushion=null;
  let isolatedPassReceptionSeen=false;
+ let priorCross=null,crossAirborne=false,crossDescending=false,crossInterrupted=false,crossReceptionSeen=false;
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
@@ -425,6 +426,43 @@ export function createPrivatePhysicalActionExecutor({
       }
      }
     }
+   }
+  }
+  if(isolatedCrossSide!==null){
+   const recipientId=isolatedCrossSide+'-9';
+   if(applied?.action==='cross')priorCross=Object.freeze({tick:nextTick,playerId:applied.playerId});
+   if(priorCross&&nextTick>priorCross.tick&&!crossReceptionSeen){
+    const pos=ballBody.translation(),before=Object.freeze({...ballBody.linvel()});
+    if(contact.started.some(id=>id!==recipientId))crossInterrupted=true;
+    const eligible=crossAirborne&&crossDescending&&!crossInterrupted;
+    if(contact.started.includes(recipientId)){
+     // First contact consumes the opportunity, even if ambiguous.
+     crossReceptionSeen=true;
+     if(eligible&&!suppressOriginalAction&&!suppressPhysicalBodyContact&&
+        contact.started.length===1&&contact.active.length===1&&
+        contact.started[0]===recipientId&&contact.active[0]===recipientId){
+      const p=playerFrame.players.find(x=>x.id===recipientId);
+      const candidate=calculateLowCrossReceivingCushion({
+       ballVelocity:before,playerVelocity:{x:p.vx,y:p.vy},
+       ballCentreZ:pos.z,ballRadiusM,ballMassKg:ballBody.mass(),
+       realBallPlayerGapM:Math.hypot(pos.x-p.x,pos.y-p.y)
+      });
+      if(candidate){
+       ballBody.applyImpulse(candidate.impulseNs,true);
+       firstCushion=Object.freeze({...candidate,
+        version:'m25-isolated-low-cross-first-touch-v1',tick:nextTick,
+        actorId:recipientId,team:isolatedCrossSide,originalCrossTick:priorCross.tick,
+        originalCrossActorId:priorCross.playerId,
+        nativeExclusiveShoeStart:true,originalRapierBallBody:true,
+        actualPhysicsImpulseApplied:true,realPreBallVelocity:before,
+        realPostBallVelocity:Object.freeze({...ballBody.linvel()}),
+        officialMatchAction:false,officialPossession:false,
+        verifiedReception:false,verifiedBallControl:false});
+      }
+     }
+    }
+    crossAirborne=crossAirborne||pos.z-ballRadiusM>0.20;
+    crossDescending=crossDescending||(crossAirborne&&before.z<0);
    }
   }
   if(side!==null){
