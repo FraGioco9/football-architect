@@ -7,10 +7,10 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
- keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport}
+ keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
-import {createCollectiveBallControlObserver} from '../src/isolated-dribble-touches.mjs';
+import {createCollectiveBallControlObserver,chooseCollectiveDefensiveTouch} from '../src/isolated-dribble-touches.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
 test('COL-01 both teams pursue the real ball without a shirt-number runner or inferred possession',()=>{
@@ -66,6 +66,31 @@ test('COL-04 support opens a real passing lane and mirrors without shirt prefere
   assert.equal(support.officialPossession,false);
   const boundary=planCollectiveSupport({player:{...player,y:32},ball:{...ball,y:33},opponents});
   assert.ok(Math.abs(boundary.target.y)<=33.49&&Math.abs(boundary.target.x)<=51.99);
+ }
+});
+test('COL-05 defending team presses and covers without formation-role restriction',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const owner={id:side+'-2',team:side,role:'defender',x:dir*30,y:0};
+  const defender={id:other+'-10',team:other,role:'forward',x:dir*31.0,y:0.3};
+  const cover={id:other+'-9',team:other,role:'forward',x:dir*34,y:3};
+  const ball={x:dir*30.4,y:0,z:0.11},velocity={x:0.2*dir,y:0,z:0};
+  const players=[owner,defender,cover],control={kind:'controlled',playerId:owner.id};
+  const plan=planCollectiveApproaches(players,ball,velocity,control);
+  assert.equal(plan[owner.id].kind,'carry-ball');
+  assert.equal(plan[defender.id].kind,'press-ball');
+  assert.equal(plan[cover.id].kind,'cover-pass');
+  assert.ok(dir*(plan[defender.id].target.x-ball.x)>0);
+  assert.ok(Math.hypot(plan[defender.id].target.x-plan[cover.id].target.x,plan[defender.id].target.y-plan[cover.id].target.y)>1);
+  assert.equal(planCollectiveDefense({player:defender,ball,velocity,opponents:[owner],owner}).officialPossession,false);
+  const touch=chooseCollectiveDefensiveTouch({player:defender,players,ballPosition:ball,ballVelocity:velocity,control,tick:5});
+  assert.equal(touch?.kind,'tackle');assert.equal(touch.officialPossession,false);
+  assert.equal(chooseCollectiveDefensiveTouch({player:defender,players,ballPosition:ball,ballVelocity:velocity,control:{kind:'loose'},tick:5}),null);
+  const passer={...owner,x:dir*26};
+  const incoming={x:dir*2,y:0,z:0};
+  const pass={kind:'loose',delivery:{kind:'pass',team:side,playerId:passer.id,tick:4}};
+  const interception=chooseCollectiveDefensiveTouch({player:defender,players:[passer,defender,cover],ballPosition:ball,ballVelocity:incoming,control:pass,tick:5});
+  assert.equal(interception?.kind,'interception');assert.equal(interception.officialPossession,false);
  }
 });
 test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{

@@ -1475,7 +1475,7 @@ export function projectActiveLabDecisions(frame,focus){
   if(!ids.includes(decision.id)||byId.has(decision.id)||
      decision.tick!==frame.physicsTick||decision.originalCanonicalMover!==true||
      decision.readOnly!==true||decision.actionConfirmed!==false||
-     !['goalkeeping','press-ball','carry-ball','approach-ball','support-run','hold-pass-target','getting-up','shoulder-challenge','intercept-ball','block-shot'].includes(decision.kind)||
+     !['goalkeeping','press-ball','cover-pass','carry-ball','approach-ball','support-run','hold-pass-target','getting-up','shoulder-challenge','intercept-ball','block-shot'].includes(decision.kind)||
      ![decision.target?.x,decision.target?.y,decision.speedMps].every(Number.isFinite))
    throw new TypeError('Invalid current authoritative mover intent');
   byId.set(decision.id,decision);

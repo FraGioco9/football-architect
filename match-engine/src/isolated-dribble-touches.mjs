@@ -26,7 +26,7 @@ export function createCollectiveBallControlObserver(activeIds,outfieldIds){
  if(!Array.isArray(activeIds)||!Array.isArray(outfieldIds)||
     new Set(activeIds).size!==activeIds.length||new Set(outfieldIds).size!==outfieldIds.length||
     !outfieldIds.every(id=>activeIds.includes(id)))throw new TypeError('Active physical participants required');
- let witness=null,latest=Object.freeze({tick:0,...observeDuelBallControl()});
+ let witness=null,delivery=null,latest=Object.freeze({tick:0,...observeDuelBallControl(),delivery:null});
  function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action}){
   if(tick!==latest.tick+1)throw new TypeError('Consecutive native control ticks required');
   const participants=players.filter(p=>outfieldIds.includes(p.id));
@@ -36,10 +36,14 @@ export function createCollectiveBallControlObserver(activeIds,outfieldIds){
    starts.length===1&&starts[0]===action.playerId&&active.length===1&&active[0]===action.playerId&&
    touching.length===1&&touching[0]===action.playerId&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true;
   if(witness&&(started.some(id=>id!==witness.playerId)||touching.some(id=>id!==witness.playerId)||real&&action.action!=='carry'))witness=null;
-  if(real&&action.action==='carry'&&outfieldIds.includes(action.playerId))witness={playerId:action.playerId,tick};
+  if(delivery&&(tick-delivery.tick>180||started.some(id=>id!==delivery.playerId)||touching.some(id=>id!==delivery.playerId)))delivery=null;
+  if(real){
+   delivery=action.action==='pass'?Object.freeze({tick,playerId:action.playerId,team:players.find(p=>p.id===action.playerId)?.team,kind:'pass'}):null;
+   if(action.action==='carry'&&outfieldIds.includes(action.playerId))witness={playerId:action.playerId,tick};
+  }
   const control=observeDuelBallControl({players:participants,ball,carryWitness:witness,tick});
   if(control.kind==='loose')witness=null;
-  latest=Object.freeze({tick,...control});
+  latest=Object.freeze({tick,...control,delivery});
   return latest;
  }
  return Object.freeze({snapshot:()=>latest,observe});
@@ -498,6 +502,22 @@ export function chooseDuelInterceptionTouch({attackingSide,attacker,defender,bal
  return Object.freeze({version:'me-628-interception-cushion-v1',kind:'interception',actorId:defender.id,opponentId:attacker.id,
   dx,dy,magnitudeNs,carrierGapM:rivalGap,defenderGapM:gap,release,desiredVelocity,
   nativeExclusiveShoeRequired:true,physicalAttemptOnly:true,interceptionConfirmed:false,officialPossession:false});
+}
+// COL-05: the same standing/interception geometry for any outfield
+// participant, independent of formation role. An interception of a
+// loose pass needs a witnessed opposing release, not guessed ownership.
+export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ballVelocity,control,tick}){
+ if(!player||player.role==='goalkeeper'||!Array.isArray(players)||!control)return null;
+ const owner=control.kind==='controlled'?players.find(p=>p.id===control.playerId):null;
+ if(owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15){
+  return chooseDribbleDefensiveTouch({attackingSide:owner.team,attacker:owner,defender:player,ballPosition,ballVelocity});
+ }
+ const delivery=control.delivery;
+ if(control.kind!=='loose'||delivery?.kind!=='pass'||delivery.team===player.team||
+    !Number.isSafeInteger(delivery.tick)||tick-delivery.tick<1||tick-delivery.tick>180)return null;
+ const passer=players.find(p=>p.id===delivery.playerId&&p.team===delivery.team);
+ if(!passer)return null;
+ return chooseDuelInterceptionTouch({attackingSide:passer.team,attacker:passer,defender:player,ballPosition,ballVelocity});
 }
 export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding','shoulder','interception']);
 export const SLIDING_GET_UP_TACKLER_TICKS=30;

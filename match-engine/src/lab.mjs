@@ -150,7 +150,7 @@ byId('me-performed-player').addEventListener('change',updatePerformedFilter);
 const smallSidedDecisionLabels=Object.freeze({
  'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
  'hold-pass-target':'Hold receiving position',
- 'support-run':'Support the attack','press-ball':'Close down the ball',
+ 'support-run':'Support the attack','press-ball':'Close down the ball','cover-pass':'Cover passing lane',
  'goalkeeping':'Protect the goal','getting-up':'—','shoulder-challenge':'Shoulder challenge','intercept-ball':'Intercept ball','block-shot':'Block shot'
 });
 const humanPlayer=id=>id.replace('home-','HOME #').replace('away-','AWAY #');

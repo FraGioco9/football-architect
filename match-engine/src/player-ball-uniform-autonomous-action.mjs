@@ -9,7 +9,7 @@ import {chooseSmallSidedContextAction}
  from './small-sided-context-choice.mjs';
 
 
-import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch,chooseDirectedDribbleTouch} from './isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch,chooseDirectedDribbleTouch,chooseCollectiveDefensiveTouch} from './isolated-dribble-touches.mjs';
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
@@ -362,15 +362,15 @@ export function selectUniformAutonomousContactAction({
   const collective=smallSidedDecisionContext?.collective===true;
   const owner=collectiveControl?.kind==='controlled'?actors.find(p=>p.id===collectiveControl.playerId):null;
   const opponentControl=!!owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15;
-  const rawDefense=chooseBasicDefensiveAttempt({actor:player,players:actors,ball:ballPosition,velocity:ballVelocity});
-  const defensiveAttempt=collective&&!opponentControl?(rawDefense?.kind==='interception'&&!owner?rawDefense:null):rawDefense;
+  const collectiveTouch=collective?chooseCollectiveDefensiveTouch({player,players:actors,ballPosition,ballVelocity,control:collectiveControl,tick}):null;
+  const defensiveAttempt=collective?null:chooseBasicDefensiveAttempt({actor:player,players:actors,ball:ballPosition,velocity:ballVelocity});
   // LAB-VAR-02 only: AFTER verified genuine exclusive Rapier shoe START,
   // examine live legitimate affordances. Normal 22-player policy, keeper
   // and defensive priority, and archival V01 remain byte-identical.
   const contextualAttacker=!activeKeeperAttacker&&isolatedDribbleContext===null&&
    smallSidedDecisionContext!==null&&
    (collective?!opponentControl:player.team===smallSidedDecisionContext.attackingSide)&&
-   player.role!=='goalkeeper'&&!defensiveAttempt;
+   player.role!=='goalkeeper'&&!defensiveAttempt&&!collectiveTouch;
   const contextualRecipient=contextualAttacker?
    chooseRecipient(player,ballPosition,actors):null;
   const carryPossible=contextualAttacker&&allowPhysicalCarry&&
@@ -418,7 +418,7 @@ export function selectUniformAutonomousContactAction({
    if(magnitudeNs<0.025)continue;
    interceptionTouch=Object.freeze({kind:'interception',version:'me-628-interception-pass-cushion-v1',actorId:id,opponentId:passer.id,carrierGapM:Math.hypot(passer.x-ballPosition.x,passer.y-ballPosition.y),defenderGapM:gap,dx,dy,magnitudeNs,desiredVelocity,incomingSpeedMps:speed,nativeExclusiveShoeRequired:true,physicalAttemptOnly:true,officialPossession:false});
   }
-  const duelDefensiveTouch=interceptionTouch??sharedTouch?.defensive??null;
+  const duelDefensiveTouch=collectiveTouch??interceptionTouch??sharedTouch?.defensive??null;
   const dribbleTouch=defending&&['intercepted','collected'].includes(ic.phase)?chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:actors.find(p=>p.id===ic.side+'-9'),ballPosition,ballVelocity,variantIndex:0,tick}):sharedDuel?sharedTouch.carry:isolatedDribbleContext===null?null:
    chooseIsolatedDribbleTouch({
     variantIndex:isolatedDribbleContext.variantIndex,tick,
@@ -437,7 +437,7 @@ export function selectUniformAutonomousContactAction({
    rule='isolated-interception-lab-original-ground-pass';
   }else if(duelDefensiveTouch){
    action=duelDefensiveTouch.kind;dx=duelDefensiveTouch.dx;dy=duelDefensiveTouch.dy;
-   rule='directed-duel-native-defensive-ground-touch';
+   rule=collectiveTouch?'collective-native-defensive-ground-touch':'directed-duel-native-defensive-ground-touch';
   }else if(dribbleTouch!==null){
    if(dribbleTouch.magnitudeNs<0.025)continue;
    action='carry';dx=dribbleTouch.dx;dy=dribbleTouch.dy;

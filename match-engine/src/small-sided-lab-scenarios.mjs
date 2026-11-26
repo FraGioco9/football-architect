@@ -105,6 +105,39 @@ export function planCollectiveSupport({player,ball,opponents}){
  return freeze({target:freeze({x:best.x,y:best.y}),safeLane:best.safe,laneClearanceM:best.lane,
   opponentGapM:best.separation,decisionOnly:true,officialPossession:false});
 }
+// COL-05: approach from the goal side when the opponent has observed
+// control. Keep the second defender in a distinct cover lane. These
+// are bounded movement proposals; the original mover still owns contact.
+export function planCollectiveDefense({player,ball,velocity,opponents,owner,primary=true}){
+ if(!player||!owner||owner.team===player.team||!Array.isArray(opponents)||
+    !opponents.some(p=>p.id===owner.id)||!['home','away'].includes(player.team)||
+    ![player.x,player.y,owner.x,owner.y,ball?.x,ball?.y,velocity?.x,velocity?.y].every(Number.isFinite))
+  throw new TypeError('Live opposing control required');
+ const dir=player.team==='home'?1:-1,goalX=-dir*52.5;
+ const bx=bounded(ball.x+velocity.x*0.15,-51.75,51.75),by=bounded(ball.y+velocity.y*0.15,-33.25,33.25);
+ const dx=goalX-bx,dy=-by,d=Math.max(0.01,Math.hypot(dx,dy));
+ const gx=dx/d,gy=dy/d;
+ const receiver=opponents.filter(p=>p.id!==owner.id&&p.role!=='goalkeeper')
+  .sort((a,b)=>Math.hypot(a.x-goalX,a.y)-Math.hypot(b.x-goalX,b.y)||a.y-b.y||a.x-b.x)[0];
+ const target=(x,y)=>freeze({x:bounded(x,-51.99,51.99),y:bounded(y,-33.49,33.49)});
+ if(!primary){
+  // If a second opponent is available, cover the actual passing lane.
+  // Otherwise screen behind the pressing teammate, away from his feet.
+  const lateral=Math.abs(player.y-by)>0.1?Math.sign(player.y-by):by>=0?-1:1;
+  const covered=receiver?target(bx+(receiver.x-bx)*0.65,by+(receiver.y-by)*0.65):
+   target(bx+gx*3.0,by+gy*3.0+lateral*2.2);
+  return freeze({kind:'cover-pass',target:covered,decisionOnly:true,officialPossession:false});
+ }
+ const gap=Math.hypot(player.x-ball.x,player.y-ball.y);
+ const goalSide=(player.x-bx)*gx+(player.y-by)*gy;
+ // Never chase through the carrier's body simply to get to the ball.
+ // Close down when already goal-side and near; otherwise regain shape.
+ const close=goalSide>=-0.15&&gap<=1.8;
+ const standOff=close?0.40:1.15;
+ const shade=receiver?bounded((receiver.y-by)*0.10,-0.40,0.40):0;
+ return freeze({kind:'press-ball',target:target(bx+gx*standOff,by+gy*standOff+(close?0:shade)),
+  mode:close?'close-down':'contain',decisionOnly:true,officialPossession:false});
+}
 export function planCollectiveApproaches(players,ball,velocity,control=null,goalkeepers=[]){
  if(!Array.isArray(players)||players.length!==3||
     new Set(players.map(p=>p.id)).size!==3||new Set(players.map(p=>p.team)).size!==2||
@@ -125,9 +158,12 @@ export function planCollectiveApproaches(players,ball,velocity,control=null,goal
   const rivalNear=owner?owner.team!==team:gap(rival)<=1.15&&gap(rival)+0.15<gap(runner);
   const dx=bx-runner.x,dy=by-runner.y,d=Math.hypot(dx,dy);
   const tx=d>0.05?dx/d:dir,ty=d>0.05?dy/d:0;
-  result[runner.id]=freeze({kind:owner?.id===runner.id?'carry-ball':rivalNear?'press-ball':'approach-ball',
+  const opposition=[...players,...goalkeepers].filter(q=>q.team!==team);
+  const defending=owner&&owner.team!==team;
+  result[runner.id]=defending?planCollectiveDefense({player:runner,ball,velocity,opponents:opposition,owner}):freeze({kind:owner?.id===runner.id?'carry-ball':rivalNear?'press-ball':'approach-ball',
    target:target(bx+0.25*tx,by+0.25*ty),decisionOnly:true,officialPossession:false});
   for(const p of own.filter(p=>p.id!==runner.id)){
+   if(defending){result[p.id]=planCollectiveDefense({player:p,ball,velocity,opponents:opposition,owner,primary:false});continue;}
    const lateral=Math.abs(p.y-by)>0.1?Math.sign(p.y-by):by>=0?-1:1;
    // Defensive cover stays separate; attacking support searches open
    // lanes against all physically active opponents, including the keeper.
