@@ -200,6 +200,7 @@ test('ME-01 lab is denied for public mode, shared/non-DEV modes and other hosts'
    const host=options.devPreview===false?'app.localhost:2000':'localhost:2000';
    assert.ok([403,404].includes((await fetchLocal(server,'/dev/match-engine',{host})).status));
    assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/core.mjs',{host})).status));
+   assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/defensive-intervention-selection.mjs',{host})).status));
    assert.ok([403,404].includes((await fetchLocal(server,
     '/__fa_match_engine__/native-shoe-body-handoff.mjs',{host})).status));
    assert.ok([403,404].includes((await fetchLocal(server,
@@ -535,5 +536,8 @@ test('ME-01 all relative browser module dependencies resolve through the DEV-onl
     pending.push(match[1]);
   }
   assert.ok(seen.has('lab-shot-calibration.mjs'),'real transitive shot import must be exercised');
+  assert.ok(seen.has('defensive-intervention-selection.mjs'),'real transitive defense import must be exercised');
+  assert.equal(isAllowlistedPublicPath('match-engine/src/defensive-intervention-selection.mjs'),false);
+  assert.equal(isAllowlistedPublicPath('__fa_match_engine__/defensive-intervention-selection.mjs'),false);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
