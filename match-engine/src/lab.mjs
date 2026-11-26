@@ -510,7 +510,8 @@ function render() {
           (f.crossPairAudit.receivingCushion?
            ' · active low-cross cushion · after contact '+fmtKmh(Math.hypot(
             ...Object.values(f.crossPairAudit.receivingCushion.realPostBallVelocity)))+' km/h':'')+
-          (f.crossPairAudit.receiverFollowThrough?.completed?
+          (f.crossPairAudit.receiverFollowThrough?.atOneSecond?
+           ' · oriented touch '+fmt(f.crossPairAudit.receiverFollowThrough.atOneSecond.directedTravelM)+' m'+
            ' · 1s gap '+fmt(f.crossPairAudit.receiverFollowThrough.atOneSecond.gapM)+' m':''):
          ' · flight observation'):' · waiting for native crossing shoe START'):'')+
       (f.nativeFixedCarryResearch?' · Native Carry · real two-shoe Rapier START required':'')+

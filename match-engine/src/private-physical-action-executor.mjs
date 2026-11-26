@@ -4,7 +4,7 @@
 import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,
  UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS}
  from './player-ball-uniform-autonomous-action.mjs';
-import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
+import {FOOT_CONTACT_VERSION,footProxyTransform} from './player-foot-contact.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
@@ -445,22 +445,25 @@ export function createPrivatePhysicalActionExecutor({
       const candidate=calculateLowCrossReceivingCushion({
        ballVelocity:before,playerVelocity:{x:p.vx,y:p.vy},
        ballCentreZ:pos.z,ballRadiusM,ballMassKg:ballBody.mass(),
-       realBallPlayerGapM:Math.hypot(pos.x-p.x,pos.y-p.y)
+       realBallPlayerGapM:Math.hypot(pos.x-p.x,pos.y-p.y),
+       ballPosition:pos,receiverPosition:p,shoePosition:footProxyTransform(p),
+       attackingSide:isolatedCrossSide
       });
       if(candidate){
-       // Same one authenticated touch: absorb angular momentum too.
-       // No subsequent correction, velocity setter or ground change.
+       // One oriented touch followed by natural ground physics. Spin is
+       // aligned with the actual post-impulse rolling direction.
        const preSpin=Object.freeze({...ballBody.angvel()});
+       ballBody.applyImpulse(candidate.impulseNs,true);
        const spinCushion=calculateLowCrossSpinCushion({
         angularVelocity:preSpin,principalInertia:ballBody.principalInertia(),
-        ballRadiusM,linearImpulseNs:Math.hypot(...Object.values(candidate.impulseNs))
+        ballRadiusM,linearImpulseNs:Math.hypot(...Object.values(candidate.impulseNs)),
+        outgoingVelocity:ballBody.linvel()
        });
-       ballBody.applyImpulse(candidate.impulseNs,true);
        if(spinCushion)ballBody.applyTorqueImpulse(spinCushion.torqueImpulseNms,true);
        const postSpin=Object.freeze({...ballBody.angvel()});
        firstCushion=Object.freeze({...candidate,
         spinCushion,realPreAngularVelocity:preSpin,realPostAngularVelocity:postSpin,
-        version:'m25-isolated-low-cross-first-touch-v2',tick:nextTick,
+        version:'m25-isolated-low-cross-first-touch-v3',tick:nextTick,
         actorId:recipientId,team:isolatedCrossSide,originalCrossTick:priorCross.tick,
         originalCrossActorId:priorCross.playerId,
         nativeExclusiveShoeStart:true,originalRapierBallBody:true,

@@ -652,7 +652,7 @@ export function createControlledActionLab(RAPIER,id,{
      eligible&&ground.nativeGroundPair?Object.freeze({...sample(),
       source:'native-ground-solver-pair',ground}):null);
     const cushion=engine.researchReceivingCushionSnapshot();
-     if(cushion&&cushion.version!=='m25-isolated-low-cross-first-touch-v2')
+     if(cushion&&cushion.version!=='m25-isolated-low-cross-first-touch-v3')
       throw new Error('CROSS-02 requires isolated low-cross first touch');
      const firstReceivingShoeStart=prior.firstReceivingShoeStart??(
      eligible&&starts.length===1&&starts[0]===prior.recipientId&&
@@ -678,7 +678,12 @@ export function createControlledActionLab(RAPIER,id,{
      if(firstReceivingShoeStart&&!follow?.completed){
       const elapsed=physics.tick-firstReceivingShoeStart.tick;
       const receiver=playerFrame.players.find(p=>p.id===prior.recipientId);
+      const dx=pos.x-firstReceivingShoeStart.position.x,dy=pos.y-firstReceivingShoeStart.position.y;
+      const dir=cushion?.controlDirection;
       const current=Object.freeze({tick:physics.tick,elapsedTicks:elapsed,
+       position:Object.freeze({...pos}),velocity:Object.freeze({...vel}),
+       directedTravelM:dir?dx*dir.x+dy*dir.y:null,
+       crossTrackM:dir?Math.abs(dx*dir.y-dy*dir.x):null,
        gapM:Math.hypot(pos.x-receiver.x,pos.y-receiver.y),
        speedMps:Math.hypot(vel.x,vel.y,vel.z),
        horizontalSpeedMps:Math.hypot(vel.x,vel.y),verticalSpeedMps:vel.z,
@@ -690,9 +695,12 @@ export function createControlledActionLab(RAPIER,id,{
        maxHorizontalSpeedMps:Math.max(follow?.maxHorizontalSpeedMps??0,current.horizontalSpeedMps),
        maxSpeedMps:Math.max(follow?.maxSpeedMps??0,current.speedMps),
        ticksAboveOneMps:(follow?.ticksAboveOneMps??0)+(current.horizontalSpeedMps>1?1:0),
+       minDirectedTravelM:Math.min(follow?.minDirectedTravelM??0,current.directedTravelM??0),
+       maxCrossTrackM:Math.max(follow?.maxCrossTrackM??0,current.crossTrackM??0),
        atQuarterSecond:elapsed===15?current:follow?.atQuarterSecond??null,
        atHalfSecond:elapsed===30?current:follow?.atHalfSecond??null,
-       atOneSecond:elapsed===60?current:null,completed:elapsed===60,readOnly:true});
+       atOneSecond:elapsed===60?current:follow?.atOneSecond??null,
+       atTwoSeconds:elapsed===120?current:null,completed:elapsed===120,readOnly:true});
      }
     crossPairAudit=Object.freeze({...prior,airborne,descending,
      peakClearanceM:prior.arrival?prior.peakClearanceM:

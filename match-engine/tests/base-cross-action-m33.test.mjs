@@ -195,54 +195,63 @@ test('CROSS-01 isolated native lofted cross measures first low arrival for both 
   const magnitude=Math.hypot(...Object.values(c.impulseNs));
   assert.ok(magnitude<=M25_CROSS_CUSHION_MAX_IMPULSE_NS+1e-9);
   assert.ok(Math.hypot(...Object.values(pre))>10);
-  assert.ok(Math.hypot(...Object.values(post))<=0.35,JSON.stringify(row));
-  assert.ok(pre.x*post.x+pre.y*post.y+pre.z*post.z>=-1e-6);
+  assert.ok(Math.hypot(post.x,post.y)>=1.0&&Math.hypot(post.x,post.y)<=1.5,JSON.stringify(row));
+  assert.ok(Math.abs(post.z)<=0.10,JSON.stringify(row));
+  assert.ok(post.x*c.controlDirection.x+post.y*c.controlDirection.y>=1.0);
+  assert.ok(c.bodyProjection>=0.15&&c.shoeProjection>=0.15);
+  assert.ok(Math.hypot(...Object.values(post))<Math.hypot(...Object.values(pre)));
   const preSpin=c.realPreAngularVelocity,postSpin=c.realPostAngularVelocity;
-  assert.ok(Math.hypot(...Object.values(postSpin))<=Math.hypot(...Object.values(preSpin))+1e-5);
   if(c.spinCushion){
-   const torque=c.spinCushion.torqueImpulseNms;
+   const torque=c.spinCushion.torqueImpulseNms,target=c.spinCushion.targetAngularVelocity;
+   const slip=w=>Math.hypot(w.x-target.x,w.y-target.y,w.z-target.z);
    assert.ok(Math.hypot(...Object.values(torque))<=M25_CROSS_MAX_ANGULAR_IMPULSE_NMS+1e-9);
-   assert.ok(preSpin.x*torque.x+preSpin.y*torque.y+preSpin.z*torque.z<0);
+   assert.ok(slip(postSpin)<=slip(preSpin)+1e-5);
   }
   const follow=row.receiverFollowThrough;
-  assert.ok(follow?.completed&&follow.samples===61,JSON.stringify(row));
-  assert.ok(follow.maxGapM<=0.85,JSON.stringify(row));
-  // Catch a short roll/reacceleration, not just the one-second endpoint.
-  // Vertical free fall remains physically lawful and is measured separately.
-  assert.ok(follow.maxHorizontalSpeedMps<=1.0,JSON.stringify(row));
-  assert.equal(follow.ticksAboveOneMps,0,JSON.stringify(row));
-  assert.ok(follow.atHalfSecond.horizontalSpeedMps<=0.30,JSON.stringify(row));
-  assert.ok(follow.atOneSecond.speedMps<=0.30,JSON.stringify(row));
-  assert.ok(follow.atOneSecond.clearanceM<=0.05,JSON.stringify(row));
+  assert.ok(follow?.completed&&follow.samples===121,JSON.stringify(row));
+  assert.ok(follow.maxGapM<=1.6,JSON.stringify(row));
+  assert.ok(follow.maxHorizontalSpeedMps<=1.65,JSON.stringify(row));
+  assert.ok(follow.atQuarterSecond.horizontalSpeedMps>=0.35,JSON.stringify(row));
+  assert.ok(follow.atHalfSecond.horizontalSpeedMps>=0.20&&follow.atHalfSecond.horizontalSpeedMps<=1.3,JSON.stringify(row));
+  assert.ok(follow.atOneSecond.directedTravelM>=0.25&&follow.atOneSecond.directedTravelM<=1.25,JSON.stringify(row));
+  assert.ok(follow.minDirectedTravelM>=-0.10&&follow.maxCrossTrackM<=0.40,JSON.stringify(row));
+  assert.ok(follow.atTwoSeconds.speedMps<=0.30,JSON.stringify(row));
+  assert.ok(follow.atTwoSeconds.clearanceM<=0.05,JSON.stringify(row));
  }
 });
 
-test('CROSS-02 low-cross cushion is finite, bounded and dissipative in 3D, never contact authority',()=>{
+test('CROSS-02c controls towards goalward space away from receiver and shoe, mirrored, bounded',()=>{
  const args={ballVelocity:{x:10,y:-10,z:1.9},playerVelocity:{x:0,y:0},
-  ballCentreZ:0.235,ballRadiusM:0.11,realBallPlayerGapM:0.15,ballMassKg:0.43};
+  ballCentreZ:0.235,ballRadiusM:0.11,realBallPlayerGapM:0.15,ballMassKg:0.43,
+  ballPosition:{x:0.06,y:0.12},receiverPosition:{x:0,y:0},shoePosition:{x:-0.11,y:0.19},attackingSide:'home'};
  const c=calculateLowCrossReceivingCushion(args);
  assert.ok(c);
+ assert.ok(c.controlDirection.x>0&&c.bodyProjection>=0.15&&c.shoeProjection>=0.15);
  assert.ok(Math.hypot(...Object.values(c.impulseNs))<=6.5);
  const post=Object.keys(args.ballVelocity).map(k=>args.ballVelocity[k]+c.impulseNs[k]/args.ballMassKg);
- assert.ok(Math.abs(Math.hypot(...post)-0.25)<1e-10);
- assert.ok(c.impulseNs.z<0);
+ assert.ok(Math.abs(Math.hypot(...post)-1.25)<1e-10);
+ assert.ok(Math.abs(post[2])<1e-10);
+ const mirror=calculateLowCrossReceivingCushion({...args,attackingSide:'away',
+  ballVelocity:{...args.ballVelocity,x:-10},ballPosition:{x:-0.06,y:0.12},shoePosition:{x:0.11,y:0.19}});
+ assert.equal(mirror.controlDirection.x,-c.controlDirection.x);
+ assert.equal(mirror.controlDirection.y,c.controlDirection.y);
  assert.equal(c.officialPossession,false);
  for(const patch of [{ballCentreZ:1.5},{realBallPlayerGapM:1},{ballVelocity:{x:19,y:0,z:0}},{ballVelocity:{x:0.1,y:0,z:0}}])
   assert.equal(calculateLowCrossReceivingCushion({...args,...patch}),null);
  assert.throws(()=>calculateLowCrossReceivingCushion({...args,ballMassKg:0}),TypeError);
 });
 
-test('CROSS-02b spin cushion is bounded, dissipative and does not reverse rotation',()=>{
+test('CROSS-02c bounded spin alignment towards outgoing natural roll',()=>{
  const args={angularVelocity:{x:10,y:20,z:-3},principalInertia:{x:0.00347,y:0.00347,z:0.00347},
-  ballRadiusM:0.11,linearImpulseNs:5.5};
+  ballRadiusM:0.11,linearImpulseNs:5.5,outgoingVelocity:{x:1.25,y:0}};
  const c=calculateLowCrossSpinCushion(args);
  assert.ok(c);
  assert.ok(Math.hypot(...Object.values(c.torqueImpulseNms))<=0.15);
  const post=Object.keys(args.angularVelocity).map(k=>args.angularVelocity[k]+c.torqueImpulseNms[k]/args.principalInertia.x);
- assert.ok(Math.abs(Math.hypot(...post)-1.5)<1e-10);
- assert.equal(calculateLowCrossSpinCushion({...args,angularVelocity:{x:0,y:1,z:0}}),null);
+ assert.ok(Math.hypot(post[0],post[1]-1.25/0.11,post[2])<1e-10);
+ assert.equal(calculateLowCrossSpinCushion({...args,angularVelocity:{x:0,y:1.25/0.11,z:0}}),null);
  assert.equal(calculateLowCrossSpinCushion({...args,linearImpulseNs:0}),null);
  const limited=calculateLowCrossSpinCushion({...args,angularVelocity:{x:300,y:0,z:0}});
- assert.equal(Math.hypot(...Object.values(limited.torqueImpulseNms)),0.15);
+ assert.ok(Math.abs(Math.hypot(...Object.values(limited.torqueImpulseNms))-0.15)<1e-10);
  assert.throws(()=>calculateLowCrossSpinCushion({...args,principalInertia:{x:1,y:2,z:3}}),TypeError);
 });
