@@ -24,7 +24,7 @@ const lanHostAllowed=(host,lanHosts)=>{
  return known.some(ip=>ipv4(ip)===ipv4(address));
 };
 const reply=(res,status,code)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({error:{code}}));return true};
-export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TARGET,pool=process.env.FA_ADMIN_API_POOL,send,lanEnabled=process.env.FA_DEV_LAN==='1',lanHosts=null}={}){
+export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TARGET,pool=process.env.FA_ADMIN_API_POOL,send,lanEnabled=process.env.FA_DEV_LAN==='1',lanHosts=null,operatorSource=process.env.FA_DEV_OPERATOR_SOURCE}={}){
  const raw=req.url||'';
  if(!/^\/api\/(?:world(?:$|[?/#])|admin(?:\/|$)|player(?:\/|$)|competitions(?:\/|$)|calendar(?:\/|$)|local-dev(?:\/|$)|clubs(?:\/|$)|players(?:[/?]|$)|matches(?:[/?]|$))/.test(raw))return false;
  if(!target)return false;
@@ -84,6 +84,11 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  const lanPublic=lanEnabled&&anonymousRead&&req.method==='GET'&&privateIPv4(req.socket.remoteAddress)&&lanHostAllowed(req.headers.host,lanHosts);
  if(!(localClient||lanPublic)||(raw.includes('%')&&!playersRead&&!licenseAccountQuery&&!economyQuery)||raw.includes('\\')||(raw.includes('?')&&!directoryRead&&!playersRead&&!clubRoster&&!contractsListQuery&&!licenseAccountQuery&&!economyQuery)||raw.includes('#')||/\/\.{1,2}(?:\/|$)/.test(raw))return reply(res,403,'forbidden');
  const adminRoutes={"/api/admin/inspection/access":"GET","/api/admin/economy/clubs":"GET","/api/admin/economy/ledger":"GET","/api/admin/reset/options":"GET","/api/admin/reset/preview":"POST","/api/admin/economy/summary":"GET","/api/admin/economy/reconciliation":"GET","/api/admin/club-licenses":"GET|POST","/api/admin/club-licenses/accounts":"GET","/api/admin/contracts":"GET","/api/admin/contracts/preview":"POST","/api/admin/contracts/sign":"POST","/api/admin/players":"GET","/api/admin/players/preview":"POST","/api/admin/players/draft":"POST","/api/admin/players/commit":"POST","/api/admin/session":"GET","/api/admin/login":"POST","/api/admin/logout":"POST","/api/admin/world":"GET","/api/admin/seasons/events":"GET","/api/admin/seasons/archives":"GET","/api/admin/seasons/next-candidate":"GET","/api/admin/seasons/next-approve":"POST","/api/admin/seasons/next-prepare":"POST","/api/admin/seasons/prepare":"POST","/api/admin/seasons/calendar":"POST","/api/admin/seasons/start":"POST","/api/admin/seasons/advance":"POST","/api/admin/seasons/archive":"POST","/api/admin/seasons/close":"POST","/api/admin/world/reset":"POST","/api/admin/seasons/events/initialize":"POST","/api/admin/seasons/events/start":"POST","/api/admin/seasons/events/advance":"POST","/api/admin/seasons/events/confirm":"POST","/api/admin/seasons/events/reschedule":"POST","/api/admin/seasons/events/domestic-calendar":"POST","/api/admin/seasons/events/international-draw":"POST","/api/admin/seasons/events/international-calendar":"POST"};
+ // Only the explicit shared-D1 loopback launcher may proxy the operator.
+ const devOperator=raw==='/api/admin/dev-operator'&&localClient&&!shared&&!lanEnabled&&
+  req.headers.host==='app.localhost:2000'&&target.replace(/\/$/,'')==='http://127.0.0.1:8787'&&
+  typeof operatorSource==='string'&&/^[a-f0-9]{40}$/.test(operatorSource);
+ if(devOperator)adminRoutes[raw]='GET|POST';
  const playerRoutes={'/api/player/login':'POST','/api/player/logout':'POST','/api/player/session':'GET','/api/player/sessions':'GET','/api/player/permissions':'GET','/api/player/register':'POST','/api/player/verify-email':'POST','/api/player/password-reset/request':'POST','/api/player/password-reset/complete':'POST','/api/player/account/change-password':'POST','/api/player/account/change-email':'POST','/api/player/account/profile':'POST','/api/player/account/revoke-other-sessions':'POST','/api/player/account/delete':'POST','/api/player/admin/world':'GET'};
  const inbox=raw==='/api/local-dev/inbox';
  const player=raw.startsWith('/api/player/');
@@ -92,16 +97,16 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  if(!method)return reply(res,404,'not_found');
  if(method==='GET|POST'?!['GET','POST'].includes(req.method):req.method!==method)return reply(res,405,'method_not_allowed');
  const chunks=[];let length=0;
- try{for await(const chunk of req){length+=chunk.length;if(length>4096)return reply(res,413,'request_too_large');chunks.push(chunk)}}catch{return reply(res,400,'invalid_request')}
+ try{for await(const chunk of req){length+=chunk.length;if(length>(devOperator?8*1024*1024:4096))return reply(res,413,'request_too_large');chunks.push(chunk)}}catch{return reply(res,400,'invalid_request')}
  const headers={};for(const key of anonymousRead?[]:['origin','content-type','cookie','x-csrf-token','idempotency-key','accept'])if(req.headers[key]!==undefined)headers[key]=req.headers[key];
  // Preserve the validated external loopback host for the Worker's exact-origin check.
  if(!publicRead)headers.host=req.headers.host;
  const body=Buffer.concat(chunks);if(anonymousRead&&body.length)return reply(res,400,'invalid_request');
  if(shared)return proxySharedNonproduction(req,res,{target,path:raw,body,publicRead:anonymousRead,send});
- const maxResponseBytes=protectedResponseLimit(raw,anonymousRead);
+ const maxResponseBytes=devOperator?8*1024*1024:protectedResponseLimit(raw,anonymousRead);
  if(body.length)headers['content-length']=body.length;
  return new Promise(resolve=>{
-  const upstream=httpRequest({hostname:url.hostname.replace(/^\[|\]$/g,''),port:url.port,path:raw,method:req.method,headers,timeout:upstreamTimeoutMs(raw,req.method)},response=>{
+  const upstream=httpRequest({hostname:url.hostname.replace(/^\[|\]$/g,''),port:url.port,path:raw,method:req.method,headers,timeout:devOperator?300000:upstreamTimeoutMs(raw,req.method)},response=>{
    const parts=[];let bytes=0;
    response.on('data',chunk=>{bytes+=chunk.length;if(bytes>maxResponseBytes)upstream.destroy();else parts.push(chunk)});
    response.on('end',()=>{
