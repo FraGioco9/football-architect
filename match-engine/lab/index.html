@@ -59,6 +59,7 @@
                     </div>
                   </div>
                 </div>
+                <button id="me-compact-side" class="me-button me-compact-control" type="button" aria-label="Switch side (HOME)" title="Switch HOME / AWAY" hidden>HOME</button>
                 <div class="me-speed-control me-inline-side-control" id="me-inline-side-control" hidden>
                   <span class="me-field-label" id="me-inline-side-label">Side</span>
                   <div class="language-control me-dropdown" data-me-dropdown="inline-side">
@@ -103,7 +104,8 @@
                   <button id="step" class="me-button" type="button" disabled>Step</button>
                   <button id="reset" class="me-button" type="button" disabled>Reset</button>
                 </div>
-                <div class="me-speed-control">
+                <button id="me-compact-speed" class="me-button me-compact-control" type="button" aria-label="Change playback speed (1×)" title="Cycle playback speed" hidden>1×</button>
+                <div class="me-speed-control" id="me-speed-dropdown">
                   <span class="me-field-label" id="speed-label">Speed</span>
                   <div class="language-control me-dropdown" data-me-dropdown="speed">
                     <input id="speed" type="hidden" value="1">
@@ -125,9 +127,9 @@
               </div>
               <div class="me-at-a-glance" aria-live="off">
                 <span>Time <strong id="tick">0 · 0.00 s</strong></span>
-                <span>Height above ground <strong id="height">—</strong></span>
-                <span>Ball <strong id="ground">—</strong></span>
-                <span>Ground speed <strong id="ground-speed">—</strong></span>
+                <span>Height <strong id="height">—</strong></span>
+                <span class="me-ball-state">Ball <strong id="ground">—</strong></span>
+                <span>Speed <strong id="ground-speed">—</strong></span>
                 <button id="players-toggle" class="me-button me-players-toggle" type="button" aria-pressed="false" aria-controls="player-controls">Players (22)</button>
                 <strong id="me-inline-summary" class="me-inline-summary" aria-live="off" hidden></strong>
               </div>

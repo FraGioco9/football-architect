@@ -22,6 +22,9 @@ import {uniformSoloCarryAttributes}
 import {prepareFlightPlaybackPair,sampleFlightPlaybackPair,flightPlaybackWallTime} from '/__fa_match_engine__/flight-playback.mjs';
 
 const byId = id => document.getElementById(id);
+const archiveMode=new URLSearchParams(location.search).get('lab')==='archive'||
+  ['#actions','#movement'].includes(location.hash);
+document.body.classList.toggle('me-modern-lab',!archiveMode);
 const pitch = byId('pitch'), elevation = byId('elevation');
 const fields = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
 const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open'];
@@ -131,7 +134,10 @@ function syncScenarioSurface(){
  const inline=activeScene!==null;
  byId('me-inline-side-control').hidden=!inline;
  byId('me-inline-rating-control').hidden=
-  activeScene?.id!=='carry-solo'||!activeScene.soloCarryLockedPhase;
+  !archiveMode||activeScene?.id!=='carry-solo'||!activeScene.soloCarryLockedPhase;
+ byId('me-compact-side').hidden=archiveMode||!inline;
+ byId('me-compact-speed').hidden=archiveMode;
+ updateCompactControls();
  const variable=activeScene?.kind==='action';
  byId('me-inline-variant-control').hidden=!variable;
  byId('me-inline-variant-display').textContent=
@@ -155,9 +161,28 @@ function disposeInline(){
 }
 
 const say = (message, error = false) => {
-  byId('status').textContent = message;
-  byId('status').classList.toggle('error', error);
+  const status=byId('status');
+  status.dataset.ready=String(!error&&message.startsWith('Ready'));
+  status.textContent = !archiveMode&&!error&&message.startsWith('Ready')?'Ready':message;
+  status.classList.toggle('error', error);
 };
+function updateCompactControls(){
+ const side=byId('me-inline-side').value.toUpperCase(),speed=byId('speed').value+'×';
+ const sideButton=byId('me-compact-side'),speedButton=byId('me-compact-speed');
+ sideButton.textContent=side;sideButton.setAttribute('aria-label','Switch side ('+side+')');
+ speedButton.textContent=speed;speedButton.setAttribute('aria-label','Change playback speed ('+speed+')');
+}
+byId('me-compact-side').addEventListener('click',()=>{
+ const side=byId('me-inline-side');
+ side.value=side.value==='home'?'away':'home';
+ side.dispatchEvent(new Event('change',{bubbles:true}));
+ updateCompactControls();
+});
+byId('me-compact-speed').addEventListener('click',()=>{
+ const speed=byId('speed'),values=['1','2','4','0.25'];
+ speed.value=values[(values.indexOf(speed.value)+1)%values.length];
+ updateCompactControls();
+});
 const fmt = x => x.toFixed(2);
 const fmtKmh = mps => fmt(speedToKmh(mps));
 const velocityFields = new Set(['vx','vy','vz']);
@@ -2122,11 +2147,11 @@ function setupUnifiedScenarioMenu(){
    ...LAB_SHOT_PROFILES.map(profile=>[profile==='power'?'action:shot-solo':'action:shot-solo:'+profile,'Shot · '+LAB_SHOT_LABELS[profile]]),
    ...LAB_SHOT_PROFILES.map(profile=>['action:shot-solo:'+profile+':first-time','First-time · '+LAB_SHOT_LABELS[profile]])
   ]],
-  ['Small-sided situations',[
+  ...(archiveMode?[['Small-sided situations',[
    ['action:keeper-1v1','1v1 · goalkeeper'],
    ['action:overload-2v1','2v1 · attack and defend'],
    ['action:duel-3v3','3v3 · team decisions']
-  ]]
+  ]]]:[])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
  for(const [title,choices] of groups){
@@ -2150,11 +2175,18 @@ function setupUnifiedScenarioMenu(){
    menu.append(opt);
   }
  }
- heading('Ball physics');
- for(const node of physics)menu.append(node);
- if(menu.querySelectorAll('[role="option"][data-value]').length!==24||
-    menu.querySelectorAll('.me-scenario-group-label').length!==5)
-  throw new Error('Lab should expose three fixed Carry phases, ground Pass, lofted Cross, six stationary and six first-time Shot profiles, three small-sided exercises and four ball presets');
+ if(archiveMode){
+  heading('Ball physics');
+  for(const node of physics)menu.append(node);
+ }else{
+  const root=menu.closest('[data-me-dropdown="preset"]');
+  root.dataset.selectedScene='action:carry-solo:moderate';
+  // The original panels are retained only inside the single diagnostics disclosure.
+  byId('me-observation-details').append(byId('me-decisions-panel'));
+ }
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:17)||
+    menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:3))
+  throw new Error('Unexpected active or archived LAB catalog');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')
@@ -2215,7 +2247,8 @@ requestAnimationFrame(frame);
 try {
   const moduleNamespace = await import('/__fa_match_engine__/rapier.es.js');
   rapier = await initializeRapier(moduleNamespace);
-  restart();
+  if(archiveMode)restart();
+  else launchSelectedScenario('action:carry-solo:moderate');
   for (const id of controls) byId(id).disabled = false;
   if(location.hash==='#actions'){
     byId('preset-options').querySelector('[data-value="action:keeper-1v1"]')?.click();

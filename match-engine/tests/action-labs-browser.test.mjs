@@ -104,6 +104,19 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   await send('Page.navigate',{
    url:'http://app.localhost:2000/dev/match-engine'
   });
+  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelectorAll('#preset-options [role=option][data-value]').length===17");
+  const activePage=await evalJs("(()=>{const el=id=>document.getElementById(id),menu=el('preset-options');return {groups:[...menu.querySelectorAll('.me-scenario-group-label')].map(x=>x.textContent),choices:menu.querySelectorAll('[role=option]').length,selected:el('preset-value').textContent,visibleComboboxes:[...document.querySelectorAll('.me-toolbar [role=combobox]')].filter(x=>x.getClientRects().length>0).length,attributesHidden:el('me-inline-rating-control').hidden,diagnosticsClosed:!el('me-observation-details').open,legacyAbsent:!menu.querySelector('[data-value=drop],[data-value=\\\"action:keeper-1v1\\\"]'),decisionsInside:el('me-observation-details').contains(el('me-decisions-panel'))};})()");
+  assert.deepEqual(activePage,{groups:['Carry phases','Passing','Shooting'],choices:17,selected:'Carry · Moderate',visibleComboboxes:1,attributesHidden:true,diagnosticsClosed:true,legacyAbsent:true,decisionsInside:true});
+  const toggled=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-compact-side').click();el('me-compact-speed').click();return {side:el('me-inline-side').value,speed:el('speed').value,sideLabel:el('me-compact-side').textContent,speedLabel:el('me-compact-speed').textContent,tick:el('tick').textContent};})()");
+  assert.deepEqual(toggled,{side:'away',speed:'2',sideLabel:'AWAY',speedLabel:'2×',tick:'Tick 0 · 0.00 s'});
+  for(const [width,height] of [[1440,900],[390,844]]){
+   await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+   const bounds=await evalJs("(()=>{const r=document.getElementById('pitch').getBoundingClientRect();return {left:r.left,right:r.right,width:innerWidth,scroll:document.documentElement.scrollWidth};})()");
+   assert.ok(bounds.left>=-1&&bounds.right<=bounds.width+1&&bounds.scroll<=bounds.width+1,JSON.stringify(bounds));
+  }
+  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+  // Historical physics and small-sided fixtures keep the same regression coverage.
+  await send('Page.navigate',{url:'http://app.localhost:2000/dev/match-engine?lab=archive'});
   await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===24");
   // Actual canvas pixels: the ball stays centred at the same XY at
   // both 3m and 0m; only the cast shadow darkens an off-centre region.

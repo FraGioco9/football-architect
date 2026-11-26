@@ -234,3 +234,22 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-compact-details>.me-decisions-heading>span:last-child{float:right;font-weight:500}
 .me-compact-details>.me-decisions-players{margin-top:8px}
 .me-compact-details>.me-decisions-log{margin-top:9px}
+
+/* Active gameplay LAB has one scenario picker. Historical experiments keep their own controls. */
+.me-compact-control[hidden]{display:none!important}
+.me-modern-lab .me-layout{grid-template-columns:minmax(0,1fr)}
+.me-modern-lab .me-side{display:none}
+.me-modern-lab #me-inline-side-control,.me-modern-lab #me-speed-dropdown,.me-modern-lab .me-inline-rating-control,.me-modern-lab .me-ball-state{display:none!important}
+.me-modern-lab .me-toolbar{align-items:center;gap:6px}
+.me-modern-lab .me-toolbar .me-field-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.me-modern-lab .me-preset-control{flex:1 1 200px}
+.me-modern-lab .me-compact-control{min-width:54px}
+.me-modern-lab #me-decisions-panel{margin-top:10px;border:0;padding:0;background:transparent;box-shadow:none}
+.me-modern-lab .me-status[data-ready="true"]:not(.error){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.me-modern-lab .me-at-a-glance{gap:5px 12px}
+@media(max-width:510px){
+ .me-modern-lab .me-toolbar>.me-preset-control{flex:1 1 100%}
+ .me-modern-lab .me-toolbar>.me-button-group{order:2;flex-basis:100%}
+ .me-modern-lab .me-variant-control{order:1}
+ .me-modern-lab #me-compact-side,.me-modern-lab #me-compact-speed{order:1}
+}
