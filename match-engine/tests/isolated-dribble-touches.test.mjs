@@ -797,10 +797,20 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
   for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
    let stagnant=0,maxStagnant=0,blocked=0,blockedRun=0,maxBlockedRun=0,ballPath=0,prior=scene.snapshot().ball.position;
-   let anchor=prior,anchorTick=0,maxCloseBallStall=0;
+   let anchor=prior,anchorTick=0,maxCloseBallStall=0,slideStarts=0,slideContacts=0,recoveryTicks=0;
    try{
     for(let k=0;k<600;k++){
      const f=scene.step(),b=f.ball.position,v=f.ball.velocity;
+     if(f.defensiveSlide?.started)slideStarts++;
+     if(f.defensiveSlide?.phase==='recovery'){
+      recoveryTicks++;
+      assert.notEqual(f.action?.playerId,f.defensiveSlide.actorId,'recovering defender cannot execute a ball action');
+     }
+     if(f.action?.defensiveTarget?.intervention==='sliding-tackle'){
+      slideContacts++;assert.equal(f.defensiveSlide?.phase,'slide');
+      assert.deepEqual(f.starts,[f.defensiveSlide.actorId]);
+      assert.equal(f.action.appliedByRapier,true);assert.equal(f.action.actualPhysicsImpulseApplied,true);
+     }
      const a=f.observedMovementPlayers.find(p=>p.id===side+'-10'),d=f.observedMovementPlayers.find(p=>p.id===(side==='home'?'away':'home')+'-2');
      const near=Math.hypot(a.x-d.x,a.y-d.y)<1.6&&Math.max(Math.hypot(a.x-b.x,a.y-b.y),Math.hypot(d.x-b.x,d.y-b.y))<1.8;
      const slow=Math.max(Math.hypot(a.vx,a.vy),Math.hypot(d.vx,d.vy))<0.30&&Math.hypot(v.x,v.y)<0.40;
@@ -815,12 +825,13 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
      if(f.refereeEvidence?.lastEvent)break;
     }
     const f=scene.snapshot();
-    results.push({side,variant:variantIndex+1,maxStagnant,blocked,maxBlockedRun,maxCloseBallStall,ballPath,attackerTouches:f.nativeDribbleAudit.appliedCarryActions,
+    results.push({side,variant:variantIndex+1,maxStagnant,blocked,maxBlockedRun,maxCloseBallStall,ballPath,slideStarts,slideContacts,recoveryTicks,attackerTouches:f.nativeDribbleAudit.appliedCarryActions,
      defenderAttempts:f.nativeDribbleAudit.defensiveTackleAttempts+f.nativeDribbleAudit.defensiveInterceptionAttempts,
      recoveryTouches:f.nativeDribbleAudit.defensiveRecoveryTouches});
    }finally{scene.dispose();}
   }
   process.stdout.write('ME_628_D07_LIVENESS '+JSON.stringify(results)+'\n');
+  for(const side of ['home','away'])assert.ok(results.some(x=>x.side===side&&x.slideStarts>0),'each side must attempt a real sliding movement');
   assert.ok(results.every(x=>x.maxStagnant<150),'no continuous stationary close duel lasting 2.5 seconds');
   assert.ok(results.every(x=>x.maxBlockedRun<120),'no mutual movement rejection lasting two seconds');
   assert.ok(results.every(x=>x.maxCloseBallStall<180),'no close contest with net ball displacement under 0.30m lasting three seconds');

@@ -881,7 +881,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
     ...(shieldAudit?{shieldAudit}:{}),
     ...(defensivePositioning?{defensivePositioning}:{}),
-    ...(directedDribble?{duelTransition:engine.duelTransitionSnapshot()}:{}),
+    ...(directedDribble?{duelTransition:engine.duelTransitionSnapshot(),defensiveSlide:playerFrame.duelSlide??null}:{}),
     ...(nativeFixedCarryResearch?{
       nativeFixedCarryResearch:true,
       nativeFixedSprintLongStride,

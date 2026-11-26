@@ -389,7 +389,10 @@ export function selectUniformAutonomousContactAction({
    }):null;
   const duelSource=duelDefender?{attackingSide:isolatedDribbleContext.attackingSide,
    attacker:actors.find(p=>p.id===isolatedDribbleContext.attackingSide+'-10'),defender:player,ballPosition,ballVelocity}:null;
-  const duelDefensiveTouch=duelSource?(duelTransition&&duelTransition.phase!=='attack'?
+  const slide=duelDefender&&playerFrame.duelSlide?.actorId===id&&playerFrame.duelSlide.tick===tick?playerFrame.duelSlide:null;
+  if(slide?.phase==='recovery')continue;
+  const duelDefensiveTouch=duelSource?(slide?.phase==='slide'?
+   chooseDribbleDefensiveTouch(duelSource):duelTransition&&duelTransition.phase!=='attack'?
    chooseDribbleRecoveryTouch(duelSource):chooseDribbleDefensiveTouch(duelSource)):null;
   const dribbleTouch=isolatedDribbleContext===null||duelDefender?null:
    (isolatedDribbleContext.directed===true?chooseDirectedDribbleTouch:chooseIsolatedDribbleTouch)({
@@ -486,7 +489,8 @@ export function selectUniformAutonomousContactAction({
   // C1.1: the live teammate and ball geometry at THIS movement tick,
   // frozen before Rapier applies the impulse. A target is only intent,
   // never evidence of reception or a completed football pass.
-  const defensiveTarget=duelDefensiveTouch?Object.freeze({...duelDefensiveTouch,physicsTick:tick}):defensiveAttempt&&
+  const defensiveTarget=duelDefensiveTouch?Object.freeze({...duelDefensiveTouch,physicsTick:tick,
+   ...(action==='tackle'?{intervention:slide?.phase==='slide'?'sliding-tackle':'standing-tackle'}:{})}):defensiveAttempt&&
    ['tackle','interception'].includes(action)?
    Object.freeze({...defensiveAttempt,physicsTick:tick}):null;
   const saveTarget=action==='save'?Object.freeze({

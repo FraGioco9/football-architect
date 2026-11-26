@@ -1,4 +1,5 @@
 import {directedDribbleApproachTarget,planDribbleDefender,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
+import {advanceSlidingTackle} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
@@ -1935,6 +1936,7 @@ export function createPlayerMovement(options={}){
  // field participant, not an inferred action, result or second decision engine.
  let lastSmallSidedMovementDecisions=Object.freeze([]);
  let currentSoloCarryPhase=null;
+ let duelSlide=null;
  const players=initial.map(p=>({...p}));
  let b06bGoalKickoffTarget=null;
  function queueB06bOriginalGoalKickoff(event){
@@ -2052,6 +2054,7 @@ export function createPlayerMovement(options={}){
    // Solver feedback may update canonical velocity after the original target
    // choice. The target remains original; velocity is the final observed value.
    ...(smallSided?.id==='carry-solo'?{soloCarryPhase:currentSoloCarryPhase}:{}),
+   ...(duelSlide?{duelSlide}:{}),
    ...(smallSided?{smallSidedMovementDecisions:Object.freeze(
     lastSmallSidedMovementDecisions.map(d=>{
      const p=players.find(x=>x.id===d.id);
@@ -2532,6 +2535,10 @@ export function createPlayerMovement(options={}){
     directedStallTicks=0;directedBlockedTicks=0;
    }
    directedLastBall={...ball};
+   duelSlide=advanceSlidingTackle({tick:tick+1,previous:duelSlide,
+    source:{attackingSide:smallSided.side,attacker,defender,ball:ballPosition,velocity:realBallVelocity},
+    allowLaunch:(!duelTransition||duelTransition.phase==='attack')&&!directedContactRelease,
+    cancel:directedContactRelease!==null});
   }
   const targets=players.map(p=>{
    if(smallSided){
@@ -2543,6 +2550,10 @@ export function createPlayerMovement(options={}){
      if(p.id===directedContactRelease.primaryId&&tick>=directedContactRelease.approachAt)
       return dribbleReleaseApproach(p,ball,directedContactRelease);
      return directedContactRelease.targets[p.id];
+    }
+    if(directedDribble&&duelSlide?.actorId===p.id){
+     if(duelSlide.phase==='slide')return duelSlide.plan.target;
+     return Object.freeze({x:p.x,y:p.y});
     }
     if(smallSided.firstTimeShot)return Object.freeze({x:p.baseX,y:p.baseY});
     if(['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)){

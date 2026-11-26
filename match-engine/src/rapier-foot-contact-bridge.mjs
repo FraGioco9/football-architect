@@ -1,3 +1,4 @@
+import {slidingShoePose} from './sliding-tackle.mjs';
 // #624 - opt-in private 22-shoe Rapier bridge for the EXISTING ball world.
 // This module creates no world, assigns no player movement and never kicks.
 import {INITIAL_PLAYERS} from './player-movement.mjs';
@@ -175,7 +176,11 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,
- firstTimeShotReleaseId=null}={}){
+ firstTimeShotReleaseId=null,duelSlideDefenderId=null}={}){
+ if(duelSlideDefenderId!==null&&(!isolatedPhysicalBodies||soloCarry||
+    activePlayerIds?.length!==2||!activePlayerIds.includes(duelSlideDefenderId)||
+    duelSlideDefenderId!==(dribbleAttackerId==='home-10'?'away-2':'home-2')))
+  throw new TypeError('Slide requires the original guarded duel defender');
  if(firstTimeShotReleaseId!==null&&(
     activePlayerIds?.length!==1||activePlayerIds[0]!==firstTimeShotReleaseId||
     !/^(home|away)-10$/.test(firstTimeShotReleaseId)||dribbleAttackerId!==null||
@@ -391,6 +396,13 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    Object.freeze(shoeFeet(next,nextTick,gait).map((p,i)=>
     initialPlayers[i].id===dribbleAttackerId?experimentalFeet.left:p)):
    shoeFeet(next,nextTick,gait);
+  if(duelSlideDefenderId!==null&&playerFrame.duelSlide){
+   const slide=playerFrame.duelSlide;
+   if(slide.tick!==nextTick||slide.actorId!==duelSlideDefenderId)
+    throw new TypeError('Current original defender slide required');
+   proposed=Object.freeze(proposed.map((p,i)=>initialPlayers[i].id===duelSlideDefenderId?
+    slidingShoePose(p,slide):p));
+  }
   if(releasePreviousNativePose!==null){
    const age=nextTick-shotRelease.strikeTick;
    // Continuous lateral recovery at 6 m/s, one hold step, then return.
@@ -413,7 +425,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   // ownership is synthesized.
   const newFeet=dribbleAttackerId===null?proposed:
    Object.freeze(proposed.map((rawFoot,i)=>{
-    if(initialPlayers[i].id!==dribbleAttackerId)return rawFoot;
+    if(initialPlayers[i].id!==dribbleAttackerId&&initialPlayers[i].id!==duelSlideDefenderId)return rawFoot;
     const foot=limitSoloFootLateralMotion(rawFoot,actualShoeFeet[i]);
     const prior=footProxyTransform(actualShoeFeet[i]);
     const desired=footProxyTransform(foot);
@@ -447,7 +459,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const poses=newFeet.map(footProxyTransform);
   for(let i=0;i<poses.length;i++){
    const p=poses[i];
-   if(initialPlayers[i].id===dribbleAttackerId||i===shotReleaseIndex){
+   if(initialPlayers[i].id===dribbleAttackerId||initialPlayers[i].id===duelSlideDefenderId||i===shotReleaseIndex){
     const previous=footProxyTransform(actualShoeFeet[i]);
     if(Math.hypot(p.x-previous.x,p.y-previous.y)>7/60+1e-5)
      throw new TypeError('D-01 real shoe exceeds original 7m/s continuity');
