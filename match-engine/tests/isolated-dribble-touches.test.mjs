@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery,isShoulderCollecting,SHOULDER_DISPLACE_TICKS,SHOULDER_COLLECTION_TICKS} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -1040,6 +1040,15 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
   assert.equal(planShoulderBalanceRecovery(defender,{lastShoulder:impact},2),null);
   assert.equal(planShoulderBalanceRecovery(attacker,{lastShoulder:evidence},2),null);
   assert.equal(planShoulderBalanceRecovery(attacker,{lastShoulder:impact},impact.balance.until+1),null);
+  const pause=planShoulderBalanceRecovery(attacker,{lastShoulder:impact},1+SHOULDER_DISPLACE_TICKS+1);
+  assert.equal(pause.phase,'pause');assert.deepEqual(pause.target,{x:attacker.x,y:attacker.y});
+  assert.ok(pause.maxSpeed<0.05);
+  const transition=createDribbleTransitionObserver(side,'shoulder');
+  const w=transition.observe({tick:1,starts:[],active:[],bodyStarts:[],bodyActive:[],action:null,ball:{position:b},players:[attacker,defender],shoulderPlan:plan,torsoPairs:pair,bodies:[{id:attacker.id,velocity:{x:1.4*dir,y:-0.3}}]});
+  assert.equal(w.carrierId,attacker.id);assert.equal(w.candidateId,defender.id);assert.ok(isShoulderCollecting(w,defender.id,2));
+  assert.equal(chooseSharedDuelTouch({player:attacker,opponent:defender,ballPosition:{...b,z:0.11},ballVelocity:{...v,z:0},transition:w,variantIndex:0,tick:2}),null);
+  const next=transition.observe({tick:2,starts:[defender.id],active:[defender.id],bodyStarts:[],bodyActive:[],action:{tick:2,playerId:defender.id,action:'carry',appliedByRapier:true,actualPhysicsImpulseApplied:true},ball:{position:b},players:[attacker,defender]});
+  assert.equal(next.carrierId,defender.id);assert.equal(next.candidateId,null);assert.equal(isShoulderCollecting(next,defender.id,3),false);
   assert.equal(planDuelShoulderApproach({attacker,defender:{...defender,vx:-2*dir},attackingSide:side,ballPosition:b,ballVelocity:v}).sideOn,false);
   assert.equal(observeNativeShoulderChallenge({...source,plan:{...plan,sideOn:false},torsoPairs:[[attacker.id,defender.id].sort().join('|')]}),null);
  }
@@ -1047,7 +1056,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
  test('D-11 dedicated shoulder LAB observes genuine opposing torso contacts in both mirrored directions',{timeout:180000},async()=>{
   const R=await initializeRapier(rapier);
   for(const side of ['home','away']){
-   let attempts=0,sideOn=0,contacts=0,realPairs=0,successful=0,balanceTicks=0,slowed=0,displaced=0;
+   let attempts=0,sideOn=0,contacts=0,realPairs=0,successful=0,balanceTicks=0,slowed=0,displaced=0,paused=0,collected=0;
    for(let variantIndex=0;variantIndex<30;variantIndex++){
     const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true,duelTackleProfile:'shoulder'});
     let impact=null;
@@ -1073,23 +1082,29 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
        if(e.successful){
         successful++;assert.ok(e.lateralResponseMps>=0.045);
         const p=f.observedMovementPlayers.find(p=>p.id===e.opponentId);
-        impact={e,x:p.x,y:p.y,forward:p.vx*e.balance.forward.x+p.vy*e.balance.forward.y,slowed:false,displaced:false};
+        impact={e,x:p.x,y:p.y,forward:p.vx*e.balance.forward.x+p.vy*e.balance.forward.y,slowed:false,displaced:false,paused:false,collected:false};
+        assert.equal(w.candidateId,e.actorId);
        }
       }
       if(impact&&f.physicsTick>impact.e.tick&&f.physicsTick<=impact.e.balance.until){
        const e=impact.e,p=f.observedMovementPlayers.find(p=>p.id===e.opponentId);
        assert.ok(f.smallSidedMovementDecisions.find(d=>d.id===p.id).shoulderBalanceRecovery);
-       balanceTicks++;
+       balanceTicks++;assert.notEqual(f.action?.playerId,e.opponentId);
+       if(!impact.paused&&f.physicsTick>e.tick+SHOULDER_DISPLACE_TICKS&&Math.hypot(p.vx,p.vy)<0.15){paused++;impact.paused=true;}
        if(!impact.slowed&&p.vx*e.balance.forward.x+p.vy*e.balance.forward.y<impact.forward-0.15){slowed++;impact.slowed=true;}
        if(!impact.displaced&&(p.x-impact.x)*e.balance.away.x+(p.y-impact.y)*e.balance.away.y>0.035){displaced++;impact.displaced=true;}
+      }
+      if(impact&&!impact.collected&&f.physicsTick>impact.e.tick&&f.physicsTick<=impact.e.tick+SHOULDER_COLLECTION_TICKS&&f.action?.playerId===impact.e.actorId&&f.action.action==='carry'){
+       assert.equal(w.carrierId,impact.e.actorId);assert.deepEqual(f.starts,[impact.e.actorId]);assert.equal(f.action.actualPhysicsImpulseApplied,true);
+       collected++;impact.collected=true;
       }
       assert.ok(f.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
       if(f.refereeEvidence?.lastEvent)break;
      }
     }finally{scene.dispose();}
    }
-   process.stdout.write('ME_628_D11_SHOULDER '+JSON.stringify({side,attempts,sideOn,realPairs,contacts,successful,balanceTicks,slowed,displaced})+'\n');
+   process.stdout.write('ME_628_D11_SHOULDER '+JSON.stringify({side,attempts,sideOn,realPairs,contacts,successful,balanceTicks,slowed,displaced,paused,collected})+'\n');
    assert.ok(attempts>0&&sideOn>0&&contacts>0,'shoulder LAB must demonstrate actual native side-on contact on both sides');
-   assert.ok(successful>0&&balanceTicks>0&&slowed>0&&displaced>0,'must measure real successful shoulder balance response');
+   assert.ok(successful>0&&balanceTicks>0&&slowed>0&&displaced>0&&paused>0&&collected>0,'must measure successful shoulder displacement, brief stop and real subsequent carry');
   }
  });

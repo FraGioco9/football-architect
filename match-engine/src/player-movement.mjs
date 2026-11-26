@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,planShoulderBalanceRecovery,planDuelRecoveryApproach,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,planShoulderBalanceRecovery,isShoulderCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
 import {advanceSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
@@ -2551,8 +2551,9 @@ export function createPlayerMovement(options={}){
    if(!directedContactRelease&&gap<1.6&&(mutualBlock||closeBall&&blocked))directedBlockedTicks++;
    else directedBlockedTicks=0;
    const gettingUp=smallSided.activeIds.some(id=>isDuelGettingUp(duelTransition,id,tick+1));
-   if(gettingUp){directedContactRelease=null;directedStallTicks=0;directedBlockedTicks=0;directedBallAnchor={...ball};directedAnchorTick=tick;}
-   if(!gettingUp&&!directedContactRelease&&(directedStallTicks>=24||directedBlockedTicks>=18||
+   const shoulderCollecting=smallSided.activeIds.some(id=>isShoulderCollecting(duelTransition,id,tick+1));
+   if(gettingUp||shoulderCollecting){directedContactRelease=null;directedStallTicks=0;directedBlockedTicks=0;directedBallAnchor={...ball};directedAnchorTick=tick;}
+   if(!gettingUp&&!shoulderCollecting&&!directedContactRelease&&(directedStallTicks>=24||directedBlockedTicks>=18||
       closeBall&&gap<1.6&&tick-directedAnchorTick>=60)){
     directedContactRelease={...planDribbleContactRelease({attackingSide,attacker,defender,ball,
      phase:'attack',variantIndex:smallSided.variantIndex}),approachAt:tick+30,until:tick+100};
@@ -2575,6 +2576,10 @@ export function createPlayerMovement(options={}){
      return Object.freeze({x:p.baseX,y:p.baseY});
     if(directedDribble&&isDuelGettingUp(duelTransition,p.id,tick+1))return Object.freeze({x:p.x,y:p.y});
     if(shoulderBalance[p.id])return shoulderBalance[p.id].target;
+    if(directedDribble&&isShoulderCollecting(duelTransition,p.id,tick+1)){
+     const rival=players.find(q=>smallActive.has(q.id)&&q.id!==p.id);
+     return routeDuelAroundOpponent(p,rival,planDuelRecoveryApproach(p,ball,realBallVelocity)).target;
+    }
     if(directedDribble&&directedContactRelease?.targets[p.id]){
      if(p.id===directedContactRelease.primaryId&&tick>=directedContactRelease.approachAt)
       return dribbleReleaseApproach(p,ball,directedContactRelease);
@@ -2799,7 +2804,8 @@ export function createPlayerMovement(options={}){
     (duelSlide?.actorId!==p.id||duelSlide.canPursueDuringRecovery);
    const gettingUp=directedDribble&&isDuelGettingUp(duelTransition,p.id,tick+1);
    const balance=shoulderBalance[p.id];
-   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:balance?{...D01_KINEMATIC_LIMITS,maxSpeed:balance.maxSpeed,acceleration:10,braking:18}:sliding?D08_SLIDE_KINEMATIC_LIMITS:recoveringEffective?D09_RECOVERY_KINEMATIC_LIMITS:shoulderPursuit?D01_CHASE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
+   const shoulderCollection=directedDribble&&isShoulderCollecting(duelTransition,p.id,tick+1);
+   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:balance?{...D01_KINEMATIC_LIMITS,maxSpeed:balance.maxSpeed,acceleration:12,braking:32}:shoulderCollection?D09_RECOVERY_KINEMATIC_LIMITS:sliding?D08_SLIDE_KINEMATIC_LIMITS:recoveringEffective?D09_RECOVERY_KINEMATIC_LIMITS:shoulderPursuit?D01_CHASE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
      // The old generic 6m/s/9m/s² recovery overrides the fixed phase
      // whenever a strong Sprint push opens a >1.5m gap, making Sprint
      // look like Moderate. Fixed DEV LABs keep their own bounded phase
@@ -2960,7 +2966,8 @@ export function createPlayerMovement(options={}){
       ['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?'hold-pass-target':'support-run';
     return Object.freeze({
      tick:tick+1,id:p.id,team:p.team,kind,
-     ...(shoulderBalance[p.id]?{shoulderBalanceRecovery:true}:{}),
+     ...(shoulderBalance[p.id]?{shoulderBalanceRecovery:true,shoulderBalancePhase:shoulderBalance[p.id].phase}:{}),
+     ...(isShoulderCollecting(duelTransition,p.id,tick+1)?{shoulderCollection:true}:{}),
      ...(duelAlignment?{postContactAlignment:true,alignmentDetour:duelAlignment[p.id].detour&&!directedContactRelease&&duelSlide?.actorId!==p.id}:{}),
      ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:{}),
      target:Object.freeze({x:target.x,y:target.y}),

@@ -357,7 +357,9 @@ export function planDuelShoulderApproach({attacker,defender,attackingSide,ballPo
 }
 // A challenge is observed only from an actual native opposing torso
 // solver pair and a playable-ball, side-on approach. No invented impact.
-export const SHOULDER_BALANCE_TICKS=16;
+export const SHOULDER_DISPLACE_TICKS=12;
+export const SHOULDER_BALANCE_TICKS=30;
+export const SHOULDER_COLLECTION_TICKS=60;
 export function observeNativeShoulderChallenge({tick,plan,players,ball,torsoPairs,bodies=[]}){
  if(!plan||!Array.isArray(torsoPairs)||!torsoPairs.includes([plan.actorId,plan.opponentId].sort().join('|')))return null;
  const actor=players.find(p=>p.id===plan.actorId),rival=players.find(p=>p.id===plan.opponentId);
@@ -374,8 +376,8 @@ export function observeNativeShoulderChallenge({tick,plan,players,ball,torsoPair
  // balance reaction. A manifold by itself does not win a challenge.
  const successful=before>=0.45&&lateralResponseMps>=0.045;
  const balance=successful?Object.freeze({until:tick+SHOULDER_BALANCE_TICKS,
-  forward,away,forwardSpeedMps:clamp(before*0.50,0.45,2.0),
-  lateralSpeedMps:clamp(0.65+lateralResponseMps,0.70,1.5)}):null;
+  forward,away,forwardSpeedMps:0.15,
+  lateralSpeedMps:clamp(1.25+lateralResponseMps,1.35,1.85)}):null;
  return Object.freeze({tick,actorId:actor.id,opponentId:rival.id,
   source:'native-rapier-solver-manifold',physicalContact:true,ballImpulseCreated:false,
   lateralResponseMps,forwardLossMps,successful,balance,
@@ -386,10 +388,19 @@ export function observeNativeShoulderChallenge({tick,plan,players,ball,torsoPair
 export function planShoulderBalanceRecovery(player,state,tick){
  const impact=state?.lastShoulder,b=impact?.balance;
  if(!b||impact.opponentId!==player.id||tick<=impact.tick||tick>b.until)return null;
- const gap=b.until-tick+1,dt=Math.min(0.22,gap/60+0.06);
+ const elapsed=tick-impact.tick;
+ if(elapsed>SHOULDER_DISPLACE_TICKS)return Object.freeze({target:duelBound(player.x,player.y),maxSpeed:0.01,phase:'pause',movementOnly:true});
+ const dt=0.22;
  return Object.freeze({target:duelBound(player.x+dt*(b.forward.x*b.forwardSpeedMps+b.away.x*b.lateralSpeedMps),
   player.y+dt*(b.forward.y*b.forwardSpeedMps+b.away.y*b.lateralSpeedMps)),
-  maxSpeed:Math.hypot(b.forwardSpeedMps,b.lateralSpeedMps),movementOnly:true});
+  maxSpeed:Math.hypot(b.forwardSpeedMps,b.lateralSpeedMps),phase:'displace',movementOnly:true});
+}
+// A successful shoulder impact opens a real collection opportunity, not a
+// possession grant. It ends on the first authenticated carry or deadline.
+export function isShoulderCollecting(state,id,tick){
+ const impact=state?.lastShoulder;
+ return impact?.successful===true&&impact.actorId===id&&state.candidateId===id&&
+  tick>impact.tick&&tick<=impact.tick+SHOULDER_COLLECTION_TICKS;
 }
 export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding','shoulder']);
 export const SLIDING_GET_UP_TACKLER_TICKS=30;
@@ -437,16 +448,22 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
    candidateId=null;candidateTick=null;
   }else if(inField&&touching.length===1&&started.includes(touching[0])){
    if(touching[0]!==carrierId){candidateId=touching[0];candidateTick=tick;}
-   else if(!(lastIntervention?.effective&&lastIntervention.actorId===candidateId&&tick-lastIntervention.tick<=24)){
+   else if(!(lastIntervention?.effective&&lastIntervention.actorId===candidateId&&tick-lastIntervention.tick<=24)&&
+     !(lastShoulder?.successful&&lastShoulder.actorId===candidateId&&tick-lastShoulder.tick<=SHOULDER_COLLECTION_TICKS)){
     candidateId=null;candidateTick=null;
    }
   }
   const shoulder=profile==='shoulder'&&inField?observeNativeShoulderChallenge({tick,plan:shoulderPlan,players,ball:ball.position,torsoPairs,bodies}):null;
   const shoulderPair=shoulder?[shoulder.actorId,shoulder.opponentId].sort().join('|'):null;
+  const shoulderWindow=lastShoulder?.successful&&tick<=lastShoulder.tick+SHOULDER_COLLECTION_TICKS;
   if(shoulder&&shoulderPair!==priorShoulderPair){
    shoulderContacts++;
-   if(!lastShoulder?.balance||tick>lastShoulder.balance.until)lastShoulder=shoulder;
-  }else if(shoulder?.successful&&!lastShoulder?.successful&&shoulderPair===priorShoulderPair){lastShoulder=shoulder;}
+   if(!shoulderWindow)lastShoulder=shoulder;
+  }else if(shoulder?.successful&&!lastShoulder?.successful&&shoulderPair===priorShoulderPair&&!shoulderWindow){lastShoulder=shoulder;}
+  if(lastShoulder?.tick===tick&&lastShoulder.successful&&lastShoulder.actorId!==carrierId){
+   candidateId=lastShoulder.actorId;candidateTick=tick;
+  }
+  if(lastShoulder?.successful&&candidateId===lastShoulder.actorId&&tick-lastShoulder.tick>SHOULDER_COLLECTION_TICKS){candidateId=null;candidateTick=null;}
   priorShoulderPair=shoulderPair;
   const phase=candidateId!==null?'recover':carrierId===first?'attack':'counter';
   latest=Object.freeze({tick,profile,phase,carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered,regained,officialPossession:false});
@@ -457,13 +474,14 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
 // Same contact decision for both actors. Loose ball may be collected.
 export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVelocity:v,transition,slide,variantIndex,tick}){
  if(!isOpposingDuelPair(player?.team,player,opponent))throw new TypeError('Opposing physical actors required');
- if(slide?.phase==='recovery'||isDuelGettingUp(transition,player.id,tick))return null;
+ if(slide?.phase==='recovery'||isDuelGettingUp(transition,player.id,tick)||planShoulderBalanceRecovery(player,transition,tick))return null;
  const opponentGap=Math.hypot(opponent.x-b.x,opponent.y-b.y);
  const shielded=observeDribbleShield(opponent,player,b);
  const current=transition?.carrierId===player.id;
  const collecting=transition?.candidateId===player.id;
  const collectingRelease=collecting&&transition?.lastIntervention?.actorId===player.id&&transition.lastIntervention.effective&&tick-transition.lastIntervention.tick<=90;
- const canCarry=!shielded&&Math.hypot(v.x,v.y)<=(collectingRelease?7.5:5);
+ const shoulderCollection=isShoulderCollecting(transition,player.id,tick);
+ const canCarry=!shielded&&Math.hypot(v.x,v.y)<=(collectingRelease||shoulderCollection?7.5:5);
  const defensive=(sliding=false)=>chooseDribbleDefensiveTouch({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v,sliding});
  const carry=()=>chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:opponent,
   ballPosition:b,ballVelocity:v,variantIndex,tick});
