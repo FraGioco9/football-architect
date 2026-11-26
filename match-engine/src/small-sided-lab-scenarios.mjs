@@ -160,7 +160,7 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
  variantIndex=0,carryRunwayStart=false,tapInStart=false,firstTimeShot=false,shoulderStart=false,interceptionStart=false
 }={}){
  const d=getSmallSidedScenario(id);
- if(typeof interceptionStart!=='boolean'||(interceptionStart&&(id!=='dribble-1v1'||shoulderStart)))throw new TypeError('Interception start requires isolated rolling 1v1');
+ if(typeof interceptionStart!=='boolean'||(interceptionStart&&(id!=='pass-pair'||shoulderStart)))throw new TypeError('Interception start requires isolated rolling 1v1');
  if(typeof shoulderStart!=='boolean'||(shoulderStart&&id!=='dribble-1v1'))
   throw new TypeError('Shoulder start requires isolated 1v1');
  if(typeof firstTimeShot!=='boolean'||(firstTimeShot&&id!=='shot-solo'))
@@ -181,9 +181,9 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
  const activeIds=freeze(canonicalPlayers.filter(p=>
    (d.includeGoalkeeper!==false&&p.id===opponent+'-1')||
    d.attackers.some(n=>p.id===side+'-'+n)||
-   d.defenders.some(n=>p.id===opponent+'-'+n)
+   (d.defenders.some(n=>p.id===opponent+'-'+n)||(interceptionStart&&p.id===opponent+'-2'))
  ).map(p=>p.id));
- if(activeIds.length!==d.attackers.length+d.defenders.length+
+ if(activeIds.length!==d.attackers.length+d.defenders.length+(interceptionStart?1:0)+
     (d.includeGoalkeeper===false?0:1)||
     new Set(activeIds).size!==activeIds.length)
   throw new TypeError('Every real small-sided attacker/defender/keeper must have a canonical identity');
@@ -208,16 +208,20 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
    const angle=variantIndex===0?0:(random()-0.5)*0.52;
    const rx=bx+distanceM*Math.cos(angle),ry=by+distanceM*Math.sin(angle);
    const positions=new Map([[side+'-10',[bx-0.30,by]],[side+'-9',[rx,ry]]]);
+   if(interceptionStart){
+    const fraction=0.40+0.20*random(),lateral=(variantIndex%2===0?1:-1)*(0.75+random()*0.65);
+    positions.set(opponent+'-2',[bx+fraction*(rx-bx)-Math.sin(angle)*lateral,by+fraction*(ry-by)+Math.cos(angle)*lateral]);
+   }
    const staged=freeze(stage(positions).map(p=>p.id===side+'-9'?
     freeze({...p,facingRad:Math.atan2(by-ry,dir*(bx-rx))}):p));
    if(!physicallySeparated(staged,1.15)){
-    if(variantIndex===0)break;
+    if(variantIndex===0&&!interceptionStart)break;
     continue;
    }
-   return freeze({id,side,opponent,variantIndex,activeIds,staged,
+   return freeze({id,side,opponent,variantIndex,activeIds,staged,...(interceptionStart?{interceptionStart:true}:{}),
     ball:freeze({preset:'roll',seed:'me-small-pass-pair-v'+variantIndex+'-'+side,
      x:dir*bx,y:by,z:0,vx:0,vy:0,vz:0}),
-    genuinePhysicalPlayers:2,officialMatchResult:null});
+    genuinePhysicalPlayers:interceptionStart?3:2,officialMatchResult:null});
   }
   throw new RangeError('No collision-free isolated pass setup');
  }
@@ -286,21 +290,8 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
   [opponent+'-4',[39,7.7]],
   [opponent+'-1',[48,0]]
  ]);
- let staged,ballX=30,ballY=0,ballVx=0,ballVy=0;
- if(interceptionStart){
-  const random=seededGeometry(id,variantIndex);let accepted=false;
-  for(let attempt=0;attempt<96&&!accepted;attempt++){
-   const fixed=variantIndex===0&&attempt===0;
-   const bx=fixed?30:27+random()*6,by=fixed?0:-6+random()*12;
-   const lateral=(variantIndex%2===0?1:-1)*(fixed?1.4:1.15+random()*0.65);
-   const vx=fixed?3.2:2.8+random()*0.9,vy=fixed?0:(random()-0.5)*0.65;
-   const lead=fixed?1.75:1.45+random()*0.65;
-   const positions=new Map([[side+'-10',[bx-1.9,by]],[opponent+'-2',[bx+lead,by+lateral+vy*0.5]]]);
-   const candidate=stage(positions);
-   if(physicallySeparated(candidate,1.15)){staged=candidate;ballX=bx;ballY=by;ballVx=dir*vx;ballVy=vy;accepted=true;}
-  }
-  if(!accepted)throw new RangeError('No collision-free interception start');
- }else if(shoulderStart){
+ let staged,ballX=30,ballY=0;
+ if(shoulderStart){
   // Dedicated shoulder fixture: both actors start in the same running
   // direction, already alongside. No retreat or lateral chase to set up contact.
   const random=seededGeometry(id,variantIndex);
@@ -363,10 +354,9 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
   id,side,opponent,variantIndex,activeIds,staged,
   ...(carryRunwayStart?{carryRunwayStart:true}:{}),
   ...(shoulderStart?{shoulderStart:true}:{}),
-  ...(interceptionStart?{interceptionStart:true}:{}),
   ball:freeze({preset:'roll',
    seed:'me-small-'+id+(variantIndex===0?'':'-v'+variantIndex)+'-'+side,
-   x:dir*ballX,y:ballY,z:0,vx:ballVx,vy:ballVy,vz:0}),
+   x:dir*ballX,y:ballY,z:0,vx:0,vy:0,vz:0}),
   genuinePhysicalPlayers:activeIds.length,
   officialMatchResult:null
  });

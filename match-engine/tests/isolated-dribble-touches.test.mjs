@@ -1130,38 +1130,51 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
   assert.ok(isSlideCollecting(w,defender.id,47));assert.equal(isSlideCollecting(w,defender.id,107),false);
  }
  });
- test('D-12 dedicated interception LAB records real interception and subsequent carry on each side',{timeout:180000},async()=>{
+ test('D-12 three-player interception LAB uses native ground passes at 6, 12 and 20 metres',{timeout:180000},async()=>{
   const R=await initializeRapier(rapier);
   for(const side of ['home','away']){
-   let plans=0,contacts=0,collections=0,slowed=0;
+   let plans=0,passes=0,contacts=0,collections=0,slowed=0,received=0;
+   const byDistance={6:{passes:0,contacts:0},12:{passes:0,contacts:0},20:{passes:0,contacts:0}};
+   const defender=(side==='home'?'away':'home')+'-2';
    for(let variantIndex=0;variantIndex<30;variantIndex++){
-    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true,duelTackleProfile:'interception'});
-    let pending=null,prior=scene.snapshot().ball.velocity;
+    const scene=createControlledActionLab(R,'pass-pair',{shotSide:side,variantIndex,duelTackleProfile:'interception'});
+    const expected=[6,12,20][variantIndex%3];let prior=scene.snapshot().ball.velocity;
     try{
-     const start=scene.snapshot(),dir=side==='home'?1:-1;
-     assert.ok(dir*start.ball.velocity.x>2.7);
+     const start=scene.snapshot(),p=start.ball.position,recipient=start.observedMovementPlayers.find(p=>p.id===side+'-9');
+     assert.deepEqual(new Set(scene.focus),new Set([side+'-10',side+'-9',defender]));
+     assert.ok(Math.abs(Math.hypot(recipient.x-p.x,recipient.y-p.y)-expected)<1e-6);
+     assert.ok(Math.hypot(prior.x,prior.y)<1e-6);
+     let passTick=null;
      for(let i=0;i<420;i++){
-      const f=scene.step(),w=f.duelTransition,a=f.action;
-      assert.equal(w.profile,'interception');assert.equal(f.defensiveSlide,null);assert.equal(a?.action==='tackle',false);
+      const f=scene.step(),w=f.interceptionAudit,a=f.action;
+      assert.ok(w);assert.equal(a?.action==='tackle',false);
       if(f.interceptionApproach)plans++;
-      if(a?.action==='interception'){
-       contacts++;assert.equal(a.actualPhysicsImpulseApplied,true);assert.deepEqual(f.starts,[a.playerId]);
-       assert.ok(a.defensiveTarget.carrierGapM>1.15);
-       assert.equal(a.defensiveTarget.version,'me-628-interception-cushion-v1');
-       if(Math.hypot(f.ball.velocity.x,f.ball.velocity.y)<Math.hypot(prior.x,prior.y))slowed++;
-       pending={id:a.playerId,tick:f.physicsTick};
-      }else if(pending&&a?.action==='carry'){
-       if(a.playerId===pending.id){collections++;assert.equal(w.carrierId,pending.id);assert.deepEqual(f.starts,[pending.id]);}
-       pending=null;
+      if(a?.action==='pass'){
+       assert.equal(passTick,null);passTick=f.physicsTick;passes++;byDistance[expected].passes++;
+       assert.equal(a.playerId,side+'-10');assert.equal(a.passTarget.recipientId,side+'-9');
+       assert.deepEqual(f.starts,[a.playerId]);assert.equal(a.actualPhysicsImpulseApplied,true);assert.equal(a.impulseNs.z,0);
+       assert.equal(w.passTick,passTick);
       }
-      if(pending&&f.physicsTick-pending.tick>120)pending=null;
-      assert.ok(f.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
+      if(a?.action==='interception'){
+       assert.ok(passTick!==null&&f.physicsTick>passTick);contacts++;byDistance[expected].contacts++;
+       assert.equal(a.playerId,defender);assert.deepEqual(f.starts,[defender]);assert.equal(a.actualPhysicsImpulseApplied,true);
+       assert.equal(a.defensiveTarget.version,'me-628-interception-pass-cushion-v1');
+       if(Math.hypot(f.ball.velocity.x,f.ball.velocity.y)<Math.hypot(prior.x,prior.y))slowed++;
+       assert.equal(w.phase,'intercepted');
+      }
+      if(w.carryTick===f.physicsTick){
+       collections++;assert.equal(a.playerId,defender);assert.equal(a.action,'carry');assert.deepEqual(f.starts,[defender]);assert.equal(a.actualPhysicsImpulseApplied,true);
+      }
+      const actors=f.observedMovementPlayers.filter(p=>scene.focus.includes(p.id));
+      for(let j=0;j<actors.length;j++)for(let k=j+1;k<actors.length;k++)assert.ok(Math.hypot(actors[j].x-actors[k].x,actors[j].y-actors[k].y)>=0.98-1e-5);
       prior=f.ball.velocity;
-      if(f.refereeEvidence?.lastEvent)break;
+      if(w.phase==='received'){received++;break;}
+      if(w.phase==='collected'||f.refereeEvidence?.lastEvent)break;
      }
+     assert.ok(passTick!==null,'must begin with a genuine pass rather than a pre-rolled ball');
     }finally{scene.dispose();}
    }
-   process.stdout.write('ME_628_D12_INTERCEPTION '+JSON.stringify({side,plans,contacts,slowed,collections})+'\n');
-   assert.ok(plans>0&&contacts>0&&slowed>0&&collections>0,'interception must read trajectory, slow the actual ball, and enable real carry on each side');
+   process.stdout.write('ME_628_D12_INTERCEPTION_PASS '+JSON.stringify({side,plans,passes,contacts,slowed,collections,received,byDistance})+'\n');
+   assert.equal(passes,30);assert.ok(plans>0&&contacts>0&&slowed>0&&collections>0,'must observe actual interception and carry after a real pass on both sides');
   }
  });

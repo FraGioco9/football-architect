@@ -22,7 +22,7 @@ export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
- smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='power',firstTimeShot=false,
+ smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,interceptionPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='power',firstTimeShot=false,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,keeperSingleShotSide=null,
  nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false
 }={}){
@@ -45,6 +45,9 @@ export function createPrivatePhysicalActionExecutor({
     activePlayerIds.length<1||activePlayerIds.length>7||
     new Set(activePlayerIds).size!==activePlayerIds.length))
   throw new TypeError('Small-sided active physical shoe set is invalid');
+ if(interceptionPassSide!==null&&(!['home','away'].includes(interceptionPassSide)||activePlayerIds?.length!==3||
+   !activePlayerIds.includes(interceptionPassSide+'-10')||!activePlayerIds.includes(interceptionPassSide+'-9')||
+   !activePlayerIds.includes((interceptionPassSide==='home'?'away':'home')+'-2')||isolatedPassSide!==null||isolatedCrossSide!==null||isolatedShotSide!==null||isolatedDribbleContext!==null||smallSidedDecisionContext!==null||allowPhysicalCarry||physicalBodyGuardEnabled||researchReceivingCushionSide!==null||researchReceivingDecisionSide!==null||researchReceiverTapSide!==null))throw new TypeError('Interception pass requires exactly two teammates and one opponent');
  if(isolatedPassSide!==null&&(
     !['home','away'].includes(isolatedPassSide)||
     activePlayerIds?.length!==2||
@@ -121,8 +124,8 @@ export function createPrivatePhysicalActionExecutor({
  let action=null,audit=null,closed=false;
  let actualPriorPass=null,interrupted=false,firstCushion=null;
  if(typeof latestLabDynamics!=='boolean')throw new TypeError('Boolean current LAB dynamics required');
- const sharedDynamics=latestLabDynamics||isolatedPassSide!==null||isolatedCrossSide!==null||isolatedShotSide!==null;
- let pendingDelivery=null,latestCushion=null;
+ const sharedDynamics=latestLabDynamics||interceptionPassSide!==null||isolatedPassSide!==null||isolatedCrossSide!==null||isolatedShotSide!==null;
+ let pendingDelivery=null,latestCushion=null,interceptionPhase='ready';
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
@@ -208,7 +211,8 @@ export function createPrivatePhysicalActionExecutor({
   const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact||
    !isolatedNativeShoeSourceValid?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,
-    smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition});
+    smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide,duelTransition,
+    interceptionContext:interceptionPassSide===null?null:{side:interceptionPassSide,phase:interceptionPhase}});
   let orientedCandidate=null,orientedDelivery=null;
   if(sharedDynamics&&pendingDelivery&&nextTick>pendingDelivery.tick){
    const d=pendingDelivery,pos=ballBody.translation(),v=ballBody.linvel();
@@ -521,6 +525,12 @@ export function createPrivatePhysicalActionExecutor({
     officialMatchAction:false,verifiedReception:false,
     verifiedControl:false,officialPossession:false,matchAuthority:false
    });
+  }
+  if(interceptionPassSide!==null){
+   if(applied?.action==='pass'&&interceptionPhase==='ready')interceptionPhase='flight';
+   else if(applied?.action==='interception'&&interceptionPhase==='flight')interceptionPhase='intercepted';
+   else if(applied?.action==='carry'&&interceptionPhase==='intercepted')interceptionPhase='collected';
+   else if(interceptionPhase==='flight'&&contact.started.includes(interceptionPassSide+'-9'))interceptionPhase='received';
   }
   tick=nextTick;action=applied;audit=currentAudit;
   return Object.freeze({tick,action,audit});

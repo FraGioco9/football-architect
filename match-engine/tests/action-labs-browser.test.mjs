@@ -184,10 +184,12 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.deepEqual(new Set(dribbleUI.players),new Set(['','away-10','home-2']));
   assert.deepEqual(dribbleUI.metrics,['Touches','Forward distance','Peak ball speed','Defender contacts','Closest defender gap','Mean touch gap']);
   assert.equal(dribbleUI.summary,'Waiting for touch');
-  for(const [profile,label] of [['standing','Standing tackle'],['sliding','Sliding tackle'],['shoulder','Shoulder challenge'],['interception','Interception']]){
+  for(const [profile,label] of [['standing','Standing tackle'],['sliding','Sliding tackle'],['shoulder','Shoulder challenge']]){
    const selected=await evalJs(`(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:dribble-1v1:${profile}').click();el('step').click();return {label:el('preset-value').textContent,summary:el('me-inline-summary').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value)};})()`);
    assert.equal(selected.label,label);assert.deepEqual(new Set(selected.players),new Set(['','away-10','home-2']));assert.ok(selected.summary);
   }
+  const interceptionUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:pass-pair:interception').click();el('step').click();return {label:el('preset-value').textContent,summary:el('me-inline-summary').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value)};})()");
+  assert.equal(interceptionUI.label,'Interception');assert.deepEqual(new Set(interceptionUI.players),new Set(['','away-10','away-9','home-2']));assert.ok(interceptionUI.summary);
   await evalJs("document.getElementById('me-observation-details').open=false");
   for(const [width,height] of [[1440,900],[390,844]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});

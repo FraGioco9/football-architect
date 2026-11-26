@@ -1162,6 +1162,6 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
 
  test('#628 recovery state stays internal and both tackle profiles remain selectable',()=>{
   const ui=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
-  assert.match(ui,/action:dribble-1v1:standing/);assert.match(ui,/action:dribble-1v1:sliding/);assert.match(ui,/action:dribble-1v1:shoulder/);assert.match(ui,/action:dribble-1v1:interception/);
+  assert.match(ui,/action:dribble-1v1:standing/);assert.match(ui,/action:dribble-1v1:sliding/);assert.match(ui,/action:dribble-1v1:shoulder/);assert.match(ui,/action:pass-pair:interception/);
   assert.doesNotMatch(ui,/Getting up/i);
  });

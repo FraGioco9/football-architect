@@ -9,7 +9,7 @@ import {chooseSmallSidedContextAction}
  from './small-sided-context-choice.mjs';
 
 
-import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch} from './isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch,chooseDirectedDribbleTouch} from './isolated-dribble-touches.mjs';
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
@@ -264,8 +264,9 @@ export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
  allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null,
- isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null
+ isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null,interceptionContext=null
 }){
+ if(interceptionContext!==null&&(!['home','away'].includes(interceptionContext.side)||!['ready','flight','intercepted','collected','received'].includes(interceptionContext.phase)||activePlayerIds?.length!==3||!activePlayerIds.includes(interceptionContext.side+'-10')||!activePlayerIds.includes(interceptionContext.side+'-9')||!activePlayerIds.includes((interceptionContext.side==='home'?'away':'home')+'-2')||isolatedDribbleContext!==null||smallSidedDecisionContext!==null))throw new TypeError('Bounded three-player pass interception context required');
  if(duelTransition!==null&&(isolatedDribbleContext?.directed!==true||duelTransition.tick!==tick-1||!['attack','recover','counter'].includes(duelTransition.phase)))
   throw new TypeError('Prior real directed duel transition required');
  if(!Number.isSafeInteger(tick)||tick<1||
@@ -390,8 +391,27 @@ export function selectUniformAutonomousContactAction({
   const sharedTouch=sharedDuel?chooseSharedDuelTouch({player,opponent,ballPosition,ballVelocity,transition:duelTransition,
    slide,variantIndex:isolatedDribbleContext.variantIndex,tick}):null;
   if(sharedDuel&&!sharedTouch)continue;
-  const duelDefensiveTouch=sharedTouch?.defensive??null;
-  const dribbleTouch=sharedDuel?sharedTouch.carry:isolatedDribbleContext===null?null:
+  const ic=interceptionContext;
+  const defending=ic&&player.team!==ic.side;
+  if(ic&&!(ic.phase==='ready'&&id===ic.side+'-10')&&!(defending&&['flight','intercepted','collected'].includes(ic.phase)))continue;
+  let interceptionTouch=null;
+  if(defending&&ic.phase==='flight'){
+   const speed=Math.hypot(ballVelocity.x,ballVelocity.y);
+   const rival=actors.find(p=>p.id===ic.side+'-9');
+   const passer=actors.find(p=>p.id===ic.side+'-10');
+   if(Math.hypot(passer.x-ballPosition.x,passer.y-ballPosition.y)<1.15||Math.hypot(rival.x-ballPosition.x,rival.y-ballPosition.y)<1.15||ballPosition.z>ballRadiusM+0.12)continue;
+   // Native pass arrival only. Cushion the live velocity toward a short
+   // open lane on the defender's side; never move or attach the ball.
+   const sx=player.x-ballPosition.x,sy=player.y-ballPosition.y,sign=sy>=0?1:-1;
+   const ux=player.team==='home'?1:-1,uy=sign*0.40;
+   const norm=Math.hypot(ux,uy),desiredVelocity=Object.freeze({x:ux*1.3/norm,y:uy*1.3/norm});
+   const dx=desiredVelocity.x-ballVelocity.x,dy=desiredVelocity.y-ballVelocity.y;
+   const magnitudeNs=Math.min(5.8,0.43*Math.hypot(dx,dy));
+   if(magnitudeNs<0.025)continue;
+   interceptionTouch=Object.freeze({kind:'interception',version:'me-628-interception-pass-cushion-v1',actorId:id,opponentId:passer.id,carrierGapM:Math.hypot(passer.x-ballPosition.x,passer.y-ballPosition.y),defenderGapM:gap,dx,dy,magnitudeNs,desiredVelocity,incomingSpeedMps:speed,nativeExclusiveShoeRequired:true,physicalAttemptOnly:true,officialPossession:false});
+  }
+  const duelDefensiveTouch=interceptionTouch??sharedTouch?.defensive??null;
+  const dribbleTouch=defending&&['intercepted','collected'].includes(ic.phase)?chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:actors.find(p=>p.id===ic.side+'-9'),ballPosition,ballVelocity,variantIndex:0,tick}):sharedDuel?sharedTouch.carry:isolatedDribbleContext===null?null:
    chooseIsolatedDribbleTouch({
     variantIndex:isolatedDribbleContext.variantIndex,tick,
     attackingSide:isolatedDribbleContext.attackingSide,
@@ -400,7 +420,11 @@ export function selectUniformAutonomousContactAction({
     defender:isolatedDribbleContext.situationId==='carry-solo'?null:actors.find(p=>p.team!==player.team)
    });
   let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
-  if(duelDefensiveTouch){
+  if(ic?.phase==='ready'){
+   recipient=actors.find(p=>p.id===ic.side+'-9');
+   action='pass';dx=recipient.x-ballPosition.x;dy=recipient.y-ballPosition.y;
+   rule='isolated-interception-lab-original-ground-pass';
+  }else if(duelDefensiveTouch){
    action=duelDefensiveTouch.kind;dx=duelDefensiveTouch.dx;dy=duelDefensiveTouch.dy;
    rule='directed-duel-native-defensive-ground-touch';
   }else if(dribbleTouch!==null){

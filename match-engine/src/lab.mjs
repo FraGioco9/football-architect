@@ -737,7 +737,7 @@ function render() {
     // Concise, observational summary only. Preserve the full diagnostics above.
     const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
     const keeper=f.keeperShotAudit;
-    const summary=keeper?
+    const summary=f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
        f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':
        f.keeperDive?.catchState?.active?'Securing ball':
@@ -770,7 +770,10 @@ function renderActiveMetrics(f){
  const shot=f.shotSoloAudit,pass=f.passPairAudit,cross=f.crossPairAudit;
  let entries;
  const keeper=f.keeperShotAudit;
- if(keeper){
+ if(f.interceptionAudit){
+  const a=f.interceptionAudit;
+  entries=[['Pass distance',n(a.passDistanceM,' m')],['Pass',a.passTick===null?'—':'Observed'],['Interception',a.interceptionTick===null?'—':n((a.interceptionTick-a.passTick)*FIXED_DT,' s')],['Recovery',a.carryTick===null?'—':n((a.carryTick-a.interceptionTick)*FIXED_DT,' s')],['Receiver contact',a.recipientTick===null?'—':'Observed']];
+ }else if(keeper){
   entries=[['Shots',count(keeper.shots)],['Launch speed',speed(keeper.launchSpeedMps)],
    ['Keeper contact',n(keeper.keeperContactTick===null?null:keeper.keeperContactTick*FIXED_DT,' s')],
    ['Deflection',keeper.deflection?({reversed:'Reversed',redirected:'Redirected',slowed:'Slowed'})[keeper.deflection.kind]:keeper.parryTick!==null?'Foot parry':'—'],
@@ -2335,7 +2338,7 @@ function setupUnifiedScenarioMenu(){
    ['action:dribble-1v1:standing','Standing tackle'],
    ['action:dribble-1v1:sliding','Sliding tackle'],
    ['action:dribble-1v1:shoulder','Shoulder challenge'],
-   ['action:dribble-1v1:interception','Interception']
+   ['action:pass-pair:interception','Interception']
   ]]])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
@@ -2349,7 +2352,8 @@ function setupUnifiedScenarioMenu(){
       (lockedPhase!==null&&
        !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedPhase))||
          (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedPhase))||
-         (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder','interception'].includes(lockedPhase)))))
+         (!archiveMode&&id==='pass-pair'&&lockedPhase==='interception')||
+         (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder'].includes(lockedPhase)))))
     throw new Error('Missing authentic LAB scenario '+value);
    const opt=document.createElement('div');
    opt.className='language-option';
@@ -2386,14 +2390,15 @@ function launchSelectedScenario(value){
  const firstTimeShot=shotMode==='first-time';
  const soloCarryLockedPhase=id==='carry-solo'?lockedProfile:null;
  const shotProfile=id==='shot-solo'?(lockedProfile??'power'):null;
- const duelTackleProfile=id==='dribble-1v1'?(lockedProfile??'mixed'):'mixed';
+ const duelTackleProfile=id==='pass-pair'&&lockedProfile==='interception'?'interception':id==='dribble-1v1'?(lockedProfile??'mixed'):'mixed';
  if(parts.length<2||parts.length>4||
     (shotMode!==null&&(id!=='shot-solo'||kind!=='action'||!LAB_SHOT_PROFILES.includes(lockedProfile)||!firstTimeShot))||
     !['action','movement'].includes(kind)||!id||
     (lockedProfile!==null&&(kind!=='action'||
       !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedProfile))||
         (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedProfile))||
-        (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder','interception'].includes(lockedProfile))))))
+        (!archiveMode&&id==='pass-pair'&&lockedProfile==='interception')||
+        (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder'].includes(lockedProfile))))))
   throw new RangeError('Invalid Scenario kind');
  const prefix=kind==='action'?'action-labs':'movement-labs';
  const choice=byId(prefix+'-choice');

@@ -409,7 +409,7 @@ export function planDuelInterception({attackingSide,attacker,defender,ballPositi
  if(!isOpposingDuelPair(attackingSide,attacker,defender)||
     ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,v?.x,v?.y].every(Number.isFinite))return null;
  const speed=Math.hypot(v.x,v.y),dir=attackingSide==='home'?1:-1;
- if(speed<0.70||speed>8||v.x*dir<0.45||Math.hypot(attacker.x-b.x,attacker.y-b.y)<=1.15)return null;
+ if(speed<0.70||speed>14||v.x*dir<0.45||Math.hypot(attacker.x-b.x,attacker.y-b.y)<=1.15)return null;
  const ux=v.x/speed,uy=v.y/speed;
  if((defender.x-b.x)*ux+(defender.y-b.y)*uy< -0.65)return null;
  let best=null;

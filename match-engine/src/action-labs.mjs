@@ -101,7 +101,7 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('Shot profile requires isolated shooter');
  if(typeof directedDribble!=='boolean'||(directedDribble&&(id!=='dribble-1v1'||!bodyGuardEnabled)))
   throw new TypeError('Directed dribble requires native 1v1');
- if(!['mixed','standing','sliding','shoulder','interception'].includes(duelTackleProfile)||(duelTackleProfile!=='mixed'&&!directedDribble))
+ if(!['mixed','standing','sliding','shoulder','interception'].includes(duelTackleProfile)||(duelTackleProfile==='interception'?(id!=='pass-pair'||directedDribble):duelTackleProfile!=='mixed'&&!directedDribble))
   throw new TypeError('Tackle profile requires original guarded directed duel');
  if(typeof keeperSingleShot!=='boolean'||(keeperSingleShot&&(id!=='keeper-1v1'||!bodyGuardEnabled)))
   throw new TypeError('Single-shot exercise requires native keeper duel');
@@ -334,7 +334,8 @@ export function createControlledActionLab(RAPIER,id,{
   peakGapM:0,outOfReachTicks:0,realRecoveryEpisodes:0,outOfReach:false
  };
  let shotTrace=null,blockedShotObservation=null,receivingContact=null;
- let passPairAudit=id==='pass-pair'?Object.freeze({
+ let interceptionAudit=duelTackleProfile==='interception'?Object.freeze({phase:'ready',passTick:null,interceptionTick:null,carryTick:null,recipientTick:null}):null;
+ let passPairAudit=id==='pass-pair'&&!interceptionAudit?Object.freeze({
   attempted:false,passTick:null,receiverTick:null,targetDistanceM:null,
   launchSpeedMps:null,peakBallSpeedMps:0,closestTargetGapM:null,
   peakGroundClearanceM:0,flightTimeS:null,
@@ -383,6 +384,12 @@ export function createControlledActionLab(RAPIER,id,{
    throw new Error('Only genuine same-tick Rapier and canonical mover allowed');
   const raw=engine.uniformAutonomousActionSnapshot?.()??null;
   const action=raw?.tick===physics.tick?raw:null;
+  if(interceptionAudit){
+   if(action?.action==='pass'&&interceptionAudit.phase==='ready')interceptionAudit=Object.freeze({...interceptionAudit,phase:'flight',passTick:physics.tick,passDistanceM:action.passTarget.distanceM});
+   else if(action?.action==='interception'&&interceptionAudit.phase==='flight')interceptionAudit=Object.freeze({...interceptionAudit,phase:'intercepted',interceptionTick:physics.tick,actorId:action.playerId});
+   else if(action?.action==='carry'&&interceptionAudit.phase==='intercepted')interceptionAudit=Object.freeze({...interceptionAudit,phase:'collected',carryTick:physics.tick});
+   else if(interceptionAudit.phase==='flight'&&starts.includes(shotSide+'-9'))interceptionAudit=Object.freeze({...interceptionAudit,phase:'received',recipientTick:physics.tick});
+  }
   if((intentDrivenSoloCarry||nativeFixedCarryResearch)&&
      action?.action==='carry'&&
      action.actualPhysicsImpulseApplied===true){
@@ -868,6 +875,7 @@ export function createControlledActionLab(RAPIER,id,{
     labDynamicsVersion:currentDynamics?CURRENT_LAB_DYNAMICS_VERSION:null,
     latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,
    ...(passPairAudit?{passPairAudit}:{}),
+   ...(interceptionAudit?{interceptionAudit,interceptionApproach:playerFrame.duelInterception??null}:{}),
    ...(crossPairAudit?{crossPairAudit}:{}),
     ...(shotSoloAudit?{shotSoloAudit}:{}),
    ...(keeperDive?{keeperDive}:{}),
@@ -947,12 +955,12 @@ export function createControlledActionLab(RAPIER,id,{
   let frame=mover.step(prior.ball.position,
    spec.mode==='control'?firstPhysicalPassAction:null,
    reachExperiment?engine.researchReceiverTapSnapshot():null,
-   (goalkeeperSave||id==='carry-solo'||id==='keeper-1v1'||directedDribble)?prior.ball.velocity:null,
+   (goalkeeperSave||id==='carry-solo'||id==='keeper-1v1'||directedDribble||interceptionAudit)?prior.ball.velocity:null,
    id==='keeper-1v1'&&!keeperSingleShot&&bodyGuardEnabled&&latest.keeperShotAudit?.reboundTick!=null&&
     !latest.keeperShotAudit.crossing&&!latest.keeperDive?.catchState?.active?
      {tick:prior.tick,reboundTick:latest.keeperShotAudit.reboundTick}:null,
    keeperSingleShot&&latest.keeperShotAudit?.shots===0&&!latest.keeperDive?.catchState?.active,directedDribble,
-   latest.duelTransition??null);
+   latest.duelTransition??null,latest.interceptionAudit??null);
   const initialAfter=engine.step(frame);
    if(smallSided&&bodyGuardEnabled){
     // Only post-step original native manifolds feed the canonical mover.
