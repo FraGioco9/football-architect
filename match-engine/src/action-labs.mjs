@@ -652,7 +652,7 @@ export function createControlledActionLab(RAPIER,id,{
      eligible&&ground.nativeGroundPair?Object.freeze({...sample(),
       source:'native-ground-solver-pair',ground}):null);
     const cushion=engine.researchReceivingCushionSnapshot();
-     if(cushion&&cushion.version!=='m25-isolated-low-cross-first-touch-v1')
+     if(cushion&&cushion.version!=='m25-isolated-low-cross-first-touch-v2')
       throw new Error('CROSS-02 requires isolated low-cross first touch');
      const firstReceivingShoeStart=prior.firstReceivingShoeStart??(
      eligible&&starts.length===1&&starts[0]===prior.recipientId&&
@@ -680,10 +680,17 @@ export function createControlledActionLab(RAPIER,id,{
       const receiver=playerFrame.players.find(p=>p.id===prior.recipientId);
       const current=Object.freeze({tick:physics.tick,elapsedTicks:elapsed,
        gapM:Math.hypot(pos.x-receiver.x,pos.y-receiver.y),
-       speedMps:Math.hypot(vel.x,vel.y,vel.z),clearanceM:clearance});
+       speedMps:Math.hypot(vel.x,vel.y,vel.z),
+       horizontalSpeedMps:Math.hypot(vel.x,vel.y),verticalSpeedMps:vel.z,
+       angularSpeedRadS:Math.hypot(...Object.values(engine.angularVelocity())),
+       clearanceM:clearance});
       follow=Object.freeze({samples:(follow?.samples??0)+1,
        maxGapM:Math.max(follow?.maxGapM??0,current.gapM),
        maxClearanceM:Math.max(follow?.maxClearanceM??0,clearance),
+       maxHorizontalSpeedMps:Math.max(follow?.maxHorizontalSpeedMps??0,current.horizontalSpeedMps),
+       maxSpeedMps:Math.max(follow?.maxSpeedMps??0,current.speedMps),
+       ticksAboveOneMps:(follow?.ticksAboveOneMps??0)+(current.horizontalSpeedMps>1?1:0),
+       atQuarterSecond:elapsed===15?current:follow?.atQuarterSecond??null,
        atHalfSecond:elapsed===30?current:follow?.atHalfSecond??null,
        atOneSecond:elapsed===60?current:null,completed:elapsed===60,readOnly:true});
      }

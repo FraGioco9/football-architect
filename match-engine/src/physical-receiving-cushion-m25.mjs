@@ -63,3 +63,29 @@ export function calculateRealReceivingCushion({
    researchOnly:true,officialPossession:false
   });
  }
+
+ // CROSS-02b: a low receiving touch can dissipate residual spin as
+ // well as translation. This spherical-ball torque candidate is bounded,
+ // opposes only measured angular velocity, and cannot reverse spin.
+ export const M25_CROSS_MAX_ANGULAR_IMPULSE_NMS=0.15;
+ export function calculateLowCrossSpinCushion({angularVelocity,principalInertia,ballRadiusM,linearImpulseNs}={}){
+  if(!angularVelocity||!principalInertia||
+     ![angularVelocity.x,angularVelocity.y,angularVelocity.z,
+       principalInertia.x,principalInertia.y,principalInertia.z,ballRadiusM,linearImpulseNs].every(finite)||
+     principalInertia.x<=0||Math.abs(principalInertia.x-principalInertia.y)>1e-5||
+     Math.abs(principalInertia.x-principalInertia.z)>1e-5||
+     ballRadiusM<0.05||ballRadiusM>0.2||linearImpulseNs<0)
+   throw new TypeError('Cross spin cushion requires observed spherical ball inertia and contact impulse');
+  const speed=Math.hypot(angularVelocity.x,angularVelocity.y,angularVelocity.z);
+  const residualTargetRadS=1.5;
+  if(speed<=residualTargetRadS)return null;
+  const magnitude=Math.min(M25_CROSS_MAX_ANGULAR_IMPULSE_NMS,
+   ballRadiusM*linearImpulseNs,principalInertia.x*(speed-residualTargetRadS));
+  if(magnitude<=0)return null;
+  return Object.freeze({
+   torqueImpulseNms:Object.freeze({x:-angularVelocity.x/speed*magnitude,
+    y:-angularVelocity.y/speed*magnitude,z:-angularVelocity.z/speed*magnitude}),
+   residualTargetRadS,maximumAngularImpulseNms:M25_CROSS_MAX_ANGULAR_IMPULSE_NMS,
+   measuredAngularSpeedRadS:speed,readOnlyCandidate:true
+  });
+ }

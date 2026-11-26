@@ -8,7 +8,7 @@ import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
-import {calculateRealReceivingCushion,M25_CUSHION_MAX_IMPULSE_NS,calculateLowCrossReceivingCushion}
+import {calculateRealReceivingCushion,M25_CUSHION_MAX_IMPULSE_NS,calculateLowCrossReceivingCushion,calculateLowCrossSpinCushion}
  from './physical-receiving-cushion-m25.mjs';
 import {choosePhysicalReceiverSecondTouch}
  from './physical-receiver-choice-m27.mjs';
@@ -448,9 +448,19 @@ export function createPrivatePhysicalActionExecutor({
        realBallPlayerGapM:Math.hypot(pos.x-p.x,pos.y-p.y)
       });
       if(candidate){
+       // Same one authenticated touch: absorb angular momentum too.
+       // No subsequent correction, velocity setter or ground change.
+       const preSpin=Object.freeze({...ballBody.angvel()});
+       const spinCushion=calculateLowCrossSpinCushion({
+        angularVelocity:preSpin,principalInertia:ballBody.principalInertia(),
+        ballRadiusM,linearImpulseNs:Math.hypot(...Object.values(candidate.impulseNs))
+       });
        ballBody.applyImpulse(candidate.impulseNs,true);
+       if(spinCushion)ballBody.applyTorqueImpulse(spinCushion.torqueImpulseNms,true);
+       const postSpin=Object.freeze({...ballBody.angvel()});
        firstCushion=Object.freeze({...candidate,
-        version:'m25-isolated-low-cross-first-touch-v1',tick:nextTick,
+        spinCushion,realPreAngularVelocity:preSpin,realPostAngularVelocity:postSpin,
+        version:'m25-isolated-low-cross-first-touch-v2',tick:nextTick,
         actorId:recipientId,team:isolatedCrossSide,originalCrossTick:priorCross.tick,
         originalCrossActorId:priorCross.playerId,
         nativeExclusiveShoeStart:true,originalRapierBallBody:true,

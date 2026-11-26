@@ -12,7 +12,8 @@ import {CROSS_LAB_STARTS,ACTION_LAB_SCENARIOS}
  from '../src/action-lab-scenarios.mjs';
 import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
-import {calculateLowCrossReceivingCushion,M25_CROSS_CUSHION_MAX_IMPULSE_NS}
+import {calculateLowCrossReceivingCushion,M25_CROSS_CUSHION_MAX_IMPULSE_NS,
+ calculateLowCrossSpinCushion,M25_CROSS_MAX_ANGULAR_IMPULSE_NMS}
  from '../src/physical-receiving-cushion-m25.mjs';
 
 const frame=(players,tick=1)=>Object.freeze({
@@ -196,9 +197,21 @@ test('CROSS-01 isolated native lofted cross measures first low arrival for both 
   assert.ok(Math.hypot(...Object.values(pre))>10);
   assert.ok(Math.hypot(...Object.values(post))<=0.35,JSON.stringify(row));
   assert.ok(pre.x*post.x+pre.y*post.y+pre.z*post.z>=-1e-6);
+  const preSpin=c.realPreAngularVelocity,postSpin=c.realPostAngularVelocity;
+  assert.ok(Math.hypot(...Object.values(postSpin))<=Math.hypot(...Object.values(preSpin))+1e-5);
+  if(c.spinCushion){
+   const torque=c.spinCushion.torqueImpulseNms;
+   assert.ok(Math.hypot(...Object.values(torque))<=M25_CROSS_MAX_ANGULAR_IMPULSE_NMS+1e-9);
+   assert.ok(preSpin.x*torque.x+preSpin.y*torque.y+preSpin.z*torque.z<0);
+  }
   const follow=row.receiverFollowThrough;
   assert.ok(follow?.completed&&follow.samples===61,JSON.stringify(row));
   assert.ok(follow.maxGapM<=0.85,JSON.stringify(row));
+  // Catch a short roll/reacceleration, not just the one-second endpoint.
+  // Vertical free fall remains physically lawful and is measured separately.
+  assert.ok(follow.maxHorizontalSpeedMps<=1.0,JSON.stringify(row));
+  assert.equal(follow.ticksAboveOneMps,0,JSON.stringify(row));
+  assert.ok(follow.atHalfSecond.horizontalSpeedMps<=0.30,JSON.stringify(row));
   assert.ok(follow.atOneSecond.speedMps<=0.30,JSON.stringify(row));
   assert.ok(follow.atOneSecond.clearanceM<=0.05,JSON.stringify(row));
  }
@@ -217,4 +230,19 @@ test('CROSS-02 low-cross cushion is finite, bounded and dissipative in 3D, never
  for(const patch of [{ballCentreZ:1.5},{realBallPlayerGapM:1},{ballVelocity:{x:19,y:0,z:0}},{ballVelocity:{x:0.1,y:0,z:0}}])
   assert.equal(calculateLowCrossReceivingCushion({...args,...patch}),null);
  assert.throws(()=>calculateLowCrossReceivingCushion({...args,ballMassKg:0}),TypeError);
+});
+
+test('CROSS-02b spin cushion is bounded, dissipative and does not reverse rotation',()=>{
+ const args={angularVelocity:{x:10,y:20,z:-3},principalInertia:{x:0.00347,y:0.00347,z:0.00347},
+  ballRadiusM:0.11,linearImpulseNs:5.5};
+ const c=calculateLowCrossSpinCushion(args);
+ assert.ok(c);
+ assert.ok(Math.hypot(...Object.values(c.torqueImpulseNms))<=0.15);
+ const post=Object.keys(args.angularVelocity).map(k=>args.angularVelocity[k]+c.torqueImpulseNms[k]/args.principalInertia.x);
+ assert.ok(Math.abs(Math.hypot(...post)-1.5)<1e-10);
+ assert.equal(calculateLowCrossSpinCushion({...args,angularVelocity:{x:0,y:1,z:0}}),null);
+ assert.equal(calculateLowCrossSpinCushion({...args,linearImpulseNs:0}),null);
+ const limited=calculateLowCrossSpinCushion({...args,angularVelocity:{x:300,y:0,z:0}});
+ assert.equal(Math.hypot(...Object.values(limited.torqueImpulseNms)),0.15);
+ assert.throws(()=>calculateLowCrossSpinCushion({...args,principalInertia:{x:1,y:2,z:3}}),TypeError);
 });
