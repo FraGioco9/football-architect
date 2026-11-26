@@ -93,6 +93,9 @@ function recordPerformedActions(frame){
    label:performedActionLabels[action.action]??action.action});
  // First receiving contacts are actual native observations, not inferred
  // completed passes or successful possession. They have their own actor.
+ const dive=frame.keeperDive;
+ if(dive?.tick===tick&&dive.started)events.push({id:dive.keeperId,kind:'dive',label:'Dive'});
+ if(dive?.tick===tick&&dive.contactStarted)events.push({id:dive.keeperId,kind:'glove-contact',label:'Glove contact'});
  const pass=frame.passPairAudit?.receivingContact;
  if(pass?.realRapierShoeStart===true&&pass.contactTick===tick)
   events.push({id:pass.receiverId,kind:'receiving-contact',
@@ -437,6 +440,13 @@ function drawInlinePlayers(ctx,X,Y){
  for(const p of all){
   if(focus&&!focus.has(p.id))continue;
   const x=X(p.x),y=Y(p.y);
+  const dive=frame.keeperDive;
+  if(dive?.keeperId===p.id&&dive.glove){
+   const gx=X(dive.glove.x),gy=Y(dive.glove.y);
+   ctx.save();ctx.strokeStyle=p.team==='home'?'#a8dfff':'#ffb39a';
+   ctx.lineWidth=12;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(gx,gy);ctx.stroke();
+   ctx.fillStyle='#fbdfaa';ctx.beginPath();ctx.arc(gx,gy,4,0,Math.PI*2);ctx.fill();ctx.restore();
+  }
   ctx.beginPath();ctx.arc(x,y,p.role==='goalkeeper'?LAB_MARKER_RADII_PX.goalkeeper:LAB_MARKER_RADII_PX.player,0,Math.PI*2);
   ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
   ctx.fill();ctx.strokeStyle=p.role==='goalkeeper'?'#fbdfaa':'#183f36';
@@ -694,7 +704,8 @@ function render() {
     const keeper=f.keeperShotAudit;
     const summary=keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
-       keeper.parryTick!==null?'Parry observed':keeper.keeperContactTick!==null?'Keeper contact':
+       keeper.gloveContactTick!==null?'Glove contact':keeper.parryTick!==null?'Parry observed':
+       f.keeperDive?.phase==='diving'?'Diving':keeper.keeperContactTick!==null?'Keeper contact':
        keeper.shots?'Shot observed':'Waiting for shot'):
       shot?
       (shot.crossing?(shot.crossing.goal?'Goal observed':'Miss observed'):

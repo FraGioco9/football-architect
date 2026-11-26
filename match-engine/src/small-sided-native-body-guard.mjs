@@ -169,3 +169,88 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
  return freeze({prepare,observe,snapshot,dispose,
   ...(feedbackEnabled?{acknowledgeCanonicalResponse}:{})});
 }
+
+// GK-03: one bounded physical reaching glove for the active keeper duel.
+// Uses the existing world/ball and the actual post-shot trajectory. A
+// reaching glove is the first dive primitive, not a full articulated body.
+export const KEEPER_DIVE_VERSION='me-628-native-keeper-dive-v1';
+const DIVE_REACH_M=1.85,DIVE_GLOVE_RADIUS_M=0.21;
+export function planNativeKeeperDive(keeper,ball){
+ const dir=keeper.team==='home'?1:-1,p=ball.position,v=ball.velocity;
+ if(![keeper.x,keeper.y,p.x,p.y,p.z,v.x,v.y,v.z].every(finite)||
+    v.x*dir>=-2)return null;
+ const goalX=-dir*52.5,goalEta=(goalX-p.x)/v.x;
+ if(goalEta<=0||Math.abs(p.y+v.y*goalEta)>3.77||
+    p.z+v.z*goalEta-4.905*goalEta**2>2.55)return null;
+ const start={x:keeper.x+dir*0.35,y:keeper.y,z:0.85};
+ const eta=(start.x-p.x)/v.x;
+ if(eta<0.10||eta>0.65)return null;
+ const target={x:start.x,y:p.y+v.y*eta,z:Math.max(0.21,p.z+v.z*eta-4.905*eta**2)};
+ const gap=Math.hypot(target.y-start.y,target.z-start.z);
+ if(gap<0.22||gap>DIVE_REACH_M||target.z>2.1||gap/eta>11)return null;
+ return freeze({start:freeze(start),target:freeze(target),eta,
+  reachTicks:Math.max(6,Math.min(39,Math.round(eta/PLAYER_DT)))});
+}
+export function createNativeKeeperDive(R,world,ballCollider,keeper){
+ const dir=keeper.team==='home'?1:-1;
+ const rest=p=>({x:p.x+dir*0.35,y:p.y,z:0.85});
+ const origin=rest(keeper);
+ const body=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased()
+  .setTranslation(origin.x,origin.y,origin.z).setCcdEnabled(true));
+ const glove=world.createCollider(R.ColliderDesc.ball(DIVE_GLOVE_RADIUS_M)
+  .setFriction(0.35).setRestitution(0.05).setCollisionGroups(0),body);
+ let plan=null,shotTick=null,usedShot=null,startTick=null,active=false,priorHit=false;
+ let latest=freeze({version:KEEPER_DIVE_VERSION,tick:0,keeperId:keeper.id,
+  phase:'ready',glove:null,started:false,contact:false,contactStarted:false,
+  officialSave:false});
+ const lerp=(a,b,u)=>({x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u,z:a.z+(b.z-a.z)*u});
+ let prepared=null;
+ function prepare(frame,tick,ball,lastAction){
+  const actor=frame.players.find(p=>p.id===keeper.id);
+  if(lastAction?.tick===tick-1&&lastAction.action==='shot'&&
+     lastAction.team!==keeper.team&&lastAction.appliedByRapier===true&&
+     lastAction.actualPhysicsImpulseApplied===true)shotTick=lastAction.tick;
+  let started=false,phase='ready',target=rest(actor);
+  if(!plan&&shotTick!==null&&shotTick!==usedShot){
+   const candidate=planNativeKeeperDive(actor,ball);
+   if(candidate){
+    plan=candidate;startTick=tick;usedShot=shotTick;started=true;
+    // Inactive glove is brought to the original player's actual ready hand
+    // before enabling collision. Every active extension is kinematic.
+    body.setTranslation(plan.start,true);
+    glove.setCollisionGroups((LEG_CATEGORY<<16)|BALL_CATEGORY);
+    active=true;priorHit=false;
+   }
+  }
+  if(plan){
+   const elapsed=tick-startTick+1,holdTicks=4,recoveryTicks=24;
+   if(elapsed<=plan.reachTicks){
+    phase='diving';target=lerp(plan.start,plan.target,elapsed/plan.reachTicks);
+   }else if(elapsed<=plan.reachTicks+holdTicks){
+    phase='extended';target=plan.target;
+   }else if(elapsed<=plan.reachTicks+holdTicks+recoveryTicks){
+    phase='recovering';
+    target=lerp(plan.target,rest(actor),(elapsed-plan.reachTicks-holdTicks)/recoveryTicks);
+   }else{
+    glove.setCollisionGroups(0);active=false;plan=null;priorHit=false;
+   }
+  }
+  body.setNextKinematicTranslation(target);
+  prepared={tick,phase,started};
+ }
+ function observe(tick){
+  if(prepared?.tick!==tick)throw new Error('Keeper dive requires same native world step');
+  let hit=false;
+  if(active)world.contactPair(ballCollider,glove,m=>{
+   if(m.numContacts()>0&&m.numSolverContacts()>0)hit=true;
+  });
+  const pos=body.translation();
+  latest=freeze({version:KEEPER_DIVE_VERSION,tick,keeperId:keeper.id,
+   phase:prepared.phase,started:prepared.started,
+   glove:active?freeze({x:pos.x,y:pos.y,z:pos.z}):null,
+   contact:hit,contactStarted:hit&&!priorHit,
+   officialSave:false,source:'native-rapier-solver-manifold'});
+  priorHit=hit;prepared=null;return latest;
+ }
+ return freeze({prepare,observe,snapshot:()=>latest});
+}

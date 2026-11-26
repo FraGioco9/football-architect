@@ -777,9 +777,10 @@ export function createControlledActionLab(RAPIER,id,{
     tick:physics.tick,kind:id,actorId:baseFootworkAudit.actorId
    })].slice(-12));
   }
+  const keeperDive=engine.keeperDiveSnapshot?.()??null;
   const refereeEvidence=refereeObserver?.observe({
    physics,playerFrame,foot,solver:engine.footContactSolverSnapshot(),
-   action:nativeAction
+   action:nativeAction,...(keeperDive?{keeperDive}: {})
   })??null;
   if(refereeEvidence?.lastEvent?.tick===physics.tick){
    count++;
@@ -852,8 +853,9 @@ export function createControlledActionLab(RAPIER,id,{
    ...(passPairAudit?{passPairAudit}:{}),
    ...(crossPairAudit?{crossPairAudit}:{}),
     ...(shotSoloAudit?{shotSoloAudit}:{}),
+   ...(keeperDive?{keeperDive}:{}),
    ...(keeperShotObserver?{keeperShotAudit:keeperShotObserver.observe({tick:physics.tick,
-    ball:physics.ball,starts,action:nativeAction,event:refereeEvidence?.lastEvent})}:{}),
+    ball:physics.ball,starts,action:nativeAction,event:refereeEvidence?.lastEvent,keeperDive})}:{}),
    ...(firstTouchCushion?{physicalFirstTouch,pressureEvidence}:{}),
    ...(adaptiveDecision?{physicalReceiverChoice,postDeferContinuity,
     physicalControlEvidence}:{}),

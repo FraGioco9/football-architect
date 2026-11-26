@@ -12,6 +12,7 @@ import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction}
  from '../src/player-ball-uniform-autonomous-action.mjs';
 import {initializeRapier,FIXED_DT} from '../src/core.mjs';
 import {advanceGoalkeeperBallOrientation} from '../src/individual-kinematics.mjs';
+import {planNativeKeeperDive,createNativeKeeperDive} from '../src/small-sided-native-body-guard.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
 function candidate(side,players,ball,active=[side+'-1'],started=active){
@@ -163,7 +164,7 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
      assert.ok(Math.cos(keeper.facingRad)*(side==='home'?-1:1)>=-1e-8,'keeper faces the field, not its own goal');
      previousFacing=keeper.facingRad;
      if(f.action?.action==='shot'&&f.action.team===side&&f.action.actualPhysicsImpulseApplied)shots.add(f.physicsTick);
-     if(f.starts.includes(audit.keeperId))contacts.add(f.physicsTick);
+     if(f.starts.includes(audit.keeperId)||f.keeperDive?.contactStarted)contacts.add(f.physicsTick);
      if(f.action?.playerId===audit.keeperId&&f.action.action==='save'&&f.action.actualPhysicsImpulseApplied)parries.add(f.physicsTick);
      assert.equal(audit.officialSave,false);assert.equal(audit.officialGoal,false);
      assert.equal(f.officialMatchResult,null);
@@ -207,5 +208,42 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
     assert.ok(Math.abs(delta(keeper.facingRad,prior))<=PLAYER_TURN_RAD_PER_S*FIXED_DT+1e-9);
     assert.ok(Math.cos(keeper.facingRad)*dir>=-1e-9);
    }
+  }
+ });
+
+ test('GK-03 dive uses mirrored inbound shot trajectory and rejects unreachable or outbound balls',()=>{
+  for(const team of ['home','away']){
+   const dir=team==='home'?1:-1,keeper={id:team+'-1',team,x:-dir*48,y:0};
+   const ball={position:{x:keeper.x+dir*6,y:1.2,z:0.11},velocity:{x:-dir*18,y:0,z:0}};
+   const plan=planNativeKeeperDive(keeper,ball);assert.ok(plan);
+   assert.ok(plan.target.y>keeper.y);assert.ok(plan.eta>0);
+   assert.equal(planNativeKeeperDive(keeper,{...ball,velocity:{x:dir*18,y:0,z:0}}),null);
+   assert.equal(planNativeKeeperDive(keeper,{...ball,position:{...ball.position,y:9}}),null);
+  }
+ });
+ test('GK-03 real Rapier glove reaches and deflects a live shot; no synthetic save', {timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const team of ['home','away']){
+   const dir=team==='home'?1:-1,keeper={id:team+'-1',team,x:-dir*48,y:0};
+   const world=new R.World({x:0,y:0,z:0});world.timestep=FIXED_DT;
+   const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(keeper.x+dir*6,1.2,0.21)
+    .setLinvel(-dir*18,0,0).setCcdEnabled(true));
+   const ballCollider=world.createCollider(R.ColliderDesc.ball(0.11).setMass(0.43),body);
+   const dive=createNativeKeeperDive(R,world,ballCollider,keeper);
+   let started=0,hit=0,changed=false;
+   try{
+    for(let tick=1;tick<=90;tick++){
+     const prior={position:body.translation(),velocity:body.linvel()};
+     dive.prepare({players:[keeper]},tick,prior,tick===1?{tick:0,action:'shot',team:team==='home'?'away':'home',appliedByRapier:true,actualPhysicsImpulseApplied:true}:null);
+     world.step();const snap=dive.observe(tick);
+     if(snap.started)started++;
+     if(snap.contactStarted)hit++;
+     if(Math.abs(body.linvel().x+dir*18)>0.1||Math.abs(body.linvel().y)>0.1)changed=true;
+     assert.equal(snap.officialSave,false);
+    }
+    assert.equal(started,1);assert.ok(hit>0,'actual glove solver contact required');
+    assert.ok(changed,'native ball velocity must change');
+    assert.equal(dive.snapshot().phase,'ready');
+   }finally{world.free();}
   }
  });

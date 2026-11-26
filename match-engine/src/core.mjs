@@ -10,7 +10,7 @@ import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {smallSidedSetup} from './small-sided-lab-scenarios.mjs';
-import {createSmallSidedNativeBodyGuard}
+import {createSmallSidedNativeBodyGuard,createNativeKeeperDive}
  from './small-sided-native-body-guard.mjs';
 import {initialResearchBodyEncounterLineup}
  from './research-body-encounter-initial-lineup.mjs';
@@ -721,6 +721,8 @@ export function createEngine(RAPIER, input = {}, {
        dribbleGroundBallCentreZ:BALL_RADIUS
       }:{})
      }):null;
+  const keeperDive=smallBodyGuard&&smallSided?.id==='keeper-1v1'?
+   createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1')):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
@@ -841,6 +843,7 @@ export function createEngine(RAPIER, input = {}, {
      previousStrike?.firstTimeShotEvidence?previousStrike:null);
     if(bodyBridge)bodyBridge.prepare(playerFrame,tick+1);
     if(smallBodyGuard)smallBodyGuard.prepare(playerFrame,tick+1);
+    if(keeperDive)keeperDive.prepare(playerFrame,tick+1,preStepBall,actionExecutor?.actionSnapshot());
     // User forces are persistent in Rapier. Clear the previous tick's drag
     // BEFORE computing this tick's force, and never apply it on the grass.
     // The default=0 branch is identical to the accepted physics-v4 path.
@@ -920,6 +923,7 @@ export function createEngine(RAPIER, input = {}, {
     // This is read exclusively from native post-step Rapier solver contact
     // manifolds. Never inject player collisions or attribute a goal/possession.
     if(smallBodyGuard)smallBodyGuard.observe(tick+1);
+    if(keeperDive)keeperDive.observe(tick+1);
     // Exponential airborne-only decay after integration; zero rate preserves
     // the original physics-v4 path without any angular-velocity setter.
     if(diagnosticSpinDecayRatePerS>0 &&
@@ -937,7 +941,7 @@ export function createEngine(RAPIER, input = {}, {
        b06bGoalPending!==null||
        (b06bHalftimePlacement!==null&&b06bKickoff===null)),
       suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
-       .lowerLegBallContacts.length>0
+       .lowerLegBallContacts.length>0||keeperDive?.snapshot().contact===true
     });
     if(diagnosticIsolatedShotProfile==='curled'){
      if(shoeBridge.snapshot().started.length)curledShotFlight=false;
@@ -1343,6 +1347,7 @@ export function createEngine(RAPIER, input = {}, {
       }:{})
     }:{}),
     ...(smallSided?.id==='cross-pair'?{crossGroundContactSnapshot}:{}),
+    ...(keeperDive?{keeperDiveSnapshot:()=>keeperDive.snapshot()}:{}),
     ...(smallSided?{
       originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds,
       ...(smallBodyGuard?{

@@ -75,22 +75,26 @@ export function createKeeperShotObserver(side){
  const keeperId=(side==='home'?'away':'home')+'-1',shooterId=side+'-10';
  let state=Object.freeze({keeperId,shooterId,shots:0,shotTick:null,
   launchSpeedMps:null,keeperContactTick:null,parryTick:null,
-  crossing:null,officialSave:false,officialGoal:false});
- return Object.freeze({observe({tick,ball,starts,action,event}){
+  crossing:null,diveTick:null,gloveContactTick:null,officialSave:false,officialGoal:false});
+ return Object.freeze({observe({tick,ball,starts,action,event,keeperDive=null}){
   const real=action?.tick===tick&&action.appliedByRapier===true&&
    action.actualPhysicsImpulseApplied===true&&starts.length===1&&starts[0]===action.playerId;
   if(real&&action.playerId===shooterId&&action.action==='shot'){
    state=Object.freeze({...state,shots:state.shots+1,shotTick:tick,
     launchSpeedMps:Math.hypot(ball.velocity.x,ball.velocity.y,ball.velocity.z),
-    keeperContactTick:null,parryTick:null,crossing:null});
+    keeperContactTick:null,parryTick:null,crossing:null,diveTick:null,gloveContactTick:null});
   }
   if(state.shotTick!==null&&tick>state.shotTick&&!state.crossing){
-   const contact=starts.includes(keeperId);
+   const dive=keeperDive?.keeperId===keeperId&&keeperDive.tick===tick;
+   const glove=dive&&keeperDive.contactStarted===true;
+   const contact=starts.includes(keeperId)||glove;
    const parry=real&&action.playerId===keeperId&&action.action==='save';
    const crossing=event?.tick===tick&&event.crossing?.fullBallCrossed===true?
     Object.freeze({tick,kind:event.kind,scoringTeam:event.scoringTeam??null,
      fullBallCrossed:true}):null;
-   if(contact||parry||crossing)state=Object.freeze({...state,
+   if(contact||parry||crossing||dive&&keeperDive.started)state=Object.freeze({...state,
+    diveTick:state.diveTick??(dive&&keeperDive.started?tick:null),
+    gloveContactTick:state.gloveContactTick??(glove?tick:null),
     keeperContactTick:state.keeperContactTick??(contact?tick:null),
     parryTick:state.parryTick??(parry?tick:null),crossing});
   }
