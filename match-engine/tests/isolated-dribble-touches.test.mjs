@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {observeDuelBallControl,chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery,isShoulderCollecting,SHOULDER_DISPLACE_TICKS,SHOULDER_COLLECTION_TICKS,planDuelInterception,chooseDuelInterceptionTouch,isSlideCollecting} from '../src/isolated-dribble-touches.mjs';
+import {planLooseDuelApproaches,observeDuelBallControl,chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery,isShoulderCollecting,SHOULDER_DISPLACE_TICKS,SHOULDER_COLLECTION_TICKS,planDuelInterception,chooseDuelInterceptionTouch,isSlideCollecting} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -970,6 +970,27 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    assert.ok(chooseSharedDuelTouch({...source,transition:loose})?.carry);
    const stationary=chooseSharedDuelTouch({...source,player:challenger,opponent:owner,transition:loose,ballVelocity:{x:0,y:0,z:0}});
    assert.ok(stationary?.carry);assert.equal(stationary.defensive,null);
+  }
+ });
+
+ test('D-17 loose-ball pursuit ignores prior actor identity and input order',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const first={id:side+'-10',team:side,x:dir*27,y:0.5};
+   const second={id:other+'-2',team:other,x:dir*30.8,y:-0.4};
+   const ball={x:dir*30,y:0,z:0.11},velocity={x:dir*1.5,y:0,z:0};
+   const plan=planLooseDuelApproaches([first,second],ball,velocity);
+   assert.deepEqual(plan,planLooseDuelApproaches([second,first],ball,velocity));
+   for(const p of [first,second]){
+    const target=plan[p.id].target;
+    assert.ok(Number.isFinite(target.x)&&Number.isFinite(target.y));
+    assert.ok(Math.hypot(target.x-ball.x,target.y-ball.y)<Math.hypot(p.x-ball.x,p.y-ball.y));
+   }
+   for(const candidateId of [first.id,second.id,null]){
+    const state={profile:'mixed',carrierId:first.id,candidateId,ballControl:{kind:'loose',playerId:null}};
+    assert.equal(resolveDuelActors([first,second],side,state,ball).attacker.id,second.id);
+    assert.equal(resolveDuelActors([first,second],side,state,ball).carrierId,null);
+   }
   }
  });
 

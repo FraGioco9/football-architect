@@ -28,7 +28,7 @@ export function resolveDuelActors(players,initialSide,state=null,ball=null){
  // Nearest-ball approach is a movement plan, not assigned possession.
  const nearest=live&&carrierId===null?players.filter(p=>ids.includes(p.id)).sort((p,q)=>
   Math.hypot(p.x-ball.x,p.y-ball.y)-Math.hypot(q.x-ball.x,q.y-ball.y))[0]?.id:null;
- const primaryId=live?(carrierId??candidateId??nearest):(candidateId??carrierId);
+ const primaryId=live?(carrierId??nearest):(candidateId??carrierId);
  const attacker=players.find(p=>p.id===primaryId),defender=players.find(p=>ids.includes(p.id)&&p.id!==primaryId);
  if(!attacker||!defender)throw new TypeError('Original two physical duel actors required');
  return {attacker,defender,attackingSide:attacker.team,carrierId,candidateId};
@@ -277,6 +277,19 @@ export function routeDuelAroundOpponent(player,opponent,target){
  const best=choices[0];
  return best?Object.freeze({target:best.waypoint,detour:true,clearanceM:best.clearance}):
   Object.freeze({target,detour:false,clearanceM:originalClearance});
+}
+
+// D-17: the two participants pursue the same physically loose ball.
+// Neither prior contact nor a candidate flag reserves its collection.
+// Independent approach directions use the existing collision-safe router.
+export function planLooseDuelApproaches(players,b,v){
+ if(players?.length!==2||players[0].team===players[1].team||
+    !players.every(p=>typeof p.id==='string'&&Number.isFinite(p.x)&&Number.isFinite(p.y))||
+    ![b?.x,b?.y,v?.x,v?.y].every(Number.isFinite))throw new TypeError('Two opposing players and live ball required');
+ return Object.freeze(Object.fromEntries(players.map(p=>{
+  const rival=players.find(q=>q.id!==p.id);
+  return [p.id,routeDuelAroundOpponent(p,rival,planDuelRecoveryApproach(p,b,v))];
+ })));
 }
 
 // Separate approach lanes after a contact. If the recovering actor can

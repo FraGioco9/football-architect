@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,chooseDribbleDefensiveTouch,planDuelInterception,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,chooseDribbleDefensiveTouch,planDuelInterception,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
 import {selectDefensiveIntervention} from './defensive-intervention-selection.mjs';
 import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
@@ -2560,7 +2560,9 @@ export function createPlayerMovement(options={}){
   const postContact=duelActors&&(duelActors.candidateId!==null||
    duelTransition?.lastIntervention&&tick-duelTransition.lastIntervention.tick<=45||
    duelTransition?.sourceTick!=null&&tick-duelTransition.sourceTick<=30);
-  const duelAlignment=postContact?planDuelPostContactAlignment({...duelActors,ballPosition:ball,ballVelocity:realBallVelocity}):null;
+  const looseDuel=duelActors&&duelTransition?.profile==='mixed'&&duelTransition.ballControl?.kind==='loose';
+  const looseApproaches=looseDuel?planLooseDuelApproaches([duelActors.attacker,duelActors.defender],ball,realBallVelocity):null;
+  const duelAlignment=postContact?(looseApproaches??planDuelPostContactAlignment({...duelActors,ballPosition:ball,ballVelocity:realBallVelocity})):null;
   if(directedDribble){
    const {attacker,defender,attackingSide}=duelActors;
    const gap=Math.hypot(attacker.x-defender.x,attacker.y-defender.y);
@@ -2671,10 +2673,7 @@ export function createPlayerMovement(options={}){
      if(duelShoulder?.actorId===p.id)return duelShoulder.target;
      if(duelInterception?.actorId===p.id)return duelInterception.target;
      if(duelAlignment)return duelAlignment[p.id].target;
-     if(duelTransition?.profile==='mixed'&&duelTransition.ballControl?.kind==='loose'){
-      const rival=players.find(q=>smallActive.has(q.id)&&q.id!==p.id);
-      return routeDuelAroundOpponent(p,rival,planDuelRecoveryApproach(p,ball,realBallVelocity)).target;
-     }
+     if(looseApproaches)return looseApproaches[p.id].target;
      const {attacker,defender,attackingSide}=duelActors;
      return p.id===attacker.id?(duelActors.candidateId===p.id?planDuelRecoveryApproach(p,ball,realBallVelocity):
       directedDribbleApproachTarget(p,ball,realBallVelocity,attackingSide,defender)):
@@ -2864,10 +2863,12 @@ export function createPlayerMovement(options={}){
     duelTransition?.lastIntervention?.actorId===p.id&&duelTransition.lastIntervention.effective&&
     tick-duelTransition.lastIntervention.tick<=90&&
     (duelSlide?.actorId!==p.id||duelSlide.canPursueDuringRecovery);
+   const loosePursuit=looseDuel&&smallActive.has(p.id)&&!directedContactRelease&&
+    (duelSlide?.actorId!==p.id||duelSlide.canPursueDuringRecovery);
    const gettingUp=directedDribble&&isDuelGettingUp(duelTransition,p.id,tick+1);
    const balance=shoulderBalance[p.id];
    const shoulderCollection=directedDribble&&(isShoulderCollecting(duelTransition,p.id,tick+1)||isSlideCollecting(duelTransition,p.id,tick+1));
-   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:balance?{...D01_KINEMATIC_LIMITS,maxSpeed:balance.maxSpeed,acceleration:12,braking:32}:shoulderCollection?D09_RECOVERY_KINEMATIC_LIMITS:sliding?D08_SLIDE_KINEMATIC_LIMITS:recoveringEffective?D09_RECOVERY_KINEMATIC_LIMITS:(shoulderPursuit||blockApproach?.actorId===p.id||duelInterception?.actorId===p.id||smallSided?.interceptionStart&&p.id===smallSided.opponent+'-2')?D01_CHASE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
+   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:balance?{...D01_KINEMATIC_LIMITS,maxSpeed:balance.maxSpeed,acceleration:12,braking:32}:shoulderCollection?D09_RECOVERY_KINEMATIC_LIMITS:sliding?D08_SLIDE_KINEMATIC_LIMITS:(recoveringEffective||loosePursuit)?D09_RECOVERY_KINEMATIC_LIMITS:(shoulderPursuit||blockApproach?.actorId===p.id||duelInterception?.actorId===p.id||smallSided?.interceptionStart&&p.id===smallSided.opponent+'-2')?D01_CHASE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
      // The old generic 6m/s/9m/s² recovery overrides the fixed phase
      // whenever a strong Sprint push opens a >1.5m gap, making Sprint
      // look like Moderate. Fixed DEV LABs keep their own bounded phase
