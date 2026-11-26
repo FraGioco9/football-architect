@@ -430,7 +430,7 @@ export function selectUniformAutonomousContactAction({
   }else if(dribbleTouch!==null){
    if(dribbleTouch.magnitudeNs<0.025)continue;
    action='carry';dx=dribbleTouch.dx;dy=dribbleTouch.dy;
-   rule=isolatedDribbleContext.directed===true?'directed-live-opponent-ground-touch':'isolated-dribble-real-shoe-variable-ground-touch';
+   rule=ic?'interception-recovery-native-carry':isolatedDribbleContext?.directed===true?'directed-live-opponent-ground-touch':'isolated-dribble-real-shoe-variable-ground-touch';
   }else if(eligibleLiveKeeperSave(player,ballPosition,ballVelocity)){
    action='save';dx=attack*7;
    dy=ballPosition.y>=0?9:-9;vertical=0.24;

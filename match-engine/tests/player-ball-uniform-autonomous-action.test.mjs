@@ -529,3 +529,12 @@ test('C3.3m real Rapier-origin pass distance is valid on both 3m and 25m edges, 
   }
  }
 });
+
+ test('D-12 interception recovery carry works without an isolated dribble context',()=>{
+ for(const side of ['home','away']){
+  const other=side==='home'?'away':'home',defender=other+'-2';
+  const frame=mover({[side+'-10']:{x:-12,y:8},[side+'-9']:{x:0,y:8},[defender]:{x:-6,y:8}},25);
+  const a=selectUniformAutonomousContactAction({tick:25,contactStarted:[defender],contactActive:[defender],playerFrame:frame,ballPosition:{x:-6,y:8,z:0.11},ballVelocity:quiet,ballRadiusM:0.11,activePlayerIds:[side+'-10',side+'-9',defender],interceptionContext:{side,phase:'intercepted'},isolatedDribbleContext:null});
+  assert.equal(a.action,'carry');assert.equal(a.playerId,defender);assert.equal(a.decisionContext.rule,'interception-recovery-native-carry');assert.equal(a.officialMatchPossession,false);
+ }
+ });

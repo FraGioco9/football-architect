@@ -188,8 +188,15 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    const selected=await evalJs(`(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:dribble-1v1:${profile}').click();el('step').click();return {label:el('preset-value').textContent,summary:el('me-inline-summary').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value)};})()`);
    assert.equal(selected.label,label);assert.deepEqual(new Set(selected.players),new Set(['','away-10','home-2']));assert.ok(selected.summary);
   }
+  const interceptionExceptions=[];
+  const captureInterceptionException=e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')interceptionExceptions.push(m.params.exceptionDetails.exception?.description??m.params.exceptionDetails.text);};
+  socket.addEventListener('message',captureInterceptionException);
   const interceptionUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:pass-pair:interception').click();el('step').click();return {label:el('preset-value').textContent,summary:el('me-inline-summary').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value)};})()");
   assert.equal(interceptionUI.label,'Interception');assert.deepEqual(new Set(interceptionUI.players),new Set(['','away-10','away-9','home-2']));assert.ok(interceptionUI.summary);
+  const interceptionProgress=await evalJs("(()=>{const el=id=>document.getElementById(id);for(let i=0;i<240;i++)el('step').click();return {summary:el('me-inline-summary').textContent,values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent)};})()");
+  assert.notEqual(interceptionProgress.summary,'Waiting for pass');assert.notEqual(interceptionProgress.values[1],'—');
+  await delay(100);socket.removeEventListener('message',captureInterceptionException);
+  assert.deepEqual(interceptionExceptions,[],'Interception must advance in Chrome without unhandled exceptions');
   await evalJs("document.getElementById('me-observation-details').open=false");
   for(const [width,height] of [[1440,900],[390,844]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
