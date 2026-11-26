@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {planSlidingTackle,advanceSlidingTackle,SLIDE_TICKS,SLIDE_RECOVERY_TICKS,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from '../src/sliding-tackle.mjs';
+import {planSlidingTackle,advanceSlidingTackle,SLIDE_TICKS,SLIDE_RECOVERY_TICKS,EFFECTIVE_SLIDE_RECOVERY_TICKS,EFFECTIVE_SLIDE_BRAKE_TICKS,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from '../src/sliding-tackle.mjs';
 import {advanceFreePlayerKinematics} from '../src/individual-kinematics.mjs';
 
 for(const side of ['home','away']){
@@ -45,5 +45,14 @@ for(const side of ['home','away']){
   state=advanceSlidingTackle({tick:1,source});
   state=advanceSlidingTackle({tick:2,previous:state,source,cancel:true});
   assert.equal(state.phase,'recovery');assert.equal(state.officialPossession,false);
+ });
+ test('D-09c '+side+' effective slide begins recovery immediately and can pursue before action lock expires',()=>{
+  let state=advanceSlidingTackle({tick:1,source});
+  const contact={tick:1,actorId:source.defender.id,intervention:'sliding-tackle',effective:true};
+  for(let tick=2;tick<=2+EFFECTIVE_SLIDE_RECOVERY_TICKS;tick++){
+   state=advanceSlidingTackle({tick,previous:state,source,allowLaunch:false,contact});
+   if(tick===2+EFFECTIVE_SLIDE_RECOVERY_TICKS)assert.equal(state,null);
+   else{assert.equal(state.phase,'recovery');assert.equal(state.canPursueDuringRecovery,tick>=2+EFFECTIVE_SLIDE_BRAKE_TICKS);assert.equal(state.officialPossession,false);}
+  }
  });
 }

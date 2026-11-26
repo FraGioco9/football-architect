@@ -150,6 +150,11 @@ const D08_SLIDE_KINEMATIC_LIMITS=Object.freeze({
  ...D01_KINEMATIC_LIMITS,maxSpeed:SLIDE_MAX_SPEED_MPS,
  acceleration:SLIDE_ACCEL_MPS2,braking:SLIDE_BRAKE_MPS2
 });
+// After an observed effective deflection, transition immediately into a
+// bounded ball recovery run. Same cap and physical separation for both actors.
+const D09_RECOVERY_KINEMATIC_LIMITS=Object.freeze({
+ ...D01_CHASE_KINEMATIC_LIMITS,maxSpeed:6.5,acceleration:15,braking:15
+});
 const soloKinematicLimits=phase=>Object.freeze({
  ...D01_KINEMATIC_LIMITS,maxSpeed:phase.maxSpeedMps,
  acceleration:phase.accelerationMps2,braking:phase.brakingMps2
@@ -2550,7 +2555,8 @@ export function createPlayerMovement(options={}){
    duelSlide=advanceSlidingTackle({tick:tick+1,previous:duelSlide,
     source:{attackingSide,attacker,defender,ball:ballPosition,velocity:realBallVelocity},
     allowLaunch:!duelActors.candidateId&&!directedContactRelease,
-    cancel:directedContactRelease!==null||duelSlide!==null&&duelSlide.actorId!==defender.id});
+    cancel:directedContactRelease!==null||duelSlide!==null&&duelSlide.actorId!==defender.id,
+    contact:duelTransition?.lastIntervention??null});
   }
   const targets=players.map(p=>{
    if(smallSided){
@@ -2565,7 +2571,7 @@ export function createPlayerMovement(options={}){
     }
     if(directedDribble&&duelSlide?.actorId===p.id){
      if(duelSlide.phase==='slide')return duelSlide.plan.target;
-     return Object.freeze({x:p.x,y:p.y});
+     if(!duelSlide.canPursueDuringRecovery)return Object.freeze({x:p.x,y:p.y});
     }
     if(smallSided.firstTimeShot)return Object.freeze({x:p.baseX,y:p.baseY});
     if(['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)){
@@ -2774,7 +2780,11 @@ export function createPlayerMovement(options={}){
      (duelActors?p.id===duelActors.attacker.id:p.id===smallSided.side+'-10')&&
      Math.hypot(ball.x-p.x,ball.y-p.y)>1.5;
    const sliding=directedDribble&&!directedContactRelease&&duelSlide?.actorId===p.id&&duelSlide.phase==='slide';
-   const limits=sliding?D08_SLIDE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
+   const recoveringEffective=directedDribble&&!directedContactRelease&&duelActors.candidateId===p.id&&
+    duelTransition?.lastIntervention?.actorId===p.id&&duelTransition.lastIntervention.effective&&
+    tick-duelTransition.lastIntervention.tick<=90&&
+    (duelSlide?.actorId!==p.id||duelSlide.canPursueDuringRecovery);
+   const limits=sliding?D08_SLIDE_KINEMATIC_LIMITS:recoveringEffective?D09_RECOVERY_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
      // The old generic 6m/s/9m/s² recovery overrides the fixed phase
      // whenever a strong Sprint push opens a >1.5m gap, making Sprint
      // look like Moderate. Fixed DEV LABs keep their own bounded phase

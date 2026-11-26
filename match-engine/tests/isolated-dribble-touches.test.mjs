@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -720,7 +720,8 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
        assert.ok(['tackle','interception','carry'].includes(a.action));
        assert.deepEqual(f.starts,[defender]);assert.equal(a.appliedByRapier,true);
        assert.equal(a.actualPhysicsImpulseApplied,true);assert.equal(a.impulseNs.z,0);
-       assert.ok(Math.hypot(a.impulseNs.x,a.impulseNs.y)<=1.25+1e-8);
+       const cap=a.defensiveTarget?.intervention==='sliding-tackle'?SLIDING_TACKLE_MAX_IMPULSE_NS:1.25;
+       assert.ok(Math.hypot(a.impulseNs.x,a.impulseNs.y)<=cap+1e-8);
        if(a.action==='carry')assert.equal(a.decisionContext.isolatedDribbleTouch.version,'me-628-directed-dribble-v1');
        else{assert.equal(a.defensiveTarget.officialPossession,false);attempts++;}
       }
@@ -801,6 +802,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    let stagnant=0,maxStagnant=0,blocked=0,blockedRun=0,maxBlockedRun=0,ballPath=0,prior=scene.snapshot().ball.position;
    let anchor=prior,anchorTick=0,maxCloseBallStall=0,slideStarts=0,slideContacts=0,recoveryTicks=0,peakSlideSpeed=0;
    let pending=null,defensiveTouches=0,available=0,recoveredCarry=0,rivalCarry=0,expired=0,censored=0,alignmentTicks=0,detourTicks=0;
+   const strikeSamples=[],releaseSamples=[];let strike=null,effectiveContacts=0;
    const finish=(reason)=>{if(!pending)return;if(pending.available)available++;if(reason==='carry')recoveredCarry++;else if(reason==='rival')rivalCarry++;else if(reason==='expired')expired++;else censored++;pending=null;};
    try{
     for(let k=0;k<600;k++){
@@ -822,6 +824,13 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
      }
      assert.ok(Math.hypot(d.vx,d.vy)<=7+1e-5);
      const action=f.action;
+     if(strike&&f.physicsTick===strike.tick+12){releaseSamples.push({kind:strike.kind,travelM:Math.hypot(b.x-strike.x,b.y-strike.y)});strike=null;}
+     if(action&&['tackle','interception'].includes(action.action)){
+      const kind=action.defensiveTarget?.intervention??action.action;
+      strikeSamples.push({kind,speedMps:Math.hypot(v.x,v.y),impulseNs:Math.hypot(action.impulseNs.x,action.impulseNs.y)});
+      if(f.duelTransition.lastIntervention?.effective)effectiveContacts++;
+      strike={kind,tick:f.physicsTick,x:b.x,y:b.y};
+     }else if(action)strike=null;
      if(f.smallSidedMovementDecisions?.some(p=>p.postContactAlignment))alignmentTicks++;
      if(f.smallSidedMovementDecisions?.some(p=>p.alignmentDetour))detourTicks++;
      if(pending&&f.physicsTick>pending.tick){
@@ -849,7 +858,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
     }
     finish('end');
     const f=scene.snapshot();
-    results.push({side,variant:variantIndex+1,maxStagnant,blocked,maxBlockedRun,maxCloseBallStall,ballPath,slideStarts,slideContacts,recoveryTicks,peakSlideSpeed,defensiveTouches,available,recoveredCarry,rivalCarry,expired,censored,alignmentTicks,detourTicks,attackerTouches:f.nativeDribbleAudit.appliedCarryActions,
+    results.push({side,variant:variantIndex+1,maxStagnant,blocked,maxBlockedRun,maxCloseBallStall,ballPath,slideStarts,slideContacts,recoveryTicks,peakSlideSpeed,defensiveTouches,available,recoveredCarry,rivalCarry,expired,censored,alignmentTicks,detourTicks,effectiveContacts,strikeSamples,releaseSamples,attackerTouches:f.nativeDribbleAudit.appliedCarryActions,
      defenderAttempts:f.nativeDribbleAudit.defensiveTackleAttempts+f.nativeDribbleAudit.defensiveInterceptionAttempts,
      recoveryTouches:f.nativeDribbleAudit.defensiveRecoveryTouches,actionsByPlayer:f.nativeDribbleAudit.actionsByPlayer,roleChanges:f.duelTransition.changes});
    }finally{scene.dispose();}
@@ -857,6 +866,15 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
   process.stdout.write('ME_628_D07_LIVENESS '+JSON.stringify(results)+'\n');
   const totals=Object.fromEntries(['defensiveTouches','available','recoveredCarry','rivalCarry','expired','censored'].map(key=>[key,results.reduce((sum,x)=>sum+x[key],0)]));
   process.stdout.write('ME_628_D09_RELEASE '+JSON.stringify(totals)+'\n');
+  const strikes=results.flatMap(x=>x.strikeSamples),releases=results.flatMap(x=>x.releaseSamples);
+  const report=['standing-tackle','sliding-tackle'].map(kind=>{
+   const s=strikes.filter(x=>x.kind===kind),r=releases.filter(x=>x.kind===kind);
+   return {kind,count:s.length,meanSpeedMps:s.length?s.reduce((sum,x)=>sum+x.speedMps,0)/s.length:null,
+    meanImpulseNs:s.length?s.reduce((sum,x)=>sum+x.impulseNs,0)/s.length:null,
+    observed12TickSamples:r.length,meanTravelM:r.length?r.reduce((sum,x)=>sum+x.travelM,0)/r.length:null};
+  });
+  process.stdout.write('ME_628_D09_REACTION '+JSON.stringify({effectiveContacts:results.reduce((s,x)=>s+x.effectiveContacts,0),report})+'\n');
+  assert.ok(report[1].count>0,'must exercise actual sliding strike');
   assert.ok(totals.defensiveTouches>0&&totals.available>0,'must observe actual post-contact recovery opportunities');
   assert.ok(totals.recoveredCarry>0,'must observe real post-contact carry by the tackler');
   assert.ok(results.some(x=>x.alignmentTicks>0),'observe live post-contact alignment');
@@ -923,5 +941,32 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
     ballPosition:{x:dir*29.6,y:0.7},ballVelocity:{x:0,y:2}});
    for(const id of [player.id,rival.id])assert.ok(Number.isFinite(targets[id].target.x)&&Number.isFinite(targets[id].target.y));
    assert.ok(Math.hypot(targets[player.id].target.x-targets[rival.id].target.x,targets[player.id].target.y-targets[rival.id].target.y)>0.5);
+  }
+ });
+
+ test('D-09c effective deflection and stronger slide are symmetric and geometry-based',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const attacker={id:side+'-10',team:side,x:dir*29.6,y:0};
+   const defender={id:other+'-2',team:other,x:dir*30.5,y:0};
+   const b={x:dir*30,y:0,z:0.11},v={x:dir,y:0,z:0};
+   const source={attackingSide:side,attacker,defender,ballPosition:b,ballVelocity:v};
+   const standing=chooseDribbleDefensiveTouch(source),sliding=chooseDribbleDefensiveTouch({...source,sliding:true});
+   assert.ok(standing&&sliding);
+   assert.equal(Math.hypot(standing.desiredVelocity.x,standing.desiredVelocity.y).toFixed(3),STANDING_TACKLE_TARGET_SPEED_MPS.toFixed(3));
+   assert.equal(Math.hypot(sliding.desiredVelocity.x,sliding.desiredVelocity.y).toFixed(3),SLIDING_TACKLE_TARGET_SPEED_MPS.toFixed(3));
+   assert.ok(sliding.magnitudeNs>standing.magnitudeNs*1.5);
+   assert.ok(sliding.magnitudeNs<=SLIDING_TACKLE_MAX_IMPULSE_NS);
+   assert.ok(observeEffectiveDuelIntervention(defender,attacker,b,{x:dir*0.8,y:2.8}));
+   assert.equal(observeEffectiveDuelIntervention(defender,attacker,b,{x:-dir*3,y:0}),false);
+   const observer=createDribbleTransitionObserver(side);
+   const action={tick:1,playerId:defender.id,action:'tackle',appliedByRapier:true,actualPhysicsImpulseApplied:true,defensiveTarget:{intervention:'sliding-tackle'}};
+   const w=observer.observe({tick:1,starts:[defender.id],active:[defender.id],bodyStarts:[],bodyActive:[],action,
+    ball:{position:b,velocity:{x:dir*0.8,y:2.8}},players:[attacker,defender]});
+   assert.equal(w.lastIntervention.effective,true);assert.equal(w.candidateId,defender.id);assert.equal(w.carrierId,attacker.id);
+   const next=observer.observe({tick:2,starts:[attacker.id],active:[attacker.id],bodyStarts:[],bodyActive:[],action:null,
+    ball:{position:b,velocity:{x:dir*0.8,y:2.8}},players:[attacker,defender]});
+   assert.equal(next.candidateId,defender.id,'incidental rival touch does not cancel effective recovery');
+   assert.equal(next.officialPossession,false);
   }
  });

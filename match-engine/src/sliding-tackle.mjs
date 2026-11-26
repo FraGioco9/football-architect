@@ -5,6 +5,8 @@ import {observeDribbleShield,isOpposingDuelPair} from './isolated-dribble-touche
 
 export const SLIDE_TICKS=18;
 export const SLIDE_RECOVERY_TICKS=32;
+export const EFFECTIVE_SLIDE_RECOVERY_TICKS=12;
+export const EFFECTIVE_SLIDE_BRAKE_TICKS=4;
 export const SLIDE_MAX_SPEED_MPS=6.5;
 export const SLIDE_ACCEL_MPS2=24;
 export const SLIDE_BRAKE_MPS2=12;
@@ -38,15 +40,23 @@ export function planSlidingTackle({attackingSide,attacker,defender,ball:b,veloci
 
 // Finite rapid movement followed by recovery. Cancellation by the
 // liveness release ends the lunge; it never synthesizes a contact.
-export function advanceSlidingTackle({tick,previous=null,source,allowLaunch=true,cancel=false}){
+export function advanceSlidingTackle({tick,previous=null,source,allowLaunch=true,cancel=false,contact=null}){
  if(!Number.isSafeInteger(tick)||tick<1||
     previous!==null&&previous.tick!==tick-1)throw new TypeError('Consecutive slide ticks required');
  let plan=previous?.plan??null,start=previous?.startTick??null,recover=previous?.recoveryTick??null;
- if(previous&&recover===null&&(cancel||tick-start>=SLIDE_TICKS))recover=tick;
- if(recover!==null&&tick-recover>=SLIDE_RECOVERY_TICKS){plan=null;start=null;recover=null;}
+ let effectiveContact=previous?.effectiveContact??false;
+ const struck=previous?.phase==='slide'&&contact?.tick===tick-1&&contact.actorId===previous.actorId&&contact.intervention==='sliding-tackle';
+ if(previous&&recover===null&&(struck||cancel||tick-start>=SLIDE_TICKS)){
+  recover=tick;effectiveContact=Boolean(struck&&contact.effective);
+ }
+ if(recover!==null&&tick-recover>=(effectiveContact?EFFECTIVE_SLIDE_RECOVERY_TICKS:SLIDE_RECOVERY_TICKS)){
+  plan=null;start=null;recover=null;effectiveContact=false;
+ }
  if(!plan&&allowLaunch&&!cancel){plan=planSlidingTackle(source);if(plan)start=tick;}
  if(!plan)return null;
  const phase=recover===null?'slide':'recovery';
  return Object.freeze({tick,actorId:plan.actorId,plan,startTick:start,recoveryTick:recover,
-  phase,started:start===tick,officialPossession:false,physicalContactProven:false});
+  phase,started:start===tick,effectiveContact,
+  canPursueDuringRecovery:phase==='recovery'&&effectiveContact&&tick-recover>=EFFECTIVE_SLIDE_BRAKE_TICKS,
+  officialPossession:false,physicalContactProven:false});
 }
