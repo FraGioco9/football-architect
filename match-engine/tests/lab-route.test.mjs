@@ -448,7 +448,10 @@ test('ME-01 compact pitch caps desktop dimensions and uses canonical site chevro
   assert.match(stylesheet,/\.me-pitch-frame canvas\{width:min\(100%, 1200px, calc\(154dvh - 550px\)\)\}/);
   assert.match(stylesheet,/\.me-pitch-frame canvas\{width:min\(100%, 1200px, calc\(113dvh - 218px\)\)\}/);
   assert.match(stylesheet,/\.me-elevation-frame canvas\{width:min\(100%, 36\.6dvh\)/);
-  assert.match(markup,/<body class="app-body me-lab-page">/);
+  assert.match(markup,/<body class="app-body me-lab-page me-modern-lab">/);
+  assert.match(markup,/<span id="preset-value">Carry · Moderate<\/span>/);
+  assert.match(markup,/class="app-panel me-panel me-main-panel"[^>]*data-loading="true"/);
+  assert.doesNotMatch(markup,/<(?:button|div|details)[^>]*id="(?:me-inline-side-control|me-speed-dropdown|me-inline-variant-control|me-observation-details)"[^>]*\shidden\b/);
   assert.equal((markup.match(/<fieldset class="me-parameter-group">/g)||[]).length,2);
   assert.match(markup,/<legend>Position · m<\/legend>/);
   assert.match(markup,/<legend>Velocity · km\/h<\/legend>/);

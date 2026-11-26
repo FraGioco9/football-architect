@@ -22,9 +22,21 @@ import {uniformSoloCarryAttributes}
 import {prepareFlightPlaybackPair,sampleFlightPlaybackPair,flightPlaybackWallTime} from '/__fa_match_engine__/flight-playback.mjs';
 
 const byId = id => document.getElementById(id);
+const archiveMode=new URLSearchParams(location.search).get('lab')==='archive'||
+  ['#actions','#movement'].includes(location.hash);
+document.body.classList.toggle('me-modern-lab',!archiveMode);
+if(archiveMode){
+ // Restore the archived physics surface before starting its original runner.
+ byId('preset-value').textContent='LAB-01 · Ball Drop';
+ for(const id of ['me-inline-side-control','me-inline-variant-control',
+  'me-inline-summary','me-observation-details'])byId(id).hidden=true;
+ byId('players-toggle').hidden=false;
+ document.querySelector('.me-main-panel').removeAttribute('data-loading');
+}
 const pitch = byId('pitch'), elevation = byId('elevation');
 const fields = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
-const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open'];
+const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open',
+ 'preset-trigger','me-inline-side-trigger','speed-trigger','me-inline-variant-prev','me-inline-variant-next'];
 let rapier, engine, history = [], playing = false, lastFrame = 0, accumulator = 0;
 let physicsTickSnapshot = null;
 let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
@@ -35,6 +47,77 @@ let activeScene=null,activeLab=null,activeVariantIndex=0;
 let lastInlineFootballAction=null;
 let lastOnFieldAction=new Map(),lastMovementKinds=new Map();
 let onFieldDecisionEvents=[];
+let performedActionKeys=new Set();
+const performedActionLabels=Object.freeze({
+ carry:'Carry',pass:'Pass',cross:'Cross',shot:'Shot',shoot:'Shot',
+ clearance:'Clearance',clear:'Clearance',tackle:'Tackle',intercept:'Interception',
+ save:'Save',receive:'Reception',control:'Control'
+});
+function resetPerformedActions(){
+ if(archiveMode)return;
+ const filter=byId('me-performed-player'),previous=filter.value;
+ const menu=byId('me-performed-player-options');
+ const ids=activeScene?.kind==='action'?activeLab.focus:[];
+ const fragment=document.createDocumentFragment();
+ for(const [id,label] of [['','All players'],...ids.map(id=>[id,humanPlayer(id)])]){
+  const option=document.createElement('div');
+  option.className='language-option';option.setAttribute('role','option');
+  option.tabIndex=-1;option.dataset.value=id;option.textContent=label;
+  fragment.append(option);
+ }
+ menu.replaceChildren(fragment);
+ filter.value=ids.includes(previous)?previous:'';
+ filter.closest('[data-me-dropdown]').dispatchEvent(new Event('lab:refresh-options'));
+ byId('me-performed-player-trigger').disabled=false;
+ performedActionKeys=new Set();
+ byId('me-performed-rows').replaceChildren();
+ updatePerformedFilter();
+}
+function updatePerformedFilter(){
+ const selected=byId('me-performed-player').value;
+ let visible=0;
+ for(const row of byId('me-performed-rows').rows){
+  row.hidden=selected!==''&&row.dataset.player!==selected;
+  if(!row.hidden)visible++;
+ }
+ const empty=byId('me-performed-empty');
+ empty.hidden=visible!==0;empty.textContent='No actions yet';
+}
+function recordPerformedActions(frame){
+ if(archiveMode)return;
+ const tick=frame.physicsTick,ids=activeLab.focus,events=[];
+ const action=frame.action;
+ if(action?.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&
+    action.tick===tick&&ids.includes(action.playerId))
+  events.push({id:action.playerId,kind:action.action,
+   label:performedActionLabels[action.action]??action.action});
+ // First receiving contacts are actual native observations, not inferred
+ // completed passes or successful possession. They have their own actor.
+ const pass=frame.passPairAudit?.receivingContact;
+ if(pass?.realRapierShoeStart===true&&pass.contactTick===tick)
+  events.push({id:pass.receiverId,kind:'receiving-contact',
+   label:pass.cushion?'First touch':'Receiving contact'});
+ const cross=frame.crossPairAudit?.firstReceivingShoeStart;
+ if(cross?.realRapierShoeStart===true&&cross.tick===tick)
+  events.push({id:cross.recipientId,kind:'receiving-contact',
+   label:frame.crossPairAudit.receivingCushion?'First touch':'Receiving contact'});
+ const tbody=byId('me-performed-rows'),selected=byId('me-performed-player').value;
+ for(const event of events){
+  if(!ids.includes(event.id)||typeof event.kind!=='string')continue;
+  const key=tick+'|'+event.id+'|'+event.kind;
+  if(performedActionKeys.has(key))continue;
+  performedActionKeys.add(key);
+  const row=document.createElement('tr');
+  row.dataset.tick=String(tick);row.dataset.player=event.id;row.dataset.action=event.kind;
+  row.hidden=selected!==''&&selected!==event.id;
+  for(const value of [(tick*FIXED_DT).toFixed(2)+' s',humanPlayer(event.id),event.label]){
+   const cell=document.createElement('td');cell.textContent=value;row.append(cell);
+  }
+  tbody.prepend(row);
+  if(!row.hidden)byId('me-performed-empty').hidden=true;
+ }
+}
+byId('me-performed-player').addEventListener('change',updatePerformedFilter);
 const smallSidedDecisionLabels=Object.freeze({
  'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
  'hold-pass-target':'Hold receiving position',
@@ -131,14 +214,18 @@ function syncScenarioSurface(){
  const inline=activeScene!==null;
  byId('me-inline-side-control').hidden=!inline;
  byId('me-inline-rating-control').hidden=
-  activeScene?.id!=='carry-solo'||!activeScene.soloCarryLockedPhase;
+  !archiveMode||activeScene?.id!=='carry-solo'||!activeScene.soloCarryLockedPhase;
  const variable=activeScene?.kind==='action';
  byId('me-inline-variant-control').hidden=!variable;
  byId('me-inline-variant-display').textContent=
   String(activeVariantIndex+1).padStart(2,'0')+' / '+SMALL_SIDED_VARIANT_COUNT;
- byId('me-inline-observation').hidden=!inline;
+ byId('me-inline-observation').hidden=!archiveMode||!inline;
+ byId('me-observation-details').hidden=!inline;
+ byId('me-inline-summary').hidden=!inline;
+ byId('me-observation-details').open=false;
+ byId('me-decisions-details').open=false;
  const showOnField=activeScene?.kind==='action';
- byId('me-decisions-panel').hidden=!showOnField;
+ byId('me-decisions-panel').hidden=!archiveMode||!showOnField;
  byId('me-elevation-panel').hidden=showOnField;
  byId('advanced-settings').hidden=inline;
  if(inline)byId('advanced-settings').open=false;
@@ -151,8 +238,10 @@ function disposeInline(){
 }
 
 const say = (message, error = false) => {
-  byId('status').textContent = message;
-  byId('status').classList.toggle('error', error);
+  const status=byId('status');
+  status.dataset.ready=String(!error&&message.startsWith('Ready'));
+  status.textContent = !archiveMode&&!error&&message.startsWith('Ready')?'Ready':message;
+  status.classList.toggle('error', error);
 };
 const fmt = x => x.toFixed(2);
 const fmtKmh = mps => fmt(speedToKmh(mps));
@@ -268,6 +357,7 @@ function restart() {
     accumulator=0;playing=false;inspectedPlayerId=null;
     byId('player-inspect-choice').value='';
     syncScenarioSurface();
+    resetPerformedActions();
     say('Ready · '+(kind==='action'?next.spec.title:next.scene.spec.title)+
       (activeScene.soloCarryLockedPhase?' · fixed '+
        activeScene.soloCarryLockedPhase.toUpperCase()+
@@ -301,7 +391,10 @@ function advance() {
       playing=false;return;
     }
     const observed=activeLab.step();
-    if(activeScene.kind==='action')trackOnFieldDecisionChanges(observed);
+    if(activeScene.kind==='action'){
+      if(archiveMode)trackOnFieldDecisionChanges(observed);
+      else recordPerformedActions(observed);
+    }
     if(activeScene.kind==='action'&&observed.action?.appliedByRapier)
       lastInlineFootballAction=Object.freeze({
        team:observed.action.team,action:observed.action.action,
@@ -474,7 +567,8 @@ function render() {
   }
   if(activeLab){
     const f=activeLab.snapshot();
-    if(activeScene.kind==='action')renderOnFieldDecisions(f);
+    if(archiveMode&&activeScene.kind==='action')renderOnFieldDecisions(f);
+    if(archiveMode){
     const detail=activeScene.kind==='action'?
       '· '+f.genuinePhysicalPlayerCount+' real physical '+(f.genuinePhysicalPlayerCount===1?'player':'players')+
       ' · source events '+f.eventCount+
@@ -594,7 +688,56 @@ function render() {
       ' · no shoe-ball action or possession claimed';
     byId('me-inline-observation').textContent=detail+
       ' · no official result';
+    }else renderActiveMetrics(f);
+    // Concise, observational summary only. Preserve the full diagnostics above.
+    const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
+    const summary=shot?
+      (shot.crossing?(shot.crossing.goal?'Goal observed':'Miss observed'):
+        shot.attempted?'Shot observed':'Waiting for shot'):
+      pass?(pass.receiverTick!=null?'Receiving contact observed':
+        pass.attempted?'Pass observed':'Waiting for pass'):
+      cross?(cross.arrival?'Arrival observed':
+        cross.attempted?'Cross observed':'Waiting for cross'):
+      f.soloCarryPhase?.phase?'Carry · '+f.soloCarryPhase.phase:
+      lastInlineFootballAction?'Last action: '+lastInlineFootballAction.action:
+      activeScene.kind==='action'?'Waiting for action':'Movement';
+    byId('me-inline-summary').textContent=summary;
   }
+}
+// Flat observational readout for the active LAB; missing evidence stays a dash.
+function renderActiveMetrics(f){
+ const n=(value,unit='')=>Number.isFinite(value)?fmt(value)+unit:'—';
+ const speed=value=>Number.isFinite(value)?fmtKmh(value)+' km/h':'—';
+ const count=value=>Number.isFinite(value)?String(value):'—';
+ const shot=f.shotSoloAudit,pass=f.passPairAudit,cross=f.crossPairAudit;
+ let entries;
+ if(shot){
+  entries=[['Distance',n(shot.distanceM,' m')],['Launch speed',speed(shot.attempted?shot.launchSpeedMps:null)],
+   ['Peak height',n(shot.attempted?shot.peakClearanceM:null,' m')],
+   ['Spin',n(shot.attempted?shot.launchSpinRadS:null,' rad/s')],
+   ['Flight time',n(shot.crossing?.timeS,' s')],
+   ['Result',shot.crossing?(shot.crossing.goal?'Goal':'Miss'):'—']];
+ }else if(pass){
+  entries=[['Distance',n(pass.targetDistanceM,' m')],['Launch speed',speed(pass.attempted?pass.launchSpeedMps:null)],
+   ['Arrival time',n(pass.receiverTick!=null?pass.flightTimeS:null,' s')],
+   ['Receiving speed',speed(pass.receivingContact?.postContactSpeedMps)],
+   ['Target gap',n(pass.attempted?pass.closestTargetGapM:null,' m')],
+   ['First touch',pass.receivingContact?(pass.receivingContact.cushion?'Oriented':'Passive'):'—']];
+ }else if(cross){
+  entries=[['Distance',n(cross.targetDistanceM,' m')],['Launch speed',speed(cross.attempted?cross.launchSpeedMps:null)],
+   ['Peak height',n(cross.attempted?cross.peakClearanceM:null,' m')],
+   ['Arrival time',n(cross.arrival?.timeS,' s')],['Target gap',n(cross.arrival?.targetGapM,' m')],
+   ['First touch',cross.receivingCushion?'Oriented':'—']];
+ }else{
+  const phase=f.soloCarryPhase,m=f.soloCarryMeasurements;
+  entries=[['Player speed',speed(phase?.playerSpeedMps)],['Ball gap',n(phase?.ballGapM,' m')],
+   ['Touches',count(m?.appliedCarryImpulses)],['Distance',n(m?.ballForwardM,' m')],
+   ['Peak speed',speed(m?.peakBallSpeedMps)],['Mean touch gap',n(m?.nativeMeanImpulseGapS,' s')]];
+ }
+ entries.forEach(([label,value],i)=>{
+  byId('me-metric-label-'+i).textContent=label;
+  byId('me-metric-value-'+i).textContent=value;
+ });
 }
 // ME-PHYS-03 diagnostic simulations are independent of the active lab engine.
 function tableRow(tbody,values) {
@@ -1900,7 +2043,7 @@ function setupDropdowns() {
     const trigger = root.querySelector('.language-trigger');
     const menu = root.querySelector('.language-menu');
     const value = trigger.querySelector('span');
-    const options = [...menu.querySelectorAll('[role="option"][data-value]')];
+    let options = [...menu.querySelectorAll('[role="option"][data-value]')];
     if (!input || !trigger || !menu || !value || !options.length) throw new Error('Malformed lab dropdown');
     function selectedIndex(){
       const key=root.dataset.meDropdown==='preset'&&root.dataset.selectedScene?
@@ -1990,6 +2133,12 @@ function setupDropdowns() {
     });
     document.addEventListener('pointerdown', event => {
       if (!root.contains(event.target)) close();
+    });
+    root.addEventListener('lab:refresh-options',()=>{
+      close();
+      options=[...menu.querySelectorAll('[role="option"][data-value]')];
+      if(!options.length)throw new Error('Empty lab dropdown');
+      update();
     });
     if(root.dataset.meDropdown==='preset')
       root.addEventListener('lab:restore-ball-scenario',()=>{
@@ -2105,11 +2254,11 @@ function setupUnifiedScenarioMenu(){
    ...LAB_SHOT_PROFILES.map(profile=>[profile==='power'?'action:shot-solo':'action:shot-solo:'+profile,'Shot · '+LAB_SHOT_LABELS[profile]]),
    ...LAB_SHOT_PROFILES.map(profile=>['action:shot-solo:'+profile+':first-time','First-time · '+LAB_SHOT_LABELS[profile]])
   ]],
-  ['Small-sided situations',[
+  ...(archiveMode?[['Small-sided situations',[
    ['action:keeper-1v1','1v1 · goalkeeper'],
    ['action:overload-2v1','2v1 · attack and defend'],
    ['action:duel-3v3','3v3 · team decisions']
-  ]]
+  ]]]:[])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
  for(const [title,choices] of groups){
@@ -2133,11 +2282,17 @@ function setupUnifiedScenarioMenu(){
    menu.append(opt);
   }
  }
- heading('Ball physics');
- for(const node of physics)menu.append(node);
- if(menu.querySelectorAll('[role="option"][data-value]').length!==24||
-    menu.querySelectorAll('.me-scenario-group-label').length!==5)
-  throw new Error('Lab should expose three fixed Carry phases, ground Pass, lofted Cross, six stationary and six first-time Shot profiles, three small-sided exercises and four ball presets');
+ if(archiveMode){
+  heading('Ball physics');
+  for(const node of physics)menu.append(node);
+ }else{
+  const root=menu.closest('[data-me-dropdown="preset"]');
+  root.dataset.selectedScene='action:carry-solo:moderate';
+  // Detailed research panels stay in the archive surface.
+ }
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:17)||
+    menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:3))
+  throw new Error('Unexpected active or archived LAB catalog');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')
@@ -2198,7 +2353,9 @@ requestAnimationFrame(frame);
 try {
   const moduleNamespace = await import('/__fa_match_engine__/rapier.es.js');
   rapier = await initializeRapier(moduleNamespace);
-  restart();
+  if(archiveMode)restart();
+  else launchSelectedScenario('action:carry-solo:moderate');
+  document.querySelector('.me-main-panel').removeAttribute('data-loading');
   for (const id of controls) byId(id).disabled = false;
   if(location.hash==='#actions'){
     byId('preset-options').querySelector('[data-value="action:keeper-1v1"]')?.click();

@@ -101,9 +101,87 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   };
   await send('Page.enable');
   await send('Runtime.enable');
-  await send('Page.navigate',{
-   url:'http://app.localhost:2000/dev/match-engine'
-  });
+  // Hold the entire LAB module before execution. Measure the actual static
+  // DOM/CSS first paint, not a post-bootstrap approximation.
+  let pausedModule;
+  const onPaused=e=>{
+   const msg=JSON.parse(e.data);
+   if(msg.method==='Fetch.requestPaused')pausedModule=msg.params.requestId;
+  };
+  socket.addEventListener('message',onPaused);
+  await send('Fetch.enable',{patterns:[{urlPattern:'*/__fa_match_engine__/lab.mjs',requestStage:'Request'}]});
+  await send('Page.navigate',{url:'http://app.localhost:2000/dev/match-engine'});
+  await wait("document.getElementById('pitch')&&document.querySelector('.me-main-panel[data-loading=true]')&&document.readyState!=='loading'");
+  for(let i=0;i<120&&!pausedModule;i++)await delay(50);
+  assert.ok(pausedModule,'LAB module must be paused before the first-paint sample');
+  const sizes=[[1280,720],[1440,900],[768,1024],[390,844],[320,700]];
+  const measure=async()=>evalJs("(async()=>{await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));"+
+   "const ids=['.me-main-panel','.me-toolbar','#preset-trigger','#me-inline-side-trigger','#me-inline-variant-control','#speed-trigger','.me-toolbar>.me-button-group','#pitch','#me-performed-panel','#me-performed-player-trigger','.me-performed-list-wrap','.me-at-a-glance','#me-inline-summary','#me-observation-details'];"+
+   "const rects=Object.fromEntries(ids.map(s=>{const r=document.querySelector(s).getBoundingClientRect();return [s,[r.x,r.y,r.width,r.height]]}));"+
+   "return {rects,selected:document.getElementById('preset-value').textContent,loading:document.querySelector('.me-main-panel').hasAttribute('data-loading'),scroll:document.documentElement.scrollWidth,width:innerWidth};})()");
+  const before=[];
+  for(const [width,height] of sizes){
+   await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+   const m=await measure();
+   assert.equal(m.loading,true);assert.equal(m.selected,'Carry · Moderate');
+   assert.ok(m.scroll<=m.width+1,JSON.stringify(m));
+   for(const [selector,rect] of Object.entries(m.rects))
+    assert.ok(rect[2]>0&&rect[3]>0,selector+' missing from first paint');
+   before.push(m);
+  }
+  await send('Fetch.continueRequest',{requestId:pausedModule});
+  await send('Fetch.disable');socket.removeEventListener('message',onPaused);
+  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelectorAll('#preset-options [role=option][data-value]').length===17&&!document.querySelector('.me-main-panel').hasAttribute('data-loading')");
+  for(let i=0;i<sizes.length;i++){
+   const [width,height]=sizes[i];
+   await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+   const after=await measure(),first=before[i];
+   assert.equal(after.loading,false);assert.equal(after.selected,first.selected);
+   assert.ok(after.scroll<=after.width+1,JSON.stringify(after));
+   for(const [selector,rect] of Object.entries(first.rects))
+    for(let axis=0;axis<4;axis++)
+     assert.ok(Math.abs(rect[axis]-after.rects[selector][axis])<=1,
+      JSON.stringify({width,height,selector,first:rect,after:after.rects[selector]}));
+   process.stdout.write('ME_628_ACTIVE_FIRST_PAINT '+JSON.stringify({width,height,first,after})+'\n');
+  }
+  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+  const activePage=await evalJs("(()=>{const el=id=>document.getElementById(id),menu=el('preset-options');return {groups:[...menu.querySelectorAll('.me-scenario-group-label')].map(x=>x.textContent),choices:menu.querySelectorAll('[role=option]').length,selected:el('preset-value').textContent,visibleComboboxes:[...document.querySelectorAll('.me-toolbar [role=combobox]')].filter(x=>x.getClientRects().length>0).length,attributesHidden:el('me-inline-rating-control').hidden,diagnosticsClosed:!el('me-observation-details').open,legacyAbsent:!menu.querySelector('[data-value=drop],[data-value=\\\"action:keeper-1v1\\\"]'),nestedMenus:el('me-observation-details').querySelectorAll('details,select,[role=combobox]').length,legacyTextHidden:el('me-inline-observation').hidden};})()");
+  assert.deepEqual(activePage,{groups:['Carry phases','Passing','Shooting'],choices:17,selected:'Carry · Moderate',visibleComboboxes:3,attributesHidden:true,diagnosticsClosed:true,legacyAbsent:true,nestedMenus:0,legacyTextHidden:true});
+  const toggled=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-inline-side-trigger').click();el('me-inline-side-options').querySelector('[data-value=away]').click();el('speed-trigger').click();el('speed-opt-2').click();return {side:el('me-inline-side').value,speed:el('speed').value,sideLabel:el('me-inline-side-value').textContent,speedLabel:el('speed-value').textContent,tick:el('tick').textContent};})()");
+  assert.deepEqual(toggled,{side:'away',speed:'2',sideLabel:'AWAY',speedLabel:'2×',tick:'Tick 0 · 0.00 s'});
+  const flat=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-observation-details').open=true;for(let i=0;i<60;i++)el('step').click();return {open:el('me-observation-details').open,labels:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent),nested:el('me-observation-details').querySelectorAll('details').length};})()");
+  assert.equal(flat.open,true);assert.equal(flat.nested,0);
+  assert.deepEqual(flat.labels,['Player speed','Ball gap','Touches','Distance','Peak speed','Mean touch gap']);
+  assert.equal(flat.values.length,6);assert.ok(flat.values.some(x=>x.endsWith(' km/h')));
+  await evalJs("document.getElementById('me-observation-details').open=false");
+  const actionLog=await evalJs("(()=>{const el=id=>document.getElementById(id),filter=el('me-performed-player'),rows=()=>[...el('me-performed-rows').rows].map(r=>({player:r.dataset.player,action:r.dataset.action,tick:+r.dataset.tick,hidden:r.hidden}));"+
+   "const carry=rows();el('preset-trigger').click();document.querySelector('#preset-options [data-value=\\\"action:pass-pair\\\"]').click();"+
+   "const start=rows(),menu=el('me-performed-player-options'),trigger=el('me-performed-player-trigger'),options=[...menu.querySelectorAll('[role=option]')].map(o=>o.dataset.value);for(let i=0;i<240;i++)el('step').click();"+
+   "const all=rows(),choose=i=>{trigger.click();menu.querySelectorAll('[role=option]')[i].click();};choose(1);const first=rows();"+
+   "trigger.click();menu.dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true}));menu.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));const second=rows();"+
+   "choose(0);const restored=rows();"+
+   "const beforeReset=el('me-performed-panel').getBoundingClientRect().height;el('reset').click();return {carry,start,options,all,first,second,restored,reset:rows(),empty:!el('me-performed-empty').hidden,beforeReset,afterReset:el('me-performed-panel').getBoundingClientRect().height};})()");
+  assert.ok(actionLog.carry.some(x=>x.action==='carry'));
+  assert.ok(actionLog.carry.every(x=>x.player==='away-10'&&x.action==='carry'));
+  assert.deepEqual(actionLog.start,[]);assert.equal(actionLog.options.length,3);
+  assert.ok(actionLog.all.some(x=>x.action==='pass'));
+  assert.ok(actionLog.all.some(x=>x.action==='receiving-contact'));
+  assert.ok(actionLog.all.every(x=>actionLog.options.includes(x.player)&&x.tick>0));
+  assert.equal(new Set(actionLog.all.map(x=>x.tick+'|'+x.player+'|'+x.action)).size,actionLog.all.length);
+  assert.ok(actionLog.all.every((x,i)=>i===0||actionLog.all[i-1].tick>=x.tick));
+  assert.ok(actionLog.first.every(x=>x.hidden===(x.player!==actionLog.options[1])));
+  assert.ok(actionLog.second.every(x=>x.hidden===(x.player!==actionLog.options[2])));
+  assert.deepEqual(actionLog.restored,actionLog.all);
+  assert.deepEqual(actionLog.reset,[]);assert.equal(actionLog.empty,true);
+  assert.ok(Math.abs(actionLog.beforeReset-actionLog.afterReset)<=1);
+  for(const [width,height] of [[1440,900],[390,844]]){
+   await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+   const bounds=await evalJs("(()=>{const r=document.getElementById('pitch').getBoundingClientRect();return {left:r.left,right:r.right,width:innerWidth,scroll:document.documentElement.scrollWidth};})()");
+   assert.ok(bounds.left>=-1&&bounds.right<=bounds.width+1&&bounds.scroll<=bounds.width+1,JSON.stringify(bounds));
+  }
+  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+  // Historical physics and small-sided fixtures keep the same regression coverage.
+  await send('Page.navigate',{url:'http://app.localhost:2000/dev/match-engine?lab=archive'});
   await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===24");
   // Actual canvas pixels: the ball stays centred at the same XY at
   // both 3m and 0m; only the cast shadow darkens an off-centre region.
@@ -434,6 +512,15 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "count:el('me-decisions-count').textContent,ballChartHidden:el('me-elevation-panel').hidden,"+
    "log:el('me-decisions-event-count').textContent};})()");
   assert.equal(carryDecisions.visible,true);
+  const compact=await evalJs("(()=>{const el=id=>document.getElementById(id),d=el('me-observation-details'),p=el('me-decisions-details');return {diagnosticsClosed:!d.open,decisionsClosed:!p.open,summary:el('me-inline-summary').textContent,diagnosticsVisible:!d.hidden};})()");
+  assert.equal(compact.diagnosticsClosed,true);
+  assert.equal(compact.decisionsClosed,true);
+  assert.equal(compact.diagnosticsVisible,true);
+  assert.ok(compact.summary.length>0&&compact.summary.length<80);
+  const expanded=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-observation-details').querySelector('summary').click();el('me-decisions-details').querySelector('summary').click();return {diagnostics:el('me-observation-details').open,decisions:el('me-decisions-details').open,readout:el('me-inline-observation').textContent};})()");
+  assert.equal(expanded.diagnostics,true);
+  assert.equal(expanded.decisions,true);
+  assert.match(expanded.readout,/no official result/);
   assert.equal(carryDecisions.count,'1 on field');
   assert.equal(carryDecisions.rows.length,1);
   assert.equal(carryDecisions.ballChartHidden,true);

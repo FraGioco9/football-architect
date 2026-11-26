@@ -93,7 +93,7 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
     await cmd('Runtime.enable');
     await cmd('Log.enable');
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
-    await cmd('Page.navigate',{url:'http://app.localhost:2000/dev/match-engine'});
+    await cmd('Page.navigate',{url:'http://app.localhost:2000/dev/match-engine?lab=archive'});
     await waitFor("document.readyState==='complete'&&document.querySelector('#advanced-settings')&&document.querySelector('#pitch')");
     await waitFor("document.querySelector('#status')?.textContent?.startsWith('Ready')");
     for(const [width,height] of [[1280,720],[1366,768],[1440,900],[1600,900],[1920,1080]]) {
