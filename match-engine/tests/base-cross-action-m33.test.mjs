@@ -372,7 +372,7 @@ test('SHOT-02 distinct native shot profiles on mirrored empty-goal starts',{time
   if(row.profile==='power')assert.ok(row.launchSpeedMps>=28&&row.launchSpeedMps<=31,JSON.stringify(row));
   if(row.profile==='tap-in'){
    assert.ok(row.distanceM>=0.95&&row.distanceM<=6.05,JSON.stringify(row));
-   assert.ok(row.launchSpeedMps>=1.38&&row.launchSpeedMps<=6.95,JSON.stringify(row));
+   assert.ok(row.launchSpeedMps>=4.16&&row.launchSpeedMps<=9.73,JSON.stringify(row));
    assert.ok(row.peakClearanceM<=0.12,JSON.stringify(row));
   }
   if(row.profile==='placed')assert.ok(Math.abs(row.crossing.position.y)>=2.15&&row.launchSpeedMps<power.launchSpeedMps,JSON.stringify(row));
@@ -427,7 +427,11 @@ test('SHOT-03 tap-in uses all 30 mirrored close starts, authentic one-touch and 
   assert.ok(Math.abs(Math.abs(row.crossing.position.x)-52.61)<1e-8,JSON.stringify(row));
   assert.ok(row.crossing.lateralErrorM<=0.05,JSON.stringify(row));
   assert.equal(row.crossing.officialGoal,false);
-  assert.ok(row.launchSpeedMps>=1.38&&row.launchSpeedMps<=6.95&&row.peakClearanceM<=0.12,JSON.stringify(row));
+  assert.ok(row.launchSpeedMps>=4.16&&row.launchSpeedMps<=9.73&&row.peakClearanceM<=0.12,JSON.stringify(row));
+  const dx=52.5-Math.abs(row.launchPosition.x),dy=row.aimY-row.launchPosition.y;
+  const expectedSpeed=Math.max(4.2,Math.min(9.7,4.0+0.90*Math.hypot(dx+0.11,dy)));
+  assert.ok(Math.abs(row.launchSpeedMps-expectedSpeed)<=0.03,JSON.stringify(row));
+  assert.ok(Math.abs(row.launchSpinRadS-row.launchSpeedMps/0.11)<=1.0,JSON.stringify(row));
  }
 });
 

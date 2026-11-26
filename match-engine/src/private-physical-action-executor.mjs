@@ -390,7 +390,7 @@ export function createPrivatePhysicalActionExecutor({
    if(shotCalibration?.targetAngularVelocity){
     const before=ballBody.angvel(),inertia=ballBody.principalInertia(),target=shotCalibration.targetAngularVelocity;
     const torque={x:(target.x-before.x)*inertia.x,y:(target.y-before.y)*inertia.y,z:(target.z-before.z)*inertia.z};
-    const norm=Math.hypot(...Object.values(torque)),limit=shotCalibration.profile==='low'?1.2:0.25;
+    const norm=Math.hypot(...Object.values(torque)),limit=shotCalibration.profile==='low'?1.2:shotCalibration.profile==='tap-in'?0.40:0.25;
     const scale=norm>limit?limit/norm:1;
     const torqueImpulseNms=Object.freeze({x:torque.x*scale,y:torque.y*scale,z:torque.z*scale});
     ballBody.applyTorqueImpulse(torqueImpulseNms,true);

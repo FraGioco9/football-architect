@@ -2,7 +2,7 @@
 // original Rapier world. Power is the default; other profiles are
 // provisional. No automatic goal, post-launch steering or velocity setters.
 import {magnusLift} from './magnus.mjs';
-export const LAB_SHOT_CALIBRATION_VERSION='lab-shot-profiles-v3';
+export const LAB_SHOT_CALIBRATION_VERSION='lab-shot-profiles-v4';
 export const LAB_SHOT_PROFILES=Object.freeze(['power','low','placed','chip','curled','tap-in']);
 export const LAB_SHOT_LABELS=Object.freeze({power:'Power',low:'Low',placed:'Placed',chip:'Chip',curled:'Curled','tap-in':'Tap-in'});
 const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
@@ -49,9 +49,11 @@ export function calculateCurrentLabShotCalibration({target,position,velocity,mas
  let speed=clamp(18+0.30*distanceM,20,28),targetCentreZM=0.90;
  if(profile==='low'){speed=clamp(19+0.14*distanceM,20,24);targetCentreZM=ballRadiusM;}
  if(profile==='power'){speed=29;targetCentreZM=0.65;}
- // Gentle finish. Distance-dependent launch with margin for observed
- // grass/solver losses; no automatic goal or post-contact boost.
- if(profile==='tap-in'){speed=clamp(2.1+0.55*fullDistance,2.5,6.0);targetCentreZM=ballRadiusM;}
+ // Decisive close finish, not necessarily a gentle touch. Retain centre
+ // lane and ground trajectory. Future player attributes should introduce
+ // low directional/power dispersion for open-goal Tap-in, not an imposed
+ // scoring probability. No attribute model or automatic goal yet.
+ if(profile==='tap-in'){speed=clamp(4.0+0.90*fullDistance,4.2,9.7);targetCentreZM=ballRadiusM;}
  if(profile==='placed'){speed=clamp(15+0.22*distanceM,17,23);targetCentreZM=0.80;}
  if(profile==='chip'){speed=fullDistance/clamp(1.40+distanceM*0.024,1.60,2.25);targetCentreZM=1.35;}
  if(profile==='curled'){speed=clamp(18+0.16*distanceM,20,24);targetCentreZM=1.00;}
