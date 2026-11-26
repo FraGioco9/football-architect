@@ -59,12 +59,11 @@
                     </div>
                   </div>
                 </div>
-                <button id="me-compact-side" class="me-button me-compact-control" type="button" aria-label="Switch side (HOME)" title="Switch HOME / AWAY" disabled>HOME</button>
-                <div class="me-speed-control me-inline-side-control" id="me-inline-side-control" hidden>
+                <div class="me-speed-control me-inline-side-control" id="me-inline-side-control">
                   <span class="me-field-label" id="me-inline-side-label">Side</span>
                   <div class="language-control me-dropdown" data-me-dropdown="inline-side">
                     <input type="hidden" id="me-inline-side" value="home">
-                    <button type="button" class="language-trigger" id="me-inline-side-trigger" role="combobox" aria-labelledby="me-inline-side-label me-inline-side-value" aria-haspopup="listbox" aria-controls="me-inline-side-options" aria-expanded="false">
+                    <button type="button" class="language-trigger" id="me-inline-side-trigger" disabled role="combobox" aria-labelledby="me-inline-side-label me-inline-side-value" aria-haspopup="listbox" aria-controls="me-inline-side-options" aria-expanded="false">
                       <span id="me-inline-side-value">HOME</span>
                       <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
@@ -104,12 +103,11 @@
                   <button id="step" class="me-button" type="button" disabled>Step</button>
                   <button id="reset" class="me-button" type="button" disabled>Reset</button>
                 </div>
-                <button id="me-compact-speed" class="me-button me-compact-control" type="button" aria-label="Change playback speed (1×)" title="Cycle playback speed" disabled>1×</button>
                 <div class="me-speed-control" id="me-speed-dropdown">
                   <span class="me-field-label" id="speed-label">Speed</span>
                   <div class="language-control me-dropdown" data-me-dropdown="speed">
                     <input id="speed" type="hidden" value="1">
-                    <button type="button" class="language-trigger" id="speed-trigger" role="combobox" aria-labelledby="speed-label speed-value" aria-haspopup="listbox" aria-controls="speed-options" aria-expanded="false">
+                    <button type="button" class="language-trigger" id="speed-trigger" disabled role="combobox" aria-labelledby="speed-label speed-value" aria-haspopup="listbox" aria-controls="speed-options" aria-expanded="false">
                       <span id="speed-value">1×</span>
                       <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
@@ -135,6 +133,14 @@
               </div>
               <details id="me-observation-details" class="me-compact-details me-observation-details">
                 <summary>Diagnostics</summary>
+                <dl id="me-active-metrics" class="me-active-metrics" aria-live="off">
+                  <div><dt id="me-metric-label-0">—</dt><dd id="me-metric-value-0">—</dd></div>
+                  <div><dt id="me-metric-label-1">—</dt><dd id="me-metric-value-1">—</dd></div>
+                  <div><dt id="me-metric-label-2">—</dt><dd id="me-metric-value-2">—</dd></div>
+                  <div><dt id="me-metric-label-3">—</dt><dd id="me-metric-value-3">—</dd></div>
+                  <div><dt id="me-metric-label-4">—</dt><dd id="me-metric-value-4">—</dd></div>
+                  <div><dt id="me-metric-label-5">—</dt><dd id="me-metric-value-5">—</dd></div>
+                </dl>
                 <div id="me-inline-observation" class="me-inline-observation" aria-live="off" hidden></div>
               </details>
               <section id="player-controls" class="me-player-controls" aria-label="ME-PLAYER-01 autonomous team movement" hidden>

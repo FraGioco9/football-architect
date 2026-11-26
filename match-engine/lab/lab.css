@@ -235,23 +235,19 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-compact-details>.me-decisions-players{margin-top:8px}
 .me-compact-details>.me-decisions-log{margin-top:9px}
 
-/* Active gameplay LAB has one scenario picker. Historical experiments keep their own controls. */
-.me-compact-control[hidden]{display:none!important}
+/* Active gameplay LAB uses the standard site dropdowns. */
 .me-modern-lab .me-layout{grid-template-columns:minmax(0,1fr)}
 .me-modern-lab .me-side{display:none}
-.me-modern-lab #me-inline-side-control,.me-modern-lab #me-speed-dropdown,.me-modern-lab .me-inline-rating-control,.me-modern-lab .me-ball-state{display:none!important}
+.me-modern-lab .me-inline-rating-control,.me-modern-lab .me-ball-state,.me-modern-lab #me-inline-observation{display:none!important}
 .me-modern-lab .me-toolbar{align-items:center;gap:6px}
 .me-modern-lab .me-toolbar .me-field-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .me-modern-lab .me-preset-control{flex:1 1 200px}
-.me-modern-lab .me-compact-control{min-width:54px}
-.me-modern-lab #me-decisions-panel{margin-top:10px;border:0;padding:0;background:transparent;box-shadow:none}
 .me-modern-lab .me-status[data-ready="true"]:not(.error){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .me-modern-lab .me-at-a-glance{gap:5px 12px}
 @media(max-width:510px){
  .me-modern-lab .me-toolbar>.me-preset-control{flex:1 1 100%}
  .me-modern-lab .me-toolbar>.me-button-group{order:2;flex-basis:100%}
  .me-modern-lab .me-variant-control{order:1}
- .me-modern-lab #me-compact-side,.me-modern-lab #me-compact-speed{order:1}
 }
 
 /* Stable active LAB first paint. The static document uses the final layout
@@ -271,15 +267,17 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
  overflow:hidden;clip-path:inset(50%);white-space:nowrap;
 }
 .me-modern-lab .me-toolbar{
- display:grid;grid-template-columns:minmax(0,1fr) 64px 144px 60px 232px;
+ display:grid;grid-template-columns:minmax(0,1fr) 94px 144px 80px 232px;
  grid-template-areas:"scenario side variant speed transport";align-items:stretch;gap:6px;
 }
 .me-modern-lab .me-toolbar>.me-preset-control{grid-area:scenario;min-width:0;display:block}
 .me-modern-lab #preset-trigger{height:36px;min-height:36px}
 .me-modern-lab #preset-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .me-modern-lab #preset-trigger svg{flex:none}
-.me-modern-lab #me-compact-side{grid-area:side}
-.me-modern-lab #me-compact-speed{grid-area:speed}
+.me-modern-lab #me-inline-side-control{grid-area:side;min-width:0;display:block}
+.me-modern-lab #me-speed-dropdown{grid-area:speed;min-width:0;display:block}
+.me-modern-lab .me-toolbar .language-trigger{height:36px;min-height:36px;padding-inline:8px;box-sizing:border-box}
+.me-modern-lab .me-toolbar .language-trigger svg{flex:none}
 .me-modern-lab #me-inline-variant-control{grid-area:variant;min-width:0;display:block}
 .me-modern-lab #me-inline-variant-control[hidden]{display:none!important}
 .me-modern-lab .me-variant-buttons{display:grid;grid-template-columns:34px minmax(0,1fr) 48px;gap:4px}
@@ -312,10 +310,18 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
  .me-modern-lab .me-main-panel{width:100%}
 }
 @container (max-width:740px){
- .me-modern-lab .me-toolbar{grid-template-columns:minmax(0,1fr) 64px 144px 60px;
+ .me-modern-lab .me-toolbar{grid-template-columns:minmax(0,1fr) 94px 144px 80px;
  grid-template-areas:"scenario side variant speed" "transport transport transport transport"}
 }
 @container (max-width:420px){
- .me-modern-lab .me-toolbar{grid-template-columns:minmax(0,1fr) 144px minmax(0,1fr);
+ .me-modern-lab .me-toolbar{grid-template-columns:minmax(0,1fr) 112px minmax(0,1fr);
  grid-template-areas:"scenario scenario scenario" "side variant speed" "transport transport transport"}
 }
+
+/* One flat, compact diagnostic disclosure; archive retains full research text. */
+.me-active-metrics{display:none;margin:8px 0 0;gap:8px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.me-modern-lab .me-active-metrics{display:grid}
+.me-active-metrics>div{min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:var(--fa-radius-control)}
+.me-active-metrics dt{font-size:11px;color:var(--muted);line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.me-active-metrics dd{margin:2px 0 0;color:var(--text);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@container (max-width:420px){.me-modern-lab .me-active-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
