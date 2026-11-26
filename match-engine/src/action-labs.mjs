@@ -39,7 +39,7 @@ export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
  controlSide='home',controlDecisionEnabled=true,
  challengeSide='away',challengeScene='contact',variantIndex=0,
- bodyGuardEnabled=false,soloShoeWidthScale=1,
+ bodyGuardEnabled=false,keeperSingleShot=false,soloShoeWidthScale=1,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
@@ -98,6 +98,8 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('First-time start requires isolated shooter');
  if(!LAB_SHOT_PROFILES.includes(shotProfile)||(shotProfile!=='power'&&id!=='shot-solo'))
   throw new TypeError('Shot profile requires isolated shooter');
+ if(typeof keeperSingleShot!=='boolean'||(keeperSingleShot&&(id!=='keeper-1v1'||!bodyGuardEnabled)))
+  throw new TypeError('Single-shot exercise requires native keeper duel');
  if(typeof bodyGuardEnabled!=='boolean'||
     (bodyGuardEnabled&&(spec.mode!=='situation'||['pass-pair','cross-pair','shot-solo'].includes(id))))
   throw new TypeError('Native body-contact exercise only in a small-sided situation');
@@ -243,6 +245,7 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride
    }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
+   diagnosticKeeperSingleShot:keeperSingleShot,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
   }:{}),
   ...(refereeMode?{diagnosticBasicRestartEnabled:true}:{}),
@@ -928,7 +931,7 @@ export function createControlledActionLab(RAPIER,id,{
    spec.mode==='control'?firstPhysicalPassAction:null,
    reachExperiment?engine.researchReceiverTapSnapshot():null,
    (goalkeeperSave||id==='carry-solo'||id==='keeper-1v1')?prior.ball.velocity:null,
-   id==='keeper-1v1'&&bodyGuardEnabled&&latest.keeperShotAudit?.reboundTick!=null&&
+   id==='keeper-1v1'&&!keeperSingleShot&&bodyGuardEnabled&&latest.keeperShotAudit?.reboundTick!=null&&
     !latest.keeperShotAudit.crossing&&!latest.keeperDive?.catchState?.active?
      {tick:prior.tick,reboundTick:latest.keeperShotAudit.reboundTick}:null);
   const initialAfter=engine.step(frame);

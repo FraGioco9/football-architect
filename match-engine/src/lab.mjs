@@ -94,7 +94,7 @@ function recordPerformedActions(frame){
  // First receiving contacts are actual native observations, not inferred
  // completed passes or successful possession. They have their own actor.
  const dive=frame.keeperDive;
- if(dive?.tick===tick&&dive.started)events.push({id:dive.keeperId,kind:'dive',label:'Dive'});
+ if(dive?.tick===tick&&dive.started)events.push({id:dive.keeperId,kind:dive.plan?.kind==='challenge'?'challenge':'dive',label:dive.plan?.kind==='challenge'?'Challenge':'Dive'});
  if(dive?.tick===tick&&dive.contactStarted)events.push({id:dive.keeperId,kind:'glove-contact',label:'Glove contact'});
  const keeper=frame.keeperShotAudit;
  if(keeper?.deflection?.tick===tick)events.push({id:keeper.keeperId,kind:'deflection',label:'Deflection'});
@@ -339,6 +339,7 @@ function restart() {
       createControlledActionLab(rapier,id,{shotSide:side,
        variantIndex:activeVariantIndex,shotProfile:activeScene.shotProfile??'power',firstTimeShot:activeScene.firstTimeShot===true,
        bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair'&&id!=='shot-solo',
+       keeperSingleShot:!archiveMode&&id==='keeper-1v1',
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
        // Leave the original ordinary 22-player physics unmodified.
@@ -396,10 +397,17 @@ function restart() {
   say('Ready · ' + ({drop:'Ball Drop',launch:'Ball Launch',roll:'Ball Roll (Grass)',bounce:'Ball Bounce (2 m)'}[engine.scenario.preset]));
   render();
 }
+function keeperSingleShotFinished(frame){
+ const audit=frame?.keeperShotAudit;
+ if(archiveMode||activeScene?.id!=='keeper-1v1'||!audit)return false;
+ if(frame.keeperDive?.catchState?.active&&frame.keeperDive.catchState.confirmedTick!==null)return true;
+ return audit.shotTick!==null&&(
+  (audit.reboundTick!==null&&frame.physicsTick-audit.reboundTick>=24)||frame.physicsTick-audit.shotTick>=240);
+}
 function advance() {
   if(activeLab){
     const old=activeLab.snapshot();
-    if(activeScene.kind==='action'&&old.refereeEvidence?.lastEvent){
+    if(activeScene.kind==='action'&&(old.refereeEvidence?.lastEvent||keeperSingleShotFinished(old))){
       playing=false;return;
     }
     const observed=activeLab.step();
@@ -417,7 +425,9 @@ function advance() {
     physicsTickSnapshot=snapshot;
     history.push(snapshot);
     if(history.length>1400)history.shift();
-    if(observed.keeperDive?.catchState?.active&&observed.keeperDive.catchState.confirmedTick!==null){
+    if(keeperSingleShotFinished(observed)){
+      playing=false;say('Exercise complete · Reset for another attempt');
+    }else if(observed.keeperDive?.catchState?.active&&observed.keeperDive.catchState.confirmedTick!==null){
       playing=false;say('Ball held · Reset for another exercise');
     }
     if(activeScene.kind==='action'&&observed.refereeEvidence?.lastEvent){
@@ -434,8 +444,8 @@ function advance() {
   if (history.length > 1400) history.shift();
 }
 function play() {
-  if(activeScene?.kind==='action'&&activeLab?.snapshot().refereeEvidence?.lastEvent){
-    playing=false;say('Dead ball · Reset to retry the real Rapier exercise');
+  if(activeScene?.kind==='action'&&(activeLab?.snapshot().refereeEvidence?.lastEvent||keeperSingleShotFinished(activeLab?.snapshot()))){
+    playing=false;say('Exercise complete · Reset to retry');
     return;
   }
   playing = true; say('Running');
@@ -452,13 +462,6 @@ function drawInlinePlayers(ctx,X,Y){
  for(const p of all){
   if(focus&&!focus.has(p.id))continue;
   const x=X(p.x),y=Y(p.y);
-  const dive=frame.keeperDive;
-  if(dive?.keeperId===p.id&&dive.glove){
-   const gx=X(dive.glove.x),gy=Y(dive.glove.y);
-   ctx.save();ctx.strokeStyle=p.team==='home'?'#a8dfff':'#ffb39a';
-   ctx.lineWidth=12;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(gx,gy);ctx.stroke();
-   ctx.fillStyle='#fbdfaa';ctx.beginPath();ctx.arc(gx,gy,4,0,Math.PI*2);ctx.fill();ctx.restore();
-  }
   ctx.beginPath();ctx.arc(x,y,p.role==='goalkeeper'?LAB_MARKER_RADII_PX.goalkeeper:LAB_MARKER_RADII_PX.player,0,Math.PI*2);
   ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
   ctx.fill();ctx.strokeStyle=p.role==='goalkeeper'?'#fbdfaa':'#183f36';
@@ -716,11 +719,12 @@ function render() {
     const keeper=f.keeperShotAudit;
     const summary=keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
-       f.keeperDive?.catchState?.active&&keeper.catchTick!==null?'Ball held':
+       f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':
        f.keeperDive?.catchState?.active?'Securing ball':
        keeper.secondShotTick===f.physicsTick?'Rebound shot':keeper.reboundRecoveryTick!==null?'Rebound contact':
        keeper.reboundTick!==null?'Live rebound':keeper.deflection?'Deflection observed':
        keeper.gloveContactTick!==null?'Glove contact':keeper.parryTick!==null?'Parry observed':
+       f.keeperDive?.phase==='challenging'?'Keeper challenge':
        f.keeperDive?.phase==='diving'?'Diving':keeper.keeperContactTick!==null?'Keeper contact':
        keeper.shots?'Shot observed':'Waiting for shot'):
       shot?
@@ -749,7 +753,7 @@ function renderActiveMetrics(f){
    ['Keeper contact',n(keeper.keeperContactTick===null?null:keeper.keeperContactTick*FIXED_DT,' s')],
    ['Deflection',keeper.deflection?({reversed:'Reversed',redirected:'Redirected',slowed:'Slowed'})[keeper.deflection.kind]:keeper.parryTick!==null?'Foot parry':'—'],
    ['Rebound',n(keeper.reboundTick===null?null:(keeper.reboundTick-keeper.shotTick)*FIXED_DT,' s')],
-   ['Result',keeper.crossing?(keeper.crossing.kind==='goal'?'Goal':'Ball out'):f.keeperDive?.catchState?.active&&keeper.catchTick!==null?'Ball held':keeper.reboundTick!==null?'Ball in play':'—']];
+   ['Result',keeper.crossing?(keeper.crossing.kind==='goal'?'Goal':'Ball out'):f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':keeper.reboundTick!==null?'Ball in play':'—']];
  }else if(shot){
   entries=[['Distance',n(shot.distanceM,' m')],['Launch speed',speed(shot.attempted?shot.launchSpeedMps:null)],
    ['Peak height',n(shot.attempted?shot.peakClearanceM:null,' m')],

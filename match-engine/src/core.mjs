@@ -134,6 +134,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticNativeFixedCarryResearchEnabled = false,
   diagnosticNativeFixedSprintLongStrideEnabled = false,
   diagnosticSmallSidedBodyGuardEnabled = false,
+  diagnosticKeeperSingleShot = false,
    diagnosticSmallSidedBodyFeedbackEnabled = false,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
@@ -258,6 +259,9 @@ export function createEngine(RAPIER, input = {}, {
       diagnosticPlayerBodyCollidersEnabled||
       diagnosticSharedContactEventsEnabled)))
    throw new TypeError('LAB body collision requires a small-sided exercise with actual shoe source');
+  if(typeof diagnosticKeeperSingleShot!=='boolean'||(diagnosticKeeperSingleShot&&
+     (diagnosticSmallSidedSituation!=='keeper-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
+   throw new TypeError('Single-shot exercise requires the native keeper duel');
   if(diagnosticSmallSidedSituation!==null){
    smallSidedSetup(diagnosticSmallSidedSituation,
     diagnosticSmallSidedSide,INITIAL_PLAYERS,
@@ -622,7 +626,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticSoloSprintActiveFootReleaseM,
     diagnosticIntentDrivenSoloCarryEnabled,
     diagnosticNativeFixedCarryResearchEnabled,
-    diagnosticSmallSidedBodyGuardEnabled,
+    diagnosticSmallSidedBodyGuardEnabled,diagnosticKeeperSingleShot,
      diagnosticSmallSidedBodyFeedbackEnabled,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
@@ -722,7 +726,8 @@ export function createEngine(RAPIER, input = {}, {
       }:{})
      }):null;
   const keeperDive=smallBodyGuard&&smallSided?.id==='keeper-1v1'?
-   createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1'),body):null;
+   createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1'),body,
+    {closeChallengeEnabled:diagnosticKeeperSingleShot}):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
@@ -768,6 +773,7 @@ export function createEngine(RAPIER, input = {}, {
     }, true);
   if(magnusSpin)body.setAngvel(magnusSpin,true);
   let tick = 0;
+  let keeperSingleShotTick=null;
   let curledShotFlight=false;
   let disposed = false;
   let basicRestartTick = -1;
@@ -937,12 +943,19 @@ export function createEngine(RAPIER, input = {}, {
     // START. The ordinary physics and contact-only modes never kick.
     if(actionExecutor)actionExecutor.apply(tick,playerFrame,{
       ...(diagnosticFirstTimeShot?{priorNativeBallVelocity:preStepBall.velocity}:{}),
-      suppressOriginalAction:diagnosticB06bNativeShotSide!==null&&(
+      suppressOriginalAction:(diagnosticB06bNativeShotSide!==null&&(
        b06bGoalPending!==null||
-       (b06bHalftimePlacement!==null&&b06bKickoff===null)),
+       (b06bHalftimePlacement!==null&&b06bKickoff===null)))||
+       (diagnosticKeeperSingleShot&&keeperSingleShotTick!==null&&
+        shoeBridge.snapshot().started.includes(smallSided.side+'-10')),
       suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
        .lowerLegBallContacts.length>0||keeperDive?.snapshot().contact===true||keeperDive?.snapshot().catchState?.active===true
     });
+    if(diagnosticKeeperSingleShot&&keeperSingleShotTick===null){
+     const shot=actionExecutor?.actionSnapshot();
+     if(shot?.tick===tick&&shot.action==='shot'&&shot.playerId===smallSided.side+'-10'&&
+       shot.appliedByRapier===true&&shot.actualPhysicsImpulseApplied===true)keeperSingleShotTick=tick;
+    }
     if(diagnosticIsolatedShotProfile==='curled'){
      if(shoeBridge.snapshot().started.length)curledShotFlight=false;
      const shot=actionExecutor.actionSnapshot();

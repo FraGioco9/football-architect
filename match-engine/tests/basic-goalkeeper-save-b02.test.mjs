@@ -13,7 +13,7 @@ import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction}
 import {initializeRapier,FIXED_DT} from '../src/core.mjs';
 import {advanceGoalkeeperBallOrientation} from '../src/individual-kinematics.mjs';
 import {keeperDuelReboundTarget} from '../src/small-sided-lab-scenarios.mjs';
-import {planNativeKeeperDive,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip} from '../src/small-sided-native-body-guard.mjs';
+import {planNativeKeeperDive,planNativeKeeperChallenge,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip} from '../src/small-sided-native-body-guard.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
 function candidate(side,players,ball,active=[side+'-1'],started=active){
@@ -383,5 +383,60 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
    const travel=Math.hypot(fast.target.y-fast.start.y,fast.target.z-fast.start.z);
    assert.ok(travel<=2.65+1e-8);assert.ok(travel/(fast.reachTicks*FIXED_DT)<=8.5+1e-8);
    assert.equal(planNativeKeeperDive(keeper,make(9,6,9)),null);
+  }
+ });
+
+ test('GK-07 close keeper challenge needs real nearby attacker and reachable ball in penalty area',()=>{
+  for(const team of ['home','away']){
+   const dir=team==='home'?1:-1,keeper={id:team+'-1',team,x:-dir*48,y:0};
+   const attacker={id:(team==='home'?'away':'home')+'-10',team:team==='home'?'away':'home',x:keeper.x+dir*1.5,y:0};
+   const ball={position:{x:keeper.x+dir*0.8,y:0,z:0.11},velocity:{x:0,y:0,z:0}};
+   assert.ok(planNativeKeeperChallenge(keeper,attacker,ball));
+   assert.equal(planNativeKeeperChallenge(keeper,{...attacker,y:6},ball),null);
+   assert.equal(planNativeKeeperChallenge(keeper,attacker,{...ball,velocity:{x:-dir*18,y:0,z:0}}),null);
+   assert.equal(planNativeKeeperChallenge({...keeper,x:-dir*30},attacker,ball),null);
+  }
+ });
+ test('GK-07 native pre-shot keeper challenge makes physical contact without a shot',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const team of ['home','away']){
+   const dir=team==='home'?1:-1,keeper={id:team+'-1',team,x:-dir*48,y:0};
+   const attacker={id:(team==='home'?'away':'home')+'-10',team:team==='home'?'away':'home',x:keeper.x+dir*1.5,y:0};
+   const world=new R.World({x:0,y:0,z:0});world.timestep=FIXED_DT;
+   const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(keeper.x+dir*0.8,0,0.21).setCcdEnabled(true));
+   const collider=world.createCollider(R.ColliderDesc.ball(0.11).setMass(0.43),body);
+   const dive=createNativeKeeperDive(R,world,collider,keeper,null,{closeChallengeEnabled:true});
+   let attempt=false,contact=false;
+   try{
+    for(let tick=1;tick<=40;tick++){
+     dive.prepare({players:[keeper,attacker]},tick,{position:body.translation(),velocity:body.linvel()},null);
+     world.step();const f=dive.observe(tick,body.linvel());
+     if(f.started){assert.equal(f.plan.kind,'challenge');attempt=true;}
+     if(f.contactStarted)contact=true;
+     assert.equal(f.officialSave,false);
+    }
+    assert.ok(attempt);assert.ok(contact,'real solver contact without prior shot');
+   }finally{world.free();}
+  }
+ });
+ test('GK-07 active single-shot duel never executes a second attacking shot',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let observedShots=0;
+   for(const variantIndex of [0,4,11,19]){
+    const scene=createControlledActionLab(R,'keeper-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,keeperSingleShot:true});
+    try{
+     let shotTick=null;
+     for(let n=0;n<600;n++){
+      const f=scene.step();
+      if(f.action?.action==='shot'&&f.action.playerId===side+'-10'){
+       assert.equal(shotTick,null,'only one authentic attacking strike');shotTick=f.physicsTick;observedShots++;
+      }
+      assert.ok(f.keeperShotAudit.shots<=1);
+      if(f.refereeEvidence?.lastEvent||f.keeperDive?.catchState?.confirmedTick!=null)break;
+     }
+    }finally{scene.dispose();}
+   }
+   assert.ok(observedShots>0,side+' active duel must preserve authentic shots');
   }
  });
