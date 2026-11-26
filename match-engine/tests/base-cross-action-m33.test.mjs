@@ -534,6 +534,19 @@ test('SHOT-05 first-time ground deliveries use real incoming momentum and one na
   assert.ok(row.crossing?.fullBallCrossed,JSON.stringify(row));
   assert.equal(row.crossing.officialGoal,false);
   assert.ok((row.side==='home'?1:-1)*row.launchVelocity.x>0,JSON.stringify(row));
+  assert.equal(row.postStrikeSamples.length,6,JSON.stringify(row));
+  for(const [i,sample] of row.postStrikeSamples.entries()){
+   assert.equal(sample.tick,row.launchTick+i+1);
+   if(row.profile==='tap-in')assert.equal(sample.nativeShotRelease,null);
+   else{
+    const release=sample.nativeShotRelease;
+    assert.equal(release.source,'native-shoe-recovery-v1');
+    assert.equal(release.strikeTick,row.launchTick);
+    assert.equal(release.actorId,row.shooterId);
+    assert.equal(release.colliderRetained,true);
+    assert.ok(release.speedMps<=7+1e-3,JSON.stringify(row));
+   }
+  }
   if(row.profile==='tap-in'){
    assert.ok(row.crossing.goal&&row.crossing.scoringTeam===row.side,JSON.stringify(row));
    assert.ok(row.peakClearanceM<=0.15&&row.crossing.lateralErrorM<=0.35,JSON.stringify(row));

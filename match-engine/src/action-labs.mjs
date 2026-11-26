@@ -792,13 +792,20 @@ export function createControlledActionLab(RAPIER,id,{
     shotSoloAudit=Object.freeze({...shotSoloAudit,attempted:true,launchTick:physics.tick,
      shooterId:nativeAction.playerId,distanceM:c.distanceM,aimY:c.targetY,
       targetSelection:c.targetSelection,
-       ...(nativeAction.firstTimeShotEvidence?{firstTimeEvidence:nativeAction.firstTimeShotEvidence}:{}),
+       ...(nativeAction.firstTimeShotEvidence?{firstTimeEvidence:nativeAction.firstTimeShotEvidence,
+         postStrikeSamples:Object.freeze([])}:{}),
       launchPosition:Object.freeze({...physics.ball.position}),launchVelocity:Object.freeze({...physics.ball.velocity}),
       launchSpinRadS:Math.hypot(...Object.values(engine.angularVelocity())),
      aimCentreZM:c.targetCentreZM,launchSpeedMps:Math.hypot(...Object.values(physics.ball.velocity))});
    }
    if(shotSoloAudit.attempted&&!shotSoloAudit.crossing){
     const e=refereeEvidence?.lastEvent;
+    const postStrikeSamples=firstTimeShot&&physics.tick>shotSoloAudit.launchTick&&
+     physics.tick<=shotSoloAudit.launchTick+6?Object.freeze([...shotSoloAudit.postStrikeSamples,
+     Object.freeze({tick:physics.tick,ballVelocity:Object.freeze({...physics.ball.velocity}),
+      active:foot.active,ended:foot.ended,
+      solverPair:engine.footContactSolverSnapshot()?.pairs.find(p=>p.id===shotSoloAudit.shooterId)??null,
+      nativeShotRelease:foot.nativeShotRelease??null})]):shotSoloAudit.postStrikeSamples;
     const crossing=e&&e.tick>=shotSoloAudit.launchTick?Object.freeze({
      tick:e.tick,timeS:(e.tick-shotSoloAudit.launchTick)*FIXED_DT,
      kind:e.kind,position:e.crossing.intersection,goal:e.kind==='goal',
@@ -807,6 +814,7 @@ export function createControlledActionLab(RAPIER,id,{
      heightErrorM:Math.abs(e.crossing.intersection.z-shotSoloAudit.aimCentreZM),
      originalRapierSource:true,officialGoal:false}):null;
     shotSoloAudit=Object.freeze({...shotSoloAudit,
+     ...(firstTimeShot?{postStrikeSamples}:{}),
      peakClearanceM:Math.max(shotSoloAudit.peakClearanceM,Math.max(0,physics.ball.position.z-0.11)),
       maxLateralBendM:Math.max(shotSoloAudit.maxLateralBendM,Math.abs(
        (physics.ball.position.y-shotSoloAudit.launchPosition.y)*shotSoloAudit.launchVelocity.x-

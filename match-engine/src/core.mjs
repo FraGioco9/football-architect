@@ -687,6 +687,8 @@ export function createEngine(RAPIER, input = {}, {
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes,
      {...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
+      ...(diagnosticFirstTimeShot&&diagnosticIsolatedShotProfile!=='tap-in'?
+       {firstTimeShotReleaseId:smallSided.side+'-10'}:{}),
       ...(isolatedCarry?{
        isolatedGroundDribbleBallCentreZ:BALL_RADIUS,
        dribbleAttackerId:smallSided.side+'-10',
@@ -833,7 +835,10 @@ export function createEngine(RAPIER, input = {}, {
     // Private current Rapier state is captured before the only world.step().
     // The bridge never manufactures an event, impulse or match possession.
     const preStepBall=shoeBridge?snapshot().ball:null;
-    if(shoeBridge)shoeBridge.prepare(playerFrame,tick+1,preStepBall);
+    const previousStrike=diagnosticFirstTimeShot&&diagnosticIsolatedShotProfile!=='tap-in'?
+     actionExecutor?.actionSnapshot():null;
+    if(shoeBridge)shoeBridge.prepare(playerFrame,tick+1,preStepBall,
+     previousStrike?.firstTimeShotEvidence?previousStrike:null);
     if(bodyBridge)bodyBridge.prepare(playerFrame,tick+1);
     if(smallBodyGuard)smallBodyGuard.prepare(playerFrame,tick+1);
     // User forces are persistent in Rapier. Clear the previous tick's drag
