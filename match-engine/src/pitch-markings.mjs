@@ -3,6 +3,44 @@
 export const PITCH_LENGTH_M = 105;
 export const PITCH_WIDTH_M = 68;
 
+// Presentation-only marker sizes in the original canvas coordinate space.
+// Physical player and ball dimensions remain in their Rapier modules.
+export const LAB_MARKER_RADII_PX=Object.freeze({
+ player:10,goalkeeper:11,pressing:11.5,ball:4.5
+});
+
+// The white ball stays at the exact observed XY and approved size.
+// A diagonal cast shadow separates smoothly with real underside clearance;
+// this is illustrative lighting, not a second ball or a landing prediction.
+export function labBallMarkerGeometry(width,height,position,clearanceM){
+ if(!position||![position.x,position.y,clearanceM].every(Number.isFinite)||clearanceM<0)
+  throw new TypeError('Finite observed ball XY and clearance required');
+ const {X,Y}=pitchProjection(width,height);
+ const x=X(position.x),y=Y(position.y);
+ const heightCue=Math.min(7.5,clearanceM);
+ const airborne=clearanceM>=0.10;
+ return Object.freeze({x,y,radius:LAB_MARKER_RADII_PX.ball,
+  airborne,clearanceM,shadowX:x+heightCue*4,shadowY:y+heightCue*6,
+  shadowAlpha:0.38-0.12*heightCue/7.5});
+}
+
+export function drawLabBallMarker(ctx,width,height,position,clearanceM){
+ const b=labBallMarkerGeometry(width,height,position,clearanceM);
+ ctx.save();
+ if(b.airborne){
+  // Small soft-edged cast shadow; no tether, height label or XY offset
+  // of the white marker. The existing height readout remains exact.
+  ctx.fillStyle='rgba(0,0,0,'+(b.shadowAlpha*0.45)+')';
+  ctx.beginPath();ctx.ellipse(b.shadowX,b.shadowY,6,4,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,'+b.shadowAlpha+')';
+  ctx.beginPath();ctx.ellipse(b.shadowX,b.shadowY,4,2.6,0,0,Math.PI*2);ctx.fill();
+ }
+ ctx.fillStyle='#ffffff';ctx.strokeStyle='#202f2b';ctx.lineWidth=1.5;
+ ctx.beginPath();ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);ctx.fill();ctx.stroke();
+ ctx.restore();
+ return b;
+}
+
 export function pitchProjection(width, height, padding = 22) {
   if (![width, height, padding].every(Number.isFinite) ||
       width <= padding * 2 || height <= padding * 2 || padding < 0)
