@@ -32,9 +32,9 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  // Rapier CONTROL world. No duplicate shoe bridge or autonomous policy.
  const actionSession=usesOriginalControl?
   createControlledActionLab(RAPIER,'control',{
+   controlSide:side,
    // Archived M4/M5 measurement of the original pass, not current gameplay.
    historicalEvidenceBaseline:true,
-   controlSide:side,
    ...(physicalContest?{controlScene:'opponent-first'}:{})
   }):null;
  // M10 keeps the ordinary 22-player lineup and original autonomous
