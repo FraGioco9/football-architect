@@ -12,7 +12,7 @@ import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {smallSidedSetup,keeperDuelAttackerTarget,keeperDuelReboundTarget,
- keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget} from './small-sided-lab-scenarios.mjs';
+ keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planCollectiveApproaches} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -1686,7 +1686,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bGoalRestartEnabled'&&
      k!=='researchB06bNativeShotSide'&&
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
-     k!=='researchSmallSidedVariantIndex'&&k!=='researchShoulderStart'&&k!=='researchInterceptionStart'&&k!=='researchBlockStart'&&k!=='researchTapInStart'&&k!=='researchFirstTimeShot'&&
+     k!=='researchSmallSidedVariantIndex'&&k!=='researchCollectiveApproaches'&&k!=='researchShoulderStart'&&k!=='researchInterceptionStart'&&k!=='researchBlockStart'&&k!=='researchTapInStart'&&k!=='researchFirstTimeShot'&&
      k!=='researchCarryRunwayStart'&&
      k!=='researchNativeFixedCarry'&&
      k!=='researchSoloSprintPursuitLeadM'&&
@@ -1840,6 +1840,7 @@ export function createPlayerMovement(options={}){
       options.researchBodyEncounter!==undefined||
       Reflect.ownKeys(options).length!==
        (options.researchSmallSidedVariantIndex===undefined?2:3)+
+        (options.researchCollectiveApproaches===true?1:0)+
         (options.researchShoulderStart===true?1:0)+
         (options.researchInterceptionStart===true?1:0)+
         (options.researchBlockStart===true?1:0)+
@@ -1863,6 +1864,7 @@ export function createPlayerMovement(options={}){
      options.researchNativeFixedCarry!==true||
      options.researchSoloCarryLockedPhase!=='sprint'||
      options.researchCarryRunwayStart!==true))||
+    (options.researchCollectiveApproaches!==undefined&&(options.researchCollectiveApproaches!==true||options.researchSmallSidedSituation!=='overload-2v1'||options.researchSmallSidedBodyFeedback!==true))||
     (options.researchBlockStart!==undefined&&(options.researchBlockStart!==true||options.researchSmallSidedSituation!=='defender-1v1'||options.researchSmallSidedBodyFeedback!==true))||
     (options.researchInterceptionStart!==undefined&&(options.researchInterceptionStart!==true||options.researchShoulderStart!==undefined||options.researchSmallSidedSituation!=='pass-pair'))||
     (options.researchShoulderStart!==undefined&&(options.researchShoulderStart!==true||options.researchSmallSidedSituation!=='dribble-1v1'||options.researchSmallSidedBodyFeedback!==true))||
@@ -2614,6 +2616,7 @@ export function createPlayerMovement(options={}){
     contact:duelTransition?.lastIntervention??null});
   }
   const shoulderBalance=directedDribble?Object.fromEntries(players.map(p=>[p.id,planShoulderBalanceRecovery(p,duelTransition,tick+1)])):{};
+  const collectiveApproaches=options.researchCollectiveApproaches===true?planCollectiveApproaches(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0}):null;
   const targets=players.map(p=>{
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can
@@ -2668,6 +2671,7 @@ export function createPlayerMovement(options={}){
       keeperDuelGoalkeeperTarget(smallSided.side,smallSided.variantIndex,
        attacker,ball,baseline):baseline;
     }
+    if(collectiveApproaches?.[p.id])return collectiveApproaches[p.id].target;
     const attack=smallSided.side==='home'?1:-1;
     if(duelActors){
      if(duelShoulder?.actorId===p.id)return duelShoulder.target;
@@ -3022,11 +3026,11 @@ export function createPlayerMovement(options={}){
   if(smallSided)lastSmallSidedMovementDecisions=Object.freeze(players
    .filter(p=>smallActive.has(p.id)).map(p=>{
     const target=targets[players.indexOf(p)];
-    const kind=smallSided.blockStart&&p.id===smallSided.opponent+'-2'?(blockState?.phase==='blocked'?'press-ball':'block-shot'):smallSided.interceptionStart&&p.id===smallSided.opponent+'-2'?(interceptionState?.phase==='flight'?'intercept-ball':['intercepted','collected'].includes(interceptionState?.phase)?'carry-ball':'press-ball'):duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':duelShoulder?.actorId===p.id&&duelShoulder.sideOn?'shoulder-challenge':duelInterception?.actorId===p.id?'intercept-ball':duelTransition?.profile==='mixed'&&duelTransition.ballControl?.kind==='loose'?'press-ball':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
+    const kind=collectiveApproaches?.[p.id]?.kind??(smallSided.blockStart&&p.id===smallSided.opponent+'-2'?(blockState?.phase==='blocked'?'press-ball':'block-shot'):smallSided.interceptionStart&&p.id===smallSided.opponent+'-2'?(interceptionState?.phase==='flight'?'intercept-ball':['intercepted','collected'].includes(interceptionState?.phase)?'carry-ball':'press-ball'):duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':duelShoulder?.actorId===p.id&&duelShoulder.sideOn?'shoulder-challenge':duelInterception?.actorId===p.id?'intercept-ball':duelTransition?.profile==='mixed'&&duelTransition.ballControl?.kind==='loose'?'press-ball':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
      p.team!==smallSided.side?'press-ball':
      p.id===smallSided.side+'-10'?
       ((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?'carry-ball':'approach-ball'):
-      ['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?'hold-pass-target':'support-run';
+      ['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?'hold-pass-target':'support-run');
     return Object.freeze({
      tick:tick+1,id:p.id,team:p.team,kind,
      ...(shoulderBalance[p.id]?{shoulderBalanceRecovery:true,shoulderBalancePhase:shoulderBalance[p.id].phase}:{}),

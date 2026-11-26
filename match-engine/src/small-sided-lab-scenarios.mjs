@@ -67,6 +67,39 @@ const byId=new Map(definitions.map(s=>[s.id,s]));
 // Keeper 1v1: deterministic source-only 60Hz tactical targets, never a
 // physical impulse, teleport, scripted save, possession or match result.
 const bounded=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+// COL-01: live outfield approach and support are geometric movement
+// proposals only. The nearest approach reference is NOT ball possession.
+// Each team can pursue the same ball; shirt numbers never select a runner.
+export function planCollectiveApproaches(players,ball,velocity){
+ if(!Array.isArray(players)||players.length!==3||
+    new Set(players.map(p=>p.id)).size!==3||new Set(players.map(p=>p.team)).size!==2||
+    !players.every(p=>['home','away'].includes(p.team)&&[p.x,p.y].every(Number.isFinite))||
+    ![ball?.x,ball?.y,velocity?.x,velocity?.y].every(Number.isFinite))
+  throw new TypeError('Three opposing live outfield players required');
+ const bx=bounded(ball.x+velocity.x*0.18,-51.75,51.75);
+ const by=bounded(ball.y+velocity.y*0.18,-33.25,33.25);
+ const target=(x,y)=>freeze({x:bounded(x,-51.99,51.99),y:bounded(y,-33.49,33.49)});
+ const gap=p=>Math.hypot(p.x-bx,p.y-by);
+ const result={};
+ for(const team of ['home','away']){
+  const own=players.filter(p=>p.team===team).sort((p,q)=>gap(p)-gap(q)||p.y-q.y||p.x-q.x);
+  const rival=players.filter(p=>p.team!==team).sort((p,q)=>gap(p)-gap(q))[0];
+  const runner=own[0],dir=team==='home'?1:-1;
+  const rivalNear=gap(rival)<=1.15&&gap(rival)+0.15<gap(runner);
+  const dx=bx-runner.x,dy=by-runner.y,d=Math.hypot(dx,dy);
+  const tx=d>0.05?dx/d:dir,ty=d>0.05?dy/d:0;
+  result[runner.id]=freeze({kind:rivalNear?'press-ball':'approach-ball',
+   target:target(bx+0.25*tx,by+0.25*ty),decisionOnly:true,officialPossession:false});
+  for(const p of own.slice(1)){
+   const lateral=Math.abs(p.y-by)>0.1?Math.sign(p.y-by):by>=0?-1:1;
+   // Keep a separate support/cover lane, never prescribe a pass reception.
+   result[p.id]=freeze({kind:rivalNear?'press-ball':'support-run',
+    target:target(bx+(rivalNear?-dir*2.5:dir*2.5),by+lateral*4.5),
+    decisionOnly:true,officialPossession:false});
+  }
+ }
+ return freeze(result);
+}
 function requireKeeperVariant(side,index){
  if(!['home','away'].includes(side)||!Number.isSafeInteger(index)||
     index<0||index>=SMALL_SIDED_VARIANT_COUNT)

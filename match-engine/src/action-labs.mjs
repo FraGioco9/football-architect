@@ -40,7 +40,7 @@ export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
  controlSide='home',controlDecisionEnabled=true,
  challengeSide='away',challengeScene='contact',variantIndex=0,
- bodyGuardEnabled=false,keeperSingleShot=false,directedDribble=false,duelTackleProfile='mixed',soloShoeWidthScale=1,
+ bodyGuardEnabled=false,collectiveApproaches=false,keeperSingleShot=false,directedDribble=false,duelTackleProfile='mixed',soloShoeWidthScale=1,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
@@ -50,6 +50,8 @@ export function createControlledActionLab(RAPIER,id,{
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
+ if(typeof collectiveApproaches!=='boolean'||(collectiveApproaches&&(id!=='overload-2v1'||!bodyGuardEnabled)))
+  throw new TypeError('Collective approaches require guarded 2v1 LAB');
  if(typeof carryRunwayStart!=='boolean'||
     (carryRunwayStart&&id!=='carry-solo'))
   throw new TypeError('Long-running pre-kickoff runway only for Solo Carry');
@@ -295,6 +297,7 @@ export function createControlledActionLab(RAPIER,id,{
    ...(soloCarryLockedPhase!==null?{
     researchSoloCarryLockedPhase:soloCarryLockedPhase,
     researchSoloCarryPlayerAttributes:selectedCarryAttributes}:{}),
+   ...(collectiveApproaches?{researchCollectiveApproaches:true}:{}),
    ...(bodyGuardEnabled?{researchSmallSidedBodyFeedback:true}:{})
   }:sourceRestart?{
    researchBasicRestartSource:id,

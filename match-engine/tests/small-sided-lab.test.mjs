@@ -7,11 +7,44 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
- keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget}
+ keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
+test('COL-01 both teams pursue the real ball without a shirt-number runner or inferred possession',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const a={id:side+'-10',team:side,x:dir*26,y:-3};
+  const b={id:side+'-9',team:side,x:dir*29,y:1};
+  const d={id:other+'-2',team:other,x:dir*31,y:0};
+  const ball={x:dir*30,y:1},velocity={x:dir,y:0};
+  const plan=planCollectiveApproaches([a,b,d],ball,velocity);
+  assert.deepEqual(plan,planCollectiveApproaches([d,b,a],ball,velocity));
+  assert.equal(plan[b.id].kind,'approach-ball');assert.equal(plan[a.id].kind,'support-run');
+  assert.ok(['press-ball','approach-ball'].includes(plan[d.id].kind));
+  const moved={...a,x:dir*29.9,y:1};
+  const switched=planCollectiveApproaches([moved,{...b,x:dir*25},d],ball,velocity);
+  assert.equal(switched[a.id].kind,'approach-ball');assert.equal(switched[b.id].kind,'support-run');
+  for(const entry of Object.values(switched)){assert.equal(entry.decisionOnly,true);assert.equal(entry.officialPossession,false);}
+ }
+});
+test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['home','away']){
+  const lab=createControlledActionLab(R,'overload-2v1',{shotSide:side,bodyGuardEnabled:true,collectiveApproaches:true});
+  try{
+   for(let k=0;k<120;k++){
+    const f=lab.step();
+    const decisions=f.smallSidedMovementDecisions;
+    assert.equal(decisions.length,4);
+    assert.ok(decisions.every(p=>p.originalCanonicalMover&&p.actionConfirmed===false));
+    assert.ok(decisions.some(p=>p.kind==='goalkeeping'));
+    if(f.refereeEvidence?.lastEvent)break;
+   }
+  }finally{lab.dispose();}
+ }
+});
 test('#628 small-sided catalog replaces only visible elementary exercise UI; archives remain for regression',()=>{
  const ids=SMALL_SIDED_LAB_SCENARIOS.map(s=>s.id);
  assert.deepEqual(ids,['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1',
