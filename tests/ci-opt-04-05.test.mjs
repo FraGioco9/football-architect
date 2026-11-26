@@ -322,3 +322,46 @@ test('selected public evidence requires executed site checks and verifies browse
  assert.equal(selectedPublicEvidence('landing-checks.yml',receipt,site,sha,1,base),true);
  site[1].steps[0].conclusion='skipped';assert.equal(selectedPublicEvidence('landing-checks.yml',receipt,site,sha,1,base),false);
 });
+
+
+test('merged Admin history requires original executed receipt and independent FULL gate',async()=>{
+ const {certifiedHistoricalAdmin,economicRepairShape,economicRepairAnchor}=await import('../tools/ci-full-evidence.cjs');
+ const base='b'.repeat(40),tree='c'.repeat(40),repo={full_name:'owner/repo'};
+ const source={number:7,merged:true,merged_at:'2026-11-26T12:41:23Z',base:{ref:'main',sha:base},head:{sha,ref:'ci/repair',repo}};
+ const identity={head_sha:sha,head_commit:{tree_id:tree},head_branch:'ci/repair',repository:repo,head_repository:repo,
+  event:'pull_request',created_at:'2026-11-26T07:41:12Z',updated_at:'2026-11-26T09:26:44Z',
+  status:'completed',conclusion:'success',run_attempt:1,pull_requests:[]};
+ const receipt={...identity,id:11,path:'.github/workflows/admin-world-checks.yml'};
+ const gate={...identity,id:12,path:'.github/workflows/ci-opt-03-full-gate.yml'};
+ const proof=jobs('admin-world-checks.yml');
+ proof.find(j=>j.name.startsWith('Final local operator')).steps.push(...['Execute isolated economic rehearsal',
+  'Verify DEV operator runtime and PowerShell regressions before full rehearsal',
+  'Verify operator bootstrap, recovery and local persistence across restart'].map(name=>({name,conclusion:'success'})));
+ proof.push({id:21,run_id:11,name:'scope',conclusion:'success',steps:[{name:'Classify Admin impact on exact HEAD',conclusion:'success'}]});
+ const gateJobs=[{id:22,run_id:12,name:'CI FULL exact-head evidence',conclusion:'success',steps:[
+  {name:'Verify exact PR head and complete FULL workflow evidence',conclusion:'success'}]}];
+ const stamp='2026-11-26T09:26:44.0000000Z ';
+ const scopeLog=stamp+'  PR_BASE_SHA: '+base+'\n'+stamp+'test "$(git rev-parse HEAD)" = "'+sha+'"';
+ const gateLog=stamp+'  PR_NUMBER: 7\n'+stamp+'  EXPECTED_HEAD: '+sha+'\n'+stamp+JSON.stringify({head:sha,rows:[
+  {workflow:'landing-checks.yml',state:'PASS'},{workflow:'int24-browser-qa.yml',state:'PASS'},
+  {workflow:'admin-world-checks.yml',state:'PASS',run:11,attempt:1}]});
+ let logs={21:scopeLog,22:gateLog};
+ const github={rest:{actions:{listWorkflowRuns:'runs',listJobsForWorkflowRun:'jobs',
+  downloadJobLogsForWorkflowRun:async({job_id})=>({data:logs[job_id]})}},paginate:async method=>method==='runs'?[gate]:gateJobs};
+ const check=(run=receipt)=>certifiedHistoricalAdmin({github,owner:'owner',repo:'repo',source,tree,baseSha:base,run,jobs:proof});
+ assert.equal(await check(),true);
+ assert.equal(await check({...receipt,head_repository:{full_name:'elsewhere/repo'}}),false);
+ assert.equal(await check({...receipt,pull_requests:[{number:99,head:{sha},base:{ref:'main',sha:base}}]}),false);
+ assert.equal(await check({...receipt,run_attempt:2}),false);
+ logs[21]=scopeLog.replace(base,'d'.repeat(40));assert.equal(await check(),false);logs[21]=scopeLog;
+ logs[22]=gateLog.replace('"run":11','"run":99');assert.equal(await check(),false);logs[22]=gateLog;
+ logs[22]=undefined;assert.equal(await check(),false);logs[22]=gateLog;
+ proof.find(j=>j.name.startsWith('Final local operator')).steps.find(s=>s.name==='Execute isolated economic rehearsal').conclusion='skipped';
+ assert.equal(await check(),false);
+ const files=['tools/ci-match-engine.cjs','tools/ci-full-evidence.cjs','tests/ci-opt-04-05.test.mjs',
+  '.github/workflows/ci-opt-03-full-gate.yml','.github/workflows/admin-world-checks.yml'].map(filename=>({filename,status:'modified'}));
+ assert.equal(economicRepairShape(economicRepairAnchor,files),true);
+ assert.equal(economicRepairShape(base,files),false);
+ assert.equal(economicRepairShape(economicRepairAnchor,[...files,{filename:'backend/src/economy.ts',status:'modified'}]),false);
+ assert.equal(economicRepairShape(economicRepairAnchor,files.map((f,i)=>i?f:{...f,status:'renamed'})),false);
+});
