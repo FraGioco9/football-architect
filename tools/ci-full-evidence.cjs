@@ -36,27 +36,107 @@ function evaluateRun(run,jobs,sha,workflow,{prNumber,baseSha}={}){
   }
   if(lanes.some(lane=>!ok(find('Browser lane ('+lane+')'),'Run loopback preview and browser checks')))return {state:'MISSING',url:run.html_url};
  }
+ const operator=find('Final local operator persistence, restart and browser lifecycle');
+ const rehearsal=operator?.steps?.find(s=>s.name==='Execute isolated economic rehearsal');
+ if(workflow==='admin-world-checks.yml'&&rehearsal){
+  const steps=['Verify DEV operator runtime and PowerShell regressions before full rehearsal',
+   'Verify operator bootstrap, recovery and local persistence across restart'];
+  if(!steps.every(name=>operator.steps.some(s=>s.name===name&&s.conclusion==='success')))return {state:'MISSING',url:run.html_url};
+  if(rehearsal.conclusion!=='success'){
+   const recorded=find('scope')?.steps?.some(s=>s.name==='Verified isolated economic inputs'&&s.conclusion==='success');
+   return {state:recorded&&rehearsal.conclusion==='skipped'?'ECONOMY_INHERITED':'MISSING',url:run.html_url};
+  }
+ }
  return {state:'PASS',url:run.html_url};
 }
-async function observe({github,owner,repo,sha,prNumber,baseSha}){
+const inheritedMarker='Verified unchanged economic scope against executed FULL source';
+const engineSteps=['Verify exact PR HEAD','Install pinned physics candidate','Focused core and route security tests',
+ 'Existing routing/preview regressions','Browser viewport fit (Chrome, Advanced settings open and closed)',
+ 'Five Action LABs clean-stack Chrome interaction','Measured local CPU / memory sample'];
+
+function inheritedAdmin(run,jobs,sha,prNumber,baseSha){
+ if(!baseSha||run.event!=='pull_request'||run.head_sha!==sha||run.conclusion!=='success'||run.status!=='completed')return false;
+ if(!run.pull_requests?.some(p=>p.number===prNumber&&p.base.sha===baseSha&&p.head.sha===sha))return false;
+ const scope=jobs.find(j=>j.name==='scope');
+ const contracts=jobs.find(j=>j.name==='Admin foundation contracts (Node 22)');
+ return scope?.conclusion==='success'&&contracts?.conclusion==='success'&&
+  scope.steps?.some(s=>s.name===inheritedMarker&&s.conclusion==='success')&&
+  contracts.steps?.some(s=>s.name==='FULL coverage completed'&&s.conclusion==='skipped');
+}
+async function engineEvidence({github,owner,repo,sha,prNumber,baseSha}){
+ const workflow='match-engine-01.yml';
+ const args={owner,repo,workflow_id:workflow,head_sha:sha,event:'pull_request',per_page:100};
+ const runs=await github.paginate(github.rest.actions.listWorkflowRuns,args);
+ const run=runs.filter(r=>r.head_sha===sha&&r.event==='pull_request'&&
+  r.pull_requests?.some(p=>p.number===prNumber&&p.base.sha===baseSha&&p.head.sha===sha)).sort((a,b)=>b.id-a.id)[0];
+ if(!run||run.status!=='completed')return {workflow,state:run?'PENDING':'MISSING'};
+ if(run.conclusion!=='success')return {workflow,run:run.id,state:'FAIL'};
+ const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:run.id,filter:'latest',per_page:100});
+ const job=jobs.find(j=>j.name==='match-engine');
+ const executed=job?.conclusion==='success'&&engineSteps.every(name=>job.steps.some(s=>s.name===name&&s.conclusion==='success'));
+ return {workflow,run:run.id,state:executed?'PASS':'MISSING'};
+}
+function selectedPublicEvidence(workflow,run,jobs,sha,prNumber,baseSha){
+ if(!baseSha||run.head_sha!==sha||run.event!=='pull_request'||run.status!=='completed'||run.conclusion!=='success'||
+    !run.pull_requests?.some(p=>p.number===prNumber&&p.head.sha===sha&&p.base.sha===baseSha))return false;
+ const job=name=>jobs.find(j=>j.name===name&&j.conclusion==='success');
+ const step=(j,name)=>j?.steps?.find(s=>s.name===name)?.conclusion;
+ const site=workflow==='landing-checks.yml';
+ if(!site&&workflow!=='int24-browser-qa.yml')return false;
+ if(step(job(site?'head-exact':'scope'),'Certified impacted suites')!=='success')return false;
+ if(site)return step(job('landing'),'Site essential contracts (FAST and TARGETED)')==='success'&&step(job('landing'),'FULL coverage completed')==='skipped';
+ const aggregate=job('chromium');
+ if(step(aggregate,'Verify browser lane results')!=='success'||step(aggregate,'FULL coverage completed')!=='skipped')return false;
+ const lanes=jobs.filter(j=>j.name.startsWith('Browser lane ('));
+ if(step(aggregate,'Run loopback preview and browser checks')==='skipped')return lanes.every(j=>j.conclusion==='skipped');
+ return lanes.length===1&&step(job('Browser lane (core)'),'Run loopback preview and browser checks')==='success'&&
+  step(aggregate,'Run loopback preview and browser checks')==='success';
+}
+async function observe({github,owner,repo,sha,prNumber,baseSha,files=[]}){
  const rows=[];
  for(const workflow_id of Object.keys(requirements)){
   const runs=await github.paginate(github.rest.actions.listWorkflowRuns,{owner,repo,workflow_id,head_sha:sha,per_page:100});
   let row={workflow:workflow_id,state:'MISSING'};
   for(const run of runs.filter(r=>r.head_sha===sha&&r.event==='pull_request').sort((a,b)=>b.id-a.id)){
    const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:run.id,filter:'latest',per_page:100});
+   if(workflow_id==='admin-world-checks.yml'&&inheritedAdmin(run,jobs,sha,prNumber,baseSha)){
+    row={workflow:workflow_id,run:run.id,state:'INHERITED',url:run.html_url};break;
+   }
+   if(selectedPublicEvidence(workflow_id,run,jobs,sha,prNumber,baseSha)){
+    row={workflow:workflow_id,run:run.id,state:'SELECTED',url:run.html_url};break;
+   }
    const value=evaluateRun(run,jobs,sha,workflow_id,{prNumber,baseSha});
+   if(workflow_id==='admin-world-checks.yml'&&value.state==='NARROW'&&baseSha){
+    const ok=(job,step)=>jobs.some(j=>j.name===job&&j.conclusion==='success'&&j.steps.some(s=>s.name===step&&s.conclusion==='success'));
+    if(ok('scope','Verified standalone test selection')&&ok('Admin foundation contracts (Node 22)','Run selected backend tests')){
+     row={workflow:workflow_id,run:run.id,state:'SELECTED',url:run.html_url};break;
+    }
+   }
    if(['NARROW','IGNORED','STALE','REUSED'].includes(value.state))continue;
    row={workflow:workflow_id,run:run.id,attempt:run.run_attempt,...value};break;
   }
   rows.push(row);
  }
+ if(rows.some(r=>r.state==='INHERITED')){
+  // The Admin proof is authoritative only if its workflow and verifier came
+  // from main. GitHub caps the file-list API at 3000 entries.
+  if(!files.length||files.length>=3000||!files.every(f=>['added','modified'].includes(f.status)&&
+   (f.filename.startsWith('match-engine/')||f.filename==='tools/dev-standings-preview.mjs')))
+   throw Error('BLOCKED: candidate changes files outside the trusted Match Engine policy');
+ }
+ if(rows.some(r=>['SELECTED','ECONOMY_INHERITED'].includes(r.state))){
+  const policy=p=>p.startsWith('.github/')||p.startsWith('tools/ci-')||p==='backend/tests/prepare-persistence.test.mts';
+  if(!files.length||files.some(f=>policy(f.filename)||(f.previous_filename&&policy(f.previous_filename))))
+   throw Error('BLOCKED: verification policy changed');
+ }
+ if(files.some(f=>f.filename.startsWith('match-engine/')||f.filename==='.github/workflows/match-engine-01.yml'))
+  rows.push(await engineEvidence({github,owner,repo,sha,prNumber,baseSha}));
  return rows;
 }
 async function verify({github,core,context,prNumber,expected,maxWaitMs=45*60*1000,intervalMs=30000,now=Date.now,wait=ms=>new Promise(r=>setTimeout(r,ms))}){
  const {owner,repo}=context.repo;
  if(!Number.isSafeInteger(prNumber)||prNumber<1||!/^[0-9a-f]{40}$/.test(expected))throw Error('Invalid PR number or expected SHA');
- const start=now();let last='';
+ const start=now();let last='',fileBase;let files=[];
  async function current(){
   const {data:pr}=await github.rest.pulls.get({owner,repo,pull_number:prNumber});
   if(pr.state!=='open'||pr.head.repo?.full_name!==owner+'/'+repo||pr.head.sha!==expected||pr.base.ref!=='main')throw Error('BLOCKED: closed/foreign PR, stale HEAD or unexpected base');
@@ -64,10 +144,15 @@ async function verify({github,core,context,prNumber,expected,maxWaitMs=45*60*100
  }
  while(true){
   const live=await current();
-  const rows=await observe({github,owner,repo,sha:expected,prNumber,baseSha:live.base.sha});
+  if(live.base.sha!==fileBase){
+   files=await github.paginate(github.rest.pulls.listFiles,{owner,repo,pull_number:prNumber,per_page:100});
+   if(files.length!==live.changed_files)throw Error('BLOCKED: incomplete candidate diff');
+   fileBase=live.base.sha;
+  }
+  const rows=await observe({github,owner,repo,sha:expected,prNumber,baseSha:live.base.sha,files});
   const summary=JSON.stringify({head:expected,rows});
-  if(summary!==last){core.info(summary);last=summary;await core.summary.addHeading('FULL exact-head evidence').addCodeBlock(summary,'json').write();}
-  if(rows.every(r=>r.state==='PASS')){const fresh=await current();if(fresh.base.sha!==live.base.sha)throw Error('BLOCKED: PR base changed during verification');return rows;}
+  if(summary!==last){core.info(summary);last=summary;await core.summary.addHeading('Exact-head workflow evidence').addCodeBlock(summary,'json').write();}
+  if(rows.every(r=>['PASS','INHERITED','SELECTED','ECONOMY_INHERITED'].includes(r.state))){const fresh=await current();if(fresh.base.sha!==live.base.sha)throw Error('BLOCKED: PR base changed during verification');if(rows.some(r=>r.state!=='PASS')&&fresh.mergeable!==true)throw Error('BLOCKED: main compatibility unconfirmed');return rows;}
   if(rows.some(r=>['FAIL','CANCELLED'].includes(r.state)))throw Error('CI evidence FAIL/CANCELLED (not an inferred product regression): '+summary);
   if(now()-start>=maxWaitMs)throw Error('BLOCKED: missing or PENDING CI evidence after observation deadline; rerun only this gate when FULL evidence is available. '+summary);
   // Missing and PENDING evidence keep this required job in progress, never PASS.
@@ -84,4 +169,21 @@ async function findReusable({github,owner,repo,sha,workflow,currentRun,prNumber,
  }
  return null;
 }
-module.exports={requirements,evaluateRun,observe,verify,findReusable};
+async function mergedPublicSource({github,owner,repo,workflow,sha,before}){
+ const {data:merge}=await github.rest.git.getCommit({owner,repo,commit_sha:sha});
+ if(merge.parents[0]?.sha!==before)return null;
+ const prs=await github.paginate(github.rest.repos.listPullRequestsAssociatedWithCommit,{owner,repo,commit_sha:sha,per_page:100});
+ const pr=prs.find(p=>p.merged_at&&p.merge_commit_sha===sha&&p.base.ref==='main'&&p.head.repo?.full_name===owner+'/'+repo);
+ if(!pr)return null;
+ const {data:source}=await github.rest.git.getCommit({owner,repo,commit_sha:pr.head.sha});
+ if(source.tree.sha!==merge.tree.sha)return null;
+ const runs=await github.paginate(github.rest.actions.listWorkflowRuns,{owner,repo,workflow_id:workflow,event:'pull_request',head_sha:pr.head.sha,per_page:100});
+ for(const run of runs.sort((a,b)=>b.id-a.id)){
+  const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:run.id,filter:'latest',per_page:100});
+  const value=evaluateRun(run,jobs,pr.head.sha,workflow,{prNumber:pr.number,baseSha:before});
+  if(value.state==='PASS'||selectedPublicEvidence(workflow,run,jobs,pr.head.sha,pr.number,before))return run.id;
+  if(['FAIL','CANCELLED','PENDING'].includes(value.state))return null;
+ }
+ return null;
+}
+module.exports={mergedPublicSource,selectedPublicEvidence,inheritedAdmin,engineEvidence,requirements,evaluateRun,observe,verify,findReusable};
