@@ -971,7 +971,7 @@ export function createEngine(RAPIER, input = {}, {
     });
     if(collectiveObserver){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
-     collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,bodyStarts:physical.lowerLegBallStarts,bodyActive:physical.lowerLegBallContacts,action:actionExecutor?.actionSnapshot()??null});
+     collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,bodyStarts:physical.lowerLegBallStarts,bodyActive:physical.lowerLegBallContacts,action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies});
     }
     if(duelTransition){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();

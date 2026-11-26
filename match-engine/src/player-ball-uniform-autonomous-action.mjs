@@ -9,7 +9,7 @@ import {chooseSmallSidedContextAction,chooseNativeFootballAction}
  from './small-sided-context-choice.mjs';
 
 
-import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch,chooseDirectedDribbleTouch,chooseCollectiveDefensiveTouch} from './isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch,chooseDirectedDribbleTouch,chooseCollectiveDefensiveTouch,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
@@ -362,7 +362,10 @@ export function selectUniformAutonomousContactAction({
   const collective=nativeActionPolicy;
   const owner=collectiveControl?.kind==='controlled'?actors.find(p=>p.id===collectiveControl.playerId):null;
   const opponentControl=!!owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15;
-  const collectiveTouch=collective?chooseCollectiveDefensiveTouch({player,players:actors,ballPosition,ballVelocity,control:collectiveControl,tick}):null;
+  const nativeSlide=collective?playerFrame.nativeSlides?.[id]??null:null;
+  if(collective&&(isNativeRecoveryLocked(collectiveControl,id,tick)||nativeSlide?.phase==='recovery'))continue;
+  const collectiveTouch=collective?chooseCollectiveDefensiveTouch({player,players:actors,ballPosition,ballVelocity,control:collectiveControl,tick,slide:nativeSlide}):null;
+  if(nativeSlide?.phase==='slide'&&!collectiveTouch)continue;
   const defensiveAttempt=collective?null:chooseBasicDefensiveAttempt({actor:player,players:actors,ball:ballPosition,velocity:ballVelocity});
   // LAB-VAR-02 only: AFTER verified genuine exclusive Rapier shoe START,
   // examine live legitimate affordances. Normal 22-player policy, keeper
@@ -521,7 +524,7 @@ export function selectUniformAutonomousContactAction({
   // frozen before Rapier applies the impulse. A target is only intent,
   // never evidence of reception or a completed football pass.
   const defensiveTarget=duelDefensiveTouch?Object.freeze({...duelDefensiveTouch,physicsTick:tick,
-   ...(action==='tackle'?{intervention:slide?.phase==='slide'?'sliding-tackle':'standing-tackle'}:{})}):defensiveAttempt&&
+   ...(action==='tackle'?{intervention:(slide?.phase==='slide'||nativeSlide?.phase==='slide'&&duelDefensiveTouch.slidingStrike===true)?'sliding-tackle':'standing-tackle'}:{})}):defensiveAttempt&&
    ['tackle','interception'].includes(action)?
    Object.freeze({...defensiveAttempt,physicsTick:tick}):null;
   const saveTarget=action==='save'?Object.freeze({

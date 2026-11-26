@@ -29,8 +29,8 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
  if(!Array.isArray(activeIds)||!Array.isArray(outfieldIds)||
     new Set(activeIds).size!==activeIds.length||new Set(outfieldIds).size!==outfieldIds.length||
     !outfieldIds.every(id=>activeIds.includes(id)))throw new TypeError('Active physical participants required');
- let witness=null,delivery=null,latest=Object.freeze({tick:0,...observeDuelBallControl(),delivery:null});
- function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action,physicalChallengeReleased=false}){
+ let witness=null,delivery=null,getUpUntil={},shoulderByPlayer={},lastInterventions={},latest=Object.freeze({tick:0,...observeDuelBallControl(),delivery:null,getUpUntil:Object.freeze({}),shoulderByPlayer:Object.freeze({}),lastInterventions:Object.freeze({})});
+ function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action,physicalChallengeReleased=false,shoulderPlans=[],torsoPairs=[],bodies=[]}){
   if(tick!==latest.tick+1)throw new TypeError('Consecutive native control ticks required');
   const participants=players.filter(p=>outfieldIds.includes(p.id));
   const touching=[...new Set([...active,...bodyActive])].filter(id=>activeIds.includes(id));
@@ -44,10 +44,27 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
    delivery=['pass','shot'].includes(action.action)?Object.freeze({tick,playerId:action.playerId,team:players.find(p=>p.id===action.playerId)?.team,kind:action.action}):null;
    if(action.action==='carry'&&outfieldIds.includes(action.playerId))witness={playerId:action.playerId,tick};
   }
-  if(physicalChallengeReleased===true){witness=null;delivery=null;}
+  getUpUntil=Object.fromEntries(Object.entries(getUpUntil).filter(([,until])=>until>=tick));
+  shoulderByPlayer=Object.fromEntries(Object.entries(shoulderByPlayer).filter(([,impact])=>impact.balance.until>=tick));
+  lastInterventions=Object.fromEntries(Object.entries(lastInterventions).filter(([,impact])=>tick-impact.tick<=120));
+  if(real&&action.action==='tackle'&&action.defensiveTarget?.intervention==='sliding-tackle'){
+   const actor=participants.find(p=>p.id===action.playerId),rival=participants.find(p=>p.id===action.defensiveTarget.opponentId&&p.team!==actor?.team);
+   if(actor&&rival){
+    const impact=Object.freeze({tick,actorId:actor.id,opponentId:rival.id,intervention:'sliding-tackle',effective:observeEffectiveDuelIntervention(actor,rival,ball.position,ball.velocity)});
+    lastInterventions[actor.id]=impact;
+    getUpUntil=applyNativeSlideRecovery(getUpUntil,impact);
+   }
+  }
+  let shoulderReleased=false;
+  for(const plan of shoulderPlans){
+   if(!outfieldIds.includes(plan.actorId)||!outfieldIds.includes(plan.opponentId)||shoulderByPlayer[plan.opponentId])continue;
+   const impact=observeNativeShoulderChallenge({tick,plan,players:participants,ball:ball.position,torsoPairs,bodies});
+   if(impact?.successful){shoulderByPlayer[impact.opponentId]=impact;shoulderReleased=true;}
+  }
+  if(physicalChallengeReleased===true||shoulderReleased){witness=null;delivery=null;}
   const control=observeNativeBallControl({players:participants,ball,carryWitness:witness,tick});
   if(control.kind==='loose')witness=null;
-  latest=Object.freeze({tick,...control,delivery});
+  latest=Object.freeze({tick,...control,delivery,getUpUntil:Object.freeze({...getUpUntil}),shoulderByPlayer:Object.freeze({...shoulderByPlayer}),lastInterventions:Object.freeze({...lastInterventions})});
   return latest;
  }
  return Object.freeze({snapshot:()=>latest,observe});
@@ -530,9 +547,13 @@ export function planNativeDefensiveIntervention({attacker,defender,ballPosition,
 // COL-05: the same standing/interception geometry for any outfield
 // participant, independent of formation role. An interception of a
 // loose pass needs a witnessed opposing release, not guessed ownership.
-export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ballVelocity,control,tick}){
+export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ballVelocity,control,tick,slide=null}){
  if(!player||player.role==='goalkeeper'||!Array.isArray(players)||!control)return null;
  const owner=control.kind==='controlled'?players.find(p=>p.id===control.playerId):null;
+ if(slide?.phase==='slide'&&slide.actorId===player.id){
+  const rival=players.find(p=>p.id===slide.opponentId&&p.team!==player.team);
+  return rival?chooseDribbleDefensiveTouch({attackingSide:rival.team,attacker:rival,defender:player,ballPosition,ballVelocity,sliding:true}):null;
+ }
  if(owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15){
   const plan=planNativeDefensiveIntervention({attacker:owner,defender:player,ballPosition,ballVelocity,allowShoulder:false,allowInterception:false});
   return plan?.decision?.kind==='standing-tackle'||plan?.decision?.kind==='interception'?plan.standing:null;
@@ -549,6 +570,14 @@ export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ball
 export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding','shoulder','interception']);
 export const SLIDING_GET_UP_TACKLER_TICKS=30;
 export const SLIDING_GET_UP_RIVAL_TICKS=36;
+// One pair-scoped recovery rule, reused by duel and shared runtime.
+export function applyNativeSlideRecovery(previous,impact){
+ if(!impact||impact.intervention!=='sliding-tackle'||!Number.isSafeInteger(impact.tick)||!impact.actorId||!impact.opponentId||impact.actorId===impact.opponentId)return previous;
+ return Object.freeze({...previous,[impact.actorId]:Math.max(previous[impact.actorId]??0,impact.tick+SLIDING_GET_UP_TACKLER_TICKS),[impact.opponentId]:Math.max(previous[impact.opponentId]??0,impact.tick+SLIDING_GET_UP_RIVAL_TICKS)});
+}
+export function isNativeRecoveryLocked(control,id,tick){
+ return isDuelGettingUp(control,id,tick)||Boolean(control?.shoulderByPlayer?.[id]?.balance?.until>=tick);
+}
 export function isSlideCollecting(state,id,tick){
  const impact=state?.lastIntervention;
  return impact?.effective===true&&impact.intervention==='sliding-tackle'&&impact.actorId===id&&state.candidateId===id&&
@@ -585,7 +614,7 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
    // This is a temporary movement/action lock, not an inferred foul or injury.
    if((profile==='sliding'||profile==='mixed')&&lastIntervention.intervention==='sliding-tackle'){
     const other=ids.find(id=>id!==action.playerId);
-    getUpUntil=Object.freeze({[action.playerId]:tick+SLIDING_GET_UP_TACKLER_TICKS,[other]:tick+SLIDING_GET_UP_RIVAL_TICKS});
+    getUpUntil=applyNativeSlideRecovery(getUpUntil,{...lastIntervention,opponentId:other});
    }
    if(action.playerId!==carrierId){candidateId=action.playerId;candidateTick=tick;}
   }

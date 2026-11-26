@@ -10,7 +10,7 @@ import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
  keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
-import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention} from '../src/isolated-dribble-touches.mjs';
+import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
 test('COL-01 both teams pursue the real ball without a shirt-number runner or inferred possession',()=>{
@@ -139,6 +139,27 @@ test('UME-04 native defense uses shared eligibility and real delivery trajectori
   assert.equal(planNativeDefensiveIntervention({...shot,defender:{...d,y:8}}).decision.kind,'none');
   assert.equal(planNativeDefensiveIntervention({...shot,ballVelocity:{x:-dir*10,y:0,z:0}}).decision.kind,'none');
   assert.equal(planNativeDefensiveIntervention({...source,defender:{...d,role:'goalkeeper'}}),null);
+ }
+});
+test('UME-04B native slide recovery is pair-scoped and needs a real impulse',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const a={id:side+'-10',team:side,x:dir*29.6,y:0};
+  const d={id:other+'-2',team:other,x:dir*30.6,y:0};
+  const extra={id:side+'-9',team:side,x:dir*25,y:3};
+  const players=[a,d,extra],ids=players.map(p=>p.id);
+  const ball={position:{x:dir*30,y:0,z:0.11},velocity:{x:dir,y:0,z:0}};
+  const observer=createNativeBallControlObserver(ids,ids);
+  const action=(tick,playerId,kind,extra={})=>({tick,playerId,action:kind,appliedByRapier:true,actualPhysicsImpulseApplied:true,...extra});
+  observer.observe({tick:1,players,ball,starts:[a.id],active:[a.id],action:action(1,a.id,'carry')});
+  const fake=observer.observe({tick:2,players,ball,starts:[],active:[],action:action(2,d.id,'tackle',{defensiveTarget:{intervention:'sliding-tackle',opponentId:a.id}})});
+  assert.deepEqual(fake.getUpUntil,{});
+  const real=observer.observe({tick:3,players,ball,starts:[d.id],active:[d.id],action:action(3,d.id,'tackle',{defensiveTarget:{intervention:'sliding-tackle',opponentId:a.id}})});
+  assert.equal(real.kind,'loose');assert.equal(real.playerId,null);
+  assert.equal(real.getUpUntil[d.id],33);assert.equal(real.getUpUntil[a.id],39);
+  assert.equal(isNativeRecoveryLocked(real,d.id,4),true);assert.equal(isNativeRecoveryLocked(real,a.id,4),true);
+  assert.equal(isNativeRecoveryLocked(real,extra.id,4),false);assert.equal(isNativeRecoveryLocked(real,d.id,34),false);
+  assert.deepEqual(applyNativeSlideRecovery({[extra.id]:20},{tick:3,actorId:d.id,opponentId:a.id,intervention:'sliding-tackle'}),{[extra.id]:20,[d.id]:33,[a.id]:39});
  }
 });
 test('UME-03 movement uses the same participant geometry for pair, groups and full field',()=>{
