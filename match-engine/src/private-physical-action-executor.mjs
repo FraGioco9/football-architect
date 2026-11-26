@@ -22,7 +22,7 @@ export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
- smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='power',
+ smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='power',firstTimeShot=false,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
  nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false
 }={}){
@@ -54,6 +54,8 @@ export function createPrivatePhysicalActionExecutor({
     isolatedDribbleContext!==null||researchReceivingCushionSide!==null||
     researchReceivingDecisionSide!==null||researchReceiverTapSide!==null))
   throw new TypeError('Isolated pass requires exactly two original teammates');
+ if(typeof firstTimeShot!=='boolean'||(firstTimeShot&&isolatedShotSide===null))
+  throw new TypeError('First-time shot requires native isolated shooter');
  if(!LAB_SHOT_PROFILES.includes(isolatedShotProfile)||(isolatedShotProfile!=='power'&&isolatedShotSide===null))
   throw new TypeError('Locked shot profile requires isolated native shooter');
  if(isolatedShotSide!==null&&(
@@ -120,9 +122,11 @@ export function createPrivatePhysicalActionExecutor({
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
-  suppressOriginalAction=false,suppressPhysicalBodyContact=false
+  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null
  }={}){
   ensureOpen();
+  if(firstTimeShot&&(!priorNativeBallVelocity||!['x','y','z'].every(k=>Number.isFinite(priorNativeBallVelocity[k]))))
+   throw new TypeError('First-time shot requires real pre-step velocity');
   if(typeof suppressOriginalAction!=='boolean'||
      typeof suppressPhysicalBodyContact!=='boolean'||
      (suppressPhysicalBodyContact&&!physicalBodyGuardEnabled))
@@ -403,6 +407,12 @@ export function createPrivatePhysicalActionExecutor({
     ...(passCalibration?{isolatedGroundPassCalibration:passCalibration}:{}),
     ...(crossCalibration?{isolatedCrossCalibration:crossCalibration}:{}),
     ...(shotCalibration?{labShotCalibration:shotCalibration,labShotSpin:shotSpin}:{}),
+     ...(firstTimeShot&&shotCalibration?{firstTimeShotEvidence:Object.freeze({
+      source:'first-time-native-shoe-v1',priorNativeBallVelocity:Object.freeze({...priorNativeBallVelocity}),
+      postSolverVelocity:shotCalibration.preImpulseVelocity,
+      appliedImpulseNs:impulse,postStrikeVelocity:Object.freeze({...ballBody.linvel()}),
+      ballMassKg:ballBody.mass(),nativeExclusiveShoeStart:true,officialGoal:false
+     })}:{}),
     ...(nativeTune?{
      nativeShoeContactVerified:true,
      nativeFixedPhaseCalibration:nativeTune,

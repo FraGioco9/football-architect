@@ -44,7 +44,7 @@ export function createControlledActionLab(RAPIER,id,{
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
  carryRunwayStart=false,nativeFixedCarryResearch=false,
  nativeFixedSprintLongStride=false,soloSprintPursuitLeadM=0,
- soloCarryPlayerAttributes=null,historicalEvidenceBaseline=false,shotProfile='power'
+ soloCarryPlayerAttributes=null,historicalEvidenceBaseline=false,shotProfile='power',firstTimeShot=false
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -93,6 +93,8 @@ export function createControlledActionLab(RAPIER,id,{
   soloCarryPlayerAttributes===null?uniformSoloCarryAttributes(50):
    validateSoloCarryAttributes(soloCarryPlayerAttributes);
  const spec=getActionLabScenario(id);
+ if(typeof firstTimeShot!=='boolean'||(firstTimeShot&&id!=='shot-solo'))
+  throw new TypeError('First-time start requires isolated shooter');
  if(!LAB_SHOT_PROFILES.includes(shotProfile)||(shotProfile!=='power'&&id!=='shot-solo'))
   throw new TypeError('Shot profile requires isolated shooter');
  if(typeof bodyGuardEnabled!=='boolean'||
@@ -116,7 +118,7 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('Sprint cadence and lateral-tracking research require guarded solo Carry');
  const smallSided=spec.mode==='situation'?
   smallSidedSetup(id,shotSide,INITIAL_PLAYERS,{
-   variantIndex,carryRunwayStart,tapInStart:shotProfile==='tap-in'
+   variantIndex,carryRunwayStart,tapInStart:shotProfile==='tap-in',firstTimeShot
   }):null;
  const refereeMode=spec.mode==='referee';
  if(typeof historicalEvidenceBaseline!=='boolean'||(historicalEvidenceBaseline&&smallSided))
@@ -221,7 +223,8 @@ export function createControlledActionLab(RAPIER,id,{
   diagnosticPlayerFootContactsEnabled:true,
   diagnosticAutonomousFixtureActionEnabled:!refereeMode,
   diagnosticLatestLabDynamics:currentDynamics,
-  diagnosticIsolatedShotProfile:shotProfile,
+  diagnosticIsolatedShotProfile:shotProfile,diagnosticFirstTimeShot:firstTimeShot,
+   ...(firstTimeShot?{diagnosticInitialRollFraction:1}:{}),
   ...(smallSided?{
    diagnosticSmallSidedSituation:id,
    diagnosticSmallSidedSide:shotSide,
@@ -271,6 +274,7 @@ export function createControlledActionLab(RAPIER,id,{
  const mover=createPlayerMovement(smallSided?{
    researchSmallSidedSituation:id,researchSmallSidedSide:shotSide,
    ...(shotProfile==='tap-in'?{researchTapInStart:true}:{}),
+   ...(firstTimeShot?{researchFirstTimeShot:true}:{}),
    ...(variantIndex>0?{researchSmallSidedVariantIndex:variantIndex}:{}),
    ...(carryRunwayStart?{researchCarryRunwayStart:true}:{}),
    ...(nativeFixedCarryResearch?{researchNativeFixedCarry:true}:{}),
@@ -334,7 +338,7 @@ export function createControlledActionLab(RAPIER,id,{
   officialCrossCompleted:false,
   officialReception:false}):null;
  let previousCrossBall=null;
- let shotSoloAudit=id==='shot-solo'?Object.freeze({profile:shotProfile,attempted:false,launchTick:null,peakClearanceM:0,maxLateralBendM:0,crossing:null,officialGoal:false}):null;
+ let shotSoloAudit=id==='shot-solo'?Object.freeze({profile:shotProfile,firstTimeShot,attempted:false,launchTick:null,peakClearanceM:0,maxLateralBendM:0,crossing:null,officialGoal:false}):null;
  let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
  const decisionObserver=createPhysicalFootballDecisionObserver();
@@ -788,6 +792,7 @@ export function createControlledActionLab(RAPIER,id,{
     shotSoloAudit=Object.freeze({...shotSoloAudit,attempted:true,launchTick:physics.tick,
      shooterId:nativeAction.playerId,distanceM:c.distanceM,aimY:c.targetY,
       targetSelection:c.targetSelection,
+       ...(nativeAction.firstTimeShotEvidence?{firstTimeEvidence:nativeAction.firstTimeShotEvidence}:{}),
       launchPosition:Object.freeze({...physics.ball.position}),launchVelocity:Object.freeze({...physics.ball.velocity}),
       launchSpinRadS:Math.hypot(...Object.values(engine.angularVelocity())),
      aimCentreZM:c.targetCentreZM,launchSpeedMps:Math.hypot(...Object.values(physics.ball.velocity))});

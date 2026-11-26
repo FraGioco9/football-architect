@@ -487,3 +487,66 @@ test('SHOT-04 safe goal-mouth ranking: nearest tap-in, varied corners, live defe
   assert.equal(aim([positiveBlock]).officialGoal,false);
  }
 });
+
+test('SHOT-05 first-time ground deliveries use real incoming momentum and one native strike',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const profile of LAB_SHOT_PROFILES)for(const side of ['home','away']){
+  const variants=profile==='tap-in'?Array.from({length:30},(_,i)=>i):[0,7,14,21,28,29];
+  for(const variantIndex of variants){
+   const lab=createControlledActionLab(R,'shot-solo',{shotSide:side,variantIndex,shotProfile:profile,firstTimeShot:true});
+   try{
+    let frame=lab.snapshot(),count=0,firstContactTick=null,prior=frame.ball;
+    assert.equal(frame.shotSoloAudit.firstTimeShot,true);
+    assert.equal(frame.shotSoloAudit.attempted,false);
+    assert.equal(frame.genuinePhysicalPlayerCount,1);
+    assert.ok(Math.hypot(prior.velocity.x,prior.velocity.y)>=3.99);
+    for(let i=0;i<300;i++){
+     frame=lab.step();
+     if(frame.starts.includes(side+'-10'))firstContactTick??=frame.physicsTick;
+     assert.equal(frame.officialMatchResult,null);
+     assert.equal(frame.latestOrientedReception,null);
+     if(frame.action){
+      count++;
+      assert.equal(frame.action.action,'shot');
+      assert.equal(frame.physicsTick,firstContactTick,'must strike on first native contact');
+      assert.deepEqual(frame.starts,[side+'-10']);
+      assert.equal(frame.action.actualPhysicsImpulseApplied,true);
+      const e=frame.action.firstTimeShotEvidence;
+      assert.equal(e.nativeExclusiveShoeStart,true);
+      assert.deepEqual(e.priorNativeBallVelocity,prior.velocity);
+      assert.ok(Math.hypot(e.priorNativeBallVelocity.x,e.priorNativeBallVelocity.y)>2.5);
+      assert.ok(Math.hypot(...Object.values(e.appliedImpulseNs))<=(profile==='tap-in'?6.5:13)+1e-8);
+      for(const k of ['x','y','z'])assert.ok(Math.abs(
+       e.postSolverVelocity[k]+e.appliedImpulseNs[k]/e.ballMassKg-e.postStrikeVelocity[k])<1e-4);
+     }
+     prior=frame.ball;
+     if(frame.shotSoloAudit.crossing)break;
+    }
+    rows.push({side,variantIndex,count,firstContactTick,...frame.shotSoloAudit});
+   }finally{lab.dispose();}
+  }
+ }
+ process.stdout.write('ME_628_FIRST_TIME '+JSON.stringify(rows)+'\n');
+ for(const row of rows){
+  assert.equal(row.count,1,JSON.stringify(row));
+  assert.ok(row.firstContactTick>1&&row.firstContactTick<=30,JSON.stringify(row));
+  assert.equal(row.launchTick,row.firstContactTick);
+  assert.ok(row.crossing?.fullBallCrossed,JSON.stringify(row));
+  assert.equal(row.crossing.officialGoal,false);
+  assert.ok((row.side==='home'?1:-1)*row.launchVelocity.x>0,JSON.stringify(row));
+  if(row.profile==='tap-in'){
+   assert.ok(row.crossing.goal&&row.crossing.scoringTeam===row.side,JSON.stringify(row));
+   assert.ok(row.peakClearanceM<=0.15&&row.crossing.lateralErrorM<=0.35,JSON.stringify(row));
+   assert.ok(Math.abs(row.aimY-row.launchPosition.y)<1e-5,JSON.stringify(row));
+  }
+ }
+ // No fake goal guarantee: bounded impulse may miss on a difficult arrival.
+ // Nevertheless each profile must physically score from most easy empty-goal
+ // samples. All actual misses remain observable in the reported matrix.
+ for(const profile of LAB_SHOT_PROFILES){
+  const subset=rows.filter(row=>row.profile===profile);
+  assert.ok(subset.filter(row=>row.crossing?.goal).length>=Math.ceil(subset.length*0.75),profile+' '+JSON.stringify(subset));
+ }
+ assert.throws(()=>createControlledActionLab(R,'pass-pair',{firstTimeShot:true}),TypeError);
+ assert.throws(()=>createControlledActionLab(R,'shot-solo',{firstTimeShot:'yes'}),TypeError);
+});

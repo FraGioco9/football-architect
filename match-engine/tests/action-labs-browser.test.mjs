@@ -104,7 +104,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   await send('Page.navigate',{
    url:'http://app.localhost:2000/dev/match-engine'
   });
-  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===18");
+  await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')&&document.querySelectorAll('#preset-options [role=option][data-value]').length===24");
   // Actual canvas pixels: the ball stays centred at the same XY at
   // both 3m and 0m; only the cast shadow darkens an off-centre region.
   const marker=await evalJs("(()=>{"+
@@ -273,6 +273,20 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    assert.match(readout.readout,/SHOT native shoe\/impulse/);
    assert.match(readout.readout,/goal · flight [0-9.]+ s/);
    process.stdout.write('ME_628_SHOT_PROFILE_CHROME '+JSON.stringify({profile,...readout})+'\n');
+  }
+  for(const [profile,label] of [['power','Power'],['low','Low'],['placed','Placed'],['chip','Chip'],['curled','Curled'],['tap-in','Tap-in']]){
+   const key='action:shot-solo:'+profile+':first-time';
+   const result=await evalJs("(()=>{"+
+    "document.getElementById('preset-trigger').click();"+
+    "document.querySelector('#preset-options [data-value='+JSON.stringify("+JSON.stringify(key)+")+']').click();"+
+    "for(let n=0;n<240;n++)document.getElementById('step').click();"+
+    "return {label:document.getElementById('preset-value').textContent,readout:document.getElementById('me-inline-observation').textContent,count:document.getElementById('me-decisions-count').textContent};})()");
+   assert.equal(result.label,'First-time · '+label);
+   assert.equal(result.count,'1 on field');
+   assert.match(result.readout,/SHOT native shoe\/impulse/);
+   assert.match(result.readout,/first-time · incoming [0-9.]+ km\/h/);
+   assert.match(result.readout,/(goal|miss) · flight [0-9.]+ s/);
+   if(profile==='tap-in')assert.match(result.readout,/goal · flight [0-9.]+ s/);
   }
   // Every visible Carry option has its own fixed phase, including both
   // mirrored sides and Reset. Real Rapier ball impulses are counted, not
@@ -808,7 +822,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "unique:document.querySelectorAll('[data-me-dropdown=preset]').length===1,"+
    "noSecondSelector:document.getElementById('lab-all-situations')===null,"+
    "current:trigger.textContent.trim()};})()");
-  assert.equal(nav.items,18);
+  assert.equal(nav.items,24);
   assert.deepEqual(nav.groups,['Carry phases','Passing','Shooting','Small-sided situations','Ball physics']);
   for(const key of ['hiddenLaunches','hiddenChoices','unique','noSecondSelector'])
    assert.equal(nav[key],true,key);

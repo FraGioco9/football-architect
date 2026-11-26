@@ -135,5 +135,6 @@ export function calculateCurrentLabShotCalibration({target,position,velocity,mas
   profile==='curled'?Object.freeze({x:0,y:0,z:spinZ}):null;
  return Object.freeze({source:LAB_SHOT_CALIBRATION_VERSION,profile,distanceM,targetY,targetCentreZM,targetSelection,
   plannedHorizontalSpeedMps:speed,plannedFlightTimeS:timeS,originalImpulseNs,impulseNs,
-  targetAngularVelocity,provisional:true,officialMatchAction:false});
+  targetAngularVelocity,preImpulseVelocity:Object.freeze({...velocity}),
+   provisional:true,officialMatchAction:false});
 }

@@ -98,8 +98,8 @@ test('seventeen base-action LABs retain negative authorization boundaries',()=>{
  const dev=readFileSync(new URL('../../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
  const client=readFileSync(new URL('../src/action-labs.mjs',import.meta.url),'utf8');
  const unified=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
- assert.match(unified,/length!==18/,
-  'three fixed Carry phases, ground Pass, lofted Cross, six Shot profiles, three small-sided exercises and four ball presets');
+ assert.match(unified,/length!==24/,
+  'three fixed Carry phases, ground Pass, lofted Cross, six stationary and six first-time Shot profiles, three small-sided exercises and four ball presets');
  assert.doesNotMatch(unified,/count!==48/);
  for(const spec of ACTION_LAB_SCENARIOS)
   assert.match(html,new RegExp('<option value="'+spec.id+'">'));

@@ -121,9 +121,11 @@ export function getSmallSidedScenario(id){
  return d;
 }
 export function smallSidedSetup(id,side,canonicalPlayers,{
- variantIndex=0,carryRunwayStart=false,tapInStart=false
+ variantIndex=0,carryRunwayStart=false,tapInStart=false,firstTimeShot=false
 }={}){
  const d=getSmallSidedScenario(id);
+ if(typeof firstTimeShot!=='boolean'||(firstTimeShot&&id!=='shot-solo'))
+  throw new TypeError('First-time start requires isolated shooter');
  if(typeof tapInStart!=='boolean'||(tapInStart&&id!=='shot-solo'))
   throw new TypeError('Tap-in start requires isolated shooter');
  if(typeof carryRunwayStart!=='boolean'||
@@ -198,6 +200,27 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
     genuinePhysicalPlayers:2,officialMatchResult:null});
   }
   throw new RangeError('No collision-free isolated cross setup');
+ }
+ // SHOT-05: a rolling ball approaches the original stationary shoe
+ // from six directions and five speed bands. Stage only before tick zero.
+ if(id==='shot-solo'&&firstTimeShot){
+  const random=seededGeometry('shot-first-time',variantIndex);
+  const angles=[Math.PI/2,-Math.PI/2,Math.PI/3,-Math.PI/3,2*Math.PI/3,-2*Math.PI/3];
+  const angle=angles[variantIndex%angles.length];
+  const speed=4+Math.floor(variantIndex/angles.length)*0.75;
+  const ux=Math.cos(angle),uy=Math.sin(angle),travel=1.05;
+  for(let attempt=0;attempt<96;attempt++){
+   const contactX=tapInStart?48.0+random()*2.7:26+random()*12;
+   const contactY=tapInStart?-1.7+random()*3.4:-10+random()*20;
+   // Existing native shoe centre is 0.22m ahead of the player.
+   const staged=stage(new Map([[side+'-10',[contactX-0.22,contactY]]]));
+   if(!physicallySeparated(staged,1.15))continue;
+   return freeze({id,side,opponent,variantIndex,activeIds,staged,firstTimeShot:true,
+    ball:freeze({preset:'roll',seed:'me-small-shot-first-time-'+(tapInStart?'tap-in-':'')+'v'+variantIndex+'-'+side,
+     x:dir*(contactX-travel*ux),y:contactY-travel*uy,z:0,vx:dir*speed*ux,vy:speed*uy,vz:0}),
+    genuinePhysicalPlayers:1,officialMatchResult:null});
+  }
+  throw new RangeError('No collision-free first-time shot setup');
  }
  // SHOT-01: one original physical shooter and a stationary ball.
  if(id==='shot-solo'){
