@@ -1,6 +1,7 @@
 // ME-01: isolated, deterministic 3D physics core. No browser, HTTP, D1 or football-world dependencies.
 import {speedDependentDragCd} from './aerodynamics.mjs';
 import {magnusLift,MAGNUS_SPIN_LIMIT_RAD_S} from './magnus.mjs';
+import {LAB_SHOT_PROFILES} from './lab-shot-calibration.mjs';
 import {literatureCandidateForces} from './literature-aero-candidate.mjs';
 import {createPrivateRapierFootContactBridge}
  from './rapier-foot-contact-bridge.mjs';
@@ -54,6 +55,10 @@ const FIELDS = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
 const BOUNDS = Object.freeze({x: 48, y: 30, z: 30, vx: 60, vy: 60, vz: 60});
 
 export function normalizeScenario(input = {}) {
+  return normalizeScenarioWithinBounds(input,BOUNDS);
+}
+// Private bound override, reachable only after canonical Tap-in setup verification.
+function normalizeScenarioWithinBounds(input,bounds) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TypeError('Invalid scenario');
   if (Object.keys(input).some(key => !['preset', 'seed', ...FIELDS].includes(key)))
     throw new TypeError('Unknown scenario field');
@@ -65,7 +70,7 @@ export function normalizeScenario(input = {}) {
   const data = {preset, seed};
   for (const key of FIELDS) {
     const value = input[key] ?? PRESETS[preset][key];
-    if (typeof value !== 'number' || !Number.isFinite(value) || Math.abs(value) > BOUNDS[key])
+    if (typeof value !== 'number' || !Number.isFinite(value) || Math.abs(value) > bounds[key])
       throw new RangeError('Invalid value for ' + key);
     data[key] = Object.is(value, -0) ? 0 : value;
   }
@@ -99,6 +104,8 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticUnstagedBodyFeedbackEnabled = false,
   diagnosticAutonomousFixtureActionEnabled = false,
   diagnosticLatestLabDynamics = false,
+  diagnosticIsolatedShotProfile = 'power',
+  diagnosticFirstTimeShot = false,
   diagnosticAutonomousCarryEnabled = false,
   diagnosticResearchShotAttacker = null,
   diagnosticResearchShotBlockedLane = false,
@@ -140,6 +147,12 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchCarrySide = null
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
+  if(typeof diagnosticFirstTimeShot!=='boolean'||(diagnosticFirstTimeShot&&
+     (!diagnosticLatestLabDynamics||diagnosticSmallSidedSituation!=='shot-solo'||diagnosticInitialRollFraction!==1)))
+    throw new TypeError('First-time shot requires canonical rolling-ball isolated shooter');
+  if(!LAB_SHOT_PROFILES.includes(diagnosticIsolatedShotProfile)||
+     (diagnosticIsolatedShotProfile!=='power'&&(!diagnosticLatestLabDynamics||diagnosticSmallSidedSituation!=='shot-solo')))
+    throw new TypeError('Shot profile is available only in current isolated shot LAB');
   if(typeof diagnosticLatestLabDynamics!=='boolean'||(diagnosticLatestLabDynamics&&!diagnosticAutonomousFixtureActionEnabled))
     throw new TypeError('Current LAB dynamics require original native action authority');
   if(typeof diagnosticPlayerFootContactsEnabled!=='boolean')
@@ -239,7 +252,7 @@ export function createEngine(RAPIER, input = {}, {
     throw new TypeError('Small-sided feedback needs selected physical bodies');
    if(typeof diagnosticSmallSidedBodyGuardEnabled!=='boolean'||
      (diagnosticSmallSidedBodyGuardEnabled&&(
-      (diagnosticSmallSidedSituation===null||['pass-pair','cross-pair'].includes(diagnosticSmallSidedSituation))||
+      (diagnosticSmallSidedSituation===null||['pass-pair','cross-pair','shot-solo'].includes(diagnosticSmallSidedSituation))||
       !diagnosticPlayerFootContactsEnabled||
       !diagnosticAutonomousFixtureActionEnabled||
       diagnosticPlayerBodyCollidersEnabled||
@@ -249,7 +262,7 @@ export function createEngine(RAPIER, input = {}, {
    smallSidedSetup(diagnosticSmallSidedSituation,
     diagnosticSmallSidedSide,INITIAL_PLAYERS,
     {variantIndex:diagnosticSmallSidedVariantIndex,
-     carryRunwayStart:diagnosticCarryRunwayStart});
+     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in',firstTimeShot:diagnosticFirstTimeShot});
    if(!diagnosticPlayerFootContactsEnabled||
       !diagnosticAutonomousFixtureActionEnabled||
       diagnosticPlayerBodyCollidersEnabled||diagnosticSharedContactEventsEnabled||
@@ -327,7 +340,20 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchDefensiveSide!==null||
     diagnosticResearchGoalkeeperSaveSide!==null))
    throw new TypeError('B06b isolated source-only native 60Hz halftime required');
-  const scenario = normalizeScenario(input);
+  let scenario;
+  if(diagnosticIsolatedShotProfile==='tap-in'||diagnosticFirstTimeShot){
+    // Manual presets retain their +/-48m limit. Only the already validated
+    // isolated native shooter may start closer to the goal line, and only
+    // at the exact deterministic stationary/rolling start for its side/seed.
+    const expected=smallSidedSetup('shot-solo',diagnosticSmallSidedSide,INITIAL_PLAYERS,{
+      variantIndex:diagnosticSmallSidedVariantIndex,tapInStart:diagnosticIsolatedShotProfile==='tap-in',
+      firstTimeShot:diagnosticFirstTimeShot
+    }).ball;
+    const candidate=normalizeScenarioWithinBounds(input,{...BOUNDS,x:52.5-BALL_RADIUS});
+    if(['preset','seed',...FIELDS].some(key=>candidate[key]!==expected[key]))
+      throw new RangeError(diagnosticFirstTimeShot?'First-time shot requires canonical rolling start':'Tap-in requires the canonical stationary close-range start');
+    scenario=candidate;
+  }else scenario=normalizeScenario(input);
   if(typeof diagnosticResearchBodyEncounter!=='boolean'||
      (diagnosticResearchBodyEncounter&&
       (!diagnosticPlayerBodyCollidersEnabled||
@@ -463,7 +489,7 @@ export function createEngine(RAPIER, input = {}, {
   smallSidedSetup(diagnosticSmallSidedSituation,
    diagnosticSmallSidedSide,INITIAL_PLAYERS,
    {variantIndex:diagnosticSmallSidedVariantIndex,
-     carryRunwayStart:diagnosticCarryRunwayStart});
+     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in',firstTimeShot:diagnosticFirstTimeShot});
  const isolatedCarry=smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo';
  const stagedShoes=smallSided?smallSided.staged:
   diagnosticB06bOpeningKickoffEnabled?
@@ -581,7 +607,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticPlayerFootContactsEnabled,diagnosticPlayerBodyCollidersEnabled,
     diagnosticSharedContactEventsEnabled,
     diagnosticResearchBodyEncounter,diagnosticUnstagedBodyFeedbackEnabled,
-    diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,diagnosticLatestLabDynamics,
+    diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,diagnosticLatestLabDynamics,diagnosticIsolatedShotProfile,diagnosticFirstTimeShot,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchShotWideCross,diagnosticResearchGoalkeeperSaveSide,
     diagnosticResearchDefensiveSide,diagnosticResearchDefensiveKind,
@@ -610,7 +636,17 @@ export function createEngine(RAPIER, input = {}, {
   world.timestep = FIXED_DT;
   // XY = field surface. Physics Z = center height, scenario Z = bottom clearance.
   // The floor top is exactly z=0 and a grounded ball center starts at its radius.
-  const ground = RAPIER.ColliderDesc.cuboid(52.5, 34, 0.2)
+  // Current gameplay: the real playing surface continues past painted
+  // boundary lines. A grounded sphere must remain supported while its
+  // trailing edge crosses the line (centre at half-length + radius).
+  // Otherwise the collider edge can tip the ball down and turn a valid
+  // rolling goal into a below-ground goal-line exit. Keep the B05 full-ball
+  // crossing geometry, in-field rolling resistance and old diagnostics
+  // unchanged. This is surface geometry, not a goal-specific correction.
+  const groundDesc = diagnosticLatestLabDynamics?
+    RAPIER.ColliderDesc.cuboid(53.5, 35, 0.2):
+    RAPIER.ColliderDesc.cuboid(52.5, 34, 0.2);
+  const ground = groundDesc
     .setTranslation(0, 0, -0.2).setFriction(0.65).setRestitution(isolatedCarry?0:GROUND_RESTITUTION);
   const groundCollider=world.createCollider(ground);
   const desc = RAPIER.RigidBodyDesc.dynamic()
@@ -651,6 +687,8 @@ export function createEngine(RAPIER, input = {}, {
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes,
      {...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
+      ...(diagnosticFirstTimeShot&&diagnosticIsolatedShotProfile!=='tap-in'?
+       {firstTimeShotReleaseId:smallSided.side+'-10'}:{}),
       ...(isolatedCarry?{
        isolatedGroundDribbleBallCentreZ:BALL_RADIUS,
        dribbleAttackerId:smallSided.side+'-10',
@@ -692,9 +730,10 @@ export function createEngine(RAPIER, input = {}, {
       nativeFixedCarryResearch:diagnosticNativeFixedCarryResearchEnabled,
       nativeFixedSprintLongStride:diagnosticNativeFixedSprintLongStrideEnabled,
       allowPhysicalCarry:diagnosticAutonomousCarryEnabled||
-       isolatedCarry||(smallSided?.variantIndex>0&&!['pass-pair','cross-pair'].includes(smallSided.id)),
+       isolatedCarry||(smallSided?.variantIndex>0&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)),
       ...(smallSided?.id==='pass-pair'?{isolatedPassSide:smallSided.side}:{}),
        ...(smallSided?.id==='cross-pair'?{isolatedCrossSide:smallSided.side}:{}),
+      ...(smallSided?.id==='shot-solo'?{isolatedShotSide:smallSided.side,isolatedShotProfile:diagnosticIsolatedShotProfile,firstTimeShot:diagnosticFirstTimeShot}:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
       ...(isolatedCarry?{
        isolatedDribbleContext:Object.freeze({
@@ -702,7 +741,7 @@ export function createEngine(RAPIER, input = {}, {
         variantIndex:smallSided.variantIndex
        })
       }:{}),
-      ...(smallSided?.variantIndex>0&&!['pass-pair','cross-pair'].includes(smallSided.id)?{
+      ...(smallSided?.variantIndex>0&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?{
        smallSidedDecisionContext:Object.freeze({
         situationId:smallSided.id,
         variantIndex:smallSided.variantIndex,
@@ -727,6 +766,7 @@ export function createEngine(RAPIER, input = {}, {
     }, true);
   if(magnusSpin)body.setAngvel(magnusSpin,true);
   let tick = 0;
+  let curledShotFlight=false;
   let disposed = false;
   let basicRestartTick = -1;
   let b06bOpeningKickoff=null,b06bHalftimePlacement=null,b06bKickoff=null;
@@ -795,14 +835,17 @@ export function createEngine(RAPIER, input = {}, {
     // Private current Rapier state is captured before the only world.step().
     // The bridge never manufactures an event, impulse or match possession.
     const preStepBall=shoeBridge?snapshot().ball:null;
-    if(shoeBridge)shoeBridge.prepare(playerFrame,tick+1,preStepBall);
+    const previousStrike=diagnosticFirstTimeShot&&diagnosticIsolatedShotProfile!=='tap-in'?
+     actionExecutor?.actionSnapshot():null;
+    if(shoeBridge)shoeBridge.prepare(playerFrame,tick+1,preStepBall,
+     previousStrike?.firstTimeShotEvidence?previousStrike:null);
     if(bodyBridge)bodyBridge.prepare(playerFrame,tick+1);
     if(smallBodyGuard)smallBodyGuard.prepare(playerFrame,tick+1);
     // User forces are persistent in Rapier. Clear the previous tick's drag
     // BEFORE computing this tick's force, and never apply it on the grass.
     // The default=0 branch is identical to the accepted physics-v4 path.
     if(diagnosticAirDragCd>0 || diagnosticAirDragModel==='speed-dependent' ||
-       diagnosticAerodynamicProfile!=='none' || magnusSpin){
+       diagnosticAerodynamicProfile!=='none' || magnusSpin || diagnosticIsolatedShotProfile==='curled'){
       body.resetForces(false);
       const position=body.translation(),v=body.linvel();
       if(position.z>BALL_RADIUS+0.02){
@@ -826,7 +869,7 @@ export function createEngine(RAPIER, input = {}, {
               BALL_FRONTAL_AREA_M2*speed;
             body.addForce({x:magnitude*v.x,y:magnitude*v.y,z:magnitude*v.z},true);
           }
-          if(magnusSpin && diagnosticMagnusLiftEnabled){
+          if((magnusSpin || curledShotFlight) && diagnosticMagnusLiftEnabled){
             const lift=magnusLift(v,body.angvel(),{
               radiusM:BALL_RADIUS,densityKgM3:AIR_DENSITY_KG_M3,
               areaM2:BALL_FRONTAL_AREA_M2
@@ -889,12 +932,18 @@ export function createEngine(RAPIER, input = {}, {
     // Same tick, same private Rapier ball, exclusively from observed shoe
     // START. The ordinary physics and contact-only modes never kick.
     if(actionExecutor)actionExecutor.apply(tick,playerFrame,{
+      ...(diagnosticFirstTimeShot?{priorNativeBallVelocity:preStepBall.velocity}:{}),
       suppressOriginalAction:diagnosticB06bNativeShotSide!==null&&(
        b06bGoalPending!==null||
        (b06bHalftimePlacement!==null&&b06bKickoff===null)),
       suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
        .lowerLegBallContacts.length>0
     });
+    if(diagnosticIsolatedShotProfile==='curled'){
+     if(shoeBridge.snapshot().started.length)curledShotFlight=false;
+     const shot=actionExecutor.actionSnapshot();
+     if(shot?.labShotCalibration?.profile==='curled'&&shot.labShotSpin?.nativeContactOnly)curledShotFlight=true;
+    }
     return snapshot();
   }
   // B05b: one original native Rapier shoe START, one outbound physical

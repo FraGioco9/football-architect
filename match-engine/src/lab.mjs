@@ -15,6 +15,7 @@ import {runContactImpactDiagnostics} from '/__fa_match_engine__/contact-impact-q
 import {mountControlledActionLabs,createControlledActionLab,projectActiveLabDecisions} from '/__fa_match_engine__/action-labs.mjs';
 import {mountControlledMovementLabs,createControlledMovementLab} from '/__fa_match_engine__/movement-labs.mjs';
 import {SMALL_SIDED_VARIANT_COUNT} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
+import {LAB_SHOT_PROFILES,LAB_SHOT_LABELS} from '/__fa_match_engine__/lab-shot-calibration.mjs';
 import {SOLO_CARRY_PHASES} from '/__fa_match_engine__/solo-carry-phases.mjs';
 import {uniformSoloCarryAttributes}
  from '/__fa_match_engine__/solo-carry-attribute-calibration.mjs';
@@ -235,8 +236,8 @@ function restart() {
       throw new TypeError('Original small-sided situation requires HOME/AWAY');
     const next=kind==='action'?
       createControlledActionLab(rapier,id,{shotSide:side,
-       variantIndex:activeVariantIndex,
-       bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair',
+       variantIndex:activeVariantIndex,shotProfile:activeScene.shotProfile??'power',firstTimeShot:activeScene.firstTimeShot===true,
+       bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair'&&id!=='shot-solo',
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
        // Leave the original ordinary 22-player physics unmodified.
@@ -518,6 +519,16 @@ function render() {
            ' · oriented touch '+fmt(f.crossPairAudit.receiverFollowThrough.atOneSecond.directedTravelM)+' m'+
            ' · 1s gap '+fmt(f.crossPairAudit.receiverFollowThrough.atOneSecond.gapM)+' m':''):
          ' · flight observation'):' · waiting for native crossing shoe START'):'')+
+      (f.shotSoloAudit?.attempted?
+        ' · '+LAB_SHOT_LABELS[f.shotSoloAudit.profile]+(f.shotSoloAudit.firstTimeShot?' · first-time · incoming '+fmtKmh(Math.hypot(...Object.values(f.shotSoloAudit.firstTimeEvidence.priorNativeBallVelocity)))+' km/h':'')+' · empty goal · distance '+fmt(f.shotSoloAudit.distanceM)+' m'+
+        ' · aim '+fmt(f.shotSoloAudit.aimY)+' m / '+fmt(f.shotSoloAudit.aimCentreZM)+' m'+
+         ' · launch '+fmtKmh(f.shotSoloAudit.launchSpeedMps)+' km/h'+
+        ' · peak height '+fmt(f.shotSoloAudit.peakClearanceM)+' m'+
+        ' · spin '+fmt(f.shotSoloAudit.launchSpinRadS)+' rad/s'+
+        (f.shotSoloAudit.profile==='curled'?' · bend '+fmt(f.shotSoloAudit.maxLateralBendM)+' m':'')+
+        (f.shotSoloAudit.crossing?' · '+(f.shotSoloAudit.crossing.goal?'goal':'miss')+
+         ' · flight '+fmt(f.shotSoloAudit.crossing.timeS)+' s'+
+         ' · lateral error '+fmt(f.shotSoloAudit.crossing.lateralErrorM)+' m':''):'')+
       (f.nativeFixedCarryResearch?' · Native Carry · real two-shoe Rapier START required':'')+
       (f.soloSprintActiveFootReleaseM===0.06?
        ' · native active-foot release 6 cm (DEV Sprint only)':'')+
@@ -540,7 +551,7 @@ function render() {
         ' · mean gap '+f.soloCarryMeasurements.meanGapM.toFixed(2)+' m'+
         ' · gap >1.5m '+f.soloCarryMeasurements.observedOutOfReachTicks+' ticks'+
         ' · recoveries '+f.soloCarryMeasurements.observedRealRecoveryEpisodes+
-        (f.nativeFixedCarryResearch?
+       (f.nativeFixedCarryResearch?
          ' · native impulses last ≤2s '+f.soloCarryMeasurements.nativeRecent2sImpulseCount+
          ' · mean native impulse gap '+
           (f.soloCarryMeasurements.nativeMeanImpulseGapS===null?'—':
@@ -2090,6 +2101,10 @@ function setupUnifiedScenarioMenu(){
    ['action:pass-pair','Pass · Ground'],
     ['action:cross-pair','Cross · Lofted']
   ]],
+  ['Shooting',[
+   ...LAB_SHOT_PROFILES.map(profile=>[profile==='power'?'action:shot-solo':'action:shot-solo:'+profile,'Shot · '+LAB_SHOT_LABELS[profile]]),
+   ...LAB_SHOT_PROFILES.map(profile=>['action:shot-solo:'+profile+':first-time','First-time · '+LAB_SHOT_LABELS[profile]])
+  ]],
   ['Small-sided situations',[
    ['action:keeper-1v1','1v1 · goalkeeper'],
    ['action:overload-2v1','2v1 · attack and defend'],
@@ -2100,10 +2115,13 @@ function setupUnifiedScenarioMenu(){
  for(const [title,choices] of groups){
   heading(title);
   for(const [value,label] of choices){
-   const [kind,id,lockedPhase=null]=value.split(':');
-   if(kind!=='action'||!available.has(id)||
+   const parts=value.split(':');
+   const [kind,id,lockedPhase=null,shotMode=null]=parts;
+   if(kind!=='action'||!available.has(id)||parts.length>4||
+      (shotMode!==null&&(id!=='shot-solo'||!LAB_SHOT_PROFILES.includes(lockedPhase)||shotMode!=='first-time'))||
       (lockedPhase!==null&&
-       (id!=='carry-solo'||!SOLO_CARRY_PHASES.includes(lockedPhase))))
+       !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedPhase))||
+         (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedPhase)))))
     throw new Error('Missing authentic LAB scenario '+value);
    const opt=document.createElement('div');
    opt.className='language-option';
@@ -2117,9 +2135,9 @@ function setupUnifiedScenarioMenu(){
  }
  heading('Ball physics');
  for(const node of physics)menu.append(node);
- if(menu.querySelectorAll('[role="option"][data-value]').length!==12||
-    menu.querySelectorAll('.me-scenario-group-label').length!==4)
-  throw new Error('Lab should expose three fixed Carry phases, ground Pass, lofted Cross, three small-sided exercises and four ball presets');
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==24||
+    menu.querySelectorAll('.me-scenario-group-label').length!==5)
+  throw new Error('Lab should expose three fixed Carry phases, ground Pass, lofted Cross, six stationary and six first-time Shot profiles, three small-sided exercises and four ball presets');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')
@@ -2130,12 +2148,16 @@ function launchSelectedScenario(value){
   restoreOriginalScenario();say('Physics is still loading',true);return;
  }
  const parts=value.split(':');
- const [kind,id,soloCarryLockedPhase=null]=parts;
- if(parts.length<2||parts.length>3||
+ const [kind,id,lockedProfile=null,shotMode=null]=parts;
+ const firstTimeShot=shotMode==='first-time';
+ const soloCarryLockedPhase=id==='carry-solo'?lockedProfile:null;
+ const shotProfile=id==='shot-solo'?(lockedProfile??'power'):null;
+ if(parts.length<2||parts.length>4||
+    (shotMode!==null&&(id!=='shot-solo'||kind!=='action'||!LAB_SHOT_PROFILES.includes(lockedProfile)||!firstTimeShot))||
     !['action','movement'].includes(kind)||!id||
-    (soloCarryLockedPhase!==null&&(
-     kind!=='action'||id!=='carry-solo'||
-     !SOLO_CARRY_PHASES.includes(soloCarryLockedPhase))))
+    (lockedProfile!==null&&(kind!=='action'||
+      !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedProfile))||
+        (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedProfile))))))
   throw new RangeError('Invalid Scenario kind');
  const prefix=kind==='action'?'action-labs':'movement-labs';
  const choice=byId(prefix+'-choice');
@@ -2147,10 +2169,10 @@ function launchSelectedScenario(value){
  // Selecting a new exercise starts at V01. Side change and Reset replay
  // the current variation; Next/Previous are the only variation controls.
  if(!activeScene||activeScene.kind!==kind||activeScene.id!==id||
-    activeScene.soloCarryLockedPhase!==soloCarryLockedPhase){
+    activeScene.soloCarryLockedPhase!==soloCarryLockedPhase||activeScene.shotProfile!==shotProfile||activeScene.firstTimeShot!==firstTimeShot){
    activeVariantIndex=0;
   }
- activeScene={kind,id,soloCarryLockedPhase};
+ activeScene={kind,id,soloCarryLockedPhase,shotProfile,firstTimeShot};
  try{restart();}catch(error){
   disposeInline();restoreOriginalScenario();
   say('LAB could not start: '+error.message,true);

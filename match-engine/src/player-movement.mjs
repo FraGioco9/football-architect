@@ -1672,7 +1672,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bGoalRestartEnabled'&&
      k!=='researchB06bNativeShotSide'&&
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
-     k!=='researchSmallSidedVariantIndex'&&
+     k!=='researchSmallSidedVariantIndex'&&k!=='researchTapInStart'&&k!=='researchFirstTimeShot'&&
      k!=='researchCarryRunwayStart'&&
      k!=='researchNativeFixedCarry'&&
      k!=='researchSoloSprintPursuitLeadM'&&
@@ -1826,6 +1826,8 @@ export function createPlayerMovement(options={}){
       options.researchBodyEncounter!==undefined||
       Reflect.ownKeys(options).length!==
        (options.researchSmallSidedVariantIndex===undefined?2:3)+
+        (options.researchTapInStart===true?1:0)+
+         (options.researchFirstTimeShot===true?1:0)+
         (options.researchSmallSidedBodyFeedback===true?1:0)+
         (options.researchSoloCarryLockedPhase===undefined?0:1)+
         (options.researchSoloCarryPlayerAttributes===undefined?0:1)+
@@ -1844,6 +1846,8 @@ export function createPlayerMovement(options={}){
      options.researchNativeFixedCarry!==true||
      options.researchSoloCarryLockedPhase!=='sprint'||
      options.researchCarryRunwayStart!==true))||
+    (options.researchFirstTimeShot!==undefined&&(options.researchFirstTimeShot!==true||options.researchSmallSidedSituation!=='shot-solo'))||
+    (options.researchTapInStart!==undefined&&(options.researchTapInStart!==true||options.researchSmallSidedSituation!=='shot-solo'))||
     (options.researchSmallSidedVariantIndex!==undefined&&
      options.researchSmallSidedSituation===undefined)||
     (options.researchCarryRunwayStart!==undefined&&
@@ -1894,7 +1898,7 @@ export function createPlayerMovement(options={}){
   smallSidedSetup(options.researchSmallSidedSituation,
    options.researchSmallSidedSide,INITIAL_PLAYERS,
    {variantIndex:options.researchSmallSidedVariantIndex??0,
-    carryRunwayStart:options.researchCarryRunwayStart===true});
+    carryRunwayStart:options.researchCarryRunwayStart===true,tapInStart:options.researchTapInStart===true,firstTimeShot:options.researchFirstTimeShot===true});
  const smallActive=smallSided?new Set(smallSided.activeIds):null;
  const initial=smallSided?smallSided.staged:
   options.researchB06bOpeningKickoffEnabled===true?
@@ -2494,7 +2498,8 @@ export function createPlayerMovement(options={}){
     // touch the ball; all others retain their own base positions.
     if(!smallActive.has(p.id))
      return Object.freeze({x:p.baseX,y:p.baseY});
-    if(['pass-pair','cross-pair'].includes(smallSided.id)){
+    if(smallSided.firstTimeShot)return Object.freeze({x:p.baseX,y:p.baseY});
+    if(['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)){
      // Fixed receiving station and short approach to the INITIAL ball.
      return p.id===smallSided.side+'-10'?
       Object.freeze({x:smallSided.ball.x+(smallSided.side==='home'?0.10:-0.10),
@@ -2836,7 +2841,7 @@ export function createPlayerMovement(options={}){
      p.team!==smallSided.side?'press-ball':
      p.id===smallSided.side+'-10'?
       ((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?'carry-ball':'approach-ball'):
-      ['pass-pair','cross-pair'].includes(smallSided.id)?'hold-pass-target':'support-run';
+      ['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?'hold-pass-target':'support-run';
     return Object.freeze({
      tick:tick+1,id:p.id,team:p.team,kind,
      ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:{}),

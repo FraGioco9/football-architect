@@ -10,6 +10,7 @@ import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
 import {calculateRealReceivingCushion,calculateOrientedReceivingCushion,calculateLowCrossSpinCushion,CURRENT_LAB_DYNAMICS_VERSION}
  from './physical-receiving-cushion-m25.mjs';
+import {calculateCurrentLabShotCalibration,LAB_SHOT_PROFILES} from './lab-shot-calibration.mjs';
 import {choosePhysicalReceiverSecondTouch}
  from './physical-receiver-choice-m27.mjs';
 import {calculatePhysicalReceiverReleaseTap} from './physical-receiver-tap-m30.mjs';
@@ -21,7 +22,7 @@ export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
- smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,
+ smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='power',firstTimeShot=false,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
  nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false
 }={}){
@@ -53,6 +54,17 @@ export function createPrivatePhysicalActionExecutor({
     isolatedDribbleContext!==null||researchReceivingCushionSide!==null||
     researchReceivingDecisionSide!==null||researchReceiverTapSide!==null))
   throw new TypeError('Isolated pass requires exactly two original teammates');
+ if(typeof firstTimeShot!=='boolean'||(firstTimeShot&&isolatedShotSide===null))
+  throw new TypeError('First-time shot requires native isolated shooter');
+ if(!LAB_SHOT_PROFILES.includes(isolatedShotProfile)||(isolatedShotProfile!=='power'&&isolatedShotSide===null))
+  throw new TypeError('Locked shot profile requires isolated native shooter');
+ if(isolatedShotSide!==null&&(
+    !['home','away'].includes(isolatedShotSide)||activePlayerIds?.length!==1||
+    !activePlayerIds.includes(isolatedShotSide+'-10')||isolatedPassSide!==null||
+    isolatedCrossSide!==null||allowPhysicalCarry||smallSidedDecisionContext!==null||
+    isolatedDribbleContext!==null||researchReceivingCushionSide!==null||
+    researchReceivingDecisionSide!==null||researchReceiverTapSide!==null||physicalBodyGuardEnabled))
+  throw new TypeError('Isolated shot requires one original shooter and no opponents');
  if(isolatedCrossSide!==null&&(
     !['home','away'].includes(isolatedCrossSide)||activePlayerIds?.length!==2||
     !activePlayerIds.includes(isolatedCrossSide+'-10')||
@@ -105,14 +117,16 @@ export function createPrivatePhysicalActionExecutor({
  let action=null,audit=null,closed=false;
  let actualPriorPass=null,interrupted=false,firstCushion=null;
  if(typeof latestLabDynamics!=='boolean')throw new TypeError('Boolean current LAB dynamics required');
- const sharedDynamics=latestLabDynamics||isolatedPassSide!==null||isolatedCrossSide!==null;
+ const sharedDynamics=latestLabDynamics||isolatedPassSide!==null||isolatedCrossSide!==null||isolatedShotSide!==null;
  let pendingDelivery=null,latestCushion=null;
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
-  suppressOriginalAction=false,suppressPhysicalBodyContact=false
+  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null
  }={}){
   ensureOpen();
+  if(firstTimeShot&&(!priorNativeBallVelocity||!['x','y','z'].every(k=>Number.isFinite(priorNativeBallVelocity[k]))))
+   throw new TypeError('First-time shot requires real pre-step velocity');
   if(typeof suppressOriginalAction!=='boolean'||
      typeof suppressPhysicalBodyContact!=='boolean'||
      (suppressPhysicalBodyContact&&!physicalBodyGuardEnabled))
@@ -295,7 +309,9 @@ export function createPrivatePhysicalActionExecutor({
    originalChoice.playerId!==isolatedCrossSide+'-10'||
    originalChoice.crossTarget?.recipientId!==isolatedCrossSide+'-9'||
    originalChoice.impulseNs.z<=0);
-  const originalChosen=orientedCandidate||researchCandidate||deferOriginal||isolatedPassRejected||isolatedCrossRejected?null:originalChoice;
+  const isolatedShotRejected=isolatedShotSide!==null&&(lastActionTick>=0||
+    originalChoice?.action!=='shot'||originalChoice.playerId!==isolatedShotSide+'-10');
+  const originalChosen=orientedCandidate||researchCandidate||deferOriginal||isolatedPassRejected||isolatedCrossRejected||isolatedShotRejected?null:originalChoice;
   // The *existing* uniform policy and Rapier exclusive shoe START remain
   // the only action authority. Native phase calibration can adjust that
   // action's impulse or decline it, never generate an extra contact/action.
@@ -329,6 +345,7 @@ export function createPrivatePhysicalActionExecutor({
     deferOriginal?'m27-native-decision-defers-original-clearance':
     isolatedPassRejected?'isolated-pass-one-original-ground-pass-only':
     isolatedCrossRejected?'isolated-cross-one-original-lofted-cross-only':
+    isolatedShotRejected?'isolated-shot-one-original-shot-only':
     nativeTune?.impulseNs===null?
      'native-shoe-contact-no-extra-ball-impulse-needed':
     (gates.firstFailedGate??'not-selected-after-input-gates')
@@ -359,7 +376,13 @@ export function createPrivatePhysicalActionExecutor({
      scale:Math.max(1,Math.min(3.8,ballBody.mass()*desiredHorizontal/horizontal)),
      officialMatchAction:false});
    })():null;
-   const impulse=crossCalibration?Object.freeze({
+   const shotCalibration=sharedDynamics&&chosen.action==='shot'&&chosen.shotTarget?
+     calculateCurrentLabShotCalibration({target:chosen.shotTarget,position:ballBody.translation(),
+      velocity:ballBody.linvel(),massKg:ballBody.mass(),ballRadiusM,originalImpulseNs:chosen.impulseNs,
+       profile:isolatedShotProfile,opponents:playerFrame.players.filter(p=>p.team!==chosen.team&&
+         (activePlayerIds===null||activePlayerIds.includes(p.id)))}):null;
+    if(isolatedShotProfile==='tap-in'&&!shotCalibration)throw new Error('Tap-in contact outside calibrated low finishing envelope');
+     const impulse=shotCalibration?shotCalibration.impulseNs:crossCalibration?Object.freeze({
     x:chosen.impulseNs.x*crossCalibration.scale,
     y:chosen.impulseNs.y*crossCalibration.scale,
     z:chosen.impulseNs.z*crossCalibration.scale
@@ -368,11 +391,28 @@ export function createPrivatePhysicalActionExecutor({
     y:chosen.impulseNs.y*passCalibration.scale,z:0
    }):nativeTune?.impulseNs??chosen.impulseNs;
    ballBody.applyImpulse(impulse,true);
+   let shotSpin=null;
+   if(shotCalibration?.targetAngularVelocity){
+    const before=ballBody.angvel(),inertia=ballBody.principalInertia(),target=shotCalibration.targetAngularVelocity;
+    const torque={x:(target.x-before.x)*inertia.x,y:(target.y-before.y)*inertia.y,z:(target.z-before.z)*inertia.z};
+    const norm=Math.hypot(...Object.values(torque)),limit=shotCalibration.profile==='low'?1.2:shotCalibration.profile==='tap-in'?0.40:0.25;
+    const scale=norm>limit?limit/norm:1;
+    const torqueImpulseNms=Object.freeze({x:torque.x*scale,y:torque.y*scale,z:torque.z*scale});
+    ballBody.applyTorqueImpulse(torqueImpulseNms,true);
+    shotSpin=Object.freeze({torqueImpulseNms,angularVelocity:Object.freeze({...ballBody.angvel()}),nativeContactOnly:true});
+   }
    applied=Object.freeze({
     ...chosen,
     impulseNs:impulse,
     ...(passCalibration?{isolatedGroundPassCalibration:passCalibration}:{}),
     ...(crossCalibration?{isolatedCrossCalibration:crossCalibration}:{}),
+    ...(shotCalibration?{labShotCalibration:shotCalibration,labShotSpin:shotSpin}:{}),
+     ...(firstTimeShot&&shotCalibration?{firstTimeShotEvidence:Object.freeze({
+      source:'first-time-native-shoe-v1',priorNativeBallVelocity:Object.freeze({...priorNativeBallVelocity}),
+      postSolverVelocity:shotCalibration.preImpulseVelocity,
+      appliedImpulseNs:impulse,postStrikeVelocity:Object.freeze({...ballBody.linvel()}),
+      ballMassKg:ballBody.mass(),nativeExclusiveShoeStart:true,officialGoal:false
+     })}:{}),
     ...(nativeTune?{
      nativeShoeContactVerified:true,
      nativeFixedPhaseCalibration:nativeTune,
