@@ -43,6 +43,7 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/intent-driven-solo-carry.mjs': 'match-engine/src/intent-driven-solo-carry.mjs',
   '/__fa_match_engine__/native-fixed-carry-impulse.mjs': 'match-engine/src/native-fixed-carry-impulse.mjs',
   '/__fa_match_engine__/physical-receiving-cushion-m25.mjs': 'match-engine/src/physical-receiving-cushion-m25.mjs',
+  '/__fa_match_engine__/lab-shot-calibration.mjs': 'match-engine/src/lab-shot-calibration.mjs',
   '/__fa_match_engine__/player-ball-uniform-autonomous-action.mjs': 'match-engine/src/player-ball-uniform-autonomous-action.mjs',
   '/__fa_match_engine__/action-labs.mjs': 'match-engine/src/action-labs.mjs',
   '/__fa_match_engine__/physical-football-decision-evidence-m23.mjs': 'match-engine/src/physical-football-decision-evidence-m23.mjs',
