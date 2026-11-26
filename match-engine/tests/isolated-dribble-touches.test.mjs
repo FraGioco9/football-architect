@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -622,5 +622,28 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    }
    process.stdout.write('ME_628_D02_DIRECTED '+JSON.stringify({side,touches,evasive})+'\n');
    assert.ok(touches>0&&evasive>0,'active 1v1 must exercise physical evasion on both sides');
+  }
+ });
+
+ test('D-03 mirrored close pressure shields the ball without claiming possession',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const b={x:dir*30,y:0},v={x:dir*0.4,y:0};
+   const attacker={id:side+'-10',team:side,x:dir*29.6,y:0};
+   const defender={id:other+'-2',team:other,x:dir*28.7,y:0.1};
+   const shield=planDribbleShield(attacker,defender,b,v,side);
+   assert.ok(shield);assert.ok(dir*shield.target.x<dir*b.x);
+   assert.ok(observeDribbleShield(attacker,defender,b));
+   assert.equal(planDribbleShield(attacker,{...defender,x:dir*33},b,v,side),null);
+   assert.equal(planDribbleShield({...attacker,x:dir*27},defender,b,v,side),null);
+   const touch=chooseDirectedDribbleTouch({attackingSide:side,variantIndex:0,tick:1,attacker,defender,ballPosition:b,ballVelocity:v});
+   assert.equal(touch.shieldingIntent,true);assert.ok(touch.magnitudeNs<=0.18);
+   const w=createDribbleShieldObserver(side);
+   const sample=(tick,starts=[],bodyStarts=[],action=null)=>w.observe({tick,players:[attacker,defender],ball:{position:b},starts,bodyStarts,action});
+   assert.equal(sample(1).shielding,true);
+   assert.equal(sample(2,[attacker.id],[],{tick:2,playerId:attacker.id,action:'carry',appliedByRapier:true,actualPhysicsImpulseApplied:true}).retained,true);
+   sample(3);sample(4,[],[defender.id]);
+   assert.equal(sample(5,[attacker.id],[],{tick:5,playerId:attacker.id,action:'carry',appliedByRapier:true,actualPhysicsImpulseApplied:true}).retained,false);
+   assert.equal(sample(6).officialPossession,false);
   }
  });

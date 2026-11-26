@@ -1,3 +1,4 @@
+import {createDribbleShieldObserver} from './isolated-dribble-touches.mjs';
 // #620 — controlled actions on the CLEAN canonical same-world Rapier core.
 // No legacy universal match session, opponent-lane tactical simulator or fake
 // action event. Exactly one core engine and one existing 22-player mover.
@@ -361,6 +362,7 @@ export function createControlledActionLab(RAPIER,id,{
    JSON.stringify(smallSided.activeIds))
   throw new Error('Small-sided participants differ from physical Rapier shoe colliders');
  const keeperShotObserver=id==='keeper-1v1'?createKeeperShotObserver(shotSide):null;
+ const shieldObserver=directedDribble?createDribbleShieldObserver(shotSide):null;
  const refereeObserver=(refereeMode||smallSided)?
   createBasicMatchRefereeB05():null;
  const matchTimelineObserver=(refereeMode||smallSided)?
@@ -837,6 +839,8 @@ export function createControlledActionLab(RAPIER,id,{
    physics,playerFrame,foot,action,
    physicalBodies:bodyGuardEnabled?engine.smallSidedBodyGuardSnapshot():null
   })??null;
+  const shieldAudit=shieldObserver?.observe({tick:physics.tick,players:playerFrame.players,ball:physics.ball,
+   starts,bodyStarts:engine.smallSidedBodyGuardSnapshot()?.lowerLegBallStarts??[],action})??null;
   const contactContinuity=continuityObserver.observe({
    physics,playerFrame,foot,decisionEvidence
   });
@@ -871,6 +875,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(refereeMode||smallSided?{refereeEvidence,physicalRestart,b05bOutKick,b05bTake,
      matchTimeline}:{}),
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
+    ...(shieldAudit?{shieldAudit}:{}),
     ...(nativeFixedCarryResearch?{
       nativeFixedCarryResearch:true,
       nativeFixedSprintLongStride,

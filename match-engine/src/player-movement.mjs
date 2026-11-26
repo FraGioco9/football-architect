@@ -2533,7 +2533,7 @@ export function createPlayerMovement(options={}){
     const attack=smallSided.side==='home'?1:-1;
     if(p.team===smallSided.side){
      if(p.id===smallSided.side+'-10')
-      return directedDribble?directedDribbleApproachTarget(p,ball,realBallVelocity,smallSided.side):
+      return directedDribble?directedDribbleApproachTarget(p,ball,realBallVelocity,smallSided.side,players.find(a=>a.id===smallSided.opponent+'-2')):
        smallSided.id==='keeper-1v1'?
        (priorKeeperRebound?keeperDuelReboundTarget(smallSided.side,smallSided.variantIndex,p,ball,realBallVelocity):
         keeperDuelAttackerTarget(smallSided.side,smallSided.variantIndex,p,ball)):

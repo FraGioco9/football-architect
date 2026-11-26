@@ -48,7 +48,7 @@ export function chooseIsolatedDribbleTouch({variantIndex,tick,attackingSide,ball
 // D-02 active 1v1 only. Use live obstacle geometry rather than per-touch
 // random direction. Carry toward a reachable opening; after passing the
 // defender straighten toward goal. No success or possession guarantee.
-export function chooseDirectedDribbleTouch({attackingSide,ballPosition:b,ballVelocity:v,defender,variantIndex,tick}={}){
+export function chooseDirectedDribbleTouch({attackingSide,ballPosition:b,ballVelocity:v,defender,variantIndex,tick,attacker=null}={}){
  if(!['home','away'].includes(attackingSide)||!defender||
     defender.team==attackingSide||![b?.x,b?.y,v?.x,v?.y,defender.x,defender.y].every(Number.isFinite)||
     !Number.isSafeInteger(variantIndex)||variantIndex<0||variantIndex>29||!Number.isSafeInteger(tick)||tick<1)
@@ -61,21 +61,25 @@ export function chooseDirectedDribbleTouch({attackingSide,ballPosition:b,ballVel
  const side=Math.abs(lateral)>0.12?-Math.sign(lateral):(variantIndex%2===0?1:-1);
  const targetY=threatening?clamp(defender.y+side*1.35,-32,32):clamp(b.y,-24,24);
  const angle=clamp(Math.atan2(targetY-b.y,Math.max(1.5,ahead+1.0)),-0.70,0.70);
+ const shield=planDribbleShield(attacker,defender,b,v,attackingSide);
  const speed=threatening?2.5-0.5*pressure:3.0;
- const desired={x:dir*speed*Math.cos(angle),y:speed*Math.sin(angle)};
+ const desired=shield?{x:0.85*shield.away.x+dir*0.30,y:0.85*shield.away.y}:
+  {x:dir*speed*Math.cos(angle),y:speed*Math.sin(angle)};
  const dx=desired.x-v.x,dy=desired.y-v.y,delta=Math.hypot(dx,dy);
  // Limit actual corrective impulse, including braking. Never set velocity.
- const magnitudeNs=Math.min(0.30,0.43*delta);
+ const magnitudeNs=Math.min(shield?0.18:0.30,0.43*delta);
  return Object.freeze({version:'me-628-directed-dribble-v1',variantIndex,tick,
   dx,dy,magnitudeNs,desiredVelocity:Object.freeze(desired),targetY,
-  bypassSide:threatening?side:0,defenderAheadM:ahead,pressure,
+  bypassSide:threatening?side:0,defenderAheadM:ahead,pressure,shieldingIntent:shield!==null,
   fromLiveOpponent:true,soloCarry:false,fromLiveBallVelocity:true,
   genuineRapierShoeStartRequired:true,decisionOnly:true,officialPossession:false,officialMatchAction:false});
 }
 // Keep the original mover aligned with the real rolling ball so the next
 // authentic shoe contact can follow a lateral touch; do not chase a fixed
 // world-X offset after an evasion.
-export function directedDribbleApproachTarget(attacker,b,v,attackingSide){
+export function directedDribbleApproachTarget(attacker,b,v,attackingSide,defender=null){
+ const shield=planDribbleShield(attacker,defender,b,v,attackingSide);
+ if(shield)return shield.target;
  const dir=attackingSide==='home'?1:-1;
  const gap=Math.hypot(b.x-attacker.x,b.y-attacker.y);
  const lead=clamp(gap/12,0,0.20);
@@ -84,4 +88,50 @@ export function directedDribbleApproachTarget(attacker,b,v,attackingSide){
  const uy=speed>0.35&&v.x*dir>0.15?v.y/speed:0;
  return Object.freeze({x:clamp(b.x+v.x*lead-0.30*ux,-51.99,51.99),
   y:clamp(b.y+v.y*lead-0.30*uy,-33.49,33.49)});
+}
+
+// D-03: protect a reachable ball from close side/rear pressure. The
+// target is only intent; the existing mover and Rapier contacts decide
+// whether the player can actually get his body between opponent and ball.
+export function planDribbleShield(attacker,defender,b,v,attackingSide){
+ if(!['home','away'].includes(attackingSide)||!attacker||!defender||
+    ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,v?.x,v?.y].every(Number.isFinite))return null;
+ const dir=attackingSide==='home'?1:-1;
+ const dx=defender.x-b.x,dy=defender.y-b.y,pressureGap=Math.hypot(dx,dy);
+ const ballGap=Math.hypot(attacker.x-b.x,attacker.y-b.y);
+ // Do not turn an open forward lane or a lost ball into shielding.
+ if(pressureGap<0.15||pressureGap>1.8||ballGap>0.9||
+    dir*dx>0.65||Math.hypot(v.x,v.y)>3.5)return null;
+ const ux=dx/pressureGap,uy=dy/pressureGap;
+ return Object.freeze({target:Object.freeze({x:clamp(b.x+0.36*ux,-51.99,51.99),y:clamp(b.y+0.36*uy,-33.49,33.49)}),
+  away:Object.freeze({x:-ux,y:-uy}),pressureGap,ballGap});
+}
+// Observe actual body-between-ball geometry, not successful possession.
+export function observeDribbleShield(attacker,defender,b){
+ const dx=defender.x-b.x,dy=defender.y-b.y,gap=Math.hypot(dx,dy);
+ if(gap<0.15||gap>1.8)return false;
+ const ax=attacker.x-b.x,ay=attacker.y-b.y;
+ const along=(ax*dx+ay*dy)/gap,across=Math.abs(ax*dy-ay*dx)/gap;
+ return along>=0.12&&along<=Math.min(0.85,gap-0.12)&&across<=0.30&&Math.hypot(ax,ay)<=0.85;
+}
+// A retained touch must follow an actual shielding sample and actual
+// pressure, with no intervening defender ball contact. No inferred win.
+export function createDribbleShieldObserver(side){
+ const attackerId=side+'-10',defenderId=(side==='home'?'away':'home')+'-2';
+ let samples=0,retainedTouches=0,priorShieldTick=null,latest=null;
+ return Object.freeze({observe({tick,players,ball,starts,bodyStarts,action}){
+  const attacker=players.find(p=>p.id===attackerId),defender=players.find(p=>p.id===defenderId);
+  const shielding=observeDribbleShield(attacker,defender,ball.position);
+  const opponentContact=starts.includes(defenderId)||bodyStarts.includes(defenderId);
+  if(opponentContact||priorShieldTick!==null&&tick-priorShieldTick>60)priorShieldTick=null;
+  let retained=false;
+  if(priorShieldTick!==null&&tick>priorShieldTick&&!opponentContact&&
+     starts.length===1&&starts[0]===attackerId&&action?.tick===tick&&
+     action.playerId===attackerId&&action.action==='carry'&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true){
+   retained=true;retainedTouches++;priorShieldTick=null;
+  }
+  if(shielding){samples++;if(!opponentContact&&!retained)priorShieldTick=tick;}
+  latest=Object.freeze({tick,shielding,samples,retained,retainedTouches,opponentContact,officialPossession:false,shieldingOutcomeProven:false});
+  return latest;
+ }});
 }

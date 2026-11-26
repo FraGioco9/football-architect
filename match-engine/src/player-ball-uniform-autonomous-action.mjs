@@ -387,7 +387,7 @@ export function selectUniformAutonomousContactAction({
    (isolatedDribbleContext.directed===true?chooseDirectedDribbleTouch:chooseIsolatedDribbleTouch)({
     variantIndex:isolatedDribbleContext.variantIndex,tick,
     attackingSide:isolatedDribbleContext.attackingSide,
-    ballPosition,ballVelocity,
+    ballPosition,ballVelocity,attacker:player,
     solo:isolatedDribbleContext.situationId==='carry-solo',
     defender:isolatedDribbleContext.situationId==='carry-solo'?null:actors.find(p=>p.team!==player.team)
    });

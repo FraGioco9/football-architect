@@ -110,6 +110,10 @@ function recordPerformedActions(frame){
   const defender=(frame.nativeDribbleAudit.side==='home'?'away':'home')+'-2';
   const shoe=frame.starts?.includes(defender),leg=frame.smallSidedNativeBodyGuard?.lowerLegBallStarts?.includes(defender);
   if(shoe||leg)events.push({id:defender,kind:'defensive-contact',label:'Defensive contact'});
+  if(frame.shieldAudit?.retained)events.push({id:frame.nativeDribbleAudit.side+'-10',kind:'retained-touch',label:'Retained touch'});
+  if(action?.tick===tick&&action?.decisionContext?.isolatedDribbleTouch?.shieldingIntent){
+   const carry=events.find(e=>e.kind==='carry'&&e.id===action.playerId);if(carry)carry.label='Shielding touch';
+  }
  }
  const pass=frame.passPairAudit?.receivingContact;
  if(pass?.realRapierShoeStart===true&&pass.contactTick===tick)
@@ -742,7 +746,7 @@ function render() {
       cross?(cross.arrival?'Arrival observed':
         cross.attempted?'Cross observed':'Waiting for cross'):
       f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry?
-        (f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
+        (f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
        f.soloCarryPhase?.phase?'Carry · '+f.soloCarryPhase.phase:
       lastInlineFootballAction?'Last action: '+lastInlineFootballAction.action:
       activeScene.kind==='action'?'Waiting for action':'Movement';
