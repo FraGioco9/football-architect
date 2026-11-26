@@ -146,7 +146,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   }
   await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
   const activePage=await evalJs("(()=>{const el=id=>document.getElementById(id),menu=el('preset-options');return {groups:[...menu.querySelectorAll('.me-scenario-group-label')].map(x=>x.textContent),choices:menu.querySelectorAll('[role=option]').length,selected:el('preset-value').textContent,visibleComboboxes:[...document.querySelectorAll('.me-toolbar [role=combobox]')].filter(x=>x.getClientRects().length>0).length,attributesHidden:el('me-inline-rating-control').hidden,diagnosticsClosed:!el('me-observation-details').open,legacyAbsent:!menu.querySelector('[data-value=drop],[data-value=\\\"action:overload-2v1\\\"]'),nestedMenus:el('me-observation-details').querySelectorAll('details,select,[role=combobox]').length,legacyTextHidden:el('me-inline-observation').hidden};})()");
-  assert.deepEqual(activePage,{groups:['Carry phases','Passing','Shooting','Goalkeeping'],choices:18,selected:'Carry · Moderate',visibleComboboxes:3,attributesHidden:true,diagnosticsClosed:true,legacyAbsent:true,nestedMenus:0,legacyTextHidden:true});
+  assert.deepEqual(activePage,{groups:['Carry phases','Passing','Shooting','Goalkeeping','Dribbling & defending'],choices:19,selected:'Carry · Moderate',visibleComboboxes:3,attributesHidden:true,diagnosticsClosed:true,legacyAbsent:true,nestedMenus:0,legacyTextHidden:true});
   const toggled=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-inline-side-trigger').click();el('me-inline-side-options').querySelector('[data-value=away]').click();el('speed-trigger').click();el('speed-opt-2').click();return {side:el('me-inline-side').value,speed:el('speed').value,sideLabel:el('me-inline-side-value').textContent,speedLabel:el('speed-value').textContent,tick:el('tick').textContent};})()");
   assert.deepEqual(toggled,{side:'away',speed:'2',sideLabel:'AWAY',speedLabel:'2×',tick:'Tick 0 · 0.00 s'});
   const flat=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-observation-details').open=true;for(let i=0;i<60;i++)el('step').click();return {open:el('me-observation-details').open,labels:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent),nested:el('me-observation-details').querySelectorAll('details').length};})()");
@@ -179,6 +179,11 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.deepEqual(new Set(keeperUI.players),new Set(['','away-10','home-1']));
   assert.deepEqual(keeperUI.metrics,['Shots','Launch speed','Keeper contact','Deflection','Rebound','Result']);
   assert.equal(keeperUI.summary,'Waiting for shot');
+  const dribbleUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();document.querySelector('#preset-options [data-value=\\\"action:dribble-1v1\\\"]').click();return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),summary:el('me-inline-summary').textContent};})()");
+  assert.equal(dribbleUI.label,'1v1 · dribbling');
+  assert.deepEqual(new Set(dribbleUI.players),new Set(['','away-10','home-2']));
+  assert.deepEqual(dribbleUI.metrics,['Touches','Forward distance','Peak ball speed','Defender contacts','Closest defender gap','Mean touch gap']);
+  assert.equal(dribbleUI.summary,'Waiting for touch');
   await evalJs("document.getElementById('me-observation-details').open=false");
   for(const [width,height] of [[1440,900],[390,844]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});

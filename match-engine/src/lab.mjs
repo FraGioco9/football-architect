@@ -105,6 +105,12 @@ function recordPerformedActions(frame){
  if(keeper?.reboundRecoveryTick===tick)events.push({id:keeper.shooterId,kind:'rebound-contact',label:'Rebound contact'});
  if(dive?.catchState?.confirmedTick===tick)events.push({id:dive.keeperId,kind:'catch',label:'Catch'});
  if(dive?.catchState?.released)events.push({id:dive.keeperId,kind:'grip-lost',label:'Grip lost'});
+ // D-01: native defender contact is not a won tackle.
+ if(frame.nativeDribbleAudit&&!frame.nativeDribbleAudit.soloCarry){
+  const defender=(frame.nativeDribbleAudit.side==='home'?'away':'home')+'-2';
+  const shoe=frame.starts?.includes(defender),leg=frame.smallSidedNativeBodyGuard?.lowerLegBallStarts?.includes(defender);
+  if(shoe||leg)events.push({id:defender,kind:'defensive-contact',label:'Defensive contact'});
+ }
  const pass=frame.passPairAudit?.receivingContact;
  if(pass?.realRapierShoeStart===true&&pass.contactTick===tick)
   events.push({id:pass.receiverId,kind:'receiving-contact',
@@ -734,7 +740,9 @@ function render() {
         pass.attempted?'Pass observed':'Waiting for pass'):
       cross?(cross.arrival?'Arrival observed':
         cross.attempted?'Cross observed':'Waiting for cross'):
-      f.soloCarryPhase?.phase?'Carry · '+f.soloCarryPhase.phase:
+      f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry?
+        (f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
+       f.soloCarryPhase?.phase?'Carry · '+f.soloCarryPhase.phase:
       lastInlineFootballAction?'Last action: '+lastInlineFootballAction.action:
       activeScene.kind==='action'?'Waiting for action':'Movement';
     byId('me-inline-summary').textContent=summary;
@@ -754,6 +762,11 @@ function renderActiveMetrics(f){
    ['Deflection',keeper.deflection?({reversed:'Reversed',redirected:'Redirected',slowed:'Slowed'})[keeper.deflection.kind]:keeper.parryTick!==null?'Foot parry':'—'],
    ['Rebound',n(keeper.reboundTick===null?null:(keeper.reboundTick-keeper.shotTick)*FIXED_DT,' s')],
    ['Result',keeper.crossing?(keeper.crossing.kind==='goal'?'Goal':'Ball out'):f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':keeper.reboundTick!==null?'Ball in play':'—']];
+ }else if(f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry){
+  const d=f.nativeDribbleAudit;
+  entries=[['Touches',count(d.appliedCarryActions)],['Forward distance',n(d.ballForwardDistanceM,' m')],
+   ['Peak ball speed',speed(d.peakBallSpeedMps)],['Defender contacts',count(d.defenderShoeStarts)],
+   ['Closest defender gap',n(d.minimumRealDefenderBallGapM,' m')],['Mean touch gap',n(d.meanAppliedTouchIntervalTicks==null?null:d.meanAppliedTouchIntervalTicks*FIXED_DT,' s')]];
  }else if(shot){
   entries=[['Distance',n(shot.distanceM,' m')],['Launch speed',speed(shot.attempted?shot.launchSpeedMps:null)],
    ['Peak height',n(shot.attempted?shot.peakClearanceM:null,' m')],
@@ -2303,6 +2316,8 @@ function setupUnifiedScenarioMenu(){
    ['action:duel-3v3','3v3 · team decisions']
   ]]]:[['Goalkeeping',[
    ['action:keeper-1v1','1v1 · goalkeeper']
+  ]],['Dribbling & defending',[
+   ['action:dribble-1v1','1v1 · dribbling']
   ]]])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
@@ -2335,8 +2350,8 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:18)||
-    menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:4))
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:19)||
+    menu.querySelectorAll('.me-scenario-group-label').length!==5)
   throw new Error('Unexpected active or archived LAB catalog');
 }
 function restoreOriginalScenario(){
