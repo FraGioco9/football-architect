@@ -1,7 +1,7 @@
 // This policy is intentionally narrower than the Match Engine workflow path filter.
 const { execFileSync, spawnSync } = require('node:child_process');
 const { isDeepStrictEqual } = require('node:util');
-const { evaluateRun } = require('./ci-full-evidence.cjs');
+const { evaluateRun, certifiedHistoricalAdmin, economicRepairAnchor, economicRepairBranch, economicRepairShape } = require('./ci-full-evidence.cjs');
 const preview = 'tools/dev-standings-preview.mjs';
 const manifest = 'match-engine/package.json';
 const sourceNames = new Set([
@@ -99,7 +99,25 @@ async function economicSource({ github, owner, repo, pr,workflow='admin-world-ch
       git('rev-parse', 'HEAD').trim() !== head || git('merge-base', base, head).trim() !== base ||
       git('rev-parse',base).trim()!==base) return null;
   let selected=[];
+  function repairShape(from,to){
+    const raw=git('diff','--raw','--no-renames','-z',from,to).split('\0');
+    const files=[];
+    for(let i=0;i<raw.length-1;i+=2){
+      if(!/^:100644 100644 [a-f0-9]+ [a-f0-9]+ M$/.test(raw[i]))return false;
+      files.push({filename:raw[i+1],status:'modified'});
+    }
+    return economicRepairShape(from,files);
+  }
   async function scope(from){
+    if(workflow==='admin-world-checks.yml'&&from===economicRepairAnchor){
+      if(base===from&&pr.head.ref===economicRepairBranch&&repairShape(from,head))return 'economic-only';
+      if(base!==from){
+        const history=git('log','--first-parent','--reverse','--format=%H',from+'..'+base).trim().split('\n');
+        const repair=history[0];
+        if(/^[a-f0-9]{40}$/.test(repair)&&git('rev-parse',repair+'^1').trim()===from&&repairShape(from,repair))
+          return scope(repair);
+      }
+    }
     const owned=require('./ci-owned-selection.cjs').ownedTests(from,head);
     if(owned){
       selected=owned.filter(t=>workflow==='admin-world-checks.yml'?t.owner!=='site-node':t.owner==='site-node').map(t=>t.path);
@@ -134,11 +152,14 @@ async function economicSource({ github, owner, repo, pr,workflow='admin-world-ch
     const runs = await github.paginate(github.rest.actions.listWorkflowRuns,
       { owner, repo, workflow_id: workflow, head_sha: source.head.sha, event: 'pull_request', per_page: 100 });
     for (const run of runs.sort((a, b) => b.id - a.id)) {
-      const sourceBase = run.pull_requests?.find(p => p.number === source.number && p.base.ref === 'main')?.base.sha;
-      if (!sourceBase || sourceBase !== git('rev-parse', merge + '^1').trim()) continue;
+      const expectedBase = git('rev-parse', merge + '^1').trim();
+      const sourceBase = run.pull_requests?.find(p => p.number === source.number && p.base.ref === 'main' && p.head.sha===source.head.sha)?.base.sha;
+      const historical = workflow==='admin-world-checks.yml'&&Array.isArray(run.pull_requests)&&run.pull_requests.length===0;
+      if(sourceBase!==expectedBase&&!historical)continue;
       const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun,
         { owner, repo, run_id: run.id, filter: 'latest', per_page: 100 });
-      const verdict = evaluateRun(run, jobs, source.head.sha, workflow, { prNumber: source.number, baseSha: sourceBase });
+      const verdict = evaluateRun(run, jobs, source.head.sha, workflow, historical?{}:{ prNumber: source.number, baseSha: sourceBase });
+      if(historical&&verdict.state==='PASS'&&!await certifiedHistoricalAdmin({github,owner,repo,source,tree:commit.tree.sha,baseSha:expectedBase,run,jobs}))continue;
       const operator = jobs.find(job => job.name === 'Final local operator persistence, restart and browser lifecycle');
       const executed = ['Verify DEV operator runtime and PowerShell regressions before full rehearsal',
         'Verify operator bootstrap, recovery and local persistence across restart'].every(name =>

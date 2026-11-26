@@ -60,7 +60,12 @@ jobs:
         id: scope
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
+          if [ "$PR_HEAD_REF" = ci/785-historical-economic-source ] && [ "${{ steps.economic.outputs.mode }}" != economic-only ]; then
+            echo 'BLOCKED: certified historical economic source unavailable; do not start the rehearsal.' >&2
+            exit 1
+          fi
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
           node tools/ci-discovery.mjs
           if [ "${{ steps.economic.outputs.mode }}" = match-engine ]; then
