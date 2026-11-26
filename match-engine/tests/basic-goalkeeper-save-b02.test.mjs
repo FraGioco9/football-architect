@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
-import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_MIN_SEPARATION_M}
+import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_MIN_SEPARATION_M,PLAYER_TURN_RAD_PER_S}
  from '../src/player-movement.mjs';
 import {SAVE_LAB_STARTS,ACTION_LAB_SCENARIOS}
  from '../src/action-lab-scenarios.mjs';
@@ -10,7 +10,8 @@ import {initialResearchGoalkeeperSaveLineup,chooseBasicGoalkeeperDiveTarget,crea
  from '../src/goalkeeper-save-foundation-b02.mjs';
 import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction}
  from '../src/player-ball-uniform-autonomous-action.mjs';
-import {initializeRapier} from '../src/core.mjs';
+import {initializeRapier,FIXED_DT} from '../src/core.mjs';
+import {advanceGoalkeeperBallOrientation} from '../src/individual-kinematics.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
 function candidate(side,players,ball,active=[side+'-1'],started=active){
@@ -153,8 +154,14 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
    try{
     let f=scene.snapshot();assert.equal(f.keeperShotAudit.shots,0);
     const shots=new Set(),contacts=new Set(),parries=new Set();
+    let previousFacing=f.observedMovementPlayers.find(p=>p.id===f.keeperShotAudit.keeperId).facingRad;
     for(let n=0;n<600;n++){
      f=scene.step();const audit=f.keeperShotAudit;
+     const keeper=f.observedMovementPlayers.find(p=>p.id===audit.keeperId);
+     const change=Math.atan2(Math.sin(keeper.facingRad-previousFacing),Math.cos(keeper.facingRad-previousFacing));
+     assert.ok(Math.abs(change)<=PLAYER_TURN_RAD_PER_S*FIXED_DT+1e-8,'one capped keeper turn per tick');
+     assert.ok(Math.cos(keeper.facingRad)*(side==='home'?-1:1)>=-1e-8,'keeper faces the field, not its own goal');
+     previousFacing=keeper.facingRad;
      if(f.action?.action==='shot'&&f.action.team===side&&f.action.actualPhysicsImpulseApplied)shots.add(f.physicsTick);
      if(f.starts.includes(audit.keeperId))contacts.add(f.physicsTick);
      if(f.action?.playerId===audit.keeperId&&f.action.action==='save'&&f.action.actualPhysicsImpulseApplied)parries.add(f.physicsTick);
@@ -177,4 +184,28 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
   }
   assert.ok(counts.shots>0,'existing live context must generate genuine shots');
   process.stdout.write('ME_628_SHOT_06_BASELINE '+JSON.stringify(counts)+'\n');
+ });
+
+ test('GK-01 keeper watches the ball instead of spinning with lateral or backward velocity',()=>{
+  const limits={dt:FIXED_DT,maxSpeed:7,acceleration:8,braking:8,turnRate:PLAYER_TURN_RAD_PER_S,maxX:51.99,maxY:33.49};
+  const delta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+  for(const team of ['home','away']){
+   const dir=team==='home'?1:-1;
+   const keeper={team,x:-dir*48,y:0,facingRad:team==='home'?0:Math.PI,vx:-dir,vy:2};
+   const target={x:keeper.x+dir*15,y:4};
+   const ideal=Math.atan2(4,dir*15);
+   for(let tick=0;tick<60;tick++){
+    const prior=keeper.facingRad;
+    keeper.facingRad=advanceGoalkeeperBallOrientation(keeper,target,limits);
+    assert.ok(Math.abs(delta(keeper.facingRad,prior))<=PLAYER_TURN_RAD_PER_S*FIXED_DT+1e-9);
+   }
+   assert.ok(Math.abs(delta(keeper.facingRad,ideal))<1e-9);
+   // Ball passing behind the keeper must not cause a 180-degree reversal.
+   for(let tick=0;tick<60;tick++){
+    const prior=keeper.facingRad;
+    keeper.facingRad=advanceGoalkeeperBallOrientation(keeper,{x:keeper.x-dir,y:0},limits);
+    assert.ok(Math.abs(delta(keeper.facingRad,prior))<=PLAYER_TURN_RAD_PER_S*FIXED_DT+1e-9);
+    assert.ok(Math.cos(keeper.facingRad)*dir>=-1e-9);
+   }
+  }
  });

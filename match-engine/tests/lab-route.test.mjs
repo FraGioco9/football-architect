@@ -480,7 +480,7 @@ test('#628 LAB height cue moves only the cast shadow, preserving approved marker
  const veryHigh=labBallMarkerGeometry(1050,680,pos,30);
  assert.equal(ground.radius,4.5);
  assert.equal(LAB_MARKER_RADII_PX.player,10);
- assert.equal(LAB_MARKER_RADII_PX.goalkeeper,11);
+ assert.equal(LAB_MARKER_RADII_PX.goalkeeper,LAB_MARKER_RADII_PX.player);
  assert.ok(LAB_MARKER_RADII_PX.ball<LAB_MARKER_RADII_PX.player/2);
  for(const b of [low,raised,high,veryHigh]){
   assert.equal(b.x,ground.x);assert.equal(b.y,ground.y);

@@ -53,3 +53,17 @@ export function advancePlayerOrientation(facingRad,vx,vy,limits){
  return wrap(facingRad+clamp(angle,
   -limits.turnRate*limits.dt,limits.turnRate*limits.dt));
 }
+
+// A keeper shuffles and backpedals while watching the ball. Facing is
+// independent of translation, constrained to the field-facing hemisphere.
+// A small forward reference prevents a near-zero/behind-ball vector from
+// reversing the body; use the same canonical angular speed cap.
+export function advanceGoalkeeperBallOrientation(keeper,ball,limits){
+ if(!keeper||!['home','away'].includes(keeper.team)||
+    ![keeper.facingRad,keeper.x,keeper.y,ball?.x,ball?.y].every(finite))
+  throw new TypeError('Finite original keeper and ball required');
+ const forward=keeper.team==='home'?1:-1;
+ const dx=ball.x-keeper.x,dy=ball.y-keeper.y;
+ return advancePlayerOrientation(keeper.facingRad,
+  forward*Math.max(0.75,forward*dx),dy,limits);
+}

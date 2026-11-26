@@ -1,7 +1,7 @@
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
-import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual-kinematics.mjs';
+import {advanceFreePlayerKinematics,advancePlayerOrientation,advanceGoalkeeperBallOrientation} from './individual-kinematics.mjs';
 import {advanceSoloCarryPhase,SOLO_CARRY_PHASES} from './solo-carry-phases.mjs';
 import {validateSoloCarryAttributes}
  from './solo-carry-attribute-calibration.mjs';
@@ -2721,8 +2721,10 @@ export function createPlayerMovement(options={}){
    p.blockedBy=blocker?.id??null;
    if(blocker){p.vx=0;p.vy=0;}
    else{p.x=candidate.x;p.y=candidate.y;p.vx=candidate.vx;p.vy=candidate.vy;}
-   const wantedFacing=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
-    PLAYER_KINEMATIC_LIMITS);
+   const keeperDuel=smallSided?.id==='keeper-1v1'&&p.id===smallSided.opponent+'-1';
+   const wantedFacing=keeperDuel?
+    advanceGoalkeeperBallOrientation(p,ball,PLAYER_KINEMATIC_LIMITS):
+    advancePlayerOrientation(p.facingRad,p.vx,p.vy,PLAYER_KINEMATIC_LIMITS);
    if(shoe){
     const facing=projectNativeShoeBodyFacing(
      p.facingRad,shoe.facingRad,wantedFacing,
@@ -3058,8 +3060,11 @@ export function createPlayerMovement(options={}){
    p.x=n.x;p.y=n.y;
    p.vx=(n.x-old.x)/PLAYER_DT;
    p.vy=(n.y-old.y)/PLAYER_DT;
-   p.facingRad=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
-    PLAYER_KINEMATIC_LIMITS);
+   // The keeper already used its one capped ball-facing turn this tick.
+   // A solver translation must not rotate it back towards velocity.
+   if(!(smallSided.id==='keeper-1v1'&&p.id===smallSided.opponent+'-1'))
+    p.facingRad=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
+     PLAYER_KINEMATIC_LIMITS);
   }
   smallBodyFeedbackTick=tick;smallBodyPrior=null;
   smallSidedPhysicalFeedback=Object.freeze({

@@ -440,7 +440,7 @@ function drawInlinePlayers(ctx,X,Y){
   ctx.beginPath();ctx.arc(x,y,p.role==='goalkeeper'?LAB_MARKER_RADII_PX.goalkeeper:LAB_MARKER_RADII_PX.player,0,Math.PI*2);
   ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
   ctx.fill();ctx.strokeStyle=p.role==='goalkeeper'?'#fbdfaa':'#183f36';
-  ctx.lineWidth=p.role==='goalkeeper'?2.2:1.5;ctx.stroke();
+  ctx.lineWidth=1.5;ctx.stroke();
   if(Number.isFinite(p.facingRad)){
    ctx.beginPath();ctx.moveTo(x,y);
    ctx.lineTo(x+Math.cos(p.facingRad)*14,y+Math.sin(p.facingRad)*14);
@@ -460,7 +460,7 @@ function drawPlayers(ctx,X,Y){
     ctx.beginPath();ctx.arc(x,y,pressing?LAB_MARKER_RADII_PX.pressing:keeper?LAB_MARKER_RADII_PX.goalkeeper:LAB_MARKER_RADII_PX.player,0,Math.PI*2);
     ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
     ctx.fill();ctx.strokeStyle=pressing?'#ffdf71':supporting?'#c0f17a':balancing?'#ddbcff':keeper?'#fbdfaa':'#183f36';
-    ctx.lineWidth=pressing?2.6:supporting?2.6:balancing?2.6:keeper?2.2:1.4;ctx.stroke();
+    ctx.lineWidth=pressing?2.6:supporting?2.6:balancing?2.6:1.4;ctx.stroke();
     const pointerX=x+Math.cos(p.facingRad)*15,pointerY=y+Math.sin(p.facingRad)*15;
     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(pointerX,pointerY);
     ctx.strokeStyle=pressing?'#ffdf71':'#142e29';
