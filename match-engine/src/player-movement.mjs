@@ -12,7 +12,7 @@ import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {smallSidedSetup,keeperDuelAttackerTarget,keeperDuelReboundTarget,
- keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planCollectiveApproaches} from './small-sided-lab-scenarios.mjs';
+ keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeFootballMovement} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -2617,7 +2617,7 @@ export function createPlayerMovement(options={}){
     contact:duelTransition?.lastIntervention??null});
   }
   const shoulderBalance=directedDribble?Object.fromEntries(players.map(p=>[p.id,planShoulderBalanceRecovery(p,duelTransition,tick+1)])):{};
-  const collectiveApproaches=options.researchCollectiveApproaches===true?planCollectiveApproaches(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0},collectiveControl,players.filter(p=>smallActive.has(p.id)&&p.role==='goalkeeper')):null;
+  const collectiveApproaches=options.researchCollectiveApproaches===true?planNativeFootballMovement(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0},collectiveControl,players.filter(p=>smallActive.has(p.id)&&p.role==='goalkeeper')):null;
   const targets=players.map(p=>{
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can

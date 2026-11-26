@@ -7,7 +7,7 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
- keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense}
+ keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch} from '../src/isolated-dribble-touches.mjs';
@@ -118,6 +118,34 @@ test('COL-05 defending team presses and covers without formation-role restrictio
   const pass={kind:'loose',delivery:{kind:'pass',team:side,playerId:passer.id,tick:4}};
   const interception=chooseCollectiveDefensiveTouch({player:defender,players:[passer,defender,cover],ballPosition:ball,ballVelocity:incoming,control:pass,tick:5});
   assert.equal(interception?.kind,'interception');assert.equal(interception.officialPossession,false);
+ }
+});
+test('UME-03 movement uses the same participant geometry for pair, groups and full field',()=>{
+ assert.equal(planCollectiveApproaches,planNativeFootballMovement);
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const owner={id:side+'-10',team:side,x:dir*29.6,y:0};
+  const rival={id:other+'-2',team:other,x:dir*31.0,y:0.3};
+  const ball={x:dir*30,y:0},velocity={x:dir*0.2,y:0};
+  const control={kind:'controlled',playerId:owner.id};
+  for(const n of [1,2,3,10]){
+   const own=[owner,...Array.from({length:n-1},(_,j)=>({id:side+'-extra-'+j,team:side,x:dir*(20-j),y:5+j*2}))];
+   const away=[rival,...Array.from({length:n-1},(_,j)=>({id:other+'-extra-'+j,team:other,x:dir*(35+j),y:-5-j*2}))];
+   const players=[...own,...away];
+   const plan=planNativeFootballMovement(players,ball,velocity,control);
+   assert.deepEqual(plan,planNativeFootballMovement([...players].reverse(),ball,velocity,control));
+   assert.equal(Object.keys(plan).length,2*n);
+   assert.equal(plan[owner.id].kind,'carry-ball');
+   assert.equal(plan[rival.id].kind,'press-ball');
+   for(const p of own.slice(1))assert.equal(plan[p.id].kind,'support-run');
+   for(const p of away.slice(1))assert.equal(plan[p.id].kind,'cover-pass');
+   for(const entry of Object.values(plan))assert.ok(entry.decisionOnly&&!entry.officialPossession&&Math.abs(entry.target.x)<=51.99&&Math.abs(entry.target.y)<=33.49);
+   if(n===3)for(const group of [own,away])for(let j=0;j<group.length;j++)for(let k=j+1;k<group.length;k++){
+    const a=plan[group[j].id].target,b=plan[group[k].id].target;
+    assert.ok(Math.hypot(a.x-b.x,a.y-b.y)>=1.8,'support/cover waypoints must not converge');
+   }
+  }
+  assert.equal(planNativeFootballMovement([owner],ball,velocity,control)[owner.id].kind,'carry-ball');
  }
 });
 test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{

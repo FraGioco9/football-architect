@@ -131,7 +131,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   }
   await send('Fetch.continueRequest',{requestId:pausedModule});
   await send('Fetch.disable');socket.removeEventListener('message',onPaused);
-  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelectorAll('#preset-options [role=option][data-value]').length===24&&!document.querySelector('.me-main-panel').hasAttribute('data-loading')");
+  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelectorAll('#preset-options [role=option][data-value]').length===25&&!document.querySelector('.me-main-panel').hasAttribute('data-loading')");
   for(let i=0;i<sizes.length;i++){
    const [width,height]=sizes[i];
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
