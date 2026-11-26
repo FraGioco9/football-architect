@@ -116,8 +116,6 @@ function recordPerformedActions(frame){
     events.push({id,kind:'ball-contact',label:'Ball contact'});
   }
   if(frame.defensiveSlide?.started&&frame.defensiveSlide.tick===tick)events.push({id:frame.defensiveSlide.actorId,kind:'sliding-tackle',label:'Sliding tackle attempt'});
-  if(frame.duelTackleProfile==='sliding'&&frame.duelTransition?.lastIntervention?.tick===tick&&frame.duelTransition.lastIntervention.intervention==='sliding-tackle')
-   for(const id of ids)if(frame.duelTransition.getUpUntil[id]>tick)events.push({id,kind:'getting-up',label:'Getting up'});
   if(frame.shieldAudit?.retained)events.push({id:frame.shieldAudit.actorId,kind:'retained-touch',label:'Retained touch'});
   if(action?.tick===tick&&action?.decisionContext?.isolatedDribbleTouch?.shieldingIntent){
    const carry=events.find(e=>e.kind==='carry'&&e.id===action.playerId);if(carry)carry.label='Carry · Shielding';
@@ -152,7 +150,7 @@ const smallSidedDecisionLabels=Object.freeze({
  'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
  'hold-pass-target':'Hold receiving position',
  'support-run':'Support the attack','press-ball':'Close down the ball',
- 'goalkeeping':'Protect the goal','getting-up':'Getting up'
+ 'goalkeeping':'Protect the goal','getting-up':'—'
 });
 const humanPlayer=id=>id.replace('home-','HOME #').replace('away-','AWAY #');
 function appendDecisionEvent(event){
@@ -165,7 +163,7 @@ function trackOnFieldDecisionChanges(frame){
   const observedPhase=row.carryPhase??null;
   const decisionKey=row.kind+'|'+(observedPhase??'');
   if(lastMovementKinds.get(row.id)!==decisionKey){
-   appendDecisionEvent({tick:frame.physicsTick,id:row.id,
+   if(row.kind!=='getting-up')appendDecisionEvent({tick:frame.physicsTick,id:row.id,
     label:smallSidedDecisionLabels[row.kind]+
      (observedPhase?' · '+observedPhase.charAt(0).toUpperCase()+
        observedPhase.slice(1):''),physical:false});
@@ -495,7 +493,6 @@ function drawInlinePlayers(ctx,X,Y){
   ctx.fillStyle='#102d2e';ctx.textAlign='center';
   ctx.textBaseline='middle';ctx.font='bold 11px system-ui';
   ctx.fillText(p.id.split('-')[1],x,y);
-  if(gettingUp){ctx.fillStyle='#ffffff';ctx.font='10px system-ui';ctx.fillText('Getting up',x,y+21);}
  }
 }
 function drawPlayers(ctx,X,Y){
@@ -757,7 +754,7 @@ function render() {
       cross?(cross.arrival?'Arrival observed':
         cross.attempted?'Cross observed':'Waiting for cross'):
       f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry?
-        (Object.values(f.duelTransition?.getUpUntil??{}).some(until=>until>=f.physicsTick)?'Getting up':f.defensiveSlide?.phase==='slide'?'Sliding tackle':f.defensiveSlide?.phase==='recovery'?'Defender recovery':f.duelTransition?.phase==='counter'?'Counter carry':f.duelTransition?.phase==='recover'?'Loose ball recovery':f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
+        (Object.values(f.duelTransition?.getUpUntil??{}).some(until=>until>=f.physicsTick)?'Loose ball':f.defensiveSlide?.phase==='slide'?'Sliding tackle':f.defensiveSlide?.phase==='recovery'?'Defender recovery':f.duelTransition?.phase==='counter'?'Counter carry':f.duelTransition?.phase==='recover'?'Loose ball recovery':f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
        f.soloCarryPhase?.phase?'Carry · '+f.soloCarryPhase.phase:
       lastInlineFootballAction?'Last action: '+lastInlineFootballAction.action:
       activeScene.kind==='action'?'Waiting for action':'Movement';
