@@ -514,3 +514,18 @@ test('club licenses proxy forwards only protected canonical reads, account looku
   await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);
  }
 });
+
+test('#791 operator bridge is unavailable by default, outside the exact loopback DEV target or in LAN/hosted Preview',async()=>{
+ const source='a'.repeat(40),target='http://127.0.0.1:8787',path='/api/admin/dev-operator';
+ for(const [request,options,expected] of [
+  [req(path,'127.0.0.1','app.localhost:2000'),{target,operatorSource:''},404],
+  [req(path,'127.0.0.1','app.localhost:2000'),{target,operatorSource:'wrong'},404],
+  [req(path,'127.0.0.1','localhost:2000'),{target,operatorSource:source},404],
+  [req(path,'127.0.0.1','app.localhost:2000'),{target,operatorSource:source,lanEnabled:true},404],
+  [req(path,'127.0.0.1','app.localhost:2000'),{target:'http://127.0.0.1:8788',operatorSource:source},404],
+  [req(path,'127.0.0.1','app.localhost:2000'),{target:'https://preview.football-architect.workers.dev',pool:'dev-preview',operatorSource:source},404],
+  [req(path,'192.168.1.20','app.localhost:2000'),{target,operatorSource:source},403]
+ ]){
+  const res=response();await proxyAdminApi(request,res,options);assert.equal(res.status,expected);
+ }
+});

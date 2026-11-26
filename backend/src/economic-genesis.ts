@@ -23,7 +23,7 @@ export type OpeningContractForecast=Readonly<{
  formulaVersion:string;expectedRewardsByClub:Readonly<Record<string,number>>;
 }>;
 export type GenesisPreparationInput=GenesisInput&{openingContracts?:OpeningContractForecast};
-async function normalizeOpeningForecast(value:OpeningContractForecast|undefined,generation:string):Promise<OpeningContractForecast|undefined>{
+export async function normalizeOpeningForecast(value:OpeningContractForecast|undefined,generation:string):Promise<OpeningContractForecast|undefined>{
  if(value===undefined)return undefined;
  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join(',')!=='expectedRewardsByClub,formulaVersion,participantsHash,rulesHash,schema,worldGeneration'||
  value.schema!=='opening-contract-forecast-v1'||value.worldGeneration!==generation||

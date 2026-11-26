@@ -27,10 +27,11 @@ const asJson=<T>(x:unknown):T=>{if(typeof x!=='string')return fail('payroll_snap
 /** Each call is bounded to one club and at most one sealed journal batch.
  * Retrying after an uncertain response reads the same immutable run and ledger receipts.
  * This is a trusted Admin service, not a request-supplied contract/amount interface. */
-export async function settleClubPayrollBatch(db:Database,session:AdminSession,clubKey:string,now:number){
+export async function settleClubPayrollBatch(db:Database,session:AdminSession,clubKey:string,now:number,expectedWorld?:WorldV1){
  if(!session?.unified)throw new ApiError(403,'economic_authority_required');
  if(!canonicalClubs.includes(clubKey))return fail('payroll_club_catalogue_invalid');
  const operator=session.unified,treasury=clubTreasuryId(clubKey),world=await readWorld(db);
+ if(expectedWorld&&JSON.stringify(expectedWorld)!==JSON.stringify(world))return fail('payroll_world_stale');
  if(world.phase!=='active'||(world.day!==28&&world.day!==56)||world.seasonNumber<1)return fail('payroll_payday_required');
  const {generation,seasonNumber:season,day}=world;
  const access=()=>['read','post'].map(cap=>financeSessionGuard(db,operator.playerId,operator.sessionDigest,operator.csrfDigest,cap as 'read'|'post',now));
@@ -185,9 +186,10 @@ export async function readPayrollPaydayEvidence(db:Database,world:WorldV1,access
 }
 
 /** Bounded internal resume entrypoint. No caller-selected amount, cursor or new journal. */
-export async function settleNextPayrollBatch(db:Database,session:AdminSession,now:number){
+export async function settleNextPayrollBatch(db:Database,session:AdminSession,now:number,expectedWorld?:WorldV1){
  if(!session?.unified)throw new ApiError(403,'economic_authority_required');
  const operator=session.unified,world=await readWorld(db);
+ if(expectedWorld&&JSON.stringify(expectedWorld)!==JSON.stringify(world))return fail('payroll_world_stale');
  if(world.phase!=='active'||(world.day!==28&&world.day!==56)||world.seasonNumber<1)return fail('payroll_payday_required');
  const read=await db.batch([
   requireEconomicGenesisGuard(db,world.generation),
@@ -197,7 +199,7 @@ export async function settleNextPayrollBatch(db:Database,session:AdminSession,no
  const done=new Set(read[read.length-1].results.map(x=>String(x.club_key)));
  const next=canonicalClubs.find(c=>!done.has(c));
  if(next===undefined)return null;
- return settleClubPayrollBatch(db,session,next,now);
+ return settleClubPayrollBatch(db,session,next,now,world);
 }
 
 /** Calendar consumes the same proof as finance reconciliation, without granting

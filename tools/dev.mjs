@@ -26,9 +26,12 @@ export function validateLanAddress(value,interfaces=networkInterfaces()){
 
 export function localDevPlan({platform=process.platform,execPath=process.execPath,env=process.env,lanAddress=null,sharedD1=false}={}){
  const localEnv={...env,FA_ADMIN_API_TARGET:LOCAL_API,FA_ADMIN_API_POOL:'',FA_DEV_LAN:'',FA_DEV_LAN_HOST:''};
+ const source=env.FA_DEV_OPERATOR_SOURCE??'';
+ if(source&&(!sharedD1||lanAddress||!/^[a-f0-9]{40}$/.test(source)))throw Error('DEV operator requires explicit shared D1 loopback and exact source SHA');
+ const operatorArgs=source?['--','--var','DEV_OPERATOR_ENABLED:true','--var','DEV_OPERATOR_SOURCE:'+source]:[];
  const frontendEnv=lanAddress?{...localEnv,FA_DEV_LAN:'1',FA_DEV_LAN_HOST:lanAddress}:localEnv;
  return [
-  {name:'backend',command:platform==='win32'?'npm.cmd':'npm',args:['run',sharedD1?'dev:shared':'dev','--prefix','backend'],options:{cwd:ROOT,env:localEnv,stdio:'inherit',shell:platform==='win32'}},
+  {name:'backend',command:platform==='win32'?'npm.cmd':'npm',args:['run',sharedD1?'dev:shared':'dev','--prefix','backend',...operatorArgs],options:{cwd:ROOT,env:localEnv,stdio:'inherit',shell:platform==='win32'}},
   {name:'frontend',command:execPath,args:['tools/dev-app-preview.mjs'],options:{cwd:ROOT,env:frontendEnv,stdio:'inherit'}}
  ];
 }
