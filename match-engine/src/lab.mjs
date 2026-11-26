@@ -105,18 +105,20 @@ function recordPerformedActions(frame){
  if(keeper?.reboundRecoveryTick===tick)events.push({id:keeper.shooterId,kind:'rebound-contact',label:'Rebound contact'});
  if(dive?.catchState?.confirmedTick===tick)events.push({id:dive.keeperId,kind:'catch',label:'Catch'});
  if(dive?.catchState?.released)events.push({id:dive.keeperId,kind:'grip-lost',label:'Grip lost'});
- // D-01: native defender contact is not a won tackle.
+ // Actual actions are attributed to the acting player, not the starting role.
  if(frame.nativeDribbleAudit&&!frame.nativeDribbleAudit.soloCarry){
-  const defender=(frame.nativeDribbleAudit.side==='home'?'away':'home')+'-2';
-  const shoe=frame.starts?.includes(defender),leg=frame.smallSidedNativeBodyGuard?.lowerLegBallStarts?.includes(defender);
-  const defensiveAction=events.find(e=>e.id===defender&&['tackle','interception','carry'].includes(e.kind));
-  if(defensiveAction)defensiveAction.label=defensiveAction.kind==='carry'?(frame.duelTransition?.recovered?'Recovery touch':'Counter carry'):defensiveAction.kind==='tackle'?(action.defensiveTarget?.intervention==='sliding-tackle'?'Sliding tackle contact':'Standing tackle attempt'):'Interception attempt';
-  else if(shoe||leg)events.push({id:defender,kind:'defensive-contact',label:'Defensive contact'});
-  if(frame.defensiveSlide?.started&&frame.defensiveSlide.tick===tick)events.push({id:defender,kind:'sliding-tackle',label:'Sliding tackle attempt'});
-  if(frame.duelTransition?.regained){const touch=events.find(e=>e.id===frame.nativeDribbleAudit.side+'-10'&&e.kind==='carry');if(touch)touch.label='Regained touch';}
-  if(frame.shieldAudit?.retained)events.push({id:frame.nativeDribbleAudit.side+'-10',kind:'retained-touch',label:'Retained touch'});
+  for(const id of ids){
+   const observed=events.find(e=>e.id===id&&['tackle','interception','carry'].includes(e.kind));
+   if(observed?.kind==='tackle')observed.label=action.defensiveTarget?.intervention==='sliding-tackle'?'Sliding tackle contact':'Standing tackle attempt';
+   else if(observed?.kind==='interception')observed.label='Interception attempt';
+   else if(observed?.kind==='carry')observed.label='Carry';
+   else if(frame.starts?.includes(id)||frame.smallSidedNativeBodyGuard?.lowerLegBallStarts?.includes(id))
+    events.push({id,kind:'ball-contact',label:'Ball contact'});
+  }
+  if(frame.defensiveSlide?.started&&frame.defensiveSlide.tick===tick)events.push({id:frame.defensiveSlide.actorId,kind:'sliding-tackle',label:'Sliding tackle attempt'});
+  if(frame.shieldAudit?.retained)events.push({id:frame.shieldAudit.actorId,kind:'retained-touch',label:'Retained touch'});
   if(action?.tick===tick&&action?.decisionContext?.isolatedDribbleTouch?.shieldingIntent){
-   const carry=events.find(e=>e.kind==='carry'&&e.id===action.playerId);if(carry)carry.label='Shielding touch';
+   const carry=events.find(e=>e.kind==='carry'&&e.id===action.playerId);if(carry)carry.label='Carry · Shielding';
   }
  }
  const pass=frame.passPairAudit?.receivingContact;

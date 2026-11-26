@@ -9,7 +9,7 @@ import {chooseSmallSidedContextAction}
  from './small-sided-context-choice.mjs';
 
 
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,chooseDribbleDefensiveTouch,chooseDribbleRecoveryTouch} from './isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch} from './isolated-dribble-touches.mjs';
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
@@ -334,10 +334,8 @@ export function selectUniformAutonomousContactAction({
    throw new TypeError('Inactive player has no authenticated Rapier shoe');
   const player=actors.find(p=>p.id===id);
   if(!player)continue;
-  // D-05: only active directed duel may authorize an original defender touch.
-  const duelDefender=isolatedDribbleContext?.directed===true&&
-   isolatedDribbleContext.situationId==='dribble-1v1'&&id===(isolatedDribbleContext.attackingSide==='home'?'away':'home')+'-2';
-  if(isolatedDribbleContext!==null&&id!==isolatedDribbleContext.attackingSide+'-10'&&!duelDefender)
+  const sharedDuel=isolatedDribbleContext?.directed===true&&isolatedDribbleContext.situationId==='dribble-1v1';
+  if(isolatedDribbleContext!==null&&id!==isolatedDribbleContext.attackingSide+'-10'&&!sharedDuel)
    continue;
   const gap=Math.hypot(player.x-ballPosition.x,player.y-ballPosition.y);
   if(!finite(gap)||gap>MAX_GAP_M)continue;
@@ -387,15 +385,14 @@ export function selectUniformAutonomousContactAction({
     canPass:contextualRecipient!==null,
     canCarry:carryPossible
    }):null;
-  const duelSource=duelDefender?{attackingSide:isolatedDribbleContext.attackingSide,
-   attacker:actors.find(p=>p.id===isolatedDribbleContext.attackingSide+'-10'),defender:player,ballPosition,ballVelocity}:null;
-  const slide=duelDefender&&playerFrame.duelSlide?.actorId===id&&playerFrame.duelSlide.tick===tick?playerFrame.duelSlide:null;
-  if(slide?.phase==='recovery')continue;
-  const duelDefensiveTouch=duelSource?(slide?.phase==='slide'?
-   chooseDribbleDefensiveTouch(duelSource):duelTransition&&duelTransition.phase!=='attack'?
-   chooseDribbleRecoveryTouch(duelSource):chooseDribbleDefensiveTouch(duelSource)):null;
-  const dribbleTouch=isolatedDribbleContext===null||duelDefender?null:
-   (isolatedDribbleContext.directed===true?chooseDirectedDribbleTouch:chooseIsolatedDribbleTouch)({
+  const slide=sharedDuel&&playerFrame.duelSlide?.actorId===id&&playerFrame.duelSlide.tick===tick?playerFrame.duelSlide:null;
+  const opponent=sharedDuel?actors.find(p=>p.team!==player.team):null;
+  const sharedTouch=sharedDuel?chooseSharedDuelTouch({player,opponent,ballPosition,ballVelocity,transition:duelTransition,
+   slide,variantIndex:isolatedDribbleContext.variantIndex,tick}):null;
+  if(sharedDuel&&!sharedTouch)continue;
+  const duelDefensiveTouch=sharedTouch?.defensive??null;
+  const dribbleTouch=sharedDuel?sharedTouch.carry:isolatedDribbleContext===null?null:
+   chooseIsolatedDribbleTouch({
     variantIndex:isolatedDribbleContext.variantIndex,tick,
     attackingSide:isolatedDribbleContext.attackingSide,
     ballPosition,ballVelocity,attacker:player,
@@ -403,10 +400,9 @@ export function selectUniformAutonomousContactAction({
     defender:isolatedDribbleContext.situationId==='carry-solo'?null:actors.find(p=>p.team!==player.team)
    });
   let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
-  if(duelDefender){
-   if(!duelDefensiveTouch)continue;
+  if(duelDefensiveTouch){
    action=duelDefensiveTouch.kind;dx=duelDefensiveTouch.dx;dy=duelDefensiveTouch.dy;
-   rule=action==='carry'?'directed-duel-native-recovery-touch':'directed-duel-native-defensive-ground-touch';
+   rule='directed-duel-native-defensive-ground-touch';
   }else if(dribbleTouch!==null){
    if(dribbleTouch.magnitudeNs<0.025)continue;
    action='carry';dx=dribbleTouch.dx;dy=dribbleTouch.dy;

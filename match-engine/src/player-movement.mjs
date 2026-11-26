@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget,planDribbleDefender,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
 import {advanceSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
@@ -2516,8 +2516,9 @@ export function createPlayerMovement(options={}){
        0.08+(options.researchSoloSprintPursuitLeadM??0)*sprintPursuitScale):
     currentSoloCarryPhase.phase==='moderate'?-0.06:
      currentSoloCarryPhase.ballTargetOffsetM:null;
+  const duelActors=directedDribble?resolveDuelActors(players,smallSided.side,duelTransition):null;
   if(directedDribble){
-   const attacker=players.find(p=>p.id===smallSided.side+'-10'),defender=players.find(p=>p.id===smallSided.opponent+'-2');
+   const {attacker,defender,attackingSide}=duelActors;
    const gap=Math.hypot(attacker.x-defender.x,attacker.y-defender.y);
    const closeBall=Math.max(Math.hypot(attacker.x-ball.x,attacker.y-ball.y),Math.hypot(defender.x-ball.x,defender.y-ball.y))<1.8;
    const slow=Math.hypot(realBallVelocity.x,realBallVelocity.y)<0.40&&Math.max(Math.hypot(attacker.vx,attacker.vy),Math.hypot(defender.vx,defender.vy))<0.30;
@@ -2537,15 +2538,15 @@ export function createPlayerMovement(options={}){
    else directedBlockedTicks=0;
    if(!directedContactRelease&&(directedStallTicks>=24||directedBlockedTicks>=18||
       closeBall&&gap<1.6&&tick-directedAnchorTick>=60)){
-    directedContactRelease={...planDribbleContactRelease({attackingSide:smallSided.side,attacker,defender,ball,
-     phase:duelTransition?.phase??'attack',variantIndex:smallSided.variantIndex}),approachAt:tick+30,until:tick+100};
+    directedContactRelease={...planDribbleContactRelease({attackingSide,attacker,defender,ball,
+     phase:'attack',variantIndex:smallSided.variantIndex}),approachAt:tick+30,until:tick+100};
     directedStallTicks=0;directedBlockedTicks=0;
    }
    directedLastBall={...ball};
    duelSlide=advanceSlidingTackle({tick:tick+1,previous:duelSlide,
-    source:{attackingSide:smallSided.side,attacker,defender,ball:ballPosition,velocity:realBallVelocity},
-    allowLaunch:(!duelTransition||duelTransition.phase==='attack')&&!directedContactRelease,
-    cancel:directedContactRelease!==null});
+    source:{attackingSide,attacker,defender,ball:ballPosition,velocity:realBallVelocity},
+    allowLaunch:!duelActors.candidateId&&!directedContactRelease,
+    cancel:directedContactRelease!==null||duelSlide!==null&&duelSlide.actorId!==defender.id});
   }
   const targets=players.map(p=>{
    if(smallSided){
@@ -2583,14 +2584,14 @@ export function createPlayerMovement(options={}){
        attacker,ball,baseline):baseline;
     }
     const attack=smallSided.side==='home'?1:-1;
-    if(directedDribble&&duelTransition&&duelTransition.phase!=='attack'&&smallActive.has(p.id)){
-     const opponent=players.find(q=>q.id===(p.team===smallSided.side?smallSided.opponent+'-2':smallSided.side+'-10'));
-     return planDribbleTransitionTarget(p,opponent,ball,realBallVelocity,smallSided.side,duelTransition.phase);
+    if(duelActors){
+     const {attacker,defender,attackingSide}=duelActors;
+     return p.id===attacker.id?directedDribbleApproachTarget(p,ball,realBallVelocity,attackingSide,defender):
+      planDribbleDefender({attackingSide,attacker,defender,ballPosition:ball,ballVelocity:realBallVelocity}).target;
     }
     if(p.team===smallSided.side){
      if(p.id===smallSided.side+'-10')
-      return directedDribble?directedDribbleApproachTarget(p,ball,realBallVelocity,smallSided.side,players.find(a=>a.id===smallSided.opponent+'-2')):
-       smallSided.id==='keeper-1v1'?
+      return smallSided.id==='keeper-1v1'?
        (priorKeeperRebound?keeperDuelReboundTarget(smallSided.side,smallSided.variantIndex,p,ball,realBallVelocity):
         keeperDuelAttackerTarget(smallSided.side,smallSided.variantIndex,p,ball)):
        Object.freeze({x:ball.x+attack*(smallSided.id==='carry-solo'?
@@ -2602,9 +2603,6 @@ export function createPlayerMovement(options={}){
       y:clamp(ball.y+wing*5,-PLAYER_KINEMATIC_LIMITS.maxY,
        PLAYER_KINEMATIC_LIMITS.maxY)});
     }
-    if(directedDribble&&p.id===smallSided.opponent+'-2')
-     return planDribbleDefender({attackingSide:smallSided.side,attacker:players.find(q=>q.id===smallSided.side+'-10'),
-      defender:p,ballPosition:ball,ballVelocity:realBallVelocity}).target;
     const lane=p.id.endsWith('-3')?-3:p.id.endsWith('-4')?4:0;
     return Object.freeze({x:clamp(ball.x+attack*1.2,
      -PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),
@@ -2767,7 +2765,7 @@ export function createPlayerMovement(options={}){
   for(let i=0;i<players.length;i++){
    const p=players[i],target=targets[i];
    const recoveringDribbleBall=(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo')&&
-     p.id===smallSided.side+'-10'&&
+     (duelActors?p.id===duelActors.attacker.id:p.id===smallSided.side+'-10')&&
      Math.hypot(ball.x-p.x,ball.y-p.y)>1.5;
    const sliding=directedDribble&&!directedContactRelease&&duelSlide?.actorId===p.id&&duelSlide.phase==='slide';
    const limits=sliding?D08_SLIDE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
@@ -2921,7 +2919,7 @@ export function createPlayerMovement(options={}){
   if(smallSided)lastSmallSidedMovementDecisions=Object.freeze(players
    .filter(p=>smallActive.has(p.id)).map(p=>{
     const target=targets[players.indexOf(p)];
-    const kind=p.id===smallSided.opponent+'-1'?'goalkeeping':
+    const kind=duelActors?(p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
      p.team!==smallSided.side?'press-ball':
      p.id===smallSided.side+'-10'?
       ((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?'carry-ball':'approach-ball'):

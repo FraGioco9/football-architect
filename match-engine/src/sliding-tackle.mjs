@@ -1,7 +1,7 @@
 // #628 D-08: bounded sliding tackle intent, not a successful tackle.
 // Only the active directed 1v1 uses this state. The native shoe and
 // original exclusive START gate remain the physical authority.
-import {observeDribbleShield} from './isolated-dribble-touches.mjs';
+import {observeDribbleShield,isOpposingDuelPair} from './isolated-dribble-touches.mjs';
 
 export const SLIDE_TICKS=18;
 export const SLIDE_RECOVERY_TICKS=32;
@@ -15,9 +15,7 @@ const target=(x,y)=>Object.freeze({x:clamp(x,-51.99,51.99),y:clamp(y,-33.49,33.4
 // while the defender is already moving toward the ball and facing it.
 // Never launch from behind, through shielding, or from a stationary jam.
 export function planSlidingTackle({attackingSide,attacker,defender,ball:b,velocity:v}={}){
- if(!['home','away'].includes(attackingSide)||
-    attacker?.id!==attackingSide+'-10'||
-    defender?.id!==(attackingSide==='home'?'away':'home')+'-2'||
+ if(!isOpposingDuelPair(attackingSide,attacker,defender)||
     ![attacker.x,attacker.y,defender.x,defender.y,defender.vx,defender.vy,
       defender.facingRad,b?.x,b?.y,b?.z,v?.x,v?.y].every(Number.isFinite))return null;
  const dir=attackingSide==='home'?1:-1;
