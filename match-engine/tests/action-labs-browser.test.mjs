@@ -131,7 +131,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   }
   await send('Fetch.continueRequest',{requestId:pausedModule});
   await send('Fetch.disable');socket.removeEventListener('message',onPaused);
-  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelectorAll('#preset-options [role=option][data-value]').length===25&&!document.querySelector('.me-main-panel').hasAttribute('data-loading')");
+  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelectorAll('#preset-options [role=option][data-value]').length===28&&!document.querySelector('.me-main-panel').hasAttribute('data-loading')");
   for(let i=0;i<sizes.length;i++){
    const [width,height]=sizes[i];
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
@@ -145,8 +145,8 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    process.stdout.write('ME_628_ACTIVE_FIRST_PAINT '+JSON.stringify({width,height,first,after})+'\n');
   }
   await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
-  const activePage=await evalJs("(()=>{const el=id=>document.getElementById(id),menu=el('preset-options');return {groups:[...menu.querySelectorAll('.me-scenario-group-label')].map(x=>x.textContent),choices:menu.querySelectorAll('[role=option]').length,selected:el('preset-value').textContent,visibleComboboxes:[...document.querySelectorAll('.me-toolbar [role=combobox]')].filter(x=>x.getClientRects().length>0).length,attributesHidden:el('me-inline-rating-control').hidden,diagnosticsClosed:!el('me-observation-details').open,legacyAbsent:!menu.querySelector('[data-value=drop],[data-value=\\\"action:duel-3v3\\\"]'),nestedMenus:el('me-observation-details').querySelectorAll('details,select,[role=combobox]').length,legacyTextHidden:el('me-inline-observation').hidden};})()");
-  assert.deepEqual(activePage,{groups:['Carry phases','Passing','Shooting','Goalkeeping','Dribbling & defending','Collective situations'],choices:25,selected:'Carry · Moderate',visibleComboboxes:3,attributesHidden:true,diagnosticsClosed:true,legacyAbsent:true,nestedMenus:0,legacyTextHidden:true});
+  const activePage=await evalJs("(()=>{const el=id=>document.getElementById(id),menu=el('preset-options');return {groups:[...menu.querySelectorAll('.me-scenario-group-label')].map(x=>x.textContent),choices:menu.querySelectorAll('[role=option]').length,selected:el('preset-value').textContent,visibleComboboxes:[...document.querySelectorAll('.me-toolbar [role=combobox]')].filter(x=>x.getClientRects().length>0).length,attributesHidden:el('me-inline-rating-control').hidden,diagnosticsClosed:!el('me-observation-details').open,legacyAbsent:!menu.querySelector('[data-value=drop]'),nestedMenus:el('me-observation-details').querySelectorAll('details,select,[role=combobox]').length,legacyTextHidden:el('me-inline-observation').hidden};})()");
+  assert.deepEqual(activePage,{groups:['Carry phases','Passing','Shooting','Goalkeeping','Dribbling & defending','Collective situations'],choices:28,selected:'Carry · Moderate',visibleComboboxes:3,attributesHidden:true,diagnosticsClosed:true,legacyAbsent:true,nestedMenus:0,legacyTextHidden:true});
   const toggled=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-inline-side-trigger').click();el('me-inline-side-options').querySelector('[data-value=away]').click();el('speed-trigger').click();el('speed-opt-2').click();return {side:el('me-inline-side').value,speed:el('speed').value,sideLabel:el('me-inline-side-value').textContent,speedLabel:el('speed-value').textContent,tick:el('tick').textContent};})()");
   assert.deepEqual(toggled,{side:'away',speed:'2',sideLabel:'AWAY',speedLabel:'2×',tick:'Tick 0 · 0.00 s'});
   const flat=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-observation-details').open=true;for(let i=0;i<60;i++)el('step').click();return {open:el('me-observation-details').open,labels:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent),nested:el('me-observation-details').querySelectorAll('details').length};})()");
@@ -182,14 +182,13 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   const dribbleUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();document.querySelector('#preset-options [data-value=\\\"action:dribble-1v1\\\"]').click();return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),summary:el('me-inline-summary').textContent};})()");
   assert.equal(dribbleUI.label,'1v1 · autonomous duel');
   assert.deepEqual(new Set(dribbleUI.players),new Set(['','away-10','home-2']));
-  assert.deepEqual(dribbleUI.metrics,['Ball control','Defensive intent','Touches','Defensive touches','Ball path','Peak ball speed']);
+  assert.deepEqual(dribbleUI.metrics,['Ball control','Carry touches','Passes','Shots','Defensive touches','Keeper saves attempted']);
   assert.equal(dribbleUI.summary,'Loose ball');
   const duelExceptions=[];const captureDuelException=e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')duelExceptions.push(m.params.exceptionDetails.exception?.description??m.params.exceptionDetails.text);};
   socket.addEventListener('message',captureDuelException);
   const duelProgress=await evalJs("(()=>{const el=id=>document.getElementById(id);const states=new Set();for(let i=0;i<360;i++){el('step').click();states.add(el('me-inline-summary').textContent);}return {states:[...states],values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent)};})()");
-  assert.ok(duelProgress.states.every(s=>['Loose ball','Ball controlled'].includes(s)));
-  assert.ok(duelProgress.states.includes('Ball controlled'),'actual control should be observable in this replay');
-  assert.ok(Number(duelProgress.values[2])>0,'real carry actions must advance');
+  assert.ok(duelProgress.states.every(s=>['Loose ball','Ball controlled','Shot in flight','Pass in flight','Goal observed','Ball out'].includes(s)));
+  assert.ok(duelProgress.values.slice(1).some(x=>Number(x)>0),'real native actions must advance');
   await delay(100);socket.removeEventListener('message',captureDuelException);assert.deepEqual(duelExceptions,[],'mixed duel must not freeze Chrome');
   for(const [profile,label] of [['standing','Standing tackle'],['sliding','Sliding tackle'],['shoulder','Shoulder challenge']]){
    const selected=await evalJs(`(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:dribble-1v1:${profile}').click();el('step').click();return {label:el('preset-value').textContent,summary:el('me-inline-summary').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value)};})()`);
@@ -214,7 +213,16 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.equal(collectiveUI.label,'2v1 · autonomous play');assert.deepEqual(new Set(collectiveUI.players),new Set(['','away-10','away-9','home-2','home-1']));
   assert.deepEqual(collectiveUI.metrics,['Ball control','Carry touches','Passes','Shots','Defensive touches','Keeper saves attempted']);
   assert.ok(collectiveUI.values.slice(1).some(x=>Number(x)>0));assert.notEqual(collectiveUI.tick,'Tick 0 · 0.00 s');
-  await delay(100);socket.removeEventListener('message',captureCollectiveException);assert.deepEqual(collectiveExceptions,[],'2v1 must not freeze Chrome');
+  for(const [id,label,players] of [
+   ['defender-1v1','1v1 + goalkeeper · autonomous play',['','away-10','home-2','home-1']],
+   ['duel-2v2','2v2 · autonomous play',['','away-10','away-9','home-2','home-3','home-1']],
+   ['duel-3v3','3v3 · autonomous play',['','away-10','away-9','away-11','home-2','home-3','home-4','home-1']]
+  ]){
+   const f=await evalJs(`(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:${id}').click();for(let i=0;i<120;i++)el('step').click();return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),tick:el('tick').textContent};})()`);
+   assert.equal(f.label,label);assert.deepEqual(new Set(f.players),new Set(players));
+   assert.deepEqual(f.metrics,collectiveUI.metrics);assert.notEqual(f.tick,'Tick 0 · 0.00 s');
+  }
+  await delay(100);socket.removeEventListener('message',captureCollectiveException);assert.deepEqual(collectiveExceptions,[],'native open play must not freeze Chrome');
   await evalJs("document.getElementById('me-observation-details').open=false");
   for(const [width,height] of [[1440,900],[390,844]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});

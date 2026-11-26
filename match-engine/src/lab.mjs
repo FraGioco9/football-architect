@@ -14,7 +14,7 @@ import {reviewLiftInputContributions} from '/__fa_match_engine__/lift-input-qa.m
 import {runContactImpactDiagnostics} from '/__fa_match_engine__/contact-impact-qa.mjs';
 import {mountControlledActionLabs,createControlledActionLab,projectActiveLabDecisions} from '/__fa_match_engine__/action-labs.mjs';
 import {mountControlledMovementLabs,createControlledMovementLab} from '/__fa_match_engine__/movement-labs.mjs';
-import {SMALL_SIDED_VARIANT_COUNT} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
+import {SMALL_SIDED_VARIANT_COUNT,supportsNativeOpenPlay} from '/__fa_match_engine__/small-sided-lab-scenarios.mjs';
 import {LAB_SHOT_PROFILES,LAB_SHOT_LABELS} from '/__fa_match_engine__/lab-shot-calibration.mjs';
 import {SOLO_CARRY_PHASES} from '/__fa_match_engine__/solo-carry-phases.mjs';
 import {uniformSoloCarryAttributes}
@@ -352,13 +352,14 @@ function restart() {
     const {kind,id}=activeScene,side=byId('me-inline-side').value;
     if(!['home','away'].includes(side))
       throw new TypeError('Original small-sided situation requires HOME/AWAY');
+    const nativeOpenPlay=!archiveMode&&kind==='action'&&supportsNativeOpenPlay(id)&&id!=='keeper-1v1'&&(activeScene.duelTackleProfile??'mixed')==='mixed';
     const next=kind==='action'?
       createControlledActionLab(rapier,id,{shotSide:side,
        variantIndex:activeVariantIndex,shotProfile:activeScene.shotProfile??'power',firstTimeShot:activeScene.firstTimeShot===true,
        bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair'&&id!=='shot-solo',
-       collectiveApproaches:!archiveMode&&id==='overload-2v1',
+       collectiveApproaches:nativeOpenPlay,
        keeperSingleShot:!archiveMode&&id==='keeper-1v1',
-       directedDribble:!archiveMode&&id==='dribble-1v1',
+       directedDribble:!archiveMode&&id==='dribble-1v1'&&!nativeOpenPlay,
        duelTackleProfile:activeScene.duelTackleProfile??'mixed',
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
@@ -2360,7 +2361,10 @@ function setupUnifiedScenarioMenu(){
    ['action:pass-pair:interception','Interception'],
    ['action:defender-1v1:block','Block']
   ]],['Collective situations',[
-   ['action:overload-2v1','2v1 · autonomous play']
+   ['action:defender-1v1','1v1 + goalkeeper · autonomous play'],
+   ['action:overload-2v1','2v1 · autonomous play'],
+   ['action:duel-2v2','2v2 · autonomous play'],
+   ['action:duel-3v3','3v3 · autonomous play']
   ]]])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
@@ -2396,7 +2400,7 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:25)||
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:28)||
     menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:6))
   throw new Error('Unexpected active or archived LAB catalog');
 }
