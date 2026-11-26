@@ -1685,7 +1685,7 @@ export function createPlayerMovement(options={}){
      k!=='researchB06bGoalRestartEnabled'&&
      k!=='researchB06bNativeShotSide'&&
      k!=='researchSmallSidedSituation'&&k!=='researchSmallSidedSide'&&
-     k!=='researchSmallSidedVariantIndex'&&k!=='researchTapInStart'&&k!=='researchFirstTimeShot'&&
+     k!=='researchSmallSidedVariantIndex'&&k!=='researchShoulderStart'&&k!=='researchTapInStart'&&k!=='researchFirstTimeShot'&&
      k!=='researchCarryRunwayStart'&&
      k!=='researchNativeFixedCarry'&&
      k!=='researchSoloSprintPursuitLeadM'&&
@@ -1839,6 +1839,7 @@ export function createPlayerMovement(options={}){
       options.researchBodyEncounter!==undefined||
       Reflect.ownKeys(options).length!==
        (options.researchSmallSidedVariantIndex===undefined?2:3)+
+        (options.researchShoulderStart===true?1:0)+
         (options.researchTapInStart===true?1:0)+
          (options.researchFirstTimeShot===true?1:0)+
         (options.researchSmallSidedBodyFeedback===true?1:0)+
@@ -1859,6 +1860,7 @@ export function createPlayerMovement(options={}){
      options.researchNativeFixedCarry!==true||
      options.researchSoloCarryLockedPhase!=='sprint'||
      options.researchCarryRunwayStart!==true))||
+    (options.researchShoulderStart!==undefined&&(options.researchShoulderStart!==true||options.researchSmallSidedSituation!=='dribble-1v1'||options.researchSmallSidedBodyFeedback!==true))||
     (options.researchFirstTimeShot!==undefined&&(options.researchFirstTimeShot!==true||options.researchSmallSidedSituation!=='shot-solo'))||
     (options.researchTapInStart!==undefined&&(options.researchTapInStart!==true||options.researchSmallSidedSituation!=='shot-solo'))||
     (options.researchSmallSidedVariantIndex!==undefined&&
@@ -1911,7 +1913,7 @@ export function createPlayerMovement(options={}){
   smallSidedSetup(options.researchSmallSidedSituation,
    options.researchSmallSidedSide,INITIAL_PLAYERS,
    {variantIndex:options.researchSmallSidedVariantIndex??0,
-    carryRunwayStart:options.researchCarryRunwayStart===true,tapInStart:options.researchTapInStart===true,firstTimeShot:options.researchFirstTimeShot===true});
+    carryRunwayStart:options.researchCarryRunwayStart===true,tapInStart:options.researchTapInStart===true,firstTimeShot:options.researchFirstTimeShot===true,shoulderStart:options.researchShoulderStart===true});
  const smallActive=smallSided?new Set(smallSided.activeIds):null;
  const initial=smallSided?smallSided.staged:
   options.researchB06bOpeningKickoffEnabled===true?

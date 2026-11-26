@@ -126,7 +126,7 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('Sprint cadence and lateral-tracking research require guarded solo Carry');
  const smallSided=spec.mode==='situation'?
   smallSidedSetup(id,shotSide,INITIAL_PLAYERS,{
-   variantIndex,carryRunwayStart,tapInStart:shotProfile==='tap-in',firstTimeShot
+   variantIndex,carryRunwayStart,tapInStart:shotProfile==='tap-in',firstTimeShot,shoulderStart:duelTackleProfile==='shoulder'
   }):null;
  const refereeMode=spec.mode==='referee';
  if(typeof historicalEvidenceBaseline!=='boolean'||(historicalEvidenceBaseline&&smallSided))
@@ -282,6 +282,7 @@ export function createControlledActionLab(RAPIER,id,{
  });
  const mover=createPlayerMovement(smallSided?{
    researchSmallSidedSituation:id,researchSmallSidedSide:shotSide,
+   ...(duelTackleProfile==='shoulder'?{researchShoulderStart:true}:{}),
    ...(shotProfile==='tap-in'?{researchTapInStart:true}:{}),
    ...(firstTimeShot?{researchFirstTimeShot:true}:{}),
    ...(variantIndex>0?{researchSmallSidedVariantIndex:variantIndex}:{}),

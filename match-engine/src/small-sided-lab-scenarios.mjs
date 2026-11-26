@@ -157,9 +157,11 @@ export function getSmallSidedScenario(id){
  return d;
 }
 export function smallSidedSetup(id,side,canonicalPlayers,{
- variantIndex=0,carryRunwayStart=false,tapInStart=false,firstTimeShot=false
+ variantIndex=0,carryRunwayStart=false,tapInStart=false,firstTimeShot=false,shoulderStart=false
 }={}){
  const d=getSmallSidedScenario(id);
+ if(typeof shoulderStart!=='boolean'||(shoulderStart&&id!=='dribble-1v1'))
+  throw new TypeError('Shoulder start requires isolated 1v1');
  if(typeof firstTimeShot!=='boolean'||(firstTimeShot&&id!=='shot-solo'))
   throw new TypeError('First-time start requires isolated shooter');
  if(typeof tapInStart!=='boolean'||(tapInStart&&id!=='shot-solo'))
@@ -192,7 +194,7 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
    if(!activeIds.includes(p.id))return p;
    const [x,y]=positions.get(p.id);
    return freeze({...p,x:dir*x,y,baseX:dir*x,baseY:y,
-    vx:0,vy:0,blockedBy:null});
+    vx:0,vy:0,blockedBy:null,...(shoulderStart?{facingRad:dir===1?0:Math.PI}:{})});
   }));
  }
  // PASS-01: before-tick-zero geometry only. No opponent or keeper.
@@ -284,7 +286,23 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
   [opponent+'-1',[48,0]]
  ]);
  let staged,ballX=30,ballY=0;
- if(variantIndex===0){
+ if(shoulderStart){
+  // Dedicated shoulder fixture: both actors start in the same running
+  // direction, already alongside. No retreat or lateral chase to set up contact.
+  const random=seededGeometry(id,variantIndex);
+  let accepted=false;
+  for(let attempt=0;attempt<96&&!accepted;attempt++){
+   const fixed=variantIndex===0&&attempt===0;
+   const bx=fixed?30:27+random()*6,by=fixed?0:-6+random()*12;
+   const ax=bx-(fixed?0.55:0.50+random()*0.15);
+   const lateral=(variantIndex%2===0?1:-1)*(fixed?1.16:1.15+random()*0.10);
+   const longitudinal=fixed?0:(random()-0.5)*0.30;
+   const positions=new Map([[side+'-10',[ax,by]],[opponent+'-2',[ax+longitudinal,by+lateral]]]);
+   const candidate=stage(positions);
+   if(physicallySeparated(candidate,1.15)){staged=candidate;ballX=bx;ballY=by;accepted=true;}
+  }
+  if(!accepted)throw new RangeError('No collision-free paired shoulder start');
+ }else if(variantIndex===0){
   staged=stage(original);
  }else{
   const random=seededGeometry(id,variantIndex);
@@ -330,6 +348,7 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
  return freeze({
   id,side,opponent,variantIndex,activeIds,staged,
   ...(carryRunwayStart?{carryRunwayStart:true}:{}),
+  ...(shoulderStart?{shoulderStart:true}:{}),
   ball:freeze({preset:'roll',
    seed:'me-small-'+id+(variantIndex===0?'':'-v'+variantIndex)+'-'+side,
    x:dir*ballX,y:ballY,z:0,vx:0,vy:0,vz:0}),

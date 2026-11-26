@@ -1025,6 +1025,8 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
   const b={x:30.5*dir,y:0},v={x:2*dir,y:0};
   const plan=planDuelShoulderApproach({attacker,defender,attackingSide:side,ballPosition:b,ballVelocity:v});
   assert.ok(plan.sideOn);assert.ok(plan.target.y>0.9);
+  for(const distant of [{...defender,x:32*dir,y:0},{...defender,x:29*dir,y:1.02},{...defender,y:3}])
+   assert.equal(planDuelShoulderApproach({attacker,defender:distant,attackingSide:side,ballPosition:b,ballVelocity:v}),null,'no deliberate move into an absent lateral lane');
   const source={tick:1,plan,players:[attacker,defender],ball:b,torsoPairs:[]};
   assert.equal(observeNativeShoulderChallenge(source),null);
   const evidence=observeNativeShoulderChallenge({...source,torsoPairs:[[attacker.id,defender.id].sort().join('|')]});
@@ -1050,6 +1052,13 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
     const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true,duelTackleProfile:'shoulder'});
     let impact=null;
     try{
+     const initial=scene.snapshot(),attacker=initial.observedMovementPlayers.find(p=>p.id===side+'-10'),defender=initial.observedMovementPlayers.find(p=>p.id===(side==='home'?'away':'home')+'-2');
+     const dir=side==='home'?1:-1;
+     assert.ok(Math.abs(attacker.x-defender.x)<=0.15+1e-7);
+     assert.ok(Math.abs(attacker.y-defender.y)>=1.15-1e-7&&Math.abs(attacker.y-defender.y)<=1.25+1e-7);
+     assert.ok(Math.cos(attacker.facingRad)*dir>0.99&&Math.cos(defender.facingRad)*dir>0.99);
+     assert.ok(dir*(initial.ball.position.x-attacker.x)>=0.49);
+     assert.equal(Math.sign(defender.y-attacker.y),variantIndex%2===0?1:-1);
      for(let i=0;i<600;i++){
       const f=scene.step(),w=f.duelTransition;
       assert.equal(w.profile,'shoulder');assert.equal(f.defensiveSlide,null);

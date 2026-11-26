@@ -337,15 +337,20 @@ export function planDuelShoulderApproach({attacker,defender,attackingSide,ballPo
  const along=rx*ux+ry*uy,across=-rx*uy+ry*ux;
  const side=Math.abs(across)>0.10?Math.sign(across):b.y>0?-1:1;
  const gap=Math.hypot(rx,ry);
+ // Do not abandon normal defending in order to manufacture an overlap.
+ // Only maintain an already adjacent running lane; otherwise fall back
+ // to the ordinary goal-side/loose-ball positioning.
+ if(Math.abs(along)>0.80||Math.abs(across)<0.70||gap>1.50)return null;
  const defenderSpeed=Math.hypot(defender.vx??0,defender.vy??0);
  const parallel=defenderSpeed>0.25&&((defender.vx??0)*ux+(defender.vy??0)*uy)/defenderSpeed>=0.55;
  const sideOn=speed>=0.55&&parallel&&Math.abs(along)<=0.55&&Math.abs(across)>=0.78&&gap<=1.28;
  // Close on a shoulder-width lateral waypoint and then run alongside.
  // A finite predicted point follows the carrier instead of aiming through him.
- const offset=sideOn?0.99:1.12,lead=sideOn?0.24:0.20;
+ const offset=sideOn?0.99:1.10,lead=clamp(0.32+speed*0.18,0.32,0.85);
  const target=duelBound(attacker.x+ux*lead-uy*side*offset,
   attacker.y+uy*lead+ux*side*offset);
  const route=routeDuelAroundOpponent(defender,attacker,target);
+ if(route.detour)return null;
  return Object.freeze({actorId:defender.id,opponentId:attacker.id,target:route.target,
   sideOn,parallel,forward:Object.freeze({x:ux,y:uy}),away:Object.freeze({x:uy*side,y:-ux*side}),
   detour:route.detour,alongM:along,acrossM:across,decisionOnly:true});
