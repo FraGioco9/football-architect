@@ -265,8 +265,20 @@ export function planDribbleContactRelease({attackingSide,attacker,defender,ball,
  // for the entire release. At a touchline favour the inside.
  const side=Math.abs(ball.y)>30?-Math.sign(ball.y):Math.abs(dy)>0.12?-Math.sign(dy):variantIndex%2===0?1:-1;
  const bound=(x,y)=>Object.freeze({x:clamp(x,-51.99,51.99),y:clamp(y,-33.49,33.49)});
- const primaryTarget=bound(ball.x-forward*0.35,ball.y+side*0.58);
- const otherTarget=bound(other.x+0.95*dx/gap,other.y+0.95*dy/gap-side*0.45);
- return Object.freeze({primaryId:primary.id,otherId:other.id,
+ // First both back out along their actual separation axis. The player
+ // pursuing the ball then gets a distinct re-approach; the challenger
+ // waits outside the immediate contact corridor for this brief manoeuvre.
+ const primaryTarget=bound(primary.x-0.65*dx/gap,primary.y-0.65*dy/gap+side*0.35);
+ const otherTarget=bound(other.x+1.35*dx/gap,other.y+1.35*dy/gap-side*0.55);
+ return Object.freeze({primaryId:primary.id,otherId:other.id,forward,side,
   targets:Object.freeze({[primary.id]:primaryTarget,[other.id]:otherTarget}),movementOnly:true});
+}
+
+// Re-approach the current ball after the release, never an obsolete fixed
+// point beside it. Keep the foot within reach from the actual free side.
+export function dribbleReleaseApproach(player,ball,release){
+ const dx=ball.x-player.x,dy=ball.y-player.y,gap=Math.hypot(dx,dy);
+ const ux=gap>0.05?dx/gap:release.forward,uy=gap>0.05?dy/gap:0;
+ return Object.freeze({x:clamp(ball.x-0.20*ux,-51.99,51.99),
+  y:clamp(ball.y-0.20*uy,-33.49,33.49)});
 }

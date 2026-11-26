@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget,planDribbleDefender,planDribbleTransitionTarget,planDribbleContactRelease} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
@@ -2212,7 +2212,7 @@ export function createPlayerMovement(options={}){
    }:{})
   });
  }
- let directedContactRelease=null,directedStallTicks=0,directedLastBall=null;
+ let directedContactRelease=null,directedStallTicks=0,directedBlockedTicks=0,directedLastBall=null,directedBallAnchor=null,directedAnchorTick=0;
  function step(ballPosition={x:0,y:0},priorRealPass=null,
   priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null){
   if(options.researchUnstagedNativeBodyFeedback===true&&
@@ -2514,13 +2514,22 @@ export function createPlayerMovement(options={}){
    const slow=Math.hypot(realBallVelocity.x,realBallVelocity.y)<0.40&&Math.max(Math.hypot(attacker.vx,attacker.vy),Math.hypot(defender.vx,defender.vy))<0.30;
    const blocked=attacker.blockedBy===defender.id||defender.blockedBy===attacker.id;
    const stagnant=directedLastBall&&Math.hypot(ball.x-directedLastBall.x,ball.y-directedLastBall.y)<0.007;
-   if(directedContactRelease&&tick>=directedContactRelease.until)directedContactRelease=null;
+   // Track net displacement rather than tiny solver oscillations.
+   if(!directedBallAnchor||Math.hypot(ball.x-directedBallAnchor.x,ball.y-directedBallAnchor.y)>0.30||!closeBall){
+    directedBallAnchor={...ball};directedAnchorTick=tick;
+   }
+   if(directedContactRelease&&tick>=directedContactRelease.until){
+    directedContactRelease=null;directedBallAnchor={...ball};directedAnchorTick=tick;
+   }
    if(!directedContactRelease&&closeBall&&gap<1.6&&stagnant&&(slow||blocked))directedStallTicks++;
    else directedStallTicks=0;
-   if(directedStallTicks>=24){
+   if(!directedContactRelease&&closeBall&&gap<1.6&&blocked)directedBlockedTicks++;
+   else directedBlockedTicks=0;
+   if(!directedContactRelease&&(directedStallTicks>=24||directedBlockedTicks>=18||
+      closeBall&&gap<1.6&&tick-directedAnchorTick>=60)){
     directedContactRelease={...planDribbleContactRelease({attackingSide:smallSided.side,attacker,defender,ball,
-     phase:duelTransition?.phase??'attack',variantIndex:smallSided.variantIndex}),until:tick+54};
-    directedStallTicks=0;
+     phase:duelTransition?.phase??'attack',variantIndex:smallSided.variantIndex}),approachAt:tick+30,until:tick+100};
+    directedStallTicks=0;directedBlockedTicks=0;
    }
    directedLastBall={...ball};
   }
@@ -2530,7 +2539,11 @@ export function createPlayerMovement(options={}){
     // touch the ball; all others retain their own base positions.
     if(!smallActive.has(p.id))
      return Object.freeze({x:p.baseX,y:p.baseY});
-    if(directedDribble&&directedContactRelease?.targets[p.id])return directedContactRelease.targets[p.id];
+    if(directedDribble&&directedContactRelease?.targets[p.id]){
+     if(p.id===directedContactRelease.primaryId&&tick>=directedContactRelease.approachAt)
+      return dribbleReleaseApproach(p,ball,directedContactRelease);
+     return directedContactRelease.targets[p.id];
+    }
     if(smallSided.firstTimeShot)return Object.freeze({x:p.baseX,y:p.baseY});
     if(['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)){
      // Fixed receiving station and short approach to the INITIAL ball.
