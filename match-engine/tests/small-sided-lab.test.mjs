@@ -236,7 +236,7 @@ test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{
 });
 test('UME-05A one native open-play adapter runs different physical participant sets',{timeout:120000},async()=>{
  const R=await initializeRapier(rapier);
- for(const [id,n] of [['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],['duel-2v2',5],['duel-3v3',7]]){
+ for(const [id,n] of [['dribble-1v1',2],['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],['duel-2v2',5],['duel-3v3',7]]){
   assert.equal(supportsNativeOpenPlay(id),true);
   for(const side of ['home','away'])for(const variantIndex of [0,9]){
    const lab=createControlledActionLab(R,id,{shotSide:side,variantIndex,bodyGuardEnabled:true,collectiveApproaches:true});
@@ -263,12 +263,47 @@ test('UME-05A one native open-play adapter runs different physical participant s
    }finally{lab.dispose();}
   }
  }
- for(const id of ['carry-solo','pass-pair','cross-pair','shot-solo','dribble-1v1']){
+ for(const id of ['carry-solo','pass-pair','cross-pair','shot-solo']){
   assert.equal(supportsNativeOpenPlay(id),false);
   assert.throws(()=>createControlledActionLab(R,id,{bodyGuardEnabled:true,collectiveApproaches:true}),/Native open play/);
  }
+ assert.throws(()=>createControlledActionLab(R,'dribble-1v1',{bodyGuardEnabled:true,collectiveApproaches:true,directedDribble:true}),/Native open play/);
  assert.throws(()=>createControlledActionLab(R,'keeper-1v1',{bodyGuardEnabled:true,collectiveApproaches:true,keeperSingleShot:true}),/Native open play/);
  assert.throws(()=>createControlledActionLab(R,'defender-1v1',{bodyGuardEnabled:true,collectiveApproaches:true,duelTackleProfile:'block'}),/Native open play/);
+});
+test('UME-05B free duel observes only the shared control and action policy',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ const results=[];
+ for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+  const lab=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,collectiveApproaches:true});
+  try{
+   let contacts=0,controlled=0,actions=0,path=0,prior=lab.snapshot().ball.position,slideStrikes=0,shoulders=0;
+   for(let k=1;k<=360;k++){
+    const f=lab.step(),control=f.collectiveControl;
+    assert.equal(control.tick,f.physicsTick);
+    assert.equal(f.duelTransition,undefined);assert.equal(f.nativeDribbleAudit,undefined);
+    assert.equal(f.genuinePhysicalPlayerCount,2);
+    assert.equal(control.officialPossession,false);
+    assert.equal(projectActiveLabDecisions(f,lab.focus).length,2);
+    contacts+=f.starts.length;
+    if(control.kind==='controlled'){controlled++;assert.ok(lab.focus.includes(control.playerId));}
+    if(f.action){actions++;assert.ok(lab.focus.includes(f.action.playerId));assert.equal(f.action.appliedByRapier,true);assert.equal(f.action.actualPhysicsImpulseApplied,true);}
+    slideStrikes+=Object.values(control.lastInterventions??{}).filter(x=>x.tick===k&&x.intervention==='sliding-tackle').length;
+    shoulders+=Object.values(control.shoulderByPlayer??{}).filter(x=>x.tick===k&&x.successful).length;
+    path+=Math.hypot(f.ball.position.x-prior.x,f.ball.position.y-prior.y);prior=f.ball.position;
+    if(f.refereeEvidence?.lastEvent)break;
+   }
+   assert.ok(contacts>0,'free duel must reach a real contact');
+   results.push({side,variant:variantIndex+1,contacts,controlled,actions,path,slideStrikes,shoulders});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_UME05B '+JSON.stringify(results)+'\n');
+ assert.equal(results.length,60);
+ for(const side of ['home','away']){
+  const cases=results.filter(x=>x.side===side);
+  assert.ok(cases.some(x=>x.controlled>0),'real carry control on each mirrored side');
+  assert.ok(cases.some(x=>x.actions>0),'native impulses on each mirrored side');
+ }
 });
 test('COL-06 all 60 guarded 2v1 variants preserve native actions and observed control',{timeout:120000},async()=>{
  const R=await initializeRapier(rapier);

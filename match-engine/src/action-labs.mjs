@@ -380,7 +380,7 @@ export function createControlledActionLab(RAPIER,id,{
   createBasicMatchRefereeB05():null;
  const matchTimelineObserver=(refereeMode||smallSided)?
   createBasicMatchTimelineB06():null;
- const isolatedDribbleAudit=(!intentDrivenSoloCarry&&
+ const isolatedDribbleAudit=(!collectiveApproaches&&!intentDrivenSoloCarry&&
   ['dribble-1v1','carry-solo'].includes(id))?
   createIsolatedDribbleNativeAudit({side:shotSide,variantIndex,solo:id==='carry-solo',directed:directedDribble}):null;
  const baseFootworkObserver=basicFootwork?

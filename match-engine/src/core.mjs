@@ -504,7 +504,9 @@ export function createEngine(RAPIER, input = {}, {
    diagnosticSmallSidedSide,INITIAL_PLAYERS,
    {variantIndex:diagnosticSmallSidedVariantIndex,
      carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in',firstTimeShot:diagnosticFirstTimeShot,shoulderStart:diagnosticDuelTackleProfile==='shoulder',interceptionStart:diagnosticDuelTackleProfile==='interception',blockStart:diagnosticDuelTackleProfile==='block'});
- const isolatedCarry=smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo';
+ // Locked carry exercises keep their experimental physical setup. Open
+ // play uses the same ordinary ball and shoe physics for every fixture.
+ const isolatedCarry=!diagnosticCollectiveActions&&(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo');
  const stagedShoes=smallSided?smallSided.staged:
   diagnosticB06bOpeningKickoffEnabled?
    initialB06bOpeningLineup(INITIAL_PLAYERS):

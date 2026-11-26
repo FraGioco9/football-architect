@@ -2902,7 +2902,7 @@ export function createPlayerMovement(options={}){
   // Fixed ordering and collision rejection make every replay byte-stable.
   for(let i=0;i<players.length;i++){
    const p=players[i],target=targets[i];
-   const recoveringDribbleBall=(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo')&&
+   const recoveringDribbleBall=!collectiveApproaches&&(smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo')&&
      (duelActors?p.id===duelActors.attacker.id:p.id===smallSided.side+'-10')&&
      Math.hypot(ball.x-p.x,ball.y-p.y)>1.5;
    const sliding=nativeSlides[p.id]?.phase==='slide'||directedDribble&&!directedContactRelease&&duelSlide?.actorId===p.id&&duelSlide.phase==='slide';
@@ -2925,7 +2925,7 @@ export function createPlayerMovement(options={}){
       soloKinematicLimits(currentSoloCarryPhase):
       recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:
        soloKinematicLimits(currentSoloCarryPhase):
-    smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
+    !collectiveApproaches&&smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
      recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:D01_KINEMATIC_LIMITS:
      PLAYER_KINEMATIC_LIMITS;
     const free=advanceFreePlayerKinematics(p,target,limits);

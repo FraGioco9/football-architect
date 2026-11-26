@@ -32,7 +32,7 @@ function physicallySeparated(players,minimumM){
 
 const ids=freeze(['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3','carry-solo','pass-pair','cross-pair','shot-solo']);
 const definitions=freeze([
- freeze({id:ids[0],title:'Dribbling · 1v1 (no goalkeeper)',
+ freeze({id:ids[0],nativeOpenPlay:true,title:'Dribbling · 1v1 (no goalkeeper)',
   attackers:freeze([10]),defenders:freeze([2]),includeGoalkeeper:false,
   description:'Real attacker vs defender and the original Rapier ball; only attacker genuine shoe STARTs can trigger variable carry touches. No shot/pass/automatic tackle, possession or dribble success.'}),
  freeze({id:ids[1],nativeOpenPlay:true,title:'1v1 · Attacker vs goalkeeper',
