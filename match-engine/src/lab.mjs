@@ -236,7 +236,7 @@ function restart() {
     const next=kind==='action'?
       createControlledActionLab(rapier,id,{shotSide:side,
        variantIndex:activeVariantIndex,
-       bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair',
+       bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair'&&id!=='shot-solo',
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
        // Leave the original ordinary 22-player physics unmodified.
@@ -540,7 +540,14 @@ function render() {
         ' · mean gap '+f.soloCarryMeasurements.meanGapM.toFixed(2)+' m'+
         ' · gap >1.5m '+f.soloCarryMeasurements.observedOutOfReachTicks+' ticks'+
         ' · recoveries '+f.soloCarryMeasurements.observedRealRecoveryEpisodes+
-        (f.nativeFixedCarryResearch?
+        (f.shotSoloAudit?.attempted?
+        ' · empty goal · distance '+fmt(f.shotSoloAudit.distanceM)+' m'+
+        ' · launch '+fmtKmh(f.shotSoloAudit.launchSpeedMps)+' km/h'+
+        ' · peak height '+fmt(f.shotSoloAudit.peakClearanceM)+' m'+
+        (f.shotSoloAudit.crossing?' · '+(f.shotSoloAudit.crossing.goal?'goal':'miss')+
+         ' · flight '+fmt(f.shotSoloAudit.crossing.timeS)+' s'+
+         ' · lateral error '+fmt(f.shotSoloAudit.crossing.lateralErrorM)+' m':''):'')+
+       (f.nativeFixedCarryResearch?
          ' · native impulses last ≤2s '+f.soloCarryMeasurements.nativeRecent2sImpulseCount+
          ' · mean native impulse gap '+
           (f.soloCarryMeasurements.nativeMeanImpulseGapS===null?'—':
@@ -2090,6 +2097,9 @@ function setupUnifiedScenarioMenu(){
    ['action:pass-pair','Pass · Ground'],
     ['action:cross-pair','Cross · Lofted']
   ]],
+  ['Shooting',[
+   ['action:shot-solo','Shot · Empty goal']
+  ]],
   ['Small-sided situations',[
    ['action:keeper-1v1','1v1 · goalkeeper'],
    ['action:overload-2v1','2v1 · attack and defend'],
@@ -2117,9 +2127,9 @@ function setupUnifiedScenarioMenu(){
  }
  heading('Ball physics');
  for(const node of physics)menu.append(node);
- if(menu.querySelectorAll('[role="option"][data-value]').length!==12||
-    menu.querySelectorAll('.me-scenario-group-label').length!==4)
-  throw new Error('Lab should expose three fixed Carry phases, ground Pass, lofted Cross, three small-sided exercises and four ball presets');
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==13||
+    menu.querySelectorAll('.me-scenario-group-label').length!==5)
+  throw new Error('Lab should expose three fixed Carry phases, ground Pass, lofted Cross, empty-goal Shot, three small-sided exercises and four ball presets');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')

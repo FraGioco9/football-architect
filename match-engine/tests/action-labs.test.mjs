@@ -9,7 +9,7 @@ import {ACTION_LAB_SCENARIOS,getActionLabScenario,
 import {createControlledActionLab as createCurrentActionLab} from '../src/action-labs.mjs';
  // Historical M/B evidence comparator only. Current gameplay uses the default.
  const createControlledActionLab=(R,id,options={})=>createCurrentActionLab(R,id,{
-  ...options,historicalEvidenceBaseline:!['pass-pair','cross-pair','carry-solo','dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].includes(id)
+  ...options,historicalEvidenceBaseline:!['shot-solo','pass-pair','cross-pair','carry-solo','dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3'].includes(id)
  });
 
 
@@ -98,8 +98,8 @@ test('seventeen base-action LABs retain negative authorization boundaries',()=>{
  const dev=readFileSync(new URL('../../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
  const client=readFileSync(new URL('../src/action-labs.mjs',import.meta.url),'utf8');
  const unified=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
- assert.match(unified,/length!==12/,
-  'three fixed Carry phases, ground Pass, lofted Cross, three small-sided exercises and four ball presets');
+ assert.match(unified,/length!==13/,
+  'three fixed Carry phases, ground Pass, lofted Cross, empty-goal Shot, three small-sided exercises and four ball presets');
  assert.doesNotMatch(unified,/count!==48/);
  for(const spec of ACTION_LAB_SCENARIOS)
   assert.match(html,new RegExp('<option value="'+spec.id+'">'));

@@ -93,7 +93,7 @@ export function createControlledActionLab(RAPIER,id,{
    validateSoloCarryAttributes(soloCarryPlayerAttributes);
  const spec=getActionLabScenario(id);
  if(typeof bodyGuardEnabled!=='boolean'||
-    (bodyGuardEnabled&&(spec.mode!=='situation'||['pass-pair','cross-pair'].includes(id))))
+    (bodyGuardEnabled&&(spec.mode!=='situation'||['pass-pair','cross-pair','shot-solo'].includes(id))))
   throw new TypeError('Native body-contact exercise only in a small-sided situation');
  if(spec.mode!=='situation'&&variantIndex!==0)
   throw new TypeError('Variations require a selected small-sided exercise');
@@ -329,6 +329,7 @@ export function createControlledActionLab(RAPIER,id,{
   officialCrossCompleted:false,
   officialReception:false}):null;
  let previousCrossBall=null;
+ let shotSoloAudit=id==='shot-solo'?Object.freeze({attempted:false,launchTick:null,peakClearanceM:0,crossing:null,officialGoal:false}):null;
  let firstOpposingShoe=null,carryTrace=null,physicalRestart=null,b05bOutKick=null,b05bTake=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
  const decisionObserver=createPhysicalFootballDecisionObserver();
@@ -776,6 +777,26 @@ export function createControlledActionLab(RAPIER,id,{
     actorId:refereeEvidence.lastVerifiedTouch?.playerId??null
    })].slice(-12));
   }
+  if(shotSoloAudit){
+   if(nativeAction?.action==='shot'&&!shotSoloAudit.attempted){
+    const c=nativeAction.labShotCalibration;
+    shotSoloAudit=Object.freeze({...shotSoloAudit,attempted:true,launchTick:physics.tick,
+     shooterId:nativeAction.playerId,distanceM:c.distanceM,aimY:c.targetY,
+     aimCentreZM:c.targetCentreZM,launchSpeedMps:Math.hypot(...Object.values(physics.ball.velocity))});
+   }
+   if(shotSoloAudit.attempted&&!shotSoloAudit.crossing){
+    const e=refereeEvidence?.lastEvent;
+    const crossing=e&&e.tick>=shotSoloAudit.launchTick?Object.freeze({
+     tick:e.tick,timeS:(e.tick-shotSoloAudit.launchTick)*FIXED_DT,
+     kind:e.kind,position:e.crossing.intersection,goal:e.kind==='goal',
+     scoringTeam:e.scoringTeam,fullBallCrossed:e.crossing.fullBallCrossed,
+     lateralErrorM:Math.abs(e.crossing.intersection.y-shotSoloAudit.aimY),
+     heightErrorM:Math.abs(e.crossing.intersection.z-shotSoloAudit.aimCentreZM),
+     originalRapierSource:true,officialGoal:false}):null;
+    shotSoloAudit=Object.freeze({...shotSoloAudit,
+     peakClearanceM:Math.max(shotSoloAudit.peakClearanceM,Math.max(0,physics.ball.position.z-0.11)),crossing});
+   }
+  }
   const matchTimeline=matchTimelineObserver?.observe({
    physics,refereeEvidence
   })??null;
@@ -803,6 +824,7 @@ export function createControlledActionLab(RAPIER,id,{
     latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,
    ...(passPairAudit?{passPairAudit}:{}),
    ...(crossPairAudit?{crossPairAudit}:{}),
+    ...(shotSoloAudit?{shotSoloAudit}:{}),
    ...(firstTouchCushion?{physicalFirstTouch,pressureEvidence}:{}),
    ...(adaptiveDecision?{physicalReceiverChoice,postDeferContinuity,
     physicalControlEvidence}:{}),

@@ -284,6 +284,7 @@ test('every current gameplay Action LAB defaults to the same dynamics version',a
     const frame=lab.step();
     if(frame.action?.action==='pass')assert.ok(frame.action.isolatedGroundPassCalibration,spec.id);
     if(frame.action?.action==='cross')assert.ok(frame.action.isolatedCrossCalibration,spec.id);
+    if(frame.action?.action==='shot')assert.ok(frame.action.labShotCalibration,spec.id);
     const c=frame.latestOrientedReception;
     if(c?.tick===frame.physicsTick){
      assert.equal(c.version,CURRENT_LAB_DYNAMICS_VERSION);
@@ -293,5 +294,45 @@ test('every current gameplay Action LAB defaults to the same dynamics version',a
     }
    }
   }finally{lab.dispose();}
+ }
+});
+
+// SHOT-01 stays in the focused delivery test entry point until a separate
+// test file can be registered without multiplying CI runs.
+test('SHOT-01 authentic empty-goal strike, actual full-ball crossing HOME/AWAY', {timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const side of ['home','away'])for(const variantIndex of [0,1,9,21,29]){
+  const lab=createControlledActionLab(R,'shot-solo',{shotSide:side,variantIndex});
+  try{
+   assert.deepEqual(lab.focus,[side+'-10']);
+   assert.equal(lab.snapshot().genuinePhysicalPlayerCount,1);
+   let frame=lab.snapshot(),count=0;
+   for(let i=0;i<180;i++){
+    frame=lab.step();
+    assert.equal(frame.officialMatchResult,null);
+    if(frame.action){
+     count++;
+     assert.equal(frame.action.action,'shot');
+     assert.deepEqual(frame.starts,[side+'-10']);
+     assert.equal(frame.action.actualPhysicsImpulseApplied,true);
+     assert.ok(frame.action.labShotCalibration);
+     assert.ok(Math.hypot(...Object.values(frame.action.impulseNs))<=13+1e-8);
+    }
+    if(frame.shotSoloAudit.crossing)break;
+   }
+   assert.equal(count,1);
+   rows.push({side,variantIndex,...frame.shotSoloAudit});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_SHOT_SOLO '+JSON.stringify(rows)+'\n');
+ for(const row of rows){
+  assert.ok(row.launchSpeedMps>=18&&row.launchSpeedMps<=31,JSON.stringify(row));
+  assert.ok(row.peakClearanceM>=0.2&&row.peakClearanceM<=2.8,JSON.stringify(row));
+  assert.ok(row.crossing?.fullBallCrossed&&row.crossing.goal,JSON.stringify(row));
+  assert.equal(row.crossing.scoringTeam,row.side);
+  assert.ok(row.crossing.timeS>=0.35&&row.crossing.timeS<=1.8,JSON.stringify(row));
+  assert.ok(row.crossing.lateralErrorM<=0.35,JSON.stringify(row));
+  assert.ok(row.crossing.heightErrorM<=0.35,JSON.stringify(row));
+  assert.equal(row.crossing.officialGoal,false);
  }
 });

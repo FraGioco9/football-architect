@@ -30,7 +30,7 @@ function physicallySeparated(players,minimumM){
  return true;
 }
 
-const ids=freeze(['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3','carry-solo','pass-pair','cross-pair']);
+const ids=freeze(['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1','duel-2v2','duel-3v3','carry-solo','pass-pair','cross-pair','shot-solo']);
 const definitions=freeze([
  freeze({id:ids[0],title:'Dribbling · 1v1 (no goalkeeper)',
   attackers:freeze([10]),defenders:freeze([2]),includeGoalkeeper:false,
@@ -58,7 +58,10 @@ const definitions=freeze([
   description:'Two teammates only. One distance-calibrated ground impulse after a genuine exclusive shoe START; first receiving contact may use a bounded native cushion; control is measured, never assumed.'}),
  freeze({id:ids[8],title:'Cross · lofted',attackers:freeze([10,9]),
   defenders:freeze([]),includeGoalkeeper:false,
-  description:'Two teammates only. One original M33 lofted cross after a genuine exclusive shoe START; observe flight and arrival, not aerial control.'})
+  description:'Two teammates only. One original M33 lofted cross after a genuine exclusive shoe START; observe flight and arrival, not aerial control.'}),
+ freeze({id:ids[9],title:'Shot · Empty goal',attackers:freeze([10]),
+  defenders:freeze([]),includeGoalkeeper:false,
+  description:'One genuine shooter, stationary ball and empty goal. Observe actual flight and full-ball goal-line crossing; no official result.'})
 ]);
 const byId=new Map(definitions.map(s=>[s.id,s]));
 // Keeper 1v1: deterministic source-only 60Hz tactical targets, never a
@@ -193,6 +196,21 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
     genuinePhysicalPlayers:2,officialMatchResult:null});
   }
   throw new RangeError('No collision-free isolated cross setup');
+ }
+ // SHOT-01: one original physical shooter and a stationary ball.
+ if(id==='shot-solo'){
+  const random=seededGeometry(id,variantIndex);
+  for(let attempt=0;attempt<96;attempt++){
+   const bx=variantIndex===0?30:24+random()*17;
+   const by=variantIndex===0?0:-14+random()*28;
+   const staged=stage(new Map([[side+'-10',[bx-0.30,by]]]));
+   if(!physicallySeparated(staged,1.15))continue;
+   return freeze({id,side,opponent,variantIndex,activeIds,staged,
+    ball:freeze({preset:'roll',seed:'me-small-shot-solo-v'+variantIndex+'-'+side,
+     x:dir*bx,y:by,z:0,vx:0,vy:0,vz:0}),
+    genuinePhysicalPlayers:1,officialMatchResult:null});
+  }
+  throw new RangeError('No collision-free isolated shot setup');
  }
  const original=new Map([
   [side+'-10',[(id==='dribble-1v1'||id==='carry-solo')?29.45:id==='keeper-1v1'?29.50:29.72,0]],

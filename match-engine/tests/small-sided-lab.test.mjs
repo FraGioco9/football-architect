@@ -15,9 +15,9 @@ import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.
 test('#628 small-sided catalog replaces only visible elementary exercise UI; archives remain for regression',()=>{
  const ids=SMALL_SIDED_LAB_SCENARIOS.map(s=>s.id);
  assert.deepEqual(ids,['dribble-1v1','keeper-1v1','defender-1v1','overload-2v1',
-  'duel-2v2','duel-3v3','carry-solo','pass-pair','cross-pair']);
+  'duel-2v2','duel-3v3','carry-solo','pass-pair','cross-pair','shot-solo']);
  assert.deepEqual(SMALL_SIDED_LAB_SCENARIOS.map(s=>s.focus.length),
-  [2,2,3,4,5,7,1,2,2]);
+  [2,2,3,4,5,7,1,2,2,1]);
  const html=readFileSync(new URL('../lab/index.html',import.meta.url),'utf8');
  const ui=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
  for(const id of ids)
@@ -25,7 +25,7 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
    'original research scene stays in hidden regression catalog');
  for(const id of ['keeper-1v1','overload-2v1','duel-3v3'])
   assert.match(ui,new RegExp("'action:"+id+"'"));
- assert.match(ui,/length!==12/);
+ assert.match(ui,/length!==13/);
  assert.doesNotMatch(ui,/visibleMovement/);
  assert.match(ui,/Carry phases/);
  assert.match(ui,/Small-sided situations/);
@@ -48,7 +48,7 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
   assert.equal(scene.staged.length,22);
   assert.equal(scene.staged.find(p=>p.id===side+'-10').role,'forward');
   assert.equal(scene.activeIds.includes((side==='home'?'away':'home')+'-1'),
-    !['dribble-1v1','carry-solo','pass-pair','cross-pair'].includes(s.id));
+    !['dribble-1v1','carry-solo','pass-pair','cross-pair','shot-solo'].includes(s.id));
   for(let i=0;i<scene.staged.length;i++)for(let j=i+1;j<scene.staged.length;j++)
    assert.ok(Math.hypot(scene.staged[i].x-scene.staged[j].x,
      scene.staged[i].y-scene.staged[j].y)>=0.98-1e-8);

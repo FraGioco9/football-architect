@@ -10,6 +10,7 @@ import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
 import {calculateRealReceivingCushion,calculateOrientedReceivingCushion,calculateLowCrossSpinCushion,CURRENT_LAB_DYNAMICS_VERSION}
  from './physical-receiving-cushion-m25.mjs';
+import {calculateCurrentLabShotCalibration} from './lab-shot-calibration.mjs';
 import {choosePhysicalReceiverSecondTouch}
  from './physical-receiver-choice-m27.mjs';
 import {calculatePhysicalReceiverReleaseTap} from './physical-receiver-tap-m30.mjs';
@@ -21,7 +22,7 @@ export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
- smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,
+ smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
  nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false
 }={}){
@@ -53,6 +54,13 @@ export function createPrivatePhysicalActionExecutor({
     isolatedDribbleContext!==null||researchReceivingCushionSide!==null||
     researchReceivingDecisionSide!==null||researchReceiverTapSide!==null))
   throw new TypeError('Isolated pass requires exactly two original teammates');
+ if(isolatedShotSide!==null&&(
+    !['home','away'].includes(isolatedShotSide)||activePlayerIds?.length!==1||
+    !activePlayerIds.includes(isolatedShotSide+'-10')||isolatedPassSide!==null||
+    isolatedCrossSide!==null||allowPhysicalCarry||smallSidedDecisionContext!==null||
+    isolatedDribbleContext!==null||researchReceivingCushionSide!==null||
+    researchReceivingDecisionSide!==null||researchReceiverTapSide!==null||physicalBodyGuardEnabled))
+  throw new TypeError('Isolated shot requires one original shooter and no opponents');
  if(isolatedCrossSide!==null&&(
     !['home','away'].includes(isolatedCrossSide)||activePlayerIds?.length!==2||
     !activePlayerIds.includes(isolatedCrossSide+'-10')||
@@ -105,7 +113,7 @@ export function createPrivatePhysicalActionExecutor({
  let action=null,audit=null,closed=false;
  let actualPriorPass=null,interrupted=false,firstCushion=null;
  if(typeof latestLabDynamics!=='boolean')throw new TypeError('Boolean current LAB dynamics required');
- const sharedDynamics=latestLabDynamics||isolatedPassSide!==null||isolatedCrossSide!==null;
+ const sharedDynamics=latestLabDynamics||isolatedPassSide!==null||isolatedCrossSide!==null||isolatedShotSide!==null;
  let pendingDelivery=null,latestCushion=null;
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
@@ -295,7 +303,9 @@ export function createPrivatePhysicalActionExecutor({
    originalChoice.playerId!==isolatedCrossSide+'-10'||
    originalChoice.crossTarget?.recipientId!==isolatedCrossSide+'-9'||
    originalChoice.impulseNs.z<=0);
-  const originalChosen=orientedCandidate||researchCandidate||deferOriginal||isolatedPassRejected||isolatedCrossRejected?null:originalChoice;
+  const isolatedShotRejected=isolatedShotSide!==null&&(lastActionTick>=0||
+    originalChoice?.action!=='shot'||originalChoice.playerId!==isolatedShotSide+'-10');
+  const originalChosen=orientedCandidate||researchCandidate||deferOriginal||isolatedPassRejected||isolatedCrossRejected||isolatedShotRejected?null:originalChoice;
   // The *existing* uniform policy and Rapier exclusive shoe START remain
   // the only action authority. Native phase calibration can adjust that
   // action's impulse or decline it, never generate an extra contact/action.
@@ -329,6 +339,7 @@ export function createPrivatePhysicalActionExecutor({
     deferOriginal?'m27-native-decision-defers-original-clearance':
     isolatedPassRejected?'isolated-pass-one-original-ground-pass-only':
     isolatedCrossRejected?'isolated-cross-one-original-lofted-cross-only':
+    isolatedShotRejected?'isolated-shot-one-original-shot-only':
     nativeTune?.impulseNs===null?
      'native-shoe-contact-no-extra-ball-impulse-needed':
     (gates.firstFailedGate??'not-selected-after-input-gates')
@@ -359,7 +370,10 @@ export function createPrivatePhysicalActionExecutor({
      scale:Math.max(1,Math.min(3.8,ballBody.mass()*desiredHorizontal/horizontal)),
      officialMatchAction:false});
    })():null;
-   const impulse=crossCalibration?Object.freeze({
+   const shotCalibration=sharedDynamics&&chosen.action==='shot'&&chosen.shotTarget?
+     calculateCurrentLabShotCalibration({target:chosen.shotTarget,position:ballBody.translation(),
+      velocity:ballBody.linvel(),massKg:ballBody.mass(),ballRadiusM,originalImpulseNs:chosen.impulseNs}):null;
+    const impulse=shotCalibration?shotCalibration.impulseNs:crossCalibration?Object.freeze({
     x:chosen.impulseNs.x*crossCalibration.scale,
     y:chosen.impulseNs.y*crossCalibration.scale,
     z:chosen.impulseNs.z*crossCalibration.scale
@@ -373,6 +387,7 @@ export function createPrivatePhysicalActionExecutor({
     impulseNs:impulse,
     ...(passCalibration?{isolatedGroundPassCalibration:passCalibration}:{}),
     ...(crossCalibration?{isolatedCrossCalibration:crossCalibration}:{}),
+    ...(shotCalibration?{labShotCalibration:shotCalibration}:{}),
     ...(nativeTune?{
      nativeShoeContactVerified:true,
      nativeFixedPhaseCalibration:nativeTune,
