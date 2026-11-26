@@ -193,7 +193,7 @@ export function planDefensiveBallRelease(attacker,defender,b,attackingSide){
  const ax=(defender.x-attacker.x)/da,ay=(defender.y-attacker.y)/da;
  const tx=-dir*ay,ty=dir*ax;
  const candidates=[];
- for(const sign of [1,-1])for(const along of [0,0.28,0.50,-0.20]){
+ for(const sign of [1,-1])for(const along of [0,0.28,0.35,0.50,-0.20]){
   const norm=Math.hypot(along,1),ux=(ax*along+tx*sign)/norm,uy=(ay*along+ty*sign)/norm;
   const end={x:b.x+ux*1.05,y:b.y+uy*1.05};
   if(Math.abs(end.x)>51.95||Math.abs(end.y)>33.35)continue;
@@ -207,6 +207,8 @@ export function planDefensiveBallRelease(attacker,defender,b,attackingSide){
    clearance=Math.min(clearance,gap(defender,x,y)-Math.min(startD,0.58),
     gap(attacker,x,y)-Math.min(startA,0.58));
   }
+  // Do not select a direction that drives the ball deeper into a body.
+  if(clearance< -0.03)continue;
   const advance=(a-startA);
   const score=2.5*(a-d)+1.8*clearance+0.5*advance-0.9*Math.abs(d-0.95);
   candidates.push({ux,uy,end,d,a,clearance,score});
