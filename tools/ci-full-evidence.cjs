@@ -49,6 +49,103 @@ function evaluateRun(run,jobs,sha,workflow,{prNumber,baseSha}={}){
  }
  return {state:'PASS',url:run.html_url};
 }
+
+// Recover only executed historical Admin evidence, corroborated by the original FULL gate.
+const economicRepairAnchor='2e4596492665401200b16ef45615a4c0e1434d34';
+const economicRepairBranch='ci/785-historical-economic-source';
+const economicRepairPaths=new Set(['tools/ci-match-engine.cjs','tools/ci-full-evidence.cjs',
+ 'tests/ci-opt-04-05.test.mjs','.github/workflows/ci-opt-03-full-gate.yml','.github/workflows/admin-world-checks.yml']);
+function economicRepairShape(baseSha,files){
+ return baseSha===economicRepairAnchor&&files.length===economicRepairPaths.size&&
+  new Set(files.map(f=>f.filename)).size===economicRepairPaths.size&&
+  files.every(f=>economicRepairPaths.has(f.filename)&&f.status==='modified'&&!f.previous_filename);
+}
+function historicIdentity(run,source,tree,workflow,owner,repo){
+ const end=Date.parse(source.merged_at),start=Date.parse(run.created_at),updated=Date.parse(run.updated_at);
+ return run.event==='pull_request'&&run.head_sha===source.head.sha&&run.head_commit?.tree_id===tree&&
+  run.head_branch===source.head.ref&&run.repository?.full_name===owner+'/'+repo&&
+  run.head_repository?.full_name===owner+'/'+repo&&run.path==='.github/workflows/'+workflow&&
+  Number.isSafeInteger(run.run_attempt)&&run.run_attempt>0&&start<end&&start<=updated&&updated<=end;
+}
+function historicalAssociation(run,source,baseSha){
+ return Array.isArray(run.pull_requests)&&(run.pull_requests.length===0||
+  run.pull_requests.some(p=>p.number===source.number&&p.head.sha===source.head.sha&&
+   p.base.ref==='main'&&p.base.sha===baseSha));
+}
+async function historicJobLog(github,owner,repo,job){
+ try{
+  const {data}=await github.rest.actions.downloadJobLogsForWorkflowRun({owner,repo,job_id:job.id});
+  if(typeof data==='string')return data;
+  if(data instanceof ArrayBuffer||ArrayBuffer.isView(data))return Buffer.from(data instanceof ArrayBuffer?data:new Uint8Array(data.buffer,data.byteOffset,data.byteLength)).toString('utf8');
+ }catch{}
+ return '';
+}
+function loggedEnv(log,key,value){
+ const matches=[...log.matchAll(new RegExp('^\\S+Z   '+key+': (.*)\\r?$','gm'))];
+ return matches.length===1&&matches[0][1].trim()===String(value);
+}
+function gateRecordedRun(log,source,run){
+ if(!loggedEnv(log,'PR_NUMBER',source.number)||!loggedEnv(log,'EXPECTED_HEAD',source.head.sha))return false;
+ const reports=[];
+ for(const line of log.split(/\r?\n/)){
+  const match=/^\S+Z (\{"head":.*\})$/.exec(line);
+  if(match){try{reports.push(JSON.parse(match[1]));}catch{return false;}}
+ }
+ const last=reports.at(-1);
+ return last?.head===source.head.sha&&Array.isArray(last.rows)&&last.rows.length>=3&&
+  last.rows.every(row=>row.state==='PASS')&&last.rows.some(row=>row.workflow==='admin-world-checks.yml'&&
+   row.run===run.id&&row.attempt===run.run_attempt);
+}
+async function certifiedHistoricalAdmin({github,owner,repo,source,tree,baseSha,run,jobs}){
+ const workflow='admin-world-checks.yml';
+ if(!source.merged||source.base.ref!=='main'||source.base.sha!==baseSha||
+    source.head.repo?.full_name!==owner+'/'+repo||!historicIdentity(run,source,tree,workflow,owner,repo)||
+    !historicalAssociation(run,source,baseSha)||evaluateRun(run,jobs,source.head.sha,workflow).state!=='PASS')return false;
+ const operator=jobs.find(j=>j.name==='Final local operator persistence, restart and browser lifecycle');
+ if(!['Verify DEV operator runtime and PowerShell regressions before full rehearsal',
+  'Verify operator bootstrap, recovery and local persistence across restart',
+  'Execute isolated economic rehearsal'].every(name=>operator?.steps?.some(s=>s.name===name&&s.conclusion==='success')))return false;
+ const scope=jobs.find(j=>j.name==='scope'&&j.run_id===run.id&&j.conclusion==='success'&&
+  j.steps?.some(s=>s.name==='Classify Admin impact on exact HEAD'&&s.conclusion==='success'));
+ if(!scope)return false;
+ const log=await historicJobLog(github,owner,repo,scope);
+ if(!loggedEnv(log,'PR_BASE_SHA',baseSha)||!log.includes('test "$(git rev-parse HEAD)" = "'+source.head.sha+'"'))return false;
+ const gateWorkflow='ci-opt-03-full-gate.yml';
+ const gates=await github.paginate(github.rest.actions.listWorkflowRuns,{owner,repo,workflow_id:gateWorkflow,
+  head_sha:source.head.sha,event:'pull_request',per_page:100});
+ for(const gate of gates){
+  if(!historicIdentity(gate,source,tree,gateWorkflow,owner,repo)||!historicalAssociation(gate,source,baseSha)||
+     gate.status!=='completed'||gate.conclusion!=='success')continue;
+  const gateJobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:gate.id,filter:'latest',per_page:100});
+  const job=gateJobs.find(j=>j.name==='CI FULL exact-head evidence'&&j.run_id===gate.id&&j.conclusion==='success'&&
+   j.steps?.some(s=>s.name==='Verify exact PR head and complete FULL workflow evidence'&&s.conclusion==='success'));
+  if(job&&gateRecordedRun(await historicJobLog(github,owner,repo,job),source,run))return true;
+ }
+ return false;
+}
+// One bounded policy transition, independently checking the executed source.
+async function certifyEconomicRepair({github,owner,repo,baseSha,headRef,files}){
+ if(headRef!==economicRepairBranch||!economicRepairShape(baseSha,files))return false;
+ const {data:source}=await github.rest.pulls.get({owner,repo,pull_number:814});
+ if(!source.merged||source.merge_commit_sha!==economicRepairAnchor||
+    source.head.sha!=='52b9cf8b9b7f1467c9a22bc5c1277106273c16df')return false;
+ const {data:merge}=await github.rest.git.getCommit({owner,repo,commit_sha:economicRepairAnchor});
+ const {data:commit}=await github.rest.git.getCommit({owner,repo,commit_sha:source.head.sha});
+ if(merge.tree.sha!==commit.tree.sha||merge.parents[0]?.sha!==source.base.sha||
+    merge.tree.sha!=='fceabfb6437d8daf662fca7aa577c239db1b784c')return false;
+ // The actual Admin workflow can only gain the fail-closed preflight lines.
+ const patch=files.find(f=>f.filename==='.github/workflows/admin-world-checks.yml')?.patch;
+ if(typeof patch!=='string')return false;
+ const additions=patch.split('\n').filter(l=>l.startsWith('+')&&!l.startsWith('+++')).map(l=>l.slice(1));
+ const deletions=patch.split('\n').filter(l=>l.startsWith('-')&&!l.startsWith('---'));
+ if(deletions.length||JSON.stringify(additions)!==JSON.stringify(economicRepairGuardLines))return false;
+ const {data:run}=await github.rest.actions.getWorkflowRun({owner,repo,run_id:45777171064});
+ if(run.id!==45777171064||run.run_attempt!==1)return false;
+ const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:run.id,filter:'latest',per_page:100});
+ return certifiedHistoricalAdmin({github,owner,repo,source,tree:commit.tree.sha,baseSha:source.base.sha,run,jobs});
+}
+
+const economicRepairGuardLines=["          PR_HEAD_REF: $"+"{{ github.event.pull_request.head.ref }}","          if [ \"$PR_HEAD_REF\" = ci/785-historical-economic-source ] && [ \"$"+"{{ steps.economic.outputs.mode }}\" != economic-only ]; then","            echo 'BLOCKED: certified historical economic source unavailable; do not start the rehearsal.' >&2","            exit 1","          fi"];
 const inheritedMarker='Verified unchanged economic scope against executed FULL source';
 const engineSteps=['Verify exact PR HEAD','Install pinned physics candidate','Focused core and route security tests',
  'Existing routing/preview regressions','Browser viewport fit (Chrome, Advanced settings open and closed)',
@@ -92,7 +189,7 @@ function selectedPublicEvidence(workflow,run,jobs,sha,prNumber,baseSha){
  return lanes.length===1&&step(job('Browser lane (core)'),'Run loopback preview and browser checks')==='success'&&
   step(aggregate,'Run loopback preview and browser checks')==='success';
 }
-async function observe({github,owner,repo,sha,prNumber,baseSha,files=[]}){
+async function observe({github,owner,repo,sha,prNumber,baseSha,headRef,files=[]}){
  const rows=[];
  for(const workflow_id of Object.keys(requirements)){
   const runs=await github.paginate(github.rest.actions.listWorkflowRuns,{owner,repo,workflow_id,head_sha:sha,per_page:100});
@@ -126,8 +223,11 @@ async function observe({github,owner,repo,sha,prNumber,baseSha,files=[]}){
  }
  if(rows.some(r=>['SELECTED','ECONOMY_INHERITED'].includes(r.state))){
   const policy=p=>p.startsWith('.github/')||p.startsWith('tools/ci-')||p==='backend/tests/prepare-persistence.test.mts';
-  if(!files.length||files.some(f=>policy(f.filename)||(f.previous_filename&&policy(f.previous_filename))))
-   throw Error('BLOCKED: verification policy changed');
+  if(!files.length||files.some(f=>policy(f.filename)||(f.previous_filename&&policy(f.previous_filename)))){
+   const transition=rows.some(r=>r.workflow==='admin-world-checks.yml'&&r.state==='ECONOMY_INHERITED')&&
+    !rows.some(r=>['SELECTED','INHERITED'].includes(r.state))&&await certifyEconomicRepair({github,owner,repo,baseSha,headRef,files});
+   if(!transition)throw Error('BLOCKED: verification policy changed');
+  }
  }
  if(files.some(f=>f.filename.startsWith('match-engine/')||f.filename==='.github/workflows/match-engine-01.yml'))
   rows.push(await engineEvidence({github,owner,repo,sha,prNumber,baseSha}));
@@ -149,7 +249,7 @@ async function verify({github,core,context,prNumber,expected,maxWaitMs=45*60*100
    if(files.length!==live.changed_files)throw Error('BLOCKED: incomplete candidate diff');
    fileBase=live.base.sha;
   }
-  const rows=await observe({github,owner,repo,sha:expected,prNumber,baseSha:live.base.sha,files});
+  const rows=await observe({github,owner,repo,sha:expected,prNumber,baseSha:live.base.sha,headRef:live.head.ref,files});
   const summary=JSON.stringify({head:expected,rows});
   if(summary!==last){core.info(summary);last=summary;await core.summary.addHeading('Exact-head workflow evidence').addCodeBlock(summary,'json').write();}
   if(rows.every(r=>['PASS','INHERITED','SELECTED','ECONOMY_INHERITED'].includes(r.state))){const fresh=await current();if(fresh.base.sha!==live.base.sha)throw Error('BLOCKED: PR base changed during verification');if(rows.some(r=>r.state!=='PASS')&&fresh.mergeable!==true)throw Error('BLOCKED: main compatibility unconfirmed');return rows;}
@@ -186,4 +286,4 @@ async function mergedPublicSource({github,owner,repo,workflow,sha,before}){
  }
  return null;
 }
-module.exports={mergedPublicSource,selectedPublicEvidence,inheritedAdmin,engineEvidence,requirements,evaluateRun,observe,verify,findReusable};
+module.exports={certifiedHistoricalAdmin,certifyEconomicRepair,economicRepairAnchor,economicRepairBranch,economicRepairShape,mergedPublicSource,selectedPublicEvidence,inheritedAdmin,engineEvidence,requirements,evaluateRun,observe,verify,findReusable};
