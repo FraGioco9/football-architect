@@ -116,7 +116,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.ok(pausedModule,'LAB module must be paused before the first-paint sample');
   const sizes=[[1280,720],[1440,900],[768,1024],[390,844],[320,700]];
   const measure=async()=>evalJs("(async()=>{await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));"+
-   "const ids=['.me-main-panel','.me-toolbar','#preset-trigger','#me-inline-side-trigger','#me-inline-variant-control','#speed-trigger','.me-toolbar>.me-button-group','#pitch','#me-performed-panel','#me-performed-player','.me-performed-list-wrap','.me-at-a-glance','#me-inline-summary','#me-observation-details'];"+
+   "const ids=['.me-main-panel','.me-toolbar','#preset-trigger','#me-inline-side-trigger','#me-inline-variant-control','#speed-trigger','.me-toolbar>.me-button-group','#pitch','#me-performed-panel','#me-performed-player-trigger','.me-performed-list-wrap','.me-at-a-glance','#me-inline-summary','#me-observation-details'];"+
    "const rects=Object.fromEntries(ids.map(s=>{const r=document.querySelector(s).getBoundingClientRect();return [s,[r.x,r.y,r.width,r.height]]}));"+
    "return {rects,selected:document.getElementById('preset-value').textContent,loading:document.querySelector('.me-main-panel').hasAttribute('data-loading'),scroll:document.documentElement.scrollWidth,width:innerWidth};})()");
   const before=[];
@@ -156,10 +156,10 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   await evalJs("document.getElementById('me-observation-details').open=false");
   const actionLog=await evalJs("(()=>{const el=id=>document.getElementById(id),filter=el('me-performed-player'),rows=()=>[...el('me-performed-rows').rows].map(r=>({player:r.dataset.player,action:r.dataset.action,tick:+r.dataset.tick,hidden:r.hidden}));"+
    "const carry=rows();el('preset-trigger').click();document.querySelector('#preset-options [data-value=\\\"action:pass-pair\\\"]').click();"+
-   "const start=rows(),options=[...filter.options].map(o=>o.value);for(let i=0;i<240;i++)el('step').click();"+
-   "const all=rows();filter.value=options[1];filter.dispatchEvent(new Event('change'));const first=rows();"+
-   "filter.value=options[2];filter.dispatchEvent(new Event('change'));const second=rows();"+
-   "filter.value='';filter.dispatchEvent(new Event('change'));const restored=rows();"+
+   "const start=rows(),menu=el('me-performed-player-options'),trigger=el('me-performed-player-trigger'),options=[...menu.querySelectorAll('[role=option]')].map(o=>o.dataset.value);for(let i=0;i<240;i++)el('step').click();"+
+   "const all=rows(),choose=i=>{trigger.click();menu.querySelectorAll('[role=option]')[i].click();};choose(1);const first=rows();"+
+   "trigger.click();menu.dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true}));menu.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));const second=rows();"+
+   "choose(0);const restored=rows();"+
    "const beforeReset=el('me-performed-panel').getBoundingClientRect().height;el('reset').click();return {carry,start,options,all,first,second,restored,reset:rows(),empty:!el('me-performed-empty').hidden,beforeReset,afterReset:el('me-performed-panel').getBoundingClientRect().height};})()");
   assert.ok(actionLog.carry.some(x=>x.action==='carry'));
   assert.ok(actionLog.carry.every(x=>x.player==='away-10'&&x.action==='carry'));

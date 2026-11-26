@@ -128,9 +128,16 @@
                   <section id="me-performed-panel" class="app-panel me-performed-panel">
                     <div class="me-performed-header">
                       <h2 id="me-performed-title">Actions</h2>
-                      <select id="me-performed-player" class="me-inspect-select" aria-label="Filter actions by player" disabled>
-                        <option value="">All players</option>
-                      </select>
+                      <div class="language-control me-dropdown" data-me-dropdown="performed-player">
+                        <input id="me-performed-player" type="hidden" value="">
+                        <button type="button" class="language-trigger" id="me-performed-player-trigger" role="combobox" aria-label="Filter actions by player" aria-haspopup="listbox" aria-controls="me-performed-player-options" aria-expanded="false" disabled>
+                          <span id="me-performed-player-value">All players</span>
+                          <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                        <div class="language-menu" id="me-performed-player-options" role="listbox" aria-label="On-field players" hidden>
+                          <div class="language-option" role="option" tabindex="-1" data-value="" aria-selected="true">All players</div>
+                        </div>
+                      </div>
                     </div>
                     <div class="me-performed-list-wrap" tabindex="0" aria-label="Performed actions">
                       <table class="me-performed-table">

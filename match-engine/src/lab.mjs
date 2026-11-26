@@ -56,11 +56,19 @@ const performedActionLabels=Object.freeze({
 function resetPerformedActions(){
  if(archiveMode)return;
  const filter=byId('me-performed-player'),previous=filter.value;
- filter.replaceChildren(new Option('All players',''));
+ const menu=byId('me-performed-player-options');
  const ids=activeScene?.kind==='action'?activeLab.focus:[];
- for(const id of ids)filter.add(new Option(humanPlayer(id),id));
+ const fragment=document.createDocumentFragment();
+ for(const [id,label] of [['','All players'],...ids.map(id=>[id,humanPlayer(id)])]){
+  const option=document.createElement('div');
+  option.className='language-option';option.setAttribute('role','option');
+  option.tabIndex=-1;option.dataset.value=id;option.textContent=label;
+  fragment.append(option);
+ }
+ menu.replaceChildren(fragment);
  filter.value=ids.includes(previous)?previous:'';
- filter.disabled=false;
+ filter.closest('[data-me-dropdown]').dispatchEvent(new Event('lab:refresh-options'));
+ byId('me-performed-player-trigger').disabled=false;
  performedActionKeys=new Set();
  byId('me-performed-rows').replaceChildren();
  updatePerformedFilter();
@@ -2035,7 +2043,7 @@ function setupDropdowns() {
     const trigger = root.querySelector('.language-trigger');
     const menu = root.querySelector('.language-menu');
     const value = trigger.querySelector('span');
-    const options = [...menu.querySelectorAll('[role="option"][data-value]')];
+    let options = [...menu.querySelectorAll('[role="option"][data-value]')];
     if (!input || !trigger || !menu || !value || !options.length) throw new Error('Malformed lab dropdown');
     function selectedIndex(){
       const key=root.dataset.meDropdown==='preset'&&root.dataset.selectedScene?
@@ -2125,6 +2133,12 @@ function setupDropdowns() {
     });
     document.addEventListener('pointerdown', event => {
       if (!root.contains(event.target)) close();
+    });
+    root.addEventListener('lab:refresh-options',()=>{
+      close();
+      options=[...menu.querySelectorAll('[role="option"][data-value]')];
+      if(!options.length)throw new Error('Empty lab dropdown');
+      update();
     });
     if(root.dataset.meDropdown==='preset')
       root.addEventListener('lab:restore-ball-scenario',()=>{
