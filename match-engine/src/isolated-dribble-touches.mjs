@@ -151,13 +151,38 @@ export function planDribbleDefender({attackingSide,attacker,defender,ballPositio
  const goalSide=dir*(defender.x-b.x);
  const lead=clamp(gap/12,0,0.35);
  const bx=clamp(b.x+v.x*lead,-51.99,51.99),by=clamp(b.y+v.y*lead,-33.49,33.49);
- const mode=carrierGap>1.15?'press':goalSide< -0.55?'recover':gap>3.2?'press':'contain';
+ const exposed=carrierGap<=1.15&&gap<=1.8&&goalSide>=-0.55&&
+  !observeDribbleShield(attacker,defender,b)&&Math.hypot(v.x,v.y)<=3.5;
+ const mode=carrierGap>1.15||exposed?'press':goalSide< -0.55?'recover':gap>3.2?'press':'contain';
  // In a controlled duel, block the goal-facing route instead of chasing
  // an arbitrary side. A loose ball may be attacked directly.
  const goalDx=dir*52.5-bx,goalDy=-by,goalDistance=Math.max(0.01,Math.hypot(goalDx,goalDy));
- const standOff=mode==='recover'?1.35:mode==='contain'?1.15:carrierGap>1.15?0.22:0.85;
+ const standOff=mode==='recover'?1.35:mode==='contain'?1.15:carrierGap>1.15||exposed?0.22:0.85;
  const target=Object.freeze({x:clamp(bx+standOff*goalDx/goalDistance,-51.99,51.99),
   y:clamp(by+standOff*goalDy/goalDistance,-33.49,33.49)});
  return Object.freeze({mode,target,carrierGapM:carrierGap,defenderGapM:gap,goalSideM:goalSide,
   decisionOnly:true,officialPossession:false});
+}
+
+// D-05: grounded defensive intent, authorized only by the existing
+// exclusive native shoe START gate. No automatic turnover.
+export function chooseDribbleDefensiveTouch({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}={}){
+ if(!['home','away'].includes(attackingSide)||attacker?.id!==attackingSide+'-10'||
+    defender?.id!==(attackingSide==='home'?'away':'home')+'-2'||
+    ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,b?.z,v?.x,v?.y,v?.z].every(Number.isFinite))return null;
+ const dir=attackingSide==='home'?1:-1;
+ const gap=Math.hypot(defender.x-b.x,defender.y-b.y),carrierGap=Math.hypot(attacker.x-b.x,attacker.y-b.y);
+ const speed=Math.hypot(v.x,v.y);
+ if(gap>0.85||b.z<0.095||b.z>0.23||speed>8||observeDribbleShield(attacker,defender,b))return null;
+ const incoming=dir*v.x>0.7&&(defender.x-b.x)*v.x+(defender.y-b.y)*v.y>=-0.10;
+ const kind=carrierGap>1.15&&incoming?'interception':carrierGap<=1.15?'tackle':null;
+ if(!kind)return null;
+ const desiredX=-dir*(kind==='interception'?2.3:1.8);
+ const desiredY=clamp((b.y-attacker.y)*1.2,-1.2,1.2);
+ const dx=desiredX-v.x,dy=desiredY-v.y;
+ const magnitudeNs=Math.min(1.25,0.43*Math.hypot(dx,dy));
+ if(magnitudeNs<0.025)return null;
+ return Object.freeze({version:'me-628-duel-defensive-touch-v1',kind,dx,dy,magnitudeNs,
+  actorId:defender.id,opponentId:attacker.id,carrierGapM:carrierGap,defenderGapM:gap,
+  nativeExclusiveShoeRequired:true,physicalAttemptOnly:true,tackleWon:false,interceptionConfirmed:false,officialPossession:false});
 }

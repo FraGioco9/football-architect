@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -686,5 +686,47 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    }
    process.stdout.write('ME_628_D04_DEFENDING '+JSON.stringify({side,moved,modes:[...modes],pressure})+'\n');
    assert.ok(moved>0&&pressure>0,'defender must approach the live ball');
+  }
+ });
+
+ test('D-05 mirrored exposed ball allows a bounded tackle or interception, never a guaranteed win',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const attacker={id:side+'-10',team:side,x:dir*29.6,y:0};
+   const defender={id:other+'-2',team:other,x:dir*30.5,y:0};
+   const source={attackingSide:side,attacker,defender,ballPosition:{x:dir*30,y:0,z:0.11},ballVelocity:{x:dir*1,y:0,z:0}};
+   const tackle=chooseDribbleDefensiveTouch(source);
+   assert.equal(tackle.kind,'tackle');assert.ok(tackle.dx*dir<0&&tackle.magnitudeNs<=1.25);
+   assert.equal(tackle.officialPossession,false);assert.equal(tackle.tackleWon,false);
+   assert.equal(chooseDribbleDefensiveTouch({...source,attacker:{...attacker,x:dir*27}}).kind,'interception');
+   assert.equal(chooseDribbleDefensiveTouch({...source,defender:{...defender,x:dir*34}}),null);
+   assert.equal(chooseDribbleDefensiveTouch({...source,ballPosition:{...source.ballPosition,z:0.5}}),null);
+   assert.equal(chooseDribbleDefensiveTouch({...source,defender:{...defender,x:dir*29.25}}),null);
+  }
+ });
+ test('D-05 active mirrored 1v1 defensive actions require native exclusive shoe contact',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let attempts=0,contacts=0;
+   const defender=(side==='home'?'away':'home')+'-2';
+   for(let variantIndex=0;variantIndex<30;variantIndex++){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
+    try{
+     for(let tick=0;tick<420;tick++){
+      const f=scene.step(),a=f.action;
+      if(f.starts.includes(defender))contacts++;
+      if(a?.playerId===defender){
+       assert.ok(['tackle','interception'].includes(a.action));
+       assert.deepEqual(f.starts,[defender]);assert.equal(a.appliedByRapier,true);
+       assert.equal(a.actualPhysicsImpulseApplied,true);assert.equal(a.impulseNs.z,0);
+       assert.ok(Math.hypot(a.impulseNs.x,a.impulseNs.y)<=1.25+1e-8);
+       assert.equal(a.defensiveTarget.officialPossession,false);attempts++;
+      }
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D05_DEFENSE '+JSON.stringify({side,contacts,attempts})+'\n');
+   assert.ok(attempts>0,'each side needs a genuine executed defensive attempt');
   }
  });

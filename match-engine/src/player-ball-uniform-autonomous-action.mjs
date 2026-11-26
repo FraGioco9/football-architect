@@ -9,7 +9,7 @@ import {chooseSmallSidedContextAction}
  from './small-sided-context-choice.mjs';
 
 
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch} from './isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,chooseDribbleDefensiveTouch} from './isolated-dribble-touches.mjs';
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
@@ -332,8 +332,10 @@ export function selectUniformAutonomousContactAction({
    throw new TypeError('Inactive player has no authenticated Rapier shoe');
   const player=actors.find(p=>p.id===id);
   if(!player)continue;
-  // 1v1 defender may collide, but does not issue other automatic actions.
-  if(isolatedDribbleContext!==null&&id!==isolatedDribbleContext.attackingSide+'-10')
+  // D-05: only active directed duel may authorize an original defender touch.
+  const duelDefender=isolatedDribbleContext?.directed===true&&
+   isolatedDribbleContext.situationId==='dribble-1v1'&&id===(isolatedDribbleContext.attackingSide==='home'?'away':'home')+'-2';
+  if(isolatedDribbleContext!==null&&id!==isolatedDribbleContext.attackingSide+'-10'&&!duelDefender)
    continue;
   const gap=Math.hypot(player.x-ballPosition.x,player.y-ballPosition.y);
   if(!finite(gap)||gap>MAX_GAP_M)continue;
@@ -383,7 +385,9 @@ export function selectUniformAutonomousContactAction({
     canPass:contextualRecipient!==null,
     canCarry:carryPossible
    }):null;
-  const dribbleTouch=isolatedDribbleContext===null?null:
+  const duelDefensiveTouch=duelDefender?chooseDribbleDefensiveTouch({attackingSide:isolatedDribbleContext.attackingSide,
+   attacker:actors.find(p=>p.id===isolatedDribbleContext.attackingSide+'-10'),defender:player,ballPosition,ballVelocity}):null;
+  const dribbleTouch=isolatedDribbleContext===null||duelDefender?null:
    (isolatedDribbleContext.directed===true?chooseDirectedDribbleTouch:chooseIsolatedDribbleTouch)({
     variantIndex:isolatedDribbleContext.variantIndex,tick,
     attackingSide:isolatedDribbleContext.attackingSide,
@@ -392,7 +396,11 @@ export function selectUniformAutonomousContactAction({
     defender:isolatedDribbleContext.situationId==='carry-solo'?null:actors.find(p=>p.team!==player.team)
    });
   let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
-  if(dribbleTouch!==null){
+  if(duelDefender){
+   if(!duelDefensiveTouch)continue;
+   action=duelDefensiveTouch.kind;dx=duelDefensiveTouch.dx;dy=duelDefensiveTouch.dy;
+   rule='directed-duel-native-defensive-ground-touch';
+  }else if(dribbleTouch!==null){
    if(dribbleTouch.magnitudeNs<0.025)continue;
    action='carry';dx=dribbleTouch.dx;dy=dribbleTouch.dy;
    rule=isolatedDribbleContext.directed===true?'directed-live-opponent-ground-touch':'isolated-dribble-real-shoe-variable-ground-touch';
@@ -467,14 +475,14 @@ export function selectUniformAutonomousContactAction({
   }
   const length=Math.hypot(dx,dy);
   if(length<1e-5)continue;
-  const magnitude=dribbleTouch?.magnitudeNs??(activeKeeperAttacker&&action==='carry'?duelIntent.magnitude:ACTION_IMPULSE_NS[action]),factor=magnitude/
+  const magnitude=duelDefensiveTouch?.magnitudeNs??dribbleTouch?.magnitudeNs??(activeKeeperAttacker&&action==='carry'?duelIntent.magnitude:ACTION_IMPULSE_NS[action]),factor=magnitude/
    Math.hypot(dx,dy,vertical*length);
   const impulseNs=Object.freeze({x:dx*factor,y:dy*factor,
    z:vertical*length*factor});
   // C1.1: the live teammate and ball geometry at THIS movement tick,
   // frozen before Rapier applies the impulse. A target is only intent,
   // never evidence of reception or a completed football pass.
-  const defensiveTarget=defensiveAttempt&&
+  const defensiveTarget=duelDefensiveTouch?Object.freeze({...duelDefensiveTouch,physicsTick:tick}):defensiveAttempt&&
    ['tackle','interception'].includes(action)?
    Object.freeze({...defensiveAttempt,physicsTick:tick}):null;
   const saveTarget=action==='save'?Object.freeze({

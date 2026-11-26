@@ -27,11 +27,13 @@ const zeroHandoffs=()=>Object.fromEntries(
  singleFootHandoffKinds.map(k=>[k,0]));
 const zeroReasons=()=>Object.fromEntries(soloNoActionReasons.map(k=>[k,0]));
 const zeroPhase=()=>({nativeShoeStarts:0,appliedCarry:0,withoutCarry:0});
-export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}={}){
+export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false,directed=false}={}){
  if(!['home','away'].includes(side)||!Number.isSafeInteger(variantIndex)||
     variantIndex<0||variantIndex>29||typeof solo!=='boolean')
   throw new TypeError('Only D-01 paired HOME/AWAY variant may audit Rapier');
  const actor=side+'-10',opponent=solo?null:(side==='home'?'away':'home')+'-2';
+ if(typeof directed!=='boolean'||(directed&&solo))throw new TypeError('Directed evidence only for 1v1');
+ let tackles=0,interceptions=0;
  let tick=-1,priorBall=null,firstBall=null,sourceEnds=0,
   nativeStarts=0,recontacts=0,opposingStarts=0,actions=0;
  let lastEnd=-1,hasEnded=false,ballPath=0,minimumGap=Infinity,
@@ -320,7 +322,14 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
    nativeStarts++;touchTicks.push(physics.tick);
    if(hasEnded&&lastEnd<physics.tick)recontacts++;
   }
-  if(action){
+  if(action&&directed&&action.playerId===opponent){
+   if(action.tick!==physics.tick||!['tackle','interception'].includes(action.action)||
+      action.appliedByRapier!==true||action.actualPhysicsImpulseApplied!==true||
+      foot.started.length!==1||foot.started[0]!==opponent||foot.active.length!==1||foot.active[0]!==opponent||
+      action.defensiveTarget?.version!=='me-628-duel-defensive-touch-v1'||action.defensiveTarget.physicsTick!==physics.tick)
+    throw new TypeError('Only native exclusive defensive touches qualify');
+   if(action.action==='tackle')tackles++;else interceptions++;
+  }else if(action){
    if(action.tick!==physics.tick||action.playerId!==actor||
       action.action!=='carry'||action.appliedByRapier!==true||
       action.actualPhysicsImpulseApplied!==true||
@@ -347,6 +356,7 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false}=
    attackerShoeStarts:nativeStarts,attackerShoeEnds:sourceEnds,
    independentRecontacts:recontacts,defenderShoeStarts:opposingStarts,
    appliedCarryActions:actions,actionTicks:freeze([...actionTicks]),
+   ...(directed?{defensiveTackleAttempts:tackles,defensiveInterceptionAttempts:interceptions}:{}),
    ...(solo?{
     nativePhysicalShoeColliders:2,
     nativeLeftFootStarts:genuineSoloFootTouches.left,

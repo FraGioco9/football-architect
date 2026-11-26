@@ -109,7 +109,9 @@ function recordPerformedActions(frame){
  if(frame.nativeDribbleAudit&&!frame.nativeDribbleAudit.soloCarry){
   const defender=(frame.nativeDribbleAudit.side==='home'?'away':'home')+'-2';
   const shoe=frame.starts?.includes(defender),leg=frame.smallSidedNativeBodyGuard?.lowerLegBallStarts?.includes(defender);
-  if(shoe||leg)events.push({id:defender,kind:'defensive-contact',label:'Defensive contact'});
+  const defensiveAction=events.find(e=>e.id===defender&&['tackle','interception'].includes(e.kind));
+  if(defensiveAction)defensiveAction.label=defensiveAction.kind==='tackle'?'Tackle attempt':'Interception attempt';
+  else if(shoe||leg)events.push({id:defender,kind:'defensive-contact',label:'Defensive contact'});
   if(frame.shieldAudit?.retained)events.push({id:frame.nativeDribbleAudit.side+'-10',kind:'retained-touch',label:'Retained touch'});
   if(action?.tick===tick&&action?.decisionContext?.isolatedDribbleTouch?.shieldingIntent){
    const carry=events.find(e=>e.kind==='carry'&&e.id===action.playerId);if(carry)carry.label='Shielding touch';

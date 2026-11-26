@@ -369,7 +369,7 @@ export function createControlledActionLab(RAPIER,id,{
   createBasicMatchTimelineB06():null;
  const isolatedDribbleAudit=(!intentDrivenSoloCarry&&
   ['dribble-1v1','carry-solo'].includes(id))?
-  createIsolatedDribbleNativeAudit({side:shotSide,variantIndex,solo:id==='carry-solo'}):null;
+  createIsolatedDribbleNativeAudit({side:shotSide,variantIndex,solo:id==='carry-solo',directed:directedDribble}):null;
  const baseFootworkObserver=basicFootwork?
   createBasicReceiveDribbleObserverB04({side:selectedControlSide,kind:id}):null;
  function record(physics,playerFrame){
