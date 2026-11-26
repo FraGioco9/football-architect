@@ -65,7 +65,7 @@ import {openLocalOpeningRehearsal,buildLocalOpeningManifest} from '../tools/open
 import {previewPlayerGeneration,commitPlayerGeneration} from '../src/players-generation-command.ts';
 import {readOpeningObservation} from '../src/opening-world-store.ts';
 import {readLocalOpeningInventory} from '../src/opening-world-inventory.ts';
-import {fundOpeningFixture,prepareOpeningFundingFixture} from './fixtures/opening-funding.ts';
+import {fundOpeningFixture} from './fixtures/opening-funding.ts';
 import {seedUnifiedOperator,rotateUnifiedOperatorFixtureSession} from './fixtures/unified-operator.ts';
 import {sessionGuard as lifecycleSessionGuard} from '../src/command-guards.ts';
 import {changeClubLicense} from '../src/club-licenses.ts';
@@ -76,7 +76,9 @@ import {preparePayrollAffordability} from '../src/payroll-affordability.ts';
 import {readPublicPlayers} from '../src/public-players-read.ts';
 import {readPublicClubRoster} from '../src/public-club-roster-read.ts';
 import {loadApprovedSnapshot,serverCanonicalCatalogue} from '../src/approved-season-one.ts';
-import type {Database} from '../src/database.ts';
+import type {Database,Statement} from '../src/database.ts';
+import {executeDevOperator} from '../src/dev-operator.ts';
+import {prepareSportingReset,executeSportingReset} from '../src/sporting-reset-preview.ts';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
 import {advanceAdministrativeClockLineupV1} from '../src/admin-calendar-clock-lineup-v1.ts';
 import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
@@ -89,7 +91,6 @@ import {closeSeasonLineupV1} from '../src/season-close-command-lineup-v1.ts';
 import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
 import {approveSeasonTwoSnapshot} from '../src/season-two-approval-command.ts';
 import {prepareSeasonTwo} from '../src/season-two-prepare-command.ts';
-import {earmarkNextRewardBudget} from '../src/economic-genesis.ts';
 import {rewardCalendarBudget} from '../src/reward-settlement-plan.mjs';
 import {prepareRewardSettlement} from '../src/reward-settlement-evidence.ts';
 import {executeRewardSettlementBatch} from '../src/reward-settlement-command.ts';
@@ -159,6 +160,51 @@ test('opening world local plan and receipts survive close/reopen without rematch
  }finally{try{if(run)await run.close();if(setup)await setup.close()}finally{await rm(state,{recursive:true,force:true})}}
 });
 
+
+/** Measure the actual canonical calls inside the isolated adapter, without changing
+ * SQL, bypassing guards or accessing a network binding. Prepared guards not
+ * executed are excluded from the statement count. D1 transport latency is NOT
+ * simulated by Miniflare; these observations are not a remote feasibility PASS. */
+async function invokeDevAdapter(db:Database,session:AdminSession,now:number,source:string,action:string,data:Record<string,string>={},readOnly=false){
+ const w=await readWorld(db),started=performance.now();
+ const metrics={calls:0,statements:0,maxBatch:0,maxSqlBytes:0,maxBindCount:0,maxValueBytes:0,maxCallMs:0};
+ const raw=new WeakMap<Statement,Statement>();
+ const timed=async<T,>(count:number,work:()=>Promise<T>)=>{
+  const start=performance.now();metrics.calls++;metrics.statements+=count;metrics.maxBatch=Math.max(metrics.maxBatch,count);
+  try{return await work()}finally{metrics.maxCallMs=Math.max(metrics.maxCallMs,performance.now()-start)}
+ };
+ function wrap(s:Statement):Statement{
+  const stmt:Statement={
+   bind(...values:unknown[]){
+    metrics.maxBindCount=Math.max(metrics.maxBindCount,values.length);
+    for(const v of values)if(typeof v==='string')metrics.maxValueBytes=Math.max(metrics.maxValueBytes,Buffer.byteLength(v,'utf8'));
+    return wrap(s.bind(...values));
+   },
+   first<T=Record<string,unknown>>(){return timed(1,()=>s.first<T>())},
+   all<T=Record<string,unknown>>(){return timed(1,()=>s.all<T>())},
+   run<T=Record<string,unknown>>(){return timed(1,()=>s.run<T>())}
+  };
+  raw.set(stmt,s);return stmt;
+ }
+ const measured:Database={
+  prepare(sql){metrics.maxSqlBytes=Math.max(metrics.maxSqlBytes,Buffer.byteLength(sql,'utf8'));return wrap(db.prepare(sql))},
+  batch(stmts){return timed(stmts.length,()=>db.batch(stmts.map(s=>raw.get(s)!)))}
+ };
+ const confirmation=readOnly?'':'DEV '+action+' '+w.generation+' '+w.seasonNumber+':'+w.day;
+ const body=JSON.stringify({action,expectedGeneration:w.generation,expectedSeason:w.seasonNumber,expectedDay:w.day,confirmation,data});
+ assert.ok(Buffer.byteLength(body)<8*1024*1024);
+ const request=new Request('http://app.localhost:2000/api/admin/dev-operator',{method:'POST',headers:{'Content-Type':'application/json'},body});
+ let result:any;
+ try{result=await executeDevOperator(request,measured,session,now,source)}finally{
+  console.log('DEV adapter isolated metrics:',JSON.stringify({action,season:w.seasonNumber,day:w.day,...metrics,elapsedMs:Math.round(performance.now()-started)}));
+ }
+ assert.ok(metrics.maxBindCount<=100,'D1 bind parameter limit');
+ assert.ok(metrics.maxSqlBytes<=100000,'D1 SQL text limit');
+ assert.ok(metrics.maxValueBytes<=2000000,'D1 per-value limit');
+ assert.ok(metrics.maxCallMs<30000,'D1 local per-call duration budget');
+ return result;
+}
+
 /** Complete end-to-end rehearsal on disposable persisted local D1. No copied
  * DEV identities or images, no direct player/contract inserts in the opening,
  * no remote binding, no synthetic shortcut for the 6,400 actual signatures. */
@@ -190,25 +236,43 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
   assert.equal(await n(db,"SELECT COUNT(*) AS n FROM player_portrait_profiles WHERE status='approved'"),26);
   await changeClubLicense(db,session,{clubKey:'IT-1',accountId:playerId,expectedAccountId:null,expectedVersion:0},now);
   const old=await readOpeningObservation(db),evidence=await captureRetainedOpeningEvidence(db);
+  // Preflight uses the same private projection without altering sporting rows.
+  await db.prepare('INSERT INTO economic_finance_permissions VALUES(?,?,?,?)').bind(playerId,'read','fixture',now).run();
+  const source='a'.repeat(40);
+  const fit=await invokeDevAdapter(db,session,now,source,'fit-preview',{seed:'opening-full-rehearsal'},true);
+  assert.equal(fit.retained,150);assert.equal(fit.newPlayers,6250);assert.equal(fit.projectedOnly,true);
+  assert.deepEqual(await readOpeningObservation(db),old);
   assert.equal(old.rows.length,150);assert.equal(old.idHighWater,193);
   assert.equal(evidence.players.length,150);
   assert.equal(evidence.history.counts?.seasons,1);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM player_signed_contracts'),0);
   await changeClubLicense(db,session,{clubKey:'IT-1',accountId:null,expectedAccountId:playerId,expectedVersion:1},now);
-  const reset=await resetWorld(db,session,{expectedGeneration:historical.world.generation,expectedRevision:historical.world.revision,confirmation:'RESET SEASON 0'},'opening-full-reset-fixture',now);
+  const resetPreview=await prepareSportingReset(db,session,now);
+  assert.deepEqual(resetPreview.retainedEvidence,evidence);
+  const reset=await executeSportingReset(db,session,{expectedGeneration:historical.world.generation,expectedRevision:historical.world.revision,confirmation:'RESET SEASON 0',expiresAt:resetPreview.expiresAt,previewToken:resetPreview.previewToken},'opening-full-reset-fixture',now);
   const retained={evidence,resetOperationId:reset.operationId};
   await handle.close();handle=await open();db=handle.db;
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM seasons'),0);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM match_lineup_result_receipts'),0);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM season_archives'),0);
-  assert.equal((await rebaseLocalRetainedPlayers(db,session,evidence,reset.operationId,now)).metadataRebased,true);
-  assert.equal((await rebaseLocalRetainedPlayers(db,session,evidence,reset.operationId,now)).alreadyRebased,true);
+  const retainedData={evidenceJson:JSON.stringify(evidence),resetReceiptJson:JSON.stringify(reset)};
+  await assert.rejects(invokeDevAdapter(db,session,now,source,'rebase',{...retainedData,resetReceiptJson:JSON.stringify({...reset,world:{...reset.world,revision:1}})}));
+  assert.deepEqual((await readOpeningObservation(db)).rawRows,old.rawRows);
+  assert.equal((await invokeDevAdapter(db,session,now,source,'rebase',retainedData)).report.metadataRebased,true);
+  assert.equal((await invokeDevAdapter(db,session,now,source,'rebase',retainedData)).report.alreadyRebased,true);
   const rebased=await readOpeningObservation(db);
   assert.equal(rebased.idHighWater,old.idHighWater);
   assert.deepEqual(rebased.rawRows,old.rawRows.map(row=>({...row,world_generation:reset.world.generation,entry_season:0})));
+  // The test-local persisted runner pins the exact source-file digest rather than
+  // a Git SHA. Use that same pin for its adapter samples; the Worker gate and
+  // production SHA pin are exercised in the small actual HTTP boundary test.
+  const manifest=await buildLocalOpeningManifest(reset.world,'opening-full-rehearsal');
+  const planSource=manifest.versions.generator;
+  const planned=await invokeDevAdapter(db,session,now,planSource,'prepare',{...retainedData,seed:'opening-full-rehearsal'},true);
+  const plan=planned.summary,planJson=planned.planJson as string;
+  await writeFile(join(state,'opening-world-plan.private.json'),planJson,{flag:'wx',mode:0o600});
   await handle.close();handle=undefined;
   runner=await openLocalOpeningRehearsal(state);
-  const plan=await runner.prepare('opening-full-rehearsal',retained);
   assert.deepEqual({slots:plan.slots,reused:plan.reused,newPlayers:plan.newPlayers,batches:plan.batches},{slots:6400,reused:150,newPlayers:6250,batches:256});
   await assert.rejects(runner.start(session,now));
   await runner.close();runner=undefined;
@@ -221,30 +285,40 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
   // Exercise the actual denial and grant before expensive opening generation.
   const finance=()=>['read','post'].map(capability=>financeSessionGuard(db,playerId,session.unified!.sessionDigest,session.unified!.csrfDigest,capability as 'read'|'post',now));
   await assert.rejects(db.batch(finance()),/CHECK constraint failed/);
-  await db.batch(['read','post'].map(capability=>db.prepare('INSERT INTO economic_finance_permissions VALUES(?,?,?,?)').bind(playerId,capability,'fixture',now)));
+  await db.batch(['post','fund','reserve'].map(capability=>db.prepare('INSERT INTO economic_finance_permissions VALUES(?,?,?,?)').bind(playerId,capability,'fixture',now)));
   await db.batch(finance());
   // Synthetic reserve for the second annual hold; not a gameplay policy change.
-  await prepareOpeningFundingFixture(db,now,rewardCalendarBudget().annual);
+  const openingSnapshot=await loadApprovedSnapshot();
+  const fundingJson=JSON.stringify({version:'synthetic-opening-world',clubs:serverCanonicalCatalogue().clubIds.map(clubKey=>({clubKey,amountArc:100000})),
+   freeReserveArc:rewardCalendarBudget().annual,issuanceLimitArc:100000000,
+   expectedRewardsByClub:Object.fromEntries(openingSnapshot.bindings.filter(b=>!b.competitionId.startsWith('int-')).flatMap(b=>b.clubIds.map(k=>[k,1000])))});
+  const preview=await invokeDevAdapter(db,session,now,planSource,'fund-preview',{planJson,fundingJson},true);
+  assert.equal(preview.annualRewardsArc,rewardCalendarBudget().annual);
+  await assert.rejects(invokeDevAdapter(db,session,now,planSource,'fund',{planJson,fundingJson,approvalHash:'0'.repeat(64)}));
+  const fundingData={planJson,fundingJson,approvalHash:preview.approvalHash};
+  assert.equal((await invokeDevAdapter(db,session,now,planSource,'fund',fundingData)).done,false);
   const access=()=>[economicAssert(db,'SELECT 1')];
-  const partial=await stepEconomicGenesis(db,access(),now);
-  assert.equal(partial?.funded_clubs,15);
+  const partial=await invokeDevAdapter(db,session,now,planSource,'fund',fundingData);
+  assert.equal(partial.genesis.funded_clubs,15);
   await assert.rejects(completeEconomicGenesis(db,access(),now));
   await handle.close();handle=await open();db=handle.db;
   assert.equal((await readEconomicGenesis(db,access()))?.funded_clubs,15);
   for(let i=0;i<20;i++)await stepEconomicGenesis(db,access(),now);
-  const funded=await completeEconomicGenesis(db,access(),now);
+  const funded=(await invokeDevAdapter(db,session,now,planSource,'fund',fundingData)).genesis;
   assert.equal(funded?.completed,1);assert.equal(funded?.funded_clubs,320);
   assert.equal(await n(db,"SELECT COUNT(*) AS n FROM economic_balances WHERE kind='CLUB_TREASURY' AND balance_arc=100000"),320);
   assert.equal(await n(db,'SELECT COUNT(*) AS n FROM economic_transactions'),321);
   assert.equal((await reconcileEconomy(db,access())).ok,true);
   await assert.rejects(prepareSeason(db,session,{expectedGeneration:reset.world.generation,expectedRevision:0},'opening-full-premature-prepare',await syntheticApproval(snapshots),now));
+  assert.equal((await invokeDevAdapter(db,session,now,planSource,'populate',{planJson})).completedSlots,0);
+  assert.equal((await invokeDevAdapter(db,session,now,planSource,'populate',{planJson})).completedSlots,25);
+  await handle.close();handle=await open();db=handle.db;
+  // Resume after losing a response; no caller cursor, the durable next batch wins.
+  assert.equal((await invokeDevAdapter(db,session,now,planSource,'populate',{planJson})).completedSlots,50);
   await handle.close();handle=undefined;
   runner=await openLocalOpeningRehearsal(state);
-  assert.equal((await runner.start(session,now)).completedSlots,0);
-  assert.equal((await runner.step(session,now)).completedSlots,25);
-  await runner.close();runner=await openLocalOpeningRehearsal(state);
-  assert.equal((await runner.start(session,now)).completedSlots,25);
-  for(let batch=1;batch<256;batch++){
+  assert.equal((await runner.start(session,now)).completedSlots,50);
+  for(let batch=2;batch<256;batch++){
    const progress=await runner.step(session,now);
    assert.equal(progress.committedBatches,batch+1);
    if((batch+1)%32===0)console.log('opening full fixture: generation batches',batch+1,'/256');
@@ -279,6 +353,8 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
   assert.ok(funding.inputs.committedUncoveredWages>0);
   assert.equal(funding.inputs.uncreditedGuaranteedParticipation,0);
   await assert.rejects(preparePayrollAffordability(db,signed.world,first.clubKey,1000000),{code:'contract_insufficient_cash_proof'});
+  const signedSample=await invokeDevAdapter(db,session,now,planSource,'sign',{planJson});
+  assert.equal(signedSample.signed,6);assert.equal(signedSample.remaining,6394);
   await handle.close();handle=undefined;
   runner=await openLocalOpeningRehearsal(state);
   for(let club=0;club<256;club++){
@@ -289,9 +365,12 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
   }
   const ready=await runner.signNextClub(session,now);
   assert.equal(ready.signed,6400);assert.equal(ready.remaining,0);assert.equal(ready.readyForContractReconciliation,true);
-  const published=await runner.publish(session,now);
+  await runner.close();runner=undefined;
+  handle=await open();db=handle.db;
+  const published=(await invokeDevAdapter(db,session,now,planSource,'publish',{planJson})).publication;
+  await handle.close();handle=undefined;
   assert.equal(published.population,6400);assert.equal(published.contracts,6400);assert.equal(published.world.revision,6401);
-  await runner.close();runner=await openLocalOpeningRehearsal(state);
+  runner=await openLocalOpeningRehearsal(state);
   assert.deepEqual(await runner.publish(session,now),published);
   assert.equal((await runner.inspect()).completedSlots,6400);
   await runner.close();runner=undefined;
@@ -319,7 +398,7 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
   console.log('opening full fixture: PASS 150 retained / 6250 new / 320 funded / 6400 signed / 256 full rosters / publication and restart');
   // #779: continue the SAME published local D1 (no second population, no
   // direct signing, no artificial expiry/retirement, no eligibility changes).
-  await rehearsePublishedLifecycle(db,session,now,after,catalogue);
+  await rehearsePublishedLifecycle(db,session,now,after,catalogue,planSource);
 
  }finally{
   try{if(runner)await runner.close();if(handle)await handle.close()}finally{await rm(state,{recursive:true,force:true})}
@@ -334,7 +413,7 @@ test('opening world end-to-end: audited 150 + 6250, all 320 treasuries, 6400 ter
 async function rehearsePublishedLifecycle(
  db:Database,session:AdminSession,now:number,
  before:Awaited<ReturnType<typeof readOpeningObservation>>,
- catalogue:Awaited<ReturnType<typeof loadApprovedSnapshot>>
+ catalogue:Awaited<ReturnType<typeof loadApprovedSnapshot>>,source:string
 ){
  type World=Awaited<ReturnType<typeof readWorld>>;
  let world=await readWorld(db);
@@ -376,6 +455,8 @@ async function rehearsePublishedLifecycle(
   assert.equal(world.day,day);
   console.log('opening lifecycle payday start:',JSON.stringify({season:world.seasonNumber,day}));
   await db.batch(['read','post'].map(capability=>financeSessionGuard(db,session.unified!.playerId,session.unified!.sessionDigest,session.unified!.csrfDigest,capability as 'read'|'post',now)));
+  const rewardSample=await invokeDevAdapter(db,session,now,source,'settle');
+  assert.equal(rewardSample.stage,'rewards');
   const prepared=await prepareRewardSettlement(db,pin);
   let complete=false;
   for(let i=0;i<100;i++){
@@ -389,6 +470,9 @@ async function rehearsePublishedLifecycle(
   await executeRewardSettlementBatch(db,session,prepared,now,true);
   world=await readWorld(db);
   console.log('opening lifecycle Rewards complete:',JSON.stringify({season:world.seasonNumber,day}));
+  await fresh();
+  const payrollSample=await invokeDevAdapter(db,session,now,source,'settle');
+  assert.equal(payrollSample.stage,'payroll');
   let finished=false;
   for(let i=0;i<1000;i++){
    await fresh();
@@ -399,7 +483,9 @@ async function rehearsePublishedLifecycle(
   }
   assert.equal(finished,true,'bounded local payroll loop');
   await fresh();
-  const report=await reconcilePayrollPayday(db,session,now);
+  const settlement=await invokeDevAdapter(db,session,now,source,'settle');
+  assert.equal(settlement.done,true);assert.equal(settlement.stage,'reconciled');
+  const report=settlement.report as Awaited<ReturnType<typeof reconcilePayrollPayday>>;
   assert.equal(report.status,'complete');assert.equal(report.clubsComplete,320);assert.equal(report.pendingArc,0);
   assert.equal(report.dueArc,report.paidArc+report.arrearsArc);
   const audit=await readAdminEconomyReconciliation(db,access()),summary=await readAdminEconomySummary(db,access());
@@ -444,7 +530,8 @@ async function rehearsePublishedLifecycle(
  const reviewed=await readSeasonTwoCandidate(db);
  await fresh();
  await step(approveSeasonTwoSnapshot(db,session,{...command(),snapshotHash:reviewed.snapshot.snapshotHash},key('approve-next'),now));
- await earmarkNextRewardBudget(db,access(),now);
+ await fresh();
+ assert.equal((await invokeDevAdapter(db,session,now,source,'reserve-next')).done,true);
  await fresh();
  const priorWorld=command(),prepareKey=key('prepare-next');
  const prepared=await prepareSeasonTwo(db,session,priorWorld,prepareKey,now);
@@ -452,7 +539,9 @@ async function rehearsePublishedLifecycle(
  world=prepared.world;
  assert.equal(world.seasonNumber,2);assert.equal(world.phase,'preparing');assert.equal(world.day,0);
  assert.equal(await count("SELECT COUNT(*) AS n FROM player_market_values WHERE config_version IS NULL"),6400);
- let updated=0;
+ await fresh();
+ const refreshed=await invokeDevAdapter(db,session,now,source,'refresh-values');
+ let updated=Number(refreshed.updated);
  for(let i=0;i<40;i++){
   const result=await refreshMarketValueIndexBatch(db);
   updated+=result.updated;
@@ -510,6 +599,10 @@ async function rehearsePublishedLifecycle(
  assert.equal(report.remaining,expectedRates.size);
  assert.equal(report.remaining+report.retired+report.expiryOnly,6400);
  assert.equal(report.expiryOnly,0,'no opening contract expires after Season 1');
+ await fresh();
+ const rosterCheck=await invokeDevAdapter(db,session,now,source,'roster-check',{},true);
+ assert.equal(rosterCheck.marketValuesReady,true);
+ assert.deepEqual(rosterCheck.rosters,rosterReport.map(r=>({clubKey:r.clubKey,players:r.players,goalkeepers:r.primaryGK})).sort((a,b)=>a.clubKey<b.clubKey?-1:a.clubKey>b.clubKey?1:0));
  console.log('opening lifecycle actual D1 roster report:',JSON.stringify(report));
  assert.deepEqual(await payrollClaims(1),priorClaims);
  await play();
