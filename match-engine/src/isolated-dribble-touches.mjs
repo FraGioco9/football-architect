@@ -1,5 +1,5 @@
 // #628 research: proposal only; actual ball impulse needs authentic Rapier START.
-import {selectDefensiveIntervention,planNativeShotBlock} from './defensive-intervention-selection.mjs';
+import {selectDefensiveIntervention,planNativeShotBlock,observeNativeShotBlock} from './defensive-intervention-selection.mjs';
 export const ISOLATED_DRIBBLE_TOUCH_VERSION='me-628-dribble-grounded-pressure-paced-v3';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const opposite=side=>side==='home'?'away':'home';
@@ -29,8 +29,8 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
  if(!Array.isArray(activeIds)||!Array.isArray(outfieldIds)||
     new Set(activeIds).size!==activeIds.length||new Set(outfieldIds).size!==outfieldIds.length||
     !outfieldIds.every(id=>activeIds.includes(id)))throw new TypeError('Active physical participants required');
- let witness=null,delivery=null,getUpUntil={},shoulderByPlayer={},lastInterventions={},latest=Object.freeze({tick:0,...observeDuelBallControl(),delivery:null,getUpUntil:Object.freeze({}),shoulderByPlayer:Object.freeze({}),lastInterventions:Object.freeze({})});
- function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action,physicalChallengeReleased=false,shoulderPlans=[],torsoPairs=[],bodies=[]}){
+ let witness=null,delivery=null,getUpUntil={},shoulderByPlayer={},lastInterventions={},lastBlock=null,blockCount=0,latest=Object.freeze({tick:0,...observeDuelBallControl(),delivery:null,getUpUntil:Object.freeze({}),shoulderByPlayer:Object.freeze({}),lastInterventions:Object.freeze({}),lastBlock:null,blockCount:0});
+ function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action,physicalChallengeReleased=false,shoulderPlans=[],torsoPairs=[],bodies=[],beforeBallVelocity=null,afterSolverVelocity=null}){
   if(tick!==latest.tick+1)throw new TypeError('Consecutive native control ticks required');
   const participants=players.filter(p=>outfieldIds.includes(p.id));
   const touching=[...new Set([...active,...bodyActive])].filter(id=>activeIds.includes(id));
@@ -39,6 +39,8 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
    starts.length===1&&starts[0]===action.playerId&&active.length===1&&active[0]===action.playerId&&
    touching.length===1&&touching[0]===action.playerId&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true;
   if(witness&&(started.some(id=>id!==witness.playerId)||touching.some(id=>id!==witness.playerId)||real&&action.action!=='carry'))witness=null;
+  const block=observeNativeShotBlock({tick,delivery,players:participants,starts,bodyStarts,before:beforeBallVelocity,after:afterSolverVelocity});
+  if(block){lastBlock=block;if(block.blocked)blockCount++;}
   if(delivery&&(tick-delivery.tick>180||started.some(id=>id!==delivery.playerId)||touching.some(id=>id!==delivery.playerId)))delivery=null;
   if(real){
    delivery=['pass','shot'].includes(action.action)?Object.freeze({tick,playerId:action.playerId,team:players.find(p=>p.id===action.playerId)?.team,kind:action.action}):null;
@@ -64,7 +66,7 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
   if(physicalChallengeReleased===true||shoulderReleased){witness=null;delivery=null;}
   const control=observeNativeBallControl({players:participants,ball,carryWitness:witness,tick});
   if(control.kind==='loose')witness=null;
-  latest=Object.freeze({tick,...control,delivery,getUpUntil:Object.freeze({...getUpUntil}),shoulderByPlayer:Object.freeze({...shoulderByPlayer}),lastInterventions:Object.freeze({...lastInterventions})});
+  latest=Object.freeze({tick,...control,delivery,getUpUntil:Object.freeze({...getUpUntil}),shoulderByPlayer:Object.freeze({...shoulderByPlayer}),lastInterventions:Object.freeze({...lastInterventions}),lastBlock,blockCount});
   return latest;
  }
  return Object.freeze({snapshot:()=>latest,observe});

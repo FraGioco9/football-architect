@@ -11,6 +11,7 @@ import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
+import {observeNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
 test('COL-01 both teams pursue the real ball without a shirt-number runner or inferred possession',()=>{
@@ -162,6 +163,30 @@ test('UME-04B native slide recovery is pair-scoped and needs a real impulse',()=
   assert.deepEqual(applyNativeSlideRecovery({[extra.id]:20},{tick:3,actorId:d.id,opponentId:a.id,intervention:'sliding-tackle'}),{[extra.id]:20,[d.id]:33,[a.id]:39});
  }
 });
+test('UME-04C native block needs opposing contact, live shot provenance and physical velocity change',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const shooter={id:side+'-10',team:side,x:dir*25,y:0};
+  const defender={id:other+'-9',team:other,role:'forward',x:dir*30,y:0};
+  const keeper={id:other+'-1',team:other,role:'goalkeeper',x:dir*50,y:0};
+  const extra={id:side+'-9',team:side,x:dir*24,y:3};
+  const players=[shooter,defender,keeper,extra],ids=players.map(p=>p.id);
+  const before={x:dir*10,y:0,z:0},after={x:dir*2,y:3,z:0};
+  const sample={tick:2,delivery:{kind:'shot',tick:1,team:side,playerId:shooter.id},players,starts:[defender.id],before,after};
+  assert.equal(observeNativeShotBlock(sample).blocked,true);
+  assert.equal(observeNativeShotBlock({...sample,starts:[],bodyStarts:[defender.id]}).contactSource,'native-leg-solver');
+  assert.equal(observeNativeShotBlock({...sample,after:before}).blocked,false);
+  for(const invalid of [{starts:[]},{starts:[shooter.id]},{starts:[keeper.id]},{starts:[defender.id,extra.id]},{delivery:{...sample.delivery,kind:'pass'}},{tick:1}])
+   assert.equal(observeNativeShotBlock({...sample,...invalid}),null);
+  const obs=createNativeBallControlObserver(ids,ids.filter(id=>id!==keeper.id));
+  const ball={position:{x:dir*30,y:0,z:0.11},velocity:before};
+  obs.observe({tick:1,players,ball,starts:[shooter.id],active:[shooter.id],action:{tick:1,playerId:shooter.id,action:'shot',appliedByRapier:true,actualPhysicsImpulseApplied:true}});
+  const contact=obs.observe({tick:2,players,ball:{...ball,velocity:after},starts:[defender.id],active:[defender.id],beforeBallVelocity:before,afterSolverVelocity:after,action:null});
+  assert.equal(contact.blockCount,1);assert.equal(contact.lastBlock.actorId,defender.id);
+  assert.equal(contact.kind,'loose');assert.equal(contact.playerId,null);
+  assert.equal(obs.observe({tick:3,players,ball,starts:[],active:[],action:null}).blockCount,1);
+ }
+});
 test('UME-03 movement uses the same participant geometry for pair, groups and full field',()=>{
  assert.equal(planCollectiveApproaches,planNativeFootballMovement);
  for(const side of ['home','away']){
@@ -217,6 +242,7 @@ test('COL-06 all 60 guarded 2v1 variants preserve native actions and observed co
   try{
    const active=lab.focus,counts={carry:0,pass:0,shot:0,tackle:0,interception:0,save:0,other:0};
    let previous=lab.snapshot().collectiveControl,observedControl=0,starts=0,pathM=0,prior=lab.snapshot().ball.position;
+   let slides=0,shoulders=0,blocks=0;
    for(let k=1;k<=360;k++){
     const f=lab.step(),control=f.collectiveControl;
     assert.equal(f.physicsTick,k);assert.equal(control.tick,k);
@@ -237,12 +263,15 @@ test('COL-06 all 60 guarded 2v1 variants preserve native actions and observed co
       assert.equal(f.action?.action,'carry');assert.equal(f.action.playerId,control.playerId);assert.equal(control.sourceTick,k);
      }
     }else assert.equal(control.playerId,null);
+    slides+=Object.values(control.lastInterventions??{}).filter(x=>x.tick===k&&x.intervention==='sliding-tackle').length;
+    shoulders+=Object.values(control.shoulderByPlayer??{}).filter(x=>x.tick===k&&x.successful).length;
+    assert.ok(control.blockCount>=blocks);blocks=control.blockCount;
     previous=control;
     pathM+=Math.hypot(f.ball.position.x-prior.x,f.ball.position.y-prior.y);prior=f.ball.position;
     if(f.refereeEvidence?.lastEvent)break;
    }
    assert.ok(starts>0,'variant must reach a real shoe contact');
-   results.push({side,variant:variantIndex+1,counts,observedControl,starts,pathM});
+   results.push({side,variant:variantIndex+1,counts,observedControl,starts,pathM,slides,shoulders,blocks});
   }finally{lab.dispose();}
  }
  process.stdout.write('ME_628_COL06 '+JSON.stringify(results)+'\n');

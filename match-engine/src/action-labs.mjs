@@ -1,4 +1,5 @@
 import {createDribbleShieldObserver,planDribbleDefender,resolveDuelActors} from './isolated-dribble-touches.mjs';
+import {observeNativeShotBlock} from './defensive-intervention-selection.mjs';
 // #620 — controlled actions on the CLEAN canonical same-world Rapier core.
 // No legacy universal match session, opponent-lane tactical simulator or fake
 // action event. Exactly one core engine and one existing 22-player mover.
@@ -401,10 +402,8 @@ export function createControlledActionLab(RAPIER,id,{
    const body=engine.smallSidedBodyGuardSnapshot();
    if(action?.action==='shot'&&blockAudit.phase==='ready')blockAudit=Object.freeze({...blockAudit,phase:'flight',shotTick:physics.tick,shotSpeedMps:Math.hypot(ball.velocity.x,ball.velocity.y,ball.velocity.z)});
    else if(blockAudit.phase==='flight'&&previousBlockBall&&physics.tick>blockAudit.shotTick&&(starts.includes(defender)||body.lowerLegBallStarts.includes(defender))){
-    const before=previousBlockBall.velocity,after=ball.velocity,pre=Math.hypot(before.x,before.y,before.z),post=Math.hypot(after.x,after.y,after.z);
-    const change=Math.hypot(before.x-after.x,before.y-after.y,before.z-after.z);
-    const blocked=change>=0.6&&(post<pre*0.85||(before.x*after.x+before.y*after.y+before.z*after.z)<pre*post*0.92);
-    blockAudit=Object.freeze({...blockAudit,phase:blocked?'blocked':'flight',contactTick:physics.tick,actorId:defender,contactSource:body.lowerLegBallStarts.includes(defender)?'native-leg-solver':'native-shoe-start',incomingSpeedMps:pre,outgoingSpeedMps:post,velocityChangeMps:change,blocked,officialPossession:false});
+    const observed=observeNativeShotBlock({tick:physics.tick,delivery:{kind:'shot',tick:blockAudit.shotTick,team:shotSide},players:playerFrame.players,starts,bodyStarts:body.lowerLegBallStarts,before:previousBlockBall.velocity,after:ball.velocity});
+    if(observed?.actorId===defender)blockAudit=Object.freeze({...blockAudit,...observed,phase:observed.blocked?'blocked':'flight'});
    }
    previousBlockBall=ball;
   }

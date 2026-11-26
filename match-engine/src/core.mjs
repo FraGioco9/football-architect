@@ -954,6 +954,7 @@ export function createEngine(RAPIER, input = {}, {
       body.setAngvel({x:a.x*ratio,y:a.y*ratio,z:a.z*ratio},true);
     }
     applyGrassRollingResistance();
+    const collectiveSolverVelocity=collectiveObserver?Object.freeze({...body.linvel()}):null;
     tick += 1;
     // Same tick, same private Rapier ball, exclusively from observed shoe
     // START. The ordinary physics and contact-only modes never kick.
@@ -971,7 +972,7 @@ export function createEngine(RAPIER, input = {}, {
     });
     if(collectiveObserver){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
-     collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,bodyStarts:physical.lowerLegBallStarts,bodyActive:physical.lowerLegBallContacts,action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies});
+     collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,bodyStarts:physical.lowerLegBallStarts,bodyActive:physical.lowerLegBallContacts,action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies,beforeBallVelocity:preStepBall.velocity,afterSolverVelocity:collectiveSolverVelocity});
     }
     if(duelTransition){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
