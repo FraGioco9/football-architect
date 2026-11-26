@@ -391,7 +391,7 @@ export function selectUniformAutonomousContactAction({
   const slide=sharedDuel&&playerFrame.duelSlide?.actorId===id&&playerFrame.duelSlide.tick===tick?playerFrame.duelSlide:null;
   const opponent=sharedDuel?actors.find(p=>p.team!==player.team):null;
   const sharedTouch=sharedDuel?chooseSharedDuelTouch({player,opponent,ballPosition,ballVelocity,transition:duelTransition,
-   slide,variantIndex:isolatedDribbleContext.variantIndex,tick}):null;
+   slide,defensiveDecision:playerFrame.defensiveDecision?.actorId===id?playerFrame.defensiveDecision:null,variantIndex:isolatedDribbleContext.variantIndex,tick}):null;
   if(sharedDuel&&!sharedTouch)continue;
   const ic=interceptionContext;
   const defending=ic&&player.team!==ic.side;

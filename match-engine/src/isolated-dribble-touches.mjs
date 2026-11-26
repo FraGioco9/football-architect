@@ -1,4 +1,5 @@
 // #628 research: proposal only; actual ball impulse needs authentic Rapier START.
+import {selectDefensiveIntervention} from './defensive-intervention-selection.mjs';
 export const ISOLATED_DRIBBLE_TOUCH_VERSION='me-628-dribble-grounded-pressure-paced-v3';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const opposite=side=>side==='home'?'away':'home';
@@ -501,7 +502,7 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
     candidateId=null;candidateTick=null;
    }
   }
-  const shoulder=profile==='shoulder'&&inField?observeNativeShoulderChallenge({tick,plan:shoulderPlan,players,ball:ball.position,torsoPairs,bodies}):null;
+  const shoulder=['shoulder','mixed'].includes(profile)&&inField?observeNativeShoulderChallenge({tick,plan:shoulderPlan,players,ball:ball.position,torsoPairs,bodies}):null;
   const shoulderPair=shoulder?[shoulder.actorId,shoulder.opponentId].sort().join('|'):null;
   const shoulderWindow=lastShoulder?.successful&&tick<=lastShoulder.tick+SHOULDER_COLLECTION_TICKS;
   if(shoulder&&shoulderPair!==priorShoulderPair){
@@ -520,7 +521,7 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
  return Object.freeze({observe,snapshot:()=>latest});
 }
 // Same contact decision for both actors. Loose ball may be collected.
-export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVelocity:v,transition,slide,variantIndex,tick}){
+export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVelocity:v,transition,slide,defensiveDecision=null,variantIndex,tick}){
  if(!isOpposingDuelPair(player?.team,player,opponent))throw new TypeError('Opposing physical actors required');
  if(slide?.phase==='recovery'||isDuelGettingUp(transition,player.id,tick)||planShoulderBalanceRecovery(player,transition,tick))return null;
  const opponentGap=Math.hypot(opponent.x-b.x,opponent.y-b.y);
@@ -535,6 +536,15 @@ export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVeloci
  const carry=()=>chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:opponent,
   ballPosition:b,ballVelocity:v,variantIndex,tick});
  if(slide?.phase==='slide'){const touch=defensive(true);return touch?{defensive:touch,carry:null}:null;}
+ // Re-evaluate the real post-solver contact; a planned shoulder never
+ // authorizes a kick and never overrides a legitimate collecting carrier.
+ if(transition?.profile==='mixed'&&!current&&!collectingRelease&&!shoulderCollection&&!slideCollection){
+  const touch=defensive();
+  const shoulder=defensiveDecision?.kind==='shoulder-challenge'?planDuelShoulderApproach({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v}):null;
+  const chosen=selectDefensiveIntervention({actorId:player.id,shoulder,standing:touch,ballGapM:Math.hypot(player.x-b.x,player.y-b.y)});
+  if(chosen.kind==='shoulder-challenge')return null;
+  if(touch&&['standing-tackle','interception'].includes(chosen.kind))return {defensive:touch,carry:null};
+ }
  if(transition?.profile==='interception'&&!current){
   const previous=transition.lastIntervention;
   if(!(collecting&&previous?.actorId===player.id&&previous.intervention==='interception'&&tick-previous.tick<=90)){

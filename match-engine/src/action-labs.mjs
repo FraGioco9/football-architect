@@ -892,6 +892,7 @@ export function createControlledActionLab(RAPIER,id,{
    ...(passPairAudit?{passPairAudit}:{}),
    ...(interceptionAudit?{interceptionAudit,interceptionApproach:playerFrame.duelInterception??null}:{}),
    ...(blockAudit?{blockAudit,blockApproach:playerFrame.blockApproach??null}:{}),
+   ...(playerFrame.defensiveDecision?{defensiveDecision:playerFrame.defensiveDecision}:{}),
    ...(crossPairAudit?{crossPairAudit}:{}),
     ...(shotSoloAudit?{shotSoloAudit}:{}),
    ...(keeperDive?{keeperDive}:{}),

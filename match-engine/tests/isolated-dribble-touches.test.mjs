@@ -807,7 +807,8 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    try{
     for(let k=0;k<600;k++){
      const f=scene.step(),b=f.ball.position,v=f.ball.velocity;
-     if(f.defensiveSlide?.started)slideStarts++;
+     if(f.defensiveSlide?.started){slideStarts++;assert.equal(f.defensiveDecision.kind,'sliding-tackle');}
+     if(f.defensiveDecision){assert.equal(f.defensiveDecision.decisionOnly,true);assert.equal(f.defensiveDecision.officialPossession,false);assert.ok(['standing-tackle','sliding-tackle','shoulder-challenge','interception','recover','none'].includes(f.defensiveDecision.kind));}
      if(scene.focus.some(id=>isDuelGettingUp(f.duelTransition,id,f.physicsTick))&&f.duelTransition.lastIntervention?.tick!==f.physicsTick){
       for(const id of scene.focus)if(isDuelGettingUp(f.duelTransition,id,f.physicsTick))assert.notEqual(f.action?.playerId,id,'mixed slide bilateral lock');
      }
@@ -1148,7 +1149,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
      for(let i=0;i<420;i++){
       const f=scene.step(),w=f.interceptionAudit,a=f.action;
       assert.ok(w);assert.equal(a?.action==='tackle',false);
-      if(f.interceptionApproach)plans++;
+      if(f.interceptionApproach){plans++;assert.equal(f.defensiveDecision.kind,'interception');assert.equal(f.defensiveDecision.actorId,defender);assert.equal(f.defensiveDecision.physicalContactProven,false);}
       if(a?.action==='pass'){
        assert.equal(passTick,null);passTick=f.physicsTick;passes++;byDistance[expected].passes++;
        assert.equal(a.playerId,side+'-10');assert.equal(a.passTarget.recipientId,side+'-9');
@@ -1192,7 +1193,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
      for(let i=0;i<300;i++){
       const f=scene.step(),a=f.action,w=f.blockAudit;
       assert.ok(w);
-      if(f.blockApproach)plans++;
+      if(f.blockApproach){plans++;assert.equal(f.defensiveDecision.kind,'block');assert.equal(f.defensiveDecision.actorId,defender);assert.equal(f.defensiveDecision.officialPossession,false);}
       if(a?.action==='shot'){
        assert.equal(shotTick,null);shots++;shotTick=f.physicsTick;
        assert.equal(a.playerId,side+'-10');assert.deepEqual(f.starts,[a.playerId]);
