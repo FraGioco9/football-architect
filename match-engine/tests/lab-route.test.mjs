@@ -528,7 +528,7 @@ test('ME-01 all relative browser module dependencies resolve through the DEV-onl
    assert.match(response.headers['content-security-policy'],/default-src 'none'/);
    // Use complete source from disk: fetchLocal bounds the response body.
    const source=readFileSync(new URL('../src/'+file,import.meta.url),'utf8');
-   for(const match of source.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s*)['"]\.\/([a-zA-Z0-9._-]+\.mjs)['"]/g))
+   for(const match of source.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s*)['"](?:\.\/|\/__fa_match_engine__\/)([a-zA-Z0-9._-]+\.mjs)['"]/g))
     pending.push(match[1]);
   }
   assert.ok(seen.has('lab-shot-calibration.mjs'),'real transitive shot import must be exercised');

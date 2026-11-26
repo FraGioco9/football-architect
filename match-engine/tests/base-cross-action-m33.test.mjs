@@ -11,6 +11,7 @@ import {initialResearchShotLineup}
 import {CROSS_LAB_STARTS,ACTION_LAB_SCENARIOS}
  from '../src/action-lab-scenarios.mjs';
 import {initializeRapier} from '../src/core.mjs';
+import {LAB_SHOT_PROFILES,calculateCurrentLabShotCalibration} from '../src/lab-shot-calibration.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {calculateLowCrossReceivingCushion,M25_CROSS_CUSHION_MAX_IMPULSE_NS,
  calculateLowCrossSpinCushion,M25_CROSS_MAX_ANGULAR_IMPULSE_NMS,
@@ -335,4 +336,45 @@ test('SHOT-01 authentic empty-goal strike, actual full-ball crossing HOME/AWAY',
   assert.ok(row.crossing.heightErrorM<=0.35,JSON.stringify(row));
   assert.equal(row.crossing.officialGoal,false);
  }
+});
+
+test('SHOT-02 distinct native shot profiles on mirrored empty-goal starts',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),rows=[];
+ for(const profile of LAB_SHOT_PROFILES)for(const side of ['home','away'])for(const variantIndex of [0,1,9,21,29]){
+  const lab=createControlledActionLab(R,'shot-solo',{shotSide:side,variantIndex,shotProfile:profile});
+  try{
+   let frame=lab.snapshot(),count=0;
+   for(let i=0;i<240;i++){
+    frame=lab.step();
+    if(frame.action){
+     count++;
+     assert.equal(frame.action.action,'shot');
+     assert.deepEqual(frame.starts,[side+'-10']);
+     assert.equal(frame.action.labShotCalibration.profile,profile);
+     assert.ok(Math.hypot(...Object.values(frame.action.impulseNs))<=13+1e-8);
+     assert.equal(Boolean(frame.action.labShotSpin),['low','curled'].includes(profile));
+    }
+    if(frame.shotSoloAudit.crossing)break;
+   }
+   assert.equal(count,1);
+   rows.push({side,variantIndex,...frame.shotSoloAudit});
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_628_SHOT_PROFILES '+JSON.stringify(rows)+'\n');
+ for(const row of rows){
+  assert.ok(row.crossing?.fullBallCrossed&&row.crossing.goal,JSON.stringify(row));
+  assert.equal(row.crossing.scoringTeam,row.side);
+  assert.equal(row.crossing.officialGoal,false);
+  assert.ok(row.crossing.lateralErrorM<=0.50,JSON.stringify(row));
+  assert.ok(row.crossing.heightErrorM<=0.45,JSON.stringify(row));
+  const standard=rows.find(x=>x.profile==='standard'&&x.side===row.side&&x.variantIndex===row.variantIndex);
+  if(row.profile==='low')assert.ok(row.peakClearanceM<=0.12,JSON.stringify(row));
+  if(row.profile==='power')assert.ok(row.launchSpeedMps>standard.launchSpeedMps,JSON.stringify(row));
+  if(row.profile==='placed')assert.ok(Math.abs(row.crossing.position.y)>=2.15&&row.launchSpeedMps<standard.launchSpeedMps,JSON.stringify(row));
+  if(row.profile==='chip')assert.ok(row.peakClearanceM>standard.peakClearanceM+0.5&&row.crossing.timeS>standard.crossing.timeS,JSON.stringify(row));
+  if(row.profile==='curled')assert.ok(row.launchSpinRadS>=30&&row.maxLateralBendM>=0.20,JSON.stringify(row));
+  if(row.profile!=='curled')assert.ok(row.maxLateralBendM<=0.12,JSON.stringify(row));
+ }
+ assert.throws(()=>createControlledActionLab(R,'pass-pair',{shotProfile:'power'}),TypeError);
+ assert.throws(()=>createControlledActionLab(R,'shot-solo',{shotProfile:'unknown'}),TypeError);
 });

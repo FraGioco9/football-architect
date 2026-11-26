@@ -10,7 +10,7 @@ import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
 import {calculateRealReceivingCushion,calculateOrientedReceivingCushion,calculateLowCrossSpinCushion,CURRENT_LAB_DYNAMICS_VERSION}
  from './physical-receiving-cushion-m25.mjs';
-import {calculateCurrentLabShotCalibration} from './lab-shot-calibration.mjs';
+import {calculateCurrentLabShotCalibration,LAB_SHOT_PROFILES} from './lab-shot-calibration.mjs';
 import {choosePhysicalReceiverSecondTouch}
  from './physical-receiver-choice-m27.mjs';
 import {calculatePhysicalReceiverReleaseTap} from './physical-receiver-tap-m30.mjs';
@@ -22,7 +22,7 @@ export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
- smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,
+ smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='standard',
  physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
  nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false
 }={}){
@@ -54,6 +54,8 @@ export function createPrivatePhysicalActionExecutor({
     isolatedDribbleContext!==null||researchReceivingCushionSide!==null||
     researchReceivingDecisionSide!==null||researchReceiverTapSide!==null))
   throw new TypeError('Isolated pass requires exactly two original teammates');
+ if(!LAB_SHOT_PROFILES.includes(isolatedShotProfile)||(isolatedShotProfile!=='standard'&&isolatedShotSide===null))
+  throw new TypeError('Locked shot profile requires isolated native shooter');
  if(isolatedShotSide!==null&&(
     !['home','away'].includes(isolatedShotSide)||activePlayerIds?.length!==1||
     !activePlayerIds.includes(isolatedShotSide+'-10')||isolatedPassSide!==null||
@@ -372,7 +374,8 @@ export function createPrivatePhysicalActionExecutor({
    })():null;
    const shotCalibration=sharedDynamics&&chosen.action==='shot'&&chosen.shotTarget?
      calculateCurrentLabShotCalibration({target:chosen.shotTarget,position:ballBody.translation(),
-      velocity:ballBody.linvel(),massKg:ballBody.mass(),ballRadiusM,originalImpulseNs:chosen.impulseNs}):null;
+      velocity:ballBody.linvel(),massKg:ballBody.mass(),ballRadiusM,originalImpulseNs:chosen.impulseNs,
+       profile:isolatedShotProfile}):null;
     const impulse=shotCalibration?shotCalibration.impulseNs:crossCalibration?Object.freeze({
     x:chosen.impulseNs.x*crossCalibration.scale,
     y:chosen.impulseNs.y*crossCalibration.scale,
@@ -382,12 +385,22 @@ export function createPrivatePhysicalActionExecutor({
     y:chosen.impulseNs.y*passCalibration.scale,z:0
    }):nativeTune?.impulseNs??chosen.impulseNs;
    ballBody.applyImpulse(impulse,true);
+   let shotSpin=null;
+   if(shotCalibration?.targetAngularVelocity){
+    const before=ballBody.angvel(),inertia=ballBody.principalInertia(),target=shotCalibration.targetAngularVelocity;
+    const torque={x:(target.x-before.x)*inertia.x,y:(target.y-before.y)*inertia.y,z:(target.z-before.z)*inertia.z};
+    const norm=Math.hypot(...Object.values(torque)),limit=shotCalibration.profile==='low'?1.2:0.25;
+    const scale=norm>limit?limit/norm:1;
+    const torqueImpulseNms=Object.freeze({x:torque.x*scale,y:torque.y*scale,z:torque.z*scale});
+    ballBody.applyTorqueImpulse(torqueImpulseNms,true);
+    shotSpin=Object.freeze({torqueImpulseNms,angularVelocity:Object.freeze({...ballBody.angvel()}),nativeContactOnly:true});
+   }
    applied=Object.freeze({
     ...chosen,
     impulseNs:impulse,
     ...(passCalibration?{isolatedGroundPassCalibration:passCalibration}:{}),
     ...(crossCalibration?{isolatedCrossCalibration:crossCalibration}:{}),
-    ...(shotCalibration?{labShotCalibration:shotCalibration}:{}),
+    ...(shotCalibration?{labShotCalibration:shotCalibration,labShotSpin:shotSpin}:{}),
     ...(nativeTune?{
      nativeShoeContactVerified:true,
      nativeFixedPhaseCalibration:nativeTune,

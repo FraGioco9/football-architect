@@ -25,7 +25,7 @@ test('#628 small-sided catalog replaces only visible elementary exercise UI; arc
    'original research scene stays in hidden regression catalog');
  for(const id of ['keeper-1v1','overload-2v1','duel-3v3'])
   assert.match(ui,new RegExp("'action:"+id+"'"));
- assert.match(ui,/length!==13/);
+ assert.match(ui,/length!==18/);
  assert.doesNotMatch(ui,/visibleMovement/);
  assert.match(ui,/Carry phases/);
  assert.match(ui,/Small-sided situations/);
@@ -174,7 +174,7 @@ test('#628 selected situations reuse main field/elevation and original transport
  assert.doesNotMatch(js,/me-inline-bodyguard|activeBodyGuardEnabled/);
  assert.doesNotMatch(html,/id="me-inline-bodyguard"/);
  assert.match(js,/createControlledMovementLab\(rapier,id,\{side\}\)/);
- assert.match(js,/activeScene=\{kind,id,soloCarryLockedPhase\}/);
+ assert.match(js,/activeScene=\{kind,id,soloCarryLockedPhase,shotProfile\}/);
  assert.match(js,/if\s*\(activeLab\)drawInlinePlayers/);
  assert.match(js,/if\s*\(\(engine\|\|activeLab\) && playing\)/);
  assert.match(js,/byId\('me-inline-side'\)\.addEventListener\('change'/);
