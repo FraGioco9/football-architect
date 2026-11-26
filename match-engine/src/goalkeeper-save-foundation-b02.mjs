@@ -96,16 +96,18 @@ export function createKeeperShotObserver(side){
  let state=Object.freeze({keeperId,shooterId,shots:0,shotTick:null,
   launchSpeedMps:null,keeperContactTick:null,parryTick:null,
   crossing:null,diveTick:null,gloveContactTick:null,deflection:null,reboundTick:null,
-  secondShots:0,catchTick:null,officialSave:false,officialGoal:false});
+  secondShots:0,secondShotTick:null,reboundRecoveryTick:null,reboundReleaseTick:null,
+  catchTick:null,officialSave:false,officialGoal:false});
  return Object.freeze({observe({tick,ball,starts,action,event,keeperDive=null}){
   const real=action?.tick===tick&&action.appliedByRapier===true&&
    action.actualPhysicsImpulseApplied===true&&starts.length===1&&starts[0]===action.playerId;
   if(real&&action.playerId===shooterId&&action.action==='shot'){
+   const followUp=state.reboundTick!==null&&!state.crossing&&!keeperDive?.catchState?.active;
    state=Object.freeze({...state,shots:state.shots+1,shotTick:tick,
     launchSpeedMps:Math.hypot(ball.velocity.x,ball.velocity.y,ball.velocity.z),
-    secondShots:state.secondShots+(state.reboundTick!==null&&!state.crossing?1:0),
+    secondShots:state.secondShots+(followUp?1:0),secondShotTick:followUp?tick:null,
     keeperContactTick:null,parryTick:null,crossing:null,diveTick:null,gloveContactTick:null,
-    deflection:null,reboundTick:null,catchTick:null});
+    deflection:null,reboundTick:null,catchTick:null,reboundRecoveryTick:null,reboundReleaseTick:null});
   }
   if(state.shotTick!==null&&tick>state.shotTick&&!state.crossing){
    const dive=keeperDive?.keeperId===keeperId&&keeperDive.tick===tick;
@@ -118,16 +120,23 @@ export function createKeeperShotObserver(side){
    const catchTick=dive&&keeperDive.catchState?.active===true?keeperDive.catchState.confirmedTick:null;
    const response=dive?observeKeeperDeflection(side,keeperDive):null;
    const deflection=state.deflection??response;
-   // A live rebound is witnessed only on a later in-field native sample
-   // travelling away from the attacked goal. An exit/goal takes precedence.
+   // A loose ball can be reversed, lateral, slowed or lost from a grip.
+   // Wait for a later native in-field sample; never turn a goal or a held
+   // ball into a rebound. A still fast goalward trajectory is unresolved.
    const p=ball.position,v=ball.velocity,dir=sideSign(side);
-   const sourceTick=deflection?.tick??state.parryTick;
-   const rebound=sourceTick!=null&&tick>sourceTick&&!crossing&&!keeperDive?.catchState?.active&&
-    [p?.x,p?.y,p?.z,v?.x].every(finite)&&Math.abs(p.x)<52.39&&Math.abs(p.y)<33.89&&
-    dir*v.x< -0.5;
-   if(contact||parry||crossing||response||rebound||catchTick!=null||dive&&keeperDive.started)state=Object.freeze({...state,
-    catchTick:state.catchTick??catchTick,
-    deflection,reboundTick:state.reboundTick??(rebound?tick:null),
+   const gripLost=dive&&keeperDive.catchState?.released===true;
+   const releaseTick=gripLost?tick:state.reboundReleaseTick;
+   const sourceTick=releaseTick??deflection?.tick??state.parryTick;
+   const free=!keeperDive?.catchState?.active;
+   const rebound=sourceTick!=null&&tick>sourceTick&&!crossing&&free&&
+    [p?.x,p?.y,p?.z,v?.x,v?.y,v?.z].every(finite)&&Math.abs(p.x)<52.39&&Math.abs(p.y)<33.89&&
+    (dir*v.x< -0.5||Math.abs(v.y)>Math.max(0.5,dir*v.x)||Math.hypot(v.x,v.y,v.z)<=2);
+   const recovery=state.reboundTick!==null&&free&&!crossing&&tick>state.reboundTick&&
+    starts.length===1&&starts[0]===shooterId;
+   if(contact||parry||crossing||response||rebound||recovery||gripLost||catchTick!=null||dive&&keeperDive.started)state=Object.freeze({...state,
+    catchTick:state.catchTick??catchTick,reboundReleaseTick:releaseTick,
+    reboundRecoveryTick:state.reboundRecoveryTick??(recovery?tick:null),
+    deflection,reboundTick:catchTick!=null?null:state.reboundTick??(rebound?tick:null),
     diveTick:state.diveTick??(dive&&keeperDive.started?tick:null),
     gloveContactTick:state.gloveContactTick??(glove?tick:null),
     keeperContactTick:state.keeperContactTick??(contact?tick:null),

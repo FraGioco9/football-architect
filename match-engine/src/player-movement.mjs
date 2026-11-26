@@ -8,7 +8,7 @@ import {validateSoloCarryAttributes}
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
-import {smallSidedSetup,keeperDuelAttackerTarget,
+import {smallSidedSetup,keeperDuelAttackerTarget,keeperDuelReboundTarget,
  keeperDuelGoalkeeperTarget} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
@@ -2212,7 +2212,7 @@ export function createPlayerMovement(options={}){
   });
  }
  function step(ballPosition={x:0,y:0},priorRealPass=null,
-  priorRealTap=null,realBallVelocity=null){
+  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null){
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
@@ -2220,6 +2220,11 @@ export function createPlayerMovement(options={}){
      smallBodyFeedbackTick!==tick)
    throw new TypeError('LAB native feedback requires the prior tick acknowledgment');
   const ball=ballXY(ballPosition);
+  if(priorKeeperRebound!==null&&(!smallSided||smallSided.id!=='keeper-1v1'||
+     priorKeeperRebound.tick!==tick||priorKeeperRebound.reboundTick==null||
+     priorKeeperRebound.reboundTick>tick||!realBallVelocity||
+     ![realBallVelocity.x,realBallVelocity.y].every(finite)))
+   throw new TypeError('Keeper rebound pursuit requires the prior original live sample');
   if(smallSided?.id==='carry-solo'){
    if(!realBallVelocity||
       ![realBallVelocity.x,realBallVelocity.y].every(finite))
@@ -2516,7 +2521,8 @@ export function createPlayerMovement(options={}){
     if(p.team===smallSided.side){
      if(p.id===smallSided.side+'-10')
       return smallSided.id==='keeper-1v1'?
-       keeperDuelAttackerTarget(smallSided.side,smallSided.variantIndex,p,ball):
+       (priorKeeperRebound?keeperDuelReboundTarget(smallSided.side,smallSided.variantIndex,p,ball,realBallVelocity):
+        keeperDuelAttackerTarget(smallSided.side,smallSided.variantIndex,p,ball)):
        Object.freeze({x:ball.x+attack*(smallSided.id==='carry-solo'?
         nativeFixedOffset??currentSoloCarryPhase.ballTargetOffsetM:
         smallSided.id==='dribble-1v1'?-0.40:-0.08),y:ball.y});

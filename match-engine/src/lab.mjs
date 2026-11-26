@@ -98,6 +98,11 @@ function recordPerformedActions(frame){
  if(dive?.tick===tick&&dive.contactStarted)events.push({id:dive.keeperId,kind:'glove-contact',label:'Glove contact'});
  const keeper=frame.keeperShotAudit;
  if(keeper?.deflection?.tick===tick)events.push({id:keeper.keeperId,kind:'deflection',label:'Deflection'});
+ if(keeper?.secondShotTick===tick){
+  const shot=events.find(e=>e.id===keeper.shooterId&&e.kind==='shot');
+  if(shot)shot.label='Rebound shot';
+ }
+ if(keeper?.reboundRecoveryTick===tick)events.push({id:keeper.shooterId,kind:'rebound-contact',label:'Rebound contact'});
  if(dive?.catchState?.confirmedTick===tick)events.push({id:dive.keeperId,kind:'catch',label:'Catch'});
  if(dive?.catchState?.released)events.push({id:dive.keeperId,kind:'grip-lost',label:'Grip lost'});
  const pass=frame.passPairAudit?.receivingContact;
@@ -713,6 +718,7 @@ function render() {
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
        f.keeperDive?.catchState?.active&&keeper.catchTick!==null?'Ball held':
        f.keeperDive?.catchState?.active?'Securing ball':
+       keeper.secondShotTick===f.physicsTick?'Rebound shot':keeper.reboundRecoveryTick!==null?'Rebound contact':
        keeper.reboundTick!==null?'Live rebound':keeper.deflection?'Deflection observed':
        keeper.gloveContactTick!==null?'Glove contact':keeper.parryTick!==null?'Parry observed':
        f.keeperDive?.phase==='diving'?'Diving':keeper.keeperContactTick!==null?'Keeper contact':

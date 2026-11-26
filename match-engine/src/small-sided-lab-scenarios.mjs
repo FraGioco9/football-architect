@@ -86,6 +86,24 @@ export function keeperDuelAttackerTarget(side,index,attacker,ball){
   y:bounded(ball.y,-33.49,33.49)
  });
 }
+// GK-06: pursuit of a witnessed loose ball only. Forecast a short
+// interception from the actual current velocity, then continue through the
+// contact point in the approach direction. No direct player or ball move.
+export function keeperDuelReboundTarget(side,index,attacker,ball,velocity){
+ requireKeeperVariant(side,index);
+ if(!attacker||attacker.id!==side+'-10'||
+    ![attacker.x,attacker.y,ball?.x,ball?.y,velocity?.x,velocity?.y].every(Number.isFinite))
+  throw new TypeError('Actual live rebound and original attacker required');
+ const distance=Math.hypot(ball.x-attacker.x,ball.y-attacker.y);
+ const horizon=bounded(distance/14,0,0.35);
+ const bx=bounded(ball.x+velocity.x*horizon,-51.75,51.75);
+ const by=bounded(ball.y+velocity.y*horizon,-33.25,33.25);
+ const dx=bx-attacker.x,dy=by-attacker.y,gap=Math.hypot(dx,dy);
+ const dir=side==='home'?1:-1;
+ const ux=gap>0.05?dx/gap:dir,uy=gap>0.05?dy/gap:0;
+ return freeze({x:bounded(bx+0.65*ux,-51.99,51.99),
+  y:bounded(by+0.65*uy,-33.49,33.49)});
+}
 export function keeperDuelGoalkeeperTarget(side,index,attacker,ball,baseline){
  requireKeeperVariant(side,index);
  if(!attacker||attacker.id!==side+'-10'||!ball||!baseline||

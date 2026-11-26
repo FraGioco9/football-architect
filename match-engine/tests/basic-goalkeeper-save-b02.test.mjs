@@ -12,6 +12,7 @@ import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction}
  from '../src/player-ball-uniform-autonomous-action.mjs';
 import {initializeRapier,FIXED_DT} from '../src/core.mjs';
 import {advanceGoalkeeperBallOrientation} from '../src/individual-kinematics.mjs';
+import {keeperDuelReboundTarget} from '../src/small-sided-lab-scenarios.mjs';
 import {planNativeKeeperDive,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip} from '../src/small-sided-native-body-guard.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
@@ -324,5 +325,38 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
     hand.setNextKinematicTranslation({x:-dir*48,y:0.8,z:1});world.step();
     assert.ok(Math.abs(ball.translation().y-released.y)<0.1);
    }finally{world.free();}
+  }
+ });
+
+ test('GK-06 actual loose-ball pursuit is mirrored, leads lateral rebounds and remains in field',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,attacker={id:side+'-10',x:dir*42,y:0};
+   const ball={x:dir*46,y:2},velocity={x:-dir*5,y:3};
+   const target=keeperDuelReboundTarget(side,0,attacker,ball,velocity);
+   assert.ok(target.x*dir<ball.x*dir);
+   assert.ok(target.y>ball.y);
+   const edge=keeperDuelReboundTarget(side,0,attacker,{x:dir*51.9,y:33.4},{x:dir*20,y:20});
+   assert.ok(Math.abs(edge.x)<=51.99&&Math.abs(edge.y)<=33.49);
+  }
+ });
+ test('GK-06 sideways loose ball, authentic recovery, follow-up shot and held-ball negatives',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,keeperId=(side==='home'?'away':'home')+'-1',shooterId=side+'-10';
+   const w=createKeeperShotObserver(side),position={x:dir*48,y:0,z:0.11};
+   const real=tick=>({tick,playerId:shooterId,action:'shot',appliedByRapier:true,actualPhysicsImpulseApplied:true});
+   const sample=(tick,velocity,extra={})=>w.observe({tick,ball:{position,velocity},starts:[],action:null,event:null,...extra});
+   const launch={x:dir*18,y:0,z:0},lateral={x:dir*1,y:4,z:0};
+   sample(1,launch,{starts:[shooterId],action:real(1)});
+   const glove={tick:2,keeperId,contact:true,contactStarted:true,source:'native-rapier-solver-manifold',contactMotion:{before:launch,after:lateral}};
+   sample(2,lateral,{keeperDive:glove});
+   assert.equal(sample(3,lateral,{keeperDive:{tick:3,keeperId,catchState:{active:true,confirmedTick:null}}}).reboundTick,null);
+   assert.equal(sample(4,lateral,{keeperDive:{tick:4,keeperId,catchState:{active:false,released:true}}}).reboundTick,null);
+   assert.equal(sample(5,lateral).reboundTick,5);
+   assert.equal(sample(6,lateral,{starts:[shooterId,keeperId]}).reboundRecoveryTick,null);
+   assert.equal(sample(7,lateral,{starts:[shooterId]}).reboundRecoveryTick,7);
+   assert.equal(sample(8,launch,{action:real(8)}).secondShots,0);
+   const shot=sample(9,launch,{starts:[shooterId],action:real(9)});
+   assert.equal(shot.secondShots,1);assert.equal(shot.secondShotTick,9);
+   assert.equal(shot.officialGoal,false);assert.equal(shot.officialSave,false);
   }
  });
