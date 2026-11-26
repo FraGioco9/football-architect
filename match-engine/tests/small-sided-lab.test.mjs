@@ -10,7 +10,7 @@ import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
  keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
-import {createCollectiveBallControlObserver,chooseCollectiveDefensiveTouch} from '../src/isolated-dribble-touches.mjs';
+import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch} from '../src/isolated-dribble-touches.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
 test('COL-01 both teams pursue the real ball without a shirt-number runner or inferred possession',()=>{
@@ -50,6 +50,33 @@ test('COL-02 native control releases on pass and contest, never on intended reci
   assert.equal(step(5,[d.id],[d.id],action(5,d.id,'carry')).playerId,d.id);
   assert.equal(step(6,[],[d.id],null,[keeper]).kind,'loose');
   assert.equal(step(7).kind,'loose');
+ }
+});
+test('UME-01 identical native control lifecycle regardless of number of participants',()=>{
+ assert.equal(createCollectiveBallControlObserver,createNativeBallControlObserver);
+ for(const side of ['home','away']){
+  const other=side==='home'?'away':'home',dir=side==='home'?1:-1;
+  const a={id:side+'-10',team:side,x:dir*29.6,y:0};
+  const d={id:other+'-2',team:other,x:dir*30.6,y:0};
+  const teammate={id:side+'-9',team:side,x:dir*24,y:4};
+  const ball={position:{x:dir*30,y:0,z:0.11},velocity:{x:dir,y:0,z:0}};
+  const duel=createDribbleTransitionObserver(side);
+  const pair=createNativeBallControlObserver([a.id,d.id],[a.id,d.id]);
+  const group=createNativeBallControlObserver([a.id,d.id,teammate.id],[a.id,d.id,teammate.id]);
+  const field=Array.from({length:22},(_,n)=>({id:(n<11?'home':'away')+'-'+(n%11+1),team:n<11?'home':'away',x:0,y:0})).map(p=>p.id===a.id?a:p.id===d.id?d:p.id===teammate.id?teammate:p);
+  const full=createNativeBallControlObserver(field.map(p=>p.id),field.filter(p=>!p.id.endsWith('-1')).map(p=>p.id));
+  const core=x=>({kind:x.kind,playerId:x.playerId,sourceTick:x.sourceTick,officialPossession:x.officialPossession});
+  for(const [tick,contact,kind] of [[1,a.id,'carry'],[2,a.id,null],[3,d.id,'carry'],[4,d.id,'pass'],[5,a.id,null],[6,a.id,'carry']]){
+   const action=kind?{tick,playerId:contact,action:kind,appliedByRapier:true,actualPhysicsImpulseApplied:true}:null;
+   const sample={tick,ball,starts:[contact],active:[contact],bodyStarts:[],bodyActive:[],action};
+   const x=pair.observe({...sample,players:[a,d]});
+   assert.deepEqual(core(x),core(group.observe({...sample,players:[a,d,teammate]})));
+   assert.deepEqual(core(x),core(full.observe({...sample,players:field})));
+   assert.deepEqual(core(x),duel.observe({...sample,players:[a,d]}).ballControl);
+   assert.equal(x.kind,kind==='carry'||tick===2?'controlled':'loose');
+  }
+  const sample={tick:7,ball,starts:[],active:[],action:null,players:[a,d],physicalChallengeReleased:true};
+  assert.equal(pair.observe(sample).kind,'loose');
  }
 });
 test('COL-04 support opens a real passing lane and mirrors without shirt preference',()=>{

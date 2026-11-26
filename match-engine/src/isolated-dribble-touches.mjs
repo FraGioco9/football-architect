@@ -9,7 +9,7 @@ export function isOpposingDuelPair(side,actor,opponent){
   (actor.team===undefined||actor.team===side)&&(opponent.team===undefined||opponent.team===opposite(side));
 }
 // Provisional control requires a genuine carry witness and live ball geometry.
-export function observeDuelBallControl({players,ball,carryWitness,tick}={}){
+export function observeNativeBallControl({players,ball,carryWitness,tick}={}){
  const player=players?.find(p=>p.id===carryWitness?.playerId);
  const b=ball?.position,v=ball?.velocity;
  const near=player&&b&&v&&[player.x,player.y,b.x,b.y,b.z,v.x,v.y].every(Number.isFinite)&&
@@ -19,15 +19,18 @@ export function observeDuelBallControl({players,ball,carryWitness,tick}={}){
  return Object.freeze({kind:controlled?'controlled':'loose',playerId:controlled?player.id:null,
   sourceTick:controlled?carryWitness.tick:null,officialPossession:false});
 }
-// COL-02: observe the same native carry witness for any active outfielder.
- // A pass, shot, defensive impulse or another participant's contact ends
- // control; even a named pass recipient must acquire a fresh real witness.
-export function createCollectiveBallControlObserver(activeIds,outfieldIds){
+// Historical name retained for source compatibility, not a separate policy.
+export const observeDuelBallControl=observeNativeBallControl;
+// UME-01: one native control lifecycle, parameterised only by physical
+// participants. No LAB identity, formation, shirt number or attacker side.
+// A release, conflicting contact or witnessed successful physical challenge
+// invalidates the witness, never assigns it to another player.
+export function createNativeBallControlObserver(activeIds,outfieldIds){
  if(!Array.isArray(activeIds)||!Array.isArray(outfieldIds)||
     new Set(activeIds).size!==activeIds.length||new Set(outfieldIds).size!==outfieldIds.length||
     !outfieldIds.every(id=>activeIds.includes(id)))throw new TypeError('Active physical participants required');
  let witness=null,delivery=null,latest=Object.freeze({tick:0,...observeDuelBallControl(),delivery:null});
- function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action}){
+ function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action,physicalChallengeReleased=false}){
   if(tick!==latest.tick+1)throw new TypeError('Consecutive native control ticks required');
   const participants=players.filter(p=>outfieldIds.includes(p.id));
   const touching=[...new Set([...active,...bodyActive])].filter(id=>activeIds.includes(id));
@@ -41,13 +44,16 @@ export function createCollectiveBallControlObserver(activeIds,outfieldIds){
    delivery=action.action==='pass'?Object.freeze({tick,playerId:action.playerId,team:players.find(p=>p.id===action.playerId)?.team,kind:'pass'}):null;
    if(action.action==='carry'&&outfieldIds.includes(action.playerId))witness={playerId:action.playerId,tick};
   }
-  const control=observeDuelBallControl({players:participants,ball,carryWitness:witness,tick});
+  if(physicalChallengeReleased===true){witness=null;delivery=null;}
+  const control=observeNativeBallControl({players:participants,ball,carryWitness:witness,tick});
   if(control.kind==='loose')witness=null;
   latest=Object.freeze({tick,...control,delivery});
   return latest;
  }
  return Object.freeze({snapshot:()=>latest,observe});
 }
+// Compatibility export for existing tests and callers; the factory is identical.
+export const createCollectiveBallControlObserver=createNativeBallControlObserver;
 // Initial IDs select fixture participants, not action capabilities.
 export function resolveDuelActors(players,initialSide,state=null,ball=null){
  const ids=[initialSide+'-10',opposite(initialSide)+'-2'];
@@ -534,7 +540,8 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
  if(!['home','away'].includes(side)||!DUEL_TACKLE_PROFILES.includes(profile))throw new TypeError('Original duel side and tackle profile required');
  const first=side+'-10',second=opposite(side)+'-2',ids=[first,second];
  let carrierId=first,candidateId=null,candidateTick=null,sourceTick=null,lastIntervention=null,recoveries=0,regains=0,changes=0;
- let getUpUntil=Object.freeze({}),lastShoulder=null,shoulderContacts=0,priorShoulderPair=null,carryWitness=null;
+ let getUpUntil=Object.freeze({}),lastShoulder=null,shoulderContacts=0,priorShoulderPair=null;
+ const controlObserver=createNativeBallControlObserver(ids,ids);
  let latest=Object.freeze({tick:0,profile,phase:'attack',carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered:false,regained:false,ballControl:observeDuelBallControl(),officialPossession:false});
  function observe({tick,starts,active,bodyStarts,bodyActive,action,ball,players=[],shoulderPlan=null,torsoPairs=[],bodies=[]}){
   if(tick!==latest.tick+1)throw new TypeError('Same original physics tick required');
@@ -561,11 +568,8 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
    }
    if(action.playerId!==carrierId){candidateId=action.playerId;candidateTick=tick;}
   }
-  // Rival native contact or defensive strike releases control, not transfers it.
-  if(carryWitness&&(!inField||started.some(id=>id!==carryWitness.playerId)||
-     real&&['tackle','interception'].includes(action.action)))carryWitness=null;
+  // Historical duel recovery diagnostics are separate from control.
   if(inField&&real&&action.action==='carry'){
-   carryWitness={playerId:action.playerId,tick};
    if(action.playerId!==carrierId){
     carrierId=action.playerId;changes++;sourceTick=tick;
     recovered=carrierId===second;regained=carrierId===first;
@@ -592,9 +596,9 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
   if(lastShoulder?.successful&&candidateId===lastShoulder.actorId&&tick-lastShoulder.tick>SHOULDER_COLLECTION_TICKS){candidateId=null;candidateTick=null;}
   priorShoulderPair=shoulderPair;
   const phase=candidateId!==null?'recover':carrierId===first?'attack':'counter';
-  if(lastShoulder?.tick===tick&&lastShoulder.successful)carryWitness=null;
-  const ballControl=observeDuelBallControl({players,ball,carryWitness,tick});
-  if(ballControl.kind==='loose')carryWitness=null;
+  const nativeControl=controlObserver.observe({tick,players,ball,starts,active,bodyStarts,bodyActive,action,
+   physicalChallengeReleased:lastShoulder?.tick===tick&&lastShoulder.successful===true});
+  const ballControl=Object.freeze({kind:nativeControl.kind,playerId:nativeControl.playerId,sourceTick:nativeControl.sourceTick,officialPossession:false});
   // Historical phase/carrier/counters remain diagnostic compatibility only.
   latest=Object.freeze({tick,profile,phase,carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered,regained,ballControl,officialPossession:false});
   return latest;

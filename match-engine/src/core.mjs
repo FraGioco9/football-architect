@@ -10,7 +10,7 @@ import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {smallSidedSetup} from './small-sided-lab-scenarios.mjs';
-import {createCollectiveBallControlObserver,createDribbleTransitionObserver} from './isolated-dribble-touches.mjs';
+import {createNativeBallControlObserver,createDribbleTransitionObserver} from './isolated-dribble-touches.mjs';
 import {createSmallSidedNativeBodyGuard,createNativeKeeperDive}
  from './small-sided-native-body-guard.mjs';
 import {initialResearchBodyEncounterLineup}
@@ -739,7 +739,7 @@ export function createEngine(RAPIER, input = {}, {
   const keeperDive=smallBodyGuard&&(smallSided?.id==='keeper-1v1'||smallSided?.blockStart)?
    createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1'),body,
     {closeChallengeEnabled:diagnosticKeeperSingleShot}):null;
-  const collectiveObserver=diagnosticCollectiveActions?createCollectiveBallControlObserver(smallSided.activeIds,smallSided.activeIds.filter(id=>!id.endsWith('-1'))):null;
+  const collectiveObserver=diagnosticCollectiveActions?createNativeBallControlObserver(smallSided.activeIds,smallSided.activeIds.filter(id=>!id.endsWith('-1'))):null;
   const duelTransition=diagnosticDirectedDribble?createDribbleTransitionObserver(smallSided.side,diagnosticDuelTackleProfile):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
