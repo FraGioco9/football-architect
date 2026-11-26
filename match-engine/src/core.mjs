@@ -137,6 +137,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSmallSidedBodyGuardEnabled = false,
   diagnosticKeeperSingleShot = false,
   diagnosticDirectedDribble = false,
+  diagnosticDuelTackleProfile = 'mixed',
    diagnosticSmallSidedBodyFeedbackEnabled = false,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
@@ -264,6 +265,8 @@ export function createEngine(RAPIER, input = {}, {
   if(typeof diagnosticDirectedDribble!=='boolean'||(diagnosticDirectedDribble&&
      (diagnosticSmallSidedSituation!=='dribble-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Directed dribble requires original guarded 1v1');
+  if(!['mixed','standing','sliding'].includes(diagnosticDuelTackleProfile)||(diagnosticDuelTackleProfile!=='mixed'&&!diagnosticDirectedDribble))
+   throw new TypeError('Tackle profile requires original guarded directed duel');
   if(typeof diagnosticKeeperSingleShot!=='boolean'||(diagnosticKeeperSingleShot&&
      (diagnosticSmallSidedSituation!=='keeper-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Single-shot exercise requires the native keeper duel');
@@ -734,7 +737,7 @@ export function createEngine(RAPIER, input = {}, {
   const keeperDive=smallBodyGuard&&smallSided?.id==='keeper-1v1'?
    createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1'),body,
     {closeChallengeEnabled:diagnosticKeeperSingleShot}):null;
-  const duelTransition=diagnosticDirectedDribble?createDribbleTransitionObserver(smallSided.side):null;
+  const duelTransition=diagnosticDirectedDribble?createDribbleTransitionObserver(smallSided.side,diagnosticDuelTackleProfile):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({

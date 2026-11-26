@@ -40,7 +40,7 @@ export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
  controlSide='home',controlDecisionEnabled=true,
  challengeSide='away',challengeScene='contact',variantIndex=0,
- bodyGuardEnabled=false,keeperSingleShot=false,directedDribble=false,soloShoeWidthScale=1,
+ bodyGuardEnabled=false,keeperSingleShot=false,directedDribble=false,duelTackleProfile='mixed',soloShoeWidthScale=1,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
@@ -101,6 +101,8 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('Shot profile requires isolated shooter');
  if(typeof directedDribble!=='boolean'||(directedDribble&&(id!=='dribble-1v1'||!bodyGuardEnabled)))
   throw new TypeError('Directed dribble requires native 1v1');
+ if(!['mixed','standing','sliding'].includes(duelTackleProfile)||(duelTackleProfile!=='mixed'&&!directedDribble))
+  throw new TypeError('Tackle profile requires original guarded directed duel');
  if(typeof keeperSingleShot!=='boolean'||(keeperSingleShot&&(id!=='keeper-1v1'||!bodyGuardEnabled)))
   throw new TypeError('Single-shot exercise requires native keeper duel');
  if(typeof bodyGuardEnabled!=='boolean'||
@@ -248,7 +250,7 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride
    }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
-   diagnosticKeeperSingleShot:keeperSingleShot,diagnosticDirectedDribble:directedDribble,
+   diagnosticKeeperSingleShot:keeperSingleShot,diagnosticDirectedDribble:directedDribble,diagnosticDuelTackleProfile:duelTackleProfile,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
   }:{}),
   ...(refereeMode?{diagnosticBasicRestartEnabled:true}:{}),
@@ -881,7 +883,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
     ...(shieldAudit?{shieldAudit}:{}),
     ...(defensivePositioning?{defensivePositioning}:{}),
-    ...(directedDribble?{duelTransition:transition,defensiveSlide:playerFrame.duelSlide??null}:{}),
+    ...(directedDribble?{duelTackleProfile,duelTransition:transition,defensiveSlide:playerFrame.duelSlide??null}:{}),
     ...(nativeFixedCarryResearch?{
       nativeFixedCarryResearch:true,
       nativeFixedSprintLongStride,
@@ -1440,7 +1442,7 @@ export function projectActiveLabDecisions(frame,focus){
   if(!ids.includes(decision.id)||byId.has(decision.id)||
      decision.tick!==frame.physicsTick||decision.originalCanonicalMover!==true||
      decision.readOnly!==true||decision.actionConfirmed!==false||
-     !['goalkeeping','press-ball','carry-ball','approach-ball','support-run','hold-pass-target'].includes(decision.kind)||
+     !['goalkeeping','press-ball','carry-ball','approach-ball','support-run','hold-pass-target','getting-up'].includes(decision.kind)||
      ![decision.target?.x,decision.target?.y,decision.speedMps].every(Number.isFinite))
    throw new TypeError('Invalid current authoritative mover intent');
   byId.set(decision.id,decision);

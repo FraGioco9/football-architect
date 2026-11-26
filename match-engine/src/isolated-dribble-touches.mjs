@@ -323,11 +323,18 @@ export function observeEffectiveDuelIntervention(actor,rival,b,v){
 
 // A contact can nominate a recovery candidate; only an authenticated
 // carry changes the carrier used for tactical decisions, never official possession.
-export function createDribbleTransitionObserver(side){
- if(!['home','away'].includes(side))throw new TypeError('Original duel side required');
+export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding']);
+export const SLIDING_GET_UP_TACKLER_TICKS=30;
+export const SLIDING_GET_UP_RIVAL_TICKS=36;
+export function isDuelGettingUp(state,id,tick){
+ return Number.isSafeInteger(state?.getUpUntil?.[id])&&tick<=state.getUpUntil[id];
+}
+export function createDribbleTransitionObserver(side,profile='mixed'){
+ if(!['home','away'].includes(side)||!DUEL_TACKLE_PROFILES.includes(profile))throw new TypeError('Original duel side and tackle profile required');
  const first=side+'-10',second=opposite(side)+'-2',ids=[first,second];
  let carrierId=first,candidateId=null,candidateTick=null,sourceTick=null,lastIntervention=null,recoveries=0,regains=0,changes=0;
- let latest=Object.freeze({tick:0,phase:'attack',carrierId,candidateId,sourceTick,lastIntervention,recoveries,regains,changes,recovered:false,regained:false,officialPossession:false});
+ let getUpUntil=Object.freeze({});
+ let latest=Object.freeze({tick:0,profile,phase:'attack',carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,recoveries,regains,changes,recovered:false,regained:false,officialPossession:false});
  function observe({tick,starts,active,bodyStarts,bodyActive,action,ball,players=[]}){
   if(tick!==latest.tick+1)throw new TypeError('Same original physics tick required');
   let recovered=false,regained=false;
@@ -344,6 +351,13 @@ export function createDribbleTransitionObserver(side){
    const actor=players.find(p=>p.id===action.playerId),rival=players.find(p=>ids.includes(p.id)&&p.id!==action.playerId);
    const effective=observeEffectiveDuelIntervention(actor,rival,ball.position,ball.velocity);
    lastIntervention=Object.freeze({tick,actorId:action.playerId,intervention:action.defensiveTarget?.intervention??action.action,effective});
+   // Dedicated sliding LAB models a contested slide with both actors down.
+   // Trigger exclusively from the actual native strike, not slide intent.
+   // This is a temporary movement/action lock, not an inferred foul or injury.
+   if(profile==='sliding'&&lastIntervention.intervention==='sliding-tackle'){
+    const other=ids.find(id=>id!==action.playerId);
+    getUpUntil=Object.freeze({[action.playerId]:tick+SLIDING_GET_UP_TACKLER_TICKS,[other]:tick+SLIDING_GET_UP_RIVAL_TICKS});
+   }
    if(action.playerId!==carrierId){candidateId=action.playerId;candidateTick=tick;}
   }
   if(inField&&real&&action.action==='carry'){
@@ -360,7 +374,7 @@ export function createDribbleTransitionObserver(side){
    }
   }
   const phase=candidateId!==null?'recover':carrierId===first?'attack':'counter';
-  latest=Object.freeze({tick,phase,carrierId,candidateId,sourceTick,lastIntervention,recoveries,regains,changes,recovered,regained,officialPossession:false});
+  latest=Object.freeze({tick,profile,phase,carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,recoveries,regains,changes,recovered,regained,officialPossession:false});
   return latest;
  }
  return Object.freeze({observe,snapshot:()=>latest});
@@ -368,7 +382,7 @@ export function createDribbleTransitionObserver(side){
 // Same contact decision for both actors. Loose ball may be collected.
 export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVelocity:v,transition,slide,variantIndex,tick}){
  if(!isOpposingDuelPair(player?.team,player,opponent))throw new TypeError('Opposing physical actors required');
- if(slide?.phase==='recovery')return null;
+ if(slide?.phase==='recovery'||isDuelGettingUp(transition,player.id,tick))return null;
  const opponentGap=Math.hypot(opponent.x-b.x,opponent.y-b.y);
  const shielded=observeDribbleShield(opponent,player,b);
  const current=transition?.carrierId===player.id;
@@ -380,7 +394,7 @@ export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVeloci
   ballPosition:b,ballVelocity:v,variantIndex,tick});
  if(slide?.phase==='slide'){const touch=defensive(true);return touch?{defensive:touch,carry:null}:null;}
  if((current||collecting)&&canCarry)return {defensive:null,carry:carry()};
- const touch=defensive();
+ const touch=transition?.profile==='sliding'?null:defensive();
  if(touch)return {defensive:touch,carry:null};
  if(opponentGap>1.15&&canCarry)return {defensive:null,carry:carry()};
  return null;

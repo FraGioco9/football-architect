@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -968,5 +968,48 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
     ball:{position:b,velocity:{x:dir*0.8,y:2.8}},players:[attacker,defender]});
    assert.equal(next.candidateId,defender.id,'incidental rival touch does not cancel effective recovery');
    assert.equal(next.officialPossession,false);
+  }
+ });
+
+ test('D-10 isolated standing and sliding tackle profiles preserve actual contact and both-player get-up lock',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const profile of ['standing','sliding'])for(const side of ['home','away']){
+   let strikes=0,pairedRecovery=0,fullyRecovered=0;
+   for(const variantIndex of [0,1,2,4,6,7,8,11]){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true,duelTackleProfile:profile});
+    let pending=null;
+    try{
+     for(let i=0;i<600;i++){
+      const f=scene.step(),action=f.action,w=f.duelTransition;
+      assert.equal(w.profile,profile);
+      if(profile==='standing'){assert.equal(f.defensiveSlide,null);assert.deepEqual(w.getUpUntil,{});}
+      if(action?.action==='tackle'){
+       strikes++;
+       assert.equal(action.defensiveTarget.intervention,profile+'-tackle');
+       assert.deepEqual(f.starts,[action.playerId]);
+       assert.equal(action.actualPhysicsImpulseApplied,true);
+       if(profile==='sliding'){
+        const rival=scene.focus.find(id=>id!==action.playerId);
+        assert.equal(w.getUpUntil[action.playerId],f.physicsTick+SLIDING_GET_UP_TACKLER_TICKS);
+        assert.equal(w.getUpUntil[rival],f.physicsTick+SLIDING_GET_UP_RIVAL_TICKS);
+        pending={tick:f.physicsTick,actor:action.playerId,rival};pairedRecovery++;
+       }
+      }
+      if(pending&&f.physicsTick>pending.tick){
+       for(const id of scene.focus){
+        const down=isDuelGettingUp(w,id,f.physicsTick);
+        const decision=f.smallSidedMovementDecisions.find(d=>d.id===id);
+        if(down){assert.equal(decision.kind,'getting-up');assert.notEqual(action?.playerId,id);}
+       }
+       if(f.physicsTick>pending.tick+SLIDING_GET_UP_RIVAL_TICKS){fullyRecovered++;pending=null;}
+      }
+      assert.ok(f.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D10_TACKLE_LABS '+JSON.stringify({profile,side,strikes,pairedRecovery,fullyRecovered})+'\n');
+   assert.ok(strikes>0,'isolated profile must actually execute its named tackle');
+   if(profile==='sliding')assert.ok(pairedRecovery>0&&fullyRecovered>0,'both players must complete the real slide recovery');
   }
  });
