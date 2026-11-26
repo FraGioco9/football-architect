@@ -247,3 +247,26 @@ export function planDribbleTransitionTarget(player,opponent,b,v,originalAttackin
  return Object.freeze({x:clamp(b.x+v.x*lead-dir*offset,-51.99,51.99),
   y:clamp(b.y+v.y*lead,-33.49,33.49)});
 }
+
+// D-07: finite movement-only release from an observed stationary duel.
+// The challenger gives space while the closer/last-touch-side actor
+// approaches the rolling ball from an offset. No displacement or kick.
+export function planDribbleContactRelease({attackingSide,attacker,defender,ball,phase='attack',variantIndex=0}={}){
+ if(!['home','away'].includes(attackingSide)||!attacker||!defender||
+    ![attacker.x,attacker.y,defender.x,defender.y,ball?.x,ball?.y].every(Number.isFinite))
+  throw new TypeError('Original duel geometry required');
+ const dir=attackingSide==='home'?1:-1;
+ const ag=Math.hypot(attacker.x-ball.x,attacker.y-ball.y),dg=Math.hypot(defender.x-ball.x,defender.y-ball.y);
+ const defenderFirst=phase==='counter'||(phase==='recover'&&dg<=ag+0.2)||dg+0.4<ag;
+ const primary=defenderFirst?defender:attacker,other=defenderFirst?attacker:defender;
+ const forward=defenderFirst?-dir:dir;
+ const dx=other.x-primary.x,dy=other.y-primary.y,gap=Math.max(0.01,Math.hypot(dx,dy));
+ // Choose an outward route based on actual relative position, stable
+ // for the entire release. At a touchline favour the inside.
+ const side=Math.abs(ball.y)>30?-Math.sign(ball.y):Math.abs(dy)>0.12?-Math.sign(dy):variantIndex%2===0?1:-1;
+ const bound=(x,y)=>Object.freeze({x:clamp(x,-51.99,51.99),y:clamp(y,-33.49,33.49)});
+ const primaryTarget=bound(ball.x-forward*0.35,ball.y+side*0.58);
+ const otherTarget=bound(other.x+0.95*dx/gap,other.y+0.95*dy/gap-side*0.45);
+ return Object.freeze({primaryId:primary.id,otherId:other.id,
+  targets:Object.freeze({[primary.id]:primaryTarget,[other.id]:otherTarget}),movementOnly:true});
+}

@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -775,4 +775,45 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    }
    process.stdout.write('ME_628_D06_TRANSITION '+JSON.stringify({side,windows,recoveries,regains})+'\n');
   }
+ });
+
+ test('D-07 contact release assigns different bounded outward movement targets without changing ball',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const attacker={id:side+'-10',x:dir*29.5,y:0},defender={id:other+'-2',x:dir*30.5,y:0};
+   const ball={x:dir*30,y:0};
+   const release=planDribbleContactRelease({attackingSide:side,attacker,defender,ball});
+   assert.equal(release.primaryId,attacker.id);assert.equal(release.movementOnly,true);
+   assert.ok(dir*(release.targets[defender.id].x-defender.x)>0.7);
+   assert.ok(Math.abs(release.targets[attacker.id].y)>0.5);
+   assert.equal(planDribbleContactRelease({attackingSide:side,attacker,defender,ball,phase:'counter'}).primaryId,defender.id);
+  }
+ });
+ test('D-07 all 60 active duels measure stationary contact rather than counting touches alone',{timeout:180000},async()=>{
+  const R=await initializeRapier(rapier);
+  const results=[];
+  for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
+   const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
+   let stagnant=0,maxStagnant=0,blocked=0,ballPath=0,prior=scene.snapshot().ball.position;
+   try{
+    for(let k=0;k<600;k++){
+     const f=scene.step(),b=f.ball.position,v=f.ball.velocity;
+     const a=f.observedMovementPlayers.find(p=>p.id===side+'-10'),d=f.observedMovementPlayers.find(p=>p.id===(side==='home'?'away':'home')+'-2');
+     const near=Math.hypot(a.x-d.x,a.y-d.y)<1.6&&Math.max(Math.hypot(a.x-b.x,a.y-b.y),Math.hypot(d.x-b.x,d.y-b.y))<1.8;
+     const slow=Math.max(Math.hypot(a.vx,a.vy),Math.hypot(d.vx,d.vy))<0.30&&Math.hypot(v.x,v.y)<0.40;
+     if(near&&slow)stagnant++;else stagnant=0;
+     if(a.blockedBy===d.id&&d.blockedBy===a.id)blocked++;
+     maxStagnant=Math.max(maxStagnant,stagnant);
+     ballPath+=Math.hypot(b.x-prior.x,b.y-prior.y);prior=b;
+     assert.ok(f.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
+     if(f.refereeEvidence?.lastEvent)break;
+    }
+    const f=scene.snapshot();
+    results.push({side,variant:variantIndex+1,maxStagnant,blocked,ballPath,attackerTouches:f.nativeDribbleAudit.appliedCarryActions,
+     defenderAttempts:f.nativeDribbleAudit.defensiveTackleAttempts+f.nativeDribbleAudit.defensiveInterceptionAttempts,
+     recoveryTouches:f.nativeDribbleAudit.defensiveRecoveryTouches});
+   }finally{scene.dispose();}
+  }
+  process.stdout.write('ME_628_D07_LIVENESS '+JSON.stringify(results)+'\n');
+  assert.ok(results.every(x=>x.maxStagnant<150),'no continuous stationary close duel lasting 2.5 seconds');
  });

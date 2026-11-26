@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget,planDribbleDefender,planDribbleTransitionTarget} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,planDribbleTransitionTarget,planDribbleContactRelease} from './isolated-dribble-touches.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
@@ -2212,6 +2212,7 @@ export function createPlayerMovement(options={}){
    }:{})
   });
  }
+ let directedContactRelease=null,directedStallTicks=0,directedLastBall=null;
  function step(ballPosition={x:0,y:0},priorRealPass=null,
   priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null){
   if(options.researchUnstagedNativeBodyFeedback===true&&
@@ -2506,12 +2507,30 @@ export function createPlayerMovement(options={}){
        0.08+(options.researchSoloSprintPursuitLeadM??0)*sprintPursuitScale):
     currentSoloCarryPhase.phase==='moderate'?-0.06:
      currentSoloCarryPhase.ballTargetOffsetM:null;
+  if(directedDribble){
+   const attacker=players.find(p=>p.id===smallSided.side+'-10'),defender=players.find(p=>p.id===smallSided.opponent+'-2');
+   const gap=Math.hypot(attacker.x-defender.x,attacker.y-defender.y);
+   const closeBall=Math.max(Math.hypot(attacker.x-ball.x,attacker.y-ball.y),Math.hypot(defender.x-ball.x,defender.y-ball.y))<1.8;
+   const slow=Math.hypot(realBallVelocity.x,realBallVelocity.y)<0.40&&Math.max(Math.hypot(attacker.vx,attacker.vy),Math.hypot(defender.vx,defender.vy))<0.30;
+   const blocked=attacker.blockedBy===defender.id||defender.blockedBy===attacker.id;
+   const stagnant=directedLastBall&&Math.hypot(ball.x-directedLastBall.x,ball.y-directedLastBall.y)<0.007;
+   if(directedContactRelease&&tick>=directedContactRelease.until)directedContactRelease=null;
+   if(!directedContactRelease&&closeBall&&gap<1.6&&stagnant&&(slow||blocked))directedStallTicks++;
+   else directedStallTicks=0;
+   if(directedStallTicks>=24){
+    directedContactRelease={...planDribbleContactRelease({attackingSide:smallSided.side,attacker,defender,ball,
+     phase:duelTransition?.phase??'attack',variantIndex:smallSided.variantIndex}),until:tick+54};
+    directedStallTicks=0;
+   }
+   directedLastBall={...ball};
+  }
   const targets=players.map(p=>{
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can
     // touch the ball; all others retain their own base positions.
     if(!smallActive.has(p.id))
      return Object.freeze({x:p.baseX,y:p.baseY});
+    if(directedDribble&&directedContactRelease?.targets[p.id])return directedContactRelease.targets[p.id];
     if(smallSided.firstTimeShot)return Object.freeze({x:p.baseX,y:p.baseY});
     if(['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)){
      // Fixed receiving station and short approach to the INITIAL ball.
@@ -2751,8 +2770,10 @@ export function createPlayerMovement(options={}){
    if(blocker){p.vx=0;p.vy=0;}
    else{p.x=candidate.x;p.y=candidate.y;p.vx=candidate.vx;p.vy=candidate.vy;}
    const keeperDuel=smallSided?.id==='keeper-1v1'&&p.id===smallSided.opponent+'-1';
+   const faceDuelBall=directedDribble&&smallActive.has(p.id)&&Math.hypot(ball.x-p.x,ball.y-p.y)<1.65;
    const wantedFacing=keeperDuel?
     advanceGoalkeeperBallOrientation(p,ball,PLAYER_KINEMATIC_LIMITS):
+    faceDuelBall?advancePlayerOrientation(p.facingRad,ball.x-p.x,ball.y-p.y,PLAYER_KINEMATIC_LIMITS):
     advancePlayerOrientation(p.facingRad,p.vx,p.vy,PLAYER_KINEMATIC_LIMITS);
    if(shoe){
     const facing=projectNativeShoeBodyFacing(
