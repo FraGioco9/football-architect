@@ -1,4 +1,4 @@
-import {createDribbleShieldObserver,planDribbleDefender,resolveDuelActors} from './isolated-dribble-touches.mjs';
+import {createCollectiveBallControlObserver,createDribbleShieldObserver,planDribbleDefender,resolveDuelActors} from './isolated-dribble-touches.mjs';
 // #620 — controlled actions on the CLEAN canonical same-world Rapier core.
 // No legacy universal match session, opponent-lane tactical simulator or fake
 // action event. Exactly one core engine and one existing 22-player mover.
@@ -373,6 +373,7 @@ export function createControlledActionLab(RAPIER,id,{
    JSON.stringify(smallSided.activeIds))
   throw new Error('Small-sided participants differ from physical Rapier shoe colliders');
  const keeperShotObserver=id==='keeper-1v1'?createKeeperShotObserver(shotSide):null;
+ const collectiveObserver=collectiveApproaches?createCollectiveBallControlObserver(smallSided.activeIds,smallSided.activeIds.filter(id=>!id.endsWith('-1'))):null;
  const shieldObserver=directedDribble?createDribbleShieldObserver(shotSide):null;
  const refereeObserver=(refereeMode||smallSided)?
   createBasicMatchRefereeB05():null;
@@ -390,6 +391,9 @@ export function createControlledActionLab(RAPIER,id,{
    throw new Error('Only genuine same-tick Rapier and canonical mover allowed');
   const raw=engine.uniformAutonomousActionSnapshot?.()??null;
   const action=raw?.tick===physics.tick?raw:null;
+  const collectiveControl=collectiveObserver?(physics.tick===0?collectiveObserver.snapshot():collectiveObserver.observe({
+   tick:physics.tick,players:playerFrame.players,ball:physics.ball,starts,active:foot.active,
+   bodyStarts:engine.smallSidedBodyGuardSnapshot().lowerLegBallStarts,bodyActive:engine.smallSidedBodyGuardSnapshot().lowerLegBallContacts,action})):null;
   if(blockAudit){
    const ball=physics.ball,defender=(shotSide==='home'?'away':'home')+'-2';
    const body=engine.smallSidedBodyGuardSnapshot();
@@ -890,6 +894,7 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
+   ...(collectiveControl?{collectiveControl}:{}),
     labDynamicsVersion:currentDynamics?CURRENT_LAB_DYNAMICS_VERSION:null,
     latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,
    ...(passPairAudit?{passPairAudit}:{}),
@@ -975,12 +980,12 @@ export function createControlledActionLab(RAPIER,id,{
   let frame=mover.step(prior.ball.position,
    spec.mode==='control'?firstPhysicalPassAction:null,
    reachExperiment?engine.researchReceiverTapSnapshot():null,
-   (goalkeeperSave||id==='carry-solo'||id==='keeper-1v1'||directedDribble||interceptionAudit||blockAudit)?prior.ball.velocity:null,
+   (goalkeeperSave||id==='carry-solo'||id==='keeper-1v1'||directedDribble||collectiveApproaches||interceptionAudit||blockAudit)?prior.ball.velocity:null,
    id==='keeper-1v1'&&!keeperSingleShot&&bodyGuardEnabled&&latest.keeperShotAudit?.reboundTick!=null&&
     !latest.keeperShotAudit.crossing&&!latest.keeperDive?.catchState?.active?
      {tick:prior.tick,reboundTick:latest.keeperShotAudit.reboundTick}:null,
    keeperSingleShot&&latest.keeperShotAudit?.shots===0&&!latest.keeperDive?.catchState?.active,directedDribble,
-   latest.duelTransition??null,latest.interceptionAudit??null,latest.blockAudit??null);
+   latest.duelTransition??null,latest.interceptionAudit??null,latest.blockAudit??null,latest.collectiveControl??null);
   const initialAfter=engine.step(frame);
    if(smallSided&&bodyGuardEnabled){
     // Only post-step original native manifolds feed the canonical mover.

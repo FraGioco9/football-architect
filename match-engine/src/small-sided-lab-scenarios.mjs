@@ -70,7 +70,7 @@ const bounded=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 // COL-01: live outfield approach and support are geometric movement
 // proposals only. The nearest approach reference is NOT ball possession.
 // Each team can pursue the same ball; shirt numbers never select a runner.
-export function planCollectiveApproaches(players,ball,velocity){
+export function planCollectiveApproaches(players,ball,velocity,control=null){
  if(!Array.isArray(players)||players.length!==3||
     new Set(players.map(p=>p.id)).size!==3||new Set(players.map(p=>p.team)).size!==2||
     !players.every(p=>['home','away'].includes(p.team)&&[p.x,p.y].every(Number.isFinite))||
@@ -84,13 +84,14 @@ export function planCollectiveApproaches(players,ball,velocity){
  for(const team of ['home','away']){
   const own=players.filter(p=>p.team===team).sort((p,q)=>gap(p)-gap(q)||p.y-q.y||p.x-q.x);
   const rival=players.filter(p=>p.team!==team).sort((p,q)=>gap(p)-gap(q))[0];
-  const runner=own[0],dir=team==='home'?1:-1;
-  const rivalNear=gap(rival)<=1.15&&gap(rival)+0.15<gap(runner);
+  const owner=control?.kind==='controlled'?players.find(p=>p.id===control.playerId):null;
+  const runner=own.find(p=>p.id===owner?.id)??own[0],dir=team==='home'?1:-1;
+  const rivalNear=owner?owner.team!==team:gap(rival)<=1.15&&gap(rival)+0.15<gap(runner);
   const dx=bx-runner.x,dy=by-runner.y,d=Math.hypot(dx,dy);
   const tx=d>0.05?dx/d:dir,ty=d>0.05?dy/d:0;
-  result[runner.id]=freeze({kind:rivalNear?'press-ball':'approach-ball',
+  result[runner.id]=freeze({kind:owner?.id===runner.id?'carry-ball':rivalNear?'press-ball':'approach-ball',
    target:target(bx+0.25*tx,by+0.25*ty),decisionOnly:true,officialPossession:false});
-  for(const p of own.slice(1)){
+  for(const p of own.filter(p=>p.id!==runner.id)){
    const lateral=Math.abs(p.y-by)>0.1?Math.sign(p.y-by):by>=0?-1:1;
    // Keep a separate support/cover lane, never prescribe a pass reception.
    result[p.id]=freeze({kind:rivalNear?'press-ball':'support-run',

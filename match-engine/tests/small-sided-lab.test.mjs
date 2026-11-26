@@ -10,6 +10,7 @@ import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
  keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
+import {createCollectiveBallControlObserver} from '../src/isolated-dribble-touches.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
 test('COL-01 both teams pursue the real ball without a shirt-number runner or inferred possession',()=>{
@@ -29,6 +30,28 @@ test('COL-01 both teams pursue the real ball without a shirt-number runner or in
   for(const entry of Object.values(switched)){assert.equal(entry.decisionOnly,true);assert.equal(entry.officialPossession,false);}
  }
 });
+test('COL-02 native control releases on pass and contest, never on intended recipient alone',()=>{
+ for(const side of ['home','away']){
+  const other=side==='home'?'away':'home',dir=side==='home'?1:-1;
+  const a={id:side+'-10',team:side,x:dir*29.6,y:0},b={id:side+'-9',team:side,x:dir*27,y:2},d={id:other+'-2',team:other,x:dir*30.6,y:0};
+  const players=[a,b,d],ids=players.map(p=>p.id),keeper=other+'-1';
+  const obs=createCollectiveBallControlObserver([...ids,keeper],ids);
+  const ball={position:{x:dir*30,y:0,z:0.11},velocity:{x:dir,y:0,z:0}};
+  const action=(tick,playerId,kind)=>({tick,playerId,action:kind,appliedByRapier:true,actualPhysicsImpulseApplied:true});
+  const step=(tick,starts=[],active=starts,act=null,bodyActive=[])=>obs.observe({tick,players,ball,starts,active,action:act,bodyActive});
+  assert.equal(obs.snapshot().kind,'loose');
+  assert.equal(step(1,[a.id]).kind,'loose');
+  assert.equal(step(2,[a.id],[a.id],action(2,a.id,'carry')).playerId,a.id);
+  const plan=planCollectiveApproaches(players,ball.position,ball.velocity,obs.snapshot());
+  assert.equal(plan[a.id].kind,'carry-ball');assert.equal(plan[b.id].kind,'support-run');
+  assert.equal(plan[d.id].kind,'press-ball');
+  assert.equal(step(3,[a.id],[a.id],action(3,a.id,'pass')).kind,'loose');
+  assert.equal(step(4,[b.id]).kind,'loose');
+  assert.equal(step(5,[d.id],[d.id],action(5,d.id,'carry')).playerId,d.id);
+  assert.equal(step(6,[],[d.id],null,[keeper]).kind,'loose');
+  assert.equal(step(7).kind,'loose');
+ }
+});
 test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{
  const R=await initializeRapier(rapier);
  for(const side of ['home','away']){
@@ -38,6 +61,9 @@ test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{
     const f=lab.step();
     const decisions=f.smallSidedMovementDecisions;
     assert.equal(decisions.length,4);
+    assert.equal(f.collectiveControl.tick,f.physicsTick);
+    assert.equal(f.collectiveControl.officialPossession,false);
+    if(f.collectiveControl.kind==='controlled')assert.ok(lab.focus.includes(f.collectiveControl.playerId));
     assert.ok(decisions.every(p=>p.originalCanonicalMover&&p.actionConfirmed===false));
     assert.ok(decisions.some(p=>p.kind==='goalkeeping'));
     if(f.refereeEvidence?.lastEvent)break;

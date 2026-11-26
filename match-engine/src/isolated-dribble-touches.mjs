@@ -19,6 +19,31 @@ export function observeDuelBallControl({players,ball,carryWitness,tick}={}){
  return Object.freeze({kind:controlled?'controlled':'loose',playerId:controlled?player.id:null,
   sourceTick:controlled?carryWitness.tick:null,officialPossession:false});
 }
+// COL-02: observe the same native carry witness for any active outfielder.
+ // A pass, shot, defensive impulse or another participant's contact ends
+ // control; even a named pass recipient must acquire a fresh real witness.
+export function createCollectiveBallControlObserver(activeIds,outfieldIds){
+ if(!Array.isArray(activeIds)||!Array.isArray(outfieldIds)||
+    new Set(activeIds).size!==activeIds.length||new Set(outfieldIds).size!==outfieldIds.length||
+    !outfieldIds.every(id=>activeIds.includes(id)))throw new TypeError('Active physical participants required');
+ let witness=null,latest=Object.freeze({tick:0,...observeDuelBallControl()});
+ function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action}){
+  if(tick!==latest.tick+1)throw new TypeError('Consecutive native control ticks required');
+  const participants=players.filter(p=>outfieldIds.includes(p.id));
+  const touching=[...new Set([...active,...bodyActive])].filter(id=>activeIds.includes(id));
+  const started=[...new Set([...starts,...bodyStarts])].filter(id=>activeIds.includes(id));
+  const real=action?.tick===tick&&activeIds.includes(action.playerId)&&
+   starts.length===1&&starts[0]===action.playerId&&active.length===1&&active[0]===action.playerId&&
+   touching.length===1&&touching[0]===action.playerId&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true;
+  if(witness&&(started.some(id=>id!==witness.playerId)||touching.some(id=>id!==witness.playerId)||real&&action.action!=='carry'))witness=null;
+  if(real&&action.action==='carry'&&outfieldIds.includes(action.playerId))witness={playerId:action.playerId,tick};
+  const control=observeDuelBallControl({players:participants,ball,carryWitness:witness,tick});
+  if(control.kind==='loose')witness=null;
+  latest=Object.freeze({tick,...control});
+  return latest;
+ }
+ return Object.freeze({snapshot:()=>latest,observe});
+}
 // Initial IDs select fixture participants, not action capabilities.
 export function resolveDuelActors(players,initialSide,state=null,ball=null){
  const ids=[initialSide+'-10',opposite(initialSide)+'-2'];

@@ -2241,7 +2241,7 @@ export function createPlayerMovement(options={}){
  }
  let directedContactRelease=null,directedStallTicks=0,directedBlockedTicks=0,directedLastBall=null,directedBallAnchor=null,directedAnchorTick=0;
  function step(ballPosition={x:0,y:0},priorRealPass=null,
-  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null,interceptionState=null,blockState=null){
+  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null,interceptionState=null,blockState=null,collectiveControl=null){
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
@@ -2249,6 +2249,7 @@ export function createPlayerMovement(options={}){
      smallBodyFeedbackTick!==tick)
    throw new TypeError('LAB native feedback requires the prior tick acknowledgment');
   const ball=ballXY(ballPosition);
+  if(collectiveControl!==null&&(options.researchCollectiveApproaches!==true||collectiveControl.tick!==tick||!['controlled','loose'].includes(collectiveControl.kind)||collectiveControl.officialPossession!==false))throw new TypeError('Previous native collective control required');
   if(blockState!==null&&(!smallSided?.blockStart||!realBallVelocity||!['ready','flight','blocked'].includes(blockState.phase)))throw new TypeError('Original shot-block state required');
   if(interceptionState!==null&&(!smallSided?.interceptionStart||!realBallVelocity||!['ready','flight','intercepted','collected','received'].includes(interceptionState.phase)))throw new TypeError('Original pass interception state required');
   if(typeof directedDribble!=='boolean'||(directedDribble&&(smallSided?.id!=='dribble-1v1'||
@@ -2616,7 +2617,7 @@ export function createPlayerMovement(options={}){
     contact:duelTransition?.lastIntervention??null});
   }
   const shoulderBalance=directedDribble?Object.fromEntries(players.map(p=>[p.id,planShoulderBalanceRecovery(p,duelTransition,tick+1)])):{};
-  const collectiveApproaches=options.researchCollectiveApproaches===true?planCollectiveApproaches(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0}):null;
+  const collectiveApproaches=options.researchCollectiveApproaches===true?planCollectiveApproaches(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0},collectiveControl):null;
   const targets=players.map(p=>{
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can
