@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -1029,16 +1029,26 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
   assert.equal(observeNativeShoulderChallenge(source),null);
   const evidence=observeNativeShoulderChallenge({...source,torsoPairs:[[attacker.id,defender.id].sort().join('|')]});
   assert.equal(evidence.actorId,defender.id);assert.equal(evidence.ballImpulseCreated,false);
-  assert.equal(evidence.officialPossession,false);
+  assert.equal(evidence.officialPossession,false);assert.equal(evidence.successful,false);
+  const pair=[[attacker.id,defender.id].sort().join('|')];
+  const impact=observeNativeShoulderChallenge({...source,torsoPairs:pair,bodies:[{id:attacker.id,velocity:{x:1.4*dir,y:-0.3}}]});
+  assert.equal(impact.successful,true);assert.ok(impact.forwardLossMps>0.5&&impact.lateralResponseMps>0.2);
+  const recovery=planShoulderBalanceRecovery(attacker,{lastShoulder:impact},2);
+  assert.ok(recovery.target.y<attacker.y&&recovery.maxSpeed<2);
+  assert.equal(planShoulderBalanceRecovery(defender,{lastShoulder:impact},2),null);
+  assert.equal(planShoulderBalanceRecovery(attacker,{lastShoulder:evidence},2),null);
+  assert.equal(planShoulderBalanceRecovery(attacker,{lastShoulder:impact},impact.balance.until+1),null);
+  assert.equal(planDuelShoulderApproach({attacker,defender:{...defender,vx:-2*dir},attackingSide:side,ballPosition:b,ballVelocity:v}).sideOn,false);
   assert.equal(observeNativeShoulderChallenge({...source,plan:{...plan,sideOn:false},torsoPairs:[[attacker.id,defender.id].sort().join('|')]}),null);
  }
  });
  test('D-11 dedicated shoulder LAB observes genuine opposing torso contacts in both mirrored directions',{timeout:180000},async()=>{
   const R=await initializeRapier(rapier);
   for(const side of ['home','away']){
-   let attempts=0,sideOn=0,contacts=0,realPairs=0;
+   let attempts=0,sideOn=0,contacts=0,realPairs=0,successful=0,balanceTicks=0,slowed=0,displaced=0;
    for(let variantIndex=0;variantIndex<30;variantIndex++){
     const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true,duelTackleProfile:'shoulder'});
+    let impact=null;
     try{
      for(let i=0;i<600;i++){
       const f=scene.step(),w=f.duelTransition;
@@ -1051,13 +1061,26 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
        contacts++;const e=w.lastShoulder;
        assert.ok(f.smallSidedNativeBodyGuard.nativeOpposingTorsoPairs.includes([e.actorId,e.opponentId].sort().join('|')));
        assert.equal(e.ballImpulseCreated,false);assert.equal(e.officialPossession,false);
+       if(e.successful){
+        successful++;assert.ok(e.lateralResponseMps>=0.045);
+        const p=f.observedMovementPlayers.find(p=>p.id===e.opponentId);
+        impact={e,x:p.x,y:p.y,forward:p.vx*e.balance.forward.x+p.vy*e.balance.forward.y,slowed:false,displaced:false};
+       }
+      }
+      if(impact&&f.physicsTick>impact.e.tick&&f.physicsTick<=impact.e.balance.until){
+       const e=impact.e,p=f.observedMovementPlayers.find(p=>p.id===e.opponentId);
+       assert.ok(f.smallSidedMovementDecisions.find(d=>d.id===p.id).shoulderBalanceRecovery);
+       balanceTicks++;
+       if(!impact.slowed&&p.vx*e.balance.forward.x+p.vy*e.balance.forward.y<impact.forward-0.15){slowed++;impact.slowed=true;}
+       if(!impact.displaced&&(p.x-impact.x)*e.balance.away.x+(p.y-impact.y)*e.balance.away.y>0.035){displaced++;impact.displaced=true;}
       }
       assert.ok(f.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
       if(f.refereeEvidence?.lastEvent)break;
      }
     }finally{scene.dispose();}
    }
-   process.stdout.write('ME_628_D11_SHOULDER '+JSON.stringify({side,attempts,sideOn,realPairs,contacts})+'\n');
+   process.stdout.write('ME_628_D11_SHOULDER '+JSON.stringify({side,attempts,sideOn,realPairs,contacts,successful,balanceTicks,slowed,displaced})+'\n');
    assert.ok(attempts>0&&sideOn>0&&contacts>0,'shoulder LAB must demonstrate actual native side-on contact on both sides');
+   assert.ok(successful>0&&balanceTicks>0&&slowed>0&&displaced>0,'must measure real successful shoulder balance response');
   }
  });

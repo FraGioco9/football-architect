@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,planDuelRecoveryApproach,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,planShoulderBalanceRecovery,planDuelRecoveryApproach,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach} from './isolated-dribble-touches.mjs';
 import {advanceSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
@@ -2564,6 +2564,7 @@ export function createPlayerMovement(options={}){
     cancel:directedContactRelease!==null||duelSlide!==null&&duelSlide.actorId!==defender.id,
     contact:duelTransition?.lastIntervention??null});
   }
+  const shoulderBalance=directedDribble?Object.fromEntries(players.map(p=>[p.id,planShoulderBalanceRecovery(p,duelTransition,tick+1)])):{};
   const targets=players.map(p=>{
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can
@@ -2571,6 +2572,7 @@ export function createPlayerMovement(options={}){
     if(!smallActive.has(p.id))
      return Object.freeze({x:p.baseX,y:p.baseY});
     if(directedDribble&&isDuelGettingUp(duelTransition,p.id,tick+1))return Object.freeze({x:p.x,y:p.y});
+    if(shoulderBalance[p.id])return shoulderBalance[p.id].target;
     if(directedDribble&&directedContactRelease?.targets[p.id]){
      if(p.id===directedContactRelease.primaryId&&tick>=directedContactRelease.approachAt)
       return dribbleReleaseApproach(p,ball,directedContactRelease);
@@ -2794,7 +2796,8 @@ export function createPlayerMovement(options={}){
     tick-duelTransition.lastIntervention.tick<=90&&
     (duelSlide?.actorId!==p.id||duelSlide.canPursueDuringRecovery);
    const gettingUp=directedDribble&&isDuelGettingUp(duelTransition,p.id,tick+1);
-   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:sliding?D08_SLIDE_KINEMATIC_LIMITS:recoveringEffective?D09_RECOVERY_KINEMATIC_LIMITS:shoulderPursuit?D01_CHASE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
+   const balance=shoulderBalance[p.id];
+   const limits=gettingUp?{...D01_KINEMATIC_LIMITS,braking:15}:balance?{...D01_KINEMATIC_LIMITS,maxSpeed:balance.maxSpeed,acceleration:10,braking:18}:sliding?D08_SLIDE_KINEMATIC_LIMITS:recoveringEffective?D09_RECOVERY_KINEMATIC_LIMITS:shoulderPursuit?D01_CHASE_KINEMATIC_LIMITS:smallSided?.id==='carry-solo'&&smallActive.has(p.id)?
      // The old generic 6m/s/9m/s² recovery overrides the fixed phase
      // whenever a strong Sprint push opens a >1.5m gap, making Sprint
      // look like Moderate. Fixed DEV LABs keep their own bounded phase
@@ -2948,13 +2951,14 @@ export function createPlayerMovement(options={}){
   if(smallSided)lastSmallSidedMovementDecisions=Object.freeze(players
    .filter(p=>smallActive.has(p.id)).map(p=>{
     const target=targets[players.indexOf(p)];
-    const kind=duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':duelShoulder?.actorId===p.id?'shoulder-challenge':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
+    const kind=duelActors?(isDuelGettingUp(duelTransition,p.id,tick+1)?'getting-up':duelShoulder?.actorId===p.id&&duelShoulder.sideOn?'shoulder-challenge':p.id===duelActors.attacker.id?'carry-ball':'press-ball'):p.id===smallSided.opponent+'-1'?'goalkeeping':
      p.team!==smallSided.side?'press-ball':
      p.id===smallSided.side+'-10'?
       ((smallSided.id==='dribble-1v1'||smallSided.id==='carry-solo')?'carry-ball':'approach-ball'):
       ['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?'hold-pass-target':'support-run';
     return Object.freeze({
      tick:tick+1,id:p.id,team:p.team,kind,
+     ...(shoulderBalance[p.id]?{shoulderBalanceRecovery:true}:{}),
      ...(duelAlignment?{postContactAlignment:true,alignmentDetour:duelAlignment[p.id].detour&&!directedContactRelease&&duelSlide?.actorId!==p.id}:{}),
      ...(smallSided.id==='carry-solo'?{carryPhase:currentSoloCarryPhase.phase}:{}),
      target:Object.freeze({x:target.x,y:target.y}),

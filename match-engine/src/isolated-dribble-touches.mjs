@@ -337,26 +337,54 @@ export function planDuelShoulderApproach({attacker,defender,attackingSide,ballPo
  const along=rx*ux+ry*uy,across=-rx*uy+ry*ux;
  const side=Math.abs(across)>0.10?Math.sign(across):b.y>0?-1:1;
  const gap=Math.hypot(rx,ry);
- const sideOn=Math.abs(along)<=0.65&&Math.abs(across)>=0.68&&gap<=1.30;
+ const defenderSpeed=Math.hypot(defender.vx??0,defender.vy??0);
+ const parallel=defenderSpeed>0.25&&((defender.vx??0)*ux+(defender.vy??0)*uy)/defenderSpeed>=0.55;
+ const sideOn=speed>=0.55&&parallel&&Math.abs(along)<=0.55&&Math.abs(across)>=0.78&&gap<=1.28;
  // Close on a shoulder-width lateral waypoint and then run alongside.
  // A finite predicted point follows the carrier instead of aiming through him.
- const offset=sideOn?0.99:1.12,lead=sideOn?0.14:0.10;
+ const offset=sideOn?0.99:1.12,lead=sideOn?0.24:0.20;
  const target=duelBound(attacker.x+ux*lead-uy*side*offset,
   attacker.y+uy*lead+ux*side*offset);
  const route=routeDuelAroundOpponent(defender,attacker,target);
  return Object.freeze({actorId:defender.id,opponentId:attacker.id,target:route.target,
-  sideOn,detour:route.detour,alongM:along,acrossM:across,decisionOnly:true});
+  sideOn,parallel,forward:Object.freeze({x:ux,y:uy}),away:Object.freeze({x:uy*side,y:-ux*side}),
+  detour:route.detour,alongM:along,acrossM:across,decisionOnly:true});
 }
 // A challenge is observed only from an actual native opposing torso
 // solver pair and a playable-ball, side-on approach. No invented impact.
-export function observeNativeShoulderChallenge({tick,plan,players,ball,torsoPairs}){
+export const SHOULDER_BALANCE_TICKS=16;
+export function observeNativeShoulderChallenge({tick,plan,players,ball,torsoPairs,bodies=[]}){
  if(!plan||!Array.isArray(torsoPairs)||!torsoPairs.includes([plan.actorId,plan.opponentId].sort().join('|')))return null;
  const actor=players.find(p=>p.id===plan.actorId),rival=players.find(p=>p.id===plan.opponentId);
  if(!actor||!rival||!plan.sideOn||Math.hypot(rival.x-ball.x,rival.y-ball.y)>1.35||
     Math.hypot(actor.x-ball.x,actor.y-ball.y)>1.9)return null;
+ const body=bodies.find(p=>p.id===rival.id);
+ const {forward,away}=plan;
+ const before=forward&&Number.isFinite(rival.vx)&&Number.isFinite(rival.vy)?
+  rival.vx*forward.x+rival.vy*forward.y:0;
+ const dvx=(body?.velocity?.x??rival.vx)-rival.vx,dvy=(body?.velocity?.y??rival.vy)-rival.vy;
+ const lateralResponseMps=away&&Number.isFinite(dvx)&&Number.isFinite(dvy)?dvx*away.x+dvy*away.y:0;
+ const forwardLossMps=forward&&Number.isFinite(dvx)&&Number.isFinite(dvy)?-(dvx*forward.x+dvy*forward.y):0;
+ // Only measurable native lateral response qualifies for a short
+ // balance reaction. A manifold by itself does not win a challenge.
+ const successful=before>=0.45&&lateralResponseMps>=0.045;
+ const balance=successful?Object.freeze({until:tick+SHOULDER_BALANCE_TICKS,
+  forward,away,forwardSpeedMps:clamp(before*0.50,0.45,2.0),
+  lateralSpeedMps:clamp(0.65+lateralResponseMps,0.70,1.5)}):null;
  return Object.freeze({tick,actorId:actor.id,opponentId:rival.id,
   source:'native-rapier-solver-manifold',physicalContact:true,ballImpulseCreated:false,
+  lateralResponseMps,forwardLossMps,successful,balance,
   officialPossession:false,challengeWon:false});
+}
+// A bounded response to a confirmed physical shoulder impact. A movement
+// target and speed cap only; the original mover and body guard decide XY.
+export function planShoulderBalanceRecovery(player,state,tick){
+ const impact=state?.lastShoulder,b=impact?.balance;
+ if(!b||impact.opponentId!==player.id||tick<=impact.tick||tick>b.until)return null;
+ const gap=b.until-tick+1,dt=Math.min(0.22,gap/60+0.06);
+ return Object.freeze({target:duelBound(player.x+dt*(b.forward.x*b.forwardSpeedMps+b.away.x*b.lateralSpeedMps),
+  player.y+dt*(b.forward.y*b.forwardSpeedMps+b.away.y*b.lateralSpeedMps)),
+  maxSpeed:Math.hypot(b.forwardSpeedMps,b.lateralSpeedMps),movementOnly:true});
 }
 export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding','shoulder']);
 export const SLIDING_GET_UP_TACKLER_TICKS=30;
@@ -370,7 +398,7 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
  let carrierId=first,candidateId=null,candidateTick=null,sourceTick=null,lastIntervention=null,recoveries=0,regains=0,changes=0;
  let getUpUntil=Object.freeze({}),lastShoulder=null,shoulderContacts=0,priorShoulderPair=null;
  let latest=Object.freeze({tick:0,profile,phase:'attack',carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered:false,regained:false,officialPossession:false});
- function observe({tick,starts,active,bodyStarts,bodyActive,action,ball,players=[],shoulderPlan=null,torsoPairs=[]}){
+ function observe({tick,starts,active,bodyStarts,bodyActive,action,ball,players=[],shoulderPlan=null,torsoPairs=[],bodies=[]}){
   if(tick!==latest.tick+1)throw new TypeError('Same original physics tick required');
   let recovered=false,regained=false;
   const touching=ids.filter(id=>active.includes(id)||bodyActive.includes(id));
@@ -408,9 +436,12 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
     candidateId=null;candidateTick=null;
    }
   }
-  const shoulder=profile==='shoulder'&&inField?observeNativeShoulderChallenge({tick,plan:shoulderPlan,players,ball:ball.position,torsoPairs}):null;
+  const shoulder=profile==='shoulder'&&inField?observeNativeShoulderChallenge({tick,plan:shoulderPlan,players,ball:ball.position,torsoPairs,bodies}):null;
   const shoulderPair=shoulder?[shoulder.actorId,shoulder.opponentId].sort().join('|'):null;
-  if(shoulder&&shoulderPair!==priorShoulderPair){lastShoulder=shoulder;shoulderContacts++;}
+  if(shoulder&&shoulderPair!==priorShoulderPair){
+   shoulderContacts++;
+   if(!lastShoulder?.balance||tick>lastShoulder.balance.until)lastShoulder=shoulder;
+  }else if(shoulder?.successful&&!lastShoulder?.successful&&shoulderPair===priorShoulderPair){lastShoulder=shoulder;}
   priorShoulderPair=shoulderPair;
   const phase=candidateId!==null?'recover':carrierId===first?'attack':'counter';
   latest=Object.freeze({tick,profile,phase,carrierId,candidateId,sourceTick,lastIntervention,getUpUntil,lastShoulder,shoulderContacts,recoveries,regains,changes,recovered,regained,officialPossession:false});
