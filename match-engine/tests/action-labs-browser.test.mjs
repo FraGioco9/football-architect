@@ -101,10 +101,50 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   };
   await send('Page.enable');
   await send('Runtime.enable');
-  await send('Page.navigate',{
-   url:'http://app.localhost:2000/dev/match-engine'
-  });
-  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelectorAll('#preset-options [role=option][data-value]').length===17");
+  // Hold the entire LAB module before execution. Measure the actual static
+  // DOM/CSS first paint, not a post-bootstrap approximation.
+  let pausedModule;
+  const onPaused=e=>{
+   const msg=JSON.parse(e.data);
+   if(msg.method==='Fetch.requestPaused')pausedModule=msg.params.requestId;
+  };
+  socket.addEventListener('message',onPaused);
+  await send('Fetch.enable',{patterns:[{urlPattern:'*/__fa_match_engine__/lab.mjs',requestStage:'Request'}]});
+  await send('Page.navigate',{url:'http://app.localhost:2000/dev/match-engine'});
+  await wait("document.getElementById('pitch')&&document.querySelector('.me-main-panel[data-loading=true]')&&document.readyState!=='loading'");
+  for(let i=0;i<120&&!pausedModule;i++)await delay(50);
+  assert.ok(pausedModule,'LAB module must be paused before the first-paint sample');
+  const sizes=[[1280,720],[1440,900],[768,1024],[390,844],[320,700]];
+  const measure=async()=>evalJs("(async()=>{await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));"+
+   "const ids=['.me-main-panel','.me-toolbar','#preset-trigger','#me-compact-side','#me-inline-variant-control','#me-compact-speed','.me-toolbar>.me-button-group','#pitch','.me-at-a-glance','#me-inline-summary','#me-observation-details'];"+
+   "const rects=Object.fromEntries(ids.map(s=>{const r=document.querySelector(s).getBoundingClientRect();return [s,[r.x,r.y,r.width,r.height]]}));"+
+   "return {rects,selected:document.getElementById('preset-value').textContent,loading:document.querySelector('.me-main-panel').hasAttribute('data-loading'),scroll:document.documentElement.scrollWidth,width:innerWidth};})()");
+  const before=[];
+  for(const [width,height] of sizes){
+   await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+   const m=await measure();
+   assert.equal(m.loading,true);assert.equal(m.selected,'Carry · Moderate');
+   assert.ok(m.scroll<=m.width+1,JSON.stringify(m));
+   for(const [selector,rect] of Object.entries(m.rects))
+    assert.ok(rect[2]>0&&rect[3]>0,selector+' missing from first paint');
+   before.push(m);
+  }
+  await send('Fetch.continueRequest',{requestId:pausedModule});
+  await send('Fetch.disable');socket.removeEventListener('message',onPaused);
+  await wait("document.querySelector('#status')?.textContent==='Ready'&&document.querySelectorAll('#preset-options [role=option][data-value]').length===17&&!document.querySelector('.me-main-panel').hasAttribute('data-loading')");
+  for(let i=0;i<sizes.length;i++){
+   const [width,height]=sizes[i];
+   await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+   const after=await measure(),first=before[i];
+   assert.equal(after.loading,false);assert.equal(after.selected,first.selected);
+   assert.ok(after.scroll<=after.width+1,JSON.stringify(after));
+   for(const [selector,rect] of Object.entries(first.rects))
+    for(let axis=0;axis<4;axis++)
+     assert.ok(Math.abs(rect[axis]-after.rects[selector][axis])<=1,
+      JSON.stringify({width,height,selector,first:rect,after:after.rects[selector]}));
+   process.stdout.write('ME_628_ACTIVE_FIRST_PAINT '+JSON.stringify({width,height,first,after})+'\n');
+  }
+  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
   const activePage=await evalJs("(()=>{const el=id=>document.getElementById(id),menu=el('preset-options');return {groups:[...menu.querySelectorAll('.me-scenario-group-label')].map(x=>x.textContent),choices:menu.querySelectorAll('[role=option]').length,selected:el('preset-value').textContent,visibleComboboxes:[...document.querySelectorAll('.me-toolbar [role=combobox]')].filter(x=>x.getClientRects().length>0).length,attributesHidden:el('me-inline-rating-control').hidden,diagnosticsClosed:!el('me-observation-details').open,legacyAbsent:!menu.querySelector('[data-value=drop],[data-value=\\\"action:keeper-1v1\\\"]'),decisionsInside:el('me-observation-details').contains(el('me-decisions-panel'))};})()");
   assert.deepEqual(activePage,{groups:['Carry phases','Passing','Shooting'],choices:17,selected:'Carry · Moderate',visibleComboboxes:1,attributesHidden:true,diagnosticsClosed:true,legacyAbsent:true,decisionsInside:true});
   const toggled=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-compact-side').click();el('me-compact-speed').click();return {side:el('me-inline-side').value,speed:el('speed').value,sideLabel:el('me-compact-side').textContent,speedLabel:el('me-compact-speed').textContent,tick:el('tick').textContent};})()");

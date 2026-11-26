@@ -25,9 +25,18 @@ const byId = id => document.getElementById(id);
 const archiveMode=new URLSearchParams(location.search).get('lab')==='archive'||
   ['#actions','#movement'].includes(location.hash);
 document.body.classList.toggle('me-modern-lab',!archiveMode);
+if(archiveMode){
+ // Restore the archived physics surface before starting its original runner.
+ byId('preset-value').textContent='LAB-01 · Ball Drop';
+ for(const id of ['me-compact-side','me-compact-speed','me-inline-variant-control',
+  'me-inline-summary','me-observation-details'])byId(id).hidden=true;
+ byId('players-toggle').hidden=false;
+ document.querySelector('.me-main-panel').removeAttribute('data-loading');
+}
 const pitch = byId('pitch'), elevation = byId('elevation');
 const fields = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
-const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open'];
+const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open', 'movement-labs-open',
+ 'preset-trigger','me-compact-side','me-compact-speed','me-inline-variant-prev','me-inline-variant-next'];
 let rapier, engine, history = [], playing = false, lastFrame = 0, accumulator = 0;
 let physicsTickSnapshot = null;
 let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
@@ -2249,6 +2258,7 @@ try {
   rapier = await initializeRapier(moduleNamespace);
   if(archiveMode)restart();
   else launchSelectedScenario('action:carry-solo:moderate');
+  document.querySelector('.me-main-panel').removeAttribute('data-loading');
   for (const id of controls) byId(id).disabled = false;
   if(location.hash==='#actions'){
     byId('preset-options').querySelector('[data-value="action:keeper-1v1"]')?.click();

@@ -253,3 +253,69 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
  .me-modern-lab .me-variant-control{order:1}
  .me-modern-lab #me-compact-side,.me-modern-lab #me-compact-speed{order:1}
 }
+
+/* Stable active LAB first paint. The static document uses the final layout
+   before either the JS module or WASM is available. Archive keeps its own layout. */
+.me-modern-lab .me-main-panel{
+ --me-panel-pad:clamp(10px,1.2vw,14px);
+ --me-pitch-max:min(1200px,max(320px,calc(154dvh - 540px)));
+ box-sizing:border-box;
+ width:min(100%,calc(var(--me-pitch-max) + 2 * var(--me-panel-pad) + 2px));
+ justify-self:center;
+ padding:var(--me-panel-pad);
+ container-type:inline-size;
+}
+.me-modern-lab .me-pitch-frame canvas{width:100%;max-width:100%;aspect-ratio:105/68}
+.me-modern-lab .me-status:not(.error){
+ position:absolute;width:1px;height:1px;min-height:0;margin:0;
+ overflow:hidden;clip-path:inset(50%);white-space:nowrap;
+}
+.me-modern-lab .me-toolbar{
+ display:grid;grid-template-columns:minmax(0,1fr) 64px 144px 60px 232px;
+ grid-template-areas:"scenario side variant speed transport";align-items:stretch;gap:6px;
+}
+.me-modern-lab .me-toolbar>.me-preset-control{grid-area:scenario;min-width:0;display:block}
+.me-modern-lab #preset-trigger{height:36px;min-height:36px}
+.me-modern-lab #preset-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me-modern-lab #preset-trigger svg{flex:none}
+.me-modern-lab #me-compact-side{grid-area:side}
+.me-modern-lab #me-compact-speed{grid-area:speed}
+.me-modern-lab #me-inline-variant-control{grid-area:variant;min-width:0;display:block}
+.me-modern-lab #me-inline-variant-control[hidden]{display:none!important}
+.me-modern-lab .me-variant-buttons{display:grid;grid-template-columns:34px minmax(0,1fr) 48px;gap:4px}
+.me-modern-lab .me-variant-buttons output{min-width:0;white-space:nowrap}
+.me-modern-lab .me-toolbar>.me-button-group{grid-area:transport;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.me-modern-lab .me-toolbar .me-button{height:36px;min-width:0;padding-inline:4px;box-sizing:border-box}
+.me-modern-lab .me-at-a-glance{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 8px;
+ margin-top:8px;align-items:center;
+}
+.me-modern-lab .me-at-a-glance>span{display:grid;gap:2px;min-width:0;line-height:14px}
+.me-modern-lab .me-at-a-glance>span.me-ball-state{display:none!important}
+.me-modern-lab .me-at-a-glance>span strong{margin:0;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;line-height:16px}
+.me-modern-lab #me-inline-summary{grid-column:1/-1;display:block;height:18px;line-height:18px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.me-modern-lab [data-loading="true"] .me-at-a-glance strong{
+ color:transparent;position:relative;
+}
+.me-modern-lab [data-loading="true"] .me-at-a-glance strong::after{
+ content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);
+ height:10px;width:64px;max-width:100%;border-radius:4px;background:var(--muted);opacity:.18;
+}
+.me-modern-lab [data-loading="true"] #me-inline-summary::after{width:100px}
+@media(min-width:901px) and (min-height:1000px){
+ .me-modern-lab .me-main-panel{--me-pitch-max:min(1200px,max(320px,calc(154dvh - 550px)))}
+}
+@media(min-width:901px) and (max-height:768px){
+ .me-modern-lab .me-main-panel{--me-pitch-max:min(1200px,max(320px,calc(113dvh - 218px)))}
+}
+@media(max-width:900px){
+ .me-modern-lab .me-main-panel{width:100%}
+}
+@container (max-width:740px){
+ .me-modern-lab .me-toolbar{grid-template-columns:minmax(0,1fr) 64px 144px 60px;
+ grid-template-areas:"scenario side variant speed" "transport transport transport transport"}
+}
+@container (max-width:420px){
+ .me-modern-lab .me-toolbar{grid-template-columns:minmax(0,1fr) 144px minmax(0,1fr);
+ grid-template-areas:"scenario scenario scenario" "side variant speed" "transport transport transport"}
+}
