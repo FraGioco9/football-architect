@@ -129,8 +129,12 @@
                 <span>Ball <strong id="ground">—</strong></span>
                 <span>Ground speed <strong id="ground-speed">—</strong></span>
                 <button id="players-toggle" class="me-button me-players-toggle" type="button" aria-pressed="false" aria-controls="player-controls">Players (22)</button>
-                <span id="me-inline-observation" class="me-inline-observation" aria-live="off" hidden></span>
+                <strong id="me-inline-summary" class="me-inline-summary" aria-live="off" hidden></strong>
               </div>
+              <details id="me-observation-details" class="me-compact-details me-observation-details" hidden>
+                <summary>Diagnostics</summary>
+                <div id="me-inline-observation" class="me-inline-observation" aria-live="off" hidden></div>
+              </details>
               <section id="player-controls" class="me-player-controls" aria-label="ME-PLAYER-01 autonomous team movement" hidden>
                 <div class="me-player-controls-main">
                   <label class="me-inspect-label" for="player-inspect-choice">Inspect player</label>
@@ -171,15 +175,17 @@
             </section>
             <div class="me-side">
               <section id="me-decisions-panel" class="app-panel me-panel me-decisions-panel" aria-labelledby="me-decisions-heading" hidden>
-                <div class="me-decisions-heading">
-                  <h2 id="me-decisions-heading">On-field decisions</h2>
-                  <span id="me-decisions-count">0 on field</span>
-                </div>
-                <p class="me-hint">Every participant's current movement target. A ball action is confirmed only by a genuine Rapier shoe impulse.</p>
-                <div id="me-decisions-players" class="me-decisions-players" aria-live="off"></div>
-                <details class="me-decisions-log">
-                  <summary>Changes and verified actions <span id="me-decisions-event-count">0</span></summary>
-                  <ol id="me-decisions-events"></ol>
+                <details id="me-decisions-details" class="me-compact-details">
+                  <summary class="me-decisions-heading">
+                    <span id="me-decisions-heading">On-field decisions</span>
+                    <span id="me-decisions-count">0 on field</span>
+                  </summary>
+                  <p class="me-hint">Current movement targets and verified physical actions.</p>
+                  <div id="me-decisions-players" class="me-decisions-players" aria-live="off"></div>
+                  <details class="me-decisions-log">
+                    <summary>Changes and verified actions <span id="me-decisions-event-count">0</span></summary>
+                    <ol id="me-decisions-events"></ol>
+                  </details>
                 </details>
               </section>
               <section id="me-elevation-panel" class="app-panel me-panel me-elevation-panel" aria-labelledby="side-heading">

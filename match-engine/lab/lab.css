@@ -220,3 +220,17 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-decisions-log .me-decision-native{color:var(--text);font-weight:650}
 @media(max-width:900px){.me-decisions-players{grid-template-columns:repeat(2,minmax(0,1fr));max-height:none}}
 @media(max-width:520px){.me-decisions-players{grid-template-columns:1fr}.me-decisions-panel{gap:7px}}
+
+/* Phase 05 — pitch-first LAB; full source evidence is still available on demand. */
+#me-observation-details[hidden],#me-inline-summary[hidden]{display:none!important}
+.me-inline-summary{min-width:0;color:var(--text);font-size:12px;overflow-wrap:anywhere}
+.me-observation-details{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+.me-compact-details{min-width:0}
+.me-compact-details>summary{cursor:pointer;color:var(--text);font-size:12px;font-weight:700;line-height:1.5}
+.me-compact-details>summary:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.me-compact-details>.me-inline-observation{margin-top:8px;font-size:11px;overflow-wrap:anywhere}
+.me-compact-details>.me-decisions-heading{display:list-item;list-style-position:inside}
+.me-compact-details>.me-decisions-heading>span:first-child{font-size:12px;color:var(--text);font-weight:700}
+.me-compact-details>.me-decisions-heading>span:last-child{float:right;font-weight:500}
+.me-compact-details>.me-decisions-players{margin-top:8px}
+.me-compact-details>.me-decisions-log{margin-top:9px}

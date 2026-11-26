@@ -434,6 +434,15 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    "count:el('me-decisions-count').textContent,ballChartHidden:el('me-elevation-panel').hidden,"+
    "log:el('me-decisions-event-count').textContent};})()");
   assert.equal(carryDecisions.visible,true);
+  const compact=await evalJs("(()=>{const el=id=>document.getElementById(id),d=el('me-observation-details'),p=el('me-decisions-details');return {diagnosticsClosed:!d.open,decisionsClosed:!p.open,summary:el('me-inline-summary').textContent,diagnosticsVisible:!d.hidden};})()");
+  assert.equal(compact.diagnosticsClosed,true);
+  assert.equal(compact.decisionsClosed,true);
+  assert.equal(compact.diagnosticsVisible,true);
+  assert.ok(compact.summary.length>0&&compact.summary.length<80);
+  const expanded=await evalJs("(()=>{const el=id=>document.getElementById(id);el('me-observation-details').querySelector('summary').click();el('me-decisions-details').querySelector('summary').click();return {diagnostics:el('me-observation-details').open,decisions:el('me-decisions-details').open,readout:el('me-inline-observation').textContent};})()");
+  assert.equal(expanded.diagnostics,true);
+  assert.equal(expanded.decisions,true);
+  assert.match(expanded.readout,/no official result/);
   assert.equal(carryDecisions.count,'1 on field');
   assert.equal(carryDecisions.rows.length,1);
   assert.equal(carryDecisions.ballChartHidden,true);

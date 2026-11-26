@@ -137,6 +137,10 @@ function syncScenarioSurface(){
  byId('me-inline-variant-display').textContent=
   String(activeVariantIndex+1).padStart(2,'0')+' / '+SMALL_SIDED_VARIANT_COUNT;
  byId('me-inline-observation').hidden=!inline;
+ byId('me-observation-details').hidden=!inline;
+ byId('me-inline-summary').hidden=!inline;
+ byId('me-observation-details').open=false;
+ byId('me-decisions-details').open=false;
  const showOnField=activeScene?.kind==='action';
  byId('me-decisions-panel').hidden=!showOnField;
  byId('me-elevation-panel').hidden=showOnField;
@@ -594,6 +598,19 @@ function render() {
       ' · no shoe-ball action or possession claimed';
     byId('me-inline-observation').textContent=detail+
       ' · no official result';
+    // Concise, observational summary only. Preserve the full diagnostics above.
+    const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
+    const summary=shot?
+      (shot.crossing?(shot.crossing.goal?'Goal observed':'Miss observed'):
+        shot.attempted?'Shot observed':'Waiting for shot'):
+      pass?(pass.receiverTick!=null?'Receiving contact observed':
+        pass.attempted?'Pass observed':'Waiting for pass'):
+      cross?(cross.arrival?'Arrival observed':
+        cross.attempted?'Cross observed':'Waiting for cross'):
+      f.soloCarryPhase?.phase?'Carry · '+f.soloCarryPhase.phase:
+      lastInlineFootballAction?'Last action: '+lastInlineFootballAction.action:
+      activeScene.kind==='action'?'Waiting for action':'Movement';
+    byId('me-inline-summary').textContent=summary;
   }
 }
 // ME-PHYS-03 diagnostic simulations are independent of the active lab engine.
