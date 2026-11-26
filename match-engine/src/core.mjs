@@ -265,7 +265,7 @@ export function createEngine(RAPIER, input = {}, {
   if(typeof diagnosticDirectedDribble!=='boolean'||(diagnosticDirectedDribble&&
      (diagnosticSmallSidedSituation!=='dribble-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Directed dribble requires original guarded 1v1');
-  if(!['mixed','standing','sliding','shoulder'].includes(diagnosticDuelTackleProfile)||(diagnosticDuelTackleProfile!=='mixed'&&!diagnosticDirectedDribble))
+  if(!['mixed','standing','sliding','shoulder','interception'].includes(diagnosticDuelTackleProfile)||(diagnosticDuelTackleProfile!=='mixed'&&!diagnosticDirectedDribble))
    throw new TypeError('Tackle profile requires original guarded directed duel');
   if(typeof diagnosticKeeperSingleShot!=='boolean'||(diagnosticKeeperSingleShot&&
      (diagnosticSmallSidedSituation!=='keeper-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
@@ -274,7 +274,7 @@ export function createEngine(RAPIER, input = {}, {
    smallSidedSetup(diagnosticSmallSidedSituation,
     diagnosticSmallSidedSide,INITIAL_PLAYERS,
     {variantIndex:diagnosticSmallSidedVariantIndex,
-     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in',firstTimeShot:diagnosticFirstTimeShot,shoulderStart:diagnosticDuelTackleProfile==='shoulder'});
+     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in',firstTimeShot:diagnosticFirstTimeShot,shoulderStart:diagnosticDuelTackleProfile==='shoulder',interceptionStart:diagnosticDuelTackleProfile==='interception'});
    if(!diagnosticPlayerFootContactsEnabled||
       !diagnosticAutonomousFixtureActionEnabled||
       diagnosticPlayerBodyCollidersEnabled||diagnosticSharedContactEventsEnabled||
@@ -501,7 +501,7 @@ export function createEngine(RAPIER, input = {}, {
   smallSidedSetup(diagnosticSmallSidedSituation,
    diagnosticSmallSidedSide,INITIAL_PLAYERS,
    {variantIndex:diagnosticSmallSidedVariantIndex,
-     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in',firstTimeShot:diagnosticFirstTimeShot,shoulderStart:diagnosticDuelTackleProfile==='shoulder'});
+     carryRunwayStart:diagnosticCarryRunwayStart,tapInStart:diagnosticIsolatedShotProfile==='tap-in',firstTimeShot:diagnosticFirstTimeShot,shoulderStart:diagnosticDuelTackleProfile==='shoulder',interceptionStart:diagnosticDuelTackleProfile==='interception'});
  const isolatedCarry=smallSided?.id==='dribble-1v1'||smallSided?.id==='carry-solo';
  const stagedShoes=smallSided?smallSided.staged:
   diagnosticB06bOpeningKickoffEnabled?

@@ -402,9 +402,57 @@ export function isShoulderCollecting(state,id,tick){
  return impact?.successful===true&&impact.actorId===id&&state.candidateId===id&&
   tick>impact.tick&&tick<=impact.tick+SHOULDER_COLLECTION_TICKS;
 }
-export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding','shoulder']);
+// D-12: read the live rolling trajectory, not an opponent contact.
+// The predicted point is a movement decision; only an actual exclusive
+// shoe START can authorize the interception touch.
+export function planDuelInterception({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}){
+ if(!isOpposingDuelPair(attackingSide,attacker,defender)||
+    ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,v?.x,v?.y].every(Number.isFinite))return null;
+ const speed=Math.hypot(v.x,v.y),dir=attackingSide==='home'?1:-1;
+ if(speed<0.70||speed>8||v.x*dir<0.45||Math.hypot(attacker.x-b.x,attacker.y-b.y)<=1.15)return null;
+ const ux=v.x/speed,uy=v.y/speed;
+ if((defender.x-b.x)*ux+(defender.y-b.y)*uy< -0.65)return null;
+ let best=null;
+ for(let i=1;i<=10;i++){
+  const eta=i*0.08,travel=Math.max(0,speed*eta-0.45*eta*eta);
+  const point=duelBound(b.x+ux*travel,b.y+uy*travel);
+  const dx=point.x-defender.x,dy=point.y-defender.y,d=Math.hypot(dx,dy);
+  const approach=Math.max(0,d>0.05?((defender.vx??0)*dx+(defender.vy??0)*dy)/d:0);
+  const reachable=0.48+Math.min(6.5*eta,approach*eta+4.5*eta*eta);
+  const target=duelBound(point.x-(d>0.05?dx/d:0)*0.24,point.y-(d>0.05?dy/d:0)*0.24);
+  const rivalGap=Math.hypot(point.x-attacker.x,point.y-attacker.y);
+  const candidate={actorId:defender.id,opponentId:attacker.id,target,point,etaS:eta,
+   reachable:d<=reachable&&rivalGap>=d+0.20,decisionOnly:true};
+  if(candidate.reachable)return Object.freeze(candidate);
+  const score=Math.max(0,d-reachable)+eta*0.30;
+  if(!best||score<best.score)best={candidate,score};
+ }
+ return best?Object.freeze(best.candidate):null;
+}
+export function chooseDuelInterceptionTouch({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}){
+ if(!isOpposingDuelPair(attackingSide,attacker,defender)||
+    ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,b?.z,v?.x,v?.y].every(Number.isFinite))return null;
+ const speed=Math.hypot(v.x,v.y),dir=attackingSide==='home'?1:-1;
+ const gap=Math.hypot(defender.x-b.x,defender.y-b.y),rivalGap=Math.hypot(attacker.x-b.x,attacker.y-b.y);
+ if(gap>0.85||rivalGap<=1.15||b.z<0.095||b.z>0.23||speed<0.70||speed>8||v.x*dir<0.45||
+    ((defender.x-b.x)*v.x+(defender.y-b.y)*v.y)/speed< -0.55)return null;
+ const release=planDefensiveBallRelease(attacker,defender,b,attackingSide);
+ if(!release)return null;
+ const desiredVelocity=Object.freeze({x:release.ux*1.6,y:release.uy*1.6});
+ const dx=desiredVelocity.x-v.x,dy=desiredVelocity.y-v.y,magnitudeNs=Math.min(2.2,0.43*Math.hypot(dx,dy));
+ if(magnitudeNs<0.025)return null;
+ return Object.freeze({version:'me-628-interception-cushion-v1',kind:'interception',actorId:defender.id,opponentId:attacker.id,
+  dx,dy,magnitudeNs,carrierGapM:rivalGap,defenderGapM:gap,release,desiredVelocity,
+  nativeExclusiveShoeRequired:true,physicalAttemptOnly:true,interceptionConfirmed:false,officialPossession:false});
+}
+export const DUEL_TACKLE_PROFILES=Object.freeze(['mixed','standing','sliding','shoulder','interception']);
 export const SLIDING_GET_UP_TACKLER_TICKS=30;
 export const SLIDING_GET_UP_RIVAL_TICKS=36;
+export function isSlideCollecting(state,id,tick){
+ const impact=state?.lastIntervention;
+ return impact?.effective===true&&impact.intervention==='sliding-tackle'&&impact.actorId===id&&state.candidateId===id&&
+  tick>impact.tick&&tick<=impact.tick+SLIDING_GET_UP_RIVAL_TICKS+60;
+}
 export function isDuelGettingUp(state,id,tick){
  return Number.isSafeInteger(state?.getUpUntil?.[id])&&tick<=state.getUpUntil[id];
 }
@@ -448,7 +496,7 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
    candidateId=null;candidateTick=null;
   }else if(inField&&touching.length===1&&started.includes(touching[0])){
    if(touching[0]!==carrierId){candidateId=touching[0];candidateTick=tick;}
-   else if(!(lastIntervention?.effective&&lastIntervention.actorId===candidateId&&tick-lastIntervention.tick<=24)&&
+   else if(!(lastIntervention?.effective&&lastIntervention.actorId===candidateId&&tick-lastIntervention.tick<=(lastIntervention.intervention==='sliding-tackle'?SLIDING_GET_UP_RIVAL_TICKS+60:24))&&
      !(lastShoulder?.successful&&lastShoulder.actorId===candidateId&&tick-lastShoulder.tick<=SHOULDER_COLLECTION_TICKS)){
     candidateId=null;candidateTick=null;
    }
@@ -481,13 +529,24 @@ export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVeloci
  const collecting=transition?.candidateId===player.id;
  const collectingRelease=collecting&&transition?.lastIntervention?.actorId===player.id&&transition.lastIntervention.effective&&tick-transition.lastIntervention.tick<=90;
  const shoulderCollection=isShoulderCollecting(transition,player.id,tick);
- const canCarry=!shielded&&Math.hypot(v.x,v.y)<=(collectingRelease||shoulderCollection?7.5:5);
+ const slideCollection=isSlideCollecting(transition,player.id,tick);
+ const canCarry=!shielded&&Math.hypot(v.x,v.y)<=(collectingRelease||shoulderCollection||slideCollection?7.5:5);
  const defensive=(sliding=false)=>chooseDribbleDefensiveTouch({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v,sliding});
  const carry=()=>chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:opponent,
   ballPosition:b,ballVelocity:v,variantIndex,tick});
  if(slide?.phase==='slide'){const touch=defensive(true);return touch?{defensive:touch,carry:null}:null;}
+ if(transition?.profile==='interception'&&!current){
+  const previous=transition.lastIntervention;
+  if(!(collecting&&previous?.actorId===player.id&&previous.intervention==='interception'&&tick-previous.tick<=90)){
+   const touch=chooseDuelInterceptionTouch({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v});
+   if(touch)return {defensive:touch,carry:null};
+  }
+ }
+ if(transition?.profile==='mixed'&&collecting&&!current&&!collectingRelease&&!slideCollection&&opponentGap<=1.15){
+  const touch=defensive();if(touch)return {defensive:touch,carry:null};
+ }
  if((current||collecting)&&canCarry)return {defensive:null,carry:carry()};
- const touch=['sliding','shoulder'].includes(transition?.profile)?null:defensive();
+ const touch=['sliding','shoulder','interception'].includes(transition?.profile)?null:defensive();
  if(touch)return {defensive:touch,carry:null};
  if(opponentGap>1.15&&canCarry)return {defensive:null,carry:carry()};
  return null;

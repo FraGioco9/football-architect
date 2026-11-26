@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery,isShoulderCollecting,SHOULDER_DISPLACE_TICKS,SHOULDER_COLLECTION_TICKS} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget,planDribbleContactRelease,dribbleReleaseApproach,chooseSharedDuelTouch,resolveDuelActors,planDefensiveBallRelease,planDuelRecoveryApproach,routeDuelAroundOpponent,planDuelPostContactAlignment,observeEffectiveDuelIntervention,SLIDING_TACKLE_MAX_IMPULSE_NS,SLIDING_TACKLE_TARGET_SPEED_MPS,STANDING_TACKLE_TARGET_SPEED_MPS,isDuelGettingUp,SLIDING_GET_UP_TACKLER_TICKS,SLIDING_GET_UP_RIVAL_TICKS,planDuelShoulderApproach,observeNativeShoulderChallenge,planShoulderBalanceRecovery,isShoulderCollecting,SHOULDER_DISPLACE_TICKS,SHOULDER_COLLECTION_TICKS,planDuelInterception,chooseDuelInterceptionTouch,isSlideCollecting} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -1106,5 +1106,62 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    process.stdout.write('ME_628_D11_SHOULDER '+JSON.stringify({side,attempts,sideOn,realPairs,contacts,successful,balanceTicks,slowed,displaced,paused,collected})+'\n');
    assert.ok(attempts>0&&sideOn>0&&contacts>0,'shoulder LAB must demonstrate actual native side-on contact on both sides');
    assert.ok(successful>0&&balanceTicks>0&&slowed>0&&displaced>0&&paused>0&&collected>0,'must measure successful shoulder displacement, brief stop and real subsequent carry');
+  }
+ });
+
+ test('D-12 interception predicts a live rolling path, not a player challenge',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const attacker={id:side+'-10',team:side,x:28*dir,y:0,vx:2*dir,vy:0};
+  const defender={id:other+'-2',team:other,x:31.6*dir,y:1.2,vx:0,vy:0};
+  const b={x:30*dir,y:0,z:0.11},v={x:3.2*dir,y:0,z:0};
+  const source={attackingSide:side,attacker,defender,ballPosition:b,ballVelocity:v};
+  const plan=planDuelInterception(source);
+  assert.ok(plan&&plan.etaS>0&&dir*(plan.point.x-b.x)>0);
+  assert.equal(plan.point.y,b.y);
+  assert.equal(planDuelInterception({...source,ballVelocity:{...v,x:-v.x}}),null);
+  assert.equal(planDuelInterception({...source,attacker:{...attacker,x:29.5*dir}}),null);
+  const close={...source,defender:{...defender,x:30.25*dir,y:0.48}};
+  const touch=chooseDuelInterceptionTouch(close);
+  assert.ok(touch&&touch.kind==='interception'&&Math.hypot(touch.desiredVelocity.x,touch.desiredVelocity.y)<Math.hypot(v.x,v.y));
+  assert.equal(touch.nativeExclusiveShoeRequired,true);assert.equal(touch.officialPossession,false);
+  assert.equal(chooseDuelInterceptionTouch({...close,attacker:{...attacker,x:29.5*dir}}),null);
+  const w={profile:'mixed',candidateId:defender.id,lastIntervention:{tick:10,actorId:defender.id,effective:true,intervention:'sliding-tackle'}};
+  assert.ok(isSlideCollecting(w,defender.id,47));assert.equal(isSlideCollecting(w,defender.id,107),false);
+ }
+ });
+ test('D-12 dedicated interception LAB records real interception and subsequent carry on each side',{timeout:180000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let plans=0,contacts=0,collections=0,slowed=0;
+   for(let variantIndex=0;variantIndex<30;variantIndex++){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true,duelTackleProfile:'interception'});
+    let pending=null,prior=scene.snapshot().ball.velocity;
+    try{
+     const start=scene.snapshot(),dir=side==='home'?1:-1;
+     assert.ok(dir*start.ball.velocity.x>2.7);
+     for(let i=0;i<420;i++){
+      const f=scene.step(),w=f.duelTransition,a=f.action;
+      assert.equal(w.profile,'interception');assert.equal(f.defensiveSlide,null);assert.equal(a?.action==='tackle',false);
+      if(f.interceptionApproach)plans++;
+      if(a?.action==='interception'){
+       contacts++;assert.equal(a.actualPhysicsImpulseApplied,true);assert.deepEqual(f.starts,[a.playerId]);
+       assert.ok(a.defensiveTarget.carrierGapM>1.15);
+       assert.equal(a.defensiveTarget.version,'me-628-interception-cushion-v1');
+       if(Math.hypot(f.ball.velocity.x,f.ball.velocity.y)<Math.hypot(prior.x,prior.y))slowed++;
+       pending={id:a.playerId,tick:f.physicsTick};
+      }else if(pending&&a?.action==='carry'){
+       if(a.playerId===pending.id){collections++;assert.equal(w.carrierId,pending.id);assert.deepEqual(f.starts,[pending.id]);}
+       pending=null;
+      }
+      if(pending&&f.physicsTick-pending.tick>120)pending=null;
+      assert.ok(f.nativeDribbleAudit.minimumCanonicalSeparationM>=0.98-1e-5);
+      prior=f.ball.velocity;
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D12_INTERCEPTION '+JSON.stringify({side,plans,contacts,slowed,collections})+'\n');
+   assert.ok(plans>0&&contacts>0&&slowed>0&&collections>0,'interception must read trajectory, slow the actual ball, and enable real carry on each side');
   }
  });

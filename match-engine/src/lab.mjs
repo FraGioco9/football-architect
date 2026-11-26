@@ -110,7 +110,7 @@ function recordPerformedActions(frame){
   for(const id of ids){
    const observed=events.find(e=>e.id===id&&['tackle','interception','carry'].includes(e.kind));
    if(observed?.kind==='tackle')observed.label=action.defensiveTarget?.intervention==='sliding-tackle'?'Sliding tackle contact':'Standing tackle attempt';
-   else if(observed?.kind==='interception')observed.label='Interception attempt';
+   else if(observed?.kind==='interception')observed.label='Interception contact';
    else if(observed?.kind==='carry')observed.label='Carry';
    else if(frame.starts?.includes(id)||frame.smallSidedNativeBodyGuard?.lowerLegBallStarts?.includes(id))
     events.push({id,kind:'ball-contact',label:'Ball contact'});
@@ -151,7 +151,7 @@ const smallSidedDecisionLabels=Object.freeze({
  'carry-ball':'Carry the ball','approach-ball':'Approach the ball',
  'hold-pass-target':'Hold receiving position',
  'support-run':'Support the attack','press-ball':'Close down the ball',
- 'goalkeeping':'Protect the goal','getting-up':'—','shoulder-challenge':'Shoulder challenge'
+ 'goalkeeping':'Protect the goal','getting-up':'—','shoulder-challenge':'Shoulder challenge','intercept-ball':'Intercept ball'
 });
 const humanPlayer=id=>id.replace('home-','HOME #').replace('away-','AWAY #');
 function appendDecisionEvent(event){
@@ -2334,7 +2334,8 @@ function setupUnifiedScenarioMenu(){
    ['action:dribble-1v1','1v1 · dribbling'],
    ['action:dribble-1v1:standing','Standing tackle'],
    ['action:dribble-1v1:sliding','Sliding tackle'],
-   ['action:dribble-1v1:shoulder','Shoulder challenge']
+   ['action:dribble-1v1:shoulder','Shoulder challenge'],
+   ['action:dribble-1v1:interception','Interception']
   ]]])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
@@ -2348,7 +2349,7 @@ function setupUnifiedScenarioMenu(){
       (lockedPhase!==null&&
        !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedPhase))||
          (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedPhase))||
-         (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder'].includes(lockedPhase)))))
+         (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder','interception'].includes(lockedPhase)))))
     throw new Error('Missing authentic LAB scenario '+value);
    const opt=document.createElement('div');
    opt.className='language-option';
@@ -2368,7 +2369,7 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:22)||
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:23)||
     menu.querySelectorAll('.me-scenario-group-label').length!==5)
   throw new Error('Unexpected active or archived LAB catalog');
 }
@@ -2392,7 +2393,7 @@ function launchSelectedScenario(value){
     (lockedProfile!==null&&(kind!=='action'||
       !((id==='carry-solo'&&SOLO_CARRY_PHASES.includes(lockedProfile))||
         (id==='shot-solo'&&LAB_SHOT_PROFILES.includes(lockedProfile))||
-        (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder'].includes(lockedProfile))))))
+        (!archiveMode&&id==='dribble-1v1'&&['standing','sliding','shoulder','interception'].includes(lockedProfile))))))
   throw new RangeError('Invalid Scenario kind');
  const prefix=kind==='action'?'action-labs':'movement-labs';
  const choice=byId(prefix+'-choice');
