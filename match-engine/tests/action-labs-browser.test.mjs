@@ -180,10 +180,17 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   assert.deepEqual(keeperUI.metrics,['Shots','Launch speed','Keeper contact','Deflection','Rebound','Result']);
   assert.equal(keeperUI.summary,'Waiting for shot');
   const dribbleUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();document.querySelector('#preset-options [data-value=\\\"action:dribble-1v1\\\"]').click();return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),summary:el('me-inline-summary').textContent};})()");
-  assert.equal(dribbleUI.label,'1v1 · dribbling');
+  assert.equal(dribbleUI.label,'1v1 · autonomous duel');
   assert.deepEqual(new Set(dribbleUI.players),new Set(['','away-10','home-2']));
-  assert.deepEqual(dribbleUI.metrics,['Touches','Forward distance','Peak ball speed','Defender contacts','Closest defender gap','Mean touch gap']);
-  assert.equal(dribbleUI.summary,'Waiting for touch');
+  assert.deepEqual(dribbleUI.metrics,['Ball control','Defensive intent','Touches','Defensive touches','Ball path','Peak ball speed']);
+  assert.equal(dribbleUI.summary,'Loose ball');
+  const duelExceptions=[];const captureDuelException=e=>{const m=JSON.parse(e.data);if(m.method==='Runtime.exceptionThrown')duelExceptions.push(m.params.exceptionDetails.exception?.description??m.params.exceptionDetails.text);};
+  socket.addEventListener('message',captureDuelException);
+  const duelProgress=await evalJs("(()=>{const el=id=>document.getElementById(id);const states=new Set();for(let i=0;i<360;i++){el('step').click();states.add(el('me-inline-summary').textContent);}return {states:[...states],values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent)};})()");
+  assert.ok(duelProgress.states.every(s=>['Loose ball','Ball controlled'].includes(s)));
+  assert.ok(duelProgress.states.includes('Ball controlled'),'actual control should be observable in this replay');
+  assert.ok(Number(duelProgress.values[2])>0,'real carry actions must advance');
+  await delay(100);socket.removeEventListener('message',captureDuelException);assert.deepEqual(duelExceptions,[],'mixed duel must not freeze Chrome');
   for(const [profile,label] of [['standing','Standing tackle'],['sliding','Sliding tackle'],['shoulder','Shoulder challenge']]){
    const selected=await evalJs(`(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:dribble-1v1:${profile}').click();el('step').click();return {label:el('preset-value').textContent,summary:el('me-inline-summary').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value)};})()`);
    assert.equal(selected.label,label);assert.deepEqual(new Set(selected.players),new Set(['','away-10','home-2']));assert.ok(selected.summary);

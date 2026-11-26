@@ -738,6 +738,7 @@ function render() {
     // Concise, observational summary only. Preserve the full diagnostics above.
     const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
     const keeper=f.keeperShotAudit;
+    const mixedControl=f.duelTackleProfile==='mixed'&&f.duelTransition?.ballControl;
     const summary=f.blockAudit?(f.blockAudit.blocked?'Shot blocked':f.blockAudit.contactTick!==null?'Defender contact':f.blockAudit.phase==='flight'?'Shot in flight':'Waiting for shot'):f.interceptionAudit?({ready:'Waiting for pass',flight:'Pass in flight',intercepted:'Interception contact',collected:'Ball recovered',received:'Pass reached receiver'})[f.interceptionAudit.phase]:keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
        f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':
@@ -755,6 +756,7 @@ function render() {
         pass.attempted?'Pass observed':'Waiting for pass'):
       cross?(cross.arrival?'Arrival observed':
         cross.attempted?'Cross observed':'Waiting for cross'):
+      mixedControl?(mixedControl.kind==='controlled'?'Ball controlled':'Loose ball'):
       f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry?
         (Object.values(f.duelTransition?.getUpUntil??{}).some(until=>until>=f.physicsTick)?'Loose ball':f.duelTransition?.lastShoulder?.tick===f.physicsTick?'Shoulder challenge':f.defensiveSlide?.phase==='slide'?'Sliding tackle':f.defensiveSlide?.phase==='recovery'?'Defender recovery':f.duelTransition?.phase==='counter'?'Counter carry':f.duelTransition?.phase==='recover'?'Loose ball recovery':f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
        f.soloCarryPhase?.phase?'Carry · '+f.soloCarryPhase.phase:
@@ -785,7 +787,14 @@ function renderActiveMetrics(f){
    ['Result',keeper.crossing?(keeper.crossing.kind==='goal'?'Goal':'Ball out'):f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':keeper.reboundTick!==null?'Ball in play':'—']];
  }else if(f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry){
   const d=f.nativeDribbleAudit;
-  entries=[['Touches',count(d.appliedCarryActions)],['Forward distance',n(d.ballForwardDistanceM,' m')],
+  if(f.duelTackleProfile==='mixed'&&f.duelTransition?.ballControl){
+   const control=f.duelTransition.ballControl,decision=f.defensiveDecision;
+   const decisionLabels={'standing-tackle':'Standing tackle','sliding-tackle':'Sliding tackle','shoulder-challenge':'Shoulder challenge','interception':'Interception','recover':'Recover ball','none':'—'};
+   entries=[['Ball control',control.kind==='controlled'?(control.playerId.startsWith('home-')?'HOME #':'AWAY #')+control.playerId.split('-').at(-1):'Loose ball'],
+    ['Defensive intent',decisionLabels[decision?.kind]??'—'],['Touches',count(d.appliedCarryActions)],
+    ['Defensive touches',count(d.defensiveTackleAttempts+d.defensiveInterceptionAttempts)],
+    ['Ball path',n(d.ballPath2DM,' m')],['Peak ball speed',speed(d.peakBallSpeedMps)]];
+  }else entries=[['Touches',count(d.appliedCarryActions)],['Forward distance',n(d.ballForwardDistanceM,' m')],
    ['Peak ball speed',speed(d.peakBallSpeedMps)],['Defender contacts',count(d.defenderShoeStarts)],
    ['Closest defender gap',n(d.minimumRealDefenderBallGapM,' m')],['Mean touch gap',n(d.meanAppliedTouchIntervalTicks==null?null:d.meanAppliedTouchIntervalTicks*FIXED_DT,' s')]];
  }else if(shot){
@@ -2338,7 +2347,7 @@ function setupUnifiedScenarioMenu(){
   ]]]:[['Goalkeeping',[
    ['action:keeper-1v1','1v1 · goalkeeper']
   ]],['Dribbling & defending',[
-   ['action:dribble-1v1','1v1 · dribbling'],
+   ['action:dribble-1v1','1v1 · autonomous duel'],
    ['action:dribble-1v1:standing','Standing tackle'],
    ['action:dribble-1v1:sliding','Sliding tackle'],
    ['action:dribble-1v1:shoulder','Shoulder challenge'],
