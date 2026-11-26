@@ -135,6 +135,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticNativeFixedSprintLongStrideEnabled = false,
   diagnosticSmallSidedBodyGuardEnabled = false,
   diagnosticKeeperSingleShot = false,
+  diagnosticDirectedDribble = false,
    diagnosticSmallSidedBodyFeedbackEnabled = false,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
@@ -259,6 +260,9 @@ export function createEngine(RAPIER, input = {}, {
       diagnosticPlayerBodyCollidersEnabled||
       diagnosticSharedContactEventsEnabled)))
    throw new TypeError('LAB body collision requires a small-sided exercise with actual shoe source');
+  if(typeof diagnosticDirectedDribble!=='boolean'||(diagnosticDirectedDribble&&
+     (diagnosticSmallSidedSituation!=='dribble-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
+   throw new TypeError('Directed dribble requires original guarded 1v1');
   if(typeof diagnosticKeeperSingleShot!=='boolean'||(diagnosticKeeperSingleShot&&
      (diagnosticSmallSidedSituation!=='keeper-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Single-shot exercise requires the native keeper duel');
@@ -626,7 +630,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticSoloSprintActiveFootReleaseM,
     diagnosticIntentDrivenSoloCarryEnabled,
     diagnosticNativeFixedCarryResearchEnabled,
-    diagnosticSmallSidedBodyGuardEnabled,diagnosticKeeperSingleShot,
+    diagnosticSmallSidedBodyGuardEnabled,diagnosticKeeperSingleShot,diagnosticDirectedDribble,
      diagnosticSmallSidedBodyFeedbackEnabled,
     diagnosticB06bGoalRestartEnabled,diagnosticB06bOpeningKickoffEnabled,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
@@ -746,7 +750,7 @@ export function createEngine(RAPIER, input = {}, {
       ...(isolatedCarry?{
        isolatedDribbleContext:Object.freeze({
         situationId:smallSided.id,attackingSide:smallSided.side,
-        variantIndex:smallSided.variantIndex
+        variantIndex:smallSided.variantIndex,...(diagnosticDirectedDribble?{directed:true}:{})
        })
       }:{}),
       ...(smallSided?.variantIndex>0&&!['pass-pair','cross-pair','shot-solo'].includes(smallSided.id)?{

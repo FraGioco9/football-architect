@@ -346,6 +346,7 @@ function restart() {
        variantIndex:activeVariantIndex,shotProfile:activeScene.shotProfile??'power',firstTimeShot:activeScene.firstTimeShot===true,
        bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair'&&id!=='shot-solo',
        keeperSingleShot:!archiveMode&&id==='keeper-1v1',
+       directedDribble:!archiveMode&&id==='dribble-1v1',
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
        // Leave the original ordinary 22-player physics unmodified.

@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -583,3 +583,44 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
  assert.equal(open.realContactsOnly,true);
  assert.equal(open.physicsImposed,false);
 });
+
+ test('D-02 directed evasion uses opposite free side and stable mirrored intent',()=>{
+  for(const attackingSide of ['home','away']){
+   const dir=attackingSide==='home'?1:-1,team=attackingSide==='home'?'away':'home';
+   const source={attackingSide,variantIndex:2,tick:1,ballPosition:{x:dir*30,y:0},
+    ballVelocity:{x:dir*1,y:0},defender:{team,x:dir*32,y:0.5}};
+   const a=chooseDirectedDribbleTouch(source);
+   assert.ok(a.desiredVelocity.y<0&&a.desiredVelocity.x*dir>0);
+   assert.ok(a.magnitudeNs<=0.30);
+   assert.deepEqual(a.desiredVelocity,chooseDirectedDribbleTouch({...source,tick:99}).desiredVelocity);
+   assert.ok(chooseDirectedDribbleTouch({...source,defender:{...source.defender,y:-0.5}}).desiredVelocity.y>0);
+   const passed=chooseDirectedDribbleTouch({...source,defender:{...source.defender,x:dir*28}});
+   assert.equal(passed.bypassSide,0);assert.equal(passed.desiredVelocity.y,0);
+   const target=directedDribbleApproachTarget({x:dir*29.3,y:0},source.ballPosition,{x:dir*2,y:1},attackingSide);
+   assert.ok(Number.isFinite(target.x)&&Number.isFinite(target.y));
+  }
+ });
+ test('D-02 active 1v1 uses genuine directed ground touches in mirrored variants',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let touches=0,evasive=0;
+   for(const variantIndex of [0,2,5,11,19,26]){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
+    try{
+     for(let n=0;n<420;n++){
+      const f=scene.step(),a=f.action;
+      if(a?.action==='carry'){
+       const d=a.decisionContext?.isolatedDribbleTouch;
+       assert.equal(d?.version,'me-628-directed-dribble-v1');
+       assert.ok(a.appliedByRapier&&a.actualPhysicsImpulseApplied&&f.starts.includes(side+'-10'));
+       assert.equal(a.impulseNs.z,0);assert.ok(Math.hypot(a.impulseNs.x,a.impulseNs.y)<=0.30+1e-8);
+       touches++;if(d.bypassSide!==0)evasive++;
+      }
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D02_DIRECTED '+JSON.stringify({side,touches,evasive})+'\n');
+   assert.ok(touches>0&&evasive>0,'active 1v1 must exercise physical evasion on both sides');
+  }
+ });

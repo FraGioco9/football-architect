@@ -44,3 +44,44 @@ export function chooseIsolatedDribbleTouch({variantIndex,tick,attackingSide,ball
   verifiedSecondTouch:false,verifiedDribble:false,
   officialPossession:false,officialMatchAction:false});
 }
+
+// D-02 active 1v1 only. Use live obstacle geometry rather than per-touch
+// random direction. Carry toward a reachable opening; after passing the
+// defender straighten toward goal. No success or possession guarantee.
+export function chooseDirectedDribbleTouch({attackingSide,ballPosition:b,ballVelocity:v,defender,variantIndex,tick}={}){
+ if(!['home','away'].includes(attackingSide)||!defender||
+    defender.team==attackingSide||![b?.x,b?.y,v?.x,v?.y,defender.x,defender.y].every(Number.isFinite)||
+    !Number.isSafeInteger(variantIndex)||variantIndex<0||variantIndex>29||!Number.isSafeInteger(tick)||tick<1)
+  throw new TypeError('Directed dribble requires live ball and opposing defender');
+ const dir=attackingSide==='home'?1:-1;
+ const ahead=dir*(defender.x-b.x),lateral=defender.y-b.y;
+ const pressure=clamp((5-Math.hypot(ahead,lateral))/3.5,0,1);
+ const threatening=ahead>=-0.65&&ahead<=5&&Math.abs(lateral)<2.2;
+ // Tie-break only a head-on geometry; do not vary the side with time.
+ const side=Math.abs(lateral)>0.12?-Math.sign(lateral):(variantIndex%2===0?1:-1);
+ const targetY=threatening?clamp(defender.y+side*1.35,-32,32):clamp(b.y,-24,24);
+ const angle=clamp(Math.atan2(targetY-b.y,Math.max(1.5,ahead+1.0)),-0.70,0.70);
+ const speed=threatening?2.5-0.5*pressure:3.0;
+ const desired={x:dir*speed*Math.cos(angle),y:speed*Math.sin(angle)};
+ const dx=desired.x-v.x,dy=desired.y-v.y,delta=Math.hypot(dx,dy);
+ // Limit actual corrective impulse, including braking. Never set velocity.
+ const magnitudeNs=Math.min(0.30,0.43*delta);
+ return Object.freeze({version:'me-628-directed-dribble-v1',variantIndex,tick,
+  dx,dy,magnitudeNs,desiredVelocity:Object.freeze(desired),targetY,
+  bypassSide:threatening?side:0,defenderAheadM:ahead,pressure,
+  fromLiveOpponent:true,soloCarry:false,fromLiveBallVelocity:true,
+  genuineRapierShoeStartRequired:true,decisionOnly:true,officialPossession:false,officialMatchAction:false});
+}
+// Keep the original mover aligned with the real rolling ball so the next
+// authentic shoe contact can follow a lateral touch; do not chase a fixed
+// world-X offset after an evasion.
+export function directedDribbleApproachTarget(attacker,b,v,attackingSide){
+ const dir=attackingSide==='home'?1:-1;
+ const gap=Math.hypot(b.x-attacker.x,b.y-attacker.y);
+ const lead=clamp(gap/12,0,0.20);
+ const speed=Math.hypot(v.x,v.y);
+ const ux=speed>0.35&&v.x*dir>0.15?v.x/speed:dir;
+ const uy=speed>0.35&&v.x*dir>0.15?v.y/speed:0;
+ return Object.freeze({x:clamp(b.x+v.x*lead-0.30*ux,-51.99,51.99),
+  y:clamp(b.y+v.y*lead-0.30*uy,-33.49,33.49)});
+}

@@ -9,7 +9,7 @@ import {chooseSmallSidedContextAction}
  from './small-sided-context-choice.mjs';
 
 
-import {chooseIsolatedDribbleTouch} from './isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch} from './isolated-dribble-touches.mjs';
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
@@ -384,7 +384,7 @@ export function selectUniformAutonomousContactAction({
     canCarry:carryPossible
    }):null;
   const dribbleTouch=isolatedDribbleContext===null?null:
-   chooseIsolatedDribbleTouch({
+   (isolatedDribbleContext.directed===true?chooseDirectedDribbleTouch:chooseIsolatedDribbleTouch)({
     variantIndex:isolatedDribbleContext.variantIndex,tick,
     attackingSide:isolatedDribbleContext.attackingSide,
     ballPosition,ballVelocity,
@@ -393,8 +393,9 @@ export function selectUniformAutonomousContactAction({
    });
   let action,recipient=null,recipientInfo=null,crossInfo=null,dx,dy,vertical=0,rule;
   if(dribbleTouch!==null){
+   if(dribbleTouch.magnitudeNs<0.025)continue;
    action='carry';dx=dribbleTouch.dx;dy=dribbleTouch.dy;
-   rule='isolated-dribble-real-shoe-variable-ground-touch';
+   rule=isolatedDribbleContext.directed===true?'directed-live-opponent-ground-touch':'isolated-dribble-real-shoe-variable-ground-touch';
   }else if(eligibleLiveKeeperSave(player,ballPosition,ballVelocity)){
    action='save';dx=attack*7;
    dy=ballPosition.y>=0?9:-9;vertical=0.24;
