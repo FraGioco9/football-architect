@@ -2617,7 +2617,7 @@ export function createPlayerMovement(options={}){
     contact:duelTransition?.lastIntervention??null});
   }
   const shoulderBalance=directedDribble?Object.fromEntries(players.map(p=>[p.id,planShoulderBalanceRecovery(p,duelTransition,tick+1)])):{};
-  const collectiveApproaches=options.researchCollectiveApproaches===true?planCollectiveApproaches(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0},collectiveControl):null;
+  const collectiveApproaches=options.researchCollectiveApproaches===true?planCollectiveApproaches(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0},collectiveControl,players.filter(p=>smallActive.has(p.id)&&p.role==='goalkeeper')):null;
   const targets=players.map(p=>{
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can

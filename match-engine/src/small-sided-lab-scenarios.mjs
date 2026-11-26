@@ -70,11 +70,47 @@ const bounded=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 // COL-01: live outfield approach and support are geometric movement
 // proposals only. The nearest approach reference is NOT ball possession.
 // Each team can pursue the same ball; shirt numbers never select a runner.
-export function planCollectiveApproaches(players,ball,velocity,control=null){
+// COL-04: choose a reachable useful support waypoint from actual open
+// passing lanes. The target is movement intent, never a pass or reception.
+export function planCollectiveSupport({player,ball,opponents}){
+ if(!player||!['home','away'].includes(player.team)||!Array.isArray(opponents)||!opponents.length||
+    ![player.x,player.y,ball?.x,ball?.y].every(Number.isFinite)||
+    !opponents.every(p=>p.team!==player.team&&[p.x,p.y].every(Number.isFinite)))
+  throw new TypeError('Live teammate support geometry required');
+ const dir=player.team==='home'?1:-1;
+ const lateral=Math.abs(player.y-ball.y)>0.1?Math.sign(player.y-ball.y):ball.y>=0?-1:1;
+ const candidates=[];
+ const evaluate=(x,y)=>{
+  x=bounded(x,-51.99,51.99);y=bounded(y,-33.49,33.49);
+  const dx=x-ball.x,dy=y-ball.y,d=Math.hypot(dx,dy),forward=dir*dx;
+  if(d<3||d>25||forward< -3)return;
+  const lane=Math.min(...opponents.map(p=>{
+   const u=bounded(((p.x-ball.x)*dx+(p.y-ball.y)*dy)/(d*d),0,1);
+   return Math.hypot(p.x-ball.x-u*dx,p.y-ball.y-u*dy);
+  }));
+  const separation=Math.min(...opponents.map(p=>Math.hypot(p.x-x,p.y-y)));
+  const travel=Math.hypot(x-player.x,y-player.y);
+  const safe=lane>=1.9&&separation>=1.6;
+  const score=Math.min(lane,8)*1.2+Math.min(separation,8)*0.65+Math.min(forward,8)*0.30-travel*0.8-Math.abs(d-7)*0.12;
+  candidates.push({x,y,lane,separation,travel,safe,score});
+ };
+ // Prefer holding an already useful position; otherwise compare both
+ // lateral sides, forward and short backward support, including near lines.
+ evaluate(player.x,player.y);
+ for(const forward of [2.5,5,0,-2.5])for(const width of [4.5,7])for(const side of [lateral,-lateral])
+  evaluate(ball.x+dir*forward,ball.y+side*width);
+ candidates.sort((a,b)=>Number(b.safe)-Number(a.safe)||b.score-a.score||a.travel-b.travel);
+ const best=candidates[0];
+ if(!best)return freeze({target:freeze({x:player.x,y:player.y}),safeLane:false,decisionOnly:true,officialPossession:false});
+ return freeze({target:freeze({x:best.x,y:best.y}),safeLane:best.safe,laneClearanceM:best.lane,
+  opponentGapM:best.separation,decisionOnly:true,officialPossession:false});
+}
+export function planCollectiveApproaches(players,ball,velocity,control=null,goalkeepers=[]){
  if(!Array.isArray(players)||players.length!==3||
     new Set(players.map(p=>p.id)).size!==3||new Set(players.map(p=>p.team)).size!==2||
     !players.every(p=>['home','away'].includes(p.team)&&[p.x,p.y].every(Number.isFinite))||
-    ![ball?.x,ball?.y,velocity?.x,velocity?.y].every(Number.isFinite))
+    ![ball?.x,ball?.y,velocity?.x,velocity?.y].every(Number.isFinite)||!Array.isArray(goalkeepers)||
+    !goalkeepers.every(p=>['home','away'].includes(p.team)&&[p.x,p.y].every(Number.isFinite)))
   throw new TypeError('Three opposing live outfield players required');
  const bx=bounded(ball.x+velocity.x*0.18,-51.75,51.75);
  const by=bounded(ball.y+velocity.y*0.18,-33.25,33.25);
@@ -93,10 +129,12 @@ export function planCollectiveApproaches(players,ball,velocity,control=null){
    target:target(bx+0.25*tx,by+0.25*ty),decisionOnly:true,officialPossession:false});
   for(const p of own.filter(p=>p.id!==runner.id)){
    const lateral=Math.abs(p.y-by)>0.1?Math.sign(p.y-by):by>=0?-1:1;
-   // Keep a separate support/cover lane, never prescribe a pass reception.
+   // Defensive cover stays separate; attacking support searches open
+   // lanes against all physically active opponents, including the keeper.
+   const support=rivalNear?null:planCollectiveSupport({player:p,ball,opponents:[...players,...goalkeepers].filter(q=>q.team!==team)});
    result[p.id]=freeze({kind:rivalNear?'press-ball':'support-run',
-    target:target(bx+(rivalNear?-dir*2.5:dir*2.5),by+lateral*4.5),
-    decisionOnly:true,officialPossession:false});
+    target:support?.target??target(bx-dir*2.5,by+lateral*4.5),
+    ...(support?{support}:{}),decisionOnly:true,officialPossession:false});
   }
  }
  return freeze(result);

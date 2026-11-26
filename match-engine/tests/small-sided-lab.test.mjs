@@ -7,7 +7,7 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
- keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches}
+ keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver} from '../src/isolated-dribble-touches.mjs';
@@ -50,6 +50,22 @@ test('COL-02 native control releases on pass and contest, never on intended reci
   assert.equal(step(5,[d.id],[d.id],action(5,d.id,'carry')).playerId,d.id);
   assert.equal(step(6,[],[d.id],null,[keeper]).kind,'loose');
   assert.equal(step(7).kind,'loose');
+ }
+});
+test('COL-04 support opens a real passing lane and mirrors without shirt preference',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const ball={x:dir*30,y:0};
+  const player={id:side+'-9',team:side,x:dir*34,y:0};
+  const opponents=[{id:other+'-2',team:other,x:dir*32,y:0},{id:other+'-1',team:other,x:dir*51,y:0}];
+  const support=planCollectiveSupport({player,ball,opponents});
+  assert.equal(support.safeLane,true);
+  assert.ok(support.laneClearanceM>=1.9&&support.opponentGapM>=1.6);
+  assert.ok(Math.abs(support.target.y)>0.1,'leave the blocked straight lane');
+  assert.deepEqual(support,planCollectiveSupport({player:{...player,id:side+'-10'},ball,opponents:[...opponents].reverse()}));
+  assert.equal(support.officialPossession,false);
+  const boundary=planCollectiveSupport({player:{...player,y:32},ball:{...ball,y:33},opponents});
+  assert.ok(Math.abs(boundary.target.y)<=33.49&&Math.abs(boundary.target.x)<=51.99);
  }
 });
 test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{
