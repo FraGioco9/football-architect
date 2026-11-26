@@ -98,6 +98,8 @@ function recordPerformedActions(frame){
  if(dive?.tick===tick&&dive.contactStarted)events.push({id:dive.keeperId,kind:'glove-contact',label:'Glove contact'});
  const keeper=frame.keeperShotAudit;
  if(keeper?.deflection?.tick===tick)events.push({id:keeper.keeperId,kind:'deflection',label:'Deflection'});
+ if(dive?.catchState?.confirmedTick===tick)events.push({id:dive.keeperId,kind:'catch',label:'Catch'});
+ if(dive?.catchState?.released)events.push({id:dive.keeperId,kind:'grip-lost',label:'Grip lost'});
  const pass=frame.passPairAudit?.receivingContact;
  if(pass?.realRapierShoeStart===true&&pass.contactTick===tick)
   events.push({id:pass.receiverId,kind:'receiving-contact',
@@ -410,6 +412,9 @@ function advance() {
     physicsTickSnapshot=snapshot;
     history.push(snapshot);
     if(history.length>1400)history.shift();
+    if(observed.keeperDive?.catchState?.active&&observed.keeperDive.catchState.confirmedTick!==null){
+      playing=false;say('Ball held · Reset for another exercise');
+    }
     if(activeScene.kind==='action'&&observed.refereeEvidence?.lastEvent){
       playing=false;
       say('Observed physical '+observed.refereeEvidence.lastEvent.kind+
@@ -706,6 +711,8 @@ function render() {
     const keeper=f.keeperShotAudit;
     const summary=keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
+       f.keeperDive?.catchState?.active&&keeper.catchTick!==null?'Ball held':
+       f.keeperDive?.catchState?.active?'Securing ball':
        keeper.reboundTick!==null?'Live rebound':keeper.deflection?'Deflection observed':
        keeper.gloveContactTick!==null?'Glove contact':keeper.parryTick!==null?'Parry observed':
        f.keeperDive?.phase==='diving'?'Diving':keeper.keeperContactTick!==null?'Keeper contact':
@@ -736,7 +743,7 @@ function renderActiveMetrics(f){
    ['Keeper contact',n(keeper.keeperContactTick===null?null:keeper.keeperContactTick*FIXED_DT,' s')],
    ['Deflection',keeper.deflection?({reversed:'Reversed',redirected:'Redirected',slowed:'Slowed'})[keeper.deflection.kind]:keeper.parryTick!==null?'Foot parry':'—'],
    ['Rebound',n(keeper.reboundTick===null?null:(keeper.reboundTick-keeper.shotTick)*FIXED_DT,' s')],
-   ['Result',keeper.crossing?(keeper.crossing.kind==='goal'?'Goal':'Ball out'):keeper.reboundTick!==null?'Ball in play':'—']];
+   ['Result',keeper.crossing?(keeper.crossing.kind==='goal'?'Goal':'Ball out'):f.keeperDive?.catchState?.active&&keeper.catchTick!==null?'Ball held':keeper.reboundTick!==null?'Ball in play':'—']];
  }else if(shot){
   entries=[['Distance',n(shot.distanceM,' m')],['Launch speed',speed(shot.attempted?shot.launchSpeedMps:null)],
    ['Peak height',n(shot.attempted?shot.peakClearanceM:null,' m')],

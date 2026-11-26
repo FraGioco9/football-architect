@@ -722,7 +722,7 @@ export function createEngine(RAPIER, input = {}, {
       }:{})
      }):null;
   const keeperDive=smallBodyGuard&&smallSided?.id==='keeper-1v1'?
-   createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1')):null;
+   createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1'),body):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
@@ -941,7 +941,7 @@ export function createEngine(RAPIER, input = {}, {
        b06bGoalPending!==null||
        (b06bHalftimePlacement!==null&&b06bKickoff===null)),
       suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
-       .lowerLegBallContacts.length>0||keeperDive?.snapshot().contact===true
+       .lowerLegBallContacts.length>0||keeperDive?.snapshot().contact===true||keeperDive?.snapshot().catchState?.active===true
     });
     if(diagnosticIsolatedShotProfile==='curled'){
      if(shoeBridge.snapshot().started.length)curledShotFlight=false;

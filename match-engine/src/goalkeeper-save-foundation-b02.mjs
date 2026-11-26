@@ -96,7 +96,7 @@ export function createKeeperShotObserver(side){
  let state=Object.freeze({keeperId,shooterId,shots:0,shotTick:null,
   launchSpeedMps:null,keeperContactTick:null,parryTick:null,
   crossing:null,diveTick:null,gloveContactTick:null,deflection:null,reboundTick:null,
-  secondShots:0,officialSave:false,officialGoal:false});
+  secondShots:0,catchTick:null,officialSave:false,officialGoal:false});
  return Object.freeze({observe({tick,ball,starts,action,event,keeperDive=null}){
   const real=action?.tick===tick&&action.appliedByRapier===true&&
    action.actualPhysicsImpulseApplied===true&&starts.length===1&&starts[0]===action.playerId;
@@ -105,7 +105,7 @@ export function createKeeperShotObserver(side){
     launchSpeedMps:Math.hypot(ball.velocity.x,ball.velocity.y,ball.velocity.z),
     secondShots:state.secondShots+(state.reboundTick!==null&&!state.crossing?1:0),
     keeperContactTick:null,parryTick:null,crossing:null,diveTick:null,gloveContactTick:null,
-    deflection:null,reboundTick:null});
+    deflection:null,reboundTick:null,catchTick:null});
   }
   if(state.shotTick!==null&&tick>state.shotTick&&!state.crossing){
    const dive=keeperDive?.keeperId===keeperId&&keeperDive.tick===tick;
@@ -115,16 +115,18 @@ export function createKeeperShotObserver(side){
    const crossing=event?.tick===tick&&event.crossing?.fullBallCrossed===true?
     Object.freeze({tick,kind:event.kind,scoringTeam:event.scoringTeam??null,
      fullBallCrossed:true}):null;
+   const catchTick=dive&&keeperDive.catchState?.active===true?keeperDive.catchState.confirmedTick:null;
    const response=dive?observeKeeperDeflection(side,keeperDive):null;
    const deflection=state.deflection??response;
    // A live rebound is witnessed only on a later in-field native sample
    // travelling away from the attacked goal. An exit/goal takes precedence.
    const p=ball.position,v=ball.velocity,dir=sideSign(side);
    const sourceTick=deflection?.tick??state.parryTick;
-   const rebound=sourceTick!=null&&tick>sourceTick&&!crossing&&
+   const rebound=sourceTick!=null&&tick>sourceTick&&!crossing&&!keeperDive?.catchState?.active&&
     [p?.x,p?.y,p?.z,v?.x].every(finite)&&Math.abs(p.x)<52.39&&Math.abs(p.y)<33.89&&
     dir*v.x< -0.5;
-   if(contact||parry||crossing||response||rebound||dive&&keeperDive.started)state=Object.freeze({...state,
+   if(contact||parry||crossing||response||rebound||catchTick!=null||dive&&keeperDive.started)state=Object.freeze({...state,
+    catchTick:state.catchTick??catchTick,
     deflection,reboundTick:state.reboundTick??(rebound?tick:null),
     diveTick:state.diveTick??(dive&&keeperDive.started?tick:null),
     gloveContactTick:state.gloveContactTick??(glove?tick:null),

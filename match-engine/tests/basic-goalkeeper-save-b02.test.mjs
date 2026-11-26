@@ -12,7 +12,7 @@ import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction}
  from '../src/player-ball-uniform-autonomous-action.mjs';
 import {initializeRapier,FIXED_DT} from '../src/core.mjs';
 import {advanceGoalkeeperBallOrientation} from '../src/individual-kinematics.mjs';
-import {planNativeKeeperDive,createNativeKeeperDive} from '../src/small-sided-native-body-guard.mjs';
+import {planNativeKeeperDive,createNativeKeeperDive,eligibleKeeperGrip,createNativeKeeperGrip} from '../src/small-sided-native-body-guard.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 
 function candidate(side,players,ball,active=[side+'-1'],started=active){
@@ -281,5 +281,48 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
     event:{tick:2,kind,crossing:{fullBallCrossed:true},scoringTeam:kind==='goal'?'home':null}});
    assert.equal(result.deflection.kind,'redirected');assert.equal(result.crossing.kind,kind);
    assert.equal(result.reboundTick,null);assert.equal(result.officialSave,false);
+  }
+ });
+
+ test('GK-05 grip requires real contact, reachable slow ball and own penalty area',()=>{
+  for(const team of ['home','away']){
+   const dir=team==='home'?1:-1;
+   const e={team,contact:true,ballPosition:{x:-dir*48,y:0,z:1},glovePosition:{x:-dir*48,y:0.30,z:1},
+    before:{x:-dir*5,y:0,z:0},after:{x:-dir*0.5,y:0,z:0},gloveVelocity:{x:0,y:0,z:0}};
+   assert.equal(eligibleKeeperGrip(e),true);
+   assert.equal(eligibleKeeperGrip({...e,contact:false}),false);
+   assert.equal(eligibleKeeperGrip({...e,before:{x:-dir*22,y:0,z:0}}),false);
+   assert.equal(eligibleKeeperGrip({...e,after:{x:-dir*9,y:0,z:0}}),false);
+   assert.equal(eligibleKeeperGrip({...e,ballPosition:{...e.ballPosition,x:-dir*30},glovePosition:{...e.glovePosition,x:-dir*30}}),false);
+  }
+ });
+ test('GK-05 original dynamic ball stays constrained after native glove contact; release restores free flight',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const team of ['home','away']){
+   const dir=team==='home'?1:-1,world=new R.World({x:0,y:0,z:0});world.timestep=FIXED_DT;
+   const hand=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(-dir*48,0,1));
+   const glove=world.createCollider(R.ColliderDesc.ball(0.21).setRestitution(0),hand);
+   const ball=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(-dir*47.5,0,1).setLinvel(-dir*3,0,0).setCcdEnabled(true));
+   const collider=world.createCollider(R.ColliderDesc.ball(0.11).setMass(0.43).setRestitution(0),ball);
+   const grip=createNativeKeeperGrip(R,world,hand,ball,team);
+   try{
+    let started=null,confirmed=null;
+    for(let tick=1;tick<=40;tick++){
+     const before={...ball.linvel()};world.step();
+     let contact=false;world.contactPair(collider,glove,m=>{if(m.numContacts()>0&&m.numSolverContacts()>0)contact=true;});
+     if(started===null&&contact&&grip.tryGrip(tick,{contact,ballPosition:ball.translation(),before,after:ball.linvel(),glovePosition:hand.translation(),gloveVelocity:hand.linvel()}))started=tick;
+     const state=grip.observe(tick);
+     assert.equal(state.officialPossession,false);assert.equal(state.officialSave,false);
+     if(state.confirmedTick!==null){confirmed=state.confirmedTick;break;}
+    }
+    assert.ok(started!==null,'requires a real native contact');assert.ok(confirmed>=started+6);
+    const before={...ball.translation()};
+    for(let n=1;n<=10;n++){hand.setNextKinematicTranslation({x:-dir*48,y:n*0.02,z:1});world.step();assert.equal(grip.observe(confirmed+n).active,true);}
+    assert.ok(ball.translation().y-before.y>0.10);
+    grip.release();assert.equal(grip.active(),false);
+    const released={...ball.translation()};
+    hand.setNextKinematicTranslation({x:-dir*48,y:0.8,z:1});world.step();
+    assert.ok(Math.abs(ball.translation().y-released.y)<0.1);
+   }finally{world.free();}
   }
  });

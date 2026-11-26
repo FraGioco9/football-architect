@@ -191,7 +191,58 @@ export function planNativeKeeperDive(keeper,ball){
  return freeze({start:freeze(start),target:freeze(target),eta,
   reachTicks:Math.max(6,Math.min(39,Math.round(eta/PLAYER_DT)))});
 }
-export function createNativeKeeperDive(R,world,ballCollider,keeper){
+// GK-05: a provisional grip only after a native solver contact. No
+// setTranslation/setLinvel on the ball. The constraint joins at the ball's
+// CURRENT centre and is verified over subsequent real world steps.
+export function eligibleKeeperGrip({team,contact,ballPosition,before,after,glovePosition,gloveVelocity}){
+ if(!['home','away'].includes(team)||contact!==true||
+    ![ballPosition,before,after,glovePosition,gloveVelocity].every(v=>v&&['x','y','z'].every(k=>finite(v[k]))))return false;
+ const dir=team==='home'?1:-1;
+ const gap=Math.hypot(ballPosition.x-glovePosition.x,ballPosition.y-glovePosition.y,ballPosition.z-glovePosition.z);
+ const relative=Math.hypot(after.x-gloveVelocity.x,after.y-gloveVelocity.y,after.z-gloveVelocity.z);
+ return -dir*ballPosition.x>=36&&-dir*ballPosition.x<52.39&&Math.abs(ballPosition.y)<=20.16&&
+  ballPosition.z>=0.10&&ballPosition.z<=2.2&&gap<=0.36&&
+  Math.hypot(before.x,before.y,before.z)<=8&&relative<=3.5;
+}
+export function createNativeKeeperGrip(R,world,hand,ballBody,team){
+ let joint=null,anchor=null,heldSince=null,confirmedTick=null,latest=null;
+ function release(){
+  if(joint)world.removeImpulseJoint(joint,true);
+  joint=null;anchor=null;heldSince=null;confirmedTick=null;
+ }
+ function tryGrip(tick,evidence){
+  if(joint||!eligibleKeeperGrip({team,...evidence}))return false;
+  const p=ballBody.translation(),h=hand.translation();
+  // The kinematic glove does not rotate. Local anchor at the measured
+  // ball centre avoids an initial positional snap; ball stays dynamic.
+  anchor={x:p.x-h.x,y:p.y-h.y,z:p.z-h.z};
+  joint=world.createImpulseJoint(R.JointData.spherical(anchor,{x:0,y:0,z:0}),hand,ballBody,true);
+  joint.setContactsEnabled(false);
+  heldSince=tick;
+  return true;
+ }
+ function observe(tick){
+  let errorM=null,relativeSpeedMps=null,released=false;
+  if(joint&&tick>heldSince){
+   const p=ballBody.translation(),h=hand.translation(),v=ballBody.linvel(),hv=hand.linvel();
+   errorM=Math.hypot(p.x-h.x-anchor.x,p.y-h.y-anchor.y,p.z-h.z-anchor.z);
+   relativeSpeedMps=Math.hypot(v.x-hv.x,v.y-hv.y,v.z-hv.z);
+   const dir=team==='home'?1:-1;
+   if(errorM>0.12||relativeSpeedMps>4||-dir*p.x<36||-dir*p.x>=52.39||Math.abs(p.y)>20.16||p.z<0.09){
+    release();released=true;
+   }else if(confirmedTick===null&&tick-heldSince>=6&&errorM<=0.05&&relativeSpeedMps<=0.8){
+    confirmedTick=tick;
+   }else if(confirmedTick===null&&tick-heldSince>=12){
+    release();released=true;
+   }
+  }
+  latest=freeze({active:joint!==null,heldSince,confirmedTick,errorM,relativeSpeedMps,released,
+   officialPossession:false,officialSave:false});
+  return latest;
+ }
+ return freeze({tryGrip,observe,release,active:()=>joint!==null,snapshot:()=>latest});
+}
+export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null){
  const dir=keeper.team==='home'?1:-1;
  const rest=p=>({x:p.x+dir*0.35,y:p.y,z:0.85});
  const origin=rest(keeper);
@@ -199,6 +250,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper){
   .setTranslation(origin.x,origin.y,origin.z).setCcdEnabled(true));
  const glove=world.createCollider(R.ColliderDesc.ball(DIVE_GLOVE_RADIUS_M)
   .setFriction(0.35).setRestitution(0.05).setCollisionGroups(0),body);
+ const grip=ballBody?createNativeKeeperGrip(R,world,body,ballBody,keeper.team):null;
  let plan=null,shotTick=null,usedShot=null,startTick=null,active=false,priorHit=false;
  let latest=freeze({version:KEEPER_DIVE_VERSION,tick:0,keeperId:keeper.id,
   phase:'ready',glove:null,started:false,contact:false,contactStarted:false,
@@ -211,7 +263,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper){
      lastAction.team!==keeper.team&&lastAction.appliedByRapier===true&&
      lastAction.actualPhysicsImpulseApplied===true)shotTick=lastAction.tick;
   let started=false,phase='ready',target=rest(actor);
-  if(!plan&&shotTick!==null&&shotTick!==usedShot){
+  if(!grip?.active()&&!plan&&shotTick!==null&&shotTick!==usedShot){
    const candidate=planNativeKeeperDive(actor,ball);
    if(candidate){
     plan=candidate;startTick=tick;usedShot=shotTick;started=true;
@@ -222,7 +274,11 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper){
     active=true;priorHit=false;
    }
   }
-  if(plan){
+  if(grip?.active()){
+   phase='holding';target=rest(actor);
+   const h=body.translation(),d=Math.hypot(target.x-h.x,target.y-h.y,target.z-h.z);
+   if(d>0.045)target=lerp(h,target,0.045/d);
+  }else if(plan){
    const elapsed=tick-startTick+1,holdTicks=4,recoveryTicks=24;
    if(elapsed<=plan.reachTicks){
     phase='diving';target=lerp(plan.start,plan.target,elapsed/plan.reachTicks);
@@ -246,11 +302,19 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper){
    if(m.numContacts()>0&&m.numSolverContacts()>0)hit=true;
   });
   const pos=body.translation();
+  if(hit&&grip&&!grip.active()&&prepared.phase!=='recovering'){
+   const accepted=grip.tryGrip(tick,{contact:true,ballPosition:ballBody.translation(),
+    before:prepared.priorVelocity,after:postVelocity,glovePosition:pos,gloveVelocity:body.linvel()});
+   if(accepted){plan=null;glove.setCollisionGroups(0);}
+  }
+  const catchState=grip?.observe(tick)??null;
+  if(catchState?.released){active=false;plan=null;}
   latest=freeze({version:KEEPER_DIVE_VERSION,tick,keeperId:keeper.id,
    phase:prepared.phase,started:prepared.started,
    glove:active?freeze({x:pos.x,y:pos.y,z:pos.z}):null,
    contact:hit,contactStarted:hit&&!priorHit,
    contactMotion:hit?freeze({before:prepared.priorVelocity,after:freeze({...postVelocity})}):null,
+   catchState,
    officialSave:false,source:'native-rapier-solver-manifold'});
   priorHit=hit;prepared=null;return latest;
  }
