@@ -93,6 +93,32 @@ function isolatedConsumers(ref) {
 }
 
 const {inputs}=require('./ci-economic-inputs.cjs');
+// GitHub can clear run.pull_requests after merge. The source workflow records
+// the event base in the runner's scope-step header before executing its shell.
+async function archivedAdminIdentity(github, owner, repo, source, run, jobs, base) {
+  const head = source.head.sha;
+  if (!Array.isArray(run.pull_requests) || run.pull_requests.length ||
+      run.path !== '.github/workflows/admin-world-checks.yml' || run.event !== 'pull_request' ||
+      run.head_sha !== head || run.head_branch !== source.head.ref ||
+      run.repository?.full_name !== owner + '/' + repo || run.head_repository?.full_name !== owner + '/' + repo)
+    return false;
+  const scope = jobs.find(job => job.name === 'scope' && job.run_id === run.id &&
+    job.run_attempt === run.run_attempt && job.head_sha === head && job.conclusion === 'success' &&
+    job.steps.some(step => step.name === 'Classify Admin impact on exact HEAD' && step.conclusion === 'success'));
+  if (!scope) return false;
+  const { data } = await github.rest.actions.downloadJobLogsForWorkflowRun({ owner, repo, job_id: scope.id });
+  const lines = Buffer.from(data).toString('utf8').split(/\r?\n/).map(line =>
+    line.replace(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z /, ''));
+  const header = '##[group]Run test "$(git rev-parse HEAD)" = "' + head + '"';
+  const start = lines.indexOf(header);
+  if (start < 0 || lines.lastIndexOf(header) !== start) return false;
+  const end = lines.indexOf('##[endgroup]', start + 1);
+  if (end < 0) return false;
+  const env = lines.slice(start + 1, end);
+  return env.filter(line => line.startsWith('  PR_BASE_SHA:')).length === 1 &&
+    env.includes('  PR_BASE_SHA: ' + base);
+}
+
 async function economicSource({ github, owner, repo, pr,workflow='admin-world-checks.yml' }) {
   const base = pr.base.sha, head = pr.head.sha;
   if (pr.base.ref !== 'main' || pr.head.repo?.full_name !== owner + '/' + repo ||
@@ -134,11 +160,14 @@ async function economicSource({ github, owner, repo, pr,workflow='admin-world-ch
     const runs = await github.paginate(github.rest.actions.listWorkflowRuns,
       { owner, repo, workflow_id: workflow, head_sha: source.head.sha, event: 'pull_request', per_page: 100 });
     for (const run of runs.sort((a, b) => b.id - a.id)) {
-      const sourceBase = run.pull_requests?.find(p => p.number === source.number && p.base.ref === 'main')?.base.sha;
-      if (!sourceBase || sourceBase !== git('rev-parse', merge + '^1').trim()) continue;
+      const sourceBase = git('rev-parse', merge + '^1').trim();
       const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun,
         { owner, repo, run_id: run.id, filter: 'latest', per_page: 100 });
-      const verdict = evaluateRun(run, jobs, source.head.sha, workflow, { prNumber: source.number, baseSha: sourceBase });
+      const linked = run.pull_requests?.some(p => p.number === source.number && p.base.ref === 'main' &&
+        p.base.sha === sourceBase && p.head.sha === source.head.sha);
+      if (!linked && (workflow !== 'admin-world-checks.yml' ||
+          !await archivedAdminIdentity(github, owner, repo, source, run, jobs, sourceBase))) continue;
+      const verdict = evaluateRun(run, jobs, source.head.sha, workflow);
       const operator = jobs.find(job => job.name === 'Final local operator persistence, restart and browser lifecycle');
       const executed = ['Verify DEV operator runtime and PowerShell regressions before full rehearsal',
         'Verify operator bootstrap, recovery and local persistence across restart'].every(name =>

@@ -266,6 +266,25 @@ test('economic inheritance walks merged main trees and rejects changed consumers
    actions:{listWorkflowRuns:'runs',listJobsForWorkflowRun:'jobs'}},paginate:async method=>method==='runs'?[receipt]:proof};
   const check=()=>economicSource({github,owner:'owner',repo:'repo',pr});
   assert.equal((await check()).source,sourceSha);
+  // A merged PR can lose its Actions association. Reconstruct the identity
+  // only from the matching job, attempt, and original runner step header.
+  const linked=receipt.pull_requests;
+  Object.assign(receipt,{pull_requests:[],path:'.github/workflows/admin-world-checks.yml',
+    head_branch:'policy',repository:identity,head_repository:identity});
+  source.head.ref='policy';
+  const scope={name:'scope',id:2,run_id:receipt.id,run_attempt:1,head_sha:sourceSha,conclusion:'success',
+    steps:[{name:'Classify Admin impact on exact HEAD',conclusion:'success'}]};
+  proof.push(scope);
+  const header='##[group]Run test "$(git rev-parse HEAD)" = "'+sourceSha+'"';
+  let log=[header,'env:','  PR_BASE_SHA: '+parent,'##[endgroup]'].join('\n');
+  github.rest.actions.downloadJobLogsForWorkflowRun=async()=>({data:Buffer.from(log)});
+  assert.equal((await check()).source,sourceSha);
+  scope.run_attempt=2;assert.equal(await check(),null);scope.run_attempt=1;
+  const original=log;
+  log=original.replace(parent,base);assert.equal(await check(),null);
+  log='##[endgroup]\n  PR_BASE_SHA: '+parent;assert.equal(await check(),null);log=original;
+  receipt.pull_requests=[{...linked[0],number:8}];assert.equal(await check(),null);
+  receipt.pull_requests=linked;
   operator.steps.at(-1).conclusion='skipped';assert.equal(await check(),null);operator.steps.at(-1).conclusion='success';
   commitData.tree.sha=parent;assert.equal(await check(),null);commitData.tree.sha=tree;
   pr.head.sha=base;assert.equal(await check(),null);pr.head.sha=head;
