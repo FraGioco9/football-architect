@@ -409,7 +409,12 @@ test('SHOT-03 tap-in uses all 30 mirrored close starts, authentic one-touch and 
      if(frame.action){count++;assert.equal(frame.action.labShotCalibration.profile,'tap-in');assert.deepEqual(frame.starts,[side+'-10']);}
      if(frame.shotSoloAudit.crossing)break;
     }
-    rows.push({side,variantIndex,count,...frame.shotSoloAudit});
+    const crossing=frame.shotSoloAudit.crossing;
+    // A genuine grounded ball must remain supported across the FULL
+    // goal line, even for slow oblique shots (reported V03 HOME/AWAY).
+    // Retain the existing B05 height threshold and raw solver evidence.
+    rows.push({side,variantIndex,count,...frame.shotSoloAudit,
+     crossingCentreAboveGroundTolerance:crossing!==null&&crossing.position.z>=0.09});
    }finally{lab.dispose();}
   }
  }
@@ -417,7 +422,10 @@ test('SHOT-03 tap-in uses all 30 mirrored close starts, authentic one-touch and 
  assert.equal(seen.size,30);
  for(const row of rows){
   assert.equal(row.count,1,JSON.stringify(row));
+  assert.ok(row.crossingCentreAboveGroundTolerance,JSON.stringify(row));
   assert.ok(row.crossing?.goal&&row.crossing.fullBallCrossed,JSON.stringify(row));
+  assert.ok(Math.abs(Math.abs(row.crossing.position.x)-52.61)<1e-8,JSON.stringify(row));
+  assert.ok(row.crossing.lateralErrorM<=0.05,JSON.stringify(row));
   assert.equal(row.crossing.officialGoal,false);
   assert.ok(row.launchSpeedMps>=1.38&&row.launchSpeedMps<=6.95&&row.peakClearanceM<=0.12,JSON.stringify(row));
  }

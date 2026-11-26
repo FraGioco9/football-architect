@@ -631,7 +631,17 @@ export function createEngine(RAPIER, input = {}, {
   world.timestep = FIXED_DT;
   // XY = field surface. Physics Z = center height, scenario Z = bottom clearance.
   // The floor top is exactly z=0 and a grounded ball center starts at its radius.
-  const ground = RAPIER.ColliderDesc.cuboid(52.5, 34, 0.2)
+  // Current gameplay: the real playing surface continues past painted
+  // boundary lines. A grounded sphere must remain supported while its
+  // trailing edge crosses the line (centre at half-length + radius).
+  // Otherwise the collider edge can tip the ball down and turn a valid
+  // rolling goal into a below-ground goal-line exit. Keep the B05 full-ball
+  // crossing geometry, in-field rolling resistance and old diagnostics
+  // unchanged. This is surface geometry, not a goal-specific correction.
+  const groundDesc = diagnosticLatestLabDynamics?
+    RAPIER.ColliderDesc.cuboid(53.5, 35, 0.2):
+    RAPIER.ColliderDesc.cuboid(52.5, 34, 0.2);
+  const ground = groundDesc
     .setTranslation(0, 0, -0.2).setFriction(0.65).setRestitution(isolatedCarry?0:GROUND_RESTITUTION);
   const groundCollider=world.createCollider(ground);
   const desc = RAPIER.RigidBodyDesc.dynamic()
