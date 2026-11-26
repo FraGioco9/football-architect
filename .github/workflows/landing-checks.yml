@@ -12,6 +12,7 @@ concurrency:
 permissions:
   actions: read
   contents: read
+  pull-requests: read
 jobs:
   # Focused Draft diagnostics are covered by Admin World; retain normal final/main gates.
   head-exact:
@@ -39,12 +40,39 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Find certified source for reviewed public suites
+        id: certified
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const {economicSource}=require('./tools/ci-match-engine.cjs');
+              const proof=await economicSource({github,...context.repo,pr:context.payload.pull_request,workflow:'landing-checks.yml'});
+              if(proof){
+                await core.summary.addHeading('Selected suites and executed source').addCodeBlock(JSON.stringify(proof),'json').write();
+                core.setOutput('base',proof.merge);
+                core.setOutput('mode',proof.mode);
+                core.setOutput('files',proof.selected.join(' '));
+              }
+            }catch(error){core.warning('No certified selection: '+error.message);}
+      - name: Certified impacted suites
+        if: ${{ steps.certified.outputs.base != '' }}
+        run: echo "Verified cumulative scope against an executed FULL source."
       - name: Classify fast-safe changes
         id: scope
         env:
+          CERTIFIED_MODE: ${{ steps.certified.outputs.mode }}
+          CERTIFIED_FILES: ${{ steps.certified.outputs.files }}
+          CERTIFIED_BASE: ${{ steps.certified.outputs.base }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ] && [ "${{ contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}" != "true" ]; then
+          if [ "${CERTIFIED_MODE:-}" = owned-tests ]; then
+            echo mode=fast >> "$GITHUB_OUTPUT"
+            echo "tests=$CERTIFIED_FILES" >> "$GITHUB_OUTPUT"
+          elif [ -n "${CERTIFIED_BASE:-}" ]; then
+            PR_BASE_SHA="$CERTIFIED_BASE" node tools/ci-opt-01-impact.mjs >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ] && [ "${{ contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}" != "true" ]; then
             node tools/ci-opt-01-impact.mjs >> "$GITHUB_OUTPUT"
           else
             echo "mode=full" >> "$GITHUB_OUTPUT"
@@ -64,6 +92,17 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            if(context.eventName==='push'&&context.ref==='refs/heads/main'){
+              try {
+                const {mergedPublicSource}=require('./tools/ci-full-evidence.cjs');
+                const id=await mergedPublicSource({github,...context.repo,workflow:'landing-checks.yml',sha:context.sha,before:context.payload.before});
+                if(id){
+                  await core.summary.addRaw('Identical merged tree and parent; source execution: '+process.env.GITHUB_SERVER_URL+'/'+context.repo.owner+'/'+context.repo.repo+'/actions/runs/'+id).write();
+                  core.setOutput('run_id',id);
+                }
+              } catch(error) { core.warning('Post-merge evidence unavailable: '+error.message); }
+              return;
+            }
             if(context.payload.pull_request?.head.repo.full_name!==context.repo.owner+'/'+context.repo.repo)return;
             const {findReusable}=require('./tools/ci-full-evidence.cjs');
             const run=await findReusable({github,...context.repo,sha:context.payload.pull_request?.head.sha||context.sha,workflow:'landing-checks.yml',currentRun:context.runId,prNumber:context.payload.pull_request.number,baseSha:context.payload.pull_request.base.sha});
@@ -156,7 +195,7 @@ jobs:
         run: |
           node tools/ci-run.mjs 3-landing-checks -- node tools/ci-selected.mjs
       - name: FULL coverage completed
-        if: needs.head-exact.outputs.mode == 'full'
+        if: needs.head-exact.outputs.mode == 'full' && (github.event_name != 'push' || !needs.head-exact.outputs.reuse)
         run: echo 'All Site FULL source checks completed on exact HEAD.'
       - name: Upload CI diagnostic evidence
         if: always()
