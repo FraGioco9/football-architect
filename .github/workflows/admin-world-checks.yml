@@ -35,17 +35,22 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const {economicSource, isolatedDiff, isolatedConsumers} = require('./tools/ci-match-engine.cjs');
+            const pr = context.payload.pull_request;
+            const isolated = isolatedDiff(pr.base.sha, pr.head.sha) && isolatedConsumers(pr.head.sha);
             try {
-              const {economicSource} = require('./tools/ci-match-engine.cjs');
               const proof = await economicSource({github, ...context.repo, pr: context.payload.pull_request});
               if (proof) {
                 await core.summary.addHeading('Certified economic inputs').addRaw('Economic tests were not run on this candidate. Inherited execution evidence:').addCodeBlock(JSON.stringify(proof), 'json').write();
                 core.setOutput('source',proof.run);
                 core.setOutput('mode',proof.mode);
                 core.setOutput('files',proof.selected.join(' '));
+              } else if (isolated) {
+                core.setFailed('Isolated Match Engine change: missing certified economic source.');
               }
             } catch (error) {
-              core.warning('No proven economic source: ' + error.message);
+              if (isolated) core.setFailed('Economic source verification failed: ' + error.message);
+              else core.warning('No proven economic source: ' + error.message);
             }
       - name: Verified unchanged economic scope against executed FULL source
         if: ${{ steps.economic.outputs.mode == 'match-engine' }}
