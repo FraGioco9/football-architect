@@ -33,7 +33,7 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false,d
   throw new TypeError('Only D-01 paired HOME/AWAY variant may audit Rapier');
  const actor=side+'-10',opponent=solo?null:(side==='home'?'away':'home')+'-2';
  if(typeof directed!=='boolean'||(directed&&solo))throw new TypeError('Directed evidence only for 1v1');
- let tackles=0,interceptions=0;
+ let tackles=0,interceptions=0,recoveryTouches=0;
  let tick=-1,priorBall=null,firstBall=null,sourceEnds=0,
   nativeStarts=0,recontacts=0,opposingStarts=0,actions=0;
  let lastEnd=-1,hasEnded=false,ballPath=0,minimumGap=Infinity,
@@ -323,12 +323,12 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false,d
    if(hasEnded&&lastEnd<physics.tick)recontacts++;
   }
   if(action&&directed&&action.playerId===opponent){
-   if(action.tick!==physics.tick||!['tackle','interception'].includes(action.action)||
+   if(action.tick!==physics.tick||!['tackle','interception','carry'].includes(action.action)||
       action.appliedByRapier!==true||action.actualPhysicsImpulseApplied!==true||
       foot.started.length!==1||foot.started[0]!==opponent||foot.active.length!==1||foot.active[0]!==opponent||
-      action.defensiveTarget?.version!=='me-628-duel-defensive-touch-v1'||action.defensiveTarget.physicsTick!==physics.tick)
+      action.defensiveTarget?.version!==(action.action==='carry'?'me-628-duel-recovery-touch-v1':'me-628-duel-defensive-touch-v1')||action.defensiveTarget.physicsTick!==physics.tick)
     throw new TypeError('Only native exclusive defensive touches qualify');
-   if(action.action==='tackle')tackles++;else interceptions++;
+   if(action.action==='tackle')tackles++;else if(action.action==='interception')interceptions++;else recoveryTouches++;
   }else if(action){
    if(action.tick!==physics.tick||action.playerId!==actor||
       action.action!=='carry'||action.appliedByRapier!==true||
@@ -356,7 +356,7 @@ export function createIsolatedDribbleNativeAudit({side,variantIndex,solo=false,d
    attackerShoeStarts:nativeStarts,attackerShoeEnds:sourceEnds,
    independentRecontacts:recontacts,defenderShoeStarts:opposingStarts,
    appliedCarryActions:actions,actionTicks:freeze([...actionTicks]),
-   ...(directed?{defensiveTackleAttempts:tackles,defensiveInterceptionAttempts:interceptions}:{}),
+   ...(directed?{defensiveTackleAttempts:tackles,defensiveInterceptionAttempts:interceptions,defensiveRecoveryTouches:recoveryTouches}:{}),
    ...(solo?{
     nativePhysicalShoeColliders:2,
     nativeLeftFootStarts:genuineSoloFootTouches.left,

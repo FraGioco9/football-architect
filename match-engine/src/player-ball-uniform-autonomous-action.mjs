@@ -9,7 +9,7 @@ import {chooseSmallSidedContextAction}
  from './small-sided-context-choice.mjs';
 
 
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,chooseDribbleDefensiveTouch} from './isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,chooseDribbleDefensiveTouch,chooseDribbleRecoveryTouch} from './isolated-dribble-touches.mjs';
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
@@ -264,8 +264,10 @@ export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
  allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null,
- isolatedDribbleContext=null,keeperSingleShotSide=null
+ isolatedDribbleContext=null,keeperSingleShotSide=null,duelTransition=null
 }){
+ if(duelTransition!==null&&(isolatedDribbleContext?.directed!==true||duelTransition.tick!==tick-1||!['attack','recover','counter'].includes(duelTransition.phase)))
+  throw new TypeError('Prior real directed duel transition required');
  if(!Number.isSafeInteger(tick)||tick<1||
     !Array.isArray(contactStarted)||new Set(contactStarted).size!==contactStarted.length||
     contactStarted.some(id=>!ids.includes(id))||
@@ -385,8 +387,10 @@ export function selectUniformAutonomousContactAction({
     canPass:contextualRecipient!==null,
     canCarry:carryPossible
    }):null;
-  const duelDefensiveTouch=duelDefender?chooseDribbleDefensiveTouch({attackingSide:isolatedDribbleContext.attackingSide,
-   attacker:actors.find(p=>p.id===isolatedDribbleContext.attackingSide+'-10'),defender:player,ballPosition,ballVelocity}):null;
+  const duelSource=duelDefender?{attackingSide:isolatedDribbleContext.attackingSide,
+   attacker:actors.find(p=>p.id===isolatedDribbleContext.attackingSide+'-10'),defender:player,ballPosition,ballVelocity}:null;
+  const duelDefensiveTouch=duelSource?(duelTransition&&duelTransition.phase!=='attack'?
+   chooseDribbleRecoveryTouch(duelSource):chooseDribbleDefensiveTouch(duelSource)):null;
   const dribbleTouch=isolatedDribbleContext===null||duelDefender?null:
    (isolatedDribbleContext.directed===true?chooseDirectedDribbleTouch:chooseIsolatedDribbleTouch)({
     variantIndex:isolatedDribbleContext.variantIndex,tick,
@@ -399,7 +403,7 @@ export function selectUniformAutonomousContactAction({
   if(duelDefender){
    if(!duelDefensiveTouch)continue;
    action=duelDefensiveTouch.kind;dx=duelDefensiveTouch.dx;dy=duelDefensiveTouch.dy;
-   rule='directed-duel-native-defensive-ground-touch';
+   rule=action==='carry'?'directed-duel-native-recovery-touch':'directed-duel-native-defensive-ground-touch';
   }else if(dribbleTouch!==null){
    if(dribbleTouch.magnitudeNs<0.025)continue;
    action='carry';dx=dribbleTouch.dx;dy=dribbleTouch.dy;

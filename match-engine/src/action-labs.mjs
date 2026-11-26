@@ -881,6 +881,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(nativeDribbleAudit?{nativeDribbleAudit}:{}),
     ...(shieldAudit?{shieldAudit}:{}),
     ...(defensivePositioning?{defensivePositioning}:{}),
+    ...(directedDribble?{duelTransition:engine.duelTransitionSnapshot()}:{}),
     ...(nativeFixedCarryResearch?{
       nativeFixedCarryResearch:true,
       nativeFixedSprintLongStride,
@@ -946,7 +947,8 @@ export function createControlledActionLab(RAPIER,id,{
    id==='keeper-1v1'&&!keeperSingleShot&&bodyGuardEnabled&&latest.keeperShotAudit?.reboundTick!=null&&
     !latest.keeperShotAudit.crossing&&!latest.keeperDive?.catchState?.active?
      {tick:prior.tick,reboundTick:latest.keeperShotAudit.reboundTick}:null,
-   keeperSingleShot&&latest.keeperShotAudit?.shots===0&&!latest.keeperDive?.catchState?.active,directedDribble);
+   keeperSingleShot&&latest.keeperShotAudit?.shots===0&&!latest.keeperDive?.catchState?.active,directedDribble,
+   latest.duelTransition??null);
   const initialAfter=engine.step(frame);
    if(smallSided&&bodyGuardEnabled){
     // Only post-step original native manifolds feed the canonical mover.

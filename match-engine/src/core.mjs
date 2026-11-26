@@ -10,6 +10,7 @@ import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {smallSidedSetup} from './small-sided-lab-scenarios.mjs';
+import {createDribbleTransitionObserver} from './isolated-dribble-touches.mjs';
 import {createSmallSidedNativeBodyGuard,createNativeKeeperDive}
  from './small-sided-native-body-guard.mjs';
 import {initialResearchBodyEncounterLineup}
@@ -732,6 +733,7 @@ export function createEngine(RAPIER, input = {}, {
   const keeperDive=smallBodyGuard&&smallSided?.id==='keeper-1v1'?
    createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1'),body,
     {closeChallengeEnabled:diagnosticKeeperSingleShot}):null;
+  const duelTransition=diagnosticDirectedDribble?createDribbleTransitionObserver(smallSided.side):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
@@ -947,6 +949,7 @@ export function createEngine(RAPIER, input = {}, {
     // Same tick, same private Rapier ball, exclusively from observed shoe
     // START. The ordinary physics and contact-only modes never kick.
     if(actionExecutor)actionExecutor.apply(tick,playerFrame,{
+      duelTransition:duelTransition?.snapshot()??null,
       ...(diagnosticFirstTimeShot?{priorNativeBallVelocity:preStepBall.velocity}:{}),
       suppressOriginalAction:(diagnosticB06bNativeShotSide!==null&&(
        b06bGoalPending!==null||
@@ -956,6 +959,11 @@ export function createEngine(RAPIER, input = {}, {
       suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
        .lowerLegBallContacts.length>0||keeperDive?.snapshot().contact===true||keeperDive?.snapshot().catchState?.active===true
     });
+    if(duelTransition){
+     const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
+     duelTransition.observe({tick,starts:shoe.started,active:shoe.active,bodyStarts:physical.lowerLegBallStarts,
+      bodyActive:physical.lowerLegBallContacts,action:actionExecutor?.actionSnapshot()??null,ball:{position:body.translation()}});
+    }
     if(diagnosticKeeperSingleShot&&keeperSingleShotTick===null){
      const shot=actionExecutor?.actionSnapshot();
      if(shot?.tick===tick&&shot.action==='shot'&&shot.playerId===smallSided.side+'-10'&&
@@ -1366,6 +1374,7 @@ export function createEngine(RAPIER, input = {}, {
     }:{}),
     ...(smallSided?.id==='cross-pair'?{crossGroundContactSnapshot}:{}),
     ...(keeperDive?{keeperDiveSnapshot:()=>keeperDive.snapshot()}:{}),
+    ...(duelTransition?{duelTransitionSnapshot:()=>duelTransition.snapshot()}:{}),
     ...(smallSided?{
       originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds,
       ...(smallBodyGuard?{

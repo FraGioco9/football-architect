@@ -109,9 +109,10 @@ function recordPerformedActions(frame){
  if(frame.nativeDribbleAudit&&!frame.nativeDribbleAudit.soloCarry){
   const defender=(frame.nativeDribbleAudit.side==='home'?'away':'home')+'-2';
   const shoe=frame.starts?.includes(defender),leg=frame.smallSidedNativeBodyGuard?.lowerLegBallStarts?.includes(defender);
-  const defensiveAction=events.find(e=>e.id===defender&&['tackle','interception'].includes(e.kind));
-  if(defensiveAction)defensiveAction.label=defensiveAction.kind==='tackle'?'Tackle attempt':'Interception attempt';
+  const defensiveAction=events.find(e=>e.id===defender&&['tackle','interception','carry'].includes(e.kind));
+  if(defensiveAction)defensiveAction.label=defensiveAction.kind==='carry'?(frame.duelTransition?.recovered?'Recovery touch':'Counter carry'):defensiveAction.kind==='tackle'?'Tackle attempt':'Interception attempt';
   else if(shoe||leg)events.push({id:defender,kind:'defensive-contact',label:'Defensive contact'});
+  if(frame.duelTransition?.regained){const touch=events.find(e=>e.id===frame.nativeDribbleAudit.side+'-10'&&e.kind==='carry');if(touch)touch.label='Regained touch';}
   if(frame.shieldAudit?.retained)events.push({id:frame.nativeDribbleAudit.side+'-10',kind:'retained-touch',label:'Retained touch'});
   if(action?.tick===tick&&action?.decisionContext?.isolatedDribbleTouch?.shieldingIntent){
    const carry=events.find(e=>e.kind==='carry'&&e.id===action.playerId);if(carry)carry.label='Shielding touch';
@@ -748,7 +749,7 @@ function render() {
       cross?(cross.arrival?'Arrival observed':
         cross.attempted?'Cross observed':'Waiting for cross'):
       f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry?
-        (f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
+        (f.duelTransition?.phase==='counter'?'Counter carry':f.duelTransition?.phase==='recover'?'Loose ball recovery':f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
        f.soloCarryPhase?.phase?'Carry · '+f.soloCarryPhase.phase:
       lastInlineFootballAction?'Last action: '+lastInlineFootballAction.action:
       activeScene.kind==='action'?'Waiting for action':'Movement';

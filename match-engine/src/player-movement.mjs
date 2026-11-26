@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget,planDribbleDefender} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,planDribbleTransitionTarget} from './isolated-dribble-touches.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
@@ -2213,7 +2213,7 @@ export function createPlayerMovement(options={}){
   });
  }
  function step(ballPosition={x:0,y:0},priorRealPass=null,
-  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false){
+  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null){
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
@@ -2224,6 +2224,8 @@ export function createPlayerMovement(options={}){
   if(typeof directedDribble!=='boolean'||(directedDribble&&(smallSided?.id!=='dribble-1v1'||
      !realBallVelocity||!['x','y'].every(k=>finite(realBallVelocity[k])))))
    throw new TypeError('Directed dribble requires live physical velocity');
+  if(duelTransition!==null&&(!directedDribble||duelTransition.tick!==tick||!['attack','recover','counter'].includes(duelTransition.phase)))
+   throw new TypeError('Original previous-tick directed transition required');
   if(typeof keeperCloseDown!=='boolean'||(keeperCloseDown&&(smallSided?.id!=='keeper-1v1'||
      !realBallVelocity||!['x','y','z'].every(k=>finite(realBallVelocity[k]))||!finite(ballPosition.z))))
    throw new TypeError('Close-down requires original keeper duel and current physical ball');
@@ -2531,6 +2533,10 @@ export function createPlayerMovement(options={}){
        attacker,ball,baseline):baseline;
     }
     const attack=smallSided.side==='home'?1:-1;
+    if(directedDribble&&duelTransition&&duelTransition.phase!=='attack'&&smallActive.has(p.id)){
+     const opponent=players.find(q=>q.id===(p.team===smallSided.side?smallSided.opponent+'-2':smallSided.side+'-10'));
+     return planDribbleTransitionTarget(p,opponent,ball,realBallVelocity,smallSided.side,duelTransition.phase);
+    }
     if(p.team===smallSided.side){
      if(p.id===smallSided.side+'-10')
       return directedDribble?directedDribbleApproachTarget(p,ball,realBallVelocity,smallSided.side,players.find(a=>a.id===smallSided.opponent+'-2')):

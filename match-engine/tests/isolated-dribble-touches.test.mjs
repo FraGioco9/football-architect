@@ -5,7 +5,7 @@ import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 import {smallSidedSetup} from '../src/small-sided-lab-scenarios.mjs';
-import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch} from '../src/isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseDirectedDribbleTouch,directedDribbleApproachTarget,planDribbleShield,observeDribbleShield,createDribbleShieldObserver,planDribbleDefender,chooseDribbleDefensiveTouch,createDribbleTransitionObserver,chooseDribbleRecoveryTouch,planDribbleTransitionTarget} from '../src/isolated-dribble-touches.mjs';
 import {advanceD01LiveShoeGait,soloCarryTwoFootPositions}
  from '../src/rapier-foot-contact-bridge.mjs';
 import {advanceSoloCarryPhase,soloCarryPhaseConfiguration}
@@ -609,7 +609,7 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
     try{
      for(let n=0;n<420;n++){
       const f=scene.step(),a=f.action;
-      if(a?.action==='carry'){
+      if(a?.action==='carry'&&a.playerId===side+'-10'){
        const d=a.decisionContext?.isolatedDribbleTouch;
        assert.equal(d?.version,'me-628-directed-dribble-v1');
        assert.ok(a.appliedByRapier&&a.actualPhysicsImpulseApplied&&f.starts.includes(side+'-10'));
@@ -716,11 +716,11 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
       const f=scene.step(),a=f.action;
       if(f.starts.includes(defender))contacts++;
       if(a?.playerId===defender){
-       assert.ok(['tackle','interception'].includes(a.action));
+       assert.ok(['tackle','interception','carry'].includes(a.action));
        assert.deepEqual(f.starts,[defender]);assert.equal(a.appliedByRapier,true);
        assert.equal(a.actualPhysicsImpulseApplied,true);assert.equal(a.impulseNs.z,0);
        assert.ok(Math.hypot(a.impulseNs.x,a.impulseNs.y)<=1.25+1e-8);
-       assert.equal(a.defensiveTarget.officialPossession,false);attempts++;
+       assert.equal(a.defensiveTarget.officialPossession,false);if(a.action!=='carry')attempts++;
       }
       if(f.refereeEvidence?.lastEvent)break;
      }
@@ -728,5 +728,51 @@ test('#628 running steps separate from real Carry touches using live Rapier rela
    }
    process.stdout.write('ME_628_D05_DEFENSE '+JSON.stringify({side,contacts,attempts})+'\n');
    assert.ok(attempts>0,'each side needs a genuine executed defensive attempt');
+  }
+ });
+
+ test('D-06 recovery needs subsequent authentic touch and is invalidated by opponent contact',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+   const attacker={id:side+'-10',team:side,x:dir*28,y:0};
+   const defender={id:other+'-2',team:other,x:dir*30.4,y:0};
+   const b={x:dir*30,y:0,z:0.11},v={x:-dir*0.8,y:0,z:0};
+   const w=createDribbleTransitionObserver(side);
+   const sample=(tick,starts=[],active=starts,action=null,bodyStarts=[])=>w.observe({tick,starts,active,bodyStarts,bodyActive:bodyStarts,action,ball:{position:b}});
+   const real=(tick,id,kind)=>({tick,playerId:id,action:kind,appliedByRapier:true,actualPhysicsImpulseApplied:true,defensiveTarget:{version:'me-628-duel-recovery-touch-v1'}});
+   assert.equal(sample(1,[defender.id]).phase,'recover');
+   assert.equal(sample(2,[],[defender.id]).recovered,false);
+   assert.equal(sample(3).phase,'recover');
+   assert.equal(sample(4,[defender.id],[defender.id],real(4,defender.id,'carry')).recovered,true);
+   assert.equal(w.snapshot().phase,'counter');
+   assert.equal(sample(5,[attacker.id],[attacker.id],real(5,attacker.id,'carry')).regained,true);
+   assert.equal(w.snapshot().officialPossession,false);
+   assert.equal(sample(6,[attacker.id,defender.id]).phase,'attack');
+   assert.equal(sample(7,[],[],null,[defender.id]).phase,'recover');
+   assert.equal(sample(8,[attacker.id]).phase,'attack');
+   const touch=chooseDribbleRecoveryTouch({attackingSide:side,attacker,defender,ballPosition:b,ballVelocity:v});
+   assert.ok(touch&&touch.dx*dir<0&&touch.magnitudeNs<=0.30);
+   const target=planDribbleTransitionTarget(defender,attacker,b,v,side,'counter');
+   assert.ok(Number.isFinite(target.x)&&Number.isFinite(target.y));
+  }
+ });
+ test('D-06 live transitions preserve native action authority and actor identities',{timeout:120000},async()=>{
+  const R=await initializeRapier(rapier);
+  for(const side of ['home','away']){
+   let windows=0,recoveries=0,regains=0;
+   for(const variantIndex of [0,2,5,11,19,26]){
+    const scene=createControlledActionLab(R,'dribble-1v1',{shotSide:side,variantIndex,bodyGuardEnabled:true,directedDribble:true});
+    try{
+     for(let k=0;k<480;k++){
+      const f=scene.step(),w=f.duelTransition;
+      assert.equal(w.tick,f.physicsTick);assert.equal(w.officialPossession,false);
+      if(w.phase!=='attack')windows++;
+      if(w.recovered){recoveries++;assert.equal(f.action?.defensiveTarget?.version,'me-628-duel-recovery-touch-v1');assert.deepEqual(f.starts,[f.action.playerId]);}
+      if(w.regained){regains++;assert.equal(f.action?.playerId,side+'-10');}
+      if(f.refereeEvidence?.lastEvent)break;
+     }
+    }finally{scene.dispose();}
+   }
+   process.stdout.write('ME_628_D06_TRANSITION '+JSON.stringify({side,windows,recoveries,regains})+'\n');
   }
  });

@@ -186,3 +186,64 @@ export function chooseDribbleDefensiveTouch({attackingSide,attacker,defender,bal
   actorId:defender.id,opponentId:attacker.id,carrierGapM:carrierGap,defenderGapM:gap,
   nativeExclusiveShoeRequired:true,physicalAttemptOnly:true,tackleWon:false,interceptionConfirmed:false,officialPossession:false});
 }
+
+// D-06: native contacts open a recovery window, not possession.
+export function createDribbleTransitionObserver(side){
+ if(!['home','away'].includes(side))throw new TypeError('Original duel side required');
+ const attackerId=side+'-10',defenderId=(side==='home'?'away':'home')+'-2';
+ let phase='attack',sourceTick=null,lastDefenderTouch=null,recoveries=0,regains=0;
+ let latest=Object.freeze({tick:0,phase,sourceTick,recoveries,regains,recovered:false,regained:false,officialPossession:false});
+ function observe({tick,starts,active,bodyStarts,bodyActive,action,ball}){
+  if(tick!==latest.tick+1)throw new TypeError('Same original physics tick required');
+  let recovered=false,regained=false;
+  const attackerContact=active.includes(attackerId)||bodyActive.includes(attackerId);
+  const defenderContact=active.includes(defenderId)||bodyActive.includes(defenderId);
+  const real=id=>action?.tick===tick&&action.playerId===id&&starts.length===1&&starts[0]===id&&
+   active.length===1&&active[0]===id&&action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true;
+  const defensiveStart=!attackerContact&&(starts.includes(defenderId)||bodyStarts.includes(defenderId));
+  const inField=Math.abs(ball.position.x)<52.39&&Math.abs(ball.position.y)<33.89;
+  if(!inField||attackerContact||phase!=='attack'&&tick-lastDefenderTouch>120){
+   if(inField&&phase!=='attack'&&!defenderContact&&real(attackerId)&&action.action==='carry'){
+    regained=true;regains++;
+   }
+   phase='attack';sourceTick=null;lastDefenderTouch=null;
+  }else if(defensiveStart){
+   if(phase==='attack'){
+    phase='recover';sourceTick=tick;lastDefenderTouch=tick;
+   }else{
+    lastDefenderTouch=tick;
+    if(tick>sourceTick&&real(defenderId)&&action.action==='carry'&&
+       action.defensiveTarget?.version==='me-628-duel-recovery-touch-v1'&&phase==='recover'){
+     phase='counter';recovered=true;recoveries++;
+    }
+   }
+  }
+  latest=Object.freeze({tick,phase,sourceTick,recoveries,regains,recovered,regained,officialPossession:false});
+  return latest;
+ }
+ return Object.freeze({observe,snapshot:()=>latest});
+}
+export function chooseDribbleRecoveryTouch({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}={}){
+ if(!['home','away'].includes(attackingSide)||attacker?.id!==attackingSide+'-10'||
+    defender?.id!==(attackingSide==='home'?'away':'home')+'-2'||
+    ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,b?.z,v?.x,v?.y,v?.z].every(Number.isFinite))return null;
+ if(Math.hypot(defender.x-b.x,defender.y-b.y)>0.85||b.z<0.095||b.z>0.23||Math.hypot(v.x,v.y)>5||
+    observeDribbleShield(attacker,defender,b))return null;
+ const dir=attackingSide==='home'?-1:1;
+ const dx=dir*2.2-v.x,dy=clamp((b.y-attacker.y)*0.6,-0.7,0.7)-v.y;
+ const magnitudeNs=Math.min(0.30,0.43*Math.hypot(dx,dy));
+ if(magnitudeNs<0.025)return null;
+ return Object.freeze({version:'me-628-duel-recovery-touch-v1',kind:'carry',dx,dy,magnitudeNs,
+  actorId:defender.id,opponentId:attacker.id,physicalAttemptOnly:true,officialPossession:false});
+}
+export function planDribbleTransitionTarget(player,opponent,b,v,originalAttackingSide,phase){
+ const defenderSide=originalAttackingSide==='home'?'away':'home';
+ if(!['recover','counter'].includes(phase))return null;
+ if(player.id===defenderSide+'-2')
+  return directedDribbleApproachTarget(player,b,v,defenderSide,opponent);
+ const dir=originalAttackingSide==='home'?1:-1;
+ const lead=clamp(Math.hypot(player.x-b.x,player.y-b.y)/12,0,0.30);
+ const offset=phase==='counter'?0.75:0.22;
+ return Object.freeze({x:clamp(b.x+v.x*lead-dir*offset,-51.99,51.99),
+  y:clamp(b.y+v.y*lead,-33.49,33.49)});
+}
