@@ -96,6 +96,8 @@ function recordPerformedActions(frame){
  const dive=frame.keeperDive;
  if(dive?.tick===tick&&dive.started)events.push({id:dive.keeperId,kind:'dive',label:'Dive'});
  if(dive?.tick===tick&&dive.contactStarted)events.push({id:dive.keeperId,kind:'glove-contact',label:'Glove contact'});
+ const keeper=frame.keeperShotAudit;
+ if(keeper?.deflection?.tick===tick)events.push({id:keeper.keeperId,kind:'deflection',label:'Deflection'});
  const pass=frame.passPairAudit?.receivingContact;
  if(pass?.realRapierShoeStart===true&&pass.contactTick===tick)
   events.push({id:pass.receiverId,kind:'receiving-contact',
@@ -704,6 +706,7 @@ function render() {
     const keeper=f.keeperShotAudit;
     const summary=keeper?
       (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
+       keeper.reboundTick!==null?'Live rebound':keeper.deflection?'Deflection observed':
        keeper.gloveContactTick!==null?'Glove contact':keeper.parryTick!==null?'Parry observed':
        f.keeperDive?.phase==='diving'?'Diving':keeper.keeperContactTick!==null?'Keeper contact':
        keeper.shots?'Shot observed':'Waiting for shot'):
@@ -731,9 +734,9 @@ function renderActiveMetrics(f){
  if(keeper){
   entries=[['Shots',count(keeper.shots)],['Launch speed',speed(keeper.launchSpeedMps)],
    ['Keeper contact',n(keeper.keeperContactTick===null?null:keeper.keeperContactTick*FIXED_DT,' s')],
-   ['Parry',n(keeper.parryTick===null?null:keeper.parryTick*FIXED_DT,' s')],
-   ['Flight time',n(keeper.crossing?(keeper.crossing.tick-keeper.shotTick)*FIXED_DT:null,' s')],
-   ['Result',keeper.crossing?(keeper.crossing.kind==='goal'?'Goal':'Ball out'):'—']];
+   ['Deflection',keeper.deflection?({reversed:'Reversed',redirected:'Redirected',slowed:'Slowed'})[keeper.deflection.kind]:keeper.parryTick!==null?'Foot parry':'—'],
+   ['Rebound',n(keeper.reboundTick===null?null:(keeper.reboundTick-keeper.shotTick)*FIXED_DT,' s')],
+   ['Result',keeper.crossing?(keeper.crossing.kind==='goal'?'Goal':'Ball out'):keeper.reboundTick!==null?'Ball in play':'—']];
  }else if(shot){
   entries=[['Distance',n(shot.distanceM,' m')],['Launch speed',speed(shot.attempted?shot.launchSpeedMps:null)],
    ['Peak height',n(shot.attempted?shot.peakClearanceM:null,' m')],

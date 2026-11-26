@@ -923,7 +923,7 @@ export function createEngine(RAPIER, input = {}, {
     // This is read exclusively from native post-step Rapier solver contact
     // manifolds. Never inject player collisions or attribute a goal/possession.
     if(smallBodyGuard)smallBodyGuard.observe(tick+1);
-    if(keeperDive)keeperDive.observe(tick+1);
+    if(keeperDive)keeperDive.observe(tick+1,body.linvel());
     // Exponential airborne-only decay after integration; zero rate preserves
     // the original physics-v4 path without any angular-velocity setter.
     if(diagnosticSpinDecayRatePerS>0 &&

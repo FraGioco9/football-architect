@@ -6,7 +6,7 @@ import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_MIN_SEPARATION_M,PLAYER_TURN_RAD_P
  from '../src/player-movement.mjs';
 import {SAVE_LAB_STARTS,ACTION_LAB_SCENARIOS}
  from '../src/action-lab-scenarios.mjs';
-import {initialResearchGoalkeeperSaveLineup,chooseBasicGoalkeeperDiveTarget,createKeeperShotObserver}
+import {initialResearchGoalkeeperSaveLineup,chooseBasicGoalkeeperDiveTarget,createKeeperShotObserver,observeKeeperDeflection}
  from '../src/goalkeeper-save-foundation-b02.mjs';
 import {eligibleLiveKeeperSave,selectUniformAutonomousContactAction}
  from '../src/player-ball-uniform-autonomous-action.mjs';
@@ -235,7 +235,8 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
     for(let tick=1;tick<=90;tick++){
      const prior={position:body.translation(),velocity:body.linvel()};
      dive.prepare({players:[keeper]},tick,prior,tick===1?{tick:0,action:'shot',team:team==='home'?'away':'home',appliedByRapier:true,actualPhysicsImpulseApplied:true}:null);
-     world.step();const snap=dive.observe(tick);
+     world.step();const snap=dive.observe(tick,body.linvel());
+     if(snap.contact)assert.deepEqual(snap.contactMotion.after,{...body.linvel()});
      if(snap.started)started++;
      if(snap.contactStarted)hit++;
      if(Math.abs(body.linvel().x+dir*18)>0.1||Math.abs(body.linvel().y)>0.1)changed=true;
@@ -245,5 +246,40 @@ test('ACTIONS-B02 real HOME/AWAY original Rapier keeper shoe START, parry, dive 
     assert.ok(changed,'native ball velocity must change');
     assert.equal(dive.snapshot().phase,'ready');
    }finally{world.free();}
+  }
+ });
+
+ test('GK-04 measures only real contact response and leaves the second ball live',()=>{
+  for(const side of ['home','away']){
+   const dir=side==='home'?1:-1,keeperId=(side==='home'?'away':'home')+'-1';
+   const witness=createKeeperShotObserver(side),ball={position:{x:dir*48,y:0,z:0.11},velocity:{x:dir*18,y:0,z:0}};
+   const real=(tick)=>({tick,playerId:side+'-10',action:'shot',appliedByRapier:true,actualPhysicsImpulseApplied:true});
+   const contact={tick:2,keeperId,contact:true,contactStarted:true,source:'native-rapier-solver-manifold',
+    contactMotion:{before:{x:dir*18,y:0,z:0},after:{x:-dir*6,y:2,z:0}}};
+   assert.equal(observeKeeperDeflection(side,{...contact,contact:false}),null);
+   assert.equal(observeKeeperDeflection(side,{...contact,contactMotion:{before:contact.contactMotion.before,
+    after:{x:dir*17.99,y:0.01,z:0}}}),null);
+   assert.equal(observeKeeperDeflection(side,contact).kind,'reversed');
+   const sample=(tick,velocity,extra={})=>witness.observe({tick,ball:{...ball,velocity},starts:[],action:null,event:null,...extra});
+   sample(1,ball.velocity,{starts:[side+'-10'],action:real(1)});
+   const deflected=sample(2,contact.contactMotion.after,{keeperDive:contact});
+   assert.equal(deflected.deflection.kind,'reversed');assert.equal(deflected.reboundTick,null);
+   const live=sample(3,contact.contactMotion.after);
+   assert.equal(live.reboundTick,3);assert.equal(live.crossing,null);assert.equal(live.officialSave,false);
+   const follow=sample(4,ball.velocity,{starts:[side+'-10'],action:real(4)});
+   assert.equal(follow.shots,2);assert.equal(follow.secondShots,1);
+   assert.equal(follow.reboundTick,null);assert.equal(follow.deflection,null);
+  }
+ });
+ test('GK-04 a glove deflection can still result in a goal or a boundary exit',()=>{
+  for(const kind of ['goal','goal-line','touchline']){
+   const w=createKeeperShotObserver('home'),ball={position:{x:52,y:0,z:0.11},velocity:{x:18,y:0,z:0}};
+   w.observe({tick:1,ball,starts:['home-10'],action:{tick:1,playerId:'home-10',action:'shot',appliedByRapier:true,actualPhysicsImpulseApplied:true}});
+   const result=w.observe({tick:2,ball,starts:[],action:null,keeperDive:{
+    tick:2,keeperId:'away-1',contact:true,contactStarted:true,source:'native-rapier-solver-manifold',
+    contactMotion:{before:{x:18,y:0,z:0},after:{x:15,y:2,z:0}}},
+    event:{tick:2,kind,crossing:{fullBallCrossed:true},scoringTeam:kind==='goal'?'home':null}});
+   assert.equal(result.deflection.kind,'redirected');assert.equal(result.crossing.kind,kind);
+   assert.equal(result.reboundTick,null);assert.equal(result.officialSave,false);
   }
  });

@@ -177,7 +177,7 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
   const keeperUI=await evalJs("(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();document.querySelector('#preset-options [data-value=\\\"action:keeper-1v1\\\"]').click();el('me-observation-details').open=true;return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),summary:el('me-inline-summary').textContent};})()");
   assert.equal(keeperUI.label,'1v1 · goalkeeper');
   assert.deepEqual(new Set(keeperUI.players),new Set(['','away-10','home-1']));
-  assert.deepEqual(keeperUI.metrics,['Shots','Launch speed','Keeper contact','Parry','Flight time','Result']);
+  assert.deepEqual(keeperUI.metrics,['Shots','Launch speed','Keeper contact','Deflection','Rebound','Result']);
   assert.equal(keeperUI.summary,'Waiting for shot');
   await evalJs("document.getElementById('me-observation-details').open=false");
   for(const [width,height] of [[1440,900],[390,844]]){

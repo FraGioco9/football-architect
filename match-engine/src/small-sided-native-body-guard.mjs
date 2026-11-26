@@ -236,10 +236,11 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper){
    }
   }
   body.setNextKinematicTranslation(target);
-  prepared={tick,phase,started};
+  prepared={tick,phase,started,priorVelocity:freeze({...ball.velocity})};
  }
- function observe(tick){
-  if(prepared?.tick!==tick)throw new Error('Keeper dive requires same native world step');
+ function observe(tick,postVelocity){
+  if(prepared?.tick!==tick||!['x','y','z'].every(k=>finite(postVelocity?.[k])))
+   throw new Error('Keeper dive requires same native world step and observed ball velocity');
   let hit=false;
   if(active)world.contactPair(ballCollider,glove,m=>{
    if(m.numContacts()>0&&m.numSolverContacts()>0)hit=true;
@@ -249,6 +250,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper){
    phase:prepared.phase,started:prepared.started,
    glove:active?freeze({x:pos.x,y:pos.y,z:pos.z}):null,
    contact:hit,contactStarted:hit&&!priorHit,
+   contactMotion:hit?freeze({before:prepared.priorVelocity,after:freeze({...postVelocity})}):null,
    officialSave:false,source:'native-rapier-solver-manifold'});
   priorHit=hit;prepared=null;return latest;
  }

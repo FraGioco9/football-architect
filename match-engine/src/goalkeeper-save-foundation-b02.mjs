@@ -67,6 +67,26 @@ export function chooseBasicGoalkeeperDiveTarget({
  });
 }
 
+// GK-04: classify a measurable response at a real glove solver contact.
+// The velocity samples bracket the same world.step; concurrent contacts
+// may contribute, so this is evidence of response, not isolated glove force.
+// Small observational tolerances reject numerical noise and normal drag.
+export function observeKeeperDeflection(side,dive){
+ if(!['home','away'].includes(side)||dive?.contact!==true||
+    dive.source!=='native-rapier-solver-manifold')return null;
+ const {before,after}=dive.contactMotion??{};
+ if(!['x','y','z'].every(k=>finite(before?.[k])&&finite(after?.[k])))return null;
+ const dir=sideSign(side),incoming=dir*before.x,outgoing=dir*after.x;
+ if(incoming<0.5)return null;
+ const lateralChange=Math.abs(after.y-before.y);
+ const speedDrop=Math.hypot(before.x,before.y)-Math.hypot(after.x,after.y);
+ const kind=outgoing<=-0.5?'reversed':
+  lateralChange>=0.5?'redirected':
+  speedDrop>=0.75?'slowed':null;
+ return kind?Object.freeze({tick:dive.tick,kind,before:Object.freeze({...before}),
+  after:Object.freeze({...after}),officialSave:false}):null;
+}
+
 // SHOT-06 baseline: read-only witness of the latest real shot against the
 // original opponent goalkeeper. Contact/parry is NOT proof of a saved shot.
 // No movement, impulse, attribute or scoring authority belongs here.
@@ -75,14 +95,17 @@ export function createKeeperShotObserver(side){
  const keeperId=(side==='home'?'away':'home')+'-1',shooterId=side+'-10';
  let state=Object.freeze({keeperId,shooterId,shots:0,shotTick:null,
   launchSpeedMps:null,keeperContactTick:null,parryTick:null,
-  crossing:null,diveTick:null,gloveContactTick:null,officialSave:false,officialGoal:false});
+  crossing:null,diveTick:null,gloveContactTick:null,deflection:null,reboundTick:null,
+  secondShots:0,officialSave:false,officialGoal:false});
  return Object.freeze({observe({tick,ball,starts,action,event,keeperDive=null}){
   const real=action?.tick===tick&&action.appliedByRapier===true&&
    action.actualPhysicsImpulseApplied===true&&starts.length===1&&starts[0]===action.playerId;
   if(real&&action.playerId===shooterId&&action.action==='shot'){
    state=Object.freeze({...state,shots:state.shots+1,shotTick:tick,
     launchSpeedMps:Math.hypot(ball.velocity.x,ball.velocity.y,ball.velocity.z),
-    keeperContactTick:null,parryTick:null,crossing:null,diveTick:null,gloveContactTick:null});
+    secondShots:state.secondShots+(state.reboundTick!==null&&!state.crossing?1:0),
+    keeperContactTick:null,parryTick:null,crossing:null,diveTick:null,gloveContactTick:null,
+    deflection:null,reboundTick:null});
   }
   if(state.shotTick!==null&&tick>state.shotTick&&!state.crossing){
    const dive=keeperDive?.keeperId===keeperId&&keeperDive.tick===tick;
@@ -92,7 +115,17 @@ export function createKeeperShotObserver(side){
    const crossing=event?.tick===tick&&event.crossing?.fullBallCrossed===true?
     Object.freeze({tick,kind:event.kind,scoringTeam:event.scoringTeam??null,
      fullBallCrossed:true}):null;
-   if(contact||parry||crossing||dive&&keeperDive.started)state=Object.freeze({...state,
+   const response=dive?observeKeeperDeflection(side,keeperDive):null;
+   const deflection=state.deflection??response;
+   // A live rebound is witnessed only on a later in-field native sample
+   // travelling away from the attacked goal. An exit/goal takes precedence.
+   const p=ball.position,v=ball.velocity,dir=sideSign(side);
+   const sourceTick=deflection?.tick??state.parryTick;
+   const rebound=sourceTick!=null&&tick>sourceTick&&!crossing&&
+    [p?.x,p?.y,p?.z,v?.x].every(finite)&&Math.abs(p.x)<52.39&&Math.abs(p.y)<33.89&&
+    dir*v.x< -0.5;
+   if(contact||parry||crossing||response||rebound||dive&&keeperDive.started)state=Object.freeze({...state,
+    deflection,reboundTick:state.reboundTick??(rebound?tick:null),
     diveTick:state.diveTick??(dive&&keeperDive.started?tick:null),
     gloveContactTick:state.gloveContactTick??(glove?tick:null),
     keeperContactTick:state.keeperContactTick??(contact?tick:null),
