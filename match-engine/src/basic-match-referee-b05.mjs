@@ -174,6 +174,12 @@ export function createBasicMatchRefereeB05(){
   lastTouch=null;
   return snapshot();
  }
+ function clearTouchForPeriod(currentTick){
+  if(currentTick!==tick||tick<1||event&&!restarted)
+   throw new TypeError('B05 period reset requires current resolved boundary');
+  lastTouch=null;
+  return snapshot();
+ }
  function recordNativeThrowIn(take){
   if(!restarted||event?.restart?.type!=='throw-in'||take?.sourceEventTick!==event.tick||
      take.tick!==tick||take.team!==event.restart.team||!knownIds.has(take.actorId)||
@@ -184,5 +190,5 @@ export function createBasicMatchRefereeB05(){
   lastTouch=freeze({tick,playerId:take.actorId,team:take.team,nativeHandRelease:true});
   return snapshot();
  }
- return freeze({observe,snapshot,acknowledgeRestart,recordNativeThrowIn});
+ return freeze({observe,snapshot,acknowledgeRestart,recordNativeThrowIn,clearTouchForPeriod});
 }

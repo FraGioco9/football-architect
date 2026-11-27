@@ -472,13 +472,14 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
  assert.ok(results.some(r=>r.boundary==='goal'),'must independently observe an actual full-ball goal');
  assert.ok(results.some(r=>r.boundary==='touchline'),'must independently observe a real touchline exit');
 });
-test('UME-06D native match stops at authentic bounded half-time without inventing second-half kickoff',async()=>{
+test('UME-06D3 bounded native two halves with authentic second-half kickoff and terminal live gate',{timeout:180000},async()=>{
  const R=await initializeRapier(rapier);
  assert.throws(()=>createNativeFullFieldSession(R,{researchHalfTicks:119}),/bounded physical half/);
  for(const side of ['home','away']){
   const session=createNativeFullFieldSession(R,{side,researchHalfTicks:120});
   try{
    assert.equal(session.snapshot().phase,'first-half');
+   assert.throws(()=>session.placeSecondHalf(),/exact half-time/);
    for(let k=1;k<=120;k++)assert.equal(session.step().playedTicks,k);
    const stopped=session.snapshot();
    assert.equal(stopped.phase,'half-time-awaiting-native-restart');
@@ -489,6 +490,35 @@ test('UME-06D native match stops at authentic bounded half-time without inventin
    assert.throws(()=>session.step(),/paused pending authenticated restart/);
    assert.throws(()=>session.placeRestart(),/verified ready boundary ticket/);
    assert.equal(session.snapshot(),stopped);
+   const placed=session.placeSecondHalf();
+   assert.equal(placed.playedTicks,120);assert.equal(placed.tick,120);
+   assert.equal(placed.physicalRestart.periodRestart,'second-half');
+   assert.equal(placed.physicalRestart.sameOriginalRapierWorld,true);
+   assert.deepEqual(placed.players,stopped.players);
+   assert.throws(()=>session.placeSecondHalf(),/exact half-time/);
+   let taken=null;
+   for(let n=1;n<=1800;n++){
+    const f=session.advanceRestart();
+    assert.equal(f.playedTicks,120);assert.equal(f.tick,120+n);
+    if(f.restartTake?.tick===f.tick){taken=f;break;}
+    assert.equal(f.phase,'dead-ball-placed-awaiting-native-take');
+    assert.equal(Math.hypot(...Object.values(f.ball.velocity)),0);
+   }
+   assert.ok(taken,'actual second-half kickoff required');
+   assert.equal(taken.phase,'second-half');assert.equal(taken.restartTake.actorId,'away-10');
+   assert.deepEqual(taken.starts,['away-10']);assert.equal(taken.clock.halfTimeRestartVerified,true);
+   assert.equal(taken.timeline.nativeHalfTake.tick,taken.tick);
+   for(let k=121;k<=240;k++)assert.equal(session.step().playedTicks,k);
+   const end=session.snapshot();
+   assert.equal(end.phase,'full-time');assert.equal(end.clock.label,'00:04');
+   assert.equal(end.boundedTwoPeriodsVerified,true);assert.equal(end.timeline.fullTimeVerified,true);
+   assert.equal(end.directionSwitchVerified,false);assert.equal(end.realFull90MinutesVerified,false);
+   assert.equal(end.officialMatchResult,null);
+   assert.throws(()=>session.step(),/full-time/);
+   assert.throws(()=>session.advanceRestart(),/Native restart requires/);
+   assert.equal(session.snapshot(),end);
+   process.stdout.write('ME_628_UME06_TWO_PERIODS '+JSON.stringify({side,playedTicks:end.playedTicks,physicsTicks:end.tick,
+    pausedTicks:end.tick-end.playedTicks,halfTakeTick:taken.tick,score:end.provisionalScore})+'\n');
   }finally{session.dispose();}
   assert.throws(()=>session.snapshot(),/disposed/);
  }

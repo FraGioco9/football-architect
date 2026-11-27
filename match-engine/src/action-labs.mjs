@@ -51,13 +51,13 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
   diagnosticSmallSidedSituation:id,diagnosticSmallSidedSide:side,diagnosticSmallSidedVariantIndex:variantIndex,
   diagnosticPlayerFootContactsEnabled:true,diagnosticAutonomousFixtureActionEnabled:true,
   diagnosticSmallSidedBodyGuardEnabled:true,diagnosticSmallSidedBodyFeedbackEnabled:true,
-  diagnosticCollectiveActions:true,diagnosticLatestLabDynamics:true
+  diagnosticCollectiveActions:true,diagnosticLatestLabDynamics:true,diagnosticNativeHalfTicks:researchHalfTicks
  });
  try{
   const mover=createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,
    researchSmallSidedVariantIndex:variantIndex,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true});
-  const ledger=createBasicMatchTimelineB06({b06bRealHalftimePause:true});
-  let disposed=false,phase='first-half',playedTicks=0,latest;
+  const ledger=createBasicMatchTimelineB06({b06bRealHalftimePause:true,nativeHalfTicks:researchHalfTicks});
+  let disposed=false,phase='first-half',playedTicks=0,secondHalfStarted=false,latest;
   function observe(physics,frame,restartTake=null){
    const placement=latest?.physicalRestart??null;
    const foot=engine.footContactSnapshot(),raw=engine.uniformAutonomousActionSnapshot();
@@ -65,24 +65,33 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
    const keepers=engine.nativeKeeperSnapshots();
    const evidence=engine.nativeMatchRefereeSnapshot();
    let timeline=ledger.observe({physics,refereeEvidence:evidence});
+   if(engine.nativePlayedTicksSnapshot()!==playedTicks)throw new Error('Native physical and session clocks disagree');
    if(restartTake){
-    timeline=ledger.recordSetPiece({physicsTick:physics.tick,take:restartTake});
-    phase='first-half';
+    if(restartTake.periodRestart==='second-half'){
+     timeline=ledger.recordNativeHalfTake({physicsTick:physics.tick,playedTicks,take:restartTake,foot,solver:engine.footContactSolverSnapshot()});
+     secondHalfStarted=true;
+    }else timeline=ledger.recordSetPiece({physicsTick:physics.tick,take:restartTake});
+    phase=secondHalfStarted?'second-half':'first-half';
    }
-   if(timeline.outstandingDeadBall)phase='dead-ball-awaiting-native-restart';
-   else if(playedTicks===researchHalfTicks)phase='half-time-awaiting-native-restart';
+   if(playedTicks===2*researchHalfTicks&&secondHalfStarted){
+    timeline=ledger.recordNativeFullTime({physicsTick:physics.tick,playedTicks});phase='full-time';
+   }else if(timeline.outstandingDeadBall)phase='dead-ball-awaiting-native-restart';
+   else if(playedTicks===researchHalfTicks&&!secondHalfStarted&&phase!=='dead-ball-placed-awaiting-native-take')phase='half-time-awaiting-native-restart';
    latest=Object.freeze({
     tick:physics.tick,ball:physics.ball,players:frame.players,starts:foot.started,action,
     control:engine.collectiveControlSnapshot(),keepers,reception:engine.latestLabReceptionSnapshot(),
     body:engine.smallSidedBodyGuardSnapshot(),decisions:frame.smallSidedMovementDecisions,
     activeIds:fixture.activeIds,phase,playedTicks,
     clock:Object.freeze({...basicMatchClockB06(playedTicks),phase,
-     originalPhysicsSourceTick:physics.tick,abbreviatedResearchRun:researchHalfTicks!==B06_HALF_TICKS}),
+     originalPhysicsSourceTick:physics.tick,abbreviatedResearchRun:researchHalfTicks!==B06_HALF_TICKS,
+     halfTimeRestartVerified:secondHalfStarted,completedMatchVerified:false}),
     referee:evidence,timeline,provisionalScore:timeline.provisionalScore,
-    pendingRestart:timeline.outstandingDeadBall||phase==='dead-ball-placed-awaiting-native-take'?evidence.lastEvent.restart:null,
+    pendingRestart:phase==='full-time'?null:phase==='dead-ball-placed-awaiting-native-take'&&placement?.periodRestart==='second-half'?null:
+     timeline.outstandingDeadBall||phase==='dead-ball-placed-awaiting-native-take'?evidence.lastEvent.restart:null,
     physicalRestart:placement,restartTake:restartTake??latest?.restartTake??null,throwHands:engine.nativeThrowHandsSnapshot(),
     matchAuthority:false,officialMatchResult:null,officialPossession:false,
-    completeFootballGameplayVerified:false,realFull90MinutesVerified:false
+    completeFootballGameplayVerified:false,realFull90MinutesVerified:false,
+    boundedTwoPeriodsVerified:phase==='full-time',directionSwitchVerified:false
    });
    return latest;
   }
@@ -90,7 +99,7 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
   function snapshot(){if(disposed)throw new Error('Native full-field session disposed');return latest;}
   function step(){
    if(disposed)throw new Error('Native full-field session disposed');
-   if(phase!=='first-half')throw new Error('Native full-field live play paused pending authenticated restart');
+   if(!['first-half','second-half'].includes(phase))throw new Error('Native full-field live play paused pending authenticated restart or full-time');
    const prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
    let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control);
    const physics=engine.step(frame);
@@ -116,6 +125,18 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
     pendingRestart:event.restart});
    return latest;
   }
+  function placeSecondHalf(){
+   if(disposed)throw new Error('Native full-field session disposed');
+   if(phase!=='half-time-awaiting-native-restart')throw new Error('Native second-half placement requires exact half-time');
+   const placement=engine.placeNativeSecondHalf(),timeline=ledger.recordNativeHalfPlacement({physicsTick:latest.tick,playedTicks,placement});
+   phase='dead-ball-placed-awaiting-native-take';
+   latest=Object.freeze({...latest,ball:engine.snapshot().ball,
+    control:engine.collectiveControlSnapshot(),keepers:engine.nativeKeeperSnapshots(),
+    action:null,starts:Object.freeze([]),reception:null,phase,
+    clock:Object.freeze({...latest.clock,phase}),referee:engine.nativeMatchRefereeSnapshot(),timeline,
+    physicalRestart:placement,pendingRestart:null});
+   return latest;
+  }
   function advanceRestart(){
    if(disposed)throw new Error('Native full-field session disposed');
    if(phase!=='dead-ball-placed-awaiting-native-take'||!latest.physicalRestart)
@@ -130,7 +151,7 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
    return observe(physics,frame,take?.tick===physics.tick?take:null);
   }
   function dispose(){if(!disposed){disposed=true;engine.dispose();}}
-  return Object.freeze({snapshot,step,placeRestart,advanceRestart,dispose});
+  return Object.freeze({snapshot,step,placeRestart,placeSecondHalf,advanceRestart,dispose});
  }catch(error){engine.dispose();throw error;}
 }
 

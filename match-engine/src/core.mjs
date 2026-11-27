@@ -137,6 +137,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticNativeFixedSprintLongStrideEnabled = false,
   diagnosticSmallSidedBodyGuardEnabled = false,
   diagnosticCollectiveActions = false,
+  diagnosticNativeHalfTicks = null,
   diagnosticKeeperSingleShot = false,
   diagnosticDirectedDribble = false,
   diagnosticDuelTackleProfile = 'mixed',
@@ -265,6 +266,9 @@ export function createEngine(RAPIER, input = {}, {
       diagnosticSharedContactEventsEnabled)))
    throw new TypeError('LAB body collision requires a small-sided exercise with actual shoe source');
   if(typeof diagnosticCollectiveActions!=='boolean'||(diagnosticCollectiveActions&&(!supportsNativeOpenPlay(diagnosticSmallSidedSituation)||!diagnosticSmallSidedBodyGuardEnabled||!diagnosticSmallSidedBodyFeedbackEnabled||diagnosticKeeperSingleShot||diagnosticDirectedDribble||diagnosticDuelTackleProfile!=='mixed')))throw new TypeError('Native open play requires guarded participants without isolated overrides');
+  if(diagnosticNativeHalfTicks!==null&&(!Number.isSafeInteger(diagnosticNativeHalfTicks)||diagnosticNativeHalfTicks<120||
+     diagnosticNativeHalfTicks>162000||diagnosticSmallSidedSituation!=='full-field-native'||!diagnosticCollectiveActions))
+   throw new TypeError('Native match half requires guarded full-field physical clock');
   if(typeof diagnosticDirectedDribble!=='boolean'||(diagnosticDirectedDribble&&
      (diagnosticSmallSidedSituation!=='dribble-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Directed dribble requires original guarded 1v1');
@@ -810,6 +814,7 @@ export function createEngine(RAPIER, input = {}, {
   // referee ticket; an externally assembled boundary object is not authority.
   const nativeMatchReferee=smallSided?.fullField&&diagnosticCollectiveActions?createBasicMatchRefereeB05():null;
   let nativeRestartPending=null,nativeRestartTake=null,nativeMatchFrame=null,nativeThrowHands=null;
+  let nativePlayedTicks=0,nativeHalfPlacement=null,nativeHalfTake=null;
   let b06bOpeningKickoff=null,b06bHalftimePlacement=null,b06bKickoff=null;
   let b06bGoalPending=null,b06bGoalLastTick=-1,b06bGoalPausedTicks=0;
   let b05bOutboundAction=null,b05bTake=null,b05bRestartTicket=null;
@@ -874,6 +879,11 @@ export function createEngine(RAPIER, input = {}, {
     const restarting=nativeRestartPending!==null;
     if(restarting?restartPlacement!==nativeRestartPending:restartPlacement!==null)
      throw new Error('Native dead ball placed; authenticated restart take required');
+    if(diagnosticNativeHalfTicks!==null&&!restarting&&(
+     nativePlayedTicks>=2*diagnosticNativeHalfTicks||
+     nativePlayedTicks===diagnosticNativeHalfTicks&&!nativeHalfTake&&
+     (!nativeMatchReferee.snapshot().lastEvent||nativeMatchReferee.snapshot().restartApplied)))
+     throw new Error('Native regulation live gate closed at period boundary');
     if(nativeMatchReferee&&!restarting&&nativeMatchReferee.snapshot().lastEvent&&!nativeMatchReferee.snapshot().restartApplied)
      throw new Error('Native full-ball exit requires verified restart placement');
     if(!shoeBridge&&!bodyBridge&&playerFrame!==undefined)
@@ -981,6 +991,7 @@ export function createEngine(RAPIER, input = {}, {
     applyGrassRollingResistance();
     const collectiveSolverVelocity=collectiveObserver?Object.freeze({...body.linvel()}):null;
     tick += 1;
+    if(diagnosticNativeHalfTicks!==null&&!restarting)nativePlayedTicks++;
     const hands=collectiveObserver?keeperSnapshots():[];
     const distribution=hands.find(k=>k.distribution?.tick===tick)?.distribution??null;
     // Same tick, same private Rapier ball, exclusively from observed shoe
@@ -1045,9 +1056,11 @@ export function createEngine(RAPIER, input = {}, {
       body.applyImpulse(impulse,true);
       nativeRestartTake=Object.freeze({tick,type:placement.kind,team:placement.assignedTeam,actorId:id,
        sourceEventTick:placement.sourceEventTick,impulseNs:impulse,singleOriginalRapierBall:true,
+       ...(placement.periodRestart==='second-half'?{periodRestart:'second-half',playedTicks:nativePlayedTicks}:{}),
        sameOriginalRapierWorld:true,physicalImpulseApplied:true,originalNativeShoeStart:true,
        currentRapierContactManifold:true,provisionalHandReleaseWithoutHandCollider:false,
        officialMatchAction:false,officialPossession:false,officialMatchResult:null,ball:snapshot().ball});
+      if(placement.periodRestart==='second-half')nativeHalfTake=nativeRestartTake;
       nativeRestartPending=null;
      }else{
       // An accidental dead-ball displacement is NOT a live kick. Retain
@@ -1158,12 +1171,7 @@ export function createEngine(RAPIER, input = {}, {
       event.restart.type!==b05bSource.kind||
       event.restart.team!==b05bSource.restartTeam))
      throw new TypeError('B05b restart requires original same-shoe outbound action and goal-line outcome');
-    if(native){
-     for(const controller of keeperDives)controller.clearForDeadBall(tick);
-     collectiveObserver.clearForDeadBall(tick);
-     actionExecutor.clearForDeadBall(tick);
-     curledShotFlight=false;
-    }
+    if(native)clearNativeDeadBallState();
     body.setTranslation(at,true);
     body.setLinvel({x:0,y:0,z:0},true);
     body.setAngvel({x:0,y:0,z:0},true);
@@ -1186,6 +1194,32 @@ export function createEngine(RAPIER, input = {}, {
      if(placement.kind==='throw-in')nativeThrowHands=createNativeThrowInHands(RAPIER,world,ballCollider,body,placement,taker);
     }
     return placement;
+  }
+  function clearNativeDeadBallState(){
+   for(const controller of keeperDives)controller.clearForDeadBall(tick);
+   collectiveObserver.clearForDeadBall(tick);
+   actionExecutor.clearForDeadBall(tick);
+   curledShotFlight=false;
+  }
+  // Exact physical half boundary, not a fabricated B05 goal/out event.
+  // Reuse the identical native kickoff approach/take path. Direction
+  // inversion is deliberately not claimed by this bounded lifecycle.
+  function placeNativeSecondHalf(){
+   if(disposed||diagnosticNativeHalfTicks===null||nativePlayedTicks!==diagnosticNativeHalfTicks||
+      nativeRestartPending||nativeHalfPlacement||!nativeMatchFrame||
+      nativeMatchReferee.snapshot().lastEvent&&!nativeMatchReferee.snapshot().restartApplied)
+    throw new TypeError('Native second-half placement requires exact completed first half and no outstanding restart');
+   clearNativeDeadBallState();
+   const at=Object.freeze({x:0,y:0,z:BALL_RADIUS});
+   body.setTranslation(at,true);body.setLinvel({x:0,y:0,z:0},true);body.setAngvel({x:0,y:0,z:0},true);
+   body.resetForces(true);body.resetTorques(true);
+   const placement=Object.freeze({tick,kind:'kickoff',periodRestart:'second-half',playedTicks:nativePlayedTicks,
+    assignedTeam:'away',takerId:'away-10',spot:at,sourceEventTick:null,
+    originalRapierBallRepositioned:true,realShoeContact:false,officialMatchResult:null,
+    sameOriginalRapierWorld:true,playerTeleports:false,deadBallPlacementOnly:true,ball:snapshot().ball});
+   nativeMatchReferee.clearTouchForPeriod(tick);
+   nativeRestartPending=placement;nativeRestartTake=null;nativeHalfPlacement=placement;
+   return placement;
   }
   // B05b set piece: corner/goal kick MUST have an independent native
   // restart-taker shoe START and live same-tick Rapier manifold.
@@ -1444,6 +1478,8 @@ export function createEngine(RAPIER, input = {}, {
     }
   }
   return Object.freeze({scenario, ballProperties, snapshot, angularVelocity, step, dispose,
+    ...(diagnosticNativeHalfTicks!==null?{placeNativeSecondHalf,
+      nativePlayedTicksSnapshot:()=>nativePlayedTicks}:{}),
     ...(diagnosticBasicRestartEnabled||nativeMatchReferee?{applyBasicRestartAtBoundary}:{}),
     ...(nativeMatchReferee?{nativeMatchRefereeSnapshot:()=>nativeMatchReferee.snapshot(),nativeRestartTakeSnapshot:()=>nativeRestartTake,nativeThrowHandsSnapshot:()=>nativeThrowHands?.snapshot()??null}:{}),
     ...(b05bSource?{attemptB05bNativeOutboundKick,attemptB05bOriginalSetPiece}:{}),
