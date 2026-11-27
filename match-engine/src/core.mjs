@@ -9,6 +9,7 @@ import {createPrivateRapier22BodyBridge} from './rapier-22-body-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
+import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
 import {smallSidedSetup,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
 import {createNativeBallControlObserver,createDribbleTransitionObserver} from './isolated-dribble-touches.mjs';
 import {createSmallSidedNativeBodyGuard,createNativeKeeperDive}
@@ -805,6 +806,10 @@ export function createEngine(RAPIER, input = {}, {
   let curledShotFlight=false;
   let disposed = false;
   let basicRestartTick = -1;
+  // Only the private full-field native session exposes its own original
+  // referee ticket; an externally assembled boundary object is not authority.
+  const nativeMatchReferee=smallSided?.fullField&&diagnosticCollectiveActions?createBasicMatchRefereeB05():null;
+  let nativeRestartPending=null;
   let b06bOpeningKickoff=null,b06bHalftimePlacement=null,b06bKickoff=null;
   let b06bGoalPending=null,b06bGoalLastTick=-1,b06bGoalPausedTicks=0;
   let b05bOutboundAction=null,b05bTake=null,b05bRestartTicket=null;
@@ -862,8 +867,11 @@ export function createEngine(RAPIER, input = {}, {
     const a=body.angvel();
     return Object.freeze({x:a.x,y:a.y,z:a.z});
   }
+  if(nativeMatchReferee)nativeMatchReferee.observe({physics:snapshot(),
+    playerFrame:{tick:0,players:stagedShoes},foot:shoeBridge.snapshot(),solver:null});
   function step(playerFrame) {
     if (disposed) throw new Error('Engine has been disposed');
+    if(nativeRestartPending)throw new Error('Native dead ball placed; authenticated restart take required');
     if(!shoeBridge&&!bodyBridge&&playerFrame!==undefined)
       throw new TypeError('Canonical player frame requires explicit physics opt-in');
     if(bodyBridge&&playerFrame===undefined)
@@ -1009,7 +1017,14 @@ export function createEngine(RAPIER, input = {}, {
      const shot=actionExecutor.actionSnapshot();
      if(shot?.labShotCalibration?.profile==='curled'&&shot.labShotSpin?.nativeContactOnly)curledShotFlight=true;
     }
-    return snapshot();
+    const result=snapshot();
+    if(nativeMatchReferee){
+     const raw=actionExecutor.actionSnapshot(),hands=keeperSnapshots().filter(k=>k.contactStarted===true);
+     nativeMatchReferee.observe({physics:result,playerFrame,foot:shoeBridge.snapshot(),
+      solver:shoeBridge.solver(),action:raw?.tick===tick?raw:null,
+      keeperDive:hands.length===1?hands[0]:null});
+    }
+    return result;
   }
   // B05b: one original native Rapier shoe START, one outbound physical
   // impulse on the same ball. This is a DEV research action, not a match
@@ -1058,8 +1073,11 @@ export function createEngine(RAPIER, input = {}, {
   // Only an exact-tick referee ticket describing the ACTUAL fully-out ball
   // unlocks this explicitly DEV-only operation.
   function applyBasicRestartAtBoundary(event){
-    if(disposed||!diagnosticBasicRestartEnabled||
-       !event||event.tick!==tick||basicRestartTick>=0||
+    const native=!!nativeMatchReferee;
+    if(disposed||(!diagnosticBasicRestartEnabled&&!native)||
+       (native&&(nativeRestartPending!==null||nativeMatchReferee.snapshot().lastEvent!==event||
+        nativeMatchReferee.snapshot().restartApplied||tick<=basicRestartTick))||
+       !event||event.tick!==tick||(!native&&basicRestartTick>=0)||
        event.originalRapierSource!==true||
        event.crossing?.fullBallCrossed!==true||
        event.crossing?.source!=='real-consecutive-rapier-centres'||
@@ -1098,6 +1116,12 @@ export function createEngine(RAPIER, input = {}, {
       event.restart.type!==b05bSource.kind||
       event.restart.team!==b05bSource.restartTeam))
      throw new TypeError('B05b restart requires original same-shoe outbound action and goal-line outcome');
+    if(native){
+     for(const controller of keeperDives)controller.clearForDeadBall(tick);
+     collectiveObserver.clearForDeadBall(tick);
+     actionExecutor.clearForDeadBall(tick);
+     curledShotFlight=false;
+    }
     body.setTranslation(at,true);
     body.setLinvel({x:0,y:0,z:0},true);
     body.setAngvel({x:0,y:0,z:0},true);
@@ -1105,11 +1129,17 @@ export function createEngine(RAPIER, input = {}, {
     body.resetTorques(true);
     basicRestartTick=tick;
     b05bRestartTicket=b05bSource?event.restart:null;
-    return Object.freeze({tick,kind:event.restart.type,
+    const placement=Object.freeze({tick,kind:event.restart.type,
      assignedTeam:event.restart.team,
      originalRapierBallRepositioned:true,
      realShoeContact:false,officialMatchResult:null,
-     ball:snapshot().ball,sourceEventTick:event.tick});
+     ball:snapshot().ball,sourceEventTick:event.tick,
+     ...(native?{sameOriginalRapierWorld:true,playerTeleports:false,deadBallPlacementOnly:true}: {})});
+    if(native){
+     nativeMatchReferee.acknowledgeRestart(event.restart);
+     nativeRestartPending=placement;
+    }
+    return placement;
   }
   // B05b set piece: corner/goal kick MUST have an independent native
   // restart-taker shoe START and live same-tick Rapier manifold.
@@ -1367,7 +1397,8 @@ export function createEngine(RAPIER, input = {}, {
     }
   }
   return Object.freeze({scenario, ballProperties, snapshot, angularVelocity, step, dispose,
-    ...(diagnosticBasicRestartEnabled?{applyBasicRestartAtBoundary}:{}),
+    ...(diagnosticBasicRestartEnabled||nativeMatchReferee?{applyBasicRestartAtBoundary}:{}),
+    ...(nativeMatchReferee?{nativeMatchRefereeSnapshot:()=>nativeMatchReferee.snapshot()}:{}),
     ...(b05bSource?{attemptB05bNativeOutboundKick,attemptB05bOriginalSetPiece}:{}),
     ...(diagnosticB06bHalftimeTick!==null?{
      b06bOriginalHalftimePlacement,b06bOriginalSecondHalfKickoff,

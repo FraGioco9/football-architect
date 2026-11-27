@@ -390,5 +390,15 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
    officialSave:false,source:'native-rapier-solver-manifold'});
   priorHit=hit;prepared=null;return latest;
  }
- return freeze({prepare,observe,snapshot:()=>latest});
+ function clearForDeadBall(tick){
+  if(!nativeOpenPlay||latest.tick!==tick||tick<1||prepared!==null)throw new TypeError('Current native keeper tick required for dead ball');
+  grip?.release();const catchState=grip?.observe(tick)??null;
+  plan=null;shotTick=null;usedShot=null;startTick=null;active=false;priorHit=false;lastChallengeTick=tick;
+  glove.setCollisionGroups(0);
+  latest=freeze({version:KEEPER_DIVE_VERSION,tick,keeperId:keeper.id,phase:'ready',
+   glove:null,started:false,contact:false,contactStarted:false,catchState,
+   distribution:null,officialSave:false,source:'native-rapier-solver-manifold'});
+  return latest;
+ }
+ return freeze({prepare,observe,clearForDeadBall,snapshot:()=>latest});
 }

@@ -567,8 +567,14 @@ export function createPrivatePhysicalActionExecutor({
   tick=nextTick;action=applied;audit=currentAudit;
   return Object.freeze({tick,action,audit});
  }
+ function clearForDeadBall(currentTick){
+  ensureOpen();
+  if(!nativeActionPolicy||tick!==currentTick||tick<1)throw new TypeError('Current native action tick required for dead ball');
+  pendingDelivery=null;latestCushion=null;action=null;
+  lastActionTick=tick-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
+ }
  return Object.freeze({
-  apply,
+  apply,clearForDeadBall,
   actionSnapshot:()=>{ensureOpen();return action;},
   rejectionSnapshot:()=>{ensureOpen();return audit;},
   cushionSnapshot:()=>{ensureOpen();return firstCushion;},

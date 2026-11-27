@@ -82,7 +82,15 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
   latest=Object.freeze({tick,...control,delivery,getUpUntil:Object.freeze({...getUpUntil}),shoulderByPlayer:Object.freeze({...shoulderByPlayer}),lastInterventions:Object.freeze({...lastInterventions}),lastBlock,blockCount,keeperHold,keeperDistribution});
   return latest;
  }
- return Object.freeze({snapshot:()=>latest,observe});
+ function clearForDeadBall(tick){
+  if(tick!==latest.tick||tick<1)throw new TypeError('Current native control tick required for dead ball');
+  witness=null;delivery=null;getUpUntil={};shoulderByPlayer={};lastInterventions={};
+  latest=Object.freeze({...latest,...observeDuelBallControl(),tick,delivery:null,
+   getUpUntil:Object.freeze({}),shoulderByPlayer:Object.freeze({}),lastInterventions:Object.freeze({}),
+   keeperHold:null,keeperDistribution:null});
+  return latest;
+ }
+ return Object.freeze({snapshot:()=>latest,observe,clearForDeadBall});
 }
 // Compatibility export for existing tests and callers; the factory is identical.
 export const createCollectiveBallControlObserver=createNativeBallControlObserver;

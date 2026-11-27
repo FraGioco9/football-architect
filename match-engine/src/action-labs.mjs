@@ -56,15 +56,13 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
  try{
   const mover=createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,
    researchSmallSidedVariantIndex:variantIndex,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true});
-  const referee=createBasicMatchRefereeB05(),ledger=createBasicMatchTimelineB06({b06bRealHalftimePause:true});
+  const ledger=createBasicMatchTimelineB06({b06bRealHalftimePause:true});
   let disposed=false,phase='first-half',playedTicks=0,latest;
   function observe(physics,frame){
    const foot=engine.footContactSnapshot(),raw=engine.uniformAutonomousActionSnapshot();
    const action=raw?.tick===physics.tick&&physics.tick>0?raw:null;
-   const keepers=engine.nativeKeeperSnapshots(),gloves=keepers.filter(k=>k.contactStarted===true);
-   const evidence=referee.observe({physics,playerFrame:frame,foot,
-    solver:physics.tick===0?null:engine.footContactSolverSnapshot(),action,
-    keeperDive:gloves.length===1?gloves[0]:null});
+   const keepers=engine.nativeKeeperSnapshots();
+   const evidence=engine.nativeMatchRefereeSnapshot();
    const timeline=ledger.observe({physics,refereeEvidence:evidence});
    if(timeline.outstandingDeadBall)phase='dead-ball-awaiting-native-restart';
    else if(playedTicks===researchHalfTicks)phase='half-time-awaiting-native-restart';
@@ -96,8 +94,24 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
    playedTicks++;
    return observe(physics,frame);
   }
+  function placeRestart(){
+   if(disposed)throw new Error('Native full-field session disposed');
+   if(phase!=='dead-ball-awaiting-native-restart'||!latest.pendingRestart?.ready)
+    throw new Error('Native restart placement requires a verified ready boundary ticket');
+   const event=latest.referee.lastEvent,placement=engine.applyBasicRestartAtBoundary(event);
+   const referee=engine.nativeMatchRefereeSnapshot();
+   const timeline=ledger.recordRestart({physicsTick:latest.tick,refereeEvidence:referee,physicalRestart:placement});
+   phase='dead-ball-placed-awaiting-native-take';
+   latest=Object.freeze({...latest,ball:engine.snapshot().ball,
+    control:engine.collectiveControlSnapshot(),keepers:engine.nativeKeeperSnapshots(),
+    action:null,starts:Object.freeze([]),reception:null,phase,
+    clock:Object.freeze({...latest.clock,phase}),referee,timeline,
+    provisionalScore:timeline.provisionalScore,physicalRestart:placement,
+    pendingRestart:event.restart});
+   return latest;
+  }
   function dispose(){if(!disposed){disposed=true;engine.dispose();}}
-  return Object.freeze({snapshot,step,dispose});
+  return Object.freeze({snapshot,step,placeRestart,dispose});
  }catch(error){engine.dispose();throw error;}
 }
 

@@ -357,6 +357,7 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
    assert.deepEqual(x.snapshot().activeIds,fixture.activeIds);
    assert.deepEqual(x.snapshot().body.selectedColliderIds,fixture.activeIds);
    assert.equal(x.snapshot().playedTicks,0);
+   assert.throws(()=>x.placeRestart(),/verified ready boundary ticket/);
    let prior=x.snapshot().ball.position,pathM=0,ticks=0,boundary=null;
    for(let k=1;k<=600;k++){
     const a=x.step(),b=y.step();
@@ -386,7 +387,31 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
      assert.deepEqual(a.pendingRestart,a.referee.lastEvent.restart);
      assert.equal(a.provisionalScore.home+a.provisionalScore.away,boundary.goal?1:0);
      assert.throws(()=>x.step(),/paused pending authenticated restart/);
-     assert.equal(x.snapshot(),a);break;
+     assert.equal(x.snapshot(),a);
+     if(a.pendingRestart.ready){
+      const placed=x.placeRestart(),replayed=y.placeRestart();
+      assert.deepEqual(placed,replayed);
+      assert.equal(placed.tick,k);assert.equal(placed.playedTicks,k);
+      assert.equal(placed.phase,'dead-ball-placed-awaiting-native-take');
+      assert.equal(placed.referee.restartApplied,true);
+      assert.equal(placed.timeline.outstandingDeadBall,false);
+      assert.equal(placed.timeline.lastPhysicalRestart.originalRapierBallRepositioned,true);
+      assert.equal(placed.physicalRestart.sameOriginalRapierWorld,true);
+      assert.equal(placed.physicalRestart.realShoeContact,false);
+      assert.equal(placed.physicalRestart.playerTeleports,false);
+      assert.deepEqual(placed.players,a.players);
+      for(const axis of ['x','y','z'])assert.ok(Math.abs(placed.ball.position[axis]-a.pendingRestart.spot[axis])<1e-5);
+      assert.deepEqual(placed.ball.velocity,{x:0,y:0,z:0});
+      assert.equal(placed.control.kind,'loose');assert.equal(placed.control.playerId,null);
+      assert.equal(placed.control.delivery,null);assert.equal(placed.control.keeperHold,null);
+      assert.ok(placed.keepers.every(p=>!p.catchState?.active));
+      assert.equal(placed.action,null);assert.equal(placed.reception,null);
+      assert.throws(()=>x.placeRestart(),/verified ready boundary ticket/);
+      assert.throws(()=>x.step(),/paused pending authenticated restart/);
+      assert.equal(x.snapshot(),placed);
+      process.stdout.write('ME_628_UME06_RESTART_PLACEMENT '+JSON.stringify({side,variantIndex,tick:k,kind:placed.physicalRestart.kind,team:placed.physicalRestart.assignedTeam,clock:placed.clock.label})+'\n');
+     }else assert.throws(()=>x.placeRestart(),/verified ready boundary ticket/);
+     break;
     }
     assert.equal(a.phase,'first-half');assert.equal(a.pendingRestart,null);
     assert.equal(a.timeline.outstandingDeadBall,false);
@@ -417,6 +442,7 @@ test('UME-06D native match stops at authentic bounded half-time without inventin
    assert.equal(stopped.clock.halfTimeRestartVerified,false);
    assert.equal(stopped.realFull90MinutesVerified,false);
    assert.throws(()=>session.step(),/paused pending authenticated restart/);
+   assert.throws(()=>session.placeRestart(),/verified ready boundary ticket/);
    assert.equal(session.snapshot(),stopped);
   }finally{session.dispose();}
   assert.throws(()=>session.snapshot(),/disposed/);
