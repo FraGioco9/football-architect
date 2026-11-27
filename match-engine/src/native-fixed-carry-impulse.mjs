@@ -4,6 +4,7 @@
 // creates shoe events, applies impulses, sets ball velocity or possession.
 import {calibrateSoloCarryTouch,validateSoloCarryAttributes}
  from './solo-carry-attribute-calibration.mjs';
+import {INITIAL_PLAYERS} from './player-movement.mjs';
 
 const PHASES=Object.freeze({
  control:Object.freeze({targetSpeedMps:2.6,maxImpulseNs:1.10,
@@ -15,7 +16,7 @@ const PHASES=Object.freeze({
 });
 export function chooseNativeFixedCarryImpulse({
  phase,playerAttributes,player,attackingSide,ballVelocity,
- verifiedNativeExclusiveShoeStart,nativeFixedSprintLongStride=false
+ verifiedNativeExclusiveShoeStart,contactActorId,nativeFixedSprintLongStride=false
 }={}){
  if(typeof nativeFixedSprintLongStride!=='boolean'||
     (nativeFixedSprintLongStride&&phase!=='sprint'))
@@ -24,7 +25,8 @@ export function chooseNativeFixedCarryImpulse({
     !['home','away'].includes(attackingSide)||
     verifiedNativeExclusiveShoeStart!==true||
     player?.team!==attackingSide||
-    player?.id!==attackingSide+'-10'||
+    player?.id!==contactActorId||
+    !INITIAL_PLAYERS.some(p=>p.id===contactActorId&&p.team===attackingSide)||
     ![player.vx,player.vy,player.x,player.y,
       ballVelocity?.x,ballVelocity?.y,ballVelocity?.z]
       .every(Number.isFinite))

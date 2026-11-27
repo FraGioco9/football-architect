@@ -606,3 +606,24 @@ test('UME-05J native interception correction is shared and bounded across mirror
   assert.equal(selectUniformAutonomousContactAction({...input,contactActive:[defenderId,passerId]}),null);
  }
 });
+
+test('UME-05K one bounded ground correction preserves defensive attempt geometry and ceilings',async()=>{
+ const {chooseDribbleDefensiveTouch,planNativeDefensiveGroundTouch,SLIDING_TACKLE_MAX_IMPULSE_NS}=await import('../src/isolated-dribble-touches.mjs');
+ for(const attackingSide of ['home','away']){
+  const dir=attackingSide==='home'?1:-1,other=attackingSide==='home'?'away':'home';
+  const defender={id:other+'-6',team:other,x:dir*0.6,y:0.2};
+  const ballPosition={x:0,y:0,z:0.11},ballVelocity={x:dir*1.4,y:0,z:0};
+  for(const [carrierX,kind,sliding,cap] of [[-0.6,'tackle',false,1.25],[-0.6,'tackle',true,SLIDING_TACKLE_MAX_IMPULSE_NS],[-4,'interception',false,1.25]]){
+   const attacker={id:attackingSide+'-8',team:attackingSide,x:dir*carrierX,y:0};
+   const source={attackingSide,attacker,defender,ballPosition,ballVelocity};
+   const touch=chooseDribbleDefensiveTouch({...source,sliding});
+   assert.equal(touch?.kind,kind);
+   const common=planNativeDefensiveGroundTouch({...source,kind,desiredVelocity:touch.desiredVelocity,maxImpulseNs:cap});
+   assert.ok(common);
+   assert.equal(common.magnitudeNs,Math.min(cap,0.43*Math.hypot(touch.desiredVelocity.x-ballVelocity.x,touch.desiredVelocity.y-ballVelocity.y)));
+   for(const key of ['dx','dy','magnitudeNs','actorId','opponentId','carrierGapM','defenderGapM'])assert.equal(common[key],touch[key]);
+   assert.equal(common.officialPossession,false);assert.equal(common.nativeExclusiveShoeRequired,true);
+   assert.equal(planNativeDefensiveGroundTouch({...source,kind:kind==='tackle'?'interception':'tackle',desiredVelocity:touch.desiredVelocity,maxImpulseNs:cap}),null);
+  }
+ }
+});

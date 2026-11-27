@@ -402,14 +402,9 @@ export function chooseDribbleDefensiveTouch({attackingSide,attacker,defender,bal
  const release=planDefensiveBallRelease(attacker,defender,b,attackingSide,{sliding:slidingStrike});
  if(!release)return null;
  const desiredSpeed=kind==='interception'?2.4:slidingStrike?SLIDING_TACKLE_TARGET_SPEED_MPS:STANDING_TACKLE_TARGET_SPEED_MPS;
- const desiredX=release.ux*desiredSpeed,desiredY=release.uy*desiredSpeed;
- const dx=desiredX-v.x,dy=desiredY-v.y;
- const magnitudeNs=Math.min(slidingStrike?SLIDING_TACKLE_MAX_IMPULSE_NS:1.25,0.43*Math.hypot(dx,dy));
- if(magnitudeNs<0.025)return null;
- return Object.freeze({version:'me-628-duel-defensive-touch-v1',kind,dx,dy,magnitudeNs,
-  actorId:defender.id,opponentId:attacker.id,carrierGapM:carrierGap,defenderGapM:gap,
-  release,slidingStrike,desiredVelocity:Object.freeze({x:desiredX,y:desiredY}),
-  nativeExclusiveShoeRequired:true,physicalAttemptOnly:true,tackleWon:false,interceptionConfirmed:false,officialPossession:false});
+ const desiredVelocity=Object.freeze({x:release.ux*desiredSpeed,y:release.uy*desiredSpeed});
+ const touch=planNativeDefensiveGroundTouch({kind,attackingSide,attacker,defender,ballPosition:b,ballVelocity:v,desiredVelocity,maxImpulseNs:slidingStrike?SLIDING_TACKLE_MAX_IMPULSE_NS:1.25});
+ return touch?Object.freeze({...touch,version:'me-628-duel-defensive-touch-v1',release,slidingStrike,tackleWon:false}):null;
 }
 
 // Observe the post-impulse Rapier trajectory, not a promised success.
@@ -532,21 +527,26 @@ export function planDuelInterception({attackingSide,attacker,defender,ballPositi
  }
  return best?Object.freeze(best.candidate):null;
 }
-// UME-05J: one bounded velocity correction for all native interception
-// attempts. Context supplies the provisional target and ceiling, not a
-// contact or outcome. Actual impulse application still needs Rapier START.
-export function planNativeInterceptionCushion({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v,desiredVelocity,maxImpulseNs}={}){
+// UME-05K: one bounded defensive ground correction for all native
+// standing, sliding and interception attempts. The action policy supplies
+// eligibility, target and ceiling. No contact or outcome is created here.
+export function planNativeDefensiveGroundTouch({kind,attackingSide,attacker,defender,ballPosition:b,ballVelocity:v,desiredVelocity,maxImpulseNs}={}){
+ if(!['tackle','interception'].includes(kind))return null;
  if(!isOpposingDuelPair(attackingSide,attacker,defender)||
     ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,b?.z,v?.x,v?.y,desiredVelocity?.x,desiredVelocity?.y,maxImpulseNs].every(Number.isFinite)||
     maxImpulseNs<=0||maxImpulseNs>5.8||Math.hypot(defender.x-b.x,defender.y-b.y)>0.85||
-    Math.hypot(attacker.x-b.x,attacker.y-b.y)<1.15)return null;
+    (kind==='interception'?Math.hypot(attacker.x-b.x,attacker.y-b.y)<1.15:Math.hypot(attacker.x-b.x,attacker.y-b.y)>1.15))return null;
  const dx=desiredVelocity.x-v.x,dy=desiredVelocity.y-v.y;
  const magnitudeNs=Math.min(maxImpulseNs,0.43*Math.hypot(dx,dy));
  if(magnitudeNs<0.025)return null;
- return Object.freeze({kind:'interception',actorId:defender.id,opponentId:attacker.id,
+ return Object.freeze({kind,actorId:defender.id,opponentId:attacker.id,
   dx,dy,magnitudeNs,desiredVelocity:Object.freeze({...desiredVelocity}),
   carrierGapM:Math.hypot(attacker.x-b.x,attacker.y-b.y),defenderGapM:Math.hypot(defender.x-b.x,defender.y-b.y),
   nativeExclusiveShoeRequired:true,physicalAttemptOnly:true,interceptionConfirmed:false,officialPossession:false});
+}
+// Existing callers keep their narrower interception contract.
+export function planNativeInterceptionCushion(source={}){
+ return planNativeDefensiveGroundTouch({...source,kind:'interception'});
 }
 export function chooseDuelInterceptionTouch({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}){
  if(!isOpposingDuelPair(attackingSide,attacker,defender)||

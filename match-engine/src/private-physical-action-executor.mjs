@@ -354,6 +354,7 @@ export function createPrivatePhysicalActionExecutor({
     ballVelocity:ballBody.linvel(),
     verifiedNativeExclusiveShoeStart:
      contact.nativeSoloFeet?.exclusivePhysicalStart===true,
+    contactActorId:contact.started[0],
     nativeFixedSprintLongStride
    }):null;
   const chosen=nativeTune?.impulseNs===null?null:originalChosen;

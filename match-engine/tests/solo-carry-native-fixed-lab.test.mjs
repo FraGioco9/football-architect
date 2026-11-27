@@ -11,7 +11,7 @@ test('#628 native fixed-phase touch requires authenticated source and pace',()=>
  const actor={id:'home-10',team:'home',x:0,y:0,vx:2,vy:0};
  const valid={phase:'moderate',playerAttributes:uniformSoloCarryAttributes(50),
   player:actor,attackingSide:'home',ballVelocity:{x:1,y:0,z:0},
-  verifiedNativeExclusiveShoeStart:true};
+  verifiedNativeExclusiveShoeStart:true,contactActorId:actor.id};
  const touch=chooseNativeFixedCarryImpulse(valid);
  assert.equal(touch.nativeShoeContactVerified,true);
  assert.equal(touch.originalRapierBall,true);
@@ -30,8 +30,16 @@ test('#628 native fixed-phase touch requires authenticated source and pace',()=>
  }),/exclusive Rapier shoe/);
  const away=chooseNativeFixedCarryImpulse({...valid,
   player:{...actor,id:'away-10',team:'away',vx:-2},
-  attackingSide:'away',ballVelocity:{x:-1,y:0,z:0}});
+  attackingSide:'away',contactActorId:'away-10',ballVelocity:{x:-1,y:0,z:0}});
  assert.ok(away.impulseNs.x<0);
+ // Contact identity, not shirt number, authorizes the phase calculation.
+ for(const shirt of [1,4,9,11]){
+  const player={...actor,id:'home-'+shirt};
+  const result=chooseNativeFixedCarryImpulse({...valid,player,contactActorId:player.id});
+  assert.deepEqual(result,touch);
+ }
+ assert.throws(()=>chooseNativeFixedCarryImpulse({...valid,contactActorId:'away-10'}),/exclusive Rapier shoe/);
+ assert.throws(()=>chooseNativeFixedCarryImpulse({...valid,player:{...actor,id:'home-99'},contactActorId:'home-99'}),/exclusive Rapier shoe/);
 });
 
 test('#628 real 10s native locked phases remain contact-authenticated and separate from intent',
