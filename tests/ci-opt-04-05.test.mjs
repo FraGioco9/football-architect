@@ -204,3 +204,164 @@ test('isolated Browser FULL evidence cannot pass with missing or skipped require
  assert.equal(evaluateRun(run(),proof,sha,workflow).state,'MISSING','unexpected parity lanes contradict scope markers');
  assert.equal(evaluateRun(run(),proof.filter(j=>!['Browser lane (css)','Browser lane (visual)'].includes(j.name)),sha,workflow).state,'PASS');
 });
+
+test('Match Engine exceptions permit only appended test files and static LAB routes',async()=>{
+ const {staticRoutes,newTestCommands}=await import('../tools/ci-match-engine.cjs');
+ const manifest=(command,dependencies={})=>JSON.stringify({scripts:{test:command},dependencies});
+ const original='node --test tests/core.test.mjs';
+ assert.ok(newTestCommands(manifest(original),manifest(original+' tests/pass.test.mjs')));
+ for(const next of [manifest('node --test tests/pass.test.mjs'),manifest(original+' && true'),
+  manifest(original+' tests/pass.test.mjs',{rapier:'latest'})])assert.equal(newTestCommands(manifest(original),next),false);
+ const old="const MATCH_ENGINE_LAB = Object.freeze({\n  '/existing': 'existing'\n});\nserve();";
+ const route="  '/__fa_match_engine__/lab-shot-calibration.mjs': 'match-engine/src/lab-shot-calibration.mjs',\n";
+ const next=old.replace("  '/existing'",route+"  '/existing'");
+ const exists=p=>p==='match-engine/src/lab-shot-calibration.mjs';
+ assert.ok(staticRoutes(old,next,exists));
+ for(const invalid of [next.replace('serve();','proxy();'),next.replace(route,route+route),
+  next.replace('match-engine/src','backend/src'),next.replace("'/existing': 'existing'","'/existing': 'other'")])
+  assert.equal(staticRoutes(old,invalid,exists),false);
+ assert.equal(staticRoutes(old,next,()=>false),false);
+});
+
+test('inherited Admin evidence requires exact PR, base, head and executed proof on the candidate',async()=>{
+ const {inheritedAdmin}=await import('../tools/ci-full-evidence.cjs');
+ const base='b'.repeat(40),current=run({pull_requests:[{number:1,head:{sha},base:{sha:base}}]});
+ const proof=[{name:'scope',conclusion:'success',steps:[{name:'Verified unchanged economic scope against executed FULL source',conclusion:'success'}]},
+  {name:'Admin foundation contracts (Node 22)',conclusion:'success',steps:[{name:'FULL coverage completed',conclusion:'skipped'}]}];
+ assert.ok(inheritedAdmin(current,proof,sha,1,base));
+ assert.equal(inheritedAdmin(current,proof,sha,2,base),false);
+ assert.equal(inheritedAdmin(current,proof,sha,1,sha),false);
+ assert.equal(inheritedAdmin(current,proof,base,1,base),false);
+ for(const conclusion of ['failure','skipped','cancelled']){
+  proof[0].steps[0].conclusion=conclusion;
+  assert.equal(inheritedAdmin(current,proof,sha,1,base),false);
+ }
+});
+
+test('economic inheritance walks merged main trees and rejects changed consumers or incomplete source jobs',async()=>{
+ const {mkdtempSync,mkdirSync,writeFileSync,rmSync}=await import('node:fs');
+ const {tmpdir}=await import('node:os');
+ const {join,dirname}=await import('node:path');
+ const {execFileSync}=await import('node:child_process');
+ const {economicSource,isolatedConsumers,isolatedDiff}=await import('../tools/ci-match-engine.cjs');
+ const previous=process.cwd(),temp=mkdtempSync(join(tmpdir(),'fa-economic-ci-'));
+ const git=(...args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
+ const put=(p,data)=>{mkdirSync(dirname(p),{recursive:true});writeFileSync(p,data);};
+ const commit=title=>{git('add','.');git('commit','-qm',title);return git('rev-parse','HEAD');};
+ try{
+  process.chdir(temp);git('init','-q');git('config','user.name','CI');git('config','user.email','ci@example.invalid');
+  put('match-engine/src/sidebar-shell.mjs','export const value=1;');const parent=commit('initial');
+  put('backend/src/economy.ts','export const balance=1;');const base=commit('certified policy (#7)');
+  const tree=git('rev-parse',base+'^{tree}');put('match-engine/src/core.mjs','export const gravity=10;');const head=commit('lab');
+  const sourceSha='e'.repeat(40),identity={full_name:'owner/repo'};
+  const pr={base:{ref:'main',sha:base},head:{sha:head,repo:identity}};
+  const receipt=run({head_sha:sourceSha,pull_requests:[{number:7,head:{sha:sourceSha},base:{ref:'main',sha:parent}}]});
+  const proof=jobs('admin-world-checks.yml');
+  const operator=proof.find(j=>j.name.startsWith('Final local operator'));
+  operator.steps.push(...['Execute isolated economic rehearsal','Verify DEV operator runtime and PowerShell regressions before full rehearsal',
+    'Verify operator bootstrap, recovery and local persistence across restart'].map(name=>({name,conclusion:'success'})));
+  const source={number:7,merged:true,merge_commit_sha:base,base:{ref:'main'},head:{sha:sourceSha,repo:identity}};
+  const commitData={tree:{sha:tree}};
+  const github={rest:{pulls:{get:async()=>({data:source})},git:{getCommit:async()=>({data:commitData})},
+   actions:{listWorkflowRuns:'runs',listJobsForWorkflowRun:'jobs'}},paginate:async method=>method==='runs'?[receipt]:proof};
+  const check=()=>economicSource({github,owner:'owner',repo:'repo',pr});
+  assert.equal((await check()).source,sourceSha);
+  operator.steps.at(-1).conclusion='skipped';assert.equal(await check(),null);operator.steps.at(-1).conclusion='success';
+  commitData.tree.sha=parent;assert.equal(await check(),null);commitData.tree.sha=tree;
+  pr.head.sha=base;assert.equal(await check(),null);pr.head.sha=head;
+  put('backend/src/adapter.ts',"export {gravity} from '../../match-engine/src/core.mjs';");
+  const shared=commit('shared consumer');assert.equal(isolatedDiff(head,shared),false);assert.equal(isolatedConsumers(shared),false);
+  git('mv','match-engine/src/core.mjs','match-engine/src/lab.mjs');
+  assert.equal(isolatedDiff(shared,commit('rename')),false);
+ }finally{process.chdir(previous);rmSync(temp,{recursive:true,force:true});}
+});
+
+test('ME-01 evidence rejects a skipped candidate check, cancellation and stale base',async()=>{
+ const {engineEvidence}=await import('../tools/ci-full-evidence.cjs');
+ const base='b'.repeat(40);
+ const exact=run({pull_requests:[{number:1,head:{sha},base:{sha:base}}]});
+ const steps=['Verify exact PR HEAD','Install pinned physics candidate','Focused core and route security tests',
+  'Existing routing/preview regressions','Browser viewport fit (Chrome, Advanced settings open and closed)',
+  'Five Action LABs clean-stack Chrome interaction','Measured local CPU / memory sample'].map(name=>({name,conclusion:'success'}));
+ const github={rest:{actions:{listWorkflowRuns:'runs',listJobsForWorkflowRun:'jobs'}},
+  paginate:async method=>method==='runs'?[exact]:[{name:'match-engine',conclusion:'success',steps}]};
+ const check=async baseSha=>(await engineEvidence({github,owner:'owner',repo:'repo',sha,prNumber:1,baseSha})).state;
+ assert.equal(await check(base),'PASS');
+ steps[4].conclusion='skipped';assert.equal(await check(base),'MISSING');
+ exact.conclusion='cancelled';assert.equal(await check(base),'FAIL');
+ assert.equal(await check(sha),'MISSING');
+});
+
+test('economic receipt verifies the remaining operator executions and cannot become a new FULL source',()=>{
+ const wf='admin-world-checks.yml',proof=jobs(wf);
+ const operator=proof.find(j=>j.name.startsWith('Final local operator'));
+ const rehearsal={name:'Execute isolated economic rehearsal',conclusion:'success'};
+ const remaining={name:'Verify operator bootstrap, recovery and local persistence across restart',conclusion:'success'};
+ operator.steps.push(rehearsal,remaining,{name:'Verify DEV operator runtime and PowerShell regressions before full rehearsal',conclusion:'success'});
+ assert.equal(evaluateRun(run(),proof,sha,wf).state,'PASS');
+ rehearsal.conclusion='skipped';assert.equal(evaluateRun(run(),proof,sha,wf).state,'MISSING');
+ proof.push({name:'scope',conclusion:'success',steps:[{name:'Verified isolated economic inputs',conclusion:'success'}]});
+ assert.equal(evaluateRun(run(),proof,sha,wf).state,'ECONOMY_INHERITED');
+ remaining.conclusion='skipped';assert.equal(evaluateRun(run(),proof,sha,wf).state,'MISSING');
+});
+
+test('selected public evidence requires executed site checks and verifies browser scope',async()=>{
+ const {selectedPublicEvidence}=await import('../tools/ci-full-evidence.cjs');
+ const base='b'.repeat(40),receipt=run({pull_requests:[{number:1,head:{sha},base:{sha:base}}]});
+ const step=(name,conclusion='success')=>({name,conclusion});
+ const job=(name,...steps)=>({name,conclusion:'success',steps});
+ const scope=job('scope',step('Certified impacted suites'));
+ const aggregate=job('chromium',step('Verify browser lane results'),step('FULL coverage completed','skipped'),step('Run loopback preview and browser checks'));
+ const lane=job('Browser lane (core)',step('Run loopback preview and browser checks'));
+ const check=(jobs,b=base)=>selectedPublicEvidence('int24-browser-qa.yml',receipt,jobs,sha,1,b);
+ assert.equal(check([scope,aggregate,lane]),true);assert.equal(check([scope,aggregate]),false);
+ assert.equal(check([scope,aggregate,lane],sha),false);
+ lane.steps[0].conclusion='skipped';assert.equal(check([scope,aggregate,lane]),false);
+ aggregate.steps[2].conclusion='skipped';assert.equal(check([scope,aggregate]),true);
+ const site=[job('head-exact',step('Certified impacted suites')),job('landing',step('Site essential contracts (FAST and TARGETED)'),step('FULL coverage completed','skipped'))];
+ assert.equal(selectedPublicEvidence('landing-checks.yml',receipt,site,sha,1,base),true);
+ site[1].steps[0].conclusion='skipped';assert.equal(selectedPublicEvidence('landing-checks.yml',receipt,site,sha,1,base),false);
+});
+
+
+test('merged Admin history requires original executed receipt and independent FULL gate',async()=>{
+ const {certifiedHistoricalAdmin,economicRepairShape,economicRepairAnchor}=await import('../tools/ci-full-evidence.cjs');
+ const base='b'.repeat(40),tree='c'.repeat(40),repo={full_name:'owner/repo'};
+ const source={number:7,merged:true,merged_at:'2026-11-26T12:41:23Z',base:{ref:'main',sha:base},head:{sha,ref:'ci/repair',repo}};
+ const identity={head_sha:sha,head_commit:{tree_id:tree},head_branch:'ci/repair',repository:repo,head_repository:repo,
+  event:'pull_request',created_at:'2026-11-26T07:41:12Z',updated_at:'2026-11-26T09:26:44Z',
+  status:'completed',conclusion:'success',run_attempt:1,pull_requests:[]};
+ const receipt={...identity,id:11,path:'.github/workflows/admin-world-checks.yml'};
+ const gate={...identity,id:12,path:'.github/workflows/ci-opt-03-full-gate.yml'};
+ const proof=jobs('admin-world-checks.yml');
+ proof.find(j=>j.name.startsWith('Final local operator')).steps.push(...['Execute isolated economic rehearsal',
+  'Verify DEV operator runtime and PowerShell regressions before full rehearsal',
+  'Verify operator bootstrap, recovery and local persistence across restart'].map(name=>({name,conclusion:'success'})));
+ proof.push({id:21,run_id:11,name:'scope',conclusion:'success',steps:[{name:'Classify Admin impact on exact HEAD',conclusion:'success'}]});
+ const gateJobs=[{id:22,run_id:12,name:'CI FULL exact-head evidence',conclusion:'success',steps:[
+  {name:'Verify exact PR head and complete FULL workflow evidence',conclusion:'success'}]}];
+ const stamp='2026-11-26T09:26:44.0000000Z ';
+ const scopeLog=stamp+'  PR_BASE_SHA: '+base+'\n'+stamp+'test "$(git rev-parse HEAD)" = "'+sha+'"';
+ const gateLog=stamp+'  PR_NUMBER: 7\n'+stamp+'  EXPECTED_HEAD: '+sha+'\n'+stamp+JSON.stringify({head:sha,rows:[
+  {workflow:'landing-checks.yml',state:'PASS'},{workflow:'int24-browser-qa.yml',state:'PASS'},
+  {workflow:'admin-world-checks.yml',state:'PASS',run:11,attempt:1}]});
+ let logs={21:scopeLog,22:gateLog};
+ const github={rest:{actions:{listWorkflowRuns:'runs',listJobsForWorkflowRun:'jobs',
+  downloadJobLogsForWorkflowRun:async({job_id})=>({data:logs[job_id]})}},paginate:async method=>method==='runs'?[gate]:gateJobs};
+ const check=(run=receipt)=>certifiedHistoricalAdmin({github,owner:'owner',repo:'repo',source,tree,baseSha:base,run,jobs:proof});
+ assert.equal(await check(),true);
+ assert.equal(await check({...receipt,head_repository:{full_name:'elsewhere/repo'}}),false);
+ assert.equal(await check({...receipt,pull_requests:[{number:99,head:{sha},base:{ref:'main',sha:base}}]}),false);
+ assert.equal(await check({...receipt,run_attempt:2}),false);
+ logs[21]=scopeLog.replace(base,'d'.repeat(40));assert.equal(await check(),false);logs[21]=scopeLog;
+ logs[22]=gateLog.replace('"run":11','"run":99');assert.equal(await check(),false);logs[22]=gateLog;
+ logs[22]=undefined;assert.equal(await check(),false);logs[22]=gateLog;
+ proof.find(j=>j.name.startsWith('Final local operator')).steps.find(s=>s.name==='Execute isolated economic rehearsal').conclusion='skipped';
+ assert.equal(await check(),false);
+ const files=['tools/ci-match-engine.cjs','tools/ci-full-evidence.cjs','tests/ci-opt-04-05.test.mjs',
+  '.github/workflows/ci-opt-03-full-gate.yml','.github/workflows/admin-world-checks.yml'].map(filename=>({filename,status:'modified'}));
+ assert.equal(economicRepairShape(economicRepairAnchor,files),true);
+ assert.equal(economicRepairShape(base,files),false);
+ assert.equal(economicRepairShape(economicRepairAnchor,[...files,{filename:'backend/src/economy.ts',status:'modified'}]),false);
+ assert.equal(economicRepairShape(economicRepairAnchor,files.map((f,i)=>i?f:{...f,status:'renamed'})),false);
+});

@@ -1,3 +1,5 @@
+import * as requireChildProcessForPowerShellTest from 'node:child_process';
+import {fileURLToPath as fileURLToPathForPowerShellTest} from 'node:url';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,rm} from 'node:fs/promises';
@@ -144,4 +146,92 @@ test('synthetic cutover rehearsal grants only explicitly matched identities and 
   assert.deepEqual((await auditOperatorCutover(handle.db,email)).findings,['operator_link_missing','missing_access','missing_read','missing_write']);
   assert.deepEqual(await handle.db.prepare('SELECT generation,revision FROM world_state').first(),worldBefore);
  }finally{await handle.close();await rm(dir,{recursive:true,force:true})}
+});
+
+test('#791 DEV operator requires explicit exact scope, action confirmation and no caller cursor',async()=>{
+ const {parseDevOperatorRequest,readDevOperatorSchema}=await import('../src/dev-operator.ts');
+ const generation='00000000-0000-4000-8000-000000000001';
+ const request={action:'settle',expectedGeneration:generation,expectedSeason:1,expectedDay:28,confirmation:'DEV settle '+generation+' 1:28',data:{}};
+ assert.equal(parseDevOperatorRequest(request).action,'settle');
+ for(const altered of [{...request,confirmation:''},{...request,expectedDay:56},{...request,data:{cursor:'1'}},{...request,action:'reset'},{...request,expectedSeason:'1'}])assert.throws(()=>parseDevOperatorRequest(altered));
+ const dir=await mkdtemp(join(tmpdir(),'fa-dev-operator-schema-'));
+ let h:Awaited<ReturnType<typeof openLocalDatabase>>|undefined;
+ try{
+  h=await openLocalDatabase(dir);
+  const before=await h.db.prepare('SELECT * FROM world_state').first();
+  const schema=await readDevOperatorSchema(h.db);
+  assert.equal(schema.ready,schema.missingMigrations.length===0&&schema.missingObjects.length===0);
+  assert.deepEqual(await h.db.prepare('SELECT * FROM world_state').first(),before);
+  assert.equal((await h.db.prepare('SELECT COUNT(*) AS n FROM generated_players').first())!.n,0);
+ }finally{await h?.close();await rm(dir,{recursive:true,force:true})}
+});
+
+test('#791 actual PowerShell client pins four paydays, confirmation and resume bound without a network binding',t=>{
+ const {spawnSync}=requireChildProcessForPowerShellTest;
+ const scriptPath=new URL('../../tools/dev-operator.ps1',import.meta.url);
+ const command=String.raw`
+$ErrorActionPreference='Stop'
+$global:FA791TestState=@{HeadSha=(git rev-parse HEAD).Trim();SourceSha='';Gen='00000000-0000-4000-8000-000000000001';Season=1;Day=28;Posts=0;Ready=$true;Confirm=$true;Fail=$false;DoneAfter=2;FirstBody='';Gets=0}
+$global:FA791TestState.SourceSha=$global:FA791TestState.HeadSha
+function global:Read-Host([string]$Prompt){
+ if(-not $global:FA791TestState.Confirm){return 'wrong confirmation'}
+ return $Prompt.Substring('Type exactly: '.Length)
+}
+function global:Invoke-RestMethod {
+ param([string]$Uri,[string]$Method='Get',[string]$ContentType,[hashtable]$Headers,[string]$Body,$WebSession,$MaximumRedirection,$TimeoutSec)
+ if($Uri -ceq 'http://app.localhost:2000/api/admin/session'){return @{csrfToken='synthetic-csrf'}}
+ if($Uri -cne 'http://app.localhost:2000/api/admin/dev-operator'){throw 'unexpected target'}
+ if($Headers['Origin'] -cne 'http://app.localhost:2000' -or $Headers['X-CSRF-Token'] -cne 'synthetic-csrf' -or $MaximumRedirection -ne 0){throw 'unexpected headers'}
+ if($Method -ne 'Post'){
+  $global:FA791TestState.Gets++
+  return @{pool='dev-preview';database='football-architect-dev';source=$global:FA791TestState.SourceSha;schema=@{ready=$global:FA791TestState.Ready};foreignKeyViolations=0;world=@{generation=$global:FA791TestState.Gen;seasonNumber=$global:FA791TestState.Season;day=$global:FA791TestState.Day}}
+ }
+ $global:FA791TestState.Posts++
+ $request=$Body|ConvertFrom-Json
+ $expected="DEV settle $($global:FA791TestState.Gen) $($global:FA791TestState.Season):$($global:FA791TestState.Day)"
+ if($request.action -cne 'settle' -or $request.expectedGeneration -cne $global:FA791TestState.Gen -or $request.expectedSeason -ne $global:FA791TestState.Season -or $request.expectedDay -ne $global:FA791TestState.Day -or $request.confirmation -cne $expected){throw 'wrong scope'}
+ if($global:FA791TestState.Posts -eq 1){$global:FA791TestState.FirstBody=$Body}
+ elseif($Body -cne $global:FA791TestState.FirstBody){throw 'retry changed approved request'}
+ if($global:FA791TestState.Fail){throw 'simulated lost response'}
+ return @{done=($global:FA791TestState.Posts -ge $global:FA791TestState.DoneAfter);stage='payroll'}
+}
+function Check([bool]$Condition,[string]$Message){if(-not $Condition){throw $Message}}
+$session=New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$path=$env:FA_TEST_OPERATOR_SCRIPT
+& $path -Action status -Session $session -ApprovedCommit $global:FA791TestState.HeadSha | Out-Null
+Check ($global:FA791TestState.Posts -eq 0 -and $global:FA791TestState.Gets -eq 1) 'status did not use only read transport'
+foreach($season in @(1,2)){foreach($day in @(28,56)){
+ $global:FA791TestState.Season=$season;$global:FA791TestState.Day=$day;$global:FA791TestState.Posts=0
+ & $path -Action settle -Session $session -ApprovedCommit $global:FA791TestState.HeadSha -MaxRequests 2 | Out-Null
+ Check ($global:FA791TestState.Posts -eq 2) 'four payday loop did not finish'
+}}
+foreach($block in @('schema','source','confirmation','transport')){
+ $global:FA791TestState.Ready=$true;$global:FA791TestState.SourceSha=$global:FA791TestState.HeadSha;$global:FA791TestState.Confirm=$true;$global:FA791TestState.Fail=$false;$global:FA791TestState.Posts=0
+ switch($block){
+  schema{$global:FA791TestState.Ready=$false}
+  source{$global:FA791TestState.SourceSha=if($global:FA791TestState.HeadSha -ceq ('a'*40)){'b'*40}else{'a'*40}}
+  confirmation{$global:FA791TestState.Confirm=$false}
+  transport{$global:FA791TestState.Fail=$true}
+ }
+ $rejected=$false
+ try{& $path -Action settle -Session $session -ApprovedCommit $global:FA791TestState.HeadSha -MaxRequests 2 | Out-Null}catch{
+  $expectedError=switch($block){schema{'Preflight blocked'} source{'Unverified DEV operator target'} confirmation{'Not authorized'} transport{'simulated lost response'}}
+  Check ($_.Exception.Message.Contains($expectedError)) "wrong failure for $block"
+  $rejected=$true
+ }
+ Check $rejected "failure not propagated: $block"
+ Check ($global:FA791TestState.Posts -eq $(if($block -eq 'transport'){1}else{0})) "unexpected mutation/retry: $block"
+}
+$global:FA791TestState.Ready=$true;$global:FA791TestState.SourceSha=$global:FA791TestState.HeadSha;$global:FA791TestState.Confirm=$true;$global:FA791TestState.Fail=$false;$global:FA791TestState.Posts=0;$global:FA791TestState.DoneAfter=9
+& $path -Action settle -Session $session -ApprovedCommit $global:FA791TestState.HeadSha -MaxRequests 2 | Out-Null
+Check ($global:FA791TestState.Posts -eq 2) 'request limit ignored'
+Remove-Variable -Name FA791TestState -Scope Global
+Write-Output 'PowerShell client contract PASS'
+`;
+ const result=spawnSync('pwsh',['-NoLogo','-NoProfile','-NonInteractive','-Command',command],{
+  cwd:new URL('../../',import.meta.url),env:{...process.env,FA_TEST_OPERATOR_SCRIPT:fileURLToPathForPowerShellTest(scriptPath)},encoding:'utf8',timeout:30000
+ });
+ if((result.error as NodeJS.ErrnoException|undefined)?.code==='ENOENT'&&!process.env.CI){t.skip('PowerShell 7 not installed on this local machine');return}
+ assert.equal(result.status,0,result.error?.message+'\n'+result.stdout+'\n'+result.stderr);
+ assert.match(result.stdout,/PowerShell client contract PASS/);
 });

@@ -1,3 +1,4 @@
+import type {Database} from './database.ts';
 import {httpJson,httpError,routeMethod,readSessionCookie,readJsonBody} from './http-contract.ts';
 import {resolveAccountConfiguration} from './environment-pool.ts';
 import {ApiError} from './errors.ts';
@@ -36,8 +37,9 @@ import {approveSeasonTwoSnapshot} from './season-two-approval-command.ts';
 export interface AdminEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string}
 const json=(status:number,body:unknown,extra:Record<string,string>={})=>httpJson('account',status,body,extra);
 const known=new Map([["/api/admin/inspection/access","GET"],["/api/admin/economy/clubs","GET"],["/api/admin/economy/ledger","GET"],["/api/admin/reset/options","GET"],["/api/admin/reset/preview","POST"],["/api/admin/economy/summary","GET"],["/api/admin/economy/reconciliation","GET"],['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/players','GET'],['/api/admin/players/preview','POST'],['/api/admin/players/draft','POST'],['/api/admin/players/commit','POST'],['/api/admin/contracts','GET'],['/api/admin/contracts/preview','POST'],['/api/admin/contracts/sign','POST'],['/api/admin/club-licenses','GET|POST'],['/api/admin/club-licenses/accounts','GET'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/season-zero/confirm','POST'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
-export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response>{
- const path=new URL(request.url).pathname,method=known.get(path);
+export type DevOperatorHandler=(request:Request,db:Database,session:AdminSession,now:number)=>Promise<unknown>;
+export async function handleAdmin(request:Request,env:AdminEnv,devOperator?:DevOperatorHandler):Promise<Response>{
+ const path=new URL(request.url).pathname,method=known.get(path)??(devOperator&&path==='/api/admin/dev-operator'?'GET|POST':undefined);
  if(!method)return json(404,{error:{code:'not_found'}});
  const denied=method==='GET|POST'
   ?(['GET','POST'].includes(request.method)?null:json(405,{error:{code:'method_not_allowed'}},{Allow:'GET, POST'}))
@@ -62,6 +64,7 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   const session:AdminSession={actor:{id:legacyId,email:player.actor.email},digest:player.digest,
    credentialVersion:legacy.credential_version,csrfDigest:player.csrfDigest,
    unified:{playerId:player.actor.id,sessionDigest:player.digest,csrfDigest:player.csrfDigest}};
+  if(devOperator&&path==='/api/admin/dev-operator')return json(200,await devOperator(request,db,session,now));
   if(path==='/api/admin/session')return json(200,{actor:player.actor,csrfToken:await playerCsrfFor(playerToken)});
   if(path==='/api/admin/world')return json(200,{world:await readWorld(db)});
   if(path==='/api/admin/inspection/access'){
