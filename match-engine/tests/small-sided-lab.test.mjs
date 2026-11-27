@@ -46,7 +46,8 @@ test('COL-02 native control releases on pass and contest, never on intended reci
   const plan=planCollectiveApproaches(players,ball.position,ball.velocity,obs.snapshot());
   assert.equal(plan[a.id].kind,'carry-ball');assert.equal(plan[b.id].kind,'support-run');
   assert.equal(plan[d.id].kind,'press-ball');
-  assert.equal(step(3,[a.id],[a.id],action(3,a.id,'pass')).kind,'loose');
+  const released=step(3,[a.id],[a.id],{...action(3,a.id,'pass'),recipientId:b.id});
+  assert.equal(released.kind,'loose');assert.equal(released.delivery.recipientId,b.id);
   assert.equal(step(4,[b.id]).kind,'loose');
   assert.equal(step(5,[d.id],[d.id],action(5,d.id,'carry')).playerId,d.id);
   assert.equal(step(6,[],[d.id],null,[keeper]).kind,'loose');
@@ -143,8 +144,9 @@ test('COL-05 defending team presses and covers without formation-role restrictio
   assert.equal(chooseCollectiveDefensiveTouch({player:defender,players,ballPosition:ball,ballVelocity:velocity,control:{kind:'loose'},tick:5}),null);
   const passer={...owner,x:dir*26};
   const incoming={x:dir*2,y:0,z:0};
-  const pass={kind:'loose',delivery:{kind:'pass',team:side,playerId:passer.id,tick:4}};
-  const interception=chooseCollectiveDefensiveTouch({player:defender,players:[passer,defender,cover],ballPosition:ball,ballVelocity:incoming,control:pass,tick:5});
+  const recipient={id:side+'-8',team:side,x:dir*37,y:0};
+  const pass={kind:'loose',delivery:{kind:'pass',team:side,playerId:passer.id,recipientId:recipient.id,tick:4}};
+  const interception=chooseCollectiveDefensiveTouch({player:defender,players:[passer,recipient,defender,cover],ballPosition:ball,ballVelocity:incoming,control:pass,tick:5});
   assert.equal(interception?.kind,'interception');assert.equal(interception.officialPossession,false);
  }
 });

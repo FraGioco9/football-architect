@@ -9,7 +9,7 @@ import {chooseSmallSidedContextAction,chooseNativeFootballAction}
  from './small-sided-context-choice.mjs';
 
 
-import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch,chooseDirectedDribbleTouch,chooseCollectiveDefensiveTouch,isNativeRecoveryLocked,planNativeCarryTouch,planNativeInterceptionCushion} from './isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch,chooseDirectedDribbleTouch,chooseCollectiveDefensiveTouch,isNativeRecoveryLocked,planNativeCarryTouch,chooseNativePassInterceptionTouch} from './isolated-dribble-touches.mjs';
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
@@ -364,7 +364,7 @@ export function selectUniformAutonomousContactAction({
   const opponentControl=!!owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15;
   const nativeSlide=collective?playerFrame.nativeSlides?.[id]??null:null;
   if(collective&&(isNativeRecoveryLocked(collectiveControl,id,tick)||nativeSlide?.phase==='recovery'))continue;
-  const collectiveTouch=collective?chooseCollectiveDefensiveTouch({player,players:actors,ballPosition,ballVelocity,control:collectiveControl,tick,slide:nativeSlide}):null;
+  const collectiveTouch=collective?chooseCollectiveDefensiveTouch({player,players:actors,ballPosition,ballVelocity,control:collectiveControl,tick,slide:nativeSlide,ballRadiusM}):null;
   if(nativeSlide?.phase==='slide'&&!collectiveTouch)continue;
   const defensiveAttempt=collective?null:chooseBasicDefensiveAttempt({actor:player,players:actors,ball:ballPosition,velocity:ballVelocity});
   // LAB-VAR-02 only: AFTER verified genuine exclusive Rapier shoe START,
@@ -402,18 +402,10 @@ export function selectUniformAutonomousContactAction({
   if(ic&&!(ic.phase==='ready'&&id===ic.side+'-10')&&!(defending&&['flight','intercepted','collected'].includes(ic.phase)))continue;
   let interceptionTouch=null;
   if(defending&&ic.phase==='flight'){
-   const speed=Math.hypot(ballVelocity.x,ballVelocity.y);
-   const rival=actors.find(p=>p.id===ic.side+'-9');
+   const recipient=actors.find(p=>p.id===ic.side+'-9');
    const passer=actors.find(p=>p.id===ic.side+'-10');
-   if(Math.hypot(passer.x-ballPosition.x,passer.y-ballPosition.y)<1.15||Math.hypot(rival.x-ballPosition.x,rival.y-ballPosition.y)<1.15||ballPosition.z>ballRadiusM+0.12)continue;
-   // Native pass arrival only. Cushion the live velocity toward a short
-   // open lane on the defender's side; never move or attach the ball.
-   const sy=player.y-ballPosition.y,sign=sy>=0?1:-1;
-   const ux=player.team==='home'?1:-1,uy=sign*0.40;
-   const norm=Math.hypot(ux,uy),desiredVelocity=Object.freeze({x:ux*1.3/norm,y:uy*1.3/norm});
-   const touch=planNativeInterceptionCushion({attackingSide:passer.team,attacker:passer,defender:player,ballPosition,ballVelocity,desiredVelocity,maxImpulseNs:5.8});
-   if(!touch)continue;
-   interceptionTouch=Object.freeze({...touch,version:'me-628-interception-pass-cushion-v1',incomingSpeedMps:speed});
+   interceptionTouch=chooseNativePassInterceptionTouch({passer,recipient,defender:player,ballPosition,ballVelocity,ballRadiusM});
+   if(!interceptionTouch)continue;
   }
   const duelDefensiveTouch=collectiveTouch??interceptionTouch??sharedTouch?.defensive??null;
   const dribbleTouch=defending&&['intercepted','collected'].includes(ic.phase)?chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:actors.find(p=>p.id===ic.side+'-9'),ballPosition,ballVelocity,variantIndex:0,tick}):sharedDuel?sharedTouch.carry:isolatedDribbleContext===null?null:

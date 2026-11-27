@@ -627,3 +627,31 @@ test('UME-05K one bounded ground correction preserves defensive attempt geometry
   }
  }
 });
+
+test('UME-05L identical witnessed pass interception in free play and isolated exercise, including backward and fast passes',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const passerId=side+'-10',recipientId=side+'-9',defenderId=other+'-2';
+  const frame=mover(Object.fromEntries(INITIAL_PLAYERS.map(p=>[p.id,p.id===passerId?{x:-dir*4,y:0}:p.id===recipientId?{x:dir*5,y:0}:p.id===defenderId?{x:dir*0.2,y:0.3}:{x:p.team===side?-40:40,y:25}])),25);
+  const ballPosition={x:0,y:0,z:0.11},activePlayerIds=[passerId,recipientId,defenderId];
+  const delivery={kind:'pass',team:side,playerId:passerId,recipientId,tick:12};
+  const common={tick:25,contactStarted:[defenderId],contactActive:[defenderId],playerFrame:frame,ballPosition,ballRadiusM:0.11,activePlayerIds};
+  for(const ballVelocity of [{x:dir*12,y:0,z:0},{x:-dir*5,y:0,z:0},{x:0,y:4,z:0}]){
+   const input={...common,ballVelocity};
+   const isolated=selectUniformAutonomousContactAction({...input,interceptionContext:{side,phase:'flight'}});
+   const open={...input,allowPhysicalCarry:true,nativeActionPolicy:true,collectiveControl:{tick:24,kind:'loose',playerId:null,officialPossession:false,delivery}};
+   const native=selectUniformAutonomousContactAction(open);
+   assert.equal(isolated?.action,'interception');assert.equal(native?.action,'interception');
+   assert.deepEqual(native.defensiveTarget,isolated.defensiveTarget);
+   assert.deepEqual(native.impulseNs,isolated.impulseNs);
+   assert.equal(native.officialMatchPossession,false);
+   assert.equal(selectUniformAutonomousContactAction({...open,contactStarted:[],contactActive:[]}),null);
+   const noRecipient=selectUniformAutonomousContactAction({...open,collectiveControl:{...open.collectiveControl,delivery:{...delivery,recipientId:'missing'}}});
+   assert.notEqual(noRecipient?.action,'interception');
+   const expired=selectUniformAutonomousContactAction({...open,collectiveControl:{...open.collectiveControl,delivery:{...delivery,tick:-200}}});
+   assert.notEqual(expired?.action,'interception');
+   const close=mover({[passerId]:{x:-dir*4,y:0},[recipientId]:{x:dir*0.5,y:0},[defenderId]:{x:dir*0.2,y:0.3}},25);
+   assert.equal(selectUniformAutonomousContactAction({...input,playerFrame:close,interceptionContext:{side,phase:'flight'}}),null);
+  }
+ }
+});

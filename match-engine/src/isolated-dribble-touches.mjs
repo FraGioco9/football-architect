@@ -43,7 +43,10 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
   if(block){lastBlock=block;if(block.blocked)blockCount++;}
   if(delivery&&(tick-delivery.tick>180||started.some(id=>id!==delivery.playerId)||touching.some(id=>id!==delivery.playerId)))delivery=null;
   if(real){
-   delivery=['pass','shot'].includes(action.action)?Object.freeze({tick,playerId:action.playerId,team:players.find(p=>p.id===action.playerId)?.team,kind:action.action}):null;
+   const source=players.find(p=>p.id===action.playerId);
+   const receiver=action.action==='pass'?players.find(p=>p.id===action.recipientId&&p.team===source?.team&&p.id!==source.id&&activeIds.includes(p.id)):null;
+   delivery=['pass','shot'].includes(action.action)?Object.freeze({tick,playerId:action.playerId,team:source?.team,kind:action.action,
+    ...(receiver?{recipientId:receiver.id}:{})}):null;
    if(action.action==='carry'&&outfieldIds.includes(action.playerId))witness={playerId:action.playerId,tick};
   }
   getUpUntil=Object.fromEntries(Object.entries(getUpUntil).filter(([,until])=>until>=tick));
@@ -548,6 +551,23 @@ export function planNativeDefensiveGroundTouch({kind,attackingSide,attacker,defe
 export function planNativeInterceptionCushion(source={}){
  return planNativeDefensiveGroundTouch({...source,kind:'interception'});
 }
+// UME-05L: the same live pass-arrival decision in isolated and open play.
+// A witnessed pass can travel sideways or backwards. The actual passer
+// and intended receiver must both be separated from the ball. Keep the
+// previously tested pass cushion and ceiling; final calibration is last.
+export function chooseNativePassInterceptionTouch({passer,recipient,defender,ballPosition:b,ballVelocity:v,ballRadiusM=0.11}={}){
+ if(!isOpposingDuelPair(passer?.team,passer,defender)||
+    !recipient||recipient.id===passer.id||recipient.team!==passer.team||
+    ![passer.x,passer.y,recipient.x,recipient.y,defender.x,defender.y,b?.x,b?.y,b?.z,v?.x,v?.y,ballRadiusM].every(Number.isFinite)||
+    ballRadiusM<0.05||ballRadiusM>0.2||b.z<ballRadiusM-0.015||b.z>ballRadiusM+0.12||
+    Math.hypot(passer.x-b.x,passer.y-b.y)<1.15||Math.hypot(recipient.x-b.x,recipient.y-b.y)<1.15)return null;
+ const speed=Math.hypot(v.x,v.y);
+ if(speed>14)return null;
+ const ux=defender.team==='home'?1:-1,uy=(defender.y-b.y>=0?1:-1)*0.40;
+ const norm=Math.hypot(ux,uy),desiredVelocity=Object.freeze({x:ux*1.3/norm,y:uy*1.3/norm});
+ const touch=planNativeInterceptionCushion({attackingSide:passer.team,attacker:passer,defender,ballPosition:b,ballVelocity:v,desiredVelocity,maxImpulseNs:5.8});
+ return touch?Object.freeze({...touch,version:'me-628-interception-pass-cushion-v1',incomingSpeedMps:speed}):null;
+}
 export function chooseDuelInterceptionTouch({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}){
  if(!isOpposingDuelPair(attackingSide,attacker,defender)||
     ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,b?.z,v?.x,v?.y].every(Number.isFinite))return null;
@@ -582,7 +602,7 @@ export function planNativeDefensiveIntervention({attacker,defender,ballPosition,
 // COL-05: the same standing/interception geometry for any outfield
 // participant, independent of formation role. An interception of a
 // loose pass needs a witnessed opposing release, not guessed ownership.
-export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ballVelocity,control,tick,slide=null}){
+export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ballVelocity,control,tick,slide=null,ballRadiusM=0.11}){
  if(!player||player.role==='goalkeeper'||!Array.isArray(players)||!control)return null;
  const owner=control.kind==='controlled'?players.find(p=>p.id===control.playerId):null;
  if(slide?.phase==='slide'&&slide.actorId===player.id){
@@ -597,8 +617,9 @@ export function chooseCollectiveDefensiveTouch({player,players,ballPosition,ball
  if(control.kind!=='loose'||delivery?.kind!=='pass'||delivery.team===player.team||
     !Number.isSafeInteger(delivery.tick)||tick-delivery.tick<1||tick-delivery.tick>180)return null;
  const passer=players.find(p=>p.id===delivery.playerId&&p.team===delivery.team);
- if(!passer)return null;
- const touch=chooseDuelInterceptionTouch({attackingSide:passer.team,attacker:passer,defender:player,ballPosition,ballVelocity});
+ const recipient=players.find(p=>p.id===delivery.recipientId&&p.team===delivery.team);
+ if(!passer||!recipient)return null;
+ const touch=chooseNativePassInterceptionTouch({passer,recipient,defender:player,ballPosition,ballVelocity,ballRadiusM});
  const decision=selectDefensiveIntervention({actorId:player.id,context:'pass',interception:touch});
  return decision.kind==='interception'?touch:null;
 }
