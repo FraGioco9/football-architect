@@ -739,9 +739,18 @@ export function createEngine(RAPIER, input = {}, {
        dribbleGroundBallCentreZ:BALL_RADIUS
       }:{})
      }):null;
-  const keeperDive=smallBodyGuard&&(smallSided?.id==='keeper-1v1'||smallSided?.blockStart)?
-   createNativeKeeperDive(RAPIER,world,ballCollider,stagedShoes.find(p=>p.id===smallSided.opponent+'-1'),body,
-    {closeChallengeEnabled:diagnosticKeeperSingleShot}):null;
+  // All physically enabled keepers use the original native glove and grip
+  // controller. Isolated one-shot fixtures retain their additional challenge
+  // constraint. Each keeper has separate dive state; own penalty-area grip
+  // geometry excludes simultaneous legal holds by opposing keepers.
+  const nativeKeeperActors=smallBodyGuard?(diagnosticCollectiveActions?
+   stagedShoes.filter(p=>smallSided.activeIds.includes(p.id)&&p.role==='goalkeeper'):
+   (smallSided?.id==='keeper-1v1'||smallSided?.blockStart)?
+    stagedShoes.filter(p=>p.id===smallSided.opponent+'-1'):[]):[];
+  const keeperDives=nativeKeeperActors.map(p=>createNativeKeeperDive(RAPIER,world,ballCollider,p,body,
+    {closeChallengeEnabled:diagnosticKeeperSingleShot}));
+  const keeperDive=!diagnosticCollectiveActions?(keeperDives[0]??null):null;
+  const keeperSnapshots=()=>Object.freeze(keeperDives.map(controller=>controller.snapshot()));
   const collectiveObserver=diagnosticCollectiveActions?createNativeBallControlObserver(smallSided.activeIds,stagedShoes.filter(p=>smallSided.activeIds.includes(p.id)&&p.role!=='goalkeeper').map(p=>p.id)):null;
   const duelTransition=diagnosticDirectedDribble?createDribbleTransitionObserver(smallSided.side,diagnosticDuelTackleProfile):null;
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
@@ -868,7 +877,7 @@ export function createEngine(RAPIER, input = {}, {
      previousStrike?.firstTimeShotEvidence?previousStrike:null);
     if(bodyBridge)bodyBridge.prepare(playerFrame,tick+1);
     if(smallBodyGuard)smallBodyGuard.prepare(playerFrame,tick+1);
-    if(keeperDive)keeperDive.prepare(playerFrame,tick+1,preStepBall,actionExecutor?.actionSnapshot());
+    for(const controller of keeperDives)controller.prepare(playerFrame,tick+1,preStepBall,actionExecutor?.actionSnapshot());
     // User forces are persistent in Rapier. Clear the previous tick's drag
     // BEFORE computing this tick's force, and never apply it on the grass.
     // The default=0 branch is identical to the accepted physics-v4 path.
@@ -948,7 +957,7 @@ export function createEngine(RAPIER, input = {}, {
     // This is read exclusively from native post-step Rapier solver contact
     // manifolds. Never inject player collisions or attribute a goal/possession.
     if(smallBodyGuard)smallBodyGuard.observe(tick+1);
-    if(keeperDive)keeperDive.observe(tick+1,body.linvel());
+    for(const controller of keeperDives)controller.observe(tick+1,body.linvel());
     // Exponential airborne-only decay after integration; zero rate preserves
     // the original physics-v4 path without any angular-velocity setter.
     if(diagnosticSpinDecayRatePerS>0 &&
@@ -971,11 +980,16 @@ export function createEngine(RAPIER, input = {}, {
        (diagnosticKeeperSingleShot&&keeperSingleShotTick!==null&&
         shoeBridge.snapshot().started.includes(smallSided.side+'-10')),
       suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
-       .lowerLegBallContacts.length>0||keeperDive?.snapshot().contact===true||keeperDive?.snapshot().catchState?.active===true
+       .lowerLegBallContacts.length>0||keeperDives.some(controller=>controller.snapshot().contact===true||controller.snapshot().catchState?.active===true)
     });
     if(collectiveObserver){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
-     collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,bodyStarts:physical.lowerLegBallStarts,bodyActive:physical.lowerLegBallContacts,action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies,beforeBallVelocity:preStepBall.velocity,afterSolverVelocity:collectiveSolverVelocity});
+     const hands=keeperSnapshots();
+     const handStarts=hands.filter(x=>x.contactStarted).map(x=>x.keeperId);
+     const handContacts=hands.filter(x=>x.contact||x.catchState?.active).map(x=>x.keeperId);
+     collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,
+      bodyStarts:[...physical.lowerLegBallStarts,...handStarts],bodyActive:[...physical.lowerLegBallContacts,...handContacts],
+      action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies,beforeBallVelocity:preStepBall.velocity,afterSolverVelocity:collectiveSolverVelocity});
     }
     if(duelTransition){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
@@ -1394,6 +1408,7 @@ export function createEngine(RAPIER, input = {}, {
     }:{}),
     ...(smallSided?.id==='cross-pair'?{crossGroundContactSnapshot}:{}),
     ...(keeperDive?{keeperDiveSnapshot:()=>keeperDive.snapshot()}:{}),
+    ...(diagnosticCollectiveActions?{nativeKeeperSnapshots:keeperSnapshots}:{}),
     ...(duelTransition?{duelTransitionSnapshot:()=>duelTransition.snapshot()}:{}),
     ...(collectiveObserver?{collectiveControlSnapshot:()=>collectiveObserver.snapshot()}:{}),
     ...(smallSided?{

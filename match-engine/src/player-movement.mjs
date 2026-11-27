@@ -2949,7 +2949,7 @@ export function createPlayerMovement(options={}){
    p.blockedBy=blocker?.id??null;
    if(blocker){p.vx=0;p.vy=0;}
    else{p.x=candidate.x;p.y=candidate.y;p.vx=candidate.vx;p.vy=candidate.vy;}
-   const keeperDuel=(smallSided?.id==='keeper-1v1'||smallSided?.blockStart)&&p.id===smallSided.opponent+'-1';
+   const keeperDuel=collectiveApproaches?p.role==='goalkeeper'&&smallActive.has(p.id):(smallSided?.id==='keeper-1v1'||smallSided?.blockStart)&&p.id===smallSided.opponent+'-1';
    const duelBallGap=Math.hypot(ball.x-p.x,ball.y-p.y);
    const detouring=duelAlignment?.[p.id]?.detour===true&&!directedContactRelease&&duelSlide?.actorId!==p.id;
    const faceDuelBall=directedDribble&&smallActive.has(p.id)&&duelBallGap<1.65&&
@@ -3299,7 +3299,7 @@ export function createPlayerMovement(options={}){
    p.vy=(n.y-old.y)/PLAYER_DT;
    // The keeper already used its one capped ball-facing turn this tick.
    // A solver translation must not rotate it back towards velocity.
-   if(!(smallSided.id==='keeper-1v1'&&p.id===smallSided.opponent+'-1'))
+   if(!(options.researchCollectiveApproaches===true&&p.role==='goalkeeper')&&!(smallSided.id==='keeper-1v1'&&p.id===smallSided.opponent+'-1'))
     p.facingRad=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
      PLAYER_KINEMATIC_LIMITS);
   }

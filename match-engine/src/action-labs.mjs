@@ -895,7 +895,7 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
-   ...(collectiveControl?{collectiveControl,collectiveCounts:Object.freeze({...collectiveCounts})}:{}),
+   ...(collectiveControl?{collectiveControl,collectiveCounts:Object.freeze({...collectiveCounts}),nativeKeeperStates:engine.nativeKeeperSnapshots()}:{}),
     labDynamicsVersion:currentDynamics?CURRENT_LAB_DYNAMICS_VERSION:null,
     latestOrientedReception:currentDynamics?(engine.latestLabReceptionSnapshot?.()??null):null,
    ...(passPairAudit?{passPairAudit}:{}),

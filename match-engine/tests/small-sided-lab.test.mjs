@@ -254,6 +254,10 @@ test('UME-05D all 22 original players share native open play in one physical wor
     assert.deepEqual(body.selectedColliderIds,fixture.activeIds);assert.equal(body.bodies.length,22);
     assert.equal(body.oneOriginalRapierWorld,true);assert.equal(frame.smallSidedMovementDecisions.length,22);
     assert.equal(frame.smallSidedMovementDecisions.filter(x=>x.kind==='goalkeeping').length,2);
+    const keepers=engine.nativeKeeperSnapshots();
+    assert.deepEqual(keepers.map(x=>x.keeperId),['home-1','away-1']);
+    assert.ok(keepers.every(x=>x.tick===k&&x.officialSave===false));
+    assert.ok(keepers.filter(x=>x.catchState?.active).length<=1);
     const observed=engine.collectiveControlSnapshot();
     assert.equal(observed.tick,k);assert.equal(observed.officialPossession,false);
     assert.ok(shoe.started.every(id=>fixture.activeIds.includes(id)));contacts+=shoe.started.length;
@@ -275,11 +279,15 @@ test('UME-05A one native open-play adapter runs different physical participant s
     const active=lab.focus;
     assert.equal(active.length,n);
     assert.equal(lab.snapshot().collectiveControl.tick,0);
+    const keeperIds=active.filter(id=>INITIAL_PLAYERS.find(p=>p.id===id).role==='goalkeeper');
+    assert.deepEqual(lab.snapshot().nativeKeeperStates.map(x=>x.keeperId),keeperIds);
     let contacts=0;
     for(let k=1;k<=120;k++){
      const f=lab.step();
      assert.equal(f.physicsTick,k);assert.equal(f.collectiveControl.tick,k);
      assert.equal(f.genuinePhysicalPlayerCount,n);
+     assert.deepEqual(f.nativeKeeperStates.map(x=>x.keeperId),keeperIds);
+     assert.ok(f.nativeKeeperStates.every(x=>x.tick===k&&x.officialSave===false));
      assert.equal(projectActiveLabDecisions(f,active).length,n);
      assert.equal(f.collectiveControl.officialPossession,false);
      assert.equal(f.officialMatchResult,null);
