@@ -9,7 +9,7 @@ import {chooseSmallSidedContextAction,chooseNativeFootballAction}
  from './small-sided-context-choice.mjs';
 
 
-import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch,chooseDirectedDribbleTouch,chooseCollectiveDefensiveTouch,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
+import {chooseIsolatedDribbleTouch,chooseSharedDuelTouch,chooseDirectedDribbleTouch,chooseCollectiveDefensiveTouch,isNativeRecoveryLocked,planNativeCarryTouch} from './isolated-dribble-touches.mjs';
 export const UNIFORM_AUTONOMOUS_ACTION_VERSION=
  'me-pb-55-closed-real-contact-uniform-action-v1';
 export const UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS=12;
@@ -514,9 +514,20 @@ export function selectUniformAutonomousContactAction({
      'no-safe-pass';
    }
   }
+  // Only a selected native carry gets the common live opponent geometry.
+  // No shirt/fixture selection, and no extra impulse for an already
+  // satisfactory rolling ball. Other action kinds remain untouched.
+  let nativeCarryTouch=null;
+  if(collective&&action==='carry'){
+   const nearest=actors.filter(p=>p.team!==player.team).sort((a,b)=>Math.hypot(a.x-ballPosition.x,a.y-ballPosition.y)-Math.hypot(b.x-ballPosition.x,b.y-ballPosition.y)||a.id.localeCompare(b.id))[0]??null;
+   nativeCarryTouch=planNativeCarryTouch({attacker:player,attackingSide:player.team,defender:nearest,ballPosition,ballVelocity,tieSide:ballPosition.y>0?-1:1});
+   if(nativeCarryTouch.magnitudeNs<0.025)continue;
+   dx=nativeCarryTouch.dx;dy=nativeCarryTouch.dy;
+   rule='native-live-opponent-ground-touch';
+  }
   const length=Math.hypot(dx,dy);
   if(length<1e-5)continue;
-  const magnitude=duelDefensiveTouch?.magnitudeNs??dribbleTouch?.magnitudeNs??(activeKeeperAttacker&&action==='carry'?duelIntent.magnitude:ACTION_IMPULSE_NS[action]),factor=magnitude/
+  const magnitude=duelDefensiveTouch?.magnitudeNs??dribbleTouch?.magnitudeNs??nativeCarryTouch?.magnitudeNs??(activeKeeperAttacker&&action==='carry'?duelIntent.magnitude:ACTION_IMPULSE_NS[action]),factor=magnitude/
    Math.hypot(dx,dy,vertical*length);
   const impulseNs=Object.freeze({x:dx*factor,y:dy*factor,
    z:vertical*length*factor});
@@ -547,7 +558,7 @@ export function selectUniformAutonomousContactAction({
    attemptOnly:true,shotOnTarget:null,goalScored:null
   }):null;
   const carryTarget=action==='carry'?Object.freeze({
-   source:dribbleTouch?'isolated-dribble-real-rapier-shoe-touch':
+   source:nativeCarryTouch?'native-live-opponent-ground-touch':dribbleTouch?'isolated-dribble-real-rapier-shoe-touch':
     'same-tick-exclusive-rapier-shoe-short-ground-touch',
    actorId:id,team:player.team,physicsTick:tick,
    originX:ballPosition.x,originY:ballPosition.y,
@@ -609,7 +620,8 @@ export function selectUniformAutonomousContactAction({
     opponentTackleProven:false,interceptionProven:false,
     passCompleted:false,goalScored:false,
     ...(contextualChoice?{smallSidedChoice:contextualChoice}:{}),
-    ...(dribbleTouch?{isolatedDribbleTouch:dribbleTouch}:{})
+    ...(dribbleTouch?{isolatedDribbleTouch:dribbleTouch}:{}),
+    ...(nativeCarryTouch?{nativeCarryTouch}:{})
    }),
    temporaryPlayersOnly:true,uniformPlayerStats:true,
    officialMatchAction:false,officialMatchPossession:false,

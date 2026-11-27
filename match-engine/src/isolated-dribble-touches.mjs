@@ -149,12 +149,22 @@ export function chooseDirectedDribbleTouch({attackingSide,ballPosition:b,ballVel
     defender.team==attackingSide||![b?.x,b?.y,v?.x,v?.y,defender.x,defender.y].every(Number.isFinite)||
     !Number.isSafeInteger(variantIndex)||variantIndex<0||variantIndex>29||!Number.isSafeInteger(tick)||tick<1)
   throw new TypeError('Directed dribble requires live ball and opposing defender');
+ const live=planNativeCarryTouch({attacker,attackingSide,defender,ballPosition:b,ballVelocity:v,tieSide:variantIndex%2===0?1:-1,maxImpulseNs:0.30});
+ return Object.freeze({...live,version:'me-628-directed-dribble-v1',variantIndex,tick});
+}
+// One live carry geometry for free play and locked duels. The experiment
+// can retain its accepted impulse ceiling and tie preference; neither
+// selects a player or grants an impulse without the original shoe gate.
+export function planNativeCarryTouch({attacker=null,attackingSide,defender=null,ballPosition:b,ballVelocity:v,tieSide=1,maxImpulseNs=0.42}={}){
+ if(!['home','away'].includes(attackingSide)||![b?.x,b?.y,v?.x,v?.y].every(Number.isFinite)||
+    (defender!==null&&(defender.team===attackingSide||![defender.x,defender.y].every(Number.isFinite)))||
+    ![-1,1].includes(tieSide)||![0.30,0.42].includes(maxImpulseNs))throw new TypeError('Live native carry geometry required');
  const dir=attackingSide==='home'?1:-1;
- const ahead=dir*(defender.x-b.x),lateral=defender.y-b.y;
+ const ahead=defender?dir*(defender.x-b.x):Infinity,lateral=defender?defender.y-b.y:0;
  const pressure=clamp((5-Math.hypot(ahead,lateral))/3.5,0,1);
  const threatening=ahead>=-0.65&&ahead<=5&&Math.abs(lateral)<2.2;
  // Tie-break only a head-on geometry; do not vary the side with time.
- const side=Math.abs(lateral)>0.12?-Math.sign(lateral):(variantIndex%2===0?1:-1);
+ const side=Math.abs(lateral)>0.12?-Math.sign(lateral):tieSide;
  const targetY=threatening?clamp(defender.y+side*1.35,-32,32):clamp(b.y,-24,24);
  const angle=clamp(Math.atan2(targetY-b.y,Math.max(1.5,ahead+1.0)),-0.70,0.70);
  const shield=planDribbleShield(attacker,defender,b,v,attackingSide);
@@ -163,11 +173,11 @@ export function chooseDirectedDribbleTouch({attackingSide,ballPosition:b,ballVel
   {x:dir*speed*Math.cos(angle),y:speed*Math.sin(angle)};
  const dx=desired.x-v.x,dy=desired.y-v.y,delta=Math.hypot(dx,dy);
  // Limit actual corrective impulse, including braking. Never set velocity.
- const magnitudeNs=Math.min(shield?0.18:0.30,0.43*delta);
- return Object.freeze({version:'me-628-directed-dribble-v1',variantIndex,tick,
+ const magnitudeNs=Math.min(shield?0.18:maxImpulseNs,0.43*delta);
+ return Object.freeze({version:'me-628-native-carry-geometry-v1',
   dx,dy,magnitudeNs,desiredVelocity:Object.freeze(desired),targetY,
-  bypassSide:threatening?side:0,defenderAheadM:ahead,pressure,shieldingIntent:shield!==null,
-  fromLiveOpponent:true,soloCarry:false,fromLiveBallVelocity:true,
+  bypassSide:threatening?side:0,defenderAheadM:defender?ahead:null,pressure,shieldingIntent:shield!==null,
+  fromLiveOpponent:defender!==null,soloCarry:false,fromLiveBallVelocity:true,
   genuineRapierShoeStartRequired:true,decisionOnly:true,officialPossession:false,officialMatchAction:false});
 }
 // Keep the original mover aligned with the real rolling ball so the next

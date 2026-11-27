@@ -539,6 +539,27 @@ test('C3.3m real Rapier-origin pass distance is valid on both 3m and 25m edges, 
  }
  });
 
+test('UME-05I native carry uses the same live opponent geometry in open play and directed duel',async()=>{
+ const {planNativeCarryTouch,chooseDirectedDribbleTouch}=await import('../src/isolated-dribble-touches.mjs');
+ for(const attackingSide of ['home','away']){
+  const dir=attackingSide==='home'?1:-1,other=attackingSide==='home'?'away':'home';
+  const attacker={id:attackingSide+'-7',team:attackingSide,x:-dir*0.5,y:0};
+  const ballPosition={x:0,y:0,z:0.11},ballVelocity={x:dir,y:0,z:0};
+  for(const y of [-0.7,0.7]){
+   const defender={id:other+'-4',team:other,x:dir*2,y};
+   const args={attackingSide,attacker,defender,ballPosition,ballVelocity};
+   const common=planNativeCarryTouch({...args,maxImpulseNs:0.30});
+   const locked=chooseDirectedDribbleTouch({...args,variantIndex:0,tick:1});
+   assert.deepEqual(common.desiredVelocity,locked.desiredVelocity);
+   assert.equal(common.magnitudeNs,locked.magnitudeNs);
+   assert.equal(Math.sign(common.dy),-Math.sign(y));
+   assert.ok(common.magnitudeNs<=0.30);assert.equal(common.officialPossession,false);
+  }
+  const unopposed=planNativeCarryTouch({attackingSide,attacker,ballPosition,ballVelocity:{x:dir*3,y:0,z:0}});
+  assert.equal(unopposed.magnitudeNs,0);
+  assert.equal(unopposed.fromLiveOpponent,false);
+ }
+});
 test('UME-02 same native contact selector for pair, overload and full participant set',()=>{
  const field=mover(Object.fromEntries(INITIAL_PLAYERS.map(p=>[p.id,{x:p.team==='home'?-45:45,y:25}]).concat([['home-10',{x:-5,y:0}],['away-2',{x:-1,y:0}]])));
  const source={tick:1,contactStarted:['home-10'],contactActive:['home-10'],playerFrame:field,ballPosition:ball,ballVelocity:quiet,ballRadiusM:0.11,allowPhysicalCarry:true,nativeActionPolicy:true,collectiveControl:{tick:0,kind:'loose',playerId:null,sourceTick:null,officialPossession:false}};
@@ -546,6 +567,7 @@ test('UME-02 same native contact selector for pair, overload and full participan
  for(const activePlayerIds of sets){
   const action=selectUniformAutonomousContactAction({...source,activePlayerIds});
   assert.equal(action?.action,'carry');assert.equal(action.decisionContext.smallSidedChoice.selected,'carry');
+  assert.ok(action.decisionContext.nativeCarryTouch);assert.ok(Math.hypot(...Object.values(action.impulseNs))<=0.42+1e-9);
   assert.equal(selectUniformAutonomousContactAction({...source,activePlayerIds,contactStarted:[],contactActive:[]}),null);
   assert.equal(selectUniformAutonomousContactAction({...source,activePlayerIds,contactActive:['home-10','away-2']}),null);
  }
