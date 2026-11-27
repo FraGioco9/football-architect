@@ -748,7 +748,7 @@ export function createEngine(RAPIER, input = {}, {
    (smallSided?.id==='keeper-1v1'||smallSided?.blockStart)?
     stagedShoes.filter(p=>p.id===smallSided.opponent+'-1'):[]):[];
   const keeperDives=nativeKeeperActors.map(p=>createNativeKeeperDive(RAPIER,world,ballCollider,p,body,
-    {closeChallengeEnabled:diagnosticKeeperSingleShot}));
+    {closeChallengeEnabled:diagnosticKeeperSingleShot,nativeOpenPlayIds:diagnosticCollectiveActions?smallSided.activeIds:null}));
   const keeperDive=!diagnosticCollectiveActions?(keeperDives[0]??null):null;
   const keeperSnapshots=()=>Object.freeze(keeperDives.map(controller=>controller.snapshot()));
   const collectiveObserver=diagnosticCollectiveActions?createNativeBallControlObserver(smallSided.activeIds,stagedShoes.filter(p=>smallSided.activeIds.includes(p.id)&&p.role!=='goalkeeper').map(p=>p.id)):null;
@@ -980,7 +980,7 @@ export function createEngine(RAPIER, input = {}, {
        (diagnosticKeeperSingleShot&&keeperSingleShotTick!==null&&
         shoeBridge.snapshot().started.includes(smallSided.side+'-10')),
       suppressPhysicalBodyContact:smallBodyGuard?.snapshot()
-       .lowerLegBallContacts.length>0||keeperDives.some(controller=>controller.snapshot().contact===true||controller.snapshot().catchState?.active===true)
+       .lowerLegBallContacts.length>0||keeperDives.some(controller=>controller.snapshot().contact===true||controller.snapshot().catchState?.active===true||controller.snapshot().distribution?.tick===tick)
     });
     if(collectiveObserver){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();

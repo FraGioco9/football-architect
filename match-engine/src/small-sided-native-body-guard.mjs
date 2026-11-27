@@ -4,6 +4,7 @@
 // movement; no second physics world, artificial collision/possession or kick.
 import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_DT,PLAYER_MAX_SPEED_MPS}
  from './player-movement.mjs';
+import {chooseRecipient} from './player-ball-uniform-autonomous-action.mjs';
 
 export const SMALL_SIDED_BODY_VERSION='me-628-native-physical-body-guard-v1';
 const TORSO_CATEGORY=0x0020,LEG_CATEGORY=0x0040,BALL_CATEGORY=0x0001;
@@ -213,8 +214,22 @@ export function eligibleKeeperGrip({team,contact,ballPosition,before,after,glove
   ballPosition.z>=0.10&&ballPosition.z<=2.2&&gap<=0.36&&
   Math.hypot(before.x,before.y,before.z)<=8&&relative<=3.5;
 }
+export const NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS=120;
+export function planNativeKeeperDistribution(keeper,position,players){
+ if(!keeper||keeper.role!=='goalkeeper'||!['home','away'].includes(keeper.team)||
+    ![keeper.x,keeper.y,position?.x,position?.y,position?.z].every(finite)||!Array.isArray(players))return null;
+ const dir=keeper.team==='home'?1:-1;
+ if(-dir*position.x<36||-dir*position.x>=52.39||Math.abs(position.y)>20.16||position.z<0.09||position.z>2.2)return null;
+ const recipient=chooseRecipient(keeper,position,players.filter(p=>p.role!=='goalkeeper'||p.id===keeper.id));
+ const dx=recipient?recipient.player.x-position.x:dir*15,dy=recipient?recipient.player.y-position.y:-position.y*0.15;
+ const length=Math.hypot(dx,dy);
+ if(length<1e-8)return null;
+ const speed=recipient?Math.max(6,Math.min(12,4+length*0.3)):9;
+ return freeze({kind:recipient?'pass':'clearance',recipientId:recipient?.player.id??null,
+  desiredVelocity:freeze({x:dx/length*speed,y:dy/length*speed,z:-0.5}),decisionOnly:true,officialPossession:false});
+}
 export function createNativeKeeperGrip(R,world,hand,ballBody,team){
- let joint=null,anchor=null,heldSince=null,confirmedTick=null,latest=null;
+ let joint=null,anchor=null,heldSince=null,confirmedTick=null,latest=null,lastObservedTick=null;
  function release(){
   if(joint)world.removeImpulseJoint(joint,true);
   joint=null;anchor=null;heldSince=null;confirmedTick=null;
@@ -245,11 +260,29 @@ export function createNativeKeeperGrip(R,world,hand,ballBody,team){
     release();released=true;
    }
   }
+  lastObservedTick=tick;
   latest=freeze({active:joint!==null,heldSince,confirmedTick,errorM,relativeSpeedMps,released,
    officialPossession:false,officialSave:false});
   return latest;
  }
- return freeze({tryGrip,observe,release,active:()=>joint!==null,snapshot:()=>latest});
+ function distribute(tick,keeper,players){
+  if(!joint||confirmedTick===null||lastObservedTick!==tick||tick-confirmedTick<NATIVE_KEEPER_DISTRIBUTION_DELAY_TICKS||keeper?.team!==team)return null;
+  const plan=planNativeKeeperDistribution(keeper,ballBody.translation(),players);
+  if(!plan)return null;
+  const before=freeze({...ballBody.linvel()}),origin=freeze({...ballBody.translation()}),mass=ballBody.mass();
+  if(!finite(mass)||mass<=0)return null;
+  const delta={x:mass*(plan.desiredVelocity.x-before.x),y:mass*(plan.desiredVelocity.y-before.y),z:mass*(plan.desiredVelocity.z-before.z)};
+  const magnitude=Math.hypot(delta.x,delta.y,delta.z),scale=magnitude>6?6/magnitude:1;
+  const impulse=freeze({x:delta.x*scale,y:delta.y*scale,z:delta.z*scale});
+  if(!Object.values(impulse).every(finite)||magnitude<0.025)return null;
+  const confirmed=confirmedTick;
+  release();ballBody.applyImpulse(impulse,true);
+  latest=freeze({...latest,active:false,heldSince:null,confirmedTick:null,released:true});
+  return freeze({tick,keeperId:keeper.id,team,kind:plan.kind,recipientId:plan.recipientId,confirmedGripTick:confirmed,
+   origin,before,after:freeze({...ballBody.linvel()}),impulseNs:impulse,nativeGripReleased:true,
+   appliedByRapier:true,actualPhysicsImpulseApplied:true,officialPossession:false,officialSave:false});
+ }
+ return freeze({tryGrip,observe,release,distribute,active:()=>joint!==null,snapshot:()=>latest});
 }
 // Nearby keeper challenge: only a reachable, slow, live ball near an
 // opponent inside the penalty area. The solver decides contact and grip.
@@ -268,7 +301,9 @@ export function planNativeKeeperChallenge(keeper,attacker,ball){
  if(gap>1.65||gap<0.08)return null;
  return freeze({kind:'challenge',start:freeze(start),target:freeze(intended),intended:freeze(intended),eta,reachTicks,limited:false});
 }
-export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null,{closeChallengeEnabled=false}={}){
+export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null,{closeChallengeEnabled=false,nativeOpenPlayIds=null}={}){
+ if(nativeOpenPlayIds!==null&&(!Array.isArray(nativeOpenPlayIds)||!nativeOpenPlayIds.includes(keeper.id)||new Set(nativeOpenPlayIds).size!==nativeOpenPlayIds.length))throw new TypeError('Native keeper requires explicit physical participants');
+ const nativeOpenPlay=nativeOpenPlayIds!==null;
  const dir=keeper.team==='home'?1:-1;
  const rest=p=>({x:p.x+dir*0.35,y:p.y,z:0.85});
  const origin=rest(keeper);
@@ -288,6 +323,8 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   if(lastAction?.tick===tick-1&&lastAction.action==='shot'&&
      lastAction.team!==keeper.team&&lastAction.appliedByRapier===true&&
      lastAction.actualPhysicsImpulseApplied===true)shotTick=lastAction.tick;
+  if(nativeOpenPlay&&shotTick!==null&&(tick-shotTick>180||lastAction?.tick===tick-1&&lastAction.action!=='shot'))shotTick=null;
+  const physicalPlayers=nativeOpenPlay?frame.players.filter(p=>nativeOpenPlayIds.includes(p.id)):null;
   let started=false,phase='ready',target=rest(actor);
   if(!grip?.active()&&!plan){
    const shotCandidate=shotTick!==null&&shotTick!==usedShot?planNativeKeeperDive(actor,ball):null;
@@ -324,7 +361,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
    }
   }
   body.setNextKinematicTranslation(target);
-  prepared={tick,phase,started,priorVelocity:freeze({...ball.velocity}),
+  prepared={tick,phase,started,actor,physicalPlayers,priorVelocity:freeze({...ball.velocity}),
    plan:plan?freeze({kind:plan.kind,eta:plan.eta,limited:plan.limited,intended:plan.intended,target:plan.target}):null};
  }
  function observe(tick,postVelocity){
@@ -340,14 +377,16 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
     before:prepared.priorVelocity,after:postVelocity,glovePosition:pos,gloveVelocity:body.linvel()});
    if(accepted){plan=null;glove.setCollisionGroups(0);}
   }
-  const catchState=grip?.observe(tick)??null;
+  let catchState=grip?.observe(tick)??null;
+  const distribution=nativeOpenPlay&&catchState?.active?grip.distribute(tick,prepared.actor,prepared.physicalPlayers):null;
+  if(distribution){catchState=grip.snapshot();shotTick=null;lastChallengeTick=tick;glove.setCollisionGroups(0);}
   if(catchState?.released){active=false;plan=null;}
   latest=freeze({version:KEEPER_DIVE_VERSION,tick,keeperId:keeper.id,
    phase:prepared.phase,started:prepared.started,plan:prepared.plan,
    glove:active?freeze({x:pos.x,y:pos.y,z:pos.z}):null,
    contact:hit,contactStarted:hit&&!priorHit,
    contactMotion:hit?freeze({before:prepared.priorVelocity,after:freeze({...postVelocity})}):null,
-   catchState,
+   catchState,...(nativeOpenPlay?{distribution}:{}),
    officialSave:false,source:'native-rapier-solver-manifold'});
   priorHit=hit;prepared=null;return latest;
  }

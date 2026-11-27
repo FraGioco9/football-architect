@@ -131,7 +131,7 @@ function chooseLiveCrossRecipient(actor,ball,players){
    ids.indexOf(a.player.id)-ids.indexOf(b.player.id));
  return choices[0]??null;
 }
-function chooseRecipient(actor,ball,players){
+export function chooseRecipient(actor,ball,players){
  const attack=actor.team==='home'?1:-1;
  const choices=players.filter(p=>p.team===actor.team&&
   p.id!==actor.id).map(p=>{
