@@ -758,7 +758,7 @@ function render() {
         pass.attempted?'Pass observed':'Waiting for pass'):
       cross?(cross.arrival?'Arrival observed':
         cross.attempted?'Cross observed':'Waiting for cross'):
-      f.collectiveControl?(f.refereeEvidence?.lastEvent?(f.refereeEvidence.lastEvent.kind==='goal'?'Goal observed':'Ball out'):f.collectiveControl.kind==='controlled'?'Ball controlled':f.collectiveControl.delivery?.kind==='shot'?'Shot in flight':f.collectiveControl.delivery?'Pass in flight':'Loose ball'):
+      f.collectiveControl?(f.refereeEvidence?.lastEvent?(f.refereeEvidence.lastEvent.kind==='goal'?'Goal observed':'Ball out'):f.collectiveControl.keeperHold?'Ball held':f.collectiveControl.kind==='controlled'?'Ball controlled':f.collectiveControl.delivery?.kind==='shot'?'Shot in flight':f.collectiveControl.delivery?'Pass in flight':'Loose ball'):
       mixedControl?(mixedControl.kind==='controlled'?'Ball controlled':'Loose ball'):
       f.nativeDribbleAudit&&!f.nativeDribbleAudit.soloCarry?
         (Object.values(f.duelTransition?.getUpUntil??{}).some(until=>until>=f.physicsTick)?'Loose ball':f.duelTransition?.lastShoulder?.tick===f.physicsTick?'Shoulder challenge':f.defensiveSlide?.phase==='slide'?'Sliding tackle':f.defensiveSlide?.phase==='recovery'?'Defender recovery':f.duelTransition?.phase==='counter'?'Counter carry':f.duelTransition?.phase==='recover'?'Loose ball recovery':f.shieldAudit?.shielding?'Shielding':f.nativeDribbleAudit.defenderShoeStarts>0||f.nativeDribbleAudit.nativeBodyBallContactTicks>0?'Physical contest':f.nativeDribbleAudit.appliedCarryActions>0?'Dribbling':'Waiting for touch'):
@@ -778,7 +778,7 @@ function renderActiveMetrics(f){
  const keeper=f.keeperShotAudit;
  if(f.collectiveControl){
   const control=f.collectiveControl,c=f.collectiveCounts;
-  entries=[['Ball control',control.kind==='controlled'?(control.playerId.startsWith('home-')?'HOME #':'AWAY #')+control.playerId.split('-').at(-1):'Loose ball'],
+  entries=[['Ball control',control.keeperHold?'Ball held':control.kind==='controlled'?(control.playerId.startsWith('home-')?'HOME #':'AWAY #')+control.playerId.split('-').at(-1):'Loose ball'],
    ['Carry touches',count(c.carry)],['Passes',count(c.pass)],['Shots',count(c.shot)],['Defensive touches',count(c.tackle+c.interception)],['Keeper saves attempted',count(c.save)]];
  }else if(f.blockAudit){
   const a=f.blockAudit;

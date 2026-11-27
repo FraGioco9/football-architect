@@ -29,8 +29,8 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
  if(!Array.isArray(activeIds)||!Array.isArray(outfieldIds)||
     new Set(activeIds).size!==activeIds.length||new Set(outfieldIds).size!==outfieldIds.length||
     !outfieldIds.every(id=>activeIds.includes(id)))throw new TypeError('Active physical participants required');
- let witness=null,delivery=null,getUpUntil={},shoulderByPlayer={},lastInterventions={},lastBlock=null,blockCount=0,latest=Object.freeze({tick:0,...observeDuelBallControl(),delivery:null,getUpUntil:Object.freeze({}),shoulderByPlayer:Object.freeze({}),lastInterventions:Object.freeze({}),lastBlock:null,blockCount:0});
- function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action,physicalChallengeReleased=false,shoulderPlans=[],torsoPairs=[],bodies=[],beforeBallVelocity=null,afterSolverVelocity=null}){
+ let witness=null,delivery=null,getUpUntil={},shoulderByPlayer={},lastInterventions={},lastBlock=null,blockCount=0,latest=Object.freeze({tick:0,...observeDuelBallControl(),delivery:null,getUpUntil:Object.freeze({}),shoulderByPlayer:Object.freeze({}),lastInterventions:Object.freeze({}),lastBlock:null,blockCount:0,keeperHold:null,keeperDistribution:null});
+ function observe({tick,players,ball,starts,active,bodyStarts=[],bodyActive=[],action,physicalChallengeReleased=false,shoulderPlans=[],torsoPairs=[],bodies=[],beforeBallVelocity=null,afterSolverVelocity=null,keeperStates=[]}){
   if(tick!==latest.tick+1)throw new TypeError('Consecutive native control ticks required');
   const participants=players.filter(p=>outfieldIds.includes(p.id));
   const touching=[...new Set([...active,...bodyActive])].filter(id=>activeIds.includes(id));
@@ -64,9 +64,19 @@ export function createNativeBallControlObserver(activeIds,outfieldIds){
    if(impact?.successful){shoulderByPlayer[impact.opponentId]=impact;shoulderReleased=true;}
   }
   if(physicalChallengeReleased===true||shoulderReleased){witness=null;delivery=null;}
+  // Hand releases are a separate native physical source, never shoe evidence.
+  const currentKeepers=keeperStates.filter(k=>k.tick===tick&&activeIds.includes(k.keeperId)&&players.some(p=>p.id===k.keeperId&&p.role==='goalkeeper'));
+  const holding=currentKeepers.filter(k=>k.catchState?.active&&Number.isSafeInteger(k.catchState.confirmedTick)&&k.catchState.confirmedTick<=tick);
+  const keeperHold=holding.length===1?Object.freeze({keeperId:holding[0].keeperId,confirmedTick:holding[0].catchState.confirmedTick}):null;
+  const released=currentKeepers.filter(k=>k.distribution?.tick===tick&&k.distribution.keeperId===k.keeperId&&k.distribution.appliedByRapier===true&&k.distribution.actualPhysicsImpulseApplied===true&&k.distribution.nativeGripReleased===true&&k.catchState?.active===false&&k.catchState.released===true&&latest.keeperHold?.keeperId===k.keeperId&&latest.keeperHold.confirmedTick===k.distribution.confirmedGripTick);
+  const candidate=released.length===1?released[0].distribution:null;
+  const keeperDistribution=candidate&&players.some(p=>p.id===candidate.keeperId&&p.team===candidate.team)&&['pass','clearance'].includes(candidate.kind)&&
+   (candidate.kind==='clearance'?candidate.recipientId===null:participants.some(p=>p.id===candidate.recipientId&&p.team===candidate.team))&&!real?candidate:null;
+  if(keeperHold){witness=null;delivery=null;}
+  if(keeperDistribution){witness=null;delivery=keeperDistribution.kind==='pass'?Object.freeze({tick,playerId:keeperDistribution.keeperId,team:keeperDistribution.team,kind:'pass',recipientId:keeperDistribution.recipientId,source:'native-keeper-grip-release'}):null;}
   const control=observeNativeBallControl({players:participants,ball,carryWitness:witness,tick});
   if(control.kind==='loose')witness=null;
-  latest=Object.freeze({tick,...control,delivery,getUpUntil:Object.freeze({...getUpUntil}),shoulderByPlayer:Object.freeze({...shoulderByPlayer}),lastInterventions:Object.freeze({...lastInterventions}),lastBlock,blockCount});
+  latest=Object.freeze({tick,...control,delivery,getUpUntil:Object.freeze({...getUpUntil}),shoulderByPlayer:Object.freeze({...shoulderByPlayer}),lastInterventions:Object.freeze({...lastInterventions}),lastBlock,blockCount,keeperHold,keeperDistribution});
   return latest;
  }
  return Object.freeze({snapshot:()=>latest,observe});

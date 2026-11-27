@@ -161,7 +161,7 @@ export function createPrivatePhysicalActionExecutor({
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
-  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null,duelTransition=null,collectiveControl=null
+  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null,duelTransition=null,collectiveControl=null,keeperDistribution=null
  }={}){
   ensureOpen();
   if(firstTimeShot&&(!priorNativeBallVelocity||!['x','y','z'].every(k=>Number.isFinite(priorNativeBallVelocity[k]))))
@@ -501,6 +501,14 @@ export function createPrivatePhysicalActionExecutor({
    if(target?.recipientId)pendingDelivery={kind:applied.action,tick:nextTick,
     actorId:applied.playerId,recipientId:target.recipientId,team:applied.team,
     airborne:false,descending:false};
+  }
+  if(keeperDistribution!==null){
+   const d=keeperDistribution;
+   const actor=playerFrame.players.find(p=>p.id===d.keeperId&&p.role==='goalkeeper'&&p.team===d.team);
+   if(!nativeActionPolicy||!suppressPhysicalBodyContact||applied||d.tick!==nextTick||d.appliedByRapier!==true||d.actualPhysicsImpulseApplied!==true||d.nativeGripReleased!==true||!actor||!activePlayerIds.includes(actor.id)||collectiveControl?.keeperHold?.keeperId!==actor.id||collectiveControl.keeperHold.confirmedTick!==d.confirmedGripTick)throw new TypeError('Current confirmed native keeper release required');
+   pendingDelivery=null;
+   if(d.kind==='pass'&&playerFrame.players.some(p=>p.id===d.recipientId&&p.team===actor.team&&activePlayerIds.includes(p.id)&&p.id!==actor.id))
+    pendingDelivery={kind:'pass',tick:nextTick,actorId:actor.id,recipientId:d.recipientId,team:actor.team,airborne:true,descending:false,source:'native-keeper-grip-release'};
   }
   if(side!==null&&!sharedDynamics){
    if(researchCandidate!==null){

@@ -968,11 +968,13 @@ export function createEngine(RAPIER, input = {}, {
     applyGrassRollingResistance();
     const collectiveSolverVelocity=collectiveObserver?Object.freeze({...body.linvel()}):null;
     tick += 1;
+    const hands=collectiveObserver?keeperSnapshots():[];
+    const distribution=hands.find(k=>k.distribution?.tick===tick)?.distribution??null;
     // Same tick, same private Rapier ball, exclusively from observed shoe
     // START. The ordinary physics and contact-only modes never kick.
     if(actionExecutor)actionExecutor.apply(tick,playerFrame,{
       duelTransition:duelTransition?.snapshot()??null,
-      collectiveControl:collectiveObserver?.snapshot()??null,
+      collectiveControl:collectiveObserver?.snapshot()??null,keeperDistribution:distribution,
       ...(diagnosticFirstTimeShot?{priorNativeBallVelocity:preStepBall.velocity}:{}),
       suppressOriginalAction:(diagnosticB06bNativeShotSide!==null&&(
        b06bGoalPending!==null||
@@ -984,12 +986,11 @@ export function createEngine(RAPIER, input = {}, {
     });
     if(collectiveObserver){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();
-     const hands=keeperSnapshots();
      const handStarts=hands.filter(x=>x.contactStarted).map(x=>x.keeperId);
      const handContacts=hands.filter(x=>x.contact||x.catchState?.active).map(x=>x.keeperId);
      collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,
       bodyStarts:[...physical.lowerLegBallStarts,...handStarts],bodyActive:[...physical.lowerLegBallContacts,...handContacts],
-      action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies,beforeBallVelocity:preStepBall.velocity,afterSolverVelocity:collectiveSolverVelocity});
+      action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies,beforeBallVelocity:preStepBall.velocity,afterSolverVelocity:collectiveSolverVelocity,keeperStates:hands});
     }
     if(duelTransition){
      const shoe=shoeBridge.snapshot(),physical=smallBodyGuard.snapshot();

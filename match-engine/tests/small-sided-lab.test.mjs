@@ -7,7 +7,7 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {createEngine,initializeRapier} from '../src/core.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/player-movement.mjs';
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
- keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay}
+ keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay,planNativeKeeperCloseDown}
  from '../src/small-sided-lab-scenarios.mjs';
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
@@ -51,6 +51,33 @@ test('COL-02 native control releases on pass and contest, never on intended reci
   assert.equal(step(5,[d.id],[d.id],action(5,d.id,'carry')).playerId,d.id);
   assert.equal(step(6,[],[d.id],null,[keeper]).kind,'loose');
   assert.equal(step(7).kind,'loose');
+ }
+});
+test('UME-05H keeper delivery requires prior confirmed grip and does not assign receiver control',()=>{
+ for(const team of ['home','away']){
+  const other=team==='home'?'away':'home',dir=team==='home'?1:-1;
+  const k={id:team+'-1',team,role:'goalkeeper',x:-dir*48,y:0};
+  const mate={id:team+'-4',team,role:'defender',x:-dir*36,y:3};
+  const rival={id:other+'-7',team:other,role:'midfielder',x:-dir*44,y:0};
+  const players=[k,mate,rival],ids=players.map(p=>p.id);
+  const obs=createNativeBallControlObserver(ids,[mate.id,rival.id]);
+  const ball={position:{x:-dir*46,y:0,z:0.11},velocity:{x:dir*2,y:0,z:0}};
+  assert.ok(planNativeKeeperCloseDown(k,rival,ball.position,ball.velocity));
+  assert.equal(planNativeKeeperCloseDown(k,mate,ball.position,ball.velocity),null);
+  const grip={keeperId:k.id,tick:1,catchState:{active:true,confirmedTick:1}};
+  const d={keeperId:k.id,team,recipientId:mate.id,kind:'pass',tick:2,confirmedGripTick:1,appliedByRapier:true,actualPhysicsImpulseApplied:true,nativeGripReleased:true};
+  const state={keeperId:k.id,tick:2,distribution:d,catchState:{active:false,released:true}};
+  const base={players,ball,starts:[],active:[],action:null};
+  const invalid=createNativeBallControlObserver(ids,[mate.id,rival.id]);
+  invalid.observe({...base,tick:1});
+  assert.equal(invalid.observe({...base,tick:2,keeperStates:[state]}).delivery,null);
+  assert.equal(obs.observe({...base,tick:1,keeperStates:[grip]}).keeperHold.keeperId,k.id);
+  const released=obs.observe({...base,tick:2,keeperStates:[state]});
+  assert.equal(released.keeperHold,null);assert.equal(released.kind,'loose');
+  assert.equal(released.delivery.source,'native-keeper-grip-release');assert.equal(released.delivery.recipientId,mate.id);
+  assert.equal(released.playerId,null);assert.equal(released.officialPossession,false);
+  const received=obs.observe({...base,tick:3,starts:[mate.id],active:[mate.id]});
+  assert.equal(received.delivery,null);assert.equal(received.kind,'loose');
  }
 });
 test('UME-01 identical native control lifecycle regardless of number of participants',()=>{

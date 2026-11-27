@@ -328,8 +328,8 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   let started=false,phase='ready',target=rest(actor);
   if(!grip?.active()&&!plan){
    const shotCandidate=shotTick!==null&&shotTick!==usedShot?planNativeKeeperDive(actor,ball):null;
-   const attacker=frame.players.find(p=>p.team!==keeper.team&&p.id.endsWith('-10'));
-   const challenge=closeChallengeEnabled&&shotTick===null&&tick-lastChallengeTick>=60?
+   const attacker=nativeOpenPlay?physicalPlayers.filter(p=>p.team!==keeper.team).sort((a,b)=>Math.hypot(a.x-ball.position.x,a.y-ball.position.y)-Math.hypot(b.x-ball.position.x,b.y-ball.position.y)||a.id.localeCompare(b.id))[0]:frame.players.find(p=>p.team!==keeper.team&&p.id.endsWith('-10'));
+   const challenge=(closeChallengeEnabled||nativeOpenPlay)&&shotTick===null&&tick-lastChallengeTick>=60?
     planNativeKeeperChallenge(actor,attacker,ball):null;
    const candidate=shotCandidate?freeze({...shotCandidate,kind:'shot'}):challenge;
    if(candidate){

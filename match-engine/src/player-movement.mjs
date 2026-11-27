@@ -12,7 +12,7 @@ import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {smallSidedSetup,keeperDuelAttackerTarget,keeperDuelReboundTarget,
- keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeFootballMovement,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
+ keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget,planNativeKeeperCloseDown,planNativeFootballMovement,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -2694,7 +2694,12 @@ export function createPlayerMovement(options={}){
        y:smallSided.ball.y}):
       Object.freeze({x:p.baseX,y:p.baseY});
     }
-    if(collectiveApproaches&&p.role==='goalkeeper')return goalkeeperPosition(p.team,ball);
+    if(collectiveApproaches&&p.role==='goalkeeper'){
+     if(collectiveControl?.keeperHold?.keeperId===p.id)return Object.freeze({x:p.x,y:p.y});
+     const rival=players.filter(q=>smallActive.has(q.id)&&q.team!==p.team).sort((a,b)=>Math.hypot(a.x-ball.x,a.y-ball.y)-Math.hypot(b.x-ball.x,b.y-ball.y)||a.id.localeCompare(b.id))[0];
+     const close=collectiveControl?.delivery?.kind!=='shot'?planNativeKeeperCloseDown(p,rival,ballPosition,realBallVelocity):null;
+     return close??goalkeeperPosition(p.team,ball);
+    }
     if(p.id===smallSided.opponent+'-1'){
      const baseline=goalkeeperPosition(p.team,ball);
      if(collectiveApproaches)return baseline;

@@ -238,7 +238,13 @@ export function keeperDuelCloseDownTarget(side,keeper,attacker,ball,velocity){
     attacker?.id!==side+'-10'||![keeper.x,keeper.y,attacker.x,attacker.y,
      ball?.x,ball?.y,ball?.z,velocity?.x,velocity?.y,velocity?.z].every(Number.isFinite))
   throw new TypeError('Live keeper close-down needs original players and ball');
- const dir=side==='home'?1:-1, gap=Math.hypot(ball.x-keeper.x,ball.y-keeper.y);
+ return planNativeKeeperCloseDown({...keeper,team:side==='home'?'away':'home'},{...attacker,team:side},ball,velocity);
+}
+// Open play and the isolated keeper experiment share this geometry.
+export function planNativeKeeperCloseDown(keeper,attacker,ball,velocity){
+ if(!keeper||!attacker||!['home','away'].includes(keeper.team)||!['home','away'].includes(attacker.team)||attacker.team===keeper.team||
+    ![keeper.x,keeper.y,attacker.x,attacker.y,ball?.x,ball?.y,ball?.z,velocity?.x,velocity?.y,velocity?.z].every(Number.isFinite))return null;
+ const dir=keeper.team==='home'?-1:1,gap=Math.hypot(ball.x-keeper.x,ball.y-keeper.y);
  if(dir*ball.x<36||dir*ball.x>=52.39||Math.abs(ball.y)>20.16||
     ball.z>0.5||Math.hypot(velocity.x,velocity.y,velocity.z)>6||
     Math.hypot(ball.x-attacker.x,ball.y-attacker.y)>2.2||gap>7)return null;
