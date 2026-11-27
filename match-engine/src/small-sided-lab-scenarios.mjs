@@ -316,11 +316,17 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
  const opponent=side==='home'?'away':'home',dir=side==='home'?1:-1;
  if(d.fullField){
   if(carryRunwayStart||tapInStart||firstTimeShot||shoulderStart||interceptionStart||blockStart)throw new TypeError('Full field cannot use isolated experiment overrides');
-  const staged=freeze(canonicalPlayers.map(p=>p.id===side+'-10'?freeze({...p,x:-dir*0.35,y:0,baseX:-dir*0.35,baseY:0}):p));
+  // UME-06B: reuse accepted pre-tick-zero geometry, never the restricted
+  // exercise action policy. All 22 players (including both keepers) remain
+  // native and active even when a particular local challenge is staged.
+  const geometry=variantIndex===0?null:smallSidedSetup(
+   ['keeper-1v1','duel-3v3','defender-1v1'][(variantIndex-1)%3],
+   side,canonicalPlayers,{variantIndex:Math.floor((variantIndex-1)/3)});
+  const staged=geometry?.staged??freeze(canonicalPlayers.map(p=>p.id===side+'-10'?freeze({...p,x:-dir*0.35,y:0,baseX:-dir*0.35,baseY:0}):p));
   const activeIds=freeze(staged.map(p=>p.id));
   if(new Set(activeIds).size!==22||!physicallySeparated(staged,1.15))throw new TypeError('Full field requires 22 distinct separated canonical participants');
   return freeze({id,side,opponent,variantIndex,activeIds,staged,fullField:true,
-   ball:freeze({preset:'roll',seed:'me-native-full-field-'+side+'-'+variantIndex,x:0,y:0,z:0,vx:0,vy:0,vz:0}),genuinePhysicalPlayers:22,officialMatchResult:null});
+   ball:freeze({preset:'roll',seed:'me-native-full-field-'+side+'-'+variantIndex,x:geometry?.ball.x??0,y:geometry?.ball.y??0,z:0,vx:0,vy:0,vz:0}),genuinePhysicalPlayers:22,officialMatchResult:null});
  }
  const activeIds=freeze(canonicalPlayers.filter(p=>
    (d.includeGoalkeeper!==false&&p.id===opponent+'-1')||

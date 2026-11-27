@@ -12,6 +12,7 @@ import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
 import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
 import {observeNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
+import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
 import {SOLO_CARRY_PHASES,advanceSoloCarryPhase} from '../src/solo-carry-phases.mjs';
 
 test('COL-01 both teams pursue the real ball without a shirt-number runner or inferred possession',()=>{
@@ -338,13 +339,20 @@ function nativeReplayAudit(active){
  };
 }
 
-test('UME-06A full field native 22-player deterministic replay with live keeper and defensive evidence',{timeout:180000},async()=>{
- const R=await initializeRapier(rapier),id='full-field-native';
- for(const side of ['home','away']){
-  const fixture=smallSidedSetup(id,side,INITIAL_PLAYERS);
-  const options={diagnosticSmallSidedSituation:id,diagnosticSmallSidedSide:side,diagnosticPlayerFootContactsEnabled:true,diagnosticAutonomousFixtureActionEnabled:true,diagnosticSmallSidedBodyGuardEnabled:true,diagnosticSmallSidedBodyFeedbackEnabled:true,diagnosticCollectiveActions:true,diagnosticLatestLabDynamics:true};
+test('UME-06A/B full field native 22-player deterministic replay from midfield and final-third geometries',{timeout:180000},async()=>{
+ const R=await initializeRapier(rapier),id='full-field-native',results=[];
+ for(const side of ['home','away'])for(const variantIndex of [0,1,2,3]){
+  const fixture=smallSidedSetup(id,side,INITIAL_PLAYERS,{variantIndex});
+  assert.equal(fixture.activeIds.length,22);
+  if(variantIndex>0){
+   const source=smallSidedSetup(['keeper-1v1','duel-3v3','defender-1v1'][variantIndex-1],side,INITIAL_PLAYERS);
+   assert.deepEqual(fixture.staged,source.staged);
+   assert.equal(fixture.ball.x,source.ball.x);assert.equal(fixture.ball.y,source.ball.y);
+   assert.ok(Math.abs(fixture.ball.x)>20);
+  }
+  const options={diagnosticSmallSidedSituation:id,diagnosticSmallSidedSide:side,diagnosticSmallSidedVariantIndex:variantIndex,diagnosticPlayerFootContactsEnabled:true,diagnosticAutonomousFixtureActionEnabled:true,diagnosticSmallSidedBodyGuardEnabled:true,diagnosticSmallSidedBodyFeedbackEnabled:true,diagnosticCollectiveActions:true,diagnosticLatestLabDynamics:true};
   assert.throws(()=>createEngine(R,fixture.ball,{...options,diagnosticCollectiveActions:false}),/Full field requires/);
-  const session=()=>({engine:createEngine(R,fixture.ball,options),mover:createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true})});
+  const session=()=>({engine:createEngine(R,fixture.ball,options),mover:createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,researchSmallSidedVariantIndex:variantIndex,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true})});
   const x=session(),y=session(),audit=nativeReplayAudit(fixture.activeIds);
   function step({engine,mover}){
    const prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
@@ -355,6 +363,7 @@ test('UME-06A full field native 22-player deterministic replay with live keeper 
   }
   try{
    assert.deepEqual(x.engine.originalSmallSidedPhysicalShoeIds(),fixture.activeIds);
+   let prior=x.engine.snapshot().ball.position,pathM=0,ticks=0,boundary=null;
    for(let k=1;k<=600;k++){
     const a=step(x),b=step(y);
     assert.equal(a.tick,k);assert.deepEqual(a.ball,b.ball);assert.deepEqual(a.players,b.players);
@@ -365,13 +374,21 @@ test('UME-06A full field native 22-player deterministic replay with live keeper 
     assert.equal(a.decisions.filter(d=>d.kind==='goalkeeping').length,2);
     assert.deepEqual(a.keepers.map(d=>d.keeperId),['home-1','away-1']);
     assert.ok(a.keepers.filter(d=>d.catchState?.active).length<=1);
-    audit.observe(a);
+    audit.observe(a);ticks=k;
+    pathM+=Math.hypot(a.ball.position.x-prior.x,a.ball.position.y-prior.y);
+    boundary=detectFirstFullyOutBallB05(prior,a.ball.position);
+    prior=a.ball.position;
+    // Do not simulate an invented restart or a live action after dead ball.
+    if(boundary){assert.equal(boundary.fullBallCrossed,true);break;}
    }
    const report=audit.report();
    assert.ok(report.contacts>0);assert.ok(Object.values(report.actions).some(n=>n>0));
-   process.stdout.write('ME_628_UME06_FULL '+JSON.stringify({side,players:22,ticks:600,deterministic:true,...report})+'\n');
+   const result={side,variantIndex,players:22,ticks,pathM,boundary:boundary?.edge??null,deterministic:true,...report};
+   results.push(result);
+   process.stdout.write('ME_628_UME06_FULL '+JSON.stringify(result)+'\n');
   }finally{x.engine.dispose();y.engine.dispose();}
  }
+ assert.equal(results.length,8);
 });
 test('UME-06A same guarded native replay matrix for 1v1 through 3v3 plus goalkeeper',{timeout:180000},async()=>{
  const R=await initializeRapier(rapier),results=[];
