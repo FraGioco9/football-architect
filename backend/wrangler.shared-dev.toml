@@ -2,7 +2,8 @@
 # Never use this file for publishing a Worker or testing destructive world resets.
 # Wrangler v4 remote bindings execute src/index.ts on this PC; only DB accesses Cloudflare.
 name = "fa-admin-world-shared-d1-local"
-main = "src/index.ts"
+main = "src/shared-dev-worker.ts"
+compatibility_flags = ["nodejs_compat"]
 compatibility_date = "2026-10-26"
 
 [dev]
