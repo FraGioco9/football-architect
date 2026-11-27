@@ -573,3 +573,36 @@ test('UME-02 same native contact selector for pair, overload and full participan
  }
  assert.throws(()=>selectUniformAutonomousContactAction({...source,activePlayerIds:sets[0],collectiveControl:null}),/control observation/);
 });
+
+test('UME-05J native interception correction is shared and bounded across mirrored actors',async()=>{
+ const {planNativeInterceptionCushion,chooseDuelInterceptionTouch}=await import('../src/isolated-dribble-touches.mjs');
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,other=side==='home'?'away':'home';
+  const attacker={id:side+'-7',team:side,x:-dir*4,y:0};
+  const defender={id:other+'-4',team:other,x:dir*0.2,y:0.3};
+  const ballPosition={x:0,y:0,z:0.11},ballVelocity={x:dir*6,y:0,z:0};
+  const args={attackingSide:side,attacker,defender,ballPosition,ballVelocity};
+  const duel=chooseDuelInterceptionTouch(args);
+  assert.ok(duel);
+  const common=planNativeInterceptionCushion({...args,desiredVelocity:duel.desiredVelocity,maxImpulseNs:2.2});
+  for(const key of ['dx','dy','magnitudeNs','carrierGapM','defenderGapM','actorId','opponentId'])assert.equal(common[key],duel[key]);
+  assert.equal(common.interceptionConfirmed,false);assert.equal(common.officialPossession,false);
+  assert.equal(common.nativeExclusiveShoeRequired,true);assert.ok(Object.isFrozen(common.desiredVelocity));
+  assert.equal(planNativeInterceptionCushion({...args,desiredVelocity:ballVelocity,maxImpulseNs:2.2}),null);
+  assert.equal(planNativeInterceptionCushion({...args,attacker:{...attacker,x:0.2},desiredVelocity:duel.desiredVelocity,maxImpulseNs:2.2}),null);
+  assert.equal(planNativeInterceptionCushion({...args,desiredVelocity:duel.desiredVelocity,maxImpulseNs:6}),null);
+  // The isolated delivery keeps its existing provisional target and
+  // ceiling; the common correction must match the actual selector.
+  const passerId=side+'-10',recipientId=side+'-9',defenderId=other+'-2';
+  const frame=mover({[passerId]:{x:attacker.x,y:0},[recipientId]:{x:dir*5,y:0},[defenderId]:{x:defender.x,y:defender.y}},25);
+  const input={tick:25,contactStarted:[defenderId],contactActive:[defenderId],playerFrame:frame,ballPosition,ballVelocity,ballRadiusM:0.11,activePlayerIds:[passerId,recipientId,defenderId],interceptionContext:{side,phase:'flight'}};
+  const action=selectUniformAutonomousContactAction(input);
+  assert.equal(action?.action,'interception');
+  const expected=planNativeInterceptionCushion({...args,attacker:{...attacker,id:passerId},defender:{...defender,id:defenderId},desiredVelocity:action.defensiveTarget.desiredVelocity,maxImpulseNs:5.8});
+  assert.equal(action.defensiveTarget.magnitudeNs,expected.magnitudeNs);
+  assert.ok(Math.abs(Math.hypot(action.impulseNs.x,action.impulseNs.y)-expected.magnitudeNs)<1e-9);
+  assert.equal(action.officialMatchPossession,false);
+  assert.equal(selectUniformAutonomousContactAction({...input,contactStarted:[],contactActive:[]}),null);
+  assert.equal(selectUniformAutonomousContactAction({...input,contactActive:[defenderId,passerId]}),null);
+ }
+});
