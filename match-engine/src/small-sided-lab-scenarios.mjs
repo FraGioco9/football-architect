@@ -64,6 +64,9 @@ const definitions=freeze([
   description:'One genuine shooter, stationary ball and empty goal. Observe actual flight and full-ball goal-line crossing; no official result.'})
 ]);
 const byId=new Map(definitions.map(s=>[s.id,s]));
+// Private full-field research fixture: initial geometry only. Not in the
+// visible LAB catalog until the full native participant path is certified.
+byId.set('full-field-native',freeze({id:'full-field-native',nativeOpenPlay:true,fullField:true}));
 // Keeper 1v1: deterministic source-only 60Hz tactical targets, never a
 // physical impulse, teleport, scripted save, possession or match result.
 const bounded=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
@@ -305,6 +308,14 @@ export function smallSidedSetup(id,side,canonicalPlayers,{
      typeof p.id!=='string'||!['home','away'].includes(p.team)))
   throw new TypeError('Small-sided exercise needs real canonical ordered 22-player identities');
  const opponent=side==='home'?'away':'home',dir=side==='home'?1:-1;
+ if(d.fullField){
+  if(carryRunwayStart||tapInStart||firstTimeShot||shoulderStart||interceptionStart||blockStart)throw new TypeError('Full field cannot use isolated experiment overrides');
+  const staged=freeze(canonicalPlayers.map(p=>p.id===side+'-10'?freeze({...p,x:-dir*0.35,y:0,baseX:-dir*0.35,baseY:0}):p));
+  const activeIds=freeze(staged.map(p=>p.id));
+  if(new Set(activeIds).size!==22||!physicallySeparated(staged,1.15))throw new TypeError('Full field requires 22 distinct separated canonical participants');
+  return freeze({id,side,opponent,variantIndex,activeIds,staged,fullField:true,
+   ball:freeze({preset:'roll',seed:'me-native-full-field-'+side+'-'+variantIndex,x:0,y:0,z:0,vx:0,vy:0,vz:0}),genuinePhysicalPlayers:22,officialMatchResult:null});
+ }
  const activeIds=freeze(canonicalPlayers.filter(p=>
    (d.includeGoalkeeper!==false&&p.id===opponent+'-1')||
    d.attackers.some(n=>p.id===side+'-'+n)||

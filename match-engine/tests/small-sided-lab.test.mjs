@@ -234,6 +234,37 @@ test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{
   }finally{lab.dispose();}
  }
 });
+test('UME-05D all 22 original players share native open play in one physical world',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier),id='full-field-native';
+ for(const side of ['home','away']){
+  const fixture=smallSidedSetup(id,side,INITIAL_PLAYERS);
+  const options={diagnosticSmallSidedSituation:id,diagnosticSmallSidedSide:side,diagnosticPlayerFootContactsEnabled:true,diagnosticAutonomousFixtureActionEnabled:true,diagnosticSmallSidedBodyGuardEnabled:true,diagnosticSmallSidedBodyFeedbackEnabled:true,diagnosticCollectiveActions:true,diagnosticLatestLabDynamics:true};
+  assert.throws(()=>createEngine(R,fixture.ball,{...options,diagnosticCollectiveActions:false}),/Full field requires/);
+  const engine=createEngine(R,fixture.ball,options);
+  try{
+   const mover=createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true});
+   assert.deepEqual(engine.originalSmallSidedPhysicalShoeIds(),fixture.activeIds);
+   let contacts=0,actions=0;
+   for(let k=1;k<=240;k++){
+    const prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
+    let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control);
+    const next=engine.step(frame),body=engine.smallSidedBodyGuardSnapshot(),shoe=engine.footContactSnapshot();
+    mover.reconcileSmallSidedNativeBodyResponse(body);frame=mover.snapshot();engine.acknowledgeSmallSidedBodyFeedback(frame);
+    assert.equal(next.tick,k);assert.equal(frame.tick,k);
+    assert.deepEqual(body.selectedColliderIds,fixture.activeIds);assert.equal(body.bodies.length,22);
+    assert.equal(body.oneOriginalRapierWorld,true);assert.equal(frame.smallSidedMovementDecisions.length,22);
+    assert.equal(frame.smallSidedMovementDecisions.filter(x=>x.kind==='goalkeeping').length,2);
+    const observed=engine.collectiveControlSnapshot();
+    assert.equal(observed.tick,k);assert.equal(observed.officialPossession,false);
+    assert.ok(shoe.started.every(id=>fixture.activeIds.includes(id)));contacts+=shoe.started.length;
+    const action=engine.uniformAutonomousActionSnapshot();
+    if(action?.tick===k){actions++;assert.deepEqual(shoe.started,[action.playerId]);assert.equal(action.appliedByRapier,true);assert.equal(action.actualPhysicsImpulseApplied,true);assert.equal(action.officialMatchAction,false);}
+   }
+   assert.ok(contacts>0);assert.ok(actions>0);
+   process.stdout.write('ME_628_UME05D '+JSON.stringify({side,players:22,ticks:240,contacts,actions})+'\n');
+  }finally{engine.dispose();}
+ }
+});
 test('UME-05A one native open-play adapter runs different physical participant sets',{timeout:120000},async()=>{
  const R=await initializeRapier(rapier);
  for(const [id,n] of [['dribble-1v1',2],['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],['duel-2v2',5],['duel-3v3',7]]){

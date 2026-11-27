@@ -272,6 +272,7 @@ export function createEngine(RAPIER, input = {}, {
   if(typeof diagnosticKeeperSingleShot!=='boolean'||(diagnosticKeeperSingleShot&&
      (diagnosticSmallSidedSituation!=='keeper-1v1'||!diagnosticSmallSidedBodyGuardEnabled)))
    throw new TypeError('Single-shot exercise requires the native keeper duel');
+  if(diagnosticSmallSidedSituation==='full-field-native'&&!diagnosticCollectiveActions)throw new TypeError('Full field requires guarded native open play');
   if(diagnosticSmallSidedSituation!==null){
    smallSidedSetup(diagnosticSmallSidedSituation,
     diagnosticSmallSidedSide,INITIAL_PLAYERS,
@@ -702,7 +703,7 @@ export function createEngine(RAPIER, input = {}, {
   const shoeBridge=diagnosticPlayerFootContactsEnabled?
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes,
      {...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{}),
-      ...(smallSided?{activePlayerIds:smallSided.activeIds}:{}),
+      ...(smallSided?{activePlayerIds:smallSided.activeIds,fullFieldNative:smallSided.fullField===true}:{}),
       ...(diagnosticFirstTimeShot&&diagnosticIsolatedShotProfile!=='tap-in'?
        {firstTimeShotReleaseId:smallSided.side+'-10'}:{}),
       ...(isolatedCarry?{
@@ -733,7 +734,7 @@ export function createEngine(RAPIER, input = {}, {
   const smallBodyGuard=diagnosticSmallSidedBodyGuardEnabled?
    createSmallSidedNativeBodyGuard(RAPIER,world,ballCollider,
      stagedShoes,smallSided.activeIds,{
-      feedbackEnabled:diagnosticSmallSidedBodyFeedbackEnabled,
+      feedbackEnabled:diagnosticSmallSidedBodyFeedbackEnabled,fullFieldNative:smallSided.fullField===true,
       ...(isolatedCarry?{
        dribbleGroundBallCentreZ:BALL_RADIUS
       }:{})

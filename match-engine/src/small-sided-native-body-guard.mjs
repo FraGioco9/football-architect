@@ -20,7 +20,8 @@ const idPair=(a,b)=>[a,b].sort().join('|');
 
 export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
  initialPlayers,activePlayerIds,{feedbackEnabled=false,
-  dribbleGroundBallCentreZ=null}={}){
+  dribbleGroundBallCentreZ=null,fullFieldNative=false}={}){
+ if(typeof fullFieldNative!=='boolean'||fullFieldNative&&(activePlayerIds?.length!==22||feedbackEnabled!==true||dribbleGroundBallCentreZ!==null))throw new TypeError('Full field requires all 22 native bodies and canonical feedback');
  if(typeof feedbackEnabled!=='boolean')
   throw new TypeError('LAB feedback option must be a boolean');
  if(dribbleGroundBallCentreZ!==null&&(!Number.isFinite(dribbleGroundBallCentreZ)||
@@ -33,7 +34,7 @@ export function createSmallSidedNativeBodyGuard(R,world,ballCollider,
     ballCollider?.handle===undefined||
     !Array.isArray(initialPlayers)||initialPlayers.length!==22||
     !Array.isArray(activePlayerIds)||activePlayerIds.length<1||
-    activePlayerIds.length>7||
+    activePlayerIds.length>(fullFieldNative?22:7)||
     new Set(activePlayerIds).size!==activePlayerIds.length||
     initialPlayers.some((p,i)=>p?.id!==INITIAL_PLAYERS[i].id||
       p.team!==INITIAL_PLAYERS[i].team||

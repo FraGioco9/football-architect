@@ -43,7 +43,7 @@ export function createPrivatePhysicalActionExecutor({
      researchReceivingDecisionSide!==null||researchReceiverTapSide!==null)))
   throw new TypeError('Intent gameplay touch is exclusive to unopposed DEV Carry Solo');
  if(activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
-    activePlayerIds.length<1||activePlayerIds.length>7||
+    activePlayerIds.length<1||(activePlayerIds.length>7&&!(nativeActionPolicy&&activePlayerIds.length===22))||
     new Set(activePlayerIds).size!==activePlayerIds.length))
   throw new TypeError('Small-sided active physical shoe set is invalid');
  if(interceptionPassSide!==null&&(!['home','away'].includes(interceptionPassSide)||activePlayerIds?.length!==3||
