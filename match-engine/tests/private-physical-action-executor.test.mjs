@@ -7,7 +7,30 @@ import {initializeRapier,createEngine,BALL_RADIUS,canonicalSnapshot}
  from '../src/core.mjs';
 import {INITIAL_PLAYERS,createPlayerMovement} from '../src/player-movement.mjs';
 import {footProxyTransform} from '../src/player-foot-contact.mjs';
+import {createNativeActionRestriction,evaluateNativeActionRestriction} from '../src/private-physical-action-executor.mjs';
 
+test('UME-05E isolated technical constraints filter the same native decision without creating actions',()=>{
+ for(const [actor,receiver] of [['home-10','home-9'],['away-4','away-7'],['home-2','home-6']]){
+  for(const [action,vertical,z] of [['pass','ground',0],['cross','lofted',1],['shot','any',0.4]]){
+   const recipientId=action==='shot'?null:receiver;
+   const limit=createNativeActionRestriction({action,actorId:actor,recipientId,vertical});
+   const target=action==='pass'?{passTarget:{recipientId}}:action==='cross'?{crossTarget:{recipientId}}:{};
+   const choice={action,playerId:actor,impulseNs:{x:1,y:0,z},...target};
+   assert.equal(evaluateNativeActionRestriction(limit,choice,0),true);
+   assert.equal(evaluateNativeActionRestriction(limit,null,0),false);
+   assert.equal(evaluateNativeActionRestriction(limit,choice,1),false);
+   assert.equal(evaluateNativeActionRestriction(limit,{...choice,action:'carry'},0),false);
+   assert.equal(evaluateNativeActionRestriction(limit,{...choice,playerId:receiver},0),false);
+   if(action!=='shot'){
+    assert.equal(evaluateNativeActionRestriction(limit,{...choice,passTarget:{recipientId:actor},crossTarget:{recipientId:actor}},0),false);
+    assert.equal(evaluateNativeActionRestriction(limit,{...choice,impulseNs:{x:1,y:0,z:action==='pass'?1:0}},0),false);
+   }
+   assert.equal(evaluateNativeActionRestriction(null,choice,1),true);
+  }
+ }
+ assert.throws(()=>createNativeActionRestriction({action:'pass',actorId:'home-10'}),/Bounded/);
+ assert.throws(()=>createNativeActionRestriction({action:'shot',actorId:'home-10',maxActions:2}),/Bounded/);
+});
 const mirrorScenario=team=>{
  const actor=INITIAL_PLAYERS.find(p=>p.id===team+'-10');
  const pose=footProxyTransform(actor);

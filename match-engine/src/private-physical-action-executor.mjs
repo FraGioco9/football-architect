@@ -18,6 +18,30 @@ import {calculatePhysicalReceiverReleaseTap} from './physical-receiver-tap-m30.m
 export const PRIVATE_PHYSICAL_ACTION_EXECUTOR_VERSION=
  'me-action-foundation-real-shoe-impulse-v1';
 
+// UME-05E: an experiment may restrict an existing decision, never create
+// one. The restriction is generic actor/action/recipient/trajectory data;
+// it neither knows a fixture ID nor grants native contact authority.
+export function createNativeActionRestriction({action,actorId,recipientId=null,vertical='any',maxActions=1}={}){
+ if(!['pass','cross','shot'].includes(action)||
+    typeof actorId!=='string'||!actorId||
+    !(recipientId===null||typeof recipientId==='string'&&recipientId&&recipientId!==actorId)||
+    (action==='shot'?recipientId!==null:recipientId===null)||
+    !['any','ground','lofted'].includes(vertical)||maxActions!==1)
+  throw new TypeError('Bounded single native action restriction required');
+ return Object.freeze({action,actorId,recipientId,vertical,maxActions});
+}
+export function evaluateNativeActionRestriction(restriction,choice,appliedActions){
+ if(restriction===null)return true;
+ if(!Number.isSafeInteger(appliedActions)||appliedActions<0||appliedActions>=restriction.maxActions||
+    !choice||choice.action!==restriction.action||choice.playerId!==restriction.actorId)return false;
+ if(restriction.recipientId!==null){
+  const target=choice.action==='pass'?choice.passTarget:choice.crossTarget;
+  if(target?.recipientId!==restriction.recipientId)return false;
+ }
+ if(restriction.vertical==='ground'&&choice.impulseNs?.z!==0)return false;
+ if(restriction.vertical==='lofted'&&!(choice.impulseNs?.z>0))return false;
+ return true;
+}
 export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
@@ -122,6 +146,12 @@ export function createPrivatePhysicalActionExecutor({
      !['home','away'].includes(researchReceiverTapSide)||
      researchReceiverTapSide!==researchReceivingDecisionSide)))
   throw new TypeError('Private Rapier body and live shoe source required');
+ // Legacy fixture options are validated above and translated once into
+ // a common constraint. Calibration, receiving cushion, and the original
+ // exclusive physical impulse gate remain shared and unchanged.
+ const restriction=isolatedPassSide!==null?createNativeActionRestriction({action:'pass',actorId:isolatedPassSide+'-10',recipientId:isolatedPassSide+'-9',vertical:'ground'}):
+  isolatedCrossSide!==null?createNativeActionRestriction({action:'cross',actorId:isolatedCrossSide+'-10',recipientId:isolatedCrossSide+'-9',vertical:'lofted'}):
+  isolatedShotSide!==null?createNativeActionRestriction({action:'shot',actorId:isolatedShotSide+'-10'}):null;
  let tick=0,lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
  let action=null,audit=null,closed=false;
  let actualPriorPass=null,interrupted=false,firstCushion=null;
@@ -310,19 +340,8 @@ export function createPrivatePhysicalActionExecutor({
   // M25 preempts same-tick action for cushioning. M27 may instead
   // defer an ORIGINAL second-touch clearance with zero additional impulse.
   // Filter existing action authority; never invent a contact or impulse.
-  const isolatedPassRejected=isolatedPassSide!==null&&(
-   lastActionTick>=0||originalChoice?.action!=='pass'||
-   originalChoice.playerId!==isolatedPassSide+'-10'||
-   originalChoice.passTarget?.recipientId!==isolatedPassSide+'-9'||
-   originalChoice.impulseNs.z!==0);
-  const isolatedCrossRejected=isolatedCrossSide!==null&&(
-   lastActionTick>=0||originalChoice?.action!=='cross'||
-   originalChoice.playerId!==isolatedCrossSide+'-10'||
-   originalChoice.crossTarget?.recipientId!==isolatedCrossSide+'-9'||
-   originalChoice.impulseNs.z<=0);
-  const isolatedShotRejected=isolatedShotSide!==null&&(lastActionTick>=0||
-    originalChoice?.action!=='shot'||originalChoice.playerId!==isolatedShotSide+'-10');
-  const originalChosen=orientedCandidate||researchCandidate||deferOriginal||isolatedPassRejected||isolatedCrossRejected||isolatedShotRejected?null:originalChoice;
+  const restrictionRejected=!evaluateNativeActionRestriction(restriction,originalChoice,lastActionTick>=0?1:0);
+  const originalChosen=orientedCandidate||researchCandidate||deferOriginal||restrictionRejected?null:originalChoice;
   // The *existing* uniform policy and Rapier exclusive shoe START remain
   // the only action authority. Native phase calibration can adjust that
   // action's impulse or decline it, never generate an extra contact/action.
@@ -354,9 +373,8 @@ export function createPrivatePhysicalActionExecutor({
     'current-lab-oriented-first-touch-preempts-uniform-action':researchCandidate?
     'experimental-receiving-cushion-preempts-uniform-action':
     deferOriginal?'m27-native-decision-defers-original-clearance':
-    isolatedPassRejected?'isolated-pass-one-original-ground-pass-only':
-    isolatedCrossRejected?'isolated-cross-one-original-lofted-cross-only':
-    isolatedShotRejected?'isolated-shot-one-original-shot-only':
+    restrictionRejected?(restriction.action==='pass'?'isolated-pass-one-original-ground-pass-only':
+     restriction.action==='cross'?'isolated-cross-one-original-lofted-cross-only':'isolated-shot-one-original-shot-only'):
     nativeTune?.impulseNs===null?
      'native-shoe-contact-no-extra-ball-impulse-needed':
     (gates.firstFailedGate??'not-selected-after-input-gates')
