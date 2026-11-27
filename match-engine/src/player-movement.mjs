@@ -1,15 +1,15 @@
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
-import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual-kinematics.mjs';
+import {advanceFreePlayerKinematics,advancePlayerOrientation,advanceGoalkeeperBallOrientation} from './individual-kinematics.mjs';
 import {advanceSoloCarryPhase,SOLO_CARRY_PHASES} from './solo-carry-phases.mjs';
 import {validateSoloCarryAttributes}
  from './solo-carry-attribute-calibration.mjs';
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
  from './native-shoe-body-handoff.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
-import {smallSidedSetup,keeperDuelAttackerTarget,
- keeperDuelGoalkeeperTarget} from './small-sided-lab-scenarios.mjs';
+import {smallSidedSetup,keeperDuelAttackerTarget,keeperDuelReboundTarget,
+ keeperDuelGoalkeeperTarget,keeperDuelCloseDownTarget} from './small-sided-lab-scenarios.mjs';
 import {basicSourcePositiveRestartSetup}
  from './basic-restart-source-lineup-b05b.mjs';
 import {initialB06bOpeningLineup} from './basic-opening-kickoff-lineup-b06b.mjs';
@@ -2212,7 +2212,7 @@ export function createPlayerMovement(options={}){
   });
  }
  function step(ballPosition={x:0,y:0},priorRealPass=null,
-  priorRealTap=null,realBallVelocity=null){
+  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false){
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
@@ -2220,6 +2220,14 @@ export function createPlayerMovement(options={}){
      smallBodyFeedbackTick!==tick)
    throw new TypeError('LAB native feedback requires the prior tick acknowledgment');
   const ball=ballXY(ballPosition);
+  if(typeof keeperCloseDown!=='boolean'||(keeperCloseDown&&(smallSided?.id!=='keeper-1v1'||
+     !realBallVelocity||!['x','y','z'].every(k=>finite(realBallVelocity[k]))||!finite(ballPosition.z))))
+   throw new TypeError('Close-down requires original keeper duel and current physical ball');
+  if(priorKeeperRebound!==null&&(!smallSided||smallSided.id!=='keeper-1v1'||
+     priorKeeperRebound.tick!==tick||priorKeeperRebound.reboundTick==null||
+     priorKeeperRebound.reboundTick>tick||!realBallVelocity||
+     ![realBallVelocity.x,realBallVelocity.y].every(finite)))
+   throw new TypeError('Keeper rebound pursuit requires the prior original live sample');
   if(smallSided?.id==='carry-solo'){
    if(!realBallVelocity||
       ![realBallVelocity.x,realBallVelocity.y].every(finite))
@@ -2508,15 +2516,22 @@ export function createPlayerMovement(options={}){
     }
     if(p.id===smallSided.opponent+'-1'){
      const baseline=goalkeeperPosition(p.team,ball);
+     const attacker=players.find(a=>a.id===smallSided.side+'-10');
+     if(keeperCloseDown){
+      const challenge=keeperDuelCloseDownTarget(smallSided.side,p,attacker,
+       ballPosition,realBallVelocity);
+      if(challenge)return challenge;
+     }
      return smallSided.id==='keeper-1v1'?
       keeperDuelGoalkeeperTarget(smallSided.side,smallSided.variantIndex,
-       players.find(a=>a.id===smallSided.side+'-10'),ball,baseline):baseline;
+       attacker,ball,baseline):baseline;
     }
     const attack=smallSided.side==='home'?1:-1;
     if(p.team===smallSided.side){
      if(p.id===smallSided.side+'-10')
       return smallSided.id==='keeper-1v1'?
-       keeperDuelAttackerTarget(smallSided.side,smallSided.variantIndex,p,ball):
+       (priorKeeperRebound?keeperDuelReboundTarget(smallSided.side,smallSided.variantIndex,p,ball,realBallVelocity):
+        keeperDuelAttackerTarget(smallSided.side,smallSided.variantIndex,p,ball)):
        Object.freeze({x:ball.x+attack*(smallSided.id==='carry-solo'?
         nativeFixedOffset??currentSoloCarryPhase.ballTargetOffsetM:
         smallSided.id==='dribble-1v1'?-0.40:-0.08),y:ball.y});
@@ -2721,8 +2736,10 @@ export function createPlayerMovement(options={}){
    p.blockedBy=blocker?.id??null;
    if(blocker){p.vx=0;p.vy=0;}
    else{p.x=candidate.x;p.y=candidate.y;p.vx=candidate.vx;p.vy=candidate.vy;}
-   const wantedFacing=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
-    PLAYER_KINEMATIC_LIMITS);
+   const keeperDuel=smallSided?.id==='keeper-1v1'&&p.id===smallSided.opponent+'-1';
+   const wantedFacing=keeperDuel?
+    advanceGoalkeeperBallOrientation(p,ball,PLAYER_KINEMATIC_LIMITS):
+    advancePlayerOrientation(p.facingRad,p.vx,p.vy,PLAYER_KINEMATIC_LIMITS);
    if(shoe){
     const facing=projectNativeShoeBodyFacing(
      p.facingRad,shoe.facingRad,wantedFacing,
@@ -3058,8 +3075,11 @@ export function createPlayerMovement(options={}){
    p.x=n.x;p.y=n.y;
    p.vx=(n.x-old.x)/PLAYER_DT;
    p.vy=(n.y-old.y)/PLAYER_DT;
-   p.facingRad=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
-    PLAYER_KINEMATIC_LIMITS);
+   // The keeper already used its one capped ball-facing turn this tick.
+   // A solver translation must not rotate it back towards velocity.
+   if(!(smallSided.id==='keeper-1v1'&&p.id===smallSided.opponent+'-1'))
+    p.facingRad=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
+     PLAYER_KINEMATIC_LIMITS);
   }
   smallBodyFeedbackTick=tick;smallBodyPrior=null;
   smallSidedPhysicalFeedback=Object.freeze({

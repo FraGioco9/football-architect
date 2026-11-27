@@ -3,6 +3,7 @@
 // action event. Exactly one core engine and one existing 22-player mover.
 import {createEngine,FIXED_DT} from './core.mjs';
 import {LAB_SHOT_PROFILES} from './lab-shot-calibration.mjs';
+import {createKeeperShotObserver} from './goalkeeper-save-foundation-b02.mjs';
 import {CURRENT_LAB_DYNAMICS_VERSION} from './physical-receiving-cushion-m25.mjs';
 import {createPhysicalFootballDecisionObserver}
  from './physical-football-decision-evidence-m23.mjs';
@@ -38,7 +39,7 @@ export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
  controlSide='home',controlDecisionEnabled=true,
  challengeSide='away',challengeScene='contact',variantIndex=0,
- bodyGuardEnabled=false,soloShoeWidthScale=1,
+ bodyGuardEnabled=false,keeperSingleShot=false,soloShoeWidthScale=1,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,soloCarryLockedPhase=null,
@@ -97,6 +98,8 @@ export function createControlledActionLab(RAPIER,id,{
   throw new TypeError('First-time start requires isolated shooter');
  if(!LAB_SHOT_PROFILES.includes(shotProfile)||(shotProfile!=='power'&&id!=='shot-solo'))
   throw new TypeError('Shot profile requires isolated shooter');
+ if(typeof keeperSingleShot!=='boolean'||(keeperSingleShot&&(id!=='keeper-1v1'||!bodyGuardEnabled)))
+  throw new TypeError('Single-shot exercise requires native keeper duel');
  if(typeof bodyGuardEnabled!=='boolean'||
     (bodyGuardEnabled&&(spec.mode!=='situation'||['pass-pair','cross-pair','shot-solo'].includes(id))))
   throw new TypeError('Native body-contact exercise only in a small-sided situation');
@@ -242,6 +245,7 @@ export function createControlledActionLab(RAPIER,id,{
     diagnosticNativeFixedSprintLongStrideEnabled:nativeFixedSprintLongStride
    }:{}),
    diagnosticSmallSidedBodyGuardEnabled:bodyGuardEnabled,
+   diagnosticKeeperSingleShot:keeperSingleShot,
     diagnosticSmallSidedBodyFeedbackEnabled:bodyGuardEnabled
   }:{}),
   ...(refereeMode?{diagnosticBasicRestartEnabled:true}:{}),
@@ -354,6 +358,7 @@ export function createControlledActionLab(RAPIER,id,{
  if(smallSided&&JSON.stringify(engine.originalSmallSidedPhysicalShoeIds())!==
    JSON.stringify(smallSided.activeIds))
   throw new Error('Small-sided participants differ from physical Rapier shoe colliders');
+ const keeperShotObserver=id==='keeper-1v1'?createKeeperShotObserver(shotSide):null;
  const refereeObserver=(refereeMode||smallSided)?
   createBasicMatchRefereeB05():null;
  const matchTimelineObserver=(refereeMode||smallSided)?
@@ -775,9 +780,10 @@ export function createControlledActionLab(RAPIER,id,{
     tick:physics.tick,kind:id,actorId:baseFootworkAudit.actorId
    })].slice(-12));
   }
+  const keeperDive=engine.keeperDiveSnapshot?.()??null;
   const refereeEvidence=refereeObserver?.observe({
    physics,playerFrame,foot,solver:engine.footContactSolverSnapshot(),
-   action:nativeAction
+   action:nativeAction,...(keeperDive?{keeperDive}: {})
   })??null;
   if(refereeEvidence?.lastEvent?.tick===physics.tick){
    count++;
@@ -850,6 +856,9 @@ export function createControlledActionLab(RAPIER,id,{
    ...(passPairAudit?{passPairAudit}:{}),
    ...(crossPairAudit?{crossPairAudit}:{}),
     ...(shotSoloAudit?{shotSoloAudit}:{}),
+   ...(keeperDive?{keeperDive}:{}),
+   ...(keeperShotObserver?{keeperShotAudit:keeperShotObserver.observe({tick:physics.tick,
+    ball:physics.ball,starts,action:nativeAction,event:refereeEvidence?.lastEvent,keeperDive})}:{}),
    ...(firstTouchCushion?{physicalFirstTouch,pressureEvidence}:{}),
    ...(adaptiveDecision?{physicalReceiverChoice,postDeferContinuity,
     physicalControlEvidence}:{}),
@@ -921,7 +930,11 @@ export function createControlledActionLab(RAPIER,id,{
   let frame=mover.step(prior.ball.position,
    spec.mode==='control'?firstPhysicalPassAction:null,
    reachExperiment?engine.researchReceiverTapSnapshot():null,
-   (goalkeeperSave||id==='carry-solo')?prior.ball.velocity:null);
+   (goalkeeperSave||id==='carry-solo'||id==='keeper-1v1')?prior.ball.velocity:null,
+   id==='keeper-1v1'&&!keeperSingleShot&&bodyGuardEnabled&&latest.keeperShotAudit?.reboundTick!=null&&
+    !latest.keeperShotAudit.crossing&&!latest.keeperDive?.catchState?.active?
+     {tick:prior.tick,reboundTick:latest.keeperShotAudit.reboundTick}:null,
+   keeperSingleShot&&latest.keeperShotAudit?.shots===0&&!latest.keeperDive?.catchState?.active);
   const initialAfter=engine.step(frame);
    if(smallSided&&bodyGuardEnabled){
     // Only post-step original native manifolds feed the canonical mover.

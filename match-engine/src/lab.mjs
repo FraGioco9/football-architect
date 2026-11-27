@@ -93,6 +93,18 @@ function recordPerformedActions(frame){
    label:performedActionLabels[action.action]??action.action});
  // First receiving contacts are actual native observations, not inferred
  // completed passes or successful possession. They have their own actor.
+ const dive=frame.keeperDive;
+ if(dive?.tick===tick&&dive.started)events.push({id:dive.keeperId,kind:dive.plan?.kind==='challenge'?'challenge':'dive',label:dive.plan?.kind==='challenge'?'Challenge':'Dive'});
+ if(dive?.tick===tick&&dive.contactStarted)events.push({id:dive.keeperId,kind:'glove-contact',label:'Glove contact'});
+ const keeper=frame.keeperShotAudit;
+ if(keeper?.deflection?.tick===tick)events.push({id:keeper.keeperId,kind:'deflection',label:'Deflection'});
+ if(keeper?.secondShotTick===tick){
+  const shot=events.find(e=>e.id===keeper.shooterId&&e.kind==='shot');
+  if(shot)shot.label='Rebound shot';
+ }
+ if(keeper?.reboundRecoveryTick===tick)events.push({id:keeper.shooterId,kind:'rebound-contact',label:'Rebound contact'});
+ if(dive?.catchState?.confirmedTick===tick)events.push({id:dive.keeperId,kind:'catch',label:'Catch'});
+ if(dive?.catchState?.released)events.push({id:dive.keeperId,kind:'grip-lost',label:'Grip lost'});
  const pass=frame.passPairAudit?.receivingContact;
  if(pass?.realRapierShoeStart===true&&pass.contactTick===tick)
   events.push({id:pass.receiverId,kind:'receiving-contact',
@@ -327,6 +339,7 @@ function restart() {
       createControlledActionLab(rapier,id,{shotSide:side,
        variantIndex:activeVariantIndex,shotProfile:activeScene.shotProfile??'power',firstTimeShot:activeScene.firstTimeShot===true,
        bodyGuardEnabled:id!=='carry-solo'&&id!=='pass-pair'&&id!=='cross-pair'&&id!=='shot-solo',
+       keeperSingleShot:!archiveMode&&id==='keeper-1v1',
        // Visible fixed Carry now runs in a long open-space native research
        // runway. Only actual same-world Rapier shoe STARTs authorize a push.
        // Leave the original ordinary 22-player physics unmodified.
@@ -384,10 +397,17 @@ function restart() {
   say('Ready · ' + ({drop:'Ball Drop',launch:'Ball Launch',roll:'Ball Roll (Grass)',bounce:'Ball Bounce (2 m)'}[engine.scenario.preset]));
   render();
 }
+function keeperSingleShotFinished(frame){
+ const audit=frame?.keeperShotAudit;
+ if(archiveMode||activeScene?.id!=='keeper-1v1'||!audit)return false;
+ if(frame.keeperDive?.catchState?.active&&frame.keeperDive.catchState.confirmedTick!==null)return true;
+ return audit.shotTick!==null&&(
+  (audit.reboundTick!==null&&frame.physicsTick-audit.reboundTick>=24)||frame.physicsTick-audit.shotTick>=240);
+}
 function advance() {
   if(activeLab){
     const old=activeLab.snapshot();
-    if(activeScene.kind==='action'&&old.refereeEvidence?.lastEvent){
+    if(activeScene.kind==='action'&&(old.refereeEvidence?.lastEvent||keeperSingleShotFinished(old))){
       playing=false;return;
     }
     const observed=activeLab.step();
@@ -405,6 +425,11 @@ function advance() {
     physicsTickSnapshot=snapshot;
     history.push(snapshot);
     if(history.length>1400)history.shift();
+    if(keeperSingleShotFinished(observed)){
+      playing=false;say('Exercise complete · Reset for another attempt');
+    }else if(observed.keeperDive?.catchState?.active&&observed.keeperDive.catchState.confirmedTick!==null){
+      playing=false;say('Ball held · Reset for another exercise');
+    }
     if(activeScene.kind==='action'&&observed.refereeEvidence?.lastEvent){
       playing=false;
       say('Observed physical '+observed.refereeEvidence.lastEvent.kind+
@@ -419,8 +444,8 @@ function advance() {
   if (history.length > 1400) history.shift();
 }
 function play() {
-  if(activeScene?.kind==='action'&&activeLab?.snapshot().refereeEvidence?.lastEvent){
-    playing=false;say('Dead ball · Reset to retry the real Rapier exercise');
+  if(activeScene?.kind==='action'&&(activeLab?.snapshot().refereeEvidence?.lastEvent||keeperSingleShotFinished(activeLab?.snapshot()))){
+    playing=false;say('Exercise complete · Reset to retry');
     return;
   }
   playing = true; say('Running');
@@ -440,7 +465,7 @@ function drawInlinePlayers(ctx,X,Y){
   ctx.beginPath();ctx.arc(x,y,p.role==='goalkeeper'?LAB_MARKER_RADII_PX.goalkeeper:LAB_MARKER_RADII_PX.player,0,Math.PI*2);
   ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
   ctx.fill();ctx.strokeStyle=p.role==='goalkeeper'?'#fbdfaa':'#183f36';
-  ctx.lineWidth=p.role==='goalkeeper'?2.2:1.5;ctx.stroke();
+  ctx.lineWidth=1.5;ctx.stroke();
   if(Number.isFinite(p.facingRad)){
    ctx.beginPath();ctx.moveTo(x,y);
    ctx.lineTo(x+Math.cos(p.facingRad)*14,y+Math.sin(p.facingRad)*14);
@@ -460,7 +485,7 @@ function drawPlayers(ctx,X,Y){
     ctx.beginPath();ctx.arc(x,y,pressing?LAB_MARKER_RADII_PX.pressing:keeper?LAB_MARKER_RADII_PX.goalkeeper:LAB_MARKER_RADII_PX.player,0,Math.PI*2);
     ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
     ctx.fill();ctx.strokeStyle=pressing?'#ffdf71':supporting?'#c0f17a':balancing?'#ddbcff':keeper?'#fbdfaa':'#183f36';
-    ctx.lineWidth=pressing?2.6:supporting?2.6:balancing?2.6:keeper?2.2:1.4;ctx.stroke();
+    ctx.lineWidth=pressing?2.6:supporting?2.6:balancing?2.6:1.4;ctx.stroke();
     const pointerX=x+Math.cos(p.facingRad)*15,pointerY=y+Math.sin(p.facingRad)*15;
     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(pointerX,pointerY);
     ctx.strokeStyle=pressing?'#ffdf71':'#142e29';
@@ -691,7 +716,18 @@ function render() {
     }else renderActiveMetrics(f);
     // Concise, observational summary only. Preserve the full diagnostics above.
     const shot=f.shotSoloAudit, pass=f.passPairAudit, cross=f.crossPairAudit;
-    const summary=shot?
+    const keeper=f.keeperShotAudit;
+    const summary=keeper?
+      (keeper.crossing?(keeper.crossing.kind==='goal'?'Goal observed':'Ball out'):
+       f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':
+       f.keeperDive?.catchState?.active?'Securing ball':
+       keeper.secondShotTick===f.physicsTick?'Rebound shot':keeper.reboundRecoveryTick!==null?'Rebound contact':
+       keeper.reboundTick!==null?'Live rebound':keeper.deflection?'Deflection observed':
+       keeper.gloveContactTick!==null?'Glove contact':keeper.parryTick!==null?'Parry observed':
+       f.keeperDive?.phase==='challenging'?'Keeper challenge':
+       f.keeperDive?.phase==='diving'?'Diving':keeper.keeperContactTick!==null?'Keeper contact':
+       keeper.shots?'Shot observed':'Waiting for shot'):
+      shot?
       (shot.crossing?(shot.crossing.goal?'Goal observed':'Miss observed'):
         shot.attempted?'Shot observed':'Waiting for shot'):
       pass?(pass.receiverTick!=null?'Receiving contact observed':
@@ -711,7 +747,14 @@ function renderActiveMetrics(f){
  const count=value=>Number.isFinite(value)?String(value):'—';
  const shot=f.shotSoloAudit,pass=f.passPairAudit,cross=f.crossPairAudit;
  let entries;
- if(shot){
+ const keeper=f.keeperShotAudit;
+ if(keeper){
+  entries=[['Shots',count(keeper.shots)],['Launch speed',speed(keeper.launchSpeedMps)],
+   ['Keeper contact',n(keeper.keeperContactTick===null?null:keeper.keeperContactTick*FIXED_DT,' s')],
+   ['Deflection',keeper.deflection?({reversed:'Reversed',redirected:'Redirected',slowed:'Slowed'})[keeper.deflection.kind]:keeper.parryTick!==null?'Foot parry':'—'],
+   ['Rebound',n(keeper.reboundTick===null?null:(keeper.reboundTick-keeper.shotTick)*FIXED_DT,' s')],
+   ['Result',keeper.crossing?(keeper.crossing.kind==='goal'?'Goal':'Ball out'):f.keeperDive?.catchState?.active&&f.keeperDive.catchState.confirmedTick!==null?'Ball held':keeper.reboundTick!==null?'Ball in play':'—']];
+ }else if(shot){
   entries=[['Distance',n(shot.distanceM,' m')],['Launch speed',speed(shot.attempted?shot.launchSpeedMps:null)],
    ['Peak height',n(shot.attempted?shot.peakClearanceM:null,' m')],
    ['Spin',n(shot.attempted?shot.launchSpinRadS:null,' rad/s')],
@@ -2258,7 +2301,9 @@ function setupUnifiedScenarioMenu(){
    ['action:keeper-1v1','1v1 · goalkeeper'],
    ['action:overload-2v1','2v1 · attack and defend'],
    ['action:duel-3v3','3v3 · team decisions']
-  ]]]:[])
+  ]]]:[['Goalkeeping',[
+   ['action:keeper-1v1','1v1 · goalkeeper']
+  ]]])
  ];
  const available=new Set([...byId('action-labs-choice').options].map(x=>x.value));
  for(const [title,choices] of groups){
@@ -2290,8 +2335,8 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:17)||
-    menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:3))
+ if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:18)||
+    menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:4))
   throw new Error('Unexpected active or archived LAB catalog');
 }
 function restoreOriginalScenario(){

@@ -36,10 +36,10 @@ function curvedAim({dx,dy,speed,spin,massKg,radiusM}){
 // This is a deterministic geometric ranking, not a probability of scoring.
 // Keeper reach/height are provisional planning proxies, never body contacts.
 const TARGET_HEIGHTS=Object.freeze({power:[0.65,1.15],low:null,placed:[0.80,1.15],chip:[1.35,1.75],curled:[1.00,1.30],'tap-in':null});
-export function selectLabShotTarget({target,position,profile='power',ballRadiusM,opponents=[]}={}){
+export function selectLabShotTarget({target,position,profile='power',ballRadiusM,opponents=[],minimumPowerLaneClearanceM=2.4}={}){
  if(!target||!position||!LAB_SHOT_PROFILES.includes(profile)||
    ![target.targetX,target.targetY,position.x,position.y,position.z,ballRadiusM].every(Number.isFinite)||
-   ballRadiusM<=0||!Array.isArray(opponents)||opponents.some(p=>!p||
+   ballRadiusM<=0||!Number.isFinite(minimumPowerLaneClearanceM)||minimumPowerLaneClearanceM<0||minimumPowerLaneClearanceM>2.4||!Array.isArray(opponents)||opponents.some(p=>!p||
     ![p.x,p.y].every(Number.isFinite)))throw new TypeError('Shot target selection requires live goal and opponent geometry');
  const dx=target.targetX-position.x,dir=Math.sign(dx);
  const half=3.66-ballRadiusM,bar=2.44-ballRadiusM;
@@ -72,7 +72,7 @@ export function selectLabShotTarget({target,position,profile='power',ballRadiusM
   const postMargin=half-Math.abs(y),barMargin=bar-z;
   // Preserve the existing conservative original straight-lane gate in
   // contested Power scenarios. This ranking cannot authorize a blocked shot.
-  if(profile==='power'&&opponents.length&&lane<2.4-1e-8)continue;
+  if(profile==='power'&&opponents.length&&lane<minimumPowerLaneClearanceM-1e-8)continue;
   if(isTap&&(distanceM>6.05||postMargin<0.60))continue;
   const score=isTap?-distanceM+Math.min(clearance,6)*2:
    Math.min(clearance,8)*3-Math.abs(y-preferredY)*0.32-
@@ -90,14 +90,14 @@ export function selectLabShotTarget({target,position,profile='power',ballRadiusM
   opponentCount:opponents.length,policy:isTap?'nearest-safe-goal-mouth':'open-lane-and-corner',
   originalTargetY:target.targetY,officialGoal:false});
 }
-export function calculateCurrentLabShotCalibration({target,position,velocity,massKg,ballRadiusM,originalImpulseNs,profile='power',opponents=[]}={}){
+export function calculateCurrentLabShotCalibration({target,position,velocity,massKg,ballRadiusM,originalImpulseNs,profile='power',opponents=[],minimumPowerLaneClearanceM=2.4}={}){
  if(!target||!position||!velocity||!originalImpulseNs||!LAB_SHOT_PROFILES.includes(profile)||
     ![target.targetX,target.targetY,position.x,position.y,position.z,velocity.x,velocity.y,velocity.z,
       massKg,ballRadiusM,originalImpulseNs.x,originalImpulseNs.y,originalImpulseNs.z].every(Number.isFinite)||
     massKg<=0||ballRadiusM<=0)throw new TypeError('Shot calibration requires measured original motion, profile and goal lane');
  const dx=target.targetX-position.x,dir=Math.sign(dx);
  if(Math.abs(dx)<0.25)return null;
- const targetSelection=selectLabShotTarget({target,position,profile,ballRadiusM,opponents});
+ const targetSelection=selectLabShotTarget({target,position,profile,ballRadiusM,opponents,minimumPowerLaneClearanceM});
  if(!targetSelection)return null;
  const {targetY}=targetSelection;
  const dy=targetY-position.y,distanceM=Math.hypot(dx,dy);

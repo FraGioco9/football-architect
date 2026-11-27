@@ -23,7 +23,7 @@ export function createPrivatePhysicalActionExecutor({
  researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
  researchReceiverTapSide=null,activePlayerIds=null,
  smallSidedDecisionContext=null,isolatedDribbleContext=null,isolatedPassSide=null,isolatedCrossSide=null,isolatedShotSide=null,isolatedShotProfile='power',firstTimeShot=false,
- physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,
+ physicalBodyGuardEnabled=false,intentDrivenSoloCarry=false,keeperSingleShotSide=null,
  nativeFixedCarryResearch=false,nativeFixedSprintLongStride=false,latestLabDynamics=false
 }={}){
  if(typeof nativeFixedSprintLongStride!=='boolean'||
@@ -74,6 +74,10 @@ export function createPrivatePhysicalActionExecutor({
     researchReceivingDecisionSide!==null||researchReceiverTapSide!==null||
     physicalBodyGuardEnabled))
   throw new TypeError('Isolated cross requires exactly two original teammates');
+ if(keeperSingleShotSide!==null&&(!['home','away'].includes(keeperSingleShotSide)||
+    !physicalBodyGuardEnabled||activePlayerIds?.length!==2||!activePlayerIds.includes(keeperSingleShotSide+'-10')||
+    !activePlayerIds.includes((keeperSingleShotSide==='home'?'away':'home')+'-1')))
+  throw new TypeError('Directed keeper duel requires original guarded 1v1 actors');
  if(typeof physicalBodyGuardEnabled!=='boolean'||
     (physicalBodyGuardEnabled&&activePlayerIds===null))
   throw new TypeError('Native body contact requires genuine small-sided shoe source');
@@ -204,7 +208,7 @@ export function createPrivatePhysicalActionExecutor({
   const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact||
    !isolatedNativeShoeSourceValid?null:
    selectUniformAutonomousContactAction({...input,activePlayerIds,
-    smallSidedDecisionContext,isolatedDribbleContext});
+    smallSidedDecisionContext,isolatedDribbleContext,keeperSingleShotSide});
   let orientedCandidate=null,orientedDelivery=null;
   if(sharedDynamics&&pendingDelivery&&nextTick>pendingDelivery.tick){
    const d=pendingDelivery,pos=ballBody.translation(),v=ballBody.linvel();
@@ -379,7 +383,10 @@ export function createPrivatePhysicalActionExecutor({
    const shotCalibration=sharedDynamics&&chosen.action==='shot'&&chosen.shotTarget?
      calculateCurrentLabShotCalibration({target:chosen.shotTarget,position:ballBody.translation(),
       velocity:ballBody.linvel(),massKg:ballBody.mass(),ballRadiusM,originalImpulseNs:chosen.impulseNs,
-       profile:isolatedShotProfile,opponents:playerFrame.players.filter(p=>p.team!==chosen.team&&
+       profile:isolatedShotProfile,
+       ...(keeperSingleShotSide===chosen.team&&chosen.shotTarget.keeperDuelMinimumLaneClearanceM!==undefined?
+        {minimumPowerLaneClearanceM:chosen.shotTarget.keeperDuelMinimumLaneClearanceM}:{}),
+       opponents:playerFrame.players.filter(p=>p.team!==chosen.team&&
          (activePlayerIds===null||activePlayerIds.includes(p.id)))}):null;
     if(isolatedShotProfile==='tap-in'&&!shotCalibration)throw new Error('Tap-in contact outside calibrated low finishing envelope');
      const impulse=shotCalibration?shotCalibration.impulseNs:crossCalibration?Object.freeze({

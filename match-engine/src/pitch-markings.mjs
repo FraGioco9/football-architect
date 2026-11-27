@@ -6,7 +6,7 @@ export const PITCH_WIDTH_M = 68;
 // Presentation-only marker sizes in the original canvas coordinate space.
 // Physical player and ball dimensions remain in their Rapier modules.
 export const LAB_MARKER_RADII_PX=Object.freeze({
- player:10,goalkeeper:11,pressing:11.5,ball:4.5
+ player:10,goalkeeper:10,pressing:11.5,ball:4.5
 });
 
 // The white ball stays at the exact observed XY and approved size.

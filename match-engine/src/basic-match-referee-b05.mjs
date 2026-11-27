@@ -89,7 +89,7 @@ export function createBasicMatchRefereeB05(){
    matchAuthority:false,officialMatchResult:null,
    officialPossession:false});
  }
- function observe({physics,playerFrame,foot,solver,action=null}={}){
+ function observe({physics,playerFrame,foot,solver,action=null,keeperDive=null}={}){
   const next=physics?.tick,ball=physics?.ball;
   if(!Number.isSafeInteger(next)||next!==tick+1||next<0||
     playerFrame?.tick!==next||foot?.tick!==next||
@@ -125,7 +125,15 @@ export function createBasicMatchRefereeB05(){
    throw new TypeError('B05 last touch requires authenticated original action');
   // A native sole START is touch evidence even without a uniform kick.
   // Simultaneous STARTs cannot be assigned to either team.
-  if(foot.started.length===1)
+  const gloveStart=keeperDive?.contactStarted===true;
+  if(gloveStart&&(keeperDive.version!=='me-628-native-keeper-dive-v1'||keeperDive.tick!==next||
+     keeperDive.contact!==true||keeperDive.source!=='native-rapier-solver-manifold'||
+     !playerFrame.players.some(p=>p.id===keeperDive.keeperId&&p.role==='goalkeeper')))
+   throw new TypeError('B05 keeper glove touch requires same-tick native evidence');
+  if(gloveStart&&foot.started.length===0)
+   lastTouch=freeze({tick:next,playerId:keeperDive.keeperId,team:keeperDive.keeperId.split('-')[0],nativeGloveContact:true});
+  else if(gloveStart&&foot.started.some(id=>id!==keeperDive.keeperId))lastTouch=null;
+  else if(foot.started.length===1)
    lastTouch=freeze({tick:next,playerId:foot.started[0],
     team:foot.started[0].split('-')[0],
     nativeExclusiveShoeStart:true});

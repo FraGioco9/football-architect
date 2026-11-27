@@ -78,6 +78,34 @@ function chooseLiveShotLane(ball,goalX,team,players){
  }
  return null;
 }
+// Active goalkeeper duel: scoring intent instead of a seeded shot/carry
+// lottery. A goalkeeper is a potential blocker, not an impenetrable
+// 2.4m exclusion zone. Rank real goal-mouth lanes; allow a contested
+// attempt near goal. All contacts and shot outcomes stay physical.
+export function chooseKeeperDuelAttackIntent(ball,velocity,team,keeper){
+ const dir=team==='home'?1:-1,goalX=dir*52.5,distance=(goalX-ball.x)*dir;
+ if(!keeper||!['home','away'].includes(team)||![ball.x,ball.y,velocity.x,velocity.y,keeper.x,keeper.y].every(finite))return null;
+ if(distance<=0.25||Math.abs(ball.y)>20)return null;
+ const candidates=[-3.1,-2.2,-1.1,0,1.1,2.2,3.1].map(y=>{
+  const target=Object.freeze({x:goalX,y});
+  return Object.freeze({target,clearance:lineClearance(ball,target,team,[keeper])});
+ });
+ candidates.sort((a,b)=>b.clearance-a.clearance||Math.abs(a.target.y)-Math.abs(b.target.y)||a.target.y-b.target.y);
+ const best=candidates[0];
+ const minimum=distance<=7?0:distance<=15?0.40:1.0;
+ if(distance<=26&&best.clearance>=minimum)
+  return Object.freeze({action:'shot',lane:best,minimum});
+ // When the opening is poor, move toward a better shooting position,
+ // not repeatedly push the ball in an arbitrary absolute direction.
+ const aimY=Math.max(-8,Math.min(8,best.target.y));
+ const angle=Math.atan2(aimY-ball.y,Math.max(distance,3));
+ const vx=dir*3.0*Math.cos(angle),vy=3.0*Math.sin(angle);
+ const dx=vx-velocity.x,dy=vy-velocity.y;
+ const correction=Math.hypot(dx,dy);
+ if(correction<0.08)return null;
+ return Object.freeze({action:'carry',dx,dy,magnitude:Math.min(0.42,0.43*correction),
+  lane:best,minimum});
+}
 // Distinct high/wide CROSS uses a LIVE same-team penalty-area option.
 // Never stages a teammate, creates a contact, or awards a header/goal.
 function chooseLiveCrossRecipient(actor,ball,players){
@@ -236,7 +264,7 @@ export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
  allowPhysicalCarry=false,activePlayerIds=null,smallSidedDecisionContext=null,
- isolatedDribbleContext=null
+ isolatedDribbleContext=null,keeperSingleShotSide=null
 }){
  if(!Number.isSafeInteger(tick)||tick<1||
     !Array.isArray(contactStarted)||new Set(contactStarted).size!==contactStarted.length||
@@ -253,6 +281,9 @@ export function selectUniformAutonomousContactAction({
     !Number.isSafeInteger(lastActionTick)||lastActionTick>tick||
     !finite(ballRadiusM)||ballRadiusM<0.05||ballRadiusM>0.2||
     typeof allowPhysicalCarry!=='boolean'||
+    (keeperSingleShotSide!==null&&(!['home','away'].includes(keeperSingleShotSide)||
+     activePlayerIds?.length!==2||!activePlayerIds.includes(keeperSingleShotSide+'-10')||
+     !activePlayerIds.includes((keeperSingleShotSide==='home'?'away':'home')+'-1')))||
     (activePlayerIds!==null&&(!Array.isArray(activePlayerIds)||
       activePlayerIds.length<1||activePlayerIds.length>7||
       new Set(activePlayerIds).size!==activePlayerIds.length||
@@ -313,8 +344,11 @@ export function selectUniformAutonomousContactAction({
   const goalTarget=Object.freeze({x:goalX,y:0});
   const shotRange=Math.abs(toGoal)<=SHOT_MAX_RANGE_M&&
    Math.abs(ballPosition.y)<=20;
-  const chosenShotLane=shotRange?
-   chooseLiveShotLane(ballPosition,goalX,player.team,actors):null;
+  const activeKeeperAttacker=keeperSingleShotSide===player.team&&id===player.team+'-10';
+  const duelIntent=activeKeeperAttacker?chooseKeeperDuelAttackIntent(ballPosition,ballVelocity,player.team,
+   actors.find(p=>p.team!==player.team&&p.role==='goalkeeper')):null;
+  const chosenShotLane=activeKeeperAttacker?(duelIntent?.action==='shot'?duelIntent.lane:null):
+   shotRange?chooseLiveShotLane(ballPosition,goalX,player.team,actors):null;
   const shotLaneM=chosenShotLane?.clearance??
    lineClearance(ballPosition,goalTarget,player.team,actors);
   const defensiveAttempt=chooseBasicDefensiveAttempt({
@@ -323,7 +357,7 @@ export function selectUniformAutonomousContactAction({
   // LAB-VAR-02 only: AFTER verified genuine exclusive Rapier shoe START,
   // examine live legitimate affordances. Normal 22-player policy, keeper
   // and defensive priority, and archival V01 remain byte-identical.
-  const contextualAttacker=isolatedDribbleContext===null&&
+  const contextualAttacker=!activeKeeperAttacker&&isolatedDribbleContext===null&&
    smallSidedDecisionContext!==null&&
    player.team===smallSidedDecisionContext.attackingSide&&
    player.role!=='goalkeeper'&&!defensiveAttempt;
@@ -365,6 +399,12 @@ export function selectUniformAutonomousContactAction({
    action='save';dx=attack*7;
    dy=ballPosition.y>=0?9:-9;vertical=0.24;
    rule='incoming-goalward-keeper-physical-parry-attempt';
+  }else if(activeKeeperAttacker){
+   if(!duelIntent)continue;
+   action=duelIntent.action;
+   if(action==='shot'){dx=toGoal;dy=chosenShotLane.target.y-ballPosition.y;vertical=0.24;
+    rule='keeper-duel-best-live-goal-lane';}
+   else{dx=duelIntent.dx;dy=duelIntent.dy;rule='keeper-duel-bounded-directed-carry';}
   }else if(defensiveAttempt){
    action=defensiveAttempt.kind;
    dx=defensiveAttempt.targetX-ballPosition.x;
@@ -426,7 +466,7 @@ export function selectUniformAutonomousContactAction({
   }
   const length=Math.hypot(dx,dy);
   if(length<1e-5)continue;
-  const magnitude=dribbleTouch?.magnitudeNs??ACTION_IMPULSE_NS[action],factor=magnitude/
+  const magnitude=dribbleTouch?.magnitudeNs??(activeKeeperAttacker&&action==='carry'?duelIntent.magnitude:ACTION_IMPULSE_NS[action]),factor=magnitude/
    Math.hypot(dx,dy,vertical*length);
   const impulseNs=Object.freeze({x:dx*factor,y:dy*factor,
    z:vertical*length*factor});
@@ -452,6 +492,7 @@ export function selectUniformAutonomousContactAction({
    originX:ballPosition.x,originY:ballPosition.y,
    targetX:chosenShotLane.target.x,targetY:chosenShotLane.target.y,
    laneClearanceM:chosenShotLane.clearance,
+   ...(activeKeeperAttacker?{keeperDuelMinimumLaneClearanceM:duelIntent.minimum}:{}),
    attemptOnly:true,shotOnTarget:null,goalScored:null
   }):null;
   const carryTarget=action==='carry'?Object.freeze({
