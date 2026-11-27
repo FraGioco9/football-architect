@@ -4,7 +4,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
-import {initializeRapier,ENGINE_VERSION,FIXED_DT} from '../src/core.mjs';
+import {initializeRapier,createEngine,ENGINE_VERSION,FIXED_DT} from '../src/core.mjs';
+import {createPlayerMovement} from '../src/player-movement.mjs';
+import {createBasicMatchRefereeB05,resolveB05BoundaryRestart} from '../src/basic-match-referee-b05.mjs';
+import {attackDirection,teamAttackingEnd} from '../src/match-directions.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {createBasicMatchTimelineB06,basicMatchClockB06,
  B06_HALF_TICKS,B06_FULL_TICKS,B06_TIMELINE_VERSION}
@@ -176,4 +179,55 @@ test('B06 genuine HOME/AWAY match clock, provisional goals, unresolved dead ball
       fullTimeVerified:false,officialMatchResult:null})+'\\n');
    }finally{a.dispose();b.dispose();}
   }
+});
+
+test('UME-06D4A goal-end ownership, corner and goal-kick reverse without changing identity (geometry contract)',()=>{
+ for(const polarity of [1,-1])for(const end of [1,-1]){
+  const attacker=end===polarity?'home':'away',defender=attacker==='home'?'away':'home';
+  assert.equal(attackDirection(attacker,polarity),end);
+  assert.equal(teamAttackingEnd(end,polarity),attacker);
+  const intersection={x:end*52.61,y:7,z:0.11};
+  const award=(edge,lastTouchTeam)=>resolveB05BoundaryRestart({edge,side:end,intersection,lastTouchTeam,attackPolarity:polarity});
+  assert.equal(award('goal',null).team,defender);
+  assert.equal(award('goal-line',defender).type,'corner');
+  assert.equal(award('goal-line',defender).team,attacker);
+  assert.equal(award('goal-line',attacker).type,'goal-kick');
+  assert.equal(award('goal-line',attacker).team,defender);
+  assert.equal(award('goal-line',null).ready,false);
+  assert.equal(award('touchline','home').team,'away');
+  assert.equal(award('touchline','away').team,'home');
+ }
+});
+
+test('UME-06D4A opposite physical goal belongs to correct reversed team on original Rapier flight and independent ledger',{timeout:120000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const end of [1,-1]){
+  const engine=createEngine(R,{preset:'roll',seed:'ume06-d4a-'+end,x:end*47.8,y:end*2.8,z:0,vx:end*25,vy:0,vz:0},
+   {diagnosticPlayerFootContactsEnabled:true});
+  const mover=createPlayerMovement(),referee=createBasicMatchRefereeB05({attackPolarity:-1}),
+   ledger=createBasicMatchTimelineB06({attackPolarity:-1}),wrong=createBasicMatchTimelineB06();
+  try{
+   let physics=engine.snapshot(),frame=mover.snapshot(),verified=null;
+   for(let k=0;k<=60;k++){
+    const evidence=referee.observe({physics,playerFrame:frame,foot:engine.footContactSnapshot(),
+     solver:k===0?null:engine.footContactSolverSnapshot()});
+    if(k===0)assert.throws(()=>wrong.observe({physics,refereeEvidence:evidence}),/next exact/);
+    const timeline=ledger.observe({physics,refereeEvidence:evidence});
+    if(evidence.lastEvent){
+     const expected=end===1?'away':'home';
+     assert.equal(evidence.lastEvent.kind,'goal');
+     assert.equal(evidence.lastEvent.scoringTeam,expected);
+     assert.equal(evidence.provisionalGoals[expected],1);
+     assert.equal(timeline.provisionalScore[expected],1);
+     assert.equal(timeline.provisionalScore[expected==='home'?'away':'home'],0);
+     assert.equal(timeline.officialMatchResult,null);
+     verified={end,team:expected,tick:k};break;
+    }
+    frame=mover.step(physics.ball.position,null,null,physics.ball.velocity);
+    physics=engine.step(frame);
+   }
+   assert.ok(verified,'actual reversed-end full-ball goal crossing required');
+   process.stdout.write('ME_628_UME06_REVERSED_GOAL '+JSON.stringify(verified)+'\n');
+  }finally{engine.dispose();}
+ }
 });

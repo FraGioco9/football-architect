@@ -5,6 +5,7 @@
 // or permission to bypass the real half-time restart.
 import {FIXED_DT,ENGINE_VERSION,BALL_RADIUS} from './core.mjs';
 import {FOOT_SOLVER_EVIDENCE_VERSION} from './player-foot-contact-solver.mjs';
+import {validateAttackPolarity,teamAttackingEnd,oppositeTeam} from './match-directions.mjs';
 import {FOOT_CONTACT_VERSION} from './player-foot-contact.mjs';
 import {UNIFORM_AUTONOMOUS_ACTION_VERSION} from './player-ball-uniform-autonomous-action.mjs';
 import {B05_REFEREE_VERSION,detectFirstFullyOutBallB05,
@@ -37,7 +38,8 @@ export function basicMatchClockB06(tick){
   readOnlyClock:true
  });
 }
-export function createBasicMatchTimelineB06({b06bRealHalftimePause=false,nativeHalfTicks=null}={}){
+export function createBasicMatchTimelineB06({b06bRealHalftimePause=false,nativeHalfTicks=null,attackPolarity=1}={}){
+ validateAttackPolarity(attackPolarity);
  if(nativeHalfTicks!==null&&(!b06bRealHalftimePause||!positiveInteger(nativeHalfTicks)||nativeHalfTicks<120||nativeHalfTicks>B06_HALF_TICKS))
   throw new TypeError('B06 native period ledger requires bounded real physical half');
  if(typeof b06bRealHalftimePause!=='boolean')
@@ -54,6 +56,7 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false,nativeH
   return freeze({
    version:B06_TIMELINE_VERSION,tick,
    clock,provisionalScore:score,
+   ...(attackPolarity!==1?{attackPolarity}:{}),
    matchEvents:events,matchEventCount:events.length,
    lastNativeBoundaryEvent:lastEvent,
    lastPhysicalRestart:lastRestart,lastPhysicalSetPiece:lastSetPiece,
@@ -84,6 +87,7 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false,nativeH
     physics?.version!==ENGINE_VERSION||!ballXYZ(b)||
     refereeEvidence?.version!==B05_REFEREE_VERSION||
     refereeEvidence.tick!==n||
+    (refereeEvidence.attackPolarity??1)!==attackPolarity||
     refereeEvidence.original22Source!==true||
     refereeEvidence.readOnlyObservation!==true||
     refereeEvidence.matchAuthority!==false||
@@ -113,9 +117,19 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false,nativeH
       Math.abs(latest.gameClockS-n*FIXED_DT)>1e-7)
     throw new TypeError('B06 must independently re-observe true fully crossed original Rapier ball');
    const goal=latest.kind==='goal';
-   const scorer=goal?(crossing.side===1?'home':'away'):null;
+   const scorer=goal?teamAttackingEnd(crossing.side,attackPolarity):null;
+   const lastTeam=latest.lastVerifiedTouch?.team??null;
+   const attacking= crossing.axis==='x'?teamAttackingEnd(crossing.side,attackPolarity):null;
+   const expectedKind=goal?'kickoff':crossing.edge==='touchline'?
+    lastTeam===null?'unresolved-throw-in':'throw-in':
+    lastTeam===null?'unresolved-goal-line':lastTeam===attacking?'goal-kick':'corner';
+   const expectedTeam=goal?oppositeTeam(scorer):lastTeam===null?null:
+    crossing.edge==='touchline'?oppositeTeam(lastTeam):
+    expectedKind==='corner'?attacking:oppositeTeam(attacking);
    const restart=latest.restart;
    if(!restart||typeof restart.type!=='string'||
+      (lastTeam!==null&&!validTeam(lastTeam))||
+      restart.type!==expectedKind||restart.team!==expectedTeam||restart.ready!==(expectedTeam!==null)||
       latest.provisionalGoalScored!==goal||
       latest.goalCountedOnlyInDevLab!==goal||
       latest.scoringTeam!==scorer||

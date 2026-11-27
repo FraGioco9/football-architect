@@ -4,6 +4,7 @@
 import {BALL_RADIUS,FIXED_DT} from './core.mjs';
 import {PLAYER_PITCH,INITIAL_PLAYERS} from './player-movement.mjs';
 import {FOOT_SOLVER_EVIDENCE_VERSION} from './player-foot-contact-solver.mjs';
+import {validateAttackPolarity,teamAttackingEnd,oppositeTeam} from './match-directions.mjs';
 export const B05_REFEREE_VERSION='actions-b05-native-boundary-referee-v1';
 export const B05_GOAL_WIDTH_M=7.32;
 export const B05_GOAL_HEIGHT_M=2.44;
@@ -12,9 +13,14 @@ const knownIds=new Set(INITIAL_PLAYERS.map(p=>p.id));
 const halfX=PLAYER_PITCH.lengthM/2,halfY=PLAYER_PITCH.widthM/2;
 const inside=(n,min,max)=>Math.max(min,Math.min(max,n));
 const fixed=Object.freeze;
-function restartFor({edge,side,intersection,lastTouchTeam,scoringTeam}){
+export function resolveB05BoundaryRestart({edge,side,intersection,lastTouchTeam,attackPolarity=1}){
+ validateAttackPolarity(attackPolarity);
+ if(!['goal','goal-line','touchline'].includes(edge)||![1,-1].includes(side)||
+    !['x','y','z'].every(k=>finite(intersection?.[k]))||
+    ![null,'home','away'].includes(lastTouchTeam))throw new TypeError('Original boundary geometry and last-touch identity required');
+ const scoringTeam=edge==='goal'?teamAttackingEnd(side,attackPolarity):null;
  if(edge==='goal'){
-  const team=scoringTeam==='home'?'away':'home';
+  const team=oppositeTeam(scoringTeam);
   return freeze({type:'kickoff',team,spot:freeze({x:0,y:0,z:BALL_RADIUS}),
    ready:true,source:'verified-real-goal-line-crossing',
    sameBallRapierRestart:true});
@@ -28,8 +34,8 @@ function restartFor({edge,side,intersection,lastTouchTeam,scoringTeam}){
    ready:team!==null,source:team?'native-sole-shoe-last-touch':'no-verified-last-touch',
    sameBallRapierRestart:team!==null});
  }
- const defending=side===1?'away':'home';
- const attacking=side===1?'home':'away';
+ const attacking=teamAttackingEnd(side,attackPolarity);
+ const defending=oppositeTeam(attacking);
  if(lastTouchTeam===null)
   return freeze({type:'unresolved-goal-line',team:null,spot:null,
    ready:false,candidates:freeze(['corner','goal-kick']),
@@ -78,13 +84,15 @@ export function detectFirstFullyOutBallB05(previous,current){
   edge:goal?'goal':first.axis==='x'?'goal-line':'touchline',
   goal,fullBallCrossed:true,source:'real-consecutive-rapier-centres'});
 }
-export function createBasicMatchRefereeB05(){
+export function createBasicMatchRefereeB05({attackPolarity=1}={}){
+ validateAttackPolarity(attackPolarity);
  let tick=-1,last=null,previous=null,lastTouch=null,
   event=null,restarted=false,score={home:0,away:0};
  function snapshot(){
   return freeze({version:B05_REFEREE_VERSION,tick,
    lastVerifiedTouch:lastTouch,lastEvent:event,
    restartApplied:restarted,provisionalGoals:freeze({...score}),
+   ...(attackPolarity!==1?{attackPolarity}:{}),
    original22Source:true,readOnlyObservation:true,
    matchAuthority:false,officialMatchResult:null,
    officialPossession:false});
@@ -145,11 +153,10 @@ export function createBasicMatchRefereeB05(){
    const crossing=detectFirstFullyOutBallB05(previous,ball.position);
    if(crossing){
     restarted=false;
-    const scoringTeam=crossing.edge==='goal'?
-     crossing.side===1?'home':'away':null;
-    const restart=restartFor({edge:crossing.edge,side:crossing.side,
+    const scoringTeam=crossing.edge==='goal'?teamAttackingEnd(crossing.side,attackPolarity):null;
+    const restart=resolveB05BoundaryRestart({edge:crossing.edge,side:crossing.side,
      intersection:crossing.intersection,lastTouchTeam:lastTouch?.team??null,
-     scoringTeam});
+     attackPolarity});
     if(scoringTeam)score={...score,[scoringTeam]:score[scoringTeam]+1};
     event=freeze({
      tick:next,gameClockS:next*FIXED_DT,kind:crossing.edge,
