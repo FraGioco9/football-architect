@@ -330,14 +330,21 @@ export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
       take.type==='throw-in'&&
       take.originalNativeShoeStart===false&&
       take.provisionalHandReleaseWithoutHandCollider===true&&
-      take.legalThrowConfirmed===false))
-   throw new TypeError('B06 physical restart must use current genuine original shoe or explicit unmodelled hand proxy');
+      take.legalThrowConfirmed===false||
+      take.type==='throw-in'&&take.originalNativeShoeStart===false&&
+      take.provisionalHandReleaseWithoutHandCollider===false&&take.originalNativeHandContact===true&&
+      take.nativeTwoHandSolverContact===true&&take.nativeGripReleased===true&&
+      take.sameOriginalRapierWorld===true&&take.sourceEventTick===lastEvent.tick&&
+      Number.isSafeInteger(take.gripTick)&&take.gripTick>lastRestart.tick&&take.tick-take.gripTick>=30&&
+      take.confirmedTicks>=6&&take.legalThrowConfirmed===false))
+   throw new TypeError('B06 physical restart must use current genuine original shoe or authenticated hand source');
   lastSetPiece=take;
   add(freeze({
    type:'set-piece-physical-attempt',tick,kind:take.type,
    team:take.team,actorId:take.actorId,
    originalNativeShoeStart:take.originalNativeShoeStart,
    unmodelledHandRelease:take.provisionalHandReleaseWithoutHandCollider,
+   ...(take.originalNativeHandContact===true?{nativeHandRelease:true,legalThrowConfirmed:false}:{}),
    sameOriginalRapierBall:true,officialMatchEvent:false
   }));
   return snapshot();

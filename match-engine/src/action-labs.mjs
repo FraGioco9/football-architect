@@ -80,7 +80,7 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
      originalPhysicsSourceTick:physics.tick,abbreviatedResearchRun:researchHalfTicks!==B06_HALF_TICKS}),
     referee:evidence,timeline,provisionalScore:timeline.provisionalScore,
     pendingRestart:timeline.outstandingDeadBall||phase==='dead-ball-placed-awaiting-native-take'?evidence.lastEvent.restart:null,
-    physicalRestart:placement,restartTake:restartTake??latest?.restartTake??null,
+    physicalRestart:placement,restartTake:restartTake??latest?.restartTake??null,throwHands:engine.nativeThrowHandsSnapshot(),
     matchAuthority:false,officialMatchResult:null,officialPossession:false,
     completeFootballGameplayVerified:false,realFull90MinutesVerified:false
    });
@@ -118,8 +118,8 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
   }
   function advanceRestart(){
    if(disposed)throw new Error('Native full-field session disposed');
-   if(phase!=='dead-ball-placed-awaiting-native-take'||!latest.physicalRestart||latest.physicalRestart.kind==='throw-in')
-    throw new Error('Native foot restart requires a placed kickoff, corner or goal kick');
+   if(phase!=='dead-ball-placed-awaiting-native-take'||!latest.physicalRestart)
+    throw new Error('Native restart requires a placed ready ticket');
    const placement=latest.physicalRestart,prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
    let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control,placement);
    const physics=engine.step(frame,placement);

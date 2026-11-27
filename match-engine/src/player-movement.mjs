@@ -2253,7 +2253,7 @@ export function createPlayerMovement(options={}){
    throw new TypeError('LAB native feedback requires the prior tick acknowledgment');
   const ball=ballXY(ballPosition);
   if(restartPlacement!==null&&(!smallSided?.fullField||options.researchCollectiveApproaches!==true||
-   !['kickoff','corner','goal-kick'].includes(restartPlacement.kind)||restartPlacement.deadBallPlacementOnly!==true||
+   !['kickoff','corner','goal-kick','throw-in'].includes(restartPlacement.kind)||restartPlacement.deadBallPlacementOnly!==true||
    !players.some(p=>p.id===restartPlacement.takerId&&p.team===restartPlacement.assignedTeam)||
    ![restartPlacement.spot?.x,restartPlacement.spot?.y].every(finite)||
    !Number.isSafeInteger(restartPlacement.tick)||restartPlacement.tick>tick))
@@ -2663,6 +2663,7 @@ export function createPlayerMovement(options={}){
   const targets=players.map(p=>{
    if(restartPlacement){
     const at=restartPlacement.spot,dir=restartPlacement.assignedTeam==='home'?1:-1;
+    if(p.id===restartPlacement.takerId&&restartPlacement.kind==='throw-in')return Object.freeze({x:clamp(at.x,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:at.y-Math.sign(at.y)*0.85});
     if(p.id===restartPlacement.takerId)return Object.freeze({x:clamp(at.x+dir*0.10,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:clamp(at.y,-PLAYER_KINEMATIC_LIMITS.maxY,PLAYER_KINEMATIC_LIMITS.maxY)});
     // Restore ordinary formation by physical movement, not staged LAB bases.
     const base=INITIAL_PLAYERS.find(q=>q.id===p.id);

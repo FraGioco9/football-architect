@@ -402,3 +402,68 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
  }
  return freeze({prepare,observe,clearForDeadBall,snapshot:()=>latest});
 }
+
+// UME-06D2C: two real hand proxies on one kinematic carrier, in the
+// original ball world. This is bounded hand physics, NOT an articulated
+// arm/foot model or certification of a legal IFAB throw-in.
+export function createNativeThrowInHands(R,world,ballCollider,ballBody,placement,actor){
+ if(placement?.kind!=='throw-in'||placement.takerId!==actor?.id||placement.assignedTeam!==actor.team||
+    ![actor.x,actor.y,placement.spot?.x,placement.spot?.y].every(finite))
+  throw new TypeError('Verified throw-in placement and original actor required');
+ const at=placement.spot,side=Math.sign(at.y);
+ const carrier=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased()
+  .setTranslation(actor.x,actor.y,0.9).setCcdEnabled(true));
+ const hands=[-1,1].map(sign=>world.createCollider(R.ColliderDesc.ball(0.105)
+  .setTranslation(sign*0.17,0,0).setFriction(0.5).setRestitution(0)
+  .setCollisionGroups(0),carrier));
+ let joint=null,anchor=null,gripTick=null,confirmedTicks=0,latest=null,prepared=null,done=false;
+ const disable=()=>hands.forEach(hand=>hand.setCollisionGroups(0));
+ function prepare(frame,tick){
+  if(done||prepared||frame.tick!==tick)throw new TypeError('Consecutive native throw approach required');
+  const p=frame.players.find(q=>q.id===actor.id);
+  const near=Math.hypot(p.x-at.x,p.y-at.y)<=1.1&&Math.hypot(p.vx,p.vy)<=0.65;
+  const target=joint?{x:at.x,y:at.y,z:1.85}:near?{x:at.x,y:at.y,z:0.13}:{x:p.x,y:p.y,z:0.9};
+  const now=carrier.translation(),dx=target.x-now.x,dy=target.y-now.y,dz=target.z-now.z;
+  const length=Math.hypot(dx,dy,dz),limit=joint?0.035:0.10,scale=length>limit?limit/length:1;
+  if(!joint){if(near)hands.forEach(hand=>hand.setCollisionGroups((LEG_CATEGORY<<16)|BALL_CATEGORY));else disable();}
+  carrier.setNextKinematicTranslation({x:now.x+dx*scale,y:now.y+dy*scale,z:now.z+dz*scale});
+  prepared={tick,near};
+ }
+ function observe(tick,foot,otherContacts){
+  if(prepared?.tick!==tick)throw new TypeError('Native throw-in requires current solver step');
+  const contact=hands.map(hand=>{let hit=false;world.contactPair(ballCollider,hand,m=>{
+   if(m.numContacts()>0&&m.numSolverContacts()>0)hit=true;
+  });return hit;});
+  let take=null;
+  const p=ballBody.translation(),h=carrier.translation();
+  const exclusive=foot.tick===tick&&foot.active.length===0&&foot.started.length===0&&otherContacts.length===0;
+  if(!joint&&prepared.near&&exclusive&&contact.every(Boolean)&&Math.hypot(p.x-at.x,p.y-at.y)<=0.25&&p.z<=0.35){
+   anchor={x:p.x-h.x,y:p.y-h.y,z:p.z-h.z};
+   joint=world.createImpulseJoint(R.JointData.spherical(anchor,{x:0,y:0,z:0}),carrier,ballBody,true);
+   joint.setContactsEnabled(false);disable();gripTick=tick;
+  }else if(joint){
+   const errorM=Math.hypot(p.x-h.x-anchor.x,p.y-h.y-anchor.y,p.z-h.z-anchor.z);
+   const v=ballBody.linvel(),hv=carrier.linvel();
+   const relative=Math.hypot(v.x-hv.x,v.y-hv.y,v.z-hv.z);
+   if(errorM<=0.08&&relative<=0.8&&exclusive)confirmedTicks++;
+   else confirmedTicks=0;
+   if(confirmedTicks>=6&&tick-gripTick>=30&&p.z>=1.65&&p.z<=2.2&&Math.abs(p.y-at.y)<=0.35&&exclusive){
+    const before=freeze({...v}),origin=freeze({...p});
+    world.removeImpulseJoint(joint,true);joint=null;disable();done=true;
+    const impulseNs=freeze({x:0,y:-side*1.8,z:0.55});
+    ballBody.applyImpulse(impulseNs,true);
+    take=freeze({tick,type:'throw-in',team:actor.team,actorId:actor.id,sourceEventTick:placement.sourceEventTick,
+     impulseNs,origin,before,after:freeze({...ballBody.linvel()}),singleOriginalRapierBall:true,sameOriginalRapierWorld:true,
+     physicalImpulseApplied:true,originalNativeShoeStart:false,originalNativeHandContact:true,
+     nativeTwoHandSolverContact:true,gripTick,confirmedTicks,nativeGripReleased:true,
+     provisionalHandReleaseWithoutHandCollider:false,legalThrowConfirmed:false,
+     officialMatchAction:false,officialPossession:false,officialMatchResult:null});
+   }
+  }
+  latest=freeze({tick,actorId:actor.id,phase:done?'released':joint?'lifting':'approaching',gripTick,
+   active:joint!==null,confirmedTicks,contacts:freeze(contact),legalThrowConfirmed:false});
+  prepared=null;return take;
+ }
+ function dispose(){if(joint)world.removeImpulseJoint(joint,true);joint=null;disable();world.removeRigidBody(carrier);done=true;}
+ return freeze({prepare,observe,snapshot:()=>latest,dispose});
+}

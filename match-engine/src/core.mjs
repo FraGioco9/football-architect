@@ -12,7 +12,7 @@ import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
 import {smallSidedSetup,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
 import {createNativeBallControlObserver,createDribbleTransitionObserver} from './isolated-dribble-touches.mjs';
-import {createSmallSidedNativeBodyGuard,createNativeKeeperDive}
+import {createSmallSidedNativeBodyGuard,createNativeKeeperDive,createNativeThrowInHands}
  from './small-sided-native-body-guard.mjs';
 import {initialResearchBodyEncounterLineup}
  from './research-body-encounter-initial-lineup.mjs';
@@ -809,7 +809,7 @@ export function createEngine(RAPIER, input = {}, {
   // Only the private full-field native session exposes its own original
   // referee ticket; an externally assembled boundary object is not authority.
   const nativeMatchReferee=smallSided?.fullField&&diagnosticCollectiveActions?createBasicMatchRefereeB05():null;
-  let nativeRestartPending=null,nativeRestartTake=null,nativeMatchFrame=null;
+  let nativeRestartPending=null,nativeRestartTake=null,nativeMatchFrame=null,nativeThrowHands=null;
   let b06bOpeningKickoff=null,b06bHalftimePlacement=null,b06bKickoff=null;
   let b06bGoalPending=null,b06bGoalLastTick=-1,b06bGoalPausedTicks=0;
   let b05bOutboundAction=null,b05bTake=null,b05bRestartTicket=null;
@@ -872,7 +872,7 @@ export function createEngine(RAPIER, input = {}, {
   function step(playerFrame,restartPlacement=null) {
     if (disposed) throw new Error('Engine has been disposed');
     const restarting=nativeRestartPending!==null;
-    if(restarting?(restartPlacement!==nativeRestartPending||restartPlacement.kind==='throw-in'):restartPlacement!==null)
+    if(restarting?restartPlacement!==nativeRestartPending:restartPlacement!==null)
      throw new Error('Native dead ball placed; authenticated restart take required');
     if(nativeMatchReferee&&!restarting&&nativeMatchReferee.snapshot().lastEvent&&!nativeMatchReferee.snapshot().restartApplied)
      throw new Error('Native full-ball exit requires verified restart placement');
@@ -890,6 +890,7 @@ export function createEngine(RAPIER, input = {}, {
     if(bodyBridge)bodyBridge.prepare(playerFrame,tick+1);
     if(smallBodyGuard)smallBodyGuard.prepare(playerFrame,tick+1);
     for(const controller of keeperDives)controller.prepare(playerFrame,tick+1,preStepBall,actionExecutor?.actionSnapshot(),restarting);
+    if(restarting&&nativeThrowHands)nativeThrowHands.prepare(playerFrame,tick+1);
     // User forces are persistent in Rapier. Clear the previous tick's drag
     // BEFORE computing this tick's force, and never apply it on the grass.
     // The default=0 branch is identical to the accepted physics-v4 path.
@@ -1027,7 +1028,17 @@ export function createEngine(RAPIER, input = {}, {
      const exclusive=foot.tick===tick&&solver?.tick===tick&&foot.started.length===1&&foot.active.length===1&&
       foot.started[0]===id&&foot.active[0]===id&&solver.pairs.some(pair=>pair.id===id&&pair.beganThisTick&&pair.collisionActive&&pair.manifolds.some(m=>m.geometricContacts>0));
      const otherBody=smallBodyGuard.snapshot().lowerLegBallContacts.some(actor=>actor!==id);
-     if(exclusive&&!otherBody&&Math.hypot(p.x-at.x,p.y-at.y)<=0.65&&Math.abs(p.z-BALL_RADIUS)<=0.35){
+     if(placement.kind==='throw-in'){
+      const take=nativeThrowHands.observe(tick,foot,smallBodyGuard.snapshot().lowerLegBallContacts);
+      if(take){
+       nativeRestartTake=Object.freeze({...take,ball:snapshot().ball});
+       nativeRestartPending=null;
+       nativeThrowHands.dispose();nativeThrowHands=null;
+      }else if(!nativeThrowHands.snapshot().active){
+       body.setTranslation(at,true);body.setLinvel({x:0,y:0,z:0},true);body.setAngvel({x:0,y:0,z:0},true);
+       body.resetForces(true);body.resetTorques(true);
+      }
+     }else if(exclusive&&!otherBody&&Math.hypot(p.x-at.x,p.y-at.y)<=0.65&&Math.abs(p.z-BALL_RADIUS)<=0.35){
       const dir=placement.assignedTeam==='home'?1:-1;
       const impulse=Object.freeze(placement.kind==='kickoff'?{x:dir*0.65,y:0,z:0.04}:
        placement.kind==='corner'?{x:-dir*1.85,y:-Math.sign(at.y)*1.15,z:0.42}:{x:dir*2.5,y:0,z:0.30});
@@ -1052,6 +1063,8 @@ export function createEngine(RAPIER, input = {}, {
      nativeMatchReferee.observe({physics:result,playerFrame,foot:shoeBridge.snapshot(),
       solver:shoeBridge.solver(),action:raw?.tick===tick?raw:null,
       keeperDive:hands.length===1?hands[0]:null});
+     if(nativeRestartTake?.tick===tick&&nativeRestartTake.type==='throw-in')
+      nativeMatchReferee.recordNativeThrowIn(nativeRestartTake);
     }
     return result;
   }
@@ -1170,6 +1183,7 @@ export function createEngine(RAPIER, input = {}, {
     if(native){
      nativeMatchReferee.acknowledgeRestart(event.restart);
      nativeRestartPending=placement;nativeRestartTake=null;
+     if(placement.kind==='throw-in')nativeThrowHands=createNativeThrowInHands(RAPIER,world,ballCollider,body,placement,taker);
     }
     return placement;
   }
@@ -1420,6 +1434,7 @@ export function createEngine(RAPIER, input = {}, {
   function dispose() {
     if (!disposed) {
       disposed = true;
+      nativeThrowHands?.dispose();
       actionExecutor?.dispose();
       shoeBridge?.dispose();
       bodyBridge?.dispose();
@@ -1430,7 +1445,7 @@ export function createEngine(RAPIER, input = {}, {
   }
   return Object.freeze({scenario, ballProperties, snapshot, angularVelocity, step, dispose,
     ...(diagnosticBasicRestartEnabled||nativeMatchReferee?{applyBasicRestartAtBoundary}:{}),
-    ...(nativeMatchReferee?{nativeMatchRefereeSnapshot:()=>nativeMatchReferee.snapshot(),nativeRestartTakeSnapshot:()=>nativeRestartTake}:{}),
+    ...(nativeMatchReferee?{nativeMatchRefereeSnapshot:()=>nativeMatchReferee.snapshot(),nativeRestartTakeSnapshot:()=>nativeRestartTake,nativeThrowHandsSnapshot:()=>nativeThrowHands?.snapshot()??null}:{}),
     ...(b05bSource?{attemptB05bNativeOutboundKick,attemptB05bOriginalSetPiece}:{}),
     ...(diagnosticB06bHalftimeTick!==null?{
      b06bOriginalHalftimePlacement,b06bOriginalSecondHalfKickoff,
