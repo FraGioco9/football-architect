@@ -19,7 +19,7 @@ import {createNativeControlEvidenceGateM29}
  from './native-control-evidence-gate-m29.mjs';
 import {createRealBallReleaseAuditM30} from './real-ball-release-audit-m30.mjs';
 import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
-import {createBasicMatchTimelineB06} from './basic-match-clock-score-b06.mjs';
+import {createBasicMatchTimelineB06,basicMatchClockB06,B06_HALF_TICKS} from './basic-match-clock-score-b06.mjs';
 import {createBasicReceiveDribbleObserverB04}
  from './basic-receive-dribble-b04.mjs';
 import {createRealOpponentBallContestAuditM31}
@@ -36,6 +36,70 @@ import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-act
 import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CROSS_LAB_STARTS,SAVE_LAB_STARTS,DEFENSE_LAB_STARTS,B05_LAB_STARTS,B05B_LAB_STARTS,CARRY_LAB_STARTS,
  CHALLENGE_LAB_STARTS,CONTROL_LAB_STARTS,
  getActionLabScenario,classifyActionLabEvidence} from './action-lab-scenarios.mjs';
+
+// UME-06D: a private match lifecycle adapter, not another movement or
+// action engine. Every live tick uses the same guarded full-field native
+// policy. Existing B05/B06 independently observe the original ball.
+// A dead ball or half-time closes the live gate until physical restart
+// support is authenticated; this adapter never fabricates a restart.
+export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,researchHalfTicks=B06_HALF_TICKS}={}){
+ if(!RAPIER||typeof RAPIER.World!=='function'||!Number.isSafeInteger(researchHalfTicks)||
+    researchHalfTicks<120||researchHalfTicks>B06_HALF_TICKS)
+  throw new TypeError('Native full-field session requires Rapier and bounded physical half');
+ const id='full-field-native',fixture=smallSidedSetup(id,side,INITIAL_PLAYERS,{variantIndex});
+ const engine=createEngine(RAPIER,fixture.ball,{
+  diagnosticSmallSidedSituation:id,diagnosticSmallSidedSide:side,diagnosticSmallSidedVariantIndex:variantIndex,
+  diagnosticPlayerFootContactsEnabled:true,diagnosticAutonomousFixtureActionEnabled:true,
+  diagnosticSmallSidedBodyGuardEnabled:true,diagnosticSmallSidedBodyFeedbackEnabled:true,
+  diagnosticCollectiveActions:true,diagnosticLatestLabDynamics:true
+ });
+ try{
+  const mover=createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,
+   researchSmallSidedVariantIndex:variantIndex,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true});
+  const referee=createBasicMatchRefereeB05(),ledger=createBasicMatchTimelineB06({b06bRealHalftimePause:true});
+  let disposed=false,phase='first-half',playedTicks=0,latest;
+  function observe(physics,frame){
+   const foot=engine.footContactSnapshot(),raw=engine.uniformAutonomousActionSnapshot();
+   const action=raw?.tick===physics.tick&&physics.tick>0?raw:null;
+   const keepers=engine.nativeKeeperSnapshots(),gloves=keepers.filter(k=>k.contactStarted===true);
+   const evidence=referee.observe({physics,playerFrame:frame,foot,
+    solver:physics.tick===0?null:engine.footContactSolverSnapshot(),action,
+    keeperDive:gloves.length===1?gloves[0]:null});
+   const timeline=ledger.observe({physics,refereeEvidence:evidence});
+   if(timeline.outstandingDeadBall)phase='dead-ball-awaiting-native-restart';
+   else if(playedTicks===researchHalfTicks)phase='half-time-awaiting-native-restart';
+   latest=Object.freeze({
+    tick:physics.tick,ball:physics.ball,players:frame.players,starts:foot.started,action,
+    control:engine.collectiveControlSnapshot(),keepers,reception:engine.latestLabReceptionSnapshot(),
+    body:engine.smallSidedBodyGuardSnapshot(),decisions:frame.smallSidedMovementDecisions,
+    activeIds:fixture.activeIds,phase,playedTicks,
+    clock:Object.freeze({...basicMatchClockB06(playedTicks),phase,
+     originalPhysicsSourceTick:physics.tick,abbreviatedResearchRun:researchHalfTicks!==B06_HALF_TICKS}),
+    referee:evidence,timeline,provisionalScore:timeline.provisionalScore,
+    pendingRestart:timeline.outstandingDeadBall?evidence.lastEvent.restart:null,
+    matchAuthority:false,officialMatchResult:null,officialPossession:false,
+    completeFootballGameplayVerified:false,realFull90MinutesVerified:false
+   });
+   return latest;
+  }
+  observe(engine.snapshot(),mover.snapshot());
+  function snapshot(){if(disposed)throw new Error('Native full-field session disposed');return latest;}
+  function step(){
+   if(disposed)throw new Error('Native full-field session disposed');
+   if(phase!=='first-half')throw new Error('Native full-field live play paused pending authenticated restart');
+   const prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
+   let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control);
+   const physics=engine.step(frame);
+   mover.reconcileSmallSidedNativeBodyResponse(engine.smallSidedBodyGuardSnapshot());
+   frame=mover.snapshot();engine.acknowledgeSmallSidedBodyFeedback(frame);
+   if(physics.tick!==latest.tick+1||frame.tick!==physics.tick)throw new Error('Native match requires consecutive physical 60Hz ticks');
+   playedTicks++;
+   return observe(physics,frame);
+  }
+  function dispose(){if(!disposed){disposed=true;engine.dispose();}}
+  return Object.freeze({snapshot,step,dispose});
+ }catch(error){engine.dispose();throw error;}
+}
 
 export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',

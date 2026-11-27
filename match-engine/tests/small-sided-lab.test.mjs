@@ -9,7 +9,7 @@ import {createPlayerMovement,INITIAL_PLAYERS,goalkeeperPosition} from '../src/pl
 import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
  keeperDuelAttackerTarget,keeperDuelGoalkeeperTarget,planCollectiveApproaches,planCollectiveSupport,planCollectiveDefense,planNativeFootballMovement,supportsNativeOpenPlay,planNativeKeeperCloseDown}
  from '../src/small-sided-lab-scenarios.mjs';
-import {createControlledActionLab,projectActiveLabDecisions} from '../src/action-labs.mjs';
+import {createControlledActionLab,projectActiveLabDecisions,createNativeFullFieldSession} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
 import {observeNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
 import {detectFirstFullyOutBallB05} from '../src/basic-match-referee-b05.mjs';
@@ -352,20 +352,18 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
   }
   const options={diagnosticSmallSidedSituation:id,diagnosticSmallSidedSide:side,diagnosticSmallSidedVariantIndex:variantIndex,diagnosticPlayerFootContactsEnabled:true,diagnosticAutonomousFixtureActionEnabled:true,diagnosticSmallSidedBodyGuardEnabled:true,diagnosticSmallSidedBodyFeedbackEnabled:true,diagnosticCollectiveActions:true,diagnosticLatestLabDynamics:true};
   assert.throws(()=>createEngine(R,fixture.ball,{...options,diagnosticCollectiveActions:false}),/Full field requires/);
-  const session=()=>({engine:createEngine(R,fixture.ball,options),mover:createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,researchSmallSidedVariantIndex:variantIndex,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true})});
-  const x=session(),y=session(),audit=nativeReplayAudit(fixture.activeIds);
-  function step({engine,mover}){
-   const prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
-   let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control);
-   const next=engine.step(frame),body=engine.smallSidedBodyGuardSnapshot(),shoe=engine.footContactSnapshot();
-   mover.reconcileSmallSidedNativeBodyResponse(body);frame=mover.snapshot();engine.acknowledgeSmallSidedBodyFeedback(frame);
-   return {tick:next.tick,ball:next.ball,players:frame.players,starts:shoe.started,action:engine.uniformAutonomousActionSnapshot(),control:engine.collectiveControlSnapshot(),keepers:engine.nativeKeeperSnapshots(),reception:engine.latestLabReceptionSnapshot(),body,decisions:frame.smallSidedMovementDecisions};
-  }
+  const x=createNativeFullFieldSession(R,{side,variantIndex}),y=createNativeFullFieldSession(R,{side,variantIndex}),audit=nativeReplayAudit(fixture.activeIds);
   try{
-   assert.deepEqual(x.engine.originalSmallSidedPhysicalShoeIds(),fixture.activeIds);
-   let prior=x.engine.snapshot().ball.position,pathM=0,ticks=0,boundary=null;
+   assert.deepEqual(x.snapshot().activeIds,fixture.activeIds);
+   assert.deepEqual(x.snapshot().body.selectedColliderIds,fixture.activeIds);
+   assert.equal(x.snapshot().playedTicks,0);
+   let prior=x.snapshot().ball.position,pathM=0,ticks=0,boundary=null;
    for(let k=1;k<=600;k++){
-    const a=step(x),b=step(y);
+    const a=x.step(),b=y.step();
+    assert.deepEqual(a.referee,b.referee);assert.deepEqual(a.timeline,b.timeline);
+    assert.equal(a.playedTicks,k);assert.equal(a.clock.originalPhysicsSourceTick,k);
+    assert.equal(a.officialMatchResult,null);assert.equal(a.matchAuthority,false);
+    assert.equal(a.realFull90MinutesVerified,false);
     assert.equal(a.tick,k);assert.deepEqual(a.ball,b.ball);assert.deepEqual(a.players,b.players);
     assert.deepEqual(a.starts,b.starts);assert.deepEqual(a.action,b.action);
     assert.deepEqual(a.control,b.control);assert.deepEqual(a.keepers,b.keepers);assert.deepEqual(a.reception,b.reception);
@@ -379,16 +377,50 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
     boundary=detectFirstFullyOutBallB05(prior,a.ball.position);
     prior=a.ball.position;
     // Do not simulate an invented restart or a live action after dead ball.
-    if(boundary){assert.equal(boundary.fullBallCrossed,true);break;}
+    if(boundary){
+     assert.equal(boundary.fullBallCrossed,true);
+     assert.equal(a.referee.lastEvent.kind,boundary.edge);
+     assert.equal(a.referee.lastEvent.tick,k);
+     assert.equal(a.timeline.outstandingDeadBall,true);
+     assert.equal(a.phase,'dead-ball-awaiting-native-restart');
+     assert.deepEqual(a.pendingRestart,a.referee.lastEvent.restart);
+     assert.equal(a.provisionalScore.home+a.provisionalScore.away,boundary.goal?1:0);
+     assert.throws(()=>x.step(),/paused pending authenticated restart/);
+     assert.equal(x.snapshot(),a);break;
+    }
+    assert.equal(a.phase,'first-half');assert.equal(a.pendingRestart,null);
+    assert.equal(a.timeline.outstandingDeadBall,false);
    }
    const report=audit.report();
    assert.ok(report.contacts>0);assert.ok(Object.values(report.actions).some(n=>n>0));
    const result={side,variantIndex,players:22,ticks,pathM,boundary:boundary?.edge??null,deterministic:true,...report};
    results.push(result);
    process.stdout.write('ME_628_UME06_FULL '+JSON.stringify(result)+'\n');
-  }finally{x.engine.dispose();y.engine.dispose();}
+  }finally{x.dispose();y.dispose();}
  }
  assert.equal(results.length,8);
+ assert.ok(results.some(r=>r.boundary==='goal'),'must independently observe an actual full-ball goal');
+ assert.ok(results.some(r=>r.boundary==='touchline'),'must independently observe a real touchline exit');
+});
+test('UME-06D native match stops at authentic bounded half-time without inventing second-half kickoff',async()=>{
+ const R=await initializeRapier(rapier);
+ assert.throws(()=>createNativeFullFieldSession(R,{researchHalfTicks:119}),/bounded physical half/);
+ for(const side of ['home','away']){
+  const session=createNativeFullFieldSession(R,{side,researchHalfTicks:120});
+  try{
+   assert.equal(session.snapshot().phase,'first-half');
+   for(let k=1;k<=120;k++)assert.equal(session.step().playedTicks,k);
+   const stopped=session.snapshot();
+   assert.equal(stopped.phase,'half-time-awaiting-native-restart');
+   assert.equal(stopped.clock.label,'00:02');assert.equal(stopped.clock.abbreviatedResearchRun,true);
+   assert.equal(stopped.pendingRestart,null);assert.equal(stopped.timeline.outstandingDeadBall,false);
+   assert.equal(stopped.clock.halfTimeRestartVerified,false);
+   assert.equal(stopped.realFull90MinutesVerified,false);
+   assert.throws(()=>session.step(),/paused pending authenticated restart/);
+   assert.equal(session.snapshot(),stopped);
+  }finally{session.dispose();}
+  assert.throws(()=>session.snapshot(),/disposed/);
+ }
 });
 test('UME-06A same guarded native replay matrix for 1v1 through 3v3 plus goalkeeper',{timeout:180000},async()=>{
  const R=await initializeRapier(rapier),results=[];
