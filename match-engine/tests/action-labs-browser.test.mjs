@@ -218,9 +218,12 @@ test('small-sided 1v1–3v3 menu and archived 17 Action LABs retain real DEV Chr
    ['duel-2v2','2v2 · autonomous play',['','away-10','away-9','home-2','home-3','home-1']],
    ['duel-3v3','3v3 · autonomous play',['','away-10','away-9','away-11','home-2','home-3','home-4','home-1']]
   ]){
-   const f=await evalJs(`(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:${id}').click();for(let i=0;i<120;i++)el('step').click();return {label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),tick:el('tick').textContent};})()`);
+   const f=await evalJs(`(()=>{const el=id=>document.getElementById(id);el('preset-trigger').click();[...el('preset-options').querySelectorAll('[data-value]')].find(x=>x.dataset.value==='action:${id}').click();const sample=()=>({position:el('position').textContent,tick:el('tick').textContent,values:[...el('me-active-metrics').querySelectorAll('dd')].map(x=>x.textContent),actions:[...el('me-performed-rows').rows].map(r=>[r.dataset.player,r.dataset.action,r.dataset.tick])});const advance=n=>{for(let i=0;i<n;i++)el('step').click();};advance(30);const first=sample();el('reset').click();const reset=sample();advance(30);const replay=sample();advance(90);return {first,reset,replay,label:el('preset-value').textContent,players:[...el('me-performed-player-options').querySelectorAll('[role=option]')].map(x=>x.dataset.value),metrics:[...el('me-active-metrics').querySelectorAll('dt')].map(x=>x.textContent),tick:el('tick').textContent};})()`);
    assert.equal(f.label,label);assert.deepEqual(new Set(f.players),new Set(players));
    assert.deepEqual(f.metrics,collectiveUI.metrics);assert.notEqual(f.tick,'Tick 0 · 0.00 s');
+   assert.equal(f.reset.tick,'Tick 0 · 0.00 s');assert.deepEqual(f.reset.actions,[]);
+   assert.deepEqual(f.replay,f.first,'same native scene must replay identically after Reset');
+   process.stdout.write('ME_628_UME06_BROWSER '+JSON.stringify({id,...f})+'\n');
   }
   await delay(100);socket.removeEventListener('message',captureCollectiveException);assert.deepEqual(collectiveExceptions,[],'native open play must not freeze Chrome');
   await evalJs("document.getElementById('me-observation-details').open=false");

@@ -263,74 +263,149 @@ test('COL-01 opt-in guarded 2v1 advances with canonical movement',async()=>{
   }finally{lab.dispose();}
  }
 });
-test('UME-05D all 22 original players share native open play in one physical world',{timeout:120000},async()=>{
+// UME-06: record observed evidence only; an unobserved outcome remains
+// a coverage gap, never a successful action assigned by the fixture.
+function nativeReplayAudit(active){
+ const activeSet=new Set(active);
+ let previous=null,contacts=0,controlled=0,holds=0,distributions=0,receptions=0,keeperReceptions=0,slides=0,shoulders=0,blocks=0,minSeparation=Infinity,peakSpeed=0;
+ const actions={},keeperPasses=new Map();
+ return {
+  observe({tick,ball,players,starts,action,control,keepers,reception}){
+   assert.equal(control.tick,tick);
+   assert.equal(control.officialPossession,false);
+   assert.ok([...Object.values(ball.position),...Object.values(ball.velocity)].every(Number.isFinite));
+   const actors=players.filter(p=>activeSet.has(p.id));
+   assert.equal(actors.length,active.length);
+   for(let i=0;i<actors.length;i++){
+    const p=actors[i];
+    assert.ok([p.x,p.y,p.vx,p.vy].every(Number.isFinite));
+    peakSpeed=Math.max(peakSpeed,Math.hypot(p.vx,p.vy));
+    assert.ok(Math.hypot(p.vx,p.vy)<=7+1e-5,'canonical player speed bound');
+    for(let j=i+1;j<actors.length;j++){
+     const gap=Math.hypot(p.x-actors[j].x,p.y-actors[j].y);
+     minSeparation=Math.min(minSeparation,gap);
+     assert.ok(gap>=0.98-1e-5,'canonical player separation');
+    }
+   }
+   assert.ok(starts.every(id=>activeSet.has(id)));contacts+=starts.length;
+   if(action?.tick===tick){
+    assert.ok(activeSet.has(action.playerId));
+    assert.deepEqual(starts,[action.playerId]);
+    assert.equal(action.appliedByRapier,true);assert.equal(action.actualPhysicsImpulseApplied,true);
+    assert.equal(action.officialMatchAction,false);
+    actions[action.action]=(actions[action.action]??0)+1;
+   }
+   if(control.kind==='controlled'){
+    controlled++;
+    assert.ok(activeSet.has(control.playerId));
+    if(previous?.sourceTick!==control.sourceTick||previous?.playerId!==control.playerId){
+     assert.equal(action?.action,'carry');assert.equal(action.playerId,control.playerId);assert.equal(control.sourceTick,tick);
+    }
+   }else assert.equal(control.playerId,null);
+   assert.ok(keepers.every(k=>k.tick===tick&&activeSet.has(k.keeperId)&&k.officialSave===false));
+   if(control.keeperHold){
+    holds++;
+    assert.ok(keepers.some(k=>k.keeperId===control.keeperHold.keeperId&&k.catchState?.active));
+    assert.equal(control.kind,'loose');assert.equal(control.playerId,null);
+   }
+   const d=control.keeperDistribution;
+   if(d?.tick===tick){
+    distributions++;
+    assert.equal(previous?.keeperHold?.keeperId,d.keeperId);
+    assert.equal(previous.keeperHold.confirmedTick,d.confirmedGripTick);
+    assert.equal(d.nativeGripReleased,true);assert.equal(d.actualPhysicsImpulseApplied,true);
+    assert.equal(control.playerId,null);
+    if(d.kind==='pass'){
+     assert.ok(activeSet.has(d.recipientId));
+     keeperPasses.set(tick,d);
+    }
+   }
+   if(reception?.tick===tick){
+    receptions++;
+    assert.deepEqual(starts,[reception.actorId]);
+    assert.equal(reception.actualPhysicsImpulseApplied,true);
+    assert.equal(reception.nativeExclusiveShoeStart,true);
+    assert.equal(reception.officialPossession,false);
+    const source=keeperPasses.get(reception.originalPassTick);
+    if(source){keeperReceptions++;assert.equal(reception.actorId,source.recipientId);assert.equal(reception.originalPassActorId,source.keeperId);}
+   }
+   slides+=Object.values(control.lastInterventions??{}).filter(x=>x.tick===tick&&x.intervention==='sliding-tackle').length;
+   shoulders+=Object.values(control.shoulderByPlayer??{}).filter(x=>x.tick===tick&&x.successful).length;
+   assert.ok(control.blockCount>=blocks);blocks=control.blockCount;
+   previous=control;
+  },
+  report:()=>({contacts,actions,controlled,holds,distributions,receptions,keeperReceptions,slides,shoulders,blocks,minSeparation,peakSpeed})
+ };
+}
+
+test('UME-06A full field native 22-player deterministic replay with live keeper and defensive evidence',{timeout:180000},async()=>{
  const R=await initializeRapier(rapier),id='full-field-native';
  for(const side of ['home','away']){
   const fixture=smallSidedSetup(id,side,INITIAL_PLAYERS);
   const options={diagnosticSmallSidedSituation:id,diagnosticSmallSidedSide:side,diagnosticPlayerFootContactsEnabled:true,diagnosticAutonomousFixtureActionEnabled:true,diagnosticSmallSidedBodyGuardEnabled:true,diagnosticSmallSidedBodyFeedbackEnabled:true,diagnosticCollectiveActions:true,diagnosticLatestLabDynamics:true};
   assert.throws(()=>createEngine(R,fixture.ball,{...options,diagnosticCollectiveActions:false}),/Full field requires/);
-  const engine=createEngine(R,fixture.ball,options);
+  const session=()=>({engine:createEngine(R,fixture.ball,options),mover:createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true})});
+  const x=session(),y=session(),audit=nativeReplayAudit(fixture.activeIds);
+  function step({engine,mover}){
+   const prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
+   let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control);
+   const next=engine.step(frame),body=engine.smallSidedBodyGuardSnapshot(),shoe=engine.footContactSnapshot();
+   mover.reconcileSmallSidedNativeBodyResponse(body);frame=mover.snapshot();engine.acknowledgeSmallSidedBodyFeedback(frame);
+   return {tick:next.tick,ball:next.ball,players:frame.players,starts:shoe.started,action:engine.uniformAutonomousActionSnapshot(),control:engine.collectiveControlSnapshot(),keepers:engine.nativeKeeperSnapshots(),reception:engine.latestLabReceptionSnapshot(),body,decisions:frame.smallSidedMovementDecisions};
+  }
   try{
-   const mover=createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true});
-   assert.deepEqual(engine.originalSmallSidedPhysicalShoeIds(),fixture.activeIds);
-   let contacts=0,actions=0;
-   for(let k=1;k<=240;k++){
-    const prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
-    let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control);
-    const next=engine.step(frame),body=engine.smallSidedBodyGuardSnapshot(),shoe=engine.footContactSnapshot();
-    mover.reconcileSmallSidedNativeBodyResponse(body);frame=mover.snapshot();engine.acknowledgeSmallSidedBodyFeedback(frame);
-    assert.equal(next.tick,k);assert.equal(frame.tick,k);
-    assert.deepEqual(body.selectedColliderIds,fixture.activeIds);assert.equal(body.bodies.length,22);
-    assert.equal(body.oneOriginalRapierWorld,true);assert.equal(frame.smallSidedMovementDecisions.length,22);
-    assert.equal(frame.smallSidedMovementDecisions.filter(x=>x.kind==='goalkeeping').length,2);
-    const keepers=engine.nativeKeeperSnapshots();
-    assert.deepEqual(keepers.map(x=>x.keeperId),['home-1','away-1']);
-    assert.ok(keepers.every(x=>x.tick===k&&x.officialSave===false));
-    assert.ok(keepers.filter(x=>x.catchState?.active).length<=1);
-    const observed=engine.collectiveControlSnapshot();
-    assert.equal(observed.tick,k);assert.equal(observed.officialPossession,false);
-    assert.ok(shoe.started.every(id=>fixture.activeIds.includes(id)));contacts+=shoe.started.length;
-    const action=engine.uniformAutonomousActionSnapshot();
-    if(action?.tick===k){actions++;assert.deepEqual(shoe.started,[action.playerId]);assert.equal(action.appliedByRapier,true);assert.equal(action.actualPhysicsImpulseApplied,true);assert.equal(action.officialMatchAction,false);}
+   assert.deepEqual(x.engine.originalSmallSidedPhysicalShoeIds(),fixture.activeIds);
+   for(let k=1;k<=600;k++){
+    const a=step(x),b=step(y);
+    assert.equal(a.tick,k);assert.deepEqual(a.ball,b.ball);assert.deepEqual(a.players,b.players);
+    assert.deepEqual(a.starts,b.starts);assert.deepEqual(a.action,b.action);
+    assert.deepEqual(a.control,b.control);assert.deepEqual(a.keepers,b.keepers);assert.deepEqual(a.reception,b.reception);
+    assert.deepEqual(a.body.selectedColliderIds,fixture.activeIds);assert.equal(a.body.bodies.length,22);
+    assert.equal(a.body.oneOriginalRapierWorld,true);assert.equal(a.decisions.length,22);
+    assert.equal(a.decisions.filter(d=>d.kind==='goalkeeping').length,2);
+    assert.deepEqual(a.keepers.map(d=>d.keeperId),['home-1','away-1']);
+    assert.ok(a.keepers.filter(d=>d.catchState?.active).length<=1);
+    audit.observe(a);
    }
-   assert.ok(contacts>0);assert.ok(actions>0);
-   process.stdout.write('ME_628_UME05D '+JSON.stringify({side,players:22,ticks:240,contacts,actions})+'\n');
-  }finally{engine.dispose();}
+   const report=audit.report();
+   assert.ok(report.contacts>0);assert.ok(Object.values(report.actions).some(n=>n>0));
+   process.stdout.write('ME_628_UME06_FULL '+JSON.stringify({side,players:22,ticks:600,deterministic:true,...report})+'\n');
+  }finally{x.engine.dispose();y.engine.dispose();}
  }
 });
-test('UME-05A one native open-play adapter runs different physical participant sets',{timeout:120000},async()=>{
- const R=await initializeRapier(rapier);
+test('UME-06A same guarded native replay matrix for 1v1 through 3v3 plus goalkeeper',{timeout:180000},async()=>{
+ const R=await initializeRapier(rapier),results=[];
  for(const [id,n] of [['dribble-1v1',2],['keeper-1v1',2],['defender-1v1',3],['overload-2v1',4],['duel-2v2',5],['duel-3v3',7]]){
   assert.equal(supportsNativeOpenPlay(id),true);
   for(const side of ['home','away'])for(const variantIndex of [0,9]){
-   const lab=createControlledActionLab(R,id,{shotSide:side,variantIndex,bodyGuardEnabled:true,collectiveApproaches:true});
+   const options={shotSide:side,variantIndex,bodyGuardEnabled:true,collectiveApproaches:true};
+   const lab=createControlledActionLab(R,id,options),replay=createControlledActionLab(R,id,options);
    try{
-    const active=lab.focus;
+    const active=lab.focus,audit=nativeReplayAudit(active);
     assert.equal(active.length,n);
     assert.equal(lab.snapshot().collectiveControl.tick,0);
     const keeperIds=active.filter(id=>INITIAL_PLAYERS.find(p=>p.id===id).role==='goalkeeper');
     assert.deepEqual(lab.snapshot().nativeKeeperStates.map(x=>x.keeperId),keeperIds);
-    let contacts=0;
-    for(let k=1;k<=120;k++){
-     const f=lab.step();
-     assert.equal(f.physicsTick,k);assert.equal(f.collectiveControl.tick,k);
-     assert.equal(f.genuinePhysicalPlayerCount,n);
+    let ticks=0,boundary=null;
+    for(let k=1;k<=360;k++){
+     const f=lab.step(),g=replay.step();ticks=k;
+     assert.equal(f.physicsTick,k);assert.equal(f.genuinePhysicalPlayerCount,n);
+     for(const key of ['ball','observedMovementPlayers','starts','action','collectiveControl','nativeKeeperStates','latestOrientedReception','refereeEvidence'])assert.deepEqual(f[key],g[key],id+' '+side+' '+key+' tick '+k);
+     assert.deepEqual(f.smallSidedNativeBodyGuard.selectedColliderIds,active);
+     assert.equal(f.smallSidedNativeBodyGuard.oneOriginalRapierWorld,true);
      assert.deepEqual(f.nativeKeeperStates.map(x=>x.keeperId),keeperIds);
-     assert.ok(f.nativeKeeperStates.every(x=>x.tick===k&&x.officialSave===false));
      assert.equal(projectActiveLabDecisions(f,active).length,n);
-     assert.equal(f.collectiveControl.officialPossession,false);
-     assert.equal(f.officialMatchResult,null);
-     assert.ok(f.starts.every(id=>active.includes(id)));contacts+=f.starts.length;
-     if(f.action){
-      assert.ok(active.includes(f.action.playerId));
-      assert.equal(f.action.appliedByRapier,true);assert.equal(f.action.actualPhysicsImpulseApplied,true);
-     }
-     if(f.refereeEvidence?.lastEvent)break;
+     assert.equal(f.officialMatchResult,null);assert.equal(f.officialMatchPossession,false);
+     audit.observe({tick:k,ball:f.ball,players:f.observedMovementPlayers,starts:f.starts,action:f.action,control:f.collectiveControl,keepers:f.nativeKeeperStates,reception:f.latestOrientedReception});
+     if(f.refereeEvidence?.lastEvent){boundary=f.refereeEvidence.lastEvent.kind;break;}
     }
-    assert.ok(contacts>0,'native contact must occur in each selected replay');
-   }finally{lab.dispose();}
+    const report=audit.report();assert.ok(report.contacts>0,'native contact must occur in each selected replay');
+    results.push({id,side,variant:variantIndex+1,players:n,ticks,boundary,deterministic:true,...report});
+   }finally{lab.dispose();replay.dispose();}
   }
  }
+ assert.equal(results.length,24);
+ process.stdout.write('ME_628_UME06_MATRIX '+JSON.stringify(results)+'\n');
  for(const id of ['carry-solo','pass-pair','cross-pair','shot-solo']){
   assert.equal(supportsNativeOpenPlay(id),false);
   assert.throws(()=>createControlledActionLab(R,id,{bodyGuardEnabled:true,collectiveApproaches:true}),/Native open play/);
