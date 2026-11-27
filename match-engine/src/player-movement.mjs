@@ -2244,7 +2244,7 @@ export function createPlayerMovement(options={}){
  }
  let directedContactRelease=null,directedStallTicks=0,directedBlockedTicks=0,directedLastBall=null,directedBallAnchor=null,directedAnchorTick=0;
  function step(ballPosition={x:0,y:0},priorRealPass=null,
-  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null,interceptionState=null,blockState=null,collectiveControl=null){
+  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null,interceptionState=null,blockState=null,collectiveControl=null,restartPlacement=null){
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
@@ -2252,6 +2252,12 @@ export function createPlayerMovement(options={}){
      smallBodyFeedbackTick!==tick)
    throw new TypeError('LAB native feedback requires the prior tick acknowledgment');
   const ball=ballXY(ballPosition);
+  if(restartPlacement!==null&&(!smallSided?.fullField||options.researchCollectiveApproaches!==true||
+   !['kickoff','corner','goal-kick'].includes(restartPlacement.kind)||restartPlacement.deadBallPlacementOnly!==true||
+   !players.some(p=>p.id===restartPlacement.takerId&&p.team===restartPlacement.assignedTeam)||
+   ![restartPlacement.spot?.x,restartPlacement.spot?.y].every(finite)||
+   !Number.isSafeInteger(restartPlacement.tick)||restartPlacement.tick>tick))
+   throw new TypeError('Original full-field restart placement required');
   if(collectiveControl!==null&&(options.researchCollectiveApproaches!==true||collectiveControl.tick!==tick||!['controlled','loose'].includes(collectiveControl.kind)||collectiveControl.officialPossession!==false))throw new TypeError('Previous native collective control required');
   if(blockState!==null&&(!smallSided?.blockStart||!realBallVelocity||!['ready','flight','blocked'].includes(blockState.phase)))throw new TypeError('Original shot-block state required');
   if(interceptionState!==null&&(!smallSided?.interceptionStart||!realBallVelocity||!['ready','flight','intercepted','collected','received'].includes(interceptionState.phase)))throw new TypeError('Original pass interception state required');
@@ -2655,6 +2661,13 @@ export function createPlayerMovement(options={}){
   }
   nativeSlides=Object.freeze(nextNativeSlides);nativeShoulders=Object.freeze(nextNativeShoulders);
   const targets=players.map(p=>{
+   if(restartPlacement){
+    const at=restartPlacement.spot,dir=restartPlacement.assignedTeam==='home'?1:-1;
+    if(p.id===restartPlacement.takerId)return Object.freeze({x:clamp(at.x+dir*0.10,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:clamp(at.y,-PLAYER_KINEMATIC_LIMITS.maxY,PLAYER_KINEMATIC_LIMITS.maxY)});
+    // Restore ordinary formation by physical movement, not staged LAB bases.
+    const base=INITIAL_PLAYERS.find(q=>q.id===p.id);
+    return Object.freeze({x:base.x,y:base.y});
+   }
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can
     // touch the ball; all others retain their own base positions.
@@ -2937,7 +2950,7 @@ export function createPlayerMovement(options={}){
     !collectiveApproaches&&smallSided?.id==='dribble-1v1'&&smallActive.has(p.id)?
      recoveringDribbleBall?D01_CHASE_KINEMATIC_LIMITS:D01_KINEMATIC_LIMITS:
      PLAYER_KINEMATIC_LIMITS;
-    const free=advanceFreePlayerKinematics(p,target,limits);
+    const free=advanceFreePlayerKinematics(p,target,restartPlacement?PLAYER_KINEMATIC_LIMITS:limits);
    const shoe=lastNativeShoeFrame?.[i];
    if(shoe&&shoe.id!==p.id)
     throw new TypeError('M16 original shoe/player order mismatch');
@@ -2961,7 +2974,8 @@ export function createPlayerMovement(options={}){
    const detouring=duelAlignment?.[p.id]?.detour===true&&!directedContactRelease&&duelSlide?.actorId!==p.id;
    const faceDuelBall=directedDribble&&smallActive.has(p.id)&&duelBallGap<1.65&&
     (!detouring||duelBallGap<0.70||Math.hypot(p.vx,p.vy)<0.15);
-   const wantedFacing=keeperDuel?
+   const wantedFacing=restartPlacement&&p.id===restartPlacement.takerId&&duelBallGap<1.65?
+    advancePlayerOrientation(p.facingRad,ball.x-p.x,ball.y-p.y,PLAYER_KINEMATIC_LIMITS):keeperDuel?
     advanceGoalkeeperBallOrientation(p,ball,PLAYER_KINEMATIC_LIMITS):
     faceDuelBall?advancePlayerOrientation(p.facingRad,ball.x-p.x,ball.y-p.y,PLAYER_KINEMATIC_LIMITS):
     advancePlayerOrientation(p.facingRad,p.vx,p.vy,PLAYER_KINEMATIC_LIMITS);

@@ -409,6 +409,32 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
       assert.throws(()=>x.placeRestart(),/verified ready boundary ticket/);
       assert.throws(()=>x.step(),/paused pending authenticated restart/);
       assert.equal(x.snapshot(),placed);
+      if(placed.physicalRestart.kind==='throw-in'){
+       assert.throws(()=>x.advanceRestart(),/Native foot restart requires/);
+      }else{
+       let taken=null;
+       for(let n=1;n<=1800;n++){
+        const u=x.advanceRestart(),v=y.advanceRestart();
+        assert.deepEqual(u,v);
+        assert.equal(u.tick,k+n);assert.equal(u.playedTicks,k);
+        assert.equal(u.action,null);
+        if(u.restartTake?.tick===u.tick){taken=u;break;}
+        assert.equal(u.phase,'dead-ball-placed-awaiting-native-take');
+        assert.deepEqual(u.ball.velocity,{x:0,y:0,z:0});
+       }
+       assert.ok(taken,'the original restart taker must reach a real exclusive shoe START');
+       assert.equal(taken.phase,'first-half');
+       assert.equal(taken.restartTake.actorId,placed.physicalRestart.takerId);
+       assert.deepEqual(taken.starts,[taken.restartTake.actorId]);
+       assert.equal(taken.restartTake.currentRapierContactManifold,true);
+       assert.equal(taken.restartTake.physicalImpulseApplied,true);
+       assert.equal(taken.timeline.lastPhysicalSetPiece.tick,taken.tick);
+       assert.equal(taken.officialMatchResult,null);
+       assert.throws(()=>x.advanceRestart(),/Native foot restart requires/);
+       const resumed=x.step();assert.deepEqual(resumed,y.step());
+       assert.equal(resumed.playedTicks,k+1);assert.equal(resumed.tick,taken.tick+1);
+       process.stdout.write('ME_628_UME06_RESTART_TAKE '+JSON.stringify({side,variantIndex,kind:taken.restartTake.type,approachTicks:taken.tick-k,actorId:taken.restartTake.actorId})+'\n');
+      }
       process.stdout.write('ME_628_UME06_RESTART_PLACEMENT '+JSON.stringify({side,variantIndex,tick:k,kind:placed.physicalRestart.kind,team:placed.physicalRestart.assignedTeam,clock:placed.clock.label})+'\n');
      }else assert.throws(()=>x.placeRestart(),/verified ready boundary ticket/);
      break;

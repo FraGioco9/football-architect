@@ -318,7 +318,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   officialSave:false});
  const lerp=(a,b,u)=>({x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u,z:a.z+(b.z-a.z)*u});
  let prepared=null;
- function prepare(frame,tick,ball,lastAction){
+ function prepare(frame,tick,ball,lastAction,deadBall=false){
   const actor=frame.players.find(p=>p.id===keeper.id);
   if(lastAction?.tick===tick-1&&lastAction.action==='shot'&&
      lastAction.team!==keeper.team&&lastAction.appliedByRapier===true&&
@@ -326,7 +326,7 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   if(nativeOpenPlay&&shotTick!==null&&(tick-shotTick>180||lastAction?.tick===tick-1&&lastAction.action!=='shot'))shotTick=null;
   const physicalPlayers=nativeOpenPlay?frame.players.filter(p=>nativeOpenPlayIds.includes(p.id)):null;
   let started=false,phase='ready',target=rest(actor);
-  if(!grip?.active()&&!plan){
+  if(!deadBall&&!grip?.active()&&!plan){
    const shotCandidate=shotTick!==null&&shotTick!==usedShot?planNativeKeeperDive(actor,ball):null;
    const attacker=nativeOpenPlay?physicalPlayers.filter(p=>p.team!==keeper.team).sort((a,b)=>Math.hypot(a.x-ball.position.x,a.y-ball.position.y)-Math.hypot(b.x-ball.position.x,b.y-ball.position.y)||a.id.localeCompare(b.id))[0]:frame.players.find(p=>p.team!==keeper.team&&p.id.endsWith('-10'));
    const challenge=(closeChallengeEnabled||nativeOpenPlay)&&shotTick===null&&tick-lastChallengeTick>=60?

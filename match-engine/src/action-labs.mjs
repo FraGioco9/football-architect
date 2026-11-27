@@ -58,12 +58,17 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
    researchSmallSidedVariantIndex:variantIndex,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true});
   const ledger=createBasicMatchTimelineB06({b06bRealHalftimePause:true});
   let disposed=false,phase='first-half',playedTicks=0,latest;
-  function observe(physics,frame){
+  function observe(physics,frame,restartTake=null){
+   const placement=latest?.physicalRestart??null;
    const foot=engine.footContactSnapshot(),raw=engine.uniformAutonomousActionSnapshot();
    const action=raw?.tick===physics.tick&&physics.tick>0?raw:null;
    const keepers=engine.nativeKeeperSnapshots();
    const evidence=engine.nativeMatchRefereeSnapshot();
-   const timeline=ledger.observe({physics,refereeEvidence:evidence});
+   let timeline=ledger.observe({physics,refereeEvidence:evidence});
+   if(restartTake){
+    timeline=ledger.recordSetPiece({physicsTick:physics.tick,take:restartTake});
+    phase='first-half';
+   }
    if(timeline.outstandingDeadBall)phase='dead-ball-awaiting-native-restart';
    else if(playedTicks===researchHalfTicks)phase='half-time-awaiting-native-restart';
    latest=Object.freeze({
@@ -74,7 +79,8 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
     clock:Object.freeze({...basicMatchClockB06(playedTicks),phase,
      originalPhysicsSourceTick:physics.tick,abbreviatedResearchRun:researchHalfTicks!==B06_HALF_TICKS}),
     referee:evidence,timeline,provisionalScore:timeline.provisionalScore,
-    pendingRestart:timeline.outstandingDeadBall?evidence.lastEvent.restart:null,
+    pendingRestart:timeline.outstandingDeadBall||phase==='dead-ball-placed-awaiting-native-take'?evidence.lastEvent.restart:null,
+    physicalRestart:placement,restartTake:restartTake??latest?.restartTake??null,
     matchAuthority:false,officialMatchResult:null,officialPossession:false,
     completeFootballGameplayVerified:false,realFull90MinutesVerified:false
    });
@@ -110,8 +116,21 @@ export function createNativeFullFieldSession(RAPIER,{side='home',variantIndex=0,
     pendingRestart:event.restart});
    return latest;
   }
+  function advanceRestart(){
+   if(disposed)throw new Error('Native full-field session disposed');
+   if(phase!=='dead-ball-placed-awaiting-native-take'||!latest.physicalRestart||latest.physicalRestart.kind==='throw-in')
+    throw new Error('Native foot restart requires a placed kickoff, corner or goal kick');
+   const placement=latest.physicalRestart,prior=engine.snapshot(),control=engine.collectiveControlSnapshot();
+   let frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,control,placement);
+   const physics=engine.step(frame,placement);
+   mover.reconcileSmallSidedNativeBodyResponse(engine.smallSidedBodyGuardSnapshot());
+   frame=mover.snapshot();engine.acknowledgeSmallSidedBodyFeedback(frame);
+   if(physics.tick!==latest.tick+1||frame.tick!==physics.tick)throw new Error('Native restart requires consecutive physical 60Hz ticks');
+   const take=engine.nativeRestartTakeSnapshot();
+   return observe(physics,frame,take?.tick===physics.tick?take:null);
+  }
   function dispose(){if(!disposed){disposed=true;engine.dispose();}}
-  return Object.freeze({snapshot,step,placeRestart,dispose});
+  return Object.freeze({snapshot,step,placeRestart,advanceRestart,dispose});
  }catch(error){engine.dispose();throw error;}
 }
 
