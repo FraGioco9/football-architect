@@ -340,7 +340,7 @@ function nativeReplayAudit(active){
 }
 
 test('UME-06A/B full field native 22-player deterministic replay from midfield and final-third geometries',{timeout:180000},async()=>{
- const R=await initializeRapier(rapier),id='full-field-native',results=[];
+ const R=await initializeRapier(rapier),id='full-field-native',results=[],failures=[];
  for(const side of ['home','away'])for(const variantIndex of [0,1,2,3]){
   const fixture=smallSidedSetup(id,side,INITIAL_PLAYERS,{variantIndex});
   assert.equal(fixture.activeIds.length,22);
@@ -401,7 +401,7 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
       assert.equal(placed.physicalRestart.playerTeleports,false);
       assert.deepEqual(placed.players,a.players);
       for(const axis of ['x','y','z'])assert.ok(Math.abs(placed.ball.position[axis]-a.pendingRestart.spot[axis])<1e-5);
-      assert.deepEqual(placed.ball.velocity,{x:0,y:0,z:0});
+      assert.equal(Math.hypot(...Object.values(placed.ball.velocity)),0,'placed ball is exactly stationary (including IEEE signed zero)');
       assert.equal(placed.control.kind,'loose');assert.equal(placed.control.playerId,null);
       assert.equal(placed.control.delivery,null);assert.equal(placed.control.keeperHold,null);
       assert.ok(placed.keepers.every(p=>!p.catchState?.active));
@@ -420,7 +420,12 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
         if(u.restartTake?.tick===u.tick){taken=u;break;}
         assert.equal(u.phase,'dead-ball-placed-awaiting-native-take');
         if(throwIn&&u.throwHands?.active)sawGrip=true;
-        else assert.deepEqual(u.ball.velocity,{x:0,y:0,z:0});
+        else assert.equal(Math.hypot(...Object.values(u.ball.velocity)),0,'unheld dead ball is exactly stationary');
+       }
+       if(!taken){
+        const f=x.snapshot(),p=f.players.find(p=>p.id===placed.physicalRestart.takerId);
+        process.stdout.write('ME_628_UME06_RESTART_STALLED '+JSON.stringify({side,variantIndex,kind:placed.physicalRestart.kind,
+         tick:f.tick,playedTicks:f.playedTicks,spot:placed.physicalRestart.spot,taker:p,ball:f.ball,starts:f.starts,throwHands:f.throwHands})+'\n');
        }
        assert.ok(taken,'the original restart taker must complete an authenticated physical take');
        assert.equal(taken.phase,'first-half');
@@ -457,8 +462,12 @@ test('UME-06A/B full field native 22-player deterministic replay from midfield a
    const result={side,variantIndex,players:22,ticks,pathM,boundary:boundary?.edge??null,deterministic:true,...report};
    results.push(result);
    process.stdout.write('ME_628_UME06_FULL '+JSON.stringify(result)+'\n');
+  }catch(error){
+   failures.push(new Error('UME-06 full field '+side+' variant '+variantIndex+' failed: '+error.message,{cause:error}));
+   process.stdout.write('ME_628_UME06_CASE_FAIL '+JSON.stringify({side,variantIndex,message:error.message,stack:error.stack})+'\n');
   }finally{x.dispose();y.dispose();}
  }
+ if(failures.length)throw new AggregateError(failures,'Independent native full-field cases failed: '+failures.map(e=>e.message).join('; '));
  assert.equal(results.length,8);
  assert.ok(results.some(r=>r.boundary==='goal'),'must independently observe an actual full-ball goal');
  assert.ok(results.some(r=>r.boundary==='touchline'),'must independently observe a real touchline exit');
