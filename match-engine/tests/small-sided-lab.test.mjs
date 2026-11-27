@@ -1576,3 +1576,33 @@ test('#628 genuine Sprint cadence/lateral-track 6s counterfactuals preserve defa
   assert.match(ui,/action:dribble-1v1:standing/);assert.match(ui,/action:dribble-1v1:sliding/);assert.match(ui,/action:dribble-1v1:shoulder/);assert.match(ui,/action:pass-pair:interception/);assert.match(ui,/action:defender-1v1:block/);
   assert.doesNotMatch(ui,/Getting up/i);
  });
+
+test('UME-05M witnessed pass movement shares one direction-independent rolling interception planner',async()=>{
+ const {planNativePassInterception,planDuelInterception}=await import('../src/isolated-dribble-touches.mjs');
+ for(const team of ['home','away']){
+  const dir=team==='home'?1:-1,other=team==='home'?'away':'home';
+  const ballPosition={x:0,y:0,z:0.11};
+  for(const [vx,vy] of [[dir*4,0],[-dir*4,0],[0,4],[0,-4]]){
+   const ballVelocity={x:vx,y:vy,z:0};
+   const passer={id:team+'-7',team,x:-vx,y:-vy};
+   const recipient={id:team+'-9',team,x:vx*3,y:vy*3};
+   const defender={id:other+'-8',team:other,x:vx*0.4,y:vy*0.4,vx:0,vy:0};
+   const input={passer,recipient,defender,ballPosition,ballVelocity};
+   const isolated=planNativePassInterception(input);
+   const open=planNativeDefensiveIntervention({attacker:passer,recipient,defender,ballPosition,ballVelocity,context:'pass'});
+   assert.ok(isolated?.reachable);
+   assert.deepEqual(open.interception,isolated);
+   assert.equal(open.decision.kind,'interception');
+   assert.equal(open.decision.physicalContactProven,false);
+   assert.ok(isolated.point.x*vx+isolated.point.y*vy>0);
+   assert.ok(isolated.etaS>0&&isolated.etaS<=0.8);
+   assert.equal(isolated.decisionOnly,true);
+   assert.equal(planNativePassInterception({...input,recipient:null}),null);
+   assert.equal(planNativePassInterception({...input,recipient:{...recipient,team:other}}),null);
+   assert.equal(planNativePassInterception({...input,ballVelocity:{x:0,y:0,z:0}}),null);
+   assert.equal(planNativePassInterception({...input,defender:{...defender,x:-vx,y:-vy}}),null);
+   assert.equal(planNativeDefensiveIntervention({attacker:passer,defender,ballPosition,ballVelocity,context:'pass'}).decision.kind,'none');
+   if(vx*dir<0.45)assert.equal(planDuelInterception({attackingSide:team,attacker:passer,defender,ballPosition,ballVelocity}),null);
+  }
+ }
+});

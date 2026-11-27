@@ -1,4 +1,4 @@
-import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,chooseDribbleDefensiveTouch,planDuelInterception,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
+import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,chooseDribbleDefensiveTouch,planDuelInterception,planNativePassInterception,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
 import {selectDefensiveIntervention} from './defensive-intervention-selection.mjs';
 import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
@@ -2548,7 +2548,8 @@ export function createPlayerMovement(options={}){
    planDuelInterception({...duelActors,ballPosition:ball,ballVelocity:realBallVelocity}):null;
   if(smallSided?.interceptionStart&&interceptionState?.phase==='flight'){
    const defender=players.find(p=>p.id===smallSided.opponent+'-2'),attacker=players.find(p=>p.id===smallSided.side+'-10');
-   duelInterception=planDuelInterception({attackingSide:smallSided.side,attacker,defender,ballPosition:ball,ballVelocity:realBallVelocity});
+   const recipient=players.find(p=>p.id===smallSided.side+'-9');
+   duelInterception=planNativePassInterception({passer:attacker,recipient,defender,ballPosition:ball,ballVelocity:realBallVelocity});
   }
   blockApproach=null;
   if(smallSided?.blockStart&&blockState?.phase==='flight'){
@@ -2623,10 +2624,11 @@ export function createPlayerMovement(options={}){
   // any active outfielder. It does not manufacture a block or interception.
   const nativeDeliveryPlans={};
   const delivery=collectiveControl?.delivery;
-  if(collectiveApproaches&&collectiveControl.kind==='loose'&&delivery&&tick-delivery.tick<=180){
-   const attacker=players.find(p=>p.id===delivery.playerId);
+  if(collectiveApproaches&&collectiveControl.kind==='loose'&&delivery&&Number.isSafeInteger(delivery.tick)&&tick>=delivery.tick&&tick-delivery.tick<180){
+   const attacker=players.find(p=>smallActive.has(p.id)&&p.id===delivery.playerId&&p.team===delivery.team);
+   const recipient=players.find(p=>smallActive.has(p.id)&&p.id===delivery.recipientId&&p.team===delivery.team);
    if(attacker)for(const defender of players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'&&p.team!==attacker.team)){
-    const plan=planNativeDefensiveIntervention({attacker,defender,ballPosition,ballVelocity:realBallVelocity,context:delivery.kind});
+    const plan=planNativeDefensiveIntervention({attacker,recipient,defender,ballPosition,ballVelocity:realBallVelocity,context:delivery.kind});
     if(plan?.decision?.plan)nativeDeliveryPlans[defender.id]=plan.decision;
    }
   }

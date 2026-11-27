@@ -506,11 +506,22 @@ export function isShoulderCollecting(state,id,tick){
 // D-12: read the live rolling trajectory, not an opponent contact.
 // The predicted point is a movement decision; only an actual exclusive
 // shoe START can authorize the interception touch.
-export function planDuelInterception({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}){
+// A loose dribble retains its original forward-direction constraint.
+// An authenticated pass may travel in any direction. Both use the same
+// bounded rolling trajectory and reachable approach geometry.
+export function planDuelInterception(source){
+ return planNativeRollingInterception(source,false);
+}
+export function planNativePassInterception({passer,recipient,defender,ballPosition,ballVelocity}={}){
+ if(!passer||!recipient||recipient.id===passer.id||recipient.team!==passer.team||
+    ![recipient.x,recipient.y].every(Number.isFinite))return null;
+ return planNativeRollingInterception({attackingSide:passer.team,attacker:passer,defender,ballPosition,ballVelocity},true);
+}
+function planNativeRollingInterception({attackingSide,attacker,defender,ballPosition:b,ballVelocity:v}={},witnessedPass){
  if(!isOpposingDuelPair(attackingSide,attacker,defender)||
     ![attacker.x,attacker.y,defender.x,defender.y,b?.x,b?.y,v?.x,v?.y].every(Number.isFinite))return null;
  const speed=Math.hypot(v.x,v.y),dir=attackingSide==='home'?1:-1;
- if(speed<0.70||speed>14||v.x*dir<0.45||Math.hypot(attacker.x-b.x,attacker.y-b.y)<=1.15)return null;
+ if(speed<0.70||speed>14||(!witnessedPass&&v.x*dir<0.45)||Math.hypot(attacker.x-b.x,attacker.y-b.y)<=1.15)return null;
  const ux=v.x/speed,uy=v.y/speed;
  if((defender.x-b.x)*ux+(defender.y-b.y)*uy< -0.65)return null;
  let best=null;
@@ -584,7 +595,7 @@ export function chooseDuelInterceptionTouch({attackingSide,attacker,defender,bal
 // UME-04: prepare and rank defensive candidates from live opposing geometry.
 // The caller supplies the existing slide plan and any genuine recovery lock.
 // No LAB identity or player formation role determines the decision.
-export function planNativeDefensiveIntervention({attacker,defender,ballPosition,ballVelocity,
+export function planNativeDefensiveIntervention({attacker,recipient=null,defender,ballPosition,ballVelocity,
  unavailable=false,recovering=false,activeSlide=false,sliding=null,available=true,
  context='duel',allowShoulder=true,allowStanding=true,allowInterception=true}={}){
  if(!defender||defender.role==='goalkeeper')return null;
@@ -592,7 +603,8 @@ export function planNativeDefensiveIntervention({attacker,defender,ballPosition,
  const eligible=available&&!unavailable&&!recovering;
  const shoulder=eligible&&context==='duel'&&allowShoulder?planDuelShoulderApproach(source):null;
  const standing=eligible&&context==='duel'&&allowStanding?chooseDribbleDefensiveTouch(source):null;
- const interception=eligible&&context!=='shot'&&allowInterception?planDuelInterception(source):null;
+ const interception=eligible&&context!=='shot'&&allowInterception?
+  context==='pass'?planNativePassInterception({passer:attacker,recipient,defender,ballPosition,ballVelocity}):planDuelInterception(source):null;
  const block=eligible&&context==='shot'?planNativeShotBlock({player:defender,ball:ballPosition,velocity:ballVelocity}):null;
  const decision=selectDefensiveIntervention({actorId:defender.id,context,unavailable,recovering,activeSlide,
   shoulder,standing,sliding:eligible?sliding:null,interception:context==='pass'?(interception?.reachable?interception:null):interception,block,
