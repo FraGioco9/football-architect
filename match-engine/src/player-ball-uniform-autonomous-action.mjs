@@ -174,7 +174,7 @@ export function chooseNativeLoftedRecipient(actor,ball,players,attackPolarity=1,
   .filter(p=>p.profile&&p.gapM>=2.2&&(requiredProfile===null||p.profile===requiredProfile))
   .sort((a,b)=>(Math.min(b.gapM,12)+b.forwardM*0.2-b.distanceM*0.1)-(Math.min(a.gapM,12)+a.forwardM*0.2-a.distanceM*0.1)||a.player.id.localeCompare(b.player.id))[0]??null;
 }
-export export function chooseRecipient(actor,ball,players,attackPolarity=1,{requiredRecipientId=null,minimumLaneClearanceM=PASS_LANE_MIN_CLEARANCE_M,minimumRecipientGapM=1.6}={}){
+export function chooseRecipient(actor,ball,players,attackPolarity=1,{requiredRecipientId=null,minimumLaneClearanceM=PASS_LANE_MIN_CLEARANCE_M,minimumRecipientGapM=1.6}={}){
  const attack=attackDirection(actor.team,attackPolarity);
  const choices=players.filter(p=>p.team===actor.team&&
   p.id!==actor.id&&(requiredRecipientId===null||p.id===requiredRecipientId)).map(p=>{
