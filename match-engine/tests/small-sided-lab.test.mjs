@@ -1831,3 +1831,51 @@ test('UME-05M witnessed pass movement shares one direction-independent rolling i
   }
  }
 });
+
+test('UME-06D4B collective targets and goalkeeper geometry reflect X without swapping team or player identity',()=>{
+ const players=[
+  {id:'home-10',team:'home',role:'forward',x:27,y:1},
+  {id:'home-9',team:'home',role:'forward',x:24,y:6},
+  {id:'away-2',team:'away',role:'defender',x:31,y:2},
+  {id:'away-3',team:'away',role:'defender',x:34,y:-4}];
+ const keepers=[{id:'away-1',team:'away',role:'goalkeeper',x:48,y:1}];
+ const mirror=p=>({...p,x:-p.x}),ball={x:28,y:1},v={x:2,y:0.4};
+ for(const control of [null,{kind:'controlled',playerId:'home-10'},{kind:'controlled',playerId:'away-2'}]){
+  const a=planNativeFootballMovement(players,ball,v,control,keepers);
+  const b=planNativeFootballMovement(players.map(mirror),mirror(ball),mirror(v),control,keepers.map(mirror),-1);
+  assert.deepEqual(Object.keys(a),Object.keys(b));
+  for(const id of Object.keys(a)){
+   assert.equal(a[id].kind,b[id].kind);
+   assert.ok(Math.abs(a[id].target.x+b[id].target.x)<1e-8);
+   assert.ok(Math.abs(a[id].target.y-b[id].target.y)<1e-8);
+   assert.equal(a[id].coveredReceiverId,b[id].coveredReceiverId);
+   assert.equal(b[id].officialPossession,false);
+  }
+ }
+ for(const team of ['home','away']){
+  const a=goalkeeperPosition(team,ball),b=goalkeeperPosition(team,mirror(ball),-1);
+  assert.equal(a.x,-b.x);assert.equal(a.y,b.y);assert.equal(a.depthM,b.depthM);
+ }
+ const keeper={id:'away-1',team:'away',x:47,y:1},actor={id:'home-10',team:'home',x:45,y:1};
+ const p={x:45.5,y:1,z:0.11},vel={x:1,y:0,z:0};
+ const a=planNativeKeeperCloseDown(keeper,actor,p,vel),b=planNativeKeeperCloseDown(mirror(keeper),mirror(actor),mirror(p),mirror(vel),-1);
+ assert.ok(a&&b);assert.equal(a.x,-b.x);assert.equal(a.y,b.y);
+ assert.throws(()=>planNativeFootballMovement(players,ball,v,null,keepers,0),/polarity/);
+});
+test('UME-06D4B original mover reversed formation preparation is bounded and identity preserving; normal engine is not switched',()=>{
+ const mover=createPlayerMovement({researchSmallSidedSituation:'full-field-native',researchSmallSidedSide:'home',researchCollectiveApproaches:true});
+ const before=mover.snapshot(),control={tick:0,kind:'loose',officialPossession:false};
+ const placement={kind:'kickoff',assignedTeam:'away',takerId:'away-10',tick:0,spot:{x:0,y:0,z:0.11},deadBallPlacementOnly:true};
+ const ball={x:0,y:0,z:0.11},v={x:0,y:0,z:0};
+ const frame=mover.step(ball,null,null,v,null,false,false,null,null,null,control,placement,-1);
+ assert.equal(frame.tick,1);
+ for(const [i,p] of frame.players.entries()){
+  assert.equal(p.id,before.players[i].id);assert.equal(p.team,before.players[i].team);
+  assert.ok(Math.hypot(p.x-before.players[i].x,p.y-before.players[i].y)<=7/60+1e-7);
+  const target=frame.smallSidedMovementDecisions.find(d=>d.id===p.id).target;
+  const base=INITIAL_PLAYERS.find(q=>q.id===p.id);
+  assert.ok(Math.abs(target.x-(p.id==='away-10'?0.10:-base.x))<1e-9);
+  assert.equal(target.y,p.id==='away-10'?0:base.y);
+ }
+ assert.throws(()=>mover.step(ball,null,null,v,null,false,false,null,null,null,{tick:1,kind:'controlled',playerId:'home-10',officialPossession:false},null,-1),/Reversed movement/);
+});

@@ -1,3 +1,4 @@
+import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,planDuelShoulderApproach,chooseDribbleDefensiveTouch,planDuelInterception,planNativePassInterception,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
 import {selectDefensiveIntervention} from './defensive-intervention-selection.mjs';
 import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
@@ -184,15 +185,14 @@ function ballXY(input){
 // Position-only goalkeeper intent: choose a conservative goal-line depth and
 // cover the angle towards the REAL ball XY, never claiming a save, interception
 // or goalkeeper ball touch. Both goals use the same mirrored 105 m pitch.
-export function goalkeeperPosition(team,ballPosition){
+export function goalkeeperPosition(team,ballPosition,attackPolarity=1){
  if(team!=='home'&&team!=='away')throw new TypeError('Known goalkeeper team required');
- const ball=ballXY(ballPosition),goalX=team==='home'?
-  -PLAYER_PITCH.lengthM/2:PLAYER_PITCH.lengthM/2;
+ const dir=attackDirection(team,attackPolarity),ball=ballXY(ballPosition),goalX=-dir*PLAYER_PITCH.lengthM/2;
  const distanceX=Math.abs(ball.x-goalX);
  const depthM=clamp(
   PLAYER_KEEPER_MIN_DEPTH_M+distanceX*PLAYER_KEEPER_DEPTH_GAIN,
   PLAYER_KEEPER_MIN_DEPTH_M,PLAYER_KEEPER_MAX_DEPTH_M);
- const x=goalX+(team==='home'?depthM:-depthM);
+ const x=goalX+dir*depthM;
  // Project the direction goal-centre -> ball onto the keeper's depth
  // and cap lateral patrol. Never let the target pass the goal line.
  const y=clamp(ball.y*depthM/Math.max(distanceX,PLAYER_KEEPER_MIN_DEPTH_M),
@@ -2244,7 +2244,13 @@ export function createPlayerMovement(options={}){
  }
  let directedContactRelease=null,directedStallTicks=0,directedBlockedTicks=0,directedLastBall=null,directedBallAnchor=null,directedAnchorTick=0;
  function step(ballPosition={x:0,y:0},priorRealPass=null,
-  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null,interceptionState=null,blockState=null,collectiveControl=null,restartPlacement=null){
+  priorRealTap=null,realBallVelocity=null,priorKeeperRebound=null,keeperCloseDown=false,directedDribble=false,duelTransition=null,interceptionState=null,blockState=null,collectiveControl=null,restartPlacement=null,attackPolarity=1){
+  validateAttackPolarity(attackPolarity);
+  // D4B is a movement-only direction candidate. Do not enable reversed
+  // live contact policy before the remaining action/defence/hand gates.
+  if(attackPolarity!==1&&(!smallSided?.fullField||options.researchCollectiveApproaches!==true||
+     (!restartPlacement&&(collectiveControl?.kind!=='loose'||collectiveControl.delivery||collectiveControl.keeperHold))))
+   throw new TypeError('Reversed movement requires full-field placement or loose ball without pending action');
   if(options.researchUnstagedNativeBodyFeedback===true&&
      lastFeedbackReconciledTick!==tick)
    throw new TypeError('M13 requires previous same-world Rapier feedback acknowledgment');
@@ -2625,7 +2631,7 @@ export function createPlayerMovement(options={}){
     contact:duelTransition?.lastIntervention??null});
   }
   const shoulderBalance=directedDribble?Object.fromEntries(players.map(p=>[p.id,planShoulderBalanceRecovery(p,duelTransition,tick+1)])):{};
-  const collectiveApproaches=options.researchCollectiveApproaches===true?planNativeFootballMovement(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0},collectiveControl,players.filter(p=>smallActive.has(p.id)&&p.role==='goalkeeper')):null;
+  const collectiveApproaches=options.researchCollectiveApproaches===true?planNativeFootballMovement(players.filter(p=>smallActive.has(p.id)&&p.role!=='goalkeeper'),ball,realBallVelocity??{x:0,y:0},collectiveControl,players.filter(p=>smallActive.has(p.id)&&p.role==='goalkeeper'),attackPolarity):null;
   // Actual delivery provenance permits trajectory-based positioning for
   // any active outfielder. It does not manufacture a block or interception.
   const nativeDeliveryPlans={};
@@ -2662,12 +2668,12 @@ export function createPlayerMovement(options={}){
   nativeSlides=Object.freeze(nextNativeSlides);nativeShoulders=Object.freeze(nextNativeShoulders);
   const targets=players.map(p=>{
    if(restartPlacement){
-    const at=restartPlacement.spot,dir=restartPlacement.assignedTeam==='home'?1:-1;
+    const at=restartPlacement.spot,dir=attackDirection(restartPlacement.assignedTeam,attackPolarity);
     if(p.id===restartPlacement.takerId&&restartPlacement.kind==='throw-in')return Object.freeze({x:clamp(at.x,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:at.y-Math.sign(at.y)*0.85});
     if(p.id===restartPlacement.takerId)return Object.freeze({x:clamp(at.x+dir*0.10,-PLAYER_KINEMATIC_LIMITS.maxX,PLAYER_KINEMATIC_LIMITS.maxX),y:clamp(at.y,-PLAYER_KINEMATIC_LIMITS.maxY,PLAYER_KINEMATIC_LIMITS.maxY)});
     // Restore ordinary formation by physical movement, not staged LAB bases.
     const base=INITIAL_PLAYERS.find(q=>q.id===p.id);
-    return Object.freeze({x:base.x,y:base.y});
+    return Object.freeze({x:attackPolarity*base.x,y:base.y});
    }
    if(smallSided){
     // A genuine reduced-player session: only selected physical shoes can
@@ -2713,8 +2719,8 @@ export function createPlayerMovement(options={}){
     if(collectiveApproaches&&p.role==='goalkeeper'){
      if(collectiveControl?.keeperHold?.keeperId===p.id)return Object.freeze({x:p.x,y:p.y});
      const rival=players.filter(q=>smallActive.has(q.id)&&q.team!==p.team).sort((a,b)=>Math.hypot(a.x-ball.x,a.y-ball.y)-Math.hypot(b.x-ball.x,b.y-ball.y)||a.id.localeCompare(b.id))[0];
-     const close=collectiveControl?.delivery?.kind!=='shot'?planNativeKeeperCloseDown(p,rival,ballPosition,realBallVelocity):null;
-     return close??goalkeeperPosition(p.team,ball);
+     const close=collectiveControl?.delivery?.kind!=='shot'?planNativeKeeperCloseDown(p,rival,ballPosition,realBallVelocity,attackPolarity):null;
+     return close??goalkeeperPosition(p.team,ball,attackPolarity);
     }
     if(p.id===smallSided.opponent+'-1'){
      const baseline=goalkeeperPosition(p.team,ball);

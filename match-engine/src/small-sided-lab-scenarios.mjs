@@ -1,3 +1,4 @@
+import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 // #628 LAB-SMALL-01: bounded small-sided exercises, never a 11v11 match.
 // Twenty-two canonical mover identities stay available to the existing
 // engine, but ONLY these selected 2–7 players receive actual Rapier shoe
@@ -75,12 +76,13 @@ const bounded=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 // Each team can pursue the same ball; shirt numbers never select a runner.
 // COL-04: choose a reachable useful support waypoint from actual open
 // passing lanes. The target is movement intent, never a pass or reception.
-export function planNativeSupport({player,ball,opponents,reserved=[]}){
+export function planNativeSupport({player,ball,opponents,reserved=[],attackPolarity=1}){
+ validateAttackPolarity(attackPolarity);
  if(!player||!['home','away'].includes(player.team)||!Array.isArray(opponents)||!Array.isArray(reserved)||!reserved.every(p=>[p.x,p.y].every(Number.isFinite))||
     ![player.x,player.y,ball?.x,ball?.y].every(Number.isFinite)||
     !opponents.every(p=>p.team!==player.team&&[p.x,p.y].every(Number.isFinite)))
   throw new TypeError('Live teammate support geometry required');
- const dir=player.team==='home'?1:-1;
+ const dir=attackDirection(player.team,attackPolarity);
  const lateral=Math.abs(player.y-ball.y)>0.1?Math.sign(player.y-ball.y):ball.y>=0?-1:1;
  const candidates=[];
  const evaluate=(x,y)=>{
@@ -111,17 +113,18 @@ export function planNativeSupport({player,ball,opponents,reserved=[]}){
 // COL-05: approach from the goal side when the opponent has observed
 // control. Keep the second defender in a distinct cover lane. These
 // are bounded movement proposals; the original mover still owns contact.
-export function planNativeDefense({player,ball,velocity,opponents,owner,primary=true,reserved=[],coveredReceivers=[]}){
+export function planNativeDefense({player,ball,velocity,opponents,owner,primary=true,reserved=[],coveredReceivers=[],attackPolarity=1}){
+ validateAttackPolarity(attackPolarity);
  if(!player||!owner||owner.team===player.team||!Array.isArray(opponents)||
     !opponents.some(p=>p.id===owner.id)||!['home','away'].includes(player.team)||
     ![player.x,player.y,owner.x,owner.y,ball?.x,ball?.y,velocity?.x,velocity?.y].every(Number.isFinite))
   throw new TypeError('Live opposing control required');
- const dir=player.team==='home'?1:-1,goalX=-dir*52.5;
+ const dir=attackDirection(player.team,attackPolarity),goalX=-dir*52.5;
  const bx=bounded(ball.x+velocity.x*0.15,-51.75,51.75),by=bounded(ball.y+velocity.y*0.15,-33.25,33.25);
  const dx=goalX-bx,dy=-by,d=Math.max(0.01,Math.hypot(dx,dy));
  const gx=dx/d,gy=dy/d;
  const receiver=opponents.filter(p=>p.id!==owner.id&&p.role!=='goalkeeper'&&!coveredReceivers.includes(p.id))
-  .sort((a,b)=>Math.hypot(a.x-goalX,a.y)-Math.hypot(b.x-goalX,b.y)||a.y-b.y||a.x-b.x)[0];
+  .sort((a,b)=>Math.hypot(a.x-goalX,a.y)-Math.hypot(b.x-goalX,b.y)||a.y-b.y||attackPolarity*(a.x-b.x))[0];
  const target=(x,y)=>freeze({x:bounded(x,-51.99,51.99),y:bounded(y,-33.49,33.49)});
  if(!primary){
   // If a second opponent is available, cover the actual passing lane.
@@ -144,7 +147,8 @@ export function planNativeDefense({player,ball,velocity,opponents,owner,primary=
  return freeze({kind:'press-ball',target:target(bx+gx*standOff,by+gy*standOff+(close?0:shade)),
   mode:close?'close-down':'contain',decisionOnly:true,officialPossession:false});
 }
-export function planNativeFootballMovement(players,ball,velocity,control=null,goalkeepers=[]){
+export function planNativeFootballMovement(players,ball,velocity,control=null,goalkeepers=[],attackPolarity=1){
+ validateAttackPolarity(attackPolarity);
  if(!Array.isArray(players)||players.length<1||players.length>22||
     new Set(players.map(p=>p.id)).size!==players.length||
     !players.every(p=>['home','away'].includes(p.team)&&[p.x,p.y].every(Number.isFinite))||
@@ -157,22 +161,22 @@ export function planNativeFootballMovement(players,ball,velocity,control=null,go
  const gap=p=>Math.hypot(p.x-bx,p.y-by);
  const result={};
  for(const team of ['home','away']){
-  const own=players.filter(p=>p.team===team).sort((p,q)=>gap(p)-gap(q)||p.y-q.y||p.x-q.x);
+  const own=players.filter(p=>p.team===team).sort((p,q)=>gap(p)-gap(q)||p.y-q.y||attackPolarity*(p.x-q.x));
   if(!own.length)continue;
   const rival=players.filter(p=>p.team!==team).sort((p,q)=>gap(p)-gap(q))[0];
   const owner=control?.kind==='controlled'?players.find(p=>p.id===control.playerId):null;
-  const runner=own.find(p=>p.id===owner?.id)??own[0],dir=team==='home'?1:-1;
+  const runner=own.find(p=>p.id===owner?.id)??own[0],dir=attackDirection(team,attackPolarity);
   const rivalNear=owner?owner.team!==team:!!rival&&gap(rival)<=1.15&&gap(rival)+0.15<gap(runner);
   const dx=bx-runner.x,dy=by-runner.y,d=Math.hypot(dx,dy);
   const tx=d>0.05?dx/d:dir,ty=d>0.05?dy/d:0;
   const opposition=[...players,...goalkeepers].filter(q=>q.team!==team);
   const defending=owner&&owner.team!==team;
-  result[runner.id]=defending?planNativeDefense({player:runner,ball,velocity,opponents:opposition,owner}):freeze({kind:owner?.id===runner.id?'carry-ball':rivalNear?'press-ball':'approach-ball',
+  result[runner.id]=defending?planNativeDefense({player:runner,ball,velocity,opponents:opposition,owner,attackPolarity}):freeze({kind:owner?.id===runner.id?'carry-ball':rivalNear?'press-ball':'approach-ball',
    target:target(bx+0.25*tx,by+0.25*ty),decisionOnly:true,officialPossession:false});
   const reserved=[result[runner.id].target],coveredReceivers=[];
   for(const p of own.filter(p=>p.id!==runner.id)){
    if(defending){
-    result[p.id]=planNativeDefense({player:p,ball,velocity,opponents:opposition,owner,primary:false,reserved,coveredReceivers});
+    result[p.id]=planNativeDefense({player:p,ball,velocity,opponents:opposition,owner,primary:false,reserved,coveredReceivers,attackPolarity});
     reserved.push(result[p.id].target);
     if(result[p.id].coveredReceiverId)coveredReceivers.push(result[p.id].coveredReceiverId);
     continue;
@@ -180,7 +184,7 @@ export function planNativeFootballMovement(players,ball,velocity,control=null,go
    const lateral=Math.abs(p.y-by)>0.1?Math.sign(p.y-by):by>=0?-1:1;
    // Defensive cover stays separate; attacking support searches open
    // lanes against all physically active opponents, including the keeper.
-   const support=rivalNear?null:planNativeSupport({player:p,ball,opponents:opposition,reserved:own.length>2?reserved:[]});
+   const support=rivalNear?null:planNativeSupport({player:p,ball,opponents:opposition,reserved:own.length>2?reserved:[],attackPolarity});
    result[p.id]=freeze({kind:rivalNear?'press-ball':'support-run',
     target:support?.target??target(bx-dir*2.5,by+lateral*4.5),
     ...(support?{support}:{}),decisionOnly:true,officialPossession:false});
@@ -241,10 +245,11 @@ export function keeperDuelCloseDownTarget(side,keeper,attacker,ball,velocity){
  return planNativeKeeperCloseDown({...keeper,team:side==='home'?'away':'home'},{...attacker,team:side},ball,velocity);
 }
 // Open play and the isolated keeper experiment share this geometry.
-export function planNativeKeeperCloseDown(keeper,attacker,ball,velocity){
+export function planNativeKeeperCloseDown(keeper,attacker,ball,velocity,attackPolarity=1){
+ validateAttackPolarity(attackPolarity);
  if(!keeper||!attacker||!['home','away'].includes(keeper.team)||!['home','away'].includes(attacker.team)||attacker.team===keeper.team||
     ![keeper.x,keeper.y,attacker.x,attacker.y,ball?.x,ball?.y,ball?.z,velocity?.x,velocity?.y,velocity?.z].every(Number.isFinite))return null;
- const dir=keeper.team==='home'?-1:1,gap=Math.hypot(ball.x-keeper.x,ball.y-keeper.y);
+ const dir=-attackDirection(keeper.team,attackPolarity),gap=Math.hypot(ball.x-keeper.x,ball.y-keeper.y);
  if(dir*ball.x<36||dir*ball.x>=52.39||Math.abs(ball.y)>20.16||
     ball.z>0.5||Math.hypot(velocity.x,velocity.y,velocity.z)>6||
     Math.hypot(ball.x-attacker.x,ball.y-attacker.y)>2.2||gap>7)return null;
