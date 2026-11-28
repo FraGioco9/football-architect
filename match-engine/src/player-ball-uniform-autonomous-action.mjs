@@ -157,6 +157,34 @@ export function chooseRecipient(actor,ball,players,attackPolarity=1){
 }
 
 
+// AERIAL-02: shared live shot lane and recipient decisions, with a
+// provisional bounded redirect after a genuine native head contact.
+// No scripted heading outcome, no LAB-specific action selection.
+export function chooseNativeHeaderIntent(actor,ball,velocity,players,attackPolarity=1){
+ validateAttackPolarity(attackPolarity);
+ if(!actor||actor.role==='goalkeeper'||!Array.isArray(players)||!players.some(p=>p.id===actor.id&&p.team===actor.team)||
+    ![actor.x,actor.y,ball?.x,ball?.y,ball?.z,velocity?.x,velocity?.y,velocity?.z].every(finite)||
+    ball.z<1.45||ball.z>2.55)return null;
+ const dir=attackDirection(actor.team,attackPolarity),goalX=dir*52.5;
+ const goalDistance=Math.hypot(goalX-ball.x,ball.y);
+ const lane=goalDistance<=16?chooseLiveShotLane(ball,goalX,actor.team,players):null;
+ const recipient=chooseRecipient(actor,ball,players.filter(p=>p.role!=='goalkeeper'),attackPolarity);
+ let action,target,recipientId=null,speed,vz;
+ if(lane){action='shot';target=lane.target;speed=11;vz=-1.5;}
+ else if(dir*ball.x<-32&&nearOpponent(ball,actor.team,players)<4){
+  action='clearance';target={x:ball.x+dir*16,y:ball.y*.5};speed=10;vz=1.4;
+ }else if(recipient){
+  action='pass';target={x:recipient.player.x,y:recipient.player.y};recipientId=recipient.player.id;
+  speed=Math.min(9,4+recipient.ballDistance*.28);vz=-1.6;
+ }else{
+  action='clearance';target={x:ball.x+dir*14,y:ball.y*.5};speed=9;vz=0.6;
+ }
+ const dx=target.x-ball.x,dy=target.y-ball.y,distance=Math.hypot(dx,dy);
+ if(distance<1e-8)return null;
+ return Object.freeze({action,recipientId,target:Object.freeze({...target}),
+  desiredVelocity:Object.freeze({x:speed*dx/distance,y:speed*dy/distance,z:vz}),decisionOnly:true});
+}
+
 // P0 ONLY: read-only replay of the EXISTING shot-lane and recipient geometry
 // helpers on a completed fixture observation. This is not a second policy:
 // neither physical shoe START, action cooldown, ball height/velocity nor

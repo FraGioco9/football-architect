@@ -12,7 +12,7 @@ import {SMALL_SIDED_LAB_SCENARIOS,smallSidedSetup,SMALL_SIDED_VARIANT_COUNT,
 import {createControlledActionLab,projectActiveLabDecisions,createNativeFullFieldSession} from '../src/action-labs.mjs';
 import {createCollectiveBallControlObserver,createNativeBallControlObserver,createDribbleTransitionObserver,chooseCollectiveDefensiveTouch,planNativeDefensiveIntervention,isNativeRecoveryLocked,applyNativeSlideRecovery} from '../src/isolated-dribble-touches.mjs';
 import {observeNativeShotBlock,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
-import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave} from '../src/player-ball-uniform-autonomous-action.mjs';
+import {selectUniformAutonomousContactAction,chooseRecipient,eligibleLiveKeeperSave,chooseNativeHeaderIntent} from '../src/player-ball-uniform-autonomous-action.mjs';
 import {planNativeCarryTouch,chooseNativePassInterceptionTouch} from '../src/isolated-dribble-touches.mjs';
 import {planNativeKeeperDive,planNativeKeeperChallenge,eligibleKeeperGrip,planNativeKeeperDistribution,createNativeAerialHead,planNativeAerialJump,aerialHeadHeight,AERIAL_JUMP_TICKS} from '../src/small-sided-native-body-guard.mjs';
 import {planSlidingTackle} from '../src/sliding-tackle.mjs';
@@ -2022,5 +2022,51 @@ test('AERIAL-01 core integration enables native heads only on guarded collective
   assert.equal(body.aerial.length,20);assert.deepEqual(body.headBallContacts,[]);assert.deepEqual(body.headBallStarts,[]);
   assert.ok(body.aerial.every(s=>s.tick===1&&!s.jumping&&!s.contact&&s.sameOriginalRapierWorld));
   mover.reconcileSmallSidedNativeBodyResponse(body);engine.acknowledgeSmallSidedBodyFeedback(mover.snapshot());
+ }finally{engine.dispose();}
+});
+
+test('AERIAL-02 common header decision uses live goal/pass/clearance geometry and mirrored ends',()=>{
+ const ball={x:45,y:0,z:2.1},v={x:0,y:0,z:-2};
+ const actor={id:'home-10',team:'home',role:'forward',x:45,y:0};
+ const shot=chooseNativeHeaderIntent(actor,ball,v,[actor]);
+ assert.equal(shot.action,'shot');assert.equal(shot.target.x,52.5);assert.ok(shot.desiredVelocity.x>0);
+ const mate={id:'home-9',team:'home',role:'forward',x:14,y:5};
+ const mid={...actor,x:0},pass=chooseNativeHeaderIntent(mid,{...ball,x:0},v,[mid,mate]);
+ assert.equal(pass.action,'pass');assert.equal(pass.recipientId,mate.id);
+ const defender={...actor,x:-42},rival={id:'away-10',team:'away',role:'forward',x:-41,y:2};
+ const clear=chooseNativeHeaderIntent(defender,{...ball,x:-42},v,[defender,rival]);
+ assert.equal(clear.action,'clearance');assert.ok(clear.desiredVelocity.x>0);
+ const mirror=p=>({...p,x:-p.x});
+ const reversed=chooseNativeHeaderIntent(mirror(actor),mirror(ball),mirror(v),[mirror(actor)],-1);
+ assert.equal(reversed.action,'shot');assert.equal(reversed.target.x,-shot.target.x);assert.equal(reversed.desiredVelocity.x,-shot.desiredVelocity.x);
+ assert.equal(chooseNativeHeaderIntent(actor,{...ball,z:0.11},v,[actor]),null);
+});
+test('AERIAL-02 original full-field core consumes a descending ball head START with one bounded native redirect',async()=>{
+ const R=await initializeRapier(rapier),id='full-field-native',side='home';
+ const fixture=smallSidedSetup(id,side,INITIAL_PLAYERS),actor=fixture.staged.find(p=>p.id==='home-10');
+ const engine=createEngine(R,{preset:'drop',seed:'aerial02-native',x:actor.x,y:actor.y,z:2.89,vx:0,vy:0,vz:-2},{
+  diagnosticSmallSidedSituation:id,diagnosticSmallSidedSide:side,
+  diagnosticPlayerFootContactsEnabled:true,diagnosticAutonomousFixtureActionEnabled:true,diagnosticSmallSidedBodyGuardEnabled:true,
+  diagnosticSmallSidedBodyFeedbackEnabled:true,diagnosticCollectiveActions:true,diagnosticLatestLabDynamics:true,diagnosticNativeAerialEnabled:true});
+ try{
+  const mover=createPlayerMovement({researchSmallSidedSituation:id,researchSmallSidedSide:side,researchSmallSidedBodyFeedback:true,researchCollectiveApproaches:true});
+  let hit=null;
+  for(let tick=1;tick<=90;tick++){
+   const prior=engine.snapshot(),frame=mover.step(prior.ball.position,null,null,prior.ball.velocity,null,false,false,null,null,null,engine.collectiveControlSnapshot());
+   const physics=engine.step(frame),body=engine.smallSidedBodyGuardSnapshot(),action=engine.uniformAutonomousActionSnapshot();
+   mover.reconcileSmallSidedNativeBodyResponse(body);engine.acknowledgeSmallSidedBodyFeedback(mover.snapshot());
+   if(action?.nativeExclusiveHeadStart){
+    assert.deepEqual(body.headBallStarts,[action.playerId]);assert.deepEqual(body.headBallContacts,[action.playerId]);
+    assert.deepEqual(engine.footContactSnapshot().active,[]);
+    assert.equal(action.tick,tick);assert.equal(action.actualPhysicsImpulseApplied,true);
+    assert.ok(Math.hypot(...Object.values(action.impulseNs))<=5+1e-8);
+    assert.ok(Math.hypot(action.after.x-action.before.x,action.after.y-action.before.y,action.after.z-action.before.z)>0.01);
+    assert.deepEqual(physics.ball.velocity,action.after);
+    assert.equal(engine.nativeMatchRefereeSnapshot().lastVerifiedTouch?.playerId??engine.nativeMatchRefereeSnapshot().lastTouch?.playerId,action.playerId);
+    hit=action;break;
+   }
+  }
+  assert.ok(hit,'genuine full-field head redirect required');
+  process.stdout.write('ME_628_AERIAL02_HEADER '+JSON.stringify({tick:hit.tick,actor:hit.playerId,action:hit.action,impulse:hit.impulseNs})+'\n');
  }finally{engine.dispose();}
 });

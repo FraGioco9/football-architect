@@ -1005,6 +1005,8 @@ export function createEngine(RAPIER, input = {}, {
     if(actionExecutor)actionExecutor.apply(tick,playerFrame,{
       duelTransition:duelTransition?.snapshot()??null,
       collectiveControl:collectiveObserver?.snapshot()??null,keeperDistribution:distribution,attackPolarity:nativeAttackPolarity,
+      ...(diagnosticNativeAerialEnabled?{aerialEvidence:smallBodyGuard.snapshot().aerial,
+       aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||hands.some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick)}:{}),
       ...(diagnosticFirstTimeShot?{priorNativeBallVelocity:preStepBall.velocity}:{}),
       suppressOriginalAction:restarting||(diagnosticB06bNativeShotSide!==null&&(
        b06bGoalPending!==null||
@@ -1020,6 +1022,7 @@ export function createEngine(RAPIER, input = {}, {
      const handContacts=hands.filter(x=>x.contact||x.catchState?.active).map(x=>x.keeperId);
      collectiveObserver.observe({tick,players:playerFrame.players,ball:{position:body.translation(),velocity:body.linvel()},starts:shoe.started,active:shoe.active,
       bodyStarts:[...physical.lowerLegBallStarts,...(physical.headBallStarts??[]),...handStarts],bodyActive:[...physical.lowerLegBallContacts,...(physical.headBallContacts??[]),...handContacts],
+      ...(diagnosticNativeAerialEnabled?{headStarts:physical.headBallStarts,headActive:physical.headBallContacts}:{}),
       action:actionExecutor?.actionSnapshot()??null,shoulderPlans:Object.values(playerFrame.nativeShoulders??{}),torsoPairs:physical.nativeOpposingTorsoPairs,bodies:physical.bodies,beforeBallVelocity:preStepBall.velocity,afterSolverVelocity:collectiveSolverVelocity,keeperStates:hands,attackPolarity:nativeAttackPolarity});
     }
     if(duelTransition){
@@ -1082,7 +1085,9 @@ export function createEngine(RAPIER, input = {}, {
      const raw=actionExecutor.actionSnapshot(),hands=keeperSnapshots().filter(k=>k.contactStarted===true);
      nativeMatchReferee.observe({physics:result,playerFrame,foot:shoeBridge.snapshot(),
       solver:shoeBridge.solver(),action:raw?.tick===tick?raw:null,
-      keeperDive:hands.length===1?hands[0]:null});
+      keeperDive:hands.length===1?hands[0]:null,
+      ...(diagnosticNativeAerialEnabled?{aerialEvidence:smallBodyGuard.snapshot().aerial,
+       aerialConflict:smallBodyGuard.snapshot().lowerLegBallContacts.length>0||keeperSnapshots().some(k=>k.contact||k.catchState?.active||k.distribution?.tick===tick)}:{})});
      if(nativeRestartTake?.tick===tick&&nativeRestartTake.type==='throw-in')
       nativeMatchReferee.recordNativeThrowIn(nativeRestartTake);
     }

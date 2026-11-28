@@ -2,7 +2,7 @@ import {validateAttackPolarity} from './match-directions.mjs';
 // Extracted #481 A4.2b.1 physical impulse boundary.
 // A private, opt-in adapter for the SAME Rapier ball body and canonical
 // 22-shoe event source. No world, policy/mover override or official results.
-import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,
+import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,chooseNativeHeaderIntent,
  UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS}
  from './player-ball-uniform-autonomous-action.mjs';
 import {FOOT_CONTACT_VERSION,footProxyTransform} from './player-foot-contact.mjs';
@@ -162,7 +162,7 @@ export function createPrivatePhysicalActionExecutor({
  let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame,{
-  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null,duelTransition=null,collectiveControl=null,keeperDistribution=null,attackPolarity=1
+  suppressOriginalAction=false,suppressPhysicalBodyContact=false,priorNativeBallVelocity=null,duelTransition=null,collectiveControl=null,keeperDistribution=null,attackPolarity=1,aerialEvidence=null,aerialConflict=false
  }={}){
   ensureOpen();
   validateAttackPolarity(attackPolarity);
@@ -223,6 +223,50 @@ export function createPrivatePhysicalActionExecutor({
     noActionReason:result?null:'not-close-or-not-time-for-next-push'
    });
    return Object.freeze({tick,action,audit});
+  }
+  // Same private executor, same original ball. The core supplies actual
+  // post-step head evidence from the guarded body source; never a caller
+  // requested action or a second ball. No shoe action on the same contact.
+  if(aerialEvidence!==null){
+   if(!nativeActionPolicy||!physicalBodyGuardEnabled||!Array.isArray(aerialEvidence)||typeof aerialConflict!=='boolean'||
+      aerialEvidence.some(s=>s.version!=='me-628-native-aerial-head-v1'||s.tick!==nextTick||
+       !activePlayerIds.includes(s.actorId)||s.sameOriginalRapierWorld!==true||
+       s.actualNativeSolverContact!==s.contact||s.contactStarted&&!s.contact))
+    throw new TypeError('Current native head solver evidence required');
+   const heads=aerialEvidence.filter(s=>s.contact);
+   if(heads.length){
+    let result=null;
+    const head=heads[0],actor=playerFrame.players.find(p=>p.id===head.actorId&&p.team===head.team&&p.role!=='goalkeeper');
+    if(!actor||playerFrame.tick!==nextTick)throw new TypeError('Canonical native header actor required');
+    if(!suppressOriginalAction&&!aerialConflict&&heads.length===1&&head.contactStarted&&
+       !contact.started.length&&!contact.active.length&&keeperDistribution===null&&
+       nextTick-lastActionTick>=UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS){
+     const origin=Object.freeze({...ballBody.translation()}),before=Object.freeze({...ballBody.linvel()});
+     const plan=chooseNativeHeaderIntent(actor,origin,before,playerFrame.players.filter(p=>activePlayerIds.includes(p.id)),attackPolarity);
+     const mass=ballBody.mass();
+     if(plan&&Number.isFinite(mass)&&mass>0){
+      const raw={x:mass*(plan.desiredVelocity.x-before.x),y:mass*(plan.desiredVelocity.y-before.y),z:mass*(plan.desiredVelocity.z-before.z)};
+      const norm=Math.hypot(raw.x,raw.y,raw.z),scale=Math.min(1,5/Math.max(norm,1e-9));
+      if(norm>0.025){
+       const impulseNs=Object.freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale});
+       ballBody.applyImpulse(impulseNs,true);
+       result=Object.freeze({version:'me-628-native-header-action-v1',tick:nextTick,playerId:actor.id,team:actor.team,
+        action:plan.action,recipientId:plan.recipientId,target:plan.target,
+        ...(plan.action==='pass'?{passTarget:Object.freeze({recipientId:plan.recipientId})}:{}),
+        impulseNs,origin,before,after:Object.freeze({...ballBody.linvel()}),
+        nativeExclusiveHeadStart:true,actualNativeSolverContact:true,sameOriginalRapierWorld:true,
+        appliedByRapier:true,actualPhysicsImpulseApplied:true,officialMatchAction:false,officialPossession:false});
+       lastActionTick=nextTick;
+      }
+     }
+    }
+    pendingDelivery=null;latestCushion=null;
+    if(result?.action==='pass')pendingDelivery={kind:'pass',tick:nextTick,actorId:result.playerId,
+     recipientId:result.recipientId,team:result.team,airborne:true,descending:result.after.z<0,source:'native-head-contact'};
+    tick=nextTick;action=result;audit=Object.freeze({tick,originalRapierBall:true,nativeHeadContacts:heads.length,
+     selectedIntent:result!==null,officialMatchAction:false,noActionReason:result?null:'head-contact-not-exclusive-or-not-eligible'});
+    return Object.freeze({tick,action,audit});
+   }
   }
   // No caller-selected action, injected START, custom impulse or player ID.
   const input={
