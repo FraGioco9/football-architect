@@ -75,7 +75,7 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
  }
 
  
-// #628: two independently positioned native shoes, only for solo Carry.
+// #628: two independently positioned native shoes, shared by current Carry.
 // A cyclic target NEVER creates Rapier START/END or applies a ball impulse.
 export function soloCarryTwoFootPositions(player,gait=null,{
  recoveryStepScale=1,sprintLateralTrackScale=1,
@@ -166,6 +166,46 @@ export function soloCarryTwoFootPositions(player,gait=null,{
   source:'original-canonical-stride-targets',
   realContactsOnly:true,physicsImposed:false
  });
+}
+
+// Conservative rounded-box proximity estimate for a Sprint support foot.
+// Target geometry only: actual START/END and all impulses remain native.
+export function nativeSprintSupportTargets(stance,player,ball,activeFeet,profile,ballRadiusM){
+ if(!stance?.left||!stance?.right||!Array.isArray(activeFeet)||
+    activeFeet.some(f=>f!=='left'&&f!=='right')||new Set(activeFeet).size!==activeFeet.length||
+    ![player?.facingRad,ball?.x,ball?.y,ball?.z,profile?.halfLengthM,profile?.halfWidthM,profile?.halfHeightM,profile?.roundingM,ballRadiusM].every(Number.isFinite)||
+    ballRadiusM<=0||profile.halfLengthM<=0||profile.halfWidthM<=0||profile.halfHeightM<=0||profile.roundingM<0)
+  throw new TypeError('Live paired Sprint support geometry required');
+ const c=Math.cos(player.facingRad),si=Math.sin(player.facingRad);
+ const metrics=Object.fromEntries(['left','right'].map(foot=>{
+  const pose=footProxyTransform(stance[foot]),dx=ball.x-pose.x,dy=ball.y-pose.y;
+  const ahead=dx*c+dy*si,lateral=-dx*si+dy*c;
+  const distance=Math.hypot(Math.max(0,Math.abs(ahead)-profile.halfLengthM),
+   Math.max(0,Math.abs(lateral)-profile.halfWidthM),
+   Math.max(0,Math.abs(ball.z-pose.z)-profile.halfHeightM));
+  return [foot,{ahead,distance,reachable:distance<=ballRadiusM+profile.roundingM}];
+ }));
+ const near=foot=>metrics[foot].reachable&&metrics[foot].ahead>=0;
+ let support=[];
+ if(activeFeet.length===2){
+  // Both already physically active: propose release, not a new lead.
+  support=activeFeet.filter(near);
+ }else if(activeFeet.length===1){
+  const other=activeFeet[0]==='left'?'right':'left';
+  if(near(other))support=[other];
+ }else if(near('left')&&near('right')){
+  const delta=metrics.left.distance-metrics.right.distance;
+  const lead=Math.abs(delta)<=1e-9?(c>=0?'right':'left'):delta<0?'left':'right';
+  support=[lead==='left'?'right':'left'];
+ }
+ if(!support.length)return stance;
+ const target=foot=>{
+  const p=stance[foot];
+  // Existing neutral stance's rearward 0.20m offset. Real travel remains
+  // governed by the same per-tick continuous native shoe limits.
+  return Object.freeze({...p,x:p.x-.20*c,y:p.y-.20*si});
+ };
+ return Object.freeze({...stance,...Object.fromEntries(support.map(f=>[f,target(f)]))});
 }
 
 // Shared neutral striking stance: retain the original forward shoe proxy
@@ -591,7 +631,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
      nativeStridePhases.set(p.id,gait.phaseRad);
     }else nativeStridePhases.delete(p.id);
     if(p.id===pairedCarryReadoutId)lastGaitFrequencyHz=gait?.frequencyHz??null;
-    const neutral=pairGeometry(p,gait,[...pair.active]);
+    const stride=pairGeometry(p,gait,[...pair.active]);
+    const neutral=phase==='sprint'?nativeSprintSupportTargets(stride,p,preStepBall.position,[...pair.active],p.id===carryReadoutId?soloShoeProfile:baseShoeProfile,ballCollider.radius()):stride;
     const desired=gait===null&&p.role!=='goalkeeper'&&pair.active.size===0?
      Object.freeze({...neutral,[neutral.leadFoot]:nativeLowDeliveryShoeTarget(neutral[neutral.leadFoot],p,preStepBall)}):neutral;
     const recovering=releasePreviousNativePose!==null&&p.id===firstTimeShotReleaseId;
