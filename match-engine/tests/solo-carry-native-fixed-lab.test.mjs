@@ -715,7 +715,7 @@ test('ME-01-QA U-01E2: paired physical contact authorization never equates two s
   const id=team+'-10',other=(team==='home'?'away':'home')+'-2';
   const masks=[[],['left'],['right'],['left','right']];
   for(const started of masks)for(const active of masks)for(const exclusivePhysicalStart of [false,true]){
-   const pair={started,active,exclusivePhysicalStart};
+   const pair={actorId:id,independentColliders:2,started,active,exclusivePhysicalStart};
    const c={started:[id],active:[id],nativePairedFeet:{[id]:pair}};
    const expected=exclusivePhysicalStart&&started.length===1&&active.length===1&&started[0]===active[0];
    assert.equal(hasExclusiveNativeShoeStart(c,id),expected);

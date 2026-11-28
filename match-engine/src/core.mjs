@@ -4,7 +4,7 @@ import {speedDependentDragCd} from './aerodynamics.mjs';
 import {magnusLift,MAGNUS_SPIN_LIMIT_RAD_S} from './magnus.mjs';
 import {LAB_SHOT_PROFILES} from './lab-shot-calibration.mjs';
 import {literatureCandidateForces} from './literature-aero-candidate.mjs';
-import {createPrivateRapierFootContactBridge,hasExclusiveNativeShoeStart}
+import {createPrivateRapierFootContactBridge,hasExclusiveNativeShoeStart,usesNativePairedShoeBridge}
  from './rapier-foot-contact-bridge.mjs';
 import {createPrivateRapier22BodyBridge} from './rapier-22-body-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
@@ -712,7 +712,7 @@ export function createEngine(RAPIER, input = {}, {
   const shoeBridge=diagnosticPlayerFootContactsEnabled?
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes,
      {...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{}),
-      ...(diagnosticCollectiveActions?{nativeCarryStride:true}:{}),
+      ...(usesNativePairedShoeBridge({activePlayerIds:smallSided?.activeIds,legacyGroundCarry:isolatedCarry,firstTimeShot:diagnosticFirstTimeShot})?{nativeCarryStride:true}:{}),
       ...(smallSided?{activePlayerIds:smallSided.activeIds,fullFieldNative:smallSided.fullField===true}:{}),
       ...(diagnosticFirstTimeShot&&diagnosticIsolatedShotProfile!=='tap-in'?
        {firstTimeShotReleaseId:smallSided.side+'-10'}:{}),
@@ -1543,6 +1543,7 @@ export function createEngine(RAPIER, input = {}, {
     ...(collectiveObserver?{collectiveControlSnapshot:()=>collectiveObserver.snapshot()}:{}),
     ...(smallSided?{
       originalSmallSidedPhysicalShoeIds:()=>shoeBridge.physicalColliderIds,
+      originalSmallSidedPhysicalShoeColliderCount:()=>shoeBridge.physicalShoeColliderCount,
       ...(smallBodyGuard?{
         smallSidedBodyGuardSnapshot:()=>smallBodyGuard.snapshot(),
         ...(diagnosticSmallSidedBodyFeedbackEnabled?{

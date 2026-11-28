@@ -201,14 +201,22 @@ export function hasExclusiveNativeShoeStart(contact,id){
  if(!id||contact?.started?.length!==1||contact?.active?.length!==1||
     contact.started[0]!==id||contact.active[0]!==id)return false;
  if(contact.nativePairedFeet!==undefined){
-  const pair=contact.nativePairedFeet[id];
-  return pair?.exclusivePhysicalStart===true&&pair.started.length===1&&pair.active.length===1&&pair.started[0]===pair.active[0];
+  const pair=contact.nativePairedFeet?.[id];
+  return pair?.actorId===id&&pair.independentColliders===2&&pair.exclusivePhysicalStart===true&&
+   Array.isArray(pair.started)&&Array.isArray(pair.active)&&pair.started.length===1&&pair.active.length===1&&
+   ['left','right'].includes(pair.started[0])&&pair.started[0]===pair.active[0];
  }
  if(contact.nativeSoloFeet!==undefined){
   const pair=contact.nativeSoloFeet;
   return pair.actorId===id&&pair.exclusivePhysicalStart===true&&pair.started.length===1&&pair.active.length===1&&pair.started[0]===pair.active[0];
  }
  return true;
+}
+// Ordinary selected-participant LABs share the paired physical bridge.
+// Historical carry and first-time release still need migration of their
+// dedicated contact/readout contracts; do not silently change them here.
+export function usesNativePairedShoeBridge({activePlayerIds,legacyGroundCarry=false,firstTimeShot=false}={}){
+ return Array.isArray(activePlayerIds)&&activePlayerIds.length>0&&!legacyGroundCarry&&!firstTimeShot;
 }
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
@@ -218,7 +226,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,
  firstTimeShotReleaseId=null,sharedDuelStride=false,fullFieldNative=false,nativeCarryStride=false}={}){
- if(typeof nativeCarryStride!=='boolean'||nativeCarryStride&&(!isolatedPhysicalBodies||activePlayerIds===null||dribbleAttackerId!==null||firstTimeShotReleaseId!==null))throw new TypeError('Native carry stride requires guarded open-play participants');
+ if(typeof nativeCarryStride!=='boolean'||nativeCarryStride&&(activePlayerIds===null||dribbleAttackerId!==null||firstTimeShotReleaseId!==null||sharedQueue!==null))throw new TypeError('Paired native stride requires selected physical participants without legacy overrides');
  if(typeof fullFieldNative!=='boolean'||fullFieldNative&&(activePlayerIds?.length!==22||!isolatedPhysicalBodies||isolatedGroundDribbleBallCentreZ!==null||sharedQueue!==null))throw new TypeError('Full field requires all 22 guarded physical shoe identities');
  if(firstTimeShotReleaseId!==null&&(
     activePlayerIds?.length!==1||activePlayerIds[0]!==firstTimeShotReleaseId||
@@ -329,7 +337,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   const shoeShape=shoeColliderDesc(soloCarry&&p.id===dribbleAttackerId?soloShoeProfile:baseShoeProfile);
   if(intentDrivenSoloCarry&&soloCarry&&p.id===dribbleAttackerId)
    shoeShape.setCollisionGroups(0);
-  else if(sharedQueue!==null||isolatedPhysicalBodies)
+  else if(sharedQueue!==null||isolatedPhysicalBodies||nativeCarryStride)
    shoeShape.setCollisionGroups(0x00010001);
   const collider=physicalIds===null||physicalIds.has(p.id)?
    world.createCollider(shoeShape,body):null;

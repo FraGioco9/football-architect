@@ -14,6 +14,7 @@ import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_ROUNDING_M,FOOT_CONTACT_FRICTION,
  FOOT_CONTACT_RESTITUTION,initialFootPositions,footProxyTransform,
  validateFootContactFrame} from '../src/player-foot-contact.mjs';
+import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions} from '../src/rapier-foot-contact-bridge.mjs';
 import {createFootContactTimeline,FOOT_CONTACT_TIMELINE_VERSION}
  from '../src/player-foot-contact-timeline.mjs';
 import {summarizeFootSolverEvidence,FOOT_SOLVER_EVIDENCE_VERSION}
@@ -221,6 +222,42 @@ test('opt-in production core reuses ONE genuine Rapier world for shoe events, de
    ordinary.dispose();
    withShoes.dispose();
    replay.dispose();
+  }
+ }
+});
+
+test('ME-01-QA U-01E3: paired bridge eligibility and physical foot authorization',()=>{
+ for(const team of ['home','away']){
+  const id=team+'-10',ids=[id],pair={actorId:id,independentColliders:2,exclusivePhysicalStart:true,started:['right'],active:['right']};
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids}),true);
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,legacyGroundCarry:true}),false);
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,firstTimeShot:true}),false);
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:[]}),false);
+  assert.equal(usesNativePairedShoeBridge({}),false);
+  const c={started:ids,active:ids,nativePairedFeet:{[id]:pair}};
+  assert.equal(hasExclusiveNativeShoeStart(c,id),true);
+  for(const invalid of [{actorId:'other'},{independentColliders:1},{started:['other'],active:['other']},{started:null},{active:[]},{exclusivePhysicalStart:false}]){
+   assert.equal(hasExclusiveNativeShoeStart({...c,nativePairedFeet:{[id]:{...pair,...invalid}}},id),false);
+  }
+  assert.equal(hasExclusiveNativeShoeStart({...c,nativePairedFeet:null},id),false);
+ }
+});
+
+test('ME-01-QA U-01E3: selected native actors have exactly two physical shoe colliders each', {timeout:30000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const team of ['home','away']){
+  for(const count of [1,2,7,22]){
+   const active= count===22?INITIAL_PLAYERS.map(p=>p.id):INITIAL_PLAYERS.filter(p=>p.team===team).slice(0,count).map(p=>p.id);
+   const world=new R.World(GRAVITY);
+   let bridge;
+   try{
+    const body=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(0,0,4));
+    const ball=world.createCollider(R.ColliderDesc.ball(BALL_RADIUS),body);
+    bridge=createPrivateRapierFootContactBridge(R,world,ball,INITIAL_PLAYERS,{activePlayerIds:active,nativeCarryStride:true,isolatedPhysicalBodies:count===22,fullFieldNative:count===22});
+    assert.deepEqual(bridge.physicalColliderIds,INITIAL_PLAYERS.filter(p=>active.includes(p.id)).map(p=>p.id));
+    assert.equal(bridge.physicalShoeColliderCount,2*count);
+    assert.equal(world.colliders.len(),2*count+1);
+   }finally{bridge?.dispose();world.free();}
   }
  }
 });

@@ -374,7 +374,7 @@ export function createPrivatePhysicalActionExecutor({
    if(actualPriorPass&&nextTick>actualPriorPass.tick&&
       contact.started.some(id=>id!==receiverId))
     interrupted=true;
-   if(actualPriorPass&&!interrupted&&!firstCushion&&
+   if(pairedSourceValid&&actualPriorPass&&!interrupted&&!firstCushion&&
       nextTick>actualPriorPass.tick&&
       contact.started.length===1&&contact.active.length===1&&
       contact.started[0]===receiverId&&
@@ -399,7 +399,7 @@ export function createPrivatePhysicalActionExecutor({
   // M27 is triggered ONLY on an existing genuine second shoe START with
   // an existing original clearance selected by the unchanged policy.
   // It changes whether to APPLY that impulse; never manufactures one.
-  if(!orientedCandidate&&researchReceivingDecisionSide===side&&
+  if(pairedSourceValid&&!orientedCandidate&&researchReceivingDecisionSide===side&&
      firstCushion&&!firstReceiverChoice&&
      nextTick>firstCushion.tick&&
      originalChoice?.action==='clearance'&&
