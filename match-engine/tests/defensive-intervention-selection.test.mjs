@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {selectDefensiveIntervention} from '../src/defensive-intervention-selection.mjs';
+import {selectDefensiveIntervention,planNativeShotBlock} from '../src/defensive-intervention-selection.mjs';
 
 test('D-14 contextual priorities, independent of team and shirt number',()=>{
  for(const actorId of ['home-10','away-2','home-7','away-11']){
