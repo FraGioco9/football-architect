@@ -1,0 +1,33 @@
+import {beforeAll,expect,it} from 'vitest';
+import {env} from 'cloudflare:workers';
+import {applyD1Migrations} from 'cloudflare:test';
+import clubs from '../../data/clubs.json' with {type:'json'};
+import type {Database} from '../src/database.ts';
+import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
+import {readWorld} from '../src/world-repository.ts';
+import {economicAssert,reconcileEconomy} from '../src/economic-ledger.ts';
+import {prepareEconomicGenesis,stepEconomicGenesis,completeEconomicGenesis,requireEconomicGenesisGuard} from '../src/economic-genesis.ts';
+const binding=env as any,db=binding.DB as Database,now=1770000000;
+const access=()=>[economicAssert(db,'SELECT 1')];
+beforeAll(async()=>{await applyD1Migrations(db,binding.TEST_MIGRATIONS);});
+it('resumes and seals a plan with 64 unfunded inactive treasuries',async()=>{
+ const snapshot=await loadApprovedSnapshot();
+ const active=new Set(snapshot.bindings.filter(b=>!b.competitionId.startsWith('int-')).flatMap(b=>[...b.clubIds]));
+ const mixed={version:'synthetic-inactive-genesis',freeReserveArc:1000,issuanceLimitArc:3000000,clubs:clubs.map(c=>{
+  const clubKey=c.countryId+'-'+c.clubId;
+  return {clubKey,amountArc:active.has(clubKey)?1000:0};
+ })};
+ const world=await readWorld(db);
+ const prepared=await prepareEconomicGenesis(db,mixed,'fixture',access(),now);
+ expect(prepared).toMatchObject({expected_funded_clubs:256,funded_clubs:0});
+ await stepEconomicGenesis(db,access(),now);
+ await expect(completeEconomicGenesis(db,access(),now)).rejects.toThrow();
+ for(let i=0;i<16;i++)await stepEconomicGenesis(db,access(),now);
+ expect(await completeEconomicGenesis(db,access(),now)).toMatchObject({funded_clubs:256,completed:1});
+ expect(await stepEconomicGenesis(db,access(),now)).toMatchObject({completed:1});
+ await db.batch([requireEconomicGenesisGuard(db,world.generation)]);
+ const balances=await db.prepare("SELECT COUNT(*) AS total,SUM(balance_arc=0) AS unpaid FROM economic_balances WHERE kind='CLUB_TREASURY'").first();
+ expect(balances).toMatchObject({total:320,unpaid:64});
+ expect(await db.prepare('SELECT COUNT(*) AS n FROM economic_transactions').first()).toMatchObject({n:257});
+ expect(await reconcileEconomy(db,access())).toMatchObject({ok:true});
+},120000);
