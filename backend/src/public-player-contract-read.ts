@@ -60,13 +60,13 @@ export async function readPublicPlayerContract(db:Database,playerId:number){
  if(!valid(contract_id,1)||typeof club_key!=='string'||!/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(club_key)
  ||!valid(signed_at_ms,1)||!valid(start_tick)||!valid(end_tick)||end_tick<=start_tick
  ||!valid(duration_seasons,1)||duration_seasons>3||!valid(signed_salary_arc,1)||!valid(effective_salary_arc,1)||!valid(paid_arc))throw unavailable();
- const pending=before.seasonNumber===0||start_tick>tick;
+ const pending=before.seasonNumber===0||before.day===0||start_tick>tick;
  const origin=Math.max(first,start_tick);
  const elapsed=pending?0:Math.max(0,Math.min(completed,end_tick)-origin);
  const earnedArc=accruedSalary(effective_salary_arc,elapsed);
  if(paid_arc>earnedArc)throw unavailable();
  return {...base,status:pending?'signed_pending':'under_contract',representation,contract:{
-  clubKey:club_key,signedAt:new Date(signed_at_ms).toISOString(),startTick:start_tick,endTick,
+  clubKey:club_key,signedAt:new Date(signed_at_ms).toISOString(),startTick:start_tick,endTick:end_tick,
   durationSeasons:duration_seasons,remainingDays:Math.max(0,end_tick-Math.max(completed,start_tick)),
   signedSalaryArc:signed_salary_arc,currentSeasonalSalaryArc:effective_salary_arc,
   earnedThisSeasonArc:earnedArc,paidThisSeasonArc:paid_arc
