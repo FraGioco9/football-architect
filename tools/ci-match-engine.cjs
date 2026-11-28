@@ -1,7 +1,7 @@
 // This policy is intentionally narrower than the Match Engine workflow path filter.
 const { execFileSync, spawnSync } = require('node:child_process');
 const { isDeepStrictEqual } = require('node:util');
-const { evaluateRun, certifiedHistoricalAdmin, economicRepairAnchor, economicRepairBranch, economicRepairShape } = require('./ci-full-evidence.cjs');
+const { evaluateRun, certifiedHistoricalAdmin, economicRepairAnchor, economicRepairBranch, economicRepairShape, stackedRepairAnchor, stackedRepairBranch, stackedRepairShape } = require('./ci-full-evidence.cjs');
 const preview = 'tools/dev-standings-preview.mjs';
 const manifest = 'match-engine/package.json';
 const sourceNames = new Set([
@@ -94,42 +94,80 @@ function isolatedConsumers(ref) {
 
 const {inputs}=require('./ci-economic-inputs.cjs');
 async function economicSource({ github, owner, repo, pr,workflow='admin-world-checks.yml' }) {
-  const base = pr.base.sha, head = pr.head.sha;
-  if (pr.base.ref !== 'main' || pr.head.repo?.full_name !== owner + '/' + repo ||
-      git('rev-parse', 'HEAD').trim() !== head || git('merge-base', base, head).trim() !== base ||
-      git('rev-parse',base).trim()!==base) return null;
+  const prBase = pr.base.sha, head = pr.head.sha;
+  if (pr.head.repo?.full_name !== owner + '/' + repo ||
+      !/^[a-f0-9]{40}$/.test(prBase) || !/^[a-f0-9]{40}$/.test(head) ||
+      git('rev-parse', 'HEAD').trim() !== head || git('merge-base', prBase, head).trim() !== prBase ||
+      git('rev-parse',prBase).trim()!==prBase) return null;
+  let base=prBase;
+  const stacked=pr.base.ref!=='main';
+  if(stacked){
+    // Never treat a parent feature branch as a certified source. Verify
+    // the current main ref against GitHub and require it to be an ancestor
+    // of the exact parent and candidate. Stale/divergent stacks fail closed.
+    if(workflow!=='admin-world-checks.yml'||pr.base.repo?.full_name!==owner+'/'+repo)return null;
+    const {data:main}=await github.rest.repos.getBranch({owner,repo,branch:'main'});
+    base=main.commit.sha;
+    if(!/^[a-f0-9]{40}$/.test(base)||git('rev-parse','refs/remotes/origin/main').trim()!==base||
+       git('merge-base',base,prBase).trim()!==base||git('merge-base',base,head).trim()!==base)return null;
+  }
   let selected=[];
-  function repairShape(from,to){
+  function repairShape(from,to,shape=economicRepairShape){
     const raw=git('diff','--raw','--no-renames','-z',from,to).split('\0');
     const files=[];
     for(let i=0;i<raw.length-1;i+=2){
       if(!/^:100644 100644 [a-f0-9]+ [a-f0-9]+ M$/.test(raw[i]))return false;
       files.push({filename:raw[i+1],status:'modified'});
     }
-    return economicRepairShape(from,files);
+    return shape(from,files);
   }
-  async function scope(from){
+  async function scope(from,to=head,lineage=base){
     if(workflow==='admin-world-checks.yml'&&from===economicRepairAnchor){
-      if(base===from&&pr.head.ref===economicRepairBranch&&repairShape(from,head))return 'economic-only';
-      if(base!==from){
-        const history=git('log','--first-parent','--reverse','--format=%H',from+'..'+base).trim().split('\n');
+      if(!stacked&&lineage===from&&to===head&&pr.head.ref===economicRepairBranch&&repairShape(from,to))return 'economic-only';
+      if(lineage!==from){
+        const history=git('log','--first-parent','--reverse','--format=%H',from+'..'+lineage).trim().split('\n');
         const repair=history[0];
         if(/^[a-f0-9]{40}$/.test(repair)&&git('rev-parse',repair+'^1').trim()===from&&repairShape(from,repair))
-          return scope(repair);
+          return scope(repair,to,lineage);
       }
     }
-    const owned=require('./ci-owned-selection.cjs').ownedTests(from,head);
+    // Permit only the separately certified six-file policy transition.
+    // Validate the prefix and suffix independently; do not erase a
+    // cumulative economic change or treat an inherited run as a source.
+    if(workflow==='admin-world-checks.yml'){
+      const candidate=!stacked&&lineage===stackedRepairAnchor&&to===head&&pr.head.ref===stackedRepairBranch&&repairShape(lineage,to,stackedRepairShape);
+      const isAncestor=(a,b)=>git('merge-base',a,b).trim()===a;
+      const hasAnchor=spawnSync('git',['cat-file','-e',stackedRepairAnchor+'^{commit}']).status===0;
+      if(candidate){
+        if(from===lineage)return 'economic-only';
+        if(!isAncestor(from,lineage))return null;
+        const prefix=await scope(from,lineage,lineage);
+        return ['match-engine','economic-only'].includes(prefix)?'economic-only':null;
+      }
+      if(hasAnchor&&lineage!==stackedRepairAnchor&&isAncestor(stackedRepairAnchor,lineage)&&isAncestor(from,stackedRepairAnchor)){
+        const repair=git('log','--first-parent','--reverse','--format=%H',stackedRepairAnchor+'..'+lineage).trim().split('\n')[0];
+        if(/^[a-f0-9]{40}$/.test(repair)&&git('rev-parse',repair+'^1').trim()===stackedRepairAnchor&&repairShape(stackedRepairAnchor,repair,stackedRepairShape)){
+          const prefix=from===stackedRepairAnchor?'match-engine':await scope(from,stackedRepairAnchor,stackedRepairAnchor);
+          const suffix=await scope(repair,to,lineage);
+          if(!['match-engine','economic-only'].includes(prefix)||!['match-engine','economic-only'].includes(suffix))return null;
+          return prefix===suffix&&suffix==='match-engine'?'match-engine':'economic-only';
+        }
+      }
+    }
+    const owned=stacked?null:require('./ci-owned-selection.cjs').ownedTests(from,to);
     if(owned){
       selected=owned.filter(t=>workflow==='admin-world-checks.yml'?t.owner!=='site-node':t.owner==='site-node').map(t=>t.path);
       return 'owned-tests';
     }
     if(workflow==='admin-world-checks.yml'){
-      if(isolatedDiff(from,head)&&isolatedConsumers(head))return 'match-engine';
-      return git('diff','--name-only',from,head,'--',...inputs,'.github','tools/ci-*','.npmrc','backend/.npmrc','.node-version','.nvmrc','package*.json').trim()?null:'economic-only';
+      const economicChanged=git('diff','--name-only',from,to,'--',...inputs,'.github','tools/ci-*','.npmrc','backend/.npmrc','.node-version','.nvmrc','package*.json').trim();
+      if(stacked&&economicChanged)return null;
+      if(isolatedDiff(from,to)&&isolatedConsumers(to))return 'match-engine';
+      return economicChanged?null:'economic-only';
     }
-    const paths=git('diff','--no-renames','--name-only','-z',from,head).split('\0').filter(Boolean);
+    const paths=git('diff','--no-renames','--name-only','-z',from,to).split('\0').filter(Boolean);
     if(!paths.length||paths.some(p=>p.startsWith('.github/')||p.startsWith('match-engine/')||(p.startsWith('docs/')&&!p.endsWith('.md'))))return null;
-    if(git('diff','--no-renames','--diff-filter=DTUXB','--name-only',from,head).trim())return null;
+    if(git('diff','--no-renames','--diff-filter=DTUXB','--name-only',from,to).trim())return null;
     const {classifyImpact}=await import('./ci-opt-01-impact.mjs');
     const plan=classifyImpact(paths);
     return plan.mode==='full'?null:plan.mode;
@@ -165,7 +203,7 @@ async function economicSource({ github, owner, repo, pr,workflow='admin-world-ch
         'Verify operator bootstrap, recovery and local persistence across restart'].every(name =>
         operator?.steps?.some(step => step.name === name && step.conclusion === 'success'));
       const rehearsal=operator?.steps?.some(s=>s.name==='Execute isolated economic rehearsal'&&s.conclusion==='success');
-      if (verdict.state === 'PASS' && (workflow!=='admin-world-checks.yml'||(executed&&rehearsal))) return { mode, selected, merge, head, base, source: source.head.sha, tree: commit.tree.sha, run: run.html_url, attempt: run.run_attempt };
+      if (verdict.state === 'PASS' && (workflow!=='admin-world-checks.yml'||(executed&&rehearsal))) return { mode, selected, merge, head, base:prBase, ...(stacked?{mainBase:base}:{}), source: source.head.sha, tree: commit.tree.sha, run: run.html_url, attempt: run.run_attempt };
       if (['FAIL', 'CANCELLED', 'PENDING'].includes(verdict.state)) break;
     }
   }
