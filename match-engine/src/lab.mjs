@@ -2426,8 +2426,15 @@ function setupUnifiedScenarioMenu(){
   root.dataset.selectedScene='action:carry-solo:moderate';
   // Detailed research panels stay in the archive surface.
  }
- if(menu.querySelectorAll('[role="option"][data-value]').length!==(archiveMode?24:29)||
-    menu.querySelectorAll('.me-scenario-group-label').length!==(archiveMode?5:6))
+ // Validate rendered options against the actual catalog, not a stale
+ // hard-coded total that prevents startup whenever a new LAB is added.
+ const expectedValues=[...groups.flatMap(([,choices])=>choices.map(([value])=>value)),
+  ...(archiveMode?physics.map(node=>node.dataset.value):[])];
+ const renderedValues=[...menu.querySelectorAll('[role="option"][data-value]')].map(node=>node.dataset.value);
+ if(new Set(expectedValues).size!==expectedValues.length||
+    renderedValues.length!==expectedValues.length||
+    renderedValues.some((value,index)=>value!==expectedValues[index])||
+    menu.querySelectorAll('.me-scenario-group-label').length!==groups.length+(archiveMode?1:0))
   throw new Error('Unexpected active or archived LAB catalog');
 }
 function restoreOriginalScenario(){
@@ -2474,6 +2481,7 @@ function launchSelectedScenario(value){
   try{restart();}catch{}
  }
 }
+try {
 setupUnifiedScenarioMenu();
 setupDropdowns();
 setupNumericFields();
@@ -2490,7 +2498,6 @@ mountControlledMovementLabs({
 loadPreset();
 topDown(); // Show the complete static pitch while the WASM physics module loads.
 requestAnimationFrame(frame);
-try {
   const moduleNamespace = await import('/__fa_match_engine__/rapier.es.js');
   rapier = await initializeRapier(moduleNamespace);
   if(archiveMode)restart();
@@ -2504,5 +2511,7 @@ try {
     byId('preset-options').querySelector('[data-value="movement:post-pass"]')?.click();
   }
 } catch (error) {
-  say('Physics library failed to initialize: ' + error.message + '. Run npm --prefix match-engine ci locally.', true);
+  document.querySelector('.me-main-panel').removeAttribute('data-loading');
+  say('LAB failed to initialize: '+error.message,true);
+  console.error(error);
 }
