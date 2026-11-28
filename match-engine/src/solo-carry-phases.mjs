@@ -35,22 +35,9 @@ export function advanceSoloCarryPhase({previousPhase='control',tick,
     ![playerSpeedMps,ballSpeedMps,ballGapM].every(n=>
      typeof n==='number'&&Number.isFinite(n)&&n>=0))
   throw new TypeError('Solo Carry phase requires original nonnegative 60Hz speed/gap');
- // Automatic mode retains the original evidence-based hysteresis.
- // A DEV-only fixed profile never changes phase, but still samples the
- // genuine player/ball speed, gap and original 60 Hz physics each tick.
- let phase=lockedPhase??previousPhase;
- if(lockedPhase===null&&previousPhase==='control'){
-  if(playerSpeedMps>=1.45&&ballSpeedMps>=0.90&&ballGapM>=0.40)
-   phase='moderate';
- }else if(lockedPhase===null&&previousPhase==='moderate'){
-  if(playerSpeedMps<1.0||ballSpeedMps<0.55||ballGapM<0.31)
-   phase='control';
-  else if(playerSpeedMps>=2.58&&ballSpeedMps>=2.20&&ballGapM>=0.46)
-   phase='sprint';
- }else if(lockedPhase===null&&
-    (playerSpeedMps<2.45||ballSpeedMps<1.75||ballGapM<0.38)){
-  phase='moderate';
- }
+ // Locked research constrains the available pace; automatic movement shares
+ // the same observed transition policy as continuing collective carry.
+ const phase=lockedPhase??selectNativeOpenCarryPhase({previousPhase,playerSpeedMps,ballSpeedMps,ballGapM});
  const attributeInputs=lockedPhase===null?null:
   playerAttributes===null?uniformSoloCarryAttributes(50):
    validateSoloCarryAttributes(playerAttributes);
@@ -76,11 +63,22 @@ const CARRY_TOUCH_PROFILES=Object.freeze({
   spacingTicks:82})
 });
 
-export function selectNativeOpenCarryPhase({playerSpeedMps,ballSpeedMps,ballGapM}={}){
- if(![playerSpeedMps,ballSpeedMps,ballGapM].every(n=>Number.isFinite(n)&&n>=0))throw new TypeError('Observed carry phase geometry required');
- if(playerSpeedMps>=2.58&&ballSpeedMps>=2.20&&ballGapM>=0.46)return 'sprint';
- if(playerSpeedMps>=1.45&&ballSpeedMps>=0.90&&ballGapM>=0.40)return 'moderate';
- return 'control';
+export function selectNativeOpenCarryPhase({playerSpeedMps,ballSpeedMps,ballGapM,previousPhase=null}={}){
+ if(![playerSpeedMps,ballSpeedMps,ballGapM].every(n=>Number.isFinite(n)&&n>=0)||
+    previousPhase!==null&&!SOLO_CARRY_PHASES.includes(previousPhase))throw new TypeError('Observed carry phase geometry required');
+ const sprint=playerSpeedMps>=2.58&&ballSpeedMps>=2.20&&ballGapM>=0.46;
+ const moderate=playerSpeedMps>=1.45&&ballSpeedMps>=0.90&&ballGapM>=0.40;
+ // A newly selected carry may already be at speed; only consecutive
+ // same-actor carry decisions inherit the preceding phase.
+ if(previousPhase===null)return sprint?'sprint':moderate?'moderate':'control';
+ if(previousPhase==='control')return moderate?'moderate':'control';
+ if(previousPhase==='moderate')return playerSpeedMps<1.0||ballSpeedMps<0.55||ballGapM<0.31?'control':sprint?'sprint':'moderate';
+ return playerSpeedMps<2.45||ballSpeedMps<1.75||ballGapM<0.38?'moderate':'sprint';
+}
+// The previous phase is evidence, not a persistent entitlement to carry.
+export function previousNativeCarryPhase(decisions,actorId,tick){
+ const d=decisions?.find(d=>d.id===actorId&&d.tick===tick&&d.kind==='carry-ball');
+ return SOLO_CARRY_PHASES.includes(d?.carryPhase)?d.carryPhase:null;
 }
 // Pure physical proposal. Caller must authenticate the exclusive contact;
 // this helper neither applies an impulse nor certifies a shoe event.
@@ -125,9 +123,9 @@ export function nearestNativeCarryOpponent(player,ball,activePlayers){
 export function nativeCarryMotionHasPriority({movementKind,restartPlacement=null,recoveryLocked=false,balance=null,slide=null,shoulder=null,deliveryPlan=null}={}){
  return movementKind==='carry-ball'&&!restartPlacement&&!recoveryLocked&&!balance&&!slide&&!shoulder&&!deliveryPlan;
 }
-export function planNativeOpenCarryMotion({player,ball,velocity,opponent=null,phase=null,attackPolarity=1}={}){
+export function planNativeOpenCarryMotion({player,ball,velocity,opponent=null,phase=null,previousPhase=null,attackPolarity=1}={}){
  if(!player||!hasNativeOpenCarrySpace(ball,opponent))return null;
- const selected=phase??selectNativeOpenCarryPhase({playerSpeedMps:Math.hypot(player.vx,player.vy),
+ const selected=phase??selectNativeOpenCarryPhase({previousPhase,playerSpeedMps:Math.hypot(player.vx,player.vy),
   ballSpeedMps:Math.hypot(velocity.x,velocity.y),ballGapM:Math.hypot(player.x-ball.x,player.y-ball.y)});
  const configuration=nativeReferenceCarryKinematics(selected);
  const dir=attackDirection(player.team,attackPolarity);

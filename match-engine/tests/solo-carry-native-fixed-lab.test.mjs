@@ -6,7 +6,7 @@ import {createControlledActionLab} from '../src/action-labs.mjs';
 import {uniformSoloCarryAttributes} from '../src/solo-carry-attribute-calibration.mjs';
 import {advanceD01LiveShoeGait,selectNativeCarryStridePhase,nativeShoeContactProfile,summarizeNativeFootTransition,hasExclusiveNativeShoeStart} from '../src/rapier-foot-contact-bridge.mjs';
 import {planNativeCarryTouch} from '../src/isolated-dribble-touches.mjs';
-import {planNativeCarryPhaseImpulse,advanceSoloCarryPhase,nativeReferenceCarryKinematics,planNativeOpenCarryMotion,hasNativeOpenCarrySpace,nearestNativeCarryOpponent,nativeCarryMotionHasPriority} from '../src/solo-carry-phases.mjs';
+import {planNativeCarryPhaseImpulse,advanceSoloCarryPhase,nativeReferenceCarryKinematics,planNativeOpenCarryMotion,hasNativeOpenCarrySpace,nearestNativeCarryOpponent,nativeCarryMotionHasPriority,selectNativeOpenCarryPhase,previousNativeCarryPhase} from '../src/solo-carry-phases.mjs';
 import {chooseNativeFixedCarryImpulse}
  from '../src/native-fixed-carry-impulse.mjs';
 
@@ -388,6 +388,7 @@ test('#628 accepted native Sprint source recontact guard: 4 ratings x 4 starts x
    };
    rows.push(row);
    if(critical.has(rating+':'+variantIndex+':'+side)){
+    process.stdout.write('ME_628_SPRINT_CRITICAL_CASE '+JSON.stringify(row)+'\n');
     assert.ok(actions>=10,'native baseline must preserve independent Carry touches');
     assert.ok(starts<=17,'no explosion of real two-shoe STARTs');
     assert.ok(row.unconverted<=2,'no conversion collapse from shoe overlap');
@@ -478,6 +479,7 @@ test('#628 native active-shoe release on full 32-seed paired 10s Rapier matrix',
  // All paired simulations must preserve valid native Carry impulses,
  // remove—not merely reclassify—false STARTs, and keep the real ball
  // physically reachable. A green test alone must not hide poor arms.
+ process.stdout.write('ME_628_SPRINT_RELEASE_AB_PRE_GATE '+JSON.stringify(rows)+'\n');
  let removedUnconverted=0,removedHandoffs=0;
  for(const row of rows){
   const old=row.baseline[2],tuned=row.release6cm[2];
@@ -571,6 +573,7 @@ test('#628 adaptive Sprint pursuit A/B 32 seeded physical source episodes',
  // This is an acceptance gate, not just a printed A/B. All actions must
  // remain authenticated original Rapier START impulses and the football
  // cannot be lost. Limit native contacts to avoid a step-by-step tap burst.
+ process.stdout.write('ME_628_SPRINT_PURSUIT_AB_PRE_GATE '+JSON.stringify(rows)+'\n');
  for(const r of rows){
   const a=r.baseline[2],b=r.adaptive[2];
   const context=`${r.rating}/V${r.variantIndex+1}/${r.side}`;
@@ -727,4 +730,26 @@ test('ME-01-QA U-01E2: paired physical contact authorization never equates two s
   assert.equal(hasExclusiveNativeShoeStart({started:[id],active:[id]},id),true);
   assert.equal(hasExclusiveNativeShoeStart({started:[id],active:[other]},id),false);
  }
+});
+
+test('ME-01-QA U-04c: shared automatic carry transitions preserve same-tick actor history',()=>{
+ const samples=[[0,0,.2],[1.45,.9,.4],[2.58,2.2,.46],[2.5,1.9,.42],[2.44,1.9,.42],[.99,.54,.30]];
+ for(const previousPhase of ['control','moderate','sprint'])for(const [playerSpeedMps,ballSpeedMps,ballGapM] of samples){
+  const input={previousPhase,playerSpeedMps,ballSpeedMps,ballGapM};
+  assert.equal(advanceSoloCarryPhase({...input,tick:8}).phase,selectNativeOpenCarryPhase(input));
+  for(const team of ['home','away'])for(const attackPolarity of [1,-1]){
+   const dir=(team==='home'?1:-1)*attackPolarity;
+   const player={id:team+'-10',team,x:0,y:0,vx:dir*playerSpeedMps,vy:0};
+   const motion=planNativeOpenCarryMotion({player,ball:{x:dir*ballGapM,y:0},velocity:{x:dir*ballSpeedMps,y:0},attackPolarity,previousPhase});
+   assert.equal(motion.phase,selectNativeOpenCarryPhase(input));
+  }
+ }
+ const decision={id:'home-10',tick:7,kind:'carry-ball',carryPhase:'sprint'};
+ assert.equal(previousNativeCarryPhase([decision],'home-10',7),'sprint');
+ assert.equal(previousNativeCarryPhase([decision],'away-10',7),null);
+ assert.equal(previousNativeCarryPhase([decision],'home-10',8),null);
+ assert.equal(previousNativeCarryPhase([{...decision,kind:'press-ball'}],'home-10',7),null);
+ assert.equal(previousNativeCarryPhase([{...decision,carryPhase:'invalid'}],'home-10',7),null);
+ assert.equal(selectNativeOpenCarryPhase({previousPhase:'sprint',playerSpeedMps:2.5,ballSpeedMps:1.9,ballGapM:.42}),'sprint');
+ assert.equal(selectNativeOpenCarryPhase({previousPhase:null,playerSpeedMps:2.5,ballSpeedMps:1.9,ballGapM:.42}),'moderate');
 });

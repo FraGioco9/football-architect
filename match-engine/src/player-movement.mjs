@@ -6,7 +6,7 @@ import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_M
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
 import {advanceFreePlayerKinematics,advancePlayerOrientation,advanceGoalkeeperBallOrientation} from './individual-kinematics.mjs';
-import {advanceSoloCarryPhase,SOLO_CARRY_PHASES,planNativeOpenCarryMotion,nativeCarryPursuitOffset,nearestNativeCarryOpponent,nativeCarryMotionHasPriority,selectNativeOpenCarryPhase} from './solo-carry-phases.mjs';
+import {advanceSoloCarryPhase,SOLO_CARRY_PHASES,planNativeOpenCarryMotion,nativeCarryPursuitOffset,nearestNativeCarryOpponent,nativeCarryMotionHasPriority,selectNativeOpenCarryPhase,previousNativeCarryPhase} from './solo-carry-phases.mjs';
 import {validateSoloCarryAttributes}
  from './solo-carry-attribute-calibration.mjs';
 import {projectNativeShoeBodyStep,projectNativeShoeBodyFacing}
@@ -2743,7 +2743,8 @@ export function createPlayerMovement(options={}){
      recoveryLocked:isNativeRecoveryLocked(collectiveControl,p.id,tick+1),balance:nativeBalance[p.id],
      slide:nativeSlides[p.id],shoulder:nativeShoulders[p.id],deliveryPlan:nativeDeliveryPlans[p.id]}))continue;
     const opponent=nearestNativeCarryOpponent(p,ball,activePlayers);
-    const motion=planNativeOpenCarryMotion({player:p,ball,velocity:realBallVelocity,opponent,attackPolarity});
+    const motion=planNativeOpenCarryMotion({player:p,ball,velocity:realBallVelocity,opponent,attackPolarity,
+     previousPhase:previousNativeCarryPhase(lastSmallSidedMovementDecisions,p.id,tick)});
     if(motion)openCarryMotion[p.id]=motion;
    }
   }
