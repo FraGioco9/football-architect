@@ -51,6 +51,10 @@ export function eligibleLiveKeeperSave(player,ballPosition,ballVelocity,attackPo
   Math.abs(ballPosition.y)<=4.5&&
   ballVelocity.x*attack<=-0.5;
 }
+// Current paired exercises rank the same live options as collective play.
+export function usesNativeLiveActionRanking({nativeActionPolicy=false,pairedPhysicalSource=false}={}){
+ return nativeActionPolicy||pairedPhysicalSource;
+}
 export const UNIFORM_ACTION_CONTEXT_VERSION='me-pb-55-contextual-lane-observation-v1';
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const ids=Object.freeze(INITIAL_PLAYERS.map(p=>p.id));
@@ -75,15 +79,16 @@ function lineClearance(from,to,team,players){
    p.y-(from.y+dy*projection));
  }));
 }
-function chooseLiveShotLane(ball,goalX,team,players){
+export function chooseLiveShotLane(ball,goalX,team,players,{minimumClearanceM=SHOT_LANE_MIN_CLEARANCE_M,aimY=null}={}){
  // Centre first, then the two open goal-mouth lanes. Each aim point
  // fits inside 7.32m goal width with the canonical 0.11m ball radius.
  // Ball contact/impulse is still authorized ONLY by Rapier shoe START.
- const candidates=[0,-SHOT_HALF_GOAL_AIM_Y_M,SHOT_HALF_GOAL_AIM_Y_M];
+ const candidates=aimY===null?[0,-SHOT_HALF_GOAL_AIM_Y_M,SHOT_HALF_GOAL_AIM_Y_M]:[aimY];
+ if(!Number.isFinite(minimumClearanceM)||minimumClearanceM<0||candidates.some(y=>!Number.isFinite(y)||Math.abs(y)>SHOT_HALF_GOAL_AIM_Y_M))return null;
  for(const targetY of candidates){
   const target=Object.freeze({x:goalX,y:targetY});
   const clearance=lineClearance(ball,target,team,players);
-  if(clearance>=SHOT_LANE_MIN_CLEARANCE_M)
+  if(clearance>=minimumClearanceM)
    return Object.freeze({target,clearance});
  }
  return null;
@@ -169,10 +174,10 @@ export function chooseNativeLoftedRecipient(actor,ball,players,attackPolarity=1,
   .filter(p=>p.profile&&p.gapM>=2.2&&(requiredProfile===null||p.profile===requiredProfile))
   .sort((a,b)=>(Math.min(b.gapM,12)+b.forwardM*0.2-b.distanceM*0.1)-(Math.min(a.gapM,12)+a.forwardM*0.2-a.distanceM*0.1)||a.player.id.localeCompare(b.player.id))[0]??null;
 }
-export function chooseRecipient(actor,ball,players,attackPolarity=1){
+export export function chooseRecipient(actor,ball,players,attackPolarity=1,{requiredRecipientId=null,minimumLaneClearanceM=PASS_LANE_MIN_CLEARANCE_M,minimumRecipientGapM=1.6}={}){
  const attack=attackDirection(actor.team,attackPolarity);
  const choices=players.filter(p=>p.team===actor.team&&
-  p.id!==actor.id).map(p=>{
+  p.id!==actor.id&&(requiredRecipientId===null||p.id===requiredRecipientId)).map(p=>{
    const d=Math.hypot(p.x-actor.x,p.y-actor.y);
    // A physical pass starts at the REAL current ball, which can be
    // 0.85m from the authentic shoe actor. The sealed observer requires
@@ -186,8 +191,8 @@ export function chooseRecipient(actor,ball,players,attackPolarity=1){
      d*0.12+Math.min(laneClearanceM,8)*0.42};
   }).filter(x=>x.d>=3&&x.d<=25&&
     x.ballDistance>=3&&x.ballDistance<=25&&x.forward>=-3&&
-    x.laneClearanceM>=PASS_LANE_MIN_CLEARANCE_M&&
-    x.nearestOpponentM>=1.6)
+    x.laneClearanceM>=minimumLaneClearanceM&&
+    x.nearestOpponentM>=minimumRecipientGapM)
   .sort((a,b)=>b.score-a.score||
    ids.indexOf(a.player.id)-ids.indexOf(b.player.id));
  return choices[0]??null;
@@ -448,11 +453,13 @@ export function selectUniformAutonomousContactAction({
   const activeKeeperAttacker=keeperSingleShotSide===player.team&&id===player.team+'-10';
   const duelIntent=activeKeeperAttacker?chooseKeeperDuelAttackIntent(ballPosition,ballVelocity,player.team,
    actors.find(p=>p.team!==player.team&&p.role==='goalkeeper'),mask):null;
+  const blockLane=blockContext&&!blockContext.shotTaken&&pairedPhysicalSource&&shotRange&&permits('shot')?chooseLiveShotLane(ballPosition,goalX,player.team,actors,{minimumClearanceM:0,aimY:ballPosition.y>=0?2.65:-2.65}):null;
   const chosenShotLane=activeKeeperAttacker?(duelIntent?.action==='shot'?duelIntent.lane:null):
    permits('shot')&&shotRange?chooseLiveShotLane(ballPosition,goalX,player.team,actors):null;
   const shotLaneM=chosenShotLane?.clearance??
    lineClearance(ballPosition,goalTarget,player.team,actors);
   const collective=nativeActionPolicy;
+  const liveRanking=usesNativeLiveActionRanking({nativeActionPolicy,pairedPhysicalSource});
   const owner=collectiveControl?.kind==='controlled'?actors.find(p=>p.id===collectiveControl.playerId):null;
   const opponentControl=!!owner&&owner.team!==player.team&&Math.hypot(owner.x-ballPosition.x,owner.y-ballPosition.y)<=1.15;
   const nativeSlide=collective?playerFrame.nativeSlides?.[id]??null:null;
@@ -474,8 +481,8 @@ export function selectUniformAutonomousContactAction({
    Math.abs(toGoal)>5&&
    Math.hypot(ballVelocity.x,ballVelocity.y)<=8;
   const contextualChoice=contextualAttacker?
-   (collective?chooseNativeFootballAction:chooseSmallSidedContextAction)({
-    ...(!collective?{situationId:smallSidedDecisionContext.situationId,variantIndex:smallSidedDecisionContext.variantIndex,tick,actorId:id,team:player.team,attackingSide:smallSidedDecisionContext.attackingSide}:{}),
+   (liveRanking?chooseNativeFootballAction:chooseSmallSidedContextAction)({
+    ...(!liveRanking?{situationId:smallSidedDecisionContext.situationId,variantIndex:smallSidedDecisionContext.variantIndex,tick,actorId:id,team:player.team,attackingSide:smallSidedDecisionContext.attackingSide}:{}),
     goalDistanceM:Math.abs(toGoal),nearestOpponentM,
     shotLaneClearanceM:chosenShotLane?.clearance??null,
     passLaneClearanceM:contextualRecipient?.laneClearanceM??null,
@@ -488,7 +495,7 @@ export function selectUniformAutonomousContactAction({
   const slide=sharedDuel&&playerFrame.duelSlide?.actorId===id&&playerFrame.duelSlide.tick===tick?playerFrame.duelSlide:null;
   const opponent=sharedDuel?actors.find(p=>p.team!==player.team):null;
   const sharedTouch=sharedDuel?chooseSharedDuelTouch({player,opponent,ballPosition,ballVelocity,transition:duelTransition,
-   slide,defensiveDecision:playerFrame.defensiveDecision?.actorId===id?playerFrame.defensiveDecision:null,variantIndex:isolatedDribbleContext.variantIndex,tick,allowedFundamentals:mask}):null;
+   slide,defensiveDecision:playerFrame.defensiveDecision?.actorId===id?playerFrame.defensiveDecision:null,variantIndex:isolatedDribbleContext.variantIndex,tick,allowedFundamentals:mask,pairedPhysicalSource}):null;
   if(sharedDuel&&!sharedTouch)continue;
   const ic=interceptionContext;
   const defending=ic&&player.team!==ic.side;
@@ -512,14 +519,16 @@ export function selectUniformAutonomousContactAction({
    });
   let action,recipient=null,recipientInfo=null,crossInfo=null,loftedInfo=null,dx,dy,vertical=0,rule;
   if(blockContext&&!blockContext.shotTaken){
-   if(!permits('shot'))continue;
-   action='shot';dx=toGoal;dy=(ballPosition.y>=0?2.65:-2.65)-ballPosition.y;vertical=0;
-   rule='isolated-block-lab-single-ground-shot';
+   if(!permits('shot')||pairedPhysicalSource&&!blockLane)continue;
+   action='shot';dx=toGoal;dy=(blockLane?.target.y??(ballPosition.y>=0?2.65:-2.65))-ballPosition.y;vertical=0;
+   rule=pairedPhysicalSource?'native-permitted-contested-shot':'isolated-block-lab-single-ground-shot';
   }else if(ic?.phase==='ready'){
    if(!permits('pass'))continue;
-   recipient=actors.find(p=>p.id===ic.side+'-9');
+   recipientInfo=pairedPhysicalSource?chooseRecipient(player,ballPosition,actors,attackPolarity,{requiredRecipientId:ic.side+'-9',minimumLaneClearanceM:0}):null;
+   recipient=pairedPhysicalSource?recipientInfo?.player:actors.find(p=>p.id===ic.side+'-9');
+   if(!recipient)continue;
    action='pass';dx=recipient.x-ballPosition.x;dy=recipient.y-ballPosition.y;
-   rule='isolated-interception-lab-original-ground-pass';
+   rule=pairedPhysicalSource?'native-permitted-contested-pass':'isolated-interception-lab-original-ground-pass';
   }else if(duelDefensiveTouch){
    if(!permits(duelDefensiveTouch.kind))continue;
    action=duelDefensiveTouch.kind;dx=duelDefensiveTouch.dx;dy=duelDefensiveTouch.dy;

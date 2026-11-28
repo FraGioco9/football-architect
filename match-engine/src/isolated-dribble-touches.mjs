@@ -768,7 +768,7 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
  return Object.freeze({observe,snapshot:()=>latest});
 }
 // Same contact decision for both actors. Loose ball may be collected.
-export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVelocity:v,transition,slide,defensiveDecision=null,variantIndex,tick,allowedFundamentals=null}){
+export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVelocity:v,transition,slide,defensiveDecision=null,variantIndex,tick,allowedFundamentals=null,pairedPhysicalSource=false}){
  const mask=allowedFundamentals===null?createNativeDuelFundamentalMask(transition?.profile??'mixed'):createNativeFundamentalMask(allowedFundamentals);
  if(!isOpposingDuelPair(player?.team,player,opponent))throw new TypeError('Opposing physical actors required');
  if(slide?.phase==='recovery'||isDuelGettingUp(transition,player.id,tick)||planShoulderBalanceRecovery(player,transition,tick))return null;
@@ -782,7 +782,7 @@ export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVeloci
  const slideCollection=isSlideCollecting(transition,player.id,tick);
  const canCarry=!shielded&&Math.hypot(v.x,v.y)<=(collectingRelease||shoulderCollection||slideCollection?7.5:5);
  const defensive=(sliding=false)=>selectPermittedDefensiveTouch(chooseDribbleDefensiveTouch({attackingSide:opponent.team,attacker:opponent,defender:player,ballPosition:b,ballVelocity:v,sliding}),mask,{sliding});
- const carry=()=>chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:opponent,
+ const carry=()=>pairedPhysicalSource?planNativeCarryTouch({attackingSide:player.team,attacker:player,defender:opponent,ballPosition:b,ballVelocity:v}):chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:opponent,
   ballPosition:b,ballVelocity:v,variantIndex,tick});
  // D-16: the current control witness determines which contact actions
  // are eligible. A blocked carry never falls through to a defensive kick.

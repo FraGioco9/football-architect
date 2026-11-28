@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {INITIAL_PLAYERS,PLAYER_VERSION} from '../src/player-movement.mjs';
 import {selectUniformAutonomousContactAction,UNIFORM_ACTION_CONTEXT_VERSION,
- SHOT_MAX_RANGE_M,SHOT_HALF_GOAL_AIM_Y_M}
+ SHOT_MAX_RANGE_M,SHOT_HALF_GOAL_AIM_Y_M,usesNativeLiveActionRanking,chooseLiveShotLane,chooseRecipient}
  from '../src/player-ball-uniform-autonomous-action.mjs';
 import {createProvisionalActionOutcomeObserver,
  PROVISIONAL_ACTION_OBSERVATION_TICKS}
@@ -664,4 +664,22 @@ test('ME-01-QA U-01F2: forbidden shot leaves an actually available pass, not inv
  assert.equal(selectUniformAutonomousContactAction({...input,allowedFundamentals:['pass']})?.action,'pass');
  assert.equal(selectUniformAutonomousContactAction({...input,allowedFundamentals:[]}),null);
  assert.equal(selectUniformAutonomousContactAction({...input,allowedFundamentals:['pass'],contactStarted:[],contactActive:[]}),null);
+});
+
+test('ME-01-QA U-02c2a: native ranking and bounded contested delivery geometry',()=>{
+ for(const nativeActionPolicy of [true,false])for(const pairedPhysicalSource of [true,false])
+  assert.equal(usesNativeLiveActionRanking({nativeActionPolicy,pairedPhysicalSource}),nativeActionPolicy||pairedPhysicalSource);
+ for(const team of ['home','away'])for(const polarity of [1,-1]){
+  const dir=(team==='home'?1:-1)*polarity;
+  const actor={id:team+'-10',team,x:dir*25,y:0},receiver={id:team+'-9',team,x:dir*37,y:0};
+  const defender={id:(team==='home'?'away':'home')+'-2',team:team==='home'?'away':'home',x:dir*31,y:0};
+  const players=[actor,receiver,defender],ball={x:actor.x,y:0,z:.11};
+  assert.equal(chooseRecipient(actor,ball,players,polarity),null);
+  assert.equal(chooseRecipient(actor,ball,players,polarity,{requiredRecipientId:receiver.id,minimumLaneClearanceM:0}).player,receiver);
+  assert.equal(chooseRecipient(actor,ball,players,polarity,{requiredRecipientId:'missing',minimumLaneClearanceM:0}),null);
+  assert.equal(chooseRecipient(actor,ball,[actor,{...receiver,x:actor.x+dir}],polarity,{requiredRecipientId:receiver.id,minimumLaneClearanceM:0}),null);
+  assert.equal(chooseLiveShotLane(ball,dir*52.5,team,players,{minimumClearanceM:0,aimY:0}).clearance,0);
+  assert.equal(chooseLiveShotLane(ball,dir*52.5,team,players,{aimY:0}),null);
+  assert.equal(chooseLiveShotLane(ball,dir*52.5,team,players,{minimumClearanceM:0,aimY:9}),null);
+ }
 });
