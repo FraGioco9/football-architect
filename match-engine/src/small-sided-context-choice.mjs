@@ -19,13 +19,13 @@ function deterministicFraction(key){
 }
 // UME-02: pure shared scoring, no fixture metadata, actor identity or count.
 function scoreFootballAffordances({
- goalDistanceM,nearestOpponentM,shotLaneClearanceM=null,passLaneClearanceM=null,
+ goalDistanceM,nearestOpponentM,shotLaneClearanceM=null,passLaneClearanceM=null,minimumShotLaneClearanceM=2.4,
  recipientOpponentGapM=null,passForwardM=null,canShoot=false,canPass=false,canCarry=false,allowedFundamentals=null
 }={}){
  if(!finite(goalDistanceM)||goalDistanceM<0||goalDistanceM>105||
     !finite(nearestOpponentM)||nearestOpponentM<0||nearestOpponentM>150||
     [canShoot,canPass,canCarry].some(x=>typeof x!=='boolean')||
-    (canShoot&&(!finite(shotLaneClearanceM)||shotLaneClearanceM<2.4))||
+    (canShoot&&(!finite(minimumShotLaneClearanceM)||minimumShotLaneClearanceM<0||minimumShotLaneClearanceM>2.4||!finite(shotLaneClearanceM)||shotLaneClearanceM<minimumShotLaneClearanceM))||
     (canPass&&(!finite(passLaneClearanceM)||passLaneClearanceM<1.9||
       !finite(recipientOpponentGapM)||recipientOpponentGapM<1.6||
       !finite(passForwardM)||passForwardM< -3)))
@@ -58,10 +58,10 @@ function scoreFootballAffordances({
  return freeze({weights,total,pressure,canShoot,canPass,canCarry});
 }
 export function chooseNativeFootballAction({
- goalDistanceM,nearestOpponentM,shotLaneClearanceM=null,passLaneClearanceM=null,
+ goalDistanceM,nearestOpponentM,shotLaneClearanceM=null,passLaneClearanceM=null,minimumShotLaneClearanceM=2.4,
  recipientOpponentGapM=null,passForwardM=null,canShoot=false,canPass=false,canCarry=false,allowedFundamentals=null
 }={}){
- const scored=scoreFootballAffordances({goalDistanceM,nearestOpponentM,shotLaneClearanceM,passLaneClearanceM,recipientOpponentGapM,passForwardM,canShoot,canPass,canCarry,allowedFundamentals});
+ const scored=scoreFootballAffordances({goalDistanceM,nearestOpponentM,shotLaneClearanceM,passLaneClearanceM,recipientOpponentGapM,passForwardM,canShoot,canPass,canCarry,allowedFundamentals,minimumShotLaneClearanceM});
  if(!scored)return null;
  const {weights,pressure}=scored;
  ({canShoot,canPass,canCarry}=scored);

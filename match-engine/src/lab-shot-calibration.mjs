@@ -57,11 +57,12 @@ export function selectLabShotTarget({target,position,profile='power',ballRadiusM
  for(const y of [...new Set(ys)])for(const z of [...new Set(heights)]){
   const dy=y-position.y,distanceM=Math.hypot(dx,dy);
   if(distanceM<1e-8||!dir)continue;
-  let lane=Infinity,clearance=Infinity;
+  let lane=Infinity,clearance=Infinity,fieldLane=Infinity;
   for(const p of opponents){
    const q=clamp(((p.x-position.x)*dx+(p.y-position.y)*dy)/(distanceM*distanceM),0,1);
    const horizontal=Math.hypot(p.x-position.x-q*dx,p.y-position.y-q*dy);
    lane=Math.min(lane,horizontal);
+   if(p.role!=='goalkeeper')fieldLane=Math.min(fieldLane,horizontal);
    // Provisional arc estimate for ranking only. Actual shot uses native
    // spin/impulse and real flight; this cannot create an outcome.
    const arc=ground?0:profile==='chip'?4.5:profile==='power'?0.65:1.1;
@@ -72,7 +73,7 @@ export function selectLabShotTarget({target,position,profile='power',ballRadiusM
   const postMargin=half-Math.abs(y),barMargin=bar-z;
   // Preserve the existing conservative original straight-lane gate in
   // contested Power scenarios. This ranking cannot authorize a blocked shot.
-  if(profile==='power'&&opponents.length&&lane<minimumPowerLaneClearanceM-1e-8)continue;
+  if(profile==='power'&&opponents.length&&(lane<minimumPowerLaneClearanceM-1e-8||fieldLane<2.4-1e-8))continue;
   if(isTap&&(distanceM>6.05||postMargin<0.60))continue;
   const score=isTap?-distanceM+Math.min(clearance,6)*2:
    Math.min(clearance,8)*3-Math.abs(y-preferredY)*0.32-

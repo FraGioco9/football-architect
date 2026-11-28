@@ -517,7 +517,7 @@ export function createPrivatePhysicalActionExecutor({
      calculateCurrentLabShotCalibration({target:chosen.shotTarget,position:ballBody.translation(),
       velocity:ballBody.linvel(),massKg:ballBody.mass(),ballRadiusM,originalImpulseNs:chosen.impulseNs,
        profile:blockShotSide===chosen.team?'low':isolatedShotProfile,
-       ...(keeperSingleShotSide===chosen.team&&chosen.shotTarget.keeperDuelMinimumLaneClearanceM!==undefined?
+       ...(chosen.shotTarget.keeperDuelMinimumLaneClearanceM!==undefined?
         {minimumPowerLaneClearanceM:chosen.shotTarget.keeperDuelMinimumLaneClearanceM}:{}),
        opponents:playerFrame.players.filter(p=>p.team!==chosen.team&&
          (activePlayerIds===null||activePlayerIds.includes(p.id))&&

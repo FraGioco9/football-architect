@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {INITIAL_PLAYERS,PLAYER_VERSION} from '../src/player-movement.mjs';
 import {selectUniformAutonomousContactAction,UNIFORM_ACTION_CONTEXT_VERSION,
- SHOT_MAX_RANGE_M,SHOT_HALF_GOAL_AIM_Y_M,usesNativeLiveActionRanking,chooseLiveShotLane,chooseRecipient}
+ SHOT_MAX_RANGE_M,SHOT_HALF_GOAL_AIM_Y_M,usesNativeLiveActionRanking,chooseLiveShotLane,chooseRecipient,rankNativeKeeperGoalLanes}
  from '../src/player-ball-uniform-autonomous-action.mjs';
 import {createProvisionalActionOutcomeObserver,
  PROVISIONAL_ACTION_OBSERVATION_TICKS}
@@ -681,5 +681,19 @@ test('ME-01-QA U-02c2a: native ranking and bounded contested delivery geometry',
   assert.equal(chooseLiveShotLane(ball,dir*52.5,team,players,{minimumClearanceM:0,aimY:0}).clearance,0);
   assert.equal(chooseLiveShotLane(ball,dir*52.5,team,players,{aimY:0}),null);
   assert.equal(chooseLiveShotLane(ball,dir*52.5,team,players,{minimumClearanceM:0,aimY:9}),null);
+ }
+});
+
+test('ME-01-QA U-02c2b: keeper lanes preserve outfield blocking constraints',()=>{
+ for(const team of ['home','away'])for(const polarity of [1,-1]){
+  const dir=(team==='home'?1:-1)*polarity,other=team==='home'?'away':'home';
+  const ball={x:dir*47,y:0},keeper={id:other+'-1',team:other,role:'goalkeeper',x:dir*50,y:0};
+  const open=rankNativeKeeperGoalLanes(ball,team,[keeper],polarity);
+  assert.equal(open.minimum,0);
+  assert.ok(open.lane);assert.equal(open.lane.target.x,dir*52.5);
+  const blocked=rankNativeKeeperGoalLanes(ball,team,[keeper,{id:other+'-2',team:other,role:'defender',x:ball.x,y:0}],polarity);
+  assert.equal(blocked.lane,null);
+  assert.equal(rankNativeKeeperGoalLanes(ball,team,[],polarity),null);
+  assert.equal(rankNativeKeeperGoalLanes({x:dir*20,y:0},team,[keeper],polarity).lane,null);
  }
 });

@@ -771,10 +771,10 @@ export function createDribbleTransitionObserver(side,profile='mixed'){
 export function chooseSharedDuelTouch({player,opponent,ballPosition:b,ballVelocity:v,transition,slide,defensiveDecision=null,variantIndex,tick,allowedFundamentals=null,pairedPhysicalSource=false}){
  const mask=allowedFundamentals===null?createNativeDuelFundamentalMask(transition?.profile??'mixed'):createNativeFundamentalMask(allowedFundamentals);
  if(!isOpposingDuelPair(player?.team,player,opponent))throw new TypeError('Opposing physical actors required');
- if(slide?.phase==='recovery'||isDuelGettingUp(transition,player.id,tick)||planShoulderBalanceRecovery(player,transition,tick))return null;
+ if(slide?.phase==='recovery'||isNativeRecoveryLocked(transition,player.id,tick)||planShoulderBalanceRecovery(player,transition,tick))return null;
  const opponentGap=Math.hypot(opponent.x-b.x,opponent.y-b.y);
  const shielded=observeDribbleShield(opponent,player,b);
- const live=transition?.profile==='mixed'&&transition.ballControl;
+ const live=(pairedPhysicalSource||transition?.profile==='mixed')&&transition?.ballControl;
  const current=(live?live.playerId:transition?.carrierId)===player.id;
  const collecting=transition?.candidateId===player.id;
  const collectingRelease=collecting&&transition?.lastIntervention?.actorId===player.id&&transition.lastIntervention.effective&&tick-transition.lastIntervention.tick<=90;

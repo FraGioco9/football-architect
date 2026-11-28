@@ -97,20 +97,29 @@ export function chooseLiveShotLane(ball,goalX,team,players,{minimumClearanceM=SH
 // lottery. A goalkeeper is a potential blocker, not an impenetrable
 // 2.4m exclusion zone. Rank real goal-mouth lanes; allow a contested
 // attempt near goal. All contacts and shot outcomes stay physical.
-export function chooseKeeperDuelAttackIntent(ball,velocity,team,keeper,allowedFundamentals=null){
- const mask=createNativeFundamentalMask(allowedFundamentals);
- const dir=team==='home'?1:-1,goalX=dir*52.5,distance=(goalX-ball.x)*dir;
- if(!keeper||!['home','away'].includes(team)||![ball.x,ball.y,velocity.x,velocity.y,keeper.x,keeper.y].every(finite))return null;
- if(distance<=0.25||Math.abs(ball.y)>20)return null;
+export function rankNativeKeeperGoalLanes(ball,team,players,attackPolarity=1){
+ const dir=attackDirection(team,attackPolarity),goalX=dir*52.5,distance=(goalX-ball.x)*dir;
+ if(![ball.x,ball.y].every(finite)||distance<=0.25||Math.abs(ball.y)>20||!Array.isArray(players))return null;
+ const keepers=players.filter(p=>p.team!==team&&p.role==='goalkeeper');
+ if(!keepers.length)return null;
+ const field=players.filter(p=>p.team!==team&&p.role!=='goalkeeper');
+ const minimum=distance<=7?0:distance<=15?0.40:1.0;
  const candidates=[-3.1,-2.2,-1.1,0,1.1,2.2,3.1].map(y=>{
   const target=Object.freeze({x:goalX,y});
-  return Object.freeze({target,clearance:lineClearance(ball,target,team,[keeper])});
- });
- candidates.sort((a,b)=>b.clearance-a.clearance||Math.abs(a.target.y)-Math.abs(b.target.y)||a.target.y-b.target.y);
- const best=candidates[0];
- const minimum=distance<=7?0:distance<=15?0.40:1.0;
- if(nativeFundamentalAllowed(mask,'shot')&&distance<=26&&best.clearance>=minimum)
-  return Object.freeze({action:'shot',lane:best,minimum});
+  const keeperClearance=lineClearance(ball,target,team,keepers),fieldClearance=lineClearance(ball,target,team,field);
+  return Object.freeze({target,clearance:Math.min(keeperClearance,fieldClearance),keeperClearance,fieldClearance});
+ }).sort((a,b)=>b.clearance-a.clearance||Math.abs(a.target.y)-Math.abs(b.target.y)||a.target.y-b.target.y);
+ const lane=distance<=26?candidates.find(c=>c.fieldClearance>=SHOT_LANE_MIN_CLEARANCE_M&&c.keeperClearance>=minimum)??null:null;
+ return Object.freeze({lane,best:candidates[0],minimum,distance});
+}
+export function chooseKeeperDuelAttackIntent(ball,velocity,team,keeper,allowedFundamentals=null,attackPolarity=1){
+ const mask=createNativeFundamentalMask(allowedFundamentals);
+ if(!keeper||!['home','away'].includes(team)||![ball.x,ball.y,velocity.x,velocity.y,keeper.x,keeper.y].every(finite))return null;
+ const ranked=rankNativeKeeperGoalLanes(ball,team,[{...keeper,team:keeper.team??(team==='home'?'away':'home'),role:'goalkeeper'}],attackPolarity);
+ if(!ranked)return null;
+ const {best,minimum,distance,lane}=ranked,dir=attackDirection(team,attackPolarity);
+ if(nativeFundamentalAllowed(mask,'shot')&&lane)
+  return Object.freeze({action:'shot',lane,minimum});
  // When the opening is poor, move toward a better shooting position,
  // not repeatedly push the ball in an arbitrary absolute direction.
  const aimY=Math.max(-8,Math.min(8,best.target.y));
@@ -452,10 +461,12 @@ export function selectUniformAutonomousContactAction({
    Math.abs(ballPosition.y)<=20;
   const activeKeeperAttacker=keeperSingleShotSide===player.team&&id===player.team+'-10';
   const duelIntent=activeKeeperAttacker?chooseKeeperDuelAttackIntent(ballPosition,ballVelocity,player.team,
-   actors.find(p=>p.team!==player.team&&p.role==='goalkeeper'),mask):null;
+   actors.find(p=>p.team!==player.team&&p.role==='goalkeeper'),mask,attackPolarity):null;
   const blockLane=blockContext&&!blockContext.shotTaken&&pairedPhysicalSource&&shotRange&&permits('shot')?chooseLiveShotLane(ballPosition,goalX,player.team,actors,{minimumClearanceM:0,aimY:ballPosition.y>=0?2.65:-2.65}):null;
-  const chosenShotLane=activeKeeperAttacker?(duelIntent?.action==='shot'?duelIntent.lane:null):
-   permits('shot')&&shotRange?chooseLiveShotLane(ballPosition,goalX,player.team,actors):null;
+  const keeperLanes=usesNativeLiveActionRanking({nativeActionPolicy,pairedPhysicalSource})&&!blockContext&&!activeKeeperAttacker&&permits('shot')&&shotRange?rankNativeKeeperGoalLanes(ballPosition,player.team,actors,attackPolarity):null;
+  const ordinaryLane=permits('shot')&&shotRange?chooseLiveShotLane(ballPosition,goalX,player.team,actors):null;
+  const chosenShotLane=activeKeeperAttacker?(duelIntent?.action==='shot'?duelIntent.lane:null):ordinaryLane??keeperLanes?.lane??null;
+  const keeperMinimum=activeKeeperAttacker?duelIntent?.minimum:!ordinaryLane&&keeperLanes?.lane?keeperLanes.minimum:undefined;
   const shotLaneM=chosenShotLane?.clearance??
    lineClearance(ballPosition,goalTarget,player.team,actors);
   const collective=nativeActionPolicy;
@@ -488,6 +499,7 @@ export function selectUniformAutonomousContactAction({
     passLaneClearanceM:contextualRecipient?.laneClearanceM??null,
     recipientOpponentGapM:contextualRecipient?.nearestOpponentM??null,
     passForwardM:contextualRecipient?.forward??null,
+    minimumShotLaneClearanceM:keeperMinimum??SHOT_LANE_MIN_CLEARANCE_M,
     canShoot:chosenShotLane!==null,
     canPass:contextualRecipient!==null,
     canCarry:carryPossible,allowedFundamentals:mask
@@ -669,7 +681,7 @@ export function selectUniformAutonomousContactAction({
    originX:ballPosition.x,originY:ballPosition.y,
    targetX:blockContext?goalX:chosenShotLane.target.x,targetY:blockContext?ballPosition.y+dy:chosenShotLane.target.y,
    laneClearanceM:blockContext?lineClearance(ballPosition,{x:goalX,y:ballPosition.y+dy},player.team,actors):chosenShotLane.clearance,
-   ...(activeKeeperAttacker?{keeperDuelMinimumLaneClearanceM:duelIntent.minimum}:{}),
+   ...(keeperMinimum!==undefined?{keeperDuelMinimumLaneClearanceM:keeperMinimum}:{}),
    attemptOnly:true,shotOnTarget:null,goalScored:null
   }):null;
   const carryTarget=action==='carry'?Object.freeze({
