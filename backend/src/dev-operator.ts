@@ -29,7 +29,7 @@ import {manifestDigest,reserveRetainedFirst} from '../../tools/world-bootstrap-7
 const MAX_BYTES=8*1024*1024;
 const invalid=()=>new ApiError(422,'dev_operator_invalid');
 const blocked=()=>new ApiError(409,'dev_operator_prerequisites');
-const requiredMigrations=['0042_opening_world_runs.sql','0043_reward_calendar_milestones.sql','0044_payroll_obligations.sql','0045_economic_genesis_guards.sql','0046_player_lifecycle_season_two.sql'];
+const requiredMigrations=['0042_opening_world_runs.sql','0043_reward_calendar_milestones.sql','0044_payroll_obligations.sql','0045_economic_genesis_guards.sql','0046_player_lifecycle_season_two.sql','0047_zero_inactive_opening_capital.sql'];
 const requiredObjects=['opening_world_runs','opening_world_staging','economic_genesis_status','payroll_runs','payroll_claim_outstanding','player_contract_promotion_salary','player_lifecycle_season_two'];
 const readActions=['fit-preview','prepare','fund-preview','roster-check'] as const;
 const writeActions=['rebase','fund','populate','sign','publish','settle','reserve-next','refresh-values'] as const;
@@ -216,7 +216,7 @@ export async function executeDevOperator(request:Request,db:Database,session:Adm
   const access=[sessionGuard(db,session,now),...finance(db,session,now,'read','fund','reserve'),guard];
   const prior=await readEconomicGenesis(db,access);
   let result=await prepareEconomicGenesis(db,input,session.unified!.playerId,access,now);
-  if(prior&&result?.completed!==1)result=result?.funded_clubs===320?await completeEconomicGenesis(db,access,now):await stepEconomicGenesis(db,access,now);
+  if(prior&&result?.completed!==1)result=result && result.funded_clubs===result.expected_funded_clubs?await completeEconomicGenesis(db,access,now):await stepEconomicGenesis(db,access,now);
   return {done:result?.completed===1,genesis:result};
  }
  if(action==='populate'||action==='sign'||action==='publish'){

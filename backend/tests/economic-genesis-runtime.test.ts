@@ -23,6 +23,24 @@ it('validates canonical complete deterministic plan',()=>{
  expect(()=>planEconomicGenesis({...input,clubs:input.clubs.map((c,i)=>i===0?{...c,amountArc:0}:c)})).toThrow();
  expect(()=>planEconomicGenesis({...input,issuanceLimitArc:2400000})).toThrow();
 });
+it('resumes and seals a plan with 64 unfunded inactive treasuries',async()=>{
+ const snapshot=await loadApprovedSnapshot();
+ const active=new Set(snapshot.bindings.filter(b=>!b.competitionId.startsWith('int-')).flatMap(b=>[...b.clubIds]));
+ const mixed={...input,clubs:input.clubs.map(c=>({...c,amountArc:active.has(c.clubKey)?1000:0}))};
+ const world=await readWorld(db);
+ const prepared=await prepareEconomicGenesis(db,mixed,'fixture',access(),now);
+ expect(prepared).toMatchObject({expected_funded_clubs:256,funded_clubs:0});
+ await stepEconomicGenesis(db,access(),now);
+ await expect(completeEconomicGenesis(db,access(),now)).rejects.toThrow();
+ for(let i=0;i<16;i++)await stepEconomicGenesis(db,access(),now);
+ expect(await completeEconomicGenesis(db,access(),now)).toMatchObject({funded_clubs:256,completed:1});
+ expect(await stepEconomicGenesis(db,access(),now)).toMatchObject({completed:1});
+ await db.batch([requireEconomicGenesisGuard(db,world.generation)]);
+ const balances=await db.prepare("SELECT COUNT(*) AS total,SUM(balance_arc=0) AS unpaid FROM economic_balances WHERE kind='CLUB_TREASURY'").first();
+ expect(balances).toMatchObject({total:320,unpaid:64});
+ expect(await db.prepare('SELECT COUNT(*) AS n FROM economic_transactions').first()).toMatchObject({n:257});
+ expect(await reconcileEconomy(db,access())).toMatchObject({ok:true});
+},120000);
 it('funds only the local fixture, resumes and seals via full annual hold',async()=>{
  await db.prepare("INSERT INTO player_accounts(id,email_normalized,password_verifier,email_verified_at,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)").bind('genesis-fixture','genesis-fixture@example.invalid','fixture',now,now,now).run();
  const world=(await db.prepare('SELECT generation FROM world_state WHERE id=1').first<{generation:string}>())!;
