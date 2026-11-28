@@ -128,8 +128,15 @@ export function planNativeAerialControl(actor,ball,surface){
   if(predictedGap>0.78)return null;
   const dx=p.x+v.x*PLAYER_DT-actor.x,dy=p.y+v.y*PLAYER_DT-actor.y;
   const gap=Math.hypot(dx,dy),reach=0.62;
-  const offset=Math.min(reach,gap);
-  return freeze({surface,actorId:actor.id,dx:gap>1e-8?dx/gap*offset:0,dy:gap>1e-8?dy/gap*offset:0,decisionOnly:true});
+  // With a slow ball and low relative approach speed, a player can lift
+  // the receiving foot slightly to meet the descent before it escapes.
+  // Spend the same reach budget in 3D; never enlarge the collider or
+  // change fast delivery/volley mechanics.
+  const slow=Math.hypot(v.x,v.y)<=4&&Math.hypot(v.x-actor.vx,v.y-actor.vy)<=1.5;
+  const nextHeight=p.z+v.z*PLAYER_DT-4.905*PLAYER_DT*PLAYER_DT;
+  const lift=slow?Math.max(0,Math.min(0.12,nextHeight-z-0.18)):0;
+  const offset=Math.min(Math.sqrt(reach*reach-lift*lift),gap);
+  return freeze({surface,actorId:actor.id,dx:gap>1e-8?dx/gap*offset:0,dy:gap>1e-8?dy/gap*offset:0,targetZ:z+lift,decisionOnly:true});
  }
  for(let k=1;k<=18;k++){
   const t=k*PLAYER_DT,h=p.z+v.z*t-4.905*t*t;
@@ -155,7 +162,7 @@ export function createNativeAerialControl(R,world,ballCollider,actor,surface){
    throw new TypeError('Native aerial receiving surface requires consecutive canonical ticks');
   const plan=!deadBall&&!headPriority&&tick>=recoverUntil?planNativeAerialControl(player,ball,surface):null;
   collider.setCollisionGroups(plan?(LEG_CATEGORY<<16)|BALL_CATEGORY:0);
-  rigid.setNextKinematicTranslation({x:player.x+(plan?.dx??0),y:player.y+(plan?.dy??0),z});
+  rigid.setNextKinematicTranslation({x:player.x+(plan?.dx??0),y:player.y+(plan?.dy??0),z:plan?.targetZ??z});
   prepared={tick,plan,incomingVelocity:freeze({...ball.velocity}),incomingPosition:freeze({...ball.position})};
  }
  function observe(tick){

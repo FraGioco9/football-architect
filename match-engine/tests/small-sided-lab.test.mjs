@@ -2156,6 +2156,21 @@ test('AERIAL-03 shared chest and raised foot reject unreachable, ascending and d
   assert.equal(planNativeAerialCushion({surface,incoming:{x:0,y:0,z:2},velocity:{x:3,y:0,z:-2},massKg:0.43,actor}),null);
  }
 });
+test('AERIAL-08C slow descending foot reach adapts height within the original 3D extension budget',()=>{
+ for(const side of ['home','away']){
+  const dir=side==='home'?1:-1,actor={id:side+'-10',team:side,role:'forward',x:0,y:0,vx:dir*2.55,vy:0};
+  const ball={position:{x:dir*0.546,y:0,z:1.193},velocity:{x:dir*2.898,y:0,z:-1.463}};
+  const plan=planNativeAerialControl(actor,ball,'foot');
+  assert.ok(plan);assert.ok(plan.targetZ>0.92&&plan.targetZ<=0.97+1e-8);
+  assert.ok(Math.hypot(plan.dx,plan.dy,plan.targetZ-0.85)<=0.62+1e-8);
+  assert.ok(dir*plan.dx>0);
+  // Same instantaneous ball position but a fast delivery and similarly
+  // moving receiver: retain the normal raised-foot contact height.
+  const fast=planNativeAerialControl({...actor,vx:dir*12},{...ball,velocity:{x:dir*12,y:0,z:-1.463}},'foot');
+  assert.ok(fast);assert.equal(fast.targetZ,0.85);
+  assert.equal(planNativeAerialControl(actor,{...ball,velocity:{...ball.velocity,z:1}},'foot'),null);
+ }
+});
 test('AERIAL-03 LABs use actual mirrored cross/chest and descending foot contacts, no granted possession',{timeout:120000},async()=>{
  const R=await initializeRapier(rapier),rows=[];
  for(const id of ['chest-control','aerial-foot-control'])for(const side of ['home','away'])for(let variantIndex=0;variantIndex<30;variantIndex++){
