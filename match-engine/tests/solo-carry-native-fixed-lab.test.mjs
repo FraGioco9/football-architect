@@ -4,7 +4,7 @@ import * as rapier from '@dimforge/rapier3d-deterministic-compat';
 import {initializeRapier} from '../src/core.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
 import {uniformSoloCarryAttributes} from '../src/solo-carry-attribute-calibration.mjs';
-import {advanceD01LiveShoeGait,selectNativeCarryStridePhase} from '../src/rapier-foot-contact-bridge.mjs';
+import {advanceD01LiveShoeGait,selectNativeCarryStridePhase,nativeShoeContactProfile,summarizeNativeFootTransition} from '../src/rapier-foot-contact-bridge.mjs';
 import {planNativeCarryTouch} from '../src/isolated-dribble-touches.mjs';
 import {planNativeCarryPhaseImpulse,advanceSoloCarryPhase,nativeReferenceCarryKinematics,planNativeOpenCarryMotion,hasNativeOpenCarrySpace,nearestNativeCarryOpponent,nativeCarryMotionHasPriority} from '../src/solo-carry-phases.mjs';
 import {chooseNativeFixedCarryImpulse}
@@ -685,4 +685,27 @@ test('ME-01-QA U-01D: common carry gait and same-tick native phase eligibility',
   assert.equal(selectNativeCarryStridePhase(player,[d],4,new Set()),null);
   assert.equal(selectNativeCarryStridePhase({...player,role:'goalkeeper'},[d],4,active),null);
  }
+});
+
+test('ME-01-QA U-01E1: shared native shoe geometry and exclusive contact reduction',()=>{
+ const standard=nativeShoeContactProfile();
+ assert.deepEqual(standard,{halfLengthM:.105,halfWidthM:.052,halfHeightM:.035,roundingM:.020,friction:.65,restitution:.12});
+ for(const widthScale of [.9,1,1.1])for(const lengthScale of [.9,1,1.05,1.075,1.1]){
+  const left=nativeShoeContactProfile({legacyGround:true,widthScale,lengthScale});
+  const right=nativeShoeContactProfile({legacyGround:true,widthScale,lengthScale});
+  assert.deepEqual(left,right);
+  assert.deepEqual(left,{halfLengthM:.105*lengthScale,halfWidthM:.052*widthScale,halfHeightM:.015,roundingM:.01,friction:.65,restitution:0});
+ }
+ assert.throws(()=>nativeShoeContactProfile({widthScale:1.1}),/geometry/);
+ assert.throws(()=>nativeShoeContactProfile({legacyGround:true,lengthScale:2}),/geometry/);
+ const masks=[[],['left'],['right'],['left','right']];
+ for(const prev of masks)for(const next of masks)for(const starts of masks){
+  const p=new Set(prev),n=new Set(next),s=new Set(starts);
+  const observed=summarizeNativeFootTransition(p,n,s);
+  assert.equal(observed.actorStarted,prev.length===0&&next.length>0);
+  assert.equal(observed.actorEnded,prev.length>0&&next.length===0);
+  assert.equal(observed.exclusivePhysicalStart,starts.length===1&&next.length===1&&starts[0]===next[0]);
+  assert.deepEqual([...p],prev);assert.deepEqual([...n],next);assert.deepEqual([...s],starts);
+ }
+ assert.throws(()=>summarizeNativeFootTransition(new Set(['other']),new Set(),new Set()),/foot sets/);
 });

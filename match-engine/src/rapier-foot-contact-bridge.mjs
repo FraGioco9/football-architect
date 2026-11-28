@@ -176,6 +176,26 @@ export function selectNativeCarryStridePhase(player,decisions,tick,activeIds){
  return SOLO_CARRY_PHASES.includes(d?.carryPhase)?d.carryPhase:null;
 }
 
+// One material/geometry descriptor for both native shoes. Legacy ground
+// diagnostics keep their historical values until common physics acceptance.
+export function nativeShoeContactProfile({legacyGround=false,widthScale=1,lengthScale=1}={}){
+ if(typeof legacyGround!=='boolean'||![0.9,1,1.1].includes(widthScale)||![0.9,1,1.05,1.075,1.1].includes(lengthScale)||
+    !legacyGround&&(widthScale!==1||lengthScale!==1))throw new TypeError('Valid native shoe geometry required');
+ return Object.freeze({halfLengthM:FOOT_CONTACT_HALF_LENGTH_M*lengthScale,halfWidthM:FOOT_CONTACT_HALF_WIDTH_M*widthScale,
+  halfHeightM:legacyGround?0.015:FOOT_CONTACT_HALF_HEIGHT_M,roundingM:legacyGround?0.01:FOOT_CONTACT_ROUNDING_M,
+  friction:FOOT_CONTACT_FRICTION,restitution:legacyGround?0:FOOT_CONTACT_RESTITUTION});
+}
+// Physical foot events are reduced to canonical actor transitions only
+// after the whole native queue has been consumed. An overlapping change
+// of foot is not a new START; two simultaneous feet are not exclusive.
+export function summarizeNativeFootTransition(previous,next,starts){
+ for(const feet of [previous,next,starts])if(!(feet instanceof Set)||[...feet].some(f=>f!=='left'&&f!=='right'))
+  throw new TypeError('Native left/right foot sets required');
+ return Object.freeze({actorStarted:previous.size===0&&next.size>0,
+  actorEnded:previous.size>0&&next.size===0,
+  exclusivePhysicalStart:starts.size===1&&next.size===1&&[...starts].every(f=>next.has(f))});
+}
+
 export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  initialPlayers=INITIAL_PLAYERS,{sharedQueue=null,activePlayerIds=null,
  isolatedPhysicalBodies=false,isolatedGroundDribbleBallCentreZ=null,
@@ -252,8 +272,13 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  if(typeof sharedDuelStride!=='boolean'||sharedDuelStride&&(!isolatedPhysicalBodies||soloCarry||activePlayerIds?.length!==2||dribbleAttackerId===null))
   throw new TypeError('Shared stride requires original guarded duel');
  const strideIds=new Set(sharedDuelStride?activePlayerIds:dribbleAttackerId===null?[]:[dribbleAttackerId]);
- const soloShoeHalfWidthM=FOOT_CONTACT_HALF_WIDTH_M*soloShoeWidthScale;
- const soloShoeHalfLengthM=FOOT_CONTACT_HALF_LENGTH_M*soloShoeLengthScale;
+ const baseShoeProfile=nativeShoeContactProfile({legacyGround:isolatedGroundDribbleBallCentreZ!==null});
+ const soloShoeProfile=soloCarry?nativeShoeContactProfile({legacyGround:true,widthScale:soloShoeWidthScale,lengthScale:soloShoeLengthScale}):baseShoeProfile;
+ const soloShoeHalfWidthM=soloShoeProfile.halfWidthM;
+ const soloShoeHalfLengthM=soloShoeProfile.halfLengthM;
+ const shoeColliderDesc=profile=>R.ColliderDesc.roundCuboid(profile.halfLengthM,profile.halfWidthM,profile.halfHeightM,profile.roundingM)
+  .setFriction(profile.friction).setRestitution(profile.restitution)
+  .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS|R.ActiveEvents.CONTACT_FORCE_EVENTS);
  const physicalIds=activePlayerIds===null?null:new Set(activePlayerIds);
  const eventQueue=sharedQueue??new R.EventQueue(true);
  const ownsEventQueue=sharedQueue===null;
@@ -286,18 +311,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    R.RigidBodyDesc.kinematicPositionBased()
     .setTranslation(groundPose.x,groundPose.y,groundPose.z)
      .setRotation(pose.rotation));
-  const shoeShape=R.ColliderDesc.roundCuboid(
-   soloCarry&&p.id===dribbleAttackerId?
-    soloShoeHalfLengthM:FOOT_CONTACT_HALF_LENGTH_M,
-   soloCarry&&p.id===dribbleAttackerId?
-    soloShoeHalfWidthM:FOOT_CONTACT_HALF_WIDTH_M,
-   isolatedGroundDribbleBallCentreZ===null?FOOT_CONTACT_HALF_HEIGHT_M:0.015,
-   isolatedGroundDribbleBallCentreZ===null?FOOT_CONTACT_ROUNDING_M:0.01)
-   .setFriction(FOOT_CONTACT_FRICTION)
-   .setRestitution(isolatedGroundDribbleBallCentreZ===null?
-    FOOT_CONTACT_RESTITUTION:0)
-   .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS|
-    R.ActiveEvents.CONTACT_FORCE_EVENTS);
+  const shoeShape=shoeColliderDesc(soloCarry&&p.id===dribbleAttackerId?soloShoeProfile:baseShoeProfile);
   if(intentDrivenSoloCarry&&soloCarry&&p.id===dribbleAttackerId)
    shoeShape.setCollisionGroups(0);
   else if(sharedQueue!==null||isolatedPhysicalBodies)
@@ -324,11 +338,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    R.RigidBodyDesc.kinematicPositionBased()
     .setTranslation(pose.x,pose.y,isolatedGroundDribbleBallCentreZ+0.018)
     .setRotation(pose.rotation));
-  rightCollider=world.createCollider(R.ColliderDesc.roundCuboid(
-   soloShoeHalfLengthM,soloShoeHalfWidthM,0.015,0.01)
-    .setFriction(FOOT_CONTACT_FRICTION).setRestitution(0)
-    .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS|
-     R.ActiveEvents.CONTACT_FORCE_EVENTS)
+  rightCollider=world.createCollider(shoeColliderDesc(soloShoeProfile)
     .setCollisionGroups(intentDrivenSoloCarry?0:0x00010001),rightBody);
   idsByCollider.set(rightCollider.handle,
    Object.freeze({id:dribbleAttackerId,foot:'right'}));
@@ -540,12 +550,11 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   }
   // Actor-level START only at the first REAL shoe contact after both
   // shoes were released. Foot-to-foot overlap does not fabricate a recontact.
-  if(soloCarry){
-   if(activeSoloFeet.size===0&&nextSoloFeet.size>0){
-    started.add(dribbleAttackerId);next.add(dribbleAttackerId);
-   }else if(activeSoloFeet.size>0&&nextSoloFeet.size===0){
-    ended.add(dribbleAttackerId);next.delete(dribbleAttackerId);
-   }
+  const soloTransition=soloCarry?summarizeNativeFootTransition(activeSoloFeet,nextSoloFeet,footStarts):null;
+  if(soloTransition?.actorStarted){
+   started.add(dribbleAttackerId);next.add(dribbleAttackerId);
+  }else if(soloTransition?.actorEnded){
+   ended.add(dribbleAttackerId);next.delete(dribbleAttackerId);
   }
   const dv=Math.hypot(
    postBall.velocity.x-priorBall.velocity.x,
@@ -569,7 +578,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     sprintActiveFootReleaseM:soloSprintActiveFootReleaseM,
     nativeObservedGaitFrequencyHz:lastGaitFrequencyHz,
     geometrySource:'native-rapier-collider-width',
-    exclusivePhysicalStart:footStarts.size===1&&nextSoloFeet.size===1
+    exclusivePhysicalStart:soloTransition.exclusivePhysicalStart
    })}:{}),
    // Whole-ball delta includes gravity/turf; never shoe attribution.
    onsetBallDeltaVelocityMps:started.size?dv:null
