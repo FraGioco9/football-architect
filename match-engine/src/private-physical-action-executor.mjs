@@ -328,10 +328,10 @@ export function createPrivatePhysicalActionExecutor({
   // is insufficient for an impulse when both shoes touch simultaneously:
   // require one (and only one) actual native foot START and active shoe.
   const solo=isolatedDribbleContext?.situationId==='carry-solo';
+  const soloActorId=solo?isolatedDribbleContext.attackingSide+'-10':null;
   const isolatedNativeShoeSourceValid=!solo||(
-   contact.nativeSoloFeet?.actorId===isolatedDribbleContext.attackingSide+'-10'&&
-   contact.nativeSoloFeet?.independentColliders===2&&
-   contact.nativeSoloFeet?.exclusivePhysicalStart===true);
+   (contact.nativePairedFeet?.[soloActorId]??contact.nativeSoloFeet)?.independentColliders===2&&
+   hasExclusiveNativeShoeStart(contact,soloActorId));
   const pairedSourceValid=contact.nativePairedFeet===undefined||hasExclusiveNativeShoeStart(contact,contact.started[0]);
   const originalChoice=suppressOriginalAction||suppressPhysicalBodyContact||
    !isolatedNativeShoeSourceValid||!pairedSourceValid?null:
@@ -448,7 +448,7 @@ export function createPrivatePhysicalActionExecutor({
     attackingSide:isolatedDribbleContext.attackingSide,
     ballVelocity:ballBody.linvel(),
     verifiedNativeExclusiveShoeStart:
-     contact.nativeSoloFeet?.exclusivePhysicalStart===true,
+     hasExclusiveNativeShoeStart(contact,soloActorId),
     contactActorId:contact.started[0],
     nativeFixedSprintLongStride
    }):null;

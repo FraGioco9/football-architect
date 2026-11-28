@@ -212,10 +212,15 @@ export function hasExclusiveNativeShoeStart(contact,id){
  }
  return true;
 }
-// Current selected-participant duels use the same paired bridge as open
-// play. Solo research retains its existing two-foot evidence adapter.
-export function usesNativePairedShoeBridge({activePlayerIds,legacyGroundCarry=false,soloCarryAdapter=false}={}){
- return Array.isArray(activePlayerIds)&&activePlayerIds.length>0&&!legacyGroundCarry&&!soloCarryAdapter;
+// All current selected participants use the paired bridge. Only the
+// archived ground-carry comparator retains its original topology.
+export function usesNativePairedShoeBridge({activePlayerIds,legacyGroundCarry=false}={}){
+ return Array.isArray(activePlayerIds)&&activePlayerIds.length>0&&!legacyGroundCarry;
+}
+export function nativePairedCarryReadout(pair,metadata){
+ if(!pair||pair.actorId!==metadata.actorId||pair.independentColliders!==2)
+  throw new TypeError('Actual paired carry evidence required');
+ return Object.freeze({...metadata,...pair,source:'rapier-physical-collider-events'});
 }
 // Recover only the physical foot that actually struck. The six-tick
 // offset is an existing target profile, never a contact or ball impulse.
@@ -239,9 +244,12 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  soloShoeLengthScale=1,soloRecoveryStepScale=1,
  soloSprintCadenceScale=1,soloSprintLateralTrackScale=1,
  soloSprintActiveFootReleaseM=0,intentDrivenSoloCarry=false,
- firstTimeShotReleaseId=null,sharedDuelStride=false,fullFieldNative=false,nativeCarryStride=false,historicalCarryMaterial=isolatedGroundDribbleBallCentreZ!==null}={}){
+ firstTimeShotReleaseId=null,sharedDuelStride=false,fullFieldNative=false,nativeCarryStride=false,historicalCarryMaterial=isolatedGroundDribbleBallCentreZ!==null,pairedCarryReadoutId=null}={}){
  if(typeof historicalCarryMaterial!=='boolean'||historicalCarryMaterial&&isolatedGroundDribbleBallCentreZ===null)throw new TypeError('Historical shoe materials require original ground carry');
  const carryShoeCenterZ=historicalCarryMaterial?isolatedGroundDribbleBallCentreZ+0.018:null;
+ if(pairedCarryReadoutId!==null&&(!nativeCarryStride||activePlayerIds?.length!==1||activePlayerIds[0]!==pairedCarryReadoutId||soloCarry||historicalCarryMaterial))throw new TypeError('Paired carry readout requires one current native actor');
+ const carryReadoutId=soloCarry?dribbleAttackerId:pairedCarryReadoutId;
+ const carryResearch=carryReadoutId!==null;
  if(typeof nativeCarryStride!=='boolean'||nativeCarryStride&&(activePlayerIds===null||dribbleAttackerId!==null||sharedQueue!==null))throw new TypeError('Paired native stride requires selected physical participants without legacy overrides');
  if(typeof fullFieldNative!=='boolean'||fullFieldNative&&(activePlayerIds?.length!==22||!isolatedPhysicalBodies||isolatedGroundDribbleBallCentreZ!==null||sharedQueue!==null))throw new TypeError('Full field requires all 22 guarded physical shoe identities');
  if(firstTimeShotReleaseId!==null&&(
@@ -294,24 +302,24 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     activePlayerIds[0]!==dribbleAttackerId)))
   throw new TypeError('Solo shoe stride needs exactly one original actor');
  if(![0.9,1,1.1].includes(soloShoeWidthScale)||
-    (soloShoeWidthScale!==1&&!soloCarry))
+    (soloShoeWidthScale!==1&&!carryResearch))
   throw new TypeError('DEV counterfactual shoe widths require genuine solo Carry');
  if(![0.9,1,1.05,1.075,1.1].includes(soloShoeLengthScale)||
     ![0.85,0.925,1,1.15].includes(soloRecoveryStepScale)||
-    ((soloShoeLengthScale!==1||soloRecoveryStepScale!==1)&&!soloCarry))
+    ((soloShoeLengthScale!==1||soloRecoveryStepScale!==1)&&!carryResearch))
   throw new TypeError('DEV longitudinal toe/recovery variants require genuine solo Carry');
  if(![0,0.06,0.1].includes(soloSprintActiveFootReleaseM)||
-     (soloSprintActiveFootReleaseM!==0&&!soloCarry))
+     (soloSprintActiveFootReleaseM!==0&&!carryResearch))
   throw new TypeError('Real active-foot release requires Solo Carry shoes');
  if(![0.9,1,1.1].includes(soloSprintCadenceScale)||
     ![0.9,1,1.1].includes(soloSprintLateralTrackScale)||
-    ((soloSprintCadenceScale!==1||soloSprintLateralTrackScale!==1)&&!soloCarry))
+    ((soloSprintCadenceScale!==1||soloSprintLateralTrackScale!==1)&&!carryResearch))
   throw new TypeError('DEV Sprint cadence and tracks require genuine solo Carry');
  if(typeof sharedDuelStride!=='boolean'||sharedDuelStride&&(!isolatedPhysicalBodies||soloCarry||activePlayerIds?.length!==2||dribbleAttackerId===null))
   throw new TypeError('Shared stride requires original guarded duel');
  const strideIds=new Set(sharedDuelStride?activePlayerIds:dribbleAttackerId===null?[]:[dribbleAttackerId]);
  const baseShoeProfile=nativeShoeContactProfile({legacyGround:historicalCarryMaterial});
- const soloShoeProfile=soloCarry?nativeShoeContactProfile({legacyGround:historicalCarryMaterial,widthScale:soloShoeWidthScale,lengthScale:soloShoeLengthScale,researchScale:true}):baseShoeProfile;
+ const soloShoeProfile=carryResearch?nativeShoeContactProfile({legacyGround:historicalCarryMaterial,widthScale:soloShoeWidthScale,lengthScale:soloShoeLengthScale,researchScale:true}):baseShoeProfile;
  const soloShoeHalfWidthM=soloShoeProfile.halfWidthM;
  const soloShoeHalfLengthM=soloShoeProfile.halfLengthM;
  const shoeColliderDesc=profile=>R.ColliderDesc.roundCuboid(profile.halfLengthM,profile.halfWidthM,profile.halfHeightM,profile.roundingM)
@@ -341,7 +349,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   }));
  }
  const nativePairs=new Map();
- const stagedFeet=nativeCarryStride?Object.freeze(initialPlayers.map(p=>physicalIds.has(p.id)?soloCarryTwoFootPositions(p).left:p)):shoeFeet(initialPlayers,0);
+ const pairGeometry=(p,gait=null,activeFeet=empty)=>soloCarryTwoFootPositions(p,gait,p.id===pairedCarryReadoutId?{recoveryStepScale:soloRecoveryStepScale,sprintLateralTrackScale:soloSprintLateralTrackScale,nativeActiveFeet:activeFeet,sprintActiveFootReleaseM:gait?.carryPhase==='sprint'?soloSprintActiveFootReleaseM:0}:{});
+ const stagedFeet=nativeCarryStride?Object.freeze(initialPlayers.map(p=>physicalIds.has(p.id)?pairGeometry(p).left:p)):shoeFeet(initialPlayers,0);
  for(const p of stagedFeet){
   const pose=footProxyTransform(p);
   const groundPose=carryShoeCenterZ===null?pose:{...pose,z:carryShoeCenterZ};
@@ -349,7 +358,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    R.RigidBodyDesc.kinematicPositionBased()
     .setTranslation(groundPose.x,groundPose.y,groundPose.z)
      .setRotation(pose.rotation));
-  const shoeShape=shoeColliderDesc(soloCarry&&p.id===dribbleAttackerId?soloShoeProfile:baseShoeProfile);
+  const shoeShape=shoeColliderDesc(p.id===carryReadoutId?soloShoeProfile:baseShoeProfile);
   if(intentDrivenSoloCarry&&soloCarry&&p.id===dribbleAttackerId)
    shoeShape.setCollisionGroups(0);
   else if(sharedQueue!==null||isolatedPhysicalBodies||nativeCarryStride)
@@ -384,10 +393,10 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
  // All physically active open-play actors receive an independent right
  // shoe in the same world. Inactive schema placeholders have no collider.
  if(nativeCarryStride)for(const p of initialPlayers.filter(p=>physicalIds.has(p.id))){
-  const actual=soloCarryTwoFootPositions(p).right,pose=footProxyTransform(actual);
+  const actual=pairGeometry(p).right,pose=footProxyTransform(actual);
   const body=world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased()
    .setTranslation(pose.x,pose.y,pose.z).setRotation(pose.rotation));
-  const collider=world.createCollider(shoeColliderDesc(baseShoeProfile).setCollisionGroups(0x00010001),body);
+  const collider=world.createCollider(shoeColliderDesc(p.id===carryReadoutId?soloShoeProfile:baseShoeProfile).setCollisionGroups(0x00010001),body);
   idsByCollider.set(collider.handle,Object.freeze({id:p.id,foot:'right'}));
   nativePairs.set(p.id,{body,collider,actual,active:new Set()});
  }
@@ -526,10 +535,11 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     const phase=selectNativeCarryStridePhase(p,playerFrame.smallSidedMovementDecisions,nextTick,physicalIds);
     let gait=null;
     if(phase!==null){
-     gait=advanceD01LiveShoeGait({phaseRad:nativeStridePhases.get(p.id)??0,player:p,ball:preStepBall,tick:nextTick,carryPhase:phase});
+     gait=advanceD01LiveShoeGait({phaseRad:nativeStridePhases.get(p.id)??0,player:p,ball:preStepBall,tick:nextTick,carryPhase:phase,solo:p.id===pairedCarryReadoutId,sprintCadenceScale:p.id===pairedCarryReadoutId?soloSprintCadenceScale:1});
      nativeStridePhases.set(p.id,gait.phaseRad);
     }else nativeStridePhases.delete(p.id);
-    const desired=soloCarryTwoFootPositions(p,gait);
+    if(p.id===pairedCarryReadoutId)lastGaitFrequencyHz=gait?.frequencyHz??null;
+    const desired=pairGeometry(p,gait,[...pair.active]);
     const recovering=releasePreviousNativePose!==null&&p.id===firstTimeShotReleaseId;
     const age=recovering?nextTick-shotRelease.strikeTick:0;
     const leftTarget=recovering?nativeFirstTimeRecoveryTarget(desired.left,'left',shotRelease,age):desired.left;
@@ -622,7 +632,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    if(transition.actorStarted){started.add(id);next.add(id);}
    if(transition.actorEnded){ended.add(id);next.delete(id);}
    pair.active=events.next;
-   if(events.next.size||events.starts.size||events.ends.size){
+   if(id===pairedCarryReadoutId||events.next.size||events.starts.size||events.ends.size){
     const foot=transition.exclusivePhysicalStart?[...events.starts][0]:null;
     const leftIndex=initialPlayers.findIndex(p=>p.id===id);
     pairedEvidence[id]=Object.freeze({actorId:id,independentColliders:2,
@@ -633,6 +643,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
      exclusiveFootPosition:foot===null?null:vector((foot==='left'?bodies[leftIndex]:pair.body).translation())});
    }
   }
+  const carryEvents=pairedCarryReadoutId===null?null:pairEvents.get(pairedCarryReadoutId);
+  const readoutStarts=carryEvents?.starts??footStarts,readoutActive=carryEvents?.next??nextSoloFeet;
   const dv=Math.hypot(
    postBall.velocity.x-priorBall.velocity.x,
    postBall.velocity.y-priorBall.velocity.y,
@@ -642,8 +654,8 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
    version:FOOT_CONTACT_VERSION,tick:nextTick,
    started:ordered(started),ended:ordered(ended),active:ordered(next),
    ...(nativeCarryStride?{nativePairedFeet:Object.freeze(pairedEvidence)}:{}),
-   ...(soloCarry?{nativeSoloFeet:Object.freeze({
-    actorId:dribbleAttackerId,source:'rapier-physical-collider-events',
+   ...(carryResearch?{nativeSoloFeet:(pairedCarryReadoutId===null?Object.freeze:n=>nativePairedCarryReadout(pairedEvidence[pairedCarryReadoutId],n))({
+    actorId:carryReadoutId,source:'rapier-physical-collider-events',
     started:Object.freeze(['left','right'].filter(x=>footStarts.has(x))),
     ended:Object.freeze(['left','right'].filter(x=>footEnds.has(x))),
     active:Object.freeze(['left','right'].filter(x=>nextSoloFeet.has(x))),
@@ -656,7 +668,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     sprintActiveFootReleaseM:soloSprintActiveFootReleaseM,
     nativeObservedGaitFrequencyHz:lastGaitFrequencyHz,
     geometrySource:'native-rapier-collider-width',
-    exclusivePhysicalStart:soloTransition.exclusivePhysicalStart
+    exclusivePhysicalStart:soloTransition?.exclusivePhysicalStart??pairedEvidence[pairedCarryReadoutId].exclusivePhysicalStart
    })}:{}),
    // Whole-ball delta includes gravity/turf; never shoe attribution.
    onsetBallDeltaVelocityMps:started.size?dv:null
@@ -668,7 +680,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     b===ballCollider.handle?a:null;
    const physical=idsByCollider.get(other);
    if(!physical)return;
-   if(soloCarry&&physical.id===dribbleAttackerId){
+   if(carryResearch&&physical.id===carryReadoutId){
     const foot=physical.foot;
     const old=soloFootForces.get(foot);
     soloFootForces.set(foot,{
@@ -717,7 +729,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     if(!geometricContacts&&!solverContacts)return;
     manifolds.push({id,flipped,normalWorld:vector(m.normal()),
      geometricContacts,solverContacts});
-    if(soloCarry&&id===dribbleAttackerId)
+    if(carryResearch&&id===carryReadoutId)
      soloFootManifolds.push({foot:'left',geometricContacts,solverContacts});
    });
   }
@@ -726,6 +738,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     const geometricContacts=m.numContacts(),solverContacts=m.numSolverContacts();
     if(!geometricContacts&&!solverContacts)return;
     manifolds.push({id,flipped,normalWorld:vector(m.normal()),geometricContacts,solverContacts});
+    if(id===pairedCarryReadoutId)soloFootManifolds.push({foot:'right',geometricContacts,solverContacts});
    });
   }
   if(rightCollider&&relevant.has(dribbleAttackerId)){
@@ -744,7 +757,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
   // velocity delta is measured BEFORE the later autonomous action impulse.
   // World-step delta includes gravity, grass and all collisions; co-occurrence
   // is NOT a causal attribution to either shoe, even for an exclusive START.
-  const footDynamics=soloCarry?Object.freeze({
+  const footDynamics=carryResearch?Object.freeze({
    source:'native-rapier-world-step-before-carry-action',tick:nextTick,
    preStepBallVelocityMps:vector(priorBall.velocity),
    postStepBallVelocityMps:vector(postBall.velocity),
@@ -758,7 +771,7 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider,
     const force=soloFootForces.get(foot);
     const contact=soloFootManifolds.filter(x=>x.foot===foot);
     return [foot,Object.freeze({
-     started:footStarts.has(foot),active:nextSoloFeet.has(foot),
+     started:readoutStarts.has(foot),active:readoutActive.has(foot),
      nativeForceEventCount:force?.eventCount??0,
      totalReportedForceMagnitudeN:force?.totalReportedMagnitudeN??0,
      peakReportedForceMagnitudeN:force?.maxReportedMagnitudeN??0,

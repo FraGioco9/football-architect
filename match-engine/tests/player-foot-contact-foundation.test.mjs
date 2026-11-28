@@ -15,7 +15,7 @@ import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_RESTITUTION,initialFootPositions,footProxyTransform,
  validateFootContactFrame} from '../src/player-foot-contact.mjs';
 import {createControlledActionLab} from '../src/action-labs.mjs';
-import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget,nativeShoeContactProfile} from '../src/rapier-foot-contact-bridge.mjs';
+import {createPrivateRapierFootContactBridge,usesNativePairedShoeBridge,hasExclusiveNativeShoeStart,soloCarryTwoFootPositions,planNativeFirstTimeFootRecovery,nativeFirstTimeRecoveryTarget,nativeShoeContactProfile,nativePairedCarryReadout} from '../src/rapier-foot-contact-bridge.mjs';
 import {createFootContactTimeline,FOOT_CONTACT_TIMELINE_VERSION}
  from '../src/player-foot-contact-timeline.mjs';
 import {summarizeFootSolverEvidence,FOOT_SOLVER_EVIDENCE_VERSION}
@@ -232,7 +232,7 @@ test('ME-01-QA U-01E3: paired bridge eligibility and physical foot authorization
   const id=team+'-10',ids=[id],pair={actorId:id,independentColliders:2,exclusivePhysicalStart:true,started:['right'],active:['right']};
   assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids}),true);
   assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,legacyGroundCarry:true}),false);
-  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,soloCarryAdapter:true}),false);
+  assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,soloCarryAdapter:true}),true);
   assert.equal(usesNativePairedShoeBridge({activePlayerIds:ids,firstTimeShot:true}),true);
   assert.equal(usesNativePairedShoeBridge({activePlayerIds:[]}),false);
   assert.equal(usesNativePairedShoeBridge({}),false);
@@ -316,5 +316,19 @@ test('ME-01-QA U-01E5b: current isolated duels use paired shoes; archive is expl
     assert.equal(frame.smallSidedParticipants.length,2);
    }
   }finally{lab.dispose();}
+ }
+});
+
+test('ME-01-QA U-01F7: paired carry diagnostic is a read-only projection of actual foot evidence',()=>{
+ for(const team of ['home','away'])for(const foot of ['left','right']){
+  const id=team+'-10',ids=[id];
+  const pair=Object.freeze({actorId:id,independentColliders:2,started:[foot],active:[foot],ended:[],exclusivePhysicalStart:true});
+  const readout=nativePairedCarryReadout(pair,{actorId:id,independentColliders:2,nativeObservedGaitFrequencyHz:2,exclusivePhysicalStart:false});
+  assert.equal(readout.started,pair.started);assert.equal(readout.active,pair.active);
+  assert.equal(readout.exclusivePhysicalStart,true);
+  assert.equal(readout.source,'rapier-physical-collider-events');assert.ok(Object.isFrozen(readout));
+  assert.equal(hasExclusiveNativeShoeStart({started:ids,active:ids,nativePairedFeet:{[id]:pair},nativeSoloFeet:readout},id),true);
+  assert.equal(hasExclusiveNativeShoeStart({started:ids,active:ids,nativePairedFeet:{[id]:{...pair,active:['left','right']}},nativeSoloFeet:readout},id),false);
+  assert.throws(()=>nativePairedCarryReadout(null,{actorId:id}),/Actual paired/);
  }
 });
