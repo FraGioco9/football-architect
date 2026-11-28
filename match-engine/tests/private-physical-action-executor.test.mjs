@@ -7,9 +7,9 @@ import {initializeRapier,createEngine,BALL_RADIUS,canonicalSnapshot}
  from '../src/core.mjs';
 import {INITIAL_PLAYERS,createPlayerMovement} from '../src/player-movement.mjs';
 import {footProxyTransform} from '../src/player-foot-contact.mjs';
-import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeLabAerialSequence,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,nativeKeeperSequenceDeliveryAllowed,nativeKeeperSequenceClaimAllowed,nativeKeeperSequenceInterrupted} from '../src/native-fundamental-mask.mjs';
+import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeLabAerialSequence,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,nativeKeeperSequenceDeliveryAllowed,nativeKeeperSequenceClaimAllowed,nativeKeeperSequenceInterrupted,selectNativeCrossProfile,nativeCrossTargetHeight} from '../src/native-fundamental-mask.mjs';
 import {selectDefensiveIntervention} from '../src/defensive-intervention-selection.mjs';
-import {createNativeActionRestriction,evaluateNativeActionRestriction} from '../src/private-physical-action-executor.mjs';
+import {createNativeActionRestriction,evaluateNativeActionRestriction,calculateNativeCrossImpulse} from '../src/private-physical-action-executor.mjs';
 
 test('UME-05E isolated technical constraints filter the same native decision without creating actions',()=>{
  for(const [actor,receiver] of [['home-10','home-9'],['away-4','away-7'],['home-2','home-6']]){
@@ -256,4 +256,29 @@ test('ME-01-QA U-01F4b: high hand sequence requires the authorized actual cross'
  }
  assert.equal(nativeKeeperSequenceClaimAllowed(null,'home-1',null,0),true);
  assert.equal(nativeKeeperSequenceInterrupted(null,['home-2'],['home-2'],['home-2']),false);
+});
+
+test('ME-01-QA U-02c1: shared cross profile and range formula',()=>{
+ const full=createNativeFundamentalMask(),ground=nativeLabFundamentalMask({id:'cross-pair'});
+ assert.equal(selectNativeCrossProfile(full),'head');
+ assert.equal(selectNativeCrossProfile(ground),'landing');
+ assert.equal(selectNativeCrossProfile(ground,'head'),null);
+ for(const [id,surface,profile,height] of [['header-pair','head','head',1.95],['chest-control','chest','chest',1.35],['volley-solo','foot','foot',.85],['keeper-high-cross','glove','head',1.95]]){
+  const mask=nativeLabFundamentalMask({id,collective:true});
+  assert.equal(selectNativeCrossProfile(mask,surface),profile);
+  assert.equal(nativeCrossTargetHeight(profile,.11),height);
+ }
+ for(const direction of [1,-1])for(const distanceM of [8,20,40]){
+  const args={origin:{z:.11},massKg:.43,target:{distanceM},originalImpulseNs:{x:direction*2,y:1,z:1.5}};
+  const result=['landing','foot','chest','head'].map(profile=>calculateNativeCrossImpulse({...args,profile}));
+  for(const [i,p] of result.entries()){
+   assert.ok(p.scale>=1&&p.scale<=3.8);
+   assert.equal(p.targetZ,[.11,.85,1.35,1.95][i]);
+   assert.equal(p.originalImpulseNs,args.originalImpulseNs);
+   assert.equal(p.officialMatchAction,false);
+   if(i)assert.ok(p.scale>=result[i-1].scale);
+  }
+  assert.equal(calculateNativeCrossImpulse({...args,profile:null}),null);
+  assert.equal(calculateNativeCrossImpulse({...args,profile:'head',originalImpulseNs:{x:0,y:0,z:1}}),null);
+ }
 });

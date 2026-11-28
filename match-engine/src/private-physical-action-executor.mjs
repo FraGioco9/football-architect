@@ -8,7 +8,7 @@ import {inspectPhysicalActionRejection,selectUniformAutonomousContactAction,choo
  from './player-ball-uniform-autonomous-action.mjs';
 import {FOOT_CONTACT_VERSION,footProxyTransform} from './player-foot-contact.mjs';
 import {hasExclusiveNativeShoeStart} from './rapier-foot-contact-bridge.mjs';
-import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePhysicalActionAllowed,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask} from './native-fundamental-mask.mjs';
+import {createNativeFundamentalMask,nativeFundamentalAllowed,nativePhysicalActionAllowed,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,selectNativeCrossProfile,nativeCrossTargetHeight} from './native-fundamental-mask.mjs';
 import {chooseIntentSoloCarryTouch} from './intent-driven-solo-carry.mjs';
 import {chooseNativeFixedCarryImpulse}
  from './native-fixed-carry-impulse.mjs';
@@ -34,6 +34,17 @@ export function calculateNativeLoftedPassImpulse({origin,velocity,target,massKg}
  if(magnitude<0.025||raw.z<=0)return null;
  return Object.freeze({source:'native-lofted-pass-range-v1',profile,distanceM:d,flightS,targetZ,
   impulseNs:Object.freeze({x:raw.x*scale,y:raw.y*scale,z:raw.z*scale}),officialMatchAction:false});
+}
+export function calculateNativeCrossImpulse({origin,massKg,target,originalImpulseNs,profile}={}){
+ const i=originalImpulseNs,distanceM=target?.distanceM;
+ if(![origin?.z,massKg,distanceM,i?.x,i?.y,i?.z].every(Number.isFinite)||massKg<=0||distanceM<=0||i.z<=0||profile===null)return null;
+ const horizontal=Math.hypot(i.x,i.y);
+ if(horizontal<=1e-8)return null;
+ const loft=i.z/horizontal,targetZ=nativeCrossTargetHeight(profile,origin.z);
+ const rise=Math.max(0,targetZ-origin.z);
+ const desiredHorizontal=Math.sqrt(9.81*distanceM*distanceM/(2*Math.max(loft*distanceM-rise,loft*distanceM*0.5)));
+ return Object.freeze({source:'isolated-cross-range-candidate-v1',profile,distanceM,targetZ,originalImpulseNs:i,
+  scale:Math.max(1,Math.min(3.8,massKg*desiredHorizontal/horizontal)),officialMatchAction:false});
 }
 export const PRIVATE_PHYSICAL_ACTION_EXECUTOR_VERSION=
  'me-action-foundation-real-shoe-impulse-v1';
@@ -498,21 +509,10 @@ export function createPrivatePhysicalActionExecutor({
    }):null;
    // CROSS-01: preserve M33 direction and loft; ideal range estimates
    // only the initial impulse. Never steer or teleport the live ball.
-   const crossCalibration=sharedDynamics&&chosen.action==='cross'&&chosen.crossTarget?(()=>{
-    const i=chosen.impulseNs,horizontal=Math.hypot(i.x,i.y);
-    const distance=chosen.crossTarget.distanceM,loft=i.z/horizontal;
-    // In native open play, aim to reach the live receiver while descending
-    // at playable heading height rather than landing at their feet.
-    // The isolated low-arrival cross exercise retains its existing profile.
-    const originZ=ballBody.translation().z;
-    const targetZ=nativeActionPolicy?1.95:originZ;
-    const rise=Math.max(0,targetZ-originZ);
-    const desiredHorizontal=Math.sqrt(9.81*distance*distance/(2*Math.max(loft*distance-rise,loft*distance*0.5)));
-    return Object.freeze({source:'isolated-cross-range-candidate-v1',
-     distanceM:distance,targetZ,originalImpulseNs:i,
-     scale:Math.max(1,Math.min(3.8,ballBody.mass()*desiredHorizontal/horizontal)),
-     officialMatchAction:false});
-   })():null;
+   const crossCalibration=sharedDynamics&&chosen.action==='cross'&&chosen.crossTarget?
+    calculateNativeCrossImpulse({origin:ballBody.translation(),massKg:ballBody.mass(),target:chosen.crossTarget,originalImpulseNs:chosen.impulseNs,
+     profile:selectNativeCrossProfile(fundamentalMask,aerialSequence?.surface??null)}):null;
+   if(sharedDynamics&&chosen.action==='cross'&&!crossCalibration)throw new Error('Cross outside permitted delivery envelope');
    const shotCalibration=sharedDynamics&&chosen.action==='shot'&&chosen.shotTarget?
      calculateCurrentLabShotCalibration({target:chosen.shotTarget,position:ballBody.translation(),
       velocity:ballBody.linvel(),massKg:ballBody.mass(),ballRadiusM,originalImpulseNs:chosen.impulseNs,

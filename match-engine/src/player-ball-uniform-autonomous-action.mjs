@@ -501,7 +501,8 @@ export function selectUniformAutonomousContactAction({
    if(!interceptionTouch)continue;
   }
   const duelDefensiveTouch=collectiveTouch??interceptionTouch??sharedTouch?.defensive??null;
-  const dribbleTouch=defending&&['intercepted','collected'].includes(ic.phase)?chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:actors.find(p=>p.id===ic.side+'-9'),ballPosition,ballVelocity,variantIndex:0,tick}):sharedDuel?sharedTouch.carry:isolatedDribbleContext===null?null:
+  const currentCarryOnly=pairedPhysicalSource&&isolatedDribbleContext!==null&&!sharedDuel;
+  const dribbleTouch=defending&&['intercepted','collected'].includes(ic.phase)?chooseDirectedDribbleTouch({attackingSide:player.team,attacker:player,defender:actors.find(p=>p.id===ic.side+'-9'),ballPosition,ballVelocity,variantIndex:0,tick}):sharedDuel?sharedTouch.carry:isolatedDribbleContext===null||currentCarryOnly?null:
    chooseIsolatedDribbleTouch({
     variantIndex:isolatedDribbleContext.variantIndex,tick,
     attackingSide:isolatedDribbleContext.attackingSide,
@@ -523,6 +524,9 @@ export function selectUniformAutonomousContactAction({
    if(!permits(duelDefensiveTouch.kind))continue;
    action=duelDefensiveTouch.kind;dx=duelDefensiveTouch.dx;dy=duelDefensiveTouch.dy;
    rule=collectiveTouch?'collective-native-defensive-ground-touch':'directed-duel-native-defensive-ground-touch';
+  }else if(currentCarryOnly){
+   if(!permits('carry'))continue;
+   action='carry';dx=attack;dy=0;rule='native-permitted-carry';
   }else if(dribbleTouch!==null){
    if(!permits('carry')||!pairedPhysicalSource&&dribbleTouch.magnitudeNs<0.025)continue;
    action='carry';dx=dribbleTouch.dx;dy=dribbleTouch.dy;

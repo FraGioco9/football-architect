@@ -1,6 +1,6 @@
 import {attackDirection,validateAttackPolarity,nativeHalfFormationReady} from './match-directions.mjs';
 import {directedDribbleApproachTarget,planDribbleDefender,resolveDuelActors,isDuelGettingUp,chooseDribbleDefensiveTouch,planShoulderBalanceRecovery,isShoulderCollecting,isSlideCollecting,routeDuelAroundOpponent,planDuelRecoveryApproach,planLooseDuelApproaches,planDuelPostContactAlignment,planDribbleContactRelease,dribbleReleaseApproach,planNativeDefensiveIntervention,isNativeRecoveryLocked} from './isolated-dribble-touches.mjs';
-import {nativeLabFundamentalMask,nativeDefensiveInterventionAllowed,nativePermittedAerialSurfaces,NATIVE_AERIAL_APPROACH_HEIGHTS} from './native-fundamental-mask.mjs';
+import {nativeLabFundamentalMask,nativeDefensiveInterventionAllowed,nativePermittedAerialSurfaces,NATIVE_AERIAL_APPROACH_HEIGHTS,selectNativeCrossProfile,nativeCrossTargetHeight,nativeLabAerialSequence} from './native-fundamental-mask.mjs';
 import {advanceSlidingTackle,planSlidingTackle,SLIDE_MAX_SPEED_MPS,SLIDE_ACCEL_MPS2,SLIDE_BRAKE_MPS2} from './sliding-tackle.mjs';
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
@@ -2667,7 +2667,8 @@ export function createPlayerMovement(options={}){
    // fixture. The receiving player runs there using normal acceleration.
    if((delivery.kind==='cross'||delivery.lofted===true)&&recipient&&[ballPosition.z,realBallVelocity.z].every(Number.isFinite)){
     const preferred=delivery.lofted===true&&aerialSurfaces.includes('foot')?'foot':aerialSurfaces[0];
-    const h=NATIVE_AERIAL_APPROACH_HEIGHTS[preferred]??(delivery.lofted===true?0.85:1.95),z=ballPosition.z,vz=realBallVelocity.z;
+    const crossProfile=delivery.kind==='cross'?selectNativeCrossProfile(defensiveMask,nativeLabAerialSequence(smallSided)?.surface??null):null;
+    const h=crossProfile&&crossProfile!=='landing'?nativeCrossTargetHeight(crossProfile,ballPosition.z):NATIVE_AERIAL_APPROACH_HEIGHTS[preferred]??(delivery.lofted===true?0.85:1.95),z=ballPosition.z,vz=realBallVelocity.z;
     const discriminant=vz*vz+19.62*(z-h);
     if(discriminant>=0){
      const t=(vz+Math.sqrt(discriminant))/9.81;

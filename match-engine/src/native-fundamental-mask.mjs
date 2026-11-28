@@ -113,3 +113,19 @@ export function nativePermittedAerialSurfaces(mask,restriction='all',enabled=tru
  if(!['all','head','chest','foot'].includes(restriction)||typeof enabled!=='boolean')throw new TypeError('Known aerial surface configuration required');
  return Object.freeze(Object.keys(NATIVE_AERIAL_APPROACH_HEIGHTS).filter(surface=>enabled&&(restriction==='all'||surface===restriction)&&nativeAerialSurfaceAllowed(mask,surface)));
 }
+
+ // A cross profile expresses its intended receiving height; it does not
+ // change the physics or guarantee the receiver's subsequent contact.
+export const NATIVE_CROSS_PROFILES=Object.freeze(['landing','head','chest','foot']);
+export function selectNativeCrossProfile(mask,requiredSurface=null){
+ if(requiredSurface==='glove')return 'head';
+ if(requiredSurface!==null){
+  if(!NATIVE_CROSS_PROFILES.includes(requiredSurface)||requiredSurface!=='landing'&&!nativeAerialSurfaceAllowed(mask,requiredSurface))return null;
+  return requiredSurface;
+ }
+ return nativePermittedAerialSurfaces(mask)[0]??'landing';
+}
+export function nativeCrossTargetHeight(profile,originZ){
+ if(!NATIVE_CROSS_PROFILES.includes(profile)||!Number.isFinite(originZ))throw new TypeError('Known cross profile and finite origin required');
+ return profile==='landing'?originZ:NATIVE_AERIAL_APPROACH_HEIGHTS[profile];
+}
