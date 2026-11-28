@@ -7,7 +7,7 @@ import {initializeRapier,createEngine,BALL_RADIUS,canonicalSnapshot}
  from '../src/core.mjs';
 import {INITIAL_PLAYERS,createPlayerMovement} from '../src/player-movement.mjs';
 import {footProxyTransform} from '../src/player-foot-contact.mjs';
-import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeLabAerialSequence,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask} from '../src/native-fundamental-mask.mjs';
+import {NATIVE_FUNDAMENTALS,createNativeFundamentalMask,nativeFundamentalAllowed,nativeLabFundamentalMask,nativeAerialSurfaceAllowed,createNativeDuelFundamentalMask,nativeDefensiveInterventionAllowed,nativePhysicalActionAllowed,nativeLabAerialSequence,nativeSequenceDeliveryAllowed,nativeSequenceAerialAllowed,nativeSequenceGroundMask,nativeKeeperSequenceDeliveryAllowed,nativeKeeperSequenceClaimAllowed,nativeKeeperSequenceInterrupted} from '../src/native-fundamental-mask.mjs';
 import {selectDefensiveIntervention} from '../src/defensive-intervention-selection.mjs';
 import {createNativeActionRestriction,evaluateNativeActionRestriction} from '../src/private-physical-action-executor.mjs';
 
@@ -228,4 +228,32 @@ test('ME-01-QA U-01F4: aerial sequence permissions require real delivery provena
  }
  assert.equal(nativeLabAerialSequence({id:'aerial-duel'}),null);
  assert.equal(nativeSequenceAerialAllowed(null,null,null,0),true);
+});
+
+test('ME-01-QA U-01F4b: high hand sequence requires the authorized actual cross',()=>{
+ for(const side of ['home','away'])for(const id of ['keeper-high-cross','keeper-high-intercept']){
+  const seq=nativeLabAerialSequence({id,side}),mask=nativeLabFundamentalMask({id,collective:true});
+  const cross={tick:3,action:'cross',team:side,playerId:seq.actorId,crossTarget:{recipientId:seq.recipientId},appliedByRapier:true,actualPhysicsImpulseApplied:true};
+  const delivery={tick:3,airborne:true};
+  assert.equal(seq.keeperId,(side==='home'?'away':'home')+'-1');
+  assert.deepEqual(nativeSequenceGroundMask(mask,seq,seq.actorId,false),['cross']);
+  assert.deepEqual(nativeSequenceGroundMask(mask,seq,seq.recipientId,false),[]);
+  assert.deepEqual(nativeSequenceGroundMask(mask,seq,seq.actorId,true),[]);
+  assert.equal(nativeKeeperSequenceDeliveryAllowed(seq,cross,4),true);
+  for(const patch of [{tick:2},{playerId:seq.recipientId},{team:'other'},{actualPhysicsImpulseApplied:false},{appliedByRapier:false},{crossTarget:{recipientId:seq.actorId}}])
+   assert.equal(nativeKeeperSequenceDeliveryAllowed(seq,{...cross,...patch},4),false);
+  assert.equal(nativeKeeperSequenceClaimAllowed(seq,seq.keeperId,delivery,5),true);
+  assert.equal(nativeKeeperSequenceClaimAllowed(seq,seq.actorId,delivery,5),false);
+  assert.equal(nativeKeeperSequenceClaimAllowed(seq,seq.keeperId,{...delivery,airborne:false},5),false);
+  assert.equal(nativeKeeperSequenceClaimAllowed(seq,seq.keeperId,null,5),false);
+  assert.equal(nativeKeeperSequenceClaimAllowed(seq,seq.keeperId,delivery,3),false);
+  assert.equal(nativeKeeperSequenceClaimAllowed(seq,seq.keeperId,delivery,184),false);
+  assert.equal(nativeKeeperSequenceClaimAllowed(seq,seq.keeperId,delivery,5,{conflict:true}),false);
+  assert.equal(nativeKeeperSequenceInterrupted(seq,[],[seq.actorId],[]),false);
+  assert.equal(nativeKeeperSequenceInterrupted(seq,[seq.actorId],[seq.actorId],[]),true);
+  assert.equal(nativeKeeperSequenceInterrupted(seq,[],[seq.recipientId],[]),true);
+  assert.equal(nativeKeeperSequenceInterrupted(seq,[],[],[seq.recipientId]),true);
+ }
+ assert.equal(nativeKeeperSequenceClaimAllowed(null,'home-1',null,0),true);
+ assert.equal(nativeKeeperSequenceInterrupted(null,['home-2'],['home-2'],['home-2']),false);
 });

@@ -63,11 +63,11 @@ export function nativePhysicalActionAllowed(mask,choice){
 // Generic bounded delivery exercise configuration; only the boundary
 // translates a scenario into actor, recipient, profile and surface.
 export function nativeLabAerialSequence({id,side}={}){
- const surfaces={'header-pair':'head','chest-control':'chest','volley-solo':'foot','lofted-pass':'foot','lofted-short':'foot','lofted-switch':'foot'};
+ const surfaces={'header-pair':'head','chest-control':'chest','volley-solo':'foot','lofted-pass':'foot','lofted-short':'foot','lofted-switch':'foot','keeper-high-cross':'glove','keeper-high-intercept':'glove'};
  if(!Object.hasOwn(surfaces,id))return null;
  if(!['home','away'].includes(side))throw new TypeError('Known delivery team required');
  const profiles={'lofted-pass':'long','lofted-short':'short','lofted-switch':'switch'};
- return Object.freeze({actorId:side+'-10',recipientId:side+'-9',team:side,kind:profiles[id]?'pass':'cross',profile:profiles[id]??null,surface:surfaces[id]});
+ return Object.freeze({actorId:side+'-10',recipientId:side+'-9',team:side,kind:profiles[id]?'pass':'cross',profile:profiles[id]??null,surface:surfaces[id],...(surfaces[id]==='glove'?{keeperId:(side==='home'?'away':'home')+'-1'}:{})});
 }
 export function nativeSequenceDeliveryAllowed(sequence,choice){
  if(sequence===null)return true;
@@ -88,4 +88,21 @@ export function nativeSequenceAerialAllowed(sequence,delivery,contact,tick){
 export function nativeSequenceGroundMask(mask,sequence,actorId,deliveryApplied){
  if(sequence===null)return mask;
  return !deliveryApplied&&actorId===sequence.actorId?createNativeFundamentalMask(mask.filter(k=>k===sequence.kind)):createNativeFundamentalMask([]);
+}
+
+// A keeper exercise consumes a witnessed delivery, not the LAB's identity.
+export function nativeKeeperSequenceDeliveryAllowed(sequence,action,tick){
+ return sequence?.surface==='glove'&&Number.isSafeInteger(tick)&&tick>=2&&action?.tick===tick-1&&
+  action.appliedByRapier===true&&action.actualPhysicsImpulseApplied===true&&nativeSequenceDeliveryAllowed(sequence,action);
+}
+export function nativeKeeperSequenceClaimAllowed(sequence,keeperId,delivery,tick,{conflict=false}={}){
+ if(sequence===null)return true;
+ return sequence.surface==='glove'&&keeperId===sequence.keeperId&&!!delivery&&delivery.airborne===true&&
+  Number.isSafeInteger(tick)&&Number.isSafeInteger(delivery.tick)&&tick>delivery.tick&&tick-delivery.tick<=180&&conflict===false;
+}
+export function nativeKeeperSequenceInterrupted(sequence,shoeStarts,shoeActive,bodyActive){
+ if(sequence===null)return false;
+ // A still-active launch shoe is not another START. Any later START
+ // or another actor's active shoe/body contact interrupts the delivery.
+ return shoeStarts.length>0||shoeActive.some(id=>id!==sequence.actorId)||bodyActive.length>0;
 }

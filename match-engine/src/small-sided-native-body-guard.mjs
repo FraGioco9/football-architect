@@ -6,7 +6,7 @@ import {attackDirection,validateAttackPolarity} from './match-directions.mjs';
 import {INITIAL_PLAYERS,PLAYER_VERSION,PLAYER_DT,PLAYER_MAX_SPEED_MPS}
  from './player-movement.mjs';
 import {chooseRecipient} from './player-ball-uniform-autonomous-action.mjs';
-import {createNativeFundamentalMask,nativeFundamentalAllowed,nativeAerialSurfaceAllowed} from './native-fundamental-mask.mjs';
+import {createNativeFundamentalMask,nativeFundamentalAllowed,nativeAerialSurfaceAllowed,nativeKeeperSequenceDeliveryAllowed,nativeKeeperSequenceClaimAllowed} from './native-fundamental-mask.mjs';
 import {planNativeKeeperHighIntercept,NATIVE_HIGH_HAND_MAX_Z} from './small-sided-lab-scenarios.mjs';
 
 export const SMALL_SIDED_BODY_VERSION='me-628-native-physical-body-guard-v1';
@@ -560,10 +560,12 @@ export function planNativeKeeperChallenge(keeper,attacker,ball,attackPolarity=1)
  if(gap>1.65||gap<0.08)return null;
  return freeze({kind:'challenge',start:freeze(start),target:freeze(intended),intended:freeze(intended),eta,reachTicks,limited:false});
 }
-export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null,{closeChallengeEnabled=false,nativeOpenPlayIds=null,allowedFundamentals=null}={}){
+export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null,{closeChallengeEnabled=false,nativeOpenPlayIds=null,allowedFundamentals=null,keeperSequence=null}={}){
  const mask=createNativeFundamentalMask(allowedFundamentals),canSave=nativeFundamentalAllowed(mask,'save');
  if(nativeOpenPlayIds!==null&&(!Array.isArray(nativeOpenPlayIds)||!nativeOpenPlayIds.includes(keeper.id)||new Set(nativeOpenPlayIds).size!==nativeOpenPlayIds.length))throw new TypeError('Native keeper requires explicit physical participants');
  const nativeOpenPlay=nativeOpenPlayIds!==null;
+ if(keeperSequence!==null&&(!nativeOpenPlay||keeperSequence.surface!=='glove'||keeperSequence.keeperId!==keeper.id))throw new TypeError('Keeper sequence requires configured active keeper');
+ let sequenceDelivery=null;
  let attackPolarity=1;
  const rest=p=>({x:p.x+attackDirection(keeper.team,attackPolarity)*0.35,y:p.y,z:0.85});
  const origin=rest(keeper);
@@ -594,14 +596,20 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   if(nativeOpenPlay&&lastAction?.tick===tick-1&&lastAction.team!==keeper.team&&
      (lastAction.action==='cross'||lastAction.passTarget?.deliveryProfile==='lofted')&&lastAction.appliedByRapier===true&&lastAction.actualPhysicsImpulseApplied===true)crossTick=lastAction.tick;
   else if(deadBall||crossTick!==null&&(tick-crossTick>180||lastAction?.tick===tick-1))crossTick=null;
+  if(keeperSequence!==null){
+   if(deadBall||sequenceDelivery&&tick-sequenceDelivery.tick>180)sequenceDelivery=null;
+   if(!deadBall&&nativeKeeperSequenceDeliveryAllowed(keeperSequence,lastAction,tick))sequenceDelivery={tick:lastAction.tick,airborne:false};
+   if(sequenceDelivery&&ball.position.z>0.31)sequenceDelivery.airborne=true;
+  }
+  const sequenceEligible=nativeKeeperSequenceClaimAllowed(keeperSequence,keeper.id,sequenceDelivery,tick);
   const physicalPlayers=nativeOpenPlay?frame.players.filter(p=>nativeOpenPlayIds.includes(p.id)):null;
   let started=false,phase='ready',target=rest(actor);
   if(canSave&&!deadBall&&!grip?.active()&&!plan){
-   const shotCandidate=shotTick!==null&&shotTick!==usedShot?planNativeKeeperDive(actor,ball,attackPolarity):null;
+   const shotCandidate=keeperSequence===null&&shotTick!==null&&shotTick!==usedShot?planNativeKeeperDive(actor,ball,attackPolarity):null;
    const attacker=nativeOpenPlay?physicalPlayers.filter(p=>p.team!==keeper.team).sort((a,b)=>Math.hypot(a.x-ball.position.x,a.y-ball.position.y)-Math.hypot(b.x-ball.position.x,b.y-ball.position.y)||a.id.localeCompare(b.id))[0]:frame.players.find(p=>p.team!==keeper.team&&p.id.endsWith('-10'));
-   const challenge=(closeChallengeEnabled||nativeOpenPlay)&&shotTick===null&&tick-lastChallengeTick>=60?
+   const challenge=keeperSequence===null&&(closeChallengeEnabled||nativeOpenPlay)&&shotTick===null&&tick-lastChallengeTick>=60?
     planNativeKeeperChallenge(actor,attacker,ball,attackPolarity):null;
-   const highCandidate=crossTick!==null&&crossTick!==usedCross?planNativeKeeperHighClaim(actor,ball,attackPolarity):null;
+   const highCandidate=sequenceEligible&&crossTick!==null&&crossTick!==usedCross?planNativeKeeperHighClaim(actor,ball,attackPolarity):null;
    const candidate=shotCandidate?freeze({...shotCandidate,kind:'shot'}):highCandidate??challenge;
    if(candidate){
     plan=candidate;startTick=tick;started=true;
@@ -650,8 +658,8 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   prepared={tick,phase,started,actor,physicalPlayers,priorVelocity:freeze({...ball.velocity}),
    plan:plan?freeze({kind:plan.kind,eta:plan.eta,limited:plan.limited,intended:plan.intended,target:plan.target}):null};
  }
- function observe(tick,postVelocity,{otherBallContact=false}={}){
-  if(typeof otherBallContact!=='boolean')throw new TypeError('Boolean competing physical contact required');
+ function observe(tick,postVelocity,{otherBallContact=false,sequenceInterrupted=false}={}){
+  if(typeof otherBallContact!=='boolean'||typeof sequenceInterrupted!=='boolean')throw new TypeError('Boolean competing physical contact required');
   if(prepared?.tick!==tick||!['x','y','z'].every(k=>finite(postVelocity?.[k])))
    throw new Error('Keeper dive requires same native world step and observed ball velocity');
   let hit=false;
@@ -660,7 +668,9 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
   });
   const pos=body.translation();
   let highHandAction=null,highHandDiagnostic=null;
-  if(canSave&&hit&&grip&&!grip.active()&&prepared.phase!=='recovering'){
+  if(keeperSequence!==null&&sequenceInterrupted)sequenceDelivery=null;
+  const sequenceEligible=nativeKeeperSequenceClaimAllowed(keeperSequence,keeper.id,sequenceDelivery,tick,{conflict:keeperSequence!==null&&otherBallContact});
+  if(canSave&&sequenceEligible&&hit&&grip&&!grip.active()&&prepared.phase!=='recovering'){
    const high=prepared.plan?.kind==='high-claim';
    const evidence={contact:true,ballPosition:ballBody.translation(),
     before:prepared.priorVelocity,after:postVelocity,glovePosition:pos,gloveVelocity:body.linvel(),highClaim:high};
@@ -703,11 +713,14 @@ export function createNativeKeeperDive(R,world,ballCollider,keeper,ballBody=null
    contact:hit,contactStarted:hit&&!priorHit,
    contactMotion:hit?freeze({before:prepared.priorVelocity,after:freeze({...postVelocity})}):null,
    catchState,...(nativeOpenPlay?{distribution,highHandAction,highHandDiagnostic}:{}),
+   ...(keeperSequence!==null?{sequenceDeliveryTick:sequenceDelivery?.tick??null,sequenceAirborne:sequenceDelivery?.airborne??false}:{}),
    officialSave:false,source:'native-rapier-solver-manifold'});
+  if(keeperSequence!==null&&hit)sequenceDelivery=null;
   priorHit=hit;prepared=null;return latest;
  }
  function clearForDeadBall(tick){
   if(!nativeOpenPlay||latest.tick!==tick||tick<1||prepared!==null)throw new TypeError('Current native keeper tick required for dead ball');
+  sequenceDelivery=null;
   grip?.release();const catchState=grip?.observe(tick)??null;
   plan=null;shotTick=null;usedShot=null;crossTick=null;usedCross=null;startTick=null;active=false;priorHit=false;lastChallengeTick=tick;highGripSettling=null;
   glove.setCollisionGroups(0);

@@ -9,7 +9,7 @@ import {createPrivateRapierFootContactBridge,hasExclusiveNativeShoeStart,usesNat
 import {createPrivateRapier22BodyBridge} from './rapier-22-body-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
-import {nativeLabFundamentalMask,nativeLabAerialSequence} from './native-fundamental-mask.mjs';
+import {nativeLabFundamentalMask,nativeLabAerialSequence,nativeKeeperSequenceInterrupted} from './native-fundamental-mask.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {createBasicMatchRefereeB05} from './basic-match-referee-b05.mjs';
 import {smallSidedSetup,supportsNativeOpenPlay} from './small-sided-lab-scenarios.mjs';
@@ -753,6 +753,8 @@ export function createEngine(RAPIER, input = {}, {
      ...(sharedContactQueue?{sharedQueue:sharedContactQueue}:{})
     }):null;
   const nativeFundamentals=nativeLabFundamentalMask({id:smallSided?.id,collective:diagnosticCollectiveActions,interceptionStart:smallSided?.interceptionStart,blockStart:smallSided?.blockStart,keeperSingleShot:diagnosticKeeperSingleShot,directedDribble:diagnosticDirectedDribble,duelTackleProfile:diagnosticDuelTackleProfile});
+  const aerialSequence=nativeLabAerialSequence(smallSided??{});
+  const keeperSequence=aerialSequence?.surface==='glove'?aerialSequence:null;
   const smallBodyGuard=diagnosticSmallSidedBodyGuardEnabled?
    createSmallSidedNativeBodyGuard(RAPIER,world,ballCollider,
      stagedShoes,smallSided.activeIds,{
@@ -770,7 +772,7 @@ export function createEngine(RAPIER, input = {}, {
    (smallSided?.id==='keeper-1v1'||smallSided?.blockStart)?
     stagedShoes.filter(p=>p.id===smallSided.opponent+'-1'):[]):[];
   const keeperDives=nativeKeeperActors.map(p=>createNativeKeeperDive(RAPIER,world,ballCollider,p,body,
-    {closeChallengeEnabled:diagnosticKeeperSingleShot,nativeOpenPlayIds:diagnosticCollectiveActions?smallSided.activeIds:null,allowedFundamentals:nativeFundamentals}));
+    {closeChallengeEnabled:diagnosticKeeperSingleShot,nativeOpenPlayIds:diagnosticCollectiveActions?smallSided.activeIds:null,allowedFundamentals:nativeFundamentals,keeperSequence}));
   const keeperDive=!diagnosticCollectiveActions?(keeperDives[0]??null):null;
   const keeperSnapshots=()=>Object.freeze(keeperDives.map(controller=>controller.snapshot()));
   const collectiveObserver=diagnosticCollectiveActions?createNativeBallControlObserver(smallSided.activeIds,stagedShoes.filter(p=>smallSided.activeIds.includes(p.id)&&p.role!=='goalkeeper').map(p=>p.id),nativeFundamentals):null;
@@ -778,7 +780,7 @@ export function createEngine(RAPIER, input = {}, {
   let sharedCollisionEventsLastTick=0,sharedForceEventsLastTick=0;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
-      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,allowedFundamentals:nativeFundamentals,aerialSequence:nativeLabAerialSequence(smallSided??{}),
+      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,latestLabDynamics:diagnosticLatestLabDynamics,allowedFundamentals:nativeFundamentals,aerialSequence,
       physicalBodyGuardEnabled:diagnosticSmallSidedBodyGuardEnabled,
       keeperSingleShotSide:diagnosticKeeperSingleShot?smallSided.side:null,
       blockShotSide:smallSided?.blockStart?smallSided.side:null,
@@ -1001,7 +1003,8 @@ export function createEngine(RAPIER, input = {}, {
     if(smallBodyGuard)smallBodyGuard.observe(tick+1);
     const physicalBallConflict=!!(shoeBridge?.snapshot().active.length||smallBodyGuard?.snapshot().lowerLegBallContacts.length||
      smallBodyGuard?.snapshot().headBallContacts?.length||smallBodyGuard?.snapshot().aerialControlContacts?.length);
-    for(const controller of keeperDives)controller.observe(tick+1,body.linvel(),{otherBallContact:physicalBallConflict});
+    const sequenceInterrupted=keeperSequence!==null&&nativeKeeperSequenceInterrupted(keeperSequence,shoeBridge.snapshot().started,shoeBridge.snapshot().active,[...smallBodyGuard.snapshot().lowerLegBallContacts,...(smallBodyGuard.snapshot().headBallContacts??[]),...(smallBodyGuard.snapshot().aerialControlContacts??[])]);
+    for(const controller of keeperDives)controller.observe(tick+1,body.linvel(),{otherBallContact:physicalBallConflict,sequenceInterrupted});
     // Exponential airborne-only decay after integration; zero rate preserves
     // the original physics-v4 path without any angular-velocity setter.
     if(diagnosticSpinDecayRatePerS>0 &&
